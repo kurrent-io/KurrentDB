@@ -11,7 +11,7 @@ using KurrentDB.Core.Messages;
 namespace EventStore.Client.Messages;
 
 partial class NewEvent {
-	public NewEvent(byte[] eventId, string eventType, int dataContentType, int metadataContentType, byte[] data, byte[] metadata, byte[] properties) {
+	public NewEvent(byte[] eventId, string eventType, int dataContentType, int metadataContentType, byte[] data, byte[] metadata) {
 
 		EventId = ByteString.CopyFrom(eventId);
 		EventType = eventType;
@@ -19,17 +19,16 @@ partial class NewEvent {
 		MetadataContentType = metadataContentType;
 		Data = ByteString.CopyFrom(data);
 		Metadata = ByteString.CopyFrom(metadata);
-		Properties = ByteString.CopyFrom(properties);
 	}
 }
 
 partial class EventRecord {
-	public EventRecord(string eventStreamId, long eventNumber, byte[] eventId, string eventType, int dataContentType, int metadataContentType, byte[] data, byte[] metadata, byte[] properties, long created, long createdEpoch) {
-		AssignValues(eventStreamId, eventNumber, eventId, eventType, dataContentType, metadataContentType, data, metadata, properties, created, createdEpoch);
+	public EventRecord(string eventStreamId, long eventNumber, byte[] eventId, string eventType, int dataContentType, int metadataContentType, byte[] data, byte[] metadata, long created, long createdEpoch) {
+		AssignValues(eventStreamId, eventNumber, eventId, eventType, dataContentType, metadataContentType, data, metadata, created, createdEpoch);
 	}
 
 	private void AssignValues(string eventStreamId, long eventNumber, byte[] eventId, string eventType, int dataContentType,
-		int metadataContentType, byte[] data, byte[] metadata, byte[] properties, long created, long createdEpoch) {
+		int metadataContentType, byte[] data, byte[] metadata, long created, long createdEpoch) {
 		EventStreamId = eventStreamId;
 		EventNumber = eventNumber;
 		EventId = ByteString.CopyFrom(eventId);
@@ -38,7 +37,6 @@ partial class EventRecord {
 		MetadataContentType = metadataContentType;
 		Data = ByteString.CopyFrom(data);
 		Metadata = ByteString.CopyFrom(metadata);
-		Properties = ByteString.CopyFrom(properties);
 		Created = created;
 		CreatedEpoch = createdEpoch;
 	}
@@ -55,7 +53,6 @@ partial class EventRecord {
 			eventRecord.IsJson ? 1 : 0,
 			eventRecord.Data.ToArray(),
 			eventRecord.Metadata.ToArray(),
-			eventRecord.Properties.ToArray(),
 			eventRecord.TimeStamp.ToBinary(),
 			(long)(eventRecord.TimeStamp - new DateTime(1970, 1, 1)).TotalMilliseconds
 			);
@@ -73,7 +70,6 @@ partial class EventRecord {
 			eventRecord.IsJson ? 1 : 0,
 			eventRecord.Data.ToArray(),
 			eventRecord.Metadata.ToArray(),
-			eventRecord.Properties.ToArray(),
 			eventRecord.TimeStamp.ToBinary(),
 			(long)(eventRecord.TimeStamp - new DateTime(1970, 1, 1)).TotalMilliseconds
 		);

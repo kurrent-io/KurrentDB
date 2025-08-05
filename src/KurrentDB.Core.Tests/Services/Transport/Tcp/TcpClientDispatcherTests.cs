@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 using System.Text;
 using EventStore.Client.Messages;
 using KurrentDB.Core.Data;
@@ -273,46 +272,6 @@ public class TcpClientDispatcherTests {
 		Assert.IsNotNull(dto, "DTO is null");
 		Assert.AreEqual(dto.Result, ScavengeDatabaseResponse.Types.ScavengeResult.Unauthorized);
 		Assert.AreEqual(dto.ScavengeId, scavengeId);
-	}
-
-	[Test]
-	public void when_wrapping_write_events_with_properties_should_unwrap_with_properties() {
-		Event evnt = new Event(Guid.NewGuid(), "test-type", false, "test-data", "test-metadata", "test-properties"u8.ToArray());
-		var msg = ClientMessage.WriteEvents.ForSingleEvent(Guid.NewGuid(), Guid.NewGuid(), IEnvelope.NoOp, false, "test-stream",
-			42, evnt, new ClaimsPrincipal());
-
-		var package = _dispatcher.WrapMessage(msg, (byte)ClientVersion.V2);
-		Assert.IsNotNull(package, "Package is null");
-		Assert.AreEqual(TcpCommand.WriteEvents, package.Value.Command, "TcpCommand");
-
-		var dto = package.Value.Data.Deserialize<WriteEvents>();
-		Assert.IsNotNull(dto, "DTO is null");
-		Assert.AreEqual(evnt.Properties, dto.Events[0].Properties);
-
-		var unwrapped = _dispatcher.UnwrapPackage(package.Value, IEnvelope.NoOp, new ClaimsPrincipal(),
-			new Dictionary<string, string>(), default, (byte)ClientVersion.V2);
-		Assert.IsNotNull(unwrapped, "Unwrapped message is null");
-		if (unwrapped is ClientMessage.WriteEvents writeEvents)
-			Assert.AreEqual(evnt.Properties, writeEvents.Events.Single.Properties);
-		else
-			Assert.Fail($"Unwrapped message is not {nameof(ClientMessage.WriteEvents)}");
-	}
-
-	[Test]
-	public void when_wrapping_read_stream_completed_with_properties() {
-		var evnt = ResolvedEvent.ForUnresolvedEvent(new EventRecord(0, 500, Guid.NewGuid(), Guid.NewGuid(), 500, 0,
-			"test-stream", -1, DateTime.Now, PrepareFlags.Data, "test-event",
-			"test-data"u8.ToArray(), "test-metadata"u8.ToArray(), "test-properties"u8.ToArray()));
-		var msg = new ClientMessage.ReadStreamEventsForwardCompleted(Guid.NewGuid(), "test-stream", 0, 1,
-			ReadStreamResult.Success, [evnt], StreamMetadata.Empty, false, string.Empty, 1, 0, true, 1000);
-
-		var package = _dispatcher.WrapMessage(msg, (byte)ClientVersion.V2);
-		Assert.IsNotNull(package, "Package is null");
-		Assert.AreEqual(TcpCommand.ReadStreamEventsForwardCompleted, package.Value.Command, "TcpCommand");
-
-		var dto = package.Value.Data.Deserialize<ReadStreamEventsCompleted>();
-		Assert.IsNotNull(dto, "DTO is null");
-		Assert.AreEqual(evnt.Event.Properties.ToArray(), dto.Events[0].Event.Properties);
 	}
 
 	private EventRecord CreateDeletedEventRecord() {

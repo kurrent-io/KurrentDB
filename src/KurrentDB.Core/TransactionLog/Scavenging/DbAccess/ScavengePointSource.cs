@@ -106,9 +106,7 @@ public class ScavengePointSource : IScavengePointSource {
 				eventId: Guid.NewGuid(),
 				eventType: SystemEventTypes.ScavengePoint,
 				isJson: true,
-				data: payload.ToJsonBytes(),
-				metadata: null,
-				properties: null),
+				data: payload.ToJsonBytes()),
 			principal: SystemAccounts.System,
 			action: m => {
 				if (m.Result == OperationResult.Success) {

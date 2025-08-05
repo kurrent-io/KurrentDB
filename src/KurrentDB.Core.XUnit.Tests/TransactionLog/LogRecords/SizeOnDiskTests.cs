@@ -39,11 +39,10 @@ public class SizeOnDiskTests {
 				eventTypeSize: null,
 				data: new byte[] { 0xDE, 0XAD, 0xC0, 0XDE },
 				metadata: new byte[] { 0XC0, 0xDE },
-				properties: ReadOnlyMemory<byte>.Empty,
 				prepareRecordVersion: 1);
 		}
 
-		static PrepareLogRecord CreateV2PrepareLogRecord(int propertiesBytesLength) {
+		static PrepareLogRecord CreateV2PrepareLogRecord(int metadataBytesLength) {
 			return new(
 				logPosition: 123,
 				correlationId: Guid.NewGuid(),
@@ -58,8 +57,7 @@ public class SizeOnDiskTests {
 				eventType: "my-event-type",
 				eventTypeSize: null,
 				data: new byte[] { 0xDE, 0XAD, 0xC0, 0XDE },
-				metadata: new byte[] { 0XC0, 0xDE },
-				properties: new byte[propertiesBytesLength],
+				metadata: new byte[metadataBytesLength],
 				prepareRecordVersion: 2);
 		}
 

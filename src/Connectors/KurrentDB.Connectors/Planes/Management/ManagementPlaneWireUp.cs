@@ -7,17 +7,15 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using KurrentDB.Connect.Connectors;
-using KurrentDB.Connect.Producers.Configuration;
-using KurrentDB.Connect.Readers.Configuration;
 using KurrentDB.Connect.Schema;
 using KurrentDB.Connectors.Infrastructure;
 using KurrentDB.Connectors.Management.Contracts.Events;
 using KurrentDB.Connectors.Management.Contracts.Queries;
 using EventStore.Plugins.Licensing;
 using FluentValidation;
+using Kurrent.Surge;
 using Kurrent.Surge.Connectors;
 using Kurrent.Surge.DataProtection;
-using Kurrent.Surge;
 using KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
 using KurrentDB.Connectors.Infrastructure.Eventuous;
 using KurrentDB.Connectors.Infrastructure.System.Node;
@@ -27,7 +25,9 @@ using KurrentDB.Connectors.Planes.Management.Domain;
 using KurrentDB.Connectors.Planes.Management.Migrations;
 using KurrentDB.Connectors.Planes.Management.Projectors;
 using KurrentDB.Connectors.Planes.Management.Queries;
-using KurrentDB.Core.Bus;
+using KurrentDB.Core;
+using KurrentDB.Surge.Producers;
+using KurrentDB.Surge.Readers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Grpc.JsonTranscoding;
 using Microsoft.Extensions.DependencyInjection;
@@ -98,7 +98,7 @@ public static class ManagementPlaneWireUp {
 
             return new ConnectorsStreamSupervisor(
                 options,
-                ctx.GetRequiredService<IPublisher>(),
+                ctx.GetRequiredService<ISystemClient>(),
                 ctx.GetRequiredService<IDataProtector>(),
                 ctx.GetRequiredService<ILogger<ConnectorsStreamSupervisor>>()
             );

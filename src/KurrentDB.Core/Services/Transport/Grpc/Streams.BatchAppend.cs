@@ -305,14 +305,14 @@ partial class Streams<TStreamId> {
 						: new ValueTask(Task.CompletedTask), cancellationToken);
 
 			static Event FromProposedMessage(ProposedMessage proposedMessage) {
-				var (isJson, eventType, properties) = MetadataHelpers.ParseGrpcMetadata(proposedMessage.Metadata);
+				var (isJson, eventType) = MetadataHelpers.ParseGrpcMetadata(proposedMessage.Metadata);
 
 				return new(Uuid.FromDto(proposedMessage.Id).ToGuid(),
 					eventType: eventType,
 					isJson: isJson,
 					data: proposedMessage.Data.ToByteArray(),
-					metadata: proposedMessage.CustomMetadata.ToByteArray(),
-					properties: properties);
+					isPropertyMetadata: false,
+					metadata: proposedMessage.CustomMetadata.ToByteArray());
 			}
 
 			static ClientMessage.WriteEvents ToInternalMessage(ClientWriteRequest request, IEnvelope envelope,
@@ -359,7 +359,7 @@ partial class Streams<TStreamId> {
 
 		public ClientWriteRequest AddEvents(IEnumerable<Event> events, int maxAppendEventSize) {
 			foreach (var e in events) {
-				var eventSize = Event.SizeOnDisk(e.EventType, e.Data, e.Metadata, e.Properties);
+				var eventSize = Event.SizeOnDisk(e.EventType, e.Data, e.Metadata);
 				if (eventSize > maxAppendEventSize) {
 					throw new MaxAppendEventSizeExceededException(e.EventId.ToString(), eventSize, maxAppendEventSize);
 				}

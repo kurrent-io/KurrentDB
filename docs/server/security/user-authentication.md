@@ -1,6 +1,6 @@
 ---
 title: User authentication
-order: 2
+order: 3
 ---
 
 # Authentication
@@ -34,7 +34,7 @@ An `$ops` user can do everything that an `$admin` can do except manage users and
 
 New users can be created through the following means:
 
-- The [HTTP API](@httpapi/security.md#creating-users)
+- The [HTTP API](../http-api/security.md#creating-users)
 - The [Admin UI](../features/admin-ui.md#users)
 <!-- TODO A [gRPC client]() -->
 

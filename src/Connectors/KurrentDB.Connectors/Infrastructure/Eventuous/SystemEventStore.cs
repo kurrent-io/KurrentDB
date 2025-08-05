@@ -1,16 +1,17 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using KurrentDB.Connect.Producers;
-using KurrentDB.Connect.Readers;
 using Eventuous;
 using Kurrent.Surge;
 using Kurrent.Surge.Consumers;
 using Kurrent.Surge.Producers;
 using Kurrent.Surge.Readers;
 using Kurrent.Surge.Schema;
+
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Transport.Enumerators;
+using KurrentDB.Surge.Producers;
+using KurrentDB.Surge.Readers;
 using StreamMetadata = KurrentDB.Core.Data.StreamMetadata;
 
 namespace KurrentDB.Connectors.Infrastructure.Eventuous;
@@ -105,7 +106,7 @@ public class SystemEventStore(SystemReader reader, SystemProducer producer) : IE
         try {
             result = await Reader
                 .ReadForwards(from, filter, count, cancellationToken)
-                .Where(x => !"$".StartsWith(x.SchemaInfo.SchemaName)) // what?
+                .Where(x => !"$".StartsWith(x.SchemaInfo.SchemaName)) // TODO SS: William triple check this.
                 .Select(record => new StreamEvent(
                     record.Id,
                     record.Value,

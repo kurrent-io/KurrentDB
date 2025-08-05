@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+package kurrentdb.protocol.v2;
+
+option csharp_namespace = "KurrentDB.SchemaRegistry.Protocol.Schemas.Events";
+// option csharp_namespace    = "KurrentDB.Protocol.Registry.V2";
+
+import "google/protobuf/timestamp.proto";
+import "registry/shared.proto";
+
+message SchemaCreated {
+  string                    schema_name       = 1;
+  optional string           description       = 2;
+  SchemaDataFormat              data_format       = 3;
+  CompatibilityMode         compatibility     = 4;
+  map<string, string>       tags              = 5;
+  string                    schema_version_id = 6;
+  bytes                     schema_definition = 7;
+  int32                     version_number    = 8;
+  google.protobuf.Timestamp created_at        = 9;
+}
+
+message SchemaVersionRegistered {
+  string                    schema_version_id = 1;
+  bytes                     schema_definition = 2;
+  int32                     version_number    = 3;
+  string                    schema_name       = 4;
+  SchemaDataFormat              data_format       = 5;
+  google.protobuf.Timestamp registered_at     = 6;
+}
+
+message SchemaVersionsDeleted {
+  // The unique name of the schema.
+  string schema_name = 1;
+  // The list of schema version IDs to be deleted.
+  repeated string versions = 2;
+  // The unique identifier of the latest schema version.
+  string latest_schema_version_id = 3;
+  // The version number of the latest schema version.
+  int32 latest_schema_version_number = 4;
+  // When the schema versions were deleted.
+  google.protobuf.Timestamp deleted_at = 5;
+}
+
+message SchemaDeleted {
+  // The unique name of the schema.
+  string schema_name = 1;
+  // When the schema was deleted.
+  google.protobuf.Timestamp deleted_at = 2;
+}
+
+message SchemaCompatibilityModeChanged {
+  // The unique name of the schema.
+  string schema_name = 1;
+  // The new compatibility mode.
+  CompatibilityMode compatibility = 2;
+  // When the compatibility mode was changed.
+  google.protobuf.Timestamp changed_at = 3;
+}
+
+message SchemaTagsUpdated {
+  // The unique name of the schema.
+  string schema_name = 1;
+  // The new tags for the schema.
+  map<string, string> tags = 2;
+  // When the tags were updated.
+  google.protobuf.Timestamp updated_at = 3;
+}
+
+message SchemaDescriptionUpdated {
+  // The unique name of the schema.
+  string schema_name = 1;
+  // The new description for the schema.
+  string description = 2;
+  // When the description was updated.
+  google.protobuf.Timestamp updated_at = 3;
+}

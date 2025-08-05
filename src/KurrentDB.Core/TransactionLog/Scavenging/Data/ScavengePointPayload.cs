@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using KurrentDB.Common.Utils;
 
 namespace KurrentDB.Core.TransactionLog.Scavenging.Data;
 
@@ -11,8 +10,8 @@ public class ScavengePointPayload {
 	public int Threshold { get; set; }
 
 	public byte[] ToJsonBytes() =>
-		Json.ToJsonBytes(this);
+		Common.Utils.Json.ToJsonBytes(this);
 
 	public static ScavengePointPayload FromBytes(ReadOnlyMemory<byte> bytes) =>
-		Json.ParseJson<ScavengePointPayload>(bytes);
+		Common.Utils.Json.ParseJson<ScavengePointPayload>(bytes);
 }

@@ -4,12 +4,11 @@
 // ReSharper disable CheckNamespace
 
 using DotNext.Collections.Generic;
-using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messaging;
 
 namespace KurrentDB.Core.Bus;
 
-public interface IBus : ISubscriber, IPublisher;
+public interface IMessageBus : ISubscriber, IPublisher;
 
 public delegate ValueTask HandleMessageAsync<in T>(T message, CancellationToken cancellationToken) where T : Message;
 
@@ -17,7 +16,7 @@ public delegate void HandleMessage<in T>(T message, CancellationToken cancellati
 
 public delegate void DropMessageSubscription();
 
-abstract class MessageHandler<T> : IAsyncHandle<T> where T : Message {
+public abstract class MessageHandler<T> : IAsyncHandle<T> where T : Message {
     public abstract ValueTask HandleAsync(T message, CancellationToken token);
 
     public class Proxy(HandleMessageAsync<T> handler) : MessageHandler<T> {
@@ -28,8 +27,6 @@ abstract class MessageHandler<T> : IAsyncHandle<T> where T : Message {
 [PublicAPI]
 public class MessageModule(ISubscriber subscriber) : IDisposable {
     Dictionary<Type, DropMessageSubscription> Subscriptions { get; } = [];
-
-    public void Dispose() => DropAll();
 
     protected void On<T>(HandleMessageAsync<T> handler) where T : Message {
         var key = typeof(T);
@@ -56,6 +53,8 @@ public class MessageModule(ISubscriber subscriber) : IDisposable {
         Subscriptions.Values.ForEach(unsubscribe => unsubscribe());
         Subscriptions.Clear();
     }
+
+    public void Dispose() => DropAll();
 }
 
 [PublicAPI]
@@ -67,9 +66,8 @@ public static class SubscriberExtensions {
     }
 
     public static DropMessageSubscription On<T>(this ISubscriber subscriber, HandleMessage<T> handler) where T : Message =>
-        On<T>(subscriber,
-            (msg, token) => {
-                handler(msg, token);
-                return ValueTask.CompletedTask;
-            });
+        On<T>(subscriber, (msg, token) => {
+            handler(msg, token);
+            return ValueTask.CompletedTask;
+        });
 }

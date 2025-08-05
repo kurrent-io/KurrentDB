@@ -19,6 +19,7 @@ using KurrentDB.Core.Messages;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Grpc;
+using KurrentDB.Core.Services.Transport.Grpc.V2;
 using KurrentDB.Core.Services.Transport.Http;
 using KurrentDB.Core.TransactionLog.Chunks;
 using Microsoft.AspNetCore.Authentication;
@@ -239,6 +240,7 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 		services
 			.AddSingleton<ISubscriber>(_mainBus)
 			.AddSingleton<IPublisher>(_mainQueue)
+			.AddSingleton<ISystemClient, SystemClient>()
 			.AddSingleton(new Streams<TStreamId>(_mainQueue,
 				Ensure.Positive(_options.Application.MaxAppendSize),
 				Ensure.Positive(_options.Application.MaxAppendEventSize),
@@ -285,7 +287,13 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 		// gRPC
 		services
 			.AddSingleton<RetryInterceptor>()
-			.AddGrpc(options => options.Interceptors.Add<RetryInterceptor>())
+			.AddGrpc(options => {
+				#if DEBUG
+				options.EnableDetailedErrors = true;
+				#endif
+
+				options.Interceptors.Add<RetryInterceptor>();
+			})
 			.AddServiceOptions<Streams<TStreamId>>(options => options.MaxReceiveMessageSize = TFConsts.EffectiveMaxLogRecordSize);
 
 		// Ask the node itself to add DI registrations

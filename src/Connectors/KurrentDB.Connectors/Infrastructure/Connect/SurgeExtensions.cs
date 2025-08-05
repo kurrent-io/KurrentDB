@@ -4,14 +4,8 @@
 // ReSharper disable CheckNamespace
 
 using KurrentDB.Connect.Connectors;
-using KurrentDB.Connect.Consumers.Configuration;
-using KurrentDB.Connect.Processors;
-using KurrentDB.Connect.Processors.Configuration;
-using KurrentDB.Connect.Producers;
-using KurrentDB.Connect.Producers.Configuration;
-using KurrentDB.Connect.Readers;
-using KurrentDB.Connect.Readers.Configuration;
 using KurrentDB.Connect.Schema;
+using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using Kurrent.Surge;
 using Kurrent.Surge.Connectors;
@@ -24,9 +18,11 @@ using Kurrent.Surge.Producers.Configuration;
 using Kurrent.Surge.Readers;
 using Kurrent.Surge.Schema;
 using Kurrent.Surge.Schema.Serializers;
-using KurrentDB.Connect.Consumers;
-using KurrentDB.Connectors.Infrastructure.Connect.Components;
-using KurrentDB.Connectors.Infrastructure.Connect.Components.Producers;
+using KurrentDB.Surge;
+using KurrentDB.Surge.Consumers;
+using KurrentDB.Surge.Processors;
+using KurrentDB.Surge.Producers;
+using KurrentDB.Surge.Readers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -39,17 +35,15 @@ namespace KurrentDB.Connect;
 
 public static class SurgeExtensions {
     public static IServiceCollection AddSurgeSystemComponents(this IServiceCollection services) {
-        services.AddSurgeSchemaRegistry(SchemaRegistry.Global);
-
         services.AddSingleton<IStateStore, InMemoryStateStore>();
 
         services.AddSingleton<Func<SystemReaderBuilder>>(ctx => {
-            var publisher      = ctx.GetRequiredService<IPublisher>();
+            var client         = ctx.GetRequiredService<ISystemClient>();
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
             var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
 
             return () => SystemReader.Builder
-                .Publisher(publisher)
+                .Client(client)
                 .SchemaRegistry(schemaRegistry)
                 .Logging(new() {
                     Enabled       = true,
@@ -59,12 +53,12 @@ public static class SurgeExtensions {
         });
 
         services.AddSingleton<Func<SystemConsumerBuilder>>(ctx => {
-            var publisher      = ctx.GetRequiredService<IPublisher>();
+            var client         = ctx.GetRequiredService<ISystemClient>();
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
             var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
 
             return () => SystemConsumer.Builder
-                .Publisher(publisher)
+                .Client(client)
                 .SchemaRegistry(schemaRegistry)
                 .Logging(new() {
                     Enabled       = true,
@@ -74,12 +68,12 @@ public static class SurgeExtensions {
         });
 
         services.AddSingleton<Func<SystemProducerBuilder>>(ctx => {
-            var publisher      = ctx.GetRequiredService<IPublisher>();
+            var client         = ctx.GetRequiredService<ISystemClient>();
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
             var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
 
             return () => SystemProducer.Builder
-                .Publisher(publisher)
+                .Client(client)
                 .SchemaRegistry(schemaRegistry)
                 .Logging(new() {
                     Enabled       = true,
@@ -89,13 +83,13 @@ public static class SurgeExtensions {
         });
 
         services.AddSingleton<Func<SystemProcessorBuilder>>(ctx => {
-            var publisher      = ctx.GetRequiredService<IPublisher>();
+            var client         = ctx.GetRequiredService<ISystemClient>();
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
             var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
             var stateStore     = ctx.GetRequiredService<IStateStore>();
 
             return () => SystemProcessor.Builder
-                .Publisher(publisher)
+                .Client(client)
                 .SchemaRegistry(schemaRegistry)
                 .StateStore(stateStore)
                 .Logging(new LoggingOptions {
@@ -126,11 +120,14 @@ public static class SurgeExtensions {
         return services;
     }
 
-    public static IServiceCollection AddSurgeSchemaRegistry(this IServiceCollection services, SchemaRegistry schemaRegistry) =>
-        services
-            .AddSingleton(schemaRegistry)
-            .AddSingleton<ISchemaRegistry>(schemaRegistry)
-            .AddSingleton<ISchemaSerializer>(schemaRegistry);
+    public static IServiceCollection AddSurgeSchemaRegistry(this IServiceCollection services, SchemaRegistry? schemaRegistry = null) {
+		schemaRegistry ??= SchemaRegistry.Global;
+
+	    return services
+		    .AddSingleton(schemaRegistry)
+		    .AddSingleton<ISchemaRegistry>(schemaRegistry)
+		    .AddSingleton<ISchemaSerializer>(schemaRegistry);
+    }
 
     public static IServiceCollection AddSurgeDataProtection(this IServiceCollection services, IConfiguration configuration) {
         var config = configuration
@@ -205,7 +202,7 @@ public static class SurgeExtensions {
         });
 
         builder.Services.AddSingleton<IManager>(ctx => {
-            var manager = new SystemManager(ctx.GetRequiredService<IPublisher>());
+            var manager = new SystemManager(ctx.GetRequiredService<ISystemClient>());
             return manager;
         });
 

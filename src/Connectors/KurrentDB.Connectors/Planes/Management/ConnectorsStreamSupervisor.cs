@@ -4,7 +4,7 @@
 using KurrentDB.Core;
 using Kurrent.Surge;
 using Kurrent.Surge.DataProtection;
-using KurrentDB.Core.Bus;
+
 using Microsoft.Extensions.Logging;
 using static KurrentDB.Connectors.Planes.ConnectorsFeatureConventions.Streams;
 
@@ -26,8 +26,8 @@ public record SystemStreamOptions(int? MaxCount = null, TimeSpan? MaxAge = null)
 /// Responsible for configuring and deleting the system streams for a connector.
 /// </summary>
 [PublicAPI]
-public class ConnectorsStreamSupervisor(ConnectorsStreamSupervisorOptions options, IPublisher client, IDataProtector protector, ILogger<ConnectorsStreamSupervisor> logger) {
-    IPublisher                          Client              { get; } = client;
+public class ConnectorsStreamSupervisor(ConnectorsStreamSupervisorOptions options, ISystemClient client, IDataProtector protector, ILogger<ConnectorsStreamSupervisor> logger) {
+    ISystemClient                       Client              { get; } = client;
     IDataProtector                      Protector           { get; } = protector;
     ILogger<ConnectorsStreamSupervisor> Logger              { get; } = logger;
     StreamMetadata                      LeasesMetadata      { get; } = options.Leases.AsStreamMetadata();
@@ -42,6 +42,7 @@ public class ConnectorsStreamSupervisor(ConnectorsStreamSupervisorOptions option
         return true;
 
         Task TryConfigureStream(string stream, StreamMetadata metadata) => Client
+            .Management
             .SetStreamMetadata(stream, metadata, cancellationToken: ct)
             .OnError(ex => Logger.LogError(ex, "{ProcessorId} Failed to configure stream {Stream}", connectorId, stream))
             .Then(state => state.Logger.LogDebug("{ProcessorId} Stream {Stream} configured {Metadata}", connectorId, state.Stream, state.Metadata), (Logger, Stream: stream, Metadata: metadata));
@@ -52,7 +53,7 @@ public class ConnectorsStreamSupervisor(ConnectorsStreamSupervisorOptions option
 
     public async ValueTask<bool> DeleteConnectorStreams(string connectorId, RecordPosition expectedPosition, CancellationToken ct) {
         await Task.WhenAll(
-            TryDeleteStream(GetLeasesStream(connectorId)),
+            // TryDeleteStream(GetLeasesStream(connectorId)),
             TryDeleteStream(GetCheckpointsStream(connectorId))
 
             // we found a last minute bug here before releasing v25.0.0
@@ -63,7 +64,8 @@ public class ConnectorsStreamSupervisor(ConnectorsStreamSupervisorOptions option
         return true;
 
         Task TryDeleteStream(string stream) => Client
-            .SoftDeleteStream(stream, ct)
+            .Management
+            .SoftDeleteStream(stream, cancellationToken: ct)
             .OnError(ex => Logger.LogError(ex, "{ProcessorId} Failed to delete stream {Stream}", connectorId, stream))
             .Then(state => state.Logger.LogInformation("{ProcessorId} Stream {Stream} deleted", connectorId, state.Stream), (Logger, Stream: stream));
     }

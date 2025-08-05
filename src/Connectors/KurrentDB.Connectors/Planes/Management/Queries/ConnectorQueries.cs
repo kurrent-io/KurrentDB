@@ -1,15 +1,14 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using KurrentDB.Connect.Readers;
-using KurrentDB.Connect.Readers.Configuration;
 using KurrentDB.Connectors.Management.Contracts.Queries;
 using Kurrent.Surge;
 using Kurrent.Surge.Protocol.Consumers;
+using KurrentDB.Common.Configuration;
 using KurrentDB.Common.Utils;
-using KurrentDB.Connectors.Infrastructure;
 using KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
 using KurrentDB.Connectors.Planes.Management.Domain;
+using KurrentDB.Surge.Readers;
 using Microsoft.Extensions.Configuration;
 
 namespace KurrentDB.Connectors.Planes.Management.Queries;

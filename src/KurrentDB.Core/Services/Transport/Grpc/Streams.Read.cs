@@ -349,7 +349,7 @@ public static class ResponseConverter {
 			case ReadResponseException.UnknownMessage unknownMessage:
 				throw RpcExceptions.UnknownMessage(unknownMessage.UnknownMessageType, unknownMessage.ExpectedMessageType);
 			case ReadResponseException.UnknownError unknown:
-				throw RpcExceptions.UnknownError(unknown.ResultType, unknown.Result);
+				throw RpcExceptions.UnknownError(unknown.ResultType, unknown.Result, unknown.ErrorMessage);
 			default:
 				throw new ArgumentException($"Unknown read response exception type: {readResponseEx.GetType().Name}", nameof(readResponseEx));
 		}
@@ -361,6 +361,7 @@ public static class ResponseConverter {
 		if (e == null)
 			return null;
 		var position = Position.FromInt64(commitPosition ?? -1, preparePosition ?? -1);
+
 		var result = new ReadEvent.Types.RecordedEvent {
 			Id = uuidOption.ContentCase switch {
 				ReadReq.Types.Options.Types.UUIDOption.ContentOneofCase.String => new UUID {

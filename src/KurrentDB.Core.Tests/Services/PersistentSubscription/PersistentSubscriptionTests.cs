@@ -314,8 +314,7 @@ public class when_updating_all_stream_subscription_with_filter<TLogFormat, TStre
 						eventType: ev.EventType,
 						eventTypeSize: null,
 						data: Array.Empty<byte>(),
-						metadata: Array.Empty<byte>(),
-						properties: Array.Empty<byte>());
+						metadata: Array.Empty<byte>());
 
 					var evRec = new EventRecord(0, prepareLogRecord, msg.EventStreamId, ev.EventType);
 					resolvedEvents.Add(ResolvedEvent.ForUnresolvedEvent(evRec));
@@ -2523,14 +2522,14 @@ public static class Helper {
 		return
 			ResolvedEvent.ForUnresolvedEvent(new EventRecord(version, preparePosition, Guid.NewGuid(), id, commitPosition, 1234,
 				stream, version,
-				DateTime.UtcNow, PrepareFlags.SingleWrite, type, new byte[0], metaData, new byte[0]), commitPosition);
+				DateTime.UtcNow, PrepareFlags.SingleWrite, type, new byte[0], metaData), commitPosition);
 	}
 
 	public static ResolvedEvent BuildLinkEvent(Guid id, string stream, long version, ResolvedEvent ev, bool resolved = true, long commitPosition = 1234567, long preparePosition = 1234567) {
 		var link = new EventRecord(version, preparePosition, Guid.NewGuid(), id, commitPosition, 1234, stream, version,
 			DateTime.UtcNow, PrepareFlags.SingleWrite, SystemEventTypes.LinkTo,
 			Encoding.UTF8.GetBytes(string.Format("{0}@{1}", ev.OriginalEventNumber, ev.OriginalStreamId)),
-			new byte[0], new byte[0]);
+			new byte[0]);
 		if (resolved)
 			return ResolvedEvent.ForResolvedLink(ev.Event, link, commitPosition);
 		else

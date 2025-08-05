@@ -98,8 +98,7 @@ internal class WriteFloodWaitingProcessor : ICmdProcessor {
 								"TakeSomeSpaceEvent",
 								0, 0,
 								Helper.UTF8NoBom.GetBytes("DATA" + new string('*', dataSize)),
-								Helper.UTF8NoBom.GetBytes("METADATA" + new string('$', metadataSize)),
-								[])
+								Helper.UTF8NoBom.GetBytes("METADATA" + new string('$', metadataSize)))
 						},
 						false);
 					var package = new TcpPackage(TcpCommand.WriteEvents, Guid.NewGuid(), write.Serialize());

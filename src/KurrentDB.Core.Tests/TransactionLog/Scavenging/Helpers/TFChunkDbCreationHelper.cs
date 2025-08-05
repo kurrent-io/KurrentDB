@@ -320,7 +320,6 @@ public class TFChunkDbCreationHelper<TLogFormat, TStreamId> {
 					eventTypeId,
 					FormatData(rec),
 					null,
-					properties: rec.Properties,
 					rec.TimeStamp);
 			}
 
@@ -410,7 +409,6 @@ public class TFChunkDbCreationHelper<TLogFormat, TStreamId> {
 			null,
 			data,
 			null,
-			null,
 			LogRecordVersion.LogRecordV0);
 	}
 }
@@ -485,7 +483,6 @@ public class Rec {
 	public readonly long? EventNumber;
 	public readonly byte[] Data;
 	public readonly StreamMetadata Metadata;
-	public readonly byte[] Properties;
 	public readonly PrepareFlags PrepareFlags;
 	public readonly byte Version;
 
@@ -498,7 +495,6 @@ public class Rec {
 		long? eventNumber = null,
 		byte[] data = null,
 		StreamMetadata metadata = null,
-		byte[] properties = null,
 		PrepareFlags prepareFlags = PrepareFlags.Data) {
 		Ensure.NotNullOrEmpty(streamId, "streamId");
 		Ensure.Nonnegative(transaction, "transaction");
@@ -516,7 +512,6 @@ public class Rec {
 		EventNumber = eventNumber;
 		Data = data;
 		Metadata = metadata;
-		Properties = properties;
 		PrepareFlags = prepareFlags;
 	}
 
@@ -540,20 +535,18 @@ public class Rec {
 		long? eventNumber = null,
 		byte[] data = null,
 		StreamMetadata metadata = null,
-		byte[] properties = null,
 		PrepareFlags prepareFlags = PrepareFlags.Data,
 		byte version = PrepareLogRecord.PrepareRecordVersion) {
-		return new Rec(RecType.Prepare, transaction, stream, eventType, timestamp, version, eventNumber, data, metadata, properties, prepareFlags);
+		return new Rec(RecType.Prepare, transaction, stream, eventType, timestamp, version, eventNumber, data, metadata, prepareFlags);
 	}
 
 	public static Rec Write(int transaction, string stream, string eventType = null, DateTime? timestamp = null,
 		long? eventNumber = null,
 		byte[] data = null,
 		StreamMetadata metadata = null,
-		byte[] properties = null,
 		PrepareFlags prepareFlags = PrepareFlags.SingleWrite | PrepareFlags.IsCommitted,
 		byte version = PrepareLogRecord.PrepareRecordVersion) {
-		return new Rec(RecType.Prepare, transaction, stream, eventType, timestamp, version, eventNumber, data, metadata, properties, prepareFlags);
+		return new Rec(RecType.Prepare, transaction, stream, eventType, timestamp, version, eventNumber, data, metadata, prepareFlags);
 	}
 
 	public static Rec TransEnd(int transaction, string stream, DateTime? timestamp = null,

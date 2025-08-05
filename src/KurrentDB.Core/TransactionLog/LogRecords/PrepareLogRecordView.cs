@@ -25,7 +25,6 @@ public readonly struct PrepareLogRecordView {
 	public ReadOnlySpan<byte> EventType => _record.AsSpan(_eventTypeOffset, _eventTypeSize);
 	public ReadOnlySpan<byte> Data => _record.AsSpan(_dataOffset, _dataSize);
 	public ReadOnlySpan<byte> Metadata => _record.AsSpan(_metadataOffset, _metadataSize);
-	public ReadOnlySpan<byte> Properties => _record.AsSpan(_propertiesOffset, _propertiesSize);
 
 	private readonly byte[] _record;
 	private readonly int _length;
@@ -41,8 +40,6 @@ public readonly struct PrepareLogRecordView {
 	private readonly int _dataOffset;
 	private readonly int _metadataSize;
 	private readonly int _metadataOffset;
-	private readonly int _propertiesSize;
-	private readonly int _propertiesOffset;
 
 	public PrepareLogRecordView(byte[] record, int length) {
 		if (!BitConverter.IsLittleEndian)
@@ -52,7 +49,7 @@ public readonly struct PrepareLogRecordView {
 		_length = length;
 
 		Version = _record[1];
-		if (Version > PrepareLogRecordVersion.V2)
+		if (Version > PrepareLogRecord.PrepareRecordVersion)
 			throw new ArgumentException(
 				$"PrepareRecord version {Version} is incorrect. Supported version: {PrepareLogRecord.PrepareRecordVersion}.");
 
@@ -94,12 +91,6 @@ public readonly struct PrepareLogRecordView {
 		_metadataOffset = currentOffset;
 		currentOffset += _metadataSize;
 
-		if (Version >= PrepareLogRecordVersion.V2) {
-			_propertiesSize = Read7BitEncodedInt(_record.AsSpan(0, _length), ref currentOffset);
-			_propertiesOffset = currentOffset;
-			currentOffset += _propertiesSize;
-		}
-
 		if (currentOffset != _length) {
 			throw new ArgumentException($"Unexpected record length: {currentOffset}, expected: {_length}");
 		}
@@ -124,7 +115,7 @@ public readonly struct PrepareLogRecordView {
 			   $"EventType: {Encoding.UTF8.GetString(EventType.ToArray())}, " +
 			   $"Data size: {Data.Length}, " +
 			   $"Metadata size: {Metadata.Length}, " +
-			   $"Properties size: {Properties.Length}";
+			   "";
 	}
 
 	// copied and adapted from https://github.com/microsoft/referencesource/blob/master/mscorlib/system/io/binaryreader.cs

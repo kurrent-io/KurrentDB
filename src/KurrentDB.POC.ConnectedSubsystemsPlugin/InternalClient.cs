@@ -50,7 +50,7 @@ public class InternalClient : IClient {
 		var metadata = new StreamMetadata(maxCount: 3);
 		var data = metadata.ToJsonBytes();
 		var eventToWrite = new EventToWrite(Guid.NewGuid(), SystemEventTypes.StreamMetadata, "application/json", data,
-			null);
+			isPropertyMetadata: false, null);
 
 		await WriteAsync(SystemStreams.MetastreamOf(stream), new[] { eventToWrite }, -2, cancellationToken);
 	}
@@ -72,8 +72,8 @@ public class InternalClient : IClient {
 				new Core.Data.Event(
 					evt.EventId, evt.EventType, isJson: evt.ContentType == "application/json",
 					evt.Data.ToArray(),
-					evt.Metadata.ToArray(),
-					properties: null)).ToArray(),
+					evt.IsPropertyMetadata,
+					evt.Metadata.ToArray())).ToArray(),
 			SystemAccounts.System,
 			cancellationToken: cancellationToken));
 
