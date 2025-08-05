@@ -20,11 +20,9 @@ internal class EventTypeIndexReader(
 			? processor.GetEventTypeId(eventTypeName)
 			: ExpectedVersion.Invalid;
 
-	protected override long GetLastIndexedSequence(long id) => processor.GetLastEventNumber((int)id);
-
 	protected override IEnumerable<IndexedPrepare> GetIndexRecords(long id, long fromEventNumber, long toEventNumber) {
 		var range = db.Pool.Query<ReadEventTypeIndexQueryArgs, EventTypeRecord, ReadEventTypeIndexQuery>(
-			new ReadEventTypeIndexQueryArgs((int)id, fromEventNumber, toEventNumber)
+			new((int)id, fromEventNumber, toEventNumber)
 		);
 		if (range.Count < toEventNumber - fromEventNumber + 1) {
 			// events might be in flight

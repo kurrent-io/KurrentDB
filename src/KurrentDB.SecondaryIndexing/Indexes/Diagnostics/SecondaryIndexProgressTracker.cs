@@ -47,10 +47,7 @@ public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
 	private readonly SecondaryIndexTrackers _trackers = new();
 	private readonly Stopwatch _sw = new();
 
-	public SecondaryIndexProgressTracker(
-		Meter meter,
-		string meterPrefix
-	) {
+	public SecondaryIndexProgressTracker(Meter meter, string meterPrefix) {
 		meter.CreateObservableGauge(
 			$"{meterPrefix}.subscription.gap",
 			ObserveGap,
@@ -112,12 +109,11 @@ public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
 
 			var currentLastLogPosition = Interlocked.Read(ref _lastLogPosition);
 
-			// Just in case we have some race condition between reading last event and getting a newly appended notification
+			// Just in case we have some race condition between reading the last event and getting a newly appended notification
 			if (currentLastLogPosition >= logPosition)
 				return;
 
-			if (Interlocked.CompareExchange(ref _lastLogPosition, logPosition, currentLastLogPosition) ==
-			    currentLastLogPosition) {
+			if (Interlocked.CompareExchange(ref _lastLogPosition, logPosition, currentLastLogPosition) == currentLastLogPosition) {
 				Interlocked.Exchange(ref _lastAppendedAt, timestampTicks);
 			}
 		} catch (Exception exc) {
@@ -127,19 +123,13 @@ public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
 
 	public void RecordCommit(Func<(long position, int batchSize)> callback) {
 		using var duration = _trackers.Commit.Start();
-		try {
-			_sw.Restart();
-			var (position, batchSize) = callback();
-			Interlocked.Exchange(ref _lastCommittedPosition, position);
-			Interlocked.Exchange(ref _pendingEvents, 0);
-			_sw.Stop();
+		_sw.Restart();
+		var (position, batchSize) = callback();
+		Interlocked.Exchange(ref _lastCommittedPosition, position);
+		Interlocked.Exchange(ref _pendingEvents, 0);
+		_sw.Stop();
 
-			Log.Debug("Committed {Count} records to index at seq {Seq} ({Took} ms)",
-				batchSize, position, _sw.ElapsedMilliseconds);
-		} catch (Exception exc) {
-			Log.Error(exc, "Error recording metrics of event appended.");
-			throw;
-		}
+		Log.Debug("Committed {Count} records to index at seq {Seq} ({Took} ms)", batchSize, position, _sw.ElapsedMilliseconds);
 	}
 
 	public void RecordError(Exception e) {
@@ -150,25 +140,25 @@ public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
 		var streamPos = Interlocked.Read(ref _lastLogPosition);
 		var indexedPos = Interlocked.Read(ref _lastIndexedPosition);
 
-		if(streamPos == -1 || indexedPos == -1)
+		if (streamPos == -1 || indexedPos == -1)
 			yield break;
 
-		yield return new Measurement<long>(streamPos - indexedPos);
+		yield return new(streamPos - indexedPos);
 	}
 
 	private IEnumerable<Measurement<long>> ObserveLag() {
 		var lastAppendedAt = Interlocked.Read(ref _lastAppendedAt);
 		var lastIndexedAt = Interlocked.Read(ref _lastIndexedAt);
 
-		if(lastAppendedAt == -1 || lastIndexedAt == -1)
+		if (lastAppendedAt == -1 || lastIndexedAt == -1)
 			yield break;
 
-		var lag = (long) new TimeSpan(lastIndexedAt - lastAppendedAt).TotalMilliseconds;
+		var lag = (long)new TimeSpan(lastIndexedAt - lastAppendedAt).TotalMilliseconds;
 
-		yield return new Measurement<long>(lag);
+		yield return new(lag);
 	}
 
 	private Measurement<int> ObservePending() {
-		return new Measurement<int>(_pendingEvents);
+		return new(_pendingEvents);
 	}
 }

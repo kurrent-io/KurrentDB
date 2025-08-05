@@ -7,57 +7,25 @@ using KurrentDB.SecondaryIndexing.Storage;
 namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
 
 internal static class EventTypeSql {
-	public record struct ReadEventTypeIndexQueryArgs(int EventTypeId, long FromSeq, long ToSeq);
+	public record struct ReadEventTypeIndexQueryArgs(int EventTypeId, long StartPosition, int Count);
 
-	public record struct EventTypeRecord(long EventTypeSeq, long LogPosition);
-
-	public struct ReadEventTypeIndexQuery : IQuery<ReadEventTypeIndexQueryArgs, EventTypeRecord> {
+	public struct ReadEventTypeIndexQuery : IQuery<ReadEventTypeIndexQueryArgs, long> {
 		public static BindingContext Bind(in ReadEventTypeIndexQueryArgs args, PreparedStatement statement)
 			=> new(statement) {
 				args.EventTypeId,
-				args.FromSeq,
-				args.ToSeq
+				args.StartPosition,
+				args.Count
 			};
 
-		public static ReadOnlySpan<byte> CommandText =>
-			"""
-			select event_type_seq, log_position
-			from idx_all where event_type=$1 and event_type_seq>=$2 and event_type_seq<=$3
-			"""u8;
+		public static ReadOnlySpan<byte> CommandText => "select log_position from idx_all where event_type_id=$1 and log_position>$2 limit $3"u8;
 
-		public static EventTypeRecord Parse(ref DataChunk.Row row)
-			=> new(row.ReadInt64(), row.ReadInt64());
+		public static long Parse(ref DataChunk.Row row) => row.ReadInt64();
 	}
 
 	public struct GetAllEventTypesQuery : IQuery<ReferenceRecord> {
-		public static ReadOnlySpan<byte> CommandText => "select id, name from event_type"u8;
+		public static ReadOnlySpan<byte> CommandText => "select id, name from event_types"u8;
 
 		public static ReferenceRecord Parse(ref DataChunk.Row row) => new(row.ReadInt32(), row.ReadString());
-	}
-
-	public record struct EventTypeSummary(long Id, string Name, long LastLogPosition);
-
-	public struct GetEventTypesSummaryQuery : IQuery<EventTypeSummary> {
-		public static ReadOnlySpan<byte> CommandText =>
-			"""
-			SELECT e.id, e.name, max_seq.max_event_type_seq
-			FROM event_type e
-			LEFT JOIN (
-			    SELECT event_type, MAX(event_type_seq) AS max_event_type_seq
-			    FROM idx_all
-			    GROUP BY event_type
-			) max_seq ON e.id = max_seq.event_type;
-			"""u8;
-
-		public static EventTypeSummary Parse(ref DataChunk.Row row) => new(row.ReadInt32(), row.ReadString(), row.ReadInt64());
-	}
-
-	public struct GetEventTypeMaxSequencesQuery : IQuery<(int Id, long Sequence)> {
-		public static ReadOnlySpan<byte> CommandText =>
-			"select event_type, max(event_type_seq) from idx_all group by event_type"u8;
-
-		public static (int Id, long Sequence) Parse(ref DataChunk.Row row) =>
-			(row.ReadInt32(), row.ReadInt64());
 	}
 
 	public record struct AddEventTypeStatementArgs(int Id, string EventType);
@@ -66,6 +34,6 @@ internal static class EventTypeSql {
 		public static BindingContext Bind(in AddEventTypeStatementArgs args, PreparedStatement statement)
 			=> new(statement) { args.Id, args.EventType };
 
-		public static ReadOnlySpan<byte> CommandText => "insert or ignore into event_type (id, name) values ($1, $2)"u8;
+		public static ReadOnlySpan<byte> CommandText => "insert or ignore into event_types (id, name) values ($1, $2)"u8;
 	}
 }

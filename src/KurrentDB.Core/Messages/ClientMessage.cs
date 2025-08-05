@@ -1072,12 +1072,10 @@ public static partial class ClientMessage {
 			StreamMetadata streamMetadata, bool isCachePublic, int maxCount,
 			TFPos currentPos, TFPos nextPos, TFPos prevPos, long tfLastCommitPosition,
 			bool isEndOfStream, long consideredEventsCount) {
-			Ensure.NotNull(events, "events");
-
 			CorrelationId = correlationId;
 			Result = result;
 			Error = error;
-			Events = events;
+			Events = Ensure.NotNull(events);
 			StreamMetadata = streamMetadata;
 			IsCachePublic = isCachePublic;
 			MaxCount = maxCount;

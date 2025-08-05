@@ -27,7 +27,6 @@ namespace KurrentDB.SecondaryIndexing.Tests.Indexes;
 public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 	[Fact]
 	public void WhenNoEventsProcessedYet_HasDefaultValues() {
-		Assert.Equal(-1, _processor.LastSequence);
 		Assert.Equal(-1, _processor.LastIndexedPosition);
 	}
 
@@ -90,10 +89,6 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 			new ReferenceRecord(0, cat1),
 			new ReferenceRecord(1, cat2)
 		]);
-		AssertGetCategoriesMaxSequencesQueryReturns([
-			(0, 6),
-			(1, 1)
-		]);
 		AssertCategoryIndexQueryReturns(0, [
 			new CategoryRecord(0, 100),
 			new CategoryRecord(1, 117),
@@ -110,18 +105,11 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 
 		// EventTypes
 		AssertGetAllEventTypesQueryReturns([
-			new ReferenceRecord(0, cat1Et1),
-			new ReferenceRecord(1, cat2Et1),
-			new ReferenceRecord(2, cat1Et2),
-			new ReferenceRecord(3, cat1Et3),
-			new ReferenceRecord(4, cat2Et2)
-		]);
-		AssertGetEventTypeMaxSequencesQueryReturns([
-			(0, 2),
-			(1, 0),
-			(2, 1),
-			(3, 1),
-			(4, 0)
+			new(0, cat1Et1),
+			new(1, cat2Et1),
+			new(2, cat1Et2),
+			new(3, cat1Et3),
+			new(4, cat2Et2)
 		]);
 		AssertReadEventTypeIndexQueryReturns(0, [
 			new EventTypeRecord(0, 100),
@@ -174,7 +162,6 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 
 		// Then
 		// Default Index
-		AssertLastSequenceQueryReturns(2);
 		AssertLastLogPositionQueryReturns(200);
 
 		AssertDefaultIndexQueryReturns([
@@ -184,12 +171,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		]);
 
 		// Categories
-		AssertGetCategoriesQueryReturns([
-			new ReferenceRecord(0, "hello")
-		]);
-		AssertGetCategoriesMaxSequencesQueryReturns([
-			(0, 2)
-		]);
+		AssertGetCategoriesQueryReturns([new(0, "hello")]);
 		AssertCategoryIndexQueryReturns(0, [
 			new CategoryRecord(0, 100),
 			new CategoryRecord(1, 117),
@@ -198,14 +180,9 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 
 		// EventTypes
 		AssertGetAllEventTypesQueryReturns([
-			new ReferenceRecord(0, eventType1),
-			new ReferenceRecord(1, eventType2),
-			new ReferenceRecord(2, eventType3)
-		]);
-		AssertGetEventTypeMaxSequencesQueryReturns([
-			(0, 0),
-			(1, 0),
-			(2, 0)
+			new(0, eventType1),
+			new(1, eventType2),
+			new(2, eventType3)
 		]);
 		AssertReadEventTypeIndexQueryReturns(0, [
 			new EventTypeRecord(0, 100)
@@ -259,31 +236,27 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		}
 
 		// Then
-		AssertLastSequenceQueryReturns(null);
 		AssertLastLogPositionQueryReturns(null);
-
 		AssertDefaultIndexQueryReturns([]);
 
 		// Categories
-		// Note: Categories are inserted using separate connection
+		// Note: Categories are inserted using a separate connection
 		AssertGetCategoriesQueryReturns([
-			new ReferenceRecord(0, cat1),
-			new ReferenceRecord(1, cat2)
+			new(0, cat1),
+			new(1, cat2)
 		]);
-		AssertGetCategoriesMaxSequencesQueryReturns([]);
 		AssertCategoryIndexQueryReturns(0, []);
 		AssertCategoryIndexQueryReturns(1, []);
 
 		// EventTypes
-		// Note: Event Types are inserted using separate connection
+		// Note: Event Types are inserted using a separate connection
 		AssertGetAllEventTypesQueryReturns([
-			new ReferenceRecord(0, cat1Et1),
-			new ReferenceRecord(1, cat2Et1),
-			new ReferenceRecord(2, cat1Et2),
-			new ReferenceRecord(3, cat1Et3),
-			new ReferenceRecord(4, cat2Et2)
+			new(0, cat1Et1),
+			new(1, cat2Et1),
+			new(2, cat1Et2),
+			new(3, cat1Et3),
+			new(4, cat2Et2)
 		]);
-		AssertGetEventTypeMaxSequencesQueryReturns([]);
 		AssertReadEventTypeIndexQueryReturns(0, []);
 		AssertReadEventTypeIndexQueryReturns(1, []);
 		AssertReadEventTypeIndexQueryReturns(2, []);
@@ -341,15 +314,9 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		);
 
 	private void AssertDefaultIndexQueryReturns(List<AllRecord> expected) {
-		var records = DuckDb.Pool.Query<(long, long), AllRecord, DefaultSql.DefaultIndexQuery>((0, 32));
+		var records = DuckDb.Pool.Query<(long, long), AllRecord, DefaultSql.ReadDefaultIndexQuery>((0, 32));
 
 		Assert.Equal(expected, records);
-	}
-
-	private void AssertLastSequenceQueryReturns(long? expectedLastSequence) {
-		var actual = DuckDb.Pool.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastSequenceSql>();
-
-		Assert.Equal(expectedLastSequence, actual?.OrNull());
 	}
 
 	private void AssertLastLogPositionQueryReturns(long? expectedLastSequence) {
@@ -364,29 +331,14 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		Assert.Equal(expected, records);
 	}
 
-	private void AssertGetCategoriesMaxSequencesQueryReturns(List<(int Id, long Sequence)> expected) {
-		var records = DuckDb.Pool.Query<(int Id, long Sequence), GetCategoriesMaxSequencesQuery>().OrderBy(x => x.Id);
-
-		Assert.Equal(expected, records);
-	}
-
 	private void AssertCategoryIndexQueryReturns(long categoryId, List<CategoryRecord> expected) {
-		var records = DuckDb.Pool
-			.Query<CategoryIndexQueryArgs, CategoryRecord, CategoryIndexQuery>(
-				new CategoryIndexQueryArgs((int)categoryId, 0, 32)
-			);
+		var records = DuckDb.Pool.Query<CategoryIndexQueryArgs, CategoryRecord, CategoryIndexQuery>(new((int)categoryId, 0, 32));
 
 		Assert.Equal(expected, records);
 	}
 
 	private void AssertGetAllEventTypesQueryReturns(List<ReferenceRecord> expected) {
 		var records = DuckDb.Pool.Query<ReferenceRecord, GetAllEventTypesQuery>().OrderBy(x => x.Id);
-
-		Assert.Equal(expected, records);
-	}
-
-	private void AssertGetEventTypeMaxSequencesQueryReturns(List<(int Id, long Sequence)> expected) {
-		var records = DuckDb.Pool.Query<(int Id, long Sequence), GetEventTypeMaxSequencesQuery>().OrderBy(x => x.Id);
 
 		Assert.Equal(expected, records);
 	}
@@ -496,11 +448,11 @@ public class CleanUpTests {
 
 		Directory.CreateDirectory(directory);
 
-		using (var dataSource = new DuckDbDataSource(options)) {
-			var actual = dataSource.Pool.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastSequenceSql>();
-
-			Assert.Null(actual?.OrNull());
-		}
+		// using (var dataSource = new DuckDbDataSource(options)) {
+		// 	var actual = dataSource.Pool.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastSequenceSql>();
+		//
+		// 	Assert.Null(actual?.OrNull());
+		// }
 	}
 
 	[Fact]

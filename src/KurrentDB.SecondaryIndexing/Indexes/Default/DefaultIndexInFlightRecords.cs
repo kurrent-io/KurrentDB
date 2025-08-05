@@ -4,16 +4,13 @@
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 record struct InFlightRecord(
-	long Seq,
 	long LogPosition,
 	int CategoryId,
-	long CategorySeq,
 	int EventTypeId,
-	long EventTypeSeq,
 	bool IsDeleted = false
 );
 
-internal delegate IEnumerable<T> QueryInFlightRecords<T>(Func<InFlightRecord, bool> query, Func<InFlightRecord, T> map);
+// internal delegate IEnumerable<T> QueryInFlightRecords<T>(Func<InFlightRecord, bool> query, Func<InFlightRecord, T> map);
 
 internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions options) {
 	private readonly InFlightRecord[] _records = new InFlightRecord[options.CommitBatchSize];

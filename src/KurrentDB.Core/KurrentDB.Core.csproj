@@ -124,5 +124,17 @@
 	  <Compile Update="Services\Transport\Grpc\Users.*.cs">
 	    <DependentUpon>Users.cs</DependentUpon>
 	  </Compile>
+	  <Compile Update="Services\Storage\StorageReaderWorker.Stream.cs">
+	    <DependentUpon>StorageReaderWorker.cs</DependentUpon>
+	  </Compile>
+	  <Compile Update="Services\Storage\StorageReaderWorker.All.cs">
+	    <DependentUpon>StorageReaderWorker.cs</DependentUpon>
+	  </Compile>
+	  <Compile Update="Services\Storage\StorageReaderWorker.Event.cs">
+	    <DependentUpon>StorageReaderWorker.cs</DependentUpon>
+	  </Compile>
+	  <Compile Update="Services\Storage\StorageReaderWorker.AllFiltered.cs">
+	    <DependentUpon>StorageReaderWorker.cs</DependentUpon>
+	  </Compile>
 	</ItemGroup>
 </Project>

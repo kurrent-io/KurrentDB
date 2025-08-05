@@ -29,7 +29,6 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	private static readonly ILogger Logger = Log.Logger.ForContext<DefaultIndexProcessor>();
 
 	public long LastIndexedPosition { get; private set; }
-	public long LastSequence;
 
 	public DefaultIndexProcessor(
 		DuckDbDataSource db,
@@ -41,7 +40,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		IPublisher publisher
 	) {
 		_connection = db.OpenNewConnection();
-		_appender = new Appender(_connection, "idx_all"u8);
+		_appender = new(_connection, "idx_all"u8);
 		_inFlightRecords = inFlightRecords;
 
 		_categoryIndexProcessor = categoryIndexProcessor;
@@ -50,9 +49,6 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_progressTracker = progressTracker;
 		_publisher = publisher;
 
-		var lastSequence = GetLastSequence();
-		Logger.Information("Last known global sequence: {Seq}", lastSequence);
-		LastSequence = lastSequence ?? -1;
 		var lastPosition = GetLastPosition();
 		Logger.Information("Last known log position: {Position}", lastPosition);
 		LastIndexedPosition = lastPosition ?? -1;
@@ -61,64 +57,42 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	public void Index(ResolvedEvent resolvedEvent) {
 		if (IsDisposingOrDisposed) return;
 
-		var category = _categoryIndexProcessor.Index(resolvedEvent);
-		var eventType = _eventTypeIndexProcessor.Index(resolvedEvent);
+		var categoryId = _categoryIndexProcessor.Index(resolvedEvent);
+		var eventTypeId = _eventTypeIndexProcessor.Index(resolvedEvent);
 		var streamId = _streamIndexProcessor.Index(resolvedEvent);
 		if (streamId == -1) {
 			// StreamIndex is disposed
 			return;
 		}
 
-		var sequence = ++LastSequence;
 		var logPosition = resolvedEvent.Event.LogPosition;
 		var commitPosition = resolvedEvent.EventPosition?.CommitPosition;
 		var eventNumber = resolvedEvent.Event.EventNumber;
 		using (var row = _appender.CreateRow()) {
-			row.Append(sequence);
-			row.Append(eventNumber);
 			row.Append(logPosition);
-			if(commitPosition.HasValue && logPosition != commitPosition)
+			if (commitPosition.HasValue && logPosition != commitPosition)
 				row.Append(commitPosition.Value);
 			else
 				row.Append(DBNull.Value);
+			row.Append(eventNumber);
 			row.Append(new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds());
 			row.Append(DBNull.Value); // expires
 			row.Append(streamId);
-			row.Append(eventType.Id);
-			row.Append(eventType.Sequence);
-			row.Append(category.Id);
-			row.Append(category.Sequence);
+			row.Append(eventTypeId);
+			row.Append(categoryId);
 			row.Append(false); // is_deleted TODO: What happens if the event is deleted before we commit?
 		}
 
-		_inFlightRecords.Append(
-			new(
-				sequence,
-				logPosition,
-				category.Id,
-				category.Sequence,
-				eventType.Id,
-				eventType.Sequence
-			)
-		);
+		_inFlightRecords.Append(new(logPosition, categoryId, eventTypeId));
 		LastIndexedPosition = resolvedEvent.Event.LogPosition;
 
-		_publisher.Publish(
-			new StorageMessage.SecondaryIndexCommitted(resolvedEvent.ToResolvedLink(DefaultIndex.Name, sequence))
-		);
+		// _publisher.Publish(new StorageMessage.SecondaryIndexCommitted(resolvedEvent.ToResolvedLink(DefaultIndex.Name, sequence)));
 		_progressTracker.RecordIndexed(resolvedEvent);
 	}
 
-	public void HandleStreamMetadataChange(ResolvedEvent evt) {
-		_streamIndexProcessor.HandleStreamMetadataChange(evt);
-	}
+	public void HandleStreamMetadataChange(ResolvedEvent evt) => _streamIndexProcessor.HandleStreamMetadataChange(evt);
 
-	public long? GetLastPosition() =>
-		_connection.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastLogPositionSql>()?.OrNull();
-
-
-	private long? GetLastSequence() =>
-		_connection.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastSequenceSql>()?.OrNull();
+	public long? GetLastPosition() => _connection.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastLogPositionSql>()?.OrNull();
 
 	public void Commit() {
 		if (IsDisposingOrDisposed)
@@ -129,12 +103,10 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		try {
 			_progressTracker.RecordCommit(() => {
 				_appender.Flush();
-				return (LastSequence, _inFlightRecords.Count);
+				return (LastIndexedPosition, _inFlightRecords.Count);
 			});
-
 		} catch (Exception e) {
-			Logger.Error(e, "Failed to commit {Count} records to index at sequence {Seq}", _inFlightRecords.Count,
-				LastSequence);
+			Logger.Error(e, "Failed to commit {Count} records to index at log position {LogPosition}", _inFlightRecords.Count, LastIndexedPosition);
 			_progressTracker.RecordError(e);
 			throw;
 		}

@@ -47,7 +47,7 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 		services.AddSingleton<DuckDbDataSourceOptions>(sp => {
 			var dbPath = options.DbPath ?? Path.Combine(sp.GetRequiredService<TFChunkDbConfig>().Path, "index.db");
 
-			return new DuckDbDataSourceOptions { ConnectionString = $"Data Source={dbPath};" };
+			return new() { ConnectionString = $"Data Source={dbPath};" };
 		});
 		services.AddSingleton<DuckDbDataSource>(sp => {
 			var dbSource = new DuckDbDataSource(sp.GetRequiredService<DuckDbDataSourceOptions>());
@@ -57,12 +57,12 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 		services.AddHostedService<SecondaryIndexBuilder>();
 
 		services.AddSingleton<DefaultIndexInFlightRecords>();
-		services.AddSingleton<QueryInFlightRecords<EventTypeSql.EventTypeRecord>>(sp =>
-			sp.GetRequiredService<DefaultIndexInFlightRecords>().QueryInFlightRecords
-		);
-		services.AddSingleton<QueryInFlightRecords<CategorySql.CategoryRecord>>(sp =>
-			sp.GetRequiredService<DefaultIndexInFlightRecords>().QueryInFlightRecords
-		);
+		// services.AddSingleton<QueryInFlightRecords<EventTypeSql.EventTypeRecord>>(sp =>
+		// 	sp.GetRequiredService<DefaultIndexInFlightRecords>().QueryInFlightRecords
+		// );
+		// services.AddSingleton<QueryInFlightRecords<CategorySql.CategoryRecord>>(sp =>
+		// 	sp.GetRequiredService<DefaultIndexInFlightRecords>().QueryInFlightRecords
+		// );
 
 		var conf = MetricsConfiguration.Get(configuration);
 		var coreMeter = new Meter(conf.CoreMeterName, version: "1.0.0");

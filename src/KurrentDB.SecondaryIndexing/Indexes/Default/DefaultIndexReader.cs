@@ -14,10 +14,8 @@ internal class DefaultIndexReader(
 ) : SecondaryIndexReaderBase(index) {
 	protected override long GetId(string streamName) => 0;
 
-	protected override long GetLastIndexedSequence(long id) => processor.LastSequence;
-
 	protected override IEnumerable<IndexedPrepare> GetIndexRecords(long _, long fromEventNumber, long toEventNumber) {
-		var range = db.Pool.Query<(long, long), AllRecord, DefaultSql.DefaultIndexQuery>((fromEventNumber, toEventNumber));
+		var range = db.Pool.Query<(long, long), AllRecord, DefaultSql.ReadDefaultIndexQuery>((fromEventNumber, toEventNumber));
 		if (range.Count < toEventNumber - fromEventNumber + 1) {
 			var inFlight = inFlightRecords.TryGetInFlightRecords(fromEventNumber, toEventNumber);
 			range.AddRange(inFlight);

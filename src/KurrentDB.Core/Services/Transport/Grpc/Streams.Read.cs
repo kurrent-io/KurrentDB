@@ -34,7 +34,6 @@ internal partial class Streams<TStreamId> {
 		ReadReq request,
 		IServerStreamWriter<ReadResp> responseStream,
 		ServerCallContext context) {
-
 		var trackDuration = request.Options.CountOptionCase != CountOptionOneofCase.Subscription;
 		using var duration = trackDuration ? _readTracker.Start() : Duration.Nil;
 		try {
@@ -158,22 +157,7 @@ internal partial class Streams<TStreamId> {
 			(StreamOptionOneofCase.All,
 				CountOptionOneofCase.Count,
 				ReadDirection.Forwards,
-				FilterOptionOneofCase.Filter) => new Enumerator.ReadAllForwardsFiltered(
-					_publisher,
-					request.Options.All.ToPosition(),
-					request.Options.Count,
-					request.Options.ResolveLinks,
-					ConvertToEventFilter(true, request.Options.Filter),
-					user,
-					requiresLeader,
-					request.Options.Filter.WindowCase switch {
-						ReadReq.Types.Options.Types.FilterOptions.WindowOneofCase.Count => null,
-						ReadReq.Types.Options.Types.FilterOptions.WindowOneofCase.Max => request.Options.Filter
-							.Max,
-						_ => throw RpcExceptions.InvalidArgument(request.Options.Filter.WindowCase)
-					},
-					deadline,
-					cancellationToken),
+				FilterOptionOneofCase.Filter) => GetReadAllForwardsFilteredEnumerator(),
 			(StreamOptionOneofCase.All,
 				CountOptionOneofCase.Count,
 				ReadDirection.Backwards,
@@ -216,8 +200,8 @@ internal partial class Streams<TStreamId> {
 					user,
 					requiresLeader,
 					// TODO: temp hack, it should be part of the client message in the future
-					readBatchSize: (int)readBatchSize,
-					catchUpBufferSize: (int)readBatchSize,
+					readBatchSize: readBatchSize,
+					catchUpBufferSize: readBatchSize,
 					cancellationToken: cancellationToken),
 			(StreamOptionOneofCase.All,
 				CountOptionOneofCase.Subscription,
@@ -251,20 +235,38 @@ internal partial class Streams<TStreamId> {
 			_ => throw RpcExceptions.InvalidCombination((streamOptionsCase, countOptionsCase, readDirection,
 				filterOptionsCase))
 		};
-	}
 
-	private static IEventFilter ConvertToEventFilter(bool isAllStream, ReadReq.Types.Options.Types.FilterOptions filter) =>
-		filter.FilterCase switch {
-			ReadReq.Types.Options.Types.FilterOptions.FilterOneofCase.EventType => (
-				string.IsNullOrEmpty(filter.EventType.Regex)
-					? EventFilter.EventType.Prefixes(isAllStream, filter.EventType.Prefix.ToArray())
-					: EventFilter.EventType.Regex(isAllStream, filter.EventType.Regex)),
-			ReadReq.Types.Options.Types.FilterOptions.FilterOneofCase.StreamIdentifier => (
-				string.IsNullOrEmpty(filter.StreamIdentifier.Regex)
-					? EventFilter.StreamName.Prefixes(isAllStream, filter.StreamIdentifier.Prefix.ToArray())
-					: EventFilter.StreamName.Regex(isAllStream, filter.StreamIdentifier.Regex)),
-			_ => throw RpcExceptions.InvalidArgument(filter)
-		};
+		IAsyncEnumerator<ReadResponse> GetReadAllForwardsFilteredEnumerator() {
+			return new Enumerator.ReadAllForwardsFiltered(
+				_publisher,
+				request.Options.All.ToPosition(),
+				request.Options.Count,
+				request.Options.ResolveLinks,
+				ConvertToEventFilter(true, request.Options.Filter),
+				user,
+				requiresLeader,
+				request.Options.Filter.WindowCase switch {
+					ReadReq.Types.Options.Types.FilterOptions.WindowOneofCase.Count => null,
+					ReadReq.Types.Options.Types.FilterOptions.WindowOneofCase.Max => request.Options.Filter.Max,
+					_ => throw RpcExceptions.InvalidArgument(request.Options.Filter.WindowCase)
+				},
+				deadline,
+				cancellationToken);
+		}
+
+		static IEventFilter ConvertToEventFilter(bool isAllStream, ReadReq.Types.Options.Types.FilterOptions filter) =>
+			filter.FilterCase switch {
+				ReadReq.Types.Options.Types.FilterOptions.FilterOneofCase.EventType => (
+					string.IsNullOrEmpty(filter.EventType.Regex)
+						? EventFilter.EventType.Prefixes(isAllStream, filter.EventType.Prefix.ToArray())
+						: EventFilter.EventType.Regex(isAllStream, filter.EventType.Regex)),
+				ReadReq.Types.Options.Types.FilterOptions.FilterOneofCase.StreamIdentifier => (
+					string.IsNullOrEmpty(filter.StreamIdentifier.Regex)
+						? EventFilter.StreamName.Prefixes(isAllStream, filter.StreamIdentifier.Prefix.ToArray())
+						: EventFilter.StreamName.Regex(isAllStream, filter.StreamIdentifier.Regex)),
+				_ => throw RpcExceptions.InvalidArgument(filter)
+			};
+	}
 }
 
 public static class ResponseConverter {

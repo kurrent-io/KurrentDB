@@ -8,12 +8,8 @@ using static KurrentDB.Core.Messages.ClientMessage;
 
 namespace KurrentDB.Core.Services.Storage.InMemory;
 
-public class VirtualStreamReader : IVirtualStreamReader {
-	private IVirtualStreamReader[] _readers;
-
-	public VirtualStreamReader(IVirtualStreamReader[] readers = null) {
-		_readers = readers ?? [];
-	}
+public class VirtualStreamReader(IVirtualStreamReader[] readers = null) : IVirtualStreamReader {
+	private IVirtualStreamReader[] _readers = readers ?? [];
 
 	public void Register(params IVirtualStreamReader[] readers) =>
 		_readers = [.._readers, ..readers];

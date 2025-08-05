@@ -12,7 +12,6 @@ namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
 
 internal class EventTypeIndexProcessor {
 	private readonly Dictionary<string, int> _eventTypes;
-	private readonly Dictionary<int, long> _eventTypeSizes;
 	private readonly DuckDbDataSource _db;
 	private readonly IPublisher _publisher;
 
@@ -24,16 +23,12 @@ internal class EventTypeIndexProcessor {
 		_publisher = publisher;
 
 		var ids = db.Pool.Query<ReferenceRecord, GetAllEventTypesQuery>();
-		var sequences = db.Pool.Query<(int Id, long Sequence), GetEventTypeMaxSequencesQuery>()
-			.ToDictionary(ks => ks.Id, vs => vs.Sequence);
 
 		_eventTypes = ids.ToDictionary(x => x.Name, x => x.Id);
-		_eventTypeSizes = ids.ToDictionary(x => x.Id, x => sequences.GetValueOrDefault(x.Id, -1L));
-
 		_seq = _eventTypes.Count > 0 ? _eventTypes.Values.Max() - 1 : -1;
 	}
 
-	public SequenceRecord Index(ResolvedEvent resolvedEvent) {
+	public int Index(ResolvedEvent resolvedEvent) {
 		var eventTypeName = resolvedEvent.OriginalEvent.EventType;
 
 		if (!_eventTypes.TryGetValue(eventTypeName, out var eventTypeId)) {
@@ -42,21 +37,13 @@ internal class EventTypeIndexProcessor {
 			_db.Pool.ExecuteNonQuery<AddEventTypeStatementArgs, AddEventTypeStatement>(new(eventTypeId, eventTypeName));
 		}
 
-		var nextEventTypeSequence = _eventTypeSizes.GetValueOrDefault(eventTypeId, -1) + 1;
-		_eventTypeSizes[eventTypeId] = nextEventTypeSequence;
-
 		LastIndexedPosition = resolvedEvent.Event.LogPosition;
 
-		_publisher.Publish(
-			new StorageMessage.SecondaryIndexCommitted(
-				resolvedEvent.ToResolvedLink(EventTypeIndex.Name(eventTypeName), nextEventTypeSequence))
-		);
+		// TODO: Real-time subscription support
+		// _publisher.Publish(new StorageMessage.SecondaryIndexCommitted(resolvedEvent.ToResolvedLink(EventTypeIndex.Name(eventTypeName))));
 
-		return new SequenceRecord(eventTypeId, nextEventTypeSequence);
+		return eventTypeId;
 	}
-
-	public long GetLastEventNumber(int eventTypeId) =>
-		_eventTypeSizes.TryGetValue(eventTypeId, out var size) ? size : ExpectedVersion.NoStream;
 
 	public int GetEventTypeId(string eventTypeName) =>
 		_eventTypes.TryGetValue(eventTypeName, out var eventTypeId) ? eventTypeId : -1;

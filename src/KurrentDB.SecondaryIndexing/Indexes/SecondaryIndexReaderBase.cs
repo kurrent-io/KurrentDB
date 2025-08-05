@@ -2,37 +2,28 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Core.Data;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Readers;
+using static KurrentDB.Core.Messages.ClientMessage;
 using static KurrentDB.Core.Services.Storage.StorageReaderWorker<string>;
 using ReadStreamResult = KurrentDB.Core.Data.ReadStreamResult;
 
 namespace KurrentDB.SecondaryIndexing.Indexes;
 
-public interface ISecondaryIndexReader : IVirtualStreamReader {
-}
+public interface ISecondaryIndexReader : IVirtualStreamReader;
 
 public record struct IndexedPrepare(long Version, long LogPosition);
 
 internal abstract class SecondaryIndexReaderBase(IReadIndex<string> index) : ISecondaryIndexReader {
 	protected abstract long GetId(string streamName);
 
-	protected abstract long GetLastIndexedSequence(long id);
-
 	protected abstract IEnumerable<IndexedPrepare> GetIndexRecords(long id, long fromEventNumber, long toEventNumber);
 
-	public ValueTask<ClientMessage.ReadStreamEventsForwardCompleted> ReadForwards(
-		ClientMessage.ReadStreamEventsForward msg,
-		CancellationToken token
-	) =>
+	public ValueTask<ReadStreamEventsForwardCompleted> ReadForwards(ReadStreamEventsForward msg, CancellationToken token) =>
 		ReadForwards(msg, index.IndexReader, index.LastIndexedPosition, token);
 
-	public ValueTask<ClientMessage.ReadStreamEventsBackwardCompleted> ReadBackwards(
-		ClientMessage.ReadStreamEventsBackward msg,
-		CancellationToken token
-	) =>
+	public ValueTask<ReadStreamEventsBackwardCompleted> ReadBackwards(ReadStreamEventsBackward msg, CancellationToken token) =>
 		ReadBackwards(msg, index.IndexReader, index.LastIndexedPosition, token);
 
 	private async ValueTask<IReadOnlyList<ResolvedEvent>> GetEvents(
@@ -55,8 +46,10 @@ internal abstract class SecondaryIndexReaderBase(IReadIndex<string> index) : ISe
 
 	public abstract bool CanReadStream(string streamId);
 
-	private async ValueTask<ClientMessage.ReadStreamEventsBackwardCompleted> ReadBackwards(
-		ClientMessage.ReadStreamEventsBackward msg, IIndexReader<string> reader, long lastIndexedPosition,
+	private async ValueTask<ReadStreamEventsBackwardCompleted> ReadBackwards(
+		ReadStreamEventsBackward msg,
+		IIndexReader<string> reader,
+		long lastIndexedPosition,
 		CancellationToken token
 	) {
 		var id = GetId(msg.EventStreamId);
@@ -90,8 +83,8 @@ internal abstract class SecondaryIndexReaderBase(IReadIndex<string> index) : ISe
 			nextEventNumber, lastEventNumber, isEndOfStream, lastIndexedPosition);
 	}
 
-	private async ValueTask<ClientMessage.ReadStreamEventsForwardCompleted> ReadForwards(
-		ClientMessage.ReadStreamEventsForward msg,
+	private async ValueTask<ReadStreamEventsForwardCompleted> ReadForwards(
+		ReadStreamEventsForward msg,
 		IIndexReader<string> reader,
 		long lastIndexedPosition,
 		CancellationToken token

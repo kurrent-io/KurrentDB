@@ -11,51 +11,27 @@ internal static class CategorySql {
 		public static BindingContext Bind(in CategoryIndexQueryArgs args, PreparedStatement statement)
 			=> new(statement) {
 				args.Id,
-				args.FromSeq,
-				args.ToSeq
+				args.StartPosition,
+				args.Count
 			};
 
 		public static ReadOnlySpan<byte> CommandText =>
 			"""
-			select category_seq, log_position
-			from idx_all where category=$1 and category_seq>=$2 and category_seq<=$3
+			select log_position
+			from idx_all where category_id=$1 and log_position>$2 limit $3
 			"""u8;
 
-		public static CategoryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
+		public static CategoryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64());
 	}
 
-	public record struct CategoryIndexQueryArgs(int Id, long FromSeq, long ToSeq);
+	public record struct CategoryIndexQueryArgs(int Id, long StartPosition, int Count);
 
-	public record struct CategoryRecord(long CategorySeq, long LogPosition);
+	public record struct CategoryRecord(long LogPosition);
 
 	public struct GetCategoriesQuery : IQuery<ReferenceRecord> {
 		public static ReadOnlySpan<byte> CommandText => "select id, name from category"u8;
 
 		public static ReferenceRecord Parse(ref DataChunk.Row row) => new(row.ReadInt32(), row.ReadString());
-	}
-
-	public record struct CategorySummary(long Id, string Name, long LastLogPosition);
-
-	public struct GetCategoriesSummaryQuery : IQuery<CategorySummary> {
-		public static ReadOnlySpan<byte> CommandText =>
-			"""
-			SELECT c.id, c.name, max_seq.max_category_seq
-			FROM category c
-			LEFT JOIN (
-			    SELECT category, MAX(category_seq) AS max_category_seq
-			    FROM idx_all
-			    GROUP BY category
-			) max_seq ON c.id = max_seq.category;
-			"""u8;
-
-		public static CategorySummary Parse(ref DataChunk.Row row) => new(row.ReadInt32(), row.ReadString(), row.ReadInt64());
-	}
-
-	public struct GetCategoriesMaxSequencesQuery : IQuery<(int Id, long Sequence)> {
-		public static ReadOnlySpan<byte> CommandText =>
-			"select category, max(category_seq) from idx_all group by category"u8;
-
-		public static (int Id, long Sequence) Parse(ref DataChunk.Row row) => (row.ReadInt32(), row.ReadInt64());
 	}
 
 	public record struct AddCategoryStatementArgs(int Id, string Category);
