@@ -71,13 +71,14 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 		services.AddSingleton<ISecondaryIndexProgressTracker>(sp =>
 			new SecondaryIndexProgressTracker(
 				coreMeter,
-				"indexes.secondary"
+				meterPrefix: $"{conf.ServiceName}-indexes-secondary",
+				useLegacyNames: conf.LegacyCoreNaming
 			)
 		);
 
 		var queryDurationMetric = new DurationMetric(
 			coreMeter,
-			name: "indexes.secondary.duckdb.query",
+			name: $"{conf.ServiceName}-indexes-secondary-duckdb-query",
 			legacyNames: conf.LegacyCoreNaming);
 
 		var queryTracker = new QueryTracker(queryDurationMetric);
@@ -86,7 +87,7 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 		services.AddSingleton<DuckDbSystemMetrics>(sp =>
 			new DuckDbSystemMetrics(
 				meter: coreMeter,
-				meterPrefix: "indexes.secondary.duckdb",
+				meterPrefix: $"{conf.ServiceName}-indexes-secondary-duckdb",
 				db: sp.GetRequiredService<DuckDbDataSource>(),
 				dbFile: GetDuckDbFilePath(sp)
 			)
