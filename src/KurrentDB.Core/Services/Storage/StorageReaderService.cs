@@ -59,6 +59,8 @@ public class StorageReaderService<TStreamId> : StorageReaderService, IHandle<Sys
 			storageReaderBuses[i].Subscribe<ClientMessage.ReadAllEventsBackward>(readerWorkers[i]);
 			storageReaderBuses[i].Subscribe<ClientMessage.FilteredReadAllEventsForward>(readerWorkers[i]);
 			storageReaderBuses[i].Subscribe<ClientMessage.FilteredReadAllEventsBackward>(readerWorkers[i]);
+			storageReaderBuses[i].Subscribe<ClientMessage.ReadIndexEventsForward>(readerWorkers[i]);
+			// storageReaderBuses[i].Subscribe<ClientMessage.ReadStreamEventsForward>(readerWorkers[i]);
 			storageReaderBuses[i].Subscribe<StorageMessage.BatchLogExpiredMessages>(readerWorkers[i]);
 			storageReaderBuses[i].Subscribe<StorageMessage.EffectiveStreamAclRequest>(readerWorkers[i]);
 			storageReaderBuses[i].Subscribe<StorageMessage.StreamIdFromTransactionIdRequest>(readerWorkers[i]);

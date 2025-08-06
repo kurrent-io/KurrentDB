@@ -14,20 +14,22 @@ using Serilog;
 
 namespace KurrentDB.SecondaryIndexing.Builders;
 
-public class SecondaryIndexBuilder :
+public sealed class SecondaryIndexBuilder :
 	IHandle<SystemMessage.SystemReady>,
 	IHandle<SystemMessage.BecomeShuttingDown>,
 	IAsyncHandle<StorageMessage.EventCommitted>,
 	IHostedService,
 	IAsyncDisposable {
-	private static readonly ILogger Logger = Log.Logger.ForContext<SecondaryIndexBuilder>();
-	private readonly SecondaryIndexSubscription _subscription;
-	private readonly ISecondaryIndexProcessor _processor;
-	private readonly ISecondaryIndexProgressTracker _progressTracker;
-	private readonly IPublisher _publisher;
-	private readonly IClient _client;
-	private Task? _readLastEventTask;
-	private readonly CancellationTokenSource _readLastEventCts;
+	static readonly ILogger Logger = Log.Logger.ForContext<SecondaryIndexBuilder>();
+
+	readonly SecondaryIndexSubscription _subscription;
+	readonly ISecondaryIndexProcessor _processor;
+	readonly ISecondaryIndexProgressTracker _progressTracker;
+	readonly IPublisher _publisher;
+	readonly IClient _client;
+	readonly CancellationTokenSource _readLastEventCts;
+
+	Task? _readLastEventTask;
 
 	[Experimental("SECONDARY_INDEX")]
 	public SecondaryIndexBuilder(
@@ -42,8 +44,8 @@ public class SecondaryIndexBuilder :
 		_progressTracker = progressTracker;
 		_publisher = publisher;
 		_client = client;
-		_subscription = new SecondaryIndexSubscription(publisher, processor, options);
-		_readLastEventCts = new CancellationTokenSource();
+		_subscription = new(publisher, processor, options);
+		_readLastEventCts = new();
 
 		subscriber.Subscribe<SystemMessage.SystemReady>(this);
 		subscriber.Subscribe<SystemMessage.BecomeShuttingDown>(this);
@@ -65,8 +67,8 @@ public class SecondaryIndexBuilder :
 		if (_readLastEventTask?.IsCompleted == false) {
 			try {
 				await _readLastEventCts.CancelAsync();
-			} catch (Exception e) {
-				Logger.Error(e, "Failed to cancel reading last event");
+			} catch (Exception) {
+				// ignore
 			}
 		}
 
@@ -84,12 +86,12 @@ public class SecondaryIndexBuilder :
 		return ValueTask.CompletedTask;
 	}
 
-	private async Task ReadLastLogEvent() {
+	async Task ReadLastLogEvent() {
 		try {
 			_readLastEventCts.CancelAfter(TimeSpan.FromSeconds(120));
 
 			var lastLogEvent = await _client.ReadAllBackwardsFilteredAsync(
-					KurrentDB.POC.IO.Core.Position.End,
+					Position.End,
 					1,
 					new EventFilter.DefaultAllFilterStrategy.NonSystemStreamStrategy(),
 					_readLastEventCts.Token

@@ -1,7 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Text;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Tests;
 using KurrentDB.Core.TransactionLog.LogRecords;
@@ -147,33 +146,16 @@ public readonly record struct TestMessageData(
 			MetaData
 		);
 
-		return ResolvedEvent.ForResolvedLink(
-			new EventRecord(
+		return ResolvedEvent.ForUnresolvedEvent(
+			new(
 				prepare.ExpectedVersion + 1,
 				prepare,
 				prepare.EventStreamId,
 				prepare.EventType
-			),
-			new EventRecord(
-				indexSequence,
-				prepare.LogPosition,
-				prepare.CorrelationId,
-				prepare.EventId,
-				prepare.TransactionPosition,
-				prepare.TransactionOffset,
-				indexStreamName,
-				indexSequence,
-				prepare.TimeStamp,
-				PrepareFlags.None,
-				"$>",
-				Encoding.UTF8.GetBytes($"{prepare.ExpectedVersion + 1}@{prepare.EventStreamId}"),
-				[],
-				[]
 			));
 	}
 
-	public Event ToEventData() =>
-		new(EventId, EventType, false, Data, MetaData, null);
+	public Event ToEventData() => new(EventId, EventType, false, Data, false, MetaData);
 }
 
 public readonly record struct TestMessageBatch(string CategoryName, string StreamName, TestMessageData[] Messages) {

@@ -6,7 +6,7 @@ using System;
 namespace KurrentDB.Core.Data;
 
 public readonly struct ResolvedEvent : IEquatable<ResolvedEvent> {
-	public static readonly ResolvedEvent[] EmptyArray = new ResolvedEvent[0];
+	public static readonly ResolvedEvent[] EmptyArray = [];
 	public static readonly ResolvedEvent EmptyEvent = new ResolvedEvent();
 
 	public readonly EventRecord Event;
@@ -37,8 +37,7 @@ public readonly struct ResolvedEvent : IEquatable<ResolvedEvent> {
 	}
 
 
-	private ResolvedEvent(EventRecord @event, EventRecord link, long? commitPosition,
-		ReadEventResult resolveResult = default(ReadEventResult)) {
+	private ResolvedEvent(EventRecord @event, EventRecord link, long? commitPosition, ReadEventResult resolveResult = default) {
 		Event = @event;
 		Link = link;
 		_originalEventCommitPosition = commitPosition;

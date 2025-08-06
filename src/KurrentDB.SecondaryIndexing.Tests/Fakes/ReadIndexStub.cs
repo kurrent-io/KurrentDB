@@ -19,8 +19,7 @@ public class ReadIndexStub {
 	public ReadIndexStub() {
 		_transactionalFileReader = Substitute.For<ITransactionFileReader>();
 
-		var lease = new TFReaderLease(
-			new ObjectPool<ITransactionFileReader>("dummy", 1, 1, () => _transactionalFileReader));
+		var lease = new TFReaderLease(new ObjectPool<ITransactionFileReader>("dummy", 1, 1, () => _transactionalFileReader));
 
 		var backend = Substitute.For<IIndexBackend<string>>();
 
@@ -37,8 +36,8 @@ public class ReadIndexStub {
 			.ReturnsForAnyArgs(x => {
 				var logPosition = x.ArgAt<long>(0);
 
-				if (!events.Any(e => e.Event.LogPosition == logPosition))
-					return new RecordReadResult();
+				if (events.All(e => e.Event.LogPosition != logPosition))
+					return new();
 
 				var evnt = events.Single(e => e.Event.LogPosition == logPosition).Event;
 
@@ -56,11 +55,10 @@ public class ReadIndexStub {
 					evnt.EventType,
 					null,
 					evnt.Data,
-					evnt.Metadata,
-					evnt.Properties
+					evnt.Metadata
 				);
 
-				return new RecordReadResult(true, -1, prepare, evnt.Data.Length);
+				return new(true, -1, prepare, evnt.Data.Length);
 			});
 
 		ReadIndex.LastIndexedPosition.Returns(events.Last().Event.LogPosition);

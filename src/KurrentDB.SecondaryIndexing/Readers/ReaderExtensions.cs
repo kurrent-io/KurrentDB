@@ -1,89 +1,34 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
-using System.Text;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.LogCommon;
 using KurrentDB.SecondaryIndexing.Indexes;
+using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Readers;
 
-public static class ReaderExtensions {
-	public static async ValueTask<IReadOnlyList<ResolvedEvent>> ReadRecords<TStreamId>(
-		this IIndexReader<TStreamId> index,
-		string virtualStreamId,
-		IEnumerable<IndexedPrepare> indexPrepares,
+static class ReaderExtensions {
+	public static async ValueTask<IReadOnlyList<ResolvedEvent>> ReadRecords(
+		this IIndexReader<string> index,
+		IEnumerable<IndexQueryRecord> indexPrepares,
 		CancellationToken cancellationToken
 	) {
 		using var reader = index.BorrowReader();
 		// ReSharper disable once AccessToDisposedClosure
-		var readPrepares = indexPrepares.Select(async x =>
-			(Record: x, Prepare: await reader.ReadPrepare<TStreamId>(x.LogPosition, cancellationToken)));
+		var readPrepares = indexPrepares.Select(async x => (Record: x, Prepare: await reader.ReadPrepare<string>(x.LogPosition, cancellationToken)));
 		var prepared = await Task.WhenAll(readPrepares);
-		var recordsQuery = prepared.Where(x => x.Prepare != null).OrderBy(x => x.Record.Version).ToList();
-		var records = recordsQuery.Select(x => ToResolvedLink(virtualStreamId, x.Record, x.Prepare!));
-		var result = records.ToList();
-		return result;
+		var recordsQuery = prepared.Where(x => x.Prepare != null).OrderBy(x => x.Record.RowId);
+		var records = recordsQuery.Select(x => ResolvedEvent.ForUnresolvedEvent(
+			new(x.Prepare!.ExpectedVersion, x.Prepare, x.Prepare!.EventStreamId, x.Prepare!.EventType)
+		));
+		return records.ToList();
 	}
 
-	public static ResolvedEvent ToResolvedLink(
-		this ResolvedEvent resolvedEvent,
-		string virtualStreamId,
-		long virtualStreamEventNumber
-	) =>
-		ResolvedEvent.ForResolvedLink(
-			resolvedEvent.Event,
-			new EventRecord(
-				virtualStreamEventNumber,
-				resolvedEvent.Event.LogPosition,
-				resolvedEvent.Event.CorrelationId,
-				resolvedEvent.Event.EventId,
-				resolvedEvent.Event.TransactionPosition,
-				resolvedEvent.Event.TransactionOffset,
-				virtualStreamId,
-				virtualStreamEventNumber - 1,
-				resolvedEvent.Event.TimeStamp,
-				resolvedEvent.Event.Flags,
-				"$>",
-				Encoding.UTF8.GetBytes(
-					$"{resolvedEvent.Event.ExpectedVersion + 1}@{resolvedEvent.Event.EventStreamId!}"),
-				[],
-				[]
-			));
-
-	private static ResolvedEvent ToResolvedLink<TStreamId>(
-		string virtualStreamId,
-		IndexedPrepare record,
-		IPrepareLogRecord<TStreamId> prepare
-	) =>
-		ResolvedEvent.ForResolvedLink(
-			new EventRecord(
-				prepare.ExpectedVersion + 1,
-				prepare,
-				prepare.EventStreamId!.ToString(),
-				prepare.EventType!.ToString()
-			),
-			new EventRecord(
-				record.Version,
-				prepare.LogPosition,
-				prepare.CorrelationId,
-				prepare.EventId,
-				prepare.TransactionPosition,
-				prepare.TransactionOffset,
-				virtualStreamId,
-				record.Version - 1,
-				prepare.TimeStamp,
-				prepare.Flags,
-				"$>",
-				Encoding.UTF8.GetBytes($"{prepare.ExpectedVersion + 1}@{prepare.EventStreamId!.ToString()}"),
-				[],
-				[]
-			));
-
-	private static async ValueTask<IPrepareLogRecord<TStreamId>?> ReadPrepare<TStreamId>(this TFReaderLease localReader,
+	static async ValueTask<IPrepareLogRecord<TStreamId>?> ReadPrepare<TStreamId>(this TFReaderLease localReader,
 		long logPosition, CancellationToken ct) {
 		var r = await localReader.TryReadAt(logPosition, couldBeScavenged: true, ct);
 		if (!r.Success)

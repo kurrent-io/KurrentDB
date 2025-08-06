@@ -55,7 +55,6 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 			return dbSource;
 		});
 		services.AddHostedService<SecondaryIndexBuilder>();
-
 		services.AddSingleton<DefaultIndexInFlightRecords>();
 		// services.AddSingleton<QueryInFlightRecords<EventTypeSql.EventTypeRecord>>(sp =>
 		// 	sp.GetRequiredService<DefaultIndexInFlightRecords>().QueryInFlightRecords
@@ -93,8 +92,7 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 	}
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {
-		var enabledOption =
-			configuration.GetValue<bool?>($"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Enabled");
+		var enabledOption = configuration.GetValue<bool?>($"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Enabled");
 		var devMode = configuration.GetValue($"{KurrentConfigurationKeys.Prefix}:Dev", defaultValue: false);
 
 		// Enabled by default only in the dev mode
@@ -103,7 +101,6 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 
 		return enabled
 			? (true, "")
-			: (false,
-				$"To enable Second Level Indexing Set '{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Enabled' to 'true'");
+			: (false, $"To enable Second Level Indexing Set '{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Enabled' to 'true'");
 	}
 }

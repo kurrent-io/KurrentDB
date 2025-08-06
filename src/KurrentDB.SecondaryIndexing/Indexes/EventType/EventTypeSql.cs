@@ -6,10 +6,10 @@ using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
 
-internal static class EventTypeSql {
+static class EventTypeSql {
 	public record struct ReadEventTypeIndexQueryArgs(int EventTypeId, long StartPosition, int Count);
 
-	public struct ReadEventTypeIndexQuery : IQuery<ReadEventTypeIndexQueryArgs, long> {
+	public struct ReadEventTypeIndexQuery : IQuery<ReadEventTypeIndexQueryArgs, IndexQueryRecord> {
 		public static BindingContext Bind(in ReadEventTypeIndexQueryArgs args, PreparedStatement statement)
 			=> new(statement) {
 				args.EventTypeId,
@@ -17,9 +17,9 @@ internal static class EventTypeSql {
 				args.Count
 			};
 
-		public static ReadOnlySpan<byte> CommandText => "select log_position from idx_all where event_type_id=$1 and log_position>$2 limit $3"u8;
+		public static ReadOnlySpan<byte> CommandText => "select rowid, log_position from idx_all where event_type_id=$1 and log_position>$2 limit $3"u8;
 
-		public static long Parse(ref DataChunk.Row row) => row.ReadInt64();
+		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadUInt32(), row.ReadInt64());
 	}
 
 	public struct GetAllEventTypesQuery : IQuery<ReferenceRecord> {

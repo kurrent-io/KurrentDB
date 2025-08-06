@@ -2,14 +2,16 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading.Channels;
 using Kurrent.Surge.Resilience;
 using KurrentDB.Core;
+using KurrentDB.Core.ClientPublisher;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Tests;
-using KurrentDB.System.Testing;
+using KurrentDB.Surge.Testing;
 using Position = KurrentDB.Core.Services.Transport.Common.Position;
 using StreamRevision = KurrentDB.Core.Services.Transport.Common.StreamRevision;
 
@@ -157,8 +159,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 	public Task<WriteEventsResult> AppendToStream(string stream, params string[] eventData) =>
 		AppendToStream(stream, eventData.Select(ToEventData).ToArray());
 
-	public static Event ToEventData(string data) =>
-		new(Guid.NewGuid(), "test", false, data, null, null);
+	public static Event ToEventData(string data) => new(Guid.NewGuid(), "test", false, Encoding.UTF8.GetBytes(data), false, []);
 
 	private void SetUpDatabaseDirectory() {
 		var typeName = GetType().Name.Length > 30 ? GetType().Name[..30] : GetType().Name;

@@ -9,35 +9,30 @@ using static KurrentDB.SecondaryIndexing.Indexes.EventType.EventTypeSql;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
 
-internal class EventTypeIndexReader(
+class EventTypeIndexReader(
 	DuckDbDataSource db,
 	EventTypeIndexProcessor processor,
 	IReadIndex<string> index,
-	QueryInFlightRecords<EventTypeRecord> queryInFlightRecords
+	DefaultIndexInFlightRecords inFlightRecords
 ) : SecondaryIndexReaderBase(index) {
-	protected override long GetId(string streamName) =>
+	protected override int GetId(string streamName) =>
 		EventTypeIndex.TryParseEventType(streamName, out var eventTypeName)
 			? processor.GetEventTypeId(eventTypeName)
-			: ExpectedVersion.Invalid;
+			: (int)ExpectedVersion.Invalid;
 
-	protected override IEnumerable<IndexedPrepare> GetIndexRecords(long id, long fromEventNumber, long toEventNumber) {
-		var range = db.Pool.Query<ReadEventTypeIndexQueryArgs, EventTypeRecord, ReadEventTypeIndexQuery>(
-			new((int)id, fromEventNumber, toEventNumber)
+	protected override IEnumerable<IndexQueryRecord> GetIndexRecords(int id, TFPos startPosition, int maxCount) {
+		var range = db.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQuery>(
+			new(id, startPosition.PreparePosition, maxCount)
 		);
-		if (range.Count < toEventNumber - fromEventNumber + 1) {
+		if (range.Count < maxCount) {
 			// events might be in flight
-			var inFlight = queryInFlightRecords(
-				r => r.EventTypeId == id && r.EventTypeSeq >= fromEventNumber && r.EventTypeSeq <= toEventNumber,
-				r => new(r.EventTypeSeq, r.LogPosition)
-			);
+			var inFlight = inFlightRecords.TryGetInFlightRecords(startPosition, range, maxCount, r => r.EventTypeId == id);
 			range.AddRange(inFlight);
 		}
 
-		var indexPrepares = range.Select(x => new IndexedPrepare(x.EventTypeSeq, x.LogPosition));
-		return indexPrepares;
+		return range;
 	}
 
 	public override long GetLastIndexedPosition(string streamId) => processor.LastIndexedPosition;
-
-	public override bool CanReadStream(string streamId) => EventTypeIndex.IsEventTypeIndexStream(streamId);
+	public override bool CanReadIndex(string indexName)=> EventTypeIndex.IsEventTypeIndex(indexName);
 }

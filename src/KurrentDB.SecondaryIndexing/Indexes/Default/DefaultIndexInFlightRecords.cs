@@ -1,6 +1,9 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using KurrentDB.Core.Data;
+using KurrentDB.SecondaryIndexing.Storage;
+
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 record struct InFlightRecord(
@@ -10,10 +13,9 @@ record struct InFlightRecord(
 	bool IsDeleted = false
 );
 
-// internal delegate IEnumerable<T> QueryInFlightRecords<T>(Func<InFlightRecord, bool> query, Func<InFlightRecord, T> map);
+class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions options) {
+	readonly InFlightRecord[] _records = new InFlightRecord[options.CommitBatchSize];
 
-internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions options) {
-	private readonly InFlightRecord[] _records = new InFlightRecord[options.CommitBatchSize];
 	public int Count { get; private set; }
 
 	public void Append(InFlightRecord record) {
@@ -24,20 +26,22 @@ internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions option
 		Count = 0;
 	}
 
-	public IEnumerable<AllRecord> TryGetInFlightRecords(long fromSeq, long toSeq) {
+	public IEnumerable<IndexQueryRecord> TryGetInFlightRecords(
+		TFPos startPosition,
+		List<IndexQueryRecord> fromDb,
+		int maxCount,
+		Func<InFlightRecord, bool>? query = null
+	) {
+		var remaining = maxCount - fromDb.Count;
+		var from = fromDb.Count == 0 ? startPosition.PreparePosition : fromDb[^1].LogPosition;
+		var seq = fromDb.Count == 0 ? 0 : fromDb[^1].RowId + 1;
 		for (var i = 0; i < Count; i++) {
+			if (remaining == 0) yield break;
 			var current = _records[i];
-			if (current.Seq > toSeq) yield break;
-			if (current.Seq >= fromSeq && current.Seq <= toSeq) {
-				yield return new(current.Seq, current.LogPosition);
+			if (current.LogPosition >= from && (query == null || query(current))) {
+				remaining--;
+				yield return new(seq++, current.LogPosition);
 			}
-		}
-	}
-
-	public IEnumerable<T> QueryInFlightRecords<T>(Func<InFlightRecord, bool> query, Func<InFlightRecord, T> map) {
-		for (var i = 0; i < Count; i++) {
-			var current = _records[i];
-			if (query(current)) yield return map(current);
 		}
 	}
 }

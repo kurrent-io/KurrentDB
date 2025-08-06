@@ -21,16 +21,16 @@ public sealed partial class SecondaryIndexSubscription(
 	ISecondaryIndexProcessor indexProcessor,
 	SecondaryIndexingPluginOptions options
 ) : IAsyncDisposable {
-	private static readonly ILogger Log = Serilog.Log.Logger.ForContext<SecondaryIndexSubscription>();
+	static readonly ILogger Log = Serilog.Log.Logger.ForContext<SecondaryIndexSubscription>();
 
-	private readonly int _commitBatchSize = options.CommitBatchSize;
-	private CancellationTokenSource? _cts = new();
-	private Enumerator.AllSubscription? _subscription;
-	private Task? _processingTask;
+	readonly int _commitBatchSize = options.CommitBatchSize;
+	CancellationTokenSource? _cts = new();
+	Enumerator.AllSubscription? _subscription;
+	Task? _processingTask;
 
 	public void Subscribe() {
 		var position = indexProcessor.GetLastPosition();
-		var startFrom = position is null ? Position.Start : Position.FromInt64((long)position, (long)position);
+		var startFrom = position == TFPos.Invalid ? Position.Start : Position.FromInt64(position.CommitPosition, position.PreparePosition);
 		Log.Information("Starting indexing subscription from {StartFrom}", startFrom);
 
 		_subscription = new(

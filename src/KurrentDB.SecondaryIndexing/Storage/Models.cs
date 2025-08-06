@@ -4,3 +4,5 @@
 namespace KurrentDB.SecondaryIndexing.Storage;
 
 public record struct ReferenceRecord(int Id, string Name);
+
+record struct IndexQueryRecord(uint RowId, long LogPosition);

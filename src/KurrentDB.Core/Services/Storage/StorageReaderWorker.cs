@@ -137,7 +137,7 @@ public partial class StorageReaderWorker<TStreamId> :
 					: ResolvedEvent.ForFailedResolvedLink(eventRecord, res.Result, commitPosition);
 			}
 
-			Log.Warning($"Invalid link event payload [{linkPayload}]: {eventRecord}");
+			Log.Warning("Invalid link event payload [{LinkPayload}]: {EventRecord}", linkPayload, eventRecord);
 			return ResolvedEvent.ForUnresolvedEvent(eventRecord, commitPosition);
 		} catch (Exception exc) when (exc is not OperationCanceledException oce || oce.CancellationToken != token) {
 			Log.Error(exc, "Error while resolving link for event record: {eventRecord}", eventRecord.ToString());

@@ -54,7 +54,7 @@ public partial class ClientMessage {
 	public partial class ReadIndexEventsForwardCompleted(
 		Guid correlationId,
 		ReadIndexResult result,
-		string error,
+		[CanBeNull] string error,
 		IReadOnlyList<ResolvedEvent> events,
 		int maxCount,
 		TFPos currentPos,

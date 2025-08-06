@@ -13,6 +13,7 @@ using KurrentDB.SecondaryIndexing.Indexes.Stream;
 using KurrentDB.SecondaryIndexing.Readers;
 using KurrentDB.SecondaryIndexing.Storage;
 using Serilog;
+using static KurrentDB.SecondaryIndexing.Indexes.Default.DefaultSql;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
@@ -51,7 +52,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 		var lastPosition = GetLastPosition();
 		Logger.Information("Last known log position: {Position}", lastPosition);
-		LastIndexedPosition = lastPosition ?? -1;
+		LastIndexedPosition = lastPosition.PreparePosition;
 	}
 
 	public void Index(ResolvedEvent resolvedEvent) {
@@ -92,7 +93,10 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 	public void HandleStreamMetadataChange(ResolvedEvent evt) => _streamIndexProcessor.HandleStreamMetadataChange(evt);
 
-	public long? GetLastPosition() => _connection.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastLogPositionSql>()?.OrNull();
+	public TFPos GetLastPosition() {
+		var result = _connection.QueryFirstOrDefault<LastPositionResult, GetLastLogPositionQuery>();
+		return result != null ? new(result.Value.CommitPosition ?? result.Value.PreparePosition, result.Value.PreparePosition) : TFPos.Invalid;
+	}
 
 	public void Commit() {
 		if (IsDisposingOrDisposed)

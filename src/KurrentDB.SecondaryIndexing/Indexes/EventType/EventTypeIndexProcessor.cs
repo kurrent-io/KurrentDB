@@ -10,12 +10,12 @@ using static KurrentDB.SecondaryIndexing.Indexes.EventType.EventTypeSql;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
 
-internal class EventTypeIndexProcessor {
-	private readonly Dictionary<string, int> _eventTypes;
-	private readonly DuckDbDataSource _db;
-	private readonly IPublisher _publisher;
+class EventTypeIndexProcessor {
+	readonly Dictionary<string, int> _eventTypes;
+	readonly DuckDbDataSource _db;
+	readonly IPublisher _publisher;
 
-	private int _seq;
+	int _seq;
 	public long LastIndexedPosition { get; private set; }
 
 	public EventTypeIndexProcessor(DuckDbDataSource db, IPublisher publisher) {

@@ -12,7 +12,7 @@ public interface ISecondaryIndexProcessor : IDisposable {
 
 	void HandleStreamMetadataChange(ResolvedEvent evt);
 
-	long? GetLastPosition();
+	TFPos GetLastPosition();
 }
 
 public record struct SequenceRecord(int Id, long Sequence);

@@ -555,41 +555,9 @@ public class DefaultIndexReaderTests : DuckDbIntegrationTest {
 	}
 
 	[Fact]
-	public void GetLastEventNumber_WhenNoRecords_ReturnsLastSequence() {
-		// Given -- no records
-		var streamId = Guid.NewGuid().ToString(); // this can be anything for a Default Index, as it's ignored
-
-		// When
-		var result = _sut.GetLastEventNumber(streamId);
-
-		// Then
-		Assert.Equal(-1, result);
-	}
-
-	[Theory]
-	[InlineData(true)]
-	[InlineData(false)]
-	public void GetLastEventNumber_WhenRecordsIndexed_ReturnsLastSequence(bool shouldCommit) {
-		// Given
-		var events = new[] {
-			From("test-stream", 0, 100, "TestEvent", []),
-			From("test-stream", 1, 200, "TestEvent", []),
-			From("test-stream", 2, 300, "TestEvent", []),
-			From("test-stream", 3, 400, "TestEvent", [])
-		};
-		IndexEvents(events, shouldCommit);
-
-		// When
-		var result = _sut.GetLastEventNumber("test-stream");
-
-		// Then
-		Assert.Equal(3L, result);
-	}
-
-	[Fact]
 	public void CanReadStream_WhenStreamIsDefaultIndexName_ReturnsTrue() {
 		// When
-		var result = _sut.CanReadStream(DefaultIndex.Name);
+		var result = _sut.CanReadIndex(DefaultIndex.Name);
 
 		// Then
 		Assert.True(result);
@@ -598,7 +566,7 @@ public class DefaultIndexReaderTests : DuckDbIntegrationTest {
 	[Fact]
 	public void CanReadStream_WhenStreamIsNotDefaultIndexName_ReturnsFalse() {
 		// When
-		var result = _sut.CanReadStream("other-stream");
+		var result = _sut.CanReadIndex("other-stream");
 
 		// Then
 		Assert.False(result);
@@ -664,14 +632,13 @@ public class DefaultIndexReaderTests : DuckDbIntegrationTest {
 			tcs.SetResult((ClientMessage.ReadStreamEventsForwardCompleted)m);
 		});
 
-		var msg = new ClientMessage.ReadStreamEventsForward(
+		var msg = new ClientMessage.ReadIndexEventsForward(
 			_internalCorrId,
 			_correlationId,
 			envelope,
 			DefaultIndex.Name,
 			fromEventNumber,
 			maxCount,
-			resolveLinkTos,
 			requireLeader,
 			validationStreamVersion,
 			user,
@@ -716,41 +683,41 @@ public class DefaultIndexReaderTests : DuckDbIntegrationTest {
 			tfLastCommitPosition
 		);
 
-	private async Task<ClientMessage.ReadStreamEventsBackwardCompleted> ReadBackwards(
-		long fromEventNumber = 10,
-		int maxCount = 5,
-		bool resolveLinkTos = true,
-		bool requireLeader = true,
-		long? validationStreamVersion = null,
-		ClaimsPrincipal? user = null,
-		DateTime? expires = null
-	) {
-		var tcs = new TaskCompletionSource<ClientMessage.ReadStreamEventsBackwardCompleted>();
-		var envelope = new CallbackEnvelope(m => {
-			Assert.IsType<ClientMessage.ReadStreamEventsBackwardCompleted>(m);
-			tcs.SetResult((ClientMessage.ReadStreamEventsBackwardCompleted)m);
-		});
-
-		var msg = new ClientMessage.ReadStreamEventsBackward(
-			_internalCorrId,
-			_correlationId,
-			envelope,
-			DefaultIndex.Name,
-			fromEventNumber,
-			maxCount,
-			resolveLinkTos,
-			requireLeader,
-			validationStreamVersion,
-			user,
-			expires,
-			CancellationToken.None
-		);
-
-		var result = await _sut.ReadBackwards(msg, CancellationToken.None);
-		envelope.ReplyWith(result);
-
-		return await tcs.Task;
-	}
+	// private async Task<ClientMessage.ReadStreamEventsBackwardCompleted> ReadBackwards(
+	// 	long fromEventNumber = 10,
+	// 	int maxCount = 5,
+	// 	bool resolveLinkTos = true,
+	// 	bool requireLeader = true,
+	// 	long? validationStreamVersion = null,
+	// 	ClaimsPrincipal? user = null,
+	// 	DateTime? expires = null
+	// ) {
+	// 	var tcs = new TaskCompletionSource<ClientMessage.ReadStreamEventsBackwardCompleted>();
+	// 	var envelope = new CallbackEnvelope(m => {
+	// 		Assert.IsType<ClientMessage.ReadStreamEventsBackwardCompleted>(m);
+	// 		tcs.SetResult((ClientMessage.ReadStreamEventsBackwardCompleted)m);
+	// 	});
+	//
+	// 	var msg = new ClientMessage.ReadStreamEventsBackward(
+	// 		_internalCorrId,
+	// 		_correlationId,
+	// 		envelope,
+	// 		DefaultIndex.Name,
+	// 		fromEventNumber,
+	// 		maxCount,
+	// 		resolveLinkTos,
+	// 		requireLeader,
+	// 		validationStreamVersion,
+	// 		user,
+	// 		expires,
+	// 		CancellationToken.None
+	// 	);
+	//
+	// 	var result = await _sut.ReadBackwards(msg, CancellationToken.None);
+	// 	envelope.ReplyWith(result);
+	//
+	// 	return await tcs.Task;
+	// }
 
 	private ClientMessage.ReadStreamEventsBackwardCompleted ReadStreamEventsBackwardCompleted(
 		ReadStreamResult result,

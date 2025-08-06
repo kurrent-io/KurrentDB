@@ -6,8 +6,8 @@ using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Category;
 
-internal static class CategorySql {
-	public struct CategoryIndexQuery : IQuery<CategoryIndexQueryArgs, CategoryRecord> {
+static class CategorySql {
+	public struct CategoryIndexQuery : IQuery<CategoryIndexQueryArgs, IndexQueryRecord> {
 		public static BindingContext Bind(in CategoryIndexQueryArgs args, PreparedStatement statement)
 			=> new(statement) {
 				args.Id,
@@ -17,16 +17,14 @@ internal static class CategorySql {
 
 		public static ReadOnlySpan<byte> CommandText =>
 			"""
-			select log_position
-			from idx_all where category_id=$1 and log_position>$2 limit $3
+			select rowid, log_position
+			from idx_all where category_id=$1 and log_position>$2 and is_deleted=false limit $3
 			"""u8;
 
-		public static CategoryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64());
+		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadUInt32(), row.ReadInt64());
 	}
 
 	public record struct CategoryIndexQueryArgs(int Id, long StartPosition, int Count);
-
-	public record struct CategoryRecord(long LogPosition);
 
 	public struct GetCategoriesQuery : IQuery<ReferenceRecord> {
 		public static ReadOnlySpan<byte> CommandText => "select id, name from category"u8;
