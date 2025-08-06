@@ -37,7 +37,7 @@ internal class StreamIndexProcessor : Disposable {
 
 		_connection = db.OpenNewConnection();
 		_appender = new Appender(_connection, "streams"u8);
-		_seq = _connection.GetStreamMaxSequences(queryTracker) ?? -1;
+		_seq = _connection.GetStreamMaxSequences(queryTracker.DontTrack) ?? -1;
 	}
 
 	public long LastCommittedPosition { get; private set; }

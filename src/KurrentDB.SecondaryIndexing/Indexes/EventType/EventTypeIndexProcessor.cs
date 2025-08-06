@@ -26,8 +26,8 @@ internal class EventTypeIndexProcessor {
 		_publisher = publisher;
 		_queryTracker = queryTracker;
 
-		var ids = db.Pool.Query<ReferenceRecord, GetAllEventTypesQuery>(queryTracker);
-		var sequences = db.Pool.Query<(int Id, long Sequence), GetEventTypeMaxSequencesQuery>(queryTracker)
+		var ids = db.Pool.Query<ReferenceRecord, GetAllEventTypesQuery>(queryTracker.DontTrack);
+		var sequences = db.Pool.Query<(int Id, long Sequence), GetEventTypeMaxSequencesQuery>(queryTracker.DontTrack)
 			.ToDictionary(ks => ks.Id, vs => vs.Sequence);
 
 		_eventTypes = ids.ToDictionary(x => x.Name, x => x.Id);

@@ -26,8 +26,8 @@ internal class CategoryIndexProcessor {
 		_publisher = publisher;
 		_queryTracker = queryTracker;
 
-		var ids = db.Pool.Query<ReferenceRecord, GetCategoriesQuery>(queryTracker);
-		var sequences = db.Pool.Query<(int Id, long Sequence), GetCategoriesMaxSequencesQuery>(queryTracker)
+		var ids = db.Pool.Query<ReferenceRecord, GetCategoriesQuery>(queryTracker.DontTrack);
+		var sequences = db.Pool.Query<(int Id, long Sequence), GetCategoriesMaxSequencesQuery>(queryTracker.DontTrack)
 			.ToDictionary(ks => ks.Id, vs => vs.Sequence);
 
 		_categories = ids.ToDictionary(x => x.Name, x => x.Id);

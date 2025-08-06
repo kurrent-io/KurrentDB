@@ -75,12 +75,12 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 			)
 		);
 
-		var durationMaxMetric = new DurationMaxMetric(
+		var queryDurationMetric = new DurationMetric(
 			coreMeter,
-			name: "indexes.secondary.duckdb.query.max",
+			name: "indexes.secondary.duckdb.query",
 			legacyNames: conf.LegacyCoreNaming);
 
-		var queryTracker = new QueryTracker(durationMaxMetric, expectedScrapeInterval: 30);
+		var queryTracker = new QueryTracker(queryDurationMetric);
 		services.AddSingleton<IQueryTracker>(queryTracker);
 
 		services.AddSingleton<DuckDbSystemMetrics>(sp =>

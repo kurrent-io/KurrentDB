@@ -117,11 +117,11 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	}
 
 	public long? GetLastPosition() =>
-		_connection.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastLogPositionSql>(_queryTracker)?.OrNull();
+		_connection.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastLogPositionSql>(_queryTracker.DontTrack)?.OrNull();
 
 
 	private long? GetLastSequence() =>
-		_connection.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastSequenceSql>(_queryTracker)?.OrNull();
+		_connection.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastSequenceSql>(_queryTracker.DontTrack)?.OrNull();
 
 	public void Commit() {
 		if (IsDisposingOrDisposed)
