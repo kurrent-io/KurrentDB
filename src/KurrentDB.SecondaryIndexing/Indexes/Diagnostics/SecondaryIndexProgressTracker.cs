@@ -49,7 +49,8 @@ public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
 
 	public SecondaryIndexProgressTracker(
 		Meter meter,
-		string meterPrefix
+		string meterPrefix,
+		bool useLegacyNames
 	) {
 		meter.CreateObservableGauge(
 			$"{meterPrefix}.subscription.gap",
@@ -72,7 +73,7 @@ public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
 			"Events pending checkpoint"
 		);
 
-		var commitLatencyTracker = new DurationMetric(meter, $"{meterPrefix}.commit", false);
+		var commitLatencyTracker = new DurationMetric(meter, $"{meterPrefix}.commit", useLegacyNames);
 
 		_trackers.Commit = new DurationTracker(commitLatencyTracker, "commit");
 	}

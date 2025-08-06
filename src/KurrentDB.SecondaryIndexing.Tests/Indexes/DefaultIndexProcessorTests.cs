@@ -316,7 +316,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		);
 
 		// Then
-		var summary = DuckDb.Pool.GetStreamsSummary(cat1Stream1);
+		var summary = DuckDb.Pool.GetStreamsSummary(cat1Stream1, QueryTracker.NoOp);
 
 		Assert.NotNull(summary);
 		Assert.Equal(cat1Stream1, summary.Value.Name);
@@ -341,31 +341,31 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		);
 
 	private void AssertDefaultIndexQueryReturns(List<AllRecord> expected) {
-		var records = DuckDb.Pool.Query<(long, long), AllRecord, DefaultSql.DefaultIndexQuery>((0, 32));
+		var records = DuckDb.Pool.Query<(long, long), AllRecord, DefaultSql.DefaultIndexQuery>((0, 32), QueryTracker.NoOp);
 
 		Assert.Equal(expected, records);
 	}
 
 	private void AssertLastSequenceQueryReturns(long? expectedLastSequence) {
-		var actual = DuckDb.Pool.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastSequenceSql>();
+		var actual = DuckDb.Pool.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastSequenceSql>(QueryTracker.NoOp);
 
 		Assert.Equal(expectedLastSequence, actual?.OrNull());
 	}
 
 	private void AssertLastLogPositionQueryReturns(long? expectedLastSequence) {
-		var actual = DuckDb.Pool.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastLogPositionSql>();
+		var actual = DuckDb.Pool.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastLogPositionSql>(QueryTracker.NoOp);
 
 		Assert.Equal(expectedLastSequence, actual?.OrNull());
 	}
 
 	private void AssertGetCategoriesQueryReturns(List<ReferenceRecord> expected) {
-		var records = DuckDb.Pool.Query<ReferenceRecord, GetCategoriesQuery>().OrderBy(x => x.Id);
+		var records = DuckDb.Pool.Query<ReferenceRecord, GetCategoriesQuery>(QueryTracker.NoOp).OrderBy(x => x.Id);
 
 		Assert.Equal(expected, records);
 	}
 
 	private void AssertGetCategoriesMaxSequencesQueryReturns(List<(int Id, long Sequence)> expected) {
-		var records = DuckDb.Pool.Query<(int Id, long Sequence), GetCategoriesMaxSequencesQuery>().OrderBy(x => x.Id);
+		var records = DuckDb.Pool.Query<(int Id, long Sequence), GetCategoriesMaxSequencesQuery>(QueryTracker.NoOp).OrderBy(x => x.Id);
 
 		Assert.Equal(expected, records);
 	}
@@ -373,20 +373,21 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 	private void AssertCategoryIndexQueryReturns(long categoryId, List<CategoryRecord> expected) {
 		var records = DuckDb.Pool
 			.Query<CategoryIndexQueryArgs, CategoryRecord, CategoryIndexQuery>(
-				new CategoryIndexQueryArgs((int)categoryId, 0, 32)
+				new CategoryIndexQueryArgs((int)categoryId, 0, 32),
+				QueryTracker.NoOp
 			);
 
 		Assert.Equal(expected, records);
 	}
 
 	private void AssertGetAllEventTypesQueryReturns(List<ReferenceRecord> expected) {
-		var records = DuckDb.Pool.Query<ReferenceRecord, GetAllEventTypesQuery>().OrderBy(x => x.Id);
+		var records = DuckDb.Pool.Query<ReferenceRecord, GetAllEventTypesQuery>(QueryTracker.NoOp).OrderBy(x => x.Id);
 
 		Assert.Equal(expected, records);
 	}
 
 	private void AssertGetEventTypeMaxSequencesQueryReturns(List<(int Id, long Sequence)> expected) {
-		var records = DuckDb.Pool.Query<(int Id, long Sequence), GetEventTypeMaxSequencesQuery>().OrderBy(x => x.Id);
+		var records = DuckDb.Pool.Query<(int Id, long Sequence), GetEventTypeMaxSequencesQuery>(QueryTracker.NoOp).OrderBy(x => x.Id);
 
 		Assert.Equal(expected, records);
 	}
@@ -394,20 +395,21 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 	private void AssertReadEventTypeIndexQueryReturns(long eventTypeId, List<EventTypeRecord> expected) {
 		var records = DuckDb.Pool
 			.Query<ReadEventTypeIndexQueryArgs, EventTypeRecord, ReadEventTypeIndexQuery>(
-				new ReadEventTypeIndexQueryArgs((int)eventTypeId, 0, 32)
+				new ReadEventTypeIndexQueryArgs((int)eventTypeId, 0, 32),
+				QueryTracker.NoOp
 			);
 
 		Assert.Equal(expected, records);
 	}
 
 	private void AssertGetStreamIdByNameQueryReturns(string streamName, long? expectedId) {
-		var actual = DuckDb.Pool.GetStreamIdByName(streamName);
+		var actual = DuckDb.Pool.GetStreamIdByName(streamName, QueryTracker.NoOp);
 
 		Assert.Equal(expectedId, actual);
 	}
 
 	private void AssertGetStreamMaxSequencesQueryReturns(long? expectedId) {
-		var actual = DuckDb.Pool.GetStreamMaxSequences();
+		var actual = DuckDb.Pool.GetStreamMaxSequences(QueryTracker.NoOp);
 
 		Assert.Equal(expectedId, actual);
 	}
@@ -423,9 +425,9 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 
 		var publisher = new FakePublisher();
 
-		var categoryIndexProcessor = new CategoryIndexProcessor(DuckDb, publisher);
-		var eventTypeIndexProcessor = new EventTypeIndexProcessor(DuckDb, publisher);
-		var streamIndexProcessor = new StreamIndexProcessor(DuckDb, reader.IndexReader.Backend, hasher);
+		var categoryIndexProcessor = new CategoryIndexProcessor(DuckDb, publisher, QueryTracker.NoOp);
+		var eventTypeIndexProcessor = new EventTypeIndexProcessor(DuckDb, publisher, QueryTracker.NoOp);
+		var streamIndexProcessor = new StreamIndexProcessor(DuckDb, reader.IndexReader.Backend, hasher, QueryTracker.NoOp);
 
 		_processor = new DefaultIndexProcessor(
 			DuckDb,
@@ -434,6 +436,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 			eventTypeIndexProcessor,
 			streamIndexProcessor,
 			new NoOpSecondaryIndexProgressTracker(),
+			QueryTracker.NoOp,
 			publisher
 		);
 	}
@@ -465,9 +468,9 @@ public class CleanUpTests {
 
 			var publisher = new FakePublisher();
 
-			var categoryIndexProcessor = new CategoryIndexProcessor(dataSource, publisher);
-			var eventTypeIndexProcessor = new EventTypeIndexProcessor(dataSource, publisher);
-			var streamIndexProcessor = new StreamIndexProcessor(dataSource, reader.IndexReader.Backend, hasher);
+			var categoryIndexProcessor = new CategoryIndexProcessor(dataSource, publisher, QueryTracker.NoOp);
+			var eventTypeIndexProcessor = new EventTypeIndexProcessor(dataSource, publisher, QueryTracker.NoOp);
+			var streamIndexProcessor = new StreamIndexProcessor(dataSource, reader.IndexReader.Backend, hasher, QueryTracker.NoOp);
 
 			using var processor = new DefaultIndexProcessor(
 				dataSource,
@@ -476,6 +479,7 @@ public class CleanUpTests {
 				eventTypeIndexProcessor,
 				streamIndexProcessor,
 				new NoOpSecondaryIndexProgressTracker(),
+				QueryTracker.NoOp,
 				publisher
 			);
 
@@ -497,7 +501,7 @@ public class CleanUpTests {
 		Directory.CreateDirectory(directory);
 
 		using (var dataSource = new DuckDbDataSource(options)) {
-			var actual = dataSource.Pool.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastSequenceSql>();
+			var actual = dataSource.Pool.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastSequenceSql>(QueryTracker.NoOp);
 
 			Assert.Null(actual?.OrNull());
 		}

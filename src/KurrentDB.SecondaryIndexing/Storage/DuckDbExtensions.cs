@@ -3,15 +3,16 @@
 
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
+using KurrentDB.SecondaryIndexing.Indexes.Diagnostics;
 
 namespace KurrentDB.SecondaryIndexing.Storage;
 
 public static class DuckDbExtensions {
-	public static TRow? QueryFirstOrDefault<TRow, TQuery>(this DuckDBConnectionPool pool)
+	public static TRow? QueryFirstOrDefault<TRow, TQuery>(this DuckDBConnectionPool pool, IQueryTracker tracker)
 		where TRow : struct
 		where TQuery : IQuery<TRow> {
 		using (pool.Rent(out var connection)) {
-			return connection.QueryFirstOrDefault<TRow, TQuery>();
+			return connection.QueryFirstOrDefault<TRow, TQuery>(tracker);
 		}
 	}
 
@@ -24,46 +25,52 @@ public static class DuckDbExtensions {
 		return enumerator.MoveNext() ? enumerator.Current : null;
 	}
 
-	public static TRow? QueryFirstOrDefault<TRow, TQuery>(this DuckDBAdvancedConnection connection)
+	public static TRow? QueryFirstOrDefault<TRow, TQuery>(this DuckDBAdvancedConnection connection, IQueryTracker tracker)
 		where TRow : struct
 		where TQuery : IQuery<TRow> {
+		using var _ = tracker.Start<TQuery>();
 		var result = connection.ExecuteQuery<TRow, TQuery>();
 		return result.GetFirstOrDefault();
 	}
 
-	public static TRow? QueryFirstOrDefault<TArgs, TRow, TQuery>(this DuckDBConnectionPool pool, TArgs args)
+	public static TRow? QueryFirstOrDefault<TArgs, TRow, TQuery>(this DuckDBConnectionPool pool, TArgs args, IQueryTracker tracker)
 		where TArgs : struct
 		where TRow : struct
 		where TQuery : IQuery<TArgs, TRow> {
 		using (pool.Rent(out var connection)) {
-			return connection.QueryFirstOrDefault<TArgs, TRow, TQuery>(args);
+			return connection.QueryFirstOrDefault<TArgs, TRow, TQuery>(args, tracker);
 		}
 	}
 
-	public static TRow? QueryFirstOrDefault<TArgs, TRow, TQuery>(this DuckDBAdvancedConnection connection, TArgs args)
+	public static TRow? QueryFirstOrDefault<TArgs, TRow, TQuery>(this DuckDBAdvancedConnection connection, TArgs args, IQueryTracker tracker)
 		where TArgs : struct
 		where TRow : struct
 		where TQuery : IQuery<TArgs, TRow> {
 		if (TQuery.UseStreamingMode) {
 			throw new InvalidOperationException("Streaming mode must be disabled for query with single result");
 		}
+
+		using var _ = tracker.Start<TQuery>();
+
 		var result = connection.ExecuteQuery<TArgs, TRow, TQuery>(args);
 		using var enumerator = result.GetEnumerator();
 		return enumerator.MoveNext() ? enumerator.Current : null;
 	}
 
-	public static List<TRow> Query<TRow, TQuery>(this DuckDBConnectionPool pool)
+	public static List<TRow> Query<TRow, TQuery>(this DuckDBConnectionPool pool, IQueryTracker tracker)
 		where TRow : struct
 		where TQuery : IQuery<TRow> {
 		using (pool.Rent(out var connection)) {
-			return connection.Query<TRow, TQuery>();
+			return connection.Query<TRow, TQuery>(tracker);
 		}
 	}
 
-	public static List<TRow> Query<TRow, TQuery>(this DuckDBAdvancedConnection connection)
+	private static List<TRow> Query<TRow, TQuery>(this DuckDBAdvancedConnection connection, IQueryTracker tracker)
 		where TRow : struct
 		where TQuery : IQuery<TRow> {
 		List<TRow> elements = [];
+
+		using var _ = tracker.Start<TQuery>();
 		using var result = connection.ExecuteQuery<TRow, TQuery>().GetEnumerator();
 
 		while (result.MoveNext()) {
@@ -73,20 +80,22 @@ public static class DuckDbExtensions {
 		return elements;
 	}
 
-	public static List<TRow> Query<TArgs, TRow, TQuery>(this DuckDBConnectionPool pool, TArgs args)
+	public static List<TRow> Query<TArgs, TRow, TQuery>(this DuckDBConnectionPool pool, TArgs args, IQueryTracker tracker)
 		where TArgs : struct
 		where TRow : struct
 		where TQuery : IQuery<TArgs, TRow> {
 		using (pool.Rent(out var connection)) {
-			return connection.Query<TArgs, TRow, TQuery>(args);
+			return connection.Query<TArgs, TRow, TQuery>(args, tracker);
 		}
 	}
 
-	public static List<TRow> Query<TArgs, TRow, TQuery>(this DuckDBAdvancedConnection connection, TArgs args)
+	private static List<TRow> Query<TArgs, TRow, TQuery>(this DuckDBAdvancedConnection connection, TArgs args, IQueryTracker tracker)
 		where TArgs : struct
 		where TRow : struct
 		where TQuery : IQuery<TArgs, TRow> {
 		List<TRow> elements = [];
+
+		using var _ = tracker.Start<TQuery>();
 		using var result = connection.ExecuteQuery<TArgs, TRow, TQuery>(args).GetEnumerator();
 
 		while (result.MoveNext()) {
@@ -96,15 +105,17 @@ public static class DuckDbExtensions {
 		return elements;
 	}
 
-	public static void ExecuteNonQuery<TQuery>(this DuckDBConnectionPool pool) where TQuery : IParameterlessStatement {
+	public static void ExecuteNonQuery<TQuery>(this DuckDBConnectionPool pool, IQueryTracker tracker) where TQuery : IParameterlessStatement {
 		using (pool.Rent(out var connection)) {
+			using var _ = tracker.Start<TQuery>();
 			connection.ExecuteNonQuery<TQuery>();
 		}
 	}
 
-	public static void ExecuteNonQuery<TArgs, TQuery>(this DuckDBConnectionPool pool, TArgs args)
+	public static void ExecuteNonQuery<TArgs, TQuery>(this DuckDBConnectionPool pool, TArgs args, IQueryTracker tracker)
 		where TQuery : IPreparedStatement<TArgs> where TArgs : struct {
 		using (pool.Rent(out var connection)) {
+			using var _ = tracker.Start<TQuery>();
 			connection.ExecuteNonQuery<TArgs, TQuery>(args);
 		}
 	}

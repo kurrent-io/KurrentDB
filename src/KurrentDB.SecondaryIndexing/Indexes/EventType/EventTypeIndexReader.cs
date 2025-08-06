@@ -4,6 +4,7 @@
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
+using KurrentDB.SecondaryIndexing.Indexes.Diagnostics;
 using KurrentDB.SecondaryIndexing.Storage;
 using static KurrentDB.SecondaryIndexing.Indexes.EventType.EventTypeSql;
 
@@ -13,7 +14,8 @@ internal class EventTypeIndexReader(
 	DuckDbDataSource db,
 	EventTypeIndexProcessor processor,
 	IReadIndex<string> index,
-	QueryInFlightRecords<EventTypeRecord> queryInFlightRecords
+	QueryInFlightRecords<EventTypeRecord> queryInFlightRecords,
+	IQueryTracker queryTracker
 ) : SecondaryIndexReaderBase(index) {
 	protected override long GetId(string streamName) =>
 		EventTypeIndex.TryParseEventType(streamName, out var eventTypeName)
@@ -24,7 +26,8 @@ internal class EventTypeIndexReader(
 
 	protected override IEnumerable<IndexedPrepare> GetIndexRecords(long id, long fromEventNumber, long toEventNumber) {
 		var range = db.Pool.Query<ReadEventTypeIndexQueryArgs, EventTypeRecord, ReadEventTypeIndexQuery>(
-			new ReadEventTypeIndexQueryArgs((int)id, fromEventNumber, toEventNumber)
+			new ReadEventTypeIndexQueryArgs((int)id, fromEventNumber, toEventNumber),
+			queryTracker
 		);
 		if (range.Count < toEventNumber - fromEventNumber + 1) {
 			// events might be in flight

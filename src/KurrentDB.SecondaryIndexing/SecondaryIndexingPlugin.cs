@@ -7,6 +7,7 @@ using EventStore.Plugins;
 using EventStore.Plugins.Subsystems;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Configuration.Sources;
+using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.SecondaryIndexing.Builders;
@@ -45,10 +46,10 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 		services.AddSingleton(options);
 
 		services.AddSingleton<DuckDbDataSourceOptions>(sp => {
-			var dbPath = options.DbPath ?? Path.Combine(sp.GetRequiredService<TFChunkDbConfig>().Path, "index.db");
-
+			var dbPath = GetDuckDbFilePath(sp);
 			return new DuckDbDataSourceOptions { ConnectionString = $"Data Source={dbPath};" };
 		});
+
 		services.AddSingleton<DuckDbDataSource>(sp => {
 			var dbSource = new DuckDbDataSource(sp.GetRequiredService<DuckDbDataSourceOptions>());
 			dbSource.InitDb();
@@ -70,9 +71,28 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 		services.AddSingleton<ISecondaryIndexProgressTracker>(sp =>
 			new SecondaryIndexProgressTracker(
 				coreMeter,
-				"indexes.secondary"
+				meterPrefix: $"{conf.ServiceName}-indexes-secondary",
+				useLegacyNames: conf.LegacyCoreNaming
 			)
 		);
+
+		var queryDurationMetric = new DurationMetric(
+			coreMeter,
+			name: $"{conf.ServiceName}-indexes-secondary-duckdb-query",
+			legacyNames: conf.LegacyCoreNaming);
+
+		var queryTracker = new QueryTracker(queryDurationMetric);
+		services.AddSingleton<IQueryTracker>(queryTracker);
+
+		services.AddSingleton<DuckDbSystemMetrics>(sp =>
+			new DuckDbSystemMetrics(
+				meter: coreMeter,
+				meterPrefix: $"{conf.ServiceName}-indexes-secondary-duckdb",
+				db: sp.GetRequiredService<DuckDbDataSource>(),
+				dbFile: GetDuckDbFilePath(sp)
+			)
+		);
+
 		services.AddSingleton<ISecondaryIndexProcessor>(sp => sp.GetRequiredService<DefaultIndexProcessor>());
 		services.AddSingleton<DefaultIndexProcessor>();
 		services.AddSingleton<CategoryIndexProcessor>();
@@ -82,6 +102,10 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 		services.AddSingleton<ISecondaryIndexReader, DefaultIndexReader>();
 		services.AddSingleton<ISecondaryIndexReader, CategoryIndexReader>();
 		services.AddSingleton<ISecondaryIndexReader, EventTypeIndexReader>();
+		return;
+
+		string GetDuckDbFilePath(IServiceProvider sp) =>
+			options.DbPath ?? Path.Combine(sp.GetRequiredService<TFChunkDbConfig>().Path, "index.db");
 	}
 
 	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
@@ -90,6 +114,8 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 		var indexReaders = app.ApplicationServices.GetServices<ISecondaryIndexReader>();
 
 		virtualStreamReader.Register(indexReaders.ToArray<IVirtualStreamReader>());
+
+		app.ApplicationServices.GetService<DuckDbSystemMetrics>();
 	}
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {

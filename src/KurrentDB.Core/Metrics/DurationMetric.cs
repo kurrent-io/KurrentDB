@@ -25,6 +25,16 @@ public class DurationMetric {
 
 	public Instant Record(
 		Instant start,
+		KeyValuePair<string, object> tag1) {
+
+		var now = _clock.Now;
+		var elapsedSeconds = now.ElapsedSecondsSince(start);
+		_histogram.Record(elapsedSeconds, tag1);
+		return now;
+	}
+
+	public Instant Record(
+		Instant start,
 		KeyValuePair<string, object> tag1,
 		KeyValuePair<string, object> tag2) {
 

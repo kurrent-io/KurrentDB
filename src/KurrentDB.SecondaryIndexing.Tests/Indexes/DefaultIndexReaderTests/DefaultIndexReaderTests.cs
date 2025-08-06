@@ -832,10 +832,10 @@ public class DefaultIndexReaderTests : DuckDbIntegrationTest {
 			new SecondaryIndexingPluginOptions { CommitBatchSize = commitBatchSize });
 
 		var publisher = new FakePublisher();
-		var categoryIndexProcessor = new CategoryIndexProcessor(DuckDb, publisher);
-		var eventTypeIndexProcessor = new EventTypeIndexProcessor(DuckDb, publisher);
+		var categoryIndexProcessor = new CategoryIndexProcessor(DuckDb, publisher, QueryTracker.NoOp);
+		var eventTypeIndexProcessor = new EventTypeIndexProcessor(DuckDb, publisher, QueryTracker.NoOp);
 		var streamIndexProcessor =
-			new StreamIndexProcessor(DuckDb, _readIndexStub.ReadIndex.IndexReader.Backend, hasher);
+			new StreamIndexProcessor(DuckDb, _readIndexStub.ReadIndex.IndexReader.Backend, hasher, QueryTracker.NoOp);
 
 		_processor = new DefaultIndexProcessor(
 			DuckDb,
@@ -844,9 +844,10 @@ public class DefaultIndexReaderTests : DuckDbIntegrationTest {
 			eventTypeIndexProcessor,
 			streamIndexProcessor,
 			new NoOpSecondaryIndexProgressTracker(),
+			QueryTracker.NoOp,
 			publisher
 		);
 
-		_sut = new DefaultIndexReader(DuckDb, _processor, inFlightRecords, _readIndexStub.ReadIndex);
+		_sut = new DefaultIndexReader(DuckDb, _processor, inFlightRecords, _readIndexStub.ReadIndex, QueryTracker.NoOp);
 	}
 }

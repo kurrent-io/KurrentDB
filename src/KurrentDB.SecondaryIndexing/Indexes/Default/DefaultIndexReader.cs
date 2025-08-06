@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.SecondaryIndexing.Indexes.Diagnostics;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
@@ -10,14 +11,15 @@ internal class DefaultIndexReader(
 	DuckDbDataSource db,
 	DefaultIndexProcessor processor,
 	DefaultIndexInFlightRecords inFlightRecords,
-	IReadIndex<string> index
+	IReadIndex<string> index,
+	IQueryTracker queryTracker
 ) : SecondaryIndexReaderBase(index) {
 	protected override long GetId(string streamName) => 0;
 
 	protected override long GetLastIndexedSequence(long id) => processor.LastSequence;
 
 	protected override IEnumerable<IndexedPrepare> GetIndexRecords(long _, long fromEventNumber, long toEventNumber) {
-		var range = db.Pool.Query<(long, long), AllRecord, DefaultSql.DefaultIndexQuery>((fromEventNumber, toEventNumber));
+		var range = db.Pool.Query<(long, long), AllRecord, DefaultSql.DefaultIndexQuery>((fromEventNumber, toEventNumber), queryTracker);
 		if (range.Count < toEventNumber - fromEventNumber + 1) {
 			var inFlight = inFlightRecords.TryGetInFlightRecords(fromEventNumber, toEventNumber);
 			range.AddRange(inFlight);
