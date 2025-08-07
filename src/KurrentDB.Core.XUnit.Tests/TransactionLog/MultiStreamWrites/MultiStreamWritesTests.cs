@@ -16,7 +16,7 @@ namespace KurrentDB.Core.XUnit.Tests.TransactionLog.MultiStreamWrites;
 
 public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixture)
 	: IClassFixture<MiniNodeFixture<MultiStreamWritesTests>> {
-	private static Event NewEvent => new(Guid.NewGuid(), "type", false, "data", "metadata", []);
+	private static Event NewEvent => new(Guid.NewGuid(), "type", false, "data", "metadata");
 
 	[Fact]
 	public async Task succeeds() {
@@ -274,7 +274,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		var B = $"${test}-b";
 
 		var chunkSize = fixture.MiniNode.Db.Config.ChunkSize;
-		var largeEvent = new Event(Guid.NewGuid(), "type", false, new byte[chunkSize / 2], [], []);
+		var largeEvent = new Event(Guid.NewGuid(), "type", false, new byte[chunkSize / 2]);
 
 		var completed = await WriteEvents(
 			eventStreamIds: [A, B],
@@ -453,7 +453,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		var B = $"${test}-b";
 
 		var chunkSize = fixture.MiniNode.Db.Config.ChunkSize;
-		var largeEvent = new Event(Guid.NewGuid(), "type", false, new byte[chunkSize], [], []);
+		var largeEvent = new Event(Guid.NewGuid(), "type", false, new byte[chunkSize]);
 
 		var completed = await WriteEvents(
 			eventStreamIds: [A, B],

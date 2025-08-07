@@ -1,0 +1,52 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- It must be `TargetFrameworks` plural to work on macos -->
+    <!-- Error MSB6004 : The specified task executable location "/macosx_x64/protoc" is invalid. -->
+    <!--suppress MsbuildTargetFrameworkTagInspection-->
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+		<IsTestProject>true</IsTestProject>
+		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <IsPackable>false</IsPackable>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+    <EnableMSTestRunner>true</EnableMSTestRunner>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <TestingPlatformCaptureOutput>false</TestingPlatformCaptureOutput>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Kurrent.Surge" />
+		<PackageReference Include="TUnit" />
+		<PackageReference Include="Microsoft.Testing.Extensions.TrxReport" />
+		<PackageReference Include="Microsoft.Testing.Extensions.CrashDump" />
+		<PackageReference Include="Microsoft.Testing.Extensions.HangDump" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\KurrentDB.Surge.Testing.Messages\KurrentDB.Surge.Testing.Messages.csproj" />
+    <ProjectReference Include="..\..\KurrentDB.Surge.Testing.TUnit\KurrentDB.Surge.Testing.TUnit.csproj" />
+    <ProjectReference Include="..\..\KurrentDB\KurrentDB.csproj" />
+    <ProjectReference Include="..\KurrentDB.SchemaRegistry\KurrentDB.SchemaRegistry.csproj" />
+  </ItemGroup>
+	<ItemGroup>
+		<Using Include="KurrentDB.Surge.Testing.TUnit.FluentAssertions"/>
+		<Using Include="KurrentDB.Surge.Testing.TUnit"/>
+		<Using Include="Kurrent.Surge"/>
+		<Using Include="Humanizer"/>
+		<Using Include="FluentAssertions"/>
+		<Using Include="TUnit"/>
+	</ItemGroup>
+	<ItemGroup>
+	  <None Remove="KurrentDB.SchemaRegistry.Tests.csproj.DotSettings" />
+	  <None Remove="Modules\Schemas\Data\**" />
+	  <None Remove="Modules\Schemas\Domain\**" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Compile Remove="Modules\Schemas\Data\**" />
+	  <Compile Remove="Modules\Schemas\Domain\**" />
+	</ItemGroup>
+	<ItemGroup>
+	  <EmbeddedResource Remove="Modules\Schemas\Data\**" />
+	  <EmbeddedResource Remove="Modules\Schemas\Domain\**" />
+	</ItemGroup>
+</Project>

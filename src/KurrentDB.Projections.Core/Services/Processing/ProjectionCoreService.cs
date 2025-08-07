@@ -76,7 +76,7 @@ public class ProjectionCoreService
 		_factory = new ProjectionStateHandlerFactory(
 			javascriptCompilationTimeout: TimeSpan.FromMilliseconds(configuration.ProjectionCompilationTimeout),
 			javascriptExecutionTimeout: TimeSpan.FromMilliseconds(configuration.ProjectionExecutionTimeout),
-			executionTrackers: configuration.ProjectionExecutionTrackers);
+			trackers: configuration.ProjectionTrackers);
 	}
 
 	public ILogger Logger {

@@ -46,13 +46,13 @@ public class when_read_completes_before_timeout<TLogFormat, TStreamId> : TestFix
 							1, 50, Guid.NewGuid(), Guid.NewGuid(), 50, 0, "a", ExpectedVersion.Any,
 							_fakeTimeProvider.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type1", new byte[] {1}, new byte[] {2}, []), 100),
+							"event_type1", new byte[] {1}, new byte[] {2}), 100),
 					ResolvedEvent.ForUnresolvedEvent(
 						new EventRecord(
 							2, 150, Guid.NewGuid(), Guid.NewGuid(), 150, 0, "b", ExpectedVersion.Any,
 							_fakeTimeProvider.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type1", new byte[] {1}, new byte[] {2}, []), 200),
+							"event_type1", new byte[] {1}, new byte[] {2}), 200),
 				}, null, false, 100, new TFPos(200, 150), new TFPos(500, -1), new TFPos(100, 50), 500));
 		_eventReader.Handle(
 			new ProjectionManagementMessage.Internal.ReadTimeout(correlationId, "$all"));

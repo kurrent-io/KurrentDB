@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using KurrentDB.Core.Settings;
+
 namespace KurrentDB.Core.Tests.TcpApiTestPlugin;
 
 public class TcpApiTestOptions {
@@ -9,6 +11,7 @@ public class TcpApiTestOptions {
 	public int NodeHeartbeatTimeout { get; init; } = 1_000;
 	public int ConnectionPendingSendBytesThreshold { get; set; } = 10 * 1_024 * 1_024;
 	public int ConnectionQueueSizeThreshold { get; set; } = 50_000;
+	public int TcpReadTimeoutMs { get; set; } = ESConsts.ReadRequestTimeout;
 	public int WriteTimeoutMs { get; set; } = 2_000;
 	public bool Insecure { get; init; } = false;
 }

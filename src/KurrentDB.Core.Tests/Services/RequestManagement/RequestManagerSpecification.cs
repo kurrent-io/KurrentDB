@@ -27,7 +27,6 @@ public abstract class RequestManagerSpecification<TManager>
 	protected Guid ClientCorrId = Guid.NewGuid();
 	protected byte[] Metadata = new byte[255];
 	protected byte[] EventData = new byte[255];
-	protected byte[] Properties = new byte[255];
 	protected FakeEnvelope Envelope = new();
 	protected CommitSource CommitSource = new();
 	protected SynchronousScheduler Dispatcher = new(nameof(RequestManagerSpecification<TManager>));
@@ -38,7 +37,7 @@ public abstract class RequestManagerSpecification<TManager>
 	protected abstract Message When();
 
 	protected Event DummyEvent() {
-		return new Event(Guid.NewGuid(), "test", false, EventData, Metadata, Properties);
+		return new Event(Guid.NewGuid(), "test", false, EventData, false, Metadata);
 	}
 
 	protected RequestManagerSpecification() {

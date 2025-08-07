@@ -1,232 +1,251 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Collections.Generic;
+using System;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using EventStore.Client;
-using EventStore.Client.PersistentSubscriptions;
 using EventStore.Client.Streams;
 using Google.Protobuf;
+using Google.Protobuf.Collections;
+using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Core.Tests.Services.Transport.Grpc.StreamsTests;
+using KurrentDB.Protocol.V2;
 using NUnit.Framework;
 using MetadataConstants = KurrentDB.Core.Services.Transport.Grpc.Constants.Metadata;
-using ReadReq = EventStore.Client.Streams.ReadReq;
-using ReadResp = EventStore.Client.Streams.ReadResp;
+using PropertiesConstants = KurrentDB.Core.Services.Transport.Grpc.Constants.Properties;
 
 namespace KurrentDB.Core.Tests.Services.Transport.Grpc;
 
 [TestFixture]
-public class PropertiesTests {
-	private static readonly string StreamName = "stream";
-	private static StreamIdentifier StreamIdentifier => new() { StreamName = ByteString.CopyFromUtf8(StreamName) };
-
-	private static Dictionary<string, string> Properties => new() {
-		{ "property-key-1", "value-1" },
-		{ "property-key-2", "value-2" },
-		{ "property-key-3", "value-3" },
+public class PropertiesTests : GrpcSpecification<LogFormat.V2, string> {
+	static StreamIdentifier CreateStreamIdentifier(string stream) => new() {
+		StreamName = ByteString.CopyFromUtf8(stream)
 	};
 
-	private static AppendReq.Types.ProposedMessage CreateAppendReqEvent(Dictionary<string, string> properties) {
-		var data = ByteString.CopyFromUtf8("test-data");
-		var metadata = ByteString.CopyFromUtf8("test-metadata");
-		properties ??= [];
-		properties[MetadataConstants.ContentType] = MetadataConstants.ContentTypes.ApplicationOctetStream;
-		properties[MetadataConstants.Type] = "test-type";
+	async Task AppendV1(string stream, string contentType, string metadataJson) {
+		using var call = StreamsClient.Append(GetCallOptions(AdminCredentials));
+		await call.RequestStream.WriteAsync(new() {
+			Options = new() {
+				StreamIdentifier = CreateStreamIdentifier(stream),
+				Any = new(),
+			}
+		});
 
-		return new AppendReq.Types.ProposedMessage {
-			Data = data,
-			Id = Uuid.NewUuid().ToDto(),
-			CustomMetadata = metadata,
-			Metadata = { properties }
+		await call.RequestStream.WriteAsync(new() {
+			ProposedMessage = new() {
+				Data = ByteString.CopyFromUtf8("test-data"),
+				Id = Uuid.NewUuid().ToDto(),
+				CustomMetadata = ByteString.CopyFromUtf8(metadataJson),
+				Metadata = {
+					{ MetadataConstants.Type, "test-type" },
+					{ MetadataConstants.ContentType, contentType },
+				}
+			}
+		});
+		await call.RequestStream.CompleteAsync();
+
+		var response = await call.ResponseAsync;
+		if (response.ResultCase is not AppendResp.ResultOneofCase.Success) {
+			throw new Exception($"Append V1 failed {response.ResultCase}");
+		}
+	}
+
+	async Task AppendV2(string stream, string dataFormat, MapField<string, Protobuf.DynamicValue> extraProperties) {
+		MapField<string, Protobuf.DynamicValue> properties = new() {
+			extraProperties,
+			{ PropertiesConstants.EventTypeKey, new() { StringValue = "test-type" } },
+			{ PropertiesConstants.DataFormatKey, new() { StringValue = dataFormat } },
 		};
-	}
 
-	[TestFixture]
-	public class single_append_with_properties : GrpcSpecification<LogFormat.V2, string> {
-		private AppendReq.Types.ProposedMessage _proposedMessage;
-		private AppendResp _appendResponse;
-		private ReadResp _readResponse;
-
-		protected override async Task Given() {
-			_proposedMessage = CreateAppendReqEvent(Properties);
-
-			using var call = StreamsClient.Append(GetCallOptions(AdminCredentials));
-			await call.RequestStream.WriteAsync(new() {
-				Options = new() {
-					StreamIdentifier = StreamIdentifier,
-					Any = new()
-				}
-			});
-
-			await call.RequestStream.WriteAsync(new() { ProposedMessage = _proposedMessage });
-			await call.RequestStream.CompleteAsync();
-			_appendResponse = await call.ResponseAsync;
-		}
-
-		protected override async Task When() {
-			using var call = StreamsClient.Read(new() {
-				Options = new() {
-					Count = 1,
-					Stream = new() {
-						StreamIdentifier = StreamIdentifier,
-						Start = new()
-					},
-					UuidOption = new() { Structured = new() },
-					ReadDirection = ReadReq.Types.Options.Types.ReadDirection.Forwards,
-					NoFilter = new(),
-					ControlOption = new() {
-						Compatibility = 21
+		var request = new MultiStreamAppendRequest() {
+			Input = {
+				new AppendStreamRequest() {
+					ExpectedRevision = -1,
+					Stream = stream,
+					Records = {
+						new AppendRecord() {
+							RecordId = Guid.NewGuid().ToString(),
+							Data = ByteString.CopyFromUtf8("test-data"),
+							Properties = { properties },
+						}
 					}
 				}
-			});
-			var readResponses = await call.ResponseStream.ReadAllAsync().ToArrayAsync();
-			_readResponse = readResponses.Single(x => x.Event is not null);
-		}
-
-		[Test]
-		public void append_is_successful() {
-			Assert.AreEqual(_appendResponse.ResultCase, AppendResp.ResultOneofCase.Success);
-		}
-
-		[Test]
-		public void read_contains_the_correct_metadata() {
-			var readMetadata = _readResponse.Event.Event.Metadata;
-			Assert.AreEqual(_proposedMessage.Metadata[MetadataConstants.ContentType], readMetadata[MetadataConstants.ContentType]);
-			foreach (var (key, _) in Properties) {
-				Assert.AreEqual(_proposedMessage.Metadata[key], readMetadata[key]);
 			}
+		};
+
+		using var call = StreamsClientV2.MultiStreamAppendAsync(request, GetCallOptions(AdminCredentials));
+
+		var response = await call.ResponseAsync;
+		if (response.ResultCase is not MultiStreamAppendResponse.ResultOneofCase.Success) {
+			throw new Exception($"Append V2 failed {response.ResultCase}");
 		}
 	}
 
-	[TestFixture]
-	public class batch_append_with_properties : GrpcSpecification<LogFormat.V2, string> {
-		private BatchAppendReq.Types.ProposedMessage _proposedMessage;
-		private BatchAppendResp _appendResponse;
-		private ReadResp _readResponse;
-
-		protected override async Task Given() {
-			_proposedMessage = CreateEvent("test-event", 10, 5, Properties);
-			_appendResponse = await AppendToStreamBatch(new BatchAppendReq {
-				Options = new() {
-					Any = new(),
-					StreamIdentifier = StreamIdentifier
+	private async Task<ReadResp> ReadSingleEventV1(string stream) {
+		var request = new ReadReq() {
+			Options = new() {
+				Count = 1,
+				Stream = new() {
+					StreamIdentifier = CreateStreamIdentifier(stream),
+					Start = new(),
 				},
-				IsFinal = true,
-				ProposedMessages = { _proposedMessage },
-				CorrelationId = Uuid.NewUuid().ToDto()
-			});
-		}
+				UuidOption = new() { Structured = new() },
+				ReadDirection = ReadReq.Types.Options.Types.ReadDirection.Forwards,
+				NoFilter = new(),
+				ControlOption = new() {
+					Compatibility = 21,
+				},
+			},
+		};
 
-		protected override async Task When() {
-			using var call = StreamsClient.Read(new() {
-				Options = new() {
-					Count = 1,
-					Stream = new() {
-						StreamIdentifier = StreamIdentifier,
-						Start = new()
-					},
-					UuidOption = new() { Structured = new() },
-					ReadDirection = ReadReq.Types.Options.Types.ReadDirection.Forwards,
-					NoFilter = new(),
-					ControlOption = new() {
-						Compatibility = 21
-					}
-				}
-			});
-			var readResponses = await call.ResponseStream.ReadAllAsync().ToArrayAsync();
-			_readResponse = readResponses.Single(x => x.Event is not null);
-		}
-
-		[Test]
-		public void append_is_successful() {
-			Assert.AreEqual(_appendResponse.ResultCase, BatchAppendResp.ResultOneofCase.Success);
-		}
-
-		[Test]
-		public void read_contains_the_correct_metadata() {
-			var readMetadata = _readResponse.Event.Event.Metadata;
-			Assert.AreEqual(_proposedMessage.Metadata[MetadataConstants.ContentType], readMetadata[MetadataConstants.ContentType]);
-			foreach (var (key, _) in Properties) {
-				Assert.AreEqual(_proposedMessage.Metadata[key], readMetadata[key]);
-			}
-		}
+		using var call = StreamsClient.Read(request);
+		var readResponses = await call.ResponseStream.ReadAllAsync().ToArrayAsync();
+		// discard the proto messages that are not events
+		return readResponses.Single(x => x.Event is not null);
 	}
 
-	[TestFixture]
-	public class when_receiving_an_event_with_properties_over_persistent_subscription : GrpcSpecification<LogFormat.V2, string> {
-		private readonly string _groupName = "test-group";
-		private AppendReq.Types.ProposedMessage _proposedMessage;
-		private AppendResp _appendResponse;
-		private EventStore.Client.PersistentSubscriptions.ReadResp _readResponse;
+	protected override Task Given() => Task.CompletedTask;
 
-		protected override async Task Given() {
-			_proposedMessage = CreateAppendReqEvent(Properties);
+	protected override Task When() => Task.CompletedTask;
 
-			using var call = StreamsClient.Append(GetCallOptions(AdminCredentials));
-			await call.RequestStream.WriteAsync(new() {
-				Options = new() {
-					StreamIdentifier = StreamIdentifier,
-					Any = new()
-				}
-			});
+	[TestCase(MetadataConstants.ContentTypes.ApplicationJson)]
+	[TestCase(MetadataConstants.ContentTypes.ApplicationOctetStream)]
+	public async Task write_with_v1_then_read_with_v1(string contentType) {
+		var stream = $"write_with_v1_read_with_v1_{contentType}-{Guid.NewGuid()}";
 
-			await call.RequestStream.WriteAsync(new() { ProposedMessage = _proposedMessage });
-			await call.RequestStream.CompleteAsync();
-			_appendResponse = await call.ResponseAsync;
-		}
-
-		protected override async Task When() {
-			await PersistentSubscriptionsClient.CreateAsync(new CreateReq {
-				Options = new() {
-					GroupName = _groupName,
-					Stream = new() {
-						StreamIdentifier = StreamIdentifier,
-						Start = new()
-					},
-					Settings = new() {
-						ConsumerStrategy = SystemConsumerStrategies.RoundRobin,
-						MaxRetryCount = 1,
-						HistoryBufferSize = 10,
-						LiveBufferSize = 10,
-						ReadBatchSize = 5
-					}
-				}
-			}, GetCallOptions(AdminCredentials));
-
-			using var call = PersistentSubscriptionsClient.Read(GetCallOptions(AdminCredentials));
-			await call.RequestStream.WriteAsync(new() {
-				Options = new() {
-					GroupName = _groupName,
-					StreamIdentifier = StreamIdentifier,
-					BufferSize = 10,
-					UuidOption = new() {
-						String = new()
-					}
-				}
-			});
-			await call.ResponseStream.MoveNext();
-			Assert.True(call.ResponseStream.Current.ContentCase == EventStore.Client.PersistentSubscriptions.ReadResp.ContentOneofCase.SubscriptionConfirmation);
-
-			await call.ResponseStream.MoveNext();
-			_readResponse = call.ResponseStream.Current;
-		}
-
-		[Test]
-		public void append_is_successful() {
-			Assert.AreEqual(_appendResponse.ResultCase, AppendResp.ResultOneofCase.Success);
-		}
-
-		[Test]
-		public void read_contains_the_correct_metadata() {
-			var readMetadata = _readResponse.Event.Event.Metadata;
-			Assert.AreEqual(_proposedMessage.Metadata[MetadataConstants.ContentType], readMetadata[MetadataConstants.ContentType]);
-			foreach (var (key, _) in Properties) {
-				Assert.AreEqual(_proposedMessage.Metadata[key], readMetadata[key]);
+		var logRecordMetadataJson = """
+			{
+			  "my-number": 42,
+			  "my-string": "hello world"
 			}
-		}
+			""";
+
+		await AppendV1(
+			stream: stream,
+			contentType: contentType,
+			metadataJson: logRecordMetadataJson);
+
+		var evt = (await ReadSingleEventV1(stream)).Event.Event;
+
+		// content-type is preserved
+		var protocolMetadata = evt.Metadata;
+		Assert.AreEqual(3, protocolMetadata.Count);
+		Assert.True(protocolMetadata.TryGetValue(MetadataConstants.Created, out _));
+		Assert.AreEqual("test-type", protocolMetadata[MetadataConstants.Type]);
+		Assert.AreEqual(contentType, protocolMetadata[MetadataConstants.ContentType]);
+
+		// log record metadata comes out the same as it went in
+		Assert.AreEqual(logRecordMetadataJson, evt.CustomMetadata.ToStringUtf8());
+	}
+
+	[TestCase(MetadataConstants.ContentTypes.ApplicationJson)]
+	[TestCase(MetadataConstants.ContentTypes.ApplicationOctetStream)]
+	public async Task write_minimal_metadata_with_v1_then_read_with_v1(string contentType) {
+		var stream = $"write_minimal_metadata_with_v1_then_read_with_v1{contentType}-{Guid.NewGuid()}";
+
+		var logRecordMetadataJson = "";
+
+		await AppendV1(
+			stream: stream,
+			contentType: contentType,
+			metadataJson: logRecordMetadataJson);
+
+		var evt = (await ReadSingleEventV1(stream)).Event.Event;
+
+		// content-type is preserved
+		var protocolMetadata = evt.Metadata;
+		Assert.AreEqual(3, protocolMetadata.Count);
+		Assert.True(protocolMetadata.TryGetValue(MetadataConstants.Created, out _));
+		Assert.AreEqual("test-type", protocolMetadata[MetadataConstants.Type]);
+		Assert.AreEqual(contentType, protocolMetadata[MetadataConstants.ContentType]);
+
+		// log record metadata comes out the same as it went in
+		Assert.AreEqual(logRecordMetadataJson, evt.CustomMetadata.ToStringUtf8());
+	}
+
+	[TestCase(PropertiesConstants.DataFormats.Json, MetadataConstants.ContentTypes.ApplicationJson)]
+	[TestCase(PropertiesConstants.DataFormats.Avro, MetadataConstants.ContentTypes.ApplicationOctetStream)]
+	[TestCase(PropertiesConstants.DataFormats.Bytes, MetadataConstants.ContentTypes.ApplicationOctetStream)]
+	[TestCase(PropertiesConstants.DataFormats.Protobuf, MetadataConstants.ContentTypes.ApplicationOctetStream)]
+	public async Task write_with_v2_then_read_with_v1(string dataFormat, string expectedContentType) {
+		var stream = $"write_with_v2_read_with_v1_{dataFormat}-{Guid.NewGuid()}";
+
+		var now = new DateTime(2025, 07, 14, 05, 05, 05, DateTimeKind.Utc);
+		await AppendV2(stream, dataFormat, new() {
+			{ "my-null", new() { NullValue = NullValue.NullValue } },
+			{ "my-int32", new() { Int32Value = 32 } },
+			{ "my-int64", new() { Int64Value = 64 } },
+			{ "my-bytes", new() { BytesValue = ByteString.CopyFromUtf8("utf8-bytes") } },
+			{ "my-double", new() { DoubleValue = 123.4 } },
+			{ "my-float", new() { FloatValue = 567.8f } },
+			{ "my-string", new() { StringValue = "hello-world" } },
+			{ "my-boolean", new() { BooleanValue = true } },
+			{ "my-timestamp", new() { TimestampValue = Timestamp.FromDateTime(now) } },
+			{ "my-duration", new() { DurationValue = Duration.FromTimeSpan(TimeSpan.FromSeconds(121)) } },
+		});
+
+		var evt = (await ReadSingleEventV1(stream)).Event.Event;
+
+		// dataFormat is translated to correct content-type
+		var protocolMetadata = evt.Metadata;
+		Assert.AreEqual(3, protocolMetadata.Count);
+		Assert.True(protocolMetadata.TryGetValue(MetadataConstants.Created, out _));
+		Assert.AreEqual("test-type", protocolMetadata[MetadataConstants.Type]);
+		Assert.AreEqual(expectedContentType, protocolMetadata[MetadataConstants.ContentType]);
+
+		// log record metadata contains the properties
+		var expectedMetadata = $$"""
+			{
+			  "my-null":             null,
+			  "my-int32":            32,
+			  "my-int64":            64,
+			  "my-bytes":            "{{Convert.ToBase64String(Encoding.UTF8.GetBytes("utf8-bytes"))}}",
+			  "my-double":           123.4,
+			  "my-float":            567.8,
+			  "my-string":           "hello-world",
+			  "my-boolean":          true,
+			  "my-timestamp":        "2025-07-14T05:05:05Z",
+			  "my-duration":         "00:02:01",
+			  "$schema.data-format": "{{dataFormat}}",
+			  "$schema.name":        "test-type"
+			}
+			""".Replace(" ", "").Replace(Environment.NewLine, "");
+
+		var actual = evt.CustomMetadata.ToStringUtf8();
+		Assert.AreEqual(expectedMetadata, actual);
+	}
+
+	[TestCase(PropertiesConstants.DataFormats.Json, MetadataConstants.ContentTypes.ApplicationJson)]
+	[TestCase(PropertiesConstants.DataFormats.Avro, MetadataConstants.ContentTypes.ApplicationOctetStream)]
+	[TestCase(PropertiesConstants.DataFormats.Bytes, MetadataConstants.ContentTypes.ApplicationOctetStream)]
+	[TestCase(PropertiesConstants.DataFormats.Protobuf, MetadataConstants.ContentTypes.ApplicationOctetStream)]
+	public async Task write_minimal_properties_with_v2_then_read_with_v1(string dataFormat, string expectedContentType) {
+		var stream = $"write_minimal_properties_with_v2_then_read_with_v1{dataFormat}-{Guid.NewGuid()}";
+
+		await AppendV2(stream, dataFormat, []);
+
+		var evt = (await ReadSingleEventV1(stream)).Event.Event;
+
+		// dataFormat is translated to correct content-type
+		var protocolMetadata = evt.Metadata;
+		Assert.AreEqual(3, protocolMetadata.Count);
+		Assert.True(protocolMetadata.TryGetValue(MetadataConstants.Created, out _));
+		Assert.AreEqual("test-type", protocolMetadata[MetadataConstants.Type]);
+		Assert.AreEqual(expectedContentType, protocolMetadata[MetadataConstants.ContentType]);
+
+		// log record metadata contains the properties
+		var expectedMetadata = $$"""
+			{
+			  "$schema.data-format": "{{dataFormat}}",
+			  "$schema.name":        "test-type"
+			}
+			""".Replace(" ", "").Replace(Environment.NewLine, "");
+
+		var actual = evt.CustomMetadata.ToStringUtf8();
+		Assert.AreEqual(expectedMetadata, actual);
 	}
 }

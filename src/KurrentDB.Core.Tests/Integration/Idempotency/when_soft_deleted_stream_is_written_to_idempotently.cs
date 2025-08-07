@@ -19,7 +19,7 @@ public class when_soft_deleted_stream_is_written_to_idempotently<TLogFormat, TSt
 
 	public when_soft_deleted_stream_is_written_to_idempotently() {
 		_streamId = $"{nameof(when_soft_deleted_stream_is_written_to_idempotently<TLogFormat, TStreamId>)}-{Guid.NewGuid()}";
-		_events = new[] { new Event(Guid.NewGuid(), "event-type", false, new byte[] { }, [], []) };
+		_events = new[] { new Event(Guid.NewGuid(), "event-type", false, new byte[] { }) };
 	}
 
 	protected override async Task Given() {

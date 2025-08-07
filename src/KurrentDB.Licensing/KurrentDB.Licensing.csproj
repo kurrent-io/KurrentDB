@@ -1,8 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<IsPlugin>true</IsPlugin>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -10,9 +11,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="EventStore.Plugins" Version="25.2.5" />
-		<PackageReference Include="RestSharp" Version="112.1.0" />
-		<PackageReference Include="Serilog" Version="4.0.1" />
+		<PackageReference Include="RestSharp" />
+		<PackageReference Include="Serilog" />
 	</ItemGroup>
 
 </Project>

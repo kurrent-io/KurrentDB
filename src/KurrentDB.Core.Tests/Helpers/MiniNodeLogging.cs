@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text;
 using NUnit.Framework;
 using Serilog;
-using Serilog.Core;
 using Serilog.Formatting.Display;
 using Serilog.Sinks.InMemory;
 
@@ -14,20 +13,22 @@ namespace KurrentDB.Core.Tests.Helpers;
 
 
 public static class MiniNodeLogging {
+	// don't use InMemorySink.Instance, it is async local.
+	private static readonly InMemorySink InMemorySink = new();
 
-	private static readonly ILogger _logger = new LoggerConfiguration()
+	private static readonly ILogger Logger = new LoggerConfiguration()
 		.Enrich.WithProcessId()
 		.Enrich.WithThreadId()
 		.Enrich.FromLogContext()
 		.MinimumLevel.Debug()
-		.WriteTo.InMemory()
+		.WriteTo.Sink(InMemorySink)
 		.CreateLogger();
 
 	private const string Template =
 		"MiniNode: [{ProcessId,5},{ThreadId,2},{Timestamp:HH:mm:ss.fff},{Level:u3}] {Message}{NewLine}{Exception}";
 
 	public static void Setup() {
-		Log.Logger = _logger;
+		Log.Logger = Logger;
 	}
 
 	public static void WriteLogs() {
@@ -36,7 +37,9 @@ public static class MiniNodeLogging {
 		var sb = new StringBuilder(256);
 		var f = new MessageTemplateTextFormatter(Template);
 		using var tw = new StringWriter(sb);
-		using var snapshot = InMemorySink.Instance.Snapshot();
+		using var snapshot = InMemorySink.Snapshot();
+		InMemorySink.Dispose(); // clear the accumulated logs
+
 
 		foreach (var e in snapshot.LogEvents.ToList()) {
 			sb.Clear();
@@ -48,7 +51,7 @@ public static class MiniNodeLogging {
 	}
 
 	public static void Clear() {
-		Log.Logger = Logger.None;
-		InMemorySink.Instance.Dispose();
+		Log.Logger = Serilog.Core.Logger.None;
+		InMemorySink.Dispose();
 	}
 }

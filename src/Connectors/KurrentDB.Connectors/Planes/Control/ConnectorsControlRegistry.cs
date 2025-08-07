@@ -4,10 +4,6 @@
 #pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
 
 using System.Collections;
-using KurrentDB.Connect.Producers;
-using KurrentDB.Connect.Producers.Configuration;
-using KurrentDB.Connect.Readers;
-using KurrentDB.Connect.Readers.Configuration;
 using KurrentDB.Connectors.Control.Contracts;
 using KurrentDB.Connectors.Management.Contracts.Events;
 using Google.Protobuf.WellKnownTypes;
@@ -16,7 +12,10 @@ using Kurrent.Surge.Connectors;
 using Kurrent.Surge.Consumers;
 using Kurrent.Surge.Producers;
 using Kurrent.Surge.Readers;
+
 using KurrentDB.Connectors.Planes.Control.Model;
+using KurrentDB.Surge.Producers;
+using KurrentDB.Surge.Readers;
 using KurrentDB.Connectors.Planes.Management;
 using ConnectorSettings = System.Collections.Generic.IDictionary<string, string?>;
 

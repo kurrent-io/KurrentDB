@@ -105,17 +105,17 @@ namespace KurrentDB.Projections.Core.Tests.Services.event_reader.event_by_type_i
 				// simulate index-by-type system projection
 				yield return
 					ClientMessage.WriteEvents.ForSingleEvent(Guid.NewGuid(), Guid.NewGuid(), new NoopEnvelope(), false, "$et-type1", ExpectedVersion.Any,
-						new Event(Guid.NewGuid(), "$>", false, "0@test-stream", TFPosToMetadata(_tfPos1), []), user: null);
+						new Event(Guid.NewGuid(), "$>", false, "0@test-stream", TFPosToMetadata(_tfPos1)), user: null);
 
 				// simulate index-by-type system projection (the second event write is delayed - awaiting for ACK from the previous write)
 				yield return
 					ClientMessage.WriteEvents.ForSingleEvent(Guid.NewGuid(), Guid.NewGuid(), new NoopEnvelope(), false, "$et-type2", ExpectedVersion.Any,
-						new Event(Guid.NewGuid(), "$>", false, "2@test-stream", TFPosToMetadata(_tfPos3), []), user: null);
+						new Event(Guid.NewGuid(), "$>", false, "2@test-stream", TFPosToMetadata(_tfPos3)), user: null);
 
 				// simulate index-by-type system projection (ACK received - writing the next event)
 				yield return
 					ClientMessage.WriteEvents.ForSingleEvent(Guid.NewGuid(), Guid.NewGuid(), new NoopEnvelope(), false, "$et-type1", ExpectedVersion.Any,
-						new Event(Guid.NewGuid(), "$>", false, "1@test-stream", TFPosToMetadata(_tfPos2), []), user: null);
+						new Event(Guid.NewGuid(), "$>", false, "1@test-stream", TFPosToMetadata(_tfPos2)), user: null);
 			}
 		}
 
@@ -142,7 +142,7 @@ namespace KurrentDB.Projections.Core.Tests.Services.event_reader.event_by_type_i
 				// simulate index-by-type system projection (ACK received - writing the next event)
 				yield return
 					ClientMessage.WriteEvents.ForSingleEvent(Guid.NewGuid(), Guid.NewGuid(), new NoopEnvelope(), false, "$et-type1", ExpectedVersion.Any,
-						new Event(Guid.NewGuid(), "$>", false, "1@test-stream", TFPosToMetadata(_tfPos2), []), user: null);
+						new Event(Guid.NewGuid(), "$>", false, "1@test-stream", TFPosToMetadata(_tfPos2)), user: null);
 			}
 		}
 	}

@@ -78,8 +78,8 @@ public class StorageReaderWorker<TStreamId> :
 		if (msg.Expires < DateTime.UtcNow) {
 			if (LogExpiredMessage(msg.Expires))
 				Log.Debug(
-					"Read Event operation has expired for Stream: {stream}, Event Number: {eventNumber}. Operation Expired at {expiryDateTime}",
-					msg.EventStreamId, msg.EventNumber, msg.Expires);
+					"Read Event operation has expired for Stream: {stream}, Event Number: {eventNumber}. Operation Expired at {expiryDateTime} after {lifetime:N0} ms.",
+					msg.EventStreamId, msg.EventNumber, msg.Expires, msg.Lifetime.TotalMilliseconds);
 			return;
 		}
 
@@ -108,8 +108,8 @@ public class StorageReaderWorker<TStreamId> :
 
 			if (LogExpiredMessage(msg.Expires))
 				Log.Debug(
-					"Read Stream Events Forward operation has expired for Stream: {stream}, From Event Number: {fromEventNumber}, Max Count: {maxCount}. Operation Expired at {expiryDateTime}",
-					msg.EventStreamId, msg.FromEventNumber, msg.MaxCount, msg.Expires);
+					"Read Stream Events Forward operation has expired for Stream: {stream}, From Event Number: {fromEventNumber}, Max Count: {maxCount}. Operation Expired at {expiryDateTime} after {lifetime:N0} ms.",
+					msg.EventStreamId, msg.FromEventNumber, msg.MaxCount, msg.Expires, msg.Lifetime.TotalMilliseconds);
 			return;
 		}
 
@@ -156,8 +156,8 @@ public class StorageReaderWorker<TStreamId> :
 		if (msg.Expires < DateTime.UtcNow) {
 			if (LogExpiredMessage(msg.Expires))
 				Log.Debug(
-					"Read Stream Events Backward operation has expired for Stream: {stream}, From Event Number: {fromEventNumber}, Max Count: {maxCount}. Operation Expired at {expiryDateTime}",
-					msg.EventStreamId, msg.FromEventNumber, msg.MaxCount, msg.Expires);
+					"Read Stream Events Backward operation has expired for Stream: {stream}, From Event Number: {fromEventNumber}, Max Count: {maxCount}. Operation Expired at {expiryDateTime} after {lifetime:N0} ms.",
+					msg.EventStreamId, msg.FromEventNumber, msg.MaxCount, msg.Expires, msg.Lifetime.TotalMilliseconds);
 			return;
 		}
 
@@ -190,8 +190,8 @@ public class StorageReaderWorker<TStreamId> :
 
 			if (LogExpiredMessage(msg.Expires))
 				Log.Debug(
-					"Read All Stream Events Forward operation has expired for C:{commitPosition}/P:{preparePosition}. Operation Expired at {expiryDateTime}",
-					msg.CommitPosition, msg.PreparePosition, msg.Expires);
+					"Read All Stream Events Forward operation has expired for C:{commitPosition}/P:{preparePosition}. Operation Expired at {expiryDateTime} after {lifetime:N0} ms.",
+					msg.CommitPosition, msg.PreparePosition, msg.Expires, msg.Lifetime.TotalMilliseconds);
 			return;
 		}
 
@@ -233,8 +233,8 @@ public class StorageReaderWorker<TStreamId> :
 		if (msg.Expires < DateTime.UtcNow) {
 			if (LogExpiredMessage(msg.Expires))
 				Log.Debug(
-					"Read All Stream Events Backward operation has expired for C:{commitPosition}/P:{preparePosition}. Operation Expired at {expiryDateTime}",
-					msg.CommitPosition, msg.PreparePosition, msg.Expires);
+					"Read All Stream Events Backward operation has expired for C:{commitPosition}/P:{preparePosition}. Operation Expired at {expiryDateTime} after {lifetime:N0} ms.",
+					msg.CommitPosition, msg.PreparePosition, msg.Expires, msg.Lifetime.TotalMilliseconds);
 			return;
 		}
 
@@ -255,8 +255,8 @@ public class StorageReaderWorker<TStreamId> :
 			}
 
 			Log.Debug(
-				"Read All Stream Events Forward Filtered operation has expired for C:{0}/P:{1}. Operation Expired at {2}",
-				msg.CommitPosition, msg.PreparePosition, msg.Expires);
+				"Read All Stream Events Forward Filtered operation has expired for C:{0}/P:{1}. Operation Expired at {2} after {lifetime:N0} ms.",
+				msg.CommitPosition, msg.PreparePosition, msg.Expires, msg.Lifetime.TotalMilliseconds);
 			return;
 		}
 
@@ -296,8 +296,8 @@ public class StorageReaderWorker<TStreamId> :
 
 		if (msg.Expires < DateTime.UtcNow) {
 			Log.Debug(
-				"Read All Stream Events Backward Filtered operation has expired for C:{0}/P:{1}. Operation Expired at {2}",
-				msg.CommitPosition, msg.PreparePosition, msg.Expires);
+				"Read All Stream Events Backward Filtered operation has expired for C:{0}/P:{1}. Operation Expired at {2} after {lifetime:N0} ms.",
+				msg.CommitPosition, msg.PreparePosition, msg.Expires, msg.Lifetime.TotalMilliseconds);
 			return;
 		}
 

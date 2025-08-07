@@ -5,7 +5,6 @@ using System;
 using System.Text;
 using DotNext.Buffers;
 using KurrentDB.Core.TransactionLog.LogRecords;
-using KurrentDB.LogCommon;
 using Xunit;
 
 namespace KurrentDB.Core.XUnit.Tests.TransactionLog.LogRecords;
@@ -22,8 +21,9 @@ public class PrepareLogRecordViewTests {
 	private const string EventType = "test_event_type";
 	private readonly byte[] _data = { 0xDE, 0XAD, 0xC0, 0XDE };
 	private readonly byte[] _metadata = { 0XC0, 0xDE };
+	private const byte Version = 1;
 
-	private PrepareLogRecord CreatePrepareLogRecord(byte version, byte[] properties) {
+	private PrepareLogRecord CreatePrepareLogRecord() {
 		return new PrepareLogRecord(
 			LogPosition,
 			_correlationId,
@@ -39,15 +39,12 @@ public class PrepareLogRecordViewTests {
 			null,
 			_data,
 			_metadata,
-			properties,
-			version);
+			Version);
 	}
 
-	[Theory]
-	[InlineData(PrepareLogRecordVersion.V1, new byte[] { })]
-	[InlineData(PrepareLogRecordVersion.V2, new byte[] { 0xDE, 0XAD })]
-	public void should_have_correct_properties(byte expectedVersion, byte[] properties) {
-		var prepareLogRecord = CreatePrepareLogRecord(expectedVersion, properties);
+	[Fact]
+	public void should_have_correct_properties() {
+		var prepareLogRecord = CreatePrepareLogRecord();
 		var writer = new BufferWriterSlim<byte>();
 		prepareLogRecord.WriteTo(ref writer);
 
@@ -67,7 +64,6 @@ public class PrepareLogRecordViewTests {
 		Assert.Equal(PrepareFlags.SingleWrite, prepare.Flags);
 		Assert.True(prepare.Data.SequenceEqual(_data));
 		Assert.True(prepare.Metadata.SequenceEqual(_metadata));
-		Assert.True(prepare.Properties.SequenceEqual(properties));
-		Assert.Equal(expectedVersion, prepare.Version);
+		Assert.Equal(Version, prepare.Version);
 	}
 }

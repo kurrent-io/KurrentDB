@@ -8,37 +8,48 @@ WORKDIR /build
 COPY ./LICENSE.md .
 COPY ./LICENSE_CONTRIBUTIONS.md .
 COPY ./NOTICE.html .
-COPY ./docker ./scripts
 
 WORKDIR /build/ci
 COPY ./ci ./
 
 WORKDIR /build/src
 COPY ./src/Connectors/*/*.csproj ./Connectors/
-RUN for file in $(ls Connectors/*.csproj); do mkdir -p ./${file%.*}/ && mv $file ./${file%.*}/; done
-COPY ./src/KurrentDB.sln ./src/*/*.csproj ./src/Directory.Build.* ./
-RUN for file in $(ls *.csproj); do mkdir -p ./${file%.*}/ && mv $file ./${file%.*}/; done
-RUN dotnet restore --runtime=${RUNTIME}
+COPY ./src/SchemaRegistry/*/*.csproj ./SchemaRegistry/
+COPY ./src/KurrentDB.sln ./src/*/*.csproj ./src/Directory.Build.* ./src/Directory.Packages.props ./
+RUN for file in $(ls Connectors/*.csproj); do mkdir -p ./${file%.*}/ && mv $file ./${file%.*}/; done && \
+    for file in $(ls SchemaRegistry/*.csproj); do mkdir -p ./${file%.*}/ && mv $file ./${file%.*}/; done && \
+    for file in $(ls *.csproj); do mkdir -p ./${file%.*}/ && mv $file ./${file%.*}/; done && \
+    dotnet restore --runtime=${RUNTIME}
 COPY ./src .
 
 WORKDIR /build/.git
 COPY ./.git/ .
 
-RUN /build/scripts/build.sh /build/src /build/published-tests
-
 # "test" image
-FROM mcr.microsoft.com/dotnet/sdk:8.0-${CONTAINER_RUNTIME} as test
+FROM mcr.microsoft.com/dotnet/sdk:8.0-${CONTAINER_RUNTIME} AS test
 WORKDIR /build
-COPY --from=build ./build/published-tests ./published-tests
+COPY --from=build ./build/src ./src
 COPY --from=build ./build/ci ./ci
-COPY --from=build ./build/scripts ./scripts
+COPY --from=build ./build/LICENSE.md ./LICENSE.md
+COPY --from=build ./build/NOTICE.html ./NOTICE.html
+COPY --from=build ./build/LICENSE_CONTRIBUTIONS.md ./LICENSE_CONTRIBUTIONS.md
 COPY --from=build ./build/src/KurrentDB.Core.Tests/Services/Transport/Tcp/test_certificates/ca/ca.crt /usr/local/share/ca-certificates/ca_kurrentdb_test.crt
 RUN mkdir ./test-results
 
-CMD ["/build/scripts/test.sh"]
+SHELL ["/bin/bash", "-c"]
+CMD dotnet test \
+    --settings "/build/ci/ci.container.runsettings" \
+    --blame \
+    --blame-hang-timeout 5min \
+    --logger:trx \
+    --logger:"GitHubActions;report-warnings=false" \
+    --logger:"console;verbosity=normal" \
+    --results-directory "/build/test-results" \
+    /build/src/KurrentDB.sln \
+    -- --report-trx --results-directory "/build/test-results"
 
 # "publish" image
-FROM build as publish
+FROM build AS publish
 ARG RUNTIME=linux-x64
 
 RUN dotnet publish --configuration=Release --runtime=${RUNTIME} --self-contained \

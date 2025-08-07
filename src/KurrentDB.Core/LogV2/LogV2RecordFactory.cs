@@ -54,8 +54,7 @@ public class LogV2RecordFactory : IRecordFactory<string> {
 		PrepareFlags flags,
 		string eventType,
 		ReadOnlyMemory<byte> data,
-		ReadOnlyMemory<byte> metadata,
-		ReadOnlyMemory<byte> properties) {
+		ReadOnlyMemory<byte> metadata) {
 
 		var result = new PrepareLogRecord(
 			logPosition: logPosition,
@@ -71,8 +70,7 @@ public class LogV2RecordFactory : IRecordFactory<string> {
 			eventType: eventType,
 			eventTypeSize: null,
 			data: data,
-			metadata: metadata,
-			properties: properties);
+			metadata: metadata);
 		return result;
 	}
 }

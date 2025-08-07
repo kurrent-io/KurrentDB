@@ -11,7 +11,7 @@ namespace KurrentDB.Projections.Core.XUnit.Tests.ProjectionManagement;
 public class ProjectionStateHandlerFactoryTests {
 	private ProjectionStateHandlerFactory _sut;
 	public ProjectionStateHandlerFactoryTests() {
-		_sut = new ProjectionStateHandlerFactory(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1), ProjectionExecutionTrackers.NoOp);
+		_sut = new ProjectionStateHandlerFactory(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1), ProjectionTrackers.NoOp);
 	}
 
 	private static (Type HandlerType, string Source)[] StandardProjections => [

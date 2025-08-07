@@ -49,7 +49,7 @@ public class
 						eventNumber, 50 * (eventNumber + 1), Guid.NewGuid(), Guid.NewGuid(), 50 * (eventNumber + 1),
 						0, _streamName, ExpectedVersion.Any, DateTime.UtcNow,
 						PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-						eventType, new byte[] { 0 }, new byte[] { 0 }, new byte[] { 0 }
+						eventType, new byte[] { 0 }, new byte[] { 0 }
 					)
 				)
 			);

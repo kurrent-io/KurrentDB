@@ -6,8 +6,9 @@ using KurrentDB.Connectors.Management.Contracts.Commands;
 using KurrentDB.Connectors.Management.Contracts.Events;
 using Eventuous;
 using Google.Protobuf.WellKnownTypes;
-using Kurrent.Surge.Connectors.Sinks;
 using Kurrent.Surge;
+using Kurrent.Surge.Connectors.Sinks;
+
 using KurrentDB.Connectors.Infrastructure.Eventuous;
 using KurrentDB.Connectors.Planes.Management.Domain;
 using Microsoft.Extensions.Configuration;

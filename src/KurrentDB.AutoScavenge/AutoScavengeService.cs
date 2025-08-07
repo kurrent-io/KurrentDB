@@ -175,6 +175,7 @@ internal class AutoScavengeService : IDisposable {
 			@event.Type,
 			"application/json",
 			JsonSerializer.SerializeToUtf8Bytes(@event, JsonSerializerOptions),
+			isPropertyMetadata: false,
 			Array.Empty<byte>());
 	}
 }

@@ -48,8 +48,11 @@ public static class RpcExceptions {
 	public static RpcException UnknownError<T>(T result) where T : unmanaged =>
 		UnknownError(typeof(T), result);
 
-	public static RpcException UnknownError(Type resultType, object result) =>
-		new(new Status(StatusCode.Unknown, $"Unexpected {resultType.Name}: {result}"));
+	public static RpcException UnknownError(Type resultType, object result, string errorMessage = null) =>
+		new(new Status(StatusCode.Unknown,
+			string.IsNullOrEmpty(errorMessage)
+				? $"Unexpected {resultType.Name}: {result}"
+				: $"Unexpected {resultType.Name}: {result} >> {errorMessage}"));
 
 	public static RpcException UnknownError(string message) =>
 		new(new Status(StatusCode.Unknown, message));
@@ -242,6 +245,9 @@ public static class RpcExceptions {
 			{ Constants.Exceptions.ExceptionKey, Constants.Exceptions.UserConflict },
 			{ Constants.Exceptions.LoginName, loginName }
 		});
+
+	public static RpcException InvalidArgument(string errorMessage) =>
+		new(new Status(StatusCode.InvalidArgument, errorMessage));
 
 	public static RpcException InvalidArgument<T>(T argument) =>
 		new(new Status(StatusCode.InvalidArgument, $"'{argument}' is not a valid {typeof(T)}"));

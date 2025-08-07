@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
@@ -13,6 +13,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="NCrontab" Version="3.3.3" />
+	  <PackageReference Include="NCrontab" />
 	</ItemGroup>
 </Project>

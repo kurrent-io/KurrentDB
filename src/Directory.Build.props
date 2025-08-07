@@ -26,12 +26,16 @@
 		<None Include="$(MSBuildThisFileDirectory)..\ouro.png" Pack="true" PackagePath="\" />
 	</ItemGroup>
 
+	<ItemGroup Condition="'$(IsPlugin)' == 'true'">
+		<ProjectReference Include="$(MSBuildThisFileDirectory)\KurrentDB.Plugins\KurrentDB.Plugins.csproj" />
+	</ItemGroup>
+
 	<ItemGroup Condition="'$(IsPluginsTestProject)' == 'true'">
 		<ProjectReference Include="..\KurrentDB.Plugins.TestHelpers\KurrentDB.Plugins.TestHelpers.csproj" />
 	</ItemGroup>
 
 	<ItemGroup Label="Default Packages">
-		<PackageReference Include="JetBrains.Annotations" Version="2024.3.0" PrivateAssets="All" />
+		<PackageReference Include="JetBrains.Annotations" PrivateAssets="All" />
 		<Using Include="JetBrains.Annotations" />
 	</ItemGroup>
 </Project>

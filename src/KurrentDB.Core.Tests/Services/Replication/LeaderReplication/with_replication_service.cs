@@ -15,6 +15,7 @@ using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Replication;
 using KurrentDB.Core.Services.Transport.Tcp;
+using KurrentDB.Core.Settings;
 using KurrentDB.Core.Tests.Authentication;
 using KurrentDB.Core.Tests.Authorization;
 using KurrentDB.Core.Tests.Helpers;
@@ -96,7 +97,7 @@ public abstract class with_replication_service : SpecificationWithDirectoryPerTe
 		var tcpConn = new DummyTcpConnection() { ConnectionId = replicaId };
 
 		var manager = new TcpConnectionManager(
-			"Test Subscription Connection manager", TcpServiceType.External, new ClientTcpDispatcher(2000),
+			"Test Subscription Connection manager", TcpServiceType.External, new ClientTcpDispatcher(ESConsts.ReadRequestTimeout, 2000),
 			new SynchronousScheduler(), tcpConn, new SynchronousScheduler(),
 			new InternalAuthenticationProvider(InMemoryBus.CreateTest(),
 				new IODispatcher(new SynchronousScheduler(), new NoopEnvelope()),

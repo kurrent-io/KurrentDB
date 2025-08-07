@@ -19,7 +19,7 @@ public class MetadataSerializationTests : ProjectionRuntimeScenario {
 
 		await WriteEvents("source-stream", ExpectedVersion.NoStream,
 			new Event(Guid.NewGuid(), "foo", true,
-				JsonSerializer.SerializeToUtf8Bytes(new object()), [], []));
+				JsonSerializer.SerializeToUtf8Bytes(new object())));
 
 		var js = @"
 fromStream('source-stream').
@@ -53,7 +53,7 @@ fromStream('source-stream').
 
 		await WriteEvents("source-stream", ExpectedVersion.NoStream,
 			new Event(Guid.NewGuid(), "foo", true,
-				JsonSerializer.SerializeToUtf8Bytes(new object()), [], []));
+				JsonSerializer.SerializeToUtf8Bytes(new object())));
 
 		var js = @"
 fromStream('source-stream').

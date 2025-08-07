@@ -142,8 +142,7 @@ public class SingleEventInMemoryStream : IVirtualStreamReader {
 			eventType: eventType,
 			eventTypeSize: null,
 			data: data,
-			metadata: Array.Empty<byte>(),
-			properties: Array.Empty<byte>());
+			metadata: Array.Empty<byte>());
 		_lastEvent = new EventRecord(_eventNumber, prepare, _streamName, eventType);
 		_publisher.Publish(new StorageMessage.InMemoryEventCommitted(commitPosition, _lastEvent));
 		_eventNumber++;

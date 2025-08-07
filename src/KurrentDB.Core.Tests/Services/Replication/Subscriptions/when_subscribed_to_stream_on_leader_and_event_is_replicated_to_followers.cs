@@ -69,7 +69,7 @@ public class when_subscribed_to_stream_on_leader_and_event_is_replicated_to_foll
 			Assert.Fail($"Timed out waiting for subscriptions to confirm, confirmed {_subscriptionsConfirmed.CurrentCount} need {_subscriptionsConfirmed.InitialCount}.");
 		}
 
-		var events = new Event[] { new Event(Guid.NewGuid(), "test-type", false, new byte[10], [], []) };
+		var events = new Event[] { new Event(Guid.NewGuid(), "test-type", false, new byte[10]) };
 		var writeResult = ReplicationTestHelper.WriteEvent(leader, events, _streamId);
 		Assert.AreEqual(OperationResult.Success, writeResult.Result);
 

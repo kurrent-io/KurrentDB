@@ -18,7 +18,6 @@ public interface IPrepareLogRecord : ILogRecord {
 	DateTime TimeStamp { get; }
 	ReadOnlyMemory<byte> Data { get; }
 	ReadOnlyMemory<byte> Metadata { get; }
-	ReadOnlyMemory<byte> Properties { get; }
 }
 
 public interface IPrepareLogRecord<TStreamId> : IPrepareLogRecord {

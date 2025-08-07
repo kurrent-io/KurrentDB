@@ -482,7 +482,7 @@ public class FakeReader : ITransactionFileReader {
 	public ValueTask<RecordReadResult> TryReadAt(long position, bool couldBeScavenged, CancellationToken token) {
 		var record = (LogRecord)new PrepareLogRecord(position, Guid.NewGuid(), Guid.NewGuid(), 0, 0,
 			position % 2 == 0 ? "account--696193173" : "LPN-FC002_LPK51001", null, -1, DateTime.UtcNow, PrepareFlags.None,
-			"type", null, new byte[0], null, null);
+			"type", null, new byte[0], null);
 		return new(new RecordReadResult(true, position + 1, record, 1));
 	}
 
