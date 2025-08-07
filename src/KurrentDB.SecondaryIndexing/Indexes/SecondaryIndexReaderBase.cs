@@ -2,20 +2,15 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Core.Data;
-using KurrentDB.Core.Services.Storage.InMemory;
+using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Readers;
 using KurrentDB.SecondaryIndexing.Storage;
 using static KurrentDB.Core.Messages.ClientMessage;
-using static KurrentDB.Core.Services.Storage.StorageReaderWorker<string>;
 
 namespace KurrentDB.SecondaryIndexing.Indexes;
 
-public interface ISecondaryIndexReader {
-	ValueTask<ReadIndexEventsForwardCompleted> ReadForwards(ReadIndexEventsForward msg, CancellationToken token);
-}
-
-abstract class SecondaryIndexReaderBase(IReadIndex<string> index) : ISecondaryIndexReader {
+public abstract class SecondaryIndexReaderBase(IReadIndex<string> index) : ISecondaryIndexReader {
 	protected abstract int GetId(string streamName);
 
 	protected abstract IEnumerable<IndexQueryRecord> GetIndexRecords(int id, TFPos startPosition, int maxCount);

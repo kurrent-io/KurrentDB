@@ -13,7 +13,7 @@ public class gRPCClientEnvironment : ILoadTestEnvironment {
 	private readonly KurrentDBClient _client;
 
 	public gRPCClientEnvironment(string dbConnectionString) {
-		_client = new KurrentDBClient(KurrentDBClientSettings.Create(dbConnectionString));
+		_client = new(KurrentDBClientSettings.Create(dbConnectionString));
 		MessageBatchAppender = new gRPCMessageBatchAppender(_client);
 		AssertThat = new DummyIndexingSummaryAssertion();
 	}

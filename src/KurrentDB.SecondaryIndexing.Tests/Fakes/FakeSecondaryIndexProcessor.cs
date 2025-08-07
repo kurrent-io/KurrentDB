@@ -23,7 +23,9 @@ public class FakeSecondaryIndexProcessor(IList<ResolvedEvent> committed, IList<R
 	}
 
 	public TFPos GetLastPosition() {
-		return !committed.IsEmpty() ? committed.Last().Event.LogPosition : null;
+		if (committed.IsEmpty()) return TFPos.Invalid;
+
+		return committed.Last().EventPosition ?? TFPos.Invalid;
 	}
 
 	public void Commit() {

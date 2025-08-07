@@ -24,6 +24,7 @@ class EventTypeIndexReader(
 		var range = db.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQuery>(
 			new(id, startPosition.PreparePosition, maxCount)
 		);
+		// ReSharper disable once InvertIf
 		if (range.Count < maxCount) {
 			// events might be in flight
 			var inFlight = inFlightRecords.TryGetInFlightRecords(startPosition, range, maxCount, r => r.EventTypeId == id);
@@ -34,5 +35,6 @@ class EventTypeIndexReader(
 	}
 
 	public override long GetLastIndexedPosition(string streamId) => processor.LastIndexedPosition;
-	public override bool CanReadIndex(string indexName)=> EventTypeIndex.IsEventTypeIndex(indexName);
+
+	public override bool CanReadIndex(string indexName) => EventTypeIndex.IsEventTypeIndex(indexName);
 }

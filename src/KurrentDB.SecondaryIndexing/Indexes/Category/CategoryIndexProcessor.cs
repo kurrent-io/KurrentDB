@@ -8,7 +8,7 @@ using static KurrentDB.SecondaryIndexing.Indexes.Category.CategorySql;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Category;
 
-internal class CategoryIndexProcessor {
+public class CategoryIndexProcessor {
 	private readonly Dictionary<string, int> _categories;
 	private readonly DuckDbDataSource _db;
 	private readonly IPublisher _publisher;

@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Core.Configuration.Sources;
+using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Plugins.TestHelpers;
 using KurrentDB.SecondaryIndexing.Tests.Fixtures;
@@ -13,7 +14,7 @@ namespace KurrentDB.SecondaryIndexing.Tests;
 public class PluginTests {
 	[Fact]
 	public void is_disabled_by_default() {
-		using var sut = new SecondaryIndexingPlugin(new VirtualStreamReader());
+		using var sut = new SecondaryIndexingPlugin(new SecondaryIndexReaders());
 
 		// when
 		using var app = TestPluginStartup.Configure(sut);

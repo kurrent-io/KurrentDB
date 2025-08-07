@@ -48,6 +48,7 @@ public partial class StorageReaderWorker<TStreamId> :
 	private readonly IReadOnlyCheckpoint _writerCheckpoint;
 	private readonly IPublisher _publisher;
 	private readonly IVirtualStreamReader _virtualStreamReader;
+	private readonly SecondaryIndexReaders _secondaryIndexReaders;
 	private readonly IBinaryInteger<int> _queueId;
 	private const int MaxPageSize = 4096;
 	private DateTime? _lastExpireTime;
@@ -60,12 +61,14 @@ public partial class StorageReaderWorker<TStreamId> :
 		ISystemStreamLookup<TStreamId> systemStreams,
 		IReadOnlyCheckpoint writerCheckpoint,
 		IVirtualStreamReader virtualStreamReader,
+		SecondaryIndexReaders secondaryIndexReaders,
 		int queueId) {
 		_publisher = publisher;
 		_readIndex = Ensure.NotNull(readIndex);
 		_systemStreams = Ensure.NotNull(systemStreams);
 		_writerCheckpoint = Ensure.NotNull(writerCheckpoint);
 		_virtualStreamReader = virtualStreamReader;
+		_secondaryIndexReaders = secondaryIndexReaders;
 		_queueId = queueId;
 	}
 

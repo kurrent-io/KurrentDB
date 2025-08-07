@@ -38,6 +38,7 @@ public class StorageReaderService<TStreamId> : StorageReaderService, IHandle<Sys
 		int threadCount,
 		IReadOnlyCheckpoint writerCheckpoint,
 		IVirtualStreamReader inMemReader,
+		SecondaryIndexReaders secondaryIndexReaders,
 		QueueStatsManager queueStatsManager,
 		QueueTrackers trackers) {
 		Ensure.NotNull(subscriber);
@@ -50,7 +51,7 @@ public class StorageReaderService<TStreamId> : StorageReaderService, IHandle<Sys
 		StorageReaderWorker<TStreamId>[] readerWorkers = new StorageReaderWorker<TStreamId>[threadCount];
 		InMemoryBus[] storageReaderBuses = new InMemoryBus[threadCount];
 		for (var i = 0; i < threadCount; i++) {
-			readerWorkers[i] = new(bus, readIndex, systemStreams, writerCheckpoint, inMemReader, i);
+			readerWorkers[i] = new(bus, readIndex, systemStreams, writerCheckpoint, inMemReader, secondaryIndexReaders, i);
 			storageReaderBuses[i] = new("StorageReaderBus", watchSlowMsg: false);
 			storageReaderBuses[i].Subscribe<ClientMessage.ReadEvent>(readerWorkers[i]);
 			storageReaderBuses[i].Subscribe<ClientMessage.ReadStreamEventsBackward>(readerWorkers[i]);

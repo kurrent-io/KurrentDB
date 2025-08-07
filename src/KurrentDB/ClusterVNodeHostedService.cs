@@ -33,6 +33,7 @@ using KurrentDB.Core.Hashing;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.PluginModel;
 using KurrentDB.Core.Services.PersistentSubscription.ConsumerStrategy;
+using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Transport.Http.Controllers;
 using KurrentDB.Diagnostics.LogsEndpointPlugin;
@@ -111,10 +112,11 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 		(_options, var authProviderFactory) = GetAuthorizationProviderFactory();
 
 		var virtualStreamReader = new VirtualStreamReader();
+		var secondaryIndexReaders = new SecondaryIndexReaders();
 
 		switch (_options.Database.DbLogFormat) {
 			case DbLogFormat.V2: {
-				var secondaryIndexingPlugin = SecondaryIndexingPluginFactory.Create(virtualStreamReader);
+				var secondaryIndexingPlugin = new SecondaryIndexingPlugin(secondaryIndexReaders);
 				_options = _options.WithPlugableComponents(secondaryIndexingPlugin);
 
 				var logFormatFactory = new LogV2FormatAbstractorFactory();

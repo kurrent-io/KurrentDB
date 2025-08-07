@@ -116,9 +116,7 @@ partial class Enumerator {
 							return;
 						}
 
-						ReadPage(Position.FromInt64(
-							completed.NextPos.CommitPosition,
-							completed.NextPos.PreparePosition), readCount);
+						ReadPage(Position.FromInt64(completed.NextPos.CommitPosition, completed.NextPos.PreparePosition), readCount);
 						return;
 					case FilteredReadAllResult.AccessDenied:
 						_channel.Writer.TryComplete(new ReadResponseException.AccessDenied());

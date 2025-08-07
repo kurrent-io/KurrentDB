@@ -38,5 +38,33 @@ public partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ClientMessage
 				msg.CommitPosition, msg.PreparePosition, msg.Expires, msg.Lifetime.TotalMilliseconds);
 			return;
 		}
+
+		var res = await _secondaryIndexReaders.ReadForwards(msg, token);
+		switch (res.Result) {
+			case ReadIndexResult.Success:
+				if (msg.LongPollTimeout.HasValue && res.IsEndOfStream && res.Events.Count is 0) {
+					_publisher.Publish(new SubscriptionMessage.PollStream(
+						SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
+						DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
+				} else
+					msg.Envelope.ReplyWith(res);
+
+				break;
+			case ReadIndexResult.NotModified:
+				if (msg.LongPollTimeout.HasValue && res.IsEndOfStream && res.CurrentPos.CommitPosition > res.TfLastCommitPosition) {
+					_publisher.Publish(new SubscriptionMessage.PollStream(
+						SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
+						DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
+				} else
+					msg.Envelope.ReplyWith(res);
+
+				break;
+			case ReadIndexResult.Error:
+			case ReadIndexResult.InvalidPosition:
+				msg.Envelope.ReplyWith(res);
+				break;
+			default:
+				throw new ArgumentOutOfRangeException($"Unknown ReadIndexResult: {res.Result}");
+		}
 	}
 }

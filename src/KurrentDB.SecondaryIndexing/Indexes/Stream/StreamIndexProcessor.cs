@@ -14,7 +14,7 @@ using Serilog;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Stream;
 
-internal class StreamIndexProcessor : Disposable {
+public class StreamIndexProcessor : Disposable {
 	private static readonly ILogger Log = Serilog.Log.ForContext<StreamIndexProcessor>();
 
 	private readonly IIndexBackend<string> _streamsCache;

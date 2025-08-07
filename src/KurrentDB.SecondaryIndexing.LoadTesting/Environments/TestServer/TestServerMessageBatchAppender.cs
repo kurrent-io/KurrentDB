@@ -23,7 +23,7 @@ public class TestServerMessageBatchAppender(SecondaryIndexingEnabledFixture fixt
 	}
 
 	private static Event ToEventData(TestMessageData messageData) =>
-		new(Guid.NewGuid(), messageData.EventType, false, messageData.Data, null, null);
+		new(Guid.NewGuid(), messageData.EventType, false, messageData.Data, false, null);
 
 	public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }

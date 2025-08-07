@@ -10,7 +10,7 @@ using static KurrentDB.SecondaryIndexing.Indexes.EventType.EventTypeSql;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
 
-class EventTypeIndexProcessor {
+public class EventTypeIndexProcessor {
 	readonly Dictionary<string, int> _eventTypes;
 	readonly DuckDbDataSource _db;
 	readonly IPublisher _publisher;

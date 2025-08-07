@@ -7,6 +7,7 @@ using EventStore.Plugins;
 using EventStore.Plugins.Subsystems;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Configuration.Sources;
+using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.SecondaryIndexing.Builders;
@@ -23,20 +24,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace KurrentDB.SecondaryIndexing;
 
-public interface ISecondaryIndexingPlugin : ISubsystemsPlugin;
-
 public sealed class SecondaryIndexingPluginOptions {
 	public int CommitBatchSize { get; set; } = 50_000;
 	public string? DbPath { get; set; }
 }
 
-public static class SecondaryIndexingPluginFactory {
-	public static ISecondaryIndexingPlugin Create(VirtualStreamReader virtualStreamReader) =>
-		new SecondaryIndexingPlugin(virtualStreamReader);
-}
-
-internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
-	: SubsystemsPlugin(name: "SecondaryIndexes"), ISecondaryIndexingPlugin {
+public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders)
+	: SubsystemsPlugin(name: "SecondaryIndexes") {
 	[Experimental("SECONDARY_INDEX")]
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
 		var options = configuration
@@ -88,7 +82,7 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 
 		var indexReaders = app.ApplicationServices.GetServices<ISecondaryIndexReader>();
 
-		virtualStreamReader.Register(indexReaders.ToArray<IVirtualStreamReader>());
+		secondaryIndexReaders.AddReaders(indexReaders.ToArray());
 	}
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {

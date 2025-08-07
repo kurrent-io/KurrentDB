@@ -17,7 +17,7 @@ using static KurrentDB.SecondaryIndexing.Indexes.Default.DefaultSql;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
-internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
+class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	private readonly DefaultIndexInFlightRecords _inFlightRecords;
 	private readonly DuckDBAdvancedConnection _connection;
 	private readonly CategoryIndexProcessor _categoryIndexProcessor;
