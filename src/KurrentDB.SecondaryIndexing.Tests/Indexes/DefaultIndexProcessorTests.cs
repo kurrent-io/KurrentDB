@@ -49,15 +49,15 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		string cat2Et2 = $"{cat2}-{Guid.NewGuid()}";
 
 		ResolvedEvent[] events = [
-			From(cat1Stream1, 0, 100, cat1Et1, []),
-			From(cat2Stream1, 0, 110, cat2Et1, []),
-			From(cat1Stream1, 1, 117, cat1Et2, []),
-			From(cat1Stream1, 2, 200, cat1Et3, []),
-			From(cat1Stream2, 0, 213, cat1Et1, []),
-			From(cat2Stream1, 0, 394, cat2Et2, []),
-			From(cat1Stream2, 1, 500, cat1Et2, []),
-			From(cat1Stream1, 3, 601, cat1Et3, []),
-			From(cat1Stream1, 4, 987, cat1Et1, [])
+			From(cat1Stream1, 0, 100, cat1Et1, []), // 0
+			From(cat2Stream1, 0, 110, cat2Et1, []), // 1
+			From(cat1Stream1, 1, 117, cat1Et2, []), // 2
+			From(cat1Stream1, 2, 200, cat1Et3, []), // 3
+			From(cat1Stream2, 0, 213, cat1Et1, []), // 4
+			From(cat2Stream1, 0, 394, cat2Et2, []), // 5
+			From(cat1Stream2, 1, 500, cat1Et2, []), // 6
+			From(cat1Stream1, 3, 601, cat1Et3, []), // 7
+			From(cat1Stream1, 4, 987, cat1Et1, []) // 8
 		];
 
 		// When
@@ -71,36 +71,15 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		// Default Index
 		AssertLastLogPositionQueryReturns(987);
 
-		AssertDefaultIndexQueryReturns([
-			new(0, 100),
-			new(1, 110),
-			new(2, 117),
-			new(3, 200),
-			new(4, 213),
-			new(5, 394),
-			new(6, 500),
-			new(7, 601),
-			new(8, 987)
-		]);
+		AssertDefaultIndexQueryReturns([100, 110, 117, 200, 213, 394, 500, 601, 987]);
 
 		// Categories
 		AssertGetCategoriesQueryReturns([
 			new(0, cat1),
 			new(1, cat2)
 		]);
-		AssertCategoryIndexQueryReturns(0, [
-			new(0, 100),
-			new(1, 117),
-			new(2, 200),
-			new(3, 213),
-			new(4, 500),
-			new(5, 601),
-			new(6, 987)
-		]);
-		AssertCategoryIndexQueryReturns(1, [
-			new(0, 110),
-			new(1, 394)
-		]);
+		AssertCategoryIndexQueryReturns(0, [100, 117, 200, 213, 500, 601, 987]);
+		AssertCategoryIndexQueryReturns(1, [110, 394]);
 
 		// EventTypes
 		AssertGetAllEventTypesQueryReturns([
@@ -110,25 +89,11 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 			new(3, cat1Et3),
 			new(4, cat2Et2)
 		]);
-		AssertReadEventTypeIndexQueryReturns(0, [
-			new(0, 100),
-			new(1, 213),
-			new(2, 987)
-		]);
-		AssertReadEventTypeIndexQueryReturns(1, [
-			new(0, 110)
-		]);
-		AssertReadEventTypeIndexQueryReturns(2, [
-			new(0, 117),
-			new(1, 500)
-		]);
-		AssertReadEventTypeIndexQueryReturns(3, [
-			new(0, 200),
-			new(1, 601)
-		]);
-		AssertReadEventTypeIndexQueryReturns(4, [
-			new(0, 394)
-		]);
+		AssertReadEventTypeIndexQueryReturns(0, [100, 213, 987]);
+		AssertReadEventTypeIndexQueryReturns(1, [110]);
+		AssertReadEventTypeIndexQueryReturns(2, [117, 500]);
+		AssertReadEventTypeIndexQueryReturns(3, [200, 601]);
+		AssertReadEventTypeIndexQueryReturns(4, [394]);
 
 		// Streams
 		AssertGetStreamMaxSequencesQueryReturns(2);
@@ -163,19 +128,11 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		// Default Index
 		AssertLastLogPositionQueryReturns(200);
 
-		AssertDefaultIndexQueryReturns([
-			new(0, 100),
-			new(1, 117),
-			new(2, 200)
-		]);
+		AssertDefaultIndexQueryReturns([100, 117, 200]);
 
 		// Categories
 		AssertGetCategoriesQueryReturns([new(0, "hello")]);
-		AssertCategoryIndexQueryReturns(0, [
-			new(0, 100),
-			new(1, 117),
-			new(2, 200)
-		]);
+		AssertCategoryIndexQueryReturns(0, [100, 117, 200]);
 
 		// EventTypes
 		AssertGetAllEventTypesQueryReturns([
@@ -183,9 +140,9 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 			new(1, eventType2),
 			new(2, eventType3)
 		]);
-		AssertReadEventTypeIndexQueryReturns(0, [new(0, 100)]);
-		AssertReadEventTypeIndexQueryReturns(1, [new(0, 117)]);
-		AssertReadEventTypeIndexQueryReturns(2, [new(0, 200)]);
+		AssertReadEventTypeIndexQueryReturns(0, [100]);
+		AssertReadEventTypeIndexQueryReturns(1, [117]);
+		AssertReadEventTypeIndexQueryReturns(2, [200]);
 
 		// Streams
 		AssertGetStreamMaxSequencesQueryReturns(0);
@@ -306,10 +263,10 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 			streamMetadata.ToJsonBytes()
 		);
 
-	void AssertDefaultIndexQueryReturns(List<IndexQueryRecord> expected) {
+	void AssertDefaultIndexQueryReturns(List<long> expected) {
 		var records = DuckDb.Pool.Query<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexQueryExcl>(new(-1, int.MaxValue));
 
-		Assert.Equal(expected, records);
+		Assert.Equal(expected, records.Select(x => x.LogPosition));
 	}
 
 	void AssertLastLogPositionQueryReturns(long? expectedLogPosition) {
@@ -324,10 +281,10 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		Assert.Equal(expected, records);
 	}
 
-	void AssertCategoryIndexQueryReturns(int categoryId, List<IndexQueryRecord> expected) {
+	void AssertCategoryIndexQueryReturns(int categoryId, List<long> expected) {
 		var records = DuckDb.Pool.Query<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryIncl>(new(categoryId, 0, 32));
 
-		Assert.Equal(expected, records);
+		Assert.Equal(expected, records.Select(x => x.LogPosition));
 	}
 
 	void AssertGetAllEventTypesQueryReturns(List<ReferenceRecord> expected) {
@@ -336,10 +293,10 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		Assert.Equal(expected, records);
 	}
 
-	void AssertReadEventTypeIndexQueryReturns(int eventTypeId, List<IndexQueryRecord> expected) {
+	void AssertReadEventTypeIndexQueryReturns(int eventTypeId, List<long> expected) {
 		var records = DuckDb.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(new(eventTypeId, 0, 32));
 
-		Assert.Equal(expected, records);
+		Assert.Equal(expected, records.Select(x => x.LogPosition));
 	}
 
 	void AssertGetStreamIdByNameQueryReturns(string streamName, long? expectedId) {

@@ -36,26 +36,26 @@ public abstract class SecondaryIndexReaderBase(DuckDbDataSource db, IReadIndex<s
 	) {
 		var pos = new TFPos(msg.CommitPosition, msg.PreparePosition);
 		if (pos.CommitPosition < 0 || pos.PreparePosition < 0) {
-			return NoData(ReadIndexResult.InvalidPosition, "Invalid position.");
+			return NoData(ReadIndexResult.InvalidPosition, false, "Invalid position.");
 		}
 
 		if (msg.ValidationTfLastCommitPosition == lastIndexedPosition) {
-			return NoData(ReadIndexResult.NotModified);
+			return NoData(ReadIndexResult.NotModified, true);
 		}
 
 		var id = GetId(msg.IndexName);
 		var resolved = await GetEventsForwards(reader, id, pos, msg.MaxCount, msg.ExcludeStart, token);
 
 		if (resolved.Count == 0) {
-			return NoData(ReadIndexResult.Success);
+			return NoData(ReadIndexResult.Success, true);
 		}
 
-		var isEndOfStream = resolved.Count < msg.MaxCount;
+		var isEndOfStream = resolved.Count < msg.MaxCount || resolved[^1].Event.LogPosition == lastIndexedPosition;
 
 		return new(ReadIndexResult.Success, resolved, lastIndexedPosition, isEndOfStream, null);
 
-		ReadIndexEventsForwardCompleted NoData(ReadIndexResult result, string? error = null)
-			=> new(result, ResolvedEvent.EmptyArray, lastIndexedPosition, false, error);
+		ReadIndexEventsForwardCompleted NoData(ReadIndexResult result, bool endOfStream, string? error = null)
+			=> new(result, ResolvedEvent.EmptyArray, lastIndexedPosition, endOfStream, error);
 	}
 
 	async ValueTask<ReadIndexEventsBackwardCompleted> ReadBackwards(
@@ -80,7 +80,7 @@ public abstract class SecondaryIndexReaderBase(DuckDbDataSource db, IReadIndex<s
 			return NoData(ReadIndexResult.Success);
 		}
 
-		var isEndOfStream = resolved.Count < msg.MaxCount;
+		var isEndOfStream = resolved.Count < msg.MaxCount || resolved[0].Event.LogPosition == lastIndexedPosition;
 
 		return new(ReadIndexResult.Success, resolved, lastIndexedPosition, isEndOfStream, null);
 

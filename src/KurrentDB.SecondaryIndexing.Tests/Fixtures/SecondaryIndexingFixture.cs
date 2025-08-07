@@ -47,7 +47,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 	}
 
 	public async Task<List<ResolvedEvent>> ReadUntil(
-		string streamName,
+		string indexName,
 		int maxCount,
 		TimeSpan? timeout = null,
 		CancellationToken ct = default
@@ -64,11 +64,10 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		do {
 			try {
 				events =
-					await Publisher.ReadStream(
-						streamName,
-						StreamRevision.Start,
+					await Publisher.ReadIndex(
+						indexName,
+						Position.Start,
 						maxCount,
-						true,
 						cancellationToken: cts.Token
 					).ToListAsync(cts.Token);
 

@@ -217,4 +217,42 @@ public static class PublisherReadExtensions {
 
 		return result;
 	}
+
+	public static async IAsyncEnumerable<ResolvedEvent> ReadIndex(this IPublisher publisher, string indexName, Position startPosition, long maxCount, bool forwards = true, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
+		await using var enumerator = GetEnumerator();
+
+		while (!cancellationToken.IsCancellationRequested) {
+			if (!await enumerator.MoveNextAsync())
+				break;
+
+			if (enumerator.Current is ReadResponse.EventReceived eventReceived)
+				yield return eventReceived.Event;
+		}
+
+		yield break;
+
+		IAsyncEnumerator<ReadResponse> GetEnumerator() {
+			return forwards
+				? new Enumerator.ReadIndexForwards(
+					bus: publisher,
+					indexName: indexName,
+					position: startPosition,
+					maxCount: (ulong)maxCount,
+					user: SystemAccounts.System,
+					requiresLeader: false,
+					deadline: DefaultDeadline,
+					cancellationToken: cancellationToken
+				)
+				: new Enumerator.ReadIndexBackwards(
+					bus: publisher,
+					indexName: indexName,
+					position: startPosition,
+					maxCount: (ulong)maxCount,
+					user: SystemAccounts.System,
+					requiresLeader: false,
+					deadline: DefaultDeadline,
+					cancellationToken: cancellationToken
+				);
+		}
+	}
 }

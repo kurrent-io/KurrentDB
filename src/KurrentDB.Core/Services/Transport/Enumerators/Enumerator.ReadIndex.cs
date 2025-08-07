@@ -35,15 +35,13 @@ partial class Enumerator {
 			long preparePosition,
 			bool excludeStart,
 			Func<Message, CancellationToken, Task> onMessage
-		) {
-			return new(
-				correlationId, correlationId, new ContinuationEnvelope(onMessage, Semaphore, CancellationToken),
-				IndexName, commitPosition, preparePosition, excludeStart, (int)Math.Min(DefaultIndexReadSize, MaxCount),
-				RequiresLeader, null, User,
-				replyOnExpired: false,
-				expires: Deadline,
-				cancellationToken: CancellationToken);
-		}
+		) => new(
+			correlationId, correlationId, new ContinuationEnvelope(onMessage, Semaphore, CancellationToken),
+			IndexName, commitPosition, preparePosition, excludeStart, (int)Math.Min(DefaultIndexReadSize, MaxCount),
+			RequiresLeader, null, User,
+			replyOnExpired: false,
+			expires: Deadline,
+			cancellationToken: CancellationToken);
 	}
 
 	public sealed class ReadIndexBackwards(
@@ -62,15 +60,13 @@ partial class Enumerator {
 			long preparePosition,
 			bool excludeStart,
 			Func<Message, CancellationToken, Task> onMessage
-		) {
-			return new(
-				correlationId, correlationId, new ContinuationEnvelope(onMessage, Semaphore, CancellationToken),
-				IndexName, commitPosition, preparePosition, excludeStart, (int)Math.Min(DefaultIndexReadSize, MaxCount),
-				RequiresLeader, null, User,
-				replyOnExpired: false,
-				expires: Deadline,
-				cancellationToken: CancellationToken);
-		}
+		) => new(
+			correlationId, correlationId, new ContinuationEnvelope(onMessage, Semaphore, CancellationToken),
+			IndexName, commitPosition, preparePosition, excludeStart, (int)Math.Min(DefaultIndexReadSize, MaxCount),
+			RequiresLeader, null, User,
+			replyOnExpired: false,
+			expires: Deadline,
+			cancellationToken: CancellationToken);
 	}
 
 	public abstract class ReadIndex<TRequest, TResponse> : IAsyncEnumerator<ReadResponse>
