@@ -51,16 +51,15 @@ public class RawDuckDbMessageBatchAppender : IMessageBatchAppender {
 			var eventNumber = message.StreamPosition;
 
 			var row = _defaultIndexAppender.CreateRow();
-			row.AppendValue(sequence);
-			row.AppendValue(eventNumber);
 			row.AppendValue(logPosition);
+			row.AppendNullValue();
+			row.AppendValue(eventNumber);
 			row.AppendValue(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
-			row.AppendValue(message.StreamPosition);
+			row.AppendNullValue();
 			row.AppendValue(1); //stream.Id
-			row.AppendValue(1); //eventType.Id);
-			row.AppendValue(1); //eventType.Sequence);
-			row.AppendValue(1); //category.Id);
-			row.AppendValue(1); //category.Sequence);
+			row.AppendValue(1); //eventType.Id
+			row.AppendValue(1); //category.Id
+			row.AppendDefault();
 			row.EndRow();
 
 			if (LastSequence < LastCommittedSequence + _commitSize) continue;
@@ -87,11 +86,9 @@ public class RawDuckDbMessageBatchAppender : IMessageBatchAppender {
 				_defaultIndexAppender = _connection.CreateAppender("idx_all");
 				_transaction = _connection.BeginTransaction();
 				_sw.Stop();
-				Logger.Debug("Committed {Count} records to index at seq {Seq} ({Took} ms)", _commitSize, LastSequence,
-					_sw.ElapsedMilliseconds);
+				Logger.Debug("Committed {Count} records to index at seq {Seq} ({Took} ms)", _commitSize, LastSequence, _sw.ElapsedMilliseconds);
 			} catch (Exception e) {
-				Logger.Error(e, "Failed to commit {Count} records to index at sequence {Seq}", _commitSize,
-					LastSequence);
+				Logger.Error(e, "Failed to commit {Count} records to index at sequence {Seq}", _commitSize, LastSequence);
 				throw;
 			}
 		}

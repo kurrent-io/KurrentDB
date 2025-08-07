@@ -6,13 +6,12 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.POC.IO.Core;
-using KurrentDB.SecondaryIndexing.Indexes;
-using KurrentDB.SecondaryIndexing.Indexes.Diagnostics;
+using KurrentDB.SecondaryIndexing.Diagnostics;
 using KurrentDB.SecondaryIndexing.Subscriptions;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
-namespace KurrentDB.SecondaryIndexing.Builders;
+namespace KurrentDB.SecondaryIndexing.Indexes;
 
 public sealed class SecondaryIndexBuilder :
 	IHandle<SystemMessage.SystemReady>,

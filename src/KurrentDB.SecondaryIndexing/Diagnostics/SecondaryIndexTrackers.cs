@@ -3,7 +3,7 @@
 
 using KurrentDB.Core.Metrics;
 
-namespace KurrentDB.SecondaryIndexing.Indexes.Diagnostics;
+namespace KurrentDB.SecondaryIndexing.Diagnostics;
 
 public class SecondaryIndexTrackers {
 	public IDurationTracker Commit { get; set; } = new DurationTracker.NoOp();

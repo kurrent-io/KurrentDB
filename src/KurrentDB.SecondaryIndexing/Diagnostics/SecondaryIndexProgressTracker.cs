@@ -8,7 +8,7 @@ using KurrentDB.Core.Metrics;
 using Serilog;
 using Event = KurrentDB.POC.IO.Core.Event;
 
-namespace KurrentDB.SecondaryIndexing.Indexes.Diagnostics;
+namespace KurrentDB.SecondaryIndexing.Diagnostics;
 
 public interface ISecondaryIndexProgressTracker {
 	void RecordIndexed(ResolvedEvent resolvedEvent);
@@ -129,7 +129,7 @@ public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
 		Interlocked.Exchange(ref _pendingEvents, 0);
 		_sw.Stop();
 
-		Log.Debug("Committed {Count} records to index at seq {Seq} ({Took} ms)", batchSize, position, _sw.ElapsedMilliseconds);
+		Log.Debug("Committed {Count} records to index at log positon {Seq} ({Took} ms)", batchSize, position, _sw.ElapsedMilliseconds);
 	}
 
 	public void RecordError(Exception e) {

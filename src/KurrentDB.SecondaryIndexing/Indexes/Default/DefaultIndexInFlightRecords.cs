@@ -26,7 +26,7 @@ class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions options) {
 		Count = 0;
 	}
 
-	public IEnumerable<IndexQueryRecord> TryGetInFlightRecords(
+	public IEnumerable<IndexQueryRecord> GetInFlightRecordsForwards(
 		TFPos startPosition,
 		List<IndexQueryRecord> fromDb,
 		int maxCount,
@@ -39,6 +39,27 @@ class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions options) {
 			if (remaining == 0) yield break;
 			var current = _records[i];
 			if (current.LogPosition >= from && (query == null || query(current))) {
+				remaining--;
+				yield return new(seq++, current.LogPosition);
+			}
+		}
+	}
+
+	public IEnumerable<IndexQueryRecord> GetInFlightRecordsBackwards(
+		TFPos startPosition,
+		int maxCount,
+		Func<InFlightRecord, bool>? query = null
+	) {
+		if (Count == 0 || _records[0].LogPosition > startPosition.PreparePosition) {
+			yield break;
+		}
+
+		var seq = -maxCount - 1;
+		var remaining = maxCount;
+		for (var i = Count - 1; i >= 0; i--) {
+			if (remaining == 0) yield break;
+			var current = _records[i];
+			if (current.LogPosition <= startPosition.PreparePosition && (query == null || query(current))) {
 				remaining--;
 				yield return new(seq++, current.LogPosition);
 			}

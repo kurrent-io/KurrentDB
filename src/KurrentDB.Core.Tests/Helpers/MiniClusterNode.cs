@@ -24,6 +24,7 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Monitoring;
 using KurrentDB.Core.Services.PersistentSubscription.ConsumerStrategy;
+using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Tests.Http;
@@ -69,11 +70,10 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 	private static bool EnableHttps() => !RuntimeInformation.IsOSX;
 
 	public MiniClusterNode(string pathname, int debugIndex, IPEndPoint internalTcp, IPEndPoint externalTcp,
-	IPEndPoint httpEndPoint, EndPoint[] gossipSeeds, ISubsystem[] subsystems = null,
-	bool enableTrustedAuth = false, int memTableSize = 1000, bool inMemDb = true,
-	bool disableFlushToDisk = false, bool readOnlyReplica = false, int nodePriority = 0,
-	string intHostAdvertiseAs = null, IExpiryStrategy expiryStrategy = null) {
-
+		IPEndPoint httpEndPoint, EndPoint[] gossipSeeds, ISubsystem[] subsystems = null,
+		bool enableTrustedAuth = false, int memTableSize = 1000, bool inMemDb = true,
+		bool disableFlushToDisk = false, bool readOnlyReplica = false, int nodePriority = 0,
+		string intHostAdvertiseAs = null, IExpiryStrategy expiryStrategy = null) {
 		if (RuntimeInformation.IsOSX) {
 			AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport",
 				true); //TODO JPB Remove this sadness when dotnet core supports kestrel + http2 on macOS
@@ -186,17 +186,19 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 			ExternalTcpEndPoint, "ExHTTP ENDPOINT:", HttpEndPoint);
 
 		var logFormatFactory = LogFormatHelper<TLogFormat, TStreamId>.LogFormatFactory;
-		Node = new ClusterVNode<TStreamId>(options, logFormatFactory, new AuthenticationProviderFactory(
-				components =>
-					new InternalAuthenticationProviderFactory(components, options.DefaultUser)),
+		Node = new ClusterVNode<TStreamId>(options, logFormatFactory,
+			new(components => new InternalAuthenticationProviderFactory(components, options.DefaultUser)),
 			new AuthorizationProviderFactory(components =>
 				new InternalAuthorizationProviderFactory(
-					new StaticAuthorizationPolicyRegistry([new LegacyPolicySelectorFactory(
-						options.Application.AllowAnonymousEndpointAccess,
-						options.Application.AllowAnonymousStreamAccess,
-						options.Application.OverrideAnonymousEndpointAccessForGossip).Create(components.MainQueue)]))),
+					new StaticAuthorizationPolicyRegistry([
+						new LegacyPolicySelectorFactory(
+							options.Application.AllowAnonymousEndpointAccess,
+							options.Application.AllowAnonymousStreamAccess,
+							options.Application.OverrideAnonymousEndpointAccessForGossip).Create(components.MainQueue)
+					]))),
 			virtualStreamReader: null,
-			Array.Empty<IPersistentSubscriptionConsumerStrategyFactory>(),
+			secondaryIndexReaders: new(),
+			[],
 			new OptionsCertificateProvider(),
 			configuration: inMemConf,
 			expiryStrategy,
@@ -219,6 +221,7 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 								if (!isValid && error != null) {
 									Log.Error("Client certificate validation error: {e}", error);
 								}
+
 								return isValid;
 							}
 						});

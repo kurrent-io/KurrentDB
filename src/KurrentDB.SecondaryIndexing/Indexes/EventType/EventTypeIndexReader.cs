@@ -14,20 +14,37 @@ class EventTypeIndexReader(
 	EventTypeIndexProcessor processor,
 	IReadIndex<string> index,
 	DefaultIndexInFlightRecords inFlightRecords
-) : SecondaryIndexReaderBase(index) {
+) : SecondaryIndexReaderBase(db, index) {
 	protected override int GetId(string streamName) =>
 		EventTypeIndex.TryParseEventType(streamName, out var eventTypeName)
 			? processor.GetEventTypeId(eventTypeName)
 			: (int)ExpectedVersion.Invalid;
 
-	protected override IEnumerable<IndexQueryRecord> GetIndexRecords(int id, TFPos startPosition, int maxCount) {
-		var range = db.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQuery>(
-			new(id, startPosition.PreparePosition, maxCount)
-		);
-		// ReSharper disable once InvertIf
+	protected override IReadOnlyList<IndexQueryRecord> GetIndexRecordsForwards(int id, TFPos startPosition, int maxCount, bool excludeStart) {
+		var range = excludeStart
+			? Db.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryExcl>(new(id, startPosition.PreparePosition, maxCount))
+			: Db.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(new(id, startPosition.PreparePosition, maxCount));
+
 		if (range.Count < maxCount) {
 			// events might be in flight
-			var inFlight = inFlightRecords.TryGetInFlightRecords(startPosition, range, maxCount, r => r.EventTypeId == id);
+			var inFlight = inFlightRecords.GetInFlightRecordsForwards(startPosition, range, maxCount, r => r.EventTypeId == id);
+			range.AddRange(inFlight);
+		}
+
+		return range;
+	}
+
+	protected override IReadOnlyList<IndexQueryRecord> GetIndexRecordsBackwards(int id, TFPos startPosition, int maxCount, bool excludeStart) {
+		var inFlight = inFlightRecords.GetInFlightRecordsBackwards(startPosition, maxCount, r => r.EventTypeId == id).ToList();
+		if (inFlight.Count == maxCount) {
+			return inFlight;
+		}
+
+		var range = excludeStart
+			? Db.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryExcl>(new(id, startPosition.PreparePosition, maxCount))
+			: Db.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(new(id, startPosition.PreparePosition, maxCount));
+
+		if (inFlight.Count > 0) {
 			range.AddRange(inFlight);
 		}
 

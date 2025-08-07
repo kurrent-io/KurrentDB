@@ -6,24 +6,25 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.LogCommon;
-using KurrentDB.SecondaryIndexing.Indexes;
 using KurrentDB.SecondaryIndexing.Storage;
 
-namespace KurrentDB.SecondaryIndexing.Readers;
+namespace KurrentDB.SecondaryIndexing.Indexes;
 
 static class ReaderExtensions {
 	public static async ValueTask<IReadOnlyList<ResolvedEvent>> ReadRecords(
 		this IIndexReader<string> index,
 		IEnumerable<IndexQueryRecord> indexPrepares,
+		bool ascending,
 		CancellationToken cancellationToken
 	) {
 		using var reader = index.BorrowReader();
 		// ReSharper disable once AccessToDisposedClosure
 		var readPrepares = indexPrepares.Select(async x => (Record: x, Prepare: await reader.ReadPrepare<string>(x.LogPosition, cancellationToken)));
 		var prepared = await Task.WhenAll(readPrepares);
-		var recordsQuery = prepared.Where(x => x.Prepare != null).OrderBy(x => x.Record.RowId);
-		var records = recordsQuery.Select(x => ResolvedEvent.ForUnresolvedEvent(
-			new(x.Prepare!.ExpectedVersion, x.Prepare, x.Prepare!.EventStreamId, x.Prepare!.EventType)
+		var recordsQuery = prepared.Where(x => x.Prepare != null);
+		var sorted = ascending ? recordsQuery.OrderBy(x => x.Record.RowId) : recordsQuery.OrderByDescending(x => x.Record.RowId);
+		var records = sorted.Select(x => ResolvedEvent.ForUnresolvedEvent(
+			new(x.Prepare!.ExpectedVersion + 1, x.Prepare, x.Prepare!.EventStreamId, x.Prepare!.EventType)
 		));
 		return records.ToList();
 	}

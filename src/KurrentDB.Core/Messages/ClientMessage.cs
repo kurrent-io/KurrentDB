@@ -99,8 +99,7 @@ public static partial class ClientMessage {
 	}
 
 	[DerivedMessage]
-	public abstract partial class ReadResponseMessage : Message {
-	}
+	public abstract partial class ReadResponseMessage : Message;
 
 	[DerivedMessage(CoreMessage.Client)]
 	public partial class TcpForwardMessage(Message message) : Message {

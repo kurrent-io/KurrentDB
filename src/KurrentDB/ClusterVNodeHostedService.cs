@@ -123,6 +123,7 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 				var node = ClusterVNode.Create(_options, logFormatFactory, GetAuthenticationProviderFactory(),
 					authProviderFactory,
 					virtualStreamReader,
+					secondaryIndexReaders,
 					GetPersistentSubscriptionConsumerStrategyFactories(), certificateProvider,
 					configuration);
 				Node = node;
@@ -134,6 +135,7 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 				var node = ClusterVNode.Create(_options, logFormatFactory, GetAuthenticationProviderFactory(),
 					authProviderFactory,
 					virtualStreamReader,
+					secondaryIndexReaders,
 					GetPersistentSubscriptionConsumerStrategyFactories(), certificateProvider,
 					configuration);
 				Node = node;

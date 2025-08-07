@@ -4,32 +4,25 @@
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
-using KurrentDB.SecondaryIndexing.Readers;
 using KurrentDB.SecondaryIndexing.Storage;
 using static KurrentDB.Core.Messages.ClientMessage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes;
 
-public abstract class SecondaryIndexReaderBase(IReadIndex<string> index) : ISecondaryIndexReader {
+public abstract class SecondaryIndexReaderBase(DuckDbDataSource db, IReadIndex<string> index) : ISecondaryIndexReader {
+	protected DuckDbDataSource Db => db;
+
 	protected abstract int GetId(string streamName);
 
-	protected abstract IEnumerable<IndexQueryRecord> GetIndexRecords(int id, TFPos startPosition, int maxCount);
+	protected abstract IReadOnlyList<IndexQueryRecord> GetIndexRecordsForwards(int id, TFPos startPosition, int maxCount, bool excludeFirst);
 
-	public ValueTask<ReadIndexEventsForwardCompleted> ReadForwards(ReadIndexEventsForward msg, CancellationToken token) =>
-		ReadForwards(msg, index.IndexReader, index.LastIndexedPosition, token);
+	protected abstract IReadOnlyList<IndexQueryRecord> GetIndexRecordsBackwards(int id, TFPos startPosition, int maxCount, bool excludeFirst);
 
-	// public ValueTask<ReadStreamEventsBackwardCompleted> ReadBackwards(ReadStreamEventsBackward msg, CancellationToken token) =>
-		// ReadBackwards(msg, index.IndexReader, index.LastIndexedPosition, token);
+	public ValueTask<ReadIndexEventsForwardCompleted> ReadForwards(ReadIndexEventsForward msg, CancellationToken token)
+		=> ReadForwards(msg, index.IndexReader, index.LastIndexedPosition, token);
 
-	async ValueTask<IReadOnlyList<ResolvedEvent>> GetEvents(
-		IIndexReader<string> indexReader,
-		int id,
-		TFPos startPosition,
-		int maxCount,
-		CancellationToken cancellationToken) {
-		var indexPrepares = GetIndexRecords(id, startPosition, maxCount);
-		return await indexReader.ReadRecords(indexPrepares, cancellationToken);
-	}
+	public ValueTask<ReadIndexEventsBackwardCompleted> ReadBackwards(ReadIndexEventsBackward msg, CancellationToken token)
+		=> ReadBackwards(msg, index.IndexReader, index.LastIndexedPosition, token);
 
 	public abstract long GetLastIndexedPosition(string indexName);
 
@@ -42,60 +35,80 @@ public abstract class SecondaryIndexReaderBase(IReadIndex<string> index) : ISeco
 		CancellationToken token
 	) {
 		var pos = new TFPos(msg.CommitPosition, msg.PreparePosition);
-		if (pos.CommitPosition < 0 || pos.PreparePosition < 0)
+		if (pos.CommitPosition < 0 || pos.PreparePosition < 0) {
 			return NoData(ReadIndexResult.InvalidPosition, "Invalid position.");
-		if (msg.ValidationTfLastCommitPosition == lastIndexedPosition)
+		}
+
+		if (msg.ValidationTfLastCommitPosition == lastIndexedPosition) {
 			return NoData(ReadIndexResult.NotModified);
+		}
 
 		var id = GetId(msg.IndexName);
-		var resolved = await GetEvents(reader, id, pos, msg.MaxCount, token);
+		var resolved = await GetEventsForwards(reader, id, pos, msg.MaxCount, msg.ExcludeStart, token);
 
-		if (resolved.Count == 0)
+		if (resolved.Count == 0) {
 			return NoData(ReadIndexResult.Success);
+		}
 
-		var isEndOfStream = resolved[^1].EventPosition!.Value.PreparePosition >= lastIndexedPosition;
+		var isEndOfStream = resolved.Count < msg.MaxCount;
 
-		return new(msg.CorrelationId, ReadIndexResult.Success, null, resolved, msg.MaxCount, pos, TFPos.Invalid, TFPos.Invalid, lastIndexedPosition, isEndOfStream);
+		return new(ReadIndexResult.Success, resolved, lastIndexedPosition, isEndOfStream, null);
 
 		ReadIndexEventsForwardCompleted NoData(ReadIndexResult result, string? error = null)
-			=> new(msg.CorrelationId, result, error, ResolvedEvent.EmptyArray,
-				msg.MaxCount, pos, TFPos.Invalid, TFPos.Invalid, lastIndexedPosition, false);
+			=> new(result, ResolvedEvent.EmptyArray, lastIndexedPosition, false, error);
 	}
 
-	// private async ValueTask<ReadStreamEventsBackwardCompleted> ReadBackwards(
-	// 	ReadStreamEventsBackward msg,
-	// 	IIndexReader<string> reader,
-	// 	long lastIndexedPosition,
-	// 	CancellationToken token
-	// ) {
-	// 	var id = GetId(msg.EventStreamId);
-	// 	var lastEventNumber = GetLastIndexedSequence(id);
-	//
-	// 	if (msg.ValidationStreamVersion.HasValue && lastEventNumber == msg.ValidationStreamVersion)
-	// 		return NoData(msg, ReadStreamResult.NotModified, lastIndexedPosition,
-	// 			msg.ValidationStreamVersion.Value);
-	// 	if (lastEventNumber == -1)
-	// 		return NoData(msg, ReadStreamResult.NoStream, lastIndexedPosition,
-	// 			msg.ValidationStreamVersion ?? -1);
-	//
-	// 	long endEventNumber = msg.FromEventNumber < 0 || msg.FromEventNumber > lastEventNumber
-	// 		? lastEventNumber
-	// 		: msg.FromEventNumber;
-	// 	long startEventNumber = Math.Max(0L, endEventNumber - msg.MaxCount + 1);
-	// 	var resolved = await GetEvents(reader, msg.EventStreamId, id, startEventNumber, endEventNumber, token);
-	//
-	// 	var records = resolved.OrderByDescending(x => x.OriginalEvent.EventNumber).ToArray();
-	// 	var isEndOfStream = startEventNumber == 0 || (startEventNumber <= lastEventNumber &&
-	// 	                                              (records.Length is 0 || records[^1].OriginalEventNumber !=
-	// 		                                              startEventNumber));
-	// 	long nextEventNumber = isEndOfStream ? -1 : Math.Min(startEventNumber - 1, lastEventNumber);
-	//
-	// 	if (resolved.Count == 0)
-	// 		return NoData(msg, ReadStreamResult.Success, lastIndexedPosition,
-	// 			msg.ValidationStreamVersion ?? lastEventNumber, nextEventNumber);
-	//
-	// 	return new(msg.CorrelationId, msg.EventStreamId, endEventNumber, msg.MaxCount,
-	// 		ReadStreamResult.Success, records, StreamMetadata.Empty, false, string.Empty,
-	// 		nextEventNumber, lastEventNumber, isEndOfStream, lastIndexedPosition);
-	// }
+	async ValueTask<ReadIndexEventsBackwardCompleted> ReadBackwards(
+		ReadIndexEventsBackward msg,
+		IIndexReader<string> reader,
+		long lastIndexedPosition,
+		CancellationToken token
+	) {
+		var pos = new TFPos(msg.CommitPosition, msg.PreparePosition);
+		if (pos.CommitPosition < 0 || pos.PreparePosition < 0) {
+			pos = new(long.MaxValue, long.MaxValue);
+		}
+
+		if (msg.ValidationTfLastCommitPosition == lastIndexedPosition) {
+			return NoData(ReadIndexResult.NotModified);
+		}
+
+		var id = GetId(msg.IndexName);
+		var resolved = await GetEventsBackwards(reader, id, pos, msg.MaxCount, msg.ExcludeStart, token);
+
+		if (resolved.Count == 0) {
+			return NoData(ReadIndexResult.Success);
+		}
+
+		var isEndOfStream = resolved.Count < msg.MaxCount;
+
+		return new(ReadIndexResult.Success, resolved, lastIndexedPosition, isEndOfStream, null);
+
+		ReadIndexEventsBackwardCompleted NoData(ReadIndexResult result, string? error = null)
+			=> new(result, ResolvedEvent.EmptyArray, lastIndexedPosition, false, error);
+	}
+
+	async ValueTask<IReadOnlyList<ResolvedEvent>> GetEventsForwards(
+		IIndexReader<string> indexReader,
+		int id,
+		TFPos startPosition,
+		int maxCount,
+		bool excludeFirst,
+		CancellationToken cancellationToken) {
+		var indexPrepares = GetIndexRecordsForwards(id, startPosition, maxCount, excludeFirst);
+		var events = await indexReader.ReadRecords(indexPrepares, true, cancellationToken);
+		return events;
+	}
+
+	async ValueTask<IReadOnlyList<ResolvedEvent>> GetEventsBackwards(
+		IIndexReader<string> indexReader,
+		int id,
+		TFPos startPosition,
+		int maxCount,
+		bool excludeFirst,
+		CancellationToken cancellationToken) {
+		var indexPrepares = GetIndexRecordsBackwards(id, startPosition, maxCount, excludeFirst);
+		var events = await indexReader.ReadRecords(indexPrepares, false, cancellationToken);
+		return events;
+	}
 }

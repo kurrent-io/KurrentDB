@@ -104,6 +104,7 @@ public abstract class ClusterVNode {
 		AuthenticationProviderFactory authenticationProviderFactory = null,
 		AuthorizationProviderFactory authorizationProviderFactory = null,
 		VirtualStreamReader virtualStreamReader = null,
+		SecondaryIndexReaders secondaryIndexReaders = null,
 		IReadOnlyList<IPersistentSubscriptionConsumerStrategyFactory> factories = null,
 		CertificateProvider certificateProvider = null,
 		IConfiguration configuration = null,
@@ -116,6 +117,7 @@ public abstract class ClusterVNode {
 			authenticationProviderFactory,
 			authorizationProviderFactory,
 			virtualStreamReader,
+			secondaryIndexReaders,
 			factories,
 			certificateProvider,
 			configuration,
@@ -233,6 +235,7 @@ public class ClusterVNode<TStreamId> :
 		AuthenticationProviderFactory authenticationProviderFactory = null,
 		AuthorizationProviderFactory authorizationProviderFactory = null,
 		VirtualStreamReader virtualStreamReader = null,
+		SecondaryIndexReaders secondaryIndexReaders = null,
 		IReadOnlyList<IPersistentSubscriptionConsumerStrategyFactory>
 			additionalPersistentSubscriptionConsumerStrategyFactories = null,
 		CertificateProvider certificateProvider = null,
@@ -786,9 +789,9 @@ public class ClusterVNode<TStreamId> :
 
 		// Storage Reader
 		var storageReader = new StorageReaderService<TStreamId>(_mainQueue, _mainBus, readIndex,
-			logFormat.SystemStreams,
-			readerThreadsCount, Db.Config.WriterCheckpoint.AsReadOnly(), virtualStreamReader, _queueStatsManager,
-			trackers.QueueTrackers);
+			logFormat.SystemStreams, readerThreadsCount, Db.Config.WriterCheckpoint.AsReadOnly(),
+			virtualStreamReader, secondaryIndexReaders,
+			_queueStatsManager, trackers.QueueTrackers);
 
 		_mainBus.Subscribe<SystemMessage.SystemInit>(storageReader);
 		_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(storageReader);

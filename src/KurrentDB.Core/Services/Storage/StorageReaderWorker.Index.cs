@@ -10,7 +10,9 @@ using KurrentDB.Core.Messages;
 
 namespace KurrentDB.Core.Services.Storage;
 
-public partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ClientMessage.ReadIndexEventsForward> {
+public partial class StorageReaderWorker<TStreamId> :
+	IAsyncHandle<ClientMessage.ReadIndexEventsForward>,
+	IAsyncHandle<ClientMessage.ReadIndexEventsBackward> {
 	public async ValueTask HandleAsync(ClientMessage.ReadIndexEventsForward msg, CancellationToken token) {
 		if (msg.CancellationToken.IsCancellationRequested)
 			return;
@@ -19,16 +21,11 @@ public partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ClientMessage
 			if (msg.ReplyOnExpired) {
 				msg.Envelope.ReplyWith(
 					new ClientMessage.ReadIndexEventsForwardCompleted(
-						msg.CorrelationId,
 						ReadIndexResult.Expired,
-						null,
 						ResolvedEvent.EmptyArray,
 						0,
-						new(msg.CommitPosition, msg.PreparePosition),
-						TFPos.Invalid,
-						TFPos.Invalid,
-						0,
-						false
+						false,
+						null
 					)
 				);
 			}
@@ -43,28 +40,88 @@ public partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ClientMessage
 		switch (res.Result) {
 			case ReadIndexResult.Success:
 				if (msg.LongPollTimeout.HasValue && res.IsEndOfStream && res.Events.Count is 0) {
-					_publisher.Publish(new SubscriptionMessage.PollStream(
-						SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
-						DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
-				} else
+					PublishLongPoll();
+				} else {
 					msg.Envelope.ReplyWith(res);
+				}
 
 				break;
 			case ReadIndexResult.NotModified:
-				if (msg.LongPollTimeout.HasValue && res.IsEndOfStream && res.CurrentPos.CommitPosition > res.TfLastCommitPosition) {
-					_publisher.Publish(new SubscriptionMessage.PollStream(
-						SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
-						DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
-				} else
-					msg.Envelope.ReplyWith(res);
-
-				break;
 			case ReadIndexResult.Error:
 			case ReadIndexResult.InvalidPosition:
+			case ReadIndexResult.IndexNotFound:
 				msg.Envelope.ReplyWith(res);
 				break;
 			default:
 				throw new ArgumentOutOfRangeException($"Unknown ReadIndexResult: {res.Result}");
+		}
+
+		return;
+
+		void PublishLongPoll() {
+			_publisher.Publish(
+				new SubscriptionMessage.PollStream(
+					SubscriptionsService.AllStreamsSubscriptionId,
+					res.TfLastCommitPosition, null,
+					DateTime.UtcNow + msg.LongPollTimeout.Value, msg
+				)
+			);
+		}
+	}
+
+	public async ValueTask HandleAsync(ClientMessage.ReadIndexEventsBackward msg, CancellationToken token) {
+		if (msg.CancellationToken.IsCancellationRequested)
+			return;
+
+		if (msg.Expires < DateTime.UtcNow) {
+			if (msg.ReplyOnExpired) {
+				msg.Envelope.ReplyWith(
+					new ClientMessage.ReadIndexEventsBackwardCompleted(
+						ReadIndexResult.Expired,
+						ResolvedEvent.EmptyArray,
+						0,
+						false,
+						null
+					)
+				);
+			}
+
+			Log.Debug(
+				"ReadIndexEventsBackward operation has expired for C:{CommitPosition}/P:{PreparePosition}. Operation expired at {ExpiredAt} after {lifetime:N0} ms.",
+				msg.CommitPosition, msg.PreparePosition, msg.Expires, msg.Lifetime.TotalMilliseconds);
+			return;
+		}
+
+		var res = await _secondaryIndexReaders.ReadBackwards(msg, token);
+		switch (res.Result) {
+			case ReadIndexResult.Success:
+				if (msg.LongPollTimeout.HasValue && res.IsEndOfStream && res.Events.Count is 0) {
+					PublishLongPoll();
+				} else {
+					msg.Envelope.ReplyWith(res);
+				}
+
+				break;
+			case ReadIndexResult.NotModified:
+			case ReadIndexResult.Error:
+			case ReadIndexResult.InvalidPosition:
+			case ReadIndexResult.IndexNotFound:
+				msg.Envelope.ReplyWith(res);
+				break;
+			default:
+				throw new ArgumentOutOfRangeException($"Unknown ReadIndexResult: {res.Result}");
+		}
+
+		return;
+
+		void PublishLongPoll() {
+			_publisher.Publish(
+				new SubscriptionMessage.PollStream(
+					SubscriptionsService.AllStreamsSubscriptionId,
+					res.TfLastCommitPosition, null,
+					DateTime.UtcNow + msg.LongPollTimeout.Value, msg
+				)
+			);
 		}
 	}
 }

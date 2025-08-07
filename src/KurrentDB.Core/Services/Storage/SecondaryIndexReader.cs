@@ -14,6 +14,8 @@ public interface ISecondaryIndexReader {
 	bool CanReadIndex(string indexName);
 
 	ValueTask<ReadIndexEventsForwardCompleted> ReadForwards(ReadIndexEventsForward msg, CancellationToken token);
+
+	ValueTask<ReadIndexEventsBackwardCompleted> ReadBackwards(ReadIndexEventsBackward msg, CancellationToken token);
 }
 
 public class SecondaryIndexReaders {
@@ -32,16 +34,28 @@ public class SecondaryIndexReaders {
 		}
 
 		return ValueTask.FromResult(new ReadIndexEventsForwardCompleted(
-			msg.CorrelationId,
 			ReadIndexResult.IndexNotFound,
-			$"Index {msg.IndexName} does not exist",
 			[],
-			msg.MaxCount,
-			new(msg.CommitPosition, msg.PreparePosition),
-			TFPos.Invalid,
-			TFPos.Invalid,
 			-1,
-			true
+			true,
+			$"Index {msg.IndexName} does not exist"
+		));
+	}
+
+	public ValueTask<ReadIndexEventsBackwardCompleted> ReadBackwards(ReadIndexEventsBackward msg, CancellationToken token) {
+		for (var i = 0; i < _readers.Length; i++) {
+			var reader = _readers[i];
+			if (!reader.CanReadIndex(msg.IndexName))
+				continue;
+			return reader.ReadBackwards(msg, token);
+		}
+
+		return ValueTask.FromResult(new ReadIndexEventsBackwardCompleted(
+			ReadIndexResult.IndexNotFound,
+			[],
+			-1,
+			true,
+			$"Index {msg.IndexName} does not exist"
 		));
 	}
 }
