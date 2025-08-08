@@ -245,6 +245,7 @@ public class ClusterVNode<TStreamId> :
 		Action<IServiceCollection> configureAdditionalNodeServices = null) {
 
 		configuration ??= new ConfigurationBuilder().Build();
+		secondaryIndexReaders ??= new();
 
 		LogPluginSubsectionWarnings(configuration);
 

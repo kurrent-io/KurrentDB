@@ -217,10 +217,7 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 			});
 
 		Node = new ClusterVNode<TStreamId>(options, logFormatFactory,
-			new AuthenticationProviderFactory(
-				c => authenticationProviderFactory ?? new InternalAuthenticationProviderFactory(
-					c,
-					options.DefaultUser)),
+			new(c => authenticationProviderFactory ?? new InternalAuthenticationProviderFactory(c, options.DefaultUser)),
 			new AuthorizationProviderFactory(
 				c => authorizationProviderFactory ?? new InternalAuthorizationProviderFactory(
 					new StaticAuthorizationPolicyRegistry([new LegacyPolicySelectorFactory(
