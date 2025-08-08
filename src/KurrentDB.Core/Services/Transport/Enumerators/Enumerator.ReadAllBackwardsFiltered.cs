@@ -14,7 +14,6 @@ using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
-using Serilog;
 
 namespace KurrentDB.Core.Services.Transport.Enumerators;
 

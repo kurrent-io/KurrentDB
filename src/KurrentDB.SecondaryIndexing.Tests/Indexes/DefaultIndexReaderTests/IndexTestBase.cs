@@ -10,7 +10,6 @@ using KurrentDB.SecondaryIndexing.Indexes.Stream;
 using KurrentDB.SecondaryIndexing.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Tests.Fixtures;
 using KurrentDB.Core.Data;
-using KurrentDB.Core.Services;
 using KurrentDB.SecondaryIndexing.Diagnostics;
 
 namespace KurrentDB.SecondaryIndexing.Tests.Indexes.DefaultIndexReaderTests;

@@ -5,7 +5,6 @@ using System.Security.Claims;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services;
-using KurrentDB.SecondaryIndexing.Indexes.Default;
 using static KurrentDB.Core.Messages.ClientMessage;
 using static KurrentDB.SecondaryIndexing.Tests.Fakes.TestResolvedEventFactory;
 

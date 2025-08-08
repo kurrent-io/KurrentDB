@@ -24,7 +24,6 @@ public sealed class SecondaryIndexBuilder :
 	readonly SecondaryIndexSubscription _subscription;
 	readonly ISecondaryIndexProcessor _processor;
 	readonly ISecondaryIndexProgressTracker _progressTracker;
-	readonly IPublisher _publisher;
 	readonly IClient _client;
 	readonly CancellationTokenSource _readLastEventCts;
 
@@ -41,7 +40,6 @@ public sealed class SecondaryIndexBuilder :
 	) {
 		_processor = processor;
 		_progressTracker = progressTracker;
-		_publisher = publisher;
 		_client = client;
 		_subscription = new(publisher, processor, options);
 		_readLastEventCts = new();

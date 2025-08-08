@@ -9,11 +9,8 @@ using Xunit.Abstractions;
 namespace KurrentDB.SecondaryIndexing.Tests.IntegrationTests;
 
 [Trait("Category", "Integration")]
-public class IndexingDisabledTests(
-	SecondaryIndexingDisabledFixture fixture,
-	ITestOutputHelper output
-) : SecondaryIndexingTest<SecondaryIndexingDisabledFixture>(fixture, output), IClassFixture<SecondaryIndexingDisabledFixture> {
-
+public class IndexingDisabledTests(SecondaryIndexingDisabledFixture fixture, ITestOutputHelper output)
+	: SecondaryIndexingTest<SecondaryIndexingDisabledFixture>(fixture, output) {
 	[Fact]
 	public async Task Index_streams_should_not_be_found() {
 		await Fixture.AppendToStream(RandomStreamName(), """{"test":"123"}""", """{"test":"321"}""");

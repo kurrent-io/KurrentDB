@@ -3,7 +3,6 @@
 
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services.Storage;
-using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Plugins.TestHelpers;
 using KurrentDB.SecondaryIndexing.Tests.Fixtures;
 using Microsoft.Extensions.Configuration;

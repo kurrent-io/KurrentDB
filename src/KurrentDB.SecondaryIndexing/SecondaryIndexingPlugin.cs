@@ -4,11 +4,9 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
 using EventStore.Plugins;
-using EventStore.Plugins.Subsystems;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services.Storage;
-using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.SecondaryIndexing.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes;
@@ -49,22 +47,11 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		});
 		services.AddHostedService<SecondaryIndexBuilder>();
 		services.AddSingleton<DefaultIndexInFlightRecords>();
-		// services.AddSingleton<QueryInFlightRecords<EventTypeSql.EventTypeRecord>>(sp =>
-		// 	sp.GetRequiredService<DefaultIndexInFlightRecords>().QueryInFlightRecords
-		// );
-		// services.AddSingleton<QueryInFlightRecords<CategorySql.CategoryRecord>>(sp =>
-		// 	sp.GetRequiredService<DefaultIndexInFlightRecords>().QueryInFlightRecords
-		// );
 
 		var conf = MetricsConfiguration.Get(configuration);
 		var coreMeter = new Meter(conf.CoreMeterName, version: "1.0.0");
 
-		services.AddSingleton<ISecondaryIndexProgressTracker>(sp =>
-			new SecondaryIndexProgressTracker(
-				coreMeter,
-				"indexes.secondary"
-			)
-		);
+		services.AddSingleton<ISecondaryIndexProgressTracker>(_ => new SecondaryIndexProgressTracker(coreMeter, "indexes.secondary"));
 		services.AddSingleton<ISecondaryIndexProcessor>(sp => sp.GetRequiredService<DefaultIndexProcessor>());
 		services.AddSingleton<DefaultIndexProcessor>();
 		services.AddSingleton<CategoryIndexProcessor>();

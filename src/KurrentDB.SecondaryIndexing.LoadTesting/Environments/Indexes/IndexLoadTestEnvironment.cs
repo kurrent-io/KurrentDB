@@ -13,21 +13,19 @@ public class IndexesLoadTestEnvironmentOptions {
 	public int CommitSize { get; set; } = 50000;
 }
 
-public class IndexesLoadTestEnvironment: ILoadTestEnvironment {
+public class IndexesLoadTestEnvironment : ILoadTestEnvironment {
 	private readonly DuckDbDataSource _dataSource;
 	public IMessageBatchAppender MessageBatchAppender { get; }
 	public IIndexingSummaryAssertion AssertThat { get; }
 	public ValueTask InitializeAsync(CancellationToken ct = default) => ValueTask.CompletedTask;
 
-	public IndexesLoadTestEnvironment(IndexesLoadTestEnvironmentOptions options) {
+	public IndexesLoadTestEnvironment() {
 		var dbPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!, "index.db");
 
 		if (File.Exists(dbPath))
 			File.Delete(dbPath);
 
-		_dataSource = new DuckDbDataSource(
-			new DuckDbDataSourceOptions { ConnectionString = $"Data Source={dbPath};" }
-		);
+		_dataSource = new(new() { ConnectionString = $"Data Source={dbPath};" });
 
 		MessageBatchAppender = new IndexMessageBatchAppender(_dataSource, 50000);
 		AssertThat = new DuckDbIndexingSummaryAssertion(_dataSource);

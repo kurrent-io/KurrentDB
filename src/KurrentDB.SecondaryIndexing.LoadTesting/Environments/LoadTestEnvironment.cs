@@ -31,8 +31,8 @@ public static class LoadTestEnvironment {
 			LoadTestEnvironmentType.InMemory => new InMemoryLoadTestEnvironment(),
 			LoadTestEnvironmentType.TestServer => new TestServerEnvironment(),
 			LoadTestEnvironmentType.gRPC => new gRPCClientEnvironment(config.KurrentDBConnectionString),
-			LoadTestEnvironmentType.DuckDb => new DuckDBTestEnvironment(config.DuckDb),
-			LoadTestEnvironmentType.Index => new IndexesLoadTestEnvironment(config.Index),
+			LoadTestEnvironmentType.DuckDb => new DuckDbTestEnvironment(config.DuckDb),
+			LoadTestEnvironmentType.Index => new IndexesLoadTestEnvironment(),
 			_ => throw new ArgumentOutOfRangeException(nameof(config.EnvironmentType), config.EnvironmentType, null)
 		};
 }

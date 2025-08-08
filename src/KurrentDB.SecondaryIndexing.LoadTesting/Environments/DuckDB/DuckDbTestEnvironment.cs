@@ -9,36 +9,26 @@ using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Environments.DuckDB;
 
-public enum DuckDBClientType {
-	Duck,
-	Quack
-}
-
-public class DuckDBTestEnvironmentOptions {
-	public DuckDBClientType ClientType { get; set; } = DuckDBClientType.Quack;
+public class DuckDbTestEnvironmentOptions {
 	public int CommitSize { get; set; } = 50000;
-	public string? WalAutocheckpoint { get; set; }
+	public string? WalAutoCheckpoint { get; set; }
 	public int? CheckpointSize { get; set; }
 }
 
-public class DuckDBTestEnvironment : ILoadTestEnvironment {
+public class DuckDbTestEnvironment : ILoadTestEnvironment {
 	private readonly DuckDbDataSource _dataSource;
 	public IMessageBatchAppender MessageBatchAppender { get; }
 	public IIndexingSummaryAssertion AssertThat { get; }
 
-	public DuckDBTestEnvironment(DuckDBTestEnvironmentOptions options) {
+	public DuckDbTestEnvironment(DuckDbTestEnvironmentOptions options) {
 		var dbPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!, "index.db");
 
 		if (File.Exists(dbPath))
 			File.Delete(dbPath);
 
-		_dataSource = new DuckDbDataSource(
-			new DuckDbDataSourceOptions { ConnectionString = $"Data Source={dbPath};" }
-		);
+		_dataSource = new(new() { ConnectionString = $"Data Source={dbPath};" });
 
-		MessageBatchAppender = options.ClientType == DuckDBClientType.Duck
-			? new RawDuckDbMessageBatchAppender(_dataSource, options)
-			: new RawQuackMessageBatchAppender(_dataSource, options);
+		MessageBatchAppender = new RawQuackMessageBatchAppender(_dataSource, options);
 
 		AssertThat = new DuckDbIndexingSummaryAssertion(_dataSource);
 	}

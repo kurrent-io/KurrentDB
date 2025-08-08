@@ -11,15 +11,18 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Environments.DuckDB;
 
 public class RawQuackMessageBatchAppender : IMessageBatchAppender {
-	private readonly DuckDbDataSource _dbDataSource;
-	private readonly int _commitSize;
-	private Appender _defaultIndexAppender;
+	readonly DuckDbDataSource _dbDataSource;
+	readonly int _commitSize;
+	readonly Stopwatch _sw = new();
+
+	Appender _defaultIndexAppender;
+
+	static readonly ILogger Logger = Log.Logger.ForContext<RawQuackMessageBatchAppender>();
+
 	public long LastCommittedSequence;
 	public long LastSequence;
-	private static readonly ILogger Logger = Log.Logger.ForContext<RawDuckDbMessageBatchAppender>();
-	private readonly Stopwatch _sw = new();
 
-	public RawQuackMessageBatchAppender(DuckDbDataSource dbDataSource, DuckDBTestEnvironmentOptions options) {
+	public RawQuackMessageBatchAppender(DuckDbDataSource dbDataSource, DuckDbTestEnvironmentOptions options) {
 		_dbDataSource = dbDataSource;
 		_commitSize = options.CommitSize;
 		_dbDataSource.InitDb();
@@ -27,9 +30,9 @@ public class RawQuackMessageBatchAppender : IMessageBatchAppender {
 		var connection = _dbDataSource.OpenNewConnection();
 		_defaultIndexAppender = new Appender(connection, "idx_all"u8);
 
-		if (!string.IsNullOrEmpty(options.WalAutocheckpoint)) {
+		if (!string.IsNullOrEmpty(options.WalAutoCheckpoint)) {
 			using var cmd = connection.CreateCommand();
-			cmd.CommandText = $"PRAGMA wal_autocheckpoint = '{options.WalAutocheckpoint}'";
+			cmd.CommandText = $"PRAGMA wal_autocheckpoint = '{options.WalAutoCheckpoint}'";
 			cmd.ExecuteNonQuery();
 		}
 	}
@@ -40,7 +43,7 @@ public class RawQuackMessageBatchAppender : IMessageBatchAppender {
 
 	public ValueTask AppendToDefaultIndex(TestMessageBatch batch) {
 		foreach (var message in batch.Messages) {
-			var sequence = LastSequence++;
+			LastSequence++;
 			var logPosition = message.LogSequence;
 			var eventNumber = message.StreamPosition;
 
@@ -74,9 +77,8 @@ public class RawQuackMessageBatchAppender : IMessageBatchAppender {
 	}
 
 	public ValueTask DisposeAsync() {
-		 _dbDataSource.Dispose();
-		 _defaultIndexAppender.Dispose();
-		 return ValueTask.CompletedTask;
-
+		_dbDataSource.Dispose();
+		_defaultIndexAppender.Dispose();
+		return ValueTask.CompletedTask;
 	}
 }

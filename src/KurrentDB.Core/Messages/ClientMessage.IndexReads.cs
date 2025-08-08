@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading;
-using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messaging;
 

@@ -129,15 +129,9 @@ public class IndexingFixture : SecondaryIndexingEnabledFixture {
 
 	public readonly List<TestMessageBatch> AppendedBatches = [];
 
-	public List<TestMessageBatch> ExpectedBatches =>
-		AppendedBatches.ToList();
+	public List<TestMessageBatch> ExpectedBatches => AppendedBatches.ToList();
 
-	string GetRandomStreamNameFromAppended() =>
-		AppendedBatches.Select(b => b.StreamName).Distinct().ToList().RandomElement();
+	public string[] Categories => AppendedBatches.Select(b => b.CategoryName).Distinct().ToArray();
 
-	public string[] Categories =>
-		AppendedBatches.Select(b => b.CategoryName).Distinct().ToArray();
-
-	public string[] EventTypes =>
-		AppendedBatches.SelectMany(b => b.Messages.Select(m => m.EventType)).Distinct().ToArray();
+	public string[] EventTypes => AppendedBatches.SelectMany(b => b.Messages.Select(m => m.EventType)).Distinct().ToArray();
 }

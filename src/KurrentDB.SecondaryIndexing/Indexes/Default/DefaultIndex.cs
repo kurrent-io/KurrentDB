@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using KurrentDB.Core.Data;
-using KurrentDB.Core.Services;
 using KurrentDB.SecondaryIndexing.Storage;
 using static KurrentDB.SecondaryIndexing.Indexes.Default.DefaultSql;
 

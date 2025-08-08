@@ -4,18 +4,17 @@
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
-using KurrentDB.Core.Services;
 using KurrentDB.SecondaryIndexing.Storage;
 using static KurrentDB.SecondaryIndexing.Indexes.Category.CategorySql;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Category;
 
 public class CategoryIndexProcessor {
-	private readonly Dictionary<string, int> _categories;
-	private readonly DuckDbDataSource _db;
-	private readonly IPublisher _publisher;
+	readonly Dictionary<string, int> _categories;
+	readonly DuckDbDataSource _db;
+	readonly IPublisher _publisher;
 
-	private int _seq;
+	int _seq;
 	public long LastIndexedPosition { get; private set; }
 
 	public CategoryIndexProcessor(DuckDbDataSource db, IPublisher publisher) {

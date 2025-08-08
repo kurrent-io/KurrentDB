@@ -3,7 +3,6 @@
 
 using System.Threading.Channels;
 using KurrentDB.Common.Utils;
-using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 
 namespace KurrentDB.Core.Services.Transport.Enumerators;

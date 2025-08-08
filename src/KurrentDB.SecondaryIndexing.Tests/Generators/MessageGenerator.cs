@@ -6,7 +6,6 @@ using KurrentDB.Core.Services;
 using KurrentDB.Core.Tests;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
-using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
 
 namespace KurrentDB.SecondaryIndexing.Tests.Generators;

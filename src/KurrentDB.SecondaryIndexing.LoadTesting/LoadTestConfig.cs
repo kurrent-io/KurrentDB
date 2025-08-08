@@ -19,7 +19,7 @@ public class LoadTestConfig {
 	public LoadTestEnvironmentType EnvironmentType { get; set; } = LoadTestEnvironmentType.TestServer;
 	public required string KurrentDBConnectionString { get; set; } = "Dummy";
 	public required string DuckDbConnectionString { get; set; }= "Dummy";
-	public DuckDBTestEnvironmentOptions DuckDb { get; set; } = new();
+	public DuckDbTestEnvironmentOptions DuckDb { get; set; } = new();
 	public IndexesLoadTestEnvironmentOptions Index { get; set; } =  new IndexesLoadTestEnvironmentOptions();
 
 

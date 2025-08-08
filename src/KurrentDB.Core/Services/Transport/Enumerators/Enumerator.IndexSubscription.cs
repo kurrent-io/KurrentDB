@@ -7,7 +7,6 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using Google.Protobuf;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;

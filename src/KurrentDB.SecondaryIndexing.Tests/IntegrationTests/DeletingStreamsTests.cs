@@ -4,7 +4,6 @@
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
-using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
 using KurrentDB.SecondaryIndexing.Tests.Fixtures;
 using KurrentDB.SecondaryIndexing.Tests.Generators;

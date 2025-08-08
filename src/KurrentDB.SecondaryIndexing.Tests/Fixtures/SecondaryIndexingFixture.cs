@@ -4,7 +4,6 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Channels;
-using Kurrent.Surge.Resilience;
 using KurrentDB.Core;
 using KurrentDB.Core.ClientPublisher;
 using KurrentDB.Core.Configuration.Sources;
@@ -93,14 +92,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		return events;
 	}
 
-	private async IAsyncEnumerable<ResolvedEvent> SubscribeToIndex(string indexName, int maxCount, [EnumeratorCancellation] CancellationToken ct = default) {
-		var inboundChannel = Channel.CreateBounded<ReadResponse>(
-			new BoundedChannelOptions(1000) {
-				FullMode = BoundedChannelFullMode.Wait,
-				SingleReader = true,
-				SingleWriter = true
-			}
-		);
+	async IAsyncEnumerable<ResolvedEvent> SubscribeToIndex(string indexName, int maxCount, [EnumeratorCancellation] CancellationToken ct = default) {
 		var enumerable = Publisher.SubscribeToIndex(indexName, Position.Start, cancellationToken: ct);
 
 		int count = 0;
