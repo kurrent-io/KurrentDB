@@ -36,7 +36,7 @@ public partial class StorageReaderWorker<TStreamId> {
 		ReadStreamEventsForwardCompleted res;
 		var cts = token.LinkTo(msg.CancellationToken);
 		try {
-			res = SystemStreams.IsVirtualStream(msg.EventStreamId)
+			res = SystemStreams.IsInMemoryStream(msg.EventStreamId)
 				? await _virtualStreamReader.ReadForwards(msg, token)
 				: await ReadStreamEventsForward(msg, token);
 		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts?.Token) {
@@ -82,7 +82,7 @@ public partial class StorageReaderWorker<TStreamId> {
 
 		var cts = token.LinkTo(msg.CancellationToken);
 		try {
-			var res = SystemStreams.IsVirtualStream(msg.EventStreamId)
+			var res = SystemStreams.IsInMemoryStream(msg.EventStreamId)
 				? await _virtualStreamReader.ReadBackwards(msg, token)
 				: await ReadStreamEventsBackward(msg, token);
 

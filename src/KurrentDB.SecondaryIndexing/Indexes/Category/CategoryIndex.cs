@@ -6,12 +6,11 @@ using KurrentDB.Core.Services;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Category;
 
-internal static class CategoryIndex {
-	public const string Prefix = $"{SystemStreams.IndexStreamPrefix}ce-";
-	public static string Name(string categoryName) => $"{Prefix}{categoryName}";
+static class CategoryIndex {
+	public static string Name(string categoryName) => $"{SystemStreams.CategorySecondaryIndexPrefix}{categoryName}";
 
 	public static bool TryParseCategoryName(string streamName, [NotNullWhen(true)] out string? categoryName) {
-		if (!IsCategoryIndexStream(Prefix)) {
+		if (!IsCategoryIndexStream(SystemStreams.CategorySecondaryIndexPrefix)) {
 			categoryName = null;
 			return false;
 		}
@@ -20,6 +19,5 @@ internal static class CategoryIndex {
 		return true;
 	}
 
-	public static bool IsCategoryIndexStream(string streamName) =>
-		streamName.StartsWith(Prefix);
+	public static bool IsCategoryIndexStream(string streamName) => streamName.StartsWith(SystemStreams.CategorySecondaryIndexPrefix);
 }

@@ -1150,6 +1150,7 @@ public class ClusterVNode<TStreamId> :
 		_mainBus.Subscribe<TcpMessage.ConnectionClosed>(subscrQueue);
 		_mainBus.Subscribe<ClientMessage.SubscribeToStream>(subscrQueue);
 		_mainBus.Subscribe<ClientMessage.FilteredSubscribeToStream>(subscrQueue);
+		_mainBus.Subscribe<ClientMessage.SubscribeToIndex>(subscrQueue);
 		_mainBus.Subscribe<ClientMessage.UnsubscribeFromStream>(subscrQueue);
 		_mainBus.Subscribe<SubscriptionMessage.DropSubscription>(subscrQueue);
 		_mainBus.Subscribe<SubscriptionMessage.PollStream>(subscrQueue);
@@ -1158,12 +1159,13 @@ public class ClusterVNode<TStreamId> :
 		_mainBus.Subscribe<StorageMessage.InMemoryEventCommitted>(subscrQueue);
 		_mainBus.Subscribe<StorageMessage.SecondaryIndexCommitted>(subscrQueue);
 
-		var subscription = new SubscriptionsService<TStreamId>(_mainQueue, subscrQueue, _authorizationProvider, readIndex, virtualStreamReader);
+		var subscription = new SubscriptionsService<TStreamId>(_mainQueue, subscrQueue, _authorizationProvider, readIndex, virtualStreamReader, secondaryIndexReaders);
 		subscrBus.Subscribe<SystemMessage.SystemStart>(subscription);
 		subscrBus.Subscribe<SystemMessage.BecomeShuttingDown>(subscription);
 		subscrBus.Subscribe<TcpMessage.ConnectionClosed>(subscription);
 		subscrBus.Subscribe<ClientMessage.SubscribeToStream>(subscription);
 		subscrBus.Subscribe<ClientMessage.FilteredSubscribeToStream>(subscription);
+		subscrBus.Subscribe<ClientMessage.SubscribeToIndex>(subscription);
 		subscrBus.Subscribe<ClientMessage.UnsubscribeFromStream>(subscription);
 		subscrBus.Subscribe<SubscriptionMessage.DropSubscription>(subscription);
 		subscrBus.Subscribe<SubscriptionMessage.PollStream>(subscription);

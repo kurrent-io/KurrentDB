@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Services;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
@@ -12,13 +13,10 @@ using Xunit.Abstractions;
 namespace KurrentDB.SecondaryIndexing.Tests.IntegrationTests;
 
 [Trait("Category", "Integration")]
-public class DeletingStreamsTests(
-	DeletingStreamsFixture fixture,
-	ITestOutputHelper output
-) : SecondaryIndexingTest<DeletingStreamsFixture>(fixture, output) {
+public class DeletingStreamsTests(DeletingStreamsFixture fixture, ITestOutputHelper output) : SecondaryIndexingTest<DeletingStreamsFixture>(fixture, output) {
 	[Fact(Skip = "For now")]
 	public Task ReadsAllEventsFromDefaultIndex() =>
-		ValidateRead(DefaultIndex.Name, Fixture.ExpectedBatches.ToDefaultIndexResolvedEvents());
+		ValidateRead(SystemStreams.DefaultSecondaryIndex, Fixture.ExpectedBatches.ToDefaultIndexResolvedEvents());
 
 	[Fact(Skip = "For now")]
 	public async Task ReadsAllEventsFromCategoryIndex() {
@@ -38,7 +36,7 @@ public class DeletingStreamsTests(
 
 	[Fact(Skip = "For now")]
 	public Task SubscriptionReturnsAllEventsFromDefaultIndex() =>
-		ValidateSubscription(DefaultIndex.Name, Fixture.ExpectedBatches.ToDefaultIndexResolvedEvents());
+		ValidateSubscription(SystemStreams.DefaultSecondaryIndex, Fixture.ExpectedBatches.ToDefaultIndexResolvedEvents());
 
 	[Fact(Skip = "For now")]
 	public async Task SubscriptionReturnsAllEventsFromCategoryIndex() {
@@ -56,53 +54,33 @@ public class DeletingStreamsTests(
 		}
 	}
 
-	private async Task ValidateRead(string indexStreamName, ResolvedEvent[] expectedEvents) {
+	async Task ValidateRead(string indexStreamName, ResolvedEvent[] expectedEvents) {
 		var results = await Fixture.ReadUntil(indexStreamName, expectedEvents.Length);
 
-		AssertResolvedEventsMatch(indexStreamName, results, expectedEvents);
+		AssertResolvedEventsMatch(results, expectedEvents);
 	}
 
-	private async Task ValidateSubscription(string indexStreamName, ResolvedEvent[] expectedEvents) {
+	async Task ValidateSubscription(string indexStreamName, ResolvedEvent[] expectedEvents) {
 		var results = await Fixture.SubscribeUntil(indexStreamName, expectedEvents.Length);
 
-		AssertResolvedEventsMatch(indexStreamName, results, expectedEvents);
+		AssertResolvedEventsMatch(results, expectedEvents);
 	}
 
-	private static void AssertResolvedEventsMatch(
-		string indexStreamName,
-		List<ResolvedEvent> results,
-		ResolvedEvent[] expectedRecords
-	) {
+	static void AssertResolvedEventsMatch(List<ResolvedEvent> results, ResolvedEvent[] expectedRecords) {
 		Assert.NotEmpty(results);
 		Assert.Equal(expectedRecords.Length, results.Count);
 
-		Assert.All(results, item => {
-			Assert.NotNull(item.Link);
-			Assert.Equal("$>", item.Link.EventType);
-			Assert.NotEqual("$>", item.Event.EventType);
-		});
-
 		Assert.All(results, (item, index) => {
-			Assert.Equal(index, item.Link.EventNumber);
-			Assert.Equal(index - 1, item.Link.ExpectedVersion);
+			Assert.NotEqual(0L, item.Event.LogPosition);
+			Assert.NotEqual(0L, item.Event.TransactionPosition);
+
+			if (index == 0)
+				return;
+
+			var previousItem = results[index - 1];
+
+			Assert.True(item.Event.LogPosition > previousItem.Event.LogPosition);
 		});
-
-		Assert.All(results,
-			(item, index) => {
-				Assert.Equal(item.Event.LogPosition, item.Link.LogPosition);
-				Assert.Equal(item.Event.TransactionOffset, item.Link.TransactionOffset);
-				Assert.Equal(item.Event.TransactionPosition, item.Link.TransactionPosition);
-
-				Assert.NotEqual(0L, item.Event.LogPosition);
-				Assert.NotEqual(0L, item.Event.TransactionPosition);
-
-				if (index == 0)
-					return;
-
-				var previousItem = results[index - 1];
-
-				Assert.True(item.Event.LogPosition > previousItem.Event.LogPosition);
-			});
 
 		Assert.All(results, item => Assert.NotEqual(default, item.Event.TimeStamp));
 
@@ -111,22 +89,10 @@ public class DeletingStreamsTests(
 			var expected = expectedRecords[sequence];
 
 			Assert.Equal(expected.Event.EventId, actual.Event.EventId);
-			Assert.Equal(actual.Link.EventId, actual.Event.EventId);
-
-			Assert.Equal(indexStreamName, actual.Link.EventStreamId);
-			Assert.NotEqual(actual.Link.EventStreamId, actual.Event.EventStreamId);
-			Assert.Equal(expected.Link.EventStreamId, actual.Link.EventStreamId);
-
 			Assert.Equal(expected.Event.EventType, actual.Event.EventType);
-
 			Assert.Equal(expected.Event.Data, actual.Event.Data);
-			//TODO: Check as for some reason that fails sometimes for subscription
-			Assert.Equal(expected.Link.Data, actual.Link.Data);
-
 			Assert.Equal(expected.Event.EventNumber, actual.Event.EventNumber);
-			Assert.Equal(sequence, actual.Link.EventNumber);
 
-			Assert.Equal(expected.Link.IsJson, actual.Link.IsJson);
 			Assert.NotEqual(default, actual.Event.Flags);
 			Assert.Equal(expected.Event.Metadata, actual.Event.Metadata);
 			Assert.Equal(actual.Event.TransactionOffset, actual.Event.TransactionOffset);
@@ -135,8 +101,9 @@ public class DeletingStreamsTests(
 	}
 }
 
+[UsedImplicitly]
 public class DeletingStreamsFixture : SecondaryIndexingEnabledFixture {
-	private readonly LoadTestPartitionConfig _config = new(
+	readonly LoadTestPartitionConfig _config = new(
 		PartitionId: 1,
 		StartCategoryIndex: 0,
 		CategoriesCount: 5,
@@ -147,7 +114,7 @@ public class DeletingStreamsFixture : SecondaryIndexingEnabledFixture {
 		TotalMessagesCount: 10
 	);
 
-	private readonly MessageGenerator _messageGenerator = new();
+	readonly MessageGenerator _messageGenerator = new();
 
 	public DeletingStreamsFixture() {
 		OnSetup = async () => {
@@ -162,19 +129,15 @@ public class DeletingStreamsFixture : SecondaryIndexingEnabledFixture {
 		};
 	}
 
-	private static string DeletedStreamName = null!;
+	static string DeletedStreamName = null!;
 
-	private readonly List<TestMessageBatch> _appendedBatches = [];
+	readonly List<TestMessageBatch> _appendedBatches = [];
 
-	public List<TestMessageBatch> ExpectedBatches =>
-		_appendedBatches.Where(b => b.StreamName != DeletedStreamName).ToList();
+	public List<TestMessageBatch> ExpectedBatches => _appendedBatches.Where(b => b.StreamName != DeletedStreamName).ToList();
 
-	private string GetRandomStreamNameFromAppended() =>
-		_appendedBatches.Select(b => b.StreamName).Distinct().ToList().RandomElement();
+	string GetRandomStreamNameFromAppended() => _appendedBatches.Select(b => b.StreamName).Distinct().ToList().RandomElement();
 
-	public string[] Categories =>
-		_appendedBatches.Select(b => b.CategoryName).Distinct().ToArray();
+	public string[] Categories => _appendedBatches.Select(b => b.CategoryName).Distinct().ToArray();
 
-	public string[] EventTypes =>
-		_appendedBatches.SelectMany(b => b.Messages.Select(m => m.EventType)).Distinct().ToArray();
+	public string[] EventTypes => _appendedBatches.SelectMany(b => b.Messages.Select(m => m.EventType)).Distinct().ToArray();
 }

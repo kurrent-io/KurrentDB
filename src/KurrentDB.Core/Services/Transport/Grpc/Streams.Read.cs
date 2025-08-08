@@ -162,14 +162,9 @@ internal partial class Streams<TStreamId> {
 					requiresLeader,
 					deadline,
 					cancellationToken),
-			(StreamOptionOneofCase.All,
-				CountOptionOneofCase.Count,
-				ReadDirection.Forwards,
-				FilterOptionOneofCase.Filter) => GetReadAllForwardsFilteredEnumerator(),
-			(StreamOptionOneofCase.All,
-				CountOptionOneofCase.Count,
-				ReadDirection.Backwards,
-				FilterOptionOneofCase.Filter) => GetReadAllBackwardsFilteredEnumerator(),
+			(StreamOptionOneofCase.All, CountOptionOneofCase.Count, ReadDirection.Forwards, FilterOptionOneofCase.Filter) => GetReadAllForwardsFilteredEnumerator(),
+			(StreamOptionOneofCase.All, CountOptionOneofCase.Count, ReadDirection.Backwards, FilterOptionOneofCase.Filter) => GetReadAllBackwardsFilteredEnumerator(),
+			(StreamOptionOneofCase.All, CountOptionOneofCase.Subscription, ReadDirection.Forwards, FilterOptionOneofCase.Filter) => GetAllSubscriptionFilteredEnumerator(),
 			(StreamOptionOneofCase.Stream,
 				CountOptionOneofCase.Subscription,
 				ReadDirection.Forwards,
@@ -195,24 +190,6 @@ internal partial class Streams<TStreamId> {
 					user,
 					requiresLeader,
 					cancellationToken: cancellationToken),
-			(StreamOptionOneofCase.All,
-				CountOptionOneofCase.Subscription,
-				ReadDirection.Forwards,
-				FilterOptionOneofCase.Filter) => new Enumerator.AllSubscriptionFiltered(
-					_publisher,
-					_expiryStrategy,
-					request.Options.All.ToSubscriptionPosition(),
-					request.Options.ResolveLinks,
-					ConvertToEventFilter(true, request.Options.Filter),
-					user,
-					requiresLeader,
-					request.Options.Filter.WindowCase switch {
-						ReadReq.Types.Options.Types.FilterOptions.WindowOneofCase.Count => null,
-						ReadReq.Types.Options.Types.FilterOptions.WindowOneofCase.Max => request.Options.Filter.Max,
-						_ => throw RpcExceptions.InvalidArgument(request.Options.Filter.WindowCase)
-					},
-					request.Options.Filter.CheckpointIntervalMultiplier,
-					cancellationToken),
 			_ => throw RpcExceptions.InvalidCombination((streamOptionsCase, countOptionsCase, readDirection,
 				filterOptionsCase))
 		};
@@ -271,6 +248,25 @@ internal partial class Streams<TStreamId> {
 					requiresLeader,
 					ConvertToWindow(filter),
 					deadline,
+					cancellationToken)
+			);
+
+		IAsyncEnumerator<ReadResponse> GetAllSubscriptionFilteredEnumerator() =>
+			GetFilterOrIndexEnumerator(
+				indexName => new Enumerator.IndexSubscription(
+					_publisher, _expiryStrategy, request.Options.All.ToSubscriptionPosition(),
+					indexName, user, requiresLeader, cancellationToken
+				),
+				filter => new Enumerator.AllSubscriptionFiltered(
+					_publisher,
+					_expiryStrategy,
+					request.Options.All.ToSubscriptionPosition(),
+					request.Options.ResolveLinks,
+					ConvertToEventFilter(true, request.Options.Filter),
+					user,
+					requiresLeader,
+					ConvertToWindow(filter),
+					request.Options.Filter.CheckpointIntervalMultiplier,
 					cancellationToken)
 			);
 

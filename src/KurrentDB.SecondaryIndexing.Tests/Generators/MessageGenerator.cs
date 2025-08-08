@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Services;
 using KurrentDB.Core.Tests;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
@@ -186,10 +187,7 @@ public static class TestMessageBatchExtensions {
 		var currentIndex = 0;
 
 		foreach (var batch in batches) {
-			var resolvedEvents = batch.ToIndexResolvedEvents(
-				DefaultIndex.Name,
-				currentIndex
-			);
+			var resolvedEvents = batch.ToIndexResolvedEvents(SystemStreams.DefaultSecondaryIndex, currentIndex);
 			currentIndex += batch.Messages.Length;
 			result.AddRange(resolvedEvents);
 		}

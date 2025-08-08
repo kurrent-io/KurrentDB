@@ -4,6 +4,7 @@
 using System.Security.Claims;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using static KurrentDB.Core.Messages.ClientMessage;
 using static KurrentDB.SecondaryIndexing.Tests.Fakes.TestResolvedEventFactory;
@@ -232,7 +233,7 @@ public class ReadForwardsTests : IndexTestBase {
 			InternalCorrId,
 			CorrelationId,
 			envelope,
-			DefaultIndex.Name,
+			SystemStreams.DefaultSecondaryIndex,
 			start.CommitPosition,
 			start.PreparePosition,
 			false,
@@ -262,6 +263,7 @@ public class ReadForwardsTests : IndexTestBase {
 		new(
 			result,
 			events,
+			TFPos.FirstRecordOfTf,
 			tfLastCommitPosition,
 			isEndOfStream,
 			error

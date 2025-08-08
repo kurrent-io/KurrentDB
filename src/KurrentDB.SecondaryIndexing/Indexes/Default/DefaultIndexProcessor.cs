@@ -6,6 +6,7 @@ using Kurrent.Quack;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
+using KurrentDB.Core.Services;
 using KurrentDB.SecondaryIndexing.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
@@ -17,16 +18,16 @@ using static KurrentDB.SecondaryIndexing.Indexes.Default.DefaultSql;
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
-	private readonly DefaultIndexInFlightRecords _inFlightRecords;
-	private readonly DuckDBAdvancedConnection _connection;
-	private readonly CategoryIndexProcessor _categoryIndexProcessor;
-	private readonly EventTypeIndexProcessor _eventTypeIndexProcessor;
-	private readonly StreamIndexProcessor _streamIndexProcessor;
-	private readonly ISecondaryIndexProgressTracker _progressTracker;
-	private readonly IPublisher _publisher;
-	private Appender _appender;
+	readonly DefaultIndexInFlightRecords _inFlightRecords;
+	readonly DuckDBAdvancedConnection _connection;
+	readonly CategoryIndexProcessor _categoryIndexProcessor;
+	readonly EventTypeIndexProcessor _eventTypeIndexProcessor;
+	readonly StreamIndexProcessor _streamIndexProcessor;
+	readonly ISecondaryIndexProgressTracker _progressTracker;
+	readonly IPublisher _publisher;
+	Appender _appender;
 
-	private static readonly ILogger Logger = Log.Logger.ForContext<DefaultIndexProcessor>();
+	static readonly ILogger Logger = Log.Logger.ForContext<DefaultIndexProcessor>();
 
 	public long LastIndexedPosition { get; private set; }
 
@@ -86,7 +87,7 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_inFlightRecords.Append(new(logPosition, categoryId, eventTypeId));
 		LastIndexedPosition = resolvedEvent.Event.LogPosition;
 
-		// _publisher.Publish(new StorageMessage.SecondaryIndexCommitted(resolvedEvent.ToResolvedLink(DefaultIndex.Name, sequence)));
+		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(SystemStreams.DefaultSecondaryIndex, resolvedEvent));
 		_progressTracker.RecordIndexed(resolvedEvent);
 	}
 

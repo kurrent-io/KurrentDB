@@ -8,10 +8,14 @@ using System.Threading.Tasks;
 using KurrentDB.Core.Data;
 using static KurrentDB.Core.Messages.ClientMessage;
 
+// ReSharper disable LoopCanBeConvertedToQuery
+
 namespace KurrentDB.Core.Services.Storage;
 
 public interface ISecondaryIndexReader {
 	bool CanReadIndex(string indexName);
+
+	long GetLastIndexedPosition(string indexName);
 
 	ValueTask<ReadIndexEventsForwardCompleted> ReadForwards(ReadIndexEventsForward msg, CancellationToken token);
 
@@ -25,37 +29,40 @@ public class SecondaryIndexReaders {
 		_readers = readers.ToArray();
 	}
 
-	public ValueTask<ReadIndexEventsForwardCompleted> ReadForwards(ReadIndexEventsForward msg, CancellationToken token) {
-		for (var i = 0; i < _readers.Length; i++) {
-			var reader = _readers[i];
-			if (!reader.CanReadIndex(msg.IndexName))
-				continue;
-			return reader.ReadForwards(msg, token);
-		}
+	public bool CanReadIndex(string indexName) => _readers.Any(r => r.CanReadIndex(indexName));
 
-		return ValueTask.FromResult(new ReadIndexEventsForwardCompleted(
-			ReadIndexResult.IndexNotFound,
-			[],
-			-1,
-			true,
+	public ValueTask<ReadIndexEventsForwardCompleted> ReadForwards(ReadIndexEventsForward msg, CancellationToken token) {
+		var reader = FindReader(msg.IndexName);
+
+		return reader?.ReadForwards(msg, token) ?? ValueTask.FromResult(
+			new ReadIndexEventsForwardCompleted(
+				ReadIndexResult.IndexNotFound, [], new(msg.CommitPosition, msg.PreparePosition), -1, true,
+				$"Index {msg.IndexName} does not exist"
+			));
+	}
+
+	public ValueTask<ReadIndexEventsBackwardCompleted> ReadBackwards(ReadIndexEventsBackward msg, CancellationToken token) {
+		var reader = FindReader(msg.IndexName);
+
+		return reader?.ReadBackwards(msg, token) ?? ValueTask.FromResult(new ReadIndexEventsBackwardCompleted(
+			ReadIndexResult.IndexNotFound, [], -1, true,
 			$"Index {msg.IndexName} does not exist"
 		));
 	}
 
-	public ValueTask<ReadIndexEventsBackwardCompleted> ReadBackwards(ReadIndexEventsBackward msg, CancellationToken token) {
+	public long GetLastIndexedPosition(string indexName) {
+		var reader = FindReader(indexName);
+		return reader?.GetLastIndexedPosition(indexName) ?? -1;
+	}
+
+	[CanBeNull]
+	ISecondaryIndexReader FindReader(string indexName) {
 		for (var i = 0; i < _readers.Length; i++) {
 			var reader = _readers[i];
-			if (!reader.CanReadIndex(msg.IndexName))
-				continue;
-			return reader.ReadBackwards(msg, token);
+			if (reader.CanReadIndex(indexName))
+				return reader;
 		}
 
-		return ValueTask.FromResult(new ReadIndexEventsBackwardCompleted(
-			ReadIndexResult.IndexNotFound,
-			[],
-			-1,
-			true,
-			$"Index {msg.IndexName} does not exist"
-		));
+		return null;
 	}
 }

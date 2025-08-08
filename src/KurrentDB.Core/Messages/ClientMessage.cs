@@ -112,6 +112,7 @@ public static partial class ClientMessage {
 		public readonly Types.NotHandledReason Reason;
 		public readonly Types.LeaderInfo LeaderInfo;
 		public readonly string Description;
+
 		public NotHandled(Guid correlationId,
 			Types.NotHandledReason reason,
 			Types.LeaderInfo leaderInfo) {
@@ -127,13 +128,13 @@ public static partial class ClientMessage {
 		}
 
 		public static class Types {
-
 			public enum NotHandledReason {
 				NotReady,
 				TooBusy,
 				NotLeader,
 				IsReadOnly
 			}
+
 			public class LeaderInfo(EndPoint externalTcp, bool isSecure, EndPoint http) {
 				public bool IsSecure { get; } = isSecure;
 				public EndPoint ExternalTcp { get; } = externalTcp;
@@ -169,7 +170,6 @@ public static partial class ClientMessage {
 			IReadOnlyDictionary<string, string> tokens = null,
 			CancellationToken cancellationToken = default)
 			: base(internalCorrId, correlationId, envelope, requireLeader, user, tokens, cancellationToken) {
-
 			// there must be at least one stream
 			ArgumentOutOfRangeException.ThrowIfNegativeOrZero(eventStreamIds.Length, nameof(eventStreamIds));
 
@@ -250,7 +250,8 @@ public static partial class ClientMessage {
 		}
 
 		public static WriteEvents ForSingleEvent(
-			Guid internalCorrId, Guid correlationId, IEnvelope envelope, bool requireLeader, string eventStreamId, long expectedVersion, Event @event, ClaimsPrincipal user, IReadOnlyDictionary<string, string> tokens = null) {
+			Guid internalCorrId, Guid correlationId, IEnvelope envelope, bool requireLeader, string eventStreamId, long expectedVersion, Event @event, ClaimsPrincipal user,
+			IReadOnlyDictionary<string, string> tokens = null) {
 			return new WriteEvents(
 				internalCorrId,
 				correlationId,
@@ -302,11 +303,11 @@ public static partial class ClientMessage {
 
 				if (firstEventNumber < -1)
 					throw new ArgumentOutOfRangeException(nameof(firstEventNumbers),
-					$"FirstEventNumber: {firstEventNumber}");
+						$"FirstEventNumber: {firstEventNumber}");
 
 				if (lastEventNumber - firstEventNumber + 1 < 0)
 					throw new ArgumentOutOfRangeException(nameof(lastEventNumbers),
-					$"LastEventNumber {lastEventNumber}, FirstEventNumber {firstEventNumber}.");
+						$"LastEventNumber {lastEventNumber}, FirstEventNumber {firstEventNumber}.");
 			}
 
 			CorrelationId = correlationId;
@@ -759,7 +760,7 @@ public static partial class ClientMessage {
 			long tfLastCommitPosition) {
 			if (result != ReadStreamResult.Success) {
 				Ensure.Equal(-1, nextEventNumber);
-				Ensure.Equal(true,isEndOfStream);
+				Ensure.Equal(true, isEndOfStream);
 			}
 
 			CorrelationId = correlationId;
@@ -1653,6 +1654,20 @@ public static partial class ClientMessage {
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
+	public partial class SubscribeToIndex(
+		Guid internalCorrId,
+		Guid correlationId,
+		IEnvelope envelope,
+		Guid connectionId,
+		string indexName,
+		ClaimsPrincipal user,
+		DateTime? expires = null)
+		: ReadRequestMessage(internalCorrId, correlationId, envelope, user, expires) {
+		public readonly Guid ConnectionId = Ensure.NotEmptyGuid(connectionId);
+		public readonly string IndexName = Ensure.NotNullOrEmpty(indexName);
+	}
+
+	[DerivedMessage(CoreMessage.Client)]
 	public partial class CheckpointReached(Guid correlationId, TFPos? position) : Message {
 		public readonly Guid CorrelationId = correlationId;
 		public readonly TFPos? Position = position;
@@ -1777,6 +1792,7 @@ public static partial class ClientMessage {
 		public readonly string ScavengeId = scavengeId;
 
 		public override string ToString() => $"Result: {Result}, ScavengeId: {ScavengeId}";
+
 		public enum ScavengeResult {
 			InProgress,
 			Stopped
@@ -1842,7 +1858,6 @@ public static partial class ClientMessage {
 		public readonly string Reason = reason;
 
 		public override string ToString() => $"ScavengeId: {ScavengeId}, Reason: {Reason}";
-
 	}
 
 	[DerivedMessage(CoreMessage.Client)]

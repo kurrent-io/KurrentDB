@@ -73,9 +73,6 @@ public static class SystemStreams {
 		return metastreamId[2..];
 	}
 
-	public static bool IsVirtualStream(string streamId) =>
-		IsInMemoryStream(streamId) || IsIndexStream(streamId);
-
 	public static bool IsInMemoryStream(string streamId) =>
 		streamId.StartsWith(InMemoryStreamPrefix);
 

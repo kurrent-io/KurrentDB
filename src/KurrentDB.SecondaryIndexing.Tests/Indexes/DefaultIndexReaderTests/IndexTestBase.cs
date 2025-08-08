@@ -10,17 +10,17 @@ using KurrentDB.SecondaryIndexing.Indexes.Stream;
 using KurrentDB.SecondaryIndexing.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Tests.Fixtures;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Services;
 using KurrentDB.SecondaryIndexing.Diagnostics;
 
 namespace KurrentDB.SecondaryIndexing.Tests.Indexes.DefaultIndexReaderTests;
 
 public abstract class IndexTestBase : DuckDbIntegrationTest {
-	private readonly DefaultIndexProcessor _processor;
+	readonly DefaultIndexProcessor _processor;
 	private protected readonly DefaultIndexReader Sut;
 	protected readonly Guid InternalCorrId = Guid.NewGuid();
 	protected readonly Guid CorrelationId = Guid.NewGuid();
-	protected const string IndexName = DefaultIndex.Name;
-	private readonly ReadIndexStub _readIndexStub = new();
+	readonly ReadIndexStub _readIndexStub = new();
 
 	protected IndexTestBase() {
 		const int commitBatchSize = 9;

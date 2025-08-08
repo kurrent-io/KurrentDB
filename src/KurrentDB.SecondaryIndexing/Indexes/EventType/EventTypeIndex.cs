@@ -7,11 +7,10 @@ using KurrentDB.Core.Services;
 namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
 
 static class EventTypeIndex {
-	const string Prefix = $"{SystemStreams.IndexStreamPrefix}et-";
-	public static string Name(string eventType) => $"{Prefix}{eventType}";
+	public static string Name(string eventType) => $"{SystemStreams.EventTypeSecondaryIndexPrefix}{eventType}";
 
 	public static bool TryParseEventType(string streamName, [NotNullWhen(true)] out string? eventTypeName) {
-		if (!IsEventTypeIndex(Prefix)) {
+		if (!IsEventTypeIndex(SystemStreams.EventTypeSecondaryIndexPrefix)) {
 			eventTypeName = null;
 			return false;
 		}
@@ -20,6 +19,5 @@ static class EventTypeIndex {
 		return true;
 	}
 
-	public static bool IsEventTypeIndex(string streamName) =>
-		streamName.StartsWith(Prefix);
+	public static bool IsEventTypeIndex(string streamName) => streamName.StartsWith(SystemStreams.EventTypeSecondaryIndexPrefix);
 }

@@ -26,11 +26,11 @@ public class SecondaryIndexingEnabledFixture() : SecondaryIndexingFixture(true);
 public class SecondaryIndexingDisabledFixture() : SecondaryIndexingFixture(false);
 
 public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
-	private const string DatabasePathConfig = $"{KurrentConfigurationKeys.Prefix}:Database:Db";
-	private const string PluginConfigPrefix = $"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing";
-	private const string OptionsConfigPrefix = $"{PluginConfigPrefix}:Options";
+	const string DatabasePathConfig = $"{KurrentConfigurationKeys.Prefix}:Database:Db";
+	const string PluginConfigPrefix = $"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing";
+	const string OptionsConfigPrefix = $"{PluginConfigPrefix}:Options";
+	readonly TimeSpan _defaultTimeout = TimeSpan.FromMilliseconds(30000);
 	protected string? PathName;
-	private readonly TimeSpan _defaultTimeout = TimeSpan.FromMilliseconds(30000);
 
 	protected SecondaryIndexingFixture(bool isSecondaryIndexingPluginEnabled) {
 		if (!isSecondaryIndexingPluginEnabled) return;
@@ -46,12 +46,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		OnTearDown = CleanUpDatabaseDirectory;
 	}
 
-	public async Task<List<ResolvedEvent>> ReadUntil(
-		string indexName,
-		int maxCount,
-		TimeSpan? timeout = null,
-		CancellationToken ct = default
-	) {
+	public async Task<List<ResolvedEvent>> ReadUntil(string indexName, int maxCount, TimeSpan? timeout = null, CancellationToken ct = default) {
 		timeout ??= _defaultTimeout;
 		var endTime = DateTime.UtcNow.Add(timeout.Value);
 
@@ -63,13 +58,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 
 		do {
 			try {
-				events =
-					await Publisher.ReadIndex(
-						indexName,
-						Position.Start,
-						maxCount,
-						cancellationToken: cts.Token
-					).ToListAsync(cts.Token);
+				events = await Publisher.ReadIndex(indexName, Position.Start, maxCount, cancellationToken: cts.Token).ToListAsync(cts.Token);
 
 				if (events.Count != maxCount) {
 					await Task.Delay(25, cts.Token);
@@ -81,19 +70,13 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 			}
 		} while (events.Count != maxCount && DateTime.UtcNow < endTime);
 
-
 		if (events.Count == 0 && streamNotFound != null)
 			throw streamNotFound;
 
 		return events;
 	}
 
-	public async Task<List<ResolvedEvent>> SubscribeUntil(
-		string streamName,
-		int maxCount,
-		TimeSpan? timeout = null,
-		CancellationToken ct = default
-	) {
+	public async Task<List<ResolvedEvent>> SubscribeUntil(string indexName, int maxCount, TimeSpan? timeout = null, CancellationToken ct = default) {
 		timeout ??= _defaultTimeout;
 
 		var events = new List<ResolvedEvent>();
@@ -102,7 +85,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		cts.CancelAfter(timeout.Value);
 
 		try {
-			events = await SubscribeToStream(streamName, maxCount, cts.Token).Take(maxCount).ToListAsync(cts.Token);
+			events = await SubscribeToIndex(indexName, maxCount, cts.Token).Take(maxCount).ToListAsync(cts.Token);
 		} catch (OperationCanceledException) {
 			// can happen
 		}
@@ -110,11 +93,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		return events;
 	}
 
-	private async IAsyncEnumerable<ResolvedEvent> SubscribeToStream(
-		string streamName,
-		int maxCount,
-		[EnumeratorCancellation] CancellationToken ct = default
-	) {
+	private async IAsyncEnumerable<ResolvedEvent> SubscribeToIndex(string indexName, int maxCount, [EnumeratorCancellation] CancellationToken ct = default) {
 		var inboundChannel = Channel.CreateBounded<ReadResponse>(
 			new BoundedChannelOptions(1000) {
 				FullMode = BoundedChannelFullMode.Wait,
@@ -122,17 +101,11 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 				SingleWriter = true
 			}
 		);
-		await Publisher.SubscribeToStream(
-			StreamRevision.Start,
-			streamName,
-			inboundChannel,
-			DefaultRetryPolicies.ConstantBackoffPipelineBuilder().Build(),
-			cancellationToken: ct
-		);
+		var enumerable = Publisher.SubscribeToIndex(indexName, Position.Start, cancellationToken: ct);
 
 		int count = 0;
 
-		await foreach (var response in inboundChannel.Reader.ReadAllAsync(ct)) {
+		await foreach (var response in enumerable) {
 			if (count == maxCount)
 				yield break;
 

@@ -23,6 +23,7 @@ public partial class StorageReaderWorker<TStreamId> :
 					new ClientMessage.ReadIndexEventsForwardCompleted(
 						ReadIndexResult.Expired,
 						ResolvedEvent.EmptyArray,
+						new(msg.CommitPosition, msg.PreparePosition),
 						0,
 						false,
 						null

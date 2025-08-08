@@ -52,10 +52,10 @@ public abstract class SecondaryIndexReaderBase(DuckDbDataSource db, IReadIndex<s
 
 		var isEndOfStream = resolved.Count < msg.MaxCount || resolved[^1].Event.LogPosition == lastIndexedPosition;
 
-		return new(ReadIndexResult.Success, resolved, lastIndexedPosition, isEndOfStream, null);
+		return new(ReadIndexResult.Success, resolved, pos, lastIndexedPosition, isEndOfStream, null);
 
 		ReadIndexEventsForwardCompleted NoData(ReadIndexResult result, bool endOfStream, string? error = null)
-			=> new(result, ResolvedEvent.EmptyArray, lastIndexedPosition, endOfStream, error);
+			=> new(result, ResolvedEvent.EmptyArray, pos, lastIndexedPosition, endOfStream, error);
 	}
 
 	async ValueTask<ReadIndexEventsBackwardCompleted> ReadBackwards(

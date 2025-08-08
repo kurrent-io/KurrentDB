@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Storage;
 using static KurrentDB.SecondaryIndexing.Indexes.Default.DefaultSql;
@@ -48,5 +49,5 @@ class DefaultIndexReader(
 
 	public override long GetLastIndexedPosition(string streamId) => processor.LastIndexedPosition;
 
-	public override bool CanReadIndex(string indexName) => indexName == DefaultIndex.Name;
+	public override bool CanReadIndex(string indexName) => indexName == SystemStreams.DefaultSecondaryIndex;
 }

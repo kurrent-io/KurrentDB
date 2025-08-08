@@ -2,8 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Services;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
-using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
 using KurrentDB.SecondaryIndexing.Tests.Fixtures;
 using KurrentDB.SecondaryIndexing.Tests.Generators;
@@ -16,7 +16,7 @@ public class IndexingTests(IndexingFixture fixture, ITestOutputHelper output)
 	: SecondaryIndexingTest<IndexingFixture>(fixture, output) {
 	[Fact]
 	public Task ReadsAllEventsFromDefaultIndex() =>
-		ValidateRead(DefaultIndex.Name, Fixture.AppendedBatches.ToDefaultIndexResolvedEvents());
+		ValidateRead(SystemStreams.DefaultSecondaryIndex, Fixture.AppendedBatches.ToDefaultIndexResolvedEvents());
 
 	[Fact]
 	public async Task ReadsAllEventsFromCategoryIndex() {
@@ -34,11 +34,11 @@ public class IndexingTests(IndexingFixture fixture, ITestOutputHelper output)
 		}
 	}
 
-	[Fact(Skip = "Subscriptions pending")]
+	[Fact]
 	public Task SubscriptionReturnsAllEventsFromDefaultIndex() =>
-		ValidateSubscription(DefaultIndex.Name, Fixture.AppendedBatches.ToDefaultIndexResolvedEvents());
+		ValidateSubscription(SystemStreams.DefaultSecondaryIndex, Fixture.AppendedBatches.ToDefaultIndexResolvedEvents());
 
-	[Fact(Skip = "Subscriptions pending")]
+	[Fact]
 	public async Task SubscriptionReturnsAllEventsFromCategoryIndex() {
 		foreach (var category in Fixture.Categories) {
 			var expectedEvents = Fixture.AppendedBatches.ToCategoryIndexResolvedEvents(category);
@@ -46,7 +46,7 @@ public class IndexingTests(IndexingFixture fixture, ITestOutputHelper output)
 		}
 	}
 
-	[Fact(Skip = "Subscriptions pending")]
+	[Fact]
 	public async Task SubscriptionReturnsAllEventsFromEventTypeIndex() {
 		foreach (var eventType in Fixture.EventTypes) {
 			var expectedEvents = Fixture.AppendedBatches.ToEventTypeIndexResolvedEvents(eventType);
@@ -54,23 +54,19 @@ public class IndexingTests(IndexingFixture fixture, ITestOutputHelper output)
 		}
 	}
 
-	private async Task ValidateRead(string indexStreamName, ResolvedEvent[] expectedEvents) {
+	async Task ValidateRead(string indexStreamName, ResolvedEvent[] expectedEvents) {
 		var results = await Fixture.ReadUntil(indexStreamName, expectedEvents.Length);
 
-		AssertResolvedEventsMatch(indexStreamName, results, expectedEvents);
+		AssertResolvedEventsMatch(results, expectedEvents);
 	}
 
-	private async Task ValidateSubscription(string indexStreamName, ResolvedEvent[] expectedEvents) {
+	async Task ValidateSubscription(string indexStreamName, ResolvedEvent[] expectedEvents) {
 		var results = await Fixture.SubscribeUntil(indexStreamName, expectedEvents.Length);
 
-		AssertResolvedEventsMatch(indexStreamName, results, expectedEvents);
+		AssertResolvedEventsMatch(results, expectedEvents);
 	}
 
-	private static void AssertResolvedEventsMatch(
-		string indexStreamName,
-		List<ResolvedEvent> results,
-		ResolvedEvent[] expectedRecords
-	) {
+	static void AssertResolvedEventsMatch(List<ResolvedEvent> results, ResolvedEvent[] expectedRecords) {
 		Assert.NotEmpty(results);
 		Assert.Equal(expectedRecords.Length, results.Count);
 
@@ -108,7 +104,7 @@ public class IndexingTests(IndexingFixture fixture, ITestOutputHelper output)
 
 [UsedImplicitly]
 public class IndexingFixture : SecondaryIndexingEnabledFixture {
-	private readonly LoadTestPartitionConfig _config = new(
+	readonly LoadTestPartitionConfig _config = new(
 		PartitionId: 1,
 		StartCategoryIndex: 0,
 		CategoriesCount: 5,
@@ -119,7 +115,7 @@ public class IndexingFixture : SecondaryIndexingEnabledFixture {
 		TotalMessagesCount: 10
 	);
 
-	private readonly MessageGenerator _messageGenerator = new();
+	readonly MessageGenerator _messageGenerator = new();
 
 	public IndexingFixture() {
 		OnSetup = async () => {
@@ -136,7 +132,7 @@ public class IndexingFixture : SecondaryIndexingEnabledFixture {
 	public List<TestMessageBatch> ExpectedBatches =>
 		AppendedBatches.ToList();
 
-	private string GetRandomStreamNameFromAppended() =>
+	string GetRandomStreamNameFromAppended() =>
 		AppendedBatches.Select(b => b.StreamName).Distinct().ToList().RandomElement();
 
 	public string[] Categories =>

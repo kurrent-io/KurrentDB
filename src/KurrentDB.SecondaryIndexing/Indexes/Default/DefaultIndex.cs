@@ -9,8 +9,6 @@ using static KurrentDB.SecondaryIndexing.Indexes.Default.DefaultSql;
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 static class DefaultIndex {
-	public const string Name = $"{SystemStreams.IndexStreamPrefix}all";
-
 	public static (TFPos PreviousPosition, TFPos NextPosition) GetPrevNextPosition(DuckDbDataSource dataSource, long firstRowId, long lastRowId) {
 		var before = firstRowId - 1;
 		var after = lastRowId + 1;

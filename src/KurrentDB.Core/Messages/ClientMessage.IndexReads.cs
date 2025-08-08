@@ -67,8 +67,16 @@ public partial class ClientMessage {
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class ReadIndexEventsForwardCompleted(ReadIndexResult result, IReadOnlyList<ResolvedEvent> events, long tfLastCommitPosition, bool isEndOfStream, string error)
-		: ReadIndexEventsCompleted(result, events, tfLastCommitPosition, isEndOfStream, error);
+	public partial class ReadIndexEventsForwardCompleted(
+		ReadIndexResult result,
+		IReadOnlyList<ResolvedEvent> events,
+		TFPos currentPos,
+		long tfLastCommitPosition,
+		bool isEndOfStream,
+		string error)
+		: ReadIndexEventsCompleted(result, events, tfLastCommitPosition, isEndOfStream, error) {
+		public readonly TFPos CurrentPos = currentPos;
+	}
 
 	[DerivedMessage(CoreMessage.Client)]
 	public partial class ReadIndexEventsBackward(

@@ -38,8 +38,7 @@ public class EventTypeIndexProcessor {
 
 		LastIndexedPosition = resolvedEvent.Event.LogPosition;
 
-		// TODO: Real-time subscription support
-		// _publisher.Publish(new StorageMessage.SecondaryIndexCommitted(resolvedEvent.ToResolvedLink(EventTypeIndex.Name(eventTypeName))));
+		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(EventTypeIndex.Name(eventTypeName), resolvedEvent));
 
 		return eventTypeId;
 	}

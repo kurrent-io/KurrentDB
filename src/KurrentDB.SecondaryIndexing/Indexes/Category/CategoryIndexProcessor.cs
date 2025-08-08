@@ -3,6 +3,8 @@
 
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
+using KurrentDB.Core.Services;
 using KurrentDB.SecondaryIndexing.Storage;
 using static KurrentDB.SecondaryIndexing.Indexes.Category.CategorySql;
 
@@ -37,8 +39,7 @@ public class CategoryIndexProcessor {
 
 		LastIndexedPosition = resolvedEvent.Event.LogPosition;
 
-		// TODO: Real-time subscription support
-		// _publisher.Publish(new StorageMessage.SecondaryIndexCommitted(resolvedEvent.ToResolvedLink(CategoryIndex.Name(categoryName), nextCategorySequence)));
+		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(CategoryIndex.Name(categoryName), resolvedEvent));
 
 		return categoryId;
 	}
