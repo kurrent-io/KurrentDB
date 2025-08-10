@@ -52,7 +52,7 @@ public class when_committing_empty_transaction<TLogFormat, TStreamId> : Specific
 	}
 
 	[Test]
-	public async Task following_append_with_correct_expected_version_are_commited_correctly() {
+	public async Task following_append_with_correct_expected_version_are_committed_correctly() {
 		Assert.AreEqual(4,
 			(await _connection.AppendToStreamAsync("test-stream", 2, TestEvent.NewTestEvent(),
 				TestEvent.NewTestEvent())
@@ -67,7 +67,7 @@ public class when_committing_empty_transaction<TLogFormat, TStreamId> : Specific
 	}
 
 	[Test]
-	public async Task following_append_with_expected_version_any_are_commited_correctly() {
+	public async Task following_append_with_expected_version_any_are_committed_correctly() {
 		Assert.AreEqual(4,
 			(await _connection.AppendToStreamAsync("test-stream", ExpectedVersion.Any, TestEvent.NewTestEvent(),
 				TestEvent.NewTestEvent())).NextExpectedVersion);

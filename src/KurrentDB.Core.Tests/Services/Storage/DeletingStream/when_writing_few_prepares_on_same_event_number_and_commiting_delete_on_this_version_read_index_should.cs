@@ -16,7 +16,7 @@ namespace KurrentDB.Core.Tests.Services.Storage.DeletingStream;
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class
-	when_writing_few_prepares_with_same_event_number_and_commiting_delete_on_this_version_read_index_should<TLogFormat, TStreamId> :
+	when_writing_few_prepares_with_same_event_number_and_committing_delete_on_this_version_read_index_should<TLogFormat, TStreamId> :
 		ReadIndexTestScenario<TLogFormat, TStreamId> {
 	private EventRecord _deleteTombstone;
 
@@ -124,7 +124,7 @@ public class
 	}
 
 	[Test]
-	public async Task read_all_forward_should_return_all_stream_records_except_uncommited() {
+	public async Task read_all_forward_should_return_all_stream_records_except_uncommitted() {
 		var events = (await ReadIndex.ReadAllEventsForward(new TFPos(0, 0), 100, CancellationToken.None))
 			.EventRecords()
 			.Select(r => r.Event)
@@ -134,7 +134,7 @@ public class
 	}
 
 	[Test]
-	public async Task read_all_backward_should_return_all_stream_records_except_uncommited() {
+	public async Task read_all_backward_should_return_all_stream_records_except_uncommitted() {
 		var events = (await ReadIndex.ReadAllEventsBackward(GetBackwardReadPos(), 100, CancellationToken.None))
 			.EventRecords()
 			.Select(r => r.Event)

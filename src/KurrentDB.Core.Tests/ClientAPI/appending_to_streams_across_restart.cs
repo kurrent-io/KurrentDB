@@ -48,8 +48,8 @@ public class appending_to_streams_across_restart<TLogFormat, TStreamId> : Specif
 		// GIVEN some streams
 		var normal = "detect_existing_streams_normal";
 		var meta = "detect_existing_streams_meta";
-		var committed = "detect_existing_streams_commited_transaction";
-		var uncommitted = "detect_existing_streams_uncommited_transaction";
+		var committed = "detect_existing_streams_committed_transaction";
+		var uncommitted = "detect_existing_streams_uncommitted_transaction";
 
 		EventData[] GenEvents() => Enumerable.Range(0, 10).Select(x => TestEvent.NewTestEvent(Guid.NewGuid())).ToArray();
 		var eventsByStream = new Dictionary<string, EventData[]>(){
