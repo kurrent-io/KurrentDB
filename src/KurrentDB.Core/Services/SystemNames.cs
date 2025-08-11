@@ -78,10 +78,6 @@ public static class SystemStreams {
 
 	public static bool IsIndexStream(string streamId) =>
 		streamId.StartsWith(IndexStreamPrefix);
-
-	[CanBeNull] public static string GetStreamCategory(string streamName) =>
-		streamName.Split('-').FirstOrDefault();
-
 }
 
 public static class SystemMetadata {
