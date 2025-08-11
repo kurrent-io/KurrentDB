@@ -309,8 +309,8 @@ public static partial class StorageMessage {
 
 	[DerivedMessage(CoreMessage.Storage)]
 	public partial class SecondaryIndexCommitted(string indexName, ResolvedEvent @event) : Message {
-		public readonly ResolvedEvent Event = @event;
 		public readonly string IndexName = indexName;
+		public readonly ResolvedEvent Event = @event;
 	}
 
 	[DerivedMessage(CoreMessage.Storage)]
