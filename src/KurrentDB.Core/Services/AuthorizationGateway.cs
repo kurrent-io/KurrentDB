@@ -22,11 +22,6 @@ public sealed class AuthorizationGateway(IAuthorizationProvider authorizationPro
 		new ReadEventCompleted(msg.CorrelationId, msg.EventStreamId, ReadEventResult.AccessDenied,
 			ResolvedEvent.EmptyEvent, StreamMetadata.Empty, false, AccessDenied);
 
-	private static readonly Func<ReadAllEventsForward, Message> ReadAllEventsForwardDenied = msg =>
-		new ReadAllEventsForwardCompleted(msg.CorrelationId, ReadAllResult.AccessDenied, AccessDenied,
-			[], StreamMetadata.Empty, false, 0, TFPos.Invalid, TFPos.Invalid,
-			TFPos.Invalid, default);
-
 	private static readonly Func<ReadStreamEventsForward, Message> ReadStreamEventsForwardDenied =
 		msg => new ReadStreamEventsForwardCompleted(msg.CorrelationId, msg.EventStreamId, msg.FromEventNumber, msg.MaxCount, ReadStreamResult.AccessDenied, Array.Empty<ResolvedEvent>(), StreamMetadata.Empty, false, AccessDenied, -1, default, true, default);
 
@@ -46,9 +41,23 @@ public sealed class AuthorizationGateway(IAuthorizationProvider authorizationPro
 	private static readonly Func<FilteredSubscribeToStream, Message> FilteredSubscribeToStreamDenied =
 		msg => new SubscriptionDropped(msg.CorrelationId, SubscriptionDropReason.AccessDenied);
 
+	private static readonly Func<ReadAllEventsForward, Message> ReadAllEventsForwardDenied = msg =>
+		new ReadAllEventsForwardCompleted(msg.CorrelationId, ReadAllResult.AccessDenied, AccessDenied,
+			[], StreamMetadata.Empty, false, 0, TFPos.Invalid, TFPos.Invalid,
+			TFPos.Invalid, default);
+
 	private static readonly Func<ReadAllEventsBackward, Message> ReadAllEventsBackwardDenied = msg =>
 		new ReadAllEventsBackwardCompleted(msg.CorrelationId, ReadAllResult.AccessDenied,
 			AccessDenied, [], StreamMetadata.Empty, false, 0, TFPos.Invalid, TFPos.Invalid, TFPos.Invalid, default);
+
+	private static readonly Func<ReadIndexEventsForward, Message> ReadIndexEventsForwardDenied = _ =>
+		new ReadIndexEventsForwardCompleted(ReadIndexResult.AccessDenied, [], TFPos.Invalid, 0, false, AccessDenied);
+
+	private static readonly Func<ReadIndexEventsBackward, Message> ReadIndexEventsBackwardDenied = _ =>
+		new ReadIndexEventsBackwardCompleted(ReadIndexResult.AccessDenied, [], 0, false, AccessDenied);
+
+	private static readonly Func<SubscribeToIndex, Message> SubscribeToIndexDenied = msg =>
+		new SubscriptionDropped(msg.CorrelationId, SubscriptionDropReason.AccessDenied);
 
 	private static readonly Func<FilteredReadAllEventsForward, Message>
 		FilteredReadAllEventsForwardDenied = msg =>
@@ -136,6 +145,9 @@ public sealed class AuthorizationGateway(IAuthorizationProvider authorizationPro
 			case SubscribeToStream msg:
 				Authorize(msg, destination);
 				break;
+			case SubscribeToIndex msg:
+				Authorize(msg, destination);
+				break;
 			case ConnectToPersistentSubscriptionToStream msg:
 				Authorize(msg, destination);
 				break;
@@ -161,6 +173,12 @@ public sealed class AuthorizationGateway(IAuthorizationProvider authorizationPro
 				Authorize(msg, destination);
 				break;
 			case ReadAllEventsForward msg:
+				Authorize(msg, destination);
+				break;
+			case ReadIndexEventsBackward msg:
+				Authorize(msg, destination);
+				break;
+			case ReadIndexEventsForward msg:
 				Authorize(msg, destination);
 				break;
 			case ReplayParkedMessages msg:
@@ -233,6 +251,12 @@ public sealed class AuthorizationGateway(IAuthorizationProvider authorizationPro
 			msg.Envelope, destination, msg, SubscribeToStreamDenied);
 	}
 
+	private void Authorize(SubscribeToIndex msg, IPublisher destination) {
+		// Using empty stream id to simulate $all subscription. Needs refactoring when we support auth for index reads.
+		Authorize(msg.User, ReadStream.WithParameter(Operations.Streams.Parameters.StreamId(string.Empty)),
+			msg.Envelope, destination, msg, SubscribeToIndexDenied);
+	}
+
 	private void Authorize(ReadEvent msg, IPublisher destination) {
 		Authorize(msg.User, ReadEvent.WithParameter(Operations.Streams.Parameters.StreamId(msg.EventStreamId)),
 			msg.Envelope, destination, msg, ReadEventDenied);
@@ -270,6 +294,16 @@ public sealed class AuthorizationGateway(IAuthorizationProvider authorizationPro
 
 	private void Authorize(FilteredReadAllEventsBackward msg, IPublisher destination) {
 		Authorize(msg.User, ReadAllStream, msg.Envelope, destination, msg, FilteredReadAllEventsBackwardDenied);
+	}
+
+	private void Authorize(ReadIndexEventsForward msg, IPublisher destination) {
+		// Using ReadAllStream to simulate $all read. Needs refactoring when we support auth for index reads.
+		Authorize(msg.User, ReadAllStream, msg.Envelope, destination, msg, ReadIndexEventsForwardDenied);
+	}
+
+	private void Authorize(ReadIndexEventsBackward msg, IPublisher destination) {
+		// Using ReadAllStream to simulate $all read. Needs refactoring when we support auth for index reads.
+		Authorize(msg.User, ReadAllStream, msg.Envelope, destination, msg, ReadIndexEventsBackwardDenied);
 	}
 
 	private void Authorize(DeleteStream msg, IPublisher destination) {

@@ -10,4 +10,5 @@ public enum ReadIndexResult {
 	IndexNotFound = 3,
 	Expired = 4,
 	InvalidPosition = 5,
+	AccessDenied = 6,
 }
