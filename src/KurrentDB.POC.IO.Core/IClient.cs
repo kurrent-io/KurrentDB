@@ -49,12 +49,7 @@ public interface IClient {
 	IAsyncEnumerable<Event> ReadStreamForwards(string stream, long maxCount, CancellationToken cancellationToken);
 	IAsyncEnumerable<Event> ReadStreamBackwards(string stream, long maxCount, CancellationToken cancellationToken);
 	IAsyncEnumerable<Event> ReadAllBackwardsAsync(Position position, long maxCount, CancellationToken cancellationToken);
-	IAsyncEnumerable<Event> ReadAllBackwardsFilteredAsync(
-		Position position,
-		long maxCount,
-		IEventFilter eventFilter,
-		CancellationToken token
-	) ;
+	IAsyncEnumerable<Event> ReadAllBackwardsFilteredAsync(Position position, long maxCount, IEventFilter eventFilter, CancellationToken token);
 	Task DeleteStreamAsync(string stream, long expectedVersion, CancellationToken cancellationToken);
 
 	async Task<long> WriteAsyncRetry(string stream, EventToWrite[] events, long expectedVersion,
@@ -103,13 +98,9 @@ public interface IClient {
 			throw new NotImplementedException();
 		}
 
-		public IAsyncEnumerable<Event> ReadAllBackwardsFilteredAsync(
-			Position position,
-			long maxCount,
-			IEventFilter eventFilter,
-			CancellationToken token
-		) =>
+		public IAsyncEnumerable<Event> ReadAllBackwardsFilteredAsync(Position position, long maxCount, IEventFilter eventFilter, CancellationToken token) {
 			throw new NotImplementedException();
+		}
 
 		public Task DeleteStreamAsync(string stream, long expectedVersion, CancellationToken cancellationToken) {
 			throw new NotImplementedException();
