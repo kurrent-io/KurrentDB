@@ -72,7 +72,7 @@ public class SubscriptionsService<TStreamId> :
 	private readonly IReadIndex<TStreamId> _readIndex;
 	private readonly IVirtualStreamReader _virtualStreamReader;
 	private readonly IAuthorizationProvider _authorizationProvider;
-	readonly SecondaryIndexReaders _secondaryIndexReaders;
+	private readonly SecondaryIndexReaders _secondaryIndexReaders;
 
 	public SubscriptionsService(
 		IPublisher bus,
