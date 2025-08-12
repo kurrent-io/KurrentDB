@@ -24,9 +24,9 @@ public partial class StorageReaderWorker<TStreamId> :
 						ReadIndexResult.Expired,
 						ResolvedEvent.EmptyArray,
 						new(msg.CommitPosition, msg.PreparePosition),
-						0,
-						false,
-						null
+						tfLastCommitPosition: 0,
+						isEndOfStream: false,
+						error: null
 					)
 				);
 			}
@@ -54,7 +54,7 @@ public partial class StorageReaderWorker<TStreamId> :
 				msg.Envelope.ReplyWith(res);
 				break;
 			default:
-				throw new ArgumentOutOfRangeException($"Unknown ReadIndexResult: {res.Result}");
+				throw new ArgumentOutOfRangeException(nameof(res.Result), $"Unknown ReadIndexResult: {res.Result}");
 		}
 
 		return;
@@ -80,9 +80,9 @@ public partial class StorageReaderWorker<TStreamId> :
 					new ClientMessage.ReadIndexEventsBackwardCompleted(
 						ReadIndexResult.Expired,
 						ResolvedEvent.EmptyArray,
-						0,
-						false,
-						null
+						tfLastCommitPosition: 0,
+						isEndOfStream: false,
+						error: null
 					)
 				);
 			}
@@ -110,7 +110,7 @@ public partial class StorageReaderWorker<TStreamId> :
 				msg.Envelope.ReplyWith(res);
 				break;
 			default:
-				throw new ArgumentOutOfRangeException($"Unknown ReadIndexResult: {res.Result}");
+				throw new ArgumentOutOfRangeException(nameof(res.Result), $"Unknown ReadIndexResult: {res.Result}");
 		}
 
 		return;
