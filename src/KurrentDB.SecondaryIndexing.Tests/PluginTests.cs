@@ -22,7 +22,7 @@ public class PluginTests {
 		Assert.False(sut.Enabled);
 	}
 
-	[Theory(Skip = "TODO: make a proper configuration")]
+	[Theory]
 	[InlineData(true, true, true)]
 	[InlineData(true, false, true)]
 	[InlineData(false, false, false)]
