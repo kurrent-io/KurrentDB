@@ -15,7 +15,10 @@ class DefaultIndexReader(
 	DefaultIndexInFlightRecords inFlightRecords,
 	IReadIndex<string> index
 ) : SecondaryIndexReaderBase(db, index) {
-	protected override int GetId(string streamName) => 0;
+	protected override bool TryGetId(string streamName, out int id) {
+		id = 0;
+		return true;
+	}
 
 	protected override IReadOnlyList<IndexQueryRecord> GetIndexRecordsForwards(int _, TFPos startPosition, int maxCount, bool excludeFirst) {
 		var range = excludeFirst

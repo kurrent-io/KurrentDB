@@ -12,7 +12,7 @@ namespace KurrentDB.SecondaryIndexing.Indexes;
 public abstract class SecondaryIndexReaderBase(DuckDbDataSource db, IReadIndex<string> index) : ISecondaryIndexReader {
 	protected DuckDbDataSource Db => db;
 
-	protected abstract int GetId(string streamName);
+	protected abstract bool TryGetId(string streamName, out int id);
 
 	protected abstract IReadOnlyList<IndexQueryRecord> GetIndexRecordsForwards(int id, TFPos startPosition, int maxCount, bool excludeFirst);
 
@@ -43,7 +43,10 @@ public abstract class SecondaryIndexReaderBase(DuckDbDataSource db, IReadIndex<s
 			return NoData(ReadIndexResult.NotModified, true);
 		}
 
-		var id = GetId(msg.IndexName);
+		if (!TryGetId(msg.IndexName, out var id)) {
+			return NoData(ReadIndexResult.IndexNotFound, true);
+		}
+
 		var resolved = await GetEventsForwards(reader, id, pos, msg.MaxCount, msg.ExcludeStart, token);
 
 		if (resolved.Count == 0) {
@@ -73,7 +76,10 @@ public abstract class SecondaryIndexReaderBase(DuckDbDataSource db, IReadIndex<s
 			return NoData(ReadIndexResult.NotModified);
 		}
 
-		var id = GetId(msg.IndexName);
+		if (!TryGetId(msg.IndexName, out var id)) {
+			return NoData(ReadIndexResult.IndexNotFound);
+		}
+
 		var resolved = await GetEventsBackwards(reader, id, pos, msg.MaxCount, msg.ExcludeStart, token);
 
 		if (resolved.Count == 0) {

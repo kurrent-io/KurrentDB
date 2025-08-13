@@ -43,8 +43,10 @@ public class CategoryIndexProcessor {
 		return categoryId;
 	}
 
-	public int GetCategoryId(string categoryName) =>
-		_categories.TryGetValue(categoryName, out var categoryId) ? categoryId : -1;
+	public bool TryGetCategoryId(string categoryName, out int categoryId) {
+		categoryId = -1;
+		return _categories.TryGetValue(categoryName, out categoryId);
+	}
 
 	private static string GetStreamCategory(string streamName) {
 		var dashIndex = streamName.IndexOf('-');

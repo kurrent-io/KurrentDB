@@ -15,10 +15,11 @@ class EventTypeIndexReader(
 	IReadIndex<string> index,
 	DefaultIndexInFlightRecords inFlightRecords
 ) : SecondaryIndexReaderBase(db, index) {
-	protected override int GetId(string streamName) =>
-		EventTypeIndex.TryParseEventType(streamName, out var eventTypeName)
-			? processor.GetEventTypeId(eventTypeName)
-			: (int)ExpectedVersion.Invalid;
+	protected override bool TryGetId(string streamName, out int id) {
+		id = (int)ExpectedVersion.Invalid;
+		return EventTypeIndex.TryParseEventType(streamName, out var eventTypeName)
+		       && processor.TryGetEventTypeId(eventTypeName, out id);
+	}
 
 	protected override IReadOnlyList<IndexQueryRecord> GetIndexRecordsForwards(int id, TFPos startPosition, int maxCount, bool excludeStart) {
 		var range = excludeStart

@@ -17,10 +17,11 @@ class CategoryIndexReader(
 	IReadIndex<string> index,
 	DefaultIndexInFlightRecords inFlightRecords
 ) : SecondaryIndexReaderBase(db, index) {
-	protected override int GetId(string streamName) =>
-		CategoryIndex.TryParseCategoryName(streamName, out var categoryName)
-			? processor.GetCategoryId(categoryName)
-			: (int)ExpectedVersion.Invalid;
+	protected override bool TryGetId(string streamName, out int id) {
+		id = (int)ExpectedVersion.Invalid;
+		return CategoryIndex.TryParseCategoryName(streamName, out var categoryName)
+		       && processor.TryGetCategoryId(categoryName, out id);
+	}
 
 	protected override IReadOnlyList<IndexQueryRecord> GetIndexRecordsForwards(int id, TFPos startPosition, int maxCount, bool excludeFirst) {
 		var range = excludeFirst

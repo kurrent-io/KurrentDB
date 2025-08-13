@@ -43,6 +43,8 @@ public class EventTypeIndexProcessor {
 		return eventTypeId;
 	}
 
-	public int GetEventTypeId(string eventTypeName) =>
-		_eventTypes.TryGetValue(eventTypeName, out var eventTypeId) ? eventTypeId : -1;
+	public bool TryGetEventTypeId(string eventTypeName, out int eventTypeId) {
+		eventTypeId = -1;
+		return _eventTypes.TryGetValue(eventTypeName, out eventTypeId);
+	}
 }
