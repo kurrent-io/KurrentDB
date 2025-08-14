@@ -23,34 +23,23 @@ class CategoryIndexReader(
 		       && processor.TryGetCategoryId(categoryName, out id);
 	}
 
-	protected override IReadOnlyList<IndexQueryRecord> GetIndexRecordsForwards(int id, TFPos startPosition, int maxCount, bool excludeFirst) {
-		var range = excludeFirst
-			? Db.Pool.Query<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryExcl>(new(id, startPosition.PreparePosition, maxCount))
-			: Db.Pool.Query<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryIncl>(new(id, startPosition.PreparePosition, maxCount));
-		if (range.Count < maxCount) {
-			// events might be in flight
-			var inFlight = inFlightRecords.GetInFlightRecordsForwards(startPosition, range, maxCount, r => r.CategoryId == id);
-			range.AddRange(inFlight);
-		}
-
-		return range;
+	protected override List<IndexQueryRecord> GetInFlightRecordsForwards(int id, TFPos startPosition, int maxCount, bool excludeFirst) {
+		return inFlightRecords
+			.GetInFlightRecordsForwards(startPosition, maxCount, excludeFirst, r => r.CategoryId == id).ToList();
 	}
 
-	protected override IReadOnlyList<IndexQueryRecord> GetIndexRecordsBackwards(int id, TFPos startPosition, int maxCount, bool excludeFirst) {
-		var inFlight = inFlightRecords.GetInFlightRecordsBackwards(startPosition, maxCount, r => r.CategoryId == id).ToList();
-		if (inFlight.Count == maxCount) {
-			return inFlight;
-		}
+	protected override List<IndexQueryRecord> GetDatabaseRecordsForwards(int id, TFPos startPosition, int maxCount, bool excludeFirst) {
+		return Db.Pool.Query<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQuery>(
+			new(id, startPosition.PreparePosition + (excludeFirst ? 1 : 0), maxCount));
+	}
 
-		var range = excludeFirst
-			? Db.Pool.Query<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexBackQueryExcl>(new(id, startPosition.PreparePosition, maxCount))
-			: Db.Pool.Query<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexBackQueryIncl>(new(id, startPosition.PreparePosition, maxCount));
+	protected override List<IndexQueryRecord> GetInFlightRecordsBackwards(int id, TFPos startPosition, int maxCount, bool excludeFirst) {
+		return inFlightRecords.GetInFlightRecordsBackwards(startPosition, maxCount, excludeFirst, r => r.CategoryId == id).ToList();
+	}
 
-		if (inFlight.Count > 0) {
-			range.AddRange(inFlight);
-		}
-
-		return range;
+	protected override List<IndexQueryRecord> GetDatabaseRecordsBackwards(int id, TFPos startPosition, int maxCount, bool excludeFirst) {
+		return Db.Pool.Query<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexBackQuery>(
+			new(id, startPosition.PreparePosition - (excludeFirst ? 1 : 0), maxCount));
 	}
 
 	public override long GetLastIndexedPosition(string streamId) => processor.LastIndexedPosition;

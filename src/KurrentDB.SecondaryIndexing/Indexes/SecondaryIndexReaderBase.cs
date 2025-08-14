@@ -13,10 +13,58 @@ public abstract class SecondaryIndexReaderBase(DuckDbDataSource db, IReadIndex<s
 	protected DuckDbDataSource Db => db;
 
 	protected abstract bool TryGetId(string streamName, out int id);
+	protected abstract List<IndexQueryRecord> GetInFlightRecordsForwards(int id, TFPos startPosition, int maxCount, bool excludeFirst);
+	protected abstract List<IndexQueryRecord> GetDatabaseRecordsForwards(int id, TFPos startPosition, int maxCount, bool excludeFirst);
+	protected abstract List<IndexQueryRecord> GetInFlightRecordsBackwards(int id, TFPos startPosition, int maxCount, bool excludeFirst);
+	protected abstract List<IndexQueryRecord> GetDatabaseRecordsBackwards(int id, TFPos startPosition, int maxCount, bool excludeFirst);
 
-	protected abstract IReadOnlyList<IndexQueryRecord> GetIndexRecordsForwards(int id, TFPos startPosition, int maxCount, bool excludeFirst);
+	private IReadOnlyList<IndexQueryRecord> GetIndexRecordsForwards(int id, TFPos startPosition, int maxCount, bool excludeFirst) {
+		var inFlight = GetInFlightRecordsForwards(id, startPosition, maxCount, excludeFirst);
+		var fromDb = GetDatabaseRecordsForwards(id, startPosition, maxCount, excludeFirst);
 
-	protected abstract IReadOnlyList<IndexQueryRecord> GetIndexRecordsBackwards(int id, TFPos startPosition, int maxCount, bool excludeFirst);
+		if (inFlight.Count == 0)
+			return fromDb;
+
+		if (fromDb.Count == 0)
+			return inFlight;
+
+		int i = 0;
+		for (; i < inFlight.Count; i++)
+			if (inFlight[i].LogPosition > fromDb[^1].LogPosition)
+				break;
+
+		for (; i < inFlight.Count && fromDb.Count < maxCount; i++) {
+			fromDb.Add(inFlight[i] with {
+				RowId = fromDb[^1].RowId + 1
+			});
+		}
+
+		return fromDb;
+	}
+
+	private IReadOnlyList<IndexQueryRecord> GetIndexRecordsBackwards(int id, TFPos startPosition, int maxCount, bool excludeFirst) {
+		var inFlight = GetInFlightRecordsBackwards(id, startPosition, maxCount, excludeFirst);
+		var fromDb = GetDatabaseRecordsBackwards(id, startPosition, maxCount, excludeFirst);
+
+		if (inFlight.Count == 0)
+			return fromDb;
+
+		if (fromDb.Count == 0)
+			return inFlight;
+
+		int i = 0;
+		for (; i < fromDb.Count; i++)
+			if (fromDb[i].LogPosition < inFlight[^1].LogPosition)
+				break;
+
+		for (; i < fromDb.Count && inFlight.Count < maxCount; i++) {
+			inFlight.Add(fromDb[i] with {
+				RowId = inFlight[^1].RowId + 1
+			});
+		}
+
+		return inFlight;
+	}
 
 	public ValueTask<ReadIndexEventsForwardCompleted> ReadForwards(ReadIndexEventsForward msg, CancellationToken token)
 		=> ReadForwards(msg, index.IndexReader, index.LastIndexedPosition, token);
@@ -102,7 +150,7 @@ public abstract class SecondaryIndexReaderBase(DuckDbDataSource db, IReadIndex<s
 		bool excludeFirst,
 		CancellationToken cancellationToken) {
 		var indexPrepares = GetIndexRecordsForwards(id, startPosition, maxCount, excludeFirst);
-		var events = await indexReader.ReadRecords(indexPrepares, true, cancellationToken);
+		var events = await indexReader.ReadRecords(indexPrepares, cancellationToken);
 		return events;
 	}
 
@@ -114,7 +162,7 @@ public abstract class SecondaryIndexReaderBase(DuckDbDataSource db, IReadIndex<s
 		bool excludeFirst,
 		CancellationToken cancellationToken) {
 		var indexPrepares = GetIndexRecordsBackwards(id, startPosition, maxCount, excludeFirst);
-		var events = await indexReader.ReadRecords(indexPrepares, false, cancellationToken);
+		var events = await indexReader.ReadRecords(indexPrepares, cancellationToken);
 		return events;
 	}
 }

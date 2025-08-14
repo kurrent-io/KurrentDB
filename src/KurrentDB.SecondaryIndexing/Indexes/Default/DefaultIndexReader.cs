@@ -20,34 +20,22 @@ class DefaultIndexReader(
 		return true;
 	}
 
-	protected override IReadOnlyList<IndexQueryRecord> GetIndexRecordsForwards(int _, TFPos startPosition, int maxCount, bool excludeFirst) {
-		var range = excludeFirst
-			? Db.Pool.Query<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexQueryExcl>(new(startPosition.PreparePosition, maxCount))
-			: Db.Pool.Query<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexQueryIncl>(new(startPosition.PreparePosition, maxCount));
-		// ReSharper disable once InvertIf
-		if (range.Count < maxCount) {
-			var inFlight = inFlightRecords.GetInFlightRecordsForwards(startPosition, range, maxCount);
-			range.AddRange(inFlight);
-		}
-
-		return range;
+	protected override List<IndexQueryRecord> GetInFlightRecordsForwards(int _, TFPos startPosition, int maxCount, bool excludeFirst) {
+		return inFlightRecords.GetInFlightRecordsForwards(startPosition, maxCount, excludeFirst).ToList();
 	}
 
-	protected override IReadOnlyList<IndexQueryRecord> GetIndexRecordsBackwards(int _, TFPos startPosition, int maxCount, bool excludeFirst) {
-		var inFlight = inFlightRecords.GetInFlightRecordsBackwards(startPosition, maxCount).ToList();
-		if (inFlight.Count == maxCount) {
-			return inFlight;
-		}
+	protected override List<IndexQueryRecord> GetDatabaseRecordsForwards(int _, TFPos startPosition, int maxCount, bool excludeFirst) {
+		return Db.Pool.Query<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexQuery>(
+			new(startPosition.PreparePosition + (excludeFirst ? 1 : 0), maxCount));
+	}
 
-		var range = excludeFirst
-			? Db.Pool.Query<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexBackQueryExcl>(new(startPosition.PreparePosition, maxCount))
-			: Db.Pool.Query<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexBackQueryIncl>(new(startPosition.PreparePosition, maxCount));
+	protected override List<IndexQueryRecord> GetInFlightRecordsBackwards(int _, TFPos startPosition, int maxCount, bool excludeFirst) {
+		return inFlightRecords.GetInFlightRecordsBackwards(startPosition, maxCount, excludeFirst).ToList();
+	}
 
-		if (inFlight.Count > 0) {
-			range.AddRange(inFlight);
-		}
-
-		return range;
+	protected override List<IndexQueryRecord> GetDatabaseRecordsBackwards(int _, TFPos startPosition, int maxCount, bool excludeFirst) {
+		return Db.Pool.Query<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexBackQuery>(
+			new(startPosition.PreparePosition - (excludeFirst ? 1 : 0), maxCount));
 	}
 
 	public override long GetLastIndexedPosition(string streamId) => processor.LastIndexedPosition;
