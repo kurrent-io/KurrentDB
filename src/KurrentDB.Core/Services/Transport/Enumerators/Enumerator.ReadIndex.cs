@@ -166,6 +166,9 @@ partial class Enumerator {
 						var last = completed.Events[^1].EventPosition!.Value;
 						ReadPage(Position.FromInt64(last.CommitPosition, last.PreparePosition), true, readCount);
 						return;
+					case ReadIndexResult.IndexNotFound:
+						_channel.Writer.TryComplete(new ReadResponseException.StreamNotFound(IndexName));
+						break;
 					default:
 						_channel.Writer.TryComplete(ReadResponseException.UnknownError.Create(completed.Result, completed.Error));
 						return;
