@@ -11,13 +11,13 @@ public static class CategorySql {
 	public struct GetCategoriesSummaryQuery : IQuery<CategorySummary> {
 		public static ReadOnlySpan<byte> CommandText =>
 			"""
-			SELECT c.id, c.name, max_seq.max_category_seq
+			SELECT c.id, c.name, max_log_pos.max_category_log_pos
 			FROM category c
 			LEFT JOIN (
-			    SELECT category, MAX(category_seq) AS max_category_seq
+			    SELECT category_id, MAX(log_position) AS max_category_log_pos
 			    FROM idx_all
-			    GROUP BY category
-			) max_seq ON c.id = max_seq.category;
+			    GROUP BY category_id
+			) max_log_pos ON c.id = max_log_pos.category_id;
 			"""u8;
 
 		public static CategorySummary Parse(ref DataChunk.Row row) => new(row.ReadInt32(), row.ReadString(), row.ReadInt64());
