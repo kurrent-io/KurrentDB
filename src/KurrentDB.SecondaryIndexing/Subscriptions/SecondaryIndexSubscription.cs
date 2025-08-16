@@ -40,9 +40,7 @@ public sealed partial class SecondaryIndexSubscription(
 			resolveLinks: false,
 			user: SystemAccounts.System,
 			requiresLeader: false,
-			// liveBufferSize: 200,
 			catchUpBufferSize: options.CommitBatchSize * 2,
-			// readBatchSize: 1000,
 			cancellationToken: _cts!.Token
 		);
 
@@ -50,15 +48,20 @@ public sealed partial class SecondaryIndexSubscription(
 	}
 
 	[AsyncMethodBuilder(typeof(SpawningAsyncTaskMethodBuilder))]
-	private async Task ProcessEvents(CancellationToken token) {
+	async Task ProcessEvents(CancellationToken token) {
 		if (_subscription == null)
 			throw new InvalidOperationException("Subscription not initialized");
 
 		var indexedCount = 0;
 
 		while (!token.IsCancellationRequested) {
-			if (!await _subscription.MoveNextAsync())
+			try {
+				if (!await _subscription.MoveNextAsync())
+					break;
+			} catch (ReadResponseException.NotHandled.ServerNotReady) {
+				Log.Information("Default indexing subscription is stopping because server is not ready");
 				break;
+			}
 
 			if (_subscription.Current is ReadResponse.SubscriptionCaughtUp caughtUp) {
 				Log.Debug("Default indexing subscription caught up at {Time}", caughtUp.Timestamp);
@@ -112,7 +115,7 @@ public sealed partial class SecondaryIndexSubscription(
 		if (_processingTask != null) {
 			try {
 				await _processingTask.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing |
-				                               ConfigureAwaitOptions.ContinueOnCapturedContext);
+				                                     ConfigureAwaitOptions.ContinueOnCapturedContext);
 			} catch (Exception ex) {
 				Log.Error(ex, "Error during processing task completion");
 			}
@@ -123,7 +126,7 @@ public sealed partial class SecondaryIndexSubscription(
 		}
 	}
 
-	private static bool IsRegularStreamMetadataChange(ResolvedEvent resolvedEvent) =>
+	static bool IsRegularStreamMetadataChange(ResolvedEvent resolvedEvent) =>
 		MetadataStreamRegex().IsMatch(resolvedEvent.Event.EventStreamId) && resolvedEvent.Event.EventType == SystemEventTypes.StreamMetadata;
 
 	[GeneratedRegex(@"^\$\$(?!\$)")]

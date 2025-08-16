@@ -6,14 +6,12 @@
 @using Microsoft.AspNetCore.Authorization
 @inject StatsService StatsService
 
-<PageTitle>KurrentDB: Stats</PageTitle>
-
 <MudExpansionPanels MultiExpansion="true">
 	@foreach (var category in Elements) {
 		<MudExpansionPanel>
 			<TitleContent>
 				<div class="d-flex">
-					<MudText Class="mt-1">@category.Category.CategoryName</MudText>
+					<MudText Class="mt-1">Category: @category.Category.CategoryName</MudText>
 					<MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Class="d-flex ml-auto"
 					         Size="Size.Small">Streams: @category.Category.NumStreams
 					</MudChip>
@@ -30,8 +28,8 @@
 					<Columns>
 						<PropertyColumn Property="x => x.EventType" Title="Event type"/>
 						<PropertyColumn Property="x => x.NumEvents" Title="Events"/>
-						<PropertyColumn Property="x => x.FirstAdded" Title="First seen"/>
-						<PropertyColumn Property="x => x.LastAdded" Title="Last seen"/>
+						<PropertyColumn Property="x => DateTimeOffset.FromUnixTimeMilliseconds(x.FirstAdded)" Title="First seen"/>
+						<PropertyColumn Property="x => DateTimeOffset.FromUnixTimeMilliseconds(x.LastAdded)" Title="Last seen"/>
 					</Columns>
 				</MudDataGrid>
 			</ChildContent>
@@ -73,6 +71,8 @@
 	// MudDataGrid<CombinedStats> _dataGrid;
 	CombinedStats[] Elements { get; set; } = [];
 	Func<CombinedStats, object> _groupBy => x => x.Category.CategoryName;
+
+	protected override string PageName => "Database Stats";
 
 	protected override void OnInitialized() {
 		base.OnInitialized();
