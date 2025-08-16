@@ -6,10 +6,8 @@
 @attribute [ExcludeFromInteractiveRouting]
 @rendermode InteractiveServer
 @using System.Diagnostics
-@using System.Diagnostics.CodeAnalysis
 @using BlazorMonaco.Editor
 @using Dapper
-@using Kurrent.Quack
 @using KurrentDB.Components.Dialogs
 @using KurrentDB.Components.Tools
 @using KurrentDB.Core.Bus
@@ -17,10 +15,9 @@
 @using KurrentDB.UI.Services
 @using Microsoft.AspNetCore.Authorization
 @using Serilog
-@inject DuckDbDataSource DataSource
+@inject ConnectionWithInlineFunctions Connection
 @inject Preferences Preferences
 @inject IDialogService DialogService
-@inject IPublisher Publisher
 @implements IDisposable
 <MudPopoverProvider/>
 <MudDialogProvider />
@@ -85,7 +82,6 @@
 	static readonly ILogger Log = Serilog.Log.ForContext<Query>();
 	IEnumerable<IDictionary<string, object>> _items;
 	StandaloneCodeEditor _editor = null!;
-	[CanBeNull] DuckDBAdvancedConnection _connection;
 	string _message = "";
 	string _error = "";
 	bool _showProgress;
@@ -118,7 +114,7 @@
 		watch.Start();
 
 		try {
-			var items = (IEnumerable<IDictionary<string, object>>)_connection!.Query(sql);
+			var items = (IEnumerable<IDictionary<string, object>>)Connection.Connection.Query(sql);
 			_items = items.Select(x => x.ToDictionary(y => y.Key, y => y.Value)).ToList();
 			watch.Stop();
 			_message = $"Query executed in {watch}";
@@ -140,19 +136,6 @@
 		void PreferencesOnThemeChanged(object sender, EventArgs e) => _editor.UpdateOptions(new() { Theme = EditorTheme() });
 	}
 
-	[Experimental("DuckDBNET001")]
-	protected override void OnAfterRender(bool firstRender) {
-		base.OnAfterRender(firstRender);
-		if (!firstRender || _connection != null) {
-			return;
-		}
-		if (_connection == null) {
-			Log.Information("Opening DuckDB connection for the query page");
-			_connection = DataSource.OpenNewConnection();
-			new InlineFunctions(Publisher).Init(_connection);
-		}
-	}
-
 	static object Shorten(object value) => value is not string s ? value : s[..Math.Min(s.Length, 50)];
 
 	static bool HasNoJson(IDictionary<string, object> arg) => arg.Keys.Select(key => arg[key]).All(item => !IsJsonString(item));
@@ -163,8 +146,6 @@
 
 	public void Dispose() {
 		_editor?.Dispose();
-		_connection?.Dispose();
-		_connection = null;
 	}
 
 }

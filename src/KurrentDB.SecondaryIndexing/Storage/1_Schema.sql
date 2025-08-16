@@ -47,7 +47,7 @@ from (
 	from (select event_number, log_position, created from idx_all where log_position >= position) k
 );
 
-create or replace macro read_category(name, start) as table
+create or replace macro read_all() as table
 select
 	log_position,
 	event->>'stream_id' as stream_id,
@@ -57,8 +57,72 @@ select
 	event->>'data' as data,
 	event->>'metadata' as metadata
 from (
-	select idx_all.log_position, idx_all.event_number, idx_all.created, kdb_get(log_position)::JSON as event
-	from idx_all
-	inner join categories on idx_all.category_id=categories.id
-	where categories.name=name and log_position>=start
+	select k.*, kdb_get(k.log_position)::JSON as event
+	from (select event_number, log_position, created from idx_all) k
 );
+
+create or replace macro read_category(name, start) as table
+	select
+		log_position,
+		event->>'stream_id' as stream_id,
+		event_number,
+		event->>'event_type' as event_type,
+		epoch_ms(created) as created_at,
+		event->>'data' as data,
+		event->>'metadata' as metadata
+	from (
+		select idx_all.log_position, idx_all.event_number, idx_all.created, kdb_get(log_position)::JSON as event
+		from idx_all
+		inner join categories on idx_all.category_id=categories.id
+		where categories.name=name and log_position>=start
+	);
+
+create or replace macro read_category(name) as table
+	select
+		log_position,
+		event->>'stream_id' as stream_id,
+		event_number,
+		event->>'event_type' as event_type,
+		epoch_ms(created) as created_at,
+		event->>'data' as data,
+		event->>'metadata' as metadata
+	from (
+		select idx_all.log_position, idx_all.event_number, idx_all.created, kdb_get(log_position)::JSON as event
+		from idx_all
+		inner join categories on idx_all.category_id=categories.id
+		where categories.name=name
+	)
+;
+
+create or replace macro read_stream(name, start) as table
+	select
+		log_position,
+		event->>'stream_id' as stream_id,
+		event_number,
+		event->>'event_type' as event_type,
+		epoch_ms(created) as created_at,
+		event->>'data' as data,
+		event->>'metadata' as metadata
+	from (
+		select idx_all.log_position, idx_all.event_number, idx_all.created, kdb_get(log_position)::JSON as event
+		from idx_all
+		inner join categories on idx_all.category_id=categories.id
+		where categories.name=name and log_position>=start
+	);
+
+create or replace macro read_stream(name) as table
+	select
+		log_position,
+		event->>'stream_id' as stream_id,
+		event_number,
+		event->>'event_type' as event_type,
+		epoch_ms(created) as created_at,
+		event->>'data' as data,
+		event->>'metadata' as metadata
+	from (
+		select idx_all.log_position, idx_all.event_number, idx_all.created, kdb_get(log_position)::JSON as event
+		from idx_all
+		inner join streams on idx_all.stream_id=streams.id
+		where streams.name=name
+	)
+;

@@ -58,6 +58,7 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddSingleton<CategoryIndexProcessor>();
 		services.AddSingleton<EventTypeIndexProcessor>();
 		services.AddSingleton<StreamIndexProcessor>();
+		services.AddSingleton<ConnectionWithInlineFunctions>();
 
 		services.AddSingleton<ISecondaryIndexReader, DefaultIndexReader>();
 		services.AddSingleton<ISecondaryIndexReader, CategoryIndexReader>();
