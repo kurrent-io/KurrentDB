@@ -1,0 +1,171 @@
+﻿@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@page "/ui/query"
+@attribute [Authorize]
+@attribute [ExcludeFromInteractiveRouting]
+@rendermode InteractiveServer
+@using System.Diagnostics
+@using System.Diagnostics.CodeAnalysis
+@using BlazorMonaco.Editor
+@using Dapper
+@using Kurrent.Quack
+@using KurrentDB.Components.Dialogs
+@using KurrentDB.Components.Tools
+@using KurrentDB.Core.Bus
+@using KurrentDB.SecondaryIndexing.Storage
+@using KurrentDB.UI.Services
+@using Microsoft.AspNetCore.Authorization
+@using Serilog
+@inject DuckDbDataSource DataSource
+@inject Preferences Preferences
+@inject IDialogService DialogService
+@inject IPublisher Publisher
+@implements IDisposable
+<MudPopoverProvider/>
+<MudDialogProvider />
+
+<PageTitle>KurrentDB: Query</PageTitle>
+
+<MudCard Outlined="true">
+	<MudCardContent>
+		<MudText>Type SQL statement in the editor below</MudText>
+		<StandaloneCodeEditor @ref="_editor" Id="my-editor-instance-id"
+		                      ConstructionOptions="EditorConstructionOptions"/>
+		@if (!string.IsNullOrEmpty(_message)) {
+			<MudAlert Severity="Severity.Normal">@_message</MudAlert>
+		}
+		@if (!string.IsNullOrEmpty(_error)) {
+			<MudAlert Severity="Severity.Error">@_error</MudAlert>
+		}
+	</MudCardContent>
+	<MudCardActions>
+		<MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="Execute">Run</MudButton>
+		<MudIconButton Icon="@Icons.Material.Filled.Help" Color="Color.Default" OnClick="ShowHelp">Help</MudIconButton>
+	</MudCardActions>
+</MudCard>
+<MudOverlay Visible="_showProgress" DarkBackground="true" Absolute="true">
+	<MudProgressCircular Color="Color.Secondary" Indeterminate="true"/>
+</MudOverlay>
+
+@if (_items != null) {
+	<MudDataGrid Items="_items" T="IDictionary<string, object>">
+		<Columns>
+			<HierarchyColumn T="IDictionary<string, object>" ButtonDisabledFunc="HasNoJson"/>
+			@if (!_items.Any()) {
+			}
+			else {
+				foreach (var item in _items.First().Keys) {
+					<PropertyColumn Property="x => Shorten(x[item])" Title="@item"></PropertyColumn>
+				}
+			}
+		</Columns>
+		<ChildRowContent>
+			<MudCard>
+				<MudCardContent>
+					@foreach (var item in context.Item.Keys) {
+						if (!IsJsonString(context.Item[item])) continue;
+
+						<MudText Typo="Typo.h6">@item</MudText>
+
+						<Json JsonString="@context.Item[item]?.ToString()"></Json>
+						@* @context.Item[item]?.ToString() *@
+					}
+				</MudCardContent>
+			</MudCard>
+		</ChildRowContent>
+		<PagerContent>
+			<MudDataGridPager T="IDictionary<string, object>"/>
+		</PagerContent>
+	</MudDataGrid>
+}
+
+@code {
+
+	static readonly ILogger Log = Serilog.Log.ForContext<Query>();
+	IEnumerable<IDictionary<string, object>> _items;
+	StandaloneCodeEditor _editor = null!;
+	[CanBeNull] DuckDBAdvancedConnection _connection;
+	string _message = "";
+	string _error = "";
+	bool _showProgress;
+
+	StandaloneEditorConstructionOptions EditorConstructionOptions(StandaloneCodeEditor arg) => new() {
+		AutomaticLayout = false,
+		Language = "sql",
+		Theme = EditorTheme(),
+		FontSize = 16
+	};
+
+	readonly DialogOptions _maxWidth = new() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+	async Task ShowHelp() {
+		await DialogService.ShowAsync<QueryHelpDialog>("How to use the query engine", _maxWidth);
+	}
+
+	async Task Execute() {
+		var sql = await _editor.GetValue();
+
+		if (string.IsNullOrWhiteSpace(sql)) return;
+
+		_items = null;
+		_showProgress = true;
+		_message = "";
+		_error = "";
+		StateHasChanged();
+
+		var watch = new Stopwatch();
+		watch.Start();
+
+		try {
+			var items = (IEnumerable<IDictionary<string, object>>)_connection!.Query(sql);
+			_items = items.Select(x => x.ToDictionary(y => y.Key, y => y.Value)).ToList();
+			watch.Stop();
+			_message = $"Query executed in {watch}";
+		}
+		catch (Exception e) {
+			_error = e.Message;
+		}
+		finally {
+			_showProgress = false;
+		}
+	}
+
+	protected override void OnInitialized() {
+		base.OnInitialized();
+		Preferences.ThemeChanged += PreferencesOnThemeChanged;
+
+		return;
+
+		void PreferencesOnThemeChanged(object sender, EventArgs e) => _editor.UpdateOptions(new() { Theme = EditorTheme() });
+	}
+
+	[Experimental("DuckDBNET001")]
+	protected override void OnAfterRender(bool firstRender) {
+		base.OnAfterRender(firstRender);
+		if (!firstRender || _connection != null) {
+			return;
+		}
+		if (_connection == null) {
+			Log.Information("Opening DuckDB connection for the query page");
+			_connection = DataSource.OpenNewConnection();
+			new InlineFunctions(Publisher).Init(_connection);
+		}
+	}
+
+	static object Shorten(object value) => value is not string s ? value : s[..Math.Min(s.Length, 50)];
+
+	static bool HasNoJson(IDictionary<string, object> arg) => arg.Keys.Select(key => arg[key]).All(item => !IsJsonString(item));
+
+	static bool IsJsonString(object value) => value is string s && (s.StartsWith('{') && s.EndsWith('}') || s.StartsWith('[') && s.EndsWith(']'));
+
+	string EditorTheme() => Preferences.DarkMode ? "vs-dark" : "vs-light";
+
+	public void Dispose() {
+		_editor?.Dispose();
+		_connection?.Dispose();
+		_connection = null;
+	}
+
+}
+

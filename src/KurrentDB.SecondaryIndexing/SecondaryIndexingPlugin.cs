@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
 using EventStore.Plugins;
 using KurrentDB.Common.Configuration;
+using KurrentDB.Core.Bus;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.TransactionLog.Chunks;

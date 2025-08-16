@@ -143,5 +143,8 @@
 	  <Compile Update="Messages\ClientMessage.IndexReads.cs">
 	    <DependentUpon>ClientMessage.cs</DependentUpon>
 	  </Compile>
+	  <Compile Update="Messages\ClientMessage.ReadLogEvents.cs">
+	    <DependentUpon>ClientMessage.cs</DependentUpon>
+	  </Compile>
 	</ItemGroup>
 </Project>

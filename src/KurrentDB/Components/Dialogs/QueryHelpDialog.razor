@@ -1,0 +1,47 @@
+@using KurrentDB.UI.Services
+@inject Preferences Preferences
+
+<MudDialog Style="height: 70%;">
+	<DialogContent>
+		<MudMarkdown Styling="@_styling" Value="@HelpText"/>
+	</DialogContent>
+	<DialogActions>
+		<MudButton Color="Color.Primary" OnClick="Ok">Close</MudButton>
+	</DialogActions>
+</MudDialog>
+
+@code {
+	readonly MudMarkdownStyling _styling = new();
+
+	protected override void OnInitialized() {
+		base.OnInitialized();
+		var theme = Preferences.DarkMode ? CodeBlockTheme.GithubDark : CodeBlockTheme.StackoverflowLight;
+		_styling.CodeBlock.Theme = theme;
+	}
+
+	[CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
+
+	private void Ok() => MudDialog.Close(DialogResult.Ok(true));
+
+	const string HelpText = @"
+**Available functions:**
+
+* `read_all(start, count)`: reads all events from `start` to `start + count`.
+* `read_category(category, start, count)`: reads all events from `start` to `start + count`.
+
+**Example query:**
+
+The query will find all events with `Version` property set, and then count the number of
+streams per found version.
+```
+select version, count(*) as count from (
+	select distinct version, stream from (
+		select k.data->>'$.Version' as version, k.stream_id as stream
+		from read_all(0) k
+		where version is not null
+	)
+) group by version
+```
+";
+
+}

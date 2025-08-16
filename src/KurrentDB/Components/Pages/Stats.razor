@@ -1,0 +1,83 @@
+@page "/ui/stats"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@inherits KurrentDB.Components.Licensed.LicensedPage
+@using KurrentDB.Services
+@using Microsoft.AspNetCore.Authorization
+@inject StatsService StatsService
+
+<PageTitle>KurrentDB: Stats</PageTitle>
+
+<MudExpansionPanels MultiExpansion="true">
+	@foreach (var category in Elements) {
+		<MudExpansionPanel>
+			<TitleContent>
+				<div class="d-flex">
+					<MudText Class="mt-1">@category.Category.CategoryName</MudText>
+					<MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Class="d-flex ml-auto"
+					         Size="Size.Small">Streams: @category.Category.NumStreams
+					</MudChip>
+					<MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Class="d-flex"
+					         Size="Size.Small">Events: @category.Category.NumEvents
+					</MudChip>
+					<MudChip T="string" Variant="Variant.Outlined" Color="@StreamLengthColor(category.AvgStreamLength)"
+					         Size="Size.Small">Avg stream length: @category.AvgStreamLength
+					</MudChip>
+				</div>
+			</TitleContent>
+			<ChildContent>
+				<MudDataGrid Items="@category.EventType" Dense="@true">
+					<Columns>
+						<PropertyColumn Property="x => x.EventType" Title="Event type"/>
+						<PropertyColumn Property="x => x.NumEvents" Title="Events"/>
+						<PropertyColumn Property="x => x.FirstAdded" Title="First seen"/>
+						<PropertyColumn Property="x => x.LastAdded" Title="Last seen"/>
+					</Columns>
+				</MudDataGrid>
+			</ChildContent>
+		</MudExpansionPanel>
+	}
+</MudExpansionPanels>
+@* <MudDataGrid @ref="_dataGrid" MultiSelection="true" Items="@Elements" Filterable="true" *@
+@*              Groupable="true" GroupExpanded="false"> *@
+@* 	<ToolBarContent> *@
+@* 		<MudText Typo="Typo.h6">Database stats</MudText> *@
+@* 		<MudSpacer/> *@
+@* 	</ToolBarContent> *@
+@* 	<Columns> *@
+@* 		<PropertyColumn Property="x => x.EventType.EventType" Title="Event type" Filterable="false" Groupable="false"/> *@
+@* 		<PropertyColumn Property="x => x.EventType.NumEvents" Title="Events count"/> *@
+@* 		<PropertyColumn Property="x => x.Category.CategoryName" Title="Category" Grouping GroupBy="@_groupBy"> *@
+@* 			<GroupTemplate> *@
+@* 				@{ *@
+@* 					var cat = @context.Grouping.First(); *@
+@* 					<span style="font-weight:bold">Category: @context.Grouping.Key *@
+@* 						<MudChip Variant="Variant.Outlined" Color="Color.Primary" *@
+@* 						         Size="Size.Small">Streams: @cat.Category.NumStreams *@
+@* 						</MudChip> *@
+@* 						<MudChip Variant="Variant.Outlined" Color="Color.Primary" *@
+@* 						         Size="Size.Small">Events: @cat.Category.NumEvents *@
+@* 						</MudChip> *@
+@* 						<MudChip Variant="Variant.Outlined" Color="Color.Primary" *@
+@* 						         Size="Size.Small">Avg stream length: @(cat.Category.NumEvents/cat.Category.NumStreams) *@
+@* 						</MudChip> *@
+@* 					</span> *@
+@* 				} *@
+@* 			</GroupTemplate> *@
+@* 		</PropertyColumn> *@
+@* 	</Columns> *@
+@* </MudDataGrid> *@
+
+
+@code {
+	// MudDataGrid<CombinedStats> _dataGrid;
+	CombinedStats[] Elements { get; set; } = [];
+	Func<CombinedStats, object> _groupBy => x => x.Category.CategoryName;
+
+	protected override void OnInitialized() {
+		base.OnInitialized();
+		Elements = StatsService.GetStats();
+	}
+
+	Color StreamLengthColor(long avgLength) => avgLength < 300 ? Color.Primary : Color.Warning;
+}
