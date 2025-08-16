@@ -45,6 +45,7 @@ select
 from (
 	select k.*, kdb_get(k.log_position)::JSON as event
 	from (select event_number, log_position, created from idx_all where log_position >= position) k
+	order by log_position
 );
 
 create or replace macro read_all() as table
@@ -59,6 +60,7 @@ select
 from (
 	select k.*, kdb_get(k.log_position)::JSON as event
 	from (select event_number, log_position, created from idx_all) k
+	order by log_position
 );
 
 create or replace macro read_category(name, start) as table
@@ -75,6 +77,7 @@ create or replace macro read_category(name, start) as table
 		from idx_all
 		inner join categories on idx_all.category_id=categories.id
 		where categories.name=name and log_position>=start
+		order by log_position
 	);
 
 create or replace macro read_category(name) as table
@@ -91,6 +94,7 @@ create or replace macro read_category(name) as table
 		from idx_all
 		inner join categories on idx_all.category_id=categories.id
 		where categories.name=name
+		order by log_position
 	)
 ;
 
@@ -108,6 +112,7 @@ create or replace macro read_stream(name, start) as table
 		from idx_all
 		inner join categories on idx_all.category_id=categories.id
 		where categories.name=name and log_position>=start
+		order by log_position
 	);
 
 create or replace macro read_stream(name) as table
@@ -124,5 +129,5 @@ create or replace macro read_stream(name) as table
 		from idx_all
 		inner join streams on idx_all.stream_id=streams.id
 		where streams.name=name
-	)
+	) order by event_number
 ;

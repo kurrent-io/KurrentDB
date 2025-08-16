@@ -24,22 +24,27 @@
 	private void Ok() => MudDialog.Close(DialogResult.Ok(true));
 
 	const string HelpText = @"
-**Available functions:**
+##### Available functions
 
-* `read_all(start, count)`: reads all events from `start` to `start + count`.
-* `read_category(category, start, count)`: reads all events from `start` to `start + count`.
+| Function | Parameters | Description |
+|----------|------------|-------------|
+| `read_all` | None | Read all events |
+| `read_all` | `start` | Reads all events for which the log position is greater or equal `start` |
+| `read_category` | `category` | Read all events within a given category |
+| `read_category` | `category`, `start` | Reads all events within a given category where the log position is greater or equal `start` |
+| `read_stream` | `stream` | Reads all events from a specific stream |
 
-**Example query:**
+##### Example query
 
 The query will find all events with `Version` property set, and then count the number of
-streams per found version.
+streams per found version value.
 ```
 select version, count(*) as count from (
-	select distinct version, stream from (
-		select k.data->>'$.Version' as version, k.stream_id as stream
-		from read_all(0) k
-		where version is not null
-	)
+  select distinct version, stream from (
+    select k.data->>'$.Version' as version, k.stream_id as stream
+    from read_all() k
+    where version is not null
+  )
 ) group by version
 ```
 ";
