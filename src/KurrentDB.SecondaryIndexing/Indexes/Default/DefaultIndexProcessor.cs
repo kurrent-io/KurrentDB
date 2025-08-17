@@ -60,11 +60,11 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 		var categoryId = _categoryIndexProcessor.Index(resolvedEvent);
 		var eventTypeId = _eventTypeIndexProcessor.Index(resolvedEvent);
-		var streamId = _streamIndexProcessor.Index(resolvedEvent);
-		if (streamId == -1) {
-			// StreamIndex is disposed
-			return;
-		}
+		// var streamId = _streamIndexProcessor.Index(resolvedEvent);
+		// if (streamId == -1) {
+		// 	// StreamIndex is disposed
+		// 	return;
+		// }
 
 		var logPosition = resolvedEvent.Event.LogPosition;
 		var commitPosition = resolvedEvent.EventPosition?.CommitPosition;
@@ -78,7 +78,7 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			row.Append(eventNumber);
 			row.Append(new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds());
 			row.Append(DBNull.Value); // expires
-			row.Append(streamId);
+			row.Append(resolvedEvent.Event.EventStreamId);
 			row.Append(eventTypeId);
 			row.Append(categoryId);
 			row.Append(false); // is_deleted TODO: What happens if the event is deleted before we commit?
