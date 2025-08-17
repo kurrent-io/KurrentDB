@@ -58,8 +58,8 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	public void Index(ResolvedEvent resolvedEvent) {
 		if (IsDisposingOrDisposed) return;
 
-		var categoryId = _categoryIndexProcessor.Index(resolvedEvent);
-		var eventTypeId = _eventTypeIndexProcessor.Index(resolvedEvent);
+		// var categoryId = _categoryIndexProcessor.Index(resolvedEvent);
+		// var eventTypeId = _eventTypeIndexProcessor.Index(resolvedEvent);
 		// var streamId = _streamIndexProcessor.Index(resolvedEvent);
 		// if (streamId == -1) {
 		// 	// StreamIndex is disposed
@@ -79,12 +79,12 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			row.Append(new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds());
 			row.Append(DBNull.Value); // expires
 			row.Append(resolvedEvent.Event.EventStreamId);
-			row.Append(eventTypeId);
-			row.Append(categoryId);
+			row.Append(resolvedEvent.Event.EventType);
+			row.Append(CategoryIndexProcessor.GetStreamCategory(resolvedEvent.Event.EventStreamId));
 			row.Append(false); // is_deleted TODO: What happens if the event is deleted before we commit?
 		}
 
-		_inFlightRecords.Append(new(logPosition, categoryId, eventTypeId));
+		// _inFlightRecords.Append(new(logPosition, categoryId, eventTypeId));
 		LastIndexedPosition = resolvedEvent.Event.LogPosition;
 
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(SystemStreams.DefaultSecondaryIndex, resolvedEvent));

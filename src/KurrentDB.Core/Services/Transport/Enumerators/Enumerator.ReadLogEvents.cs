@@ -53,7 +53,7 @@ partial class Enumerator {
 			Read(logPositions);
 		}
 
-		void Read(long[] logPositions, ulong readCount = 0) {
+		void Read(long[] logPositions) {
 			Guid correlationId = Guid.NewGuid();
 
 			_bus.Publish(new ClientMessage.ReadLogEvents(

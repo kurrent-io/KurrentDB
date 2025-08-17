@@ -46,7 +46,7 @@ public class CategoryIndexProcessor {
 	public int GetCategoryId(string categoryName) =>
 		_categories.TryGetValue(categoryName, out var categoryId) ? categoryId : -1;
 
-	private static string GetStreamCategory(string streamName) {
+	public static string GetStreamCategory(string streamName) {
 		var dashIndex = streamName.IndexOf('-');
 		return dashIndex == -1 ? streamName : streamName[..dashIndex];
 	}

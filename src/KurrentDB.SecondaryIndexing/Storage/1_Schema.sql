@@ -27,9 +27,9 @@ create table if not exists idx_all (
 	event_number bigint not null,
 	created bigint not null,
 	expires bigint null,
-	stream_id varchar not null,
-	event_type_id int4 not null,
-	category_id int4 not null,
+	stream varchar not null,
+	event_type varchar not null,
+	category varchar not null,
 	is_deleted boolean not null
 );
 
@@ -127,7 +127,6 @@ create or replace macro read_stream(name) as table
 	from (
 		select idx_all.log_position, idx_all.event_number, idx_all.created, kdb_get(log_position)::JSON as event
 		from idx_all
-		inner join streams on idx_all.stream_id=streams.id
-		where streams.name=name
+		where stream_id=name
 	) order by event_number
 ;
