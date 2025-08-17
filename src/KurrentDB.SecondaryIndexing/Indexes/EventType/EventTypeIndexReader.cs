@@ -41,8 +41,8 @@ class EventTypeIndexReader(
 		}
 
 		var range = excludeStart
-			? Db.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryExcl>(new(id, startPosition.PreparePosition, maxCount))
-			: Db.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(new(id, startPosition.PreparePosition, maxCount));
+			? Db.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexBackQueryExcl>(new(id, startPosition.PreparePosition, maxCount))
+			: Db.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexBackQueryIncl>(new(id, startPosition.PreparePosition, maxCount));
 
 		if (inFlight.Count > 0) {
 			range.AddRange(inFlight);
