@@ -1,6 +1,7 @@
 // Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
+using System;
 using System.Linq;
 using Dapper;
 using KurrentDB.SecondaryIndexing.Storage;
@@ -12,31 +13,29 @@ class StatsService(DuckDbDataSource dataSource) {
 		using var connection = dataSource.Pool.Open();
 		var categories = connection.Query<CategoryStats>(CategoriesSql);
 		var eventTypes = connection.Query<CategoryEventTypeStats>(CategoriesEventTypesSql);
-		return categories.GroupJoin(eventTypes, x => x.CategoryId, y => y.CategoryId, (x, y) => new CombinedStats(x, y.ToArray())).ToArray();
+		return categories.GroupJoin(eventTypes, x => x.category, y => y.category, (x, y) => new CombinedStats(x, y.ToArray())).ToArray();
 	}
 
 	const string CategoriesSql =
 		"""
-		SELECT
-			c.id as CategoryId, c.name AS CategoryName,
-			COUNT(DISTINCT s.id) as NumStreams, COUNT(DISTINCT i.log_position) AS NumEvents
-		FROM categories c
-			JOIN idx_all i ON c.id = i.category_id
-			JOIN streams s ON i.stream_id = s.id
-		GROUP BY c.id, c.name
+		select
+			category,
+			count(distinct stream) as num_streams,
+			count(distinct log_position) AS num_events
+		from idx_all
+		group by category
 		""";
 
 	const string CategoriesEventTypesSql =
 		"""
-		SELECT
-			c.id as CategoryId, e.id as EventTypeId,
-			e.name AS EventType, COUNT(DISTINCT i.log_position) AS NumEvents,
-			min(i.created) as FirstAdded, max(i.created) as LastAdded
-		FROM categories c
-			JOIN idx_all i ON c.id = i.category_id
-			JOIN event_types e ON i.event_type_id = e.id
-			JOIN streams s ON i.stream_id = s.id
-		GROUP BY c.id, e.id, e.name
+		select
+			category,
+			event_type,
+			count(distinct log_position) AS num_events,
+			epoch_ms(min(created)) as first_added,
+			epoch_ms(max(created)) as last_added
+		from idx_all
+		group by category, event_type
 		""";
 
 	const string LongestStreamSql =
@@ -49,22 +48,20 @@ class StatsService(DuckDbDataSource dataSource) {
 		""";
 
 	public record CategoryStats {
-		public long CategoryId { get; init; }
-		public string CategoryName { get; init; }
-		public long NumStreams { get; init; }
-		public long NumEvents { get; init; }
+		public string category { get; init; }
+		public long num_streams { get; init; }
+		public long num_events { get; init; }
 	}
 
 	public record CategoryEventTypeStats {
-		public long CategoryId { get; init; }
-		public long EventTypeId { get; init; }
-		public string EventType { get; init; }
-		public int NumEvents { get; init; }
-		public long FirstAdded { get; init; }
-		public long LastAdded { get; init; }
+		public string category { get; init; }
+		public string event_type { get; init; }
+		public long num_events { get; init; }
+		public DateTime first_added { get; init; }
+		public DateTime last_added { get; init; }
 	}
 }
 
 record CombinedStats(StatsService.CategoryStats Category, StatsService.CategoryEventTypeStats[] EventType) {
-	public long AvgStreamLength => Category.NumEvents / Category.NumStreams;
+	public long AvgStreamLength => Category.num_events / Category.num_streams;
 }

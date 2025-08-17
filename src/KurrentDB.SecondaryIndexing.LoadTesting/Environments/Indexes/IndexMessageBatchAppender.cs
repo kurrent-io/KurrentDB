@@ -39,7 +39,8 @@ public class IndexMessageBatchAppender : IMessageBatchAppender {
 			eventTypeIndexProcessor,
 			streamIndexProcessor,
 			new NoOpSecondaryIndexProgressTracker(), // TODO: Use the real one with metrics
-			publisher
+			publisher,
+			hasher
 		);
 	}
 

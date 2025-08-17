@@ -5,6 +5,7 @@ using DotNext;
 using Kurrent.Quack;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services;
 using KurrentDB.SecondaryIndexing.Diagnostics;
@@ -25,6 +26,7 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	readonly StreamIndexProcessor _streamIndexProcessor;
 	readonly ISecondaryIndexProgressTracker _progressTracker;
 	readonly IPublisher _publisher;
+	readonly ILongHasher<string> _hasher;
 	Appender _appender;
 
 	static readonly ILogger Logger = Log.Logger.ForContext<DefaultIndexProcessor>();
@@ -38,7 +40,8 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		EventTypeIndexProcessor eventTypeIndexProcessor,
 		StreamIndexProcessor streamIndexProcessor,
 		ISecondaryIndexProgressTracker progressTracker,
-		IPublisher publisher
+		IPublisher publisher,
+		ILongHasher<string> hasher
 	) {
 		_connection = db.OpenNewConnection();
 		_appender = new(_connection, "idx_all"u8);
@@ -49,6 +52,7 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_streamIndexProcessor = streamIndexProcessor;
 		_progressTracker = progressTracker;
 		_publisher = publisher;
+		_hasher = hasher;
 
 		var lastPosition = GetLastPosition();
 		Logger.Information("Last known log position: {Position}", lastPosition);
@@ -69,6 +73,9 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		var logPosition = resolvedEvent.Event.LogPosition;
 		var commitPosition = resolvedEvent.EventPosition?.CommitPosition;
 		var eventNumber = resolvedEvent.Event.EventNumber;
+		var streamHash = _hasher.Hash(resolvedEvent.Event.EventStreamId);
+		var eventType = resolvedEvent.Event.EventType;
+		var category = CategoryIndexProcessor.GetStreamCategory(resolvedEvent.Event.EventStreamId);
 		using (var row = _appender.CreateRow()) {
 			row.Append(logPosition);
 			if (commitPosition.HasValue && logPosition != commitPosition)
@@ -79,15 +86,18 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			row.Append(new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds());
 			row.Append(DBNull.Value); // expires
 			row.Append(resolvedEvent.Event.EventStreamId);
-			row.Append(resolvedEvent.Event.EventType);
-			row.Append(CategoryIndexProcessor.GetStreamCategory(resolvedEvent.Event.EventStreamId));
+			row.Append(streamHash);
+			row.Append(eventType);
+			row.Append(category);
 			row.Append(false); // is_deleted TODO: What happens if the event is deleted before we commit?
 		}
 
-		// _inFlightRecords.Append(new(logPosition, categoryId, eventTypeId));
+		_inFlightRecords.Append(new(logPosition, category, eventType));
 		LastIndexedPosition = resolvedEvent.Event.LogPosition;
 
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(SystemStreams.DefaultSecondaryIndex, resolvedEvent));
+		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(EventTypeIndex.Name(eventType), resolvedEvent));
+		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(CategoryIndex.Name(category), resolvedEvent));
 		_progressTracker.RecordIndexed(resolvedEvent);
 	}
 

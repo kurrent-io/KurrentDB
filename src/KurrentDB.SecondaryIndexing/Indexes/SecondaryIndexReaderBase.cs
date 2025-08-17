@@ -12,11 +12,11 @@ namespace KurrentDB.SecondaryIndexing.Indexes;
 public abstract class SecondaryIndexReaderBase(DuckDbDataSource db, IReadIndex<string> index) : ISecondaryIndexReader {
 	protected DuckDbDataSource Db => db;
 
-	protected abstract int GetId(string streamName);
+	protected abstract string GetId(string indexName);
 
-	protected abstract IReadOnlyList<IndexQueryRecord> GetIndexRecordsForwards(int id, TFPos startPosition, int maxCount, bool excludeFirst);
+	protected abstract IReadOnlyList<IndexQueryRecord> GetIndexRecordsForwards(string id, TFPos startPosition, int maxCount, bool excludeFirst);
 
-	protected abstract IReadOnlyList<IndexQueryRecord> GetIndexRecordsBackwards(int id, TFPos startPosition, int maxCount, bool excludeFirst);
+	protected abstract IReadOnlyList<IndexQueryRecord> GetIndexRecordsBackwards(string id, TFPos startPosition, int maxCount, bool excludeFirst);
 
 	public ValueTask<ReadIndexEventsForwardCompleted> ReadForwards(ReadIndexEventsForward msg, CancellationToken token)
 		=> ReadForwards(msg, index.IndexReader, index.LastIndexedPosition, token);
@@ -90,7 +90,7 @@ public abstract class SecondaryIndexReaderBase(DuckDbDataSource db, IReadIndex<s
 
 	async ValueTask<IReadOnlyList<ResolvedEvent>> GetEventsForwards(
 		IIndexReader<string> indexReader,
-		int id,
+		string id,
 		TFPos startPosition,
 		int maxCount,
 		bool excludeFirst,
@@ -102,7 +102,7 @@ public abstract class SecondaryIndexReaderBase(DuckDbDataSource db, IReadIndex<s
 
 	async ValueTask<IReadOnlyList<ResolvedEvent>> GetEventsBackwards(
 		IIndexReader<string> indexReader,
-		int id,
+		string id,
 		TFPos startPosition,
 		int maxCount,
 		bool excludeFirst,

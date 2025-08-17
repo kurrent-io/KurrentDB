@@ -37,15 +37,15 @@ public class NoOpSecondaryIndexProgressTracker : ISecondaryIndexProgressTracker 
 }
 
 public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
-	private static readonly ILogger Log = Serilog.Log.Logger.ForContext<SecondaryIndexProgressTracker>();
-	private long _lastIndexedPosition = -1;
-	private long _lastCommittedPosition = -1;
-	private long _lastLogPosition = -1;
-	private long _lastIndexedAt = -1;
-	private long _lastAppendedAt = -1;
-	private int _pendingEvents;
-	private readonly SecondaryIndexTrackers _trackers = new();
-	private readonly Stopwatch _sw = new();
+	static readonly ILogger Log = Serilog.Log.Logger.ForContext<SecondaryIndexProgressTracker>();
+	long _lastIndexedPosition = -1;
+	long _lastCommittedPosition = -1;
+	long _lastLogPosition = -1;
+	long _lastIndexedAt = -1;
+	long _lastAppendedAt = -1;
+	int _pendingEvents;
+	readonly SecondaryIndexTrackers _trackers = new();
+	readonly Stopwatch _sw = new();
 
 	public SecondaryIndexProgressTracker(Meter meter, string meterPrefix) {
 		meter.CreateObservableGauge(
@@ -72,6 +72,31 @@ public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
 		var commitLatencyTracker = new DurationMetric(meter, $"{meterPrefix}.commit", false);
 
 		_trackers.Commit = new DurationTracker(commitLatencyTracker, "commit");
+		return;
+
+		Measurement<int> ObservePending() => new(_pendingEvents);
+
+		IEnumerable<Measurement<long>> ObserveGap() {
+			var streamPos = Interlocked.Read(ref _lastLogPosition);
+			var indexedPos = Interlocked.Read(ref _lastIndexedPosition);
+
+			if (streamPos == -1 || indexedPos == -1)
+				yield break;
+
+			yield return new(streamPos - indexedPos);
+		}
+
+		IEnumerable<Measurement<long>> ObserveLag() {
+			var lastAppendedAt = Interlocked.Read(ref _lastAppendedAt);
+			var lastIndexedAt = Interlocked.Read(ref _lastIndexedAt);
+
+			if (lastAppendedAt == -1 || lastIndexedAt == -1)
+				yield break;
+
+			var lag = (long)new TimeSpan(lastIndexedAt - lastAppendedAt).TotalMilliseconds;
+
+			yield return new(lag);
+		}
 	}
 
 	public void RecordIndexed(ResolvedEvent resolvedEvent) {
@@ -100,7 +125,7 @@ public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
 			eventRecord.TimeStamp.Ticks
 		);
 
-	private void RecordAppended(string streamId, string eventType, long logPosition, long timestampTicks) {
+	void RecordAppended(string streamId, string eventType, long logPosition, long timestampTicks) {
 		try {
 			if (eventType.StartsWith('$') || streamId.StartsWith('$')) {
 				// ignore system events
@@ -134,31 +159,5 @@ public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
 
 	public void RecordError(Exception e) {
 		//TODO: Log error here
-	}
-
-	private IEnumerable<Measurement<long>> ObserveGap() {
-		var streamPos = Interlocked.Read(ref _lastLogPosition);
-		var indexedPos = Interlocked.Read(ref _lastIndexedPosition);
-
-		if (streamPos == -1 || indexedPos == -1)
-			yield break;
-
-		yield return new(streamPos - indexedPos);
-	}
-
-	private IEnumerable<Measurement<long>> ObserveLag() {
-		var lastAppendedAt = Interlocked.Read(ref _lastAppendedAt);
-		var lastIndexedAt = Interlocked.Read(ref _lastIndexedAt);
-
-		if (lastAppendedAt == -1 || lastIndexedAt == -1)
-			yield break;
-
-		var lag = (long)new TimeSpan(lastIndexedAt - lastAppendedAt).TotalMilliseconds;
-
-		yield return new(lag);
-	}
-
-	private Measurement<int> ObservePending() {
-		return new(_pendingEvents);
 	}
 }

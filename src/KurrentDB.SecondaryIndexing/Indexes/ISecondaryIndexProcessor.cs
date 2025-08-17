@@ -14,5 +14,3 @@ public interface ISecondaryIndexProcessor : IDisposable {
 
 	TFPos GetLastPosition();
 }
-
-public record struct SequenceRecord(int Id, long Sequence);

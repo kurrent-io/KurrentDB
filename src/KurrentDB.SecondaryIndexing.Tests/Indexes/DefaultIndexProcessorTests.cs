@@ -74,33 +74,33 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		AssertDefaultIndexQueryReturns([100, 110, 117, 200, 213, 394, 500, 601, 987]);
 
 		// Categories
-		AssertGetCategoriesQueryReturns([
-			new(0, cat1),
-			new(1, cat2)
-		]);
-		AssertCategoryIndexQueryReturns(0, [100, 117, 200, 213, 500, 601, 987]);
-		AssertCategoryIndexQueryReturns(1, [110, 394]);
+		// AssertGetCategoriesQueryReturns([
+		// 	new(0, cat1),
+		// 	new(1, cat2)
+		// ]);
+		AssertCategoryIndexQueryReturns(cat1, [100, 117, 200, 213, 500, 601, 987]);
+		AssertCategoryIndexQueryReturns(cat2, [110, 394]);
 
 		// EventTypes
-		AssertGetAllEventTypesQueryReturns([
-			new(0, cat1Et1),
-			new(1, cat2Et1),
-			new(2, cat1Et2),
-			new(3, cat1Et3),
-			new(4, cat2Et2)
-		]);
-		AssertReadEventTypeIndexQueryReturns(0, [100, 213, 987]);
-		AssertReadEventTypeIndexQueryReturns(1, [110]);
-		AssertReadEventTypeIndexQueryReturns(2, [117, 500]);
-		AssertReadEventTypeIndexQueryReturns(3, [200, 601]);
-		AssertReadEventTypeIndexQueryReturns(4, [394]);
+		// AssertGetAllEventTypesQueryReturns([
+		// 	new(0, cat1Et1),
+		// 	new(1, cat2Et1),
+		// 	new(2, cat1Et2),
+		// 	new(3, cat1Et3),
+		// 	new(4, cat2Et2)
+		// ]);
+		AssertReadEventTypeIndexQueryReturns(cat1Et1, [100, 213, 987]);
+		AssertReadEventTypeIndexQueryReturns(cat2Et1, [110]);
+		AssertReadEventTypeIndexQueryReturns(cat1Et2, [117, 500]);
+		AssertReadEventTypeIndexQueryReturns(cat1Et3, [200, 601]);
+		AssertReadEventTypeIndexQueryReturns(cat2Et2, [394]);
 
 		// Streams
-		AssertGetStreamMaxSequencesQueryReturns(2);
+		// AssertGetStreamMaxSequencesQueryReturns(2);
 
-		AssertGetStreamIdByNameQueryReturns(cat1Stream1, 0);
-		AssertGetStreamIdByNameQueryReturns(cat2Stream1, 1);
-		AssertGetStreamIdByNameQueryReturns(cat1Stream2, 2);
+		// AssertGetStreamIdByNameQueryReturns(cat1Stream1, 0);
+		// AssertGetStreamIdByNameQueryReturns(cat2Stream1, 1);
+		// AssertGetStreamIdByNameQueryReturns(cat1Stream2, 2);
 	}
 
 	[Fact]
@@ -131,23 +131,23 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		AssertDefaultIndexQueryReturns([100, 117, 200]);
 
 		// Categories
-		AssertGetCategoriesQueryReturns([new(0, "hello")]);
-		AssertCategoryIndexQueryReturns(0, [100, 117, 200]);
+		// AssertGetCategoriesQueryReturns([new(0, "hello")]);
+		AssertCategoryIndexQueryReturns(streamName, [100, 117, 200]);
 
 		// EventTypes
-		AssertGetAllEventTypesQueryReturns([
-			new(0, eventType1),
-			new(1, eventType2),
-			new(2, eventType3)
-		]);
-		AssertReadEventTypeIndexQueryReturns(0, [100]);
-		AssertReadEventTypeIndexQueryReturns(1, [117]);
-		AssertReadEventTypeIndexQueryReturns(2, [200]);
+		// AssertGetAllEventTypesQueryReturns([
+		// 	new(0, eventType1),
+		// 	new(1, eventType2),
+		// 	new(2, eventType3)
+		// ]);
+		AssertReadEventTypeIndexQueryReturns(eventType1, [100]);
+		AssertReadEventTypeIndexQueryReturns(eventType2, [117]);
+		AssertReadEventTypeIndexQueryReturns(eventType3, [200]);
 
 		// Streams
-		AssertGetStreamMaxSequencesQueryReturns(0);
+		// AssertGetStreamMaxSequencesQueryReturns(0);
 
-		AssertGetStreamIdByNameQueryReturns(streamName, 0);
+		// AssertGetStreamIdByNameQueryReturns(streamName, 0);
 	}
 
 	[Fact]
@@ -191,37 +191,37 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 
 		// Categories
 		// Note: Categories are inserted using a separate connection
-		AssertGetCategoriesQueryReturns([
-			new(0, cat1),
-			new(1, cat2)
-		]);
-		AssertCategoryIndexQueryReturns(0, []);
-		AssertCategoryIndexQueryReturns(1, []);
+		// AssertGetCategoriesQueryReturns([
+		// 	new(0, cat1),
+		// 	new(1, cat2)
+		// ]);
+		AssertCategoryIndexQueryReturns(cat1, []);
+		AssertCategoryIndexQueryReturns(cat2, []);
 
 		// EventTypes
 		// Note: Event Types are inserted using a separate connection
-		AssertGetAllEventTypesQueryReturns([
-			new(0, cat1Et1),
-			new(1, cat2Et1),
-			new(2, cat1Et2),
-			new(3, cat1Et3),
-			new(4, cat2Et2)
-		]);
-		AssertReadEventTypeIndexQueryReturns(0, []);
-		AssertReadEventTypeIndexQueryReturns(1, []);
-		AssertReadEventTypeIndexQueryReturns(2, []);
-		AssertReadEventTypeIndexQueryReturns(3, []);
-		AssertReadEventTypeIndexQueryReturns(4, []);
+		// AssertGetAllEventTypesQueryReturns([
+		// 	new(0, cat1Et1),
+		// 	new(1, cat2Et1),
+		// 	new(2, cat1Et2),
+		// 	new(3, cat1Et3),
+		// 	new(4, cat2Et2)
+		// ]);
+		AssertReadEventTypeIndexQueryReturns(cat1Et1, []);
+		AssertReadEventTypeIndexQueryReturns(cat2Et1, []);
+		AssertReadEventTypeIndexQueryReturns(cat1Et2, []);
+		AssertReadEventTypeIndexQueryReturns(cat1Et3, []);
+		AssertReadEventTypeIndexQueryReturns(cat2Et2, []);
 
 		// Streams
-		AssertGetStreamMaxSequencesQueryReturns(null);
+		// AssertGetStreamMaxSequencesQueryReturns(null);
 
-		AssertGetStreamIdByNameQueryReturns(cat1Stream1, null);
-		AssertGetStreamIdByNameQueryReturns(cat2Stream1, null);
-		AssertGetStreamIdByNameQueryReturns(cat1Stream2, null);
+		// AssertGetStreamIdByNameQueryReturns(cat1Stream1, null);
+		// AssertGetStreamIdByNameQueryReturns(cat2Stream1, null);
+		// AssertGetStreamIdByNameQueryReturns(cat1Stream2, null);
 	}
 
-	[Fact]
+	[Fact(Skip = "This might be deleted")]
 	public void StreamMetadataChangeWithEmptyValues_IsStored() {
 		// Given
 		const string cat1 = "first";
@@ -239,15 +239,15 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		);
 
 		// Then
-		var summary = DuckDb.Pool.GetStreamsSummary(cat1Stream1);
+		// var summary = DuckDb.Pool.GetStreamsSummary(cat1Stream1);
 
-		Assert.NotNull(summary);
-		Assert.Equal(cat1Stream1, summary.Value.Name);
-		Assert.Null(summary.Value.MaxAge);
-		Assert.Null(summary.Value.MaxCount);
-		Assert.False(summary.Value.IsDeleted);
-		Assert.Null(summary.Value.TruncateBefore);
-		Assert.Null(summary.Value.Acl);
+		// Assert.NotNull(summary);
+		// Assert.Equal(cat1Stream1, summary.Value.Name);
+		// Assert.Null(summary.Value.MaxAge);
+		// Assert.Null(summary.Value.MaxCount);
+		// Assert.False(summary.Value.IsDeleted);
+		// Assert.Null(summary.Value.TruncateBefore);
+		// Assert.Null(summary.Value.Acl);
 	}
 
 	private static ResolvedEvent StreamMetadataChanged(
@@ -275,41 +275,41 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		Assert.Equal(expectedLogPosition, actual?.PreparePosition);
 	}
 
-	void AssertGetCategoriesQueryReturns(List<ReferenceRecord> expected) {
-		var records = DuckDb.Pool.Query<ReferenceRecord, GetCategoriesQuery>().OrderBy(x => x.Id);
+	// void AssertGetCategoriesQueryReturns(List<ReferenceRecord> expected) {
+	// 	var records = DuckDb.Pool.Query<ReferenceRecord, GetCategoriesQuery>().OrderBy(x => x.Id);
+	//
+	// 	Assert.Equal(expected, records);
+	// }
 
-		Assert.Equal(expected, records);
-	}
-
-	void AssertCategoryIndexQueryReturns(int categoryId, List<long> expected) {
-		var records = DuckDb.Pool.Query<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryIncl>(new(categoryId, 0, 32));
-
-		Assert.Equal(expected, records.Select(x => x.LogPosition));
-	}
-
-	void AssertGetAllEventTypesQueryReturns(List<ReferenceRecord> expected) {
-		var records = DuckDb.Pool.Query<ReferenceRecord, GetAllEventTypesQuery>().OrderBy(x => x.Id);
-
-		Assert.Equal(expected, records);
-	}
-
-	void AssertReadEventTypeIndexQueryReturns(int eventTypeId, List<long> expected) {
-		var records = DuckDb.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(new(eventTypeId, 0, 32));
+	void AssertCategoryIndexQueryReturns(string category, List<long> expected) {
+		var records = DuckDb.Pool.Query<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryIncl>(new(category, 0, 32));
 
 		Assert.Equal(expected, records.Select(x => x.LogPosition));
 	}
 
-	void AssertGetStreamIdByNameQueryReturns(string streamName, long? expectedId) {
-		var actual = DuckDb.Pool.GetStreamIdByName(streamName);
+	// void AssertGetAllEventTypesQueryReturns(List<ReferenceRecord> expected) {
+	// 	var records = DuckDb.Pool.Query<ReferenceRecord, GetAllEventTypesQuery>().OrderBy(x => x.Id);
+	//
+	// 	Assert.Equal(expected, records);
+	// }
 
-		Assert.Equal(expectedId, actual);
+	void AssertReadEventTypeIndexQueryReturns(string eventType, List<long> expected) {
+		var records = DuckDb.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(new(eventType, 0, 32));
+
+		Assert.Equal(expected, records.Select(x => x.LogPosition));
 	}
 
-	void AssertGetStreamMaxSequencesQueryReturns(long? expectedId) {
-		var actual = DuckDb.Pool.GetStreamMaxSequences();
+	// void AssertGetStreamIdByNameQueryReturns(string streamName, long? expectedId) {
+	// 	var actual = DuckDb.Pool.GetStreamIdByName(streamName);
+	//
+	// 	Assert.Equal(expectedId, actual);
+	// }
 
-		Assert.Equal(expectedId, actual);
-	}
+	// void AssertGetStreamMaxSequencesQueryReturns(long? expectedId) {
+	// 	var actual = DuckDb.Pool.GetStreamMaxSequences();
+	//
+	// 	Assert.Equal(expectedId, actual);
+	// }
 
 	readonly DefaultIndexProcessor _processor;
 
@@ -333,7 +333,8 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 			eventTypeIndexProcessor,
 			streamIndexProcessor,
 			new NoOpSecondaryIndexProgressTracker(),
-			publisher
+			publisher,
+			hasher
 		);
 	}
 
@@ -375,7 +376,8 @@ public class CleanUpTests {
 				eventTypeIndexProcessor,
 				streamIndexProcessor,
 				new NoOpSecondaryIndexProgressTracker(),
-				publisher
+				publisher,
+				hasher
 			);
 
 			const string cat1 = "first";

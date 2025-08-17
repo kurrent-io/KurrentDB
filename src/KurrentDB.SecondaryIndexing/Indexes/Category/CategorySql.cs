@@ -13,30 +13,30 @@ static class CategorySql {
 	public struct CategoryIndexQueryExcl : IQuery<CategoryIndexQueryArgs, IndexQueryRecord> {
 		public static BindingContext Bind(in CategoryIndexQueryArgs args, PreparedStatement statement)
 			=> new(statement) {
-				args.Id,
+				args.Category,
 				args.StartPosition,
 				args.Count
 			};
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select rowid, log_position from idx_all where category_id=$1 and log_position>$2 and is_deleted=false order by rowid limit $3"u8;
+			"select rowid, log_position from idx_all where category=$1 and log_position>$2 and is_deleted=false order by rowid limit $3"u8;
 
 		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
 	}
 
 	/// <summary>
-	/// Get index records for a given category where log position is greater or equal the start position
+	/// Get index records for a given category where the log position is greater or equal the start position
 	/// </summary>
 	public struct CategoryIndexQueryIncl : IQuery<CategoryIndexQueryArgs, IndexQueryRecord> {
 		public static BindingContext Bind(in CategoryIndexQueryArgs args, PreparedStatement statement)
 			=> new(statement) {
-				args.Id,
+				args.Category,
 				args.StartPosition,
 				args.Count
 			};
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select rowid, log_position from idx_all where category_id=$1 and log_position>=$2 and is_deleted=false order by rowid limit $3"u8;
+			"select rowid, log_position from idx_all where category=$1 and log_position>=$2 and is_deleted=false order by rowid limit $3"u8;
 
 		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
 	}
@@ -47,35 +47,35 @@ static class CategorySql {
 	public struct CategoryIndexBackQueryExcl : IQuery<CategoryIndexQueryArgs, IndexQueryRecord> {
 		public static BindingContext Bind(in CategoryIndexQueryArgs args, PreparedStatement statement)
 			=> new(statement) {
-				args.Id,
+				args.Category,
 				args.StartPosition,
 				args.Count
 			};
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select rowid, log_position from idx_all where category_id=$1 and log_position<$2 and is_deleted=false order by rowid desc limit $3"u8;
+			"select rowid, log_position from idx_all where category=$1 and log_position<$2 and is_deleted=false order by rowid desc limit $3"u8;
 
 		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
 	}
 
 	/// <summary>
-	/// Get index records for a given category where log position is less or equal the start position
+	/// Get index records for a given category where the log position is less or equal the start position
 	/// </summary>
 	public struct CategoryIndexBackQueryIncl : IQuery<CategoryIndexQueryArgs, IndexQueryRecord> {
 		public static BindingContext Bind(in CategoryIndexQueryArgs args, PreparedStatement statement)
 			=> new(statement) {
-				args.Id,
+				args.Category,
 				args.StartPosition,
 				args.Count
 			};
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select rowid, log_position from idx_all where category_id=$1 and log_position<=$2 and is_deleted=false order by rowid desc limit $3"u8;
+			"select rowid, log_position from idx_all where category=$1 and log_position<=$2 and is_deleted=false order by rowid desc limit $3"u8;
 
 		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
 	}
 
-	public record struct CategoryIndexQueryArgs(int Id, long StartPosition, int Count);
+	public record struct CategoryIndexQueryArgs(string Category, long StartPosition, int Count);
 
 	/// <summary>
 	/// Get the list of categories

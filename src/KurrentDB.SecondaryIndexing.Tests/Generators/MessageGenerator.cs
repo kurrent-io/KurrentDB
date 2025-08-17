@@ -45,7 +45,7 @@ public class MessageGenerator : IMessageGenerator {
 		} while (eventsLeft > 0);
 	}
 
-	private TestMessageBatch GenerateBatch(LoadTestPartitionConfig config,
+	static TestMessageBatch GenerateBatch(LoadTestPartitionConfig config,
 		Dictionary<string, string[]> eventTypesByCategory,
 		Dictionary<string, int> streams,
 		int batchSize,
@@ -72,10 +72,10 @@ public class MessageGenerator : IMessageGenerator {
 			);
 		}
 
-		return new TestMessageBatch(category, streamName, messages);
+		return new(category, streamName, messages);
 	}
 
-	private static Dictionary<string, string[]> GenerateCategories(LoadTestPartitionConfig loadTestPartitionConfig) {
+	static Dictionary<string, string[]> GenerateCategories(LoadTestPartitionConfig loadTestPartitionConfig) {
 		var categories = Enumerable
 			.Range(loadTestPartitionConfig.StartCategoryIndex, loadTestPartitionConfig.CategoriesCount)
 			.Select(index => $"c{index}")
@@ -96,8 +96,8 @@ public readonly record struct TestMessageData(
 	byte[] Data,
 	byte[] MetaData
 ) {
-	public readonly Guid EventId = Guid.NewGuid();
-	public readonly Guid CorrelationId = Guid.NewGuid();
+	readonly Guid _eventId = Guid.NewGuid();
+	readonly Guid _correlationId = Guid.NewGuid();
 
 	public ResolvedEvent ToResolvedEvent(string streamName, int batchIndex) {
 		var recordFactory = LogFormatHelper<LogFormat.V2, string>.RecordFactory;
@@ -105,8 +105,8 @@ public readonly record struct TestMessageData(
 		var prepare = LogRecord.Prepare(
 			recordFactory,
 			LogSequence,
-			CorrelationId,
-			EventId,
+			_correlationId,
+			_eventId,
 			LogSequence,
 			batchIndex,
 			streamName,
@@ -117,25 +117,19 @@ public readonly record struct TestMessageData(
 			MetaData
 		);
 
-		var record = new EventRecord(
-			StreamPosition,
-			prepare,
-			streamName,
-			EventType
-		);
+		var record = new EventRecord(StreamPosition, prepare, streamName, EventType);
 
 		return ResolvedEvent.ForUnresolvedEvent(record, 0);
 	}
 
-	public ResolvedEvent ToIndexResolvedEvent(string originalStreamName, string indexStreamName, int indexSequence,
-		int batchIndex) {
+	public ResolvedEvent ToIndexResolvedEvent(string originalStreamName, string indexStreamName, int indexSequence, int batchIndex) {
 		var recordFactory = LogFormatHelper<LogFormat.V2, string>.RecordFactory;
 
 		var prepare = LogRecord.Prepare(
 			recordFactory,
 			LogSequence,
-			CorrelationId,
-			EventId,
+			_correlationId,
+			_eventId,
 			LogSequence,
 			batchIndex,
 			originalStreamName,
@@ -155,7 +149,7 @@ public readonly record struct TestMessageData(
 			));
 	}
 
-	public Event ToEventData() => new(EventId, EventType, false, Data, false, MetaData);
+	public Event ToEventData() => new(_eventId, EventType, false, Data, false, MetaData);
 }
 
 public readonly record struct TestMessageBatch(string CategoryName, string StreamName, TestMessageData[] Messages) {
@@ -194,21 +188,13 @@ public static class TestMessageBatchExtensions {
 		return result.ToArray();
 	}
 
-	public static ResolvedEvent[] ToCategoryIndexResolvedEvents(
-		this List<TestMessageBatch> batches,
-		string category
-	) {
+	public static ResolvedEvent[] ToCategoryIndexResolvedEvents(this List<TestMessageBatch> batches, string category) {
 		var categoryStreamName = CategoryIndex.Name(category);
-
 		var result = new List<ResolvedEvent>();
-
 		var currentIndex = 0;
 
 		foreach (var batch in batches.Where(b => b.StreamName.StartsWith(category + "-"))) {
-			var resolvedEvents = batch.ToIndexResolvedEvents(
-				categoryStreamName,
-				currentIndex
-			);
+			var resolvedEvents = batch.ToIndexResolvedEvents(categoryStreamName, currentIndex);
 			currentIndex += batch.Messages.Length;
 			result.AddRange(resolvedEvents);
 		}
@@ -216,22 +202,13 @@ public static class TestMessageBatchExtensions {
 		return result.ToArray();
 	}
 
-	public static ResolvedEvent[] ToEventTypeIndexResolvedEvents(
-		this List<TestMessageBatch> batches,
-		string eventType
-	) {
+	public static ResolvedEvent[] ToEventTypeIndexResolvedEvents(this List<TestMessageBatch> batches, string eventType) {
 		var eventTypeStreamName = EventTypeIndex.Name(eventType);
-
 		var result = new List<ResolvedEvent>();
-
 		var currentIndex = 0;
 
 		foreach (var batch in batches) {
-			var resolvedEvents = batch.ToIndexResolvedEvents(
-				eventTypeStreamName,
-				currentIndex,
-				m => m.EventType == eventType
-			);
+			var resolvedEvents = batch.ToIndexResolvedEvents(eventTypeStreamName, currentIndex, m => m.EventType == eventType);
 			currentIndex += resolvedEvents.Length;
 			result.AddRange(resolvedEvents);
 		}

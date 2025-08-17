@@ -39,7 +39,8 @@ public abstract class IndexTestBase : DuckDbIntegrationTest {
 			eventTypeIndexProcessor,
 			streamIndexProcessor,
 			new NoOpSecondaryIndexProgressTracker(),
-			publisher
+			publisher,
+			hasher
 		);
 
 		Sut = new(DuckDb, _processor, inFlightRecords, _readIndexStub.ReadIndex);

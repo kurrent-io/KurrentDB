@@ -15,9 +15,9 @@ class DefaultIndexReader(
 	DefaultIndexInFlightRecords inFlightRecords,
 	IReadIndex<string> index
 ) : SecondaryIndexReaderBase(db, index) {
-	protected override int GetId(string streamName) => 0;
+	protected override string GetId(string streamName) => string.Empty;
 
-	protected override IReadOnlyList<IndexQueryRecord> GetIndexRecordsForwards(int _, TFPos startPosition, int maxCount, bool excludeFirst) {
+	protected override IReadOnlyList<IndexQueryRecord> GetIndexRecordsForwards(string _, TFPos startPosition, int maxCount, bool excludeFirst) {
 		var range = excludeFirst
 			? Db.Pool.Query<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexQueryExcl>(new(startPosition.PreparePosition, maxCount))
 			: Db.Pool.Query<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexQueryIncl>(new(startPosition.PreparePosition, maxCount));
@@ -30,7 +30,7 @@ class DefaultIndexReader(
 		return range;
 	}
 
-	protected override IReadOnlyList<IndexQueryRecord> GetIndexRecordsBackwards(int _, TFPos startPosition, int maxCount, bool excludeFirst) {
+	protected override IReadOnlyList<IndexQueryRecord> GetIndexRecordsBackwards(string _, TFPos startPosition, int maxCount, bool excludeFirst) {
 		var inFlight = inFlightRecords.GetInFlightRecordsBackwards(startPosition, maxCount).ToList();
 		if (inFlight.Count == maxCount) {
 			return inFlight;

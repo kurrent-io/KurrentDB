@@ -6,71 +6,49 @@
 @using Microsoft.AspNetCore.Authorization
 @inject StatsService StatsService
 
-<MudExpansionPanels MultiExpansion="true">
-	@foreach (var category in Elements) {
-		<MudExpansionPanel>
-			<TitleContent>
-				<div class="d-flex">
-					<MudText Class="mt-1">Category: @category.Category.CategoryName</MudText>
-					<MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Class="d-flex ml-auto"
-					         Size="Size.Small">Streams: @category.Category.NumStreams
-					</MudChip>
-					<MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Class="d-flex"
-					         Size="Size.Small">Events: @category.Category.NumEvents
-					</MudChip>
-					<MudChip T="string" Variant="Variant.Outlined" Color="@StreamLengthColor(category.AvgStreamLength)"
-					         Size="Size.Small">Avg stream length: @category.AvgStreamLength
-					</MudChip>
-				</div>
-			</TitleContent>
-			<ChildContent>
-				<MudDataGrid Items="@category.EventType" Dense="@true">
-					<Columns>
-						<PropertyColumn Property="x => x.EventType" Title="Event type"/>
-						<PropertyColumn Property="x => x.NumEvents" Title="Events"/>
-						<PropertyColumn Property="x => DateTimeOffset.FromUnixTimeMilliseconds(x.FirstAdded)" Title="First seen"/>
-						<PropertyColumn Property="x => DateTimeOffset.FromUnixTimeMilliseconds(x.LastAdded)" Title="Last seen"/>
-					</Columns>
-				</MudDataGrid>
-			</ChildContent>
-		</MudExpansionPanel>
-	}
-</MudExpansionPanels>
-@* <MudDataGrid @ref="_dataGrid" MultiSelection="true" Items="@Elements" Filterable="true" *@
-@*              Groupable="true" GroupExpanded="false"> *@
-@* 	<ToolBarContent> *@
-@* 		<MudText Typo="Typo.h6">Database stats</MudText> *@
-@* 		<MudSpacer/> *@
-@* 	</ToolBarContent> *@
-@* 	<Columns> *@
-@* 		<PropertyColumn Property="x => x.EventType.EventType" Title="Event type" Filterable="false" Groupable="false"/> *@
-@* 		<PropertyColumn Property="x => x.EventType.NumEvents" Title="Events count"/> *@
-@* 		<PropertyColumn Property="x => x.Category.CategoryName" Title="Category" Grouping GroupBy="@_groupBy"> *@
-@* 			<GroupTemplate> *@
-@* 				@{ *@
-@* 					var cat = @context.Grouping.First(); *@
-@* 					<span style="font-weight:bold">Category: @context.Grouping.Key *@
-@* 						<MudChip Variant="Variant.Outlined" Color="Color.Primary" *@
-@* 						         Size="Size.Small">Streams: @cat.Category.NumStreams *@
-@* 						</MudChip> *@
-@* 						<MudChip Variant="Variant.Outlined" Color="Color.Primary" *@
-@* 						         Size="Size.Small">Events: @cat.Category.NumEvents *@
-@* 						</MudChip> *@
-@* 						<MudChip Variant="Variant.Outlined" Color="Color.Primary" *@
-@* 						         Size="Size.Small">Avg stream length: @(cat.Category.NumEvents/cat.Category.NumStreams) *@
-@* 						</MudChip> *@
-@* 					</span> *@
-@* 				} *@
-@* 			</GroupTemplate> *@
-@* 		</PropertyColumn> *@
-@* 	</Columns> *@
-@* </MudDataGrid> *@
-
+<MudPaper Outlined="true">
+	<MudText Typo="Typo.h5" Class="pa-6">Stream Categories</MudText>
+	<MudDivider/>
+	<MudExpansionPanels MultiExpansion="true">
+		@foreach (var category in Elements) {
+			<MudExpansionPanel>
+				<TitleContent>
+					<div class="d-flex">
+						<MudText Class="mt-1">Category: @category.Category.category</MudText>
+						<MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Class="d-flex ml-auto"
+						         Size="Size.Medium">Streams: @category.Category.num_streams
+						</MudChip>
+						<MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Class="d-flex"
+						         Size="Size.Medium">Events: @category.Category.num_events
+						</MudChip>
+						<MudChip T="string" Variant="Variant.Outlined"
+						         Color="@StreamLengthColor(category.AvgStreamLength)"
+						         Size="Size.Medium">Avg stream length: @category.AvgStreamLength
+						</MudChip>
+					</div>
+				</TitleContent>
+				<ChildContent>
+					<MudDataGrid Items="@category.EventType" Dense="@true">
+						<Columns>
+							<PropertyColumn Property="x => x.event_type" Title="Event type"/>
+							<PropertyColumn Property="x => x.num_events" Title="Events"/>
+							<PropertyColumn Property="x => x.first_added" Title="First seen"/>
+							<PropertyColumn Property="x => x.last_added" Title="Last seen"/>
+						</Columns>
+					</MudDataGrid>
+				</ChildContent>
+			</MudExpansionPanel>
+		}
+	</MudExpansionPanels>
+</MudPaper>
+<MudPaper Outlined="true" Class="mt-4">
+<MudText Typo="Typo.h5" Class="pa-6">Stream Stats</MudText>
+<MudDivider/>
+<MudText Class="pa-6">This section is work in progress. What would you like to see here?</MudText>
+</MudPaper>
 
 @code {
-	// MudDataGrid<CombinedStats> _dataGrid;
 	CombinedStats[] Elements { get; set; } = [];
-	Func<CombinedStats, object> _groupBy => x => x.Category.CategoryName;
 
 	protected override string PageName => "Database Stats";
 

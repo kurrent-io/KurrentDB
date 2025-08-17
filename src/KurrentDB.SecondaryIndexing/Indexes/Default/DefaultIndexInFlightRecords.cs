@@ -8,8 +8,8 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 record struct InFlightRecord(
 	long LogPosition,
-	int CategoryId,
-	int EventTypeId,
+	string Category,
+	string EventType,
 	bool IsDeleted = false
 );
 
