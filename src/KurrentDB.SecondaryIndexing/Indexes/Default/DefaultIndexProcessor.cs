@@ -18,18 +18,18 @@ using static KurrentDB.SecondaryIndexing.Indexes.Default.DefaultSql;
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
-	readonly DefaultIndexInFlightRecords _inFlightRecords;
-	readonly DuckDBAdvancedConnection _connection;
-	readonly CategoryIndexProcessor _categoryIndexProcessor;
-	readonly EventTypeIndexProcessor _eventTypeIndexProcessor;
-	readonly StreamIndexProcessor _streamIndexProcessor;
-	readonly ISecondaryIndexProgressTracker _progressTracker;
-	readonly IPublisher _publisher;
-	Appender _appender;
+	private readonly DefaultIndexInFlightRecords _inFlightRecords;
+	private readonly DuckDBAdvancedConnection _connection;
+	private readonly CategoryIndexProcessor _categoryIndexProcessor;
+	private readonly EventTypeIndexProcessor _eventTypeIndexProcessor;
+	private readonly StreamIndexProcessor _streamIndexProcessor;
+	private readonly ISecondaryIndexProgressTracker _progressTracker;
+	private readonly IPublisher _publisher;
+	private Appender _appender;
 
-	static readonly ILogger Logger = Log.Logger.ForContext<DefaultIndexProcessor>();
+	private static readonly ILogger Logger = Log.Logger.ForContext<DefaultIndexProcessor>();
 
-	public long LastIndexedPosition { get; private set; }
+	public TFPos LastIndexedPosition { get; private set; } = TFPos.HeadOfTf;
 
 	public DefaultIndexProcessor(
 		DuckDbDataSource db,
@@ -50,9 +50,8 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_progressTracker = progressTracker;
 		_publisher = publisher;
 
-		var lastPosition = GetLastPosition();
-		Logger.Information("Last known log position: {Position}", lastPosition);
-		LastIndexedPosition = lastPosition.PreparePosition;
+		SetLastPosition();
+		Logger.Information("Last known log position: {Position}", LastIndexedPosition);
 	}
 
 	public void Index(ResolvedEvent resolvedEvent) {
@@ -85,7 +84,7 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		}
 
 		_inFlightRecords.Append(new(logPosition, categoryId, eventTypeId));
-		LastIndexedPosition = resolvedEvent.Event.LogPosition;
+		LastIndexedPosition = resolvedEvent.OriginalPosition!.Value;
 
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(SystemStreams.DefaultSecondaryIndex, resolvedEvent));
 		_progressTracker.RecordIndexed(resolvedEvent);
@@ -93,9 +92,12 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 	public void HandleStreamMetadataChange(ResolvedEvent evt) => _streamIndexProcessor.HandleStreamMetadataChange(evt);
 
-	public TFPos GetLastPosition() {
+	private void SetLastPosition() {
 		var result = _connection.QueryFirstOrDefault<LastPositionResult, GetLastLogPositionQuery>();
-		return result != null ? new(result.Value.CommitPosition ?? result.Value.PreparePosition, result.Value.PreparePosition) : TFPos.Invalid;
+		if (result is null)
+			return;
+
+		LastIndexedPosition = new(result.Value.CommitPosition ?? result.Value.PreparePosition, result.Value.PreparePosition);
 	}
 
 	public void Commit() {

@@ -39,7 +39,7 @@ class EventTypeIndexReader(
 			new(id, startPosition.PreparePosition - (excludeFirst ? 1 : 0), maxCount));
 	}
 
-	public override long GetLastIndexedPosition(string streamId) => processor.LastIndexedPosition;
+	public override TFPos GetLastIndexedPosition(string streamId) => processor.LastIndexedPosition;
 
 	public override bool CanReadIndex(string indexName) => EventTypeIndex.IsEventTypeIndex(indexName);
 }

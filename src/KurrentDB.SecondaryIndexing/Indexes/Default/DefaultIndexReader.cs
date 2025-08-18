@@ -38,7 +38,7 @@ class DefaultIndexReader(
 			new(startPosition.PreparePosition - (excludeFirst ? 1 : 0), maxCount));
 	}
 
-	public override long GetLastIndexedPosition(string streamId) => processor.LastIndexedPosition;
+	public override TFPos GetLastIndexedPosition(string streamId) => processor.LastIndexedPosition;
 
 	public override bool CanReadIndex(string indexName) => indexName == SystemStreams.DefaultSecondaryIndex;
 }

@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -15,7 +16,7 @@ namespace KurrentDB.Core.Services.Storage;
 public interface ISecondaryIndexReader {
 	bool CanReadIndex(string indexName);
 
-	long GetLastIndexedPosition(string indexName);
+	TFPos GetLastIndexedPosition(string indexName);
 
 	ValueTask<ReadIndexEventsForwardCompleted> ReadForwards(ReadIndexEventsForward msg, CancellationToken token);
 
@@ -50,9 +51,11 @@ public class SecondaryIndexReaders {
 		));
 	}
 
-	public long GetLastIndexedPosition(string indexName) {
+	public TFPos GetLastIndexedPosition(string indexName) {
 		var reader = FindReader(indexName);
-		return reader?.GetLastIndexedPosition(indexName) ?? -1;
+		ArgumentNullException.ThrowIfNull(reader, nameof(reader));
+
+		return reader.GetLastIndexedPosition(indexName);
 	}
 
 	[CanBeNull]

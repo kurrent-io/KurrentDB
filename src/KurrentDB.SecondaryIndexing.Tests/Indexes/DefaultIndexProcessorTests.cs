@@ -27,7 +27,7 @@ namespace KurrentDB.SecondaryIndexing.Tests.Indexes;
 public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 	[Fact]
 	public void WhenNoEventsProcessedYet_HasDefaultValues() {
-		Assert.Equal(-1, _processor.LastIndexedPosition);
+		Assert.Equal(TFPos.HeadOfTf, _processor.LastIndexedPosition);
 	}
 
 	[Fact]

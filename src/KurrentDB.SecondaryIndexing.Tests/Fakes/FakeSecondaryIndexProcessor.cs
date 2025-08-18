@@ -22,10 +22,11 @@ public class FakeSecondaryIndexProcessor(IList<ResolvedEvent> committed, IList<R
 	public void HandleStreamMetadataChange(ResolvedEvent evt) {
 	}
 
-	public TFPos GetLastPosition() {
-		if (committed.IsEmpty()) return TFPos.Invalid;
-
-		return committed.Last().EventPosition ?? TFPos.Invalid;
+	public TFPos LastIndexedPosition {
+		get {
+			if (committed.IsEmpty()) return TFPos.HeadOfTf;
+			return committed.Last().EventPosition ?? TFPos.HeadOfTf;
+		}
 	}
 
 	public void Commit() {

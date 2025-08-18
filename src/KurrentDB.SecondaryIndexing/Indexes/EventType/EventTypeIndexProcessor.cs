@@ -15,7 +15,7 @@ public class EventTypeIndexProcessor {
 	readonly IPublisher _publisher;
 
 	int _seq;
-	public long LastIndexedPosition { get; private set; }
+	public TFPos LastIndexedPosition { get; private set; } = TFPos.HeadOfTf;
 
 	public EventTypeIndexProcessor(DuckDbDataSource db, IPublisher publisher) {
 		_db = db;
@@ -36,7 +36,7 @@ public class EventTypeIndexProcessor {
 			_db.Pool.ExecuteNonQuery<AddEventTypeStatementArgs, AddEventTypeStatement>(new(eventTypeId, eventTypeName));
 		}
 
-		LastIndexedPosition = resolvedEvent.Event.LogPosition;
+		LastIndexedPosition = resolvedEvent.OriginalPosition!.Value;
 
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(EventTypeIndex.Name(eventTypeName), resolvedEvent));
 

@@ -136,7 +136,12 @@ public class SubscriptionsService<TStreamId> :
 			return;
 		}
 
-		var lastIndexedPos = _secondaryIndexReaders.GetLastIndexedPosition(msg.IndexName);
+		// note: we ignore the PreparePosition here.
+		// if the LastIndexedPosition was in the middle of an explicit transaction, events *after* the explicit transaction will be sent to the live subscription
+		// it's fine if some events are missed as it's not a strict checkpoint - it is a start position for the live subscription to the stream
+		var lastIndexedPos = _secondaryIndexReaders
+			.GetLastIndexedPosition(msg.IndexName)
+			.CommitPosition;
 
 		SubscribeToStream(msg.CorrelationId, msg.Envelope, msg.ConnectionId, msg.IndexName, false, lastIndexedPos, null, msg.User, null);
 

@@ -72,7 +72,7 @@ public abstract class SecondaryIndexReaderBase(DuckDbDataSource db, IReadIndex<s
 	public ValueTask<ReadIndexEventsBackwardCompleted> ReadBackwards(ReadIndexEventsBackward msg, CancellationToken token)
 		=> ReadBackwards(msg, index.IndexReader, index.LastIndexedPosition, token);
 
-	public abstract long GetLastIndexedPosition(string indexName);
+	public abstract TFPos GetLastIndexedPosition(string indexName);
 
 	public abstract bool CanReadIndex(string indexName);
 
