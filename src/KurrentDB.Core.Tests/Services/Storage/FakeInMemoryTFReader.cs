@@ -12,7 +12,6 @@ namespace KurrentDB.Core.Tests.Services.Storage;
 
 public class FakeInMemoryTfReader : ITransactionFileReader {
 	private Dictionary<long, ILogRecord> _records = new();
-	private long _curPosition = 0;
 	private int _recordOffset;
 
 	public int NumReads { get; private set; }
@@ -30,9 +29,9 @@ public class FakeInMemoryTfReader : ITransactionFileReader {
 		NumReads++;
 
 		SeqReadResult result;
-		if (_records.ContainsKey(_curPosition)) {
-			var pos = _curPosition;
-			_curPosition += _recordOffset;
+		if (_records.ContainsKey(cursor.Position)) {
+			var pos = cursor.Position;
+			cursor.Position = pos + _recordOffset;
 			result = new(true, false, _records[pos], _recordOffset, pos, pos + _recordOffset);
 		} else {
 			result = new(false, false, null, 0, 0, 0);

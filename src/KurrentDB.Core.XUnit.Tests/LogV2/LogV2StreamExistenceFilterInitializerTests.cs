@@ -9,7 +9,6 @@ using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.LogV2;
 using KurrentDB.Core.Tests.Fakes;
 using KurrentDB.Core.Tests.Services.Storage;
-using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using Xunit;
 
