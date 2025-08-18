@@ -6,55 +6,65 @@
 @using Microsoft.AspNetCore.Authorization
 @inject StatsService StatsService
 
-<MudPaper Outlined="true">
-	<MudText Typo="Typo.h5" Class="pa-6">Stream Categories</MudText>
-	<MudDivider/>
-	<MudExpansionPanels MultiExpansion="true">
-		@foreach (var category in Elements) {
-			<MudExpansionPanel>
-				<TitleContent>
-					<div class="d-flex">
-						<MudText Class="mt-1">Category: @category.Category.category</MudText>
-						<MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Class="d-flex ml-auto"
-						         Size="Size.Medium">Streams: @category.Category.num_streams
-						</MudChip>
-						<MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Class="d-flex"
-						         Size="Size.Medium">Events: @category.Category.num_events
-						</MudChip>
-						<MudChip T="string" Variant="Variant.Outlined"
-						         Color="@StreamLengthColor(category.AvgStreamLength)"
-						         Size="Size.Medium">Avg stream length: @category.AvgStreamLength
-						</MudChip>
-					</div>
-				</TitleContent>
-				<ChildContent>
-					<MudDataGrid Items="@category.EventType" Dense="@true">
-						<Columns>
-							<PropertyColumn Property="x => x.event_type" Title="Event type"/>
-							<PropertyColumn Property="x => x.num_events" Title="Events"/>
-							<PropertyColumn Property="x => x.first_added" Title="First seen"/>
-							<PropertyColumn Property="x => x.last_added" Title="Last seen"/>
-						</Columns>
-					</MudDataGrid>
-				</ChildContent>
-			</MudExpansionPanel>
-		}
-	</MudExpansionPanels>
-</MudPaper>
-<MudPaper Outlined="true" Class="mt-4">
-<MudText Typo="Typo.h5" Class="pa-6">Stream Stats</MudText>
-<MudDivider/>
-<MudText Class="pa-6">This section is work in progress. What would you like to see here?</MudText>
-</MudPaper>
+@if (IsLoading) {
+	<div class="d-flex justify-center align-center pa-6">
+		<MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large"/>
+		<MudText Class="ml-4 mt-2">Loading stats...</MudText>
+	</div>
+} else {
+	<MudPaper Outlined="true">
+		<MudText Typo="Typo.h5" Class="pa-6">Stream Categories</MudText>
+		<MudDivider/>
+		<MudExpansionPanels MultiExpansion="true">
+			@foreach (var category in Elements) {
+				<MudExpansionPanel>
+					<TitleContent>
+						<div class="d-flex">
+							<MudText Class="mt-1">Category: @category.Category.category</MudText>
+							<MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Class="d-flex ml-auto"
+							         Size="Size.Medium">Streams: @category.Category.num_streams
+							</MudChip>
+							<MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Class="d-flex"
+							         Size="Size.Medium">Events: @category.Category.num_events
+							</MudChip>
+							<MudChip T="string" Variant="Variant.Outlined"
+							         Color="@StreamLengthColor(category.AvgStreamLength)"
+							         Size="Size.Medium">Avg stream length: @category.AvgStreamLength
+							</MudChip>
+						</div>
+					</TitleContent>
+					<ChildContent>
+						<MudDataGrid Items="@category.EventType" Dense="@true">
+							<Columns>
+								<PropertyColumn Property="x => x.event_type" Title="Event type"/>
+								<PropertyColumn Property="x => x.num_events" Title="Events"/>
+								<PropertyColumn Property="x => x.first_added" Title="First seen"/>
+								<PropertyColumn Property="x => x.last_added" Title="Last seen"/>
+							</Columns>
+						</MudDataGrid>
+					</ChildContent>
+				</MudExpansionPanel>
+			}
+		</MudExpansionPanels>
+	</MudPaper>
+	<MudPaper Outlined="true" Class="mt-4">
+		<MudText Typo="Typo.h5" Class="pa-6">Stream Stats</MudText>
+		<MudDivider/>
+		<MudText Class="pa-6">This section is work in progress. What would you like to see here?</MudText>
+	</MudPaper>
+}
 
 @code {
 	CombinedStats[] Elements { get; set; } = [];
+	bool IsLoading { get; set; } = true;
 
 	protected override string PageName => "Database Stats";
 
-	protected override void OnInitialized() {
-		base.OnInitialized();
-		Elements = StatsService.GetStats();
+	protected override async Task OnInitializedAsync() {
+		await base.OnInitializedAsync();
+		// Load stats asynchronously so the page can render a loading indicator first
+		Elements = await Task.Run(() => StatsService.GetStats());
+		IsLoading = false;
 	}
 
 	Color StreamLengthColor(long avgLength) => avgLength < 300 ? Color.Primary : Color.Warning;

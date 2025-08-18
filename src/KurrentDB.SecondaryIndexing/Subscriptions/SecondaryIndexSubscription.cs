@@ -97,6 +97,11 @@ public sealed partial class SecondaryIndexSubscription(
 				throw;
 			}
 		}
+
+		return;
+
+		static bool IsRegularStreamMetadataChange(ResolvedEvent resolvedEvent) =>
+			MetadataStreamRegex().IsMatch(resolvedEvent.Event.EventStreamId) && resolvedEvent.Event.EventType == SystemEventTypes.StreamMetadata;
 	}
 
 	public ValueTask DisposeAsync() {
@@ -125,9 +130,6 @@ public sealed partial class SecondaryIndexSubscription(
 			await _subscription.DisposeAsync();
 		}
 	}
-
-	static bool IsRegularStreamMetadataChange(ResolvedEvent resolvedEvent) =>
-		MetadataStreamRegex().IsMatch(resolvedEvent.Event.EventStreamId) && resolvedEvent.Event.EventType == SystemEventTypes.StreamMetadata;
 
 	[GeneratedRegex(@"^\$\$(?!\$)")]
 	private static partial Regex MetadataStreamRegex();
