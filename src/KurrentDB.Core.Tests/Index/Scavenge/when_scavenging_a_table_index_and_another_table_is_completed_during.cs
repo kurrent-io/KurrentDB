@@ -38,18 +38,18 @@ class
 		var scavengeBlocker = new ManualResetEventSlim(false);
 		var scavengeStarted = new ManualResetEventSlim(false);
 
-		var fakeReader = new TFReaderLease(new FakeIndexReader(l => {
+		var fakeReader = new FakeIndexReader(l => {
 			scavengeStarted.Set();
 			if (!scavengeBlocker.Wait(5000))
 				throw new Exception("Failed to continue.");
 			return false;
-		}));
+		});
 
 		_lowHasher = new XXHashUnsafe();
 		_highHasher = new Murmur3AUnsafe();
 		_tableIndex = new TableIndex<string>(_indexDir, _lowHasher, _highHasher, "",
 			() => new HashListMemTable(PTableVersions.IndexV4, maxSize: 5),
-			() => fakeReader,
+			fakeReader,
 			PTableVersions.IndexV4,
 			5, Constants.PTableMaxReaderCountDefault,
 			maxSizeForMemory: 2,
@@ -82,7 +82,7 @@ class
 
 		_tableIndex = new TableIndex<string>(_indexDir, _lowHasher, _highHasher, "",
 			() => new HashListMemTable(PTableVersions.IndexV4, maxSize: 5),
-			() => fakeReader,
+			fakeReader,
 			PTableVersions.IndexV4,
 			5, Constants.PTableMaxReaderCountDefault,
 			maxSizeForMemory: 2,

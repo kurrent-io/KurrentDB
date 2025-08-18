@@ -80,10 +80,11 @@ public class when_sequentially_reading_db_with_one_chunk_ending_with_prepare<TLo
 
 	[Test]
 	public async Task only_the_last_record_is_marked_eof() {
-		var seqReader = new TFChunkReader(_db, _db.Config.WriterCheckpoint, 0);
+		var seqReader = new TFChunkReader(_db, _db.Config.WriterCheckpoint);
 
 		int count = 0;
-		while (await seqReader.TryReadNext(CancellationToken.None) is { Success: true } res) {
+		using var cursorScope = new AsyncReadCursor.Scope();
+		while (await seqReader.TryReadNext<AsyncReadCursor>(cursorScope, CancellationToken.None) is { Success: true } res) {
 			++count;
 			Assert.AreEqual(count == RecordsCount, res.Eof);
 		}

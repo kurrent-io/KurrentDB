@@ -32,19 +32,18 @@ public class when_rebuilding_index_for_partially_persisted_transaction<TLogForma
 		ReadIndex.Dispose();
 		TableIndex.Close(removeFiles: false);
 
-		var readers =
-			new ObjectPool<ITransactionFileReader>("Readers", 2, 2, () => new TFChunkReader(Db, WriterCheckpoint));
+		var reader = new TFChunkReader(Db, WriterCheckpoint);
 		var lowHasher = _logFormat.LowHasher;
 		var highHasher = _logFormat.HighHasher;
 		var emptyStreamId = _logFormat.EmptyStreamId;
 		TableIndex = new TableIndex<TStreamId>(GetFilePathFor("index"), lowHasher, highHasher, emptyStreamId,
 			() => new HashListMemTable(PTableVersions.IndexV2, maxSize: MaxEntriesInMemTable * 2),
-			() => new TFReaderLease(readers),
+			reader,
 			PTableVersions.IndexV2,
 			5, Constants.PTableMaxReaderCountDefault,
 			MaxEntriesInMemTable);
 		var readIndex = new ReadIndex<TStreamId>(new NoopPublisher(),
-			readers,
+			reader,
 			TableIndex,
 			_logFormat.StreamNameIndexConfirmer,
 			_logFormat.StreamIds,

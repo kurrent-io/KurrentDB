@@ -25,11 +25,8 @@ public class FakeInMemoryTfReader : ITransactionFileReader {
 		_records.Add(position, record);
 	}
 
-	public void Reposition(long position) {
-		_curPosition = position;
-	}
-
-	public ValueTask<SeqReadResult> TryReadNext(CancellationToken token) {
+	public ValueTask<SeqReadResult> TryReadNext<TCursor>(TCursor cursor, CancellationToken token)
+		where TCursor : IReadCursor {
 		NumReads++;
 
 		SeqReadResult result;
@@ -44,7 +41,8 @@ public class FakeInMemoryTfReader : ITransactionFileReader {
 		return new(result);
 	}
 
-	public ValueTask<SeqReadResult> TryReadPrev(CancellationToken token)
+	public ValueTask<SeqReadResult> TryReadPrev<TCursor>(TCursor cursor, CancellationToken token)
+		where TCursor : IReadCursor
 		=> ValueTask.FromException<SeqReadResult>(new NotImplementedException());
 
 	public ValueTask<RecordReadResult> TryReadAt(long position, bool couldBeScavenged, CancellationToken token) {

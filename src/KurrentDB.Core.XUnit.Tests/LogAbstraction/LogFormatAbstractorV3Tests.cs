@@ -399,9 +399,7 @@ public class LogFormatAbstractorV3Tests : IAsyncLifetime {
 }
 
 public class MockIndexBackend<TStreamId> : IIndexBackend<TStreamId> {
-	public TFReaderLease BorrowReader() {
-		throw new NotImplementedException();
-	}
+	public ITransactionFileReader TFReader => throw new NotImplementedException();
 
 	public SystemSettings GetSystemSettings() {
 		throw new NotImplementedException();

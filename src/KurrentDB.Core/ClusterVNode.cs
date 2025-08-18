@@ -611,13 +611,7 @@ public class ClusterVNode<TStreamId> :
 		var indexPath = options.Database.Index ?? Path.Combine(Db.Config.Path, ESConsts.DefaultIndexDirectoryName);
 
 		var pTableMaxReaderCount = GetPTableMaxReaderCount(readerThreadsCount);
-		var readerPool = new ObjectPool<ITransactionFileReader>(
-			"ReadIndex readers pool",
-			ESConsts.PTableInitialReaderCount,
-			pTableMaxReaderCount,
-			() => new TFChunkReader(
-				Db,
-				Db.Config.WriterCheckpoint.AsReadOnly()));
+		var tfReader = new TFChunkReader(Db, Db.Config.WriterCheckpoint.AsReadOnly());
 
 		var logFormat = logFormatAbstractorFactory.Create(new() {
 			InMemory = options.Database.MemDb,
@@ -626,7 +620,7 @@ public class ClusterVNode<TStreamId> :
 			MaxReaderCount = pTableMaxReaderCount,
 			StreamExistenceFilterSize = options.Database.StreamExistenceFilterSize,
 			StreamExistenceFilterCheckpoint = Db.Config.StreamExistenceFilterCheckpoint,
-			TFReaderLeaseFactory = () => new TFReaderLease(readerPool),
+			TFReader = tfReader,
 			LowHasher = new XXHashUnsafe(),
 			HighHasher = new Murmur3AUnsafe(),
 		});
@@ -680,7 +674,7 @@ public class ClusterVNode<TStreamId> :
 			logFormat.EmptyStreamId,
 			() => new HashListMemTable(options.IndexBitnessVersion,
 				maxSize: options.Database.MaxMemTableSize * 2),
-			() => new TFReaderLease(readerPool),
+			tfReader,
 			options.IndexBitnessVersion,
 			maxSizeForMemory: options.Database.MaxMemTableSize,
 			maxTablesPerLevel: 2,
@@ -697,7 +691,7 @@ public class ClusterVNode<TStreamId> :
 		logFormat.StreamNamesProvider.SetTableIndex(tableIndex);
 
 		var readIndex = new ReadIndex<TStreamId>(_mainQueue,
-			readerPool,
+			tfReader,
 			tableIndex,
 			logFormat.StreamNameIndexConfirmer,
 			logFormat.StreamIds,
@@ -733,9 +727,7 @@ public class ClusterVNode<TStreamId> :
 			writer,
 			initialReaderCount: 1,
 			maxReaderCount: 5,
-			readerFactory: () => new TFChunkReader(
-				Db,
-				Db.Config.WriterCheckpoint.AsReadOnly()),
+			tfReader,
 			logFormat.RecordFactory,
 			logFormat.StreamNameIndex,
 			logFormat.EventTypeIndex,
@@ -1307,7 +1299,7 @@ public class ClusterVNode<TStreamId> :
 				logger: logger,
 				new IndexReaderForCalculator<TStreamId>(
 					readIndex,
-					() => new TFReaderLease(readerPool),
+					tfReader,
 					state.LookupUniqueHashUser),
 				chunkSize: options.Database.ChunkSize,
 				cancellationCheckPeriod: cancellationCheckPeriod,
@@ -1346,7 +1338,7 @@ public class ClusterVNode<TStreamId> :
 			var indexExecutor = new IndexExecutor<TStreamId>(
 				logger,
 				new IndexScavenger(tableIndex),
-				new ChunkReaderForIndexExecutor<TStreamId>(() => new TFReaderLease(readerPool)),
+				new ChunkReaderForIndexExecutor<TStreamId>(tfReader),
 				unsafeIgnoreHardDeletes: options.Database.UnsafeIgnoreHardDelete,
 				restPeriod: 32_768,
 				throttle: throttle);

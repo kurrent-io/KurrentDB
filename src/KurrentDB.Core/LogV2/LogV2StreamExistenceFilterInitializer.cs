@@ -27,18 +27,18 @@ namespace KurrentDB.Core.LogV2;
 /// of the previous record, which is fine. the net effect is an extra record is initialized
 /// on startup next time.
 public class LogV2StreamExistenceFilterInitializer : INameExistenceFilterInitializer {
-	private readonly Func<TFReaderLease> _tfReaderFactory;
+	private readonly ITransactionFileReader _tfReader;
 	private readonly ITableIndex _tableIndex;
 
 	protected static readonly ILogger Log = Serilog.Log.ForContext<LogV2StreamExistenceFilterInitializer>();
 
 	public LogV2StreamExistenceFilterInitializer(
-		Func<TFReaderLease> tfReaderFactory,
+		ITransactionFileReader tfReader,
 		ITableIndex tableIndex) {
 
 		Ensure.NotNull(tableIndex, nameof(tableIndex));
 
-		_tfReaderFactory = tfReaderFactory;
+		_tfReader = tfReader;
 		_tableIndex = tableIndex;
 	}
 
@@ -140,10 +140,9 @@ public class LogV2StreamExistenceFilterInitializer : INameExistenceFilterInitial
 		// whether the checkpoint is the pre or post position of the last processed record.
 		var startPosition = filter.CurrentCheckpoint == -1 ? 0 : filter.CurrentCheckpoint;
 		Log.Information("Initializing from log starting at {startPosition:N0}", startPosition);
-		using var reader = _tfReaderFactory();
-		reader.Reposition(startPosition);
+		using var cursor = new AsyncReadCursor.Scope(startPosition);
 
-		while (await reader.TryReadNext(token) is { Success: true } result) {
+		while (await _tfReader.TryReadNext<AsyncReadCursor>(cursor, token) is { Success: true } result) {
 			switch (result.LogRecord.RecordType) {
 				case LogRecordType.Prepare:
 					// add regardless of expectedVersion because event 0 may be scavenged

@@ -11,49 +11,40 @@ using Serilog;
 
 namespace KurrentDB.Core.TransactionLog.Chunks;
 
-public class TFChunkReader : ITransactionFileReader {
+public sealed class TFChunkReader : ITransactionFileReader {
 	internal static long CachedReads;
 	internal static long NotCachedReads;
 
-	public const int MaxRetries = 20;
-
-	public long CurrentPosition {
-		get { return _curPos; }
-	}
+	private const int MaxRetries = 20;
 
 	private readonly TFChunkDb _db;
 	private readonly IReadOnlyCheckpoint _writerCheckpoint;
-	private long _curPos;
 	private readonly ILogger _log = Log.ForContext<TFChunkReader>();
 
-	public TFChunkReader(TFChunkDb db, IReadOnlyCheckpoint writerCheckpoint, long initialPosition = 0) {
+	public TFChunkReader(TFChunkDb db, IReadOnlyCheckpoint writerCheckpoint) {
 		Ensure.NotNull(db, "dbConfig");
 		Ensure.NotNull(writerCheckpoint, "writerCheckpoint");
-		Ensure.Nonnegative(initialPosition, "initialPosition");
 
 		_db = db;
 		_writerCheckpoint = writerCheckpoint;
-		_curPos = initialPosition;
 	}
 
-	public void Reposition(long position) {
-		_curPos = position;
-	}
+	public ValueTask<SeqReadResult> TryReadNext<TCursor>(TCursor cursor, CancellationToken token)
+		where TCursor : IReadCursor
+		=> TryReadNextInternal(cursor, 0, token);
 
-	public ValueTask<SeqReadResult> TryReadNext(CancellationToken token)
-		=> TryReadNextInternal(0, token);
-
-	private async ValueTask<SeqReadResult> TryReadNextInternal(int retries, CancellationToken token) {
+	private async ValueTask<SeqReadResult> TryReadNextInternal<TCursor>(TCursor cursor, int retries,
+		CancellationToken token)
+		where TCursor : IReadCursor {
 		while (true) {
-			var pos = _curPos;
 			var writerChk = _writerCheckpoint.Read();
-			if (pos >= writerChk)
+			if (cursor.Position >= writerChk)
 				return SeqReadResult.Failure;
 
-			var chunk = await _db.Manager.GetInitializedChunkFor(pos, token);
+			var chunk = await _db.Manager.GetInitializedChunkFor(cursor.Position, token);
 			RecordReadResult result;
 			try {
-				result = await chunk.TryReadClosestForward(chunk.ChunkHeader.GetLocalLogPosition(pos), token);
+				result = await chunk.TryReadClosestForward(chunk.ChunkHeader.GetLocalLogPosition(cursor.Position), token);
 				CountRead(chunk.IsCached);
 			} catch (FileBeingDeletedException) {
 				if (retries > MaxRetries)
@@ -66,7 +57,7 @@ public class TFChunkReader : ITransactionFileReader {
 			}
 
 			if (result.Success) {
-				_curPos = chunk.ChunkHeader.ChunkStartPosition + result.NextPosition;
+				cursor.Position = chunk.ChunkHeader.ChunkStartPosition + result.NextPosition;
 				var postPos =
 					result.LogRecord.GetNextLogPosition(result.LogRecord.LogPosition, result.RecordLength);
 				var eof = postPos == writerChk;
@@ -75,41 +66,42 @@ public class TFChunkReader : ITransactionFileReader {
 			}
 
 			// we are the end of chunk
-			_curPos = chunk.ChunkHeader.ChunkEndPosition; // the start of next physical chunk
+			cursor.Position = chunk.ChunkHeader.ChunkEndPosition; // the start of next physical chunk
 		}
 	}
 
-	public ValueTask<SeqReadResult> TryReadPrev(CancellationToken token) {
-		return TryReadPrevInternal(0, token);
-	}
+	public ValueTask<SeqReadResult> TryReadPrev<TCursor>(TCursor cursor, CancellationToken token)
+		where TCursor : IReadCursor
+		=> TryReadPrevInternal(cursor, 0, token);
 
-	private async ValueTask<SeqReadResult> TryReadPrevInternal(int retries, CancellationToken token) {
-		for (; ; token.ThrowIfCancellationRequested()) {
-			var pos = _curPos;
+	private async ValueTask<SeqReadResult> TryReadPrevInternal<TCursor>(TCursor cursor, int retries,
+		CancellationToken token)
+		where TCursor : IReadCursor {
+		for (;; token.ThrowIfCancellationRequested()) {
 			var writerChk = _writerCheckpoint.Read();
 			// we allow == writerChk, that means read the very last record
-			if (pos > writerChk)
+			if (cursor.Position > writerChk)
 				throw new Exception(string.Format(
 					"Requested position {0} is greater than writer checkpoint {1} when requesting to read previous record from TF.",
-					pos, writerChk));
-			if (pos <= 0)
+					cursor.Position, writerChk));
+			if (cursor.Position <= 0)
 				return SeqReadResult.Failure;
 
 			bool readLast = false;
 
-			if (await _db.Manager.TryGetInitializedChunkFor(pos, token) is not { } chunk ||
-				pos == chunk.ChunkHeader.ChunkStartPosition) {
+			if (await _db.Manager.TryGetInitializedChunkFor(cursor.Position, token) is not { } chunk ||
+			    cursor.Position == chunk.ChunkHeader.ChunkStartPosition) {
 				// we are exactly at the boundary of physical chunks
 				// so we switch to previous chunk and request TryReadLast
 				readLast = true;
-				chunk = await _db.Manager.GetInitializedChunkFor(pos - 1, token);
+				chunk = await _db.Manager.GetInitializedChunkFor(cursor.Position - 1, token);
 			}
 
 			RecordReadResult result;
 			try {
 				result = await (readLast
 					? chunk.TryReadLast(token)
-					: chunk.TryReadClosestBackward(chunk.ChunkHeader.GetLocalLogPosition(pos), token));
+					: chunk.TryReadClosestBackward(chunk.ChunkHeader.GetLocalLogPosition(cursor.Position), token));
 				CountRead(chunk.IsCached);
 			} catch (FileBeingDeletedException) {
 				if (retries > MaxRetries)
@@ -122,7 +114,7 @@ public class TFChunkReader : ITransactionFileReader {
 			}
 
 			if (result.Success) {
-				_curPos = chunk.ChunkHeader.ChunkStartPosition + result.NextPosition;
+				cursor.Position = chunk.ChunkHeader.ChunkStartPosition + result.NextPosition;
 				var postPos =
 					result.LogRecord.GetNextLogPosition(result.LogRecord.LogPosition, result.RecordLength);
 				var eof = postPos == writerChk;
@@ -134,7 +126,7 @@ public class TFChunkReader : ITransactionFileReader {
 			// we are the beginning of chunk, so need to switch to previous one
 			// to do that we set cur position to the exact boundary position between current and previous chunk,
 			// this will be handled correctly on next iteration
-			_curPos = chunk.ChunkHeader.ChunkStartPosition;
+			cursor.Position = chunk.ChunkHeader.ChunkStartPosition;
 		}
 	}
 

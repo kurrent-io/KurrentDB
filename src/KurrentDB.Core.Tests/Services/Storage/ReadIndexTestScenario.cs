@@ -109,12 +109,11 @@ public abstract class ReadIndexTestScenario<TLogFormat, TStreamId> : Specificati
 		ChaserCheckpoint.Write(WriterCheckpoint.Read());
 		ChaserCheckpoint.Flush();
 
-		var readers = new ObjectPool<ITransactionFileReader>("Readers", 2, 5,
-			() => new TFChunkReader(Db, Db.Config.WriterCheckpoint));
+		var reader = new TFChunkReader(Db, Db.Config.WriterCheckpoint);
 		var emptyStreamId = _logFormat.EmptyStreamId;
 		TableIndex = TransformTableIndex(new TableIndex<TStreamId>(indexDirectory, LowHasher, HighHasher, emptyStreamId,
 			() => new HashListMemTable(IndexBitnessVersion, MaxEntriesInMemTable * 2),
-			() => new TFReaderLease(readers),
+			reader,
 			IndexBitnessVersion,
 			int.MaxValue,
 			Constants.PTableMaxReaderCountDefault,
@@ -122,7 +121,7 @@ public abstract class ReadIndexTestScenario<TLogFormat, TStreamId> : Specificati
 		_logFormat.StreamNamesProvider.SetTableIndex(TableIndex);
 
 		var readIndex = new ReadIndex<TStreamId>(new NoopPublisher(),
-			readers,
+			reader,
 			TableIndex,
 			_logFormat.StreamNameIndexConfirmer,
 			_logFormat.StreamIds,

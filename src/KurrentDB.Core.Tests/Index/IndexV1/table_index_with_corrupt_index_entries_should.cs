@@ -24,11 +24,11 @@ public class table_index_with_corrupt_index_entries_should : SpecificationWithDi
 		bool createForceVerifyFile = false) {
 		var lowHasher = new XXHashUnsafe();
 		var highHasher = new Murmur3AUnsafe();
-		var fakeReader = new TFReaderLease(new FakeIndexReader());
+		var fakeReader = new FakeIndexReader();
 
 		_tableIndex = new TableIndex<string>(PathName, lowHasher, highHasher, "",
 			() => new HashListMemTable(version, maxSize: NumIndexEntries),
-			() => fakeReader,
+			fakeReader,
 			version,
 			int.MaxValue, Constants.PTableMaxReaderCountDefault,
 			maxSizeForMemory: NumIndexEntries,
@@ -69,7 +69,7 @@ public class table_index_with_corrupt_index_entries_should : SpecificationWithDi
 		//load table index again
 		_tableIndex = new TableIndex<string>(PathName, lowHasher, highHasher, "",
 			() => new HashListMemTable(version, maxSize: NumIndexEntries),
-			() => fakeReader,
+			fakeReader,
 			version,
 			int.MaxValue, Constants.PTableMaxReaderCountDefault,
 			maxSizeForMemory: NumIndexEntries,

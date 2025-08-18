@@ -8,7 +8,7 @@ using KurrentDB.Core.TransactionLog.Checkpoint;
 
 namespace KurrentDB.Core.TransactionLog.Chunks;
 
-public class TFChunkChaser : ITransactionFileChaser {
+public class TFChunkChaser : ITransactionFileChaser, IReadCursor {
 	public ICheckpoint Checkpoint {
 		get { return _chaserCheckpoint; }
 	}
@@ -17,6 +17,7 @@ public class TFChunkChaser : ITransactionFileChaser {
 	private readonly IReadOnlyCheckpoint _writerCheckpoint;
 	private readonly ICheckpoint _chaserCheckpoint;
 	private TFChunkReader _reader;
+	private long _position;
 
 	public TFChunkChaser(TFChunkDb db, IReadOnlyCheckpoint writerCheckpoint, ICheckpoint chaserCheckpoint) {
 		Ensure.NotNull(db, "dbConfig");
@@ -28,16 +29,22 @@ public class TFChunkChaser : ITransactionFileChaser {
 		_chaserCheckpoint = chaserCheckpoint;
 	}
 
+	long IReadCursor.Position {
+		get => _position;
+		set => _position = value;
+	}
+
 	public void Open() {
-		_reader = new TFChunkReader(_db, _writerCheckpoint, _chaserCheckpoint.Read());
+		_reader = new TFChunkReader(_db, _writerCheckpoint);
+		_position = _chaserCheckpoint.Read();
 	}
 
 	public async ValueTask<SeqReadResult> TryReadNext(CancellationToken token) {
-		var res = await _reader.TryReadNext(token);
+		var res = await _reader.TryReadNext(this, token);
 		if (res.Success)
 			_chaserCheckpoint.Write(res.RecordPostPosition);
 		else
-			_chaserCheckpoint.Write(_reader.CurrentPosition);
+			_chaserCheckpoint.Write(_position);
 
 		return res;
 	}

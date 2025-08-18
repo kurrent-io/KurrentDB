@@ -34,21 +34,20 @@ public abstract class TruncateAndReOpenDbScenario<TLogFormat, TStreamId> : Trunc
 		_logFormat = LogFormatHelper<TLogFormat, TStreamId>.LogFormatFactory.Create(new() {
 			IndexDirectory = indexDirectory,
 		});
-		var readers = new ObjectPool<ITransactionFileReader>("Readers", 2, 5,
-			() => new TFChunkReader(Db, Db.Config.WriterCheckpoint));
+		var reader = new TFChunkReader(Db, Db.Config.WriterCheckpoint);
 		var lowHasher = _logFormat.LowHasher;
 		var highHasher = _logFormat.HighHasher;
 		var emptyStreamId = _logFormat.EmptyStreamId;
 		TableIndex = new TableIndex<TStreamId>(indexDirectory, lowHasher, highHasher, emptyStreamId,
 			() => new HashListMemTable(PTableVersions.IndexV3, MaxEntriesInMemTable * 2),
-			() => new TFReaderLease(readers),
+			reader,
 			PTableVersions.IndexV3,
 			int.MaxValue,
 			Constants.PTableMaxReaderCountDefault,
 			MaxEntriesInMemTable);
 		_logFormat.StreamNamesProvider.SetTableIndex(TableIndex);
 		var readIndex = new ReadIndex<TStreamId>(new NoopPublisher(),
-			readers,
+			reader,
 			TableIndex,
 			_logFormat.StreamNameIndexConfirmer,
 			_logFormat.StreamIds,

@@ -49,7 +49,7 @@ public class TableIndex<TStreamId> : TableIndex, ITableIndex<TStreamId> {
 	private readonly byte _ptableVersion;
 	private readonly string _directory;
 	private readonly Func<IMemTable> _memTableFactory;
-	private readonly Func<TFReaderLease> _tfReaderFactory;
+	private readonly ITransactionFileReader _tfReader;
 	private readonly IIndexFilenameProvider _fileNameProvider;
 	private readonly IIndexStatusTracker _statusTracker;
 
@@ -79,7 +79,7 @@ public class TableIndex<TStreamId> : TableIndex, ITableIndex<TStreamId> {
 		IHasher<TStreamId> highHasher,
 		TStreamId emptyStreamId,
 		Func<IMemTable> memTableFactory,
-		Func<TFReaderLease> tfReaderFactory,
+		ITransactionFileReader tfReader,
 		byte ptableVersion,
 		int maxAutoMergeIndexLevel,
 		int pTableMaxReaderCount,
@@ -98,19 +98,18 @@ public class TableIndex<TStreamId> : TableIndex, ITableIndex<TStreamId> {
 		Ensure.NotNull(memTableFactory, "memTableFactory");
 		Ensure.NotNull(lowHasher, "lowHasher");
 		Ensure.NotNull(highHasher, "highHasher");
-		Ensure.NotNull(tfReaderFactory, "tfReaderFactory");
+		ArgumentNullException.ThrowIfNull(tfReader);
 		Ensure.Positive(initializationThreads, "initializationThreads");
 		Ensure.Positive(pTableMaxReaderCount, "pTableMaxReaderCount");
 
-		if (maxTablesPerLevel <= 1)
-			throw new ArgumentOutOfRangeException("maxTablesPerLevel");
+		ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(maxTablesPerLevel, 1);
 
-		if (indexCacheDepth > 28 || indexCacheDepth < 8)
-			throw new ArgumentOutOfRangeException("indexCacheDepth");
+		if (indexCacheDepth is > 28 or < 8)
+			throw new ArgumentOutOfRangeException(nameof(indexCacheDepth));
 
 		_directory = directory;
 		_memTableFactory = memTableFactory;
-		_tfReaderFactory = tfReaderFactory;
+		_tfReader = tfReader;
 		_fileNameProvider = new GuidFilenameProvider(directory);
 		_statusTracker = statusTracker ?? new IndexStatusTracker.NoOp();
 		_maxSizeForMemory = maxSizeForMemory;
@@ -451,36 +450,31 @@ public class TableIndex<TStreamId> : TableIndex, ITableIndex<TStreamId> {
 			var startNew = new Timestamp();
 
 			try {
-				using (var reader = _tfReaderFactory()) {
-					var indexmapFile = Path.Combine(_directory, IndexMapFilename);
+				var indexmapFile = Path.Combine(_directory, IndexMapFilename);
 
-					Func<IndexEntry, CancellationToken, ValueTask<bool>> existsAt =
-						(entry, token) => reader.ExistsAt(entry.Position, token);
+				var scavengeResult = await _indexMap.Scavenge(
+					pTable.Id,
+					ct,
+					shouldKeep ?? _tfReader.ExistsAt,
+					_fileNameProvider,
+					_ptableVersion,
+					_indexCacheDepth,
+					_skipIndexVerify,
+					useBloomFilter: _useBloomFilter,
+					lruCacheSize: _lruCacheSize);
 
-					var scavengeResult = await _indexMap.Scavenge(
-						pTable.Id,
-						ct,
-						shouldKeep ?? existsAt,
-						_fileNameProvider,
-						_ptableVersion,
-						_indexCacheDepth,
-						_skipIndexVerify,
-						useBloomFilter: _useBloomFilter,
-						lruCacheSize: _lruCacheSize);
+				if (scavengeResult.IsSuccess) {
+					_indexMap = scavengeResult.ScavengedMap;
+					_indexMap.SaveToFile(indexmapFile);
 
-					if (scavengeResult.IsSuccess) {
-						_indexMap = scavengeResult.ScavengedMap;
-						_indexMap.SaveToFile(indexmapFile);
+					scavengeResult.OldTable.MarkForDestruction();
 
-						scavengeResult.OldTable.MarkForDestruction();
-
-						var entriesDeleted = scavengeResult.OldTable.Count - scavengeResult.NewTable.Count;
-						log.IndexTableScavenged(scavengeResult.Level, scavengeResult.Index, startNew.Elapsed,
-							entriesDeleted, scavengeResult.NewTable.Count, scavengeResult.SpaceSaved);
-					} else {
-						log.IndexTableNotScavenged(scavengeResult.Level, scavengeResult.Index, startNew.Elapsed,
-							pTable.Count, "");
-					}
+					var entriesDeleted = scavengeResult.OldTable.Count - scavengeResult.NewTable.Count;
+					log.IndexTableScavenged(scavengeResult.Level, scavengeResult.Index, startNew.Elapsed,
+						entriesDeleted, scavengeResult.NewTable.Count, scavengeResult.SpaceSaved);
+				} else {
+					log.IndexTableNotScavenged(scavengeResult.Level, scavengeResult.Index, startNew.Elapsed,
+						pTable.Count, "");
 				}
 			} catch (OperationCanceledException) {
 				log.IndexTableNotScavenged(-1, -1, startNew.Elapsed, pTable.Count, "Scavenge cancelled");
@@ -1007,4 +1001,10 @@ public class TableIndex<TStreamId> : TableIndex, ITableIndex<TStreamId> {
 			Log.Error("Could not delete force index verification file at: {path}", path);
 		}
 	}
+}
+
+file static class TransactionFileReaderExtensions {
+	public static ValueTask<bool> ExistsAt(this ITransactionFileReader tfReader, IndexEntry entry,
+		CancellationToken token)
+		=> tfReader.ExistsAt(entry.Position, token);
 }
