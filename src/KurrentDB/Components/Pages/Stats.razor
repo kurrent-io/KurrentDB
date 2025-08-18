@@ -63,10 +63,8 @@
 	protected override async Task OnInitializedAsync() {
 		await base.OnInitializedAsync();
 		// Load stats asynchronously so the page can render a loading indicator first
-		_ = Task.Run(() => {
-			Elements = StatsService.GetStats();
-			IsLoading = false;
-		});
+		Elements = StatsService.GetStats();
+		IsLoading = false;
 	}
 
 	Color StreamLengthColor(long avgLength) => avgLength < 300 ? Color.Primary : Color.Warning;
