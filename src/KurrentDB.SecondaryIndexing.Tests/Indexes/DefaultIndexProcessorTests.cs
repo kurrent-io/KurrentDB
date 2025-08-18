@@ -281,7 +281,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 	// 	Assert.Equal(expected, records);
 	// }
 
-	void AssertCategoryIndexQueryReturns(string category, List<long> expected) {
+	void AssertCategoryIndexQueryReturns(int category, List<long> expected) {
 		var records = DuckDb.Pool.Query<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryIncl>(new(category, 0, 32));
 
 		Assert.Equal(expected, records.Select(x => x.LogPosition));
@@ -293,7 +293,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 	// 	Assert.Equal(expected, records);
 	// }
 
-	void AssertReadEventTypeIndexQueryReturns(string eventType, List<long> expected) {
+	void AssertReadEventTypeIndexQueryReturns(int eventType, List<long> expected) {
 		var records = DuckDb.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(new(eventType, 0, 32));
 
 		Assert.Equal(expected, records.Select(x => x.LogPosition));

@@ -7,7 +7,7 @@ using KurrentDB.SecondaryIndexing.Storage;
 namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
 
 static class EventTypeSql {
-	public record struct ReadEventTypeIndexQueryArgs(string EventType, long StartPosition, int Count);
+	public record struct ReadEventTypeIndexQueryArgs(int EventType, long StartPosition, int Count);
 
 	/// <summary>
 	/// Get index records for a given event type where the log position is greater than the start position
@@ -20,7 +20,7 @@ static class EventTypeSql {
 				args.Count
 			};
 
-		public static ReadOnlySpan<byte> CommandText => "select rowid, log_position from idx_all where event_type=$1 and log_position>$2 order by rowid limit $3"u8;
+		public static ReadOnlySpan<byte> CommandText => "select rowid, log_position from idx_all where event_type_id=$1 and log_position>$2 order by rowid limit $3"u8;
 
 		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
 	}
@@ -36,7 +36,7 @@ static class EventTypeSql {
 				args.Count
 			};
 
-		public static ReadOnlySpan<byte> CommandText => "select rowid, log_position from idx_all where event_type=$1 and log_position>=$2 order by rowid limit $3"u8;
+		public static ReadOnlySpan<byte> CommandText => "select rowid, log_position from idx_all where event_type_id=$1 and log_position>=$2 order by rowid limit $3"u8;
 
 		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
 	}
@@ -52,7 +52,7 @@ static class EventTypeSql {
 				args.Count
 			};
 
-		public static ReadOnlySpan<byte> CommandText => "select rowid, log_position from idx_all where event_type=$1 and log_position<$2 order by rowid desc limit $3"u8;
+		public static ReadOnlySpan<byte> CommandText => "select rowid, log_position from idx_all where event_type_id=$1 and log_position<$2 order by rowid desc limit $3"u8;
 
 		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
 	}
@@ -68,7 +68,7 @@ static class EventTypeSql {
 				args.Count
 			};
 
-		public static ReadOnlySpan<byte> CommandText => "select rowid, log_position from idx_all where event_type=$1 and log_position<=$2 order by rowid limit $3"u8;
+		public static ReadOnlySpan<byte> CommandText => "select rowid, log_position from idx_all where event_type_id=$1 and log_position<=$2 order by rowid limit $3"u8;
 
 		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
 	}

@@ -3,7 +3,6 @@
 
 using DotNext;
 using Kurrent.Quack;
-using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
 using KurrentDB.SecondaryIndexing.Storage;
 
@@ -12,9 +11,6 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Stream;
 static class StreamSql {
 	public static long? GetStreamIdByName(this DuckDBAdvancedConnection connection, string streamName) =>
 		connection.QueryFirstOrDefault<GetStreamIdByNameQueryArgs, long, GetStreamIdByNameQuery>(new(streamName));
-
-	public static long? GetStreamIdByName(this DuckDBConnectionPool pool, string streamName) =>
-		pool.QueryFirstOrDefault<GetStreamIdByNameQueryArgs, long, GetStreamIdByNameQuery>(new(streamName));
 
 	record struct GetStreamIdByNameQueryArgs(string StreamName);
 
@@ -31,9 +27,6 @@ static class StreamSql {
 
 	public static long? GetStreamMaxSequences(this DuckDBAdvancedConnection connection) =>
 		connection.QueryFirstOrDefault<Optional<long>, GetStreamMaxSequencesQuery>()?.OrNull();
-
-	public static long? GetStreamMaxSequences(this DuckDBConnectionPool pool) =>
-		pool.QueryFirstOrDefault<Optional<long>, GetStreamMaxSequencesQuery>()?.OrNull();
 
 	struct GetStreamMaxSequencesQuery : IQuery<Optional<long>> {
 		public static ReadOnlySpan<byte> CommandText => "select max(id) from streams"u8;
@@ -92,54 +85,5 @@ static class StreamSql {
 			where
 			    name = $1
 			"""u8;
-	}
-
-	public record struct StreamSummary(
-		long Id,
-		string Name,
-		ulong NameHash,
-		long? MaxAge,
-		long? MaxCount,
-		bool IsDeleted,
-		long? TruncateBefore,
-		string? Acl
-	);
-
-
-	public static StreamSummary? GetStreamsSummary(this DuckDBConnectionPool pool, string streamName) =>
-		pool.Query<GetStreamSummaryArgs, StreamSummary, GetStreamSummaryQuery>(new(streamName)).FirstOrDefault();
-
-	readonly record struct GetStreamSummaryArgs(string StreamName);
-
-	struct GetStreamSummaryQuery : IQuery<GetStreamSummaryArgs, StreamSummary> {
-		public static BindingContext Bind(in GetStreamSummaryArgs args, PreparedStatement statement) =>
-			new(statement) { args.StreamName };
-
-		public static ReadOnlySpan<byte> CommandText =>
-			"""
-			SELECT
-			    s.id,
-			    s.name,
-			    s.name_hash,
-			    s.max_age,
-			    s.max_count,
-			    s.is_deleted,
-			    s.truncate_before,
-			    s.acl
-			FROM streams s
-			WHERE name = $1
-			"""u8;
-
-		public static StreamSummary Parse(ref DataChunk.Row row) =>
-			new(
-				row.ReadInt32(),
-				row.ReadString(),
-				row.ReadUInt64(),
-				row.TryReadInt64(),
-				row.TryReadInt64(),
-				row.ReadBoolean(),
-				row.TryReadInt64(),
-				row.TryReadString()
-			);
 	}
 }

@@ -13,30 +13,30 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Category;
 
 class CategoryIndexReader(
 	DuckDbDataSource db,
-	DefaultIndexProcessor processor,
+	CategoryIndexProcessor processor,
 	IReadIndex<string> index,
 	DefaultIndexInFlightRecords inFlightRecords
 ) : SecondaryIndexReaderBase(db, index) {
-	protected override string GetId(string streamName) =>
+	protected override int GetId(string streamName) =>
 		CategoryIndex.TryParseCategoryName(streamName, out var categoryName)
-			? categoryName
-			: string.Empty;
+			? processor.GetCategoryId(categoryName)
+			: (int)ExpectedVersion.Invalid;
 
-	protected override IReadOnlyList<IndexQueryRecord> GetIndexRecordsForwards(string id, TFPos startPosition, int maxCount, bool excludeFirst) {
+	protected override IReadOnlyList<IndexQueryRecord> GetIndexRecordsForwards(int id, TFPos startPosition, int maxCount, bool excludeFirst) {
 		var range = excludeFirst
 			? Db.Pool.Query<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryExcl>(new(id, startPosition.PreparePosition, maxCount))
 			: Db.Pool.Query<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryIncl>(new(id, startPosition.PreparePosition, maxCount));
 		if (range.Count < maxCount) {
 			// events might be in flight
-			var inFlight = inFlightRecords.GetInFlightRecordsForwards(startPosition, range, maxCount, r => r.Category == id);
+			var inFlight = inFlightRecords.GetInFlightRecordsForwards(startPosition, range, maxCount, r => r.CategoryId == id);
 			range.AddRange(inFlight);
 		}
 
 		return range;
 	}
 
-	protected override IReadOnlyList<IndexQueryRecord> GetIndexRecordsBackwards(string id, TFPos startPosition, int maxCount, bool excludeFirst) {
-		var inFlight = inFlightRecords.GetInFlightRecordsBackwards(startPosition, maxCount, r => r.Category == id).ToList();
+	protected override IReadOnlyList<IndexQueryRecord> GetIndexRecordsBackwards(int id, TFPos startPosition, int maxCount, bool excludeFirst) {
+		var inFlight = inFlightRecords.GetInFlightRecordsBackwards(startPosition, maxCount, r => r.CategoryId == id).ToList();
 		if (inFlight.Count == maxCount) {
 			return inFlight;
 		}

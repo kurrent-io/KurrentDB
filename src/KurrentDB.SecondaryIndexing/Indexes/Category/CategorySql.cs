@@ -19,7 +19,7 @@ static class CategorySql {
 			};
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select rowid, log_position from idx_all where category=$1 and log_position>$2 and is_deleted=false order by rowid limit $3"u8;
+			"select rowid, log_position from idx_all where category_id=$1 and log_position>$2 and is_deleted=false order by rowid limit $3"u8;
 
 		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
 	}
@@ -70,12 +70,12 @@ static class CategorySql {
 			};
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select rowid, log_position from idx_all where category=$1 and log_position<=$2 and is_deleted=false order by rowid desc limit $3"u8;
+			"select rowid, log_position from idx_all where category_id=$1 and log_position<=$2 and is_deleted=false order by rowid desc limit $3"u8;
 
 		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
 	}
 
-	public record struct CategoryIndexQueryArgs(string Category, long StartPosition, int Count);
+	public record struct CategoryIndexQueryArgs(int Category, long StartPosition, int Count);
 
 	/// <summary>
 	/// Get the list of categories

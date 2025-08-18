@@ -29,8 +29,8 @@ create table if not exists idx_all (
 	expires bigint null,
 	stream varchar not null,
 	name_hash ubigint not null,
-	event_type varchar not null,
-	category varchar not null,
+	event_type_id int not null,
+	category_id int not null,
 	is_deleted boolean not null
 );
 

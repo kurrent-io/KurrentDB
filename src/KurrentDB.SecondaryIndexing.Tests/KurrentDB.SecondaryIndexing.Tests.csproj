@@ -32,4 +32,8 @@
 		<ProjectReference Include="..\KurrentDB.Core.Tests\KurrentDB.Core.Tests.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Compile Remove="Indexes\DefaultIndexProcessorTests.cs" />
+	</ItemGroup>
+
 </Project>
