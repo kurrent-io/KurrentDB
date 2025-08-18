@@ -21,7 +21,6 @@ using KurrentDB.Core.Tests.Fakes;
 using KurrentDB.Core.Tests.Index.Hashers;
 using KurrentDB.Core.Tests.TransactionLog;
 using KurrentDB.Core.Tests.TransactionLog.Scavenging.Helpers;
-using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
 using KurrentDB.Core.TransactionLog.LogRecords;

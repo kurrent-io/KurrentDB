@@ -53,7 +53,7 @@ public class TableIndex<TStreamId> : TableIndex, ITableIndex<TStreamId> {
 	private readonly IIndexFilenameProvider _fileNameProvider;
 	private readonly IIndexStatusTracker _statusTracker;
 
-	private readonly object _awaitingTablesLock = new object();
+	private readonly object _awaitingTablesLock = new();
 
 	private IndexMap _indexMap;
 	private List<TableItem> _awaitingMemTables;

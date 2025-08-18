@@ -66,7 +66,6 @@ using KurrentDB.Core.Services.VNode;
 using KurrentDB.Core.Settings;
 using KurrentDB.Core.Synchronization;
 using KurrentDB.Core.Telemetry;
-using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
