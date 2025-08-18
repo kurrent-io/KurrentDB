@@ -21,7 +21,7 @@ class StatsService(DuckDbDataSource dataSource) {
 		select
 			category,
 			count(distinct stream) as num_streams,
-			count(distinct log_position) AS num_events
+			count(log_position) AS num_events
 		from idx_all
 		group by category
 		""";
@@ -31,7 +31,7 @@ class StatsService(DuckDbDataSource dataSource) {
 		select
 			category,
 			event_type,
-			count(distinct log_position) AS num_events,
+			count(log_position) AS num_events,
 			epoch_ms(min(created)) as first_added,
 			epoch_ms(max(created)) as last_added
 		from idx_all
