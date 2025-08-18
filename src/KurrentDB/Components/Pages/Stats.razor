@@ -12,9 +12,9 @@
 		<MudText Class="ml-4 mt-2">Loading stats...</MudText>
 	</div>
 } else {
+	<MudDivider/>
+	<MudText Typo="Typo.h5" Class="pb-4 pt-2">Stream Categories</MudText>
 	<MudPaper Outlined="true">
-		<MudText Typo="Typo.h5" Class="pa-6">Stream Categories</MudText>
-		<MudDivider/>
 		<MudExpansionPanels MultiExpansion="true">
 			@foreach (var category in Elements) {
 				<MudExpansionPanel>
@@ -47,9 +47,9 @@
 			}
 		</MudExpansionPanels>
 	</MudPaper>
+	<MudDivider Class="mt-6"/>
+	<MudText Typo="Typo.h5" Class="pt-2">Stream Stats</MudText>
 	<MudPaper Outlined="true" Class="mt-4">
-		<MudText Typo="Typo.h5" Class="pa-6">Stream Stats</MudText>
-		<MudDivider/>
 		<MudText Class="pa-6">This section is work in progress. What would you like to see here?</MudText>
 	</MudPaper>
 }
@@ -60,11 +60,16 @@
 
 	protected override string PageName => "Database Stats";
 
-	protected override async Task OnInitializedAsync() {
-		await base.OnInitializedAsync();
-		// Load stats asynchronously so the page can render a loading indicator first
+	// protected override async Task OnInitializedAsync() {
+	// 	await base.OnInitializedAsync();
+	// }
+
+	protected override void OnAfterRender(bool firstRender) {
+		base.OnAfterRender(firstRender);
+		if (!firstRender) return;
 		Elements = StatsService.GetStats();
 		IsLoading = false;
+		StateHasChanged();
 	}
 
 	Color StreamLengthColor(long avgLength) => avgLength < 300 ? Color.Primary : Color.Warning;
