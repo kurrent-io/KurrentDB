@@ -128,7 +128,7 @@
 	  <Compile Update="Services\Storage\StorageReaderWorker.*.cs">
 	    <DependentUpon>StorageReaderWorker.cs</DependentUpon>
 	  </Compile>
-	  <Compile Update="Messages\ClientMessage.IndexReads.cs">
+	  <Compile Update="Messages\ClientMessage.*.cs">
 	    <DependentUpon>ClientMessage.cs</DependentUpon>
 	  </Compile>
 	</ItemGroup>
