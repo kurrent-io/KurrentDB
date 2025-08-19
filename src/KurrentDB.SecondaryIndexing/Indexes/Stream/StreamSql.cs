@@ -9,26 +9,16 @@ using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Stream;
 
-internal static class StreamSql {
-	public static long? GetStreamIdByName(
-		this DuckDBAdvancedConnection connection,
-		string streamName
-	) =>
-		connection.QueryFirstOrDefault<GetStreamIdByNameQueryArgs, long, GetStreamIdByNameQuery>(
-			new GetStreamIdByNameQueryArgs(streamName)
-		);
+static class StreamSql {
+	public static long? GetStreamIdByName(this DuckDBAdvancedConnection connection, string streamName) =>
+		connection.QueryFirstOrDefault<GetStreamIdByNameQueryArgs, long, GetStreamIdByNameQuery>(new(streamName));
 
-	public static long? GetStreamIdByName(
-		this DuckDBConnectionPool pool,
-		string streamName
-	) =>
-		pool.QueryFirstOrDefault<GetStreamIdByNameQueryArgs, long, GetStreamIdByNameQuery>(
-			new GetStreamIdByNameQueryArgs(streamName)
-		);
+	public static long? GetStreamIdByName(this DuckDBConnectionPool pool, string streamName) =>
+		pool.QueryFirstOrDefault<GetStreamIdByNameQueryArgs, long, GetStreamIdByNameQuery>(new(streamName));
 
-	private record struct GetStreamIdByNameQueryArgs(string StreamName);
+	record struct GetStreamIdByNameQueryArgs(string StreamName);
 
-	private struct GetStreamIdByNameQuery : IQuery<GetStreamIdByNameQueryArgs, long> {
+	struct GetStreamIdByNameQuery : IQuery<GetStreamIdByNameQueryArgs, long> {
 		public static BindingContext Bind(in GetStreamIdByNameQueryArgs args, PreparedStatement statement)
 			=> new(statement) { args.StreamName };
 
@@ -45,7 +35,7 @@ internal static class StreamSql {
 	public static long? GetStreamMaxSequences(this DuckDBConnectionPool pool) =>
 		pool.QueryFirstOrDefault<Optional<long>, GetStreamMaxSequencesQuery>()?.OrNull();
 
-	private struct GetStreamMaxSequencesQuery : IQuery<Optional<long>> {
+	struct GetStreamMaxSequencesQuery : IQuery<Optional<long>> {
 		public static ReadOnlySpan<byte> CommandText => "select max(id) from streams"u8;
 
 		public static bool UseStreamingMode => false;
@@ -74,16 +64,12 @@ internal static class StreamSql {
 			);
 	}
 
-	public static void UpdateStreamMetadata(
-		this DuckDBAdvancedConnection connection,
-		string streamName,
-		StreamMetadata metadata
-	) =>
+	public static void UpdateStreamMetadata(this DuckDBAdvancedConnection connection, string streamName, StreamMetadata metadata) =>
 		connection.ExecuteNonQuery<UpdateStreamMetadataParams, UpdateStreamMetadataStatement>(
 			UpdateStreamMetadataParams.From(streamName, metadata)
 		);
 
-	private struct UpdateStreamMetadataStatement : IPreparedStatement<UpdateStreamMetadataParams> {
+	struct UpdateStreamMetadataStatement : IPreparedStatement<UpdateStreamMetadataParams> {
 		public static BindingContext Bind(in UpdateStreamMetadataParams args, PreparedStatement statement) =>
 			new(statement) {
 				args.StreamName,
@@ -120,16 +106,12 @@ internal static class StreamSql {
 	);
 
 
-	public static StreamSummary? GetStreamsSummary(
-		this DuckDBConnectionPool pool,
-		string streamName
-	) =>
-		pool.Query<GetStreamSummaryArgs, StreamSummary, GetStreamSummaryQuery>(new GetStreamSummaryArgs(streamName))
-			.FirstOrDefault();
+	public static StreamSummary? GetStreamsSummary(this DuckDBConnectionPool pool, string streamName) =>
+		pool.Query<GetStreamSummaryArgs, StreamSummary, GetStreamSummaryQuery>(new(streamName)).FirstOrDefault();
 
-	private readonly record struct GetStreamSummaryArgs(string StreamName);
+	readonly record struct GetStreamSummaryArgs(string StreamName);
 
-	private struct GetStreamSummaryQuery : IQuery<GetStreamSummaryArgs, StreamSummary> {
+	struct GetStreamSummaryQuery : IQuery<GetStreamSummaryArgs, StreamSummary> {
 		public static BindingContext Bind(in GetStreamSummaryArgs args, PreparedStatement statement) =>
 			new(statement) { args.StreamName };
 

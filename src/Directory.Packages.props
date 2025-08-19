@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="BenchmarkDotNet" Version="0.13.10" />
+    <PackageVersion Include="BlazorMonaco" Version="3.3.0" />
     <PackageVersion Include="Bogus" Version="35.6.3" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="DotNext" Version="5.21.0" />
@@ -19,7 +20,7 @@
     <PackageVersion Include="Eventuous.Extensions.AspNetCore" Version="0.15.0" />
     <PackageVersion Include="Eventuous.Extensions.DependencyInjection" Version="0.15.0" />
     <PackageVersion Include="Eventuous.Testing" Version="0.15.0" />
-    <PackageVersion Include="Extensions.MudBlazor.StaticInput" Version="3.2.0" />
+    <PackageVersion Include="Extensions.MudBlazor.StaticInput" Version="3.2.1" />
     <PackageVersion Include="FluentAssertions" Version="6.12.2" />
     <PackageVersion Include="FluentAssertions.Analyzers" Version="0.34.1" />
     <PackageVersion Include="FluentStorage" Version="5.6.0" />
@@ -85,7 +86,7 @@
     <PackageVersion Include="Microsoft.FASTER.Core" Version="1.9.16" />
     <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="7.6.0" />
     <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.6.0" />
-    <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="8.6.0" />
+    <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="8.13.1" />
     <PackageVersion Include="Microsoft.Net.Http.Headers" Version="8.0.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
     <PackageVersion Include="Microsoft.OpenApi.Readers" Version="1.6.23" />
@@ -94,8 +95,8 @@
     <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.7.3" />
     <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="1.7.3" />
     <PackageVersion Include="Mono.Posix.NETStandard" Version="1.0.0" />
-    <PackageVersion Include="MudBlazor" Version="8.3.0" />
-    <PackageVersion Include="MudBlazor.Markdown" Version="8.0.0" />
+    <PackageVersion Include="MudBlazor" Version="8.11.0" />
+    <PackageVersion Include="MudBlazor.Markdown" Version="8.11.0" />
     <PackageVersion Include="NCrontab" Version="3.3.3" />
     <PackageVersion Include="NetEscapades.Configuration.Yaml" Version="3.1.0" />
     <!-- upgrade because of transitive dependency vulnerability -->
@@ -143,7 +144,7 @@
     <PackageVersion Include="System.Diagnostics.PerformanceCounter" Version="8.0.0" />
     <!-- upgrade because of transitive dependency vulnerability https://github.com/advisories/GHSA-447r-wph3-92pm -->
     <PackageVersion Include="System.Formats.Asn1" Version="8.0.1" />
-    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.6.0" />
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.13.1" />
     <PackageVersion Include="System.IO.Pipelines" Version="9.0.6" />
     <PackageVersion Include="System.Linq.Async" Version="6.0.1" />
     <!-- upgrade because of transitive dependency vulnerability -->

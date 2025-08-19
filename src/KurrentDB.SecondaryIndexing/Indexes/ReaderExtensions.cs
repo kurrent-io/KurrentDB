@@ -29,7 +29,7 @@ static class ReaderExtensions {
 		return records.ToList();
 	}
 
-	static async ValueTask<IPrepareLogRecord<TStreamId>?> ReadPrepare<TStreamId>(this TFReaderLease localReader,
+	public static async ValueTask<IPrepareLogRecord<TStreamId>?> ReadPrepare<TStreamId>(this TFReaderLease localReader,
 		long logPosition, CancellationToken ct) {
 		var r = await localReader.TryReadAt(logPosition, couldBeScavenged: true, ct);
 		if (!r.Success)

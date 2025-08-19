@@ -31,6 +31,7 @@ public abstract class StorageReaderWorker {
 public partial class StorageReaderWorker<TStreamId> :
 	StorageReaderWorker,
 	IAsyncHandle<ClientMessage.ReadEvent>,
+	IAsyncHandle<ClientMessage.ReadLogEvents>,
 	IAsyncHandle<ClientMessage.ReadStreamEventsBackward>,
 	IAsyncHandle<ClientMessage.ReadStreamEventsForward>,
 	IAsyncHandle<ClientMessage.ReadAllEventsForward>,

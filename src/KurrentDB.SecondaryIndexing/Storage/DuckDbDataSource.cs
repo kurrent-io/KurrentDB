@@ -3,7 +3,6 @@
 
 using DotNext;
 using DotNext.Threading;
-using DuckDB.NET.Data;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 
@@ -14,37 +13,27 @@ public class DuckDbDataSourceOptions {
 }
 
 public class DuckDbDataSource : Disposable {
-	readonly string _connectionString;
-
 	public readonly DuckDBConnectionPool Pool;
-	private Atomic.Boolean _wasInitialized;
+	Atomic.Boolean _wasInitialized;
 
 	public DuckDbDataSource(DuckDbDataSourceOptions options) {
-		_connectionString = options.ConnectionString;
-		Pool = new(_connectionString);
+		var connectionString = options.ConnectionString;
+		Pool = new(connectionString);
 	}
 
 	public void InitDb() {
 		if (!_wasInitialized.FalseToTrue()) return;
 
-		using var connection = OpenConnection();
+		using var connection = OpenNewConnection();
 		DuckDbSchema.CreateSchema(connection);
-	}
-
-	public DuckDBConnection OpenConnection() {
-		var connection = new DuckDBConnection(_connectionString);
-		connection.Open();
-		return connection;
 	}
 
 	public DuckDBAdvancedConnection OpenNewConnection() => Pool.Open();
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {
-			using var connection = OpenConnection();
-			// using (Pool.Rent(out var connection)) {
+			using var connection = OpenNewConnection();
 			connection.Checkpoint();
-			// }
 			Pool.Dispose();
 		}
 

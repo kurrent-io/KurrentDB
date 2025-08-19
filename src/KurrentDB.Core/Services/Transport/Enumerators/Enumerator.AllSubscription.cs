@@ -84,7 +84,7 @@ static partial class Enumerator {
 		}
 
 		public async ValueTask<bool> MoveNextAsync() {
-ReadLoop:
+			ReadLoop:
 
 			if (!await _channel.Reader.WaitToReadAsync(_cts.Token)) {
 				return false;
@@ -151,6 +151,9 @@ ReadLoop:
 					checkpoint = await CatchUp(checkpoint, ct);
 					(checkpoint, sequenceNumber) = await GoLive(checkpoint, sequenceNumber, ct);
 				}
+			} catch (ReadResponseException.NotHandled.ServerNotReady ex) {
+				Log.Warning("Subscription {subscriptionId} to $all terminated because server is not ready.", _subscriptionId);
+				_channel.Writer.TryComplete(ex);
 			} catch (Exception ex) {
 				if (ex is not (OperationCanceledException or ReadResponseException.InvalidPosition))
 					Log.Error(ex, "Subscription {subscriptionId} to $all experienced an error.", _subscriptionId);
@@ -233,7 +236,7 @@ ReadLoop:
 			async Task OnMessage(Message message, CancellationToken ct) {
 				try {
 					if (message is ClientMessage.NotHandled notHandled &&
-						TryHandleNotHandled(notHandled, out var ex))
+					    TryHandleNotHandled(notHandled, out var ex))
 						throw ex;
 
 					if (message is not ClientMessage.ReadAllEventsForwardCompleted completed)
