@@ -60,8 +60,6 @@ class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions options) {
 		     i < count && maxCount > 0 && TryRead(currentVer, i, out var current);
 		     i++, maxCount--) {
 
-			// make sure that the obtained record is not dirty due to concurrent write. Otherwise,
-			// 'current' variable is not valid
 			if (current.LogPosition >= from && query.Invoke(current))
 				yield return new(seq++, current.LogPosition);
 		}
@@ -81,8 +79,6 @@ class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions options) {
 		     i >= 0 && maxCount > 0 && TryRead(currentVer, i, out var current);
 		     i--, maxCount--) {
 
-			// make sure that the obtained record is not dirty due to concurrent write. Otherwise,
-			// 'current' variable is not valid
 			if (current.LogPosition <= from && query.Invoke(current))
 				yield return new(seq++, current.LogPosition);
 		}
