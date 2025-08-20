@@ -17,7 +17,7 @@ readonly record struct InFlightRecord(
 
 class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions options) {
 	readonly InFlightRecord[] _records = new InFlightRecord[options.CommitBatchSize];
-	private volatile uint _version; // used for optimistic lock
+	private uint _version; // used for optimistic lock
 	private int _count;
 
 	public int Count => _count;
@@ -40,6 +40,9 @@ class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions options) {
 	// read is protected by optimistic lock
 	private bool TryRead(uint currentVer, int index, out InFlightRecord record) {
 		record = _records[index];
+
+		// ensure that the record is copied before the comparison
+		Interlocked.MemoryBarrier();
 		return currentVer == _version;
 	}
 
