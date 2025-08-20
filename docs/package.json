@@ -35,7 +35,7 @@
     "vue-router": "^4.4.0",
     "vuepress": "2.0.0-rc.19",
     "iconify-icon": "^2.1.0",
-    "mermaid": "^11.3.0"
+    "mermaid": "^11.10.0"
   },
   "scripts": {
     "preinstall": "npx only-allow pnpm",
