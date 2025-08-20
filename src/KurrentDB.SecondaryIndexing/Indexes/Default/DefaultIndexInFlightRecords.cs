@@ -1,32 +1,46 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using KurrentDB.Core.Data;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
-record struct InFlightRecord(
+[StructLayout(LayoutKind.Auto)]
+readonly record struct InFlightRecord(
 	long LogPosition,
 	int CategoryId,
-	int EventTypeId,
-	bool IsDeleted = false
+	int EventTypeId
 );
 
 class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions options) {
 	readonly InFlightRecord[] _records = new InFlightRecord[options.CommitBatchSize];
-	private long _batchCounter; // for synchronization
-	private volatile int _count;
+	private volatile uint _version; // used for optimistic lock
+	private int _count;
 
 	public int Count => _count;
 
-	public void Append(InFlightRecord record) {
-		_records[_count++] = record;
+	public void Append(long logPosition, int categoryId, int eventTypeId) {
+		var count = _count;
+		_records[count] = new(logPosition, categoryId, eventTypeId);
+
+		// Fence: make sure that the array modification cannot be done after the increment
+		Volatile.Write(ref _count, count + 1);
 	}
 
 	public void Clear() {
+		Interlocked.Increment(ref _version); // full fence
+
+		// Fence: make sure that the count is modified after the version
 		_count = 0;
-		Volatile.Write(ref _batchCounter, _batchCounter + 1);
+	}
+
+	// read is protected by optimistic lock
+	private bool TryRead(uint currentVer, int index, out InFlightRecord record) {
+		record = _records[index];
+		return currentVer == _version;
 	}
 
 	public IEnumerable<IndexQueryRecord> GetInFlightRecordsForwards(
@@ -34,28 +48,19 @@ class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions options) {
 		int maxCount,
 		bool excludeFirst,
 		Func<InFlightRecord, bool>? query = null) {
-		var initialBatchCounter = Volatile.Read(ref _batchCounter);
+		query ??= True; // to avoid branching in the loop
 
-		var from = startPosition.PreparePosition + (excludeFirst ? 1 : 0);
-		var seq = 0;
+		var from = startPosition.PreparePosition + Unsafe.BitCast<bool, byte>(excludeFirst);
+		var currentVer = _version;
 
-		var count = _count;
-		for (var i = 0; i < count; i++) {
-			if (maxCount == 0)
-				yield break;
+		for (int i = 0, count = Volatile.Read(in _count), seq = 0;
+		     i < count && maxCount > 0 && TryRead(currentVer, i, out var current);
+		     i++, maxCount--) {
 
-			var current = _records[i];
-			if (current.LogPosition < from)
-				continue;
-
-			if (query is not null && !query(current))
-				continue;
-
-			if (Volatile.Read(ref _batchCounter) != initialBatchCounter)
-				break;
-
-			yield return new(seq++, current.LogPosition);
-			maxCount--;
+			// make sure that the obtained record is not dirty due to concurrent write. Otherwise,
+			// 'current' variable is not valid
+			if (current.LogPosition >= from && query.Invoke(current))
+				yield return new(seq++, current.LogPosition);
 		}
 	}
 
@@ -64,28 +69,21 @@ class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions options) {
 		int maxCount,
 		bool excludeFirst,
 		Func<InFlightRecord, bool>? query = null) {
-		var initialBatchCounter = Volatile.Read(ref _batchCounter);
+		query ??= True; // to avoid branching in the loop
 
-		var from = startPosition.PreparePosition - (excludeFirst ? 1 : 0);
-		var seq = 0;
+		var from = startPosition.PreparePosition - Unsafe.BitCast<bool, byte>(excludeFirst);
+		var currentVer = _version;
 
-		var count = _count;
-		for (var i = count - 1; i >= 0; i--) {
-			if (maxCount == 0)
-				yield break;
+		for (int count = Volatile.Read(in _count), i = count - 1, seq = 0;
+		     i >= 0 && maxCount > 0 && TryRead(currentVer, i, out var current);
+		     i--, maxCount--) {
 
-			var current = _records[i];
-			if (current.LogPosition > from)
-				continue;
-
-			if (query is not null && !query(current))
-				continue;
-
-			if (Volatile.Read(ref _batchCounter) != initialBatchCounter)
-				break;
-
-			yield return new(seq++, current.LogPosition);
-			maxCount--;
+			// make sure that the obtained record is not dirty due to concurrent write. Otherwise,
+			// 'current' variable is not valid
+			if (current.LogPosition <= from && query.Invoke(current))
+				yield return new(seq++, current.LogPosition);
 		}
 	}
+
+	private static bool True(InFlightRecord record) => true;
 }
