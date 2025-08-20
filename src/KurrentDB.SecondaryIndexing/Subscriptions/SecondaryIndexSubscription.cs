@@ -2,11 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Runtime.CompilerServices;
-using System.Text.RegularExpressions;
 using DotNext.Runtime.CompilerServices;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
-using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
@@ -74,11 +72,6 @@ public sealed partial class SecondaryIndexSubscription(
 			try {
 				var resolvedEvent = eventReceived.Event;
 
-				if (IsRegularStreamMetadataChange(resolvedEvent)) {
-					indexProcessor.HandleStreamMetadataChange(resolvedEvent);
-					continue;
-				}
-
 				if (resolvedEvent.Event.EventType.StartsWith('$') || resolvedEvent.Event.EventStreamId.StartsWith('$')) {
 					// ignore system events
 					continue;
@@ -97,11 +90,6 @@ public sealed partial class SecondaryIndexSubscription(
 				throw;
 			}
 		}
-
-		return;
-
-		static bool IsRegularStreamMetadataChange(ResolvedEvent resolvedEvent) =>
-			MetadataStreamRegex().IsMatch(resolvedEvent.Event.EventStreamId) && resolvedEvent.Event.EventType == SystemEventTypes.StreamMetadata;
 	}
 
 	public ValueTask DisposeAsync() {
@@ -130,7 +118,4 @@ public sealed partial class SecondaryIndexSubscription(
 			await _subscription.DisposeAsync();
 		}
 	}
-
-	[GeneratedRegex(@"^\$\$(?!\$)")]
-	private static partial Regex MetadataStreamRegex();
 }

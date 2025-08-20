@@ -8,6 +8,7 @@
     <PackageVersion Include="BlazorMonaco" Version="3.3.0" />
     <PackageVersion Include="Bogus" Version="35.6.3" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+    <PackageVersion Include="Dapper" Version="2.1.66" />
     <PackageVersion Include="DotNext" Version="5.21.0" />
     <PackageVersion Include="DotNext.IO" Version="5.18.2" />
     <PackageVersion Include="DotNext.Threading" Version="5.18.1" />

@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using DotNext;
+using DotNext.Threading;
 using Kurrent.Quack;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
@@ -11,7 +12,6 @@ using KurrentDB.Core.Services;
 using KurrentDB.SecondaryIndexing.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
-using KurrentDB.SecondaryIndexing.Indexes.Stream;
 using KurrentDB.SecondaryIndexing.Storage;
 using Serilog;
 using static KurrentDB.SecondaryIndexing.Indexes.Default.DefaultSql;
@@ -21,9 +21,6 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	readonly DefaultIndexInFlightRecords _inFlightRecords;
 	readonly DuckDBAdvancedConnection _connection;
-	readonly CategoryIndexProcessor _categoryIndexProcessor;
-	readonly EventTypeIndexProcessor _eventTypeIndexProcessor;
-	readonly StreamIndexProcessor _streamIndexProcessor;
 	readonly ISecondaryIndexProgressTracker _progressTracker;
 	readonly IPublisher _publisher;
 	readonly ILongHasher<string> _hasher;
@@ -36,9 +33,6 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	public DefaultIndexProcessor(
 		DuckDbDataSource db,
 		DefaultIndexInFlightRecords inFlightRecords,
-		CategoryIndexProcessor categoryIndexProcessor,
-		EventTypeIndexProcessor eventTypeIndexProcessor,
-		StreamIndexProcessor streamIndexProcessor,
 		ISecondaryIndexProgressTracker progressTracker,
 		IPublisher publisher,
 		ILongHasher<string> hasher
@@ -46,10 +40,6 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_connection = db.OpenNewConnection();
 		_appender = new(_connection, "idx_all"u8);
 		_inFlightRecords = inFlightRecords;
-
-		_categoryIndexProcessor = categoryIndexProcessor;
-		_eventTypeIndexProcessor = eventTypeIndexProcessor;
-		_streamIndexProcessor = streamIndexProcessor;
 		_progressTracker = progressTracker;
 		_publisher = publisher;
 		_hasher = hasher;
@@ -62,20 +52,12 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	public void Index(ResolvedEvent resolvedEvent) {
 		if (IsDisposingOrDisposed) return;
 
-		// var categoryId = _categoryIndexProcessor.Index(resolvedEvent);
-		// var eventTypeId = _eventTypeIndexProcessor.Index(resolvedEvent);
-		// var streamId = _streamIndexProcessor.Index(resolvedEvent);
-		// if (streamId == -1) {
-		// 	// StreamIndex is disposed
-		// 	return;
-		// }
-
 		var logPosition = resolvedEvent.Event.LogPosition;
 		var commitPosition = resolvedEvent.EventPosition?.CommitPosition;
 		var eventNumber = resolvedEvent.Event.EventNumber;
 		var streamHash = _hasher.Hash(resolvedEvent.Event.EventStreamId);
 		var eventType = resolvedEvent.Event.EventType;
-		var category = CategoryIndexProcessor.GetStreamCategory(resolvedEvent.Event.EventStreamId);
+		var category = GetStreamCategory(resolvedEvent.Event.EventStreamId);
 		using (var row = _appender.CreateRow()) {
 			row.Append(logPosition);
 			if (commitPosition.HasValue && logPosition != commitPosition)
@@ -99,20 +81,24 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(EventTypeIndex.Name(eventType), resolvedEvent));
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(CategoryIndex.Name(category), resolvedEvent));
 		_progressTracker.RecordIndexed(resolvedEvent);
-	}
+		return;
 
-	public void HandleStreamMetadataChange(ResolvedEvent evt) => _streamIndexProcessor.HandleStreamMetadataChange(evt);
+		static string GetStreamCategory(string streamName) {
+			var dashIndex = streamName.IndexOf('-');
+			return dashIndex == -1 ? streamName : streamName[..dashIndex];
+		}
+	}
 
 	public TFPos GetLastPosition() {
 		var result = _connection.QueryFirstOrDefault<LastPositionResult, GetLastLogPositionQuery>();
 		return result != null ? new(result.Value.CommitPosition ?? result.Value.PreparePosition, result.Value.PreparePosition) : TFPos.Invalid;
 	}
 
-	public void Commit() {
-		if (IsDisposingOrDisposed)
-			return;
+	Atomic.Boolean _committing;
 
-		_streamIndexProcessor.Commit();
+	public void Commit() {
+		if (IsDisposingOrDisposed || !_committing.FalseToTrue())
+			return;
 
 		try {
 			_progressTracker.RecordCommit(() => {
@@ -123,6 +109,8 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			Logger.Error(e, "Failed to commit {Count} records to index at log position {LogPosition}", _inFlightRecords.Count, LastIndexedPosition);
 			_progressTracker.RecordError(e);
 			throw;
+		} finally {
+			_committing.TrueToFalse();
 		}
 
 		_inFlightRecords.Clear();

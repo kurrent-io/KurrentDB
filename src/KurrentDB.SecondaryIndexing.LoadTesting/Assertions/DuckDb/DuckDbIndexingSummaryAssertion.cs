@@ -3,8 +3,7 @@
 
 using KurrentDB.SecondaryIndexing.Storage;
 using KurrentDB.SecondaryIndexing.Tests.Observability;
-using static KurrentDB.SecondaryIndexing.LoadTesting.Assertions.DuckDb.CategorySql;
-using static KurrentDB.SecondaryIndexing.LoadTesting.Assertions.DuckDb.EventTypeSql;
+using Dapper;
 
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Assertions.DuckDb;
 
@@ -15,17 +14,19 @@ public class DuckDbIndexingSummaryAssertion(DuckDbDataSource db): IIndexingSumma
 	}
 
 	private ValueTask AssertCategoriesAreIndexed(IndexingSummary summary) {
-		var categories = db.Pool.Query<CategorySummary, GetCategoriesSummaryQuery>();
+		using var connection = db.OpenNewConnection();
+		var categories = connection.Query<string>("select distinct category from idx_all");
 
-		return categories.All(c => summary.Categories.ContainsKey(c.Name))
+		return categories.All(c => summary.Categories.ContainsKey(c))
 			? ValueTask.FromException(new Exception("Categories doesn't match;"))
 			: ValueTask.CompletedTask;
 	}
 
 	private ValueTask AssertEventTypesAreIndexed(IndexingSummary summary) {
-		var eventTypes = db.Pool.Query<EventTypeSummary, GetEventTypesSummaryQuery>();
+		using var connection = db.OpenNewConnection();
+		var eventTypes = connection.Query<string>("select distinct event_type from idx_all");
 
-		return eventTypes.All(c => summary.EventTypes.ContainsKey(c.Name))
+		return eventTypes.All(c => summary.EventTypes.ContainsKey(c))
 			? ValueTask.FromException(new Exception("Event Types doesn't match;"))
 			: ValueTask.CompletedTask;
 	}

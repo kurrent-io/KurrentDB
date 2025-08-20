@@ -24,6 +24,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <PackageReference Include="Dapper" />
 	  <PackageReference Include="KurrentDB.Client" />
 	</ItemGroup>
 

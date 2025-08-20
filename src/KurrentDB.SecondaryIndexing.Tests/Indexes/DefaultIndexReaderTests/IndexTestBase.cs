@@ -3,10 +3,7 @@
 
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Tests.Fakes;
-using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
-using KurrentDB.SecondaryIndexing.Indexes.EventType;
-using KurrentDB.SecondaryIndexing.Indexes.Stream;
 using KurrentDB.SecondaryIndexing.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Tests.Fixtures;
 using KurrentDB.Core.Data;
@@ -25,23 +22,9 @@ public abstract class IndexTestBase : DuckDbIntegrationTest {
 		const int commitBatchSize = 9;
 		var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
 		var inFlightRecords = new DefaultIndexInFlightRecords(new() { CommitBatchSize = commitBatchSize });
-
 		var publisher = new FakePublisher();
-		var categoryIndexProcessor = new CategoryIndexProcessor(DuckDb, publisher);
-		var eventTypeIndexProcessor = new EventTypeIndexProcessor(DuckDb, publisher);
-		var streamIndexProcessor =
-			new StreamIndexProcessor(DuckDb, _readIndexStub.ReadIndex.IndexReader.Backend, hasher);
 
-		_processor = new(
-			DuckDb,
-			inFlightRecords,
-			categoryIndexProcessor,
-			eventTypeIndexProcessor,
-			streamIndexProcessor,
-			new NoOpSecondaryIndexProgressTracker(),
-			publisher,
-			hasher
-		);
+		_processor = new(DuckDb, inFlightRecords, new NoOpSecondaryIndexProgressTracker(), publisher, hasher);
 
 		Sut = new(DuckDb, _processor, inFlightRecords, _readIndexStub.ReadIndex);
 	}

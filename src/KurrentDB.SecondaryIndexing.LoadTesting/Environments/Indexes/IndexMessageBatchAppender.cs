@@ -24,20 +24,13 @@ public class IndexMessageBatchAppender : IMessageBatchAppender {
 		_commitSize = commitSize;
 		var reader = ReadIndexStub.Build();
 		var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
-		var inflightRecordsCache =
-			new DefaultIndexInFlightRecords(new SecondaryIndexingPluginOptions { CommitBatchSize = commitSize });
+		var inflightRecordsCache = new DefaultIndexInFlightRecords(new() { CommitBatchSize = commitSize });
 
 		var publisher = new FakePublisher();
-		var categoryIndexProcessor = new CategoryIndexProcessor(dbDataSource, publisher);
-		var eventTypeIndexProcessor = new EventTypeIndexProcessor(dbDataSource, publisher);
-		var streamIndexProcessor = new StreamIndexProcessor(dbDataSource, reader.IndexReader.Backend, hasher);
 
-		_processor = new DefaultIndexProcessor(
+		_processor = new(
 			dbDataSource,
 			inflightRecordsCache,
-			categoryIndexProcessor,
-			eventTypeIndexProcessor,
-			streamIndexProcessor,
 			new NoOpSecondaryIndexProgressTracker(), // TODO: Use the real one with metrics
 			publisher,
 			hasher

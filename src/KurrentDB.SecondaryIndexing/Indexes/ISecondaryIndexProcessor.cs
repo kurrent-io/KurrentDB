@@ -10,7 +10,5 @@ public interface ISecondaryIndexProcessor : IDisposable {
 
 	void Index(ResolvedEvent evt);
 
-	void HandleStreamMetadataChange(ResolvedEvent evt);
-
 	TFPos GetLastPosition();
 }

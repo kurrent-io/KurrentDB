@@ -1,19 +1,12 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using DuckDB.NET.Data;
-using Kurrent.Quack;
-using Kurrent.Quack.ConnectionPool;
+using Dapper;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Index.Hashes;
-using KurrentDB.Core.Services;
-using KurrentDB.Core.Tests;
 using KurrentDB.Core.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Diagnostics;
-using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
-using KurrentDB.SecondaryIndexing.Indexes.EventType;
-using KurrentDB.SecondaryIndexing.Indexes.Stream;
 using KurrentDB.SecondaryIndexing.Storage;
 using KurrentDB.SecondaryIndexing.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Tests.Fixtures;
@@ -73,34 +66,14 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 
 		AssertDefaultIndexQueryReturns([100, 110, 117, 200, 213, 394, 500, 601, 987]);
 
-		// Categories
-		// AssertGetCategoriesQueryReturns([
-		// 	new(0, cat1),
-		// 	new(1, cat2)
-		// ]);
 		AssertCategoryIndexQueryReturns(cat1, [100, 117, 200, 213, 500, 601, 987]);
 		AssertCategoryIndexQueryReturns(cat2, [110, 394]);
 
-		// EventTypes
-		// AssertGetAllEventTypesQueryReturns([
-		// 	new(0, cat1Et1),
-		// 	new(1, cat2Et1),
-		// 	new(2, cat1Et2),
-		// 	new(3, cat1Et3),
-		// 	new(4, cat2Et2)
-		// ]);
 		AssertReadEventTypeIndexQueryReturns(cat1Et1, [100, 213, 987]);
 		AssertReadEventTypeIndexQueryReturns(cat2Et1, [110]);
 		AssertReadEventTypeIndexQueryReturns(cat1Et2, [117, 500]);
 		AssertReadEventTypeIndexQueryReturns(cat1Et3, [200, 601]);
 		AssertReadEventTypeIndexQueryReturns(cat2Et2, [394]);
-
-		// Streams
-		// AssertGetStreamMaxSequencesQueryReturns(2);
-
-		// AssertGetStreamIdByNameQueryReturns(cat1Stream1, 0);
-		// AssertGetStreamIdByNameQueryReturns(cat2Stream1, 1);
-		// AssertGetStreamIdByNameQueryReturns(cat1Stream2, 2);
 	}
 
 	[Fact]
@@ -131,137 +104,15 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		AssertDefaultIndexQueryReturns([100, 117, 200]);
 
 		// Categories
-		// AssertGetCategoriesQueryReturns([new(0, "hello")]);
+		AssertGetCategoriesQueryReturns(["hello"]);
 		AssertCategoryIndexQueryReturns(streamName, [100, 117, 200]);
 
 		// EventTypes
-		// AssertGetAllEventTypesQueryReturns([
-		// 	new(0, eventType1),
-		// 	new(1, eventType2),
-		// 	new(2, eventType3)
-		// ]);
+		AssertGetAllEventTypesQueryReturns([eventType1, eventType2, eventType3]);
 		AssertReadEventTypeIndexQueryReturns(eventType1, [100]);
 		AssertReadEventTypeIndexQueryReturns(eventType2, [117]);
 		AssertReadEventTypeIndexQueryReturns(eventType3, [200]);
-
-		// Streams
-		// AssertGetStreamMaxSequencesQueryReturns(0);
-
-		// AssertGetStreamIdByNameQueryReturns(streamName, 0);
 	}
-
-	[Fact]
-	public void UncommittedMultipleEventsInMultipleStreams_AreNOTIndexedCorrectly() {
-		// Given
-		const string cat1 = "first";
-		const string cat2 = "second";
-
-		var cat1Stream1 = $"{cat1}-{Guid.NewGuid()}";
-		var cat1Stream2 = $"{cat1}-{Guid.NewGuid()}";
-
-		var cat2Stream1 = $"{cat2}-{Guid.NewGuid()}";
-
-		var cat1Et1 = $"{cat1}-{Guid.NewGuid()}";
-		var cat1Et2 = $"{cat1}-{Guid.NewGuid()}";
-		var cat1Et3 = $"{cat1}-{Guid.NewGuid()}";
-
-		var cat2Et1 = $"{cat2}-{Guid.NewGuid()}";
-		var cat2Et2 = $"{cat2}-{Guid.NewGuid()}";
-
-		ResolvedEvent[] events = [
-			From(cat1Stream1, 0, 100, cat1Et1, []),
-			From(cat2Stream1, 0, 110, cat2Et1, []),
-			From(cat1Stream1, 1, 117, cat1Et2, []),
-			From(cat1Stream1, 2, 200, cat1Et3, []),
-			From(cat1Stream2, 0, 213, cat1Et1, []),
-			From(cat2Stream1, 0, 394, cat2Et2, []),
-			From(cat1Stream2, 1, 500, cat1Et2, []),
-			From(cat1Stream1, 3, 601, cat1Et3, []),
-			From(cat1Stream1, 4, 987, cat1Et1, [])
-		];
-
-		// When
-		foreach (var resolvedEvent in events) {
-			_processor.Index(resolvedEvent);
-		}
-
-		// Then
-		AssertLastLogPositionQueryReturns(null);
-		AssertDefaultIndexQueryReturns([]);
-
-		// Categories
-		// Note: Categories are inserted using a separate connection
-		// AssertGetCategoriesQueryReturns([
-		// 	new(0, cat1),
-		// 	new(1, cat2)
-		// ]);
-		AssertCategoryIndexQueryReturns(cat1, []);
-		AssertCategoryIndexQueryReturns(cat2, []);
-
-		// EventTypes
-		// Note: Event Types are inserted using a separate connection
-		// AssertGetAllEventTypesQueryReturns([
-		// 	new(0, cat1Et1),
-		// 	new(1, cat2Et1),
-		// 	new(2, cat1Et2),
-		// 	new(3, cat1Et3),
-		// 	new(4, cat2Et2)
-		// ]);
-		AssertReadEventTypeIndexQueryReturns(cat1Et1, []);
-		AssertReadEventTypeIndexQueryReturns(cat2Et1, []);
-		AssertReadEventTypeIndexQueryReturns(cat1Et2, []);
-		AssertReadEventTypeIndexQueryReturns(cat1Et3, []);
-		AssertReadEventTypeIndexQueryReturns(cat2Et2, []);
-
-		// Streams
-		// AssertGetStreamMaxSequencesQueryReturns(null);
-
-		// AssertGetStreamIdByNameQueryReturns(cat1Stream1, null);
-		// AssertGetStreamIdByNameQueryReturns(cat2Stream1, null);
-		// AssertGetStreamIdByNameQueryReturns(cat1Stream2, null);
-	}
-
-	[Fact(Skip = "This might be deleted")]
-	public void StreamMetadataChangeWithEmptyValues_IsStored() {
-		// Given
-		const string cat1 = "first";
-		string cat1Stream1 = $"{cat1}-{Guid.NewGuid()}";
-		string cat1Et1 = $"{cat1}-{Guid.NewGuid()}";
-
-		_processor.Index(From(cat1Stream1, 0, 100, cat1Et1, []));
-		_processor.Commit();
-
-		// When
-		var streamMetadata = new StreamMetadata();
-
-		_processor.HandleStreamMetadataChange(
-			StreamMetadataChanged(cat1Stream1, 0, 1293, streamMetadata)
-		);
-
-		// Then
-		// var summary = DuckDb.Pool.GetStreamsSummary(cat1Stream1);
-
-		// Assert.NotNull(summary);
-		// Assert.Equal(cat1Stream1, summary.Value.Name);
-		// Assert.Null(summary.Value.MaxAge);
-		// Assert.Null(summary.Value.MaxCount);
-		// Assert.False(summary.Value.IsDeleted);
-		// Assert.Null(summary.Value.TruncateBefore);
-		// Assert.Null(summary.Value.Acl);
-	}
-
-	private static ResolvedEvent StreamMetadataChanged(
-		string streamName,
-		int streamPosition,
-		long logPosition,
-		StreamMetadata streamMetadata) =>
-		From(
-			SystemStreams.MetastreamOf(streamName),
-			streamPosition,
-			logPosition,
-			SystemEventTypes.StreamMetadata,
-			streamMetadata.ToJsonBytes()
-		);
 
 	void AssertDefaultIndexQueryReturns(List<long> expected) {
 		var records = DuckDb.Pool.Query<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexQueryExcl>(new(-1, int.MaxValue));
@@ -275,11 +126,12 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		Assert.Equal(expectedLogPosition, actual?.PreparePosition);
 	}
 
-	// void AssertGetCategoriesQueryReturns(List<ReferenceRecord> expected) {
-	// 	var records = DuckDb.Pool.Query<ReferenceRecord, GetCategoriesQuery>().OrderBy(x => x.Id);
-	//
-	// 	Assert.Equal(expected, records);
-	// }
+	void AssertGetCategoriesQueryReturns(string[] expected) {
+		using var connection = DuckDb.OpenNewConnection();
+		var records = connection.Query<string>("select distinct category from idx_all order by log_position");
+
+		Assert.Equal(expected, records);
+	}
 
 	void AssertCategoryIndexQueryReturns(string category, List<long> expected) {
 		var records = DuckDb.Pool.Query<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryIncl>(new(category, 0, 32));
@@ -287,11 +139,12 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		Assert.Equal(expected, records.Select(x => x.LogPosition));
 	}
 
-	// void AssertGetAllEventTypesQueryReturns(List<ReferenceRecord> expected) {
-	// 	var records = DuckDb.Pool.Query<ReferenceRecord, GetAllEventTypesQuery>().OrderBy(x => x.Id);
-	//
-	// 	Assert.Equal(expected, records);
-	// }
+	void AssertGetAllEventTypesQueryReturns(string[] expected) {
+		using var connection = DuckDb.OpenNewConnection();
+		var records = connection.Query<string>("select distinct event_type from idx_all order by log_position");
+
+		Assert.Equal(expected, records);
+	}
 
 	void AssertReadEventTypeIndexQueryReturns(string eventType, List<long> expected) {
 		var records = DuckDb.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(new(eventType, 0, 32));
@@ -299,22 +152,10 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		Assert.Equal(expected, records.Select(x => x.LogPosition));
 	}
 
-	// void AssertGetStreamIdByNameQueryReturns(string streamName, long? expectedId) {
-	// 	var actual = DuckDb.Pool.GetStreamIdByName(streamName);
-	//
-	// 	Assert.Equal(expectedId, actual);
-	// }
-
-	// void AssertGetStreamMaxSequencesQueryReturns(long? expectedId) {
-	// 	var actual = DuckDb.Pool.GetStreamMaxSequences();
-	//
-	// 	Assert.Equal(expectedId, actual);
-	// }
-
 	readonly DefaultIndexProcessor _processor;
 
 	public DefaultIndexProcessorTests() {
-		var reader = ReadIndexStub.Build();
+		ReadIndexStub.Build();
 
 		const int commitBatchSize = 9;
 		var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
@@ -322,16 +163,9 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 
 		var publisher = new FakePublisher();
 
-		var categoryIndexProcessor = new CategoryIndexProcessor(DuckDb, publisher);
-		var eventTypeIndexProcessor = new EventTypeIndexProcessor(DuckDb, publisher);
-		var streamIndexProcessor = new StreamIndexProcessor(DuckDb, reader.IndexReader.Backend, hasher);
-
 		_processor = new(
 			DuckDb,
 			inflightRecordsCache,
-			categoryIndexProcessor,
-			eventTypeIndexProcessor,
-			streamIndexProcessor,
 			new NoOpSecondaryIndexProgressTracker(),
 			publisher,
 			hasher
@@ -341,140 +175,5 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 	public override Task DisposeAsync() {
 		_processor.Dispose();
 		return base.DisposeAsync();
-	}
-}
-
-public class CleanUpTests {
-	[Fact(Skip = "TODO: Check why is it failing")]
-	public void DisposingAndDroppingDatabaseCleansAllResources() {
-		var directory = Path.Combine(Path.GetTempPath(), "TestCleanup");
-
-		if (!Directory.Exists(directory))
-			Directory.CreateDirectory(directory);
-
-		var fileName = Path.Combine(directory, Path.GetRandomFileName());
-		var connectionString = $"Data Source={fileName};";
-		var options = new DuckDbDataSourceOptions { ConnectionString = connectionString };
-
-		using (var dataSource = new DuckDbDataSource(options)) {
-			var reader = ReadIndexStub.Build();
-
-			const int commitBatchSize = 9;
-			var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
-			var inflightRecordsCache = new DefaultIndexInFlightRecords(new() { CommitBatchSize = commitBatchSize });
-
-			var publisher = new FakePublisher();
-
-			var categoryIndexProcessor = new CategoryIndexProcessor(dataSource, publisher);
-			var eventTypeIndexProcessor = new EventTypeIndexProcessor(dataSource, publisher);
-			var streamIndexProcessor = new StreamIndexProcessor(dataSource, reader.IndexReader.Backend, hasher);
-
-			using var processor = new DefaultIndexProcessor(
-				dataSource,
-				inflightRecordsCache,
-				categoryIndexProcessor,
-				eventTypeIndexProcessor,
-				streamIndexProcessor,
-				new NoOpSecondaryIndexProgressTracker(),
-				publisher,
-				hasher
-			);
-
-			const string cat1 = "first";
-
-			var cat1Stream1 = $"{cat1}-{Guid.NewGuid()}";
-			var cat1Et1 = $"{cat1}-{Guid.NewGuid()}";
-
-			// When
-			processor.Index(From(cat1Stream1, 0, 100, cat1Et1, []));
-			processor.Commit();
-		}
-
-		Assert.True(DirectoryDeleter.TryForceDeleteDirectory(directory));
-
-		Assert.False(Directory.Exists(directory));
-		Assert.False(File.Exists(fileName));
-
-		Directory.CreateDirectory(directory);
-
-		// using (var dataSource = new DuckDbDataSource(options)) {
-		// 	var actual = dataSource.Pool.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastSequenceSql>();
-		//
-		// 	Assert.Null(actual?.OrNull());
-		// }
-	}
-
-	[Fact]
-	public void DisposingAndDroppingDatabaseCleansAllResourcesRawQuack() {
-		var directory = Path.Combine(Path.GetTempPath(), "QuackDisposeTest");
-
-		if (!Directory.Exists(directory))
-			Directory.CreateDirectory(directory);
-
-		var fileName = Path.Combine(directory, Path.GetRandomFileName());
-		var connectionString = $"Data Source={fileName};";
-
-		using (var pool = new DuckDBConnectionPool(connectionString)) {
-			using (pool.Rent(out var connection)) {
-				connection.ExecuteNonQuery<NotNullTableDefinition>();
-
-				using (var appender = new Appender(connection, "test_table"u8)) {
-					using (var row = appender.CreateRow()) {
-						row.Append(1u);
-						row.Append("test"u8);
-					}
-				}
-
-				uint actualCount = 0U;
-
-				foreach (ref readonly var row in connection.ExecuteQuery<(uint, string), QueryStatement>()) {
-					Assert.Equal((1u, "test"), row);
-					actualCount++;
-				}
-
-				Assert.Equal(1u, actualCount);
-			}
-
-			using (var c = new DuckDBConnection(connectionString)) {
-				c.Open();
-				c.Checkpoint();
-			}
-		}
-
-		Assert.True(DirectoryDeleter.TryForceDeleteDirectory(directory));
-
-		Assert.False(Directory.Exists(directory));
-		Assert.False(File.Exists(fileName));
-
-		Directory.CreateDirectory(directory);
-
-		using (var pool = new DuckDBConnectionPool(connectionString)) {
-			using (pool.Rent(out var connection)) {
-				uint actualCount = 0U;
-				connection.ExecuteNonQuery<NotNullTableDefinition>();
-
-				foreach (ref readonly var row in connection.ExecuteQuery<(uint, string), QueryStatement>()) {
-					Assert.NotEqual((1u, "test"), row);
-					actualCount++;
-				}
-
-				Assert.Equal(0u, actualCount);
-			}
-		}
-	}
-
-	private struct NotNullTableDefinition : IParameterlessStatement {
-		public static ReadOnlySpan<byte> CommandText => """
-		                                                create table if not exists test_table (
-		                                                    col0 UINTEGER not null primary key,
-		                                                    col1 VARCHAR not null
-		                                                );
-		                                                """u8;
-	}
-
-	private struct QueryStatement : IQuery<(uint, string)> {
-		public static ReadOnlySpan<byte> CommandText => "SELECT * FROM test_table;"u8;
-
-		public static (uint, string) Parse(ref DataChunk.Row row) => (row.ReadUInt32(), row.ReadString());
 	}
 }
