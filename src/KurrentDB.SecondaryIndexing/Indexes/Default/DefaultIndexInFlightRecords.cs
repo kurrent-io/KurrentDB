@@ -9,36 +9,62 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 record struct InFlightRecord(
 	long LogPosition,
 	string Category,
-	string EventType,
-	bool IsDeleted = false
+	string EventType
 );
 
 class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions options) {
 	readonly InFlightRecord[] _records = new InFlightRecord[options.CommitBatchSize];
+	private uint _version; // used for optimistic lock
+	private int _count;
 
-	public int Count { get; private set; }
+	public int Count => _count;
 
-	public void Append(InFlightRecord record) {
-		_records[Count++] = record;
+	public void Append(long logPosition, string category, string eventType) {
+		var count = _count;
+		_records[count] = new(logPosition, category, eventType);
+
+		// Fence: make sure that the array modification cannot be done after the increment
+		Volatile.Write(ref _count, count + 1);
 	}
 
 	public void Clear() {
-		Count = 0;
+		Interlocked.Increment(ref _version); // full fence
+
+		// Fence: make sure that the count is modified after the version
+		_count = 0;
+	}
+
+	// read is protected by optimistic lock
+	private bool TryRead(uint currentVer, int index, out InFlightRecord record) {
+		record = _records[index];
+
+		// ensure that the record is copied before the comparison
+		Interlocked.MemoryBarrier();
+		return currentVer == _version;
 	}
 
 	public IEnumerable<IndexQueryRecord> GetInFlightRecordsForwards(
 		TFPos startPosition,
-		List<IndexQueryRecord> fromDb,
+		IReadOnlyList<IndexQueryRecord> fromDb,
 		int maxCount,
-		Func<InFlightRecord, bool>? query = null
-	) {
-		var remaining = maxCount - fromDb.Count;
-		var from = fromDb.Count == 0 ? startPosition.PreparePosition : fromDb[^1].LogPosition;
-		var seq = fromDb.Count == 0 ? 0 : fromDb[^1].RowId + 1;
-		for (var i = 0; i < Count; i++) {
-			if (remaining == 0) yield break;
-			var current = _records[i];
-			if (current.LogPosition >= from && (query == null || query(current))) {
+		Func<InFlightRecord, bool>? query = null) {
+		query ??= True; // to avoid branching in the loop
+
+		long from, seq;
+		if (fromDb is []) {
+			from = startPosition.PreparePosition;
+			seq = 0;
+		} else {
+			from = fromDb[^1].LogPosition;
+			seq = fromDb[^1].RowId + 1;
+		}
+
+		var currentVer = _version;
+		for (int i = 0, count = Volatile.Read(in _count), remaining = maxCount - fromDb.Count;
+		     i < count && remaining > 0 && TryRead(currentVer, i, out var current);
+		     i++) {
+
+			if (current.LogPosition >= from && query(current)) {
 				remaining--;
 				yield return new(seq++, current.LogPosition);
 			}
@@ -48,21 +74,28 @@ class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions options) {
 	public IEnumerable<IndexQueryRecord> GetInFlightRecordsBackwards(
 		TFPos startPosition,
 		int maxCount,
-		Func<InFlightRecord, bool>? query = null
-	) {
-		if (Count == 0 || _records[0].LogPosition > startPosition.PreparePosition) {
-			yield break;
-		}
+		Func<InFlightRecord, bool>? query = null) {
+		query ??= True; // to avoid branching in the loop
 
-		var seq = -maxCount - 1;
-		var remaining = maxCount;
-		for (var i = Count - 1; i >= 0; i--) {
-			if (remaining == 0) yield break;
-			var current = _records[i];
-			if (current.LogPosition <= startPosition.PreparePosition && (query == null || query(current))) {
-				remaining--;
-				yield return new(seq++, current.LogPosition);
+		var count = Volatile.Read(in _count);
+		var currentVer = _version;
+
+		if (count > 0
+		    && TryRead(currentVer, 0, out var current)
+		    && current.LogPosition > startPosition.PreparePosition) {
+
+			long seq = -maxCount - 1;
+			for (int i = count - 1, remaining = maxCount;
+			     i >= 0 && remaining > 0 && TryRead(currentVer, i, out current);
+			     i--) {
+
+				if (current.LogPosition <= startPosition.PreparePosition && query(current)) {
+					remaining--;
+					yield return new(seq++, current.LogPosition);
+				}
 			}
 		}
 	}
+
+	private static bool True(InFlightRecord record) => true;
 }
