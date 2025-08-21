@@ -9,6 +9,7 @@ using KurrentDB.Core.Helpers;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.PersistentSubscription;
 using KurrentDB.Core.Services.PersistentSubscription.ConsumerStrategy;
 using KurrentDB.Core.Tests.TransactionLog;
@@ -33,12 +34,12 @@ public class PersistentSubscriptionServiceErrorTests {
 			var bus = new SynchronousScheduler();
 			var trackers = new Trackers();
 			_sut = new PersistentSubscriptionService<TStreamId>(
-				new ThreadPoolMessageScheduler(bus) { Name = "test", SynchronizeMessagesWithUnknownAffinity = true },
+				new QueuedHandlerThreadPool(bus, "test",
+					new QueueStatsManager(), new QueueTrackers()),
 				new FakeReadIndex<TLogFormat, TStreamId>(_ => false, new MetaStreamLookup()),
 				new IODispatcher(bus, bus), bus,
 				new PersistentSubscriptionConsumerStrategyRegistry(bus, bus,
-					Array.Empty<IPersistentSubscriptionConsumerStrategyFactory>()),
-				trackers.PersistentSubscriptionTracker);
+					Array.Empty<IPersistentSubscriptionConsumerStrategyFactory>()), trackers.PersistentSubscriptionTracker);
 			_envelope = new CallbackEnvelope(_replySource.SetResult);
 			_sut.Start();
 		}

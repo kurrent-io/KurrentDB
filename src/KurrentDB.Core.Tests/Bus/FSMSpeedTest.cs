@@ -53,10 +53,7 @@ public class FSMSpeedTest {
 
 	private VNodeFSM CreateFSM() {
 		var outputBus = InMemoryBus.CreateTest(false);
-		var scheduler = new ThreadPoolMessageScheduler(outputBus) {
-			Name = "Test",
-			SynchronizeMessagesWithUnknownAffinity = true,
-		};
+		var scheduler = new QueuedHandlerThreadPool(outputBus, "Test", new(), new());
 
 		var stm = new VNodeFSMBuilder(new ValueReference<VNodeState>(VNodeState.Leader))
 			.InAnyState()

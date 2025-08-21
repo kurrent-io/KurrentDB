@@ -116,10 +116,9 @@ public class TcpApiPluginTests {
 
 		var dbConfig = TFChunkHelper.CreateDbConfig(Path.GetTempPath(), 0);
 		var mainBus = new InMemoryBus("mainBus");
-		var mainQueue = new ThreadPoolMessageScheduler(mainBus) {
-			Name = "MainQueue",
-			SynchronizeMessagesWithUnknownAffinity = true,
-		};
+		var mainQueue = new QueuedHandlerThreadPool(
+			mainBus, "MainQueue", queueStatsManager, queueTrackers);
+		mainQueue.Start();
 		var threadBasedScheduler = new ThreadBasedScheduler(queueStatsManager, queueTrackers);
 		var timerService = new TimerService(threadBasedScheduler);
 

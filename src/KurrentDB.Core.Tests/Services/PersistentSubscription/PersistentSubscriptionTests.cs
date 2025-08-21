@@ -190,7 +190,7 @@ public class when_updating_all_stream_subscription_with_filter<TLogFormat, TStre
 		bus.Subscribe<ClientMessage.WriteEventsCompleted>(ioDispatcher.Writer);
 
 		_sut = new PersistentSubscriptionService<TStreamId>(
-			new ThreadPoolMessageScheduler(bus) { Name = "test", SynchronizeMessagesWithUnknownAffinity = true },
+			new QueuedHandlerThreadPool(bus, "test", new QueueStatsManager(), new QueueTrackers()),
 			new FakeReadIndex<TLogFormat, TStreamId>(_ => false, new MetaStreamLookup()),
 			ioDispatcher, bus,
 			new PersistentSubscriptionConsumerStrategyRegistry(bus, bus,
