@@ -1,6 +1,5 @@
 #nullable enable
 using System;
-using System.Linq;
 using EventStore.Common.Utils;
 using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
@@ -30,11 +29,12 @@ namespace EventStore.Core.Services.PersistentSubscription {
 
 			public void LoadStateCompleted(ClientMessage.ReadStreamEventsBackwardCompleted msg) {
 				if (msg.Events.Length > 0) {
-					var checkpoint = msg.Events.Where(v => v.Event.EventType == "SubscriptionCheckpoint")
-						.Select(x => x.Event).FirstOrDefault();
-					if (checkpoint != null) {
-						string lastEvent = checkpoint.Data.ParseJson<string>();
-						_onStateLoaded(lastEvent);
+					var checkpoint = msg.Events[0].Event;
+
+					if (checkpoint.EventType is "SubscriptionCheckpoint" or "$SubscriptionCheckpoint") {
+
+						var checkpointJson = checkpoint.Data.ParseJson<string>();
+						_onStateLoaded(checkpointJson);
 						return;
 					}
 				}

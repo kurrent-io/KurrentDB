@@ -52,7 +52,7 @@
 		<None Include="Resources\es-tile.png">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
-		<None Include="..\..\docs\http-api\swagger.yaml">
+		<None Include="..\..\docs\server\http-api\swagger.yaml">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
