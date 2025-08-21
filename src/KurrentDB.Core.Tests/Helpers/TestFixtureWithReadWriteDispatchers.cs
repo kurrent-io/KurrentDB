@@ -54,10 +54,10 @@ public abstract class TestFixtureWithReadWriteDispatchers {
 		_envelope = null;
 		_timeProvider = new FakeTimeProvider();
 		_bus = new SynchronousScheduler();
-		_publisher = new QueuedHandlerThreadPool(_bus,
-			"TestQueue",
-			new QueueStatsManager(),
-			new QueueTrackers(), watchSlowMsg: false);
+		_publisher = new ThreadPoolMessageScheduler(_bus) {
+			Name = "TestQueue",
+			SynchronizeMessagesWithUnknownAffinity = true,
+		};
 		_publisher.Start();
 		_consumer = new TestHandler<Message>();
 		_consumer.AddConverter(typeof(ClientMessage.WriteEvents), msg => {

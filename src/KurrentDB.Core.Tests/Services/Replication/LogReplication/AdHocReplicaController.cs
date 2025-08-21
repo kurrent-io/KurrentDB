@@ -44,11 +44,10 @@ internal class AdHocReplicaController<TStreamId> : IAsyncHandle<Message> {
 	public int NumWriterFlushes => Interlocked.CompareExchange(ref _numWriterFlushes, 0, 0);
 
 	public AdHocReplicaController(IPublisher outputBus, LeaderInfo<TStreamId> leaderInfo) {
-		_inputQueue = new QueuedHandlerThreadPool(
-			consumer: this,
-			name: "InputQueue",
-			queueStatsManager: new QueueStatsManager(),
-			trackers: new QueueTrackers());
+		_inputQueue = new ThreadPoolMessageScheduler(this) {
+			Name = "InputQueue",
+			SynchronizeMessagesWithUnknownAffinity = true,
+		};
 		_outputBus = outputBus;
 		_leaderInfo = leaderInfo;
 
