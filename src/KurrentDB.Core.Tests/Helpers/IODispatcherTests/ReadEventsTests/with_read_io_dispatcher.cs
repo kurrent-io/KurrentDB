@@ -32,13 +32,15 @@ public abstract class with_read_io_dispatcher<TLogFormat, TStreamId> : IHandle<C
 
 	[OneTimeSetUp]
 	public virtual void TestFixtureSetUp() {
-		var _queue = new QueuedHandlerThreadPool(_bus, "TestQueuedHandler", new QueueStatsManager(), new());
-		_ioDispatcher = new IODispatcher(_bus, _queue);
+		var queue = new ThreadPoolMessageScheduler(_bus) {
+			Name = "TestQueuedHandler",
+			SynchronizeMessagesWithUnknownAffinity = true,
+		};
+		_ioDispatcher = new IODispatcher(_bus, queue);
 		IODispatcherTestHelpers.SubscribeIODispatcher(_ioDispatcher, _bus);
 		_bus.Subscribe<ClientMessage.ReadStreamEventsForward>(this);
 		_bus.Subscribe<ClientMessage.ReadStreamEventsBackward>(this);
 		_bus.Subscribe<TimerMessage.Schedule>(this);
-		_queue.Start();
 	}
 
 	public virtual void Handle(ClientMessage.ReadStreamEventsForward message) {
