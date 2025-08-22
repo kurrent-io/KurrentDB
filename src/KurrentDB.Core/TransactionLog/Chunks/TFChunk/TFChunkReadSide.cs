@@ -50,6 +50,41 @@ public partial class TFChunk {
 			: ValueTask.FromResult(logicalPosition >= Chunk.LogicalDataSize ? -1 : logicalPosition);
 		}
 
+		// so the question is where should we acquire the lease. if we acquire it inside the chunk then we will only have it
+		// for that one event read, which is probably too granular. but we can't acquire it until we are granular enough
+		// to know whether we are accessing archive or memory or filesystem. but we have to get a readerworkitem from the chunk
+		// to be able to know that (and if we return it and get another then it might have changed source)
+		// SO maybe it means for now we should plug it in inside the chunk and take the hit of acquiring/releasing a lot
+		// (this whole thing could be feature flagged if we want) and then later its improve if we can improve the way we deal with
+		// the readerworkitems too.
+
+		//qq maybe we can split this work into two, 1 an introduction of the rate limiting and making the api available to the readerworker
+		// and then (2) having the reader worker be more accurate about what resources it needs to acquire for particular operations
+		// i.e. not make unnecessary acquisitions
+
+		//qq it is only now that we have a reader workitem that we can be _sure_ what source we need.
+		// so only now can we acquire the lease from the rate limiter
+		// but that means loads of threads might be acquiring readerworkitems for this chunk
+		// and actually, might be doing so legitimately.
+		// so we need to be able to support many more readers reading a chunk anyway
+		//  this ties into other changes we want to make to the reader work items
+		//      1. the buffer sizes need to be BIG for archived chunks (1mb+)
+		//      2. the number of concurrent readers needs to be large too, but we dont want to park loads of 1mb buffers for each archived chunk.
+		//         instead the readerworkitems should probably come from outside of the chunk its just that the chunk needs
+		//         to keep track of how many active readers there are.
+		// so two options
+		//  1. we could acquire a lease based on what source we expect to be need (and either approximate is good enough or we can adjust it if the actual source is different)
+		//  2. we could make it cheap to check out a reader for a chunk (say, incrementing a number)
+		//  3. we could just take the hit of checking out lots of readers for now? i.e. have the max number of readers limited to something modest
+		//  maybe i should rewatch those videos
+		// OOOOOOOOOR is it _part of_ getting the readerworkitem?
+		//var lease = await _limiter.AcquireAsync(
+		//	//qq pass priority in //qq fill continued in
+		//	//qq bad cast, consider if we need a proper conversion or if they should be the same enum
+		//	new(Source: (Source)workItem.Source, Priority: new(Priority.None, Continued: false)),
+		//	cancellationToken: token);
+			//if (!lease.IsAcquired)
+			//	throw new TooBusyException();
 		public async ValueTask<RecordReadResult> TryReadAt(long logicalPosition, bool couldBeScavenged, CancellationToken token) {
 			var start = Instant.Now;
 			var workItem = Chunk.GetReaderWorkItem();
@@ -463,6 +498,7 @@ public partial class TFChunk {
 
 	private abstract class TFChunkReadSide {
 		protected readonly TFChunk Chunk;
+//qq		private readonly PartitionedRateLimiter<Resource> _limiter;
 		protected readonly ILogger _log = Log.ForContext<TFChunkReader>();
 		private readonly ITransactionFileTracker _tracker;
 

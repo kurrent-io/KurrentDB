@@ -9,9 +9,11 @@ namespace KurrentDB.Core.TransactionLog;
 public interface ITransactionFileTracker {
 	void OnRead(Instant start, ILogRecord record, Source source);
 
+	//qq not sure if this should be different to the limiter (re)source
 	enum Source {
 		Unknown,
 		Archive,
+		//qq Archive Cache? or is that just filesystem/chunkcache accordingly
 		ChunkCache,
 		FileSystem,
 	};

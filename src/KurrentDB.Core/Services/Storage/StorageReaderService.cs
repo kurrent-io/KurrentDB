@@ -4,12 +4,15 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.RateLimiting;
 using System.Threading.Tasks;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Messages;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Metrics;
+using KurrentDB.Core.RateLimiting;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.TransactionLog.Checkpoint;
@@ -28,63 +31,52 @@ public class StorageReaderService<TStreamId> : StorageReaderService, IHandle<Sys
 
 	private readonly IPublisher _bus;
 	private readonly IReadIndex _readIndex;
-	private readonly MultiQueuedHandler _workersMultiHandler;
 
 	public StorageReaderService(
 		IPublisher bus,
 		ISubscriber subscriber,
 		IReadIndex<TStreamId> readIndex,
 		ISystemStreamLookup<TStreamId> systemStreams,
-		int threadCount,
+		PartitionedRateLimiter<ResourceAndPriority> limiter,
 		IReadOnlyCheckpoint writerCheckpoint,
 		IVirtualStreamReader inMemReader,
+
+		//qq we ought to be doing something with trackers and maybe queueStatsManager
 		QueueStatsManager queueStatsManager,
 		QueueTrackers trackers) {
+
 		Ensure.NotNull(subscriber);
 		Ensure.NotNull(systemStreams);
-		Ensure.Positive(threadCount);
+		Ensure.NotNull(limiter);
 		Ensure.NotNull(writerCheckpoint);
 
 		_bus = Ensure.NotNull(bus);
 		_readIndex = Ensure.NotNull(readIndex);
-		StorageReaderWorker<TStreamId>[] readerWorkers = new StorageReaderWorker<TStreamId>[threadCount];
-		InMemoryBus[] storageReaderBuses = new InMemoryBus[threadCount];
-		for (var i = 0; i < threadCount; i++) {
-			readerWorkers[i] = new(bus, readIndex, systemStreams, writerCheckpoint, inMemReader, i);
-			storageReaderBuses[i] = new("StorageReaderBus", watchSlowMsg: false);
-			storageReaderBuses[i].Subscribe<ClientMessage.ReadEvent>(readerWorkers[i]);
-			storageReaderBuses[i].Subscribe<ClientMessage.ReadStreamEventsBackward>(readerWorkers[i]);
-			storageReaderBuses[i].Subscribe<ClientMessage.ReadStreamEventsForward>(readerWorkers[i]);
-			storageReaderBuses[i].Subscribe<ClientMessage.ReadAllEventsForward>(readerWorkers[i]);
-			storageReaderBuses[i].Subscribe<ClientMessage.ReadAllEventsBackward>(readerWorkers[i]);
-			storageReaderBuses[i].Subscribe<ClientMessage.FilteredReadAllEventsForward>(readerWorkers[i]);
-			storageReaderBuses[i].Subscribe<ClientMessage.FilteredReadAllEventsBackward>(readerWorkers[i]);
-			storageReaderBuses[i].Subscribe<StorageMessage.BatchLogExpiredMessages>(readerWorkers[i]);
-			storageReaderBuses[i].Subscribe<StorageMessage.EffectiveStreamAclRequest>(readerWorkers[i]);
-			storageReaderBuses[i].Subscribe<StorageMessage.StreamIdFromTransactionIdRequest>(readerWorkers[i]);
-		}
 
-		_workersMultiHandler = new MultiQueuedHandler(
-			threadCount,
-			queueNum => new QueuedHandlerThreadPool(storageReaderBuses[queueNum],
-				$"StorageReaderQueue #{queueNum + 1}",
-				queueStatsManager,
-				trackers,
-				groupName: "StorageReaderQueue",
-				watchSlowMsg: true,
-				slowMsgThreshold: TimeSpan.FromMilliseconds(200)));
-		_workersMultiHandler.Start();
+		var readerWorker = new StorageReaderWorker<TStreamId>(bus, readIndex, systemStreams, writerCheckpoint, inMemReader,
+			limiter,
+			queueId: 123); //qq
 
-		subscriber.Subscribe<ClientMessage.ReadEvent>(_workersMultiHandler);
-		subscriber.Subscribe<ClientMessage.ReadStreamEventsBackward>(_workersMultiHandler);
-		subscriber.Subscribe<ClientMessage.ReadStreamEventsForward>(_workersMultiHandler);
-		subscriber.Subscribe<ClientMessage.ReadAllEventsForward>(_workersMultiHandler);
-		subscriber.Subscribe<ClientMessage.ReadAllEventsBackward>(_workersMultiHandler);
-		subscriber.Subscribe<ClientMessage.FilteredReadAllEventsForward>(_workersMultiHandler);
-		subscriber.Subscribe<ClientMessage.FilteredReadAllEventsBackward>(_workersMultiHandler);
-		subscriber.Subscribe<StorageMessage.BatchLogExpiredMessages>(_workersMultiHandler);
-		subscriber.Subscribe<StorageMessage.EffectiveStreamAclRequest>(_workersMultiHandler);
-		subscriber.Subscribe<StorageMessage.StreamIdFromTransactionIdRequest>(_workersMultiHandler);
+		//qq consider whether we want this bus at all any more.
+		var storageReaderBus = new InMemoryBus("StorageReaderBus",
+			//qq check that slow message watching is working (moved it from queue to bus)
+			watchSlowMsg: true,
+			slowMsgThreshold: TimeSpan.FromMilliseconds(200));
+		storageReaderBus.Subscribe<ClientMessage.ReadEvent>(readerWorker);
+		storageReaderBus.Subscribe<ClientMessage.ReadStreamEventsBackward>(readerWorker);
+		storageReaderBus.Subscribe<ClientMessage.ReadStreamEventsForward>(readerWorker);
+		storageReaderBus.Subscribe<ClientMessage.ReadAllEventsForward>(readerWorker);
+		storageReaderBus.Subscribe<ClientMessage.ReadAllEventsBackward>(readerWorker);
+		storageReaderBus.Subscribe<ClientMessage.FilteredReadAllEventsForward>(readerWorker);
+		storageReaderBus.Subscribe<ClientMessage.FilteredReadAllEventsBackward>(readerWorker);
+		storageReaderBus.Subscribe<StorageMessage.BatchLogExpiredMessages>(readerWorker);
+		storageReaderBus.Subscribe<StorageMessage.EffectiveStreamAclRequest>(readerWorker);
+		storageReaderBus.Subscribe<StorageMessage.StreamIdFromTransactionIdRequest>(readerWorker);
+
+		//qq the workersMultiHandler used to need Start()ing and stopping, does anything still
+		//_workersMultiHandler.Start();
+
+		subscriber.Subscribe<Message>(storageReaderBus);
 	}
 
 	void IHandle<SystemMessage.SystemInit>.Handle(SystemMessage.SystemInit message) {
@@ -93,7 +85,7 @@ public class StorageReaderService<TStreamId> : StorageReaderService, IHandle<Sys
 
 	async ValueTask IAsyncHandle<SystemMessage.BecomeShuttingDown>.HandleAsync(SystemMessage.BecomeShuttingDown message, CancellationToken token) {
 		try {
-			await _workersMultiHandler.Stop();
+			await Task.Yield(); //qq await _workersMultiHandler.Stop();
 		} catch (Exception exc) {
 			Log.Error(exc, "Error while stopping readers multi handler.");
 		}
