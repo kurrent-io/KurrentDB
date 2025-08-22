@@ -8,15 +8,16 @@ using KurrentDB.SecondaryIndexing.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Tests.Fixtures;
 using KurrentDB.Core.Data;
 using KurrentDB.SecondaryIndexing.Diagnostics;
+using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Tests.Indexes.DefaultIndexReaderTests;
 
 public abstract class IndexTestBase : DuckDbIntegrationTest {
-	readonly DefaultIndexProcessor _processor;
+	private readonly DefaultIndexProcessor _processor;
 	private protected readonly DefaultIndexReader Sut;
 	protected readonly Guid InternalCorrId = Guid.NewGuid();
 	protected readonly Guid CorrelationId = Guid.NewGuid();
-	readonly ReadIndexStub _readIndexStub = new();
+	private readonly ReadIndexStub _readIndexStub = new();
 
 	protected IndexTestBase() {
 		const int commitBatchSize = 9;
@@ -24,7 +25,7 @@ public abstract class IndexTestBase : DuckDbIntegrationTest {
 		var inFlightRecords = new DefaultIndexInFlightRecords(new() { CommitBatchSize = commitBatchSize });
 		var publisher = new FakePublisher();
 
-		_processor = new(DuckDb, inFlightRecords, new NoOpSecondaryIndexProgressTracker(), publisher, hasher);
+		_processor = new(DuckDb, new(DuckDb), inFlightRecords, new NoOpSecondaryIndexProgressTracker(), publisher, hasher);
 
 		Sut = new(DuckDb, _processor, inFlightRecords, _readIndexStub.ReadIndex);
 	}

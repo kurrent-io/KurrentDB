@@ -6,14 +6,15 @@ using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
-record struct InFlightRecord(
+internal record struct InFlightRecord(
 	long LogPosition,
 	string Category,
 	string EventType
 );
 
-class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions options) {
-	readonly InFlightRecord[] _records = new InFlightRecord[options.CommitBatchSize];
+internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions options) {
+	private readonly InFlightRecord[] _records = new InFlightRecord[options.CommitBatchSize];
+
 	private uint _version; // used for optimistic lock
 	private int _count;
 

@@ -1,13 +1,11 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Diagnostics;
-using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
-using KurrentDB.SecondaryIndexing.Indexes.EventType;
-using KurrentDB.SecondaryIndexing.Indexes.Stream;
 using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
 using KurrentDB.SecondaryIndexing.Storage;
 using KurrentDB.SecondaryIndexing.Tests.Fakes;
@@ -20,7 +18,7 @@ public class IndexMessageBatchAppender : IMessageBatchAppender {
 	private long _indexedCount;
 	private readonly DefaultIndexProcessor _processor;
 
-	public IndexMessageBatchAppender(DuckDbDataSource dbDataSource, int commitSize) {
+	public IndexMessageBatchAppender(DuckDBConnectionPool db, int commitSize) {
 		_commitSize = commitSize;
 		var reader = ReadIndexStub.Build();
 		var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
@@ -29,7 +27,8 @@ public class IndexMessageBatchAppender : IMessageBatchAppender {
 		var publisher = new FakePublisher();
 
 		_processor = new(
-			dbDataSource,
+			db,
+			new(db),
 			inflightRecordsCache,
 			new NoOpSecondaryIndexProgressTracker(), // TODO: Use the real one with metrics
 			publisher,

@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
+using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
@@ -10,7 +11,7 @@ using static KurrentDB.SecondaryIndexing.Indexes.EventType.EventTypeSql;
 namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
 
 class EventTypeIndexReader(
-	DuckDbDataSource db,
+	DuckDBConnectionPool db,
 	DefaultIndexProcessor processor,
 	IReadIndex<string> index,
 	DefaultIndexInFlightRecords inFlightRecords
@@ -20,8 +21,8 @@ class EventTypeIndexReader(
 
 	protected override IReadOnlyList<IndexQueryRecord> GetIndexRecordsForwards(string id, TFPos startPosition, int maxCount, bool excludeStart) {
 		var range = excludeStart
-			? Db.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryExcl>(new(id, startPosition.PreparePosition, maxCount))
-			: Db.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(new(id, startPosition.PreparePosition, maxCount));
+			? Db.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryExcl>(new(id, startPosition.PreparePosition, maxCount))
+			: Db.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(new(id, startPosition.PreparePosition, maxCount));
 
 		if (range.Count < maxCount) {
 			// events might be in flight
@@ -39,8 +40,8 @@ class EventTypeIndexReader(
 		}
 
 		var range = excludeStart
-			? Db.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexBackQueryExcl>(new(id, startPosition.PreparePosition, maxCount))
-			: Db.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexBackQueryIncl>(new(id, startPosition.PreparePosition, maxCount));
+			? Db.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexBackQueryExcl>(new(id, startPosition.PreparePosition, maxCount))
+			: Db.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexBackQueryIncl>(new(id, startPosition.PreparePosition, maxCount));
 
 		if (inFlight.Count > 0) {
 			range.AddRange(inFlight);

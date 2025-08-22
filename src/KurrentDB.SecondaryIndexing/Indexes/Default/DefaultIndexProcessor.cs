@@ -4,6 +4,7 @@
 using DotNext;
 using DotNext.Threading;
 using Kurrent.Quack;
+using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Index.Hashes;
@@ -31,13 +32,15 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	public long LastIndexedPosition { get; private set; }
 
 	public DefaultIndexProcessor(
-		DuckDbDataSource db,
+		DuckDBConnectionPool db,
+		IndexingDbSchema schema,
 		DefaultIndexInFlightRecords inFlightRecords,
 		ISecondaryIndexProgressTracker progressTracker,
 		IPublisher publisher,
 		ILongHasher<string> hasher
 	) {
-		_connection = db.OpenNewConnection();
+		schema.CreateSchema();
+		_connection = db.Open();
 		_appender = new(_connection, "idx_all"u8);
 		_inFlightRecords = inFlightRecords;
 		_progressTracker = progressTracker;

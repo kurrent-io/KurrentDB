@@ -19,5 +19,5 @@ static class EventTypeIndex {
 		return true;
 	}
 
-	public static bool IsEventTypeIndex(string streamName) => streamName.StartsWith(SystemStreams.EventTypeSecondaryIndexPrefix);
+	public static bool IsEventTypeIndex(string indexName) => indexName.StartsWith(SystemStreams.EventTypeSecondaryIndexPrefix);
 }

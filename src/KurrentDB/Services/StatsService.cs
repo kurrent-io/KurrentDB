@@ -4,13 +4,14 @@
 using System;
 using System.Linq;
 using Dapper;
+using Kurrent.Quack.ConnectionPool;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.Services;
 
-class StatsService(DuckDbDataSource dataSource) {
+class StatsService(DuckDBConnectionPool db) {
 	public CombinedStats[] GetStats() {
-		using var connection = dataSource.Pool.Open();
+		using var connection = db.Open();
 		var categories = connection.Query<CategoryStats>(CategoriesSql);
 		var eventTypes = connection.Query<CategoryEventTypeStats>(CategoriesEventTypesSql);
 		return categories.GroupJoin(eventTypes, x => x.category, y => y.category, (x, y) => new CombinedStats(x, y.ToArray())).ToArray();

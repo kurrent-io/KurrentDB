@@ -1,13 +1,14 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Tests;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Tests.Fixtures;
 
 public abstract class DuckDbIntegrationTest : IAsyncLifetime {
-	protected readonly DuckDbDataSource DuckDb;
+	protected readonly DuckDBConnectionPool DuckDb;
 	private readonly string _directory;
 
 	protected DuckDbIntegrationTest() {
@@ -21,10 +22,8 @@ public abstract class DuckDbIntegrationTest : IAsyncLifetime {
 		if (File.Exists(dbPath))
 			File.Delete(dbPath);
 
-		DuckDb = new DuckDbDataSource(
-			new DuckDbDataSourceOptions { ConnectionString = $"Data Source={dbPath};" }
-		);
-		DuckDb.InitDb();
+		DuckDb = new($"Data Source={dbPath};");
+		new IndexingDbSchema(DuckDb).CreateSchema();
 	}
 
 	public virtual Task InitializeAsync() =>

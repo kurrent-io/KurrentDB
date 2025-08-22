@@ -252,7 +252,7 @@ public class ReadForwardsTests : IndexTestBase {
 		return await tcs.Task;
 	}
 
-	static ReadIndexEventsForwardCompleted ReadForwardCompleted(
+	private static ReadIndexEventsForwardCompleted ReadForwardCompleted(
 		ReadIndexResult result,
 		IReadOnlyList<ResolvedEvent> events,
 		bool isEndOfStream = false,

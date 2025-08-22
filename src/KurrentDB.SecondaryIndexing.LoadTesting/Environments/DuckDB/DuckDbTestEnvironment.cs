@@ -2,10 +2,10 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Reflection;
+using Kurrent.Quack.ConnectionPool;
 using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
 using KurrentDB.SecondaryIndexing.LoadTesting.Assertions;
 using KurrentDB.SecondaryIndexing.LoadTesting.Assertions.DuckDb;
-using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Environments.DuckDB;
 
@@ -16,7 +16,7 @@ public class DuckDbTestEnvironmentOptions {
 }
 
 public class DuckDbTestEnvironment : ILoadTestEnvironment {
-	private readonly DuckDbDataSource _dataSource;
+	private readonly DuckDBConnectionPool _pool;
 	public IMessageBatchAppender MessageBatchAppender { get; }
 	public IIndexingSummaryAssertion AssertThat { get; }
 
@@ -26,17 +26,17 @@ public class DuckDbTestEnvironment : ILoadTestEnvironment {
 		if (File.Exists(dbPath))
 			File.Delete(dbPath);
 
-		_dataSource = new(new() { ConnectionString = $"Data Source={dbPath};" });
+		_pool = new($"Data Source={dbPath};");
 
-		MessageBatchAppender = new RawQuackMessageBatchAppender(_dataSource, options);
+		MessageBatchAppender = new RawQuackMessageBatchAppender(_pool, options);
 
-		AssertThat = new DuckDbIndexingSummaryAssertion(_dataSource);
+		AssertThat = new DuckDbIndexingSummaryAssertion(_pool);
 	}
 
 	public ValueTask InitializeAsync(CancellationToken ct = default) => ValueTask.CompletedTask;
 
 	public async ValueTask DisposeAsync() {
 		await MessageBatchAppender.DisposeAsync();
-		_dataSource.Dispose();
+		_pool.Dispose();
 	}
 }

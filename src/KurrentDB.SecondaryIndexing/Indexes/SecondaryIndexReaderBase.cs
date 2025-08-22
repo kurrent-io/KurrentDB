@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
@@ -9,8 +10,8 @@ using static KurrentDB.Core.Messages.ClientMessage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes;
 
-public abstract class SecondaryIndexReaderBase(DuckDbDataSource db, IReadIndex<string> index) : ISecondaryIndexReader {
-	protected DuckDbDataSource Db => db;
+public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool db, IReadIndex<string> index) : ISecondaryIndexReader {
+	protected DuckDBConnectionPool Db => db;
 
 	protected abstract string GetId(string indexName);
 
@@ -28,7 +29,7 @@ public abstract class SecondaryIndexReaderBase(DuckDbDataSource db, IReadIndex<s
 
 	public abstract bool CanReadIndex(string indexName);
 
-	async ValueTask<ReadIndexEventsForwardCompleted> ReadForwards(
+	private async ValueTask<ReadIndexEventsForwardCompleted> ReadForwards(
 		ReadIndexEventsForward msg,
 		IIndexReader<string> reader,
 		long lastIndexedPosition,
@@ -58,7 +59,7 @@ public abstract class SecondaryIndexReaderBase(DuckDbDataSource db, IReadIndex<s
 			=> new(result, ResolvedEvent.EmptyArray, pos, lastIndexedPosition, endOfStream, error);
 	}
 
-	async ValueTask<ReadIndexEventsBackwardCompleted> ReadBackwards(
+	private async ValueTask<ReadIndexEventsBackwardCompleted> ReadBackwards(
 		ReadIndexEventsBackward msg,
 		IIndexReader<string> reader,
 		long lastIndexedPosition,
@@ -77,10 +78,12 @@ public abstract class SecondaryIndexReaderBase(DuckDbDataSource db, IReadIndex<s
 		var resolved = await GetEventsBackwards(reader, id, pos, msg.MaxCount, msg.ExcludeStart, token);
 
 		if (resolved.Count == 0) {
-			return NoData(ReadIndexResult.Success);
+			var response = NoData(ReadIndexResult.Success);
+			response.IsEndOfStream = true;
+			return response;
 		}
 
-		var isEndOfStream = resolved.Count < msg.MaxCount || resolved[0].Event.LogPosition == lastIndexedPosition;
+		var isEndOfStream = resolved.Count < msg.MaxCount;
 
 		return new(ReadIndexResult.Success, resolved, lastIndexedPosition, isEndOfStream, null);
 

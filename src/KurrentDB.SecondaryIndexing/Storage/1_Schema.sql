@@ -1,5 +1,5 @@
 create table if not exists idx_all (
-	log_position bigint not null unique,
+	log_position bigint not null,
 	commit_position bigint null,
 	event_number bigint not null,
 	created bigint not null,

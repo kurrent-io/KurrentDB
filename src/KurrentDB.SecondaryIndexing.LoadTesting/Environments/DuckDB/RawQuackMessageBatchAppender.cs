@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Kurrent.Quack;
+using Kurrent.Quack.ConnectionPool;
 using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
 using KurrentDB.SecondaryIndexing.Storage;
 using KurrentDB.SecondaryIndexing.Tests.Generators;
@@ -11,7 +12,7 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Environments.DuckDB;
 
 public class RawQuackMessageBatchAppender : IMessageBatchAppender {
-	readonly DuckDbDataSource _dbDataSource;
+	readonly DuckDBConnectionPool _db;
 	readonly int _commitSize;
 	readonly Stopwatch _sw = new();
 
@@ -22,13 +23,14 @@ public class RawQuackMessageBatchAppender : IMessageBatchAppender {
 	public long LastCommittedSequence;
 	public long LastSequence;
 
-	public RawQuackMessageBatchAppender(DuckDbDataSource dbDataSource, DuckDbTestEnvironmentOptions options) {
-		_dbDataSource = dbDataSource;
+	public RawQuackMessageBatchAppender(DuckDBConnectionPool db, DuckDbTestEnvironmentOptions options) {
+		_db = db;
 		_commitSize = options.CommitSize;
-		_dbDataSource.InitDb();
+		var schema = new IndexingDbSchema(db);
+		schema.CreateSchema();
 
-		var connection = _dbDataSource.OpenNewConnection();
-		_defaultIndexAppender = new Appender(connection, "idx_all"u8);
+		using var connection = _db.Open();
+		_defaultIndexAppender = new(connection, "idx_all"u8);
 
 		if (!string.IsNullOrEmpty(options.WalAutoCheckpoint)) {
 			using var cmd = connection.CreateCommand();
@@ -42,10 +44,8 @@ public class RawQuackMessageBatchAppender : IMessageBatchAppender {
 	}
 
 	public ValueTask AppendToDefaultIndex(TestMessageBatch batch) {
-		foreach (var message in batch.Messages) {
+		foreach (var (eventNumber, logPosition, _, _, _) in batch.Messages) {
 			LastSequence++;
-			var logPosition = message.LogSequence;
-			var eventNumber = message.StreamPosition;
 
 			using (var row = _defaultIndexAppender.CreateRow()) {
 				row.Append(logPosition);
@@ -77,7 +77,6 @@ public class RawQuackMessageBatchAppender : IMessageBatchAppender {
 	}
 
 	public ValueTask DisposeAsync() {
-		_dbDataSource.Dispose();
 		_defaultIndexAppender.Dispose();
 		return ValueTask.CompletedTask;
 	}

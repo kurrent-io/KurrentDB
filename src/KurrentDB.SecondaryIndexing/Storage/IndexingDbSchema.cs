@@ -2,15 +2,23 @@
 // Kurrent, Inc licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System.Reflection;
-using DuckDB.NET.Data;
+using DotNext.Threading;
+using Kurrent.Quack.ConnectionPool;
 
 namespace KurrentDB.SecondaryIndexing.Storage;
 
-public static class DuckDbSchema {
-	private static readonly Assembly Assembly = typeof(DuckDbSchema).Assembly;
+public class IndexingDbSchema(DuckDBConnectionPool connectionPool) {
+	private static readonly Assembly Assembly = typeof(IndexingDbSchema).Assembly;
 
-	public static void CreateSchema(DuckDBConnection connection) {
+	private Atomic.Boolean _created;
+
+	public void CreateSchema() {
+		if (!_created.FalseToTrue()) {
+			return;
+		}
+
 		var names = Assembly.GetManifestResourceNames().Where(x => x.EndsWith(".sql")).OrderBy(x => x);
+		using var connection = connectionPool.Open();
 		using var transaction = connection.BeginTransaction();
 		var cmd = connection.CreateCommand();
 		cmd.Transaction = transaction;

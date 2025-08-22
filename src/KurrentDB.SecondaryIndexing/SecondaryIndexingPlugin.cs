@@ -7,13 +7,11 @@ using EventStore.Plugins;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services.Storage;
-using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.SecondaryIndexing.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
-using KurrentDB.SecondaryIndexing.Indexes.Stream;
 using KurrentDB.SecondaryIndexing.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -35,16 +33,7 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 			.Get<SecondaryIndexingPluginOptions>() ?? new();
 		services.AddSingleton(options);
 
-		services.AddSingleton<DuckDbDataSourceOptions>(sp => {
-			var dbPath = options.DbPath ?? Path.Combine(sp.GetRequiredService<TFChunkDbConfig>().Path, "index.db");
-
-			return new() { ConnectionString = $"Data Source={dbPath};threads=1;memory_limit=1GB" };
-		});
-		services.AddSingleton<DuckDbDataSource>(sp => {
-			var dbSource = new DuckDbDataSource(sp.GetRequiredService<DuckDbDataSourceOptions>());
-			dbSource.InitDb();
-			return dbSource;
-		});
+		services.AddSingleton<IndexingDbSchema>();
 		services.AddHostedService<SecondaryIndexBuilder>();
 		services.AddSingleton<DefaultIndexInFlightRecords>();
 
@@ -54,7 +43,6 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddSingleton<ISecondaryIndexProgressTracker>(_ => new SecondaryIndexProgressTracker(coreMeter, "indexes.secondary"));
 		services.AddSingleton<ISecondaryIndexProcessor>(sp => sp.GetRequiredService<DefaultIndexProcessor>());
 		services.AddSingleton<DefaultIndexProcessor>();
-		services.AddSingleton<StreamIndexProcessor>();
 		services.AddSingleton<ConnectionWithInlineFunctions>();
 
 		services.AddSingleton<ISecondaryIndexReader, DefaultIndexReader>();

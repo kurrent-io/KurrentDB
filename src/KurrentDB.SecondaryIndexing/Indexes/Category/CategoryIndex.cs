@@ -7,15 +7,17 @@ using KurrentDB.Core.Services;
 namespace KurrentDB.SecondaryIndexing.Indexes.Category;
 
 static class CategoryIndex {
+	static readonly int PrefixLength = SystemStreams.CategorySecondaryIndexPrefix.Length;
+
 	public static string Name(string categoryName) => $"{SystemStreams.CategorySecondaryIndexPrefix}{categoryName}";
 
-	public static bool TryParseCategoryName(string streamName, [NotNullWhen(true)] out string? categoryName) {
+	public static bool TryParseCategoryName(string indexName, [NotNullWhen(true)] out string? categoryName) {
 		if (!IsCategoryIndexStream(SystemStreams.CategorySecondaryIndexPrefix)) {
 			categoryName = null;
 			return false;
 		}
 
-		categoryName = streamName[8..];
+		categoryName = indexName[PrefixLength..];
 		return true;
 	}
 

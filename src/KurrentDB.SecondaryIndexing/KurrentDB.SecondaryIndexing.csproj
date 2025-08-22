@@ -14,7 +14,6 @@
 
 	<ItemGroup>
 		<PackageReference Include="Kurrent.Quack" />
-		<PackageReference Include="DuckDB.NET.Data.Full" />
 		<ProjectReference Include="..\KurrentDB.POC.ConnectedSubsystemsPlugin\KurrentDB.POC.ConnectedSubsystemsPlugin.csproj" />
 		<ProjectReference Include="..\KurrentDB.POC.IO.Core\KurrentDB.POC.IO.Core.csproj" />
 	</ItemGroup>

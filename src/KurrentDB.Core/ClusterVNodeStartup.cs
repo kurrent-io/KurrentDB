@@ -7,11 +7,14 @@ using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using DotNext;
 using EventStore.Core.Services.Transport.Grpc;
 using EventStore.Core.Services.Transport.Grpc.Cluster;
 using EventStore.Plugins;
 using EventStore.Plugins.Authentication;
 using EventStore.Plugins.Authorization;
+using Kurrent.Quack;
+using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
@@ -296,6 +299,9 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 			})
 			.AddServiceOptions<Streams<TStreamId>>(options => options.MaxReceiveMessageSize = TFConsts.EffectiveMaxLogRecordSize);
 
+		services.AddSingleton<DuckDBConnectionPoolLifetime>();
+		services.AddSingleton<DuckDBConnectionPool>(sp => sp.GetRequiredService<DuckDBConnectionPoolLifetime>().GetConnectionPool());
+
 		// Ask the node itself to add DI registrations
 		_configureNodeServices(services);
 
@@ -363,4 +369,21 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 	}
 
 	bool OAuthEnabled => _plugableComponents.Any(x => x is { Enabled: true, Name: "OAuthAuthentication" });
+
+	private class DuckDBConnectionPoolLifetime(TFChunkDbConfig config) : Disposable {
+		readonly DuckDBConnectionPool _pool = new($"Data Source={config.Path}/kurrent.ddb");
+
+		public DuckDBConnectionPool GetConnectionPool() => _pool;
+
+		protected override void Dispose(bool disposing) {
+			if (disposing) {
+				using (var connection = _pool.Open()) {
+					connection.Checkpoint();
+				}
+				_pool.Dispose();
+			}
+			base.Dispose(disposing);
+		}
+	}
 }
+

@@ -1,26 +1,33 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Event Store License v2 (see LICENSE.md).
+
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using DotNext;
+using DuckDB.NET.Data;
 using DuckDB.NET.Data.DataChunk.Reader;
 using DuckDB.NET.Data.DataChunk.Writer;
+using DuckDB.NET.Native;
 using Kurrent.Quack;
+using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
+using KurrentDB.SecondaryIndexing.Indexes.Default;
 using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 
 namespace KurrentDB.SecondaryIndexing.Storage;
 
 public class ConnectionWithInlineFunctions : Disposable {
 	readonly IPublisher _publisher;
-	readonly DuckDBAdvancedConnection _connection;
 
 	[Experimental("DuckDBNET001")]
-	public ConnectionWithInlineFunctions(IPublisher publisher, DuckDbDataSource db) {
+	public ConnectionWithInlineFunctions(IPublisher publisher, DuckDBConnectionPool db) {
 		_publisher = publisher;
-		_connection = db.OpenNewConnection();
-		_connection.RegisterScalarFunction<long, string>("kdb_get", GetEvent);
+		Connection = db.Open();
+		Connection.RegisterScalarFunction<long, string>("kdb_get", GetEvent);
 	}
 
-	public DuckDBAdvancedConnection Connection => _connection;
+	public DuckDBAdvancedConnection Connection { get; }
 
 	[Experimental("DuckDBNET001")]
 	void GetEvent(IReadOnlyList<IDuckDBDataReader> readers, IDuckDBDataWriter writer, ulong rowCount) {
@@ -44,7 +51,7 @@ public class ConnectionWithInlineFunctions : Disposable {
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {
-			_connection.Dispose();
+			Connection.Dispose();
 		}
 
 		base.Dispose(disposing);

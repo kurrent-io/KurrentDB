@@ -4,17 +4,18 @@
 using KurrentDB.SecondaryIndexing.Storage;
 using KurrentDB.SecondaryIndexing.Tests.Observability;
 using Dapper;
+using Kurrent.Quack.ConnectionPool;
 
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Assertions.DuckDb;
 
-public class DuckDbIndexingSummaryAssertion(DuckDbDataSource db): IIndexingSummaryAssertion {
+public class DuckDbIndexingSummaryAssertion(DuckDBConnectionPool db): IIndexingSummaryAssertion {
 	public async ValueTask IndexesMatch(IndexingSummary summary) {
 		await AssertCategoriesAreIndexed(summary);
 		await AssertEventTypesAreIndexed(summary);
 	}
 
 	private ValueTask AssertCategoriesAreIndexed(IndexingSummary summary) {
-		using var connection = db.OpenNewConnection();
+		using var connection = db.Open();
 		var categories = connection.Query<string>("select distinct category from idx_all");
 
 		return categories.All(c => summary.Categories.ContainsKey(c))
@@ -23,7 +24,7 @@ public class DuckDbIndexingSummaryAssertion(DuckDbDataSource db): IIndexingSumma
 	}
 
 	private ValueTask AssertEventTypesAreIndexed(IndexingSummary summary) {
-		using var connection = db.OpenNewConnection();
+		using var connection = db.Open();
 		var eventTypes = connection.Query<string>("select distinct event_type from idx_all");
 
 		return eventTypes.All(c => summary.EventTypes.ContainsKey(c))
