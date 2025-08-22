@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Security.Claims;
 using System.Threading;
+using System.Threading.RateLimiting;
 using System.Threading.Tasks;
 using DotNext.Threading;
 using KurrentDB.Common.Utils;
@@ -15,6 +16,7 @@ using KurrentDB.Core.Exceptions;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.RateLimiting;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.TimerService;
@@ -31,6 +33,15 @@ public abstract class StorageReaderWorker {
 	protected static readonly ILogger Log = Serilog.Log.ForContext<StorageReaderWorker>();
 }
 
+//qq why do we have a worker per queue
+// _queueId and expiry log batching seems to be the only reason but i suspect we can do without it
+// maybe we should rename this.. 'StorageReader'?
+//
+// the rate limiting used to be done earlier than here, so by the time we are here we could just
+// consume whatever resources we want. now we need to deal with rate limiting ourselves.
+// hopefully we can push the rate limiting down closer to the actual resources so they can guard themselves
+// they already know what resources they are, so we will just need to tell them what priority our access is
+// bearing in mind it changes slightly for subsequent access.
 public class StorageReaderWorker<TStreamId> :
 	StorageReaderWorker,
 	IAsyncHandle<ClientMessage.ReadEvent>,
@@ -51,6 +62,7 @@ public class StorageReaderWorker<TStreamId> :
 	private readonly ISystemStreamLookup<TStreamId> _systemStreams;
 	private readonly IReadOnlyCheckpoint _writerCheckpoint;
 	private readonly IPublisher _publisher;
+	private readonly PartitionedRateLimiter<Resource> _limiter;
 	private readonly IVirtualStreamReader _virtualStreamReader;
 	private readonly IBinaryInteger<int> _queueId;
 	private const int MaxPageSize = 4096;
@@ -64,6 +76,7 @@ public class StorageReaderWorker<TStreamId> :
 		ISystemStreamLookup<TStreamId> systemStreams,
 		IReadOnlyCheckpoint writerCheckpoint,
 		IVirtualStreamReader virtualStreamReader,
+		PartitionedRateLimiter<Resource> limiter,
 		int queueId) {
 
 		_publisher = publisher;
@@ -72,13 +85,17 @@ public class StorageReaderWorker<TStreamId> :
 		_writerCheckpoint = Ensure.NotNull(writerCheckpoint);
 		_virtualStreamReader = virtualStreamReader;
 		_queueId = queueId;
+		_limiter = limiter; //qq use the limiter
 	}
 
+	//qq the token used to be the token from the reader queue, right now it'll be the token from the main queue, consider.
 	async ValueTask IAsyncHandle<ClientMessage.ReadEvent>.HandleAsync(ClientMessage.ReadEvent msg, CancellationToken token) {
+		//qq we can now sensibly check cancellation & expiry more than just once at the top
 		if (msg.CancellationToken.IsCancellationRequested)
 			return;
 
 		if (msg.Expires < DateTime.UtcNow) {
+			//qq metric for this rather than logs would likely be better
 			if (LogExpiredMessage(msg.Expires))
 				Log.Debug(
 					"Read Event operation has expired for Stream: {stream}, Event Number: {eventNumber}. Operation Expired at {expiryDateTime} after {lifetime:N0} ms.",

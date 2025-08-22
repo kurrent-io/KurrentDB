@@ -109,6 +109,7 @@ public class IndexReader<TStreamId> : IndexReader, IIndexReader<TStreamId> {
 		Ensure.Valid(streamId, _validator);
 		ArgumentOutOfRangeException.ThrowIfLessThan(eventNumber, -1);
 
+		//qq make sure there are enough of these. its probably the same as the number of max concurrent reads plus a few more
 		using var reader = _backend.BorrowReader();
 		return await ReadEventInternal(reader, streamName, streamId, eventNumber, token);
 	}

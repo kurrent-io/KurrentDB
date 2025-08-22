@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Threading;
+using System.Threading.RateLimiting;
 using System.Threading.Tasks;
 using DotNext.Buffers;
 using DotNext.Collections.Concurrent;
@@ -21,6 +22,7 @@ using EventStore.Plugins.Transforms;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Exceptions;
+using KurrentDB.Core.RateLimiting;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.Core.TransactionLog.Scavenging.DbAccess;
 using KurrentDB.Core.Transforms;
@@ -236,6 +238,7 @@ public partial class TFChunk : IChunkBlob {
 
 	// https://learn.microsoft.com/en-US/troubleshoot/windows-server/application-management/operating-system-performance-degrades
 	private readonly bool _reduceFileCachePressure;
+	private readonly PartitionedRateLimiter<(Source, PriorityEx)> _limiter;
 	private readonly IChunkFileSystem _fileSystem;
 
 	private IChunkReadSide _readSide;
@@ -261,6 +264,7 @@ public partial class TFChunk : IChunkBlob {
 		_unbuffered = unbuffered;
 		_writeThrough = writethrough;
 		_reduceFileCachePressure = reduceFileCachePressure;
+		_limiter = null; //qq plumb this in
 		_memStreams = new();
 		_fileStreams = new();
 		_fileSystem = fileSystem;
@@ -1373,6 +1377,24 @@ public partial class TFChunk : IChunkBlob {
 	public void WaitForDestroy(int timeoutMs) {
 		if (!_destroyEvent.Wait(timeoutMs))
 			throw new TimeoutException();
+	}
+
+	//qqqqqqqq we could call GetReaderWorkItem, get the right kind of lease
+	// and wrap the returning thing in some struct.
+	private async ValueTask<ReaderWorkItem> GetReaderWorkItem(PriorityEx priority, CancellationToken token) {
+		var workItem = GetReaderWorkItem();
+		var lease = await _limiter.AcquireAsync(
+			//qq pass priority in //qq fill continued in
+			//qq bad cast, consider if we need a proper conversion or if they should be the same enum
+			((Source)workItem.Source, priority),
+			cancellationToken: token);
+
+		if (!lease.IsAcquired) {
+			ReturnReaderWorkItem(workItem);
+			throw new TooBusyException();
+		}
+
+		return workItem; //qqqqqqq we need to attach to this some way of returning the lease.
 	}
 
 	private ReaderWorkItem GetReaderWorkItem() {
