@@ -91,7 +91,7 @@ public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool db, IReadInd
 			=> new(result, ResolvedEvent.EmptyArray, lastIndexedPosition, false, error);
 	}
 
-	async ValueTask<IReadOnlyList<ResolvedEvent>> GetEventsForwards(
+	private async ValueTask<IReadOnlyList<ResolvedEvent>> GetEventsForwards(
 		IIndexReader<string> indexReader,
 		string id,
 		TFPos startPosition,
@@ -103,7 +103,7 @@ public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool db, IReadInd
 		return events;
 	}
 
-	async ValueTask<IReadOnlyList<ResolvedEvent>> GetEventsBackwards(
+	private async ValueTask<IReadOnlyList<ResolvedEvent>> GetEventsBackwards(
 		IIndexReader<string> indexReader,
 		string id,
 		TFPos startPosition,

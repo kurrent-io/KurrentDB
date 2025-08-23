@@ -54,19 +54,19 @@ public class IndexingTests(IndexingFixture fixture, ITestOutputHelper output)
 		}
 	}
 
-	async Task ValidateRead(string indexStreamName, ResolvedEvent[] expectedEvents) {
-		var results = await Fixture.ReadUntil(indexStreamName, expectedEvents.Length);
+	private async Task ValidateRead(string indexName, ResolvedEvent[] expectedEvents) {
+		var results = await Fixture.ReadUntil(indexName, expectedEvents.Length);
 
 		AssertResolvedEventsMatch(results, expectedEvents);
 	}
 
-	async Task ValidateSubscription(string indexStreamName, ResolvedEvent[] expectedEvents) {
-		var results = await Fixture.SubscribeUntil(indexStreamName, expectedEvents.Length);
+	private async Task ValidateSubscription(string indexName, ResolvedEvent[] expectedEvents) {
+		var results = await Fixture.SubscribeUntil(indexName, expectedEvents.Length);
 
 		AssertResolvedEventsMatch(results, expectedEvents);
 	}
 
-	static void AssertResolvedEventsMatch(List<ResolvedEvent> results, ResolvedEvent[] expectedRecords) {
+	private static void AssertResolvedEventsMatch(List<ResolvedEvent> results, ResolvedEvent[] expectedRecords) {
 		Assert.NotEmpty(results);
 		Assert.Equal(expectedRecords.Length, results.Count);
 

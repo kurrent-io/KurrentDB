@@ -19,15 +19,15 @@ public sealed class SecondaryIndexBuilder :
 	IAsyncHandle<StorageMessage.EventCommitted>,
 	IHostedService,
 	IAsyncDisposable {
-	static readonly ILogger Logger = Log.Logger.ForContext<SecondaryIndexBuilder>();
+	private static readonly ILogger Logger = Log.Logger.ForContext<SecondaryIndexBuilder>();
 
-	readonly SecondaryIndexSubscription _subscription;
-	readonly ISecondaryIndexProcessor _processor;
-	readonly ISecondaryIndexProgressTracker _progressTracker;
-	readonly IClient _client;
-	readonly CancellationTokenSource _readLastEventCts;
+	private readonly SecondaryIndexSubscription _subscription;
+	private readonly ISecondaryIndexProcessor _processor;
+	private readonly ISecondaryIndexProgressTracker _progressTracker;
+	private readonly IClient _client;
+	private readonly CancellationTokenSource _readLastEventCts;
 
-	Task? _readLastEventTask;
+	private Task? _readLastEventTask;
 
 	[Experimental("SECONDARY_INDEX")]
 	public SecondaryIndexBuilder(
@@ -83,7 +83,7 @@ public sealed class SecondaryIndexBuilder :
 		return ValueTask.CompletedTask;
 	}
 
-	async Task ReadLastLogEvent() {
+	private async Task ReadLastLogEvent() {
 		try {
 			_readLastEventCts.CancelAfter(TimeSpan.FromSeconds(120));
 

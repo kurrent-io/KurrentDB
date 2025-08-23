@@ -19,15 +19,15 @@ using static KurrentDB.SecondaryIndexing.Indexes.Default.DefaultSql;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
-class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
-	readonly DefaultIndexInFlightRecords _inFlightRecords;
-	readonly DuckDBAdvancedConnection _connection;
-	readonly ISecondaryIndexProgressTracker _progressTracker;
-	readonly IPublisher _publisher;
-	readonly ILongHasher<string> _hasher;
-	Appender _appender;
+internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
+	private readonly DefaultIndexInFlightRecords _inFlightRecords;
+	private readonly DuckDBAdvancedConnection _connection;
+	private readonly ISecondaryIndexProgressTracker _progressTracker;
+	private readonly IPublisher _publisher;
+	private readonly ILongHasher<string> _hasher;
+	private Appender _appender;
 
-	static readonly ILogger Logger = Log.Logger.ForContext<DefaultIndexProcessor>();
+	private static readonly ILogger Logger = Log.Logger.ForContext<DefaultIndexProcessor>();
 
 	public long LastIndexedPosition { get; private set; }
 
@@ -97,7 +97,7 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		return result != null ? new(result.Value.CommitPosition ?? result.Value.PreparePosition, result.Value.PreparePosition) : TFPos.Invalid;
 	}
 
-	Atomic.Boolean _committing;
+	private Atomic.Boolean _committing;
 
 	public void Commit() {
 		if (IsDisposingOrDisposed || !_committing.FalseToTrue())

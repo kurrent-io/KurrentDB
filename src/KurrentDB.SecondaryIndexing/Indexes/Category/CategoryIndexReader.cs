@@ -12,7 +12,7 @@ using static KurrentDB.SecondaryIndexing.Indexes.Category.CategorySql;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Category;
 
-class CategoryIndexReader(
+internal class CategoryIndexReader(
 	DuckDBConnectionPool db,
 	DefaultIndexProcessor processor,
 	IReadIndex<string> index,
@@ -25,8 +25,8 @@ class CategoryIndexReader(
 
 	protected override IReadOnlyList<IndexQueryRecord> GetIndexRecordsForwards(string id, TFPos startPosition, int maxCount, bool excludeFirst) {
 		var range = excludeFirst
-			? Db.Query<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryExcl>(new(id, startPosition.PreparePosition, maxCount))
-			: Db.Query<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryIncl>(new(id, startPosition.PreparePosition, maxCount));
+			? Db.QueryToList<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryExcl>(new(id, startPosition.PreparePosition, maxCount))
+			: Db.QueryToList<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryIncl>(new(id, startPosition.PreparePosition, maxCount));
 		if (range.Count < maxCount) {
 			// events might be in flight
 			var inFlight = inFlightRecords.GetInFlightRecordsForwards(startPosition, range, maxCount, r => r.Category == id);
@@ -43,8 +43,8 @@ class CategoryIndexReader(
 		}
 
 		var range = excludeFirst
-			? Db.Query<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexBackQueryExcl>(new(id, startPosition.PreparePosition, maxCount))
-			: Db.Query<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexBackQueryIncl>(new(id, startPosition.PreparePosition, maxCount));
+			? Db.QueryToList<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexBackQueryExcl>(new(id, startPosition.PreparePosition, maxCount))
+			: Db.QueryToList<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexBackQueryIncl>(new(id, startPosition.PreparePosition, maxCount));
 
 		if (inFlight.Count > 0) {
 			range.AddRange(inFlight);
@@ -53,7 +53,7 @@ class CategoryIndexReader(
 		return range;
 	}
 
-	public override long GetLastIndexedPosition(string streamId) => processor.LastIndexedPosition;
+	public override long GetLastIndexedPosition(string indexName) => processor.LastIndexedPosition;
 
-	public override bool CanReadIndex(string indexName) => CategoryIndex.IsCategoryIndexStream(indexName);
+	public override bool CanReadIndex(string indexName) => CategoryIndex.IsCategoryIndex(indexName);
 }

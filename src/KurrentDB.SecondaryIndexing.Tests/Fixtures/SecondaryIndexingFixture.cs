@@ -3,7 +3,6 @@
 
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading.Channels;
 using KurrentDB.Core;
 using KurrentDB.Core.ClientPublisher;
 using KurrentDB.Core.Configuration.Sources;
@@ -25,11 +24,12 @@ public class SecondaryIndexingEnabledFixture() : SecondaryIndexingFixture(true);
 public class SecondaryIndexingDisabledFixture() : SecondaryIndexingFixture(false);
 
 public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
-	const string DatabasePathConfig = $"{KurrentConfigurationKeys.Prefix}:Database:Db";
-	const string PluginConfigPrefix = $"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing";
-	const string OptionsConfigPrefix = $"{PluginConfigPrefix}:Options";
-	readonly TimeSpan _defaultTimeout = TimeSpan.FromMilliseconds(30000);
-	protected string? PathName;
+	private const string DatabasePathConfig = $"{KurrentConfigurationKeys.Prefix}:Database:Db";
+	private const string PluginConfigPrefix = $"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing";
+	private const string OptionsConfigPrefix = $"{PluginConfigPrefix}:Options";
+
+	private readonly TimeSpan _defaultTimeout = TimeSpan.FromMilliseconds(30000);
+	private string? _pathName;
 
 	protected SecondaryIndexingFixture(bool isSecondaryIndexingPluginEnabled) {
 		if (!isSecondaryIndexingPluginEnabled) return;
@@ -39,7 +39,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		Configuration = new() {
 			{ $"{PluginConfigPrefix}:Enabled", "true" },
 			{ $"{OptionsConfigPrefix}:{nameof(SecondaryIndexingPluginOptions.CommitBatchSize)}", "500" },
-			{ DatabasePathConfig, PathName }
+			{ DatabasePathConfig, _pathName }
 		};
 
 		OnTearDown = CleanUpDatabaseDirectory;
@@ -92,7 +92,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		return events;
 	}
 
-	async IAsyncEnumerable<ResolvedEvent> SubscribeToIndex(string indexName, int maxCount, [EnumeratorCancellation] CancellationToken ct = default) {
+	private async IAsyncEnumerable<ResolvedEvent> SubscribeToIndex(string indexName, int maxCount, [EnumeratorCancellation] CancellationToken ct = default) {
 		var enumerable = Publisher.SubscribeToIndex(indexName, Position.Start, cancellationToken: ct);
 
 		int count = 0;
@@ -127,11 +127,11 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 
 	private void SetUpDatabaseDirectory() {
 		var typeName = GetType().Name.Length > 30 ? GetType().Name[..30] : GetType().Name;
-		PathName = Path.Combine(Path.GetTempPath(), $"ES-{Guid.NewGuid()}-{typeName}");
+		_pathName = Path.Combine(Path.GetTempPath(), $"ES-{Guid.NewGuid()}-{typeName}");
 
-		Directory.CreateDirectory(PathName);
+		Directory.CreateDirectory(_pathName);
 	}
 
 	private Task CleanUpDatabaseDirectory() =>
-		PathName != null ? DirectoryDeleter.TryForceDeleteDirectoryAsync(PathName, retries: 10) : Task.CompletedTask;
+		_pathName != null ? DirectoryDeleter.TryForceDeleteDirectoryAsync(_pathName, retries: 10) : Task.CompletedTask;
 }

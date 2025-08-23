@@ -10,7 +10,7 @@ using static KurrentDB.SecondaryIndexing.Indexes.EventType.EventTypeSql;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
 
-class EventTypeIndexReader(
+internal class EventTypeIndexReader(
 	DuckDBConnectionPool db,
 	DefaultIndexProcessor processor,
 	IReadIndex<string> index,
@@ -21,8 +21,8 @@ class EventTypeIndexReader(
 
 	protected override IReadOnlyList<IndexQueryRecord> GetIndexRecordsForwards(string id, TFPos startPosition, int maxCount, bool excludeStart) {
 		var range = excludeStart
-			? Db.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryExcl>(new(id, startPosition.PreparePosition, maxCount))
-			: Db.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(new(id, startPosition.PreparePosition, maxCount));
+			? Db.QueryToList<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryExcl>(new(id, startPosition.PreparePosition, maxCount))
+			: Db.QueryToList<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(new(id, startPosition.PreparePosition, maxCount));
 
 		if (range.Count < maxCount) {
 			// events might be in flight
@@ -40,8 +40,8 @@ class EventTypeIndexReader(
 		}
 
 		var range = excludeStart
-			? Db.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexBackQueryExcl>(new(id, startPosition.PreparePosition, maxCount))
-			: Db.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexBackQueryIncl>(new(id, startPosition.PreparePosition, maxCount));
+			? Db.QueryToList<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexBackQueryExcl>(new(id, startPosition.PreparePosition, maxCount))
+			: Db.QueryToList<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexBackQueryIncl>(new(id, startPosition.PreparePosition, maxCount));
 
 		if (inFlight.Count > 0) {
 			range.AddRange(inFlight);
@@ -50,7 +50,7 @@ class EventTypeIndexReader(
 		return range;
 	}
 
-	public override long GetLastIndexedPosition(string streamId) => processor.LastIndexedPosition;
+	public override long GetLastIndexedPosition(string indexName) => processor.LastIndexedPosition;
 
 	public override bool CanReadIndex(string indexName) => EventTypeIndex.IsEventTypeIndex(indexName);
 }

@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Dapper;
-using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Tests.Fakes;
@@ -115,40 +114,40 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		AssertReadEventTypeIndexQueryReturns(eventType3, [200]);
 	}
 
-	void AssertDefaultIndexQueryReturns(List<long> expected) {
-		var records = DuckDb.Query<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexQueryExcl>(new(-1, int.MaxValue));
+	private void AssertDefaultIndexQueryReturns(List<long> expected) {
+		var records = DuckDb.QueryToList<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexQueryExcl>(new(-1, int.MaxValue));
 
 		Assert.Equal(expected, records.Select(x => x.LogPosition));
 	}
 
-	void AssertLastLogPositionQueryReturns(long? expectedLogPosition) {
+	private void AssertLastLogPositionQueryReturns(long? expectedLogPosition) {
 		var actual = DuckDb.QueryFirstOrDefault<LastPositionResult, GetLastLogPositionQuery>();
 
 		Assert.Equal(expectedLogPosition, actual?.PreparePosition);
 	}
 
-	void AssertGetCategoriesQueryReturns(string[] expected) {
+	private void AssertGetCategoriesQueryReturns(string[] expected) {
 		using var connection = DuckDb.Open();
 		var records = connection.Query<string>("select distinct category from idx_all order by log_position");
 
 		Assert.Equal(expected, records);
 	}
 
-	void AssertCategoryIndexQueryReturns(string category, List<long> expected) {
-		var records = DuckDb.Query<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryIncl>(new(category, 0, 32));
+	private void AssertCategoryIndexQueryReturns(string category, List<long> expected) {
+		var records = DuckDb.QueryToList<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryIncl>(new(category, 0, 32));
 
 		Assert.Equal(expected, records.Select(x => x.LogPosition));
 	}
 
-	void AssertGetAllEventTypesQueryReturns(string[] expected) {
+	private void AssertGetAllEventTypesQueryReturns(string[] expected) {
 		using var connection = DuckDb.Open();
 		var records = connection.Query<string>("select distinct event_type from idx_all order by log_position");
 
 		Assert.Equal(expected, records);
 	}
 
-	void AssertReadEventTypeIndexQueryReturns(string eventType, List<long> expected) {
-		var records = DuckDb.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(new(eventType, 0, 32));
+	private void AssertReadEventTypeIndexQueryReturns(string eventType, List<long> expected) {
+		var records = DuckDb.QueryToList<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(new(eventType, 0, 32));
 
 		Assert.Equal(expected, records.Select(x => x.LogPosition));
 	}

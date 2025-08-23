@@ -19,9 +19,6 @@ public class FakeSecondaryIndexProcessor(IList<ResolvedEvent> committed, IList<R
 		}
 	}
 
-	public void HandleStreamMetadataChange(ResolvedEvent evt) {
-	}
-
 	public TFPos GetLastPosition() {
 		if (committed.IsEmpty()) return TFPos.Invalid;
 

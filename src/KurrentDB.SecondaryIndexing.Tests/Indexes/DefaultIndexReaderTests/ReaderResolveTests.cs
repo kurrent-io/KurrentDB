@@ -7,7 +7,7 @@ namespace KurrentDB.SecondaryIndexing.Tests.Indexes.DefaultIndexReaderTests;
 
 public class ReaderResolveTests : IndexTestBase {
 	[Fact]
-	public void CanReadStream_WhenStreamIsDefaultIndexName_ReturnsTrue() {
+	public void CanReadIndex_WhenIndexIsDefaultIndexName_ReturnsTrue() {
 		// When
 		var result = Sut.CanReadIndex(SystemStreams.DefaultSecondaryIndex);
 
@@ -16,7 +16,7 @@ public class ReaderResolveTests : IndexTestBase {
 	}
 
 	[Fact]
-	public void CanReadStream_WhenStreamIsNotDefaultIndexName_ReturnsFalse() {
+	public void CanReadIndex_WhenIndexIsNotDefaultIndexName_ReturnsFalse() {
 		// When
 		var result = Sut.CanReadIndex("other-stream");
 

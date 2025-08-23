@@ -15,8 +15,4 @@ public abstract class SecondaryIndexingTest<TFixture> : IClassFixture<TFixture>
 		Fixture = fixture;
 		Fixture.CaptureTestRun(output);
 	}
-
-	public virtual Task DisposeAsync() {
-		return Task.CompletedTask;
-	}
 }

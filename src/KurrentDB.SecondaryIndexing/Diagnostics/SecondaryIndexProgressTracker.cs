@@ -37,15 +37,15 @@ public class NoOpSecondaryIndexProgressTracker : ISecondaryIndexProgressTracker 
 }
 
 public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
-	static readonly ILogger Log = Serilog.Log.Logger.ForContext<SecondaryIndexProgressTracker>();
-	long _lastIndexedPosition = -1;
-	long _lastCommittedPosition = -1;
-	long _lastLogPosition = -1;
-	long _lastIndexedAt = -1;
-	long _lastAppendedAt = -1;
-	int _pendingEvents;
-	readonly SecondaryIndexTrackers _trackers = new();
-	readonly Stopwatch _sw = new();
+	private static readonly ILogger Log = Serilog.Log.Logger.ForContext<SecondaryIndexProgressTracker>();
+	private long _lastIndexedPosition = -1;
+	private long _lastCommittedPosition = -1;
+	private long _lastLogPosition = -1;
+	private long _lastIndexedAt = -1;
+	private long _lastAppendedAt = -1;
+	private int _pendingEvents;
+	private readonly SecondaryIndexTrackers _trackers = new();
+	private readonly Stopwatch _sw = new();
 
 	public SecondaryIndexProgressTracker(Meter meter, string meterPrefix) {
 		meter.CreateObservableGauge(
@@ -125,7 +125,7 @@ public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
 			eventRecord.TimeStamp.Ticks
 		);
 
-	void RecordAppended(string streamId, string eventType, long logPosition, long timestampTicks) {
+	private void RecordAppended(string streamId, string eventType, long logPosition, long timestampTicks) {
 		try {
 			if (eventType.StartsWith('$') || streamId.StartsWith('$')) {
 				// ignore system events

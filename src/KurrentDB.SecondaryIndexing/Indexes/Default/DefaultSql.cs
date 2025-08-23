@@ -6,7 +6,7 @@ using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
-static class DefaultSql {
+internal static class DefaultSql {
 	public record struct ReadDefaultIndexQueryArgs(long StartPosition, int Count);
 
 	/// <summary>
@@ -72,20 +72,5 @@ static class DefaultSql {
 		public static bool UseStreamingMode => false;
 
 		public static LastPositionResult Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.TryReadInt64());
-	}
-
-	public record struct GetPrevNextPositionQueryArgs(long FirstPosition, long LastPosition);
-
-	public record struct PositionQueryRecord(long RowId, long LogPosition, long? CommitPosition);
-
-	public struct GetPrevNextPositionQuery : IQuery<GetPrevNextPositionQueryArgs, PositionQueryRecord> {
-		public static BindingContext Bind(in GetPrevNextPositionQueryArgs args, PreparedStatement statement)
-			=> new(statement) { args.FirstPosition, args.LastPosition };
-
-		public static ReadOnlySpan<byte> CommandText => "select rowid, log_position, commit_position from idx_all where rowid=$1 or rowid=$2"u8;
-
-		public static bool UseStreamingMode => false;
-
-		public static PositionQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64(), row.TryReadInt64());
 	}
 }

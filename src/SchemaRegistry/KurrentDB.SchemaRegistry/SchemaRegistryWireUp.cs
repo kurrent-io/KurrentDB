@@ -40,8 +40,7 @@ public static class SchemaRegistryWireUp {
 
         services.AddSingleton<ISchemaCompatibilityManager>(new NJsonSchemaCompatibilityManager());
 
-        services.AddDuckDB()
-            .WithKeyedConnectionProvider("schema-registry", $"DataSource=schema-registry-{Identifiers.GenerateShortId()}.ddb");
+        services.AddDuckDBConnectionProvider();
 
         services.AddMessageRegistration();
         services.AddCommandPlane();
@@ -95,7 +94,7 @@ public static class SchemaRegistryWireUp {
 
     static IServiceCollection AddQueryPlane(this IServiceCollection services) {
 	    services.AddSingleton<IHostedService, DuckDBProjectorService>(ctx => {
-		    var connectionProvider = ctx.GetRequiredKeyedService<DuckDBConnectionProvider>("schema-registry");
+		    var connectionProvider = ctx.GetRequiredService<IDuckDBConnectionProvider>();
 		    var projector = new DuckDBProjectorService(
 			    connectionProvider: connectionProvider,
 			    publisher: ctx.GetRequiredService<IPublisher>(),
@@ -108,7 +107,7 @@ public static class SchemaRegistryWireUp {
 	    });
 
         services.AddSingleton<SchemaQueries>(ctx => {
-            var connectionProvider   = ctx.GetRequiredKeyedService<DuckDBConnectionProvider>("schema-registry");
+            var connectionProvider   = ctx.GetRequiredService<IDuckDBConnectionProvider>();
             var compatibilityManager = ctx.GetRequiredService<ISchemaCompatibilityManager>();
             return new SchemaQueries(connectionProvider, compatibilityManager);
         });

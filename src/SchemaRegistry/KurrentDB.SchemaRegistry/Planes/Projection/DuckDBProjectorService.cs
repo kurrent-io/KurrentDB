@@ -16,7 +16,7 @@ public class DuckDBProjectorService : LeaderNodeBackgroundService {
 	public DuckDBProjectorService(
 		IPublisher publisher,
 		ISubscriber subscriber,
-		DuckDBConnectionProvider connectionProvider,
+		IDuckDBConnectionProvider connectionProvider,
 		IConsumerBuilder consumerBuilder,
 		ILoggerFactory loggerFactory,
 		GetNodeSystemInfo getNodeSystemInfo
@@ -26,7 +26,7 @@ public class DuckDBProjectorService : LeaderNodeBackgroundService {
 		LoggerFactory = loggerFactory;
 	}
 
-	DuckDBConnectionProvider ConnectionProvider { get; }
+	IDuckDBConnectionProvider ConnectionProvider { get; }
 	IConsumerBuilder ConsumerBuilder { get; }
 	ILoggerFactory LoggerFactory { get; }
 

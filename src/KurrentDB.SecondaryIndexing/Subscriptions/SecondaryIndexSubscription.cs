@@ -14,17 +14,17 @@ using Serilog;
 
 namespace KurrentDB.SecondaryIndexing.Subscriptions;
 
-public sealed partial class SecondaryIndexSubscription(
+public sealed class SecondaryIndexSubscription(
 	IPublisher publisher,
 	ISecondaryIndexProcessor indexProcessor,
 	SecondaryIndexingPluginOptions options
 ) : IAsyncDisposable {
-	static readonly ILogger Log = Serilog.Log.Logger.ForContext<SecondaryIndexSubscription>();
+	private static readonly ILogger Log = Serilog.Log.Logger.ForContext<SecondaryIndexSubscription>();
 
-	readonly int _commitBatchSize = options.CommitBatchSize;
-	CancellationTokenSource? _cts = new();
-	Enumerator.AllSubscription? _subscription;
-	Task? _processingTask;
+	private readonly int _commitBatchSize = options.CommitBatchSize;
+	private CancellationTokenSource? _cts = new();
+	private Enumerator.AllSubscription? _subscription;
+	private Task? _processingTask;
 
 	public void Subscribe() {
 		var position = indexProcessor.GetLastPosition();
@@ -104,7 +104,7 @@ public sealed partial class SecondaryIndexSubscription(
 		return DisposeCoreAsync();
 	}
 
-	async ValueTask DisposeCoreAsync() {
+	private async ValueTask DisposeCoreAsync() {
 		if (_processingTask != null) {
 			try {
 				await _processingTask.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing |

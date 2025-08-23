@@ -6,7 +6,7 @@ using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Category;
 
-static class CategorySql {
+internal static class CategorySql {
 	/// <summary>
 	/// Get index records for a given category where log position is greater the start position
 	/// </summary>
@@ -76,25 +76,4 @@ static class CategorySql {
 	}
 
 	public record struct CategoryIndexQueryArgs(string Category, long StartPosition, int Count);
-
-	/// <summary>
-	/// Get the list of categories
-	/// </summary>
-	public struct GetCategoriesQuery : IQuery<ReferenceRecord> {
-		public static ReadOnlySpan<byte> CommandText => "select id, name from categories"u8;
-
-		public static ReferenceRecord Parse(ref DataChunk.Row row) => new(row.ReadInt32(), row.ReadString());
-	}
-
-	public record struct AddCategoryStatementArgs(int Id, string Category);
-
-	/// <summary>
-	/// Add a new category
-	/// </summary>
-	public struct AddCategoryStatement : IPreparedStatement<AddCategoryStatementArgs> {
-		public static BindingContext Bind(in AddCategoryStatementArgs args, PreparedStatement statement)
-			=> new(statement) { args.Id, args.Category };
-
-		public static ReadOnlySpan<byte> CommandText => "insert or ignore into categories (id, name) values ($1, $2)"u8;
-	}
 }

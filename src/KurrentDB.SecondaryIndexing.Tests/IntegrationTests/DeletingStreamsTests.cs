@@ -53,19 +53,19 @@ public class DeletingStreamsTests(DeletingStreamsFixture fixture, ITestOutputHel
 		}
 	}
 
-	async Task ValidateRead(string indexStreamName, ResolvedEvent[] expectedEvents) {
-		var results = await Fixture.ReadUntil(indexStreamName, expectedEvents.Length);
+	private async Task ValidateRead(string indexName, ResolvedEvent[] expectedEvents) {
+		var results = await Fixture.ReadUntil(indexName, expectedEvents.Length);
 
 		AssertResolvedEventsMatch(results, expectedEvents);
 	}
 
-	async Task ValidateSubscription(string indexStreamName, ResolvedEvent[] expectedEvents) {
-		var results = await Fixture.SubscribeUntil(indexStreamName, expectedEvents.Length);
+	private async Task ValidateSubscription(string indexName, ResolvedEvent[] expectedEvents) {
+		var results = await Fixture.SubscribeUntil(indexName, expectedEvents.Length);
 
 		AssertResolvedEventsMatch(results, expectedEvents);
 	}
 
-	static void AssertResolvedEventsMatch(List<ResolvedEvent> results, ResolvedEvent[] expectedRecords) {
+	private static void AssertResolvedEventsMatch(List<ResolvedEvent> results, ResolvedEvent[] expectedRecords) {
 		Assert.NotEmpty(results);
 		Assert.Equal(expectedRecords.Length, results.Count);
 
@@ -102,7 +102,7 @@ public class DeletingStreamsTests(DeletingStreamsFixture fixture, ITestOutputHel
 
 [UsedImplicitly]
 public class DeletingStreamsFixture : SecondaryIndexingEnabledFixture {
-	readonly LoadTestPartitionConfig _config = new(
+	private readonly LoadTestPartitionConfig _config = new(
 		PartitionId: 1,
 		StartCategoryIndex: 0,
 		CategoriesCount: 5,
@@ -113,7 +113,7 @@ public class DeletingStreamsFixture : SecondaryIndexingEnabledFixture {
 		TotalMessagesCount: 10
 	);
 
-	readonly MessageGenerator _messageGenerator = new();
+	private readonly MessageGenerator _messageGenerator = new();
 
 	public DeletingStreamsFixture() {
 		OnSetup = async () => {
@@ -128,13 +128,13 @@ public class DeletingStreamsFixture : SecondaryIndexingEnabledFixture {
 		};
 	}
 
-	static string DeletedStreamName = null!;
+	private static string DeletedStreamName = null!;
 
-	readonly List<TestMessageBatch> _appendedBatches = [];
+	private readonly List<TestMessageBatch> _appendedBatches = [];
 
 	public List<TestMessageBatch> ExpectedBatches => _appendedBatches.Where(b => b.StreamName != DeletedStreamName).ToList();
 
-	string GetRandomStreamNameFromAppended() => _appendedBatches.Select(b => b.StreamName).Distinct().ToList().RandomElement();
+	private string GetRandomStreamNameFromAppended() => _appendedBatches.Select(b => b.StreamName).Distinct().ToList().RandomElement();
 
 	public string[] Categories => _appendedBatches.Select(b => b.CategoryName).Distinct().ToArray();
 

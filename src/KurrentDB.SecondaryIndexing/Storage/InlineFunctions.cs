@@ -18,7 +18,7 @@ using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 namespace KurrentDB.SecondaryIndexing.Storage;
 
 public class ConnectionWithInlineFunctions : Disposable {
-	readonly IPublisher _publisher;
+	private readonly IPublisher _publisher;
 
 	[Experimental("DuckDBNET001")]
 	public ConnectionWithInlineFunctions(IPublisher publisher, DuckDBConnectionPool db) {
@@ -40,13 +40,13 @@ public class ConnectionWithInlineFunctions : Disposable {
 		}
 	}
 
-	static string AsDuckEvent(string stream, string eventType, DateTime created, ReadOnlyMemory<byte> data, ReadOnlyMemory<byte> meta) {
+	private static string AsDuckEvent(string stream, string eventType, DateTime created, ReadOnlyMemory<byte> data, ReadOnlyMemory<byte> meta) {
 		var dataString = Helper.UTF8NoBom.GetString(data.Span);
 		var metaString = meta.Length == 0 ? "{}" : Helper.UTF8NoBom.GetString(meta.Span);
 		return $"{{ \"data\": {dataString}, \"metadata\": {metaString}, \"stream_id\": \"{stream}\", \"created\": \"{created:u}\", \"event_type\": \"{eventType}\" }}";
 	}
 
-	static string AsDuckEvent(ResolvedEvent evt)
+	private static string AsDuckEvent(ResolvedEvent evt)
 		=> AsDuckEvent(evt.Event.EventStreamId, evt.Event.EventType, evt.Event.TimeStamp, evt.Event.Data, evt.Event.Metadata);
 
 	protected override void Dispose(bool disposing) {
