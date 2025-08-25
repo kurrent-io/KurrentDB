@@ -10,7 +10,6 @@ using DotNext.Threading;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
-using KurrentDB.Core.DataStructures;
 using KurrentDB.Core.Exceptions;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Messages;

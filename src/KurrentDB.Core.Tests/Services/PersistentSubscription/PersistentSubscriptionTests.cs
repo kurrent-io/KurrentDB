@@ -16,7 +16,6 @@ using KurrentDB.Core.Helpers;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
-using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.PersistentSubscription;
 using KurrentDB.Core.Services.PersistentSubscription.ConsumerStrategy;
 using KurrentDB.Core.Services.Storage.ReaderIndex;

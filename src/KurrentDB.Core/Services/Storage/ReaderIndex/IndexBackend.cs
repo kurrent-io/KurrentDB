@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
-using System.Diagnostics.Metrics;
 using System.Runtime.CompilerServices;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;

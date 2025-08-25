@@ -24,10 +24,6 @@ public class QueuedHandlerThreadPool : IQueuedHandler, IMonitoredQueue, IThreadP
 	public static readonly TimeSpan VerySlowMsgThreshold = TimeSpan.FromSeconds(7);
 	private static readonly ILogger Log = Serilog.Log.ForContext<QueuedHandlerThreadPool>();
 
-	public int MessageCount {
-		get { return _queue.Count; }
-	}
-
 	public string Name {
 		get { return _queueStats.Name; }
 	}
@@ -61,8 +57,8 @@ public class QueuedHandlerThreadPool : IQueuedHandler, IMonitoredQueue, IThreadP
 		TimeSpan? slowMsgThreshold = null,
 		TimeSpan? threadStopWaitTimeout = null,
 		string groupName = null) {
-		Ensure.NotNull(consumer, "consumer");
-		Ensure.NotNull(name, "name");
+		Ensure.NotNull(consumer);
+		Ensure.NotNull(name);
 
 		// Pef: devirt interface
 		_consumer = consumer.HandleAsync;

@@ -5,7 +5,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Core.TransactionLog;
-using YamlDotNet.Core;
 
 namespace KurrentDB.Core.Tests.Fakes;
 

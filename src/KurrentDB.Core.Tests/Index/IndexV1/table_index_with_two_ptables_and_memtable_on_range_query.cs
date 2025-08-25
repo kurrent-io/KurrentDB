@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using KurrentDB.Core.Index;
 using KurrentDB.Core.Index.Hashes;
-using KurrentDB.Core.TransactionLog;
 using NUnit.Framework;
 
 namespace KurrentDB.Core.Tests.Index.IndexV1;

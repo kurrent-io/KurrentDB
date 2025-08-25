@@ -10,7 +10,6 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Helpers;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
-using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Tests.Bus.Helpers;
 using KurrentDB.Core.Tests.Services.TimeService;
 using NUnit.Framework;

@@ -16,7 +16,6 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Tests.Fakes;
 using KurrentDB.Core.Tests.TransactionLog;
 using KurrentDB.Core.Tests.TransactionLog.Scavenging.Helpers;
-using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.TransactionLog.LogRecords;

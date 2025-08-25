@@ -8,7 +8,6 @@ using KurrentDB.Core.Index;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Tests.Fakes;
-using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.Util;
 

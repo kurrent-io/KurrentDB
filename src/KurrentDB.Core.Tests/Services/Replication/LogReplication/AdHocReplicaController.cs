@@ -8,7 +8,6 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
-using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.VNode;
 
 namespace KurrentDB.Core.Tests.Services.Replication.LogReplication;
