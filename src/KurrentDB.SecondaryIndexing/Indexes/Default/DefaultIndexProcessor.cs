@@ -83,7 +83,7 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			row.Append(false); // is_deleted TODO: What happens if the event is deleted before we commit?
 		}
 
-		_inFlightRecords.Append(new(logPosition, categoryId, eventTypeId));
+		_inFlightRecords.Append(logPosition, categoryId, eventTypeId);
 		LastIndexedPosition = resolvedEvent.OriginalPosition!.Value;
 
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(SystemStreams.DefaultSecondaryIndex, resolvedEvent));
