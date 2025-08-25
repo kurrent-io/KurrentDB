@@ -64,7 +64,7 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 
 	private bool _ready;
 	private readonly IAuthorizationProvider _authorizationProvider;
-	private readonly MultiQueuedHandler _httpMessageHandler;
+	private readonly IPublisher _httpMessageHandler;
 	private readonly string? _clusterDns;
 
 	public ClusterVNodeStartup(
@@ -73,7 +73,7 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 		IPublisher mainQueue,
 		IPublisher monitoringQueue,
 		ISubscriber mainBus,
-		MultiQueuedHandler httpMessageHandler,
+		IPublisher httpMessageHandler,
 		IAuthenticationProvider authenticationProvider,
 		IAuthorizationProvider authorizationProvider,
 		IExpiryStrategy expiryStrategy,
@@ -104,9 +104,7 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 	public void Configure(WebApplication app) {
 		_configureNode(app);
 
-		var forcePlainTextMetrics =
-			_metricsConfiguration.LegacyCoreNaming &&
-			_metricsConfiguration.LegacyProjectionsNaming;
+		var forcePlainTextMetrics = _metricsConfiguration is { LegacyCoreNaming: true, LegacyProjectionsNaming: true };
 
 		var internalDispatcher = new InternalDispatcherEndpoint(_mainQueue, _httpMessageHandler);
 		_mainBus.Subscribe(internalDispatcher);

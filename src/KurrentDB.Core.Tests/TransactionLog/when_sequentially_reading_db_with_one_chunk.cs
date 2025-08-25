@@ -69,10 +69,11 @@ public class when_sequentially_reading_db_with_one_chunk<TLogFormat, TStreamId> 
 
 	[Test]
 	public async Task all_records_could_be_read_with_forward_pass() {
-		var seqReader = new TFChunkReader(_db, _db.Config.WriterCheckpoint, 0);
+		var seqReader = new TFChunkReader(_db, _db.Config.WriterCheckpoint);
 
 		int count = 0;
-		while (await seqReader.TryReadNext(CancellationToken.None) is { Success: true } res) {
+		using var cursorScope = new AsyncReadCursor.Scope();
+		while (await seqReader.TryReadNext<AsyncReadCursor>(cursorScope, CancellationToken.None) is { Success: true } res) {
 			var rec = _records[count];
 			Assert.AreEqual(rec, res.LogRecord);
 			Assert.AreEqual(rec.LogPosition, res.RecordPrePosition);
@@ -86,10 +87,11 @@ public class when_sequentially_reading_db_with_one_chunk<TLogFormat, TStreamId> 
 
 	[Test]
 	public async Task only_the_last_record_is_marked_eof() {
-		var seqReader = new TFChunkReader(_db, _db.Config.WriterCheckpoint, 0);
+		var seqReader = new TFChunkReader(_db, _db.Config.WriterCheckpoint);
 
 		int count = 0;
-		while (await seqReader.TryReadNext(CancellationToken.None) is { Success: true } res) {
+		using var cursorScope = new AsyncReadCursor.Scope();
+		while (await seqReader.TryReadNext<AsyncReadCursor>(cursorScope, CancellationToken.None) is { Success: true } res) {
 			++count;
 			Assert.AreEqual(count == RecordsCount, res.Eof);
 		}
@@ -99,11 +101,12 @@ public class when_sequentially_reading_db_with_one_chunk<TLogFormat, TStreamId> 
 
 	[Test]
 	public async Task all_records_could_be_read_with_backward_pass() {
-		var seqReader = new TFChunkReader(_db, _db.Config.WriterCheckpoint, _db.Config.WriterCheckpoint.Read());
+		var seqReader = new TFChunkReader(_db, _db.Config.WriterCheckpoint);
 
 		SeqReadResult res;
 		int count = 0;
-		while ((res = await seqReader.TryReadPrev(CancellationToken.None)).Success) {
+		using var cursorScope = new AsyncReadCursor.Scope(_db.Config.WriterCheckpoint.Read());
+		while ((res = await seqReader.TryReadPrev<AsyncReadCursor>(cursorScope, CancellationToken.None)).Success) {
 			var rec = _records[RecordsCount - count - 1];
 			Assert.AreEqual(rec, res.LogRecord);
 			Assert.AreEqual(rec.LogPosition, res.RecordPrePosition);
@@ -117,10 +120,11 @@ public class when_sequentially_reading_db_with_one_chunk<TLogFormat, TStreamId> 
 
 	[Test]
 	public async Task all_records_could_be_read_doing_forward_backward_pass() {
-		var seqReader = new TFChunkReader(_db, _db.Config.WriterCheckpoint, 0);
+		var seqReader = new TFChunkReader(_db, _db.Config.WriterCheckpoint);
 
 		int count1 = 0;
-		while (await seqReader.TryReadNext(CancellationToken.None) is { Success: true } res) {
+		using var cursorScope = new AsyncReadCursor.Scope();
+		while (await seqReader.TryReadNext<AsyncReadCursor>(cursorScope, CancellationToken.None) is { Success: true } res) {
 			var rec = _records[count1];
 			Assert.AreEqual(rec, res.LogRecord);
 			Assert.AreEqual(rec.LogPosition, res.RecordPrePosition);
@@ -132,7 +136,7 @@ public class when_sequentially_reading_db_with_one_chunk<TLogFormat, TStreamId> 
 		Assert.AreEqual(RecordsCount, count1);
 
 		int count2 = 0;
-		while (await seqReader.TryReadPrev(CancellationToken.None) is { Success: true } res) {
+		while (await seqReader.TryReadPrev<AsyncReadCursor>(cursorScope, CancellationToken.None) is { Success: true } res) {
 			var rec = _records[RecordsCount - count2 - 1];
 			Assert.AreEqual(rec, res.LogRecord);
 			Assert.AreEqual(rec.LogPosition, res.RecordPrePosition);
@@ -146,11 +150,11 @@ public class when_sequentially_reading_db_with_one_chunk<TLogFormat, TStreamId> 
 
 	[Test]
 	public async Task records_can_be_read_forward_starting_from_any_position() {
+		var seqReader = new TFChunkReader(_db, _db.Config.WriterCheckpoint);
 		for (int i = 0; i < RecordsCount; ++i) {
-			var seqReader = new TFChunkReader(_db, _db.Config.WriterCheckpoint, _records[i].LogPosition);
-
 			int count = 0;
-			while (await seqReader.TryReadNext(CancellationToken.None) is { Success: true } res) {
+			using var cursorScope = new AsyncReadCursor.Scope(_records[i].LogPosition);
+			while (await seqReader.TryReadNext<AsyncReadCursor>(cursorScope, CancellationToken.None) is { Success: true } res) {
 				var rec = _records[i + count];
 				Assert.AreEqual(rec, res.LogRecord);
 				Assert.AreEqual(rec.LogPosition, res.RecordPrePosition);
@@ -165,12 +169,12 @@ public class when_sequentially_reading_db_with_one_chunk<TLogFormat, TStreamId> 
 
 	[Test]
 	public async Task records_can_be_read_backward_starting_from_any_position() {
+		var seqReader = new TFChunkReader(_db, _db.Config.WriterCheckpoint);
 		for (int i = 0; i < RecordsCount; ++i) {
-			var seqReader = new TFChunkReader(_db, _db.Config.WriterCheckpoint, _records[i].LogPosition);
-
 			SeqReadResult res;
 			int count = 0;
-			while ((res = await seqReader.TryReadPrev(CancellationToken.None)).Success) {
+			using var cursorScope = new AsyncReadCursor.Scope(_records[i].LogPosition);
+			while ((res = await seqReader.TryReadPrev<AsyncReadCursor>(cursorScope, CancellationToken.None)).Success) {
 				var rec = _records[i - count - 1];
 				Assert.AreEqual(rec, res.LogRecord);
 				Assert.AreEqual(rec.LogPosition, res.RecordPrePosition);

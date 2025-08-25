@@ -59,21 +59,19 @@ public abstract class ScavengeTestScenario<TLogFormat, TStreamId> : Specificatio
 		_dbResult.Db.Config.ChaserCheckpoint.Write(_dbResult.Db.Config.WriterCheckpoint.Read());
 		_dbResult.Db.Config.ChaserCheckpoint.Flush();
 
-		var readerPool = new ObjectPool<ITransactionFileReader>(
-			"ReadIndex readers pool", Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault,
-			() => new TFChunkReader(_dbResult.Db, _dbResult.Db.Config.WriterCheckpoint));
+		var reader = new TFChunkReader(_dbResult.Db, _dbResult.Db.Config.WriterCheckpoint);
 		var lowHasher = _logFormat.LowHasher;
 		var highHasher = _logFormat.HighHasher;
 		var emptyStreamId = _logFormat.EmptyStreamId;
 		var tableIndex = new TableIndex<TStreamId>(indexDirectory, lowHasher, highHasher, emptyStreamId,
 			() => new HashListMemTable(PTableVersions.IndexV3, maxSize: 200),
-			() => new TFReaderLease(readerPool),
+			reader,
 			PTableVersions.IndexV3,
 			5, Constants.PTableMaxReaderCountDefault,
 			maxSizeForMemory: 100,
 			maxTablesPerLevel: 2);
 		_logFormat.StreamNamesProvider.SetTableIndex(tableIndex);
-		var readIndex = new ReadIndex<TStreamId>(new NoopPublisher(), readerPool, tableIndex,
+		var readIndex = new ReadIndex<TStreamId>(new NoopPublisher(), reader, tableIndex,
 			_logFormat.StreamNameIndexConfirmer,
 			_logFormat.StreamIds,
 			_logFormat.StreamNamesProvider,

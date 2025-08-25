@@ -1,11 +1,11 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System;
 using System.Linq;
 using System.Threading.Tasks;
 using KurrentDB.Core.Index;
 using KurrentDB.Core.Index.Hashes;
+using KurrentDB.Core.Tests.Fakes;
 using NUnit.Framework;
 
 namespace KurrentDB.Core.Tests.Index.IndexV1;
@@ -36,7 +36,7 @@ public class table_index_on_range_query : SpecificationWithDirectoryPerTestFixtu
 		_highHasher = new Murmur3AUnsafe();
 		_tableIndex = new TableIndex<string>(PathName, _lowHasher, _highHasher, "",
 			() => new HashListMemTable(version: _ptableVersion, maxSize: 40),
-			() => { throw new InvalidOperationException(); },
+			new FakeTfReader(),
 			_ptableVersion,
 			5, Constants.PTableMaxReaderCountDefault,
 			maxSizeForMemory: 5,

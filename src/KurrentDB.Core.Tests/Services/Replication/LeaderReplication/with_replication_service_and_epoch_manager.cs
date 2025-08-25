@@ -75,7 +75,7 @@ public abstract class with_replication_service_and_epoch_manager<TLogFormat, TSt
 			DbConfig.EpochCheckpoint,
 			Writer,
 			1, 1,
-			() => new TFChunkReader(Db, Db.Config.WriterCheckpoint),
+			new TFChunkReader(Db, Db.Config.WriterCheckpoint),
 			_logFormat.RecordFactory,
 			_logFormat.StreamNameIndex,
 			_logFormat.EventTypeIndex,

@@ -16,6 +16,7 @@ using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.EpochManager;
 using KurrentDB.Core.Tests.TransactionLog;
+using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
@@ -46,7 +47,7 @@ public class when_having_an_epoch_manager_and_empty_tf_log<TLogFormat, TStreamId
 			_writer,
 			initialReaderCount: 1,
 			maxReaderCount: 5,
-			readerFactory: () => new TFChunkReader(_db, _db.Config.WriterCheckpoint),
+			new TFChunkReader(_db, _db.Config.WriterCheckpoint),
 			_logFormat.RecordFactory,
 			_logFormat.StreamNameIndex,
 			_logFormat.EventTypeIndex,
@@ -148,12 +149,13 @@ public class when_having_an_epoch_manager_and_empty_tf_log<TLogFormat, TStreamId
 		// has written epoch information
 		var epochsWritten = _published.OfType<SystemMessage.EpochWritten>().ToArray();
 		Assert.AreEqual(1 + 4 + 16, epochsWritten.Length);
+		using var cursorScope = new AsyncReadCursor.Scope();
 		for (int i = 0; i < epochsWritten.Length; i++) {
-			_reader.Reposition(epochsWritten[i].Epoch.EpochPosition);
-			await _reader.TryReadNext(CancellationToken.None); // read epoch
+			cursorScope.Cursor.Position = epochsWritten[i].Epoch.EpochPosition;
+			await _reader.TryReadNext<AsyncReadCursor>(cursorScope, CancellationToken.None); // read epoch
 			IPrepareLogRecord<TStreamId> epochInfo;
 			while (true) {
-				var result = await _reader.TryReadNext(CancellationToken.None);
+				var result = await _reader.TryReadNext<AsyncReadCursor>(cursorScope, CancellationToken.None);
 				Assert.True(result.Success);
 				if (result.LogRecord is IPrepareLogRecord<TStreamId> prepare) {
 					epochInfo = prepare;

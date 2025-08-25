@@ -62,10 +62,6 @@ public class when_reading_a_single_record<TLogFormat, TStreamId> : Specification
 		await base.TestFixtureTearDown();
 	}
 
-	private TFChunkReader GetTFChunkReader(long from) {
-		return new TFChunkReader(_db, _db.Config.WriterCheckpoint, from);
-	}
-
 	[Test]
 	public void all_records_were_written() {
 		var pos = 0;
@@ -83,7 +79,8 @@ public class when_reading_a_single_record<TLogFormat, TStreamId> : Specification
 
 	[Test]
 	public async Task all_records_can_be_read() {
-		var reader = GetTFChunkReader(0);
+		using var cursorScope = new AsyncReadCursor.Scope();
+		var reader = new TFChunkReader(_db, _db.Config.WriterCheckpoint);
 
 		RecordReadResult res;
 		for (var i = 0; i < RecordsCount; i++) {

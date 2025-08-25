@@ -9,14 +9,12 @@ using KurrentDB.Core.TransactionLog;
 namespace KurrentDB.Core.Tests.Fakes;
 
 public class FakeTfReader : ITransactionFileReader {
-	public void Reposition(long position) {
-		throw new NotImplementedException();
-	}
-
-	public ValueTask<SeqReadResult> TryReadNext(CancellationToken token)
+	public ValueTask<SeqReadResult> TryReadNext<TCursor>(TCursor cursor, CancellationToken token)
+		where TCursor : IReadCursor
 		=> ValueTask.FromException<SeqReadResult>(new NotImplementedException());
 
-	public ValueTask<SeqReadResult> TryReadPrev(CancellationToken token)
+	public ValueTask<SeqReadResult> TryReadPrev<TCursor>(TCursor cursor, CancellationToken token)
+		where TCursor : IReadCursor
 		=> ValueTask.FromException<SeqReadResult>(new NotImplementedException());
 
 	public ValueTask<RecordReadResult> TryReadAt(long position, bool couldBeScavenged, CancellationToken token)

@@ -25,7 +25,7 @@ public record LogFormatAbstractorOptions {
 	public ICheckpoint StreamExistenceFilterCheckpoint { get; init; }
 	public TimeSpan StreamExistenceFilterCheckpointInterval { get; init; } = TimeSpan.FromSeconds(30);
 	public TimeSpan StreamExistenceFilterCheckpointDelay { get; init; } = TimeSpan.FromSeconds(5);
-	public Func<TFReaderLease> TFReaderLeaseFactory { get; init; }
+	public ITransactionFileReader TFReader { get; init; }
 	public IHasher<string> LowHasher { get; init; } = new XXHashUnsafe();
 	public IHasher<string> HighHasher { get; init; } = new Murmur3AUnsafe();
 }
@@ -96,7 +96,7 @@ public class LogV2FormatAbstractorFactory : ILogFormatAbstractorFactory<string> 
 			self.StreamNames = streamNameIndex;
 			self.EventTypes = eventTypeIndex;
 			self.StreamExistenceFilterInitializer = new LogV2StreamExistenceFilterInitializer(
-				options.TFReaderLeaseFactory,
+				options.TFReader,
 				tableIndex);
 		});
 }
