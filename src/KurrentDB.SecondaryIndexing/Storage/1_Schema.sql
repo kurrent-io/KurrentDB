@@ -22,7 +22,11 @@ select
 	event->>'metadata' as metadata
 from (
 	select k.*, kdb_get(k.log_position)::JSON as event
-	from (select event_number, log_position, created from idx_all where log_position >= position) k
+	from (
+		select event_number, log_position, created from idx_all where log_position >= position
+		union
+		select event_number, log_position, created from inflight() where log_position >= position
+	) k
 	order by log_position
 );
 
@@ -37,7 +41,11 @@ select
 	event->>'metadata' as metadata
 from (
 	select k.*, kdb_get(k.log_position)::JSON as event
-	from (select event_number, log_position, created from idx_all) k
+	from (
+		select event_number, log_position, created from idx_all
+		union
+		select event_number, log_position, created from inflight()
+	) k
 	order by log_position
 );
 
@@ -51,9 +59,12 @@ create or replace macro read_category(name, start) as table
 		event->>'data' as data,
 		event->>'metadata' as metadata
 	from (
-		select idx_all.log_position, idx_all.event_number, idx_all.created, kdb_get(log_position)::JSON as event
-		from idx_all
-		where category=name and log_position>=start
+		select log_position, event_number, created, kdb_get(log_position)::JSON as event
+		from (
+			select log_position, event_number, created from idx_all where category=name and log_position>=start
+			union
+			select log_position, event_number, created from inflight() where category=name and log_position>=start
+		)
 		order by log_position
 	);
 
@@ -69,11 +80,11 @@ create or replace macro read_category(name) as table
 	from (
 		select log_position, event_number, created, kdb_get(log_position)::JSON as event
 		from (
-		select log_position, event_number, created from idx_all where category=name
-		union
-		select log_position, event_number, created from inflight() where category=name
-		order by log_position
+			select log_position, event_number, created from idx_all where category=name
+			union
+			select log_position, event_number, created from inflight() where category=name
 		)
+		order by log_position
 	)
 ;
 
@@ -87,9 +98,16 @@ create or replace macro read_stream(name, start) as table
 		event->>'data' as data,
 		event->>'metadata' as metadata
 	from (
-		select idx_all.log_position, idx_all.event_number, idx_all.created, kdb_get(log_position)::JSON as event
-		from idx_all
-		where stream=name and log_position>=start
+		select log_position, event_number, created, kdb_get(log_position)::JSON as event
+		from (
+			select log_position, event_number, created, stream
+			from idx_all
+			where stream=name and log_position>=start
+			union
+			select log_position, event_number, created, stream
+			from inflight() where stream=name and log_position>=start
+			where stream=name
+		)
 		order by log_position
 	);
 
@@ -104,8 +122,15 @@ create or replace macro read_stream(name) as table
 		event->>'metadata' as metadata
 	from (
 		select idx_all.log_position, idx_all.event_number, idx_all.created, kdb_get(log_position)::JSON as event
-		from idx_all
-		where stream=name
+		from (
+			select log_position, event_number, created, stream
+			from idx_all
+			where stream=name
+			union
+			select log_position, event_number, created, stream
+			from inflight() where stream=name
+			where stream=name
+		)
 	) order by event_number
 ;
 
