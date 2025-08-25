@@ -83,7 +83,7 @@ internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions option
 
 		if (count > 0
 		    && TryRead(currentVer, 0, out var current)
-		    && current.LogPosition > startPosition.PreparePosition) {
+		    && current.LogPosition <= startPosition.PreparePosition) {
 
 			long seq = -maxCount - 1;
 			for (int i = count - 1, remaining = maxCount;
