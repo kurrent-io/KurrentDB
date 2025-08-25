@@ -40,13 +40,6 @@ public partial class StorageReaderWorker<TStreamId> :
 		var res = await _secondaryIndexReaders.ReadForwards(msg, token);
 		switch (res.Result) {
 			case ReadIndexResult.Success:
-				if (msg.LongPollTimeout.HasValue && res.IsEndOfStream && res.Events.Count is 0) {
-					PublishLongPoll();
-				} else {
-					msg.Envelope.ReplyWith(res);
-				}
-
-				break;
 			case ReadIndexResult.NotModified:
 			case ReadIndexResult.Error:
 			case ReadIndexResult.InvalidPosition:
@@ -55,18 +48,6 @@ public partial class StorageReaderWorker<TStreamId> :
 				break;
 			default:
 				throw new ArgumentOutOfRangeException(nameof(res.Result), $"Unknown ReadIndexResult: {res.Result}");
-		}
-
-		return;
-
-		void PublishLongPoll() {
-			_publisher.Publish(
-				new SubscriptionMessage.PollStream(
-					SubscriptionsService.AllStreamsSubscriptionId,
-					res.TfLastCommitPosition, null,
-					DateTime.UtcNow + msg.LongPollTimeout.Value, msg
-				)
-			);
 		}
 	}
 
@@ -96,13 +77,6 @@ public partial class StorageReaderWorker<TStreamId> :
 		var res = await _secondaryIndexReaders.ReadBackwards(msg, token);
 		switch (res.Result) {
 			case ReadIndexResult.Success:
-				if (msg.LongPollTimeout.HasValue && res.IsEndOfStream && res.Events.Count is 0) {
-					PublishLongPoll();
-				} else {
-					msg.Envelope.ReplyWith(res);
-				}
-
-				break;
 			case ReadIndexResult.NotModified:
 			case ReadIndexResult.Error:
 			case ReadIndexResult.InvalidPosition:
@@ -111,18 +85,6 @@ public partial class StorageReaderWorker<TStreamId> :
 				break;
 			default:
 				throw new ArgumentOutOfRangeException(nameof(res.Result), $"Unknown ReadIndexResult: {res.Result}");
-		}
-
-		return;
-
-		void PublishLongPoll() {
-			_publisher.Publish(
-				new SubscriptionMessage.PollStream(
-					SubscriptionsService.AllStreamsSubscriptionId,
-					res.TfLastCommitPosition, null,
-					DateTime.UtcNow + msg.LongPollTimeout.Value, msg
-				)
-			);
 		}
 	}
 }
