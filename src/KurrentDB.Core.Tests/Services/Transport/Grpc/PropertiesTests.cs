@@ -209,7 +209,7 @@ public class PropertiesTests : GrpcSpecification<LogFormat.V2, string> {
 			  "my-string":           "hello-world",
 			  "my-boolean":          true,
 			  "my-timestamp":        "2025-07-14T05:05:05Z",
-			  "my-duration":         "00:02:01",
+			  "my-duration":         "PT2M1S",
 			  "$schema.data-format": "{{dataFormat}}",
 			  "$schema.name":        "test-type"
 			}

@@ -47,7 +47,7 @@ public class PropertiesExtendedTests {
 			  "my-boolean":   true,
 			  "my-string":    "hello-world",
 			  "my-timestamp": "2025-07-14T05:05:05Z",
-			  "my-duration":  "00:02:01"
+			  "my-duration":  "PT2M1S"
 			}
 			""";
 

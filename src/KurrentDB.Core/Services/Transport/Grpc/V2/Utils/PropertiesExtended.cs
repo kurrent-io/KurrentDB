@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Xml;
 using static System.Text.Json.JsonSerializer;
 using static KurrentDB.Protobuf.DynamicValue.KindOneofCase;
 
@@ -36,7 +37,7 @@ public sealed partial class Properties {
 				case FloatValue:     Serialize(writer, value.FloatValue, options); break;
 				case DoubleValue:    Serialize(writer, value.DoubleValue, options); break;
 				case TimestampValue: Serialize(writer, value.TimestampValue.ToDateTime(), options); break;
-				case DurationValue:  Serialize(writer, value.DurationValue.ToTimeSpan(), options); break;
+				case DurationValue:  Serialize(writer, XmlConvert.ToString(value.DurationValue.ToTimeSpan()), options); break;
 				case BytesValue:     Serialize(writer, value.BytesValue.Memory, options); break;
 
 				case NullValue or None: writer.WriteNullValue(); break;
