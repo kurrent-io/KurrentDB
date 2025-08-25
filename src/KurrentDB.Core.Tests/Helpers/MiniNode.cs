@@ -16,7 +16,6 @@ using EventStore.Plugins.Authorization;
 using EventStore.Plugins.Subsystems;
 using EventStore.Plugins.Transforms;
 using KurrentDB.Common.Utils;
-using KurrentDB.Core.Authentication;
 using KurrentDB.Core.Authentication.InternalAuthentication;
 using KurrentDB.Core.Authorization;
 using KurrentDB.Core.Authorization.AuthorizationPolicies;
@@ -31,7 +30,6 @@ using KurrentDB.Core.Tests.Index.Hashers;
 using KurrentDB.Core.Tests.Services.Transport.Tcp;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.Util;
-using KurrentDB.SecondaryIndexing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -217,10 +215,7 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 			});
 
 		Node = new ClusterVNode<TStreamId>(options, logFormatFactory,
-			new AuthenticationProviderFactory(
-				c => authenticationProviderFactory ?? new InternalAuthenticationProviderFactory(
-					c,
-					options.DefaultUser)),
+			new(c => authenticationProviderFactory ?? new InternalAuthenticationProviderFactory(c, options.DefaultUser)),
 			new AuthorizationProviderFactory(
 				c => authorizationProviderFactory ?? new InternalAuthorizationProviderFactory(
 					new StaticAuthorizationPolicyRegistry([new LegacyPolicySelectorFactory(

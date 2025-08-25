@@ -20,11 +20,12 @@ namespace KurrentDB.Core;
 
 [PublicAPI]
 public static class PublisherSubscribeExtensions {
-    static readonly IExpiryStrategy DefaultExpiryStrategy = new DefaultExpiryStrategy();
+	static readonly IExpiryStrategy DefaultExpiryStrategy = new DefaultExpiryStrategy();
 
-    const uint DefaultCheckpointIntervalMultiplier = 1;
+	const uint DefaultCheckpointIntervalMultiplier = 1;
 
-	static async IAsyncEnumerable<ReadResponse> SubscribeToAll(this IPublisher publisher, Position? position, IEventFilter filter, uint maxSearchWindow, [EnumeratorCancellation] CancellationToken cancellationToken) {
+	static async IAsyncEnumerable<ReadResponse> SubscribeToAll(this IPublisher publisher, Position? position, IEventFilter filter, uint maxSearchWindow,
+		[EnumeratorCancellation] CancellationToken cancellationToken) {
 		await using var sub = new Enumerator.AllSubscriptionFiltered(
 			bus: publisher,
 			expiryStrategy: DefaultExpiryStrategy,
@@ -69,11 +70,32 @@ public static class PublisherSubscribeExtensions {
 
 		yield break;
 
-        static StreamRevision? StartFrom(StreamRevision? revision) =>
-	        revision == 0 ? null : revision;
+		static StreamRevision? StartFrom(StreamRevision? revision) =>
+			revision == 0 ? null : revision;
 	}
 
-	public static Task SubscribeToAll(this IPublisher publisher, Position? position, IEventFilter filter, uint maxSearchWindow, Channel<ReadResponse> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken) {
+	public static async IAsyncEnumerable<ReadResponse> SubscribeToIndex(this IPublisher publisher, string indexName, Position? position, [EnumeratorCancellation] CancellationToken cancellationToken) {
+		await using var sub = new Enumerator.IndexSubscription(
+			bus: publisher,
+			indexName: indexName,
+			expiryStrategy: DefaultExpiryStrategy,
+			checkpoint: position,
+			user: SystemAccounts.System,
+			requiresLeader: false,
+			cancellationToken: cancellationToken
+		);
+
+		while (!cancellationToken.IsCancellationRequested) {
+			if (!await sub.MoveNextAsync(cancellationToken)) // not sure if we need to retry forever or if the enumerator will do that for us
+				break;
+
+			yield return sub.Current;
+		}
+	}
+
+
+	public static Task SubscribeToAll(this IPublisher publisher, Position? position, IEventFilter filter, uint maxSearchWindow, Channel<ReadResponse> channel, ResiliencePipeline resiliencePipeline,
+		CancellationToken cancellationToken) {
 		_ = Task.Run(async () => {
 			var resilienceContext = ResilienceContextPool.Shared
 				.Get(nameof(SubscribeToAll), cancellationToken);
@@ -95,23 +117,20 @@ public static class PublisherSubscribeExtensions {
 						}
 					},
 					resilienceContext, (
-						Publisher      : publisher,
-						Checkpoint     : position,
-						Filter         : filter,
+						Publisher: publisher,
+						Checkpoint: position,
+						Filter: filter,
 						MaxSearchWindow: maxSearchWindow,
-						Channel        : channel
+						Channel: channel
 					)
 				);
 
 				channel.Writer.TryComplete();
-			}
-			catch (OperationCanceledException) {
+			} catch (OperationCanceledException) {
 				channel.Writer.TryComplete();
-			}
-			catch (Exception ex) {
+			} catch (Exception ex) {
 				channel.Writer.TryComplete(ex);
-			}
-			finally {
+			} finally {
 				ResilienceContextPool.Shared
 					.Return(resilienceContext);
 			}
@@ -120,7 +139,8 @@ public static class PublisherSubscribeExtensions {
 		return Task.CompletedTask;
 	}
 
-	public static Task SubscribeToStream(this IPublisher publisher, StreamRevision? revision, string stream, Channel<ReadResponse> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken) {
+	public static Task SubscribeToStream(this IPublisher publisher, StreamRevision? revision, string stream, Channel<ReadResponse> channel, ResiliencePipeline resiliencePipeline,
+		CancellationToken cancellationToken) {
 		_ = Task.Run(async () => {
 			var resilienceContext = ResilienceContextPool.Shared
 				.Get(nameof(SubscribeToStream), cancellationToken);
@@ -128,32 +148,29 @@ public static class PublisherSubscribeExtensions {
 			try {
 				await resiliencePipeline.ExecuteAsync(
 					static async (ctx, state) => {
-                        await foreach (var response in state.Publisher.SubscribeToStream(state.Stream, state.Checkpoint, ctx.CancellationToken)) {
-	                        // keeping track of the last position before an error occurs
-	                        // so we can let the policy know where to start from
-	                        if (response is ReadResponse.EventReceived eventReceived)
-		                        state.Checkpoint = StreamRevision.FromInt64(eventReceived.Event.OriginalEventNumber);
+						await foreach (var response in state.Publisher.SubscribeToStream(state.Stream, state.Checkpoint, ctx.CancellationToken)) {
+							// keeping track of the last position before an error occurs
+							// so we can let the policy know where to start from
+							if (response is ReadResponse.EventReceived eventReceived)
+								state.Checkpoint = StreamRevision.FromInt64(eventReceived.Event.OriginalEventNumber);
 
-	                        await state.Channel.Writer.WriteAsync(response, ctx.CancellationToken);
-                        }
+							await state.Channel.Writer.WriteAsync(response, ctx.CancellationToken);
+						}
 					},
 					resilienceContext, (
-                        Publisher : publisher,
-                        Checkpoint: revision,
-                        Channel   : channel,
-                        Stream    : stream
+						Publisher: publisher,
+						Checkpoint: revision,
+						Channel: channel,
+						Stream: stream
 					)
 				);
 
 				channel.Writer.TryComplete();
-			}
-			catch (OperationCanceledException) {
+			} catch (OperationCanceledException) {
 				channel.Writer.TryComplete();
-			}
-			catch (Exception ex) {
+			} catch (Exception ex) {
 				channel.Writer.TryComplete(ex);
-			}
-			finally {
+			} finally {
 				ResilienceContextPool.Shared
 					.Return(resilienceContext);
 			}

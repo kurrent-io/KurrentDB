@@ -1,70 +1,92 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
+using DotNext.Runtime.CompilerServices;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Services.UserManagement;
-using KurrentDB.SecondaryIndexing.Indices;
+using KurrentDB.SecondaryIndexing.Indexes;
 using Serilog;
 
 namespace KurrentDB.SecondaryIndexing.Subscriptions;
 
-public class SecondaryIndexSubscription(
+public sealed partial class SecondaryIndexSubscription(
 	IPublisher publisher,
-	ISecondaryIndex index,
-	SecondaryIndexingPluginOptions? options
+	ISecondaryIndexProcessor indexProcessor,
+	SecondaryIndexingPluginOptions options
 ) : IAsyncDisposable {
-	private static readonly ILogger Log = Serilog.Log.Logger.ForContext<SecondaryIndexSubscription>();
-	private readonly int _checkpointCommitBatchSize = options?.CheckpointCommitBatchSize ?? 50000;
-	private readonly uint _checkpointCommitDelayMs = options?.CheckpointCommitDelayMs ?? 10000;
+	static readonly ILogger Log = Serilog.Log.Logger.ForContext<SecondaryIndexSubscription>();
 
-	private readonly CancellationTokenSource _cts = new();
-	private Enumerator.AllSubscription? _subscription;
-	private Task? _processingTask;
-	private SecondaryIndexCheckpointTracker? _checkpointTracker;
+	readonly int _commitBatchSize = options.CommitBatchSize;
+	CancellationTokenSource? _cts = new();
+	Enumerator.AllSubscription? _subscription;
+	Task? _processingTask;
 
-	public async ValueTask Subscribe(CancellationToken cancellationToken) {
-		var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _cts.Token);
-		var position = await index.GetLastPosition(linkedCts.Token);
-		var startFrom = position == null ? Position.Start : Position.FromInt64((long)position, (long)position);
+	public void Subscribe() {
+		var position = indexProcessor.GetLastPosition();
+		var startFrom = position == TFPos.Invalid ? Position.Start : Position.FromInt64(position.CommitPosition, position.PreparePosition);
+		Log.Information("Starting indexing subscription from {StartFrom}", startFrom);
 
-		_checkpointTracker = new SecondaryIndexCheckpointTracker(
-			_checkpointCommitBatchSize,
-			_checkpointCommitDelayMs,
-			ct => index.Processor.Commit(ct),
-			linkedCts.Token
-		);
-
-		_subscription = new Enumerator.AllSubscription(
+		_subscription = new(
 			bus: publisher,
 			expiryStrategy: new DefaultExpiryStrategy(),
 			checkpoint: startFrom,
 			resolveLinks: false,
 			user: SystemAccounts.System,
 			requiresLeader: false,
-			cancellationToken: linkedCts.Token
+			// liveBufferSize: 200,
+			catchUpBufferSize: options.CommitBatchSize * 2,
+			// readBatchSize: 1000,
+			cancellationToken: _cts!.Token
 		);
 
-		_processingTask = Task.Run(() => ProcessEvents(linkedCts.Token), linkedCts.Token);
+		_processingTask = ProcessEvents(_cts.Token);
 	}
 
+	[AsyncMethodBuilder(typeof(SpawningAsyncTaskMethodBuilder))]
 	private async Task ProcessEvents(CancellationToken token) {
-		if (_subscription == null || _checkpointTracker == null)
+		if (_subscription == null)
 			throw new InvalidOperationException("Subscription not initialized");
+
+		var indexedCount = 0;
 
 		while (!token.IsCancellationRequested) {
 			if (!await _subscription.MoveNextAsync())
 				break;
 
+			if (_subscription.Current is ReadResponse.SubscriptionCaughtUp caughtUp) {
+				Log.Debug("Default indexing subscription caught up at {Time}", caughtUp.Timestamp);
+				continue;
+			}
+
 			if (_subscription.Current is not ReadResponse.EventReceived eventReceived)
 				continue;
 
 			try {
-				await index.Processor.Index(eventReceived.Event, token);
+				var resolvedEvent = eventReceived.Event;
 
-				_checkpointTracker.Increment();
+				if (IsRegularStreamMetadataChange(resolvedEvent)) {
+					indexProcessor.HandleStreamMetadataChange(resolvedEvent);
+					continue;
+				}
+
+				if (resolvedEvent.Event.EventType.StartsWith('$') || resolvedEvent.Event.EventStreamId.StartsWith('$')) {
+					// ignore system events
+					continue;
+				}
+
+				indexProcessor.Index(resolvedEvent);
+
+				if (++indexedCount >= _commitBatchSize) {
+					indexProcessor.Commit();
+					indexedCount = 0;
+				}
 			} catch (OperationCanceledException) {
 				break;
 			} catch (Exception e) {
@@ -74,29 +96,36 @@ public class SecondaryIndexSubscription(
 		}
 	}
 
-	public async ValueTask DisposeAsync() {
-		try {
-			await _cts.CancelAsync();
+	public ValueTask DisposeAsync() {
+		// dispose CTS once to deal with the concurrent call to the current method
+		if (Interlocked.Exchange(ref _cts, null) is not { } cts)
+			return ValueTask.CompletedTask;
 
-			if (_processingTask != null) {
-				try {
-					await _processingTask;
-				} catch (OperationCanceledException) {
-					// Expected
-				} catch (Exception ex) {
-					Log.Error(ex, "Error during processing task completion");
-				}
-			}
+		using (cts) {
+			cts.Cancel();
+		}
 
-			if (_checkpointTracker != null) {
-				await _checkpointTracker.DisposeAsync();
-			}
+		return DisposeCoreAsync();
+	}
 
-			if (_subscription != null) {
-				await _subscription.DisposeAsync();
+	async ValueTask DisposeCoreAsync() {
+		if (_processingTask != null) {
+			try {
+				await _processingTask.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing |
+				                               ConfigureAwaitOptions.ContinueOnCapturedContext);
+			} catch (Exception ex) {
+				Log.Error(ex, "Error during processing task completion");
 			}
-		} finally {
-			_cts.Dispose();
+		}
+
+		if (_subscription != null) {
+			await _subscription.DisposeAsync();
 		}
 	}
+
+	private static bool IsRegularStreamMetadataChange(ResolvedEvent resolvedEvent) =>
+		MetadataStreamRegex().IsMatch(resolvedEvent.Event.EventStreamId) && resolvedEvent.Event.EventType == SystemEventTypes.StreamMetadata;
+
+	[GeneratedRegex(@"^\$\$(?!\$)")]
+	private static partial Regex MetadataStreamRegex();
 }
