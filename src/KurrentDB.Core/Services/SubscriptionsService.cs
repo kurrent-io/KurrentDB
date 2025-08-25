@@ -150,7 +150,7 @@ public class SubscriptionsService<TStreamId> :
 	}
 
 	async ValueTask IAsyncHandle<ClientMessage.SubscribeToStream>.HandleAsync(ClientMessage.SubscribeToStream msg, CancellationToken token) {
-		var isVirtualStream = SystemStreams.IsInMemoryStream(msg.EventStreamId);
+		var isVirtualStream = SystemStreams.IsVirtualStream(msg.EventStreamId);
 		var isIndexStream = !isVirtualStream && SystemStreams.IsIndexStream(msg.EventStreamId);
 
 		long? lastEventNumber = null;
@@ -178,7 +178,7 @@ public class SubscriptionsService<TStreamId> :
 	}
 
 	async ValueTask IAsyncHandle<ClientMessage.FilteredSubscribeToStream>.HandleAsync(ClientMessage.FilteredSubscribeToStream msg, CancellationToken token) {
-		var isVirtualStream = SystemStreams.IsInMemoryStream(msg.EventStreamId);
+		var isVirtualStream = SystemStreams.IsVirtualStream(msg.EventStreamId);
 
 		long? lastEventNumber = null;
 		if (isVirtualStream) {
@@ -261,7 +261,7 @@ public class SubscriptionsService<TStreamId> :
 	private bool MissedEvents(string streamId, long lastIndexedPosition) {
 		return SystemStreams.IsIndexStream(streamId)
 			? _lastSeenSecondaryIndexLogPosition > lastIndexedPosition
-			: SystemStreams.IsInMemoryStream(streamId)
+			: SystemStreams.IsVirtualStream(streamId)
 				? _lastSeenInMemoryCommitPosition > lastIndexedPosition
 				: _lastSeenCommitPosition > lastIndexedPosition;
 	}
