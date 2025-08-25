@@ -18,6 +18,7 @@ using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.DuckDB;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
@@ -25,6 +26,7 @@ using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Core.Services.Transport.Grpc.V2;
 using KurrentDB.Core.Services.Transport.Http;
 using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.DuckDB;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -300,6 +302,7 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 			.AddServiceOptions<Streams<TStreamId>>(options => options.MaxReceiveMessageSize = TFConsts.EffectiveMaxLogRecordSize);
 
 		services.AddSingleton<DuckDBConnectionPoolLifetime>();
+		services.AddSingleton<IDuckDBInlineFunction, KdbGetEventInlineFunction>();
 		services.AddSingleton<DuckDBConnectionPool>(sp => sp.GetRequiredService<DuckDBConnectionPoolLifetime>().GetConnectionPool());
 
 		// Ask the node itself to add DI registrations
@@ -344,13 +347,9 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 
 	public void Handle(SystemMessage.BecomeShuttingDown _) => _ready = false;
 
-	private class StatusCheck {
-		private readonly ClusterVNodeStartup<TStreamId> _startup;
-		private readonly int _livecode = 204;
-
-		public StatusCheck(ClusterVNodeStartup<TStreamId> startup) {
-			_startup = startup ?? throw new ArgumentNullException(nameof(startup));
-		}
+	private class StatusCheck(ClusterVNodeStartup<TStreamId> startup) {
+		private readonly ClusterVNodeStartup<TStreamId> _startup = startup ?? throw new ArgumentNullException(nameof(startup));
+		private const int Livecode = 204;
 
 		public void MapLiveness(RouteGroupBuilder builder) {
 			builder.MapMethods("live", [HttpMethod.Get, HttpMethod.Head], Handler);
@@ -360,7 +359,7 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 				context.Response.StatusCode = _startup._ready
 					? context.Request.Query.TryGetValue("liveCode", out var expected) && int.TryParse(expected, out var statusCode)
 						? statusCode
-						: _livecode
+						: Livecode
 					: 503;
 
 				return Task.CompletedTask;
@@ -370,20 +369,5 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 
 	bool OAuthEnabled => _plugableComponents.Any(x => x is { Enabled: true, Name: "OAuthAuthentication" });
 
-	private class DuckDBConnectionPoolLifetime(TFChunkDbConfig config) : Disposable {
-		readonly DuckDBConnectionPool _pool = new($"Data Source={config.Path}/kurrent.ddb");
-
-		public DuckDBConnectionPool GetConnectionPool() => _pool;
-
-		protected override void Dispose(bool disposing) {
-			if (disposing) {
-				using (var connection = _pool.Open()) {
-					connection.Checkpoint();
-				}
-				_pool.Dispose();
-			}
-			base.Dispose(disposing);
-		}
-	}
 }
 

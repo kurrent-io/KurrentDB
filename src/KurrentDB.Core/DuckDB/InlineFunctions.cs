@@ -1,38 +1,30 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
+using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Text;
-using DotNext;
+using System.Linq;
 using DuckDB.NET.Data;
 using DuckDB.NET.Data.DataChunk.Reader;
 using DuckDB.NET.Data.DataChunk.Writer;
-using DuckDB.NET.Native;
-using Kurrent.Quack;
-using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
-using KurrentDB.SecondaryIndexing.Indexes.Default;
+using KurrentDB.DuckDB;
 using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 
-namespace KurrentDB.SecondaryIndexing.Storage;
+namespace KurrentDB.Core.DuckDB;
 
-public class ConnectionWithInlineFunctions : Disposable {
-	private readonly IPublisher _publisher;
-
+public class KdbGetEventInlineFunction(IPublisher publisher) : IDuckDBInlineFunction {
 	[Experimental("DuckDBNET001")]
-	public ConnectionWithInlineFunctions(IPublisher publisher, DuckDBConnectionPool db) {
-		_publisher = publisher;
-		Connection = db.Open();
-		Connection.RegisterScalarFunction<long, string>("kdb_get", GetEvent);
+	public void Register(DuckDBConnection connection) {
+		connection.RegisterScalarFunction<long, string>("kdb_get", GetEvent);
 	}
 
-	public DuckDBAdvancedConnection Connection { get; }
-
 	[Experimental("DuckDBNET001")]
-	void GetEvent(IReadOnlyList<IDuckDBDataReader> readers, IDuckDBDataWriter writer, ulong rowCount) {
+	private void GetEvent(IReadOnlyList<IDuckDBDataReader> readers, IDuckDBDataWriter writer, ulong rowCount) {
 		var positions = Enumerable.Range(0, (int)rowCount).Select(x => (long)readers[0].GetValue<ulong>((ulong)x)).ToArray();
-		var result = _publisher.ReadEvents(positions).ToArray();
+		var result = publisher.ReadEvents(positions).ToArray();
 
 		for (ulong i = 0; i < (ulong)result.Length; i++) {
 			var asString = AsDuckEvent(result[i]);
@@ -48,12 +40,4 @@ public class ConnectionWithInlineFunctions : Disposable {
 
 	private static string AsDuckEvent(ResolvedEvent evt)
 		=> AsDuckEvent(evt.Event.EventStreamId, evt.Event.EventType, evt.Event.TimeStamp, evt.Event.Data, evt.Event.Metadata);
-
-	protected override void Dispose(bool disposing) {
-		if (disposing) {
-			Connection.Dispose();
-		}
-
-		base.Dispose(disposing);
-	}
 }

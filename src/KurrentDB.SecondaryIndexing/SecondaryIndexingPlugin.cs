@@ -7,6 +7,7 @@ using EventStore.Plugins;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services.Storage;
+using KurrentDB.DuckDB;
 using KurrentDB.SecondaryIndexing.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
@@ -43,11 +44,12 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddSingleton<ISecondaryIndexProgressTracker>(_ => new SecondaryIndexProgressTracker(coreMeter, "indexes.secondary"));
 		services.AddSingleton<ISecondaryIndexProcessor>(sp => sp.GetRequiredService<DefaultIndexProcessor>());
 		services.AddSingleton<DefaultIndexProcessor>();
-		services.AddSingleton<ConnectionWithInlineFunctions>();
 
 		services.AddSingleton<ISecondaryIndexReader, DefaultIndexReader>();
 		services.AddSingleton<ISecondaryIndexReader, CategoryIndexReader>();
 		services.AddSingleton<ISecondaryIndexReader, EventTypeIndexReader>();
+
+		services.AddSingleton<IDuckDBInlineFunction, InFlightInlineFunction>();
 	}
 
 	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {

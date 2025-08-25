@@ -10,5 +10,5 @@ public interface ISecondaryIndexProcessor : IDisposable {
 
 	void Index(ResolvedEvent evt);
 
-	TFPos GetLastPosition();
+	(TFPos Position, long RowId) GetLastPosition();
 }

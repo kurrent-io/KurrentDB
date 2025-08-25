@@ -52,7 +52,7 @@
     <PackageVersion Include="Kurrent.Surge.Core" Version="1.1.1-alpha.1.9" />
     <PackageVersion Include="Kurrent.Surge.DataProtection" Version="1.1.1-alpha.1.9" />
     <PackageVersion Include="Kurrent.Surge.DuckDB" Version="1.1.1-alpha.1.9" />
-    <PackageVersion Include="Kurrent.Quack" Version="0.0.0-alpha.57" />
+    <PackageVersion Include="Kurrent.Quack" Version="0.0.0-alpha.61" />
     <PackageVersion Include="KurrentDB.Client" Version="1.0.0" />
     <PackageVersion Include="librdkafka.redist" Version="2.5.0" />
     <PackageVersion Include="LruCacheNet" Version="1.2.0" />

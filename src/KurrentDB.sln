@@ -174,6 +174,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.SecondaryIndexing
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Secondary Indexes", "Secondary Indexes", "{3A1B0CF7-E114-4C30-9D2F-E3F2AE8B5449}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.DuckDB", "KurrentDB.DuckDB\KurrentDB.DuckDB.csproj", "{FEE7911C-BA1B-4409-AAF6-0AA30DDB9FE3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1048,6 +1050,18 @@ Global
 		{3F0FBE06-8EA2-473E-854F-769329981135}.Release|ARM64.Build.0 = Release|ARM64
 		{3F0FBE06-8EA2-473E-854F-769329981135}.Release|x64.ActiveCfg = Release|x64
 		{3F0FBE06-8EA2-473E-854F-769329981135}.Release|x64.Build.0 = Release|x64
+		{FEE7911C-BA1B-4409-AAF6-0AA30DDB9FE3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FEE7911C-BA1B-4409-AAF6-0AA30DDB9FE3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FEE7911C-BA1B-4409-AAF6-0AA30DDB9FE3}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{FEE7911C-BA1B-4409-AAF6-0AA30DDB9FE3}.Debug|ARM64.Build.0 = Debug|ARM64
+		{FEE7911C-BA1B-4409-AAF6-0AA30DDB9FE3}.Debug|x64.ActiveCfg = Debug|x64
+		{FEE7911C-BA1B-4409-AAF6-0AA30DDB9FE3}.Debug|x64.Build.0 = Debug|x64
+		{FEE7911C-BA1B-4409-AAF6-0AA30DDB9FE3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FEE7911C-BA1B-4409-AAF6-0AA30DDB9FE3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FEE7911C-BA1B-4409-AAF6-0AA30DDB9FE3}.Release|ARM64.ActiveCfg = Release|ARM64
+		{FEE7911C-BA1B-4409-AAF6-0AA30DDB9FE3}.Release|ARM64.Build.0 = Release|ARM64
+		{FEE7911C-BA1B-4409-AAF6-0AA30DDB9FE3}.Release|x64.ActiveCfg = Release|x64
+		{FEE7911C-BA1B-4409-AAF6-0AA30DDB9FE3}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

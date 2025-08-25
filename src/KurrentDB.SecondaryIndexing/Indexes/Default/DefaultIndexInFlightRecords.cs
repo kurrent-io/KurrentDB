@@ -9,7 +9,10 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 internal record struct InFlightRecord(
 	long LogPosition,
 	string Category,
-	string EventType
+	string EventType,
+	string StreamName,
+	long EventNumber,
+	long Created
 );
 
 internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions options) {
@@ -20,9 +23,9 @@ internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions option
 
 	public int Count => _count;
 
-	public void Append(long logPosition, string category, string eventType) {
+	public void Append(long logPosition, string category, string eventType, string stream, long eventNumber, long created) {
 		var count = _count;
-		_records[count] = new(logPosition, category, eventType);
+		_records[count] = new(logPosition, category, eventType, stream, eventNumber, created);
 
 		// Fence: make sure that the array modification cannot be done after the increment
 		Volatile.Write(ref _count, count + 1);
@@ -64,7 +67,6 @@ internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions option
 		for (int i = 0, count = Volatile.Read(in _count), remaining = maxCount - fromDb.Count;
 		     i < count && remaining > 0 && TryRead(currentVer, i, out var current);
 		     i++) {
-
 			if (current.LogPosition >= from && query(current)) {
 				remaining--;
 				yield return new(seq++, current.LogPosition);
@@ -84,12 +86,10 @@ internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions option
 		if (count > 0
 		    && TryRead(currentVer, 0, out var current)
 		    && current.LogPosition <= startPosition.PreparePosition) {
-
 			long seq = -maxCount - 1;
 			for (int i = count - 1, remaining = maxCount;
 			     i >= 0 && remaining > 0 && TryRead(currentVer, i, out current);
 			     i--) {
-
 				if (current.LogPosition <= startPosition.PreparePosition && query(current)) {
 					remaining--;
 					yield return new(seq++, current.LogPosition);
@@ -99,4 +99,13 @@ internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions option
 	}
 
 	private static bool True(InFlightRecord record) => true;
+
+	public IEnumerable<InFlightRecord> GetInFlightRecords() {
+		var currentVer = _version;
+		for (int i = 0, count = Volatile.Read(in _count);
+		     i < count && TryRead(currentVer, i, out var current);
+		     i++) {
+			yield return current;
+		}
+	}
 }

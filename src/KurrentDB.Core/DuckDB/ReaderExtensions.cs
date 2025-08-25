@@ -1,12 +1,14 @@
 // Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
+using System;
+using System.Collections.Generic;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Services.UserManagement;
 using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 
-namespace KurrentDB.SecondaryIndexing.Storage;
+namespace KurrentDB.Core.DuckDB;
 
 public static class ReaderExtensions {
 	public static IEnumerable<ResolvedEvent> ReadEvents(this IPublisher publisher, long[] logPositions) {
@@ -30,5 +32,5 @@ public static class ReaderExtensions {
 		}
 	}
 
-	static readonly DateTime DefaultDeadline = DateTime.UtcNow.AddYears(1);
+	private static readonly DateTime DefaultDeadline = DateTime.UtcNow.AddYears(1);
 }

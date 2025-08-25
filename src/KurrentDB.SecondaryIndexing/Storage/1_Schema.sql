@@ -67,10 +67,13 @@ create or replace macro read_category(name) as table
 		event->>'data' as data,
 		event->>'metadata' as metadata
 	from (
-		select idx_all.log_position, idx_all.event_number, idx_all.created, kdb_get(log_position)::JSON as event
-		from idx_all
-		where category=name
+		select log_position, event_number, created, kdb_get(log_position)::JSON as event
+		from (
+		select log_position, event_number, created from idx_all where category=name
+		union
+		select log_position, event_number, created from inflight() where category=name
 		order by log_position
+		)
 	)
 ;
 

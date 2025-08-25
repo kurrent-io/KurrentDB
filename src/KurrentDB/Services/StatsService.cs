@@ -9,7 +9,7 @@ using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.Services;
 
-class StatsService(DuckDBConnectionPool db) {
+internal class StatsService(DuckDBConnectionPool db) {
 	public CombinedStats[] GetStats() {
 		using var connection = db.Open();
 		var categories = connection.Query<CategoryStats>(CategoriesSql);
@@ -17,7 +17,7 @@ class StatsService(DuckDBConnectionPool db) {
 		return categories.GroupJoin(eventTypes, x => x.category, y => y.category, (x, y) => new CombinedStats(x, y.ToArray())).ToArray();
 	}
 
-	const string CategoriesSql =
+	private const string CategoriesSql =
 		"""
 		select
 			category,
@@ -27,7 +27,7 @@ class StatsService(DuckDBConnectionPool db) {
 		group by category
 		""";
 
-	const string CategoriesEventTypesSql =
+	private const string CategoriesEventTypesSql =
 		"""
 		select
 			category,
@@ -63,6 +63,6 @@ class StatsService(DuckDBConnectionPool db) {
 	}
 }
 
-record CombinedStats(StatsService.CategoryStats Category, StatsService.CategoryEventTypeStats[] EventType) {
+internal record CombinedStats(StatsService.CategoryStats Category, StatsService.CategoryEventTypeStats[] EventType) {
 	public long AvgStreamLength => Category.num_events / Category.num_streams;
 }

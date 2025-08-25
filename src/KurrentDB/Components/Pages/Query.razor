@@ -9,16 +9,15 @@
 @using BlazorMonaco
 @using BlazorMonaco.Editor
 @using Dapper
+@using Kurrent.Quack.ConnectionPool
 @using KurrentDB.Components.Dialogs
 @using KurrentDB.Components.Tools
-@using KurrentDB.SecondaryIndexing.Storage
 @using KurrentDB.UI.Services
 @using Microsoft.AspNetCore.Authorization
 @using Serilog
-@inject ConnectionWithInlineFunctions Connection
+@inject DuckDBConnectionPool Db
 @inject Preferences Preferences
 @inject IDialogService DialogService
-@inject NavigationManager Navigation
 @implements IDisposable
 <MudPopoverProvider/>
 <MudDialogProvider />
@@ -121,7 +120,8 @@
 		watch.Start();
 
 		try {
-			var items = (IEnumerable<IDictionary<string, object>>)Connection.Connection.Query(sql);
+			using var scope = Db.Rent(out var connection);
+			var items = (IEnumerable<IDictionary<string, object>>)connection.Query(sql);
 			_items = items.Select(x => x.ToDictionary(y => y.Key, y => y.Value)).ToList();
 			watch.Stop();
 			_message = $"Query executed in {watch}";

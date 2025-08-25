@@ -19,10 +19,11 @@ public class FakeSecondaryIndexProcessor(IList<ResolvedEvent> committed, IList<R
 		}
 	}
 
-	public TFPos GetLastPosition() {
-		if (committed.IsEmpty()) return TFPos.Invalid;
+	public (TFPos, long) GetLastPosition() {
+		if (committed.IsEmpty()) return (TFPos.Invalid, 0);
 
-		return committed.Last().EventPosition ?? TFPos.Invalid;
+		// This won't work because of RowId, but it's not used yet
+		return (committed.Last().EventPosition ?? TFPos.Invalid, 0);
 	}
 
 	public void Commit() {

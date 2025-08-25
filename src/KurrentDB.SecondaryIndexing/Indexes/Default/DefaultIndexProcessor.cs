@@ -47,9 +47,10 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_publisher = publisher;
 		_hasher = hasher;
 
-		var lastPosition = GetLastPosition();
+		var (lastPosition, rowId) = GetLastPosition();
 		Logger.Information("Last known log position: {Position}", lastPosition);
 		LastIndexedPosition = lastPosition.PreparePosition;
+		_rowId = rowId;
 	}
 
 	public void Index(ResolvedEvent resolvedEvent) {
@@ -61,6 +62,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		var streamHash = _hasher.Hash(resolvedEvent.Event.EventStreamId);
 		var eventType = resolvedEvent.Event.EventType;
 		var category = GetStreamCategory(resolvedEvent.Event.EventStreamId);
+		var created = new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds();
 		using (var row = _appender.CreateRow()) {
 			row.Append(logPosition);
 			if (commitPosition.HasValue && logPosition != commitPosition)
@@ -68,7 +70,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			else
 				row.Append(DBNull.Value);
 			row.Append(eventNumber);
-			row.Append(new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds());
+			row.Append(created);
 			row.Append(DBNull.Value); // expires
 			row.Append(resolvedEvent.Event.EventStreamId);
 			row.Append(streamHash);
@@ -77,7 +79,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			row.Append(false); // is_deleted TODO: What happens if the event is deleted before we commit?
 		}
 
-		_inFlightRecords.Append(logPosition, category, eventType);
+		_inFlightRecords.Append(logPosition, category, eventType, resolvedEvent.Event.EventStreamId, eventNumber, created);
 		LastIndexedPosition = resolvedEvent.Event.LogPosition;
 
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(SystemStreams.DefaultSecondaryIndex, resolvedEvent));
@@ -92,12 +94,15 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		}
 	}
 
-	public TFPos GetLastPosition() {
+	public (TFPos, long) GetLastPosition() {
 		var result = _connection.QueryFirstOrDefault<LastPositionResult, GetLastLogPositionQuery>();
-		return result != null ? new(result.Value.CommitPosition ?? result.Value.PreparePosition, result.Value.PreparePosition) : TFPos.Invalid;
+		return result != null ?
+			(new(result.Value.CommitPosition ?? result.Value.PreparePosition, result.Value.PreparePosition), result.Value.RowId)
+			: (TFPos.Invalid, 0);
 	}
 
 	private Atomic.Boolean _committing;
+	private long _rowId;
 
 	public void Commit() {
 		if (IsDisposingOrDisposed || !_committing.FalseToTrue())
