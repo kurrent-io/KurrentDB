@@ -39,13 +39,15 @@ partial class Enumerator {
 
 		public string SubscriptionId { get; }
 
-		public IndexSubscription(IPublisher bus,
+		public IndexSubscription(
+			IPublisher bus,
 			IExpiryStrategy expiryStrategy,
 			Position? checkpoint,
 			string indexName,
 			ClaimsPrincipal user,
 			bool requiresLeader,
 			CancellationToken cancellationToken) {
+
 			_expiryStrategy = expiryStrategy;
 			_subscriptionId = Guid.NewGuid();
 			_bus = Ensure.NotNull(bus);
@@ -305,8 +307,12 @@ partial class Enumerator {
 			Guid correlationId = Guid.NewGuid();
 			Log.Verbose("Subscription {SubscriptionId} to {IndexName} reading next page starting from {Position}.", _subscriptionId, _indexName, startPos);
 
-			if (startPos is { CommitPosition: < 0, PreparePosition: < 0 })
+			var excludeStart = true;
+
+			if (startPos is { CommitPosition: < 0, PreparePosition: < 0 }) {
 				startPos = new TFPos(0, 0);
+				excludeStart = false;
+			}
 
 			_bus.Publish(new ReadIndexEventsForward(
 				internalCorrId: correlationId,
@@ -315,7 +321,7 @@ partial class Enumerator {
 				indexName: _indexName,
 				commitPosition: startPos.CommitPosition,
 				preparePosition: startPos.PreparePosition,
-				excludeStart: true,
+				excludeStart: excludeStart,
 				maxCount: DefaultIndexReadSize,
 				requireLeader: _requiresLeader,
 				validationTfLastCommitPosition: null,
@@ -330,7 +336,7 @@ partial class Enumerator {
 				return ValueTask.CompletedTask;
 			}
 
-			Log.Verbose("Subscription {SubscriptionId} to{IndexName} disposed.", _subscriptionId, _indexName);
+			Log.Verbose("Subscription {SubscriptionId} to {IndexName} disposed.", _subscriptionId, _indexName);
 
 			_disposed = true;
 			Unsubscribe();
