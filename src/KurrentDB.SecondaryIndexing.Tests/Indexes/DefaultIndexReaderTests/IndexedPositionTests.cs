@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using KurrentDB.Core.Data;
 using static KurrentDB.SecondaryIndexing.Tests.Fakes.TestResolvedEventFactory;
 
 namespace KurrentDB.SecondaryIndexing.Tests.Indexes.DefaultIndexReaderTests;
@@ -23,7 +24,7 @@ public class IndexedPositionTests : IndexTestBase {
 		var result = Sut.GetLastIndexedPosition(streamId);
 
 		// Then
-		Assert.Equal(300L, result);
+		Assert.Equal(new TFPos(300L, 300L), result);
 	}
 
 	[Fact]
@@ -35,6 +36,6 @@ public class IndexedPositionTests : IndexTestBase {
 		var result = Sut.GetLastIndexedPosition(streamId);
 
 		// Then
-		Assert.Equal(-1L, result);
+		Assert.Equal(TFPos.HeadOfTf, result);
 	}
 }

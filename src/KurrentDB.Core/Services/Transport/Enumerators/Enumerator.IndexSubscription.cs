@@ -21,31 +21,33 @@ namespace KurrentDB.Core.Services.Transport.Enumerators;
 
 partial class Enumerator {
 	public sealed class IndexSubscription : IAsyncEnumerator<ReadResponse> {
-		static readonly ILogger Log = Serilog.Log.ForContext<IndexSubscription>();
+		private static readonly ILogger Log = Serilog.Log.ForContext<IndexSubscription>();
 
-		readonly IExpiryStrategy _expiryStrategy;
-		readonly Guid _subscriptionId;
-		readonly IPublisher _bus;
-		readonly ClaimsPrincipal _user;
-		readonly bool _requiresLeader;
-		readonly CancellationTokenSource _cts;
-		readonly Channel<ReadResponse> _channel;
-		readonly Channel<(ulong SequenceNumber, ResolvedEvent? ResolvedEvent, TFPos? Checkpoint)> _liveEvents;
+		private readonly IExpiryStrategy _expiryStrategy;
+		private readonly Guid _subscriptionId;
+		private readonly IPublisher _bus;
+		private readonly ClaimsPrincipal _user;
+		private readonly bool _requiresLeader;
+		private readonly CancellationTokenSource _cts;
+		private readonly Channel<ReadResponse> _channel;
+		private readonly Channel<(ulong SequenceNumber, ResolvedEvent? ResolvedEvent, TFPos? Checkpoint)> _liveEvents;
 
-		bool _disposed;
-		readonly string _indexName;
+		private bool _disposed;
+		private readonly string _indexName;
 
 		public ReadResponse Current { get; private set; }
 
-		string SubscriptionId { get; }
+		public string SubscriptionId { get; }
 
-		public IndexSubscription(IPublisher bus,
+		public IndexSubscription(
+			IPublisher bus,
 			IExpiryStrategy expiryStrategy,
 			Position? checkpoint,
 			string indexName,
 			ClaimsPrincipal user,
 			bool requiresLeader,
 			CancellationToken cancellationToken) {
+
 			_expiryStrategy = expiryStrategy;
 			_subscriptionId = Guid.NewGuid();
 			_bus = Ensure.NotNull(bus);
@@ -305,8 +307,12 @@ partial class Enumerator {
 			Guid correlationId = Guid.NewGuid();
 			Log.Verbose("Subscription {SubscriptionId} to {IndexName} reading next page starting from {Position}.", _subscriptionId, _indexName, startPos);
 
-			if (startPos is { CommitPosition: < 0, PreparePosition: < 0 })
+			var excludeStart = true;
+
+			if (startPos is { CommitPosition: < 0, PreparePosition: < 0 }) {
 				startPos = new TFPos(0, 0);
+				excludeStart = false;
+			}
 
 			_bus.Publish(new ReadIndexEventsForward(
 				internalCorrId: correlationId,
@@ -315,7 +321,7 @@ partial class Enumerator {
 				indexName: _indexName,
 				commitPosition: startPos.CommitPosition,
 				preparePosition: startPos.PreparePosition,
-				excludeStart: true,
+				excludeStart: excludeStart,
 				maxCount: DefaultIndexReadSize,
 				requireLeader: _requiresLeader,
 				validationTfLastCommitPosition: null,
@@ -330,7 +336,7 @@ partial class Enumerator {
 				return ValueTask.CompletedTask;
 			}
 
-			Log.Verbose("Subscription {SubscriptionId} to{IndexName} disposed.", _subscriptionId, _indexName);
+			Log.Verbose("Subscription {SubscriptionId} to {IndexName} disposed.", _subscriptionId, _indexName);
 
 			_disposed = true;
 			Unsubscribe();

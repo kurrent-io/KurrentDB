@@ -29,8 +29,8 @@ public sealed partial class SecondaryIndexSubscription(
 	Task? _processingTask;
 
 	public void Subscribe() {
-		var position = indexProcessor.GetLastPosition();
-		var startFrom = position == TFPos.Invalid ? Position.Start : Position.FromInt64(position.CommitPosition, position.PreparePosition);
+		var position = indexProcessor.LastIndexedPosition;
+		var startFrom = position == TFPos.HeadOfTf ? Position.Start : Position.FromInt64(position.CommitPosition, position.PreparePosition);
 		Log.Information("Starting indexing subscription from {StartFrom}", startFrom);
 
 		_subscription = new(

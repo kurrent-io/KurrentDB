@@ -15,7 +15,7 @@ public class CategoryIndexProcessor {
 	readonly IPublisher _publisher;
 
 	int _seq;
-	public long LastIndexedPosition { get; private set; }
+	public TFPos LastIndexedPosition { get; private set; } = TFPos.HeadOfTf;
 
 	public CategoryIndexProcessor(DuckDbDataSource db, IPublisher publisher) {
 		_db = db;
@@ -36,15 +36,17 @@ public class CategoryIndexProcessor {
 			_db.Pool.ExecuteNonQuery<AddCategoryStatementArgs, AddCategoryStatement>(new(categoryId, categoryName));
 		}
 
-		LastIndexedPosition = resolvedEvent.Event.LogPosition;
+		LastIndexedPosition = resolvedEvent.OriginalPosition!.Value;
 
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(CategoryIndex.Name(categoryName), resolvedEvent));
 
 		return categoryId;
 	}
 
-	public int GetCategoryId(string categoryName) =>
-		_categories.TryGetValue(categoryName, out var categoryId) ? categoryId : -1;
+	public bool TryGetCategoryId(string categoryName, out int categoryId) {
+		categoryId = -1;
+		return _categories.TryGetValue(categoryName, out categoryId);
+	}
 
 	private static string GetStreamCategory(string streamName) {
 		var dashIndex = streamName.IndexOf('-');

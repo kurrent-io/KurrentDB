@@ -15,43 +15,31 @@ class EventTypeIndexReader(
 	IReadIndex<string> index,
 	DefaultIndexInFlightRecords inFlightRecords
 ) : SecondaryIndexReaderBase(db, index) {
-	protected override int GetId(string streamName) =>
-		EventTypeIndex.TryParseEventType(streamName, out var eventTypeName)
-			? processor.GetEventTypeId(eventTypeName)
-			: (int)ExpectedVersion.Invalid;
-
-	protected override IReadOnlyList<IndexQueryRecord> GetIndexRecordsForwards(int id, TFPos startPosition, int maxCount, bool excludeStart) {
-		var range = excludeStart
-			? Db.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryExcl>(new(id, startPosition.PreparePosition, maxCount))
-			: Db.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(new(id, startPosition.PreparePosition, maxCount));
-
-		if (range.Count < maxCount) {
-			// events might be in flight
-			var inFlight = inFlightRecords.GetInFlightRecordsForwards(startPosition, range, maxCount, r => r.EventTypeId == id);
-			range.AddRange(inFlight);
-		}
-
-		return range;
+	protected override bool TryGetId(string streamName, out int id) {
+		id = (int)ExpectedVersion.Invalid;
+		return EventTypeIndex.TryParseEventType(streamName, out var eventTypeName)
+		       && processor.TryGetEventTypeId(eventTypeName, out id);
 	}
 
-	protected override IReadOnlyList<IndexQueryRecord> GetIndexRecordsBackwards(int id, TFPos startPosition, int maxCount, bool excludeStart) {
-		var inFlight = inFlightRecords.GetInFlightRecordsBackwards(startPosition, maxCount, r => r.EventTypeId == id).ToList();
-		if (inFlight.Count == maxCount) {
-			return inFlight;
-		}
-
-		var range = excludeStart
-			? Db.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryExcl>(new(id, startPosition.PreparePosition, maxCount))
-			: Db.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(new(id, startPosition.PreparePosition, maxCount));
-
-		if (inFlight.Count > 0) {
-			range.AddRange(inFlight);
-		}
-
-		return range;
+	protected override List<IndexQueryRecord> GetInFlightRecordsForwards(int id, TFPos startPosition, int maxCount, bool excludeFirst) {
+		return inFlightRecords.GetInFlightRecordsForwards(startPosition, maxCount, excludeFirst, r => r.EventTypeId == id).ToList();
 	}
 
-	public override long GetLastIndexedPosition(string streamId) => processor.LastIndexedPosition;
+	protected override List<IndexQueryRecord> GetDatabaseRecordsForwards(int id, TFPos startPosition, int maxCount, bool excludeFirst) {
+		return Db.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQuery>(
+			new(id, startPosition.PreparePosition + (excludeFirst ? 1 : 0), maxCount));
+	}
+
+	protected override List<IndexQueryRecord> GetInFlightRecordsBackwards(int id, TFPos startPosition, int maxCount, bool excludeFirst) {
+		return inFlightRecords.GetInFlightRecordsBackwards(startPosition, maxCount, excludeFirst, r => r.EventTypeId == id).ToList();
+	}
+
+	protected override List<IndexQueryRecord> GetDatabaseRecordsBackwards(int id, TFPos startPosition, int maxCount, bool excludeFirst) {
+		return Db.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQuery>(
+			new(id, startPosition.PreparePosition - (excludeFirst ? 1 : 0), maxCount));
+	}
+
+	public override TFPos GetLastIndexedPosition(string streamId) => processor.LastIndexedPosition;
 
 	public override bool CanReadIndex(string indexName) => EventTypeIndex.IsEventTypeIndex(indexName);
 }

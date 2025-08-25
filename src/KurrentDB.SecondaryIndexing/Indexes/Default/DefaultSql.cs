@@ -10,22 +10,9 @@ static class DefaultSql {
 	public record struct ReadDefaultIndexQueryArgs(long StartPosition, int Count);
 
 	/// <summary>
-	/// Get index records for the default index with log position greater than the start position
-	/// </summary>
-	public struct ReadDefaultIndexQueryExcl : IQuery<ReadDefaultIndexQueryArgs, IndexQueryRecord> {
-		public static BindingContext Bind(in ReadDefaultIndexQueryArgs args, PreparedStatement statement)
-			=> new(statement) { args.StartPosition, args.Count };
-
-		public static ReadOnlySpan<byte> CommandText =>
-			"select rowid, log_position from idx_all where log_position>$1 and is_deleted=false order by rowid limit $2"u8;
-
-		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
-	}
-
-	/// <summary>
 	/// Get index records for the default index with log position greater or equal than the start position
 	/// </summary>
-	public struct ReadDefaultIndexQueryIncl : IQuery<ReadDefaultIndexQueryArgs, IndexQueryRecord> {
+	public struct ReadDefaultIndexQuery : IQuery<ReadDefaultIndexQueryArgs, IndexQueryRecord> {
 		public static BindingContext Bind(in ReadDefaultIndexQueryArgs args, PreparedStatement statement)
 			=> new(statement) { args.StartPosition, args.Count };
 
@@ -36,27 +23,14 @@ static class DefaultSql {
 	}
 
 	/// <summary>
-	/// Get index records for the default index with log position less than the start position
-	/// </summary>
-	public struct ReadDefaultIndexBackQueryExcl : IQuery<ReadDefaultIndexQueryArgs, IndexQueryRecord> {
-		public static BindingContext Bind(in ReadDefaultIndexQueryArgs args, PreparedStatement statement)
-			=> new(statement) { args.StartPosition, args.Count };
-
-		public static ReadOnlySpan<byte> CommandText =>
-			"select rowid, log_position from idx_all where log_position<$1 and is_deleted=false order by rowid desc limit $2"u8;
-
-		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
-	}
-
-	/// <summary>
 	/// Get index records for the default index with log position less or equal than the start position
 	/// </summary>
-	public struct ReadDefaultIndexBackQueryIncl : IQuery<ReadDefaultIndexQueryArgs, IndexQueryRecord> {
+	public struct ReadDefaultIndexBackQuery : IQuery<ReadDefaultIndexQueryArgs, IndexQueryRecord> {
 		public static BindingContext Bind(in ReadDefaultIndexQueryArgs args, PreparedStatement statement)
 			=> new(statement) { args.StartPosition, args.Count };
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select rowid, log_position from idx_all where log_position<=$1 and is_deleted=false order by rowid desc limit $2"u8;
+			"select -rowid, log_position from idx_all where log_position<=$1 and is_deleted=false order by rowid desc limit $2"u8;
 
 		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
 	}

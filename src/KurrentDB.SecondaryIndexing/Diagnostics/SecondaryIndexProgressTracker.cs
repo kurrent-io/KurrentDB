@@ -14,7 +14,7 @@ public interface ISecondaryIndexProgressTracker {
 	void RecordIndexed(ResolvedEvent resolvedEvent);
 	void RecordAppended(Event eventRecord);
 	void RecordAppended(EventRecord eventRecord);
-	void RecordCommit(Func<(long position, int batchSize)> callback);
+	void RecordCommit(Func<(TFPos position, int batchSize)> callback);
 	void RecordError(Exception e);
 }
 
@@ -28,7 +28,7 @@ public class NoOpSecondaryIndexProgressTracker : ISecondaryIndexProgressTracker 
 	public void RecordAppended(EventRecord eventRecord) {
 	}
 
-	public void RecordCommit(Func<(long position, int batchSize)> callback) {
+	public void RecordCommit(Func<(TFPos position, int batchSize)> callback) {
 		callback();
 	}
 
@@ -121,11 +121,11 @@ public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
 		}
 	}
 
-	public void RecordCommit(Func<(long position, int batchSize)> callback) {
+	public void RecordCommit(Func<(TFPos position, int batchSize)> callback) {
 		using var duration = _trackers.Commit.Start();
 		_sw.Restart();
 		var (position, batchSize) = callback();
-		Interlocked.Exchange(ref _lastCommittedPosition, position);
+		Interlocked.Exchange(ref _lastCommittedPosition, position.CommitPosition);
 		Interlocked.Exchange(ref _pendingEvents, 0);
 		_sw.Stop();
 

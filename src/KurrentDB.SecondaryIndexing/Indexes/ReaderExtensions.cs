@@ -14,7 +14,6 @@ static class ReaderExtensions {
 	public static async ValueTask<IReadOnlyList<ResolvedEvent>> ReadRecords(
 		this IIndexReader<string> index,
 		IEnumerable<IndexQueryRecord> indexPrepares,
-		bool ascending,
 		CancellationToken cancellationToken
 	) {
 		using var reader = index.BorrowReader();
@@ -22,7 +21,7 @@ static class ReaderExtensions {
 		var readPrepares = indexPrepares.Select(async x => (Record: x, Prepare: await reader.ReadPrepare<string>(x.LogPosition, cancellationToken)));
 		var prepared = await Task.WhenAll(readPrepares);
 		var recordsQuery = prepared.Where(x => x.Prepare != null);
-		var sorted = ascending ? recordsQuery.OrderBy(x => x.Record.RowId) : recordsQuery.OrderByDescending(x => x.Record.RowId);
+		var sorted = recordsQuery.OrderBy(x => x.Record.RowId);
 		var records = sorted.Select(x => ResolvedEvent.ForUnresolvedEvent(
 			new(x.Prepare!.ExpectedVersion + 1, x.Prepare, x.Prepare!.EventStreamId, x.Prepare!.EventType)
 		));

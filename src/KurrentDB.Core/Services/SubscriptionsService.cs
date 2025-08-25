@@ -64,7 +64,6 @@ public class SubscriptionsService<TStreamId> :
 
 	private long _lastSeenCommitPosition = -1;
 	private long _lastSeenInMemoryCommitPosition = -1;
-	private long _lastSeenSecondaryIndexLogPosition = -1;
 
 	private readonly IPublisher _bus;
 	private readonly IEnvelope _busEnvelope;
@@ -72,7 +71,7 @@ public class SubscriptionsService<TStreamId> :
 	private readonly IReadIndex<TStreamId> _readIndex;
 	private readonly IVirtualStreamReader _virtualStreamReader;
 	private readonly IAuthorizationProvider _authorizationProvider;
-	readonly SecondaryIndexReaders _secondaryIndexReaders;
+	private readonly SecondaryIndexReaders _secondaryIndexReaders;
 
 	public SubscriptionsService(
 		IPublisher bus,
@@ -136,7 +135,12 @@ public class SubscriptionsService<TStreamId> :
 			return;
 		}
 
-		var lastIndexedPos = _secondaryIndexReaders.GetLastIndexedPosition(msg.IndexName);
+		// note: we ignore the PreparePosition here.
+		// if the LastIndexedPosition was in the middle of an explicit transaction, events *after* the explicit transaction will be sent to the live subscription
+		// it's fine if some events are missed as it's not a strict checkpoint - it is a start position for the live subscription to the stream
+		var lastIndexedPos = _secondaryIndexReaders
+			.GetLastIndexedPosition(msg.IndexName)
+			.CommitPosition;
 
 		SubscribeToStream(msg.CorrelationId, msg.Envelope, msg.ConnectionId, msg.IndexName, false, lastIndexedPos, null, msg.User, null);
 
@@ -145,13 +149,17 @@ public class SubscriptionsService<TStreamId> :
 	}
 
 	async ValueTask IAsyncHandle<ClientMessage.SubscribeToStream>.HandleAsync(ClientMessage.SubscribeToStream msg, CancellationToken token) {
-		var isVirtualStream = SystemStreams.IsInMemoryStream(msg.EventStreamId);
-		var isIndexStream = !isVirtualStream && SystemStreams.IsIndexStream(msg.EventStreamId);
+		if (SystemStreams.IsIndexStream(msg.EventStreamId)) {
+			msg.Envelope.ReplyWith(new ClientMessage.SubscriptionDropped(Guid.Empty, SubscriptionDropReason.NotFound));
+			return;
+		}
+
+		var isVirtualStream = SystemStreams.IsVirtualStream(msg.EventStreamId);
 
 		long? lastEventNumber = null;
 		if (isVirtualStream) {
 			lastEventNumber = _virtualStreamReader.GetLastEventNumber(msg.EventStreamId);
-		} else if (!msg.EventStreamId.IsEmptyString() && !isIndexStream) {
+		} else if (!msg.EventStreamId.IsEmptyString()) {
 			lastEventNumber = await _readIndex.GetStreamLastEventNumber(_readIndex.GetStreamId(msg.EventStreamId), token);
 		}
 
@@ -173,7 +181,12 @@ public class SubscriptionsService<TStreamId> :
 	}
 
 	async ValueTask IAsyncHandle<ClientMessage.FilteredSubscribeToStream>.HandleAsync(ClientMessage.FilteredSubscribeToStream msg, CancellationToken token) {
-		var isVirtualStream = SystemStreams.IsInMemoryStream(msg.EventStreamId);
+		if (SystemStreams.IsIndexStream(msg.EventStreamId)) {
+			msg.Envelope.ReplyWith(new ClientMessage.SubscriptionDropped(Guid.Empty, SubscriptionDropReason.NotFound));
+			return;
+		}
+
+		var isVirtualStream = SystemStreams.IsVirtualStream(msg.EventStreamId);
 
 		long? lastEventNumber = null;
 		if (isVirtualStream) {
@@ -254,11 +267,9 @@ public class SubscriptionsService<TStreamId> :
 	}
 
 	private bool MissedEvents(string streamId, long lastIndexedPosition) {
-		return SystemStreams.IsIndexStream(streamId)
-			? _lastSeenSecondaryIndexLogPosition > lastIndexedPosition
-			: SystemStreams.IsInMemoryStream(streamId)
-				? _lastSeenInMemoryCommitPosition > lastIndexedPosition
-				: _lastSeenCommitPosition > lastIndexedPosition;
+		return SystemStreams.IsVirtualStream(streamId)
+			? _lastSeenInMemoryCommitPosition > lastIndexedPosition
+			: _lastSeenCommitPosition > lastIndexedPosition;
 	}
 
 	private void SubscribePoller(string streamId, DateTime expireAt, long lastIndexedPosition, long? lastEventNumber, Message originalRequest) {
@@ -306,9 +317,6 @@ public class SubscriptionsService<TStreamId> :
 				streamReq.ReplyOnExpired),
 			ClientMessage.ReadAllEventsForward allReq => new ClientMessage.ReadAllEventsForward(allReq.InternalCorrId, allReq.CorrelationId, allReq.Envelope, allReq.CommitPosition,
 				allReq.PreparePosition, allReq.MaxCount, allReq.ResolveLinkTos, allReq.RequireLeader, allReq.ValidationTfLastCommitPosition, allReq.User, allReq.ReplyOnExpired),
-			ClientMessage.ReadIndexEventsForward indexReq => new ClientMessage.ReadIndexEventsForward(indexReq.InternalCorrId, indexReq.CorrelationId, indexReq.Envelope, indexReq.IndexName,
-				indexReq.CommitPosition, indexReq.PreparePosition, indexReq.ExcludeStart, indexReq.MaxCount, indexReq.RequireLeader, indexReq.ValidationTfLastCommitPosition, indexReq.User,
-				indexReq.ReplyOnExpired),
 			_ => throw new Exception($"Unexpected read request of type {originalRequest.GetType()} for long polling: {originalRequest}.")
 		};
 	}
@@ -335,35 +343,22 @@ public class SubscriptionsService<TStreamId> :
 	}
 
 	ValueTask IAsyncHandle<StorageMessage.SecondaryIndexCommitted>.HandleAsync(StorageMessage.SecondaryIndexCommitted message, CancellationToken token) {
-		if (ProcessSecondaryIndexEvent(message.IndexName, message.Event)) {
+		var indexName = message.IndexName;
+		var indexEvent = message.Event;
+		var logPosition = indexEvent.OriginalPosition!.Value.CommitPosition;
+
+		if (!_subscriptionTopics.TryGetValue(indexName, out var subscriptions))
 			return ValueTask.CompletedTask;
+
+		for (int i = 0, n = subscriptions.Count; i < n; i++) {
+			var sub = subscriptions[i];
+			if (logPosition <= sub.LastIndexedPosition)
+				continue;
+
+			sub.Envelope.ReplyWith(new ClientMessage.StreamEventAppeared(sub.CorrelationId, indexEvent));
 		}
 
-		// I don't think that we need to handle that for now, but
-		// TODO: check if we can skip it
-		// ProcessStreamMetadataChanges(message.Event.EventStreamId);
-		// ProcessSettingsStreamChanges(message.Event.EventStreamId);
-
-		ReissueReadsFor(message.IndexName, message.Event.Event.LogPosition, long.MaxValue);
 		return ValueTask.CompletedTask;
-
-		bool ProcessSecondaryIndexEvent(string indexName, ResolvedEvent resolvedEvent) {
-			var indexEvent = resolvedEvent.Event;
-			var logPosition = _lastSeenSecondaryIndexLogPosition = indexEvent.LogPosition;
-
-			if (!_subscriptionTopics.TryGetValue(indexName, out var subscriptions))
-				return true;
-
-			for (int i = 0, n = subscriptions.Count; i < n; i++) {
-				var sub = subscriptions[i];
-				if (logPosition <= sub.LastIndexedPosition)
-					continue;
-
-				sub.Envelope.ReplyWith(new ClientMessage.StreamEventAppeared(sub.CorrelationId, resolvedEvent));
-			}
-
-			return false;
-		}
 	}
 
 	private async ValueTask<ResolvedEvent?> ProcessEventCommited(string eventStreamId, long commitPosition, EventRecord evnt, ResolvedEvent? resolvedEvent, CancellationToken token) {

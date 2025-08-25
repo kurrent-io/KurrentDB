@@ -15,7 +15,7 @@ static class EventTypeIndex {
 			return false;
 		}
 
-		eventTypeName = streamName[8..];
+		eventTypeName = streamName[SystemStreams.EventTypeSecondaryIndexPrefix.Length..];
 		return true;
 	}
 

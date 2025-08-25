@@ -216,7 +216,7 @@ public class ClusterVNode<TStreamId> :
 	private int _stopCalled;
 	private int _reloadingConfig;
 	private PosixSignalRegistration _reloadConfigSignalRegistration;
-	readonly CompositeHasher<TStreamId> _longHasher;
+	private readonly CompositeHasher<TStreamId> _longHasher;
 
 	public override CertificateDelegates.ClientCertificateValidator InternalClientCertificateValidator => _internalClientCertificateValidator;
 	public override Func<X509Certificate2> CertificateSelector => _certificateSelector;
@@ -1278,8 +1278,8 @@ public class ClusterVNode<TStreamId> :
 			// so that we don't keep hold of memory used for the page caches between scavenges
 			var backendPool = new ObjectPool<IScavengeStateBackend<TStreamId>>(
 				objectPoolName: "scavenge backend pool",
-				initialCount: 0, maxCount // so that factory is not called on the main queue
-				: TFChunkScavenger.MaxThreadCount + 1,
+				initialCount: 0, // so that factory is not called on the main queue
+				maxCount : TFChunkScavenger.MaxThreadCount + 1,
 				factory: () => {
 					// not on the main queue
 					var scavengeDirectory = Path.Combine(indexPath, "scavenging");
@@ -1395,11 +1395,11 @@ public class ClusterVNode<TStreamId> :
 				cleaner: cleaner,
 				scavengePointSource: scavengePointSource,
 				scavengerLogger: scavengerLogger,
-				statusTracker: trackers.ScavengeStatusTracker, thresholdForNewScavenge
+				statusTracker: trackers.ScavengeStatusTracker,
 				// threshold < 0: execute all chunks, even those with no weight
 				// threshold = 0: execute all chunks with weight greater than 0
 				// threshold > 0: execute all chunks above a certain weight
-				: optionsCalculator.ChunkExecutionThreshold,
+				thresholdForNewScavenge : optionsCalculator.ChunkExecutionThreshold,
 				syncOnly: message.SyncOnly,
 				getThrottleStats: () => throttle.PrettyPrint());
 		});
