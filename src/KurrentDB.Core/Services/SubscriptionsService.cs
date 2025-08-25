@@ -150,13 +150,17 @@ public class SubscriptionsService<TStreamId> :
 	}
 
 	async ValueTask IAsyncHandle<ClientMessage.SubscribeToStream>.HandleAsync(ClientMessage.SubscribeToStream msg, CancellationToken token) {
+		if (SystemStreams.IsIndexStream(msg.EventStreamId)) {
+			msg.Envelope.ReplyWith(new ClientMessage.SubscriptionDropped(Guid.Empty, SubscriptionDropReason.NotFound));
+			return;
+		}
+
 		var isVirtualStream = SystemStreams.IsVirtualStream(msg.EventStreamId);
-		var isIndexStream = !isVirtualStream && SystemStreams.IsIndexStream(msg.EventStreamId);
 
 		long? lastEventNumber = null;
 		if (isVirtualStream) {
 			lastEventNumber = _virtualStreamReader.GetLastEventNumber(msg.EventStreamId);
-		} else if (!msg.EventStreamId.IsEmptyString() && !isIndexStream) {
+		} else if (!msg.EventStreamId.IsEmptyString()) {
 			lastEventNumber = await _readIndex.GetStreamLastEventNumber(_readIndex.GetStreamId(msg.EventStreamId), token);
 		}
 
@@ -178,6 +182,11 @@ public class SubscriptionsService<TStreamId> :
 	}
 
 	async ValueTask IAsyncHandle<ClientMessage.FilteredSubscribeToStream>.HandleAsync(ClientMessage.FilteredSubscribeToStream msg, CancellationToken token) {
+		if (SystemStreams.IsIndexStream(msg.EventStreamId)) {
+			msg.Envelope.ReplyWith(new ClientMessage.SubscriptionDropped(Guid.Empty, SubscriptionDropReason.NotFound));
+			return;
+		}
+
 		var isVirtualStream = SystemStreams.IsVirtualStream(msg.EventStreamId);
 
 		long? lastEventNumber = null;
