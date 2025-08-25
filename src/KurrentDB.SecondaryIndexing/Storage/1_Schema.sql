@@ -100,13 +100,9 @@ create or replace macro read_stream(name, start) as table
 	from (
 		select log_position, event_number, created, kdb_get(log_position)::JSON as event
 		from (
-			select log_position, event_number, created, stream
-			from idx_all
-			where stream=name and log_position>=start
+			select log_position, event_number, created from idx_all where stream=name and log_position>=start
 			union
-			select log_position, event_number, created, stream
-			from inflight() where stream=name and log_position>=start
-			where stream=name
+			select log_position, event_number, created from inflight() where stream=name and log_position>=start
 		)
 		order by log_position
 	);
@@ -121,15 +117,11 @@ create or replace macro read_stream(name) as table
 		event->>'data' as data,
 		event->>'metadata' as metadata
 	from (
-		select idx_all.log_position, idx_all.event_number, idx_all.created, kdb_get(log_position)::JSON as event
+		select log_position, event_number, created, kdb_get(log_position)::JSON as event
 		from (
-			select log_position, event_number, created, stream
-			from idx_all
-			where stream=name
+			select log_position, event_number, created from idx_all where stream=name
 			union
-			select log_position, event_number, created, stream
-			from inflight() where stream=name
-			where stream=name
+			select log_position, event_number, created from inflight() where stream=name where stream=name
 		)
 	) order by event_number
 ;
