@@ -7,7 +7,7 @@ using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Tests.Bus.Helpers;
 using NUnit.Framework;
 
-namespace KurrentDB.Core.Tests.Bus;
+namespace KurrentDB.Projections.Core.Tests.Bus;
 
 [TestFixture]
 public abstract class queued_handler_should : QueuedHandlerTestWithNoopConsumer {
