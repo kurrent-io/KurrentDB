@@ -111,7 +111,7 @@ partial class Enumerator {
 			Deadline = deadline;
 			CancellationToken = cancellationToken;
 
-			ReadPage(position, false);
+			ReadPage(position, excludeStart: false);
 		}
 
 		public ValueTask DisposeAsync() {
@@ -149,13 +149,12 @@ partial class Enumerator {
 				switch (completed.Result) {
 					case ReadIndexResult.Success:
 						foreach (var @event in completed.Events) {
-							if (readCount >= MaxCount) {
+							await _channel.Writer.WriteAsync(new ReadResponse.EventReceived(@event), ct);
+
+							if (++readCount >= MaxCount) {
 								_channel.Writer.TryComplete();
 								return;
 							}
-
-							await _channel.Writer.WriteAsync(new ReadResponse.EventReceived(@event), ct);
-							readCount++;
 						}
 
 						if (completed.IsEndOfStream || completed.Events.Count == 0) {
@@ -164,7 +163,7 @@ partial class Enumerator {
 						}
 
 						var last = completed.Events[^1].EventPosition!.Value;
-						ReadPage(Position.FromInt64(last.CommitPosition, last.PreparePosition), true, readCount);
+						ReadPage(Position.FromInt64(last.CommitPosition, last.PreparePosition), excludeStart: true, readCount);
 						return;
 					case ReadIndexResult.IndexNotFound:
 						_channel.Writer.TryComplete(new ReadResponseException.StreamNotFound(IndexName));
