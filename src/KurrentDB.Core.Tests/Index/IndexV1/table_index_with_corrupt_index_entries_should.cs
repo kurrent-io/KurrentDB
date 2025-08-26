@@ -8,7 +8,6 @@ using System.Linq;
 using KurrentDB.Core.Exceptions;
 using KurrentDB.Core.Index;
 using KurrentDB.Core.Index.Hashes;
-using KurrentDB.Core.TransactionLog;
 using NUnit.Framework;
 
 namespace KurrentDB.Core.Tests.Index.IndexV1;
