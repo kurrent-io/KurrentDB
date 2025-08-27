@@ -24,7 +24,7 @@ public class EventTypeIndexProcessor {
 		var ids = db.Pool.Query<ReferenceRecord, GetAllEventTypesQuery>();
 
 		_eventTypes = ids.ToDictionary(x => x.Name, x => x.Id);
-		_seq = _eventTypes.Count > 0 ? _eventTypes.Values.Max() - 1 : -1;
+		_seq = _eventTypes.Count > 0 ? _eventTypes.Values.Max() : -1;
 	}
 
 	public int Index(ResolvedEvent resolvedEvent) {

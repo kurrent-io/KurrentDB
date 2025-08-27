@@ -24,7 +24,7 @@ public class CategoryIndexProcessor {
 		var ids = db.Pool.Query<ReferenceRecord, GetCategoriesQuery>();
 
 		_categories = ids.ToDictionary(x => x.Name, x => x.Id);
-		_seq = _categories.Count > 0 ? _categories.Values.Max() - 1 : -1;
+		_seq = _categories.Count > 0 ? _categories.Values.Max() : -1;
 	}
 
 	public int Index(ResolvedEvent resolvedEvent) {
