@@ -121,7 +121,7 @@ create or replace macro read_stream(name) as table
 		from (
 			select log_position, event_number, created from idx_all where stream=name
 			union
-			select log_position, event_number, created from inflight() where stream=name where stream=name
+			select log_position, event_number, created from inflight() where stream=name
 		)
 	) order by event_number
 ;

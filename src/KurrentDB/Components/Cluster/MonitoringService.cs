@@ -4,14 +4,15 @@
 using System;
 using System.Diagnostics;
 
-namespace KurrentDB.Services;
+namespace KurrentDB.Components.Cluster;
 
 public sealed class MonitoringService {
-	DateTime _lastTime = DateTime.MinValue;
-	readonly Process _process = Process.GetCurrentProcess();
-	TimeSpan _lastTotalProcessorTime;
-	DateTime _curTime;
-	TimeSpan _curTotalProcessorTime;
+	private DateTime _lastTime = DateTime.MinValue;
+	private TimeSpan _lastTotalProcessorTime;
+	private DateTime _curTime;
+	private TimeSpan _curTotalProcessorTime;
+
+	private readonly Process _process = Process.GetCurrentProcess();
 
 	public double CalculateCpu() {
 		if (_lastTime == DateTime.MinValue) {

@@ -16,6 +16,8 @@ using KurrentDB.Common.Exceptions;
 using KurrentDB.Common.Log;
 using KurrentDB.Common.Utils;
 using KurrentDB.Components;
+using KurrentDB.Components.Cluster;
+using KurrentDB.Components.Stats;
 using KurrentDB.Core;
 using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Configuration;

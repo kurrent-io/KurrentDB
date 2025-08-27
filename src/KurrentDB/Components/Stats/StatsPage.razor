@@ -1,0 +1,43 @@
+@page "/ui/stats"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@inherits KurrentDB.Components.Licensed.LicensedPage
+@using Microsoft.AspNetCore.Authorization
+@inject StatsService StatsService
+
+@if (IsLoading) {
+	<div class="d-flex justify-center align-center pa-6">
+		<MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large"/>
+		<MudText Class="ml-4 mt-2">Loading stats...</MudText>
+	</div>
+} else {
+	<MudDivider/>
+	<MudText Typo="Typo.h5" Class="pb-4 pt-2">Stream Categories</MudText>
+	<MudPaper Outlined="true">
+		<MudExpansionPanels MultiExpansion="true">
+			@foreach (var category in Elements) {
+				<CategoryStats CategoryName="@category.Category"/>
+			}
+		</MudExpansionPanels>
+	</MudPaper>
+	<MudDivider Class="mt-6"/>
+	<MudText Typo="Typo.h5" Class="pt-2">Stream Stats</MudText>
+	<MudPaper Outlined="true" Class="mt-4">
+		<MudText Class="pa-6">This section is work in progress. What would you like to see here?</MudText>
+	</MudPaper>
+}
+
+@code {
+	CategoryName[] Elements { get; set; } = [];
+	bool IsLoading { get; set; } = true;
+
+	protected override string PageName => "Database Stats";
+
+	protected override void OnAfterRender(bool firstRender) {
+		base.OnAfterRender(firstRender);
+		if (!firstRender) return;
+		Elements = StatsService.GetCategories().ToArray();
+		IsLoading = false;
+		StateHasChanged();
+	}
+}
