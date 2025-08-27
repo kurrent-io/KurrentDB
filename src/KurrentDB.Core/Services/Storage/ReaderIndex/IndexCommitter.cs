@@ -150,7 +150,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 
 			long processed = 0;
 			SeqReadResult result;
-			while ((result = await _backend.TFReader.TryReadNext<AsyncReadCursor>(cursorScope, token)).Success && result.LogRecord.LogPosition < buildToPosition) {
+			while ((result = await _backend.TFReader.TryReadNext(cursorScope.Cursor, token)).Success && result.LogRecord.LogPosition < buildToPosition) {
 				switch (result.LogRecord.RecordType) {
 					case LogRecordType.Stream:
 					case LogRecordType.EventType:
@@ -521,7 +521,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 
 		// in case all prepares were scavenged, we should not read past Commit LogPosition
 		SeqReadResult result;
-		while ((result = await _backend.TFReader.TryReadNext<AsyncReadCursor>(cursorScope, token)).Success && result.RecordPrePosition <= commitPos) {
+		while ((result = await _backend.TFReader.TryReadNext(cursorScope.Cursor, token)).Success && result.RecordPrePosition <= commitPos) {
 			if (result.LogRecord.RecordType != LogRecordType.Prepare)
 				continue;
 

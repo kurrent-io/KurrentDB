@@ -140,9 +140,9 @@ public class LogV2StreamExistenceFilterInitializer : INameExistenceFilterInitial
 		// whether the checkpoint is the pre or post position of the last processed record.
 		var startPosition = filter.CurrentCheckpoint == -1 ? 0 : filter.CurrentCheckpoint;
 		Log.Information("Initializing from log starting at {startPosition:N0}", startPosition);
-		using var cursor = new AsyncReadCursor.Scope(startPosition);
+		using var cursorScope = new AsyncReadCursor.Scope(startPosition);
 
-		while (await _tfReader.TryReadNext<AsyncReadCursor>(cursor, token) is { Success: true } result) {
+		while (await _tfReader.TryReadNext(cursorScope.Cursor, token) is { Success: true } result) {
 			switch (result.LogRecord.RecordType) {
 				case LogRecordType.Prepare:
 					// add regardless of expectedVersion because event 0 may be scavenged

@@ -358,7 +358,7 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 	private async ValueTask<(bool, TransactionInfo<TStreamId>)> GetTransactionInfoUncached(long writerCheckpoint, long transactionId, CancellationToken token) {
 		using (var cursorScope = new AsyncReadCursor.Scope(writerCheckpoint)) {
 			SeqReadResult result;
-			while ((result = await _indexBackend.TFReader.TryReadPrev<AsyncReadCursor>(cursorScope, token)).Success) {
+			while ((result = await _indexBackend.TFReader.TryReadPrev(cursorScope.Cursor, token)).Success) {
 				if (result.LogRecord.LogPosition < transactionId)
 					break;
 				if (result.LogRecord.RecordType != LogRecordType.Prepare)
@@ -421,7 +421,7 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 
 		// in case all prepares were scavenged, we should not read past Commit LogPosition
 		SeqReadResult result;
-		while ((result = await _indexBackend.TFReader.TryReadNext<AsyncReadCursor>(cursorScope, token)).Success && result.RecordPrePosition <= commitPos) {
+		while ((result = await _indexBackend.TFReader.TryReadNext(cursorScope.Cursor, token)).Success && result.RecordPrePosition <= commitPos) {
 			if (result.LogRecord.RecordType is not LogRecordType.Prepare)
 				continue;
 

@@ -41,8 +41,6 @@ public readonly struct AsyncReadCursor : IReadCursor {
 		/// </summary>
 		public readonly AsyncReadCursor Cursor => new(_cursor.Pointer);
 
-		public static implicit operator AsyncReadCursor(Scope scope) => scope.Cursor;
-
 		public void Dispose() => _cursor.Dispose();
 	}
 }

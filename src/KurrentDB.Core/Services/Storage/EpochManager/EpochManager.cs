@@ -132,7 +132,7 @@ public class EpochManager<TStreamId> : IEpochManager {
 				using var cursorScope = new AsyncReadCursor.Scope(_writer.FlushedPosition);
 
 				for (SeqReadResult result;
-				     (result = await _reader.TryReadPrev<AsyncReadCursor>(cursorScope, token)).Success;
+				     (result = await _reader.TryReadPrev(cursorScope.Cursor, token)).Success;
 				     token.ThrowIfCancellationRequested()) {
 					var rec = result.LogRecord;
 					if (rec.RecordType is not LogRecordType.System ||
@@ -400,12 +400,12 @@ public class EpochManager<TStreamId> : IEpochManager {
 		try {
 
 			// read the epoch
-			if (await _reader.TryReadNext<AsyncReadCursor>(cursorScope, token) is { Success: false })
+			if (await _reader.TryReadNext(cursorScope.Cursor, token) is { Success: false })
 				return null;
 
 			// read the epoch-information (if there is one)
 			while (true) {
-				var result = await _reader.TryReadNext<AsyncReadCursor>(cursorScope, token);
+				var result = await _reader.TryReadNext(cursorScope.Cursor, token);
 				if (!result.Success)
 					return null;
 

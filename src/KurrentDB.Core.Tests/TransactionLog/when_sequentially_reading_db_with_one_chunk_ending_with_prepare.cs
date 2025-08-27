@@ -84,7 +84,7 @@ public class when_sequentially_reading_db_with_one_chunk_ending_with_prepare<TLo
 
 		int count = 0;
 		using var cursorScope = new AsyncReadCursor.Scope();
-		while (await seqReader.TryReadNext<AsyncReadCursor>(cursorScope, CancellationToken.None) is { Success: true } res) {
+		while (await seqReader.TryReadNext(cursorScope.Cursor, CancellationToken.None) is { Success: true } res) {
 			++count;
 			Assert.AreEqual(count == RecordsCount, res.Eof);
 		}

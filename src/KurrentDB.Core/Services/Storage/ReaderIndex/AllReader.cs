@@ -92,7 +92,7 @@ public class AllReader<TStreamId> : IAllReader {
 			cursorScope.Cursor.Position = nextCommitPos;
 
 			SeqReadResult result;
-			while ((result = await _backend.TFReader.TryReadNext<AsyncReadCursor>(cursorScope, token)).Success && !IsCommitAlike(result.LogRecord)) {
+			while ((result = await _backend.TFReader.TryReadNext(cursorScope.Cursor, token)).Success && !IsCommitAlike(result.LogRecord)) {
 				// skip until commit
 			}
 
@@ -139,7 +139,7 @@ public class AllReader<TStreamId> : IAllReader {
 
 					cursorScope.Cursor.Position = commit.TransactionPosition;
 					while (records.Count < maxCount && consideredEventsCount < maxSearchWindow) {
-						result = await _backend.TFReader.TryReadNext<AsyncReadCursor>(cursorScope, token);
+						result = await _backend.TFReader.TryReadNext(cursorScope.Cursor, token);
 						if (!result.Success) // no more records in TF
 							break;
 						// prepare with TransactionEnd could be scavenged already
@@ -214,7 +214,7 @@ public class AllReader<TStreamId> : IAllReader {
 			cursorScope.Cursor.Position = nextCommitPostPos;
 
 			SeqReadResult result;
-			while ((result = await _backend.TFReader.TryReadPrev<AsyncReadCursor>(cursorScope, token)).Success &&
+			while ((result = await _backend.TFReader.TryReadPrev(cursorScope.Cursor, token)).Success &&
 			       !IsCommitAlike(result.LogRecord)) {
 				// skip until commit
 			}
@@ -275,7 +275,7 @@ public class AllReader<TStreamId> : IAllReader {
 					// as we don't know exact position of the last record of transaction,
 					// we have to sequentially scan backwards, so no need to reposition
 					while (records.Count < maxCount && consideredEventsCount < maxSearchWindow) {
-						result = await _backend.TFReader.TryReadPrev<AsyncReadCursor>(cursorScope, token);
+						result = await _backend.TFReader.TryReadPrev(cursorScope.Cursor, token);
 						if (!result.Success) // no more records in TF
 							break;
 

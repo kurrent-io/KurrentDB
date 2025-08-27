@@ -152,10 +152,10 @@ public class when_having_an_epoch_manager_and_empty_tf_log<TLogFormat, TStreamId
 		using var cursorScope = new AsyncReadCursor.Scope();
 		for (int i = 0; i < epochsWritten.Length; i++) {
 			cursorScope.Cursor.Position = epochsWritten[i].Epoch.EpochPosition;
-			await _reader.TryReadNext<AsyncReadCursor>(cursorScope, CancellationToken.None); // read epoch
+			await _reader.TryReadNext(cursorScope.Cursor, CancellationToken.None); // read epoch
 			IPrepareLogRecord<TStreamId> epochInfo;
 			while (true) {
-				var result = await _reader.TryReadNext<AsyncReadCursor>(cursorScope, CancellationToken.None);
+				var result = await _reader.TryReadNext(cursorScope.Cursor, CancellationToken.None);
 				Assert.True(result.Success);
 				if (result.LogRecord is IPrepareLogRecord<TStreamId> prepare) {
 					epochInfo = prepare;

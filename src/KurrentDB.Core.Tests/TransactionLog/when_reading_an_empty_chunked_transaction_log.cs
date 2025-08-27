@@ -24,7 +24,7 @@ public class when_reading_an_empty_chunked_transaction_log<TLogFormat, TStreamId
 
 		var reader = new TFChunkReader(db, writerchk);
 		using var cursorScope = new AsyncReadCursor.Scope();
-		Assert.IsTrue(await reader.TryReadNext<AsyncReadCursor>(cursorScope, CancellationToken.None) is { Success: false });
+		Assert.IsTrue(await reader.TryReadNext(cursorScope.Cursor, CancellationToken.None) is { Success: false });
 	}
 
 	[Test]
@@ -40,7 +40,7 @@ public class when_reading_an_empty_chunked_transaction_log<TLogFormat, TStreamId
 		var reader = new TFChunkReader(db, writerchk);
 		using var cursorScope = new AsyncReadCursor.Scope();
 
-		Assert.IsTrue(await reader.TryReadNext<AsyncReadCursor>(cursorScope, CancellationToken.None) is { Success: false });
+		Assert.IsTrue(await reader.TryReadNext(cursorScope.Cursor, CancellationToken.None) is { Success: false });
 
 		var recordFactory = LogFormatHelper<TLogFormat, TStreamId>.RecordFactory;
 		var streamId = LogFormatHelper<TLogFormat, TStreamId>.StreamId;
@@ -50,7 +50,7 @@ public class when_reading_an_empty_chunked_transaction_log<TLogFormat, TStreamId
 		Assert.IsTrue(await writer.Write(rec, CancellationToken.None) is (true, _));
 		await writer.DisposeAsync();
 
-		var res = await reader.TryReadNext<AsyncReadCursor>(cursorScope, CancellationToken.None);
+		var res = await reader.TryReadNext(cursorScope.Cursor, CancellationToken.None);
 		Assert.IsTrue(res.Success);
 		Assert.AreEqual(rec, res.LogRecord);
 	}

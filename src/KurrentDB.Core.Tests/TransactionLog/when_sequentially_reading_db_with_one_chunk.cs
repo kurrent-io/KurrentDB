@@ -73,7 +73,7 @@ public class when_sequentially_reading_db_with_one_chunk<TLogFormat, TStreamId> 
 
 		int count = 0;
 		using var cursorScope = new AsyncReadCursor.Scope();
-		while (await seqReader.TryReadNext<AsyncReadCursor>(cursorScope, CancellationToken.None) is { Success: true } res) {
+		while (await seqReader.TryReadNext(cursorScope.Cursor, CancellationToken.None) is { Success: true } res) {
 			var rec = _records[count];
 			Assert.AreEqual(rec, res.LogRecord);
 			Assert.AreEqual(rec.LogPosition, res.RecordPrePosition);
@@ -91,7 +91,7 @@ public class when_sequentially_reading_db_with_one_chunk<TLogFormat, TStreamId> 
 
 		int count = 0;
 		using var cursorScope = new AsyncReadCursor.Scope();
-		while (await seqReader.TryReadNext<AsyncReadCursor>(cursorScope, CancellationToken.None) is { Success: true } res) {
+		while (await seqReader.TryReadNext(cursorScope.Cursor, CancellationToken.None) is { Success: true } res) {
 			++count;
 			Assert.AreEqual(count == RecordsCount, res.Eof);
 		}
@@ -106,7 +106,7 @@ public class when_sequentially_reading_db_with_one_chunk<TLogFormat, TStreamId> 
 		SeqReadResult res;
 		int count = 0;
 		using var cursorScope = new AsyncReadCursor.Scope(_db.Config.WriterCheckpoint.Read());
-		while ((res = await seqReader.TryReadPrev<AsyncReadCursor>(cursorScope, CancellationToken.None)).Success) {
+		while ((res = await seqReader.TryReadPrev(cursorScope.Cursor, CancellationToken.None)).Success) {
 			var rec = _records[RecordsCount - count - 1];
 			Assert.AreEqual(rec, res.LogRecord);
 			Assert.AreEqual(rec.LogPosition, res.RecordPrePosition);
@@ -124,7 +124,7 @@ public class when_sequentially_reading_db_with_one_chunk<TLogFormat, TStreamId> 
 
 		int count1 = 0;
 		using var cursorScope = new AsyncReadCursor.Scope();
-		while (await seqReader.TryReadNext<AsyncReadCursor>(cursorScope, CancellationToken.None) is { Success: true } res) {
+		while (await seqReader.TryReadNext(cursorScope.Cursor, CancellationToken.None) is { Success: true } res) {
 			var rec = _records[count1];
 			Assert.AreEqual(rec, res.LogRecord);
 			Assert.AreEqual(rec.LogPosition, res.RecordPrePosition);
@@ -136,7 +136,7 @@ public class when_sequentially_reading_db_with_one_chunk<TLogFormat, TStreamId> 
 		Assert.AreEqual(RecordsCount, count1);
 
 		int count2 = 0;
-		while (await seqReader.TryReadPrev<AsyncReadCursor>(cursorScope, CancellationToken.None) is { Success: true } res) {
+		while (await seqReader.TryReadPrev(cursorScope.Cursor, CancellationToken.None) is { Success: true } res) {
 			var rec = _records[RecordsCount - count2 - 1];
 			Assert.AreEqual(rec, res.LogRecord);
 			Assert.AreEqual(rec.LogPosition, res.RecordPrePosition);
@@ -154,7 +154,7 @@ public class when_sequentially_reading_db_with_one_chunk<TLogFormat, TStreamId> 
 		for (int i = 0; i < RecordsCount; ++i) {
 			int count = 0;
 			using var cursorScope = new AsyncReadCursor.Scope(_records[i].LogPosition);
-			while (await seqReader.TryReadNext<AsyncReadCursor>(cursorScope, CancellationToken.None) is { Success: true } res) {
+			while (await seqReader.TryReadNext(cursorScope.Cursor, CancellationToken.None) is { Success: true } res) {
 				var rec = _records[i + count];
 				Assert.AreEqual(rec, res.LogRecord);
 				Assert.AreEqual(rec.LogPosition, res.RecordPrePosition);
@@ -174,7 +174,7 @@ public class when_sequentially_reading_db_with_one_chunk<TLogFormat, TStreamId> 
 			SeqReadResult res;
 			int count = 0;
 			using var cursorScope = new AsyncReadCursor.Scope(_records[i].LogPosition);
-			while ((res = await seqReader.TryReadPrev<AsyncReadCursor>(cursorScope, CancellationToken.None)).Success) {
+			while ((res = await seqReader.TryReadPrev(cursorScope.Cursor, CancellationToken.None)).Success) {
 				var rec = _records[i - count - 1];
 				Assert.AreEqual(rec, res.LogRecord);
 				Assert.AreEqual(rec.LogPosition, res.RecordPrePosition);
