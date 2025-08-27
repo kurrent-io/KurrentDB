@@ -38,8 +38,7 @@ public class StreamIndexProcessor : Disposable {
 	public long LastCommittedPosition { get; private set; }
 
 	public long Index(ResolvedEvent resolvedEvent) {
-		if (IsDisposingOrDisposed)
-			return -1;
+		ObjectDisposedException.ThrowIf(IsDisposingOrDisposed, nameof(StreamIndexProcessor));
 
 		string name = resolvedEvent.OriginalStreamId;
 		_lastLogPosition = resolvedEvent.Event.LogPosition;

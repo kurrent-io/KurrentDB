@@ -55,23 +55,20 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	}
 
 	public void Index(ResolvedEvent resolvedEvent) {
-		if (IsDisposingOrDisposed) return;
+		ObjectDisposedException.ThrowIf(IsDisposingOrDisposed, nameof(DefaultIndexProcessor));
 
 		var categoryId = _categoryIndexProcessor.Index(resolvedEvent);
 		var eventTypeId = _eventTypeIndexProcessor.Index(resolvedEvent);
 		var streamId = _streamIndexProcessor.Index(resolvedEvent);
-		if (streamId == -1) {
-			// StreamIndex is disposed
-			return;
-		}
 
-		var logPosition = resolvedEvent.Event.LogPosition;
-		var commitPosition = resolvedEvent.EventPosition?.CommitPosition;
+		long preparePosition = resolvedEvent.OriginalPosition!.Value.PreparePosition;
+		long commitPosition = resolvedEvent.OriginalPosition!.Value.CommitPosition;
+
 		var eventNumber = resolvedEvent.Event.EventNumber;
 		using (var row = _appender.CreateRow()) {
-			row.Append(logPosition);
-			if (commitPosition.HasValue && logPosition != commitPosition)
-				row.Append(commitPosition.Value);
+			row.Append(preparePosition);
+			if (preparePosition != commitPosition)
+				row.Append(commitPosition);
 			else
 				row.Append(DBNull.Value);
 			row.Append(eventNumber);
@@ -83,7 +80,7 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			row.Append(false); // is_deleted TODO: What happens if the event is deleted before we commit?
 		}
 
-		_inFlightRecords.Append(logPosition, categoryId, eventTypeId);
+		_inFlightRecords.Append(preparePosition, categoryId, eventTypeId);
 		LastIndexedPosition = resolvedEvent.OriginalPosition!.Value;
 
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(SystemStreams.DefaultSecondaryIndex, resolvedEvent));
@@ -101,13 +98,11 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	}
 
 	public void Commit() {
-		if (IsDisposingOrDisposed)
-			return;
-
-		_streamIndexProcessor.Commit();
+		ObjectDisposedException.ThrowIf(IsDisposingOrDisposed, nameof(DefaultIndexProcessor));
 
 		try {
 			_progressTracker.RecordCommit(() => {
+				_streamIndexProcessor.Commit();
 				_appender.Flush();
 				return (LastIndexedPosition, _inFlightRecords.Count);
 			});
