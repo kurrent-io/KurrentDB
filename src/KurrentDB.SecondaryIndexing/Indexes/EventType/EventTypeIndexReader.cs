@@ -35,7 +35,7 @@ class EventTypeIndexReader(
 	}
 
 	protected override List<IndexQueryRecord> GetDatabaseRecordsBackwards(int id, TFPos startPosition, int maxCount, bool excludeFirst) {
-		return Db.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQuery>(
+		return Db.Pool.Query<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexBackQuery>(
 			new(id, startPosition.PreparePosition - (excludeFirst ? 1 : 0), maxCount));
 	}
 
