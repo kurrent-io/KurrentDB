@@ -66,6 +66,7 @@ public static class Constants {
 	public static class Properties {
 		public const string EventTypeKey = "$schema.name";
 		public const string DataFormatKey = "$schema.data-format";
+		public const string SchemaId = "$schema.id";
 		public const string CreatedKey = "$record.timestamp";
 		public const string LegacyMetadataKey = "$legacy-metadata";
 

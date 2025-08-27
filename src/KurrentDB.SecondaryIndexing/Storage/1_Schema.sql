@@ -8,7 +8,9 @@ create table if not exists idx_all (
 	name_hash ubigint not null,
 	event_type varchar not null,
 	category varchar not null,
-	is_deleted boolean not null
+	is_deleted boolean not null,
+	schema_id varchar null,
+	schema_format varchar not null
 );
 
 create or replace macro read_all(position) as table

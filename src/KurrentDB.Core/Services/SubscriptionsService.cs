@@ -339,11 +339,6 @@ public class SubscriptionsService<TStreamId> :
 			return ValueTask.CompletedTask;
 		}
 
-		// I don't think that we need to handle that for now, but
-		// TODO: check if we can skip it
-		// ProcessStreamMetadataChanges(message.Event.EventStreamId);
-		// ProcessSettingsStreamChanges(message.Event.EventStreamId);
-
 		ReissueReadsFor(message.IndexName, message.Event.Event.LogPosition, long.MaxValue);
 		return ValueTask.CompletedTask;
 
