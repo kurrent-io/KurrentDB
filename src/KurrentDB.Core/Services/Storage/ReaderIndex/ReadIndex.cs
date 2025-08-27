@@ -64,7 +64,7 @@ public sealed class ReadIndex<TStreamId> : IDisposable, IReadIndex<TStreamId> {
 		ICacheHitsMissesTracker cacheTracker) {
 
 		Ensure.NotNull(bus, "bus");
-		Ensure.NotNull(reader, "readerPool");
+		Ensure.NotNull(reader, nameof(reader));
 		Ensure.NotNull(tableIndex, "tableIndex");
 		Ensure.NotNull(streamIds, nameof(streamIds));
 		Ensure.NotNull(streamNamesProvider, nameof(streamNamesProvider));
