@@ -715,9 +715,8 @@ public class ClusterVNode<TStreamId> :
 		_readIndex = readIndex;
 		var writer = new TFChunkWriter(Db);
 
-		var partitionManager = logFormat.CreatePartitionManager(new TFChunkReader(
-				Db,
-				Db.Config.WriterCheckpoint.AsReadOnly()),
+		var partitionManager = logFormat.CreatePartitionManager(
+			tfReader,
 			writer);
 
 		var epochManager = new EpochManager<TStreamId>(_mainQueue,

@@ -79,7 +79,6 @@ public class when_reading_a_single_record<TLogFormat, TStreamId> : Specification
 
 	[Test]
 	public async Task all_records_can_be_read() {
-		using var cursorScope = new AsyncReadCursor.Scope();
 		var reader = new TFChunkReader(_db, _db.Config.WriterCheckpoint);
 
 		RecordReadResult res;

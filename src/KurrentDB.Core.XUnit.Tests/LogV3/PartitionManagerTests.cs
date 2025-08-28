@@ -186,7 +186,6 @@ class FakeWriter : ITransactionFileWriter {
 
 file sealed class FakeReader : ITransactionFileReader {
 	private readonly List<SeqReadResult> _results = new();
-	private int _resultIndex = 0;
 	private int _readCount = 0;
 
 	public int ReadCount => _readCount;
@@ -223,8 +222,8 @@ file sealed class FakeReader : ITransactionFileReader {
 		where TCursor : IReadCursor{
 		_readCount++;
 
-		return new(_resultIndex < _results.Count
-			? _results[_resultIndex++]
+		return new(cursor.Position < _results.Count
+			? _results[int.CreateChecked(cursor.Position++)]
 			: SeqReadResult.Failure);
 	}
 
