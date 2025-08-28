@@ -1639,6 +1639,11 @@ public class ClusterVNode<TStreamId> :
 
 			await storageWriter.Start(token);
 
+			_workersHandler.Start();
+			monitoringQueue.Start();
+			subscrQueue.Start();
+			perSubscrQueue.Start();
+			redactionQueue.Start();
 			dynamicCacheManager.Start();
 			_mainQueue.Publish(new SystemMessage.SystemInit());
 		}

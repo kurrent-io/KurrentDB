@@ -24,6 +24,7 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 
 	private volatile CancellationTokenSource _lifetimeSource;
 	private volatile uint _processingCount;
+	private volatile TaskCompletionSource readinessBarrier;
 
 	public ThreadPoolMessageScheduler(IAsyncHandle<Message> consumer) {
 		ArgumentNullException.ThrowIfNull(consumer);
@@ -37,6 +38,7 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 		_pool = new();
 		StopTimeout = DefaultStopWaitTimeout;
 		_maxPoolSize = Environment.ProcessorCount * 16;
+		readinessBarrier = new();
 	}
 
 	public int MaxPoolSize {
@@ -56,8 +58,10 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 
 	public required string Name { get; init; }
 
-	void IQueuedHandler.Start() {
-		// nothing to do here
+	public void Start() {
+		if (Interlocked.Exchange(ref readinessBarrier, null) is { } completionSource) {
+			completionSource.SetResult();
+		}
 	}
 
 	public void RequestStop() {
@@ -125,6 +129,21 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 			stateMachine = new PoolingAsyncStateMachine(this);
 		}
 
-		stateMachine.Schedule(message, GetSynchronizationGroup(message.Affinity));
+		Schedule(stateMachine, message, GetSynchronizationGroup(message), readinessBarrier);
+	}
+
+	private static void Schedule(AsyncStateMachine stateMachine, Message message,
+		AsyncExclusiveLock synchronizationGroup,
+		TaskCompletionSource readinessBarrier) {
+
+		if (readinessBarrier is { Task : { IsCompleted: false } readinessTask }) {
+			readinessTask.ConfigureAwait(false).GetAwaiter().UnsafeOnCompleted(Schedule);
+		} else {
+			Schedule();
+		}
+
+		void Schedule() {
+			stateMachine.Schedule(message, synchronizationGroup);
+		}
 	}
 }

@@ -41,6 +41,7 @@ public abstract class with_read_io_dispatcher<TLogFormat, TStreamId> : IHandle<C
 		_bus.Subscribe<ClientMessage.ReadStreamEventsForward>(this);
 		_bus.Subscribe<ClientMessage.ReadStreamEventsBackward>(this);
 		_bus.Subscribe<TimerMessage.Schedule>(this);
+		queue.Start();
 	}
 
 	public virtual void Handle(ClientMessage.ReadStreamEventsForward message) {

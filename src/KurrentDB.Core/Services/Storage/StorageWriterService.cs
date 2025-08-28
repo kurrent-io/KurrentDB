@@ -172,6 +172,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 
 	public async ValueTask Start(CancellationToken token) {
 		await Writer.Open(token);
+		_writerQueue.Start();
 	}
 
 	protected void SubscribeToMessage<T>() where T : Message {

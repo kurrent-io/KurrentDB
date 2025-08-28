@@ -64,6 +64,7 @@ public class StorageReaderService<TStreamId> : StorageReaderService, IHandle<Sys
 			SynchronizeMessagesWithUnknownAffinity = false,
 			Name = "StorageReaderQueue",
 		};
+		_workersHandler.Start();
 
 		subscriber.Subscribe<ClientMessage.ReadEvent>(_workersHandler);
 		subscriber.Subscribe<ClientMessage.ReadStreamEventsBackward>(_workersHandler);

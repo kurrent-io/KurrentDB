@@ -120,6 +120,7 @@ public class TcpApiPluginTests {
 			Name = "MainQueue",
 			SynchronizeMessagesWithUnknownAffinity = true,
 		};
+		mainQueue.Start();
 		var threadBasedScheduler = new ThreadBasedScheduler(queueStatsManager, queueTrackers);
 		var timerService = new TimerService(threadBasedScheduler);
 
