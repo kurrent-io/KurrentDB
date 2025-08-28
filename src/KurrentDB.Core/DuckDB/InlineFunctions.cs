@@ -5,11 +5,19 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Threading;
+using System.Threading.Channels;
+using System.Threading.Tasks;
 using DuckDB.NET.Data;
 using DuckDB.NET.Data.DataChunk.Reader;
 using DuckDB.NET.Data.DataChunk.Writer;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.Services.Transport.Common;
+using KurrentDB.Core.Services.Transport.Enumerators;
+using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.DuckDB;
 using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 
@@ -40,4 +48,44 @@ public class KdbGetEventInlineFunction(IPublisher publisher) : IDuckDBInlineFunc
 
 	private static string AsDuckEvent(ResolvedEvent evt)
 		=> AsDuckEvent(evt.Event.EventStreamId, evt.Event.EventType, evt.Event.TimeStamp, evt.Event.Data, evt.Event.Metadata);
+
+	public IEnumerable<ResolvedEvent> ReadAll() {
+		var cts = new CancellationTokenSource();
+		var enumerator = new Enumerator.ReadAllForwardsFiltered(
+			publisher,
+			Position.Start,
+			2048,
+			false,
+			UserEventsFilter.Instance,
+			SystemAccounts.System,
+			false,
+			null,
+			DateTime.MaxValue,
+			cts.Token
+		);
+		var channel = Channel.CreateBounded<ResolvedEvent>(10);
+		Task.Run(ReadAllAsync, cts.Token);
+		while (!channel.Reader.Completion.IsCompleted) {
+			if (channel.Reader.TryRead(out var evt))
+				yield return evt;
+		}
+
+		yield break;
+
+		async Task ReadAllAsync() {
+			while (await enumerator.MoveNextAsync()) {
+				if (enumerator.Current is ReadResponse.EventReceived eventReceived) {
+					await channel.Writer.WriteAsync(eventReceived.Event, cts.Token);
+				}
+			}
+		}
+	}
+
+	private class UserEventsFilter : IEventFilter {
+		public static readonly UserEventsFilter Instance = new();
+
+		public bool IsEventAllowed(EventRecord eventRecord) {
+			return !eventRecord.EventType.StartsWith('$') && !eventRecord.EventStreamId.StartsWith('$');
+		}
+	}
 }

@@ -75,6 +75,9 @@
 	<ItemGroup>
 	  <_ContentIncludedByDefault Remove="Components\Layout\CheckAuthorization.razor" />
 	</ItemGroup>
+	<ItemGroup>
+	  <Folder Include="Components\Dialogs\" />
+	</ItemGroup>
 	<!-- TODO(jen20): Investigate which of these are correct -->
 	<PropertyGroup>
 		<IsMac>false</IsMac>

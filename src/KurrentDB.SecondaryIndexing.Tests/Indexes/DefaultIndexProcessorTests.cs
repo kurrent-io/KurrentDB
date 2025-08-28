@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Dapper;
+using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Tests.Fakes;

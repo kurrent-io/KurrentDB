@@ -10,8 +10,8 @@
 @using BlazorMonaco.Editor
 @using Dapper
 @using Kurrent.Quack.ConnectionPool
-@using KurrentDB.Components.Dialogs
 @using KurrentDB.Components.Tools
+@using KurrentDB.Services
 @using KurrentDB.UI.Services
 @using Microsoft.AspNetCore.Authorization
 @using Serilog
@@ -121,7 +121,8 @@
 
 		try {
 			using var scope = Db.Rent(out var connection);
-			var items = (IEnumerable<IDictionary<string, object>>)connection.Query(sql);
+			var query = QueryService.AmendQuery(sql);
+			var items = (IEnumerable<IDictionary<string, object>>)connection.Query(query);
 			_items = items.Select(x => x.ToDictionary(y => y.Key, y => y.Value)).ToList();
 			watch.Stop();
 			_message = $"Query executed in {watch}";
@@ -164,6 +165,5 @@
 	public void Dispose() {
 		// _editor?.Dispose();
 	}
-
 }
 
