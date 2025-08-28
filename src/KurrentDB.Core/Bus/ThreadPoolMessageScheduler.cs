@@ -24,7 +24,7 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 
 	private volatile CancellationTokenSource _lifetimeSource;
 	private volatile uint _processingCount;
-	private volatile TaskCompletionSource readinessBarrier;
+	private volatile TaskCompletionSource _readinessBarrier;
 
 	public ThreadPoolMessageScheduler(IAsyncHandle<Message> consumer) {
 		ArgumentNullException.ThrowIfNull(consumer);
@@ -38,7 +38,7 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 		_pool = new();
 		StopTimeout = DefaultStopWaitTimeout;
 		_maxPoolSize = Environment.ProcessorCount * 16;
-		readinessBarrier = new();
+		_readinessBarrier = new();
 	}
 
 	public int MaxPoolSize {
@@ -59,7 +59,7 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 	public required string Name { get; init; }
 
 	public void Start() {
-		if (Interlocked.Exchange(ref readinessBarrier, null) is { } completionSource) {
+		if (Interlocked.Exchange(ref _readinessBarrier, null) is { } completionSource) {
 			completionSource.SetResult();
 		}
 	}
@@ -129,7 +129,7 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 			stateMachine = new PoolingAsyncStateMachine(this);
 		}
 
-		Schedule(stateMachine, message, GetSynchronizationGroup(message), readinessBarrier);
+		Schedule(stateMachine, message, GetSynchronizationGroup(message), _readinessBarrier);
 	}
 
 	private static void Schedule(AsyncStateMachine stateMachine, Message message,
