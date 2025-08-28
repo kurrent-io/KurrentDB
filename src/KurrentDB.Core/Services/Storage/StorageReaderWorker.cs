@@ -52,9 +52,10 @@ public class StorageReaderWorker<TStreamId> :
 	private readonly IPublisher _publisher;
 	private readonly IVirtualStreamReader _virtualStreamReader;
 	private const int MaxPageSize = 4096;
-	private DateTime? _lastExpireTime;
-	private long _expiredBatchCount;
-	private bool _batchLoggingEnabled;
+
+	private readonly Message _scheduleBatchPeriodCompletion;
+	private Atomic.Boolean _expiryPeriodRunning;
+	private long _messagesExpiredInPeriod;
 
 	public StorageReaderWorker(
 		IPublisher publisher,
@@ -68,6 +69,11 @@ public class StorageReaderWorker<TStreamId> :
 		_systemStreams = Ensure.NotNull(systemStreams);
 		_writerCheckpoint = Ensure.NotNull(writerCheckpoint);
 		_virtualStreamReader = virtualStreamReader;
+
+		_scheduleBatchPeriodCompletion = TimerMessage.Schedule.Create(
+			TimeSpan.FromSeconds(10),
+			_publisher,
+			new StorageMessage.BatchLogExpiredMessages());
 	}
 
 	async ValueTask IAsyncHandle<ClientMessage.ReadEvent>.HandleAsync(ClientMessage.ReadEvent msg, CancellationToken token) {
@@ -75,7 +81,7 @@ public class StorageReaderWorker<TStreamId> :
 			return;
 
 		if (msg.Expires < DateTime.UtcNow) {
-			if (LogExpiredMessage(msg.Expires))
+			if (LogExpiredMessage())
 				Log.Debug(
 					"Read Event operation has expired for Stream: {stream}, Event Number: {eventNumber}. Operation Expired at {expiryDateTime} after {lifetime:N0} ms.",
 					msg.EventStreamId, msg.EventNumber, msg.Expires, msg.Lifetime.TotalMilliseconds);
@@ -105,7 +111,7 @@ public class StorageReaderWorker<TStreamId> :
 					ResolvedEvent.EmptyArray, default, default, default, default, default, default, default));
 			}
 
-			if (LogExpiredMessage(msg.Expires))
+			if (LogExpiredMessage())
 				Log.Debug(
 					"Read Stream Events Forward operation has expired for Stream: {stream}, From Event Number: {fromEventNumber}, Max Count: {maxCount}. Operation Expired at {expiryDateTime} after {lifetime:N0} ms.",
 					msg.EventStreamId, msg.FromEventNumber, msg.MaxCount, msg.Expires, msg.Lifetime.TotalMilliseconds);
@@ -153,7 +159,7 @@ public class StorageReaderWorker<TStreamId> :
 			return;
 
 		if (msg.Expires < DateTime.UtcNow) {
-			if (LogExpiredMessage(msg.Expires))
+			if (LogExpiredMessage())
 				Log.Debug(
 					"Read Stream Events Backward operation has expired for Stream: {stream}, From Event Number: {fromEventNumber}, Max Count: {maxCount}. Operation Expired at {expiryDateTime} after {lifetime:N0} ms.",
 					msg.EventStreamId, msg.FromEventNumber, msg.MaxCount, msg.Expires, msg.Lifetime.TotalMilliseconds);
@@ -187,7 +193,7 @@ public class StorageReaderWorker<TStreamId> :
 					TFPos.Invalid, TFPos.Invalid, default));
 			}
 
-			if (LogExpiredMessage(msg.Expires))
+			if (LogExpiredMessage())
 				Log.Debug(
 					"Read All Stream Events Forward operation has expired for C:{commitPosition}/P:{preparePosition}. Operation Expired at {expiryDateTime} after {lifetime:N0} ms.",
 					msg.CommitPosition, msg.PreparePosition, msg.Expires, msg.Lifetime.TotalMilliseconds);
@@ -230,7 +236,7 @@ public class StorageReaderWorker<TStreamId> :
 			return;
 
 		if (msg.Expires < DateTime.UtcNow) {
-			if (LogExpiredMessage(msg.Expires))
+			if (LogExpiredMessage())
 				Log.Debug(
 					"Read All Stream Events Backward operation has expired for C:{commitPosition}/P:{preparePosition}. Operation Expired at {expiryDateTime} after {lifetime:N0} ms.",
 					msg.CommitPosition, msg.PreparePosition, msg.Expires, msg.Lifetime.TotalMilliseconds);
@@ -720,58 +726,25 @@ public class StorageReaderWorker<TStreamId> :
 	}
 
 	public void Handle(StorageMessage.BatchLogExpiredMessages message) {
-		if (!_batchLoggingEnabled)
-			return;
-		if (_expiredBatchCount == 0) {
-			_batchLoggingEnabled = false;
-			Log.Warning("StorageReaderWorker: Batch logging disabled, read load is back to normal");
-			return;
+		_expiryPeriodRunning.Value = false;
+		var count = Interlocked.Exchange(ref _messagesExpiredInPeriod, 0);
+		Log.Warning("StorageReader {0} read operations expired during the period", count);
 		}
 
-		Log.Warning("StorageReaderWorker: {0} read operations have expired", _expiredBatchCount);
-		_expiredBatchCount = 0;
-		_publisher.Publish(
-			TimerMessage.Schedule.Create(TimeSpan.FromSeconds(2),
-				_publisher,
-				new StorageMessage.BatchLogExpiredMessages())
-		);
-	}
+	// Counts expired messages and ensures the count is logged at the end of the period.
+	// Returns whether the caller should additionally log a detailed message (limited to 5 per period).
+	// Can run concurrently with the handling of BatchLogExpiredMessages.
+	private bool LogExpiredMessage() {
+		const int MaxDetailedExpiriesPerPeriod = 5;
+		var count = Interlocked.Increment(ref _messagesExpiredInPeriod);
 
-	private bool LogExpiredMessage(DateTime expire) {
-		if (!_lastExpireTime.HasValue) {
-			_expiredBatchCount = 1;
-			_lastExpireTime = expire;
-			return true;
-		}
+		if (count == MaxDetailedExpiriesPerPeriod + 1)
+			Log.Warning("StorageReaderWorker: High rate of expired read messages detected. Stopping detailed expiry logs for remainder of period.");
 
-		if (_batchLoggingEnabled) {
-			_expiredBatchCount++;
-			_lastExpireTime = expire;
-			return false;
-		}
+		if (_expiryPeriodRunning.FalseToTrue())
+			_publisher.Publish(_scheduleBatchPeriodCompletion);
 
-		_expiredBatchCount++;
-		if (_expiredBatchCount < 50)
-			return true;
-
-		if (expire - _lastExpireTime.Value > TimeSpan.FromSeconds(1)) {
-			_expiredBatchCount = 1;
-			_lastExpireTime = expire;
-
-			return true;
-		}
-
-		//heuristic to match approximately >= 50 expired messages / second
-		_batchLoggingEnabled = true;
-		Log.Warning("StorageReaderWorker: Batch logging enabled, high rate of expired read messages detected");
-		_publisher.Publish(
-			TimerMessage.Schedule.Create(TimeSpan.FromSeconds(2),
-				_publisher,
-				new StorageMessage.BatchLogExpiredMessages())
-		);
-		_expiredBatchCount = 1;
-		_lastExpireTime = expire;
-		return false;
+		return count <= MaxDetailedExpiriesPerPeriod;
 	}
 
 	async ValueTask IAsyncHandle<StorageMessage.StreamIdFromTransactionIdRequest>.HandleAsync(StorageMessage.StreamIdFromTransactionIdRequest message, CancellationToken token) {
