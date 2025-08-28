@@ -31,8 +31,8 @@ public readonly struct AsyncReadCursor : IReadCursor {
 	/// Represents the lifetime of the cursor.
 	/// </summary>
 	[StructLayout(LayoutKind.Auto)]
-	public readonly struct Scope(long position) : IDisposable {
-		private readonly UnmanagedMemory<long> _cursor = new(position);
+	public struct Scope(long position) : IDisposable {
+		private UnmanagedMemory<long> _cursor = new(position);
 
 		public Scope() : this(position: 0L) { }
 
