@@ -17,17 +17,14 @@ static class ReaderExtensions {
 	) {
 		using var reader = index.BorrowReader();
 
-		var readEvents = indexRecords.Select(async x => {
-			var @event = await reader.ReadEvent<string>(x, cancellationToken);
-			return (Record: x, Event: @event);
-		});
+		List<ResolvedEvent> events = [];
+		foreach (var indexRecord in indexRecords) {
+			var @event = await reader.ReadEvent<string>(indexRecord, cancellationToken);
+			if (@event is not null)
+				events.Add(@event.Value);
+		}
 
-		var events = (await Task.WhenAll(readEvents))
-			.OrderBy(x => x.Record.RowId)
-			.Where(x => x.Event is not null)
-			.Select(x => x.Event!.Value);
-
-		return events.ToList();
+		return events;
 	}
 
 	private static async ValueTask<ResolvedEvent?> ReadEvent<TStreamId>(this TFReaderLease localReader, IndexQueryRecord record, CancellationToken ct) {
