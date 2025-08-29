@@ -14,14 +14,11 @@ using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
-using Serilog;
 
 namespace KurrentDB.Core.Services.Transport.Enumerators;
 
 partial class Enumerator {
 	public class ReadAllForwardsFiltered : IAsyncEnumerator<ReadResponse> {
-		private static readonly ILogger Log = Serilog.Log.ForContext<ReadAllForwardsFiltered>();
-
 		private readonly IPublisher _bus;
 		private readonly ulong _maxCount;
 		private readonly bool _resolveLinks;
@@ -32,7 +29,7 @@ partial class Enumerator {
 		private readonly uint _maxSearchWindow;
 		private readonly CancellationToken _cancellationToken;
 		private readonly SemaphoreSlim _semaphore = new(1, 1);
-		private readonly Channel<ReadResponse> _channel = Channel.CreateBounded<ReadResponse>(BoundedChannelOptions);
+		private readonly Channel<ReadResponse> _channel = Channel.CreateBounded<ReadResponse>(DefaultCatchUpChannelOptions);
 
 		private ReadResponse _current;
 
@@ -54,7 +51,7 @@ partial class Enumerator {
 			_eventFilter = Ensure.NotNull(eventFilter);
 			_user = user;
 			_requiresLeader = requiresLeader;
-			_maxSearchWindow = maxSearchWindow ?? ReadBatchSize;
+			_maxSearchWindow = maxSearchWindow ?? DefaultReadBatchSize;
 			_deadline = deadline;
 			_cancellationToken = cancellationToken;
 
@@ -83,7 +80,7 @@ partial class Enumerator {
 
 			_bus.Publish(new ClientMessage.FilteredReadAllEventsForward(
 				correlationId, correlationId, new ContinuationEnvelope(OnMessage, _semaphore, _cancellationToken),
-				commitPosition, preparePosition, (int)Math.Min(ReadBatchSize, _maxCount), _resolveLinks,
+				commitPosition, preparePosition, (int)Math.Min(DefaultReadBatchSize, _maxCount), _resolveLinks,
 				_requiresLeader, (int)_maxSearchWindow, null, _eventFilter, _user,
 				replyOnExpired: false,
 				expires: _deadline,
@@ -118,9 +115,7 @@ partial class Enumerator {
 							return;
 						}
 
-						ReadPage(Position.FromInt64(
-							completed.NextPos.CommitPosition,
-							completed.NextPos.PreparePosition), readCount);
+						ReadPage(Position.FromInt64(completed.NextPos.CommitPosition, completed.NextPos.PreparePosition), readCount);
 						return;
 					case FilteredReadAllResult.AccessDenied:
 						_channel.Writer.TryComplete(new ReadResponseException.AccessDenied());

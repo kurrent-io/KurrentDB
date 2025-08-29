@@ -21,7 +21,8 @@ public abstract class StorageReaderService {
 	protected static readonly ILogger Log = Serilog.Log.ForContext<StorageReaderService>();
 }
 
-public class StorageReaderService<TStreamId> : StorageReaderService, IHandle<SystemMessage.SystemInit>,
+public class StorageReaderService<TStreamId> : StorageReaderService,
+	IHandle<SystemMessage.SystemInit>,
 	IAsyncHandle<SystemMessage.BecomeShuttingDown>,
 	IHandle<SystemMessage.BecomeShutdown>,
 	IHandle<MonitoringMessage.InternalStatsRequest> {
@@ -38,6 +39,7 @@ public class StorageReaderService<TStreamId> : StorageReaderService, IHandle<Sys
 		int threadCount,
 		IReadOnlyCheckpoint writerCheckpoint,
 		IVirtualStreamReader inMemReader,
+		SecondaryIndexReaders secondaryIndexReaders,
 		QueueStatsManager queueStatsManager,
 		QueueTrackers trackers) {
 		Ensure.NotNull(subscriber);
@@ -50,15 +52,18 @@ public class StorageReaderService<TStreamId> : StorageReaderService, IHandle<Sys
 		StorageReaderWorker<TStreamId>[] readerWorkers = new StorageReaderWorker<TStreamId>[threadCount];
 		InMemoryBus[] storageReaderBuses = new InMemoryBus[threadCount];
 		for (var i = 0; i < threadCount; i++) {
-			readerWorkers[i] = new(bus, readIndex, systemStreams, writerCheckpoint, inMemReader, i);
+			readerWorkers[i] = new(bus, readIndex, systemStreams, writerCheckpoint, inMemReader, secondaryIndexReaders, i);
 			storageReaderBuses[i] = new("StorageReaderBus", watchSlowMsg: false);
 			storageReaderBuses[i].Subscribe<ClientMessage.ReadEvent>(readerWorkers[i]);
-			storageReaderBuses[i].Subscribe<ClientMessage.ReadStreamEventsBackward>(readerWorkers[i]);
+			storageReaderBuses[i].Subscribe<ClientMessage.ReadLogEvents>(readerWorkers[i]);
 			storageReaderBuses[i].Subscribe<ClientMessage.ReadStreamEventsForward>(readerWorkers[i]);
+			storageReaderBuses[i].Subscribe<ClientMessage.ReadStreamEventsBackward>(readerWorkers[i]);
 			storageReaderBuses[i].Subscribe<ClientMessage.ReadAllEventsForward>(readerWorkers[i]);
 			storageReaderBuses[i].Subscribe<ClientMessage.ReadAllEventsBackward>(readerWorkers[i]);
 			storageReaderBuses[i].Subscribe<ClientMessage.FilteredReadAllEventsForward>(readerWorkers[i]);
 			storageReaderBuses[i].Subscribe<ClientMessage.FilteredReadAllEventsBackward>(readerWorkers[i]);
+			storageReaderBuses[i].Subscribe<ClientMessage.ReadIndexEventsForward>(readerWorkers[i]);
+			storageReaderBuses[i].Subscribe<ClientMessage.ReadIndexEventsBackward>(readerWorkers[i]);
 			storageReaderBuses[i].Subscribe<StorageMessage.BatchLogExpiredMessages>(readerWorkers[i]);
 			storageReaderBuses[i].Subscribe<StorageMessage.EffectiveStreamAclRequest>(readerWorkers[i]);
 			storageReaderBuses[i].Subscribe<StorageMessage.StreamIdFromTransactionIdRequest>(readerWorkers[i]);
@@ -76,12 +81,15 @@ public class StorageReaderService<TStreamId> : StorageReaderService, IHandle<Sys
 		_workersMultiHandler.Start();
 
 		subscriber.Subscribe<ClientMessage.ReadEvent>(_workersMultiHandler);
-		subscriber.Subscribe<ClientMessage.ReadStreamEventsBackward>(_workersMultiHandler);
+		subscriber.Subscribe<ClientMessage.ReadLogEvents>(_workersMultiHandler);
 		subscriber.Subscribe<ClientMessage.ReadStreamEventsForward>(_workersMultiHandler);
+		subscriber.Subscribe<ClientMessage.ReadStreamEventsBackward>(_workersMultiHandler);
 		subscriber.Subscribe<ClientMessage.ReadAllEventsForward>(_workersMultiHandler);
 		subscriber.Subscribe<ClientMessage.ReadAllEventsBackward>(_workersMultiHandler);
 		subscriber.Subscribe<ClientMessage.FilteredReadAllEventsForward>(_workersMultiHandler);
 		subscriber.Subscribe<ClientMessage.FilteredReadAllEventsBackward>(_workersMultiHandler);
+		subscriber.Subscribe<ClientMessage.ReadIndexEventsForward>(_workersMultiHandler);
+		subscriber.Subscribe<ClientMessage.ReadIndexEventsBackward>(_workersMultiHandler);
 		subscriber.Subscribe<StorageMessage.BatchLogExpiredMessages>(_workersMultiHandler);
 		subscriber.Subscribe<StorageMessage.EffectiveStreamAclRequest>(_workersMultiHandler);
 		subscriber.Subscribe<StorageMessage.StreamIdFromTransactionIdRequest>(_workersMultiHandler);

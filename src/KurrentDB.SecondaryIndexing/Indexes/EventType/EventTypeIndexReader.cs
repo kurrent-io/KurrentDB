@@ -1,0 +1,56 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Event Store License v2 (see LICENSE.md).
+
+using Kurrent.Quack.ConnectionPool;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.SecondaryIndexing.Indexes.Default;
+using KurrentDB.SecondaryIndexing.Storage;
+using static KurrentDB.SecondaryIndexing.Indexes.EventType.EventTypeSql;
+
+namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
+
+internal class EventTypeIndexReader(
+	DuckDBConnectionPool db,
+	DefaultIndexProcessor processor,
+	IReadIndex<string> index,
+	DefaultIndexInFlightRecords inFlightRecords
+) : SecondaryIndexReaderBase(db, index) {
+	protected override string GetId(string streamName) =>
+		EventTypeIndex.TryParseEventType(streamName, out var eventTypeName) ? eventTypeName : string.Empty;
+
+	protected override IReadOnlyList<IndexQueryRecord> GetIndexRecordsForwards(string id, TFPos startPosition, int maxCount, bool excludeStart) {
+		var range = excludeStart
+			? Db.QueryToList<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryExcl>(new(id, startPosition.PreparePosition, maxCount))
+			: Db.QueryToList<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(new(id, startPosition.PreparePosition, maxCount));
+
+		if (range.Count < maxCount) {
+			// events might be in flight
+			var inFlight = inFlightRecords.GetInFlightRecordsForwards(startPosition, range, maxCount, r => r.EventType == id);
+			range.AddRange(inFlight);
+		}
+
+		return range;
+	}
+
+	protected override IReadOnlyList<IndexQueryRecord> GetIndexRecordsBackwards(string id, TFPos startPosition, int maxCount, bool excludeStart) {
+		var inFlight = inFlightRecords.GetInFlightRecordsBackwards(startPosition, maxCount, r => r.EventType == id).ToList();
+		if (inFlight.Count == maxCount) {
+			return inFlight;
+		}
+
+		var range = excludeStart
+			? Db.QueryToList<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexBackQueryExcl>(new(id, startPosition.PreparePosition, maxCount))
+			: Db.QueryToList<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexBackQueryIncl>(new(id, startPosition.PreparePosition, maxCount));
+
+		if (inFlight.Count > 0) {
+			range.AddRange(inFlight);
+		}
+
+		return range;
+	}
+
+	public override TFPos GetLastIndexedPosition(string indexName) => processor.LastIndexedPosition;
+
+	public override bool CanReadIndex(string indexName) => EventTypeIndex.IsEventTypeIndex(indexName);
+}
