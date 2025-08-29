@@ -28,7 +28,7 @@
 
 	private bool _loading = true;
 	private bool _wasExpanded;
-	private StatsService.CategoryEventTypes[] _details = [];
+	private StatsSql.GetCategoryEventTypes.Result[] _details = [];
 
 	void ExpandedChanged(bool newValue) {
 		if (_wasExpanded || !newValue) return;

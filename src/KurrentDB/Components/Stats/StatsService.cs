@@ -6,46 +6,33 @@ using System.Collections.Generic;
 using Dapper;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
+using KurrentDB.SecondaryIndexing.Storage;
+using static KurrentDB.Components.Stats.StatsSql;
 
 namespace KurrentDB.Components.Stats;
 
 internal class StatsService(DuckDBConnectionPool db) {
 	public IEnumerable<CategoryName> GetCategories() {
 		using var connection = db.Open();
-		var st = new PreparedStatement(connection, StatsSql.GetAllCategories.CommandText);
-		foreach (var row in new QueryResult<CategoryName, StatsSql.GetAllCategories>(st)) {
+		var st = new PreparedStatement(connection, GetAllCategories.CommandText);
+		foreach (var row in new QueryResult<CategoryName, GetAllCategories>(st)) {
 			yield return row;
 		}
 	}
 
-	public IEnumerable<(long, long)> GetCategoryStats(string category) {
-		if (string.IsNullOrWhiteSpace(category)) return [];
-		using var connection = db.Open();
-		return connection.Query<(long, long)>("select count(distinct stream), count(rowid) from idx_all where category = $category", new { category });
-	}
+	public List<GetCategoryStats.Result> GetCategoryStats(string category)
+		=> string.IsNullOrWhiteSpace(category)
+			? []
+			: db.QueryToList<GetCategoryStats.Args, GetCategoryStats.Result, GetCategoryStats>(new(category))!;
 
-	public IEnumerable<CategoryEventTypes> GetCategoryEventTypes(string category) {
-		if (string.IsNullOrWhiteSpace(category)) return [];
-		using var connection = db.Open();
-		return connection.Query<CategoryEventTypes>(CategoryEventTypesSql, new { category });
-	}
+	public List<GetCategoryEventTypes.Result> GetCategoryEventTypes(string category)
+		=> string.IsNullOrWhiteSpace(category)
+			? []
+			: db.QueryToList<GetCategoryEventTypes.Args, GetCategoryEventTypes.Result, GetCategoryEventTypes>(new(category));
 
-	private const string CategoryEventTypesSql =
-		"""
-		select
-			event_type as EventType,
-			count(rowid) AS NumEvents,
-			epoch_ms(min(created)) as FirstAdded,
-			epoch_ms(max(created)) as LastAdded
-		from idx_all
-		where category = $category
-		group by event_type
-		""";
+	public List<GetExplicitTransactions.Result> GetExplicitTransactions()
+		=> db.QueryToList<GetExplicitTransactions.Result, GetExplicitTransactions>();
 
-	public record CategoryEventTypes {
-		public string EventType { get; init; }
-		public long NumEvents { get; init; }
-		public DateTime FirstAdded { get; init; }
-		public DateTime LastAdded { get; init; }
-	}
+	public List<GetLongestStreams.Result> GetLongestStreams()
+		=> db.QueryToList<GetLongestStreams.Result, GetLongestStreams>();
 }

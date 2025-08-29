@@ -12,4 +12,9 @@ public static class DuckDbExtensions {
 		where TRow : struct
 		where TQuery : IQuery<TArgs, TRow>
 		=> db.QueryAsCollection<TArgs, TRow, TQuery, List<TRow>>(args);
+
+	public static List<TRow> QueryToList<TRow, TQuery>(this DuckDBConnectionPool db)
+		where TRow : struct
+		where TQuery : IQuery<TRow>
+		=> db.QueryAsCollection<TRow, TQuery, List<TRow>>();
 }

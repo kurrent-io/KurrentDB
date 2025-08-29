@@ -1,0 +1,30 @@
+@inject StatsService Stats
+
+@if (_loading) {
+	<MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large"/>
+} else {
+	<MudText Typo="Typo.h6" Class="pt-2 ml-4">Longest streams per category</MudText>
+	<MudDataGrid Items="@_details">
+		<Columns>
+			<PropertyColumn Property="x => x.Stream" Title="Stream"/>
+			<PropertyColumn Property="x => x.EventNumber" Title="Event number"/>
+		</Columns>
+	</MudDataGrid>
+}
+
+@code {
+	private bool _loading = true;
+	private List<StatsSql.GetLongestStreams.Result> _details = [];
+
+	protected override void OnAfterRender(bool firstRender) {
+		base.OnAfterRender(firstRender);
+		if (!firstRender) return;
+		Task.Run(() => InvokeAsync(LoadDetails));
+	}
+
+	void LoadDetails() {
+		_details = Stats.GetLongestStreams();
+		_loading = false;
+		StateHasChanged();
+	}
+}
