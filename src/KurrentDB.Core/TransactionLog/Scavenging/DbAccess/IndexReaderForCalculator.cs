@@ -13,16 +13,16 @@ namespace KurrentDB.Core.TransactionLog.Scavenging.DbAccess;
 
 public class IndexReaderForCalculator<TStreamId> : IIndexReaderForCalculator<TStreamId> {
 	private readonly IReadIndex<TStreamId> _readIndex;
-	private readonly Func<TFReaderLease> _tfReaderFactory;
+	private readonly ITransactionFileReader _tfReader;
 	private readonly Func<ulong, TStreamId> _lookupUniqueHashUser;
 
 	public IndexReaderForCalculator(
 		IReadIndex<TStreamId> readIndex,
-		Func<TFReaderLease> tfReaderFactory,
+		ITransactionFileReader tfReader,
 		Func<ulong, TStreamId> lookupUniqueHashUser) {
 
 		_readIndex = readIndex;
-		_tfReaderFactory = tfReaderFactory;
+		_tfReader = tfReader;
 		_lookupUniqueHashUser = lookupUniqueHashUser;
 	}
 
@@ -65,8 +65,7 @@ public class IndexReaderForCalculator<TStreamId> : IIndexReaderForCalculator<TSt
 	}
 
 	public async ValueTask<bool> IsTombstone(long logPosition, CancellationToken token) {
-		using var reader = _tfReaderFactory();
-		var result = await reader.TryReadAt(logPosition, couldBeScavenged: true, token);
+		var result = await _tfReader.TryReadAt(logPosition, couldBeScavenged: true, token);
 
 		if (!result.Success)
 			return false;

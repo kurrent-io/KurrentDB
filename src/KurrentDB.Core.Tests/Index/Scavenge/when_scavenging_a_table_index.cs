@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using KurrentDB.Core.Index;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Tests.TransactionLog.Scavenging.Helpers;
-using KurrentDB.Core.TransactionLog;
 using NUnit.Framework;
 
 namespace KurrentDB.Core.Tests.Index.Scavenge;
@@ -36,13 +35,13 @@ class when_scavenging_a_table_index : SpecificationWithDirectoryPerTestFixture {
 
 		_indexDir = PathName;
 
-		var fakeReader = new TFReaderLease(new FakeIndexReader(l => !Deleted.Contains(l)));
+		var fakeReader = new FakeIndexReader(l => !Deleted.Contains(l));
 
 		_lowHasher = new XXHashUnsafe();
 		_highHasher = new Murmur3AUnsafe();
 		_tableIndex = new TableIndex<string>(_indexDir, _lowHasher, _highHasher, "",
 			() => new HashListMemTable(PTableVersions.IndexV4, maxSize: 5),
-			() => fakeReader,
+			fakeReader,
 			PTableVersions.IndexV4,
 			5, Constants.PTableMaxReaderCountDefault,
 			maxSizeForMemory: 2,
@@ -66,7 +65,7 @@ class when_scavenging_a_table_index : SpecificationWithDirectoryPerTestFixture {
 
 		_tableIndex = new TableIndex<string>(_indexDir, _lowHasher, _highHasher, "",
 			() => new HashListMemTable(PTableVersions.IndexV4, maxSize: 5),
-			() => fakeReader,
+			fakeReader,
 			PTableVersions.IndexV4,
 			5, Constants.PTableMaxReaderCountDefault,
 			maxSizeForMemory: 2,

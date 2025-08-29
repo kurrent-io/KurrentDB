@@ -14,11 +14,12 @@ using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Core.LogV3;
 
-public class PartitionManager : IPartitionManager {
+public class PartitionManager : IPartitionManager, IReadCursor {
 	private static readonly ILogger _log = Log.ForContext<PartitionManager>();
 	private readonly ITransactionFileReader _reader;
 	private readonly ITransactionFileWriter _writer;
 	private readonly LogV3RecordFactory _recordFactory;
+	private long _position;
 
 	private const string RootPartitionName = "Root";
 	private const string RootPartitionTypeName = "Root";
@@ -31,6 +32,11 @@ public class PartitionManager : IPartitionManager {
 		_reader = reader;
 		_writer = writer;
 		_recordFactory = recordFactory;
+	}
+
+	long IReadCursor.Position {
+		get => _position;
+		set => _position = value;
 	}
 
 	public async ValueTask Initialize(CancellationToken token) {
@@ -87,8 +93,8 @@ public class PartitionManager : IPartitionManager {
 
 	private async ValueTask ReadRootPartition(CancellationToken token) {
 		SeqReadResult result;
-		_reader.Reposition(0);
-		while ((result = await _reader.TryReadNext(token)).Success) {
+		_position = 0L;
+		while ((result = await _reader.TryReadNext(this, token)).Success) {
 			var rec = result.LogRecord;
 			switch (rec.RecordType) {
 				case LogRecordType.PartitionType:

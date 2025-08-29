@@ -30,13 +30,7 @@ public sealed class when_starting_having_TFLog_with_no_epochs<TLogFormat, TStrea
 	private SynchronousScheduler _mainBus;
 	private readonly Guid _instanceId = Guid.NewGuid();
 	private readonly List<Message> _published = new List<Message>();
-	public when_starting_having_TFLog_with_no_epochs() {
-	}
 
-	private static int GetNextEpoch() {
-		return (int)Interlocked.Increment(ref _currentEpoch);
-	}
-	private static long _currentEpoch = -1;
 	private EpochManager<TStreamId> GetManager() {
 		return new EpochManager<TStreamId>(_mainBus,
 			10,
@@ -44,7 +38,7 @@ public sealed class when_starting_having_TFLog_with_no_epochs<TLogFormat, TStrea
 			_writer,
 			initialReaderCount: 1,
 			maxReaderCount: 5,
-			readerFactory: () => new TFChunkReader(_db, _db.Config.WriterCheckpoint),
+			new TFChunkReader(_db, _db.Config.WriterCheckpoint),
 			_logFormat.RecordFactory,
 			_logFormat.StreamNameIndex,
 			_logFormat.EventTypeIndex,

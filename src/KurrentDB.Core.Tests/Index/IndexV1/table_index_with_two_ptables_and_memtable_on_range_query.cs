@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using KurrentDB.Core.Index;
 using KurrentDB.Core.Index.Hashes;
-using KurrentDB.Core.TransactionLog;
 using NUnit.Framework;
 
 namespace KurrentDB.Core.Tests.Index.IndexV1;
@@ -34,12 +33,12 @@ public class table_index_with_two_ptables_and_memtable_on_range_query : Specific
 		await base.TestFixtureSetUp();
 
 		_indexDir = PathName;
-		var fakeReader = new TFReaderLease(new FakeIndexReader());
+		var fakeReader = new FakeIndexReader();
 		_lowHasher = new FakeIndexHasher();
 		_highHasher = new FakeIndexHasher();
 		_tableIndex = new TableIndex<string>(_indexDir, _lowHasher, _highHasher, "",
 			() => new HashListMemTable(_ptableVersion, maxSize: 10),
-			() => fakeReader,
+			fakeReader,
 			_ptableVersion,
 			5, Constants.PTableMaxReaderCountDefault,
 			maxSizeForMemory: 2,

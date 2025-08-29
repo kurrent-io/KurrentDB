@@ -23,16 +23,14 @@ public class InternalAuthenticationProviderFactory : IAuthenticationProviderFact
 		_dispatcher = new(components.MainQueue, components.WorkersQueue);
 		_defaultUserOptions = defaultUserOptions;
 
-		foreach (var bus in components.WorkerBuses) {
-			bus.Subscribe<ClientMessage.ReadStreamEventsForwardCompleted>(_dispatcher.ForwardReader);
-			bus.Subscribe<ClientMessage.ReadStreamEventsBackwardCompleted>(_dispatcher.BackwardReader);
-			bus.Subscribe<ClientMessage.NotHandled>(_dispatcher.BackwardReader);
-			bus.Subscribe<ClientMessage.WriteEventsCompleted>(_dispatcher.Writer);
-			bus.Subscribe<ClientMessage.DeleteStreamCompleted>(_dispatcher.StreamDeleter);
-			bus.Subscribe<IODispatcherDelayedMessage>(_dispatcher.Awaker);
-			bus.Subscribe<IODispatcherDelayedMessage>(_dispatcher);
-			bus.Subscribe<ClientMessage.NotHandled>(_dispatcher);
-		}
+		components.WorkerBus.Subscribe<ClientMessage.ReadStreamEventsForwardCompleted>(_dispatcher.ForwardReader);
+		components.WorkerBus.Subscribe<ClientMessage.ReadStreamEventsBackwardCompleted>(_dispatcher.BackwardReader);
+		components.WorkerBus.Subscribe<ClientMessage.NotHandled>(_dispatcher.BackwardReader);
+		components.WorkerBus.Subscribe<ClientMessage.WriteEventsCompleted>(_dispatcher.Writer);
+		components.WorkerBus.Subscribe<ClientMessage.DeleteStreamCompleted>(_dispatcher.StreamDeleter);
+		components.WorkerBus.Subscribe<IODispatcherDelayedMessage>(_dispatcher.Awaker);
+		components.WorkerBus.Subscribe<IODispatcherDelayedMessage>(_dispatcher);
+		components.WorkerBus.Subscribe<ClientMessage.NotHandled>(_dispatcher);
 
 		var usersController = new UsersController(
 			components.HttpSendService,

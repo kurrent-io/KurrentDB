@@ -38,8 +38,10 @@ public class GetAllPersistentSubscriptionStatsTests {
 	private PersistentSubscriptionService<string> CreateSut() {
 		_publisher.Messages.Clear();
 		var subscriber = new SynchronousScheduler();
-		var queuedHandler =
-			new QueuedHandlerThreadPool(subscriber, "test", new QueueStatsManager(), new QueueTrackers());
+		var queuedHandler = new ThreadPoolMessageScheduler(subscriber) {
+			Name = "test",
+			SynchronizeMessagesWithUnknownAffinity = true
+		};
 		var index = new FakeReadIndex<LogFormat.V2, string>(_ => false, new LogV2SystemStreams());
 		var strategyRegistry = new PersistentSubscriptionConsumerStrategyRegistry(_publisher, subscriber,
 			Array.Empty<IPersistentSubscriptionConsumerStrategyFactory>());

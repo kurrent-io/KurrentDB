@@ -66,7 +66,6 @@ using KurrentDB.Core.Services.VNode;
 using KurrentDB.Core.Settings;
 using KurrentDB.Core.Synchronization;
 using KurrentDB.Core.Telemetry;
-using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
@@ -172,7 +171,7 @@ public class ClusterVNode<TStreamId> :
 		get { return _authenticationProvider; }
 	}
 
-	internal MultiQueuedHandler WorkersHandler {
+	internal ThreadPoolMessageScheduler WorkersHandler {
 		get { return _workersHandler; }
 	}
 
@@ -193,8 +192,8 @@ public class ClusterVNode<TStreamId> :
 	private readonly IReadIndex<TStreamId> _readIndex;
 	private readonly SemaphoreSlimLock _switchChunksLock = new();
 
-	private readonly InMemoryBus[] _workerBuses;
-	private readonly MultiQueuedHandler _workersHandler;
+	private readonly InMemoryBus _workerBus;
+	private readonly ThreadPoolMessageScheduler _workersHandler;
 	private readonly List<Task> _tasks = new();
 	private readonly QueueStatsManager _queueStatsManager;
 	private readonly bool _disableHttps;
@@ -329,8 +328,7 @@ public class ClusterVNode<TStreamId> :
 
 		var dbConfig = CreateDbConfig(
 			out var statsHelper,
-			out var readerThreadsCount,
-			out var workerThreadsCount);
+			out var readerThreadsCount);
 
 		var trackers = new Trackers();
 		var metricsConfiguration = MetricsConfiguration.Get(configuration);
@@ -367,8 +365,7 @@ public class ClusterVNode<TStreamId> :
 
 		TFChunkDbConfig CreateDbConfig(
 			out SystemStatsHelper statsHelper,
-			out int readerThreadsCount,
-			out int workerThreadsCount) {
+			out int readerThreadsCount) {
 
 			ICheckpoint writerChk;
 			ICheckpoint chaserChk;
@@ -464,10 +461,6 @@ public class ClusterVNode<TStreamId> :
 				ThreadCountCalculator.CalculateReaderThreadCount(options.Database.ReaderThreadsCount,
 					processorCount, isRunningInContainer);
 
-			workerThreadsCount =
-				ThreadCountCalculator.CalculateWorkerThreadCount(options.Application.WorkerThreads,
-					readerThreadsCount, isRunningInContainer);
-
 			return new TFChunkDbConfig(dbPath,
 				options.Database.ChunkSize,
 				cache,
@@ -524,19 +517,11 @@ public class ClusterVNode<TStreamId> :
 		var forwardingProxy = new MessageForwardingProxy();
 
 		// MISC WORKERS
-		_workerBuses = Enumerable.Range(0, workerThreadsCount).Select(queueNum =>
-			new InMemoryBus($"Worker #{queueNum + 1} Bus",
-				watchSlowMsg: true,
-				slowMsgThreshold: TimeSpan.FromMilliseconds(200))).ToArray();
-		_workersHandler = new MultiQueuedHandler(
-			workerThreadsCount,
-			queueNum => new QueuedHandlerThreadPool(_workerBuses[queueNum],
-				$"Worker #{queueNum + 1}",
-				_queueStatsManager,
-				trackers.QueueTrackers,
-				groupName: "Workers",
-				watchSlowMsg: true,
-				slowMsgThreshold: TimeSpan.FromMilliseconds(200)));
+		_workerBus = new("Worker Bus", watchSlowMsg: true, slowMsgThreshold: TimeSpan.FromMilliseconds(200));
+		_workersHandler = new ThreadPoolMessageScheduler(_workerBus) {
+			SynchronizeMessagesWithUnknownAffinity = false,
+			Name = "Worker Scheduler",
+		};
 
 		void StartSubsystems() {
 			foreach (var subsystem in _subsystems) {
@@ -594,10 +579,10 @@ public class ClusterVNode<TStreamId> :
 		// MONITORING
 		var monitoringInnerBus = new InMemoryBus("MonitoringInnerBus", watchSlowMsg: false);
 		var monitoringRequestBus = new InMemoryBus("MonitoringRequestBus", watchSlowMsg: false);
-		var monitoringQueue = new QueuedHandlerThreadPool(monitoringInnerBus, "MonitoringQueue", _queueStatsManager,
-			trackers.QueueTrackers,
-			true,
-			TimeSpan.FromMilliseconds(800));
+		var monitoringQueue = new ThreadPoolMessageScheduler(monitoringInnerBus) {
+			SynchronizeMessagesWithUnknownAffinity = true,
+			Name = "MonitoringQueue",
+		};
 
 		var monitoring = new MonitoringService(monitoringQueue,
 			monitoringRequestBus,
@@ -625,13 +610,7 @@ public class ClusterVNode<TStreamId> :
 		var indexPath = options.Database.Index ?? Path.Combine(Db.Config.Path, ESConsts.DefaultIndexDirectoryName);
 
 		var pTableMaxReaderCount = GetPTableMaxReaderCount(readerThreadsCount);
-		var readerPool = new ObjectPool<ITransactionFileReader>(
-			"ReadIndex readers pool",
-			ESConsts.PTableInitialReaderCount,
-			pTableMaxReaderCount,
-			() => new TFChunkReader(
-				Db,
-				Db.Config.WriterCheckpoint.AsReadOnly()));
+		var tfReader = new TFChunkReader(Db, Db.Config.WriterCheckpoint.AsReadOnly());
 
 		var logFormat = logFormatAbstractorFactory.Create(new() {
 			InMemory = options.Database.MemDb,
@@ -640,7 +619,7 @@ public class ClusterVNode<TStreamId> :
 			MaxReaderCount = pTableMaxReaderCount,
 			StreamExistenceFilterSize = options.Database.StreamExistenceFilterSize,
 			StreamExistenceFilterCheckpoint = Db.Config.StreamExistenceFilterCheckpoint,
-			TFReaderLeaseFactory = () => new TFReaderLease(readerPool),
+			TFReader = tfReader,
 			LowHasher = new XXHashUnsafe(),
 			HighHasher = new Murmur3AUnsafe(),
 		});
@@ -694,7 +673,7 @@ public class ClusterVNode<TStreamId> :
 			logFormat.EmptyStreamId,
 			() => new HashListMemTable(options.IndexBitnessVersion,
 				maxSize: options.Database.MaxMemTableSize * 2),
-			() => new TFReaderLease(readerPool),
+			tfReader,
 			options.IndexBitnessVersion,
 			maxSizeForMemory: options.Database.MaxMemTableSize,
 			maxTablesPerLevel: 2,
@@ -711,7 +690,7 @@ public class ClusterVNode<TStreamId> :
 		logFormat.StreamNamesProvider.SetTableIndex(tableIndex);
 
 		var readIndex = new ReadIndex<TStreamId>(_mainQueue,
-			readerPool,
+			tfReader,
 			tableIndex,
 			logFormat.StreamNameIndexConfirmer,
 			logFormat.StreamIds,
@@ -736,9 +715,8 @@ public class ClusterVNode<TStreamId> :
 		_readIndex = readIndex;
 		var writer = new TFChunkWriter(Db);
 
-		var partitionManager = logFormat.CreatePartitionManager(new TFChunkReader(
-				Db,
-				Db.Config.WriterCheckpoint.AsReadOnly()),
+		var partitionManager = logFormat.CreatePartitionManager(
+			tfReader,
 			writer);
 
 		var epochManager = new EpochManager<TStreamId>(_mainQueue,
@@ -747,9 +725,7 @@ public class ClusterVNode<TStreamId> :
 			writer,
 			initialReaderCount: 1,
 			maxReaderCount: 5,
-			readerFactory: () => new TFChunkReader(
-				Db,
-				Db.Config.WriterCheckpoint.AsReadOnly()),
+			tfReader,
 			logFormat.RecordFactory,
 			logFormat.StreamNameIndex,
 			logFormat.EventTypeIndex,
@@ -790,8 +766,7 @@ public class ClusterVNode<TStreamId> :
 
 		// Storage Reader
 		var storageReader = new StorageReaderService<TStreamId>(_mainQueue, _mainBus, readIndex,
-			logFormat.SystemStreams,
-			readerThreadsCount, Db.Config.WriterCheckpoint.AsReadOnly(), virtualStreamReader, _queueStatsManager,
+			logFormat.SystemStreams, Db.Config.WriterCheckpoint.AsReadOnly(), virtualStreamReader, _queueStatsManager,
 			trackers.QueueTrackers);
 
 		_mainBus.Subscribe<SystemMessage.SystemInit>(storageReader);
@@ -867,13 +842,11 @@ public class ClusterVNode<TStreamId> :
 		var httpPipe = new HttpMessagePipe();
 		var httpSendService = new HttpSendService(httpPipe, true, _externalServerCertificateValidator);
 		_mainBus.Subscribe<SystemMessage.StateChangeMessage>(httpSendService);
-		SubscribeWorkers(bus => bus.Subscribe<HttpMessage.HttpSend>(httpSendService));
+		_workerBus.Subscribe<HttpMessage.HttpSend>(httpSendService);
 
 		var grpcSendService = new GrpcSendService(_eventStoreClusterClientCache);
 		_mainBus.Subscribe<GrpcMessage.SendOverGrpc>(_workersHandler);
-		SubscribeWorkers(bus => {
-			bus.Subscribe<GrpcMessage.SendOverGrpc>(grpcSendService);
-		});
+		_workerBus.Subscribe<GrpcMessage.SendOverGrpc>(grpcSendService);
 
 		GossipAdvertiseInfo = GetGossipAdvertiseInfo();
 		GossipAdvertiseInfo GetGossipAdvertiseInfo() {
@@ -941,7 +914,7 @@ public class ClusterVNode<TStreamId> :
 		var components = new AuthenticationProviderFactoryComponents {
 			MainBus = _mainBus,
 			MainQueue = _mainQueue,
-			WorkerBuses = _workerBuses,
+			WorkerBus = _workerBus,
 			WorkersQueue = _workersHandler,
 			HttpSendService = httpSendService,
 			HttpService = _httpService,
@@ -1015,13 +988,7 @@ public class ClusterVNode<TStreamId> :
 			}
 		}
 
-		SubscribeWorkers(bus => {
-			var tcpSendService = new TcpSendService();
-			// ReSharper disable RedundantTypeArgumentsOfMethod
-			bus.Subscribe<TcpMessage.TcpSend>(tcpSendService);
-			// ReSharper restore RedundantTypeArgumentsOfMethod
-		});
-
+		_workerBus.Subscribe<TcpMessage.TcpSend>(new TcpSendService());
 
 		var httpAuthenticationProviders = new List<IHttpAuthenticationProvider>();
 
@@ -1098,7 +1065,7 @@ public class ClusterVNode<TStreamId> :
 		_mainBus.Subscribe<SystemMessage.SystemInit>(_httpService);
 		_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(_httpService);
 
-		SubscribeWorkers(KestrelHttpService.CreateAndSubscribePipeline);
+		KestrelHttpService.CreateAndSubscribePipeline(_workerBus);
 
 		// REQUEST FORWARDING
 		var forwardingService = new RequestForwardingService(_mainQueue, forwardingProxy, TimeSpan.FromSeconds(1));
@@ -1143,8 +1110,11 @@ public class ClusterVNode<TStreamId> :
 
 		// SUBSCRIPTIONS
 		var subscrBus = new InMemoryBus("SubscriptionsBus", true, TimeSpan.FromMilliseconds(50));
-		var subscrQueue = new QueuedHandlerThreadPool(subscrBus, "Subscriptions", _queueStatsManager,
-			trackers.QueueTrackers, false);
+		var subscrQueue = new ThreadPoolMessageScheduler(subscrBus) {
+			SynchronizeMessagesWithUnknownAffinity = true,
+			Name = "Subscriptions",
+		};
+
 		_mainBus.Subscribe<SystemMessage.SystemStart>(subscrQueue);
 		_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(subscrQueue);
 		_mainBus.Subscribe<TcpMessage.ConnectionClosed>(subscrQueue);
@@ -1173,8 +1143,10 @@ public class ClusterVNode<TStreamId> :
 		// PERSISTENT SUBSCRIPTIONS
 		// IO DISPATCHER
 		var perSubscrBus = new InMemoryBus("PersistentSubscriptionsBus", true, TimeSpan.FromMilliseconds(50));
-		var perSubscrQueue = new QueuedHandlerThreadPool(perSubscrBus, "PersistentSubscriptions", _queueStatsManager,
-			trackers.QueueTrackers, false);
+		var perSubscrQueue = new ThreadPoolMessageScheduler(perSubscrBus) {
+			SynchronizeMessagesWithUnknownAffinity = true,
+			Name = "PersistentSubscriptions",
+		};
 		var psubDispatcher = new IODispatcher(_mainQueue, perSubscrQueue);
 		perSubscrBus.Subscribe<ClientMessage.ReadStreamEventsBackwardCompleted>(psubDispatcher.BackwardReader);
 		perSubscrBus.Subscribe<ClientMessage.NotHandled>(psubDispatcher.BackwardReader);
@@ -1325,7 +1297,7 @@ public class ClusterVNode<TStreamId> :
 				logger: logger,
 				new IndexReaderForCalculator<TStreamId>(
 					readIndex,
-					() => new TFReaderLease(readerPool),
+					tfReader,
 					state.LookupUniqueHashUser),
 				chunkSize: options.Database.ChunkSize,
 				cancellationCheckPeriod: cancellationCheckPeriod,
@@ -1364,7 +1336,7 @@ public class ClusterVNode<TStreamId> :
 			var indexExecutor = new IndexExecutor<TStreamId>(
 				logger,
 				new IndexScavenger(tableIndex),
-				new ChunkReaderForIndexExecutor<TStreamId>(() => new TFReaderLease(readerPool)),
+				new ChunkReaderForIndexExecutor<TStreamId>(tfReader),
 				unsafeIgnoreHardDeletes: options.Database.UnsafeIgnoreHardDelete,
 				restPeriod: 32_768,
 				throttle: throttle);
@@ -1422,8 +1394,10 @@ public class ClusterVNode<TStreamId> :
 
 		// REDACTION
 		var redactionBus = new InMemoryBus("RedactionBus", true, TimeSpan.FromSeconds(2));
-		var redactionQueue = new QueuedHandlerThreadPool(redactionBus, "Redaction", _queueStatsManager,
-			trackers.QueueTrackers, false);
+		var redactionQueue = new ThreadPoolMessageScheduler(redactionBus) {
+			SynchronizeMessagesWithUnknownAffinity = true,
+			Name = "Redaction"
+		};
 
 		_mainBus.Subscribe<RedactionMessage.GetEventPosition>(redactionQueue);
 		_mainBus.Subscribe<RedactionMessage.AcquireChunksLock>(redactionQueue);
@@ -1790,12 +1764,6 @@ public class ClusterVNode<TStreamId> :
 			weight: 100,
 			new DynamicCacheResizer(ResizerUnit.Bytes, minCapacityPerCache, maxCapacityPerCache, 60, streamLastEventNumberCache),
 			new DynamicCacheResizer(ResizerUnit.Bytes, minCapacityPerCache, maxCapacityPerCache, 40, streamMetadataCache));
-	}
-
-	private void SubscribeWorkers(Action<InMemoryBus> setup) {
-		foreach (var workerBus in _workerBuses) {
-			setup(workerBus);
-		}
 	}
 
 	public override async Task StopAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default) {
