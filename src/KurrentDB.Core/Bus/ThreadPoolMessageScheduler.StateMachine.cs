@@ -44,21 +44,18 @@ partial class ThreadPoolMessageScheduler {
 		protected void ReturnToPool() => _scheduler._pool.Add(this);
 
 		// The current state machine implements approximately the following implementation:
-#if DEBUG
-		public async void ScheduleAsync(Message message, AsyncExclusiveLock groupLock){
-			try {
-				if (groupLock is not null)
-					await groupLock.AcquireAsync(_scheduler._lifetimeToken);
-
-				await _scheduler._consumer(message, _scheduler._lifetimeToken);
-			} catch(OperationCanceledException e) when (e.CancellationToken == _scheduler._lifetimeToken) {
-				// do nothing
-			} finally {
-				groupLock?.Release();
-				ProcessingCompleted();
-			}
-		}
-#endif
+		//public async void ScheduleAsync(Message message, AsyncExclusiveLock groupLock){
+		//	try {
+		//		if (groupLock is not null)
+		//			await groupLock.AcquireAsync(_scheduler._lifetimeToken);
+		//		await _scheduler._consumer(message, _scheduler._lifetimeToken);
+		//	} catch(OperationCanceledException e) when (e.CancellationToken == _scheduler._lifetimeToken) {
+		//		// do nothing
+		//	} finally {
+		//		groupLock?.Release();
+		//		ProcessingCompleted();
+		//	}
+		//}
 
 		internal void Schedule(Message message, AsyncExclusiveLock groupLock) {
 			_message = message;
