@@ -25,7 +25,8 @@ partial class ThreadPoolMessageScheduler {
 	// to apply PoolingAsyncValueTaskMethodBuilder for that method.
 	private class AsyncStateMachine : IThreadPoolWorkItem {
 		private readonly ThreadPoolMessageScheduler _scheduler;
-		private readonly Action _completionCallback, _lockAcquiredCallback;
+		private readonly Action _onConsumerCompleted;
+		private readonly Action _onLockAcquisitionCompleted;
 
 		// state fields
 		private ConfiguredValueTaskAwaitable.ConfiguredValueTaskAwaiter _awaiter;
@@ -34,8 +35,8 @@ partial class ThreadPoolMessageScheduler {
 
 		public AsyncStateMachine(ThreadPoolMessageScheduler scheduler) {
 			_scheduler = scheduler;
-			_completionCallback = Complete;
-			_lockAcquiredCallback = InvokeHandlerWithAcquiredLock;
+			_onConsumerCompleted = OnConsumerCompleted;
+			_onLockAcquisitionCompleted = OnLockAcquisitionCompleted;
 		}
 
 		protected virtual void ProcessingCompleted() {
@@ -45,7 +46,7 @@ partial class ThreadPoolMessageScheduler {
 
 		// true if acquired successfully
 		// false if canceled
-		private bool FinishLockAcquisition() {
+		private bool CheckLockAcquisition() {
 			try {
 				// We must consume the result, even if it's void. This is required by ValueTask behavioral contract.
 				_awaiter.GetResult();
@@ -63,14 +64,14 @@ partial class ThreadPoolMessageScheduler {
 			return true;
 		}
 
-		private void InvokeHandlerWithAcquiredLock() {
-			if (FinishLockAcquisition()) {
-				InvokeHandler();
+		private void OnLockAcquisitionCompleted() {
+			if (CheckLockAcquisition()) {
+				InvokeConsumer();
 			}
 		}
 
 		[SuppressMessage("Reliability", "CA2012", Justification = "The state machine is coded manually")]
-		private void AcquireAndSchedule() {
+		private void AcquireAndQueueOnThreadPool() {
 			Debug.Assert(_message is not null);
 			Debug.Assert(_groupLock is not null);
 
@@ -83,10 +84,10 @@ partial class ThreadPoolMessageScheduler {
 			if (!_awaiter.IsCompleted) {
 				// the lock cannot be acquired synchronously, attach the callback
 				// to be called when the lock is acquired
-				_awaiter.UnsafeOnCompleted(_lockAcquiredCallback);
-			} else if (FinishLockAcquisition()) {
+				_awaiter.UnsafeOnCompleted(_onLockAcquisitionCompleted);
+			} else if (CheckLockAcquisition()) {
 				// acquired synchronously without exceptions
-				EnqueueMessageHandler();
+				QueueOnThreadPool();
 			}
 		}
 
@@ -114,10 +115,10 @@ partial class ThreadPoolMessageScheduler {
 
 			if (groupLock is null) {
 				// no synchronization group provided, simply enqueue the processing to the thread pool
-				EnqueueMessageHandler();
+				QueueOnThreadPool();
 			} else {
 				// acquire the lock first to preserve the correct ordering
-				AcquireAndSchedule();
+				AcquireAndQueueOnThreadPool();
 			}
 		}
 
@@ -127,7 +128,7 @@ partial class ThreadPoolMessageScheduler {
 			_awaiter = default;
 		}
 
-		private void Complete() {
+		private void OnConsumerCompleted() {
 			try {
 				_awaiter.GetResult();
 			} catch (OperationCanceledException e) when (e.CancellationToken == _scheduler._lifetimeToken) {
@@ -139,22 +140,22 @@ partial class ThreadPoolMessageScheduler {
 		}
 
 		[SuppressMessage("Reliability", "CA2012", Justification = "The state machine is coded manually")]
-		private void InvokeHandler() {
+		private void InvokeConsumer() {
 			_awaiter = _scheduler
 				._consumer(_message, _scheduler._lifetimeToken)
 				.ConfigureAwait(false)
 				.GetAwaiter();
 
 			if (_awaiter.IsCompleted) {
-				Complete();
+				OnConsumerCompleted();
 			} else {
-				_awaiter.UnsafeOnCompleted(_completionCallback);
+				_awaiter.UnsafeOnCompleted(_onConsumerCompleted);
 			}
 		}
 
-		private void EnqueueMessageHandler() => ThreadPool.UnsafeQueueUserWorkItem(this, preferLocal: false);
+		private void QueueOnThreadPool() => ThreadPool.UnsafeQueueUserWorkItem(this, preferLocal: false);
 
-		void IThreadPoolWorkItem.Execute() => InvokeHandler();
+		void IThreadPoolWorkItem.Execute() => InvokeConsumer();
 	}
 
 	private sealed class PoolingAsyncStateMachine(ThreadPoolMessageScheduler scheduler) : AsyncStateMachine(scheduler) {
