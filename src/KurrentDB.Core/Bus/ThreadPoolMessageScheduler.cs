@@ -137,20 +137,27 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 		AsyncStateMachine stateMachine;
 		if (messageCount > _maxPoolSize) {
 			stateMachine = new(this);
-		}
-		else if (!_pool.TryTake(out stateMachine)) {
+		} else if (!_pool.TryTake(out stateMachine)) {
 			stateMachine = new PoolingAsyncStateMachine(this);
 		}
 
-		var synchronizationGroup = GetSynchronizationGroup(message);
+		Schedule(stateMachine, message, GetSynchronizationGroup(message), _readinessBarrier);
+	}
 
-		if (_readinessBarrier is { Task : { IsCompleted: false } readinessTask }) {
-			readinessTask.ConfigureAwait(false).GetAwaiter().UnsafeOnCompleted(Schedule);
+	// separate static method to avoid capture of `this` in Schedule closure
+	private static void Schedule(
+		AsyncStateMachine stateMachine,
+		Message message,
+		AsyncExclusiveLock synchronizationGroup,
+		TaskCompletionSource readinessBarrier) {
+
+		if (readinessBarrier is { Task: { IsCompleted: false } readinessTask }) {
+			readinessTask.ConfigureAwait(false).GetAwaiter().UnsafeOnCompleted(ScheduleMessage);
 		} else {
-			Schedule();
+			ScheduleMessage();
 		}
 
-		void Schedule() {
+		void ScheduleMessage() {
 			stateMachine.Schedule(message, synchronizationGroup);
 		}
 	}
