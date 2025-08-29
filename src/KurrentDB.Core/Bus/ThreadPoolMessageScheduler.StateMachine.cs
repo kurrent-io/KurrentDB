@@ -41,6 +41,8 @@ partial class ThreadPoolMessageScheduler {
 			_onLockAcquisitionCompleted = OnLockAcquisitionCompleted;
 		}
 
+		protected void ReturnToPool() => _scheduler._pool.Add(this);
+
 		// The current state machine implements approximately the following implementation:
 #if DEBUG
 		public async void ScheduleAsync(Message message, AsyncExclusiveLock groupLock){
@@ -163,11 +165,9 @@ partial class ThreadPoolMessageScheduler {
 	}
 
 	private sealed class PoolingAsyncStateMachine(ThreadPoolMessageScheduler scheduler) : AsyncStateMachine(scheduler) {
-		readonly ThreadPoolMessageScheduler _scheduler = scheduler;
-
 		protected override void ProcessingCompleted() {
 			base.ProcessingCompleted();
-			_scheduler._pool.Add(this);
+			ReturnToPool();
 		}
 	}
 }
