@@ -1,13 +1,14 @@
 ﻿@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
 @* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
 @inherits LayoutComponentBase
 
-<MudThemeProvider @ref="@_mudThemeProvider" Theme="@_theme" IsDarkMode="_darkMode"/>
+<MudThemeProvider Theme="@_theme"/>
 <MudLayout>
 	<MudAppBar Elevation="1">
-		<MudStaticNavDrawerToggle DrawerId="nav-drawer" Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" />
-		<img alt="Kurrent logo" src="@(_darkMode ? "logo_white.svg" : "logo_plum.svg")" height="32"/>
-		@* <MudText Typo="Typo.h5" Class="ml-3">KurrentDB @VersionInfo.Version</MudText> *@
+		<MudStaticNavDrawerToggle DrawerId="nav-drawer" Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit"
+		                          Edge="Edge.Start"/>
+		<img alt="Kurrent logo" src="logo_white.svg" height="32"/>
 		<MudText Typo="Typo.h5" Class="ml-3">KurrentDB</MudText>
 		<MudSpacer/>
 		<AuthorizeView>
@@ -15,9 +16,9 @@
 				<MudIconButton Icon="@(Icons.Material.Filled.Logout)" Color="Color.Inherit" Href="/ui/logout"/>
 			</Authorized>
 		</AuthorizeView>
-		@* <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle"/> *@
 	</MudAppBar>
-	<MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" Elevation="1" Variant="@DrawerVariant.Responsive" Breakpoint="@Breakpoint.Md" ClipMode="DrawerClipMode.Always">
+	<MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" Elevation="1" Variant="@DrawerVariant.Responsive"
+	           Breakpoint="@Breakpoint.Md" ClipMode="DrawerClipMode.Always">
 		<NavMenu/>
 	</MudDrawer>
 	<MudMainContent Class="mt-16 pa-4">
@@ -33,17 +34,9 @@
 
 @code {
 	bool _drawerOpen = true;
-	bool _darkMode = true;
 	MudTheme _theme = null!;
 
 	[Inject] private NavigationManager NavigationManager { get; set; } = null!;
-
-	// protected override async Task OnAfterRenderAsync(bool firstRender) {
-	// 	if (!firstRender) return;
-	//
-	// 	Preferences.SetTheme(await _mudThemeProvider.GetSystemPreference());
-	// 	StateHasChanged();
-	// }
 
 	protected override void OnInitialized() {
 		base.OnInitialized();
@@ -71,11 +64,6 @@
 			}
 		};
 	}
-
-	// Remove it until we figure out how to make SSR work with dynamic actions
-	// private void DarkModeToggle() {
-	// 	Preferences.ToggleTheme();
-	// }
 
 	private readonly PaletteLight _lightPalette = new() {
 		Black = "#110e2d",
@@ -114,13 +102,6 @@
 		Divider = "#292838",
 		OverlayLight = "#1e1e2d80",
 	};
-
-	MudThemeProvider _mudThemeProvider = null!;
-
-	// string DarkLightModeButtonIcon => Preferences.DarkMode switch {
-	// 	true => Icons.Material.Rounded.AutoMode,
-	// 	false => Icons.Material.Outlined.DarkMode,
-	// };
 }
 
 

@@ -52,7 +52,6 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		var (lastPosition, rowId) = GetLastPosition();
 		Logger.Information("Last known log position: {Position}", lastPosition);
 		LastIndexedPosition = lastPosition.PreparePosition;
-		_rowId = rowId;
 	}
 
 	public void Index(ResolvedEvent resolvedEvent) {
@@ -120,7 +119,6 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	}
 
 	private Atomic.Boolean _committing;
-	private long _rowId;
 
 	public void Commit() {
 		if (IsDisposingOrDisposed || !_committing.FalseToTrue())

@@ -18,7 +18,6 @@
 @inject DuckDBConnectionPool Db
 @inject Preferences Preferences
 @inject IDialogService DialogService
-@implements IDisposable
 <MudPopoverProvider/>
 <MudDialogProvider />
 
@@ -26,7 +25,10 @@
 
 <MudCard Outlined="true">
 	<MudCardContent>
-		<MudText>Type SQL statement in the editor below</MudText>
+		<MudAlert Severity="Severity.Warning">
+			Querying large datasets may cause performance impact. Consider adding <code>LIMIT</code> to your query.
+		</MudAlert>
+		<MudText class="my-4">Type SQL statement in the editor below</MudText>
 		<StandaloneCodeEditor @ref="_editor" Id="query-editor"
 		                      OnDidInit="OnEditorInit"
 		                      ConstructionOptions="EditorConstructionOptions"/>
@@ -67,7 +69,6 @@
 						<MudText Typo="Typo.h6">@item</MudText>
 
 						<Json JsonString="@context.Item[item]?.ToString()"></Json>
-						@* @context.Item[item]?.ToString() *@
 					}
 				</MudCardContent>
 			</MudCard>
@@ -145,15 +146,6 @@
 		void PreferencesOnThemeChanged(object sender, EventArgs e) => _editor.UpdateOptions(new() { Theme = EditorTheme() });
 	}
 
-	protected override async Task OnAfterRenderAsync(bool firstRender) {
-		await base.OnAfterRenderAsync(firstRender);
-		if (firstRender) {
-			// Console.WriteLine("Rendering the editor");
-			// await _editor.Render(true);
-			// Navigation.Refresh(true);
-		}
-	}
-
 	static object Shorten(object value) => value is not string s ? value : s[..Math.Min(s.Length, 50)];
 
 	static bool HasNoJson(IDictionary<string, object> arg) => arg.Keys.Select(key => arg[key]).All(item => !IsJsonString(item));
@@ -161,9 +153,5 @@
 	static bool IsJsonString(object value) => value is string s && (s.StartsWith('{') && s.EndsWith('}') || s.StartsWith('[') && s.EndsWith(']'));
 
 	string EditorTheme() => Preferences.DarkMode ? "vs-dark" : "vs-light";
-
-	public void Dispose() {
-		// _editor?.Dispose();
-	}
 }
 

@@ -104,7 +104,7 @@ public class IndexingTests(IndexingFixture fixture, ITestOutputHelper output)
 
 [UsedImplicitly]
 public class IndexingFixture : SecondaryIndexingEnabledFixture {
-	readonly LoadTestPartitionConfig _config = new(
+	private readonly LoadTestPartitionConfig _config = new(
 		PartitionId: 1,
 		StartCategoryIndex: 0,
 		CategoriesCount: 5,
@@ -115,7 +115,7 @@ public class IndexingFixture : SecondaryIndexingEnabledFixture {
 		TotalMessagesCount: 10
 	);
 
-	readonly MessageGenerator _messageGenerator = new();
+	private readonly MessageGenerator _messageGenerator = new();
 
 	public IndexingFixture() {
 		OnSetup = async () => {

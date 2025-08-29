@@ -15,8 +15,8 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Category;
 internal class CategoryIndexReader(
 	DuckDBConnectionPool db,
 	DefaultIndexProcessor processor,
-	IReadIndex<string> index//,
-	//DefaultIndexInFlightRecords inFlightRecords
+	IReadIndex<string> index,
+	DefaultIndexInFlightRecords inFlightRecords
 ) : SecondaryIndexReaderBase(db, index) {
 	protected override string GetId(string indexName) =>
 		CategoryIndex.TryParseCategoryName(indexName, out var categoryName)
@@ -27,28 +27,28 @@ internal class CategoryIndexReader(
 		var range = excludeFirst
 			? Db.QueryToList<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryExcl>(new(id, startPosition.PreparePosition, maxCount))
 			: Db.QueryToList<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryIncl>(new(id, startPosition.PreparePosition, maxCount));
-		// if (range.Count < maxCount) {
-		// 	// events might be in flight
-		// 	var inFlight = inFlightRecords.GetInFlightRecordsForwards(startPosition, range, maxCount, r => r.Category == id);
-		// 	range.AddRange(inFlight);
-		// }
+		if (range.Count < maxCount) {
+			// events might be in flight
+			var inFlight = inFlightRecords.GetInFlightRecordsForwards(startPosition, range, maxCount, r => r.Category == id);
+			range.AddRange(inFlight);
+		}
 
 		return range;
 	}
 
 	protected override IReadOnlyList<IndexQueryRecord> GetIndexRecordsBackwards(string id, TFPos startPosition, int maxCount, bool excludeFirst) {
-		// var inFlight = inFlightRecords.GetInFlightRecordsBackwards(startPosition, maxCount, r => r.Category == id).ToList();
-		// if (inFlight.Count == maxCount) {
-		// 	return inFlight;
-		// }
+		var inFlight = inFlightRecords.GetInFlightRecordsBackwards(startPosition, maxCount, r => r.Category == id).ToList();
+		if (inFlight.Count == maxCount) {
+			return inFlight;
+		}
 
 		var range = excludeFirst
 			? Db.QueryToList<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexBackQueryExcl>(new(id, startPosition.PreparePosition, maxCount))
 			: Db.QueryToList<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexBackQueryIncl>(new(id, startPosition.PreparePosition, maxCount));
 
-		// if (inFlight.Count > 0) {
-		// 	range.AddRange(inFlight);
-		// }
+		if (inFlight.Count > 0) {
+			range.AddRange(inFlight);
+		}
 
 		return range;
 	}
