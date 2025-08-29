@@ -40,8 +40,6 @@ partial class ThreadPoolMessageScheduler {
 
 		protected virtual void ProcessingCompleted() => _scheduler.ProcessingCompleted();
 
-		protected void ReturnToPool() => _scheduler._pool.Add(this);
-
 		// true if acquired successfully
 		// false if canceled
 		private bool FinishLockAcquisition() {
@@ -158,9 +156,11 @@ partial class ThreadPoolMessageScheduler {
 	}
 
 	private sealed class PoolingAsyncStateMachine(ThreadPoolMessageScheduler scheduler) : AsyncStateMachine(scheduler) {
+		readonly ThreadPoolMessageScheduler _scheduler = scheduler;
+
 		protected override void ProcessingCompleted() {
 			base.ProcessingCompleted();
-			ReturnToPool();
+			_scheduler._pool.Add(this);
 		}
 	}
 }
