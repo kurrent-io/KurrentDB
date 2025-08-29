@@ -129,14 +129,9 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 			stateMachine = new PoolingAsyncStateMachine(this);
 		}
 
-		Schedule(stateMachine, message, GetSynchronizationGroup(message), _readinessBarrier);
-	}
+		var synchronizationGroup = GetSynchronizationGroup(message);
 
-	private static void Schedule(AsyncStateMachine stateMachine, Message message,
-		AsyncExclusiveLock synchronizationGroup,
-		TaskCompletionSource readinessBarrier) {
-
-		if (readinessBarrier is { Task : { IsCompleted: false } readinessTask }) {
+		if (_readinessBarrier is { Task : { IsCompleted: false } readinessTask }) {
 			readinessTask.ConfigureAwait(false).GetAwaiter().UnsafeOnCompleted(Schedule);
 		} else {
 			Schedule();
