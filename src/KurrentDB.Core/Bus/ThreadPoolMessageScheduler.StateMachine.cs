@@ -41,61 +41,6 @@ partial class ThreadPoolMessageScheduler {
 			_onLockAcquisitionCompleted = OnLockAcquisitionCompleted;
 		}
 
-		protected virtual void ProcessingCompleted() {
-			CleanUp();
-			_scheduler.ProcessingCompleted();
-		}
-
-		// true if acquired successfully
-		// false if canceled
-		private bool CheckLockAcquisition() {
-			try {
-				// We must consume the result, even if it's void. This is required by ValueTask behavioral contract.
-				_awaiter.GetResult();
-			} catch (Exception e) {
-				ProcessingCompleted();
-				if (e is OperationCanceledException canceledEx &&
-				    canceledEx.CancellationToken == _scheduler._lifetimeToken) {
-					return false;
-				}
-
-				// not possible to get here. throwing here on the thread pool will exit the application
-				throw;
-			}
-
-			_awaiter = default;
-			return true;
-		}
-
-		private void OnLockAcquisitionCompleted() {
-			if (CheckLockAcquisition()) {
-				// We are already on the thread pool so we can invoke directly.
-				InvokeConsumer();
-			}
-		}
-
-		[SuppressMessage("Reliability", "CA2012", Justification = "The state machine is coded manually")]
-		private void AcquireAndQueueOnThreadPool() {
-			Debug.Assert(_message is not null);
-			Debug.Assert(_groupLock is not null);
-
-			// start the lock acquisition
-			_awaiter = _groupLock
-				.AcquireAsync(_scheduler._lifetimeToken)
-				.ConfigureAwait(false)
-				.GetAwaiter();
-
-			if (!_awaiter.IsCompleted) {
-				// the lock cannot be acquired synchronously, attach the callback
-				// to be called when the lock is acquired
-				_awaiter.UnsafeOnCompleted(_onLockAcquisitionCompleted);
-			} else if (CheckLockAcquisition()) {
-				// acquired synchronously without exceptions
-				QueueOnThreadPool();
-			}
-		}
-
-
 		// The current state machine implements approximately the following implementation:
 #if DEBUG
 		public async void ScheduleAsync(Message message, AsyncExclusiveLock groupLock){
@@ -126,22 +71,58 @@ partial class ThreadPoolMessageScheduler {
 			}
 		}
 
-		private void CleanUp() {
-			_message = null;
-			_groupLock = null;
-			_awaiter = default;
-		}
+		[SuppressMessage("Reliability", "CA2012", Justification = "The state machine is coded manually")]
+		private void AcquireAndQueueOnThreadPool() {
+			Debug.Assert(_message is not null);
+			Debug.Assert(_groupLock is not null);
 
-		private void OnConsumerCompleted() {
-			try {
-				_awaiter.GetResult();
-			} catch (OperationCanceledException e) when (e.CancellationToken == _scheduler._lifetimeToken) {
-				// suspend
-			} finally {
-				_groupLock?.Release();
-				ProcessingCompleted();
+			// start the lock acquisition
+			_awaiter = _groupLock
+				.AcquireAsync(_scheduler._lifetimeToken)
+				.ConfigureAwait(false)
+				.GetAwaiter();
+
+			if (!_awaiter.IsCompleted) {
+				// the lock cannot be acquired synchronously, attach the callback
+				// to be called when the lock is acquired
+				_awaiter.UnsafeOnCompleted(_onLockAcquisitionCompleted);
+			} else if (CheckLockAcquisition()) {
+				// acquired synchronously without exceptions
+				QueueOnThreadPool();
 			}
 		}
+
+		private void OnLockAcquisitionCompleted() {
+			if (CheckLockAcquisition()) {
+				// We are already on the thread pool so we can invoke directly.
+				InvokeConsumer();
+			}
+		}
+
+		// true if acquired successfully
+		// false if canceled
+		private bool CheckLockAcquisition() {
+			try {
+				// We must consume the result, even if it's void. This is required by ValueTask behavioral contract.
+				_awaiter.GetResult();
+			} catch (Exception e) {
+				ProcessingCompleted();
+				if (e is OperationCanceledException canceledEx &&
+				    canceledEx.CancellationToken == _scheduler._lifetimeToken) {
+					return false;
+				}
+
+				// not possible to get here. throwing here on the thread pool will exit the application
+				throw;
+			}
+
+			_awaiter = default;
+			return true;
+		}
+
+		private void QueueOnThreadPool() => ThreadPool.UnsafeQueueUserWorkItem(this, preferLocal: false);
+
+		void IThreadPoolWorkItem.Execute() => InvokeConsumer();
 
 		[SuppressMessage("Reliability", "CA2012", Justification = "The state machine is coded manually")]
 		private void InvokeConsumer() {
@@ -158,9 +139,27 @@ partial class ThreadPoolMessageScheduler {
 			}
 		}
 
-		private void QueueOnThreadPool() => ThreadPool.UnsafeQueueUserWorkItem(this, preferLocal: false);
+		private void OnConsumerCompleted() {
+			try {
+				_awaiter.GetResult();
+			} catch (OperationCanceledException e) when (e.CancellationToken == _scheduler._lifetimeToken) {
+				// suspend
+			} finally {
+				_groupLock?.Release();
+				ProcessingCompleted();
+			}
+		}
 
-		void IThreadPoolWorkItem.Execute() => InvokeConsumer();
+		protected virtual void ProcessingCompleted() {
+			CleanUp();
+			_scheduler.ProcessingCompleted();
+		}
+
+		private void CleanUp() {
+			_message = null;
+			_groupLock = null;
+			_awaiter = default;
+		}
 	}
 
 	private sealed class PoolingAsyncStateMachine(ThreadPoolMessageScheduler scheduler) : AsyncStateMachine(scheduler) {
