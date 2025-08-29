@@ -30,7 +30,7 @@ public abstract class SecondaryIndexReaderBase(DuckDbDataSource db, IReadIndex<s
 
 		int i = 0;
 		for (; i < inFlight.Count; i++)
-			if (inFlight[i].LogPosition > fromDb[^1].LogPosition)
+			if (inFlight[i].Position > fromDb[^1].Position)
 				break;
 
 		for (; i < inFlight.Count && fromDb.Count < maxCount; i++) {
@@ -54,7 +54,7 @@ public abstract class SecondaryIndexReaderBase(DuckDbDataSource db, IReadIndex<s
 
 		int i = 0;
 		for (; i < fromDb.Count; i++)
-			if (fromDb[i].LogPosition < inFlight[^1].LogPosition)
+			if (fromDb[i].Position < inFlight[^1].Position)
 				break;
 
 		for (; i < fromDb.Count && inFlight.Count < maxCount; i++) {

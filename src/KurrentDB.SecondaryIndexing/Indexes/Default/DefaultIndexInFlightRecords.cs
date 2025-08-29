@@ -10,7 +10,7 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 [StructLayout(LayoutKind.Auto)]
 readonly record struct InFlightRecord(
-	long LogPosition,
+	TFPos Position,
 	int CategoryId,
 	int EventTypeId
 );
@@ -22,9 +22,9 @@ class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions options) {
 
 	public int Count => _count;
 
-	public void Append(long logPosition, int categoryId, int eventTypeId) {
+	public void Append(TFPos position, int categoryId, int eventTypeId) {
 		var count = _count;
-		_records[count] = new(logPosition, categoryId, eventTypeId);
+		_records[count] = new(position, categoryId, eventTypeId);
 
 		// Fence: make sure that the array modification cannot be done after the increment
 		Volatile.Write(ref _count, count + 1);
@@ -53,15 +53,15 @@ class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions options) {
 		Func<InFlightRecord, bool>? query = null) {
 		query ??= True; // to avoid branching in the loop
 
-		var from = startPosition.PreparePosition + Unsafe.BitCast<bool, byte>(excludeFirst);
+		var from = new TFPos(startPosition.CommitPosition, startPosition.PreparePosition + Unsafe.BitCast<bool, byte>(excludeFirst));
 		var currentVer = _version;
 
 		for (int i = 0, count = Volatile.Read(in _count), seq = 0;
 		     i < count && maxCount > 0 && TryRead(currentVer, i, out var current);
 		     i++, maxCount--) {
 
-			if (current.LogPosition >= from && query.Invoke(current))
-				yield return new(seq++, current.LogPosition);
+			if (current.Position >= from && query.Invoke(current))
+				yield return new(seq++, current.Position);
 		}
 	}
 
@@ -72,15 +72,15 @@ class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions options) {
 		Func<InFlightRecord, bool>? query = null) {
 		query ??= True; // to avoid branching in the loop
 
-		var from = startPosition.PreparePosition - Unsafe.BitCast<bool, byte>(excludeFirst);
+		var from = new TFPos(startPosition.CommitPosition, startPosition.PreparePosition - Unsafe.BitCast<bool, byte>(excludeFirst));
 		var currentVer = _version;
 
 		for (int count = Volatile.Read(in _count), i = count - 1, seq = 0;
 		     i >= 0 && maxCount > 0 && TryRead(currentVer, i, out var current);
 		     i--, maxCount--) {
 
-			if (current.LogPosition <= from && query.Invoke(current))
-				yield return new(seq++, current.LogPosition);
+			if (current.Position <= from && query.Invoke(current))
+				yield return new(seq++, current.Position);
 		}
 	}
 

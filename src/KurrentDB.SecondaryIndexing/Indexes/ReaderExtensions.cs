@@ -5,7 +5,6 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.LogRecords;
-using KurrentDB.LogCommon;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes;
@@ -13,31 +12,59 @@ namespace KurrentDB.SecondaryIndexing.Indexes;
 static class ReaderExtensions {
 	public static async ValueTask<IReadOnlyList<ResolvedEvent>> ReadRecords(
 		this IIndexReader<string> index,
-		IEnumerable<IndexQueryRecord> indexPrepares,
+		IEnumerable<IndexQueryRecord> indexRecords,
 		CancellationToken cancellationToken
 	) {
 		using var reader = index.BorrowReader();
-		// ReSharper disable once AccessToDisposedClosure
-		var readPrepares = indexPrepares.Select(async x => (Record: x, Prepare: await reader.ReadPrepare<string>(x.LogPosition, cancellationToken)));
-		var prepared = await Task.WhenAll(readPrepares);
-		var recordsQuery = prepared.Where(x => x.Prepare != null);
-		var sorted = recordsQuery.OrderBy(x => x.Record.RowId);
-		var records = sorted.Select(x => ResolvedEvent.ForUnresolvedEvent(
-			new(x.Prepare!.ExpectedVersion + 1, x.Prepare, x.Prepare!.EventStreamId, x.Prepare!.EventType)
-		));
-		return records.ToList();
+
+		var readEvents = indexRecords.Select(async x => {
+			var @event = await reader.ReadEvent<string>(x, cancellationToken);
+			return (Record: x, Event: @event);
+		});
+
+		var events = (await Task.WhenAll(readEvents))
+			.OrderBy(x => x.Record.RowId)
+			.Where(x => x.Event is not null)
+			.Select(x => x.Event!.Value);
+
+		return events.ToList();
 	}
 
-	static async ValueTask<IPrepareLogRecord<TStreamId>?> ReadPrepare<TStreamId>(this TFReaderLease localReader,
-		long logPosition, CancellationToken ct) {
-		var r = await localReader.TryReadAt(logPosition, couldBeScavenged: true, ct);
-		if (!r.Success)
+	private static async ValueTask<ResolvedEvent?> ReadEvent<TStreamId>(this TFReaderLease localReader, IndexQueryRecord record, CancellationToken ct) {
+		var readPrepare = await localReader.TryReadAt(record.Position.PreparePosition, couldBeScavenged: true, ct);
+		if (!readPrepare.Success)
 			return null;
 
-		if (r.LogRecord.RecordType is not LogRecordType.Prepare
-		    and not LogRecordType.Stream
-		    and not LogRecordType.EventType)
-			throw new($"Incorrect type of log record {r.LogRecord.RecordType}, expected Prepare record.");
-		return (IPrepareLogRecord<TStreamId>)r.LogRecord;
+		if (readPrepare.LogRecord is not IPrepareLogRecord<TStreamId> prepare)
+			throw new($"Incorrect type of log record {readPrepare.LogRecord.RecordType}, expected Prepare record.");
+
+		long eventNumber;
+		long commitPosition;
+
+		if (record.Position.PreparePosition != record.Position.CommitPosition) {
+			var readCommit = await localReader.TryReadAt(record.Position.CommitPosition, couldBeScavenged: true, ct);
+			if (!readCommit.Success)
+				return null;
+
+			if (readCommit.LogRecord is not CommitLogRecord commit)
+				throw new($"Incorrect type of log record {readCommit.LogRecord.RecordType}, expected Commit record.");
+
+			eventNumber = commit.FirstEventNumber + prepare.TransactionOffset;
+			commitPosition = record.Position.CommitPosition;
+		} else {
+			eventNumber = prepare.ExpectedVersion + 1;
+			commitPosition = prepare.LogPosition;
+		}
+
+		if (prepare.EventStreamId is not string streamId)
+			throw new("Incorrect type of log record event stream id, expected string.");
+
+		if (prepare.EventType is not string eventType)
+			throw new("Incorrect type of log record event type, expected string.");
+
+		return ResolvedEvent.ForUnresolvedEvent(
+			@event: new(eventNumber, prepare, streamId, eventType),
+			commitPosition: commitPosition
+		);
 	}
 }

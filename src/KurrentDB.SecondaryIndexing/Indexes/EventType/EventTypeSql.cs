@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Kurrent.Quack;
+using KurrentDB.Core.Data;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
@@ -20,9 +21,9 @@ static class EventTypeSql {
 				args.Count
 			};
 
-		public static ReadOnlySpan<byte> CommandText => "select rowid, log_position from idx_all where event_type_id=$1 and log_position>=$2 order by rowid limit $3"u8;
+		public static ReadOnlySpan<byte> CommandText => "select rowid, COALESCE(commit_position, log_position), log_position from idx_all where event_type_id=$1 and log_position>=$2 order by rowid limit $3"u8;
 
-		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
+		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), new TFPos(row.ReadInt64(), row.ReadInt64()));
 	}
 
 	/// <summary>
@@ -36,9 +37,9 @@ static class EventTypeSql {
 				args.Count
 			};
 
-		public static ReadOnlySpan<byte> CommandText => "select rowid, log_position from idx_all where event_type_id=$1 and log_position<=$2 order by rowid limit $3"u8;
+		public static ReadOnlySpan<byte> CommandText => "select rowid, COALESCE(commit_position, log_position), log_position from idx_all where event_type_id=$1 and log_position<=$2 order by rowid limit $3"u8;
 
-		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
+		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), new TFPos(row.ReadInt64(), row.ReadInt64()));
 	}
 
 	public struct GetAllEventTypesQuery : IQuery<ReferenceRecord> {

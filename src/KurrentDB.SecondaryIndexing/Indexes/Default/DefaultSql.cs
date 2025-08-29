@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Kurrent.Quack;
+using KurrentDB.Core.Data;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
@@ -17,9 +18,9 @@ static class DefaultSql {
 			=> new(statement) { args.StartPosition, args.Count };
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select rowid, log_position from idx_all where log_position>=$1 and is_deleted=false order by rowid limit $2"u8;
+			"select rowid, COALESCE(commit_position, log_position), log_position from idx_all where log_position>=$1 and is_deleted=false order by rowid limit $2"u8;
 
-		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
+		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), new TFPos(row.ReadInt64(), row.ReadInt64()));
 	}
 
 	/// <summary>
@@ -30,9 +31,9 @@ static class DefaultSql {
 			=> new(statement) { args.StartPosition, args.Count };
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select -rowid, log_position from idx_all where log_position<=$1 and is_deleted=false order by rowid desc limit $2"u8;
+			"select -rowid, COALESCE(commit_position, log_position), log_position from idx_all where log_position<=$1 and is_deleted=false order by rowid desc limit $2"u8;
 
-		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
+		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), new TFPos(row.ReadInt64(), row.ReadInt64()));
 	}
 
 	public record struct LastPositionResult(long PreparePosition, long? CommitPosition);
