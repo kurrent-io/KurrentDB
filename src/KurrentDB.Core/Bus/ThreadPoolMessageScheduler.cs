@@ -12,11 +12,20 @@ using KurrentDB.Core.Messaging;
 
 namespace KurrentDB.Core.Bus;
 
+/// <summary>
+/// Handles messages by scheduling them for consumption on the thread pool by the consumer.
+/// Unlike QueuedHandlerThreadPool this is not a queue:
+/// Messages can consumed concurrently by the consumer, depending on their Affinity.
+/// </summary>
 public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 	private static readonly TimeSpan DefaultStopWaitTimeout = TimeSpan.FromSeconds(10);
 
 	private readonly Func<Message, CancellationToken, ValueTask> _consumer;
 	private readonly CancellationToken _lifetimeToken; // cached to avoid ObjectDisposedException
+
+	// ConditionalWeakTable does not keep the keys alive, they are removed from the table when
+	// they are garbage collected. It is thread safe.
+	// We use it to associate AsyncExclusiveLocks with Affinity objects.
 	private readonly ConditionalWeakTable<object, AsyncExclusiveLock> _syncGroups;
 	private readonly ConcurrentBag<AsyncStateMachine> _pool;
 	private readonly TaskCompletionSource _stopNotification;

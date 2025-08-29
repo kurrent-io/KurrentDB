@@ -15,9 +15,9 @@ using ILogger = Serilog.ILogger;
 namespace KurrentDB.Core.Bus;
 
 /// <summary>
-/// Lightweight in-memory queue with a separate thread in which it passes messages
-/// to the consumer. It also tracks statistics about the message processing to help
-/// in identifying bottlenecks
+/// Handles messages by putting them in a queue.
+/// Messages in the queue are consumed sequentially one at a time by the on the consumer.
+/// Messages are consumed on a thread pool thread. The is occupied until the queue becomes empty.
 /// </summary>
 public class QueuedHandlerThreadPool : IQueuedHandler, IMonitoredQueue, IThreadPoolWorkItem {
 	private static readonly TimeSpan DefaultStopWaitTimeout = TimeSpan.FromSeconds(10);
