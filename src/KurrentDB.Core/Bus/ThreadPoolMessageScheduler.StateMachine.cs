@@ -38,7 +38,10 @@ partial class ThreadPoolMessageScheduler {
 			_lockAcquiredCallback = InvokeHandlerWithAcquiredLock;
 		}
 
-		protected virtual void ProcessingCompleted() => _scheduler.ProcessingCompleted();
+		protected virtual void ProcessingCompleted() {
+			CleanUp();
+			_scheduler.ProcessingCompleted();
+		}
 
 		// true if acquired successfully
 		// false if canceled
@@ -47,8 +50,6 @@ partial class ThreadPoolMessageScheduler {
 				// We must consume the result, even if it's void. This is required by ValueTask behavioral contract.
 				_awaiter.GetResult();
 			} catch (Exception e) {
-				CleanUp();
-
 				ProcessingCompleted();
 				if (e is OperationCanceledException canceledEx &&
 				    canceledEx.CancellationToken == _scheduler._lifetimeToken) {
@@ -131,7 +132,6 @@ partial class ThreadPoolMessageScheduler {
 				// suspend
 			} finally {
 				_groupLock?.Release();
-				CleanUp();
 				ProcessingCompleted();
 			}
 		}
