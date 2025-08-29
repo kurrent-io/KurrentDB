@@ -53,7 +53,7 @@ internal class CategoryIndexReader(
 		return range;
 	}
 
-	public override long GetLastIndexedPosition(string indexName) => processor.LastIndexedPosition;
+	public override TFPos GetLastIndexedPosition(string indexName) => processor.LastIndexedPosition;
 
 	public override bool CanReadIndex(string indexName) => CategoryIndex.IsCategoryIndex(indexName);
 }

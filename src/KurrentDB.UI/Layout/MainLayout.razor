@@ -3,11 +3,14 @@
 
 @inherits LayoutComponentBase
 
-<MudThemeProvider Theme="@_theme"/>
+<MudThemeProvider Theme="@_theme" IsDarkMode="true"/>
 <MudLayout>
 	<MudAppBar Elevation="1">
-		<MudStaticNavDrawerToggle DrawerId="nav-drawer" Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit"
-		                          Edge="Edge.Start"/>
+		<MudStaticNavDrawerToggle
+			DrawerId="nav-drawer"
+			Icon="@Icons.Material.Filled.Menu"
+			Color="Color.Inherit"
+			Edge="Edge.Start"/>
 		<img alt="Kurrent logo" src="logo_white.svg" height="32"/>
 		<MudText Typo="Typo.h5" Class="ml-3">KurrentDB</MudText>
 		<MudSpacer/>
@@ -17,8 +20,13 @@
 			</Authorized>
 		</AuthorizeView>
 	</MudAppBar>
-	<MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" Elevation="1" Variant="@DrawerVariant.Responsive"
-	           Breakpoint="@Breakpoint.Md" ClipMode="DrawerClipMode.Always">
+	<MudDrawer
+		id="nav-drawer"
+		@bind-Open="_drawerOpen"
+		Elevation="1"
+		Variant="@DrawerVariant.Responsive"
+		Breakpoint="@Breakpoint.Md"
+		ClipMode="DrawerClipMode.Always">
 		<NavMenu/>
 	</MudDrawer>
 	<MudMainContent Class="mt-16 pa-4">

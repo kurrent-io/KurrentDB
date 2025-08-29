@@ -10,7 +10,7 @@ using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes;
 
-static class ReaderExtensions {
+internal static class ReaderExtensions {
 	public static async ValueTask<IReadOnlyList<ResolvedEvent>> ReadRecords(
 		this IIndexReader<string> index,
 		IEnumerable<IndexQueryRecord> indexPrepares,
@@ -24,13 +24,15 @@ static class ReaderExtensions {
 		var recordsQuery = prepared.Where(x => x.Prepare != null);
 		var sorted = ascending ? recordsQuery.OrderBy(x => x.Record.RowId) : recordsQuery.OrderByDescending(x => x.Record.RowId);
 		var records = sorted.Select(x => ResolvedEvent.ForUnresolvedEvent(
-			new(x.Prepare!.ExpectedVersion + 1, x.Prepare, x.Prepare!.EventStreamId, x.Prepare!.EventType)
+			new(x.Record.EventNumber, x.Prepare!, x.Prepare!.EventStreamId, x.Prepare!.EventType)
 		));
 		return records.ToList();
 	}
 
-	public static async ValueTask<IPrepareLogRecord<TStreamId>?> ReadPrepare<TStreamId>(this TFReaderLease localReader,
+	private static async ValueTask<IPrepareLogRecord<TStreamId>?> ReadPrepare<TStreamId>(this TFReaderLease localReader,
 		long logPosition, CancellationToken ct) {
+		// TFChunkReader is not thread safe because it keeps internal state but since it's only used for reading next and previous
+		// records, which we are not doing here, it should be ok.
 		var r = await localReader.TryReadAt(logPosition, couldBeScavenged: true, ct);
 		if (!r.Success)
 			return null;

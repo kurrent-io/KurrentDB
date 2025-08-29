@@ -23,7 +23,7 @@ public class IndexedPositionTests : IndexTestBase {
 		var result = Sut.GetLastIndexedPosition(streamId);
 
 		// Then
-		Assert.Equal(300L, result);
+		Assert.Equal(300L, result.PreparePosition);
 	}
 
 	[Fact]
@@ -35,6 +35,6 @@ public class IndexedPositionTests : IndexTestBase {
 		var result = Sut.GetLastIndexedPosition(streamId);
 
 		// Then
-		Assert.Equal(-1L, result);
+		Assert.Equal(-1L, result.PreparePosition);
 	}
 }

@@ -48,7 +48,7 @@ internal class DefaultIndexReader(
 		return range;
 	}
 
-	public override long GetLastIndexedPosition(string indexName) => processor.LastIndexedPosition;
+	public override TFPos GetLastIndexedPosition(string indexName) => processor.LastIndexedPosition;
 
 	public override bool CanReadIndex(string indexName) => indexName == SystemStreams.DefaultSecondaryIndex;
 }

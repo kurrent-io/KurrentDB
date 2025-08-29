@@ -10,16 +10,16 @@ internal static class DefaultSql {
 	public record struct ReadDefaultIndexQueryArgs(long StartPosition, int Count);
 
 	/// <summary>
-	/// Get index records for the default index with log position greater than the start position
+	/// Get index records for the default index with a log position greater than the start position
 	/// </summary>
 	public struct ReadDefaultIndexQueryExcl : IQuery<ReadDefaultIndexQueryArgs, IndexQueryRecord> {
 		public static BindingContext Bind(in ReadDefaultIndexQueryArgs args, PreparedStatement statement)
 			=> new(statement) { args.StartPosition, args.Count };
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select rowid, log_position from idx_all where log_position>$1 and is_deleted=false order by rowid limit $2"u8;
+			"select rowid, log_position, event_number from idx_all where log_position>$1 and is_deleted=false order by rowid limit $2"u8;
 
-		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
+		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64(), row.ReadInt64());
 	}
 
 	/// <summary>
@@ -30,22 +30,22 @@ internal static class DefaultSql {
 			=> new(statement) { args.StartPosition, args.Count };
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select rowid, log_position from idx_all where log_position>=$1 and is_deleted=false order by rowid limit $2"u8;
+			"select rowid, log_position, event_number from idx_all where log_position>=$1 and is_deleted=false order by rowid limit $2"u8;
 
-		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
+		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64(), row.ReadInt64());
 	}
 
 	/// <summary>
-	/// Get index records for the default index with log position less than the start position
+	/// Get index records for the default index with the log position less than the start position
 	/// </summary>
 	public struct ReadDefaultIndexBackQueryExcl : IQuery<ReadDefaultIndexQueryArgs, IndexQueryRecord> {
 		public static BindingContext Bind(in ReadDefaultIndexQueryArgs args, PreparedStatement statement)
 			=> new(statement) { args.StartPosition, args.Count };
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select rowid, log_position from idx_all where log_position<$1 and is_deleted=false order by rowid desc limit $2"u8;
+			"select rowid, log_position, event_number from idx_all where log_position<$1 and is_deleted=false order by rowid desc limit $2"u8;
 
-		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
+		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64(), row.ReadInt64());
 	}
 
 	/// <summary>
@@ -56,9 +56,9 @@ internal static class DefaultSql {
 			=> new(statement) { args.StartPosition, args.Count };
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select rowid, log_position from idx_all where log_position<=$1 and is_deleted=false order by rowid desc limit $2"u8;
+			"select rowid, log_position, event_number from idx_all where log_position<=$1 and is_deleted=false order by rowid desc limit $2"u8;
 
-		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
+		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64(), row.ReadInt64());
 	}
 
 	public record struct LastPositionResult(long PreparePosition, long? CommitPosition, long RowId);

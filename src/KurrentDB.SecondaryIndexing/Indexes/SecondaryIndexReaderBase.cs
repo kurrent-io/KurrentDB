@@ -25,7 +25,7 @@ public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool db, IReadInd
 	public ValueTask<ReadIndexEventsBackwardCompleted> ReadBackwards(ReadIndexEventsBackward msg, CancellationToken token)
 		=> ReadBackwards(msg, index.IndexReader, index.LastIndexedPosition, token);
 
-	public abstract long GetLastIndexedPosition(string indexName);
+	public abstract TFPos GetLastIndexedPosition(string indexName);
 
 	public abstract bool CanReadIndex(string indexName);
 

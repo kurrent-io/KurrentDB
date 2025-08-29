@@ -136,7 +136,7 @@ public class SubscriptionsService<TStreamId> :
 			return;
 		}
 
-		var lastIndexedPos = _secondaryIndexReaders.GetLastIndexedPosition(msg.IndexName);
+		var lastIndexedPos = _secondaryIndexReaders.GetLastIndexedPosition(msg.IndexName).CommitPosition;
 
 		SubscribeToStream(msg.CorrelationId, msg.Envelope, msg.ConnectionId, msg.IndexName, false, lastIndexedPos, null, msg.User, null);
 

@@ -50,7 +50,7 @@ internal class EventTypeIndexReader(
 		return range;
 	}
 
-	public override long GetLastIndexedPosition(string indexName) => processor.LastIndexedPosition;
+	public override TFPos GetLastIndexedPosition(string indexName) => processor.LastIndexedPosition;
 
 	public override bool CanReadIndex(string indexName) => EventTypeIndex.IsEventTypeIndex(indexName);
 }

@@ -4,7 +4,7 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace KurrentDB.Services;
+namespace KurrentDB.Components.Query;
 
 public static partial class QueryService {
     public static string AmendQuery(string query) {

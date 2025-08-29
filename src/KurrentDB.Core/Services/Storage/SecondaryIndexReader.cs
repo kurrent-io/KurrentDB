@@ -15,7 +15,7 @@ namespace KurrentDB.Core.Services.Storage;
 public interface ISecondaryIndexReader {
 	bool CanReadIndex(string indexName);
 
-	long GetLastIndexedPosition(string indexName);
+	TFPos GetLastIndexedPosition(string indexName);
 
 	ValueTask<ReadIndexEventsForwardCompleted> ReadForwards(ReadIndexEventsForward msg, CancellationToken token);
 
@@ -50,13 +50,13 @@ public class SecondaryIndexReaders {
 		));
 	}
 
-	public long GetLastIndexedPosition(string indexName) {
+	public TFPos GetLastIndexedPosition(string indexName) {
 		var reader = FindReader(indexName);
-		return reader?.GetLastIndexedPosition(indexName) ?? -1;
+		return reader?.GetLastIndexedPosition(indexName) ?? TFPos.Invalid;
 	}
 
 	[CanBeNull]
-	ISecondaryIndexReader FindReader(string indexName) {
+	private ISecondaryIndexReader FindReader(string indexName) {
 		for (var i = 0; i < _readers.Length; i++) {
 			var reader = _readers[i];
 			if (reader.CanReadIndex(indexName))

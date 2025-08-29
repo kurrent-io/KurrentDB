@@ -31,7 +31,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 	private static readonly ILogger Logger = Log.Logger.ForContext<DefaultIndexProcessor>();
 
-	public long LastIndexedPosition { get; private set; }
+	public TFPos LastIndexedPosition { get; private set; }
 
 	public DefaultIndexProcessor(
 		DuckDBConnectionPool db,
@@ -51,7 +51,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 		var (lastPosition, rowId) = GetLastPosition();
 		Logger.Information("Last known log position: {Position}", lastPosition);
-		LastIndexedPosition = lastPosition.PreparePosition;
+		LastIndexedPosition = lastPosition;
 	}
 
 	public void Index(ResolvedEvent resolvedEvent) {
@@ -66,12 +66,13 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		}
 
 		var schemaName = resolvedEvent.Event.EventType;
-		schemaFormat ??= (resolvedEvent.Event.IsJson ? Constants.Properties.DataFormats.Json : Constants.Properties.DataFormats.Bytes);
+		schemaFormat ??= resolvedEvent.Event.IsJson ? Constants.Properties.DataFormats.Json : Constants.Properties.DataFormats.Bytes;
 
+		var stream = resolvedEvent.Event.EventStreamId;
 		var logPosition = resolvedEvent.Event.LogPosition;
 		var commitPosition = resolvedEvent.EventPosition?.CommitPosition;
 		var eventNumber = resolvedEvent.Event.EventNumber;
-		var streamHash = _hasher.Hash(resolvedEvent.Event.EventStreamId);
+		var streamHash = _hasher.Hash(stream);
 		var category = GetStreamCategory(resolvedEvent.Event.EventStreamId);
 		var created = new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds();
 		using (var row = _appender.CreateRow()) {
@@ -83,7 +84,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			row.Append(eventNumber);
 			row.Append(created);
 			row.Append(DBNull.Value); // expires
-			row.Append(resolvedEvent.Event.EventStreamId);
+			row.Append(stream);
 			row.Append(streamHash);
 			row.Append(schemaName);
 			row.Append(category);
@@ -97,7 +98,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		}
 
 		_inFlightRecords.Append(logPosition, category, schemaName, resolvedEvent.Event.EventStreamId, eventNumber, created);
-		LastIndexedPosition = resolvedEvent.Event.LogPosition;
+		LastIndexedPosition = resolvedEvent.EventPosition!.Value;
 
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(SystemStreams.DefaultSecondaryIndex, resolvedEvent));
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(EventTypeIndex.Name(schemaName), resolvedEvent));

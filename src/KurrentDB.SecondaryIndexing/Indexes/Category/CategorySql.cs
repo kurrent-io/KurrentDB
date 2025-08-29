@@ -19,9 +19,9 @@ internal static class CategorySql {
 			};
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select rowid, log_position from idx_all where category=$1 and log_position>$2 order by rowid limit $3"u8;
+			"select rowid, log_position, event_number from idx_all where category=$1 and log_position>$2 order by rowid limit $3"u8;
 
-		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
+		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64(), row.ReadInt64());
 	}
 
 	/// <summary>
@@ -36,9 +36,9 @@ internal static class CategorySql {
 			};
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select rowid, log_position from idx_all where category=$1 and log_position>=$2 order by rowid limit $3"u8;
+			"select rowid, log_position, event_number from idx_all where category=$1 and log_position>=$2 order by rowid limit $3"u8;
 
-		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
+		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64(), row.ReadInt64());
 	}
 
 	/// <summary>
@@ -53,9 +53,9 @@ internal static class CategorySql {
 			};
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select rowid, log_position from idx_all where category=$1 and log_position<$2 order by rowid desc limit $3"u8;
+			"select rowid, log_position, event_number from idx_all where category=$1 and log_position<$2 order by rowid desc limit $3"u8;
 
-		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
+		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64(), row.ReadInt64());
 	}
 
 	/// <summary>
@@ -70,9 +70,9 @@ internal static class CategorySql {
 			};
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select rowid, log_position from idx_all where category=$1 and log_position<=$2 order by rowid desc limit $3"u8;
+			"select rowid, log_position, event_number from idx_all where category=$1 and log_position<=$2 order by rowid desc limit $3"u8;
 
-		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
+		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64(), row.ReadInt64());
 	}
 
 	public record struct CategoryIndexQueryArgs(string Category, long StartPosition, int Count);

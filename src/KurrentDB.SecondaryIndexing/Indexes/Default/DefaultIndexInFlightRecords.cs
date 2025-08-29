@@ -69,7 +69,7 @@ internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions option
 		     i++) {
 			if (current.LogPosition >= from && query(current)) {
 				remaining--;
-				yield return new(seq++, current.LogPosition);
+				yield return new(seq++, current.LogPosition, current.EventNumber);
 			}
 		}
 	}
@@ -92,7 +92,7 @@ internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions option
 			     i--) {
 				if (current.LogPosition <= startPosition.PreparePosition && query(current)) {
 					remaining--;
-					yield return new(seq++, current.LogPosition);
+					yield return new(seq++, current.LogPosition, current.EventNumber);
 				}
 			}
 		}
