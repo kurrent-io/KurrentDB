@@ -15,7 +15,7 @@ static class CategoryIndex {
 			return false;
 		}
 
-		categoryName = streamName[8..];
+		categoryName = streamName[SystemStreams.CategorySecondaryIndexPrefix.Length..];
 		return true;
 	}
 

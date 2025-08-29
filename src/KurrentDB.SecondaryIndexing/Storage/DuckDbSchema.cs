@@ -24,13 +24,13 @@ public static class DuckDbSchema {
 				cmd.CommandText = script;
 				cmd.ExecuteNonQuery();
 			}
+
+			transaction.Commit();
 		} catch {
 			transaction.Rollback();
 			throw;
 		} finally {
 			cmd.Dispose();
 		}
-
-		transaction.Commit();
 	}
 }
