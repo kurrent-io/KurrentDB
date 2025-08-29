@@ -23,6 +23,8 @@ partial class ThreadPoolMessageScheduler {
 	// reused multiple times. Execution procedure is effectively 'async void' method that
 	// doesn't have any awaiters (in contrast to ValueTask or Task). Thus, it's not possible
 	// to apply PoolingAsyncValueTaskMethodBuilder for that method.
+	// We register different callbacks rather than storing an explicit state variable.
+	// The meaning of _awaiter depends on the state that we are in.
 	private class AsyncStateMachine : IThreadPoolWorkItem {
 		private readonly ThreadPoolMessageScheduler _scheduler;
 		private readonly Action _onConsumerCompleted;
@@ -57,6 +59,7 @@ partial class ThreadPoolMessageScheduler {
 					return false;
 				}
 
+				// not possible to get here. throwing here on the thread pool will exit the application
 				throw;
 			}
 
@@ -66,6 +69,7 @@ partial class ThreadPoolMessageScheduler {
 
 		private void OnLockAcquisitionCompleted() {
 			if (CheckLockAcquisition()) {
+				// We are already on the thread pool so we can invoke directly.
 				InvokeConsumer();
 			}
 		}
@@ -141,6 +145,7 @@ partial class ThreadPoolMessageScheduler {
 
 		[SuppressMessage("Reliability", "CA2012", Justification = "The state machine is coded manually")]
 		private void InvokeConsumer() {
+			// ALWAYS called on the thread pool.
 			_awaiter = _scheduler
 				._consumer(_message, _scheduler._lifetimeToken)
 				.ConfigureAwait(false)
