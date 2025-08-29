@@ -19,7 +19,11 @@ public class GcSuspensionMetric(DurationMaxTracker? tracker) : EventListener {
 	private static readonly ILogger Log = Serilog.Log.ForContext<GcSuspensionMetric>();
 
 	// Match DefaultSlowMessageThreshold so slow messages can be attributed to GC.
-	private static readonly TimeSpan LongSuspensionThreshold = InMemoryBus.DefaultSlowMessageThreshold;
+	private static TimeSpan LongSuspensionThreshold;
+	public static void ConfigureLongSuspensionThreshold(int ? _slowMessageThresholdMs) {
+		LongSuspensionThreshold = TimeSpan.FromMilliseconds(_slowMessageThresholdMs.GetValueOrDefault(ClusterVNodeOptions.InMemoryBusOptions
+			.DefaultSlowMessageThreshold));
+	}
 	private static readonly TimeSpan VeryLongSuspensionThreshold = TimeSpan.FromMilliseconds(600);
 	private static readonly TimeSpan LongSuspensionLogPeriod = TimeSpan.FromMilliseconds(10_000);
 
@@ -183,7 +187,7 @@ public class GcSuspensionMetric(DurationMaxTracker? tracker) : EventListener {
 						_periodLongSuspensionCount = 0;
 						_periodLongSuspensionsElapsedTotal = TimeSpan.Zero;
 					} else {
-						// have logged recently 
+						// have logged recently
 						_periodLongSuspensionCount++;
 						_periodLongSuspensionsElapsedTotal += elapsed;
 					}

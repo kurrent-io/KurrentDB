@@ -67,7 +67,7 @@ public static class MetricsBootstrapper {
 	public static void Bootstrap(
 		Conf conf,
 		TFChunkDbConfig dbConfig,
-		Trackers trackers) {
+		Trackers trackers, int _slowMessageThresholdMs) {
 
 		OptionsFormatter.LogConfig("Metrics", conf);
 
@@ -307,7 +307,7 @@ public static class MetricsBootstrapper {
 				? $"{serviceName}-gc-total-allocated"
 				: $"{serviceName}-gc-allocated" },
 			{ Conf.ProcessTracker.GcPauseDuration, $"{serviceName}-gc-pause-duration-max" },
-		});
+		}, _slowMessageThresholdMs);
 
 		processMetrics.CreateMemoryMetric($"{serviceName}-proc-mem", new() {
 			{ Conf.ProcessTracker.MemWorkingSet, "working-set" },

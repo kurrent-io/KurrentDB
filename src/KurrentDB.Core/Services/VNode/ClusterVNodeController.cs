@@ -102,9 +102,9 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		_forwardingTimeout = TimeSpan.FromMilliseconds(options.Database.PrepareTimeoutMs +
 													   options.Database.CommitTimeoutMs + 300);
 
-		_outputBus = new InMemoryBus("MainBus");
+		_outputBus = new InMemoryBus("MainBus", true, TimeSpan.FromMilliseconds(options.InMemoryBus.SlowMessageThresholdMs));
 		_fsm = CreateFSM();
-		_mainQueue = new QueuedHandlerThreadPool(_fsm, "MainQueue", statsManager, trackers.QueueTrackers);
+		_mainQueue = new QueuedHandlerThreadPool(_fsm, "MainQueue", statsManager, trackers.QueueTrackers, true, TimeSpan.FromMilliseconds(options.InMemoryBus.SlowMessageThresholdMs));
 		_publishEnvelope = _mainQueue;
 	}
 

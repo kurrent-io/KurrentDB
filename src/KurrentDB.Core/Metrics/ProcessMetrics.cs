@@ -19,7 +19,7 @@ public class ProcessMetrics(Meter meter, TimeSpan timeout, int scrapingPeriodInS
 	private readonly Func<DiskIoData> _getDiskIo = Functions.Debounce(ProcessStats.GetDiskIo, timeout);
 	private readonly Func<Process> _getCurrentProc = Functions.Debounce(Process.GetCurrentProcess, timeout);
 
-	public void CreateObservableMetrics(Dictionary<ProcessTracker, string> metricNames) {
+	public void CreateObservableMetrics(Dictionary<ProcessTracker, string> metricNames, int ? _slowThresholdMs = null) {
 		var enabledNames = metricNames
 			.Where(kvp => config.TryGetValue(kvp.Key, out var enabled) && enabled)
 			.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
@@ -34,6 +34,7 @@ public class ProcessMetrics(Meter meter, TimeSpan timeout, int scrapingPeriodInS
 		if (enabledNames.TryGetValue(ProcessTracker.GcPauseDuration, out var gcMaxPauseName)) {
 			var maxGcPauseDurationMetric = new DurationMaxMetric(meter, gcMaxPauseName, legacyNames);
 			var maxGcPauseDurationTracker = new DurationMaxTracker(maxGcPauseDurationMetric, null, scrapingPeriodInSeconds);
+			GcSuspensionMetric.ConfigureLongSuspensionThreshold(_slowThresholdMs);
 			_ = new GcSuspensionMetric(maxGcPauseDurationTracker);
 		}
 

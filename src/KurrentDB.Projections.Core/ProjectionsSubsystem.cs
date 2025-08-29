@@ -96,7 +96,9 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 		"$by_correlation_id"
 	};
 
-	public ProjectionsSubsystem(ProjectionSubsystemOptions projectionSubsystemOptions) {
+	private readonly TimeSpan slowMessageThresholdMs;
+
+	public ProjectionsSubsystem(ProjectionSubsystemOptions projectionSubsystemOptions , int? _slowMessageThresholdMs = null) {
 		if (projectionSubsystemOptions.RunProjections <= ProjectionType.System)
 			_projectionWorkerThreadCount = 1;
 		else
@@ -114,8 +116,9 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 		_projectionsQueryExpiry = projectionSubsystemOptions.ProjectionQueryExpiry;
 		_faultOutOfOrderProjections = projectionSubsystemOptions.FaultOutOfOrderProjections;
 
-		_leaderInputBus = new InMemoryBus("manager input bus");
-		_leaderOutputBus = new InMemoryBus("ProjectionManagerAndCoreCoordinatorOutput");
+		slowMessageThresholdMs = TimeSpan.FromMilliseconds(_slowMessageThresholdMs ?? ClusterVNodeOptions.InMemoryBusOptions.DefaultSlowMessageThreshold);
+		_leaderInputBus = new InMemoryBus("manager input bus" , true , slowMessageThresholdMs);
+		_leaderOutputBus = new InMemoryBus("ProjectionManagerAndCoreCoordinatorOutput" , true , slowMessageThresholdMs);
 
 		_subsystemInitialized = new();
 		_executionTimeout = projectionSubsystemOptions.ExecutionTimeout;
@@ -142,13 +145,17 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 			_leaderInputBus,
 			"Projections Leader",
 			standardComponents.QueueStatsManager,
-			standardComponents.QueueTrackers
+			standardComponents.QueueTrackers,
+			true,
+			this.slowMessageThresholdMs
 		);
 		_leaderOutputQueue = new QueuedHandlerThreadPool(
 			_leaderOutputBus,
 			"Projections Leader",
 			standardComponents.QueueStatsManager,
-			standardComponents.QueueTrackers
+			standardComponents.QueueTrackers,
+			true,
+			this.slowMessageThresholdMs
 		);
 
 		LeaderInputBus.Subscribe<ProjectionSubsystemMessage.RestartSubsystem>(this);
@@ -177,7 +184,7 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 			projectionTrackers);
 
 		CreateAwakerService(standardComponents);
-		_coreWorkers = ProjectionCoreWorkersNode.CreateCoreWorkers(standardComponents, projectionsStandardComponents);
+		_coreWorkers = ProjectionCoreWorkersNode.CreateCoreWorkers(standardComponents, projectionsStandardComponents , this.slowMessageThresholdMs);
 		_queueMap = _coreWorkers.ToDictionary(v => v.Key, v => v.Value.CoreInputQueue.As<IPublisher>());
 
 		ProjectionManagerNode.CreateManagerService(standardComponents, projectionsStandardComponents, _queueMap,

@@ -334,7 +334,7 @@ public class ClusterVNode<TStreamId> :
 
 		var trackers = new Trackers();
 		var metricsConfiguration = MetricsConfiguration.Get(configuration);
-		MetricsBootstrapper.Bootstrap(metricsConfiguration, dbConfig, trackers);
+		MetricsBootstrapper.Bootstrap(metricsConfiguration, dbConfig, trackers, options.InMemoryBus.SlowMessageThresholdMs);
 
 		var namingStrategy = new VersionedPatternFileNamingStrategy(dbConfig.Path, "chunk-");
 		IChunkFileSystem fileSystem = new ChunkLocalFileSystem(namingStrategy);
