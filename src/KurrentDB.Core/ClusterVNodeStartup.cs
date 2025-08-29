@@ -7,13 +7,11 @@ using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using DotNext;
 using EventStore.Core.Services.Transport.Grpc;
 using EventStore.Core.Services.Transport.Grpc.Cluster;
 using EventStore.Plugins;
 using EventStore.Plugins.Authentication;
 using EventStore.Plugins.Authorization;
-using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Common.Utils;
@@ -48,11 +46,14 @@ using Operations = EventStore.Core.Services.Transport.Grpc.Operations;
 using ServerFeatures = KurrentDB.Core.Services.Transport.Grpc.ServerFeatures;
 
 #nullable enable
+
 namespace KurrentDB.Core;
 
-public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMessage.SystemReady>,
-	IHandle<SystemMessage.BecomeShuttingDown> {
-	readonly ClusterVNodeOptions _options;
+public class ClusterVNodeStartup<TStreamId>
+	: IInternalStartup,
+		IHandle<SystemMessage.SystemReady>,
+		IHandle<SystemMessage.BecomeShuttingDown> {
+	private readonly ClusterVNodeOptions _options;
 	private readonly IReadOnlyList<IPlugableComponent> _plugableComponents;
 	private readonly IPublisher _mainQueue;
 	private readonly IPublisher _monitoringQueue;
@@ -215,6 +216,7 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 						};
 						o.RequireHttpsMetadata = false;
 					}
+
 					o.SaveTokens = true;
 					o.GetClaimsFromUserInfoEndpoint = true;
 					o.TokenValidationParameters.NameClaimType = JwtRegisteredClaimNames.Name;
@@ -293,9 +295,9 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 		services
 			.AddSingleton<RetryInterceptor>()
 			.AddGrpc(options => {
-				#if DEBUG
+#if DEBUG
 				options.EnableDetailedErrors = true;
-				#endif
+#endif
 
 				options.Interceptors.Add<RetryInterceptor>();
 			})
@@ -368,6 +370,4 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 	}
 
 	bool OAuthEnabled => _plugableComponents.Any(x => x is { Enabled: true, Name: "OAuthAuthentication" });
-
 }
-

@@ -4,7 +4,6 @@
 using System.Diagnostics.CodeAnalysis;
 using DuckDB.NET.Data;
 using DuckDB.NET.Data.DataChunk.Writer;
-using DuckDB.NET.Native;
 using KurrentDB.DuckDB;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 

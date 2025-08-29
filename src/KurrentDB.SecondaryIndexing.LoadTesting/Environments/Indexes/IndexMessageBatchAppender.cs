@@ -7,7 +7,6 @@ using KurrentDB.Core.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
-using KurrentDB.SecondaryIndexing.Storage;
 using KurrentDB.SecondaryIndexing.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Tests.Generators;
 
@@ -20,7 +19,7 @@ public class IndexMessageBatchAppender : IMessageBatchAppender {
 
 	public IndexMessageBatchAppender(DuckDBConnectionPool db, int commitSize) {
 		_commitSize = commitSize;
-		var reader = ReadIndexStub.Build();
+		ReadIndexStub.Build();
 		var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
 		var inflightRecordsCache = new DefaultIndexInFlightRecords(new() { CommitBatchSize = commitSize });
 

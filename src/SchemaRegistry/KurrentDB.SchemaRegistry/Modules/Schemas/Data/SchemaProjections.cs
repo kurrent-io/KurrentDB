@@ -24,10 +24,6 @@ public class SchemaProjections : DuckDBProjection {
 				    , registered_at     TIMESTAMPTZ NOT NULL DEFAULT current_localtimestamp()
 				    , checkpoint        UBIGINT     NOT NULL DEFAULT 0
 				);
-
-				CREATE INDEX IF NOT EXISTS idx_schema_versions_schema_name ON schema_versions (schema_name);
-				CREATE INDEX IF NOT EXISTS idx_schema_versions_version_number ON schema_versions (version_number);
-
 				CREATE TABLE IF NOT EXISTS schemas (
 				      schema_name           TEXT        PRIMARY KEY
 				    , description           TEXT
@@ -40,8 +36,6 @@ public class SchemaProjections : DuckDBProjection {
 				    , updated_at            TIMESTAMPTZ
 				    , checkpoint            UBIGINT     NOT NULL DEFAULT 0
 				);
-
-				CREATE INDEX IF NOT EXISTS idx_schemas_latest_version_id ON schemas (latest_version_id);
 				""";
 
 			using var scope = db.GetScopedConnection(out var connection);
@@ -282,7 +276,7 @@ public class SchemaProjections : DuckDBProjection {
 			return ValueTask.CompletedTask;
 		});
 
-		Project<SchemaDeleted>((msg, db, ctx) => {
+		Project<SchemaDeleted>((msg, db, _) => {
 			using var scope = db.GetScopedConnection(out var connection);
 			using var tx = connection.BeginTransaction();
 

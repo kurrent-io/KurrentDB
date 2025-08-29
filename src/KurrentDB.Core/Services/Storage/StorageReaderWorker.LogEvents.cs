@@ -11,13 +11,11 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.LogCommon;
-using Serilog;
 using static KurrentDB.Core.Messages.ClientMessage;
 
 namespace KurrentDB.Core.Services.Storage;
 
 public partial class StorageReaderWorker<TStreamId> {
-
 	async ValueTask IAsyncHandle<ReadLogEvents>.HandleAsync(ReadLogEvents msg, CancellationToken token) {
 		if (msg.CancellationToken.IsCancellationRequested)
 			return;
@@ -36,7 +34,7 @@ public partial class StorageReaderWorker<TStreamId> {
 		msg.Envelope.ReplyWith(ev);
 	}
 
-	async ValueTask<ReadLogEventsCompleted> ReadLogEvents(ReadLogEvents msg, CancellationToken token) {
+	private async ValueTask<ReadLogEventsCompleted> ReadLogEvents(ReadLogEvents msg, CancellationToken token) {
 		try {
 			using var reader = _readIndex.IndexReader.BorrowReader();
 			var readPrepares = msg.LogPositions.Select(async (pos, index) => (Index: index, Prepare: await reader.ReadPrepare<TStreamId>(pos, token)));

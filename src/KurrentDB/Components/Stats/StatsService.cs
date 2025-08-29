@@ -3,8 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
 using Dapper;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
@@ -32,35 +30,6 @@ internal class StatsService(DuckDBConnectionPool db) {
 		return connection.Query<CategoryEventTypes>(CategoryEventTypesSql, new { category });
 	}
 
-	public CombinedStats[] GetStats() {
-		using var connection = db.Open();
-		var categories = connection.Query<CategoryStats>(CategoriesSql);
-		var eventTypes = connection.Query<CategoryEventTypeStats>(CategoriesEventTypesSql);
-		return categories.GroupJoin(eventTypes, x => x.category, y => y.category, (x, y) => new CombinedStats(x, y.ToArray())).ToArray();
-	}
-
-	private const string CategoriesSql =
-		"""
-		select
-			category,
-			count(distinct stream) as num_streams,
-			count(log_position) AS num_events
-		from idx_all
-		group by category
-		""";
-
-	private const string CategoriesEventTypesSql =
-		"""
-		select
-			category,
-			event_type,
-			count(log_position) AS num_events,
-			epoch_ms(min(created)) as first_added,
-			epoch_ms(max(created)) as last_added
-		from idx_all
-		group by category, event_type
-		""";
-
 	private const string CategoryEventTypesSql =
 		"""
 		select
@@ -79,22 +48,4 @@ internal class StatsService(DuckDBConnectionPool db) {
 		public DateTime FirstAdded { get; init; }
 		public DateTime LastAdded { get; init; }
 	}
-
-	public record CategoryStats {
-		public string category { get; init; }
-		public long num_streams { get; init; }
-		public long num_events { get; init; }
-	}
-
-	public record CategoryEventTypeStats {
-		public string category { get; init; }
-		public string event_type { get; init; }
-		public long num_events { get; init; }
-		public DateTime first_added { get; init; }
-		public DateTime last_added { get; init; }
-	}
-}
-
-internal record CombinedStats(StatsService.CategoryStats Category, StatsService.CategoryEventTypeStats[] EventType) {
-	public long AvgStreamLength => Category.num_events / Category.num_streams;
 }

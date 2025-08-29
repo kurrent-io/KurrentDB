@@ -12,24 +12,22 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Environments.DuckDB;
 
 public class RawQuackMessageBatchAppender : IMessageBatchAppender {
-	readonly DuckDBConnectionPool _db;
-	readonly int _commitSize;
-	readonly Stopwatch _sw = new();
+	private readonly int _commitSize;
+	private readonly Stopwatch _sw = new();
 
-	Appender _defaultIndexAppender;
+	private Appender _defaultIndexAppender;
 
-	static readonly ILogger Logger = Log.Logger.ForContext<RawQuackMessageBatchAppender>();
+	private static readonly ILogger Logger = Log.Logger.ForContext<RawQuackMessageBatchAppender>();
 
 	public long LastCommittedSequence;
 	public long LastSequence;
 
 	public RawQuackMessageBatchAppender(DuckDBConnectionPool db, DuckDbTestEnvironmentOptions options) {
-		_db = db;
 		_commitSize = options.CommitSize;
 		var schema = new IndexingDbSchema(db);
 		schema.CreateSchema();
 
-		using var connection = _db.Open();
+		using var connection = db.Open();
 		_defaultIndexAppender = new(connection, "idx_all"u8);
 
 		if (!string.IsNullOrEmpty(options.WalAutoCheckpoint)) {
