@@ -93,7 +93,11 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 		{ "SynchronizationGroup", affinity.ToString() }
 	};
 
-	private AsyncExclusiveLock GetSynchronizationGroup(object affinity) {
+	// If two messages use the same affinity object, they execute sequentially and in order,
+	// Unless the affinity object is Message.UnknownAffinity, which acts as null unless
+	// SynchronizeMessagesWithUnknownAffinity is true.
+	private AsyncExclusiveLock GetSynchronizationGroup(Message message) {
+		var affinity = message.Affinity;
 		AsyncExclusiveLock syncGroup;
 		if (affinity is null ||
 		    (ReferenceEquals(Message.UnknownAffinity, affinity) && !SynchronizeMessagesWithUnknownAffinity)) {
