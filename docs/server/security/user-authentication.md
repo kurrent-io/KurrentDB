@@ -75,12 +75,6 @@ Use the following option to enable this feature:
 | YAML                 | `EnableTrustedAuth`              |
 | Environment variable | `KURRENTDB_ENABLE_TRUSTED_AUTH`  |
 
-### Disable HTTP authentication
-
-It is possible to disable authentication on all protected HTTP endpoints by setting
-the `DisableFirstLevelHttpAuthorization` setting to `true`. The setting is set to `false` by default. When
-`true`, the setting will force KurrentDB to use the supplied credentials only to check [stream access](./user-authorization.md#stream-access).
-
 ## User X.509 Certificates 
 
 <Badge type="info" vertical="middle" text="License Required"/>

@@ -217,10 +217,6 @@ public partial record ClusterVNodeOptions {
 
 		[Description("Path to the configuration file for Authentication configuration (if applicable).")]
 		public string? AuthenticationConfig { get; init; }
-
-		[Description("Disables first level authorization checks on all HTTP endpoints. " +
-					 "This option can be enabled for backwards compatibility with EventStore 5.0.1 or earlier.")]
-		public bool DisableFirstLevelHttpAuthorization { get; init; } = false;
 	}
 
 	[Description("Certificate Options (from file)")]
