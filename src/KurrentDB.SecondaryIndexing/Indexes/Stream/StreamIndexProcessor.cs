@@ -52,12 +52,12 @@ public class StreamIndexProcessor : Disposable {
 
 		var fromDb = _connection.GetStreamIdByName(name);
 		if (fromDb.HasValue) {
-			_streamsCache.UpdateStreamSecondaryIndexId(1, name, fromDb.Value);
+			_streamsCache.UpdateStreamSecondaryIndexId(cacheVersion: 1, name, fromDb.Value);
 			return fromDb.Value;
 		}
 
 		id = ++_seq;
-		_streamsCache.UpdateStreamSecondaryIndexId(1, name, id);
+		_streamsCache.UpdateStreamSecondaryIndexId(cacheVersion: 1, name, id);
 
 		_inFlightRecords.Add(name, id);
 
@@ -92,13 +92,14 @@ public class StreamIndexProcessor : Disposable {
 		if (IsDisposed || _count == 0)
 			return;
 
-		_inFlightRecords.Clear();
 		_stopwatch.Start();
 		_appender.Flush();
 		_stopwatch.Stop();
 		Log.Debug("Committed {Count} records to streams at seq {Seq} ({Took} ms)", _count, _seq,
 			_stopwatch.ElapsedMilliseconds);
 		_stopwatch.Reset();
+
+		_inFlightRecords.Clear();
 
 		LastCommittedPosition = _lastLogPosition;
 		_count = 0;
