@@ -107,7 +107,6 @@ public class StreamIndexProcessor : Disposable {
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {
-			Commit();
 			_appender.Dispose();
 			_connection.Dispose();
 		}

@@ -31,7 +31,7 @@ public class DuckDbDataSource : Disposable {
 		DuckDbSchema.CreateSchema(connection);
 	}
 
-	public DuckDBConnection OpenConnection() {
+	private DuckDBConnection OpenConnection() {
 		var connection = new DuckDBConnection(_connectionString);
 		connection.Open();
 		return connection;
@@ -41,10 +41,6 @@ public class DuckDbDataSource : Disposable {
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {
-			using var connection = OpenConnection();
-			// using (Pool.Rent(out var connection)) {
-			connection.Checkpoint();
-			// }
 			Pool.Dispose();
 		}
 

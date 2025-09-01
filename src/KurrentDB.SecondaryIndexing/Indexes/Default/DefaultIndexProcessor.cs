@@ -117,7 +117,6 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {
-			Commit();
 			_appender.Dispose();
 			_connection.Dispose();
 		}
