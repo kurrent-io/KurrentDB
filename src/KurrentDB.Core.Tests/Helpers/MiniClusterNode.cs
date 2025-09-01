@@ -106,7 +106,6 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 				Insecure = !useHttps,
 				LogFailedAuthenticationAttempts = true,
 				LogHttpRequests = true,
-				WorkerThreads = 1,
 				StatsPeriodSec = (int)TimeSpan.FromHours(1).TotalSeconds
 			},
 			Cluster = new() {

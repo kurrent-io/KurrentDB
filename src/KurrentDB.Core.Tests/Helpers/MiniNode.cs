@@ -128,7 +128,6 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 				AllowAnonymousEndpointAccess = true,
 				AllowAnonymousStreamAccess = true,
 				StatsPeriodSec = 60 * 60,
-				WorkerThreads = 1,
 				MaxAppendEventSize = maxAppendEventSize
 			},
 			Interface = new() {

@@ -134,6 +134,7 @@ public partial record ClusterVNodeOptions {
 		public int StatsPeriodSec { get; init; } = 30;
 
 		[Description("The number of threads to use for pool of worker services. Set to '0' to scale automatically (Default)")]
+		[Deprecated("This setting no longer has an effect. The workers automatically scale as necessary")]
 		public int WorkerThreads { get; init; } = 0;
 
 		[Description("Enables the tracking of various histograms in the backend, " +
