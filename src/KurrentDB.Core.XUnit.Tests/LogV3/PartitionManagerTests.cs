@@ -191,7 +191,13 @@ file sealed class FakeReader : ITransactionFileReader {
 	public int ReadCount => _readCount;
 
 	public FakeReader(ILogRecord record) {
-		_results.Add(new SeqReadResult(true, false, record, 0, 0, 0));
+		_results.Add(new() {
+			Eof = false,
+			LogRecord = record,
+			RecordLength = 0,
+			RecordPostPosition = 0L,
+			RecordPrePosition = 0L
+		});
 	}
 
 	public FakeReader(bool withoutRecords = false) : this(Guid.NewGuid(), Guid.NewGuid(), withoutRecords) {
@@ -207,14 +213,28 @@ file sealed class FakeReader : ITransactionFileReader {
 			var rootPartitionType = new PartitionTypeLogRecord(
 					DateTime.UtcNow, 2, rootPartitionTypeId.Value, Guid.Empty, "Root");
 
-			_results.Add(new SeqReadResult(true, false, rootPartitionType, 0, 0, 0));
+			_results.Add(new()
+			{
+				Eof = false,
+				LogRecord = rootPartitionType,
+				RecordLength = 0,
+				RecordPostPosition = 0L,
+				RecordPrePosition = 0L,
+			});
 		}
 
 		if (rootPartitionId.HasValue && rootPartitionTypeId.HasValue) {
 			var rootPartition = new PartitionLogRecord(
 					DateTime.UtcNow, 3, rootPartitionId.Value, rootPartitionTypeId.Value, Guid.Empty, 0, 0, "Root");
 
-			_results.Add(new SeqReadResult(true, false, rootPartition, 0, 0, 0));
+			_results.Add(new()
+			{
+				Eof = false,
+				LogRecord = rootPartition,
+				RecordLength = 0,
+				RecordPrePosition = 0L,
+				RecordPostPosition = 0L,
+			});
 		}
 	}
 

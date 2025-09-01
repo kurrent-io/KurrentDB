@@ -32,9 +32,15 @@ public class FakeInMemoryTfReader : ITransactionFileReader {
 		if (_records.ContainsKey(cursor.Position)) {
 			var pos = cursor.Position;
 			cursor.Position = pos + _recordOffset;
-			result = new(true, false, _records[pos], _recordOffset, pos, pos + _recordOffset);
+			result = new() {
+				Eof = false,
+				LogRecord = _records[pos],
+				RecordLength = _recordOffset,
+				RecordPrePosition = pos,
+				RecordPostPosition = pos + _recordOffset,
+			};
 		} else {
-			result = new(false, false, null, 0, 0, 0);
+			result = SeqReadResult.Failure;
 		}
 
 		return new(result);
