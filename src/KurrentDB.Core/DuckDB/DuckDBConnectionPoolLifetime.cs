@@ -13,8 +13,13 @@ using KurrentDB.DuckDB;
 
 namespace KurrentDB.Core.DuckDB;
 
-public class DuckDBConnectionPoolLifetime(TFChunkDbConfig config, IEnumerable<IDuckDBInlineFunction> inlineFunctions) : Disposable {
-	private readonly DuckDBConnectionPool _pool = new ConnectionPoolWithFunctions($"Data Source={config.Path}/kurrent.ddb", inlineFunctions.ToArray());
+public class DuckDBConnectionPoolLifetime : Disposable {
+	private readonly DuckDBConnectionPool _pool;
+
+	public DuckDBConnectionPoolLifetime(TFChunkDbConfig config, IEnumerable<IDuckDBInlineFunction> inlineFunctions) {
+		var path = config.InMemDb ? ":memory:" : $"{config.Path}/kurrent.ddb";
+		_pool = new ConnectionPoolWithFunctions($"Data Source={path}", inlineFunctions.ToArray());
+	}
 
 	public DuckDBConnectionPool GetConnectionPool() => _pool;
 
