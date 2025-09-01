@@ -21,12 +21,12 @@ public sealed partial class SecondaryIndexSubscription(
 	ISecondaryIndexProcessor indexProcessor,
 	SecondaryIndexingPluginOptions options
 ) : IAsyncDisposable {
-	static readonly ILogger Log = Serilog.Log.Logger.ForContext<SecondaryIndexSubscription>();
+	private static readonly ILogger Log = Serilog.Log.Logger.ForContext<SecondaryIndexSubscription>();
 
-	readonly int _commitBatchSize = options.CommitBatchSize;
-	CancellationTokenSource? _cts = new();
-	Enumerator.AllSubscription? _subscription;
-	Task? _processingTask;
+	private readonly int _commitBatchSize = options.CommitBatchSize;
+	private CancellationTokenSource? _cts = new();
+	private Enumerator.AllSubscription? _subscription;
+	private Task? _processingTask;
 
 	public void Subscribe() {
 		var position = indexProcessor.LastIndexedPosition;
@@ -123,9 +123,18 @@ public sealed partial class SecondaryIndexSubscription(
 		}
 	}
 
-	private static bool IsRegularStreamMetadataChange(ResolvedEvent resolvedEvent) =>
-		MetadataStreamRegex().IsMatch(resolvedEvent.Event.EventStreamId) && resolvedEvent.Event.EventType == SystemEventTypes.StreamMetadata;
+	private static bool IsRegularStreamMetadataChange(ResolvedEvent resolvedEvent) {
+		var streamId = resolvedEvent.Event.EventStreamId;
+		if (!SystemStreams.IsMetastream(streamId))
+			return false;
 
-	[GeneratedRegex(@"^\$\$(?!\$)")]
-	private static partial Regex MetadataStreamRegex();
+		var originalStream = SystemStreams.OriginalStreamOf(streamId);
+		if (SystemStreams.IsSystemStream(originalStream))
+			return false;
+
+		if (resolvedEvent.Event.EventType != SystemEventTypes.StreamMetadata)
+			return false;
+
+		return true;
+	}
 }
