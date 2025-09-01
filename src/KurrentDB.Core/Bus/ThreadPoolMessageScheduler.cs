@@ -141,24 +141,7 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 			stateMachine = new PoolingAsyncStateMachine(this);
 		}
 
-		Schedule(stateMachine, message, GetSynchronizationGroup(message), _readinessBarrier);
-	}
-
-	// separate static method to avoid capture of `this` in Schedule closure
-	private static void Schedule(
-		AsyncStateMachine stateMachine,
-		Message message,
-		AsyncExclusiveLock synchronizationGroup,
-		TaskCompletionSource readinessBarrier) {
-
-		if (readinessBarrier is { Task: { IsCompleted: false } readinessTask }) {
-			readinessTask.ConfigureAwait(false).GetAwaiter().UnsafeOnCompleted(ScheduleMessage);
-		} else {
-			ScheduleMessage();
-		}
-
-		void ScheduleMessage() {
-			stateMachine.Schedule(message, synchronizationGroup);
-		}
+		// TODO: We need to respect readiness barrier here and delay messages if the scheduler is not yet started
+		stateMachine.Schedule(message, GetSynchronizationGroup(message));
 	}
 }
