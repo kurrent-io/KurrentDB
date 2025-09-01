@@ -144,6 +144,14 @@ partial class ThreadPoolMessageScheduler {
 				_awaiter.GetResult();
 			} catch (OperationCanceledException e) when (e.CancellationToken == _scheduler._lifetimeToken) {
 				// suspend
+			} catch (Exception ex) {
+				Log.Error(ex,
+					"Error while processing message {message} in '{scheduler}'.",
+					_message,
+					_scheduler.Name);
+#if DEBUG
+				throw;
+#endif
 			} finally {
 				_groupLock?.Release();
 				CleanUp();

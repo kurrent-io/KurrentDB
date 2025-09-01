@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Threading;
 using KurrentDB.Core.Messaging;
+using Serilog;
 
 namespace KurrentDB.Core.Bus;
 
@@ -19,6 +20,7 @@ namespace KurrentDB.Core.Bus;
 /// </summary>
 public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 	private static readonly TimeSpan DefaultStopWaitTimeout = TimeSpan.FromSeconds(10);
+	private static readonly ILogger Log = Serilog.Log.ForContext<ThreadPoolMessageScheduler>();
 
 	private readonly Func<Message, CancellationToken, ValueTask> _consumer;
 	private readonly CancellationToken _lifetimeToken; // cached to avoid ObjectDisposedException
