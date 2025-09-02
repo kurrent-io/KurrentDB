@@ -54,7 +54,7 @@ public readonly struct RawReadResult {
 
 public readonly struct SeqReadResult {
 	public static SeqReadResult Failure =>
-		default(SeqReadResult) with { RecordPrePosition = -1L, RecordPostPosition = -1L };
+		default(SeqReadResult) with { RecordPrePosition = -1L, RecordPostPosition = -1L, Eof = true };
 
 	public required ILogRecord LogRecord { get; init; }
 
