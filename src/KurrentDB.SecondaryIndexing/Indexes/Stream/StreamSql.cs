@@ -70,7 +70,7 @@ internal static class StreamSql {
 				streamMetadata.TruncateBefore,
 				streamMetadata.Acl == null || streamMetadata.Acl.ReadRoles.Length == 0
 					? null
-					: $"[${string.Join(",", streamMetadata.Acl.ReadRoles)}]"
+					: $"[${string.Join(",", streamMetadata.Acl.ReadRoles)}]" // why are the other role types not stored?
 			);
 	}
 
