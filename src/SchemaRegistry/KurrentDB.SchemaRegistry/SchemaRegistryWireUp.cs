@@ -78,9 +78,9 @@ public static class SchemaRegistryWireUp {
 
 		services.AddSingleton<LookupSchemaNameByVersionId>(ctx => {
 			var queries = ctx.GetRequiredService<SchemaQueries>();
-			return async (schemaVersionId, ct) => {
-				var response = await queries.LookupSchemaName(new() { SchemaVersionId = schemaVersionId }, ct);
-				return response.SchemaName;
+			return (schemaVersionId, _) => {
+				var response = queries.LookupSchemaName(new() { SchemaVersionId = schemaVersionId });
+				return ValueTask.FromResult(response.SchemaName);
 			};
 		});
 

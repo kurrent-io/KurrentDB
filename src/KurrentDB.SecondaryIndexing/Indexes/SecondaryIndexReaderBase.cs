@@ -45,7 +45,7 @@ public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool db, IReadInd
 		}
 
 		var id = GetId(msg.IndexName);
-		var resolved = await GetEventsForwards(reader, id, pos, msg.MaxCount, msg.ExcludeStart, token);
+		var (indexRecordsCount, resolved) = await GetEventsForwards(reader, id, pos, msg.MaxCount, msg.ExcludeStart, token);
 
 		if (resolved.Count == 0) {
 			return NoData(ReadIndexResult.Success, true);
@@ -91,7 +91,7 @@ public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool db, IReadInd
 			=> new(result, ResolvedEvent.EmptyArray, lastIndexedPosition, false, error);
 	}
 
-	private async ValueTask<IReadOnlyList<ResolvedEvent>> GetEventsForwards(
+	private async ValueTask<(long, IReadOnlyList<ResolvedEvent>)> GetEventsForwards(
 		IIndexReader<string> indexReader,
 		string id,
 		TFPos startPosition,
@@ -100,7 +100,7 @@ public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool db, IReadInd
 		CancellationToken cancellationToken) {
 		var indexPrepares = GetIndexRecordsForwards(id, startPosition, maxCount, excludeFirst);
 		var events = await indexReader.ReadRecords(indexPrepares, true, cancellationToken);
-		return events;
+		return (indexPrepares.Count, events);
 	}
 
 	private async ValueTask<IReadOnlyList<ResolvedEvent>> GetEventsBackwards(

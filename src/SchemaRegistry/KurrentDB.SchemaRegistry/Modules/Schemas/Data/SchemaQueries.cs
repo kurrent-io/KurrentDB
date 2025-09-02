@@ -5,10 +5,12 @@
 
 using System.Text.Json;
 using Google.Protobuf.Collections;
+using Kurrent.Quack;
 using Kurrent.Surge.DuckDB;
 using Kurrent.Surge.Schema.Validation;
 using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Infrastructure.Grpc;
+using KurrentDB.SchemaRegistry.Planes.Storage;
 using static KurrentDB.SchemaRegistry.Data.SchemaQueriesMapping;
 using SchemaCompatibilityError = KurrentDB.Protocol.Registry.V2.SchemaCompatibilityError;
 using SchemaCompatibilityErrorKind = KurrentDB.Protocol.Registry.V2.SchemaCompatibilityErrorKind;
@@ -20,16 +22,16 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 	IDuckDBConnectionProvider ConnectionProvider { get; } = connectionProvider;
 	ISchemaCompatibilityManager CompatibilityManager { get; } = compatibilityManager;
 
-	public async Task<GetSchemaResponse> GetSchema(GetSchemaRequest query, CancellationToken cancellationToken) {
+	public GetSchemaResponse GetSchema(GetSchemaRequest query) {
 		const string sql =
 			"""
 			SELECT * FROM schemas
 			WHERE schema_name = $schema_name
 			""";
 
-		var connection = ConnectionProvider.GetConnection();
+		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
 
-		return await connection.QueryOneAsync(
+		return connection.QueryOne(
 			sql, record => record is not null
 				? new GetSchemaResponse { Schema = MapToSchema(record) }
 				: throw RpcExceptions.NotFound("Schema", query.SchemaName),
@@ -37,16 +39,16 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 		);
 	}
 
-	public async Task<LookupSchemaNameResponse> LookupSchemaName(LookupSchemaNameRequest query, CancellationToken cancellationToken) {
+	public LookupSchemaNameResponse LookupSchemaName(LookupSchemaNameRequest query) {
 		const string sql =
 			"""
 			SELECT schema_name FROM schema_versions
 			WHERE version_id = $schema_version_id
 			""";
 
-		var connection = ConnectionProvider.GetConnection();
+		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
 
-		return await connection.QueryOneAsync(
+		return connection.QueryOne(
 			sql, record => record is not null
 				? new LookupSchemaNameResponse { SchemaName = record.schema_name }
 				: throw RpcExceptions.NotFound("SchemaVersion", query.SchemaVersionId),
@@ -54,7 +56,7 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 		);
 	}
 
-	public async Task<GetSchemaVersionResponse> GetSchemaVersion(GetSchemaVersionRequest query, CancellationToken cancellationToken) {
+	public GetSchemaVersionResponse GetSchemaVersion(GetSchemaVersionRequest query) {
 		const string sqlWithVersionNumber =
 			"""
 			SELECT
@@ -82,16 +84,16 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 			LIMIT 1;
 			""";
 
-		var connection = ConnectionProvider.GetConnection();
+		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
 
 		return query.HasVersionNumber
-			? await connection.QueryOneAsync(
+			? connection.QueryOne(
 				sqlWithVersionNumber, record => record is not null
 					? new GetSchemaVersionResponse { Version = MapToSchemaVersion(record) }
 					: throw RpcExceptions.NotFound("Schema", query.SchemaName),
 				new { schema_name = query.SchemaName, version_number = query.VersionNumber }
 			)
-			: await connection.QueryOneAsync(
+			: connection.QueryOne(
 				sqlWithoutVersionNumber, record => record is not null
 					? new GetSchemaVersionResponse { Version = MapToSchemaVersion(record) }
 					: throw RpcExceptions.NotFound("SchemaVersion", query.VersionNumber.ToString()),
@@ -99,7 +101,7 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 			);
 	}
 
-	public async Task<GetSchemaVersionByIdResponse> GetSchemaVersionById(GetSchemaVersionByIdRequest query, CancellationToken cancellationToken) {
+	public GetSchemaVersionByIdResponse GetSchemaVersionById(GetSchemaVersionByIdRequest query) {
 		const string sql =
 			"""
 			SELECT
@@ -112,9 +114,9 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 			WHERE version_id = $schema_version_id
 			""";
 
-		var connection = ConnectionProvider.GetConnection();
+		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
 
-		return await connection.QueryOneAsync(
+		return connection.QueryOne(
 			sql, record => record is not null
 				? new GetSchemaVersionByIdResponse { Version = MapToSchemaVersion(record) }
 				: throw RpcExceptions.NotFound("SchemaVersion", query.SchemaVersionId),
@@ -122,7 +124,7 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 		);
 	}
 
-	public async Task<ListSchemasResponse> ListSchemas(ListSchemasRequest query, CancellationToken cancellationToken) {
+	public ListSchemasResponse ListSchemas(ListSchemasRequest query) {
 		const string sql =
 			"""
 			SELECT * FROM schemas
@@ -130,22 +132,22 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 			  AND ($tags = '' OR json_contains(tags, $tags))
 			""";
 
-		var connection = ConnectionProvider.GetConnection();
+		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
 
-		var result = await connection
-			.QueryManyAsync<Schema>(
+		var result = connection
+			.QueryMany<Schema>(
 				sql, record => MapToSchema(record),
 				new {
 					schema_name_prefix = query.HasSchemaNamePrefix ? $"{query.SchemaNamePrefix}%" : "",
 					tags = query.SchemaTags.Count > 0 ? JsonSerializer.Serialize(query.SchemaTags) : ""
 				}
 			)
-			.ToListAsync(cancellationToken);
+			.ToList();
 
 		return new ListSchemasResponse { Schemas = { result } };
 	}
 
-	public async Task<ListSchemaVersionsResponse> ListSchemaVersions(ListSchemaVersionsRequest query, CancellationToken cancellationToken) {
+	public ListSchemaVersionsResponse ListSchemaVersions(ListSchemaVersionsRequest query) {
 		const string sqlIncludeDefinition =
 			"""
 			SELECT
@@ -171,15 +173,15 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 			ORDER BY version_number
 			""";
 
-		var connection = ConnectionProvider.GetConnection();
+		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
 
-		var result = await connection
-			.QueryManyAsync<SchemaVersion>(
+		var result = connection
+			.QueryMany<SchemaVersion>(
 				query.IncludeDefinition ? sqlIncludeDefinition : sqlExcludeDefinition,
 				record => MapToSchemaVersion(record),
 				new { schema_name = query.SchemaName }
 			)
-			.ToListAsync(cancellationToken);
+			.ToList();
 
 		if (result.Count == 0)
 			throw RpcExceptions.NotFound("Schema", query.SchemaName);
@@ -189,7 +191,7 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 		};
 	}
 
-	public async Task<ListRegisteredSchemasResponse> ListRegisteredSchemas(ListRegisteredSchemasRequest query, CancellationToken cancellationToken) {
+	public ListRegisteredSchemasResponse ListRegisteredSchemas(ListRegisteredSchemasRequest query) {
 		const string sql =
 			"""
 			SELECT
@@ -208,10 +210,10 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 			  AND ($tags == '' OR json_contains(s.tags, $tags))
 			""";
 
-		var connection = ConnectionProvider.GetConnection();
+		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
 
-		var result = await connection
-			.QueryManyAsync<RegisteredSchema>(
+		var result = connection
+			.QueryMany<RegisteredSchema>(
 				sql, record => MapToRegisteredSchema(record),
 				new {
 					schema_version_id = query.SchemaVersionId,
@@ -219,15 +221,17 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 					tags = query.SchemaTags.Count > 0 ? JsonSerializer.Serialize(query.SchemaTags) : ""
 				}
 			)
-			.ToListAsync(cancellationToken);
+			.ToList();
 
-		return new ListRegisteredSchemasResponse { Schemas = { result } };
+		return new() { Schemas = { result } };
 	}
 
 	public async Task<CheckSchemaCompatibilityResponse> CheckSchemaCompatibility(CheckSchemaCompatibilityRequest query, CancellationToken cancellationToken) {
+		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
+
 		var info = query.HasSchemaVersionId
-			? await GetLatestSchemaValidationInfo(Guid.Parse(query.SchemaVersionId), cancellationToken)
-			: await GetLatestSchemaValidationInfo(query.SchemaName, cancellationToken);
+			? GetLatestSchemaValidationInfo(connection, Guid.Parse(query.SchemaVersionId))
+			: GetLatestSchemaValidationInfo(connection, query.SchemaName);
 
 		if (query.DataFormat != info.DataFormat) {
 			var errors = new RepeatedField<SchemaCompatibilityError> {
@@ -239,11 +243,7 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 				}
 			};
 
-			return new CheckSchemaCompatibilityResponse {
-				Failure = new CheckSchemaCompatibilityResponse.Types.Failure {
-					Errors = { errors }
-				}
-			};
+			return new() { Failure = new() { Errors = { errors } } };
 		}
 
 		var uncheckedSchema = query.Definition.ToStringUtf8();
@@ -255,8 +255,8 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 			result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, info.SchemaDefinition.ToStringUtf8(), compatibility, cancellationToken);
 		} else {
 			var infos = query.HasSchemaVersionId
-				? await GetAllSchemaValidationInfos(Guid.Parse(query.SchemaVersionId), cancellationToken)
-				: await GetAllSchemaValidationInfos(query.SchemaName, cancellationToken);
+				? GetAllSchemaValidationInfos(connection, Guid.Parse(query.SchemaVersionId))
+				: GetAllSchemaValidationInfos(connection, query.SchemaName);
 
 			var referenceSchemas = infos
 				.Select(i => i.SchemaDefinition.ToStringUtf8())
@@ -268,7 +268,7 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 		return MapToSchemaCompatibilityResult(result, info.SchemaVersionId);
 	}
 
-	async Task<SchemaValidationInfo> GetLatestSchemaValidationInfo(string schemaName, CancellationToken cancellationToken) {
+	static SchemaValidationInfo GetLatestSchemaValidationInfo(DuckDBAdvancedConnection connection, string schemaName) {
 		const string sql =
 			"""
 			SELECT
@@ -281,9 +281,7 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 			WHERE s.schema_name = $schema_name
 			""";
 
-		var connection = ConnectionProvider.GetConnection();
-
-		return await connection.QueryOneAsync(
+		return connection.QueryOne(
 			sql, record => record is not null
 				? MapToSchemaValidationInfo(record)
 				: throw RpcExceptions.NotFound("Schema", schemaName),
@@ -291,7 +289,7 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 		);
 	}
 
-	async Task<SchemaValidationInfo> GetLatestSchemaValidationInfo(Guid schemaVersionId, CancellationToken cancellationToken) {
+	static SchemaValidationInfo GetLatestSchemaValidationInfo(DuckDBAdvancedConnection connection, Guid schemaVersionId) {
 		const string sql =
 			"""
 			SELECT
@@ -307,9 +305,7 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 			)
 			""";
 
-		var connection = ConnectionProvider.GetConnection();
-
-		return await connection.QueryOneAsync(
+		return connection.QueryOne(
 			sql, record => record is not null
 				? MapToSchemaValidationInfo(record)
 				: throw RpcExceptions.NotFound("SchemaVersion", schemaVersionId.ToString()),
@@ -317,7 +313,7 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 		);
 	}
 
-	async Task<List<SchemaValidationInfo>> GetAllSchemaValidationInfos(string schemaName, CancellationToken cancellationToken) {
+	static List<SchemaValidationInfo> GetAllSchemaValidationInfos(DuckDBAdvancedConnection connection, string schemaName) {
 		const string sql =
 			"""
 			SELECT
@@ -331,16 +327,14 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 			ORDER BY v.version_number
 			""";
 
-		var connection = ConnectionProvider.GetConnection();
-
-		return await connection.QueryManyAsync<SchemaValidationInfo>(
+		return connection.QueryMany<SchemaValidationInfo>(
 			sql,
 			record => MapToSchemaValidationInfo(record),
 			new { schema_name = schemaName }
-		).ToListAsync(cancellationToken);
+		).ToList();
 	}
 
-	async Task<List<SchemaValidationInfo>> GetAllSchemaValidationInfos(Guid schemaVersionId, CancellationToken cancellationToken) {
+	static List<SchemaValidationInfo> GetAllSchemaValidationInfos(DuckDBAdvancedConnection connection, Guid schemaVersionId) {
 		const string sql =
 			"""
 			SELECT
@@ -357,12 +351,10 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 			ORDER BY v.version_number
 			""";
 
-		var connection = ConnectionProvider.GetConnection();
-
-		return await connection.QueryManyAsync<SchemaValidationInfo>(
+		return connection.QueryMany<SchemaValidationInfo>(
 			sql,
 			record => MapToSchemaValidationInfo(record),
 			new { schema_version_id = schemaVersionId }
-		).ToListAsync(cancellationToken);
+		).ToList();
 	}
 }
