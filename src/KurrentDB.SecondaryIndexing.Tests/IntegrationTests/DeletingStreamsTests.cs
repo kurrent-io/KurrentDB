@@ -13,7 +13,7 @@ namespace KurrentDB.SecondaryIndexing.Tests.IntegrationTests;
 
 [Trait("Category", "Integration")]
 public class DeletingStreamsTests(DeletingStreamsFixture fixture, ITestOutputHelper output) : SecondaryIndexingTest<DeletingStreamsFixture>(fixture, output) {
-	[Fact(Skip = "For now")]
+	[Fact(Skip = "For now")] // will these skipped tests be re-enabled?
 	public Task ReadsAllEventsFromDefaultIndex() =>
 		ValidateRead(SystemStreams.DefaultSecondaryIndex, Fixture.ExpectedBatches.ToDefaultIndexResolvedEvents());
 
