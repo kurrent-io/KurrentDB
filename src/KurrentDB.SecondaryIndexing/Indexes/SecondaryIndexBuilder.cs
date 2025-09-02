@@ -79,7 +79,7 @@ public sealed class SecondaryIndexBuilder :
 	}
 
 	public ValueTask HandleAsync(StorageMessage.EventCommitted message, CancellationToken token) {
-		_progressTracker.RecordAppended(message.Event);
+		_progressTracker.RecordAppended(message.Event, message.CommitPosition);
 		return ValueTask.CompletedTask;
 	}
 
@@ -96,7 +96,7 @@ public sealed class SecondaryIndexBuilder :
 				.FirstOrDefaultAsync();
 
 			if (lastLogEvent != null)
-				_progressTracker.RecordAppended(lastLogEvent);
+				_progressTracker.InitLastAppended(lastLogEvent);
 			else
 				Logger.Information("No events found in the log.");
 		} catch (Exception exc) {

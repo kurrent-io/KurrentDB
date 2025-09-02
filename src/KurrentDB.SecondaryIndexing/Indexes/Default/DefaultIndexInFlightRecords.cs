@@ -1,68 +1,88 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using KurrentDB.Core.Data;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
-record struct InFlightRecord(
-	long LogPosition,
+[StructLayout(LayoutKind.Auto)]
+readonly record struct InFlightRecord(
+	TFPos Position,
 	int CategoryId,
-	int EventTypeId,
-	bool IsDeleted = false
+	int EventTypeId
 );
 
 class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions options) {
 	readonly InFlightRecord[] _records = new InFlightRecord[options.CommitBatchSize];
+	private uint _version; // used for optimistic lock
+	private int _count;
 
-	public int Count { get; private set; }
+	public int Count => _count;
 
-	public void Append(InFlightRecord record) {
-		_records[Count++] = record;
+	public void Append(TFPos position, int categoryId, int eventTypeId) {
+		var count = _count;
+		_records[count] = new(position, categoryId, eventTypeId);
+
+		// Fence: make sure that the array modification cannot be done after the increment
+		Volatile.Write(ref _count, count + 1);
 	}
 
 	public void Clear() {
-		Count = 0;
+		Interlocked.Increment(ref _version); // full fence
+
+		// Fence: make sure that the count is modified after the version
+		_count = 0;
+	}
+
+	// read is protected by optimistic lock
+	private bool TryRead(uint currentVer, int index, out InFlightRecord record) {
+		record = _records[index];
+
+		// ensure that the record is copied before the comparison
+		Interlocked.MemoryBarrier();
+		return currentVer == _version;
 	}
 
 	public IEnumerable<IndexQueryRecord> GetInFlightRecordsForwards(
 		TFPos startPosition,
-		List<IndexQueryRecord> fromDb,
 		int maxCount,
-		Func<InFlightRecord, bool>? query = null
-	) {
-		var remaining = maxCount - fromDb.Count;
-		var from = fromDb.Count == 0 ? startPosition.PreparePosition : fromDb[^1].LogPosition;
-		var seq = fromDb.Count == 0 ? 0 : fromDb[^1].RowId + 1;
-		for (var i = 0; i < Count; i++) {
-			if (remaining == 0) yield break;
-			var current = _records[i];
-			if (current.LogPosition >= from && (query == null || query(current))) {
-				remaining--;
-				yield return new(seq++, current.LogPosition);
-			}
+		bool excludeFirst,
+		Func<InFlightRecord, bool>? query = null) {
+		query ??= True; // to avoid branching in the loop
+
+		var from = new TFPos(startPosition.CommitPosition, startPosition.PreparePosition + Unsafe.BitCast<bool, byte>(excludeFirst));
+		var currentVer = _version;
+
+		for (int i = 0, count = Volatile.Read(in _count), seq = 0;
+		     i < count && maxCount > 0 && TryRead(currentVer, i, out var current);
+		     i++, maxCount--) {
+
+			if (current.Position >= from && query.Invoke(current))
+				yield return new(seq++, current.Position);
 		}
 	}
 
 	public IEnumerable<IndexQueryRecord> GetInFlightRecordsBackwards(
 		TFPos startPosition,
 		int maxCount,
-		Func<InFlightRecord, bool>? query = null
-	) {
-		if (Count == 0 || _records[0].LogPosition > startPosition.PreparePosition) {
-			yield break;
-		}
+		bool excludeFirst,
+		Func<InFlightRecord, bool>? query = null) {
+		query ??= True; // to avoid branching in the loop
 
-		var seq = -maxCount - 1;
-		var remaining = maxCount;
-		for (var i = Count - 1; i >= 0; i--) {
-			if (remaining == 0) yield break;
-			var current = _records[i];
-			if (current.LogPosition <= startPosition.PreparePosition && (query == null || query(current))) {
-				remaining--;
-				yield return new(seq++, current.LogPosition);
-			}
+		var from = new TFPos(startPosition.CommitPosition, startPosition.PreparePosition - Unsafe.BitCast<bool, byte>(excludeFirst));
+		var currentVer = _version;
+
+		for (int count = Volatile.Read(in _count), i = count - 1, seq = 0;
+		     i >= 0 && maxCount > 0 && TryRead(currentVer, i, out var current);
+		     i--, maxCount--) {
+
+			if (current.Position <= from && query.Invoke(current))
+				yield return new(seq++, current.Position);
 		}
 	}
+
+	private static bool True(InFlightRecord record) => true;
 }

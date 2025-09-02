@@ -73,15 +73,14 @@ public static class SystemStreams {
 		return metastreamId[2..];
 	}
 
-	public static bool IsInMemoryStream(string streamId) =>
+	public static bool IsVirtualStream(string streamId) =>
+		IsMemoryStream(streamId);
+
+	private static bool IsMemoryStream(string streamId) =>
 		streamId.StartsWith(InMemoryStreamPrefix);
 
 	public static bool IsIndexStream(string streamId) =>
 		streamId.StartsWith(IndexStreamPrefix);
-
-	[CanBeNull] public static string GetStreamCategory(string streamName) =>
-		streamName.Split('-').FirstOrDefault();
-
 }
 
 public static class SystemMetadata {

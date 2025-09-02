@@ -36,7 +36,7 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddSingleton(options);
 
 		services.AddSingleton<DuckDbDataSourceOptions>(sp => {
-			var dbPath = options.DbPath ?? Path.Combine(sp.GetRequiredService<TFChunkDbConfig>().Path, "index.db");
+			var dbPath = options.DbPath ?? Path.Combine(sp.GetRequiredService<TFChunkDbConfig>().Path, "index.db"); // consider using the index directory by default
 
 			return new() { ConnectionString = $"Data Source={dbPath};" };
 		});

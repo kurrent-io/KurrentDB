@@ -6,13 +6,13 @@ using KurrentDB.Core.Data;
 namespace KurrentDB.SecondaryIndexing.Indexes;
 
 public interface ISecondaryIndexProcessor : IDisposable {
+	TFPos LastIndexedPosition { get; }
+
 	void Commit();
 
 	void Index(ResolvedEvent evt);
 
 	void HandleStreamMetadataChange(ResolvedEvent evt);
-
-	TFPos GetLastPosition();
 }
 
 public record struct SequenceRecord(int Id, long Sequence);

@@ -38,8 +38,7 @@ public class StreamIndexProcessor : Disposable {
 	public long LastCommittedPosition { get; private set; }
 
 	public long Index(ResolvedEvent resolvedEvent) {
-		if (IsDisposingOrDisposed)
-			return -1;
+		ObjectDisposedException.ThrowIf(IsDisposingOrDisposed, nameof(StreamIndexProcessor));
 
 		string name = resolvedEvent.OriginalStreamId;
 		_lastLogPosition = resolvedEvent.Event.LogPosition;
@@ -53,12 +52,12 @@ public class StreamIndexProcessor : Disposable {
 
 		var fromDb = _connection.GetStreamIdByName(name);
 		if (fromDb.HasValue) {
-			_streamsCache.UpdateStreamSecondaryIndexId(1, name, fromDb.Value);
+			_streamsCache.UpdateStreamSecondaryIndexId(cacheVersion: 1, name, fromDb.Value);
 			return fromDb.Value;
 		}
 
 		id = ++_seq;
-		_streamsCache.UpdateStreamSecondaryIndexId(1, name, id);
+		_streamsCache.UpdateStreamSecondaryIndexId(cacheVersion: 1, name, id);
 
 		_inFlightRecords.Add(name, id);
 
@@ -93,7 +92,6 @@ public class StreamIndexProcessor : Disposable {
 		if (IsDisposed || _count == 0)
 			return;
 
-		_inFlightRecords.Clear();
 		_stopwatch.Start();
 		_appender.Flush();
 		_stopwatch.Stop();
@@ -101,13 +99,14 @@ public class StreamIndexProcessor : Disposable {
 			_stopwatch.ElapsedMilliseconds);
 		_stopwatch.Reset();
 
+		_inFlightRecords.Clear();
+
 		LastCommittedPosition = _lastLogPosition;
 		_count = 0;
 	}
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {
-			Commit();
 			_appender.Dispose();
 			_connection.Dispose();
 		}

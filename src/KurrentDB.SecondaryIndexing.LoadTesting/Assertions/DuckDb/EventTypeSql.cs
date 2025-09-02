@@ -11,13 +11,13 @@ public static class EventTypeSql {
 	public struct GetEventTypesSummaryQuery : IQuery<EventTypeSummary> {
 		public static ReadOnlySpan<byte> CommandText =>
 			"""
-			SELECT e.id, e.name, max_seq.max_event_type_seq
+			SELECT e.id, e.name, max_log_pos.max_event_type_log_pos
 			FROM event_type e
 			LEFT JOIN (
-			    SELECT event_type, MAX(event_type_seq) AS max_event_type_seq
+			    SELECT event_type_id, MAX(log_position) AS max_event_type_log_pos
 			    FROM idx_all
-			    GROUP BY event_type
-			) max_seq ON e.id = max_seq.event_type;
+			    GROUP BY event_type_id
+			) max_log_pos ON e.id = max_log_pos.event_type_id;
 			"""u8;
 
 		public static EventTypeSummary Parse(ref DataChunk.Row row) => new(row.ReadInt32(), row.ReadString(), row.ReadInt64());

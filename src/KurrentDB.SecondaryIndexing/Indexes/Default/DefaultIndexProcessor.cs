@@ -18,18 +18,18 @@ using static KurrentDB.SecondaryIndexing.Indexes.Default.DefaultSql;
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
-	readonly DefaultIndexInFlightRecords _inFlightRecords;
-	readonly DuckDBAdvancedConnection _connection;
-	readonly CategoryIndexProcessor _categoryIndexProcessor;
-	readonly EventTypeIndexProcessor _eventTypeIndexProcessor;
-	readonly StreamIndexProcessor _streamIndexProcessor;
-	readonly ISecondaryIndexProgressTracker _progressTracker;
-	readonly IPublisher _publisher;
-	Appender _appender;
+	private readonly DefaultIndexInFlightRecords _inFlightRecords;
+	private readonly DuckDBAdvancedConnection _connection;
+	private readonly CategoryIndexProcessor _categoryIndexProcessor;
+	private readonly EventTypeIndexProcessor _eventTypeIndexProcessor;
+	private readonly StreamIndexProcessor _streamIndexProcessor;
+	private readonly ISecondaryIndexProgressTracker _progressTracker;
+	private readonly IPublisher _publisher;
+	private Appender _appender;
 
-	static readonly ILogger Logger = Log.Logger.ForContext<DefaultIndexProcessor>();
+	private static readonly ILogger Logger = Log.Logger.ForContext<DefaultIndexProcessor>();
 
-	public long LastIndexedPosition { get; private set; }
+	public TFPos LastIndexedPosition { get; private set; } = TFPos.HeadOfTf;
 
 	public DefaultIndexProcessor(
 		DuckDbDataSource db,
@@ -50,29 +50,25 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_progressTracker = progressTracker;
 		_publisher = publisher;
 
-		var lastPosition = GetLastPosition();
-		Logger.Information("Last known log position: {Position}", lastPosition);
-		LastIndexedPosition = lastPosition.PreparePosition;
+		SetLastPosition();
+		Logger.Information("Last known log position: {Position}", LastIndexedPosition);
 	}
 
 	public void Index(ResolvedEvent resolvedEvent) {
-		if (IsDisposingOrDisposed) return;
+		ObjectDisposedException.ThrowIf(IsDisposingOrDisposed, nameof(DefaultIndexProcessor));
 
 		var categoryId = _categoryIndexProcessor.Index(resolvedEvent);
 		var eventTypeId = _eventTypeIndexProcessor.Index(resolvedEvent);
 		var streamId = _streamIndexProcessor.Index(resolvedEvent);
-		if (streamId == -1) {
-			// StreamIndex is disposed
-			return;
-		}
 
-		var logPosition = resolvedEvent.Event.LogPosition;
-		var commitPosition = resolvedEvent.EventPosition?.CommitPosition;
+		long preparePosition = resolvedEvent.OriginalPosition!.Value.PreparePosition;
+		long commitPosition = resolvedEvent.OriginalPosition!.Value.CommitPosition;
+
 		var eventNumber = resolvedEvent.Event.EventNumber;
 		using (var row = _appender.CreateRow()) {
-			row.Append(logPosition);
-			if (commitPosition.HasValue && logPosition != commitPosition)
-				row.Append(commitPosition.Value);
+			row.Append(preparePosition);
+			if (preparePosition != commitPosition)
+				row.Append(commitPosition);
 			else
 				row.Append(DBNull.Value);
 			row.Append(eventNumber);
@@ -84,8 +80,8 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			row.Append(false); // is_deleted TODO: What happens if the event is deleted before we commit?
 		}
 
-		_inFlightRecords.Append(new(logPosition, categoryId, eventTypeId));
-		LastIndexedPosition = resolvedEvent.Event.LogPosition;
+		_inFlightRecords.Append(new TFPos(commitPosition, preparePosition), categoryId, eventTypeId);
+		LastIndexedPosition = resolvedEvent.OriginalPosition!.Value;
 
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(SystemStreams.DefaultSecondaryIndex, resolvedEvent));
 		_progressTracker.RecordIndexed(resolvedEvent);
@@ -93,19 +89,20 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 	public void HandleStreamMetadataChange(ResolvedEvent evt) => _streamIndexProcessor.HandleStreamMetadataChange(evt);
 
-	public TFPos GetLastPosition() {
+	private void SetLastPosition() {
 		var result = _connection.QueryFirstOrDefault<LastPositionResult, GetLastLogPositionQuery>();
-		return result != null ? new(result.Value.CommitPosition ?? result.Value.PreparePosition, result.Value.PreparePosition) : TFPos.Invalid;
+		if (result is null)
+			return;
+
+		LastIndexedPosition = new(result.Value.CommitPosition ?? result.Value.PreparePosition, result.Value.PreparePosition);
 	}
 
 	public void Commit() {
-		if (IsDisposingOrDisposed)
-			return;
-
-		_streamIndexProcessor.Commit();
+		ObjectDisposedException.ThrowIf(IsDisposingOrDisposed, nameof(DefaultIndexProcessor));
 
 		try {
 			_progressTracker.RecordCommit(() => {
+				_streamIndexProcessor.Commit();
 				_appender.Flush();
 				return (LastIndexedPosition, _inFlightRecords.Count);
 			});
@@ -120,7 +117,6 @@ class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {
-			Commit();
 			_appender.Dispose();
 			_connection.Dispose();
 		}

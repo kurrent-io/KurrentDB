@@ -64,8 +64,10 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 				}
 			} catch (ReadResponseException.StreamNotFound ex) {
 				streamNotFound = ex;
+				break;
 			} catch (OperationCanceledException) {
 				// can happen
+				break;
 			}
 		} while (events.Count != maxCount && DateTime.UtcNow < endTime);
 
