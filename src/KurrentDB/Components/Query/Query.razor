@@ -10,18 +10,25 @@
 @using BlazorMonaco.Editor
 @using Dapper
 @using Kurrent.Quack.ConnectionPool
+@using KurrentDB.Common.Configuration
+@using KurrentDB.Components.Plugins
 @using KurrentDB.Components.Tools
-@using KurrentDB.Services
 @using KurrentDB.UI.Services
 @using Microsoft.AspNetCore.Authorization
 @using Serilog
 @inject DuckDBConnectionPool Db
 @inject Preferences Preferences
 @inject IDialogService DialogService
+@inject PluginsService Plugins
 <MudPopoverProvider/>
 <MudDialogProvider />
 
 <PageTitle>KurrentDB: Query</PageTitle>
+
+@if (!Plugins.IsPluginEnabled(PluginNames.SecondaryIndexes)) {
+	<NotEnabled Plugin="@PluginNames.SecondaryIndexes"/>
+	return;
+}
 
 <MudCard Outlined="true">
 	<MudCardContent>

@@ -3,22 +3,18 @@
 
 using System.Reflection;
 using DotNext.Threading;
+using DuckDB.NET.Data;
+using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
+using KurrentDB.DuckDB;
 
 namespace KurrentDB.SecondaryIndexing.Storage;
 
-public class IndexingDbSchema(DuckDBConnectionPool connectionPool) {
+public class IndexingDbSchema : DuckDBOneTimeSetup {
 	private static readonly Assembly Assembly = typeof(IndexingDbSchema).Assembly;
 
-	private Atomic.Boolean _created;
-
-	public void CreateSchema() {
-		if (!_created.FalseToTrue()) {
-			return;
-		}
-
+	protected override void ExecuteCore(DuckDBConnection connection) {
 		var names = Assembly.GetManifestResourceNames().Where(x => x.EndsWith(".sql")).OrderBy(x => x);
-		using var connection = connectionPool.Open();
 		using var transaction = connection.BeginTransaction();
 		var cmd = connection.CreateCommand();
 		cmd.Transaction = transaction;
@@ -40,5 +36,10 @@ public class IndexingDbSchema(DuckDBConnectionPool connectionPool) {
 		}
 
 		transaction.Commit();
+	}
+
+	public void CreateSchema(DuckDBConnectionPool pool) {
+		using var connection = pool.Open();
+		Execute(connection);
 	}
 }

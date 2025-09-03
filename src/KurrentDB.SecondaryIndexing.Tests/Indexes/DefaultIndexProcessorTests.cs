@@ -166,7 +166,6 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 
 		_processor = new(
 			DuckDb,
-			new IndexingDbSchema(DuckDb),
 			inflightRecordsCache,
 			new NoOpSecondaryIndexProgressTracker(),
 			publisher,

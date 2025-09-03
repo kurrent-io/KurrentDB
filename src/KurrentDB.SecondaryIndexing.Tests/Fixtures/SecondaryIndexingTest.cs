@@ -5,8 +5,7 @@ using Xunit.Abstractions;
 
 namespace KurrentDB.SecondaryIndexing.Tests.Fixtures;
 
-public abstract class SecondaryIndexingTest<TFixture> : IClassFixture<TFixture>
-	where TFixture : SecondaryIndexingFixture {
+public abstract class SecondaryIndexingTest<TFixture> : IClassFixture<TFixture> where TFixture : SecondaryIndexingFixture {
 	protected TFixture Fixture { get; }
 
 	protected static string RandomStreamName() => $"c{DateTime.Now.Ticks}-{Guid.NewGuid()}";

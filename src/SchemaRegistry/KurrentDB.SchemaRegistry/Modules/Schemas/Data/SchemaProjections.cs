@@ -12,37 +12,6 @@ namespace KurrentDB.SchemaRegistry.Data;
 
 public class SchemaProjections : DuckDBProjection {
 	public SchemaProjections() {
-		Setup((db, _) => {
-			const string createTablesAndIndexesSql =
-				"""
-				CREATE TABLE IF NOT EXISTS schema_versions (
-				      version_id        TEXT        PRIMARY KEY
-				    , schema_name       TEXT        NOT NULL
-				    , version_number    INT         NOT NULL DEFAULT 0
-				    , schema_definition BLOB        NOT NULL
-				    , data_format       TINYINT     NOT NULL DEFAULT 0
-				    , registered_at     TIMESTAMPTZ NOT NULL DEFAULT current_localtimestamp()
-				    , checkpoint        UBIGINT     NOT NULL DEFAULT 0
-				);
-				CREATE TABLE IF NOT EXISTS schemas (
-				      schema_name           TEXT        PRIMARY KEY
-				    , description           TEXT
-				    , data_format           TINYINT     NOT NULL DEFAULT 0
-				    , latest_version_number INT         NOT NULL DEFAULT 0
-				    , latest_version_id     TEXT        NOT NULL
-				    , compatibility         TINYINT     NOT NULL
-				    , tags                  JSON        NOT NULL DEFAULT '{}'
-				    , created_at            TIMESTAMPTZ NOT NULL DEFAULT current_localtimestamp()
-				    , updated_at            TIMESTAMPTZ
-				    , checkpoint            UBIGINT     NOT NULL DEFAULT 0
-				);
-				""";
-
-			using var scope = db.GetScopedConnection(out var connection);
-			connection.Execute(createTablesAndIndexesSql);
-			return ValueTask.CompletedTask;
-		});
-
 		Project<SchemaCreated>((msg, db, ctx) => {
 			using var scope = db.GetScopedConnection(out var connection);
 			using var tx = connection.BeginTransaction();

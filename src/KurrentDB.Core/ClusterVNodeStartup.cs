@@ -304,7 +304,7 @@ public class ClusterVNodeStartup<TStreamId>
 			.AddServiceOptions<Streams<TStreamId>>(options => options.MaxReceiveMessageSize = TFConsts.EffectiveMaxLogRecordSize);
 
 		services.AddSingleton<DuckDBConnectionPoolLifetime>();
-		services.AddSingleton<IDuckDBInlineFunction, KdbGetEventInlineFunction>();
+		services.AddDuckDBSetup<KdbGetEventSetup>();
 		services.AddSingleton<DuckDBConnectionPool>(sp => sp.GetRequiredService<DuckDBConnectionPoolLifetime>().GetConnectionPool());
 
 		// Ask the node itself to add DI registrations

@@ -8,6 +8,7 @@ using Kurrent.Surge.Readers.Configuration;
 using Kurrent.Surge.Schema;
 using Kurrent.Surge.Schema.Serializers;
 using Kurrent.Surge.Schema.Validation;
+using KurrentDB.DuckDB;
 using KurrentDB.SchemaRegistry.Infrastructure;
 using KurrentDB.SchemaRegistry.Infrastructure.Grpc;
 using KurrentDB.SchemaRegistry.Data;
@@ -39,6 +40,7 @@ public static class SchemaRegistryWireUp {
 		services.AddSingleton<ISchemaCompatibilityManager>(new NJsonSchemaCompatibilityManager());
 
 		services.AddDuckDBConnectionProvider();
+		services.AddDuckDBSetup<SchemaDbSchema>();
 
 		services.AddMessageRegistration();
 		services.AddCommandPlane();

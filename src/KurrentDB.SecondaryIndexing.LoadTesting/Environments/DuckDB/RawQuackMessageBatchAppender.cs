@@ -24,8 +24,8 @@ public class RawQuackMessageBatchAppender : IMessageBatchAppender {
 
 	public RawQuackMessageBatchAppender(DuckDBConnectionPool db, DuckDbTestEnvironmentOptions options) {
 		_commitSize = options.CommitSize;
-		var schema = new IndexingDbSchema(db);
-		schema.CreateSchema();
+		var schema = new IndexingDbSchema();
+		schema.CreateSchema(db);
 
 		using var connection = db.Open();
 		_defaultIndexAppender = new(connection, "idx_all"u8);

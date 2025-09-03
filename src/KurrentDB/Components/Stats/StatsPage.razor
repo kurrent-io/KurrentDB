@@ -2,8 +2,17 @@
 @rendermode InteractiveServer
 @attribute [Authorize]
 @inherits KurrentDB.Components.Licensed.LicensedPage
+@using KurrentDB.Common.Configuration
+@using KurrentDB.Components.Plugins
+@using KurrentDB.Components.Tools
 @using Microsoft.AspNetCore.Authorization
 @inject StatsService StatsService
+@inject PluginsService Plugins
+
+@if (!Plugins.IsPluginEnabled(PluginNames.SecondaryIndexes)) {
+	<NotEnabled Plugin="@PluginNames.SecondaryIndexes"/>
+	return;
+}
 
 @if (IsLoading) {
 	<div class="d-flex justify-center align-center pa-6">

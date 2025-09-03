@@ -26,7 +26,7 @@ public sealed class SecondaryIndexingPluginOptions {
 }
 
 public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders)
-	: SubsystemsPlugin(name: "SecondaryIndexes") {
+	: SubsystemsPlugin(name: PluginNames.SecondaryIndexes) {
 	[Experimental("SECONDARY_INDEX")]
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
 		var options = configuration
@@ -34,7 +34,8 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 			.Get<SecondaryIndexingPluginOptions>() ?? new();
 		services.AddSingleton(options);
 
-		services.AddSingleton<IndexingDbSchema>();
+		services.AddDuckDBSetup<IndexingDbSchema>();
+		services.AddDuckDBSetup<InFlightSetup>();
 		services.AddHostedService<SecondaryIndexBuilder>();
 		services.AddSingleton<DefaultIndexInFlightRecords>();
 
@@ -48,8 +49,6 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddSingleton<ISecondaryIndexReader, DefaultIndexReader>();
 		services.AddSingleton<ISecondaryIndexReader, CategoryIndexReader>();
 		services.AddSingleton<ISecondaryIndexReader, EventTypeIndexReader>();
-
-		services.AddSingleton<IDuckDBInlineFunction, InFlightInlineFunction>();
 	}
 
 	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {

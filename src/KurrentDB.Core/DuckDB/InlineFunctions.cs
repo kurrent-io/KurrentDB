@@ -23,11 +23,13 @@ using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 
 namespace KurrentDB.Core.DuckDB;
 
-public class KdbGetEventInlineFunction(IPublisher publisher) : IDuckDBInlineFunction {
+public class KdbGetEventSetup(IPublisher publisher) : IDuckDBSetup {
 	[Experimental("DuckDBNET001")]
-	public void Register(DuckDBConnection connection) {
+	public void Execute(DuckDBConnection connection) {
 		connection.RegisterScalarFunction<long, string>("kdb_get", GetEvent);
 	}
+
+	public bool OneTimeOnly => false;
 
 	[Experimental("DuckDBNET001")]
 	private void GetEvent(IReadOnlyList<IDuckDBDataReader> readers, IDuckDBDataWriter writer, ulong rowCount) {

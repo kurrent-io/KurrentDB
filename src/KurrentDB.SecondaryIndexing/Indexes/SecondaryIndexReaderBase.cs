@@ -45,18 +45,24 @@ public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool db, IReadInd
 		}
 
 		var id = GetId(msg.IndexName);
-		var (indexRecordsCount, resolved) = await GetEventsForwards(reader, id, pos, msg.MaxCount, msg.ExcludeStart, token);
+		var (indexRecordsCount, resolved) = await GetEventsForwards(pos);
 
 		if (resolved.Count == 0) {
 			return NoData(ReadIndexResult.Success, true);
 		}
 
-		var isEndOfStream = resolved.Count < msg.MaxCount || resolved[^1].Event.LogPosition == lastIndexedPosition;
+		var isEndOfStream = indexRecordsCount < msg.MaxCount || resolved[^1].Event.LogPosition == lastIndexedPosition;
 
 		return new(ReadIndexResult.Success, resolved, pos, lastIndexedPosition, isEndOfStream, null);
 
 		ReadIndexEventsForwardCompleted NoData(ReadIndexResult result, bool endOfStream, string? error = null)
 			=> new(result, ResolvedEvent.EmptyArray, pos, lastIndexedPosition, endOfStream, error);
+
+		async ValueTask<(long, IReadOnlyList<ResolvedEvent>)> GetEventsForwards(TFPos startPosition) {
+			var indexPrepares = GetIndexRecordsForwards(id, startPosition, msg.MaxCount, msg.ExcludeStart);
+			var events = await reader.ReadRecords(indexPrepares, true, token);
+			return (indexPrepares.Count, events);
+		}
 	}
 
 	private async ValueTask<ReadIndexEventsBackwardCompleted> ReadBackwards(
@@ -75,7 +81,7 @@ public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool db, IReadInd
 		}
 
 		var id = GetId(msg.IndexName);
-		var resolved = await GetEventsBackwards(reader, id, pos, msg.MaxCount, msg.ExcludeStart, token);
+		var (indexRecordsCount, resolved) = await GetEventsBackwards(pos);
 
 		if (resolved.Count == 0) {
 			var response = NoData(ReadIndexResult.Success);
@@ -83,35 +89,17 @@ public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool db, IReadInd
 			return response;
 		}
 
-		var isEndOfStream = resolved.Count < msg.MaxCount;
+		var isEndOfStream = indexRecordsCount < msg.MaxCount;
 
 		return new(ReadIndexResult.Success, resolved, lastIndexedPosition, isEndOfStream, null);
 
 		ReadIndexEventsBackwardCompleted NoData(ReadIndexResult result, string? error = null)
 			=> new(result, ResolvedEvent.EmptyArray, lastIndexedPosition, false, error);
-	}
 
-	private async ValueTask<(long, IReadOnlyList<ResolvedEvent>)> GetEventsForwards(
-		IIndexReader<string> indexReader,
-		string id,
-		TFPos startPosition,
-		int maxCount,
-		bool excludeFirst,
-		CancellationToken cancellationToken) {
-		var indexPrepares = GetIndexRecordsForwards(id, startPosition, maxCount, excludeFirst);
-		var events = await indexReader.ReadRecords(indexPrepares, true, cancellationToken);
-		return (indexPrepares.Count, events);
-	}
-
-	private async ValueTask<IReadOnlyList<ResolvedEvent>> GetEventsBackwards(
-		IIndexReader<string> indexReader,
-		string id,
-		TFPos startPosition,
-		int maxCount,
-		bool excludeFirst,
-		CancellationToken cancellationToken) {
-		var indexPrepares = GetIndexRecordsBackwards(id, startPosition, maxCount, excludeFirst);
-		var events = await indexReader.ReadRecords(indexPrepares, false, cancellationToken);
-		return events;
+		async ValueTask<(long, IReadOnlyList<ResolvedEvent>)> GetEventsBackwards(TFPos startPosition) {
+			var indexPrepares = GetIndexRecordsBackwards(id, startPosition, msg.MaxCount, msg.ExcludeStart);
+			var events = await reader.ReadRecords(indexPrepares, false, token);
+			return (indexPrepares.Count, events);
+		}
 	}
 }

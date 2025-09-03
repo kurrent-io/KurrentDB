@@ -9,6 +9,7 @@ using KurrentDB.AutoScavenge.Clients;
 using KurrentDB.AutoScavenge.Converters;
 using KurrentDB.AutoScavenge.Domain;
 using KurrentDB.AutoScavenge.Scavengers;
+using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services.Transport.Http.NodeHttpClientFactory;
 using KurrentDB.POC.IO.Core;
@@ -22,7 +23,7 @@ using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.AutoScavenge;
 
-public class AutoScavengePlugin() : SubsystemsPlugin(name: "AutoScavenge", requiredEntitlements: ["AUTO_SCAVENGE"]), IConnectedSubsystemsPlugin {
+public class AutoScavengePlugin() : SubsystemsPlugin(name: PluginNames.AutoScavenge, requiredEntitlements: ["AUTO_SCAVENGE"]), IConnectedSubsystemsPlugin {
 	private static readonly ILogger Log = Serilog.Log.ForContext<AutoScavengePlugin>();
 	private readonly CancellationTokenSource _cts = new();
 	private AutoScavengeService? _autoScavengeService;

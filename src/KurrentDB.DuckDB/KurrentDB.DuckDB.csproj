@@ -9,6 +9,8 @@
 
 	<ItemGroup>
 		<PackageReference Include="Kurrent.Quack" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+		<PackageReference Include="Serilog" />
 	</ItemGroup>
 
 </Project>

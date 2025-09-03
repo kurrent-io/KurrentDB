@@ -35,13 +35,11 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 	public DefaultIndexProcessor(
 		DuckDBConnectionPool db,
-		IndexingDbSchema schema,
 		DefaultIndexInFlightRecords inFlightRecords,
 		ISecondaryIndexProgressTracker progressTracker,
 		IPublisher publisher,
 		ILongHasher<string> hasher
 	) {
-		schema.CreateSchema();
 		_connection = db.Open();
 		_appender = new(_connection, "idx_all"u8);
 		_inFlightRecords = inFlightRecords;

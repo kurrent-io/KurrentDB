@@ -19,7 +19,7 @@ public static class Logging {
         .Enrich.WithMachineName()
         .Enrich.FromLogContext()
         .Enrich.WithExceptionDetails()
-        .MinimumLevel.Verbose();
+        .MinimumLevel.Debug();
 
     static Subject<LogEvent> OnNext { get; } = new();
 

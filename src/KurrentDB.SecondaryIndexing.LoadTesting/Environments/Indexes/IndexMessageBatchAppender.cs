@@ -7,6 +7,7 @@ using KurrentDB.Core.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
+using KurrentDB.SecondaryIndexing.Storage;
 using KurrentDB.SecondaryIndexing.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Tests.Generators;
 
@@ -24,10 +25,11 @@ public class IndexMessageBatchAppender : IMessageBatchAppender {
 		var inflightRecordsCache = new DefaultIndexInFlightRecords(new() { CommitBatchSize = commitSize });
 
 		var publisher = new FakePublisher();
+		var schema = new IndexingDbSchema();
+		schema.CreateSchema(db);
 
 		_processor = new(
 			db,
-			new(db),
 			inflightRecordsCache,
 			new NoOpSecondaryIndexProgressTracker(), // TODO: Use the real one with metrics
 			publisher,

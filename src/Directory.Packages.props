@@ -75,6 +75,7 @@
     <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="9.0.6" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.CommandLine" Version="9.0.6" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.6" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.AutoActivation" Version="9.6.0" />
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.Testing" Version="9.2.0" />
     <PackageVersion Include="Microsoft.Extensions.FileProviders.Composite" Version="8.0.0" />

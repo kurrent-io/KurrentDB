@@ -9,11 +9,13 @@ using KurrentDB.SecondaryIndexing.Indexes.Default;
 
 namespace KurrentDB.SecondaryIndexing.Storage;
 
-internal class InFlightInlineFunction(DefaultIndexInFlightRecords inFlightRecords) : IDuckDBInlineFunction {
+internal class InFlightSetup(DefaultIndexInFlightRecords inFlightRecords) : IDuckDBSetup {
 	[Experimental("DuckDBNET001")]
-	public void Register(DuckDBConnection connection) {
+	public void Execute(DuckDBConnection connection) {
 		connection.RegisterTableFunction("inflight", ReadBackwardsResultCallback, ReadInFlightMapperCallback);
 	}
+
+	public bool OneTimeOnly => false;
 
 	private static readonly IReadOnlyList<ColumnInfo> ColumnInfos = [
 		new("log_position", typeof(long)),

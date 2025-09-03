@@ -17,6 +17,7 @@ using KurrentDB.Common.Log;
 using KurrentDB.Common.Utils;
 using KurrentDB.Components;
 using KurrentDB.Components.Cluster;
+using KurrentDB.Components.Plugins;
 using KurrentDB.Components.Stats;
 using KurrentDB.Core;
 using KurrentDB.Core.Certificates;
@@ -259,6 +260,7 @@ try {
 			builder.Services.AddSingleton(monitoringService);
 			builder.Services.AddSingleton(metricsObserver);
 			builder.Services.AddSingleton<StatsService>();
+			builder.Services.AddSingleton<PluginsService>();
 			builder.Services.AddWindowsService();
 			Log.Information("Environment Name: {0}", builder.Environment.EnvironmentName);
 			Log.Information("ContentRoot Path: {0}", builder.Environment.ContentRootPath);

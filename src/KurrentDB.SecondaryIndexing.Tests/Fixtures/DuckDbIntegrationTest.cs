@@ -23,7 +23,8 @@ public abstract class DuckDbIntegrationTest : IAsyncLifetime {
 			File.Delete(dbPath);
 
 		DuckDb = new($"Data Source={dbPath};");
-		new IndexingDbSchema(DuckDb).CreateSchema();
+		var schema = new IndexingDbSchema();
+		schema.CreateSchema(DuckDb);
 	}
 
 	public virtual Task InitializeAsync() =>

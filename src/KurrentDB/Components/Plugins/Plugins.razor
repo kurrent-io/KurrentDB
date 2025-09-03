@@ -5,10 +5,9 @@
 @rendermode InteractiveServer
 @attribute [Authorize]
 @using EventStore.Plugins
-@using KurrentDB.Core
 @using Microsoft.AspNetCore.Authorization
 @inherits KurrentDB.Components.Licensed.LicensedPage
-@inject ClusterVNodeOptions Configuration
+@inject PluginsService PluginsService
 
 <MudDataGrid Items="@_items" Dense="true" Filterable="false">
 	<Columns>
@@ -25,7 +24,7 @@
 
 	protected override void OnInitialized() {
 		base.OnInitialized();
-		_items = Configuration.PlugableComponents.OrderBy(x => x.Name).ToList();
+		_items = PluginsService.PluggableComponents;
 	}
 
 }
