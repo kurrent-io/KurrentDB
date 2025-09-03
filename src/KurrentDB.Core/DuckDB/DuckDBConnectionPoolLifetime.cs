@@ -18,7 +18,6 @@ namespace KurrentDB.Core.DuckDB;
 
 public class DuckDBConnectionPoolLifetime : Disposable {
 	private readonly DuckDBConnectionPool _pool;
-	private readonly DuckDBAdvancedConnection _connection;
 	private readonly ILogger<DuckDBConnectionPoolLifetime> _log;
 	[CanBeNull] private string _tempPath;
 
@@ -33,12 +32,13 @@ public class DuckDBConnectionPoolLifetime : Disposable {
 				repeated.Add(duckDBSetup);
 			}
 		}
+
 		_pool = new ConnectionPoolWithFunctions($"Data Source={path}", repeated.ToArray());
 		log?.LogInformation("Created DuckDB connection pool at {path}", path);
 		_log = log;
-		_connection = _pool.Open();
+		using var connection = _pool.Open();
 		foreach (var s in once) {
-			s.Execute(_connection);
+			s.Execute(connection);
 		}
 
 		return;
@@ -55,10 +55,17 @@ public class DuckDBConnectionPoolLifetime : Disposable {
 	protected override void Dispose(bool disposing) {
 		if (disposing) {
 			_log?.LogDebug("Checkpointing DuckDB connection");
-			_connection.Checkpoint();
-			_connection.Dispose();
+			var connection = _pool.Open();
+			connection.Checkpoint();
+			connection.Dispose();
 			_pool.Dispose();
-			if (_tempPath != null) File.Delete(_tempPath);
+			if (_tempPath != null) {
+				try {
+					File.Delete(_tempPath);
+				} catch (IOException) {
+					// let the file stay and be cleaned up by the OS
+				}
+			}
 			_log?.LogInformation("Disposed DuckDB connection pool");
 		}
 
