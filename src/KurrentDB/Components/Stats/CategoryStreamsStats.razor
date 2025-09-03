@@ -1,0 +1,36 @@
+@inject StatsService Stats
+
+<MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Class="d-flex ml-auto"
+         Size="Size.Medium">Streams: @NumStreams
+</MudChip>
+<MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Class="d-flex"
+         Size="Size.Medium">Events: @NumEvents
+</MudChip>
+<MudChip T="string" Variant="Variant.Outlined"
+         Color="@StreamLengthColor(_avgLength)"
+         Size="Size.Medium">Avg stream length: @AvgLength
+</MudChip>
+
+@code {
+	[Parameter] public string CategoryName { get; set; }
+
+	private long _numStreams;
+	private long _numEvents;
+	private long _avgLength;
+	private bool _loading = true;
+	private string NumStreams => _loading ? "loading..." : _numStreams.ToString();
+	private string NumEvents => _loading ? "loading..." : _numEvents.ToString();
+	private string AvgLength => _loading ? "loading..." : _avgLength.ToString();
+
+	protected override void OnParametersSet() {
+		base.OnParametersSet();
+		Task.Run(() => InvokeAsync(() => {
+			(_numStreams, _numEvents) = Stats.GetCategoryStats(CategoryName).FirstOrDefault();
+			_avgLength = _numEvents / _numStreams;
+			_loading = false;
+			StateHasChanged();
+		}));
+	}
+
+	Color StreamLengthColor(long avgLength) => avgLength < 300 ? Color.Primary : Color.Warning;
+}
