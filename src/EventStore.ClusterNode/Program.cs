@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Security;
@@ -223,9 +224,16 @@ internal static class Program {
 						// Later it may be possible to use constructor injection instead if it fits with the bootstrapping strategy.
 						.ConfigureServices(services => services.AddSingleton<IHostedService>(hostedService));
 
+					// We do not call AddWindowsService because it adds windows event log logging.
+					// We configure our own logging separately, and the event log logging can fail with exceptions while
+					// the server is shutting down routinely.
 					if (WindowsServiceHelpers.IsWindowsService()) {
 						await builder
-							.ConfigureServices(services => services.AddWindowsService())
+							.ConfigureServices(services => {
+								// roslyn analyser doesn't recognise the outer IsWindowsService check
+								Debug.Assert(WindowsServiceHelpers.IsWindowsService());
+								services.AddSingleton<IHostLifetime, WindowsServiceLifetime>();
+							})
 							.Build()
 							.RunAsync(cts.Token);
 					} else {
