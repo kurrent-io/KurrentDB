@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Security;
@@ -229,10 +230,9 @@ internal static class Program {
 					if (WindowsServiceHelpers.IsWindowsService()) {
 						await builder
 							.ConfigureServices(services => {
-								// roslyn analyser doesn't recognise the outer IsWindowsService check, check again.
-								if (WindowsServiceHelpers.IsWindowsService()) {
-									services.AddSingleton<IHostLifetime, WindowsServiceLifetime>();
-								}
+								// roslyn analyser doesn't recognise the outer IsWindowsService check
+								Debug.Assert(WindowsServiceHelpers.IsWindowsService());
+								services.AddSingleton<IHostLifetime, WindowsServiceLifetime>();
 							})
 							.Build()
 							.RunAsync(cts.Token);
