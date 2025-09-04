@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Core.Data;
+using KurrentDB.SecondaryIndexing.Diagnostics;
 
 namespace KurrentDB.SecondaryIndexing.Indexes;
 
@@ -11,4 +12,6 @@ public interface ISecondaryIndexProcessor : IDisposable {
 	void Index(ResolvedEvent evt);
 
 	(TFPos Position, long RowId) GetLastPosition();
+
+	SecondaryIndexProgressTracker Tracker { get; }
 }

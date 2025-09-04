@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Diagnostics.Metrics;
 using DotNext;
 using DotNext.Threading;
 using Kurrent.Quack;
@@ -14,7 +15,7 @@ using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.SecondaryIndexing.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
-using KurrentDB.SecondaryIndexing.Storage;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using static KurrentDB.SecondaryIndexing.Indexes.Default.DefaultSql;
 using static KurrentDB.Protobuf.Server.Properties;
@@ -24,7 +25,6 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	private readonly DefaultIndexInFlightRecords _inFlightRecords;
 	private readonly DuckDBAdvancedConnection _connection;
-	private readonly ISecondaryIndexProgressTracker _progressTracker;
 	private readonly IPublisher _publisher;
 	private readonly ILongHasher<string> _hasher;
 	private Appender _appender;
@@ -36,14 +36,14 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	public DefaultIndexProcessor(
 		DuckDBConnectionPool db,
 		DefaultIndexInFlightRecords inFlightRecords,
-		ISecondaryIndexProgressTracker progressTracker,
 		IPublisher publisher,
-		ILongHasher<string> hasher
+		ILongHasher<string> hasher,
+		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)] Meter meter
 	) {
 		_connection = db.Open();
 		_appender = new(_connection, "idx_all"u8);
 		_inFlightRecords = inFlightRecords;
-		_progressTracker = progressTracker;
+		Tracker = new("default", meter);
 		_publisher = publisher;
 		_hasher = hasher;
 
@@ -101,7 +101,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(SystemStreams.DefaultSecondaryIndex, resolvedEvent));
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(EventTypeIndex.Name(schemaName), resolvedEvent));
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(CategoryIndex.Name(category), resolvedEvent));
-		_progressTracker.RecordIndexed(resolvedEvent);
+		Tracker.RecordIndexed(resolvedEvent);
 		return;
 
 		static string GetStreamCategory(string streamName) {
@@ -117,6 +117,8 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			: (TFPos.Invalid, 0);
 	}
 
+	public SecondaryIndexProgressTracker Tracker { get; }
+
 	private Atomic.Boolean _committing;
 
 	public void Commit() {
@@ -124,13 +126,11 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			return;
 
 		try {
-			_progressTracker.RecordCommit(() => {
-				_appender.Flush();
-				return (LastIndexedPosition, _inFlightRecords.Count);
-			});
+			using var duration = Tracker.StartCommitDuration();
+			_appender.Flush();
 		} catch (Exception e) {
 			Logger.Error(e, "Failed to commit {Count} records to index at log position {LogPosition}", _inFlightRecords.Count, LastIndexedPosition);
-			_progressTracker.RecordError(e);
+			Tracker.RecordError(e);
 			throw;
 		} finally {
 			_committing.TrueToFalse();

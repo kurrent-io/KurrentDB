@@ -25,6 +25,11 @@ public sealed class SecondaryIndexingPluginOptions {
 	public string? DbPath { get; set; }
 }
 
+public static class SecondaryIndexingConstants {
+	public const string MeterName = "KurrentDB.SecondaryIndexes";
+	public const string InjectionKey = "secondary-index";
+}
+
 public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders)
 	: SubsystemsPlugin(name: PluginNames.SecondaryIndexes) {
 	[Experimental("SECONDARY_INDEX")]
@@ -39,10 +44,9 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddHostedService<SecondaryIndexBuilder>();
 		services.AddSingleton<DefaultIndexInFlightRecords>();
 
-		var conf = MetricsConfiguration.Get(configuration);
-		var coreMeter = new Meter(conf.CoreMeterName, version: "1.0.0");
+		var meter = new Meter(SecondaryIndexingConstants.MeterName, "1.0.0");
 
-		services.AddSingleton<ISecondaryIndexProgressTracker>(_ => new SecondaryIndexProgressTracker(coreMeter, "indexes.secondary"));
+		services.AddKeyedSingleton(SecondaryIndexingConstants.InjectionKey, meter);
 		services.AddSingleton<ISecondaryIndexProcessor>(sp => sp.GetRequiredService<DefaultIndexProcessor>());
 		services.AddSingleton<DefaultIndexProcessor>();
 

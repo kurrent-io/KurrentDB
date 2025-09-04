@@ -4,7 +4,6 @@
 using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Tests.Fakes;
-using KurrentDB.SecondaryIndexing.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
 using KurrentDB.SecondaryIndexing.Storage;
@@ -28,13 +27,7 @@ public class IndexMessageBatchAppender : IMessageBatchAppender {
 		var schema = new IndexingDbSchema();
 		schema.CreateSchema(db);
 
-		_processor = new(
-			db,
-			inflightRecordsCache,
-			new NoOpSecondaryIndexProgressTracker(), // TODO: Use the real one with metrics
-			publisher,
-			hasher
-		);
+		_processor = new(db, inflightRecordsCache, publisher, hasher, new("test"));
 	}
 
 	public ValueTask Append(TestMessageBatch batch) {

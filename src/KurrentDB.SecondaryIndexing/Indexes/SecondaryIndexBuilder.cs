@@ -6,7 +6,6 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.POC.IO.Core;
-using KurrentDB.SecondaryIndexing.Diagnostics;
 using KurrentDB.SecondaryIndexing.Subscriptions;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -23,7 +22,6 @@ public sealed class SecondaryIndexBuilder :
 
 	private readonly SecondaryIndexSubscription _subscription;
 	private readonly ISecondaryIndexProcessor _processor;
-	private readonly ISecondaryIndexProgressTracker _progressTracker;
 	private readonly IClient _client;
 	private readonly CancellationTokenSource _readLastEventCts;
 
@@ -32,14 +30,12 @@ public sealed class SecondaryIndexBuilder :
 	[Experimental("SECONDARY_INDEX")]
 	public SecondaryIndexBuilder(
 		ISecondaryIndexProcessor processor,
-		ISecondaryIndexProgressTracker progressTracker,
 		IPublisher publisher,
 		ISubscriber subscriber,
 		IClient client,
 		SecondaryIndexingPluginOptions options
 	) {
 		_processor = processor;
-		_progressTracker = progressTracker;
 		_client = client;
 		_subscription = new(publisher, processor, options);
 		_readLastEventCts = new();
@@ -79,7 +75,7 @@ public sealed class SecondaryIndexBuilder :
 	}
 
 	public ValueTask HandleAsync(StorageMessage.EventCommitted message, CancellationToken token) {
-		_progressTracker.RecordAppended(message.Event, message.CommitPosition);
+		_processor.Tracker.RecordAppended(message.Event, message.CommitPosition);
 		return ValueTask.CompletedTask;
 	}
 
@@ -96,7 +92,7 @@ public sealed class SecondaryIndexBuilder :
 				.FirstOrDefaultAsync();
 
 			if (lastLogEvent != null)
-				_progressTracker.InitLastAppended(lastLogEvent);
+				_processor.Tracker.InitLastAppended(lastLogEvent);
 			else
 				Logger.Information("No events found in the log.");
 		} catch (Exception exc) {

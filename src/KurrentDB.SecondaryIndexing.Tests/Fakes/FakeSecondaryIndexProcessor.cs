@@ -4,6 +4,7 @@
 using FluentStorage.Utils.Extensions;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
+using KurrentDB.SecondaryIndexing.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes;
 
 namespace KurrentDB.SecondaryIndexing.Tests.Fakes;
@@ -25,6 +26,8 @@ public class FakeSecondaryIndexProcessor(IList<ResolvedEvent> committed, IList<R
 		// This won't work because of RowId, but it's not used yet
 		return (committed.Last().EventPosition ?? TFPos.Invalid, 0);
 	}
+
+	public SecondaryIndexProgressTracker Tracker { get; } = new("fake", new("fake"));
 
 	public void Commit() {
 		lock (_lock) {

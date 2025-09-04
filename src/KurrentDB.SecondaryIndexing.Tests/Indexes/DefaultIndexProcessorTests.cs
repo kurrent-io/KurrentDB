@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Diagnostics.Metrics;
 using Dapper;
 using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
@@ -164,13 +165,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 
 		var publisher = new FakePublisher();
 
-		_processor = new(
-			DuckDb,
-			inflightRecordsCache,
-			new NoOpSecondaryIndexProgressTracker(),
-			publisher,
-			hasher
-		);
+		_processor = new(DuckDb, inflightRecordsCache, publisher, hasher, new("test"));
 	}
 
 	public override Task DisposeAsync() {
