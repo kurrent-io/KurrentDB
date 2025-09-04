@@ -216,6 +216,8 @@ try {
 
 			var builder = WebApplication.CreateBuilder(applicationOptions);
 			builder.Configuration.AddConfiguration(configuration);
+			// AddWindowsService adds EventLog logging, which we remove afterwards.
+			builder.Services.AddWindowsService();
 			builder.Logging.ClearProviders().AddSerilog();
 			builder.Services.Configure<KestrelServerOptions>(configuration.GetSection("Kestrel"));
 			builder.Services.Configure<HostOptions>(x => {
@@ -256,7 +258,6 @@ try {
 			builder.Services.AddScoped<IdentityRedirectManager>();
 			builder.Services.AddSingleton(monitoringService);
 			builder.Services.AddSingleton(metricsObserver);
-			builder.Services.AddWindowsService();
 			Log.Information("Environment Name: {0}", builder.Environment.EnvironmentName);
 			Log.Information("ContentRoot Path: {0}", builder.Environment.ContentRootPath);
 
