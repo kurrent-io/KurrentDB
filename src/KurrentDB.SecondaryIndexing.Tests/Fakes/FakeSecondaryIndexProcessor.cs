@@ -20,14 +20,17 @@ public class FakeSecondaryIndexProcessor(IList<ResolvedEvent> committed, IList<R
 		}
 	}
 
-	public (TFPos, long) GetLastPosition() {
-		if (committed.IsEmpty()) return (TFPos.Invalid, 0);
+	public (TFPos, long, DateTimeOffset) GetLastPosition() {
+		if (committed.IsEmpty()) return (TFPos.Invalid, 0, DateTimeOffset.MinValue);
 
 		// This won't work because of RowId, but it's not used yet
-		return (committed.Last().EventPosition ?? TFPos.Invalid, 0);
+		var last = committed.Last();
+		return (last.EventPosition ?? TFPos.Invalid, 0, last.Event.TimeStamp);
 	}
 
-	public SecondaryIndexProgressTracker Tracker { get; } = new("fake", new("fake"));
+	public SecondaryIndexProgressTracker Tracker { get; } = new("fake", new("fake"), -1, DateTime.MinValue);
+
+	public TFPos LastIndexedPosition => committed.IsEmpty() ? TFPos.Invalid : committed.Last().EventPosition ?? TFPos.Invalid;
 
 	public void Commit() {
 		lock (_lock) {

@@ -11,7 +11,9 @@ public interface ISecondaryIndexProcessor : IDisposable {
 
 	void Index(ResolvedEvent evt);
 
-	(TFPos Position, long RowId) GetLastPosition();
+	(TFPos Position, long RowId, DateTimeOffset Created) GetLastPosition();
 
 	SecondaryIndexProgressTracker Tracker { get; }
+
+	TFPos LastIndexedPosition { get; }
 }

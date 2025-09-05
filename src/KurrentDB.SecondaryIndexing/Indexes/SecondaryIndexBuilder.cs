@@ -2,11 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics.CodeAnalysis;
-using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.ClientPublisher;
 using KurrentDB.Core.Messages;
-using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.SecondaryIndexing.Subscriptions;
 using Microsoft.Extensions.Hosting;
@@ -24,10 +22,7 @@ public sealed class SecondaryIndexBuilder
 
 	private readonly SecondaryIndexSubscription _subscription;
 	private readonly ISecondaryIndexProcessor _processor;
-	private readonly CancellationTokenSource _readLastEventCts;
 	private readonly IPublisher _publisher;
-
-	private Task? _readLastEventTask;
 
 	[Experimental("SECONDARY_INDEX")]
 	public SecondaryIndexBuilder(
@@ -39,7 +34,6 @@ public sealed class SecondaryIndexBuilder
 		_processor = processor;
 		_publisher = publisher;
 		_subscription = new(publisher, processor, options);
-		_readLastEventCts = new();
 
 		subscriber.Subscribe<SystemMessage.SystemReady>(this);
 		subscriber.Subscribe<SystemMessage.BecomeShuttingDown>(this);
@@ -47,7 +41,7 @@ public sealed class SecondaryIndexBuilder
 	}
 
 	public void Handle(SystemMessage.SystemReady message) {
-		_readLastEventTask = ReadLastLogEvent();
+		Task.Run(() => InitTracker(default));
 		_subscription.Subscribe();
 	}
 
@@ -58,14 +52,6 @@ public sealed class SecondaryIndexBuilder
 	public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
 	public async ValueTask DisposeAsync() {
-		if (_readLastEventTask?.IsCompleted == false) {
-			try {
-				await _readLastEventCts.CancelAsync();
-			} catch (Exception) {
-				// ignore
-			}
-		}
-
 		try {
 			await _subscription.DisposeAsync();
 		} catch (Exception e) {
@@ -76,22 +62,16 @@ public sealed class SecondaryIndexBuilder
 	}
 
 	public ValueTask HandleAsync(StorageMessage.EventCommitted message, CancellationToken token) {
-		_processor.Tracker.RecordAppended(message.Event, message.CommitPosition);
+		_processor.Tracker.RecordAppended((message.CommitPosition, message.Event.TimeStamp));
 		return ValueTask.CompletedTask;
 	}
 
-	private async Task ReadLastLogEvent() {
-		try {
-			_readLastEventCts.CancelAfter(TimeSpan.FromSeconds(120));
+	private async Task InitTracker(CancellationToken cancellationToken) {
+		var lastLogEvent = await _publisher.Read(Position.End, 1L, false, cancellationToken).FirstOrDefaultAsync(cancellationToken);
 
-			var lastLogEvent = await _publisher.Read(Position.End, 1L, false, _readLastEventCts.Token).FirstOrDefaultAsync();
-
-			if (lastLogEvent != default)
-				_processor.Tracker.InitLastAppended(ref lastLogEvent);
-			else
-				Logger.Information("No events found in the log.");
-		} catch (Exception exc) {
-			Logger.Error(exc, "Error reading last event");
-		}
+		if (lastLogEvent != default)
+			_processor.Tracker.InitLastAppended((lastLogEvent.OriginalPosition!.Value.CommitPosition, lastLogEvent.OriginalEvent.TimeStamp));
+		else
+			Logger.Information("No events found in the log.");
 	}
 }

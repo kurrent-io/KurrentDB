@@ -38,18 +38,19 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		DefaultIndexInFlightRecords inFlightRecords,
 		IPublisher publisher,
 		ILongHasher<string> hasher,
-		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)] Meter meter
+		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)]
+		Meter meter
 	) {
 		_connection = db.Open();
 		_appender = new(_connection, "idx_all"u8);
 		_inFlightRecords = inFlightRecords;
-		Tracker = new("default", meter);
 		_publisher = publisher;
 		_hasher = hasher;
 
-		var (lastPosition, _) = GetLastPosition();
+		var (lastPosition, _, lastIndexedAt) = GetLastPosition();
 		Logger.Information("Last known log position: {Position}", lastPosition);
 		LastIndexedPosition = lastPosition;
+		Tracker = new("default", meter, lastPosition.CommitPosition, lastIndexedAt.DateTime);
 	}
 
 	public void Index(ResolvedEvent resolvedEvent) {
@@ -92,6 +93,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			} else {
 				row.Append(DBNull.Value);
 			}
+
 			row.Append(schemaFormat);
 		}
 
@@ -101,7 +103,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(SystemStreams.DefaultSecondaryIndex, resolvedEvent));
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(EventTypeIndex.Name(schemaName), resolvedEvent));
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(CategoryIndex.Name(category), resolvedEvent));
-		Tracker.RecordIndexed(ref resolvedEvent);
+		Tracker.RecordIndexed((LastIndexedPosition.CommitPosition, resolvedEvent.Event.TimeStamp));
 		return;
 
 		static string GetStreamCategory(string streamName) {
@@ -110,11 +112,15 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		}
 	}
 
-	public (TFPos, long) GetLastPosition() {
+	public (TFPos, long, DateTimeOffset) GetLastPosition() {
 		var result = _connection.QueryFirstOrDefault<LastPositionResult, GetLastLogPositionQuery>();
-		return result != null ?
-			(new(result.Value.CommitPosition ?? result.Value.PreparePosition, result.Value.PreparePosition), result.Value.RowId)
-			: (TFPos.Invalid, 0);
+		return result != null
+			? (
+				new(result.Value.CommitPosition ?? result.Value.PreparePosition, result.Value.PreparePosition),
+				result.Value.RowId,
+				DateTimeOffset.FromUnixTimeMilliseconds(result.Value.Created)
+			)
+			: (TFPos.Invalid, 0, DateTimeOffset.MinValue);
 	}
 
 	public SecondaryIndexProgressTracker Tracker { get; }
