@@ -95,7 +95,7 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 					options.Projection.FaultOutOfOrderProjections,
 					options.Projection.ProjectionCompilationTimeout,
 					options.Projection.ProjectionExecutionTimeout,
-					options.Projection.MaxProjectionStateSize)))
+					options.Projection.MaxProjectionStateSize) , options.InMemoryBus.SlowMessageThresholdMs))
 			: options;
 
 		if (!_options.Database.MemDb) {

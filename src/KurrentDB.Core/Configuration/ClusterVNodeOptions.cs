@@ -47,6 +47,7 @@ public partial record ClusterVNodeOptions {
 	[OptionGroup] public GrpcOptions Grpc { get; init; } = new();
 	[OptionGroup] public InterfaceOptions Interface { get; init; } = new();
 	[OptionGroup] public ProjectionOptions Projection { get; init; } = new();
+	[OptionGroup] public InMemoryBusOptions InMemoryBus { get; set; } = new();
 	public UnknownOptions Unknown { get; init; } = new([]);
 
 	public byte IndexBitnessVersion { get; init; } = PTableVersions.IndexV4;
@@ -85,6 +86,7 @@ public partial record ClusterVNodeOptions {
 			Grpc = configuration.BindOptions<GrpcOptions>(),
 			Interface = configuration.BindOptions<InterfaceOptions>(),
 			Projection = configuration.BindOptions<ProjectionOptions>(),
+			InMemoryBus = configuration.BindOptions<InMemoryBusOptions>(),
 
 			Unknown = UnknownOptions.FromConfiguration(configuration),
 			ConfigurationRoot = configurationRoot,
@@ -589,6 +591,14 @@ public partial record ClusterVNodeOptions {
 
 		[Description("The maximum size, in bytes, of a projection's state and result. A projection will fault if its state size exceeds this value. May not exceed 16mb.")]
 		public int MaxProjectionStateSize { get; set; } = Opts.MaxProjectionStateSizeDefault;
+	}
+
+	[Description("InMemoryBus Options")]
+	public record InMemoryBusOptions {
+		public const int DefaultSlowMessageThreshold = 48;
+		[Description("The time limit in milliseconds beyond which a SLOW MSG would be logged"),
+		 Unit("ms")]
+		public int SlowMessageThresholdMs { get; set; } = DefaultSlowMessageThreshold;
 	}
 
 	public record UnknownOptions(IReadOnlyList<(string, string)> Options) {
