@@ -2,19 +2,43 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics.Metrics;
+using System.Runtime.CompilerServices;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Time;
 using Serilog;
-using Event = KurrentDB.POC.IO.Core.Event;
 
 namespace KurrentDB.SecondaryIndexing.Diagnostics;
 
 public class SecondaryIndexProgressTracker {
 	private static readonly ILogger Log = Serilog.Log.Logger.ForContext<SecondaryIndexProgressTracker>();
-	private long _lastIndexedPosition = -1;
-	private DateTime _lastIndexedAt = DateTime.MinValue;
-	private long _lastAppendedPosition = -1;
-	private DateTime _lastAppendedAt = DateTime.MinValue;
+
+	private long LastIndexedPosition {
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		get;
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		set;
+	} = -1;
+
+	private DateTime LastIndexedAt {
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		get;
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		set;
+	} = DateTime.MinValue;
+
+	private long LastAppendedPosition {
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		get;
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		set;
+	} = -1;
+
+	private DateTime LastAppendedAt {
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		get;
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		set;
+	} = DateTime.MinValue;
 
 	private readonly KeyValuePair<string, object?>[] _tag;
 	private readonly Histogram<double> _histogram;
@@ -46,19 +70,19 @@ public class SecondaryIndexProgressTracker {
 
 	public string IndexName { get; }
 
-	public void RecordIndexed(ResolvedEvent resolvedEvent) {
-		_lastIndexedPosition = resolvedEvent.OriginalPosition!.Value.CommitPosition;
-		_lastIndexedAt = DateTime.Now;
+	public void RecordIndexed(ref ResolvedEvent resolvedEvent) {
+		LastIndexedPosition = resolvedEvent.OriginalPosition!.Value.CommitPosition;
+		LastIndexedAt = DateTime.Now;
 	}
 
-	public void InitLastAppended(Event @event) {
-		_lastAppendedPosition = (long)@event.CommitPosition;
-		_lastAppendedAt = @event.Created;
+	public void InitLastAppended(ref ResolvedEvent resolvedEvent) {
+		LastAppendedPosition = resolvedEvent.EventPosition!.Value.CommitPosition;
+		LastAppendedAt = resolvedEvent.OriginalEvent.TimeStamp;
 	}
 
 	public void RecordAppended(EventRecord record, long commitPosition) {
-		_lastAppendedPosition = commitPosition;
-		_lastAppendedAt = record.TimeStamp;
+		LastAppendedPosition = commitPosition;
+		LastAppendedAt = record.TimeStamp;
 	}
 
 	public void RecordError(Exception e) {
@@ -68,8 +92,8 @@ public class SecondaryIndexProgressTracker {
 	public CommitDuration StartCommitDuration() => new(_histogram, _clock, _tag[0], IndexName, Log);
 
 	private IEnumerable<Measurement<long>> ObserveGap() {
-		var lastAppendedPos = _lastAppendedPosition;
-		var lastIndexedPos = _lastIndexedPosition;
+		var lastAppendedPos = LastAppendedPosition;
+		var lastIndexedPos = LastIndexedPosition;
 
 		if (lastAppendedPos < 0 || lastIndexedPos < 0)
 			yield break;
@@ -78,8 +102,8 @@ public class SecondaryIndexProgressTracker {
 	}
 
 	private IEnumerable<Measurement<double>> ObserveLag() {
-		var lastAppendedAt = _lastAppendedAt;
-		var lastIndexedAt = _lastIndexedAt;
+		var lastAppendedAt = LastAppendedAt;
+		var lastIndexedAt = LastIndexedAt;
 
 		if (lastAppendedAt == DateTime.MinValue || lastIndexedAt == DateTime.MinValue)
 			yield break;

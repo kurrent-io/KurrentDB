@@ -47,7 +47,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_publisher = publisher;
 		_hasher = hasher;
 
-		var (lastPosition, rowId) = GetLastPosition();
+		var (lastPosition, _) = GetLastPosition();
 		Logger.Information("Last known log position: {Position}", lastPosition);
 		LastIndexedPosition = lastPosition;
 	}
@@ -101,7 +101,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(SystemStreams.DefaultSecondaryIndex, resolvedEvent));
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(EventTypeIndex.Name(schemaName), resolvedEvent));
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(CategoryIndex.Name(category), resolvedEvent));
-		Tracker.RecordIndexed(resolvedEvent);
+		Tracker.RecordIndexed(ref resolvedEvent);
 		return;
 
 		static string GetStreamCategory(string streamName) {
