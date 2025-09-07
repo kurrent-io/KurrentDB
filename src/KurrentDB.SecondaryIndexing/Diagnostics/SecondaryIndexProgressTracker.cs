@@ -56,21 +56,13 @@ public class SecondaryIndexProgressTracker {
 
 	public string IndexName { get; }
 
-	public void InitLastAppended(TrackerPoint trackerPoint) {
-		LastAppended = trackerPoint;
-	}
+	public void InitLastAppended(TrackerPoint trackerPoint) => LastAppended = trackerPoint;
 
-	public void InitLastIndexed(TrackerPoint trackerPoint) {
-		LastIndexed = trackerPoint;
-	}
+	public void InitLastIndexed(TrackerPoint trackerPoint) => LastIndexed = trackerPoint;
 
-	public void RecordIndexed(TrackerPoint trackerPoint) {
-		LastIndexed = trackerPoint;
-	}
+	public void RecordIndexed(TrackerPoint trackerPoint) => LastIndexed = trackerPoint;
 
-	public void RecordAppended(TrackerPoint trackerPoint) {
-		LastAppended = trackerPoint;
-	}
+	public void RecordAppended(TrackerPoint trackerPoint) => LastAppended = trackerPoint;
 
 	public void RecordError(Exception e) {
 		//TODO: Log error here
@@ -100,7 +92,7 @@ public class SecondaryIndexProgressTracker {
 		yield return new(lag, _tag);
 	}
 
-	public sealed class CommitDuration(Histogram<double> histogram, IClock clock, KeyValuePair<string, object?> tag, string indexName, ILogger logger) : IDisposable {
+	public readonly struct CommitDuration(Histogram<double> histogram, IClock clock, KeyValuePair<string, object?> tag, string indexName, ILogger logger) : IDisposable {
 		private readonly Instant _start = clock.Now;
 
 		public void Dispose() {
