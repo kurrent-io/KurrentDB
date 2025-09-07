@@ -20,7 +20,7 @@ public class IndexedPositionTests : IndexTestBase {
 		var streamId = Guid.NewGuid().ToString(); // this can be anything for a Default Index, as it's ignored
 
 		// When
-		var result = Sut.GetLastIndexedPosition(streamId);
+		var result = Sut.GetLastIndexedPosition();
 
 		// Then
 		Assert.Equal(300L, result.PreparePosition);
@@ -32,7 +32,7 @@ public class IndexedPositionTests : IndexTestBase {
 		var streamId = Guid.NewGuid().ToString(); // this can be anything for a Default Index, as it's ignored
 
 		// When
-		var result = Sut.GetLastIndexedPosition(streamId);
+		var result = Sut.GetLastIndexedPosition();
 
 		// Then
 		Assert.Equal(-1L, result.PreparePosition);

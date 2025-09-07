@@ -15,7 +15,7 @@ namespace KurrentDB.Core.Services.Storage;
 public interface ISecondaryIndexReader {
 	bool CanReadIndex(string indexName);
 
-	TFPos GetLastIndexedPosition(string indexName);
+	TFPos GetLastIndexedPosition();
 
 	ValueTask<ReadIndexEventsForwardCompleted> ReadForwards(ReadIndexEventsForward msg, CancellationToken token);
 
@@ -23,36 +23,39 @@ public interface ISecondaryIndexReader {
 }
 
 public class SecondaryIndexReaders {
-	ISecondaryIndexReader[] _readers = [];
+	private ISecondaryIndexReader[] _readers = [];
 
-	public void AddReaders(IEnumerable<ISecondaryIndexReader> readers) {
-		_readers = readers.ToArray();
-	}
+	public void AddReaders(IEnumerable<ISecondaryIndexReader> readers) => _readers = readers.ToArray();
 
 	public bool CanReadIndex(string indexName) => _readers.Any(r => r.CanReadIndex(indexName));
 
 	public ValueTask<ReadIndexEventsForwardCompleted> ReadForwards(ReadIndexEventsForward msg, CancellationToken token) {
 		var reader = FindReader(msg.IndexName);
 
-		return reader?.ReadForwards(msg, token) ?? ValueTask.FromResult(
-			new ReadIndexEventsForwardCompleted(
-				ReadIndexResult.IndexNotFound, [], new(msg.CommitPosition, msg.PreparePosition), -1, true,
-				$"Index {msg.IndexName} does not exist"
-			));
+		return reader?.ReadForwards(msg, token)
+		       ?? ValueTask.FromResult(
+			       new ReadIndexEventsForwardCompleted(
+				       ReadIndexResult.IndexNotFound, [], new(msg.CommitPosition, msg.PreparePosition), -1, true,
+				       $"Index {msg.IndexName} does not exist"
+			       )
+		       );
 	}
 
 	public ValueTask<ReadIndexEventsBackwardCompleted> ReadBackwards(ReadIndexEventsBackward msg, CancellationToken token) {
 		var reader = FindReader(msg.IndexName);
 
-		return reader?.ReadBackwards(msg, token) ?? ValueTask.FromResult(new ReadIndexEventsBackwardCompleted(
-			ReadIndexResult.IndexNotFound, [], -1, true,
-			$"Index {msg.IndexName} does not exist"
-		));
+		return reader?.ReadBackwards(msg, token)
+		       ?? ValueTask.FromResult(
+			       new ReadIndexEventsBackwardCompleted(
+				       ReadIndexResult.IndexNotFound, [], -1, true,
+				       $"Index {msg.IndexName} does not exist"
+			       )
+		       );
 	}
 
 	public TFPos GetLastIndexedPosition(string indexName) {
 		var reader = FindReader(indexName);
-		return reader?.GetLastIndexedPosition(indexName) ?? TFPos.Invalid;
+		return reader?.GetLastIndexedPosition() ?? TFPos.Invalid;
 	}
 
 	[CanBeNull]
