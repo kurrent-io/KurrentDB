@@ -6,6 +6,22 @@ order: 1
 
 This page contains the release notes for EventStoreDB 24.10
 
+## [24.10.7](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.7)
+
+05 September 2025
+
+### Removed logging to Windows Event Log when running as a windows service (PR [#5253](https://github.com/kurrent-io/KurrentDB/pull/5253))
+
+Running as a Windows Service was introduced in 24.10.6. When running as a Windows Service logs were also outputted to the Windows Event Log. We have removed this extra log output to avoid the duplicated logging and also to avoid some logging failures that could occur when logging to the Windows Event Log during server shutdown, which could result in worrying (but harmless) errors on shutdown.
+
+### Add extra logging when UnwrapEnvelopeMessage is slow (PR [#5198](https://github.com/kurrent-io/KurrentDB/pull/5198))
+
+When UnwrapEnvelopeMessage triggers a 'SLOW QUEUE MESSAGE` log, it now includes the name of the action it was unwrapping.
+
+### Lower Scavenge API GET calls to Verbose (#5197) (PR [#5204](https://github.com/kurrent-io/KurrentDB/pull/5204))
+
+The auto-scavenge checks on the status of in-progress scavenges frequently, which was producing unnecessary logs.
+
 ## [24.10.6](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.6)
 
 07 July 2025
