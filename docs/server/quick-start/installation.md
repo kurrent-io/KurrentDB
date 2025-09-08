@@ -288,7 +288,7 @@ sc.exe start "KurrentDB"
 
 Logs will still be written to the usual log file location. By default on windows this is the `logs` directory within the directory that contains `KurrentDB.exe`.
 
-::: note
+::: warning
 In this version the the service restart policy does not guarantee that the service is running. If running as a Windows Service, we recommend configuring
 the Windows Task Scheduler to start the service regularly (say, every 10 seconds), which will do nothing if the service is already running.
 
