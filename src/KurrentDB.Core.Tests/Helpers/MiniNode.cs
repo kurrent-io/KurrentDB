@@ -31,7 +31,6 @@ using KurrentDB.Core.Tests.Index.Hashers;
 using KurrentDB.Core.Tests.Services.Transport.Tcp;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.Util;
-using KurrentDB.SecondaryIndexing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
