@@ -4,10 +4,12 @@
 using EventStore.Plugins;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using Serilog;
+using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.OtlpExporterPlugin;
 
@@ -73,9 +75,16 @@ public class OtlpExporterPlugin : SubsystemsPlugin {
 						periodicOptions.ExportIntervalMilliseconds / 1000.0);
 				}));
 
+
 		if (logExportEnabled) {
 			services.Configure<LogRecordExportProcessorOptions>(configuration.GetSection($"{KurrentConfigurationPrefix}:OpenTelemetry:Logging"));
-			builder.WithLogging(l => l.AddOtlpExporter());
+			services.AddLogging(logging => logging.AddOpenTelemetry(options => {
+				options.IncludeFormattedMessage = true;
+				options.IncludeScopes = true;
+				options.AddOtlpExporter(exporterOptions => {
+					_logger.Information("OtlpExporter: Exporting logs to {endpoint}", exporterOptions.Endpoint);
+				});
+			}));
 		}
 	}
 }
