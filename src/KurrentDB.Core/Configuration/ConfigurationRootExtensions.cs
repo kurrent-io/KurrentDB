@@ -97,16 +97,4 @@ public static class ConfigurationRootExtensions {
 
 		return warnings.ToArray();
 	}
-
-	public static T BindOptions<T>(this IConfiguration configuration) where T : new() {
-		try {
-			return configuration.Get<T>() ?? new T();
-		} catch (InvalidOperationException ex) {
-			var messages = new[] { ex.Message, ex.InnerException?.Message }
-				.Where(x => !string.IsNullOrWhiteSpace(x))
-				.Select(x => x?.TrimEnd('.'));
-
-			throw new InvalidConfigurationException(string.Join(". ", messages) + ".");
-		}
-	}
 }

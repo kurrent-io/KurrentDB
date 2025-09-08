@@ -33,11 +33,8 @@ public class KurrentLoggerConfiguration {
 
 	private static readonly Func<LogEvent, bool> RegularStats = Matching.FromSource("REGULAR-STATS-LOGGER");
 
-	private static int Initialized;
-	private static LoggingLevelSwitch _defaultLogLevelSwitch = new() {
-		MinimumLevel = LogEventLevel.Verbose
-	};
-	private static object _defaultLogLevelSwitchLock = new object();
+	private static LoggingLevelSwitch DefaultLogLevelSwitch = new() { MinimumLevel = LogEventLevel.Verbose };
+	private static readonly object DefaultLogLevelSwitchLock = new();
 
 	private readonly string _logsDirectory;
 	private readonly string _componentName;
@@ -60,10 +57,6 @@ public class KurrentLoggerConfiguration {
 	}
 
 	public static LoggerConfiguration CreateLoggerConfiguration(LoggingOptions options, string componentName) {
-		if (Interlocked.Exchange(ref Initialized, 1) == 1) {
-			throw new InvalidOperationException($"{nameof(CreateLoggerConfiguration)} may not be called more than once.");
-		}
-
 		if (options.Log.StartsWith('~')) {
 			throw new ApplicationInitializationException("The given log path starts with a '~'. KurrentDB does not expand '~'.");
 		}
@@ -85,7 +78,7 @@ public class KurrentLoggerConfiguration {
 	}
 
 	public static bool AdjustMinimumLogLevel(LogLevel logLevel) {
-		lock (_defaultLogLevelSwitchLock) {
+		lock (DefaultLogLevelSwitchLock) {
 #if !DEBUG
 			if (_defaultLogLevelSwitch == null) {
 				throw new InvalidOperationException("The logger configuration has not yet been initialized.");
@@ -95,9 +88,9 @@ public class KurrentLoggerConfiguration {
 				throw new ArgumentException($"'{logLevel}' is not a valid log level.");
 			}
 
-			if (serilogLogLevel == _defaultLogLevelSwitch.MinimumLevel)
+			if (serilogLogLevel == DefaultLogLevelSwitch.MinimumLevel)
 				return false;
-			_defaultLogLevelSwitch.MinimumLevel = serilogLogLevel;
+			DefaultLogLevelSwitch.MinimumLevel = serilogLogLevel;
 			return true;
 		}
 	}
@@ -120,15 +113,15 @@ public class KurrentLoggerConfiguration {
 
 		var loglevelSection = logLevelConfigurationRoot.GetSection("Logging").GetSection("LogLevel");
 		var defaultLogLevelSection = loglevelSection.GetSection("Default");
-		lock (_defaultLogLevelSwitchLock) {
-			_defaultLogLevelSwitch = new LoggingLevelSwitch {
+		lock (DefaultLogLevelSwitchLock) {
+			DefaultLogLevelSwitch = new LoggingLevelSwitch {
 				MinimumLevel = LogEventLevel.Verbose
 			};
-			ApplyLogLevel(defaultLogLevelSection, _defaultLogLevelSwitch);
+			ApplyLogLevel(defaultLogLevelSection, DefaultLogLevelSwitch);
 		}
 
 		var loggerConfiguration = StandardLoggerConfiguration
-			.MinimumLevel.ControlledBy(_defaultLogLevelSwitch)
+			.MinimumLevel.ControlledBy(DefaultLogLevelSwitch)
 			.WriteTo.Async(AsyncSink);
 
 		foreach (var namedLogLevelSection in loglevelSection.GetChildren().Where(x => x.Key != "Default")) {

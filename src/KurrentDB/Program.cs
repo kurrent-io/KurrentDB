@@ -48,8 +48,11 @@ var exitCodeSource = new TaskCompletionSource<int>();
 Log.Logger = KurrentLoggerConfiguration.ConsoleLog;
 try {
 	var options = ClusterVNodeOptions.FromConfiguration(configuration);
+	configuration["Temp:ComponentName"] = options.GetComponentName();
 
-	Log.Logger = KurrentLoggerConfiguration.CreateLogger(options.Logging, options.GetComponentName());
+	Log.Logger = KurrentLoggerConfiguration
+		.CreateLoggerConfiguration(options.Logging, options.GetComponentName())
+		.CreateLogger();
 
 	if (options.Application.Help) {
 		await Console.Out.WriteLineAsync(ClusterVNodeOptions.HelpText);
