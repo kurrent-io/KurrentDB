@@ -80,7 +80,7 @@ public class KurrentLoggerConfiguration {
 	public static bool AdjustMinimumLogLevel(LogLevel logLevel) {
 		lock (DefaultLogLevelSwitchLock) {
 #if !DEBUG
-			if (_defaultLogLevelSwitch == null) {
+			if (DefaultLogLevelSwitch == null) {
 				throw new InvalidOperationException("The logger configuration has not yet been initialized.");
 			}
 #endif
