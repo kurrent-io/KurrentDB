@@ -20,4 +20,8 @@
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\KurrentDB.Logging\KurrentDB.Logging.csproj" />
+	</ItemGroup>
 </Project>

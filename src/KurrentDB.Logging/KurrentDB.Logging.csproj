@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Serilog.Expressions" />
+      <PackageReference Include="System.Reactive" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -1,13 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System;
-using System.IO;
-using System.Linq;
-using System.Threading;
 using KurrentDB.Common.Exceptions;
 using KurrentDB.Common.Options;
-using KurrentDB.Core;
 using KurrentDB.Core.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Primitives;
@@ -39,7 +34,9 @@ public class KurrentLoggerConfiguration {
 	private static readonly Func<LogEvent, bool> RegularStats = Matching.FromSource("REGULAR-STATS-LOGGER");
 
 	private static int Initialized;
-	private static LoggingLevelSwitch _defaultLogLevelSwitch;
+	private static LoggingLevelSwitch _defaultLogLevelSwitch = new() {
+		MinimumLevel = LogEventLevel.Verbose
+	};
 	private static object _defaultLogLevelSwitchLock = new object();
 
 	private readonly string _logsDirectory;
@@ -62,9 +59,9 @@ public class KurrentLoggerConfiguration {
 		SerilogEventListener = new();
 	}
 
-	public static ILogger CreateLogger(ClusterVNodeOptions.LoggingOptions options, string componentName) {
+	public static LoggerConfiguration CreateLoggerConfiguration(LoggingOptions options, string componentName) {
 		if (Interlocked.Exchange(ref Initialized, 1) == 1) {
-			throw new InvalidOperationException($"{nameof(CreateLogger)} may not be called more than once.");
+			throw new InvalidOperationException($"{nameof(CreateLoggerConfiguration)} may not be called more than once.");
 		}
 
 		if (options.Log.StartsWith('~')) {
@@ -84,7 +81,7 @@ public class KurrentLoggerConfiguration {
 			: Default(options.Log, componentName, configurationRoot, options.LogConsoleFormat, options.LogFileInterval,
 				options.LogFileSize, options.LogFileRetentionCount, options.DisableLogFile);
 		SelfLog.Disable();
-		return logConfig.CreateLogger();
+		return logConfig;
 	}
 
 	public static bool AdjustMinimumLogLevel(LogLevel logLevel) {
@@ -191,7 +188,7 @@ public class KurrentLoggerConfiguration {
 		// that the ms libraries will access.
 		static void TrySetLogLevel(IConfigurationSection logLevel, LoggingLevelSwitch levelSwitch) {
 			if (!Enum.TryParse<Microsoft.Extensions.Logging.LogLevel>(logLevel.Value, out var level))
-				throw new UnknownLogLevelException(logLevel.Value, logLevel.Path);
+				throw new UnknownLogLevelException(logLevel.Value!, logLevel.Path);
 
 			levelSwitch.MinimumLevel = level switch {
 				Microsoft.Extensions.Logging.LogLevel.None => LogEventLevel.Fatal,
@@ -213,7 +210,7 @@ public class KurrentLoggerConfiguration {
 			.Enrich.WithThreadId()
 			.Enrich.FromLogContext();
 
-	private string GetLogFileName(string log = null) =>
+	private string GetLogFileName(string? log = null) =>
 		Path.Combine(_logsDirectory, $"{_componentName}/log{(log == null ? string.Empty : $"-{log}")}.json");
 
 	private static bool Errors(LogEvent e) => e.Exception != null || e.Level >= LogEventLevel.Error;

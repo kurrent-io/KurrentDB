@@ -102,7 +102,7 @@ public static class ConfigurationRootExtensions {
 		try {
 			return configuration.Get<T>() ?? new T();
 		} catch (InvalidOperationException ex) {
-			var messages = new string?[] { ex.Message, ex.InnerException?.Message }
+			var messages = new[] { ex.Message, ex.InnerException?.Message }
 				.Where(x => !string.IsNullOrWhiteSpace(x))
 				.Select(x => x?.TrimEnd('.'));
 

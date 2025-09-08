@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using KurrentDB.Common.Log;
 using KurrentDB.Common.Options;
 using KurrentDB.Common.Utils;
-using KurrentDB.Core;
 using KurrentDB.TestClient.Statistics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -53,7 +52,7 @@ internal static class Program {
 
 		try {
 			var logsDirectory = log?.FullName ?? Locations.DefaultTestClientLogDirectory;
-			var logOptions = new ClusterVNodeOptions.LoggingOptions {
+			var logOptions = new LoggingOptions {
 				Log = logsDirectory,
 				LogConsoleFormat = LogConsoleFormat.Plain,
 				LogFileInterval = RollingInterval.Day,

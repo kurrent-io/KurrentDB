@@ -3,6 +3,7 @@
 
 using System;
 using EventStore.Plugins;
+using KurrentDB.Common.Log;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -80,9 +81,8 @@ public class OtlpExporterPlugin(ILogger logger) : SubsystemsPlugin(requiredEntit
 				// Let Serilog parse the headers string into a dictionary instead of trying to replicate their logic
 				Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_HEADERS", otlpExporterConfig.Headers);
 			}
-			Log.Logger = new LoggerConfiguration()
+			Log.Logger = KurrentLoggerConfiguration.CreateLoggerConfiguration()
 				// Use the existing logger as a sink
-				.WriteTo.Sink((ILogEventSink)Log.Logger)
 				.WriteTo.OpenTelemetry(options =>
 				{
 					options.Endpoint = otlpExporterConfig.Endpoint.AbsoluteUri;
