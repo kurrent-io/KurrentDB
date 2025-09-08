@@ -1964,14 +1964,14 @@ public class ClusterVNode<TStreamId> :
 	private void ReloadTransform(ClusterVNodeOptions options) {
 		var transform = options.Database.Transform;
 		if (!Db.TransformManager.TrySetActiveTransform(transform))
-			Log.Error($"Unknown {nameof(options.Database.Transform)} specified: {options.Database.Transform}");
+			Log.Error("Unknown {DatabaseTransformName} specified: {DatabaseTransform}", nameof(options.Database.Transform), options.Database.Transform);
 	}
 
-	private void ReloadLogOptions(ClusterVNodeOptions options) {
+	private static void ReloadLogOptions(ClusterVNodeOptions options) {
 		if (options.Logging.LogLevel != LogLevel.Default) {
-			var changed = EventStoreLoggerConfiguration.AdjustMinimumLogLevel(options.Logging.LogLevel);
+			var changed = KurrentLoggerConfiguration.AdjustMinimumLogLevel(options.Logging.LogLevel);
 			if (changed) {
-				Log.Information($"The log level was adjusted to: {options.Logging.LogLevel}");
+				Log.Information("The log level was adjusted to: {LoggingLogLevel}", options.Logging.LogLevel);
 
 				if (options.Logging.LogLevel > LogLevel.Information) {
 					Console.WriteLine($"The log level was adjusted to: {options.Logging.LogLevel}");

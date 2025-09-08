@@ -13,7 +13,6 @@ using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using EventStore.Plugins;
 using EventStore.Plugins.Subsystems;
-using JetBrains.Annotations;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Common.Options;
 using KurrentDB.Common.Utils;

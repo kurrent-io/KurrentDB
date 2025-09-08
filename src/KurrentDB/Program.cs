@@ -45,17 +45,11 @@ var configuration = KurrentConfiguration.Build(optionsWithLegacyDefaults, args);
 ThreadPool.SetMaxThreads(1000, 1000);
 var exitCodeSource = new TaskCompletionSource<int>();
 
-Log.Logger = EventStoreLoggerConfiguration.ConsoleLog;
+Log.Logger = KurrentLoggerConfiguration.ConsoleLog;
 try {
 	var options = ClusterVNodeOptions.FromConfiguration(configuration);
 
-	EventStoreLoggerConfiguration.Initialize(options.Logging.Log, options.GetComponentName(),
-		options.Logging.LogConsoleFormat,
-		options.Logging.LogFileSize,
-		options.Logging.LogFileInterval,
-		options.Logging.LogFileRetentionCount,
-		options.Logging.DisableLogFile,
-		options.Logging.LogConfig);
+	Log.Logger = KurrentLoggerConfiguration.CreateLogger(options.Logging, options.GetComponentName());
 
 	if (options.Application.Help) {
 		await Console.Out.WriteLineAsync(ClusterVNodeOptions.HelpText);
