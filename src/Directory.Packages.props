@@ -71,8 +71,8 @@
     <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.4" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="9.0.6" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.CommandLine" Version="9.0.6" />
-		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.6"/>
-		<PackageVersion Include="Microsoft.Extensions.DependencyInjection.AutoActivation" Version="9.6.0"/>
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.6" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.AutoActivation" Version="9.6.0" />
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.Testing" Version="9.2.0" />
     <PackageVersion Include="Microsoft.Extensions.FileProviders.Composite" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.FileProviders.Embedded" Version="8.0.0" />
@@ -88,10 +88,10 @@
     <PackageVersion Include="Microsoft.Net.Http.Headers" Version="8.0.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
     <PackageVersion Include="Microsoft.OpenApi.Readers" Version="1.6.23" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="1.7.3" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.7.3"/>
-		<PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="1.7.3" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="1.7.3" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.7.3" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="1.7.3" />
     <PackageVersion Include="Mono.Posix.NETStandard" Version="1.0.0" />
     <PackageVersion Include="MudBlazor" Version="8.3.0" />
     <PackageVersion Include="MudBlazor.Markdown" Version="8.0.0" />
@@ -106,9 +106,9 @@
     <PackageVersion Include="NUnit" Version="3.14.0" />
     <PackageVersion Include="NUnit3TestAdapter" Version="4.5.0" />
     <PackageVersion Include="ObjectLayoutInspector" Version="0.1.4" />
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.11.2" />
-    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.11.2-beta.1" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.11.2" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.12.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.12.0-beta.1" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.12.0" />
     <PackageVersion Include="Polly" Version="8.2.0" />
     <PackageVersion Include="Polly.Core" Version="8.5.2" />
     <PackageVersion Include="Quickenshtein" Version="1.5.1" />
@@ -160,10 +160,10 @@
     <PackageVersion Include="System.Threading.Channels" Version="9.0.1" />
     <PackageVersion Include="TestableIO.System.IO.Abstractions" Version="21.3.1" />
     <PackageVersion Include="TestableIO.System.IO.Abstractions.TestingHelpers" Version="21.3.1" />
-		<PackageVersion Include="TUnit" Version="0.25.21"/>
-		<PackageVersion Include="TUnit.Core" Version="0.25.21" />
+    <PackageVersion Include="TUnit" Version="0.25.21" />
+    <PackageVersion Include="TUnit.Core" Version="0.25.21" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.2" />
     <PackageVersion Include="YamlDotnet" Version="15.1.4" />
-	</ItemGroup>
+  </ItemGroup>
 </Project>

@@ -5,6 +5,7 @@ using EventStore.Plugins;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Exporter;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using Serilog;
 
@@ -19,9 +20,7 @@ public class OtlpExporterPlugin : SubsystemsPlugin {
 	}
 
 	public OtlpExporterPlugin(ILogger logger)
-		: base(
-			requiredEntitlements: ["OTLP_EXPORTER"]) {
-
+		: base(requiredEntitlements: ["OTLP_EXPORTER"]) {
 		_logger = logger;
 	}
 
@@ -50,8 +49,9 @@ public class OtlpExporterPlugin : SubsystemsPlugin {
 		// removing the special handling of metricsconfig.json where ExpectedScrapeInterval is defined.
 
 		var scrapeIntervalSeconds = configuration.GetValue<int>($"{KurrentConfigurationPrefix}:Metrics:ExpectedScrapeIntervalSeconds");
+		var logExportEnabled = configuration.GetValue<bool>($"{KurrentConfigurationPrefix}:OpenTelemetry:Logging:Enabled");
 
-		services
+		var builder = services
 			.Configure<OtlpExporterOptions>(configuration.GetSection($"{KurrentConfigurationPrefix}:OpenTelemetry:Otlp"))
 			.Configure<MetricReaderOptions>(configuration.GetSection($"{KurrentConfigurationPrefix}:OpenTelemetry:Metrics"))
 			.AddOpenTelemetry()
@@ -72,5 +72,10 @@ public class OtlpExporterPlugin : SubsystemsPlugin {
 						exporterOptions.Endpoint,
 						periodicOptions.ExportIntervalMilliseconds / 1000.0);
 				}));
+
+		if (logExportEnabled) {
+			services.Configure<LogRecordExportProcessorOptions>(configuration.GetSection($"{KurrentConfigurationPrefix}:OpenTelemetry:Logging"));
+			builder.WithLogging(l => l.AddOtlpExporter());
+		}
 	}
 }
