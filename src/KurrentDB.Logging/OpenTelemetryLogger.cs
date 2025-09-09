@@ -11,8 +11,9 @@ using Serilog.Sinks.OpenTelemetry;
 
 namespace KurrentDB.Logging;
 
-public class OpenTelemetryLogger : ILogEventSink {
-	readonly ILogEventSink _log;
+internal sealed class OpenTelemetryLogger : ILogEventSink, IDisposable {
+	readonly Logger _log;
+	readonly ILogEventSink _sink;
 
 	const string KurrentConfigurationPrefix = "KurrentDB";
 
@@ -24,6 +25,7 @@ public class OpenTelemetryLogger : ILogEventSink {
 			// Let Serilog parse the headers string into a dictionary instead of trying to replicate their logic
 			Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_HEADERS", otlpExporterConfig.Headers);
 		}
+
 		_log = new LoggerConfiguration()
 			.WriteTo.OpenTelemetry(options => {
 				options.Endpoint = otlpExporterConfig.Endpoint.AbsoluteUri;
@@ -38,9 +40,14 @@ public class OpenTelemetryLogger : ILogEventSink {
 				options.BatchingOptions.RetryTimeLimit = TimeSpan.FromMilliseconds(logExporterConfig.BatchExportProcessorOptions.ExporterTimeoutMilliseconds);
 			})
 			.CreateLogger();
+		_sink = _log;
 	}
 
 	public void Emit(LogEvent logEvent) {
-		_log.Emit(logEvent);
+		_sink.Emit(logEvent);
+	}
+
+	public void Dispose() {
+		_log.Dispose();
 	}
 }
