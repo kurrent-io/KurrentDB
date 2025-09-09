@@ -146,12 +146,11 @@ public class SubscriptionsService<TStreamId> :
 
 	async ValueTask IAsyncHandle<ClientMessage.SubscribeToStream>.HandleAsync(ClientMessage.SubscribeToStream msg, CancellationToken token) {
 		var isVirtualStream = SystemStreams.IsInMemoryStream(msg.EventStreamId);
-		var isIndexStream = !isVirtualStream && SystemStreams.IsIndexStream(msg.EventStreamId);
 
 		long? lastEventNumber = null;
 		if (isVirtualStream) {
 			lastEventNumber = _virtualStreamReader.GetLastEventNumber(msg.EventStreamId);
-		} else if (!msg.EventStreamId.IsEmptyString() && !isIndexStream) {
+		} else if (!msg.EventStreamId.IsEmptyString()) {
 			lastEventNumber = await _readIndex.GetStreamLastEventNumber(_readIndex.GetStreamId(msg.EventStreamId), token);
 		}
 
