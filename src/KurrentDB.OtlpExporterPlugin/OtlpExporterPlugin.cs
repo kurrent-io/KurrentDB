@@ -3,29 +3,28 @@
 
 using System;
 using EventStore.Plugins;
-using KurrentDB.Common.Configuration;
-using KurrentDB.Common.Log;
+using KurrentDB.Logging;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Exporter;
-using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using Serilog;
-using Serilog.Sinks.OpenTelemetry;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.OtlpExporterPlugin;
 
 public class OtlpExporterPlugin(ILogger logger) : SubsystemsPlugin(requiredEntitlements: ["OTLP_EXPORTER"]) {
-	public const string KurrentConfigurationPrefix = "KurrentDB";
+	private const string KurrentConfigurationPrefix = "KurrentDB";
+	private OpenTelemetryLogger? _otlpSink;
 	private static readonly ILogger _staticLogger = Log.ForContext<OtlpExporterPlugin>();
 
 	public OtlpExporterPlugin() : this(_staticLogger) {
 	}
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {
-		var enabled = configuration.GetSection($"{KurrentConfigurationPrefix}:OpenTelemetry:Otlp").Exists();
-		return (enabled, $"No {KurrentConfigurationPrefix}:OpenTelemetry:Otlp configuration found. Not exporting metrics.");
+		var enabled = MetricsExportEnabled(configuration);
+		return (enabled, $"No {KurrentConfigurationPrefix}:OpenTelemetry:Otlp configuration found. Not exporting metrics and logs.");
 	}
 
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
@@ -48,7 +47,6 @@ public class OtlpExporterPlugin(ILogger logger) : SubsystemsPlugin(requiredEntit
 		// removing the special handling of metricsconfig.json where ExpectedScrapeInterval is defined.
 
 		var scrapeIntervalSeconds = configuration.GetValue<int>($"{KurrentConfigurationPrefix}:Metrics:ExpectedScrapeIntervalSeconds");
-		var logExportEnabled = configuration.GetValue<bool>($"{KurrentConfigurationPrefix}:OpenTelemetry:Logging:Enabled");
 
 		services
 			.Configure<OtlpExporterOptions>(configuration.GetSection($"{KurrentConfigurationPrefix}:OpenTelemetry:Otlp"))
@@ -71,33 +69,22 @@ public class OtlpExporterPlugin(ILogger logger) : SubsystemsPlugin(requiredEntit
 						exporterOptions.Endpoint,
 						periodicOptions.ExportIntervalMilliseconds / 1000.0);
 				}));
-
-		// if (!logExportEnabled) return;
-		//
-		// var logExporterConfig = configuration.GetSection($"{KurrentConfigurationPrefix}:OpenTelemetry:Logging").Get<LogRecordExportProcessorOptions>()!;
-		// var otlpExporterConfig = configuration.GetSection($"{KurrentConfigurationPrefix}:OpenTelemetry:Otlp").Get<OtlpExporterOptions>()!;
-		//
-		// if (!string.IsNullOrWhiteSpace(otlpExporterConfig.Headers)) {
-		// 	// Let Serilog parse the headers string into a dictionary instead of trying to replicate their logic
-		// 	Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_HEADERS", otlpExporterConfig.Headers);
-		// }
-		//
-		// var loggingOptions = configuration.BindOptions<LoggingOptions>();
-		// Log.Logger = KurrentLoggerConfiguration.CreateLoggerConfiguration(loggingOptions, configuration["Temp:ComponentName"]!)
-		// 	// Use the existing logger as a sink
-		// 	.WriteTo.OpenTelemetry(options => {
-		// 		options.Endpoint = otlpExporterConfig.Endpoint.AbsoluteUri;
-		// 		options.Protocol = otlpExporterConfig.Protocol switch {
-		// 			OtlpExportProtocol.Grpc => OtlpProtocol.Grpc,
-		// 			OtlpExportProtocol.HttpProtobuf => OtlpProtocol.HttpProtobuf,
-		// 			_ => throw new ArgumentOutOfRangeException(">" + otlpExporterConfig.Protocol + "<", "Invalid protocol for OTLP exporter.")
-		// 		};
-		// 		options.BatchingOptions.BatchSizeLimit = logExporterConfig.BatchExportProcessorOptions.MaxExportBatchSize;
-		// 		options.BatchingOptions.BufferingTimeLimit = TimeSpan.FromMilliseconds(logExporterConfig.BatchExportProcessorOptions.ScheduledDelayMilliseconds);
-		// 		options.BatchingOptions.QueueLimit = logExporterConfig.BatchExportProcessorOptions.MaxQueueSize;
-		// 		options.BatchingOptions.RetryTimeLimit = TimeSpan.FromMilliseconds(logExporterConfig.BatchExportProcessorOptions.ExporterTimeoutMilliseconds);
-		// 	})
-		// 	.CreateLogger();
-		// logger.Information("OtlpExporter: Exporting logs to {endpoint}", otlpExporterConfig.Endpoint);
 	}
+
+	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
+		base.ConfigureApplication(app, configuration);
+		_otlpSink = app.ApplicationServices.GetService<OpenTelemetryLogger>();
+	}
+
+	protected override void OnLicenseException(Exception ex, Action<Exception> shutdown) {
+		if (ex is not LicenseEntitlementException licenseEntitlementException || _otlpSink == null) return;
+		logger.Warning(
+			"{Entitlement} entitlement missing in the license or no license provided, exporting logs disabled.",
+			licenseEntitlementException.MissingEntitlement
+		);
+		_otlpSink.Disable();
+	}
+
+	private static bool MetricsExportEnabled(IConfiguration configuration)
+		=> configuration.GetSection($"{KurrentConfigurationPrefix}:OpenTelemetry:Otlp").Exists();
 }

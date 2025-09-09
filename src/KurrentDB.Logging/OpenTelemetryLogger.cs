@@ -11,9 +11,9 @@ using Serilog.Sinks.OpenTelemetry;
 
 namespace KurrentDB.Logging;
 
-internal sealed class OpenTelemetryLogger : ILogEventSink, IDisposable {
-	readonly Logger _log;
-	readonly ILogEventSink _sink;
+public sealed class OpenTelemetryLogger : ILogEventSink, IDisposable {
+	Logger? _log;
+	ILogEventSink? _sink;
 
 	const string KurrentConfigurationPrefix = "KurrentDB";
 
@@ -43,11 +43,17 @@ internal sealed class OpenTelemetryLogger : ILogEventSink, IDisposable {
 		_sink = _log;
 	}
 
+	public void Disable() {
+		Dispose();
+		_sink = null;
+		_log = null;
+	}
+
 	public void Emit(LogEvent logEvent) {
-		_sink.Emit(logEvent);
+		_sink?.Emit(logEvent);
 	}
 
 	public void Dispose() {
-		_log.Dispose();
+		_log?.Dispose();
 	}
 }

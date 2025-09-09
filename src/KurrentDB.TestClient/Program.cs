@@ -59,8 +59,7 @@ internal static class Program {
 				LogFileRetentionCount = 31,
 				DisableLogFile = false
 			};
-			var config = new ConfigurationBuilder().Build();
-			Log.Logger = KurrentLoggerConfiguration.CreateLoggerConfiguration(config, logOptions, "client").CreateLogger();
+			Log.Logger = KurrentLoggerConfiguration.CreateLoggerConfiguration(logOptions, "client").CreateLogger();
 			var statsLog = statsFormat == StatsFormat.Csv
 				? TestClientCsvLoggerConfiguration.CreateLogger(logsDirectory, "client")
 				: Log.ForContext(Constants.SourceContextPropertyName, "REGULAR-STATS-LOGGER");

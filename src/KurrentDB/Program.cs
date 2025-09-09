@@ -21,6 +21,7 @@ using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Configuration;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services.Transport.Http;
+using KurrentDB.Logging;
 using KurrentDB.Services;
 using KurrentDB.Tools;
 using KurrentDB.UI.Services;
@@ -35,6 +36,7 @@ using Microsoft.Extensions.Logging;
 using MudBlazor;
 using MudBlazor.Services;
 using Serilog;
+using Serilog.Core;
 using Serilog.Events;
 using _Imports = KurrentDB.UI._Imports;
 using RuntimeInformation = System.Runtime.RuntimeInformation;
@@ -48,10 +50,12 @@ var exitCodeSource = new TaskCompletionSource<int>();
 Log.Logger = KurrentLoggerConfiguration.ConsoleLog;
 try {
 	var options = ClusterVNodeOptions.FromConfiguration(configuration);
-	configuration["Temp:ComponentName"] = options.GetComponentName();
 
+	var logExportEnabled = configuration.GetValue<bool>("KurrentDB:OpenTelemetry:Logging:Enabled");
+	var otlpSink = logExportEnabled ? new OpenTelemetryLogger(configuration) : null;
+	ILogEventSink[] extraSinks = logExportEnabled ? [otlpSink] : [];
 	Log.Logger = KurrentLoggerConfiguration
-		.CreateLoggerConfiguration(configuration, options.Logging, options.GetComponentName())
+		.CreateLoggerConfiguration(options.Logging, options.GetComponentName(), extraSinks)
 		.CreateLogger();
 
 	if (options.Application.Help) {
@@ -217,6 +221,10 @@ try {
 			// AddWindowsService adds EventLog logging, which we remove afterwards.
 			builder.Services.AddWindowsService();
 			builder.Logging.ClearProviders().AddSerilog();
+			if (otlpSink != null) {
+				builder.Services.AddSingleton(otlpSink);
+			}
+
 			builder.Services.Configure<KestrelServerOptions>(configuration.GetSection("Kestrel"));
 			builder.Services.Configure<HostOptions>(x => {
 				x.ShutdownTimeout = ClusterVNode.ShutdownTimeout + TimeSpan.FromSeconds(1);

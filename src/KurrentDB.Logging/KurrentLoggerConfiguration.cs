@@ -57,7 +57,7 @@ public class KurrentLoggerConfiguration {
 		SerilogEventListener = new();
 	}
 
-	public static LoggerConfiguration CreateLoggerConfiguration(IConfiguration configuration, LoggingOptions options, string componentName) {
+	public static LoggerConfiguration CreateLoggerConfiguration(LoggingOptions options, string componentName, params ILogEventSink[] extraSinks) {
 		if (options.Log.StartsWith('~')) {
 			throw new ApplicationInitializationException("The given log path starts with a '~'. KurrentDB does not expand '~'.");
 		}
@@ -75,10 +75,13 @@ public class KurrentLoggerConfiguration {
 			: Default(options.Log, componentName, configurationRoot, options.LogConsoleFormat, options.LogFileInterval,
 				options.LogFileSize, options.LogFileRetentionCount, options.DisableLogFile);
 
-		var logExportEnabled = configuration.GetValue<bool>("KurrentDB:OpenTelemetry:Logging:Enabled");
-		if (logExportEnabled) {
-			logConfig.WriteTo.Sink(new OpenTelemetryLogger(configuration));
+		foreach (var extraSink in extraSinks) {
+			logConfig.WriteTo.Sink(extraSink);
 		}
+		// var logExportEnabled = configuration.GetValue<bool>("KurrentDB:OpenTelemetry:Logging:Enabled");
+		// if (logExportEnabled) {
+		// 	logConfig.WriteTo.Sink(new OpenTelemetryLogger(configuration));
+		// }
 		SelfLog.Disable();
 		return logConfig;
 	}
