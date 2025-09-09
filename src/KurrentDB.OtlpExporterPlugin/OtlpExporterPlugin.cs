@@ -52,7 +52,7 @@ public class OtlpExporterPlugin(ILogger logger) : SubsystemsPlugin(requiredEntit
 			.Configure<OtlpExporterOptions>(configuration.GetSection($"{KurrentConfigurationPrefix}:OpenTelemetry:Otlp"))
 			.Configure<MetricReaderOptions>(configuration.GetSection($"{KurrentConfigurationPrefix}:OpenTelemetry:Metrics"))
 			.AddOpenTelemetry()
-			.WithMetrics(o => o
+			.WithMetrics(configure => configure
 				.AddOtlpExporter((exporterOptions, metricReaderOptions) => {
 					var periodicOptions = metricReaderOptions.PeriodicExportingMetricReaderOptions;
 					if (periodicOptions.ExportIntervalMilliseconds is null) {
@@ -74,15 +74,6 @@ public class OtlpExporterPlugin(ILogger logger) : SubsystemsPlugin(requiredEntit
 	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
 		base.ConfigureApplication(app, configuration);
 		_otlpSink = app.ApplicationServices.GetService<OpenTelemetryLogger>();
-	}
-
-	protected override void OnLicenseException(Exception ex, Action<Exception> shutdown) {
-		if (ex is not LicenseEntitlementException licenseEntitlementException || _otlpSink == null) return;
-		logger.Warning(
-			"{Entitlement} entitlement missing in the license or no license provided, exporting logs disabled.",
-			licenseEntitlementException.MissingEntitlement
-		);
-		_otlpSink.Disable();
 	}
 
 	private static bool MetricsExportEnabled(IConfiguration configuration)
