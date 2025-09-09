@@ -74,6 +74,7 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 
 	public string Name => _tracker.Name;
 
+	// set this property only if SynchronizeMessagesWithUnknownAffinity is set to 'true'
 	public QueueTrackers Trackers {
 		init => _tracker = value.GetTrackerForQueue(Name);
 	}
