@@ -17,13 +17,12 @@ public class QueueTrackers {
 
 	private readonly Dictionary<string, SharedTrackers> _sharedTrackers = new();
 
-	private readonly PrivateTrackers _noOpPrivate = new(
-		new QueueBusyTracker.NoOp());
+	private readonly PrivateTrackers _noOpPrivate = new(IQueueBusyTracker.NoOp);
 
 	private readonly SharedTrackers _noOpShared = new(
 		"NoOp",
-		new DurationMaxTracker.NoOp(),
-		new QueueProcessingTracker.NoOp());
+		IDurationMaxTracker.NoOp,
+		IQueueProcessingTracker.NoOp);
 
 	private readonly Conf.LabelMappingCase[] _cases;
 	private readonly Func<string, IQueueBusyTracker> _busyTrackerFactory;

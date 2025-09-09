@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Threading;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Metrics;
 using Serilog;
 
 namespace KurrentDB.Core.Bus;
@@ -32,12 +33,14 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 	private readonly ConcurrentBag<AsyncStateMachine> _pool;
 	private readonly TaskCompletionSource _stopNotification;
 	private readonly int _maxPoolSize;
+	private readonly QueueTracker _tracker;
 
 	private volatile CancellationTokenSource _lifetimeSource;
 	private volatile uint _processingCount;
 	private volatile TaskCompletionSource _readinessBarrier;
 
-	public ThreadPoolMessageScheduler(IAsyncHandle<Message> consumer) {
+	public ThreadPoolMessageScheduler(string name, IAsyncHandle<Message> consumer) {
+		ArgumentException.ThrowIfNullOrWhiteSpace(name);
 		ArgumentNullException.ThrowIfNull(consumer);
 
 		_lifetimeToken = (_lifetimeSource = new CancellationTokenSource()).Token;
@@ -46,10 +49,12 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 
 		// Pef: devirt interface
 		_consumer = consumer.HandleAsync;
+
 		_pool = new();
 		StopTimeout = DefaultStopWaitTimeout;
 		_maxPoolSize = Environment.ProcessorCount * 16;
 		_readinessBarrier = new();
+		_tracker = new(name, IQueueBusyTracker.NoOp, IDurationMaxTracker.NoOp, IQueueProcessingTracker.NoOp);
 	}
 
 	public int MaxPoolSize {
@@ -67,7 +72,11 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 		init;
 	}
 
-	public required string Name { get; init; }
+	public string Name => _tracker.Name;
+
+	public QueueTrackers Trackers {
+		init => _tracker = value.GetTrackerForQueue(Name);
+	}
 
 	public void Start() {
 		if (Interlocked.Exchange(ref _readinessBarrier, null) is { } completionSource) {

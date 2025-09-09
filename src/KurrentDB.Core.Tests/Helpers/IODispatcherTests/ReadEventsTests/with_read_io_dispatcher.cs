@@ -32,8 +32,7 @@ public abstract class with_read_io_dispatcher<TLogFormat, TStreamId> : IHandle<C
 
 	[OneTimeSetUp]
 	public virtual void TestFixtureSetUp() {
-		var queue = new ThreadPoolMessageScheduler(_bus) {
-			Name = "TestQueuedHandler",
+		var queue = new ThreadPoolMessageScheduler("TestQueuedHandler", _bus) {
 			SynchronizeMessagesWithUnknownAffinity = true,
 		};
 		_ioDispatcher = new IODispatcher(_bus, queue);

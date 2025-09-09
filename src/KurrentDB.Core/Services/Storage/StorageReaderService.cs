@@ -60,9 +60,8 @@ public class StorageReaderService<TStreamId> : StorageReaderService, IHandle<Sys
 		storageReaderBus.Subscribe<StorageMessage.EffectiveStreamAclRequest>(worker);
 		storageReaderBus.Subscribe<StorageMessage.StreamIdFromTransactionIdRequest>(worker);
 
-		_workersHandler = new ThreadPoolMessageScheduler(storageReaderBus) {
+		_workersHandler = new ThreadPoolMessageScheduler("StorageReaderQueue", storageReaderBus) {
 			SynchronizeMessagesWithUnknownAffinity = false,
-			Name = "StorageReaderQueue",
 		};
 		_workersHandler.Start();
 

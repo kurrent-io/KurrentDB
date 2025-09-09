@@ -109,15 +109,13 @@ public class TcpApiPluginTests {
 	private static StandardComponents CreateStandardComponents(InMemoryBus workerBus) {
 		var queueStatsManager = new QueueStatsManager();
 		var queueTrackers = new QueueTrackers();
-		var workersHandler = new ThreadPoolMessageScheduler(workerBus) {
+		var workersHandler = new ThreadPoolMessageScheduler("Worker Scheduler", workerBus) {
 			SynchronizeMessagesWithUnknownAffinity = false,
-			Name = "Worker Scheduler",
 		};
 
 		var dbConfig = TFChunkHelper.CreateDbConfig(Path.GetTempPath(), 0);
 		var mainBus = new InMemoryBus("mainBus");
-		var mainQueue = new ThreadPoolMessageScheduler(mainBus) {
-			Name = "MainQueue",
+		var mainQueue = new ThreadPoolMessageScheduler("MainQueue", mainBus) {
 			SynchronizeMessagesWithUnknownAffinity = true,
 		};
 		mainQueue.Start();

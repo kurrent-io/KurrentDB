@@ -518,9 +518,8 @@ public class ClusterVNode<TStreamId> :
 
 		// MISC WORKERS
 		_workerBus = new("Worker Bus", watchSlowMsg: true, slowMsgThreshold: TimeSpan.FromMilliseconds(200));
-		_workersHandler = new ThreadPoolMessageScheduler(_workerBus) {
+		_workersHandler = new ThreadPoolMessageScheduler("Worker Scheduler", _workerBus) {
 			SynchronizeMessagesWithUnknownAffinity = false,
-			Name = "Worker Scheduler",
 		};
 
 		void StartSubsystems() {
@@ -579,9 +578,8 @@ public class ClusterVNode<TStreamId> :
 		// MONITORING
 		var monitoringInnerBus = new InMemoryBus("MonitoringInnerBus", watchSlowMsg: false);
 		var monitoringRequestBus = new InMemoryBus("MonitoringRequestBus", watchSlowMsg: false);
-		var monitoringQueue = new ThreadPoolMessageScheduler(monitoringInnerBus) {
+		var monitoringQueue = new ThreadPoolMessageScheduler("MonitoringQueue", monitoringInnerBus) {
 			SynchronizeMessagesWithUnknownAffinity = true,
-			Name = "MonitoringQueue",
 		};
 
 		var monitoring = new MonitoringService(monitoringQueue,
@@ -1110,9 +1108,8 @@ public class ClusterVNode<TStreamId> :
 
 		// SUBSCRIPTIONS
 		var subscrBus = new InMemoryBus("SubscriptionsBus", true, TimeSpan.FromMilliseconds(50));
-		var subscrQueue = new ThreadPoolMessageScheduler(subscrBus) {
+		var subscrQueue = new ThreadPoolMessageScheduler("Subscriptions", subscrBus) {
 			SynchronizeMessagesWithUnknownAffinity = true,
-			Name = "Subscriptions",
 		};
 
 		_mainBus.Subscribe<SystemMessage.SystemStart>(subscrQueue);
@@ -1143,9 +1140,8 @@ public class ClusterVNode<TStreamId> :
 		// PERSISTENT SUBSCRIPTIONS
 		// IO DISPATCHER
 		var perSubscrBus = new InMemoryBus("PersistentSubscriptionsBus", true, TimeSpan.FromMilliseconds(50));
-		var perSubscrQueue = new ThreadPoolMessageScheduler(perSubscrBus) {
+		var perSubscrQueue = new ThreadPoolMessageScheduler("PersistentSubscriptions", perSubscrBus) {
 			SynchronizeMessagesWithUnknownAffinity = true,
-			Name = "PersistentSubscriptions",
 		};
 		var psubDispatcher = new IODispatcher(_mainQueue, perSubscrQueue);
 		perSubscrBus.Subscribe<ClientMessage.ReadStreamEventsBackwardCompleted>(psubDispatcher.BackwardReader);
@@ -1394,9 +1390,8 @@ public class ClusterVNode<TStreamId> :
 
 		// REDACTION
 		var redactionBus = new InMemoryBus("RedactionBus", true, TimeSpan.FromSeconds(2));
-		var redactionQueue = new ThreadPoolMessageScheduler(redactionBus) {
+		var redactionQueue = new ThreadPoolMessageScheduler("Redaction", redactionBus) {
 			SynchronizeMessagesWithUnknownAffinity = true,
-			Name = "Redaction"
 		};
 
 		_mainBus.Subscribe<RedactionMessage.GetEventPosition>(redactionQueue);

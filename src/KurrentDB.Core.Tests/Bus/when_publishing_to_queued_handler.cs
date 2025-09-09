@@ -86,7 +86,7 @@ public abstract class when_publishing_to_queued_handler : QueuedHandlerTestWithW
 public class when_publishing_to_ThreadPoolMessageScheduler : when_publishing_to_queued_handler {
 	public when_publishing_to_ThreadPoolMessageScheduler()
 		: base(static (consumer, name, timeout) =>
-			new ThreadPoolMessageScheduler(consumer)
-				{ StopTimeout = timeout, SynchronizeMessagesWithUnknownAffinity = true, Name = name }) {
+			new ThreadPoolMessageScheduler(name, consumer)
+				{ StopTimeout = timeout, SynchronizeMessagesWithUnknownAffinity = true }) {
 	}
 }

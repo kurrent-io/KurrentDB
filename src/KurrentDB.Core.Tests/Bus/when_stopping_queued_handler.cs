@@ -50,7 +50,7 @@ public abstract class when_stopping_queued_handler : QueuedHandlerTestWithNoopCo
 public class when_stopping_ThreadPoolMessageScheduler : when_stopping_queued_handler {
 	public when_stopping_ThreadPoolMessageScheduler()
 		: base(static (consumer, name, timeout) =>
-			new ThreadPoolMessageScheduler(consumer)
-				{ Name = name, StopTimeout = timeout, SynchronizeMessagesWithUnknownAffinity = true }) {
+			new ThreadPoolMessageScheduler(name, consumer)
+				{ StopTimeout = timeout, SynchronizeMessagesWithUnknownAffinity = true }) {
 	}
 }

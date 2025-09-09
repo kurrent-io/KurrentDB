@@ -33,7 +33,7 @@ public class PersistentSubscriptionServiceErrorTests {
 			var bus = new SynchronousScheduler();
 			var trackers = new Trackers();
 			_sut = new PersistentSubscriptionService<TStreamId>(
-				new ThreadPoolMessageScheduler(bus) { Name = "test", SynchronizeMessagesWithUnknownAffinity = true },
+				new ThreadPoolMessageScheduler("test", bus) { SynchronizeMessagesWithUnknownAffinity = true },
 				new FakeReadIndex<TLogFormat, TStreamId>(_ => false, new MetaStreamLookup()),
 				new IODispatcher(bus, bus), bus,
 				new PersistentSubscriptionConsumerStrategyRegistry(bus, bus,

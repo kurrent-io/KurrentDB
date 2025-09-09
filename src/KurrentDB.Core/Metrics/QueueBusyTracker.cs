@@ -8,6 +8,8 @@ namespace KurrentDB.Core.Metrics;
 public interface IQueueBusyTracker {
 	void EnterBusy();
 	void EnterIdle();
+
+	public static IQueueBusyTracker NoOp { get; } = new NoOpQueueBusyTracker();
 }
 
 public class QueueBusyTracker : IQueueBusyTracker {
@@ -20,12 +22,12 @@ public class QueueBusyTracker : IQueueBusyTracker {
 	public void EnterBusy() => _stopwatch.Start();
 
 	public void EnterIdle() => _stopwatch.Stop();
+}
 
-	public class NoOp : IQueueBusyTracker {
-		public void EnterBusy() {
-		}
+file sealed class NoOpQueueBusyTracker : IQueueBusyTracker {
+	void IQueueBusyTracker.EnterBusy() {
+	}
 
-		public void EnterIdle() {
-		}
+	void IQueueBusyTracker.EnterIdle() {
 	}
 }

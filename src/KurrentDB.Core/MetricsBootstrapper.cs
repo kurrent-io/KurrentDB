@@ -28,7 +28,7 @@ public class Trackers {
 	public ITransactionFileTracker TransactionFileTracker { get; set; } = new TFChunkTracker.NoOp();
 	public IIndexTracker IndexTracker { get; set; } = new IndexTracker.NoOp();
 	public IMaxTracker<long> WriterFlushSizeTracker { get; set; } = new MaxTracker<long>.NoOp();
-	public IDurationMaxTracker WriterFlushDurationTracker { get; set; } = new DurationMaxTracker.NoOp();
+	public IDurationMaxTracker WriterFlushDurationTracker { get; set; } = IDurationMaxTracker.NoOp;
 	public ICacheHitsMissesTracker CacheHitsMissesTracker { get; set; } = new CacheHitsMissesTracker.NoOp();
 	public ICacheResourcesTracker CacheResourcesTracker { get; set; } = new CacheResourcesTracker.NoOp();
 	public IElectionCounterTracker ElectionCounterTracker { get; set; } = new ElectionsCounterTracker.NoOp();
@@ -246,9 +246,9 @@ public static class MetricsBootstrapper {
 		}
 
 		// queue trackers
-		Func<string, IQueueBusyTracker> busyTrackerFactory = name => new QueueBusyTracker.NoOp();
-		Func<string, IDurationMaxTracker> lengthFactory = name => new DurationMaxTracker.NoOp();
-		Func<string, IQueueProcessingTracker> processingFactory = name => new QueueProcessingTracker.NoOp();
+		Func<string, IQueueBusyTracker> busyTrackerFactory = _ => IQueueBusyTracker.NoOp;
+		Func<string, IDurationMaxTracker> lengthFactory = _ => IDurationMaxTracker.NoOp;
+		Func<string, IQueueProcessingTracker> processingFactory = _ => IQueueProcessingTracker.NoOp;
 
 		if (conf.Queues.TryGetValue(Conf.QueueTracker.Busy, out var busyEnabled) && busyEnabled)
 			busyTrackerFactory = name => new QueueBusyTracker(queueBusyMetric, name);
