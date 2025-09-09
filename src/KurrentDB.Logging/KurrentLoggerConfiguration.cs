@@ -4,6 +4,7 @@
 using KurrentDB.Common.Exceptions;
 using KurrentDB.Common.Options;
 using KurrentDB.Core.Configuration;
+using KurrentDB.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Primitives;
 using Serilog;
@@ -56,7 +57,7 @@ public class KurrentLoggerConfiguration {
 		SerilogEventListener = new();
 	}
 
-	public static LoggerConfiguration CreateLoggerConfiguration(LoggingOptions options, string componentName) {
+	public static LoggerConfiguration CreateLoggerConfiguration(IConfiguration configuration, LoggingOptions options, string componentName) {
 		if (options.Log.StartsWith('~')) {
 			throw new ApplicationInitializationException("The given log path starts with a '~'. KurrentDB does not expand '~'.");
 		}
@@ -73,6 +74,11 @@ public class KurrentLoggerConfiguration {
 				.ReadFrom.Configuration(configurationRoot)
 			: Default(options.Log, componentName, configurationRoot, options.LogConsoleFormat, options.LogFileInterval,
 				options.LogFileSize, options.LogFileRetentionCount, options.DisableLogFile);
+
+		var logExportEnabled = configuration.GetValue<bool>("KurrentDB:OpenTelemetry:Logging:Enabled");
+		if (logExportEnabled) {
+			logConfig.WriteTo.Sink(new OpenTelemetryLogger(configuration));
+		}
 		SelfLog.Disable();
 		return logConfig;
 	}

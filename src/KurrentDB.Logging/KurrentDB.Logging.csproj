@@ -7,7 +7,9 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
       <PackageReference Include="Serilog.Expressions" />
+      <PackageReference Include="Serilog.Sinks.OpenTelemetry" />
       <PackageReference Include="System.Reactive" />
     </ItemGroup>
 

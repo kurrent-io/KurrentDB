@@ -52,7 +52,7 @@ public class LicensingPlugin : Plugin {
 				if (licenseError is NoLicenseKeyException)
 					return Results.NotFound();
 
-				return Results.NotFound(licenseError?.Message ?? "Unknown eror");
+				return Results.NotFound(licenseError?.Message ?? "Unknown error");
 			})
 			.RequireAuthorization());
 	}
@@ -84,7 +84,7 @@ public class LicensingPlugin : Plugin {
 				revalidationDelay: TimeSpan.FromSeconds(10));
 
 			licenses = lifecycleService.Licenses;
-			services.AddHostedService(sp => lifecycleService);
+			services.AddHostedService(_ => lifecycleService);
 		}
 
 		services
@@ -98,6 +98,5 @@ public class LicensingPlugin : Plugin {
 				telemetry => PublishDiagnosticsData(telemetry, PluginDiagnosticsDataCollectionMode.Snapshot)));
 	}
 
-	class NoLicenseKeyException : Exception {
-	}
+	class NoLicenseKeyException : Exception;
 }

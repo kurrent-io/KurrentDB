@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Reactive.Linq;
 using Microsoft.Extensions.Logging;
 
 namespace EventStore.Plugins.Licensing;
@@ -16,7 +17,6 @@ public static class LicenseMonitor {
 		ILogger logger,
 		string? licensePublicKey = null,
 		Action<int>? onCriticalError = null) {
-
 		licensePublicKey ??= LicenseConstants.LicensePublicKey;
 		onCriticalError ??= Environment.Exit;
 
@@ -31,25 +31,31 @@ public static class LicenseMonitor {
 		}
 
 		// authenticate the licenses that the license service sends us
-		return licenseService.Licenses.Subscribe(
-			onNext: async license => {
-				if (await license.TryValidateAsync(licensePublicKey)) {
-					// got an authentic license. check required entitlements
-					if (license.HasEntitlement("ALL"))
-						return;
+		return licenseService.Licenses
+			.Select(x => Observable.FromAsync(async () => {
+				var isValid = await x.TryValidateAsync(licensePublicKey);
+				return (License: x, IsValid: isValid);
+			}))
+			.Concat()
+			.Subscribe(
+				onNext: x => {
+					var (license, isValid) = x;
+					if (isValid) {
+						// got an authentic license. check required entitlements
+						if (license.HasEntitlement("ALL"))
+							return;
 
-					if (!license.HasEntitlements(requiredEntitlements, out var missing)) {
-						onLicenseException(new LicenseEntitlementException(featureName, missing));
+						if (!license.HasEntitlements(requiredEntitlements, out var missing)) {
+							onLicenseException(new LicenseEntitlementException(featureName, missing));
+						}
+					} else {
+						// this should never happen
+						logger.LogCritical("KurrentDB License was not valid");
+						onLicenseException(new LicenseException(featureName, new Exception("KurrentDB License was not valid")));
+						onCriticalError(12);
 					}
-				} else {
-					// this should never happen
-					logger.LogCritical("ESDB License was not valid");
-					onLicenseException(new LicenseException(featureName, new Exception("ESDB License was not valid")));
-					onCriticalError(12);
-				}
-			},
-			onError: ex => {
-				onLicenseException(new LicenseException(featureName, ex));
-			});
+				},
+				onError: ex => onLicenseException(new LicenseException(featureName, ex))
+			);
 	}
 }

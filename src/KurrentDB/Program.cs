@@ -51,7 +51,7 @@ try {
 	configuration["Temp:ComponentName"] = options.GetComponentName();
 
 	Log.Logger = KurrentLoggerConfiguration
-		.CreateLoggerConfiguration(options.Logging, options.GetComponentName())
+		.CreateLoggerConfiguration(configuration, options.Logging, options.GetComponentName())
 		.CreateLogger();
 
 	if (options.Application.Help) {
