@@ -107,6 +107,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		_mainQueue = new ThreadPoolMessageScheduler("MainQueue", _fsm) {
 			SynchronizeMessagesWithUnknownAffinity = true,
 			Trackers = trackers.QueueTrackers,
+			StatsManager = statsManager,
 		};
 		_publishEnvelope = _mainQueue;
 	}

@@ -158,8 +158,8 @@ partial class ThreadPoolMessageScheduler {
 				throw;
 #endif
 			} finally {
-				_groupLock?.Release();
 				ReportCompleted();
+				_groupLock?.Release();
 				CleanUp();
 				ProcessingCompleted();
 			}
@@ -176,13 +176,25 @@ partial class ThreadPoolMessageScheduler {
 		private void ReportEnqueued() => _timestamp = NeedsMetrics ? _scheduler._tracker.Now : default;
 
 		private void ReportDequeued() {
-			if (NeedsMetrics)
+			if (NeedsMetrics) {
 				_timestamp = _scheduler._tracker.RecordMessageDequeued(_timestamp);
+
+				var queueCnt = _scheduler._processingCount;
+				Debug.Assert(queueCnt > 0U);
+
+				queueCnt -= 1U; // exclude the current message
+				_scheduler._statsCollector.ProcessingStarted(
+					_message.GetType(),
+					int.CreateSaturating(queueCnt)); // avoid any overflow exceptions
+			}
 		}
 
+		// should not be called outside the lock, because the old stats collector is not thread safe
 		private void ReportCompleted() {
-			if (NeedsMetrics)
+			if (NeedsMetrics) {
 				_scheduler._tracker.RecordMessageProcessed(_timestamp, _message.Label);
+				_scheduler._statsCollector.ProcessingEnded(itemsProcessed: 1);
+			}
 		}
 
 		[MemberNotNullWhen(true, nameof(_groupLock))]

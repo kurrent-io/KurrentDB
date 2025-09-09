@@ -581,6 +581,7 @@ public class ClusterVNode<TStreamId> :
 		var monitoringQueue = new ThreadPoolMessageScheduler("MonitoringQueue", monitoringInnerBus) {
 			SynchronizeMessagesWithUnknownAffinity = true,
 			Trackers = trackers.QueueTrackers,
+			StatsManager = _queueStatsManager,
 		};
 
 		var monitoring = new MonitoringService(monitoringQueue,
@@ -1112,6 +1113,7 @@ public class ClusterVNode<TStreamId> :
 		var subscrQueue = new ThreadPoolMessageScheduler("Subscriptions", subscrBus) {
 			SynchronizeMessagesWithUnknownAffinity = true,
 			Trackers = trackers.QueueTrackers,
+			StatsManager = _queueStatsManager,
 		};
 
 		_mainBus.Subscribe<SystemMessage.SystemStart>(subscrQueue);
@@ -1145,6 +1147,7 @@ public class ClusterVNode<TStreamId> :
 		var perSubscrQueue = new ThreadPoolMessageScheduler("PersistentSubscriptions", perSubscrBus) {
 			SynchronizeMessagesWithUnknownAffinity = true,
 			Trackers = trackers.QueueTrackers,
+			StatsManager = _queueStatsManager,
 		};
 		var psubDispatcher = new IODispatcher(_mainQueue, perSubscrQueue);
 		perSubscrBus.Subscribe<ClientMessage.ReadStreamEventsBackwardCompleted>(psubDispatcher.BackwardReader);
@@ -1396,6 +1399,7 @@ public class ClusterVNode<TStreamId> :
 		var redactionQueue = new ThreadPoolMessageScheduler("Redaction", redactionBus) {
 			SynchronizeMessagesWithUnknownAffinity = true,
 			Trackers = trackers.QueueTrackers,
+			StatsManager = _queueStatsManager,
 		};
 
 		_mainBus.Subscribe<RedactionMessage.GetEventPosition>(redactionQueue);

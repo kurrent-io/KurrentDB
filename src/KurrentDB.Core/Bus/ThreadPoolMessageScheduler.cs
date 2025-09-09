@@ -17,7 +17,7 @@ namespace KurrentDB.Core.Bus;
 /// <summary>
 /// Handles messages by scheduling them for consumption on the thread pool by the consumer.
 /// Unlike QueuedHandlerThreadPool this is not a queue:
-/// Messages can consumed concurrently by the consumer, depending on their Affinity.
+/// Messages can be consumed concurrently by the consumer, depending on their Affinity.
 /// </summary>
 public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 	private static readonly TimeSpan DefaultStopWaitTimeout = TimeSpan.FromSeconds(10);
@@ -33,7 +33,6 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 	private readonly ConcurrentBag<AsyncStateMachine> _pool;
 	private readonly TaskCompletionSource _stopNotification;
 	private readonly int _maxPoolSize;
-	private readonly QueueTracker _tracker;
 
 	private volatile CancellationTokenSource _lifetimeSource;
 	private volatile uint _processingCount;
@@ -54,7 +53,15 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 		StopTimeout = DefaultStopWaitTimeout;
 		_maxPoolSize = Environment.ProcessorCount * 16;
 		_readinessBarrier = new();
+
+		// Backward Compatibility Notes:
+		// by default, we do not report any metrics.
+		// The metrics must be reported only if the scheduler is
+		// configured to synchronize the messages with unknown affinity. In that case, the synchronization
+		// group associated with the unknown affinity reports the metrics. Any other sync groups do not
+		// report any metrics even if tracker/collector is defined.
 		_tracker = new(name, IQueueBusyTracker.NoOp, IDurationMaxTracker.NoOp, IQueueProcessingTracker.NoOp);
+		_statsCollector = IQueueStatsCollector.NoOp;
 	}
 
 	public int MaxPoolSize {
@@ -74,20 +81,19 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 
 	public string Name => _tracker.Name;
 
-	// set this property only if SynchronizeMessagesWithUnknownAffinity is set to 'true'
-	public QueueTrackers Trackers {
-		init => _tracker = value.GetTrackerForQueue(Name);
-	}
-
 	public void Start() {
 		if (Interlocked.Exchange(ref _readinessBarrier, null) is { } completionSource) {
 			completionSource.SetResult();
+
+			if (SynchronizeMessagesWithUnknownAffinity)
+				Monitor.Register(this);
 		}
 	}
 
 	public void RequestStop() {
 		if (Interlocked.Exchange(ref _lifetimeSource, null) is { } cts) {
 			cts.Cancel();
+			Monitor.Unregister(this);
 		}
 	}
 
