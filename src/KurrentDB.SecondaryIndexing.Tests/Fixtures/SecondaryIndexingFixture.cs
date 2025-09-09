@@ -27,8 +27,9 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 	private const string DatabasePathConfig = $"{KurrentConfigurationKeys.Prefix}:Database:Db";
 	private const string PluginConfigPrefix = $"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing";
 	private const string OptionsConfigPrefix = $"{PluginConfigPrefix}:Options";
+	private const string ProjectionsConfigPrefix = $"{KurrentConfigurationKeys.Prefix}:Projections";
 
-	private readonly TimeSpan _defaultTimeout = TimeSpan.FromMilliseconds(30000);
+	private readonly TimeSpan _defaultTimeout = TimeSpan.FromMilliseconds(3000);
 	private string? _pathName;
 
 	protected SecondaryIndexingFixture(bool isSecondaryIndexingPluginEnabled) {
@@ -39,7 +40,8 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		Configuration = new() {
 			{ $"{PluginConfigPrefix}:Enabled", "true" },
 			{ $"{OptionsConfigPrefix}:{nameof(SecondaryIndexingPluginOptions.CommitBatchSize)}", "500" },
-			{ DatabasePathConfig, _pathName }
+			{ DatabasePathConfig, _pathName },
+			{ $"{ProjectionsConfigPrefix}:RunProjections", "None" }
 		};
 
 		OnTearDown = CleanUpDatabaseDirectory;
@@ -84,7 +86,10 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		cts.CancelAfter(timeout.Value);
 
 		try {
-			events = await SubscribeToIndex(indexName, maxCount, cts.Token).Take(maxCount).ToListAsync(cts.Token);
+			await foreach (var evt in SubscribeToIndex(indexName, maxCount, cts.Token)) {
+				events.Add(evt);
+			}
+			// events = await SubscribeToIndex(indexName, maxCount, cts.Token).Take(maxCount).ToListAsync(cts.Token);
 		} catch (OperationCanceledException) {
 			// can happen
 		}

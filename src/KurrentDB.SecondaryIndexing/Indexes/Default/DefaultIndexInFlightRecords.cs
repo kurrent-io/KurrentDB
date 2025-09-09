@@ -48,26 +48,24 @@ internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions option
 	}
 
 	public IEnumerable<IndexQueryRecord> GetInFlightRecordsForwards(
-		TFPos startPosition,
-		IReadOnlyList<IndexQueryRecord> fromDb,
+		long startPosition,
 		int maxCount,
+		bool excludeFirst,
 		Func<InFlightRecord, bool>? query = null) {
 		query ??= True; // to avoid branching in the loop
 
-		long from, seq;
-		if (fromDb is []) {
-			from = startPosition.PreparePosition;
-			seq = 0;
-		} else {
-			from = fromDb[^1].LogPosition;
-			seq = fromDb[^1].RowId + 1;
-		}
+		long seq = 0;
+		bool first = true;
 
 		var currentVer = _version;
-		for (int i = 0, count = Volatile.Read(in _count), remaining = maxCount - fromDb.Count;
+		for (int i = 0, count = Volatile.Read(in _count), remaining = maxCount;
 		     i < count && remaining > 0 && TryRead(currentVer, i, out var current);
 		     i++) {
-			if (current.LogPosition >= from && query(current)) {
+			if (current.LogPosition >= startPosition && query(current)) {
+				if (first && excludeFirst && current.LogPosition == startPosition) {
+					first = false;
+					continue;
+				}
 				remaining--;
 				yield return new(seq++, current.LogPosition, current.EventNumber);
 			}
@@ -75,22 +73,28 @@ internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions option
 	}
 
 	public IEnumerable<IndexQueryRecord> GetInFlightRecordsBackwards(
-		TFPos startPosition,
+		long startPosition,
 		int maxCount,
+		bool excludeFirst,
 		Func<InFlightRecord, bool>? query = null) {
 		query ??= True; // to avoid branching in the loop
 
 		var count = Volatile.Read(in _count);
 		var currentVer = _version;
+		bool first = true;
 
 		if (count > 0
 		    && TryRead(currentVer, 0, out var current)
-		    && current.LogPosition <= startPosition.PreparePosition) {
+		    && current.LogPosition <= startPosition) {
 			long seq = -maxCount - 1;
 			for (int i = count - 1, remaining = maxCount;
 			     i >= 0 && remaining > 0 && TryRead(currentVer, i, out current);
 			     i--) {
-				if (current.LogPosition <= startPosition.PreparePosition && query(current)) {
+				if (current.LogPosition <= startPosition && query(current)) {
+					if (first && excludeFirst && current.LogPosition == startPosition) {
+						first = false;
+						continue;
+					}
 					remaining--;
 					yield return new(seq++, current.LogPosition, current.EventNumber);
 				}
