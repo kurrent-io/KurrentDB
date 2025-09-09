@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using DotNext.Threading;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Time;
 
 namespace KurrentDB.Core.Bus;
 
@@ -34,6 +35,7 @@ partial class ThreadPoolMessageScheduler {
 		private ConfiguredValueTaskAwaitable.ConfiguredValueTaskAwaiter _awaiter;
 		private Message _message;
 		private AsyncExclusiveLock _groupLock;
+		private Instant _timestamp;
 
 		public AsyncStateMachine(ThreadPoolMessageScheduler scheduler) {
 			_scheduler = scheduler;
@@ -60,6 +62,7 @@ partial class ThreadPoolMessageScheduler {
 		internal void Schedule(Message message, AsyncExclusiveLock groupLock) {
 			_message = message;
 			_groupLock = groupLock;
+			ReportEnqueued();
 
 			if (groupLock is null) {
 				// no synchronization group provided, simply enqueue the processing to the thread pool
@@ -126,6 +129,8 @@ partial class ThreadPoolMessageScheduler {
 
 		[SuppressMessage("Reliability", "CA2012", Justification = "The state machine is coded manually")]
 		private void InvokeConsumer() {
+			ReportDequeued();
+
 			// ALWAYS called on the thread pool.
 			_awaiter = _scheduler
 				._consumer(_message, _scheduler._lifetimeToken)
@@ -154,6 +159,7 @@ partial class ThreadPoolMessageScheduler {
 #endif
 			} finally {
 				_groupLock?.Release();
+				ReportCompleted();
 				CleanUp();
 				ProcessingCompleted();
 			}
@@ -165,6 +171,29 @@ partial class ThreadPoolMessageScheduler {
 			_message = null;
 			_groupLock = null;
 			_awaiter = default;
+		}
+
+		private void ReportEnqueued() => _timestamp = NeedsMetrics ? _scheduler._tracker.Now : default;
+
+		private void ReportDequeued() {
+			if (NeedsMetrics)
+				_timestamp = _scheduler._tracker.RecordMessageDequeued(_timestamp);
+		}
+
+		private void ReportCompleted() {
+			if (NeedsMetrics)
+				_scheduler._tracker.RecordMessageProcessed(_timestamp, _message.Label);
+		}
+
+		[MemberNotNullWhen(true, nameof(_groupLock))]
+		[MemberNotNullWhen(true, nameof(_message))]
+		private bool NeedsMetrics {
+			get {
+				Debug.Assert(_message is not null);
+
+				return ReferenceEquals(_message.Affinity, Message.UnknownAffinity)
+				       && _groupLock is not null;
+			}
 		}
 	}
 
