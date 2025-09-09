@@ -52,8 +52,7 @@ try {
 	var options = ClusterVNodeOptions.FromConfiguration(configuration);
 
 	var logExportEnabled = configuration.GetValue<bool>("KurrentDB:OpenTelemetry:Logging:Enabled");
-	var otlpSink = logExportEnabled ? new OpenTelemetryLogger(configuration) : null;
-	ILogEventSink[] extraSinks = logExportEnabled ? [otlpSink] : [];
+	ILogEventSink[] extraSinks = logExportEnabled ? [new OpenTelemetryLogger(configuration)] : [];
 	Log.Logger = KurrentLoggerConfiguration
 		.CreateLoggerConfiguration(options.Logging, options.GetComponentName(), extraSinks)
 		.CreateLogger();
@@ -221,10 +220,6 @@ try {
 			// AddWindowsService adds EventLog logging, which we remove afterwards.
 			builder.Services.AddWindowsService();
 			builder.Logging.ClearProviders().AddSerilog();
-			if (otlpSink != null) {
-				builder.Services.AddSingleton(otlpSink);
-			}
-
 			builder.Services.Configure<KestrelServerOptions>(configuration.GetSection("Kestrel"));
 			builder.Services.Configure<HostOptions>(x => {
 				x.ShutdownTimeout = ClusterVNode.ShutdownTimeout + TimeSpan.FromSeconds(1);
