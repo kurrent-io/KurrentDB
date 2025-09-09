@@ -178,7 +178,6 @@ DEFAULT OPTIONS:
          AUTHENTICATION TYPE:                                internal (<DEFAULT>)
          AUTHORIZATION CONFIG:                                (<DEFAULT>)
          AUTHORIZATION TYPE:                                 internal (<DEFAULT>)
-         DISABLE FIRST LEVEL HTTP AUTHORIZATION:             False (<DEFAULT>)
 
     CERTIFICATE OPTIONS:
          CERTIFICATE RESERVED NODE COMMON NAME:               (<DEFAULT>)

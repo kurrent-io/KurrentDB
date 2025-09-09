@@ -143,17 +143,25 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 		return response;
 	}
 
-	protected async Task<DeleteSchemaResponse> DeleteSchema(string schemaName, CancellationToken ct = default) =>
-		await Client.DeleteSchemaAsync(new DeleteSchemaRequest { SchemaName = schemaName }, cancellationToken: ct);
+	protected async Task<DeleteSchemaResponse> DeleteSchema(string schemaName, CancellationToken ct = default) {
+		var response = await Client.DeleteSchemaAsync(new DeleteSchemaRequest { SchemaName = schemaName }, cancellationToken: ct);
+		await Task.Delay(TimeSpan.FromMilliseconds(200), ct);
+		return response;
+	}
 
-	protected async Task<DeleteSchemaVersionsResponse> DeleteSchemaVersions(string schemaName, IEnumerable<int> versions, CancellationToken ct = default) =>
-		await Client.DeleteSchemaVersionsAsync(
+	protected async Task<DeleteSchemaVersionsResponse> DeleteSchemaVersions(string schemaName, IEnumerable<int> versions, CancellationToken ct = default) {
+		var response = await Client.DeleteSchemaVersionsAsync(
 			new DeleteSchemaVersionsRequest {
 				SchemaName = schemaName,
 				Versions = { versions.ToList() }
 			},
 			cancellationToken: ct
 		);
+
+		await Task.Delay(TimeSpan.FromMilliseconds(200), ct);
+
+		return response;
+	}
 
 	protected async Task<UpdateSchemaResponse> UpdateSchema(string schemaName, SchemaDetails details, FieldMask mask, CancellationToken ct = default) {
 		var response = await Client.UpdateSchemaAsync(

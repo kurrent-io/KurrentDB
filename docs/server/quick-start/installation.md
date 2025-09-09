@@ -288,6 +288,17 @@ sc.exe start "KurrentDB"
 
 Logs will still be written to the usual log file location. By default on windows this is the `logs` directory within the directory that contains `KurrentDB.exe`.
 
+::: warning
+In this version the the service restart policy does not guarantee that the service is running. If running as a Windows Service, we recommend configuring
+the Windows Task Scheduler to start the service regularly (say, every 10 seconds), which will do nothing if the service is already running.
+
+This is for two reasons, both of which we intend to address in a future version:
+
+1. If the service shuts down gracefully, such as when going offline for truncation, it will be not be restarted by the policy.
+2. If the service does not start within 30s (by default), it will not be restarted by the policy. The 'start' that the service manager is looking for
+usually only takes a second or two, and is not related to the size of the database, but none the less there is some risk of timeout.
+:::
+
 ## Docker
 
 You can run KurrentDB in a Docker container as a single node, using insecure mode. It is useful in most
