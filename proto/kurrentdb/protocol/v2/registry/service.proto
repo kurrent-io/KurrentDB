@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package kurrentdb.protocol.registry.v2;
+
+option csharp_namespace    = "KurrentDB.Protocol.Registry.V2";
+option java_package        = "io.kurrentdb.protocol.registry.v2";
+option java_multiple_files = true;
+
+import "registry/groups.proto";
+import "registry/schemas.proto";
+import "registry/validation.proto";
+
+service SchemaRegistryService {
+  //===================================================================
+  // Schema Group Management
+  //===================================================================
+
+  rpc CreateSchemaGroup(CreateSchemaGroupRequest) returns (CreateSchemaGroupResponse);
+
+  rpc UpdateSchemaGroup(UpdateSchemaGroupRequest) returns (UpdateSchemaGroupResponse);
+
+  rpc DeleteSchemaGroup(DeleteSchemaGroupRequest) returns (DeleteSchemaGroupResponse);
+
+  rpc GetSchemaGroup(GetSchemaGroupRequest) returns (GetSchemaGroupResponse);
+
+  rpc ListSchemaGroups(ListSchemaGroupsRequest) returns (ListSchemaGroupsResponse);
+
+  //===================================================================
+  // Schema Management
+  //===================================================================
+
+  rpc CreateSchema(CreateSchemaRequest) returns (CreateSchemaResponse); // produce
+
+  rpc UpdateSchema(UpdateSchemaRequest) returns (UpdateSchemaResponse);
+
+  rpc DeleteSchema(DeleteSchemaRequest) returns (DeleteSchemaResponse);
+
+  rpc GetSchema(GetSchemaRequest) returns (GetSchemaResponse);
+
+  rpc ListSchemas(ListSchemasRequest) returns (ListSchemasResponse);
+
+  rpc LookupSchemaName(LookupSchemaNameRequest) returns (LookupSchemaNameResponse);
+
+  rpc RegisterSchemaVersion(RegisterSchemaVersionRequest) returns (RegisterSchemaVersionResponse);
+
+  rpc DeleteSchemaVersions(DeleteSchemaVersionsRequest) returns (DeleteSchemaVersionsResponse);
+
+  rpc GetSchemaVersion(GetSchemaVersionRequest) returns (GetSchemaVersionResponse); // produce
+
+  rpc GetSchemaVersionById(GetSchemaVersionByIdRequest) returns (GetSchemaVersionByIdResponse);
+
+  rpc ListSchemaVersions(ListSchemaVersionsRequest) returns (ListSchemaVersionsResponse);
+
+  rpc ListRegisteredSchemas(ListRegisteredSchemasRequest) returns (ListRegisteredSchemasResponse);
+
+  rpc BulkRegisterSchemas(BulkRegisterSchemasRequest) returns (BulkRegisterSchemasResponse);
+
+  //===================================================================
+  // Schema Compatibility & Validation
+  //===================================================================
+
+  rpc CheckSchemaCompatibility(CheckSchemaCompatibilityRequest) returns (CheckSchemaCompatibilityResponse); // consume
+}

@@ -20,4 +20,8 @@
 	<ItemGroup>
 		<InternalsVisibleTo Include="KurrentDB.Plugins.Tests" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageVersion Update="YamlDotNet" Version="16.3.0" />
+	</ItemGroup>
 </Project>

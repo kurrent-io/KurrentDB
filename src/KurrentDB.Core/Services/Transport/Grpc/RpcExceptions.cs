@@ -10,7 +10,7 @@ using KurrentDB.Core.Messaging;
 
 namespace KurrentDB.Core.Services.Transport.Grpc;
 
-public static class RpcExceptions {
+static class RpcExceptions {
 	public static Exception Timeout(string message) => new RpcException(new Status(StatusCode.Aborted, $"Operation timed out: {message}"));
 
 	public static RpcException ServerNotReady() =>
@@ -143,13 +143,13 @@ public static class RpcExceptions {
 				{ Constants.Exceptions.RequiredMetadataProperties, string.Join(",", Constants.Metadata.RequiredMetadata) }
 			});
 
-	public static RpcException RequiredPropertyMissing(string missingProperty) =>
-		new(
-			new Status(StatusCode.InvalidArgument, $"Required Property '{missingProperty}' is missing"),
-			new Metadata {
-					{ Constants.Exceptions.ExceptionKey, Constants.Exceptions.MissingRequiredProperty },
-					{ Constants.Exceptions.RequiredProperties, Constants.Properties.RequiredProperties }
-			});
+	// public static RpcException RequiredPropertyMissing(string missingProperty) =>
+	// 	new(
+	// 		new Status(StatusCode.InvalidArgument, $"Required Property '{missingProperty}' is missing"),
+	// 		new Metadata {
+	// 				{ Constants.Exceptions.ExceptionKey, Constants.Exceptions.MissingRequiredProperty },
+	// 				{ Constants.Exceptions.RequiredProperties, Constants.Properties.RequiredProperties }
+	// 		});
 
 	public static bool TryHandleNotHandled(ClientMessage.NotHandled notHandled, out Exception exception) {
 		exception = null;

@@ -1,0 +1,147 @@
+// ******************************************************************************************
+// This protocol is UNSTABLE in the sense of being subject to change.
+// ******************************************************************************************
+
+syntax = "proto3";
+
+package kurrentdb.protocol.v2.common.errors;
+
+option csharp_namespace = "KurrentDB.Protocol.V2.Common.Errors";
+
+import "rpc.proto";
+
+enum CommonError {
+  // Default value. This value is not used.
+  // An error code MUST always be set to a non-zero value.
+  // If an error code is not explicitly set, it MUST be treated as
+  // an internal server error (INTERNAL).
+  UNSPECIFIED = 0;
+
+  ACCESS_DENIED = 1 [(kurrent.rpc.error) = {
+    status_code:  PERMISSION_DENIED,
+    has_details: true
+  }];
+
+  INVALID_REQUEST = 2 [(kurrent.rpc.error) = {
+    status_code:  INVALID_ARGUMENT,
+    has_details: true
+  }];
+
+  NOT_LEADER_NODE = 5 [(kurrent.rpc.error) = {
+    status_code:  FAILED_PRECONDITION,
+    has_details: true
+  }];
+
+  OPERATION_TIMEOUT = 6 [(kurrent.rpc.error) = {
+    status_code: DEADLINE_EXCEEDED
+  }];
+
+  SERVER_NOT_READY = 7 [(kurrent.rpc.error) = {
+    status_code: UNAVAILABLE
+  }];
+
+  SERVER_OVERLOADED = 8 [(kurrent.rpc.error) = {
+    status_code: UNAVAILABLE
+  }];
+
+  SERVER_MALFUNCTION = 9 [(kurrent.rpc.error) = {
+    status_code: INTERNAL
+  }];
+
+//  // The operation was aborted, typically due to a concurrency issue such as a
+//  // sequencer conflict or transaction abort.
+//  // This error will only be used when there is no intention to create a dedicated
+//  // error code for the specific issue, perhaps because the issue is too generic
+//  // or too transient or temporary in terms of handling.
+//  OPERATION_ABORTED = 10 [(kurrent.rpc.error) = {
+//    status_code: ABORTED
+//  }];
+}
+
+message AccessDeniedErrorDetails {
+  // The scope in which access was denied.
+  // It could represent a resource, a domain, a permission type
+  // or a "path" that is a combination of these.
+  // (e.g., "stream:orders", "db:customers:read", etc.)
+  optional string scope = 1;
+
+  // The username of the user who was denied access.
+  optional string username = 2;
+}
+
+message InvalidRequestErrorDetails {
+  // Detailed information about each invalid argument.
+  repeated FieldViolation violations = 1;
+
+  // Describes a single field violation.
+  message FieldViolation {
+    // A path that leads to a field in the request body. The value will be a
+    // sequence of dot-separated identifiers that identify a protocol buffer
+    // field.
+    //
+    // Consider the following:
+    //
+    //     message CreateContactRequest {
+    //       message EmailAddress {
+    //         enum Type {
+    //           TYPE_UNSPECIFIED = 0;
+    //           HOME = 1;
+    //           WORK = 2;
+    //         }
+    //
+    //         optional string email = 1;
+    //         repeated EmailType type = 2;
+    //       }
+    //
+    //       string full_name = 1;
+    //       repeated EmailAddress email_addresses = 2;
+    //     }
+    //
+    // In this example, in proto `field` could take one of the following values:
+    //
+    // * `full_name` for a violation in the `full_name` value
+    // * `email_addresses[1].email` for a violation in the `email` field of the
+    //   first `email_addresses` message
+    // * `email_addresses[3].type[2]` for a violation in the second `type`
+    //   value in the third `email_addresses` message.
+    //
+    // In JSON, the same values are represented as:
+    //
+    // * `fullName` for a violation in the `fullName` value
+    // * `emailAddresses[1].email` for a violation in the `email` field of the
+    //   first `emailAddresses` message
+    // * `emailAddresses[3].type[2]` for a violation in the second `type`
+    //   value in the third `emailAddresses` message.
+    string field = 1;
+
+    // A description of why the request element is bad.
+    string description = 2;
+  }
+}
+
+message NotLeaderNodeErrorDetails {
+  // The host of the current leader node
+  string host = 1;
+
+  // The port of the current leader node
+  int32 port = 2;
+
+  // The instance ID of the current leader node
+  optional string node_id = 3;
+}
+
+message RetryInfoErrorDetails {
+  // The duration in milliseconds after which the client can retry the operation.
+  int32 retry_delay_ms = 1;
+}
+
+message NodeInfoErrorDetails {
+  // The host of the node
+  string host = 1;
+
+  // The port of the node
+  int32 port = 2;
+
+  // The instance ID of the node
+  optional string node_id = 3;
+}

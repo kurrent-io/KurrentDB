@@ -14,6 +14,15 @@ public readonly struct Operation {
 
 	public Operation(string resource, string action) : this(resource, action, Array.Empty<Parameter>()) { }
 
+	public Operation(string resource, string action, Parameter parameter) {
+		Resource   = resource;
+		Action     = action;
+		Parameters = new([parameter]);
+	}
+
+	public Operation(OperationDefinition definition, Parameter parameter)
+		: this(definition.Resource, definition.Action, parameter) { }
+
 	public Operation WithParameter(string name, string value) => WithParameters(new Parameter(name, value));
 
 	public Operation WithParameter(Parameter parameter) => WithParameters(parameter);
@@ -34,6 +43,7 @@ public readonly struct Operation {
 	}
 
 	public static implicit operator OperationDefinition(Operation operation) => new(operation.Resource, operation.Action);
+	public static implicit operator Operation(OperationDefinition definition) => new(definition);
 
 	public override string ToString() {
 		var sb = new StringBuilder();

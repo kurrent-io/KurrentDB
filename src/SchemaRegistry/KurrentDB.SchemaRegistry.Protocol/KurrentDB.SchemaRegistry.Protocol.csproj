@@ -12,24 +12,28 @@
     <PackageReference Include="Google.Protobuf" />
     <PackageReference Include="Grpc.Net.ClientFactory" />
     <PackageReference Include="Grpc.StatusProto" />
-    <PackageReference Include="Grpc.Tools">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-
-		<!-- Required to remove conflicts -->
-    <PackageReference Include="Google.Api.CommonProtos"  PrivateAssets="All" />
+    <PackageReference Include="Grpc.Tools" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- TODO: share the protos to avoid generating the server code here -->
+		<!-- v2  -->
+		<Protobuf
+			ProtoRoot="../../../proto/kurrentdb/protocol/v2"
+			Include="../../../proto/kurrentdb/protocol/v2/**/*.proto"
+			Exclude="../../../proto/kurrentdb/protocol/v2/streams/**/*.proto"
+			Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"
+			GrpcServices="Both"
+			Access="Public"
+			AdditionalImportDirs="../../../proto"
+		/>
 
-    <Protobuf
-        ProtoRoot="proto/kurrentdb/protocol/v2"
-        Include="proto/kurrentdb/protocol/v2/**/*.proto"
-        Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"
-        GrpcServices="All"
-    />
-
+		<!-- google -->
+		<Protobuf
+			ProtoRoot="../../../proto/google"
+			Include="../../../proto/google/**/*.proto"
+			Link="proto\google\%(RecursiveDir)/%(FileName)%(Extension)"
+			Access="Internal"
+			ProtoCompile="false"
+		/>
   </ItemGroup>
 </Project>

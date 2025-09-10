@@ -50,11 +50,18 @@
 		<ProjectReference Include="..\KurrentDB.NETCore.Compatibility\KurrentDB.NETCore.Compatibility.csproj" />
 		<ProjectReference Include="..\KurrentDB.SourceGenerators\KurrentDB.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 	</ItemGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="KurrentDB.Projections.Core" />
+		<InternalsVisibleTo Include="KurrentDB.Core.Tests" />
+		<InternalsVisibleTo Include="KurrentDB.Core.XUnit.Tests" />
+	</ItemGroup>
+
 	<ItemGroup>
 		<Protobuf Include="..\Protos\ClientAPI\ClientMessageDtos.proto">
 			<Link>Services\Transport\Tcp\protos\ClientMessageDtos.proto</Link>
 		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\code.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
+		<Protobuf Include="..\Protos\Grpc\code.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc" Access="Internal">
 			<Link>Services\Transport\Grpc\Protos\code.proto</Link>
 		</Protobuf>
 		<Protobuf Include="../Protos/Grpc/cluster.proto" GrpcServices="Both" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
@@ -72,10 +79,10 @@
 		<Protobuf Include="..\Protos\Grpc\shared.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
 			<Link>Services\Transport\Grpc\Protos\shared.proto</Link>
 		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\status.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
+		<Protobuf Include="..\Protos\Grpc\status.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc" Access="Internal" >
 			<Link>Services\Transport\Grpc\Protos\status.proto</Link>
 		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\streams.proto" GrpcServices="Both" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
+		<Protobuf Include="..\Protos\Grpc\streams.proto" GrpcServices="Both" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc" Access="Internal">
 			<Link>Services\Transport\Grpc\Protos\streams.proto</Link>
 		</Protobuf>
 		<Protobuf Include="..\Protos\Grpc\users.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
@@ -89,15 +96,6 @@
 		</Protobuf>
 		<Protobuf Include="..\Protos\Grpc\redaction.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
 			<Link>Services\Transport\Grpc\Protos\redaction.proto</Link>
-		</Protobuf>
-		<Protobuf Include="..\Protos\dynamic-value.proto" ProtoRoot="../Protos">
-			<Link>Protos\dynamic-value.proto</Link>
-		</Protobuf>
-		<Protobuf Include="..\Protos\Server\properties.proto" ProtoRoot="../Protos">
-			<Link>Protos\Server\properties.proto</Link>
-		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\streams.v2.proto" GrpcServices="Both" ProtoRoot="../Protos">
-			<Link>Protos\Server\streams.v2.proto</Link>
 		</Protobuf>
 	</ItemGroup>
 	<ItemGroup>

@@ -31,10 +31,11 @@ public abstract class SchemaRegistryServerTestFixture : ITestStartEventReceiver,
 	protected DuckDBConnectionProvider    DuckDbConnectionProvider { get; private set; } = null!;
 	SequenceIdGenerator                   SequenceIdGenerator      { get; } = new();
 
-	public async ValueTask OnTestStart(BeforeTestContext beforeTestContext) {
-		await TestingToolkitAutoWireUp.TestSetUp(beforeTestContext.TestContext);
 
-		FixtureName              = beforeTestContext.TestContext.TestDetails.TestClass.Name;
+	public async ValueTask OnTestStart(TestContext context) {
+		await TestingToolkitAutoWireUp.TestSetUp(context);
+
+		FixtureName              = context.TestDetails.ClassType.Name;
 		NodeServices             = SchemaRegistryServerAutoWireUp.NodeServices;
 		Client                   = SchemaRegistryServerAutoWireUp.Client;
 		LoggerFactory            = NodeServices.GetRequiredService<ILoggerFactory>();
@@ -42,9 +43,8 @@ public abstract class SchemaRegistryServerTestFixture : ITestStartEventReceiver,
 		SchemaRegistry           = NodeServices.GetRequiredService<ISchemaRegistry>();
 		DuckDbConnectionProvider = NodeServices.GetRequiredKeyedService<DuckDBConnectionProvider>("schema-registry");
 	}
-
-	public async ValueTask OnTestEnd(AfterTestContext testContext) =>
-		await TestingToolkitAutoWireUp.TestCleanUp(testContext);
+	public async ValueTask OnTestEnd(TestContext context) =>
+		await TestingToolkitAutoWireUp.TestCleanUp(context);
 
 	protected async ValueTask<SurgeRecord> CreateRecord<T>(T message, SchemaDataFormat dataFormat = SchemaDataFormat.Json, string? streamId = null) {
 		var schemaName = $"{SchemaRegistryConventions.Streams.RegistryStreamPrefix}-{typeof(T).Name.Kebaberize()}";
