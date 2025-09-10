@@ -6,7 +6,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using DotNext;
 using DotNext.Threading;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Time;
@@ -112,7 +111,7 @@ partial class ThreadPoolMessageScheduler {
 				CleanUp();
 				ProcessingCompleted();
 				if (e is OperationCanceledException canceledEx &&
-				    IsKnownCancellation(canceledEx)) {
+				    canceledEx.CancellationToken == _scheduler._lifetimeToken) {
 					return false;
 				}
 
@@ -148,7 +147,7 @@ partial class ThreadPoolMessageScheduler {
 		private void OnConsumerCompleted() {
 			try {
 				_awaiter.GetResult();
-			} catch (OperationCanceledException e) when (IsKnownCancellation(e)) {
+			} catch (OperationCanceledException e) when (e.CancellationToken == _scheduler._lifetimeToken) {
 				// suspend
 			} catch (Exception ex) {
 				Log.Error(ex,
@@ -208,9 +207,6 @@ partial class ThreadPoolMessageScheduler {
 				       && _groupLock is not null;
 			}
 		}
-
-		private bool IsKnownCancellation(OperationCanceledException e)
-			=> e.CancellationToken.IsOneOf([_scheduler._lifetimeToken, _message.CancellationToken]);
 	}
 
 	private sealed class PoolingAsyncStateMachine(ThreadPoolMessageScheduler scheduler) : AsyncStateMachine(scheduler) {
