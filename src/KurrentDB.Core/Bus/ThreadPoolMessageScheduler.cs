@@ -60,7 +60,7 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 		// configured to synchronize the messages with unknown affinity. In that case, the synchronization
 		// group associated with the unknown affinity reports the metrics. Any other sync groups do not
 		// report any metrics even if tracker/collector is defined.
-		_tracker = new(name, IQueueBusyTracker.NoOp, IDurationMaxTracker.NoOp, IQueueProcessingTracker.NoOp);
+		_tracker = new(name, IDurationMaxTracker.NoOp, IQueueProcessingTracker.NoOp);
 		_statsCollector = IQueueStatsCollector.NoOp;
 	}
 

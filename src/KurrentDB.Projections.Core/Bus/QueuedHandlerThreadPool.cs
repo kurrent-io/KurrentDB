@@ -126,7 +126,6 @@ public class QueuedHandlerThreadPool : IQueuedHandler, IMonitoredQueue, IThreadP
 			bool proceed = true;
 			while (proceed) {
 				_queueStats.EnterBusy();
-				_tracker.EnterBusy();
 
 				while (!_lifetimeToken.IsCancellationRequested && _queue.TryDequeue(out var item)) {
 					var start = _tracker.RecordMessageDequeued(item.EnqueuedAt);
@@ -176,7 +175,6 @@ public class QueuedHandlerThreadPool : IQueuedHandler, IMonitoredQueue, IThreadP
 				}
 
 				_queueStats.EnterIdle();
-				_tracker.EnterIdle();
 				Interlocked.CompareExchange(ref _isRunning, 0, 1);
 				if (_lifetimeToken.IsCancellationRequested) {
 					TryStopQueueStats();

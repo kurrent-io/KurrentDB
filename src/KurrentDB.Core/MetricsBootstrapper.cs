@@ -246,12 +246,8 @@ public static class MetricsBootstrapper {
 		}
 
 		// queue trackers
-		Func<string, IQueueBusyTracker> busyTrackerFactory = _ => IQueueBusyTracker.NoOp;
 		Func<string, IDurationMaxTracker> lengthFactory = _ => IDurationMaxTracker.NoOp;
 		Func<string, IQueueProcessingTracker> processingFactory = _ => IQueueProcessingTracker.NoOp;
-
-		if (conf.Queues.TryGetValue(Conf.QueueTracker.Busy, out var busyEnabled) && busyEnabled)
-			busyTrackerFactory = name => new QueueBusyTracker(queueBusyMetric, name);
 
 		if (conf.Queues.TryGetValue(Conf.QueueTracker.Length, out var lengthEnabled) && lengthEnabled)
 			lengthFactory = name => new DurationMaxTracker(
@@ -262,7 +258,7 @@ public static class MetricsBootstrapper {
 		if (conf.Queues.TryGetValue(Conf.QueueTracker.Processing, out var processingEnabled) && processingEnabled)
 			processingFactory = name => new QueueProcessingTracker(queueProcessingDurationMetric, name);
 
-		trackers.QueueTrackers = new QueueTrackers(conf.QueueLabels, busyTrackerFactory, lengthFactory, processingFactory);
+		trackers.QueueTrackers = new QueueTrackers(conf.QueueLabels, lengthFactory, processingFactory);
 
 		// kestrel
 		if (conf.Kestrel.TryGetValue(Conf.KestrelTracker.ConnectionCount, out var kestrelConnections) && kestrelConnections) {

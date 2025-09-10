@@ -17,44 +17,36 @@ public class QueueTrackers {
 
 	private readonly Dictionary<string, SharedTrackers> _sharedTrackers = new();
 
-	private readonly PrivateTrackers _noOpPrivate = new(IQueueBusyTracker.NoOp);
-
 	private readonly SharedTrackers _noOpShared = new(
 		"NoOp",
 		IDurationMaxTracker.NoOp,
 		IQueueProcessingTracker.NoOp);
 
 	private readonly Conf.LabelMappingCase[] _cases;
-	private readonly Func<string, IQueueBusyTracker> _busyTrackerFactory;
 	private readonly Func<string, IDurationMaxTracker> _durationTrackerFactory;
 	private readonly Func<string, IQueueProcessingTracker> _processingTrackerFactory;
 
 	public QueueTrackers() {
-		_cases = Array.Empty<Conf.LabelMappingCase>();
-		_busyTrackerFactory = _ => _noOpPrivate.QueueBusyTracker;
+		_cases = [];
 		_durationTrackerFactory = _ => _noOpShared.QueueingDurationTracker;
 		_processingTrackerFactory = _ => _noOpShared.QueueProcessingTracker;
 	}
 
 	public QueueTrackers(
 		Conf.LabelMappingCase[] cases,
-		Func<string, IQueueBusyTracker> busyTrackerFactory,
 		Func<string, IDurationMaxTracker> durationTrackerFactory,
 		Func<string, IQueueProcessingTracker> processingTrackerFactory) {
 
 		_cases = cases;
-		_busyTrackerFactory = busyTrackerFactory;
 		_durationTrackerFactory = durationTrackerFactory;
 		_processingTrackerFactory = processingTrackerFactory;
 	}
 
 	public QueueTracker GetTrackerForQueue(string queueName) {
 		var sharedTrackers = GetSharedTrackerForQueue(queueName);
-		var privateTrackers = GetPrivateTrackerForLabel(sharedTrackers.Label);
 
 		return new QueueTracker(
 			sharedTrackers.Label,
-			privateTrackers.QueueBusyTracker,
 			sharedTrackers.QueueingDurationTracker,
 			sharedTrackers.QueueProcessingTracker);
 	}
@@ -103,16 +95,6 @@ public class QueueTrackers {
 
 		return tracker;
 	}
-
-	private PrivateTrackers GetPrivateTrackerForLabel(string label) {
-		return new(_busyTrackerFactory(label));
-	}
-
-	// each queue gets its own instance of the busytracker because it deals with the aggregation
-	// on observation rather than on measurement. two queues trying to start/stop the same stopwatch
-	// wouldn't make sense.
-	private record PrivateTrackers(
-		IQueueBusyTracker QueueBusyTracker);
 
 	private record SharedTrackers(
 		string Label,
