@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.RateLimiting;
 using System.Threading.Tasks;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
@@ -37,16 +38,19 @@ public class StorageReaderService<TStreamId> : StorageReaderService, IHandle<Sys
 		ISystemStreamLookup<TStreamId> systemStreams,
 		IReadOnlyCheckpoint writerCheckpoint,
 		IVirtualStreamReader inMemReader,
+		RateLimiter limiter,
 		QueueStatsManager queueStatsManager,
 		QueueTrackers trackers) {
+
 		Ensure.NotNull(subscriber);
 		Ensure.NotNull(systemStreams);
 		Ensure.NotNull(writerCheckpoint);
+		Ensure.NotNull(limiter);
 
 		_bus = Ensure.NotNull(bus);
 		_readIndex = Ensure.NotNull(readIndex);
 
-		var worker = new StorageReaderWorker<TStreamId>(bus, readIndex, systemStreams, writerCheckpoint, inMemReader);
+		var worker = new StorageReaderWorker<TStreamId>(bus, readIndex, systemStreams, writerCheckpoint, inMemReader, limiter);
 		var storageReaderBus = new InMemoryBus("StorageReaderBus", watchSlowMsg: false);
 
 		storageReaderBus.Subscribe<ClientMessage.ReadEvent>(worker);
