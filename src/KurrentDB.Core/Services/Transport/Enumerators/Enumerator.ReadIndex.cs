@@ -73,16 +73,16 @@ partial class Enumerator {
 		where TRequest : Message
 		where TResponse : ReadIndexEventsCompleted {
 		protected readonly string IndexName;
-		readonly IPublisher _bus;
 		protected readonly ulong MaxCount;
 		protected readonly ClaimsPrincipal User;
 		protected readonly bool RequiresLeader;
 		protected readonly DateTime Deadline;
 		protected readonly CancellationToken CancellationToken;
 		protected readonly SemaphoreSlim Semaphore = new(1, 1);
-		readonly Channel<ReadResponse> _channel = Channel.CreateBounded<ReadResponse>(DefaultCatchUpChannelOptions);
+		private readonly IPublisher _bus;
+		private readonly Channel<ReadResponse> _channel = Channel.CreateBounded<ReadResponse>(DefaultCatchUpChannelOptions);
 
-		ReadResponse _current;
+		private ReadResponse _current;
 
 		public ReadResponse Current => _current;
 
@@ -146,30 +146,35 @@ partial class Enumerator {
 					return;
 				}
 
-				switch (completed.Result) {
-					case ReadIndexResult.Success:
-						foreach (var @event in completed.Events) {
-							if (readCount >= MaxCount) {
-								_channel.Writer.TryComplete();
-								return;
-							}
-
-							await _channel.Writer.WriteAsync(new ReadResponse.EventReceived(@event), ct);
-							readCount++;
-						}
-
-						if (completed.IsEndOfStream || completed.Events.Count == 0) {
+				if (completed.Result == ReadIndexResult.Success) {
+					foreach (var @event in completed.Events) {
+						if (readCount >= MaxCount) {
 							_channel.Writer.TryComplete();
 							return;
 						}
 
-						var last = completed.Events[^1].EventPosition!.Value;
-						ReadPage(Position.FromInt64(last.CommitPosition, last.PreparePosition), true, readCount);
+						await _channel.Writer.WriteAsync(new ReadResponse.EventReceived(@event), ct);
+						readCount++;
+					}
+
+					if (completed.IsEndOfStream || completed.Events.Count == 0) {
+						_channel.Writer.TryComplete();
 						return;
-					default:
-						_channel.Writer.TryComplete(ReadResponseException.UnknownError.Create(completed.Result, completed.Error));
-						return;
+					}
+
+					var last = completed.Events[^1].EventPosition!.Value;
+					ReadPage(Position.FromInt64(last.CommitPosition, last.PreparePosition), true, readCount);
+					return;
 				}
+
+				Exception exception = completed.Result switch {
+					ReadIndexResult.AccessDenied => new ReadResponseException.AccessDenied(),
+					ReadIndexResult.IndexNotFound => new ReadResponseException.IndexNotFound(IndexName),
+					ReadIndexResult.InvalidPosition => new ReadResponseException.InvalidPosition(),
+					ReadIndexResult.Expired => new ReadResponseException.Timeout("Read index operation expired"),
+					_ => ReadResponseException.UnknownError.Create(completed.Result, completed.Error)
+				};
+				_channel.Writer.TryComplete(exception);
 			}
 		}
 	}

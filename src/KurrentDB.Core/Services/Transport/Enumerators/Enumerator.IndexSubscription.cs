@@ -268,8 +268,9 @@ partial class Enumerator {
 									throw new ReadResponseException.AccessDenied();
 								case SubscriptionDropReason.Unsubscribed:
 									return;
+								case SubscriptionDropReason.NotFound:
+									throw new ReadResponseException.IndexNotFound(_indexName);
 								case SubscriptionDropReason.StreamDeleted: // applies only to regular streams
-								case SubscriptionDropReason.NotFound: // applies only to persistent subscriptions
 								default:
 									throw ReadResponseException.UnknownError.Create(dropped.Reason);
 							}
