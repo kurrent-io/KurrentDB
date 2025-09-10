@@ -1,0 +1,23 @@
+{
+  "$schema": "https://context7.com/schema/context7.json",
+  "projectTitle": "KurrentDB",
+  "description": "Event-native Database for modern event-driven and event sourcing applications",
+  "folders": ["docs/server"],
+  "excludeFolders": [],
+  "excludeFiles": [],
+  "rules": [],
+  "previousVersions": [
+    {
+      "tag": "v25.0.1",
+      "title": "v25.0.1"
+    },
+    {
+      "tag": "v24.10.7",
+      "title": "v24.10.7"
+    },
+    {
+      "tag": "oss-v23.10.7",
+      "title": "v23.10.7"
+    }
+  ]
+}
