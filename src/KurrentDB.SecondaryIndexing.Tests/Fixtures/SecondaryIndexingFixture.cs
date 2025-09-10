@@ -30,7 +30,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 	private const string ProjectionsConfigPrefix = $"{KurrentConfigurationKeys.Prefix}:Projections";
 
 	private readonly TimeSpan _defaultTimeout = TimeSpan.FromMilliseconds(3000);
-	private string? _pathName;
+	private string? _path;
 
 	protected SecondaryIndexingFixture(bool isSecondaryIndexingPluginEnabled) {
 		if (!isSecondaryIndexingPluginEnabled) return;
@@ -40,7 +40,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		Configuration = new() {
 			{ $"{PluginConfigPrefix}:Enabled", "true" },
 			{ $"{OptionsConfigPrefix}:{nameof(SecondaryIndexingPluginOptions.CommitBatchSize)}", "500" },
-			{ DatabasePathConfig, _pathName },
+			{ DatabasePathConfig, _path },
 			{ $"{ProjectionsConfigPrefix}:RunProjections", "None" }
 		};
 
@@ -133,11 +133,11 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 
 	private void SetUpDatabaseDirectory() {
 		var typeName = GetType().Name.Length > 30 ? GetType().Name[..30] : GetType().Name;
-		_pathName = Path.Combine(Path.GetTempPath(), $"ES-{Guid.NewGuid()}-{typeName}");
+		_path = Path.Combine(Path.GetTempPath(), $"ES-{Guid.NewGuid()}-{typeName}");
 
-		Directory.CreateDirectory(_pathName);
+		Directory.CreateDirectory(_path);
 	}
 
 	private Task CleanUpDatabaseDirectory() =>
-		_pathName != null ? DirectoryDeleter.TryForceDeleteDirectoryAsync(_pathName, retries: 10) : Task.CompletedTask;
+		_path != null ? DirectoryDeleter.TryForceDeleteDirectoryAsync(_path, retries: 10) : Task.CompletedTask;
 }

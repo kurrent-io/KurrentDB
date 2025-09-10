@@ -7,38 +7,40 @@ using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
 using KurrentDB.SecondaryIndexing.Tests.Fixtures;
 using KurrentDB.SecondaryIndexing.Tests.Generators;
+using KurrentDB.Surge.Testing;
+using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
 namespace KurrentDB.SecondaryIndexing.Tests.IntegrationTests;
 
 [Trait("Category", "Integration")]
 public class IndexingTests(IndexingFixture fixture, ITestOutputHelper output)
-	: SecondaryIndexingTest<IndexingFixture>(fixture, output) {
-	[Fact]
-	public Task ReadsAllEventsFromDefaultIndexForwards() =>
-		ValidateRead(SystemStreams.DefaultSecondaryIndex, Fixture.AppendedBatches.ToDefaultIndexResolvedEvents(), true);
+	: ClusterVNodeTests<IndexingFixture>(fixture, output) {
+	[Theory]
+	[InlineData(true)]
+	[InlineData(false)]
+	public async Task ReadsAllEventsFromDefaultIndex(bool forwards) {
+		Fixture.LogDatasetInfo();
+		await ValidateRead(SystemStreams.DefaultSecondaryIndex, Fixture.AppendedBatches.ToDefaultIndexResolvedEvents(), forwards);
+	}
 
-	[Fact]
-	public async Task ReadsAllEventsFromCategoryIndexForwards() {
+	[Theory]
+	[InlineData(true)]
+	[InlineData(false)]
+	public async Task ReadsAllEventsFromCategoryIndex(bool forwards) {
 		foreach (var category in Fixture.Categories) {
 			var expectedEvents = Fixture.AppendedBatches.ToCategoryIndexResolvedEvents(category);
-			await ValidateRead(CategoryIndex.Name(category), expectedEvents, true);
+			await ValidateRead(CategoryIndex.Name(category), expectedEvents, forwards);
 		}
 	}
 
-	[Fact]
-	public async Task ReadsAllEventsFromCategoryIndexBackwards() {
-		foreach (var category in Fixture.Categories) {
-			var expectedEvents = Fixture.AppendedBatches.ToCategoryIndexResolvedEvents(category);
-			await ValidateRead(CategoryIndex.Name(category), expectedEvents, false);
-		}
-	}
-
-	[Fact]
-	public async Task ReadsAllEventsFromEventTypeIndexForwards() {
+	[Theory]
+	[InlineData(true)]
+	[InlineData(false)]
+	public async Task ReadsAllEventsFromEventTypeIndex(bool forwards) {
 		foreach (var eventType in Fixture.EventTypes) {
 			var expectedEvents = Fixture.AppendedBatches.ToEventTypeIndexResolvedEvents(eventType);
-			await ValidateRead(EventTypeIndex.Name(eventType), expectedEvents, true);
+			await ValidateRead(EventTypeIndex.Name(eventType), expectedEvents, forwards);
 		}
 	}
 
@@ -125,24 +127,29 @@ public class IndexingFixture : SecondaryIndexingEnabledFixture {
 		MessageTypesCount: 10,
 		MessageSize: 10,
 		MaxBatchSize: 2,
-		TotalMessagesCount: 10
+		TotalMessagesCount: 2000
 	);
 
 	private readonly MessageGenerator _messageGenerator = new();
 
 	public IndexingFixture() {
 		OnSetup = async () => {
+			_total = 0;
 			await foreach (var batch in _messageGenerator.GenerateBatches(_config)) {
 				var messages = batch.Messages.Select(m => m.ToEventData()).ToArray();
 				await AppendToStream(batch.StreamName, messages);
+				_total += messages.Length;
 				AppendedBatches.Add(batch);
 			}
 		};
 	}
 
 	public readonly List<TestMessageBatch> AppendedBatches = [];
+	private int _total;
 
-	public List<TestMessageBatch> ExpectedBatches => AppendedBatches.ToList();
+	public void LogDatasetInfo() {
+		Logger.LogInformation("Using {Batches} batches with total {Count} records", AppendedBatches.Count, _total);
+	}
 
 	public string[] Categories => AppendedBatches.Select(b => b.CategoryName).Distinct().ToArray();
 

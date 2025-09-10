@@ -14,6 +14,7 @@
 	<ItemGroup>
 		<PackageReference Include="Bogus" />
 		<PackageReference Include="coverlet.collector" />
+		<PackageReference Include="KurrentDB.Client" />
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
 		<PackageReference Include="GitHubActionsTestLogger" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" />
@@ -30,6 +31,10 @@
 		<ProjectReference Include="..\Connectors\KurrentDB.Connectors.Tests\KurrentDB.Connectors.Tests.csproj" />
 		<ProjectReference Include="..\KurrentDB.SecondaryIndexing\KurrentDB.SecondaryIndexing.csproj" />
 		<ProjectReference Include="..\KurrentDB.Core.Tests\KurrentDB.Core.Tests.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="ClientTests\" />
 	</ItemGroup>
 
 </Project>
