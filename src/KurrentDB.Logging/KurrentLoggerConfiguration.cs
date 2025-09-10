@@ -78,10 +78,6 @@ public class KurrentLoggerConfiguration {
 		foreach (var extraSink in extraSinks) {
 			logConfig.WriteTo.Sink(extraSink);
 		}
-		// var logExportEnabled = configuration.GetValue<bool>("KurrentDB:OpenTelemetry:Logging:Enabled");
-		// if (logExportEnabled) {
-		// 	logConfig.WriteTo.Sink(new OpenTelemetryLogger(configuration));
-		// }
 		SelfLog.Disable();
 		return logConfig;
 	}
