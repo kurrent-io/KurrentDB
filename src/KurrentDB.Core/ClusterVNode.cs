@@ -92,6 +92,7 @@ using RuntimeInformation = System.Runtime.RuntimeInformation;
 using TelemetryMessage = KurrentDB.Core.Telemetry.TelemetryMessage;
 
 namespace KurrentDB.Core;
+
 public abstract class ClusterVNode {
 	protected static readonly ILogger Log = Serilog.Log.ForContext<ClusterVNode>();
 
