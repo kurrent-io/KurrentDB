@@ -12,6 +12,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
+using System.Threading.RateLimiting;
 using System.Threading.Tasks;
 using EventStore.Core.Cluster;
 using EventStore.Plugins.Authentication;
@@ -329,6 +330,12 @@ public class ClusterVNode<TStreamId> :
 		var dbConfig = CreateDbConfig(
 			out var statsHelper,
 			out var readerThreadsCount);
+
+		// Rate Limiting
+		var limiter = new ConcurrencyLimiter(new() {
+			PermitLimit = readerThreadsCount,
+			QueueLimit = int.MaxValue, // unbounded for now.
+		});
 
 		var trackers = new Trackers();
 		var metricsConfiguration = MetricsConfiguration.Get(configuration);
@@ -766,7 +773,9 @@ public class ClusterVNode<TStreamId> :
 
 		// Storage Reader
 		var storageReader = new StorageReaderService<TStreamId>(_mainQueue, _mainBus, readIndex,
-			logFormat.SystemStreams, Db.Config.WriterCheckpoint.AsReadOnly(), virtualStreamReader, _queueStatsManager,
+			logFormat.SystemStreams, Db.Config.WriterCheckpoint.AsReadOnly(), virtualStreamReader,
+			limiter,
+			_queueStatsManager,
 			trackers.QueueTrackers);
 
 		_mainBus.Subscribe<SystemMessage.SystemInit>(storageReader);
