@@ -54,7 +54,7 @@ public class DeletingStreamsTests(DeletingStreamsFixture fixture, ITestOutputHel
 	}
 
 	private async Task ValidateRead(string indexName, ResolvedEvent[] expectedEvents) {
-		var results = await Fixture.ReadUntil(indexName, expectedEvents.Length);
+		var results = await Fixture.ReadUntil(indexName, expectedEvents.Length, true);
 
 		AssertResolvedEventsMatch(results, expectedEvents);
 	}

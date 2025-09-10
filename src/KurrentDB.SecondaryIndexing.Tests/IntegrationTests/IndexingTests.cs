@@ -15,22 +15,30 @@ namespace KurrentDB.SecondaryIndexing.Tests.IntegrationTests;
 public class IndexingTests(IndexingFixture fixture, ITestOutputHelper output)
 	: SecondaryIndexingTest<IndexingFixture>(fixture, output) {
 	[Fact]
-	public Task ReadsAllEventsFromDefaultIndex() =>
-		ValidateRead(SystemStreams.DefaultSecondaryIndex, Fixture.AppendedBatches.ToDefaultIndexResolvedEvents());
+	public Task ReadsAllEventsFromDefaultIndexForwards() =>
+		ValidateRead(SystemStreams.DefaultSecondaryIndex, Fixture.AppendedBatches.ToDefaultIndexResolvedEvents(), true);
 
 	[Fact]
-	public async Task ReadsAllEventsFromCategoryIndex() {
+	public async Task ReadsAllEventsFromCategoryIndexForwards() {
 		foreach (var category in Fixture.Categories) {
 			var expectedEvents = Fixture.AppendedBatches.ToCategoryIndexResolvedEvents(category);
-			await ValidateRead(CategoryIndex.Name(category), expectedEvents);
+			await ValidateRead(CategoryIndex.Name(category), expectedEvents, true);
 		}
 	}
 
 	[Fact]
-	public async Task ReadsAllEventsFromEventTypeIndex() {
+	public async Task ReadsAllEventsFromCategoryIndexBackwards() {
+		foreach (var category in Fixture.Categories) {
+			var expectedEvents = Fixture.AppendedBatches.ToCategoryIndexResolvedEvents(category);
+			await ValidateRead(CategoryIndex.Name(category), expectedEvents, false);
+		}
+	}
+
+	[Fact]
+	public async Task ReadsAllEventsFromEventTypeIndexForwards() {
 		foreach (var eventType in Fixture.EventTypes) {
 			var expectedEvents = Fixture.AppendedBatches.ToEventTypeIndexResolvedEvents(eventType);
-			await ValidateRead(EventTypeIndex.Name(eventType), expectedEvents);
+			await ValidateRead(EventTypeIndex.Name(eventType), expectedEvents, true);
 		}
 	}
 
@@ -54,19 +62,20 @@ public class IndexingTests(IndexingFixture fixture, ITestOutputHelper output)
 		}
 	}
 
-	private async Task ValidateRead(string indexName, ResolvedEvent[] expectedEvents) {
-		var results = await Fixture.ReadUntil(indexName, expectedEvents.Length);
+	private async Task ValidateRead(string indexName, ResolvedEvent[] expectedEvents, bool forwards) {
+		var results = await Fixture.ReadUntil(indexName, expectedEvents.Length, forwards);
+		var expected = forwards ? expectedEvents : expectedEvents.Reverse().ToArray();
 
-		AssertResolvedEventsMatch(results, expectedEvents);
+		AssertResolvedEventsMatch(results, expected, forwards);
 	}
 
 	private async Task ValidateSubscription(string indexName, ResolvedEvent[] expectedEvents) {
 		var results = await Fixture.SubscribeUntil(indexName, expectedEvents.Length);
 
-		AssertResolvedEventsMatch(results, expectedEvents);
+		AssertResolvedEventsMatch(results, expectedEvents, true);
 	}
 
-	private static void AssertResolvedEventsMatch(List<ResolvedEvent> results, ResolvedEvent[] expectedRecords) {
+	private static void AssertResolvedEventsMatch(List<ResolvedEvent> results, ResolvedEvent[] expectedRecords, bool forwards) {
 		Assert.NotEmpty(results);
 		Assert.Equal(expectedRecords.Length, results.Count);
 
@@ -80,7 +89,11 @@ public class IndexingTests(IndexingFixture fixture, ITestOutputHelper output)
 
 				var previousItem = results[index - 1];
 
-				Assert.True(item.Event.LogPosition > previousItem.Event.LogPosition);
+				if (forwards) {
+					Assert.True(item.Event.LogPosition > previousItem.Event.LogPosition);
+				} else {
+					Assert.True(item.Event.LogPosition < previousItem.Event.LogPosition);
+				}
 			});
 
 		Assert.All(results, item => Assert.NotEqual(default, item.Event.TimeStamp));

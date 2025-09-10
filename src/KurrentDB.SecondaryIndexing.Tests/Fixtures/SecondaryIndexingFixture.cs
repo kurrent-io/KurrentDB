@@ -47,7 +47,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		OnTearDown = CleanUpDatabaseDirectory;
 	}
 
-	public async Task<List<ResolvedEvent>> ReadUntil(string indexName, int maxCount, TimeSpan? timeout = null, CancellationToken ct = default) {
+	public async Task<List<ResolvedEvent>> ReadUntil(string indexName, int maxCount, bool forwards, TimeSpan? timeout = null, CancellationToken ct = default) {
 		timeout ??= _defaultTimeout;
 		var endTime = DateTime.UtcNow.Add(timeout.Value);
 
@@ -59,7 +59,8 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 
 		do {
 			try {
-				events = await Publisher.ReadIndex(indexName, Position.Start, maxCount, cancellationToken: cts.Token).ToListAsync(cts.Token);
+				var from = forwards ? Position.Start : Position.End;
+				events = await Publisher.ReadIndex(indexName, from, maxCount, forwards: forwards, cancellationToken: cts.Token).ToListAsync(cts.Token);
 
 				if (events.Count != maxCount) {
 					await Task.Delay(25, cts.Token);
