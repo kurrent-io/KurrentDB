@@ -78,8 +78,7 @@ public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool db, IReadInd
 			}
 
 			if (inFlight.Length > 0) {
-				var last = range[^1].RowId + 1;
-				range.AddRange(inFlight.Select((record, i) => record with { RowId = last + i }));
+				range.AddRange(inFlight);
 			}
 
 			return range;
@@ -148,8 +147,7 @@ public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool db, IReadInd
 			}
 
 			if (inFlight.Length > 0) {
-				var last = range[^1].RowId + 1;
-				range.AddRange(inFlight.Select((record, i) => record with { RowId = last + i }));
+				range.AddRange(inFlight);
 			}
 
 			return range;

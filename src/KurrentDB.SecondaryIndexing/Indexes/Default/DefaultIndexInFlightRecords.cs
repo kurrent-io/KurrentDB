@@ -1,7 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using KurrentDB.Core.Data;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
@@ -54,7 +53,6 @@ internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions option
 		Func<InFlightRecord, bool>? query = null) {
 		query ??= True; // to avoid branching in the loop
 
-		long seq = 0;
 		bool first = true;
 
 		var currentVer = _version;
@@ -67,7 +65,7 @@ internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions option
 					continue;
 				}
 				remaining--;
-				yield return new(seq++, current.LogPosition, current.EventNumber);
+				yield return new(current.LogPosition, current.EventNumber);
 			}
 		}
 	}
@@ -86,7 +84,6 @@ internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions option
 		if (count > 0
 		    && TryRead(currentVer, 0, out var current)
 		    && current.LogPosition <= startPosition) {
-			long seq = long.MaxValue;
 			for (int i = count - 1, remaining = maxCount;
 			     i >= 0 && remaining > 0 && TryRead(currentVer, i, out current);
 			     i--) {
@@ -96,7 +93,7 @@ internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions option
 						continue;
 					}
 					remaining--;
-					yield return new(seq--, current.LogPosition, current.EventNumber);
+					yield return new(current.LogPosition, current.EventNumber);
 				}
 			}
 		}

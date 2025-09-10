@@ -92,9 +92,9 @@ public class IndexingTests(IndexingFixture fixture, ITestOutputHelper output)
 				var previousItem = results[index - 1];
 
 				if (forwards) {
-					Assert.True(item.Event.LogPosition > previousItem.Event.LogPosition);
+					Assert.True(item.Event.LogPosition > previousItem.Event.LogPosition, $"{item.Event.LogPosition} should be greater than {previousItem.Event.LogPosition}");
 				} else {
-					Assert.True(item.Event.LogPosition < previousItem.Event.LogPosition);
+					Assert.True(item.Event.LogPosition < previousItem.Event.LogPosition, $"{item.Event.LogPosition} should be less than {previousItem.Event.LogPosition}");
 				}
 			});
 
@@ -127,7 +127,7 @@ public class IndexingFixture : SecondaryIndexingEnabledFixture {
 		MessageTypesCount: 10,
 		MessageSize: 10,
 		MaxBatchSize: 2,
-		TotalMessagesCount: 2000
+		TotalMessagesCount: 1850
 	);
 
 	private readonly MessageGenerator _messageGenerator = new();

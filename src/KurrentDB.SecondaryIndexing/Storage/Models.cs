@@ -3,4 +3,4 @@
 
 namespace KurrentDB.SecondaryIndexing.Storage;
 
-public record struct IndexQueryRecord(long RowId, long LogPosition, long EventNumber);
+public record struct IndexQueryRecord(long LogPosition, long EventNumber);

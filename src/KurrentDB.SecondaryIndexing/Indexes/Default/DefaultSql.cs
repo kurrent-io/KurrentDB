@@ -17,9 +17,9 @@ internal static class DefaultSql {
 			=> new(statement) { args.StartPosition, args.Count };
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select rowid, log_position, event_number from idx_all where log_position>$1 and is_deleted=false order by rowid limit $2"u8;
+			"select log_position, event_number from idx_all where log_position>$1 and is_deleted=false order by rowid limit $2"u8;
 
-		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64(), row.ReadInt64());
+		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
 	}
 
 	/// <summary>
@@ -30,9 +30,9 @@ internal static class DefaultSql {
 			=> new(statement) { args.StartPosition, args.Count };
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select rowid, log_position, event_number from idx_all where log_position>=$1 and is_deleted=false order by rowid limit $2"u8;
+			"select log_position, event_number from idx_all where log_position>=$1 and is_deleted=false order by rowid limit $2"u8;
 
-		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64(), row.ReadInt64());
+		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
 	}
 
 	/// <summary>
@@ -43,9 +43,9 @@ internal static class DefaultSql {
 			=> new(statement) { args.StartPosition, args.Count };
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select rowid, log_position, event_number from idx_all where log_position<$1 and is_deleted=false order by rowid desc limit $2"u8;
+			"select log_position, event_number from idx_all where log_position<$1 and is_deleted=false order by rowid desc limit $2"u8;
 
-		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64(), row.ReadInt64());
+		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
 	}
 
 	/// <summary>
@@ -56,9 +56,9 @@ internal static class DefaultSql {
 			=> new(statement) { args.StartPosition, args.Count };
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select rowid, log_position, event_number from idx_all where log_position<=$1 and is_deleted=false order by rowid desc limit $2"u8;
+			"select log_position, event_number from idx_all where log_position<=$1 and is_deleted=false order by rowid desc limit $2"u8;
 
-		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64(), row.ReadInt64());
+		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
 	}
 
 	public record struct LastPositionResult(long PreparePosition, long? CommitPosition, long RowId);
