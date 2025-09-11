@@ -7,17 +7,17 @@ using KurrentDB.SecondaryIndexing.Storage;
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 internal static class DefaultSql {
-	public record struct ReadDefaultIndexQueryArgs(long StartPosition, int Count);
+	public record struct ReadDefaultIndexQueryArgs(long StartPosition, long EndPosition, int Count);
 
 	/// <summary>
 	/// Get index records for the default index with a log position greater than the start position
 	/// </summary>
 	public struct ReadDefaultIndexQueryExcl : IQuery<ReadDefaultIndexQueryArgs, IndexQueryRecord> {
 		public static BindingContext Bind(in ReadDefaultIndexQueryArgs args, PreparedStatement statement)
-			=> new(statement) { args.StartPosition, args.Count };
+			=> new(statement) { args.StartPosition, args.EndPosition, args.Count };
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select log_position, event_number from idx_all where log_position>$1 and is_deleted=false order by rowid limit $2"u8;
+			"select log_position, event_number from idx_all where log_position>$1 and log_position<$2 and is_deleted=false order by rowid limit $3"u8;
 
 		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
 	}
@@ -27,10 +27,10 @@ internal static class DefaultSql {
 	/// </summary>
 	public struct ReadDefaultIndexQueryIncl : IQuery<ReadDefaultIndexQueryArgs, IndexQueryRecord> {
 		public static BindingContext Bind(in ReadDefaultIndexQueryArgs args, PreparedStatement statement)
-			=> new(statement) { args.StartPosition, args.Count };
+			=> new(statement) { args.StartPosition, args.EndPosition, args.Count };
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select log_position, event_number from idx_all where log_position>=$1 and is_deleted=false order by rowid limit $2"u8;
+			"select log_position, event_number from idx_all where log_position>=$1 and log_position<$2 and is_deleted=false order by rowid limit $3"u8;
 
 		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
 	}

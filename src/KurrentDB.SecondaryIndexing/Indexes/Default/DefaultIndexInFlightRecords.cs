@@ -46,28 +46,42 @@ internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions option
 		return currentVer == _version;
 	}
 
-	public IEnumerable<IndexQueryRecord> GetInFlightRecordsForwards(
+	public (List<IndexQueryRecord>, bool) GetInFlightRecordsForwards(
 		long startPosition,
 		int maxCount,
 		bool excludeFirst,
 		Func<InFlightRecord, bool>? query = null) {
 		query ??= True; // to avoid branching in the loop
 
+		var isComplete = false;
 		bool first = true;
 
 		var currentVer = _version;
+		var result = new List<IndexQueryRecord>();
 		for (int i = 0, count = Volatile.Read(in _count), remaining = maxCount;
 		     i < count && remaining > 0 && TryRead(currentVer, i, out var current);
 		     i++) {
-			if (current.LogPosition >= startPosition && query(current)) {
-				if (first && excludeFirst && current.LogPosition == startPosition) {
-					first = false;
-					continue;
+			if (current.LogPosition >= startPosition) {
+				if (i == 0 && current.LogPosition == startPosition) {
+					isComplete = true;
 				}
-				remaining--;
-				yield return new(current.LogPosition, current.EventNumber);
+				if (query(current)) {
+					if (first && excludeFirst && current.LogPosition == startPosition) {
+						first = false;
+						continue;
+					}
+
+					remaining--;
+					result.Add(new(current.LogPosition, current.EventNumber));
+				}
+			} else {
+				if (i == 0) {
+					isComplete = true;
+				}
 			}
 		}
+
+		return (result, isComplete);
 	}
 
 	public IEnumerable<IndexQueryRecord> GetInFlightRecordsBackwards(
@@ -92,6 +106,7 @@ internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions option
 						first = false;
 						continue;
 					}
+
 					remaining--;
 					yield return new(current.LogPosition, current.EventNumber);
 				}

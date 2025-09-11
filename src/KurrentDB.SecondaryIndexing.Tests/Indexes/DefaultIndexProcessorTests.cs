@@ -1,13 +1,11 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Diagnostics.Metrics;
 using Dapper;
 using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Tests.Fakes;
-using KurrentDB.SecondaryIndexing.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Storage;
 using KurrentDB.SecondaryIndexing.Tests.Fakes;
@@ -117,7 +115,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 	}
 
 	private void AssertDefaultIndexQueryReturns(List<long> expected) {
-		var records = DuckDb.QueryToList<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexQueryExcl>(new(-1, int.MaxValue));
+		var records = DuckDb.QueryToList<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexQueryExcl>(new(-1, long.MaxValue, int.MaxValue));
 
 		Assert.Equal(expected, records.Select(x => x.LogPosition));
 	}
@@ -136,7 +134,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 	}
 
 	private void AssertCategoryIndexQueryReturns(string category, List<long> expected) {
-		var records = DuckDb.QueryToList<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryIncl>(new(category, 0, 32));
+		var records = DuckDb.QueryToList<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryIncl>(new(category, 0, long.MaxValue, 32));
 
 		Assert.Equal(expected, records.Select(x => x.LogPosition));
 	}
@@ -149,7 +147,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 	}
 
 	private void AssertReadEventTypeIndexQueryReturns(string eventType, List<long> expected) {
-		var records = DuckDb.QueryToList<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(new(eventType, 0, 32));
+		var records = DuckDb.QueryToList<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(new(eventType, 0, long.MaxValue, 32));
 
 		Assert.Equal(expected, records.Select(x => x.LogPosition));
 	}

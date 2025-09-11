@@ -17,9 +17,9 @@ public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool db, IReadInd
 
 	protected abstract string GetId(string indexName);
 
-	protected abstract IEnumerable<IndexQueryRecord> GetInflightForwards(string id, long startPosition, int maxCount, bool excludeFirst);
+	protected abstract (List<IndexQueryRecord> Records, bool IsFinal) GetInflightForwards(string id, long startPosition, int maxCount, bool excludeFirst);
 
-	protected abstract List<IndexQueryRecord> GetDbRecordsForwards(string id, long startPosition, int maxCount, bool excludeFirst);
+	protected abstract List<IndexQueryRecord> GetDbRecordsForwards(string id, long startPosition, long endPosition, int maxCount, bool excludeFirst);
 
 	protected abstract IEnumerable<IndexQueryRecord> GetInflightBackwards(string id, long startPosition, int maxCount, bool excludeFirst);
 
@@ -66,18 +66,18 @@ public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool db, IReadInd
 
 		IReadOnlyList<IndexQueryRecord> GetIndexRecordsForwards(long startPosition) {
 			var maxCount = msg.MaxCount;
-			var inFlight = GetInflightForwards(id, startPosition, maxCount, msg.ExcludeStart).ToArray();
-			if (inFlight.Length == maxCount) {
+			var (inFlight, isComplete) = GetInflightForwards(id, startPosition, maxCount, msg.ExcludeStart);
+			if (isComplete) {
 				return inFlight;
 			}
 
-			var count = inFlight.Length > 0 ? maxCount - inFlight.Length : maxCount;
-			var range = GetDbRecordsForwards(id, startPosition, count, msg.ExcludeStart);
+			var end = inFlight.Count > 0 ? inFlight[0].LogPosition : lastIndexedPosition + 1;
+			var range = GetDbRecordsForwards(id, startPosition, end, maxCount, msg.ExcludeStart);
 			if (range.Count == 0) {
 				return inFlight;
 			}
 
-			if (inFlight.Length > 0) {
+			if (inFlight.Count > 0) {
 				range.AddRange(inFlight);
 			}
 

@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.SecondaryIndexing.Tests.Fixtures;
 using KurrentDB.SecondaryIndexing.Tests.Generators;
 using Microsoft.Extensions.Logging;
@@ -24,24 +25,25 @@ public class IndexingFixture : SecondaryIndexingEnabledFixture {
 
 	public IndexingFixture() {
 		OnSetup = async () => {
-			_total = 0;
+			TotalMessagesCount = 0;
 			await foreach (var batch in _messageGenerator.GenerateBatches(_config)) {
 				var messages = batch.Messages.Select(m => m.ToEventData()).ToArray();
-				await AppendToStream(batch.StreamName, messages);
-				_total += messages.Length;
-				AppendedBatches.Add(batch);
+				var result = await AppendToStream(batch.StreamName, messages);
+				TotalMessagesCount += messages.Length;
+				AppendedBatches.Add((batch, result.Position));
 			}
 		};
 	}
 
-	public readonly List<TestMessageBatch> AppendedBatches = [];
-	private int _total;
+	public readonly List<(TestMessageBatch Batch, Position Position)> AppendedBatches = [];
 
 	public void LogDatasetInfo() {
-		Logger.LogInformation("Using {Batches} batches with total {Count} records", AppendedBatches.Count, _total);
+		Logger.LogInformation("Using {Batches} batches with total {Count} records", AppendedBatches.Count, TotalMessagesCount);
 	}
 
-	public string[] Categories => AppendedBatches.Select(b => b.CategoryName).Distinct().ToArray();
+	public string[] Categories => AppendedBatches.Select(b => b.Batch.CategoryName).Distinct().ToArray();
 
-	public string[] EventTypes => AppendedBatches.SelectMany(b => b.Messages.Select(m => m.EventType)).Distinct().ToArray();
+	public string[] EventTypes => AppendedBatches.SelectMany(b => b.Batch.Messages.Select(m => m.EventType)).Distinct().ToArray();
+
+	public int TotalMessagesCount { get; private set; }
 }

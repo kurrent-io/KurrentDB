@@ -3,6 +3,7 @@
 
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services;
+using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Tests;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
@@ -174,26 +175,26 @@ public readonly record struct TestMessageBatch(string CategoryName, string Strea
 }
 
 public static class TestMessageBatchExtensions {
-	public static ResolvedEvent[] ToDefaultIndexResolvedEvents(this List<TestMessageBatch> batches) {
+	public static ResolvedEvent[] ToDefaultIndexResolvedEvents(this List<(TestMessageBatch Batch, Position)> batches) {
 		var result = new List<ResolvedEvent>();
 
 		var currentIndex = 0;
 
 		foreach (var batch in batches) {
-			var resolvedEvents = batch.ToIndexResolvedEvents(SystemStreams.DefaultSecondaryIndex, currentIndex);
-			currentIndex += batch.Messages.Length;
+			var resolvedEvents = batch.Batch.ToIndexResolvedEvents(SystemStreams.DefaultSecondaryIndex, currentIndex);
+			currentIndex += batch.Batch.Messages.Length;
 			result.AddRange(resolvedEvents);
 		}
 
 		return result.ToArray();
 	}
 
-	public static ResolvedEvent[] ToCategoryIndexResolvedEvents(this List<TestMessageBatch> batches, string category) {
+	public static ResolvedEvent[] ToCategoryIndexResolvedEvents(this List<(TestMessageBatch Batch, Position)> batches, string category) {
 		var categoryStreamName = CategoryIndex.Name(category);
 		var result = new List<ResolvedEvent>();
 		var currentIndex = 0;
 
-		foreach (var batch in batches.Where(b => b.StreamName.StartsWith(category + "-"))) {
+		foreach (var batch in batches.Select(x => x.Batch).Where(b => b.StreamName.StartsWith(category + "-"))) {
 			var resolvedEvents = batch.ToIndexResolvedEvents(categoryStreamName, currentIndex);
 			currentIndex += batch.Messages.Length;
 			result.AddRange(resolvedEvents);
@@ -202,13 +203,13 @@ public static class TestMessageBatchExtensions {
 		return result.ToArray();
 	}
 
-	public static ResolvedEvent[] ToEventTypeIndexResolvedEvents(this List<TestMessageBatch> batches, string eventType) {
+	public static ResolvedEvent[] ToEventTypeIndexResolvedEvents(this List<(TestMessageBatch Batch, Position)> batches, string eventType) {
 		var eventTypeStreamName = EventTypeIndex.Name(eventType);
 		var result = new List<ResolvedEvent>();
 		var currentIndex = 0;
 
 		foreach (var batch in batches) {
-			var resolvedEvents = batch.ToIndexResolvedEvents(eventTypeStreamName, currentIndex, m => m.EventType == eventType);
+			var resolvedEvents = batch.Batch.ToIndexResolvedEvents(eventTypeStreamName, currentIndex, m => m.EventType == eventType);
 			currentIndex += resolvedEvents.Length;
 			result.AddRange(resolvedEvents);
 		}

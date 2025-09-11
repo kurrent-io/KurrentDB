@@ -32,6 +32,8 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 	private readonly TimeSpan _defaultTimeout = TimeSpan.FromMilliseconds(3000);
 	private string? _path;
 
+	public readonly int CommitSize = 500;
+
 	protected SecondaryIndexingFixture(bool isSecondaryIndexingPluginEnabled) {
 		if (!isSecondaryIndexingPluginEnabled) return;
 
@@ -39,7 +41,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 
 		Configuration = new() {
 			{ $"{PluginConfigPrefix}:Enabled", "true" },
-			{ $"{OptionsConfigPrefix}:{nameof(SecondaryIndexingPluginOptions.CommitBatchSize)}", "500" },
+			{ $"{OptionsConfigPrefix}:{nameof(SecondaryIndexingPluginOptions.CommitBatchSize)}", CommitSize.ToString() },
 			{ DatabasePathConfig, _path },
 			{ $"{ProjectionsConfigPrefix}:RunProjections", "None" }
 		};
@@ -47,7 +49,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		OnTearDown = CleanUpDatabaseDirectory;
 	}
 
-	public async Task<List<ResolvedEvent>> ReadUntil(string indexName, int maxCount, bool forwards, TimeSpan? timeout = null, CancellationToken ct = default) {
+	public async Task<List<ResolvedEvent>> ReadUntil(string indexName, int maxCount, bool forwards, Position? from = null, TimeSpan? timeout = null, CancellationToken ct = default) {
 		timeout ??= _defaultTimeout;
 		var endTime = DateTime.UtcNow.Add(timeout.Value);
 
@@ -59,8 +61,8 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 
 		do {
 			try {
-				var from = forwards ? Position.Start : Position.End;
-				events = await Publisher.ReadIndex(indexName, from, maxCount, forwards: forwards, cancellationToken: cts.Token).ToListAsync(cts.Token);
+				var start = from ?? (forwards ? Position.Start : Position.End);
+				events = await Publisher.ReadIndex(indexName, start, maxCount, forwards: forwards, cancellationToken: cts.Token).ToListAsync(cts.Token);
 
 				if (events.Count != maxCount) {
 					await Task.Delay(25, cts.Token);
