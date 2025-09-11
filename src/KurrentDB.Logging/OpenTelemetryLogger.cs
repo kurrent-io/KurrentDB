@@ -14,12 +14,12 @@ namespace KurrentDB.Logging;
 public static class OpenTelemetryLogger {
 	const string KurrentConfigurationPrefix = "KurrentDB";
 
-	public static void AddOpenTelemetryLogger(this LoggerConfiguration config, IConfiguration configuration, string componentName) {
+	public static LoggerConfiguration AddOpenTelemetryLogger(this LoggerConfiguration config, IConfiguration configuration, string componentName) {
 		var logExporterConfig = configuration.GetSection($"{KurrentConfigurationPrefix}:OpenTelemetry:Logging").Get<LogRecordExportProcessorOptions>()!;
 		var otlpExporterConfig = configuration.GetSection($"{KurrentConfigurationPrefix}:OpenTelemetry:Otlp").Get<OtlpExporterOptions>()!;
 		var metricsConfig = MetricsConfiguration.Get(configuration);
 
-		config
+		return config
 			.WriteTo.OpenTelemetry(options => {
 				options.ResourceAttributes = new Dictionary<string, object> {
 					["service.name"] = metricsConfig.ServiceName,

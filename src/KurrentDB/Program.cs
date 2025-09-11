@@ -55,7 +55,7 @@ try {
 	var loggerConfig = KurrentLoggerConfiguration.CreateLoggerConfiguration(options.Logging, options.GetComponentName());
 
 	if (logExportEnabled) {
-		loggerConfig.AddOpenTelemetryLogger(configuration, options.GetComponentName());
+		loggerConfig = loggerConfig.AddOpenTelemetryLogger(configuration, options.GetComponentName());
 	}
 	Log.Logger = loggerConfig.CreateLogger();
 
