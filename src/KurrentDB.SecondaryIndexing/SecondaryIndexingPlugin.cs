@@ -65,11 +65,7 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {
 		var enabledOption = configuration.GetValue<bool?>($"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Enabled");
-		var devMode = configuration.GetValue($"{KurrentConfigurationKeys.Prefix}:Dev", defaultValue: false);
-
-		// Enabled by default only in the dev mode
-		// TODO: Change it to be enabled by default when work on secondary indexing is finished
-		bool enabled = enabledOption ?? devMode;
+		bool enabled = enabledOption ?? true;
 
 		return enabled
 			? (true, "")

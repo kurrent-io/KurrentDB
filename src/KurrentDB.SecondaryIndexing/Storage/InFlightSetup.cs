@@ -9,6 +9,7 @@ using KurrentDB.SecondaryIndexing.Indexes.Default;
 
 namespace KurrentDB.SecondaryIndexing.Storage;
 
+[UsedImplicitly]
 internal class InFlightSetup(DefaultIndexInFlightRecords inFlightRecords) : IDuckDBSetup {
 	[Experimental("DuckDBNET001")]
 	public void Execute(DuckDBConnection connection) {
