@@ -216,7 +216,7 @@ The replica node needs to have the cluster gossip DNS or seed configured. For th
 
 ### Node priority
 
-You can control which clones the cluster promotes with the `NodePriority` setting. The default value is `0`, and the cluster is more likely to promote nodes with higher values.
+You can influence which clones the cluster promotes with the `NodePriority` setting. The default value is `0`, and the cluster is more likely to promote nodes with higher values.
 
 | Format               | Syntax                    |
 |:---------------------|:--------------------------|
