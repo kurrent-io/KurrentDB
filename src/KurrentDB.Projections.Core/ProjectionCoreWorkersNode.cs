@@ -23,20 +23,22 @@ namespace KurrentDB.Projections.Core;
 public static class ProjectionCoreWorkersNode {
 	public static Dictionary<Guid, CoreWorker> CreateCoreWorkers(
 		StandardComponents standardComponents,
-		ProjectionsStandardComponents projectionsStandardComponents) {
+		ProjectionsStandardComponents projectionsStandardComponents , TimeSpan _slowMessageThresholdMs) {
 		var coreWorkers = new Dictionary<Guid, CoreWorker>();
 		while (coreWorkers.Count < projectionsStandardComponents.ProjectionWorkerThreadCount) {
-			var coreInputBus = new InMemoryBus("bus");
+			var coreInputBus = new InMemoryBus("bus" , true , _slowMessageThresholdMs);
 			var coreInputQueue = new QueuedHandlerThreadPool(coreInputBus,
 				"Projection Core #" + coreWorkers.Count,
 				standardComponents.QueueStatsManager,
-				standardComponents.QueueTrackers,
+				standardComponents.QueueTrackers, true,
+				_slowMessageThresholdMs,
 				groupName: "Projection Core");
-			var coreOutputBus = new InMemoryBus("output bus");
+			var coreOutputBus = new InMemoryBus("output bus" , true , _slowMessageThresholdMs);
 			var coreOutputQueue = new QueuedHandlerThreadPool(coreOutputBus,
 				"Projection Core #" + coreWorkers.Count + " output",
 				standardComponents.QueueStatsManager,
-				standardComponents.QueueTrackers,
+				standardComponents.QueueTrackers, true,
+				_slowMessageThresholdMs,
 				groupName: "Projection Core");
 			var workerId = Guid.NewGuid();
 			var projectionNode = new ProjectionWorkerNode(
