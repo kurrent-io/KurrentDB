@@ -4,11 +4,14 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Configuration;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Exceptions;
+using Serilog.Extensions.Logging;
+using ILogger = Serilog.ILogger;
 
 namespace Kurrent.Surge.Testing.TUnit.Logging;
 
@@ -40,27 +43,7 @@ public static class Logging {
             .CreateLogger();
     }
 
-    // public static (ILoggerFactory LoggerFactory, ILogger Logger) CaptureTestLogs(Guid testUid, Func<LogEvent, bool> isMatch) {
-	   //  ILogger logger = DefaultLoggerConfig
-		  //   .Enrich.WithProperty("TestUid", testUid)
-		  //   .Enrich.WithProperty("ShortTestUid", testUid.ToString()[^12..])
-		  //   .WriteTo.Console()
-		  //   .CreateLogger();
-    //
-	   //  var testUidProp      = new LogEventProperty("TestUid", new ScalarValue(testUid));
-	   //  var shortTestUidProp = new LogEventProperty("ShortTestUid", new ScalarValue(testUid.ToString()[^12..]));
-    //
-	   //  _ = OnNext
-		  //   .Where(isMatch)
-		  //   .Subscribe(logEvent => {
-			 //    logEvent.AddOrUpdateProperty(testUidProp);
-			 //    logEvent.AddOrUpdateProperty(shortTestUidProp);
-		  //   });
-    //
-	   //  return (new SerilogLoggerFactory(logger, true), null!);
-    // }
-
-    public static ILogger CaptureTestLogs(Guid testUid, Func<LogEvent, bool> isMatch) {
+    public static ILoggerFactory CaptureTestLogs(Guid testUid, Func<LogEvent, bool> isMatch) {
 	    ILogger logger = DefaultLoggerConfig
 		    .ReadFrom.Configuration(Configuration)
 		    .Enrich.WithProperty("TestUid", testUid)
@@ -78,7 +61,7 @@ public static class Logging {
 			    logEvent.AddOrUpdateProperty(shortTestUidProp);
 		    });
 
-	    return logger;
+	    return new SerilogLoggerFactory(logger);
     }
 
     public static ValueTask CloseAndFlushAsync() => Log.CloseAndFlushAsync();

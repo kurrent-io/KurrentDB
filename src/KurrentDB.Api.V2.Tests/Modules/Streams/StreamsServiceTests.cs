@@ -6,7 +6,7 @@ using static KurrentDB.Protocol.V2.Streams.StreamsService;
 
 namespace KurrentDB.Api.Tests.Streams;
 
-public class StreamsServiceTests : ApiTestFixture {
+public class StreamsServiceTests : ClusterNodeTestFixture {
 	[Test]
 	public async Task appends_records_to_single_stream() {
 		// Arrange
@@ -48,7 +48,7 @@ public class StreamsServiceTests : ApiTestFixture {
 	}
 
 	[Test]
-	public async Task throws_when_user_does_not_have_premissions() {
+	public async Task throws_when_user_does_not_have_permissions() {
 
 	}
 

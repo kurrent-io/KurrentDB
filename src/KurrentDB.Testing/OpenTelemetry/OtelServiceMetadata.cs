@@ -18,7 +18,7 @@ public record OtelServiceMetadata {
     OtelServiceMetadata() => ServiceName = string.Empty;
 
     public OtelServiceMetadata(string serviceName) {
-	    Debug.Assert(!string.IsNullOrWhiteSpace(serviceName), "Service name should not be null or whitespace.");
+	    Debug.Assert(!string.IsNullOrWhiteSpace(serviceName), "Service name should not be empty.");
 	    ServiceName = serviceName;
     }
 

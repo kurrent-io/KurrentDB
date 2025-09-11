@@ -38,7 +38,7 @@ public class TestingToolkitAutoWireUp {
 
         new OtelServiceMetadata("TestingToolkit") {
             ServiceVersion   = "1.0.0",
-            ServiceNamespace = "Kurrent.Client.Testing",
+            ServiceNamespace = "KurrentDB.Testing",
         }.UpdateEnvironmentVariables();
 
         ApplicationContext.Initialize();
@@ -56,13 +56,12 @@ public class TestingToolkitAutoWireUp {
 
     public static Task TestSetUp(TestContext context, CancellationToken ct = default) {
 	    var testUid = Guid.NewGuid();
-        context.SetTestUid(testUid);
 
-        var logger = Logging
-	        .CaptureTestLogs(testUid, _ => TestContext.Current.TestUid(defaultValue: Guid.Empty).Equals(testUid));
+	    var loggerFactory = Logging
+		    .CaptureTestLogs(testUid, _ => TestContext.Current.TestUid(defaultValue: Guid.Empty).Equals(testUid));
 
-        context.SetLogger(logger);
-
+	    context.SetTestUid(testUid);
+	    context.SetLoggerFactory(loggerFactory);
         context.SetOtelServiceMetadata(
             new(context.TestDetails.ClassType.Name) {
                 ServiceInstanceId = testUid.ToString(),
@@ -76,13 +75,16 @@ public class TestingToolkitAutoWireUp {
     }
 
     public static Task TestCleanUp(TestContext context, CancellationToken ct = default) {
-        Log.Verbose(
+	    if (context.TryGetLoggerFactory(out var loggerFactory))
+		    loggerFactory.Dispose();
+
+	    Log.Verbose(
             "#### Test {TestName} finished in {Elapsed}",
             GetTestMethodName(context.TestDetails.TestId),
             ((context.TestEnd ?? TimeProvider.System.GetUtcNow()) - context.TestStart).Humanize(precision: 2)
         );
 
-		return Task.CompletedTask;
+	    return Task.CompletedTask;
     }
 
     static string GetTestMethodName(string fullyQualifiedTestName) {

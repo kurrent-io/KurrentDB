@@ -37,7 +37,7 @@ public static class EventFilter {
 			=> new EventTypeRegexStrategy(isAllStream, regex);
 	}
 
-	public static IEventFilter Get(bool isAllStream, Filter filter) {
+	internal static IEventFilter Get(bool isAllStream, Filter filter) {
 		if (filter == null || filter.Data.Count == 0) {
 			return isAllStream ? new DefaultAllFilterStrategy() : new DefaultStreamFilterStrategy();
 		}

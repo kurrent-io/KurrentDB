@@ -10,6 +10,7 @@
   <Folder Name="/Api/">
     <Project Path="src\KurrentDB.Api.V2.Tests\KurrentDB.Api.V2.Tests.csproj" Type="Classic C#" />
     <Project Path="src\KurrentDB.Api.V2\KurrentDB.Api.V2.csproj" Type="Classic C#" />
+    <Project Path="src\KurrentDB.Testing.ClusterVNode\KurrentDB.Testing.ClusterVNode.csproj" Type="Classic C#" />
     <Project Path="src\KurrentDB.Testing\KurrentDB.Testing.csproj" Type="Classic C#" />
   </Folder>
   <Folder Name="/Plugins/">

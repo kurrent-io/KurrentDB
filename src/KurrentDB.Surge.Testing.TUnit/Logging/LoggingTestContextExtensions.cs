@@ -2,31 +2,34 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics.CodeAnalysis;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace Kurrent.Surge.Testing.TUnit.Logging;
 
 public static class LoggingTestContextExtensions {
-	const string LoggerKey = "$ToolkitLogger";
+	const string LoggerFactoryKey = "$ToolkitLoggerFactory";
 
-	public static void SetLogger(this TestContext context, ILogger logger) => context.ObjectBag[LoggerKey] = logger;
+	public static void SetLoggerFactory(this TestContext context, ILoggerFactory loggerFactory) {
+		Ensure.NotNull(loggerFactory);
+		context.ObjectBag[LoggerFactoryKey] = loggerFactory;
+	}
 
-	public static bool TryGetLogger(this TestContext? context, [MaybeNullWhen(false)] out ILogger logger) {
+	public static bool TryGetLoggerFactory(this TestContext? context, [MaybeNullWhen(false)] out ILoggerFactory loggerFactory) {
 		if (context is not null
-		 && context.ObjectBag.TryGetValue(LoggerKey, out var value)
-		 && value is ILogger serilogLogger) {
-			logger = serilogLogger;
+		 && context.ObjectBag.TryGetValue(LoggerFactoryKey, out var value)
+		 && value is ILoggerFactory factory) {
+			loggerFactory = factory;
 			return true;
 		}
 
-		logger = null!;
+		loggerFactory = null!;
 		return false;
 	}
 
-	public static ILogger Logger(this TestContext? context) =>
-		context is not null
-	 && context.ObjectBag.TryGetValue(LoggerKey, out var value)
-	 && value is ILogger logger
-			? logger
-			: throw new InvalidOperationException("Testing toolkit logger not found!");
+	public static ILoggerFactory LoggerFactory(this TestContext? context)
+		=> context is not null
+		&& context.ObjectBag.TryGetValue(LoggerFactoryKey, out var value)
+		&& value is ILoggerFactory loggerFactory
+			? loggerFactory
+			: throw new InvalidOperationException("Testing toolkit logger factory not found!");
 }

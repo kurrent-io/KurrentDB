@@ -17,34 +17,34 @@ enum CommonError {
   // an internal server error (INTERNAL).
   UNSPECIFIED = 0;
 
-  ACCESS_DENIED = 1 [(kurrent.rpc.error) = {
-    status_code:  PERMISSION_DENIED,
+  COMMON_ERROR_ACCESS_DENIED = 1 [(kurrent.rpc.error) = {
+    status_code: PERMISSION_DENIED,
     has_details: true
   }];
 
-  INVALID_REQUEST = 2 [(kurrent.rpc.error) = {
-    status_code:  INVALID_ARGUMENT,
+  COMMON_ERROR_INVALID_REQUEST = 2 [(kurrent.rpc.error) = {
+    status_code: INVALID_ARGUMENT,
     has_details: true
   }];
 
-  NOT_LEADER_NODE = 5 [(kurrent.rpc.error) = {
-    status_code:  FAILED_PRECONDITION,
+  COMMON_ERROR_NOT_LEADER_NODE = 5 [(kurrent.rpc.error) = {
+    status_code: FAILED_PRECONDITION,
     has_details: true
   }];
 
-  OPERATION_TIMEOUT = 6 [(kurrent.rpc.error) = {
+  COMMON_ERROR_OPERATION_TIMEOUT = 6 [(kurrent.rpc.error) = {
     status_code: DEADLINE_EXCEEDED
   }];
 
-  SERVER_NOT_READY = 7 [(kurrent.rpc.error) = {
+  COMMON_ERROR_SERVER_NOT_READY = 7 [(kurrent.rpc.error) = {
     status_code: UNAVAILABLE
   }];
 
-  SERVER_OVERLOADED = 8 [(kurrent.rpc.error) = {
+  COMMON_ERROR_SERVER_OVERLOADED = 8 [(kurrent.rpc.error) = {
     status_code: UNAVAILABLE
   }];
 
-  SERVER_MALFUNCTION = 9 [(kurrent.rpc.error) = {
+  COMMON_ERROR_SERVER_MALFUNCTION = 9 [(kurrent.rpc.error) = {
     status_code: INTERNAL
   }];
 

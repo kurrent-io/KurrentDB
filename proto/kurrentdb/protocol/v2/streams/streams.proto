@@ -11,11 +11,11 @@ option csharp_namespace = "KurrentDB.Protocol.V2.Streams";
 import "google/protobuf/struct.proto";
 
 service StreamsService {
-  //  // Executes an atomic operation to append records to multiple streams.
-  //  // This transactional method ensures that all appends either succeed
-  //  // completely, or are entirely rolled back, thereby maintaining strict
-  //  // data consistency across all involved streams.
-  //  rpc Append(AppendRequest) returns (AppendResponse);
+  // Executes an atomic operation to append records to multiple streams.
+  // This transactional method ensures that all appends either succeed
+  // completely, or are entirely rolled back, thereby maintaining strict
+  // data consistency across all involved streams.
+  rpc Append(AppendRequest) returns (AppendResponse);
 
   // Streaming version of Append that allows clients to send multiple
   // append requests continuously. Once completed, all records are
@@ -25,12 +25,6 @@ service StreamsService {
   rpc AppendSession(stream AppendRequest) returns (AppendSessionResponse);
 }
 
-message AppendSessionResponse {
-  repeated AppendResponse output = 1;
-
-  // The position of the last appended record in the transaction.
-  int64 position = 2;
-}
 
 // Represents the input for appending records to a specific stream.
 message AppendRequest {
@@ -52,6 +46,13 @@ message AppendResponse {
   string stream = 1;
   // The expected revision of the stream after the append operation.
   int64 stream_revision = 2;
+}
+
+message AppendSessionResponse {
+  repeated AppendResponse output = 1;
+
+  // The position of the last appended record in the transaction.
+  int64 position = 2;
 }
 
 // Represents the data format of the schema.

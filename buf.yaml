@@ -1,0 +1,20 @@
+# For details on buf.yaml configuration, visit https://buf.build/docs/configuration/v2/buf-yaml
+version: v2
+modules:
+  - path: proto/kurrentdb/protocol/v2
+
+lint:
+  use:
+    - STANDARD
+    # Documentation requirements for better API clarity
+    - COMMENT_FIELD
+    - COMMENT_MESSAGE
+    - COMMENT_ENUM
+    - COMMENT_SERVICE
+    - COMMENT_RPC
+    # C# consistency for your .NET codebase
+    - PACKAGE_SAME_CSHARP_NAMESPACE
+
+breaking:
+  use:
+    - FILE

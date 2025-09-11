@@ -4,7 +4,6 @@
 using System.ComponentModel;
 using System.Net;
 using DotNext.Collections.Generic;
-using KurrentDB.Testing;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Certificates;
@@ -19,7 +18,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
 
-namespace KurrentDB.Api.Tests;
+namespace KurrentDB.Testing.ClusterVNode;
 
 public class ClusterVNodeApp : IAsyncDisposable {
     static readonly Dictionary<string, string?> DefaultSettings = new() {
@@ -34,7 +33,6 @@ public class ClusterVNodeApp : IAsyncDisposable {
     };
 
     public WebApplication? Web { get; private set; }
-
 
     public async Task<(ClusterVNodeOptions Options, IServiceProvider Services)> Start(
 	    TimeSpan? readinessTimeout = null,
@@ -100,25 +98,25 @@ public class ClusterVNodeApp : IAsyncDisposable {
 			    Ready.TrySetResult();
 	    }
 
-	    async Task WaitUntilReadyAsync(ClusterVNode node, TimeSpan? timeout = null) {
+	    async Task WaitUntilReadyAsync(Core.ClusterVNode node, TimeSpan? timeout = null) {
 		    node.MainBus.Subscribe(this);
 
 		    using var cancellator = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(30)).With(x => {
 			    x.Token.Register(() => {
-				    Ready.TrySetException(new Exception("Node not ready in time."));
+				    Ready.TrySetException(new Exception("ClusterVNode not ready in time."));
 				    node.MainBus.Unsubscribe(this);
 			    });
 		    });
 
 		    await Ready.Task.ContinueWith(t => {
 			    if (!t.IsCompletedSuccessfully) return;
-			    Log.Verbose("Node is ready.");
+			    Log.Verbose("ClusterVNode is ready.");
 			    node.MainBus.Unsubscribe(this);
 			    Log.Verbose("Unsubscribed from the bus.");
 		    }, cancellator.Token);
 	    }
 
-	    public static Task WaitUntilReady(ClusterVNode node, TimeSpan? timeout = null) =>
+	    public static Task WaitUntilReady(Core.ClusterVNode node, TimeSpan? timeout = null) =>
 		    new NodeReadinessProbe().WaitUntilReadyAsync(node, timeout);
     }
 }

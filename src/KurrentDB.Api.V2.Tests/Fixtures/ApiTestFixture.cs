@@ -23,7 +23,7 @@ using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KurrentDB.Api.Tests.Fixtures;
 
-public class ApiTestFixture : ITestStartEventReceiver, ITestEndEventReceiver, ITestRetryEventReceiver {
+public class ClusterNodeTestFixture : ITestStartEventReceiver, ITestEndEventReceiver, ITestRetryEventReceiver {
 	static ClusterVNodeApp ClusterVNodeApp { get; set; } = null!;
 
 	protected static ClusterVNodeOptions NodeOptions  { get; private set; } = null!;
@@ -112,7 +112,6 @@ public class ApiTestFixture : ITestStartEventReceiver, ITestEndEventReceiver, IT
 	        $"http://localhost:{ServerUrl.Port}",
 	        new GrpcChannelOptions { LoggerFactory = LoggerFactory }
         );
-
     }
 
     public async ValueTask OnTestEnd(TestContext testContext)  {

@@ -15,60 +15,60 @@ enum StreamsError {
   // An error code MUST always be set to a non-zero value.
   // If an error code is not explicitly set, it MUST be treated as
   // an internal server error (INTERNAL).
-  UNSPECIFIED = 0;
+  STREAMS_ERROR_UNSPECIFIED = 0;
 
   // The stream was not found.
   // This is recoverable by the client by creating the stream first.
-  STREAM_NOT_FOUND = 1 [(kurrent.rpc.error) = {
+  STREAMS_ERROR_STREAM_NOT_FOUND = 1 [(kurrent.rpc.error) = {
     status_code: NOT_FOUND,
     has_details: true,
   }];
 
   // The stream already exists.
   // This is recoverable by the client by using the existing stream.
-  STREAM_ALREADY_EXISTS = 2 [(kurrent.rpc.error) = {
+  STREAMS_ERROR_STREAM_ALREADY_EXISTS = 2 [(kurrent.rpc.error) = {
     status_code: ALREADY_EXISTS,
     has_details: true
   }];
 
   // The stream has been soft deleted.
   // It will not be visible in the stream list, until it is restored by appending to it again.
-  STREAM_DELETED = 3 [(kurrent.rpc.error) = {
+  STREAMS_ERROR_STREAM_DELETED = 3 [(kurrent.rpc.error) = {
     status_code: FAILED_PRECONDITION,
     has_details: true
   }];
 
   // The stream has been tombstoned.
   // It has been permanently removed from the system and cannot be restored.
-  STREAM_TOMBSTONED = 4 [(kurrent.rpc.error) = {
+  STREAMS_ERROR_STREAM_TOMBSTONED = 4 [(kurrent.rpc.error) = {
     status_code: FAILED_PRECONDITION,
     has_details: true
   }];
 
   // The expected revision of the stream does not match the actual revision.
   // This is recoverable by the client by fetching the current revision and retrying.
-  STREAM_REVISION_CONFLICT = 5 [(kurrent.rpc.error) = {
+  STREAMS_ERROR_STREAM_REVISION_CONFLICT = 5 [(kurrent.rpc.error) = {
     status_code: FAILED_PRECONDITION,
     has_details: true
   }];
 
   // The size of a record being appended exceeds the maximum allowed size.
   // It is recoverable by the client by sending a smaller record.
-  APPEND_RECORD_SIZE_EXCEEDED = 6 [(kurrent.rpc.error) = {
+  STREAMS_ERROR_APPEND_RECORD_SIZE_EXCEEDED = 6 [(kurrent.rpc.error) = {
     status_code: INVALID_ARGUMENT,
     has_details: true
   }];
 
   // When the transaction exceeds the maximum size allowed (max chunk size).
   // It is recoverable by the client by sending a smaller transaction.
-  APPEND_TRANSACTION_SIZE_EXCEEDED = 7 [(kurrent.rpc.error) = {
+  STREAMS_ERROR_APPEND_TRANSACTION_SIZE_EXCEEDED = 7 [(kurrent.rpc.error) = {
     status_code: ABORTED,
     has_details: true
   }];
 
   // The stream is already in an append session.
   // Appending to the same stream multiple times is currently not supported.
-  STREAM_ALREADY_IN_APPEND_SESSION = 8 [(kurrent.rpc.error) = {
+  STREAMS_ERROR_STREAM_ALREADY_IN_APPEND_SESSION = 8 [(kurrent.rpc.error) = {
     status_code: ABORTED,
     has_details: true
   }];
