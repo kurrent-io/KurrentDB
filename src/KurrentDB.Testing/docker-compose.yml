@@ -1,0 +1,22 @@
+services:
+  seq:
+    image: datalust/seq:latest
+    container_name: seq
+    restart: unless-stopped
+    environment:
+      - ACCEPT_EULA=Y
+      - SEQ_FIRSTRUN_NOAUTHENTICATION=True
+    volumes:
+      - seq-data:/data
+    ports:
+      - "5341:80"
+    networks:
+      - kurrentdb-net
+
+volumes:
+  seq-data:
+    name: seq-data
+
+networks:
+  kurrentdb-net:
+    name: kurrentdb-net

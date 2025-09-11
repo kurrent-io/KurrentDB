@@ -72,6 +72,9 @@ public class SchemaRegistryServerAutoWireUp {
 		readonly ILoggerFactory _defaultLoggerFactory = new LoggerFactory();
 
 		public ILogger CreateLogger(string categoryName) {
+
+			TestContext.Current.TryGetLogger(out var logger);
+
 			return TestContext.Current is not null
 				? TestContext.Current.LoggerFactory().CreateLogger(categoryName)
 				: _defaultLoggerFactory.CreateLogger(categoryName);

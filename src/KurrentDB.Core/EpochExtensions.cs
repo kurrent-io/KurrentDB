@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Diagnostics;
 
 namespace KurrentDB.Core;
 
@@ -11,4 +12,9 @@ internal static class EpochExtensions {
 
 	public static long ToTicksSinceEpoch(this DateTime value) =>
 		(value - DateTime.UnixEpoch).Ticks;
+
+	public static long ToUnixTimeMilliseconds(this DateTime value) {
+		Debug.Assert(value.Kind == DateTimeKind.Utc, "The Kind must be DateTimeKind.Utc");
+		return (long)(value - DateTime.UnixEpoch).TotalMilliseconds;
+	}
 }

@@ -19,7 +19,6 @@ using KurrentDB.Core.Messages;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Grpc;
-using KurrentDB.Core.Services.Transport.Grpc.V2;
 using KurrentDB.Core.Services.Transport.Http;
 using KurrentDB.Core.TransactionLog.Chunks;
 using Microsoft.AspNetCore.Authentication;
@@ -171,7 +170,7 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 		app.MapGrpcService<ClientGossip>();
 		app.MapGrpcService<Monitoring>();
 		app.MapGrpcService<ServerFeatures>();
-		app.MapGrpcService<MultiStreamAppendService>();
+		// app.MapGrpcService<MultiStreamAppendService>();
 
 		// enable redaction service on unix sockets only
 		app.MapGrpcService<Redaction>().AddEndpointFilter(async (c, next) => {
@@ -256,13 +255,13 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 			.AddSingleton(new ClientGossip(_mainQueue, _authorizationProvider, _trackers.GossipTrackers.ProcessingRequestFromGrpcClient))
 			.AddSingleton(new Monitoring(_monitoringQueue))
 			.AddSingleton(new Redaction(_mainQueue, _authorizationProvider))
-			.AddSingleton(new MultiStreamAppendService(
-				publisher: _mainQueue,
-				authorizationProvider: _authorizationProvider,
-				appendTracker: _trackers.GrpcTrackers[MetricsConfiguration.GrpcMethod.StreamAppend],
-				maxAppendSize: Ensure.Positive(_options.Application.MaxAppendSize),
-				maxAppendEventSize: Ensure.Positive(_options.Application.MaxAppendEventSize),
-				chunkSize: _options.Database.ChunkSize))
+			// .AddSingleton(new MultiStreamAppendService(
+			// 	publisher: _mainQueue,
+			// 	authorizationProvider: _authorizationProvider,
+			// 	appendTracker: _trackers.GrpcTrackers[MetricsConfiguration.GrpcMethod.StreamAppend],
+			// 	maxAppendSize: Ensure.Positive(_options.Application.MaxAppendSize),
+			// 	maxAppendEventSize: Ensure.Positive(_options.Application.MaxAppendEventSize),
+			// 	chunkSize: _options.Database.ChunkSize))
 			.AddSingleton<ServerFeatures>();
 
 		// OpenTelemetry

@@ -1,0 +1,47 @@
+// ******************************************************************************************
+// This protocol is UNSTABLE in the sense of being subject to change.
+// ******************************************************************************************
+
+syntax = "proto3";
+
+package kurrentdb.protocol.v2.registry.errors;
+
+option csharp_namespace = "KurrentDB.Protocol.V2.Registry.Errors";
+
+import "rpc.proto";
+
+enum RegistryError {
+  // Default value. This value is not used.
+  // An error code MUST always be set to a non-zero value.
+  // If an error code is not explicitly set, it MUST be treated as
+  // an internal server error (INTERNAL).
+  UNSPECIFIED = 0;
+
+  SCHEMA_NOT_FOUND = 1 [(kurrent.rpc.error) = {
+    status_code: NOT_FOUND,
+    has_details: true,
+  }];
+
+  SCHEMA_ALREADY_EXISTS = 2 [(kurrent.rpc.error) = {
+    status_code: ALREADY_EXISTS,
+    has_details: true
+  }];
+
+  SCHEMA_DELETED = 3 [(kurrent.rpc.error) = {
+    status_code: FAILED_PRECONDITION,
+    has_details: true
+  }];
+
+}
+
+message SchemaNotFoundErrorDetails {
+  string schema = 1;
+}
+
+message SchemaAlreadyExistsErrorDetails {
+  string schema = 1;
+}
+
+message SchemaDeletedErrorDetails {
+  string schema = 1;
+}

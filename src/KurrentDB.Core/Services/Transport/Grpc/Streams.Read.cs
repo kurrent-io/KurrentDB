@@ -257,7 +257,7 @@ internal partial class Streams<TStreamId> {
 		};
 }
 
-public static class ResponseConverter {
+static class ResponseConverter {
 	public static bool TryConvertReadResponse(ReadResponse readResponse, ReadReq.Types.Options.Types.UUIDOption uuidOption, out ReadResp readResp) {
 		readResp = readResponse switch {
 			ReadResponse.EventReceived eventReceived => new ReadResp {

@@ -2,35 +2,31 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics.CodeAnalysis;
-using Kurrent.Surge;
-using Microsoft.Extensions.Logging;
+using Serilog;
 
 namespace Kurrent.Surge.Testing.TUnit.Logging;
 
 public static class LoggingTestContextExtensions {
-    const string LoggerFactoryKey = "$ToolkitLoggerFactory";
+	const string LoggerKey = "$ToolkitLogger";
 
-    public static void SetLoggerFactory(this TestContext context, ILoggerFactory loggerFactory) {
-        Ensure.NotNull(loggerFactory);
-        context.ObjectBag[LoggerFactoryKey] = loggerFactory;
-    }
+	public static void SetLogger(this TestContext context, ILogger logger) => context.ObjectBag[LoggerKey] = logger;
 
-    public static bool TryGetLoggerFactory(this TestContext? context, [MaybeNullWhen(false)] out IPartitionedLoggerFactory loggerFactory) {
-        if (context is not null
-         && context.ObjectBag.TryGetValue(LoggerFactoryKey, out var value)
-         && value is IPartitionedLoggerFactory factory) {
-            loggerFactory = factory;
-            return true;
-        }
+	public static bool TryGetLogger(this TestContext? context, [MaybeNullWhen(false)] out ILogger logger) {
+		if (context is not null
+		 && context.ObjectBag.TryGetValue(LoggerKey, out var value)
+		 && value is ILogger serilogLogger) {
+			logger = serilogLogger;
+			return true;
+		}
 
-        loggerFactory = null!;
-        return false;
-    }
+		logger = null!;
+		return false;
+	}
 
-    public static IPartitionedLoggerFactory LoggerFactory(this TestContext? context)
-        => context is not null
-        && context.ObjectBag.TryGetValue(LoggerFactoryKey, out var value)
-        && value is IPartitionedLoggerFactory loggerFactory
-            ? loggerFactory
-            : throw new InvalidOperationException("Testing toolkit logger factory not found!");
+	public static ILogger Logger(this TestContext? context) =>
+		context is not null
+	 && context.ObjectBag.TryGetValue(LoggerKey, out var value)
+	 && value is ILogger logger
+			? logger
+			: throw new InvalidOperationException("Testing toolkit logger not found!");
 }

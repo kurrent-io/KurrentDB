@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Security.Claims;
 using System.Threading;
@@ -62,9 +63,9 @@ public static partial class ClientMessage {
 			ClaimsPrincipal user, IReadOnlyDictionary<string, string> tokens,
 			CancellationToken token) : base(token) {
 
-			Ensure.NotEmptyGuid(internalCorrId, "internalCorrId");
-			Ensure.NotEmptyGuid(correlationId, "correlationId");
-			Ensure.NotNull(envelope, "envelope");
+			Debug.Assert(internalCorrId != Guid.Empty, "internalCorrId should not be empty");
+			Debug.Assert(correlationId != Guid.Empty, "correlationId should not be empty");
+			Debug.Assert(envelope != null, "envelope should not be null");
 
 			InternalCorrId = internalCorrId;
 			CorrelationId = correlationId;
@@ -73,6 +74,18 @@ public static partial class ClientMessage {
 
 			User = user;
 			Tokens = tokens;
+		}
+
+		// used in the new multi stream append
+		protected WriteRequestMessage(IEnvelope envelope, ClaimsPrincipal user, CancellationToken token) : base(token) {
+			var cid = Guid.NewGuid();
+
+			InternalCorrId = cid;
+			CorrelationId  = cid;
+			Envelope       = envelope;
+			RequireLeader  = true;
+			User           = user;
+			Tokens         = new Dictionary<string, string>();
 		}
 	}
 
@@ -174,6 +187,74 @@ public static partial class ClientMessage {
 		}
 	}
 
+	#region . Write Records .
+
+	public enum RecordSchemaFormat {
+		Unspecified = 0,
+		Json        = 1,
+		Protobuf    = 2,
+		Avro        = 3,
+		Bytes       = 4,
+	}
+
+	public readonly record struct NewRecord {
+		public Guid               RecordId     { get; init; }
+		public long               Timestamp    { get; init; }
+		public string             SchemaName   { get; init; }
+		public RecordSchemaFormat SchemaFormat { get; init; }
+		public Guid?              SchemaId     { get; init; }
+		public byte[]             Data         { get; init; }
+		public byte[]             Properties   { get; init; }
+	}
+
+	public readonly record struct WriteRecordsRequest(string Stream, long ExpectedRevision, NewRecord[] Records);
+
+	[DerivedMessage(CoreMessage.Client)]
+	public partial class WriteRecords(WriteRecordsRequest[] requests, IEnvelope envelope, ClaimsPrincipal user, CancellationToken token) : WriteRequestMessage(envelope, user, token) {
+		public WriteRecordsRequest[] Requests { get; } = requests;
+	}
+
+	public readonly record struct WriteRecordsResult {
+		public string Stream         { get; init; }
+		public long   FirstRevision  { get; init; }
+		public long   LastRevision   { get; init; }
+		public long   ActualRevision { get; init; }
+	}
+
+	public abstract record WriteRecordsError {
+		public record AccessDenied(string Stream) : WriteRecordsError;
+		public record StreamTombstoned(string Stream) : WriteRecordsError;
+		public record StreamRevisionConflict(string Stream, long Expected, long Actual) : WriteRecordsError;
+		public record CommitTimeout(string Stream) : WriteRecordsError;
+		public record UnexpectedError(Exception Exception) : WriteRecordsError;
+	}
+
+	[DerivedMessage(CoreMessage.Client)]
+	public partial class WriteRecordsCompleted(Guid correlationId) : Message {
+		public Guid CorrelationId { get; } = correlationId;
+
+		public class Success(Guid correlationId, long position, WriteRecordsResult[] results) : WriteRecordsCompleted(correlationId) {
+			public long                 Position { get; } = position;
+			public WriteRecordsResult[] Results  { get; } = results;
+		}
+
+		public class Failure : WriteRecordsCompleted {
+			public Failure(Guid correlationId, WriteRecordsError[] errors) : base(correlationId) {
+				Debug.Assert(errors is { Length: > 0 }, "There must be at least one error");
+				Errors = errors;
+			}
+
+			public Failure(Guid correlationId, Exception exception)
+				: this(correlationId, [new WriteRecordsError.UnexpectedError(exception)]) { }
+
+			public WriteRecordsError[] Errors { get; }
+
+			public bool IsException => Errors[0] is WriteRecordsError.UnexpectedError;
+		}
+	}
+
+	#endregion
+
 	[DerivedMessage(CoreMessage.Client)]
 	public partial class WriteEvents : WriteRequestMessage {
 		// one per Stream being written to
@@ -187,6 +268,21 @@ public static partial class ClientMessage {
 		// EventStreamIndexes is     [] => stream of event e == EventStreamIds[0]
 		// EventStreamIndexes is not [] => stream of event e == EventStreamIds[EventStreamIndexes[index of e in Events]]
 		public readonly LowAllocReadOnlyMemory<int> EventStreamIndexes;
+
+		public WriteEvents(
+			IEnvelope envelope,
+			LowAllocReadOnlyMemory<string> eventStreamIds,
+			LowAllocReadOnlyMemory<long> expectedVersions,
+			LowAllocReadOnlyMemory<Event> events,
+			LowAllocReadOnlyMemory<int> eventStreamIndexes,
+			ClaimsPrincipal user,
+			CancellationToken cancellationToken)
+			: base(envelope, user, cancellationToken) {
+			EventStreamIds     = eventStreamIds;
+			ExpectedVersions   = expectedVersions;
+			Events             = events;
+			EventStreamIndexes = eventStreamIndexes;
+		}
 
 		public WriteEvents(
 			Guid internalCorrId,
@@ -203,52 +299,53 @@ public static partial class ClientMessage {
 			: base(internalCorrId, correlationId, envelope, requireLeader, user, tokens, cancellationToken) {
 
 			// there must be at least one stream
-			ArgumentOutOfRangeException.ThrowIfNegativeOrZero(eventStreamIds.Length, nameof(eventStreamIds));
+			Debug.Assert(eventStreamIds.Length > 0, "eventStreamIds must not be empty");
 
 			// each stream must correspond to an expected version at the same index
-			ArgumentOutOfRangeException.ThrowIfNotEqual(expectedVersions.Length, eventStreamIds.Length, nameof(expectedVersions));
+			Debug.Assert(
+				expectedVersions.Length == eventStreamIds.Length,
+				"expectedVersions length must match eventStreamIds length");
 
-			if (eventStreamIndexes.Length is not 0) {
-				// when non-empty: eventStreamIndexes maps each event to the index of its stream
-				ArgumentOutOfRangeException.ThrowIfNotEqual(eventStreamIndexes.Length, events.Length, nameof(eventStreamIndexes));
-			} else {
-				// when empty, all events implicitly are for the single stream which is at index 0.
-			}
+			// when empty: all events implicitly are for the single stream which is at index 0.
+			// when non-empty: eventStreamIndexes maps each event to the index of its stream
+			if (eventStreamIndexes.Length is not 0)
+				Debug.Assert(
+					eventStreamIndexes.Length == events.Length,
+					"eventStreamIndexes length must match events length when non-empty");
+#if DEBUG
+			foreach (var eventStreamId in eventStreamIds.Span)
+				Debug.Assert(!SystemStreams.IsInvalidStream(eventStreamId), $"Invalid stream ID: {eventStreamId}");
 
-			foreach (var eventStreamId in eventStreamIds.Span) {
-				if (SystemStreams.IsInvalidStream(eventStreamId))
-					throw new ArgumentOutOfRangeException(nameof(eventStreamIds), $"Invalid stream ID: {eventStreamId}");
-			}
-
-			foreach (var expectedVersion in expectedVersions.Span) {
-				if (expectedVersion is < ExpectedVersion.StreamExists or ExpectedVersion.Invalid)
-					throw new ArgumentOutOfRangeException(nameof(expectedVersions), $"Invalid expected version: {expectedVersion}");
-			}
+			foreach (var expectedVersion in expectedVersions.Span)
+				Debug.Assert(
+					expectedVersion >= ExpectedVersion.StreamExists && expectedVersion != ExpectedVersion.Invalid,
+					$"Invalid expected version: {expectedVersion}");
 
 			var nextEventStreamIndex = 0;
 			if (eventStreamIndexes.Length is not 0) {
 				foreach (var eventStreamIndex in eventStreamIndexes.Span) {
-					if (eventStreamIndex < 0 || eventStreamIndex >= eventStreamIds.Length)
-						throw new ArgumentOutOfRangeException(nameof(eventStreamIndexes),
-							$"Stream index is out of range: {eventStreamIndex}. Number of streams: {eventStreamIds.Length}");
+					Debug.Assert(
+						eventStreamIndex >= 0 && eventStreamIndex < eventStreamIds.Length,
+						$"Stream index is out of range: {eventStreamIndex}. Number of streams: {eventStreamIds.Length}");
 
-					if (eventStreamIndex == nextEventStreamIndex) {
+					if (eventStreamIndex == nextEventStreamIndex)
 						nextEventStreamIndex++;
-					} else if (eventStreamIndex > nextEventStreamIndex) {
-						throw new ArgumentOutOfRangeException(nameof(eventStreamIds),
+					else
+						Debug.Assert(
+							eventStreamIndex <= nextEventStreamIndex,
 							"Indexes must be assigned to streams in the order in which they first appear in the list of events being written");
-					}
 				}
-			} else {
-				nextEventStreamIndex = 1;
 			}
+			else nextEventStreamIndex = 1;
 
-			if (events.Length > 0 && nextEventStreamIndex != eventStreamIds.Length)
-				throw new ArgumentOutOfRangeException(nameof(eventStreamIds),
-					"Not all streams have events being written to them");
+			Debug.Assert(
+				events.Length == 0 || nextEventStreamIndex == eventStreamIds.Length,
+				"Not all streams have events being written to them");
 
-			if (events.Length == 0 && eventStreamIds.Length > 1)
-				throw new ArgumentException("Empty writes to multiple streams is not supported");
+			Debug.Assert(
+				events.Length > 0 || eventStreamIds.Length == 1,
+				"Empty writes to multiple streams is not supported");
+#endif
 
 			EventStreamIds = eventStreamIds;
 			ExpectedVersions = expectedVersions;
@@ -326,8 +423,10 @@ public static partial class ClientMessage {
 			LowAllocReadOnlyMemory<long> firstEventNumbers,
 			LowAllocReadOnlyMemory<long> lastEventNumbers,
 			long preparePosition, long commitPosition) {
-			ArgumentOutOfRangeException.ThrowIfNotEqual(firstEventNumbers.Length, lastEventNumbers.Length, nameof(firstEventNumbers));
 
+			Debug.Assert(firstEventNumbers.Length == lastEventNumbers.Length, "firstEventNumbers length must match lastEventNumbers length");
+
+			#if DEBUG
 			for (var i = 0; i < firstEventNumbers.Length; i++) {
 				var firstEventNumber = firstEventNumbers.Span[i];
 				var lastEventNumber = lastEventNumbers.Span[i];
@@ -340,6 +439,7 @@ public static partial class ClientMessage {
 					throw new ArgumentOutOfRangeException(nameof(lastEventNumbers),
 					$"LastEventNumber {lastEventNumber}, FirstEventNumber {firstEventNumber}.");
 			}
+			#endif
 
 			CorrelationId = correlationId;
 			Result = OperationResult.Success;
@@ -351,12 +451,11 @@ public static partial class ClientMessage {
 		}
 
 		/// <summary>Failure constructor</summary>
-		public WriteEventsCompleted(Guid correlationId, OperationResult result, string message,
+		public WriteEventsCompleted(
+			Guid correlationId, OperationResult result, string message,
 			LowAllocReadOnlyMemory<int> failureStreamIndexes = default, LowAllocReadOnlyMemory<long> failureCurrentVersions = default) {
-			ArgumentOutOfRangeException.ThrowIfNotEqual(failureStreamIndexes.Length, failureCurrentVersions.Length, nameof(failureStreamIndexes));
-
-			if (result == OperationResult.Success)
-				throw new ArgumentException("Invalid constructor used for successful write.", nameof(result));
+			Debug.Assert(failureStreamIndexes.Length == failureCurrentVersions.Length, "failureStreamIndexes length must match failureCurrentVersions length");
+			Debug.Assert(result != OperationResult.Success, "Invalid constructor used for successful write.");
 
 			CorrelationId = correlationId;
 			Result = result;
