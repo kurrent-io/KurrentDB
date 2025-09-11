@@ -24,7 +24,7 @@
 <MudGrid>
 	<MudItem xs="12">
 		<MudDivider/>
-		<MudText>Node status</MudText>
+		<MudText Typo="Typo.h5" Class="pl-2 pt-2">Node status</MudText>
 	</MudItem>
 	<MudItem xs="12">
 		<MudCard Class="ma-2">
@@ -51,7 +51,7 @@
 	</MudItem>
 	<MudItem xs="12">
 		<MudDivider/>
-		<MudText>Cluster status</MudText>
+		<MudText Typo="Typo.h5" Class="pt-2 pl-2">Cluster status</MudText>
 	</MudItem>
 	@foreach (var member in _clusterInfo?.Members ?? []) {
 		<MudItem xs="@CardWidth">
@@ -60,7 +60,7 @@
 	}
 	<MudItem xs="12">
 		<MudDivider/>
-		<MudText>Resources</MudText>
+		<MudText Typo="Typo.h5" Class="pt-2 pl-2">Resources</MudText>
 	</MudItem>
 	<MudItem xs="3">
 		<MudPaper Class="pa-16 ma-2" Outlined="true">
@@ -112,7 +112,7 @@
 	<LicensedContent>
 		<MudItem xs="12">
 			<MudDivider/>
-			<MudText>Throughput</MudText>
+			<MudText Typo="Typo.h5" Class="pt-2 pl-2">Throughput</MudText>
 		</MudItem>
 		<MudItem xs="6">
 			<MudPaper Outlined="true">

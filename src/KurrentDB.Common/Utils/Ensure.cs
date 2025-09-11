@@ -47,22 +47,20 @@ public static class Ensure {
 	}
 
 	public static Guid NotEmptyGuid(Guid guid, [CallerArgumentExpression("guid")] string argumentName = null) {
-		if (Guid.Empty == guid)
-			throw new ArgumentException(argumentName, $"{argumentName} should be non-empty GUID.");
-		return guid;
+		return Guid.Empty == guid ? throw new ArgumentException(argumentName, $"{argumentName} should be non-empty GUID.") : guid;
 	}
 
-	public static void Equal(int expected, int actual, string argumentName) {
+	public static void Equal(int expected, int actual, [CallerArgumentExpression("actual")] string argumentName = null) {
 		if (expected != actual)
 			throw new ArgumentException($"{argumentName} expected value: {expected}, actual value: {actual}");
 	}
 
-	public static void Equal(long expected, long actual, string argumentName) {
+	public static void Equal(long expected, long actual, [CallerArgumentExpression("actual")] string argumentName = null) {
 		if (expected != actual)
 			throw new ArgumentException($"{argumentName} expected value: {expected}, actual value: {actual}");
 	}
 
-	public static void Equal(bool expected, bool actual, string argumentName) {
+	public static void Equal(bool expected, bool actual, [CallerArgumentExpression("actual")] string argumentName = null) {
 		if (expected != actual)
 			throw new ArgumentException($"{argumentName} expected value: {expected}, actual value: {actual}");
 	}

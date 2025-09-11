@@ -26,7 +26,7 @@ partial class Enumerator {
 		private readonly DateTime _deadline;
 		private readonly CancellationToken _cancellationToken;
 		private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
-		private readonly Channel<ReadResponse> _channel = Channel.CreateBounded<ReadResponse>(BoundedChannelOptions);
+		private readonly Channel<ReadResponse> _channel = Channel.CreateBounded<ReadResponse>(DefaultCatchUpChannelOptions);
 
 		private ReadResponse _current;
 
@@ -73,7 +73,7 @@ partial class Enumerator {
 
 			_bus.Publish(new ClientMessage.ReadAllEventsForward(
 				correlationId, correlationId, new ContinuationEnvelope(OnMessage, _semaphore, _cancellationToken),
-				commitPosition, preparePosition, (int)Math.Min(ReadBatchSize, _maxCount), _resolveLinks,
+				commitPosition, preparePosition, (int)Math.Min(DefaultReadBatchSize, _maxCount), _resolveLinks,
 				_requiresLeader, default, _user, replyOnExpired: false, expires: _deadline,
 				cancellationToken: _cancellationToken)
 			);

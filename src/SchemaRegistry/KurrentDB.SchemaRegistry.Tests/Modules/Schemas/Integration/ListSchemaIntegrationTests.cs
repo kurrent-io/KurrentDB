@@ -126,7 +126,6 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 			.SchemaName.Should().Be(schemaName);
 	}
 
-
 	[Test]
 	public async Task list_registered_schemas_with_version_id(CancellationToken cancellationToken) {
 		// Arrange
@@ -149,7 +148,6 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 			.Schemas.ShouldHaveSingleItem()
 			.VersionNumber.ShouldBe(1);
 	}
-
 
 	[Test]
 	public async Task list_schema_versions(CancellationToken cancellationToken) {

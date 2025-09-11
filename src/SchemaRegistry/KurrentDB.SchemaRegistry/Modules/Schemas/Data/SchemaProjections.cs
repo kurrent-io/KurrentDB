@@ -12,43 +12,9 @@ namespace KurrentDB.SchemaRegistry.Data;
 
 public class SchemaProjections : DuckDBProjection {
 	public SchemaProjections() {
-		Setup(async (db, _) => {
-			const string createTablesAndIndexesSql =
-				"""
-				CREATE TABLE IF NOT EXISTS schema_versions (
-				      version_id        TEXT        PRIMARY KEY
-				    , schema_name       TEXT        NOT NULL
-				    , version_number    INT         NOT NULL DEFAULT 0
-				    , schema_definition BLOB        NOT NULL
-				    , data_format       TINYINT     NOT NULL DEFAULT 0
-				    , registered_at     TIMESTAMPTZ NOT NULL DEFAULT current_localtimestamp()
-				    , checkpoint        UBIGINT     NOT NULL DEFAULT 0
-				);
-
-				CREATE INDEX IF NOT EXISTS idx_schema_versions_schema_name ON schema_versions (schema_name);
-				CREATE INDEX IF NOT EXISTS idx_schema_versions_version_number ON schema_versions (version_number);
-
-				CREATE TABLE IF NOT EXISTS schemas (
-				      schema_name           TEXT        PRIMARY KEY
-				    , description           TEXT
-				    , data_format           TINYINT     NOT NULL DEFAULT 0
-				    , latest_version_number INT         NOT NULL DEFAULT 0
-				    , latest_version_id     TEXT        NOT NULL
-				    , compatibility         TINYINT     NOT NULL
-				    , tags                  JSON        NOT NULL DEFAULT '{}'
-				    , created_at            TIMESTAMPTZ NOT NULL DEFAULT current_localtimestamp()
-				    , updated_at            TIMESTAMPTZ
-				    , checkpoint            UBIGINT     NOT NULL DEFAULT 0
-				);
-
-				CREATE INDEX IF NOT EXISTS idx_schemas_latest_version_id ON schemas (latest_version_id);
-				""";
-
-			await db.ExecuteAsync(createTablesAndIndexesSql);
-		});
-
-		Project<SchemaCreated>(async (msg, db, ctx) => {
-			await using var tx = await db.BeginTransactionAsync(ctx.CancellationToken);
+		Project<SchemaCreated>((msg, db, ctx) => {
+			using var scope = db.GetScopedConnection(out var connection);
+			using var tx = connection.BeginTransaction();
 
 			const string insertSchemaVersionSql =
 				"""
@@ -82,7 +48,7 @@ public class SchemaProjections : DuckDBProjection {
 				""";
 
 			try {
-				await db.ExecuteAsync(insertSchemaVersionSql,
+				connection.Execute(insertSchemaVersionSql,
 					new {
 						version_id = msg.SchemaVersionId,
 						schema_name = msg.SchemaName,
@@ -93,7 +59,7 @@ public class SchemaProjections : DuckDBProjection {
 						checkpoint = ctx.Record.LogPosition.CommitPosition
 					}
 				);
-				await db.ExecuteAsync(insertSchemaSql,
+				connection.Execute(insertSchemaSql,
 					new {
 						schema_name = msg.SchemaName,
 						description = msg.Description,
@@ -106,15 +72,17 @@ public class SchemaProjections : DuckDBProjection {
 						checkpoint = ctx.Record.LogPosition.CommitPosition
 					}
 				);
-				await tx.CommitAsync(ctx.CancellationToken);
+				tx.Commit();
 			} catch {
-				await tx.RollbackAsync(ctx.CancellationToken);
+				tx.Rollback();
 				throw;
 			}
+			return ValueTask.CompletedTask;
 		});
 
-		Project<SchemaVersionRegistered>(async (msg, db, ctx) => {
-			await using var tx = await db.BeginTransactionAsync(ctx.CancellationToken);
+		Project<SchemaVersionRegistered>((msg, db, ctx) => {
+			using var scope = db.GetScopedConnection(out var connection);
+			using var tx = connection.BeginTransaction();
 
 			const string insertSchemaVersionSql =
 				"""
@@ -139,7 +107,7 @@ public class SchemaProjections : DuckDBProjection {
 				""";
 
 			try {
-				await db.ExecuteAsync(
+				connection.Execute(
 					insertSchemaVersionSql,
 					new {
 						version_id = msg.SchemaVersionId,
@@ -152,7 +120,7 @@ public class SchemaProjections : DuckDBProjection {
 					}
 				);
 
-				await db.ExecuteAsync(
+				connection.Execute(
 					updateSchemaLatestVersionSql,
 					new {
 						version_number = msg.VersionNumber,
@@ -162,14 +130,16 @@ public class SchemaProjections : DuckDBProjection {
 					}
 				);
 
-				await tx.CommitAsync(ctx.CancellationToken);
+				tx.Commit();
 			} catch {
-				await tx.RollbackAsync(ctx.CancellationToken);
+				tx.Rollback();
 				throw;
 			}
+			return ValueTask.CompletedTask;
 		});
 
-		Project<SchemaCompatibilityModeChanged>(async (msg, db, _) => {
+		Project<SchemaCompatibilityModeChanged>((msg, db, _) => {
+			using var scope = db.GetScopedConnection(out var connection);
 			const string updateSchemaCompatibilitySql =
 				"""
 				UPDATE schemas
@@ -178,7 +148,7 @@ public class SchemaProjections : DuckDBProjection {
 				WHERE schema_name = $schema_name
 				""";
 
-			await db.ExecuteAsync(
+			connection.Execute(
 				updateSchemaCompatibilitySql,
 				new {
 					schema_name = msg.SchemaName,
@@ -186,9 +156,11 @@ public class SchemaProjections : DuckDBProjection {
 					updated_at = msg.ChangedAt.ToDateTime()
 				}
 			);
+			return ValueTask.CompletedTask;
 		});
 
-		Project<SchemaDescriptionUpdated>(async (msg, db, _) => {
+		Project<SchemaDescriptionUpdated>((msg, db, _) => {
+			using var scope = db.GetScopedConnection(out var connection);
 			const string updateSchemaDescriptionSql =
 				"""
 				UPDATE schemas
@@ -197,7 +169,7 @@ public class SchemaProjections : DuckDBProjection {
 				WHERE schema_name = $schema_name
 				""";
 
-			await db.ExecuteAsync(
+			connection.Execute(
 				updateSchemaDescriptionSql,
 				new {
 					schema_name = msg.SchemaName,
@@ -205,9 +177,11 @@ public class SchemaProjections : DuckDBProjection {
 					updated_at = msg.UpdatedAt.ToDateTime()
 				}
 			);
+			return ValueTask.CompletedTask;
 		});
 
-		Project<SchemaTagsUpdated>(async (msg, db, _) => {
+		Project<SchemaTagsUpdated>((msg, db, _) => {
+			using var scope = db.GetScopedConnection(out var connection);
 			const string updateSchemaTagsSql =
 				"""
 				UPDATE schemas
@@ -216,7 +190,7 @@ public class SchemaProjections : DuckDBProjection {
 				WHERE schema_name = $schema_name
 				""";
 
-			await db.ExecuteAsync(
+			connection.Execute(
 				updateSchemaTagsSql,
 				new {
 					schema_name = msg.SchemaName,
@@ -224,10 +198,12 @@ public class SchemaProjections : DuckDBProjection {
 					updated_at = msg.UpdatedAt.ToDateTime()
 				}
 			);
+			return ValueTask.CompletedTask;
 		});
 
-		Project<SchemaVersionsDeleted>(async (msg, db, ctx) => {
-			await using var tx = await db.BeginTransactionAsync(ctx.CancellationToken);
+		Project<SchemaVersionsDeleted>((msg, db, ctx) => {
+			using var scope = db.GetScopedConnection(out var connection);
+			using var tx = connection.BeginTransaction();
 
 			try {
 				// TODO: Must figure out a better way to do this. Right now, we have to do string interpolation,
@@ -248,12 +224,12 @@ public class SchemaProjections : DuckDBProjection {
 					WHERE schema_name = $schema_name;
 					""";
 
-				await db.ExecuteAsync(deleteSelectedSchemaVersionsSql, new {
+				connection.Execute(deleteSelectedSchemaVersionsSql, new {
 					schema_name = msg.SchemaName,
 					versions = msg.Versions.ToList()
 				});
 
-				await db.ExecuteAsync(updateSchemaLatestVersionSql, new {
+				connection.Execute(updateSchemaLatestVersionSql, new {
 					schema_name = msg.SchemaName,
 					latest_version_id = msg.LatestSchemaVersionId,
 					latest_version_number = msg.LatestSchemaVersionNumber,
@@ -261,15 +237,17 @@ public class SchemaProjections : DuckDBProjection {
 					checkpoint = ctx.Record.LogPosition.CommitPosition
 				});
 
-				await tx.CommitAsync(ctx.CancellationToken);
+				tx.Commit();
 			} catch {
-				await tx.RollbackAsync(ctx.CancellationToken);
+				tx.Rollback();
 				throw;
 			}
+			return ValueTask.CompletedTask;
 		});
 
-		Project<SchemaDeleted>(async (msg, db, ctx) => {
-			await using var tx = await db.BeginTransactionAsync(ctx.CancellationToken);
+		Project<SchemaDeleted>((msg, db, _) => {
+			using var scope = db.GetScopedConnection(out var connection);
+			using var tx = connection.BeginTransaction();
 
 			const string deleteSchemaVersionsSql =
 				"""
@@ -284,13 +262,14 @@ public class SchemaProjections : DuckDBProjection {
 				""";
 
 			try {
-				await db.ExecuteAsync(deleteSchemaVersionsSql, new { schema_name = msg.SchemaName });
-				await db.ExecuteAsync(deleteSchemasSql, new { schema_name = msg.SchemaName });
-				await tx.CommitAsync(ctx.CancellationToken);
+				connection.Execute(deleteSchemaVersionsSql, new { schema_name = msg.SchemaName });
+				connection.Execute(deleteSchemasSql, new { schema_name = msg.SchemaName });
+				tx.Commit();
 			} catch {
-				await tx.RollbackAsync(ctx.CancellationToken);
+				tx.Rollback();
 				throw;
 			}
+			return ValueTask.CompletedTask;
 		});
 	}
 }

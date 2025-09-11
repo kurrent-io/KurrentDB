@@ -18,6 +18,10 @@ charset = utf-8
 dotnet_diagnostic.IDE0073.severity = error
 file_header_template = Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.\nKurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+# Modifiers
+csharp_default_private_modifier = explicit
+csharp_default_internal_modifier = explicit
+
 # New line preferences
 csharp_new_line_before_open_brace = none
 csharp_new_line_before_catch = false
@@ -26,6 +30,16 @@ csharp_new_line_before_finally = false
 csharp_new_line_before_members_in_anonymous_types = false
 csharp_new_line_before_members_in_object_initializers = false
 csharp_new_line_within_query_expression_clauses = true
+
+# Wrapping preferences
+csharp_wrap_before_arrow_with_expressions = true
+csharp_wrap_before_first_type_parameter_constraint = true
+csharp_wrap_multiple_type_parameter_constraints_style = chop_if_long
+csharp_wrap_before_type_parameter_langle = false
+csharp_wrap_before_extends_colon = true
+csharp_wrap_extends_list_style = chop_if_long
+csharp_wrap_before_ternary_opsigns = true
+csharp_wrap_parameters_style = chop_if_long
 
 # disable hint to use primary constructor
 dotnet_diagnostic.IDE0290.severity = none

@@ -25,7 +25,7 @@ public class ChartSeriesValues : TimeSeriesChartSeries {
 		Name = name;
 		Data = empty;
 		IsVisible = true;
-		Type = TimeSeriesDisplayType.Area;
+		LineDisplayType = LineDisplayType.Area;
 	}
 
 	public void AddData(double value) {

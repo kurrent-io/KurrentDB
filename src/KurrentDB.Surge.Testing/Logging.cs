@@ -26,6 +26,7 @@ public static class Logging {
         );
 
 		Log.Logger = new LoggerConfiguration()
+			.MinimumLevel.Debug()
             .Enrich.WithProperty(Constants.SourceContextPropertyName, "EventStore")
 			.ReadFrom.Configuration(Application.Configuration)
             .Filter.ByExcluding(Matching.FromSource("REGULAR-STATS-LOGGER"))

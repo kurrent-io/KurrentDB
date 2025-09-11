@@ -190,6 +190,26 @@ public class InternalClient : IClient {
 				cancellationToken: token
 			));
 
+	public IAsyncEnumerable<Event> ReadAllBackwardsFilteredAsync(
+		Position position,
+		long maxCount,
+		IEventFilter eventFilter,
+		CancellationToken token
+	) =>
+		Create($"Reading from $all Backwards filtered", () =>
+			new Enumerator.ReadAllBackwardsFiltered(
+				bus: _publisher,
+				position: Convert(position),
+				maxCount: (ulong)maxCount,
+				resolveLinks: false,
+				eventFilter,
+				user: SystemAccounts.System,
+				requiresLeader: _requiresLeader,
+				maxSearchWindow: null,
+				deadline: DateTime.UtcNow.AddSeconds(10),
+				cancellationToken: token
+			));
+
 	public IAsyncEnumerable<Event> ReadStreamForwards(string stream, long maxCount, CancellationToken token) =>
 		Create(
 			$"Reading stream {stream} forwards for max {maxCount} events",
