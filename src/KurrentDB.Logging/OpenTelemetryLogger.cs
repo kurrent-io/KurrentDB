@@ -7,24 +7,19 @@ using Microsoft.Extensions.Configuration;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using Serilog;
-using Serilog.Core;
-using Serilog.Events;
 using Serilog.Sinks.OpenTelemetry;
 
 namespace KurrentDB.Logging;
 
-public sealed class OpenTelemetryLogger : ILogEventSink, IDisposable {
-	Logger? _log;
-	ILogEventSink? _sink;
-
+public static class OpenTelemetryLogger {
 	const string KurrentConfigurationPrefix = "KurrentDB";
 
-	public OpenTelemetryLogger(IConfiguration configuration, string componentName) {
+	public static void AddOpenTelemetryLogger(this LoggerConfiguration config, IConfiguration configuration, string componentName) {
 		var logExporterConfig = configuration.GetSection($"{KurrentConfigurationPrefix}:OpenTelemetry:Logging").Get<LogRecordExportProcessorOptions>()!;
 		var otlpExporterConfig = configuration.GetSection($"{KurrentConfigurationPrefix}:OpenTelemetry:Otlp").Get<OtlpExporterOptions>()!;
 		var metricsConfig = MetricsConfiguration.Get(configuration);
 
-		_log = new LoggerConfiguration()
+		config
 			.WriteTo.OpenTelemetry(options => {
 				options.ResourceAttributes = new Dictionary<string, object> {
 					["service.name"] = metricsConfig.ServiceName,
@@ -45,22 +40,6 @@ public sealed class OpenTelemetryLogger : ILogEventSink, IDisposable {
 				// Let Serilog parse the headers string into a dictionary instead of trying to replicate their logic
 				"OTEL_EXPORTER_OTLP_HEADERS" => otlpExporterConfig.Headers,
 				_ => null,
-			})
-			.CreateLogger();
-		_sink = _log;
-	}
-
-	public void Disable() {
-		Dispose();
-		_sink = null;
-		_log = null;
-	}
-
-	public void Emit(LogEvent logEvent) {
-		_sink?.Emit(logEvent);
-	}
-
-	public void Dispose() {
-		_log?.Dispose();
+			});
 	}
 }

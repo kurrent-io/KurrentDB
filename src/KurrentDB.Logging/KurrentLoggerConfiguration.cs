@@ -57,7 +57,7 @@ public class KurrentLoggerConfiguration {
 		SerilogEventListener = new();
 	}
 
-	public static LoggerConfiguration CreateLoggerConfiguration(LoggingOptions options, string componentName, params ILogEventSink[] extraSinks) {
+	public static LoggerConfiguration CreateLoggerConfiguration(LoggingOptions options, string componentName) {
 		if (options.Log.StartsWith('~')) {
 			throw new ApplicationInitializationException("The given log path starts with a '~'. KurrentDB does not expand '~'.");
 		}
@@ -75,9 +75,6 @@ public class KurrentLoggerConfiguration {
 			: Default(options.Log, componentName, configurationRoot, options.LogConsoleFormat, options.LogFileInterval,
 				options.LogFileSize, options.LogFileRetentionCount, options.DisableLogFile);
 
-		foreach (var extraSink in extraSinks) {
-			logConfig.WriteTo.Sink(extraSink);
-		}
 		SelfLog.Disable();
 		return logConfig;
 	}

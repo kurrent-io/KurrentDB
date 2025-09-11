@@ -52,10 +52,12 @@ try {
 	var options = ClusterVNodeOptions.FromConfiguration(configuration);
 
 	var logExportEnabled = configuration.GetValue<bool>("KurrentDB:OpenTelemetry:Logging:Enabled");
-	ILogEventSink[] extraSinks = logExportEnabled ? [new OpenTelemetryLogger(configuration, options.GetComponentName())] : [];
-	Log.Logger = KurrentLoggerConfiguration
-		.CreateLoggerConfiguration(options.Logging, options.GetComponentName(), extraSinks)
-		.CreateLogger();
+	var loggerConfig = KurrentLoggerConfiguration.CreateLoggerConfiguration(options.Logging, options.GetComponentName());
+
+	if (logExportEnabled) {
+		loggerConfig.AddOpenTelemetryLogger(configuration, options.GetComponentName());
+	}
+	Log.Logger = loggerConfig.CreateLogger();
 
 	if (options.Application.Help) {
 		await Console.Out.WriteLineAsync(ClusterVNodeOptions.HelpText);

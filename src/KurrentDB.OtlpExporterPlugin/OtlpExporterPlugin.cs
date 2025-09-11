@@ -2,8 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using EventStore.Plugins;
-using KurrentDB.Logging;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Exporter;
@@ -67,11 +65,6 @@ public class OtlpExporterPlugin(ILogger logger) : SubsystemsPlugin(requiredEntit
 						exporterOptions.Endpoint,
 						periodicOptions.ExportIntervalMilliseconds / 1000.0);
 				}));
-	}
-
-	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
-		base.ConfigureApplication(app, configuration);
-		app.ApplicationServices.GetService<OpenTelemetryLogger>();
 	}
 
 	private static bool MetricsExportEnabled(IConfiguration configuration)
