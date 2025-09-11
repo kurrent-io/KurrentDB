@@ -7,7 +7,6 @@ using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using Serilog;
-using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.OtlpExporterPlugin;
 

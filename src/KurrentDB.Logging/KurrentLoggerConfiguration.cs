@@ -4,7 +4,6 @@
 using KurrentDB.Common.Exceptions;
 using KurrentDB.Common.Options;
 using KurrentDB.Core.Configuration;
-using KurrentDB.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Primitives;
 using Serilog;
