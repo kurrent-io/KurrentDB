@@ -1,7 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System;
 using EventStore.Plugins;
 using KurrentDB.Logging;
 using Microsoft.AspNetCore.Builder;
@@ -16,7 +15,6 @@ namespace KurrentDB.OtlpExporterPlugin;
 
 public class OtlpExporterPlugin(ILogger logger) : SubsystemsPlugin(requiredEntitlements: ["OTLP_EXPORTER"]) {
 	private const string KurrentConfigurationPrefix = "KurrentDB";
-	private OpenTelemetryLogger? _otlpSink;
 	private static readonly ILogger _staticLogger = Log.ForContext<OtlpExporterPlugin>();
 
 	public OtlpExporterPlugin() : this(_staticLogger) {
@@ -73,7 +71,7 @@ public class OtlpExporterPlugin(ILogger logger) : SubsystemsPlugin(requiredEntit
 
 	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
 		base.ConfigureApplication(app, configuration);
-		_otlpSink = app.ApplicationServices.GetService<OpenTelemetryLogger>();
+		app.ApplicationServices.GetService<OpenTelemetryLogger>();
 	}
 
 	private static bool MetricsExportEnabled(IConfiguration configuration)

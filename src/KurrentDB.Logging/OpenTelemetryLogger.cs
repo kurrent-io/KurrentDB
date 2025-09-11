@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using KurrentDB.Common.Configuration;
 using KurrentDB.Common.Utils;
 using Microsoft.Extensions.Configuration;
 using OpenTelemetry.Exporter;
@@ -21,11 +22,12 @@ public sealed class OpenTelemetryLogger : ILogEventSink, IDisposable {
 	public OpenTelemetryLogger(IConfiguration configuration, string componentName) {
 		var logExporterConfig = configuration.GetSection($"{KurrentConfigurationPrefix}:OpenTelemetry:Logging").Get<LogRecordExportProcessorOptions>()!;
 		var otlpExporterConfig = configuration.GetSection($"{KurrentConfigurationPrefix}:OpenTelemetry:Otlp").Get<OtlpExporterOptions>()!;
+		var metricsConfig = MetricsConfiguration.Get(configuration);
 
 		_log = new LoggerConfiguration()
 			.WriteTo.OpenTelemetry(options => {
 				options.ResourceAttributes = new Dictionary<string, object> {
-					["service.name"] = "KurrentDB",
+					["service.name"] = metricsConfig.ServiceName,
 					["service.instance.id"] = componentName,
 					["service.version"] = VersionInfo.Version
 				};
