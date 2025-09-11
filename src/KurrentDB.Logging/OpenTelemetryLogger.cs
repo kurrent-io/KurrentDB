@@ -22,11 +22,6 @@ public sealed class OpenTelemetryLogger : ILogEventSink, IDisposable {
 		var logExporterConfig = configuration.GetSection($"{KurrentConfigurationPrefix}:OpenTelemetry:Logging").Get<LogRecordExportProcessorOptions>()!;
 		var otlpExporterConfig = configuration.GetSection($"{KurrentConfigurationPrefix}:OpenTelemetry:Otlp").Get<OtlpExporterOptions>()!;
 
-		if (!string.IsNullOrWhiteSpace(otlpExporterConfig.Headers)) {
-			// Let Serilog parse the headers string into a dictionary instead of trying to replicate their logic
-			Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_HEADERS", otlpExporterConfig.Headers);
-		}
-
 		_log = new LoggerConfiguration()
 			.WriteTo.OpenTelemetry(options => {
 				options.ResourceAttributes = new Dictionary<string, object> {
@@ -44,6 +39,10 @@ public sealed class OpenTelemetryLogger : ILogEventSink, IDisposable {
 				options.BatchingOptions.BufferingTimeLimit = TimeSpan.FromMilliseconds(logExporterConfig.BatchExportProcessorOptions.ScheduledDelayMilliseconds);
 				options.BatchingOptions.QueueLimit = logExporterConfig.BatchExportProcessorOptions.MaxQueueSize;
 				options.BatchingOptions.RetryTimeLimit = TimeSpan.FromMilliseconds(logExporterConfig.BatchExportProcessorOptions.ExporterTimeoutMilliseconds);
+			}, getConfigurationVariable: name => name switch {
+				// Let Serilog parse the headers string into a dictionary instead of trying to replicate their logic
+				"OTEL_EXPORTER_OTLP_HEADERS" => otlpExporterConfig.Headers,
+				_ => null,
 			})
 			.CreateLogger();
 		_sink = _log;
