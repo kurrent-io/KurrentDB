@@ -367,6 +367,8 @@ public static class ResponseConverter {
 				throw RpcExceptions.Timeout(timeout.ErrorMessage);
 			case ReadResponseException.InvalidPosition:
 				throw RpcExceptions.InvalidPositionException();
+			case ReadResponseException.IndexNotFound indexNotFound:
+				throw RpcExceptions.IndexNotFound(indexNotFound.IndexName);
 			case ReadResponseException.UnknownMessage unknownMessage:
 				throw RpcExceptions.UnknownMessage(unknownMessage.UnknownMessageType, unknownMessage.ExpectedMessageType);
 			case ReadResponseException.UnknownError unknown:

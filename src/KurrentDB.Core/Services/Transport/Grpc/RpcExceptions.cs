@@ -246,6 +246,12 @@ public static class RpcExceptions {
 			{ Constants.Exceptions.LoginName, loginName }
 		});
 
+	public static RpcException IndexNotFound(string indexName) =>
+		new(new Status(StatusCode.NotFound, $"Index '{indexName}' not found."), new Metadata {
+			{ Constants.Exceptions.ExceptionKey, Constants.Exceptions.IndexNotFound },
+			{ Constants.Exceptions.IndexName, indexName }
+		});
+
 	public static RpcException InvalidArgument(string errorMessage) =>
 		new(new Status(StatusCode.InvalidArgument, errorMessage));
 
