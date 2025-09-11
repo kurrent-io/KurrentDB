@@ -6,6 +6,7 @@ using EventStore.Plugins;
 using EventStore.Plugins.Diagnostics;
 using EventStore.Plugins.Licensing;
 using FluentAssertions;
+using KurrentDB.Common.Configuration;
 using KurrentDB.Plugins.TestHelpers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -40,9 +41,9 @@ public class OtlpExporterTests {
 
 	[Fact]
 	public async Task respects_expected_scrape_interval() {
-		await using var _ = await CreateServer(new(), new Dictionary<string, string?> {
-			{ $"{KurrentConfigurationConstants.Prefix}:OpenTelemetry:Otlp:Endpoint", Endpoint },
-			{ $"{KurrentConfigurationConstants.Prefix}:Metrics:ExpectedScrapeIntervalSeconds", "5" },
+		await using var _ = await CreateServer(new(), new() {
+			{ $"{ConfigConstants.OtlpConfigPrefix}:Endpoint", Endpoint },
+			{ $"{ConfigConstants.RootPrefix}:Metrics:ExpectedScrapeIntervalSeconds", "5" },
 		});
 		var log = Assert.Single(_logger.LogMessages);
 		Assert.Equal("OtlpExporter: Exporting metrics to http://localhost:6506/ every 5.0 seconds", log.RenderMessage());
@@ -50,15 +51,15 @@ public class OtlpExporterTests {
 
 	[Fact]
 	public async Task export_interval_superceeds_expected_scrape_interval() {
-		await using var _ = await CreateServer(new(), new Dictionary<string, string?> {
-			{ $"{KurrentConfigurationConstants.Prefix}:OpenTelemetry:Otlp:Endpoint", Endpoint },
-			{ $"{KurrentConfigurationConstants.Prefix}:OpenTelemetry:Metrics:PeriodicExportingMetricReaderOptions:ExportIntervalMilliseconds", "5000" },
-			{ $"{KurrentConfigurationConstants.Prefix}:Metrics:ExpectedScrapeIntervalSeconds", "4" },
+		await using var _ = await CreateServer(new(), new() {
+			{ $"{ConfigConstants.OtlpConfigPrefix}:Endpoint", Endpoint },
+			{ $"{ConfigConstants.OpenTelemetryPrefix}:Metrics:PeriodicExportingMetricReaderOptions:ExportIntervalMilliseconds", "5000" },
+			{ $"{ConfigConstants.RootPrefix}:Metrics:ExpectedScrapeIntervalSeconds", "4" },
 		});
 		Assert.Collection(_logger.LogMessages,
 			log => Assert.Equal(
-				$"OtlpExporter: {KurrentConfigurationConstants.Prefix}:OpenTelemetry:Metrics:PeriodicExportingMetricReaderOptions:ExportIntervalMilliseconds " +
-				$"(5000 ms) does not match {KurrentConfigurationConstants.Prefix}:Metrics:ExpectedScrapeIntervalSeconds " +
+				$"OtlpExporter: {ConfigConstants.OpenTelemetryPrefix}:Metrics:PeriodicExportingMetricReaderOptions:ExportIntervalMilliseconds " +
+				$"(5000 ms) does not match {ConfigConstants.RootPrefix}:Metrics:ExpectedScrapeIntervalSeconds " +
 				"(4 s). Periodic maximum metrics may not be reported correctly.",
 				log.RenderMessage()),
 			log => Assert.Equal("OtlpExporter: Exporting metrics to http://localhost:6506/ every 5.0 seconds", log.RenderMessage()));
@@ -67,9 +68,9 @@ public class OtlpExporterTests {
 	[Fact]
 	public async Task does_not_warn_when_settings_agree() {
 		await using var _ = await CreateServer(new(), new Dictionary<string, string?> {
-			{ $"{KurrentConfigurationConstants.Prefix}:OpenTelemetry:Otlp:Endpoint", Endpoint },
-			{ $"{KurrentConfigurationConstants.Prefix}:OpenTelemetry:Metrics:PeriodicExportingMetricReaderOptions:ExportIntervalMilliseconds", "5000" },
-			{ $"{KurrentConfigurationConstants.Prefix}:Metrics:ExpectedScrapeIntervalSeconds", "5" },
+			{ $"{ConfigConstants.OtlpConfigPrefix}:Endpoint", Endpoint },
+			{ $"{ConfigConstants.OpenTelemetryPrefix}:Metrics:PeriodicExportingMetricReaderOptions:ExportIntervalMilliseconds", "5000" },
+			{ $"{ConfigConstants.RootPrefix}:Metrics:ExpectedScrapeIntervalSeconds", "5" },
 		});
 		var log = Assert.Single(_logger.LogMessages);
 		Assert.Equal("OtlpExporter: Exporting metrics to http://localhost:6506/ every 5.0 seconds", log.RenderMessage());
@@ -82,9 +83,9 @@ public class OtlpExporterTests {
 
 		var tcs = new TaskCompletionSource<ExportMetricsServiceRequest>();
 
-		await using var _ = await CreateServer(tcs, new Dictionary<string, string?> {
-			{ $"{KurrentConfigurationConstants.Prefix}:OpenTelemetry:Otlp:Endpoint", Endpoint },
-			{ $"{KurrentConfigurationConstants.Prefix}:Metrics:ExpectedScrapeIntervalSeconds", "1" }
+		await using var _ = await CreateServer(tcs, new() {
+			{ $"{ConfigConstants.OtlpConfigPrefix}:Endpoint", Endpoint },
+			{ $"{ConfigConstants.RootPrefix}:Metrics:ExpectedScrapeIntervalSeconds", "1" }
 		});
 
 		var log = Assert.Single(_logger.LogMessages);

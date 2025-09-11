@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Plugins.TestHelpers;
@@ -39,10 +40,7 @@ public abstract class SecondaryIndexingPluginTests<TStreamId> {
 		};
 
 		if (pluginEnabled.HasValue)
-			configuration.Add(
-				$"{KurrentConfigurationConstants.Prefix}:SecondaryIndexing:Enabled",
-				pluginEnabled.Value.ToString().ToLower()
-			);
+			configuration.Add($"{ConfigConstants.RootPrefix}:SecondaryIndexing:Enabled", pluginEnabled.Value.ToString().ToLower());
 
 		var configBuilder = new ConfigurationBuilder()
 			.AddInMemoryCollection(configuration);

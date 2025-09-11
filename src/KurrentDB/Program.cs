@@ -11,6 +11,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB;
+using KurrentDB.Common.Configuration;
 using KurrentDB.Common.DevCertificates;
 using KurrentDB.Common.Exceptions;
 using KurrentDB.Common.Log;
@@ -51,10 +52,9 @@ Log.Logger = KurrentLoggerConfiguration.ConsoleLog;
 try {
 	var options = ClusterVNodeOptions.FromConfiguration(configuration);
 
-	var logExportEnabled = configuration.GetValue<bool>("KurrentDB:OpenTelemetry:Logging:Enabled");
 	var loggerConfig = KurrentLoggerConfiguration.CreateLoggerConfiguration(options.Logging, options.GetComponentName());
 
-	if (logExportEnabled) {
+	if (configuration.OtlpLogsEnabled()) {
 		loggerConfig = loggerConfig.AddOpenTelemetryLogger(configuration, options.GetComponentName());
 	}
 	Log.Logger = loggerConfig.CreateLogger();

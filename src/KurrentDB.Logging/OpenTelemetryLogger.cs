@@ -12,11 +12,9 @@ using Serilog.Sinks.OpenTelemetry;
 namespace KurrentDB.Logging;
 
 public static class OpenTelemetryLogger {
-	const string KurrentConfigurationPrefix = "KurrentDB";
-
 	public static LoggerConfiguration AddOpenTelemetryLogger(this LoggerConfiguration config, IConfiguration configuration, string componentName) {
-		var logExporterConfig = configuration.GetSection($"{KurrentConfigurationPrefix}:OpenTelemetry:Logging").Get<LogRecordExportProcessorOptions>()!;
-		var otlpExporterConfig = configuration.GetSection($"{KurrentConfigurationPrefix}:OpenTelemetry:Otlp").Get<OtlpExporterOptions>()!;
+		var logExporterConfig = configuration.GetSection(ConfigConstants.OtlpLogsPrefix).Get<LogRecordExportProcessorOptions>()!;
+		var otlpExporterConfig = configuration.GetSection(ConfigConstants.OtlpConfigPrefix).Get<OtlpExporterOptions>()!;
 		var metricsConfig = MetricsConfiguration.Get(configuration);
 
 		return config
