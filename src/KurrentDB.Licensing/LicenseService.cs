@@ -22,21 +22,27 @@ public class LicenseService : ILicenseService {
 		SelfLicense = License.Create([]);
 		Licenses = licenseProvider.Licenses;
 		Licenses.Subscribe(
-			license => CurrentLicense = license,
-			_ => CurrentLicense = null);
+			license => {
+				CurrentLicense = license;
+			},
+			ex => {
+				CurrentLicense = null;
+			});
 	}
 
-	public License SelfLicense { get; }
+	public License SelfLicense { get; private set; }
 
 	public License? CurrentLicense { get; private set; }
 
-	public IObservable<License> Licenses { get; }
+	public IObservable<License> Licenses { get; private set; }
 
 	public void RejectLicense(Exception ex) {
 		// we wait for the application to start before stopping it so that
 		// 1. we can log the error message after stopping, to be really clear what the cause was
 		// 2. stopping the application during startup results in several other exceptions being thrown which are just noise
-		_lifetime.ApplicationStarted.Register(() => _requestShutdown(ex));
+		_lifetime.ApplicationStarted.Register(() => {
+			_requestShutdown(ex);
+		});
 		_lifetime.ApplicationStopped.Register(() => Log.Fatal(ex.Message));
 
 		// belt and braces (in case the above fails due to application somehow never fully starting)
