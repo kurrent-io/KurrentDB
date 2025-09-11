@@ -134,7 +134,7 @@ public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool db, IReadInd
 			bool excl;
 			if (inFlight.Length > 0) {
 				count = maxCount - inFlight.Length;
-				start = inFlight[0].LogPosition;
+				start = inFlight[^1].LogPosition;
 				excl = true;
 			} else {
 				count = maxCount;

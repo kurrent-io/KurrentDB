@@ -121,7 +121,13 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 	private Atomic.Boolean _committing;
 
-	public void Commit() {
+	public void Commit() => Commit(true);
+
+	/// <summary>
+	/// Commits all in-flight records to the index.
+	/// </summary>
+	/// <param name="clearInflight">Tells whether to clear the in-flight records after committing. It must be true and only set to false in tests.</param>
+	internal void Commit(bool clearInflight) {
 		if (IsDisposingOrDisposed || !_committing.FalseToTrue())
 			return;
 
@@ -136,7 +142,9 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			_committing.TrueToFalse();
 		}
 
-		_inFlightRecords.Clear();
+		if (clearInflight) {
+			_inFlightRecords.Clear();
+		}
 	}
 
 	protected override void Dispose(bool disposing) {

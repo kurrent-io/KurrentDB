@@ -95,7 +95,7 @@ public class SecondaryIndexProgressTracker {
 		public void Dispose() {
 			var stop = clock.Now;
 			var elapsed = stop.ElapsedSecondsSince(_start);
-			logger.Debug("Secondary index {Index} records committed in {Duration} ms", indexName, elapsed * 1000);
+			logger.Debug("Secondary index {Index} records committed in {Duration} ms", indexName, elapsed);
 			histogram.Record(elapsed, tag);
 		}
 	}
