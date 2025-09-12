@@ -17,8 +17,8 @@ public static class OpenTelemetryLogger {
 		if (!configuration.OtlpLogsEnabled())
 			return config;
 
-		var logExporterConfig = configuration.GetSection(ConfigConstants.OtlpLogsPrefix).Get<LogRecordExportProcessorOptions>()!;
-		var otlpExporterConfig = configuration.GetSection(ConfigConstants.OtlpConfigPrefix).Get<OtlpExporterOptions>()!;
+		var logExporterConfig = configuration.GetSection(ConfigConstants.OtlpLogsPrefix).Get<LogRecordExportProcessorOptions>() ?? new();
+		var otlpExporterConfig = configuration.GetSection(ConfigConstants.OtlpConfigPrefix).Get<OtlpExporterOptions>() ?? new();
 		var metricsConfig = MetricsConfiguration.Get(configuration);
 
 		return config
