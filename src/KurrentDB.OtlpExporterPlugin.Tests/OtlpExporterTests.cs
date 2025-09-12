@@ -53,12 +53,12 @@ public class OtlpExporterTests {
 	public async Task export_interval_superceeds_expected_scrape_interval() {
 		await using var _ = await CreateServer(new(), new() {
 			{ $"{ConfigConstants.OtlpConfigPrefix}:Endpoint", Endpoint },
-			{ $"{ConfigConstants.OpenTelemetryPrefix}:Metrics:PeriodicExportingMetricReaderOptions:ExportIntervalMilliseconds", "5000" },
+			{ $"{ConfigConstants.OtlpMetricsPrefix}:PeriodicExportingMetricReaderOptions:ExportIntervalMilliseconds", "5000" },
 			{ $"{ConfigConstants.RootPrefix}:Metrics:ExpectedScrapeIntervalSeconds", "4" },
 		});
 		Assert.Collection(_logger.LogMessages,
 			log => Assert.Equal(
-				$"OtlpExporter: {ConfigConstants.OpenTelemetryPrefix}:Metrics:PeriodicExportingMetricReaderOptions:ExportIntervalMilliseconds " +
+				$"OtlpExporter: {ConfigConstants.OtlpMetricsPrefix}:PeriodicExportingMetricReaderOptions:ExportIntervalMilliseconds " +
 				$"(5000 ms) does not match {ConfigConstants.RootPrefix}:Metrics:ExpectedScrapeIntervalSeconds " +
 				"(4 s). Periodic maximum metrics may not be reported correctly.",
 				log.RenderMessage()),
@@ -69,7 +69,7 @@ public class OtlpExporterTests {
 	public async Task does_not_warn_when_settings_agree() {
 		await using var _ = await CreateServer(new(), new Dictionary<string, string?> {
 			{ $"{ConfigConstants.OtlpConfigPrefix}:Endpoint", Endpoint },
-			{ $"{ConfigConstants.OpenTelemetryPrefix}:Metrics:PeriodicExportingMetricReaderOptions:ExportIntervalMilliseconds", "5000" },
+			{ $"{ConfigConstants.OtlpMetricsPrefix}:PeriodicExportingMetricReaderOptions:ExportIntervalMilliseconds", "5000" },
 			{ $"{ConfigConstants.RootPrefix}:Metrics:ExpectedScrapeIntervalSeconds", "5" },
 		});
 		var log = Assert.Single(_logger.LogMessages);

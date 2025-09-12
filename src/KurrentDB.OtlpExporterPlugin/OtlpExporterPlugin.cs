@@ -52,7 +52,7 @@ public class OtlpExporterPlugin(ILogger logger) : SubsystemsPlugin(requiredEntit
 
 		services
 			.Configure<OtlpExporterOptions>(configuration.GetSection(OtlpConfigPrefix))
-			.Configure<MetricReaderOptions>(configuration.GetSection($"{OpenTelemetryPrefix}:Metrics"))
+			.Configure<MetricReaderOptions>(configuration.GetSection(OtlpMetricsPrefix))
 			.AddOpenTelemetry()
 			.WithMetrics(configure => configure
 				.AddOtlpExporter((exporterOptions, metricReaderOptions) => {
@@ -61,7 +61,7 @@ public class OtlpExporterPlugin(ILogger logger) : SubsystemsPlugin(requiredEntit
 						periodicOptions.ExportIntervalMilliseconds = scrapeIntervalSeconds * 1000;
 					} else if (periodicOptions.ExportIntervalMilliseconds != scrapeIntervalSeconds * 1000) {
 						logger.Warning(
-							$"OtlpExporter: {OpenTelemetryPrefix}:Metrics:PeriodicExportingMetricReaderOptions:ExportIntervalMilliseconds " +
+							$"OtlpExporter: {OtlpMetricsPrefix}:PeriodicExportingMetricReaderOptions:ExportIntervalMilliseconds " +
 							$"({{exportInterval}} ms) does not match {KurrentConfigurationPrefix}:Metrics:ExpectedScrapeIntervalSeconds " +
 							"({scrapeInterval} s). Periodic maximum metrics may not be reported correctly.",
 							periodicOptions.ExportIntervalMilliseconds, scrapeIntervalSeconds);

@@ -8,4 +8,5 @@ public static class ConfigConstants {
 	public const string OpenTelemetryPrefix = $"{RootPrefix}:OpenTelemetry";
 	public const string OtlpConfigPrefix = $"{OpenTelemetryPrefix}:Otlp";
 	public const string OtlpLogsPrefix = $"{OpenTelemetryPrefix}:Logs";
+	public const string OtlpMetricsPrefix = $"{OpenTelemetryPrefix}:Metrics";
 }
