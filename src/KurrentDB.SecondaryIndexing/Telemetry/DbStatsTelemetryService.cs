@@ -26,7 +26,8 @@ public class DbStatsTelemetryService(StatsService statsService, Action<Dictionar
 		var telemetry = new Dictionary<string, object?> {
 			{ "streams", streams },
 			{ "events", events },
-			{ "explicitTransactions", explicitTransactions }
+			{ "explicitTransactions", explicitTransactions.Sum(x => x.TransactionCount) },
+			{ "explicitTransactionLastSeen", explicitTransactions.Max(x => x.LastTransactionDate) }
 		};
 		publish(telemetry);
 	}
