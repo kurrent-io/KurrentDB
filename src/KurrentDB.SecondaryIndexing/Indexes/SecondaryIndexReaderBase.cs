@@ -6,14 +6,12 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Storage;
-using Microsoft.Extensions.Logging;
 using static KurrentDB.Core.Messages.ClientMessage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes;
 
-public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool db, IReadIndex<string> index, ILogger log) : ISecondaryIndexReader {
+public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool db, IReadIndex<string> index) : ISecondaryIndexReader {
 	protected DuckDBConnectionPool Db => db;
-	protected ILogger Log = log;
 
 	protected abstract string GetId(string indexName);
 

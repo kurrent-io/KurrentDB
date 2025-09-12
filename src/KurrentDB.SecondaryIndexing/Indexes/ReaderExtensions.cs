@@ -22,9 +22,12 @@ internal static class ReaderExtensions {
 		var readPrepares = indexPrepares.Select(async x => (Record: x, Prepare: await reader.ReadPrepare<string>(x.LogPosition, cancellationToken)));
 		var prepared = await Task.WhenAll(readPrepares);
 		var recordsQuery = prepared.Where(x => x.Prepare != null);
-		var sorted = ascending ? recordsQuery.OrderBy(x => x.Record.LogPosition) : recordsQuery.OrderByDescending(x => x.Record.LogPosition);
+		var sorted = ascending
+			? recordsQuery.OrderBy(x => x.Record.LogPosition)
+			: recordsQuery.OrderByDescending(x => x.Record.LogPosition);
 		var records = sorted.Select(x => ResolvedEvent.ForUnresolvedEvent(
-			new(x.Record.EventNumber, x.Prepare!, x.Prepare!.EventStreamId, x.Prepare!.EventType)
+			new(x.Record.EventNumber, x.Prepare!, x.Prepare!.EventStreamId, x.Prepare!.EventType),
+			x.Record.CommitPosition
 		));
 		return records.ToList();
 	}

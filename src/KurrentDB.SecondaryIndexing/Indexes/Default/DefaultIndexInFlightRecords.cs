@@ -7,6 +7,7 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 internal record struct InFlightRecord(
 	long LogPosition,
+	long CommitPosition,
 	string Category,
 	string EventType,
 	string StreamName,
@@ -22,9 +23,9 @@ internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions option
 
 	public int Count => _count;
 
-	public void Append(long logPosition, string category, string eventType, string stream, long eventNumber, long created) {
+	public void Append(long logPosition, long commitPosition, string category, string eventType, string stream, long eventNumber, long created) {
 		var count = _count;
-		_records[count] = new(logPosition, category, eventType, stream, eventNumber, created);
+		_records[count] = new(logPosition, commitPosition, category, eventType, stream, eventNumber, created);
 
 		// Fence: make sure that the array modification cannot be done after the increment
 		Volatile.Write(ref _count, count + 1);
@@ -72,7 +73,7 @@ internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions option
 					}
 
 					remaining--;
-					result.Add(new(current.LogPosition, current.EventNumber));
+					result.Add(new(current.LogPosition, current.CommitPosition, current.EventNumber));
 				}
 			} else {
 				if (i == 0) {
@@ -108,7 +109,7 @@ internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions option
 					}
 
 					remaining--;
-					yield return new(current.LogPosition, current.EventNumber);
+					yield return new(current.LogPosition, current.CommitPosition, current.EventNumber);
 				}
 			}
 		}

@@ -3,4 +3,14 @@
 
 namespace KurrentDB.SecondaryIndexing.Storage;
 
-public record struct IndexQueryRecord(long LogPosition, long EventNumber);
+public record struct IndexQueryRecord {
+	public IndexQueryRecord(long LogPosition, long? CommitPosition, long EventNumber) {
+		this.LogPosition = LogPosition;
+		this.CommitPosition = CommitPosition ?? LogPosition;
+		this.EventNumber = EventNumber;
+	}
+
+	public long LogPosition { get; }
+	public long CommitPosition { get; }
+	public long EventNumber { get; }
+}

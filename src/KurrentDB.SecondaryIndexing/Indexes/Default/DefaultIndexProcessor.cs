@@ -95,7 +95,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			row.Append(schemaFormat);
 		}
 
-		_inFlightRecords.Append(logPosition, category, schemaName, resolvedEvent.Event.EventStreamId, eventNumber, created);
+		_inFlightRecords.Append(logPosition, commitPosition ?? logPosition, category, schemaName, resolvedEvent.Event.EventStreamId, eventNumber, created);
 		LastIndexedPosition = resolvedEvent.EventPosition!.Value;
 
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(SystemStreams.DefaultSecondaryIndex, resolvedEvent));
