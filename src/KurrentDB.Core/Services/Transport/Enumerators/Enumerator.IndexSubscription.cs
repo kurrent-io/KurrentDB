@@ -21,23 +21,23 @@ namespace KurrentDB.Core.Services.Transport.Enumerators;
 
 partial class Enumerator {
 	public sealed class IndexSubscription : IAsyncEnumerator<ReadResponse> {
-		static readonly ILogger Log = Serilog.Log.ForContext<IndexSubscription>();
+		private static readonly ILogger Log = Serilog.Log.ForContext<IndexSubscription>();
 
-		readonly IExpiryStrategy _expiryStrategy;
-		readonly Guid _subscriptionId;
-		readonly IPublisher _bus;
-		readonly ClaimsPrincipal _user;
-		readonly bool _requiresLeader;
-		readonly CancellationTokenSource _cts;
-		readonly Channel<ReadResponse> _channel;
-		readonly Channel<(ulong SequenceNumber, ResolvedEvent? ResolvedEvent, TFPos? Checkpoint)> _liveEvents;
+		private readonly IExpiryStrategy _expiryStrategy;
+		private readonly Guid _subscriptionId;
+		private readonly IPublisher _bus;
+		private readonly ClaimsPrincipal _user;
+		private readonly bool _requiresLeader;
+		private readonly CancellationTokenSource _cts;
+		private readonly Channel<ReadResponse> _channel;
+		private readonly Channel<(ulong SequenceNumber, ResolvedEvent? ResolvedEvent, TFPos? Checkpoint)> _liveEvents;
 
-		bool _disposed;
-		readonly string _indexName;
+		private bool _disposed;
+		private readonly string _indexName;
 
 		public ReadResponse Current { get; private set; }
 
-		string SubscriptionId { get; }
+		private string SubscriptionId { get; }
 
 		public IndexSubscription(IPublisher bus,
 			IExpiryStrategy expiryStrategy,
@@ -62,7 +62,7 @@ partial class Enumerator {
 			Task.Factory.StartNew(() => MainLoop(checkpoint, _cts.Token), _cts.Token);
 		}
 
-		async Task MainLoop(Position? checkpointPosition, CancellationToken ct) {
+		private async Task MainLoop(Position? checkpointPosition, CancellationToken ct) {
 			try {
 				Log.Debug("Subscription {SubscriptionId} to {IndexName} has started at checkpoint {Position}",
 					_subscriptionId, _indexName, checkpointPosition?.ToString() ?? "Start");
@@ -128,7 +128,7 @@ partial class Enumerator {
 			return true;
 		}
 
-		async ValueTask<(TFPos, ulong)> GoLive(TFPos checkpoint, ulong sequenceNumber, CancellationToken ct) {
+		private async ValueTask<(TFPos, ulong)> GoLive(TFPos checkpoint, ulong sequenceNumber, CancellationToken ct) {
 			await NotifyCaughtUp(checkpoint);
 
 			await foreach (var liveEvent in _liveEvents.Reader.ReadAllAsync(ct)) {
@@ -177,7 +177,7 @@ partial class Enumerator {
 			}
 		}
 
-		Task<TFPos> CatchUp(TFPos checkpoint, CancellationToken ct) {
+		private Task<TFPos> CatchUp(TFPos checkpoint, CancellationToken ct) {
 			Log.Verbose("Subscription {SubscriptionId} to {IndexName} is catching up from checkpoint {Position}", _subscriptionId, _indexName, checkpoint);
 
 			var catchupCompletionTcs = new TaskCompletionSource<TFPos>();
@@ -237,9 +237,10 @@ partial class Enumerator {
 			}
 		}
 
-		ValueTask SendEventToSubscription(ResolvedEvent @event, CancellationToken ct) => _channel.Writer.WriteAsync(new ReadResponse.EventReceived(@event), ct);
+		private ValueTask SendEventToSubscription(ResolvedEvent @event, CancellationToken ct)
+			=> _channel.Writer.WriteAsync(new ReadResponse.EventReceived(@event), ct);
 
-		Task<TFPos> SubscribeToLive() {
+		private Task<TFPos> SubscribeToLive() {
 			var nextLiveSequenceNumber = 0UL;
 			var confirmationPositionTcs = new TaskCompletionSource<TFPos>();
 
@@ -302,7 +303,7 @@ partial class Enumerator {
 			}
 		}
 
-		void ReadPage(TFPos startPos, IEnvelope envelope, CancellationToken ct) {
+		private void ReadPage(TFPos startPos, IEnvelope envelope, CancellationToken ct) {
 			Guid correlationId = Guid.NewGuid();
 			Log.Verbose("Subscription {SubscriptionId} to {IndexName} reading next page starting from {Position}.", _subscriptionId, _indexName, startPos);
 
