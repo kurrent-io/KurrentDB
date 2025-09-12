@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using Serilog;
+using Serilog.Filters;
 using Serilog.Sinks.OpenTelemetry;
 
 namespace KurrentDB.Logging;
@@ -18,6 +19,7 @@ public static class OpenTelemetryLogger {
 		var metricsConfig = MetricsConfiguration.Get(configuration);
 
 		return config
+			.Filter.ByExcluding(Matching.FromSource("REGULAR-STATS-LOGGER"))
 			.WriteTo.OpenTelemetry(options => {
 				options.ResourceAttributes = new Dictionary<string, object> {
 					["service.name"] = metricsConfig.ServiceName,
