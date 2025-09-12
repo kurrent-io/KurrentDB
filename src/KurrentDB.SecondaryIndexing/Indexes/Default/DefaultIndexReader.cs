@@ -15,9 +15,8 @@ internal class DefaultIndexReader(
 	DuckDBConnectionPool db,
 	DefaultIndexProcessor processor,
 	DefaultIndexInFlightRecords inFlightRecords,
-	IReadIndex<string> index,
-	ILogger<DefaultIndexReader> log
-) : SecondaryIndexReaderBase(db, index, log) {
+	IReadIndex<string> index
+) : SecondaryIndexReaderBase(db, index) {
 	protected override string GetId(string indexName) => string.Empty;
 
 	protected override (List<IndexQueryRecord> Records, bool IsFinal) GetInflightForwards(string id, long startPosition, int maxCount, bool excludeFirst)
