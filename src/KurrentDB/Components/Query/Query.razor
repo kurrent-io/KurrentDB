@@ -129,10 +129,7 @@
 		watch.Start();
 
 		try {
-			using var scope = Db.Rent(out var connection);
-			var query = QueryService.AmendQuery(sql);
-			var items = (IEnumerable<IDictionary<string, object>>)connection.Query(query);
-			_items = items.Select(x => x.ToDictionary(y => y.Key, y => y.Value)).ToList();
+			_items = Db.ExecuteAdHocUserQuery(sql);
 			watch.Stop();
 			_message = $"Query executed in {watch}";
 		}
