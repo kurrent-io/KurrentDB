@@ -27,7 +27,7 @@ public abstract class IndexTestBase : DuckDbIntegrationTest {
 
 		_processor = new(DuckDb, inFlightRecords, publisher, hasher, new("test"));
 
-		Sut = new(DuckDb, _processor, inFlightRecords, _readIndexStub.ReadIndex, NullLogger<DefaultIndexReader>.Instance);
+		Sut = new(DuckDb, _processor, inFlightRecords, _readIndexStub.ReadIndex);
 	}
 
 	protected void IndexEvents(ResolvedEvent[] events, bool shouldCommit) {

@@ -4,6 +4,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
 using EventStore.Plugins;
+using EventStore.Plugins.Diagnostics;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services.Storage;
@@ -13,7 +14,9 @@ using KurrentDB.SecondaryIndexing.Indexes;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
+using KurrentDB.SecondaryIndexing.Stats;
 using KurrentDB.SecondaryIndexing.Storage;
+using KurrentDB.SecondaryIndexing.Telemetry;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -53,6 +56,11 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddSingleton<ISecondaryIndexReader, DefaultIndexReader>();
 		services.AddSingleton<ISecondaryIndexReader, CategoryIndexReader>();
 		services.AddSingleton<ISecondaryIndexReader, EventTypeIndexReader>();
+
+		services.AddHostedService(sp => new DbStatsTelemetryService(
+			sp.GetRequiredService<StatsService>(),
+			telemetry => PublishDiagnosticsData(telemetry, PluginDiagnosticsDataCollectionMode.Snapshot))
+		);
 	}
 
 	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
