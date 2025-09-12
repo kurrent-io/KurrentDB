@@ -36,7 +36,7 @@ partial class ThreadPoolMessageScheduler {
 		private ConfiguredValueTaskAwaitable.ConfiguredValueTaskAwaiter _awaiter;
 		private Message _message;
 		private AsyncExclusiveLock _groupLock;
-		private Instant _timestamp;
+		private Instant _timestamp; // enqueuedAt or processingStartedAt depending on the state.
 
 		public AsyncStateMachine(ThreadPoolMessageScheduler scheduler) {
 			_scheduler = scheduler;
@@ -199,6 +199,9 @@ partial class ThreadPoolMessageScheduler {
 			}
 		}
 
+		// For now only producing metrics when the ThreadPoolMessageScheduler is configured as a queue
+		// i.e. SynchronizeMessagesWithUnknownAffinity is true. The queue for UnknownAffinity is the queue
+		// we report metrics for. In the future this can be generalised to treat each affinity as a queue.
 		[MemberNotNullWhen(true, nameof(_groupLock))]
 		[MemberNotNullWhen(true, nameof(_message))]
 		private bool NeedsMetrics {
