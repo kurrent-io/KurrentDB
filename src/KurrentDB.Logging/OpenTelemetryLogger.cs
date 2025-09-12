@@ -14,6 +14,9 @@ namespace KurrentDB.Logging;
 
 public static class OpenTelemetryLogger {
 	public static LoggerConfiguration AddOpenTelemetryLogger(this LoggerConfiguration config, IConfiguration configuration, string componentName) {
+		if (!configuration.OtlpLogsEnabled())
+			return config;
+
 		var logExporterConfig = configuration.GetSection(ConfigConstants.OtlpLogsPrefix).Get<LogRecordExportProcessorOptions>()!;
 		var otlpExporterConfig = configuration.GetSection(ConfigConstants.OtlpConfigPrefix).Get<OtlpExporterOptions>()!;
 		var metricsConfig = MetricsConfiguration.Get(configuration);
