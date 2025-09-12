@@ -2,7 +2,7 @@
 @* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
 
 @page "/ui/query"
-@attribute [Authorize]
+@attribute [Authorize(Roles = "$admins")]
 @attribute [ExcludeFromInteractiveRouting]
 @rendermode InteractiveServer
 @using System.Diagnostics
@@ -20,6 +20,7 @@
 @inject Preferences Preferences
 @inject IDialogService DialogService
 @inject PluginsService Plugins
+
 <MudPopoverProvider/>
 <MudDialogProvider />
 
