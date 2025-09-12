@@ -23,12 +23,16 @@ public class DbStatsTelemetryService(StatsService statsService, Action<Dictionar
 	private void CollectDbStats() {
 		var (streams, events) = statsService.GetTotalStats();
 		var explicitTransactions = statsService.GetExplicitTransactions();
+		var tCount = explicitTransactions.Count > 0 ? explicitTransactions.Sum(x => x.TransactionCount) : 0;
 		var telemetry = new Dictionary<string, object?> {
 			{ "streams", streams },
 			{ "events", events },
-			{ "explicitTransactions", explicitTransactions.Sum(x => x.TransactionCount) },
-			{ "explicitTransactionLastSeen", explicitTransactions.Max(x => x.LastTransactionDate) }
+			{ "explicitTransactions", tCount },
 		};
+		if (tCount > 0) {
+			telemetry.Add("explicitTransactionLastSeen", explicitTransactions.Max(x => x.LastTransactionDate));
+		}
+
 		publish(telemetry);
 	}
 }
