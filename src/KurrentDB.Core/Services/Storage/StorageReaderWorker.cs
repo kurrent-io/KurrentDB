@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading;
+using System.Threading.RateLimiting;
 using System.Threading.Tasks;
 using DotNext.Threading;
 using KurrentDB.Common.Utils;
@@ -14,6 +15,7 @@ using KurrentDB.Core.Exceptions;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.RateLimiting;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.TimerService;
@@ -50,6 +52,7 @@ public class StorageReaderWorker<TStreamId> :
 	private readonly ISystemStreamLookup<TStreamId> _systemStreams;
 	private readonly IReadOnlyCheckpoint _writerCheckpoint;
 	private readonly IPublisher _publisher;
+	private readonly PartitionedRateLimiter<ResourceAndPriority> _limiter;
 	private readonly IVirtualStreamReader _virtualStreamReader;
 	private const int MaxPageSize = 4096;
 
@@ -62,6 +65,7 @@ public class StorageReaderWorker<TStreamId> :
 		IReadIndex<TStreamId> readIndex,
 		ISystemStreamLookup<TStreamId> systemStreams,
 		IReadOnlyCheckpoint writerCheckpoint,
+		PartitionedRateLimiter<ResourceAndPriority> limiter,
 		IVirtualStreamReader virtualStreamReader) {
 
 		_publisher = publisher;
@@ -69,6 +73,7 @@ public class StorageReaderWorker<TStreamId> :
 		_systemStreams = Ensure.NotNull(systemStreams);
 		_writerCheckpoint = Ensure.NotNull(writerCheckpoint);
 		_virtualStreamReader = virtualStreamReader;
+		_limiter = limiter; //qq use the limiter
 
 		_scheduleBatchPeriodCompletion = TimerMessage.Schedule.Create(
 			TimeSpan.FromSeconds(10),

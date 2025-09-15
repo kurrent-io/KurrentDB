@@ -40,6 +40,7 @@ using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.RateLimiting;
 using KurrentDB.Core.Resilience;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Archive;
@@ -285,6 +286,9 @@ public class ClusterVNode<TStreamId> :
 		var archiveOptions = GetOptions<ArchiveOptions>("Archive");
 		OptionsFormatter.LogConfig("Archive", archiveOptions);
 		archiveOptions.Validate();
+
+		// Rate Limiting
+		var limiter = RateLimiters.General;
 
 		var disableInternalTcpTls = options.Application.Insecure;
 		var disableExternalTcpTls = options.Application.Insecure;
@@ -766,7 +770,7 @@ public class ClusterVNode<TStreamId> :
 
 		// Storage Reader
 		var storageReader = new StorageReaderService<TStreamId>(_mainQueue, _mainBus, readIndex,
-			logFormat.SystemStreams, Db.Config.WriterCheckpoint.AsReadOnly(), virtualStreamReader, _queueStatsManager,
+			logFormat.SystemStreams, limiter, Db.Config.WriterCheckpoint.AsReadOnly(), virtualStreamReader, _queueStatsManager,
 			trackers.QueueTrackers);
 
 		_mainBus.Subscribe<SystemMessage.SystemInit>(storageReader);

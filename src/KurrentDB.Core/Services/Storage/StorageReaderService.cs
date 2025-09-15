@@ -4,12 +4,14 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.RateLimiting;
 using System.Threading.Tasks;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Metrics;
+using KurrentDB.Core.RateLimiting;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.TransactionLog.Checkpoint;
@@ -35,18 +37,20 @@ public class StorageReaderService<TStreamId> : StorageReaderService, IHandle<Sys
 		ISubscriber subscriber,
 		IReadIndex<TStreamId> readIndex,
 		ISystemStreamLookup<TStreamId> systemStreams,
+		PartitionedRateLimiter<ResourceAndPriority> limiter,
 		IReadOnlyCheckpoint writerCheckpoint,
 		IVirtualStreamReader inMemReader,
 		QueueStatsManager queueStatsManager,
 		QueueTrackers trackers) {
 		Ensure.NotNull(subscriber);
 		Ensure.NotNull(systemStreams);
+		Ensure.NotNull(limiter);
 		Ensure.NotNull(writerCheckpoint);
 
 		_bus = Ensure.NotNull(bus);
 		_readIndex = Ensure.NotNull(readIndex);
 
-		var worker = new StorageReaderWorker<TStreamId>(bus, readIndex, systemStreams, writerCheckpoint, inMemReader);
+		var worker = new StorageReaderWorker<TStreamId>(bus, readIndex, systemStreams, writerCheckpoint, limiter, inMemReader);
 		var storageReaderBus = new InMemoryBus("StorageReaderBus", watchSlowMsg: false);
 
 		storageReaderBus.Subscribe<ClientMessage.ReadEvent>(worker);
