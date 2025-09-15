@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading;
+using System.Threading.RateLimiting;
 using System.Threading.Tasks;
 using DotNext.Threading;
 using KurrentDB.Common.Utils;
@@ -51,6 +52,7 @@ public class StorageReaderWorker<TStreamId> :
 	private readonly IReadOnlyCheckpoint _writerCheckpoint;
 	private readonly IPublisher _publisher;
 	private readonly IVirtualStreamReader _virtualStreamReader;
+	private readonly RateLimiter _limiter;
 	private const int MaxPageSize = 4096;
 
 	private readonly Message _scheduleBatchPeriodCompletion;
@@ -62,13 +64,15 @@ public class StorageReaderWorker<TStreamId> :
 		IReadIndex<TStreamId> readIndex,
 		ISystemStreamLookup<TStreamId> systemStreams,
 		IReadOnlyCheckpoint writerCheckpoint,
-		IVirtualStreamReader virtualStreamReader) {
+		IVirtualStreamReader virtualStreamReader,
+		RateLimiter limiter) {
 
 		_publisher = publisher;
 		_readIndex = Ensure.NotNull(readIndex);
 		_systemStreams = Ensure.NotNull(systemStreams);
 		_writerCheckpoint = Ensure.NotNull(writerCheckpoint);
 		_virtualStreamReader = virtualStreamReader;
+		_limiter = Ensure.NotNull(limiter);
 
 		_scheduleBatchPeriodCompletion = TimerMessage.Schedule.Create(
 			TimeSpan.FromSeconds(10),
@@ -76,7 +80,25 @@ public class StorageReaderWorker<TStreamId> :
 			new StorageMessage.BatchLogExpiredMessages());
 	}
 
+	// There are two cancellation tokens
+	// 1. token: cancelled when the scheduler is stopped
+	// 2. msg.CancellationToken: cancelled when the read request is cancelled (e.g. because of the gRPC call)
+	//
+	// We want to stop processing if either token is cancelled, but we ideally want to avoid allocating on every message,
+	// especially for the duration of queueing.
+	//
+	// If the scheduler is stopped then it's actually not that important that we stop processing quickly,
+	// because the whole server is shutting down so there isn't urgent work to do.
+	// If the message is cancelled its more import, because its consuming resources and getting in the way of proper work.
+	//
+	// We therefore mainly want to respect msg.CancellationToken.
+	// We should ideally still check token because when we are shutting down the server we don't want to wait
+	// for all the requests in the queues to complete.
+	//
+	// The infrastructure (ThreadPoolMessageScheduler) swallows OperationCanceledExceptions from either token.
 	async ValueTask IAsyncHandle<ClientMessage.ReadEvent>.HandleAsync(ClientMessage.ReadEvent msg, CancellationToken token) {
+		using var lease = await _limiter.AcquireAsync(permitCount: 1, msg.CancellationToken);
+
 		if (msg.CancellationToken.IsCancellationRequested)
 			return;
 
@@ -100,6 +122,8 @@ public class StorageReaderWorker<TStreamId> :
 	}
 
 	async ValueTask IAsyncHandle<ClientMessage.ReadStreamEventsForward>.HandleAsync(ClientMessage.ReadStreamEventsForward msg, CancellationToken token) {
+		using var lease = await _limiter.AcquireAsync(permitCount: 1, msg.CancellationToken);
+
 		if (msg.CancellationToken.IsCancellationRequested)
 			return;
 
@@ -155,6 +179,8 @@ public class StorageReaderWorker<TStreamId> :
 	}
 
 	async ValueTask IAsyncHandle<ClientMessage.ReadStreamEventsBackward>.HandleAsync(ClientMessage.ReadStreamEventsBackward msg, CancellationToken token) {
+		using var lease = await _limiter.AcquireAsync(permitCount: 1, msg.CancellationToken);
+
 		if (msg.CancellationToken.IsCancellationRequested)
 			return;
 
@@ -181,6 +207,8 @@ public class StorageReaderWorker<TStreamId> :
 	}
 
 	async ValueTask IAsyncHandle<ClientMessage.ReadAllEventsForward>.HandleAsync(ClientMessage.ReadAllEventsForward msg, CancellationToken token) {
+		using var lease = await _limiter.AcquireAsync(permitCount: 1, msg.CancellationToken);
+
 		if (msg.CancellationToken.IsCancellationRequested)
 			return;
 
@@ -232,6 +260,8 @@ public class StorageReaderWorker<TStreamId> :
 	}
 
 	async ValueTask IAsyncHandle<ClientMessage.ReadAllEventsBackward>.HandleAsync(ClientMessage.ReadAllEventsBackward msg, CancellationToken token) {
+		using var lease = await _limiter.AcquireAsync(permitCount: 1, msg.CancellationToken);
+
 		if (msg.CancellationToken.IsCancellationRequested)
 			return;
 
@@ -247,6 +277,8 @@ public class StorageReaderWorker<TStreamId> :
 	}
 
 	async ValueTask IAsyncHandle<ClientMessage.FilteredReadAllEventsForward>.HandleAsync(ClientMessage.FilteredReadAllEventsForward msg, CancellationToken token) {
+		using var lease = await _limiter.AcquireAsync(permitCount: 1, msg.CancellationToken);
+
 		if (msg.CancellationToken.IsCancellationRequested)
 			return;
 
@@ -296,6 +328,8 @@ public class StorageReaderWorker<TStreamId> :
 	}
 
 	async ValueTask IAsyncHandle<ClientMessage.FilteredReadAllEventsBackward>.HandleAsync(ClientMessage.FilteredReadAllEventsBackward msg, CancellationToken token) {
+		using var lease = await _limiter.AcquireAsync(permitCount: 1, msg.CancellationToken);
+
 		if (msg.CancellationToken.IsCancellationRequested)
 			return;
 
@@ -339,8 +373,10 @@ public class StorageReaderWorker<TStreamId> :
 	async ValueTask IAsyncHandle<StorageMessage.EffectiveStreamAclRequest>.HandleAsync(StorageMessage.EffectiveStreamAclRequest msg, CancellationToken token) {
 		Message reply;
 		var cts = token.LinkTo(msg.CancellationToken);
+		var lease = default(RateLimitLease);
 
 		try {
+			lease = await _limiter.AcquireAsync(permitCount: 1, msg.CancellationToken);
 			var acl = await _readIndex.GetEffectiveAcl(_readIndex.GetStreamId(msg.StreamId), token);
 			reply = new StorageMessage.EffectiveStreamAclResponse(acl);
 		} catch (OperationCanceledException e) when (e.CausedBy(cts, msg.CancellationToken)) {
@@ -348,6 +384,7 @@ public class StorageReaderWorker<TStreamId> :
 		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts?.Token) {
 			throw new OperationCanceledException(null, ex, cts.CancellationOrigin);
 		} finally {
+			lease?.Dispose();
 			cts?.Dispose();
 		}
 
@@ -729,7 +766,7 @@ public class StorageReaderWorker<TStreamId> :
 		_expiryPeriodRunning.Value = false;
 		var count = Interlocked.Exchange(ref _messagesExpiredInPeriod, 0);
 		Log.Warning("StorageReader {0} read operations expired during the period", count);
-		}
+	}
 
 	// Counts expired messages and ensures the count is logged at the end of the period.
 	// Returns whether the caller should additionally log a detailed message (limited to 5 per period).
@@ -750,7 +787,10 @@ public class StorageReaderWorker<TStreamId> :
 	async ValueTask IAsyncHandle<StorageMessage.StreamIdFromTransactionIdRequest>.HandleAsync(StorageMessage.StreamIdFromTransactionIdRequest message, CancellationToken token) {
 		var cts = token.LinkTo(message.CancellationToken);
 		Message reply;
+
+		var lease = default(RateLimitLease);
 		try {
+			lease = await _limiter.AcquireAsync(permitCount: 1, message.CancellationToken);
 			var streamId = await _readIndex.GetEventStreamIdByTransactionId(message.TransactionId, token);
 			var streamName = await _readIndex.GetStreamName(streamId, token);
 			reply = new StorageMessage.StreamIdFromTransactionIdResponse(streamName);
@@ -759,6 +799,7 @@ public class StorageReaderWorker<TStreamId> :
 		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts?.Token) {
 			throw new OperationCanceledException(null, ex, cts.CancellationOrigin);
 		} finally {
+			lease?.Dispose();
 			cts?.Dispose();
 		}
 
