@@ -62,7 +62,7 @@ public sealed class SecondaryIndexSubscription(
 			}
 
 			if (_subscription.Current is ReadResponse.SubscriptionCaughtUp caughtUp) {
-				Log.Debug("Default indexing subscription caught up at {Time}", caughtUp.Timestamp);
+				Log.Verbose("Default indexing subscription caught up at {Time}", caughtUp.Timestamp);
 				continue;
 			}
 

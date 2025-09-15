@@ -111,6 +111,7 @@
     <PackageVersion Include="NUnit" Version="3.14.0" />
     <PackageVersion Include="NUnit3TestAdapter" Version="4.5.0" />
     <PackageVersion Include="ObjectLayoutInspector" Version="0.1.4" />
+    <PackageVersion Include="OpenTelemetry" Version="1.11.2" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.11.2" />
     <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.11.2-beta.1" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.11.2" />

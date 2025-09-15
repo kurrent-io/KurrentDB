@@ -163,7 +163,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 
 		var publisher = new FakePublisher();
 
-		_processor = new(DuckDb, inflightRecordsCache, publisher, hasher, new("test"));
+		_processor = new(DuckDb, inflightRecordsCache, publisher, hasher, new("test"), null);
 	}
 
 	public override Task DisposeAsync() {

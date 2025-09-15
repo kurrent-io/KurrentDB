@@ -27,7 +27,7 @@ public class FakeSecondaryIndexProcessor(IList<ResolvedEvent> committed, IList<R
 		return (committed.Last().EventPosition ?? TFPos.Invalid, 0);
 	}
 
-	public SecondaryIndexProgressTracker Tracker { get; } = new("fake", new("fake"));
+	public SecondaryIndexProgressTracker Tracker { get; } = new("fake", "kurrentdb", new("fake"));
 
 	public void Commit() {
 		lock (_lock) {

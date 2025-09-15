@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics.Metrics;
+using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Time;
 using Serilog;
@@ -22,25 +23,28 @@ public class SecondaryIndexProgressTracker {
 
 	private const string MeterPrefix = "indexes.secondary";
 
-	public SecondaryIndexProgressTracker(string indexName, Meter meter, IClock? clock = null) {
+	public SecondaryIndexProgressTracker(string indexName, string serviceName, Meter meter, IClock? clock = null) {
 		_clock = clock ?? Clock.Instance;
 		IndexName = indexName;
 
 		meter.CreateObservableGauge(
-			$"{MeterPrefix}.subscription.gap",
+			$"{serviceName}.{MeterPrefix}.subscription.gap",
 			ObserveGap,
 			"bytes",
 			"Gap between last indexed and current last event log position, in bytes"
 		);
 
 		meter.CreateObservableGauge(
-			$"{MeterPrefix}.subscription.lag",
+			$"{serviceName}.{MeterPrefix}.subscription.lag",
 			ObserveLag,
 			"s",
 			"Time between last appended and last indexed event, in seconds"
 		);
 
-		_histogram = meter.CreateHistogram<double>($"{MeterPrefix}.commit.seconds");
+		_histogram = meter.CreateHistogram<double>(
+			$"{serviceName}.{MeterPrefix}.commit.seconds",
+			advice: new() { HistogramBucketBoundaries = MetricsConfiguration.SecondsHistogramBucketConfiguration.Boundaries }
+		);
 		_tag = [new("index", indexName)];
 	}
 
@@ -48,7 +52,7 @@ public class SecondaryIndexProgressTracker {
 
 	public void RecordIndexed(ResolvedEvent resolvedEvent) {
 		_lastIndexedPosition = resolvedEvent.OriginalPosition!.Value.CommitPosition;
-		_lastIndexedAt = DateTime.Now;
+		_lastIndexedAt = DateTime.UtcNow;
 	}
 
 	public void InitLastAppended(Event @event) {
@@ -89,7 +93,12 @@ public class SecondaryIndexProgressTracker {
 		yield return new(lag, _tag);
 	}
 
-	public sealed class CommitDuration(Histogram<double> histogram, IClock clock, KeyValuePair<string, object?> tag, string indexName, ILogger logger) : IDisposable {
+	public sealed class CommitDuration(
+		Histogram<double> histogram,
+		IClock clock,
+		KeyValuePair<string, object?> tag,
+		string indexName,
+		ILogger logger) : IDisposable {
 		private readonly Instant _start = clock.Now;
 
 		public void Dispose() {

@@ -110,9 +110,7 @@ public class ClusterVNodeStartup<TStreamId>
 	public void Configure(WebApplication app) {
 		_configureNode(app);
 
-		var forcePlainTextMetrics =
-			_metricsConfiguration.LegacyCoreNaming &&
-			_metricsConfiguration.LegacyProjectionsNaming;
+		var forcePlainTextMetrics = _metricsConfiguration is { LegacyCoreNaming: true, LegacyProjectionsNaming: true };
 
 		var internalDispatcher = new InternalDispatcherEndpoint(_mainQueue, _httpMessageHandler);
 		_mainBus.Subscribe(internalDispatcher);
@@ -274,7 +272,8 @@ public class ClusterVNodeStartup<TStreamId>
 				maxAppendEventSize: Ensure.Positive(_options.Application.MaxAppendEventSize),
 				chunkSize: _options.Database.ChunkSize))
 			.AddSingleton<ServerFeatures>()
-			.AddSingleton(_options);
+			.AddSingleton(_options)
+			.AddSingleton(_metricsConfiguration);
 
 		// OpenTelemetry
 		services.AddOpenTelemetry()
@@ -322,28 +321,11 @@ public class ClusterVNodeStartup<TStreamId>
 			if (i.Name == MetricsBootstrapper.LogicalChunkReadDistributionName(_metricsConfiguration.ServiceName))
 				// 20 buckets, 0, 1, 2, 4, 8, ...
 				return new ExplicitBucketHistogramConfiguration { Boundaries = [0, .. Enumerable.Range(0, count: 19).Select(x => 1 << x)] };
-			if (i.Name.StartsWith(_metricsConfiguration.ServiceName + "-") && (i.Name.EndsWith("-latency-seconds") || i.Name.EndsWith("-latency") && i.Unit == "seconds"))
-				return new ExplicitBucketHistogramConfiguration {
-					Boundaries = [
-						0.001, //    1 ms
-						0.005, //    5 ms
-						0.01, //   10 ms
-						0.05, //   50 ms
-						0.1, //  100 ms
-						0.5, //  500 ms
-						1, // 1000 ms
-						5, // 5000 ms
-					]
-				};
+			if (i.Name.StartsWith(_metricsConfiguration.ServiceName + "-") &&
+			    (i.Name.EndsWith("-latency-seconds") || i.Name.EndsWith("-latency") && i.Unit == "seconds"))
+				return MetricsConfiguration.LatencySecondsHistogramBucketConfiguration;
 			if (i.Name.StartsWith(_metricsConfiguration.ServiceName + "-") && (i.Name.EndsWith("-seconds") || i.Unit == "seconds"))
-				return new ExplicitBucketHistogramConfiguration {
-					Boundaries = [
-						0.000_001, // 1 microsecond
-						0.000_01, 0.000_1, 0.001, // 1 millisecond
-						0.01, 0.1, 1, // 1 second
-						10,
-					]
-				};
+				return MetricsConfiguration.SecondsHistogramBucketConfiguration;
 			return default;
 		}
 	}

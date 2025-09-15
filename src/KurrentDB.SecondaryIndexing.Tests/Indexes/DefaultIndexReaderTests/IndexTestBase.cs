@@ -25,7 +25,7 @@ public abstract class IndexTestBase : DuckDbIntegrationTest {
 		var inFlightRecords = new DefaultIndexInFlightRecords(new() { CommitBatchSize = commitBatchSize });
 		var publisher = new FakePublisher();
 
-		_processor = new(DuckDb, inFlightRecords, publisher, hasher, new("test"));
+		_processor = new(DuckDb, inFlightRecords, publisher, hasher, new("test"), null);
 
 		Sut = new(DuckDb, _processor, inFlightRecords, _readIndexStub.ReadIndex);
 	}

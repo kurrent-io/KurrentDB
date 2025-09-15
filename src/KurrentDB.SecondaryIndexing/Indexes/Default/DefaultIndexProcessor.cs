@@ -6,6 +6,7 @@ using DotNext;
 using DotNext.Threading;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
+using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Index.Hashes;
@@ -38,12 +39,13 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		DefaultIndexInFlightRecords inFlightRecords,
 		IPublisher publisher,
 		ILongHasher<string> hasher,
-		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)] Meter meter
+		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)] Meter meter,
+		MetricsConfiguration? metricsConfiguration
 	) {
 		_connection = db.Open();
 		_appender = new(_connection, "idx_all"u8);
 		_inFlightRecords = inFlightRecords;
-		Tracker = new("default", meter);
+		Tracker = new("default", metricsConfiguration?.ServiceName ?? "kurrentdb", meter);
 		_publisher = publisher;
 		_hasher = hasher;
 
