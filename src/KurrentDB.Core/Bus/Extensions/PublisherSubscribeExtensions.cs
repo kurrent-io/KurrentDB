@@ -20,9 +20,9 @@ namespace KurrentDB.Core;
 
 [PublicAPI]
 public static class PublisherSubscribeExtensions {
-	static readonly IExpiryStrategy DefaultExpiryStrategy = new DefaultExpiryStrategy();
+	private static readonly IExpiryStrategy DefaultExpiryStrategy = new DefaultExpiryStrategy();
 
-	const uint DefaultCheckpointIntervalMultiplier = 1;
+	private const uint DefaultCheckpointIntervalMultiplier = 1;
 
 	static async IAsyncEnumerable<ReadResponse> SubscribeToAll(this IPublisher publisher, Position? position, IEventFilter filter, uint maxSearchWindow,
 		[EnumeratorCancellation] CancellationToken cancellationToken) {
@@ -40,14 +40,14 @@ public static class PublisherSubscribeExtensions {
 		);
 
 		while (!cancellationToken.IsCancellationRequested) {
-			if (!await sub.MoveNextAsync(cancellationToken)) // not sure if we need to retry forever or if the enumerator will do that for us
+			if (!await sub.MoveNextAsync(cancellationToken))
 				break;
 
 			yield return sub.Current;
 		}
 	}
 
-	static async IAsyncEnumerable<ReadResponse> SubscribeToStream(this IPublisher publisher, string stream, StreamRevision? revision, [EnumeratorCancellation] CancellationToken cancellationToken) {
+	private static async IAsyncEnumerable<ReadResponse> SubscribeToStream(this IPublisher publisher, string stream, StreamRevision? revision, [EnumeratorCancellation] CancellationToken cancellationToken) {
 		var startRevision = StartFrom(revision);
 
 		await using var sub = new Enumerator.StreamSubscription<string>(
@@ -62,7 +62,7 @@ public static class PublisherSubscribeExtensions {
 		);
 
 		while (!cancellationToken.IsCancellationRequested) {
-			if (!await sub.MoveNextAsync()) // not sure if we need to retry forever or if the enumerator will do that for us
+			if (!await sub.MoveNextAsync())
 				break;
 
 			yield return sub.Current;
@@ -86,7 +86,7 @@ public static class PublisherSubscribeExtensions {
 		);
 
 		while (!cancellationToken.IsCancellationRequested) {
-			if (!await sub.MoveNextAsync(cancellationToken)) // not sure if we need to retry forever or if the enumerator will do that for us
+			if (!await sub.MoveNextAsync(cancellationToken))
 				break;
 
 			yield return sub.Current;

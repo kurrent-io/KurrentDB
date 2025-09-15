@@ -2,22 +2,24 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics.CodeAnalysis;
-using KurrentDB.Core.Services;
+using static KurrentDB.Core.Services.SystemStreams;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
 
-static class EventTypeIndex {
-	public static string Name(string eventType) => $"{SystemStreams.EventTypeSecondaryIndexPrefix}{eventType}";
+internal static class EventTypeIndex {
+	public static string Name(string eventType) => $"{EventTypeSecondaryIndexPrefix}{eventType}";
 
-	public static bool TryParseEventType(string streamName, [NotNullWhen(true)] out string? eventTypeName) {
-		if (!IsEventTypeIndex(SystemStreams.EventTypeSecondaryIndexPrefix)) {
+	private static readonly int PrefixLength = EventTypeSecondaryIndexPrefix.Length;
+
+	public static bool TryParseEventType(string indexName, [NotNullWhen(true)] out string? eventTypeName) {
+		if (!IsEventTypeIndex(indexName)) {
 			eventTypeName = null;
 			return false;
 		}
 
-		eventTypeName = streamName[8..];
+		eventTypeName = indexName[PrefixLength..];
 		return true;
 	}
 
-	public static bool IsEventTypeIndex(string indexName) => indexName.StartsWith(SystemStreams.EventTypeSecondaryIndexPrefix);
+	public static bool IsEventTypeIndex(string indexName) => indexName.StartsWith(EventTypeSecondaryIndexPrefix);
 }

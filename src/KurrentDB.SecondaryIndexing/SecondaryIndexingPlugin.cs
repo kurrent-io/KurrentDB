@@ -57,6 +57,7 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddSingleton<ISecondaryIndexReader, CategoryIndexReader>();
 		services.AddSingleton<ISecondaryIndexReader, EventTypeIndexReader>();
 
+		services.AddSingleton<StatsService>();
 		services.AddHostedService(sp => new DbStatsTelemetryService(
 			sp.GetRequiredService<StatsService>(),
 			telemetry => PublishDiagnosticsData(telemetry, PluginDiagnosticsDataCollectionMode.Snapshot))

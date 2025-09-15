@@ -54,7 +54,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		var endTime = DateTime.UtcNow.Add(timeout.Value);
 
 		var events = new List<ResolvedEvent>();
-		ReadResponseException.StreamNotFound? streamNotFound = null;
+		ReadResponseException.IndexNotFound? indexNotFound = null;
 
 		CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
 		cts.CancelAfter(timeout.Value);
@@ -67,15 +67,16 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 				if (events.Count != maxCount) {
 					await Task.Delay(25, cts.Token);
 				}
-			} catch (ReadResponseException.StreamNotFound ex) {
-				streamNotFound = ex;
+			} catch (ReadResponseException.IndexNotFound ex) {
+				indexNotFound = ex;
+				break;
 			} catch (OperationCanceledException) {
-				// can happen
+				break;
 			}
 		} while (events.Count != maxCount && DateTime.UtcNow < endTime);
 
-		if (events.Count == 0 && streamNotFound != null)
-			throw streamNotFound;
+		if (events.Count == 0 && indexNotFound != null)
+			throw indexNotFound;
 
 		return events;
 	}
@@ -92,7 +93,6 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 			await foreach (var evt in SubscribeToIndex(indexName, maxCount, cts.Token)) {
 				events.Add(evt);
 			}
-			// events = await SubscribeToIndex(indexName, maxCount, cts.Token).Take(maxCount).ToListAsync(cts.Token);
 		} catch (OperationCanceledException) {
 			// can happen
 		}

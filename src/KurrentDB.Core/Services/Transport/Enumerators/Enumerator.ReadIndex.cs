@@ -148,13 +148,12 @@ partial class Enumerator {
 
 				if (completed.Result == ReadIndexResult.Success) {
 					foreach (var @event in completed.Events) {
-						if (readCount >= MaxCount) {
+						await _channel.Writer.WriteAsync(new ReadResponse.EventReceived(@event), ct);
+
+						if (++readCount >= MaxCount) {
 							_channel.Writer.TryComplete();
 							return;
 						}
-
-						await _channel.Writer.WriteAsync(new ReadResponse.EventReceived(@event), ct);
-						readCount++;
 					}
 
 					if (completed.IsEndOfStream || completed.Events.Count == 0) {

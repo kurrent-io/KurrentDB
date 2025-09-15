@@ -2,17 +2,17 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics.CodeAnalysis;
-using KurrentDB.Core.Services;
+using static KurrentDB.Core.Services.SystemStreams;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Category;
 
 internal static class CategoryIndex {
-	private static readonly int PrefixLength = SystemStreams.CategorySecondaryIndexPrefix.Length;
+	private static readonly int PrefixLength = CategorySecondaryIndexPrefix.Length;
 
-	public static string Name(string categoryName) => $"{SystemStreams.CategorySecondaryIndexPrefix}{categoryName}";
+	public static string Name(string categoryName) => $"{CategorySecondaryIndexPrefix}{categoryName}";
 
 	public static bool TryParseCategoryName(string indexName, [NotNullWhen(true)] out string? categoryName) {
-		if (!IsCategoryIndex(SystemStreams.CategorySecondaryIndexPrefix)) {
+		if (!IsCategoryIndex(indexName)) {
 			categoryName = null;
 			return false;
 		}
@@ -21,5 +21,5 @@ internal static class CategoryIndex {
 		return true;
 	}
 
-	public static bool IsCategoryIndex(string indexName) => indexName.StartsWith(SystemStreams.CategorySecondaryIndexPrefix);
+	public static bool IsCategoryIndex(string indexName) => indexName.StartsWith(CategorySecondaryIndexPrefix);
 }
