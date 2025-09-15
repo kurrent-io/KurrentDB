@@ -53,6 +53,7 @@ public class StorageReaderWorker<TStreamId> :
 	private readonly IReadOnlyCheckpoint _writerCheckpoint;
 	private readonly IPublisher _publisher;
 	private readonly PartitionedRateLimiter<ResourceAndPriority> _limiter;
+	private readonly CancellationTokenMultiplexer _multiplexer;
 	private readonly IVirtualStreamReader _virtualStreamReader;
 	private const int MaxPageSize = 4096;
 
@@ -74,6 +75,7 @@ public class StorageReaderWorker<TStreamId> :
 		_writerCheckpoint = Ensure.NotNull(writerCheckpoint);
 		_virtualStreamReader = virtualStreamReader;
 		_limiter = limiter; //qq use the limiter
+		_multiplexer = new() { MaximumRetained = 100 };
 
 		_scheduleBatchPeriodCompletion = TimerMessage.Schedule.Create(
 			TimeSpan.FromSeconds(10),
@@ -93,14 +95,14 @@ public class StorageReaderWorker<TStreamId> :
 			return;
 		}
 
-		var cts = token.LinkTo(msg.CancellationToken);
+		var cts = _multiplexer.Combine([token, msg.CancellationToken]);
 		try {
-			var ev = await ReadEvent(msg, token);
+			var ev = await ReadEvent(msg, cts.Token);
 			msg.Envelope.ReplyWith(ev);
-		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts?.Token) {
-			throw new OperationCanceledException(null, ex, cts.CancellationOrigin);
+		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts.Token) {
+			throw new OperationCanceledException(ex.Message, ex, cts.CancellationOrigin);
 		} finally {
-			cts?.Dispose();
+			await cts.DisposeAsync().ConfigureAwait(false);
 		}
 	}
 
