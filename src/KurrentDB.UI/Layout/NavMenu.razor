@@ -9,6 +9,10 @@
 	<MudNavLink Href="/ui/plugins" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Power">Plugins</MudNavLink>
 	<MudNavLink Href="/ui/license" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Verified">License</MudNavLink>
 	<MudNavLink Href="/ui/navigator" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Stream">Navigator</MudNavLink>
-	<MudNavLink Href="/ui/query" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Search" data-enhance-nav="false">Query</MudNavLink>
+	<AuthorizeView Roles="$admins">
+		<MudNavLink Href="/ui/query" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Search" data-enhance-nav="false">
+			Query
+		</MudNavLink>
+	</AuthorizeView>
 	<MudNavLink Href="/web" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Code">Legacy UI</MudNavLink>
 </MudNavMenu>

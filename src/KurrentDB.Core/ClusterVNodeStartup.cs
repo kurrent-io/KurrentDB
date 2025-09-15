@@ -227,7 +227,10 @@ public class ClusterVNodeStartup<TStreamId>
 					};
 				});
 		} else {
-			authBuilder.AddCookie(x => x.LoginPath = "/ui/login");
+			authBuilder.AddCookie(options => {
+				options.LoginPath = "/ui/login";
+				options.AccessDeniedPath = "/ui/access-denied";
+			});
 		}
 
 		services.AddAuthorization();
