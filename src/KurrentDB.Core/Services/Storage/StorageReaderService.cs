@@ -39,9 +39,7 @@ public class StorageReaderService<TStreamId> : StorageReaderService, IHandle<Sys
 		ISystemStreamLookup<TStreamId> systemStreams,
 		PartitionedRateLimiter<ResourceAndPriority> limiter,
 		IReadOnlyCheckpoint writerCheckpoint,
-		IVirtualStreamReader inMemReader,
-		QueueStatsManager queueStatsManager,
-		QueueTrackers trackers) {
+		IVirtualStreamReader inMemReader) {
 		Ensure.NotNull(subscriber);
 		Ensure.NotNull(systemStreams);
 		Ensure.NotNull(limiter);
