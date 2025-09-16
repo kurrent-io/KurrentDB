@@ -5,7 +5,7 @@ create table if not exists idx_all (
 	created bigint not null,
 	expires bigint null,
 	stream varchar not null,
-	name_hash ubigint not null,
+	stream_hash ubigint not null,
 	event_type varchar not null,
 	category varchar not null,
 	is_deleted boolean not null,
