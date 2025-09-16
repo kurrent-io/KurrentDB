@@ -13,9 +13,8 @@ namespace KurrentDB.SecondaryIndexing.Diagnostics;
 public class SecondaryIndexProgressTracker {
 	private static readonly ILogger Log = Serilog.Log.Logger.ForContext<SecondaryIndexProgressTracker>();
 	private long _lastIndexedPosition = -1;
-	private DateTime _lastIndexedAt = DateTime.MinValue;
 	private long _lastAppendedPosition = -1;
-	private DateTime _lastAppendedAt = DateTime.MinValue;
+	private TimeSpan _lag = TimeSpan.MinValue;
 
 	private readonly KeyValuePair<string, object?>[] _tag;
 	private readonly Histogram<double> _histogram;
@@ -38,7 +37,7 @@ public class SecondaryIndexProgressTracker {
 			$"{serviceName}.{MeterPrefix}.subscription.lag",
 			ObserveLag,
 			"s",
-			"Time between last appended and last indexed event, in seconds"
+			"Time taken for the last event to be indexed, in seconds"
 		);
 
 		_histogram = meter.CreateHistogram<double>(
@@ -52,17 +51,15 @@ public class SecondaryIndexProgressTracker {
 
 	public void RecordIndexed(ResolvedEvent resolvedEvent) {
 		_lastIndexedPosition = resolvedEvent.OriginalPosition!.Value.CommitPosition;
-		_lastIndexedAt = DateTime.UtcNow;
+		_lag = DateTime.UtcNow - resolvedEvent.OriginalEvent.TimeStamp;
 	}
 
 	public void InitLastAppended(Event @event) {
 		_lastAppendedPosition = (long)@event.CommitPosition;
-		_lastAppendedAt = @event.Created;
 	}
 
 	public void RecordAppended(EventRecord record, long commitPosition) {
 		_lastAppendedPosition = commitPosition;
-		_lastAppendedAt = record.TimeStamp;
 	}
 
 	public void RecordError(Exception e) {
@@ -82,15 +79,12 @@ public class SecondaryIndexProgressTracker {
 	}
 
 	private IEnumerable<Measurement<double>> ObserveLag() {
-		var lastAppendedAt = _lastAppendedAt;
-		var lastIndexedAt = _lastIndexedAt;
+		var lag = _lag;
 
-		if (lastAppendedAt == DateTime.MinValue || lastIndexedAt == DateTime.MinValue)
+		if (lag == TimeSpan.MinValue)
 			yield break;
 
-		var lag = (lastIndexedAt - lastAppendedAt).TotalSeconds;
-
-		yield return new(lag, _tag);
+		yield return new(lag.TotalSeconds, _tag);
 	}
 
 	public sealed class CommitDuration(
