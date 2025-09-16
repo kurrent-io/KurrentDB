@@ -10,16 +10,16 @@ using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.SecondaryIndexing.Indexes;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.SecondaryIndexing.Subscriptions;
 
-public sealed class SecondaryIndexSubscription(
+public sealed partial class SecondaryIndexSubscription(
 	IPublisher publisher,
 	ISecondaryIndexProcessor indexProcessor,
-	SecondaryIndexingPluginOptions options
+	SecondaryIndexingPluginOptions options,
+	ILogger log
 ) : IAsyncDisposable {
-	private static readonly ILogger Log = Serilog.Log.Logger.ForContext<SecondaryIndexSubscription>();
 
 	private readonly int _commitBatchSize = options.CommitBatchSize;
 	private CancellationTokenSource? _cts = new();
@@ -27,9 +27,9 @@ public sealed class SecondaryIndexSubscription(
 	private Task? _processingTask;
 
 	public void Subscribe() {
-		var (position, _) = indexProcessor.GetLastPosition();
+		var position = indexProcessor.GetLastPosition();
 		var startFrom = position == TFPos.Invalid ? Position.Start : Position.FromInt64(position.CommitPosition, position.PreparePosition);
-		Log.Information("Starting indexing subscription from {StartFrom}", startFrom);
+		log.LogInformation("Starting indexing subscription from {StartFrom}", startFrom);
 
 		_subscription = new(
 			bus: publisher,
@@ -57,12 +57,12 @@ public sealed class SecondaryIndexSubscription(
 				if (!await _subscription.MoveNextAsync())
 					break;
 			} catch (ReadResponseException.NotHandled.ServerNotReady) {
-				Log.Information("Default indexing subscription is stopping because server is not ready");
+				log.LogInformation("Default indexing subscription is stopping because server is not ready");
 				break;
 			}
 
 			if (_subscription.Current is ReadResponse.SubscriptionCaughtUp caughtUp) {
-				Log.Verbose("Default indexing subscription caught up at {Time}", caughtUp.Timestamp);
+				LogDefaultIndexingSubscriptionCaughtUpAtTime(log, caughtUp.Timestamp);
 				continue;
 			}
 
@@ -86,7 +86,7 @@ public sealed class SecondaryIndexSubscription(
 			} catch (OperationCanceledException) {
 				break;
 			} catch (Exception e) {
-				Log.Error(e, "Error while processing event {EventType}", eventReceived.Event.Event.EventType);
+				log.LogError(e, "Error while processing event {EventType}", eventReceived.Event.Event.EventType);
 				throw;
 			}
 		}
@@ -110,7 +110,7 @@ public sealed class SecondaryIndexSubscription(
 				await _processingTask.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing |
 				                                     ConfigureAwaitOptions.ContinueOnCapturedContext);
 			} catch (Exception ex) {
-				Log.Error(ex, "Error during processing task completion");
+				log.LogError(ex, "Error during processing task completion");
 			}
 		}
 
@@ -118,4 +118,7 @@ public sealed class SecondaryIndexSubscription(
 			await _subscription.DisposeAsync();
 		}
 	}
+
+	[LoggerMessage(LogLevel.Trace, "Default indexing subscription caught up at {time}")]
+	static partial void LogDefaultIndexingSubscriptionCaughtUpAtTime(ILogger logger, DateTime time);
 }

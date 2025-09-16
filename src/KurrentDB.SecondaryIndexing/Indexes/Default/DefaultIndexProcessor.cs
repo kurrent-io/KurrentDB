@@ -17,7 +17,8 @@ using KurrentDB.SecondaryIndexing.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
 using Microsoft.Extensions.DependencyInjection;
-using Serilog;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using static KurrentDB.SecondaryIndexing.Indexes.Default.DefaultSql;
 using static KurrentDB.Protobuf.Server.Properties;
 
@@ -28,9 +29,8 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	private readonly DuckDBAdvancedConnection _connection;
 	private readonly IPublisher _publisher;
 	private readonly ILongHasher<string> _hasher;
+	private readonly ILogger<DefaultIndexProcessor> _log;
 	private Appender _appender;
-
-	private static readonly ILogger Logger = Log.Logger.ForContext<DefaultIndexProcessor>();
 
 	public TFPos LastIndexedPosition { get; private set; }
 
@@ -39,19 +39,25 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		DefaultIndexInFlightRecords inFlightRecords,
 		IPublisher publisher,
 		ILongHasher<string> hasher,
-		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)] Meter meter,
-		MetricsConfiguration? metricsConfiguration
+		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)]
+		Meter meter,
+		MetricsConfiguration? metricsConfiguration = null,
+		TimeProvider? clock = null,
+		ILogger<DefaultIndexProcessor>? log = null
 	) {
 		_connection = db.Open();
 		_appender = new(_connection, "idx_all"u8);
 		_inFlightRecords = inFlightRecords;
-		Tracker = new("default", metricsConfiguration?.ServiceName ?? "kurrentdb", meter);
+		_log = log ?? NullLogger<DefaultIndexProcessor>.Instance;
+		var serviceName = metricsConfiguration?.ServiceName ?? "kurrentdb";
+		Tracker = new("default", serviceName, meter, clock ?? TimeProvider.System, _log);
 		_publisher = publisher;
 		_hasher = hasher;
 
-		var (lastPosition, rowId) = GetLastPosition();
-		Logger.Information("Last known log position: {Position}", lastPosition);
+		var (lastPosition, lastTimestamp) = ReadLastIndexedRecord();
+		_log.LogInformation("Last known log position: {Position}", lastPosition);
 		LastIndexedPosition = lastPosition;
+		Tracker.InitLastIndexed(lastPosition.CommitPosition, lastTimestamp);
 	}
 
 	public void Index(ResolvedEvent resolvedEvent) {
@@ -61,8 +67,12 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		string? schemaId = null;
 		if (resolvedEvent.Event.Properties.Length > 0) {
 			var props = Parser.ParseFrom(resolvedEvent.Event.Properties.Span);
-			schemaId = props.PropertiesValues.TryGetValue(Constants.Properties.SchemaId, out var schemaIdValue) ? schemaIdValue.StringValue : null;
-			schemaFormat = props.PropertiesValues.TryGetValue(Constants.Properties.DataFormatKey, out var dataFormatValue) ? dataFormatValue.StringValue : null;
+			schemaId = props.PropertiesValues.TryGetValue(Constants.Properties.SchemaId, out var schemaIdValue)
+				? schemaIdValue.StringValue
+				: null;
+			schemaFormat = props.PropertiesValues.TryGetValue(Constants.Properties.DataFormatKey, out var dataFormatValue)
+				? dataFormatValue.StringValue
+				: null;
 		}
 
 		var schemaName = resolvedEvent.Event.EventType;
@@ -94,10 +104,12 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			} else {
 				row.Append(DBNull.Value);
 			}
+
 			row.Append(schemaFormat);
 		}
 
-		_inFlightRecords.Append(logPosition, commitPosition ?? logPosition, category, schemaName, resolvedEvent.Event.EventStreamId, eventNumber, created);
+		_inFlightRecords.Append(logPosition, commitPosition ?? logPosition, category, schemaName, resolvedEvent.Event.EventStreamId,
+			eventNumber, created);
 		LastIndexedPosition = resolvedEvent.EventPosition!.Value;
 
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(SystemStreams.DefaultSecondaryIndex, resolvedEvent));
@@ -112,11 +124,14 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		}
 	}
 
-	public (TFPos, long) GetLastPosition() {
+	public TFPos GetLastPosition() => LastIndexedPosition;
+
+	private (TFPos, DateTimeOffset) ReadLastIndexedRecord() {
 		var result = _connection.QueryFirstOrDefault<LastPositionResult, GetLastLogPositionQuery>();
-		return result != null ?
-			(new(result.Value.CommitPosition ?? result.Value.PreparePosition, result.Value.PreparePosition), result.Value.RowId)
-			: (TFPos.Invalid, 0);
+		return result != null
+			? (new(result.Value.CommitPosition ?? result.Value.PreparePosition, result.Value.PreparePosition),
+				DateTimeOffset.FromUnixTimeMilliseconds(result.Value.Timestamp))
+			: (TFPos.Invalid, DateTimeOffset.MinValue);
 	}
 
 	public SecondaryIndexProgressTracker Tracker { get; }
@@ -128,7 +143,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	/// <summary>
 	/// Commits all in-flight records to the index.
 	/// </summary>
-	/// <param name="clearInflight">Tells whether to clear the in-flight records after committing. It must be true and only set to false in tests.</param>
+	/// <param name="clearInflight">Tells you whether to clear the in-flight records after committing. It must be true and only set to false in tests.</param>
 	internal void Commit(bool clearInflight) {
 		if (IsDisposingOrDisposed || !_committing.FalseToTrue())
 			return;
@@ -137,8 +152,8 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			using var duration = Tracker.StartCommitDuration();
 			_appender.Flush();
 		} catch (Exception e) {
-			Logger.Error(e, "Failed to commit {Count} records to index at log position {LogPosition}", _inFlightRecords.Count, LastIndexedPosition);
-			Tracker.RecordError(e);
+			_log.LogError(e, "Failed to commit {Count} records to index at log position {LogPosition}",
+				_inFlightRecords.Count, LastIndexedPosition);
 			throw;
 		} finally {
 			_committing.TrueToFalse();

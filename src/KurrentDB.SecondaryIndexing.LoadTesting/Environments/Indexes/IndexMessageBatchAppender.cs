@@ -27,7 +27,7 @@ public class IndexMessageBatchAppender : IMessageBatchAppender {
 		var schema = new IndexingDbSchema();
 		schema.CreateSchema(db);
 
-		_processor = new(db, inflightRecordsCache, publisher, hasher, new("test"), null);
+		_processor = new(db, inflightRecordsCache, publisher, hasher, new("test"));
 	}
 
 	public ValueTask Append(TestMessageBatch batch) {

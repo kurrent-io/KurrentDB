@@ -61,13 +61,13 @@ internal static class DefaultSql {
 		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.TryReadInt64(), row.ReadInt64());
 	}
 
-	public record struct LastPositionResult(long PreparePosition, long? CommitPosition, long RowId);
+	public record struct LastPositionResult(long PreparePosition, long? CommitPosition, long Timestamp);
 
 	/// <summary>
 	/// Get the last indexed log position
 	/// </summary>
 	public struct GetLastLogPositionQuery : IQuery<LastPositionResult> {
-		public static ReadOnlySpan<byte> CommandText => "select log_position, commit_position, rowid from idx_all order by rowid desc limit 1"u8;
+		public static ReadOnlySpan<byte> CommandText => "select log_position, commit_position, created from idx_all order by rowid desc limit 1"u8;
 
 		public static bool UseStreamingMode => false;
 

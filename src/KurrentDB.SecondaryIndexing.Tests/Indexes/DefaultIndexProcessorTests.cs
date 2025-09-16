@@ -115,7 +115,9 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 	}
 
 	private void AssertDefaultIndexQueryReturns(List<long> expected) {
-		var records = DuckDb.QueryToList<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexQueryExcl>(new(-1, long.MaxValue, int.MaxValue));
+		var records =
+			DuckDb.QueryToList<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexQueryExcl>(new(-1, long.MaxValue,
+				int.MaxValue));
 
 		Assert.Equal(expected, records.Select(x => x.LogPosition));
 	}
@@ -134,7 +136,8 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 	}
 
 	private void AssertCategoryIndexQueryReturns(string category, List<long> expected) {
-		var records = DuckDb.QueryToList<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryIncl>(new(category, 0, long.MaxValue, 32));
+		var records =
+			DuckDb.QueryToList<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryIncl>(new(category, 0, long.MaxValue, 32));
 
 		Assert.Equal(expected, records.Select(x => x.LogPosition));
 	}
@@ -147,7 +150,9 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 	}
 
 	private void AssertReadEventTypeIndexQueryReturns(string eventType, List<long> expected) {
-		var records = DuckDb.QueryToList<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(new(eventType, 0, long.MaxValue, 32));
+		var records = DuckDb.QueryToList<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(
+			new(eventType, 0, long.MaxValue, 32)
+		);
 
 		Assert.Equal(expected, records.Select(x => x.LogPosition));
 	}
@@ -163,7 +168,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 
 		var publisher = new FakePublisher();
 
-		_processor = new(DuckDb, inflightRecordsCache, publisher, hasher, new("test"), null);
+		_processor = new(DuckDb, inflightRecordsCache, publisher, hasher, new("test"));
 	}
 
 	public override Task DisposeAsync() {

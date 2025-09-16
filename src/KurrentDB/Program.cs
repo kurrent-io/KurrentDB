@@ -22,6 +22,7 @@ using KurrentDB.Core;
 using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Configuration;
 using KurrentDB.Core.Configuration.Sources;
+using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.Services.Transport.Http;
 using KurrentDB.SecondaryIndexing.Stats;
 using KurrentDB.Services;
@@ -262,6 +263,7 @@ try {
 			builder.Services.AddSingleton(monitoringService);
 			builder.Services.AddSingleton(metricsObserver);
 			builder.Services.AddSingleton<PluginsService>();
+			builder.Services.AddSingleton(TimeProvider.System);
 			Log.Information("Environment Name: {0}", builder.Environment.EnvironmentName);
 			Log.Information("ContentRoot Path: {0}", builder.Environment.ContentRootPath);
 

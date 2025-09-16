@@ -3,42 +3,40 @@
 
 using System.Diagnostics.CodeAnalysis;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.ClientPublisher;
+using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
-using KurrentDB.POC.IO.Core;
+using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.SecondaryIndexing.Subscriptions;
 using Microsoft.Extensions.Hosting;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.SecondaryIndexing.Indexes;
 
-public sealed class SecondaryIndexBuilder :
-	IHandle<SystemMessage.SystemReady>,
-	IHandle<SystemMessage.BecomeShuttingDown>,
-	IAsyncHandle<StorageMessage.EventCommitted>,
-	IHostedService,
-	IAsyncDisposable {
-	private static readonly ILogger Logger = Log.Logger.ForContext<SecondaryIndexBuilder>();
-
+public sealed class SecondaryIndexBuilder
+	: IHandle<SystemMessage.SystemReady>,
+		IHandle<SystemMessage.BecomeShuttingDown>,
+		IHandle<StorageMessage.EventCommitted>,
+		IHostedService,
+		IAsyncDisposable {
 	private readonly SecondaryIndexSubscription _subscription;
 	private readonly ISecondaryIndexProcessor _processor;
-	private readonly IClient _client;
-	private readonly CancellationTokenSource _readLastEventCts;
-
-	private Task? _readLastEventTask;
+	private readonly ILogger<SecondaryIndexBuilder> _log;
+	private readonly IPublisher _publisher;
 
 	[Experimental("SECONDARY_INDEX")]
 	public SecondaryIndexBuilder(
 		ISecondaryIndexProcessor processor,
 		IPublisher publisher,
 		ISubscriber subscriber,
-		IClient client,
-		SecondaryIndexingPluginOptions options
-	) {
+		SecondaryIndexingPluginOptions options,
+		ILogger<SecondaryIndexBuilder> log) {
 		_processor = processor;
-		_client = client;
-		_subscription = new(publisher, processor, options);
-		_readLastEventCts = new();
+		_subscription = new(publisher, processor, options, log);
+		_log = log;
+		_publisher = publisher;
 
 		subscriber.Subscribe<SystemMessage.SystemReady>(this);
 		subscriber.Subscribe<SystemMessage.BecomeShuttingDown>(this);
@@ -46,8 +44,8 @@ public sealed class SecondaryIndexBuilder :
 	}
 
 	public void Handle(SystemMessage.SystemReady message) {
-		_readLastEventTask = ReadLastLogEvent();
 		_subscription.Subscribe();
+		Task.Run(ReadTail);
 	}
 
 	public void Handle(SystemMessage.BecomeShuttingDown message) => _processor.Dispose();
@@ -57,46 +55,29 @@ public sealed class SecondaryIndexBuilder :
 	public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
 	public async ValueTask DisposeAsync() {
-		if (_readLastEventTask?.IsCompleted == false) {
-			try {
-				await _readLastEventCts.CancelAsync();
-			} catch (Exception) {
-				// ignore
-			}
-		}
-
 		try {
 			await _subscription.DisposeAsync();
 		} catch (Exception e) {
-			Logger.Error(e, "Failed to dispose secondary index subscription");
+			_log.LogError(e, "Failed to dispose secondary index subscription");
 		}
 
 		_processor.Dispose();
 	}
 
-	public ValueTask HandleAsync(StorageMessage.EventCommitted message, CancellationToken token) {
-		_processor.Tracker.RecordAppended(message.Event, message.CommitPosition);
-		return ValueTask.CompletedTask;
+	private async Task ReadTail() {
+		var lastRecord = await _publisher.ReadBackwards(Position.End, new Filter(), 1).FirstOrDefaultAsync();
+		if (lastRecord != default) {
+			_processor.Tracker.RecordAppended(lastRecord.Event, lastRecord.OriginalPosition!.Value.CommitPosition);
+		}
 	}
 
-	private async Task ReadLastLogEvent() {
-		try {
-			_readLastEventCts.CancelAfter(TimeSpan.FromSeconds(120));
-
-			var lastLogEvent = await _client.ReadAllBackwardsFilteredAsync(
-					Position.End,
-					1,
-					new EventFilter.DefaultAllFilterStrategy.NonSystemStreamStrategy(),
-					_readLastEventCts.Token
-				)
-				.FirstOrDefaultAsync();
-
-			if (lastLogEvent != null)
-				_processor.Tracker.InitLastAppended(lastLogEvent);
-			else
-				Logger.Information("No events found in the log.");
-		} catch (Exception exc) {
-			Logger.Error(exc, "Error reading last event");
+	public void Handle(StorageMessage.EventCommitted message) {
+		if (!message.Event.EventStreamId.StartsWith('$')) {
+			_processor.Tracker.RecordAppended(message.Event, message.CommitPosition);
 		}
+	}
+
+	private class Filter : IEventFilter {
+		public bool IsEventAllowed(EventRecord eventRecord) => !eventRecord.EventStreamId.StartsWith('$');
 	}
 }

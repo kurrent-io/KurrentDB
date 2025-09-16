@@ -8,6 +8,7 @@ using EventStore.Plugins.Diagnostics;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services.Storage;
+using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.DuckDB;
 using KurrentDB.SecondaryIndexing.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes;
@@ -62,6 +63,7 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 			sp.GetRequiredService<StatsService>(),
 			telemetry => PublishDiagnosticsData(telemetry, PluginDiagnosticsDataCollectionMode.Snapshot))
 		);
+		services.AddSingleton<GetLastPosition>(sp => sp.GetRequiredService<TFChunkDbConfig>().WriterCheckpoint.Read);
 	}
 
 	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
