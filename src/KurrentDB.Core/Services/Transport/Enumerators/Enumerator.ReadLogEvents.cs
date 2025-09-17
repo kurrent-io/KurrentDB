@@ -36,8 +36,10 @@ partial class Enumerator {
 					Thread.Sleep(1);
 					continue;
 				}
+
 				return true;
 			}
+
 			return false;
 		}
 
@@ -83,9 +85,11 @@ partial class Enumerator {
 				switch (completed.Result) {
 					case ReadEventResult.Success:
 						foreach (var @event in completed.Records) {
-							while (!_channel.Writer.TryWrite(new ReadResponse.EventReceived(@event))) { }
-							Thread.Sleep(1);
+							while (!_channel.Writer.TryWrite(new ReadResponse.EventReceived(@event))) {
+								Thread.Sleep(1);
+							}
 						}
+
 						_channel.Writer.TryComplete();
 						return Task.CompletedTask;
 					default:
