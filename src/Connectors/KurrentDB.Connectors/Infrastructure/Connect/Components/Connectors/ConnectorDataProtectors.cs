@@ -12,6 +12,8 @@ using Kurrent.Surge.DataProtection;
 
 namespace KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
 
+#region sink
+
 [PublicAPI]
 public class SerilogSinkConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<SerilogSinkOptions>(dataProtector) {
     protected override string[] ConfigureSensitiveKeys() => [];
@@ -67,3 +69,20 @@ public class KurrentDbSinkConnectorDataProtector(IDataProtector dataProtector) :
         "ConnectionString"
     ];
 }
+
+#endregion
+
+#region source
+
+[PublicAPI]
+public class KafkaSourceConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<KafkaSourceOptions>(dataProtector) {
+    protected override string[] ConfigureSensitiveKeys() => [
+	    "Consumer:SaslUsername",
+	    "Consumer:SaslPassword",
+	    "Consumer:SslCaPem",
+	    "Consumer:SslCertificatePem",
+	    "Consumer:SslKeyPem"
+    ];
+}
+
+#endregion
