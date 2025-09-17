@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections;
@@ -16,18 +16,26 @@ using KurrentDB.Core.Messaging;
 namespace KurrentDB.Core.Services.Transport.Enumerators;
 
 partial class Enumerator {
+	/// <summary>
+	/// This is a synchronous enumerator that reads the log events in a blocking manner.
+	/// It is ONLY used in the kdb_get DuckDB inline function.
+	/// Don't use it anywhere else.
+	/// </summary>
 	public class ReadLogEventsSync : IEnumerator<ReadResponse> {
-		readonly IPublisher _bus;
-		readonly ClaimsPrincipal _user;
-		readonly DateTime _deadline;
-		readonly SemaphoreSlim _semaphore;
-		readonly Channel<ReadResponse> _channel;
+		private readonly IPublisher _bus;
+		private readonly ClaimsPrincipal _user;
+		private readonly DateTime _deadline;
+		private readonly SemaphoreSlim _semaphore;
+		private readonly Channel<ReadResponse> _channel;
 
-		ReadResponse _current;
+		private ReadResponse _current;
 
 		public bool MoveNext() {
 			while (_channel.Reader.Completion is { IsCompleted: false, IsCanceled: false }) {
-				if (!_channel.Reader.TryRead(out _current)) continue;
+				if (!_channel.Reader.TryRead(out _current)) {
+					Thread.Sleep(1);
+					continue;
+				}
 				return true;
 			}
 			return false;
@@ -53,7 +61,7 @@ partial class Enumerator {
 			Read(logPositions);
 		}
 
-		void Read(long[] logPositions) {
+		private void Read(long[] logPositions) {
 			Guid correlationId = Guid.NewGuid();
 
 			_bus.Publish(new ClientMessage.ReadLogEvents(
@@ -76,6 +84,7 @@ partial class Enumerator {
 					case ReadEventResult.Success:
 						foreach (var @event in completed.Records) {
 							while (!_channel.Writer.TryWrite(new ReadResponse.EventReceived(@event))) { }
+							Thread.Sleep(1);
 						}
 						_channel.Writer.TryComplete();
 						return Task.CompletedTask;

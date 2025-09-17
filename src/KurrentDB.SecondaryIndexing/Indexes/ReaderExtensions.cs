@@ -20,6 +20,7 @@ internal static class ReaderExtensions {
 		using var reader = index.BorrowReader();
 		// ReSharper disable once AccessToDisposedClosure
 		var readPrepares = indexPrepares.Select(async x => (Record: x, Prepare: await reader.ReadPrepare<string>(x.LogPosition, cancellationToken)));
+		// This way to read is unusual and might cause issues. Observe the impact in the field and revisit.
 		var prepared = await Task.WhenAll(readPrepares);
 		var recordsQuery = prepared.Where(x => x.Prepare != null);
 		var sorted = ascending

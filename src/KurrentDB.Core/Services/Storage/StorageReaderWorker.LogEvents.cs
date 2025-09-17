@@ -38,6 +38,7 @@ public partial class StorageReaderWorker<TStreamId> {
 		try {
 			using var reader = _readIndex.IndexReader.BorrowReader();
 			var readPrepares = msg.LogPositions.Select(async (pos, index) => (Index: index, Prepare: await reader.ReadPrepare<TStreamId>(pos, token)));
+			// This way to read is unusual and might cause issues. Observe the impact in the field and revisit.
 			var prepared = (await Task.WhenAll(readPrepares))
 				.Select(x => ResolvedEvent.ForUnresolvedEvent(new(x.Index, x.Prepare, x.Prepare!.EventStreamId!.ToString()!, x.Prepare.EventType.ToString())));
 			return new(msg.CorrelationId, ReadEventResult.Success, prepared.ToArray(), null);
