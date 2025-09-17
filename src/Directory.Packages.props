@@ -7,7 +7,7 @@
     <PackageVersion Include="BenchmarkDotNet" Version="0.13.10" />
     <PackageVersion Include="Bogus" Version="35.6.3" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
-    <PackageVersion Include="DotNext" Version="5.21.0" />
+    <PackageVersion Include="DotNext" Version="5.24.0" />
     <PackageVersion Include="DotNext.IO" Version="5.18.2" />
     <PackageVersion Include="DotNext.Threading" Version="5.18.1" />
     <PackageVersion Include="DotNext.Unsafe" Version="5.18.0" />
@@ -50,7 +50,7 @@
     <PackageVersion Include="Kurrent.Surge.Core" Version="1.1.1-alpha.1.12" />
     <PackageVersion Include="Kurrent.Surge.DataProtection" Version="1.1.1-alpha.1.12" />
     <PackageVersion Include="Kurrent.Surge.DuckDB" Version="1.1.1-alpha.1.12" />
-    <PackageVersion Include="Kurrent.Quack" Version="0.0.0-alpha.0.13" />
+    <PackageVersion Include="Kurrent.Quack" Version="0.0.0-alpha.77" />
     <PackageVersion Include="librdkafka.redist" Version="2.5.0" />
     <PackageVersion Include="LruCacheNet" Version="1.2.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="8.0.13" />
@@ -76,7 +76,7 @@
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.Testing" Version="9.2.0" />
     <PackageVersion Include="Microsoft.Extensions.FileProviders.Composite" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.FileProviders.Embedded" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.4" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.9" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.1" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.6" />
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.2" />
