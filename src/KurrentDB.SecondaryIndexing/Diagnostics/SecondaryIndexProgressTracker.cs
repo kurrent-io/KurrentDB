@@ -19,8 +19,8 @@ public class SecondaryIndexProgressTracker {
 
 	private long _lastIndexedPosition = -1;
 	private DateTime _lastIndexedTimestamp = DateTime.MinValue;
-	private long _lastAppendedPosition;
-	private DateTime _lastAppendedTimestamp;
+	private long _lastAppendedPosition = -1;
+	private DateTime _lastAppendedTimestamp = DateTime.MinValue;
 
 	private const string MeterPrefix = "indexes.secondary";
 
