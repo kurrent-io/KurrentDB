@@ -84,6 +84,8 @@ public class SecondaryIndexProgressTracker {
 	}
 
 	private IEnumerable<Measurement<double>> ObserveLag() {
+		if (_lastAppendedTimestamp == DateTime.MinValue || _lastIndexedTimestamp == DateTime.MinValue) yield break;
+
 		var lag = _lastAppendedTimestamp - _lastIndexedTimestamp;
 		yield return new(lag.TotalSeconds, _tag);
 	}
