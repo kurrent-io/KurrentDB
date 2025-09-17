@@ -176,6 +176,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Secondary Indexes", "Second
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.DuckDB", "KurrentDB.DuckDB\KurrentDB.DuckDB.csproj", "{FEE7911C-BA1B-4409-AAF6-0AA30DDB9FE3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Logging", "KurrentDB.Logging\KurrentDB.Logging.csproj", "{7C294F99-8848-4248-873C-1EC1E8E1E233}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1062,6 +1064,18 @@ Global
 		{FEE7911C-BA1B-4409-AAF6-0AA30DDB9FE3}.Release|ARM64.Build.0 = Release|ARM64
 		{FEE7911C-BA1B-4409-AAF6-0AA30DDB9FE3}.Release|x64.ActiveCfg = Release|x64
 		{FEE7911C-BA1B-4409-AAF6-0AA30DDB9FE3}.Release|x64.Build.0 = Release|x64
+		{7C294F99-8848-4248-873C-1EC1E8E1E233}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C294F99-8848-4248-873C-1EC1E8E1E233}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C294F99-8848-4248-873C-1EC1E8E1E233}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{7C294F99-8848-4248-873C-1EC1E8E1E233}.Debug|ARM64.Build.0 = Debug|ARM64
+		{7C294F99-8848-4248-873C-1EC1E8E1E233}.Debug|x64.ActiveCfg = Debug|x64
+		{7C294F99-8848-4248-873C-1EC1E8E1E233}.Debug|x64.Build.0 = Debug|x64
+		{7C294F99-8848-4248-873C-1EC1E8E1E233}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C294F99-8848-4248-873C-1EC1E8E1E233}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7C294F99-8848-4248-873C-1EC1E8E1E233}.Release|ARM64.ActiveCfg = Release|ARM64
+		{7C294F99-8848-4248-873C-1EC1E8E1E233}.Release|ARM64.Build.0 = Release|ARM64
+		{7C294F99-8848-4248-873C-1EC1E8E1E233}.Release|x64.ActiveCfg = Release|x64
+		{7C294F99-8848-4248-873C-1EC1E8E1E233}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
