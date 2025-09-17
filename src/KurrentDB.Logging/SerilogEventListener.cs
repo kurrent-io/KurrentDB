@@ -28,37 +28,23 @@ public class SerilogEventListener : EventListener {
 	}
 
 	private static LogEventLevel ConvertToSerilogLevel(EventLevel level) {
-		switch (level) {
-			case EventLevel.Critical:
-				return LogEventLevel.Fatal;
-			case EventLevel.Error:
-				return LogEventLevel.Error;
-			case EventLevel.Informational:
-				return LogEventLevel.Information;
-			case EventLevel.Verbose:
-				return LogEventLevel.Verbose;
-			case EventLevel.Warning:
-				return LogEventLevel.Warning;
-			case EventLevel.LogAlways:
-				return LogEventLevel.Information;
-		}
-
-		return LogEventLevel.Information;
+		return level switch {
+			EventLevel.Critical => LogEventLevel.Fatal,
+			EventLevel.Error => LogEventLevel.Error,
+			EventLevel.Informational => LogEventLevel.Information,
+			EventLevel.Verbose => LogEventLevel.Verbose,
+			EventLevel.Warning => LogEventLevel.Warning,
+			_ => LogEventLevel.Information
+		};
 	}
 	private static EventLevel ConvertToEventSourceLevel(LogEventLevel level) {
-		switch (level) {
-			case LogEventLevel.Fatal:
-				return EventLevel.Critical;
-			case LogEventLevel.Error:
-				return EventLevel.Error;
-			case LogEventLevel.Information:
-				return EventLevel.Informational;
-			case LogEventLevel.Verbose:
-				return EventLevel.Verbose;
-			case LogEventLevel.Warning:
-				return EventLevel.Warning;
-		}
-
-		return EventLevel.Informational;
+		return level switch {
+			LogEventLevel.Fatal => EventLevel.Critical,
+			LogEventLevel.Error => EventLevel.Error,
+			LogEventLevel.Information => EventLevel.Informational,
+			LogEventLevel.Verbose => EventLevel.Verbose,
+			LogEventLevel.Warning => EventLevel.Warning,
+			_ => EventLevel.Informational
+		};
 	}
 }

@@ -43,6 +43,7 @@
 		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
 		<ProjectReference Include="..\KurrentDB.DuckDB\KurrentDB.DuckDB.csproj" />
 		<ProjectReference Include="..\KurrentDB.Licensing\KurrentDB.Licensing.csproj" />
+		<ProjectReference Include="..\KurrentDB.Logging\KurrentDB.Logging.csproj" />
 		<ProjectReference Include="..\KurrentDB.LogV3\KurrentDB.LogV3.csproj" />
 		<ProjectReference Include="..\KurrentDB.Native\KurrentDB.Native.csproj" />
 		<ProjectReference Include="..\KurrentDB.Plugins\KurrentDB.Plugins.csproj" />

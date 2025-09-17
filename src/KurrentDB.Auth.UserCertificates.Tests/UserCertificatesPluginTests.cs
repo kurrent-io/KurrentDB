@@ -8,6 +8,7 @@ using EventStore.Plugins.Authentication;
 using EventStore.Plugins.Diagnostics;
 using EventStore.Plugins.Licensing;
 using FluentAssertions;
+using KurrentDB.Common.Configuration;
 using KurrentDB.Plugins.TestHelpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -41,9 +42,7 @@ public class UserCertificatesPluginTests {
 	[Fact]
 	public async Task works() {
 		await using var app = await CreateServer(
-			new Dictionary<string, string?> {
-				{ $"{KurrentConfigurationConstants.Prefix}:UserCertificates:Enabled", "true" }
-			},
+			new() { { $"{ConfigConstants.RootPrefix}:UserCertificates:Enabled", "true" } },
 			ConfigureServicesCorrectly);
 
 		var client = CreateClient(app, _userCert);
@@ -71,9 +70,7 @@ public class UserCertificatesPluginTests {
 	public async Task can_be_disabled() {
 		using var collector = PluginDiagnosticsDataCollector.Start("UserCertificates");
 		await using var app = await CreateServer(
-			new Dictionary<string, string?> {
-				{ $"{KurrentConfigurationConstants.Prefix}:UserCertificates:Enabled", "false" }
-			},
+			new() { { $"{ConfigConstants.RootPrefix}:UserCertificates:Enabled", "false" } },
 			ConfigureServicesCorrectly);
 
 		var client = CreateClient(app, _userCert);
@@ -87,9 +84,7 @@ public class UserCertificatesPluginTests {
 	[Fact]
 	public async Task requires_user_certificate_scheme() {
 		await using var app = await CreateServer(
-			new Dictionary<string, string?> {
-				{ $"{KurrentConfigurationConstants.Prefix}:UserCertificates:Enabled", "true" }
-			},
+			new() { { $"{ConfigConstants.RootPrefix}:UserCertificates:Enabled", "true" } },
 			services => services
 				.AddSingleton<ILicenseService>(new Fixtures.FakeLicenseService())
 				.AddSingleton<IReadOnlyList<IHttpAuthenticationProvider>>([new FakeAnonymousHttpAuthenticationProvider()])
@@ -108,9 +103,7 @@ public class UserCertificatesPluginTests {
 	[Fact]
 	public async Task requires_anonymous_http_provider() {
 		await using var app = await CreateServer(
-			new Dictionary<string, string?> {
-				{ $"{KurrentConfigurationConstants.Prefix}:UserCertificates:Enabled", "true" }
-			},
+			new() { { $"{ConfigConstants.RootPrefix}:UserCertificates:Enabled", "true" } },
 			services => services
 				.AddSingleton<ILicenseService>(new Fixtures.FakeLicenseService())
 				.AddSingleton<IReadOnlyList<IHttpAuthenticationProvider>>([])
@@ -194,7 +187,7 @@ public class UserCertificatesPluginTests {
 
 		var config = new ConfigurationBuilder()
 			.AddInMemoryCollection(new Dictionary<string, string?> {
-				{$"{KurrentConfigurationConstants.Prefix}:UserCertificates:Enabled", $"{enabled}"},
+				{$"{ConfigConstants.RootPrefix}:UserCertificates:Enabled", $"{enabled}"},
 			})
 			.Build();
 
@@ -230,7 +223,7 @@ public class UserCertificatesPluginTests {
 
 		var config = new ConfigurationBuilder()
 			.AddInMemoryCollection(new Dictionary<string, string?> {
-				{$"{KurrentConfigurationConstants.Prefix}:UserCertificates:Enabled", $"{enabled}"},
+				{$"{ConfigConstants.RootPrefix}:UserCertificates:Enabled", $"{enabled}"},
 			})
 			.Build();
 

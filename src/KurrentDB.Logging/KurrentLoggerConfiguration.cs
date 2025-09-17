@@ -1,10 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System;
-using System.IO;
-using System.Linq;
-using System.Threading;
 using KurrentDB.Common.Exceptions;
 using KurrentDB.Common.Options;
 using KurrentDB.Core.Configuration;
@@ -23,7 +19,7 @@ using Serilog.Templates.Themes;
 
 namespace KurrentDB.Common.Log;
 
-public class EventStoreLoggerConfiguration {
+public class KurrentLoggerConfiguration {
 	static readonly ExpressionTemplate ConsoleOutputExpressionTemplate = new(
 		"[{ProcessId,5},{ThreadId,2},{@t:HH:mm:ss.fff},{@l:u3}] {Substring(SourceContext, LastIndexOf(SourceContext, '.') + 1), -30} {@m}\n{@x}",
 		theme: TemplateTheme.Literate
@@ -37,17 +33,19 @@ public class EventStoreLoggerConfiguration {
 
 	private static readonly Func<LogEvent, bool> RegularStats = Matching.FromSource("REGULAR-STATS-LOGGER");
 
-	private static readonly SerilogEventListener EventListener;
-
-	private static int Initialized;
-	private static LoggingLevelSwitch _defaultLogLevelSwitch;
-	private static object _defaultLogLevelSwitchLock = new object();
+	private static LoggingLevelSwitch DefaultLogLevelSwitch = new() { MinimumLevel = LogEventLevel.Verbose };
+	private static readonly object DefaultLogLevelSwitchLock = new();
 
 	private readonly string _logsDirectory;
 	private readonly string _componentName;
 	private readonly LoggerConfiguration _loggerConfiguration;
 
-	static EventStoreLoggerConfiguration() {
+	private static readonly ExpressionTemplate JsonTemplate = new(CompactJsonTemplate);
+
+	// ReSharper disable once NotAccessedField.Local
+	private static readonly SerilogEventListener SerilogEventListener;
+
+	static KurrentLoggerConfiguration() {
 		Serilog.Log.Logger = ConsoleLog;
 		AppDomain.CurrentDomain.UnhandledException += (s, e) => {
 			if (e.ExceptionObject is Exception exc)
@@ -55,42 +53,35 @@ public class EventStoreLoggerConfiguration {
 			else
 				Serilog.Log.Fatal("Global Unhandled Exception object: {e}.", e.ExceptionObject);
 		};
-		EventListener = new SerilogEventListener();
+		SerilogEventListener = new();
 	}
 
-	public static void Initialize(string logsDirectory, string componentName, LogConsoleFormat logConsoleFormat,
-		int logFileSize, RollingInterval logFileInterval, int logFileRetentionCount, bool disableLogFile,
-		string logConfig = "logconfig.json") {
-		if (Interlocked.Exchange(ref Initialized, 1) == 1) {
-			throw new InvalidOperationException($"{nameof(Initialize)} may not be called more than once.");
-		}
-
-		if (logsDirectory.StartsWith("~")) {
-			throw new ApplicationInitializationException(
-				"The given log path starts with a '~'. KurrentDB does not expand '~'.");
+	public static LoggerConfiguration CreateLoggerConfiguration(LoggingOptions options, string componentName) {
+		if (options.Log.StartsWith('~')) {
+			throw new ApplicationInitializationException("The given log path starts with a '~'. KurrentDB does not expand '~'.");
 		}
 
 		var configurationRoot = new ConfigurationBuilder()
-			.AddKurrentConfigFile(logConfig, reloadOnChange: true)
+			.AddKurrentConfigFile(options.LogConfig, reloadOnChange: true)
 			.Build();
 
 		SelfLog.Enable(ConsoleLog.Information);
 
-		Serilog.Log.Logger = (configurationRoot.GetSection("Serilog").Exists()
-				? new LoggerConfiguration()
-					.Enrich.WithProperty(Constants.SourceContextPropertyName, "KurrentDB")
-					.ReadFrom.Configuration(configurationRoot)
-				: Default(logsDirectory, componentName, configurationRoot, logConsoleFormat, logFileInterval,
-					logFileSize, logFileRetentionCount, disableLogFile))
-			.CreateLogger();
+		var logConfig = configurationRoot.GetSection("Serilog").Exists()
+			? new LoggerConfiguration()
+				.Enrich.WithProperty(Constants.SourceContextPropertyName, "KurrentDB")
+				.ReadFrom.Configuration(configurationRoot)
+			: Default(options.Log, componentName, configurationRoot, options.LogConsoleFormat, options.LogFileInterval,
+				options.LogFileSize, options.LogFileRetentionCount, options.DisableLogFile);
 
 		SelfLog.Disable();
+		return logConfig;
 	}
 
 	public static bool AdjustMinimumLogLevel(LogLevel logLevel) {
-		lock (_defaultLogLevelSwitchLock) {
+		lock (DefaultLogLevelSwitchLock) {
 #if !DEBUG
-			if (_defaultLogLevelSwitch == null) {
+			if (DefaultLogLevelSwitch == null) {
 				throw new InvalidOperationException("The logger configuration has not yet been initialized.");
 			}
 #endif
@@ -98,9 +89,9 @@ public class EventStoreLoggerConfiguration {
 				throw new ArgumentException($"'{logLevel}' is not a valid log level.");
 			}
 
-			if (serilogLogLevel == _defaultLogLevelSwitch.MinimumLevel)
+			if (serilogLogLevel == DefaultLogLevelSwitch.MinimumLevel)
 				return false;
-			_defaultLogLevelSwitch.MinimumLevel = serilogLogLevel;
+			DefaultLogLevelSwitch.MinimumLevel = serilogLogLevel;
 			return true;
 		}
 	}
@@ -108,38 +99,30 @@ public class EventStoreLoggerConfiguration {
 	private static LoggerConfiguration Default(string logsDirectory, string componentName,
 		IConfigurationRoot logLevelConfigurationRoot, LogConsoleFormat logConsoleFormat,
 		RollingInterval logFileInterval, int logFileSize, int logFileRetentionCount, bool disableLogFile) =>
-		new EventStoreLoggerConfiguration(logsDirectory, componentName, logLevelConfigurationRoot, logConsoleFormat,
+		new KurrentLoggerConfiguration(logsDirectory, componentName, logLevelConfigurationRoot, logConsoleFormat,
 			logFileInterval, logFileSize, logFileRetentionCount, disableLogFile);
 
-	private EventStoreLoggerConfiguration(string logsDirectory, string componentName,
+	private KurrentLoggerConfiguration(string logsDirectory, string componentName,
 		IConfigurationRoot logLevelConfigurationRoot, LogConsoleFormat logConsoleFormat,
 		RollingInterval logFileInterval, int logFileSize, int logFileRetentionCount, bool disableLogFile) {
-		if (logsDirectory == null) {
-			throw new ArgumentNullException(nameof(logsDirectory));
-		}
-
-		if (componentName == null) {
-			throw new ArgumentNullException(nameof(componentName));
-		}
-
-		if (logLevelConfigurationRoot == null) {
-			throw new ArgumentNullException(nameof(logLevelConfigurationRoot));
-		}
+		ArgumentNullException.ThrowIfNull(logsDirectory);
+		ArgumentNullException.ThrowIfNull(componentName);
+		ArgumentNullException.ThrowIfNull(logLevelConfigurationRoot);
 
 		_logsDirectory = logsDirectory;
 		_componentName = componentName;
 
 		var loglevelSection = logLevelConfigurationRoot.GetSection("Logging").GetSection("LogLevel");
 		var defaultLogLevelSection = loglevelSection.GetSection("Default");
-		lock (_defaultLogLevelSwitchLock) {
-			_defaultLogLevelSwitch = new LoggingLevelSwitch {
+		lock (DefaultLogLevelSwitchLock) {
+			DefaultLogLevelSwitch = new LoggingLevelSwitch {
 				MinimumLevel = LogEventLevel.Verbose
 			};
-			ApplyLogLevel(defaultLogLevelSection, _defaultLogLevelSwitch);
+			ApplyLogLevel(defaultLogLevelSection, DefaultLogLevelSwitch);
 		}
 
 		var loggerConfiguration = StandardLoggerConfiguration
-			.MinimumLevel.ControlledBy(_defaultLogLevelSwitch)
+			.MinimumLevel.ControlledBy(DefaultLogLevelSwitch)
 			.WriteTo.Async(AsyncSink);
 
 		foreach (var namedLogLevelSection in loglevelSection.GetChildren().Where(x => x.Key != "Default")) {
@@ -163,12 +146,11 @@ public class EventStoreLoggerConfiguration {
 			configuration.WriteTo.Console(
 				logConsoleFormat == LogConsoleFormat.Plain
 					? ConsoleOutputExpressionTemplate
-					: new(CompactJsonTemplate));
+					: JsonTemplate);
 
 			if (!disableLogFile) {
 				configuration.WriteTo
-					.RollingFile(GetLogFileName(), new ExpressionTemplate(CompactJsonTemplate),
-						logFileRetentionCount, logFileInterval, logFileSize)
+					.RollingFile(GetLogFileName(), JsonTemplate, logFileRetentionCount, logFileInterval, logFileSize)
 					.WriteTo.Logger(Error);
 			}
 
@@ -180,16 +162,13 @@ public class EventStoreLoggerConfiguration {
 				configuration
 					.Filter.ByIncludingOnly(Errors)
 					.WriteTo
-					.RollingFile(GetLogFileName("err"), new ExpressionTemplate(CompactJsonTemplate),
-						logFileRetentionCount, logFileInterval, logFileSize);
+					.RollingFile(GetLogFileName("err"), JsonTemplate, logFileRetentionCount, logFileInterval, logFileSize);
 			}
 		}
 
 		void Stats(LoggerConfiguration configuration) {
 			if (!disableLogFile) {
-				configuration.WriteTo.RollingFile(GetLogFileName("stats"),
-					new ExpressionTemplate(CompactJsonTemplate), logFileRetentionCount, logFileInterval,
-					logFileSize);
+				configuration.WriteTo.RollingFile(GetLogFileName("stats"), JsonTemplate, logFileRetentionCount, logFileInterval, logFileSize);
 			}
 		}
 
@@ -203,7 +182,7 @@ public class EventStoreLoggerConfiguration {
 		// that the ms libraries will access.
 		static void TrySetLogLevel(IConfigurationSection logLevel, LoggingLevelSwitch levelSwitch) {
 			if (!Enum.TryParse<Microsoft.Extensions.Logging.LogLevel>(logLevel.Value, out var level))
-				throw new UnknownLogLevelException(logLevel.Value, logLevel.Path);
+				throw new UnknownLogLevelException(logLevel.Value!, logLevel.Path);
 
 			levelSwitch.MinimumLevel = level switch {
 				Microsoft.Extensions.Logging.LogLevel.None => LogEventLevel.Fatal,
@@ -225,13 +204,12 @@ public class EventStoreLoggerConfiguration {
 			.Enrich.WithThreadId()
 			.Enrich.FromLogContext();
 
-
-	private string GetLogFileName(string log = null) =>
+	private string GetLogFileName(string? log = null) =>
 		Path.Combine(_logsDirectory, $"{_componentName}/log{(log == null ? string.Empty : $"-{log}")}.json");
 
 	private static bool Errors(LogEvent e) => e.Exception != null || e.Level >= LogEventLevel.Error;
 
-	public static implicit operator LoggerConfiguration(EventStoreLoggerConfiguration configuration) =>
+	public static implicit operator LoggerConfiguration(KurrentLoggerConfiguration configuration) =>
 		configuration._loggerConfiguration;
 }
 
