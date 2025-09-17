@@ -42,10 +42,15 @@ public class KdbGetEventSetup(IPublisher publisher) : IDuckDBSetup {
 		}
 	}
 
-	private static string AsDuckEvent(string stream, string eventType, DateTime created, ReadOnlyMemory<byte> data, ReadOnlyMemory<byte> meta) {
+	private static string AsDuckEvent(string stream,
+		string eventType,
+		DateTime created,
+		ReadOnlyMemory<byte> data,
+		ReadOnlyMemory<byte> meta) {
 		var dataString = Helper.UTF8NoBom.GetString(data.Span);
 		var metaString = meta.Length == 0 ? "{}" : Helper.UTF8NoBom.GetString(meta.Span);
-		return $"{{ \"data\": {dataString}, \"metadata\": {metaString}, \"stream_id\": \"{stream}\", \"created\": \"{created:u}\", \"event_type\": \"{eventType}\" }}";
+		return
+			$"{{ \"data\": {dataString}, \"metadata\": {metaString}, \"stream_id\": \"{stream}\", \"created\": \"{created:u}\", \"event_type\": \"{eventType}\" }}";
 	}
 
 	private static string AsDuckEvent(ResolvedEvent evt)
@@ -90,4 +95,29 @@ public class KdbGetEventSetup(IPublisher publisher) : IDuckDBSetup {
 			return !eventRecord.EventType.StartsWith('$') && !eventRecord.EventStreamId.StartsWith('$');
 		}
 	}
+}
+
+file static class ReadEventsExtensions {
+	public static IEnumerable<ResolvedEvent> ReadEvents(this IPublisher publisher, long[] logPositions) {
+		using var enumerator = GetEnumerator();
+
+		while (enumerator.MoveNext()) {
+			if (enumerator.Current is ReadResponse.EventReceived eventReceived) {
+				yield return eventReceived.Event;
+			}
+		}
+
+		yield break;
+
+		IEnumerator<ReadResponse> GetEnumerator() {
+			return new Enumerator.ReadLogEventsSync(
+				bus: publisher,
+				logPositions: logPositions,
+				user: SystemAccounts.System,
+				deadline: DefaultDeadline
+			);
+		}
+	}
+
+	private static readonly DateTime DefaultDeadline = DateTime.UtcNow.AddYears(1);
 }
