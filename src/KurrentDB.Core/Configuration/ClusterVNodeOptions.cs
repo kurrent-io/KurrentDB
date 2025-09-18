@@ -339,6 +339,7 @@ public partial record ClusterVNodeOptions {
 		public string Transform { get; init; } = "identity";
 
 		[Description("Keep everything in memory, no directories or files are created.")]
+		[Deprecated("MemDb is deprecated and will be removed in a future version. Please contact Kurrent if your use case requires it.")]
 		public bool MemDb { get; init; } = false;
 
 		[Description("Creates a Bloom filter file for each new index file to speed up index reads.")]
