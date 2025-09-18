@@ -23,7 +23,7 @@ public class when_writing_few_prepares_with_same_expected_version_and_not_commit
 	}
 
 	[Test]
-	public async Task every_prepare_can_be_commited() {
+	public async Task every_prepare_can_be_committed() {
 		var res = await ReadIndex.IndexWriter.CheckCommitStartingAt(_prepare0.LogPosition,
 			WriterCheckpoint.ReadNonFlushed(), CancellationToken.None);
 

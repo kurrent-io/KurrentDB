@@ -49,7 +49,7 @@ public class FakeReadIndex<TLogFormat, TStreamId> : IReadIndex<TStreamId> {
 		throw new NotImplementedException();
 	}
 
-	public void Commit(IList<IPrepareLogRecord<TStreamId>> commitedPrepares) {
+	public void Commit(IList<IPrepareLogRecord<TStreamId>> committedPrepares) {
 		throw new NotImplementedException();
 	}
 
