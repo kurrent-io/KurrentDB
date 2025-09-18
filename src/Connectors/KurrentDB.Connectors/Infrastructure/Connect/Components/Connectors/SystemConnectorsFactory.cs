@@ -110,6 +110,7 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ISe
     SourceConnectorContext CreateSourceConnectorContext(
 	    ConnectorId connectorId, IConfiguration configuration, LinkedList<InterceptorModule> interceptors, SourceOptions sourceOptions
     ) {
+        var client         = Services.GetRequiredService<ISystemClient>();
 	    var loggerFactory = Services.GetRequiredService<ILoggerFactory>();
 	    var schemaRegistry = Services.GetRequiredService<SchemaRegistry>();
 	    var getNodeSystemInfo = Services.GetRequiredService<GetNodeSystemInfo>();
@@ -125,6 +126,7 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ISe
 	    };
 
 	    var producer = SystemProducer.Builder
+		    .Client(client)
 		    .ClientId(connectorId)
 		    .ProducerId(connectorId)
 		    .SchemaRegistry(schemaRegistry)
@@ -133,6 +135,7 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ISe
 		    .Create();
 
 	    var reader = SystemReader.Builder
+		    .Client(client)
 		    .ReaderId(connectorId)
 		    .SchemaRegistry(schemaRegistry)
 		    .Logging(loggingOptions)

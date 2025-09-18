@@ -7,6 +7,8 @@ using KurrentDB.Connectors.Management.Contracts.Events;
 using Eventuous;
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Surge;
+using Kurrent.Surge.Connectors;
+using static System.StringComparison;
 using Kurrent.Surge.Connectors.Sinks;
 
 using KurrentDB.Connectors.Infrastructure.Eventuous;
@@ -14,6 +16,7 @@ using KurrentDB.Connectors.Planes.Management.Domain;
 using Microsoft.Extensions.Configuration;
 using static KurrentDB.Connectors.Planes.Management.Domain.ConnectorDomainExceptions;
 using static KurrentDB.Connectors.Planes.Management.Domain.ConnectorDomainServices;
+using ConnectorState = KurrentDB.Connectors.Management.Contracts.ConnectorState;
 
 namespace KurrentDB.Connectors.Planes.Management;
 
@@ -42,6 +45,21 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
             CheckAccess(settings, licenseService);
 
             configureConnectorStreams(cmd.ConnectorId);
+
+            var instanceType = cmd.Settings
+                .FirstOrDefault(kvp => kvp.Key.Equals(nameof(IConnectorOptions.InstanceTypeName), OrdinalIgnoreCase))
+                .Value;
+
+            if (instanceType?.EndsWith("source", OrdinalIgnoreCase) == true) {
+                return Enumerable.Range(0, 5)
+                    .Select(i => new ConnectorCreated {
+                        ConnectorId = ConnectorId.From($"{cmd.ConnectorId}-{i}"),
+                        Name        = cmd.Name,
+                        Settings    = { settings },
+                        Timestamp   = time.GetUtcNow().ToTimestamp()
+                    })
+                    .ToList();
+            }
 
             return [
                 new ConnectorCreated {
@@ -102,6 +120,21 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
 
             // connector.EnsureStopped();
 
+            var instanceType = connector.CurrentRevision.Settings
+                .FirstOrDefault(kvp => kvp.Key.Equals(nameof(IConnectorOptions.InstanceTypeName), OrdinalIgnoreCase))
+                .Value;
+
+            if (instanceType?.EndsWith("source", OrdinalIgnoreCase) == true) {
+                return Enumerable.Range(0, 5)
+                    .Select(i => new ConnectorActivating {
+                        ConnectorId = ConnectorId.From($"{cmd.ConnectorId}-{i}"),
+                        Settings    = { connector.CurrentRevision.Settings },
+                        StartFrom   = cmd.StartFrom,
+                        Timestamp   = time.GetUtcNow().ToTimestamp()
+                    })
+                    .ToList();
+            }
+
             return [
                 new ConnectorActivating {
                     ConnectorId = connector.Id,
@@ -118,6 +151,23 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
             connector.EnsureNotDeleted();
             connector.EnsureStopped();
 
+            var instanceType = connector.CurrentRevision.Settings
+                .FirstOrDefault(kvp => kvp.Key.Equals(nameof(IConnectorOptions.InstanceTypeName), OrdinalIgnoreCase))
+                .Value;
+
+            if (instanceType?.EndsWith("source", OrdinalIgnoreCase) == true) {
+                return Enumerable.Range(0, 5)
+                    .Select(i => new ConnectorActivating {
+                        ConnectorId = ConnectorId.From($"{cmd.ConnectorId}-{i}"),
+                        Settings = { connector.CurrentRevision.Settings },
+                        StartFrom = cmd.StartFrom ?? new StartFromPosition {
+	                        LogPosition = 0
+                        }, // reset to beginning, this is the big difference from StartConnector
+                        Timestamp = time.GetUtcNow().ToTimestamp()
+                    })
+                    .ToList();
+            }
+
             return [
                 new ConnectorActivating {
                     ConnectorId = connector.Id,
@@ -130,7 +180,7 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
             ];
         });
 
-        OnExisting<StopConnector>((connector, _) => {
+        OnExisting<StopConnector>((connector, cmd) => {
             connector.EnsureNotDeleted();
 
             if (connector.State
@@ -139,6 +189,19 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
                 return [];
 
             connector.EnsureRunning();
+
+            var instanceType = connector.CurrentRevision.Settings
+                .FirstOrDefault(kvp => kvp.Key.Equals(nameof(IConnectorOptions.InstanceTypeName), OrdinalIgnoreCase))
+                .Value;
+
+            if (instanceType?.EndsWith("source", OrdinalIgnoreCase) == true) {
+                return Enumerable.Range(0, 5)
+                    .Select(i => new ConnectorDeactivating {
+                        ConnectorId = ConnectorId.From($"{cmd.ConnectorId}-{i}"),
+                        Timestamp   = time.GetUtcNow().ToTimestamp()
+                    })
+                    .ToList();
+            }
 
             return [
                 new ConnectorDeactivating {
@@ -225,9 +288,10 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
 
     static void CheckAccess(ConnectorEntity connector, ConnectorsLicenseService licenseService) {
         var instanceType = connector.CurrentRevision.Settings
-            .First(kvp => kvp.Key.Equals(nameof(SinkOptions.InstanceTypeName), StringComparison.OrdinalIgnoreCase)).Value;
+            .First(kvp => kvp.Key.Equals(nameof(SinkOptions.InstanceTypeName), OrdinalIgnoreCase)).Value;
 
         if (!licenseService.CheckLicense(instanceType, out var info))
             throw new ConnectorAccessDeniedException($"Usage of the {info.ConnectorType.Name} connector is not authorized");
     }
 }
+
