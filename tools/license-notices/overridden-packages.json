@@ -1,0 +1,52 @@
+[
+  {
+    "Id": "Apache.Avro",
+    "Version": "1.12.0",
+    "License": "Apache-2.0"
+  },
+  {
+    "Id": "JeremyEspresso.MurmurHash",
+    "Version": "0.0.1",
+    "License": "MIT"
+  },
+  {
+    "Id": "JsonCons.JsonPath",
+    "Version": "1.1.0",
+    "License": "Apache-2.0"
+  },
+  {
+    "Id": "JsonCons.Utilities",
+    "Version": "1.0.0",
+    "License": "Apache-2.0"
+  },
+  {
+    "Id": "NCrontab",
+    "Version": "3.3.3",
+    "License": "Apache-2.0"
+  },
+  {
+    "Id": "Quickenshtein",
+    "Version": "1.5.1",
+    "License": "MIT"
+  },
+  {
+    "Id": "Serilog.Settings.Reloader",
+    "Version": "2.10.0",
+    "License": "Apache-2.0"
+  },
+  {
+    "Id": "SharpCompress",
+    "Version": "0.30.1",
+    "License": "MIT"
+  },
+  {
+    "Id": "SharpDotYaml.Extensions.Configuration",
+    "Version": "0.3.1",
+    "License": "MIT"
+  },
+  {
+    "Id": "Snappier",
+    "Version": "1.0.0",
+    "License": "BSD-3-Clause"
+  }
+]

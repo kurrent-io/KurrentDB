@@ -16,6 +16,8 @@ using KurrentDB.Common.Exceptions;
 using KurrentDB.Common.Log;
 using KurrentDB.Common.Utils;
 using KurrentDB.Components;
+using KurrentDB.Components.Cluster;
+using KurrentDB.Components.Plugins;
 using KurrentDB.Core;
 using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Configuration;
@@ -252,11 +254,12 @@ try {
 			builder.Services.AddCascadingAuthenticationState();
 			builder.Services.AddMudServices();
 			builder.Services.AddMudMarkdownServices();
-			builder.Services.AddSingleton(options);
 			builder.Services.AddScoped<LogObserver>();
 			builder.Services.AddScoped<IdentityRedirectManager>();
 			builder.Services.AddSingleton(monitoringService);
 			builder.Services.AddSingleton(metricsObserver);
+			builder.Services.AddSingleton<PluginsService>();
+			builder.Services.AddSingleton(TimeProvider.System);
 			Log.Information("Environment Name: {0}", builder.Environment.EnvironmentName);
 			Log.Information("ContentRoot Path: {0}", builder.Environment.ContentRootPath);
 

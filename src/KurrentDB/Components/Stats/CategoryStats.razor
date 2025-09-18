@@ -1,0 +1,45 @@
+@using KurrentDB.SecondaryIndexing.Stats
+@inject StatsService Stats
+
+<MudExpansionPanel ExpandedChanged="ExpandedChanged">
+	<TitleContent>
+		<div class="d-flex">
+			<MudText Class="mt-1">Category: @CategoryName</MudText>
+			<CategoryStreamsStats CategoryName="@CategoryName"/>
+		</div>
+	</TitleContent>
+	<ChildContent>
+		@if (_loading) {
+			<MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large"/>
+		} else {
+			<MudDataGrid Items="@_details" Dense="@true">
+				<Columns>
+					<PropertyColumn Property="x => x.EventType" Title="Event type"/>
+					<PropertyColumn Property="x => x.NumEvents" Title="Events"/>
+					<PropertyColumn Property="x => x.FirstAdded" Title="First seen"/>
+					<PropertyColumn Property="x => x.LastAdded" Title="Last seen"/>
+				</Columns>
+			</MudDataGrid>
+		}
+	</ChildContent>
+</MudExpansionPanel>
+
+@code {
+	[Parameter] public string CategoryName { get; set; }
+
+	private bool _loading = true;
+	private bool _wasExpanded;
+	private StatsSql.GetCategoryEventTypes.Result[] _details = [];
+
+	void ExpandedChanged(bool newValue) {
+		if (_wasExpanded || !newValue) return;
+		Task.Run(() => InvokeAsync(LoadDetails));
+		_wasExpanded = true;
+	}
+
+	void LoadDetails() {
+		_details = Stats.GetCategoryEventTypes(CategoryName).ToArray();
+		_loading = false;
+		StateHasChanged();
+	}
+}

@@ -27,7 +27,7 @@ public abstract class LeaderNodeBackgroundService : NodeBackgroundService {
 
         GetNodeSystemInfo = getNodeSystemInfo;
 
-        Logger = loggerFactory.CreateLogger<LeaderNodeBackgroundService>();
+        Logger = loggerFactory.CreateLogger(GetType());
     }
 
     // GetNodeLifetimeService GetNodeLifetimeService { get; }

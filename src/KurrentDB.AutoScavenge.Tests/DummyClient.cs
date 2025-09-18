@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Text.Json;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.POC.IO.Core;
 
 namespace KurrentDB.AutoScavenge.Tests;
@@ -56,6 +57,11 @@ public class DummyClient : IClient {
 
 	public IAsyncEnumerable<Event> ReadStreamBackwards(string stream, long maxCount, CancellationToken cancellationToken) {
 		return AsyncEnumerable.Empty<Event>();
+	}
+
+	public IAsyncEnumerable<Event> ReadAllBackwardsFilteredAsync(Position position, long maxCount, IEventFilter eventFilter,
+		CancellationToken token) {
+		throw new NotImplementedException();
 	}
 
 	public IAsyncEnumerable<Event> ReadAllBackwardsAsync(Position position, long maxCount, CancellationToken cancellationToken) {

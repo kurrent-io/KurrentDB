@@ -12,9 +12,11 @@ using EventStore.Core.Services.Transport.Grpc.Cluster;
 using EventStore.Plugins;
 using EventStore.Plugins.Authentication;
 using EventStore.Plugins.Authorization;
+using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.DuckDB;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
@@ -22,6 +24,7 @@ using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Core.Services.Transport.Grpc.V2;
 using KurrentDB.Core.Services.Transport.Http;
 using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.DuckDB;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -43,11 +46,14 @@ using Operations = EventStore.Core.Services.Transport.Grpc.Operations;
 using ServerFeatures = KurrentDB.Core.Services.Transport.Grpc.ServerFeatures;
 
 #nullable enable
+
 namespace KurrentDB.Core;
 
-public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMessage.SystemReady>,
-	IHandle<SystemMessage.BecomeShuttingDown> {
-	readonly ClusterVNodeOptions _options;
+public class ClusterVNodeStartup<TStreamId>
+	: IInternalStartup,
+		IHandle<SystemMessage.SystemReady>,
+		IHandle<SystemMessage.BecomeShuttingDown> {
+	private readonly ClusterVNodeOptions _options;
 	private readonly IReadOnlyList<IPlugableComponent> _plugableComponents;
 	private readonly IPublisher _mainQueue;
 	private readonly IPublisher _monitoringQueue;
@@ -104,9 +110,7 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 	public void Configure(WebApplication app) {
 		_configureNode(app);
 
-		var forcePlainTextMetrics =
-			_metricsConfiguration.LegacyCoreNaming &&
-			_metricsConfiguration.LegacyProjectionsNaming;
+		var forcePlainTextMetrics = _metricsConfiguration is { LegacyCoreNaming: true, LegacyProjectionsNaming: true };
 
 		var internalDispatcher = new InternalDispatcherEndpoint(_mainQueue, _httpMessageHandler);
 		_mainBus.Subscribe(internalDispatcher);
@@ -210,6 +214,7 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 						};
 						o.RequireHttpsMetadata = false;
 					}
+
 					o.SaveTokens = true;
 					o.GetClaimsFromUserInfoEndpoint = true;
 					o.TokenValidationParameters.NameClaimType = JwtRegisteredClaimNames.Name;
@@ -220,7 +225,10 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 					};
 				});
 		} else {
-			authBuilder.AddCookie(x => x.LoginPath = "/ui/login");
+			authBuilder.AddCookie(options => {
+				options.LoginPath = "/ui/login";
+				options.AccessDeniedPath = "/ui/access-denied";
+			});
 		}
 
 		services.AddAuthorization();
@@ -263,7 +271,9 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 				maxAppendSize: Ensure.Positive(_options.Application.MaxAppendSize),
 				maxAppendEventSize: Ensure.Positive(_options.Application.MaxAppendEventSize),
 				chunkSize: _options.Database.ChunkSize))
-			.AddSingleton<ServerFeatures>();
+			.AddSingleton<ServerFeatures>()
+			.AddSingleton(_options)
+			.AddSingleton(_metricsConfiguration);
 
 		// OpenTelemetry
 		services.AddOpenTelemetry()
@@ -287,13 +297,17 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 		services
 			.AddSingleton<RetryInterceptor>()
 			.AddGrpc(options => {
-				#if DEBUG
+#if DEBUG
 				options.EnableDetailedErrors = true;
-				#endif
+#endif
 
 				options.Interceptors.Add<RetryInterceptor>();
 			})
 			.AddServiceOptions<Streams<TStreamId>>(options => options.MaxReceiveMessageSize = TFConsts.EffectiveMaxLogRecordSize);
+
+		services.AddSingleton<DuckDBConnectionPoolLifetime>();
+		services.AddDuckDBSetup<KdbGetEventSetup>();
+		services.AddSingleton<DuckDBConnectionPool>(sp => sp.GetRequiredService<DuckDBConnectionPoolLifetime>().GetConnectionPool());
 
 		// Ask the node itself to add DI registrations
 		_configureNodeServices(services);
@@ -307,28 +321,11 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 			if (i.Name == MetricsBootstrapper.LogicalChunkReadDistributionName(_metricsConfiguration.ServiceName))
 				// 20 buckets, 0, 1, 2, 4, 8, ...
 				return new ExplicitBucketHistogramConfiguration { Boundaries = [0, .. Enumerable.Range(0, count: 19).Select(x => 1 << x)] };
-			if (i.Name.StartsWith(_metricsConfiguration.ServiceName + "-") && (i.Name.EndsWith("-latency-seconds") || i.Name.EndsWith("-latency") && i.Unit == "seconds"))
-				return new ExplicitBucketHistogramConfiguration {
-					Boundaries = [
-						0.001, //    1 ms
-						0.005, //    5 ms
-						0.01, //   10 ms
-						0.05, //   50 ms
-						0.1, //  100 ms
-						0.5, //  500 ms
-						1, // 1000 ms
-						5, // 5000 ms
-					]
-				};
+			if (i.Name.StartsWith(_metricsConfiguration.ServiceName + "-") &&
+			    (i.Name.EndsWith("-latency-seconds") || i.Name.EndsWith("-latency") && i.Unit == "seconds"))
+				return MetricsConfiguration.LatencySecondsHistogramBucketConfiguration;
 			if (i.Name.StartsWith(_metricsConfiguration.ServiceName + "-") && (i.Name.EndsWith("-seconds") || i.Unit == "seconds"))
-				return new ExplicitBucketHistogramConfiguration {
-					Boundaries = [
-						0.000_001, // 1 microsecond
-						0.000_01, 0.000_1, 0.001, // 1 millisecond
-						0.01, 0.1, 1, // 1 second
-						10,
-					]
-				};
+				return MetricsConfiguration.SecondsHistogramBucketConfiguration;
 			return default;
 		}
 	}
@@ -337,13 +334,9 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 
 	public void Handle(SystemMessage.BecomeShuttingDown _) => _ready = false;
 
-	private class StatusCheck {
-		private readonly ClusterVNodeStartup<TStreamId> _startup;
-		private readonly int _livecode = 204;
-
-		public StatusCheck(ClusterVNodeStartup<TStreamId> startup) {
-			_startup = startup ?? throw new ArgumentNullException(nameof(startup));
-		}
+	private class StatusCheck(ClusterVNodeStartup<TStreamId> startup) {
+		private readonly ClusterVNodeStartup<TStreamId> _startup = startup ?? throw new ArgumentNullException(nameof(startup));
+		private const int Livecode = 204;
 
 		public void MapLiveness(RouteGroupBuilder builder) {
 			builder.MapMethods("live", [HttpMethod.Get, HttpMethod.Head], Handler);
@@ -353,7 +346,7 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 				context.Response.StatusCode = _startup._ready
 					? context.Request.Query.TryGetValue("liveCode", out var expected) && int.TryParse(expected, out var statusCode)
 						? statusCode
-						: _livecode
+						: Livecode
 					: 503;
 
 				return Task.CompletedTask;

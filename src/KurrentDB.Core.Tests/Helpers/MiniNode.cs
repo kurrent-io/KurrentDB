@@ -16,7 +16,6 @@ using EventStore.Plugins.Authorization;
 using EventStore.Plugins.Subsystems;
 using EventStore.Plugins.Transforms;
 using KurrentDB.Common.Utils;
-using KurrentDB.Core.Authentication;
 using KurrentDB.Core.Authentication.InternalAuthentication;
 using KurrentDB.Core.Authorization;
 using KurrentDB.Core.Authorization.AuthorizationPolicies;
@@ -216,10 +215,7 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 			});
 
 		Node = new ClusterVNode<TStreamId>(options, logFormatFactory,
-			new AuthenticationProviderFactory(
-				c => authenticationProviderFactory ?? new InternalAuthenticationProviderFactory(
-					c,
-					options.DefaultUser)),
+			new(c => authenticationProviderFactory ?? new InternalAuthenticationProviderFactory(c, options.DefaultUser)),
 			new AuthorizationProviderFactory(
 				c => authorizationProviderFactory ?? new InternalAuthorizationProviderFactory(
 					new StaticAuthorizationPolicyRegistry([new LegacyPolicySelectorFactory(

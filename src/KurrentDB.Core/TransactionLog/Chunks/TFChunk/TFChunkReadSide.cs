@@ -366,6 +366,7 @@ public partial class TFChunk {
 		}
 
 		private async ValueTask<int> TranslateWithoutMidpoints(ReaderWorkItem workItem, long pos, long startIndex,
+			// ReSharper disable once IncorrectConstantExpectedAnnotation
 			long endIndex, [ConstantExpected] bool exactMatch, CancellationToken token) {
 			var count = (int)(endIndex - startIndex + 1L);
 			var posmapSize = Chunk.ChunkFooter.IsMap12Bytes

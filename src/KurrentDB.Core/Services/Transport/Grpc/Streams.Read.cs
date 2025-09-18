@@ -26,6 +26,8 @@ using Position = KurrentDB.Core.Services.Transport.Common.Position;
 using ReadDirection = EventStore.Client.Streams.ReadReq.Types.Options.Types.ReadDirection;
 using StreamOptionOneofCase = EventStore.Client.Streams.ReadReq.Types.Options.StreamOptionOneofCase;
 
+// ReSharper disable InvertIf
+
 // ReSharper disable once CheckNamespace
 namespace EventStore.Core.Services.Transport.Grpc;
 
@@ -34,7 +36,6 @@ internal partial class Streams<TStreamId> {
 		ReadReq request,
 		IServerStreamWriter<ReadResp> responseStream,
 		ServerCallContext context) {
-
 		var trackDuration = request.Options.CountOptionCase != CountOptionOneofCase.Subscription;
 		using var duration = trackDuration ? _readTracker.Start() : Duration.Nil;
 		try {
@@ -50,7 +51,7 @@ internal partial class Streams<TStreamId> {
 
 			var uuidOption = options.UuidOption;
 			if (uuidOption == null) {
-				throw RpcExceptions.RequiredArgument(nameof(uuidOption), uuidOption);
+				throw RpcExceptions.RequiredArgument<ReadReq.Types.Options.Types.UUIDOption>(nameof(uuidOption));
 			}
 
 			var op = streamOptionsCase switch {
@@ -120,6 +121,7 @@ internal partial class Streams<TStreamId> {
 					requiresLeader,
 					deadline,
 					compatibility,
+					Enumerator.DefaultReadBatchSize,
 					cancellationToken),
 			(StreamOptionOneofCase.Stream,
 				CountOptionOneofCase.Count,
@@ -134,6 +136,7 @@ internal partial class Streams<TStreamId> {
 					requiresLeader,
 					deadline,
 					compatibility,
+					Enumerator.DefaultReadBatchSize,
 					cancellationToken),
 			(StreamOptionOneofCase.All,
 				CountOptionOneofCase.Count,
@@ -149,25 +152,6 @@ internal partial class Streams<TStreamId> {
 					cancellationToken),
 			(StreamOptionOneofCase.All,
 				CountOptionOneofCase.Count,
-				ReadDirection.Forwards,
-				FilterOptionOneofCase.Filter) => new Enumerator.ReadAllForwardsFiltered(
-					_publisher,
-					request.Options.All.ToPosition(),
-					request.Options.Count,
-					request.Options.ResolveLinks,
-					ConvertToEventFilter(true, request.Options.Filter),
-					user,
-					requiresLeader,
-					request.Options.Filter.WindowCase switch {
-						ReadReq.Types.Options.Types.FilterOptions.WindowOneofCase.Count => null,
-						ReadReq.Types.Options.Types.FilterOptions.WindowOneofCase.Max => request.Options.Filter
-							.Max,
-						_ => throw RpcExceptions.InvalidArgument(request.Options.Filter.WindowCase)
-					},
-					deadline,
-					cancellationToken),
-			(StreamOptionOneofCase.All,
-				CountOptionOneofCase.Count,
 				ReadDirection.Backwards,
 				FilterOptionOneofCase.NoFilter) => new Enumerator.ReadAllBackwards(
 					_publisher,
@@ -178,25 +162,9 @@ internal partial class Streams<TStreamId> {
 					requiresLeader,
 					deadline,
 					cancellationToken),
-			(StreamOptionOneofCase.All,
-				CountOptionOneofCase.Count,
-				ReadDirection.Backwards,
-				FilterOptionOneofCase.Filter) => new Enumerator.ReadAllBackwardsFiltered(
-					_publisher,
-					request.Options.All.ToPosition(),
-					request.Options.Count,
-					request.Options.ResolveLinks,
-					ConvertToEventFilter(true, request.Options.Filter),
-					user,
-					requiresLeader,
-					request.Options.Filter.WindowCase switch {
-						ReadReq.Types.Options.Types.FilterOptions.WindowOneofCase.Count => null,
-						ReadReq.Types.Options.Types.FilterOptions.WindowOneofCase.Max => request.Options.Filter
-							.Max,
-						_ => throw RpcExceptions.InvalidArgument(request.Options.Filter.WindowCase)
-					},
-					deadline,
-					cancellationToken),
+			(StreamOptionOneofCase.All, CountOptionOneofCase.Count, ReadDirection.Forwards, FilterOptionOneofCase.Filter) => GetReadAllForwardsFilteredEnumerator(),
+			(StreamOptionOneofCase.All, CountOptionOneofCase.Count, ReadDirection.Backwards, FilterOptionOneofCase.Filter) => GetReadAllBackwardsFilteredEnumerator(),
+			(StreamOptionOneofCase.All, CountOptionOneofCase.Subscription, ReadDirection.Forwards, FilterOptionOneofCase.Filter) => GetAllSubscriptionFilteredEnumerator(),
 			(StreamOptionOneofCase.Stream,
 				CountOptionOneofCase.Subscription,
 				ReadDirection.Forwards,
@@ -208,7 +176,9 @@ internal partial class Streams<TStreamId> {
 					request.Options.ResolveLinks,
 					user,
 					requiresLeader,
-					cancellationToken),
+					readBatchSize: Enumerator.DefaultReadBatchSize,
+					catchUpBufferSize: Enumerator.DefaultCatchUpBufferSize,
+					cancellationToken: cancellationToken),
 			(StreamOptionOneofCase.All,
 				CountOptionOneofCase.Subscription,
 				ReadDirection.Forwards,
@@ -219,11 +189,75 @@ internal partial class Streams<TStreamId> {
 					request.Options.ResolveLinks,
 					user,
 					requiresLeader,
-					cancellationToken),
-			(StreamOptionOneofCase.All,
-				CountOptionOneofCase.Subscription,
-				ReadDirection.Forwards,
-				FilterOptionOneofCase.Filter) => new Enumerator.AllSubscriptionFiltered(
+					cancellationToken: cancellationToken),
+			_ => throw RpcExceptions.InvalidCombination((streamOptionsCase, countOptionsCase, readDirection,
+				filterOptionsCase))
+		};
+
+		IAsyncEnumerator<ReadResponse> GetFilterOrIndexEnumerator(
+			Func<string, IAsyncEnumerator<ReadResponse>> getIndexEnumerator,
+			Func<ReadReq.Types.Options.Types.FilterOptions, IAsyncEnumerator<ReadResponse>> getReadAllEnumerator
+		) {
+			var filter = request.Options.Filter;
+			// Index reads require StreamIdentifier filter with one element that is the index name
+			if (filter.FilterCase == ReadReq.Types.Options.Types.FilterOptions.FilterOneofCase.StreamIdentifier
+			    && string.IsNullOrEmpty(filter.StreamIdentifier.Regex)) {
+				var indexName = filter.StreamIdentifier.Prefix.FirstOrDefault(SystemStreams.IsIndexStream);
+				if (indexName != null) {
+					return filter.StreamIdentifier.Prefix.Count > 1
+						? throw RpcExceptions.InvalidArgument("Index reads only work with one index name and cannot be combined with stream prefixes or other indexes")
+						: getIndexEnumerator(indexName);
+				}
+			}
+
+			return getReadAllEnumerator(filter);
+		}
+
+		IAsyncEnumerator<ReadResponse> GetReadAllForwardsFilteredEnumerator() =>
+			GetFilterOrIndexEnumerator(
+				indexName => new Enumerator.ReadIndexForwards(
+					_publisher, indexName, request.Options.All.ToPosition(),
+					request.Options.Count, user, requiresLeader, deadline, cancellationToken
+				),
+				filter => new Enumerator.ReadAllForwardsFiltered(
+					_publisher,
+					request.Options.All.ToPosition(),
+					request.Options.Count,
+					request.Options.ResolveLinks,
+					ConvertToEventFilter(true, filter),
+					user,
+					requiresLeader,
+					ConvertToWindow(filter),
+					deadline,
+					cancellationToken)
+			);
+
+		IAsyncEnumerator<ReadResponse> GetReadAllBackwardsFilteredEnumerator() =>
+			GetFilterOrIndexEnumerator(
+				indexName => new Enumerator.ReadIndexBackwards(
+					_publisher, indexName, request.Options.All.ToPosition(),
+					request.Options.Count, user, requiresLeader, deadline, cancellationToken
+				),
+				filter => new Enumerator.ReadAllBackwardsFiltered(
+					_publisher,
+					request.Options.All.ToPosition(),
+					request.Options.Count,
+					request.Options.ResolveLinks,
+					ConvertToEventFilter(true, filter),
+					user,
+					requiresLeader,
+					ConvertToWindow(filter),
+					deadline,
+					cancellationToken)
+			);
+
+		IAsyncEnumerator<ReadResponse> GetAllSubscriptionFilteredEnumerator() =>
+			GetFilterOrIndexEnumerator(
+				indexName => new Enumerator.IndexSubscription(
+					_publisher, _expiryStrategy, request.Options.All.ToSubscriptionPosition(),
+					indexName, user, requiresLeader, cancellationToken
+				),
+				filter => new Enumerator.AllSubscriptionFiltered(
 					_publisher,
 					_expiryStrategy,
 					request.Options.All.ToSubscriptionPosition(),
@@ -231,30 +265,29 @@ internal partial class Streams<TStreamId> {
 					ConvertToEventFilter(true, request.Options.Filter),
 					user,
 					requiresLeader,
-					request.Options.Filter.WindowCase switch {
-						ReadReq.Types.Options.Types.FilterOptions.WindowOneofCase.Count => null,
-						ReadReq.Types.Options.Types.FilterOptions.WindowOneofCase.Max => request.Options.Filter.Max,
-						_ => throw RpcExceptions.InvalidArgument(request.Options.Filter.WindowCase)
-					},
+					ConvertToWindow(filter),
 					request.Options.Filter.CheckpointIntervalMultiplier,
-					cancellationToken),
-			_ => throw RpcExceptions.InvalidCombination((streamOptionsCase, countOptionsCase, readDirection,
-				filterOptionsCase))
-		};
-	}
+					cancellationToken)
+			);
 
-	private static IEventFilter ConvertToEventFilter(bool isAllStream, ReadReq.Types.Options.Types.FilterOptions filter) =>
-		filter.FilterCase switch {
-			ReadReq.Types.Options.Types.FilterOptions.FilterOneofCase.EventType => (
-				string.IsNullOrEmpty(filter.EventType.Regex)
+		static uint? ConvertToWindow(ReadReq.Types.Options.Types.FilterOptions filter) =>
+			filter.WindowCase switch {
+				ReadReq.Types.Options.Types.FilterOptions.WindowOneofCase.Count => null,
+				ReadReq.Types.Options.Types.FilterOptions.WindowOneofCase.Max => filter.Max,
+				_ => throw RpcExceptions.InvalidArgument(filter.WindowCase)
+			};
+
+		static IEventFilter ConvertToEventFilter(bool isAllStream, ReadReq.Types.Options.Types.FilterOptions filter) =>
+			filter.FilterCase switch {
+				ReadReq.Types.Options.Types.FilterOptions.FilterOneofCase.EventType => string.IsNullOrEmpty(filter.EventType.Regex)
 					? EventFilter.EventType.Prefixes(isAllStream, filter.EventType.Prefix.ToArray())
-					: EventFilter.EventType.Regex(isAllStream, filter.EventType.Regex)),
-			ReadReq.Types.Options.Types.FilterOptions.FilterOneofCase.StreamIdentifier => (
-				string.IsNullOrEmpty(filter.StreamIdentifier.Regex)
+					: EventFilter.EventType.Regex(isAllStream, filter.EventType.Regex),
+				ReadReq.Types.Options.Types.FilterOptions.FilterOneofCase.StreamIdentifier => string.IsNullOrEmpty(filter.StreamIdentifier.Regex)
 					? EventFilter.StreamName.Prefixes(isAllStream, filter.StreamIdentifier.Prefix.ToArray())
-					: EventFilter.StreamName.Regex(isAllStream, filter.StreamIdentifier.Regex)),
-			_ => throw RpcExceptions.InvalidArgument(filter)
-		};
+					: EventFilter.StreamName.Regex(isAllStream, filter.StreamIdentifier.Regex),
+				_ => throw RpcExceptions.InvalidArgument(filter)
+			};
+	}
 }
 
 public static class ResponseConverter {
@@ -334,6 +367,8 @@ public static class ResponseConverter {
 				throw RpcExceptions.Timeout(timeout.ErrorMessage);
 			case ReadResponseException.InvalidPosition:
 				throw RpcExceptions.InvalidPositionException();
+			case ReadResponseException.IndexNotFound indexNotFound:
+				throw RpcExceptions.IndexNotFound(indexNotFound.IndexName);
 			case ReadResponseException.UnknownMessage unknownMessage:
 				throw RpcExceptions.UnknownMessage(unknownMessage.UnknownMessageType, unknownMessage.ExpectedMessageType);
 			case ReadResponseException.UnknownError unknown:

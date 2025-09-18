@@ -7,7 +7,8 @@
 		"KurrentDB.Projections.Core",
 		"Kurrent",
 		"Kurrent.Connectors",
-		"Kurrent.Connectors.Sinks"
+		"Kurrent.Connectors.Sinks",
+		"KurrentDB.SecondaryIndexes"
 	],
 
 	"Statuses": {
