@@ -24,6 +24,9 @@ public class ReadAllBackwardsFilteredTests {
 		private Position _positionOfLastWrite;
 		private readonly List<ReadResp> _responses = new();
 
+		public when_reading_all_backwards_filtered() : base(new LotsOfExpiriesStrategy()) {
+		}
+
 		protected override async Task Given() {
 			var response = await AppendToStreamBatch(new BatchAppendReq {
 				Options = new() {
@@ -99,6 +102,9 @@ public class ReadAllBackwardsFilteredTests {
 
 		private Position _positionOfLastWrite;
 		private readonly List<ReadResp> _responses = new();
+
+		public when_reading_all_backwards_filtered_from_end() : base(new LotsOfExpiriesStrategy()) {
+		}
 
 		protected override async Task Given() {
 			var response = await AppendToStreamBatch(new BatchAppendReq {

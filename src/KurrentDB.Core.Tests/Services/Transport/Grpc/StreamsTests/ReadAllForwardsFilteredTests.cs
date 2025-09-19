@@ -24,6 +24,9 @@ public class ReadAllForwardsFilteredTests {
 		private Position _positionOfLastWrite;
 		private readonly List<ReadResp> _responses = new();
 
+		public when_reading_all_forwards_filtered() : base(new LotsOfExpiriesStrategy()) {
+		}
+
 		protected override async Task Given() {
 			var response = await AppendToStreamBatch(new BatchAppendReq {
 				Options = new() {
