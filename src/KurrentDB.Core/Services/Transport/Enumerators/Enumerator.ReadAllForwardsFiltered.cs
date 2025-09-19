@@ -82,7 +82,7 @@ partial class Enumerator {
 				correlationId, correlationId, new ContinuationEnvelope(OnMessage, _semaphore, _cancellationToken),
 				commitPosition, preparePosition, (int)Math.Min(DefaultReadBatchSize, _maxCount), _resolveLinks,
 				_requiresLeader, (int)_maxSearchWindow, null, _eventFilter, _user,
-				replyOnExpired: false,
+				replyOnExpired: true,
 				expires: _deadline,
 				cancellationToken: _cancellationToken)
 			);
@@ -116,6 +116,9 @@ partial class Enumerator {
 						}
 
 						ReadPage(Position.FromInt64(completed.NextPos.CommitPosition, completed.NextPos.PreparePosition), readCount);
+						return;
+					case FilteredReadAllResult.Expired:
+						ReadPage(Position.FromInt64(completed.CurrentPos.CommitPosition, completed.CurrentPos.PreparePosition), readCount);
 						return;
 					case FilteredReadAllResult.AccessDenied:
 						_channel.Writer.TryComplete(new ReadResponseException.AccessDenied());
