@@ -7,13 +7,16 @@ using KurrentDB.Connectors.Management.Contracts.Commands;
 using Kurrent.Surge;
 using Eventuous;
 using FluentValidation;
+using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Kurrent.Surge.Connectors;
 using KurrentDB.Connectors.Infrastructure;
 using KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
+using KurrentDB.Connectors.Management.Contracts.Queries;
 using KurrentDB.Connectors.Planes.Management;
 using KurrentDB.Connectors.Planes.Management.Domain;
+using KurrentDB.Connectors.Planes.Management.Queries;
 using Microsoft.Extensions.Logging;
 using static System.StringComparison;
 using static KurrentDB.Connectors.Planes.Management.Domain.ConnectorDomainExceptions;
@@ -23,6 +26,7 @@ namespace KurrentDB.Connectors.Management;
 
 public class ConnectorsCommandService(
     ConnectorsCommandApplication application,
+    ConnectorQueries connectorQueries,
     RequestValidationService requestValidationService,
     ILogger<ConnectorsCommandService> logger
 ) : ConnectorsCommandServiceBase {
@@ -42,12 +46,111 @@ public class ConnectorsCommandService(
         return await Execute(request, context);
     }
 
-    public override Task<Empty> Reconfigure(ReconfigureConnector request, ServerCallContext context) => Execute(request, context);
-    public override Task<Empty> Delete(DeleteConnector request, ServerCallContext context)           => Execute(request, context);
-    public override Task<Empty> Start(StartConnector request, ServerCallContext context)             => Execute(request, context);
-    public override Task<Empty> Reset(ResetConnector request, ServerCallContext context)             => Execute(request, context);
-    public override Task<Empty> Stop(StopConnector request, ServerCallContext context)               => Execute(request, context);
-    public override Task<Empty> Rename(RenameConnector request, ServerCallContext context)           => Execute(request, context);
+    public override async Task<Empty> Reconfigure(ReconfigureConnector request, ServerCallContext context) {
+        var instanceType = request.Settings
+            .FirstOrDefault(kvp => kvp.Key.Equals(nameof(IConnectorOptions.InstanceTypeName), OrdinalIgnoreCase))
+            .Value;
+
+        if (ConnectorCatalogue.TryGetConnector(instanceType, out var item) && item.AllowsMultipleInstances) {
+            await Task.WhenAll(request
+                .Repeat(5)
+                .Skip(1)
+                .Select(r => Execute(r, context))
+                .ToList());
+        }
+
+        return await Execute(request, context);
+    }
+
+    public override async Task<Empty> Delete(DeleteConnector request, ServerCallContext context) {
+        var connector = await connectorQueries.GetSettings(new GetConnectorSettings { ConnectorId = request.ConnectorId }, context.CancellationToken);
+
+        var instanceType = connector.Settings
+            .FirstOrDefault(kvp => kvp.Key.Equals(nameof(IConnectorOptions.InstanceTypeName), OrdinalIgnoreCase))
+            .Value;
+
+        if (ConnectorCatalogue.TryGetConnector(instanceType, out var item) && item.AllowsMultipleInstances) {
+            await Task.WhenAll(request
+                .Repeat(5)
+                .Skip(1)
+                .Select(r => Execute(r, context))
+                .ToList());
+        }
+
+        return await Execute(request, context);
+    }
+
+    public override async Task<Empty> Start(StartConnector request, ServerCallContext context) {
+        var connector = await connectorQueries.GetSettings(new GetConnectorSettings { ConnectorId = request.ConnectorId }, context.CancellationToken);
+
+        var instanceType = connector.Settings
+            .FirstOrDefault(kvp => kvp.Key.Equals(nameof(IConnectorOptions.InstanceTypeName), OrdinalIgnoreCase))
+            .Value;
+
+        if (ConnectorCatalogue.TryGetConnector(instanceType, out var item) && item.AllowsMultipleInstances) {
+            await Task.WhenAll(request
+                .Repeat(5)
+                .Skip(1)
+                .Select(r => Execute(r, context))
+                .ToList());
+        }
+
+        return await Execute(request, context);
+    }
+
+    public override async Task<Empty> Stop(StopConnector request, ServerCallContext context) {
+        var connector = await connectorQueries.GetSettings(new GetConnectorSettings { ConnectorId = request.ConnectorId }, context.CancellationToken);
+
+        var instanceType = connector.Settings
+            .FirstOrDefault(kvp => kvp.Key.Equals(nameof(IConnectorOptions.InstanceTypeName), OrdinalIgnoreCase))
+            .Value;
+
+        if (ConnectorCatalogue.TryGetConnector(instanceType, out var item) && item.AllowsMultipleInstances) {
+            await Task.WhenAll(request
+                .Repeat(5)
+                .Skip(1)
+                .Select(r => Execute(r, context))
+                .ToList());
+        }
+
+        return await Execute(request, context);
+    }
+
+    public override async Task<Empty> Reset(ResetConnector request, ServerCallContext context) {
+        var connector = await connectorQueries.GetSettings(new GetConnectorSettings { ConnectorId = request.ConnectorId }, context.CancellationToken);
+
+        var instanceType = connector.Settings
+            .FirstOrDefault(kvp => kvp.Key.Equals(nameof(IConnectorOptions.InstanceTypeName), OrdinalIgnoreCase))
+            .Value;
+
+        if (ConnectorCatalogue.TryGetConnector(instanceType, out var item) && item.AllowsMultipleInstances) {
+            await Task.WhenAll(request
+                .Repeat(5)
+                .Skip(1)
+                .Select(r => Execute(r, context))
+                .ToList());
+        }
+
+        return await Execute(request, context);
+    }
+
+    public override async Task<Empty> Rename(RenameConnector request, ServerCallContext context) {
+        var connector = await connectorQueries.GetSettings(new GetConnectorSettings { ConnectorId = request.ConnectorId }, context.CancellationToken);
+
+        var instanceType = connector.Settings
+            .FirstOrDefault(kvp => kvp.Key.Equals(nameof(IConnectorOptions.InstanceTypeName), OrdinalIgnoreCase))
+            .Value;
+
+        if (ConnectorCatalogue.TryGetConnector(instanceType, out var item) && item.AllowsMultipleInstances) {
+            await Task.WhenAll(request
+                .Repeat(5)
+                .Skip(1)
+                .Select(r => Execute(r, context))
+                .ToList());
+        }
+
+        return await Execute(request, context);
+    }
 
     async Task<Empty> Execute<TCommand>(TCommand command, ServerCallContext context) where TCommand : class {
         var http = context.GetHttpContext();
@@ -105,5 +208,20 @@ public class ConnectorsCommandService(
                 throw rpcEx;
             }
         );
+    }
+}
+
+public static class ConnectorsCommandExtensions {
+    public static List<T> Repeat<T>(this T message, int count) where T : IMessage<T> {
+        var property    = typeof(T).GetProperty(nameof(ConnectorId));
+        var connectorId = (property!.GetValue(message) as string)!;
+
+        return Enumerable.Range(1, count)
+            .Select(i => {
+                var clone = message.Clone();
+                property.SetValue(clone, i == 1 ? connectorId : $"{connectorId}-{i - 1}");
+                return clone;
+            })
+            .ToList();
     }
 }
