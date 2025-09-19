@@ -39,7 +39,7 @@ partial class Enumerator {
 			correlationId, correlationId, new ContinuationEnvelope(onMessage, Semaphore, CancellationToken),
 			IndexName, commitPosition, preparePosition, excludeStart, (int)Math.Min(DefaultIndexReadSize, MaxCount),
 			RequiresLeader, null, User,
-			replyOnExpired: false,
+			replyOnExpired: true,
 			expires: Deadline,
 			cancellationToken: CancellationToken);
 	}
@@ -64,7 +64,7 @@ partial class Enumerator {
 			correlationId, correlationId, new ContinuationEnvelope(onMessage, Semaphore, CancellationToken),
 			IndexName, commitPosition, preparePosition, excludeStart, (int)Math.Min(DefaultIndexReadSize, MaxCount),
 			RequiresLeader, null, User,
-			replyOnExpired: false,
+			replyOnExpired: true,
 			expires: Deadline,
 			cancellationToken: CancellationToken);
 	}
@@ -146,31 +146,34 @@ partial class Enumerator {
 					return;
 				}
 
-				if (completed.Result == ReadIndexResult.Success) {
-					foreach (var @event in completed.Events) {
-						await _channel.Writer.WriteAsync(new ReadResponse.EventReceived(@event), ct);
+				switch (completed.Result) {
+					case ReadIndexResult.Success:
+						foreach (var @event in completed.Events) {
+							await _channel.Writer.WriteAsync(new ReadResponse.EventReceived(@event), ct);
 
-						if (++readCount >= MaxCount) {
+							if (++readCount >= MaxCount) {
+								_channel.Writer.TryComplete();
+								return;
+							}
+						}
+
+						if (completed.IsEndOfStream || completed.Events.Count == 0) {
 							_channel.Writer.TryComplete();
 							return;
 						}
-					}
 
-					if (completed.IsEndOfStream || completed.Events.Count == 0) {
-						_channel.Writer.TryComplete();
+						var last = completed.Events[^1].EventPosition!.Value;
+						ReadPage(Position.FromInt64(last.CommitPosition, last.PreparePosition), true, readCount);
 						return;
-					}
-
-					var last = completed.Events[^1].EventPosition!.Value;
-					ReadPage(Position.FromInt64(last.CommitPosition, last.PreparePosition), true, readCount);
-					return;
+					case ReadIndexResult.Expired:
+						ReadPage(Position.FromInt64(completed.CurrentPos.CommitPosition, completed.CurrentPos.PreparePosition), true, readCount);
+						return;
 				}
 
 				Exception exception = completed.Result switch {
 					ReadIndexResult.AccessDenied => new ReadResponseException.AccessDenied(),
 					ReadIndexResult.IndexNotFound => new ReadResponseException.IndexNotFound(IndexName),
 					ReadIndexResult.InvalidPosition => new ReadResponseException.InvalidPosition(),
-					ReadIndexResult.Expired => new ReadResponseException.Timeout("Read index operation expired"),
 					_ => ReadResponseException.UnknownError.Create(completed.Result, completed.Error)
 				};
 				_channel.Writer.TryComplete(exception);

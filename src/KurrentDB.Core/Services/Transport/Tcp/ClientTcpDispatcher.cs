@@ -162,7 +162,7 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 		return new(Guid.NewGuid(), package.CorrelationId, envelope,
 			dto.EventStreamId, dto.FromEventNumber, dto.MaxCount,
 			dto.ResolveLinkTos, dto.RequireLeader, null, user,
-			expires: DateTime.UtcNow + _readTimeout);
+			expires: DateTime.UtcNow + _readTimeout, replyOnExpired: false);
 	}
 
 	private static TcpPackage WrapReadStreamEventsBackwardCompleted(ClientMessage.ReadStreamEventsBackwardCompleted msg) {
@@ -210,7 +210,7 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 		return new(Guid.NewGuid(), package.CorrelationId, envelope,
 			dto.CommitPosition, dto.PreparePosition, dto.MaxCount,
 			dto.ResolveLinkTos, dto.RequireLeader, null, user,
-			expires: DateTime.UtcNow + _readTimeout);
+			expires: DateTime.UtcNow + _readTimeout, replyOnExpired: false);
 	}
 
 	private static TcpPackage WrapReadAllEventsBackwardCompleted(ClientMessage.ReadAllEventsBackwardCompleted msg) {
@@ -272,7 +272,8 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 			dto.CommitPosition, dto.PreparePosition, dto.MaxCount,
 			dto.ResolveLinkTos, dto.RequireLeader, maxSearchWindow, null, eventFilter, user,
 			longPollTimeout: null,
-			expires: DateTime.UtcNow + _readTimeout);
+			expires: DateTime.UtcNow + _readTimeout,
+			replyOnExpired: false);
 	}
 
 	private static TcpPackage WrapFilteredReadAllEventsBackwardCompleted(

@@ -54,7 +54,7 @@ public sealed class AuthorizationGateway(IAuthorizationProvider authorizationPro
 		new ReadIndexEventsForwardCompleted(ReadIndexResult.AccessDenied, [], TFPos.Invalid, 0, false, AccessDenied);
 
 	private static readonly Func<ReadIndexEventsBackward, Message> ReadIndexEventsBackwardDenied = _ =>
-		new ReadIndexEventsBackwardCompleted(ReadIndexResult.AccessDenied, [], 0, false, AccessDenied);
+		new ReadIndexEventsBackwardCompleted(ReadIndexResult.AccessDenied, [], TFPos.Invalid, 0, false, AccessDenied);
 
 	private static readonly Func<SubscribeToIndex, Message> SubscribeToIndexDenied = msg =>
 		new SubscriptionDropped(msg.CorrelationId, SubscriptionDropReason.AccessDenied);

@@ -1089,7 +1089,8 @@ public class ProjectionManager
 				requireLeader: false,
 				validationStreamVersion: null,
 				user: SystemAccounts.System,
-				expires: DateTime.MaxValue),
+				expires: DateTime.MaxValue,
+				replyOnExpired: false),
 			new ReadStreamEventsBackwardHandlers.Optimistic(onComplete));
 	}
 

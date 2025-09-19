@@ -68,7 +68,7 @@ partial class Enumerator {
 
 			_bus.Publish(new ClientMessage.ReadLogEvents(
 				correlationId, correlationId, new ContinuationEnvelope(OnMessage, _semaphore, CancellationToken.None),
-				logPositions, _user, expires: _deadline, cancellationToken: CancellationToken.None));
+				logPositions, _user, replyOnExpired: true, expires: _deadline, cancellationToken: CancellationToken.None));
 			return;
 
 			Task OnMessage(Message message, CancellationToken ct) {
@@ -91,6 +91,9 @@ partial class Enumerator {
 						}
 
 						_channel.Writer.TryComplete();
+						return Task.CompletedTask;
+					case ReadEventResult.Expired:
+						Read(logPositions);
 						return Task.CompletedTask;
 					default:
 						_channel.Writer.TryComplete(ReadResponseException.UnknownError.Create(completed.Result));

@@ -45,7 +45,7 @@ public class SecondaryIndexReaders {
 		var reader = FindReader(msg.IndexName);
 
 		return reader?.ReadBackwards(msg, token) ?? ValueTask.FromResult(new ReadIndexEventsBackwardCompleted(
-			ReadIndexResult.IndexNotFound, [], -1, true,
+			ReadIndexResult.IndexNotFound, [], new(msg.CommitPosition, msg.PreparePosition), -1, true,
 			$"Index {msg.IndexName} does not exist"
 		));
 	}

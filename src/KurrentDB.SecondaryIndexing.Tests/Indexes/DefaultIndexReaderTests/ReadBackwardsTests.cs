@@ -238,7 +238,7 @@ public class ReadBackwardsTests : IndexTestBase {
 		long tfLastCommitPosition = 0,
 		string? error = null
 	) =>
-		new(result, events, tfLastCommitPosition, isEndOfStream, error);
+		new(result, events, TFPos.FirstRecordOfTf, tfLastCommitPosition, isEndOfStream, error);
 
 	private static void AssertEqual(
 		ReadIndexEventsBackwardCompleted expected,
