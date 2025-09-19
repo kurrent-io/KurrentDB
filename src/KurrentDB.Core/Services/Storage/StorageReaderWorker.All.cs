@@ -69,6 +69,14 @@ public partial class StorageReaderWorker<TStreamId> {
 			return;
 
 		if (msg.Expires < DateTime.UtcNow) {
+			if (msg.ReplyOnExpired) {
+				msg.Envelope.ReplyWith(new ClientMessage.ReadAllEventsBackwardCompleted(
+					msg.CorrelationId, ReadAllResult.Expired,
+					default, ResolvedEvent.EmptyArray, default, default, default,
+					currentPos: new TFPos(msg.CommitPosition, msg.PreparePosition),
+					TFPos.Invalid, TFPos.Invalid, default));
+			}
+
 			if (LogExpiredMessage(msg.Expires))
 				Log.Debug(
 					"Read All Stream Events Backward operation has expired for C:{commitPosition}/P:{preparePosition}. Operation Expired at {expiryDateTime} after {lifetime:N0} ms.",

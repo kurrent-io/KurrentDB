@@ -527,7 +527,8 @@ public sealed class IODispatcher : IHandle<IODispatcherDelayedMessage>, IHandle<
 				resolveLinks,
 				requireLeader,
 				validationTfLastCommitPosition,
-				user
+				user,
+				replyOnExpired: false
 			),
 			res => {
 				if (_requestTracker.RemovePendingRead(res.CorrelationId)) {
