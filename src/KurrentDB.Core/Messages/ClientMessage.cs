@@ -1038,10 +1038,12 @@ public static partial class ClientMessage {
 
 		public readonly long? ValidationTfLastCommitPosition;
 		public readonly TimeSpan? LongPollTimeout;
+		public readonly bool ReplyOnExpired;
 
 		public FilteredReadAllEventsBackward(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
 			long commitPosition, long preparePosition, int maxCount, bool resolveLinkTos, bool requireLeader,
 			int maxSearchWindow, long? validationTfLastCommitPosition, IEventFilter eventFilter, ClaimsPrincipal user,
+			bool replyOnExpired,
 			TimeSpan? longPollTimeout = null, DateTime? expires = null,
 			CancellationToken cancellationToken = default)
 			: base(internalCorrId, correlationId, envelope, user, expires, cancellationToken) {
@@ -1054,6 +1056,7 @@ public static partial class ClientMessage {
 			LongPollTimeout = longPollTimeout;
 			MaxSearchWindow = maxSearchWindow;
 			EventFilter = eventFilter;
+			ReplyOnExpired = replyOnExpired;
 		}
 
 		public override string ToString() =>
@@ -1066,7 +1069,8 @@ public static partial class ClientMessage {
 			$"MaxSearchWindow: {MaxSearchWindow}, " +
 			$"EventFilter: {{ {EventFilter} }}, " +
 			$"LongPollTimeout: {LongPollTimeout}, " +
-			$"ValidationTfLastCommitPosition: {ValidationTfLastCommitPosition}";
+			$"ValidationTfLastCommitPosition: {ValidationTfLastCommitPosition}, " +
+			$"ReplyOnExpired: {ReplyOnExpired}";
 	}
 
 	[DerivedMessage(CoreMessage.Client)]

@@ -68,6 +68,14 @@ public partial class StorageReaderWorker<TStreamId> {
 			return;
 
 		if (msg.Expires < DateTime.UtcNow) {
+			if (msg.ReplyOnExpired) {
+				msg.Envelope.ReplyWith(new FilteredReadAllEventsBackwardCompleted(
+					msg.CorrelationId, FilteredReadAllResult.Expired,
+					default, ResolvedEvent.EmptyArray, default, default, default,
+					currentPos: new TFPos(msg.CommitPosition, msg.PreparePosition),
+					TFPos.Invalid, TFPos.Invalid, default, default));
+			}
+
 			Log.Debug(
 				"Read All Stream Events Backward Filtered operation has expired for C:{0}/P:{1}. Operation Expired at {2} after {lifetime:N0} ms.",
 				msg.CommitPosition, msg.PreparePosition, msg.Expires, msg.Lifetime.TotalMilliseconds);

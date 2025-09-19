@@ -272,7 +272,8 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 			dto.CommitPosition, dto.PreparePosition, dto.MaxCount,
 			dto.ResolveLinkTos, dto.RequireLeader, maxSearchWindow, null, eventFilter, user,
 			longPollTimeout: null,
-			expires: DateTime.UtcNow + _readTimeout);
+			expires: DateTime.UtcNow + _readTimeout,
+			replyOnExpired: false);
 	}
 
 	private static TcpPackage WrapFilteredReadAllEventsBackwardCompleted(
