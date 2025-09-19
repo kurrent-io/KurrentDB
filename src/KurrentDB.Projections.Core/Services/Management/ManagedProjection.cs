@@ -641,7 +641,8 @@ public class ManagedProjection : IDisposable {
 				1,
 				resolveLinkTos: false, requireLeader: false, validationStreamVersion: null,
 				user: SystemAccounts.System,
-				expires: DateTime.MaxValue),
+				expires: DateTime.MaxValue,
+				replyOnExpired: false),
 			new ReadStreamEventsBackwardHandlers.Optimistic(PersistedStateReadCompleted));
 	}
 

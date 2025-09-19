@@ -303,7 +303,7 @@ public partial class EventByTypeIndexEventReader {
 				readRequest = new ClientMessage.ReadStreamEventsBackward(
 					pendingRequestCorrelationId, pendingRequestCorrelationId, new SendToThisEnvelope(this), "$et",
 					-1, 1, false, false, null,
-					_readAs);
+					_readAs, replyOnExpired: false);
 			} else {
 				readRequest = new ClientMessage.ReadStreamEventsForward(
 					pendingRequestCorrelationId, pendingRequestCorrelationId, new SendToThisEnvelope(this), "$et",

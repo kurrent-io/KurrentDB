@@ -1039,7 +1039,7 @@ public class AtomController : CommunicationController {
 			(args, msg) => Configure.GetStreamEventsBackward(args, msg, headOfStream));
 		var corrId = Guid.NewGuid();
 		Publish(new ClientMessage.ReadStreamEventsBackward(corrId, corrId, envelope, stream, eventNumber, count,
-			resolveLinkTos, requireLeader, GetETagStreamVersion(manager), manager.User));
+			resolveLinkTos, requireLeader, GetETagStreamVersion(manager), manager.User, replyOnExpired: false));
 	}
 
 	private void GetStreamEventsForward(HttpEntityManager manager, string stream, long eventNumber, int count,
