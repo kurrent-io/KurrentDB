@@ -48,7 +48,7 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ISe
     static DisposeCallback? OnDisposeCallback;
 
     public IConnector CreateConnector(ConnectorId connectorId, IConfiguration configuration) {
-        var options = configuration.GetRequiredOptions<ConnectorOptions>();
+        var options       = configuration.GetRequiredOptions<ConnectorOptions>();
         var validator     = Services.GetRequiredService<IConnectorValidator>();
         var dataProtector = Services.GetRequiredService<IConnectorDataProtector>();
 

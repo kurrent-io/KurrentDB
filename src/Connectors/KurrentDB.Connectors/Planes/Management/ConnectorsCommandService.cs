@@ -9,10 +9,13 @@ using Eventuous;
 using FluentValidation;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using Kurrent.Surge.Connectors;
 using KurrentDB.Connectors.Infrastructure;
+using KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
 using KurrentDB.Connectors.Planes.Management;
 using KurrentDB.Connectors.Planes.Management.Domain;
 using Microsoft.Extensions.Logging;
+using static System.StringComparison;
 using static KurrentDB.Connectors.Planes.Management.Domain.ConnectorDomainExceptions;
 using static KurrentDB.Connectors.Management.Contracts.Commands.ConnectorsCommandService;
 
@@ -23,7 +26,22 @@ public class ConnectorsCommandService(
     RequestValidationService requestValidationService,
     ILogger<ConnectorsCommandService> logger
 ) : ConnectorsCommandServiceBase {
-    public override Task<Empty> Create(CreateConnector request, ServerCallContext context)           => Execute(request, context);
+    public override async Task<Empty> Create(CreateConnector request, ServerCallContext context) {
+        var instanceType = request.Settings
+            .FirstOrDefault(kvp => kvp.Key.Equals(nameof(IConnectorOptions.InstanceTypeName), OrdinalIgnoreCase))
+            .Value;
+
+        if (ConnectorCatalogue.TryGetConnector(instanceType, out var item) && item.AllowsMultipleInstances) {
+            await Task.WhenAll(request
+                .Repeat(5)
+                .Skip(1)
+                .Select(r => Execute(r, context))
+                .ToList());
+        }
+
+        return await Execute(request, context);
+    }
+
     public override Task<Empty> Reconfigure(ReconfigureConnector request, ServerCallContext context) => Execute(request, context);
     public override Task<Empty> Delete(DeleteConnector request, ServerCallContext context)           => Execute(request, context);
     public override Task<Empty> Start(StartConnector request, ServerCallContext context)             => Execute(request, context);

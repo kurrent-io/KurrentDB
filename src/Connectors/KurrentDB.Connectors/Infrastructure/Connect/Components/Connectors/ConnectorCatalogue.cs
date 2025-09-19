@@ -65,6 +65,8 @@ public readonly record struct ConnectorCatalogueItem() {
     public string[] RequiredEntitlements { get; init; } = [];
     public string[] Aliases              { get; init; } = [];
 
+    public bool AllowsMultipleInstances => ConnectorType == typeof(KafkaSource);
+
     public static ConnectorCatalogueItem For<T, TValidator, TProtector>(string[] requiredEntitlements, bool requiresLicense) {
         return new ConnectorCatalogueItem {
             ConnectorType          = typeof(T),

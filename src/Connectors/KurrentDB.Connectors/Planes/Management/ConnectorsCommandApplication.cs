@@ -5,12 +5,13 @@ using KurrentDB.Connectors.Management.Contracts;
 using KurrentDB.Connectors.Management.Contracts.Commands;
 using KurrentDB.Connectors.Management.Contracts.Events;
 using Eventuous;
+using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Surge;
 using Kurrent.Surge.Connectors;
 using static System.StringComparison;
 using Kurrent.Surge.Connectors.Sinks;
-
+using KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
 using KurrentDB.Connectors.Infrastructure.Eventuous;
 using KurrentDB.Connectors.Planes.Management.Domain;
 using Microsoft.Extensions.Configuration;
@@ -19,7 +20,6 @@ using static KurrentDB.Connectors.Planes.Management.Domain.ConnectorDomainServic
 using ConnectorState = KurrentDB.Connectors.Management.Contracts.ConnectorState;
 
 namespace KurrentDB.Connectors.Planes.Management;
-
 
 [PublicAPI]
 public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
@@ -45,21 +45,6 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
             CheckAccess(settings, licenseService);
 
             configureConnectorStreams(cmd.ConnectorId);
-
-            var instanceType = cmd.Settings
-                .FirstOrDefault(kvp => kvp.Key.Equals(nameof(IConnectorOptions.InstanceTypeName), OrdinalIgnoreCase))
-                .Value;
-
-            if (instanceType?.EndsWith("source", OrdinalIgnoreCase) == true) {
-                return Enumerable.Range(0, 5)
-                    .Select(i => new ConnectorCreated {
-                        ConnectorId = ConnectorId.From($"{cmd.ConnectorId}-{i}"),
-                        Name        = cmd.Name,
-                        Settings    = { settings },
-                        Timestamp   = time.GetUtcNow().ToTimestamp()
-                    })
-                    .ToList();
-            }
 
             return [
                 new ConnectorCreated {
@@ -121,63 +106,43 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
             // connector.EnsureStopped();
 
             var instanceType = connector.CurrentRevision.Settings
-                .FirstOrDefault(kvp => kvp.Key.Equals(nameof(IConnectorOptions.InstanceTypeName), OrdinalIgnoreCase))
+                .First(kvp => kvp.Key.Equals(nameof(IConnectorOptions.InstanceTypeName), OrdinalIgnoreCase))
                 .Value;
 
-            if (instanceType?.EndsWith("source", OrdinalIgnoreCase) == true) {
-                return Enumerable.Range(0, 5)
-                    .Select(i => new ConnectorActivating {
-                        ConnectorId = ConnectorId.From($"{cmd.ConnectorId}-{i}"),
-                        Settings    = { connector.CurrentRevision.Settings },
-                        StartFrom   = cmd.StartFrom,
-                        Timestamp   = time.GetUtcNow().ToTimestamp()
-                    })
-                    .ToList();
-            }
+            var message = new ConnectorActivating {
+                ConnectorId = connector.Id,
+                Settings    = { connector.CurrentRevision.Settings },
+                StartFrom   = cmd.StartFrom,
+                Timestamp   = time.GetUtcNow().ToTimestamp()
+            };
 
-            return [
-                new ConnectorActivating {
-                    ConnectorId = connector.Id,
-                    Settings    = { connector.CurrentRevision.Settings },
-                    StartFrom   = cmd.StartFrom,
-                    Timestamp   = time.GetUtcNow().ToTimestamp()
-                }
-            ];
+            return AllowsMultipleInstances(connector)
+                ? message.Repeat(5)
+                : message.Repeat(1);
         });
 
         OnExisting<ResetConnector>((connector, cmd) => {
             CheckAccess(connector, licenseService);
-
             connector.EnsureNotDeleted();
             connector.EnsureStopped();
 
             var instanceType = connector.CurrentRevision.Settings
-                .FirstOrDefault(kvp => kvp.Key.Equals(nameof(IConnectorOptions.InstanceTypeName), OrdinalIgnoreCase))
+                .First(kvp => kvp.Key.Equals(nameof(IConnectorOptions.InstanceTypeName), OrdinalIgnoreCase))
                 .Value;
 
-            if (instanceType?.EndsWith("source", OrdinalIgnoreCase) == true) {
-                return Enumerable.Range(0, 5)
-                    .Select(i => new ConnectorActivating {
-                        ConnectorId = ConnectorId.From($"{cmd.ConnectorId}-{i}"),
-                        Settings = { connector.CurrentRevision.Settings },
-                        StartFrom = cmd.StartFrom ?? new StartFromPosition {
-	                        LogPosition = 0
-                        }, // reset to beginning, this is the big difference from StartConnector
-                        Timestamp = time.GetUtcNow().ToTimestamp()
-                    })
-                    .ToList();
-            }
+            var timestamp = time.GetUtcNow().ToTimestamp();
+            var startFrom = cmd.StartFrom ?? new StartFromPosition { LogPosition = 0 };
 
-            return [
-                new ConnectorActivating {
-                    ConnectorId = connector.Id,
-                    Settings    = { connector.CurrentRevision.Settings },
-                    StartFrom = cmd.StartFrom ?? new StartFromPosition {
-                        LogPosition = 0
-                    }, // reset to beginning, this is the big difference from StartConnector
-                    Timestamp   = time.GetUtcNow().ToTimestamp()
-                }
-            ];
+            var message = new ConnectorActivating {
+                ConnectorId = connector.Id,
+                Settings    = { connector.CurrentRevision.Settings },
+                StartFrom   = startFrom,
+                Timestamp   = timestamp
+            };
+
+            return AllowsMultipleInstances(connector)
+                ? message.Repeat(5)
+                : message.Repeat(1);
         });
 
         OnExisting<StopConnector>((connector, cmd) => {
@@ -190,25 +155,14 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
 
             connector.EnsureRunning();
 
-            var instanceType = connector.CurrentRevision.Settings
-                .FirstOrDefault(kvp => kvp.Key.Equals(nameof(IConnectorOptions.InstanceTypeName), OrdinalIgnoreCase))
-                .Value;
+            var message = new ConnectorDeactivating {
+                ConnectorId = connector.Id,
+                Timestamp   = time.GetUtcNow().ToTimestamp()
+            };
 
-            if (instanceType?.EndsWith("source", OrdinalIgnoreCase) == true) {
-                return Enumerable.Range(0, 5)
-                    .Select(i => new ConnectorDeactivating {
-                        ConnectorId = ConnectorId.From($"{cmd.ConnectorId}-{i}"),
-                        Timestamp   = time.GetUtcNow().ToTimestamp()
-                    })
-                    .ToList();
-            }
-
-            return [
-                new ConnectorDeactivating {
-                    ConnectorId = connector.Id,
-                    Timestamp   = time.GetUtcNow().ToTimestamp()
-                }
-            ];
+            return AllowsMultipleInstances(connector)
+                ? message.Repeat(5)
+                : message.Repeat(1);
         });
 
         OnExisting<RenameConnector>((connector, cmd) => {
@@ -288,10 +242,31 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
 
     static void CheckAccess(ConnectorEntity connector, ConnectorsLicenseService licenseService) {
         var instanceType = connector.CurrentRevision.Settings
-            .First(kvp => kvp.Key.Equals(nameof(SinkOptions.InstanceTypeName), OrdinalIgnoreCase)).Value;
+            .First(kvp => kvp.Key.Equals(nameof(IConnectorOptions.InstanceTypeName), OrdinalIgnoreCase)).Value;
 
         if (!licenseService.CheckLicense(instanceType, out var info))
             throw new ConnectorAccessDeniedException($"Usage of the {info.ConnectorType.Name} connector is not authorized");
     }
+
+    static bool AllowsMultipleInstances(ConnectorEntity connector) {
+        var instanceType = connector.CurrentRevision.Settings
+            .First(kvp => kvp.Key.Equals(nameof(IConnectorOptions.InstanceTypeName), OrdinalIgnoreCase)).Value;
+
+	    return ConnectorCatalogue.TryGetConnector(instanceType, out var item) && item.AllowsMultipleInstances;
+    }
 }
 
+public static class ConnectorsCommandExtensions {
+    public static List<T> Repeat<T>(this T message, int count) where T : IMessage<T> {
+        var property    = typeof(T).GetProperty(nameof(ConnectorId));
+        var connectorId = (property!.GetValue(message) as string)!;
+
+        return Enumerable.Range(1, count)
+            .Select(i => {
+                var clone = message.Clone();
+                property.SetValue(clone, i == 1 ? connectorId : $"{connectorId}-{i - 1}");
+                return clone;
+            })
+            .ToList();
+    }
+}
