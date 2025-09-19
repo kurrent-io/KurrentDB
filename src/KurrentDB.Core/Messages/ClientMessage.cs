@@ -873,10 +873,12 @@ public static partial class ClientMessage {
 		public readonly bool RequireLeader;
 
 		public readonly long? ValidationTfLastCommitPosition;
+		public readonly bool ReplyOnExpired;
 
 		public ReadAllEventsBackward(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
 			long commitPosition, long preparePosition, int maxCount, bool resolveLinkTos,
 			bool requireLeader, long? validationTfLastCommitPosition, ClaimsPrincipal user,
+			bool replyOnExpired,
 			DateTime? expires = null,
 			CancellationToken cancellationToken = default)
 			: base(internalCorrId, correlationId, envelope, user, expires, cancellationToken) {
@@ -886,6 +888,7 @@ public static partial class ClientMessage {
 			ResolveLinkTos = resolveLinkTos;
 			RequireLeader = requireLeader;
 			ValidationTfLastCommitPosition = validationTfLastCommitPosition;
+			ReplyOnExpired = replyOnExpired;
 		}
 
 		public override string ToString() =>
@@ -895,7 +898,8 @@ public static partial class ClientMessage {
 			$"MaxCount: {MaxCount}, " +
 			$"ResolveLinkTos: {ResolveLinkTos}, " +
 			$"RequireLeader: {RequireLeader}, " +
-			$"ValidationTfLastCommitPosition: {ValidationTfLastCommitPosition}";
+			$"ValidationTfLastCommitPosition: {ValidationTfLastCommitPosition}, " +
+			$"ReplyOnExpired: {ReplyOnExpired}";
 	}
 
 	[DerivedMessage(CoreMessage.Client)]

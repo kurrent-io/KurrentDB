@@ -74,7 +74,7 @@ partial class Enumerator {
 			_bus.Publish(new ClientMessage.ReadAllEventsBackward(
 				correlationId, correlationId, new ContinuationEnvelope(OnMessage, _semaphore, _cancellationToken),
 				commitPosition, preparePosition, (int)Math.Min(DefaultReadBatchSize, _maxCount), _resolveLinks,
-				_requiresLeader, default, _user, _deadline,
+				_requiresLeader, default, _user, replyOnExpired: true, expires: _deadline,
 				cancellationToken: _cancellationToken));
 
 			async Task OnMessage(Message message, CancellationToken ct) {
@@ -106,6 +106,9 @@ partial class Enumerator {
 						}
 
 						ReadPage(Position.FromInt64(completed.NextPos.CommitPosition, completed.NextPos.PreparePosition), readCount);
+						return;
+					case ReadAllResult.Expired:
+						ReadPage(Position.FromInt64(completed.CurrentPos.CommitPosition, completed.CurrentPos.PreparePosition), readCount);
 						return;
 					case ReadAllResult.AccessDenied:
 						_channel.Writer.TryComplete(new ReadResponseException.AccessDenied());

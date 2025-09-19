@@ -210,7 +210,7 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 		return new(Guid.NewGuid(), package.CorrelationId, envelope,
 			dto.CommitPosition, dto.PreparePosition, dto.MaxCount,
 			dto.ResolveLinkTos, dto.RequireLeader, null, user,
-			expires: DateTime.UtcNow + _readTimeout);
+			expires: DateTime.UtcNow + _readTimeout, replyOnExpired: false);
 	}
 
 	private static TcpPackage WrapReadAllEventsBackwardCompleted(ClientMessage.ReadAllEventsBackwardCompleted msg) {

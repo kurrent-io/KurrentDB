@@ -703,7 +703,7 @@ public class AtomController : CommunicationController {
 		var corrId = Guid.NewGuid();
 		Publish(new ClientMessage.ReadAllEventsBackward(corrId, corrId, envelope,
 			position.CommitPosition, position.PreparePosition, count, resolveLinkTos,
-			requireLeader, GetETagTFPosition(manager), manager.User));
+			requireLeader, GetETagTFPosition(manager), manager.User, replyOnExpired: false));
 	}
 
 	private void GetAllEventsBackwardFiltered(HttpEntityManager manager, UriTemplateMatch match) {
