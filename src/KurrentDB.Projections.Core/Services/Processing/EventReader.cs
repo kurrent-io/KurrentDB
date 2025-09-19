@@ -89,14 +89,13 @@ public abstract class EventReader : IEventReader {
 
 	protected void SendPartitionDeleted_WhenReadingDataStream(
 		string partition, long? lastEventNumber, TFPos? deletedLinkOrEventPosition, TFPos? deletedEventPosition,
-		string positionStreamId,
-		int? positionEventNumber, CheckpointTag preTagged = null) {
+		string positionStreamId, int? positionEventNumber) {
 		if (_disposed)
 			return;
 		_publisher.Publish(
 			new ReaderSubscriptionMessage.EventReaderPartitionDeleted(
 				EventReaderCorrelationId, partition, deletedLinkOrEventPosition,
-				deletedEventPosition, positionStreamId, positionEventNumber, preTagged));
+				deletedEventPosition, positionStreamId, positionEventNumber));
 	}
 
 	public void SendNotAuthorized() {
