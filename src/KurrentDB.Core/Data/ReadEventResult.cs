@@ -9,5 +9,6 @@ public enum ReadEventResult {
 	NoStream = 2,
 	StreamDeleted = 3,
 	Error = 4,
-	AccessDenied = 5
+	AccessDenied = 5,
+	Expired = 6,
 }
