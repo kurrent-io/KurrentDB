@@ -81,7 +81,7 @@ partial class Enumerator {
 			_bus.Publish(new ClientMessage.ReadStreamEventsBackward(
 				correlationId, correlationId, new ContinuationEnvelope(OnMessage, _semaphore, _cancellationToken),
 				_streamName, startRevision.ToInt64(), (int)Math.Min((ulong)_batchSize, _maxCount), _resolveLinks,
-				_requiresLeader, null, _user, _deadline,
+				_requiresLeader, null, _user, replyOnExpired: true, expires: _deadline,
 				cancellationToken: _cancellationToken));
 
 			async Task OnMessage(Message message, CancellationToken ct) {
@@ -119,6 +119,9 @@ partial class Enumerator {
 					case ReadStreamResult.NoStream:
 						await _channel.Writer.WriteAsync(new ReadResponse.StreamNotFound(_streamName), ct);
 						_channel.Writer.TryComplete();
+						return;
+					case ReadStreamResult.Expired:
+						ReadPage(StreamRevision.FromInt64(completed.FromEventNumber), readCount);
 						return;
 					case ReadStreamResult.StreamDeleted:
 						_channel.Writer.TryComplete(new ReadResponseException.StreamDeleted(_streamName));

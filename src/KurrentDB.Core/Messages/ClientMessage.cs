@@ -703,10 +703,13 @@ public static partial class ClientMessage {
 		public readonly bool RequireLeader;
 
 		public readonly long? ValidationStreamVersion;
+		public readonly bool ReplyOnExpired;
 
 		public ReadStreamEventsBackward(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
 			string eventStreamId, long fromEventNumber, int maxCount, bool resolveLinkTos,
-			bool requireLeader, long? validationStreamVersion, ClaimsPrincipal user, DateTime? expires = null,
+			bool requireLeader, long? validationStreamVersion, ClaimsPrincipal user,
+			bool replyOnExpired,
+			DateTime? expires = null,
 			CancellationToken cancellationToken = default)
 			: base(internalCorrId, correlationId, envelope, user, expires, cancellationToken) {
 			ArgumentOutOfRangeException.ThrowIfLessThan(fromEventNumber, -1);
@@ -716,6 +719,7 @@ public static partial class ClientMessage {
 			ResolveLinkTos = resolveLinkTos;
 			RequireLeader = requireLeader;
 			ValidationStreamVersion = validationStreamVersion;
+			ReplyOnExpired = replyOnExpired;
 		}
 
 		public override string ToString() =>
@@ -725,7 +729,8 @@ public static partial class ClientMessage {
 			$"MaxCount: {MaxCount}, " +
 			$"ResolveLinkTos: {ResolveLinkTos}, " +
 			$"RequireLeader: {RequireLeader}, " +
-			$"ValidationStreamVersion: {ValidationStreamVersion}";
+			$"ValidationStreamVersion: {ValidationStreamVersion}, " +
+			$"ReplyOnExpired: {ReplyOnExpired}";
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
