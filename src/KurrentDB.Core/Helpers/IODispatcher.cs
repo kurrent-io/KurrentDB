@@ -619,7 +619,8 @@ public sealed class IODispatcher : IHandle<IODispatcherDelayedMessage>, IHandle<
 				maxSearchWindow,
 				validationTfLastCommitPosition,
 				eventFilter,
-				user
+				user,
+				replyOnExpired: false
 			),
 			res => {
 				if (_requestTracker.RemovePendingRead(res.CorrelationId)) {

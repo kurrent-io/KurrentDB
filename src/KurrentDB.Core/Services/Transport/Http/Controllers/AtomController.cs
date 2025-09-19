@@ -744,7 +744,7 @@ public class AtomController : CommunicationController {
 		var corrId = Guid.NewGuid();
 		Publish(new ClientMessage.FilteredReadAllEventsBackward(corrId, corrId, envelope,
 			position.CommitPosition, position.PreparePosition, count,
-			requireLeader, true, count, GetETagTFPosition(manager), filter, manager.User));
+			requireLeader, true, count, GetETagTFPosition(manager), filter, manager.User, replyOnExpired: false));
 	}
 
 
