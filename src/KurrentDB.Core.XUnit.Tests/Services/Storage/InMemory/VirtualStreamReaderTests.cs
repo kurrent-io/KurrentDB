@@ -38,7 +38,8 @@ public class VirtualStreamReaderTests {
 			resolveLinkTos: false,
 			requireLeader: false,
 			validationStreamVersion: null,
-			user: ClaimsPrincipal.Current);
+			user: ClaimsPrincipal.Current,
+			replyOnExpired: false);
 	}
 
 	public static ClientMessage.ReadStreamEventsForward GenReadForwards(Guid correlation, long fromEventNumber, int maxCount, string eventStreamId = SystemStreams.NodeStateStream) {
