@@ -17,10 +17,12 @@ public partial class ClientMessage {
 		IEnvelope envelope,
 		long[] logPositions,
 		ClaimsPrincipal user,
+		bool replyOnExpired,
 		DateTime? expires,
 		CancellationToken cancellationToken = default)
 		: ReadRequestMessage(internalCorrId, correlationId, envelope, user, expires, cancellationToken) {
-		public long[] LogPositions = logPositions;
+		public readonly long[] LogPositions = logPositions;
+		public readonly bool ReplyOnExpired = replyOnExpired;
 	}
 
 	[DerivedMessage(CoreMessage.Client)]

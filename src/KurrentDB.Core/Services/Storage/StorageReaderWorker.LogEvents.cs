@@ -21,6 +21,11 @@ public partial class StorageReaderWorker<TStreamId> {
 			return;
 
 		if (msg.Expires < DateTime.UtcNow) {
+			if (msg.ReplyOnExpired) {
+				msg.Envelope.ReplyWith(new ReadLogEventsCompleted(msg.CorrelationId, ReadEventResult.Expired, [], null));
+				return;
+			}
+
 			if (LogExpiredMessage(msg.Expires))
 				Log.Debug("Read Log Events operation has expired. Operation Expired at {expiryDateTime}", msg.Expires);
 			return;
