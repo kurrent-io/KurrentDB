@@ -65,49 +65,25 @@ public static partial class ReaderSubscriptionMessage {
 
 	[DerivedMessage(ProjectionMessage.ReaderSubscription)]
 	public partial class EventReaderEof : SubscriptionMessage {
-		private readonly bool _maxEventsReached;
-
-		public EventReaderEof(Guid correlationId, bool maxEventsReached = false, object source = null)
+		public EventReaderEof(Guid correlationId, object source = null)
 			: base(correlationId, null, source) {
-			_maxEventsReached = maxEventsReached;
-		}
-
-		public bool MaxEventsReached {
-			get { return _maxEventsReached; }
-		}
-	}
-
-	[DerivedMessage(ProjectionMessage.ReaderSubscription)]
-	public partial class EventReaderPartitionEof : SubscriptionMessage {
-		private readonly string _partition;
-
-		public EventReaderPartitionEof(
-			Guid correlationId, string partition, CheckpointTag preTagged, object source = null)
-			: base(correlationId, preTagged, source) {
-			_partition = partition;
-		}
-
-		public string Partition {
-			get { return _partition; }
 		}
 	}
 
 	[DerivedMessage(ProjectionMessage.ReaderSubscription)]
 	public partial class EventReaderPartitionDeleted : SubscriptionMessage {
 		private readonly string _partition;
-		private readonly long? _lastEventNumber;
 		private readonly TFPos? _deleteLinkOrEventPosition;
 		private readonly TFPos? _deleteEventOrLinkTargetPosition;
 		private readonly string _positionStreamId;
 		private readonly long? _positionEventNumber;
 
 		public EventReaderPartitionDeleted(
-			Guid correlationId, string partition, long? lastEventNumber, TFPos? deleteLinkOrEventPosition,
+			Guid correlationId, string partition, TFPos? deleteLinkOrEventPosition,
 			TFPos? deleteEventOrLinkTargetPosition, string positionStreamId, long? positionEventNumber,
 			CheckpointTag preTagged = null, object source = null)
 			: base(correlationId, preTagged, source) {
 			_partition = partition;
-			_lastEventNumber = lastEventNumber;
 			_deleteLinkOrEventPosition = deleteLinkOrEventPosition;
 			_deleteEventOrLinkTargetPosition = deleteEventOrLinkTargetPosition;
 			_positionStreamId = positionStreamId;
@@ -116,10 +92,6 @@ public static partial class ReaderSubscriptionMessage {
 
 		public string Partition {
 			get { return _partition; }
-		}
-
-		public long? LastEventNumber {
-			get { return _lastEventNumber; }
 		}
 
 		public TFPos? DeleteEventOrLinkTargetPosition {

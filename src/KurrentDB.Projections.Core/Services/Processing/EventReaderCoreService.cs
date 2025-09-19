@@ -31,7 +31,6 @@ public class EventReaderCoreService :
 	IHandle<ReaderSubscriptionMessage.EventReaderStarting>,
 	IHandle<ReaderSubscriptionMessage.EventReaderNotAuthorized>,
 	IHandle<ReaderSubscriptionMessage.EventReaderEof>,
-	IHandle<ReaderSubscriptionMessage.EventReaderPartitionEof>,
 	IHandle<ReaderSubscriptionMessage.EventReaderPartitionDeleted>,
 	IHandle<ReaderSubscriptionMessage.Faulted>,
 	IHandle<ReaderSubscriptionMessage.ReportProgress> {
@@ -139,8 +138,7 @@ public class EventReaderCoreService :
 	public void Handle(ReaderSubscriptionManagement.Unsubscribe message) {
 		if (!_pausedSubscriptions.Contains(message.SubscriptionId))
 			Handle(new ReaderSubscriptionManagement.Pause(message.SubscriptionId));
-		var eventReaderId = Guid.Empty;
-		_subscriptionEventReaders.TryGetValue(message.SubscriptionId, out eventReaderId);
+		_subscriptionEventReaders.TryGetValue(message.SubscriptionId, out var eventReaderId);
 		if (eventReaderId != Guid.Empty) {
 			_eventReaders[eventReaderId].Dispose();
 			_eventReaders.Remove(eventReaderId);
@@ -209,15 +207,6 @@ public class EventReaderCoreService :
 
 		//            _pausedSubscriptions.Add(projectionId); // it is actually disposed -- workaround
 		//            Handle(new ReaderSubscriptionManagement.Unsubscribe(projectionId));
-	}
-
-	public void Handle(ReaderSubscriptionMessage.EventReaderPartitionEof message) {
-		Guid projectionId;
-		if (_stopped)
-			return;
-		if (!_eventReaderSubscriptions.TryGetValue(message.CorrelationId, out projectionId))
-			return; // unsubscribed
-		_subscriptions[projectionId].Handle(message);
 	}
 
 	public void Handle(ReaderSubscriptionMessage.EventReaderPartitionDeleted message) {

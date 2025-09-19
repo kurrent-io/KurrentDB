@@ -20,7 +20,6 @@ namespace KurrentDB.Projections.Core.EventReaders.Feeds;
 
 public class FeedReader : IHandle<EventReaderSubscriptionMessage.CommittedEventReceived>,
 	IHandle<EventReaderSubscriptionMessage.EofReached>,
-	IHandle<EventReaderSubscriptionMessage.PartitionEofReached>,
 	IHandle<EventReaderSubscriptionMessage.CheckpointSuggested>,
 	IHandle<EventReaderSubscriptionMessage.NotAuthorized> {
 	private readonly
@@ -102,10 +101,6 @@ public class FeedReader : IHandle<EventReaderSubscriptionMessage.CommittedEventR
 		_lastReaderPosition = message.CheckpointTag;
 		Reply();
 		Unsubscribe();
-	}
-
-	public void Handle(EventReaderSubscriptionMessage.PartitionEofReached message) {
-		_lastReaderPosition = message.CheckpointTag;
 	}
 
 	public void Handle(EventReaderSubscriptionMessage.CheckpointSuggested message) {

@@ -87,13 +87,6 @@ public abstract class EventReader : IEventReader {
 		}
 	}
 
-	protected void SendPartitionEof(string partition, CheckpointTag preTagged) {
-		if (_disposed)
-			return;
-		_publisher.Publish(
-			new ReaderSubscriptionMessage.EventReaderPartitionEof(EventReaderCorrelationId, partition, preTagged));
-	}
-
 	protected void SendPartitionDeleted_WhenReadingDataStream(
 		string partition, long? lastEventNumber, TFPos? deletedLinkOrEventPosition, TFPos? deletedEventPosition,
 		string positionStreamId,
@@ -102,7 +95,7 @@ public abstract class EventReader : IEventReader {
 			return;
 		_publisher.Publish(
 			new ReaderSubscriptionMessage.EventReaderPartitionDeleted(
-				EventReaderCorrelationId, partition, lastEventNumber, deletedLinkOrEventPosition,
+				EventReaderCorrelationId, partition, deletedLinkOrEventPosition,
 				deletedEventPosition, positionStreamId, positionEventNumber, preTagged));
 	}
 

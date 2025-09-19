@@ -19,9 +19,6 @@ public abstract class PositionTagger {
 		CheckpointTag previous, ReaderSubscriptionMessage.CommittedEventDistributed committedEvent);
 
 	public abstract CheckpointTag MakeCheckpointTag(
-		CheckpointTag previous, ReaderSubscriptionMessage.EventReaderPartitionEof partitionEof);
-
-	public abstract CheckpointTag MakeCheckpointTag(
 		CheckpointTag previous, ReaderSubscriptionMessage.EventReaderPartitionDeleted partitionDeleted);
 
 	public abstract CheckpointTag MakeZeroCheckpointTag();

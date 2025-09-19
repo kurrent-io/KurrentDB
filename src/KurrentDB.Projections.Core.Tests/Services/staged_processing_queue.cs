@@ -128,7 +128,7 @@ public class staged_processing_queue {
 		public void queue_becomes_empty() {
 			_q.Process(max: 2);
 
-			Assert.That(_q.IsEmpty);
+			Assert.That(_q.Count == 0);
 		}
 
 		[Test]

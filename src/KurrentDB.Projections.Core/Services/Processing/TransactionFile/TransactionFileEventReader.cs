@@ -196,7 +196,7 @@ public class TransactionFileEventReader : EventReader,
 		if (isDeletedStreamEvent)
 			_publisher.Publish(
 				new ReaderSubscriptionMessage.EventReaderPartitionDeleted(
-					EventReaderCorrelationId, deletedPartitionStreamId, source: this.GetType(), lastEventNumber: -1,
+					EventReaderCorrelationId, deletedPartitionStreamId, source: this.GetType(),
 					deleteEventOrLinkTargetPosition: resolvedEvent.EventOrLinkTargetPosition,
 					deleteLinkOrEventPosition: resolvedEvent.LinkOrEventPosition,
 					positionStreamId: positionEvent.EventStreamId, positionEventNumber: positionEvent.EventNumber));

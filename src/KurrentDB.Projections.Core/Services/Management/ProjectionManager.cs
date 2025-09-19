@@ -43,7 +43,6 @@ public class ProjectionManager
 		IHandle<ProjectionManagementMessage.Command.Disable>,
 		IHandle<ProjectionManagementMessage.Command.Enable>,
 		IHandle<ProjectionManagementMessage.Command.Abort>,
-		IHandle<ProjectionManagementMessage.Command.SetRunAs>,
 		IHandle<ProjectionManagementMessage.Command.Reset>,
 		IHandle<ProjectionManagementMessage.Command.GetConfig>,
 		IHandle<ProjectionManagementMessage.Command.UpdateConfig>,
@@ -191,7 +190,7 @@ public class ProjectionManager
 					v => v.CorrelationId,
 					_inputQueue);
 		_getStats = TimerMessage.Schedule.Create(_interval, _inputQueue,
-			new ProjectionManagementMessage.Command.GetStatistics(new CallbackEnvelope(PushStatsToProjectionTracker), ProjectionMode.AllNonTransient, null, true));
+			new ProjectionManagementMessage.Command.GetStatistics(new CallbackEnvelope(PushStatsToProjectionTracker), ProjectionMode.AllNonTransient, null));
 	}
 
 	private void PushStatsToProjectionTracker(Message message) {
@@ -468,26 +467,6 @@ public class ProjectionManager
 			if (!ProjectionManagementMessage.RunAs.ValidateRunAs(projection.Mode, ReadWrite.Write, projection.RunAs,
 				message))
 				return;
-			projection.Handle(message);
-		}
-	}
-
-	public void Handle(ProjectionManagementMessage.Command.SetRunAs message) {
-		if (!_projectionsStarted)
-			return;
-		_logger.Information("Setting RunAs1 account for '{projection}' projection", message.Name);
-
-		var projection = GetProjection(message.Name);
-		if (projection == null) {
-			_logger.Error("DBG: PROJECTION *{projection}* NOT FOUND.", message.Name);
-			message.Envelope.ReplyWith(new ProjectionManagementMessage.NotFound());
-		} else {
-			if (
-				!ProjectionManagementMessage.RunAs.ValidateRunAs(
-					projection.Mode, ReadWrite.Write, projection.RunAs, message,
-					message.Action == ProjectionManagementMessage.Command.SetRunAs.SetRemove.Set))
-				return;
-
 			projection.Handle(message);
 		}
 	}
