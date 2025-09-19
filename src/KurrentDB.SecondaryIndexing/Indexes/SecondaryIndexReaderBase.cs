@@ -115,10 +115,10 @@ public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool db, IReadInd
 
 		var isEndOfStream = indexRecordsCount < msg.MaxCount;
 
-		return new(ReadIndexResult.Success, resolved, lastIndexedPosition, isEndOfStream, null);
+		return new(ReadIndexResult.Success, resolved, pos, lastIndexedPosition, isEndOfStream, null);
 
 		ReadIndexEventsBackwardCompleted NoData(ReadIndexResult result, string? error = null)
-			=> new(result, ResolvedEvent.EmptyArray, lastIndexedPosition, false, error);
+			=> new(result, ResolvedEvent.EmptyArray, pos, lastIndexedPosition, false, error);
 
 		IReadOnlyList<IndexQueryRecord> GetIndexRecordsBackwards(TFPos startPosition) {
 			var maxCount = msg.MaxCount;

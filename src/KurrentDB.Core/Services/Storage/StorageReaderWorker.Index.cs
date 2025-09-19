@@ -61,6 +61,7 @@ public partial class StorageReaderWorker<TStreamId> :
 					new ClientMessage.ReadIndexEventsBackwardCompleted(
 						ReadIndexResult.Expired,
 						ResolvedEvent.EmptyArray,
+						new(msg.CommitPosition, msg.PreparePosition),
 						0,
 						false,
 						null
