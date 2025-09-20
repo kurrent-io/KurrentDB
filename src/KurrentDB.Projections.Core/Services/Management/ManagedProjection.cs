@@ -52,7 +52,6 @@ public class ManagedProjection : IDisposable {
 		public bool DeleteCheckpointStream { get; set; }
 		public bool DeleteStateStream { get; set; }
 		public int NumberOfPrequisitesMetForDeletion;
-		public string Message { get; set; }
 
 		public ProjectionSourceDefinition SourceDefinition { get; set; }
 		public bool? EmitEnabled { get; set; }
@@ -424,15 +423,6 @@ public class ManagedProjection : IDisposable {
 		StopUnlessPreparedOrLoaded();
 	}
 
-	public void Handle(ProjectionManagementMessage.Command.SetRunAs message) {
-		_lastAccessed = _timeProvider.UtcNow;
-		Prepared = false;
-		SetRunAs(message);
-		UpdateProjectionVersion();
-		SetLastReplyEnvelope(message.Envelope);
-		StopUnlessPreparedOrLoaded();
-	}
-
 	public void Handle(ProjectionManagementMessage.Command.Delete message) {
 		if ((_state != ManagedProjectionState.Stopped && _state != ManagedProjectionState.Faulted) &&
 			Mode != ProjectionMode.Transient)
@@ -592,15 +582,6 @@ public class ManagedProjection : IDisposable {
 
 	public void Handle(CoreProjectionStatusMessage.StatisticsReport message) {
 		_lastReceivedStatistics = message.Statistics;
-	}
-
-	private void SetRunAs(ProjectionManagementMessage.Command.SetRunAs message) {
-		PersistedProjectionState.RunAs =
-			message.Action == ProjectionManagementMessage.Command.SetRunAs.SetRemove.Set
-				? SerializedRunAs.SerializePrincipal(message.RunAs)
-				: null;
-		_runAs = SerializedRunAs.DeserializePrincipal(PersistedProjectionState.RunAs);
-		_pendingWritePersistedState = true;
 	}
 
 	private void SetLastReplyEnvelope(IEnvelope envelope) {

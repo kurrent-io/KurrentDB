@@ -60,8 +60,7 @@ public class when_a_disabled_projection_has_been_loaded<TLogFormat, TStreamId> :
 	[Test]
 	public void the_projection_status_is_stopped() {
 		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName,
-				false));
+			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
 
 		Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
 		Assert.AreEqual(

@@ -23,9 +23,6 @@ public class QuerySourcesDefinition : IQuerySources {
 	[DataMember(Name = "byCustomPartitions")]
 	public bool ByCustomPartitions { get; set; }
 
-	[DataMember(Name = "limitingCommitPosition")]
-	public long? LimitingCommitPosition { get; set; }
-
 	bool IQuerySources.DefinesStateTransform {
 		get { return Options != null && Options.DefinesStateTransform; }
 	}
@@ -77,7 +74,6 @@ public class QuerySourcesDefinition : IQuerySources {
 			Categories = (sources.Categories ?? new string[0]).ToArray(),
 			Events = (sources.Events ?? new string[0]).ToArray(),
 			Streams = (sources.Streams ?? new string[0]).ToArray(),
-			LimitingCommitPosition = sources.LimitingCommitPosition,
 			Options =
 				new QuerySourcesDefinitionOptions {
 					DefinesStateTransform = sources.DefinesStateTransform,

@@ -12,11 +12,9 @@ public interface IReaderSubscription : IHandle<ReaderSubscriptionMessage.Committ
 	IHandle<ReaderSubscriptionMessage.EventReaderIdle>,
 	IHandle<ReaderSubscriptionMessage.EventReaderStarting>,
 	IHandle<ReaderSubscriptionMessage.EventReaderEof>,
-	IHandle<ReaderSubscriptionMessage.EventReaderPartitionEof>,
 	IHandle<ReaderSubscriptionMessage.EventReaderPartitionDeleted>,
 	IHandle<ReaderSubscriptionMessage.EventReaderNotAuthorized>,
 	IHandle<ReaderSubscriptionMessage.ReportProgress> {
-	string Tag { get; }
 	Guid SubscriptionId { get; }
 	IEventReader CreatePausedEventReader(IPublisher publisher, IODispatcher ioDispatcher, Guid forkedEventReaderId);
 }

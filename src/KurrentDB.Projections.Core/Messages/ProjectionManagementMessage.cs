@@ -208,31 +208,6 @@ public static partial class ProjectionManagementMessage {
 		}
 
 		[DerivedMessage(ProjectionMessage.Management)]
-		public partial class SetRunAs : ControlMessage {
-			public enum SetRemove {
-				Set,
-				Remove
-			};
-
-			private readonly string _name;
-			private readonly SetRemove _action;
-
-			public SetRunAs(IEnvelope envelope, string name, RunAs runAs, SetRemove action)
-				: base(envelope, runAs) {
-				_name = name;
-				_action = action;
-			}
-
-			public string Name {
-				get { return _name; }
-			}
-
-			public SetRemove Action {
-				get { return _action; }
-			}
-		}
-
-		[DerivedMessage(ProjectionMessage.Management)]
 		public partial class UpdateQuery : ControlMessage {
 			private readonly string _name;
 			private readonly string _query;
@@ -409,13 +384,11 @@ public static partial class ProjectionManagementMessage {
 			private readonly IEnvelope _envelope;
 			private readonly ProjectionMode? _mode;
 			private readonly string _name;
-			private readonly bool _includeDeleted;
 
-			public GetStatistics(IEnvelope envelope, ProjectionMode? mode, string name, bool includeDeleted) {
+			public GetStatistics(IEnvelope envelope, ProjectionMode? mode, string name) {
 				_envelope = envelope;
 				_mode = mode;
 				_name = name;
-				_includeDeleted = includeDeleted;
 			}
 
 			public ProjectionMode? Mode {
@@ -424,10 +397,6 @@ public static partial class ProjectionManagementMessage {
 
 			public string Name {
 				get { return _name; }
-			}
-
-			public bool IncludeDeleted {
-				get { return _includeDeleted; }
 			}
 
 			public IEnvelope Envelope {
@@ -571,22 +540,7 @@ public static partial class ProjectionManagementMessage {
 				return false;
 			}
 
-			if (replace && message.RunAs.Principal != null)
-				return true; // enable this operation while no projection permissions are defined
-
 			return true;
-
-			//if (existingRunAs == null)
-			//    return true;
-			//if (message.RunAs1.Principal == null
-			//    || !string.Equals(
-			//        existingRunAs.Identity.Name, message.RunAs1.Principal.Identity.Name,
-			//        StringComparison.OrdinalIgnoreCase))
-			//{
-			//    message.Envelope.ReplyWith(new NotAuthorized());
-			//    return false;
-			//}
-			//return true;
 		}
 	}
 

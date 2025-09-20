@@ -19,10 +19,6 @@ public class FakePositionTagger : PositionTagger {
 		throw new NotImplementedException();
 	}
 
-	public override CheckpointTag MakeCheckpointTag(CheckpointTag previous, ReaderSubscriptionMessage.EventReaderPartitionEof partitionEof) {
-		throw new NotImplementedException();
-	}
-
 	public override CheckpointTag MakeCheckpointTag(CheckpointTag previous, ReaderSubscriptionMessage.EventReaderPartitionDeleted partitionDeleted) {
 		throw new NotImplementedException();
 	}

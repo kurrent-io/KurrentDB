@@ -57,7 +57,7 @@ namespace KurrentDB.Projections.Core.Tests.Services.projections_system.updating_
 				yield return CreateWriteEvent("stream5", "type1", "{\"Data\": 10}");
 				yield return
 					new ProjectionManagementMessage.Command.GetStatistics(
-						Envelope, ProjectionMode.AllNonTransient, _projectionName, false);
+						Envelope, ProjectionMode.AllNonTransient, _projectionName);
 				yield return new ProjectionManagementMessage.Command.GetState(Envelope, _projectionName, "");
 				yield return
 					new ProjectionManagementMessage.Command.GetQuery(

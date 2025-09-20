@@ -141,7 +141,7 @@ public static class a_new_posted_projection {
 		public void the_projection_status_becomes_faulted() {
 			_manager.Handle(
 				new ProjectionManagementMessage.Command.GetStatistics(
-					_bus, null, _projectionName, false));
+					_bus, null, _projectionName));
 
 			Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
 			Assert.AreEqual(
@@ -204,7 +204,7 @@ public class an_expired_projection {
 			_consumer.HandledMessages.Clear();
 			yield return (
 				new ProjectionManagementMessage.Command.GetStatistics(
-					_bus, null, _projectionName, false));
+					_bus, null, _projectionName));
 		}
 
 		[Test]

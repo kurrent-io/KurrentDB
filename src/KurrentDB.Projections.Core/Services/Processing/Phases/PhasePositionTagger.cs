@@ -22,11 +22,6 @@ public class PhasePositionTagger : PositionTagger {
 	}
 
 	public override CheckpointTag MakeCheckpointTag(CheckpointTag previous,
-		ReaderSubscriptionMessage.EventReaderPartitionEof partitionEof) {
-		throw new NotSupportedException();
-	}
-
-	public override CheckpointTag MakeCheckpointTag(CheckpointTag previous,
 		ReaderSubscriptionMessage.EventReaderPartitionDeleted partitionDeleted) {
 		throw new NotSupportedException();
 	}

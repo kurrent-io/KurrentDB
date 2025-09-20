@@ -40,8 +40,6 @@ public class TestFixtureWithEventReaderService<TLogFormat, TStreamId> : core_pro
 		_bus.Subscribe(
 			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.CommittedEventReceived>());
 		_bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.EofReached>());
-		_bus.Subscribe(
-			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.PartitionEofReached>());
 		_bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.ProgressChanged>());
 		_bus.Subscribe(
 			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.SubscriptionStarted>());
@@ -57,7 +55,6 @@ public class TestFixtureWithEventReaderService<TLogFormat, TStreamId> : core_pro
 		_bus.Subscribe<ReaderCoreServiceMessage.StopReader>(_readerService);
 		_bus.Subscribe<ReaderSubscriptionMessage.CommittedEventDistributed>(_readerService);
 		_bus.Subscribe<ReaderSubscriptionMessage.EventReaderEof>(_readerService);
-		_bus.Subscribe<ReaderSubscriptionMessage.EventReaderPartitionEof>(_readerService);
 		_bus.Subscribe<ReaderSubscriptionMessage.EventReaderPartitionDeleted>(_readerService);
 		_bus.Subscribe<ReaderSubscriptionMessage.EventReaderNotAuthorized>(_readerService);
 		_bus.Subscribe<ReaderSubscriptionMessage.EventReaderIdle>(_readerService);

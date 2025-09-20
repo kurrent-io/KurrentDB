@@ -57,8 +57,7 @@ namespace KurrentDB.Projections.Core.Tests.Services.projections_manager.query {
 			[Test]
 			public void the_projection_status_becomes_completed_disabled() {
 				_manager.Handle(
-					new ProjectionManagementMessage.Command.GetStatistics(
-						_bus, null, _projectionName, false));
+					new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
 
 				Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
 				Assert.AreEqual(
@@ -101,8 +100,7 @@ namespace KurrentDB.Projections.Core.Tests.Services.projections_manager.query {
 			[Test]
 			public void the_projection_status_becomes_running_enabled() {
 				_manager.Handle(
-					new ProjectionManagementMessage.Command.GetStatistics(
-						_bus, null, _projectionName, false));
+					new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
 
 				Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
 				Assert.AreEqual(

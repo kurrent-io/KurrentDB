@@ -51,8 +51,7 @@ public class an_expired_projection {
 				yield return s;
 			_consumer.HandledMessages.Clear();
 			yield return (
-				new ProjectionManagementMessage.Command.GetStatistics(
-					_bus, null, _projectionName, false));
+				new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
 		}
 
 		[Test]

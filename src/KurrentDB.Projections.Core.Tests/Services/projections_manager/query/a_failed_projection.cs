@@ -50,8 +50,7 @@ public class a_failed_projection {
 		[Test]
 		public void the_projection_status_becomes_running() {
 			_manager.Handle(
-				new ProjectionManagementMessage.Command.GetStatistics(
-					_bus, null, _projectionName, false));
+				new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
 
 			Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
 			Assert.AreEqual(
@@ -88,8 +87,7 @@ public class a_failed_projection {
 		[Test]
 		public void the_projection_status_becomes_faulted_disabled() {
 			_manager.Handle(
-				new ProjectionManagementMessage.Command.GetStatistics(
-					_bus, null, _projectionName, false));
+				new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
 
 			Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
 			Assert.AreEqual(
@@ -133,8 +131,7 @@ public class a_failed_projection {
 		public void the_projection_status_becomes_running_enabled() // as we restart
 		{
 			_manager.Handle(
-				new ProjectionManagementMessage.Command.GetStatistics(
-					_bus, null, _projectionName, false));
+				new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
 
 			Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
 			Assert.AreEqual(

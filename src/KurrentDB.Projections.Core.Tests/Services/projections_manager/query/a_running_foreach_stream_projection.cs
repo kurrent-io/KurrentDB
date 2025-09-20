@@ -78,8 +78,7 @@ public class a_running_foreach_stream_projection {
 		[Test]
 		public void the_projection_status_becomes_completed_enabled() {
 			_manager.Handle(
-				new ProjectionManagementMessage.Command.GetStatistics(
-					_bus, null, _projectionName, false));
+				new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
 
 			Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
 			Assert.AreEqual(

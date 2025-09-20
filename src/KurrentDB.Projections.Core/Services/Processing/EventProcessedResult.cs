@@ -18,12 +18,11 @@ public class EventProcessedResult {
 	private readonly CheckpointTag _checkpointTag;
 	private readonly Guid _causedBy;
 	private readonly string _correlationId;
-	private readonly bool _isPartitionTombstone;
 
 	public EventProcessedResult(
 		string partition, CheckpointTag checkpointTag, PartitionState oldState, PartitionState newState,
 		PartitionState oldSharedState, PartitionState newSharedState, EmittedEventEnvelope[] emittedEvents,
-		Guid causedBy, string correlationId, bool isPartitionTombstone = false) {
+		Guid causedBy, string correlationId) {
 		if (partition == null)
 			throw new ArgumentNullException("partition");
 		if (checkpointTag == null)
@@ -31,7 +30,6 @@ public class EventProcessedResult {
 		_emittedEvents = emittedEvents;
 		_causedBy = causedBy;
 		_correlationId = correlationId;
-		_isPartitionTombstone = isPartitionTombstone;
 		_oldState = oldState;
 		_newState = newState;
 		_oldSharedState = oldSharedState;
@@ -80,9 +78,5 @@ public class EventProcessedResult {
 
 	public string CorrelationId {
 		get { return _correlationId; }
-	}
-
-	public bool IsPartitionTombstone {
-		get { return _isPartitionTombstone; }
 	}
 }

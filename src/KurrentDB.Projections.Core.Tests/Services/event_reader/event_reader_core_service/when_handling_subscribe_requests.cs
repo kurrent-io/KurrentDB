@@ -116,10 +116,6 @@ public class when_handling_subscribe_requests<TLogFormat, TStreamId> : TestFixtu
 			throw new NotImplementedException();
 		}
 
-		public void Handle(ReaderSubscriptionMessage.EventReaderPartitionEof message) {
-			throw new NotImplementedException();
-		}
-
 		public void Handle(ReaderSubscriptionMessage.EventReaderPartitionDeleted message) {
 			throw new NotImplementedException();
 		}
