@@ -48,6 +48,7 @@ public static class PublisherReadExtensions {
                     requiresLeader: false,
                     maxSearchWindow: null,
                     deadline: DefaultDeadline,
+                    expiryStrategy: DefaultExpiryStrategy.Instance,
                     cancellationToken: cancellationToken
                 )
                 : new Enumerator.ReadAllBackwardsFiltered(
@@ -60,6 +61,7 @@ public static class PublisherReadExtensions {
                     requiresLeader: false,
                     maxSearchWindow: null,
                     deadline: DefaultDeadline,
+                    expiryStrategy: DefaultExpiryStrategy.Instance,
                     cancellationToken: cancellationToken
                 );
         }
@@ -94,6 +96,7 @@ public static class PublisherReadExtensions {
 					user: SystemAccounts.System,
 					requiresLeader: false,
 					deadline: DefaultDeadline,
+					expiryStrategy: DefaultExpiryStrategy.Instance,
 					cancellationToken: cancellationToken
 				)
 				: new Enumerator.ReadAllBackwards(
@@ -104,6 +107,7 @@ public static class PublisherReadExtensions {
 					user: SystemAccounts.System,
 					requiresLeader: false,
 					deadline: DefaultDeadline,
+					expiryStrategy: DefaultExpiryStrategy.Instance,
 					cancellationToken: cancellationToken
 				);
 		}
@@ -145,6 +149,7 @@ public static class PublisherReadExtensions {
 					user: SystemAccounts.System,
 					requiresLeader: false,
 					deadline: DefaultDeadline,
+					expiryStrategy: DefaultExpiryStrategy.Instance,
 					cancellationToken: cancellationToken,
 					compatibility: 1 // whats this?
 				)
@@ -157,6 +162,7 @@ public static class PublisherReadExtensions {
 					user: SystemAccounts.System,
 					requiresLeader: false,
 					deadline: DefaultDeadline,
+					expiryStrategy: DefaultExpiryStrategy.Instance,
 					cancellationToken: cancellationToken,
 					compatibility: 1 // whats this?
 				);
@@ -241,6 +247,7 @@ public static class PublisherReadExtensions {
 					user: SystemAccounts.System,
 					requiresLeader: false,
 					deadline: DefaultDeadline,
+					expiryStrategy: DefaultExpiryStrategy.Instance,
 					cancellationToken: cancellationToken
 				)
 				: new Enumerator.ReadIndexBackwards(
@@ -251,6 +258,7 @@ public static class PublisherReadExtensions {
 					user: SystemAccounts.System,
 					requiresLeader: false,
 					deadline: DefaultDeadline,
+					expiryStrategy: DefaultExpiryStrategy.Instance,
 					cancellationToken: cancellationToken
 				);
 		}

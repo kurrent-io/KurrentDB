@@ -28,6 +28,7 @@ public partial class EnumeratorTests {
 			requiresLeader: false,
 			maxSearchWindow: null,
 			deadline: DateTime.Now,
+			expiryStrategy: DefaultExpiryStrategy.Instance,
 			cancellationToken: CancellationToken.None));
 	}
 

@@ -33,7 +33,7 @@ public sealed partial class SecondaryIndexSubscription(
 
 		_subscription = new(
 			bus: publisher,
-			expiryStrategy: new DefaultExpiryStrategy(),
+			expiryStrategy: DefaultExpiryStrategy.Instance,
 			checkpoint: startFrom,
 			resolveLinks: false,
 			user: SystemAccounts.System,

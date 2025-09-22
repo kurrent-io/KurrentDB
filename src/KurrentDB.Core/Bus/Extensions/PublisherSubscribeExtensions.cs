@@ -20,15 +20,13 @@ namespace KurrentDB.Core;
 
 [PublicAPI]
 public static class PublisherSubscribeExtensions {
-	private static readonly IExpiryStrategy DefaultExpiryStrategy = new DefaultExpiryStrategy();
-
 	private const uint DefaultCheckpointIntervalMultiplier = 1;
 
 	static async IAsyncEnumerable<ReadResponse> SubscribeToAll(this IPublisher publisher, Position? position, IEventFilter filter, uint maxSearchWindow,
 		[EnumeratorCancellation] CancellationToken cancellationToken) {
 		await using var sub = new Enumerator.AllSubscriptionFiltered(
 			bus: publisher,
-			expiryStrategy: DefaultExpiryStrategy,
+			expiryStrategy: DefaultExpiryStrategy.Instance,
 			checkpoint: position,
 			resolveLinks: false,
 			eventFilter: filter,
@@ -52,7 +50,7 @@ public static class PublisherSubscribeExtensions {
 
 		await using var sub = new Enumerator.StreamSubscription<string>(
 			bus: publisher,
-			expiryStrategy: new DefaultExpiryStrategy(),
+			expiryStrategy: DefaultExpiryStrategy.Instance,
 			streamName: stream,
 			checkpoint: startRevision,
 			resolveLinks: false,
@@ -78,7 +76,7 @@ public static class PublisherSubscribeExtensions {
 		await using var sub = new Enumerator.IndexSubscription(
 			bus: publisher,
 			indexName: indexName,
-			expiryStrategy: DefaultExpiryStrategy,
+			expiryStrategy: DefaultExpiryStrategy.Instance,
 			checkpoint: position,
 			user: SystemAccounts.System,
 			requiresLeader: false,
