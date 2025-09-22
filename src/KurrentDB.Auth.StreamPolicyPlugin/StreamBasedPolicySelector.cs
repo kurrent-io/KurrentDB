@@ -107,7 +107,6 @@ public abstract class StreamBasedPolicySelector : IPolicySelector {
 			resolveLinks: false,
 			user: _user,
 			requiresLeader: false,
-			deadline: DateTime.MaxValue,
 			expiryStrategy: DefaultExpiryStrategy.Instance,
 			compatibility: 0,
 			cancellationToken: ct);

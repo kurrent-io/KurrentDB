@@ -25,7 +25,6 @@ partial class Enumerator {
 		private readonly bool _resolveLinks;
 		private readonly ClaimsPrincipal _user;
 		private readonly bool _requiresLeader;
-		private readonly DateTime _deadline;
 		private readonly IExpiryStrategy _expiryStrategy;
 		private readonly uint _compatibility;
 		private readonly int _batchSize;
@@ -44,7 +43,6 @@ partial class Enumerator {
 			bool resolveLinks,
 			ClaimsPrincipal user,
 			bool requiresLeader,
-			DateTime deadline,
 			IExpiryStrategy expiryStrategy,
 			uint compatibility,
 			int batchSize = DefaultReadBatchSize,
@@ -55,7 +53,6 @@ partial class Enumerator {
 			_resolveLinks = resolveLinks;
 			_user = user;
 			_requiresLeader = requiresLeader;
-			_deadline = deadline;
 			_expiryStrategy = expiryStrategy;
 			_compatibility = compatibility;
 			_batchSize = batchSize;
@@ -85,7 +82,7 @@ partial class Enumerator {
 			_bus.Publish(new ClientMessage.ReadStreamEventsBackward(
 				correlationId, correlationId, new ContinuationEnvelope(OnMessage, _semaphore, _cancellationToken),
 				_streamName, startRevision.ToInt64(), (int)Math.Min((ulong)_batchSize, _maxCount), _resolveLinks,
-				_requiresLeader, null, _user, replyOnExpired: true, expires: _expiryStrategy.GetExpiry() ?? _deadline,
+				_requiresLeader, null, _user, replyOnExpired: true, expires: _expiryStrategy.GetExpiry(),
 				cancellationToken: _cancellationToken));
 
 			async Task OnMessage(Message message, CancellationToken ct) {

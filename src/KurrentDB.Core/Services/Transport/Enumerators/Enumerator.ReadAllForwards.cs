@@ -24,7 +24,6 @@ partial class Enumerator {
 		private readonly bool _resolveLinks;
 		private readonly ClaimsPrincipal _user;
 		private readonly bool _requiresLeader;
-		private readonly DateTime _deadline;
 		private readonly IExpiryStrategy _expiryStrategy;
 		private readonly CancellationToken _cancellationToken;
 		private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
@@ -40,7 +39,6 @@ partial class Enumerator {
 			bool resolveLinks,
 			ClaimsPrincipal user,
 			bool requiresLeader,
-			DateTime deadline,
 			IExpiryStrategy expiryStrategy,
 			CancellationToken cancellationToken) {
 			_bus = Ensure.NotNull(bus);
@@ -48,7 +46,6 @@ partial class Enumerator {
 			_resolveLinks = resolveLinks;
 			_user = user;
 			_requiresLeader = requiresLeader;
-			_deadline = deadline;
 			_expiryStrategy = expiryStrategy;
 			_cancellationToken = cancellationToken;
 
@@ -78,7 +75,7 @@ partial class Enumerator {
 			_bus.Publish(new ClientMessage.ReadAllEventsForward(
 				correlationId, correlationId, new ContinuationEnvelope(OnMessage, _semaphore, _cancellationToken),
 				commitPosition, preparePosition, (int)Math.Min(DefaultReadBatchSize, _maxCount), _resolveLinks,
-				_requiresLeader, default, _user, replyOnExpired: true, expires: _expiryStrategy.GetExpiry() ?? _deadline,
+				_requiresLeader, default, _user, replyOnExpired: true, expires: _expiryStrategy.GetExpiry(),
 				cancellationToken: _cancellationToken)
 			);
 

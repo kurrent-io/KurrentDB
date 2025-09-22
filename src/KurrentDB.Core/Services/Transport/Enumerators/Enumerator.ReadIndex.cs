@@ -27,10 +27,9 @@ partial class Enumerator {
 		ulong maxCount,
 		ClaimsPrincipal user,
 		bool requiresLeader,
-		DateTime deadline,
 		IExpiryStrategy expiryStrategy,
 		CancellationToken cancellationToken)
-		: ReadIndex<ReadIndexEventsForward, ReadIndexEventsForwardCompleted>(bus, indexName, position, maxCount, user, requiresLeader, deadline, expiryStrategy, cancellationToken) {
+		: ReadIndex<ReadIndexEventsForward, ReadIndexEventsForwardCompleted>(bus, indexName, position, maxCount, user, requiresLeader, expiryStrategy, cancellationToken) {
 		protected override ReadIndexEventsForward CreateRequest(
 			Guid correlationId,
 			long commitPosition,
@@ -42,7 +41,7 @@ partial class Enumerator {
 			IndexName, commitPosition, preparePosition, excludeStart, (int)Math.Min(DefaultIndexReadSize, MaxCount),
 			RequiresLeader, null, User,
 			replyOnExpired: true,
-			expires: ExpiryStrategy.GetExpiry() ?? Deadline,
+			expires: ExpiryStrategy.GetExpiry(),
 			cancellationToken: CancellationToken);
 	}
 
@@ -53,10 +52,9 @@ partial class Enumerator {
 		ulong maxCount,
 		ClaimsPrincipal user,
 		bool requiresLeader,
-		DateTime deadline,
 		IExpiryStrategy expiryStrategy,
 		CancellationToken cancellationToken)
-		: ReadIndex<ReadIndexEventsBackward, ReadIndexEventsBackwardCompleted>(bus, indexName, position, maxCount, user, requiresLeader, deadline, expiryStrategy, cancellationToken) {
+		: ReadIndex<ReadIndexEventsBackward, ReadIndexEventsBackwardCompleted>(bus, indexName, position, maxCount, user, requiresLeader, expiryStrategy, cancellationToken) {
 		protected override ReadIndexEventsBackward CreateRequest(
 			Guid correlationId,
 			long commitPosition,
@@ -68,7 +66,7 @@ partial class Enumerator {
 			IndexName, commitPosition, preparePosition, excludeStart, (int)Math.Min(DefaultIndexReadSize, MaxCount),
 			RequiresLeader, null, User,
 			replyOnExpired: true,
-			expires: ExpiryStrategy.GetExpiry() ?? Deadline,
+			expires: ExpiryStrategy.GetExpiry(),
 			cancellationToken: CancellationToken);
 	}
 
@@ -79,7 +77,6 @@ partial class Enumerator {
 		protected readonly ulong MaxCount;
 		protected readonly ClaimsPrincipal User;
 		protected readonly bool RequiresLeader;
-		protected readonly DateTime Deadline;
 		protected readonly IExpiryStrategy ExpiryStrategy;
 		protected readonly CancellationToken CancellationToken;
 		protected readonly SemaphoreSlim Semaphore = new(1, 1);
@@ -105,7 +102,6 @@ partial class Enumerator {
 			ulong maxCount,
 			ClaimsPrincipal user,
 			bool requiresLeader,
-			DateTime deadline,
 			IExpiryStrategy expiryStrategy,
 			CancellationToken cancellationToken) {
 			_bus = Ensure.NotNull(bus);
@@ -113,7 +109,6 @@ partial class Enumerator {
 			MaxCount = maxCount;
 			User = user;
 			RequiresLeader = requiresLeader;
-			Deadline = deadline;
 			ExpiryStrategy = expiryStrategy;
 			CancellationToken = cancellationToken;
 
