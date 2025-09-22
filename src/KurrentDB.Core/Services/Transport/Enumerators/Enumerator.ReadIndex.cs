@@ -172,7 +172,7 @@ partial class Enumerator {
 						ReadPage(Position.FromInt64(last.CommitPosition, last.PreparePosition), true, readCount);
 						return;
 					case ReadIndexResult.Expired:
-						ReadPage(Position.FromInt64(completed.CurrentPos.CommitPosition, completed.CurrentPos.PreparePosition), true, readCount);
+						ReadPage(Position.FromInt64(completed.CurrentPos.CommitPosition, completed.CurrentPos.PreparePosition), excludeStart, readCount);
 						return;
 				}
 
