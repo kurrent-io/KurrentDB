@@ -11,6 +11,7 @@ using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using ReadStreamResult = KurrentDB.Core.Data.ReadStreamResult;
 
@@ -25,6 +26,7 @@ partial class Enumerator {
 		private readonly ClaimsPrincipal _user;
 		private readonly bool _requiresLeader;
 		private readonly DateTime _deadline;
+		private readonly IExpiryStrategy _expiryStrategy;
 		private readonly uint _compatibility;
 		private readonly int _batchSize;
 		private readonly CancellationToken _cancellationToken;
@@ -43,6 +45,7 @@ partial class Enumerator {
 			ClaimsPrincipal user,
 			bool requiresLeader,
 			DateTime deadline,
+			IExpiryStrategy expiryStrategy,
 			uint compatibility,
 			int batchSize = DefaultReadBatchSize,
 			CancellationToken cancellationToken = default) {
@@ -53,6 +56,7 @@ partial class Enumerator {
 			_user = user;
 			_requiresLeader = requiresLeader;
 			_deadline = deadline;
+			_expiryStrategy = expiryStrategy;
 			_compatibility = compatibility;
 			_batchSize = batchSize;
 			_cancellationToken = cancellationToken;
@@ -81,7 +85,7 @@ partial class Enumerator {
 			_bus.Publish(new ClientMessage.ReadStreamEventsForward(
 				correlationId, correlationId, new ContinuationEnvelope(OnMessage, _semaphore, _cancellationToken),
 				_streamName, startRevision.ToInt64(), (int)Math.Min((ulong)_batchSize, _maxCount), _resolveLinks,
-				_requiresLeader, null, _user, replyOnExpired: true, expires: _deadline,
+				_requiresLeader, null, _user, replyOnExpired: true, expires: _expiryStrategy.GetExpiry() ?? _deadline,
 				cancellationToken: _cancellationToken));
 
 			async Task OnMessage(Message message, CancellationToken ct) {

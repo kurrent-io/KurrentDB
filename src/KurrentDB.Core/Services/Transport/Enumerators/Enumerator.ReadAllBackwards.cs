@@ -12,6 +12,7 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 
 namespace KurrentDB.Core.Services.Transport.Enumerators;
@@ -24,6 +25,7 @@ partial class Enumerator {
 		private readonly ClaimsPrincipal _user;
 		private readonly bool _requiresLeader;
 		private readonly DateTime _deadline;
+		private readonly IExpiryStrategy _expiryStrategy;
 		private readonly CancellationToken _cancellationToken;
 		private readonly SemaphoreSlim _semaphore = new(1, 1);
 		private readonly Channel<ReadResponse> _channel = Channel.CreateBounded<ReadResponse>(DefaultCatchUpChannelOptions);
@@ -39,6 +41,7 @@ partial class Enumerator {
 			ClaimsPrincipal user,
 			bool requiresLeader,
 			DateTime deadline,
+			IExpiryStrategy expiryStrategy,
 			CancellationToken cancellationToken) {
 			_bus = Ensure.NotNull(bus);
 			_maxCount = maxCount;
@@ -46,6 +49,7 @@ partial class Enumerator {
 			_user = user;
 			_requiresLeader = requiresLeader;
 			_deadline = deadline;
+			_expiryStrategy = expiryStrategy;
 			_cancellationToken = cancellationToken;
 
 			ReadPage(position);
@@ -74,7 +78,7 @@ partial class Enumerator {
 			_bus.Publish(new ClientMessage.ReadAllEventsBackward(
 				correlationId, correlationId, new ContinuationEnvelope(OnMessage, _semaphore, _cancellationToken),
 				commitPosition, preparePosition, (int)Math.Min(DefaultReadBatchSize, _maxCount), _resolveLinks,
-				_requiresLeader, default, _user, replyOnExpired: true, expires: _deadline,
+				_requiresLeader, default, _user, replyOnExpired: true, expires: _expiryStrategy.GetExpiry() ?? _deadline,
 				cancellationToken: _cancellationToken));
 
 			async Task OnMessage(Message message, CancellationToken ct) {

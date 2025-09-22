@@ -26,6 +26,7 @@ partial class Enumerator {
 		private readonly ClaimsPrincipal _user;
 		private readonly bool _requiresLeader;
 		private readonly DateTime _deadline;
+		private readonly IExpiryStrategy _expiryStrategy;
 		private readonly uint _maxSearchWindow;
 		private readonly CancellationToken _cancellationToken;
 		private readonly SemaphoreSlim _semaphore = new(1, 1);
@@ -44,6 +45,7 @@ partial class Enumerator {
 			bool requiresLeader,
 			uint? maxSearchWindow,
 			DateTime deadline,
+			IExpiryStrategy expiryStrategy,
 			CancellationToken cancellationToken) {
 			_bus = Ensure.NotNull(bus);
 			_maxCount = maxCount;
@@ -53,6 +55,7 @@ partial class Enumerator {
 			_requiresLeader = requiresLeader;
 			_maxSearchWindow = maxSearchWindow ?? DefaultReadBatchSize;
 			_deadline = deadline;
+			_expiryStrategy = expiryStrategy;
 			_cancellationToken = cancellationToken;
 
 			ReadPage(position);
@@ -83,7 +86,7 @@ partial class Enumerator {
 				commitPosition, preparePosition, (int)Math.Min(DefaultReadBatchSize, _maxCount), _resolveLinks,
 				_requiresLeader, (int)_maxSearchWindow, null, _eventFilter, _user,
 				replyOnExpired: true,
-				expires: _deadline,
+				expires: _expiryStrategy.GetExpiry() ?? _deadline,
 				cancellationToken: _cancellationToken)
 			);
 

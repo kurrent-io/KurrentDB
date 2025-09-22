@@ -120,6 +120,7 @@ internal partial class Streams<TStreamId> {
 					user,
 					requiresLeader,
 					deadline,
+					_expiryStrategy,
 					compatibility,
 					Enumerator.DefaultReadBatchSize,
 					cancellationToken),
@@ -135,6 +136,7 @@ internal partial class Streams<TStreamId> {
 					user,
 					requiresLeader,
 					deadline,
+					_expiryStrategy,
 					compatibility,
 					Enumerator.DefaultReadBatchSize,
 					cancellationToken),
@@ -149,6 +151,7 @@ internal partial class Streams<TStreamId> {
 					user,
 					requiresLeader,
 					deadline,
+					_expiryStrategy,
 					cancellationToken),
 			(StreamOptionOneofCase.All,
 				CountOptionOneofCase.Count,
@@ -161,6 +164,7 @@ internal partial class Streams<TStreamId> {
 					user,
 					requiresLeader,
 					deadline,
+					_expiryStrategy,
 					cancellationToken),
 			(StreamOptionOneofCase.All, CountOptionOneofCase.Count, ReadDirection.Forwards, FilterOptionOneofCase.Filter) => GetReadAllForwardsFilteredEnumerator(),
 			(StreamOptionOneofCase.All, CountOptionOneofCase.Count, ReadDirection.Backwards, FilterOptionOneofCase.Filter) => GetReadAllBackwardsFilteredEnumerator(),
@@ -217,7 +221,7 @@ internal partial class Streams<TStreamId> {
 			GetFilterOrIndexEnumerator(
 				indexName => new Enumerator.ReadIndexForwards(
 					_publisher, indexName, request.Options.All.ToPosition(),
-					request.Options.Count, user, requiresLeader, deadline, cancellationToken
+					request.Options.Count, user, requiresLeader, deadline, _expiryStrategy, cancellationToken
 				),
 				filter => new Enumerator.ReadAllForwardsFiltered(
 					_publisher,
@@ -229,6 +233,7 @@ internal partial class Streams<TStreamId> {
 					requiresLeader,
 					ConvertToWindow(filter),
 					deadline,
+					_expiryStrategy,
 					cancellationToken)
 			);
 
@@ -236,7 +241,7 @@ internal partial class Streams<TStreamId> {
 			GetFilterOrIndexEnumerator(
 				indexName => new Enumerator.ReadIndexBackwards(
 					_publisher, indexName, request.Options.All.ToPosition(),
-					request.Options.Count, user, requiresLeader, deadline, cancellationToken
+					request.Options.Count, user, requiresLeader, deadline, _expiryStrategy, cancellationToken
 				),
 				filter => new Enumerator.ReadAllBackwardsFiltered(
 					_publisher,
@@ -248,6 +253,7 @@ internal partial class Streams<TStreamId> {
 					requiresLeader,
 					ConvertToWindow(filter),
 					deadline,
+					_expiryStrategy,
 					cancellationToken)
 			);
 
