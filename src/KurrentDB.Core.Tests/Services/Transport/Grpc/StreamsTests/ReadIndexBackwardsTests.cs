@@ -22,7 +22,9 @@ public class ReadIndexBackwardsTests {
 
 		private readonly List<ReadResp> _responses = new();
 
-		public when_reading_index_backwards() : base(new LotsOfExpiriesStrategy(), secondaryIndexReaders: new SecondaryIndexReaders([new FakeSecondaryIndexReader()])) {
+		public when_reading_index_backwards() : base(
+			new LotsOfExpiriesStrategy(),
+			secondaryIndexReaders: new SecondaryIndexReaders().AddReaders([new FakeSecondaryIndexReader()])) {
 		}
 
 		protected override Task Given() {

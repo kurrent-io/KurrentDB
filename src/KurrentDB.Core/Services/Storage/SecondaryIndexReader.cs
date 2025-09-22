@@ -25,15 +25,9 @@ public interface ISecondaryIndexReader {
 public class SecondaryIndexReaders {
 	ISecondaryIndexReader[] _readers = [];
 
-	public SecondaryIndexReaders() {
-	}
-
-	public SecondaryIndexReaders(IEnumerable<ISecondaryIndexReader> readers) {
+	public SecondaryIndexReaders AddReaders(IEnumerable<ISecondaryIndexReader> readers) {
 		_readers = readers.ToArray();
-	}
-
-	public void AddReaders(IEnumerable<ISecondaryIndexReader> readers) {
-		_readers = readers.ToArray();
+		return this;
 	}
 
 	public bool CanReadIndex(string indexName) => _readers.Any(r => r.CanReadIndex(indexName));
