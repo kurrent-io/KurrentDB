@@ -23,7 +23,6 @@ public partial class StorageReaderWorker<TStreamId> {
 		if (msg.Expires < DateTime.UtcNow) {
 			if (msg.ReplyOnExpired) {
 				msg.Envelope.ReplyWith(new ReadLogEventsCompleted(msg.CorrelationId, ReadEventResult.Expired, [], null));
-				return;
 			}
 
 			if (LogExpiredMessage(msg.Expires))

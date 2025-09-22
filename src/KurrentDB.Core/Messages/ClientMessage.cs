@@ -672,7 +672,7 @@ public static partial class ClientMessage {
 			StreamMetadata streamMetadata, bool isCachePublic,
 			string error, long nextEventNumber, long lastEventNumber, bool isEndOfStream,
 			long tfLastCommitPosition) {
-			if (result != ReadStreamResult.Success && result != ReadStreamResult.Expired) {
+			if (result != ReadStreamResult.Success) {
 				Ensure.Equal(-1, nextEventNumber);
 				Ensure.Equal(true, isEndOfStream);
 			}
