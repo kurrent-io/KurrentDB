@@ -24,6 +24,7 @@ using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Monitoring;
+using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Tests.Http;
 using KurrentDB.Core.Tests.Index.Hashers;
@@ -94,7 +95,8 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 		string transform = "identity",
 		IConfiguration configuration = null,
 		IReadOnlyList<IDbTransform> newTransforms = null,
-		int maxAppendEventSize = TFConsts.EffectiveMaxLogRecordSize) {
+		int maxAppendEventSize = TFConsts.EffectiveMaxLogRecordSize,
+		SecondaryIndexReaders secondaryIndexReaders = null) {
 
 		_httpClientTimeoutSec = httpClientTimeoutSec;
 		RunningTime.Start();
@@ -225,7 +227,8 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 			expiryStrategy: expiryStrategy,
 			certificateProvider: new OptionsCertificateProvider(),
 			configuration: inMemConf,
-			configureAdditionalNodeServices: services => ConfigureMiniNodeServices(services, newTransforms));
+			configureAdditionalNodeServices: services => ConfigureMiniNodeServices(services, newTransforms),
+			secondaryIndexReaders: secondaryIndexReaders);
 		Db = Node.Db;
 
 		Node.HttpService.SetupController(new TestController(Node.MainQueue));

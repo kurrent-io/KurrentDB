@@ -25,6 +25,13 @@ public interface ISecondaryIndexReader {
 public class SecondaryIndexReaders {
 	ISecondaryIndexReader[] _readers = [];
 
+	public SecondaryIndexReaders() {
+	}
+
+	public SecondaryIndexReaders(IEnumerable<ISecondaryIndexReader> readers) {
+		_readers = readers.ToArray();
+	}
+
 	public void AddReaders(IEnumerable<ISecondaryIndexReader> readers) {
 		_readers = readers.ToArray();
 	}
