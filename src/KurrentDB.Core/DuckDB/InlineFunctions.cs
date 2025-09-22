@@ -67,11 +67,7 @@ file static class ReadEventsExtensions {
 			return new Enumerator.ReadLogEventsSync(
 				bus: publisher,
 				logPositions: logPositions,
-				user: SystemAccounts.System,
-				deadline: DefaultDeadline
-			);
+				user: SystemAccounts.System);
 		}
 	}
-
-	private static readonly DateTime DefaultDeadline = DateTime.UtcNow.AddYears(1);
 }
