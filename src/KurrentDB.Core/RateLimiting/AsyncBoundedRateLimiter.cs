@@ -37,7 +37,7 @@ public sealed partial class AsyncBoundedRateLimiter : Disposable {
 	/// <see langword="false"/> if the rate limit is reached and <paramref name="prioritized"/>
 	/// is <see langword="false"/>.
 	/// </returns>
-	public ValueTask<bool> AcquireAsync(bool prioritized, CancellationToken token) {
+	public ValueTask<bool> AcquireAsync(bool prioritized, CancellationToken token = default) {
 		ISupplier<TimeSpan, CancellationToken, ValueTask<bool>> factory;
 		lock (_syncRoot) {
 			if (IsDisposingOrDisposed) {
