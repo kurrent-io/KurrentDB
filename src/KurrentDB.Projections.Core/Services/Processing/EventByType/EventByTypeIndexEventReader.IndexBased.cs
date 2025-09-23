@@ -282,16 +282,13 @@ public partial class EventByTypeIndexEventReader {
 				_pendingRequests["$et"] = pendingRequestCorrelationId;
 			}
 
-			Message readRequest;
-			if (_lastKnownIndexCheckpointEventNumber == -1) {
-				readRequest = new ClientMessage.ReadStreamEventsBackward(
+			Message readRequest = _lastKnownIndexCheckpointEventNumber == -1
+				? new ClientMessage.ReadStreamEventsBackward(
 					pendingRequestCorrelationId, pendingRequestCorrelationId, new SendToThisEnvelope(this), "$et",
-					-1, 1, false, false, null, _readAs);
-			} else {
-				readRequest = new ClientMessage.ReadStreamEventsForward(
+					-1, 1, false, false, null, _readAs, replyOnExpired: false)
+				: new ClientMessage.ReadStreamEventsForward(
 					pendingRequestCorrelationId, pendingRequestCorrelationId, new SendToThisEnvelope(this), "$et",
 					_lastKnownIndexCheckpointEventNumber + 1, 100, false, false, null, _readAs, replyOnExpired: false);
-			}
 
 			var timeoutMessage = TimerMessage.Schedule.Create(
 				TimeSpan.FromMilliseconds(ESConsts.ReadRequestTimeout),

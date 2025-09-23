@@ -724,7 +724,7 @@ public class ClusterVNode<TStreamId> :
 			logFormat.EventTypeIndexConfirmer,
 			streamLastEventNumberCache,
 			streamMetadataCache,
-			ESConsts.PerformAdditionlCommitChecks,
+			ESConsts.PerformAdditionalCommitChecks,
 			ESConsts.MetaStreamMaxCount,
 			options.Database.HashCollisionReadLimit,
 			options.Application.SkipIndexScanOnReads,

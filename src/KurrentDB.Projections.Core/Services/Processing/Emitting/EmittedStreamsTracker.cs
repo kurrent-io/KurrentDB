@@ -22,7 +22,7 @@ public class EmittedStreamsTracker(
 	private static readonly ILogger Log = Serilog.Log.ForContext<EmittedStreamsTracker>();
 
 	private readonly BoundedCache<string, string> _streamIdCache = new(int.MaxValue,
-		ESConsts.CommitedEventsMemCacheLimit, x => 16 + 4 + IntPtr.Size + 2 * x.Length);
+		ESConsts.CommittedEventsMemCacheLimit, x => 16 + 4 + IntPtr.Size + 2 * x.Length);
 
 	private const int MaxRetryCount = 3;
 	private readonly object _locker = new();
