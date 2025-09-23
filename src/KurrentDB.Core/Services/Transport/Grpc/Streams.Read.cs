@@ -74,7 +74,6 @@ internal partial class Streams<TStreamId> {
 					countOptionsCase,
 					readDirection,
 					filterOptionsCase,
-					context.Deadline,
 					context.CancellationToken);
 
 				async void DisposeEnumerator() => await enumerator.DisposeAsync();
@@ -105,7 +104,6 @@ internal partial class Streams<TStreamId> {
 		CountOptionOneofCase countOptionsCase,
 		ReadDirection readDirection,
 		FilterOptionOneofCase filterOptionsCase,
-		DateTime deadline,
 		CancellationToken cancellationToken) {
 		return (streamOptionsCase, countOptionsCase, readDirection, filterOptionsCase) switch {
 			(StreamOptionOneofCase.Stream,
@@ -119,7 +117,7 @@ internal partial class Streams<TStreamId> {
 					request.Options.ResolveLinks,
 					user,
 					requiresLeader,
-					deadline,
+					_expiryStrategy,
 					compatibility,
 					Enumerator.DefaultReadBatchSize,
 					cancellationToken),
@@ -134,7 +132,7 @@ internal partial class Streams<TStreamId> {
 					request.Options.ResolveLinks,
 					user,
 					requiresLeader,
-					deadline,
+					_expiryStrategy,
 					compatibility,
 					Enumerator.DefaultReadBatchSize,
 					cancellationToken),
@@ -148,7 +146,7 @@ internal partial class Streams<TStreamId> {
 					request.Options.ResolveLinks,
 					user,
 					requiresLeader,
-					deadline,
+					_expiryStrategy,
 					cancellationToken),
 			(StreamOptionOneofCase.All,
 				CountOptionOneofCase.Count,
@@ -160,7 +158,7 @@ internal partial class Streams<TStreamId> {
 					request.Options.ResolveLinks,
 					user,
 					requiresLeader,
-					deadline,
+					_expiryStrategy,
 					cancellationToken),
 			(StreamOptionOneofCase.All, CountOptionOneofCase.Count, ReadDirection.Forwards, FilterOptionOneofCase.Filter) => GetReadAllForwardsFilteredEnumerator(),
 			(StreamOptionOneofCase.All, CountOptionOneofCase.Count, ReadDirection.Backwards, FilterOptionOneofCase.Filter) => GetReadAllBackwardsFilteredEnumerator(),
@@ -217,7 +215,7 @@ internal partial class Streams<TStreamId> {
 			GetFilterOrIndexEnumerator(
 				indexName => new Enumerator.ReadIndexForwards(
 					_publisher, indexName, request.Options.All.ToPosition(),
-					request.Options.Count, user, requiresLeader, deadline, cancellationToken
+					request.Options.Count, user, requiresLeader, _expiryStrategy, cancellationToken
 				),
 				filter => new Enumerator.ReadAllForwardsFiltered(
 					_publisher,
@@ -228,7 +226,7 @@ internal partial class Streams<TStreamId> {
 					user,
 					requiresLeader,
 					ConvertToWindow(filter),
-					deadline,
+					_expiryStrategy,
 					cancellationToken)
 			);
 
@@ -236,7 +234,7 @@ internal partial class Streams<TStreamId> {
 			GetFilterOrIndexEnumerator(
 				indexName => new Enumerator.ReadIndexBackwards(
 					_publisher, indexName, request.Options.All.ToPosition(),
-					request.Options.Count, user, requiresLeader, deadline, cancellationToken
+					request.Options.Count, user, requiresLeader, _expiryStrategy, cancellationToken
 				),
 				filter => new Enumerator.ReadAllBackwardsFiltered(
 					_publisher,
@@ -247,7 +245,7 @@ internal partial class Streams<TStreamId> {
 					user,
 					requiresLeader,
 					ConvertToWindow(filter),
-					deadline,
+					_expiryStrategy,
 					cancellationToken)
 			);
 

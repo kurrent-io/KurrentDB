@@ -99,7 +99,7 @@ public class StreamBasedAuthorizationPolicyRegistry :
 			: (StreamRevision?)null;
 		await using var sub = new Enumerator.StreamSubscription<string>(
 			bus: _publisher,
-			expiryStrategy: new DefaultExpiryStrategy(),
+			expiryStrategy: DefaultExpiryStrategy.Instance,
 			streamName: _stream,
 			resolveLinks: false,
 			user: SystemAccounts.System,
@@ -211,7 +211,7 @@ public class StreamBasedAuthorizationPolicyRegistry :
 		ulong? checkpoint = null;
 		try {
 			await using var read = new Enumerator.ReadStreamBackwards(_publisher, _stream,
-				StreamRevision.End, ulong.MaxValue, false, SystemAccounts.System, false, DateTime.MaxValue, 1, cancellationToken: ct);
+				StreamRevision.End, ulong.MaxValue, false, SystemAccounts.System, false, DefaultExpiryStrategy.Instance, 1, cancellationToken: ct);
 			while (await read.MoveNextAsync()) {
 				var readResponse = read.Current;
 				switch (readResponse) {

@@ -1685,7 +1685,7 @@ public class ClusterVNode<TStreamId> :
 			modifiedOptions.PlugableComponents,
 			_mainQueue, monitoringQueue, _mainBus, _workersHandler,
 			_authenticationProvider, _authorizationProvider,
-			expiryStrategy ?? new DefaultExpiryStrategy(),
+			expiryStrategy ?? DefaultExpiryStrategy.Instance,
 			_httpService,
 			configuration,
 			trackers,

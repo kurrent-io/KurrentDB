@@ -25,8 +25,9 @@ public interface ISecondaryIndexReader {
 public class SecondaryIndexReaders {
 	ISecondaryIndexReader[] _readers = [];
 
-	public void AddReaders(IEnumerable<ISecondaryIndexReader> readers) {
+	public SecondaryIndexReaders AddReaders(IEnumerable<ISecondaryIndexReader> readers) {
 		_readers = readers.ToArray();
+		return this;
 	}
 
 	public bool CanReadIndex(string indexName) => _readers.Any(r => r.CanReadIndex(indexName));
@@ -45,7 +46,7 @@ public class SecondaryIndexReaders {
 		var reader = FindReader(msg.IndexName);
 
 		return reader?.ReadBackwards(msg, token) ?? ValueTask.FromResult(new ReadIndexEventsBackwardCompleted(
-			ReadIndexResult.IndexNotFound, [], -1, true,
+			ReadIndexResult.IndexNotFound, [], new(msg.CommitPosition, msg.PreparePosition), -1, true,
 			$"Index {msg.IndexName} does not exist"
 		));
 	}

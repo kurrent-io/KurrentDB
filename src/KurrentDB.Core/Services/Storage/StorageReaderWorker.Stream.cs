@@ -23,7 +23,7 @@ public partial class StorageReaderWorker<TStreamId> {
 			if (msg.ReplyOnExpired) {
 				msg.Envelope.ReplyWith(new ReadStreamEventsForwardCompleted(
 					msg.CorrelationId, msg.EventStreamId, msg.FromEventNumber, msg.MaxCount, ReadStreamResult.Expired,
-					ResolvedEvent.EmptyArray, default, default, default, default, default, default, default));
+					ResolvedEvent.EmptyArray, default, default, default, -1, default, true, default));
 			}
 
 			if (LogExpiredMessage(msg.Expires))
@@ -73,6 +73,12 @@ public partial class StorageReaderWorker<TStreamId> {
 			return;
 
 		if (msg.Expires < DateTime.UtcNow) {
+			if (msg.ReplyOnExpired) {
+				msg.Envelope.ReplyWith(new ReadStreamEventsBackwardCompleted(
+					msg.CorrelationId, msg.EventStreamId, msg.FromEventNumber, msg.MaxCount, ReadStreamResult.Expired,
+					ResolvedEvent.EmptyArray, default, default, default, -1, default, true, default));
+			}
+
 			if (LogExpiredMessage(msg.Expires))
 				Log.Debug(
 					"Read Stream Events Backward operation has expired for Stream: {stream}, From Event Number: {fromEventNumber}, Max Count: {maxCount}. Operation Expired at {expiryDateTime} after {lifetime:N0} ms.",

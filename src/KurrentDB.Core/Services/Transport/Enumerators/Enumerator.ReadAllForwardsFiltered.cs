@@ -25,7 +25,7 @@ partial class Enumerator {
 		private readonly IEventFilter _eventFilter;
 		private readonly ClaimsPrincipal _user;
 		private readonly bool _requiresLeader;
-		private readonly DateTime _deadline;
+		private readonly IExpiryStrategy _expiryStrategy;
 		private readonly uint _maxSearchWindow;
 		private readonly CancellationToken _cancellationToken;
 		private readonly SemaphoreSlim _semaphore = new(1, 1);
@@ -43,7 +43,7 @@ partial class Enumerator {
 			ClaimsPrincipal user,
 			bool requiresLeader,
 			uint? maxSearchWindow,
-			DateTime deadline,
+			IExpiryStrategy expiryStrategy,
 			CancellationToken cancellationToken) {
 			_bus = Ensure.NotNull(bus);
 			_maxCount = maxCount;
@@ -52,7 +52,7 @@ partial class Enumerator {
 			_user = user;
 			_requiresLeader = requiresLeader;
 			_maxSearchWindow = maxSearchWindow ?? DefaultReadBatchSize;
-			_deadline = deadline;
+			_expiryStrategy = expiryStrategy;
 			_cancellationToken = cancellationToken;
 
 			ReadPage(position);
@@ -82,8 +82,8 @@ partial class Enumerator {
 				correlationId, correlationId, new ContinuationEnvelope(OnMessage, _semaphore, _cancellationToken),
 				commitPosition, preparePosition, (int)Math.Min(DefaultReadBatchSize, _maxCount), _resolveLinks,
 				_requiresLeader, (int)_maxSearchWindow, null, _eventFilter, _user,
-				replyOnExpired: false,
-				expires: _deadline,
+				replyOnExpired: true,
+				expires: _expiryStrategy.GetExpiry(),
 				cancellationToken: _cancellationToken)
 			);
 
@@ -116,6 +116,9 @@ partial class Enumerator {
 						}
 
 						ReadPage(Position.FromInt64(completed.NextPos.CommitPosition, completed.NextPos.PreparePosition), readCount);
+						return;
+					case FilteredReadAllResult.Expired:
+						ReadPage(Position.FromInt64(completed.CurrentPos.CommitPosition, completed.CurrentPos.PreparePosition), readCount);
 						return;
 					case FilteredReadAllResult.AccessDenied:
 						_channel.Writer.TryComplete(new ReadResponseException.AccessDenied());

@@ -21,10 +21,9 @@ partial class Enumerator {
 	/// It is ONLY used in the kdb_get DuckDB inline function.
 	/// Don't use it anywhere else.
 	/// </summary>
-	public class ReadLogEventsSync : IEnumerator<ReadResponse> {
+	public sealed class ReadLogEventsSync : IEnumerator<ReadResponse> {
 		private readonly IPublisher _bus;
 		private readonly ClaimsPrincipal _user;
-		private readonly DateTime _deadline;
 		private readonly SemaphoreSlim _semaphore;
 		private readonly Channel<ReadResponse> _channel;
 
@@ -53,10 +52,9 @@ partial class Enumerator {
 
 		public ReadResponse Current => _current;
 
-		public ReadLogEventsSync(IPublisher bus, long[] logPositions, ClaimsPrincipal user, DateTime deadline) {
+		public ReadLogEventsSync(IPublisher bus, long[] logPositions, ClaimsPrincipal user) {
 			_bus = bus ?? throw new ArgumentNullException(nameof(bus));
 			_user = user;
-			_deadline = deadline;
 			_semaphore = new(1, 1);
 			_channel = Channel.CreateBounded<ReadResponse>(DefaultCatchUpChannelOptions);
 
@@ -68,7 +66,7 @@ partial class Enumerator {
 
 			_bus.Publish(new ClientMessage.ReadLogEvents(
 				correlationId, correlationId, new ContinuationEnvelope(OnMessage, _semaphore, CancellationToken.None),
-				logPositions, _user, expires: _deadline, cancellationToken: CancellationToken.None));
+				logPositions, _user, replyOnExpired: true, expires: null, cancellationToken: CancellationToken.None));
 			return;
 
 			Task OnMessage(Message message, CancellationToken ct) {
@@ -91,6 +89,9 @@ partial class Enumerator {
 						}
 
 						_channel.Writer.TryComplete();
+						return Task.CompletedTask;
+					case ReadEventResult.Expired:
+						Read(logPositions);
 						return Task.CompletedTask;
 					default:
 						_channel.Writer.TryComplete(ReadResponseException.UnknownError.Create(completed.Result));

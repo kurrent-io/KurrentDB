@@ -11,6 +11,7 @@ using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using static KurrentDB.Core.Messages.ClientMessage;
 
@@ -26,9 +27,9 @@ partial class Enumerator {
 		ulong maxCount,
 		ClaimsPrincipal user,
 		bool requiresLeader,
-		DateTime deadline,
+		IExpiryStrategy expiryStrategy,
 		CancellationToken cancellationToken)
-		: ReadIndex<ReadIndexEventsForward, ReadIndexEventsForwardCompleted>(bus, indexName, position, maxCount, user, requiresLeader, deadline, cancellationToken) {
+		: ReadIndex<ReadIndexEventsForward, ReadIndexEventsForwardCompleted>(bus, indexName, position, maxCount, user, requiresLeader, expiryStrategy, cancellationToken) {
 		protected override ReadIndexEventsForward CreateRequest(
 			Guid correlationId,
 			long commitPosition,
@@ -39,8 +40,8 @@ partial class Enumerator {
 			correlationId, correlationId, new ContinuationEnvelope(onMessage, Semaphore, CancellationToken),
 			IndexName, commitPosition, preparePosition, excludeStart, (int)Math.Min(DefaultIndexReadSize, MaxCount),
 			RequiresLeader, null, User,
-			replyOnExpired: false,
-			expires: Deadline,
+			replyOnExpired: true,
+			expires: ExpiryStrategy.GetExpiry(),
 			cancellationToken: CancellationToken);
 	}
 
@@ -51,9 +52,9 @@ partial class Enumerator {
 		ulong maxCount,
 		ClaimsPrincipal user,
 		bool requiresLeader,
-		DateTime deadline,
+		IExpiryStrategy expiryStrategy,
 		CancellationToken cancellationToken)
-		: ReadIndex<ReadIndexEventsBackward, ReadIndexEventsBackwardCompleted>(bus, indexName, position, maxCount, user, requiresLeader, deadline, cancellationToken) {
+		: ReadIndex<ReadIndexEventsBackward, ReadIndexEventsBackwardCompleted>(bus, indexName, position, maxCount, user, requiresLeader, expiryStrategy, cancellationToken) {
 		protected override ReadIndexEventsBackward CreateRequest(
 			Guid correlationId,
 			long commitPosition,
@@ -64,8 +65,8 @@ partial class Enumerator {
 			correlationId, correlationId, new ContinuationEnvelope(onMessage, Semaphore, CancellationToken),
 			IndexName, commitPosition, preparePosition, excludeStart, (int)Math.Min(DefaultIndexReadSize, MaxCount),
 			RequiresLeader, null, User,
-			replyOnExpired: false,
-			expires: Deadline,
+			replyOnExpired: true,
+			expires: ExpiryStrategy.GetExpiry(),
 			cancellationToken: CancellationToken);
 	}
 
@@ -76,7 +77,7 @@ partial class Enumerator {
 		protected readonly ulong MaxCount;
 		protected readonly ClaimsPrincipal User;
 		protected readonly bool RequiresLeader;
-		protected readonly DateTime Deadline;
+		protected readonly IExpiryStrategy ExpiryStrategy;
 		protected readonly CancellationToken CancellationToken;
 		protected readonly SemaphoreSlim Semaphore = new(1, 1);
 		private readonly IPublisher _bus;
@@ -101,14 +102,14 @@ partial class Enumerator {
 			ulong maxCount,
 			ClaimsPrincipal user,
 			bool requiresLeader,
-			DateTime deadline,
+			IExpiryStrategy expiryStrategy,
 			CancellationToken cancellationToken) {
 			_bus = Ensure.NotNull(bus);
 			IndexName = Ensure.NotNullOrEmpty(indexName);
 			MaxCount = maxCount;
 			User = user;
 			RequiresLeader = requiresLeader;
-			Deadline = deadline;
+			ExpiryStrategy = expiryStrategy;
 			CancellationToken = cancellationToken;
 
 			ReadPage(position, false);
@@ -146,31 +147,34 @@ partial class Enumerator {
 					return;
 				}
 
-				if (completed.Result == ReadIndexResult.Success) {
-					foreach (var @event in completed.Events) {
-						await _channel.Writer.WriteAsync(new ReadResponse.EventReceived(@event), ct);
+				switch (completed.Result) {
+					case ReadIndexResult.Success:
+						foreach (var @event in completed.Events) {
+							await _channel.Writer.WriteAsync(new ReadResponse.EventReceived(@event), ct);
 
-						if (++readCount >= MaxCount) {
+							if (++readCount >= MaxCount) {
+								_channel.Writer.TryComplete();
+								return;
+							}
+						}
+
+						if (completed.IsEndOfStream || completed.Events.Count == 0) {
 							_channel.Writer.TryComplete();
 							return;
 						}
-					}
 
-					if (completed.IsEndOfStream || completed.Events.Count == 0) {
-						_channel.Writer.TryComplete();
+						var last = completed.Events[^1].EventPosition!.Value;
+						ReadPage(Position.FromInt64(last.CommitPosition, last.PreparePosition), true, readCount);
 						return;
-					}
-
-					var last = completed.Events[^1].EventPosition!.Value;
-					ReadPage(Position.FromInt64(last.CommitPosition, last.PreparePosition), true, readCount);
-					return;
+					case ReadIndexResult.Expired:
+						ReadPage(Position.FromInt64(completed.CurrentPos.CommitPosition, completed.CurrentPos.PreparePosition), excludeStart, readCount);
+						return;
 				}
 
 				Exception exception = completed.Result switch {
 					ReadIndexResult.AccessDenied => new ReadResponseException.AccessDenied(),
 					ReadIndexResult.IndexNotFound => new ReadResponseException.IndexNotFound(IndexName),
 					ReadIndexResult.InvalidPosition => new ReadResponseException.InvalidPosition(),
-					ReadIndexResult.Expired => new ReadResponseException.Timeout("Read index operation expired"),
 					_ => ReadResponseException.UnknownError.Create(completed.Result, completed.Error)
 				};
 				_channel.Writer.TryComplete(exception);

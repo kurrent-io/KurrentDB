@@ -3,7 +3,6 @@
 
 // ReSharper disable CheckNamespace
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -20,9 +19,6 @@ namespace KurrentDB.Core.ClientPublisher;
 
 [PublicAPI]
 public static class PublisherReadExtensions {
-	//TODO SS: what should I do with this deadline?
-	public static readonly DateTime DefaultDeadline = DateTime.UtcNow.AddYears(1);
-
     public static async IAsyncEnumerable<ResolvedEvent> Read(this IPublisher publisher, Position startPosition, IEventFilter filter, long maxCount, bool forwards = true, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
         await using var enumerator = GetEnumerator();
 
@@ -47,7 +43,7 @@ public static class PublisherReadExtensions {
                     user: SystemAccounts.System,
                     requiresLeader: false,
                     maxSearchWindow: null,
-                    deadline: DefaultDeadline,
+                    expiryStrategy: DefaultExpiryStrategy.Instance,
                     cancellationToken: cancellationToken
                 )
                 : new Enumerator.ReadAllBackwardsFiltered(
@@ -59,7 +55,7 @@ public static class PublisherReadExtensions {
                     user: SystemAccounts.System,
                     requiresLeader: false,
                     maxSearchWindow: null,
-                    deadline: DefaultDeadline,
+                    expiryStrategy: DefaultExpiryStrategy.Instance,
                     cancellationToken: cancellationToken
                 );
         }
@@ -93,7 +89,7 @@ public static class PublisherReadExtensions {
 					resolveLinks: false,
 					user: SystemAccounts.System,
 					requiresLeader: false,
-					deadline: DefaultDeadline,
+					expiryStrategy: DefaultExpiryStrategy.Instance,
 					cancellationToken: cancellationToken
 				)
 				: new Enumerator.ReadAllBackwards(
@@ -103,7 +99,7 @@ public static class PublisherReadExtensions {
 					resolveLinks: false,
 					user: SystemAccounts.System,
 					requiresLeader: false,
-					deadline: DefaultDeadline,
+					expiryStrategy: DefaultExpiryStrategy.Instance,
 					cancellationToken: cancellationToken
 				);
 		}
@@ -144,7 +140,7 @@ public static class PublisherReadExtensions {
 					resolveLinks: false,
 					user: SystemAccounts.System,
 					requiresLeader: false,
-					deadline: DefaultDeadline,
+					expiryStrategy: DefaultExpiryStrategy.Instance,
 					cancellationToken: cancellationToken,
 					compatibility: 1 // whats this?
 				)
@@ -156,7 +152,7 @@ public static class PublisherReadExtensions {
 					resolveLinks: false,
 					user: SystemAccounts.System,
 					requiresLeader: false,
-					deadline: DefaultDeadline,
+					expiryStrategy: DefaultExpiryStrategy.Instance,
 					cancellationToken: cancellationToken,
 					compatibility: 1 // whats this?
 				);
@@ -240,7 +236,7 @@ public static class PublisherReadExtensions {
 					maxCount: (ulong)maxCount,
 					user: SystemAccounts.System,
 					requiresLeader: false,
-					deadline: DefaultDeadline,
+					expiryStrategy: DefaultExpiryStrategy.Instance,
 					cancellationToken: cancellationToken
 				)
 				: new Enumerator.ReadIndexBackwards(
@@ -250,7 +246,7 @@ public static class PublisherReadExtensions {
 					maxCount: (ulong)maxCount,
 					user: SystemAccounts.System,
 					requiresLeader: false,
-					deadline: DefaultDeadline,
+					expiryStrategy: DefaultExpiryStrategy.Instance,
 					cancellationToken: cancellationToken
 				);
 		}

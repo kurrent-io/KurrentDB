@@ -28,7 +28,7 @@ public interface IIndexWriter<TStreamId> {
 	ValueTask<CommitCheckResult<TStreamId>> CheckCommitStartingAt(long transactionPosition, long commitPosition, CancellationToken token);
 	ValueTask<CommitCheckResult<TStreamId>> CheckCommit(TStreamId streamId, long expectedVersion, LowAllocReadOnlyMemory<Guid> eventIds, bool streamMightExist, CancellationToken token);
 	ValueTask PreCommit(CommitLogRecord commit, CancellationToken token);
-	void PreCommit(ReadOnlySpan<IPrepareLogRecord<TStreamId>> commitedPrepares, LowAllocReadOnlyMemory<int> eventStreamIndexes);
+	void PreCommit(ReadOnlySpan<IPrepareLogRecord<TStreamId>> committedPrepares, LowAllocReadOnlyMemory<int> eventStreamIndexes);
 	void UpdateTransactionInfo(long transactionId, long logPosition, TransactionInfo<TStreamId> transactionInfo);
 	ValueTask<TransactionInfo<TStreamId>> GetTransactionInfo(long writerCheckpoint, long transactionId, CancellationToken token);
 	void PurgeNotProcessedCommitsTill(long checkpoint);
@@ -87,7 +87,7 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 		ISystemStreamLookup<TStreamId> systemStreams,
 		TStreamId emptyStreamId,
 		ISizer<TStreamId> inMemorySizer) {
-		_committedEvents = new(int.MaxValue, ESConsts.CommitedEventsMemCacheLimit, x => 16 + 4 + IntPtr.Size + Ensure.NotNull(inMemorySizer).GetSizeInBytes(x.StreamId));
+		_committedEvents = new(int.MaxValue, ESConsts.CommittedEventsMemCacheLimit, x => 16 + 4 + IntPtr.Size + Ensure.NotNull(inMemorySizer).GetSizeInBytes(x.StreamId));
 		_indexBackend = Ensure.NotNull(indexBackend);
 		_indexReader = Ensure.NotNull(indexReader);
 		_streamIds = Ensure.NotNull(streamIds);

@@ -16,13 +16,15 @@ public partial class ClientMessage {
 		IReadOnlyList<ResolvedEvent> events,
 		long tfLastCommitPosition,
 		bool isEndOfStream,
-		string error
+		string error,
+		TFPos currentPos
 	) : ReadResponseMessage {
 		public readonly ReadIndexResult Result = result;
 		public IReadOnlyList<ResolvedEvent> Events = events;
 		public long TfLastCommitPosition = tfLastCommitPosition;
 		public bool IsEndOfStream = isEndOfStream;
 		public string Error = error;
+		public TFPos CurrentPos = currentPos;
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
@@ -73,9 +75,7 @@ public partial class ClientMessage {
 		long tfLastCommitPosition,
 		bool isEndOfStream,
 		string error)
-		: ReadIndexEventsCompleted(result, events, tfLastCommitPosition, isEndOfStream, error) {
-		public readonly TFPos CurrentPos = currentPos;
-	}
+		: ReadIndexEventsCompleted(result, events, tfLastCommitPosition, isEndOfStream, error, currentPos);
 
 	[DerivedMessage(CoreMessage.Client)]
 	public partial class ReadIndexEventsBackward(
@@ -118,6 +118,12 @@ public partial class ClientMessage {
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class ReadIndexEventsBackwardCompleted(ReadIndexResult result, IReadOnlyList<ResolvedEvent> events, long tfLastCommitPosition, bool isEndOfStream, string error)
-		: ReadIndexEventsCompleted(result, events, tfLastCommitPosition, isEndOfStream, error);
+	public partial class ReadIndexEventsBackwardCompleted(
+		ReadIndexResult result,
+		IReadOnlyList<ResolvedEvent> events,
+		TFPos currentPos,
+		long tfLastCommitPosition,
+		bool isEndOfStream,
+		string error)
+		: ReadIndexEventsCompleted(result, events, tfLastCommitPosition, isEndOfStream, error, currentPos);
 }

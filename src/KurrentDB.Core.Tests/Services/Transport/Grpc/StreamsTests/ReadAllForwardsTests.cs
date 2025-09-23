@@ -14,17 +14,16 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Services.Transport.Grpc.StreamsTests;
 
 [TestFixture]
-public class ReadAllForwardsFilteredTests {
+public class ReadAllForwardsTests {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_reading_all_forwards_filtered<TLogFormat, TStreamId>
-	  : GrpcSpecification<TLogFormat, TStreamId> {
-		private const string StreamId = nameof(when_reading_all_forwards_filtered<TLogFormat, TStreamId>);
+	public class when_reading_all_forwards<TLogFormat, TStreamId> : GrpcSpecification<TLogFormat, TStreamId> {
+		private const string StreamId = nameof(when_reading_all_forwards<TLogFormat, TStreamId>);
 
-		private Position _positionOfLastWrite;
 		private readonly List<ReadResp> _responses = new();
+		private Position _positionOfLastWrite;
 
-		public when_reading_all_forwards_filtered() : base(new LotsOfExpiriesStrategy()) {
+		public when_reading_all_forwards() : base(new LotsOfExpiriesStrategy()) {
 		}
 
 		protected override async Task Given() {
@@ -48,15 +47,11 @@ public class ReadAllForwardsFilteredTests {
 					UuidOption = new() { Structured = new() },
 					Count = 20,
 					ReadDirection = ReadReq.Types.Options.Types.ReadDirection.Forwards,
-					ResolveLinks = true,
+					ResolveLinks = false,
 					All = new() {
 						Start = new()
 					},
-					Filter = new() {
-						Max = 32,
-						CheckpointIntervalMultiplier = 4,
-						StreamIdentifier = new() { Prefix = { StreamId } }
-					}
+					NoFilter = new()
 				}
 			}, GetCallOptions(AdminCredentials));
 			_responses.AddRange(await call.ResponseStream.ReadAllAsync().ToArrayAsync());
@@ -81,13 +76,6 @@ public class ReadAllForwardsFilteredTests {
 				.All(x =>
 					new Position(x.Event.Event.CommitPosition, x.Event.Event.PreparePosition) <=
 					_positionOfLastWrite));
-
-			Assert.AreEqual(0, _responses.First(x => x.Event is not null).Event.Event.StreamRevision);
-			Assert.AreEqual(19, _responses.Last(x => x.Event is not null).Event.Event.StreamRevision);
-
-			Assert.True(_responses
-				.Where(x => x.Event is not null)
-				.All(x => x.Event.Event.StreamIdentifier.StreamName.ToStringUtf8() == StreamId));
 		}
 	}
 }

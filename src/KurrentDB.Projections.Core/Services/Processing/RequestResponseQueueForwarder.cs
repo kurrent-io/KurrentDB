@@ -52,6 +52,7 @@ public class RequestResponseQueueForwarder(IPublisher inputQueue, IPublisher ext
 				new PublishToWrapEnvelop(inputQueue, msg.Envelope, nameof(ClientMessage.ReadStreamEventsBackward)),
 				msg.EventStreamId, msg.FromEventNumber, msg.MaxCount, msg.ResolveLinkTos, msg.RequireLeader,
 				msg.ValidationStreamVersion, msg.User,
+				replyOnExpired: false,
 				expires: msg.Expires == DateTime.MaxValue ? msg.Expires : null));
 	}
 
