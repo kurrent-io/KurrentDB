@@ -13,6 +13,12 @@ partial class AsyncBoundedRateLimiter {
 	private WaitNode _poolHead;
 
 	private void BackToPool(WaitNode node) {
+		lock (_syncRoot) {
+			BackToPoolUnsafe(node);
+		}
+	}
+
+	private void BackToPoolUnsafe(WaitNode node) {
 		Debug.Assert(Monitor.IsEntered(_syncRoot));
 		Debug.Assert(node.Status is ManualResetCompletionSourceStatus.WaitForActivation);
 		Debug.Assert(node is { Next: null, Previous: null });
