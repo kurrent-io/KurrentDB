@@ -69,7 +69,12 @@ partial class AsyncBoundedRateLimiter {
 		public bool TrySignal(out bool resumable)
 			=> TrySetResult(completionData: Sentinel, completionToken: null, result: true, out resumable);
 
-		public new void NotifyConsumer() => base.NotifyConsumer();
+		public new void NotifyConsumer() {
+			Debug.Assert(!NeedsRemoval);
+			Debug.Assert(Status is ManualResetCompletionSourceStatus.WaitForConsumption);
+
+			base.NotifyConsumer();
+		}
 	}
 
 	[StructLayout(LayoutKind.Auto)]
