@@ -10,6 +10,7 @@ using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Management;
 using KurrentDB.Projections.Core.Services.Processing;
 using NUnit.Framework;
+using static KurrentDB.Projections.Core.Messages.ProjectionCoreServiceMessage;
 
 namespace KurrentDB.Projections.Core.Tests.Services.core_coordinator;
 
@@ -23,25 +24,19 @@ public class when_restarting_with_projection_type_system {
 
 	[SetUp]
 	public void Setup() {
-		queues = new List<FakePublisher>() { new FakePublisher() }.ToArray();
-		publisher = new FakePublisher();
-
-		_coordinator =
-			new ProjectionCoreCoordinator(ProjectionType.System, queues, publisher);
+		queues = [new()];
+		publisher = new();
+		_coordinator = new(ProjectionType.System, queues, publisher);
 
 		// Start components and handle started
 		_coordinator.Handle(new ProjectionSubsystemMessage.StartComponents(instanceCorrelationId));
-		_coordinator.Handle(
-			new ProjectionCoreServiceMessage.SubComponentStarted(EventReaderCoreService.SubComponentName,
-				instanceCorrelationId));
-		_coordinator.Handle(
-			new ProjectionCoreServiceMessage.SubComponentStarted(ProjectionCoreService.SubComponentName,
-				instanceCorrelationId));
+		_coordinator.Handle(new SubComponentStarted(EventReaderCoreService.SubComponentName, instanceCorrelationId));
+		_coordinator.Handle(new SubComponentStarted(ProjectionCoreService.SubComponentName, instanceCorrelationId));
 
 		// Stop components but don't handle stopped
 		_coordinator.Handle(new ProjectionSubsystemMessage.StopComponents(instanceCorrelationId));
 
-		var stopCore = queues[0].Messages.OfType<ProjectionCoreServiceMessage.StopCore>().First();
+		var stopCore = queues[0].Messages.OfType<StopCore>().First();
 		queueId = stopCore.QueueId;
 		//clear queues for clearer testing
 		queues[0].Messages.Clear();
@@ -55,38 +50,32 @@ public class when_restarting_with_projection_type_system {
 		_coordinator.Handle(new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid()));
 
 		Assert.AreEqual(0, queues[0].Messages.FindAll(x => x is ReaderCoreServiceMessage.StartReader).Count);
-		Assert.AreEqual(0, queues[0].Messages.FindAll(x => x is ProjectionCoreServiceMessage.StartCore).Count);
+		Assert.AreEqual(0, queues[0].Messages.FindAll(x => x is StartCore).Count);
 	}
 
 	[Test]
 	public void should_not_start_if_not_all_subcomponents_stopped() {
 		// Not all components stopped
-		_coordinator.Handle(
-			new ProjectionCoreServiceMessage.SubComponentStopped(EventReaderCoreService.SubComponentName,
-				queueId));
+		_coordinator.Handle(new SubComponentStopped(EventReaderCoreService.SubComponentName, queueId));
 
 		// Start Components
 		_coordinator.Handle(new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid()));
 
 		Assert.AreEqual(0, queues[0].Messages.FindAll(x => x is ReaderCoreServiceMessage.StartReader).Count);
-		Assert.AreEqual(0, queues[0].Messages.FindAll(x => x is ProjectionCoreServiceMessage.StartCore).Count);
+		Assert.AreEqual(0, queues[0].Messages.FindAll(x => x is StartCore).Count);
 	}
 
 	[Test]
 	public void should_start_if_subcomponents_stopped_before_starting_components_again() {
 		// All components stopped
-		_coordinator.Handle(
-			new ProjectionCoreServiceMessage.SubComponentStopped(EventReaderCoreService.SubComponentName,
-				queueId));
-		_coordinator.Handle(
-			new ProjectionCoreServiceMessage.SubComponentStopped(ProjectionCoreService.SubComponentName,
-				queueId));
+		_coordinator.Handle(new SubComponentStopped(EventReaderCoreService.SubComponentName, queueId));
+		_coordinator.Handle(new SubComponentStopped(ProjectionCoreService.SubComponentName, queueId));
 
 		// Start components
 		_coordinator.Handle(new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid()));
 
 		Assert.AreEqual(1, queues[0].Messages.FindAll(x => x is ReaderCoreServiceMessage.StartReader).Count);
-		Assert.AreEqual(1, queues[0].Messages.FindAll(x => x is ProjectionCoreServiceMessage.StartCore).Count);
+		Assert.AreEqual(1, queues[0].Messages.FindAll(x => x is StartCore).Count);
 	}
 
 	[Test]
@@ -94,12 +83,8 @@ public class when_restarting_with_projection_type_system {
 		var newInstanceCorrelationId = Guid.NewGuid();
 
 		// All components stopped
-		_coordinator.Handle(
-			new ProjectionCoreServiceMessage.SubComponentStopped(EventReaderCoreService.SubComponentName,
-				queueId));
-		_coordinator.Handle(
-			new ProjectionCoreServiceMessage.SubComponentStopped(ProjectionCoreService.SubComponentName,
-				queueId));
+		_coordinator.Handle(new SubComponentStopped(EventReaderCoreService.SubComponentName, queueId));
+		_coordinator.Handle(new SubComponentStopped(ProjectionCoreService.SubComponentName, queueId));
 
 		queues[0].Messages.Clear();
 
@@ -107,26 +92,20 @@ public class when_restarting_with_projection_type_system {
 		_coordinator.Handle(new ProjectionSubsystemMessage.StartComponents(newInstanceCorrelationId));
 
 		// Not all subcomponents started
-		_coordinator.Handle(
-			new ProjectionCoreServiceMessage.SubComponentStarted(EventReaderCoreService.SubComponentName,
-				newInstanceCorrelationId));
+		_coordinator.Handle(new SubComponentStarted(EventReaderCoreService.SubComponentName, newInstanceCorrelationId));
 
 		// Stop components
 		_coordinator.Handle(new ProjectionSubsystemMessage.StopComponents(newInstanceCorrelationId));
 
 		Assert.AreEqual(0, queues[0].Messages.FindAll(x => x is ReaderCoreServiceMessage.StopReader).Count);
-		Assert.AreEqual(0, queues[0].Messages.FindAll(x => x is ProjectionCoreServiceMessage.StopCore).Count);
+		Assert.AreEqual(0, queues[0].Messages.FindAll(x => x is StopCore).Count);
 	}
 
 	[Test]
 	public void should_not_stop_if_not_started() {
 		// All components stopped
-		_coordinator.Handle(
-			new ProjectionCoreServiceMessage.SubComponentStopped(EventReaderCoreService.SubComponentName,
-				queueId));
-		_coordinator.Handle(
-			new ProjectionCoreServiceMessage.SubComponentStopped(ProjectionCoreService.SubComponentName,
-				queueId));
+		_coordinator.Handle(new SubComponentStopped(EventReaderCoreService.SubComponentName, queueId));
+		_coordinator.Handle(new SubComponentStopped(ProjectionCoreService.SubComponentName, queueId));
 
 		queues[0].Messages.Clear();
 
@@ -134,7 +113,7 @@ public class when_restarting_with_projection_type_system {
 		_coordinator.Handle(new ProjectionSubsystemMessage.StopComponents(Guid.NewGuid()));
 
 		Assert.AreEqual(0, queues[0].Messages.FindAll(x => x is ReaderCoreServiceMessage.StopReader).Count);
-		Assert.AreEqual(0, queues[0].Messages.FindAll(x => x is ProjectionCoreServiceMessage.StopCore).Count);
+		Assert.AreEqual(0, queues[0].Messages.FindAll(x => x is StopCore).Count);
 	}
 
 	[Test]
@@ -142,23 +121,15 @@ public class when_restarting_with_projection_type_system {
 		var newInstanceCorrelationId = Guid.NewGuid();
 
 		// All components stopped
-		_coordinator.Handle(
-			new ProjectionCoreServiceMessage.SubComponentStopped(EventReaderCoreService.SubComponentName,
-				queueId));
-		_coordinator.Handle(
-			new ProjectionCoreServiceMessage.SubComponentStopped(ProjectionCoreService.SubComponentName,
-				queueId));
+		_coordinator.Handle(new SubComponentStopped(EventReaderCoreService.SubComponentName, queueId));
+		_coordinator.Handle(new SubComponentStopped(ProjectionCoreService.SubComponentName, queueId));
 
 		// Start components
 		_coordinator.Handle(new ProjectionSubsystemMessage.StartComponents(newInstanceCorrelationId));
 
 		// All components started
-		_coordinator.Handle(
-			new ProjectionCoreServiceMessage.SubComponentStarted(EventReaderCoreService.SubComponentName,
-				newInstanceCorrelationId));
-		_coordinator.Handle(
-			new ProjectionCoreServiceMessage.SubComponentStarted(ProjectionCoreService.SubComponentName,
-				newInstanceCorrelationId));
+		_coordinator.Handle(new SubComponentStarted(EventReaderCoreService.SubComponentName, newInstanceCorrelationId));
+		_coordinator.Handle(new SubComponentStarted(ProjectionCoreService.SubComponentName, newInstanceCorrelationId));
 
 		queues[0].Messages.Clear();
 		// Stop components with a different correlation id
@@ -166,6 +137,6 @@ public class when_restarting_with_projection_type_system {
 		_coordinator.Handle(new ProjectionSubsystemMessage.StopComponents(incorrectCorrelationId));
 
 		Assert.AreEqual(0, queues[0].Messages.FindAll(x => x is ReaderCoreServiceMessage.StopReader).Count);
-		Assert.AreEqual(0, queues[0].Messages.FindAll(x => x is ProjectionCoreServiceMessage.StopCore).Count);
+		Assert.AreEqual(0, queues[0].Messages.FindAll(x => x is StopCore).Count);
 	}
 }

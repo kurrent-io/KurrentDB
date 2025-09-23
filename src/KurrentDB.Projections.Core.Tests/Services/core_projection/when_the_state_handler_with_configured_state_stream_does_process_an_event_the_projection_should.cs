@@ -34,7 +34,7 @@ public class when_the_state_handler_with_configured_state_stream_does_process_an
 				new ResolvedEvent(
 					"/event_category/1", -1, "/event_category/1", -1, false, new TFPos(120, 110),
 					Guid.NewGuid(), "handle_this_type", false, "data",
-					"metadata"), _subscriptionId, 0));
+					"metadata"), SubscriptionId, 0));
 	}
 
 	[Test]

@@ -35,17 +35,9 @@ public class when_loading_a_managed_projection_state<TLogFormat, TStreamId> : Te
 			_writeDispatcher,
 			_readDispatcher,
 			_bus,
-			_timeProvider, new RequestResponseDispatcher
-				<CoreProjectionManagementMessage.GetState, CoreProjectionStatusMessage.StateReport>(
-					_bus,
-					v => v.CorrelationId,
-					v => v.CorrelationId,
-					_bus), new RequestResponseDispatcher
-				<CoreProjectionManagementMessage.GetResult, CoreProjectionStatusMessage.ResultReport>(
-					_bus,
-					v => v.CorrelationId,
-					v => v.CorrelationId,
-					_bus),
+			_timeProvider,
+			new(_bus, v => v.CorrelationId, v => v.CorrelationId, _bus),
+			new(_bus, v => v.CorrelationId, v => v.CorrelationId, _bus),
 			_ioDispatcher,
 			TimeSpan.FromMinutes(Opts.ProjectionsQueryExpiryDefault));
 	}
@@ -53,9 +45,9 @@ public class when_loading_a_managed_projection_state<TLogFormat, TStreamId> : Te
 	[Test]
 	public void null_handler_type_throws_argument_null_exception() {
 		Assert.Throws<ArgumentNullException>(() => {
-			ProjectionManagementMessage.Command.Post message = new ProjectionManagementMessage.Command.Post(
+			var message = new ProjectionManagementMessage.Command.Post(
 				new NoopEnvelope(), ProjectionMode.OneTime, "name", ProjectionManagementMessage.RunAs.Anonymous,
-				(string)null, @"log(1);", enabled: true, checkpointsEnabled: false, emitEnabled: false,
+				(string)null, "log(1);", enabled: true, checkpointsEnabled: false, emitEnabled: false,
 				trackEmittedStreams: false);
 			_mp.InitializeNew(
 				new ManagedProjection.PersistedState {
@@ -76,9 +68,9 @@ public class when_loading_a_managed_projection_state<TLogFormat, TStreamId> : Te
 	[Test]
 	public void empty_handler_type_throws_argument_null_exception() {
 		Assert.Throws<ArgumentException>(() => {
-			ProjectionManagementMessage.Command.Post message = new ProjectionManagementMessage.Command.Post(
+			var message = new ProjectionManagementMessage.Command.Post(
 				new NoopEnvelope(), ProjectionMode.OneTime, "name", ProjectionManagementMessage.RunAs.Anonymous, "",
-				@"log(1);", enabled: true, checkpointsEnabled: false, emitEnabled: false,
+				"log(1);", enabled: true, checkpointsEnabled: false, emitEnabled: false,
 				trackEmittedStreams: false);
 			_mp.InitializeNew(
 				new ManagedProjection.PersistedState {
@@ -99,7 +91,7 @@ public class when_loading_a_managed_projection_state<TLogFormat, TStreamId> : Te
 	[Test]
 	public void null_query_throws_argument_null_exception() {
 		Assert.Throws<ArgumentNullException>(() => {
-			ProjectionManagementMessage.Command.Post message = new ProjectionManagementMessage.Command.Post(
+			var message = new ProjectionManagementMessage.Command.Post(
 				new NoopEnvelope(), ProjectionMode.OneTime, "name", ProjectionManagementMessage.RunAs.Anonymous,
 				"JS", query: null, enabled: true, checkpointsEnabled: false, emitEnabled: false,
 				trackEmittedStreams: false);

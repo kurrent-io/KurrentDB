@@ -29,8 +29,8 @@ public class ProjectionExecutionHistogramTracker(string projectionName, Duration
 	public void CallExecuted(Instant start, string jsFunctionName) {
 		executionDurationMetric.Record(
 			start,
-			new KeyValuePair<string, object>("projection", projectionName),
-			new KeyValuePair<string, object>("jsFunction", jsFunctionName));
+			new("projection", projectionName),
+			new("jsFunction", jsFunctionName));
 	}
 }
 

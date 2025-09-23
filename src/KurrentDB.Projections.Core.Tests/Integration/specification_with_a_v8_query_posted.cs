@@ -102,21 +102,21 @@ public abstract class specification_with_a_v8_query_posted<TLogFormat, TStreamId
 		var index = 0;
 		foreach (var source in otherProjections) {
 			yield return
-				(new ProjectionManagementMessage.Command.Post(
+				new ProjectionManagementMessage.Command.Post(
 					_bus, ProjectionMode.Continuous, "other_" + index,
 					ProjectionManagementMessage.RunAs.System, "JS", source, enabled: true, checkpointsEnabled: true,
 					trackEmittedStreams: true,
-					emitEnabled: true));
+					emitEnabled: true);
 			index++;
 		}
 
 		if (!string.IsNullOrEmpty(_projectionSource)) {
 			yield return
-				(new ProjectionManagementMessage.Command.Post(
+				new ProjectionManagementMessage.Command.Post(
 					_bus, _projectionMode, _projectionName,
 					ProjectionManagementMessage.RunAs.System, "JS", _projectionSource, enabled: true,
 					checkpointsEnabled: _checkpointsEnabled, emitEnabled: _emitEnabled,
-					trackEmittedStreams: _trackEmittedStreams));
+					trackEmittedStreams: _trackEmittedStreams);
 		}
 	}
 

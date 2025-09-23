@@ -6,21 +6,12 @@ using KurrentDB.Projections.Core.Messages;
 
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection;
 
-public class TestCheckpointManagerMessageHandler : IProjectionCheckpointManager, IEmittedStreamContainer {
-	public readonly List<CoreProjectionProcessingMessage.ReadyForCheckpoint> HandledMessages =
-		new List<CoreProjectionProcessingMessage.ReadyForCheckpoint>();
-
-	public readonly List<CoreProjectionProcessingMessage.RestartRequested> HandledRestartRequestedMessages =
-		new List<CoreProjectionProcessingMessage.RestartRequested>();
-
-	public readonly List<CoreProjectionProcessingMessage.Failed> HandledFailedMessages =
-		new List<CoreProjectionProcessingMessage.Failed>();
-
-	public readonly List<CoreProjectionProcessingMessage.EmittedStreamWriteCompleted> HandledWriteCompletedMessage =
-		new List<CoreProjectionProcessingMessage.EmittedStreamWriteCompleted>();
-
-	public readonly List<CoreProjectionProcessingMessage.EmittedStreamAwaiting> HandledStreamAwaitingMessage =
-		new List<CoreProjectionProcessingMessage.EmittedStreamAwaiting>();
+public class TestCheckpointManagerMessageHandler : IEmittedStreamContainer {
+	public readonly List<CoreProjectionProcessingMessage.ReadyForCheckpoint> HandledMessages = [];
+	public readonly List<CoreProjectionProcessingMessage.RestartRequested> HandledRestartRequestedMessages = [];
+	public readonly List<CoreProjectionProcessingMessage.Failed> HandledFailedMessages = [];
+	public readonly List<CoreProjectionProcessingMessage.EmittedStreamWriteCompleted> HandledWriteCompletedMessage = [];
+	public readonly List<CoreProjectionProcessingMessage.EmittedStreamAwaiting> HandledStreamAwaitingMessage = [];
 
 	public void Handle(CoreProjectionProcessingMessage.ReadyForCheckpoint message) {
 		HandledMessages.Add(message);

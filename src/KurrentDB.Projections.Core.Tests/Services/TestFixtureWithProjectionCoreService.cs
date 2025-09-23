@@ -128,13 +128,12 @@ public class TestFixtureWithProjectionCoreService {
 			0,
 			result.Build(),
 			new RealTimeProvider(),
-			stopOnEof: false,
 			runAs: null);
 	}
 
 	protected static ResolvedEvent CreateEvent() {
 		return new ResolvedEvent(
 			"test", -1, "test", -1, false, new TFPos(10, 5), new TFPos(10, 5), Guid.NewGuid(), "t", false,
-			new byte[0], new byte[0], null, null, default(DateTime));
+			[], [], null, null, default(DateTime));
 	}
 }

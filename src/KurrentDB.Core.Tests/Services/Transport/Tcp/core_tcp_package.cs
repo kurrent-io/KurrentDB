@@ -74,7 +74,7 @@ public class core_tcp_package {
 	[Test]
 	public void not_authorized_with_empty_data_should_serialize_and_deserialize_correctly() {
 		var corrId = Guid.NewGuid();
-		var refPkg = new TcpPackage(TcpCommand.BadRequest, TcpFlags.None, corrId, null, null, new byte[0]);
+		var refPkg = new TcpPackage(TcpCommand.BadRequest, TcpFlags.None, corrId, null, null, []);
 		var bytes = refPkg.AsArraySegment();
 
 		var pkg = TcpPackage.FromArraySegment(bytes);
@@ -113,7 +113,7 @@ public class core_tcp_package {
 	public void authorized_with_empty_data_should_serialize_and_deserialize_correctly() {
 		var corrId = Guid.NewGuid();
 		var refPkg = new TcpPackage(TcpCommand.BadRequest, TcpFlags.Authenticated, corrId, "login", "pa$$",
-			new byte[0]);
+			[]);
 		var bytes = refPkg.AsArraySegment();
 
 		var pkg = TcpPackage.FromArraySegment(bytes);
@@ -152,7 +152,7 @@ public class core_tcp_package {
 	public void token_authorized_with_empty_data_should_serialize_and_deserialize_correctly() {
 		var corrId = Guid.NewGuid();
 		var refPkg = new TcpPackage(TcpCommand.BadRequest, TcpFlags.Authenticated, corrId, "token",
-			new byte[0]);
+			[]);
 		var bytes = refPkg.AsArraySegment();
 
 		var pkg = TcpPackage.FromArraySegment(bytes);

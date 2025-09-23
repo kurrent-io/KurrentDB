@@ -29,10 +29,10 @@ public class ProjectionsStatisticsTests : SpecificationWithNodeAndProjectionsMan
 				HttpHandler = _node.HttpMessageHandler,
 			});
 
-		_client = new EventStore.Client.Projections.Projections.ProjectionsClient(_channel);
+		_client = new(_channel);
 		await _client.CreateAsync(new CreateReq {
-			Options = new CreateReq.Types.Options {
-				Continuous = new CreateReq.Types.Options.Types.Continuous {
+			Options = new() {
+				Continuous = new() {
 					Name = "invalid-projection",
 					EmitEnabled = false,
 					TrackEmittedStreams = false,
@@ -41,8 +41,8 @@ public class ProjectionsStatisticsTests : SpecificationWithNodeAndProjectionsMan
 			},
 		}, GetCallOptions());
 		await _client.CreateAsync(new CreateReq {
-			Options = new CreateReq.Types.Options {
-				Continuous = new CreateReq.Types.Options.Types.Continuous {
+			Options = new() {
+				Continuous = new() {
 					Name = "valid-projection",
 					EmitEnabled = false,
 					TrackEmittedStreams = false,
@@ -54,17 +54,19 @@ public class ProjectionsStatisticsTests : SpecificationWithNodeAndProjectionsMan
 
 	public override async Task When() {
 		var statuses = _client.Statistics(new StatisticsReq {
-			Options = new StatisticsReq.Types.Options {
-				All = new Empty()
+			Options = new() {
+				All = new()
 			}
 		}, GetCallOptions());
 		while (await statuses.ResponseStream.MoveNext(CancellationToken.None)) {
 			var status = statuses.ResponseStream.Current;
-			if (status.Details.Name == "invalid-projection") {
-				_invalidProjectionStatistics = status;
-			}
-			if (status.Details.Name == "valid-projection") {
-				_validProjectionStatistics = status;
+			switch (status.Details.Name) {
+				case "invalid-projection":
+					_invalidProjectionStatistics = status;
+					break;
+				case "valid-projection":
+					_validProjectionStatistics = status;
+					break;
 			}
 		}
 	}
@@ -93,8 +95,7 @@ public class ProjectionsStatisticsTests : SpecificationWithNodeAndProjectionsMan
 
 	protected CallOptions GetCallOptions() {
 		var credentials = CallCredentials.FromInterceptor((_, metadata) => {
-			metadata.Add(new Metadata.Entry("authorization",
-				$"Basic {Convert.ToBase64String("admin:changeit"u8.ToArray())}"));
+			metadata.Add(new Metadata.Entry("authorization", $"Basic {Convert.ToBase64String("admin:changeit"u8.ToArray())}"));
 			return Task.CompletedTask;
 		});
 		return new(credentials: credentials,

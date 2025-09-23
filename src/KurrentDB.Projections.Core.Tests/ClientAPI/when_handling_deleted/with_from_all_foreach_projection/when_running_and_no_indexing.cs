@@ -21,14 +21,14 @@ public class when_running_and_no_indexing<TLogFormat, TStreamId> : specification
 		await PostEvent("stream-2", "type1", "{}");
 		await PostEvent("stream-2", "type2", "{}");
 		WaitIdle();
-		await PostProjection(@"
-fromAll().foreachStream().when({
-    $init: function(){return {}},
-    type1: function(s,e){s.a=1},
-    type2: function(s,e){s.a=1},
-    $deleted: function(s,e){s.deleted=1;},
-}).outputState();
-");
+		await PostProjection("""
+		                     fromAll().foreachStream().when({
+		                         $init: function(){return {}},
+		                         type1: function(s,e){s.a=1},
+		                         type2: function(s,e){s.a=1},
+		                         $deleted: function(s,e){s.deleted=1;},
+		                     }).outputState();
+		                     """);
 	}
 
 	protected override async Task When() {
@@ -39,7 +39,6 @@ fromAll().foreachStream().when({
 
 	[Test, Category("Network")]
 	public async Task receives_deleted_notification() {
-		await AssertStreamTail(
-			"$projections-test-projection-stream-1-result", "Result:{\"a\":1}", "Result:{\"a\":1,\"deleted\":1}");
+		await AssertStreamTail("$projections-test-projection-stream-1-result", "Result:{\"a\":1}", "Result:{\"a\":1,\"deleted\":1}");
 	}
 }

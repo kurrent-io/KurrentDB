@@ -13,17 +13,18 @@ namespace KurrentDB.Projections.Core.Tests.Services.core_projection.checkpoint_m
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class when_starting_and_read_prerecorded_events_successfully<TLogFormat, TStreamId> : with_multi_stream_checkpoint_manager<TLogFormat, TStreamId>,
-	IHandle<CoreProjectionProcessingMessage.PrerecordedEventsLoaded> {
-	private ManualResetEventSlim _mre = new ManualResetEventSlim();
+public class when_starting_and_read_prerecorded_events_successfully<TLogFormat, TStreamId>
+	: with_multi_stream_checkpoint_manager<TLogFormat, TStreamId>,
+		IHandle<CoreProjectionProcessingMessage.PrerecordedEventsLoaded> {
+	private readonly ManualResetEventSlim _mre = new();
 	private CoreProjectionProcessingMessage.PrerecordedEventsLoaded _eventsLoadedMessage;
 
-	public override void When() {
-		_bus.Subscribe<CoreProjectionProcessingMessage.PrerecordedEventsLoaded>(this);
+	protected override void When() {
+		Bus.Subscribe<CoreProjectionProcessingMessage.PrerecordedEventsLoaded>(this);
 
-		_checkpointManager.Initialize();
+		CheckpointManager.Initialize();
 		var positions = new Dictionary<string, long> { { "a", 1 }, { "b", 1 }, { "c", 1 } };
-		_checkpointManager.BeginLoadPrerecordedEvents(CheckpointTag.FromStreamPositions(0, positions));
+		CheckpointManager.BeginLoadPrerecordedEvents(CheckpointTag.FromStreamPositions(0, positions));
 
 		if (!_mre.Wait(10000)) {
 			Assert.Fail("Timed out waiting for pre recorded events loaded message");

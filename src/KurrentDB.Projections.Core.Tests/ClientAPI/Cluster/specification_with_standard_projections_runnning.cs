@@ -72,12 +72,9 @@ public abstract class specification_with_standard_projections_runnning<TLogForma
 			PortsHelper.GetAvailablePort(IPAddress.Loopback),
 			PortsHelper.GetAvailablePort(IPAddress.Loopback));
 
-		_nodes[0] = CreateNode(0,
-			_nodeEndpoints[0], new[] { _nodeEndpoints[0].HttpEndPoint });
-		_nodes[1] = CreateNode(1,
-			_nodeEndpoints[1], new[] { _nodeEndpoints[1].HttpEndPoint });
-		_nodes[2] = CreateNode(2,
-			_nodeEndpoints[2], new[] { _nodeEndpoints[2].HttpEndPoint });
+		_nodes[0] = CreateNode(0, _nodeEndpoints[0], [_nodeEndpoints[0].HttpEndPoint]);
+		_nodes[1] = CreateNode(1, _nodeEndpoints[1], [_nodeEndpoints[1].HttpEndPoint]);
+		_nodes[2] = CreateNode(2, _nodeEndpoints[2], [_nodeEndpoints[2].HttpEndPoint]);
 		WaitIdle();
 
 		var projectionsStarted = _projections.Select(p => SystemProjections.Created(p.LeaderInputBus)).ToArray();
@@ -166,7 +163,7 @@ public abstract class specification_with_standard_projections_runnning<TLogForma
 		await Task.Delay(1000); /* workaround for race condition when multiple projections are being enabled simultaneously */
 	}
 
-	protected Task DisableProjection(string name) {
+	private Task DisableProjection(string name) {
 		return _manager.DisableAsync(name, _admin);
 	}
 
@@ -185,7 +182,7 @@ public abstract class specification_with_standard_projections_runnning<TLogForma
 	protected virtual Task Given() => Task.CompletedTask;
 
 	protected Task PostEvent(string stream, string eventType, string data) {
-		return _conn.AppendToStreamAsync(stream, ExpectedVersion.Any, new[] { CreateEvent(eventType, data) });
+		return _conn.AppendToStreamAsync(stream, ExpectedVersion.Any, CreateEvent(eventType, data));
 	}
 
 	protected Task HardDeleteStream(string stream) {
@@ -196,11 +193,11 @@ public abstract class specification_with_standard_projections_runnning<TLogForma
 		return _conn.DeleteStreamAsync(stream, ExpectedVersion.Any, false, _admin);
 	}
 
-	protected static EventData CreateEvent(string type, string data) {
-		return new EventData(Guid.NewGuid(), type, true, Encoding.UTF8.GetBytes(data), new byte[0]);
+	private static EventData CreateEvent(string type, string data) {
+		return new EventData(Guid.NewGuid(), type, true, Encoding.UTF8.GetBytes(data), []);
 	}
 
-	protected void WaitIdle() {
+	private void WaitIdle() {
 #if DEBUG
 		_nodes[0].WaitIdle();
 		_nodes[1].WaitIdle();
@@ -226,7 +223,7 @@ public abstract class specification_with_standard_projections_runnning<TLogForma
 					DumpFailed("Stream does not contain enough events", streamId, events, result.Events);
 				else {
 					for (var index = 0; index < events.Length; index++) {
-						var parts = events[index].Split(new char[] { ':' }, 2);
+						var parts = events[index].Split([':'], 2);
 						var eventType = parts[0];
 						var eventData = parts[1];
 
@@ -263,13 +260,9 @@ public abstract class specification_with_standard_projections_runnning<TLogForma
 
 #if DEBUG
 	private void DumpFailed(string message, string streamId, string[] events, ResolvedEvent[] resultEvents) {
-		var expected = events.Aggregate("", (a, v) => a + ", " + v);
-		var actual = resultEvents.Aggregate(
-			"", (a, v) => a + ", " + v.Event.EventType + ":" + v.Event.DebugDataView());
-
-		var actualMeta = resultEvents.Aggregate(
-			"", (a, v) => a + "\r\n" + v.Event.EventType + ":" + v.Event.DebugMetadataView());
-
+		var expected = events.Aggregate("", (a, v) => $"{a}, {v}");
+		var actual = resultEvents.Aggregate("", (a, v) => $"{a}, {v.Event.EventType}:{v.Event.DebugDataView()}");
+		var actualMeta = resultEvents.Aggregate("", (a, v) => $"{a}\r\n{v.Event.EventType}:{v.Event.DebugMetadataView()}");
 
 		Assert.Fail(
 			"Stream: '{0}'\r\n{1}\r\n\r\nExisting events: \r\n{2}\r\n Expected events: \r\n{3}\r\n\r\nActual metas:{4}",
@@ -277,12 +270,12 @@ public abstract class specification_with_standard_projections_runnning<TLogForma
 			message, actual, expected, actualMeta);
 	}
 
-	private void Dump(string message, string streamId, ResolvedEvent[] resultEvents) {
+	private static void Dump(string message, string streamId, ResolvedEvent[] resultEvents) {
 		var actual = resultEvents.Aggregate(
-			"", (a, v) => a + ", " + v.OriginalEvent.EventType + ":" + v.OriginalEvent.DebugDataView());
+			"", (a, v) => $"{a}, {v.OriginalEvent.EventType}:{v.OriginalEvent.DebugDataView()}");
 
 		var actualMeta = resultEvents.Aggregate(
-			"", (a, v) => a + "\r\n" + v.OriginalEvent.EventType + ":" + v.OriginalEvent.DebugMetadataView());
+			"", (a, v) => $"{a}\r\n{v.OriginalEvent.EventType}:{v.OriginalEvent.DebugMetadataView()}");
 
 		Debug.WriteLine(
 			"Stream: '{0}'\r\n{1}\r\n\r\nExisting events: \r\n{2}\r\n \r\nActual metas:{3}", streamId,
@@ -302,7 +295,7 @@ public abstract class specification_with_standard_projections_runnning<TLogForma
 public class vnode_cluster_specification<TLogFormat, TStreamId> : specification_with_standard_projections_runnning<TLogFormat, TStreamId> {
 	[Test, Explicit]
 	public async Task vnode_cluster_starts() {
-		await PostProjection(@"fromStream('$user-admin').outputState()");
+		await PostProjection("fromStream('$user-admin').outputState()");
 		await AssertStreamTailAsync("$projections-test-projection-result", "Result:{}");
 	}
 }

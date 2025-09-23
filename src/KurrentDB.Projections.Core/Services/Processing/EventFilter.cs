@@ -26,22 +26,18 @@ public abstract class EventFilter {
 		_events = events;
 	}
 
-	public bool Passes(
-		bool resolvedFromLinkTo, string eventStreamId, string eventName, bool isStreamDeletedEvent = false) {
-		return (PassesSource(resolvedFromLinkTo, eventStreamId, eventName))
-			   && ((_allEvents || _events != null && _events.Contains(eventName))
-				   && (!isStreamDeletedEvent || _includeDeletedStreamEvents));
-	}
+	public bool Passes(bool resolvedFromLinkTo, string eventStreamId, string eventName, bool isStreamDeletedEvent = false)
+		=> PassesSource(resolvedFromLinkTo, eventStreamId, eventName)
+		   && (_allEvents || _events != null && _events.Contains(eventName))
+		   && (!isStreamDeletedEvent || _includeDeletedStreamEvents);
 
-	public bool PassesValidation(bool isJson, ReadOnlyMemory<byte> data) {
-		return !isJson || data.IsValidUtf8Json();
-	}
+	public static bool PassesValidation(bool isJson, ReadOnlyMemory<byte> data) => !isJson || data.IsValidUtf8Json();
 
 	protected abstract bool DeletedNotificationPasses(string positionStreamId);
+
 	public abstract bool PassesSource(bool resolvedFromLinkTo, string positionStreamId, string eventType);
+
 	public abstract string GetCategory(string positionStreamId);
 
-	public bool PassesDeleteNotification(string positionStreamId) {
-		return !_includeDeletedStreamEvents && DeletedNotificationPasses(positionStreamId);
-	}
+	public bool PassesDeleteNotification(string positionStreamId) => !_includeDeletedStreamEvents && DeletedNotificationPasses(positionStreamId);
 }

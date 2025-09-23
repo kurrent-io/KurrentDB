@@ -20,18 +20,17 @@ public class when_running_a_projection_with_created_handler : TestFixtureWithInt
                     }
                 });
             ";
-		_state = @"{}";
+		_state = "{}";
 	}
 
-	[Test, Category(_projectionType)]
+	[Test, Category(ProjectionType)]
 	public void returns_emitted_events() {
 		var e = new ResolvedEvent(
 			"stream", 0, "stream", 0, false, new TFPos(1000, 900), Guid.NewGuid(), "event", true, "{}",
 			"{\"m\":1}");
 
-		EmittedEventEnvelope[] emittedEvents;
 		_stateHandler.ProcessPartitionCreated(
-			"partition", CheckpointTag.FromPosition(0, 10, 5), e, out emittedEvents);
+			"partition", CheckpointTag.FromPosition(0, 10, 5), e, out var emittedEvents);
 
 		Assert.IsNotNull(emittedEvents);
 		Assert.AreEqual(1, emittedEvents.Length);

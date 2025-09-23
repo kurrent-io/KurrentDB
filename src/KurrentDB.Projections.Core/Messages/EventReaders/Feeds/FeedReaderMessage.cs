@@ -11,50 +11,40 @@ namespace KurrentDB.Projections.Core.Messages.EventReaders.Feeds;
 
 public static partial class FeedReaderMessage {
 	[DerivedMessage]
-	public abstract partial class FeedReaderMessageBase : Message {
+	public abstract partial class FeedReaderMessageBase : Message;
+
+	[DerivedMessage(ProjectionMessage.FeedReader)]
+	public sealed partial class ReadPage(
+		Guid correlationId,
+		IEnvelope envelope,
+		ClaimsPrincipal user,
+		QuerySourcesDefinition querySource,
+		CheckpointTag fromPosition,
+		int maxEvents)
+		: FeedReaderMessageBase {
+		public readonly Guid CorrelationId = correlationId;
+		public readonly IEnvelope Envelope = envelope;
+		public readonly ClaimsPrincipal User = user;
+		public readonly QuerySourcesDefinition QuerySource = querySource;
+		public readonly CheckpointTag FromPosition = fromPosition;
+		public readonly int MaxEvents = maxEvents;
 	}
 
 	[DerivedMessage(ProjectionMessage.FeedReader)]
-	public sealed partial class ReadPage : FeedReaderMessageBase {
-		public readonly Guid CorrelationId;
-		public readonly IEnvelope Envelope;
-		public readonly ClaimsPrincipal User;
-
-		public readonly QuerySourcesDefinition QuerySource;
-		public readonly CheckpointTag FromPosition;
-		public readonly int MaxEvents;
-
-		public ReadPage(
-			Guid correlationId, IEnvelope envelope, ClaimsPrincipal user, QuerySourcesDefinition querySource,
-			CheckpointTag fromPosition,
-			int maxEvents) {
-			User = user;
-			CorrelationId = correlationId;
-			Envelope = envelope;
-			QuerySource = querySource;
-			FromPosition = fromPosition;
-			MaxEvents = maxEvents;
-		}
-	}
-
-	[DerivedMessage(ProjectionMessage.FeedReader)]
-	public sealed partial class FeedPage : FeedReaderMessageBase {
+	public sealed partial class FeedPage(
+		Guid correlationId,
+		FeedPage.ErrorStatus error,
+		TaggedResolvedEvent[] events,
+		CheckpointTag lastReaderPosition)
+		: FeedReaderMessageBase {
 		public enum ErrorStatus {
 			Success,
 			NotAuthorized
 		}
 
-		public readonly Guid CorrelationId;
-		public readonly ErrorStatus Error;
-		public readonly TaggedResolvedEvent[] Events;
-		public readonly CheckpointTag LastReaderPosition;
-
-		public FeedPage(
-			Guid correlationId, ErrorStatus error, TaggedResolvedEvent[] events, CheckpointTag lastReaderPosition) {
-			CorrelationId = correlationId;
-			Error = error;
-			Events = events;
-			LastReaderPosition = lastReaderPosition;
-		}
+		public readonly Guid CorrelationId = correlationId;
+		public readonly ErrorStatus Error = error;
+		public readonly TaggedResolvedEvent[] Events = events;
+		public readonly CheckpointTag LastReaderPosition = lastReaderPosition;
 	}
 }

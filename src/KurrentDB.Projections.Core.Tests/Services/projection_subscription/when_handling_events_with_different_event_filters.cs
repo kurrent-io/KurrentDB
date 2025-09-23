@@ -29,9 +29,7 @@ namespace KurrentDB.Projections.Core.Tests.Services.projection_subscription;
 [TestFixture("good-stream", "good-event-type", "bad-stream", "good-event-type", false, false)]
 [TestFixture("good-stream", "good-event-type", "bad-stream", "bad-event-type", false, true)]
 [TestFixture("good-stream", "good-event-type", "bad-stream", "bad-event-type", false, false)]
-public class
-	when_handling_events_with_different_event_filters :
-		TestFixtureWithProjectionSubscription {
+public class when_handling_events_with_different_event_filters : TestFixtureWithProjectionSubscription {
 	private string _sourceStream;
 	private string _sourceEventType;
 	private string _stream;
@@ -40,8 +38,12 @@ public class
 	private bool _checkpointIfEventsProcessed;
 	private int _processedEvents;
 
-	public when_handling_events_with_different_event_filters(
-		string sourceStream, string sourceEventType, string stream, string eventType, bool exceedUnhandledBytesThreshold, bool checkpointIfEventsProcessed) {
+	public when_handling_events_with_different_event_filters(string sourceStream,
+		string sourceEventType,
+		string stream,
+		string eventType,
+		bool exceedUnhandledBytesThreshold,
+		bool checkpointIfEventsProcessed) {
 		_sourceStream = sourceStream;
 		_sourceEventType = sourceEventType;
 		_stream = stream;
@@ -59,6 +61,7 @@ public class
 			} else {
 				source.FromStream(_sourceStream);
 			}
+
 			source.IncludeEvent(_sourceEventType);
 		};
 		_checkpointAfterMs = 1000;
@@ -78,7 +81,7 @@ public class
 		_subscription.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 				Guid.NewGuid(), firstPosition, "a-random-stream-name", 1, false, Guid.NewGuid(),
-				"a-random-event-type", false, new byte[0], new byte[0]));
+				"a-random-event-type", false, [], []));
 
 		_checkpointHandler.HandledMessages.Clear();
 
@@ -87,13 +90,13 @@ public class
 		_subscription.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 				Guid.NewGuid(), secondPosition, _stream, 1, false, Guid.NewGuid(),
-				_eventType, false, new byte[0], new byte[0]));
+				_eventType, false, [], []));
 	}
 
 	[Test]
 	public void checkpoint_is_suggested_when_processed_events_threshold_exceeded_or_unhandled_bytes_threshold_exceeded() {
 		var shouldCheckpoint = (_processedEvents >= _checkpointProcessedEventsThreshold) ||
-							   (_processedEvents == 0 && _exceedUnhandledBytesThreshold);
+		                       (_processedEvents == 0 && _exceedUnhandledBytesThreshold);
 		Assert.AreEqual(shouldCheckpoint ? 1 : 0, _checkpointHandler.HandledMessages.Count);
 	}
 }

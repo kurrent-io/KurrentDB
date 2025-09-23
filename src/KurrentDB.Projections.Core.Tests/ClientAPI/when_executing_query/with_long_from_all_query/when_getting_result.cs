@@ -24,21 +24,21 @@ public class when_getting_result<TLogFormat, TStreamId>
 
 	[Test, Category("Network")]
 	public async Task waits_for_results() {
-		const string query = @"
-fromAll().when({
-    $init: function(){return {count:0}},
-    type1: function(s,e){
-        var start = new Date();
-        while(new Date()-start < 150){}
+		const string query = """
+		                     fromAll().when({
+		                         $init: function(){return {count:0}},
+		                         type1: function(s,e){
+		                             var start = new Date();
+		                             while(new Date()-start < 150){}
 
-        s.count++;
-    },
-});
-";
+		                             s.count++;
+		                         },
+		                     });
+		                     """;
 
-		var result = await _queryManager
-			.ExecuteAsync("query", query, TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(5000), _admin)
-;
+		var result = await _queryManager.ExecuteAsync(
+			"query", query, TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(5000), _admin
+		);
 		Assert.AreEqual("{\"count\":3}", result);
 	}
 }

@@ -28,13 +28,13 @@ public class when_reading_deleted_stream_written_with_old_log_record_version<TLo
 		_deleteId = Guid.NewGuid();
 
 		var (_, pos1) = await Writer.Write(new PrepareLogRecord(0, _id1, _id1, 0, 0, "ES", null, 0, DateTime.UtcNow,
-				PrepareFlags.SingleWrite, "type", null, new byte[0], new byte[0], LogRecordVersion.LogRecordV0),
+				PrepareFlags.SingleWrite, "type", null, LogRecord.NoData, LogRecord.NoData, LogRecordVersion.LogRecordV0),
 			token);
 		var (_, pos2) = await Writer.Write(new PrepareLogRecord(pos1, _id2, _id2, pos1, 0, "ES", null, 1, DateTime.UtcNow,
-				PrepareFlags.SingleWrite, "type", null, new byte[0], new byte[0], LogRecordVersion.LogRecordV0),
+				PrepareFlags.SingleWrite, "type", null, LogRecord.NoData, LogRecord.NoData, LogRecordVersion.LogRecordV0),
 			token);
 		var (_, pos3) = await Writer.Write(new PrepareLogRecord(pos2, _id3, _id3, pos2, 0, "ES", null, 2, DateTime.UtcNow,
-				PrepareFlags.SingleWrite, "type", null, new byte[0], new byte[0]),
+				PrepareFlags.SingleWrite, "type", null, LogRecord.NoData, LogRecord.NoData),
 			token);
 		var (_, pos4) = await Writer.Write(new CommitLogRecord(pos3, _id1, 0, DateTime.UtcNow, 0, LogRecordVersion.LogRecordV0),
 			token);

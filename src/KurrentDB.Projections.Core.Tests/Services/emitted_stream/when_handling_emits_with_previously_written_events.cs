@@ -23,18 +23,17 @@ public class when_handling_emits_with_previously_written_events<TLogFormat, TStr
 
 	protected override void Given() {
 		AllWritesQueueUp();
-		ExistingEvent("test_stream", "type1", @"{""c"": 100, ""p"": 50}", "data");
-		ExistingEvent("test_stream", "type2", @"{""c"": 200, ""p"": 150}", "data");
-		ExistingEvent("test_stream", "type3", @"{""c"": 300, ""p"": 250}", "data");
+		ExistingEvent("test_stream", "type1", """{"c": 100, "p": 50}""", "data");
+		ExistingEvent("test_stream", "type2", """{"c": 200, "p": 150}""", "data");
+		ExistingEvent("test_stream", "type3", """{"c": 300, "p": 250}""", "data");
 	}
 
 	[SetUp]
 	public void setup() {
-		_readyHandler = new TestCheckpointManagerMessageHandler();
-		_stream = new EmittedStream(
+		_readyHandler = new();
+		_stream = new(
 			"test_stream",
-			new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
-				new EmittedStream.WriterConfiguration.StreamMetadata(), null, maxWriteBatchLength: 50),
+			new(new EmittedStreamsWriter(_ioDispatcher), new(), null, maxWriteBatchLength: 50),
 			new ProjectionVersion(1, 0, 0), new TransactionFilePositionTagger(0),
 			CheckpointTag.FromPosition(0, 100, 50), _bus, _ioDispatcher, _readyHandler);
 		_stream.Start();
@@ -43,28 +42,22 @@ public class when_handling_emits_with_previously_written_events<TLogFormat, TStr
 	[Test]
 	public void does_not_publish_already_published_events() {
 		_stream.EmitEvents(
-			new[] {
-				new EmittedDataEvent(
-					"test_stream", Guid.NewGuid(), "type2", true, "data", null,
-					CheckpointTag.FromPosition(0, 200, 150), null)
-			});
+		[
+			new EmittedDataEvent("test_stream", Guid.NewGuid(), "type2", true, "data", null, CheckpointTag.FromPosition(0, 200, 150), null)
+		]);
 		_stream.EmitEvents(
-			new[] {
-				new EmittedDataEvent(
-					"test_stream", Guid.NewGuid(), "type3", true, "data", null,
-					CheckpointTag.FromPosition(0, 300, 250), null)
-			});
+		[
+			new EmittedDataEvent("test_stream", Guid.NewGuid(), "type3", true, "data", null, CheckpointTag.FromPosition(0, 300, 250), null)
+		]);
 		Assert.AreEqual(0, _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().Count());
 	}
 
 	[Test]
 	public void does_not_fail_the_projection_if_events_are_skipped() {
 		_stream.EmitEvents(
-			new[] {
-				new EmittedDataEvent(
-					"test_stream", Guid.NewGuid(), "type3", true, "data", null,
-					CheckpointTag.FromPosition(0, 300, 250), null)
-			});
+		[
+			new EmittedDataEvent("test_stream", Guid.NewGuid(), "type3", true, "data", null, CheckpointTag.FromPosition(0, 300, 250), null)
+		]);
 		Assert.AreEqual(0, _readyHandler.HandledFailedMessages.Count);
 		Assert.AreEqual(0, _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().Count());
 	}
@@ -72,11 +65,9 @@ public class when_handling_emits_with_previously_written_events<TLogFormat, TStr
 	[Test]
 	public void fails_the_projection_if_events_are_at_different_positions() {
 		_stream.EmitEvents(
-			new[] {
-				new EmittedDataEvent(
-					"test_stream", Guid.NewGuid(), "type3", true, "data", null,
-					CheckpointTag.FromPosition(0, 250, 220), null)
-			});
+		[
+			new EmittedDataEvent("test_stream", Guid.NewGuid(), "type3", true, "data", null, CheckpointTag.FromPosition(0, 250, 220), null)
+		]);
 		Assert.AreEqual(1, _readyHandler.HandledFailedMessages.Count);
 		Assert.AreEqual(0, _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().Count());
 	}
@@ -84,22 +75,18 @@ public class when_handling_emits_with_previously_written_events<TLogFormat, TStr
 	[Test]
 	public void publishes_not_yet_published_events() {
 		_stream.EmitEvents(
-			new[] {
-				new EmittedDataEvent(
-					"test_stream", Guid.NewGuid(), "type", true, "data", null,
-					CheckpointTag.FromPosition(0, 400, 350), null)
-			});
+		[
+			new EmittedDataEvent("test_stream", Guid.NewGuid(), "type", true, "data", null, CheckpointTag.FromPosition(0, 400, 350), null)
+		]);
 		Assert.AreEqual(1, _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().Count());
 	}
 
 	[Test]
 	public void replies_with_write_completed_message_for_existing_events() {
 		_stream.EmitEvents(
-			new[] {
-				new EmittedDataEvent(
-					"test_stream", Guid.NewGuid(), "type2", true, "data", null,
-					CheckpointTag.FromPosition(0, 200, 150), null)
-			});
+		[
+			new EmittedDataEvent("test_stream", Guid.NewGuid(), "type2", true, "data", null, CheckpointTag.FromPosition(0, 200, 150), null)
+		]);
 		Assert.AreEqual(1, _readyHandler.HandledWriteCompletedMessage.Count);
 	}
 
@@ -107,23 +94,19 @@ public class when_handling_emits_with_previously_written_events<TLogFormat, TStr
 	public void retrieves_event_number_for_previously_written_events() {
 		long eventNumber = -1;
 		_stream.EmitEvents(
-			new[] {
-				new EmittedDataEvent(
-					(string)"test_stream", Guid.NewGuid(), (string)"type2", (bool)true,
-					(string)"data", (ExtraMetaData)null, CheckpointTag.FromPosition(0, 200, 150),
-					(CheckpointTag)null, v => eventNumber = v)
-			});
+		[
+			new EmittedDataEvent("test_stream", Guid.NewGuid(), "type2", true, "data", null, CheckpointTag.FromPosition(0, 200, 150),
+				null, v => eventNumber = v)
+		]);
 		Assert.AreEqual(1, eventNumber);
 	}
 
 	[Test]
 	public void reply_with_write_completed_message_when_write_completes() {
 		_stream.EmitEvents(
-			new[] {
-				new EmittedDataEvent(
-					"test_stream", Guid.NewGuid(), "type", true, "data", null,
-					CheckpointTag.FromPosition(0, 400, 350), null)
-			});
+		[
+			new EmittedDataEvent("test_stream", Guid.NewGuid(), "type", true, "data", null, CheckpointTag.FromPosition(0, 400, 350), null)
+		]);
 		OneWriteCompletes();
 		Assert.IsTrue(_readyHandler.HandledWriteCompletedMessage.Any(v => v.StreamId == "test_stream"));
 		// more than one is ok
@@ -133,12 +116,9 @@ public class when_handling_emits_with_previously_written_events<TLogFormat, TStr
 	public void reports_event_number_for_new_events() {
 		long eventNumber = -1;
 		_stream.EmitEvents(
-			new[] {
-				new EmittedDataEvent(
-					(string)"test_stream", Guid.NewGuid(), (string)"type", (bool)true,
-					(string)"data", (ExtraMetaData)null, CheckpointTag.FromPosition(0, 400, 350),
-					(CheckpointTag)null, v => eventNumber = v)
-			});
+		[
+			new EmittedDataEvent("test_stream", Guid.NewGuid(), "type", true, "data", null, CheckpointTag.FromPosition(0, 400, 350), null, v => eventNumber = v)
+		]);
 		OneWriteCompletes();
 		Assert.AreEqual(3, eventNumber);
 	}
@@ -146,11 +126,9 @@ public class when_handling_emits_with_previously_written_events<TLogFormat, TStr
 	[Test]
 	public void does_not_fail_if_link_event_target_does_not_exist() {
 		_stream.EmitEvents(
-			new[] {
-				new EmittedDataEvent(
-					"test_stream", Guid.NewGuid(), "$>", true, "0@foobar", null,
-					CheckpointTag.FromPosition(0, 150, 100), null)
-			});
+		[
+			new EmittedDataEvent("test_stream", Guid.NewGuid(), "$>", true, "0@foobar", null, CheckpointTag.FromPosition(0, 150, 100), null)
+		]);
 		Assert.AreEqual(0, _readyHandler.HandledFailedMessages.Count);
 		Assert.AreEqual(0, _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().Count());
 		Assert.AreEqual(1, _consumer.HandledMessages.OfType<KurrentDB.Core.Messages.ClientMessage.ReadEvent>().Count());

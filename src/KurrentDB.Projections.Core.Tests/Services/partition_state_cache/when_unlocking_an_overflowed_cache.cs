@@ -27,12 +27,9 @@ public class when_unlocking_an_overflowed_cache {
 
 		_cachedAtCheckpointTag2 = CheckpointTag.FromPosition(0, 20100, 20050);
 		_cachedAtCheckpointTag3 = CheckpointTag.FromPosition(0, 20200, 20150);
-		_cache.CacheAndLockPartitionState(
-			"partition1", new PartitionState("data1", null, _cachedAtCheckpointTag1), _cachedAtCheckpointTag1);
-		_cache.CacheAndLockPartitionState(
-			"partition2", new PartitionState("data2", null, _cachedAtCheckpointTag2), _cachedAtCheckpointTag2);
-		_cache.CacheAndLockPartitionState(
-			"partition3", new PartitionState("data3", null, _cachedAtCheckpointTag3), _cachedAtCheckpointTag3);
+		_cache.CacheAndLockPartitionState("partition1", new("data1", null, _cachedAtCheckpointTag1), _cachedAtCheckpointTag1);
+		_cache.CacheAndLockPartitionState("partition2", new("data2", null, _cachedAtCheckpointTag2), _cachedAtCheckpointTag2);
+		_cache.CacheAndLockPartitionState("partition3", new("data3", null, _cachedAtCheckpointTag3), _cachedAtCheckpointTag3);
 		// when
 		_cache.Unlock(_cachedAtCheckpointTag2);
 	}
@@ -45,8 +42,7 @@ public class when_unlocking_an_overflowed_cache {
 	[Test]
 	public void
 		the_first_partition_locked_before_the_unlock_position_cannot_be_retrieved_and_relocked_at_later_position() {
-		var data = _cache.TryGetAndLockPartitionState(
-			"partition1", CheckpointTag.FromPosition(0, 25000, 24000));
+		var data = _cache.TryGetAndLockPartitionState("partition1", CheckpointTag.FromPosition(0, 25000, 24000));
 		Assert.AreEqual("data1", data.State);
 	}
 
@@ -63,8 +59,7 @@ public class when_unlocking_an_overflowed_cache {
 
 	[Test]
 	public void partitions_locked_at_the_unlock_position_can_be_retrieved_and_relocked_at_later_position() {
-		var data = _cache.TryGetAndLockPartitionState(
-			"partition2", CheckpointTag.FromPosition(0, 25000, 24000));
+		var data = _cache.TryGetAndLockPartitionState("partition2", CheckpointTag.FromPosition(0, 25000, 24000));
 		Assert.AreEqual("data2", data.State);
 	}
 

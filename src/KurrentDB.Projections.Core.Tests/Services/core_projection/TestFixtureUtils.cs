@@ -9,33 +9,27 @@ using KurrentDB.Core.Tests.TestAdapters;
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection;
 
 public static class TestFixtureUtils {
-	public static IEnumerable<ClientMessage.WriteEvents> ToStream(
-		this IEnumerable<ClientMessage.WriteEvents> self, string streamId) {
+	public static IEnumerable<ClientMessage.WriteEvents> ToStream(this IEnumerable<ClientMessage.WriteEvents> self, string streamId) {
 		return self.Where(v => v.EventStreamId == streamId);
 	}
 
-	public static List<ClientMessage.WriteEvents> ToStream(
-		this List<ClientMessage.WriteEvents> self, string streamId) {
+	public static List<ClientMessage.WriteEvents> ToStream(this List<ClientMessage.WriteEvents> self, string streamId) {
 		return self.Where(v => v.EventStreamId == streamId).ToList();
 	}
 
-	public static IEnumerable<Event> OfEventType(
-		this IEnumerable<ClientMessage.WriteEvents> self, string type) {
+	public static IEnumerable<Event> OfEventType(this IEnumerable<ClientMessage.WriteEvents> self, string type) {
 		return self.SelectMany(v => v.Events).Where(v => v.EventType == type);
 	}
 
-	public static IEnumerable<Event> ExceptOfEventType(
-		this IEnumerable<ClientMessage.WriteEvents> self, string type) {
+	public static IEnumerable<Event> ExceptOfEventType(this IEnumerable<ClientMessage.WriteEvents> self, string type) {
 		return self.SelectMany(v => v.Events).Where(v => v.EventType != type);
 	}
 
-	public static List<Event> OfEventType(
-		this List<ClientMessage.WriteEvents> self, string type) {
+	public static List<Event> OfEventType(this List<ClientMessage.WriteEvents> self, string type) {
 		return self.SelectMany(v => v.Events).Where(v => v.EventType == type).ToList();
 	}
 
-	public static List<ClientMessage.WriteEvents> WithEventType(
-		this List<ClientMessage.WriteEvents> self, string type) {
+	public static List<ClientMessage.WriteEvents> WithEventType(this List<ClientMessage.WriteEvents> self, string type) {
 		return self.Where(v => v.Events.Any(m => m.EventType == type)).ToList();
 	}
 

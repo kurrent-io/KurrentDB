@@ -16,7 +16,7 @@ namespace KurrentDB.Core.Tests.Services.PersistentSubscription;
 public class PinnedByCorrelationConsumerStrategyTests {
 	[Test]
 	public void live_subscription_with_pinned_by_correlation_pushes_events_without_metadata_to_same_client_for_stream_id() {
-		live_subscription_with_pinned_by_correlation_pushes_events_to_same_client_for_stream_id_for_metadata(new byte[0]);
+		live_subscription_with_pinned_by_correlation_pushes_events_to_same_client_for_stream_id_for_metadata([]);
 
 	}
 

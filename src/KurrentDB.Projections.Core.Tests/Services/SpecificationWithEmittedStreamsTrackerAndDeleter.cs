@@ -33,7 +33,7 @@ public abstract class SpecificationWithEmittedStreamsTrackerAndDeleter<TLogForma
 		_node.Node.MainBus.Subscribe<ClientMessage.NotHandled>(_ioDispatcher);
 		_projectionNamesBuilder = ProjectionNamesBuilder.CreateForTest(_projectionName);
 		_emittedStreamsTracker = new EmittedStreamsTracker(_ioDispatcher,
-			new ProjectionConfig(null, 1000, 1000 * 1000, 100, 500, true, true, false, false,
+			new ProjectionConfig(null, 1000, 1000 * 1000, 100, 500, true, true, false,
 				_trackEmittedStreams, 10000, 1, null), _projectionNamesBuilder);
 		_emittedStreamsDeleter = new EmittedStreamsDeleter(_ioDispatcher,
 			_projectionNamesBuilder.GetEmittedStreamsName(),

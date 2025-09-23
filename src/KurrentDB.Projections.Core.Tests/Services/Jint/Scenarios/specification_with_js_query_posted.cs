@@ -113,15 +113,13 @@ public abstract class specification_with_js_query_posted<TLogFormat, TStreamId> 
 
 		if (!string.IsNullOrEmpty(_projectionSource)) {
 			yield return
-				(new ProjectionManagementMessage.Command.Post(
+				new ProjectionManagementMessage.Command.Post(
 					_bus, _projectionMode, _projectionName,
 					ProjectionManagementMessage.RunAs.System, "JS", _projectionSource, enabled: true,
 					checkpointsEnabled: _checkpointsEnabled, emitEnabled: _emitEnabled,
-					trackEmittedStreams: _trackEmittedStreams));
+					trackEmittedStreams: _trackEmittedStreams);
 		}
 	}
 
-	protected virtual IEnumerable<string> GivenOtherProjections() {
-		return new string[0];
-	}
+	protected virtual IEnumerable<string> GivenOtherProjections() => [];
 }

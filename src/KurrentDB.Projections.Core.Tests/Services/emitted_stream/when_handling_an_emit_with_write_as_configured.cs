@@ -25,28 +25,25 @@ public class when_handling_an_emit_with_write_as_configured<TLogFormat, TStreamI
 
 	protected override void Given() {
 		AllWritesQueueUp();
-		ExistingEvent("test_stream", "type", @"{""c"": 100, ""p"": 50}", "data");
+		ExistingEvent("test_stream", "type", """{"c": 100, "p": 50}""", "data");
 	}
 
 	[SetUp]
 	public void setup() {
-		_readyHandler = new TestCheckpointManagerMessageHandler();
-		_writeAs = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.Role, "test-user") }, "ES-Test"));
-		_stream = new EmittedStream(
+		_readyHandler = new();
+		_writeAs = new(new ClaimsIdentity([new Claim(ClaimTypes.Role, "test-user")], "ES-Test"));
+		_stream = new(
 			"test_stream",
-			new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
-				new EmittedStream.WriterConfiguration.StreamMetadata(), _writeAs, maxWriteBatchLength: 50),
+			new(new EmittedStreamsWriter(_ioDispatcher), new(), _writeAs, maxWriteBatchLength: 50),
 			new ProjectionVersion(1, 0, 0), new TransactionFilePositionTagger(0),
 			CheckpointTag.FromPosition(0, 40, 30),
 			_bus, _ioDispatcher, _readyHandler);
 		_stream.Start();
 
 		_stream.EmitEvents(
-			new[] {
-				new EmittedDataEvent(
-					"test_stream", Guid.NewGuid(), "type", true, "data", null,
-					CheckpointTag.FromPosition(0, 200, 150), null)
-			});
+		[
+			new EmittedDataEvent("test_stream", Guid.NewGuid(), "type", true, "data", null, CheckpointTag.FromPosition(0, 200, 150), null)
+		]);
 	}
 
 	[Test]

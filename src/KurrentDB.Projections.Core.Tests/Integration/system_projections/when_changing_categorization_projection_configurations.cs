@@ -22,7 +22,7 @@ public class
 	protected override IEnumerable<WhenStep> When() {
 		foreach (var e in base.When())
 			yield return e;
-		string query = "first\r\n-";
+		const string query = "first\r\n-";
 		yield return
 			new ProjectionManagementMessage.Command.UpdateQuery(
 				Envelope, ProjectionNamesBuilder.StandardProjections.StreamByCategoryStandardProjection,

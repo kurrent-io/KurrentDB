@@ -10,6 +10,7 @@ using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Management;
 using KurrentDB.Projections.Core.Services.Processing;
 using NUnit.Framework;
+using static KurrentDB.Projections.Core.Messages.ProjectionManagementMessage;
 
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
 
@@ -22,20 +23,21 @@ public class when_a_disabled_projection_has_been_loaded<TLogFormat, TStreamId> :
 		NoStream("$projections-test-projection-order");
 		AllWritesToSucceed("$projections-test-projection-order");
 		NoStream("$projections-test-projection-checkpoint");
-		ExistingEvent(ProjectionNamesBuilder.ProjectionsRegistrationStream, ProjectionEventTypes.ProjectionCreated,
-			null, "test-projection");
+		ExistingEvent(ProjectionNamesBuilder.ProjectionsRegistrationStream, ProjectionEventTypes.ProjectionCreated, null, "test-projection");
 		ExistingEvent(
 			"$projections-test-projection", ProjectionEventTypes.ProjectionUpdated, null,
-			@"{
-                    ""Query"":""fromAll(); on_any(function(){});log('hello-from-projection-definition');"",
-                    ""Mode"":""3"",
-                    ""Enabled"":false,
-                    ""HandlerType"":""JS"",
-                    ""SourceDefinition"":{
-                        ""AllEvents"":true,
-                        ""AllStreams"":true,
-                    }
-                }");
+			"""
+			{
+			  "Query":"fromAll(); on_any(function(){});log('hello-from-projection-definition');",
+			  "Mode":"3",
+			  "Enabled":false,
+			  "HandlerType":"JS",
+			  "SourceDefinition":{
+			    "AllEvents":true,
+			    "AllStreams":true,
+			  }
+			}
+			""");
 		AllWritesSucceed();
 	}
 
@@ -48,45 +50,32 @@ public class when_a_disabled_projection_has_been_loaded<TLogFormat, TStreamId> :
 
 	[Test]
 	public void the_projection_source_can_be_retrieved() {
-		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetQuery(
-				_bus, _projectionName, ProjectionManagementMessage.RunAs.Anonymous));
-		Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionQuery>().Count());
-		var projectionQuery =
-			_consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionQuery>().Single();
+		_manager.Handle(new Command.GetQuery(_bus, _projectionName, RunAs.Anonymous));
+		Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionQuery>().Count());
+		var projectionQuery = _consumer.HandledMessages.OfType<ProjectionQuery>().Single();
 		Assert.AreEqual(_projectionName, projectionQuery.Name);
 	}
 
 	[Test]
 	public void the_projection_status_is_stopped() {
-		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
+		_manager.Handle(new Command.GetStatistics(_bus, null, _projectionName));
 
-		Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
-		Assert.AreEqual(
-			1,
-			_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Single().Projections.Length);
-		Assert.AreEqual(
-			_projectionName,
-			_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Single().Projections.Single()
-				.Name);
-		Assert.AreEqual(
-			ManagedProjectionState.Stopped,
-			_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Single().Projections.Single()
-				.LeaderStatus);
+		var actual = _consumer.HandledMessages.OfType<Statistics>().ToArray();
+		Assert.AreEqual(1, actual.Length);
+		Assert.AreEqual(1, actual.Single().Projections.Length);
+		Assert.AreEqual(_projectionName, actual.Single().Projections.Single().Name);
+		Assert.AreEqual(ManagedProjectionState.Stopped, actual.Single().Projections.Single().LeaderStatus);
 	}
 
 	[Test]
 	public void the_projection_state_can_be_retrieved() {
-		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetState(_bus, _projectionName, ""));
+		_manager.Handle(new Command.GetState(_bus, _projectionName, ""));
 		_queue.Process();
 
-		Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionState>().Count());
-		Assert.AreEqual(
-			_projectionName,
-			_consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionState>().Single().Name);
-		Assert.AreEqual(
-			"", _consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionState>().Single().State);
+		var actualStats = _consumer.HandledMessages.OfType<Statistics>().ToArray();
+		var actualState = _consumer.HandledMessages.OfType<ProjectionState>().ToArray();
+		Assert.AreEqual(1, actualStats.Length);
+		Assert.AreEqual(_projectionName, actualState.Single().Name);
+		Assert.AreEqual("", actualState.Single().State);
 	}
 }

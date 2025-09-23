@@ -16,8 +16,8 @@ namespace KurrentDB.Projections.Core.Tests.Services.core_projection.projection_c
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class when_starting_the_projection_checkpoint_with_some_events_already_emitted<TLogFormat, TStreamId> :
-	TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
+public class when_starting_the_projection_checkpoint_with_some_events_already_emitted<TLogFormat, TStreamId>
+	: TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private ProjectionCheckpoint _checkpoint;
 	private TestCheckpointManagerMessageHandler _readyHandler;
 
@@ -35,27 +35,15 @@ public class when_starting_the_projection_checkpoint_with_some_events_already_em
 			CheckpointTag.FromPosition(0, 100, 50), new TransactionFilePositionTagger(0), 250,
 			AllowedWritesInFlight.Unbounded);
 		_checkpoint.ValidateOrderAndEmitEvents(
-			new[] {
-				new EmittedEventEnvelope(
-					new EmittedDataEvent(
-						"stream2", Guid.NewGuid(), "type", true, "data2", null,
-						CheckpointTag.FromPosition(0, 120, 110), null)),
-				new EmittedEventEnvelope(
-					new EmittedDataEvent(
-						"stream3", Guid.NewGuid(), "type", true, "data3", null,
-						CheckpointTag.FromPosition(0, 120, 110), null)),
-				new EmittedEventEnvelope(
-					new EmittedDataEvent(
-						"stream2", Guid.NewGuid(), "type", true, "data4", null,
-						CheckpointTag.FromPosition(0, 120, 110), null)),
-			});
+		[
+			new(new EmittedDataEvent("stream2", Guid.NewGuid(), "type", true, "data2", null, CheckpointTag.FromPosition(0, 120, 110), null)),
+			new(new EmittedDataEvent("stream3", Guid.NewGuid(), "type", true, "data3", null, CheckpointTag.FromPosition(0, 120, 110), null)),
+			new(new EmittedDataEvent("stream2", Guid.NewGuid(), "type", true, "data4", null, CheckpointTag.FromPosition(0, 120, 110), null))
+		]);
 		_checkpoint.ValidateOrderAndEmitEvents(
-			new[] {
-				new EmittedEventEnvelope(
-					new EmittedDataEvent(
-						"stream1", Guid.NewGuid(), "type", true, "data", null,
-						CheckpointTag.FromPosition(0, 140, 130), null))
-			});
+		[
+			new(new EmittedDataEvent("stream1", Guid.NewGuid(), "type", true, "data", null, CheckpointTag.FromPosition(0, 140, 130), null))
+		]);
 		_checkpoint.Start();
 	}
 

@@ -18,14 +18,16 @@ public abstract class specification_with_event_handled : TestFixtureWithInterpre
 	protected override void When() {
 		_stateHandler.ProcessEvent(
 			"",
-			CheckpointTag.FromPosition(
-				0, _handledEvent.Position.CommitPosition, _handledEvent.Position.PreparePosition), "",
-			_handledEvent,
-			out _newState, out _newSharedState, out _emittedEventEnvelopes);
+			CheckpointTag.FromPosition(0, _handledEvent.Position.CommitPosition, _handledEvent.Position.PreparePosition), "",
+			_handledEvent, out _newState, out _newSharedState, out _emittedEventEnvelopes);
 	}
 
 	protected static ResolvedEvent CreateSampleEvent(
-		string streamId, int sequenceNumber, string eventType, string data, TFPos tfPos) {
+		string streamId,
+		int sequenceNumber,
+		string eventType,
+		string data,
+		TFPos tfPos) {
 		return new ResolvedEvent(
 			streamId, sequenceNumber, streamId, sequenceNumber, true, tfPos, Guid.NewGuid(), eventType, true, data,
 			"{}", "{\"position_meta\":1}");

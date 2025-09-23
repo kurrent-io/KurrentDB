@@ -28,20 +28,16 @@ public class when_the_stream_is_started_with_already_emitted_events<TLogFormat, 
 
 	[SetUp]
 	public void setup() {
-		_readyHandler = new TestCheckpointManagerMessageHandler();
-		;
-		_stream = new EmittedStream(
+		_readyHandler = new();
+		_stream = new(
 			"test",
-			new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
-				new EmittedStream.WriterConfiguration.StreamMetadata(), null, 50), new ProjectionVersion(1, 0, 0),
+			new(new EmittedStreamsWriter(_ioDispatcher), new(), null, 50), new ProjectionVersion(1, 0, 0),
 			new TransactionFilePositionTagger(0), CheckpointTag.FromPosition(0, 0, -1), _bus, _ioDispatcher,
 			_readyHandler);
 		_stream.EmitEvents(
-			new[] {
-				new EmittedDataEvent(
-					"test", Guid.NewGuid(), "type", true, "data", null, CheckpointTag.FromPosition(0, 100, 50),
-					null)
-			});
+		[
+			new EmittedDataEvent("test", Guid.NewGuid(), "type", true, "data", null, CheckpointTag.FromPosition(0, 100, 50), null)
+		]);
 		_stream.Start();
 	}
 

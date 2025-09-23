@@ -3,129 +3,116 @@
 
 using System;
 using System.Security.Claims;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Projections.Core.Messages;
-using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 
 namespace KurrentDB.Projections.Core.Services.Processing;
 
 public abstract class EventReader : IEventReader {
 	protected readonly Guid EventReaderCorrelationId;
-	private readonly ClaimsPrincipal _readAs;
-	protected readonly IPublisher _publisher;
-
-	protected readonly bool _stopOnEof;
-	private bool _paused = true;
-	private bool _pauseRequested = true;
-	protected bool _disposed;
+	protected readonly IPublisher Publisher;
+	protected readonly bool StopOnEof;
+	protected bool Disposed;
 	private bool _startingSent;
 
 	protected EventReader(IPublisher publisher, Guid eventReaderCorrelationId, ClaimsPrincipal readAs, bool stopOnEof) {
-		if (publisher == null)
-			throw new ArgumentNullException("publisher");
-		if (eventReaderCorrelationId == Guid.Empty)
-			throw new ArgumentException("eventReaderCorrelationId");
-		_publisher = publisher;
-		EventReaderCorrelationId = eventReaderCorrelationId;
-		_readAs = readAs;
-		_stopOnEof = stopOnEof;
+		ArgumentNullException.ThrowIfNull(publisher);
+		Publisher = publisher;
+		EventReaderCorrelationId = Ensure.NotEmptyGuid(eventReaderCorrelationId);
+		ReadAs = readAs;
+		StopOnEof = stopOnEof;
 	}
 
-	protected bool PauseRequested {
-		get { return _pauseRequested; }
-	}
+	protected bool PauseRequested { get; private set; } = true;
 
-	protected bool Paused {
-		get { return _paused; }
-	}
+	protected bool Paused { get; private set; } = true;
 
-	protected ClaimsPrincipal ReadAs {
-		get { return _readAs; }
-	}
+	protected ClaimsPrincipal ReadAs { get; }
 
 	public void Resume() {
-		if (_disposed)
+		if (Disposed)
 			throw new InvalidOperationException("Disposed");
-		if (!_pauseRequested)
+		if (!PauseRequested)
 			throw new InvalidOperationException("Is not paused");
-		if (!_paused) {
-			_pauseRequested = false;
+		if (!Paused) {
+			PauseRequested = false;
 			return;
 		}
 
-		_paused = false;
-		_pauseRequested = false;
-		//            _logger.Trace("Resuming event distribution {eventReaderCorrelationId} at '{at}'", EventReaderCorrelationId, FromAsText());
+		Paused = false;
+		PauseRequested = false;
 		RequestEvents();
 	}
 
 	public void Pause() {
-		if (_disposed)
-			return; // due to possible self disposed
+		if (Disposed)
+			return;
 
-		if (_pauseRequested)
+		if (PauseRequested)
 			throw new InvalidOperationException("Pause has been already requested");
-		_pauseRequested = true;
+		PauseRequested = true;
 		if (!AreEventsRequested())
-			_paused = true;
-		//            _logger.Trace("Pausing event distribution {eventReaderCorrelationId} at '{at}'", EventReaderCorrelationId, FromAsText());
+			Paused = true;
 	}
 
 	public virtual void Dispose() {
-		_disposed = true;
+		Disposed = true;
 	}
 
 	protected abstract bool AreEventsRequested();
+
 	protected abstract void RequestEvents();
 
 	protected void SendEof() {
-		if (_stopOnEof) {
-			_publisher.Publish(new ReaderSubscriptionMessage.EventReaderEof(EventReaderCorrelationId));
+		if (StopOnEof) {
+			Publisher.Publish(new ReaderSubscriptionMessage.EventReaderEof(EventReaderCorrelationId));
 			Dispose();
 		}
 	}
 
 	protected void SendPartitionDeleted_WhenReadingDataStream(
-		string partition, long? lastEventNumber, TFPos? deletedLinkOrEventPosition, TFPos? deletedEventPosition,
-		string positionStreamId, int? positionEventNumber) {
-		if (_disposed)
+		string partition,
+		TFPos? deletedLinkOrEventPosition,
+		TFPos? deletedEventPosition,
+		string positionStreamId,
+		int? positionEventNumber) {
+		if (Disposed)
 			return;
-		_publisher.Publish(
+		Publisher.Publish(
 			new ReaderSubscriptionMessage.EventReaderPartitionDeleted(
 				EventReaderCorrelationId, partition, deletedLinkOrEventPosition,
 				deletedEventPosition, positionStreamId, positionEventNumber));
 	}
 
 	public void SendNotAuthorized() {
-		if (_disposed)
+		if (Disposed)
 			return;
-		_publisher.Publish(new ReaderSubscriptionMessage.EventReaderNotAuthorized(EventReaderCorrelationId));
+		Publisher.Publish(new ReaderSubscriptionMessage.EventReaderNotAuthorized(EventReaderCorrelationId));
 		Dispose();
 	}
 
 	protected static long? GetLastCommitPositionFrom(ClientMessage.ReadStreamEventsForwardCompleted msg) {
-		return (msg.IsEndOfStream
-				|| msg.Result == ReadStreamResult.NoStream
-				|| msg.Result == ReadStreamResult.StreamDeleted)
-			? (msg.TfLastCommitPosition == -1 ? (long?)null : msg.TfLastCommitPosition)
-			: (long?)null;
+		return msg.IsEndOfStream
+		       || msg.Result == ReadStreamResult.NoStream
+		       || msg.Result == ReadStreamResult.StreamDeleted
+			? msg.TfLastCommitPosition == -1 ? null : msg.TfLastCommitPosition
+			: null;
 	}
 
 	protected void PauseOrContinueProcessing() {
-		if (_disposed)
+		if (Disposed)
 			return;
-		if (_pauseRequested)
-			_paused = !AreEventsRequested();
+		if (PauseRequested)
+			Paused = !AreEventsRequested();
 		else
 			RequestEvents();
 	}
 
 	private void SendStarting(long startingLastCommitPosition) {
-		_publisher.Publish(
-			new ReaderSubscriptionMessage.EventReaderStarting(EventReaderCorrelationId,
-				startingLastCommitPosition));
+		Publisher.Publish(new ReaderSubscriptionMessage.EventReaderStarting(EventReaderCorrelationId, startingLastCommitPosition));
 	}
 
 	protected void NotifyIfStarting(long startingLastCommitPosition) {

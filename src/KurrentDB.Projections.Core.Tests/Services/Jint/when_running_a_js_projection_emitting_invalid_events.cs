@@ -10,32 +10,29 @@ using NUnit.Framework;
 namespace KurrentDB.Projections.Core.Tests.Services.Jint;
 
 public abstract class when_running_a_js_projection_emitting_invalid_events : TestFixtureWithInterpretedProjection {
-
 	protected override void Given() {
-		_projection = @"
-			              fromAll().when({$any:
-			                  function(state, event) {
-			                      emit(" + FormatEmitParameters + @");
-			                  return {};
-			              }});
-			          ";
+		_projection = $$$"""
+		                 fromAll().when({$any:
+		                 function(state, event) {
+		                 emit({{{FormatEmitParameters}}});
+		                 return {};
+		                 }});
+		                 """;
 	}
 
 	protected virtual string StreamId => "'testStream'";
 	protected virtual string EventType => "'testEventType'";
 	protected virtual string EventBody => "{}";
-	protected virtual string FormatEmitParameters => $"{StreamId}, {EventType}, {EventBody}";
+	protected string FormatEmitParameters => $"{StreamId}, {EventType}, {EventBody}";
 	protected virtual bool IsNull => false;
 	protected abstract string ParameterName { get; }
-	[Test, Category(_projectionType)]
+
+	[Test, Category(ProjectionType)]
 	public void process_event_faults() {
-		string state;
-		EmittedEventEnvelope[] emittedEvents;
 		TestDelegate td = () =>
 			_stateHandler.ProcessEvent(
 				"", CheckpointTag.FromPosition(0, 20, 10), "stream1", "type1", "category", Guid.NewGuid(), 0,
-				"metadata",
-				@"{""a"":""b""}", out state, out emittedEvents);
+				"metadata", """{"a":"b"}""", out _, out _);
 		var ae = IsNull ? Assert.Throws<ArgumentNullException>(td) : Assert.Throws<ArgumentException>(td);
 		Assert.AreEqual(ParameterName, ae.ParamName);
 	}
@@ -61,9 +58,7 @@ public abstract class when_running_a_js_projection_emitting_invalid_events : Tes
 		protected override string ParameterName => "streamId";
 		protected override string StreamId => "undefined";
 		protected override bool IsNull => true;
-
 	}
-
 
 	public class null_eventtype : when_running_a_js_projection_emitting_invalid_events {
 		protected override string ParameterName => "eventName";

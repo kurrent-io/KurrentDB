@@ -41,8 +41,7 @@ public class when_the_partition_state_cache_has_been_created {
 	[Test]
 	public void random_item_cannot_be_retrieved_as_locked() {
 		Assert.IsNull(
-			_cache.TryGetAndLockPartitionState(
-				"random", CheckpointTag.FromPosition(0, 200, 190)),
+			_cache.TryGetAndLockPartitionState("random", CheckpointTag.FromPosition(0, 200, 190)),
 			"Cache should be empty");
 	}
 
@@ -54,8 +53,7 @@ public class when_the_partition_state_cache_has_been_created {
 	[Test]
 	public void root_partition_state_cannot_be_retrieved() {
 		Assert.IsNull(
-			_cache.TryGetAndLockPartitionState(
-				"", CheckpointTag.FromPosition(0, 200, 190)),
+			_cache.TryGetAndLockPartitionState("", CheckpointTag.FromPosition(0, 200, 190)),
 			"Cache should be empty");
 	}
 

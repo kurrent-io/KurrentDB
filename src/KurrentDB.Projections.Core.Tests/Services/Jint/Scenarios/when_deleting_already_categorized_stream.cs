@@ -50,16 +50,15 @@ public class when_deleting_already_categorized_stream<TLogFormat, TStreamId> : s
       ""time"": ""03:45:31""
     }");
 		var corrId = Guid.NewGuid();
-		yield return
-			new ClientMessage.DeleteStream(
-				corrId, corrId, Envelope, false, "chat-2", ExpectedVersion.Any, true, null);
-		yield return CreateNewProjectionMessage("test1", @"
-fromCategory('chat').when({
-    ChatMessage: function(s, e) {
-        copyTo('out1', e);
-    }
-})
-");
+		yield return new ClientMessage.DeleteStream(corrId, corrId, Envelope, false, "chat-2", ExpectedVersion.Any, true, null);
+		yield return CreateNewProjectionMessage("test1",
+			"""
+			fromCategory('chat').when({
+			    ChatMessage: function(s, e) {
+			        copyTo('out1', e);
+			    }
+			})
+			""");
 	}
 
 	protected override bool GivenInitializeSystemProjections() {

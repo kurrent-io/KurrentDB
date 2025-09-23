@@ -27,8 +27,6 @@ public class when_reinitializing_transaction_file_postion_tracker {
 		_positionTracker = new PositionTracker(_tagger);
 		_positionTracker.UpdateByCheckpointTagInitial(_tag);
 		// when
-
-
 		_positionTracker.Initialize();
 	}
 

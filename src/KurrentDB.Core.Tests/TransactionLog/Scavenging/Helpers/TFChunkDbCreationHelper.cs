@@ -306,7 +306,7 @@ public class TFChunkDbCreationHelper<TLogFormat, TStreamId> {
 						| (rec.Metadata == null ? PrepareFlags.None : PrepareFlags.IsJson));
 				}
 
-				return LogRecord.Prepare(_logFormat.RecordFactory, logPos,
+				return _logFormat.RecordFactory.Prepare(logPos,
 					Guid.NewGuid(),
 					rec.Id,
 					transInfo.TransactionPosition,
@@ -336,7 +336,7 @@ public class TFChunkDbCreationHelper<TLogFormat, TStreamId> {
 						| (transInfo.LastPrepareId == rec.Id ? PrepareFlags.TransactionEnd : PrepareFlags.None));
 				}
 
-				return LogRecord.Prepare(_logFormat.RecordFactory, logPos,
+				return _logFormat.RecordFactory.Prepare(logPos,
 					Guid.NewGuid(),
 					rec.Id,
 					transInfo.TransactionPosition,
@@ -348,7 +348,7 @@ public class TFChunkDbCreationHelper<TLogFormat, TStreamId> {
 					| (transInfo.FirstPrepareId == rec.Id ? PrepareFlags.TransactionBegin : PrepareFlags.None)
 					| (transInfo.LastPrepareId == rec.Id ? PrepareFlags.TransactionEnd : PrepareFlags.None),
 					eventTypeId,
-					LogRecord.NoData,
+					LogRecord.NoData.ToArray(),
 					null,
 					rec.TimeStamp);
 			}
@@ -362,7 +362,7 @@ public class TFChunkDbCreationHelper<TLogFormat, TStreamId> {
 						| (transInfo.LastPrepareId == rec.Id ? PrepareFlags.TransactionEnd : PrepareFlags.None));
 				}
 
-				return LogRecord.Prepare(_logFormat.RecordFactory, logPos,
+				return _logFormat.RecordFactory.Prepare(logPos,
 					Guid.NewGuid(),
 					rec.Id,
 					transInfo.TransactionPosition,
@@ -372,7 +372,7 @@ public class TFChunkDbCreationHelper<TLogFormat, TStreamId> {
 					(transInfo.FirstPrepareId == rec.Id ? PrepareFlags.TransactionBegin : PrepareFlags.None)
 					| (transInfo.LastPrepareId == rec.Id ? PrepareFlags.TransactionEnd : PrepareFlags.None),
 					eventTypeId,
-					LogRecord.NoData,
+					LogRecord.NoData.ToArray(),
 					null,
 					rec.TimeStamp);
 			}

@@ -10,6 +10,7 @@ using System.Threading;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Services.Transport.Tcp;
 using KurrentDB.Core.Tests.Helpers;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.Transport.Tcp;
 using NUnit.Framework;
 using Serilog;
@@ -127,6 +128,6 @@ public class ssl_connections_mutual_auth {
 		if (shouldConnectSuccessfully)
 			Assert.AreEqual(sent, received.ToArray());
 		else
-			Assert.AreEqual(new byte[0], received.ToArray());
+			Assert.AreEqual(LogRecord.NoData, received.ToArray());
 	}
 }

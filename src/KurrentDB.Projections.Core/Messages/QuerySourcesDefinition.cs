@@ -23,70 +23,48 @@ public class QuerySourcesDefinition : IQuerySources {
 	[DataMember(Name = "byCustomPartitions")]
 	public bool ByCustomPartitions { get; set; }
 
-	bool IQuerySources.DefinesStateTransform {
-		get { return Options != null && Options.DefinesStateTransform; }
-	}
+	bool IQuerySources.DefinesStateTransform => Options is { DefinesStateTransform: true };
 
-	bool IQuerySources.ProducesResults {
-		get { return Options != null && Options.ProducesResults; }
-	}
+	bool IQuerySources.ProducesResults => Options is { ProducesResults: true };
 
-	bool IQuerySources.DefinesFold {
-		get { return Options != null && Options.DefinesFold; }
-	}
+	bool IQuerySources.DefinesFold => Options is { DefinesFold: true };
 
-	bool IQuerySources.HandlesDeletedNotifications {
-		get { return Options != null && Options.HandlesDeletedNotifications; }
-	}
+	bool IQuerySources.HandlesDeletedNotifications => Options is { HandlesDeletedNotifications: true };
 
-	bool IQuerySources.IncludeLinksOption {
-		get { return Options != null && Options.IncludeLinks; }
-	}
+	bool IQuerySources.IncludeLinksOption => Options is { IncludeLinks: true };
 
-	string IQuerySources.ResultStreamNameOption {
-		get { return Options != null ? Options.ResultStreamName : null; }
-	}
+	string IQuerySources.ResultStreamNameOption => Options?.ResultStreamName;
 
-	string IQuerySources.PartitionResultStreamNamePatternOption {
-		get { return Options != null ? Options.PartitionResultStreamNamePattern : null; }
-	}
+	string IQuerySources.PartitionResultStreamNamePatternOption => Options?.PartitionResultStreamNamePattern;
 
-	bool IQuerySources.ReorderEventsOption {
-		get { return Options != null && Options.ReorderEvents; }
-	}
+	bool IQuerySources.ReorderEventsOption => Options is { ReorderEvents: true };
 
-	int? IQuerySources.ProcessingLagOption {
-		get { return Options != null ? Options.ProcessingLag : null; }
-	}
+	int? IQuerySources.ProcessingLagOption => Options?.ProcessingLag;
 
-	bool IQuerySources.IsBiState {
-		get { return Options != null ? Options.IsBiState : false; }
-	}
+	bool IQuerySources.IsBiState => Options?.IsBiState ?? false;
 
 	[DataMember(Name = "options")] public QuerySourcesDefinitionOptions Options { get; set; }
 
-	public static QuerySourcesDefinition From(IQuerySources sources) {
-		return new QuerySourcesDefinition {
-			AllEvents = sources.AllEvents,
-			AllStreams = sources.AllStreams,
-			ByStreams = sources.ByStreams,
-			ByCustomPartitions = sources.ByCustomPartitions,
-			Categories = (sources.Categories ?? new string[0]).ToArray(),
-			Events = (sources.Events ?? new string[0]).ToArray(),
-			Streams = (sources.Streams ?? new string[0]).ToArray(),
-			Options =
-				new QuerySourcesDefinitionOptions {
-					DefinesStateTransform = sources.DefinesStateTransform,
-					ProducesResults = sources.ProducesResults,
-					DefinesFold = sources.DefinesFold,
-					HandlesDeletedNotifications = sources.HandlesDeletedNotifications,
-					IncludeLinks = sources.IncludeLinksOption,
-					PartitionResultStreamNamePattern = sources.PartitionResultStreamNamePatternOption,
-					ProcessingLag = sources.ProcessingLagOption.GetValueOrDefault(),
-					IsBiState = sources.IsBiState,
-					ReorderEvents = sources.ReorderEventsOption,
-					ResultStreamName = sources.ResultStreamNameOption,
-				}
-		};
-	}
+	public static QuerySourcesDefinition From(IQuerySources sources) => new() {
+		AllEvents = sources.AllEvents,
+		AllStreams = sources.AllStreams,
+		ByStreams = sources.ByStreams,
+		ByCustomPartitions = sources.ByCustomPartitions,
+		Categories = (sources.Categories ?? []).ToArray(),
+		Events = (sources.Events ?? []).ToArray(),
+		Streams = (sources.Streams ?? []).ToArray(),
+		Options =
+			new QuerySourcesDefinitionOptions {
+				DefinesStateTransform = sources.DefinesStateTransform,
+				ProducesResults = sources.ProducesResults,
+				DefinesFold = sources.DefinesFold,
+				HandlesDeletedNotifications = sources.HandlesDeletedNotifications,
+				IncludeLinks = sources.IncludeLinksOption,
+				PartitionResultStreamNamePattern = sources.PartitionResultStreamNamePatternOption,
+				ProcessingLag = sources.ProcessingLagOption.GetValueOrDefault(),
+				IsBiState = sources.IsBiState,
+				ReorderEvents = sources.ReorderEventsOption,
+				ResultStreamName = sources.ResultStreamNameOption,
+			}
+	};
 }

@@ -28,7 +28,7 @@ public class FakeForeachStreamProjection : IProjectionStateHandler {
 	}
 
 	public void ConfigureSourceProcessingStrategy(SourceDefinitionBuilder builder) {
-		Log("ConfigureSourceProcessingStrategy(" + builder + ")");
+		Log($"ConfigureSourceProcessingStrategy({builder})");
 		builder.FromAll();
 		builder.AllEvents();
 		builder.SetByStream();
@@ -36,7 +36,7 @@ public class FakeForeachStreamProjection : IProjectionStateHandler {
 	}
 
 	public void Load(string state) {
-		Log("Load(" + state + ")");
+		Log($"Load({state})");
 		_state = state;
 	}
 
@@ -55,7 +55,7 @@ public class FakeForeachStreamProjection : IProjectionStateHandler {
 	}
 
 	public string GetStatePartition(CheckpointTag eventPosition, string category, ResolvedEvent data) {
-		Log("GetStatePartition(" + "..." + ")");
+		Log("GetStatePartition(...)");
 		return @data.EventStreamId;
 	}
 
@@ -65,8 +65,8 @@ public class FakeForeachStreamProjection : IProjectionStateHandler {
 		newSharedState = null;
 		if (data.EventType == "fail" || _query == "fail")
 			throw new Exception("failed");
-		Log("ProcessEvent(" + "..." + ")");
-		newState = "{\"data\": " + _state + data + "}";
+		Log("ProcessEvent(...)");
+		newState = $"{{\"data\": {_state}{data}}}";
 		emittedEvents = null;
 		return true;
 	}

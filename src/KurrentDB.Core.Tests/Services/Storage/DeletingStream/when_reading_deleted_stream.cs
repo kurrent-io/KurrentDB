@@ -27,11 +27,11 @@ public class when_reading_deleted_stream<TLogFormat, TStreamId> : ReadIndexTestS
 
 		var (streamId, pos0) = await GetOrReserve("ES", token);
 		var (_, pos1) = await Writer.Write(LogRecord.SingleWrite(_recordFactory, pos0, _id1, _id1, streamId, ExpectedVersion.NoStream,
-			eventTypeId, new byte[0], new byte[0], DateTime.UtcNow, PrepareFlags.IsCommitted), token);
+			eventTypeId, LogRecord.NoData, LogRecord.NoData, DateTime.UtcNow, PrepareFlags.IsCommitted), token);
 		var (_, pos2) = await Writer.Write(LogRecord.SingleWrite(_recordFactory, pos1, _id2, _id2, streamId, 0,
-			eventTypeId, new byte[0], new byte[0], DateTime.UtcNow, PrepareFlags.IsCommitted), token);
+			eventTypeId, LogRecord.NoData, LogRecord.NoData, DateTime.UtcNow, PrepareFlags.IsCommitted), token);
 		var (_, pos3) = await Writer.Write(LogRecord.SingleWrite(_recordFactory, pos2, _id3, _id3, streamId, 1,
-			eventTypeId, new byte[0], new byte[0], DateTime.UtcNow, PrepareFlags.IsCommitted), token);
+			eventTypeId, LogRecord.NoData, LogRecord.NoData, DateTime.UtcNow, PrepareFlags.IsCommitted), token);
 		await Writer.Write(LogRecord.DeleteTombstone(_recordFactory, pos3, _deleteId, _deleteId, streamId,
 			eventTypeId, EventNumber.DeletedStream - 1, PrepareFlags.IsCommitted), token);
 	}

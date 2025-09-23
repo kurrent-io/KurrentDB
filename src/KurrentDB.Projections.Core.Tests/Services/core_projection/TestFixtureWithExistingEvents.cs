@@ -14,9 +14,10 @@ using AwakeServiceMessage = KurrentDB.Core.Services.AwakeReaderService.AwakeServ
 
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection;
 
-public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId> : KurrentDB.Core.Tests.Helpers.TestFixtureWithExistingEvents<TLogFormat, TStreamId>,
-	IHandle<ProjectionCoreServiceMessage.CoreTick> {
-	protected ReaderSubscriptionDispatcher _subscriptionDispatcher;
+public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId>
+	: KurrentDB.Core.Tests.Helpers.TestFixtureWithExistingEvents<TLogFormat, TStreamId>,
+		IHandle<ProjectionCoreServiceMessage.CoreTick> {
+	protected ReaderSubscriptionDispatcher SubscriptionDispatcher;
 
 	private bool _ticksAreHandledImmediately;
 	protected AwakeService AwakeService;
@@ -28,19 +29,15 @@ public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId> : Kur
 
 	[SetUp]
 	public void SetUp() {
-		_subscriptionDispatcher = new ReaderSubscriptionDispatcher(_bus);
-		_bus.Subscribe(
-			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.CommittedEventReceived>());
-		_bus.Subscribe(
-			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.CheckpointSuggested>());
-		_bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.EofReached>());
-		_bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.PartitionDeleted>());
-		_bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.ProgressChanged>());
-		_bus.Subscribe(
-			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.SubscriptionStarted>());
-		_bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.NotAuthorized>());
-		_bus.Subscribe(
-			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.ReaderAssignedReader>());
+		SubscriptionDispatcher = new(_bus);
+		_bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.CommittedEventReceived>());
+		_bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.CheckpointSuggested>());
+		_bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.EofReached>());
+		_bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.PartitionDeleted>());
+		_bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.ProgressChanged>());
+		_bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.SubscriptionStarted>());
+		_bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.NotAuthorized>());
+		_bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.ReaderAssignedReader>());
 		_bus.Subscribe<ProjectionCoreServiceMessage.CoreTick>(this);
 
 		AwakeService = new AwakeService();
@@ -61,7 +58,11 @@ public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId> : Kur
 	}
 
 	protected ClientMessage.WriteEvents CreateWriteEvent(
-		string streamId, string eventType, string data, string metadata = null, bool isJson = true,
+		string streamId,
+		string eventType,
+		string data,
+		string metadata = null,
+		bool isJson = true,
 		Guid? correlationId = null) {
 		return ClientMessage.WriteEvents.ForSingleEvent(Guid.NewGuid(), correlationId ?? Guid.NewGuid(), GetInputQueue(), false, streamId,
 			ExpectedVersion.Any, new Event(Guid.NewGuid(), eventType, isJson, data, metadata), null);

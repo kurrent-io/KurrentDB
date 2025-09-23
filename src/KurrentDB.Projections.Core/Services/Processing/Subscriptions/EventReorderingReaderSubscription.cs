@@ -13,15 +13,14 @@ using KurrentDB.Projections.Core.Services.Processing.Strategies;
 namespace KurrentDB.Projections.Core.Services.Processing.Subscriptions;
 
 public class EventReorderingReaderSubscription : ReaderSubscriptionBase, IReaderSubscription {
-	private readonly SortedList<long, ReaderSubscriptionMessage.CommittedEventDistributed> _buffer =
-		new SortedList<long, ReaderSubscriptionMessage.CommittedEventDistributed>();
+	private readonly SortedList<long, ReaderSubscriptionMessage.CommittedEventDistributed> _buffer = new();
 
 	private readonly int _processingLagMs;
 
 	public EventReorderingReaderSubscription(
 		IPublisher publisher,
 		Guid subscriptionId,
-		CheckpointTag @from,
+		CheckpointTag from,
 		IReaderStrategy readerStrategy,
 		ITimeProvider timeProvider,
 		long? checkpointUnhandledBytesThreshold,
@@ -34,7 +33,7 @@ public class EventReorderingReaderSubscription : ReaderSubscriptionBase, IReader
 		: base(
 			publisher,
 			subscriptionId,
-			@from,
+			from,
 			readerStrategy,
 			timeProvider,
 			checkpointUnhandledBytesThreshold,

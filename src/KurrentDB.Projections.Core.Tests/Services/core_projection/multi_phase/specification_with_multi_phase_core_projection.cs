@@ -23,51 +23,32 @@ using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection.multi_phase;
 
-abstract class specification_with_multi_phase_core_projection<TLogFormat, TStreamId> : TestFixtureWithCoreProjection<TLogFormat, TStreamId> {
-	private FakeCheckpointManager _phase1checkpointManager;
-	private FakeCheckpointManager _phase2checkpointManager;
+abstract class
+	specification_with_multi_phase_core_projection<TLogFormat, TStreamId> : TestFixtureWithCoreProjection<TLogFormat, TStreamId> {
 	private IEmittedStreamsTracker _emittedStreamsTracker;
-	private FakeProjectionProcessingPhase _phase1;
-	private FakeProjectionProcessingPhase _phase2;
-	private IReaderStrategy _phase1readerStrategy;
-	private IReaderStrategy _phase2readerStrategy;
 
-	class FakeProjectionProcessingStrategy : ProjectionProcessingStrategy {
-		private readonly FakeProjectionProcessingPhase _phase1;
-		private readonly FakeProjectionProcessingPhase _phase2;
-
-		public FakeProjectionProcessingStrategy(
-			string name, ProjectionVersion projectionVersion, ILogger logger, FakeProjectionProcessingPhase phase1,
-			FakeProjectionProcessingPhase phase2)
-			: base(name, projectionVersion, logger, Opts.MaxProjectionStateSizeDefault) {
-			_phase1 = phase1;
-			_phase2 = phase2;
-		}
-
-		protected override IQuerySources GetSourceDefinition() {
-			return new QuerySourcesDefinition {
+	private class FakeProjectionProcessingStrategy(
+		string name,
+		ProjectionVersion projectionVersion,
+		ILogger logger,
+		FakeProjectionProcessingPhase phase1,
+		FakeProjectionProcessingPhase phase2)
+		: ProjectionProcessingStrategy(name, projectionVersion, logger, Opts.MaxProjectionStateSizeDefault) {
+		protected override IQuerySources GetSourceDefinition()
+			=> new QuerySourcesDefinition {
 				AllStreams = true,
 				AllEvents = true,
 				ByStreams = true,
-				Options = new QuerySourcesDefinitionOptions()
+				Options = new()
 			};
-		}
 
-		public override bool GetStopOnEof() {
-			return true;
-		}
+		public override bool GetStopOnEof() => true;
 
-		public override bool GetUseCheckpoints() {
-			return false;
-		}
+		public override bool GetUseCheckpoints() => false;
 
-		public override bool GetRequiresRootPartition() {
-			return false;
-		}
+		public override bool GetRequiresRootPartition() => false;
 
-		public override bool GetProducesRunningResults() {
-			return true;
-		}
+		protected override bool GetProducesRunningResults() => true;
 
 		public override void EnrichStatistics(ProjectionStatistics info) {
 		}
@@ -83,34 +64,16 @@ abstract class specification_with_multi_phase_core_projection<TLogFormat, TStrea
 			ITimeProvider timeProvider,
 			IODispatcher ioDispatcher,
 			CoreProjectionCheckpointWriter coreProjectionCheckpointWriter) {
-			return new IProjectionProcessingPhase[] { _phase1, _phase2 };
+			return [phase1, phase2];
 		}
 	}
 
-	internal class FakeProjectionProcessingPhase : IProjectionProcessingPhase {
-		private readonly int _phase;
-		private readonly specification_with_multi_phase_core_projection<TLogFormat, TStreamId> _specification;
-		private readonly ICoreProjectionCheckpointManager _checkpointManager;
-		private readonly IEmittedStreamsTracker _emittedStreamsTracker;
-		private readonly IReaderStrategy _readerStrategy;
-
-		private bool _initializedFromCheckpoint;
-		private CheckpointTag _initializedFromCheckpointAt;
-		private PhaseState _state;
-		private Guid _subscriptionId;
-		private int _subscribeInvoked;
-
-		public FakeProjectionProcessingPhase(int phase,
-			specification_with_multi_phase_core_projection<TLogFormat, TStreamId> specification,
-			ICoreProjectionCheckpointManager checkpointManager, IReaderStrategy readerStrategy,
-			IEmittedStreamsTracker emittedStreamsTracker) {
-			_phase = phase;
-			_specification = specification;
-			_checkpointManager = checkpointManager;
-			_readerStrategy = readerStrategy;
-			_emittedStreamsTracker = emittedStreamsTracker;
-		}
-
+	internal class FakeProjectionProcessingPhase(
+		int phase,
+		specification_with_multi_phase_core_projection<TLogFormat, TStreamId> specification,
+		ICoreProjectionCheckpointManager checkpointManager,
+		IEmittedStreamsTracker emittedStreamsTracker)
+		: IProjectionProcessingPhase {
 		public void Dispose() {
 			throw new NotImplementedException();
 		}
@@ -132,12 +95,10 @@ abstract class specification_with_multi_phase_core_projection<TLogFormat, TStrea
 		}
 
 		public void InitializeFromCheckpoint(CheckpointTag checkpointTag) {
-			_initializedFromCheckpoint = true;
-			_initializedFromCheckpointAt = checkpointTag;
+			InitializedFromCheckpoint = true;
 		}
 
 		public void SetProjectionState(PhaseState state) {
-			_state = state;
 		}
 
 		public void ProcessEvent() {
@@ -145,111 +106,58 @@ abstract class specification_with_multi_phase_core_projection<TLogFormat, TStrea
 		}
 
 		public void Subscribe(CheckpointTag from, bool fromCheckpoint) {
-			_subscribeInvoked++;
-			_subscriptionId = Guid.NewGuid();
-			_specification._coreProjection.Subscribed();
+			Guid.NewGuid();
+			specification._coreProjection.Subscribed();
 		}
 
 		public void EnsureUnsubscribed() {
 			throw new NotImplementedException();
 		}
 
-		public CheckpointTag MakeZeroCheckpointTag() {
-			return CheckpointTag.FromPhase(_phase, completed: false);
-		}
+		public CheckpointTag MakeZeroCheckpointTag() => CheckpointTag.FromPhase(phase, completed: false);
 
-		public ICoreProjectionCheckpointManager CheckpointManager {
-			get { return _checkpointManager; }
-		}
+		public ICoreProjectionCheckpointManager CheckpointManager { get; } = checkpointManager;
 
-		public IEmittedStreamsTracker EmittedStreamsTracker {
-			get { return _emittedStreamsTracker; }
-		}
+		public IEmittedStreamsTracker EmittedStreamsTracker { get; } = emittedStreamsTracker;
 
-		public IReaderStrategy ReaderStrategy {
-			get { return _readerStrategy; }
-		}
-
-		public bool InitializedFromCheckpoint {
-			get { return _initializedFromCheckpoint; }
-		}
-
-		public CheckpointTag InitializedFromCheckpointAt {
-			get { return _initializedFromCheckpointAt; }
-		}
-
-		public PhaseState State {
-			get { return _state; }
-		}
-
-		public Guid SubscriptionId {
-			get { return _subscriptionId; }
-		}
-
-		public bool Unsubscribed_ {
-			get { return false; }
-		}
+		public bool InitializedFromCheckpoint { get; private set; }
 
 		public int ProcessEventInvoked { get; set; }
 
-		public int SubscribeInvoked {
-			get { return _subscribeInvoked; }
-			set { _subscribeInvoked = value; }
-		}
+		public int SubscribeInvoked { get => 1; }
 
 		public void GetStatistics(ProjectionStatistics info) {
 		}
 
 		public void Complete() {
-			_specification._coreProjection.CompletePhase();
+			specification._coreProjection.CompletePhase();
 		}
 	}
 
-	internal class FakeCheckpointManager : ICoreProjectionCheckpointManager, IEmittedEventWriter {
-		private readonly IPublisher _publisher;
-		private readonly Guid _projectionCorrelationId;
-
-		private bool _started;
-		private CheckpointTag _startedAt;
-		private CheckpointTag _lastEvent;
-		private float _progress;
-		private bool _stopped;
-		private bool _stopping;
-		private readonly List<EmittedEventEnvelope> _emittedEvents = new List<EmittedEventEnvelope>();
-
-		public FakeCheckpointManager(IPublisher publisher, Guid projectionCorrelationId) {
-			_publisher = publisher;
-			_projectionCorrelationId = projectionCorrelationId;
-		}
-
+	internal class FakeCheckpointManager(IPublisher publisher, Guid projectionCorrelationId)
+		: ICoreProjectionCheckpointManager, IEmittedEventWriter {
 		public void Initialize() {
 		}
 
 		public void Start(CheckpointTag checkpointTag, PartitionState rootPartitionState) {
-			_started = true;
-			_startedAt = checkpointTag;
-			_lastEvent = checkpointTag;
+			LastProcessedEventPosition = checkpointTag;
 		}
 
 		public void Stopping() {
-			_stopping = true;
-			_publisher.Publish(
-				new CoreProjectionProcessingMessage.CheckpointCompleted(_projectionCorrelationId, _lastEvent));
+			publisher.Publish(new CoreProjectionProcessingMessage.CheckpointCompleted(projectionCorrelationId, LastProcessedEventPosition));
 		}
 
 		public void Stopped() {
-			_stopped = true;
+			Stopped_ = true;
 		}
 
 		public void GetStatistics(ProjectionStatistics info) {
 		}
 
-		public void NewPartition(string partition, CheckpointTag eventCheckpointTag) {
-			throw new NotImplementedException();
-		}
-
 		public void EventsEmitted(
-			EmittedEventEnvelope[] scheduledWrites, Guid causedBy, string correlationId) {
+			EmittedEventEnvelope[] scheduledWrites,
+			Guid causedBy,
+			string correlationId) {
 			EmittedEvents.AddRange(scheduledWrites);
 		}
 
@@ -257,11 +165,8 @@ abstract class specification_with_multi_phase_core_projection<TLogFormat, TStrea
 			throw new NotImplementedException();
 		}
 
-		public void PartitionCompleted(string partition) {
-		}
-
 		public void EventProcessed(CheckpointTag checkpointTag, float progress) {
-			_lastEvent = checkpointTag;
+			LastProcessedEventPosition = checkpointTag;
 		}
 
 		public bool CheckpointSuggested(CheckpointTag checkpointTag, float progress) {
@@ -269,92 +174,51 @@ abstract class specification_with_multi_phase_core_projection<TLogFormat, TStrea
 		}
 
 		public void Progress(float progress) {
-			_progress = progress;
-		}
-
-		public void BeginLoadState() {
-			_publisher.Publish(
-				new CoreProjectionProcessingMessage.CheckpointLoaded(
-					_projectionCorrelationId, CheckpointTag.FromPosition(0, 0, -1), "", 0));
 		}
 
 		public void BeginLoadPrerecordedEvents(CheckpointTag checkpointTag) {
-			_publisher.Publish(
-				new CoreProjectionProcessingMessage.PrerecordedEventsLoaded(_projectionCorrelationId,
-					checkpointTag));
+			publisher.Publish(new CoreProjectionProcessingMessage.PrerecordedEventsLoaded(projectionCorrelationId, checkpointTag));
 		}
 
-		public void BeginLoadPartitionStateAt(string statePartition, CheckpointTag requestedStateCheckpointTag,
+		public void BeginLoadPartitionStateAt(string statePartition,
+			CheckpointTag requestedStateCheckpointTag,
 			Action<PartitionState> loadCompleted) {
 			throw new NotImplementedException();
 		}
 
-		public void RecordEventOrder(ResolvedEvent resolvedEvent, CheckpointTag orderCheckpointTag,
-			Action committed) {
+		public void RecordEventOrder(ResolvedEvent resolvedEvent, CheckpointTag orderCheckpointTag, Action committed) {
 			throw new NotImplementedException();
 		}
 
-		public CheckpointTag LastProcessedEventPosition {
-			get { return _lastEvent; }
-		}
+		public CheckpointTag LastProcessedEventPosition { get; private set; }
 
-		public bool Started {
-			get { return _started; }
-		}
+		public bool Stopped_ { get; private set; }
 
-		public CheckpointTag StartedAt {
-			get { return _startedAt; }
-		}
-
-		public float Progress_ {
-			get { return _progress; }
-		}
-
-		public bool Stopped_ {
-			get { return _stopped; }
-		}
-
-		public bool Stopping_ {
-			get { return _stopping; }
-		}
-
-		public List<EmittedEventEnvelope> EmittedEvents {
-			get { return _emittedEvents; }
-		}
+		public List<EmittedEventEnvelope> EmittedEvents { get; } = [];
 	}
 
-	protected class FakeReaderStrategy : IReaderStrategy {
-		private readonly int _phase;
+	protected class FakeReaderStrategy(int phase) : IReaderStrategy {
+		public bool IsReadingOrderRepeatable => throw new NotImplementedException();
 
-		public FakeReaderStrategy(int phase) {
-			_phase = phase;
-		}
+		public EventFilter EventFilter => throw new NotImplementedException();
 
-		public bool IsReadingOrderRepeatable {
-			get { throw new NotImplementedException(); }
-		}
+		public PositionTagger PositionTagger => new TransactionFilePositionTagger(Phase);
 
-		public EventFilter EventFilter {
-			get { throw new NotImplementedException(); }
-		}
-
-		public PositionTagger PositionTagger {
-			get { return new TransactionFilePositionTagger(Phase); }
-		}
-
-		public int Phase {
-			get { return _phase; }
-		}
+		private int Phase => phase;
 
 		public IReaderSubscription CreateReaderSubscription(
-			IPublisher publisher, CheckpointTag fromCheckpointTag, Guid subscriptionId,
+			IPublisher publisher,
+			CheckpointTag fromCheckpointTag,
+			Guid subscriptionId,
 			ReaderSubscriptionOptions readerSubscriptionOptions) {
 			throw new NotImplementedException();
 		}
 
 		public IEventReader CreatePausedEventReader(
-			Guid eventReaderId, IPublisher publisher, IODispatcher ioDispatcher, CheckpointTag checkpointTag,
-			bool stopOnEof, int? stopAfterNEvents) {
+			Guid eventReaderId,
+			IPublisher publisher,
+			CheckpointTag checkpointTag,
+			bool stopOnEof) {
 			throw new NotImplementedException();
 		}
 	}
@@ -367,42 +231,17 @@ abstract class specification_with_multi_phase_core_projection<TLogFormat, TStrea
 		}
 	}
 
-	public FakeCheckpointManager Phase1CheckpointManager {
-		get { return _phase1checkpointManager; }
-	}
-
-	public FakeCheckpointManager Phase2CheckpointManager {
-		get { return _phase2checkpointManager; }
-	}
-
-
-	public FakeProjectionProcessingPhase Phase1 {
-		get { return _phase1; }
-	}
-
-	public FakeProjectionProcessingPhase Phase2 {
-		get { return _phase2; }
-	}
+	protected FakeCheckpointManager Phase1CheckpointManager { get; private set; }
+	private FakeCheckpointManager Phase2CheckpointManager { get; set; }
+	protected FakeProjectionProcessingPhase Phase1 { get; private set; }
+	protected FakeProjectionProcessingPhase Phase2 { get; private set; }
 
 	protected override ProjectionProcessingStrategy GivenProjectionProcessingStrategy() {
-		_phase1checkpointManager = new FakeCheckpointManager(_bus, _projectionCorrelationId);
-		_phase2checkpointManager = new FakeCheckpointManager(_bus, _projectionCorrelationId);
+		Phase1CheckpointManager = new(_bus, _projectionCorrelationId);
+		Phase2CheckpointManager = new(_bus, _projectionCorrelationId);
 		_emittedStreamsTracker = new FakeEmittedStreamsTracker();
-		_phase1readerStrategy = GivenPhase1ReaderStrategy();
-		_phase2readerStrategy = GivenPhase2ReaderStrategy();
-		_phase1 = new FakeProjectionProcessingPhase(0, this, Phase1CheckpointManager, _phase1readerStrategy,
-			_emittedStreamsTracker);
-		_phase2 = new FakeProjectionProcessingPhase(1, this, Phase2CheckpointManager, _phase2readerStrategy,
-			_emittedStreamsTracker);
-		return new FakeProjectionProcessingStrategy(
-			_projectionName, _version, Log.Logger, Phase1, Phase2);
-	}
-
-	protected virtual FakeReaderStrategy GivenPhase2ReaderStrategy() {
-		return new FakeReaderStrategy(1);
-	}
-
-	protected virtual FakeReaderStrategy GivenPhase1ReaderStrategy() {
-		return new FakeReaderStrategy(0);
+		Phase1 = new(0, this, Phase1CheckpointManager, _emittedStreamsTracker);
+		Phase2 = new(1, this, Phase2CheckpointManager, _emittedStreamsTracker);
+		return new FakeProjectionProcessingStrategy(_projectionName, _version, Log.Logger, Phase1, Phase2);
 	}
 }

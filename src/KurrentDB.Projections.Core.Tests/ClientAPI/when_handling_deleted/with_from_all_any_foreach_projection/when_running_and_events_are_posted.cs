@@ -26,13 +26,13 @@ public class when_running_and_events_are_posted<TLogFormat, TStreamId> : specifi
 
 	protected override async Task When() {
 		await base.When();
-		await PostProjection(@"
-fromAll().foreachStream().when({
-    $init: function(){return {a:0}},
-    $any: function(s,e){s.a++},
-    $deleted: function(s,e){s.deleted=1;},
-}).outputState();
-");
+		await PostProjection("""
+		                     fromAll().foreachStream().when({
+		                         $init: function(){return {a:0}},
+		                         $any: function(s,e){s.a++},
+		                         $deleted: function(s,e){s.deleted=1;},
+		                     }).outputState();
+		                     """);
 		WaitIdle();
 	}
 

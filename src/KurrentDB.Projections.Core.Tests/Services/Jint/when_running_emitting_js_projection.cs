@@ -26,26 +26,22 @@ public class when_running_emitting_js_projection : TestFixtureWithInterpretedPro
             ";
 	}
 
-	[Test, Category(_projectionType)]
+	[Test, Category(ProjectionType)]
 	public void process_event_returns_true() {
-		string state;
-		EmittedEventEnvelope[] emittedEvents;
 		var result = _stateHandler.ProcessEvent(
 			"", CheckpointTag.FromPosition(0, 20, 10), "stream1", "type1", "category", Guid.NewGuid(), 0,
 			"{\"d\":\"e\"}",
-			@"{""a"":""b""}", out state, out emittedEvents);
+			@"{""a"":""b""}", out _, out _);
 
 		Assert.IsTrue(result);
 	}
 
-	[Test, Category(_projectionType)]
+	[Test, Category(ProjectionType)]
 	public void process_event_returns_emitted_event() {
-		string state;
-		EmittedEventEnvelope[] emittedEvents;
 		_stateHandler.ProcessEvent(
 			"", CheckpointTag.FromPosition(0, 20, 10), "stream1", "type1", "category", Guid.NewGuid(), 0,
 			"{\"d\":\"e\"}",
-			@"{""a"":""b""}", out state, out emittedEvents);
+			@"{""a"":""b""}", out _, out var emittedEvents);
 
 		Assert.IsNotNull(emittedEvents);
 		Assert.AreEqual(1, emittedEvents.Length);
@@ -58,24 +54,22 @@ public class when_running_emitting_js_projection : TestFixtureWithInterpretedPro
 		Assert.AreEqual("10", metadata["i"]);
 	}
 	//todo: actual benchmark
-	[Test, Category(_projectionType), Category("Manual"), Explicit]
+	[Test, Category(ProjectionType), Category("Manual"), Explicit]
 	public void can_pass_though_millions_of_events() {
-		var i = 0;
+		int i;
 		var sw = Stopwatch.StartNew();
 
 		for (i = 0; i < 100000000; i++) {
-			string state;
-			EmittedEventEnvelope[] emittedEvents;
 			_stateHandler.ProcessEvent(
-				"", CheckpointTag.FromPosition(0, i * 10 + 20, i * 10 + 10), "stream" + i, "type" + i, "category",
+				"", CheckpointTag.FromPosition(0, i * 10 + 20, i * 10 + 10), $"stream{i}", $"type{i}", "category",
 				Guid.NewGuid(), i,
-				"{\"d\":\"e\"}", @"{""a"":""" + i + @"""}", out state, out emittedEvents);
+				"{\"d\":\"e\"}", $$"""{"a":"{{i}}"}""", out _, out var emittedEvents);
 
 			Assert.IsNotNull(emittedEvents);
 			Assert.AreEqual(1, emittedEvents.Length);
-			Assert.AreEqual("emitted-event" + i, emittedEvents[0].Event.EventType);
-			Assert.AreEqual("output-stream" + i, emittedEvents[0].Event.StreamId);
-			Assert.AreEqual(@"{""a"":""" + i + @"""}", emittedEvents[0].Event.Data);
+			Assert.AreEqual($"emitted-event{i}", emittedEvents[0].Event.EventType);
+			Assert.AreEqual($"output-stream{i}", emittedEvents[0].Event.StreamId);
+			Assert.AreEqual($$"""{"a":"{{i}}"}""", emittedEvents[0].Event.Data);
 
 			if (sw.Elapsed > TimeSpan.FromSeconds(120))
 				break;

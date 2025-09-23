@@ -71,7 +71,7 @@ public sealed class HttpEntityManager {
 		_onComplete = onComplete;
 
 		if (HttpEntity.Request != null && HttpEntity.Request.ContentLength64 == 0) {
-			LogRequest(new byte[0]);
+			LogRequest([]);
 		}
 	}
 

@@ -10,7 +10,7 @@ using KurrentDB.Core.Tests;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
 using NUnit.Framework;
-
+using static KurrentDB.Projections.Core.Messages.ProjectionManagementMessage;
 using ClientMessageWriteEvents = KurrentDB.Core.Tests.TestAdapters.ClientMessage.WriteEvents;
 
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
@@ -19,8 +19,8 @@ namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_deleting_a_persistent_projection<TLogFormat, TStreamId> : TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId> {
 	private string _projectionName;
-	private const string _projectionCheckpointStream = "$projections-test-projection-checkpoint";
-	private const string _projectionEmittedStreamsStream = "$projections-test-projection-emittedstreams";
+	private const string ProjectionCheckpointStream = "$projections-test-projection-checkpoint";
+	private const string ProjectionEmittedStreamsStream = "$projections-test-projection-emittedstreams";
 
 	protected override void Given() {
 		_projectionName = "test-projection";
@@ -31,17 +31,12 @@ public class when_deleting_a_persistent_projection<TLogFormat, TStreamId> : Test
 	protected override IEnumerable<WhenStep> When() {
 		yield return new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid());
 		yield return
-			new ProjectionManagementMessage.Command.Post(
+			new Command.Post(
 				_bus, ProjectionMode.Continuous, _projectionName,
-				ProjectionManagementMessage.RunAs.System, "JS", @"fromAll().when({$any:function(s,e){return s;}});",
+				RunAs.System, "JS", "fromAll().when({$any:function(s,e){return s;}});",
 				enabled: true, checkpointsEnabled: true, emitEnabled: true, trackEmittedStreams: true);
-		yield return
-			new ProjectionManagementMessage.Command.Disable(
-				_bus, _projectionName, ProjectionManagementMessage.RunAs.System);
-		yield return
-			new ProjectionManagementMessage.Command.Delete(
-				_bus, _projectionName,
-				ProjectionManagementMessage.RunAs.System, true, true, true);
+		yield return new Command.Disable(_bus, _projectionName, RunAs.System);
+		yield return new Command.Delete(_bus, _projectionName, RunAs.System, true, true, true);
 	}
 
 	[Test, Category("v8")]
@@ -57,13 +52,13 @@ public class when_deleting_a_persistent_projection<TLogFormat, TStreamId> : Test
 	public void should_have_attempted_to_delete_the_checkpoint_stream() {
 		Assert.IsTrue(
 			_consumer.HandledMessages.OfType<ClientMessage.DeleteStream>()
-				.Any(x => x.EventStreamId == _projectionCheckpointStream));
+				.Any(x => x.EventStreamId == ProjectionCheckpointStream));
 	}
 
 	[Test, Category("v8")]
 	public void should_have_attempted_to_delete_the_emitted_streams_stream() {
 		Assert.IsTrue(
 			_consumer.HandledMessages.OfType<ClientMessage.DeleteStream>()
-				.Any(x => x.EventStreamId == _projectionEmittedStreamsStream));
+				.Any(x => x.EventStreamId == ProjectionEmittedStreamsStream));
 	}
 }

@@ -52,18 +52,18 @@ public class when_building_an_index_off_tfile_with_duplicate_events_in_a_stream<
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
 
 		//stream id: duplicate_stream at version: 0
-		(_, pos1) = await Writer.Write(LogRecord.Prepare(_logFormat.RecordFactory, pos0, _id1, _id1, pos0, 0, streamId, expectedVersion++,
-			PrepareFlags.SingleWrite, eventTypeId, new byte[0], new byte[0], DateTime.UtcNow), token);
+		(_, pos1) = await Writer.Write(_logFormat.RecordFactory.Prepare(pos0, _id1, _id1, pos0, 0, streamId, expectedVersion++,
+			PrepareFlags.SingleWrite, eventTypeId, [], [], DateTime.UtcNow), token);
 		(_, pos2) = await Writer.Write(new CommitLogRecord(pos1, _id1, pos0, DateTime.UtcNow, 0), token);
 
 		//stream id: duplicate_stream at version: 1
-		(_, pos3) = await Writer.Write(LogRecord.Prepare(_logFormat.RecordFactory, pos2, _id2, _id2, pos2, 0, streamId, expectedVersion++,
-			PrepareFlags.SingleWrite, eventTypeId, new byte[0], new byte[0], DateTime.UtcNow), token);
+		(_, pos3) = await Writer.Write(_logFormat.RecordFactory.Prepare(pos2, _id2, _id2, pos2, 0, streamId, expectedVersion++,
+			PrepareFlags.SingleWrite, eventTypeId, [], [], DateTime.UtcNow), token);
 		(_, pos4) = await Writer.Write(new CommitLogRecord(pos3, _id2, pos2, DateTime.UtcNow, 1), token);
 
 		//stream id: duplicate_stream at version: 2
-		(_, pos5) = await Writer.Write(LogRecord.Prepare(_logFormat.RecordFactory, pos4, _id3, _id3, pos4, 0, streamId, expectedVersion++,
-			PrepareFlags.SingleWrite, eventTypeId, new byte[0], new byte[0], DateTime.UtcNow), token);
+		(_, pos5) = await Writer.Write(_logFormat.RecordFactory.Prepare(pos4, _id3, _id3, pos4, 0, streamId, expectedVersion++,
+			PrepareFlags.SingleWrite, eventTypeId, [], [], DateTime.UtcNow), token);
 		(_, pos6) = await Writer.Write(new CommitLogRecord(pos5, _id3, pos4, DateTime.UtcNow, 2), token);
 	}
 
@@ -74,8 +74,8 @@ public class when_building_an_index_off_tfile_with_duplicate_events_in_a_stream<
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
 
 		//stream id: duplicate_stream at version: 0 (duplicate event/index entry)
-		(_, pos7) = await Writer.Write(LogRecord.Prepare(_logFormat.RecordFactory, pos6, _id4, _id4, pos6, 0, streamId, ExpectedVersion.NoStream,
-			PrepareFlags.SingleWrite, eventTypeId, new byte[0], new byte[0], DateTime.UtcNow), token);
+		(_, pos7) = await Writer.Write(_logFormat.RecordFactory.Prepare(pos6, _id4, _id4, pos6, 0, streamId, ExpectedVersion.NoStream,
+			PrepareFlags.SingleWrite, eventTypeId, [], [], DateTime.UtcNow), token);
 		await Writer.Write(new CommitLogRecord(pos7, _id4, pos6, DateTime.UtcNow, 0), token);
 	}
 
@@ -100,7 +100,7 @@ public abstract class DuplicateReadIndexTestScenario<TLogFormat, TStreamId> : Sp
 
 	protected DuplicateReadIndexTestScenario(int maxEntriesInMemTable = 20, int metastreamMaxCount = 1,
 		byte indexBitnessVersion = Opts.IndexBitnessVersionDefault, bool performAdditionalChecks = false) {
-		Ensure.Positive(maxEntriesInMemTable, "maxEntriesInMemTable");
+		Ensure.Positive(maxEntriesInMemTable);
 		MaxEntriesInMemTable = maxEntriesInMemTable;
 		MetastreamMaxCount = metastreamMaxCount;
 		IndexBitnessVersion = indexBitnessVersion;

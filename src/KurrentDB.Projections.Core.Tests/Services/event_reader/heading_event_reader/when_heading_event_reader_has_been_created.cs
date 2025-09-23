@@ -55,15 +55,13 @@ public class when_heading_event_reader_has_been_created : TestFixtureWithReadWri
 			_point.Handle(
 				ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 					Guid.NewGuid(), new TFPos(20, 10), "stream", 10, false, Guid.NewGuid(), "type", false,
-					new byte[0], new byte[0]));
+					[], []));
 		});
 	}
 
 	[Test]
 	public void can_be_started() {
 		var eventReaderId = Guid.NewGuid();
-		_point.Start(
-			eventReaderId,
-			new TransactionFileEventReader(_bus, eventReaderId, null, new TFPos(0, -1), new RealTimeProvider()));
+		_point.Start(eventReaderId, new TransactionFileEventReader(_bus, eventReaderId, null, new TFPos(0, -1), new RealTimeProvider()));
 	}
 }

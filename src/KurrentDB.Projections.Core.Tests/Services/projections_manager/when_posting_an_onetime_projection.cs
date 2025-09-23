@@ -7,6 +7,7 @@ using System.Linq;
 using KurrentDB.Core.Tests;
 using KurrentDB.Projections.Core.Messages;
 using NUnit.Framework;
+using static KurrentDB.Projections.Core.Messages.ProjectionManagementMessage;
 
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
 
@@ -18,15 +19,12 @@ public class when_posting_an_onetime_projection<TLogFormat, TStreamId> : TestFix
 	}
 
 	protected override IEnumerable<WhenStep> When() {
-		yield return (new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid()));
-		yield return
-			(new ProjectionManagementMessage.Command.Post(
-				_bus, ProjectionManagementMessage.RunAs.Anonymous,
-				@"fromAll().when({$any:function(s,e){return s;}});", enabled: true));
+		yield return new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid());
+		yield return new Command.Post( _bus, RunAs.Anonymous, "fromAll().when({$any:function(s,e){return s;}});", enabled: true);
 	}
 
 	[Test, Category("v8")]
 	public void projection_updated_is_published() {
-		Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Updated>().Count());
+		Assert.AreEqual(1, _consumer.HandledMessages.OfType<Updated>().Count());
 	}
 }

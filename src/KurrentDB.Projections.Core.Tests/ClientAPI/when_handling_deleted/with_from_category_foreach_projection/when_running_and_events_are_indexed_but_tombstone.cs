@@ -23,14 +23,14 @@ public class when_running_and_events_are_indexed_but_tombstone<TLogFormat, TStre
 		WaitIdle();
 		await EnableStandardProjections();
 		WaitIdle();
-		await PostProjection(@"
-fromCategory('stream').foreachStream().when({
-    $init: function(){return {a:0}},
-    type1: function(s,e){s.a++},
-    type2: function(s,e){s.a++},
-    $deleted: function(s,e){s.deleted=1},
-}).outputState();
-");
+		await PostProjection("""
+		                     fromCategory('stream').foreachStream().when({
+		                         $init: function(){return {a:0}},
+		                         type1: function(s,e){s.a++},
+		                         type2: function(s,e){s.a++},
+		                         $deleted: function(s,e){s.deleted=1},
+		                     }).outputState();
+		                     """);
 	}
 
 	protected override async Task When() {

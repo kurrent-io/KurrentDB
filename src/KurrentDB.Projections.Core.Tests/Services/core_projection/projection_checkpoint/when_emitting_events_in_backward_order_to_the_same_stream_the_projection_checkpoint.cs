@@ -14,8 +14,8 @@ namespace KurrentDB.Projections.Core.Tests.Services.core_projection.projection_c
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class
-	when_emitting_events_in_backward_order_to_the_same_stream_the_projection_checkpoint<TLogFormat, TStreamId> :
-		TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
+	when_emitting_events_in_backward_order_to_the_same_stream_the_projection_checkpoint<TLogFormat, TStreamId>
+	: TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private ProjectionCheckpoint _checkpoint;
 	private Exception _lastException;
 	private TestCheckpointManagerMessageHandler _readyHandler;
@@ -28,19 +28,9 @@ public class
 			CheckpointTag.FromPosition(0, 100, 50), new TransactionFilePositionTagger(0), 250, 1);
 		try {
 			_checkpoint.ValidateOrderAndEmitEvents(
-				new[] {
-					new EmittedEventEnvelope(
-						new EmittedDataEvent(
-							"stream1", Guid.NewGuid(), "type", true, "data", null,
-							CheckpointTag.FromPosition(0, 140, 130), null))
-				});
+				[new(new EmittedDataEvent("stream1", Guid.NewGuid(), "type", true, "data", null, CheckpointTag.FromPosition(0, 140, 130), null))]);
 			_checkpoint.ValidateOrderAndEmitEvents(
-				new[] {
-					new EmittedEventEnvelope(
-						new EmittedDataEvent(
-							"stream1", Guid.NewGuid(), "type", true, "data2", null,
-							CheckpointTag.FromPosition(0, 120, 110), null))
-				});
+				[new(new EmittedDataEvent("stream1", Guid.NewGuid(), "type", true, "data2", null, CheckpointTag.FromPosition(0, 120, 110), null))]);
 		} catch (Exception ex) {
 			_lastException = ex;
 		}

@@ -283,7 +283,7 @@ public class TcpClientDispatcherTests {
 	private EventRecord CreateLinkEventRecord() {
 		return new EventRecord(0, LogRecord.Prepare(new LogV2RecordFactory(), 100, Guid.NewGuid(), Guid.NewGuid(), 0, 0,
 			"link-stream", -1, PrepareFlags.SingleWrite | PrepareFlags.Data, SystemEventTypes.LinkTo,
-			Encoding.UTF8.GetBytes(string.Format("{0}@test-stream", long.MaxValue)), new byte[0]), "link-stream", SystemEventTypes.LinkTo);
+			Encoding.UTF8.GetBytes($"{long.MaxValue}@test-stream"), LogRecord.NoData), "link-stream", SystemEventTypes.LinkTo);
 	}
 
 	[Test]

@@ -23,11 +23,11 @@ public class when_handling_an_idle_notification_and_reordering_is_required :
 		_subscription.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 				Guid.NewGuid(), new TFPos(200, 150), "a", 1, false, _secondEventId, "bad-event-type", false,
-				new byte[0], new byte[0], _firstEventTimestamp));
+				[], [], _firstEventTimestamp));
 		_subscription.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 				Guid.NewGuid(), new TFPos(300, 100), "b", 1, false, _firstEventId, "bad-event-type", false,
-				new byte[0], new byte[0], _firstEventTimestamp.AddMilliseconds(1)));
+				[], [], _firstEventTimestamp.AddMilliseconds(1)));
 		_subscription.Handle(
 			new ReaderSubscriptionMessage.EventReaderIdle(
 				Guid.NewGuid(), _firstEventTimestamp.AddMilliseconds(_timeBetweenEvents)));

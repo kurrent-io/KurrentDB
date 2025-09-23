@@ -22,14 +22,14 @@ public class
 		await PostEvent("stream-1", "type2", "{}");
 		await PostEvent("stream-2", "type2", "{}");
 		WaitIdle();
-		await PostProjection(@"
-fromAll().foreachStream().when({
-    $init: function(){return {a:0}},
-    type1: function(s,e){s.a++},
-    type2: function(s,e){s.a++},
-    $deleted: function(s,e){s.deleted=1},
-}).outputState();
-");
+		await PostProjection("""
+		                     fromAll().foreachStream().when({
+		                         $init: function(){return {a:0}},
+		                         type1: function(s,e){s.a++},
+		                         type2: function(s,e){s.a++},
+		                         $deleted: function(s,e){s.deleted=1},
+		                     }).outputState();
+		                     """);
 		WaitIdle();
 		await HardDeleteStream("stream-1");
 		WaitIdle();

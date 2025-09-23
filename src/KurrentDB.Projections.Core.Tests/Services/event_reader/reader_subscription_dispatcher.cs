@@ -22,21 +22,21 @@ namespace KurrentDB.Projections.Core.Tests.Services.event_reader;
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class reader_subscription_dispatcher<TLogFormat, TStreamId> : TestFixtureWithEventReaderService<TLogFormat, TStreamId> {
-	private ReaderSubscriptionOptions _defaultOptions = new(1000, null, 1000, false, null, false);
+	private readonly ReaderSubscriptionOptions _defaultOptions = new(1000, null, 1000, false, null, false);
 	private FakeReaderStrategy _readerStrategy;
 	private FakeSubscriptionHandler _handler;
 	private Guid _subscriptionId;
+
 	protected override void Given() {
 		base.Given();
-		_readerStrategy = new FakeReaderStrategy();
+		_readerStrategy = new();
 		_subscriptionId = Guid.NewGuid();
-		_handler = new FakeSubscriptionHandler(_subscriptionId);
+		_handler = new();
 	}
 
 	[Test]
 	public void should_publish_subscribe_timeout_if_schedule_timeout_is_true() {
-		_subscriptionDispatcher.PublishSubscribe(new ReaderSubscriptionManagement.Subscribe(
-			_subscriptionId, CheckpointTag.Empty, _readerStrategy, _defaultOptions),
+		SubscriptionDispatcher.PublishSubscribe(new(_subscriptionId, CheckpointTag.Empty, _readerStrategy, _defaultOptions),
 			_handler, scheduleTimeout: true);
 
 		_queue.Process();
@@ -51,8 +51,7 @@ public class reader_subscription_dispatcher<TLogFormat, TStreamId> : TestFixture
 
 	[Test]
 	public void should_not_publish_subscribe_timeout_if_schedule_timeout_is_false() {
-		_subscriptionDispatcher.PublishSubscribe(new ReaderSubscriptionManagement.Subscribe(
-				_subscriptionId, CheckpointTag.Empty, _readerStrategy, _defaultOptions),
+		SubscriptionDispatcher.PublishSubscribe(new(_subscriptionId, CheckpointTag.Empty, _readerStrategy, _defaultOptions),
 			_handler, scheduleTimeout: false);
 
 		_queue.Process();
@@ -63,18 +62,15 @@ public class reader_subscription_dispatcher<TLogFormat, TStreamId> : TestFixture
 
 	[Test]
 	public void should_publish_subscription_messages_to_subscribed_handler() {
-		_subscriptionDispatcher.PublishSubscribe(new ReaderSubscriptionManagement.Subscribe(
-				_subscriptionId, CheckpointTag.Empty, _readerStrategy, _defaultOptions),
+		SubscriptionDispatcher.PublishSubscribe(new(_subscriptionId, CheckpointTag.Empty, _readerStrategy, _defaultOptions),
 			_handler, scheduleTimeout: false);
 
 		_queue.Process();
-		var assignedReaderMessage =
-			_handler.HandledMessages.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>().FirstOrDefault();
+		var assignedReaderMessage = _handler.HandledMessages.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>().FirstOrDefault();
 		Assert.NotNull(assignedReaderMessage, "Expected ReaderAssignedReader message to have been published");
 
 		_readerService.Handle(new ReaderSubscriptionMessage.CommittedEventDistributed(
-			assignedReaderMessage.ReaderId,
-			CreateFakeEvent(), CheckpointTag.Empty));
+			assignedReaderMessage.ReaderId, CreateFakeEvent(), CheckpointTag.Empty));
 		_queue.Process();
 		var commitedEventReceived = _handler.HandledMessages
 			.OfType<EventReaderSubscriptionMessage.CommittedEventReceived>()
@@ -84,20 +80,16 @@ public class reader_subscription_dispatcher<TLogFormat, TStreamId> : TestFixture
 
 	[Test]
 	public void should_not_send_subscription_messages_to_cancelled_handlers() {
-		_subscriptionDispatcher.PublishSubscribe(new ReaderSubscriptionManagement.Subscribe(
-				_subscriptionId, CheckpointTag.Empty, _readerStrategy, _defaultOptions),
+		SubscriptionDispatcher.PublishSubscribe(new(_subscriptionId, CheckpointTag.Empty, _readerStrategy, _defaultOptions),
 			_handler, scheduleTimeout: false);
 
 		_queue.Process();
-		var assignedReaderMessage =
-			_handler.HandledMessages.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>().FirstOrDefault();
+		var assignedReaderMessage = _handler.HandledMessages.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>().FirstOrDefault();
 		Assert.NotNull(assignedReaderMessage, "Expected ReaderAssignedReader message to have been published");
 
-		_subscriptionDispatcher.Cancel(_subscriptionId);
+		SubscriptionDispatcher.Cancel(_subscriptionId);
 
-		_readerService.Handle(new ReaderSubscriptionMessage.CommittedEventDistributed(
-			assignedReaderMessage.ReaderId,
-			CreateFakeEvent(), CheckpointTag.Empty));
+		_readerService.Handle(new ReaderSubscriptionMessage.CommittedEventDistributed(assignedReaderMessage.ReaderId, CreateFakeEvent(), CheckpointTag.Empty));
 		_queue.Process();
 
 		Assert.IsEmpty(_handler.HandledMessages.OfType<EventReaderSubscriptionMessage.CommittedEventReceived>());
@@ -105,26 +97,22 @@ public class reader_subscription_dispatcher<TLogFormat, TStreamId> : TestFixture
 
 	[Test]
 	public void should_send_subscription_messages_to_handler_that_has_subscribed_without_publishing() {
-		_subscriptionDispatcher.Subscribed(_subscriptionId, _handler);
+		SubscriptionDispatcher.Subscribed(_subscriptionId, _handler);
 
-		_readerService.Handle(new ReaderSubscriptionManagement.Subscribe(
-			_subscriptionId, CheckpointTag.Empty, _readerStrategy, _defaultOptions));
+		_readerService.Handle(new ReaderSubscriptionManagement.Subscribe(_subscriptionId, CheckpointTag.Empty, _readerStrategy, _defaultOptions));
 
 		_queue.Process();
-		Assert.IsNotEmpty(_handler.HandledMessages
-			.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>());
+		Assert.IsNotEmpty(_handler.HandledMessages.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>());
 	}
 
 
 	[Test]
 	public void multiple_handlers_should_only_receive_messages_for_their_subscription() {
 		var secondSubscription = Guid.NewGuid();
-		var secondHandler = new FakeSubscriptionHandler(secondSubscription);
-		_subscriptionDispatcher.PublishSubscribe(new ReaderSubscriptionManagement.Subscribe(
-				_subscriptionId, CheckpointTag.Empty, _readerStrategy, _defaultOptions),
+		var secondHandler = new FakeSubscriptionHandler();
+		SubscriptionDispatcher.PublishSubscribe(new(_subscriptionId, CheckpointTag.Empty, _readerStrategy, _defaultOptions),
 			_handler, scheduleTimeout: false);
-		_subscriptionDispatcher.PublishSubscribe(new ReaderSubscriptionManagement.Subscribe(
-				secondSubscription, CheckpointTag.Empty, _readerStrategy, _defaultOptions),
+		SubscriptionDispatcher.PublishSubscribe(new(secondSubscription, CheckpointTag.Empty, _readerStrategy, _defaultOptions),
 			secondHandler, scheduleTimeout: false);
 
 		_queue.Process();
@@ -134,27 +122,22 @@ public class reader_subscription_dispatcher<TLogFormat, TStreamId> : TestFixture
 		Assert.AreEqual(1, secondHandler.HandledMessages.Count(x => x is EventReaderSubscriptionMessage.ReaderAssignedReader));
 	}
 
-	private ResolvedEvent CreateFakeEvent() => new(
+	private static ResolvedEvent CreateFakeEvent() => new(
 		"test-stream", 0, "test-stream", 0, false, new TFPos(100, 100),
 		Guid.NewGuid(), "test-event", isJson: true,
 		"{\"foo\":\"bar\"}", "{}");
 
-	private class FakeSubscriptionHandler : IHandle<EventReaderSubscriptionMessage.ProgressChanged>,
-		IHandle<EventReaderSubscriptionMessage.CommittedEventReceived>,
-		IHandle<EventReaderSubscriptionMessage.SubscriptionStarted>,
-		IHandle<EventReaderSubscriptionMessage.NotAuthorized>,
-		IHandle<EventReaderSubscriptionMessage.EofReached>,
-		IHandle<EventReaderSubscriptionMessage.CheckpointSuggested>,
-		IHandle<EventReaderSubscriptionMessage.ReaderAssignedReader>,
-		IHandle<EventReaderSubscriptionMessage.Failed>,
-		IHandle<EventReaderSubscriptionMessage.SubscribeTimeout> {
-		public Guid SubscriptionId { get; }
-
-		public FakeSubscriptionHandler(Guid subscriptionId) {
-			SubscriptionId = subscriptionId;
-		}
-
-		public List<EventReaderSubscriptionMessageBase> HandledMessages = new();
+	private class FakeSubscriptionHandler
+		: IHandle<EventReaderSubscriptionMessage.ProgressChanged>,
+			IHandle<EventReaderSubscriptionMessage.CommittedEventReceived>,
+			IHandle<EventReaderSubscriptionMessage.SubscriptionStarted>,
+			IHandle<EventReaderSubscriptionMessage.NotAuthorized>,
+			IHandle<EventReaderSubscriptionMessage.EofReached>,
+			IHandle<EventReaderSubscriptionMessage.CheckpointSuggested>,
+			IHandle<EventReaderSubscriptionMessage.ReaderAssignedReader>,
+			IHandle<EventReaderSubscriptionMessage.Failed>,
+			IHandle<EventReaderSubscriptionMessage.SubscribeTimeout> {
+		public readonly List<EventReaderSubscriptionMessageBase> HandledMessages = [];
 		public void Handle(EventReaderSubscriptionMessage.ProgressChanged message) => HandledMessages.Add(message);
 		public void Handle(EventReaderSubscriptionMessage.SubscriptionStarted message) => HandledMessages.Add(message);
 		public void Handle(EventReaderSubscriptionMessage.NotAuthorized message) => HandledMessages.Add(message);
@@ -163,7 +146,6 @@ public class reader_subscription_dispatcher<TLogFormat, TStreamId> : TestFixture
 		public void Handle(EventReaderSubscriptionMessage.ReaderAssignedReader message) => HandledMessages.Add(message);
 		public void Handle(EventReaderSubscriptionMessage.Failed message) => HandledMessages.Add(message);
 		public void Handle(EventReaderSubscriptionMessage.SubscribeTimeout message) => HandledMessages.Add(message);
-		public void Handle(EventReaderSubscriptionMessage.CommittedEventReceived message) =>
-			HandledMessages.Add(message);
+		public void Handle(EventReaderSubscriptionMessage.CommittedEventReceived message) => HandledMessages.Add(message);
 	}
 }

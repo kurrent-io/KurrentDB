@@ -5,40 +5,30 @@ using System;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 
-public class PositionTracker {
-	private readonly PositionTagger _positionTagger;
-	private CheckpointTag _lastTag = null;
-
-	public PositionTracker(PositionTagger positionTagger) {
-		_positionTagger = positionTagger;
-	}
-
-	public CheckpointTag LastTag {
-		get { return _lastTag; }
-	}
+public class PositionTracker(PositionTagger positionTagger) {
+	public CheckpointTag LastTag { get; private set; }
 
 	public void UpdateByCheckpointTagForward(CheckpointTag newTag) {
-		if (_lastTag == null)
+		if (LastTag == null)
 			throw new InvalidOperationException("Initial position was not set");
-		if (newTag <= _lastTag)
-			throw new InvalidOperationException(
-				string.Format("Event at checkpoint tag {0} has been already processed", newTag));
+		if (newTag <= LastTag)
+			throw new InvalidOperationException($"Event at checkpoint tag {newTag} has been already processed");
 		InternalUpdate(newTag);
 	}
 
 	public void UpdateByCheckpointTagInitial(CheckpointTag checkpointTag) {
-		if (_lastTag != null)
+		if (LastTag != null)
 			throw new InvalidOperationException("Position tagger has be already updated");
 		InternalUpdate(checkpointTag);
 	}
 
 	private void InternalUpdate(CheckpointTag newTag) {
-		if (!_positionTagger.IsCompatible(newTag))
+		if (!positionTagger.IsCompatible(newTag))
 			throw new InvalidOperationException("Cannot update by incompatible checkpoint tag");
-		_lastTag = newTag;
+		LastTag = newTag;
 	}
 
 	public void Initialize() {
-		_lastTag = null;
+		LastTag = null;
 	}
 }

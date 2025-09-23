@@ -40,24 +40,24 @@ public class when_receiving_committed_events_the_projection_with_partitioned_sta
 			EventReaderSubscriptionMessage.CommittedEventReceived.Sample(
 				new ResolvedEvent(
 					"account-01", 1, "account-01", 1, false, new TFPos(120, 110), _eventId,
-					"handle_this_type", false, "data1", "metadata"), _subscriptionId, 0));
+					"handle_this_type", false, "data1", "metadata"), SubscriptionId, 0));
 		_bus.Publish(
 			EventReaderSubscriptionMessage.CommittedEventReceived.Sample(
 				new ResolvedEvent(
 					"account-02", 2, "account-02", 2, false, new TFPos(140, 130), _eventId,
-					"handle_this_type", false, "data2", "metadata"), _subscriptionId, 1));
+					"handle_this_type", false, "data2", "metadata"), SubscriptionId, 1));
 		_bus.Publish(
 			EventReaderSubscriptionMessage.CommittedEventReceived.Sample(
 				new ResolvedEvent(
 					"account-01", 2, "account-01", 2, false, new TFPos(160, 150), _eventId, "append", false,
 					"$", "metadata"),
-				_subscriptionId, 2));
+				SubscriptionId, 2));
 		_bus.Publish(
 			EventReaderSubscriptionMessage.CommittedEventReceived.Sample(
 				new ResolvedEvent(
 					"account-02", 3, "account-02", 3, false, new TFPos(180, 170), _eventId, "append", false,
 					"$", "metadata"),
-				_subscriptionId, 3));
+				SubscriptionId, 3));
 	}
 
 	[Test]

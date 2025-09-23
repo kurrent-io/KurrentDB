@@ -23,13 +23,13 @@ public class
 		_subscription.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 				Guid.NewGuid(), new TFPos(200, 200), "test-stream", 1, false, Guid.NewGuid(),
-				"bad-event-type", false, new byte[0], new byte[0]));
+				"bad-event-type", false, [], []));
 		_checkpointHandler.HandledMessages.Clear();
 		((FakeTimeProvider)_timeProvider).AddToUtcTime(TimeSpan.FromMilliseconds(_checkpointAfterMs));
 		_subscription.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 				Guid.NewGuid(), new TFPos(300, 300), "test-stream", 1, false, Guid.NewGuid(),
-				"bad-event-type", false, new byte[0], new byte[0]));
+				"bad-event-type", false, [], []));
 	}
 
 	[Test]
@@ -57,17 +57,17 @@ public class
 		_subscription.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 				Guid.NewGuid(), new TFPos(200, 200), "test-stream", 1, false, Guid.NewGuid(),
-				"bad-event-type", false, new byte[0], new byte[0]));
+				"bad-event-type", false, [], []));
 		_subscription.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 				Guid.NewGuid(), new TFPos(300, 300), "test-stream", 1, false, Guid.NewGuid(),
-				"bad-event-type", false, new byte[0], new byte[0]));
+				"bad-event-type", false, [], []));
 		_checkpointHandler.HandledMessages.Clear();
 		((FakeTimeProvider)_timeProvider).AddToUtcTime(TimeSpan.FromMilliseconds(_checkpointAfterMs));
 		_subscription.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 				Guid.NewGuid(), new TFPos(400, 400), "test-stream", 1, false, Guid.NewGuid(),
-				"bad-event-type", false, new byte[0], new byte[0]));
+				"bad-event-type", false, [], []));
 	}
 
 	[Test]

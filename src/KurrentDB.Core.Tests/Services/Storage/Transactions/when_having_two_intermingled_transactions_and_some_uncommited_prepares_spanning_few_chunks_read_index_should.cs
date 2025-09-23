@@ -53,14 +53,14 @@ public class
 
 		var (t1StreamId, _) = await GetOrReserve("t1", token);
 		(var eventTypeId, _pos6) = await GetOrReserveEventType("et", token);
-		var r6 = LogRecord.Prepare(_recordFactory, _pos6, Guid.NewGuid(), Guid.NewGuid(), _pos6, 0, t1StreamId, -1,
-			PrepareFlags.SingleWrite, eventTypeId, LogRecord.NoData, LogRecord.NoData);
+		var r6 = _recordFactory.Prepare( _pos6, Guid.NewGuid(), Guid.NewGuid(), _pos6, 0, t1StreamId, -1,
+			PrepareFlags.SingleWrite, eventTypeId, LogRecord.NoData.ToArray(), LogRecord.NoData.ToArray());
 		(_, _pos7) = await Writer.Write(r6, token);
-		var r7 = LogRecord.Prepare(_recordFactory, _pos7, Guid.NewGuid(), Guid.NewGuid(), _pos7, 0, t1StreamId, -1,
-			PrepareFlags.SingleWrite, eventTypeId, LogRecord.NoData, LogRecord.NoData);
+		var r7 = _recordFactory.Prepare( _pos7, Guid.NewGuid(), Guid.NewGuid(), _pos7, 0, t1StreamId, -1,
+			PrepareFlags.SingleWrite, eventTypeId, LogRecord.NoData.ToArray(), LogRecord.NoData.ToArray());
 		(_, _pos8) = await Writer.Write(r7, token);
-		var r8 = LogRecord.Prepare(_recordFactory, _pos8, Guid.NewGuid(), Guid.NewGuid(), _pos8, 0, t1StreamId, -1,
-			PrepareFlags.SingleWrite, eventTypeId, LogRecord.NoData, LogRecord.NoData);
+		var r8 = _recordFactory.Prepare( _pos8, Guid.NewGuid(), Guid.NewGuid(), _pos8, 0, t1StreamId, -1,
+			PrepareFlags.SingleWrite, eventTypeId, LogRecord.NoData.ToArray(), LogRecord.NoData.ToArray());
 
 		await Writer.Write(r8, token);
 	}

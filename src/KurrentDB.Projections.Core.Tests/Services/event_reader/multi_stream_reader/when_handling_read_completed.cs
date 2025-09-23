@@ -22,7 +22,7 @@ namespace KurrentDB.Projections.Core.Tests.Services.event_reader.multi_stream_re
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_handling_read_completed<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private MultiStreamEventReader _edp;
-	private Guid _distibutionPointCorrelationId;
+	private Guid _distributionPointCorrelationId;
 	private Guid _firstEventId;
 	private Guid _secondEventId;
 
@@ -35,34 +35,30 @@ public class when_handling_read_completed<TLogFormat, TStreamId> : TestFixtureWi
 
 	[SetUp]
 	public new void When() {
-		_ab12Tag = new Dictionary<string, long> { { "a", 1 }, { "b", 2 } };
-		_abStreams = new[] { "a", "b" };
+		_ab12Tag = new() { { "a", 1 }, { "b", 2 } };
+		_abStreams = ["a", "b"];
 
-		_distibutionPointCorrelationId = Guid.NewGuid();
-		_edp = new MultiStreamEventReader(
-			_ioDispatcher, _bus, _distibutionPointCorrelationId, null, 0, _abStreams, _ab12Tag, false,
-			new RealTimeProvider());
+		_distributionPointCorrelationId = Guid.NewGuid();
+		_edp = new(_bus, _distributionPointCorrelationId, null, 0, _abStreams, _ab12Tag, false, new RealTimeProvider());
 		_edp.Resume();
 		_firstEventId = Guid.NewGuid();
 		_secondEventId = Guid.NewGuid();
-		var correlationId = _consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>()
-			.Last(x => x.EventStreamId == "a").CorrelationId;
+		var correlationId = _consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>().Last(x => x.EventStreamId == "a").CorrelationId;
 		_edp.Handle(
 			new ClientMessage.ReadStreamEventsForwardCompleted(
 				correlationId, "a", 100, 100, ReadStreamResult.Success,
-				new[] {
+				[
 					ResolvedEvent.ForUnresolvedEvent(
 						new EventRecord(
 							1, 50, Guid.NewGuid(), _firstEventId, 50, 0, "a", ExpectedVersion.Any, DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type1", new byte[] {1}, new byte[] {2})),
+							"event_type1", [1], [2])),
 					ResolvedEvent.ForUnresolvedEvent(
 						new EventRecord(
 							2, 100, Guid.NewGuid(), _secondEventId, 100, 0, "a", ExpectedVersion.Any,
-							DateTime.UtcNow,
-							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type2", new byte[] {3}, new byte[] {4}))
-				}, null, false, "", 3, 4, false, 200));
+							DateTime.UtcNow, PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
+							"event_type2", [3], [4]))
+				], null, false, "", 3, 4, false, 200));
 	}
 
 	[Test]
@@ -77,8 +73,7 @@ public class when_handling_read_completed<TLogFormat, TStreamId> : TestFixtureWi
 
 	[Test]
 	public void does_not_publish_committed_event_received_messages() {
-		Assert.AreEqual(
-			0, _consumer.HandledMessages.OfType<ReaderSubscriptionMessage.CommittedEventDistributed>().Count());
+		Assert.AreEqual(0, _consumer.HandledMessages.OfType<ReaderSubscriptionMessage.CommittedEventDistributed>().Count());
 	}
 
 	[Test]
@@ -94,21 +89,19 @@ public class when_handling_read_completed<TLogFormat, TStreamId> : TestFixtureWi
 
 	[Test]
 	public void cannot_handle_repeated_read_events_completed() {
-		var correlationId = _consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>()
-			.Last(x => x.EventStreamId == "a").CorrelationId;
+		var correlationId = _consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>().Last(x => x.EventStreamId == "a").CorrelationId;
 		Assert.Throws<InvalidOperationException>(() => {
 			_edp.Handle(
 				new ClientMessage.ReadStreamEventsForwardCompleted(
 					correlationId, "a", 100, 100, ReadStreamResult.Success,
-					new[] {
+					[
 						ResolvedEvent.ForUnresolvedEvent(
 							new EventRecord(
-								2, 50, Guid.NewGuid(), Guid.NewGuid(), 50, 0, "a", ExpectedVersion.Any,
-								DateTime.UtcNow,
+								2, 50, Guid.NewGuid(), Guid.NewGuid(), 50, 0, "a", ExpectedVersion.Any, DateTime.UtcNow,
 								PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin |
 								PrepareFlags.TransactionEnd,
-								"event_type", new byte[0], new byte[0]))
-					}, null, false, "", 3, 4, false, 100));
+								"event_type", [], []))
+					], null, false, "", 3, 4, false, 100));
 		});
 	}
 }

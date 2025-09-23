@@ -34,21 +34,20 @@ public class when_running_and_events_are_indexed_but_tombstone<TLogFormat, TStre
 			WaitIdle();
 		}
 
-
 		await HardDeleteStream("stream-1");
 		WaitIdle();
 	}
 
 	protected override async Task When() {
 		await base.When();
-		await PostProjection(@"
-fromAll().foreachStream().when({
-    $init: function(){return {}},
-    type1: function(s,e){s.a=1},
-    type2: function(s,e){s.a=1},
-    $deleted: function(s,e){s.deleted=1},
-}).outputState();
-");
+		await PostProjection("""
+		                     fromAll().foreachStream().when({
+		                         $init: function(){return {}},
+		                         type1: function(s,e){s.a=1},
+		                         type2: function(s,e){s.a=1},
+		                         $deleted: function(s,e){s.deleted=1},
+		                     }).outputState();
+		                     """);
 		WaitIdle();
 	}
 

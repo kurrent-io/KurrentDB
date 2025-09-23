@@ -17,7 +17,7 @@ namespace KurrentDB.Projections.Core.Tests.Services.event_reordering_projection_
 public class when_creating_projection_subscription {
 	[Test]
 	public void it_can_be_created() {
-		new EventReorderingReaderSubscription(
+		_ = new EventReorderingReaderSubscription(
 			new FakePublisher(),
 			Guid.NewGuid(),
 			CheckpointTag.FromPosition(0, 0, -1),
@@ -35,7 +35,7 @@ public class when_creating_projection_subscription {
 	[Test]
 	public void null_publisher_throws_argument_null_exception() {
 		Assert.Throws<ArgumentNullException>(() => {
-			new EventReorderingReaderSubscription(
+			_ = new EventReorderingReaderSubscription(
 				null,
 				Guid.NewGuid(),
 				CheckpointTag.FromPosition(0, 0, -1),
@@ -54,7 +54,7 @@ public class when_creating_projection_subscription {
 	[Test]
 	public void null_describe_source_throws_argument_null_exception() {
 		Assert.Throws<ArgumentNullException>(() => {
-			new EventReorderingReaderSubscription(
+			_ = new EventReorderingReaderSubscription(
 				new FakePublisher(),
 				Guid.NewGuid(),
 				CheckpointTag.FromPosition(0, 0, -1),
@@ -73,7 +73,7 @@ public class when_creating_projection_subscription {
 	[Test]
 	public void null_time_provider_throws_argument_null_exception() {
 		Assert.Throws<ArgumentNullException>(() => {
-			new EventReorderingReaderSubscription(
+			_ = new EventReorderingReaderSubscription(
 				new FakePublisher(),
 				Guid.NewGuid(),
 				CheckpointTag.FromPosition(0, 0, -1),
@@ -89,16 +89,10 @@ public class when_creating_projection_subscription {
 		});
 	}
 
-	private IReaderStrategy CreateReaderStrategy() {
+	private static IReaderStrategy CreateReaderStrategy() {
 		var result = new SourceDefinitionBuilder();
 		result.FromAll();
 		result.AllEvents();
-		return ReaderStrategy.Create(
-			"test",
-			0,
-			result.Build(),
-			new RealTimeProvider(),
-			stopOnEof: false,
-			runAs: null);
+		return ReaderStrategy.Create("test", 0, result.Build(), new RealTimeProvider(), runAs: null);
 	}
 }

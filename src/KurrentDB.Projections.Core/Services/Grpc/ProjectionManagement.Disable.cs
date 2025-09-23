@@ -14,24 +14,24 @@ using KurrentDB.Projections.Core.Messages;
 namespace EventStore.Projections.Core.Services.Grpc;
 
 internal partial class ProjectionManagement {
-	private static readonly Operation DisableOperation = new Operation(Operations.Projections.Disable);
+	private static readonly Operation DisableOperation = new(Operations.Projections.Disable);
+
 	public override async Task<DisableResp> Disable(DisableReq request, ServerCallContext context) {
 		var disableSource = new TaskCompletionSource<bool>();
-
 		var options = request.Options;
-
 		var user = context.GetHttpContext().User;
+
 		if (!await _authorizationProvider.CheckAccessAsync(user, DisableOperation, context.CancellationToken)) {
 			throw RpcExceptions.AccessDenied();
 		}
+
 		var name = options.Name;
 		var runAs = new ProjectionManagementMessage.RunAs(user);
-
 		var envelope = new CallbackEnvelope(OnMessage);
 
 		_publisher.Publish(options.WriteCheckpoint
 			? new ProjectionManagementMessage.Command.Disable(envelope, name, runAs)
-			: (Message)new ProjectionManagementMessage.Command.Abort(envelope, name, runAs));
+			: new ProjectionManagementMessage.Command.Abort(envelope, name, runAs));
 
 		await disableSource.Task;
 

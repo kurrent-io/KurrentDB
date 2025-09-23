@@ -20,7 +20,7 @@ public class when_running_a_js_projection_emitting_invalid_links : TestFixtureWi
             ";
 	}
 
-	[Test, Category(_projectionType)]
+	[Test, Category(ProjectionType)]
 	public void process_event_does_not_allow_emitted_event() {
 		var ex = Assert.Throws<Exception>(() => {
 			_stateHandler.ProcessEvent(

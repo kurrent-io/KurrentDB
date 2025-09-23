@@ -14,7 +14,7 @@ public class when_handling_committed_event_passing_the_filter : TestFixtureWithP
 		_subscription.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 				Guid.NewGuid(), new TFPos(200, 150), "test-stream", 1, false, Guid.NewGuid(),
-				"bad-event-type", false, new byte[0], new byte[0]));
+				"bad-event-type", false, [], []));
 	}
 
 	[Test]

@@ -11,7 +11,7 @@ namespace KurrentDB.Projections.Core.Tests.Services.event_reordering_projection_
 
 public abstract class TestFixtureWithEventReorderingProjectionSubscription : TestFixtureWithProjectionSubscription {
 	protected int _timeBetweenEvents;
-	protected int _processingLagMs;
+	private int _processingLagMs;
 
 	protected override void Given() {
 		_timeBetweenEvents = 1100;
@@ -29,8 +29,7 @@ public abstract class TestFixtureWithEventReorderingProjectionSubscription : Tes
 	protected override IReaderSubscription CreateProjectionSubscription() {
 		return new EventReorderingReaderSubscription(_bus,
 			_projectionCorrelationId,
-			CheckpointTag.FromStreamPositions(0,
-				new Dictionary<string, long> { { "a", ExpectedVersion.NoStream }, { "b", ExpectedVersion.NoStream } }),
+			CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> { { "a", ExpectedVersion.NoStream }, { "b", ExpectedVersion.NoStream } }),
 			_readerStrategy,
 			_timeProvider,
 			_checkpointUnhandledBytesThreshold, _checkpointProcessedEventsThreshold, _checkpointAfterMs,

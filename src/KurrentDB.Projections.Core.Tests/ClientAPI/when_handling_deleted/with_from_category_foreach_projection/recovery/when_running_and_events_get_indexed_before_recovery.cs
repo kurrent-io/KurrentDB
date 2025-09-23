@@ -25,14 +25,14 @@ public class
 		WaitIdle();
 		await EnableStandardProjections();
 		WaitIdle();
-		await PostProjection(@"
-fromCategory('stream').foreachStream().when({
-    $init: function(){return {a:0}},
-    type1: function(s,e){s.a++},
-    type2: function(s,e){s.a++},
-    $deleted: function(s,e){s.deleted=1},
-}).outputState();
-");
+		await PostProjection("""
+		                     fromCategory('stream').foreachStream().when({
+		                         $init: function(){return {a:0}},
+		                         type1: function(s,e){s.a++},
+		                         type2: function(s,e){s.a++},
+		                         $deleted: function(s,e){s.deleted=1},
+		                     }).outputState();
+		                     """);
 		WaitIdle();
 		await HardDeleteStream("stream-1");
 		WaitIdle();

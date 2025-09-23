@@ -10,28 +10,23 @@ using Newtonsoft.Json.Linq;
 namespace KurrentDB.Projections.Core.Services.Processing.Partitioning;
 
 public class PartitionState {
-	private static readonly JsonSerializerSettings JsonSettings = new JsonSerializerSettings {
-		DateParseHandling = DateParseHandling.None,
-	};
+	private static readonly JsonSerializerSettings JsonSettings = new() { DateParseHandling = DateParseHandling.None };
 
-	public bool IsChanged(PartitionState newState) {
-		return State != newState.State || Result != newState.Result;
-	}
+	public bool IsChanged(PartitionState newState) => State != newState.State || Result != newState.Result;
 
 	public static PartitionState Deserialize(string serializedState, CheckpointTag causedBy) {
 		if (serializedState == null)
-			return new PartitionState("", null, causedBy);
+			return new("", null, causedBy);
 
 		JToken state = null;
 		JToken result = null;
 
 		if (!string.IsNullOrEmpty(serializedState)) {
 			var deserialized = JsonConvert.DeserializeObject(serializedState, JsonSettings);
-			var array = deserialized as JArray;
-			if (array != null && array.Count > 0) {
-				state = array[0] as JToken;
+			if (deserialized is JArray { Count: > 0 } array) {
+				state = array[0];
 				if (array.Count == 2) {
-					result = array[1] as JToken;
+					result = array[1];
 				}
 			} else {
 				state = deserialized as JObject;
@@ -39,50 +34,33 @@ public class PartitionState {
 		}
 
 		var stateJson = state != null ? state.ToCanonicalJson() : "";
-		var resultJson = result != null ? result.ToCanonicalJson() : null;
+		var resultJson = result?.ToCanonicalJson();
 
-		return new PartitionState(stateJson, resultJson, causedBy);
+		return new(stateJson, resultJson, causedBy);
 	}
-
-	private readonly string _state;
-	private readonly string _result;
-	private readonly CheckpointTag _causedBy;
-	private readonly int _size;
 
 	public PartitionState(string state, string result, CheckpointTag causedBy) {
-		if (state == null)
-			throw new ArgumentNullException("state");
-		if (causedBy == null)
-			throw new ArgumentNullException("causedBy");
+		ArgumentNullException.ThrowIfNull(state);
+		ArgumentNullException.ThrowIfNull(causedBy);
 
-		_state = state;
-		_result = result;
-		_causedBy = causedBy;
-		_size = _state.Length + (_result?.Length ?? 0);
+		State = state;
+		Result = result;
+		CausedBy = causedBy;
+		Size = State.Length + (Result?.Length ?? 0);
 	}
 
-	public string State {
-		get { return _state; }
-	}
+	public string State { get; }
 
-	public CheckpointTag CausedBy {
-		get { return _causedBy; }
-	}
+	public CheckpointTag CausedBy { get; }
 
-	public string Result {
-		get { return _result; }
-	}
+	public string Result { get; }
 
-	public int Size {
-		get { return _size; }
-	}
+	public int Size { get; }
 
-	public string Serialize() {
-		var state = _state;
-		if (state == "" && Result != null)
-			throw new Exception("state == \"\" && Result != null");
-		return Result != null
-			? "[" + state + "," + _result + "]"
-			: "[" + state + "]";
-	}
+	public string Serialize()
+		=> State == "" && Result != null
+			? throw new Exception("state == \"\" && Result != null")
+			: Result != null
+				? $"[{State},{Result}]"
+				: $"[{State}]";
 }

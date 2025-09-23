@@ -22,13 +22,9 @@ public class when_unlocking_and_forgetting_part_of_cached_states {
 		_cachedAtCheckpointTag1 = CheckpointTag.FromPosition(0, 1000, 900);
 		_cachedAtCheckpointTag2 = CheckpointTag.FromPosition(0, 1200, 1100);
 		_cachedAtCheckpointTag3 = CheckpointTag.FromPosition(0, 1400, 1300);
-		_cache.CacheAndLockPartitionState(
-			"partition1", new PartitionState("data1", null, _cachedAtCheckpointTag1), _cachedAtCheckpointTag1);
-		_cache.CacheAndLockPartitionState(
-			"partition2", new PartitionState("data2", null, _cachedAtCheckpointTag2), _cachedAtCheckpointTag2);
-		_cache.CacheAndLockPartitionState(
-			"partition3", new PartitionState("data3", null, _cachedAtCheckpointTag3), _cachedAtCheckpointTag3);
-		// when
+		_cache.CacheAndLockPartitionState("partition1", new("data1", null, _cachedAtCheckpointTag1), _cachedAtCheckpointTag1);
+		_cache.CacheAndLockPartitionState("partition2", new("data2", null, _cachedAtCheckpointTag2), _cachedAtCheckpointTag2);
+		_cache.CacheAndLockPartitionState("partition3", new("data3", null, _cachedAtCheckpointTag3), _cachedAtCheckpointTag3); // when
 		_cache.Unlock(_cachedAtCheckpointTag2, forgetUnlocked: true);
 	}
 

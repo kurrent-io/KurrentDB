@@ -12,20 +12,10 @@ using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 namespace KurrentDB.Projections.Core.Standard;
 
 public class IndexStreams : IProjectionStateHandler {
-	public IndexStreams(string source, Action<string, object[]> logger) {
-		var trimmedSource = source == null ? null : source.Trim();
+	public IndexStreams(string source) {
+		var trimmedSource = source?.Trim();
 		if (!string.IsNullOrEmpty(trimmedSource))
-			throw new InvalidOperationException(
-				"Cannot initialize categorize stream projection handler.  No source is allowed.");
-		if (logger != null) {
-			//                logger(string.Format("Index streams projection handler has been initialized"));
-		}
-	}
-
-	public void ConfigureSourceProcessingStrategy(SourceDefinitionBuilder builder) {
-		builder.FromAll();
-		builder.AllEvents();
-		builder.SetIncludeLinks();
+			throw new InvalidOperationException("Cannot initialize categorize stream projection handler.  No source is allowed.");
 	}
 
 	public void Load(string state) {
@@ -54,13 +44,13 @@ public class IndexStreams : IProjectionStateHandler {
 		if (data.PositionSequenceNumber != 0)
 			return false; // not our event
 
-		emittedEvents = new[] {
-			new EmittedEventEnvelope(
+		emittedEvents = [
+			new(
 				new EmittedDataEvent(
 					SystemStreams.StreamsStream, Guid.NewGuid(), SystemEventTypes.LinkTo, false,
-					data.PositionSequenceNumber + "@" + data.PositionStreamId, null, eventPosition,
+					$"{data.PositionSequenceNumber}@{data.PositionStreamId}", null, eventPosition,
 					expectedTag: null))
-		};
+		];
 
 		return true;
 	}
@@ -84,5 +74,11 @@ public class IndexStreams : IProjectionStateHandler {
 
 	public IQuerySources GetSourceDefinition() {
 		return SourceDefinitionBuilder.From(ConfigureSourceProcessingStrategy);
+
+		static void ConfigureSourceProcessingStrategy(SourceDefinitionBuilder builder) {
+			builder.FromAll();
+			builder.AllEvents();
+			builder.SetIncludeLinks();
+		}
 	}
 }

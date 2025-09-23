@@ -10,24 +10,21 @@ using KurrentDB.Projections.Core.Services.Processing.Strategies;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Subscriptions;
 
-public class ReaderSubscription : ReaderSubscriptionBase, IReaderSubscription {
-	public ReaderSubscription(
-		string tag,
-		IPublisher publisher,
-		Guid subscriptionId,
-		CheckpointTag @from,
-		IReaderStrategy readerStrategy,
-		ITimeProvider timeProvider,
-		long? checkpointUnhandledBytesThreshold,
-		int? checkpointProcessedEventsThreshold,
-		int checkpointAfterMs,
-		bool stopOnEof,
-		int? stopAfterNEvents,
-		bool enableContentTypeValidation)
-		: base(
-			publisher,
+public class ReaderSubscription(
+	IPublisher publisher,
+	Guid subscriptionId,
+	CheckpointTag from,
+	IReaderStrategy readerStrategy,
+	ITimeProvider timeProvider,
+	long? checkpointUnhandledBytesThreshold,
+	int? checkpointProcessedEventsThreshold,
+	int checkpointAfterMs,
+	bool stopOnEof,
+	int? stopAfterNEvents,
+	bool enableContentTypeValidation)
+	: ReaderSubscriptionBase(publisher,
 			subscriptionId,
-			@from,
+			from,
 			readerStrategy,
 			timeProvider,
 			checkpointUnhandledBytesThreshold,
@@ -35,10 +32,8 @@ public class ReaderSubscription : ReaderSubscriptionBase, IReaderSubscription {
 			checkpointAfterMs,
 			stopOnEof,
 			stopAfterNEvents,
-			enableContentTypeValidation) {
-		_tag = tag;
-	}
-
+			enableContentTypeValidation),
+		IReaderSubscription {
 	public void Handle(ReaderSubscriptionMessage.CommittedEventDistributed message) {
 		ProcessOne(message);
 	}
@@ -48,9 +43,9 @@ public class ReaderSubscription : ReaderSubscriptionBase, IReaderSubscription {
 	}
 
 	public void Handle(ReaderSubscriptionMessage.EventReaderPartitionDeleted message) {
-		if (!base._eventFilter.PassesDeleteNotification(message.PositionStreamId))
+		if (!EventFilter.PassesDeleteNotification(message.PositionStreamId))
 			return;
-		var deletePosition = _positionTagger.MakeCheckpointTag(_positionTracker.LastTag, message);
+		var deletePosition = PositionTagger.MakeCheckpointTag(PositionTracker.LastTag, message);
 		PublishPartitionDeleted(message.Partition, deletePosition);
 	}
 

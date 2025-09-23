@@ -33,11 +33,12 @@ public class when_tf_based_read_timeout_occurs<TLogFormat, TStreamId> : EventByT
 	public new void When() {
 		_distributionCorrelationId = Guid.NewGuid();
 		_fakeTimeProvider = new FakeTimeProvider();
-		var fromPositions = new Dictionary<string, long>();
-		fromPositions.Add("$et-eventTypeOne", 0);
-		fromPositions.Add("$et-eventTypeTwo", 0);
-		_eventReader = new EventByTypeIndexEventReader(_bus, _distributionCorrelationId,
-			null, new string[] { "eventTypeOne", "eventTypeTwo" },
+		var fromPositions = new Dictionary<string, long> {
+			{ "$et-eventTypeOne", 0 },
+			{ "$et-eventTypeTwo", 0 }
+		};
+		_eventReader = new(_bus, _distributionCorrelationId,
+			null, ["eventTypeOne", "eventTypeTwo"],
 			false, new TFPos(0, 0),
 			fromPositions, true,
 			_fakeTimeProvider,
@@ -51,26 +52,25 @@ public class when_tf_based_read_timeout_occurs<TLogFormat, TStreamId> : EventByT
 
 		_readAllEventsForwardCorrelationId = TimeoutRead("$all", Guid.Empty);
 
-		CompleteForwardAllStreamRead(_readAllEventsForwardCorrelationId, new[] {
+		CompleteForwardAllStreamRead(_readAllEventsForwardCorrelationId,
 			ResolvedEvent.ForUnresolvedEvent(
 				new EventRecord(
 					1, 50, Guid.NewGuid(), Guid.NewGuid(), 50, 0, "test_stream", ExpectedVersion.Any,
 					_fakeTimeProvider.UtcNow,
 					PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-					"eventTypeOne", new byte[] {1}, new byte[] {2}), 100),
+					"eventTypeOne", [1], [2]), 100),
 			ResolvedEvent.ForUnresolvedEvent(
 				new EventRecord(
 					2, 150, Guid.NewGuid(), Guid.NewGuid(), 150, 0, "test_stream", ExpectedVersion.Any,
 					_fakeTimeProvider.UtcNow,
 					PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-					"eventTypeTwo", new byte[] {1}, new byte[] {2}), 200),
-		});
+					"eventTypeTwo", [1], [2]), 200)
+		);
 	}
 
 	[Test]
 	public void should_not_deliver_events() {
-		Assert.AreEqual(0,
-			_consumer.HandledMessages.OfType<ReaderSubscriptionMessage.CommittedEventDistributed>().Count());
+		Assert.AreEqual(0, _consumer.HandledMessages.OfType<ReaderSubscriptionMessage.CommittedEventDistributed>().Count());
 	}
 
 	[Test]

@@ -26,12 +26,9 @@ public class when_the_partition_state_cache_has_been_reinitialized {
 
 		_cachedAtCheckpointTag2 = CheckpointTag.FromPosition(0, 20100, 20050);
 		_cachedAtCheckpointTag3 = CheckpointTag.FromPosition(0, 20200, 20150);
-		_cache.CacheAndLockPartitionState(
-			"partition1", new PartitionState("data1", null, _cachedAtCheckpointTag1), _cachedAtCheckpointTag1);
-		_cache.CacheAndLockPartitionState(
-			"partition2", new PartitionState("data2", null, _cachedAtCheckpointTag2), _cachedAtCheckpointTag2);
-		_cache.CacheAndLockPartitionState(
-			"partition3", new PartitionState("data3", null, _cachedAtCheckpointTag3), _cachedAtCheckpointTag3);
+		_cache.CacheAndLockPartitionState("partition1", new("data1", null, _cachedAtCheckpointTag1), _cachedAtCheckpointTag1);
+		_cache.CacheAndLockPartitionState("partition2", new("data2", null, _cachedAtCheckpointTag2), _cachedAtCheckpointTag2);
+		_cache.CacheAndLockPartitionState("partition3", new("data3", null, _cachedAtCheckpointTag3), _cachedAtCheckpointTag3);
 		_cache.Unlock(_cachedAtCheckpointTag2);
 		// when
 		_cache.Initialize();
@@ -50,10 +47,7 @@ public class when_the_partition_state_cache_has_been_reinitialized {
 
 	[Test]
 	public void random_item_cannot_be_retrieved_as_locked() {
-		Assert.IsNull(
-			_cache.TryGetAndLockPartitionState(
-				"random", CheckpointTag.FromPosition(0, 200, 190)),
-			"Cache should be empty");
+		Assert.IsNull(_cache.TryGetAndLockPartitionState("random", CheckpointTag.FromPosition(0, 200, 190)), "Cache should be empty");
 	}
 
 	[Test]
@@ -63,10 +57,7 @@ public class when_the_partition_state_cache_has_been_reinitialized {
 
 	[Test]
 	public void root_partition_state_cannot_be_retrieved() {
-		Assert.IsNull(
-			_cache.TryGetAndLockPartitionState(
-				"", CheckpointTag.FromPosition(0, 200, 190)),
-			"Cache should be empty");
+		Assert.IsNull(_cache.TryGetAndLockPartitionState("", CheckpointTag.FromPosition(0, 200, 190)), "Cache should be empty");
 	}
 
 	[Test]

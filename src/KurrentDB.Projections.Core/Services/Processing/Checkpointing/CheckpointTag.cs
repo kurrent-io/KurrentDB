@@ -15,7 +15,6 @@ namespace KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 
 public class CheckpointTag : IComparable<CheckpointTag> {
 	public readonly int Phase;
-
 	public readonly TFPos Position;
 
 	//TODO: rename to StreamsOrEventTypes or just Positions
@@ -66,13 +65,13 @@ public class CheckpointTag : IComparable<CheckpointTag> {
 		Phase = phase;
 		foreach (var stream in streams) {
 			if (stream.Key == "")
-				throw new ArgumentException("Empty stream name", "streams");
+				throw new ArgumentException("Empty stream name", nameof(streams));
 			if (stream.Value < 0 && stream.Value != ExpectedVersion.NoStream)
-				throw new ArgumentException("Invalid sequence number", "streams");
+				throw new ArgumentException("Invalid sequence number", nameof(streams));
 		}
 
-		Streams = new Dictionary<string, long>(streams); // clone
-		Position = new TFPos(Int64.MinValue, Int64.MinValue);
+		Streams = new(streams); // clone
+		Position = new TFPos(long.MinValue, long.MinValue);
 		Mode_ = CalculateMode();
 	}
 
@@ -81,55 +80,58 @@ public class CheckpointTag : IComparable<CheckpointTag> {
 		Position = position;
 		foreach (var stream in eventTypes) {
 			if (stream.Key == "")
-				throw new ArgumentException("Empty stream name", "eventTypes");
+				throw new ArgumentException("Empty stream name", nameof(eventTypes));
 			if (stream.Value < 0 && stream.Value != ExpectedVersion.NoStream)
-				throw new ArgumentException("Invalid sequence number", "eventTypes");
+				throw new ArgumentException("Invalid sequence number", nameof(eventTypes));
 		}
 
-		Streams = new Dictionary<string, long>(eventTypes); // clone
+		Streams = new(eventTypes); // clone
 		Mode_ = CalculateMode();
 	}
 
 	private CheckpointTag(int phase, string stream, long sequenceNumber) {
 		Phase = phase;
-		if (stream == null)
-			throw new ArgumentNullException("stream");
-		if (stream == "")
-			throw new ArgumentException("stream");
+		ArgumentNullException.ThrowIfNull(stream);
+		ArgumentException.ThrowIfNullOrEmpty(stream);
 		if (sequenceNumber < 0 && sequenceNumber != ExpectedVersion.NoStream)
-			throw new ArgumentException("sequenceNumber");
-		Position = new TFPos(Int64.MinValue, Int64.MinValue);
-		Streams = new Dictionary<string, long> { { stream, sequenceNumber } };
+			throw new ArgumentException(null, nameof(sequenceNumber));
+		Position = new TFPos(long.MinValue, long.MinValue);
+		Streams = new() { { stream, sequenceNumber } };
 		Mode_ = CalculateMode();
 	}
 
-	private CheckpointTag(
-		int phase, string catalogStream, long catalogPosition, string dataStream, long dataPosition,
+	private CheckpointTag(int phase,
+		string catalogStream,
+		long catalogPosition,
+		string dataStream,
+		long dataPosition,
 		long commitPosition) {
 		Phase = phase;
 		CatalogStream = catalogStream;
 		CatalogPosition = catalogPosition;
 		DataStream = dataStream;
 		DataPosition = dataPosition;
-		Position = new TFPos(commitPosition, Int64.MinValue);
+		Position = new TFPos(commitPosition, long.MinValue);
 		Mode_ = Mode.ByStream;
 	}
 
 	private Mode CalculateMode() {
 		if (Streams == null || Streams.Count == 0)
-			if (Position.CommitPosition == Int64.MinValue && Position.PreparePosition == Int64.MinValue)
-				return Mode.Phase;
-			else if (Position.CommitPosition == Int64.MaxValue && Position.PreparePosition == Int64.MaxValue)
-				return Mode.Phase;
-			else if (Position.CommitPosition == Int64.MinValue && Position.PreparePosition != Int64.MinValue)
-				return Mode.PreparePosition;
-			else
-				return Mode.Position;
-		if (Position != new TFPos(Int64.MinValue, Int64.MinValue))
-			return Mode.EventTypeIndex;
-		if (Streams.Count == 1)
-			return Mode.Stream;
-		return Mode.MultiStream;
+			switch (Position.CommitPosition) {
+				case long.MinValue when Position.PreparePosition == long.MinValue:
+				case long.MaxValue when Position.PreparePosition == long.MaxValue:
+					return Mode.Phase;
+				case long.MinValue when Position.PreparePosition != long.MinValue:
+					return Mode.PreparePosition;
+				default:
+					return Mode.Position;
+			}
+
+		return Position != new TFPos(long.MinValue, long.MinValue)
+			? Mode.EventTypeIndex
+			: Streams.Count == 1
+				? Mode.Stream
+				: Mode.MultiStream;
 	}
 
 	public static bool operator >(CheckpointTag left, CheckpointTag right) {
@@ -152,9 +154,8 @@ public class CheckpointTag : IComparable<CheckpointTag> {
 			case Mode.ByStream:
 				CheckCatalogCompatibility(left, right);
 				return left.CatalogPosition > right.CatalogPosition
-					   || (left.CatalogPosition == right.CatalogPosition && left.DataPosition > right.DataPosition);
+				       || (left.CatalogPosition == right.CatalogPosition && left.DataPosition > right.DataPosition);
 			case Mode.Phase:
-				return left.Position > right.Position;
 			case Mode.Position:
 			case Mode.EventTypeIndex:
 				return left.Position > right.Position;
@@ -166,14 +167,8 @@ public class CheckpointTag : IComparable<CheckpointTag> {
 				var result = left.Streams.Values.First() > right.Streams.Values.First();
 				return result;
 			case Mode.MultiStream:
-				long rvalue;
-				bool anyLeftGreater = left.Streams.Any(l =>
-					!right.Streams.TryGetValue(l.Key, out rvalue) || l.Value > rvalue);
-
-				long lvalue;
-				bool anyRightGreater = right.Streams.Any(r =>
-					!left.Streams.TryGetValue(r.Key, out lvalue) || r.Value > lvalue);
-
+				bool anyLeftGreater = left.Streams.Any(l => !right.Streams.TryGetValue(l.Key, out var rvalue) || l.Value > rvalue);
+				bool anyRightGreater = right.Streams.Any(r => !left.Streams.TryGetValue(r.Key, out var lvalue) || r.Value > lvalue);
 				if (anyLeftGreater && anyRightGreater)
 					ThrowIncomparable(left, right);
 				return anyLeftGreater;
@@ -188,8 +183,7 @@ public class CheckpointTag : IComparable<CheckpointTag> {
 	}
 
 	private static void ThrowIncomparable(CheckpointTag left, CheckpointTag right) {
-		throw new InvalidOperationException(
-			string.Format("Incomparable multi-stream checkpoint tags. '{0}' and '{1}'", left, right));
+		throw new InvalidOperationException($"Incomparable multi-stream checkpoint tags. '{left}' and '{right}'");
 	}
 
 	public static bool operator >=(CheckpointTag left, CheckpointTag right) {
@@ -212,10 +206,9 @@ public class CheckpointTag : IComparable<CheckpointTag> {
 			case Mode.ByStream:
 				CheckCatalogCompatibility(left, right);
 				return left.CatalogPosition > right.CatalogPosition
-					   || (left.CatalogPosition == right.CatalogPosition &&
-						   left.DataPosition >= right.DataPosition);
+				       || (left.CatalogPosition == right.CatalogPosition &&
+				           left.DataPosition >= right.DataPosition);
 			case Mode.Phase:
-				return left.Position >= right.Position;
 			case Mode.Position:
 			case Mode.EventTypeIndex:
 				return left.Position >= right.Position;
@@ -227,13 +220,8 @@ public class CheckpointTag : IComparable<CheckpointTag> {
 				var result = left.Streams.Values.First() >= right.Streams.Values.First();
 				return result;
 			case Mode.MultiStream:
-				long rvalue;
-				bool anyLeftGreater = left.Streams.Any(l =>
-					!right.Streams.TryGetValue(l.Key, out rvalue) || l.Value > rvalue);
-
-				long lvalue;
-				bool anyRightGreater = right.Streams.Any(r =>
-					!left.Streams.TryGetValue(r.Key, out lvalue) || r.Value > lvalue);
+				bool anyLeftGreater = left.Streams.Any(l => !right.Streams.TryGetValue(l.Key, out var rvalue) || l.Value > rvalue);
+				bool anyRightGreater = right.Streams.Any(r => !left.Streams.TryGetValue(r.Key, out var lvalue) || r.Value > lvalue);
 
 				if (anyLeftGreater && anyRightGreater)
 					ThrowIncomparable(left, right);
@@ -243,23 +231,15 @@ public class CheckpointTag : IComparable<CheckpointTag> {
 		}
 	}
 
-	public static bool operator <(CheckpointTag left, CheckpointTag right) {
-		return !(left >= right);
-	}
+	public static bool operator <(CheckpointTag left, CheckpointTag right) => !(left >= right);
 
-	public static bool operator <=(CheckpointTag left, CheckpointTag right) {
-		return !(left > right);
-	}
+	public static bool operator <=(CheckpointTag left, CheckpointTag right) => !(left > right);
 
-	public static bool operator ==(CheckpointTag left, CheckpointTag right) {
-		return Equals(left, right);
-	}
+	public static bool operator ==(CheckpointTag left, CheckpointTag right) => Equals(left, right);
 
-	public static bool operator !=(CheckpointTag left, CheckpointTag right) {
-		return !(left == right);
-	}
+	public static bool operator !=(CheckpointTag left, CheckpointTag right) => !(left == right);
 
-	protected bool Equals(CheckpointTag other) {
+	private bool Equals(CheckpointTag other) {
 		if (Phase != other.Phase)
 			return false;
 		var leftMode = Mode_;
@@ -269,10 +249,11 @@ public class CheckpointTag : IComparable<CheckpointTag> {
 		UpgradeModes(ref leftMode, ref rightMode);
 		switch (leftMode) {
 			case Mode.ByStream:
-				return CatalogStream == other.CatalogStream && CatalogPosition == other.CatalogPosition
-															&& DataStream == other.DataStream &&
-															DataPosition == other.DataPosition
-															&& CommitPosition == other.CommitPosition;
+				return CatalogStream == other.CatalogStream
+				       && CatalogPosition == other.CatalogPosition
+				       && DataStream == other.DataStream &&
+				       DataPosition == other.DataPosition
+				       && CommitPosition == other.CommitPosition;
 			case Mode.Phase:
 				return Position == other.Position;
 			case Mode.EventTypeIndex:
@@ -289,9 +270,8 @@ public class CheckpointTag : IComparable<CheckpointTag> {
 				var result = Streams.Values.First() == other.Streams.Values.First();
 				return result;
 			case Mode.MultiStream:
-				long rvalue = 0;
 				return Streams.Count == other.Streams.Count
-					   && Streams.All(l => other.Streams.TryGetValue(l.Key, out rvalue) && l.Value == rvalue);
+				       && Streams.All(l => other.Streams.TryGetValue(l.Key, out var rvalue) && l.Value == rvalue);
 			default:
 				throw new NotSupportedException("Checkpoint tag mode is not supported in comparison");
 		}
@@ -307,92 +287,66 @@ public class CheckpointTag : IComparable<CheckpointTag> {
 		return Equals((CheckpointTag)obj);
 	}
 
-	public override int GetHashCode() {
-		return Position.GetHashCode();
-	}
-
+	public override int GetHashCode() => Position.GetHashCode();
 
 	public long? CommitPosition {
 		get {
 			var commitPosition = Position.CommitPosition;
-			switch (Mode_) {
-				case Mode.ByStream:
-					return commitPosition == long.MinValue ? (long?)null : commitPosition;
-				case Mode.Position:
-				case Mode.EventTypeIndex:
-					return commitPosition;
-				default:
-					return null;
-			}
+			return Mode_ switch {
+				Mode.ByStream => commitPosition == long.MinValue ? null : commitPosition,
+				Mode.Position or Mode.EventTypeIndex => commitPosition,
+				_ => null
+			};
 		}
 	}
 
 	public long? PreparePosition {
 		get {
-			switch (Mode_) {
-				case Mode.Position:
-				case Mode.PreparePosition:
-				case Mode.EventTypeIndex:
-					return Position.PreparePosition;
-				default:
-					return null;
-			}
+			return Mode_ switch {
+				Mode.Position or Mode.PreparePosition or Mode.EventTypeIndex => Position.PreparePosition,
+				_ => null
+			};
 		}
 	}
 
-	public static CheckpointTag Empty {
-		get { return _empty; }
-	}
+	public static CheckpointTag Empty { get; } = new(-1, false);
 
 	internal readonly Mode Mode_;
-	private static readonly CheckpointTag _empty = new CheckpointTag(-1, false);
 
-	public static CheckpointTag FromPhase(int phase, bool completed) {
-		return new CheckpointTag(phase, completed);
-	}
+	public static CheckpointTag FromPhase(int phase, bool completed) => new(phase, completed);
 
-	public static CheckpointTag FromPosition(int phase, long commitPosition, long preparePosition) {
-		return new CheckpointTag(phase, new TFPos(commitPosition, preparePosition));
-	}
+	public static CheckpointTag FromPosition(int phase, long commitPosition, long preparePosition)
+		=> new(phase, new TFPos(commitPosition, preparePosition));
 
-	public static CheckpointTag FromPosition(int phase, TFPos position) {
-		return new CheckpointTag(phase, position);
-	}
+	public static CheckpointTag FromPosition(int phase, TFPos position) => new(phase, position);
 
-	public static CheckpointTag FromPreparePosition(int phase, long preparePosition) {
-		return new CheckpointTag(phase, preparePosition);
-	}
+	public static CheckpointTag FromPreparePosition(int phase, long preparePosition) => new(phase, preparePosition);
 
-	public static CheckpointTag FromStreamPosition(int phase, string stream, long sequenceNumber) {
-		return new CheckpointTag(phase, stream, sequenceNumber);
-	}
+	public static CheckpointTag FromStreamPosition(int phase, string stream, long sequenceNumber) => new(phase, stream, sequenceNumber);
 
-	public static CheckpointTag FromStreamPositions(int phase, IDictionary<string, long> streams) {
+	// streams cloned inside
+	public static CheckpointTag FromStreamPositions(int phase, IDictionary<string, long> streams) => new(phase, streams);
+
+	public static CheckpointTag FromEventTypeIndexPositions(int phase, TFPos position, IDictionary<string, long> streams) =>
 		// streams cloned inside
-		return new CheckpointTag(phase, streams);
-	}
-
-	public static CheckpointTag FromEventTypeIndexPositions(int phase, TFPos position,
-		IDictionary<string, long> streams) {
-		// streams cloned inside
-		return new CheckpointTag(phase, streams, position);
-	}
+		new(phase, streams, position);
 
 	public static CheckpointTag FromByStreamPosition(
-		int phase, string catalogStream, long catalogPosition, string dataStream, long dataPosition,
-		long commitPosition) {
-		return new CheckpointTag(phase, catalogStream, catalogPosition, dataStream, dataPosition, commitPosition);
-	}
+		int phase,
+		string catalogStream,
+		long catalogPosition,
+		string dataStream,
+		long dataPosition,
+		long commitPosition)
+		=> new(phase, catalogStream, catalogPosition, dataStream, dataPosition, commitPosition);
 
-	public int CompareTo(CheckpointTag other) {
-		return this < other ? -1 : (this > other ? 1 : 0);
-	}
+	public int CompareTo(CheckpointTag other) => this < other ? -1 : this > other ? 1 : 0;
 
 	public override string ToString() {
 		string result;
 		switch (Mode_) {
 			case Mode.Phase:
-				return "Phase: " + Phase + (Completed ? " (completed)" : "");
+				return $"Phase: {Phase}{(Completed ? " (completed)" : "")}";
 			case Mode.Position:
 				result = Position.ToString();
 				break;
@@ -400,7 +354,7 @@ public class CheckpointTag : IComparable<CheckpointTag> {
 				result = PreparePosition.ToString();
 				break;
 			case Mode.Stream:
-				result = Streams.Keys.First() + ": " + Streams.Values.First();
+				result = $"{Streams.Keys.First()}: {Streams.Values.First()}";
 				break;
 			case Mode.MultiStream:
 			case Mode.EventTypeIndex:
@@ -411,50 +365,37 @@ public class CheckpointTag : IComparable<CheckpointTag> {
 				}
 
 				foreach (var stream in Streams) {
-					sb.AppendFormat("{0}: {1}; ", stream.Key, stream.Value);
+					sb.Append($"{stream.Key}: {stream.Value}; ");
 				}
 
 				result = sb.ToString();
 				break;
 			case Mode.ByStream:
-				result = string.Format(
-					"{0}:{1}/{2}:{3}/{4}", CatalogStream, CatalogPosition, DataStream, DataPosition,
-					CommitPosition);
+				result = $"{CatalogStream}:{CatalogPosition}/{DataStream}:{DataPosition}/{CommitPosition}";
 				break;
 			default:
-				return "Unsupported mode: " + Mode_.ToString();
+				return $"Unsupported mode: {Mode_}";
 		}
 
-		if (Phase == 0)
-			return result;
-		else {
-			return "(" + Phase + ") " + result;
-		}
+		return Phase == 0 ? result : $"({Phase}) {result}";
 	}
 
-	public bool Completed {
-		get { return Position.CommitPosition == Int64.MaxValue; }
-	}
+	private bool Completed => Position.CommitPosition == long.MaxValue;
 
 	private static void UpgradeModes(ref Mode leftMode, ref Mode rightMode) {
-		if (leftMode == Mode.Stream && rightMode == Mode.MultiStream) {
-			leftMode = Mode.MultiStream;
-			return;
-		}
-
-		if (leftMode == Mode.MultiStream && rightMode == Mode.Stream) {
-			rightMode = Mode.MultiStream;
-			return;
-		}
-
-		if (leftMode == Mode.Position && rightMode == Mode.EventTypeIndex) {
-			leftMode = Mode.EventTypeIndex;
-			return;
-		}
-
-		if (leftMode == Mode.EventTypeIndex && rightMode == Mode.Position) {
-			rightMode = Mode.EventTypeIndex;
-			return;
+		switch (leftMode) {
+			case Mode.Stream when rightMode == Mode.MultiStream:
+				leftMode = Mode.MultiStream;
+				return;
+			case Mode.MultiStream when rightMode == Mode.Stream:
+				rightMode = Mode.MultiStream;
+				return;
+			case Mode.Position when rightMode == Mode.EventTypeIndex:
+				leftMode = Mode.EventTypeIndex;
+				return;
+			case Mode.EventTypeIndex when rightMode == Mode.Position:
+				rightMode = Mode.EventTypeIndex;
+				return;
 		}
 	}
 
@@ -473,9 +414,9 @@ public class CheckpointTag : IComparable<CheckpointTag> {
 	}
 
 	public CheckpointTag UpdateEventTypeIndexPosition(TFPos position) {
-		if (Mode_ != Mode.EventTypeIndex)
-			throw new ArgumentException("Invalid tag mode", "tag");
-		return FromEventTypeIndexPositions(Phase, position, Streams);
+		return Mode_ == Mode.EventTypeIndex
+			? FromEventTypeIndexPositions(Phase, position, Streams)
+			: throw new ArgumentException("Invalid tag mode", "tag");
 	}
 
 	private Dictionary<string, long> PatchStreamsDictionary(string streamId, long eventSequenceNumber) {
@@ -484,73 +425,65 @@ public class CheckpointTag : IComparable<CheckpointTag> {
 		foreach (var stream in Streams) {
 			if (stream.Key == streamId) {
 				was = true;
-				if (eventSequenceNumber < stream.Value)
-					resultDictionary.Add(stream.Key, stream.Value);
-				else
-					resultDictionary.Add(stream.Key, eventSequenceNumber);
+				resultDictionary.Add(stream.Key, eventSequenceNumber < stream.Value ? stream.Value : eventSequenceNumber);
 			} else {
 				resultDictionary.Add(stream.Key, stream.Value);
 			}
 		}
 
 		if (!was)
-			throw new ArgumentException("Key not found: " + streamId, "streamId");
+			throw new ArgumentException($"Key not found: {streamId}", nameof(streamId));
 		if (resultDictionary.Count < Streams.Count)
 			resultDictionary.Add(streamId, eventSequenceNumber);
 		return resultDictionary;
 	}
 
-	public byte[] ToJsonBytes(ProjectionVersion projectionVersion,
-		IEnumerable<KeyValuePair<string, JToken>> extraMetaData = null) {
+	public byte[] ToJsonBytes(ProjectionVersion projectionVersion, IEnumerable<KeyValuePair<string, JToken>> extraMetaData = null) {
 		if (projectionVersion.ProjectionId == -1)
-			throw new ArgumentException("projectionId is required", "projectionVersion");
+			throw new ArgumentException("projectionId is required", nameof(projectionVersion));
 
-		using (var memoryStream = new MemoryStream()) {
-			using (var textWriter = new StreamWriter(memoryStream, Helper.UTF8NoBom))
-			using (var jsonWriter = new JsonTextWriter(textWriter)) {
-				WriteTo(projectionVersion, extraMetaData, jsonWriter);
-			}
-
-			return memoryStream.ToArray();
+		using var memoryStream = new MemoryStream();
+		using (var textWriter = new StreamWriter(memoryStream, Helper.UTF8NoBom))
+		using (var jsonWriter = new JsonTextWriter(textWriter)) {
+			WriteTo(projectionVersion, extraMetaData, jsonWriter);
 		}
+
+		return memoryStream.ToArray();
 	}
 
-	public string ToJsonString(ProjectionVersion projectionVersion,
-		IEnumerable<KeyValuePair<string, JToken>> extraMetaData = null) {
+	public string ToJsonString(ProjectionVersion projectionVersion, IEnumerable<KeyValuePair<string, JToken>> extraMetaData = null) {
 		if (projectionVersion.ProjectionId == -1)
-			throw new ArgumentException("projectionId is required", "projectionVersion");
+			throw new ArgumentException("projectionId is required", nameof(projectionVersion));
 
-		using (var textWriter = new StringWriter()) {
-			using (var jsonWriter = new JsonTextWriter(textWriter)) {
-				WriteTo(projectionVersion, extraMetaData, jsonWriter);
-			}
-
-			return textWriter.ToString();
+		using var textWriter = new StringWriter();
+		using (var jsonWriter = new JsonTextWriter(textWriter)) {
+			WriteTo(projectionVersion, extraMetaData, jsonWriter);
 		}
+
+		return textWriter.ToString();
 	}
 
 	public string ToJsonString(IEnumerable<KeyValuePair<string, JToken>> extraMetaData = null) {
-		using (var textWriter = new StringWriter()) {
-			using (var jsonWriter = new JsonTextWriter(textWriter)) {
-				WriteTo(default(ProjectionVersion), extraMetaData, jsonWriter);
-			}
-
-			return textWriter.ToString();
+		using var textWriter = new StringWriter();
+		using (var jsonWriter = new JsonTextWriter(textWriter)) {
+			WriteTo(default, extraMetaData, jsonWriter);
 		}
+
+		return textWriter.ToString();
 	}
 
 	public JRaw ToJsonRaw(IEnumerable<KeyValuePair<string, JToken>> extraMetaData = null) {
-		using (var textWriter = new StringWriter()) {
-			using (var jsonWriter = new JsonTextWriter(textWriter)) {
-				WriteTo(default(ProjectionVersion), extraMetaData, jsonWriter);
-			}
-
-			return new JRaw(textWriter.ToString());
+		using var textWriter = new StringWriter();
+		using (var jsonWriter = new JsonTextWriter(textWriter)) {
+			WriteTo(default, extraMetaData, jsonWriter);
 		}
+
+		return new(textWriter.ToString());
 	}
 
-	public void WriteTo(ProjectionVersion projectionVersion,
-		IEnumerable<KeyValuePair<string, JToken>> extraMetaData, JsonWriter jsonWriter) {
+	private void WriteTo(ProjectionVersion projectionVersion,
+		IEnumerable<KeyValuePair<string, JToken>> extraMetaData,
+		JsonWriter jsonWriter) {
 		jsonWriter.WriteStartObject();
 		if (projectionVersion.ProjectionId > 0) {
 			jsonWriter.WritePropertyName("$v");
@@ -625,14 +558,14 @@ public class CheckpointTag : IComparable<CheckpointTag> {
 
 	private static void WriteVersion(ProjectionVersion projectionVersion, JsonWriter jsonWriter) {
 		jsonWriter.WriteValue(
-			projectionVersion.ProjectionId + ":" + projectionVersion.Epoch + ":" + projectionVersion.Version + ":"
-			+ ProjectionsSubsystem.VERSION);
+			$"{projectionVersion.ProjectionId}:{projectionVersion.Epoch}:{projectionVersion.Version}:{ProjectionsSubsystem.VERSION}");
 	}
 
-	public static CheckpointTagVersion FromJson(JsonReader reader, ProjectionVersion current,
+	public static CheckpointTagVersion FromJson(JsonReader reader,
+		ProjectionVersion current,
 		bool skipStartObject = false) {
 		if (!skipStartObject)
-			Check(reader.Read(), reader);
+			Check(reader.Read());
 		Check(JsonToken.StartObject, reader);
 		long? commitPosition = null;
 		long? preparePosition = null;
@@ -649,21 +582,21 @@ public class CheckpointTag : IComparable<CheckpointTag> {
 		var projectionSystemVersion = 0;
 		int projectionPhase = 0;
 		while (true) {
-			Check(reader.Read(), reader);
+			Check(reader.Read());
 			if (reader.TokenType == JsonToken.EndObject)
 				break;
 			Check(JsonToken.PropertyName, reader);
 			var name = (string)reader.Value;
 			switch (name) {
 				case "$cp":
-					Check(reader.Read(), reader);
+					Check(reader.Read());
 					var completed = (bool)reader.Value;
-					commitPosition = completed ? Int64.MaxValue : Int64.MinValue;
-					preparePosition = completed ? Int64.MaxValue : Int64.MinValue;
+					commitPosition = completed ? long.MaxValue : long.MinValue;
+					preparePosition = completed ? long.MaxValue : long.MinValue;
 					break;
 				case "$v":
 				case "v":
-					Check(reader.Read(), reader);
+					Check(reader.Read());
 					if (reader.ValueType == typeof(long)) {
 						var v = (int)(long)reader.Value;
 						if (v > 0) // TODO: remove this if with time
@@ -673,13 +606,13 @@ public class CheckpointTag : IComparable<CheckpointTag> {
 						var v = (string)reader.Value;
 						string[] parts = v.Split(':');
 						if (parts.Length == 2) {
-							projectionVersion = Int32.Parse(parts[1]);
+							projectionVersion = int.Parse(parts[1]);
 						} else {
-							projectionId = Int32.Parse(parts[0]);
-							projectionEpoch = Int32.Parse(parts[1]);
-							projectionVersion = Int32.Parse(parts[2]);
+							projectionId = int.Parse(parts[0]);
+							projectionEpoch = int.Parse(parts[1]);
+							projectionVersion = int.Parse(parts[2]);
 							if (parts.Length >= 4)
-								projectionSystemVersion = Int32.Parse(parts[3]);
+								projectionSystemVersion = int.Parse(parts[3]);
 						}
 					}
 
@@ -687,53 +620,53 @@ public class CheckpointTag : IComparable<CheckpointTag> {
 				case "$c":
 				case "c":
 				case "commitPosition":
-					Check(reader.Read(), reader);
+					Check(reader.Read());
 					commitPosition = (long)reader.Value;
 					break;
 				case "$p":
 				case "p":
 				case "preparePosition":
-					Check(reader.Read(), reader);
+					Check(reader.Read());
 					preparePosition = (long)reader.Value;
 					break;
 				case "$s":
 				case "s":
 				case "streams":
-					Check(reader.Read(), reader);
+					Check(reader.Read());
 					if (reader.TokenType == JsonToken.StartArray) {
-						Check(reader.Read(), reader);
+						Check(reader.Read());
 						Check(JsonToken.StartObject, reader);
-						Check(reader.Read(), reader);
+						Check(reader.Read());
 						Check(JsonToken.PropertyName, reader);
 						catalogStream = (string)reader.Value;
-						Check(reader.Read(), reader);
+						Check(reader.Read());
 						catalogPosition = (long)reader.Value;
-						Check(reader.Read(), reader);
+						Check(reader.Read());
 						Check(JsonToken.EndObject, reader);
 
-						Check(reader.Read(), reader);
+						Check(reader.Read());
 						if (reader.TokenType == JsonToken.StartObject) {
-							Check(reader.Read(), reader);
+							Check(reader.Read());
 							Check(JsonToken.PropertyName, reader);
 							dataStream = (string)reader.Value;
-							Check(reader.Read(), reader);
+							Check(reader.Read());
 							dataPosition = (long)reader.Value;
-							Check(reader.Read(), reader);
+							Check(reader.Read());
 							Check(JsonToken.EndObject, reader);
-							Check(reader.Read(), reader);
+							Check(reader.Read());
 						}
 
 						Check(JsonToken.EndArray, reader);
 					} else {
 						Check(JsonToken.StartObject, reader);
-						streams = new Dictionary<string, long>();
+						streams = new();
 						while (true) {
-							Check(reader.Read(), reader);
+							Check(reader.Read());
 							if (reader.TokenType == JsonToken.EndObject)
 								break;
 							Check(JsonToken.PropertyName, reader);
 							var streamName = (string)reader.Value;
-							Check(reader.Read(), reader);
+							Check(reader.Read());
 							long position = (long)reader.Value;
 							streams.Add(streamName, position);
 						}
@@ -741,47 +674,43 @@ public class CheckpointTag : IComparable<CheckpointTag> {
 
 					break;
 				case "$ph":
-					Check(reader.Read(), reader);
+					Check(reader.Read());
 					projectionPhase = (int)(long)reader.Value;
 					break;
 				case "$m":
-					Check(reader.Read(), reader);
+					Check(reader.Read());
 					var readMode = (string)reader.Value;
 					if (readMode != "bs")
-						throw new ApplicationException("Unknown checkpoint tag mode: " + readMode);
+						throw new ApplicationException($"Unknown checkpoint tag mode: {readMode}");
 					byStreamMode = true;
 					break;
 				default:
-					if (extra == null)
-						extra = new Dictionary<string, JToken>();
-					Check(reader.Read(), reader);
+					extra ??= new();
+					Check(reader.Read());
 					var jToken = JToken.ReadFrom(reader);
 					extra.Add(name, jToken);
 					break;
 			}
 		}
 
-		return new CheckpointTagVersion {
-			Tag =
-				byStreamMode
-					? new CheckpointTag(
-						projectionPhase, catalogStream, catalogPosition.GetValueOrDefault(), dataStream,
-						dataPosition ?? -1, commitPosition.GetValueOrDefault())
-					: new CheckpointTag(
-						projectionPhase,
-						new TFPos(commitPosition ?? Int64.MinValue, preparePosition ?? Int64.MinValue), streams),
-			Version = new ProjectionVersion(projectionId, projectionEpoch, projectionVersion),
+		return new() {
+			Tag = byStreamMode
+				? new CheckpointTag(
+					projectionPhase, catalogStream, catalogPosition.GetValueOrDefault(), dataStream,
+					dataPosition ?? -1, commitPosition.GetValueOrDefault())
+				: new(projectionPhase, new TFPos(commitPosition ?? long.MinValue, preparePosition ?? long.MinValue), streams),
+			Version = new(projectionId, projectionEpoch, projectionVersion),
 			SystemVersion = projectionSystemVersion,
-			ExtraMetadata = extra,
+			ExtraMetadata = extra
 		};
 	}
 
-	public static void Check(JsonToken type, JsonReader reader) {
+	private static void Check(JsonToken type, JsonReader reader) {
 		if (reader.TokenType != type)
 			throw new Exception("Invalid JSON");
 	}
 
-	public static void Check(bool read, JsonReader reader) {
+	public static void Check(bool read) {
 		if (!read)
 			throw new Exception("Invalid JSON");
 	}

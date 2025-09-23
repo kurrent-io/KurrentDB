@@ -19,11 +19,9 @@ public class when_starting_with_projection_type_system {
 
 	[SetUp]
 	public void Setup() {
-		queues = new List<FakePublisher>() { new FakePublisher() }.ToArray();
-		publisher = new FakePublisher();
-
-		_coordinator =
-			new ProjectionCoreCoordinator(ProjectionType.System, queues, publisher);
+		queues = [new()];
+		publisher = new();
+		_coordinator = new(ProjectionType.System, queues, publisher);
 		_coordinator.Handle(new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid()));
 	}
 
@@ -34,7 +32,6 @@ public class when_starting_with_projection_type_system {
 
 	[Test]
 	public void should_publish_start_core_messages() {
-		Assert.AreEqual(1,
-			queues[0].Messages.FindAll(x => x.GetType() == typeof(ProjectionCoreServiceMessage.StartCore)).Count);
+		Assert.AreEqual(1, queues[0].Messages.FindAll(x => x.GetType() == typeof(ProjectionCoreServiceMessage.StartCore)).Count);
 	}
 }

@@ -16,7 +16,7 @@ namespace KurrentDB.Projections.Core.Tests.Services.event_reader.heading_event_r
 public class when_the_heading_event_reader_unsubscribes_a_projection : TestFixtureWithReadWriteDispatchers {
 	private HeadingEventReader _point;
 	private Exception _exception;
-	private Guid _distibutionPointCorrelationId;
+	private Guid _distributionPointCorrelationId;
 	private FakeReaderSubscription _subscription;
 	private Guid _projectionSubscriptionId;
 
@@ -31,19 +31,18 @@ public class when_the_heading_event_reader_unsubscribes_a_projection : TestFixtu
 
 		Assume.That(_exception == null);
 
-		_distibutionPointCorrelationId = Guid.NewGuid();
+		_distributionPointCorrelationId = Guid.NewGuid();
 		_point.Start(
-			_distibutionPointCorrelationId,
-			new TransactionFileEventReader(_bus, _distibutionPointCorrelationId, null, new TFPos(0, -1),
-				new RealTimeProvider()));
+			_distributionPointCorrelationId,
+			new TransactionFileEventReader(_bus, _distributionPointCorrelationId, null, new TFPos(0, -1), new RealTimeProvider()));
 		_point.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
-				_distibutionPointCorrelationId, new TFPos(20, 10), "stream", 10, false, Guid.NewGuid(),
-				"type", false, new byte[0], new byte[0]));
+				_distributionPointCorrelationId, new TFPos(20, 10), "stream", 10, false, Guid.NewGuid(),
+				"type", false, [], []));
 		_point.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
-				_distibutionPointCorrelationId, new TFPos(40, 30), "stream", 11, false, Guid.NewGuid(),
-				"type", false, new byte[0], new byte[0]));
+				_distributionPointCorrelationId, new TFPos(40, 30), "stream", 11, false, Guid.NewGuid(),
+				"type", false, [], []));
 		_subscription = new FakeReaderSubscription();
 		_projectionSubscriptionId = Guid.NewGuid();
 		var subscribed = _point.TrySubscribe(_projectionSubscriptionId, _subscription, 30);
@@ -51,14 +50,13 @@ public class when_the_heading_event_reader_unsubscribes_a_projection : TestFixtu
 		_point.Unsubscribe(_projectionSubscriptionId);
 	}
 
-
 	[Test]
 	public void projection_does_not_receive_any_events_after_unsubscribing() {
 		var count = _subscription.ReceivedEvents.Count;
 		_point.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
-				_distibutionPointCorrelationId, new TFPos(60, 50), "stream", 12, false, Guid.NewGuid(),
-				"type", false, new byte[0], new byte[0]));
+				_distributionPointCorrelationId, new TFPos(60, 50), "stream", 12, false, Guid.NewGuid(),
+				"type", false, [], []));
 		Assert.AreEqual(count, _subscription.ReceivedEvents.Count);
 	}
 

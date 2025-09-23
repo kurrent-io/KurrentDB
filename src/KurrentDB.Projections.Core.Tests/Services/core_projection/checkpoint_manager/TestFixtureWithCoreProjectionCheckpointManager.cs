@@ -12,7 +12,8 @@ using NUnit.Framework;
 
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection.checkpoint_manager;
 
-public abstract class TestFixtureWithCoreProjectionCheckpointManager<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
+public abstract class TestFixtureWithCoreProjectionCheckpointManager<TLogFormat, TStreamId>
+	: TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	protected DefaultCheckpointManager _manager;
 	protected FakeCoreProjection _projection;
 	protected ProjectionConfig _config;
@@ -44,27 +45,23 @@ public abstract class TestFixtureWithCoreProjectionCheckpointManager<TLogFormat,
 		_namingBuilder = ProjectionNamesBuilder.CreateForTest("projection");
 		_config = new ProjectionConfig(null, _checkpointHandledThreshold, _checkpointUnhandledBytesThreshold,
 			_pendingEventsThreshold, _maxWriteBatchLength, _emitEventEnabled,
-			_checkpointsEnabled, _createTempStreams, _stopOnEof, _trackEmittedStreams, _checkpointAfterMs,
+			_checkpointsEnabled, _stopOnEof, _trackEmittedStreams, _checkpointAfterMs,
 			_maximumAllowedWritesInFlight, null);
 		When();
 	}
 
 	protected new virtual void When() {
-		_projectionVersion = new ProjectionVersion(1, 0, 0);
+		_projectionVersion = new(1, 0, 0);
 		_projectionName = "projection";
-		_checkpointWriter = new CoreProjectionCheckpointWriter(
-			_namingBuilder.MakeCheckpointStreamName(), _ioDispatcher, _projectionVersion, _projectionName);
-		_checkpointReader = new CoreProjectionCheckpointReader(
-			GetInputQueue(), _projectionCorrelationId, _ioDispatcher, _projectionCheckpointStreamId,
+		_checkpointWriter = new(_namingBuilder.MakeCheckpointStreamName(), _ioDispatcher, _projectionVersion, _projectionName);
+		_checkpointReader = new(GetInputQueue(), _projectionCorrelationId, _ioDispatcher, _projectionCheckpointStreamId,
 			_projectionVersion, _checkpointsEnabled);
 		_manager = GivenCheckpointManager();
 	}
 
 	protected virtual DefaultCheckpointManager GivenCheckpointManager() {
-		return new DefaultCheckpointManager(
-			_bus, _projectionCorrelationId, _projectionVersion, null, _ioDispatcher, _config, _projectionName,
-			new StreamPositionTagger(0, "stream"), _namingBuilder, _checkpointsEnabled, _producesResults,
-			_definesFold,
+		return new(_bus, _projectionCorrelationId, _projectionVersion, null, _ioDispatcher, _config, _projectionName,
+			new StreamPositionTagger(0, "stream"), _namingBuilder, _checkpointsEnabled,
 			_checkpointWriter, _maxProjectionStateSize);
 	}
 
@@ -79,16 +76,13 @@ public abstract class TestFixtureWithCoreProjectionCheckpointManager<TLogFormat,
 		_bus.Subscribe<CoreProjectionProcessingMessage.Failed>(_projection);
 		_bus.Subscribe<EventReaderSubscriptionMessage.ReaderAssignedReader>(_projection);
 
-		_bus.Subscribe(_subscriptionDispatcher
-			.CreateSubscriber<EventReaderSubscriptionMessage.CommittedEventReceived>());
-		_bus.Subscribe(
-			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.CheckpointSuggested>());
-		_bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.EofReached>());
-		_bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.PartitionDeleted>());
-		_bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.ProgressChanged>());
-		_bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.NotAuthorized>());
-		_bus.Subscribe(
-			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.ReaderAssignedReader>());
+		_bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.CommittedEventReceived>());
+		_bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.CheckpointSuggested>());
+		_bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.EofReached>());
+		_bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.PartitionDeleted>());
+		_bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.ProgressChanged>());
+		_bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.NotAuthorized>());
+		_bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.ReaderAssignedReader>());
 		_checkpointHandledThreshold = 2;
 		_checkpointUnhandledBytesThreshold = 5;
 		_pendingEventsThreshold = 5;

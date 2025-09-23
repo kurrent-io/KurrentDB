@@ -3,7 +3,6 @@
 
 using System;
 using KurrentDB.Core.Tests;
-using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.TransactionFile;
 using NUnit.Framework;
@@ -18,9 +17,8 @@ public class the_non_started_checkpoint<TLogFormat, TStreamId> : TestFixtureWith
 
 	[SetUp]
 	public void setup() {
-		_readyHandler = new TestCheckpointManagerMessageHandler();
-		_checkpoint = new ProjectionCheckpoint(
-			_bus, _ioDispatcher, new ProjectionVersion(1, 0, 0), null, _readyHandler,
+		_readyHandler = new();
+		_checkpoint = new(_bus, _ioDispatcher, new(1, 0, 0), null, _readyHandler,
 			CheckpointTag.FromPosition(0, 100, 50), new TransactionFilePositionTagger(0), 250, 1);
 	}
 

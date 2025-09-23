@@ -15,14 +15,12 @@ public class when_created {
 
 	[SetUp]
 	public void setup() {
-		_updateManager = new PartitionStateUpdateManager(ProjectionNamesBuilder.CreateForTest("projection"));
+		_updateManager = new(ProjectionNamesBuilder.CreateForTest("projection"));
 	}
 
 	[Test]
 	public void handles_state_updated() {
-		_updateManager.StateUpdated("partition",
-			new PartitionState("state", null, CheckpointTag.FromPosition(0, 100, 50)),
-			CheckpointTag.FromPosition(0, 200, 150));
+		_updateManager.StateUpdated("partition", new("state", null, CheckpointTag.FromPosition(0, 100, 50)), CheckpointTag.FromPosition(0, 200, 150));
 	}
 
 	[Test]
@@ -30,7 +28,7 @@ public class when_created {
 		_updateManager.EmitEvents(new FakeEventWriter());
 	}
 
-	class FakeEventWriter : IEventWriter {
+	private class FakeEventWriter : IEventWriter {
 		public void ValidateOrderAndEmitEvents(EmittedEventEnvelope[] events) {
 			Assert.Fail("Should not write any events");
 		}

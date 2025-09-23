@@ -21,11 +21,11 @@ public class when_a_subscribed_projection_handler_throws : TestFixtureWithProjec
 		_readerService.Handle(
 			new ReaderSubscriptionManagement.Subscribe(
 				projectionCorrelationId, CheckpointTag.FromPosition(0, 0, 0), readerStrategy,
-				new ReaderSubscriptionOptions(1000, 2000, 10000, false, stopAfterNEvents: null, true)));
+				new(1000, 2000, 10000, false, stopAfterNEvents: null, true)));
 		_readerService.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 				readerStrategy.EventReaderId, new TFPos(20, 10), "throws", 10, false, Guid.NewGuid(),
-				"type", false, new byte[0], new byte[0]));
+				"type", false, [], []));
 	}
 
 	[Test]

@@ -25,11 +25,9 @@ public class when_starting_the_core_projection_checkpoint_manager<TLogFormat, TS
 		_exception = null;
 		try {
 			_checkpointReader.BeginLoadState();
-			var checkpointLoaded =
-				_consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.CheckpointLoaded>().First();
-			_checkpointWriter.StartFrom(checkpointLoaded.CheckpointTag, checkpointLoaded.CheckpointEventNumber);
+			var checkpointLoaded = _consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.CheckpointLoaded>().First();
+			_checkpointWriter.StartFrom(checkpointLoaded.CheckpointEventNumber);
 			_manager.BeginLoadPrerecordedEvents(checkpointLoaded.CheckpointTag);
-
 			_manager.Start(CheckpointTag.FromStreamPosition(0, "stream", 10), null);
 		} catch (Exception ex) {
 			_exception = ex;
@@ -60,13 +58,11 @@ public class when_starting_the_core_projection_checkpoint_manager<TLogFormat, TS
 
 	[Test]
 	public void accepts_event_processed() {
-		//            _manager.StateUpdated("", @"{""state"":""state""}");
 		_manager.EventProcessed(CheckpointTag.FromStreamPosition(0, "stream", 11), 77.7f);
 	}
 
 	[Test]
 	public void event_processed_at_the_start_position_throws_invalid_operation_exception() {
-		//            _manager.StateUpdated("", @"{""state"":""state""}");
 		Assert.Throws<InvalidOperationException>(() => {
 			_manager.EventProcessed(CheckpointTag.FromStreamPosition(0, "stream", 10), 77.7f);
 		});

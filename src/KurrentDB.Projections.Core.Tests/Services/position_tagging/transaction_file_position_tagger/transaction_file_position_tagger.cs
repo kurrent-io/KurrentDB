@@ -21,19 +21,16 @@ public class transaction_file_position_tagger {
 	[SetUp]
 	public void setup() {
 		_zeroEvent = ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
-			Guid.NewGuid(), new TFPos(10, 0), "stream", 0, false, Guid.NewGuid(), "StreamCreated", false,
-			new byte[0], new byte[0]);
+			Guid.NewGuid(), new TFPos(10, 0), "stream", 0, false, Guid.NewGuid(), "StreamCreated", false, [], []);
 		_firstEvent = ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
-			Guid.NewGuid(), new TFPos(30, 20), "stream", 1, false, Guid.NewGuid(), "Data", true,
-			Helper.UTF8NoBom.GetBytes("{}"), new byte[0]);
+			Guid.NewGuid(), new TFPos(30, 20), "stream", 1, false, Guid.NewGuid(), "Data", true, Helper.UTF8NoBom.GetBytes("{}"), []);
 		_secondEvent = ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
-			Guid.NewGuid(), new TFPos(50, 40), "stream", 2, false, Guid.NewGuid(), "Data", true,
-			Helper.UTF8NoBom.GetBytes("{}"), new byte[0]);
+			Guid.NewGuid(), new TFPos(50, 40), "stream", 2, false, Guid.NewGuid(), "Data", true, Helper.UTF8NoBom.GetBytes("{}"), []);
 	}
 
 	[Test]
 	public void can_be_created() {
-		new TransactionFilePositionTagger(0);
+		_ = new TransactionFilePositionTagger(0);
 	}
 
 	[Test]

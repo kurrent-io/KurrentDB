@@ -16,21 +16,17 @@ public class PartitionStateUpdateManager {
 		public CheckpointTag ExpectedTag;
 	}
 
-	private readonly Dictionary<string, State> _states = new Dictionary<string, State>();
+	private readonly Dictionary<string, State> _states = new();
 	private readonly ProjectionNamesBuilder _namingBuilder;
-
-	private readonly EmittedStream.WriterConfiguration.StreamMetadata _partitionCheckpointStreamMetadata =
-		new EmittedStream.WriterConfiguration.StreamMetadata(maxCount: 2);
+	private readonly EmittedStream.WriterConfiguration.StreamMetadata _partitionCheckpointStreamMetadata = new(maxCount: 2);
 
 	public PartitionStateUpdateManager(ProjectionNamesBuilder namingBuilder) {
-		if (namingBuilder == null)
-			throw new ArgumentNullException("namingBuilder");
+		ArgumentNullException.ThrowIfNull(namingBuilder);
 		_namingBuilder = namingBuilder;
 	}
 
 	public void StateUpdated(string partition, PartitionState state, CheckpointTag basedOn) {
-		State stateEntry;
-		if (_states.TryGetValue(partition, out stateEntry)) {
+		if (_states.TryGetValue(partition, out var stateEntry)) {
 			stateEntry.PartitionState = state;
 		} else {
 			_states.Add(partition, new State { PartitionState = state, ExpectedTag = basedOn });
@@ -40,17 +36,15 @@ public class PartitionStateUpdateManager {
 	public void EmitEvents(IEventWriter eventWriter) {
 		if (_states.Count > 0) {
 			var list = new List<EmittedEventEnvelope>();
-			foreach (var entry in _states) {
-				var partition = entry.Key;
+			foreach (var (partition, state) in _states) {
 				var streamId = _namingBuilder.MakePartitionCheckpointStreamName(partition);
-				var data = entry.Value.PartitionState.Serialize();
-				var causedBy = entry.Value.PartitionState.CausedBy;
-				var expectedTag = entry.Value.ExpectedTag;
-				list.Add(
-					new EmittedEventEnvelope(
-						new EmittedDataEvent(
-							streamId, Guid.NewGuid(), ProjectionEventTypes.PartitionCheckpoint, true,
-							data, null, causedBy, expectedTag), _partitionCheckpointStreamMetadata));
+				var data = state.PartitionState.Serialize();
+				var causedBy = state.PartitionState.CausedBy;
+				var expectedTag = state.ExpectedTag;
+				list.Add(new(
+					new EmittedDataEvent(
+						streamId, Guid.NewGuid(), ProjectionEventTypes.PartitionCheckpoint, true,
+						data, null, causedBy, expectedTag), _partitionCheckpointStreamMetadata));
 			}
 
 			//NOTE: order yb is required to satisfy internal emit events validation

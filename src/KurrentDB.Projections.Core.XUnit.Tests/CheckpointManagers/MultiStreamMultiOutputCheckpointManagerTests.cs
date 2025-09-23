@@ -26,29 +26,26 @@ public class MultiStreamMultiOutputCheckpointManagerTests {
 	private const string OrderStreamName = $"$projections-{ProjectionName}-order";
 	private const int ProjectionPhase = 0;
 	private readonly MultiStreamMultiOutputCheckpointManager _sut;
-	private readonly FakePublisher _publisher;
+	private readonly FakePublisher _publisher = new();
 	private readonly IODispatcher _ioDispatcher;
 	private readonly CoreProjectionCheckpointWriter _checkpointWriter;
-	private readonly ExistingStreamsHelper _existingStreams;
+	private readonly ExistingStreamsHelper _existingStreams = new();
 
 	public MultiStreamMultiOutputCheckpointManagerTests() {
 		var projectionId = Guid.NewGuid();
 		var projectionVersion = new ProjectionVersion(3, ProjectionPhase, 5);
 		var namingBuilder = new ProjectionNamesBuilder(ProjectionName, new ProjectionSourceDefinition());
-		_publisher = new FakePublisher();
 		var envelope = new FakeEnvelope();
 		_ioDispatcher = new IODispatcher(_publisher, envelope);
-		_checkpointWriter = new CoreProjectionCheckpointWriter(
-			namingBuilder.MakeCheckpointStreamName(), _ioDispatcher, projectionVersion, ProjectionName);
-		_existingStreams = new ExistingStreamsHelper();
+		_checkpointWriter = new(namingBuilder.MakeCheckpointStreamName(), _ioDispatcher, projectionVersion, ProjectionName);
 
 		var projectionConfig = new ProjectionConfig(SystemAccounts.System, 10, 1000, 20, 2,
-			true, true, false, false, false, 10000, 100, null);
+			true, true, false, false, 10000, 100, null);
 		var positionTagger = new FakePositionTagger(ProjectionPhase);
 
 		_sut = new MultiStreamMultiOutputCheckpointManager(
 			_publisher, projectionId, projectionVersion, SystemAccounts.System, _ioDispatcher, projectionConfig, ProjectionName,
-			positionTagger, namingBuilder, usePersistentCheckpoints: true, producesRunningResults: true, definesFold: false,
+			positionTagger, namingBuilder, usePersistentCheckpoints: true,
 			_checkpointWriter, Opts.MaxProjectionStateSizeDefault);
 	}
 
@@ -59,7 +56,7 @@ public class MultiStreamMultiOutputCheckpointManagerTests {
 		_existingStreams.HardDeleteStreams(scenario.WithHardDeletedStreams);
 
 		var checkpointTag = CheckpointTag.Empty;
-		_checkpointWriter.StartFrom(checkpointTag, 0);
+		_checkpointWriter.StartFrom(0);
 		_sut.BeginLoadPrerecordedEvents(checkpointTag);
 
 		// Read the order stream to find prerecorded events
@@ -120,116 +117,119 @@ public class MultiStreamMultiOutputCheckpointManagerTests {
 		public override string ToString() => ScenarioName;
 	}
 
-	public static TheoryData<PreRecordedEventsScenario> PreRecordedEvents() =>
-		new() {
-			new PreRecordedEventsScenario("No prerecorded events", [], [], []),
-			new PreRecordedEventsScenario("All prerecorded events can be read",
-				withExistingEvents: new ExistingEvent[] {
-					new("a", 0, 100, """{ "data": "a0" }"""),
-					new(OrderStreamName, 0, 200, "0@a", """{"s": { "a": 0, "b": 0 }}""", SystemEventTypes.LinkTo),
-					new("b", 0, 300, """{ "data": "b0" }"""),
-					new(OrderStreamName, 1, 400, "0@b", """{"s": { "a": 0, "b": 0 }}""", SystemEventTypes.LinkTo),
-					new("a", 1, 500, """{ "data": "a1" }"""),
-					new(OrderStreamName, 2, 600, "1@a", """{"s": { "a": 1, "b": 0 }}""", SystemEventTypes.LinkTo),
-					new("b", 1, 700, """{ "data": "b1" }"""),
-					new(OrderStreamName, 3, 800, "1@b", """{"s": { "a": 1, "b": 1 }}""", SystemEventTypes.LinkTo),
-				},
-				expectedCommittedEvents: new ExistingEvent[] {
-					new("a", 0, 100, """{ "data": "a0" }"""),
-					new("b", 0, 300, """{ "data": "b0" }"""),
-					new("a", 1, 500, """{ "data": "a1" }"""),
-					new("b", 1, 700, """{ "data": "b1" }"""),
-				},
-				expectedInputStreamReads: new Tuple<string, long>[] {
-					new("b", 1),
-					new("a", 1),
-					new("b", 0),
-					new("a", 0),
-				}
-			),
-			new PreRecordedEventsScenario("Some prerecorded events have been truncated",
-				withExistingEvents: new ExistingEvent[] {
-					new("a", 0, 100, """{ "data": "a0" }""", ""),
-					new(OrderStreamName, 0, 200, "0@a", """{"s": { "a": 0, "b": 0 }}""", SystemEventTypes.LinkTo),
-					// b@0 has been deleted
-					new(OrderStreamName, 1, 400, "0@b", """{"s": { "a": 0, "b": 0 }}""", SystemEventTypes.LinkTo),
-					new("a", 1, 500, """{ "data": "a1" }"""),
-					new(OrderStreamName, 2, 600, "1@a", """{"s": { "a": 1, "b": 0 }}""", SystemEventTypes.LinkTo),
-					// b@1 has been deleted
-					new(OrderStreamName, 3, 800, "1@b", """{"s": { "a": 1, "b": 1 }}""", SystemEventTypes.LinkTo),
-					new("a", 2, 900, """{ "data": "a2" }"""),
-					new(OrderStreamName, 4, 1000, "2@a", """{"s": { "a": 2, "b": 1 }}""", SystemEventTypes.LinkTo),
-					new("b", 2, 1100, """{ "data": "b2" }"""),
-					new(OrderStreamName, 5, 1200, "2@b", """{"s": { "a": 2, "b": 2 }}""", SystemEventTypes.LinkTo)
-				},
-				expectedCommittedEvents: new ExistingEvent[] {
-					new("a", 0, 100, """{ "data": "a0" }"""),
-					new("a", 1, 500, """{ "data": "a1" }"""),
-					new("a", 2, 900, """{ "data": "a2" }"""),
-					new("b", 2, 1100, """{ "data": "b2" }"""),
-				},
-				expectedInputStreamReads: new Tuple<string, long>[] {
-					new("b", 2),
-					new("a", 2),
-					new("b", 1),
-					new("a", 1),
-					new("b", 0),
-					new("a", 0),
-				}),
-			new PreRecordedEventsScenario("All prerecorded events have been truncated",
-				withExistingEvents: new ExistingEvent[] {
-					new(OrderStreamName, 0, 200, "0@a", """{"s": { "a": 0, "b": 0 }}""", SystemEventTypes.LinkTo),
-					new(OrderStreamName, 1, 400, "0@b", """{"s": { "a": 0, "b": 0 }}""", SystemEventTypes.LinkTo),
-					new(OrderStreamName, 2, 600, "1@a", """{"s": { "a": 1, "b": 0 }}""", SystemEventTypes.LinkTo),
-					new(OrderStreamName, 3, 800, "1@b", """{"s": { "a": 1, "b": 1 }}""", SystemEventTypes.LinkTo),
-					new(OrderStreamName, 4, 1000, "2@a", """{"s": { "a": 2, "b": 1 }}""", SystemEventTypes.LinkTo),
-					new(OrderStreamName, 5, 1200, "2@b", """{"s": { "a": 2, "b": 2 }}""", SystemEventTypes.LinkTo),
-					// We must write events at the end of the input stream because this is a different scenario to stream not found.
-					new("a", 3, 1300, """{ "data": "a3" }"""),
-					new("b", 3, 1400, """{ "data": "b3" }"""),
-				},
-				expectedCommittedEvents: new ExistingEvent[] { },
-				expectedInputStreamReads: new Tuple<string, long>[] {
-					new("b", 2),
-					new("a", 2),
-					new("b", 1),
-					new("a", 1),
-					new("b", 0),
-					new("a", 0),
-				}),
-			new PreRecordedEventsScenario("All input streams have been soft deleted",
-				withExistingEvents: new ExistingEvent[] {
-					new(OrderStreamName, 0, 200, "0@a", """{"s": { "a": 0, "b": 0 }}""", SystemEventTypes.LinkTo),
-					new(OrderStreamName, 1, 400, "0@b", """{"s": { "a": 0, "b": 0 }}""", SystemEventTypes.LinkTo),
-					new(OrderStreamName, 2, 600, "1@a", """{"s": { "a": 1, "b": 0 }}""", SystemEventTypes.LinkTo),
-					new(OrderStreamName, 3, 800, "1@b", """{"s": { "a": 1, "b": 1 }}""", SystemEventTypes.LinkTo),
-				},
-				expectedCommittedEvents: new ExistingEvent[] { },
-				expectedInputStreamReads: new Tuple<string, long>[] {
-					new("b", 1),
-					new("a", 1),
-					new("b", 0),
-					new("a", 0),
-				}),
-			new PreRecordedEventsScenario("One of the input streams has been hard deleted",
-				withExistingEvents: new ExistingEvent[] {
-					new("a", 0, 100, """{ "data": "a0" }"""),
-					new(OrderStreamName, 0, 200, "0@a", """{"s": { "a": 0, "b": 0 }}""", SystemEventTypes.LinkTo),
-					new(OrderStreamName, 1, 400, "0@b", """{"s": { "a": 0, "b": 0 }}""", SystemEventTypes.LinkTo),
-					new("a", 1, 500, """{ "data": "a1" }"""),
-					new(OrderStreamName, 2, 600, "1@a", """{"s": { "a": 1, "b": 0 }}""", SystemEventTypes.LinkTo),
-					new(OrderStreamName, 3, 800, "1@b", """{"s": { "a": 1, "b": 1 }}""", SystemEventTypes.LinkTo),
-				},
-				withHardDeletedStreams: new string[] { "b" },
-				expectedCommittedEvents: new ExistingEvent[] {
-					new("a", 0, 100, """{ "data": "a0" }"""),
-					new("a", 1, 500, """{ "data": "a1" }"""),
-				},
-				expectedInputStreamReads: new Tuple<string, long>[] {
-					new("b", 1),
-					new("a", 1),
-					new("b", 0),
-					new("a", 0),
-				})
-		};
+	public static TheoryData<PreRecordedEventsScenario> PreRecordedEvents() => [
+		new("No prerecorded events", [], [], []),
+		new("All prerecorded events can be read",
+			withExistingEvents: [
+				new("a", 0, 100, """{ "data": "a0" }"""),
+				new(OrderStreamName, 0, 200, "0@a", """{"s": { "a": 0, "b": 0 }}""", SystemEventTypes.LinkTo),
+				new("b", 0, 300, """{ "data": "b0" }"""),
+				new(OrderStreamName, 1, 400, "0@b", """{"s": { "a": 0, "b": 0 }}""", SystemEventTypes.LinkTo),
+				new("a", 1, 500, """{ "data": "a1" }"""),
+				new(OrderStreamName, 2, 600, "1@a", """{"s": { "a": 1, "b": 0 }}""", SystemEventTypes.LinkTo),
+				new("b", 1, 700, """{ "data": "b1" }"""),
+				new(OrderStreamName, 3, 800, "1@b", """{"s": { "a": 1, "b": 1 }}""", SystemEventTypes.LinkTo)
+			],
+			expectedCommittedEvents: [
+				new("a", 0, 100, """{ "data": "a0" }"""),
+				new("b", 0, 300, """{ "data": "b0" }"""),
+				new("a", 1, 500, """{ "data": "a1" }"""),
+				new("b", 1, 700, """{ "data": "b1" }""")
+			],
+			expectedInputStreamReads: [
+				new("b", 1),
+				new("a", 1),
+				new("b", 0),
+				new("a", 0)
+			]
+		),
+
+		new("Some prerecorded events have been truncated",
+			withExistingEvents: [
+				new("a", 0, 100, """{ "data": "a0" }""", ""),
+				new(OrderStreamName, 0, 200, "0@a", """{"s": { "a": 0, "b": 0 }}""", SystemEventTypes.LinkTo),
+				// b@0 has been deleted
+				new(OrderStreamName, 1, 400, "0@b", """{"s": { "a": 0, "b": 0 }}""", SystemEventTypes.LinkTo),
+				new("a", 1, 500, """{ "data": "a1" }"""),
+				new(OrderStreamName, 2, 600, "1@a", """{"s": { "a": 1, "b": 0 }}""", SystemEventTypes.LinkTo),
+				// b@1 has been deleted
+				new(OrderStreamName, 3, 800, "1@b", """{"s": { "a": 1, "b": 1 }}""", SystemEventTypes.LinkTo),
+				new("a", 2, 900, """{ "data": "a2" }"""),
+				new(OrderStreamName, 4, 1000, "2@a", """{"s": { "a": 2, "b": 1 }}""", SystemEventTypes.LinkTo),
+				new("b", 2, 1100, """{ "data": "b2" }"""),
+				new(OrderStreamName, 5, 1200, "2@b", """{"s": { "a": 2, "b": 2 }}""", SystemEventTypes.LinkTo)
+			],
+			expectedCommittedEvents: [
+				new("a", 0, 100, """{ "data": "a0" }"""),
+				new("a", 1, 500, """{ "data": "a1" }"""),
+				new("a", 2, 900, """{ "data": "a2" }"""),
+				new("b", 2, 1100, """{ "data": "b2" }""")
+			],
+			expectedInputStreamReads: [
+				new("b", 2),
+				new("a", 2),
+				new("b", 1),
+				new("a", 1),
+				new("b", 0),
+				new("a", 0)
+			]),
+
+		new("All prerecorded events have been truncated",
+			withExistingEvents: [
+				new(OrderStreamName, 0, 200, "0@a", """{"s": { "a": 0, "b": 0 }}""", SystemEventTypes.LinkTo),
+				new(OrderStreamName, 1, 400, "0@b", """{"s": { "a": 0, "b": 0 }}""", SystemEventTypes.LinkTo),
+				new(OrderStreamName, 2, 600, "1@a", """{"s": { "a": 1, "b": 0 }}""", SystemEventTypes.LinkTo),
+				new(OrderStreamName, 3, 800, "1@b", """{"s": { "a": 1, "b": 1 }}""", SystemEventTypes.LinkTo),
+				new(OrderStreamName, 4, 1000, "2@a", """{"s": { "a": 2, "b": 1 }}""", SystemEventTypes.LinkTo),
+				new(OrderStreamName, 5, 1200, "2@b", """{"s": { "a": 2, "b": 2 }}""", SystemEventTypes.LinkTo),
+				// We must write events at the end of the input stream because this is a different scenario to stream not found.
+				new("a", 3, 1300, """{ "data": "a3" }"""),
+				new("b", 3, 1400, """{ "data": "b3" }""")
+			],
+			expectedCommittedEvents: [],
+			expectedInputStreamReads: [
+				new("b", 2),
+				new("a", 2),
+				new("b", 1),
+				new("a", 1),
+				new("b", 0),
+				new("a", 0)
+			]),
+
+		new("All input streams have been soft deleted",
+			withExistingEvents: [
+				new(OrderStreamName, 0, 200, "0@a", """{"s": { "a": 0, "b": 0 }}""", SystemEventTypes.LinkTo),
+				new(OrderStreamName, 1, 400, "0@b", """{"s": { "a": 0, "b": 0 }}""", SystemEventTypes.LinkTo),
+				new(OrderStreamName, 2, 600, "1@a", """{"s": { "a": 1, "b": 0 }}""", SystemEventTypes.LinkTo),
+				new(OrderStreamName, 3, 800, "1@b", """{"s": { "a": 1, "b": 1 }}""", SystemEventTypes.LinkTo)
+			],
+			expectedCommittedEvents: [],
+			expectedInputStreamReads: [
+				new("b", 1),
+				new("a", 1),
+				new("b", 0),
+				new("a", 0)
+			]),
+
+		new("One of the input streams has been hard deleted",
+			withExistingEvents: [
+				new("a", 0, 100, """{ "data": "a0" }"""),
+				new(OrderStreamName, 0, 200, "0@a", """{"s": { "a": 0, "b": 0 }}""", SystemEventTypes.LinkTo),
+				new(OrderStreamName, 1, 400, "0@b", """{"s": { "a": 0, "b": 0 }}""", SystemEventTypes.LinkTo),
+				new("a", 1, 500, """{ "data": "a1" }"""),
+				new(OrderStreamName, 2, 600, "1@a", """{"s": { "a": 1, "b": 0 }}""", SystemEventTypes.LinkTo),
+				new(OrderStreamName, 3, 800, "1@b", """{"s": { "a": 1, "b": 1 }}""", SystemEventTypes.LinkTo)
+			],
+			withHardDeletedStreams: ["b"],
+			expectedCommittedEvents: [
+				new("a", 0, 100, """{ "data": "a0" }"""),
+				new("a", 1, 500, """{ "data": "a1" }""")
+			],
+			expectedInputStreamReads: [
+				new("b", 1),
+				new("a", 1),
+				new("b", 0),
+				new("a", 0)
+			])
+	];
 }

@@ -8,8 +8,9 @@ namespace KurrentDB.Projections.Core.Tests.Services.core_projection.multi_phase;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_starting_phase2_without_a_reader_strategy<TLogFormat, TStreamId> : specification_with_multi_phase_core_projection<TLogFormat, TStreamId> {
-	protected override FakeReaderStrategy GivenPhase2ReaderStrategy() {
+class when_starting_phase2_without_a_reader_strategy<TLogFormat, TStreamId>
+	: specification_with_multi_phase_core_projection<TLogFormat, TStreamId> {
+	protected virtual FakeReaderStrategy GivenPhase2ReaderStrategy() {
 		return null;
 	}
 

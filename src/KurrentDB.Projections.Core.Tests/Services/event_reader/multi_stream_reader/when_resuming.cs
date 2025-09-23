@@ -21,27 +21,23 @@ namespace KurrentDB.Projections.Core.Tests.Services.event_reader.multi_stream_re
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_resuming<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private MultiStreamEventReader _edp;
-	private Guid _distibutionPointCorrelationId;
+	private Guid _distributionPointCorrelationId;
 
 	private string[] _abStreams;
 	private Dictionary<string, long> _ab12Tag;
 
 	[SetUp]
 	public new void When() {
-		_ab12Tag = new Dictionary<string, long> { { "a", 1 }, { "b", 2 } };
-		_abStreams = new[] { "a", "b" };
-
-		_distibutionPointCorrelationId = Guid.NewGuid();
-		_edp = new MultiStreamEventReader(
-			_ioDispatcher, _bus, _distibutionPointCorrelationId, null, 0, _abStreams, _ab12Tag, false,
-			new RealTimeProvider());
-
+		_ab12Tag = new() { { "a", 1 }, { "b", 2 } };
+		_abStreams = ["a", "b"];
+		_distributionPointCorrelationId = Guid.NewGuid();
+		_edp = new(_bus, _distributionPointCorrelationId, null, 0, _abStreams, _ab12Tag, false, new RealTimeProvider());
 		_edp.Resume();
 	}
 
 	[Test]
 	public void it_cannot_be_resumed() {
-		Assert.Throws<InvalidOperationException>(() => { _edp.Resume(); });
+		Assert.Throws<InvalidOperationException>(() => _edp.Resume());
 	}
 
 	[Test]
@@ -52,36 +48,28 @@ public class when_resuming<TLogFormat, TStreamId> : TestFixtureWithExistingEvent
 	[Test]
 	public void it_publishes_read_events_from_beginning() {
 		Assert.AreEqual(2, _consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>().Count());
-		Assert.IsTrue(
-			_consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>()
-				.Any(m => m.EventStreamId == "a"));
-		Assert.IsTrue(
-			_consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>()
-				.Any(m => m.EventStreamId == "b"));
+		Assert.IsTrue(_consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>().Any(m => m.EventStreamId == "a"));
+		Assert.IsTrue(_consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>().Any(m => m.EventStreamId == "b"));
 		Assert.AreEqual(
 			1,
-			_consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>()
-				.Single(m => m.EventStreamId == "a")
-				.FromEventNumber);
+			_consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>().Single(m => m.EventStreamId == "a").FromEventNumber);
 		Assert.AreEqual(
 			2,
-			_consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>()
-				.Single(m => m.EventStreamId == "b")
-				.FromEventNumber);
+			_consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>().Single(m => m.EventStreamId == "b").FromEventNumber);
 	}
 
 	[Test]
 	public void can_handle_read_events_completed() {
 		_edp.Handle(
 			new ClientMessage.ReadStreamEventsForwardCompleted(
-				_distibutionPointCorrelationId, "a", 100, 100, ReadStreamResult.Success,
-				new[] {
+				_distributionPointCorrelationId, "a", 100, 100, ReadStreamResult.Success,
+				[
 					ResolvedEvent.ForUnresolvedEvent(
 						new EventRecord(
 							1, 50, Guid.NewGuid(), Guid.NewGuid(), 50, 0, "a", ExpectedVersion.Any,
 							DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type", new byte[0], new byte[0]), 0)
-				}, null, false, "", 2, 4, false, 100));
+							"event_type", [], []), 0)
+				], null, false, "", 2, 4, false, 100));
 	}
 }

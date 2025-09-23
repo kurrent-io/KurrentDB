@@ -32,11 +32,12 @@ public class when_index_based_read_completes_before_timeout<TLogFormat, TStreamI
 	public new void When() {
 		_distributionCorrelationId = Guid.NewGuid();
 		_fakeTimeProvider = new FakeTimeProvider();
-		var fromPositions = new Dictionary<string, long>();
-		fromPositions.Add("$et-eventTypeOne", 0);
-		fromPositions.Add("$et-eventTypeTwo", 0);
-		_eventReader = new EventByTypeIndexEventReader(_bus, _distributionCorrelationId,
-			null, new string[] { "eventTypeOne", "eventTypeTwo" },
+		var fromPositions = new Dictionary<string, long> {
+			{ "$et-eventTypeOne", 0 },
+			{ "$et-eventTypeTwo", 0 }
+		};
+		_eventReader = new(_bus, _distributionCorrelationId,
+			null, ["eventTypeOne", "eventTypeTwo"],
 			false, new TFPos(-1, -1),
 			fromPositions, true,
 			_fakeTimeProvider,
@@ -87,7 +88,6 @@ public class when_index_based_read_completes_before_timeout<TLogFormat, TStreamI
 
 	[Test]
 	public void should_deliver_events() {
-		Assert.AreEqual(3,
-			_consumer.HandledMessages.OfType<ReaderSubscriptionMessage.CommittedEventDistributed>().Count());
+		Assert.AreEqual(3, _consumer.HandledMessages.OfType<ReaderSubscriptionMessage.CommittedEventDistributed>().Count());
 	}
 }

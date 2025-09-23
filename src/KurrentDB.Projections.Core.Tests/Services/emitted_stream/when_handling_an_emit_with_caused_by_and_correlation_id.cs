@@ -21,7 +21,8 @@ namespace KurrentDB.Projections.Core.Tests.Services.emitted_stream;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class when_handling_an_emit_with_caused_by_and_correlation_id<TLogFormat, TStreamId> : core_projection.TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
+public class when_handling_an_emit_with_caused_by_and_correlation_id<TLogFormat, TStreamId>
+	: core_projection.TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private EmittedStream _stream;
 	private TestCheckpointManagerMessageHandler _readyHandler;
 	private EmittedDataEvent _emittedDataEvent;
@@ -39,23 +40,20 @@ public class when_handling_an_emit_with_caused_by_and_correlation_id<TLogFormat,
 		_causedBy = Guid.NewGuid();
 		_correlationId = "correlation_id";
 
-		_emittedDataEvent = new EmittedDataEvent(
-			"test_stream", Guid.NewGuid(), "type", true, "data", null, CheckpointTag.FromPosition(0, 200, 150),
-			null);
+		_emittedDataEvent = new("test_stream", Guid.NewGuid(), "type", true, "data", null, CheckpointTag.FromPosition(0, 200, 150), null);
 
 		_emittedDataEvent.SetCausedBy(_causedBy);
 		_emittedDataEvent.SetCorrelationId(_correlationId);
 
-		_readyHandler = new TestCheckpointManagerMessageHandler();
-		_stream = new EmittedStream(
+		_readyHandler = new();
+		_stream = new(
 			"test_stream",
-			new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
-				new EmittedStream.WriterConfiguration.StreamMetadata(), null, maxWriteBatchLength: 50),
+			new(new EmittedStreamsWriter(_ioDispatcher), new(), null, maxWriteBatchLength: 50),
 			new ProjectionVersion(1, 0, 0), new TransactionFilePositionTagger(0),
 			CheckpointTag.FromPosition(0, 40, 30),
 			_bus, _ioDispatcher, _readyHandler);
 		_stream.Start();
-		_stream.EmitEvents(new[] { _emittedDataEvent });
+		_stream.EmitEvents([_emittedDataEvent]);
 	}
 
 
@@ -69,7 +67,6 @@ public class when_handling_an_emit_with_caused_by_and_correlation_id<TLogFormat,
 		var writeEvent = writeEvents.Single();
 		Assert.NotNull(writeEvent.Metadata);
 		var metadata = Helper.UTF8NoBom.GetString(writeEvent.Metadata);
-		HelperExtensions.AssertJson(
-			new { ___causedBy = _causedBy, ___correlationId = _correlationId }, metadata.ParseJson<JObject>());
+		HelperExtensions.AssertJson(new { ___causedBy = _causedBy, ___correlationId = _correlationId }, metadata.ParseJson<JObject>());
 	}
 }

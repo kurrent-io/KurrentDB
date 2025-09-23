@@ -22,16 +22,16 @@ public class when_starting_and_enqueue_prerecorded_events_read_times_out<TLogFor
 	IHandle<CoreProjectionProcessingMessage.PrerecordedEventsLoaded> {
 	private bool _hasTimedOut;
 	private Guid _timeoutCorrelationId;
-	private ManualResetEventSlim _mre = new ManualResetEventSlim();
+	private readonly ManualResetEventSlim _mre = new();
 	private CoreProjectionProcessingMessage.PrerecordedEventsLoaded _eventsLoadedMessage;
 
-	public override void When() {
-		_bus.Subscribe<TimerMessage.Schedule>(this);
-		_bus.Subscribe<CoreProjectionProcessingMessage.PrerecordedEventsLoaded>(this);
+	protected override void When() {
+		Bus.Subscribe<TimerMessage.Schedule>(this);
+		Bus.Subscribe<CoreProjectionProcessingMessage.PrerecordedEventsLoaded>(this);
 
-		_checkpointManager.Initialize();
+		CheckpointManager.Initialize();
 		var positions = new Dictionary<string, long> { { "a", 1 }, { "b", 1 }, { "c", 1 } };
-		_checkpointManager.BeginLoadPrerecordedEvents(CheckpointTag.FromStreamPositions(0, positions));
+		CheckpointManager.BeginLoadPrerecordedEvents(CheckpointTag.FromStreamPositions(0, positions));
 
 		if (!_mre.Wait(10000)) {
 			Assert.Fail("Timed out waiting for pre recorded events loaded message");
@@ -49,8 +49,7 @@ public class when_starting_and_enqueue_prerecorded_events_read_times_out<TLogFor
 	}
 
 	public void Handle(TimerMessage.Schedule message) {
-		var delay = message.ReplyMessage as IODispatcherDelayedMessage;
-		if (delay != null && delay.MessageCorrelationId == _timeoutCorrelationId) {
+		if (message.ReplyMessage is IODispatcherDelayedMessage delay && delay.MessageCorrelationId == _timeoutCorrelationId) {
 			message.Reply();
 		}
 	}

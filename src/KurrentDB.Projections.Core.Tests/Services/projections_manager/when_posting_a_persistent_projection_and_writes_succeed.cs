@@ -15,8 +15,8 @@ namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class
-	when_posting_a_persistent_projection_and_writes_succeed<TLogFormat, TStreamId> : TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId> {
+public class when_posting_a_persistent_projection_and_writes_succeed<TLogFormat, TStreamId>
+	: TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId> {
 	protected override void Given() {
 		NoStream("$projections-test-projection-order");
 		AllWritesToSucceed("$projections-test-projection-order");
@@ -33,25 +33,21 @@ public class
 		yield return
 			new ProjectionManagementMessage.Command.Post(
 				_bus, ProjectionMode.Continuous, _projectionName,
-				ProjectionManagementMessage.RunAs.System, "JS", @"fromAll().when({$any:function(s,e){return s;}});",
+				ProjectionManagementMessage.RunAs.System, "JS", "fromAll().when({$any:function(s,e){return s;}});",
 				enabled: true, checkpointsEnabled: true, emitEnabled: true, trackEmittedStreams: true);
 	}
 
 	[Test, Category("v8")]
 	public void projection_status_is_running() {
-		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
-		Assert.AreEqual(
-			ManagedProjectionState.Running,
-			_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Single().Projections[0]
-				.LeaderStatus);
+		_manager.Handle(new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
+		Assert.AreEqual(ManagedProjectionState.Running,
+			_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Single().Projections[0].LeaderStatus);
 	}
 
 	[Test, Category("v8")]
 	public void a_projection_updated_event_is_written() {
 		Assert.IsTrue(
-			_consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().Any(
-				v => v.Events[0].EventType == ProjectionEventTypes.ProjectionUpdated));
+			_consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().Any(v => v.Events[0].EventType == ProjectionEventTypes.ProjectionUpdated));
 	}
 
 	[Test, Category("v8")]

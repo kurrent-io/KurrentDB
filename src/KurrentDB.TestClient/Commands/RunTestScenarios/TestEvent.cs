@@ -14,7 +14,7 @@ internal class TestEvent {
 		var body = new string('#', 1 + subIndex * subIndex);
 		var encodedData = Helper.UTF8NoBom.GetBytes(string.Format("{0}-{1}-{2}", index, body.Length, body));
 
-		return new EventData(Guid.NewGuid(), type, false, encodedData, new byte[0]);
+		return new EventData(Guid.NewGuid(), type, false, encodedData, []);
 	}
 
 	public static void VerifyIfMatched(RecordedEvent evnt) {

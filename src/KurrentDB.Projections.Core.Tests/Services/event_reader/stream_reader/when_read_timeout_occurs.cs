@@ -32,44 +32,39 @@ public class when_read_timeout_occurs<TLogFormat, TStreamId> : TestFixtureWithEx
 	[SetUp]
 	public new void When() {
 		_distributionCorrelationId = Guid.NewGuid();
-		_fakeTimeProvider = new FakeTimeProvider();
-		_eventReader = new StreamEventReader(_bus, _distributionCorrelationId, null, "stream", 10,
-			_fakeTimeProvider,
-			resolveLinkTos: false, stopOnEof: true, produceStreamDeletes: false);
+		_fakeTimeProvider = new();
+		_eventReader = new(_bus, _distributionCorrelationId, null, "stream", 10, _fakeTimeProvider, resolveLinkTos: false, stopOnEof: true,
+			produceStreamDeletes: false);
 		_eventReader.Resume();
-		_readCorrelationId = _consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>().Last()
-			.CorrelationId;
-		_eventReader.Handle(
-			new ProjectionManagementMessage.Internal.ReadTimeout(_readCorrelationId, "stream"));
+		_readCorrelationId = _consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>().Last().CorrelationId;
+		_eventReader.Handle(new ProjectionManagementMessage.Internal.ReadTimeout(_readCorrelationId, "stream"));
 		_eventReader.Handle(
 			new ClientMessage.ReadStreamEventsForwardCompleted(
 				_readCorrelationId, "stream", 100, 100, ReadStreamResult.Success,
-				new[] {
+				[
 					ResolvedEvent.ForUnresolvedEvent(
 						new EventRecord(
 							10, 50, Guid.NewGuid(), Guid.NewGuid(), 50, 0, "stream", ExpectedVersion.Any,
 							DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type1", new byte[] {1}, new byte[] {2})),
+							"event_type1", [1], [2])),
 					ResolvedEvent.ForUnresolvedEvent(
 						new EventRecord(
 							11, 100, Guid.NewGuid(), Guid.NewGuid(), 100, 0, "stream", ExpectedVersion.Any,
 							DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type2", new byte[] {3}, new byte[] {4}))
-				}, null, false, "", 12, 11, true, 200));
+							"event_type2", [3], [4]))
+				], null, false, "", 12, 11, true, 200));
 	}
 
 	[Test]
 	public void should_not_deliver_events() {
-		Assert.AreEqual(0,
-			_consumer.HandledMessages.OfType<ReaderSubscriptionMessage.CommittedEventDistributed>().Count());
+		Assert.AreEqual(0, _consumer.HandledMessages.OfType<ReaderSubscriptionMessage.CommittedEventDistributed>().Count());
 	}
 
 	[Test]
 	public void should_attempt_another_read_for_the_timed_out_reads() {
-		var reads = _consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>()
-			.Where(x => x.EventStreamId == "stream");
+		var reads = _consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>().Where(x => x.EventStreamId == "stream").ToArray();
 
 		Assert.AreEqual(reads.First().CorrelationId, _readCorrelationId);
 		Assert.AreEqual(1, reads.Skip(1).Count());

@@ -20,8 +20,8 @@ public class when_projection_state_is_too_large<TLogFormat, TStreamId> :
 	protected override void Given() {
 		AllWritesSucceed();
 		base.Given();
-		this._checkpointHandledThreshold = 2;
-		this._maxProjectionStateSize = 1024 * 1024;
+		_checkpointHandledThreshold = 2;
+		_maxProjectionStateSize = 1024 * 1024;
 	}
 
 	protected override void When() {
@@ -29,9 +29,8 @@ public class when_projection_state_is_too_large<TLogFormat, TStreamId> :
 		_exception = null;
 		try {
 			_checkpointReader.BeginLoadState();
-			var checkpointLoaded =
-				_consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.CheckpointLoaded>().First();
-			_checkpointWriter.StartFrom(checkpointLoaded.CheckpointTag, checkpointLoaded.CheckpointEventNumber);
+			var checkpointLoaded = _consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.CheckpointLoaded>().First();
+			_checkpointWriter.StartFrom(checkpointLoaded.CheckpointEventNumber);
 			_manager.BeginLoadPrerecordedEvents(checkpointLoaded.CheckpointTag);
 
 			// Initial checkpoint and state
@@ -41,16 +40,14 @@ public class when_projection_state_is_too_large<TLogFormat, TStreamId> :
 
 			// checkpoint and state after first event processed
 			var firstEventCheckpointTag = CheckpointTag.FromStreamPosition(0, "stream", 11);
-			var newState = new PartitionState("{ \"state\": \"foo\"}", "",
-				firstEventCheckpointTag);
+			var newState = new PartitionState("{ \"state\": \"foo\"}", "", firstEventCheckpointTag);
 			_manager.StateUpdated("", oldState, newState);
 			_manager.EventProcessed(firstEventCheckpointTag, 55.5f);
 
 			// second event processed fails, as the state is too large
 			var secondEventCheckpointTag = CheckpointTag.FromStreamPosition(0, "stream", 12);
 			oldState = newState;
-			newState = new PartitionState($"{{ \"state\": \"{new string('*', _maxProjectionStateSize)}\"}}", "",
-				firstEventCheckpointTag);
+			newState = new($"{{ \"state\": \"{new string('*', _maxProjectionStateSize)}\"}}", "", firstEventCheckpointTag);
 			_manager.StateUpdated("", oldState, newState);
 			_manager.EventProcessed(secondEventCheckpointTag, 77.7f);
 		} catch (Exception ex) {

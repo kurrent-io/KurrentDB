@@ -14,15 +14,15 @@ public class when_handling_duplicate_events : TestFixtureWithProjectionSubscript
 		_subscription.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 				Guid.NewGuid(), new TFPos(200, 150), "test-stream", 1, false, Guid.NewGuid(),
-				"bad-event-type", false, new byte[0], new byte[0]));
+				"bad-event-type", false, [], []));
 		_subscription.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 				Guid.NewGuid(), new TFPos(100, 50), "test-stream", 0, false, Guid.NewGuid(),
-				"bad-event-type", false, new byte[0], new byte[0]));
+				"bad-event-type", false, [], []));
 		_subscription.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 				Guid.NewGuid(), new TFPos(200, 150), "test-stream", 1, false, Guid.NewGuid(),
-				"bad-event-type", false, new byte[0], new byte[0]));
+				"bad-event-type", false, [], []));
 	}
 
 	[Test]

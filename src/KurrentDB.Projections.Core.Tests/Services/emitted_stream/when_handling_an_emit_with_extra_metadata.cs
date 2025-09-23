@@ -27,28 +27,25 @@ public class when_handling_an_emit_with_extra_metadata<TLogFormat, TStreamId> : 
 
 	protected override void Given() {
 		AllWritesQueueUp();
-		ExistingEvent("test_stream", "type", @"{""c"": 100, ""p"": 50}", "data");
+		ExistingEvent("test_stream", "type", """{"c": 100, "p": 50}""", "data");
 	}
 
 	[SetUp]
 	public void setup() {
-		_readyHandler = new TestCheckpointManagerMessageHandler();
-		_stream = new EmittedStream(
+		_readyHandler = new();
+		_stream = new(
 			"test_stream",
-			new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
-				new EmittedStream.WriterConfiguration.StreamMetadata(), null, maxWriteBatchLength: 50),
+			new(new EmittedStreamsWriter(_ioDispatcher), new(), null, maxWriteBatchLength: 50),
 			new ProjectionVersion(1, 0, 0), new TransactionFilePositionTagger(0),
 			CheckpointTag.FromPosition(0, 40, 30),
 			_bus, _ioDispatcher, _readyHandler);
 		_stream.Start();
 
 		_stream.EmitEvents(
-			new[] {
-				new EmittedDataEvent(
-					"test_stream", Guid.NewGuid(), "type", true, "data",
-					new ExtraMetaData(new Dictionary<string, string> {{"a", "1"}, {"b", "{}"}}),
-					CheckpointTag.FromPosition(0, 200, 150), null)
-			});
+		[
+			new EmittedDataEvent("test_stream", Guid.NewGuid(), "type", true, "data", new(new Dictionary<string, string> { { "a", "1" }, { "b", "{}" } }),
+				CheckpointTag.FromPosition(0, 200, 150), null)
+		]);
 	}
 
 	[Test]

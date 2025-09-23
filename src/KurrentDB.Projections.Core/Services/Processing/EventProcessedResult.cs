@@ -9,74 +9,44 @@ using KurrentDB.Projections.Core.Services.Processing.Partitioning;
 namespace KurrentDB.Projections.Core.Services.Processing;
 
 public class EventProcessedResult {
-	private readonly EmittedEventEnvelope[] _emittedEvents;
-	private readonly PartitionState _oldState;
-	private readonly PartitionState _newState;
-	private readonly PartitionState _oldSharedState;
-	private readonly PartitionState _newSharedState;
-	private readonly string _partition;
-	private readonly CheckpointTag _checkpointTag;
-	private readonly Guid _causedBy;
-	private readonly string _correlationId;
-
 	public EventProcessedResult(
 		string partition, CheckpointTag checkpointTag, PartitionState oldState, PartitionState newState,
 		PartitionState oldSharedState, PartitionState newSharedState, EmittedEventEnvelope[] emittedEvents,
 		Guid causedBy, string correlationId) {
-		if (partition == null)
-			throw new ArgumentNullException("partition");
-		if (checkpointTag == null)
-			throw new ArgumentNullException("checkpointTag");
-		_emittedEvents = emittedEvents;
-		_causedBy = causedBy;
-		_correlationId = correlationId;
-		_oldState = oldState;
-		_newState = newState;
-		_oldSharedState = oldSharedState;
-		_newSharedState = newSharedState;
-		_partition = partition;
-		_checkpointTag = checkpointTag;
+		ArgumentNullException.ThrowIfNull(partition);
+		ArgumentNullException.ThrowIfNull(checkpointTag);
+		EmittedEvents = emittedEvents;
+		CausedBy = causedBy;
+		CorrelationId = correlationId;
+		OldState = oldState;
+		NewState = newState;
+		OldSharedState = oldSharedState;
+		NewSharedState = newSharedState;
+		Partition = partition;
+		CheckpointTag = checkpointTag;
 	}
 
-	public EmittedEventEnvelope[] EmittedEvents {
-		get { return _emittedEvents; }
-	}
+	public EmittedEventEnvelope[] EmittedEvents { get; }
 
-	public PartitionState OldState {
-		get { return _oldState; }
-	}
+	public PartitionState OldState { get; }
 
 	/// <summary>
 	/// null - means no state change
 	/// </summary>
-	public PartitionState NewState {
-		get { return _newState; }
-	}
+	public PartitionState NewState { get; }
 
-	public PartitionState OldSharedState {
-		get { return _oldSharedState; }
-	}
+	public PartitionState OldSharedState { get; }
 
 	/// <summary>
 	/// null - means no state change
 	/// </summary>
-	public PartitionState NewSharedState {
-		get { return _newSharedState; }
-	}
+	public PartitionState NewSharedState { get; }
 
-	public string Partition {
-		get { return _partition; }
-	}
+	public string Partition { get; }
 
-	public CheckpointTag CheckpointTag {
-		get { return _checkpointTag; }
-	}
+	public CheckpointTag CheckpointTag { get; }
 
-	public Guid CausedBy {
-		get { return _causedBy; }
-	}
+	public Guid CausedBy { get; }
 
-	public string CorrelationId {
-		get { return _correlationId; }
-	}
+	public string CorrelationId { get; }
 }

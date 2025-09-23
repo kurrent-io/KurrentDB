@@ -22,28 +22,22 @@ using IODispatcherDelayedMessage = KurrentDB.Core.Helpers.IODispatcherDelayedMes
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
 
 public abstract class specification_with_projection_management_service<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
-	protected ProjectionManager _manager;
-	protected ProjectionManagerMessageDispatcher _managerMessageDispatcher;
+	private ProjectionManager _manager;
+	private ProjectionManagerMessageDispatcher _managerMessageDispatcher;
 	private bool _initializeSystemProjections;
-	protected AwakeService AwakeService;
-
+	private AwakeService _awakeService;
 
 	protected override void Given1() {
 		base.Given1();
 		_initializeSystemProjections = GivenInitializeSystemProjections();
 		if (!_initializeSystemProjections) {
-			ExistingEvent(ProjectionNamesBuilder.ProjectionsRegistrationStream,
-				ProjectionEventTypes.ProjectionsInitialized, "", "");
+			ExistingEvent(ProjectionNamesBuilder.ProjectionsRegistrationStream, ProjectionEventTypes.ProjectionsInitialized, "", "");
 		}
 	}
 
-	protected virtual bool GivenInitializeSystemProjections() {
-		return false;
-	}
+	protected virtual bool GivenInitializeSystemProjections() => false;
 
-	protected override ManualQueue GiveInputQueue() {
-		return new ManualQueue(_bus, _timeProvider);
-	}
+	protected override ManualQueue GiveInputQueue() => new(_bus, _timeProvider);
 
 	[SetUp]
 	public void Setup() {
@@ -103,12 +97,11 @@ public abstract class specification_with_projection_management_service<TLogForma
 		_bus.Subscribe<IODispatcherDelayedMessage>(ioDispatcher.Awaker);
 		_bus.Subscribe<IODispatcherDelayedMessage>(ioDispatcher);
 
-		AwakeService = new AwakeService();
-		_bus.Subscribe<StorageMessage.EventCommitted>(AwakeService);
-		_bus.Subscribe<StorageMessage.TfEofAtNonCommitRecord>(AwakeService);
-		_bus.Subscribe<AwakeServiceMessage.SubscribeAwake>(AwakeService);
-		_bus.Subscribe<AwakeServiceMessage.UnsubscribeAwake>(AwakeService);
-
+		_awakeService = new AwakeService();
+		_bus.Subscribe<StorageMessage.EventCommitted>(_awakeService);
+		_bus.Subscribe<StorageMessage.TfEofAtNonCommitRecord>(_awakeService);
+		_bus.Subscribe<AwakeServiceMessage.SubscribeAwake>(_awakeService);
+		_bus.Subscribe<AwakeServiceMessage.UnsubscribeAwake>(_awakeService);
 
 		Given();
 		WhenLoop();

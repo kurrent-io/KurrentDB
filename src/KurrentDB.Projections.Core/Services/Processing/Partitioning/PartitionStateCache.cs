@@ -8,110 +8,76 @@ using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Partitioning;
 
-public class PartitionStateCache {
-	private readonly int _maxCachedPartitions;
+public class PartitionStateCache(int maxCachedPartitions = 4000) {
+	private readonly LinkedList<(CheckpointTag Tag, string Partition)> _cacheOrder = [];
+	private readonly Dictionary<string, (PartitionState State, CheckpointTag Tag)> _partitionStates = new();
+	private readonly CheckpointTag _zeroPosition = CheckpointTag.Empty;
+	private CheckpointTag _unlockedBefore = CheckpointTag.Empty;
 
-	private readonly LinkedList<Tuple<CheckpointTag, string>> _cacheOrder =
-		new LinkedList<Tuple<CheckpointTag, string>>();
-
-	private readonly Dictionary<string, Tuple<PartitionState, CheckpointTag>> _partitionStates =
-		new Dictionary<string, Tuple<PartitionState, CheckpointTag>>();
-
-	private int _cachedItemCount;
-
-	private CheckpointTag _unlockedBefore;
-	private readonly CheckpointTag _zeroPosition;
-
-	public PartitionStateCache(int maxCachedPartitions = 4000) {
-		_zeroPosition = CheckpointTag.Empty;
-		_unlockedBefore = CheckpointTag.Empty;
-		_maxCachedPartitions = maxCachedPartitions;
-	}
-
-	public int CachedItemCount {
-		get { return _cachedItemCount; }
-	}
+	public int CachedItemCount { get; private set; }
 
 	public void Initialize() {
 		_partitionStates.Clear();
-		_cachedItemCount = 0;
+		CachedItemCount = 0;
 
 		_cacheOrder.Clear();
 		_unlockedBefore = _zeroPosition;
 	}
 
 	public void CacheAndLockPartitionState(string partition, PartitionState data, CheckpointTag at) {
-		if (partition == null)
-			throw new ArgumentNullException("partition");
-		if (data == null)
-			throw new ArgumentNullException("data");
+		ArgumentNullException.ThrowIfNull(partition);
+		ArgumentNullException.ThrowIfNull(data);
 		EnsureCanLockPartitionAt(partition, at);
 
-		_partitionStates[partition] = Tuple.Create(data, at);
-		_cachedItemCount = _partitionStates.Count;
+		_partitionStates[partition] = (data, at);
+		CachedItemCount = _partitionStates.Count;
 
 		if (!string.IsNullOrEmpty(partition)) // cached forever - for root state
-			_cacheOrder.AddLast(Tuple.Create(at, partition));
+			_cacheOrder.AddLast((at, partition));
 		CleanUp();
 	}
 
 	public void CachePartitionState(string partition, PartitionState data) {
-		if (partition == null)
-			throw new ArgumentNullException("partition");
-		if (data == null)
-			throw new ArgumentNullException("data");
+		ArgumentNullException.ThrowIfNull(partition);
+		ArgumentNullException.ThrowIfNull(data);
 
-		_partitionStates[partition] = Tuple.Create(data, _zeroPosition);
-		_cachedItemCount = _partitionStates.Count;
+		_partitionStates[partition] = (data, _zeroPosition);
+		CachedItemCount = _partitionStates.Count;
 
-		_cacheOrder.AddFirst(Tuple.Create(_zeroPosition, partition));
+		_cacheOrder.AddFirst((_zeroPosition, partition));
 		CleanUp();
 	}
 
 	public PartitionState TryGetAndLockPartitionState(string partition, CheckpointTag lockAt) {
-		if (partition == null)
-			throw new ArgumentNullException("partition");
-		Tuple<PartitionState, CheckpointTag> stateData;
-		if (!_partitionStates.TryGetValue(partition, out stateData))
+		ArgumentNullException.ThrowIfNull(partition);
+		if (!_partitionStates.TryGetValue(partition, out var stateData))
 			return null;
 		EnsureCanLockPartitionAt(partition, lockAt);
-		if (lockAt != null && lockAt <= stateData.Item2)
+		if (lockAt != null && lockAt <= stateData.Tag)
 			throw new InvalidOperationException(
-				string.Format(
-					"Attempt to relock the '{0}' partition state locked at the '{1}' position at the earlier position '{2}'",
-					partition, stateData.Item2, lockAt));
+				$"Attempt to relock the '{partition}' partition state locked at the '{stateData.Tag}' position at the earlier position '{lockAt}'");
 
-		_partitionStates[partition] = Tuple.Create(stateData.Item1, lockAt);
-		_cachedItemCount = _partitionStates.Count;
+		_partitionStates[partition] = (stateData.State, lockAt);
+		CachedItemCount = _partitionStates.Count;
 
 		if (!string.IsNullOrEmpty(partition)) // cached forever - for root state
-			_cacheOrder.AddLast(Tuple.Create(lockAt, partition));
+			_cacheOrder.AddLast((lockAt, partition));
 		CleanUp();
-		return stateData.Item1;
+		return stateData.State;
 	}
 
 	public PartitionState TryGetPartitionState(string partition) {
-		if (partition == null)
-			throw new ArgumentNullException("partition");
-		Tuple<PartitionState, CheckpointTag> stateData;
-		if (!_partitionStates.TryGetValue(partition, out stateData))
-			return null;
-		return stateData.Item1;
+		ArgumentNullException.ThrowIfNull(partition);
+		return !_partitionStates.TryGetValue(partition, out var stateData) ? null : stateData.State;
 	}
 
 	public PartitionState GetLockedPartitionState(string partition) {
-		Tuple<PartitionState, CheckpointTag> stateData;
-		if (!_partitionStates.TryGetValue(partition, out stateData)) {
-			throw new InvalidOperationException(
-				string.Format(
-					"Partition '{0}' state was requested as locked but it is missing in the cache.", partition));
-		}
+		if (!_partitionStates.TryGetValue(partition, out var stateData))
+			throw new InvalidOperationException($"Partition '{partition}' state was requested as locked but it is missing in the cache.");
 
-		if (stateData.Item2 != null && stateData.Item2 <= _unlockedBefore)
-			throw new InvalidOperationException(
-				string.Format(
-					"Partition '{0}' state was requested as locked but it is cached as unlocked", partition));
-		return stateData.Item1;
+		if (stateData.Tag != null && stateData.Tag <= _unlockedBefore)
+			throw new InvalidOperationException($"Partition '{partition}' state was requested as locked but it is cached as unlocked");
+		return stateData.State;
 	}
 
 	public void Unlock(CheckpointTag beforeCheckpoint, bool forgetUnlocked = false) {
@@ -120,40 +86,34 @@ public class PartitionStateCache {
 	}
 
 	private void CleanUp(bool removeAllUnlocked = false) {
-		while (removeAllUnlocked || _cacheOrder.Count > _maxCachedPartitions * 5
-								 || CachedItemCount > _maxCachedPartitions) {
+		while (removeAllUnlocked || _cacheOrder.Count > maxCachedPartitions * 5
+		                         || CachedItemCount > maxCachedPartitions) {
 			if (_cacheOrder.Count == 0)
 				break;
-			Tuple<CheckpointTag, string> top = _cacheOrder.FirstOrDefault();
-			if (top.Item1 >= _unlockedBefore)
+			var top = _cacheOrder.FirstOrDefault();
+			if (top.Tag >= _unlockedBefore)
 				break; // other entries were locked after the checkpoint (or almost .. order is not very strong)
 			_cacheOrder.RemoveFirst();
-			Tuple<PartitionState, CheckpointTag> entry;
-			if (!_partitionStates.TryGetValue(top.Item2, out entry))
+			if (!_partitionStates.TryGetValue(top.Partition, out var entry))
 				continue; // already removed
-			if (entry.Item2 >= _unlockedBefore)
+			if (entry.Tag >= _unlockedBefore)
 				continue; // was relocked
 
-			_partitionStates.Remove(top.Item2);
-			_cachedItemCount = _partitionStates.Count;
+			_partitionStates.Remove(top.Partition);
+			CachedItemCount = _partitionStates.Count;
 		}
 	}
 
 	private void EnsureCanLockPartitionAt(string partition, CheckpointTag at) {
-		if (partition == null)
-			throw new ArgumentNullException("partition");
+		ArgumentNullException.ThrowIfNull(partition);
 		if (at == null && partition != "")
 			throw new InvalidOperationException("Only the root partition can be locked forever");
 		if (partition == "" && at != null)
 			throw new InvalidOperationException("Root partition must be locked forever");
 		if (at != null && at <= _unlockedBefore)
 			throw new InvalidOperationException(
-				string.Format(
-					"Attempt to lock the '{0}' partition state at the position '{1}' before the unlocked position '{2}'",
-					partition, at, _unlockedBefore));
+				$"Attempt to lock the '{partition}' partition state at the position '{at}' before the unlocked position '{_unlockedBefore}'");
 	}
 
-	public IEnumerable<Tuple<string, PartitionState>> Enumerate() {
-		return _partitionStates.Select(v => Tuple.Create(v.Key, v.Value.Item1)).ToList();
-	}
+	public IEnumerable<(string Partition, PartitionState State)> Enumerate() => _partitionStates.Select(v => (v.Key, v.Value.Item1)).ToList();
 }

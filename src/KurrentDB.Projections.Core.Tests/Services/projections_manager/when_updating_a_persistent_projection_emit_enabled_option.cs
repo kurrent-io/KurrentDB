@@ -8,13 +8,14 @@ using KurrentDB.Core.Tests;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
 using NUnit.Framework;
+using static KurrentDB.Projections.Core.Messages.ProjectionManagementMessage;
 
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class when_updating_a_persistent_projection_emit_enabled_option<TLogFormat, TStreamId> :
-	TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId> {
+public class when_updating_a_persistent_projection_emit_enabled_option<TLogFormat, TStreamId>
+	: TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId> {
 	protected override void Given() {
 		NoStream("$projections-test-projection");
 		NoStream("$projections-test-projection-result");
@@ -24,34 +25,25 @@ public class when_updating_a_persistent_projection_emit_enabled_option<TLogForma
 		AllWritesSucceed();
 	}
 
-	private string _projectionName;
-	private string _source;
+	private const string ProjectionName = "test-projection";
+	private const string Source = "fromAll();_source; on_any(function(){});log(1);";
 
 	protected override IEnumerable<WhenStep> When() {
-		_projectionName = "test-projection";
-		_source = @"fromAll(); on_any(function(){});log(1);";
-		yield return (new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid()));
-		yield return
-			(new ProjectionManagementMessage.Command.Post(
-				_bus, ProjectionMode.Continuous, _projectionName,
-				ProjectionManagementMessage.RunAs.System, "JS", _source, enabled: true, checkpointsEnabled: true,
-				emitEnabled: true, trackEmittedStreams: true));
+		yield return new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid());
+		yield return new Command.Post(
+			_bus, ProjectionMode.Continuous, ProjectionName,
+			RunAs.System, "JS", Source, enabled: true, checkpointsEnabled: true,
+			emitEnabled: true, trackEmittedStreams: true);
 		// when
-		yield return
-			(new ProjectionManagementMessage.Command.UpdateQuery(
-				_bus, _projectionName, ProjectionManagementMessage.RunAs.System,
-				_source, emitEnabled: false));
+		yield return new Command.UpdateQuery(_bus, ProjectionName, RunAs.System, Source, emitEnabled: false);
 	}
 
 	[Test, Category("v8")]
 	public void emit_enabled_options_remains_unchanged() {
-		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetQuery(
-				_bus, _projectionName, ProjectionManagementMessage.RunAs.Anonymous));
-		Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionQuery>().Count());
-		var projectionQuery =
-			_consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionQuery>().Single();
-		Assert.AreEqual(_projectionName, projectionQuery.Name);
+		_manager.Handle(new Command.GetQuery(_bus, ProjectionName, RunAs.Anonymous));
+
+		var projectionQuery = _consumer.HandledMessages.OfType<ProjectionQuery>().Single();
+		Assert.AreEqual(ProjectionName, projectionQuery.Name);
 		Assert.AreEqual(false, projectionQuery.EmitEnabled);
 	}
 }

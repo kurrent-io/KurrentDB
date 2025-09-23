@@ -41,13 +41,13 @@ public abstract class TestFixtureWithProjectionSubscription {
 		Given();
 		_bus = new();
 		_projectionCorrelationId = Guid.NewGuid();
-		_eventHandler = new TestHandler<EventReaderSubscriptionMessage.CommittedEventReceived>();
-		_checkpointHandler = new TestHandler<EventReaderSubscriptionMessage.CheckpointSuggested>();
-		_progressHandler = new TestHandler<EventReaderSubscriptionMessage.ProgressChanged>();
-		_subscriptionStartedHandler = new TestHandler<EventReaderSubscriptionMessage.SubscriptionStarted>();
-		_notAuthorizedHandler = new TestHandler<EventReaderSubscriptionMessage.NotAuthorized>();
-		_eofHandler = new TestHandler<EventReaderSubscriptionMessage.EofReached>();
-		_partitionDeletedHandler = new TestHandler<EventReaderSubscriptionMessage.PartitionDeleted>();
+		_eventHandler = new();
+		_checkpointHandler = new();
+		_progressHandler = new();
+		_subscriptionStartedHandler = new();
+		_notAuthorizedHandler = new();
+		_eofHandler = new();
+		_partitionDeletedHandler = new();
 
 		_bus.Subscribe(_eventHandler);
 		_bus.Subscribe(_checkpointHandler);
@@ -56,14 +56,11 @@ public abstract class TestFixtureWithProjectionSubscription {
 		_readerStrategy = CreateCheckpointStrategy();
 		_subscription = CreateProjectionSubscription();
 
-
 		When();
 	}
 
 	protected virtual IReaderSubscription CreateProjectionSubscription() {
-		return new ReaderSubscription(
-			"Test Subscription",
-			_bus,
+		return new ReaderSubscription(_bus,
 			_projectionCorrelationId,
 			_readerStrategy.PositionTagger.MakeZeroCheckpointTag(),
 			_readerStrategy,
@@ -81,7 +78,7 @@ public abstract class TestFixtureWithProjectionSubscription {
 
 	protected abstract void When();
 
-	protected virtual IReaderStrategy CreateCheckpointStrategy() {
+	protected IReaderStrategy CreateCheckpointStrategy() {
 		var readerBuilder = new SourceDefinitionBuilder();
 		if (_source != null) {
 			_source(readerBuilder);
@@ -90,15 +87,13 @@ public abstract class TestFixtureWithProjectionSubscription {
 			readerBuilder.AllEvents();
 		}
 
-		var config = new ProjectionConfig(null, 1000, 1000 * 1000, 100, 500, true, true, false, false, true, 10000,
-			1, 250);
+		var config = new ProjectionConfig(null, 1000, 1000 * 1000, 100, 500, true, true, false, true, 10000, 1, 250);
 		IQuerySources sources = readerBuilder.Build();
 		var readerStrategy = ReaderStrategy.Create(
 			"test",
 			0,
 			sources,
 			_timeProvider,
-			stopOnEof: false,
 			runAs: config.RunAs);
 		return readerStrategy;
 	}

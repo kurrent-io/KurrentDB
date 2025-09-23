@@ -194,9 +194,9 @@ namespace KurrentDB.Projections.Core.Tests.Services.feed_reader {
 						EventReaderSubscriptionMessage.CommittedEventReceived.Sample(
 							new ResolvedEvent(
 								"stream", i, "stream", i, false, new TFPos(i * 100, i * 100 - 50),
-								new TFPos(i * 100, i * 100 - 50), Guid.NewGuid(), "type", false, new byte[0],
-								new byte[0],
-								new byte[0], null, DateTime.UtcNow), _subscriptionId, _number++));
+								new TFPos(i * 100, i * 100 - 50), Guid.NewGuid(), "type", false, [],
+								[],
+								[], null, DateTime.UtcNow), _subscriptionId, _number++));
 				}
 			}
 
@@ -229,9 +229,9 @@ namespace KurrentDB.Projections.Core.Tests.Services.feed_reader {
 						EventReaderSubscriptionMessage.CommittedEventReceived.Sample(
 							new ResolvedEvent(
 								"stream", i, "stream", i, false, new TFPos(i * 100, i * 100 - 50),
-								new TFPos(i * 100, i * 100 - 50), Guid.NewGuid(), "type", false, new byte[0],
-								new byte[0],
-								new byte[0], null, DateTime.UtcNow), _subscriptionId, _number++));
+								new TFPos(i * 100, i * 100 - 50), Guid.NewGuid(), "type", false, [],
+								[],
+								[], null, DateTime.UtcNow), _subscriptionId, _number++));
 				}
 			}
 

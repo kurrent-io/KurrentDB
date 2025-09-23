@@ -3,16 +3,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using KurrentDB.Common.Utils;
 
 namespace KurrentDB.Core.Services.Storage.ReaderIndex;
 
 public class BoundedCache<TKey, TValue> {
-	public int Count {
-		get { return _cache.Count; }
-	}
-
 	private readonly int _maxCachedEntries;
 	private readonly long _maxDataSize;
 	private readonly Func<TValue, long> _valueSize;
@@ -20,8 +15,6 @@ public class BoundedCache<TKey, TValue> {
 	private readonly Queue<TKey> _queue = new();
 
 	private long _currentSize;
-	private long _missCount;
-	private long _hitCount;
 
 	public BoundedCache(int maxCachedEntries, long maxDataSize, Func<TValue, long> valueSize) {
 		_maxCachedEntries = Ensure.Positive(maxCachedEntries);
@@ -31,15 +24,11 @@ public class BoundedCache<TKey, TValue> {
 
 	public bool TryGetRecord(TKey key, out TValue value) {
 		var found = _cache.TryGetValue(key, out value);
-		if (found)
-			_hitCount++;
-		else
-			_missCount++;
-		return found;
-	}
+		if (found) {
+		} else {
+		}
 
-	public void PutRecord(TKey key, TValue value) {
-		PutRecord(key, value, true);
+		return found;
 	}
 
 	public void PutRecord(TKey key, TValue value, bool throwOnDuplicate) {
@@ -55,37 +44,12 @@ public class BoundedCache<TKey, TValue> {
 		_cache.Add(key, value);
 	}
 
-	public bool TryPutRecord(TKey key, TValue value) {
-		if (IsFull())
-			return false;
+	private bool IsFull() => _queue.Count >= _maxCachedEntries || (_currentSize > _maxDataSize && _queue.Count > 0);
 
-		_currentSize += _valueSize(value);
-		_queue.Enqueue(key);
-		_cache.Add(key, value); // add to throw exception if duplicate
-		return true;
-	}
-
-	public void Clear() {
-		_currentSize = 0;
-		_queue.Clear();
-		_cache.Clear();
-	}
-
-	private bool IsFull() {
-		return _queue.Count >= _maxCachedEntries || (_currentSize > _maxDataSize && _queue.Count > 0);
-	}
-
-	public void RemoveRecord(TKey key) {
+	private void RemoveRecord(TKey key) {
 		if (_cache.TryGetValue(key, out var old)) {
 			_currentSize -= _valueSize(old);
 			_cache.Remove(key);
 		}
-	}
-
-	public ReadCacheStats GetStatistics() {
-		return new ReadCacheStats(Interlocked.Read(ref _currentSize),
-			_cache.Count,
-			Interlocked.Read(ref _hitCount),
-			Interlocked.Read(ref _missCount));
 	}
 }

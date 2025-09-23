@@ -3,19 +3,13 @@
 
 namespace KurrentDB.Projections.Core.Standard;
 
-public class StreamCategoryExtractorByFirstSeparator : StreamCategoryExtractor {
-	private readonly char _separator;
-
-	public StreamCategoryExtractorByFirstSeparator(char separator) {
-		_separator = separator;
-	}
-
+public class StreamCategoryExtractorByFirstSeparator(char separator) : StreamCategoryExtractor {
 	public override string GetCategoryByStreamId(string streamId) {
 		string category = null;
-		if (!streamId.StartsWith("$")) {
-			var lastSeparatorPosition = streamId.IndexOf(_separator);
+		if (!streamId.StartsWith('$')) {
+			var lastSeparatorPosition = streamId.IndexOf(separator);
 			if (lastSeparatorPosition > 0)
-				category = streamId.Substring(0, lastSeparatorPosition);
+				category = streamId[..lastSeparatorPosition];
 		}
 
 		return category;

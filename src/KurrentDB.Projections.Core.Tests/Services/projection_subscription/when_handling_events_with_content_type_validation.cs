@@ -4,9 +4,9 @@
 using System;
 using System.Text;
 using KurrentDB.Core.Data;
-using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Subscriptions;
 using NUnit.Framework;
+using static KurrentDB.Projections.Core.Messages.ReaderSubscriptionMessage;
 
 namespace KurrentDB.Projections.Core.Tests.Services.projection_subscription;
 
@@ -15,23 +15,21 @@ public class when_handling_events_with_content_type_validation {
 	public class given_json_events_and_content_type_validation_enabled : TestFixtureWithProjectionSubscription {
 		protected override void When() {
 			_subscription.Handle(
-				ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
+				CommittedEventDistributed.Sample(
 					Guid.NewGuid(), new TFPos(100, 100), "test-stream", 0, false, Guid.NewGuid(),
 					"null-json", true, null, null));
 			_subscription.Handle(
-				ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
+				CommittedEventDistributed.Sample(
 					Guid.NewGuid(), new TFPos(200, 200), "test-stream", 1, false, Guid.NewGuid(),
-					"invalid-json", true, Encoding.UTF8.GetBytes("{foo:bar}"), new byte[0]));
+					"invalid-json", true, "{foo:bar}"u8.ToArray(), []));
 			_subscription.Handle(
-				ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
+				CommittedEventDistributed.Sample(
 					Guid.NewGuid(), new TFPos(300, 300), "test-stream", 2, false, Guid.NewGuid(),
-					"valid-json", true, Encoding.UTF8.GetBytes("{\"foo\":\"bar\"}"), new byte[0]));
+					"valid-json", true, "{\"foo\":\"bar\"}"u8.ToArray(), []));
 		}
 
 		protected override IReaderSubscription CreateProjectionSubscription() {
-			return new ReaderSubscription(
-				"Test Subscription",
-				_bus,
+			return new ReaderSubscription(_bus,
 				_projectionCorrelationId,
 				_readerStrategy.PositionTagger.MakeZeroCheckpointTag(),
 				_readerStrategy,
@@ -55,23 +53,21 @@ public class when_handling_events_with_content_type_validation {
 	public class given_non_json_events_and_content_type_validation_enabled : TestFixtureWithProjectionSubscription {
 		protected override void When() {
 			_subscription.Handle(
-				ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
+				CommittedEventDistributed.Sample(
 					Guid.NewGuid(), new TFPos(100, 100), "test-stream", 0, false, Guid.NewGuid(),
 					"null-event", false, null, null));
 			_subscription.Handle(
-				ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
+				CommittedEventDistributed.Sample(
 					Guid.NewGuid(), new TFPos(200, 200), "test-stream", 1, false, Guid.NewGuid(),
-					"plain-text", false, Encoding.UTF8.GetBytes("foo bar"), new byte[0]));
+					"plain-text", false, "foo bar"u8.ToArray(), []));
 			_subscription.Handle(
-				ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
+				CommittedEventDistributed.Sample(
 					Guid.NewGuid(), new TFPos(300, 300), "test-stream", 2, false, Guid.NewGuid(),
-					"valid-json", false, Encoding.UTF8.GetBytes("{\"foo\":\"bar\"}"), new byte[0]));
+					"valid-json", false, "{\"foo\":\"bar\"}"u8.ToArray(), []));
 		}
 
 		protected override IReaderSubscription CreateProjectionSubscription() {
-			return new ReaderSubscription(
-				"Test Subscription",
-				_bus,
+			return new ReaderSubscription(_bus,
 				_projectionCorrelationId,
 				_readerStrategy.PositionTagger.MakeZeroCheckpointTag(),
 				_readerStrategy,
@@ -94,35 +90,33 @@ public class when_handling_events_with_content_type_validation {
 	public class given_json_and_non_json_events_and_content_type_validation_disabled : TestFixtureWithProjectionSubscription {
 		protected override void When() {
 			_subscription.Handle(
-				ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
+				CommittedEventDistributed.Sample(
 					Guid.NewGuid(), new TFPos(100, 100), "test-stream", 0, false, Guid.NewGuid(),
 					"null-json", true, null, null));
 			_subscription.Handle(
-				ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
+				CommittedEventDistributed.Sample(
 					Guid.NewGuid(), new TFPos(200, 200), "test-stream", 1, false, Guid.NewGuid(),
-					"invalid-json", true, Encoding.UTF8.GetBytes("{foo:bar}"), new byte[0]));
+					"invalid-json", true, "{foo:bar}"u8.ToArray(), []));
 			_subscription.Handle(
-				ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
+				CommittedEventDistributed.Sample(
 					Guid.NewGuid(), new TFPos(300, 300), "test-stream", 2, false, Guid.NewGuid(),
-					"valid-json", true, Encoding.UTF8.GetBytes("{\"foo\":\"bar\"}"), new byte[0]));
+					"valid-json", true, "{\"foo\":\"bar\"}"u8.ToArray(), []));
 			_subscription.Handle(
-				ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
+				CommittedEventDistributed.Sample(
 					Guid.NewGuid(), new TFPos(400, 400), "test-stream", 3, false, Guid.NewGuid(),
 					"null-event", false, null, null));
 			_subscription.Handle(
-				ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
+				CommittedEventDistributed.Sample(
 					Guid.NewGuid(), new TFPos(500, 500), "test-stream", 4, false, Guid.NewGuid(),
-					"plain-text", false, Encoding.UTF8.GetBytes("foo bar"), new byte[0]));
+					"plain-text", false, "foo bar"u8.ToArray(), []));
 			_subscription.Handle(
-				ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
+				CommittedEventDistributed.Sample(
 					Guid.NewGuid(), new TFPos(600, 600), "test-stream", 5, false, Guid.NewGuid(),
-					"valid-json", false, Encoding.UTF8.GetBytes("{\"foo\":\"bar\"}"), new byte[0]));
+					"valid-json", false, "{\"foo\":\"bar\"}"u8.ToArray(), []));
 		}
 
 		protected override IReaderSubscription CreateProjectionSubscription() {
-			return new ReaderSubscription(
-				"Test Subscription",
-				_bus,
+			return new ReaderSubscription(_bus,
 				_projectionCorrelationId,
 				_readerStrategy.PositionTagger.MakeZeroCheckpointTag(),
 				_readerStrategy,

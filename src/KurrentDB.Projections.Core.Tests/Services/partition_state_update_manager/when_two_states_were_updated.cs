@@ -19,19 +19,19 @@ public class when_two_states_were_updated {
 
 	[SetUp]
 	public void setup() {
-		_updateManager = new PartitionStateUpdateManager(ProjectionNamesBuilder.CreateForTest("projection"));
-		_updateManager.StateUpdated("partition1", new PartitionState("{\"state\":1}", null, _one), _zero);
-		_updateManager.StateUpdated("partition2", new PartitionState("{\"state\":2}", null, _two), _zero);
+		_updateManager = new(ProjectionNamesBuilder.CreateForTest("projection"));
+		_updateManager.StateUpdated("partition1", new("{\"state\":1}", null, _one), _zero);
+		_updateManager.StateUpdated("partition2", new("{\"state\":2}", null, _two), _zero);
 	}
 
 	[Test]
 	public void handles_state_updated_for_the_same_partition() {
-		_updateManager.StateUpdated("partition1", new PartitionState("{\"state\":0}", null, _three), _two);
+		_updateManager.StateUpdated("partition1", new("{\"state\":0}", null, _three), _two);
 	}
 
 	[Test]
 	public void handles_state_updated_for_another_partition() {
-		_updateManager.StateUpdated("partition3", new PartitionState("{\"state\":0}", null, _three), _two);
+		_updateManager.StateUpdated("partition3", new("{\"state\":0}", null, _three), _two);
 	}
 
 	[Test]
@@ -46,8 +46,8 @@ public class when_two_states_were_updated {
 		var eventWriter = new FakeEventWriter();
 		_updateManager.EmitEvents(eventWriter);
 		var events = eventWriter.Writes.SelectMany(write => write).ToArray();
-		Assert.IsTrue(events.Any((v => "$projections-projection-partition1-checkpoint" == v.StreamId)));
-		Assert.IsTrue(events.Any((v => "$projections-projection-partition2-checkpoint" == v.StreamId)));
+		Assert.IsTrue(events.Any(v => "$projections-projection-partition1-checkpoint" == v.StreamId));
+		Assert.IsTrue(events.Any(v => "$projections-projection-partition2-checkpoint" == v.StreamId));
 	}
 
 	[Test]

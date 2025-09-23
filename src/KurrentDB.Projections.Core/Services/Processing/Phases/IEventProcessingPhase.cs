@@ -19,26 +19,17 @@ public interface IProjectionPhaseCheckpointManager {
 }
 
 public interface IProjectionPhaseStateManager {
-	void BeginGetPartitionStateAt(
-		string statePartition, CheckpointTag at, Action<PartitionState> loadCompleted,
-		bool lockLoaded);
-
-	void UnlockAndForgetBefore(CheckpointTag checkpointTag);
+	void BeginGetPartitionStateAt(string statePartition, CheckpointTag at, Action<PartitionState> loadCompleted, bool lockLoaded);
 
 	CheckpointTag LastProcessedEventPosition { get; }
 }
 
 public interface IEventProcessingProjectionPhase : IProjectionPhaseStateManager {
-	EventProcessedResult ProcessCommittedEvent(EventReaderSubscriptionMessage.CommittedEventReceived message,
-		string partition);
+	EventProcessedResult ProcessCommittedEvent(EventReaderSubscriptionMessage.CommittedEventReceived message,string partition);
 
-	void FinalizeEventProcessing(
-		EventProcessedResult result, CheckpointTag eventCheckpointTag, float progress);
+	void FinalizeEventProcessing(EventProcessedResult result, CheckpointTag eventCheckpointTag, float progress);
 
 	void RecordEventOrder(ResolvedEvent resolvedEvent, CheckpointTag orderCheckpointTag, Action completed);
-
-	void EmitEofResult(
-		string partition, string resultBody, CheckpointTag causedBy, Guid causedByGuid, string correlationId);
 
 	EventProcessedResult ProcessPartitionDeleted(string partition, CheckpointTag deletedPosition);
 }

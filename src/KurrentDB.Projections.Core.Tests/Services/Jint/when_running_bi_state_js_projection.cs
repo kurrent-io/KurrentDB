@@ -27,7 +27,7 @@ public class when_running_bi_state_js_projection : TestFixtureWithInterpretedPro
 		_sharedState = @"{""sharedCount"": 0}";
 	}
 
-	[Test, Category(_projectionType)]
+	[Test, Category(ProjectionType)]
 	public void process_event_counts_events() {
 		_stateHandler.ProcessEvent(
 			"", CheckpointTag.FromPosition(0, 10, 5), "stream1", "type1", "category", Guid.NewGuid(), 0, "metadata",

@@ -2,50 +2,37 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using static KurrentDB.Projections.Core.Messages.ReaderSubscriptionMessage;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Phases;
 
-public class PhasePositionTagger : PositionTagger {
-	public PhasePositionTagger(int phase) : base(phase) {
-	}
-
-	public override bool IsMessageAfterCheckpointTag(
-		CheckpointTag previous, ReaderSubscriptionMessage.CommittedEventDistributed committedEvent) {
+public class PhasePositionTagger(int phase) : PositionTagger(phase) {
+	public override bool IsMessageAfterCheckpointTag(CheckpointTag previous, CommittedEventDistributed committedEvent) {
 		throw new NotSupportedException();
 	}
 
-	public override CheckpointTag MakeCheckpointTag(
-		CheckpointTag previous, ReaderSubscriptionMessage.CommittedEventDistributed committedEvent) {
+	public override CheckpointTag MakeCheckpointTag(CheckpointTag previous, CommittedEventDistributed committedEvent) {
 		throw new NotSupportedException();
 	}
 
-	public override CheckpointTag MakeCheckpointTag(CheckpointTag previous,
-		ReaderSubscriptionMessage.EventReaderPartitionDeleted partitionDeleted) {
+	public override CheckpointTag MakeCheckpointTag(CheckpointTag previous, EventReaderPartitionDeleted partitionDeleted) {
 		throw new NotSupportedException();
 	}
 
-	public override CheckpointTag MakeZeroCheckpointTag() {
-		return CheckpointTag.FromPhase(Phase, completed: false);
-	}
+	public override CheckpointTag MakeZeroCheckpointTag() => CheckpointTag.FromPhase(Phase, completed: false);
 
-	public override bool IsCompatible(CheckpointTag checkpointTag) {
-		return checkpointTag.Mode_ == CheckpointTag.Mode.Phase;
-	}
+	public override bool IsCompatible(CheckpointTag checkpointTag) => checkpointTag.Mode_ == CheckpointTag.Mode.Phase;
 
 	public override CheckpointTag AdjustTag(CheckpointTag tag) {
 		if (tag.Phase < Phase)
 			return tag;
 		if (tag.Phase > Phase)
 			throw new ArgumentException(
-				string.Format("Invalid checkpoint tag phase.  Expected less or equal to: {0} Was: {1}", Phase,
-					tag.Phase), "tag");
+				$"Invalid checkpoint tag phase.  Expected less or equal to: {Phase} Was: {tag.Phase}", nameof(tag));
 
-		if (tag.Mode_ == CheckpointTag.Mode.Phase) {
-			return tag;
-		}
-
-		throw new NotSupportedException("Conversion to phase based checkpoint tag is not supported");
+		return tag.Mode_ == CheckpointTag.Mode.Phase
+			? tag
+			: throw new NotSupportedException("Conversion to phase based checkpoint tag is not supported");
 	}
 }

@@ -48,10 +48,8 @@ public class when_scavenging_tfchunk_with_version0_log_records_using_transaction
 		await WriteTransactionEndV0(t1.CorrelationId, Writer.Position, t1.TransactionPosition,
 			t1.EventStreamId, token);
 
-		(_t2CommitPos, _postCommitPos) = await WriteCommitV0(t2.CorrelationId, Writer.Position, t2.TransactionPosition,
-			t2.EventStreamId, 0, token);
-		(_t1CommitPos, _postCommitPos) = await WriteCommitV0(t1.CorrelationId, Writer.Position, t1.TransactionPosition,
-			t1.EventStreamId, 0, token);
+		(_t2CommitPos, _postCommitPos) = await WriteCommitV0(t2.CorrelationId, Writer.Position, t2.TransactionPosition, 0, token);
+		(_t1CommitPos, _postCommitPos) = await WriteCommitV0(t1.CorrelationId, Writer.Position, t1.TransactionPosition, 0, token);
 
 		await Writer.CompleteChunk(token);
 		await Writer.AddNewChunk(token: token);
@@ -67,7 +65,7 @@ public class when_scavenging_tfchunk_with_version0_log_records_using_transaction
 		long expectedVersion, CancellationToken token) {
 		var prepare = new PrepareLogRecord(logPosition, id, Guid.NewGuid(), logPosition, -1,
 			eventStreamId, null, expectedVersion,
-			DateTime.UtcNow, PrepareFlags.TransactionBegin, null, null, new byte[0], new byte[0],
+			DateTime.UtcNow, PrepareFlags.TransactionBegin, null, null, LogRecord.NoData, LogRecord.NoData,
 			LogRecordVersion.LogRecordV0);
 
 		Assert.IsTrue(await Writer.Write(prepare, token) is (true, _));
@@ -80,7 +78,7 @@ public class when_scavenging_tfchunk_with_version0_log_records_using_transaction
 		var prepare = new PrepareLogRecord(logPosition, correlationId, Guid.NewGuid(), transactionPosition,
 			transactionOffset,
 			eventStreamId, null, ExpectedVersion.Any, DateTime.UtcNow, flags,
-			"testEventType", null, Encoding.UTF8.GetBytes(eventData), new byte[0],
+			"testEventType", null, Encoding.UTF8.GetBytes(eventData), LogRecord.NoData,
 			LogRecordVersion.LogRecordV0);
 
 		await Writer.Write(prepare, token);
@@ -91,13 +89,13 @@ public class when_scavenging_tfchunk_with_version0_log_records_using_transaction
 		string eventStreamId, CancellationToken token) {
 		var prepare = new PrepareLogRecord(logPosition, correlationId, Guid.NewGuid(), transactionId, -1,
 			eventStreamId, null, ExpectedVersion.Any,
-			DateTime.UtcNow, PrepareFlags.TransactionEnd, null, null, new byte[0], new byte[0],
+			DateTime.UtcNow, PrepareFlags.TransactionEnd, null, null, LogRecord.NoData, LogRecord.NoData,
 			LogRecordVersion.LogRecordV0);
 
 		await Writer.Write(prepare, token);
 	}
 
-	private async ValueTask<(long, long)> WriteCommitV0(Guid correlationId, long logPosition, long transactionPosition, string eventStreamId,
+	private async ValueTask<(long, long)> WriteCommitV0(Guid correlationId, long logPosition, long transactionPosition,
 		long eventNumber, CancellationToken token) {
 		var commit = new CommitLogRecord(logPosition, correlationId, transactionPosition, DateTime.UtcNow,
 			eventNumber,

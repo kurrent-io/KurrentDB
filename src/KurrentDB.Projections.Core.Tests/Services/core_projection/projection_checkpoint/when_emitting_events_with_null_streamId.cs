@@ -26,12 +26,9 @@ public class when_emitting_events_with_null_streamId<TLogFormat, TStreamId> : Te
 			CheckpointTag.FromPosition(0, 100, 50), new TransactionFilePositionTagger(0), 250, 1);
 		try {
 			_checkpoint.ValidateOrderAndEmitEvents(
-				new[] {
-					new EmittedEventEnvelope(
-						new EmittedDataEvent(
-							null, Guid.NewGuid(), "type", true, "data", null, CheckpointTag.FromPosition(0, 40, 30),
-							null))
-				});
+			[
+				new(new EmittedDataEvent(null, Guid.NewGuid(), "type", true, "data", null, CheckpointTag.FromPosition(0, 40, 30), null))
+			]);
 		} catch (Exception ex) {
 			_lastException = ex;
 		}

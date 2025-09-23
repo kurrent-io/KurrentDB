@@ -20,36 +20,27 @@ public class TestFixtureWithEventReaderService<TLogFormat, TStreamId> : core_pro
 		EnableReadAll();
 	}
 
-	protected override ManualQueue GiveInputQueue() {
-		return new ManualQueue(_bus, _timeProvider);
-	}
+	protected override ManualQueue GiveInputQueue() => new(_bus, _timeProvider);
 
 	[SetUp]
 	public void Setup() {
 		_bus.Subscribe(_consumer);
 
 		ICheckpoint writerCheckpoint = new InMemoryCheckpoint(1000);
-		_readerService = new EventReaderCoreService(
-			GetInputQueue(), _ioDispatcher, 10, writerCheckpoint, runHeadingReader: GivenHeadingReaderRunning(),
+		_readerService = new(GetInputQueue(), _ioDispatcher, 10, writerCheckpoint, runHeadingReader: GivenHeadingReaderRunning(),
 			faultOutOfOrderProjections: true);
-		_subscriptionDispatcher = new ReaderSubscriptionDispatcher(GetInputQueue());
+		SubscriptionDispatcher = new ReaderSubscriptionDispatcher(GetInputQueue());
 
 
-		_bus.Subscribe(
-			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.CheckpointSuggested>());
-		_bus.Subscribe(
-			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.CommittedEventReceived>());
-		_bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.EofReached>());
-		_bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.ProgressChanged>());
-		_bus.Subscribe(
-			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.SubscriptionStarted>());
-		_bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.NotAuthorized>());
-		_bus.Subscribe(
-			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.ReaderAssignedReader>());
-		_bus.Subscribe(
-			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.Failed>());
-		_bus.Subscribe(
-			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.SubscribeTimeout>());
+		_bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.CheckpointSuggested>());
+		_bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.CommittedEventReceived>());
+		_bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.EofReached>());
+		_bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.ProgressChanged>());
+		_bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.SubscriptionStarted>());
+		_bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.NotAuthorized>());
+		_bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.ReaderAssignedReader>());
+		_bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.Failed>());
+		_bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.SubscribeTimeout>());
 
 		_bus.Subscribe<ReaderCoreServiceMessage.StartReader>(_readerService);
 		_bus.Subscribe<ReaderCoreServiceMessage.StopReader>(_readerService);
@@ -71,16 +62,13 @@ public class TestFixtureWithEventReaderService<TLogFormat, TStreamId> : core_pro
 		WhenLoop();
 	}
 
-	protected virtual bool GivenHeadingReaderRunning() {
-		return false;
-	}
+	protected virtual bool GivenHeadingReaderRunning() => false;
 
 	protected virtual void GivenAdditionalServices() {
 	}
 
 	protected Guid GetReaderId() {
-		var readerAssignedMessage =
-			_consumer.HandledMessages.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>().LastOrDefault();
+		var readerAssignedMessage = _consumer.HandledMessages.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>().LastOrDefault();
 		Assert.IsNotNull(readerAssignedMessage);
 		var reader = readerAssignedMessage.ReaderId;
 		return reader;

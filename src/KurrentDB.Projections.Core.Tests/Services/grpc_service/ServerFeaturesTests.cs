@@ -42,7 +42,7 @@ public class ServerFeaturesTests<TLogFormat, TStreamId> : SpecificationWithNodeA
 		_supportedEndPoints = resp.Methods.Where(x => x.ServiceName.Contains("projections")).ToList();
 	}
 
-	private SupportedMethod[] GetEndPoints(ServiceDescriptor desc) =>
+	private static SupportedMethod[] GetEndPoints(ServiceDescriptor desc) =>
 		desc.Methods.Select(x => new SupportedMethod {
 			MethodName = x.Name.ToLower(),
 			ServiceName = x.Service.FullName.ToLower()

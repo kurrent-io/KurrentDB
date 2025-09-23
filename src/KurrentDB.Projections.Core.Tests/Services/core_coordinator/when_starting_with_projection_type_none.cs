@@ -19,11 +19,9 @@ public class when_starting_with_projection_type_none {
 
 	[SetUp]
 	public void Setup() {
-		queues = new List<FakePublisher>() { new FakePublisher() }.ToArray();
-		publisher = new FakePublisher();
-
-		_coordinator =
-			new ProjectionCoreCoordinator(ProjectionType.None, queues, publisher);
+		queues = [new()];
+		publisher = new();
+		_coordinator = new(ProjectionType.None, queues, publisher);
 		_coordinator.Handle(new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid()));
 	}
 
@@ -34,7 +32,6 @@ public class when_starting_with_projection_type_none {
 
 	[Test]
 	public void should_not_publish_start_core_messages() {
-		Assert.AreEqual(0,
-			queues[0].Messages.FindAll(x => x.GetType() == typeof(ProjectionCoreServiceMessage.StartCore)).Count);
+		Assert.AreEqual(0, queues[0].Messages.FindAll(x => x.GetType() == typeof(ProjectionCoreServiceMessage.StartCore)).Count);
 	}
 }

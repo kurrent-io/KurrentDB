@@ -21,12 +21,12 @@ namespace KurrentDB.Projections.Core.Tests.Services.core_projection.projection_c
 public class when_projection_reader_times_out_on_read<TLogFormat, TStreamId> : with_projection_checkpoint_reader<TLogFormat, TStreamId>,
 	IHandle<CoreProjectionProcessingMessage.CheckpointLoaded>,
 	IHandle<TimerMessage.Schedule> {
-	private ManualResetEventSlim _mre = new ManualResetEventSlim();
+	private readonly ManualResetEventSlim _mre = new();
 	private CoreProjectionProcessingMessage.CheckpointLoaded _checkpointLoaded;
 	private bool _hasTimedOut;
 	private Guid _timeoutCorrelationId;
 
-	public override void When() {
+	protected override void When() {
 		_bus.Subscribe<CoreProjectionProcessingMessage.CheckpointLoaded>(this);
 		_bus.Subscribe<TimerMessage.Schedule>(this);
 
@@ -46,11 +46,13 @@ public class when_projection_reader_times_out_on_read<TLogFormat, TStreamId> : w
 
 		var evnts = IODispatcherTestHelpers.CreateResolvedEvent<TLogFormat, TStreamId>(message.EventStreamId,
 			ProjectionEventTypes.ProjectionCheckpoint, "[]",
-			@"{
-                    ""$v"": ""1:-1:3:3"",
-                    ""$c"": 269728,
-                    ""$p"": 269728
-                }");
+			"""
+			{
+			  "$v": "1:-1:3:3",
+			  "$c": 269728,
+			  "$p": 269728
+			}
+			""");
 		var reply = new ClientMessage.ReadStreamEventsBackwardCompleted(message.CorrelationId,
 			message.EventStreamId, message.FromEventNumber, message.MaxCount, ReadStreamResult.Success,
 			evnts, null, true, "", 0, 0, true, 10000);

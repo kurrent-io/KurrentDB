@@ -34,11 +34,11 @@ public class
 		var (test2StreamId, pos0) = await GetOrReserve("test2", token);
 
 		var (_, pos1) = await Writer.Write(LogRecord.SingleWrite(_recordFactory, pos0, _id1, _id1, test1StreamId, firstEventNumber,
-			eventTypeId, new byte[0], new byte[0], DateTime.UtcNow), token);
+			eventTypeId, LogRecord.NoData, LogRecord.NoData, DateTime.UtcNow), token);
 		var (_, pos2) = await Writer.Write(LogRecord.SingleWrite(_recordFactory, pos1, _id2, _id2, test2StreamId, secondEventNumber,
-			eventTypeId, new byte[0], new byte[0], DateTime.UtcNow), token);
+			eventTypeId, LogRecord.NoData, LogRecord.NoData, DateTime.UtcNow), token);
 		var (_, pos3) = await Writer.Write(LogRecord.SingleWrite(_recordFactory, pos2, _id3, _id3, test2StreamId, thirdEventNumber,
-			eventTypeId, new byte[0], new byte[0], DateTime.UtcNow), token);
+			eventTypeId, LogRecord.NoData, LogRecord.NoData, DateTime.UtcNow), token);
 		var (_, pos4) = await Writer.Write(new CommitLogRecord(pos3, _id1, pos0, DateTime.UtcNow, firstEventNumber), token);
 		var (_, pos5) = await Writer.Write(new CommitLogRecord(pos4, _id2, pos1, DateTime.UtcNow, secondEventNumber), token);
 		await Writer.Write(new CommitLogRecord(pos5, _id3, pos2, DateTime.UtcNow, thirdEventNumber), token);

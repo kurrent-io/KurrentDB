@@ -8,6 +8,7 @@ using KurrentDB.Core.Tests;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
 using NUnit.Framework;
+using static KurrentDB.Projections.Core.Tests.Services.core_projection.FakeProjectionStateHandler;
 using ResolvedEvent = KurrentDB.Projections.Core.Services.Processing.ResolvedEvent;
 
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection;
@@ -19,14 +20,9 @@ public class
 	private readonly Guid _causedByEventId = Guid.NewGuid();
 
 	protected override void Given() {
-		ExistingEvent(
-			"$projections-projection-result", "Result", @"{""c"": 100, ""p"": 50}", "{}");
-		ExistingEvent(
-			"$projections-projection-checkpoint", ProjectionEventTypes.ProjectionCheckpoint,
-			@"{""c"": 100, ""p"": 50}", "{}");
-		ExistingEvent(
-			FakeProjectionStateHandler._emit1StreamId, FakeProjectionStateHandler._emit1EventType,
-			@"{""c"": 120, ""p"": 110}", FakeProjectionStateHandler._emit1Data);
+		ExistingEvent("$projections-projection-result", "Result", """{"c": 100, "p": 50}""", "{}");
+		ExistingEvent("$projections-projection-checkpoint", ProjectionEventTypes.ProjectionCheckpoint, """{"c": 100, "p": 50}""", "{}");
+		ExistingEvent(_emit1StreamId, _emit1EventType, """{"c": 120, "p": 110}""", _emit1Data);
 		NoStream("$projections-projection-order");
 		AllWritesToSucceed("$projections-projection-order");
 	}
@@ -38,7 +34,7 @@ public class
 				new ResolvedEvent(
 					"/event_category/1", -1, "/event_category/1", -1, false, new TFPos(120, 110),
 					_causedByEventId, "emit1_type", false, "data",
-					"metadata"), _subscriptionId, 0));
+					"metadata"), SubscriptionId, 0));
 	}
 
 	[Test]

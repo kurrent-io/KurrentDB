@@ -15,18 +15,18 @@ namespace KurrentDB.Projections.Core.Tests.Services.emitted_streams_deleter.when
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class when_emitted_streams_read_times_out<TLogFormat, TStreamId> : with_emitted_stream_deleter<TLogFormat, TStreamId>,
-	IHandle<TimerMessage.Schedule> {
+public class when_emitted_streams_read_times_out<TLogFormat, TStreamId>
+	: with_emitted_stream_deleter<TLogFormat, TStreamId>,
+		IHandle<TimerMessage.Schedule> {
 	protected Action _onDeleteStreamCompleted;
-	private ManualResetEventSlim _mre = new ManualResetEventSlim();
-	private List<ClientMessage.DeleteStream> _deleteMessages = new List<ClientMessage.DeleteStream>();
+	private readonly ManualResetEventSlim _mre = new();
+	private readonly List<ClientMessage.DeleteStream> _deleteMessages = [];
 	private bool _hasTimedOut;
-
 	private Guid _timedOutCorrelationId;
 
 	public override void When() {
 		_bus.Subscribe<TimerMessage.Schedule>(this);
-		_onDeleteStreamCompleted = () => { _mre.Set(); };
+		_onDeleteStreamCompleted = () => _mre.Set();
 
 		_deleter.DeleteEmittedStreams(_onDeleteStreamCompleted);
 	}
@@ -36,20 +36,18 @@ public class when_emitted_streams_read_times_out<TLogFormat, TStreamId> : with_e
 			_hasTimedOut = true;
 			_timedOutCorrelationId = message.CorrelationId;
 			return;
-		} else {
-			base.Handle(message);
 		}
+
+		base.Handle(message);
 	}
 
 	public override void Handle(ClientMessage.DeleteStream message) {
 		_deleteMessages.Add(message);
-		message.Envelope.ReplyWith(new ClientMessage.DeleteStreamCompleted(
-			message.CorrelationId, OperationResult.Success, String.Empty));
+		message.Envelope.ReplyWith(new ClientMessage.DeleteStreamCompleted(message.CorrelationId, OperationResult.Success, string.Empty));
 	}
 
 	public void Handle(TimerMessage.Schedule message) {
-		var delay = message.ReplyMessage as IODispatcherDelayedMessage;
-		if (delay != null && delay.MessageCorrelationId.Value == _timedOutCorrelationId) {
+		if (message.ReplyMessage is IODispatcherDelayedMessage delay && delay.MessageCorrelationId.Value == _timedOutCorrelationId) {
 			message.Reply();
 		}
 	}

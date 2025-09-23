@@ -15,20 +15,15 @@ namespace KurrentDB.Projections.Core.Tests.Services.core_projection;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class when_starting_an_existing_projection_missing_last_emitted_event_and_state_snapshot<TLogFormat, TStreamId> :
-	TestFixtureWithCoreProjectionStarted<TLogFormat, TStreamId> {
+public class when_starting_an_existing_projection_missing_last_emitted_event_and_state_snapshot<TLogFormat, TStreamId>
+	: TestFixtureWithCoreProjectionStarted<TLogFormat, TStreamId> {
 	private readonly Guid _causedByEventId = Guid.NewGuid();
 
 	protected override void Given() {
-		ExistingEvent(
-			"$projections-projection-result", "Result", @"{""c"": 100, ""p"": 50}", "{}");
-		ExistingEvent(
-			"$projections-projection-checkpoint", ProjectionEventTypes.ProjectionCheckpoint,
-			@"{""c"": 100, ""p"": 50}", "{}");
-
-		ExistingEvent(
-			FakeProjectionStateHandler._emit1StreamId, FakeProjectionStateHandler._emit1EventType,
-			@"{""c"": 120, ""p"": 110}", FakeProjectionStateHandler._emit1Data);
+		ExistingEvent("$projections-projection-result", "Result", """{"c": 100, "p": 50}""", "{}");
+		ExistingEvent("$projections-projection-checkpoint", ProjectionEventTypes.ProjectionCheckpoint, """{"c": 100, "p": 50}""", "{}");
+		ExistingEvent(FakeProjectionStateHandler._emit1StreamId, FakeProjectionStateHandler._emit1EventType, """{"c": 120, "p": 110}""",
+			FakeProjectionStateHandler._emit1Data);
 		AllWritesSucceed();
 		NoOtherStreams();
 	}
@@ -40,18 +35,14 @@ public class when_starting_an_existing_projection_missing_last_emitted_event_and
 				new ResolvedEvent(
 					"/event_category/1", -1, "/event_category/1", -1, false, new TFPos(120, 110),
 					_causedByEventId, "emit12_type", false, "data",
-					"metadata"), _subscriptionId, 0));
+					"metadata"), SubscriptionId, 0));
 	}
 
 	[Test]
 	public void should_write_second_emitted_event_and_state_snapshot() {
 		Assert.AreEqual(1, _writeEventHandler.HandledMessages.OfEventType("Result").Count);
-		Assert.AreEqual(
-			1, _writeEventHandler.HandledMessages.OfEventType(FakeProjectionStateHandler._emit2EventType).Count);
-
-		Assert.IsTrue(
-			_writeEventHandler.HandledMessages.Any(
-				v => Helper.UTF8NoBom.GetString(v.Events[0].Data) == FakeProjectionStateHandler._emit2Data));
+		Assert.AreEqual(1, _writeEventHandler.HandledMessages.OfEventType(FakeProjectionStateHandler._emit2EventType).Count);
+		Assert.IsTrue(_writeEventHandler.HandledMessages.Any(v => Helper.UTF8NoBom.GetString(v.Events[0].Data) == FakeProjectionStateHandler._emit2Data));
 		Assert.IsTrue(_writeEventHandler.HandledMessages.Any(v => v.Events[0].EventType == "Result"));
 	}
 }

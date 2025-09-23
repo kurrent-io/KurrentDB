@@ -9,77 +9,56 @@ using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Management;
 using NUnit.Framework;
+using static KurrentDB.Projections.Core.Messages.ProjectionManagementMessage;
 
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_updating_an_onetime_projection_query_text<TLogFormat, TStreamId> : TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId> {
-	private string _projectionName;
-	private string _newProjectionSource;
+	private const string ProjectionName = "test-projection";
+	private const string NewProjectionSource = @"fromAll(); on_any(function(){});log(2);";
 
 	protected override void Given() {
 		NoOtherStreams();
 	}
 
+	protected override IEnumerable<WhenStep> When() {
+		yield return new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid());
+		yield return new Command.Post(
+			_bus, ProjectionMode.Transient, ProjectionName,
+			RunAs.Anonymous, "JS", @"fromAll(); on_any(function(){});log(1);",
+			enabled: true, checkpointsEnabled: false, emitEnabled: false, trackEmittedStreams: true);
+		// when
+		yield return new Command.UpdateQuery( _bus, ProjectionName, RunAs.Anonymous, NewProjectionSource, emitEnabled: null);
+	}
+
 	[Test, Category("v8")]
 	public void the_projection_source_can_be_retrieved() {
-		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetQuery(
-				_bus, _projectionName, ProjectionManagementMessage.RunAs.Anonymous));
-		Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionQuery>().Count());
-		var projectionQuery =
-			_consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionQuery>().Single();
-		Assert.AreEqual(_projectionName, projectionQuery.Name);
-		Assert.AreEqual(_newProjectionSource, projectionQuery.Query);
+		_manager.Handle(new Command.GetQuery(_bus, ProjectionName, RunAs.Anonymous));
+
+		var projectionQuery = _consumer.HandledMessages.OfType<ProjectionQuery>().Single();
+		Assert.AreEqual(ProjectionName, projectionQuery.Name);
+		Assert.AreEqual(NewProjectionSource, projectionQuery.Query);
 	}
 
 	[Test, Category("v8")]
 	public void the_projection_status_is_still_running() {
-		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
+		_manager.Handle(new Command.GetStatistics(_bus, null, ProjectionName));
 
-		Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
-		Assert.AreEqual(
-			1,
-			_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Single().Projections.Length);
-		Assert.AreEqual(
-			_projectionName,
-			_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Single().Projections.Single()
-				.Name);
-		Assert.AreEqual(
-			ManagedProjectionState.Running,
-			_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Single().Projections.Single()
-				.LeaderStatus);
+		var stats = _consumer.HandledMessages.OfType<Statistics>().Single();
+		Assert.AreEqual(1, stats.Projections.Length);
+		Assert.AreEqual(ProjectionName, stats.Projections.Single().Name);
+		Assert.AreEqual(ManagedProjectionState.Running, stats.Projections.Single().LeaderStatus);
 	}
 
 	[Test, Category("v8")]
 	public void the_projection_state_can_be_retrieved() {
-		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetState(_bus, _projectionName, ""));
+		_manager.Handle(new Command.GetState(_bus, ProjectionName, ""));
 		_queue.Process();
 
-		Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionState>().Count());
-		Assert.AreEqual(
-			_projectionName,
-			_consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionState>().Single().Name);
-		Assert.AreEqual(
-			"", _consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionState>().Single().State);
-	}
-
-	protected override IEnumerable<WhenStep> When() {
-		_projectionName = "test-projection";
-		yield return (new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid()));
-		yield return
-			(new ProjectionManagementMessage.Command.Post(
-				_bus, ProjectionMode.Transient, _projectionName,
-				ProjectionManagementMessage.RunAs.Anonymous, "JS", @"fromAll(); on_any(function(){});log(1);",
-				enabled: true, checkpointsEnabled: false, emitEnabled: false, trackEmittedStreams: true));
-		// when
-		_newProjectionSource = @"fromAll(); on_any(function(){});log(2);";
-		yield return
-			(new ProjectionManagementMessage.Command.UpdateQuery(
-				_bus, _projectionName, ProjectionManagementMessage.RunAs.Anonymous,
-				_newProjectionSource, emitEnabled: null));
+		var state = _consumer.HandledMessages.OfType<ProjectionState>().Single();
+		Assert.AreEqual(ProjectionName, state.Name);
+		Assert.AreEqual("", state.State);
 	}
 }

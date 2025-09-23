@@ -15,38 +15,26 @@ using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 
-public class CoreProjectionCheckpointReader : ICoreProjectionCheckpointReader {
-	private readonly IPublisher _publisher;
-	private readonly Guid _projectionCorrelationId;
-	private readonly IODispatcher _ioDispatcher;
-	private readonly string _projectionCheckpointStreamId;
-	private readonly bool _useCheckpoints;
+public class CoreProjectionCheckpointReader(
+	IPublisher publisher,
+	Guid projectionCorrelationId,
+	IODispatcher ioDispatcher,
+	string projectionCheckpointStreamId,
+	ProjectionVersion projectionVersion,
+	bool useCheckpoints) {
 	private readonly ILogger _logger = Log.ForContext<CoreProjectionCheckpointReader>();
 
 	private bool _stateRequested;
-
 	private long _nextStateIndexToRequest;
-	private ProjectionVersion _projectionVersion;
 	private Guid _readRequestId;
 	private long _lastWrittenCheckpointEventNumber;
-
-	public CoreProjectionCheckpointReader(
-		IPublisher publisher, Guid projectionCorrelationId, IODispatcher ioDispatcher,
-		string projectionCheckpointStreamId, ProjectionVersion projectionVersion, bool useCheckpoints) {
-		_publisher = publisher;
-		_projectionCorrelationId = projectionCorrelationId;
-		_ioDispatcher = ioDispatcher;
-		_projectionCheckpointStreamId = projectionCheckpointStreamId;
-		_projectionVersion = projectionVersion;
-		_useCheckpoints = useCheckpoints;
-	}
 
 	public void BeginLoadState() {
 		if (_stateRequested)
 			throw new InvalidOperationException("State has been already requested");
 		BeforeBeginLoadState();
 		_stateRequested = true;
-		if (_useCheckpoints) {
+		if (useCheckpoints) {
 			RequestLoadState();
 		} else {
 			CheckpointLoaded(null, null);
@@ -54,24 +42,24 @@ public class CoreProjectionCheckpointReader : ICoreProjectionCheckpointReader {
 	}
 
 	public void Initialize() {
-		_ioDispatcher.BackwardReader.Cancel(_readRequestId);
+		ioDispatcher.BackwardReader.Cancel(_readRequestId);
 		_readRequestId = Guid.Empty;
 		_stateRequested = false;
 	}
 
-	protected void BeforeBeginLoadState() {
+	private void BeforeBeginLoadState() {
 		_lastWrittenCheckpointEventNumber = ExpectedVersion.NoStream;
 		_nextStateIndexToRequest = -1; // from the end
 	}
 
-	protected void RequestLoadState() {
+	private void RequestLoadState() {
 		const int recordsToRequest = 10;
 		_readRequestId = Guid.NewGuid();
-		_ioDispatcher.ReadBackward(
-			_projectionCheckpointStreamId, _nextStateIndexToRequest, recordsToRequest, false,
+		ioDispatcher.ReadBackward(
+			projectionCheckpointStreamId, _nextStateIndexToRequest, recordsToRequest, false,
 			SystemAccounts.System, OnLoadStateReadRequestCompleted,
 			() => {
-				_logger.Warning("Read forward of stream {stream} timed out. Retrying.", _projectionCheckpointStreamId);
+				_logger.Warning("Read forward of stream {stream} timed out. Retrying.", projectionCheckpointStreamId);
 				RequestLoadState();
 			}, _readRequestId);
 	}
@@ -83,9 +71,9 @@ public class CoreProjectionCheckpointReader : ICoreProjectionCheckpointReader {
 				.Where(v => v.Event.EventType == ProjectionEventTypes.ProjectionCheckpoint).Select(x => x.Event)
 				.FirstOrDefault();
 			if (checkpoint != null) {
-				var parsed = checkpoint.Metadata.ParseCheckpointTagVersionExtraJson(_projectionVersion);
-				if (parsed.Version.ProjectionId != _projectionVersion.ProjectionId
-					|| _projectionVersion.Epoch > parsed.Version.Version) {
+				var parsed = checkpoint.Metadata.ParseCheckpointTagVersionExtraJson(projectionVersion);
+				if (parsed.Version.ProjectionId != projectionVersion.ProjectionId
+				    || projectionVersion.Epoch > parsed.Version.Version) {
 					_lastWrittenCheckpointEventNumber = checkpoint.EventNumber;
 					CheckpointLoaded(null, null);
 				} else {
@@ -111,14 +99,12 @@ public class CoreProjectionCheckpointReader : ICoreProjectionCheckpointReader {
 	}
 
 
-	protected void CheckpointLoaded(CheckpointTag checkpointTag, string checkpointData) {
+	private void CheckpointLoaded(CheckpointTag checkpointTag, string checkpointData) {
 		if (checkpointTag == null) // no checkpoint data found
-		{
 			checkpointData = null;
-		}
 
-		_publisher.Publish(
+		publisher.Publish(
 			new CoreProjectionProcessingMessage.CheckpointLoaded(
-				_projectionCorrelationId, checkpointTag, checkpointData, _lastWrittenCheckpointEventNumber));
+				projectionCorrelationId, checkpointTag, checkpointData, _lastWrittenCheckpointEventNumber));
 	}
 }

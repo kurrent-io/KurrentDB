@@ -12,11 +12,11 @@ namespace KurrentDB.Projections.Core.Tests.Services.emitted_streams_deleter.when
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class with_no_emitted_streams_stream<TLogFormat, TStreamId> : SpecificationWithEmittedStreamsTrackerAndDeleter<TLogFormat, TStreamId> {
-	protected Action _onDeleteStreamCompleted;
-	protected ManualResetEvent _resetEvent = new ManualResetEvent(false);
+	private Action _onDeleteStreamCompleted;
+	private readonly ManualResetEvent _resetEvent = new(false);
 
 	protected override Task Given() {
-		_onDeleteStreamCompleted = () => { _resetEvent.Set(); };
+		_onDeleteStreamCompleted = () => _resetEvent.Set();
 		return base.Given();
 	}
 
@@ -30,7 +30,5 @@ public class with_no_emitted_streams_stream<TLogFormat, TStreamId> : Specificati
 		if (!_resetEvent.WaitOne(TimeSpan.FromSeconds(10))) {
 			throw new Exception("Timed out waiting callback.");
 		}
-
-		;
 	}
 }

@@ -14,9 +14,8 @@ namespace KurrentDB.Projections.Core.Tests.Services.event_reader.event_by_type_i
 
 public abstract class EventByTypeIndexEventReaderTestFixture<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	public Guid CompleteForwardStreamRead(string streamId, Guid corrId, params ResolvedEvent[] events) {
-		var lastEventNumber = events != null && events.Length > 0 ? events.Last().Event.EventNumber : 0;
-		var message = _consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>()
-			.Last(x => x.EventStreamId == streamId);
+		var lastEventNumber = events is { Length: > 0 } ? events.Last().Event.EventNumber : 0;
+		var message = _consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>().Last(x => x.EventStreamId == streamId);
 		message.Envelope.ReplyWith(
 			new ClientMessage.ReadStreamEventsForwardCompleted(
 				corrId == Guid.Empty ? message.CorrelationId : corrId, streamId, 0, 100, ReadStreamResult.Success,
@@ -34,30 +33,23 @@ public abstract class EventByTypeIndexEventReaderTestFixture<TLogFormat, TStream
 	}
 
 	public Guid CompleteBackwardStreamRead(string streamId, Guid corrId, params ResolvedEvent[] events) {
-		var lastEventNumber = events != null && events.Length > 0 ? events.Last().Event.EventNumber : 0;
-		var message = _consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsBackward>()
-			.Last(x => x.EventStreamId == streamId);
+		var lastEventNumber = events is { Length: > 0 } ? events.Last().Event.EventNumber : 0;
+		var message = _consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsBackward>().Last(x => x.EventStreamId == streamId);
 		message.Envelope.ReplyWith(
 			new ClientMessage.ReadStreamEventsBackwardCompleted(
 				corrId == Guid.Empty ? message.CorrelationId : corrId, streamId, 0, 100, ReadStreamResult.Success,
-				new ResolvedEvent[] { }, null, false, "", lastEventNumber + 1, lastEventNumber, true, 200));
+				[], null, false, "", lastEventNumber + 1, lastEventNumber, true, 200));
 		return message.CorrelationId;
 	}
 
 	public Guid TimeoutRead(string streamId, Guid corrId) {
 		var timeoutMessage = _consumer.HandledMessages
-			.OfType<TimerMessage.Schedule>().Last(x =>
-				((ProjectionManagementMessage.Internal.ReadTimeout)x.ReplyMessage).StreamId == streamId);
-		var correlationId = ((ProjectionManagementMessage.Internal.ReadTimeout)timeoutMessage.ReplyMessage)
-			.CorrelationId;
+			.OfType<TimerMessage.Schedule>().Last(x => ((ProjectionManagementMessage.Internal.ReadTimeout)x.ReplyMessage).StreamId == streamId);
+		var correlationId = ((ProjectionManagementMessage.Internal.ReadTimeout)timeoutMessage.ReplyMessage).CorrelationId;
 		correlationId = corrId == Guid.Empty ? correlationId : corrId;
-		timeoutMessage.Envelope.ReplyWith(
-			new ProjectionManagementMessage.Internal.ReadTimeout(corrId == Guid.Empty ? correlationId : corrId,
-				streamId));
+		timeoutMessage.Envelope.ReplyWith(new ProjectionManagementMessage.Internal.ReadTimeout(corrId == Guid.Empty ? correlationId : corrId, streamId));
 		return correlationId;
 	}
 
-	protected static string TFPosToMetadata(TFPos tfPos) {
-		return string.Format(@"{{""$c"":{0},""$p"":{1}}}", tfPos.CommitPosition, tfPos.PreparePosition);
-	}
+	protected static string TFPosToMetadata(TFPos tfPos) => $$"""{"$c":{{tfPos.CommitPosition}},"$p":{{tfPos.PreparePosition}}}""";
 }

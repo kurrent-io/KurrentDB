@@ -5,10 +5,6 @@ using System;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 
-sealed class ErroredEmittedEvent : IValidatedEmittedEvent {
-	public Exception Exception { get; private set; }
-
-	public ErroredEmittedEvent(InvalidEmittedEventSequenceException exception) {
-		Exception = exception;
-	}
+internal sealed class ErroredEmittedEvent(InvalidEmittedEventSequenceException exception) : IValidatedEmittedEvent {
+	public Exception Exception { get; private set; } = exception;
 }

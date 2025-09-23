@@ -16,8 +16,7 @@ public class when_caching_a_parition_state_as_locked {
 	public void when() {
 		_cache = new PartitionStateCache();
 		_cachedAtCheckpointTag = CheckpointTag.FromPosition(0, 1000, 900);
-		_cache.CacheAndLockPartitionState("partition", new PartitionState("data", null, _cachedAtCheckpointTag),
-			_cachedAtCheckpointTag);
+		_cache.CacheAndLockPartitionState("partition", new("data", null, _cachedAtCheckpointTag), _cachedAtCheckpointTag);
 	}
 
 	[Test]

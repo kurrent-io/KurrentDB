@@ -19,7 +19,6 @@ namespace KurrentDB.Projections.Core.Tests.Services.emitted_stream;
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_handling_an_emit_the_not_started_stream<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private EmittedStream _stream;
-
 	private TestCheckpointManagerMessageHandler _readyHandler;
 
 	protected override void Given() {
@@ -29,20 +28,17 @@ public class when_handling_an_emit_the_not_started_stream<TLogFormat, TStreamId>
 
 	[SetUp]
 	public void setup() {
-		_readyHandler = new TestCheckpointManagerMessageHandler();
-		;
-		_stream = new EmittedStream(
+		_readyHandler = new();
+		_stream = new(
 			"test",
-			new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
-				new EmittedStream.WriterConfiguration.StreamMetadata(), null, 50), new ProjectionVersion(1, 0, 0),
-			new TransactionFilePositionTagger(0), CheckpointTag.FromPosition(0, 0, -1), _bus, _ioDispatcher,
+			new(new EmittedStreamsWriter(_ioDispatcher), new(), null, 50),
+			new ProjectionVersion(1, 0, 0), new TransactionFilePositionTagger(0),
+			CheckpointTag.FromPosition(0, 0, -1), _bus, _ioDispatcher,
 			_readyHandler);
 		_stream.EmitEvents(
-			new[] {
-				new EmittedDataEvent(
-					"test", Guid.NewGuid(), "type", true, "data", null, CheckpointTag.FromPosition(0, 200, 150),
-					null)
-			});
+		[
+			new EmittedDataEvent("test", Guid.NewGuid(), "type", true, "data", null, CheckpointTag.FromPosition(0, 200, 150), null)
+		]);
 	}
 
 	[Test]

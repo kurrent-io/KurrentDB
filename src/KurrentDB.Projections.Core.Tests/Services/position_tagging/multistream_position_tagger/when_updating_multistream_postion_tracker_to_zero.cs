@@ -15,10 +15,8 @@ public class when_updating_multistream_postion_tracker_to_zero {
 
 	[SetUp]
 	public void When() {
-		_tagger = new MultiStreamPositionTagger(0, new[] { "stream1", "stream2" });
+		_tagger = new MultiStreamPositionTagger(0, ["stream1", "stream2"]);
 		_positionTracker = new PositionTracker(_tagger);
-		// when
-
 		_positionTracker.UpdateByCheckpointTagInitial(_tagger.MakeZeroCheckpointTag());
 	}
 

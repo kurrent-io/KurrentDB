@@ -51,9 +51,9 @@ public class when_handling_committed_event_after_unsybscribe<TLogFormat, TStream
 
 		_eventRecord = new EventRecord(
 			100,
-			LogRecord.Prepare(
-				recordFactory, 1500, Guid.NewGuid(), Guid.NewGuid(), 1500, 0, streamId, 99, PrepareFlags.Data,
-				eventTypeId, new byte[0], null, DateTime.UtcNow), "Stream", "EventType");
+			recordFactory.Prepare(
+				1500, Guid.NewGuid(), Guid.NewGuid(), 1500, 0, streamId, 99, PrepareFlags.Data,
+				eventTypeId, [], null, DateTime.UtcNow), "Stream", "EventType");
 		_eventCommitted = new StorageMessage.EventCommitted(2000, _eventRecord, isTfEof: true);
 		_publisher = new();
 		_envelope = _publisher;

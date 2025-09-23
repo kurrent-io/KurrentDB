@@ -13,7 +13,8 @@ namespace KurrentDB.Projections.Core.Tests.Services.core_projection.checkpoint_m
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class
-	when_a_core_projection_checkpoint_manager_has_been_created<TLogFormat, TStreamId> : TestFixtureWithCoreProjectionCheckpointManager<TLogFormat, TStreamId> {
+	when_a_core_projection_checkpoint_manager_has_been_created<TLogFormat, TStreamId>
+	: TestFixtureWithCoreProjectionCheckpointManager<TLogFormat, TStreamId> {
 	[Test]
 	public void stopping_throws_invalid_operation_exception() {
 		Assert.Throws<InvalidOperationException>(() => { _manager.Stopping(); });
@@ -26,7 +27,6 @@ public class
 
 	[Test]
 	public void event_processed_throws_invalid_operation_exception() {
-		//            _manager.StateUpdated("", @"{""state"":""state""}");
 		Assert.Throws<InvalidOperationException>(() => {
 			_manager.EventProcessed(CheckpointTag.FromStreamPosition(0, "stream", 10), 77.7f);
 		});
@@ -48,7 +48,7 @@ public class
 
 	[Test]
 	public void can_begin_load_state() {
-		_checkpointWriter.StartFrom(CheckpointTag.FromPosition(0, 0, -1), ExpectedVersion.NoStream);
+		_checkpointWriter.StartFrom(ExpectedVersion.NoStream);
 	}
 
 	[Test]

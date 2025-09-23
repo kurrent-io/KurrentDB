@@ -13,10 +13,10 @@ namespace KurrentDB.Projections.Core.Tests.Services.core_projection.projection_c
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_projection_reader_reads_successfully<TLogFormat, TStreamId> : with_projection_checkpoint_reader<TLogFormat, TStreamId>,
 	IHandle<CoreProjectionProcessingMessage.CheckpointLoaded> {
-	private ManualResetEventSlim _mre = new ManualResetEventSlim();
+	private readonly ManualResetEventSlim _mre = new();
 	private CoreProjectionProcessingMessage.CheckpointLoaded _checkpointLoaded;
 
-	public override void When() {
+	protected override void When() {
 		_bus.Subscribe<CoreProjectionProcessingMessage.CheckpointLoaded>(this);
 
 		_reader.Initialize();

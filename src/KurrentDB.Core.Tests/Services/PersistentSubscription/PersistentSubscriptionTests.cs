@@ -2443,7 +2443,7 @@ public class DeadlockTest<TLogFormat, TStreamId> : SpecificationWithMiniNode<TLo
 
 	private static IEnumerable<EventData> CreateEvent() {
 		while (true) {
-			yield return new EventData(Guid.NewGuid(), "testtype", false, new byte[0], new byte[0]);
+			yield return new EventData(Guid.NewGuid(), "testtype", false, [], []);
 		}
 	}
 }
@@ -2515,21 +2515,21 @@ public static class Helper {
 	}
 
 	public static ResolvedEvent BuildFakeEvent(Guid id, string type, string stream, long version, long commitPosition = 1234567, long preparePosition = 1234567) {
-		return BuildFakeEventWithMetadata(id, type, stream, version, new byte[0], commitPosition, preparePosition);
+		return BuildFakeEventWithMetadata(id, type, stream, version, [], commitPosition, preparePosition);
 	}
 
 	public static ResolvedEvent BuildFakeEventWithMetadata(Guid id, string type, string stream, long version, byte[] metaData, long commitPosition = 1234567, long preparePosition = 1234567) {
 		return
 			ResolvedEvent.ForUnresolvedEvent(new EventRecord(version, preparePosition, Guid.NewGuid(), id, commitPosition, 1234,
 				stream, version,
-				DateTime.UtcNow, PrepareFlags.SingleWrite, type, new byte[0], metaData), commitPosition);
+				DateTime.UtcNow, PrepareFlags.SingleWrite, type, [], metaData), commitPosition);
 	}
 
 	public static ResolvedEvent BuildLinkEvent(Guid id, string stream, long version, ResolvedEvent ev, bool resolved = true, long commitPosition = 1234567, long preparePosition = 1234567) {
 		var link = new EventRecord(version, preparePosition, Guid.NewGuid(), id, commitPosition, 1234, stream, version,
 			DateTime.UtcNow, PrepareFlags.SingleWrite, SystemEventTypes.LinkTo,
 			Encoding.UTF8.GetBytes(string.Format("{0}@{1}", ev.OriginalEventNumber, ev.OriginalStreamId)),
-			new byte[0]);
+			[]);
 		if (resolved)
 			return ResolvedEvent.ForResolvedLink(ev.Event, link, commitPosition);
 		else

@@ -10,12 +10,9 @@ using KurrentDB.Projections.Core.Services;
 namespace KurrentDB.Projections.Core.Metrics;
 
 public class ProjectionTracker : IProjectionTracker {
-
-	public const string Projection = "projection";
 	public static KeyValuePair<string, object> StatusRunning = new("status", "Running");
 	public static KeyValuePair<string, object> StatusFaulted = new("status", "Faulted");
 	public static KeyValuePair<string, object> StatusStopped = new("status", "Stopped");
-
 
 	private ProjectionStatistics[] _currentStats = [];
 
@@ -41,9 +38,7 @@ public class ProjectionTracker : IProjectionTracker {
 
 	public IEnumerable<Measurement<long>> ObserveRunning() =>
 		_currentStats.Select(x => {
-			var projectionRunning = x.Status.StartsWith("running", StringComparison.CurrentCultureIgnoreCase)
-				? 1
-				: 0;
+			var projectionRunning = x.Status.StartsWith("running", StringComparison.CurrentCultureIgnoreCase) ? 1 : 0;
 
 			return new Measurement<long>(
 				projectionRunning, [
@@ -99,7 +94,7 @@ public class ProjectionTracker : IProjectionTracker {
 				};
 
 				if (partition != string.Empty)
-					tags.Add(new KeyValuePair<string, object>("partition", partition));
+					tags.Add(new("partition", partition));
 
 				yield return new(stateSize, tags);
 			}

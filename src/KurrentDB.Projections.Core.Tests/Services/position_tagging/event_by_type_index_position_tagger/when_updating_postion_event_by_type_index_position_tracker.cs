@@ -18,7 +18,7 @@ public class when_updating_postion_event_by_type_index_position_tracker {
 	[SetUp]
 	public void When() {
 		// given
-		_tagger = new EventByTypeIndexPositionTagger(0, new[] { "type1", "type2" });
+		_tagger = new EventByTypeIndexPositionTagger(0, ["type1", "type2"]);
 		_positionTracker = new PositionTracker(_tagger);
 		var newTag = CheckpointTag.FromEventTypeIndexPositions(0, new TFPos(10, 5),
 			new Dictionary<string, long> { { "type1", 1 }, { "type2", 2 } });

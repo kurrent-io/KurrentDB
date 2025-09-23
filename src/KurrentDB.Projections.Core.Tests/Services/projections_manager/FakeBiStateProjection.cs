@@ -26,8 +26,8 @@ public class FakeBiStateProjection : IProjectionStateHandler {
 		_logger(msg, args);
 	}
 
-	public void ConfigureSourceProcessingStrategy(SourceDefinitionBuilder builder) {
-		Log("ConfigureSourceProcessingStrategy(" + builder + ")");
+	private void ConfigureSourceProcessingStrategy(SourceDefinitionBuilder builder) {
+		Log($"ConfigureSourceProcessingStrategy({builder})");
 		builder.FromAll();
 		builder.AllEvents();
 		builder.SetByStream();
@@ -35,11 +35,11 @@ public class FakeBiStateProjection : IProjectionStateHandler {
 	}
 
 	public void Load(string state) {
-		Log("Load(" + state + ")");
+		Log($"Load({state})");
 	}
 
 	public void LoadShared(string state) {
-		Log("LoadShared(" + state + ")");
+		Log($"LoadShared({state})");
 	}
 
 	public void Initialize() {
@@ -51,7 +51,7 @@ public class FakeBiStateProjection : IProjectionStateHandler {
 	}
 
 	public string GetStatePartition(CheckpointTag eventPosition, string category, ResolvedEvent data) {
-		Log("GetStatePartition(" + "..." + ")");
+		Log("GetStatePartition(...)");
 		throw new NotImplementedException();
 	}
 
@@ -61,7 +61,7 @@ public class FakeBiStateProjection : IProjectionStateHandler {
 		newSharedState = null;
 		if (data.EventType == "fail" || _query == "fail")
 			throw new Exception("failed");
-		Log("ProcessEvent(" + "..." + ")");
+		Log("ProcessEvent(...)");
 		newState = "{\"data\": 1}";
 		newSharedState = "{\"data\": 2}";
 		emittedEvents = null;

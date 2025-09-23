@@ -23,17 +23,15 @@ public class a_running_projection {
 		protected override IEnumerable<WhenStep> When() {
 			foreach (var m in base.When())
 				yield return m;
-			var readerAssignedMessage =
-				_consumer.HandledMessages.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>()
-					.LastOrDefault();
+			var readerAssignedMessage = _consumer.HandledMessages.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>().LastOrDefault();
 			if (_projectionEnabled) {
 				Assert.IsNotNull(readerAssignedMessage);
 				_reader = readerAssignedMessage.ReaderId;
 
 				yield return
-					(ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
+					ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 						_reader, new TFPos(100, 50), new TFPos(100, 50), "stream", 1, "stream", 1, false,
-						Guid.NewGuid(), "type", false, new byte[0], new byte[0], 100, 33.3f));
+						Guid.NewGuid(), "type", false, [], [], 100, 33.3f);
 			} else
 				_reader = Guid.Empty;
 		}
@@ -47,14 +45,14 @@ public class a_running_projection {
 				yield return m;
 
 			yield return
-				(new ProjectionManagementMessage.Command.Disable(
-					_bus, _projectionName, ProjectionManagementMessage.RunAs.System));
+				new ProjectionManagementMessage.Command.Disable(
+					_bus, _projectionName, ProjectionManagementMessage.RunAs.System);
 			for (var i = 0; i < 50; i++) {
 				yield return
-					(ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
+					ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 						_reader, new TFPos(100 * i + 200, 150), new TFPos(100 * i + 200, 150), "stream", 1 + i + 1,
-						"stream", 1 + i + 1, false, Guid.NewGuid(), "type", false, new byte[0], new byte[0],
-						100 * i + 200, 33.3f));
+						"stream", 1 + i + 1, false, Guid.NewGuid(), "type", false, [], [],
+						100 * i + 200, 33.3f);
 			}
 		}
 
@@ -68,37 +66,16 @@ public class a_running_projection {
 			Assert.Inconclusive("actually in unsubscribes...");
 		}
 
-
 		[Test]
 		public void the_projection_status_becomes_stopped_disabled() {
-			_manager.Handle(
-				new ProjectionManagementMessage.Command.GetStatistics(
-					_bus, null, _projectionName));
+			_manager.Handle(new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
 
-			Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
-			Assert.AreEqual(
-				1,
-				_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>()
-					.Single()
-					.Projections.Length);
-			Assert.AreEqual(
-				_projectionName,
-				_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>()
-					.Single()
-					.Projections.Single()
-					.Name);
-			Assert.AreEqual(
-				ManagedProjectionState.Stopped,
-				_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>()
-					.Single()
-					.Projections.Single()
-					.LeaderStatus);
-			Assert.AreEqual(
-				false,
-				_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>()
-					.Single()
-					.Projections.Single()
-					.Enabled);
+			var actual = _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().ToArray();
+			Assert.AreEqual(1, actual.Length);
+			Assert.AreEqual(1, actual.Single().Projections.Length);
+			Assert.AreEqual(_projectionName, actual.Single().Projections.Single().Name);
+			Assert.AreEqual(ManagedProjectionState.Stopped, actual.Single().Projections.Single().LeaderStatus);
+			Assert.AreEqual(false, actual.Single().Projections.Single().Enabled);
 		}
 	}
 
@@ -109,41 +86,21 @@ public class a_running_projection {
 			foreach (var m in base.When())
 				yield return m;
 			yield return
-				(ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
+				ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 					_reader, new TFPos(200, 150), new TFPos(200, 150), "stream", 2, "stream", 2, false,
-					Guid.NewGuid(), "type", false, new byte[0], new byte[0], 100, 33.3f));
+					Guid.NewGuid(), "type", false, [], [], 100, 33.3f);
 		}
 
 		[Test]
 		public void the_projection_status_remains_running_enabled() {
-			_manager.Handle(
-				new ProjectionManagementMessage.Command.GetStatistics(
-					_bus, null, _projectionName));
+			_manager.Handle(new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
 
-			Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
-			Assert.AreEqual(
-				1,
-				_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>()
-					.Single()
-					.Projections.Length);
-			Assert.AreEqual(
-				_projectionName,
-				_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>()
-					.Single()
-					.Projections.Single()
-					.Name);
-			Assert.AreEqual(
-				ManagedProjectionState.Running,
-				_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>()
-					.Single()
-					.Projections.Single()
-					.LeaderStatus);
-			Assert.AreEqual(
-				true,
-				_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>()
-					.Single()
-					.Projections.Single()
-					.Enabled);
+			var actual = _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().ToArray();
+			Assert.AreEqual(1, actual.Length);
+			Assert.AreEqual(1, actual.Single().Projections.Length);
+			Assert.AreEqual(_projectionName, actual.Single().Projections.Single().Name);
+			Assert.AreEqual(ManagedProjectionState.Running, actual.Single().Projections.Single().LeaderStatus);
+			Assert.AreEqual(true, actual.Single().Projections.Single().Enabled);
 		}
 	}
 
@@ -159,61 +116,29 @@ public class a_running_projection {
 			foreach (var m in base.When())
 				yield return m;
 
-			yield return
-				(new ProjectionManagementMessage.Command.Reset(
-					_bus, _projectionName, ProjectionManagementMessage.RunAs.System));
+			yield return new ProjectionManagementMessage.Command.Reset(_bus, _projectionName, ProjectionManagementMessage.RunAs.System);
 		}
 
 		[Test]
 		public void the_projection_epoch_changes() {
-			_manager.Handle(
-				new ProjectionManagementMessage.Command.GetStatistics(
-					_bus, null, _projectionName));
+			_manager.Handle(new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
 
-			Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
-			Assert.AreEqual(
-				1,
-				_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>()
-					.Single()
-					.Projections.Length);
-			Assert.AreEqual(
-				1,
-				_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>()
-					.Single()
-					.Projections.Single()
-					.Epoch);
-			Assert.AreEqual(
-				1,
-				_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>()
-					.Single()
-					.Projections.Single()
-					.Version);
+			var actual = _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().ToArray();
+			Assert.AreEqual(1, actual.Length);
+			Assert.AreEqual(1, actual.Single().Projections.Length);
+			Assert.AreEqual(1, actual.Single().Projections.Single().Epoch);
+			Assert.AreEqual(1, actual.Single().Projections.Single().Version);
 		}
 
 		[Test]
 		public void the_projection_status_is_enabled_running() {
-			_manager.Handle(
-				new ProjectionManagementMessage.Command.GetStatistics(
-					_bus, null, _projectionName));
+			_manager.Handle(new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
 
-			Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
-			Assert.AreEqual(
-				1,
-				_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>()
-					.Single()
-					.Projections.Length);
-			Assert.AreEqual(
-				ManagedProjectionState.Stopped,
-				_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>()
-					.Single()
-					.Projections.Single()
-					.LeaderStatus);
-			Assert.AreEqual(
-				false,
-				_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>()
-					.Single()
-					.Projections.Single()
-					.Enabled);
+			var actual = _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().ToArray();
+			Assert.AreEqual(1, actual.Length);
+			Assert.AreEqual(1, actual.Single().Projections.Length);
+			Assert.AreEqual(ManagedProjectionState.Stopped, actual.Single().Projections.Single().LeaderStatus);
+			Assert.AreEqual(false, actual.Single().Projections.Single().Enabled);
 		}
 	}
 
@@ -228,67 +153,34 @@ public class a_running_projection {
 		protected override IEnumerable<WhenStep> When() {
 			foreach (var m in base.When())
 				yield return m;
+			yield return new ProjectionManagementMessage.Command.Reset(_bus, _projectionName, ProjectionManagementMessage.RunAs.System);
+			yield return new ProjectionManagementMessage.Command.Enable(_bus, _projectionName, ProjectionManagementMessage.RunAs.System);
 			yield return
-				(new ProjectionManagementMessage.Command.Reset(
-					_bus, _projectionName, ProjectionManagementMessage.RunAs.System));
-			yield return
-				(new ProjectionManagementMessage.Command.Enable(
-					_bus, _projectionName, ProjectionManagementMessage.RunAs.System));
-			yield return
-				(ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
+				ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 					_reader, new TFPos(100, 150), new TFPos(100, 150), "stream", 1 + 1, "stream", 1 + 1, false,
-					Guid.NewGuid(), "type", false, new byte[0], new byte[0], 200, 33.3f));
+					Guid.NewGuid(), "type", false, [], [], 200, 33.3f);
 		}
 
 		[Test]
 		public void the_projection_epoch_changes() {
-			_manager.Handle(
-				new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
+			_manager.Handle(new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
 
-			Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
-			Assert.AreEqual(
-				1,
-				_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>()
-					.Single()
-					.Projections.Length);
-			Assert.AreEqual(
-				1,
-				_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>()
-					.Single()
-					.Projections.Single()
-					.Epoch);
-			Assert.AreEqual(
-				2,
-				_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>()
-					.Single()
-					.Projections.Single()
-					.Version);
+			var actual = _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().ToArray();
+			Assert.AreEqual(1, actual.Length);
+			Assert.AreEqual(1, actual.Single().Projections.Length);
+			Assert.AreEqual(1, actual.Single().Projections.Single().Epoch);
+			Assert.AreEqual(2, actual.Single().Projections.Single().Version);
 		}
 
 		[Test]
 		public void the_projection_status_is_enabled_running() {
-			_manager.Handle(
-				new ProjectionManagementMessage.Command.GetStatistics(
-					_bus, null, _projectionName));
+			_manager.Handle(new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
 
-			Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
-			Assert.AreEqual(
-				1,
-				_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>()
-					.Single()
-					.Projections.Length);
-			Assert.AreEqual(
-				ManagedProjectionState.Running,
-				_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>()
-					.Single()
-					.Projections.Single()
-					.LeaderStatus);
-			Assert.AreEqual(
-				true,
-				_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>()
-					.Single()
-					.Projections.Single()
-					.Enabled);
+			var actual = _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().ToArray();
+			Assert.AreEqual(1, actual.Length);
+			Assert.AreEqual(1, actual.Single().Projections.Length);
+			Assert.AreEqual(ManagedProjectionState.Running, actual.Single().Projections.Single().LeaderStatus);
+			Assert.AreEqual(true, actual.Single().Projections.Single().Enabled);
 		}
 	}
 }

@@ -16,7 +16,6 @@ using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Management;
 using KurrentDB.Projections.Core.Services.Processing;
 using NUnit.Framework;
-
 using ClientMessageWriteEvents = KurrentDB.Core.Tests.TestAdapters.ClientMessage.WriteEvents;
 
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager.managed_projection;
@@ -35,7 +34,7 @@ public class when_persisted_state_write_fails<TLogFormat, TStreamId> : TestFixtu
 	private string _projectionDefinitionStreamId;
 	private Guid _originalPersistedStateEventId;
 
-	private OperationResult _failureCondition;
+	private readonly OperationResult _failureCondition;
 
 	public when_persisted_state_write_fails(OperationResult failureCondition) {
 		_failureCondition = failureCondition;
@@ -67,24 +66,15 @@ public class when_persisted_state_write_fails<TLogFormat, TStreamId> : TestFixtu
 			_writeDispatcher,
 			_readDispatcher,
 			_bus,
-			_timeProvider, new RequestResponseDispatcher
-				<CoreProjectionManagementMessage.GetState, CoreProjectionStatusMessage.StateReport>(
-					_bus,
-					v => v.CorrelationId,
-					v => v.CorrelationId,
-					_bus),
-			new RequestResponseDispatcher
-				<CoreProjectionManagementMessage.GetResult, CoreProjectionStatusMessage.ResultReport>(
-					_bus,
-					v => v.CorrelationId,
-					v => v.CorrelationId,
-					_bus),
+			_timeProvider,
+			new(_bus, v => v.CorrelationId, v => v.CorrelationId, _bus),
+			new(_bus, v => v.CorrelationId, v => v.CorrelationId, _bus),
 			_ioDispatcher,
 			TimeSpan.FromMinutes(Opts.ProjectionsQueryExpiryDefault));
 	}
 
 	protected override IEnumerable<WhenStep> When() {
-		ProjectionManagementMessage.Command.Post message = new ProjectionManagementMessage.Command.Post(
+		var message = new ProjectionManagementMessage.Command.Post(
 			Envelope, ProjectionMode.OneTime, _projectionName, ProjectionManagementMessage.RunAs.System,
 			typeof(FakeForeachStreamProjection), "", true, false, false, false);
 		_managedProjection.InitializeNew(
@@ -104,12 +94,9 @@ public class when_persisted_state_write_fails<TLogFormat, TStreamId> : TestFixtu
 		var sourceDefinition = new FakeForeachStreamProjection("", Console.WriteLine).GetSourceDefinition();
 		var projectionSourceDefinition = ProjectionSourceDefinition.From(sourceDefinition);
 
-		_managedProjection.Handle(
-			new CoreProjectionStatusMessage.Prepared(
-				_coreProjectionId, projectionSourceDefinition));
-
-		_originalPersistedStateEventId = _consumer.HandledMessages.OfType<ClientMessageWriteEvents>()
-			.Where(x => x.EventStreamId == _projectionDefinitionStreamId).First().Events[0].EventId;
+		_managedProjection.Handle(new CoreProjectionStatusMessage.Prepared(_coreProjectionId, projectionSourceDefinition));
+		_originalPersistedStateEventId = _consumer.HandledMessages
+			.OfType<ClientMessageWriteEvents>().First(x => x.EventStreamId == _projectionDefinitionStreamId).Events[0].EventId;
 
 		CompleteWriteWithResult(_failureCondition);
 
@@ -120,8 +107,8 @@ public class when_persisted_state_write_fails<TLogFormat, TStreamId> : TestFixtu
 
 	[Test]
 	public void should_retry_writing_the_persisted_state_with_the_same_event_id() {
-		var eventId = _consumer.HandledMessages.OfType<ClientMessageWriteEvents>()
-			.Where(x => x.EventStreamId == _projectionDefinitionStreamId).First().Events[0].EventId;
+		var eventId = _consumer.HandledMessages
+			.OfType<ClientMessageWriteEvents>().First(x => x.EventStreamId == _projectionDefinitionStreamId).Events[0].EventId;
 		Assert.AreEqual(eventId, _originalPersistedStateEventId);
 	}
 }

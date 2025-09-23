@@ -27,14 +27,14 @@ public class when_building_an_index_off_tfile_with_prepares_and_commits<TLogForm
 		var expectedVersion1 = ExpectedVersion.NoStream;
 		var expectedVersion2 = ExpectedVersion.NoStream;
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
-		var (_, pos1) = await Writer.Write(LogRecord.Prepare(_logFormat.RecordFactory, pos0, _id1, _id1, pos0, 0, streamId1, expectedVersion1++,
-				PrepareFlags.SingleWrite, eventTypeId, new byte[0], new byte[0], DateTime.UtcNow),
+		var (_, pos1) = await Writer.Write(_logFormat.RecordFactory.Prepare(pos0, _id1, _id1, pos0, 0, streamId1, expectedVersion1++,
+				PrepareFlags.SingleWrite, eventTypeId, [], [], DateTime.UtcNow),
 			token);
-		var (_, pos2) = await Writer.Write(LogRecord.Prepare(_logFormat.RecordFactory, pos1, _id2, _id2, pos1, 0, streamId2, expectedVersion2++,
-				PrepareFlags.SingleWrite, eventTypeId, new byte[0], new byte[0], DateTime.UtcNow),
+		var (_, pos2) = await Writer.Write(_logFormat.RecordFactory.Prepare(pos1, _id2, _id2, pos1, 0, streamId2, expectedVersion2++,
+				PrepareFlags.SingleWrite, eventTypeId, [], [], DateTime.UtcNow),
 			token);
-		var (_, pos3) = await Writer.Write(LogRecord.Prepare(_logFormat.RecordFactory, pos2, _id3, _id3, pos2, 0, streamId2, expectedVersion2++,
-				PrepareFlags.SingleWrite, eventTypeId, new byte[0], new byte[0], DateTime.UtcNow),
+		var (_, pos3) = await Writer.Write(_logFormat.RecordFactory.Prepare(pos2, _id3, _id3, pos2, 0, streamId2, expectedVersion2++,
+				PrepareFlags.SingleWrite, eventTypeId, [], [], DateTime.UtcNow),
 			token);
 		var (_, pos4) = await Writer.Write(new CommitLogRecord(pos3, _id1, pos0, DateTime.UtcNow, 0), token);
 		var (_, pos5) = await Writer.Write(new CommitLogRecord(pos4, _id2, pos1, DateTime.UtcNow, 0), token);

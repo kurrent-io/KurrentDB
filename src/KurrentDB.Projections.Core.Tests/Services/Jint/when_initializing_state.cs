@@ -25,17 +25,15 @@ public class when_initializing_state : TestFixtureWithInterpretedProjection {
             ";
 	}
 
-	[Test, Category(_projectionType)]
+	[Test, Category(ProjectionType)]
 	public void process_event_should_return_initialized_state() {
-		string state;
-		EmittedEventEnvelope[] emittedEvents;
 		_stateHandler.ProcessEvent(
 			"", CheckpointTag.FromPosition(0, 20, 10), "stream1", "type1", "category",
-			Guid.NewGuid(), 0, "metadata", @"{""a"":""b""}", out state, out emittedEvents);
+			Guid.NewGuid(), 0, "metadata", @"{""a"":""b""}", out var state, out _);
 		Assert.IsTrue(state.Contains("\"test\":\"1\""));
 	}
 
-	[Test, Category(_projectionType)]
+	[Test, Category(ProjectionType)]
 	public void transform_state_should_return_initialized_state() {
 		var result = _stateHandler.TransformStateToResult();
 		Assert.IsTrue(result.Contains("\"test\":\"1\""));

@@ -20,18 +20,14 @@ public class when_emitting_events_before_from_position_the_projection_checkpoint
 
 	[SetUp]
 	public void setup() {
-		_readyHandler = new TestCheckpointManagerMessageHandler();
-		_checkpoint = new ProjectionCheckpoint(
-			_bus, _ioDispatcher, new ProjectionVersion(1, 0, 0), null, _readyHandler,
+		_readyHandler = new();
+		_checkpoint = new(_bus, _ioDispatcher, new(1, 0, 0), null, _readyHandler,
 			CheckpointTag.FromPosition(0, 100, 50), new TransactionFilePositionTagger(0), 250, 1);
 		try {
 			_checkpoint.ValidateOrderAndEmitEvents(
-				new[] {
-					new EmittedEventEnvelope(
-						new EmittedDataEvent(
-							"stream1", Guid.NewGuid(), "type", true, "data", null,
-							CheckpointTag.FromPosition(0, 40, 30), null))
-				});
+			[
+				new(new EmittedDataEvent("stream1", Guid.NewGuid(), "type", true, "data", null, CheckpointTag.FromPosition(0, 40, 30), null))
+			]);
 		} catch (Exception ex) {
 			_lastException = ex;
 		}

@@ -35,37 +35,24 @@ public class when_requesting_checkpoint_before_all_writes_completed<TLogFormat, 
 			CheckpointTag.FromPosition(0, 100, 50), new TransactionFilePositionTagger(0), 250, 1);
 		_checkpoint.Start();
 		_checkpoint.ValidateOrderAndEmitEvents(
-			new[] {
-				new EmittedEventEnvelope(
-					new EmittedDataEvent(
-						"stream2", Guid.NewGuid(), "type", true, "data2", null,
-						CheckpointTag.FromPosition(0, 120, 110), null)),
-				new EmittedEventEnvelope(
-					new EmittedDataEvent(
-						"stream2", Guid.NewGuid(), "type", true, "data4", null,
-						CheckpointTag.FromPosition(0, 120, 110), null)),
-			});
+		[
+			new(new EmittedDataEvent("stream2", Guid.NewGuid(), "type", true, "data2", null, CheckpointTag.FromPosition(0, 120, 110), null)),
+			new(new EmittedDataEvent("stream2", Guid.NewGuid(), "type", true, "data4", null, CheckpointTag.FromPosition(0, 120, 110), null))
+		]);
 		_checkpoint.ValidateOrderAndEmitEvents(
-			new[] {
-				new EmittedEventEnvelope(
-					new EmittedDataEvent(
-						"stream1", Guid.NewGuid(), "type", true, "data", null,
-						CheckpointTag.FromPosition(0, 140, 130), null))
-			});
+		[
+			new(new EmittedDataEvent("stream1", Guid.NewGuid(), "type", true, "data", null, CheckpointTag.FromPosition(0, 140, 130), null))
+		]);
 		_checkpoint.ValidateOrderAndEmitEvents(
-			new[] {
-				new EmittedEventEnvelope(
-					new EmittedDataEvent(
-						"stream1", Guid.NewGuid(), "type", true, "data", null,
-						CheckpointTag.FromPosition(0, 160, 150), null))
-			});
+		[
+			new(new EmittedDataEvent("stream1", Guid.NewGuid(), "type", true, "data", null, CheckpointTag.FromPosition(0, 160, 150), null))
+		]);
 		_checkpoint.Prepare(CheckpointTag.FromPosition(0, 200, 150));
 	}
 
 	[Test]
 	public void not_ready_for_checkpoint_immediately() {
-		Assert.AreEqual(0,
-			_consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.ReadyForCheckpoint>().Count());
+		Assert.AreEqual(0, _consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.ReadyForCheckpoint>().Count());
 	}
 
 	[Test]
@@ -76,7 +63,6 @@ public class when_requesting_checkpoint_before_all_writes_completed<TLogFormat, 
 		writes = _consumer.HandledMessages.OfType<ClientMessageWriteEvents>().ToArray();
 		writes[2].Envelope.ReplyWith(ClientMessage.WriteEventsCompleted.ForSingleStream(writes[2].CorrelationId, 0, 0, -1, -1));
 
-		Assert.AreEqual(1,
-			_readyHandler.HandledMessages.OfType<CoreProjectionProcessingMessage.ReadyForCheckpoint>().Count());
+		Assert.AreEqual(1, _readyHandler.HandledMessages.OfType<CoreProjectionProcessingMessage.ReadyForCheckpoint>().Count());
 	}
 }

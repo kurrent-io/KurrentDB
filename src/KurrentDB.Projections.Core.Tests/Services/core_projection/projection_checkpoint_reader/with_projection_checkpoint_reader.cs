@@ -29,21 +29,22 @@ public abstract class with_projection_checkpoint_reader<TLogFormat, TStreamId> :
 		IODispatcherTestHelpers.SubscribeIODispatcher(_ioDispatcher, _bus);
 		_bus.Subscribe<ClientMessage.ReadStreamEventsBackward>(this);
 		_projectionVersion = new ProjectionVersion(1, 2, 3);
-		_reader = new CoreProjectionCheckpointReader(_bus, _projectionId, _ioDispatcher,
-			_projectionCheckpointStreamId, _projectionVersion, true);
+		_reader = new(_bus, _projectionId, _ioDispatcher, _projectionCheckpointStreamId, _projectionVersion, true);
 		When();
 	}
 
-	public abstract void When();
+	protected abstract void When();
 
 	public virtual void Handle(ClientMessage.ReadStreamEventsBackward message) {
 		var evnts = IODispatcherTestHelpers.CreateResolvedEvent<TLogFormat, TStreamId>(message.EventStreamId,
 			ProjectionEventTypes.ProjectionCheckpoint, "[]",
-			@"{
-                    ""$v"": ""1:-1:3:3"",
-                    ""$c"": 269728,
-                    ""$p"": 269728
-                }");
+			"""
+			{
+			  "$v": "1:-1:3:3",
+			  "$c": 269728,
+			  "$p": 269728
+			}
+			""");
 		var reply = new ClientMessage.ReadStreamEventsBackwardCompleted(message.CorrelationId,
 			message.EventStreamId, message.FromEventNumber, message.MaxCount, ReadStreamResult.Success,
 			evnts, null, true, "", 0, 0, true, 10000);

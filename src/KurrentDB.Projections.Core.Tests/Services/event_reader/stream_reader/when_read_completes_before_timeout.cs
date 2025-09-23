@@ -31,37 +31,33 @@ public class when_read_completes_before_timeout<TLogFormat, TStreamId> : TestFix
 	[SetUp]
 	public new void When() {
 		_distributionCorrelationId = Guid.NewGuid();
-		_fakeTimeProvider = new FakeTimeProvider();
-		_eventReader = new StreamEventReader(_bus, _distributionCorrelationId, null, "stream", 10,
-			_fakeTimeProvider,
-			resolveLinkTos: false, stopOnEof: true, produceStreamDeletes: false);
+		_fakeTimeProvider = new();
+		_eventReader = new(_bus, _distributionCorrelationId, null, "stream", 10, _fakeTimeProvider, resolveLinkTos: false, stopOnEof: true,
+			produceStreamDeletes: false);
 		_eventReader.Resume();
-		var correlationId = _consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>().Last()
-			.CorrelationId;
+		var correlationId = _consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>().Last().CorrelationId;
 		_eventReader.Handle(
 			new ClientMessage.ReadStreamEventsForwardCompleted(
 				correlationId, "stream", 100, 100, ReadStreamResult.Success,
-				new[] {
+				[
 					ResolvedEvent.ForUnresolvedEvent(
 						new EventRecord(
 							10, 50, Guid.NewGuid(), Guid.NewGuid(), 50, 0, "stream", ExpectedVersion.Any,
 							DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type1", new byte[] {1}, new byte[] {2})),
+							"event_type1", [1], [2])),
 					ResolvedEvent.ForUnresolvedEvent(
 						new EventRecord(
 							11, 100, Guid.NewGuid(), Guid.NewGuid(), 100, 0, "stream", ExpectedVersion.Any,
 							DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type2", new byte[] {3}, new byte[] {4}))
-				}, null, false, "", 12, 11, true, 200));
-		_eventReader.Handle(
-			new ProjectionManagementMessage.Internal.ReadTimeout(correlationId, "stream"));
+							"event_type2", [3], [4]))
+				], null, false, "", 12, 11, true, 200));
+		_eventReader.Handle(new ProjectionManagementMessage.Internal.ReadTimeout(correlationId, "stream"));
 	}
 
 	[Test]
 	public void should_deliver_events() {
-		Assert.AreEqual(2,
-			_consumer.HandledMessages.OfType<ReaderSubscriptionMessage.CommittedEventDistributed>().Count());
+		Assert.AreEqual(2, _consumer.HandledMessages.OfType<ReaderSubscriptionMessage.CommittedEventDistributed>().Count());
 	}
 }

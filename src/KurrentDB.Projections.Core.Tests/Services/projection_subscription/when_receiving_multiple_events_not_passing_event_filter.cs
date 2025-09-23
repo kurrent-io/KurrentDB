@@ -21,15 +21,15 @@ public class when_receiving_multiple_events_not_passing_event_filter : TestFixtu
 		_subscription.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 				Guid.NewGuid(), new TFPos(200, 150), "test-stream", 1, false, Guid.NewGuid(),
-				"bad-event-type", false, new byte[0], new byte[0]));
+				"bad-event-type", false, [], []));
 		_subscription.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 				Guid.NewGuid(), new TFPos(2000, 1950), "test-stream", 2, false, Guid.NewGuid(),
-				"bad-event-type", false, new byte[0], new byte[0]));
+				"bad-event-type", false, [], []));
 		_subscription.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 				Guid.NewGuid(), new TFPos(2100, 2050), "test-stream", 2, false, Guid.NewGuid(),
-				"bad-event-type", false, new byte[0], new byte[0]));
+				"bad-event-type", false, [], []));
 	}
 
 	[Test]

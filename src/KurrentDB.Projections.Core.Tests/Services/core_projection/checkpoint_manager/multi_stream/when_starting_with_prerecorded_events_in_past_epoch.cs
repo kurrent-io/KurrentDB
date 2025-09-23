@@ -28,7 +28,7 @@ public class when_starting_with_prerecorded_events_in_past_epoch<TLogFormat, TSt
 		_projectionVersion = new ProjectionVersion(1, 2, 2);
 		ExistingEvent(
 			"$projections-projection-checkpoint", ProjectionEventTypes.ProjectionCheckpoint,
-			@"{""v"":2, ""s"": {""a"": 0, ""b"": 0, ""c"": 0}}",
+			"""{"v":2, "s": {"a": 0, "b": 0, "c": 0}}""",
 			"{}");
 		ExistingEvent("a", "StreamCreated", "", "");
 		ExistingEvent("b", "StreamCreated", "", "");
@@ -38,28 +38,20 @@ public class when_starting_with_prerecorded_events_in_past_epoch<TLogFormat, TSt
 		ExistingEvent("b", "Event", "", @"{""data"":""b""");
 		ExistingEvent("c", "Event", "", @"{""data"":""c""");
 
-		ExistingEvent("$projections-projection-order", "$>", @"{""v"":1, ""s"": {""a"": 0, ""b"": 0, ""c"": 0}}",
-			"0@c");
-		ExistingEvent("$projections-projection-order", "$>", @"{""v"":1, ""s"": {""a"": 0, ""b"": 0, ""c"": 1}}",
-			"1@c");
-		ExistingEvent("$projections-projection-order", "$>", @"{""v"":1, ""s"": {""a"": 1, ""b"": 0, ""c"": 1}}",
-			"1@a");
-		ExistingEvent("$projections-projection-order", "$>", @"{""v"":1, ""s"": {""a"": 1, ""b"": 1, ""c"": 1}}",
-			"1@b");
-		ExistingEvent("$projections-projection-order", "$>", @"{""v"":2, ""s"": {""a"": 0, ""b"": 0, ""c"": 0}}",
-			"0@c");
-		ExistingEvent("$projections-projection-order", "$>", @"{""v"":2, ""s"": {""a"": 0, ""b"": 0, ""c"": 1}}",
-			"1@c");
-		ExistingEvent("$projections-projection-order", "$>", @"{""v"":2, ""s"": {""a"": 1, ""b"": 0, ""c"": 1}}",
-			"1@a");
+		ExistingEvent("$projections-projection-order", "$>", """{"v":1, "s": {"a": 0, "b": 0, "c": 0}}""", "0@c");
+		ExistingEvent("$projections-projection-order", "$>", """{"v":1, "s": {"a": 0, "b": 0, "c": 1}}""", "1@c");
+		ExistingEvent("$projections-projection-order", "$>", """{"v":1, "s": {"a": 1, "b": 0, "c": 1}}""", "1@a");
+		ExistingEvent("$projections-projection-order", "$>", """{"v":1, "s": {"a": 1, "b": 1, "c": 1}}""", "1@b");
+		ExistingEvent("$projections-projection-order", "$>", """{"v":2, "s": {"a": 0, "b": 0, "c": 0}}""", "0@c");
+		ExistingEvent("$projections-projection-order", "$>", """{"v":2, "s": {"a": 0, "b": 0, "c": 1}}""", "1@c");
+		ExistingEvent("$projections-projection-order", "$>", """{"v":2, "s": {"a": 1, "b": 0, "c": 1}}""", "1@a");
 	}
 
 	protected override void When() {
 		base.When();
 		_checkpointReader.BeginLoadState();
-		var checkpointLoaded =
-			_consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.CheckpointLoaded>().First();
-		_checkpointWriter.StartFrom(checkpointLoaded.CheckpointTag, checkpointLoaded.CheckpointEventNumber);
+		var checkpointLoaded = _consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.CheckpointLoaded>().First();
+		_checkpointWriter.StartFrom(checkpointLoaded.CheckpointEventNumber);
 		_manager.BeginLoadPrerecordedEvents(checkpointLoaded.CheckpointTag);
 	}
 

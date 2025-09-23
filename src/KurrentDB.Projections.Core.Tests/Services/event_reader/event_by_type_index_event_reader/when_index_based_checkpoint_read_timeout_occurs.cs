@@ -39,7 +39,7 @@ public class when_index_based_checkpoint_read_timeout_occurs<TLogFormat, TStream
 		fromPositions.Add("$et-eventTypeOne", 0);
 		fromPositions.Add("$et-eventTypeTwo", 0);
 		_eventReader = new EventByTypeIndexEventReader(_bus, _distributionCorrelationId,
-			null, new[] { "eventTypeOne", "eventTypeTwo" },
+			null, ["eventTypeOne", "eventTypeTwo"],
 			false, new TFPos(0, 0),
 			fromPositions, true,
 			_fakeTimeProvider,
@@ -49,7 +49,7 @@ public class when_index_based_checkpoint_read_timeout_occurs<TLogFormat, TStream
 
 		_checkpointStreamCorrelationId = TimeoutRead("$et", Guid.Empty);
 
-		CompleteForwardStreamRead("$et-eventTypeOne", Guid.Empty, new[] {
+		CompleteForwardStreamRead("$et-eventTypeOne", Guid.Empty,
 			ResolvedEvent.ForUnresolvedEvent(
 				new EventRecord(
 					1, 50, Guid.NewGuid(), Guid.NewGuid(), 50, 0, "$et-eventTypeOne", ExpectedVersion.Any,
@@ -64,8 +64,7 @@ public class when_index_based_checkpoint_read_timeout_occurs<TLogFormat, TStream
 					DateTime.UtcNow,
 					PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
 					"$>", Helper.UTF8NoBom.GetBytes("1@test-stream"),
-					Helper.UTF8NoBom.GetBytes(TFPosToMetadata(new TFPos(150, 150)))))
-		});
+					Helper.UTF8NoBom.GetBytes(TFPosToMetadata(new TFPos(150, 150))))));
 
 		CompleteForwardStreamRead("$et-eventTypeTwo", Guid.Empty, new[] {
 			ResolvedEvent.ForUnresolvedEvent(
@@ -88,8 +87,7 @@ public class when_index_based_checkpoint_read_timeout_occurs<TLogFormat, TStream
 
 	[Test]
 	public void should_not_deliver_events() {
-		Assert.AreEqual(0,
-			_consumer.HandledMessages.OfType<ReaderSubscriptionMessage.CommittedEventDistributed>().Count());
+		Assert.AreEqual(0, _consumer.HandledMessages.OfType<ReaderSubscriptionMessage.CommittedEventDistributed>().Count());
 	}
 
 	[Test]

@@ -10,131 +10,61 @@ using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Strategies;
 using KurrentDB.Projections.Core.Services.Processing.Subscriptions;
+using static KurrentDB.Projections.Core.Messages.ReaderSubscriptionMessage;
 
 namespace KurrentDB.Projections.Core.Tests.Services.event_reader.heading_event_reader;
 
-public class FakeReaderSubscription : IReaderSubscription {
-	private readonly IPublisher _publisher;
-	private readonly Guid _subscriptionId;
-
-	public FakeReaderSubscription() {
-		_subscriptionId = Guid.NewGuid();
+public class FakeReaderSubscription(IPublisher publisher, Guid subscriptionId) : IReaderSubscription {
+	public FakeReaderSubscription() : this(null, Guid.NewGuid()) {
 	}
 
-	public FakeReaderSubscription(IPublisher publisher, Guid subscriptionId) {
-		_publisher = publisher;
-		_subscriptionId = subscriptionId;
-	}
-	private readonly List<ReaderSubscriptionMessage.CommittedEventDistributed> _receivedEvents =
-		new List<ReaderSubscriptionMessage.CommittedEventDistributed>();
-
-	private readonly List<ReaderSubscriptionMessage.EventReaderIdle> _receivedIdleNotifications =
-		new List<ReaderSubscriptionMessage.EventReaderIdle>();
-
-	private readonly List<ReaderSubscriptionMessage.EventReaderStarting> _receivedStartingNotifications =
-		new List<ReaderSubscriptionMessage.EventReaderStarting>();
-
-	private readonly List<ReaderSubscriptionMessage.EventReaderEof> _receivedEofNotifications =
-		new List<ReaderSubscriptionMessage.EventReaderEof>();
-
-	private readonly List<ReaderSubscriptionMessage.EventReaderPartitionDeleted>
-		_receivedPartitionDeletedNotifications =
-			new List<ReaderSubscriptionMessage.EventReaderPartitionDeleted>();
-
-	private readonly List<ReaderSubscriptionMessage.EventReaderNotAuthorized> _receivedNotAuthorizedNotifications =
-		new List<ReaderSubscriptionMessage.EventReaderNotAuthorized>();
-
-	public void Handle(ReaderSubscriptionMessage.CommittedEventDistributed message) {
-		if (message.Data != null && message.Data.PositionStreamId == "throws") {
+	public void Handle(CommittedEventDistributed message) {
+		if (message.Data is { PositionStreamId: "throws" }) {
 			throw new Exception("Bad Handler");
 		}
 
-		_receivedEvents.Add(message);
-		_publisher?.Publish(
+		ReceivedEvents.Add(message);
+		publisher?.Publish(
 			EventReaderSubscriptionMessage.CommittedEventReceived
 				.FromCommittedEventDistributed(message,
-				CheckpointTag.Empty, "", _subscriptionId, 0));
+				CheckpointTag.Empty, "", subscriptionId, 0));
 	}
 
-	public List<ReaderSubscriptionMessage.CommittedEventDistributed> ReceivedEvents {
-		get { return _receivedEvents; }
+	public List<CommittedEventDistributed> ReceivedEvents { get; } = [];
+
+	public List<EventReaderIdle> ReceivedIdleNotifications { get; } = [];
+
+	public void Handle(EventReaderIdle message) {
+		ReceivedIdleNotifications.Add(message);
 	}
 
-	public List<ReaderSubscriptionMessage.EventReaderIdle> ReceivedIdleNotifications {
-		get { return _receivedIdleNotifications; }
+	public void Handle(EventReaderStarting message) {
 	}
 
-	public List<ReaderSubscriptionMessage.EventReaderStarting> ReceivedStartingNotifications {
-		get { return _receivedStartingNotifications; }
+	public void Handle(EventReaderEof message) {
 	}
 
-	public List<ReaderSubscriptionMessage.EventReaderEof> ReceivedEofNotifications {
-		get { return _receivedEofNotifications; }
+	public void Handle(EventReaderPartitionDeleted message) {
 	}
 
-	public List<ReaderSubscriptionMessage.EventReaderPartitionDeleted> ReceivedPartitionDeletedNotifications {
-		get { return _receivedPartitionDeletedNotifications; }
+	public void Handle(EventReaderNotAuthorized message) {
 	}
 
-	public List<ReaderSubscriptionMessage.EventReaderNotAuthorized> ReceivedNotAuthorizedNotifications {
-		get { return _receivedNotAuthorizedNotifications; }
+	public void Handle(ReportProgress message) {
 	}
 
-	public void Handle(ReaderSubscriptionMessage.EventReaderIdle message) {
-		_receivedIdleNotifications.Add(message);
-	}
+	public Guid SubscriptionId { get => Guid.Empty; }
 
-	public void Handle(ReaderSubscriptionMessage.EventReaderStarting message) {
-		_receivedStartingNotifications.Add(message);
-	}
+	public FakeEventReader EventReader { get; private set; }
 
-	public void Handle(ReaderSubscriptionMessage.EventReaderEof message) {
-		_receivedEofNotifications.Add(message);
-	}
-
-	public void Handle(ReaderSubscriptionMessage.EventReaderPartitionDeleted message) {
-		_receivedPartitionDeletedNotifications.Add(message);
-	}
-
-	public void Handle(ReaderSubscriptionMessage.EventReaderNotAuthorized message) {
-		_receivedNotAuthorizedNotifications.Add(message);
-	}
-
-	public void Handle(ReaderSubscriptionMessage.Faulted message) {
-		//ignore
-	}
-
-	public void Handle(ReaderSubscriptionMessage.ReportProgress message) {
-		//ignore
-	}
-
-	public string Tag {
-		get { return "FakeReaderSubscription"; }
-	}
-
-	public Guid SubscriptionId {
-		get { return Guid.Empty; }
-	}
-
-	private FakeEventReader _eventReader;
-
-	public FakeEventReader EventReader {
-		get { return _eventReader; }
-	}
-
-	public IEventReader CreatePausedEventReader(
-		IPublisher publisher, IODispatcher ioDispatcher, Guid forkedEventReaderId) {
-		_eventReader = new FakeEventReader(forkedEventReaderId);
-		return _eventReader;
+	public IEventReader CreatePausedEventReader( IPublisher publisher, IODispatcher ioDispatcher, Guid forkedEventReaderId) {
+		EventReader = new FakeEventReader(forkedEventReaderId);
+		return EventReader;
 	}
 }
 
-public class FakeEventReader : IEventReader {
-	public Guid EventReaderId { get; private set; }
-
-	public FakeEventReader(Guid eventReaderId) {
-		EventReaderId = eventReaderId;
-	}
+public class FakeEventReader(Guid eventReaderId) : IEventReader {
+	public Guid EventReaderId { get; } = eventReaderId;
 
 	public void Dispose() {
 	}
@@ -155,12 +85,10 @@ public class FakeReaderStrategy : IReaderStrategy {
 	public PositionTagger PositionTagger { get; set; }
 	private FakeReaderSubscription _subscription;
 
-	public Guid EventReaderId {
-		get { return _subscription.EventReader.EventReaderId; }
-	}
+	public Guid EventReaderId => _subscription.EventReader.EventReaderId;
 
-	public IEventReader CreatePausedEventReader(Guid eventReaderId, IPublisher publisher, IODispatcher ioDispatcher,
-		CheckpointTag checkpointTag, bool stopOnEof, int? stopAfterNEvents) {
+	public IEventReader CreatePausedEventReader(Guid eventReaderId, IPublisher publisher,
+		CheckpointTag checkpointTag, bool stopOnEof) {
 		throw new NotImplementedException();
 	}
 

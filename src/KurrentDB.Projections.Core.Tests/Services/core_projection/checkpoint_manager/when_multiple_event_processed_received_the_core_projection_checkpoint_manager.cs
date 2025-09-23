@@ -19,7 +19,7 @@ public class when_multiple_event_processed_received_the_core_projection_checkpoi
 	protected override void Given() {
 		AllWritesSucceed();
 		base.Given();
-		this._checkpointHandledThreshold = 2;
+		_checkpointHandledThreshold = 2;
 	}
 
 	protected override void When() {
@@ -27,15 +27,11 @@ public class when_multiple_event_processed_received_the_core_projection_checkpoi
 		_exception = null;
 		try {
 			_checkpointReader.BeginLoadState();
-			var checkpointLoaded =
-				_consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.CheckpointLoaded>().First();
-			_checkpointWriter.StartFrom(checkpointLoaded.CheckpointTag, checkpointLoaded.CheckpointEventNumber);
+			var checkpointLoaded = _consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.CheckpointLoaded>().First();
+			_checkpointWriter.StartFrom(checkpointLoaded.CheckpointEventNumber);
 			_manager.BeginLoadPrerecordedEvents(checkpointLoaded.CheckpointTag);
-
 			_manager.Start(CheckpointTag.FromStreamPosition(0, "stream", 10), null);
-			//                _manager.StateUpdated("", @"{""state"":""state1""}");
 			_manager.EventProcessed(CheckpointTag.FromStreamPosition(0, "stream", 11), 77.7f);
-			//                _manager.StateUpdated("", @"{""state"":""state2""}");
 			_manager.EventProcessed(CheckpointTag.FromStreamPosition(0, "stream", 12), 77.7f);
 		} catch (Exception ex) {
 			_exception = ex;
@@ -59,13 +55,11 @@ public class when_multiple_event_processed_received_the_core_projection_checkpoi
 
 	[Test]
 	public void accepts_event_processed() {
-		//            _manager.StateUpdated("", @"{""state"":""state""}");
 		_manager.EventProcessed(CheckpointTag.FromStreamPosition(0, "stream", 13), 77.7f);
 	}
 
 	[Test]
 	public void event_processed_at_the_start_position_throws_invalid_operation_exception() {
-		//            _manager.StateUpdated("", @"{""state"":""state""}");
 		Assert.Throws<InvalidOperationException>(() => {
 			_manager.EventProcessed(CheckpointTag.FromStreamPosition(0, "stream", 10), 77.7f);
 		});

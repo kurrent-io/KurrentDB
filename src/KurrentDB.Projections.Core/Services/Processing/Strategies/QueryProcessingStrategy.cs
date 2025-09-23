@@ -14,44 +14,49 @@ using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Strategies;
 
-public class QueryProcessingStrategy : DefaultProjectionProcessingStrategy {
-	public QueryProcessingStrategy(
-		string name, ProjectionVersion projectionVersion, IProjectionStateHandler stateHandler,
-		ProjectionConfig projectionConfig, IQuerySources sourceDefinition, ILogger logger,
-		ReaderSubscriptionDispatcher subscriptionDispatcher, bool enableContentTypeValidation, int maxProjectionStateSize)
-		: base(
-			name, projectionVersion, stateHandler, projectionConfig, sourceDefinition, logger,
-			subscriptionDispatcher, enableContentTypeValidation, maxProjectionStateSize) {
-	}
+public class QueryProcessingStrategy(
+	string name,
+	ProjectionVersion projectionVersion,
+	IProjectionStateHandler stateHandler,
+	ProjectionConfig projectionConfig,
+	IQuerySources sourceDefinition,
+	ILogger logger,
+	ReaderSubscriptionDispatcher subscriptionDispatcher,
+	bool enableContentTypeValidation,
+	int maxProjectionStateSize)
+	: DefaultProjectionProcessingStrategy(name, projectionVersion, stateHandler, projectionConfig, sourceDefinition, logger,
+		subscriptionDispatcher, enableContentTypeValidation, maxProjectionStateSize) {
+	public override bool GetStopOnEof() => true;
 
-	public override bool GetStopOnEof() {
-		return true;
-	}
+	public override bool GetUseCheckpoints() => false;
 
-	public override bool GetUseCheckpoints() {
-		return false;
-	}
-
-	public override bool GetProducesRunningResults() {
-		return !_sourceDefinition.DefinesFold;
-	}
+	protected override bool GetProducesRunningResults() => !SourceDefinition.DefinesFold;
 
 	protected override IProjectionProcessingPhase[] CreateProjectionProcessingPhases(
-		IPublisher publisher, IPublisher inputQueue, Guid projectionCorrelationId,
+		IPublisher publisher,
+		Guid projectionCorrelationId,
 		ProjectionNamesBuilder namingBuilder,
-		PartitionStateCache partitionStateCache, CoreProjection coreProjection, IODispatcher ioDispatcher,
+		PartitionStateCache partitionStateCache,
+		CoreProjection coreProjection,
+		IODispatcher ioDispatcher,
 		IProjectionProcessingPhase firstPhase) {
 		var coreProjectionCheckpointWriter =
-			new CoreProjectionCheckpointWriter(
-				namingBuilder.MakeCheckpointStreamName(), ioDispatcher, _projectionVersion, _name);
+			new CoreProjectionCheckpointWriter(namingBuilder.MakeCheckpointStreamName(), ioDispatcher, ProjectionVersion, Name);
 		var checkpointManager2 = new DefaultCheckpointManager(
-			publisher, projectionCorrelationId, _projectionVersion, SystemAccounts.System, ioDispatcher,
-			_projectionConfig, _name, new PhasePositionTagger(1), namingBuilder, GetUseCheckpoints(), false,
-			_sourceDefinition.DefinesFold, coreProjectionCheckpointWriter, _maxProjectionStateSize);
+			publisher, projectionCorrelationId, ProjectionVersion, SystemAccounts.System, ioDispatcher,
+			ProjectionConfig, Name, new PhasePositionTagger(1), namingBuilder, GetUseCheckpoints(), coreProjectionCheckpointWriter, MaxProjectionStateSize);
 
-		IProjectionProcessingPhase writeResultsPhase;
-		if (GetProducesRunningResults())
-			writeResultsPhase = new WriteQueryEofProjectionProcessingPhase(
+		IProjectionProcessingPhase writeResultsPhase = GetProducesRunningResults()
+			? new WriteQueryEofProjectionProcessingPhase(
+				publisher,
+				1,
+				namingBuilder.GetResultStreamName(),
+				coreProjection,
+				partitionStateCache,
+				checkpointManager2,
+				checkpointManager2,
+				firstPhase.EmittedStreamsTracker)
+			: new WriteQueryResultProjectionProcessingPhase(
 				publisher,
 				1,
 				namingBuilder.GetResultStreamName(),
@@ -60,21 +65,10 @@ public class QueryProcessingStrategy : DefaultProjectionProcessingStrategy {
 				checkpointManager2,
 				checkpointManager2,
 				firstPhase.EmittedStreamsTracker);
-		else
-			writeResultsPhase = new WriteQueryResultProjectionProcessingPhase(
-				publisher,
-				1,
-				namingBuilder.GetResultStreamName(),
-				coreProjection,
-				partitionStateCache,
-				checkpointManager2,
-				checkpointManager2,
-				firstPhase.EmittedStreamsTracker);
 
-		return new[] { firstPhase, writeResultsPhase };
+		return [firstPhase, writeResultsPhase];
 	}
 
-	protected override IResultEventEmitter CreateFirstPhaseResultEmitter(ProjectionNamesBuilder namingBuilder) {
-		return new ResultEventEmitter(namingBuilder);
-	}
+	protected override IResultEventEmitter CreateFirstPhaseResultEmitter(ProjectionNamesBuilder namingBuilder)
+		=> new ResultEventEmitter(namingBuilder);
 }

@@ -6,22 +6,11 @@ using KurrentDB.Projections.Core.Services.Processing.Phases;
 
 namespace KurrentDB.Projections.Core.Services.Processing.WorkItems;
 
-class ProgressWorkItem : CheckpointWorkItemBase {
-	private readonly ICoreProjectionCheckpointManager _checkpointManager;
-	private readonly IProgressResultWriter _resultWriter;
-	private readonly float _progress;
-
-	public ProgressWorkItem(ICoreProjectionCheckpointManager checkpointManager, IProgressResultWriter resultWriter,
-		float progress)
-		: base(null) {
-		_checkpointManager = checkpointManager;
-		_resultWriter = resultWriter;
-		_progress = progress;
-	}
-
+internal class ProgressWorkItem(ICoreProjectionCheckpointManager checkpointManager, IProgressResultWriter resultWriter, float progress)
+	: CheckpointWorkItemBase(null) {
 	protected override void WriteOutput() {
-		_checkpointManager.Progress(_progress);
-		_resultWriter.WriteProgress(_progress);
+		checkpointManager.Progress(progress);
+		resultWriter.WriteProgress(progress);
 		NextStage();
 	}
 }

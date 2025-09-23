@@ -25,7 +25,7 @@ public class when_having_commit_spanning_multiple_chunks<TLogFormat, TStreamId> 
 		var transPos = Writer.Position;
 
 		for (int i = 0; i < 10; ++i) {
-			var r = LogRecord.Prepare(_recordFactory, Writer.Position,
+			var r = _recordFactory.Prepare( Writer.Position,
 				Guid.NewGuid(),
 				Guid.NewGuid(),
 				transPos,

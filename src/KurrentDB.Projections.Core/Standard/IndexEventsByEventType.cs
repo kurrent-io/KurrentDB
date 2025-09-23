@@ -16,6 +16,8 @@ public class IndexEventsByEventType : IProjectionStateHandler, IProjectionCheckp
 	private readonly string _indexStreamPrefix;
 	private readonly string _indexCheckpointStream;
 
+	// ReSharper disable once UnusedParameter.Local
+	// ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
 	public IndexEventsByEventType(string source, Action<string, object[]> logger) {
 		if (!string.IsNullOrWhiteSpace(source))
 			throw new InvalidOperationException("Empty source expected");
@@ -23,11 +25,6 @@ public class IndexEventsByEventType : IProjectionStateHandler, IProjectionCheckp
 		// we will need to declare event types we are interested in
 		_indexStreamPrefix = "$et-";
 		_indexCheckpointStream = "$et";
-	}
-
-	public void ConfigureSourceProcessingStrategy(SourceDefinitionBuilder builder) {
-		builder.FromAll();
-		builder.AllEvents();
 	}
 
 	public void Load(string state) {
@@ -48,8 +45,13 @@ public class IndexEventsByEventType : IProjectionStateHandler, IProjectionCheckp
 	}
 
 	public bool ProcessEvent(
-		string partition, CheckpointTag eventPosition, string category1, ResolvedEvent data,
-		out string newState, out string newSharedState, out EmittedEventEnvelope[] emittedEvents) {
+		string partition,
+		CheckpointTag eventPosition,
+		string category1,
+		ResolvedEvent data,
+		out string newState,
+		out string newSharedState,
+		out EmittedEventEnvelope[] emittedEvents) {
 		newSharedState = null;
 		emittedEvents = null;
 		newState = null;
@@ -59,26 +61,27 @@ public class IndexEventsByEventType : IProjectionStateHandler, IProjectionCheckp
 		if (indexedEventType == "$>")
 			return false;
 
-		string positionStreamId;
-		var isStreamDeletedEvent = StreamDeletedHelper.IsStreamDeletedEvent(
-			data.PositionStreamId, data.EventType, data.Data, out positionStreamId);
+		var isStreamDeletedEvent =
+			StreamDeletedHelper.IsStreamDeletedEvent(data.PositionStreamId, data.EventType, data.Data, out var positionStreamId);
 		if (isStreamDeletedEvent)
 			indexedEventType = "$deleted";
 
-		emittedEvents = new[] {
-			new EmittedEventEnvelope(
+		emittedEvents = [
+			new(
 				new EmittedDataEvent(
 					_indexStreamPrefix + indexedEventType, Guid.NewGuid(), "$>", false,
-					data.EventSequenceNumber + "@" + positionStreamId,
+					$"{data.EventSequenceNumber}@{positionStreamId}",
 					isStreamDeletedEvent
-						? new ExtraMetaData(new Dictionary<string, JRaw> {{"$deleted", new JRaw(-1)}})
+						? new ExtraMetaData(new Dictionary<string, JRaw> { { "$deleted", new(-1) } })
 						: null, eventPosition, expectedTag: null))
-		};
+		];
 
 		return true;
 	}
 
-	public bool ProcessPartitionCreated(string partition, CheckpointTag createPosition, ResolvedEvent data,
+	public bool ProcessPartitionCreated(string partition,
+		CheckpointTag createPosition,
+		ResolvedEvent data,
 		out EmittedEventEnvelope[] emittedEvents) {
 		emittedEvents = null;
 		return false;
@@ -96,15 +99,20 @@ public class IndexEventsByEventType : IProjectionStateHandler, IProjectionCheckp
 	}
 
 	public void ProcessNewCheckpoint(CheckpointTag checkpointPosition, out EmittedEventEnvelope[] emittedEvents) {
-		emittedEvents = new[] {
-			new EmittedEventEnvelope(
+		emittedEvents = [
+			new(
 				new EmittedDataEvent(
 					_indexCheckpointStream, Guid.NewGuid(), ProjectionEventTypes.PartitionCheckpoint,
 					true, checkpointPosition.ToJsonString(), null, checkpointPosition, expectedTag: null))
-		};
+		];
 	}
 
 	public IQuerySources GetSourceDefinition() {
 		return SourceDefinitionBuilder.From(ConfigureSourceProcessingStrategy);
+
+		static void ConfigureSourceProcessingStrategy(SourceDefinitionBuilder builder) {
+			builder.FromAll();
+			builder.AllEvents();
+		}
 	}
 }

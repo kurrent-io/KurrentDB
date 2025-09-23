@@ -18,19 +18,16 @@ namespace KurrentDB.Projections.Core.Tests.Services.event_reader.multi_stream_re
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_has_been_created<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private MultiStreamEventReader _edp;
-	private Guid _distibutionPointCorrelationId;
+	private Guid _distributionPointCorrelationId;
 	private string[] _abStreams;
 	private Dictionary<string, long> _ab12Tag;
 
 	[SetUp]
 	public new void When() {
-		_ab12Tag = new Dictionary<string, long> { { "a", 1 }, { "b", 2 } };
-		_abStreams = new[] { "a", "b" };
-
-		_distibutionPointCorrelationId = Guid.NewGuid();
-		_edp = new MultiStreamEventReader(
-			_ioDispatcher, _bus, _distibutionPointCorrelationId, null, 0, _abStreams, _ab12Tag, false,
-			new RealTimeProvider());
+		_ab12Tag = new() { { "a", 1 }, { "b", 2 } };
+		_abStreams = ["a", "b"];
+		_distributionPointCorrelationId = Guid.NewGuid();
+		_edp = new(_bus, _distributionPointCorrelationId, null, 0, _abStreams, _ab12Tag, false, new RealTimeProvider());
 	}
 
 	[Test]
@@ -40,7 +37,7 @@ public class when_has_been_created<TLogFormat, TStreamId> : TestFixtureWithExist
 
 	[Test]
 	public void it_cannot_be_paused() {
-		Assert.Throws<InvalidOperationException>(() => { _edp.Pause(); });
+		Assert.Throws<InvalidOperationException>(() => _edp.Pause());
 	}
 
 	[Test]
@@ -48,7 +45,7 @@ public class when_has_been_created<TLogFormat, TStreamId> : TestFixtureWithExist
 		Assert.Throws<InvalidOperationException>(() => {
 			_edp.Handle(
 				new ClientMessage.ReadStreamEventsForwardCompleted(
-					_distibutionPointCorrelationId, "a", 100, 100, ReadStreamResult.Success, new ResolvedEvent[0],
+					_distributionPointCorrelationId, "a", 100, 100, ReadStreamResult.Success, [],
 					null, false, "", -1, 4, true, 100));
 		});
 	}

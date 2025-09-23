@@ -18,6 +18,7 @@ using KurrentDB.Projections.Core.Services.Management;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Tests.Services.core_projection;
 using NUnit.Framework;
+using static KurrentDB.Projections.Core.Messages.ProjectionManagementMessage;
 
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
 
@@ -31,13 +32,18 @@ public class
 
 	protected override void Given() {
 		_workerId = Guid.NewGuid();
-		ExistingEvent(ProjectionNamesBuilder.ProjectionsRegistrationStream, ProjectionEventTypes.ProjectionCreated,
-			null, "projection1");
-		ExistingEvent(ProjectionNamesBuilder.ProjectionsRegistrationStream, ProjectionEventTypes.ProjectionCreated,
-			null, "projection1");
+		ExistingEvent(ProjectionNamesBuilder.ProjectionsRegistrationStream, ProjectionEventTypes.ProjectionCreated, null, "projection1");
+		ExistingEvent(ProjectionNamesBuilder.ProjectionsRegistrationStream, ProjectionEventTypes.ProjectionCreated, null, "projection1");
 		ExistingEvent(
 			"$projections-projection1", ProjectionEventTypes.ProjectionUpdated, null,
-			@"{""Query"":""fromAll(); on_any(function(){});log('hello-from-projection-definition');"", ""Mode"":""3"", ""Enabled"":true, ""HandlerType"":""JS""}");
+			"""
+			{
+			  "Query":"fromAll(); on_any(function(){});log('hello-from-projection-definition');",
+			  "Mode":"3",
+			  "Enabled":true,
+			  "HandlerType":"JS"
+			}
+			""");
 	}
 
 	[SetUp]
@@ -66,21 +72,19 @@ public class
 
 	[Test]
 	public void projection_status_is_preparing() {
-		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, "projection1"));
+		_manager.Handle(new Command.GetStatistics(_bus, null, "projection1"));
 		Assert.AreEqual(
 			ManagedProjectionState.Preparing,
-			_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().SingleOrDefault(
+			_consumer.HandledMessages.OfType<Statistics>().Single(
 				v => v.Projections[0].Name == "projection1").Projections[0].LeaderStatus);
 	}
 
 	[Test]
 	public void projection_id_is_latest() {
-		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, "projection1"));
+		_manager.Handle(new Command.GetStatistics(_bus, null, "projection1"));
 		Assert.AreEqual(
 			1,
-			_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().SingleOrDefault(
+			_consumer.HandledMessages.OfType<Statistics>().Single(
 				v => v.Projections[0].Name == "projection1").Projections[0].ProjectionId);
 	}
 }

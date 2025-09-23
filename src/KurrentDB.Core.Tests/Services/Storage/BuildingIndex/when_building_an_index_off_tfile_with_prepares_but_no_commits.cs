@@ -20,15 +20,15 @@ public class when_building_an_index_off_tfile_with_prepares_but_no_commits<TLogF
 
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
 
-		var (_, p1) = await Writer.Write(LogRecord.Prepare(_logFormat.RecordFactory, p0, Guid.NewGuid(), Guid.NewGuid(), p0, 0, streamId1, -1,
-				PrepareFlags.SingleWrite, eventTypeId, new byte[0], new byte[0], DateTime.UtcNow),
+		var (_, p1) = await Writer.Write(_logFormat.RecordFactory.Prepare(p0, Guid.NewGuid(), Guid.NewGuid(), p0, 0, streamId1, -1,
+				PrepareFlags.SingleWrite, eventTypeId, [], [], DateTime.UtcNow),
 			token);
-		var (_, p2) = await Writer.Write(LogRecord.Prepare(_logFormat.RecordFactory, p1, Guid.NewGuid(), Guid.NewGuid(), p1, 0, streamId2, -1,
-				PrepareFlags.SingleWrite, eventTypeId, new byte[0], new byte[0], DateTime.UtcNow),
+		var (_, p2) = await Writer.Write(_logFormat.RecordFactory.Prepare(p1, Guid.NewGuid(), Guid.NewGuid(), p1, 0, streamId2, -1,
+				PrepareFlags.SingleWrite, eventTypeId, [], [], DateTime.UtcNow),
 			token);
 
-		await Writer.Write(LogRecord.Prepare(_logFormat.RecordFactory, p2, Guid.NewGuid(), Guid.NewGuid(), p2, 0, streamId3, -1,
-				PrepareFlags.SingleWrite, eventTypeId, new byte[0], new byte[0], DateTime.UtcNow),
+		await Writer.Write(_logFormat.RecordFactory.Prepare(p2, Guid.NewGuid(), Guid.NewGuid(), p2, 0, streamId3, -1,
+				PrepareFlags.SingleWrite, eventTypeId, [], [], DateTime.UtcNow),
 			token);
 	}
 

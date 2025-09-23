@@ -8,7 +8,6 @@ using System.Linq;
 using System.Security.Claims;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
-using KurrentDB.Core.Helpers;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.TimerService;
@@ -28,42 +27,35 @@ public class MultiStreamEventReader : EventReader,
 	private readonly bool _resolveLinkTos;
 	private readonly ITimeProvider _timeProvider;
 
-	private readonly HashSet<string> _eventsRequested = new HashSet<string>();
-	private readonly Dictionary<string, long?> _preparePositions = new Dictionary<string, long?>();
+	private readonly HashSet<string> _eventsRequested = [];
+	private readonly Dictionary<string, long?> _preparePositions = new();
 
 	// event, link, progress
 	// null element in a queue means stream deleted
-	private readonly Dictionary<string, Queue<Tuple<KurrentDB.Core.Data.ResolvedEvent, float>>> _buffers =
-		new Dictionary<string, Queue<Tuple<KurrentDB.Core.Data.ResolvedEvent, float>>>();
+	private readonly Dictionary<string, Queue<Tuple<KurrentDB.Core.Data.ResolvedEvent, float>>> _buffers = new();
 
-	private const int _maxReadCount = 111;
+	private const int MaxReadCount = 111;
 	private long? _safePositionToJoin;
 	private readonly ConcurrentDictionary<string, bool> _eofs;
-	private int _deliveredEvents;
 	private long _lastPosition;
 
 	private readonly ConcurrentDictionary<string, Guid> _pendingRequests;
 
-	public MultiStreamEventReader(
-		IODispatcher ioDispatcher, IPublisher publisher, Guid eventReaderCorrelationId, ClaimsPrincipal readAs,
-		int phase,
-		string[] streams, Dictionary<string, long> fromPositions, bool resolveLinkTos, ITimeProvider timeProvider,
-		bool stopOnEof = false, int? stopAfterNEvents = null)
-		: base(publisher, eventReaderCorrelationId, readAs, stopOnEof) {
-		if (streams == null)
-			throw new ArgumentNullException("streams");
-		if (timeProvider == null)
-			throw new ArgumentNullException("timeProvider");
+	public MultiStreamEventReader(IPublisher publisher, Guid eventReaderCorrelationId, ClaimsPrincipal readAs,
+		int phase, string[] streams, Dictionary<string, long> fromPositions, bool resolveLinkTos, ITimeProvider timeProvider,
+		bool stopOnEof = false) : base(publisher, eventReaderCorrelationId, readAs, stopOnEof) {
+		ArgumentNullException.ThrowIfNull(streams);
+		ArgumentNullException.ThrowIfNull(timeProvider);
 		if (streams.Length == 0)
-			throw new ArgumentException("streams");
-		_streams = new HashSet<string>(streams);
-		_eofs = new ConcurrentDictionary<string, bool>(_streams.ToDictionary(v => v, v => false));
+			throw new ArgumentException(null, nameof(streams));
+		_streams = new(streams);
+		_eofs = new(_streams.ToDictionary(v => v, _ => false));
 		var positions = CheckpointTag.FromStreamPositions(phase, fromPositions);
 		ValidateTag(positions);
 		_fromPositions = positions;
 		_resolveLinkTos = resolveLinkTos;
 		_timeProvider = timeProvider;
-		_pendingRequests = new ConcurrentDictionary<string, Guid>();
+		_pendingRequests = new();
 		foreach (var stream in streams) {
 			_pendingRequests[stream] = Guid.Empty;
 			_preparePositions.Add(stream, null);
@@ -72,12 +64,11 @@ public class MultiStreamEventReader : EventReader,
 
 	private void ValidateTag(CheckpointTag fromPositions) {
 		if (_streams.Count != fromPositions.Streams.Count)
-			throw new ArgumentException("Number of streams does not match", "fromPositions");
+			throw new ArgumentException("Number of streams does not match", nameof(fromPositions));
 
 		foreach (var stream in _streams) {
 			if (!fromPositions.Streams.ContainsKey(stream))
-				throw new ArgumentException(
-					string.Format("The '{0}' stream position has not been set", stream), "fromPositions");
+				throw new ArgumentException($"The '{stream}' stream position has not been set", nameof(fromPositions));
 		}
 	}
 
@@ -85,9 +76,9 @@ public class MultiStreamEventReader : EventReader,
 		if (PauseRequested || Paused)
 			return;
 		if (_eofs.Any(v => v.Value))
-			_publisher.Publish(
+			Publisher.Publish(
 				TimerMessage.Schedule.Create(
-					TimeSpan.FromMilliseconds(250), _publisher,
+					TimeSpan.FromMilliseconds(250), Publisher,
 					new UnwrapEnvelopeMessage(ProcessBuffers2, nameof(ProcessBuffers2))));
 		foreach (var stream in _streams)
 			RequestEvents(stream, delay: _eofs[stream]);
@@ -98,20 +89,18 @@ public class MultiStreamEventReader : EventReader,
 		CheckIdle();
 	}
 
-	protected override bool AreEventsRequested() {
-		return _eventsRequested.Count != 0;
-	}
+	protected override bool AreEventsRequested() => _eventsRequested.Count != 0;
 
 	public void Handle(ClientMessage.ReadStreamEventsForwardCompleted message) {
-		if (_disposed)
+		if (Disposed)
 			return;
 		if (!_streams.Contains(message.EventStreamId))
-			throw new InvalidOperationException(string.Format("Invalid stream name: {0}", message.EventStreamId));
+			throw new InvalidOperationException($"Invalid stream name: {message.EventStreamId}");
 		if (!_eventsRequested.Contains(message.EventStreamId))
 			throw new InvalidOperationException("Read events has not been requested");
 		if (Paused)
 			throw new InvalidOperationException("Paused");
-		if (!_pendingRequests.Values.Any(x => x == message.CorrelationId))
+		if (_pendingRequests.Values.All(x => x != message.CorrelationId))
 			return;
 
 		_lastPosition = message.TfLastCommitPosition;
@@ -143,10 +132,9 @@ public class MultiStreamEventReader : EventReader,
 					}
 					for (int index = 0; index < message.Events.Count; index++) {
 						var @event = message.Events[index].Event;
-						var @link = message.Events[index].Link;
-						EventRecord positionEvent = (link ?? @event);
-						UpdateSafePositionToJoin(
-							positionEvent.EventStreamId, EventPairToPosition(message.Events[index]));
+						var link = message.Events[index].Link;
+						EventRecord positionEvent = link ?? @event;
+						UpdateSafePositionToJoin(positionEvent.EventStreamId, EventPairToPosition(message.Events[index]));
 						Tuple<KurrentDB.Core.Data.ResolvedEvent, float> itemToEnqueue = Tuple.Create(
 							message.Events[index],
 							100.0f * (link ?? @event).EventNumber / message.LastEventNumber);
@@ -162,17 +150,16 @@ public class MultiStreamEventReader : EventReader,
 				SendNotAuthorized();
 				return;
 			default:
-				throw new NotSupportedException(
-					string.Format("ReadEvents result code was not recognized. Code: {0}", message.Result));
+				throw new NotSupportedException($"ReadEvents result code was not recognized. Code: {message.Result}");
 		}
 	}
 
 	public void Handle(ProjectionManagementMessage.Internal.ReadTimeout message) {
-		if (_disposed)
+		if (Disposed)
 			return;
 		if (Paused)
 			return;
-		if (!_pendingRequests.Values.Any(x => x == message.CorrelationId))
+		if (_pendingRequests.Values.All(x => x != message.CorrelationId))
 			return;
 
 		_eventsRequested.Remove(message.StreamId);
@@ -180,9 +167,8 @@ public class MultiStreamEventReader : EventReader,
 	}
 
 	private void EnqueueItem(Tuple<KurrentDB.Core.Data.ResolvedEvent, float> itemToEnqueue, string streamId) {
-		Queue<Tuple<KurrentDB.Core.Data.ResolvedEvent, float>> queue;
-		if (!_buffers.TryGetValue(streamId, out queue)) {
-			queue = new Queue<Tuple<KurrentDB.Core.Data.ResolvedEvent, float>>();
+		if (!_buffers.TryGetValue(streamId, out var queue)) {
+			queue = new();
 			_buffers.Add(streamId, queue);
 		}
 
@@ -197,12 +183,11 @@ public class MultiStreamEventReader : EventReader,
 
 	private void CheckIdle() {
 		if (_eofs.All(v => v.Value))
-			_publisher.Publish(
-				new ReaderSubscriptionMessage.EventReaderIdle(EventReaderCorrelationId, _timeProvider.UtcNow));
+			Publisher.Publish(new ReaderSubscriptionMessage.EventReaderIdle(EventReaderCorrelationId, _timeProvider.UtcNow));
 	}
 
 	private void ProcessBuffers() {
-		if (_disposed)
+		if (Disposed)
 			return;
 		if (_safePositionToJoin == null)
 			return;
@@ -216,13 +201,11 @@ public class MultiStreamEventReader : EventReader,
 			var anyDeletedStream = false;
 			var deletedStreamId = "";
 
-			foreach (var buffer in _buffers) {
-				if (buffer.Value.Count == 0)
+			foreach (var (currentStreamId, value) in _buffers) {
+				if (value.Count == 0)
 					continue;
 				anyNonEmpty = true;
-				var head = buffer.Value.Peek();
-
-				var currentStreamId = buffer.Key;
+				var head = value.Peek();
 
 				if (head != null) {
 					var itemPosition = GetItemPosition(head);
@@ -255,21 +238,20 @@ public class MultiStreamEventReader : EventReader,
 
 			if (anyDeletedStream) {
 				_buffers[deletedStreamId].Dequeue();
-				SendPartitionDeleted_WhenReadingDataStream(deletedStreamId, -1, null, null, null, null);
+				SendPartitionDeleted_WhenReadingDataStream(deletedStreamId, null, null, null, null);
 			}
 		}
 	}
 
 	private void RequestEvents(string stream, bool delay) {
-		if (_disposed)
+		if (Disposed)
 			throw new InvalidOperationException("Disposed");
 		if (PauseRequested || Paused)
 			throw new InvalidOperationException("Paused or pause requested");
 
 		if (_eventsRequested.Contains(stream))
 			return;
-		Queue<Tuple<KurrentDB.Core.Data.ResolvedEvent, float>> queue;
-		if (_buffers.TryGetValue(stream, out queue) && queue.Count > 0)
+		if (_buffers.TryGetValue(stream, out var queue) && queue.Count > 0)
 			return;
 		_eventsRequested.Add(stream);
 
@@ -279,28 +261,28 @@ public class MultiStreamEventReader : EventReader,
 		var readEventsForward = new ClientMessage.ReadStreamEventsForward(
 			Guid.NewGuid(), pendingRequestCorrelationId, new SendToThisEnvelope(this), stream,
 			_fromPositions.Streams[stream],
-			_maxReadCount, _resolveLinkTos, false, null, ReadAs, replyOnExpired: false);
+			MaxReadCount, _resolveLinkTos, false, null, ReadAs, replyOnExpired: false);
 		if (delay) {
-			_publisher.Publish(
+			Publisher.Publish(
 				new AwakeServiceMessage.SubscribeAwake(
-					_publisher, Guid.NewGuid(), null,
+					Publisher, Guid.NewGuid(), null,
 					new TFPos(_lastPosition, _lastPosition),
 					CreateReadTimeoutMessage(pendingRequestCorrelationId, stream)));
-			_publisher.Publish(
+			Publisher.Publish(
 				new AwakeServiceMessage.SubscribeAwake(
-					_publisher, Guid.NewGuid(), null,
+					Publisher, Guid.NewGuid(), null,
 					new TFPos(_lastPosition, _lastPosition), readEventsForward));
 		} else {
-			_publisher.Publish(readEventsForward);
+			Publisher.Publish(readEventsForward);
 			ScheduleReadTimeoutMessage(pendingRequestCorrelationId, stream);
 		}
 	}
 
 	private void ScheduleReadTimeoutMessage(Guid correlationId, string streamId) {
-		_publisher.Publish(CreateReadTimeoutMessage(correlationId, streamId));
+		Publisher.Publish(CreateReadTimeoutMessage(correlationId, streamId));
 	}
 
-	private Message CreateReadTimeoutMessage(Guid correlationId, string streamId) {
+	private TimerMessage.Schedule CreateReadTimeoutMessage(Guid correlationId, string streamId) {
 		return TimerMessage.Schedule.Create(
 			TimeSpan.FromMilliseconds(ESConsts.ReadRequestTimeout),
 			new SendToThisEnvelope(this),
@@ -308,13 +290,13 @@ public class MultiStreamEventReader : EventReader,
 	}
 
 	private void DeliverSafePositionToJoin() {
-		if (_stopOnEof || _safePositionToJoin == null)
+		if (StopOnEof || _safePositionToJoin == null)
 			return;
 		// deliver if already available
-		_publisher.Publish(
+		Publisher.Publish(
 			new ReaderSubscriptionMessage.CommittedEventDistributed(
 				EventReaderCorrelationId, null, PositionToSafeJoinPosition(_safePositionToJoin), 100.0f,
-				source: this.GetType()));
+				source: GetType()));
 	}
 
 	private void UpdateSafePositionToJoin(string streamId, long? preparePosition) {
@@ -324,7 +306,6 @@ public class MultiStreamEventReader : EventReader,
 	}
 
 	private void DeliverEvent(KurrentDB.Core.Data.ResolvedEvent pair, float progress) {
-		_deliveredEvents++;
 		var positionEvent = pair.OriginalEvent;
 		string streamId = positionEvent.EventStreamId;
 		long fromPosition = _fromPositions.Streams[streamId];
@@ -336,37 +317,27 @@ public class MultiStreamEventReader : EventReader,
 
 		if (positionEvent.EventNumber != fromPosition) {
 			// This can happen when the original stream has $maxAge/$maxCount set
-			_publisher.Publish(new ReaderSubscriptionMessage.Faulted(EventReaderCorrelationId, string.Format(
-				"Event number {0} was expected in the stream {1}, but event number {2} was received. This may happen if events have been deleted from the beginning of your stream, please reset your projection.",
-				fromPosition, streamId, positionEvent.EventNumber), this.GetType()));
+			Publisher.Publish(
+				new ReaderSubscriptionMessage.Faulted(EventReaderCorrelationId,
+					$"Event number {fromPosition} was expected in the stream {streamId}, but event number {positionEvent.EventNumber} was received. This may happen if events have been deleted from the beginning of your stream, please reset your projection.", GetType()));
 			return;
 		}
 
 		_fromPositions = _fromPositions.UpdateStreamPosition(streamId, positionEvent.EventNumber + 1);
-		_publisher.Publish(
+		Publisher.Publish(
 			//TODO: publish both link and event data
 			new ReaderSubscriptionMessage.CommittedEventDistributed(
-				EventReaderCorrelationId, new ResolvedEvent(pair, null),
-				_stopOnEof ? (long?)null : positionEvent.LogPosition, progress, source: this.GetType()));
+				EventReaderCorrelationId, new(pair, null),
+				StopOnEof ? null : positionEvent.LogPosition, progress, source: GetType()));
 	}
 
-	private long? EventPairToPosition(KurrentDB.Core.Data.ResolvedEvent resolvedEvent) {
-		return resolvedEvent.OriginalEvent.LogPosition;
-	}
+	private static long? EventPairToPosition(KurrentDB.Core.Data.ResolvedEvent resolvedEvent) => resolvedEvent.OriginalEvent.LogPosition;
 
-	private long? MessageToLastCommitPosition(ClientMessage.ReadStreamEventsForwardCompleted message) {
-		return GetLastCommitPositionFrom(message);
-	}
+	private static long? MessageToLastCommitPosition(ClientMessage.ReadStreamEventsForwardCompleted message) => GetLastCommitPositionFrom(message);
 
-	private long GetItemPosition(Tuple<KurrentDB.Core.Data.ResolvedEvent, float> head) {
-		return head.Item1.OriginalEvent.LogPosition;
-	}
+	private static long GetItemPosition(Tuple<KurrentDB.Core.Data.ResolvedEvent, float> head) => head.Item1.OriginalEvent.LogPosition;
 
-	private long GetMaxPosition() {
-		return long.MaxValue;
-	}
+	private static long GetMaxPosition() => long.MaxValue;
 
-	private long? PositionToSafeJoinPosition(long? safePositionToJoin) {
-		return safePositionToJoin;
-	}
+	private static long? PositionToSafeJoinPosition(long? safePositionToJoin) => safePositionToJoin;
 }

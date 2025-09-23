@@ -1,7 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Collections.Generic;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Tests;
 using NUnit.Framework;
@@ -21,22 +20,11 @@ public class when_recategorizing_events<TLogFormat, TStreamId> : specification_w
 		ExistingEvent("categorized-1", SystemEventTypes.LinkTo, "{\"a\":1}", "0@account-01");
 	}
 
-	protected override IEnumerable<WhenStep> When() {
-		foreach (var e in base.When())
-			yield return e;
-	}
+	protected override bool GivenInitializeSystemProjections() => true;
 
-	protected override bool GivenInitializeSystemProjections() {
-		return true;
-	}
+	protected override bool GivenStartSystemProjections() => true;
 
-	protected override bool GivenStartSystemProjections() {
-		return true;
-	}
-
-	protected override string GivenQuery() {
-		return "";
-	}
+	protected override string GivenQuery() => "";
 
 	[Test]
 	public void streams_are_categorized() {

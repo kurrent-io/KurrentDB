@@ -14,11 +14,11 @@ internal static class EventDataComparer {
 		if (expected.Type != actual.EventType)
 			return false;
 
-		var expectedDataString = Helper.UTF8NoBom.GetString(expected.Data ?? new byte[0]);
-		var expectedMetadataString = Helper.UTF8NoBom.GetString(expected.Metadata ?? new byte[0]);
+		var expectedDataString = Helper.UTF8NoBom.GetString(expected.Data ?? []);
+		var expectedMetadataString = Helper.UTF8NoBom.GetString(expected.Metadata ?? []);
 
-		var actualDataString = Helper.UTF8NoBom.GetString(actual.Data ?? new byte[0]);
-		var actualMetadataDataString = Helper.UTF8NoBom.GetString(actual.Metadata ?? new byte[0]);
+		var actualDataString = Helper.UTF8NoBom.GetString(actual.Data ?? []);
+		var actualMetadataDataString = Helper.UTF8NoBom.GetString(actual.Metadata ?? []);
 
 		return expectedDataString == actualDataString && expectedMetadataString == actualMetadataDataString;
 	}

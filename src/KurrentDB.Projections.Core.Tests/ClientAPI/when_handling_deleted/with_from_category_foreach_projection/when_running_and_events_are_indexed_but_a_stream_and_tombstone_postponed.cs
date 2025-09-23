@@ -26,14 +26,14 @@ public class when_running_and_events_are_indexed_but_a_stream_and_tombstone_post
 		await DisableStandardProjections();
 		WaitIdle();
 
-		await PostProjection(@"
-fromCategory('stream').foreachStream().when({
-    $init: function(){return {a:0}},
-    type1: function(s,e){s.a++},
-    type2: function(s,e){s.a++},
-    $deleted: function(s,e){s.deleted=1},
-}).outputState();
-");
+		await PostProjection("""
+		                     fromCategory('stream').foreachStream().when({
+		                         $init: function(){return {a:0}},
+		                         type1: function(s,e){s.a++},
+		                         type2: function(s,e){s.a++},
+		                         $deleted: function(s,e){s.deleted=1},
+		                     }).outputState();
+		                     """);
 		WaitIdle();
 		// SUT projection must have been joined heading reader
 		await EnableStandardProjections();

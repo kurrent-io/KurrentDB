@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Security.Claims;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Helpers;
 using KurrentDB.Core.Services.TimerService;
@@ -18,12 +17,12 @@ using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Projections.Core.Services.Processing;
 
-
-public class CoreProjection : IDisposable,
-	ICoreProjection,
-	ICoreProjectionForProcessingPhase,
-	IHandle<CoreProjectionManagementMessage.GetState>,
-	IHandle<CoreProjectionManagementMessage.GetResult> {
+public class CoreProjection
+	: IDisposable,
+		ICoreProjection,
+		ICoreProjectionForProcessingPhase,
+		IHandle<CoreProjectionManagementMessage.GetState>,
+		IHandle<CoreProjectionManagementMessage.GetResult> {
 	[Flags]
 	private enum State : uint {
 		Initial = 0x80000000,
@@ -42,25 +41,16 @@ public class CoreProjection : IDisposable,
 
 	private readonly string _name;
 	private readonly ProjectionVersion _version;
-
 	private readonly IPublisher _publisher;
-	private readonly IODispatcher _ioDispatcher;
-
-	private readonly ProjectionProcessingStrategy _projectionProcessingStrategy;
-	private readonly Guid _workerId;
 	internal readonly Guid _projectionCorrelationId;
-	private readonly IPublisher _inputQueue;
-	private readonly ClaimsPrincipal _runAs;
-
 	private readonly ILogger _logger;
 
 	private State _state;
-
 	private string _faultedReason;
 
 	private readonly PartitionStateCache _partitionStateCache;
 	private ICoreProjectionCheckpointManager _checkpointManager;
-	private readonly ICoreProjectionCheckpointReader _checkpointReader;
+	private readonly CoreProjectionCheckpointReader _checkpointReader;
 
 	private bool _tickPending;
 
@@ -83,35 +73,23 @@ public class CoreProjection : IDisposable,
 		ProjectionVersion version,
 		Guid projectionCorrelationId,
 		IPublisher inputQueue,
-		Guid workerId,
-		ClaimsPrincipal runAs,
 		IPublisher publisher,
 		IODispatcher ioDispatcher,
-		ReaderSubscriptionDispatcher subscriptionDispatcher,
 		ILogger logger,
 		ProjectionNamesBuilder namingBuilder,
 		CoreProjectionCheckpointWriter coreProjectionCheckpointWriter,
 		PartitionStateCache partitionStateCache,
 		string effectiveProjectionName,
 		ITimeProvider timeProvider) {
-		if (publisher == null)
-			throw new ArgumentNullException("publisher");
-		if (ioDispatcher == null)
-			throw new ArgumentNullException("ioDispatcher");
-		if (subscriptionDispatcher == null)
-			throw new ArgumentNullException("subscriptionDispatcher");
+		ArgumentNullException.ThrowIfNull(publisher);
+		ArgumentNullException.ThrowIfNull(ioDispatcher);
 
-		_projectionProcessingStrategy = projectionProcessingStrategy;
 		_projectionCorrelationId = projectionCorrelationId;
-		_inputQueue = inputQueue;
-		_workerId = workerId;
-		_runAs = runAs;
 		_name = effectiveProjectionName;
 		_version = version;
 		_stopOnEof = projectionProcessingStrategy.GetStopOnEof();
 		_logger = logger ?? Log.ForContext<CoreProjection>();
 		_publisher = publisher;
-		_ioDispatcher = ioDispatcher;
 		_partitionStateCache = partitionStateCache;
 		_requiresRootPartition = projectionProcessingStrategy.GetRequiresRootPartition();
 		var useCheckpoints = projectionProcessingStrategy.GetUseCheckpoints();
@@ -130,9 +108,8 @@ public class CoreProjection : IDisposable,
 			ioDispatcher,
 			coreProjectionCheckpointWriter);
 
-
 		//NOTE: currently assuming the first checkpoint manager to be able to load any state
-		_checkpointReader = new CoreProjectionCheckpointReader(
+		_checkpointReader = new(
 			publisher,
 			_projectionCorrelationId,
 			ioDispatcher,
@@ -143,8 +120,7 @@ public class CoreProjection : IDisposable,
 		GoToState(State.Initial);
 	}
 
-	private void BeginPhase(IProjectionProcessingPhase processingPhase, CheckpointTag startFrom,
-		PartitionState rootPartitionState) {
+	private void BeginPhase(IProjectionProcessingPhase processingPhase, CheckpointTag startFrom, PartitionState rootPartitionState) {
 		_projectionProcessingPhase = processingPhase;
 		_projectionProcessingPhase.SetProjectionState(PhaseState.Starting);
 		_checkpointManager = processingPhase.CheckpointManager;
@@ -159,8 +135,7 @@ public class CoreProjection : IDisposable,
 		int sequentialNumber = _statisticsSequentialNumber++;
 		var info = new ProjectionStatistics();
 		GetStatistics(info);
-		_publisher.Publish(
-			new CoreProjectionStatusMessage.StatisticsReport(_projectionCorrelationId, info, sequentialNumber));
+		_publisher.Publish(new CoreProjectionStatusMessage.StatisticsReport(_projectionCorrelationId, info, sequentialNumber));
 	}
 
 	public void Start() {
@@ -176,14 +151,9 @@ public class CoreProjection : IDisposable,
 	}
 
 	public void Stop() {
-		EnsureState(
-			State.LoadStateRequested | State.StateLoaded | State.Subscribed | State.Running | State.PhaseCompleted
-			| State.CompletingPhase);
+		EnsureState(State.LoadStateRequested | State.StateLoaded | State.Subscribed | State.Running | State.PhaseCompleted | State.CompletingPhase);
 		try {
-			if (_state == State.LoadStateRequested || _state == State.PhaseCompleted)
-				GoToState(State.Stopped);
-			else
-				GoToState(State.Stopping);
+			GoToState(_state is State.LoadStateRequested or State.PhaseCompleted ? State.Stopped : State.Stopping);
 		} catch (Exception ex) {
 			SetFaulted(ex);
 		}
@@ -195,7 +165,7 @@ public class CoreProjection : IDisposable,
 	}
 
 	public bool Suspend() {
-		if (_state == State.Stopped || _state == State.Suspended)
+		if (_state is State.Stopped or State.Suspended)
 			return false;
 
 		GoToState(State.Suspended);
@@ -209,8 +179,7 @@ public class CoreProjection : IDisposable,
 
 	private void GetStatistics(ProjectionStatistics info) {
 		_checkpointManager.GetStatistics(info);
-		if (float.IsNaN(info.Progress) || float.IsNegativeInfinity(info.Progress)
-									   || float.IsPositiveInfinity(info.Progress)) {
+		if (float.IsNaN(info.Progress) || float.IsNegativeInfinity(info.Progress) || float.IsPositiveInfinity(info.Progress)) {
 			info.Progress = -2.0f;
 		}
 
@@ -224,8 +193,7 @@ public class CoreProjection : IDisposable,
 		info.BufferedEvents = 0;
 		info.PartitionsCached = _partitionStateCache.CachedItemCount;
 		_enrichStatistics(info);
-		if (_projectionProcessingPhase != null)
-			_projectionProcessingPhase.GetStatistics(info);
+		_projectionProcessingPhase?.GetStatistics(info);
 	}
 
 	public void CompletePhase() {
@@ -239,8 +207,7 @@ public class CoreProjection : IDisposable,
 	}
 
 	public void Handle(CoreProjectionManagementMessage.GetState message) {
-		if (_state == State.LoadStateRequested || _state == State.StateLoaded ||
-			_projectionProcessingPhase == null) {
+		if (_state == State.LoadStateRequested || _state == State.StateLoaded || _projectionProcessingPhase == null) {
 			_publisher.Publish(
 				new CoreProjectionStatusMessage.StateReport(
 					message.CorrelationId, _projectionCorrelationId, message.Partition, state: null,
@@ -248,16 +215,14 @@ public class CoreProjection : IDisposable,
 			return;
 		}
 
-		EnsureState(
-			State.Running | State.Stopping | State.Stopped | State.FaultedStopping | State.Faulted
-			| State.CompletingPhase | State.PhaseCompleted);
+		EnsureState(State.Running | State.Stopping | State.Stopped | State.FaultedStopping | State.Faulted | State.CompletingPhase | State.PhaseCompleted);
 
 		_projectionProcessingPhase.Handle(message);
 	}
 
 	public void Handle(CoreProjectionManagementMessage.GetResult message) {
 		if (_state == State.LoadStateRequested || _state == State.StateLoaded ||
-			_projectionProcessingPhase == null) {
+		    _projectionProcessingPhase == null) {
 			_publisher.Publish(
 				new CoreProjectionStatusMessage.ResultReport(
 					message.CorrelationId, _projectionCorrelationId, message.Partition, result: null,
@@ -265,9 +230,7 @@ public class CoreProjection : IDisposable,
 			return;
 		}
 
-		EnsureState(
-			State.Running | State.Stopping | State.Stopped | State.FaultedStopping | State.Faulted
-			| State.CompletingPhase | State.PhaseCompleted);
+		EnsureState(State.Running | State.Stopping | State.Stopped | State.FaultedStopping | State.Faulted | State.CompletingPhase | State.PhaseCompleted);
 
 		_projectionProcessingPhase.Handle(message);
 	}
@@ -288,7 +251,7 @@ public class CoreProjection : IDisposable,
 			//TODO: initialize projection state here (test it)
 			//TODO: write test to ensure projection state is correctly loaded from a checkpoint and posted back when enough empty records processed
 			//TODO: handle errors
-			_coreProjectionCheckpointWriter.StartFrom(checkpointTag, message.CheckpointEventNumber);
+			_coreProjectionCheckpointWriter.StartFrom(message.CheckpointEventNumber);
 
 			PartitionState rootPartitionState = null;
 			if (_requiresRootPartition) {
@@ -323,9 +286,8 @@ public class CoreProjection : IDisposable,
 			message.Reason);
 		if (_state != State.Running) {
 			SetFaulted(
-				string.Format(
-					"A concurrency violation was detected, but the projection is not running. Current state is: {0}.  The reason for the restart is: '{1}' ",
-					_state, message.Reason));
+				$"A concurrency violation was detected, but the projection is not running. Current state is: {_state}. " +
+				$" The reason for the restart is: '{message.Reason}' ");
 			return;
 		}
 
@@ -339,9 +301,8 @@ public class CoreProjection : IDisposable,
 		SetFaulted(message.Reason);
 	}
 
-	public void EnsureUnsubscribed() {
-		if (_projectionProcessingPhase != null)
-			_projectionProcessingPhase.EnsureUnsubscribed();
+	private void EnsureUnsubscribed() {
+		_projectionProcessingPhase?.EnsureUnsubscribed();
 	}
 
 	private void GoToState(State state) {
@@ -349,14 +310,11 @@ public class CoreProjection : IDisposable,
 			_logger.Debug($"Projection {_name} has been suspended for a subsystem restart. Cannot go to state {state}");
 			return;
 		}
-		//            _logger.Trace("CP: {projection} {stateFrom} => {stateTo}", _name, _state, state);
-		var wasStopped = _state == State.Stopped || _state == State.Faulted || _state == State.PhaseCompleted;
-		var wasStopping = _state == State.Stopping || _state == State.FaultedStopping
-												   || _state == State.CompletingPhase;
-		var wasStarting = _state == State.LoadStateRequested || _state == State.StateLoaded
-															 || _state == State.Subscribed;
-		var wasStarted = _state == State.Subscribed || _state == State.Running || _state == State.Stopping
-						 || _state == State.FaultedStopping || _state == State.CompletingPhase;
+
+		var wasStopped = _state is State.Stopped or State.Faulted or State.PhaseCompleted;
+		var wasStopping = _state is State.Stopping or State.FaultedStopping or State.CompletingPhase;
+		var wasStarting = _state is State.LoadStateRequested or State.StateLoaded or State.Subscribed;
+		var wasStarted = _state is State.Subscribed or State.Running or State.Stopping or State.FaultedStopping or State.CompletingPhase;
 		var wasRunning = _state == State.Running;
 		var stateChanged = _state != state;
 		_state = state; // set state before transition to allow further state change
@@ -375,7 +333,6 @@ public class CoreProjection : IDisposable,
 				break;
 		}
 
-
 		if (_projectionProcessingPhase != null) // null while loading state
 			switch (state) {
 				case State.LoadStateRequested:
@@ -390,9 +347,6 @@ public class CoreProjection : IDisposable,
 					break;
 				case State.Faulted:
 				case State.FaultedStopping:
-					if (wasRunning)
-						_projectionProcessingPhase.SetProjectionState(PhaseState.Stopped);
-					break;
 				case State.Stopped:
 				case State.Stopping:
 				case State.CompletingPhase:
@@ -404,6 +358,7 @@ public class CoreProjection : IDisposable,
 					_projectionProcessingPhase.SetProjectionState(PhaseState.Unknown);
 					break;
 			}
+
 		switch (state) {
 			case State.Initial:
 				EnterInitial();
@@ -412,7 +367,6 @@ public class CoreProjection : IDisposable,
 				EnterLoadStateRequested();
 				break;
 			case State.StateLoaded:
-				EnterStateLoaded();
 				break;
 			case State.Subscribed:
 				EnterSubscribed();
@@ -433,7 +387,6 @@ public class CoreProjection : IDisposable,
 				EnterFaulted();
 				break;
 			case State.CompletingPhase:
-				EnterCompletingPhase();
 				break;
 			case State.PhaseCompleted:
 				EnterPhaseCompleted();
@@ -460,8 +413,7 @@ public class CoreProjection : IDisposable,
 		_checkpointReader.Initialize();
 		_tickPending = false;
 		if (_requiresRootPartition)
-			_partitionStateCache.CacheAndLockPartitionState("", new PartitionState("", null, CheckpointTag.Empty),
-				null);
+			_partitionStateCache.CacheAndLockPartitionState("", new PartitionState("", null, CheckpointTag.Empty), null);
 		// NOTE: this is to workaround exception in GetState requests submitted by client
 	}
 
@@ -469,20 +421,13 @@ public class CoreProjection : IDisposable,
 		_checkpointReader.BeginLoadState();
 	}
 
-	private void EnterStateLoaded() {
-	}
-
 	private void EnterSubscribed() {
-		if (_startOnLoad) {
-			GoToState(State.Running);
-		} else
-			GoToState(State.Stopped);
+		GoToState(_startOnLoad ? State.Running : State.Stopped);
 	}
 
 	private void EnterRunning() {
 		try {
-			_publisher.Publish(
-				new CoreProjectionStatusMessage.Started(_projectionCorrelationId, _name));
+			_publisher.Publish(new CoreProjectionStatusMessage.Started(_projectionCorrelationId, _name));
 			_projectionProcessingPhase.ProcessEvent();
 		} catch (Exception ex) {
 			SetFaulted(ex);
@@ -504,11 +449,7 @@ public class CoreProjection : IDisposable,
 
 	private void EnterFaulted() {
 		EnsureUnsubscribed();
-		_publisher.Publish(
-			new CoreProjectionStatusMessage.Faulted(_projectionCorrelationId, _faultedReason));
-	}
-
-	private void EnterCompletingPhase() {
+		_publisher.Publish(new CoreProjectionStatusMessage.Faulted(_projectionCorrelationId, _faultedReason));
 	}
 
 	private void EnterPhaseCompleted() {
@@ -525,8 +466,7 @@ public class CoreProjection : IDisposable,
 
 	private void EnsureState(State expectedStates) {
 		if ((_state & expectedStates) == 0) {
-			throw new Exception(
-				string.Format("Current state is {0}. Expected states are: {1}", _state, expectedStates));
+			throw new Exception($"Current state is {_state}. Expected states are: {expectedStates}");
 		}
 	}
 
@@ -540,9 +480,7 @@ public class CoreProjection : IDisposable,
 			return;
 		}
 
-		EnsureState(
-			State.Running | State.Stopping | State.Stopped | State.FaultedStopping | State.Faulted
-			| State.CompletingPhase | State.PhaseCompleted);
+		EnsureState(State.Running | State.Stopping | State.Stopped | State.FaultedStopping | State.Faulted | State.CompletingPhase | State.PhaseCompleted);
 
 		try {
 			_tickPending = false;
@@ -556,8 +494,7 @@ public class CoreProjection : IDisposable,
 	public void Dispose() {
 		_disposed = true;
 		EnsureUnsubscribed();
-		if (_projectionProcessingPhase != null)
-			_projectionProcessingPhase.Dispose();
+		_projectionProcessingPhase?.Dispose();
 	}
 
 	public void EnsureTickPending() {
@@ -571,7 +508,7 @@ public class CoreProjection : IDisposable,
 	}
 
 	public void SetFaulted(Exception ex) {
-		SetFaulted(ex.Message + "\r\n" + (ex.StackTrace ?? "").ToString());
+		SetFaulted($"{ex.Message}\r\n{ex.StackTrace ?? ""}");
 	}
 
 	public void SetFaulted(string reason) {
@@ -624,10 +561,7 @@ public class CoreProjection : IDisposable,
 		}
 	}
 
-
-	public CheckpointTag LastProcessedEventPosition {
-		get { return _checkpointManager.LastProcessedEventPosition; }
-	}
+	public CheckpointTag LastProcessedEventPosition => _checkpointManager.LastProcessedEventPosition;
 
 	public void Subscribed() {
 		GoToState(State.Subscribed);

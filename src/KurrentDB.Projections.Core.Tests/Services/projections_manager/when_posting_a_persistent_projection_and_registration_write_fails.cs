@@ -11,7 +11,7 @@ using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Management;
 using KurrentDB.Projections.Core.Services.Processing;
 using NUnit.Framework;
-
+using static KurrentDB.Projections.Core.Messages.ProjectionManagementMessage;
 using WriteEvents = KurrentDB.Core.Tests.TestAdapters.ClientMessage.WriteEvents;
 
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
@@ -22,10 +22,9 @@ namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
 [TestFixture(typeof(LogFormat.V3), typeof(uint), OperationResult.ForwardTimeout)]
 [TestFixture(typeof(LogFormat.V2), typeof(string), OperationResult.PrepareTimeout)]
 [TestFixture(typeof(LogFormat.V3), typeof(uint), OperationResult.PrepareTimeout)]
-public class
-	when_posting_a_persistent_projection_and_registration_write_fails<TLogFormat, TStreamId> :
-		TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId> {
-	private OperationResult _failureCondition;
+public class when_posting_a_persistent_projection_and_registration_write_fails<TLogFormat, TStreamId>
+	: TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId> {
+	private readonly OperationResult _failureCondition;
 
 	public when_posting_a_persistent_projection_and_registration_write_fails(OperationResult failureCondition) {
 		_failureCondition = failureCondition;
@@ -44,18 +43,16 @@ public class
 	protected override IEnumerable<WhenStep> When() {
 		_projectionName = "test-projection";
 		yield return new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid());
-		yield return
-			new ProjectionManagementMessage.Command.Post(
-				_bus, ProjectionMode.Continuous, _projectionName,
-				ProjectionManagementMessage.RunAs.System, "JS", @"fromAll().when({$any:function(s,e){return s;}});",
-				enabled: true, checkpointsEnabled: true, emitEnabled: true, trackEmittedStreams: true);
+		yield return new Command.Post(_bus, ProjectionMode.Continuous, _projectionName,
+			RunAs.System, "JS", "fromAll().when({$any:function(s,e){return s;}});",
+			enabled: true, checkpointsEnabled: true, emitEnabled: true, trackEmittedStreams: true);
 	}
 
 	[Test, Category("v8")]
 	public void retries_creating_the_projection_only_the_specified_number_of_times_and_the_same_event_id() {
 		int retryCount = 0;
-		var projectionRegistrationWrite = _consumer.HandledMessages.OfType<WriteEvents>()
-			.Where(x => x.EventStreamId == ProjectionNamesBuilder.ProjectionsRegistrationStream).Last();
+		var projectionRegistrationWrite = _consumer.HandledMessages
+			.OfType<WriteEvents>().Last(x => x.EventStreamId == ProjectionNamesBuilder.ProjectionsRegistrationStream);
 		var eventId = projectionRegistrationWrite.Events[0].EventId;
 		while (projectionRegistrationWrite != null) {
 			Assert.AreEqual(eventId, projectionRegistrationWrite.Events[0].EventId);
@@ -63,9 +60,9 @@ public class
 				projectionRegistrationWrite.CorrelationId, _failureCondition,
 				Enum.GetName(typeof(OperationResult), _failureCondition)));
 			_queue.Process();
-			projectionRegistrationWrite = _consumer.HandledMessages.OfType<WriteEvents>()
-				.Where(x => x.EventStreamId == ProjectionNamesBuilder.ProjectionsRegistrationStream)
-				.LastOrDefault();
+			projectionRegistrationWrite = _consumer.HandledMessages
+				.OfType<WriteEvents>()
+				.LastOrDefault(x => x.EventStreamId == ProjectionNamesBuilder.ProjectionsRegistrationStream);
 			if (projectionRegistrationWrite != null) {
 				retryCount++;
 			}

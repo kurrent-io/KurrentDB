@@ -14,18 +14,15 @@ namespace KurrentDB.Projections.Core.Tests.Services.emitted_stream;
 [TestFixture]
 public class a_checkpoint_requested_on_a_non_started_stream : TestFixtureWithReadWriteDispatchers {
 	private EmittedStream _stream;
-
 	private TestCheckpointManagerMessageHandler _readyHandler;
 	private Exception _caughtException;
 
 	[SetUp]
 	public void setup() {
-		_readyHandler = new TestCheckpointManagerMessageHandler();
-		;
-		_stream = new EmittedStream(
+		_readyHandler = new();
+		_stream = new(
 			"test",
-			new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
-				new EmittedStream.WriterConfiguration.StreamMetadata(), null, 50), new ProjectionVersion(1, 0, 0),
+			new(new EmittedStreamsWriter(_ioDispatcher), new(), null, 50), new ProjectionVersion(1, 0, 0),
 			new TransactionFilePositionTagger(0), CheckpointTag.FromPosition(0, 0, -1), _bus, _ioDispatcher,
 			_readyHandler);
 		try {
