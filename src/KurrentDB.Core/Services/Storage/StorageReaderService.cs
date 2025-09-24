@@ -9,7 +9,6 @@ using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Messages;
-using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.TransactionLog.Checkpoint;
@@ -36,9 +35,7 @@ public class StorageReaderService<TStreamId> : StorageReaderService, IHandle<Sys
 		IReadIndex<TStreamId> readIndex,
 		ISystemStreamLookup<TStreamId> systemStreams,
 		IReadOnlyCheckpoint writerCheckpoint,
-		IVirtualStreamReader inMemReader,
-		QueueStatsManager queueStatsManager,
-		QueueTrackers trackers) {
+		IVirtualStreamReader inMemReader) {
 		Ensure.NotNull(subscriber);
 		Ensure.NotNull(systemStreams);
 		Ensure.NotNull(writerCheckpoint);
