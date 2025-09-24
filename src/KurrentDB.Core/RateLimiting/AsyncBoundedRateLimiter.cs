@@ -76,6 +76,8 @@ public sealed partial class AsyncBoundedRateLimiter : Disposable {
 		suspendedCaller?.NotifyConsumer();
 	}
 
+	public int LeaseCount => Volatile.Read(in _leasesAvailable);
+
 	protected override void Dispose(bool disposing) {
 		if (disposing) {
 			NotifyObjectDisposed();
