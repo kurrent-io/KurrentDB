@@ -120,7 +120,7 @@ public class AsyncBoundedRateLimiterTests {
 	public static async Task StressTest() {
 		using var rateLimiter = new AsyncBoundedRateLimiter(concurrencyLimit: 3, maxQueueSize: 1);
 
-		// start 4 competing tasks in parallel
+		// start 4 competing tasks in parallel, which is larger than concurrency limit
 		await Task.WhenAll(
 			Task.Run(AcquireReleaseAsync),
 			Task.Run(AcquireReleaseAsync),
@@ -131,7 +131,7 @@ public class AsyncBoundedRateLimiterTests {
 
 		async Task AcquireReleaseAsync() {
 			for (var i = 0; i < 100; i++) {
-				await rateLimiter.AcquireAsync(prioritized: false);
+				Assert.True(await rateLimiter.AcquireAsync(prioritized: false));
 				await Task.Delay(10);
 				rateLimiter.Release();
 			}
