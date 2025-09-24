@@ -20,37 +20,32 @@ public class when_handling_emits_in_invalid_order<TLogFormat, TStreamId> : TestF
 	private TestCheckpointManagerMessageHandler _readyHandler;
 
 	protected override void Given() {
-		ExistingEvent("test_stream", "type", @"{""c"": 100, ""p"": 50}", "data");
+		ExistingEvent("test_stream", "type", """{"c": 100, "p": 50}""", "data");
 	}
 
 	[SetUp]
 	public void setup() {
-		_readyHandler = new TestCheckpointManagerMessageHandler();
-		_stream = new EmittedStream(
+		_readyHandler = new();
+		_stream = new(
 			"test_stream",
-			new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
-				new EmittedStream.WriterConfiguration.StreamMetadata(), null, maxWriteBatchLength: 50),
+			new(new EmittedStreamsWriter(_ioDispatcher), new(), null, maxWriteBatchLength: 50),
 			new ProjectionVersion(1, 0, 0), new TransactionFilePositionTagger(0),
 			CheckpointTag.FromPosition(0, 40, 30),
 			_bus, _ioDispatcher, _readyHandler);
 		_stream.Start();
 		_stream.EmitEvents(
-			new[] {
-				new EmittedDataEvent(
-					"test_stream", Guid.NewGuid(), "type", true, "data", null,
-					CheckpointTag.FromPosition(0, 100, 90), null)
-			});
+		[
+			new EmittedDataEvent("test_stream", Guid.NewGuid(), "type", true, "data", null, CheckpointTag.FromPosition(0, 100, 90), null)
+		]);
 	}
 
 	[Test]
 	public void throws_if_position_is_prior_to_the_last_event_position() {
 		Assert.Throws<InvalidOperationException>(() => {
 			_stream.EmitEvents(
-				new[] {
-					new EmittedDataEvent(
-						"test_stream", Guid.NewGuid(), "type", true, "data", null,
-						CheckpointTag.FromPosition(0, 80, 70), null)
-				});
+			[
+				new EmittedDataEvent("test_stream", Guid.NewGuid(), "type", true, "data", null, CheckpointTag.FromPosition(0, 80, 70), null)
+			]);
 		});
 	}
 }

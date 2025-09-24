@@ -5,24 +5,20 @@ using System;
 using System.Threading;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
-using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Management;
 using KurrentDB.Projections.Core.Services.Processing;
 using NUnit.Framework;
+using static KurrentDB.Projections.Core.Messages.ProjectionSubsystemMessage;
 
 namespace KurrentDB.Projections.Core.Tests.Subsystem;
 
 [TestFixture]
 public class when_projection_subsystem_starting_and_all_components_started
 	: TestFixtureWithProjectionSubsystem {
-	private readonly ManualResetEventSlim _initializedReceived = new ManualResetEventSlim();
+	private readonly ManualResetEventSlim _initializedReceived = new();
 
 	protected override void Given() {
-		Subsystem.LeaderOutputBus.Subscribe(
-			new AdHocHandler<ProjectionSubsystemMessage.ComponentStarted>(msg => {
-				_initializedReceived.Set();
-			}));
-
+		Subsystem.LeaderOutputBus.Subscribe(new AdHocHandler<ComponentStarted>(_ => _initializedReceived.Set()));
 		Subsystem.Handle(new SystemMessage.SystemCoreReady());
 		Subsystem.Handle(new SystemMessage.BecomeLeader(Guid.NewGuid()));
 	}
@@ -38,8 +34,6 @@ public class when_projection_subsystem_starting_and_all_components_started
 [TestFixture]
 public class when_projection_subsystem_starting_and_wrong_components_started
 	: TestFixtureWithProjectionSubsystem {
-	private readonly ManualResetEventSlim _initializedReceived = new ManualResetEventSlim();
-
 	protected override void Given() {
 		Subsystem.Handle(new SystemMessage.SystemCoreReady());
 		Subsystem.Handle(new SystemMessage.BecomeLeader(Guid.NewGuid()));
@@ -48,10 +42,8 @@ public class when_projection_subsystem_starting_and_wrong_components_started
 
 		var wrongCorrelation = Guid.NewGuid();
 
-		Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStarted(
-			ProjectionManager.ServiceName, wrongCorrelation));
-		Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStarted(
-			ProjectionCoreCoordinator.ComponentName, wrongCorrelation));
+		Subsystem.Handle(new ComponentStarted(ProjectionManager.ServiceName, wrongCorrelation));
+		Subsystem.Handle(new ComponentStarted(ProjectionCoreCoordinator.ComponentName, wrongCorrelation));
 	}
 
 	[Test]
@@ -72,11 +64,8 @@ public class when_projection_subsystem_started_and_leader_changes
 		var startMsg = WaitForStartMessage();
 		_instanceCorrelation = startMsg.InstanceCorrelationId;
 
-		Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStarted(
-			ProjectionManager.ServiceName, _instanceCorrelation));
-		Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStarted(
-			ProjectionCoreCoordinator.ComponentName, _instanceCorrelation));
-
+		Subsystem.Handle(new ComponentStarted(ProjectionManager.ServiceName, _instanceCorrelation));
+		Subsystem.Handle(new ComponentStarted(ProjectionCoreCoordinator.ComponentName, _instanceCorrelation));
 		Subsystem.Handle(new SystemMessage.BecomeUnknown(Guid.NewGuid()));
 	}
 
@@ -101,21 +90,17 @@ public class when_projection_subsystem_stopping_and_all_components_stopped
 		ResetMessageEvents();
 		_instanceCorrelation = startMessage.InstanceCorrelationId;
 
-		Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStarted(
-			ProjectionManager.ServiceName, _instanceCorrelation));
-		Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStarted(
-			ProjectionCoreCoordinator.ComponentName, _instanceCorrelation));
+		Subsystem.Handle(new ComponentStarted(ProjectionManager.ServiceName, _instanceCorrelation));
+		Subsystem.Handle(new ComponentStarted(ProjectionCoreCoordinator.ComponentName, _instanceCorrelation));
 
 		Subsystem.Handle(new SystemMessage.BecomeUnknown(Guid.NewGuid()));
 
 		WaitForStopMessage();
 
-		Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStopped(
-			ProjectionManager.ServiceName, _instanceCorrelation));
-		Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStopped(
-			ProjectionCoreCoordinator.ComponentName, _instanceCorrelation));
-		Subsystem.Handle(new ProjectionSubsystemMessage.IODispatcherDrained(ProjectionManager.ServiceName));
-		Subsystem.Handle(new ProjectionSubsystemMessage.IODispatcherDrained(ProjectionCoreService.SubComponentName));
+		Subsystem.Handle(new ComponentStopped(ProjectionManager.ServiceName, _instanceCorrelation));
+		Subsystem.Handle(new ComponentStopped(ProjectionCoreCoordinator.ComponentName, _instanceCorrelation));
+		Subsystem.Handle(new IODispatcherDrained(ProjectionManager.ServiceName));
+		Subsystem.Handle(new IODispatcherDrained(ProjectionCoreService.SubComponentName));
 	}
 
 	[Test]
@@ -142,10 +127,8 @@ public class when_projection_subsystem_starting_and_node_becomes_unknown
 		// Become unknown before components started
 		Subsystem.Handle(new SystemMessage.BecomeUnknown(Guid.NewGuid()));
 
-		Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStarted(
-			ProjectionManager.ServiceName, _instanceCorrelation));
-		Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStarted(
-			ProjectionCoreCoordinator.ComponentName, _instanceCorrelation));
+		Subsystem.Handle(new ComponentStarted(ProjectionManager.ServiceName, _instanceCorrelation));
+		Subsystem.Handle(new ComponentStarted(ProjectionCoreCoordinator.ComponentName, _instanceCorrelation));
 	}
 
 	[Test]
@@ -168,10 +151,8 @@ public class when_projection_subsystem_stopping_and_node_becomes_leader
 		ResetMessageEvents();
 		_instanceCorrelation = startMessage.InstanceCorrelationId;
 
-		Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStarted(
-			ProjectionManager.ServiceName, _instanceCorrelation));
-		Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStarted(
-			ProjectionCoreCoordinator.ComponentName, _instanceCorrelation));
+		Subsystem.Handle(new ComponentStarted(ProjectionManager.ServiceName, _instanceCorrelation));
+		Subsystem.Handle(new ComponentStarted(ProjectionCoreCoordinator.ComponentName, _instanceCorrelation));
 
 		// Become unknown to stop the subsystem
 		Subsystem.Handle(new SystemMessage.BecomeUnknown(Guid.NewGuid()));
@@ -180,12 +161,10 @@ public class when_projection_subsystem_stopping_and_node_becomes_leader
 		// Become leader again before subsystem fully stopped
 		Subsystem.Handle(new SystemMessage.BecomeLeader(Guid.NewGuid()));
 
-		Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStopped(
-			ProjectionManager.ServiceName, _instanceCorrelation));
-		Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStopped(
-			ProjectionCoreCoordinator.ComponentName, _instanceCorrelation));
-		Subsystem.Handle(new ProjectionSubsystemMessage.IODispatcherDrained(ProjectionManager.ServiceName));
-		Subsystem.Handle(new ProjectionSubsystemMessage.IODispatcherDrained(ProjectionCoreService.SubComponentName));
+		Subsystem.Handle(new ComponentStopped(ProjectionManager.ServiceName, _instanceCorrelation));
+		Subsystem.Handle(new ComponentStopped(ProjectionCoreCoordinator.ComponentName, _instanceCorrelation));
+		Subsystem.Handle(new IODispatcherDrained(ProjectionManager.ServiceName));
+		Subsystem.Handle(new IODispatcherDrained(ProjectionCoreService.SubComponentName));
 	}
 
 	[Test]

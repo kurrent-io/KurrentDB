@@ -14,18 +14,18 @@ public static class partition_state {
 		[Test]
 		public void throws_argument_null_exception_if_state_is_null() {
 			Assert.Throws<ArgumentNullException>(() => {
-				new PartitionState(null, "result", CheckpointTag.FromPosition(0, 100, 50));
+				_ = new PartitionState(null, "result", CheckpointTag.FromPosition(0, 100, 50));
 			});
 		}
 
 		[Test]
 		public void throws_argument_null_exception_if_caused_by_is_null() {
-			Assert.Throws<ArgumentNullException>(() => { new PartitionState("state", "result", null); });
+			Assert.Throws<ArgumentNullException>(() => { _ = new PartitionState("state", "result", null); });
 		}
 
 		[Test]
 		public void can_be_created() {
-			new PartitionState("state", "result", CheckpointTag.FromPosition(0, 100, 50));
+			_ = new PartitionState("state", "result", CheckpointTag.FromPosition(0, 100, 50));
 		}
 	}
 
@@ -33,7 +33,7 @@ public static class partition_state {
 	public class can_be_deserialized_from_serialized_form {
 		[Test]
 		public void simple_object() {
-			AssertCorrect(@"");
+			AssertCorrect("");
 			AssertCorrect(@"{""a"":""b""}");
 			AssertCorrect(@"{""a"":""b"",""c"":1}");
 			AssertCorrect(@"{""z"":null,""a"":""b"",""c"":1}");
@@ -48,7 +48,7 @@ public static class partition_state {
 
 		[Test]
 		public void array() {
-			AssertCorrect(@"[]");
+			AssertCorrect("[]");
 			AssertCorrect(@"[""one"",""two""]");
 			AssertCorrect(@"[{""data"":{}}]");
 		}
@@ -66,7 +66,7 @@ public static class partition_state {
 			Assert.IsNull(deserialized.Result);
 		}
 
-		private void AssertCorrect(string state, string result = null) {
+		private static void AssertCorrect(string state, string result = null) {
 			var partitionState = new PartitionState(state, result, CheckpointTag.FromPosition(0, 100, 50));
 			var serialized = partitionState.Serialize();
 			var deserialized = PartitionState.Deserialize(serialized, CheckpointTag.FromPosition(0, 100, 50));

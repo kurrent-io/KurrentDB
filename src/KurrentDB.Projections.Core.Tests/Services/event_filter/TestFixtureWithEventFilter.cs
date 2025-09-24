@@ -16,7 +16,7 @@ public class TestFixtureWithEventFilter {
 
 	[SetUp]
 	public void Setup() {
-		_builder = new SourceDefinitionBuilder();
+		_builder = new();
 		Given();
 		When();
 	}
@@ -24,13 +24,11 @@ public class TestFixtureWithEventFilter {
 	protected virtual void Given() {
 	}
 
-	protected virtual void When() {
+	private void When() {
 		_ef = null;
 		try {
 			var sources = _builder.Build();
-			_ef =
-				ReaderStrategy.Create("test", 0, sources, new RealTimeProvider(), stopOnEof: false, runAs: null)
-					.EventFilter;
+			_ef = ReaderStrategy.Create("test", 0, sources, new RealTimeProvider(), runAs: null).EventFilter;
 		} catch (Exception ex) {
 			_exception = ex;
 		}

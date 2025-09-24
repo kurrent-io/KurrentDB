@@ -15,9 +15,8 @@ using KurrentDB.Core.Messaging;
 // ReSharper disable CheckNamespace
 
 namespace EventStore.Client.Projections {
-	partial class Projections {
-		partial class ProjectionsBase : ServiceBase {
-		}
+	internal partial class Projections {
+		partial class ProjectionsBase : ServiceBase;
 	}
 }
 
@@ -27,25 +26,18 @@ namespace EventStore.Projections.Core.Services.Grpc {
 		private readonly IAuthorizationProvider _authorizationProvider;
 
 		public ProjectionManagement(IPublisher publisher, IAuthorizationProvider authorizationProvider) {
-			if (publisher == null)
-				throw new ArgumentNullException(nameof(publisher));
-			if (authorizationProvider == null)
-				throw new ArgumentNullException(nameof(authorizationProvider));
+			ArgumentNullException.ThrowIfNull(publisher);
+			ArgumentNullException.ThrowIfNull(authorizationProvider);
 			_publisher = publisher;
 			_authorizationProvider = authorizationProvider;
 		}
 
-		private static Exception UnknownMessage<T>(Message message) where T : Message =>
-			new RpcException(
-				new Status(StatusCode.Unknown,
-					$"Envelope callback expected {typeof(T).Name}, received {message.GetType().Name} instead"));
-		private static Exception InvalidSubsystemRestart(string state) =>
-			new RpcException(
-				new Status(StatusCode.FailedPrecondition,
-					$"Projection Subsystem cannot be restarted as it is in the wrong state: {state}"));
+		private static RpcException UnknownMessage<T>(Message message) where T : Message =>
+			new(new(StatusCode.Unknown, $"Envelope callback expected {typeof(T).Name}, received {message.GetType().Name} instead"));
+		private static RpcException InvalidSubsystemRestart(string state) =>
+			new(new(StatusCode.FailedPrecondition, $"Projection Subsystem cannot be restarted as it is in the wrong state: {state}"));
 
-		private static Exception ProjectionNotFound(string name) =>
-			new RpcException(new Status(StatusCode.NotFound, $"Projection '{name}' not found"));
+		private static RpcException ProjectionNotFound(string name) => new(new(StatusCode.NotFound, $"Projection '{name}' not found"));
 
 		private static Value GetProtoValue(JsonElement element) =>
 			element.ValueKind switch {

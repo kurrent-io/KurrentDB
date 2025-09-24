@@ -16,16 +16,14 @@ namespace KurrentDB.Projections.Core.Services.Processing.Phases;
 public abstract class WriteQueryResultProjectionProcessingPhaseBase : IProjectionProcessingPhase {
 	private readonly IPublisher _publisher;
 	private readonly int _phase;
-	protected readonly string _resultStream;
 	private readonly ICoreProjectionForProcessingPhase _coreProjection;
-	protected readonly PartitionStateCache _stateCache;
-	protected readonly ICoreProjectionCheckpointManager _checkpointManager;
-	protected readonly IEmittedEventWriter _emittedEventWriter;
-	protected readonly IEmittedStreamsTracker _emittedStreamsTracker;
+	private readonly IEmittedEventWriter EmittedEventWriter;
+	protected readonly string ResultStream;
+	protected readonly PartitionStateCache StateCache;
 	private bool _subscribed;
 	private PhaseState _projectionState;
 
-	public WriteQueryResultProjectionProcessingPhaseBase(
+	protected WriteQueryResultProjectionProcessingPhaseBase(
 		IPublisher publisher,
 		int phase,
 		string resultStream,
@@ -34,45 +32,34 @@ public abstract class WriteQueryResultProjectionProcessingPhaseBase : IProjectio
 		ICoreProjectionCheckpointManager checkpointManager,
 		IEmittedEventWriter emittedEventWriter,
 		IEmittedStreamsTracker emittedStreamsTracker) {
-		if (resultStream == null)
-			throw new ArgumentNullException("resultStream");
-		if (coreProjection == null)
-			throw new ArgumentNullException("coreProjection");
-		if (stateCache == null)
-			throw new ArgumentNullException("stateCache");
-		if (checkpointManager == null)
-			throw new ArgumentNullException("checkpointManager");
-		if (emittedEventWriter == null)
-			throw new ArgumentNullException("emittedEventWriter");
-		if (emittedStreamsTracker == null)
-			throw new ArgumentNullException("emittedStreamsTracker");
-		if (string.IsNullOrEmpty(resultStream))
-			throw new ArgumentException("resultStream");
+		ArgumentNullException.ThrowIfNull(resultStream);
+		ArgumentNullException.ThrowIfNull(coreProjection);
+		ArgumentNullException.ThrowIfNull(stateCache);
+		ArgumentNullException.ThrowIfNull(checkpointManager);
+		ArgumentNullException.ThrowIfNull(emittedEventWriter);
+		ArgumentNullException.ThrowIfNull(emittedStreamsTracker);
+		ArgumentException.ThrowIfNullOrEmpty(resultStream);
 
 		_publisher = publisher;
 		_phase = phase;
-		_resultStream = resultStream;
+		ResultStream = resultStream;
 		_coreProjection = coreProjection;
-		_stateCache = stateCache;
-		_checkpointManager = checkpointManager;
-		_emittedEventWriter = emittedEventWriter;
-		_emittedStreamsTracker = emittedStreamsTracker;
+		StateCache = stateCache;
+		CheckpointManager = checkpointManager;
+		EmittedEventWriter = emittedEventWriter;
+		EmittedStreamsTracker = emittedStreamsTracker;
 	}
 
-	public ICoreProjectionCheckpointManager CheckpointManager {
-		get { return _checkpointManager; }
-	}
+	public ICoreProjectionCheckpointManager CheckpointManager { get; }
 
-	public IEmittedStreamsTracker EmittedStreamsTracker {
-		get { return _emittedStreamsTracker; }
-	}
+	public IEmittedStreamsTracker EmittedStreamsTracker { get; }
 
 	public void Dispose() {
 	}
 
 	public void Handle(CoreProjectionManagementMessage.GetState message) {
-		var state = _stateCache.TryGetPartitionState(message.Partition);
-		var stateString = state != null ? state.State : null;
+		var state = StateCache.TryGetPartitionState(message.Partition);
+		var stateString = state?.State;
 		_publisher.Publish(
 			new CoreProjectionStatusMessage.StateReport(
 				message.CorrelationId,
@@ -83,8 +70,8 @@ public abstract class WriteQueryResultProjectionProcessingPhaseBase : IProjectio
 	}
 
 	public void Handle(CoreProjectionManagementMessage.GetResult message) {
-		var state = _stateCache.TryGetPartitionState(message.Partition);
-		var resultString = state != null ? state.Result : null;
+		var state = StateCache.TryGetPartitionState(message.Partition);
+		var resultString = state?.Result;
 		_publisher.Publish(
 			new CoreProjectionStatusMessage.ResultReport(
 				message.CorrelationId,
@@ -98,9 +85,7 @@ public abstract class WriteQueryResultProjectionProcessingPhaseBase : IProjectio
 		throw new NotImplementedException();
 	}
 
-	public CheckpointTag AdjustTag(CheckpointTag tag) {
-		return tag;
-	}
+	public CheckpointTag AdjustTag(CheckpointTag tag) => tag;
 
 	public void InitializeFromCheckpoint(CheckpointTag checkpointTag) {
 		_subscribed = false;
@@ -114,29 +99,26 @@ public abstract class WriteQueryResultProjectionProcessingPhaseBase : IProjectio
 
 		var phaseCheckpointTag = CheckpointTag.FromPhase(_phase, completed: true);
 		var writeResults = WriteResults(phaseCheckpointTag);
-
 		var writeEofResults = WriteEofEvent(phaseCheckpointTag);
 
-		_emittedEventWriter.EventsEmitted(writeResults.Concat(writeEofResults).ToArray(), Guid.Empty, null);
+		EmittedEventWriter.EventsEmitted(writeResults.Concat(writeEofResults).ToArray(), Guid.Empty, null);
 
-		_checkpointManager.EventProcessed(phaseCheckpointTag, 100.0f);
+		CheckpointManager.EventProcessed(phaseCheckpointTag, 100.0f);
 		_coreProjection.CompletePhase();
 	}
 
 	private IEnumerable<EmittedEventEnvelope> WriteEofEvent(CheckpointTag phaseCheckpointTag) {
-		EmittedStream.WriterConfiguration.StreamMetadata streamMetadata = null;
 		yield return
 			new EmittedEventEnvelope(
 				new EmittedDataEvent(
-					_resultStream,
+					ResultStream,
 					Guid.NewGuid(),
 					"$Eof",
 					true,
 					null,
 					null,
 					phaseCheckpointTag,
-					null),
-				streamMetadata);
+					null));
 	}
 
 	protected abstract IEnumerable<EmittedEventEnvelope> WriteResults(CheckpointTag phaseCheckpointTag);
@@ -151,12 +133,10 @@ public abstract class WriteQueryResultProjectionProcessingPhaseBase : IProjectio
 	}
 
 	public void GetStatistics(ProjectionStatistics info) {
-		info.Status = info.Status + "/Writing results";
+		info.Status += "/Writing results";
 	}
 
-	public CheckpointTag MakeZeroCheckpointTag() {
-		return CheckpointTag.FromPhase(_phase, completed: false);
-	}
+	public CheckpointTag MakeZeroCheckpointTag() => CheckpointTag.FromPhase(_phase, completed: false);
 
 	public void EnsureUnsubscribed() {
 	}

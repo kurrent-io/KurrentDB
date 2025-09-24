@@ -26,7 +26,7 @@ public class when_killing_a_projection_and_an_event_is_received<TLogFormat, TStr
 			EventReaderSubscriptionMessage.CommittedEventReceived.Sample(
 				new ResolvedEvent(
 					"/event_category/1", -1, "/event_category/1", -1, false, new TFPos(120, 110), Guid.NewGuid(),
-					"handle_this_type", false, "data1", "metadata"), _subscriptionId, 0));
+					"handle_this_type", false, "data1", "metadata"), SubscriptionId, 0));
 
 		//receive second event
 		_lastEventIdBeforeKill = Guid.NewGuid();
@@ -35,7 +35,7 @@ public class when_killing_a_projection_and_an_event_is_received<TLogFormat, TStr
 				new ResolvedEvent(
 					"/event_category/1", -1, "/event_category/1", -1, false, new TFPos(140, 130),
 					_lastEventIdBeforeKill,
-					"handle_this_type", false, "data2", "metadata"), _subscriptionId, 1));
+					"handle_this_type", false, "data2", "metadata"), SubscriptionId, 1));
 
 		//kill the projection
 		_coreProjection.Kill();
@@ -45,7 +45,7 @@ public class when_killing_a_projection_and_an_event_is_received<TLogFormat, TStr
 			EventReaderSubscriptionMessage.CommittedEventReceived.Sample(
 				new ResolvedEvent(
 					"/event_category/1", -1, "/event_category/1", -1, false, new TFPos(160, 150), Guid.NewGuid(),
-					"handle_this_type", false, "data3", "metadata"), _subscriptionId, 2));
+					"handle_this_type", false, "data3", "metadata"), SubscriptionId, 2));
 	}
 
 	[Test]

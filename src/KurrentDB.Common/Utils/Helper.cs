@@ -2,14 +2,14 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.IO;
-using System.Reflection;
 using System.Text;
 
 namespace KurrentDB.Common.Utils;
 
 public static class Helper {
 	public static readonly UTF8Encoding UTF8NoBom = new(encoderShouldEmitUTF8Identifier: false);
+
+	public static byte[] AsUTF8Bytes(this string str) => UTF8NoBom.GetBytes(str);
 
 	public static void EatException(Action action) {
 		try {
@@ -25,16 +25,12 @@ public static class Helper {
 		}
 	}
 
-	public static T EatException<T>(Func<T> action, T defaultValue = default(T)) {
+	public static T EatException<T>(Func<T> action, T defaultValue = default) {
 		try {
 			return action();
 		} catch (Exception) {
 			return defaultValue;
 		}
-	}
-
-	public static string GetDefaultLogsDir() {
-		return Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "es-logs");
 	}
 
 	public static string FormatBinaryDump(byte[] logBulk) {
@@ -49,12 +45,12 @@ public static class Helper {
 		int cur = 0;
 		int len = logBulk.Count;
 		for (int row = 0, rows = (logBulk.Count + 15) / 16; row < rows; ++row) {
-			sb.AppendFormat("{0:000000}:", row * 16);
+			sb.Append($"{row * 16:000000}:");
 			for (int i = 0; i < 16; ++i, ++cur) {
 				if (cur >= len)
 					sb.Append("   ");
 				else
-					sb.AppendFormat(" {0:X2}", logBulk.Array[logBulk.Offset + cur]);
+					sb.Append($" {logBulk.Array[logBulk.Offset + cur]:X2}");
 			}
 
 			sb.Append("  | ");

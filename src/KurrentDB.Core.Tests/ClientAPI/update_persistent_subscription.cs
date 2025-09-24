@@ -23,7 +23,7 @@ public class update_existing_persistent_subscription<TLogFormat, TStreamId> : Sp
 
 	protected override async Task Given() {
 		await _conn.AppendToStreamAsync(_stream, ExpectedVersion.Any,
-			new EventData(Guid.NewGuid(), "whatever", true, Encoding.UTF8.GetBytes("{'foo' : 2}"), new Byte[0]));
+			new EventData(Guid.NewGuid(), "whatever", true, Encoding.UTF8.GetBytes("{'foo' : 2}"), []));
 		await _conn.CreatePersistentSubscriptionAsync(_stream, "existing", _settings, DefaultData.AdminCredentials);
 	}
 
@@ -52,7 +52,7 @@ public class update_existing_persistent_subscription_with_subscribers<TLogFormat
 
 	protected override async Task Given() {
 		await _conn.AppendToStreamAsync(_stream, ExpectedVersion.Any,
-			new EventData(Guid.NewGuid(), "whatever", true, Encoding.UTF8.GetBytes("{'foo' : 2}"), new Byte[0]));
+			new EventData(Guid.NewGuid(), "whatever", true, Encoding.UTF8.GetBytes("{'foo' : 2}"), []));
 		await _conn.CreatePersistentSubscriptionAsync(_stream, "existing", _settings, DefaultData.AdminCredentials)
 ;
 		_conn.ConnectToPersistentSubscription(_stream, "existing", (x, y) => Task.CompletedTask,
@@ -117,7 +117,7 @@ public class update_existing_persistent_subscription_without_permissions<TLogFor
 
 	protected override async Task When() {
 		await _conn.AppendToStreamAsync(_stream, ExpectedVersion.Any,
-			new EventData(Guid.NewGuid(), "whatever", true, Encoding.UTF8.GetBytes("{'foo' : 2}"), new Byte[0]));
+			new EventData(Guid.NewGuid(), "whatever", true, Encoding.UTF8.GetBytes("{'foo' : 2}"), []));
 		await _conn.CreatePersistentSubscriptionAsync(_stream, "existing", _settings, DefaultData.AdminCredentials)
 ;
 	}

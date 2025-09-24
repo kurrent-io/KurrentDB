@@ -22,12 +22,12 @@ public static class result_emitter {
 
 		[Test]
 		public void it_can_be_created() {
-			new ResultEventEmitter(_namesBuilder);
+			_ = new ResultEventEmitter(_namesBuilder);
 		}
 
 		[Test]
 		public void null_names_builder_throws_argument_null_exception() {
-			Assert.Throws<ArgumentNullException>(() => { new ResultEventEmitter(null); });
+			Assert.Throws<ArgumentNullException>(() => _ = new ResultEventEmitter(null));
 		}
 	}
 

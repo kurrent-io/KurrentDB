@@ -198,8 +198,6 @@ class can_serialize_and_deserialize {
 			return (Data != null ? Data.GetHashCode() : 0);
 		}
 
-		public override string ToString() {
-			return string.Format("Data: {0}", Data);
-		}
+		public override string ToString() => $"Data: {Data}";
 	}
 }

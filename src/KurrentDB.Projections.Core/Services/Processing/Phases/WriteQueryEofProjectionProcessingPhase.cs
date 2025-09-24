@@ -10,20 +10,18 @@ using KurrentDB.Projections.Core.Services.Processing.Partitioning;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Phases;
 
-public sealed class WriteQueryEofProjectionProcessingPhase : WriteQueryResultProjectionProcessingPhaseBase {
-	public WriteQueryEofProjectionProcessingPhase(
-		IPublisher publisher,
-		int phase,
-		string resultStream,
-		ICoreProjectionForProcessingPhase coreProjection,
-		PartitionStateCache stateCache,
-		ICoreProjectionCheckpointManager checkpointManager,
-		IEmittedEventWriter emittedEventWriter,
-		IEmittedStreamsTracker emittedStreamsTracker)
-		: base(publisher, phase, resultStream, coreProjection, stateCache, checkpointManager, emittedEventWriter,
-			emittedStreamsTracker) {
-	}
-
+public sealed class WriteQueryEofProjectionProcessingPhase(
+	IPublisher publisher,
+	int phase,
+	string resultStream,
+	ICoreProjectionForProcessingPhase coreProjection,
+	PartitionStateCache stateCache,
+	ICoreProjectionCheckpointManager checkpointManager,
+	IEmittedEventWriter emittedEventWriter,
+	IEmittedStreamsTracker emittedStreamsTracker)
+	: WriteQueryResultProjectionProcessingPhaseBase(publisher, phase, resultStream, coreProjection, stateCache, checkpointManager,
+		emittedEventWriter,
+		emittedStreamsTracker) {
 	protected override IEnumerable<EmittedEventEnvelope> WriteResults(CheckpointTag phaseCheckpointTag) {
 		// do nothing
 		yield break;

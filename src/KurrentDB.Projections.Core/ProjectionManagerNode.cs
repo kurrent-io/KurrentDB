@@ -22,7 +22,7 @@ using TelemetryMessage = KurrentDB.Core.Telemetry.TelemetryMessage;
 
 namespace KurrentDB.Projections.Core;
 
-public class ProjectionManagerNode {
+public static class ProjectionManagerNode {
 	public static void CreateManagerService(
 		StandardComponents standardComponents,
 		ProjectionsStandardComponents projectionsStandardComponents,
@@ -66,7 +66,6 @@ public class ProjectionManagerNode {
 			projectionsStandardComponents.RunProjections,
 			ioDispatcher,
 			projectionManagerMessageDispatcher);
-
 
 		SubscribeOutputBus(standardComponents, projectionsStandardComponents, forwarder, ioDispatcher);
 	}
@@ -140,25 +139,18 @@ public class ProjectionManagerNode {
 
 		managerOutput.Subscribe<TimerMessage.Schedule>(standardComponents.TimerService);
 		managerOutput.Subscribe(Forwarder.Create<AwakeServiceMessage.SubscribeAwake>(standardComponents.MainQueue));
-		managerOutput.Subscribe(
-			Forwarder.Create<AwakeServiceMessage.UnsubscribeAwake>(standardComponents.MainQueue));
+		managerOutput.Subscribe(Forwarder.Create<AwakeServiceMessage.UnsubscribeAwake>(standardComponents.MainQueue));
 		managerOutput.Subscribe<SystemMessage.SubSystemInitialized>(forwarder);
 
 		// self forward all
+		standardComponents.MainBus.Subscribe(Forwarder.Create<SystemMessage.StateChangeMessage>(projectionsStandardComponents.LeaderInputQueue));
+		standardComponents.MainBus.Subscribe(Forwarder.Create<SystemMessage.SystemCoreReady>(projectionsStandardComponents.LeaderInputQueue));
+		standardComponents.MainBus.Subscribe(Forwarder.Create<SystemMessage.EpochWritten>(projectionsStandardComponents.LeaderInputQueue));
 		standardComponents.MainBus.Subscribe(
-			Forwarder.Create<SystemMessage.StateChangeMessage>(projectionsStandardComponents.LeaderInputQueue));
+			Forwarder.Create<ProjectionCoreServiceMessage.SubComponentStarted>(projectionsStandardComponents.LeaderInputQueue));
 		standardComponents.MainBus.Subscribe(
-			Forwarder.Create<SystemMessage.SystemCoreReady>(projectionsStandardComponents.LeaderInputQueue));
-		standardComponents.MainBus.Subscribe(
-			Forwarder.Create<SystemMessage.EpochWritten>(projectionsStandardComponents.LeaderInputQueue));
-		standardComponents.MainBus.Subscribe(
-			Forwarder.Create<ProjectionCoreServiceMessage.SubComponentStarted>(projectionsStandardComponents
-				.LeaderInputQueue));
-		standardComponents.MainBus.Subscribe(
-			Forwarder.Create<ProjectionCoreServiceMessage.SubComponentStopped>(projectionsStandardComponents
-				.LeaderInputQueue));
-		standardComponents.MainBus.Subscribe(
-			Forwarder.Create<TelemetryMessage.Request>(projectionsStandardComponents.LeaderInputQueue));
+			Forwarder.Create<ProjectionCoreServiceMessage.SubComponentStopped>(projectionsStandardComponents.LeaderInputQueue));
+		standardComponents.MainBus.Subscribe(Forwarder.Create<TelemetryMessage.Request>(projectionsStandardComponents.LeaderInputQueue));
 		projectionsStandardComponents.LeaderInputBus.Subscribe(new UnwrapEnvelopeHandler());
 	}
 }

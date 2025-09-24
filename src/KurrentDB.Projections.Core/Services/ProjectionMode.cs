@@ -11,5 +11,5 @@ public enum ProjectionMode {
 	//____2 = 2,
 	//____3 = 3,
 	Continuous = 4,
-	AllNonTransient = 999,
+	AllNonTransient = 999
 }

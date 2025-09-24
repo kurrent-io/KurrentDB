@@ -15,16 +15,11 @@ public class CategorizeStreamByPath : IProjectionStateHandler {
 	private readonly StreamCategoryExtractor _streamCategoryExtractor;
 
 	public CategorizeStreamByPath(string source, Action<string, object[]> logger) {
-		var extractor = StreamCategoryExtractor.GetExtractor(source, logger);
+		var extractor = StreamCategoryExtractor.GetExtractor(source);
 		// we will need to declare event types we are interested in
 		_streamCategoryExtractor = extractor;
 	}
 
-	public void ConfigureSourceProcessingStrategy(SourceDefinitionBuilder builder) {
-		builder.FromAll();
-		builder.AllEvents();
-		builder.SetIncludeLinks();
-	}
 
 	public void Load(string state) {
 	}
@@ -44,8 +39,13 @@ public class CategorizeStreamByPath : IProjectionStateHandler {
 	}
 
 	public bool ProcessEvent(
-		string partition, CheckpointTag eventPosition, string category1, ResolvedEvent data,
-		out string newState, out string newSharedState, out EmittedEventEnvelope[] emittedEvents) {
+		string partition,
+		CheckpointTag eventPosition,
+		string category1,
+		ResolvedEvent data,
+		out string newState,
+		out string newSharedState,
+		out EmittedEventEnvelope[] emittedEvents) {
 		newSharedState = null;
 		emittedEvents = null;
 		newState = null;
@@ -57,17 +57,19 @@ public class CategorizeStreamByPath : IProjectionStateHandler {
 		if (category == null)
 			return true; // handled but not interesting
 
-		emittedEvents = new[] {
-			new EmittedEventEnvelope(
+		emittedEvents = [
+			new(
 				new EmittedDataEvent(
-					"$category" + "-" + category, Guid.NewGuid(), SystemEventTypes.StreamReference, false,
+					$"$category-{category}", Guid.NewGuid(), SystemEventTypes.StreamReference, false,
 					data.PositionStreamId, null, eventPosition, expectedTag: null))
-		};
+		];
 
 		return true;
 	}
 
-	public bool ProcessPartitionCreated(string partition, CheckpointTag createPosition, ResolvedEvent data,
+	public bool ProcessPartitionCreated(string partition,
+		CheckpointTag createPosition,
+		ResolvedEvent data,
 		out EmittedEventEnvelope[] emittedEvents) {
 		emittedEvents = null;
 		return false;
@@ -86,5 +88,11 @@ public class CategorizeStreamByPath : IProjectionStateHandler {
 
 	public IQuerySources GetSourceDefinition() {
 		return SourceDefinitionBuilder.From(ConfigureSourceProcessingStrategy);
+
+		static void ConfigureSourceProcessingStrategy(SourceDefinitionBuilder builder) {
+			builder.FromAll();
+			builder.AllEvents();
+			builder.SetIncludeLinks();
+		}
 	}
 }

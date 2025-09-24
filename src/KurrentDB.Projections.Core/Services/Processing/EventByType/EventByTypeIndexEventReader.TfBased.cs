@@ -19,7 +19,6 @@ public partial class EventByTypeIndexEventReader {
 	private class TfBased : State,
 		IHandle<ClientMessage.ReadAllEventsForwardCompleted>,
 		IHandle<ProjectionManagementMessage.Internal.ReadTimeout> {
-		private readonly HashSet<string> _eventTypes;
 		private readonly ITimeProvider _timeProvider;
 		private bool _tfEventsRequested;
 		private bool _disposed;
@@ -34,8 +33,8 @@ public partial class EventByTypeIndexEventReader {
 			IPublisher publisher, ClaimsPrincipal readAs)
 			: base(reader, readAs) {
 			_timeProvider = timeProvider;
-			_eventTypes = reader._eventTypes;
-			_streamToEventType = _eventTypes.ToDictionary(v => "$et-" + v, v => v);
+			var eventTypes = reader._eventTypes;
+			_streamToEventType = eventTypes.ToDictionary(v => $"$et-{v}", v => v);
 			_publisher = publisher;
 			_fromTfPosition = fromTfPosition;
 		}
@@ -62,7 +61,7 @@ public partial class EventByTypeIndexEventReader {
 				case ReadAllResult.Success:
 					var eof = message.Events is [];
 					_eof = eof;
-					var willDispose = _reader._stopOnEof && eof;
+					var willDispose = _reader.StopOnEof && eof;
 					_fromTfPosition = message.NextPos;
 
 					if (!willDispose) {
@@ -102,13 +101,9 @@ public partial class EventByTypeIndexEventReader {
 						}
 					}
 
-					if (_disposed)
-						return;
-
 					break;
 				default:
-					throw new NotSupportedException(
-						String.Format("ReadEvents result code was not recognized. Code: {0}", message.Result));
+					throw new NotSupportedException($"ReadEvents result code was not recognized. Code: {message.Result}");
 			}
 		}
 
@@ -151,25 +146,23 @@ public partial class EventByTypeIndexEventReader {
 		}
 
 		private void DeliverLastCommitPosition(TFPos lastPosition) {
-			if (_reader._stopOnEof)
+			if (_reader.StopOnEof)
 				return;
 			_publisher.Publish(
 				new ReaderSubscriptionMessage.CommittedEventDistributed(
 					_reader.EventReaderCorrelationId, null, lastPosition.PreparePosition, 100.0f,
-					source: this.GetType()));
+					source: GetType()));
 			//TODO: check was is passed here
 		}
 
-		private void DeliverEventRetrievedFromTf(KurrentDB.Core.Data.ResolvedEvent pair, float progress,
-			TFPos position) {
+		private void DeliverEventRetrievedFromTf(KurrentDB.Core.Data.ResolvedEvent pair, float progress, TFPos position) {
 			var resolvedEvent = new ResolvedEvent(pair, null);
 
 			DeliverEvent(progress, resolvedEvent, position, pair);
 		}
 
 		private void SendIdle() {
-			_publisher.Publish(
-				new ReaderSubscriptionMessage.EventReaderIdle(_reader.EventReaderCorrelationId, _timeProvider.UtcNow));
+			_publisher.Publish(new ReaderSubscriptionMessage.EventReaderIdle(_reader.EventReaderCorrelationId, _timeProvider.UtcNow));
 		}
 
 		public override void Dispose() {

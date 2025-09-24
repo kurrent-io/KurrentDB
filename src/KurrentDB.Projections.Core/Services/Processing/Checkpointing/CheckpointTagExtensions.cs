@@ -72,7 +72,7 @@ public static class CheckpointTagExtensions {
 			if (reader.TokenType != JsonToken.StartObject)
 				return null;
 			while (true) {
-				CheckpointTag.Check(reader.Read(), reader);
+				CheckpointTag.Check(reader.Read());
 				if (reader.TokenType == JsonToken.EndObject)
 					break;
 				if (reader.TokenType != JsonToken.PropertyName)

@@ -26,14 +26,12 @@ public class when_running_a_js_projection_with_transform_by : TestFixtureWithInt
             ";
 	}
 
-	[Test, Category(_projectionType)]
+	[Test, Category(ProjectionType)]
 	public void transform_state_returns_correct_result() {
-		string state;
-		EmittedEventEnvelope[] emittedEvents;
 		_stateHandler.ProcessEvent(
 			"", CheckpointTag.FromPosition(0, 20, 10), "stream1", "type1", "category", Guid.NewGuid(), 0,
 			"metadata",
-			@"{}", out state, out emittedEvents);
+			"{}", out _, out _);
 		var result = _stateHandler.TransformStateToResult();
 
 		Assert.IsNotNull(result);

@@ -302,22 +302,22 @@ public class when_reading_a_stream_forward_with_linkto_with_at_sign_in_name : Ht
 			await conn.ConnectAsync();
 			await conn.AppendToStreamAsync(StreamName, ExpectedVersion.Any, creds,
 					new EventData(Guid.NewGuid(), "testing", true, Encoding.UTF8.GetBytes("{'foo' : 4}"),
-						new byte[0]))
+						[]))
 				;
 			await conn.AppendToStreamAsync(StreamName, ExpectedVersion.Any, creds,
 					new EventData(Guid.NewGuid(), "testing", true, Encoding.UTF8.GetBytes("{'foo' : 4}"),
-						new byte[0]))
+						[]))
 				;
 			await conn.AppendToStreamAsync(StreamName, ExpectedVersion.Any, creds,
 					new EventData(Guid.NewGuid(), "testing", true, Encoding.UTF8.GetBytes("{'foo' : 4}"),
-						new byte[0]))
+						[]))
 				;
 			await conn.AppendToStreamAsync(LinkedStreamName, ExpectedVersion.Any, creds,
 				new EventData(Guid.NewGuid(), SystemEventTypes.LinkTo, false,
-					Encoding.UTF8.GetBytes("0@" + StreamName), new byte[0]));
+					Encoding.UTF8.GetBytes("0@" + StreamName), []));
 			await conn.AppendToStreamAsync(LinkedStreamName, ExpectedVersion.Any, creds,
 				new EventData(Guid.NewGuid(), SystemEventTypes.LinkTo, false,
-					Encoding.UTF8.GetBytes("1@" + StreamName), new byte[0]));
+					Encoding.UTF8.GetBytes("1@" + StreamName), []));
 		}
 	}
 

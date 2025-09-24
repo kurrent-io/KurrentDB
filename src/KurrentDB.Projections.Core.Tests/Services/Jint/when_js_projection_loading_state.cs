@@ -22,14 +22,11 @@ public class when_js_projection_loading_state : TestFixtureWithInterpretedProjec
 		_state = @"{""A"":""A"",""B"":""B""}";
 	}
 
-	[Test, Category(_projectionType)]
+	[Test, Category(ProjectionType)]
 	public void the_state_is_loaded() {
-		string state;
-		EmittedEventEnvelope[] emittedEvents;
 		_stateHandler.ProcessEvent(
 			"", CheckpointTag.FromPosition(0, 20, 10), "stream1", "type1", "category", Guid.NewGuid(), 0,
-			"metadata",
-			@"{""x"":""y""}", out state, out emittedEvents);
+			"metadata", """{"x":"y"}""", out var state, out _);
 
 		Assert.AreEqual(_state, state);
 	}

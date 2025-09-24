@@ -16,7 +16,8 @@ using static EventStore.Client.Projections.UpdateReq.Types.Options;
 namespace EventStore.Projections.Core.Services.Grpc;
 
 internal partial class ProjectionManagement {
-	private static readonly Operation UpdateOperation = new Operation(Operations.Projections.Update);
+	private static readonly Operation UpdateOperation = new(Operations.Projections.Update);
+
 	public override async Task<UpdateResp> Update(UpdateReq request, ServerCallContext context) {
 		var updatedSource = new TaskCompletionSource<bool>();
 		var options = request.Options;
@@ -37,9 +38,7 @@ internal partial class ProjectionManagement {
 		var runAs = new ProjectionManagementMessage.RunAs(user);
 
 		var envelope = new CallbackEnvelope(OnMessage);
-		_publisher.Publish(
-			new ProjectionManagementMessage.Command.UpdateQuery(envelope, name, runAs, query,
-				emitEnabled));
+		_publisher.Publish(new ProjectionManagementMessage.Command.UpdateQuery(envelope, name, runAs, query, emitEnabled));
 
 		await updatedSource.Task;
 

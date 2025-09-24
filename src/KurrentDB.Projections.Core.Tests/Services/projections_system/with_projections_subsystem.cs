@@ -7,6 +7,7 @@ using System.Linq;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Tests.Services.projections_manager;
+using static KurrentDB.Projections.Core.Messages.ProjectionManagementMessage;
 
 namespace KurrentDB.Projections.Core.Tests.Services.projections_system;
 
@@ -14,9 +15,7 @@ public abstract class with_projections_subsystem<TLogFormat, TStreamId> : TestFi
 	protected bool _startSystemProjections;
 	protected Guid _instanceCorrelation = Guid.NewGuid();
 
-	protected override bool GivenInitializeSystemProjections() {
-		return true;
-	}
+	protected override bool GivenInitializeSystemProjections() => true;
 
 	protected override void Given1() {
 		base.Given1();
@@ -26,24 +25,17 @@ public abstract class with_projections_subsystem<TLogFormat, TStreamId> : TestFi
 		EnableReadAll();
 	}
 
-	protected virtual bool GivenStartSystemProjections() {
-		return false;
-	}
+	protected virtual bool GivenStartSystemProjections() => false;
 
 	protected override IEnumerable<WhenStep> PreWhen() {
 		yield return (new ProjectionSubsystemMessage.StartComponents(_instanceCorrelation));
 		yield return Yield;
 		if (_startSystemProjections) {
-			yield return
-				new ProjectionManagementMessage.Command.GetStatistics(Envelope, ProjectionMode.AllNonTransient,
-					null)
-				;
-			var statistics = HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Last();
+			yield return new Command.GetStatistics(Envelope, ProjectionMode.AllNonTransient, null);
+			var statistics = HandledMessages.OfType<Statistics>().Last();
 			foreach (var projection in statistics.Projections) {
 				if (projection.Status != "Running")
-					yield return
-						new ProjectionManagementMessage.Command.Enable(
-							Envelope, projection.Name, ProjectionManagementMessage.RunAs.Anonymous);
+					yield return new Command.Enable(Envelope, projection.Name, RunAs.Anonymous);
 			}
 		}
 	}

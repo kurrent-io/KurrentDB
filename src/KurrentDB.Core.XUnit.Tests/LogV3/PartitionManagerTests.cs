@@ -143,7 +143,7 @@ public class PartitionManagerTests {
 		timeStamp: DateTime.UtcNow,
 		systemRecordType: SystemRecordType.Invalid,
 		systemRecordSerialization: SystemRecordSerialization.Invalid,
-		data: new byte[0]);
+		data: []);
 }
 
 class FakeWriter : ITransactionFileWriter {

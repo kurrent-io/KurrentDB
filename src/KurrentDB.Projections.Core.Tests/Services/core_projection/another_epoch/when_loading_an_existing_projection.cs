@@ -11,27 +11,26 @@ namespace KurrentDB.Projections.Core.Tests.Services.core_projection.another_epoc
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_starting_an_existing_projection<TLogFormat, TStreamId> : TestFixtureWithCoreProjectionStarted<TLogFormat, TStreamId> {
-	private string _testProjectionState = @"{""test"":1}";
+	private const string TestProjectionState = """{"test":1}""";
 
 	protected override void Given() {
 		_version = new ProjectionVersion(1, 2, 2);
 		ExistingEvent(
 			"$projections-projection-result", "Result",
-			@"{""v"":1, ""c"": 100, ""p"": 50}", _testProjectionState);
+			"""{"v":1, "c": 100, "p": 50}""", TestProjectionState);
 		ExistingEvent(
 			"$projections-projection-checkpoint", ProjectionEventTypes.ProjectionCheckpoint,
-			@"{""v"":1, ""c"": 100, ""p"": 50}", _testProjectionState);
+			"""{"v":1, "c": 100, "p": 50}""", TestProjectionState);
 		ExistingEvent(
 			"$projections-projection-result", "Result",
-			@"{""v"":1, ""c"": 200, ""p"": 150}", _testProjectionState);
+			"""{"v":1, "c": 200, "p": 150}""", TestProjectionState);
 		ExistingEvent(
 			"$projections-projection-result", "Result",
-			@"{""v"":1, ""c"": 300, ""p"": 250}", _testProjectionState);
+			"""{"v":1, "c": 300, "p": 250}""", TestProjectionState);
 	}
 
 	protected override void When() {
 	}
-
 
 	[Test]
 	public void should_subscribe_from_the_beginning() {

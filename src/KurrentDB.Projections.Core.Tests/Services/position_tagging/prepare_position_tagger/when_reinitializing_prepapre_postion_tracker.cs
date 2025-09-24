@@ -19,16 +19,12 @@ public class when_reinitializing_prepapre_postion_tracker {
 		// given
 		var tagger = new PreparePositionTagger(0);
 		var positionTracker = new PositionTracker(tagger);
-
 		var newTag = CheckpointTag.FromPreparePosition(0, 50);
 		positionTracker.UpdateByCheckpointTagInitial(newTag);
 		_tag = positionTracker.LastTag;
 		_tagger = new PreparePositionTagger(0);
 		_positionTracker = new PositionTracker(_tagger);
 		_positionTracker.UpdateByCheckpointTagInitial(_tag);
-		// when
-
-
 		_positionTracker.Initialize();
 	}
 

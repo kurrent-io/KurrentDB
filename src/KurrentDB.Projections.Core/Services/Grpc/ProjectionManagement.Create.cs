@@ -17,7 +17,7 @@ using static EventStore.Client.Projections.CreateReq.Types.Options;
 namespace EventStore.Projections.Core.Services.Grpc;
 
 internal partial class ProjectionManagement {
-	private static readonly Operation CreateOperation = new Operation(Operations.Projections.Create);
+	private static readonly Operation CreateOperation = new(Operations.Projections.Create);
 
 	public override async Task<CreateResp> Create(CreateReq request, ServerCallContext context) {
 		var createdSource = new TaskCompletionSource<bool>();

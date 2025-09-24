@@ -15,15 +15,12 @@ public class prepare_log_record_should<TLogFormat, TStreamId> {
 	private readonly IRecordFactory<TStreamId> _recordFactory = LogFormatHelper<TLogFormat, TStreamId>.RecordFactory;
 	private readonly TStreamId _streamId = LogFormatHelper<TLogFormat, TStreamId>.StreamId;
 
-	public prepare_log_record_should() {
-	}
-
 	[Test]
 	public void throw_argumentoutofrangeexception_when_given_negative_logposition() {
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
 		Assert.Throws<ArgumentOutOfRangeException>(() => {
-			LogRecord.Prepare(_recordFactory, -1, Guid.NewGuid(), Guid.NewGuid(), 0, 0, _streamId, 0,
-				PrepareFlags.None, eventTypeId, new byte[0], null, DateTime.UtcNow);
+			_recordFactory.Prepare( -1, Guid.NewGuid(), Guid.NewGuid(), 0, 0, _streamId, 0,
+				PrepareFlags.None, eventTypeId, [], null, DateTime.UtcNow);
 		});
 	}
 
@@ -31,8 +28,8 @@ public class prepare_log_record_should<TLogFormat, TStreamId> {
 	public void throw_argumentoutofrangeexception_when_given_negative_transactionposition() {
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
 		Assert.Throws<ArgumentOutOfRangeException>(() => {
-			LogRecord.Prepare(_recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), -1, 0, _streamId, 0,
-				PrepareFlags.None, eventTypeId, new byte[0], null, DateTime.UtcNow);
+			_recordFactory.Prepare(0, Guid.NewGuid(), Guid.NewGuid(), -1, 0, _streamId, 0,
+				PrepareFlags.None, eventTypeId, [], null, DateTime.UtcNow);
 		});
 	}
 
@@ -40,8 +37,8 @@ public class prepare_log_record_should<TLogFormat, TStreamId> {
 	public void throw_argumentoutofrangeexception_when_given_transaction_offset_less_than_minus_one() {
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
 		Assert.Throws<ArgumentOutOfRangeException>(() => {
-			LogRecord.Prepare(_recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), 0, -2, _streamId, 0,
-				PrepareFlags.None, eventTypeId, new byte[0], null, DateTime.UtcNow);
+			_recordFactory.Prepare( 0, Guid.NewGuid(), Guid.NewGuid(), 0, -2, _streamId, 0,
+				PrepareFlags.None, eventTypeId, [], null, DateTime.UtcNow);
 		});
 	}
 
@@ -49,8 +46,8 @@ public class prepare_log_record_should<TLogFormat, TStreamId> {
 	public void throw_argumentexception_when_given_empty_correlationid() {
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
 		Assert.Throws<ArgumentException>(() => {
-			LogRecord.Prepare(_recordFactory, 0, Guid.Empty, Guid.NewGuid(), 0, 0, _streamId, 0,
-				PrepareFlags.None, eventTypeId, new byte[0], null, DateTime.UtcNow);
+			_recordFactory.Prepare( 0, Guid.Empty, Guid.NewGuid(), 0, 0, _streamId, 0,
+				PrepareFlags.None, eventTypeId, [], null, DateTime.UtcNow);
 		});
 	}
 
@@ -58,8 +55,8 @@ public class prepare_log_record_should<TLogFormat, TStreamId> {
 	public void throw_argumentexception_when_given_empty_eventid() {
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
 		Assert.Throws<ArgumentException>(() => {
-			LogRecord.Prepare(_recordFactory, 0, Guid.NewGuid(), Guid.Empty, 0, 0, _streamId, 0,
-				PrepareFlags.None, eventTypeId, new byte[0], null, DateTime.UtcNow);
+			_recordFactory.Prepare( 0, Guid.NewGuid(), Guid.Empty, 0, 0, _streamId, 0,
+				PrepareFlags.None, eventTypeId, [], null, DateTime.UtcNow);
 		});
 	}
 
@@ -72,8 +69,8 @@ public class prepare_log_record_should<TLogFormat, TStreamId> {
 			typeof(ArgumentOutOfRangeException));
 
 		Assert.Throws(expectedExceptionType, () => {
-			LogRecord.Prepare(_recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, nullStreamId, 0,
-				PrepareFlags.None, eventTypeId, new byte[0], null, DateTime.UtcNow);
+			_recordFactory.Prepare( 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, nullStreamId, 0,
+				PrepareFlags.None, eventTypeId, [], null, DateTime.UtcNow);
 		});
 	}
 
@@ -86,8 +83,8 @@ public class prepare_log_record_should<TLogFormat, TStreamId> {
 			typeof(ArgumentOutOfRangeException));
 
 		Assert.Throws(expectedExceptionType, () => {
-			LogRecord.Prepare(_recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, emptyStreamId, 0,
-				PrepareFlags.None, eventTypeId, new byte[0], null, DateTime.UtcNow);
+			_recordFactory.Prepare( 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, emptyStreamId, 0,
+				PrepareFlags.None, eventTypeId, [], null, DateTime.UtcNow);
 		});
 	}
 
@@ -95,8 +92,8 @@ public class prepare_log_record_should<TLogFormat, TStreamId> {
 	public void throw_argumentoutofrangeexception_when_given_incorrect_expectedversion() {
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
 		Assert.Throws<ArgumentOutOfRangeException>(() => {
-			LogRecord.Prepare(_recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, _streamId, -3,
-				PrepareFlags.None, eventTypeId, new byte[0], null, DateTime.UtcNow);
+			_recordFactory.Prepare( 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, _streamId, -3,
+				PrepareFlags.None, eventTypeId, [], null, DateTime.UtcNow);
 		});
 	}
 
@@ -104,7 +101,7 @@ public class prepare_log_record_should<TLogFormat, TStreamId> {
 	public void throw_argumentnullexception_when_given_null_data() {
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
 		Assert.Throws<ArgumentNullException>(() => {
-			LogRecord.Prepare(_recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, _streamId, 0,
+			_recordFactory.Prepare( 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, _streamId, 0,
 				PrepareFlags.None, eventTypeId, null, null, DateTime.UtcNow);
 		});
 	}
@@ -112,16 +109,16 @@ public class prepare_log_record_should<TLogFormat, TStreamId> {
 	[Test]
 	public void throw_argumentnullexception_when_given_null_eventtype() {
 		Assert.DoesNotThrow(() =>
-			LogRecord.Prepare(_recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, _streamId, 0,
-				PrepareFlags.None, default, new byte[0], null, DateTime.UtcNow));
+			_recordFactory.Prepare( 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, _streamId, 0,
+				PrepareFlags.None, default, [], null, DateTime.UtcNow));
 	}
 
 	[Test]
 	public void throw_argumentexception_when_given_empty_eventtype() {
 		var emptyEventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
 		Assert.DoesNotThrow(() =>
-			LogRecord.Prepare(_recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, _streamId, 0,
-				PrepareFlags.None, emptyEventTypeId, new byte[0], null, DateTime.UtcNow));
+			_recordFactory.Prepare( 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, _streamId, 0,
+				PrepareFlags.None, emptyEventTypeId, [], null, DateTime.UtcNow));
 	}
 
 	[Test]
@@ -133,7 +130,7 @@ public class prepare_log_record_should<TLogFormat, TStreamId> {
 
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
 
-		var prepare = LogRecord.Prepare(_recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, _streamId, 0,
+		var prepare = _recordFactory.Prepare( 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, _streamId, 0,
 			PrepareFlags.IsRedacted, eventTypeId, new byte[100], null, DateTime.UtcNow);
 		Assert.AreEqual(0, prepare.Data.Length);
 	}
@@ -149,7 +146,7 @@ public class prepare_log_record_should<TLogFormat, TStreamId> {
 
 		const int dataSize = 10000;
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
-		var prepare = LogRecord.Prepare(_recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, _streamId, 0,
+		var prepare = _recordFactory.Prepare( 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, _streamId, 0,
 			PrepareFlags.IsRedacted, eventTypeId, new byte[dataSize], null, DateTime.UtcNow);
 
 		prepare.WriteTo(ref binaryWriter);

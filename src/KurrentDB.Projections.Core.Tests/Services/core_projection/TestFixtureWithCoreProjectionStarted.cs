@@ -8,13 +8,12 @@ using KurrentDB.Projections.Core.Messages;
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection;
 
 public abstract class TestFixtureWithCoreProjectionStarted<TLogFormat, TStreamId> : TestFixtureWithCoreProjection<TLogFormat, TStreamId> {
-	protected Guid _subscriptionId;
+	protected Guid SubscriptionId;
 
 	protected override void PreWhen() {
 		_coreProjection.Start();
-		var lastSubscribe =
-			_consumer.HandledMessages.OfType<ReaderSubscriptionManagement.Subscribe>().LastOrDefault();
-		_subscriptionId = lastSubscribe != null ? lastSubscribe.SubscriptionId : Guid.NewGuid();
-		_bus.Publish(new EventReaderSubscriptionMessage.ReaderAssignedReader(_subscriptionId, Guid.NewGuid()));
+		var lastSubscribe = _consumer.HandledMessages.OfType<ReaderSubscriptionManagement.Subscribe>().LastOrDefault();
+		SubscriptionId = lastSubscribe?.SubscriptionId ?? Guid.NewGuid();
+		_bus.Publish(new EventReaderSubscriptionMessage.ReaderAssignedReader(SubscriptionId, Guid.NewGuid()));
 	}
 }

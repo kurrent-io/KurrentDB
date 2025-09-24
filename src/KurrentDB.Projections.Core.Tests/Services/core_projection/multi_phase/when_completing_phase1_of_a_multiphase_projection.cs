@@ -8,7 +8,8 @@ namespace KurrentDB.Projections.Core.Tests.Services.core_projection.multi_phase;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_completing_phase1_of_a_multiphase_projection<TLogFormat, TStreamId> : specification_with_multi_phase_core_projection<TLogFormat, TStreamId> {
+class when_completing_phase1_of_a_multiphase_projection<TLogFormat, TStreamId>
+	: specification_with_multi_phase_core_projection<TLogFormat, TStreamId> {
 	protected override void When() {
 		_coreProjection.Start();
 		Phase1.Complete();

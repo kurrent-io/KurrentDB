@@ -12,43 +12,37 @@ using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Strategies;
 
-public class ContinuousProjectionProcessingStrategy : DefaultProjectionProcessingStrategy {
-	public ContinuousProjectionProcessingStrategy(
-		string name, ProjectionVersion projectionVersion, IProjectionStateHandler stateHandler,
-		ProjectionConfig projectionConfig, IQuerySources sourceDefinition, ILogger logger,
-		ReaderSubscriptionDispatcher subscriptionDispatcher, bool enableContentTypeValidation, int maxProjectionStateSize)
-		: base(
-			name, projectionVersion, stateHandler, projectionConfig, sourceDefinition, logger,
-			subscriptionDispatcher, enableContentTypeValidation, maxProjectionStateSize) {
-	}
+public class ContinuousProjectionProcessingStrategy(
+	string name,
+	ProjectionVersion projectionVersion,
+	IProjectionStateHandler stateHandler,
+	ProjectionConfig projectionConfig,
+	IQuerySources sourceDefinition,
+	ILogger logger,
+	ReaderSubscriptionDispatcher subscriptionDispatcher,
+	bool enableContentTypeValidation,
+	int maxProjectionStateSize)
+	: DefaultProjectionProcessingStrategy(
+		name, projectionVersion, stateHandler, projectionConfig, sourceDefinition, logger,
+		subscriptionDispatcher, enableContentTypeValidation, maxProjectionStateSize) {
+	public override bool GetStopOnEof() => false;
 
-	public override bool GetStopOnEof() {
-		return false;
-	}
+	public override bool GetUseCheckpoints() => ProjectionConfig.CheckpointsEnabled;
 
-	public override bool GetUseCheckpoints() {
-		return _projectionConfig.CheckpointsEnabled;
-	}
-
-	public override bool GetProducesRunningResults() {
-		return _sourceDefinition.ProducesResults;
-	}
+	protected override bool GetProducesRunningResults() => SourceDefinition.ProducesResults;
 
 	protected override IProjectionProcessingPhase[] CreateProjectionProcessingPhases(
 		IPublisher publisher,
-		IPublisher inputQueue,
 		Guid projectionCorrelationId,
 		ProjectionNamesBuilder namingBuilder,
 		PartitionStateCache partitionStateCache,
 		CoreProjection coreProjection,
 		IODispatcher ioDispatcher,
-		IProjectionProcessingPhase firstPhase) {
-		return new IProjectionProcessingPhase[] { firstPhase };
-	}
+		IProjectionProcessingPhase firstPhase)
+		=> [firstPhase];
 
-	protected override IResultEventEmitter CreateFirstPhaseResultEmitter(ProjectionNamesBuilder namingBuilder) {
-		return _sourceDefinition.ProducesResults
+	protected override IResultEventEmitter CreateFirstPhaseResultEmitter(ProjectionNamesBuilder namingBuilder)
+		=> SourceDefinition.ProducesResults
 			? new ResultEventEmitter(namingBuilder)
-			: (IResultEventEmitter)new NoopResultEventEmitter();
-	}
+			: new NoopResultEventEmitter();
 }

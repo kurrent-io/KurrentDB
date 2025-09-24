@@ -10,7 +10,6 @@ using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Processing;
 using NUnit.Framework;
-
 using ClientMessageWriteEvents = KurrentDB.Core.Tests.TestAdapters.ClientMessage.WriteEvents;
 
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
@@ -21,10 +20,9 @@ namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
 [TestFixture(typeof(LogFormat.V3), typeof(uint), OperationResult.PrepareTimeout)]
 [TestFixture(typeof(LogFormat.V2), typeof(string), OperationResult.ForwardTimeout)]
 [TestFixture(typeof(LogFormat.V3), typeof(uint), OperationResult.ForwardTimeout)]
-public class
-	when_writing_the_projections_initialized_event_fails<TLogFormat, TStreamId> : TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId> {
-
-	private OperationResult _failureCondition;
+public class when_writing_the_projections_initialized_event_fails<TLogFormat, TStreamId>
+	: TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId> {
+	private readonly OperationResult _failureCondition;
 
 	public when_writing_the_projections_initialized_event_fails(OperationResult failureCondition) {
 		_failureCondition = failureCondition;
@@ -46,9 +44,10 @@ public class
 	[Test, Category("v8")]
 	public void retries_writing_with_the_same_event_id() {
 		int retryCount = 0;
-		var projectionsInitializedWrite = _consumer.HandledMessages.OfType<ClientMessageWriteEvents>().Where(x =>
-			x.EventStreamId == ProjectionNamesBuilder.ProjectionsRegistrationStream &&
-			x.Events[0].EventType == ProjectionEventTypes.ProjectionsInitialized).Last();
+		var projectionsInitializedWrite = _consumer.HandledMessages
+			.OfType<ClientMessageWriteEvents>()
+			.Last(x => x.EventStreamId == ProjectionNamesBuilder.ProjectionsRegistrationStream &&
+			           x.Events[0].EventType == ProjectionEventTypes.ProjectionsInitialized);
 		var eventId = projectionsInitializedWrite.Events[0].EventId;
 		while (retryCount < 5) {
 			Assert.AreEqual(eventId, projectionsInitializedWrite.Events[0].EventId);
@@ -56,9 +55,10 @@ public class
 				projectionsInitializedWrite.CorrelationId, _failureCondition,
 				Enum.GetName(typeof(OperationResult), _failureCondition)));
 			_queue.Process();
-			projectionsInitializedWrite = _consumer.HandledMessages.OfType<ClientMessageWriteEvents>().Where(x =>
-				x.EventStreamId == ProjectionNamesBuilder.ProjectionsRegistrationStream &&
-				x.Events[0].EventType == ProjectionEventTypes.ProjectionsInitialized).LastOrDefault();
+			projectionsInitializedWrite = _consumer.HandledMessages
+				.OfType<ClientMessageWriteEvents>()
+				.LastOrDefault(x => x.EventStreamId == ProjectionNamesBuilder.ProjectionsRegistrationStream &&
+				                    x.Events[0].EventType == ProjectionEventTypes.ProjectionsInitialized);
 			if (projectionsInitializedWrite != null) {
 				retryCount++;
 			}

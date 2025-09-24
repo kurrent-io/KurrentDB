@@ -13,7 +13,6 @@ using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using KurrentDB.Projections.Core.Services.Processing.TransactionFile;
 using KurrentDB.Projections.Core.Tests.Services.core_projection;
 using NUnit.Framework;
-
 using ClientMessageWriteEvents = KurrentDB.Core.Tests.TestAdapters.ClientMessage.WriteEvents;
 
 namespace KurrentDB.Projections.Core.Tests.Services.emitted_stream;
@@ -32,35 +31,29 @@ public class when_checkpoint_requested_with_pending_writes<TLogFormat, TStreamId
 
 	[SetUp]
 	public void setup() {
-		_readyHandler = new TestCheckpointManagerMessageHandler();
-		;
-		_stream = new EmittedStream(
+		_readyHandler = new();
+		_stream = new(
 			"test",
-			new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
-				new EmittedStream.WriterConfiguration.StreamMetadata(), null, 50), new ProjectionVersion(1, 0, 0),
+			new(new EmittedStreamsWriter(_ioDispatcher), new(), null, 50), new ProjectionVersion(1, 0, 0),
 			new TransactionFilePositionTagger(0), CheckpointTag.FromPosition(0, 0, -1), _bus, _ioDispatcher,
 			_readyHandler);
 		_stream.Start();
 		_stream.EmitEvents(
-			new[] {
-				new EmittedDataEvent(
-					"test", Guid.NewGuid(), "type", true, "data", null, CheckpointTag.FromPosition(0, 100, 50),
-					null)
-			});
+		[
+			new EmittedDataEvent("test", Guid.NewGuid(), "type", true, "data", null, CheckpointTag.FromPosition(0, 100, 50), null)
+		]);
 		_stream.Checkpoint();
 	}
 
 	[Test]
 	public void does_not_publish_ready_for_checkpoint_immediately() {
-		Assert.AreEqual(
-			0, _consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.ReadyForCheckpoint>().Count());
+		Assert.AreEqual(0, _consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.ReadyForCheckpoint>().Count());
 	}
 
 	[Test]
 	public void publishes_ready_for_checkpoint_on_handling_last_write_events_completed() {
 		var msg = _consumer.HandledMessages.OfType<ClientMessageWriteEvents>().First();
 		_bus.Publish(ClientMessage.WriteEventsCompleted.ForSingleStream(msg.CorrelationId, 0, 0, -1, -1));
-		Assert.AreEqual(
-			1, _readyHandler.HandledMessages.OfType<CoreProjectionProcessingMessage.ReadyForCheckpoint>().Count());
+		Assert.AreEqual(1, _readyHandler.HandledMessages.OfType<CoreProjectionProcessingMessage.ReadyForCheckpoint>().Count());
 	}
 }

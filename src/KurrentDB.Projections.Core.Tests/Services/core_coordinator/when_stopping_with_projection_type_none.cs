@@ -9,6 +9,7 @@ using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Management;
 using KurrentDB.Projections.Core.Services.Processing;
 using NUnit.Framework;
+using static KurrentDB.Projections.Core.Messages.ProjectionCoreServiceMessage;
 
 namespace KurrentDB.Projections.Core.Tests.Services.core_coordinator;
 
@@ -20,20 +21,16 @@ public class when_stopping_with_projection_type_none {
 
 	[SetUp]
 	public void Setup() {
-		queues = new List<FakePublisher>() { new FakePublisher() }.ToArray();
-		publisher = new FakePublisher();
-
+		queues = [new()];
+		publisher = new();
 		var instanceCorrelationId = Guid.NewGuid();
-		_coordinator =
-			new ProjectionCoreCoordinator(ProjectionType.None, queues, publisher);
+		_coordinator = new(ProjectionType.None, queues, publisher);
 
 		// Start components
 		_coordinator.Handle(new ProjectionSubsystemMessage.StartComponents(instanceCorrelationId));
 
 		// start sub components
-		_coordinator.Handle(
-			new ProjectionCoreServiceMessage.SubComponentStarted(EventReaderCoreService.SubComponentName,
-				instanceCorrelationId));
+		_coordinator.Handle(new SubComponentStarted(EventReaderCoreService.SubComponentName, instanceCorrelationId));
 
 		//force stop
 		_coordinator.Handle(new ProjectionSubsystemMessage.StopComponents(instanceCorrelationId));
@@ -46,7 +43,6 @@ public class when_stopping_with_projection_type_none {
 
 	[Test]
 	public void should_not_publish_stop_core_messages() {
-		Assert.AreEqual(0,
-			queues[0].Messages.FindAll(x => x.GetType() == typeof(ProjectionCoreServiceMessage.StopCore)).Count);
+		Assert.AreEqual(0, queues[0].Messages.FindAll(x => x.GetType() == typeof(StopCore)).Count);
 	}
 }

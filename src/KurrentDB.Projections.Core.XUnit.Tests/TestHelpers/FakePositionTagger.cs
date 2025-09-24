@@ -7,10 +7,7 @@ using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 namespace KurrentDB.Projections.Core.XUnit.Tests.TestHelpers;
 
 // TODO: Flesh out this helper as more tests need it
-public class FakePositionTagger : PositionTagger {
-	public FakePositionTagger(int phase) : base(phase) {
-	}
-
+public class FakePositionTagger(int phase) : PositionTagger(phase) {
 	public override bool IsMessageAfterCheckpointTag(CheckpointTag previous, ReaderSubscriptionMessage.CommittedEventDistributed committedEvent) {
 		throw new NotImplementedException();
 	}

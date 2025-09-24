@@ -19,10 +19,10 @@ public abstract class SpecificationWithLinkToToDeletedEvents<TLogFormat, TStream
 		LinkedStreamName = Guid.NewGuid().ToString();
 		DeletedStreamName = Guid.NewGuid().ToString();
 		await _conn.AppendToStreamAsync(DeletedStreamName, ExpectedVersion.Any, creds,
-				new EventData(Guid.NewGuid(), "testing", true, Encoding.UTF8.GetBytes("{'foo' : 4}"), new byte[0]));
+				new EventData(Guid.NewGuid(), "testing", true, Encoding.UTF8.GetBytes("{'foo' : 4}"), []));
 		await _conn.AppendToStreamAsync(LinkedStreamName, ExpectedVersion.Any, creds,
 			new EventData(Guid.NewGuid(), SystemEventTypes.LinkTo, false,
-				Encoding.UTF8.GetBytes("0@" + DeletedStreamName), new byte[0]));
+				Encoding.UTF8.GetBytes("0@" + DeletedStreamName), []));
 		await _conn.DeleteStreamAsync(DeletedStreamName, ExpectedVersion.Any);
 	}
 }

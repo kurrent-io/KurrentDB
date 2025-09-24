@@ -41,14 +41,14 @@ public static class a_new_posted_projection {
 		}
 
 		protected override IEnumerable<WhenStep> When() {
-			yield return (new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid()));
+			yield return new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid());
 			yield return
-				(new ProjectionManagementMessage.Command.Post(
+				new ProjectionManagementMessage.Command.Post(
 					_bus, _projectionMode, _projectionName,
 					ProjectionManagementMessage.RunAs.System, "native:" + _fakeProjectionType.AssemblyQualifiedName,
 					_projectionSource, enabled: true, checkpointsEnabled: _checkpointsEnabled,
 					trackEmittedStreams: _trackEmittedStreams,
-					emitEnabled: _emitEnabled));
+					emitEnabled: _emitEnabled);
 		}
 	}
 
@@ -58,19 +58,14 @@ public static class a_new_posted_projection {
 		protected override IEnumerable<WhenStep> When() {
 			foreach (var m in base.When())
 				yield return m;
-			yield return (
-				new ProjectionManagementMessage.Command.GetState(_bus, _projectionName, ""));
+			yield return new ProjectionManagementMessage.Command.GetState(_bus, _projectionName, "");
 		}
 
 		[Test]
 		public void returns_correct_state() {
-			Assert.AreEqual(
-				1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionState>().Count());
-			Assert.AreEqual(
-				_projectionName,
-				_consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionState>().Single().Name);
-			Assert.AreEqual(
-				"", _consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionState>().Single().State);
+			Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionState>().Count());
+			Assert.AreEqual(_projectionName, _consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionState>().Single().Name);
+			Assert.AreEqual("", _consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionState>().Single().State);
 		}
 	}
 
@@ -83,45 +78,36 @@ public static class a_new_posted_projection {
 			foreach (var m in base.When())
 				yield return m;
 
-			var readerAssignedMessage =
-				_consumer.HandledMessages.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>()
-					.LastOrDefault();
+			var readerAssignedMessage = _consumer.HandledMessages.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>().LastOrDefault();
 			Assert.IsNotNull(readerAssignedMessage);
 			_reader = readerAssignedMessage.ReaderId;
 
 			yield return
-				(ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
+				ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 					_reader, new TFPos(100, 50), new TFPos(100, 50), "stream1", 1, "stream1", 1, false,
 					Guid.NewGuid(),
-					"type", false, Helper.UTF8NoBom.GetBytes("1"), new byte[0], 100, 33.3f));
+					"type", false, Helper.UTF8NoBom.GetBytes("1"), [], 100, 33.3f);
 
 			yield return
-				(ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
+				ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 					_reader, new TFPos(200, 150), new TFPos(200, 150), "stream2", 1, "stream2", 1, false,
 					Guid.NewGuid(),
-					"type", false, Helper.UTF8NoBom.GetBytes("1"), new byte[0], 100, 33.3f));
+					"type", false, Helper.UTF8NoBom.GetBytes("1"), [], 100, 33.3f);
 
-			yield return
-				new ProjectionManagementMessage.Command.Disable(
-					_bus, _projectionName, ProjectionManagementMessage.RunAs.System);
+			yield return new ProjectionManagementMessage.Command.Disable(_bus, _projectionName, ProjectionManagementMessage.RunAs.System);
 		}
 
 		[Test]
 		public void writes_both_stream_and_shared_partition_checkpoints() {
 			var writeProjectionCheckpoints =
-				HandledMessages.OfType<ClientMessage.WriteEvents>()
-					.OfEventType(ProjectionEventTypes.ProjectionCheckpoint).ToArray();
-			var writeCheckpoints =
-				HandledMessages.OfType<ClientMessage.WriteEvents>()
-					.OfEventType(ProjectionEventTypes.PartitionCheckpoint).ToArray();
+				HandledMessages.OfType<ClientMessage.WriteEvents>().OfEventType(ProjectionEventTypes.ProjectionCheckpoint).ToArray();
+			var writeCheckpoints = HandledMessages.OfType<ClientMessage.WriteEvents>().OfEventType(ProjectionEventTypes.PartitionCheckpoint).ToArray();
 
 			Assert.AreEqual(1, writeProjectionCheckpoints.Length);
 			Assert.AreEqual(@"[{""data"": 2}]", Encoding.UTF8.GetString(writeProjectionCheckpoints[0].Data));
 			Assert.AreEqual(2, writeCheckpoints.Length);
 
-			Assert.That(
-				writeCheckpoints.All(
-					v => Encoding.UTF8.GetString(v.Data) == @"[{""data"": 1},{""data"": 1}]"));
+			Assert.That(writeCheckpoints.All(v => Encoding.UTF8.GetString(v.Data) == @"[{""data"": 1},{""data"": 1}]"));
 		}
 	}
 }

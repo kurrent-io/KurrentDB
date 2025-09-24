@@ -17,8 +17,7 @@ public class when_caching_a_parition_state {
 	public void when() {
 		_cache = new PartitionStateCache();
 		_cachedAtCheckpointTag = CheckpointTag.FromPosition(0, 1000, 900);
-		_cache.CachePartitionState(
-			"partition", new PartitionState("data", null, _cachedAtCheckpointTag));
+		_cache.CachePartitionState("partition", new("data", null, _cachedAtCheckpointTag));
 	}
 
 	[Test]

@@ -26,7 +26,7 @@ public class when_starting_a_new_projection_and_an_event_is_received<TLogFormat,
 			EventReaderSubscriptionMessage.CommittedEventReceived.Sample(
 				new ResolvedEvent(
 					"/event_category/1", -1, "/event_category/1", -1, false, new TFPos(120, 110), eventId,
-					"handle_this_type", false, "data", "metadata"), _subscriptionId, 0));
+					"handle_this_type", false, "data", "metadata"), SubscriptionId, 0));
 	}
 
 	[Test]

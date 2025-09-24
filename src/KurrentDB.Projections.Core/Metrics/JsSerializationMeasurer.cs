@@ -16,8 +16,8 @@ public class JsSerializationMeasurer(IProjectionStateSerializationTracker tracke
 		return _serializer.Serialize(value).Span;
 	}
 
-	readonly struct Measurer(IProjectionStateSerializationTracker tracker) : IDisposable {
-		readonly Instant _start = Instant.Now;
+	private readonly struct Measurer(IProjectionStateSerializationTracker tracker) : IDisposable {
+		private readonly Instant _start = Instant.Now;
 
 		public void Dispose() {
 			tracker.StateSerialized(_start);

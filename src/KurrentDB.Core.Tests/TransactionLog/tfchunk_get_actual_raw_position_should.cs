@@ -23,7 +23,7 @@ public class tfchunk_get_actual_raw_position_should<TLogFormat, TStreamId> : Spe
 	private readonly Random _random = new();
 
 	private IPrepareLogRecord<TStreamId> CreateRecord(long logPosition, int dataSize) {
-		return LogRecord.Prepare(_recordFactory, logPosition, Guid.NewGuid(), Guid.NewGuid(), 0, 0, _streamId, 1,
+		return _recordFactory.Prepare( logPosition, Guid.NewGuid(), Guid.NewGuid(), 0, 0, _streamId, 1,
 			PrepareFlags.None, _eventTypeId, new byte[dataSize], Array.Empty<byte>(), new DateTime(2000, 1, 1, 12, 0, 0));
 	}
 

@@ -24,20 +24,19 @@ public static class categorize_events_by_correlation_id {
 
 		[SetUp]
 		public void when() {
-			_handler = new ByCorrelationId("", Console.WriteLine);
+			_handler = new("", Console.WriteLine);
 			_handler.Initialize();
 			_dateTime = DateTime.UtcNow;
-			var dataBytes = Encoding.ASCII.GetBytes("{}");
-			var metadataBytes = Encoding.ASCII.GetBytes("{\"$correlationId\":\"testing1\"}");
+			var dataBytes = "{}"u8.ToArray();
+			var metadataBytes = "{\"$correlationId\":\"testing1\"}"u8.ToArray();
 
-			string sharedState;
 			_result = _handler.ProcessEvent(
 				"", CheckpointTag.FromPosition(0, 200, 150), null,
 				new ResolvedEvent(
 					"cat1-stream1", 10, "cat1-stream1", 10, false, new TFPos(200, 150), new TFPos(200, 150),
 					Guid.NewGuid(),
 					"event_type", true, dataBytes, metadataBytes, null, null, _dateTime), out _state,
-				out sharedState, out _emittedEvents);
+				out _, out _emittedEvents);
 		}
 
 		[Test]
@@ -86,18 +85,14 @@ public static class categorize_events_by_correlation_id {
 			_handler = new ByCorrelationId("", Console.WriteLine);
 			_handler.Initialize();
 			_dateTime = DateTime.UtcNow;
-			string sharedState;
 
-			var dataBytes = Encoding.ASCII.GetBytes("10@cat1-stream1");
-			var metadataBytes =
-				Encoding.ASCII.GetBytes("{\"$correlationId\":\"testing2\", \"$whatever\":\"hello\"}");
+			var dataBytes = "10@cat1-stream1"u8.ToArray();
+			var metadataBytes = "{\"$correlationId\":\"testing2\", \"$whatever\":\"hello\"}"u8.ToArray();
 			var myEvent = new ResolvedEvent("cat2-stream2", 20, "cat2-stream2", 20, true, new TFPos(200, 150),
 				new TFPos(200, 150), Guid.NewGuid(), "$>", true, dataBytes, metadataBytes, null, null, _dateTime);
 
 			_eventId = myEvent.EventId;
-			_result = _handler.ProcessEvent(
-				"", CheckpointTag.FromPosition(0, 200, 150), null,
-				myEvent, out _state, out sharedState, out _emittedEvents);
+			_result = _handler.ProcessEvent("", CheckpointTag.FromPosition(0, 200, 150), null, myEvent, out _state, out _, out _emittedEvents);
 		}
 
 		[Test]
@@ -134,7 +129,7 @@ public static class categorize_events_by_correlation_id {
 			}
 
 			Assert.NotNull(eventTimestampJson);
-			Assert.AreEqual("\"" + _dateTime.ToString("yyyy-MM-ddTHH:mm:ss.ffffffZ") + "\"", eventTimestampJson);
+			Assert.AreEqual($"\"{_dateTime:yyyy-MM-ddTHH:mm:ss.ffffffZ}\"", eventTimestampJson);
 
 			//the link's metadata should be copied to $link.metadata and id to $link.eventId
 			Assert.NotNull(linkJson);
@@ -158,12 +153,11 @@ public static class categorize_events_by_correlation_id {
 		public void when() {
 			_handler = new ByCorrelationId("", Console.WriteLine);
 			_handler.Initialize();
-			string sharedState;
 			_result = _handler.ProcessEvent(
 				"", CheckpointTag.FromPosition(0, 200, 150), null,
 				new ResolvedEvent(
 					"cat1-stream1", 10, "cat1-stream1", 10, false, new TFPos(200, 150), Guid.NewGuid(),
-					"event_type", false, "non_json_data", "non_json_metadata"), out _state, out sharedState,
+					"event_type", false, "non_json_data", "non_json_metadata"), out _state, out _,
 				out _emittedEvents);
 		}
 
@@ -194,12 +188,11 @@ public static class categorize_events_by_correlation_id {
 		public void when() {
 			_handler = new ByCorrelationId("", Console.WriteLine);
 			_handler.Initialize();
-			string sharedState;
 			_result = _handler.ProcessEvent(
 				"", CheckpointTag.FromPosition(0, 200, 150), null,
 				new ResolvedEvent(
 					"cat1-stream1", 10, "cat1-stream1", 10, false, new TFPos(200, 150), Guid.NewGuid(),
-					"event_type", true, "{}", "{}"), out _state, out sharedState, out _emittedEvents);
+					"event_type", true, "{}", "{}"), out _state, out _, out _emittedEvents);
 		}
 
 		[Test]
@@ -229,12 +222,11 @@ public static class categorize_events_by_correlation_id {
 		public void when() {
 			_handler = new ByCorrelationId("", Console.WriteLine);
 			_handler.Initialize();
-			string sharedState;
 			_result = _handler.ProcessEvent(
 				"", CheckpointTag.FromPosition(0, 200, 150), null,
 				new ResolvedEvent(
 					"cat1-stream1", 10, "cat1-stream1", 10, false, new TFPos(200, 150), Guid.NewGuid(),
-					"event_type", true, "{}", "non_json_metadata"), out _state, out sharedState,
+					"event_type", true, "{}", "non_json_metadata"), out _state, out _,
 				out _emittedEvents);
 		}
 
@@ -260,18 +252,17 @@ public static class categorize_events_by_correlation_id {
 		private string _state;
 		private EmittedEventEnvelope[] _emittedEvents;
 		private bool _result;
-		private string source = "{\"correlationIdProperty\":\"$myCorrelationId\"}";
+		private const string Source = "{\"correlationIdProperty\":\"$myCorrelationId\"}";
 
 		[SetUp]
 		public void when() {
-			_handler = new ByCorrelationId(source, Console.WriteLine);
+			_handler = new ByCorrelationId(Source, Console.WriteLine);
 			_handler.Initialize();
-			string sharedState;
 			_result = _handler.ProcessEvent(
 				"", CheckpointTag.FromPosition(0, 200, 150), null,
 				new ResolvedEvent(
 					"cat1-stream1", 10, "cat1-stream1", 10, false, new TFPos(200, 150), Guid.NewGuid(),
-					"event_type", true, "{}", "{\"$myCorrelationId\":\"testing1\"}"), out _state, out sharedState,
+					"event_type", true, "{}", "{\"$myCorrelationId\":\"testing1\"}"), out _state, out _,
 				out _emittedEvents);
 		}
 
@@ -298,7 +289,7 @@ public static class categorize_events_by_correlation_id {
 
 	[TestFixture]
 	public class with_custom_invalid_correlation_id_property {
-		private string source = "{\"thisisnotvalid\":\"$myCorrelationId\"}";
+		private const string Source = "{\"thisisnotvalid\":\"$myCorrelationId\"}";
 
 		[SetUp]
 		public void when() {
@@ -306,7 +297,7 @@ public static class categorize_events_by_correlation_id {
 
 		[Test]
 		public void should_throw_invalid_operation_exception() {
-			Assert.Throws<InvalidOperationException>(() => { new ByCorrelationId(source, Console.WriteLine); });
+			Assert.Throws<InvalidOperationException>(() => { _ = new ByCorrelationId(Source, Console.WriteLine); });
 		}
 	}
 }

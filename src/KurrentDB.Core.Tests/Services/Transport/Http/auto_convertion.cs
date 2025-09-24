@@ -17,7 +17,7 @@ namespace KurrentDB.Core.Tests.Services.Transport.Http;
 
 internal static class ByteArrayExtensions {
 	public static string AsString(this byte[] data) {
-		return Helper.UTF8NoBom.GetString(data ?? new byte[0]);
+		return Helper.UTF8NoBom.GetString(data ?? []);
 	}
 }
 
@@ -112,7 +112,7 @@ internal static class FakeRequest {
 	}
 
 	public static string AsString(byte[] bytes) {
-		return Helper.UTF8NoBom.GetString(bytes ?? new byte[0]);
+		return Helper.UTF8NoBom.GetString(bytes ?? []);
 	}
 
 	public static string AsString(ReadOnlyMemory<byte> bytes) {

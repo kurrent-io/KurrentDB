@@ -19,17 +19,16 @@ public abstract class TestFixtureWithInterpretedProjection {
 	protected string _state = null;
 	protected string _sharedState = null;
 	protected IQuerySources _source;
-	protected TimeSpan CompilationTimeout { get; set; } = TimeSpan.FromMilliseconds(1000);
-	protected TimeSpan ExecutionTimeout { get; set; } = TimeSpan.FromMilliseconds(500);
+	private TimeSpan CompilationTimeout { get; } = TimeSpan.FromMilliseconds(1000);
+	private TimeSpan ExecutionTimeout { get; } = TimeSpan.FromMilliseconds(500);
 
 	[SetUp]
 	public void Setup() {
 		_state = null;
 		_projection = null;
 		Given();
-		_logged = new List<string>();
-		_stateHandlerFactory =
-			new ProjectionStateHandlerFactory(CompilationTimeout, ExecutionTimeout, ProjectionTrackers.NoOp);
+		_logged = [];
+		_stateHandlerFactory = new(CompilationTimeout, ExecutionTimeout, ProjectionTrackers.NoOp);
 		_stateHandler = CreateStateHandler();
 		_source = _stateHandler.GetSourceDefinition();
 
@@ -43,11 +42,11 @@ public abstract class TestFixtureWithInterpretedProjection {
 		When();
 	}
 
-	protected const string _projectionType = "js";
+	protected const string ProjectionType = "js";
 
 	protected virtual IProjectionStateHandler CreateStateHandler() {
 		return _stateHandlerFactory.Create(
-			"projection", _projectionType, _projection, true, null, logger: (s, _) => {
+			"projection", ProjectionType, _projection, true, null, logger: (s, _) => {
 				if (s.StartsWith("P:"))
 					Console.WriteLine(s);
 				else

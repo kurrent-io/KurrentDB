@@ -25,9 +25,9 @@ public class FakeProjectionStateHandler : IProjectionStateHandler {
 	public string _lastProcessedMetadata;
 	public string _lastProcessedData;
 	public string _lastPartition;
-	public const string _emit1Data = @"{""emit"":1}";
-	public const string _emit2Data = @"{""emit"":2}";
-	public const string _emit3Data = @"{""emit"":3}";
+	public const string _emit1Data = """{"emit":1}""";
+	public const string _emit2Data = """{"emit":2}""";
+	public const string _emit3Data = """{"emit":3}""";
 	public const string _emit1StreamId = "/emit1";
 	public const string _emit2StreamId = "/emit2";
 	public const string _emit1EventType = "emit1_event_type";
@@ -40,12 +40,14 @@ public class FakeProjectionStateHandler : IProjectionStateHandler {
 	private readonly Action<SourceDefinitionBuilder> _configureBuilder;
 	private readonly IQuerySources _definition;
 
-	public FakeProjectionStateHandler(string source, Action<string, object[]> logger) {
+	public FakeProjectionStateHandler(string source) {
 		_definition = source.ParseJson<QuerySourcesDefinition>();
 	}
 
 	public FakeProjectionStateHandler(
-		bool failOnInitialize = false, bool failOnLoad = false, bool failOnProcessEvent = false,
+		bool failOnInitialize = false,
+		bool failOnLoad = false,
+		bool failOnProcessEvent = false,
 		bool failOnGetPartition = true,
 		Action<SourceDefinitionBuilder> configureBuilder = null) {
 		_failOnInitialize = failOnInitialize;
@@ -93,14 +95,17 @@ public class FakeProjectionStateHandler : IProjectionStateHandler {
 
 
 	public string GetStatePartition(CheckpointTag eventPosition, string category, ResolvedEvent data) {
-		if (_failOnGetPartition)
-			throw new Exception("GetStatePartition FAILED");
-		return "region-a";
+		return _failOnGetPartition ? throw new Exception("GetStatePartition FAILED") : "region-a";
 	}
 
 	public bool ProcessEvent(
-		string partition, CheckpointTag eventPosition, string category1, ResolvedEvent data,
-		out string newState, out string newSharedState, out EmittedEventEnvelope[] emittedEvents) {
+		string partition,
+		CheckpointTag eventPosition,
+		string category1,
+		ResolvedEvent data,
+		out string newState,
+		out string newSharedState,
+		out EmittedEventEnvelope[] emittedEvents) {
 		newSharedState = null;
 		if (_failOnProcessEvent)
 			throw new Exception("PROCESS_EVENT_FAILED");
@@ -128,80 +133,52 @@ public class FakeProjectionStateHandler : IProjectionStateHandler {
 				return true;
 			case "no_state_emit1_type":
 				_loadedState = newState = "";
-				emittedEvents = new[] {
-					new EmittedEventEnvelope(
-						new EmittedDataEvent(
-							_emit1StreamId, Guid.NewGuid(), _emit1EventType, true, _emit1Data, null, eventPosition,
-							null)),
-				};
+				emittedEvents = [
+					new(new EmittedDataEvent(_emit1StreamId, Guid.NewGuid(), _emit1EventType, true, _emit1Data, null, eventPosition, null))
+				];
 				return true;
 			case "emit1_type":
 				_loadedState = newState = data.Data;
-				emittedEvents = new[] {
-					new EmittedEventEnvelope(
-						new EmittedDataEvent(
-							_emit1StreamId, Guid.NewGuid(), _emit1EventType, true, _emit1Data, null, eventPosition,
-							null)),
-				};
+				emittedEvents = [
+					new(new EmittedDataEvent(_emit1StreamId, Guid.NewGuid(), _emit1EventType, true, _emit1Data, null, eventPosition, null))
+				];
 				return true;
 			case "emit22_type":
 				_loadedState = newState = data.Data;
-				emittedEvents = new[] {
-					new EmittedEventEnvelope(
-						new EmittedDataEvent(
-							_emit2StreamId, Guid.NewGuid(), _emit2EventType, true, _emit1Data, null, eventPosition,
-							null)),
-					new EmittedEventEnvelope(
-						new EmittedDataEvent(
-							_emit2StreamId, Guid.NewGuid(), _emit2EventType, true, _emit2Data, null, eventPosition,
-							null)),
-				};
+				emittedEvents = [
+					new(new EmittedDataEvent(_emit2StreamId, Guid.NewGuid(), _emit2EventType, true, _emit1Data, null, eventPosition, null)),
+					new(new EmittedDataEvent(_emit2StreamId, Guid.NewGuid(), _emit2EventType, true, _emit2Data, null, eventPosition, null))
+				];
 				return true;
 			case "emit212_type":
 				_loadedState = newState = data.Data;
-				emittedEvents = new[] {
-					new EmittedEventEnvelope(
-						new EmittedDataEvent(
-							_emit2StreamId, Guid.NewGuid(), _emit2EventType, true, _emit1Data, null, eventPosition,
-							null)),
-					new EmittedEventEnvelope(
-						new EmittedDataEvent(
-							_emit1StreamId, Guid.NewGuid(), _emit1EventType, true, _emit2Data, null, eventPosition,
-							null)),
-					new EmittedEventEnvelope(
-						new EmittedDataEvent(
-							_emit2StreamId, Guid.NewGuid(), _emit2EventType, true, _emit3Data, null, eventPosition,
-							null)),
-				};
+				emittedEvents = [
+					new(new EmittedDataEvent(_emit2StreamId, Guid.NewGuid(), _emit2EventType, true, _emit1Data, null, eventPosition, null)),
+					new(new EmittedDataEvent(_emit1StreamId, Guid.NewGuid(), _emit1EventType, true, _emit2Data, null, eventPosition, null)),
+					new(new EmittedDataEvent(_emit2StreamId, Guid.NewGuid(), _emit2EventType, true, _emit3Data, null, eventPosition, null))
+				];
 				return true;
 			case "emit12_type":
 				_loadedState = newState = data.Data;
-				emittedEvents = new[] {
-					new EmittedEventEnvelope(
-						new EmittedDataEvent(
-							_emit1StreamId, Guid.NewGuid(), _emit1EventType, true, _emit1Data, null, eventPosition,
-							null)),
-					new EmittedEventEnvelope(
-						new EmittedDataEvent(
-							_emit2StreamId, Guid.NewGuid(), _emit2EventType, true, _emit2Data, null, eventPosition,
-							null)),
-				};
+				emittedEvents = [
+					new(new EmittedDataEvent(_emit1StreamId, Guid.NewGuid(), _emit1EventType, true, _emit1Data, null, eventPosition, null)),
+					new(new EmittedDataEvent(_emit2StreamId, Guid.NewGuid(), _emit2EventType, true, _emit2Data, null, eventPosition, null))
+				];
 				return true;
 			case "just_emit":
 				newState = _loadedState;
-				emittedEvents = new[] {
-					new EmittedEventEnvelope(
-						new EmittedDataEvent(
-							_emit1StreamId, Guid.NewGuid(), _emit1EventType, true, _emit1Data, null, eventPosition,
-							null)),
-				};
+				emittedEvents = [
+					new(new EmittedDataEvent(_emit1StreamId, Guid.NewGuid(), _emit1EventType, true, _emit1Data, null, eventPosition, null))
+				];
 				return true;
 			default:
 				throw new NotSupportedException();
 		}
 	}
 
-	public bool ProcessPartitionCreated(string partition, CheckpointTag createPosition, ResolvedEvent data,
+	public bool ProcessPartitionCreated(string partition,
+		CheckpointTag createPosition,
+		ResolvedEvent data,
 		out EmittedEventEnvelope[] emittedEvents) {
 		_partitionCreatedProcessed++;
 		emittedEvents = null;

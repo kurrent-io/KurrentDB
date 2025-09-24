@@ -5,8 +5,4 @@ using System;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Emitting;
 
-class InvalidEmittedEventSequenceException : Exception {
-	public InvalidEmittedEventSequenceException(string message)
-		: base(message) {
-	}
-}
+internal class InvalidEmittedEventSequenceException(string message) : Exception(message);

@@ -29,34 +29,22 @@ public class
 	protected override void Given() {
 		AllWritesQueueUp();
 		//NOTE: it is possible for a batch of events to be partially written if it contains links
-		ExistingEvent("test_stream", "type1", @"{""v"": 1, ""c"": 100, ""p"": 50}", "data");
-		ExistingEvent("test_stream", "type1", @"{""v"": 2, ""c"": 100, ""p"": 50}", "data");
+		ExistingEvent("test_stream", "type1", """{"v": 1, "c": 100, "p": 50}""", "data");
+		ExistingEvent("test_stream", "type1", """{"v": 2, "c": 100, "p": 50}""", "data");
 	}
 
-	private EmittedEvent[] CreateEventBatch() {
-		return new EmittedEvent[] {
-			new EmittedDataEvent(
-				(string)"test_stream", Guid.NewGuid(), (string)"type1", (bool)true,
-				(string)"data", (ExtraMetaData)null, CheckpointTag.FromPosition(0, 100, 50), (CheckpointTag)null,
-				v => _1 = v),
-			new EmittedDataEvent(
-				(string)"test_stream", Guid.NewGuid(), (string)"type2", (bool)true,
-				(string)"data", (ExtraMetaData)null, CheckpointTag.FromPosition(0, 100, 50), (CheckpointTag)null,
-				v => _2 = v),
-			new EmittedDataEvent(
-				(string)"test_stream", Guid.NewGuid(), (string)"type3", (bool)true,
-				(string)"data", (ExtraMetaData)null, CheckpointTag.FromPosition(0, 100, 50), (CheckpointTag)null,
-				v => _3 = v)
-		};
-	}
+	private EmittedEvent[] CreateEventBatch() => [
+		new EmittedDataEvent("test_stream", Guid.NewGuid(), "type1", true, "data", null, CheckpointTag.FromPosition(0, 100, 50), null, v => _1 = v),
+		new EmittedDataEvent("test_stream", Guid.NewGuid(), "type2", true, "data", null, CheckpointTag.FromPosition(0, 100, 50), null, v => _2 = v),
+		new EmittedDataEvent("test_stream", Guid.NewGuid(), "type3", true, "data", null, CheckpointTag.FromPosition(0, 100, 50), null, v => _3 = v)
+	];
 
 	[SetUp]
 	public void setup() {
-		_readyHandler = new TestCheckpointManagerMessageHandler();
-		_stream = new EmittedStream(
+		_readyHandler = new();
+		_stream = new(
 			"test_stream",
-			new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
-				new EmittedStream.WriterConfiguration.StreamMetadata(), null, maxWriteBatchLength: 50),
+			new(new EmittedStreamsWriter(_ioDispatcher), new(), null, maxWriteBatchLength: 50),
 			new ProjectionVersion(1, 2, 2), new TransactionFilePositionTagger(0),
 			CheckpointTag.FromPosition(0, 20, 10),
 			_bus, _ioDispatcher, _readyHandler);
@@ -67,8 +55,7 @@ public class
 
 	[Test]
 	public void publishes_all_events() {
-		var writtenEvents =
-			_consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().SelectMany(v => v.Events).ToArray();
+		var writtenEvents = _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().SelectMany(v => v.Events).ToArray();
 		Assert.AreEqual(2, writtenEvents.Length);
 		Assert.AreEqual("type2", writtenEvents[0].EventType);
 		Assert.AreEqual("type3", writtenEvents[1].EventType);
@@ -76,13 +63,9 @@ public class
 
 	[Test]
 	public void updates_stream_metadata() {
-		var writes =
-			HandledMessages.OfType<ClientMessage.WriteEvents>()
-				.OfEventType(SystemEventTypes.StreamMetadata)
-				.ToArray();
+		var writes = HandledMessages.OfType<ClientMessage.WriteEvents>().OfEventType(SystemEventTypes.StreamMetadata).ToArray();
 		Assert.AreEqual(0, writes.Length);
 	}
-
 
 	[Test]
 	public void reports_correct_event_numbers() {

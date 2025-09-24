@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
-using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.Core.Tests.Bus.Helpers;
 using KurrentDB.Core.Util;
 using KurrentDB.Projections.Core.Messages;
@@ -14,7 +13,6 @@ using KurrentDB.Projections.Core.Services.Management;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Strategies;
 using NUnit.Framework;
-
 using ClientMessageWriteEvents = KurrentDB.Core.Tests.TestAdapters.ClientMessage.WriteEvents;
 
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection;
@@ -29,7 +27,6 @@ public abstract class TestFixtureWithCoreProjection<TLogFormat, TStreamId> : Tes
 	protected int _checkpointUnhandledBytesThreshold = 10000;
 	protected Action<SourceDefinitionBuilder> _configureBuilderByQuerySource = null;
 	protected Guid _projectionCorrelationId;
-	private bool _createTempStreams = false;
 	protected ProjectionConfig _projectionConfig;
 	protected ProjectionVersion _version;
 	protected string _projectionName;
@@ -42,19 +39,15 @@ public abstract class TestFixtureWithCoreProjection<TLogFormat, TStreamId> : Tes
 
 	[SetUp]
 	public void setup() {
-		_subscribeProjectionHandler = new TestHandler<ReaderSubscriptionManagement.Subscribe>();
-		_writeEventHandler = new TestHandlerAndConverter<ClientMessage.WriteEvents, ClientMessageWriteEvents>(
-			msg => new ClientMessageWriteEvents(msg));
+		_subscribeProjectionHandler = new();
+		_writeEventHandler = new(msg => new ClientMessageWriteEvents(msg));
 
 		_bus.Subscribe(_subscribeProjectionHandler);
 		_bus.Subscribe(_writeEventHandler);
 
-
 		_stateHandler = GivenProjectionStateHandler();
 		_firstWriteCorrelationId = Guid.NewGuid();
 		_workerId = Guid.NewGuid();
-		var dispatcher = new ProjectionManagerMessageDispatcher(new Dictionary<Guid, IPublisher>
-			{{_workerId, GetInputQueue()}});
 		_projectionCorrelationId = Guid.NewGuid();
 		_projectionConfig = GivenProjectionConfig();
 		var projectionProcessingStrategy = GivenProjectionProcessingStrategy();
@@ -69,16 +62,12 @@ public abstract class TestFixtureWithCoreProjection<TLogFormat, TStreamId> : Tes
 		When();
 	}
 
-	protected virtual CoreProjection
-		GivenCoreProjection(ProjectionProcessingStrategy projectionProcessingStrategy) {
+	protected CoreProjection GivenCoreProjection(ProjectionProcessingStrategy projectionProcessingStrategy) {
 		return projectionProcessingStrategy.Create(
 			_projectionCorrelationId,
 			_bus,
-			_workerId,
-			SystemAccounts.System,
 			_bus,
 			_ioDispatcher,
-			_subscriptionDispatcher,
 			_timeProvider);
 	}
 
@@ -86,61 +75,45 @@ public abstract class TestFixtureWithCoreProjection<TLogFormat, TStreamId> : Tes
 		return CreateProjectionProcessingStrategy();
 	}
 
-	protected ProjectionProcessingStrategy CreateProjectionProcessingStrategy() {
+	private ProjectionProcessingStrategy CreateProjectionProcessingStrategy() {
 		return new ContinuousProjectionProcessingStrategy(
 			_projectionName, _version, _stateHandler, _projectionConfig, _stateHandler.GetSourceDefinition(), null,
-			_subscriptionDispatcher, true, Opts.MaxProjectionStateSizeDefault);
+			SubscriptionDispatcher, true, Opts.MaxProjectionStateSizeDefault);
 	}
 
 	protected ProjectionProcessingStrategy CreateQueryProcessingStrategy() {
 		return new QueryProcessingStrategy(
 			_projectionName, _version, _stateHandler, _projectionConfig, _stateHandler.GetSourceDefinition(), null,
-			_subscriptionDispatcher, true, Opts.MaxProjectionStateSizeDefault);
+			SubscriptionDispatcher, true, Opts.MaxProjectionStateSizeDefault);
 	}
 
-	protected virtual ProjectionConfig GivenProjectionConfig() {
+	protected ProjectionConfig GivenProjectionConfig() {
 		return new ProjectionConfig(
 			null, _checkpointHandledThreshold, _checkpointUnhandledBytesThreshold, GivenPendingEventsThreshold(),
-			GivenMaxWriteBatchLength(), GivenEmitEventEnabled(), GivenCheckpointsEnabled(), _createTempStreams,
+			GivenMaxWriteBatchLength(), GivenEmitEventEnabled(), GivenCheckpointsEnabled(),
 			GivenStopOnEof(), GivenTrackEmittedStreams(), GivenCheckpointAfterMs(),
 			GivenMaximumAllowedWritesInFlight(), null);
 	}
 
-	protected virtual int GivenMaxWriteBatchLength() {
-		return 250;
-	}
+	protected int GivenMaxWriteBatchLength() => 250;
 
-	protected virtual int GivenPendingEventsThreshold() {
-		return 1000;
-	}
+	protected virtual int GivenPendingEventsThreshold() => 1000;
 
-	protected virtual bool GivenStopOnEof() {
-		return false;
-	}
+	protected virtual bool GivenStopOnEof() => false;
 
-	protected virtual bool GivenCheckpointsEnabled() {
-		return true;
-	}
+	protected virtual bool GivenCheckpointsEnabled() => true;
 
-	protected virtual bool GivenTrackEmittedStreams() {
-		return true;
-	}
+	protected bool GivenTrackEmittedStreams() => true;
 
 	protected virtual bool GivenEmitEventEnabled() {
 		return true;
 	}
 
-	protected virtual int GivenCheckpointAfterMs() {
-		return 10000;
-	}
+	protected int GivenCheckpointAfterMs() => 10000;
 
-	protected virtual int GivenMaximumAllowedWritesInFlight() {
-		return 1;
-	}
+	protected int GivenMaximumAllowedWritesInFlight() => 1;
 
-	protected virtual FakeProjectionStateHandler GivenProjectionStateHandler() {
-		return new FakeProjectionStateHandler(configureBuilder: _configureBuilderByQuerySource);
-	}
+	protected virtual FakeProjectionStateHandler GivenProjectionStateHandler() => new(configureBuilder: _configureBuilderByQuerySource);
 
 	protected new virtual void PreWhen() {
 	}

@@ -35,21 +35,22 @@ public class TestFixtureWithProjectionSubsystem {
 
 	protected Task Started { get; private set; }
 
-	static readonly IConfiguration EmptyConfiguration = new ConfigurationBuilder().AddInMemoryCollection().Build();
+	private static readonly IConfiguration EmptyConfiguration = new ConfigurationBuilder().AddInMemoryCollection().Build();
 
-	private StandardComponents CreateStandardComponents() {
+	private static StandardComponents CreateStandardComponents() {
 		var dbConfig = TFChunkHelper.CreateDbConfig(Path.Combine(Path.GetTempPath(), "ES-Projections"), 0);
-		var mainQueue = new QueuedHandlerThreadPool
-		(new AdHocHandler<Message>(msg => {
-			/* Ignore messages */
-		}), "MainQueue", new QueueStatsManager(), new());
+		var mainQueue = new QueuedHandlerThreadPool(
+			new AdHocHandler<Message>(_ => {
+				/* Ignore messages */
+			}), "MainQueue", new(), new());
 		var mainBus = new InMemoryBus("mainBus");
-		var threadBasedScheduler = new ThreadBasedScheduler(new QueueStatsManager(), new());
+		var statsManager = new QueueStatsManager();
+		var threadBasedScheduler = new ThreadBasedScheduler(statsManager, new());
 		var timerService = new TimerService(threadBasedScheduler);
 
 		return new StandardComponents(dbConfig, mainQueue, mainBus,
-			timerService, timeProvider: null, httpForwarder: null, httpServices: new IHttpService[] { },
-			networkSendService: null, queueStatsManager: new QueueStatsManager(),
+			timerService, timeProvider: null, httpForwarder: null, httpServices: [],
+			networkSendService: null, queueStatsManager: statsManager,
 			trackers: new(), new());
 	}
 
@@ -61,8 +62,7 @@ public class TestFixtureWithProjectionSubsystem {
 		builder.Services.AddGrpc();
 		builder.Services.AddSingleton(_standardComponents);
 
-		Subsystem = new ProjectionsSubsystem(
-			new ProjectionSubsystemOptions(1, ProjectionType.All, true, TimeSpan.FromSeconds(3), true, 500, 250, Opts.MaxProjectionStateSizeDefault));
+		Subsystem = new(new(1, ProjectionType.All, true, TimeSpan.FromSeconds(3), true, 500, 250, Opts.MaxProjectionStateSizeDefault));
 
 		Subsystem.ConfigureServices(builder.Services, new ConfigurationBuilder().Build());
 		Subsystem.ConfigureApplication(builder.Build().UseRouting(), EmptyConfiguration);
@@ -71,21 +71,20 @@ public class TestFixtureWithProjectionSubsystem {
 		Subsystem.LeaderInputBus.Unsubscribe<ProjectionSubsystemMessage.ComponentStarted>(Subsystem);
 		Subsystem.LeaderInputBus.Unsubscribe<ProjectionSubsystemMessage.ComponentStopped>(Subsystem);
 
-		Subsystem.LeaderInputBus.Subscribe(new AdHocHandler<Message>(
-			msg => {
-				switch (msg) {
-					case ProjectionSubsystemMessage.StartComponents start: {
-						_lastStartMessage = start;
-						_startReceived.Set();
-						break;
-					}
-					case ProjectionSubsystemMessage.StopComponents stop: {
-						_lastStopMessage = stop;
-						_stopReceived.Set();
-						break;
-					}
+		Subsystem.LeaderInputBus.Subscribe(new AdHocHandler<Message>(msg => {
+			switch (msg) {
+				case ProjectionSubsystemMessage.StartComponents start: {
+					_lastStartMessage = start;
+					_startReceived.Set();
+					break;
 				}
-			}));
+				case ProjectionSubsystemMessage.StopComponents stop: {
+					_lastStopMessage = stop;
+					_stopReceived.Set();
+					break;
+				}
+			}
+		}));
 
 		Started = Subsystem.Start();
 
@@ -100,8 +99,7 @@ public class TestFixtureWithProjectionSubsystem {
 	protected virtual void Given() {
 	}
 
-	protected ProjectionSubsystemMessage.StartComponents WaitForStartMessage
-		(string timeoutMsg = null, bool failOnTimeout = true) {
+	protected ProjectionSubsystemMessage.StartComponents WaitForStartMessage(string timeoutMsg = null, bool failOnTimeout = true) {
 		timeoutMsg ??= "Timed out waiting for Start Components";
 		if (_startReceived.WaitOne(WaitTimeoutMs))
 			return _lastStartMessage;

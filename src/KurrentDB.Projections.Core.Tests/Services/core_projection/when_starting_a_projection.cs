@@ -7,7 +7,6 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Helpers;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.TimerService;
-using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.Core.Tests.Bus.Helpers;
 using KurrentDB.Core.Util;
 using KurrentDB.Projections.Core.Messages;
@@ -59,7 +58,7 @@ public class when_starting_a_projection {
 		_bus.Subscribe<ClientMessage.NotHandled>(_ioDispatcher);
 		IProjectionStateHandler projectionStateHandler = new FakeProjectionStateHandler();
 		_projectionConfig =
-			new ProjectionConfig(null, 5, 10, 1000, 250, true, true, false, false, true, 10000, 1, null);
+			new ProjectionConfig(null, 5, 10, 1000, 250, true, true, false, true, 10000, 1, null);
 		var version = new ProjectionVersion(1, 0, 0);
 		var projectionProcessingStrategy = new ContinuousProjectionProcessingStrategy(
 			"projection", version, projectionStateHandler, _projectionConfig,
@@ -67,11 +66,8 @@ public class when_starting_a_projection {
 		_coreProjection = projectionProcessingStrategy.Create(
 			Guid.NewGuid(),
 			_bus,
-			Guid.NewGuid(),
-			SystemAccounts.System,
 			_bus,
 			_ioDispatcher,
-			_subscriptionDispatcher,
 			new RealTimeProvider());
 		_coreProjection.Start();
 	}

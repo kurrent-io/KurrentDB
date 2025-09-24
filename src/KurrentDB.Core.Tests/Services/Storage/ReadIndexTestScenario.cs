@@ -297,7 +297,7 @@ public abstract class ReadIndexTestScenario<TLogFormat, TStreamId> : Specificati
 		LogFormatHelper<TLogFormat, TStreamId>.CheckIfExplicitTransactionsSupported();
 		var (eventStreamId, _) = await GetOrReserve(eventStreamName, token);
 		var (eventTypeId, pos) = await GetOrReserveEventType("some-type", token);
-		var prepare = LogRecord.Prepare(_recordFactory, pos,
+		var prepare = _recordFactory.Prepare( pos,
 			Guid.NewGuid(),
 			Guid.NewGuid(),
 			Writer.Position,
@@ -338,7 +338,7 @@ public abstract class ReadIndexTestScenario<TLogFormat, TStreamId> : Specificati
 		var (eventStreamId, _) = await GetOrReserve(eventStreamName, token);
 		var (eventTypeId, pos) = await GetOrReserveEventType(eventType, token);
 
-		var prepare = LogRecord.Prepare(_recordFactory, pos,
+		var prepare = _recordFactory.Prepare( pos,
 			correlationId,
 			Guid.NewGuid(),
 			transactionPos,
@@ -485,7 +485,7 @@ public abstract class ReadIndexTestScenario<TLogFormat, TStreamId> : Specificati
 
 		var record = new PrepareLogRecord(position, id, id, position, 0, streamId, null, expectedVersion,
 			DateTime.UtcNow,
-			flags.Value, "type", null, new byte[10], new byte[0], LogRecordVersion.LogRecordV0);
+			flags.Value, "type", null, new byte[10], LogRecord.NoData, LogRecordVersion.LogRecordV0);
 		var (_, pos) = await Writer.Write(record, token);
 		await Writer.Write(
 			new CommitLogRecord(pos, id, position, DateTime.UtcNow, expectedVersion, LogRecordVersion.LogRecordV0),

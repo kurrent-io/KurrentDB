@@ -5,23 +5,10 @@ using System.Collections.Generic;
 
 namespace KurrentDB.Projections.Core.Services.Processing.MultiStream;
 
-public class MultiStreamEventFilter : EventFilter {
-	private readonly HashSet<string> _streams;
+public class MultiStreamEventFilter(HashSet<string> streams, bool allEvents, HashSet<string> events) : EventFilter(allEvents, false, events) {
+	protected override bool DeletedNotificationPasses(string positionStreamId) => false;
 
-	public MultiStreamEventFilter(HashSet<string> streams, bool allEvents, HashSet<string> events)
-		: base(allEvents, false, events) {
-		_streams = streams;
-	}
+	public override bool PassesSource(bool resolvedFromLinkTo, string positionStreamId, string eventType) => streams.Contains(positionStreamId);
 
-	protected override bool DeletedNotificationPasses(string positionStreamId) {
-		return false;
-	}
-
-	public override bool PassesSource(bool resolvedFromLinkTo, string positionStreamId, string eventType) {
-		return _streams.Contains(positionStreamId);
-	}
-
-	public override string GetCategory(string positionStreamId) {
-		return null;
-	}
+	public override string GetCategory(string positionStreamId) => null;
 }

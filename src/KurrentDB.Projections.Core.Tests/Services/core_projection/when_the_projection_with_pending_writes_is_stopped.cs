@@ -32,19 +32,19 @@ public class when_the_projection_with_pending_writes_is_stopped<TLogFormat, TStr
 				new ResolvedEvent(
 					"/event_category/1", -1, "/event_category/1", -1, false, new TFPos(120, 110),
 					Guid.NewGuid(), "handle_this_type", false, "data1",
-					"metadata"), _subscriptionId, 0));
+					"metadata"), SubscriptionId, 0));
 		_bus.Publish(
 			EventReaderSubscriptionMessage.CommittedEventReceived.Sample(
 				new ResolvedEvent(
 					"/event_category/1", -1, "/event_category/1", -1, false, new TFPos(140, 130),
 					Guid.NewGuid(), "handle_this_type", false, "data2",
-					"metadata"), _subscriptionId, 1));
+					"metadata"), SubscriptionId, 1));
 		_bus.Publish(
 			EventReaderSubscriptionMessage.CommittedEventReceived.Sample(
 				new ResolvedEvent(
 					"/event_category/1", -1, "/event_category/1", -1, false, new TFPos(160, 150),
 					Guid.NewGuid(), "handle_this_type", false, "data3",
-					"metadata"), _subscriptionId, 2));
+					"metadata"), SubscriptionId, 2));
 		_coreProjection.Stop();
 	}
 

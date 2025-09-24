@@ -8,20 +8,19 @@ namespace KurrentDB.Projections.Core.Tests.Services.Jint;
 
 [TestFixture]
 public class when_defining_a_js_projection {
-	private const string _projectionType = "INTERPRETED";
 	[TestFixture]
 	public class with_from_all_source : TestFixtureWithInterpretedProjection {
 		protected override void Given() {
-			_projection = @"
-                   fromAll().when({
-                        $any:function(state, event) {
-                            return state;
-                        }});
-                ";
-			_state = @"{""count"": 0}";
+			_projection = """
+			              fromAll().when({
+			              $any:function(state, event) {
+			              return state;
+			              }});
+			              """;
+			_state = """{"count": 0}""";
 		}
 
-		[Test, Category(_projectionType)]
+		[Test, Category(ProjectionType)]
 		public void source_definition_is_correct() {
 			var expected = SourceDefinitionBuilder.From(b => {
 				b.FromAll();
@@ -34,16 +33,16 @@ public class when_defining_a_js_projection {
 	[TestFixture]
 	public class with_from_stream : TestFixtureWithInterpretedProjection {
 		protected override void Given() {
-			_projection = @"
-                    fromStream('stream1').when({
-                        $any:function(state, event) {
-                            return state;
-                        }});
-                ";
-			_state = @"{""count"": 0}";
+			_projection = """
+			              fromStream('stream1').when({
+			                $any:function(state, event) {
+			                  return state;
+			              }});
+			              """;
+			_state = """{"count": 0}""";
 		}
 
-		[Test, Category(_projectionType)]
+		[Test, Category(ProjectionType)]
 		public void source_definition_is_correct() {
 			var expected = SourceDefinitionBuilder.From(b => {
 				b.AllEvents();
@@ -56,16 +55,16 @@ public class when_defining_a_js_projection {
 	[TestFixture]
 	public class with_multiple_from_streams : TestFixtureWithInterpretedProjection {
 		protected override void Given() {
-			_projection = @"
-                    fromStreams(['stream1', 'stream2', 'stream3']).when({
-                    $any: function(state, event) {
-                            return state;
-                        }});
-                ";
-			_state = @"{""count"": 0}";
+			_projection = """
+			              fromStreams(['stream1', 'stream2', 'stream3']).when({
+			                $any: function(state, event) {
+			                  return state;
+			              }});
+			              """;
+			_state = """{"count": 0}""";
 		}
 
-		[Test, Category(_projectionType)]
+		[Test, Category(ProjectionType)]
 		public void source_definition_is_correct() {
 			var expected = SourceDefinitionBuilder.From(b => {
 				b.AllEvents();
@@ -80,16 +79,16 @@ public class when_defining_a_js_projection {
 	[TestFixture]
 	public class with_multiple_from_streams_plain : TestFixtureWithInterpretedProjection {
 		protected override void Given() {
-			_projection = @"
-                    fromStreams('stream1', 'stream2', 'stream3').when({
-                        $any:function(state, event) {
-                            return state;
-                        }});
-                ";
-			_state = @"{""count"": 0}";
+			_projection = """
+			              fromStreams('stream1', 'stream2', 'stream3').when({
+			              $any:function(state, event) {
+			              return state;
+			              }});
+			              """;
+			_state = """{"count": 0}""";
 		}
 
-		[Test, Category(_projectionType)]
+		[Test, Category(ProjectionType)]
 		public void source_definition_is_correct() {
 			var expected = SourceDefinitionBuilder.From(b => {
 				b.AllEvents();
@@ -113,7 +112,7 @@ public class when_defining_a_js_projection {
 			_state = @"{""count"": 0}";
 		}
 
-		[Test, Category(_projectionType)]
+		[Test, Category(ProjectionType)]
 		public void source_definition_is_correct() {
 			var expected = SourceDefinitionBuilder.From(b => {
 				b.AllEvents();
@@ -137,7 +136,7 @@ public class when_defining_a_js_projection {
 			_state = @"{""count"": 0}";
 		}
 
-		[Test, Category(_projectionType)]
+		[Test, Category(ProjectionType)]
 		public void source_definition_is_correct() {
 			var expected = SourceDefinitionBuilder.From(b => {
 				b.AllEvents();
@@ -161,7 +160,7 @@ public class when_defining_a_js_projection {
 			_state = @"{""count"": 0}";
 		}
 
-		[Test, Category(_projectionType)]
+		[Test, Category(ProjectionType)]
 		public void source_definition_is_correct() {
 			var expected = SourceDefinitionBuilder.From(b => {
 				b.AllEvents();
@@ -183,7 +182,7 @@ public class when_defining_a_js_projection {
 			_state = @"{""count"": 0}";
 		}
 
-		[Test, Category(_projectionType)]
+		[Test, Category(ProjectionType)]
 		public void source_definition_is_correct() {
 			var expected = SourceDefinitionBuilder.From(b => {
 				b.AllEvents();
@@ -257,7 +256,7 @@ public class when_defining_a_js_projection {
 			_state = @"{""count"": 0}";
 		}
 
-		[Test, Category(_projectionType)]
+		[Test, Category(ProjectionType)]
 		public void source_definition_is_correct() {
 			var expected = SourceDefinitionBuilder.From(b => {
 				b.AllEvents();
@@ -281,7 +280,7 @@ public class when_defining_a_js_projection {
 			_state = @"{""count"": 0}";
 		}
 
-		[Test, Category(_projectionType)]
+		[Test, Category(ProjectionType)]
 		public void source_definition_is_correct() {
 			var expected = SourceDefinitionBuilder.From(b => {
 				b.FromAll();
@@ -301,7 +300,7 @@ public class when_defining_a_js_projection {
 			_state = @"{""count"": 0}";
 		}
 
-		[Test, Category(_projectionType)]
+		[Test, Category(ProjectionType)]
 		public void source_definition_is_correct() {
 			var expected = SourceDefinitionBuilder.From(b => {
 				b.AllEvents();
@@ -321,7 +320,7 @@ public class when_defining_a_js_projection {
 			_state = @"{""count"": 0}";
 		}
 
-		[Test, Category(_projectionType)]
+		[Test, Category(ProjectionType)]
 		public void source_definition_is_correct() {
 			var expected = SourceDefinitionBuilder.From(b => {
 				b.AllEvents();
@@ -340,7 +339,7 @@ public class when_defining_a_js_projection {
 			_state = @"{""count"": 0}";
 		}
 
-		[Test, Category(_projectionType)]
+		[Test, Category(ProjectionType)]
 		public void source_definition_is_correct() {
 			var expected = SourceDefinitionBuilder.From(b => {
 				b.FromAll();
@@ -365,7 +364,7 @@ public class when_defining_a_js_projection {
 			_state = @"{""count"": 0}";
 		}
 
-		[Test, Category(_projectionType)]
+		[Test, Category(ProjectionType)]
 		public void source_definition_is_correct() {
 			var expected = SourceDefinitionBuilder.From(b => {
 				b.AllEvents();
@@ -391,7 +390,7 @@ public class when_defining_a_js_projection {
 			_state = @"{""count"": 0}";
 		}
 
-		[Test, Category(_projectionType)]
+		[Test, Category(ProjectionType)]
 		public void source_definition_is_correct() {
 			var expected = SourceDefinitionBuilder.From(b => {
 				b.AllEvents();
@@ -417,7 +416,7 @@ public class when_defining_a_js_projection {
 			_state = @"{""count"": 0}";
 		}
 
-		[Test, Category(_projectionType)]
+		[Test, Category(ProjectionType)]
 		public void source_definition_is_correct() {
 			var expected = SourceDefinitionBuilder.From(b => {
 				b.AllEvents();
@@ -445,7 +444,7 @@ public class when_defining_a_js_projection {
 			_state = @"{""count"": 0}";
 		}
 
-		[Test, Category(_projectionType)]
+		[Test, Category(ProjectionType)]
 		public void source_definition_is_correct() {
 			var expected = SourceDefinitionBuilder.From(b => {
 				b.AllEvents();
@@ -476,7 +475,7 @@ public class when_defining_a_js_projection {
 			_state = @"{""count"": 0}";
 		}
 
-		[Test, Category(_projectionType)]
+		[Test, Category(ProjectionType)]
 		public void source_definition_is_correct() {
 			var expected = SourceDefinitionBuilder.From(b => {
 				b.AllEvents();
@@ -494,7 +493,7 @@ public class when_defining_a_js_projection {
 			_projection = @"fromAll().foreachStream().when({
                 $deleted: function(){}
             })";
-			_state = @"{}";
+			_state = "{}";
 		}
 
 		[Test]
@@ -515,7 +514,7 @@ public class when_defining_a_js_projection {
 			_projection = @"fromAll().when({
                 $deleted: function(){}
             })";
-			_state = @"{}";
+			_state = "{}";
 		}
 
 		[Test]

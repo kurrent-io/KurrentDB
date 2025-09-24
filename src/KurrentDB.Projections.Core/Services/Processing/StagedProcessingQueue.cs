@@ -17,27 +17,18 @@ namespace KurrentDB.Projections.Core.Services.Processing;
 /// it and store.  But no subprojection can process events prior to preceding projections has completed processing.
 /// </summary>
 public class StagedProcessingQueue {
-	private class TaskEntry {
-		public readonly StagedTask Task;
-		public readonly long Sequence;
+	private class TaskEntry(StagedTask task, long sequence) {
+		public readonly StagedTask Task = task;
+		public readonly long Sequence = sequence;
 		public bool Busy;
 		public object BusyCorrelationId;
 		public TaskEntry PreviousByCorrelation;
 		public TaskEntry NextByCorrelation;
 		public TaskEntry Next;
 		public bool Completed;
-		public int ReadForStage;
+		public int ReadForStage = -1;
 
-		public TaskEntry(StagedTask task, long sequence) {
-			Task = task;
-			ReadForStage = -1;
-			Sequence = sequence;
-		}
-
-		public override string ToString() {
-			return string.Format("ReadForStage: {3},  Busy: {1}, Completed: {2} => {0}", Task, Busy, Completed,
-				ReadForStage);
-		}
+		public override string ToString() => $"ReadForStage: {ReadForStage},  Busy: {Busy}, Completed: {Completed} => {Task}";
 	}
 
 	private class StageEntry {
@@ -46,14 +37,13 @@ public class StagedProcessingQueue {
 	}
 
 	private readonly bool[] _orderedStage;
-	private readonly Dictionary<object, TaskEntry> _correlationLastEntries = new Dictionary<object, TaskEntry>();
+	private readonly Dictionary<object, TaskEntry> _correlationLastEntries = new();
 	private StageEntry[] _byUnorderedStageFirst; // null means all processed? so append need to set it?
 	private StageEntry[] _byUnorderedStageLast; // null means all processed? so append need to set it?
 	private TaskEntry[] _byOrderedStageLast; // null means all processed? so append need to set it?
-	private long _sequence = 0;
+	private long _sequence;
 	private TaskEntry _first;
 	private TaskEntry _last;
-	private int _count;
 	private readonly int _maxStage;
 	public event Action EnsureTickPending;
 
@@ -65,20 +55,18 @@ public class StagedProcessingQueue {
 		_maxStage = _orderedStage.Length - 1;
 	}
 
-	public int Count {
-		get { return _count; }
-	}
+	public int Count { get; private set; }
 
 	public void Enqueue(StagedTask stagedTask) {
 		var entry = new TaskEntry(stagedTask, ++_sequence);
 		if (_first == null) {
 			_first = entry;
 			_last = entry;
-			_count = 1;
+			Count = 1;
 		} else {
 			_last.Next = entry;
 			_last = entry;
-			_count++;
+			Count++;
 		}
 
 		// re-initialize already completed queues
@@ -93,7 +81,7 @@ public class StagedProcessingQueue {
 	public bool Process(int max = 1) {
 		int processed = 0;
 		int fromStage = _maxStage;
-		while (_count > 0 && processed < max) {
+		while (Count > 0 && processed < max) {
 			RemoveCompleted();
 			var entry = GetEntryToProcess(fromStage);
 			if (entry == null)
@@ -137,21 +125,19 @@ public class StagedProcessingQueue {
 				continue;
 			}
 
-			if (task.ReadForStage != stageIndex)
-				throw new Exception();
-			return task;
+			return task.ReadForStage != stageIndex ? throw new Exception() : task;
 		}
 
 		return null;
 	}
 
 	private void RemoveCompleted() {
-		while (_first != null && _first.Completed) {
+		while (_first is { Completed: true }) {
 			var task = _first;
 			_first = task.Next;
 			if (_first == null)
 				_last = null;
-			_count--;
+			Count--;
 			if (task.BusyCorrelationId != null) {
 				var nextByCorrelation = task.NextByCorrelation;
 				if (nextByCorrelation != null) {
@@ -181,8 +167,7 @@ public class StagedProcessingQueue {
 		} else
 			EnqueueForStage(entry, readyForStage);
 
-		if (EnsureTickPending != null)
-			EnsureTickPending();
+		EnsureTickPending?.Invoke();
 	}
 
 	private void EnqueueForStage(TaskEntry entry, int readyForStage) {
@@ -191,26 +176,24 @@ public class StagedProcessingQueue {
 			var stageEntry = new StageEntry { Entry = entry, Next = null };
 			if (_byUnorderedStageFirst[readyForStage] != null) {
 				_byUnorderedStageLast[readyForStage].Next = stageEntry;
-				_byUnorderedStageLast[readyForStage] = stageEntry;
 			} else {
 				_byUnorderedStageFirst[readyForStage] = stageEntry;
-				_byUnorderedStageLast[readyForStage] = stageEntry;
 			}
+
+			_byUnorderedStageLast[readyForStage] = stageEntry;
 		}
 	}
 
 	private void AdvanceStage(int stage, TaskEntry entry) {
 		if (!_orderedStage[stage]) {
 			if (_byUnorderedStageFirst[stage].Entry != entry)
-				throw new ArgumentException(
-					string.Format("entry is not a head of the queue at the stage {0}", stage), "entry");
+				throw new ArgumentException($"entry is not a head of the queue at the stage {stage}", nameof(entry));
 			_byUnorderedStageFirst[stage] = _byUnorderedStageFirst[stage].Next;
 			if (_byUnorderedStageFirst[stage] == null)
 				_byUnorderedStageLast[stage] = null;
 		} else {
 			if (_byOrderedStageLast[stage] != entry)
-				throw new ArgumentException(
-					string.Format("entry is not a head of the queue at the stage {0}", stage), "entry");
+				throw new ArgumentException($"entry is not a head of the queue at the stage {stage}", nameof(entry));
 			_byOrderedStageLast[stage] = entry.Next;
 		}
 	}
@@ -224,12 +207,10 @@ public class StagedProcessingQueue {
 
 			entry.BusyCorrelationId = newCorrelationId;
 			if (newCorrelationId != null) {
-				TaskEntry lastEntry;
-				if (_correlationLastEntries.TryGetValue(newCorrelationId, out lastEntry)) {
+				if (_correlationLastEntries.TryGetValue(newCorrelationId, out var lastEntry)) {
 					if (entry.Sequence < lastEntry.Sequence)
 						//NOTE: should never happen as we require ordered stage or initialization
-						throw new InvalidOperationException(
-							"Cannot inject task correlation id before another task with the same correlation id");
+						throw new InvalidOperationException("Cannot inject task correlation id before another task with the same correlation id");
 					lastEntry.NextByCorrelation = entry;
 					entry.PreviousByCorrelation = lastEntry;
 					_correlationLastEntries[newCorrelationId] = entry;
@@ -239,7 +220,7 @@ public class StagedProcessingQueue {
 		}
 	}
 
-	private void MarkCompletedTask(TaskEntry entry) {
+	private static void MarkCompletedTask(TaskEntry entry) {
 		entry.Completed = true;
 	}
 
@@ -248,18 +229,14 @@ public class StagedProcessingQueue {
 		_byUnorderedStageFirst = new StageEntry[_orderedStage.Length];
 		_byUnorderedStageLast = new StageEntry[_orderedStage.Length];
 		_byOrderedStageLast = new TaskEntry[_orderedStage.Length];
-		_count = 0;
+		Count = 0;
 		_first = null;
 		_last = null;
 	}
 }
 
-public abstract class StagedTask {
-	public readonly object InitialCorrelationId;
-
-	protected StagedTask(object initialCorrelationId) {
-		InitialCorrelationId = initialCorrelationId;
-	}
+public abstract class StagedTask(object initialCorrelationId) {
+	public readonly object InitialCorrelationId = initialCorrelationId;
 
 	public abstract void Process(int onStage, Action<int, object> readyForStage);
 }

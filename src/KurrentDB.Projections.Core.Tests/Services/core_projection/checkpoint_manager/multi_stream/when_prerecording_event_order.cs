@@ -24,17 +24,15 @@ public class when_prerecording_event_order<TLogFormat, TStreamId> : TestFixtureW
 
 	protected override void Given() {
 		base.Given();
-		_streams = new[] { "pa", "pb" };
+		_streams = ["pa", "pb"];
 		ExistingEvent("a", "test1", "{}", "{}");
 		ExistingEvent("b", "test1", "{}", "{}");
 
 		ExistingEvent("pa", "$>", "1@a", "{$o:\"oa\"}");
 		ExistingEvent("pb", "$>", "1@b", "{$o:\"ob\"}");
 
-		_event1 = new ResolvedEvent("pa", 1, "a", 1, true, new TFPos(200, 150), Guid.NewGuid(), "test1", true, "{}",
-			"{}", "{$o:\"oa\"");
-		_event2 = new ResolvedEvent("pb", 1, "b", 1, true, new TFPos(300, 250), Guid.NewGuid(), "test1", true, "{}",
-			"{}", "{$o:\"ob\"");
+		_event1 = new("pa", 1, "a", 1, true, new TFPos(200, 150), Guid.NewGuid(), "test1", true, "{}", "{}", "{$o:\"oa\"");
+		_event2 = new("pb", 1, "b", 1, true, new TFPos(300, 250), Guid.NewGuid(), "test1", true, "{}", "{}", "{$o:\"ob\"");
 
 		NoOtherStreams();
 		AllWritesSucceed();
@@ -45,17 +43,17 @@ public class when_prerecording_event_order<TLogFormat, TStreamId> : TestFixtureW
 		Action noop = () => { };
 		_manager.Initialize();
 		_checkpointReader.BeginLoadState();
-		var checkpointLoaded =
-			_consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.CheckpointLoaded>().First();
-		_checkpointWriter.StartFrom(checkpointLoaded.CheckpointTag, checkpointLoaded.CheckpointEventNumber);
+		var checkpointLoaded = _consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.CheckpointLoaded>().First();
+		_checkpointWriter.StartFrom(checkpointLoaded.CheckpointEventNumber);
 		_manager.BeginLoadPrerecordedEvents(checkpointLoaded.CheckpointTag);
 
-		_manager.Start(CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> { { "pa", -1 }, { "pb", -1 } }),
-			null);
-		_manager.RecordEventOrder(_event1,
+		_manager.Start(CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> { { "pa", -1 }, { "pb", -1 } }), null);
+		_manager.RecordEventOrder(
+			_event1,
 			CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> { { "pa", 1 }, { "pb", -1 } }),
 			committed: noop);
-		_manager.RecordEventOrder(_event2,
+		_manager.RecordEventOrder(
+			_event2,
 			CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> { { "pa", 1 }, { "pb", 1 } }),
 			committed: noop);
 	}

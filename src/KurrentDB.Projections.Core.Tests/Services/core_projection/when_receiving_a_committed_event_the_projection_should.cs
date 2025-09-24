@@ -30,7 +30,7 @@ public class when_receiving_a_committed_event_the_projection_should<TLogFormat, 
 			EventReaderSubscriptionMessage.CommittedEventReceived.Sample(
 				new ResolvedEvent(
 					"/event_category/1", -1, "/event_category/1", -1, false, new TFPos(120, 110), _eventId,
-					"handle_this_type", false, "data", "metadata"), _subscriptionId, 0));
+					"handle_this_type", false, "data", "metadata"), SubscriptionId, 0));
 	}
 
 	[Test]

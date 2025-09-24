@@ -15,26 +15,23 @@ namespace KurrentDB.Projections.Core.Tests.Services.emitted_streams_tracker.when
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class with_tracking_enabled_with_duplicate_event_streams<TLogFormat, TStreamId> : SpecificationWithEmittedStreamsTrackerAndDeleter<TLogFormat, TStreamId> {
-	private CountdownEvent _eventAppeared = new CountdownEvent(2);
-	private UserCredentials _credentials = new UserCredentials("admin", "changeit");
+public class with_tracking_enabled_with_duplicate_event_streams<TLogFormat, TStreamId>
+	: SpecificationWithEmittedStreamsTrackerAndDeleter<TLogFormat, TStreamId> {
+	private readonly CountdownEvent _eventAppeared = new(2);
+	private readonly UserCredentials _credentials = new("admin", "changeit");
 
 	protected override TimeSpan Timeout { get; } = TimeSpan.FromSeconds(10);
 
 	protected override async Task When() {
-		var sub = await _conn.SubscribeToStreamAsync(_projectionNamesBuilder.GetEmittedStreamsName(), true, (s, evnt) => {
+		var sub = await _conn.SubscribeToStreamAsync(_projectionNamesBuilder.GetEmittedStreamsName(), true, (_, _) => {
 			_eventAppeared.Signal();
 			return Task.CompletedTask;
 		}, userCredentials: _credentials);
 
-		_emittedStreamsTracker.TrackEmittedStream(new EmittedEvent[] {
-			new EmittedDataEvent(
-				"test_stream", Guid.NewGuid(), "type1", true,
-				"data", null, CheckpointTag.FromPosition(0, 100, 50), null, null),
-			new EmittedDataEvent(
-				"test_stream", Guid.NewGuid(), "type1", true,
-				"data", null, CheckpointTag.FromPosition(0, 100, 50), null, null)
-		});
+		_emittedStreamsTracker.TrackEmittedStream([
+			new EmittedDataEvent("test_stream", Guid.NewGuid(), "type1", true, "data", null, CheckpointTag.FromPosition(0, 100, 50), null),
+			new EmittedDataEvent("test_stream", Guid.NewGuid(), "type1", true, "data", null, CheckpointTag.FromPosition(0, 100, 50), null)
+		]);
 
 		_eventAppeared.Wait(TimeSpan.FromSeconds(5));
 		sub.Unsubscribe();
@@ -42,8 +39,7 @@ public class with_tracking_enabled_with_duplicate_event_streams<TLogFormat, TStr
 
 	[Test]
 	public async Task should_at_best_attempt_to_track_a_unique_list_of_streams() {
-		var result = await _conn.ReadStreamEventsForwardAsync(_projectionNamesBuilder.GetEmittedStreamsName(), 0, 200,
-			false, _credentials);
+		var result = await _conn.ReadStreamEventsForwardAsync(_projectionNamesBuilder.GetEmittedStreamsName(), 0, 200, false, _credentials);
 		Assert.AreEqual(1, result.Events.Length);
 		Assert.AreEqual("test_stream", Helper.UTF8NoBom.GetString(result.Events[0].Event.Data));
 		Assert.AreEqual(1, _eventAppeared.CurrentCount); //only 1 event appeared should get through

@@ -24,17 +24,17 @@ public class when_running_a_query_using_link_metadata<TLogFormat, TStreamId> : s
 	}
 
 	protected override string GivenQuery() {
-		return @"
-fromStream('stream').when({
-    $any: function(s, e) {
-        // test
-        if (JSON.stringify(e.body) != JSON.stringify(e.linkMetadata))
-            throw 'invalid link metadata ' + JSON.stringify(e.linkMetadata) + ' expected is ' + JSON.stringify(e.body);
+		return """
+		       fromStream('stream').when({
+		           $any: function(s, e) {
+		               // test
+		               if (JSON.stringify(e.body) != JSON.stringify(e.linkMetadata))
+		                   throw 'invalid link metadata ' + JSON.stringify(e.linkMetadata) + ' expected is ' + JSON.stringify(e.body);
 
-        return e.linkMetadata;
-    }
-}).outputState()
-";
+		               return e.linkMetadata;
+		           }
+		       }).outputState()
+		       """;
 	}
 
 	[Test]
@@ -44,9 +44,7 @@ fromStream('stream').when({
 
 	[Test]
 	public void state_becomes_completed() {
-		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetStatistics(
-				_bus, null, _projectionName));
+		_manager.Handle(new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
 
 		Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
 		Assert.AreEqual(

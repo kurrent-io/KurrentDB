@@ -13,8 +13,8 @@ namespace KurrentDB.Projections.Core.Tests.Services.core_projection.checkpoint_m
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class when_starting_with_prerecorded_events_after_the_last_checkpoint<TLogFormat, TStreamId> :
-	TestFixtureWithMultiStreamCheckpointManager<TLogFormat, TStreamId> {
+public class when_starting_with_prerecorded_events_after_the_last_checkpoint<TLogFormat, TStreamId>
+	: TestFixtureWithMultiStreamCheckpointManager<TLogFormat, TStreamId> {
 	private readonly CheckpointTag _tag1 =
 		CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> { { "a", 0 }, { "b", 0 }, { "c", 1 } });
 
@@ -28,7 +28,7 @@ public class when_starting_with_prerecorded_events_after_the_last_checkpoint<TLo
 		base.Given();
 		ExistingEvent(
 			"$projections-projection-checkpoint", ProjectionEventTypes.ProjectionCheckpoint,
-			@"{""s"": {""a"": 0, ""b"": 0, ""c"": 0}}", "{}");
+			"""{"s": {"a": 0, "b": 0, "c": 0}}""", "{}");
 		ExistingEvent("a", "StreamCreated", "", "");
 		ExistingEvent("b", "StreamCreated", "", "");
 		ExistingEvent("c", "StreamCreated", "", "");
@@ -39,22 +39,17 @@ public class when_starting_with_prerecorded_events_after_the_last_checkpoint<TLo
 		ExistingEvent("c", "$>", "{$o:\"org\"}", @"1@d");
 		ExistingEvent("d", "Event", "dd", @"{""data"":""d""");
 
-		ExistingEvent(
-			"$projections-projection-order", "$>", @"{""s"": {""a"": 0, ""b"": 0, ""c"": 0}}", "0@c");
-		ExistingEvent(
-			"$projections-projection-order", "$>", @"{""s"": {""a"": 0, ""b"": 0, ""c"": 1}}", "1@c");
-		ExistingEvent(
-			"$projections-projection-order", "$>", @"{""s"": {""a"": 1, ""b"": 0, ""c"": 1}}", "1@a");
-		ExistingEvent(
-			"$projections-projection-order", "$>", @"{""s"": {""a"": 1, ""b"": 1, ""c"": 1}}", "1@b");
+		ExistingEvent("$projections-projection-order", "$>", """{"s": {"a": 0, "b": 0, "c": 0}}""", "0@c");
+		ExistingEvent("$projections-projection-order", "$>", """{"s": {"a": 0, "b": 0, "c": 1}}""", "1@c");
+		ExistingEvent("$projections-projection-order", "$>", """{"s": {"a": 1, "b": 0, "c": 1}}""", "1@a");
+		ExistingEvent("$projections-projection-order", "$>", """{"s": {"a": 1, "b": 1, "c": 1}}""", "1@b");
 	}
 
 	protected override void When() {
 		base.When();
 		_checkpointReader.BeginLoadState();
-		var checkpointLoaded =
-			_consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.CheckpointLoaded>().First();
-		_checkpointWriter.StartFrom(checkpointLoaded.CheckpointTag, checkpointLoaded.CheckpointEventNumber);
+		var checkpointLoaded = _consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.CheckpointLoaded>().First();
+		_checkpointWriter.StartFrom(checkpointLoaded.CheckpointEventNumber);
 		_manager.BeginLoadPrerecordedEvents(checkpointLoaded.CheckpointTag);
 	}
 

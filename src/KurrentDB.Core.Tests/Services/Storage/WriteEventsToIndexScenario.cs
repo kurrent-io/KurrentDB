@@ -48,8 +48,8 @@ public abstract class WriteEventsToIndexScenario<TLogFormat, TStreamId> : Specif
 				streamId,
 				expectedVersion,
 				eventType,
-				new byte[0],
-				new byte[0],
+				LogRecord.NoData,
+				LogRecord.NoData,
 				DateTime.Now,
 				PrepareFlags.IsCommitted
 			)
@@ -87,8 +87,8 @@ public abstract class WriteEventsToIndexScenario<TLogFormat, TStreamId> : Specif
 					expectedVersion + i,
 					flags,
 					eventTypes[i],
-					new byte[0],
-					new byte[0],
+					LogRecord.NoData,
+					LogRecord.NoData,
 					DateTime.Now
 			));
 		}

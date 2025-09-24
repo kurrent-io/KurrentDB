@@ -61,12 +61,12 @@ public class when_receiving_committed_events_the_projection_without_when<TLogFor
 			EventReaderSubscriptionMessage.CommittedEventReceived.Sample(
 				new ResolvedEvent(
 					"account-01", 1, "account-01", 1, false, new TFPos(120, 110), _eventId, "handle_this_type",
-					false, "data1", "metadata"), _subscriptionId, 0));
+					false, "data1", "metadata"), SubscriptionId, 0));
 		_bus.Publish(
 			EventReaderSubscriptionMessage.CommittedEventReceived.Sample(
 				new ResolvedEvent(
 					"account-02", 2, "account-02", 2, false, new TFPos(140, 130), _eventId, "handle_this_type",
-					false, "data2", "metadata"), _subscriptionId, 1));
+					false, "data2", "metadata"), SubscriptionId, 1));
 	}
 
 	[Test]
@@ -94,12 +94,12 @@ public class
 			EventReaderSubscriptionMessage.CommittedEventReceived.Sample(
 				new ResolvedEvent(
 					"account-01", 1, "account-01", 1, false, new TFPos(120, 110), _eventId, "handle_this_type",
-					false, "data1", "metadata"), _subscriptionId, 0));
+					false, "data1", "metadata"), SubscriptionId, 0));
 		_bus.Publish(
 			EventReaderSubscriptionMessage.CommittedEventReceived.Sample(
 				new ResolvedEvent(
 					"account-01", 2, "account-01", 2, false, new TFPos(140, 130), _eventId, "handle_this_type",
-					false, "data1", "metadata"), _subscriptionId, 1));
+					false, "data1", "metadata"), SubscriptionId, 1));
 	}
 
 	[Test, Ignore("To be fixed")]

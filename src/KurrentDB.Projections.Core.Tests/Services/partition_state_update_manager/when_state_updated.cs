@@ -12,24 +12,24 @@ namespace KurrentDB.Projections.Core.Tests.Services.partition_state_update_manag
 [TestFixture]
 public class when_state_updated {
 	private PartitionStateUpdateManager _updateManager;
-	private CheckpointTag _zero = CheckpointTag.FromPosition(0, 100, 50);
-	private CheckpointTag _one = CheckpointTag.FromPosition(0, 200, 150);
-	private CheckpointTag _two = CheckpointTag.FromPosition(0, 300, 250);
+	private readonly CheckpointTag _zero = CheckpointTag.FromPosition(0, 100, 50);
+	private readonly CheckpointTag _one = CheckpointTag.FromPosition(0, 200, 150);
+	private readonly CheckpointTag _two = CheckpointTag.FromPosition(0, 300, 250);
 
 	[SetUp]
 	public void setup() {
-		_updateManager = new PartitionStateUpdateManager(ProjectionNamesBuilder.CreateForTest("projection"));
-		_updateManager.StateUpdated("partition", new PartitionState("{\"state\":1}", null, _one), _zero);
+		_updateManager = new(ProjectionNamesBuilder.CreateForTest("projection"));
+		_updateManager.StateUpdated("partition", new("{\"state\":1}", null, _one), _zero);
 	}
 
 	[Test]
 	public void handles_state_updated_for_the_same_partition() {
-		_updateManager.StateUpdated("partition", new PartitionState("{\"state\":1}", null, _two), _one);
+		_updateManager.StateUpdated("partition", new("{\"state\":1}", null, _two), _one);
 	}
 
 	[Test]
 	public void handles_state_updated_for_another_partition() {
-		_updateManager.StateUpdated("partition", new PartitionState("{\"state\":1}", null, _two), _one);
+		_updateManager.StateUpdated("partition", new("{\"state\":1}", null, _two), _one);
 	}
 
 	[Test]

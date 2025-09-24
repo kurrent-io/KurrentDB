@@ -17,15 +17,15 @@ public class when_handling_duplicate_events : TestFixtureWithEventReorderingProj
 		_subscription.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 				_projectionCorrelationId, new TFPos(200, 150), "a", 1, false, Guid.NewGuid(),
-				"bad-event-type", false, new byte[0], new byte[0], _timestamp));
+				"bad-event-type", false, [], [], _timestamp));
 		_subscription.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 				_projectionCorrelationId, new TFPos(100, 50), "a", 0, false, Guid.NewGuid(),
-				"bad-event-type", false, new byte[0], new byte[0], _timestamp.AddMilliseconds(1)));
+				"bad-event-type", false, [], [], _timestamp.AddMilliseconds(1)));
 		_subscription.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 				_projectionCorrelationId, new TFPos(200, 150), "a", 1, false, Guid.NewGuid(),
-				"bad-event-type", false, new byte[0], new byte[0], _timestamp.AddMilliseconds(1)));
+				"bad-event-type", false, [], [], _timestamp.AddMilliseconds(1)));
 		_subscription.Handle(
 			new ReaderSubscriptionMessage.EventReaderIdle(
 				_projectionCorrelationId, _timestamp.AddMilliseconds(1100)));

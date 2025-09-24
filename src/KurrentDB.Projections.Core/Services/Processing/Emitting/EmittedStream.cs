@@ -21,11 +21,8 @@ using Serilog;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Emitting;
 
-public partial class EmittedStream : IDisposable,
-	IHandle<CoreProjectionProcessingMessage.EmittedStreamWriteCompleted> {
+public partial class EmittedStream : IDisposable, IHandle<CoreProjectionProcessingMessage.EmittedStreamWriteCompleted> {
 	private readonly IODispatcher _ioDispatcher;
-	private readonly IPublisher _publisher;
-
 	private readonly ILogger _logger;
 	private readonly string _streamId;
 	private readonly string _metadataStreamId;
@@ -36,13 +33,12 @@ public partial class EmittedStream : IDisposable,
 	private readonly CheckpointTag _zeroPosition;
 	private readonly CheckpointTag _fromCheckpointPosition;
 	private readonly IEmittedStreamContainer _readyHandler;
-	private static readonly string LinkEventType = "$>";
-	private static readonly char[] LinkToSeparator = new[] { '@' };
+	private const string LinkEventType = "$>";
+	private static readonly char[] LinkToSeparator = ['@'];
 
-	private readonly Stack<Tuple<CheckpointTag, string, long>> _alreadyCommittedEvents =
-		new Stack<Tuple<CheckpointTag, string, long>>();
+	private readonly Stack<Tuple<CheckpointTag, string, long>> _alreadyCommittedEvents = new();
 
-	private readonly Queue<EmittedEvent> _pendingWrites = new Queue<EmittedEvent>();
+	private readonly Queue<EmittedEvent> _pendingWrites = new();
 
 	private bool _checkpointRequested;
 	private bool _awaitingWriteCompleted;
@@ -67,27 +63,25 @@ public partial class EmittedStream : IDisposable,
 	private const int MaxRetryCount = 12;
 	private const int MinAttemptWarnThreshold = 5;
 	private Guid _pendingRequestCorrelationId;
-	private Random _random = new Random();
+	private readonly Random _random = new();
 
 	public EmittedStream(
-		string streamId, WriterConfiguration writerConfiguration, ProjectionVersion projectionVersion,
-		PositionTagger positionTagger, CheckpointTag fromCheckpointPosition, IPublisher publisher,
+		string streamId,
+		WriterConfiguration writerConfiguration,
+		ProjectionVersion projectionVersion,
+		PositionTagger positionTagger,
+		CheckpointTag fromCheckpointPosition,
+		IPublisher publisher,
 		IODispatcher ioDispatcher,
-		IEmittedStreamContainer readyHandler, bool noCheckpoints = false) {
-		if (string.IsNullOrEmpty(streamId))
-			throw new ArgumentNullException("streamId");
-		if (writerConfiguration == null)
-			throw new ArgumentNullException("writerConfiguration");
-		if (positionTagger == null)
-			throw new ArgumentNullException("positionTagger");
-		if (fromCheckpointPosition == null)
-			throw new ArgumentNullException("fromCheckpointPosition");
-		if (publisher == null)
-			throw new ArgumentNullException("publisher");
-		if (ioDispatcher == null)
-			throw new ArgumentNullException("ioDispatcher");
-		if (readyHandler == null)
-			throw new ArgumentNullException("readyHandler");
+		IEmittedStreamContainer readyHandler,
+		bool noCheckpoints = false) {
+		ArgumentException.ThrowIfNullOrEmpty(streamId);
+		ArgumentNullException.ThrowIfNull(writerConfiguration);
+		ArgumentNullException.ThrowIfNull(positionTagger);
+		ArgumentNullException.ThrowIfNull(fromCheckpointPosition);
+		ArgumentNullException.ThrowIfNull(publisher);
+		ArgumentNullException.ThrowIfNull(ioDispatcher);
+		ArgumentNullException.ThrowIfNull(readyHandler);
 		_streamId = streamId;
 		_metadataStreamId = SystemStreams.MetastreamOf(streamId);
 		_writerConfiguration = writerConfiguration;
@@ -97,7 +91,6 @@ public partial class EmittedStream : IDisposable,
 		_zeroPosition = positionTagger.MakeZeroCheckpointTag();
 		_fromCheckpointPosition = fromCheckpointPosition;
 		_lastQueuedEventPosition = null;
-		_publisher = publisher;
 		_ioDispatcher = ioDispatcher;
 		_readyHandler = readyHandler;
 		_maxWriteBatchLength = writerConfiguration.MaxWriteBatchLength;
@@ -106,23 +99,21 @@ public partial class EmittedStream : IDisposable,
 	}
 
 	public void EmitEvents(EmittedEvent[] events) {
-		if (events == null)
-			throw new ArgumentNullException("events");
+		ArgumentNullException.ThrowIfNull(events);
 		CheckpointTag groupCausedBy = null;
 		foreach (var @event in events) {
 			if (groupCausedBy == null) {
 				groupCausedBy = @event.CausedByTag;
 				if (!(_lastQueuedEventPosition != null && groupCausedBy > _lastQueuedEventPosition) &&
-					!(_lastQueuedEventPosition == null && groupCausedBy >= _fromCheckpointPosition))
+				    !(_lastQueuedEventPosition == null && groupCausedBy >= _fromCheckpointPosition))
 					throw new InvalidOperationException(
-						string.Format("Invalid event order.  '{0}' goes after '{1}'", @event.CausedByTag,
-							_lastQueuedEventPosition));
+						$"Invalid event order.  '{@event.CausedByTag}' goes after '{_lastQueuedEventPosition}'");
 				_lastQueuedEventPosition = groupCausedBy;
 			} else if (@event.CausedByTag != groupCausedBy)
 				throw new ArgumentException("events must share the same CausedByTag");
 
 			if (@event.StreamId != _streamId)
-				throw new ArgumentException("Invalid streamId", "events");
+				throw new ArgumentException("Invalid streamId", nameof(events));
 		}
 
 		EnsureCheckpointNotRequested();
@@ -147,17 +138,11 @@ public partial class EmittedStream : IDisposable,
 		ProcessWrites();
 	}
 
-	public int GetWritePendingEvents() {
-		return _pendingWrites.Count;
-	}
+	public int GetWritePendingEvents() => _pendingWrites.Count;
 
-	public int GetWritesInProgress() {
-		return (_awaitingWriteCompleted ? 1 : 0) + (_awaitingMetadataWriteCompleted ? 1 : 0);
-	}
+	public int GetWritesInProgress() => (_awaitingWriteCompleted ? 1 : 0) + (_awaitingMetadataWriteCompleted ? 1 : 0);
 
-	public int GetReadsInProgress() {
-		return _awaitingListEventsCompleted ? 1 : 0;
-	}
+	public int GetReadsInProgress() => _awaitingListEventsCompleted ? 1 : 0;
 
 	private void HandleWriteEventsCompleted(ClientMessage.WriteEventsCompleted message, int retryCount) {
 		if (!_awaitingWriteCompleted)
@@ -172,17 +157,13 @@ public partial class EmittedStream : IDisposable,
 			return;
 		}
 
-		if (_logger != null) {
-			_logger.Information("Failed to write events to stream {stream}. Error: {e}",
-				_streamId,
-				Enum.GetName(typeof(OperationResult), message.Result));
-		}
+		_logger?.Information("Failed to write events to stream {stream}. Error: {e}", _streamId,
+			Enum.GetName(typeof(OperationResult), message.Result));
 
 		switch (message.Result) {
 			case OperationResult.WrongExpectedVersion:
-				RequestRestart(string.Format(
-					"The '{0}' stream has been written to from the outside. Expected Version: {1}, Current Version: {2}. Checkpoint: {3}.",
-					_streamId, _lastKnownEventNumber, message.FailureCurrentVersions.Single, _fromCheckpointPosition));
+				RequestRestart(
+					$"The '{_streamId}' stream has been written to from the outside. Expected Version: {_lastKnownEventNumber}, Current Version: {message.FailureCurrentVersions.Single}. Checkpoint: {_fromCheckpointPosition}.");
 				break;
 			case OperationResult.PrepareTimeout:
 			case OperationResult.ForwardTimeout:
@@ -190,9 +171,8 @@ public partial class EmittedStream : IDisposable,
 				if (retryCount > 0) {
 					PublishWriteEvents(--retryCount);
 				} else {
-					Failed(string.Format(
-						"Failed to write events to {0}. Retry limit of {1} reached. Reason: {2}. Checkpoint: {3}.",
-						_streamId, MaxRetryCount, message.Result, _fromCheckpointPosition));
+					Failed(
+						$"Failed to write events to {_streamId}. Retry limit of {MaxRetryCount} reached. Reason: {message.Result}. Checkpoint: {_fromCheckpointPosition}.");
 				}
 
 				break;
@@ -227,7 +207,7 @@ public partial class EmittedStream : IDisposable,
 
 		var newPhysicalStream = message.LastEventNumber == ExpectedVersion.NoStream;
 		_retrievedNextEventNumber = newPhysicalStream
-			? (message.StreamMetadata != null ? (message.StreamMetadata.TruncateBefore ?? 0) : 0)
+			? message.StreamMetadata != null ? message.StreamMetadata.TruncateBefore ?? 0 : 0
 			: message.LastEventNumber + 1;
 
 		if (_lastCommittedOrSubmittedEventPosition == null) {
@@ -235,24 +215,21 @@ public partial class EmittedStream : IDisposable,
 			if (!newPhysicalStream && message.Events is not []) {
 				parsed = message.Events[0].Event.Metadata.ParseCheckpointTagVersionExtraJson(_projectionVersion);
 				if (parsed.Tag == null) {
-					Failed(string.Format(
-						"The '{0}' stream managed by projection {1} has been written to from the outside.",
-						_streamId, _projectionVersion.ProjectionId));
+					Failed(
+						$"The '{_streamId}' stream managed by projection {_projectionVersion.ProjectionId} has been written to from the outside.");
 					return;
 				}
 
 				if (_projectionVersion.ProjectionId != parsed.Version.ProjectionId) {
 					Failed(
-						string.Format(
-							"Multiple projections emitting to the same stream detected.  Stream: '{0}'. Last event projection: '{1}'.  Emitting projection: '{2}'",
-							_streamId, parsed.Version.ProjectionId, _projectionVersion.ProjectionId));
+						$"Multiple projections emitting to the same stream detected.  Stream: '{_streamId}'. Last event projection: '{parsed.Version.ProjectionId}'.  Emitting projection: '{_projectionVersion.ProjectionId}'");
 					return;
 				}
 			}
 
 			var newLogicalStream = newPhysicalStream
-								   || (_projectionVersion.ProjectionId != parsed.Version.ProjectionId ||
-									   _projectionVersion.Epoch > parsed.Version.Version);
+			                       || _projectionVersion.ProjectionId != parsed.Version.ProjectionId
+			                       || _projectionVersion.Epoch > parsed.Version.Version;
 
 			_lastKnownEventNumber = newPhysicalStream ? ExpectedVersion.NoStream : message.LastEventNumber;
 
@@ -282,22 +259,19 @@ public partial class EmittedStream : IDisposable,
 			SubmitListEvents(lastCheckpointPosition, message.NextEventNumber);
 	}
 
-	private bool CollectAlreadyCommittedEvents(
-		ClientMessage.ReadStreamEventsBackwardCompleted message, CheckpointTag lastCheckpointPosition) {
+	private bool CollectAlreadyCommittedEvents(ClientMessage.ReadStreamEventsBackwardCompleted message,
+		CheckpointTag lastCheckpointPosition) {
 		var stop = false;
 		foreach (var e in message.Events) {
 			var checkpointTagVersion = e.Event.Metadata.ParseCheckpointTagVersionExtraJson(_projectionVersion);
 			var ourEpoch = checkpointTagVersion.Version.ProjectionId == _projectionVersion.ProjectionId
-						   && checkpointTagVersion.Version.Version >= _projectionVersion.Epoch;
+			               && checkpointTagVersion.Version.Version >= _projectionVersion.Epoch;
 
 			if (IsV1StreamCreatedEvent(e))
 				continue;
 
 			if (checkpointTagVersion.Tag == null) {
-				Failed(
-					string.Format(
-						"A unstamped event found. Stream: '{0}'. EventNumber: '{1}'", message.EventStreamId,
-						e.OriginalEventNumber));
+				Failed($"A unstamped event found. Stream: '{message.EventStreamId}'. EventNumber: '{e.OriginalEventNumber}'");
 				return true;
 			}
 
@@ -309,9 +283,8 @@ public partial class EmittedStream : IDisposable,
 				doStop = adjustedTag <= lastCheckpointPosition;
 			}
 
-			if (doStop)
-			// ignore any events prior to the requested lastCheckpointPosition (== first emitted event position)
-			{
+			if (doStop) {
+				// ignore any events prior to the requested lastCheckpointPosition (== first emitted event position)
 				stop = true;
 				break;
 			}
@@ -324,14 +297,14 @@ public partial class EmittedStream : IDisposable,
 	}
 
 	private static bool IsV1StreamCreatedEvent(KurrentDB.Core.Data.ResolvedEvent e) {
-		return e.Link == null && e.OriginalEventNumber == 0
-							  && (e.OriginalEvent.EventType == SystemEventTypes.V1__StreamCreatedImplicit__
-								  || e.OriginalEvent.EventType == SystemEventTypes.V1__StreamCreated__);
+		return e.Link == null!
+		       && e.OriginalEventNumber == 0
+		       && e.OriginalEvent.EventType is SystemEventTypes.V1__StreamCreatedImplicit__ or SystemEventTypes.V1__StreamCreated__;
 	}
 
 	private void ProcessWrites() {
 		if (_started && !_awaitingListEventsCompleted && !_awaitingWriteCompleted
-			&& !_awaitingMetadataWriteCompleted && _pendingWrites.Count > 0) {
+		    && !_awaitingMetadataWriteCompleted && _pendingWrites.Count > 0) {
 			if (_lastCommittedOrSubmittedEventPosition == null)
 				SubmitListEvents(_fromCheckpointPosition);
 			else
@@ -364,16 +337,15 @@ public partial class EmittedStream : IDisposable,
 	private void SubmitWriteMetadata() {
 		if (_awaitingWriteCompleted || _awaitingMetadataWriteCompleted || _awaitingListEventsCompleted)
 			throw new Exception();
-		var streamAcl = _streamId.StartsWith("$")
+		var streamAcl = _streamId.StartsWith('$')
 			? new StreamAcl(SystemRoles.All, null, null, SystemRoles.All, null)
 			: new StreamAcl((string)null, null, null, null, null);
 
 		var streamMetadata = new StreamMetadata(
 			_writerConfiguration.MaxCount, _writerConfiguration.MaxAge, acl: streamAcl,
-			truncateBefore: _retrievedNextEventNumber == 0 ? (long?)null : _retrievedNextEventNumber);
+			truncateBefore: _retrievedNextEventNumber == 0 ? null : _retrievedNextEventNumber);
 
-		_submittedWriteMetaStreamEvent = new Event(
-			Guid.NewGuid(), SystemEventTypes.StreamMetadata, true, streamMetadata.ToJsonBytes());
+		_submittedWriteMetaStreamEvent = new(Guid.NewGuid(), SystemEventTypes.StreamMetadata, true, streamMetadata.ToJsonBytes());
 
 		_awaitingMetadataWriteCompleted = true;
 
@@ -392,12 +364,12 @@ public partial class EmittedStream : IDisposable,
 
 		if (delayInSeconds == 0) {
 			_writerConfiguration.Writer.WriteEvents(
-				_metadataStreamId, ExpectedVersion.Any, new Event[] { _submittedWriteMetaStreamEvent }, _writeAs,
+				_metadataStreamId, ExpectedVersion.Any, [_submittedWriteMetaStreamEvent], _writeAs,
 				m => HandleMetadataWriteCompleted(m, retryCount));
 		} else {
 			_ioDispatcher.Delay(TimeSpan.FromSeconds(delayInSeconds),
 				_ => _writerConfiguration.Writer.WriteEvents(
-					_metadataStreamId, ExpectedVersion.Any, new Event[] { _submittedWriteMetaStreamEvent }, _writeAs,
+					_metadataStreamId, ExpectedVersion.Any, [_submittedWriteMetaStreamEvent], _writeAs,
 					m => HandleMetadataWriteCompleted(m, retryCount)));
 		}
 	}
@@ -414,16 +386,13 @@ public partial class EmittedStream : IDisposable,
 			return;
 		}
 
-		if (_logger != null) {
-			_logger.Information("Failed to write events to stream {stream}. Error: {e}",
-				_metadataStreamId,
-				Enum.GetName(typeof(OperationResult), message.Result));
-		}
+		_logger?.Information("Failed to write events to stream {stream}. Error: {e}",
+			_metadataStreamId,
+			Enum.GetName(typeof(OperationResult), message.Result));
 
 		switch (message.Result) {
 			case OperationResult.WrongExpectedVersion:
-				RequestRestart(string.Format("The '{0}' stream has been written to from the outside",
-					_metadataStreamId));
+				RequestRestart($"The '{_metadataStreamId}' stream has been written to from the outside");
 				break;
 			case OperationResult.PrepareTimeout:
 			case OperationResult.ForwardTimeout:
@@ -431,9 +400,8 @@ public partial class EmittedStream : IDisposable,
 				if (retryCount > 0) {
 					PublishWriteMetaStream(--retryCount);
 				} else {
-					Failed(string.Format(
-						"Failed to write an events to {0}. Retry limit of {1} reached. Reason: {2}",
-						_metadataStreamId, MaxRetryCount, message.Result));
+					Failed(
+						$"Failed to write an events to {_metadataStreamId}. Retry limit of {MaxRetryCount} reached. Reason: {message.Result}");
 				}
 
 				break;
@@ -445,17 +413,15 @@ public partial class EmittedStream : IDisposable,
 	private void SubmitWriteEvents() {
 		if (_awaitingWriteCompleted || _awaitingMetadataWriteCompleted || _awaitingListEventsCompleted)
 			throw new Exception();
-		if (!_metadataStreamCreated)
-			if (_lastCommittedOrSubmittedEventPosition != _zeroPosition)
-				throw new Exception("Internal error");
+		if (!_metadataStreamCreated && _lastCommittedOrSubmittedEventPosition != _zeroPosition)
+			throw new Exception("Internal error");
 		var events = new List<Event>();
 		var emittedEvents = new List<EmittedEvent>();
 		while (_pendingWrites.Count > 0 && events.Count < _maxWriteBatchLength) {
 			var e = _pendingWrites.Peek();
 			if (!e.IsReady()) {
 				_readyHandler.Handle(
-					new CoreProjectionProcessingMessage.EmittedStreamAwaiting(
-						_streamId, new SendToThisEnvelope(this)));
+					new CoreProjectionProcessingMessage.EmittedStreamAwaiting(_streamId, new SendToThisEnvelope(this)));
 				_awaitingReady = true;
 				break;
 			}
@@ -467,9 +433,7 @@ public partial class EmittedStream : IDisposable,
 			if (expectedTag != null)
 				if (DetectConcurrencyViolations(expectedTag)) {
 					RequestRestart(
-						string.Format(
-							"Wrong expected tag while submitting write event request to the '{0}' stream.  The last known stream tag is: '{1}'  the expected tag is: '{2}'",
-							_streamId, _lastCommittedOrSubmittedEventPosition, expectedTag));
+						$"Wrong expected tag while submitting write event request to the '{_streamId}' stream.  The last known stream tag is: '{_lastCommittedOrSubmittedEventPosition}'  the expected tag is: '{expectedTag}'");
 					return;
 				}
 
@@ -481,8 +445,7 @@ public partial class EmittedStream : IDisposable,
 						isPropertyMetadata: false,
 						e.CausedByTag.ToJsonBytes(_projectionVersion, MetadataWithCausedByAndCorrelationId(e))));
 			} catch (ArgumentException ex) {
-				Failed(string.Format("Failed to write the event: {0} to stream: {1} failed. Reason: {2}.", e,
-					_streamId, ex.Message));
+				Failed($"Failed to write the event: {e} to stream: {_streamId} failed. Reason: {ex.Message}.");
 				return;
 			}
 
@@ -496,26 +459,22 @@ public partial class EmittedStream : IDisposable,
 			PublishWriteEvents(MaxRetryCount);
 	}
 
-	private IEnumerable<KeyValuePair<string, JToken>> MetadataWithCausedByAndCorrelationId(
-		EmittedEvent emittedEvent) {
+	private static IEnumerable<KeyValuePair<string, JToken>> MetadataWithCausedByAndCorrelationId(EmittedEvent emittedEvent) {
 		var extraMetaData = emittedEvent.ExtraMetaData();
 		var correlationIdFound = false;
 		if (extraMetaData != null)
 			foreach (var valuePair in from pair in extraMetaData
-									  where pair.Key != "$causedBy"
-									  select pair) {
+			         where pair.Key != "$causedBy"
+			         select pair) {
 				if (valuePair.Key == "$correlationId")
 					correlationIdFound = true;
-				yield return new KeyValuePair<string, JToken>(valuePair.Key, new JRaw(valuePair.Value));
+				yield return new(valuePair.Key, new JRaw(valuePair.Value));
 			}
 
 		if (emittedEvent.CausedBy != Guid.Empty)
-			yield return
-				new KeyValuePair<string, JToken>(
-					"$causedBy", JValue.CreateString(emittedEvent.CausedBy.ToString("D")));
+			yield return new("$causedBy", JValue.CreateString(emittedEvent.CausedBy.ToString("D")));
 		if (!correlationIdFound && !string.IsNullOrEmpty(emittedEvent.CorrelationId))
-			yield return
-				new KeyValuePair<string, JToken>("$correlationId", JValue.CreateString(emittedEvent.CorrelationId));
+			yield return new("$correlationId", JValue.CreateString(emittedEvent.CorrelationId));
 	}
 
 	private bool DetectConcurrencyViolations(CheckpointTag expectedTag) {
@@ -564,7 +523,7 @@ public partial class EmittedStream : IDisposable,
 		attempt--;
 		if (attempt == 0)
 			return 0;
-		var expBackoff = attempt < 9 ? (1 << attempt) : 256;
+		var expBackoff = attempt < 9 ? 1 << attempt : 256;
 		return _random.Next(1, expBackoff + 1);
 	}
 
@@ -589,8 +548,7 @@ public partial class EmittedStream : IDisposable,
 	}
 
 	private void ProcessRequestedCheckpoint() {
-		if (_checkpointRequested && !_awaitingWriteCompleted && !_awaitingMetadataWriteCompleted
-			&& _pendingWrites.Count == 0) {
+		if (_checkpointRequested && !_awaitingWriteCompleted && !_awaitingMetadataWriteCompleted && _pendingWrites.Count == 0) {
 			EnsureCheckpointsEnabled();
 			_readyHandler.Handle(new CoreProjectionProcessingMessage.ReadyForCheckpoint(this));
 		}
@@ -612,7 +570,7 @@ public partial class EmittedStream : IDisposable,
 		while (_pendingWrites.Count > 0) {
 			var eventToWrite = _pendingWrites.Peek();
 			if (eventToWrite.CausedByTag > _lastCommittedOrSubmittedEventPosition ||
-				_alreadyCommittedEvents.Count == 0)
+			    _alreadyCommittedEvents.Count == 0)
 				RecoveryCompleted();
 			if (_recoveryCompleted) {
 				if (anyFound)
@@ -623,18 +581,18 @@ public partial class EmittedStream : IDisposable,
 
 			var report = ValidateEmittedEventInRecoveryMode(eventToWrite);
 
-			if (report is IgnoredEmittedEvent) {
-				Log.Verbose($"Emitted event ignored because it links to an event that no longer exists: eventId: {eventToWrite.EventId}, eventType: {eventToWrite.EventId}, checkpoint: {eventToWrite.CorrelationId}, causedBy: {eventToWrite.CausedBy}");
-				continue;
-			}
-
-			if (report is ErroredEmittedEvent error)
-				throw error.Exception;
-
-			if (report is ValidEmittedEvent valid) {
-				anyFound = true;
-				NotifyEventCommitted(eventToWrite, valid.Revision);
-				_pendingWrites.Dequeue();
+			switch (report) {
+				case IgnoredEmittedEvent:
+					Log.Verbose(
+						$"Emitted event ignored because it links to an event that no longer exists: eventId: {eventToWrite.EventId}, eventType: {eventToWrite.EventId}, checkpoint: {eventToWrite.CorrelationId}, causedBy: {eventToWrite.CausedBy}");
+					continue;
+				case ErroredEmittedEvent error:
+					throw error.Exception;
+				case ValidEmittedEvent valid:
+					anyFound = true;
+					NotifyEventCommitted(eventToWrite, valid.Revision);
+					_pendingWrites.Dequeue();
+					break;
 			}
 
 			if (report is EmittedEventResolutionNeeded resolution) {
@@ -661,30 +619,36 @@ public partial class EmittedStream : IDisposable,
 			return new IgnoredEmittedEvent();
 
 		var failed = topAlreadyCommitted.Item1 != eventToWrite.CausedByTag ||
-					 topAlreadyCommitted.Item2 != eventToWrite.EventType;
+		             topAlreadyCommitted.Item2 != eventToWrite.EventType;
 
-		if (failed && eventToWrite.EventType.Equals(LinkEventType)) {
-			// We check if the linked event still exists. If not, we skip that emitted event.
-			var parts = eventToWrite.Data.Split(LinkToSeparator, 2);
-			var streamId = parts[1];
-			if (!long.TryParse(parts[0], out long eventNumber))
-				throw new Exception($"Unexpected exception: Emitted event is an invalid link event: Body ({eventToWrite.Data}) CausedByTag ({eventToWrite.CausedByTag}) StreamId ({eventToWrite.StreamId})");
+		switch (failed) {
+			case true when eventToWrite.EventType.Equals(LinkEventType): {
+				// We check if the linked event still exists. If not, we skip that emitted event.
+				var parts = eventToWrite.Data.Split(LinkToSeparator, 2);
+				var streamId = parts[1];
+				if (!long.TryParse(parts[0], out long eventNumber))
+					throw new Exception(
+						$"Unexpected exception: Emitted event is an invalid link event: Body ({eventToWrite.Data}) CausedByTag ({eventToWrite.CausedByTag}) StreamId ({eventToWrite.StreamId})");
 
-			return new EmittedEventResolutionNeeded(streamId, eventNumber, topAlreadyCommitted);
+				return new EmittedEventResolutionNeeded(streamId, eventNumber, topAlreadyCommitted);
+			}
+			case true: {
+				var error = CreateSequenceException(topAlreadyCommitted, eventToWrite);
+				return new ErroredEmittedEvent(error);
+			}
+			default:
+				return new ValidEmittedEvent(topAlreadyCommitted.Item3);
 		}
-
-		if (failed) {
-			var error = CreateSequenceException(topAlreadyCommitted, eventToWrite);
-			return new ErroredEmittedEvent(error);
-		}
-
-		return new ValidEmittedEvent(topAlreadyCommitted.Item1, topAlreadyCommitted.Item2, topAlreadyCommitted.Item3);
 	}
 
 	// Used when we need to resolve a link event to see if it points to an event that no longer exists. If that
 	// event no longer exists, we skip it and resume the recovery process.
-	private void OnEmittedLinkEventResolved(bool anyFound, EmittedEvent eventToWrite, Tuple<CheckpointTag, string, long> topAlreadyCommitted, ClientMessage.ReadEventCompleted resp) {
-		if (resp.Result != ReadEventResult.StreamDeleted && resp.Result != ReadEventResult.NotFound && resp.Result != ReadEventResult.NoStream && resp.Result != ReadEventResult.Success) {
+	private void OnEmittedLinkEventResolved(bool anyFound,
+		EmittedEvent eventToWrite,
+		Tuple<CheckpointTag, string, long> topAlreadyCommitted,
+		ClientMessage.ReadEventCompleted resp) {
+		if (resp.Result != ReadEventResult.StreamDeleted && resp.Result != ReadEventResult.NotFound &&
+		    resp.Result != ReadEventResult.NoStream && resp.Result != ReadEventResult.Success) {
 			throw CreateSequenceException(topAlreadyCommitted, eventToWrite);
 		}
 
@@ -692,19 +656,20 @@ public partial class EmittedStream : IDisposable,
 			anyFound = true;
 			NotifyEventCommitted(eventToWrite, topAlreadyCommitted.Item3);
 		} else {
-			Log.Verbose($"Emitted event ignored after resolution because it links to an event that no longer exists: eventId: {eventToWrite.EventId}, eventType: {eventToWrite.EventId}, checkpoint: {eventToWrite.CorrelationId}, causedBy: {eventToWrite.CausedBy}");
+			Log.Verbose(
+				$"Emitted event ignored after resolution because it links to an event that no longer exists: eventId: {eventToWrite.EventId}, eventType: {eventToWrite.EventId}, checkpoint: {eventToWrite.CorrelationId}, causedBy: {eventToWrite.CausedBy}");
 		}
+
 		_pendingWrites.Dequeue();
 		_awaitingLinkToResolution = false;
 		SubmitWriteEventsInRecoveryLoop(anyFound);
 	}
 
-	private InvalidEmittedEventSequenceException CreateSequenceException(
-		Tuple<CheckpointTag, string, long> committed, EmittedEvent eventToWrite) {
-		return new InvalidEmittedEventSequenceException(
+	private InvalidEmittedEventSequenceException CreateSequenceException(Tuple<CheckpointTag, string, long> committed,
+		EmittedEvent eventToWrite)
+		=> new(
 			$"An event emitted in recovery for stream {_streamId} differs from the originally emitted event. Existing('{committed.Item2}', '{committed.Item1}'). New('{eventToWrite.EventType}', '{eventToWrite.CausedByTag}')"
 		);
-	}
 
 	private void RecoveryCompleted() {
 		_recoveryCompleted = true;
@@ -717,8 +682,7 @@ public partial class EmittedStream : IDisposable,
 	}
 
 	private static void NotifyEventCommitted(EmittedEvent @event, long eventNumber) {
-		if (@event.OnCommitted != null)
-			@event.OnCommitted(eventNumber);
+		@event.OnCommitted?.Invoke(eventNumber);
 	}
 
 	public void Dispose() {

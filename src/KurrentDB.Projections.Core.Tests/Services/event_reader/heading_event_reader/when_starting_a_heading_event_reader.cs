@@ -18,7 +18,7 @@ namespace KurrentDB.Projections.Core.Tests.Services.event_reader.heading_event_r
 public class when_starting_a_heading_event_reader : TestFixtureWithReadWriteDispatchers {
 	private HeadingEventReader _point;
 	private Exception _exception;
-	private Guid _distibutionPointCorrelationId;
+	private Guid _distributionPointCorrelationId;
 
 	[SetUp]
 	public void setup() {
@@ -31,11 +31,10 @@ public class when_starting_a_heading_event_reader : TestFixtureWithReadWriteDisp
 
 		Assume.That(_exception == null);
 
-		_distibutionPointCorrelationId = Guid.NewGuid();
+		_distributionPointCorrelationId = Guid.NewGuid();
 		_point.Start(
-			_distibutionPointCorrelationId,
-			new TransactionFileEventReader(_bus, _distibutionPointCorrelationId, null, new TFPos(0, -1),
-				new RealTimeProvider()));
+			_distributionPointCorrelationId,
+			new TransactionFileEventReader(_bus, _distributionPointCorrelationId, null, new TFPos(0, -1), new RealTimeProvider()));
 	}
 
 	[Test]
@@ -47,8 +46,8 @@ public class when_starting_a_heading_event_reader : TestFixtureWithReadWriteDisp
 	public void can_handle_events() {
 		_point.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
-				_distibutionPointCorrelationId, new TFPos(20, 10), "stream", 10, false, Guid.NewGuid(),
-				"type", false, new byte[0], new byte[0]));
+				_distributionPointCorrelationId, new TFPos(20, 10), "stream", 10, false, Guid.NewGuid(),
+				"type", false, [], []));
 	}
 
 	[Test]

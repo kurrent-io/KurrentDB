@@ -26,34 +26,22 @@ public class when_handling_a_timeout<TLogFormat, TStreamId> : TestFixtureWithExi
 
 	protected override void Given() {
 		AllWritesQueueUp();
-		ExistingEvent("test_stream", "type1", @"{""v"": 1, ""c"": 100, ""p"": 50}", "data");
-		ExistingEvent("test_stream", "type1", @"{""v"": 2, ""c"": 100, ""p"": 50}", "data");
+		ExistingEvent("test_stream", "type1", """{"v": 1, "c": 100, "p": 50}""", "data");
+		ExistingEvent("test_stream", "type1", """{"v": 2, "c": 100, "p": 50}""", "data");
 	}
 
-	private EmittedEvent[] CreateEventBatch() {
-		return new EmittedEvent[] {
-			new EmittedDataEvent(
-				(string)"test_stream", Guid.NewGuid(), (string)"type1", (bool)true,
-				(string)"data", (ExtraMetaData)null, CheckpointTag.FromPosition(0, 100, 50), (CheckpointTag)null,
-				null),
-			new EmittedDataEvent(
-				(string)"test_stream", Guid.NewGuid(), (string)"type2", (bool)true,
-				(string)"data", (ExtraMetaData)null, CheckpointTag.FromPosition(0, 100, 50), (CheckpointTag)null,
-				null),
-			new EmittedDataEvent(
-				(string)"test_stream", Guid.NewGuid(), (string)"type3", (bool)true,
-				(string)"data", (ExtraMetaData)null, CheckpointTag.FromPosition(0, 100, 50), (CheckpointTag)null,
-				null)
-		};
-	}
+	private static EmittedEvent[] CreateEventBatch() => [
+		new EmittedDataEvent("test_stream", Guid.NewGuid(), "type1", true, "data", null, CheckpointTag.FromPosition(0, 100, 50), null),
+		new EmittedDataEvent("test_stream", Guid.NewGuid(), "type2", true, "data", null, CheckpointTag.FromPosition(0, 100, 50), null),
+		new EmittedDataEvent("test_stream", Guid.NewGuid(), "type3", true, "data", null, CheckpointTag.FromPosition(0, 100, 50), null)
+	];
 
 	[SetUp]
 	public void setup() {
-		_readyHandler = new TestCheckpointManagerMessageHandler();
-		_stream = new EmittedStream(
+		_readyHandler = new();
+		_stream = new(
 			"test_stream",
-			new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
-				new EmittedStream.WriterConfiguration.StreamMetadata(), null, maxWriteBatchLength: 50),
+			new(new EmittedStreamsWriter(_ioDispatcher), new(), null, maxWriteBatchLength: 50),
 			new ProjectionVersion(1, 2, 2), new TransactionFilePositionTagger(0), CheckpointTag.Empty,
 			_bus, _ioDispatcher, _readyHandler);
 		_stream.Start();
@@ -66,8 +54,7 @@ public class when_handling_a_timeout<TLogFormat, TStreamId> : TestFixtureWithExi
 	public void should_retry_the_write_with_the_same_events() {
 		var current = _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().Last();
 		while (_consumer.HandledMessages.Last() is TimerMessage.Schedule) {
-			var message =
-				_consumer.HandledMessages.Last() as TimerMessage.Schedule;
+			var message = _consumer.HandledMessages.Last() as TimerMessage.Schedule;
 			message.Envelope.ReplyWith(message.ReplyMessage);
 
 			CompleteWriteWithResult(OperationResult.CommitTimeout);

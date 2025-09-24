@@ -21,13 +21,13 @@ public class when_running_and_events_are_posted<TLogFormat, TStreamId> : specifi
 		await PostEvent("stream-2", "type1", "{}");
 		await PostEvent("stream-2", "type2", "{}");
 		WaitIdle();
-		await PostProjection(@"
-fromAll().foreachStream().when({
-    $init: function(){return {a:0}},
-    $any: function(s,e){s.a++},
-    $deleted: function(s,e){s.deleted=1;},
-}).outputState();
-");
+		await PostProjection("""
+		                     fromAll().foreachStream().when({
+		                         $init: function(){return {a:0}},
+		                         $any: function(s,e){s.a++},
+		                         $deleted: function(s,e){s.deleted=1;},
+		                     }).outputState();
+		                     """);
 		WaitIdle();
 		await HardDeleteStream("stream-1");
 		WaitIdle();

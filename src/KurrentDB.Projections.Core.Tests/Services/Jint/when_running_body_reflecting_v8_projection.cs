@@ -23,25 +23,19 @@ public class when_running_body_reflecting_v8_projection : TestFixtureWithInterpr
             ";
 	}
 
-	[Test, Category(_projectionType)]
+	[Test, Category(ProjectionType)]
 	public void process_event_should_reflect_event() {
-		string state;
-		EmittedEventEnvelope[] emittedEvents;
 		_stateHandler.ProcessEvent(
 			"", CheckpointTag.FromPosition(0, 20, 10), "stream1", "type1", "category", Guid.NewGuid(), 0,
-			"metadata",
-			@"{""a"":""b""}", out state, out emittedEvents);
+			"metadata", @"{""a"":""b""}", out var state, out _);
 		Assert.AreEqual(@"{""a"":""b""}", state);
 	}
 
-	[Test, Category(_projectionType)]
+	[Test, Category(ProjectionType)]
 	public void process_event_should_not_reflect_non_json_events_even_if_valid_json() {
-		string state;
-		EmittedEventEnvelope[] emittedEvents;
 		_stateHandler.ProcessEvent(
 			"", CheckpointTag.FromPosition(0, 20, 10), "stream1", "type1", "category", Guid.NewGuid(), 0,
-			"metadata",
-			@"{""a"":""b""}", out state, out emittedEvents, isJson: false);
+			"metadata", @"{""a"":""b""}", out var state, out _, isJson: false);
 		Assert.AreEqual(@"{}", state);
 	}
 }

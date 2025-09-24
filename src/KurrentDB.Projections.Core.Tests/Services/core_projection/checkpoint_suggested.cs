@@ -35,7 +35,7 @@ public static class checkpoint_suggested {
 			//projection subscribes here
 			_bus.Publish(
 				new EventReaderSubscriptionMessage.CheckpointSuggested(
-					_subscriptionId,
+					SubscriptionId,
 					CheckpointTag.FromEventTypeIndexPositions(0, new TFPos(140, 130),
 						new Dictionary<string, long> { { "non-existing", -1 } }), 55.5f, 0));
 		}
@@ -77,12 +77,12 @@ public static class checkpoint_suggested {
 			//projection subscribes here
 			_bus.Publish(
 				new EventReaderSubscriptionMessage.CheckpointSuggested(
-					_subscriptionId,
+					SubscriptionId,
 					CheckpointTag.FromEventTypeIndexPositions(0, new TFPos(140, 130),
 						new Dictionary<string, long> { { "non-existing", -1 } }), 55.5f, 0));
 			_bus.Publish(
 				new EventReaderSubscriptionMessage.CheckpointSuggested(
-					_subscriptionId,
+					SubscriptionId,
 					CheckpointTag.FromEventTypeIndexPositions(0, new TFPos(160, 150),
 						new Dictionary<string, long> { { "non-existing", -1 } }), 55.6f, 1));
 		}
@@ -99,7 +99,8 @@ public static class checkpoint_suggested {
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_the_second_checkpoint_is_suggested_and_write_succeeds<TLogFormat, TStreamId> : TestFixtureWithCoreProjectionStarted<TLogFormat, TStreamId> {
+	public class when_the_second_checkpoint_is_suggested_and_write_succeeds<TLogFormat, TStreamId>
+		: TestFixtureWithCoreProjectionStarted<TLogFormat, TStreamId> {
 		protected override void Given() {
 			_checkpointHandledThreshold = 10;
 			_checkpointUnhandledBytesThreshold = 41;
@@ -119,12 +120,12 @@ public static class checkpoint_suggested {
 			//projection subscribes here
 			_bus.Publish(
 				new EventReaderSubscriptionMessage.CheckpointSuggested(
-					_subscriptionId,
+					SubscriptionId,
 					CheckpointTag.FromEventTypeIndexPositions(0, new TFPos(140, 130),
 						new Dictionary<string, long> { { "non-existing", -1 } }), 55.5f, 0));
 			_bus.Publish(
 				new EventReaderSubscriptionMessage.CheckpointSuggested(
-					_subscriptionId,
+					SubscriptionId,
 					CheckpointTag.FromEventTypeIndexPositions(0, new TFPos(160, 150),
 						new Dictionary<string, long> { { "non-existing", -1 } }), 55.6f, 1));
 		}

@@ -126,7 +126,7 @@ public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId> : Tes
 				_fakePosition, Guid.NewGuid(), Guid.NewGuid(), _fakePosition, 0, streamIdIgnored, list.Count - 1,
 				PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd | (isJson ? PrepareFlags.IsJson : 0),
 				eventTypeIdIgnored, eventData is null ? null : Helper.UTF8NoBom.GetBytes(eventData),
-				eventMetadata == null ? new byte[0] : Helper.UTF8NoBom.GetBytes(eventMetadata),
+				eventMetadata == null ? [] : Helper.UTF8NoBom.GetBytes(eventMetadata),
 				_timeProvider.UtcNow), streamName, eventType);
 		list.Add(eventRecord);
 		var eventPosition = new TFPos(_fakePosition + 50, _fakePosition);

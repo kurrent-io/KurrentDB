@@ -22,7 +22,7 @@ public class when_creating_one_time_projection<TLogFormat, TStreamId> : Specific
 	private string _query;
 
 	public override async Task Given() {
-		_streamName = "test-stream-" + Guid.NewGuid().ToString();
+		_streamName = $"test-stream-{Guid.NewGuid()}";
 		await PostEvent(_streamName, "testEvent", "{\"A\":\"1\"}");
 		await PostEvent(_streamName, "testEvent", "{\"A\":\"2\"}");
 
@@ -49,7 +49,7 @@ public class when_creating_transient_projection<TLogFormat, TStreamId> : Specifi
 	private string _query;
 
 	public override async Task Given() {
-		_streamName = "test-stream-" + Guid.NewGuid().ToString();
+		_streamName = $"test-stream-{Guid.NewGuid()}";
 		_projectionName = "when_creating_transient_projection";
 		await PostEvent(_streamName, "testEvent", "{\"A\":\"1\"}");
 		await PostEvent(_streamName, "testEvent", "{\"A\":\"2\"}");
@@ -79,9 +79,9 @@ public class when_creating_continuous_projection<TLogFormat, TStreamId> : Specif
 	private string _projectionId;
 
 	public override async Task Given() {
-		_streamName = "test-stream-" + Guid.NewGuid().ToString();
+		_streamName = $"test-stream-{Guid.NewGuid()}";
 		_projectionName = "when_creating_continuous_projection";
-		_emittedStreamName = "emittedStream-" + Guid.NewGuid().ToString();
+		_emittedStreamName = $"emittedStream-{Guid.NewGuid()}";
 		await PostEvent(_streamName, "testEvent", "{\"A\":\"1\"}");
 		await PostEvent(_streamName, "testEvent", "{\"A\":\"2\"}");
 
@@ -102,8 +102,7 @@ public class when_creating_continuous_projection<TLogFormat, TStreamId> : Specif
 
 	[Test]
 	public async Task should_have_turn_on_emit_to_stream() {
-		var events = await _connection
-			.ReadEventAsync(string.Format("$projections-{0}", _projectionId), 0, true, _credentials);
+		var events = await _connection.ReadEventAsync($"$projections-{_projectionId}", 0, true, _credentials);
 		var data = Encoding.UTF8.GetString(events.Event.Value.Event.Data);
 		var eventData = data.ParseJson<JObject>();
 		Assert.IsTrue((bool)eventData["emitEnabled"]);
@@ -122,9 +121,9 @@ public class
 	private string _projectionId;
 
 	public override async Task Given() {
-		_streamName = "test-stream-" + Guid.NewGuid().ToString();
+		_streamName = $"test-stream-{Guid.NewGuid()}";
 		_projectionName = "when_creating_continuous_projection_with_track_emitted_streams";
-		_emittedStreamName = "emittedStream-" + Guid.NewGuid().ToString();
+		_emittedStreamName = $"emittedStream-{Guid.NewGuid()}";
 		await PostEvent(_streamName, "testEvent", "{\"A\":\"1\"}");
 
 		_query = CreateEmittingQuery(_streamName, _emittedStreamName);
@@ -144,8 +143,7 @@ public class
 
 	[Test]
 	public async Task should_enable_track_emitted_streams() {
-		var events = await _connection
-			.ReadEventAsync(string.Format("$projections-{0}", _projectionId), 0, true, _credentials);
+		var events = await _connection.ReadEventAsync($"$projections-{_projectionId}", 0, true, _credentials);
 		var data = Encoding.UTF8.GetString(events.Event.Value.Event.Data);
 		var eventData = data.ParseJson<JObject>();
 		Assert.IsTrue((bool)eventData["trackEmittedStreams"]);
@@ -161,7 +159,7 @@ public class when_disabling_projections<TLogFormat, TStreamId> : SpecificationWi
 	private string _query;
 
 	public override async Task Given() {
-		_streamName = "test-stream-" + Guid.NewGuid().ToString();
+		_streamName = $"test-stream-{Guid.NewGuid()}";
 		_projectionName = "when_disabling_projection";
 		await PostEvent(_streamName, "testEvent", "{\"A\":\"1\"}");
 		await PostEvent(_streamName, "testEvent", "{\"A\":\"2\"}");
@@ -192,7 +190,7 @@ public class when_enabling_projections<TLogFormat, TStreamId> : SpecificationWit
 	private string _query;
 
 	public override async Task Given() {
-		_streamName = "test-stream-" + Guid.NewGuid().ToString();
+		_streamName = $"test-stream-{Guid.NewGuid()}";
 		_projectionName = "when_enabling_projections";
 		await PostEvent(_streamName, "testEvent", "{\"A\":\"1\"}");
 		await PostEvent(_streamName, "testEvent", "{\"A\":\"2\"}");
@@ -287,7 +285,7 @@ public class when_a_projection_is_running<TLogFormat, TStreamId> : Specification
 
 	public override async Task Given() {
 		_projectionName = "when_getting_projection_information";
-		_streamName = "test-stream-" + Guid.NewGuid().ToString();
+		_streamName = $"test-stream-{Guid.NewGuid()}";
 
 		await PostEvent(_streamName, "testEvent", "{\"A\":\"1\"}");
 		await PostEvent(_streamName, "testEvent", "{\"A\":\"2\"}");
@@ -333,7 +331,7 @@ public class when_updating_a_projection_query<TLogFormat, TStreamId> : Specifica
 
 	public override async Task Given() {
 		_projectionName = "when_updating_a_projection_query";
-		_streamName = "test-stream-" + Guid.NewGuid().ToString();
+		_streamName = $"test-stream-{Guid.NewGuid()}";
 
 		await PostEvent(_streamName, "testEvent", "{\"A\":\"1\"}");
 		await PostEvent(_streamName, "testEvent", "{\"A\":\"2\"}");

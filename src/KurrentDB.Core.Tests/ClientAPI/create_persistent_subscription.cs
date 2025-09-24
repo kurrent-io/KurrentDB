@@ -22,7 +22,7 @@ public class create_persistent_subscription_on_existing_stream<TLogFormat, TStre
 
 	protected override Task When() {
 		return _conn.AppendToStreamAsync(_stream, ExpectedVersion.Any,
-			new EventData(Guid.NewGuid(), "whatever", true, Encoding.UTF8.GetBytes("{'foo' : 2}"), new Byte[0]));
+			new EventData(Guid.NewGuid(), "whatever", true, Encoding.UTF8.GetBytes("{'foo' : 2}"), []));
 	}
 
 	[Test]
@@ -201,7 +201,7 @@ public class create_persistent_subscription_after_deleting_the_same<TLogFormat, 
 
 	protected override async Task When() {
 		await _conn.AppendToStreamAsync(_stream, ExpectedVersion.Any,
-			new EventData(Guid.NewGuid(), "whatever", true, Encoding.UTF8.GetBytes("{'foo' : 2}"), new Byte[0]));
+			new EventData(Guid.NewGuid(), "whatever", true, Encoding.UTF8.GetBytes("{'foo' : 2}"), []));
 		await _conn.CreatePersistentSubscriptionAsync(_stream, "existing", _settings, DefaultData.AdminCredentials);
 		await _conn.DeletePersistentSubscriptionAsync(_stream, "existing", DefaultData.AdminCredentials);
 	}

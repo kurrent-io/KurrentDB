@@ -14,13 +14,13 @@ public abstract class TestFixtureWithMultiStreamCheckpointManager<TLogFormat, TS
 	protected override void Given() {
 		base.Given();
 		_projectionVersion = new ProjectionVersion(1, 0, 0);
-		_streams = new[] { "a", "b", "c" };
+		_streams = ["a", "b", "c"];
 	}
 
 	protected override DefaultCheckpointManager GivenCheckpointManager() {
 		return new MultiStreamMultiOutputCheckpointManager(
 			_bus, _projectionCorrelationId, _projectionVersion, null, _ioDispatcher, _config, _projectionName,
-			new MultiStreamPositionTagger(0, _streams), _namingBuilder, _checkpointsEnabled, true, true,
+			new MultiStreamPositionTagger(0, _streams), _namingBuilder, _checkpointsEnabled,
 			_checkpointWriter, Opts.MaxProjectionStateSizeDefault);
 	}
 }

@@ -18,16 +18,15 @@ namespace KurrentDB.Projections.Core.Tests.Services.Jint.Serialization;
 
 [TestFixture]
 public class when_serializing_state {
-	private readonly Engine _engine;
+	private readonly Engine _engine = new();
 	private readonly JintProjectionStateHandler _sut;
 	private readonly JsonSerializer _builtIn;
 	private readonly JsonParser _parser;
 
 	public when_serializing_state() {
-		_engine = new Engine();
-		_parser = new JsonParser(_engine);
-		_builtIn = new JsonSerializer(_engine);
-		_sut = new JintProjectionStateHandler(
+		_parser = new(_engine);
+		_builtIn = new(_engine);
+		_sut = new(
 			source: "",
 			enableContentTypeValidation: false,
 			compilationTimeout: TimeSpan.FromMilliseconds(500),
@@ -56,7 +55,7 @@ public class when_serializing_state {
 
 	[Test]
 	public void round_trip_objects() {
-		RoundTrip(@"{}");
+		RoundTrip("{}");
 		RoundTrip(@"{""foo"":123,""bar"":456}");
 		RoundTrip(@"{""fo o"":[1,2,3]}");
 		RoundTrip(@"{"" foo"":{}}");
@@ -65,21 +64,23 @@ public class when_serializing_state {
 
 	[Test]
 	public void round_trip_arrays() {
-		RoundTrip(@"[]");
-		RoundTrip(@"[[],3]");
-		RoundTrip(@"[3,[]]");
-		RoundTrip(@"[{},[[],null],{"""":[4,5,6]}]");
+		RoundTrip("[]");
+		RoundTrip("[[],3]");
+		RoundTrip("[3,[]]");
+		RoundTrip("""[{},[[],null],{"":[4,5,6]}]""");
 	}
 
 	[Test]
 	public void round_trip_values() {
-		RoundTrip(@"""stringvalue""");
-		RoundTrip(@"34");
-		RoundTrip(@"{""foo"":""bar""}");
-		RoundTrip(@"[1,4,5,8]");
-		RoundTrip(@"true");
-		RoundTrip(@"false");
-		RoundTrip(@"null");
+		RoundTrip("""
+		          "stringvalue"
+		          """);
+		RoundTrip("34");
+		RoundTrip("""{"foo":"bar"}""");
+		RoundTrip("[1,4,5,8]");
+		RoundTrip("true");
+		RoundTrip("false");
+		RoundTrip("null");
 	}
 
 	[Test]
@@ -119,13 +120,15 @@ public class when_serializing_state {
 	[Test]
 	public void big_int() {
 		var serialized = _sut.Serialize(new JsBigInt(BigInteger.Parse("20000000000000000000")));
-		Assert.AreEqual(@"""20000000000000000000""", serialized);
+		Assert.AreEqual("""
+		                "20000000000000000000"
+		                """, serialized);
 	}
 
 	[Test]
 	public void undefined() {
 		var serialized = _sut.Serialize(JsValue.Undefined);
-		Assert.AreEqual(@"null", serialized);
+		Assert.AreEqual("null", serialized);
 	}
 
 	[Test]
@@ -134,7 +137,7 @@ public class when_serializing_state {
 		instance.Set("foo", JsValue.Undefined);
 		instance.Set("bar", "baz");
 		var serialized = _sut.Serialize(instance);
-		Assert.AreEqual(@"{""bar"":""baz""}", serialized);
+		Assert.AreEqual("""{"bar":"baz"}""", serialized);
 	}
 
 	[Test]
@@ -153,9 +156,7 @@ public class when_serializing_state {
 	public static string ReadJsonFromFile(string filename) {
 		var assembly = typeof(when_serializing_state).Assembly;
 		var availableFiles = assembly.GetManifestResourceNames();
-		var streamName = availableFiles.Where(
-			x => x.StartsWith(typeof(when_serializing_state).Namespace) && x.EndsWith(filename)
-			).SingleOrDefault();
+		var streamName = availableFiles.SingleOrDefault(x => x.StartsWith(typeof(when_serializing_state).Namespace) && x.EndsWith(filename));
 		if (streamName == null)
 			throw new InvalidOperationException($"Could not find {filename}");
 		using var stream = assembly.GetManifestResourceStream(streamName);

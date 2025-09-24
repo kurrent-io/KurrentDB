@@ -10,7 +10,6 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Helpers;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
-using KurrentDB.Core.Services.Monitoring.Stats;
 using KurrentDB.Core.Tests.Helpers;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.Util;
@@ -26,8 +25,9 @@ using IODispatcherDelayedMessage = KurrentDB.Core.Helpers.IODispatcherDelayedMes
 
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
 
-public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId> : core_projection.TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
-	protected class GuardBusToTriggerFixingIfUsed : IQueuedHandler, IPublisher, ISubscriber {
+public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId>
+	: core_projection.TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
+	private class GuardBusToTriggerFixingIfUsed : IQueuedHandler, ISubscriber {
 		public void Handle(Message message) {
 			throw new NotImplementedException();
 		}
@@ -44,10 +44,6 @@ public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFor
 			throw new NotImplementedException();
 		}
 
-		public QueueStats GetStatistics() {
-			throw new NotImplementedException();
-		}
-
 		public void Subscribe<T>(IAsyncHandle<T> handler) where T : Message {
 			throw new NotImplementedException();
 		}
@@ -56,29 +52,25 @@ public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFor
 			throw new NotImplementedException();
 		}
 	}
+
 	protected ProjectionManager _manager;
 	protected ProjectionManagerMessageDispatcher _managerMessageDispatcher;
 	private bool _initializeSystemProjections;
 	protected Tuple<SynchronousScheduler, IPublisher, SynchronousScheduler, Guid>[] _processingQueues;
 	private ProjectionCoreCoordinator _coordinator;
-	protected readonly ProjectionTracker _projectionMetricTracker= new();
+	protected readonly ProjectionTracker ProjectionMetricTracker = new();
 
 	protected override void Given1() {
 		base.Given1();
 		_initializeSystemProjections = GivenInitializeSystemProjections();
 		if (!_initializeSystemProjections) {
-			ExistingEvent(ProjectionNamesBuilder.ProjectionsRegistrationStream,
-				ProjectionEventTypes.ProjectionsInitialized, "", "");
+			ExistingEvent(ProjectionNamesBuilder.ProjectionsRegistrationStream, ProjectionEventTypes.ProjectionsInitialized, "", "");
 		}
 	}
 
-	protected virtual bool GivenInitializeSystemProjections() {
-		return false;
-	}
+	protected virtual bool GivenInitializeSystemProjections() => false;
 
-	protected override ManualQueue GiveInputQueue() {
-		return new ManualQueue(_bus, _timeProvider);
-	}
+	protected override ManualQueue GiveInputQueue() => new(_bus, _timeProvider);
 
 	[SetUp]
 	public void Setup() {
@@ -87,7 +79,7 @@ public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFor
 
 		_processingQueues = GivenProcessingQueues();
 		var queues = _processingQueues.ToDictionary(v => v.Item4, v => v.Item1.As<IPublisher>());
-		_managerMessageDispatcher = new ProjectionManagerMessageDispatcher(queues);
+		_managerMessageDispatcher = new(queues);
 
 		_manager = new ProjectionManager(
 			GetInputQueue(),
@@ -97,13 +89,10 @@ public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFor
 			ProjectionType.All,
 			_ioDispatcher,
 			TimeSpan.FromMinutes(Opts.ProjectionsQueryExpiryDefault),
-			_projectionMetricTracker,
+			ProjectionMetricTracker,
 			_initializeSystemProjections);
 
-		_coordinator = new ProjectionCoreCoordinator(
-			ProjectionType.All,
-			queues.Values.ToArray(),
-			_bus);
+		_coordinator = new(ProjectionType.All, queues.Values.ToArray(), _bus);
 
 		_bus.Subscribe<ProjectionManagementMessage.Internal.CleanupExpired>(_manager);
 		_bus.Subscribe<ProjectionManagementMessage.Internal.Deleted>(_manager);
@@ -136,8 +125,7 @@ public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFor
 		_bus.Subscribe<ProjectionSubsystemMessage.StopComponents>(_coordinator);
 
 		if (GetInputQueue() != _processingQueues.First().Item2) {
-			_bus.Subscribe<CoreProjectionManagementControlMessage>(
-				_managerMessageDispatcher);
+			_bus.Subscribe<CoreProjectionManagementControlMessage>(_managerMessageDispatcher);
 		}
 
 		foreach (var q in _processingQueues)
@@ -148,9 +136,7 @@ public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFor
 	}
 
 	protected virtual Tuple<SynchronousScheduler, IPublisher, SynchronousScheduler, Guid>[] GivenProcessingQueues() {
-		return new[] {
-			Tuple.Create(_bus, GetInputQueue(), (SynchronousScheduler)null, Guid.NewGuid())
-		};
+		return [Tuple.Create(_bus, GetInputQueue(), (SynchronousScheduler)null, Guid.NewGuid())];
 	}
 
 	private void SetUpCoreServices(
@@ -158,7 +144,7 @@ public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFor
 		SynchronousScheduler bus,
 		IPublisher inputQueue,
 		SynchronousScheduler output_) {
-		var output = (output_ ?? inputQueue);
+		var output = output_ ?? inputQueue;
 		ICheckpoint writerCheckpoint = new InMemoryCheckpoint(1000);
 		var readerService = new EventReaderCoreService(
 			output,
@@ -166,20 +152,16 @@ public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFor
 			10,
 			writerCheckpoint,
 			runHeadingReader: true, faultOutOfOrderProjections: true);
-		_subscriptionDispatcher = new ReaderSubscriptionDispatcher(inputQueue);
+		SubscriptionDispatcher = new ReaderSubscriptionDispatcher(inputQueue);
 
-		bus.Subscribe(
-			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.CheckpointSuggested>());
-		bus.Subscribe(
-			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.CommittedEventReceived>());
-		bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.EofReached>());
-		bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.PartitionDeleted>());
-		bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.ProgressChanged>());
-		bus.Subscribe(
-			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.SubscriptionStarted>());
-		bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.NotAuthorized>());
-		bus.Subscribe(
-			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.ReaderAssignedReader>());
+		bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.CheckpointSuggested>());
+		bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.CommittedEventReceived>());
+		bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.EofReached>());
+		bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.PartitionDeleted>());
+		bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.ProgressChanged>());
+		bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.SubscriptionStarted>());
+		bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.NotAuthorized>());
+		bus.Subscribe(SubscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.ReaderAssignedReader>());
 
 		var ioDispatcher = new IODispatcher(output, inputQueue, true);
 
@@ -190,7 +172,7 @@ public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFor
 			workerId,
 			inputQueue,
 			output,
-			_subscriptionDispatcher,
+			SubscriptionDispatcher,
 			_timeProvider,
 			ioDispatcher,
 			configuration);
@@ -241,8 +223,7 @@ public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFor
 			output_.Subscribe(Forwarder.Create<CoreProjectionStatusMessage.Stopped>(GetInputQueue()));
 			output_.Subscribe(Forwarder.Create<CoreProjectionStatusMessage.Faulted>(GetInputQueue()));
 			output_.Subscribe(Forwarder.Create<CoreProjectionStatusMessage.Prepared>(GetInputQueue()));
-			output_.Subscribe(
-				Forwarder.Create<ProjectionManagementMessage.Command.ControlMessage>(GetInputQueue()));
+			output_.Subscribe(Forwarder.Create<ProjectionManagementMessage.Command.ControlMessage>(GetInputQueue()));
 			output_.Subscribe(Forwarder.Create<AwakeServiceMessage.SubscribeAwake>(GetInputQueue()));
 			output_.Subscribe(Forwarder.Create<AwakeServiceMessage.UnsubscribeAwake>(GetInputQueue()));
 			output_.Subscribe(Forwarder.Create<Message>(inputQueue)); // forward all

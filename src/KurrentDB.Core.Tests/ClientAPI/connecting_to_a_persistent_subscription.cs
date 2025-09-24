@@ -202,7 +202,7 @@ public class
 
 	protected override Task When() {
 		return _conn.AppendToStreamAsync(_stream, ExpectedVersion.Any, DefaultData.AdminCredentials,
-			new EventData(_id, "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"), new byte[0]));
+			new EventData(_id, "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"), []));
 	}
 
 	private Task HandleEvent(EventStorePersistentSubscriptionBase sub, ResolvedEvent resolvedEvent) {
@@ -250,13 +250,13 @@ public class
 
 	protected override async Task When() {
 		await _conn.AppendToStreamAsync(_stream, ExpectedVersion.Any, DefaultData.AdminCredentials,
-				new EventData(Guid.NewGuid(), "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"), new byte[0]))
+				new EventData(Guid.NewGuid(), "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"), []))
 ;
 		await _conn.AppendToStreamAsync(_stream, ExpectedVersion.Any, DefaultData.AdminCredentials,
-				new EventData(Guid.NewGuid(), "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"), new byte[0]))
+				new EventData(Guid.NewGuid(), "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"), []))
 ;
 		await _conn.AppendToStreamAsync(_stream, ExpectedVersion.Any, DefaultData.AdminCredentials,
-			new EventData(_id, "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"), new byte[0]));
+			new EventData(_id, "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"), []));
 	}
 
 	private Task HandleEvent(EventStorePersistentSubscriptionBase sub, ResolvedEvent resolvedEvent) {
@@ -301,7 +301,7 @@ public class
 		for (int i = 0; i < 10; i++) {
 			_ids.Add(Guid.NewGuid());
 			await connection.AppendToStreamAsync(_stream, ExpectedVersion.Any, DefaultData.AdminCredentials,
-					new EventData(_ids[i], "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"), new byte[0]))
+					new EventData(_ids[i], "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"), []))
 ;
 		}
 	}
@@ -360,7 +360,7 @@ public class
 		for (int i = 0; i < 10; i++) {
 			await connection.AppendToStreamAsync(_stream, ExpectedVersion.Any, DefaultData.AdminCredentials,
 					new EventData(Guid.NewGuid(), "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"),
-						new byte[0]))
+						[]))
 ;
 		}
 	}
@@ -419,7 +419,7 @@ public class
 		for (int i = 0; i < 10; i++) {
 			await connection.AppendToStreamAsync(_stream, ExpectedVersion.Any, DefaultData.AdminCredentials,
 					new EventData(Guid.NewGuid(), "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"),
-						new byte[0]))
+						[]))
 ;
 		}
 	}
@@ -427,7 +427,7 @@ public class
 	protected override async Task When() {
 		_id = Guid.NewGuid();
 		await _conn.AppendToStreamAsync(_stream, ExpectedVersion.Any, DefaultData.AdminCredentials,
-			new EventData(_id, "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"), new byte[0]));
+			new EventData(_id, "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"), []));
 	}
 
 	private Task HandleEvent(EventStorePersistentSubscriptionBase sub, ResolvedEvent resolvedEvent) {
@@ -479,7 +479,7 @@ public class
 		for (int i = 0; i < 11; i++) {
 			await connection.AppendToStreamAsync(_stream, ExpectedVersion.Any, DefaultData.AdminCredentials,
 					new EventData(Guid.NewGuid(), "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"),
-						new byte[0]))
+						[]))
 ;
 		}
 	}
@@ -487,7 +487,7 @@ public class
 	protected override Task When() {
 		_id = Guid.NewGuid();
 		return _conn.AppendToStreamAsync(_stream, ExpectedVersion.Any, DefaultData.AdminCredentials,
-			new EventData(_id, "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"), new byte[0]));
+			new EventData(_id, "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"), []));
 	}
 
 	private Task HandleEvent(EventStorePersistentSubscriptionBase sub, ResolvedEvent resolvedEvent) {
@@ -541,7 +541,7 @@ public class a_nak_in_subscription_handler_in_autoack_mode_drops_the_subscriptio
 
 	protected override Task When() {
 		return _conn.AppendToStreamAsync(_stream, ExpectedVersion.Any, DefaultData.AdminCredentials,
-				new EventData(Guid.NewGuid(), "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"), new byte[0]));
+				new EventData(Guid.NewGuid(), "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"), []));
 	}
 
 	private static Task HandleEvent(EventStorePersistentSubscriptionBase sub, ResolvedEvent resolvedEvent) {
@@ -593,7 +593,7 @@ public class
 		for (int i = 0; i < 10; i++) {
 			await connection.AppendToStreamAsync(_stream, ExpectedVersion.Any, DefaultData.AdminCredentials,
 					new EventData(Guid.NewGuid(), "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"),
-						new byte[0]))
+						[]))
 ;
 		}
 	}
@@ -601,7 +601,7 @@ public class
 	protected override Task When() {
 		_id = Guid.NewGuid();
 		return _conn.AppendToStreamAsync(_stream, ExpectedVersion.Any, DefaultData.AdminCredentials,
-			new EventData(_id, "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"), new byte[0]));
+			new EventData(_id, "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"), []));
 	}
 
 	private Task HandleEvent(EventStorePersistentSubscriptionBase sub, ResolvedEvent resolvedEvent) {
@@ -653,7 +653,7 @@ public class
 		for (int i = 0; i < 10; i++) {
 			var id = Guid.NewGuid();
 			await connection.AppendToStreamAsync(_stream, ExpectedVersion.Any, DefaultData.AdminCredentials,
-				new EventData(id, "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"), new byte[0]));
+				new EventData(id, "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"), []));
 			if (i == 4)
 				_id = id;
 		}
@@ -661,7 +661,7 @@ public class
 
 	protected override Task When() {
 		return _conn.AppendToStreamAsync(_stream, ExpectedVersion.Any, DefaultData.AdminCredentials,
-			new EventData(_id, "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"), new byte[0]));
+			new EventData(_id, "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"), []));
 	}
 
 	private bool _set = false;
@@ -776,7 +776,7 @@ public class connect_to_persistent_subscription_with_retries<TLogFormat, TStream
 
 	protected override Task When() {
 		return _conn.AppendToStreamAsync(_stream, ExpectedVersion.Any, DefaultData.AdminCredentials,
-			new EventData(_id, "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"), new byte[0]));
+			new EventData(_id, "test", true, Encoding.UTF8.GetBytes("{'foo' : 'bar'}"), []));
 	}
 
 	private Task HandleEvent(EventStorePersistentSubscriptionBase sub, ResolvedEvent resolvedEvent,

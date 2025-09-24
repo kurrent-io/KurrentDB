@@ -9,15 +9,9 @@ using KurrentDB.Core.Messages;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Emitting;
 
-public class EmittedStreamsWriter : IEmittedStreamsWriter {
-	private IODispatcher _ioDispatcher;
-
-	public EmittedStreamsWriter(IODispatcher ioDispatcher) {
-		_ioDispatcher = ioDispatcher;
-	}
-
+public class EmittedStreamsWriter(IODispatcher ioDispatcher) : IEmittedStreamsWriter {
 	public void WriteEvents(string streamId, long expectedVersion, Event[] events, ClaimsPrincipal writeAs,
 		Action<ClientMessage.WriteEventsCompleted> complete) {
-		_ioDispatcher.WriteEvents(streamId, expectedVersion, events, writeAs, complete);
+		ioDispatcher.WriteEvents(streamId, expectedVersion, events, writeAs, complete);
 	}
 }

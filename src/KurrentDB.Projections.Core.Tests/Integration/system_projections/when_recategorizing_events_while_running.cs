@@ -25,17 +25,11 @@ public class when_recategorizing_events_while_running<TLogFormat, TStreamId> : s
 		yield return CreateWriteEvent("categorized-1", SystemEventTypes.LinkTo, "0@account-01", "{\"a\":1}");
 	}
 
-	protected override bool GivenInitializeSystemProjections() {
-		return true;
-	}
+	protected override bool GivenInitializeSystemProjections() => true;
 
-	protected override bool GivenStartSystemProjections() {
-		return true;
-	}
+	protected override bool GivenStartSystemProjections() => true;
 
-	protected override string GivenQuery() {
-		return "";
-	}
+	protected override string GivenQuery() => "";
 
 	[Test]
 	public void streams_are_categorized() {

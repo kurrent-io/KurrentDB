@@ -34,34 +34,32 @@ public class a_running_foreach_stream_projection {
 		protected override IEnumerable<WhenStep> When() {
 			foreach (var m in base.When())
 				yield return m;
-			var readerAssignedMessage =
-				_consumer.HandledMessages.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>()
-					.LastOrDefault();
+			var readerAssignedMessage = _consumer.HandledMessages.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>().LastOrDefault();
 			Assert.IsNotNull(readerAssignedMessage);
 			_reader = readerAssignedMessage.ReaderId;
 
 			_consumer.HandledMessages.Clear();
 
 			yield return
-				(ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
+				ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 					_reader, new TFPos(100, 50), new TFPos(100, 50), "stream1", 1, "stream1", 1, false,
 					Guid.NewGuid(),
-					"type", false, Helper.UTF8NoBom.GetBytes("1"), new byte[0], 100, 33.3f));
+					"type", false, Helper.UTF8NoBom.GetBytes("1"), [], 100, 33.3f);
 			yield return
-				(ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
+				ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 					_reader, new TFPos(200, 150), new TFPos(200, 150), "stream2", 1, "stream2", 1, false,
 					Guid.NewGuid(),
-					"type", false, Helper.UTF8NoBom.GetBytes("1"), new byte[0], 100, 33.3f));
+					"type", false, Helper.UTF8NoBom.GetBytes("1"), [], 100, 33.3f);
 			yield return
-				(ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
+				ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 					_reader, new TFPos(300, 250), new TFPos(300, 250), "stream3", 1, "stream3", 1, false,
 					Guid.NewGuid(),
-					"type", false, Helper.UTF8NoBom.GetBytes("1"), new byte[0], 100, 33.3f));
+					"type", false, Helper.UTF8NoBom.GetBytes("1"), [], 100, 33.3f);
 			yield return
-				(ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
+				ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 					_reader, new TFPos(400, 350), new TFPos(400, 350), "stream1", 2, "stream1", 2, false,
 					Guid.NewGuid(),
-					"type", false, Helper.UTF8NoBom.GetBytes("1"), new byte[0], 100, 33.3f));
+					"type", false, Helper.UTF8NoBom.GetBytes("1"), [], 100, 33.3f);
 		}
 	}
 
@@ -72,44 +70,24 @@ public class a_running_foreach_stream_projection {
 			foreach (var m in base.When())
 				yield return m;
 
-			yield return (new ReaderSubscriptionMessage.EventReaderEof(_reader));
+			yield return new ReaderSubscriptionMessage.EventReaderEof(_reader);
 		}
 
 		[Test]
 		public void the_projection_status_becomes_completed_enabled() {
-			_manager.Handle(
-				new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
+			_manager.Handle(new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
 
-			Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
-			Assert.AreEqual(
-				1,
-				_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>()
-					.Single()
-					.Projections.Length);
-			Assert.AreEqual(
-				_projectionName,
-				_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>()
-					.Single()
-					.Projections.Single()
-					.Name);
-			Assert.AreEqual(
-				ManagedProjectionState.Completed,
-				_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>()
-					.Single()
-					.Projections.Single()
-					.LeaderStatus);
-			Assert.AreEqual(
-				true,
-				_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>()
-					.Single()
-					.Projections.Single()
-					.Enabled);
+			var actual = _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().ToArray();
+			Assert.AreEqual(1, actual.Length);
+			Assert.AreEqual(1, actual.Single().Projections.Length);
+			Assert.AreEqual(_projectionName, actual.Single().Projections.Single().Name);
+			Assert.AreEqual(ManagedProjectionState.Completed, actual.Single().Projections.Single().LeaderStatus);
+			Assert.AreEqual(true, actual.Single().Projections.Single().Enabled);
 		}
 
 		[Test]
 		public void writes_result_stream() {
-			List<EventRecord> resultsStream;
-			Assert.IsTrue((_streams.TryGetValue("$projections-test-projection-result", out resultsStream)));
+			Assert.IsTrue(_streams.TryGetValue("$projections-test-projection-result", out var resultsStream));
 			Assert.AreEqual(3 + 1 /* $Eof */, resultsStream.Count);
 		}
 

@@ -7,37 +7,27 @@ using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Strategies;
 
-public class ProcessingStrategySelector {
+public class ProcessingStrategySelector(ReaderSubscriptionDispatcher subscriptionDispatcher, int maxProjectionStateSize) {
 	private readonly ILogger _logger = Log.ForContext<ProcessingStrategySelector>();
-	private readonly ReaderSubscriptionDispatcher _subscriptionDispatcher;
-	private readonly int _maxProjectionStateSize;
-
-	public ProcessingStrategySelector(
-		ReaderSubscriptionDispatcher subscriptionDispatcher, int maxProjectionStateSize) {
-		_subscriptionDispatcher = subscriptionDispatcher;
-		_maxProjectionStateSize = maxProjectionStateSize;
-	}
 
 	public ProjectionProcessingStrategy CreateProjectionProcessingStrategy(
 		string name,
 		ProjectionVersion projectionVersion,
-		ProjectionNamesBuilder namesBuilder,
 		IQuerySources sourceDefinition,
 		ProjectionConfig projectionConfig,
-		IProjectionStateHandler stateHandler, string handlerType, string query, bool enableContentTypeValidation) {
-
-		return projectionConfig.StopOnEof
-			? (ProjectionProcessingStrategy)
-			new QueryProcessingStrategy(
+		IProjectionStateHandler stateHandler,
+		bool enableContentTypeValidation)
+		=> projectionConfig.StopOnEof
+			? new QueryProcessingStrategy(
 				name,
 				projectionVersion,
 				stateHandler,
 				projectionConfig,
 				sourceDefinition,
 				_logger,
-				_subscriptionDispatcher,
+				subscriptionDispatcher,
 				enableContentTypeValidation,
-				_maxProjectionStateSize)
+				maxProjectionStateSize)
 			: new ContinuousProjectionProcessingStrategy(
 				name,
 				projectionVersion,
@@ -45,8 +35,7 @@ public class ProcessingStrategySelector {
 				projectionConfig,
 				sourceDefinition,
 				_logger,
-				_subscriptionDispatcher,
+				subscriptionDispatcher,
 				enableContentTypeValidation,
-				_maxProjectionStateSize);
-	}
+				maxProjectionStateSize);
 }

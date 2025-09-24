@@ -35,11 +35,12 @@ public class when_index_based_read_timeout_occurs<TLogFormat, TStreamId> : Event
 	public new void When() {
 		_distributionCorrelationId = Guid.NewGuid();
 		_fakeTimeProvider = new FakeTimeProvider();
-		var fromPositions = new Dictionary<string, long>();
-		fromPositions.Add("$et-eventTypeOne", 0);
-		fromPositions.Add("$et-eventTypeTwo", 0);
-		_eventReader = new EventByTypeIndexEventReader(_bus, _distributionCorrelationId,
-			null, new string[] { "eventTypeOne", "eventTypeTwo" },
+		var fromPositions = new Dictionary<string, long> {
+			{ "$et-eventTypeOne", 0 },
+			{ "$et-eventTypeTwo", 0 }
+		};
+		_eventReader = new(_bus, _distributionCorrelationId,
+			null, ["eventTypeOne", "eventTypeTwo"],
 			false, new TFPos(0, 0),
 			fromPositions, true,
 			_fakeTimeProvider,
@@ -49,7 +50,7 @@ public class when_index_based_read_timeout_occurs<TLogFormat, TStreamId> : Event
 
 		_eventTypeOneStreamReadCorrelationId = TimeoutRead("$et-eventTypeOne", Guid.Empty);
 
-		CompleteForwardStreamRead("$et-eventTypeOne", _eventTypeOneStreamReadCorrelationId, new[] {
+		CompleteForwardStreamRead("$et-eventTypeOne", _eventTypeOneStreamReadCorrelationId,
 			ResolvedEvent.ForUnresolvedEvent(
 				new EventRecord(
 					1, 50, Guid.NewGuid(), Guid.NewGuid(), 50, 0, "$et-eventTypeOne", ExpectedVersion.Any,
@@ -64,12 +65,11 @@ public class when_index_based_read_timeout_occurs<TLogFormat, TStreamId> : Event
 					DateTime.UtcNow,
 					PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
 					"$>", Helper.UTF8NoBom.GetBytes("1@test-stream"),
-					Helper.UTF8NoBom.GetBytes(TFPosToMetadata(new TFPos(150, 150)))))
-		});
+					Helper.UTF8NoBom.GetBytes(TFPosToMetadata(new TFPos(150, 150))))));
 
 		_eventTypeTwoStreamReadCorrelationId = TimeoutRead("$et-eventTypeTwo", Guid.Empty);
 
-		CompleteForwardStreamRead("$et-eventTypeTwo", _eventTypeTwoStreamReadCorrelationId, new[] {
+		CompleteForwardStreamRead("$et-eventTypeTwo", _eventTypeTwoStreamReadCorrelationId,
 			ResolvedEvent.ForUnresolvedEvent(
 				new EventRecord(
 					1, 100, Guid.NewGuid(), Guid.NewGuid(), 100, 0, "$et-eventTypeTwo", ExpectedVersion.Any,
@@ -84,14 +84,12 @@ public class when_index_based_read_timeout_occurs<TLogFormat, TStreamId> : Event
 					DateTime.UtcNow,
 					PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
 					"$>", Helper.UTF8NoBom.GetBytes("3@test-stream"),
-					Helper.UTF8NoBom.GetBytes(TFPosToMetadata(new TFPos(200, 200)))))
-		});
+					Helper.UTF8NoBom.GetBytes(TFPosToMetadata(new TFPos(200, 200))))));
 	}
 
 	[Test]
 	public void should_not_deliver_events() {
-		Assert.AreEqual(0,
-			_consumer.HandledMessages.OfType<ReaderSubscriptionMessage.CommittedEventDistributed>().Count());
+		Assert.AreEqual(0, _consumer.HandledMessages.OfType<ReaderSubscriptionMessage.CommittedEventDistributed>().Count());
 	}
 
 	[Test]

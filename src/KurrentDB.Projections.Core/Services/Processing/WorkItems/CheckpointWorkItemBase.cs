@@ -4,14 +4,12 @@
 namespace KurrentDB.Projections.Core.Services.Processing.WorkItems;
 
 public class CheckpointWorkItemBase : WorkItem {
-	private static readonly object _correlationId = new object();
+	private static readonly object CorrelationId = new();
 
-	protected CheckpointWorkItemBase()
-		: base(_correlationId) {
-		_requiresRunning = true;
+	protected CheckpointWorkItemBase() : base(CorrelationId) {
+		RequiresRunning = true;
 	}
 
-	protected CheckpointWorkItemBase(object correlation)
-		: base(correlation) {
+	protected CheckpointWorkItemBase(object correlation) : base(correlation) {
 	}
 }

@@ -29,9 +29,8 @@ public class when_updating_postion_stream_position_tracker {
 		Assert.AreEqual(2, _positionTracker.LastTag.Streams["stream1"]);
 	}
 
-
 	[Test]
-	public void cannot_update_to_the_same_postion() {
+	public void cannot_update_to_the_same_position() {
 		Assert.Throws<InvalidOperationException>(() => {
 			var newTag = CheckpointTag.FromStreamPosition(0, "stream1", 2);
 			_positionTracker.UpdateByCheckpointTagForward(newTag);

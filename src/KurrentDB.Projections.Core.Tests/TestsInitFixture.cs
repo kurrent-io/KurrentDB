@@ -7,8 +7,7 @@ namespace KurrentDB.Projections.Core.Tests;
 
 [SetUpFixture]
 public class TestsInitFixture {
-	private readonly KurrentDB.Core.Tests.TestsInitFixture _initFixture =
-		new KurrentDB.Core.Tests.TestsInitFixture();
+	private readonly KurrentDB.Core.Tests.TestsInitFixture _initFixture = new();
 
 	[OneTimeSetUp]
 	public void SetUp() {

@@ -13,11 +13,11 @@ namespace KurrentDB.Projections.Core.Tests.Other;
 public class claims_serialization {
 	[Test]
 	public void should_serialize_principal_name() {
-		var principalName = "foo-name";
-		var claimsIdentity = new ClaimsIdentity(new Claim[] {
+		const string principalName = "foo-name";
+		var claimsIdentity = new ClaimsIdentity([
 			new(ClaimTypes.Name, principalName),
-			new(ClaimTypes.Role, "$admins"),
-		});
+			new(ClaimTypes.Role, "$admins")
+		]);
 		var runas = new ProjectionManagementMessage.RunAs(new ClaimsPrincipal(claimsIdentity));
 		var sra = SerializedRunAs.SerializePrincipal(runas);
 		Assert.AreEqual(principalName, sra.Name);
@@ -26,12 +26,12 @@ public class claims_serialization {
 	[Test]
 	public void should_only_serialize_role() {
 		var roleClaim = new Claim(ClaimTypes.Role, "$admins");
-		var claimsIdentity = new ClaimsIdentity(new[] {
+		var claimsIdentity = new ClaimsIdentity([
 			new(ClaimTypes.Name, "foo-name"),
 			roleClaim,
 			new("uid", "foo-uid"),
 			new("pwd", "foo-pwd")
-		});
+		]);
 		var runas = new ProjectionManagementMessage.RunAs(new ClaimsPrincipal(claimsIdentity));
 		var sra = SerializedRunAs.SerializePrincipal(runas);
 		Assert.AreEqual(1, sra.Roles.Length);

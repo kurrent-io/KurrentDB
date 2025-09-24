@@ -15,7 +15,7 @@ public class when_updating_event_by_type_index_position_tracker_to_zero {
 
 	[SetUp]
 	public void When() {
-		_tagger = new EventByTypeIndexPositionTagger(0, new[] { "type1", "type2" });
+		_tagger = new EventByTypeIndexPositionTagger(0, ["type1", "type2"]);
 		_positionTracker = new PositionTracker(_tagger);
 		// when
 

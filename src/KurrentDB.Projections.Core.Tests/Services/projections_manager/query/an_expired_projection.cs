@@ -25,17 +25,14 @@ public class an_expired_projection {
 		protected override IEnumerable<WhenStep> When() {
 			foreach (var m in base.When())
 				yield return m;
-			var readerAssignedMessage =
-				_consumer.HandledMessages.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>()
-					.LastOrDefault();
+			var readerAssignedMessage = _consumer.HandledMessages.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>() .LastOrDefault();
 			Assert.IsNotNull(readerAssignedMessage);
 			_reader = readerAssignedMessage.ReaderId;
 
 			yield return
-				(ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
+				ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 					_reader, new TFPos(100, 50), new TFPos(100, 50), "stream", 1, "stream", 1, false,
-					Guid.NewGuid(),
-					"type", false, new byte[0], new byte[0], 100, 33.3f));
+					Guid.NewGuid(), "type", false, [], [], 100, 33.3f);
 			_timeProvider.AddToUtcTime(TimeSpan.FromMinutes(6));
 			yield return Yield;
 			foreach (var m in _consumer.HandledMessages.OfType<TimerMessage.Schedule>().ToArray())
@@ -50,8 +47,7 @@ public class an_expired_projection {
 			foreach (var s in base.When())
 				yield return s;
 			_consumer.HandledMessages.Clear();
-			yield return (
-				new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
+			yield return new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName);
 		}
 
 		[Test]
@@ -74,8 +70,7 @@ public class an_expired_projection {
 		public void projection_deletion_should_not_be_written() {
 			var registrationEvents = _streams["$projections-$all"];
 			Assert.AreEqual(1, registrationEvents.Count(e => e.EventType == "$ProjectionsInitialized"));
-			Assert.AreEqual(0,
-				registrationEvents.Count(e => Helper.UTF8NoBom.GetString(e.Data.ToArray()) == _projectionName));
+			Assert.AreEqual(0, registrationEvents.Count(e => Helper.UTF8NoBom.GetString(e.Data.ToArray()) == _projectionName));
 		}
 	}
 }

@@ -24,19 +24,18 @@ public partial class MultiStreamMultiOutputCheckpointManager : DefaultCheckpoint
 	private EmittedStream _orderStream;
 	private bool _orderStreamReadingCompleted;
 	private int _loadingItemsCount;
-	private readonly Stack<Item> _loadQueue = new Stack<Item>();
+	private readonly Stack<Item> _loadQueue = new();
 	private CheckpointTag _loadingPrerecordedEventsFrom;
-	private static readonly char[] _linkToSeparator = new[] { '@' };
+	private static readonly char[] LinkToSeparator = ['@'];
 
 	public MultiStreamMultiOutputCheckpointManager(
 		IPublisher publisher, Guid projectionCorrelationId, ProjectionVersion projectionVersion, ClaimsPrincipal runAs,
 		IODispatcher ioDispatcher, ProjectionConfig projectionConfig, string name, PositionTagger positionTagger,
-		ProjectionNamesBuilder namingBuilder, bool usePersistentCheckpoints, bool producesRunningResults,
-		bool definesFold,
+		ProjectionNamesBuilder namingBuilder, bool usePersistentCheckpoints,
 		CoreProjectionCheckpointWriter coreProjectionCheckpointWriter, int maxProjectionStateSize)
 		: base(
 			publisher, projectionCorrelationId, projectionVersion, runAs, ioDispatcher, projectionConfig, name,
-			positionTagger, namingBuilder, usePersistentCheckpoints, producesRunningResults, definesFold,
+			positionTagger, namingBuilder, usePersistentCheckpoints,
 			coreProjectionCheckpointWriter, maxProjectionStateSize) {
 		_positionTagger = positionTagger;
 	}
@@ -44,8 +43,7 @@ public partial class MultiStreamMultiOutputCheckpointManager : DefaultCheckpoint
 	public override void Initialize() {
 		base.Initialize();
 		_lastOrderCheckpointTag = null;
-		if (_orderStream != null)
-			_orderStream.Dispose();
+		_orderStream?.Dispose();
 		_orderStream = null;
 	}
 
@@ -60,16 +58,16 @@ public partial class MultiStreamMultiOutputCheckpointManager : DefaultCheckpoint
 		EnsureStarted();
 		if (_stopping)
 			throw new InvalidOperationException("Stopping");
-		var orderStreamName = _namingBuilder.GetOrderStreamName();
+		var orderStreamName = NamingBuilder.GetOrderStreamName();
 		//TODO: -order stream requires correctly configured event expiration.
 		// the best is to truncate using $startFrom, but $maxAge should be also acceptable
 		_orderStream.EmitEvents(
-			new[] {
-				new EmittedDataEvent(
+		[
+			new EmittedDataEvent(
 					orderStreamName, Guid.NewGuid(), "$>",
-					false, resolvedEvent.PositionSequenceNumber + "@" + resolvedEvent.PositionStreamId, null,
-					orderCheckpointTag, _lastOrderCheckpointTag, v => committed())
-			});
+					false, $"{resolvedEvent.PositionSequenceNumber}@{resolvedEvent.PositionStreamId}", null,
+					orderCheckpointTag, _lastOrderCheckpointTag, _ => committed())
+		]);
 		_lastOrderCheckpointTag = orderCheckpointTag;
 	}
 
@@ -77,11 +75,9 @@ public partial class MultiStreamMultiOutputCheckpointManager : DefaultCheckpoint
 		//TODO: this stream requires $startFrom to be updated from time to time to reduce space taken
 		return new EmittedStream(
 			/* MUST NEVER SEND READY MESSAGE */
-			_namingBuilder.GetOrderStreamName(),
-			new EmittedStream.WriterConfiguration(
-				new EmittedStreamsWriter(_ioDispatcher), new EmittedStream.WriterConfiguration.StreamMetadata(),
-				SystemAccounts.System, 100, _logger),
-			_projectionVersion, _positionTagger, @from, _publisher, _ioDispatcher, this, noCheckpoints: true);
+			NamingBuilder.GetOrderStreamName(),
+			new(new EmittedStreamsWriter(_ioDispatcher), new(), SystemAccounts.System, 100, Logger),
+			_projectionVersion, _positionTagger, from, Publisher, _ioDispatcher, this, noCheckpoints: true);
 	}
 
 	public override void GetStatistics(ProjectionStatistics info) {
@@ -93,7 +89,6 @@ public partial class MultiStreamMultiOutputCheckpointManager : DefaultCheckpoint
 		}
 	}
 
-
 	public override void BeginLoadPrerecordedEvents(CheckpointTag checkpointTag) {
 		BeginLoadPrerecordedEventsChunk(checkpointTag, -1);
 	}
@@ -101,7 +96,7 @@ public partial class MultiStreamMultiOutputCheckpointManager : DefaultCheckpoint
 	private void BeginLoadPrerecordedEventsChunk(CheckpointTag checkpointTag, long fromEventNumber) {
 		_loadingPrerecordedEventsFrom = checkpointTag;
 		_ioDispatcher.ReadBackward(
-			_namingBuilder.GetOrderStreamName(), fromEventNumber, 100, false, SystemAccounts.System,
+			NamingBuilder.GetOrderStreamName(), fromEventNumber, 100, false, SystemAccounts.System,
 			completed => {
 				switch (completed.Result) {
 					case ReadStreamResult.NoStream:
@@ -143,19 +138,16 @@ public partial class MultiStreamMultiOutputCheckpointManager : DefaultCheckpoint
 						throw new Exception("Cannot read order stream");
 				}
 			}, () => {
-				_logger.Warning("Read backward of stream {stream} timed out. Retrying",
-					_namingBuilder.GetOrderStreamName());
+				Logger.Warning("Read backward of stream {stream} timed out. Retrying", NamingBuilder.GetOrderStreamName());
 				BeginLoadPrerecordedEventsChunk(checkpointTag, fromEventNumber);
 			}, Guid.NewGuid());
 	}
 
 	private void EnqueuePrerecordedEvent(EventRecord @event, CheckpointTag tag) {
-		if (@event == null)
-			throw new ArgumentNullException("event");
-		if (tag == null)
-			throw new ArgumentNullException("tag");
+		ArgumentNullException.ThrowIfNull(@event);
+		ArgumentNullException.ThrowIfNull(tag);
 		if (@event.EventType != "$>")
-			throw new ArgumentException("linkto ($>) event expected", "event");
+			throw new ArgumentException("linkto ($>) event expected", nameof(@event));
 
 		_loadingItemsCount++;
 
@@ -165,7 +157,7 @@ public partial class MultiStreamMultiOutputCheckpointManager : DefaultCheckpoint
 		//      which may in turn be a link.  This is necessary to provide a correct
 		//       ResolvedEvent when replaying from the -order stream
 		var linkTo = Helper.UTF8NoBom.GetString(@event.Data.Span);
-		string[] parts = linkTo.Split(_linkToSeparator, 2);
+		string[] parts = linkTo.Split(LinkToSeparator, 2);
 		long eventNumber = long.Parse(parts[0]);
 		string streamId = parts[1];
 
@@ -180,7 +172,7 @@ public partial class MultiStreamMultiOutputCheckpointManager : DefaultCheckpoint
 					CheckAllEventsLoaded();
 					break;
 				default:
-					throw new Exception(string.Format("Cannot read {0}. Error: {1}", linkTo, completed.Error));
+					throw new Exception($"Cannot read {linkTo}. Error: {completed.Error}");
 			}
 		});
 	}
@@ -189,7 +181,7 @@ public partial class MultiStreamMultiOutputCheckpointManager : DefaultCheckpoint
 		Action<ClientMessage.ReadStreamEventsBackwardCompleted> action) {
 		_ioDispatcher.ReadBackward(
 			streamId, eventNumber, 1, true, SystemAccounts.System, action, () => {
-				_logger.Warning("Read backward of stream {stream} timed out. Retrying", streamId);
+				Logger.Warning("Read backward of stream {stream} timed out. Retrying", streamId);
 				ReadPrerecordedEventStream(streamId, eventNumber, action);
 			}, Guid.NewGuid());
 	}
@@ -219,13 +211,9 @@ public partial class MultiStreamMultiOutputCheckpointManager : DefaultCheckpoint
 	}
 
 	public void Handle(CoreProjectionProcessingMessage.EmittedStreamAwaiting message) {
-		if (_stopped)
-			return;
-		throw new NotImplementedException();
+		if (!_stopped) throw new NotImplementedException();
 	}
 
 	public void Handle(CoreProjectionProcessingMessage.EmittedStreamWriteCompleted message) {
-		if (_stopped)
-			return;
 	}
 }

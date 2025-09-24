@@ -26,9 +26,9 @@ public class when_building_an_index_off_tfile_with_two_events_in_stream<TLogForm
 
 		var (streamId1, _) = await GetOrReserve("test1", token);
 		var (eventTypeId, pos0) = await GetOrReserveEventType("eventType", token);
-		_prepare1 = LogRecord.SingleWrite(_recordFactory, pos0, _id1, _id1, streamId1, ExpectedVersion.NoStream, eventTypeId, new byte[0], new byte[0]);
+		_prepare1 = LogRecord.SingleWrite(_recordFactory, pos0, _id1, _id1, streamId1, ExpectedVersion.NoStream, eventTypeId, LogRecord.NoData, LogRecord.NoData);
 		var (_, pos1) = await Writer.Write(_prepare1, token);
-		_prepare2 = LogRecord.SingleWrite(_recordFactory, pos1, _id2, _id2, streamId1, 0, eventTypeId, new byte[0], new byte[0]);
+		_prepare2 = LogRecord.SingleWrite(_recordFactory, pos1, _id2, _id2, streamId1, 0, eventTypeId, LogRecord.NoData, LogRecord.NoData);
 		var (_, pos2) = await Writer.Write(_prepare2, token);
 		var (_, pos3) = await Writer.Write(new CommitLogRecord(pos2, _id1, pos0, DateTime.UtcNow, 0), token);
 		await Writer.Write(new CommitLogRecord(pos3, _id2, pos1, DateTime.UtcNow, 1), token);

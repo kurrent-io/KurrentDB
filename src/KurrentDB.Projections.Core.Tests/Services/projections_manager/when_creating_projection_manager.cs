@@ -26,12 +26,9 @@ public class when_creating_projection_manager {
 	[SetUp]
 	public void setup() {
 		_timeProvider = new FakeTimeProvider();
-		_queues = new Dictionary<Guid, IPublisher> { { Guid.NewGuid(), new FakePublisher() } };
+		_queues = new() { { Guid.NewGuid(), new FakePublisher() } };
 		var fakePublisher = new FakePublisher();
-		new ProjectionCoreCoordinator(
-			ProjectionType.All,
-			_queues.Values.ToArray(),
-			fakePublisher);
+		_ = new ProjectionCoreCoordinator(ProjectionType.All, _queues.Values.ToArray(), fakePublisher);
 		_ioDispatcher = new IODispatcher(fakePublisher, fakePublisher, true);
 	}
 

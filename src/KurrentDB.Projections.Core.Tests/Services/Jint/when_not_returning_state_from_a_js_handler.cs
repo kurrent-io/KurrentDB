@@ -19,23 +19,19 @@ public class when_not_returning_state_from_a_js_handler : TestFixtureWithInterpr
             ";
 	}
 
-	[Test, Category(_projectionType)]
+	[Test, Category(ProjectionType)]
 	public void process_event_should_return_updated_state() {
-		string state;
-		EmittedEventEnvelope[] emittedEvents;
 		_stateHandler.ProcessEvent(
 			"", CheckpointTag.FromPosition(0, 20, 10), "stream1", "type1", "category",
-			Guid.NewGuid(), 0, "metadata", @"{""a"":""b""}", out state, out emittedEvents);
+			Guid.NewGuid(), 0, "metadata", @"{""a"":""b""}", out var state, out _);
 		Assert.IsTrue(state.Contains("\"newValue\":\"new\""));
 	}
 
-	[Test, Category(_projectionType)]
+	[Test, Category(ProjectionType)]
 	public void process_event_returns_true() {
-		string state;
-		EmittedEventEnvelope[] emittedEvents;
 		var result = _stateHandler.ProcessEvent(
 			"", CheckpointTag.FromPosition(0, 20, 10), "stream1", "type1", "category",
-			Guid.NewGuid(), 0, "metadata", @"{""a"":""b""}", out state, out emittedEvents);
+			Guid.NewGuid(), 0, "metadata", @"{""a"":""b""}", out _, out _);
 
 		Assert.IsTrue(result);
 	}

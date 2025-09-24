@@ -12,6 +12,7 @@ using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Management;
 using KurrentDB.Projections.Core.Services.Processing;
 using NUnit.Framework;
+using static KurrentDB.Projections.Core.Messages.ProjectionManagementMessage;
 
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
 
@@ -28,22 +29,17 @@ public class when_posting_a_persistent_projection<TLogFormat, TStreamId> : TestF
 
 	protected override IEnumerable<WhenStep> When() {
 		yield return new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid());
-		yield return
-			new ProjectionManagementMessage.Command.Post(
-				_bus, ProjectionMode.Continuous, _projectionName,
-				ProjectionManagementMessage.RunAs.System, "JS", @"fromAll().when({$any:function(s,e){return s;}});",
-				enabled: true, checkpointsEnabled: true, emitEnabled: true, trackEmittedStreams: true);
+		yield return new Command.Post(
+			_bus, ProjectionMode.Continuous, _projectionName,
+			RunAs.System, "JS", "fromAll().when({$any:function(s,e){return s;}});",
+			enabled: true, checkpointsEnabled: true, emitEnabled: true, trackEmittedStreams: true);
 		OneWriteCompletes();
 	}
 
 	[Test, Category("v8")]
 	public void the_projection_status_is_writing() {
-		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
-		Assert.AreEqual(
-			ManagedProjectionState.Prepared,
-			_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Single().Projections[0]
-				.LeaderStatus);
+		_manager.Handle(new Command.GetStatistics(_bus, null, _projectionName));
+		Assert.AreEqual(ManagedProjectionState.Prepared, _consumer.HandledMessages.OfType<Statistics>().Single().Projections[0].LeaderStatus);
 	}
 
 	[Test, Category("v8")]
@@ -58,8 +54,7 @@ public class when_posting_a_persistent_projection<TLogFormat, TStreamId> : TestF
 	[Test, Category("v8")]
 	public void persisted_projection_state_is_written_with_empty_execution_timeout() {
 		var persistedStateStream = ProjectionNamesBuilder.ProjectionsStreamPrefix + _projectionName;
-		var persistedStateWrite = _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>()
-			.FirstOrDefault(x => x.EventStreamId == persistedStateStream);
+		var persistedStateWrite = _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().FirstOrDefault(x => x.EventStreamId == persistedStateStream);
 
 		Assert.NotNull(persistedStateWrite);
 		Assert.AreEqual(ProjectionEventTypes.ProjectionUpdated, persistedStateWrite.Events[0].EventType);
@@ -70,6 +65,6 @@ public class when_posting_a_persistent_projection<TLogFormat, TStreamId> : TestF
 	[Test, Category("v8")]
 	public void a_projection_updated_message_is_not_published() {
 		// not published until all writes complete
-		Assert.AreEqual(0, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Updated>().Count());
+		Assert.AreEqual(0, _consumer.HandledMessages.OfType<Updated>().Count());
 	}
 }

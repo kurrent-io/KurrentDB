@@ -2,9 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
@@ -17,7 +14,6 @@ using KurrentDB.Core.Tests;
 using KurrentDB.Core.Tests.ClientAPI.Helpers;
 using KurrentDB.Core.Tests.Helpers;
 using KurrentDB.Core.Util;
-using KurrentDB.Projections.Core.Services.Processing;
 using NUnit.Framework;
 
 namespace KurrentDB.Projections.Core.Tests.ClientAPI.projectionsManager;
@@ -31,7 +27,6 @@ public abstract class SpecificationWithNodeAndProjectionsManager<TLogFormat, TSt
 	protected string _tag;
 	private Task _systemProjectionsCreated;
 	private ProjectionsSubsystem _projectionsSubsystem;
-
 
 	[OneTimeSetUp]
 	public override async Task TestFixtureSetUp() {
@@ -118,13 +113,4 @@ public abstract class SpecificationWithNodeAndProjectionsManager<TLogFormat, TSt
                     }
                 });";
 	}
-
-	private List<string> _systemProjections =>
-		typeof(ProjectionNamesBuilder.StandardProjections).GetFields(
-				BindingFlags.Public |
-				BindingFlags.Static |
-				BindingFlags.FlattenHierarchy)
-			.Where(x => x.IsLiteral && !x.IsInitOnly)
-			.Select(x => x.GetRawConstantValue().ToString())
-			.ToList();
 }

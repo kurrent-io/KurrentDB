@@ -14,7 +14,6 @@ namespace KurrentDB.Projections.Core.Tests.Services.core_projection.checkpoint_m
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_a_default_checkpoint_manager_has_been_reinitialized<TLogFormat, TStreamId> :
 	TestFixtureWithCoreProjectionCheckpointManager<TLogFormat, TStreamId> {
-	//private Exception _exception;
 
 	protected override void Given() {
 		AllWritesSucceed();
@@ -24,26 +23,20 @@ public class when_a_default_checkpoint_manager_has_been_reinitialized<TLogFormat
 
 	protected override void When() {
 		base.When();
-		//_exception = null;
 		try {
 			_checkpointReader.BeginLoadState();
-			var checkpointLoaded =
-				_consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.CheckpointLoaded>().First();
-			_checkpointWriter.StartFrom(checkpointLoaded.CheckpointTag, checkpointLoaded.CheckpointEventNumber);
+			var checkpointLoaded = _consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.CheckpointLoaded>().First();
+			_checkpointWriter.StartFrom(checkpointLoaded.CheckpointEventNumber);
 			_manager.BeginLoadPrerecordedEvents(checkpointLoaded.CheckpointTag);
-
 			_manager.Start(CheckpointTag.FromStreamPosition(0, "stream", 10), null);
-			//                _manager.StateUpdated("", @"{""state"":""state1""}");
 			_manager.EventProcessed(CheckpointTag.FromStreamPosition(0, "stream", 11), 77.7f);
-			//                _manager.StateUpdated("", @"{""state"":""state2""}");
 			_manager.EventProcessed(CheckpointTag.FromStreamPosition(0, "stream", 12), 77.7f);
 			_manager.Initialize();
 			_checkpointReader.Initialize();
 		} catch (Exception) {
-			//_exception = ex;
+			//
 		}
 	}
-
 
 	[Test]
 	public void stopping_throws_invalid_operation_exception() {
@@ -57,7 +50,6 @@ public class when_a_default_checkpoint_manager_has_been_reinitialized<TLogFormat
 
 	[Test]
 	public void event_processed_throws_invalid_operation_exception() {
-		//            _manager.StateUpdated("", @"{""state"":""state""}");
 		Assert.Throws<InvalidOperationException>(() => {
 			_manager.EventProcessed(CheckpointTag.FromStreamPosition(0, "stream", 10), 77.7f);
 		});

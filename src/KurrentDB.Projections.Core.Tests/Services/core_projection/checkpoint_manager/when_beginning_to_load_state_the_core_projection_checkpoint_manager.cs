@@ -47,7 +47,6 @@ public class when_beginning_to_load_state_the_core_projection_checkpoint_manager
 
 	[Test]
 	public void event_processed_throws_invalid_operation_exception() {
-		//            _manager.StateUpdated("", @"{""state"":""state""}");
 		Assert.Throws<InvalidOperationException>(() => {
 			_manager.EventProcessed(CheckpointTag.FromStreamPosition(0, "stream", 10), 77.7f);
 		});

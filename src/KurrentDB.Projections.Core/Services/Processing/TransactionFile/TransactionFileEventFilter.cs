@@ -6,29 +6,18 @@ using KurrentDB.Core.Services;
 
 namespace KurrentDB.Projections.Core.Services.Processing.TransactionFile;
 
-public class TransactionFileEventFilter : EventFilter {
-	private readonly bool _includeLinks;
-
-	public TransactionFileEventFilter(
-		bool allEvents, bool includeDeletedStreamEvents, HashSet<string> events, bool includeLinks = false)
-		: base(allEvents, includeDeletedStreamEvents, events) {
-		_includeLinks = includeLinks;
-	}
-
-	protected override bool DeletedNotificationPasses(string positionStreamId) {
-		return true;
-	}
+public class TransactionFileEventFilter(bool allEvents, bool includeDeletedStreamEvents, HashSet<string> events, bool includeLinks = false)
+	: EventFilter(allEvents, includeDeletedStreamEvents, events) {
+	protected override bool DeletedNotificationPasses(string positionStreamId) => true;
 
 	public override bool PassesSource(bool resolvedFromLinkTo, string positionStreamId, string eventType) {
-		if (!_includeLinks && eventType == SystemEventTypes.LinkTo)
+		if (!includeLinks && eventType == SystemEventTypes.LinkTo)
 			return false;
-		return (_includeLinks || !resolvedFromLinkTo)
-			   && (!SystemStreams.IsSystemStream(positionStreamId)
-				   || SystemStreams.IsMetastream(positionStreamId)
-				   && !SystemStreams.IsSystemStream(SystemStreams.OriginalStreamOf(positionStreamId)));
+		return (includeLinks || !resolvedFromLinkTo)
+		       && (!SystemStreams.IsSystemStream(positionStreamId)
+		           || SystemStreams.IsMetastream(positionStreamId)
+		           && !SystemStreams.IsSystemStream(SystemStreams.OriginalStreamOf(positionStreamId)));
 	}
 
-	public override string GetCategory(string positionStreamId) {
-		return null;
-	}
+	public override string GetCategory(string positionStreamId) => null;
 }

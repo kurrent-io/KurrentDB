@@ -22,7 +22,8 @@ namespace KurrentDB.Projections.Core.Tests.Services.emitted_stream.another_epoch
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class
-	when_handling_emits_with_previously_written_events_at_the_same_position<TLogFormat, TStreamId> : core_projection.TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
+	when_handling_emits_with_previously_written_events_at_the_same_position<TLogFormat, TStreamId>
+	: core_projection.TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private EmittedStream _stream;
 	private TestCheckpointManagerMessageHandler _readyHandler;
 	private long _1;
@@ -33,35 +34,23 @@ public class
 		AllWritesQueueUp();
 		AllWritesToSucceed("$$test_stream");
 		//NOTE: it is possible for a batch of events to be partially written if it contains links
-		ExistingEvent("test_stream", "type1", @"{""v"": 1, ""c"": 100, ""p"": 50}", "data");
-		ExistingEvent("test_stream", "type2", @"{""v"": 1, ""c"": 100, ""p"": 50}", "data");
+		ExistingEvent("test_stream", "type1", """{"v": 1, "c": 100, "p": 50}""", "data");
+		ExistingEvent("test_stream", "type2", """{"v": 1, "c": 100, "p": 50}""", "data");
 		NoOtherStreams();
 	}
 
-	private EmittedEvent[] CreateEventBatch() {
-		return new EmittedEvent[] {
-			new EmittedDataEvent(
-				(string)"test_stream", Guid.NewGuid(), (string)"type1", (bool)true,
-				(string)"data", (ExtraMetaData)null, CheckpointTag.FromPosition(0, 100, 50), (CheckpointTag)null,
-				v => _1 = v),
-			new EmittedDataEvent(
-				(string)"test_stream", Guid.NewGuid(), (string)"type2", (bool)true,
-				(string)"data", (ExtraMetaData)null, CheckpointTag.FromPosition(0, 100, 50), (CheckpointTag)null,
-				v => _2 = v),
-			new EmittedDataEvent(
-				(string)"test_stream", Guid.NewGuid(), (string)"type3", (bool)true,
-				(string)"data", (ExtraMetaData)null, CheckpointTag.FromPosition(0, 100, 50), (CheckpointTag)null,
-				v => _3 = v)
-		};
-	}
+	private EmittedEvent[] CreateEventBatch() => [
+		new EmittedDataEvent("test_stream", Guid.NewGuid(), "type1", true, "data", null, CheckpointTag.FromPosition(0, 100, 50), null, v => _1 = v),
+		new EmittedDataEvent("test_stream", Guid.NewGuid(), "type2", true, "data", null, CheckpointTag.FromPosition(0, 100, 50), null, v => _2 = v),
+		new EmittedDataEvent("test_stream", Guid.NewGuid(), "type3", true, "data", null, CheckpointTag.FromPosition(0, 100, 50), null, v => _3 = v)
+	];
 
 	[SetUp]
 	public void setup() {
-		_readyHandler = new TestCheckpointManagerMessageHandler();
-		_stream = new EmittedStream(
+		_readyHandler = new();
+		_stream = new(
 			"test_stream",
-			new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
-				new EmittedStream.WriterConfiguration.StreamMetadata(), null, maxWriteBatchLength: 50),
+			new(new EmittedStreamsWriter(_ioDispatcher), new(), null, maxWriteBatchLength: 50),
 			new ProjectionVersion(1, 2, 2), new TransactionFilePositionTagger(0),
 			CheckpointTag.FromPosition(0, 100, 50),
 			_bus, _ioDispatcher, _readyHandler);
@@ -72,20 +61,14 @@ public class
 
 	[Test]
 	public void truncates_existing_stream_at_correct_position() {
-		var writes =
-			HandledMessages.OfType<ClientMessage.WriteEvents>()
-				.OfEventType(SystemEventTypes.StreamMetadata)
-				.ToArray();
+		var writes = HandledMessages.OfType<ClientMessage.WriteEvents>().OfEventType(SystemEventTypes.StreamMetadata).ToArray();
 		Assert.AreEqual(1, writes.Length);
 		HelperExtensions.AssertJson(new { ___tb = 2 }, writes[0].Data.ParseJson<JObject>());
 	}
 
 	[Test]
 	public void publishes_all_events() {
-		var writtenEvents =
-			_consumer.HandledMessages.OfType<ClientMessage.WriteEvents>()
-				.ExceptOfEventType(SystemEventTypes.StreamMetadata)
-				.ToArray();
+		var writtenEvents = _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().ExceptOfEventType(SystemEventTypes.StreamMetadata).ToArray();
 		Assert.AreEqual(3, writtenEvents.Length);
 		Assert.AreEqual("type1", writtenEvents[0].EventType);
 		Assert.AreEqual("type2", writtenEvents[1].EventType);
@@ -94,10 +77,7 @@ public class
 
 	[Test]
 	public void updates_stream_metadata() {
-		var writes =
-			HandledMessages.OfType<ClientMessage.WriteEvents>()
-				.OfEventType(SystemEventTypes.StreamMetadata)
-				.ToArray();
+		var writes = HandledMessages.OfType<ClientMessage.WriteEvents>().OfEventType(SystemEventTypes.StreamMetadata).ToArray();
 		Assert.AreEqual(1, writes.Length);
 	}
 

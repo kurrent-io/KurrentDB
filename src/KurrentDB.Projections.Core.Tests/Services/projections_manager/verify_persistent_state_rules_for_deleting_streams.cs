@@ -14,10 +14,10 @@ public class VerifyPersistentStateRulesForDeletingStreams {
 	[TestCase(true, false, false)]
 	[TestCase(false, false, false)]
 	public void EmitStreamNeedsDeletedAsExpected(bool emitEnabled, bool deleteEmitStreams, bool expectedResult) {
-		ManagedProjection.PersistedState persistedState = new ManagedProjection.PersistedState();
-
-		persistedState.EmitEnabled = emitEnabled;
-		persistedState.DeleteEmittedStreams = deleteEmitStreams;
+		var persistedState = new ManagedProjection.PersistedState {
+			EmitEnabled = emitEnabled,
+			DeleteEmittedStreams = deleteEmitStreams
+		};
 
 		Assert.IsTrue(persistedState.EmitStreamNeedsDeleted() == expectedResult);
 	}
@@ -28,10 +28,10 @@ public class VerifyPersistentStateRulesForDeletingStreams {
 	[TestCase(true, false, false)]
 	[TestCase(false, false, false)]
 	public void CheckpointStreamNeedsDeletedAsExpected(bool checkPointsDisabled, bool deleteCheckpointStreams, bool expectedResult) {
-		ManagedProjection.PersistedState persistedState = new ManagedProjection.PersistedState();
-
-		persistedState.CheckpointsDisabled = checkPointsDisabled;
-		persistedState.DeleteCheckpointStream = deleteCheckpointStreams;
+		var persistedState = new ManagedProjection.PersistedState {
+			CheckpointsDisabled = checkPointsDisabled,
+			DeleteCheckpointStream = deleteCheckpointStreams
+		};
 
 		Assert.IsTrue(persistedState.CheckpointStreamNeedsDeleted() == expectedResult);
 	}

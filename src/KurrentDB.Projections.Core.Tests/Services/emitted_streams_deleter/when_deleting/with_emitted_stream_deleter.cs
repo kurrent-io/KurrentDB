@@ -18,11 +18,11 @@ namespace KurrentDB.Projections.Core.Tests.Services.emitted_streams_deleter.when
 public abstract class with_emitted_stream_deleter<TLogFormat, TStreamId> : IHandle<ClientMessage.ReadStreamEventsForward>,
 	IHandle<ClientMessage.ReadStreamEventsBackward>,
 	IHandle<ClientMessage.DeleteStream> {
-	protected SynchronousScheduler _bus = new();
-	protected IODispatcher _ioDispatcher;
+	protected readonly SynchronousScheduler _bus = new();
+	private IODispatcher _ioDispatcher;
 	protected EmittedStreamsDeleter _deleter;
-	protected ProjectionNamesBuilder _projectionNamesBuilder;
-	protected string _projectionName = "test_projection";
+	private ProjectionNamesBuilder _projectionNamesBuilder;
+	private const string ProjectionName = "test_projection";
 	protected string _checkpointName;
 	protected string _testStreamName = "test_stream";
 	private bool _hasReadForward;
@@ -30,12 +30,10 @@ public abstract class with_emitted_stream_deleter<TLogFormat, TStreamId> : IHand
 	[OneTimeSetUp]
 	protected virtual void SetUp() {
 		_ioDispatcher = new IODispatcher(_bus, _bus, true);
-		_projectionNamesBuilder = ProjectionNamesBuilder.CreateForTest(_projectionName);
+		_projectionNamesBuilder = ProjectionNamesBuilder.CreateForTest(ProjectionName);
 		_checkpointName = _projectionNamesBuilder.GetEmittedStreamsCheckpointName();
 
-		_deleter = new EmittedStreamsDeleter(_ioDispatcher,
-			_projectionNamesBuilder.GetEmittedStreamsName(),
-			_checkpointName);
+		_deleter = new(_ioDispatcher, _projectionNamesBuilder.GetEmittedStreamsName(), _checkpointName);
 
 		IODispatcherTestHelpers.SubscribeIODispatcher(_ioDispatcher, _bus);
 
@@ -53,7 +51,7 @@ public abstract class with_emitted_stream_deleter<TLogFormat, TStreamId> : IHand
 			ProjectionEventTypes.ProjectionCheckpoint, "0");
 		var reply = new ClientMessage.ReadStreamEventsBackwardCompleted(message.CorrelationId,
 			message.EventStreamId, message.FromEventNumber, message.MaxCount,
-			ReadStreamResult.Success, events, null, false, String.Empty, 0, message.FromEventNumber, true, 1000);
+			ReadStreamResult.Success, events, null, false, string.Empty, 0, message.FromEventNumber, true, 1000);
 
 		message.Envelope.ReplyWith(reply);
 	}
@@ -65,14 +63,14 @@ public abstract class with_emitted_stream_deleter<TLogFormat, TStreamId> : IHand
 			_hasReadForward = true;
 			var events = IODispatcherTestHelpers.CreateResolvedEvent<TLogFormat, TStreamId>(message.EventStreamId,
 				ProjectionEventTypes.ProjectionCheckpoint, _testStreamName);
-			reply = new ClientMessage.ReadStreamEventsForwardCompleted(message.CorrelationId, message.EventStreamId,
+			reply = new(message.CorrelationId, message.EventStreamId,
 				message.FromEventNumber, message.MaxCount,
-				ReadStreamResult.Success, events, null, false, String.Empty, message.FromEventNumber + 1,
+				ReadStreamResult.Success, events, null, false, string.Empty, message.FromEventNumber + 1,
 				message.FromEventNumber, true, 1000);
 		} else {
-			reply = new ClientMessage.ReadStreamEventsForwardCompleted(message.CorrelationId, message.EventStreamId,
+			reply = new(message.CorrelationId, message.EventStreamId,
 				message.FromEventNumber, message.MaxCount,
-				ReadStreamResult.Success, new ResolvedEvent[] { }, null, false, String.Empty,
+				ReadStreamResult.Success, [], null, false, string.Empty,
 				message.FromEventNumber, message.FromEventNumber, true, 1000);
 		}
 

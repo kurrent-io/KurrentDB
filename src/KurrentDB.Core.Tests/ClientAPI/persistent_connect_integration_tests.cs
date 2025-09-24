@@ -50,7 +50,7 @@ public class happy_case_writing_and_subscribing_to_normal_events_manual_ack<TLog
 			bufferSize: 10, autoAck: false, userCredentials: DefaultData.AdminCredentials);
 
 		for (var i = 0; i < EventWriteCount; i++) {
-			var eventData = new EventData(Guid.NewGuid(), "SomeEvent", false, new byte[0], new byte[0]);
+			var eventData = new EventData(Guid.NewGuid(), "SomeEvent", false, [], []);
 
 			await _conn.AppendToStreamAsync(streamName, ExpectedVersion.Any, DefaultData.AdminCredentials, eventData);
 		}
@@ -98,7 +98,7 @@ public class happy_case_writing_and_subscribing_to_normal_events_auto_ack<TLogFo
 			userCredentials: DefaultData.AdminCredentials);
 
 		for (var i = 0; i < EventWriteCount; i++) {
-			var eventData = new EventData(Guid.NewGuid(), "SomeEvent", false, new byte[0], new byte[0]);
+			var eventData = new EventData(Guid.NewGuid(), "SomeEvent", false, [], []);
 
 			await _conn.AppendToStreamAsync(streamName, ExpectedVersion.Any, DefaultData.AdminCredentials, eventData);
 		}
@@ -133,7 +133,7 @@ public class happy_case_catching_up_to_normal_events_auto_ack<TLogFormat, TStrea
 			.ResolveLinkTos()
 			.Build();
 		for (var i = 0; i < EventWriteCount; i++) {
-			var eventData = new EventData(Guid.NewGuid(), "SomeEvent", false, new byte[0], new byte[0]);
+			var eventData = new EventData(Guid.NewGuid(), "SomeEvent", false, [], []);
 
 			await _conn.AppendToStreamAsync(streamName, ExpectedVersion.Any, DefaultData.AdminCredentials, eventData);
 		}
@@ -183,7 +183,7 @@ public class happy_case_catching_up_to_normal_events_manual_ack<TLogFormat, TStr
 			.ResolveLinkTos()
 			.Build();
 		for (var i = 0; i < EventWriteCount; i++) {
-			var eventData = new EventData(Guid.NewGuid(), "SomeEvent", false, new byte[0], new byte[0]);
+			var eventData = new EventData(Guid.NewGuid(), "SomeEvent", false, [], []);
 
 			await _conn.AppendToStreamAsync(streamName, ExpectedVersion.Any, DefaultData.AdminCredentials, eventData);
 		}
@@ -232,7 +232,7 @@ public class happy_case_catching_up_to_link_to_events_manual_ack<TLogFormat, TSt
 			.ResolveLinkTos()
 			.Build();
 		for (var i = 0; i < EventWriteCount; i++) {
-			var eventData = new EventData(Guid.NewGuid(), "SomeEvent", false, new byte[0], new byte[0]);
+			var eventData = new EventData(Guid.NewGuid(), "SomeEvent", false, [], []);
 			await _conn.AppendToStreamAsync(streamName + "original", ExpectedVersion.Any, DefaultData.AdminCredentials,
 				eventData);
 		}
@@ -286,7 +286,7 @@ public class happy_case_catching_up_to_link_to_events_auto_ack<TLogFormat, TStre
 			.ResolveLinkTos()
 			.Build();
 		for (var i = 0; i < EventWriteCount; i++) {
-			var eventData = new EventData(Guid.NewGuid(), "SomeEvent", false, new byte[0], new byte[0]);
+			var eventData = new EventData(Guid.NewGuid(), "SomeEvent", false, [], []);
 			await _conn.AppendToStreamAsync(streamName + "original", ExpectedVersion.Any, DefaultData.AdminCredentials,
 				eventData);
 		}
@@ -355,7 +355,7 @@ public class when_writing_and_subscribing_to_normal_events_manual_nack<TLogForma
 			bufferSize: 10, autoAck: false, userCredentials: DefaultData.AdminCredentials);
 
 		for (var i = 0; i < EventWriteCount; i++) {
-			var eventData = new EventData(Guid.NewGuid(), "SomeEvent", false, new byte[0], new byte[0]);
+			var eventData = new EventData(Guid.NewGuid(), "SomeEvent", false, [], []);
 
 			await _conn.AppendToStreamAsync(streamName, ExpectedVersion.Any, DefaultData.AdminCredentials, eventData);
 		}
@@ -403,7 +403,7 @@ public class when_connection_drops_messages_that_have_run_out_of_retries_are_not
 			},
 			bufferSize: 10, autoAck: false, userCredentials: DefaultData.AdminCredentials);
 
-		var parkedEventData = new EventData(Guid.NewGuid(), "SomeEvent", false, new byte[0], new byte[0]);
+		var parkedEventData = new EventData(Guid.NewGuid(), "SomeEvent", false, [], []);
 		await _conn.AppendToStreamAsync(streamName, ExpectedVersion.Any, DefaultData.AdminCredentials, parkedEventData);
 
 		await _subscriptionDropped.Task.WithTimeout();
@@ -421,7 +421,7 @@ public class when_connection_drops_messages_that_have_run_out_of_retries_are_not
 		}, bufferSize: 10, autoAck: false, userCredentials: DefaultData.AdminCredentials);
 
 		// Ensure we only get the new event, not the previous one
-		var newEventData = new EventData(Guid.NewGuid(), "SomeEvent", false, new byte[0], new byte[0]);
+		var newEventData = new EventData(Guid.NewGuid(), "SomeEvent", false, [], []);
 		await _conn.AppendToStreamAsync(streamName, ExpectedVersion.Any, DefaultData.AdminCredentials, newEventData);
 
 		await _eventReceived.Task.WithTimeout();

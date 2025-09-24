@@ -17,7 +17,7 @@ public class when_creating_event_by_type_index_position_tracker {
 
 	[SetUp]
 	public void when() {
-		_tagger = new EventByTypeIndexPositionTagger(0, new[] { "type1", "type2" });
+		_tagger = new EventByTypeIndexPositionTagger(0, ["type1", "type2"]);
 		_positionTracker = new PositionTracker(_tagger);
 	}
 
@@ -40,7 +40,7 @@ public class when_creating_event_by_type_index_position_tracker {
 	public void it_cannot_be_updated_forward() {
 		var newTag = CheckpointTag.FromEventTypeIndexPositions(0, new TFPos(100, 50),
 			new Dictionary<string, long> { { "type1", 10 }, { "type2", 20 } });
-		Assert.Throws<InvalidOperationException>(() => { _positionTracker.UpdateByCheckpointTagForward(newTag); });
+		Assert.Throws<InvalidOperationException>(() => _positionTracker.UpdateByCheckpointTagForward(newTag));
 	}
 
 	[Test]

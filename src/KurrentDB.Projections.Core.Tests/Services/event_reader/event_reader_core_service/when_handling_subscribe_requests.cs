@@ -15,18 +15,19 @@ using KurrentDB.Projections.Core.Tests.Services.event_reader.heading_event_reade
 using NUnit.Framework;
 
 namespace KurrentDB.Projections.Core.Tests.Services.event_reader.event_reader_core_service;
+
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_handling_subscribe_requests<TLogFormat, TStreamId> : TestFixtureWithEventReaderService<TLogFormat, TStreamId> {
 	private readonly ReaderSubscriptionOptions _defaultOptions = new(1000, 10, 1000, false, null, false);
+
 	[Test]
 	public void should_publish_subscription_failed_if_the_reader_is_not_running() {
 		EventReaderSubscriptionMessage.Failed failedMessage = null;
 		var subscriptionId = Guid.NewGuid();
 		_readerService.Handle(new ReaderCoreServiceMessage.StopReader(Guid.Empty));
-		_subscriptionDispatcher.PublishSubscribe(
-			new ReaderSubscriptionManagement.Subscribe(subscriptionId, CheckpointTag.Empty,
-				new FakeReaderStrategy(), _defaultOptions),
+		SubscriptionDispatcher.PublishSubscribe(
+			new(subscriptionId, CheckpointTag.Empty, new FakeReaderStrategy(), _defaultOptions),
 			new AdHocHandlerStruct<EventReaderSubscriptionMessage.Failed>(m => failedMessage = m, null),
 			scheduleTimeout: false);
 		_queue.Process();
@@ -40,9 +41,8 @@ public class when_handling_subscribe_requests<TLogFormat, TStreamId> : TestFixtu
 	public void should_publish_subscription_failed_if_creating_the_reader_fails() {
 		EventReaderSubscriptionMessage.Failed failedMessage = null;
 		var subscriptionId = Guid.NewGuid();
-		_subscriptionDispatcher.PublishSubscribe(
-			new ReaderSubscriptionManagement.Subscribe(subscriptionId, CheckpointTag.Empty,
-				FakeReaderStrategyThatThrows.ThrowOnCreateReaderSubscription(), _defaultOptions),
+		SubscriptionDispatcher.PublishSubscribe(
+			new(subscriptionId, CheckpointTag.Empty, FakeReaderStrategyThatThrows.ThrowOnCreateReaderSubscription(), _defaultOptions),
 			new AdHocHandlerStruct<EventReaderSubscriptionMessage.Failed>(m => failedMessage = m, null),
 			scheduleTimeout: false);
 		_queue.Process();
@@ -56,9 +56,8 @@ public class when_handling_subscribe_requests<TLogFormat, TStreamId> : TestFixtu
 	public void should_publish_subscription_failed_if_creating_the_paused_event_reader_fails() {
 		EventReaderSubscriptionMessage.Failed failedMessage = null;
 		var subscriptionId = Guid.NewGuid();
-		_subscriptionDispatcher.PublishSubscribe(
-			new ReaderSubscriptionManagement.Subscribe(subscriptionId, CheckpointTag.Empty,
-				FakeReaderStrategyThatThrows.ThrowOnCreatePausedReader(), _defaultOptions),
+		SubscriptionDispatcher.PublishSubscribe(
+			new(subscriptionId, CheckpointTag.Empty, FakeReaderStrategyThatThrows.ThrowOnCreatePausedReader(), _defaultOptions),
 			new AdHocHandlerStruct<EventReaderSubscriptionMessage.Failed>(m => failedMessage = m, null),
 			scheduleTimeout: false);
 		_queue.Process();
@@ -84,7 +83,9 @@ public class when_handling_subscribe_requests<TLogFormat, TStreamId> : TestFixtu
 		public EventFilter EventFilter { get; }
 		public PositionTagger PositionTagger { get; }
 
-		public IReaderSubscription CreateReaderSubscription(IPublisher publisher, CheckpointTag fromCheckpointTag, Guid subscriptionId,
+		public IReaderSubscription CreateReaderSubscription(IPublisher publisher,
+			CheckpointTag fromCheckpointTag,
+			Guid subscriptionId,
 			ReaderSubscriptionOptions readerSubscriptionOptions) {
 			if (_throwOnCreateSubscription)
 				throw new ArgumentException(nameof(FakeReaderStrategyThatThrows));
@@ -93,8 +94,10 @@ public class when_handling_subscribe_requests<TLogFormat, TStreamId> : TestFixtu
 			return new FakeReaderSubscription();
 		}
 
-		public IEventReader CreatePausedEventReader(Guid eventReaderId, IPublisher publisher, IODispatcher ioDispatcher,
-			CheckpointTag checkpointTag, bool stopOnEof, int? stopAfterNEvents) {
+		public IEventReader CreatePausedEventReader(Guid eventReaderId,
+			IPublisher publisher,
+			CheckpointTag checkpointTag,
+			bool stopOnEof) {
 			throw new NotImplementedException();
 		}
 	}
@@ -130,6 +133,7 @@ public class when_handling_subscribe_requests<TLogFormat, TStreamId> : TestFixtu
 
 		public string Tag { get; }
 		public Guid SubscriptionId { get; }
+
 		public IEventReader CreatePausedEventReader(IPublisher publisher, IODispatcher ioDispatcher, Guid forkedEventReaderId) {
 			throw new ArgumentException(nameof(FakeReaderSubscriptionThatThrows));
 		}

@@ -7,34 +7,34 @@ namespace KurrentDB.Projections.Core.Services.Http;
 
 public class ProjectionStatisticsHttpFormatted {
 	public ProjectionStatisticsHttpFormatted(ProjectionStatistics source, Func<string, string> makeAbsoluteUrl) {
-		this.Status = source.Status;
-		this.StateReason = source.StateReason;
-		this.Name = source.Name;
-		this.EffectiveName = source.Name;
-		this.Epoch = source.Epoch;
-		this.Version = source.Version;
-		this.Mode = source.Mode;
-		this.Position = (source.Position ?? (object)"").ToString();
-		this.Progress = source.Progress;
-		this.LastCheckpoint = source.LastCheckpoint;
-		this.EventsProcessedAfterRestart = source.EventsProcessedAfterRestart;
-		this.BufferedEvents = source.BufferedEvents;
-		this.CheckpointStatus = source.CheckpointStatus;
-		this.WritePendingEventsBeforeCheckpoint = source.WritePendingEventsBeforeCheckpoint;
-		this.WritePendingEventsAfterCheckpoint = source.WritePendingEventsAfterCheckpoint;
-		this.ReadsInProgress = source.ReadsInProgress;
-		this.WritesInProgress = source.WritesInProgress;
-		this.CoreProcessingTime = source.CoreProcessingTime;
-		this.PartitionsCached = source.PartitionsCached;
-		var statusLocalUrl = "/projection/" + source.Name;
-		this.StatusUrl = makeAbsoluteUrl(statusLocalUrl);
-		this.StateUrl = makeAbsoluteUrl(statusLocalUrl + "/state");
-		this.ResultUrl = makeAbsoluteUrl(statusLocalUrl + "/result");
-		this.QueryUrl = makeAbsoluteUrl(statusLocalUrl + "/query?config=yes");
+		Status = source.Status;
+		StateReason = source.StateReason;
+		Name = source.Name;
+		EffectiveName = source.Name;
+		Epoch = source.Epoch;
+		Version = source.Version;
+		Mode = source.Mode;
+		Position = (source.Position ?? (object)"").ToString();
+		Progress = source.Progress;
+		LastCheckpoint = source.LastCheckpoint;
+		EventsProcessedAfterRestart = source.EventsProcessedAfterRestart;
+		BufferedEvents = source.BufferedEvents;
+		CheckpointStatus = source.CheckpointStatus;
+		WritePendingEventsBeforeCheckpoint = source.WritePendingEventsBeforeCheckpoint;
+		WritePendingEventsAfterCheckpoint = source.WritePendingEventsAfterCheckpoint;
+		ReadsInProgress = source.ReadsInProgress;
+		WritesInProgress = source.WritesInProgress;
+		CoreProcessingTime = source.CoreProcessingTime;
+		PartitionsCached = source.PartitionsCached;
+		var statusLocalUrl = $"/projection/{source.Name}";
+		StatusUrl = makeAbsoluteUrl(statusLocalUrl);
+		StateUrl = makeAbsoluteUrl($"{statusLocalUrl}/state");
+		ResultUrl = makeAbsoluteUrl($"{statusLocalUrl}/result");
+		QueryUrl = makeAbsoluteUrl($"{statusLocalUrl}/query?config=yes");
 		if (!string.IsNullOrEmpty(source.ResultStreamName))
-			this.ResultStreamUrl = makeAbsoluteUrl("/streams/" + Uri.EscapeDataString(source.ResultStreamName));
-		this.DisableCommandUrl = makeAbsoluteUrl(statusLocalUrl + "/command/disable");
-		this.EnableCommandUrl = makeAbsoluteUrl(statusLocalUrl + "/command/enable");
+			ResultStreamUrl = makeAbsoluteUrl($"/streams/{Uri.EscapeDataString(source.ResultStreamName)}");
+		DisableCommandUrl = makeAbsoluteUrl($"{statusLocalUrl}/command/disable");
+		EnableCommandUrl = makeAbsoluteUrl($"{statusLocalUrl}/command/enable");
 	}
 
 	public long CoreProcessingTime { get; set; }

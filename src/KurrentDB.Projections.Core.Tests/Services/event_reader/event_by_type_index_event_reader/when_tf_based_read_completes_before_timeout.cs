@@ -33,8 +33,8 @@ public class when_tf_based_read_completes_before_timeout<TLogFormat, TStreamId> 
 		var fromPositions = new Dictionary<string, long>();
 		fromPositions.Add("$et-eventTypeOne", 0);
 		fromPositions.Add("$et-eventTypeTwo", 0);
-		_eventReader = new EventByTypeIndexEventReader(_bus, _distributionCorrelationId,
-			null, new string[] { "eventTypeOne", "eventTypeTwo" },
+		_eventReader = new(_bus, _distributionCorrelationId,
+			null, ["eventTypeOne", "eventTypeTwo"],
 			false, new TFPos(0, 0),
 			fromPositions, true,
 			_fakeTimeProvider,
@@ -46,27 +46,26 @@ public class when_tf_based_read_completes_before_timeout<TLogFormat, TStreamId> 
 		CompleteForwardStreamRead("$et-eventTypeTwo", Guid.Empty);
 		CompleteBackwardStreamRead("$et", Guid.Empty);
 
-		var correlationId = CompleteForwardAllStreamRead(Guid.Empty, new[] {
+		var correlationId = CompleteForwardAllStreamRead(Guid.Empty,
 			ResolvedEvent.ForUnresolvedEvent(
 				new EventRecord(
 					1, 50, Guid.NewGuid(), Guid.NewGuid(), 50, 0, "test_stream", ExpectedVersion.Any,
 					_fakeTimeProvider.UtcNow,
 					PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-					"eventTypeOne", new byte[] {1}, new byte[] {2}), 100),
+					"eventTypeOne", [1], [2]), 100),
 			ResolvedEvent.ForUnresolvedEvent(
 				new EventRecord(
 					2, 150, Guid.NewGuid(), Guid.NewGuid(), 150, 0, "test_stream", ExpectedVersion.Any,
 					_fakeTimeProvider.UtcNow,
 					PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-					"eventTypeTwo", new byte[] {1}, new byte[] {2}), 200),
-		});
+					"eventTypeTwo", [1], [2]), 200)
+		);
 
 		TimeoutRead("$all", correlationId);
 	}
 
 	[Test]
 	public void should_deliver_events() {
-		Assert.AreEqual(2,
-			_consumer.HandledMessages.OfType<ReaderSubscriptionMessage.CommittedEventDistributed>().Count());
+		Assert.AreEqual(2, _consumer.HandledMessages.OfType<ReaderSubscriptionMessage.CommittedEventDistributed>().Count());
 	}
 }

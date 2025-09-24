@@ -42,7 +42,7 @@ public class when_receiving_a_committed_event_the_projection_with_partitioned_st
 			EventReaderSubscriptionMessage.CommittedEventReceived.Sample(
 				new ResolvedEvent(
 					"account-01", -1, "account-01", -1, false, new TFPos(120, 110), _eventId,
-					"handle_this_type", false, "data", "metadata"), _subscriptionId, 0));
+					"handle_this_type", false, "data", "metadata"), SubscriptionId, 0));
 	}
 
 	[Test]

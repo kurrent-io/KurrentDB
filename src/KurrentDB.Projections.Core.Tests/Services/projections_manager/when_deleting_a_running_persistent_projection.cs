@@ -9,32 +9,26 @@ using KurrentDB.Core.Tests.TestAdapters;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
 using NUnit.Framework;
+using static KurrentDB.Projections.Core.Messages.ProjectionManagementMessage;
 
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_deleting_a_running_persistent_projection<TLogFormat, TStreamId> : TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId> {
-	private string _projectionName;
-	private const string _projectionCheckpointStream = "$projections-test-projection-checkpoint";
+	private const string ProjectionName = "test-projection";
 
 	protected override void Given() {
-		_projectionName = "test-projection";
 		AllWritesSucceed();
 		NoOtherStreams();
 	}
 
 	protected override IEnumerable<WhenStep> When() {
 		yield return new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid());
-		yield return
-			new ProjectionManagementMessage.Command.Post(
-				_bus, ProjectionMode.Continuous, _projectionName,
-				ProjectionManagementMessage.RunAs.System, "JS", @"fromAll().when({$any:function(s,e){return s;}});",
-				enabled: true, checkpointsEnabled: true, emitEnabled: true, trackEmittedStreams: true);
-		yield return
-			new ProjectionManagementMessage.Command.Delete(
-				_bus, _projectionName,
-				ProjectionManagementMessage.RunAs.System, true, true, false);
+		yield return new Command.Post(_bus, ProjectionMode.Continuous, ProjectionName,
+			RunAs.System, "JS", "fromAll().when({$any:function(s,e){return s;}});",
+			enabled: true, checkpointsEnabled: true, emitEnabled: true, trackEmittedStreams: true);
+		yield return new Command.Delete(_bus, ProjectionName, RunAs.System, true, true, false);
 	}
 
 	[Test, Category("v8")]

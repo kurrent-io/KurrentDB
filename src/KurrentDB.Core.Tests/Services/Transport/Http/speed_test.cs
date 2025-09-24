@@ -101,7 +101,7 @@ public class FakeController : IHttpController {
 			_http.RegisterAction(
 				new ControllerAction(route, verb, Codec.NoCodecs, SupportedCodecs, new Operation()),
 				(x, y) => {
-					x.Reply(new byte[0], 200, "", "", Helper.UTF8NoBom, null, e => new Exception());
+					x.Reply([], 200, "", "", Helper.UTF8NoBom, null, e => new Exception());
 					CountdownEvent.Signal();
 				});
 		} else {

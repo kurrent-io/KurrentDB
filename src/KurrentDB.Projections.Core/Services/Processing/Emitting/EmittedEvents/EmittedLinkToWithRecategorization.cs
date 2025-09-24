@@ -8,36 +8,25 @@ using Newtonsoft.Json;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 
-public class EmittedLinkToWithRecategorization : EmittedEvent {
-	private readonly string _target;
-	private readonly string _originalStreamId;
-	private readonly int? _streamDeletedAt;
+public class EmittedLinkToWithRecategorization(
+	string streamId,
+	Guid eventId,
+	string target,
+	CheckpointTag causedByTag,
+	CheckpointTag expectedTag,
+	string originalStreamId,
+	int? streamDeletedAt)
+	: EmittedEvent(streamId, eventId, "$>", causedByTag, expectedTag) {
+	public override string Data { get; } = target;
 
-	public EmittedLinkToWithRecategorization(
-		string streamId, Guid eventId, string target, CheckpointTag causedByTag, CheckpointTag expectedTag,
-		string originalStreamId, int? streamDeletedAt)
-		: base(streamId, eventId, "$>", causedByTag, expectedTag, null) {
-		_target = target;
-		_originalStreamId = originalStreamId;
-		_streamDeletedAt = streamDeletedAt;
-	}
+	public override bool IsJson => false;
 
-	public override string Data {
-		get { return _target; }
-	}
-
-	public override bool IsJson {
-		get { return false; }
-	}
-
-	public override bool IsReady() {
-		return true;
-	}
+	public override bool IsReady() => true;
 
 	public override IEnumerable<KeyValuePair<string, string>> ExtraMetaData() {
-		if (!string.IsNullOrEmpty(_originalStreamId))
-			yield return new KeyValuePair<string, string>("$o", JsonConvert.ToString(_originalStreamId));
-		if (_streamDeletedAt != null)
-			yield return new KeyValuePair<string, string>("$deleted", JsonConvert.ToString(_streamDeletedAt.Value));
+		if (!string.IsNullOrEmpty(originalStreamId))
+			yield return new("$o", JsonConvert.ToString(originalStreamId));
+		if (streamDeletedAt != null)
+			yield return new("$deleted", JsonConvert.ToString(streamDeletedAt.Value));
 	}
 }

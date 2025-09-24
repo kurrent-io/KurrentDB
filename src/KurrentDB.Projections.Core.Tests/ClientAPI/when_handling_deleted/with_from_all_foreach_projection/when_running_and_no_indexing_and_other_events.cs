@@ -21,14 +21,14 @@ public class when_running_and_no_indexing_and_other_events<TLogFormat, TStreamId
 		await PostEvent("stream-2", "type1", "{}");
 		await PostEvent("stream-2", "type2", "{}");
 		WaitIdle();
-		await PostProjection(@"
-fromAll().foreachStream().when({
-    $init: function(){return {a:0}},
-    type1: function(s,e){s.a++},
-    type2: function(s,e){s.a++},
-    $deleted: function(s,e){s.deleted=1;},
-}).outputState();
-");
+		await PostProjection("""
+		                     fromAll().foreachStream().when({
+		                         $init: function(){return {a:0}},
+		                         type1: function(s,e){s.a++},
+		                         type2: function(s,e){s.a++},
+		                         $deleted: function(s,e){s.deleted=1;},
+		                     }).outputState();
+		                     """);
 	}
 
 	protected override async Task When() {
@@ -43,8 +43,7 @@ fromAll().foreachStream().when({
 
 	[Test, Category("Network")]
 	public async Task receives_deleted_notification() {
-		await AssertStreamTail(
-			"$projections-test-projection-stream-1-result", "Result:{\"a\":2}", "Result:{\"a\":2,\"deleted\":1}");
+		await AssertStreamTail("$projections-test-projection-stream-1-result", "Result:{\"a\":2}", "Result:{\"a\":2,\"deleted\":1}");
 		await AssertStreamTail("$projections-test-projection-stream-2-result", "Result:{\"a\":4}");
 		await AssertStreamTail("$projections-test-projection-stream-3-result", "Result:{\"a\":1}");
 	}

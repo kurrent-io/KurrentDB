@@ -13,13 +13,13 @@ namespace KurrentDB.Projections.Core.Tests.ClientAPI;
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class list_projections<TLogFormat, TStreamId> : specification_with_standard_projections_runnning<TLogFormat, TStreamId> {
-	const string TestProjection =
+	private const string TestProjection =
 		"fromAll().when({$init: function (state, ev) {return {};},ConversationStarted: function (state, ev) {state.lastBatchSent = ev;return state;}});";
 
 	[Test]
 	public async Task list_all_projections_works() {
 		var x = await _manager.ListAllAsync(new UserCredentials("admin", "changeit"));
-		Assert.AreEqual(true, x.Any());
+		Assert.AreEqual(true, x.Count != 0);
 		Assert.IsTrue(x.Any(p => p.Name == "$streams"));
 	}
 

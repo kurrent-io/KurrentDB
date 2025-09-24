@@ -5,12 +5,7 @@ using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 
 namespace KurrentDB.Projections.Core.Services.Processing;
 
-public sealed class TaggedResolvedEvent {
-	public readonly ResolvedEvent ResolvedEvent;
-	public readonly CheckpointTag ReaderPosition;
-
-	public TaggedResolvedEvent(ResolvedEvent resolvedEvent, CheckpointTag readerPosition) {
-		ResolvedEvent = resolvedEvent;
-		ReaderPosition = readerPosition;
-	}
+public sealed class TaggedResolvedEvent(ResolvedEvent resolvedEvent, CheckpointTag readerPosition) {
+	public readonly ResolvedEvent ResolvedEvent = resolvedEvent;
+	public readonly CheckpointTag ReaderPosition = readerPosition;
 }

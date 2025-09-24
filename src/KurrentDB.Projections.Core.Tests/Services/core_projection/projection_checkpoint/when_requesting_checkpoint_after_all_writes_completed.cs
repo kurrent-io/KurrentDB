@@ -35,23 +35,14 @@ public class when_requesting_checkpoint_after_all_writes_completed<TLogFormat, T
 			CheckpointTag.FromPosition(0, 100, 50), new TransactionFilePositionTagger(0), 250, 1);
 		_checkpoint.Start();
 		_checkpoint.ValidateOrderAndEmitEvents(
-			new[] {
-				new EmittedEventEnvelope(
-					new EmittedDataEvent(
-						"stream2", Guid.NewGuid(), "type", true, "data2", null,
-						CheckpointTag.FromPosition(0, 120, 110), null)),
-				new EmittedEventEnvelope(
-					new EmittedDataEvent(
-						"stream2", Guid.NewGuid(), "type", true, "data4", null,
-						CheckpointTag.FromPosition(0, 120, 110), null)),
-			});
+		[
+			new(new EmittedDataEvent("stream2", Guid.NewGuid(), "type", true, "data2", null, CheckpointTag.FromPosition(0, 120, 110), null)),
+			new(new EmittedDataEvent("stream2", Guid.NewGuid(), "type", true, "data4", null, CheckpointTag.FromPosition(0, 120, 110), null))
+		]);
 		_checkpoint.ValidateOrderAndEmitEvents(
-			new[] {
-				new EmittedEventEnvelope(
-					new EmittedDataEvent(
-						"stream1", Guid.NewGuid(), "type", true, "data", null,
-						CheckpointTag.FromPosition(0, 140, 130), null))
-			});
+		[
+			new(new EmittedDataEvent("stream1", Guid.NewGuid(), "type", true, "data", null, CheckpointTag.FromPosition(0, 140, 130), null))
+		]);
 		var writes = _consumer.HandledMessages.OfType<ClientMessageWriteEvents>().ToArray();
 		writes[0].Envelope.ReplyWith(ClientMessage.WriteEventsCompleted.ForSingleStream(writes[0].CorrelationId, 0, 0, -1, -1));
 		writes[1].Envelope.ReplyWith(ClientMessage.WriteEventsCompleted.ForSingleStream(writes[1].CorrelationId, 0, 0, -1, -1));
@@ -61,7 +52,6 @@ public class when_requesting_checkpoint_after_all_writes_completed<TLogFormat, T
 
 	[Test]
 	public void ready_for_checkpoint_immediately() {
-		Assert.AreEqual(
-			1, _readyHandler.HandledMessages.OfType<CoreProjectionProcessingMessage.ReadyForCheckpoint>().Count());
+		Assert.AreEqual(1, _readyHandler.HandledMessages.OfType<CoreProjectionProcessingMessage.ReadyForCheckpoint>().Count());
 	}
 }

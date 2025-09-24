@@ -17,16 +17,10 @@ public class CategorizeEventsByStreamPath : IProjectionStateHandler {
 	private readonly StreamCategoryExtractor _streamCategoryExtractor;
 
 	public CategorizeEventsByStreamPath(string source, Action<string, object[]> logger) {
-		var extractor = StreamCategoryExtractor.GetExtractor(source, logger);
+		var extractor = StreamCategoryExtractor.GetExtractor(source);
 		// we will need to declare event types we are interested in
 		_categoryStreamPrefix = "$ce-";
 		_streamCategoryExtractor = extractor;
-	}
-
-	public void ConfigureSourceProcessingStrategy(SourceDefinitionBuilder builder) {
-		builder.FromAll();
-		builder.AllEvents();
-		builder.SetIncludeLinks();
 	}
 
 	public void Load(string state) {
@@ -47,37 +41,39 @@ public class CategorizeEventsByStreamPath : IProjectionStateHandler {
 	}
 
 	public bool ProcessEvent(
-		string partition, CheckpointTag eventPosition, string category1, ResolvedEvent data,
-		out string newState, out string newSharedState, out EmittedEventEnvelope[] emittedEvents) {
+		string partition,
+		CheckpointTag eventPosition,
+		string category1,
+		ResolvedEvent data,
+		out string newState,
+		out string newSharedState,
+		out EmittedEventEnvelope[] emittedEvents) {
 		newSharedState = null;
 		emittedEvents = null;
 		newState = null;
-		string deletedStreamId;
 		var isStreamDeletedEvent = StreamDeletedHelper.IsStreamDeletedEvent(
-			data.PositionStreamId, data.EventType, data.Data, out deletedStreamId);
+			data.PositionStreamId, data.EventType, data.Data, out var deletedStreamId);
 
 		var category = _streamCategoryExtractor.GetCategoryByStreamId(isStreamDeletedEvent ? deletedStreamId : data.PositionStreamId);
 		if (category == null)
 			return true; // handled but not interesting
 
+		var linkTarget = data.EventType == SystemEventTypes.LinkTo ? data.Data : $"{data.EventSequenceNumber}@{data.EventStreamId}";
 
-		string linkTarget;
-		if (data.EventType == SystemEventTypes.LinkTo)
-			linkTarget = data.Data;
-		else
-			linkTarget = data.EventSequenceNumber + "@" + data.EventStreamId;
-
-		emittedEvents = new[] {
-			new EmittedEventEnvelope(
+		emittedEvents = [
+			new(
 				new EmittedLinkToWithRecategorization(
 					_categoryStreamPrefix + category, Guid.NewGuid(), linkTarget, eventPosition, expectedTag: null,
-					originalStreamId: isStreamDeletedEvent?deletedStreamId:data.PositionStreamId, streamDeletedAt: isStreamDeletedEvent ? -1 : (int?)null))
-		};
+					originalStreamId: isStreamDeletedEvent ? deletedStreamId : data.PositionStreamId,
+					streamDeletedAt: isStreamDeletedEvent ? -1 : null))
+		];
 
 		return true;
 	}
 
-	public bool ProcessPartitionCreated(string partition, CheckpointTag createPosition, ResolvedEvent data,
+	public bool ProcessPartitionCreated(string partition,
+		CheckpointTag createPosition,
+		ResolvedEvent data,
 		out EmittedEventEnvelope[] emittedEvents) {
 		emittedEvents = null;
 		return false;
@@ -96,5 +92,11 @@ public class CategorizeEventsByStreamPath : IProjectionStateHandler {
 
 	public IQuerySources GetSourceDefinition() {
 		return SourceDefinitionBuilder.From(ConfigureSourceProcessingStrategy);
+
+		static void ConfigureSourceProcessingStrategy(SourceDefinitionBuilder builder) {
+			builder.FromAll();
+			builder.AllEvents();
+			builder.SetIncludeLinks();
+		}
 	}
 }

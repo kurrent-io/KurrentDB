@@ -18,14 +18,14 @@ public class
 
 	protected override async Task Given() {
 		await base.Given();
-		await PostProjection(@"
-fromCategory('stream').foreachStream().when({
-    $init: function(){return {a:0}},
-    type1: function(s,e){s.a++},
-    type2: function(s,e){s.a++},
-    $deleted: function(s,e){s.deleted=1;},
-}).outputState();
-");
+		await PostProjection("""
+		                     fromCategory('stream').foreachStream().when({
+		                         $init: function(){return {a:0}},
+		                         type1: function(s,e){s.a++},
+		                         type2: function(s,e){s.a++},
+		                         $deleted: function(s,e){s.deleted=1;},
+		                     }).outputState();
+		                     """);
 		WaitIdle();
 		await EnableStandardProjections();
 	}
@@ -48,8 +48,7 @@ fromCategory('stream').foreachStream().when({
 	[Test, Category("Network")]
 	[Ignore("Regression")]
 	public async Task receives_deleted_notification() {
-		await AssertStreamTail(
-			"$projections-test-projection-stream-1-result", "Result:{\"a\":2}", "Result:{\"a\":2,\"deleted\":1}");
+		await AssertStreamTail("$projections-test-projection-stream-1-result", "Result:{\"a\":2}", "Result:{\"a\":2,\"deleted\":1}");
 		await AssertStreamTail("$projections-test-projection-stream-2-result", "Result:{\"a\":4}");
 		await AssertStreamTail("$projections-test-projection-stream-3-result", "Result:{\"a\":1}");
 	}

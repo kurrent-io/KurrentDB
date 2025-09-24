@@ -20,7 +20,8 @@ namespace KurrentDB.Projections.Core.Tests.Services.projections_manager.managed_
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class when_starting_a_managed_projection_without_follower_projections<TLogFormat, TStreamId> : core_projection.TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
+public class when_starting_a_managed_projection_without_follower_projections<TLogFormat, TStreamId>
+	: core_projection.TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private new ITimeProvider _timeProvider;
 
 	private ManagedProjection _mp;
@@ -51,22 +52,14 @@ public class when_starting_a_managed_projection_without_follower_projections<TLo
 			_writeDispatcher,
 			_readDispatcher,
 			_bus,
-			_timeProvider, new RequestResponseDispatcher
-				<CoreProjectionManagementMessage.GetState, CoreProjectionStatusMessage.StateReport>(
-					_bus,
-					v => v.CorrelationId,
-					v => v.CorrelationId,
-					_bus), new RequestResponseDispatcher
-				<CoreProjectionManagementMessage.GetResult, CoreProjectionStatusMessage.ResultReport>(
-					_bus,
-					v => v.CorrelationId,
-					v => v.CorrelationId,
-					_bus), _ioDispatcher,
+			_timeProvider,
+			new(_bus, v => v.CorrelationId, v => v.CorrelationId, _bus),
+			new(_bus, v => v.CorrelationId, v => v.CorrelationId, _bus), _ioDispatcher,
 			TimeSpan.FromMinutes(Opts.ProjectionsQueryExpiryDefault));
 	}
 
 	protected override IEnumerable<WhenStep> When() {
-		ProjectionManagementMessage.Command.Post message = new ProjectionManagementMessage.Command.Post(
+		var message = new ProjectionManagementMessage.Command.Post(
 			Envelope, ProjectionMode.Transient, _projectionName, ProjectionManagementMessage.RunAs.System,
 			typeof(FakeForeachStreamProjection), "", true, false, false, false);
 		_mp.InitializeNew(
@@ -86,9 +79,7 @@ public class when_starting_a_managed_projection_without_follower_projections<TLo
 		var sourceDefinition = new FakeForeachStreamProjection("", Console.WriteLine).GetSourceDefinition();
 		var projectionSourceDefinition = ProjectionSourceDefinition.From(sourceDefinition);
 
-		_mp.Handle(
-			new CoreProjectionStatusMessage.Prepared(
-				_coreProjectionId, projectionSourceDefinition));
+		_mp.Handle(new CoreProjectionStatusMessage.Prepared(_coreProjectionId, projectionSourceDefinition));
 		yield break;
 	}
 

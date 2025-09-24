@@ -14,7 +14,7 @@ using KurrentDB.Projections.Core.Messages;
 namespace EventStore.Projections.Core.Services.Grpc;
 
 internal partial class ProjectionManagement {
-	private static readonly Operation RestartOperation = new Operation(Operations.Projections.Restart);
+	private static readonly Operation RestartOperation = new(Operations.Projections.Restart);
 
 	public override async Task<Empty> RestartSubsystem(Empty empty, ServerCallContext context) {
 		var restart = new TaskCompletionSource<bool>();
@@ -32,7 +32,7 @@ internal partial class ProjectionManagement {
 
 		void OnMessage(Message message) {
 			switch (message) {
-				case ProjectionSubsystemMessage.SubsystemRestarting _:
+				case ProjectionSubsystemMessage.SubsystemRestarting:
 					restart.TrySetResult(true);
 					break;
 				case ProjectionSubsystemMessage.InvalidSubsystemRestart fail:

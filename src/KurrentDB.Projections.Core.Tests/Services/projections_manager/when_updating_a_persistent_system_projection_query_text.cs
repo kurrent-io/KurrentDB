@@ -9,12 +9,14 @@ using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Management;
 using NUnit.Framework;
+using static KurrentDB.Projections.Core.Messages.ProjectionManagementMessage;
 
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class when_updating_a_continous_system_projection_query_text<TLogFormat, TStreamId> : TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId> {
+public class when_updating_a_continous_system_projection_query_text<TLogFormat, TStreamId>
+	: TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId> {
 	protected override void Given() {
 		NoStream("$projections-$by_correlation_id");
 		NoStream("$projections-$by_correlation_id-result");
@@ -24,80 +26,57 @@ public class when_updating_a_continous_system_projection_query_text<TLogFormat, 
 		AllWritesSucceed();
 	}
 
-	private string _projectionName;
-	private string _newProjectionSource;
+	private const string ProjectionName = "$by_correlation_id";
+	private const string NewProjectionSource = "{\"correlationIdProperty\":\"$updateCorrelationId\"}";
 
 	protected override IEnumerable<WhenStep> When() {
-		_projectionName = "$by_correlation_id";
-		yield return (new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid()));
-		yield return
-			(new ProjectionManagementMessage.Command.Post(
-				_bus, ProjectionMode.Continuous, _projectionName,
-				ProjectionManagementMessage.RunAs.System, "native:KurrentDB.Projections.Core.Standard.ByCorrelationId", "{\"correlationIdProperty\":\"$myCorrelationId\"}",
-				enabled: true, checkpointsEnabled: true, emitEnabled: true, trackEmittedStreams: true));
+		yield return new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid());
+		yield return new Command.Post(
+			_bus, ProjectionMode.Continuous, ProjectionName,
+			RunAs.System, "native:KurrentDB.Projections.Core.Standard.ByCorrelationId",
+			"{\"correlationIdProperty\":\"$myCorrelationId\"}",
+			enabled: true, checkpointsEnabled: true, emitEnabled: true, trackEmittedStreams: true);
 		// when
-		_newProjectionSource = "{\"correlationIdProperty\":\"$updateCorrelationId\"}";
-		yield return
-			(new ProjectionManagementMessage.Command.UpdateQuery(
-				_bus, _projectionName, ProjectionManagementMessage.RunAs.System,
-				_newProjectionSource, emitEnabled: null));
+		yield return new Command.UpdateQuery(_bus, ProjectionName, RunAs.System, NewProjectionSource, emitEnabled: null);
 	}
 
 	[Test, Category("v8")]
 	public void the_projection_source_can_be_retrieved() {
-		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetQuery(
-				_bus, _projectionName, ProjectionManagementMessage.RunAs.Anonymous));
-		Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionQuery>().Count());
-		var projectionQuery =
-			_consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionQuery>().Single();
-		Assert.AreEqual(_projectionName, projectionQuery.Name);
-		Assert.AreEqual(_newProjectionSource, projectionQuery.Query);
+		_manager.Handle(new Command.GetQuery(_bus, ProjectionName, RunAs.Anonymous));
+
+		var projectionQuery = _consumer.HandledMessages.OfType<ProjectionQuery>().Single();
+		Assert.AreEqual(ProjectionName, projectionQuery.Name);
+		Assert.AreEqual(NewProjectionSource, projectionQuery.Query);
 	}
 
 	[Test, Category("v8")]
 	public void emit_enabled_options_remains_unchanged() {
-		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetQuery(
-				_bus, _projectionName, ProjectionManagementMessage.RunAs.Anonymous));
-		Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionQuery>().Count());
-		var projectionQuery =
-			_consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionQuery>().Single();
-		Assert.AreEqual(_projectionName, projectionQuery.Name);
+		_manager.Handle(new Command.GetQuery(_bus, ProjectionName, RunAs.Anonymous));
+
+		var projectionQuery = _consumer.HandledMessages.OfType<ProjectionQuery>().Single();
+		Assert.AreEqual(ProjectionName, projectionQuery.Name);
 		Assert.AreEqual(true, projectionQuery.EmitEnabled);
 	}
 
 	[Test, Category("v8")]
 	public void the_projection_status_is_still_running() {
-		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
+		_manager.Handle(new Command.GetStatistics(_bus, null, ProjectionName));
 
-		Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
-		Assert.AreEqual(
-			1,
-			_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Single().Projections.Length);
-		Assert.AreEqual(
-			_projectionName,
-			_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Single().Projections.Single()
-				.Name);
-		Assert.AreEqual(
-			ManagedProjectionState.Running,
-			_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Single().Projections.Single()
-				.LeaderStatus);
+		var actual = _consumer.HandledMessages.OfType<Statistics>().Single();
+		Assert.AreEqual(1, actual.Projections.Length);
+		Assert.AreEqual(ProjectionName, actual.Projections.Single().Name);
+		Assert.AreEqual(ManagedProjectionState.Running, actual.Projections.Single().LeaderStatus);
 	}
 
 	[Test, Category("v8")]
 	public void the_projection_state_can_be_retrieved() {
-		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetState(_bus, _projectionName, ""));
+		_manager.Handle(new Command.GetState(_bus, ProjectionName, ""));
 		_queue.Process();
 
-		Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionState>().Count());
-		Assert.AreEqual(
-			_projectionName,
-			_consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionState>().Single().Name);
-		Assert.AreEqual( // empty? why?
-			"", _consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionState>().Single().State);
+		var state = _consumer.HandledMessages.OfType<ProjectionState>().Single();
+		Assert.AreEqual(ProjectionName, state.Name);
+		// empty? why?
+		Assert.AreEqual("", state.State);
 	}
 
 	[Test, Category("v8")]

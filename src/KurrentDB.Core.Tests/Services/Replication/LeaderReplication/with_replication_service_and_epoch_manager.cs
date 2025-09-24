@@ -109,7 +109,7 @@ public abstract class with_replication_service_and_epoch_manager<TLogFormat, TSt
 	public IPrepareLogRecord<TStreamId> CreateLogRecord(long eventNumber, string data = "*************") {
 		var tStreamId = LogFormatHelper<TLogFormat, TStreamId>.StreamId;
 		var eventType = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
-		return LogRecord.Prepare(_logFormat.RecordFactory, Writer.Position, Guid.NewGuid(), Guid.NewGuid(), 0, 0,
+		return _logFormat.RecordFactory.Prepare(Writer.Position, Guid.NewGuid(), Guid.NewGuid(), 0, 0,
 			tStreamId, eventNumber, PrepareFlags.None, eventType, Encoding.UTF8.GetBytes(data),
 			null, DateTime.UtcNow);
 	}

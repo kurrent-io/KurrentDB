@@ -28,13 +28,13 @@ public static class ProjectionCoreWorkersNode {
 		while (coreWorkers.Count < projectionsStandardComponents.ProjectionWorkerThreadCount) {
 			var coreInputBus = new InMemoryBus("bus");
 			var coreInputQueue = new QueuedHandlerThreadPool(coreInputBus,
-				"Projection Core #" + coreWorkers.Count,
+				$"Projection Core #{coreWorkers.Count}",
 				standardComponents.QueueStatsManager,
 				standardComponents.QueueTrackers,
 				groupName: "Projection Core");
 			var coreOutputBus = new InMemoryBus("output bus");
 			var coreOutputQueue = new QueuedHandlerThreadPool(coreOutputBus,
-				"Projection Core #" + coreWorkers.Count + " output",
+				$"Projection Core #{coreWorkers.Count} output",
 				standardComponents.QueueStatsManager,
 				standardComponents.QueueTrackers,
 				groupName: "Projection Core");
@@ -67,13 +67,9 @@ public static class ProjectionCoreWorkersNode {
 			coreOutput.Subscribe<ProjectionCoreServiceMessage.SubComponentStopped>(forwarder);
 
 			if (projectionsStandardComponents.RunProjections >= ProjectionType.System) {
-				coreOutput.Subscribe(
-					Forwarder.Create<AwakeServiceMessage.SubscribeAwake>(standardComponents.MainQueue));
-				coreOutput.Subscribe(
-					Forwarder.Create<AwakeServiceMessage.UnsubscribeAwake>(standardComponents.MainQueue));
-				coreOutput.Subscribe(
-					Forwarder.Create<ProjectionSubsystemMessage.IODispatcherDrained>(projectionsStandardComponents
-						.LeaderOutputQueue));
+				coreOutput.Subscribe(Forwarder.Create<AwakeServiceMessage.SubscribeAwake>(standardComponents.MainQueue));
+				coreOutput.Subscribe(Forwarder.Create<AwakeServiceMessage.UnsubscribeAwake>(standardComponents.MainQueue));
+				coreOutput.Subscribe(Forwarder.Create<ProjectionSubsystemMessage.IODispatcherDrained>(projectionsStandardComponents.LeaderOutputQueue));
 			}
 
 			coreOutput.Subscribe<TimerMessage.Schedule>(standardComponents.TimerService);
@@ -82,7 +78,7 @@ public static class ProjectionCoreWorkersNode {
 
 			coreInputBus.Subscribe(new UnwrapEnvelopeHandler());
 
-			coreWorkers.Add(workerId, new CoreWorker(workerId, coreInputQueue, coreOutputQueue));
+			coreWorkers.Add(workerId, new CoreWorker(coreInputQueue, coreOutputQueue));
 		}
 
 		var queues = coreWorkers.Select(v => v.Value.CoreInputQueue).ToArray();
@@ -100,16 +96,9 @@ public static class ProjectionCoreWorkersNode {
 	}
 }
 
-public class CoreWorker {
-	public Guid WorkerId { get; }
-	public IQueuedHandler CoreInputQueue { get; }
-	public IQueuedHandler CoreOutputQueue { get; }
-
-	public CoreWorker(Guid workerId, IQueuedHandler inputQueue, IQueuedHandler outputQueue) {
-		WorkerId = workerId;
-		CoreInputQueue = inputQueue;
-		CoreOutputQueue = outputQueue;
-	}
+public class CoreWorker(IQueuedHandler inputQueue, IQueuedHandler outputQueue) {
+	public IQueuedHandler CoreInputQueue { get; } = inputQueue;
+	private IQueuedHandler CoreOutputQueue { get; } = outputQueue;
 
 	public void Start() {
 		CoreInputQueue.Start();

@@ -24,11 +24,11 @@ public class when_handling_a_second_event_after_the_delay : TestFixtureWithEvent
 		_subscription.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 				Guid.NewGuid(), new TFPos(200, 150), "a", 1, false, _firstEventId, "bad-event-type", false,
-				new byte[0], new byte[0], _firstEventTimestamp));
+				[], [], _firstEventTimestamp));
 		_subscription.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 				Guid.NewGuid(), new TFPos(300, 250), "a", 2, false, Guid.NewGuid(), "bad-event-type", false,
-				new byte[0], new byte[0], _firstEventTimestamp.AddMilliseconds(_timeBetweenEvents)));
+				[], [], _firstEventTimestamp.AddMilliseconds(_timeBetweenEvents)));
 	}
 
 	[Test]

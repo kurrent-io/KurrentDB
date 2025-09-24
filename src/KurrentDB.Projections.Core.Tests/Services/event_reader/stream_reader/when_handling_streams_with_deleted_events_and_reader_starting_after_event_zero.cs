@@ -20,10 +20,11 @@ namespace KurrentDB.Projections.Core.Tests.Services.event_reader.stream_reader;
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class
-	when_handling_streams_with_deleted_events_and_reader_starting_after_event_zero<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
+	when_handling_streams_with_deleted_events_and_reader_starting_after_event_zero<TLogFormat, TStreamId>
+	: TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private StreamEventReader _edp;
 	private int _fromSequenceNumber;
-	const string _streamName = "stream";
+	private const string StreamName = "stream";
 
 	protected override void Given() {
 		TicksAreHandledImmediately();
@@ -32,36 +33,19 @@ public class
 
 	[SetUp]
 	public new void When() {
-		_edp = new StreamEventReader(_bus, Guid.NewGuid(), null, _streamName, _fromSequenceNumber,
-			new RealTimeProvider(), false,
-			produceStreamDeletes: false);
+		_edp = new(_bus, Guid.NewGuid(), null, StreamName, _fromSequenceNumber, new RealTimeProvider(), false, produceStreamDeletes: false);
 		_edp.Resume();
 	}
 
 	private void HandleEvents(long[] eventNumbers) {
-		string eventType = "event_type";
-		List<ResolvedEvent> events = new List<ResolvedEvent>();
+		const string eventType = "event_type";
 
-		foreach (long eventNumber in eventNumbers) {
-			events.Add(
-				ResolvedEvent.ForUnresolvedEvent(
-					new EventRecord(
-						eventNumber, 50 * (eventNumber + 1), Guid.NewGuid(), Guid.NewGuid(), 50 * (eventNumber + 1),
-						0, _streamName, ExpectedVersion.Any, DateTime.UtcNow,
-						PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-						eventType, new byte[] { 0 }, new byte[] { 0 }
-					)
-				)
-			);
-		}
-
-		var correlationId = _consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>().Last()
-			.CorrelationId;
+		var correlationId = _consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>().Last().CorrelationId;
 
 		long start, end;
 		if (eventNumbers.Length > 0) {
 			start = eventNumbers[0];
-			end = eventNumbers[eventNumbers.Length - 1];
+			end = eventNumbers[^1];
 		} else {
 			start = _fromSequenceNumber;
 			end = _fromSequenceNumber;
@@ -69,13 +53,19 @@ public class
 
 		_edp.Handle(
 			new ClientMessage.ReadStreamEventsForwardCompleted(
-				correlationId, _streamName, start, 100, ReadStreamResult.Success, events.ToArray(), null, false, "",
-				start + 1, end, true, 200)
+				correlationId, StreamName, start, 100, ReadStreamResult.Success,
+				eventNumbers.Select(eventNumber =>
+						ResolvedEvent.ForUnresolvedEvent(
+							new EventRecord(eventNumber, 50 * (eventNumber + 1), Guid.NewGuid(),
+								Guid.NewGuid(), 50 * (eventNumber + 1), 0, StreamName, ExpectedVersion.Any, DateTime.UtcNow,
+								PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd, eventType,
+								[0], [0])))
+					.ToArray(), null, false, "", start + 1, end, true, 200)
 		);
 	}
 
 	private void HandleEvents(long start, long end) {
-		List<long> eventNumbers = new List<long>();
+		List<long> eventNumbers = [];
 		for (long i = start; i <= end; i++)
 			eventNumbers.Add(i);
 		HandleEvents(eventNumbers.ToArray());
@@ -109,8 +99,7 @@ public class
 	[Test]
 	public void events_after_second_event_should_not_be_in_sequence() {
 		//_fromSequenceNumber+2 has been omitted
-		HandleEvents(new long[]
-			{_fromSequenceNumber, _fromSequenceNumber + 1, _fromSequenceNumber + 3, _fromSequenceNumber + 4});
+		HandleEvents([_fromSequenceNumber, _fromSequenceNumber + 1, _fromSequenceNumber + 3, _fromSequenceNumber + 4]);
 
 		Assert.AreEqual(2, HandledMessages.OfType<ReaderSubscriptionMessage.Faulted>().Count());
 	}

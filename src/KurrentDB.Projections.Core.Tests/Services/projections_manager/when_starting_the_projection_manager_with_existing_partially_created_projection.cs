@@ -18,24 +18,23 @@ using KurrentDB.Projections.Core.Services.Management;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Tests.Services.core_projection;
 using NUnit.Framework;
+using static KurrentDB.Projections.Core.Messages.ProjectionManagementMessage;
 
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class when_starting_the_projection_manager_with_existing_partially_created_projection<TLogFormat, TStreamId> :
-	TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
+public class when_starting_the_projection_manager_with_existing_partially_created_projection<TLogFormat, TStreamId>
+	: TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private ProjectionManager _manager;
 	private new ITimeProvider _timeProvider;
 	private Guid _workerId;
 
 	protected override void Given() {
 		_workerId = Guid.NewGuid();
-		ExistingEvent(ProjectionNamesBuilder.ProjectionsRegistrationStream, ProjectionEventTypes.ProjectionCreated,
-			null, "projection1");
+		ExistingEvent(ProjectionNamesBuilder.ProjectionsRegistrationStream, ProjectionEventTypes.ProjectionCreated, null, "projection1");
 		NoStream("$projections-projection1");
 	}
-
 
 	[SetUp]
 	public void setup() {
@@ -63,20 +62,15 @@ public class when_starting_the_projection_manager_with_existing_partially_create
 
 	[Test]
 	public void projection_status_can_be_retrieved() {
-		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, "projection1"));
-		Assert.IsNotNull(
-			_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().SingleOrDefault(
-				v => v.Projections[0].Name == "projection1"));
+		_manager.Handle(new Command.GetStatistics(_bus, null, "projection1"));
+		Assert.IsNotNull(_consumer.HandledMessages.OfType<Statistics>().SingleOrDefault(v => v.Projections[0].Name == "projection1"));
 	}
 
 	[Test]
 	public void projection_status_is_creating() {
-		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, "projection1"));
+		_manager.Handle(new Command.GetStatistics(_bus, null, "projection1"));
 		Assert.AreEqual(
 			ManagedProjectionState.Creating,
-			_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().SingleOrDefault(
-				v => v.Projections[0].Name == "projection1").Projections[0].LeaderStatus);
+			_consumer.HandledMessages.OfType<Statistics>().Single(v => v.Projections[0].Name == "projection1").Projections[0].LeaderStatus);
 	}
 }

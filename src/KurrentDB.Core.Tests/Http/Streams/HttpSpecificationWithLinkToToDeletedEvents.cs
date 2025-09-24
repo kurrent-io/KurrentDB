@@ -22,11 +22,11 @@ public abstract class HttpSpecificationWithLinkToToDeletedEvents : HttpBehaviorS
 			await conn.ConnectAsync();
 			await conn.AppendToStreamAsync(DeletedStreamName, ExpectedVersion.Any, creds,
 					new EventData(Guid.NewGuid(), "testing", true, Encoding.UTF8.GetBytes("{'foo' : 4}"),
-						new byte[0]))
+						[]))
 ;
 			await conn.AppendToStreamAsync(LinkedStreamName, ExpectedVersion.Any, creds,
 				new EventData(Guid.NewGuid(), SystemEventTypes.LinkTo, false,
-					Encoding.UTF8.GetBytes("0@" + DeletedStreamName), new byte[0]));
+					Encoding.UTF8.GetBytes("0@" + DeletedStreamName), []));
 			await conn.DeleteStreamAsync(DeletedStreamName, ExpectedVersion.Any);
 		}
 	}

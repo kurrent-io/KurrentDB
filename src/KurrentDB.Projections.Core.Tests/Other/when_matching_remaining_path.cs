@@ -52,7 +52,6 @@ class when_matching_remaining_multi_segment_path {
 	}
 }
 
-
 [TestFixture]
 class when_matching_uri_with_missing_query_variable {
 	private UriTemplate _urlTemplate;
@@ -145,17 +144,5 @@ class when_matching_escaped_urls {
 
 			Console.WriteLine();
 		}
-	}
-
-	private static void Matches(string template, string candidate) {
-		var urlTemplate = new UriTemplate(template);
-		var match = urlTemplate.Match(new Uri("http://localhost"), new Uri("http://localhost" + candidate));
-		Assert.IsNotNull(match);
-	}
-
-	private static void DoesNotMatch(string template, string candidate) {
-		var urlTemplate = new UriTemplate(template);
-		var match = urlTemplate.Match(new Uri("http://localhost"), new Uri("http://localhost" + candidate));
-		Assert.IsNull(match);
 	}
 }

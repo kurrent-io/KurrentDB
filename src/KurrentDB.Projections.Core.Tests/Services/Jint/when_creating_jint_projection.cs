@@ -14,34 +14,33 @@ namespace KurrentDB.Projections.Core.Tests.Services.Jint;
 
 class when_creating_jint_projection {
 	private ProjectionStateHandlerFactory _stateHandlerFactory;
-	private const string _projectionType = "js";
+	private const string ProjectionType = "js";
 
 	[SetUp]
 	public void Setup() {
-		_stateHandlerFactory =
-			new ProjectionStateHandlerFactory(TimeSpan.FromMilliseconds(250), TimeSpan.FromMilliseconds(100), ProjectionTrackers.NoOp);
+		_stateHandlerFactory = new(TimeSpan.FromMilliseconds(250), TimeSpan.FromMilliseconds(100), ProjectionTrackers.NoOp);
 	}
 
-	[Test, Category(_projectionType)]
+	[Test, Category(ProjectionType)]
 	public void it_can_be_created() {
-		using (_stateHandlerFactory.Create("projection", _projectionType, @"", true, null)) {
+		using (_stateHandlerFactory.Create("projection", ProjectionType, "", true, null)) {
 		}
 	}
 
-	[Test, Category(_projectionType)]
+	[Test, Category(ProjectionType)]
 	public void js_syntax_errors_are_reported() {
 		try {
-			using (_stateHandlerFactory.Create("projection", _projectionType, @"log(1;", true, null, logger: (s, _) => { })) {
+			using (_stateHandlerFactory.Create("projection", ProjectionType, "log(1;", true, null, logger: (_, _) => { })) {
 			}
 		} catch (Exception ex) {
 			Assert.IsInstanceOf<JavaScriptException>(ex);
 		}
 	}
 
-	[Test, Category(_projectionType)]
+	[Test, Category(ProjectionType)]
 	public void js_exceptions_errors_are_reported() {
 		try {
-			using (_stateHandlerFactory.Create("projection", _projectionType, @"throw 123;", true, null, logger: (s, _) => { })) {
+			using (_stateHandlerFactory.Create("projection", ProjectionType, "throw 123;", true, null, logger: (_, _) => { })) {
 			}
 		} catch (Exception ex) {
 			Assert.IsInstanceOf<JavaScriptException>(ex);
@@ -49,14 +48,14 @@ class when_creating_jint_projection {
 		}
 	}
 
-	[Test, Category(_projectionType)]
+	[Test, Category(ProjectionType)]
 	public void long_compilation_times_out() {
 		try {
-			using (_stateHandlerFactory.Create("projection", _projectionType,
-				@"
-                                var i = 0;
-                                while (true) i++;
-                    ",
+			using (_stateHandlerFactory.Create("projection", ProjectionType,
+				       """
+				       var i = 0;
+				       while (true) i++;
+				       """,
 				true,
 				null,
 				logger: (s, _) => { })) {
@@ -66,80 +65,74 @@ class when_creating_jint_projection {
 		}
 	}
 
-	[Test, Category(_projectionType)]
+	[Test, Category(ProjectionType)]
 	public void long_execution_times_out() {
 		try {
-			using (var h = _stateHandlerFactory.Create("projection", _projectionType,
-				@"
-                        fromAll().when({
-                            $any: function (s, e) {
-                                log('1');
-                                var i = 0;
-                                while (true) i++;
-                            }
-                        });
-                    ",
+			using var h = _stateHandlerFactory.Create("projection", ProjectionType,
+				"""
+				fromAll().when({
+				  $any: function (s, e) {
+				    log('1');
+				    var i = 0;
+				    while (true) i++;
+				  }
+				});
+				""",
 				true,
 				null,
-				logger: Console.WriteLine)) {
-				h.Initialize();
-				string newState;
-				EmittedEventEnvelope[] emittedevents;
-				h.ProcessEvent(
-					"partition",
-					CheckpointTag.FromPosition(0, 100, 50),
-					"stream",
-					"event",
-					"",
-					Guid.NewGuid(),
-					1,
-					"", "{}",
-					out newState, out emittedevents);
-			}
+				logger: Console.WriteLine);
+			h.Initialize();
+			h.ProcessEvent(
+				"partition",
+				CheckpointTag.FromPosition(0, 100, 50),
+				"stream",
+				"event",
+				"",
+				Guid.NewGuid(),
+				1,
+				"", "{}",
+				out _, out _);
 		} catch (Exception ex) {
 			Assert.IsInstanceOf<TimeoutException>(ex);
 		}
 	}
 
-	[Test, Category(_projectionType)]
+	[Test, Category(ProjectionType)]
 	public void long_post_processing_times_out() {
 		try {
-			using (var h = _stateHandlerFactory.Create("projection", _projectionType,
-				@"
-                        fromAll().when({
-                            $any: function (s, e) {
-                                return {};
-                            }
-                        })
-                        .transformBy(function(s){
-                                log('1');
-                                var i = 0;
-                                while (true) i++;
-                        });
-                    ",
+			using var h = _stateHandlerFactory.Create("projection", ProjectionType,
+				"""
+				fromAll().when({
+					$any: function (s, e) {
+						return {};
+					}
+				})
+				.transformBy(function(s){
+						log('1');
+						var i = 0;
+						while (true) i++;
+				});
+				""",
 				true,
 				null,
-				logger: Console.WriteLine)) {
-				h.Initialize();
-				string newState;
-				EmittedEventEnvelope[] emittedevents;
-				h.ProcessEvent(
-					"partition", CheckpointTag.FromPosition(0, 100, 50), "stream", "event", "", Guid.NewGuid(), 1,
-					"", "{}",
-					out newState, out emittedevents);
-				h.TransformStateToResult();
-			}
+				logger: Console.WriteLine);
+			h.Initialize();
+			h.ProcessEvent(
+				"partition", CheckpointTag.FromPosition(0, 100, 50), "stream", "event", "", Guid.NewGuid(), 1,
+				"", "{}",
+				out _, out _);
+			h.TransformStateToResult();
 		} catch (Exception ex) {
 			Assert.IsInstanceOf<TimeoutException>(ex);
 		}
 	}
 
-	[Test, Category(_projectionType)]
+	[Test, Category(ProjectionType)]
 	public void long_execution_times_out_many() {
 		for (var i = 0; i < 10; i++) {
 			try {
-				using (var h = _stateHandlerFactory.Create(
-					"projection", _projectionType, @"
+				using var h = _stateHandlerFactory.Create(
+					"projection", ProjectionType, @"
                     fromAll().when({
                         $any: function (s, e) {
                             log('1');
@@ -147,16 +140,12 @@ class when_creating_jint_projection {
                             while (true) i++;
                         }
                     });
-                ", true, null, logger: Console.WriteLine)) {
-					h.Initialize();
-					string newState;
-					EmittedEventEnvelope[] emittedevents;
-					h.ProcessEvent(
-						"partition", CheckpointTag.FromPosition(0, 100, 50), "stream", "event", "", Guid.NewGuid(),
-						1,
-						"", "{}", out newState, out emittedevents);
-					Assert.Fail("Timeout didn't happen");
-				}
+                ", true, null, logger: Console.WriteLine);
+				h.Initialize();
+				h.ProcessEvent(
+					"partition", CheckpointTag.FromPosition(0, 100, 50), "stream", "event", "", Guid.NewGuid(),
+					1, "", "{}", out _, out _);
+				Assert.Fail("Timeout didn't happen");
 			} catch (TimeoutException) {
 			}
 		}

@@ -40,17 +40,17 @@ public record ProjectionSubsystemOptions(
 	int ExecutionTimeout,
 	int MaxProjectionStateSize);
 
-public sealed class ProjectionsSubsystem : ISubsystem,
-	IHandle<SystemMessage.SystemCoreReady>,
-	IHandle<SystemMessage.StateChangeMessage>,
-	IHandle<CoreProjectionStatusMessage.Stopped>,
-	IHandle<CoreProjectionStatusMessage.Started>,
-	IHandle<ProjectionSubsystemMessage.RestartSubsystem>,
-	IHandle<ProjectionSubsystemMessage.ComponentStarted>,
-	IHandle<ProjectionSubsystemMessage.ComponentStopped>,
-	IHandle<ProjectionSubsystemMessage.IODispatcherDrained> {
-
-	static readonly ILogger Logger = Log.ForContext<ProjectionsSubsystem>();
+public sealed class ProjectionsSubsystem
+	: ISubsystem,
+		IHandle<SystemMessage.SystemCoreReady>,
+		IHandle<SystemMessage.StateChangeMessage>,
+		IHandle<CoreProjectionStatusMessage.Stopped>,
+		IHandle<CoreProjectionStatusMessage.Started>,
+		IHandle<ProjectionSubsystemMessage.RestartSubsystem>,
+		IHandle<ProjectionSubsystemMessage.ComponentStarted>,
+		IHandle<ProjectionSubsystemMessage.ComponentStopped>,
+		IHandle<ProjectionSubsystemMessage.IODispatcherDrained> {
+	private static readonly ILogger Logger = Log.ForContext<ProjectionsSubsystem>();
 
 	public const int VERSION = 4;
 	public const int CONTENT_TYPE_VALIDATION_VERSION = 4;
@@ -60,23 +60,20 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 	private readonly bool _startStandardProjections;
 	private readonly TimeSpan _projectionsQueryExpiry;
 
-	private readonly InMemoryBus _leaderInputBus;
-	private readonly InMemoryBus _leaderOutputBus;
+	private readonly InMemoryBus _leaderInputBus = new("manager input bus");
+	private readonly InMemoryBus _leaderOutputBus = new("ProjectionManagerAndCoreCoordinatorOutput");
 
-	private IQueuedHandler _leaderInputQueue;
-	private IQueuedHandler _leaderOutputQueue;
+	private QueuedHandlerThreadPool _leaderInputQueue;
+	private QueuedHandlerThreadPool _leaderOutputQueue;
 
 	private IDictionary<Guid, CoreWorker> _coreWorkers;
 	private Dictionary<Guid, IPublisher> _queueMap;
 	private bool _subsystemStarted;
-	private readonly TaskCompletionSource _subsystemInitialized;
-
+	private readonly TaskCompletionSource _subsystemInitialized = new();
 	private readonly bool _faultOutOfOrderProjections;
-
 	private readonly int _compilationTimeout;
 	private readonly int _executionTimeout;
 	private readonly int _maxProjectionStateSize;
-
 	private readonly int _componentCount;
 	private readonly int _dispatcherCount;
 	private bool _restarting;
@@ -88,19 +85,18 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 	private SubsystemState _subsystemState = SubsystemState.NotReady;
 	private Guid _instanceCorrelationId;
 
-	private readonly List<string> _standardProjections = new List<string> {
+	private readonly List<string> _standardProjections = [
 		"$by_category",
 		"$stream_by_category",
 		"$streams",
 		"$by_event_type",
 		"$by_correlation_id"
-	};
+	];
 
 	public ProjectionsSubsystem(ProjectionSubsystemOptions projectionSubsystemOptions) {
-		if (projectionSubsystemOptions.RunProjections <= ProjectionType.System)
-			_projectionWorkerThreadCount = 1;
-		else
-			_projectionWorkerThreadCount = projectionSubsystemOptions.ProjectionWorkerThreadCount;
+		_projectionWorkerThreadCount = projectionSubsystemOptions.RunProjections <= ProjectionType.System
+			? 1
+			: projectionSubsystemOptions.ProjectionWorkerThreadCount;
 
 		_runProjections = projectionSubsystemOptions.RunProjections;
 		// Projection manager & Projection Core Coordinator
@@ -113,11 +109,6 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 		_startStandardProjections = projectionSubsystemOptions.StartStandardProjections;
 		_projectionsQueryExpiry = projectionSubsystemOptions.ProjectionQueryExpiry;
 		_faultOutOfOrderProjections = projectionSubsystemOptions.FaultOutOfOrderProjections;
-
-		_leaderInputBus = new InMemoryBus("manager input bus");
-		_leaderOutputBus = new InMemoryBus("ProjectionManagerAndCoreCoordinatorOutput");
-
-		_subsystemInitialized = new();
 		_executionTimeout = projectionSubsystemOptions.ExecutionTimeout;
 		_compilationTimeout = projectionSubsystemOptions.CompilationTimeout;
 		_maxProjectionStateSize = projectionSubsystemOptions.MaxProjectionStateSize;
@@ -137,13 +128,13 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 	public void ConfigureApplication(IApplicationBuilder builder, IConfiguration configuration) {
 		var standardComponents = builder.ApplicationServices.GetRequiredService<StandardComponents>();
 
-		_leaderInputQueue = new QueuedHandlerThreadPool(
+		_leaderInputQueue = new(
 			_leaderInputBus,
 			"Projections Leader",
 			standardComponents.QueueStatsManager,
 			standardComponents.QueueTrackers
 		);
-		_leaderOutputQueue = new QueuedHandlerThreadPool(
+		_leaderOutputQueue = new(
 			_leaderOutputBus,
 			"Projections Leader",
 			standardComponents.QueueStatsManager,
@@ -191,11 +182,9 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 		MetricsConfiguration conf,
 		out IProjectionTracker projectionTracker,
 		out ProjectionTrackers projectionTrackers) {
-
 		projectionTracker = IProjectionTracker.NoOp;
 
-		Func<string, IProjectionStateSerializationTracker> serializationTrackerFactory =
-			_ => IProjectionStateSerializationTracker.NoOp;
+		Func<string, IProjectionStateSerializationTracker> serializationTrackerFactory = _ => IProjectionStateSerializationTracker.NoOp;
 
 		var projectionMeter = new Meter(conf.ProjectionsMeterName, version: "1.0.0");
 		var serviceName = conf.ServiceName;
@@ -220,7 +209,7 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 							conf.LegacyProjectionsNaming),
 						name: name,
 						expectedScrapeIntervalSeconds: conf.ExpectedScrapeIntervalSeconds
-				));
+					));
 		}
 
 		List<Func<string, IProjectionExecutionTracker>> executionTrackerFactories = [];
@@ -246,8 +235,7 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 				$"{serviceName}-projection-execution-duration",
 				conf.LegacyProjectionsNaming);
 
-			executionTrackerFactories.Add(name =>
-				new ProjectionExecutionHistogramTracker(name, executionDurationMetric));
+			executionTrackerFactories.Add(name => new ProjectionExecutionHistogramTracker(name, executionDurationMetric));
 		}
 
 		projectionTrackers = new(ExecutionTrackerFactory, serializationTrackerFactory);
@@ -258,7 +246,8 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 	}
 
 	public void ConfigureServices(IServiceCollection services, IConfiguration configuration) =>
-		services.AddSingleton(provider => new ProjectionManagement(_leaderInputQueue, provider.GetRequiredService<IAuthorizationProvider>()));
+		services.AddSingleton(provider
+			=> new ProjectionManagement(_leaderInputQueue, provider.GetRequiredService<IAuthorizationProvider>()));
 
 	private static void CreateAwakerService(StandardComponents standardComponents) {
 		var awakeReaderService = new AwakeService();
@@ -272,12 +261,14 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 		if (_subsystemState != SubsystemState.NotReady)
 			return;
 		_subsystemState = SubsystemState.Ready;
-		if (_nodeState == VNodeState.Leader) {
-			StartComponents();
-			return;
-		}
-		if (_nodeState == VNodeState.Follower || _nodeState == VNodeState.ReadOnlyReplica) {
-			PublishInitialized();
+		switch (_nodeState) {
+			case VNodeState.Leader:
+				StartComponents();
+				return;
+			case VNodeState.Follower:
+			case VNodeState.ReadOnlyReplica:
+				PublishInitialized();
+				break;
 		}
 	}
 
@@ -286,28 +277,32 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 		if (_subsystemState == SubsystemState.NotReady)
 			return;
 
-		if (_nodeState == VNodeState.Leader) {
-			StartComponents();
-			return;
+		switch (_nodeState) {
+			case VNodeState.Leader:
+				StartComponents();
+				return;
+			case VNodeState.Follower:
+			case VNodeState.ReadOnlyReplica:
+				PublishInitialized();
+				break;
 		}
 
-		if (_nodeState == VNodeState.Follower || _nodeState == VNodeState.ReadOnlyReplica) {
-			PublishInitialized();
-		}
 		StopComponents();
 	}
 
 	private void StartComponents() {
 		if (_nodeState != VNodeState.Leader) {
-			Logger.Debug("PROJECTIONS SUBSYSTEM: Not starting because node is not leader. Current node state: {nodeState}",
-				_nodeState);
+			Logger.Debug("PROJECTIONS SUBSYSTEM: Not starting because node is not leader. Current node state: {nodeState}", _nodeState);
 			return;
 		}
+
 		if (_subsystemState != SubsystemState.Ready && _subsystemState != SubsystemState.Stopped) {
-			Logger.Debug("PROJECTIONS SUBSYSTEM: Not starting because system is not ready or stopped. Current Subsystem state: {subsystemState}",
+			Logger.Debug(
+				"PROJECTIONS SUBSYSTEM: Not starting because system is not ready or stopped. Current Subsystem state: {subsystemState}",
 				_subsystemState);
 			return;
 		}
+
 		if (_runningComponentCount > 0) {
 			Logger.Warning("PROJECTIONS SUBSYSTEM: Subsystem is stopped, but components are still running.");
 			return;
@@ -323,7 +318,9 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 
 	private void StopComponents() {
 		if (_subsystemState != SubsystemState.Started) {
-			Logger.Debug("PROJECTIONS SUBSYSTEM: Not stopping because subsystem is not in a started state. Current Subsystem state: {state}", _subsystemState);
+			Logger.Debug(
+				"PROJECTIONS SUBSYSTEM: Not stopping because subsystem is not in a started state. Current Subsystem state: {state}",
+				_subsystemState);
 			return;
 		}
 
@@ -334,7 +331,7 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 
 	public void Handle(ProjectionSubsystemMessage.RestartSubsystem message) {
 		if (_restarting) {
-			var info = "PROJECTIONS SUBSYSTEM: Not restarting because the subsystem is already being restarted.";
+			const string info = "PROJECTIONS SUBSYSTEM: Not restarting because the subsystem is already being restarted.";
 			Logger.Information(info);
 			message.ReplyEnvelope.ReplyWith(new ProjectionSubsystemMessage.InvalidSubsystemRestart("Restarting", info));
 			return;
@@ -393,7 +390,8 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 		PublishInitialized();
 
 		if (_nodeState != VNodeState.Leader) {
-			Logger.Information("PROJECTIONS SUBSYSTEM: Node state is no longer Leader. Stopping projections. Current node state: {nodeState}",
+			Logger.Information(
+				"PROJECTIONS SUBSYSTEM: Node state is no longer Leader. Stopping projections. Current node state: {nodeState}",
 				_nodeState);
 			StopComponents();
 		}
@@ -449,7 +447,7 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 	}
 
 	public Task Start() {
-		if (_subsystemStarted == false) {
+		if (!_subsystemStarted) {
 			_leaderInputQueue?.Start();
 			_leaderOutputQueue?.Start();
 

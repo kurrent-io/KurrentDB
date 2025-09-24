@@ -17,12 +17,11 @@ public class when_creating_a_projection_checkpoint {
 	private TestCheckpointManagerMessageHandler _readyHandler;
 	private IODispatcher _ioDispatcher;
 
-
 	[SetUp]
 	public void setup() {
-		_readyHandler = new TestCheckpointManagerMessageHandler();
-		_fakePublisher = new FakePublisher();
-		_ioDispatcher = new IODispatcher(_fakePublisher, _fakePublisher, true);
+		_readyHandler = new();
+		_fakePublisher = new();
+		_ioDispatcher = new(_fakePublisher, _fakePublisher, true);
 	}
 
 	[Test]

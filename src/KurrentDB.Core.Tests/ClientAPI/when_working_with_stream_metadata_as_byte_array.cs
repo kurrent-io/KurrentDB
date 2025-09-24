@@ -51,7 +51,7 @@ public class when_working_with_stream_metadata_as_byte_array<TLogFormat, TStream
 		Assert.AreEqual(stream, meta.Stream);
 		Assert.AreEqual(false, meta.IsStreamDeleted);
 		Assert.AreEqual(0, meta.MetastreamVersion);
-		Assert.AreEqual(new byte[0], meta.StreamMetadata);
+		Assert.AreEqual(Array.Empty<byte>(), meta.StreamMetadata);
 	}
 
 	[Test]
@@ -151,7 +151,7 @@ public class when_working_with_stream_metadata_as_byte_array<TLogFormat, TStream
 		Assert.AreEqual(stream, meta.Stream);
 		Assert.AreEqual(false, meta.IsStreamDeleted);
 		Assert.AreEqual(-1, meta.MetastreamVersion);
-		Assert.AreEqual(new byte[0], meta.StreamMetadata);
+		Assert.AreEqual(Array.Empty<byte>(), meta.StreamMetadata);
 	}
 
 	[Test]
@@ -168,6 +168,6 @@ public class when_working_with_stream_metadata_as_byte_array<TLogFormat, TStream
 		Assert.AreEqual(stream, meta.Stream);
 		Assert.AreEqual(true, meta.IsStreamDeleted);
 		Assert.AreEqual(EventNumber.DeletedStream, meta.MetastreamVersion);
-		Assert.AreEqual(new byte[0], meta.StreamMetadata);
+		Assert.AreEqual(Array.Empty<byte>(), meta.StreamMetadata);
 	}
 }

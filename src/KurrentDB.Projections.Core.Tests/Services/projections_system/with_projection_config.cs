@@ -16,14 +16,14 @@ public abstract class with_projection_config<TLogFormat, TStreamId> : with_proje
 		base.Given();
 
 		_projectionName = "test-projection";
-		_projectionSource = @"";
+		_projectionSource = "";
 		_checkpointsEnabled = true;
 		_trackEmittedStreams = true;
 		_emitEnabled = true;
 
-		NoStream(ProjectionNamesBuilder.ProjectionsStreamPrefix + _projectionName + "-checkpoint");
-		NoStream(ProjectionNamesBuilder.ProjectionsStreamPrefix + _projectionName + "-order");
-		NoStream(ProjectionNamesBuilder.ProjectionsStreamPrefix + _projectionName + "-emittedstreams");
+		NoStream($"{ProjectionNamesBuilder.ProjectionsStreamPrefix}{_projectionName}-checkpoint");
+		NoStream($"{ProjectionNamesBuilder.ProjectionsStreamPrefix}{_projectionName}-order");
+		NoStream($"{ProjectionNamesBuilder.ProjectionsStreamPrefix}{_projectionName}-emittedstreams");
 		AllWritesSucceed();
 	}
 }

@@ -6,11 +6,7 @@ using KurrentDB.Projections.Core.Messages;
 namespace KurrentDB.Projections.Core.Services.Processing.Partitioning;
 
 public class NoopStatePartitionSelector : StatePartitionSelector {
-	public override string GetStatePartition(EventReaderSubscriptionMessage.CommittedEventReceived @event) {
-		return "";
-	}
+	public override string GetStatePartition(EventReaderSubscriptionMessage.CommittedEventReceived @event) => "";
 
-	public override bool EventReaderBasePartitionDeletedIsSupported() {
-		return false;
-	}
+	public override bool EventReaderBasePartitionDeletedIsSupported() => false;
 }

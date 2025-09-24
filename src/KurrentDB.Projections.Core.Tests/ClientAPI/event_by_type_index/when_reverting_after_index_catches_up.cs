@@ -9,7 +9,8 @@ namespace KurrentDB.Projections.Core.Tests.ClientAPI.event_by_type_index;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class when_reverting_after_index_catches_up<TLogFormat, TStreamId> : specification_with_standard_projections_runnning<TLogFormat, TStreamId> {
+public class when_reverting_after_index_catches_up<TLogFormat, TStreamId>
+	: specification_with_standard_projections_runnning<TLogFormat, TStreamId> {
 	protected override bool GivenStandardProjectionsRunning() {
 		return false;
 	}
@@ -21,14 +22,15 @@ public class when_reverting_after_index_catches_up<TLogFormat, TStreamId> : spec
 		await PostEvent("stream-2", "type1", "{}");
 		await PostEvent("stream-2", "type2", "{}");
 		WaitIdle();
-		await PostProjection(@"
-fromAll().foreachStream().when({
-    $init: function(){return {a:0}},
-    type1: function(s,e){s.a++},
-    type2: function(s,e){s.a++},
-    $deleted: function(s,e){s.deleted=1;},
-}).outputState();
-");
+		await PostProjection(
+			"""
+			fromAll().foreachStream().when({
+			    $init: function(){return {a:0}},
+			    type1: function(s,e){s.a++},
+			    type2: function(s,e){s.a++},
+			    $deleted: function(s,e){s.deleted=1;},
+			}).outputState();
+			""");
 		await _manager.AbortAsync("test-projection", _admin);
 		WaitIdle();
 

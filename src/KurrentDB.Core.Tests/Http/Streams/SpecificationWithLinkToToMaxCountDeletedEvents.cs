@@ -22,18 +22,18 @@ public abstract class SpecificationWithLinkToToMaxCountDeletedEvents : HttpBehav
 			await conn.ConnectAsync();
 			await conn.AppendToStreamAsync(DeletedStreamName, ExpectedVersion.Any, creds,
 					new EventData(Guid.NewGuid(), "testing1", true, Encoding.UTF8.GetBytes("{'foo' : 4}"),
-						new byte[0]));
+						[]));
 			await conn.SetStreamMetadataAsync(DeletedStreamName, ExpectedVersion.Any,
 				new StreamMetadata(2, null, null, null, null));
 			await conn.AppendToStreamAsync(DeletedStreamName, ExpectedVersion.Any, creds,
 					new EventData(Guid.NewGuid(), "testing2", true, Encoding.UTF8.GetBytes("{'foo' : 4}"),
-						new byte[0]));
+						[]));
 			await conn.AppendToStreamAsync(DeletedStreamName, ExpectedVersion.Any, creds,
 					new EventData(Guid.NewGuid(), "testing3", true, Encoding.UTF8.GetBytes("{'foo' : 4}"),
-						new byte[0]));
+						[]));
 			await conn.AppendToStreamAsync(LinkedStreamName, ExpectedVersion.Any, creds,
 				new EventData(Guid.NewGuid(), SystemEventTypes.LinkTo, false,
-					Encoding.UTF8.GetBytes("0@" + DeletedStreamName), new byte[0]));
+					Encoding.UTF8.GetBytes("0@" + DeletedStreamName), []));
 		}
 	}
 }

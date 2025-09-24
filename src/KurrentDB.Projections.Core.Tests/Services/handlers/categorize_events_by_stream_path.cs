@@ -22,14 +22,13 @@ public static class categorize_events_by_stream_path {
 
 		[SetUp]
 		public void when() {
-			_handler = new CategorizeEventsByStreamPath("-", Console.WriteLine);
+			_handler = new("-", Console.WriteLine);
 			_handler.Initialize();
-			string sharedState;
 			_result = _handler.ProcessEvent(
 				"", CheckpointTag.FromPosition(0, 200, 150), null,
 				new ResolvedEvent(
 					"cat1-stream1", 10, "cat1-stream1", 10, false, new TFPos(200, 150), Guid.NewGuid(),
-					"event_type", true, "{}", "{}"), out _state, out sharedState, out _emittedEvents);
+					"event_type", true, "{}", "{}"), out _state, out _, out _emittedEvents);
 		}
 
 		[Test]
@@ -62,14 +61,13 @@ public static class categorize_events_by_stream_path {
 
 		[SetUp]
 		public void when() {
-			_handler = new CategorizeEventsByStreamPath("-", Console.WriteLine);
+			_handler = new("-", Console.WriteLine);
 			_handler.Initialize();
-			string sharedState;
 			_result = _handler.ProcessEvent(
 				"", CheckpointTag.FromPosition(0, 200, 150), null,
 				new ResolvedEvent(
 					"cat2-stream2", 20, "cat2-stream2", 20, true, new TFPos(200, 150), Guid.NewGuid(),
-					"$>", true, "10@cat1-stream1", "{}"), out _state, out sharedState, out _emittedEvents);
+					"$>", true, "10@cat1-stream1", "{}"), out _state, out _, out _emittedEvents);
 		}
 
 		[Test]
@@ -102,14 +100,13 @@ public static class categorize_events_by_stream_path {
 
 		[SetUp]
 		public void when() {
-			_handler = new CategorizeEventsByStreamPath("-", Console.WriteLine);
+			_handler = new("-", Console.WriteLine);
 			_handler.Initialize();
-			string sharedState;
 			_result = _handler.ProcessEvent(
 				"", CheckpointTag.FromPosition(0, 200, 150), null,
 				new ResolvedEvent(
 					"$$cat3-stream3", 20, "$$cat3-stream3", 20, true, new TFPos(200, 150), Guid.NewGuid(),
-					"$metadata", true, "{}", "{}"), out _state, out sharedState, out _emittedEvents);
+					"$metadata", true, "{}", "{}"), out _state, out _, out _emittedEvents);
 		}
 
 		[Test]
@@ -137,14 +134,13 @@ public static class categorize_events_by_stream_path {
 
 		[SetUp]
 		public void when() {
-			_handler = new CategorizeEventsByStreamPath("-", Console.WriteLine);
+			_handler = new("-", Console.WriteLine);
 			_handler.Initialize();
-			string sharedState;
 			_result = _handler.ProcessEvent(
 				"", CheckpointTag.FromPosition(0, 200, 150), null,
 				new ResolvedEvent(
 					"$$cat4-stream4", 20, "$$cat4-stream4", 20, true, new TFPos(200, 150), Guid.NewGuid(),
-					"$metadata", true, "{ \"$tb\": " + long.MaxValue + " }", "{}"), out _state, out sharedState, out _emittedEvents);
+					"$metadata", true, $"{{ \"$tb\": {long.MaxValue} }}", "{}"), out _state, out _, out _emittedEvents);
 		}
 
 		[Test]
@@ -185,14 +181,13 @@ public static class categorize_events_by_stream_path {
 
 		[SetUp]
 		public void when() {
-			_handler = new CategorizeEventsByStreamPath("-", Console.WriteLine);
+			_handler = new("-", Console.WriteLine);
 			_handler.Initialize();
-			string sharedState;
 			_result = _handler.ProcessEvent(
 				"", CheckpointTag.FromPosition(0, 200, 150), null,
 				new ResolvedEvent(
 					"cat5-stream5", 20, "cat5-stream5", 20, true, new TFPos(200, 150), Guid.NewGuid(),
-					"$streamDeleted", true, "{}", "{}"), out _state, out sharedState, out _emittedEvents);
+					"$streamDeleted", true, "{}", "{}"), out _state, out _, out _emittedEvents);
 		}
 
 		[Test]

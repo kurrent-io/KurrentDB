@@ -25,7 +25,7 @@ public class when_handling_comitted_event<TLogFormat, TStreamId> {
 	}
 
 	private void Given() {
-		_it = new KurrentDB.Core.Services.AwakeReaderService.AwakeService();
+		_it = new();
 
 		var recordFactory = LogFormatHelper<TLogFormat, TStreamId>.RecordFactory;
 		var streamId = LogFormatHelper<TLogFormat, TStreamId>.StreamId;
@@ -33,10 +33,10 @@ public class when_handling_comitted_event<TLogFormat, TStreamId> {
 
 		_eventRecord = new EventRecord(
 			10,
-			LogRecord.Prepare(
-				recordFactory, 500, Guid.NewGuid(), Guid.NewGuid(), 500, 0, streamId, 99, PrepareFlags.Data,
-				eventTypeId, new byte[0], null, DateTime.UtcNow), "Stream", "EventType");
-		_eventCommitted = new StorageMessage.EventCommitted(1000, _eventRecord, isTfEof: true);
+			recordFactory.Prepare(
+				500, Guid.NewGuid(), Guid.NewGuid(), 500, 0, streamId, 99, PrepareFlags.Data,
+				eventTypeId, [], null, DateTime.UtcNow), "Stream", "EventType");
+		_eventCommitted = new(1000, _eventRecord, isTfEof: true);
 	}
 
 	private void When() {

@@ -25,15 +25,12 @@ public class when_running_a_faulting_js_projection {
 			_state = @"{""count"": 0}";
 		}
 
-		[Test, Category(_projectionType)]
+		[Test, Category(ProjectionType)]
 		public void process_event_throws_javascript_exception() {
 			try {
-				string state;
-				EmittedEventEnvelope[] emittedEvents;
 				_stateHandler.ProcessEvent(
 					"", CheckpointTag.FromPosition(0, 10, 5), "stream1", "type1", "category", Guid.NewGuid(), 0,
-					"metadata",
-					@"{""a"":""b""}", out state, out emittedEvents);
+					"metadata", """{"a":"b"}""", out _, out _);
 			} catch (Exception ex) {
 				Assert.IsInstanceOf<JavaScriptException>(ex);
 				Assert.AreEqual("failed", ex.Message);
@@ -53,15 +50,12 @@ public class when_running_a_faulting_js_projection {
 			_state = @"{""count"": 0}";
 		}
 
-		[Test, Category(_projectionType)]
+		[Test, Category(ProjectionType)]
 		public void process_event_throws_javascript_exception() {
 			try {
-				string state;
-				EmittedEventEnvelope[] emittedEvents;
 				Assert.DoesNotThrow(() => _stateHandler.ProcessEvent(
 					"", CheckpointTag.FromPosition(0, 10, 5), "stream1", "type1", "category", Guid.NewGuid(), 0,
-					"metadata",
-					@"{""a"":""b""}", out state, out emittedEvents));
+					"metadata", """{"a":"b"}""", out _, out _));
 				_stateHandler.TransformStateToResult();
 			} catch (Exception ex) {
 				Assert.IsInstanceOf<JavaScriptException>(ex);

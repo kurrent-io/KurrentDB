@@ -8,41 +8,36 @@ using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Phases;
 using KurrentDB.Projections.Core.Services.Processing.WorkItems;
+using static KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage;
 
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection.checkpoint_manager;
 
-public class FakeCoreProjection : ICoreProjection,
-	ICoreProjectionForProcessingPhase,
-	IHandle<EventReaderSubscriptionMessage.ReaderAssignedReader> {
-	public readonly List<CoreProjectionProcessingMessage.CheckpointCompleted> _checkpointCompletedMessages =
-		new List<CoreProjectionProcessingMessage.CheckpointCompleted>();
+public class FakeCoreProjection
+	: ICoreProjection,
+		ICoreProjectionForProcessingPhase,
+		IHandle<EventReaderSubscriptionMessage.ReaderAssignedReader> {
+	public readonly List<CheckpointCompleted> _checkpointCompletedMessages = [];
+	public readonly List<CheckpointLoaded> _checkpointLoadedMessages = [];
+	public readonly List<PrerecordedEventsLoaded> _prerecordedEventsLoadedMessages = [];
+	private readonly List<Failed> _failedMessages = [];
 
-	public readonly List<CoreProjectionProcessingMessage.CheckpointLoaded> _checkpointLoadedMessages =
-		new List<CoreProjectionProcessingMessage.CheckpointLoaded>();
-
-	public readonly List<CoreProjectionProcessingMessage.PrerecordedEventsLoaded> _prerecordedEventsLoadedMessages =
-		new List<CoreProjectionProcessingMessage.PrerecordedEventsLoaded>();
-
-	public readonly List<CoreProjectionProcessingMessage.Failed> _failedMessages =
-		new List<CoreProjectionProcessingMessage.Failed>();
-
-	public void Handle(CoreProjectionProcessingMessage.CheckpointCompleted message) {
+	public void Handle(CheckpointCompleted message) {
 		_checkpointCompletedMessages.Add(message);
 	}
 
-	public void Handle(CoreProjectionProcessingMessage.CheckpointLoaded message) {
+	public void Handle(CheckpointLoaded message) {
 		_checkpointLoadedMessages.Add(message);
 	}
 
-	public void Handle(CoreProjectionProcessingMessage.RestartRequested message) {
+	public void Handle(RestartRequested message) {
 		throw new NotImplementedException();
 	}
 
-	public void Handle(CoreProjectionProcessingMessage.Failed message) {
+	public void Handle(Failed message) {
 		_failedMessages.Add(message);
 	}
 
-	public void Handle(CoreProjectionProcessingMessage.PrerecordedEventsLoaded message) {
+	public void Handle(PrerecordedEventsLoaded message) {
 		_prerecordedEventsLoadedMessages.Add(message);
 	}
 
@@ -70,11 +65,10 @@ public class FakeCoreProjection : ICoreProjection,
 		throw new NotImplementedException();
 	}
 
-	public CheckpointTag LastProcessedEventPosition {
-		get { throw new NotImplementedException(); }
-	}
+	public CheckpointTag LastProcessedEventPosition => throw new NotImplementedException();
 
 	public int SubscribedInvoked { get; set; }
+
 	public int CompletePhaseInvoked { get; set; }
 
 	public void Subscribed() {

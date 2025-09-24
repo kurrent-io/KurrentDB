@@ -27,14 +27,14 @@ public class when_running_and_events_are_indexed<TLogFormat, TStreamId> : specif
 
 	protected override async Task When() {
 		await base.When();
-		await PostProjection(@"
-fromCategory('stream').foreachStream().when({
-    $init: function(){return {}},
-    type1: function(s,e){s.a=(s.a||0) + 1},
-    type2: function(s,e){s.a=(s.a||0) + 1},
-    $deleted: function(s,e){s.deleted=1},
-}).outputState();
-");
+		await PostProjection("""
+		                     fromCategory('stream').foreachStream().when({
+		                         $init: function(){return {}},
+		                         type1: function(s,e){s.a=(s.a||0) + 1},
+		                         type2: function(s,e){s.a=(s.a||0) + 1},
+		                         $deleted: function(s,e){s.deleted=1},
+		                     }).outputState();
+		                     """);
 		WaitIdle();
 	}
 

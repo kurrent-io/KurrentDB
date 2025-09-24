@@ -21,20 +21,17 @@ public class stream_position_tagger {
 	[SetUp]
 	public void setup() {
 		_zeroEvent = ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
-			Guid.NewGuid(), new TFPos(10, 0), "stream1", 0, false, Guid.NewGuid(), "StreamCreated", false,
-			new byte[0], new byte[0]);
+			Guid.NewGuid(), new TFPos(10, 0), "stream1", 0, false, Guid.NewGuid(), "StreamCreated", false, [], []);
 		_firstEvent = ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
-			Guid.NewGuid(), new TFPos(30, 20), "stream1", 1, false, Guid.NewGuid(), "Data", true,
-			Helper.UTF8NoBom.GetBytes("{}"), new byte[0]);
+			Guid.NewGuid(), new TFPos(30, 20), "stream1", 1, false, Guid.NewGuid(), "Data", true, Helper.UTF8NoBom.GetBytes("{}"), []);
 		_secondEvent = ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
-			Guid.NewGuid(), new TFPos(50, 40), "stream1", 2, false, Guid.NewGuid(), "Data", true,
-			Helper.UTF8NoBom.GetBytes("{}"), new byte[0]);
+			Guid.NewGuid(), new TFPos(50, 40), "stream1", 2, false, Guid.NewGuid(), "Data", true, Helper.UTF8NoBom.GetBytes("{}"), []);
 	}
 
 	[Test]
 	public void can_be_created() {
 		var t = new StreamPositionTagger(0, "stream1");
-		new PositionTracker(t);
+		_ = new PositionTracker(t);
 	}
 
 	[Test]
@@ -65,7 +62,6 @@ public class stream_position_tagger {
 		var result = t.IsMessageAfterCheckpointTag(CheckpointTag.FromStreamPosition(0, "stream1", 1), _firstEvent);
 		Assert.IsFalse(result);
 	}
-
 
 	[Test]
 	public void null_stream_throws_argument_null_exception() {
@@ -106,8 +102,7 @@ public class stream_position_tagger {
 	public void can_adjust_multi_stream_position_tag() {
 		var t = new StreamPositionTagger(0, "stream1");
 		var tag = CheckpointTag.FromStreamPosition(0, "stream1", 1);
-		var original =
-			CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> { { "stream1", 1 }, { "stream2", 2 } });
+		var original = CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> { { "stream1", 1 }, { "stream2", 2 } });
 		Assert.AreEqual(tag, t.AdjustTag(original));
 	}
 
@@ -115,7 +110,6 @@ public class stream_position_tagger {
 	public void zero_position_tag_is_before_first_event_possible() {
 		var t = new StreamPositionTagger(0, "stream1");
 		var zero = t.MakeZeroCheckpointTag();
-
 		var zeroFromEvent = t.MakeCheckpointTag(zero, _zeroEvent);
 
 		Assert.IsTrue(zeroFromEvent > zero);

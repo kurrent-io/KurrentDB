@@ -11,7 +11,7 @@ public class with_deleted_notification_handled : TestFixtureWithInterpretedProje
 		_projection = @"fromAll().foreachStream().when({
                 $deleted: function(){}
             })";
-		_state = @"{}";
+		_state = "{}";
 	}
 
 	[Test]

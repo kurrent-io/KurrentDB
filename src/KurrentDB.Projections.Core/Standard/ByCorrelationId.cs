@@ -18,10 +18,10 @@ namespace KurrentDB.Projections.Core.Standard;
 public class ByCorrelationId : IProjectionStateHandler {
 	private readonly string _corrIdStreamPrefix;
 
+	// ReSharper disable once UnusedParameter.Local
 	public ByCorrelationId(string source, Action<string, object[]> logger) {
 		if (!string.IsNullOrWhiteSpace(source)) {
-			string correlationIdProperty;
-			if (!TryParseCorrelationIdProperty(source, out correlationIdProperty)) {
+			if (!TryParseCorrelationIdProperty(source, out var correlationIdProperty)) {
 				throw new InvalidOperationException(
 					"Could not parse projection source. Please make sure the source is a valid JSON string with a property: 'correlationIdProperty' having a string value");
 			}
@@ -32,7 +32,7 @@ public class ByCorrelationId : IProjectionStateHandler {
 		_corrIdStreamPrefix = "$bc-";
 	}
 
-	private bool TryParseCorrelationIdProperty(string source, out string correlationIdProperty) {
+	private static bool TryParseCorrelationIdProperty(string source, out string correlationIdProperty) {
 		correlationIdProperty = null;
 		try {
 			var obj = JObject.Parse(source);
@@ -40,17 +40,12 @@ public class ByCorrelationId : IProjectionStateHandler {
 			if (prop != null) {
 				correlationIdProperty = prop;
 				return true;
-			} else {
-				return false;
 			}
+
+			return false;
 		} catch (Exception) {
 			return false;
 		}
-	}
-
-	public void ConfigureSourceProcessingStrategy(SourceDefinitionBuilder builder) {
-		builder.FromAll();
-		builder.AllEvents();
 	}
 
 	public void Load(string state) {
@@ -71,8 +66,13 @@ public class ByCorrelationId : IProjectionStateHandler {
 	}
 
 	public bool ProcessEvent(
-		string partition, CheckpointTag eventPosition, string category1, ResolvedEvent data,
-		out string newState, out string newSharedState, out EmittedEventEnvelope[] emittedEvents) {
+		string partition,
+		CheckpointTag eventPosition,
+		string category1,
+		ResolvedEvent data,
+		out string newState,
+		out string newSharedState,
+		out EmittedEventEnvelope[] emittedEvents) {
 		newSharedState = null;
 		emittedEvents = null;
 		newState = null;
@@ -97,38 +97,37 @@ public class ByCorrelationId : IProjectionStateHandler {
 		if (correlationId == null)
 			return false;
 
-		string linkTarget;
-		if (data.EventType == SystemEventTypes.LinkTo)
-			linkTarget = data.Data;
-		else
-			linkTarget = data.EventSequenceNumber + "@" + data.EventStreamId;
+		var linkTarget = data.EventType == SystemEventTypes.LinkTo ? data.Data : $"{data.EventSequenceNumber}@{data.EventStreamId}";
 
-		var metadataDict = new Dictionary<string, string>();
-		metadataDict.Add("$eventTimestamp", "\"" + data.Timestamp.ToString("yyyy-MM-ddTHH:mm:ss.ffffffZ") + "\"");
+		var metadataDict = new Dictionary<string, string> { { "$eventTimestamp", $"\"{data.Timestamp:yyyy-MM-ddTHH:mm:ss.ffffffZ}\"" } };
 		if (data.EventType == SystemEventTypes.LinkTo) {
-			JObject linkObj = new JObject();
-			linkObj.Add("eventId", data.EventId);
-			linkObj.Add("metadata", metadata);
+			JObject linkObj = new JObject {
+				{ "eventId", data.EventId },
+				{ "metadata", metadata }
+			};
 			metadataDict.Add("$link", linkObj.ToJson());
 		}
 
 		var linkMetadata = new ExtraMetaData(metadataDict);
 
-		emittedEvents = new[] {
-			new EmittedEventEnvelope(
-				new EmittedDataEvent(
-					_corrIdStreamPrefix + correlationId, Guid.NewGuid(), "$>", false,
-					linkTarget,
-					linkMetadata,
-					eventPosition,
-					expectedTag: null))
-		};
-
+		emittedEvents = [
+			new(new EmittedDataEvent(
+				_corrIdStreamPrefix + correlationId,
+				Guid.NewGuid(),
+				"$>",
+				false,
+				linkTarget,
+				linkMetadata,
+				eventPosition,
+				expectedTag: null))
+		];
 
 		return true;
 	}
 
-	public bool ProcessPartitionCreated(string partition, CheckpointTag createPosition, ResolvedEvent data,
+	public bool ProcessPartitionCreated(string partition,
+		CheckpointTag createPosition,
+		ResolvedEvent data,
 		out EmittedEventEnvelope[] emittedEvents) {
 		emittedEvents = null;
 		return false;
@@ -147,5 +146,10 @@ public class ByCorrelationId : IProjectionStateHandler {
 
 	public IQuerySources GetSourceDefinition() {
 		return SourceDefinitionBuilder.From(ConfigureSourceProcessingStrategy);
+
+		static void ConfigureSourceProcessingStrategy(SourceDefinitionBuilder builder) {
+			builder.FromAll();
+			builder.AllEvents();
+		}
 	}
 }

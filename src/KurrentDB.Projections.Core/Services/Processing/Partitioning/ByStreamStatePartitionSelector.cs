@@ -12,8 +12,7 @@ public class ByStreamStatePartitionSelector : StatePartitionSelector {
 	public override string GetStatePartition(EventReaderSubscriptionMessage.CommittedEventReceived @event) {
 		if (@event.Data.ResolvedLinkTo && @event.Data.PositionMetadata != null) {
 			var extra = @event.Data.PositionMetadata.ParseCheckpointExtraJson();
-			JToken v;
-			if (extra != null && extra.TryGetValue("$o", out v)) {
+			if (extra != null && extra.TryGetValue("$o", out var v)) {
 				//TODO: handle exceptions properly
 				var originalStream = (string)((JValue)v).Value;
 				return originalStream;
@@ -22,11 +21,9 @@ public class ByStreamStatePartitionSelector : StatePartitionSelector {
 
 		var eventStreamId = @event.Data.EventStreamId;
 		return SystemStreams.IsMetastream(eventStreamId)
-			? eventStreamId.Substring("$$".Length)
+			? eventStreamId["$$".Length..]
 			: eventStreamId;
 	}
 
-	public override bool EventReaderBasePartitionDeletedIsSupported() {
-		return true;
-	}
+	public override bool EventReaderBasePartitionDeletedIsSupported() => true;
 }

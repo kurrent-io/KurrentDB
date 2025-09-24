@@ -19,7 +19,7 @@ namespace KurrentDB.Projections.Core.Tests.Services.projections_manager.when_rea
 
 [TestFixture, TestFixtureSource(typeof(SystemProjectionNames))]
 public class with_no_stream_and_intialize_system_projections<TLogFormat, TStreamId> : TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId> {
-	private string _systemProjectionName;
+	private readonly string _systemProjectionName;
 
 	public with_no_stream_and_intialize_system_projections(string projectionName) {
 		_systemProjectionName = projectionName;

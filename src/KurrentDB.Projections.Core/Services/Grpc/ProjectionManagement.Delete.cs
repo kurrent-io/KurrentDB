@@ -14,7 +14,8 @@ using KurrentDB.Projections.Core.Messages;
 namespace EventStore.Projections.Core.Services.Grpc;
 
 internal partial class ProjectionManagement {
-	private static readonly Operation DeleteOperation = new Operation(Operations.Projections.Delete);
+	private static readonly Operation DeleteOperation = new(Operations.Projections.Delete);
+
 	public override async Task<DeleteResp> Delete(DeleteReq request, ServerCallContext context) {
 		var deletedSource = new TaskCompletionSource<bool>();
 		var options = request.Options;
@@ -23,6 +24,7 @@ internal partial class ProjectionManagement {
 		if (!await _authorizationProvider.CheckAccessAsync(user, DeleteOperation, context.CancellationToken)) {
 			throw RpcExceptions.AccessDenied();
 		}
+
 		var name = options.Name;
 		var deleteCheckpointStream = options.DeleteCheckpointStream;
 		var deleteStateStream = options.DeleteStateStream;

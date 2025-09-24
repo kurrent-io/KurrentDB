@@ -15,7 +15,7 @@ public abstract class TestFixtureWithFeedReaderService<TLogFormat, TStreamId> : 
 	}
 
 	protected override void GivenAdditionalServices() {
-		_feedReaderService = new FeedReaderService(_subscriptionDispatcher, _timeProvider);
+		_feedReaderService = new FeedReaderService(SubscriptionDispatcher, _timeProvider);
 		_bus.Subscribe(_feedReaderService);
 	}
 }

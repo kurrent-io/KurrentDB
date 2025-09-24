@@ -3,15 +3,15 @@
 
 using System.Text;
 using KurrentDB.Core.Data;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.TransactionLog.LogRecords;
+using static KurrentDB.Core.Messages.ClientMessage;
 
 namespace KurrentDB.Projections.Core.XUnit.Tests.TestHelpers;
 
 // TODO: Flesh out this helper as more tests need it
 public class ExistingStreamsHelper {
 	private readonly Dictionary<string, List<ExistingEvent>> _streams = new();
-	private readonly List<string> _hardDeletedStreams = new();
+	private readonly List<string> _hardDeletedStreams = [];
 	private long _lastPosition;
 
 	public void AddEvents(params ExistingEvent[] newEvents) {
@@ -46,8 +46,8 @@ public class ExistingStreamsHelper {
 			: EventNumber.Invalid;
 	}
 
-	public ClientMessage.ReadStreamEventsBackwardCompleted ReadStreamBackward(
-		ClientMessage.ReadStreamEventsBackward request) {
+	public ReadStreamEventsBackwardCompleted ReadStreamBackward(
+		ReadStreamEventsBackward request) {
 		if (_hardDeletedStreams.Contains(request.EventStreamId)) {
 			return CreateReadBackwardCompleted(request, ReadStreamResult.StreamDeleted, []);
 		}
@@ -71,10 +71,9 @@ public class ExistingStreamsHelper {
 		return CreateReadBackwardCompleted(request, ReadStreamResult.Success, resolvedEvents.ToArray());
 	}
 
-	private ClientMessage.ReadStreamEventsBackwardCompleted CreateReadBackwardCompleted(
-		ClientMessage.ReadStreamEventsBackward request, ReadStreamResult result, ResolvedEvent[] events) {
+	private ReadStreamEventsBackwardCompleted CreateReadBackwardCompleted(ReadStreamEventsBackward request, ReadStreamResult result, ResolvedEvent[] events) {
 		if (result is ReadStreamResult.NoStream) {
-			return new ClientMessage.ReadStreamEventsBackwardCompleted(request.CorrelationId, request.EventStreamId,
+			return new(request.CorrelationId, request.EventStreamId,
 				request.FromEventNumber, request.MaxCount, result, [], StreamMetadata.Empty, false,
 				"", -1, EventNumber.Invalid, true, _lastPosition);
 		}
@@ -85,35 +84,30 @@ public class ExistingStreamsHelper {
 		}
 
 		var isEof = nextEventNumber == 0;
-		return new ClientMessage.ReadStreamEventsBackwardCompleted(
+		return new(
 			request.CorrelationId, request.EventStreamId, request.FromEventNumber, request.MaxCount,
 			ReadStreamResult.Success, events.ToArray(), StreamMetadata.Empty, false, string.Empty,
 			nextEventNumber, GetLastEventNumberForStream(request.EventStreamId), isEof, _lastPosition);
 	}
 
-	public class ExistingEvent {
-		public ExistingEvent(string eventStreamId, long eventNumber, long position, string data,
-			string metadata = "", string eventType = "test-event") {
-			EventStreamId = eventStreamId;
-			EventNumber = eventNumber;
-			PreparePosition = position;
-			Data = data;
-			Metadata = metadata;
-			EventType = eventType;
-		}
-
-		public string EventStreamId { get; }
-		public string EventType { get; }
-		public long EventNumber { get; }
-		public long PreparePosition { get; }
-		public string Data { get; }
-		public string Metadata { get; }
+	public class ExistingEvent(
+		string eventStreamId,
+		long eventNumber,
+		long position,
+		string data,
+		string metadata = "",
+		string eventType = "test-event") {
+		public string EventStreamId { get; } = eventStreamId;
+		public string EventType { get; } = eventType;
+		public long EventNumber { get; } = eventNumber;
+		public long PreparePosition { get; } = position;
+		public string Data { get; } = data;
+		public string Metadata { get; } = metadata;
 
 		public EventRecord ToEventRecord(Guid correlationId) =>
-			new(EventNumber, PreparePosition, correlationId, Guid.NewGuid(), transactionPosition: 0,
-				transactionOffset: 0,
+			new(EventNumber, PreparePosition, correlationId, Guid.NewGuid(),
+				transactionPosition: 0, transactionOffset: 0,
 				EventStreamId, EventNumber, DateTime.Now, PrepareFlags.IsCommitted, EventType,
 				Encoding.UTF8.GetBytes(Data), Encoding.UTF8.GetBytes(Metadata));
 	}
 }
-

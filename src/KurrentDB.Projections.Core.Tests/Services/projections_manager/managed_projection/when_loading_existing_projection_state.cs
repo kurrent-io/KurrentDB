@@ -19,9 +19,10 @@ namespace KurrentDB.Projections.Core.Tests.Services.projections_manager.managed_
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class when_loading_existing_projection_state_with_no_projection_subsystem_version<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
+public class when_loading_existing_projection_state_with_no_projection_subsystem_version<TLogFormat, TStreamId>
+	: TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private new ITimeProvider _timeProvider;
-	private string _projectionName = Guid.NewGuid().ToString();
+	private readonly string _projectionName = Guid.NewGuid().ToString();
 
 	private ManagedProjection _mp;
 
@@ -29,7 +30,7 @@ public class when_loading_existing_projection_state_with_no_projection_subsystem
 		var persistedState = new ManagedProjection.PersistedState {
 			Enabled = true,
 			HandlerType = "JS",
-			Query = @"log(1);",
+			Query = "log(1);",
 			Mode = ProjectionMode.Continuous,
 			EmitEnabled = true,
 			CheckpointsDisabled = true,
@@ -37,8 +38,8 @@ public class when_loading_existing_projection_state_with_no_projection_subsystem
 			Version = -1,
 			RunAs = SerializedRunAs.SerializePrincipal(ProjectionManagementMessage.RunAs.Anonymous)
 		};
-		ExistingEvent(ProjectionNamesBuilder.ProjectionsStreamPrefix + _projectionName,
-			ProjectionEventTypes.ProjectionUpdated, "", persistedState.ToJson());
+		ExistingEvent($"{ProjectionNamesBuilder.ProjectionsStreamPrefix}{_projectionName}", ProjectionEventTypes.ProjectionUpdated, "",
+			persistedState.ToJson());
 
 		_timeProvider = new FakeTimeProvider();
 		_mp = new ManagedProjection(
@@ -52,17 +53,9 @@ public class when_loading_existing_projection_state_with_no_projection_subsystem
 			_writeDispatcher,
 			_readDispatcher,
 			_bus,
-			_timeProvider, new RequestResponseDispatcher
-				<CoreProjectionManagementMessage.GetState, CoreProjectionStatusMessage.StateReport>(
-					_bus,
-					v => v.CorrelationId,
-					v => v.CorrelationId,
-					_bus), new RequestResponseDispatcher
-				<CoreProjectionManagementMessage.GetResult, CoreProjectionStatusMessage.ResultReport>(
-					_bus,
-					v => v.CorrelationId,
-					v => v.CorrelationId,
-					_bus),
+			_timeProvider,
+			new(_bus, v => v.CorrelationId, v => v.CorrelationId, _bus),
+			new(_bus, v => v.CorrelationId, v => v.CorrelationId, _bus),
 			_ioDispatcher,
 			TimeSpan.FromMinutes(Opts.ProjectionsQueryExpiryDefault));
 	}
@@ -76,9 +69,10 @@ public class when_loading_existing_projection_state_with_no_projection_subsystem
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class when_loading_existing_projection_state_with_projection_subsystem_version<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
+public class when_loading_existing_projection_state_with_projection_subsystem_version<TLogFormat, TStreamId>
+	: TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private new ITimeProvider _timeProvider;
-	private string _projectionName = Guid.NewGuid().ToString();
+	private readonly string _projectionName = Guid.NewGuid().ToString();
 
 	private ManagedProjection _mp;
 
@@ -86,7 +80,7 @@ public class when_loading_existing_projection_state_with_projection_subsystem_ve
 		var persistedState = new ManagedProjection.PersistedState {
 			Enabled = true,
 			HandlerType = "JS",
-			Query = @"log(1);",
+			Query = "log(1);",
 			Mode = ProjectionMode.Continuous,
 			EmitEnabled = true,
 			CheckpointsDisabled = true,
@@ -95,8 +89,8 @@ public class when_loading_existing_projection_state_with_projection_subsystem_ve
 			RunAs = SerializedRunAs.SerializePrincipal(ProjectionManagementMessage.RunAs.Anonymous),
 			ProjectionSubsystemVersion = 4
 		};
-		ExistingEvent(ProjectionNamesBuilder.ProjectionsStreamPrefix + _projectionName,
-			ProjectionEventTypes.ProjectionUpdated, "", persistedState.ToJson());
+		ExistingEvent($"{ProjectionNamesBuilder.ProjectionsStreamPrefix}{_projectionName}", ProjectionEventTypes.ProjectionUpdated, "",
+			persistedState.ToJson());
 
 		_timeProvider = new FakeTimeProvider();
 		_mp = new ManagedProjection(
@@ -110,17 +104,9 @@ public class when_loading_existing_projection_state_with_projection_subsystem_ve
 			_writeDispatcher,
 			_readDispatcher,
 			_bus,
-			_timeProvider, new RequestResponseDispatcher
-				<CoreProjectionManagementMessage.GetState, CoreProjectionStatusMessage.StateReport>(
-					_bus,
-					v => v.CorrelationId,
-					v => v.CorrelationId,
-					_bus), new RequestResponseDispatcher
-				<CoreProjectionManagementMessage.GetResult, CoreProjectionStatusMessage.ResultReport>(
-					_bus,
-					v => v.CorrelationId,
-					v => v.CorrelationId,
-					_bus),
+			_timeProvider,
+			new(_bus, v => v.CorrelationId, v => v.CorrelationId, _bus),
+			new(_bus, v => v.CorrelationId, v => v.CorrelationId, _bus),
 			_ioDispatcher,
 			TimeSpan.FromMinutes(Opts.ProjectionsQueryExpiryDefault));
 	}

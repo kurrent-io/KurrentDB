@@ -33,7 +33,7 @@ public class
 				new ResolvedEvent(
 					"/event_category/1", -1, "/event_category/1", -1, false, new TFPos(120, 110),
 					_causingEventId, "no_state_emit1_type", false, "data",
-					"metadata"), _subscriptionId, 0);
+					"metadata"), SubscriptionId, 0);
 		_bus.Publish(committedEventReceived);
 	}
 

@@ -23,26 +23,22 @@ public class when_running_a_js_projection_emitting_metadata : TestFixtureWithInt
             ";
 	}
 
-	[Test, Category(_projectionType)]
+	[Test, Category(ProjectionType)]
 	public void process_event_returns_true() {
-		string state;
-		EmittedEventEnvelope[] emittedEvents;
 		var result = _stateHandler.ProcessEvent(
 			"", CheckpointTag.FromPosition(0, 20, 10), "stream1", "type1", "category", Guid.NewGuid(), 0,
 			"metadata",
-			@"{""a"":""b""}", out state, out emittedEvents);
+			@"{""a"":""b""}", out _, out _);
 
 		Assert.IsTrue(result);
 	}
 
-	[Test, Category(_projectionType)]
+	[Test, Category(ProjectionType)]
 	public void process_event_returns_emitted_event() {
-		string state;
-		EmittedEventEnvelope[] emittedEvents;
 		_stateHandler.ProcessEvent(
 			"", CheckpointTag.FromPosition(0, 20, 10), "stream1", "type1", "category", Guid.NewGuid(), 0,
 			"metadata",
-			@"{""a"":""b""}", out state, out emittedEvents);
+			@"{""a"":""b""}", out _, out var emittedEvents);
 
 		Assert.IsNotNull(emittedEvents);
 		Assert.AreEqual(1, emittedEvents.Length);
@@ -54,15 +50,14 @@ public class when_running_a_js_projection_emitting_metadata : TestFixtureWithInt
 		Assert.AreEqual(2, extraMetaData.Length);
 	}
 
-	[Test, Category(_projectionType), Category("Manual"), Explicit]
+	[Test, Category(ProjectionType), Category("Manual"), Explicit]
 	public void can_pass_though_millions_of_events() {
 		int i;
 		var sw = Stopwatch.StartNew();
 		for (i = 0; i < 100000000; i++) {
-			EmittedEventEnvelope[] emittedEvents;
 			_stateHandler.ProcessEvent(
 				"", CheckpointTag.FromPosition(0, i * 10 + 20, i * 10 + 10), "stream" + i, "type" + i, "category",
-				Guid.NewGuid(), i, "metadata", @"{""a"":""" + i + @"""}", out _, out emittedEvents);
+				Guid.NewGuid(), i, "metadata", @"{""a"":""" + i + @"""}", out _, out var emittedEvents);
 
 			Assert.IsNotNull(emittedEvents);
 			Assert.AreEqual(1, emittedEvents.Length);

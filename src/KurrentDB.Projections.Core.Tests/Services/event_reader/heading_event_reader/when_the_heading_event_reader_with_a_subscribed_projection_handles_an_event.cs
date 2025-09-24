@@ -18,7 +18,7 @@ public class when_the_heading_event_reader_with_a_subscribed_projection_handles_
 	TestFixtureWithReadWriteDispatchers {
 	private HeadingEventReader _point;
 	private Exception _exception;
-	private Guid _distibutionPointCorrelationId;
+	private Guid _distributionPointCorrelationId;
 	private FakeReaderSubscription _subscription;
 	private Guid _projectionSubscriptionId;
 
@@ -33,28 +33,26 @@ public class when_the_heading_event_reader_with_a_subscribed_projection_handles_
 
 		Assume.That(_exception == null);
 
-		_distibutionPointCorrelationId = Guid.NewGuid();
+		_distributionPointCorrelationId = Guid.NewGuid();
 		_point.Start(
-			_distibutionPointCorrelationId,
-			new TransactionFileEventReader(_bus, _distibutionPointCorrelationId, null, new TFPos(0, -1),
-				new RealTimeProvider()));
-		_point.Handle(
-			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
-				_distibutionPointCorrelationId, new TFPos(20, 10), "stream", 10, false, Guid.NewGuid(),
-				"type", false, new byte[0], new byte[0]));
-		_point.Handle(
-			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
-				_distibutionPointCorrelationId, new TFPos(40, 30), "stream", 11, false, Guid.NewGuid(),
-				"type", false, new byte[0], new byte[0]));
+			_distributionPointCorrelationId,
+			new TransactionFileEventReader(_bus, _distributionPointCorrelationId, null, new TFPos(0, -1), new RealTimeProvider()));
+		Call(new(20, 10), 10);
+		Call(new(40, 30), 11);
 		_subscription = new FakeReaderSubscription();
 		_projectionSubscriptionId = Guid.NewGuid();
 		_point.TrySubscribe(_projectionSubscriptionId, _subscription, 30);
-		_point.Handle(
-			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
-				_distibutionPointCorrelationId, new TFPos(60, 50), "stream", 12, false, Guid.NewGuid(),
-				"type", false, new byte[0], new byte[0]));
-	}
+		Call(new(60, 50), 12);
+		return;
 
+		void Call(TFPos pos, int number) {
+			_point.Handle(
+				ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
+					_distributionPointCorrelationId, pos, "stream", number, false, Guid.NewGuid(),
+					"type", false, [], []));
+
+		}
+	}
 
 	[Test]
 	public void projection_receives_events_after_the_subscription_point() {

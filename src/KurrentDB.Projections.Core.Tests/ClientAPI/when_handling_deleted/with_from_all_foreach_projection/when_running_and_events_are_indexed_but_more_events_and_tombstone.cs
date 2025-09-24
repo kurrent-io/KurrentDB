@@ -42,14 +42,14 @@ public class when_running_and_events_are_indexed_but_more_events_and_tombstone<T
 
 	protected override async Task When() {
 		await base.When();
-		await PostProjection(@"
-fromAll().foreachStream().when({
-    $init: function(){return {a:0}},
-    type1: function(s,e){s.a++},
-    type2: function(s,e){},
-    $deleted: function(s,e){s.deleted=1},
-}).outputState();
-");
+		await PostProjection("""
+		                     fromAll().foreachStream().when({
+		                         $init: function(){return {a:0}},
+		                         type1: function(s,e){s.a++},
+		                         type2: function(s,e){},
+		                         $deleted: function(s,e){s.deleted=1},
+		                     }).outputState();
+		                     """);
 		WaitIdle();
 	}
 

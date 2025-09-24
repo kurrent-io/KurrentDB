@@ -22,19 +22,22 @@ public class when_requesting_partition_state_from_a_stopped_foreach_projection<T
 			null, "test-projection");
 		ExistingEvent(
 			"$projections-test-projection", ProjectionEventTypes.ProjectionUpdated, null,
-			@"{""Query"":""fromCategory('test').foreachStream().when({'e': function(s,e){}})"",
-                    ""Mode"":""3"", ""Enabled"":false, ""HandlerType"":""JS"",
-                    ""SourceDefinition"":{
-                        ""AllEvents"":true,
-                        ""AllStreams"":false,
-                        ""Streams"":[""$ce-test""]
-                    }
-                }");
+			"""
+			{
+			  "Query":"fromCategory('test').foreachStream().when({'e': function(s,e){}})",
+			  "Mode":"3", "Enabled":false, "HandlerType":"JS",
+			  "SourceDefinition":{
+			    "AllEvents":true,
+			    "AllStreams":false,
+			    "Streams":["$ce-test"]
+			  }
+			}
+			""");
 		ExistingEvent("$projections-test-projection-a-checkpoint", ProjectionEventTypes.PartitionCheckpoint,
-			@"{""s"":{""$ce-test"": 9}}", @"{""data"":1}");
+			"""{"s":{"$ce-test": 9}}""", """{"data":1}""");
 		NoStream("$projections-test-projection-b-checkpoint");
 		ExistingEvent("$projections-test-projection-checkpoint", ProjectionEventTypes.ProjectionCheckpoint,
-			@"{""s"":{""$ce-test"": 10}}", @"{}");
+			"""{"s":{"$ce-test": 10}}""", "{}");
 		AllWritesSucceed();
 	}
 
@@ -48,23 +51,18 @@ public class when_requesting_partition_state_from_a_stopped_foreach_projection<T
 
 	[Test]
 	public void the_projection_state_can_be_retrieved() {
-		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetState(_bus, _projectionName, "a"));
+		_manager.Handle(new ProjectionManagementMessage.Command.GetState(_bus, _projectionName, "a"));
 		_queue.Process();
 
-		Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionState>().Count());
-
-		var first = _consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionState>().First();
+		var first = _consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionState>().Single();
 		Assert.AreEqual(_projectionName, first.Name);
-		Assert.AreEqual(@"{""data"":1}", first.State);
+		Assert.AreEqual("""{"data":1}""", first.State);
 
-		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetState(_bus, _projectionName, "b"));
+		_manager.Handle(new ProjectionManagementMessage.Command.GetState(_bus, _projectionName, "b"));
 		_queue.Process();
 
 		Assert.AreEqual(2, _consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionState>().Count());
-		var second = _consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionState>().Skip(1)
-			.First();
+		var second = _consumer.HandledMessages.OfType<ProjectionManagementMessage.ProjectionState>().Skip(1).First();
 		Assert.AreEqual(_projectionName, second.Name);
 		Assert.AreEqual("", second.State);
 	}

@@ -74,17 +74,11 @@ fromCategory(""user"")
 ");
 	}
 
-	protected override bool GivenInitializeSystemProjections() {
-		return true;
-	}
+	protected override bool GivenInitializeSystemProjections() => true;
 
-	protected override bool GivenStartSystemProjections() {
-		return true;
-	}
+	protected override bool GivenStartSystemProjections() => true;
 
-	protected override string GivenQuery() {
-		return "";
-	}
+	protected override string GivenQuery() => "";
 
 	protected override IEnumerable<string> GivenOtherProjections() {
 		yield return @"

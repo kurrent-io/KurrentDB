@@ -79,9 +79,8 @@ public abstract class with_index_committer_service<TLogFormat, TStreamId> {
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
 		return LogRecord.Prepare(recordFactory, logPosition, Guid.NewGuid(), Guid.NewGuid(), transactionPosition, 0,
 			streamId, -1, PrepareFlags.None, eventTypeId,
-			new byte[10], new byte[0]);
+			new byte[10], Array.Empty<byte>());
 	}
-
 
 	protected void AddPendingCommit(long transactionPosition, long logPosition, long postPosition = -1) {
 		postPosition = postPosition == -1 ? logPosition : postPosition;

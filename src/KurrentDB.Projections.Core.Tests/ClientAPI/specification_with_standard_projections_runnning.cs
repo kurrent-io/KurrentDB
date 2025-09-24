@@ -44,10 +44,8 @@ public abstract class specification_with_standard_projections_runnning<TLogForma
 			Opts.FaultOutOfOrderProjectionsDefault,
 			500,
 			250, Opts.MaxProjectionStateSizeDefault);
-		_projections = new ProjectionsSubsystem(configuration);
-		_node = new MiniNode<TLogFormat, TStreamId>(
-			PathName, inMemDb: true,
-			subsystems: [_projections]);
+		_projections = new(configuration);
+		_node = new(PathName, inMemDb: true, subsystems: [_projections]);
 		_projectionsCreated = SystemProjections.Created(_projections.LeaderInputBus);
 
 		await _node.Start();
@@ -128,8 +126,7 @@ public abstract class specification_with_standard_projections_runnning<TLogForma
 
 	[OneTimeTearDown]
 	public override async Task TestFixtureTearDown() {
-		if (_conn != null)
-			_conn.Close();
+		_conn?.Close();
 
 		if (_node != null)
 			await _node.Shutdown();
@@ -149,15 +146,11 @@ public abstract class specification_with_standard_projections_runnning<TLogForma
 		return _conn.DeleteStreamAsync(stream, ExpectedVersion.Any, true, _admin);
 	}
 
-	protected Task SoftDeleteStream(string stream) {
-		return _conn.DeleteStreamAsync(stream, ExpectedVersion.Any, false, _admin);
+	private static EventData CreateEvent(string type, string data) {
+		return new EventData(Guid.NewGuid(), type, true, Encoding.UTF8.GetBytes(data), []);
 	}
 
-	protected static EventData CreateEvent(string type, string data) {
-		return new EventData(Guid.NewGuid(), type, true, Encoding.UTF8.GetBytes(data), new byte[0]);
-	}
-
-	protected void WaitIdle(int multiplier = 1) {
+	protected void WaitIdle() {
 #if DEBUG
 		_node.WaitIdle();
 #endif
@@ -219,13 +212,9 @@ public abstract class specification_with_standard_projections_runnning<TLogForma
 
 #if DEBUG
 	private void DumpFailed(string message, string streamId, string[] events, ResolvedEvent[] resultEvents) {
-		var expected = events.Aggregate("", (a, v) => a + ", " + v);
-		var actual = resultEvents.Aggregate(
-			"", (a, v) => a + ", " + v.Event.EventType + ":" + v.Event.DebugDataView());
-
-		var actualMeta = resultEvents.Aggregate(
-			"", (a, v) => a + "\r\n" + v.Event.EventType + ":" + v.Event.DebugMetadataView());
-
+		var expected = events.Aggregate("", (a, v) => $"{a}, {v}");
+		var actual = resultEvents.Aggregate("", (a, v) => $"{a}, {v.Event.EventType}:{v.Event.DebugDataView()}");
+		var actualMeta = resultEvents.Aggregate("", (a, v) => $"{a}\r\n{v.Event.EventType}:{v.Event.DebugMetadataView()}");
 
 		Assert.Fail(
 			"Stream: '{0}'\r\n{1}\r\n\r\nExisting events: \r\n{2}\r\n Expected events: \r\n{3}\r\n\r\nActual metas:{4}",
@@ -233,13 +222,9 @@ public abstract class specification_with_standard_projections_runnning<TLogForma
 			message, actual, expected, actualMeta);
 	}
 
-	protected void Dump(string message, string streamId, ResolvedEvent[] resultEvents) {
-		var actual = resultEvents.Aggregate(
-			"", (a, v) => a + ", " + v.OriginalEvent.EventType + ":" + v.OriginalEvent.DebugDataView());
-
-		var actualMeta = resultEvents.Aggregate(
-			"", (a, v) => a + "\r\n" + v.OriginalEvent.EventType + ":" + v.OriginalEvent.DebugMetadataView());
-
+	private void Dump(string message, string streamId, ResolvedEvent[] resultEvents) {
+		var actual = resultEvents.Aggregate("", (a, v) => $"{a}, {v.OriginalEvent.EventType}:{v.OriginalEvent.DebugDataView()}");
+		var actualMeta = resultEvents.Aggregate("", (a, v) => $"{a}\r\n{v.OriginalEvent.EventType}:{v.OriginalEvent.DebugMetadataView()}");
 
 		Debug.WriteLine(
 			"Stream: '{0}'\r\n{1}\r\n\r\nExisting events: \r\n{2}\r\n \r\nActual metas:{3}", streamId,
@@ -249,11 +234,6 @@ public abstract class specification_with_standard_projections_runnning<TLogForma
 
 	protected async Task PostProjection(string query) {
 		await _manager.CreateContinuousAsync("test-projection", query, _admin);
-		WaitIdle();
-	}
-
-	protected async Task PostQuery(string query) {
-		await _manager.CreateTransientAsync("query", query, _admin);
 		WaitIdle();
 	}
 }

@@ -20,8 +20,8 @@ namespace KurrentDB.Projections.Core.Tests.Services.http_service;
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class Authorization<TLogFormat, TStreamId> : specification_with_standard_projections_runnning<TLogFormat, TStreamId> {
-	private Dictionary<string, HttpClient> _httpClients = new Dictionary<string, HttpClient>();
-	private TimeSpan _timeout = TimeSpan.FromSeconds(10);
+	private readonly Dictionary<string, HttpClient> _httpClients = new();
+	private readonly TimeSpan _timeout = TimeSpan.FromSeconds(10);
 	private int _leaderId;
 
 	private HttpClient CreateHttpClient(string username, string password) {
@@ -31,18 +31,16 @@ public class Authorization<TLogFormat, TStreamId> : specification_with_standard_
 			Timeout = _timeout
 		};
 		if (!string.IsNullOrEmpty(username)) {
-			client.DefaultRequestHeaders.Authorization =
-				new AuthenticationHeaderValue(
-					"Basic", Convert.ToBase64String(
-						Encoding.ASCII.GetBytes(
-							$"{username}:{password}")));
+			client.DefaultRequestHeaders.Authorization = new("Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{password}")));
 		}
 
 		return client;
 	}
 
-	private async Task<int> SendRequest(HttpClient client, HttpMethod method, string url, string body, string contentType) {
-		using var request = new HttpRequestMessage { Method = method, RequestUri = new Uri(url) };
+	private static async Task<int> SendRequest(HttpClient client, HttpMethod method, string url, string body, string contentType) {
+		using var request = new HttpRequestMessage();
+		request.Method = method;
+		request.RequestUri = new Uri(url);
 
 		if (body != null) {
 			var bodyBytes = Helper.UTF8NoBom.GetBytes(body);
@@ -58,54 +56,46 @@ public class Authorization<TLogFormat, TStreamId> : specification_with_standard_
 		return (int)result.StatusCode;
 	}
 
-	private HttpMethod GetHttpMethod(string method) {
-		switch (method) {
-			case "GET":
-				return HttpMethod.Get;
-			case "POST":
-				return HttpMethod.Post;
-			case "PUT":
-				return HttpMethod.Put;
-			case "DELETE":
-				return HttpMethod.Delete;
-			default:
-				throw new Exception("Unknown Http Method");
-		}
+	private static HttpMethod GetHttpMethod(string method) {
+		return method switch {
+			"GET" => HttpMethod.Get,
+			"POST" => HttpMethod.Post,
+			"PUT" => HttpMethod.Put,
+			"DELETE" => HttpMethod.Delete,
+			_ => throw new Exception("Unknown Http Method")
+		};
 	}
 
-	private int GetAuthLevel(string userAuthorizationLevel) {
-		switch (userAuthorizationLevel) {
-			case "None":
-				return 0;
-			case "User":
-				return 1;
-			case "Ops":
-				return 2;
-			case "Admin":
-				return 3;
-			default:
-				throw new Exception("Unknown authorization level");
-		}
+	private static int GetAuthLevel(string userAuthorizationLevel) {
+		return userAuthorizationLevel switch {
+			"None" => 0,
+			"User" => 1,
+			"Ops" => 2,
+			"Admin" => 3,
+			_ => throw new Exception("Unknown authorization level")
+		};
 	}
-	public async Task CreateUser(string username, string password) {
+
+	private async Task CreateUser(string username, string password) {
 		for (int trial = 1; trial <= 5; trial++) {
 			try {
-				var dataStr = string.Format("{{loginName: '{0}', fullName: '{1}', password: '{2}', groups: []}}", username, username, password);
+				var dataStr = $"{{loginName: '{username}', fullName: '{username}', password: '{password}', groups: []}}";
 				var data = Helper.UTF8NoBom.GetBytes(dataStr);
 				var stream = new MemoryStream(data);
 				var content = new StreamContent(stream);
 				content.Headers.Add("Content-Type", ContentType.Json);
 
 				var res = await _httpClients["Admin"].PostAsync(
-					string.Format("http://{0}/users/", _nodes[_leaderId].HttpEndPoint),
+					$"http://{_nodes[_leaderId].HttpEndPoint}/users/",
 					content
 				);
 				res.EnsureSuccessStatusCode();
 				break;
 			} catch (HttpRequestException) {
 				if (trial == 5) {
-					throw new Exception(string.Format("Error creating user: {0}", username));
+					throw new Exception($"Error creating user: {username}");
 				}
+
 				await Task.Delay(1000);
 			}
 		}
@@ -133,71 +123,7 @@ public class Authorization<TLogFormat, TStreamId> : specification_with_standard_
 		foreach (var kvp in _httpClients) {
 			kvp.Value.Dispose();
 		}
+
 		return base.TestFixtureTearDown();
-	}
-	//just using Ignore not being honored for Combinatorial tests in the dotnet test runner
-	//[Test, Combinatorial, Ignore("Invalid URl templates, retained for future refactoring")]
-	public async Task authorization_tests(
-		[Values(
-			"None",
-			"User",
-			"Ops",
-			"Admin"
-		)] string userAuthorizationLevel,
-		[Values(
-			"/web/es/js/projections/{*remaining_path};GET;None",
-			"/web/es/js/projections/v8/Prelude/{*remaining_path};GET;None",
-			"/web/projections;GET;None",
-			"/projections;GET;User",
-			"/projections/any;GET;User",
-			"/projections/all-non-transient;GET;User",
-			"/projections/transient;GET;User",
-			"/projections/onetime;GET;User",
-			"/projections/continuous;GET;User",
-			"/projections/transient?name=name&type=type&enabled={enabled};POST;User", /* /projections/transient?name={name}&type={type}&enabled={enabled} */
-			"/projections/onetime?name=name&type=type&enabled={enabled}&checkpoints={checkpoints}&emit={emit}&trackemittedstreams={trackemittedstreams};POST;Ops", /* /projections/onetime?name={name}&type={type}&enabled={enabled}&checkpoints={checkpoints}&emit={emit}&trackemittedstreams={trackemittedstreams} */
-			"/projections/continuous?name=name&type=type&enabled={enabled}&emit={emit}&trackemittedstreams={trackemittedstreams};POST;Ops", /* /projections/continuous?name={name}&type={type}&enabled={enabled}&emit={emit}&trackemittedstreams={trackemittedstreams} */
-			"/projection/name/query?config={config};GET;User", /* /projection/{name}/query?config={config} */
-			"/projection/name/query?type={type}&emit={emit};PUT;User", /* /projection/{name}/query?type={type}&emit={emit} */
-			"/projection/name;GET;User", /* /projection/{name} */
-			"/projection/name?deleteStateStream={deleteStateStream}&deleteCheckpointStream={deleteCheckpointStream}&deleteEmittedStreams={deleteEmittedStreams};DELETE;Ops", /* /projection/{name}?deleteStateStream={deleteStateStream}&deleteCheckpointStream={deleteCheckpointStream}&deleteEmittedStreams={deleteEmittedStreams} */
-			"/projection/name/statistics;GET;User", /* projection/{name}/statistics */
-			"/projections/read-events;POST;User",
-			"/projection/{name}/state?partition={partition};GET;User",
-			"/projection/{name}/result?partition={partition};GET;User",
-			"/projection/{name}/command/disable?enableRunAs={enableRunAs};POST;User",
-			"/projection/{name}/command/enable?enableRunAs={enableRunAs};POST;User",
-			"/projection/{name}/command/reset?enableRunAs={enableRunAs};POST;User",
-			"/projection/{name}/command/abort?enableRunAs={enableRunAs};POST;User",
-			"/projection/{name}/config;GET;Ops",
-			"/projection/{name}/config;PUT;Ops"
-			/*"/sys/subsystems;GET;Ops"*/ /* this endpoint has been commented since this controller is not registered when using a MiniNode */
-		)] string httpEndpointDetails
-	) {
-		/*use the leader node endpoint to avoid any redirects*/
-		var nodeEndpoint = _nodes[_leaderId].HttpEndPoint;
-		var httpEndpointTokens = httpEndpointDetails.Split(';');
-		var endpointUrl = httpEndpointTokens[0];
-		var httpMethod = GetHttpMethod(httpEndpointTokens[1]);
-		var requiredMinAuthorizationLevel = httpEndpointTokens[2];
-
-		var url = $"http://{nodeEndpoint}{endpointUrl}";
-		var body = GetData(httpMethod, endpointUrl);
-		var contentType = httpMethod == HttpMethod.Post || httpMethod == HttpMethod.Put || httpMethod == HttpMethod.Delete ? ContentType.Json : null;
-		var statusCode = await SendRequest(_httpClients[userAuthorizationLevel], httpMethod, url, body, contentType);
-
-		if (GetAuthLevel(userAuthorizationLevel) >= GetAuthLevel(requiredMinAuthorizationLevel)) {
-			Assert.AreNotEqual(401, statusCode);
-		} else {
-			Assert.AreEqual(401, statusCode);
-		}
-	}
-
-	private string GetData(HttpMethod httpMethod, string url) {
-		if (httpMethod == HttpMethod.Post || httpMethod == HttpMethod.Put || httpMethod == HttpMethod.Delete) {
-			return "{}";
-		} else {
-			return null;
-		}
 	}
 }

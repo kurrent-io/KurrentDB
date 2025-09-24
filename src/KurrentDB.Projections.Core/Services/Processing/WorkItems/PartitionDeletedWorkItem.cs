@@ -2,32 +2,30 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Projections.Core.Messages;
-using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Partitioning;
 using KurrentDB.Projections.Core.Services.Processing.Phases;
 
 namespace KurrentDB.Projections.Core.Services.Processing.WorkItems;
 
-class PartitionDeletedWorkItem : WorkItem {
+internal class PartitionDeletedWorkItem : WorkItem {
 	private readonly EventReaderSubscriptionMessage.PartitionDeleted _message;
 	private readonly string _partition;
 	private readonly IEventProcessingProjectionPhase _projection;
 	private EventProcessedResult _eventProcessedResult;
 
-	public PartitionDeletedWorkItem(
-		IEventProcessingProjectionPhase projection, EventReaderSubscriptionMessage.PartitionDeleted message)
+	public PartitionDeletedWorkItem(IEventProcessingProjectionPhase projection, EventReaderSubscriptionMessage.PartitionDeleted message)
 		: base(null) {
 		_partition = message.Partition;
 		_projection = projection;
 		_message = message;
-		_requiresRunning = true;
+		RequiresRunning = true;
 	}
 
 	protected override void GetStatePartition() {
 		NextStage(_partition);
 	}
 
-	protected override void Load(CheckpointTag checkpointTag) {
+	protected override void Load() {
 		// we load partition state even if stopping etc.  should we skip?
 		_projection.BeginGetPartitionStateAt(_partition, _message.CheckpointTag, LoadCompleted, lockLoaded: true);
 	}

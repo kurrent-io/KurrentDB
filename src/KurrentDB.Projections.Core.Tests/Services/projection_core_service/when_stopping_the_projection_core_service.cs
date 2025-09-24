@@ -43,8 +43,7 @@ public class when_stopping_the_projection_core_service_with_running_projections
 		_bus.Subscribe<CoreProjectionStatusMessage.Suspended>(_service);
 		_service.Handle(new CoreProjectionManagementMessage.CreateAndPrepare(
 			_projectionId, _workerId, "test-projection",
-			new ProjectionVersion(), new ProjectionConfig(null, 1000, 1000 * 1000, 100, 500, true, true, false, false, true, 10000,
-				1, 250),
+			new(), new(null, 1000, 1000 * 1000, 100, 500, true, true, false, true, 10000, 1, 250),
 			"JS", "fromStream('$user-admin').outputState()", true));
 		_service.Handle(new ProjectionCoreServiceMessage.StopCore(_stopCorrelationId));
 	}
@@ -79,8 +78,7 @@ public class when_stopping_the_projection_core_service_times_out_suspending_proj
 		_bus.Unsubscribe<CoreProjectionStatusMessage.Suspended>(_service);
 		_service.Handle(new CoreProjectionManagementMessage.CreateAndPrepare(
 			_projectionId, _workerId, "test-projection",
-			new ProjectionVersion(), new ProjectionConfig(null, 1000, 1000 * 1000, 100, 500, true, true, false, false, true, 10000,
-				1, 250),
+			new(), new(null, 1000, 1000 * 1000, 100, 500, true, true, false, true, 10000, 1, 250),
 			"JS", "fromStream('$user-admin').outputState()", true));
 		_service.Handle(new ProjectionCoreServiceMessage.StopCore(_stopCorrelationId));
 		_service.Handle(new ProjectionCoreServiceMessage.StopCoreTimeout(_stopCorrelationId));
@@ -108,8 +106,7 @@ public class when_stopping_the_projection_core_service_and_timeout_for_wrong_cor
 		_bus.Unsubscribe<CoreProjectionStatusMessage.Suspended>(_service);
 		_service.Handle(new CoreProjectionManagementMessage.CreateAndPrepare(
 			_projectionId, _workerId, "test-projection",
-			new ProjectionVersion(), new ProjectionConfig(null, 1000, 1000 * 1000, 100, 500, true, true, false, false, true, 10000,
-				1, 250),
+			new(), new(null, 1000, 1000 * 1000, 100, 500, true, true, false, true, 10000, 1, 250),
 			"JS", "fromStream('$user-admin').outputState()", true));
 		_service.Handle(new ProjectionCoreServiceMessage.StopCore(_stopCorrelationId));
 		_service.Handle(new ProjectionCoreServiceMessage.StopCoreTimeout(Guid.NewGuid()));

@@ -11,7 +11,7 @@ using KurrentDB.Transport.Tcp;
 namespace KurrentDB.TestClient.Commands;
 
 internal class PingFloodProcessor : ICmdProcessor {
-	private static readonly byte[] Payload = new byte[0];
+	private static readonly byte[] Payload = [];
 
 	public string Usage {
 		get { return "PINGFL [<clients> <messages>]"; }

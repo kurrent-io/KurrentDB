@@ -14,8 +14,7 @@ public class
 	protected override void When() {
 		_subscription.Handle(
 			ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
-				Guid.NewGuid(), new TFPos(200, 150), "a", 1, false, Guid.NewGuid(), "bad-event-type", false,
-				new byte[0], new byte[0]));
+				Guid.NewGuid(), new TFPos(200, 150), "a", 1, false, Guid.NewGuid(), "bad-event-type", false, [], []));
 	}
 
 	[Test]

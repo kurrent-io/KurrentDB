@@ -31,8 +31,8 @@ public class JsFunctionCallMeasurer(IProjectionExecutionTracker tracker) {
 		return jsFunction.Call(jsArgs);
 	}
 
-	readonly struct Measurer(IProjectionExecutionTracker tracker, string jsFunctionName) : IDisposable {
-		readonly Instant _start = Instant.Now;
+	private readonly struct Measurer(IProjectionExecutionTracker tracker, string jsFunctionName) : IDisposable {
+		private readonly Instant _start = Instant.Now;
 
 		public void Dispose() {
 			tracker.CallExecuted(_start, jsFunctionName);

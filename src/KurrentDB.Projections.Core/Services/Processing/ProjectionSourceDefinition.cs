@@ -25,59 +25,37 @@ public class ProjectionSourceDefinition : IQuerySources {
 
 	[DataMember] public QuerySourceOptions Options { get; set; }
 
-	bool IQuerySources.DefinesStateTransform {
-		get { return Options != null && Options.DefinesStateTransform; }
-	}
+	bool IQuerySources.DefinesStateTransform => Options is { DefinesStateTransform: true };
 
-	bool IQuerySources.ProducesResults {
-		get { return Options != null && Options.ProducesResults; }
-	}
+	bool IQuerySources.ProducesResults => Options is { ProducesResults: true };
 
-	bool IQuerySources.DefinesFold {
-		get { return Options != null && Options.DefinesFold; }
-	}
+	bool IQuerySources.DefinesFold => Options is { DefinesFold: true };
 
-	bool IQuerySources.HandlesDeletedNotifications {
-		get { return Options != null && Options.HandlesDeletedNotifications; }
-	}
+	bool IQuerySources.HandlesDeletedNotifications => Options is { HandlesDeletedNotifications: true };
 
-	bool IQuerySources.IncludeLinksOption {
-		get { return Options != null && Options.IncludeLinks; }
-	}
+	bool IQuerySources.IncludeLinksOption => Options is { IncludeLinks: true };
 
-	string IQuerySources.ResultStreamNameOption {
-		get { return Options != null ? Options.ResultStreamName : null; }
-	}
+	string IQuerySources.ResultStreamNameOption => Options?.ResultStreamName;
 
-	string IQuerySources.PartitionResultStreamNamePatternOption {
-		get { return Options != null ? Options.PartitionResultStreamNamePattern : null; }
-	}
+	string IQuerySources.PartitionResultStreamNamePatternOption => Options?.PartitionResultStreamNamePattern;
 
-	bool IQuerySources.ReorderEventsOption {
-		get { return Options != null && Options.ReorderEvents; }
-	}
+	bool IQuerySources.ReorderEventsOption => Options is { ReorderEvents: true };
 
-	int? IQuerySources.ProcessingLagOption {
-		get { return Options != null ? Options.ProcessingLag : (int?)null; }
-	}
+	int? IQuerySources.ProcessingLagOption => Options?.ProcessingLag;
 
-	bool IQuerySources.IsBiState {
-		get { return Options != null ? Options.IsBiState : false; }
-	}
+	bool IQuerySources.IsBiState => Options?.IsBiState ?? false;
 
-	bool IQuerySources.ByStreams {
-		get { return ByStream; }
-	}
+	bool IQuerySources.ByStreams => ByStream;
 
-	public static ProjectionSourceDefinition From(IQuerySources sources) {
-		return new ProjectionSourceDefinition {
+	public static ProjectionSourceDefinition From(IQuerySources sources)
+		=> new() {
 			AllEvents = sources.AllEvents,
 			AllStreams = sources.AllStreams,
 			ByStream = sources.ByStreams,
 			ByCustomPartitions = sources.ByCustomPartitions,
-			Categories = (sources.Categories ?? new string[0]).ToArray(),
-			Events = (sources.Events ?? new string[0]).ToArray(),
-			Streams = (sources.Streams ?? new string[0]).ToArray(),
+			Categories = (sources.Categories ?? []).ToArray(),
+			Events = (sources.Events ?? []).ToArray(),
+			Streams = (sources.Streams ?? []).ToArray(),
 			Options =
 				new QuerySourceOptions {
 					DefinesStateTransform = sources.DefinesStateTransform,
@@ -89,14 +67,13 @@ public class ProjectionSourceDefinition : IQuerySources {
 					ProcessingLag = sources.ProcessingLagOption.GetValueOrDefault(),
 					IsBiState = sources.IsBiState,
 					ReorderEvents = sources.ReorderEventsOption,
-					ResultStreamName = sources.ResultStreamNameOption,
-				},
+					ResultStreamName = sources.ResultStreamNameOption
+				}
 		};
-	}
 
-	private bool Equals(string[] a, string[] b) {
-		bool aEmpty = (a == null || a.Length == 0);
-		bool bEmpty = (b == null || b.Length == 0);
+	private static bool Equals(string[] a, string[] b) {
+		bool aEmpty = a == null || a.Length == 0;
+		bool bEmpty = b == null || b.Length == 0;
 		if (aEmpty && bEmpty)
 			return true;
 		if (aEmpty || bEmpty)
@@ -104,22 +81,22 @@ public class ProjectionSourceDefinition : IQuerySources {
 		return a.SequenceEqual(b);
 	}
 
-	protected bool Equals(ProjectionSourceDefinition other) {
-		return AllEvents.Equals(other.AllEvents) && AllStreams.Equals(other.AllStreams)
-												 && ByStream.Equals(other.ByStream) &&
-												 ByCustomPartitions.Equals(other.ByCustomPartitions)
-												 && Equals(Categories, other.Categories) &&
-												 Equals(Events, other.Events)
-												 && Equals(Streams, other.Streams)
-												 && Equals(Options, other.Options);
-	}
+	private bool Equals(ProjectionSourceDefinition other)
+		=> AllEvents.Equals(other.AllEvents)
+		   && AllStreams.Equals(other.AllStreams)
+		   && ByStream.Equals(other.ByStream) &&
+		   ByCustomPartitions.Equals(other.ByCustomPartitions)
+		   && Equals(Categories, other.Categories) &&
+		   Equals(Events, other.Events)
+		   && Equals(Streams, other.Streams)
+		   && Equals(Options, other.Options);
 
 	public override bool Equals(object obj) {
 		if (ReferenceEquals(null, obj))
 			return false;
 		if (ReferenceEquals(this, obj))
 			return true;
-		if (obj.GetType() != this.GetType())
+		if (obj.GetType() != GetType())
 			return false;
 		return Equals((ProjectionSourceDefinition)obj);
 	}

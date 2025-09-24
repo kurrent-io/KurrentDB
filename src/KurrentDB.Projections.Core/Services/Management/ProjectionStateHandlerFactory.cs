@@ -8,31 +8,20 @@ using KurrentDB.Projections.Core.Services.Interpreted;
 
 namespace KurrentDB.Projections.Core.Services.Management;
 
-public class ProjectionStateHandlerFactory {
-	private readonly TimeSpan _javascriptCompilationTimeout;
-	private readonly TimeSpan _javascriptExecutionTimeout;
-	private readonly ProjectionTrackers _trackers;
-
-	public ProjectionStateHandlerFactory(
-		TimeSpan javascriptCompilationTimeout,
-		TimeSpan javascriptExecutionTimeout,
-		ProjectionTrackers trackers) {
-		_javascriptCompilationTimeout = javascriptCompilationTimeout;
-		_javascriptExecutionTimeout = javascriptExecutionTimeout;
-		_trackers = trackers;
-	}
+public class ProjectionStateHandlerFactory(TimeSpan javascriptCompilationTimeout, TimeSpan javascriptExecutionTimeout, ProjectionTrackers trackers) {
 	public IProjectionStateHandler Create(
 		string projectionName,
-		string factoryType, string source,
+		string factoryType,
+		string source,
 		bool enableContentTypeValidation,
 		int? projectionExecutionTimeout,
 		Action<string, object[]> logger = null) {
 		var colonPos = factoryType.IndexOf(':');
-		string kind = null;
+		string kind;
 		string rest = null;
 		if (colonPos > 0) {
-			kind = factoryType.Substring(0, colonPos);
-			rest = factoryType.Substring(colonPos + 1);
+			kind = factoryType[..colonPos];
+			rest = factoryType[(colonPos + 1)..];
 		} else {
 			kind = factoryType;
 		}
@@ -40,25 +29,21 @@ public class ProjectionStateHandlerFactory {
 		IProjectionStateHandler result;
 		var executionTimeout = projectionExecutionTimeout is > 0
 			? TimeSpan.FromMilliseconds(projectionExecutionTimeout.Value)
-			: _javascriptExecutionTimeout;
+			: javascriptExecutionTimeout;
 		switch (kind.ToLowerInvariant()) {
 			case "js":
 				result = new JintProjectionStateHandler(source, enableContentTypeValidation,
-					_javascriptCompilationTimeout, executionTimeout,
-					new(_trackers.GetExecutionTrackerForProjection(projectionName)),
-					new(_trackers.GetSerializationTrackerForProjection(projectionName)));
+					javascriptCompilationTimeout, executionTimeout,
+					new(trackers.GetExecutionTrackerForProjection(projectionName)),
+					new(trackers.GetSerializationTrackerForProjection(projectionName)));
 				break;
 			case "native":
 				// Allow loading native projections from previous versions
 				rest = rest?.Replace("EventStore", "KurrentDB");
 
-				var type = Type.GetType(rest);
-				if (type == null) {
-					type =
-						AppDomain.CurrentDomain.GetAssemblies()
-							.Select(v => v.GetType(rest))
-							.FirstOrDefault(v => v != null);
-				}
+				var type = Type.GetType(rest) ?? AppDomain.CurrentDomain.GetAssemblies()
+					.Select(v => v.GetType(rest))
+					.FirstOrDefault(v => v != null);
 
 				if (type is null) {
 					throw new NotSupportedException($"Could not find type \"{rest}\"");
@@ -68,7 +53,7 @@ public class ProjectionStateHandlerFactory {
 				result = (IProjectionStateHandler)handler;
 				break;
 			default:
-				throw new NotSupportedException(string.Format("'{0}' handler type is not supported", factoryType));
+				throw new NotSupportedException($"'{factoryType}' handler type is not supported");
 		}
 
 		return result;

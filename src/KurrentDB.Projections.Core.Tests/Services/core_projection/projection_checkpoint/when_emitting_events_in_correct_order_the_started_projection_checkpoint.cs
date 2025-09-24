@@ -11,7 +11,6 @@ using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using KurrentDB.Projections.Core.Services.Processing.TransactionFile;
 using NUnit.Framework;
-
 using ClientMessageWriteEvents = KurrentDB.Core.Tests.TestAdapters.ClientMessage.WriteEvents;
 
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection.projection_checkpoint;
@@ -39,47 +38,30 @@ public class
 			CheckpointTag.FromPosition(0, 100, 50), new TransactionFilePositionTagger(0), 250, 1);
 		_checkpoint.Start();
 		_checkpoint.ValidateOrderAndEmitEvents(
-			new[] {
-				new EmittedEventEnvelope(
-					new EmittedDataEvent(
-						"stream2", Guid.NewGuid(), "type1", true, "data2", null,
-						CheckpointTag.FromPosition(0, 120, 110), null)),
-				new EmittedEventEnvelope(
-					new EmittedDataEvent(
-						"stream3", Guid.NewGuid(), "type2", true, "data3", null,
-						CheckpointTag.FromPosition(0, 120, 110), null)),
-				new EmittedEventEnvelope(
-					new EmittedDataEvent(
-						"stream2", Guid.NewGuid(), "type3", true, "data4", null,
-						CheckpointTag.FromPosition(0, 120, 110), null)),
-			});
+		[
+			new(new EmittedDataEvent("stream2", Guid.NewGuid(), "type1", true, "data2", null, CheckpointTag.FromPosition(0, 120, 110), null)),
+			new(new EmittedDataEvent("stream3", Guid.NewGuid(), "type2", true, "data3", null, CheckpointTag.FromPosition(0, 120, 110), null)),
+			new(new EmittedDataEvent("stream2", Guid.NewGuid(), "type3", true, "data4", null, CheckpointTag.FromPosition(0, 120, 110), null))
+		]);
 		_checkpoint.ValidateOrderAndEmitEvents(
-			new[] {
-				new EmittedEventEnvelope(
-					new EmittedDataEvent(
-						"stream1", Guid.NewGuid(), "type4", true, "data", null,
-						CheckpointTag.FromPosition(0, 140, 130), null))
-			});
+		[
+			new(new EmittedDataEvent("stream1", Guid.NewGuid(), "type4", true, "data", null, CheckpointTag.FromPosition(0, 140, 130), null))
+		]);
 		OneWriteCompletes(); //stream2
 		OneWriteCompletes(); //stream3
 	}
 
 	[Test]
 	public void should_publish_write_events() {
-		var writeEvents =
-			_consumer.HandledMessages.OfType<ClientMessageWriteEvents>()
-				.ExceptOfEventType(SystemEventTypes.StreamMetadata);
+		var writeEvents = _consumer.HandledMessages.OfType<ClientMessageWriteEvents>().ExceptOfEventType(SystemEventTypes.StreamMetadata);
 		Assert.AreEqual(4, writeEvents.Count());
 	}
 
 	[Test]
 	public void should_publish_write_events_to_correct_streams() {
-		Assert.IsTrue(
-			_consumer.HandledMessages.OfType<ClientMessageWriteEvents>().Any(v => v.EventStreamId == "stream1"));
-		Assert.IsTrue(
-			_consumer.HandledMessages.OfType<ClientMessageWriteEvents>().Any(v => v.EventStreamId == "stream2"));
-		Assert.IsTrue(
-			_consumer.HandledMessages.OfType<ClientMessageWriteEvents>().Any(v => v.EventStreamId == "stream3"));
+		Assert.IsTrue(_consumer.HandledMessages.OfType<ClientMessageWriteEvents>().Any(v => v.EventStreamId == "stream1"));
+		Assert.IsTrue(_consumer.HandledMessages.OfType<ClientMessageWriteEvents>().Any(v => v.EventStreamId == "stream2"));
+		Assert.IsTrue(_consumer.HandledMessages.OfType<ClientMessageWriteEvents>().Any(v => v.EventStreamId == "stream3"));
 	}
 
 	[Test]
@@ -89,24 +71,18 @@ public class
 		// are present in a stream
 		Assert.AreEqual(
 			2,
-			_consumer.HandledMessages.OfType<ClientMessageWriteEvents>().Single(v => v.EventStreamId == "stream2")
-				.Events.Length);
+			_consumer.HandledMessages.OfType<ClientMessageWriteEvents>().Single(v => v.EventStreamId == "stream2").Events.Length);
 	}
 
 	[Test]
 	public void should_not_write_a_second_group_until_the_first_write_completes() {
 		_checkpoint.ValidateOrderAndEmitEvents(
-			new[] {
-				new EmittedEventEnvelope(
-					new EmittedDataEvent(
-						"stream1", Guid.NewGuid(), "type", true, "data", null,
-						CheckpointTag.FromPosition(0, 170, 160), null))
-			});
-		var writeRequests =
-			_consumer.HandledMessages.OfType<ClientMessageWriteEvents>().Where(v => v.EventStreamId == "stream1");
+		[
+			new(new EmittedDataEvent("stream1", Guid.NewGuid(), "type", true, "data", null, CheckpointTag.FromPosition(0, 170, 160), null))
+		]);
+		var writeRequests = _consumer.HandledMessages.OfType<ClientMessageWriteEvents>().Where(v => v.EventStreamId == "stream1").ToArray();
 		var writeEvents = writeRequests.Single();
-		writeEvents.Envelope.ReplyWith(
-			ClientMessage.WriteEventsCompleted.ForSingleStream(writeEvents.CorrelationId, 0, 0, -1, -1));
-		Assert.AreEqual(2, writeRequests.Count());
+		writeEvents.Envelope.ReplyWith(ClientMessage.WriteEventsCompleted.ForSingleStream(writeEvents.CorrelationId, 0, 0, -1, -1));
+		Assert.AreEqual(2, writeRequests.Length);
 	}
 }

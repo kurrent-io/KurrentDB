@@ -19,26 +19,33 @@ using KurrentDB.Projections.Core.Services.Management;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Tests.Services.core_projection;
 using NUnit.Framework;
+using static KurrentDB.Projections.Core.Messages.ProjectionManagementMessage;
 using TelemetryMessage = KurrentDB.Core.Telemetry.TelemetryMessage;
 
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class when_starting_the_projection_manager_with_existing_projection<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
+public class when_starting_the_projection_manager_with_existing_projection<TLogFormat, TStreamId>
+	: TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private new ITimeProvider _timeProvider;
 	private ProjectionManager _manager;
 	private Guid _workerId;
 
 	protected override void Given() {
 		_workerId = Guid.NewGuid();
-		ExistingEvent(ProjectionNamesBuilder.ProjectionsRegistrationStream, ProjectionEventTypes.ProjectionCreated,
-			null, "projection1");
+		ExistingEvent(ProjectionNamesBuilder.ProjectionsRegistrationStream, ProjectionEventTypes.ProjectionCreated, null, "projection1");
 		ExistingEvent(
 			"$projections-projection1", ProjectionEventTypes.ProjectionUpdated, null,
-			@"{""Query"":""fromAll(); on_any(function(){});log('hello-from-projection-definition');"", ""Mode"":""3"", ""Enabled"":true, ""HandlerType"":""JS""}");
+			"""
+			{
+			  "Query":"fromAll(); on_any(function(){});log('hello-from-projection-definition');",
+			  "Mode":"3",
+			  "Enabled":true,
+			  "HandlerType":"JS"
+			}
+			""");
 	}
-
 
 	[SetUp]
 	public void setup() {
@@ -66,28 +73,21 @@ public class when_starting_the_projection_manager_with_existing_projection<TLogF
 
 	[Test]
 	public void projection_status_can_be_retrieved() {
-		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, "projection1"));
-		Assert.IsNotNull(
-			_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().SingleOrDefault(
-				v => v.Projections[0].Name == "projection1"));
+		_manager.Handle(new Command.GetStatistics(_bus, null, "projection1"));
+		Assert.IsNotNull(_consumer.HandledMessages.OfType<Statistics>().SingleOrDefault(v => v.Projections[0].Name == "projection1"));
 	}
 
 	[Test]
 	public void projection_status_is_starting() {
-		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, "projection1"));
+		_manager.Handle(new Command.GetStatistics(_bus, null, "projection1"));
 		Assert.AreEqual(
 			ManagedProjectionState.Preparing,
-			_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().SingleOrDefault(
-				v => v.Projections[0].Name == "projection1").Projections[0].LeaderStatus);
+			_consumer.HandledMessages.OfType<Statistics>().Single(v => v.Projections[0].Name == "projection1").Projections[0].LeaderStatus);
 	}
 
 	[Test]
 	public void projection_telemetry_working() {
-		_manager.Handle(
-			new TelemetryMessage.Request(
-				_bus));
+		_manager.Handle(new TelemetryMessage.Request(_bus));
 
 		var actual = _consumer.HandledMessages.OfType<TelemetryMessage.Response>().Single();
 

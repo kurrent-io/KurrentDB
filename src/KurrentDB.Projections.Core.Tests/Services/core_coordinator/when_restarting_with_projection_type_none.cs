@@ -10,6 +10,8 @@ using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Management;
 using KurrentDB.Projections.Core.Services.Processing;
 using NUnit.Framework;
+using static KurrentDB.Projections.Core.Messages.ProjectionCoreServiceMessage;
+using static KurrentDB.Projections.Core.Messages.ProjectionSubsystemMessage;
 
 namespace KurrentDB.Projections.Core.Tests.Services.core_coordinator;
 
@@ -23,20 +25,16 @@ public class when_restarting_with_projection_type_none {
 
 	[SetUp]
 	public void Setup() {
-		queues = new List<FakePublisher>() { new FakePublisher() }.ToArray();
-		publisher = new FakePublisher();
-
-		_coordinator =
-			new ProjectionCoreCoordinator(ProjectionType.None, queues, publisher);
+		queues = [new()];
+		publisher = new();
+		_coordinator = new(ProjectionType.None, queues, publisher);
 
 		// Start components
-		_coordinator.Handle(new ProjectionSubsystemMessage.StartComponents(instanceCorrelationId));
-		_coordinator.Handle(
-			new ProjectionCoreServiceMessage.SubComponentStarted(EventReaderCoreService.SubComponentName,
-				instanceCorrelationId));
+		_coordinator.Handle(new StartComponents(instanceCorrelationId));
+		_coordinator.Handle(new SubComponentStarted(EventReaderCoreService.SubComponentName, instanceCorrelationId));
 
 		// Stop components but don't handle component stopped
-		_coordinator.Handle(new ProjectionSubsystemMessage.StopComponents(instanceCorrelationId));
+		_coordinator.Handle(new StopComponents(instanceCorrelationId));
 
 		var stopReader = queues[0].Messages.OfType<ReaderCoreServiceMessage.StopReader>().First();
 		queueId = stopReader.QueueId;
@@ -49,7 +47,7 @@ public class when_restarting_with_projection_type_none {
 		// None of the subcomponents stopped
 
 		// Start components
-		_coordinator.Handle(new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid()));
+		_coordinator.Handle(new StartComponents(Guid.NewGuid()));
 
 		Assert.AreEqual(0, queues[0].Messages.FindAll(x => x is ReaderCoreServiceMessage.StartReader).Count);
 	}
@@ -58,12 +56,10 @@ public class when_restarting_with_projection_type_none {
 	[Test]
 	public void should_start_reader_if_subcomponents_stopped_before_starting_components_again() {
 		// Component stopped
-		_coordinator.Handle(
-			new ProjectionCoreServiceMessage.SubComponentStopped(EventReaderCoreService.SubComponentName,
-				queueId));
+		_coordinator.Handle(new SubComponentStopped(EventReaderCoreService.SubComponentName, queueId));
 
 		// Start component
-		_coordinator.Handle(new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid()));
+		_coordinator.Handle(new StartComponents(Guid.NewGuid()));
 
 		Assert.AreEqual(1, queues[0].Messages.FindAll(x => x is ReaderCoreServiceMessage.StartReader).Count);
 	}
@@ -73,15 +69,13 @@ public class when_restarting_with_projection_type_none {
 		var newInstanceCorrelationId = Guid.NewGuid();
 
 		// Stop components
-		_coordinator.Handle(
-			new ProjectionCoreServiceMessage.SubComponentStopped(EventReaderCoreService.SubComponentName,
-				queueId));
+		_coordinator.Handle(new SubComponentStopped(EventReaderCoreService.SubComponentName, queueId));
 
 		// Start components but don't handle component started
-		_coordinator.Handle(new ProjectionSubsystemMessage.StartComponents(newInstanceCorrelationId));
+		_coordinator.Handle(new StartComponents(newInstanceCorrelationId));
 
 		// Stop components
-		_coordinator.Handle(new ProjectionSubsystemMessage.StopComponents(newInstanceCorrelationId));
+		_coordinator.Handle(new StopComponents(newInstanceCorrelationId));
 
 		Assert.AreEqual(0, queues[0].Messages.FindAll(x => x is ReaderCoreServiceMessage.StopReader).Count);
 	}
@@ -89,12 +83,10 @@ public class when_restarting_with_projection_type_none {
 	[Test]
 	public void should_not_stop_reader_if_subcomponents_not_started() {
 		// Stop components
-		_coordinator.Handle(
-			new ProjectionCoreServiceMessage.SubComponentStopped(EventReaderCoreService.SubComponentName,
-				queueId));
+		_coordinator.Handle(new SubComponentStopped(EventReaderCoreService.SubComponentName, queueId));
 
 		// Stop components without starting
-		_coordinator.Handle(new ProjectionSubsystemMessage.StopComponents(Guid.NewGuid()));
+		_coordinator.Handle(new StopComponents(Guid.NewGuid()));
 
 		Assert.AreEqual(0, queues[0].Messages.FindAll(x => x is ReaderCoreServiceMessage.StopReader).Count);
 	}

@@ -24,11 +24,11 @@ namespace KurrentDB.Projections.Core.Tests.Services.projections_manager.managed_
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 public class when_initializing_projection_with_default_options<TLogFormat, TStreamId> : projection_config_test_base<TLogFormat, TStreamId> {
 	private ManagedProjection _mp;
-	private Guid _projectionId = Guid.NewGuid();
+	private readonly Guid _projectionId = Guid.NewGuid();
 	private ProjectionManagementMessage.ProjectionConfig _config;
 	private EventRecord _persistedStateWrite;
 
-	private ManagedProjection.PersistedState _persistedState = new ManagedProjection.PersistedState {
+	private readonly ManagedProjection.PersistedState _persistedState = new() {
 		Enabled = true,
 		HandlerType = "JS",
 		Query = "fromAll().when({});",
@@ -55,10 +55,8 @@ public class when_initializing_projection_with_default_options<TLogFormat, TStre
 		_timeProvider = new FakeTimeProvider();
 		_mp = CreateManagedProjection();
 
-		_mp.InitializeNew(
-			_persistedState,
-			null);
-		_mp.Handle(new CoreProjectionStatusMessage.Prepared(_projectionId, new ProjectionSourceDefinition()));
+		_mp.InitializeNew(_persistedState, null);
+		_mp.Handle(new CoreProjectionStatusMessage.Prepared(_projectionId, new()));
 
 		// Complete write of persisted state to start projection
 		OneWriteCompletes();
@@ -91,11 +89,11 @@ public class when_initializing_projection_with_default_options<TLogFormat, TStre
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_initializing_projection_with_persisted_state<TLogFormat, TStreamId> : projection_config_test_base<TLogFormat, TStreamId> {
 	private ManagedProjection _mp;
-	private Guid _projectionId = Guid.NewGuid();
+	private readonly Guid _projectionId = Guid.NewGuid();
 	private ProjectionManagementMessage.ProjectionConfig _config;
 	private EventRecord _persistedStateWrite;
 
-	private ManagedProjection.PersistedState _persistedState = new ManagedProjection.PersistedState {
+	private readonly ManagedProjection.PersistedState _persistedState = new() {
 		Enabled = true,
 		HandlerType = "JS",
 		Query = "fromAll().when({});",
@@ -123,10 +121,8 @@ public class when_initializing_projection_with_persisted_state<TLogFormat, TStre
 		_timeProvider = new FakeTimeProvider();
 		_mp = CreateManagedProjection();
 
-		_mp.InitializeNew(
-			_persistedState,
-			null);
-		_mp.Handle(new CoreProjectionStatusMessage.Prepared(_projectionId, new ProjectionSourceDefinition()));
+		_mp.InitializeNew(_persistedState, null);
+		_mp.Handle(new CoreProjectionStatusMessage.Prepared(_projectionId, new()));
 
 		// Complete write of persisted state to start projection
 		OneWriteCompletes();
@@ -140,17 +136,12 @@ public class when_initializing_projection_with_persisted_state<TLogFormat, TStre
 		Assert.AreEqual(_persistedState.EmitEnabled, _config.EmitEnabled, "EmitEnabled");
 		Assert.AreEqual(_persistedState.TrackEmittedStreams, _config.TrackEmittedStreams, "TrackEmittedStreams");
 		Assert.AreEqual(_persistedState.CheckpointAfterMs, _config.CheckpointAfterMs, "CheckpointAfterMs");
-		Assert.AreEqual(_persistedState.CheckpointHandledThreshold, _config.CheckpointHandledThreshold,
-			"CheckpointHandledThreshold");
-		Assert.AreEqual(_persistedState.CheckpointUnhandledBytesThreshold,
-			_config.CheckpointUnhandledBytesThreshold, "CheckpointUnhandledBytesThreshold");
-		Assert.AreEqual(_persistedState.PendingEventsThreshold, _config.PendingEventsThreshold,
-			"PendingEventsThreshold");
+		Assert.AreEqual(_persistedState.CheckpointHandledThreshold, _config.CheckpointHandledThreshold, "CheckpointHandledThreshold");
+		Assert.AreEqual(_persistedState.CheckpointUnhandledBytesThreshold, _config.CheckpointUnhandledBytesThreshold, "CheckpointUnhandledBytesThreshold");
+		Assert.AreEqual(_persistedState.PendingEventsThreshold, _config.PendingEventsThreshold, "PendingEventsThreshold");
 		Assert.AreEqual(_persistedState.MaxWriteBatchLength, _config.MaxWriteBatchLength, "MaxWriteBatchLength");
-		Assert.AreEqual(_persistedState.MaxAllowedWritesInFlight, _config.MaxAllowedWritesInFlight,
-			"MaxAllowedWritesInFlight");
-		Assert.AreEqual(_persistedState.ProjectionExecutionTimeout, _config.ProjectionExecutionTimeout,
-			"ProjectionExecutionTimeout");
+		Assert.AreEqual(_persistedState.MaxAllowedWritesInFlight, _config.MaxAllowedWritesInFlight, "MaxAllowedWritesInFlight");
+		Assert.AreEqual(_persistedState.ProjectionExecutionTimeout, _config.ProjectionExecutionTimeout, "ProjectionExecutionTimeout");
 	}
 
 	[Test]
@@ -161,30 +152,24 @@ public class when_initializing_projection_with_persisted_state<TLogFormat, TStre
 		Assert.AreEqual(_persistedState.EmitEnabled, actualState.EmitEnabled, "EmitEnabled");
 		Assert.AreEqual(_persistedState.TrackEmittedStreams, actualState.TrackEmittedStreams, "TrackEmittedStreams");
 		Assert.AreEqual(_persistedState.CheckpointAfterMs, actualState.CheckpointAfterMs, "CheckpointAfterMs");
-		Assert.AreEqual(_persistedState.CheckpointHandledThreshold, actualState.CheckpointHandledThreshold,
-			"CheckpointHandledThreshold");
-		Assert.AreEqual(_persistedState.CheckpointUnhandledBytesThreshold,
-			actualState.CheckpointUnhandledBytesThreshold, "CheckpointUnhandledBytesThreshold");
-		Assert.AreEqual(_persistedState.PendingEventsThreshold, actualState.PendingEventsThreshold,
-			"PendingEventsThreshold");
+		Assert.AreEqual(_persistedState.CheckpointHandledThreshold, actualState.CheckpointHandledThreshold, "CheckpointHandledThreshold");
+		Assert.AreEqual(_persistedState.CheckpointUnhandledBytesThreshold, actualState.CheckpointUnhandledBytesThreshold, "CheckpointUnhandledBytesThreshold");
+		Assert.AreEqual(_persistedState.PendingEventsThreshold, actualState.PendingEventsThreshold, "PendingEventsThreshold");
 		Assert.AreEqual(_persistedState.MaxWriteBatchLength, actualState.MaxWriteBatchLength, "MaxWriteBatchLength");
-		Assert.AreEqual(_persistedState.MaxAllowedWritesInFlight, actualState.MaxAllowedWritesInFlight,
-			"MaxAllowedWritesInFlight");
-		Assert.AreEqual(_persistedState.ProjectionExecutionTimeout, actualState.ProjectionExecutionTimeout,
-			"ProjectionExecutionTimeout");
+		Assert.AreEqual(_persistedState.MaxAllowedWritesInFlight, actualState.MaxAllowedWritesInFlight, "MaxAllowedWritesInFlight");
+		Assert.AreEqual(_persistedState.ProjectionExecutionTimeout, actualState.ProjectionExecutionTimeout, "ProjectionExecutionTimeout");
 	}
 }
-
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 public class when_updating_projection_config_to_remove_execution_timeout<TLogFormat, TStreamId> : projection_config_test_base<TLogFormat, TStreamId> {
 	private ManagedProjection _mp;
-	private Guid _projectionId = Guid.NewGuid();
+	private readonly Guid _projectionId = Guid.NewGuid();
 	private ProjectionManagementMessage.ProjectionConfig _config;
 	private EventRecord _persistedStateWrite;
 	private ProjectionManagementMessage.Command.UpdateConfig _updateConfig;
 
-	private ManagedProjection.PersistedState _persistedState => new ManagedProjection.PersistedState {
+	private static ManagedProjection.PersistedState PersistedState => new() {
 		Enabled = false,
 		HandlerType = "JS",
 		Query = "fromAll().when({});",
@@ -212,25 +197,22 @@ public class when_updating_projection_config_to_remove_execution_timeout<TLogFor
 		_timeProvider = new FakeTimeProvider();
 		_mp = CreateManagedProjection();
 
-		_mp.InitializeNew(
-			_persistedState,
-			null);
-		_mp.Handle(new CoreProjectionStatusMessage.Prepared(_projectionId, new ProjectionSourceDefinition()));
+		_mp.InitializeNew(PersistedState, null);
+		_mp.Handle(new CoreProjectionStatusMessage.Prepared(_projectionId, new()));
 		OneWriteCompletes();
 		_mp.Handle(new CoreProjectionStatusMessage.Stopped(_projectionId, ProjectionName, false));
 
-		_updateConfig = new ProjectionManagementMessage.Command.UpdateConfig(
-			new NoopEnvelope(), ProjectionName, _persistedState.EmitEnabled ?? false, _persistedState.TrackEmittedStreams ?? false,
-			_persistedState.CheckpointAfterMs, _persistedState.CheckpointHandledThreshold, _persistedState.CheckpointUnhandledBytesThreshold,
-			_persistedState.PendingEventsThreshold, _persistedState.MaxWriteBatchLength, _persistedState.MaxAllowedWritesInFlight,
-			_persistedState.RunAs,
+		_updateConfig = new(
+			new NoopEnvelope(), ProjectionName, PersistedState.EmitEnabled ?? false, PersistedState.TrackEmittedStreams ?? false,
+			PersistedState.CheckpointAfterMs, PersistedState.CheckpointHandledThreshold, PersistedState.CheckpointUnhandledBytesThreshold,
+			PersistedState.PendingEventsThreshold, PersistedState.MaxWriteBatchLength, PersistedState.MaxAllowedWritesInFlight,
+			PersistedState.RunAs,
 			projectionExecutionTimeout: null);
 		_mp.Handle(_updateConfig);
 		OneWriteCompletes();
 
 		_config = GetProjectionConfig(_mp);
 		_persistedStateWrite = _streams[ProjectionStreamId].LastOrDefault();
-
 	}
 
 	[Test]
@@ -251,7 +233,7 @@ public class when_updating_projection_config_to_remove_execution_timeout<TLogFor
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_updating_projection_config_of_faulted_projection<TLogFormat, TStreamId> : projection_config_test_base<TLogFormat, TStreamId> {
 	private ManagedProjection _mp;
-	private Guid _projectionId = Guid.NewGuid();
+	private readonly Guid _projectionId = Guid.NewGuid();
 	private Exception _thrownException;
 	private ProjectionManagementMessage.Command.UpdateConfig _updateConfig;
 
@@ -263,7 +245,7 @@ public class when_updating_projection_config_of_faulted_projection<TLogFormat, T
 		_timeProvider = new FakeTimeProvider();
 		_mp = CreateManagedProjection();
 		_mp.InitializeNew(
-			new ManagedProjection.PersistedState {
+			new() {
 				Enabled = false,
 				HandlerType = "JS",
 				Query = "fromAll().when({});",
@@ -281,9 +263,7 @@ public class when_updating_projection_config_of_faulted_projection<TLogFormat, T
 		OneWriteCompletes();
 		_consumer.HandledMessages.Clear();
 
-		_mp.Handle(new CoreProjectionStatusMessage.Faulted(
-			_projectionId,
-			"test"));
+		_mp.Handle(new CoreProjectionStatusMessage.Faulted(_projectionId, "test"));
 
 		_updateConfig = CreateConfig();
 		try {
@@ -296,7 +276,7 @@ public class when_updating_projection_config_of_faulted_projection<TLogFormat, T
 	[Test]
 	public void persisted_state_is_written() {
 		var writeEvents = _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().ToList();
-		Assert.AreEqual(1, writeEvents.Count());
+		Assert.AreEqual(1, writeEvents.Count);
 		Assert.AreEqual(ProjectionStreamId, writeEvents[0].EventStreamId);
 	}
 
@@ -314,8 +294,7 @@ public class when_updating_projection_config_of_faulted_projection<TLogFormat, T
 		Assert.AreEqual(_updateConfig.TrackEmittedStreams, getConfigResult.TrackEmittedStreams);
 		Assert.AreEqual(_updateConfig.CheckpointAfterMs, getConfigResult.CheckpointAfterMs);
 		Assert.AreEqual(_updateConfig.CheckpointHandledThreshold, getConfigResult.CheckpointHandledThreshold);
-		Assert.AreEqual(_updateConfig.CheckpointUnhandledBytesThreshold,
-			getConfigResult.CheckpointUnhandledBytesThreshold);
+		Assert.AreEqual(_updateConfig.CheckpointUnhandledBytesThreshold, getConfigResult.CheckpointUnhandledBytesThreshold);
 		Assert.AreEqual(_updateConfig.PendingEventsThreshold, getConfigResult.PendingEventsThreshold);
 		Assert.AreEqual(_updateConfig.MaxWriteBatchLength, getConfigResult.MaxWriteBatchLength);
 		Assert.AreEqual(_updateConfig.MaxAllowedWritesInFlight, getConfigResult.MaxAllowedWritesInFlight);
@@ -326,9 +305,9 @@ public class when_updating_projection_config_of_faulted_projection<TLogFormat, T
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_updating_projection_config_of_running_projection<TLogFormat, TStreamId> : projection_config_test_base<TLogFormat, TStreamId> {
 	private ManagedProjection _mp;
-	private Guid _projectionId = Guid.NewGuid();
+	private readonly Guid _projectionId = Guid.NewGuid();
 
-	private ManagedProjection.PersistedState _persistedState = new ManagedProjection.PersistedState {
+	private readonly ManagedProjection.PersistedState _persistedState = new() {
 		Enabled = true,
 		HandlerType = "JS",
 		Query = "fromAll().when({});",
@@ -358,10 +337,8 @@ public class when_updating_projection_config_of_running_projection<TLogFormat, T
 		_timeProvider = new FakeTimeProvider();
 		_mp = CreateManagedProjection();
 
-		_mp.InitializeNew(
-			_persistedState,
-			null);
-		_mp.Handle(new CoreProjectionStatusMessage.Prepared(_projectionId, new ProjectionSourceDefinition()));
+		_mp.InitializeNew(_persistedState, null);
+		_mp.Handle(new CoreProjectionStatusMessage.Prepared(_projectionId, new()));
 
 		// Complete write of persisted state to start projection
 		OneWriteCompletes();
@@ -384,27 +361,22 @@ public class when_updating_projection_config_of_running_projection<TLogFormat, T
 
 		Assert.IsNotNull(getConfigResult);
 		Assert.AreEqual(_persistedState.EmitEnabled, getConfigResult.EmitEnabled, "EmitEnabled");
-		Assert.AreEqual(_persistedState.TrackEmittedStreams, getConfigResult.TrackEmittedStreams,
-			"TrackEmittedStreams");
+		Assert.AreEqual(_persistedState.TrackEmittedStreams, getConfigResult.TrackEmittedStreams, "TrackEmittedStreams");
 		Assert.AreEqual(_persistedState.CheckpointAfterMs, getConfigResult.CheckpointAfterMs, "CheckpointAfterMs");
-		Assert.AreEqual(_persistedState.CheckpointHandledThreshold, getConfigResult.CheckpointHandledThreshold,
-			"CheckpointHandledThreshold");
-		Assert.AreEqual(_persistedState.CheckpointUnhandledBytesThreshold,
-			getConfigResult.CheckpointUnhandledBytesThreshold, "CheckpointUnhandledBytesThreshold");
-		Assert.AreEqual(_persistedState.PendingEventsThreshold, getConfigResult.PendingEventsThreshold,
-			"PendingEventsThreshold");
-		Assert.AreEqual(_persistedState.MaxWriteBatchLength, getConfigResult.MaxWriteBatchLength,
-			"MaxWriteBatchLength");
-		Assert.AreEqual(_persistedState.MaxAllowedWritesInFlight, getConfigResult.MaxAllowedWritesInFlight,
-			"MaxAllowedWritesInFlight");
-		Assert.AreEqual(_persistedState.ProjectionExecutionTimeout, getConfigResult.ProjectionExecutionTimeout,
-			"ProjectionExecutionTimeout");
+		Assert.AreEqual(_persistedState.CheckpointHandledThreshold, getConfigResult.CheckpointHandledThreshold, "CheckpointHandledThreshold");
+		Assert.AreEqual(_persistedState.CheckpointUnhandledBytesThreshold, getConfigResult.CheckpointUnhandledBytesThreshold,
+			"CheckpointUnhandledBytesThreshold");
+		Assert.AreEqual(_persistedState.PendingEventsThreshold, getConfigResult.PendingEventsThreshold, "PendingEventsThreshold");
+		Assert.AreEqual(_persistedState.MaxWriteBatchLength, getConfigResult.MaxWriteBatchLength, "MaxWriteBatchLength");
+		Assert.AreEqual(_persistedState.MaxAllowedWritesInFlight, getConfigResult.MaxAllowedWritesInFlight, "MaxAllowedWritesInFlight");
+		Assert.AreEqual(_persistedState.ProjectionExecutionTimeout, getConfigResult.ProjectionExecutionTimeout, "ProjectionExecutionTimeout");
 	}
 }
 
 public abstract class projection_config_test_base<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	protected const string ProjectionName = "name";
 	protected readonly string ProjectionStreamId = ProjectionNamesBuilder.ProjectionsStreamPrefix + ProjectionName;
+
 	protected ManagedProjection CreateManagedProjection() {
 		return new ManagedProjection(
 			Guid.NewGuid(),
@@ -417,23 +389,15 @@ public abstract class projection_config_test_base<TLogFormat, TStreamId> : TestF
 			_writeDispatcher,
 			_readDispatcher,
 			_bus,
-			_timeProvider, new RequestResponseDispatcher
-				<CoreProjectionManagementMessage.GetState, CoreProjectionStatusMessage.StateReport>(
-					_bus,
-					v => v.CorrelationId,
-					v => v.CorrelationId,
-					_bus), new RequestResponseDispatcher
-				<CoreProjectionManagementMessage.GetResult, CoreProjectionStatusMessage.ResultReport>(
-					_bus,
-					v => v.CorrelationId,
-					v => v.CorrelationId,
-					_bus),
+			_timeProvider,
+			new(_bus, v => v.CorrelationId, v => v.CorrelationId, _bus),
+			new(_bus, v => v.CorrelationId, v => v.CorrelationId, _bus),
 			_ioDispatcher,
 			TimeSpan.FromMinutes(Opts.ProjectionsQueryExpiryDefault));
 	}
 
 	protected ProjectionManagementMessage.Command.UpdateConfig CreateConfig() {
-		return new ProjectionManagementMessage.Command.UpdateConfig(
+		return new(
 			new NoopEnvelope(), ProjectionName, true, false, 100, 200, 300, 400, 500, 600,
 			ProjectionManagementMessage.RunAs.Anonymous, ClusterVNodeOptions.ProjectionOptions.DefaultProjectionExecutionTimeout);
 	}

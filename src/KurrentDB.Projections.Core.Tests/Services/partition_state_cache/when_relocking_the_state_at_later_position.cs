@@ -19,8 +19,7 @@ public class when_relocking_the_state_at_later_position {
 		//given
 		_cache = new PartitionStateCache();
 		_cachedAtCheckpointTag = CheckpointTag.FromPosition(0, 1000, 900);
-		_cache.CacheAndLockPartitionState("partition", new PartitionState("data", null, _cachedAtCheckpointTag),
-			_cachedAtCheckpointTag);
+		_cache.CacheAndLockPartitionState("partition", new PartitionState("data", null, _cachedAtCheckpointTag), _cachedAtCheckpointTag);
 		_relockedData = _cache.TryGetAndLockPartitionState("partition", CheckpointTag.FromPosition(0, 2000, 1900));
 	}
 

@@ -13,7 +13,7 @@ public static class ESConsts {
 	public const int CommittedEventsMemCacheLimit = 8 * 1024 * 1024;
 	public const int CachedEpochCount = 1000;
 	public const int ReadRequestTimeout = 10000;
-	public const bool PerformAdditionlCommitChecks = false;
+	public const bool PerformAdditionalCommitChecks = false;
 	public const int MetaStreamMaxCount = 1;
 
 	public const int CachedPrincipalCount = 1000;

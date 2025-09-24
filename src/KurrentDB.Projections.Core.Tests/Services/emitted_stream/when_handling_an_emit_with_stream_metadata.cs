@@ -26,31 +26,27 @@ public class when_handling_an_emit_with_stream_metadata_to_empty_stream<TLogForm
 	protected override void Given() {
 		AllWritesQueueUp();
 		NoStream("test_stream");
-		_streamMetadata = new EmittedStream.WriterConfiguration.StreamMetadata(maxCount: 10);
-		_writerConfiguration = new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
-			_streamMetadata, null, maxWriteBatchLength: 50);
+		_streamMetadata = new(maxCount: 10);
+		_writerConfiguration = new(new EmittedStreamsWriter(_ioDispatcher), _streamMetadata, null, maxWriteBatchLength: 50);
 	}
 
 	[SetUp]
 	public void setup() {
-		_readyHandler = new TestCheckpointManagerMessageHandler();
-		_stream = new EmittedStream(
+		_readyHandler = new();
+		_stream = new(
 			"test_stream", _writerConfiguration, new ProjectionVersion(1, 0, 0),
 			new TransactionFilePositionTagger(0),
 			CheckpointTag.FromPosition(0, 40, 30), _bus, _ioDispatcher, _readyHandler);
 		_stream.Start();
 		_stream.EmitEvents(
-			new[] {
-				new EmittedDataEvent(
-					"test_stream", Guid.NewGuid(), "type", true, "data", null,
-					CheckpointTag.FromPosition(0, 200, 150), null)
-			});
+		[
+			new EmittedDataEvent("test_stream", Guid.NewGuid(), "type", true, "data", null, CheckpointTag.FromPosition(0, 200, 150), null)
+		]);
 	}
 
 	[Test]
 	public void publishes_write_stream_metadata() {
-		Assert.AreEqual(
-			1, _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().ToStream("$$test_stream").Count());
+		Assert.AreEqual(1, _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().ToStream("$$test_stream").Count());
 	}
 
 	[Test]
@@ -58,20 +54,16 @@ public class when_handling_an_emit_with_stream_metadata_to_empty_stream<TLogForm
 		OneWriteCompletes();
 		OneWriteCompletes();
 		_stream.EmitEvents(
-			new[] {
-				new EmittedDataEvent(
-					"test_stream", Guid.NewGuid(), "type", true, "data", null,
-					CheckpointTag.FromPosition(0, 400, 350), null)
-			});
-		Assert.AreEqual(
-			1, _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().ToStream("$$test_stream").Count());
+		[
+			new EmittedDataEvent("test_stream", Guid.NewGuid(), "type", true, "data", null, CheckpointTag.FromPosition(0, 400, 350), null)
+		]);
+		Assert.AreEqual(1, _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().ToStream("$$test_stream").Count());
 	}
 
 	[Test]
 	public void publishes_write_emitted_event_on_write_stream_metadata_completed() {
 		OneWriteCompletes();
-		Assert.AreEqual(
-			1, _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().ToStream("test_stream").Count());
+		Assert.AreEqual( 1, _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().ToStream("test_stream").Count());
 	}
 
 	[Test]

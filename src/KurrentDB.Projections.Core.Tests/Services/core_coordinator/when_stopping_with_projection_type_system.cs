@@ -10,6 +10,7 @@ using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Management;
 using KurrentDB.Projections.Core.Services.Processing;
 using NUnit.Framework;
+using static KurrentDB.Projections.Core.Messages.ProjectionCoreServiceMessage;
 
 namespace KurrentDB.Projections.Core.Tests.Services.core_coordinator;
 
@@ -18,39 +19,29 @@ public class when_stopping_with_projection_type_system {
 	private FakePublisher[] queues;
 	private FakePublisher publisher;
 	private ProjectionCoreCoordinator _coordinator;
-
-	private List<ProjectionCoreServiceMessage.StopCore> stopCoreMessages =
-		new List<ProjectionCoreServiceMessage.StopCore>();
+	private List<StopCore> stopCoreMessages = [];
 
 	[SetUp]
 	public void Setup() {
-		queues = new List<FakePublisher>() { new FakePublisher() }.ToArray();
-		publisher = new FakePublisher();
-
+		queues = [new()];
+		publisher = new();
 		var instanceCorrelationId = Guid.NewGuid();
-		_coordinator =
-			new ProjectionCoreCoordinator(ProjectionType.System, queues, publisher);
+		_coordinator = new(ProjectionType.System, queues, publisher);
 
 		// Start components
 		_coordinator.Handle(new ProjectionSubsystemMessage.StartComponents(instanceCorrelationId));
 
 		// Start all sub components
-		_coordinator.Handle(
-			new ProjectionCoreServiceMessage.SubComponentStarted(EventReaderCoreService.SubComponentName,
-				instanceCorrelationId));
-		_coordinator.Handle(
-			new ProjectionCoreServiceMessage.SubComponentStarted(ProjectionCoreService.SubComponentName,
-				instanceCorrelationId));
+		_coordinator.Handle(new SubComponentStarted(EventReaderCoreService.SubComponentName, instanceCorrelationId));
+		_coordinator.Handle(new SubComponentStarted(ProjectionCoreService.SubComponentName, instanceCorrelationId));
 
 		// Stop components
 		_coordinator.Handle(new ProjectionSubsystemMessage.StopComponents(instanceCorrelationId));
 
 		// Publish SubComponent stopped messages for the projection core service
-		stopCoreMessages = queues[0].Messages.OfType<ProjectionCoreServiceMessage.StopCore>().ToList();
+		stopCoreMessages = queues[0].Messages.OfType<StopCore>().ToList();
 		foreach (var msg in stopCoreMessages)
-			_coordinator.Handle(
-				new ProjectionCoreServiceMessage.SubComponentStopped(ProjectionCoreService.SubComponentName,
-					msg.QueueId));
+			_coordinator.Handle(new SubComponentStopped(ProjectionCoreService.SubComponentName, msg.QueueId));
 	}
 
 	[Test]
