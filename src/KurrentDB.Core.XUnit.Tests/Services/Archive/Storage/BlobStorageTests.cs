@@ -10,6 +10,7 @@ using DotNext.Buffers;
 using KurrentDB.Core.Services.Archive;
 using KurrentDB.Core.Services.Archive.Storage;
 using KurrentDB.Core.Services.Archive.Storage.Azure;
+using KurrentDB.Core.Services.Archive.Storage.Gcp;
 using KurrentDB.Core.Services.Archive.Storage.S3;
 using Xunit;
 
@@ -20,6 +21,7 @@ namespace KurrentDB.Core.XUnit.Tests.Services.Archive.Storage;
 public class BlobStorageTests : DirectoryPerTest<BlobStorageTests> {
 	private const string AwsRegion = "eu-west-1";
 	private const string AwsBucket = "archiver-unit-tests";
+	private const string GcpBucket = "archiver-unit-tests";
 
 	private string ArchivePath => Path.Combine(Fixture.Directory, "archive");
 	private string LocalPath => Path.Combine(Fixture.Directory, "local");
@@ -47,6 +49,11 @@ public class BlobStorageTests : DirectoryPerTest<BlobStorageTests> {
 				storage = new AzureBlobStorage(AzuriteHelpers.Options);
 				AzuriteHelpers.ConfigureEnvironment();
 				break;
+			case StorageType.GCP:
+                storage = new GcpBlobStorage(new() {
+                    Bucket = GcpBucket,
+                });
+				break;
 			default:
 				throw new NotImplementedException();
 		}
@@ -68,6 +75,7 @@ public class BlobStorageTests : DirectoryPerTest<BlobStorageTests> {
 	[Theory]
 	[StorageData.S3]
 	[StorageData.Azure]
+	[StorageData.GCP]
 	[StorageData.FileSystem]
 	public async Task can_read_file_entirely(StorageType storageType) {
 		var sut = CreateSut(storageType);
@@ -85,17 +93,19 @@ public class BlobStorageTests : DirectoryPerTest<BlobStorageTests> {
 
 		// read the uploaded file
 		using var buffer = Memory.AllocateExactly<byte>(fileSize);
-		await sut.ReadAsync("output.file", buffer.Memory, offset: 0, CancellationToken.None);
+		var numRead = await sut.ReadAsync("output.file", buffer.Memory, offset: 0, CancellationToken.None);
 
 		// then
 		Assert.Equal(localContent, buffer.Span);
+		Assert.Equal(localContent.Length, numRead);
 	}
 
 	[Theory]
 	[StorageData.S3]
 	[StorageData.Azure]
+	[StorageData.GCP]
 	[StorageData.FileSystem]
-	public async Task can_store_and_read_file_partially(StorageType storageType) {
+	public async Task can_read_file_partially(StorageType storageType) {
 		var sut = CreateSut(storageType);
 
 		// create a file and upload it
@@ -113,15 +123,72 @@ public class BlobStorageTests : DirectoryPerTest<BlobStorageTests> {
 		var end = localContent.Length;
 		var length = end - start;
 		using var buffer = Memory.AllocateExactly<byte>(length);
-		await sut.ReadAsync("output.file", buffer.Memory, offset: start, CancellationToken.None);
+		var numRead = await sut.ReadAsync("output.file", buffer.Memory, offset: start, CancellationToken.None);
 
 		// then
 		Assert.Equal(localContent.AsSpan(start..end), buffer.Span);
+		Assert.Equal(localContent.Length / 2, numRead);
 	}
 
 	[Theory]
 	[StorageData.S3]
 	[StorageData.Azure]
+	[StorageData.GCP]
+	[StorageData.FileSystem]
+	public async Task can_read_file_partially_and_past_end_of_file(StorageType storageType) {
+		var sut = CreateSut(storageType);
+
+		// create a file and upload it
+		string localPath;
+		await using (var fs = await CreateFile("local.file", fileSize: 1024)) {
+			await sut.StoreAsync(fs, "output.file", CancellationToken.None);
+			localPath = fs.Name;
+		}
+
+		// read the local file
+		var localContent = await File.ReadAllBytesAsync(localPath);
+
+		// read the uploaded file partially with a buffer that goes past the end of the file
+		var start = localContent.Length / 2;
+		using var buffer = Memory.AllocateExactly<byte>(localContent.Length);
+		var numRead = await sut.ReadAsync("output.file", buffer.Memory, offset: start, CancellationToken.None);
+
+		// then
+		Assert.Equal(localContent.AsSpan(start..), buffer.Span[..numRead]);
+		Assert.Equal(localContent.Length / 2, numRead);
+	}
+
+	[Theory]
+	[StorageData.S3]
+	[StorageData.Azure]
+	[StorageData.GCP]
+	[StorageData.FileSystem]
+	public async Task can_read_past_end_of_file(StorageType storageType) {
+		var sut = CreateSut(storageType);
+
+		// create a file and upload it
+		string localPath;
+		await using (var fs = await CreateFile("local.file", fileSize: 1024)) {
+			await sut.StoreAsync(fs, "output.file", CancellationToken.None);
+			localPath = fs.Name;
+		}
+
+		// read the local file
+		var localContent = await File.ReadAllBytesAsync(localPath);
+
+		// read past the end of the uploaded file
+		var start = localContent.Length;
+		using var buffer = Memory.AllocateExactly<byte>(localContent.Length);
+		var numRead = await sut.ReadAsync("output.file", buffer.Memory, offset: start, CancellationToken.None);
+
+		// then
+		Assert.Equal(0, numRead);
+	}
+
+	[Theory]
+	[StorageData.S3]
+	[StorageData.Azure]
+	[StorageData.GCP]
 	[StorageData.FileSystem]
 	public async Task can_retrieve_metadata(StorageType storageType) {
 		var sut = CreateSut(storageType);
@@ -142,6 +209,7 @@ public class BlobStorageTests : DirectoryPerTest<BlobStorageTests> {
 	[Theory]
 	[StorageData.S3]
 	[StorageData.Azure]
+	[StorageData.GCP]
 	[StorageData.FileSystem]
 	public async Task read_missing_file_throws_FileNotFoundException(StorageType storageType) {
 		var sut = CreateSut(storageType);

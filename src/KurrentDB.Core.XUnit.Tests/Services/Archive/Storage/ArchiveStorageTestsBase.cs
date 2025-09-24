@@ -20,6 +20,7 @@ namespace KurrentDB.Core.XUnit.Tests.Services.Archive.Storage;
 public abstract class ArchiveStorageTestsBase<T> : DirectoryPerTest<T> {
 	private const string AwsRegion = "eu-west-1";
 	private const string AwsBucket = "archiver-unit-tests";
+	private const string GcpBucket = "archiver-unit-tests";
 
 	private const string ChunkPrefix = "chunk-";
 	private string ArchivePath => Path.Combine(Fixture.Directory, "archive");
@@ -44,6 +45,9 @@ public abstract class ArchiveStorageTestsBase<T> : DirectoryPerTest<T> {
 					Region = AwsRegion,
 				},
 				Azure = AzuriteHelpers.Options,
+				GCP = new () {
+					Bucket = GcpBucket,
+				},
 			},
 			archiveNamingStrategy);
 

@@ -12,6 +12,7 @@ public class ArchiveOptions {
 	public FileSystemOptions FileSystem { get; init; } = new();
 	public S3Options S3 { get; init; } = new();
 	public AzureOptions Azure { get; init; } = new();
+	public GcpOptions GCP { get; init; } = new();
 	public RetentionOptions RetainAtLeast { get; init; } = new();
 
 	public void Validate() {
@@ -28,7 +29,7 @@ public class ArchiveOptions {
 
 		switch (StorageType) {
 			case StorageType.Unspecified:
-				throw new InvalidConfigurationException("Please specify a StorageType (e.g. S3)");
+				throw new InvalidConfigurationException("Please specify a StorageType (e.g. S3, Azure, GCP)");
 			case StorageType.FileSystemDevelopmentOnly:
 				FileSystem.Validate();
 				break;
@@ -37,6 +38,9 @@ public class ArchiveOptions {
 				break;
 			case StorageType.Azure:
 				Azure.Validate();
+                break;
+            case StorageType.GCP:
+				GCP.Validate();
 				break;
 			default:
 				throw new InvalidConfigurationException("Unknown StorageType");
@@ -53,6 +57,7 @@ public enum StorageType {
 	FileSystemDevelopmentOnly,
 	S3,
 	Azure,
+	GCP,
 }
 
 public class FileSystemOptions {
@@ -158,6 +163,15 @@ public class AzureOptions {
 		/// </summary>
 		/// <seealso href="https://learn.microsoft.com/en-us/azure/storage/common/storage-configure-connection-string"/>
 		ConnectionString,
+	}
+}
+
+public class GcpOptions {
+	public string Bucket { get; init; } = "";
+
+	public void Validate() {
+		if (string.IsNullOrEmpty(Bucket))
+			throw new InvalidConfigurationException("Please provide a Bucket for the GCP archive");
 	}
 }
 

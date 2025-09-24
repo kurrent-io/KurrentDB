@@ -4,6 +4,7 @@
 using System;
 using KurrentDB.Core.Services.Archive.Naming;
 using KurrentDB.Core.Services.Archive.Storage.Azure;
+using KurrentDB.Core.Services.Archive.Storage.Gcp;
 using KurrentDB.Core.Services.Archive.Storage.S3;
 
 namespace KurrentDB.Core.Services.Archive.Storage;
@@ -17,6 +18,7 @@ public static class ArchiveStorageFactory {
 			StorageType.FileSystemDevelopmentOnly => new FileSystemBlobStorage(options.FileSystem),
 			StorageType.S3 => new S3BlobStorage(options.S3),
 			StorageType.Azure => new AzureBlobStorage(options.Azure),
+			StorageType.GCP => new GcpBlobStorage(options.GCP),
 			_ => throw new ArgumentOutOfRangeException(nameof(options.StorageType))
 		};
 

@@ -34,6 +34,7 @@
     <PackageVersion Include="GitHubActionsTestLogger" Version="2.4.1" />
     <PackageVersion Include="GitInfo" Version="3.3.3" />
     <PackageVersion Include="Google.Api.CommonProtos" Version="2.17.0" />
+    <PackageVersion Include="Google.Cloud.Storage.V1" Version="4.13.0" />
     <PackageVersion Include="Google.Protobuf" Version="3.32.1" />
     <PackageVersion Include="Grpc.AspNetCore" Version="2.71.0" />
     <PackageVersion Include="Grpc.AspNetCore.Web" Version="2.71.0" />

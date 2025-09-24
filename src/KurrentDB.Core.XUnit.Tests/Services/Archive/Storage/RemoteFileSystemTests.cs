@@ -25,6 +25,7 @@ public sealed class RemoteFileSystemTests : ArchiveStorageTestsBase<RemoteFileSy
 	[Theory]
 	[StorageData.S3]
 	[StorageData.Azure]
+	[StorageData.GCP]
 	[StorageData.FileSystem]
 	public async Task chunk_can_read_record_from_object_storage(StorageType storageType) {
 		const int recordsCount = 10;
@@ -72,6 +73,7 @@ public sealed class RemoteFileSystemTests : ArchiveStorageTestsBase<RemoteFileSy
 	[Theory]
 	[StorageData.S3]
 	[StorageData.Azure]
+	[StorageData.GCP]
 	[StorageData.FileSystem]
 	public async Task chunk_can_bulk_read_record_from_object_storage(StorageType storageType) {
 		const int recordsCount = 10;

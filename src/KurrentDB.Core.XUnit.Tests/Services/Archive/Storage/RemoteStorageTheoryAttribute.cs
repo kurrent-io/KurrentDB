@@ -56,6 +56,32 @@ public static class StorageData {
 		}
 	}
 
+	public sealed class GCPAttribute(params object[] args) : RemoteStorageDataAttribute(
+		StorageType.GCP,
+		args,
+		Symbol,
+		static (ref bool isSet) => CheckPrerequisites(ref isSet)) {
+		const string Symbol = "RUN_GCP_TESTS";
+
+		[Conditional(Symbol)]
+		private static void CheckPrerequisites(ref bool symbolSet) {
+			symbolSet = true;
+			const string gcpDirectoryNameLinux = ".config/gcloud";
+			const string gcpDirectoryNameWindows = "gcloud";
+			var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+			if (OperatingSystem.IsLinux())
+				homeDir = Path.Combine(homeDir, gcpDirectoryNameLinux);
+			else if (OperatingSystem.IsWindows())
+				homeDir = Path.Combine(homeDir, gcpDirectoryNameWindows);
+			else
+				throw new NotSupportedException();
+
+			if (!Directory.Exists(homeDir))
+				throw new GcpCliDirectoryNotFoundException(homeDir);
+		}
+	}
+
 	public sealed class FileSystemAttribute(params object[] args) : RemoteStorageDataAttribute(
 		StorageType.FileSystemDevelopmentOnly,
 		args,
