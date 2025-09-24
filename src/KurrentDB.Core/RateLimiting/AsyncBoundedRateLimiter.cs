@@ -14,7 +14,7 @@ public sealed partial class AsyncBoundedRateLimiter : Disposable {
 
 	public AsyncBoundedRateLimiter(int concurrencyLimit, int maxQueueSize) {
 		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(concurrencyLimit);
-		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxQueueSize);
+		ArgumentOutOfRangeException.ThrowIfNegative(maxQueueSize);
 
 		_leasesAvailable = concurrencyLimit;
 		_maxQueueSize = maxQueueSize;
