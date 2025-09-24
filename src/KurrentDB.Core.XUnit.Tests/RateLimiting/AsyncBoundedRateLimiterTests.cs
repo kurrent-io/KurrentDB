@@ -127,7 +127,7 @@ public class AsyncBoundedRateLimiterTests {
 			Task.Run(AcquireReleaseAsync),
 			Task.Run(AcquireReleaseAsync));
 
-		Assert.Equal(3, rateLimiter.LeaseCount);
+		Assert.Equal(3, rateLimiter.RemainingLeases);
 
 		async Task AcquireReleaseAsync() {
 			for (var i = 0; i < 100; i++) {
