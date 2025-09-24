@@ -137,4 +137,16 @@ public class AsyncBoundedRateLimiterTests {
 			}
 		}
 	}
+
+	[Fact]
+	public static async Task TimeoutWhenAcquiringLease() {
+		using var rateLimiter = new AsyncBoundedRateLimiter(concurrencyLimit: 1, maxQueueSize: 1);
+		Assert.True(await rateLimiter.AcquireAsync(prioritized: false, TimeSpan.Zero));
+
+		await Assert.ThrowsAsync<TimeoutException>(async () =>
+			await rateLimiter.AcquireAsync(prioritized: false, TimeSpan.Zero));
+
+		await Assert.ThrowsAsync<TimeoutException>(async () =>
+			await rateLimiter.AcquireAsync(prioritized: false, TimeSpan.FromMilliseconds(1)));
+	}
 }

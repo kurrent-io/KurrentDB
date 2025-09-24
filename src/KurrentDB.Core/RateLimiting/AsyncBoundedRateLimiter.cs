@@ -5,6 +5,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext;
+using static DotNext.Threading.Timeout;
 
 namespace KurrentDB.Core.RateLimiting;
 
@@ -31,13 +32,43 @@ public sealed partial class AsyncBoundedRateLimiter : Disposable {
 	/// Acquires the lease.
 	/// </summary>
 	/// <param name="prioritized"></param>
+	/// <param name="timeout">The maximum amount of time to wait for the lease.</param>
 	/// <param name="token"></param>
 	/// <returns>
 	/// <see langword="true"/> if the lease is acquired successfully;
 	/// <see langword="false"/> if the rate limit is reached and <paramref name="prioritized"/>
 	/// is <see langword="false"/>.
 	/// </returns>
-	public ValueTask<bool> AcquireAsync(bool prioritized, CancellationToken token = default) {
+	/// <exception cref="OperationCanceledException">The operation is canceled by <paramref name="token"/>.</exception>
+	/// <exception cref="TimeoutException">The lease cannot be acquired in timely manner.</exception>
+	public ValueTask<bool> AcquireAsync(bool prioritized, TimeSpan timeout, CancellationToken token = default)
+		=> timeout.Ticks switch {
+			InfiniteTicks => AcquireAsync(prioritized, token),
+			< 0L or > MaxTimeoutParameterTicks => ValueTask.FromException<bool>(
+				new ArgumentOutOfRangeException(nameof(timeout))),
+			0L => TryAcquireLease()
+				? ValueTask.FromResult(true)
+				: ValueTask.FromException<bool>(new TimeoutException()),
+			_ => GetValueTaskFactory(prioritized, token).Invoke(timeout, token),
+		};
+
+	/// <summary>
+	/// Acquires the lease.
+	/// </summary>
+	/// <param name="prioritized"></param>
+	/// <param name="token"></param>
+	/// <returns>
+	/// <see langword="true"/> if the lease is acquired successfully;
+	/// <see langword="false"/> if the rate limit is reached and <paramref name="prioritized"/>
+	/// is <see langword="false"/>.
+	/// </returns>
+	/// <exception cref="OperationCanceledException">The operation is canceled by <paramref name="token"/>.</exception>
+	/// <exception cref="TimeoutException">The lease cannot be acquired in timely manner.</exception>
+	public ValueTask<bool> AcquireAsync(bool prioritized, CancellationToken token = default)
+		=> GetValueTaskFactory(prioritized, token).Invoke(Timeout.InfiniteTimeSpan, token);
+
+	private ISupplier<TimeSpan, CancellationToken, ValueTask<bool>> GetValueTaskFactory(bool prioritized,
+		CancellationToken token) {
 		ISupplier<TimeSpan, CancellationToken, ValueTask<bool>> factory;
 		lock (_syncRoot) {
 			if (IsDisposingOrDisposed) {
@@ -57,7 +88,25 @@ public sealed partial class AsyncBoundedRateLimiter : Disposable {
 		}
 
 		// activate the completion source out of the lock to reduce the lock contention
-		return factory.Invoke(Timeout.InfiniteTimeSpan, token);
+		return factory;
+	}
+
+	private bool TryAcquireLease() {
+		bool result;
+
+		// use double-check pattern to avoid lock contention when there are no available leases
+		if (Volatile.Read(in _leasesAvailable) > 0) {
+			lock (_syncRoot) {
+				result = _leasesAvailable > 0;
+				if (result) {
+					_leasesAvailable--;
+				}
+			}
+		} else {
+			result = false;
+		}
+
+		return result;
 	}
 
 	/// <summary>
