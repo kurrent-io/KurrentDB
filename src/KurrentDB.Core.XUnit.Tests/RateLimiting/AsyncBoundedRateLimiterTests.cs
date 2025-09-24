@@ -115,4 +115,26 @@ public class AsyncBoundedRateLimiterTests {
 			Assert.True(await rateLimiter.AcquireAsync(prioritized: false));
 		}
 	}
+
+	[Fact]
+	public static async Task StressTest() {
+		using var rateLimiter = new AsyncBoundedRateLimiter(concurrencyLimit: 3, maxQueueSize: 1);
+
+		// start 4 competing tasks in parallel
+		await Task.WhenAll(
+			Task.Run(AcquireReleaseAsync),
+			Task.Run(AcquireReleaseAsync),
+			Task.Run(AcquireReleaseAsync),
+			Task.Run(AcquireReleaseAsync));
+
+		Assert.Equal(3, rateLimiter.LeaseCount);
+
+		async Task AcquireReleaseAsync() {
+			for (var i = 0; i < 100; i++) {
+				await rateLimiter.AcquireAsync(prioritized: false);
+				await Task.Delay(10);
+				rateLimiter.Release();
+			}
+		}
+	}
 }
