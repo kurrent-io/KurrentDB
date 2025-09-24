@@ -92,13 +92,13 @@ OpenTelemetry:
 
 The configuration can specify:
 
-| Name                                                                            | Description          |
-|---------------------------------------------------------------------------------|----------------------|
-| `OpenTelemetry__Logs__Enabled`                                                  | Set to true to enable logs export to the Otlp Endpoint. |
-| `OpenTelemetry__Logs__BatchExportProcessorOptions__ExporterTimeoutMilliseconds` | Maximum time to keep retrying failed batches for. Default: 30000. |
-| `OpenTelemetry__Logs__BatchExportProcessorOptions__MaxExportBatchSize`          | Maximum number of log entries included in each batch. Default: 512. |
-| `OpenTelemetry__Logs__BatchExportProcessorOptions__MaxQueueSize`                | Maximum number of log entries to queue. When the limit is exceeded, logs are discarded. Default: 2048. |
-| `OpenTelemetry__Logs__BatchExportProcessorOptions__ScheduledDelayMilliseconds`  | Maximum delay between batches. Default: 5000. |
+| Name                                                                                   | Description          |
+|----------------------------------------------------------------------------------------|----------------------|
+| `OpenTelemetry__Logs__Enabled`                                                         | Set to true to enable logs export to the Otlp Endpoint. |
+| `OpenTelemetry__Logs__BatchExportProcessorOptions`<br/>`__ExporterTimeoutMilliseconds` | Maximum time to keep retrying failed batches for. Default: 30000. |
+| `OpenTelemetry__Logs__BatchExportProcessorOptions`<br/>`__MaxExportBatchSize`          | Maximum number of log entries included in each batch. Default: 512. |
+| `OpenTelemetry__Logs__BatchExportProcessorOptions`<br/>`__MaxQueueSize`                | Maximum number of log entries to queue. When the limit is exceeded, logs are discarded. Default: 2048. |
+| `OpenTelemetry__Logs__BatchExportProcessorOptions`<br/>`__ScheduledDelayMilliseconds`  | Maximum delay between batches. Default: 5000. |
 
 ### Troubleshooting
 
