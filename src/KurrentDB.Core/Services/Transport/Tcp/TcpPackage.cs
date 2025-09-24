@@ -144,7 +144,6 @@ public readonly struct TcpPackage {
 		_authToken = authToken;
 	}
 
-
 	private TcpPackage(TcpCommand command, TcpFlags flags, Guid correlationId, ArraySegment<byte> data) {
 		Command = command;
 		Flags = flags;

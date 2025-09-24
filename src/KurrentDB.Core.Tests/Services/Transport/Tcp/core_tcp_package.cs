@@ -151,8 +151,7 @@ public class core_tcp_package {
 	[Test]
 	public void token_authorized_with_empty_data_should_serialize_and_deserialize_correctly() {
 		var corrId = Guid.NewGuid();
-		var refPkg = new TcpPackage(TcpCommand.BadRequest, TcpFlags.Authenticated, corrId, "token",
-			[]);
+		var refPkg = new TcpPackage(TcpCommand.BadRequest, TcpFlags.Authenticated, corrId, "token", Array.Empty<byte>());
 		var bytes = refPkg.AsArraySegment();
 
 		var pkg = TcpPackage.FromArraySegment(bytes);

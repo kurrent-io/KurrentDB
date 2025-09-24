@@ -12,7 +12,8 @@ using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 namespace KurrentDB.Projections.Core.Standard;
 
 public class IndexStreams : IProjectionStateHandler {
-	public IndexStreams(string source) {
+	// ReSharper disable once UnusedParameter.Local
+	public IndexStreams(string source, Action<string, object[]> logger) {
 		var trimmedSource = source?.Trim();
 		if (!string.IsNullOrEmpty(trimmedSource))
 			throw new InvalidOperationException("Cannot initialize categorize stream projection handler.  No source is allowed.");
@@ -36,8 +37,13 @@ public class IndexStreams : IProjectionStateHandler {
 	}
 
 	public bool ProcessEvent(
-		string partition, CheckpointTag eventPosition, string category1, ResolvedEvent data,
-		out string newState, out string newSharedState, out EmittedEventEnvelope[] emittedEvents) {
+		string partition,
+		CheckpointTag eventPosition,
+		string category1,
+		ResolvedEvent data,
+		out string newState,
+		out string newSharedState,
+		out EmittedEventEnvelope[] emittedEvents) {
 		newSharedState = null;
 		emittedEvents = null;
 		newState = null;
@@ -55,7 +61,9 @@ public class IndexStreams : IProjectionStateHandler {
 		return true;
 	}
 
-	public bool ProcessPartitionCreated(string partition, CheckpointTag createPosition, ResolvedEvent data,
+	public bool ProcessPartitionCreated(string partition,
+		CheckpointTag createPosition,
+		ResolvedEvent data,
 		out EmittedEventEnvelope[] emittedEvents) {
 		emittedEvents = null;
 		return false;
