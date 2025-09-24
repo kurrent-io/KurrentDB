@@ -104,4 +104,15 @@ public class AsyncBoundedRateLimiterTests {
 		rateLimiter.Release();
 		Assert.True(await task2);
 	}
+
+	[Fact]
+	public static async Task AcquireInParallel() {
+		using var rateLimiter = new AsyncBoundedRateLimiter(concurrencyLimit: 3, maxQueueSize: 0);
+		await Task.WhenAll(Task.Run(AcquireAsync), Task.Run(AcquireAsync), Task.Run(AcquireAsync));
+		Assert.False(await rateLimiter.AcquireAsync(prioritized: false));
+
+		async Task AcquireAsync() {
+			Assert.True(await rateLimiter.AcquireAsync(prioritized: false));
+		}
+	}
 }
