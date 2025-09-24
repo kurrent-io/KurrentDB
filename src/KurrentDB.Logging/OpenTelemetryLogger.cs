@@ -37,6 +37,8 @@ public static class OpenTelemetryLogger {
 				};
 				options.BatchingOptions.BatchSizeLimit = logExporterConfig.BatchExportProcessorOptions.MaxExportBatchSize;
 				options.BatchingOptions.BufferingTimeLimit = TimeSpan.FromMilliseconds(logExporterConfig.BatchExportProcessorOptions.ScheduledDelayMilliseconds);
+				// xmldoc says logs exceeding the queue limit will cause back-pressure, but they are actually discarded
+				// https://github.com/serilog/serilog/pull/2203
 				options.BatchingOptions.QueueLimit = logExporterConfig.BatchExportProcessorOptions.MaxQueueSize;
 				options.BatchingOptions.RetryTimeLimit = TimeSpan.FromMilliseconds(logExporterConfig.BatchExportProcessorOptions.ExporterTimeoutMilliseconds);
 			}, getConfigurationVariable: name => name switch {
