@@ -10,6 +10,7 @@ using System.Threading;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Services.Transport.Tcp;
 using KurrentDB.Core.Tests.Helpers;
+using KurrentDB.Core.Tests.Logging;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.Transport.Tcp;
 using NUnit.Framework;
@@ -19,12 +20,13 @@ namespace KurrentDB.Core.Tests.Services.Transport.Tcp;
 
 [TestFixture]
 public class ssl_connections_mutual_auth {
-	private static readonly ILogger Log = Serilog.Log.ForContext<ssl_connections_mutual_auth>();
+	private static readonly ILogger Log = TestLogger.Create<ssl_connections_mutual_auth>();
 	private IPAddress _ip;
 	private int _port;
 
 	[SetUp]
 	public void SetUp() {
+		Serilog.Log.Logger = TestLogger.Logger;
 		_ip = IPAddress.Loopback;
 		_port = PortsHelper.GetAvailablePort(_ip);
 	}
@@ -61,7 +63,6 @@ public class ssl_connections_mutual_auth {
 			: ssl_connections.GetUntrustedCertificate();
 		var rootCertificates = new X509Certificate2Collection(ssl_connections.GetRootCertificate());
 
-
 		var sent = new byte[1000];
 		new Random().NextBytes(sent);
 
@@ -71,16 +72,25 @@ public class ssl_connections_mutual_auth {
 
 		var listener = new TcpServerListener(serverEndPoint);
 		listener.StartListening((endPoint, socket) => {
-			var ssl = TcpConnectionSsl.CreateServerFromSocket(Guid.NewGuid(), endPoint, socket, () => serverCertificate,
-				null, (cert, chain, err) => validateClientCertificate ?
-					ClusterVNode<string>.ValidateClientCertificate(cert, chain, err, () => null, () => rootCertificates) : (true, null),
+			var ssl = TcpConnectionSsl.CreateServerFromSocket(
+				Guid.NewGuid(),
+				endPoint,
+				socket,
+				() => serverCertificate,
+				null,
+				(cert, chain, err) => validateClientCertificate
+					? ClusterVNode<string>.ValidateClientCertificate(cert, chain, err, () => null, () => rootCertificates)
+					: (true, null),
 				verbose: true);
-			ssl.ConnectionClosed += (x, y) => done.Set();
+			ssl.ConnectionClosed += (_, error) => {
+				Log.Information("Connection closed: {Error}.", error);
+				done.Set();
+			};
 			if (ssl.IsClosed)
 				done.Set();
 
 			Action<ITcpConnection, IEnumerable<ArraySegment<byte>>> callback = null;
-			callback = (x, y) => {
+			callback = (_, y) => {
 				foreach (var arraySegment in y) {
 					received.Write(arraySegment.Array, arraySegment.Offset, arraySegment.Count);
 					Log.Information("Received: {0} bytes, total: {1}.", arraySegment.Count, received.Length);
@@ -103,31 +113,30 @@ public class ssl_connections_mutual_auth {
 			serverEndPoint.GetHost(),
 			null,
 			serverEndPoint,
-			(cert, chain, err, _) => validateServerCertificate ? ClusterVNode<string>.ValidateServerCertificate(cert, chain, err, () => null, () => rootCertificates, null) : (true, null),
+			(cert, chain, err, _) => validateServerCertificate
+				? ClusterVNode<string>.ValidateServerCertificate(cert, chain, err, () => null, () => rootCertificates, null)
+				: (true, null),
 			() => new X509CertificateCollection { clientCertificate },
 			new TcpClientConnector(),
 			TcpConnectionManager.ConnectionTimeout,
 			conn => {
 				Log.Information("Sending bytes...");
-				conn.EnqueueSend(new[] { new ArraySegment<byte>(sent) });
+				conn.EnqueueSend([new(sent)]);
 			},
-			(conn, err) => {
-				Log.Error("Connecting failed: {0}.", err);
+			(_, err) => {
+				Log.Error("Connecting failed: {Error}.", err);
 				done.Set();
 			},
 			verbose: true);
 
 		Assert.IsTrue(done.Wait(20000), "Took too long to receive completion.");
 
-		Log.Information("Stopping listener...");
-		listener.Stop();
 		Log.Information("Closing client TLS connection...");
 		clientSsl.Close("Normal close.");
+		Log.Information("Stopping listener...");
+		listener.Stop();
 		Log.Information("Checking received data...");
 
-		if (shouldConnectSuccessfully)
-			Assert.AreEqual(sent, received.ToArray());
-		else
-			Assert.AreEqual(LogRecord.NoData, received.ToArray());
+		Assert.AreEqual(shouldConnectSuccessfully ? sent : LogRecord.NoData.ToArray(), received.ToArray());
 	}
 }
