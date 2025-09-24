@@ -36,19 +36,17 @@ public sealed partial class AsyncBoundedRateLimiter : Disposable {
 	/// <param name="token"></param>
 	/// <returns>
 	/// <see langword="true"/> if the lease is acquired successfully;
-	/// <see langword="false"/> if the rate limit is reached and <paramref name="prioritized"/>
-	/// is <see langword="false"/>.
+	/// <see langword="false"/> if the concurrency limit is reached and <paramref name="prioritized"/>
+	/// is <see langword="false"/>; or if the timeout occured.
 	/// </returns>
+	/// <exception cref="ObjectDisposedException">The rate limiter is disposed.</exception>
 	/// <exception cref="OperationCanceledException">The operation is canceled by <paramref name="token"/>.</exception>
-	/// <exception cref="TimeoutException">The lease cannot be acquired in timely manner.</exception>
 	public ValueTask<bool> AcquireAsync(bool prioritized, TimeSpan timeout, CancellationToken token = default)
 		=> timeout.Ticks switch {
 			InfiniteTicks => AcquireAsync(prioritized, token),
 			< 0L or > MaxTimeoutParameterTicks => ValueTask.FromException<bool>(
 				new ArgumentOutOfRangeException(nameof(timeout))),
-			0L => TryAcquireLease()
-				? ValueTask.FromResult(true)
-				: ValueTask.FromException<bool>(new TimeoutException()),
+			0L => ValueTask.FromResult(TryAcquireLease()),
 			_ => GetValueTaskFactory(prioritized, token).Invoke(timeout, token),
 		};
 
@@ -63,7 +61,7 @@ public sealed partial class AsyncBoundedRateLimiter : Disposable {
 	/// is <see langword="false"/>.
 	/// </returns>
 	/// <exception cref="OperationCanceledException">The operation is canceled by <paramref name="token"/>.</exception>
-	/// <exception cref="TimeoutException">The lease cannot be acquired in timely manner.</exception>
+	/// <exception cref="ObjectDisposedException">The rate limiter is disposed.</exception>
 	public ValueTask<bool> AcquireAsync(bool prioritized, CancellationToken token = default)
 		=> GetValueTaskFactory(prioritized, token).Invoke(Timeout.InfiniteTimeSpan, token);
 

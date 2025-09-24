@@ -3,6 +3,7 @@
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using DotNext;
 using DotNext.Threading.Tasks;
 
 namespace KurrentDB.Core.RateLimiting;
@@ -24,7 +25,7 @@ partial class AsyncBoundedRateLimiter {
 		public WaitNode Previous => _previous;
 
 		/// <summary>
-		/// <see cref="Sentinel"/> object is used to fill <see cref="ManualResetCompletionSource.CompletionData"/>
+		/// <see cref="AsyncBoundedRateLimiter.Sentinel"/> object is used to fill <see cref="ManualResetCompletionSource.CompletionData"/>
 		/// when we need to distinguish two completion reasons:
 		/// 1. Completed by cancellation token. We need to remove the node manually from the queue
 		/// 2. Completed normally by signaling thread. The node is removed by the thread.
@@ -45,6 +46,8 @@ partial class AsyncBoundedRateLimiter {
 		}
 
 		protected override void AfterConsumed() => _owner?.ReturnNode(this);
+
+		protected override Result<bool> OnTimeout() => false;
 
 		public void Append(WaitNode node) {
 			Debug.Assert(node.Next is null);
