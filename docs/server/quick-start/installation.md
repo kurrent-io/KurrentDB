@@ -124,7 +124,7 @@ Alternatively, you can find instructions to manually configure it yourself on Cl
 Install the package:
 
 ```bash
-apt-get install kurrentdb=25.0.0
+apt-get install kurrentdb=25.1.0
 ```
 
 #### Uninstall with apt-get
@@ -207,7 +207,7 @@ Alternatively, you can find instructions to manually configure it yourself on Cl
 Install the package:
 
 ```bash
-yum install kurrentdb-25.0.0-1.x86_64
+yum install kurrentdb-25.1.0-1.x86_64
 ```
 
 #### Uninstall with yum
@@ -243,7 +243,7 @@ KurrentDB has NuGet packages available on [Chocolatey](https://community.chocola
 You can install KurrentDB through Chocolatey:
 
 ```powershell
-choco install kurrentdb --version=25.0.0
+choco install kurrentdb --version=25.1.0
 ```
 
 KurrentDB can then be run with `KurrentDB.exe`:
@@ -371,10 +371,6 @@ docker compose up
 ```
 
 The command above would run KurrentDB as a single node without SSL. You also get AtomPub protocol enabled, so you can get the stream browser to work in the Admin UI.
-
-::: warning
-The legacy TCP client protocol is disabled by default and is no longer be available from version 24.10. 
-:::
 
 #### Secure cluster
 
