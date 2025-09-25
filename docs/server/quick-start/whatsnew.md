@@ -43,7 +43,7 @@ TODO: Description and link to documentation.
 
 The server now supports appending to multiple streams atomically in one write request.
 
-Events `e1, ..., eN` can be appended to stream `s1` atomically with events `f1, ..., fN` being appended to stream `s2`.
+Events `e1, ..., eN` can be appended to stream `s1` and events `f1, ..., fN` being appended to stream `s2`, and so on with other streams, all in one atomic operation.
 
 An optimistic concurrency check can be provided for each stream, and the write will only take effect if all of the checks are successful.
 
@@ -119,14 +119,6 @@ See [the documentation](../diagnostics/metrics.md#persistent-subscriptions) for 
 
 ### Miscellaneous quality of life improvements
 
-- Lower Scavenge API GET calls to Verbose
-
-  The auto-scavenge checks on the status of in-progress scavenges frequently, which was producing unnecessary logs.
-
-- Added extra logging when UnwrapEnvelopeMessage is slow
-
-  When UnwrapEnvelopeMessage triggers a 'SLOW QUEUE MESSAGE` log, it now includes the name of the action it was unwrapping.
-
 - Added server configuration option for TCP read expiry
 
   The option is `TcpReadTimeoutMs` and it defaults to 10000 (10s, which matches the previous behavior).
@@ -164,12 +156,20 @@ See [the documentation](../diagnostics/metrics.md#persistent-subscriptions) for 
 
   If GC is determined as the cause of a leader election, a sensible course of action could be to reduce the Stream Info Cache Capacity (say, to the 100k traditional value) and/or consider enabling ServerGC.
 
-  example logs:
+  Example logs:
   ```
   [34144,13,11:03:05.307,INF] Start of full blocking garbage collection at 06/06/2025 10:02:49. GC: #210548. Generation: 2. Reason: LargeObjectHeapAllocation. Type: BlockingOutsideBackgroundGC.
   [34144,13,11:03:05.307,INF] End of full blocking garbage collection at 06/06/2025 10:03:05. GC: #210548. Took: 15,727ms
   [34144,13,11:03:05.307,WRN] Garbage collection: Very long Execution Engine Suspension. Reason: GarbageCollection. Took: 15,727ms
   ```
+
+- Lower Scavenge API GET calls to Verbose
+
+  The auto-scavenge checks on the status of in-progress scavenges frequently, which was producing unnecessary logs.
+
+- Added extra logging when UnwrapEnvelopeMessage is slow
+
+  When `UnwrapEnvelopeMessage` triggers a `SLOW QUEUE MESSAGE` log, it now includes the name of the action it was unwrapping.
 
 ## New in 25.0
 
