@@ -6,13 +6,90 @@ order: 2
 
 ## New in 25.1
 
-These are the new features in KurrentDB 25.1:
+These are the new features and important changes and in KurrentDB 25.1:
 
-* [Additional Projection Metrics](#additional-projection-metrics)
+Features
+* [Secondary Indexing](#secondary-indexing)
+* [Schema Registry](#schema-registry)
+* [Multi-stream Appends](#multi-stream-appends)
+* [Log Record Properties](#)
+* [Windows Service](#windows-service)
+* [Open Telemetry Logs Export](#open-telemetry-logs-export)
+
+Changes / Improvements
 * [ServerGC](#server-garbage-collection)
 * [StreamInfoCacheCapacity default](#streaminfocachecapacity-default)
+* [Connectors Improvements](#)
+* [Archiving Improvements](#)
+* [Additional Projection Metrics](#additional-projection-metrics)
+* [Additional other metrics? incorporate? ](#)
+* [Misc Quality of Life Improvements]()
 
-### Additional Projection Metrics
+For breaking changes and deprecation notices, see the [upgrade guide](upgrade-guide.md).
+
+### Secondary Indexing
+
+```
+TODO: Description and link to documentation.
+```
+
+### Schema Registry
+
+```
+TODO: Description and link to documentation.
+```
+
+### Multi-stream Appends
+
+The server now supports appending to multiple streams atomically in one write request.
+
+Events `e1, ..., eN` can be appended to stream `s1` atomically with events `f1, ..., fN` being appended to stream `s2`.
+
+An optimistic concurrency check can be provided for each stream, and the write will only take effect if all of the checks are successful.
+
+Client support for this feature is in progress.
+
+### Log record properties
+
+Historically events have been appended with optional bytes for event metadata. The server now supports receiving this data in a structured way.
+
+```
+TODO: devex to write something here
+```
+
+Client support for this feature is in progress.
+
+### Windows Service
+
+KurrentDB can now be run as a Windows Service. See the [documentation](installation.md#running-as-a-service) for more information.
+
+### Open Telemetry logs export
+
+<Badge type="info" vertical="middle" text="License Required"/>
+
+The [Open Telemetry Integration](../diagnostics/integrations.md#opentelemetry-exporter) can now be used to export logs as well as metrics.
+
+### Server garbage collection
+
+The .NET runtime Server Garbage Collection is now enabled by default, increasing the performance of the server. See [the documentation](../configuration/db-config.md#garbage-collection) for more information.
+
+### StreamInfoCacheCapacity default
+
+`StreamInfoCacheCapacity` is now `100,000` by default rather than `0` (dynamically sized).
+
+StreamInfoCache dynamic sizing was introduced introduced in v21.10 and enabled by default. It allows the StreamInfoCache to grow much larger, according to the amount of free memory which is reevaluated periodically. This is desirable for some workloads, but it comes with a tradeoff of very significantly increased managed memory usage, which in turn causes additional GC pressure and can lead to more frequent elections. On balance we have decided that a default of 100,000 (which is the value used before v21.10) is a better default, favouring its predictability and stability.
+
+Users wishing to keep dynamic sizing can enable it by setting StreamInfoCacheCapacity to 0. Additional can be found in the [StreamInfoCache documentation](../configuration/README.md#streaminfocachecapacity)
+
+### Connectors improvements
+
+Connectors no longer periodically acquire leases, reducing the number of events they write to the database.
+
+### Archiving Improvements
+
+The headers of remote chunks are now only read on demand and not on startup, improving startup times when there are a large number of remote chunks.
+
+### Additional projection metrics
 
 Several new metrics have been added to track important properties of projections.
 
@@ -32,17 +109,67 @@ Several new metrics have been added to track important properties of projections
 
 See [the documentation](../diagnostics/metrics.md#projections) for more information.
 
-### Server Garbage Collection
+### Additional persistent subscription metrics
 
-The .NET runtime Server Garbage Collection is now enabled by default, increasing the performance of the server. See [the documentation](../configuration/db-config.md#garbage-collection) for more information.
+- `kurrentdb_persistent_sub_parked_message_replays` counts the number of messages that have been parked by stream, group, and reason. Reason can be `client-nak` meaning that the client `nak`ed the message, or `max-retries` meaning that the server retried sending it to the clients until the maximum attempts was reached.
 
-### StreamInfoCacheCapacity Default
+- `kurrentdb_persistent_sub_park_message_requests` counts the number of requests to replay parked messages by stream and group.
 
-`StreamInfoCacheCapacity` is now `100,000` by default rather than `0` (dynamically sized).
+See [the documentation](../diagnostics/metrics.md#persistent-subscriptions) for more information.
 
-StreamInfoCache dynamic sizing was introduced introduced in v21.10 and enabled by default. It allows the StreamInfoCache to grow much larger, according to the amount of free memory which is reevaluated periodically. This is desirable for some workloads, but it comes with a tradeoff of very significantly increased managed memory usage, which in turn causes additional GC pressure and can lead to more frequent elections. On balance we have decided that a default of 100,000 (which is the value used before v21.10) is a better default, favouring its predictability and stability.
+### Miscellaneous quality of life improvements
 
-Users wishing to keep dynamic sizing can enable it by setting StreamInfoCacheCapacity to 0. Additional can be found in the [StreamInfoCache documentation](../configuration/README.md#streaminfocachecapacity)
+- Lower Scavenge API GET calls to Verbose
+
+  The auto-scavenge checks on the status of in-progress scavenges frequently, which was producing unnecessary logs.
+
+- Added extra logging when UnwrapEnvelopeMessage is slow
+
+  When UnwrapEnvelopeMessage triggers a 'SLOW QUEUE MESSAGE` log, it now includes the name of the action it was unwrapping.
+
+- Added server configuration option for TCP read expiry
+
+  The option is `TcpReadTimeoutMs` and it defaults to 10000 (10s, which matches the previous behavior).
+
+  It applies to reads received via the TCP client API. When a read has been in the server queue for longer than this, it will be discarded without being executed. If your TCP clients are configured to timeout after X milliseconds, it is advisable to set this server option to be the same, so that the server will not execute reads that the client is no longer waiting for.
+
+  For gRPC clients, the server-side discarding is already driven by the deadline on the read itself without requiring server configuration.
+
+- Log output to `Seq`
+
+  You can now configure a [Seq](https://datalust.co/) log output by adding the following to `logconfig.json`:
+  ```
+      "Serilog": {
+          "WriteTo": [
+              {
+                  "Name": "Seq",
+                  "Args": {
+                      "serverUrl": "http://localhost:5341",
+                      "restrictedToMinimumLevel": "Information"
+                  }
+              }
+          ]
+      }
+  ```
+
+- Added logging for significant garbage collections
+
+  This makes it clear from the logs if slow messages or leader elections are attributable to Garbage Collection (GC).
+
+  Execution engine (EE) suspensions longer than 48ms are logged as Information. Execution engine suspensions longer than 600ms are logged as Warnings. Full compacting GC start/end are logged as Information.
+
+  Note that the Start/End log messages may both be logged AFTER the execution engine pause has completed.
+
+  These will be logged even if the node shortly goes offline for truncation, which would likely prevent the EE suspension from appearing in the metrics.
+
+  If GC is determined as the cause of a leader election, a sensible course of action could be to reduce the Stream Info Cache Capacity (say, to the 100k traditional value) and/or consider enabling ServerGC.
+
+  example logs:
+  ```
+  [34144,13,11:03:05.307,INF] Start of full blocking garbage collection at 06/06/2025 10:02:49. GC: #210548. Generation: 2. Reason: LargeObjectHeapAllocation. Type: BlockingOutsideBackgroundGC.
+  [34144,13,11:03:05.307,INF] End of full blocking garbage collection at 06/06/2025 10:03:05. GC: #210548. Took: 15,727ms
+  [34144,13,11:03:05.307,WRN] Garbage collection: Very long Execution Engine Suspension. Reason: GarbageCollection. Took: 15,727ms
+  ```
 
 ## New in 25.0
 
