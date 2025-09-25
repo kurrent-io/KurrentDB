@@ -297,6 +297,8 @@ This is for two reasons, both of which we intend to address in a future version:
 1. If the service shuts down gracefully, such as when going offline for truncation, it will be not be restarted by the policy.
 2. If the service does not start within 30s (by default), it will not be restarted by the policy. The 'start' that the service manager is looking for
 usually only takes a second or two, and is not related to the size of the database, but none the less there is some risk of timeout.
+
+Important: it is not recommended to run KurrentDB directly using Task Scheduler. By default Task Scheduler runs processes with low priority which will significantly impact performance.
 :::
 
 ## Docker
