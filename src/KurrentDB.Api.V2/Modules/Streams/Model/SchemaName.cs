@@ -9,7 +9,7 @@ public readonly record struct SchemaName(string Value) {
 
     public static SchemaName From(string value) {
         return string.IsNullOrWhiteSpace(value)
-            ? throw new ArgumentException($"SchemaName '{value}' is not valid.", nameof(value))
+            ? throw new ArgumentException($"SchemaName '{value}' is not valid", nameof(value))
             : new(value);
     }
 

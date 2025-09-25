@@ -3,11 +3,10 @@
 
 using FluentValidation;
 using FluentValidation.Results;
-using KurrentDB.Api.Infrastructure.Validation;
 
 namespace KurrentDB.Api.Streams.Validators;
 
-class UnixTimestampValidator : EnhancedValidator<long> {
+class UnixTimestampValidator : AbstractValidator<long> {
 	public static readonly UnixTimestampValidator Instance = new(UnixTimestampValidatorOptions.Default);
 
 	public UnixTimestampValidator(UnixTimestampValidatorOptions options) {

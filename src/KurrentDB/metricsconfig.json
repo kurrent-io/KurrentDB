@@ -46,6 +46,10 @@
 		"StreamTombstone": ""
 	},
 
+    "ApiV2Methods": {
+      "StreamAppendSession": "streams-v2-append-session"
+    },
+
 	"IncomingGrpcCalls": {
 		"Current": true,
 		"Total": true,

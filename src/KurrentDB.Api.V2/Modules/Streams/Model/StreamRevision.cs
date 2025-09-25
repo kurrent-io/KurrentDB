@@ -28,7 +28,7 @@ public record StreamRevision : IComparable<StreamRevision>, IComparable {
         value switch {
             -1000 => Unset,
             >= 0  => new StreamRevision(value),
-            _     => throw new Exception($"Stream revision is invalid: {value}")
+            _     => throw new ArgumentException($"Invalid stream revision: {value}")
         };
 
     public static implicit operator long(StreamRevision _)                => _.Value;
@@ -75,5 +75,3 @@ public record StreamRevision : IComparable<StreamRevision>, IComparable {
 
     #endregion
 }
-
-// public class InvalidStreamRevision(long value) : KurrentException($"Stream revision is invalid: {value}");

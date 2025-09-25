@@ -15,17 +15,21 @@ public class ProtobufEnums(Assembly assembly) {
 			.Select(t => t.GetProperty("Descriptor", BindingFlags.Public | BindingFlags.Static))
 			.SelectMany(prop => prop?.GetValue(null) is FileDescriptor fs ? fs.EnumTypes : [])
 			.ToDictionary(x => x.ClrType, x => x);
-	}
+    }
 
 	public bool TryGetEnumDescriptor(Type enumType, [MaybeNullWhen(false)] out EnumDescriptor descriptor) =>
 		EnumTypes.TryGetValue(enumType, out descriptor);
 
 	public bool TryGetEnumValueDescriptor(Type enumType, ReadOnlySpan<char> value, [MaybeNullWhen(false)] out EnumValueDescriptor descriptor) {
 		descriptor = Enum.TryParse(enumType, value, true, out var enumValue) && TryGetEnumDescriptor(enumType, out var enumDescriptor)
-			? enumDescriptor.FindValueByName(Enum.GetName(enumType, enumValue))
+			? enumDescriptor.FindValueByName(GetEnumOriginalName(enumValue))
 			: null;
 
 		return descriptor is not null;
+
+        static string GetEnumOriginalName(object enumValue) =>
+            enumValue.GetType().GetField(enumValue.ToString()!)!
+                .GetCustomAttribute<OriginalNameAttribute>()!.Name;
 	}
 
 	public bool TryGetEnumDescriptor<T>([MaybeNullWhen(false)] out EnumDescriptor descriptor) where T : struct, Enum =>

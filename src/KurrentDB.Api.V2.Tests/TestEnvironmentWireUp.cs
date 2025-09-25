@@ -1,0 +1,49 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
+using Humanizer;
+using KurrentDB.Testing.TUnit;
+using Serilog;
+using TUnit.Core.Executors;
+
+[assembly: ToolkitTestConfigurator]
+[assembly: TestExecutor<ToolkitTestExecutor>]
+
+namespace KurrentDB.Api.Tests;
+
+public class TestEnvironmentWireUp {
+    [BeforeEvery(Assembly)]
+    public static ValueTask BeforeEveryAssembly(AssemblyHookContext context) => ToolkitTestEnvironment.Initialize(context.Assembly);
+
+    [AfterEvery(Assembly)]
+    public static ValueTask AfterEveryAssembly(AssemblyHookContext context) => ToolkitTestEnvironment.Reset(context.Assembly);
+
+    [BeforeEvery(Test)]
+    public static void BeforeEveryTest(TestContext context) {
+        var testUid = context.TestUid();
+
+        // using static Log since the context has not been pushed yet in the Executor
+        Log.ForContext(nameof(TestUid), testUid).Verbose(
+            "{TestClass} {TestName} {Status} TestUid: {TestUid}",
+            context.TestDetails.ClassType.Name,
+            context.TestDetails.TestName,
+            TestState.NotStarted,
+            context.TestUid()
+        );
+    }
+
+    [AfterEvery(Test)]
+    public static void AfterEveryTest(TestContext context) {
+        var testUid = context.TestUid();
+        var elapsed = context.Result?.Duration ?? context.TestStart - context.TestEnd ?? TimeSpan.Zero;
+
+        // using static Log since we have already pushed the context in the Executor
+        Log.ForContext(nameof(TestUid), testUid).Verbose(
+            "{TestClass} {TestName} {Status} in {Elapsed}",
+            context.TestDetails.ClassType.Name,
+            context.TestDetails.TestName,
+            context.Result!.State,
+            elapsed.Humanize(2)
+        );
+    }
+}

@@ -1,10 +1,11 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Diagnostics;
 using System.Text;
 using Google.Protobuf.WellKnownTypes;
+using KurrentDB.Api.Infrastructure.Validation;
 using KurrentDB.Api.Streams.Validators;
-using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Protocol.V2.Streams;
 
 namespace KurrentDB.Api.Streams;
@@ -37,20 +38,23 @@ public static class AppendRecordExtensions {
 	public static AppendRecord EnsureValid(this AppendRecord record) =>
 		AppendRecordValidator.Instance.EnsureValid(record);
 
-	/// <summary>
-	/// Calculates the size on disk of the AppendRecord including data, properties and schema name.
-	/// Also indicates if it exceeds the maximum allowed size.
-	/// </summary>
-	public static AppendRecord CalculateSizeOnDisk(this AppendRecord record, out (int TotalSize, int SizeExceededBy, bool RecordTooBig) result) {
-		var dataSize       = record.Data.Length;
-		var propsSize      = new Struct { Fields = { record.Properties } }.CalculateSize();
-		var schemaNameSize = Encoding.UTF8.GetByteCount(record.Schema.Name);
+    /// <summary>
+    /// Calculates the size on disk of the AppendRecord including data, properties and schema name.
+    /// Also indicates if it exceeds the maximum allowed size.
+    /// </summary>
+    public static (int TotalSize, int SizeExceededBy, bool ExceedsMax) CalculateSizeOnDisk(this AppendRecord record, int maxRecordSize) {
+        Debug.Assert(maxRecordSize > 0, "maxRecordSize must be positive");
 
-		var size     = dataSize + propsSize + schemaNameSize;
-		var exceeded = size - TFConsts.EffectiveMaxLogRecordSize;
+        var dataSize       = record.Data.Length;
+        var propsSize      = new Struct { Fields = { record.Properties } }.CalculateSize();
+        var schemaNameSize = Encoding.UTF8.GetByteCount(record.Schema.Name);
 
-		result = (size, exceeded, exceeded > 0);
+        var size = dataSize + propsSize + schemaNameSize;
 
-		return record;
-	}
+        return size <= maxRecordSize ? (size, 0, false) : (size, size - maxRecordSize, true);
+    }
+}
+
+public readonly record struct RecordSize(int TotalSize, int SizeExceededBy, bool ExceedsMax) {
+
 }

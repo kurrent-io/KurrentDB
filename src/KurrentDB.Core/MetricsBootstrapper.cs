@@ -18,22 +18,22 @@ using Conf = KurrentDB.Common.Configuration.MetricsConfiguration;
 namespace KurrentDB.Core;
 
 public class Trackers {
-	public IInaugurationStatusTracker InaugurationStatusTracker { get; set; } = new NodeStatusTracker.NoOp();
-	public IIndexStatusTracker IndexStatusTracker { get; set; } = new IndexStatusTracker.NoOp();
-	public INodeStatusTracker NodeStatusTracker { get; set; } = new NodeStatusTracker.NoOp();
-	public IScavengeStatusTracker ScavengeStatusTracker { get; set; } = new ScavengeStatusTracker.NoOp();
-	public GrpcTrackers GrpcTrackers { get; } = new();
-	public QueueTrackers QueueTrackers { get; set; } = new();
-	public GossipTrackers GossipTrackers { get; set; } = new();
-	public ITransactionFileTracker TransactionFileTracker { get; set; } = new TFChunkTracker.NoOp();
-	public IIndexTracker IndexTracker { get; set; } = new IndexTracker.NoOp();
-	public IMaxTracker<long> WriterFlushSizeTracker { get; set; } = new MaxTracker<long>.NoOp();
-	public IDurationMaxTracker WriterFlushDurationTracker { get; set; } = new DurationMaxTracker.NoOp();
-	public ICacheHitsMissesTracker CacheHitsMissesTracker { get; set; } = new CacheHitsMissesTracker.NoOp();
-	public ICacheResourcesTracker CacheResourcesTracker { get; set; } = new CacheResourcesTracker.NoOp();
-	public IElectionCounterTracker ElectionCounterTracker { get; set; } = new ElectionsCounterTracker.NoOp();
-	public IPersistentSubscriptionTracker PersistentSubscriptionTracker { get; set; } =
-		IPersistentSubscriptionTracker.NoOp;
+    public IInaugurationStatusTracker     InaugurationStatusTracker     { get; set; } = new NodeStatusTracker.NoOp();
+    public IIndexStatusTracker            IndexStatusTracker            { get; set; } = new IndexStatusTracker.NoOp();
+    public INodeStatusTracker             NodeStatusTracker             { get; set; } = new NodeStatusTracker.NoOp();
+    public IScavengeStatusTracker         ScavengeStatusTracker         { get; set; } = new ScavengeStatusTracker.NoOp();
+    public GrpcTrackers                   GrpcTrackers                  { get; }      = new();
+    public ApiV2Trackers                  ApiV2Trackers                 { get; }      = new();
+    public QueueTrackers                  QueueTrackers                 { get; set; } = new();
+    public GossipTrackers                 GossipTrackers                { get; set; } = new();
+    public ITransactionFileTracker        TransactionFileTracker        { get; set; } = new TFChunkTracker.NoOp();
+    public IIndexTracker                  IndexTracker                  { get; set; } = new IndexTracker.NoOp();
+    public IMaxTracker<long>              WriterFlushSizeTracker        { get; set; } = new MaxTracker<long>.NoOp();
+    public IDurationMaxTracker            WriterFlushDurationTracker    { get; set; } = new DurationMaxTracker.NoOp();
+    public ICacheHitsMissesTracker        CacheHitsMissesTracker        { get; set; } = new CacheHitsMissesTracker.NoOp();
+    public ICacheResourcesTracker         CacheResourcesTracker         { get; set; } = new CacheResourcesTracker.NoOp();
+    public IElectionCounterTracker        ElectionCounterTracker        { get; set; } = new ElectionsCounterTracker.NoOp();
+    public IPersistentSubscriptionTracker PersistentSubscriptionTracker { get; set; } = IPersistentSubscriptionTracker.NoOp;
 }
 
 public class GrpcTrackers {
@@ -50,6 +50,22 @@ public class GrpcTrackers {
 		get => _trackers[(int)index];
 		set => _trackers[(int)index] = value;
 	}
+}
+
+public class ApiV2Trackers {
+    readonly IDurationTracker[] _trackers;
+
+    public ApiV2Trackers() {
+        _trackers = new IDurationTracker[Enum.GetValues<Conf.ApiV2Method>().Cast<int>().Max() + 1];
+        var noOp = new DurationTracker.NoOp();
+        for (var i = 0; i < _trackers.Length; i++)
+            _trackers[i] = noOp;
+    }
+
+    public IDurationTracker this[Conf.ApiV2Method index] {
+        get => _trackers[(int)index];
+        set => _trackers[(int)index] = value;
+    }
 }
 
 public class GossipTrackers {
@@ -83,6 +99,7 @@ public static class MetricsBootstrapper {
 		var coreMeter = new Meter(conf.CoreMeterName, version: "1.0.0");
 		var statusMetric = new StatusMetric(coreMeter, $"{serviceName}-statuses", useLegacyNames);
 		var grpcMethodMetric = new DurationMetric(coreMeter, $"{serviceName}-grpc-method-duration", useLegacyNames);
+        var apiv2MethodMetric = new DurationMetric(coreMeter, $"{serviceName}-api-v2-method-duration", useLegacyNames);
 		var gossipLatencyMetric = new DurationMetric(coreMeter, $"{serviceName}-gossip-latency", useLegacyNames);
 		var gossipProcessingMetric = new DurationMetric(coreMeter, $"{serviceName}-gossip-processing-duration", useLegacyNames);
 		var queueQueueingDurationMaxMetric = new DurationMaxMetric(coreMeter, $"{serviceName}-queue-queueing-duration-max", useLegacyNames);
@@ -220,11 +237,17 @@ public static class MetricsBootstrapper {
 				trackers.ScavengeStatusTracker = new ScavengeStatusTracker(statusMetric);
 		}
 
-		// grpc histograms
+		// grpc histograms (api v1)
 		foreach (var method in Enum.GetValues<Conf.GrpcMethod>()) {
 			if (conf.GrpcMethods.TryGetValue(method, out var label) && !string.IsNullOrWhiteSpace(label))
 				trackers.GrpcTrackers[method] = new DurationTracker(grpcMethodMetric, label);
 		}
+
+        // api v2 histograms
+        foreach (var method in Enum.GetValues<Conf.ApiV2Method>()) {
+            if (conf.ApiV2Methods.TryGetValue(method, out var label) && !string.IsNullOrWhiteSpace(label))
+                trackers.ApiV2Trackers[method] = new DurationTracker(apiv2MethodMetric, label);
+        }
 
 		// storage writer
 		if (conf.Writer.Count > 0) {

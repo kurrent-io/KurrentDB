@@ -5,6 +5,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -51,6 +52,8 @@ public interface IReadOperations {
     IAsyncEnumerable<ResolvedEvent> ReadForwards(Position startPosition, long maxCount, CancellationToken cancellationToken = default);
     IAsyncEnumerable<ResolvedEvent> ReadBackwards(Position startPosition, IEventFilter filter, long maxCount, CancellationToken cancellationToken = default);
     IAsyncEnumerable<ResolvedEvent> ReadBackwards(Position startPosition, long maxCount, CancellationToken cancellationToken = default);
+    ValueTask<ResolvedEvent?> ReadFirstEvent(CancellationToken cancellationToken = default);
+    ValueTask<ResolvedEvent?> ReadLastEvent(CancellationToken cancellationToken = default);
     IAsyncEnumerable<ResolvedEvent> ReadStream(string stream, StreamRevision startRevision, long maxCount, bool forwards, CancellationToken cancellationToken = default);
     IAsyncEnumerable<ResolvedEvent> ReadStreamForwards(string stream, StreamRevision startRevision, long maxCount, CancellationToken cancellationToken = default);
     IAsyncEnumerable<ResolvedEvent> ReadFullStream(string stream, CancellationToken cancellationToken = default);
@@ -173,6 +176,12 @@ public class SystemClient : ISystemClient {
 		public IAsyncEnumerable<ResolvedEvent> ReadBackwards(Position startPosition, long maxCount, CancellationToken cancellationToken = default) =>
 			Publisher.Read(startPosition, maxCount, false, cancellationToken);
 
+        public ValueTask<ResolvedEvent?> ReadFirstEvent(CancellationToken cancellationToken = default) =>
+            Publisher.ReadFirstEvent(cancellationToken);
+
+        public ValueTask<ResolvedEvent?> ReadLastEvent(CancellationToken cancellationToken = default) =>
+            Publisher.ReadLastEvent(cancellationToken);
+
 		public IAsyncEnumerable<ResolvedEvent> ReadStream(string stream, StreamRevision startRevision, long maxCount, bool forwards, CancellationToken cancellationToken = default) =>
 			Publisher.ReadStream(stream, startRevision, maxCount, forwards, cancellationToken);
 
@@ -205,4 +214,17 @@ public class SystemClient : ISystemClient {
 	}
 
 	#endregion . Read .
+}
+
+public static class SystemClientExtensions {
+    public static async ValueTask<long> GetLastPosition(this ISystemClient client, CancellationToken cancellationToken = default) {
+        var lastEvent = await client.Reading.ReadLastEvent(cancellationToken);
+        return lastEvent is { } resolvedEvent ? resolvedEvent.OriginalPosition.GetValueOrDefault().CommitPosition : -1;
+    }
+
+    public static async ValueTask<long> GetStreamLastPosition(this ISystemClient client, string stream, CancellationToken cancellationToken = default) {
+        Debug.Assert(!string.IsNullOrWhiteSpace(stream), "Stream cannot be null or empty");
+        var lastEvent = await client.Reading.ReadStreamLastEvent(stream, cancellationToken);
+        return lastEvent is { } resolvedEvent ? resolvedEvent.OriginalPosition.GetValueOrDefault().CommitPosition : -1;
+    }
 }

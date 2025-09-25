@@ -4,13 +4,13 @@
 using System.Diagnostics;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
+using Google.Rpc;
 using Grpc.Core;
 using Kurrent.Rpc;
-using KurrentDB.Api.Infrastructure.Errors;
 using Enum = System.Enum;
 using Status = Google.Rpc.Status;
 
-namespace KurrentDB.Api.Errors;
+namespace KurrentDB.Api.Infrastructure.Errors;
 
 public static partial class RpcExceptions {
 	static RpcException Create(int statusCode, string message, params IMessage[] details) {
@@ -57,11 +57,17 @@ public static partial class RpcExceptions {
 
 		var err = error.GetErrorMetadata();
 
-		Debug.Assert(
-			err.HasDetails && details.Any(d => d.GetType() == err.DetailsType),
+        Debug.Assert(
+            !err.HasDetails || err.HasDetails && details.Any(d => d.GetType() == err.DetailsType),
 			$"The error is annotated to have details of type '{err.DetailsType}', but none were provided!");
 
 		var info = new RequestErrorInfo { Code = err.Code };
+
+        var errorInfo = new ErrorInfo {
+            Reason   = error.ToString(),
+            Domain   = "kurrentdb.api.v2.streams",
+            Metadata = { { "ErrorCode", err.Code } }
+        };
 
 		return Create((StatusCode)err.StatusCode, message, details.Prepend(info).ToArray());
 	}

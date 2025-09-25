@@ -9,13 +9,13 @@ public readonly record struct SchemaVersionId(Guid Value) {
 
     public static SchemaVersionId From(Guid value) {
         return value == Guid.Empty
-            ? throw new ArgumentException($"SchemaVersionId '{value}' is not a valid identifier", nameof(value))
+            ? throw new ArgumentException($"SchemaVersionId '{value}' is not valid", nameof(value))
             : new(value);
     }
 
     public static SchemaVersionId From(string value) {
         return !Guid.TryParse(value, out var guid)
-            ? throw new ArgumentException($"SchemaVersionId '{value}' is not valid.", nameof(value))
+            ? throw new ArgumentException($"SchemaVersionId '{value}' is not valid", nameof(value))
             : From(guid);
     }
 

@@ -2,11 +2,10 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using FluentValidation;
-using KurrentDB.Api.Infrastructure.Validation;
 
 namespace KurrentDB.Api.Streams.Validators;
 
-class SchemaIdValidator : EnhancedValidator<string> {
+class SchemaIdValidator : AbstractValidator<string> {
 	public static readonly SchemaIdValidator Instance = new();
 
 	public SchemaIdValidator() {

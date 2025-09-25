@@ -9,6 +9,7 @@ using FluentValidation.Results;
 using Google.Protobuf;
 using Grpc.Core;
 using Humanizer;
+using KurrentDB.Api.Infrastructure.Errors;
 using KurrentDB.Protocol.V2.Common.Errors;
 
 namespace KurrentDB.Api.Errors;
@@ -45,6 +46,17 @@ public static partial class ApiErrors {
 
 		return RpcExceptions.FromError(CommonError.AccessDenied, message, details);
 	}
+
+    // public static RpcException AccessDenied() {
+    //     var message = "Access to the requested operation is denied.";
+    //
+    //     var details = new AccessDeniedErrorDetails {
+    //         Scope    = scope,
+    //         Username = username,
+    //     };
+    //
+    //     return RpcExceptions.FromError(CommonError.AccessDenied, message, details);
+    // }
 
 	/// <summary>
 	/// Creates an RPC exception for requests with invalid arguments based on FluentValidation results.

@@ -27,7 +27,10 @@ static class ErrorExtensions {
 	/// any structured details associated with the error.
 	/// </summary>
 	public static ErrorMetadata GetErrorMetadata<T>(this T errorCode) where T : struct, Enum {
-		return Annotations.GetOrAdd($"{typeof(T).FullName}.{errorCode}", BuildErrorMetadata, errorCode);
+		// use the enums namespace and the error code name as the cache key
+        // because not only it is unique but it will also help us to find the details type
+        // by appending "ErrorDetails" to the full name of the enum
+        return Annotations.GetOrAdd($"{typeof(T).Namespace}.{errorCode}", BuildErrorMetadata, errorCode);
 
 		static ErrorMetadata BuildErrorMetadata(string key, T errorCode) {
 			var descriptor  = ProtobufEnums.System.GetEnumValueDescriptor(errorCode);
@@ -45,9 +48,9 @@ static class ErrorExtensions {
 				errorCode.GetCustomAttribute<T, OriginalNameAttribute>()!.Name;
 
 			static Type GetDetailsType(string key) {
-				return Type.GetType(key)
-				    ?? Type.GetType($"{key}ErrorDetails")
-				    ?? throw new InvalidOperationException($"Error details type not found for error code '{key}'.");
+				return Type.GetType($"{key}ErrorDetails")
+                    ?? Type.GetType(key)
+				    ?? throw new InvalidOperationException($"Error details type not found for error code '{key.Split(".")[^1]}'.");
 			}
 		}
 

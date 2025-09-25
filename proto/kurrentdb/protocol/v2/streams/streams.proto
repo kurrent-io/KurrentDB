@@ -46,12 +46,14 @@ message AppendResponse {
   string stream = 1;
   // The expected revision of the stream after the append operation.
   int64 stream_revision = 2;
+  // The position of the last appended record in the stream.
+  optional int64 position = 4;
 }
 
 message AppendSessionResponse {
+  // The results of each append request in the session.
   repeated AppendResponse output = 1;
-
-  // The position of the last appended record in the transaction.
+  // The position of the last appended record in the session.
   int64 position = 2;
 }
 
@@ -68,10 +70,8 @@ enum SchemaFormat {
 message SchemaInfo {
   // The format of the schema that the record conforms to.
   SchemaFormat format  = 1;
-
   // The name of the schema that the record conforms to.
   string name = 2;
-
   // The identifier of the specific version of the schema that the record payload
   // conforms to. This should match a registered schema version in the system.
   // Not necessary when not enforcing schema validation.
@@ -83,22 +83,18 @@ message AppendRecord {
   // Universally Unique identifier for the record. Must be a guid.
   // If not provided, the server will generate a new one.
   optional string record_id = 1;
-
   // The timestamp of when the record was created, represented as
   // milliseconds since the Unix epoch. This is primarily for
   // informational purposes and does not affect the ordering of records
   // within the stream, which is determined by the server.
   // If not provided, the server will assign it upon receipt.
   optional int64 timestamp = 2;
-
   // A collection of properties providing additional information about the
   // record. This can include user-defined metadata or system properties.
   // System properties are uniquely identified by the "$." prefix.
   map<string, google.protobuf.Value> properties = 3;
-
   // Information about the schema that the record payload conforms to.
   SchemaInfo schema = 4;
-
   // The actual data payload of the record.
   bytes data = 5;
 }
@@ -109,13 +105,10 @@ message AppendRecord {
 enum ExpectedRevisionConstants {
   // The stream should exist and have a single event.
   EXPECTED_REVISION_CONSTANTS_SINGLE_EVENT = 0;
-
   // It is not important whether the stream exists or not.
   EXPECTED_REVISION_CONSTANTS_ANY = -2;
-
   // The stream should not exist. If it does, the append will fail.
   EXPECTED_REVISION_CONSTANTS_NO_STREAM = -1;
-
   // The stream should exist
   EXPECTED_REVISION_CONSTANTS_EXISTS = -4;
 }

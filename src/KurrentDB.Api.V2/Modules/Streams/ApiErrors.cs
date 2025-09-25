@@ -6,6 +6,7 @@
 using System.Diagnostics;
 using Grpc.Core;
 using Humanizer;
+using KurrentDB.Api.Infrastructure.Errors;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Protocol.V2.Streams.Errors;
 
@@ -75,12 +76,13 @@ public static partial class ApiErrors {
 		var message = $"Stream '{stream}' is already part of this append session. " +
 		              $"Appending to the same stream multiple times is currently not supported.";
 
+        //KurrentDB.Protocol.V2.Streams.Errors.StreamsError.StreamAlreadyInAppendSessionErrorDetails
 		var details = new StreamAlreadyInAppendSessionErrorDetails { Stream = stream };
 
 		return RpcExceptions.FromError(StreamsError.StreamAlreadyInAppendSession, message, details);
 	}
 
-	public static RpcException AppendRecordSizeExceeded(string stream, string recordId, int recordSize, int maxSize = TFConsts.EffectiveMaxLogRecordSize) {
+	public static RpcException AppendRecordSizeExceeded(string stream, string recordId, int recordSize, int maxSize) {
 		Debug.Assert(!string.IsNullOrWhiteSpace(stream), "The stream cannot be empty!");
 		Debug.Assert(!string.IsNullOrWhiteSpace(recordId), "The record ID cannot be empty!");
 		Debug.Assert(recordSize > 0, "The record size must be positive!");

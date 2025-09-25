@@ -78,12 +78,11 @@ public static partial class ClientMessage {
 
 		// used in the new multi stream append
 		protected WriteRequestMessage(IEnvelope envelope, ClaimsPrincipal user, CancellationToken token) : base(token) {
-			var cid = Guid.NewGuid();
+            var cid = Guid.NewGuid();
 
 			InternalCorrId = cid;
 			CorrelationId  = cid;
 			Envelope       = envelope;
-			RequireLeader  = true;
 			User           = user;
 			Tokens         = new Dictionary<string, string>();
 		}
@@ -269,20 +268,20 @@ public static partial class ClientMessage {
 		// EventStreamIndexes is not [] => stream of event e == EventStreamIds[EventStreamIndexes[index of e in Events]]
 		public readonly LowAllocReadOnlyMemory<int> EventStreamIndexes;
 
-		public WriteEvents(
-			IEnvelope envelope,
-			LowAllocReadOnlyMemory<string> eventStreamIds,
-			LowAllocReadOnlyMemory<long> expectedVersions,
-			LowAllocReadOnlyMemory<Event> events,
-			LowAllocReadOnlyMemory<int> eventStreamIndexes,
-			ClaimsPrincipal user,
-			CancellationToken cancellationToken)
-			: base(envelope, user, cancellationToken) {
-			EventStreamIds     = eventStreamIds;
-			ExpectedVersions   = expectedVersions;
-			Events             = events;
-			EventStreamIndexes = eventStreamIndexes;
-		}
+		// public WriteEvents(
+		// 	IEnvelope envelope,
+		// 	LowAllocReadOnlyMemory<string> eventStreamIds,
+		// 	LowAllocReadOnlyMemory<long> expectedVersions,
+		// 	LowAllocReadOnlyMemory<Event> events,
+		// 	LowAllocReadOnlyMemory<int> eventStreamIndexes,
+		// 	ClaimsPrincipal user,
+		// 	CancellationToken cancellationToken)
+		// 	: base(envelope, user, cancellationToken) {
+		// 	EventStreamIds     = eventStreamIds;
+		// 	ExpectedVersions   = expectedVersions;
+		// 	Events             = events;
+		// 	EventStreamIndexes = eventStreamIndexes;
+		// }
 
 		public WriteEvents(
 			Guid internalCorrId,

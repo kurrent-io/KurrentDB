@@ -29,6 +29,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using OpenTelemetry.Metrics;
@@ -170,7 +171,6 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 		app.MapGrpcService<ClientGossip>();
 		app.MapGrpcService<Monitoring>();
 		app.MapGrpcService<ServerFeatures>();
-		// app.MapGrpcService<MultiStreamAppendService>();
 
 		// enable redaction service on unix sockets only
 		app.MapGrpcService<Redaction>().AddEndpointFilter(async (c, next) => {
@@ -237,6 +237,8 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 
 		// Other dependencies
 		services
+            .AddSingleton(_options)
+            .AddSingleton(_trackers.ApiV2Trackers)
 			.AddSingleton<ISubscriber>(_mainBus)
 			.AddSingleton<IPublisher>(_mainQueue)
 			.AddSingleton<ISystemClient, SystemClient>()
@@ -255,40 +257,47 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 			.AddSingleton(new ClientGossip(_mainQueue, _authorizationProvider, _trackers.GossipTrackers.ProcessingRequestFromGrpcClient))
 			.AddSingleton(new Monitoring(_monitoringQueue))
 			.AddSingleton(new Redaction(_mainQueue, _authorizationProvider))
-			// .AddSingleton(new MultiStreamAppendService(
-			// 	publisher: _mainQueue,
-			// 	authorizationProvider: _authorizationProvider,
-			// 	appendTracker: _trackers.GrpcTrackers[MetricsConfiguration.GrpcMethod.StreamAppend],
-			// 	maxAppendSize: Ensure.Positive(_options.Application.MaxAppendSize),
-			// 	maxAppendEventSize: Ensure.Positive(_options.Application.MaxAppendEventSize),
-			// 	chunkSize: _options.Database.ChunkSize))
 			.AddSingleton<ServerFeatures>();
 
 		// OpenTelemetry
 		services.AddOpenTelemetry()
-			.WithMetrics(meterOptions => meterOptions
-				.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(_metricsConfiguration.ServiceName))
-				.AddMeter(_metricsConfiguration.Meters)
-				.AddView(ViewConfig)
-				.AddInternalExporter()
-				.AddPrometheusExporter(options => {
-					if (_metricsConfiguration is { LegacyCoreNaming: true, LegacyProjectionsNaming: true }) {
-						options.DisableTotalNameSuffixForCounters = true;
-					} else if (_metricsConfiguration.LegacyCoreNaming || _metricsConfiguration.LegacyProjectionsNaming) {
-						Log.Error("Inconsistent Meter names: {names}. Please use EventStore or KurrentDB for all.",
-							string.Join(", ", _metricsConfiguration.Meters));
-					}
+            .ConfigureResource(r => r.AddService(_metricsConfiguration.ServiceName))
+			.WithMetrics(metrics => {
+                    metrics.AddAspNetCoreInstrumentation();
 
-					options.ScrapeResponseCacheDurationMilliseconds = 1000;
-				}));
+                    metrics
+                        .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(_metricsConfiguration.ServiceName))
+                        .AddMeter(_metricsConfiguration.Meters)
+                        .AddView(ViewConfig)
+                        .AddInternalExporter()
+                        .AddPrometheusExporter(options => {
+                                if (_metricsConfiguration is { LegacyCoreNaming: true, LegacyProjectionsNaming: true }) {
+                                    options.DisableTotalNameSuffixForCounters = true;
+                                }
+                                else if (_metricsConfiguration.LegacyCoreNaming || _metricsConfiguration.LegacyProjectionsNaming) {
+                                    Log.Error(
+                                        "Inconsistent Meter names: {MeterNames}. Please use EventStore or KurrentDB for all.",
+                                        string.Join(", ", _metricsConfiguration.Meters)
+                                    );
+                                }
+
+                                options.ScrapeResponseCacheDurationMilliseconds = 1000;
+                            }
+                        );
+                }
+            );
+
+        var hostEnvironment = services
+            .BuildServiceProvider()
+            .GetRequiredService<IHostEnvironment>();
 
 		// gRPC
 		services
 			.AddSingleton<RetryInterceptor>()
 			.AddGrpc(options => {
-				#if DEBUG
-				options.EnableDetailedErrors = true;
-				#endif
+                options.EnableDetailedErrors = hostEnvironment.IsDevelopment()
+                                            || hostEnvironment.IsStaging()
+                                            || _options.DevMode.Dev;
 
 				options.Interceptors.Add<RetryInterceptor>();
 			})
@@ -300,7 +309,8 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 		// Let pluggable components to register their services
 		foreach (var component in _plugableComponents)
 			component.ConfigureServices(services, _configuration);
-		return;
+
+        return;
 
 		MetricStreamConfiguration? ViewConfig(Instrument i) {
 			if (i.Name == MetricsBootstrapper.LogicalChunkReadDistributionName(_metricsConfiguration.ServiceName))

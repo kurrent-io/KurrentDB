@@ -18,8 +18,6 @@ public static class AuthorizationExtensions {
 	/// If the user is not authorized, an <see cref="Grpc.Core.RpcException"/> is thrown.
 	/// </summary>
 	public static async Task AuthorizeStreamOperation(this IAuthorizationProvider authz, StreamName stream, StreamOperation operation, ClaimsPrincipal user, CancellationToken ct) {
-		ArgumentException.ThrowIfNullOrWhiteSpace(stream);
-
 		Operation op = operation switch {
 			StreamOperation.Read          => Operations.Streams.Read,
 			StreamOperation.Write         => Operations.Streams.Write,
@@ -34,4 +32,19 @@ public static class AuthorizationExtensions {
 		if (!accessGranted)
 			throw ApiErrors.AccessDenied($"{nameof(Operations.Streams)}:{operation}".ToLowerInvariant(), user.Identity?.Name);
 	}
+
+    public static Task AuthorizeStreamRead(this IAuthorizationProvider authz, StreamName stream, ClaimsPrincipal user, CancellationToken ct) =>
+        authz.AuthorizeStreamOperation(stream, StreamOperation.Read, user, ct);
+
+    public static Task AuthorizeStreamWrite(this IAuthorizationProvider authz, StreamName stream, ClaimsPrincipal user, CancellationToken ct) =>
+        authz.AuthorizeStreamOperation(stream, StreamOperation.Write, user, ct);
+
+    public static Task AuthorizeStreamDelete(this IAuthorizationProvider authz, StreamName stream, ClaimsPrincipal user, CancellationToken ct) =>
+        authz.AuthorizeStreamOperation(stream, StreamOperation.Delete, user, ct);
+
+    public static Task AuthorizeStreamMetadataRead(this IAuthorizationProvider authz, StreamName stream, ClaimsPrincipal user, CancellationToken ct) =>
+        authz.AuthorizeStreamOperation(stream, StreamOperation.MetadataRead, user, ct);
+
+    public static Task AuthorizeStreamMetadataWrite(this IAuthorizationProvider authz, StreamName stream, ClaimsPrincipal user, CancellationToken ct) =>
+        authz.AuthorizeStreamOperation(stream, StreamOperation.MetadataWrite, user, ct);
 }

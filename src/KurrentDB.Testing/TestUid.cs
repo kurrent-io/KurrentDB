@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Buffers;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace KurrentDB.Testing;
@@ -9,68 +11,75 @@ namespace KurrentDB.Testing;
 /// Generates short unique identifiers for tests to be able to
 /// correlate log, tracing or other info to a specific test run.
 /// <remarks>
-/// The generated ID is a hexadecimal string derived from a folded GUID,
+/// The generated 48-bit ID is a hexadecimal string derived from a folded GUID,
 /// ensuring uniqueness while keeping the identifier concise.
 /// </remarks>
 /// </summary>
 [PublicAPI]
-public static class TestUid {
+public readonly record struct TestUid() {
+    const string EmptyValue = "000000000000";
+
+    static readonly SearchValues<char> HexChars =
+		SearchValues.Create("0123456789ABCDEFabcdef");
+
 	/// <summary>
 	/// Represents an empty TestUid
 	/// </summary>
-	public const string Empty = "00000000";
+	public static readonly TestUid Empty = new();
 
 	/// <summary>
-	/// Generate a new random TestUid
+	/// The unique identifier value as a 12-character hexadecimal string.
+	/// This value is immutable and set during initialization.
 	/// </summary>
-	public static unsafe string New() {
-		var guid = Guid.NewGuid();
+	public string Value { get; private init; } = EmptyValue;
+
+	/// <inheritdoc/>
+	public override string ToString() => Value;
+
+	/// <inheritdoc/>
+	public bool Equals(TestUid other) => Value == other.Value;
+
+	/// <inheritdoc/>
+	public override int GetHashCode() => Value.GetHashCode();
+
+    public static implicit operator string(TestUid _) => _.Value;
+    public static implicit operator TestUid(string _) => Parse(_);
+
+	/// <summary>
+	/// Attempts to parse a string into a TestUid.
+	/// </summary>
+	public static bool TryParse(string? input, out TestUid uid) {
+		if (input?.Length == 12 && !input.ContainsAnyExcept(HexChars)) {
+			uid = input;
+			return true;
+		}
+
+		uid = Empty;
+		return false;
+	}
+
+	/// <summary>
+	/// Parses a string into a TestUid, throwing a FormatException if invalid.
+	/// </summary>
+	public static TestUid Parse(string? input) =>
+		!TryParse(input, out var result)
+			? throw new FormatException($"'{input}' is not a valid TestUid")
+			: result;
+
+	/// <summary>
+	/// Generate a 12-char hex ID (48-bit)
+	/// </summary>
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	public static unsafe TestUid New() {
 		Span<byte> bytes = stackalloc byte[16];
-		guid.TryWriteBytes(bytes);
 
-		ulong folded = MemoryMarshal.Read<ulong>(bytes) ^
-		               MemoryMarshal.Read<ulong>(bytes[8..]);
+		Guid.NewGuid().TryWriteBytes(bytes);
 
-		return folded.ToString("X8");
-	}
+		var folded = MemoryMarshal.Read<ulong>(bytes)
+                   ^ MemoryMarshal.Read<ulong>(bytes[8..]);
 
-	/// <summary>
-	/// Check if a TestId is empty
-	/// </summary>
-	public static bool IsEmpty(string testId) => testId == Empty;
-
-	/// <summary>
-	/// Validates if a given TestId is a valid 8-character hexadecimal string.
-	/// </summary>
-	public static bool IsValid(ReadOnlySpan<char> testId) {
-		if (testId.Length != 8)
-			return false;
-
-		foreach (char c in testId)
-			if (!Uri.IsHexDigit(c)) return false;
-
-		return true;
-	}
-}
-
-public static class TestContextExtensions {
-	public const string TestUidKey = $"${nameof(TestUid)}";
-
-	/// <summary>
-	/// Assigns a new unique test id to the TestContext's ObjectBag.
-	/// </summary>
-	public static string AssignTestUid(this TestContext ctx) {
-		var testUid = TestUid.New();
-		ctx.ObjectBag.Add(TestUidKey,  testUid);
-		return testUid;
-	}
-
-	/// <summary>
-	/// Extracts the test unique id from the TestContext's ObjectBag.
-	/// </summary>
-	public static string GetTestUid(this TestContext? ctx) {
-		return ctx is null || !ctx.ObjectBag.TryGetValue(TestUidKey, out var val) || val is not string uid || TestUid.IsEmpty(uid)
-			? throw new KeyNotFoundException("Failed to find TestUid in the TestContext ObjectBag!")
-			: TestUid.IsValid(uid) ? uid : throw new FormatException($"Invalid TestUid '{uid}' format!");
+		return new() {
+            Value = (folded & 0xFFFFFFFFFFFF).ToString("X12")
+        };
 	}
 }

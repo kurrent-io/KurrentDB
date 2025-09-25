@@ -13,16 +13,18 @@
 		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
 		<PackageReference Include="Google.Protobuf" />
 		<PackageReference Include="Grpc.AspNetCore" />
+		<PackageReference Include="Grpc.AspNetCore.Web" />
 		<PackageReference Include="Grpc.Tools" />
 		<PackageReference Include="Grpc.StatusProto" />
 		<PackageReference Include="Humanizer.Core" />
+		<PackageReference Include="Scrutor" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<!-- v2  -->
 		<Protobuf
 			ProtoRoot="../../proto/kurrentdb/protocol/v2"
-			Include="../../proto/kurrentdb/protocol/v2/**/*.proto" 
+			Include="../../proto/kurrentdb/protocol/v2/**/*.proto"
 			Exclude="../../proto/kurrentdb/protocol/v2/registry/**/*.proto"
 			Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"
 			GrpcServices="Both"
@@ -43,6 +45,12 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
 	</ItemGroup>
+
+    <ItemGroup>
+
+        <InternalsVisibleTo Include="KurrentDB.Plugins.Api.V2" />
+        <InternalsVisibleTo Include="KurrentDB.Api.V2.Tests" />
+    </ItemGroup>
 
 	<ItemGroup>
 	  <None Remove="KurrentDB.Api.V2.csproj.DotSettings" />

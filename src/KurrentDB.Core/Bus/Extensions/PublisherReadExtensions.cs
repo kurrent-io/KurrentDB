@@ -115,7 +115,25 @@ public static class PublisherReadExtensions {
 	public static IAsyncEnumerable<ResolvedEvent> ReadBackwards(this IPublisher publisher, Position startPosition, long maxCount, CancellationToken cancellationToken = default) =>
 		publisher.Read(startPosition, maxCount, false, cancellationToken);
 
-	public static async IAsyncEnumerable<ResolvedEvent> ReadStream(this IPublisher publisher, string stream, StreamRevision startRevision, long maxCount, bool forwards, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
+    public static async ValueTask<ResolvedEvent?> ReadFirstEvent(this IPublisher publisher, CancellationToken cancellationToken = default) {
+        var first = await publisher.Read(
+            Position.Start, EventFilter.Unfiltered, 1,
+            true, cancellationToken
+        ).FirstOrDefaultAsync(cancellationToken);
+
+        return first == ResolvedEvent.EmptyEvent ? null : first;
+    }
+
+    public static async ValueTask<ResolvedEvent?> ReadLastEvent(this IPublisher publisher, CancellationToken cancellationToken = default) {
+        var last = await publisher.Read(
+            Position.End, EventFilter.Unfiltered, 1,
+            false, cancellationToken
+        ).FirstOrDefaultAsync(cancellationToken);
+
+        return last == ResolvedEvent.EmptyEvent ? null : last;
+    }
+
+    public static async IAsyncEnumerable<ResolvedEvent> ReadStream(this IPublisher publisher, string stream, StreamRevision startRevision, long maxCount, bool forwards, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
 		await using var enumerator = GetEnumerator();
 
 		while (!cancellationToken.IsCancellationRequested) {

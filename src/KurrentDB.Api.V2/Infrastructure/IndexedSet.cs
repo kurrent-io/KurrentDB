@@ -1,3 +1,6 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
 using System.Collections;
 
 namespace KurrentDB.Api.Infrastructure;
@@ -7,6 +10,7 @@ namespace KurrentDB.Api.Infrastructure;
 /// Combines the uniqueness of HashSet with the index access of List.
 /// </summary>
 /// <typeparam name="T">The type of elements in the set</typeparam>
+[PublicAPI]
 public class IndexedSet<T> : IReadOnlyList<T> {
 	readonly List<T>    _list;
 	readonly HashSet<T> _set;

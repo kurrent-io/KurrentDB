@@ -11,9 +11,7 @@ namespace KurrentDB.Api.Streams;
 
 public static class Mapping {
 	public static Event MapToEvent(this AppendRecord record) {
-		Debug.Assert(
-			Guid.TryParse(record.RecordId, out _),
-			"Dude, record ID should have been validated by now");
+		Debug.Assert(Guid.TryParse(record.RecordId, out _), "Record ID should have been validated by now");
 
 		return new(
 			recordId: Guid.Parse(record.RecordId),

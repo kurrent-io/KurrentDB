@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
 	<PropertyGroup>
+        <OutputType>Exe</OutputType>
 		<TargetFramework>net8.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
@@ -9,28 +9,30 @@
 		<RootNamespace>KurrentDB.Api.Tests</RootNamespace>
 		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
 		<IsPackable>false</IsPackable>
-		<UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
-		<EnableMSTestRunner>true</EnableMSTestRunner>
-		<TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
-		<TestingPlatformCaptureOutput>false</TestingPlatformCaptureOutput>
+<!--		<UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>-->
+<!--		<EnableMSTestRunner>true</EnableMSTestRunner>-->
+<!--		<TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>-->
+<!--		<TestingPlatformCaptureOutput>false</TestingPlatformCaptureOutput>-->
 	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Grpc.Net.Client" />
 		<PackageReference Include="GitHubActionsTestLogger" />
-		<PackageReference Include="Microsoft.AspNetCore.TestHost" />
+		<PackageReference Include="TUnit" />
 	</ItemGroup>
 
 	<ItemGroup>
+		<Using Include="Bogus"/>
 		<Using Include="Shouldly"/>
 		<Using Include="TUnit"/>
-		<Using Include="Kurrent.Toolkit.Testing"/>
+		<Using Include="TUnit.Core"/>
+		<Using Include="KurrentDB.Testing"/>
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\KurrentDB.Testing.ClusterNode\KurrentDB.Testing.ClusterNode.csproj" />
 		<ProjectReference Include="..\KurrentDB.Testing\KurrentDB.Testing.csproj" />
 		<ProjectReference Include="..\KurrentDB.Api.V2\KurrentDB.Api.V2.csproj" />
-		<ProjectReference Include="..\KurrentDB\KurrentDB.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -25,6 +25,7 @@
 		<PackageReference Include="Microsoft.Testing.Extensions.HangDump" />
 		<PackageReference Include="Microsoft.Testing.Extensions.TrxReport" />
 		<PackageReference Include="Serilog" />
+		<PackageReference Include="Serilog.Enrichers.Demystifier" />
 		<PackageReference Include="Serilog.Enrichers.Environment" />
 		<PackageReference Include="Serilog.Enrichers.Process" />
 		<PackageReference Include="Serilog.Enrichers.Thread" />
@@ -34,18 +35,22 @@
 		<PackageReference Include="Serilog.Extensions.Logging" />
 		<PackageReference Include="Serilog.Settings.Configuration" />
 		<PackageReference Include="Serilog.Sinks.Console" />
+		<PackageReference Include="Serilog.Sinks.Debug" />
+		<PackageReference Include="Serilog.Sinks.Map" />
 		<PackageReference Include="Serilog.Sinks.Observable" />
 		<PackageReference Include="Serilog.Sinks.Seq" />
 		<PackageReference Include="Shouldly" />
 		<PackageReference Include="System.Reactive" />
 		<PackageReference Include="TUnit" />
-		<PackageReference Include="Verify.TUnit" />
 		<PackageReference Include="WaffleGenerator.Bogus" />
+
+        <PackageReference Include="Grpc.StatusProto" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<None Update="appsettings.json">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
+		<None Remove="KurrentDB.Testing.csproj.DotSettings" />
 	</ItemGroup>
 </Project>

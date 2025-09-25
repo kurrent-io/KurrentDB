@@ -2,12 +2,12 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using FluentValidation;
-using KurrentDB.Api.Infrastructure.Validation;
+using KurrentDB.Api.Infrastructure.Grpc.Validation;
 using KurrentDB.Protocol.V2.Streams;
 
 namespace KurrentDB.Api.Streams.Validators;
 
-class AppendRequestValidator : EnhancedValidator<AppendRequest> {
+class AppendRequestValidator : RequestValidator<AppendRequest> {
 	public static readonly AppendRequestValidator Instance = new();
 
 	public AppendRequestValidator() {
