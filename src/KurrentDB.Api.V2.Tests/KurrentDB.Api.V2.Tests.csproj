@@ -30,7 +30,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\KurrentDB.Testing.ClusterNode\KurrentDB.Testing.ClusterNode.csproj" />
+		<ProjectReference Include="..\KurrentDB.Testing.ClusterVNodeApp\KurrentDB.Testing.ClusterVNodeApp.csproj" />
 		<ProjectReference Include="..\KurrentDB.Testing\KurrentDB.Testing.csproj" />
 		<ProjectReference Include="..\KurrentDB.Api.V2\KurrentDB.Api.V2.csproj" />
 	</ItemGroup>

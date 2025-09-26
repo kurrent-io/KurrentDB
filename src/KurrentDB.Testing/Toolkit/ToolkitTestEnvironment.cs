@@ -1,14 +1,13 @@
-using System.Reactive.Linq;
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
 using System.Reactive.Subjects;
 using System.Reflection;
 using KurrentDB.Testing.OpenTelemetry;
-using KurrentDB.Testing.TUnit;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
 using Serilog.Exceptions;
-using Serilog.Extensions.Logging;
 using Serilog.Sinks.SystemConsole.Themes;
 
 using static Serilog.Core.Constants;

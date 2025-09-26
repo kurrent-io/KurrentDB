@@ -287,21 +287,23 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
                 }
             );
 
-        var hostEnvironment = services
-            .BuildServiceProvider()
-            .GetRequiredService<IHostEnvironment>();
 
 		// gRPC
 		services
-			.AddSingleton<RetryInterceptor>()
+			.AddSingleton<LogRetriesInterceptor>()
 			.AddGrpc(options => {
+                var hostEnvironment = services
+                    .BuildServiceProvider()
+                    .GetRequiredService<IHostEnvironment>();
+
                 options.EnableDetailedErrors = hostEnvironment.IsDevelopment()
                                             || hostEnvironment.IsStaging()
                                             || _options.DevMode.Dev;
 
-				options.Interceptors.Add<RetryInterceptor>();
-			})
-			.AddServiceOptions<Streams<TStreamId>>(options => options.MaxReceiveMessageSize = TFConsts.EffectiveMaxLogRecordSize);
+				options.Interceptors.Add<LogRetriesInterceptor>();
+			});
+            // _options.Application.MaxAppendEventSize && _options.Application.MaxAppendSize
+			// .AddServiceOptions<Streams<TStreamId>>(options => options.MaxReceiveMessageSize = TFConsts.EffectiveMaxLogRecordSize);
 
 		// Ask the node itself to add DI registrations
 		_configureNodeServices(services);

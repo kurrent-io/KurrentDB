@@ -3,7 +3,7 @@ using Humanizer;
 namespace KurrentDB.Testing.Sample.HomeAutomation;
 
 public enum RoomType {
-    Undefined = 0,
+    Unspecified = 0,
     LivingRoom,
     Kitchen,
     Bedroom,
@@ -18,7 +18,7 @@ public enum RoomType {
 }
 
 public enum DeviceType {
-    Undefined = 0,
+    Unspecified = 0,
     Thermostat,
     MotionSensor,
     SmartLight,
@@ -30,14 +30,14 @@ public enum DeviceType {
 }
 
 public enum TemperatureUnit {
-    Undefined = 0,
+    Unspecified = 0,
     Celsius,
     Fahrenheit,
     Kelvin
 }
 
 public enum AlarmStatus {
-    Undefined = 0,
+    Unspecified = 0,
     Normal,
     Active,
     Testing,
@@ -45,7 +45,7 @@ public enum AlarmStatus {
 }
 
 public enum LockStatus {
-    Undefined = 0,
+    Unspecified = 0,
     Locked,
     Unlocked,
     Unknown,
@@ -53,7 +53,7 @@ public enum LockStatus {
 }
 
 public enum WeatherCondition {
-    Undefined = 0,
+    Unspecified = 0,
     Sunny,
     Cloudy,
     Rainy,
@@ -62,7 +62,7 @@ public enum WeatherCondition {
 }
 
 public enum ComfortLevel {
-    Undefined = 0,
+    Unspecified = 0,
     Low,
     Optimal,
     High
@@ -71,16 +71,29 @@ public enum ComfortLevel {
 /// <summary>
 /// Represents a room within a home
 /// </summary>
-public record Room(Guid RoomId, string Name, RoomType Type);
+public class Room {
+    public Room() { }
+
+    public Room(Guid roomId, string name, RoomType type) {
+        RoomId = roomId;
+        Name   = name;
+        Type   = type;
+    }
+
+    public Guid     RoomId { get; set; } = Guid.Empty;
+    public string   Name   { get; set; } = "";
+    public RoomType Type   { get; set; } = RoomType.Unspecified;
+}
 
 /// <summary>
 /// Represents a home with rooms
 /// </summary>
-public record Home {
-    public required string     Id        { get; init; }
-    public required string     Name      { get; init; }
-    public required List<Room> Rooms     { get; init; }
-    public required DateTime   CreatedAt { get; init; }
+public class Home {
+    public string       Id        { get; set; } = "";
+    public string       Name      { get; set; } = "";
+    public List<Room>   Rooms     { get; set; } = [];
+    public List<Device> Devices   { get; set; } = [];
+    public DateTime     CreatedAt { get; set; } = DateTime.UtcNow;
 }
 
 /// <summary>
@@ -104,37 +117,26 @@ public abstract class Device(Room room, DeviceType deviceType, bool isBatteryPow
         };
 }
 
-public class Thermostat(Room room, string deviceId) : Device(
-    room, DeviceType.Thermostat, true,
-    deviceId
-) {
+public class Thermostat(Room room, string deviceId)
+    : Device(room, DeviceType.Thermostat, true, deviceId) {
     public int    BatteryLevel       { get; set; } = 85;
     public double CurrentTemperature { get; set; } = 22.0;
 
-    public void UpdateTemperature(double newTemperature) {
+    public void UpdateTemperature(double newTemperature) =>
         CurrentTemperature = Math.Max(5.0, Math.Min(45.0, newTemperature));
-    }
 
-    public void DepleteBattery(int amount = 1) {
+    public void DepleteBattery(int amount = 1) =>
         BatteryLevel = Math.Max(5, BatteryLevel - amount);
-    }
 }
 
-public class MotionSensor(Room room, string deviceId) : Device(
-    room, DeviceType.MotionSensor, false,
-    deviceId
-) {
+public class MotionSensor(Room room, string deviceId)
+    : Device(room, DeviceType.MotionSensor, false, deviceId) {
     public long LastMotionTime { get; set; } = DateTimeOffset.UtcNow.AddHours(-24).ToUnixTimeMilliseconds();
 
-    public void RecordMotion(long timestamp) {
-        LastMotionTime = timestamp;
-    }
+    public void RecordMotion(long timestamp) => LastMotionTime = timestamp;
 }
 
-public class SmartLight(Room room, string deviceId) : Device(
-    room, DeviceType.SmartLight, false,
-    deviceId
-) {
+public class SmartLight(Room room, string deviceId) : Device(room, DeviceType.SmartLight, false, deviceId ) {
     public bool IsOn       { get; set; }
     public int  Brightness { get; set; }
 
@@ -148,10 +150,8 @@ public class SmartLight(Room room, string deviceId) : Device(
     }
 }
 
-public class DoorLock(Room room, string deviceId) : Device(
-    room, DeviceType.DoorLock, false,
-    deviceId
-) {
+public class DoorLock(Room room, string deviceId)
+    : Device(room, DeviceType.DoorLock, false, deviceId ) {
     public bool       IsOpen     { get; set; }
     public LockStatus LockStatus { get; set; } = LockStatus.Locked;
 
@@ -166,13 +166,55 @@ public class DoorLock(Room room, string deviceId) : Device(
     }
 }
 
-public class SmokeDetector(Room room, string deviceId) : Device(
-    room, DeviceType.SmokeDetector, true,
-    deviceId
-) {
+public class SmokeDetector(Room room, string deviceId)
+    : Device(room, DeviceType.SmokeDetector, true, deviceId) {
     public int BatteryLevel { get; set; } = 90;
 
-    public void DepleteBattery(int amount = 1) {
-        BatteryLevel = Math.Max(5, BatteryLevel - amount);
+    public void DepleteBattery(int amount = 1) => BatteryLevel = Math.Max(5, BatteryLevel - amount);
+}
+
+public class HumiditySensor(Room room, string deviceId)
+    : Device(room, DeviceType.HumiditySensor, true, deviceId) {
+    public int    BatteryLevel  { get; set; } = 85;
+    public double HumidityLevel { get; set; } = 45.0; // Starting at 45% humidity
+
+    public void UpdateHumidity(double newHumidity) =>
+        HumidityLevel = Math.Max(0.0, Math.Min(100.0, newHumidity));
+
+    public void DepleteBattery(int amount = 1) => BatteryLevel = Math.Max(5, BatteryLevel - amount);
+}
+
+public class WindowSensor(Room room, string deviceId)
+    : Device(room, DeviceType.WindowSensor, true, deviceId) {
+    public int  BatteryLevel  { get; set; } = 90;
+    public bool IsOpen        { get; set; } = false;
+    public long LastOpenTime  { get; set; } = DateTimeOffset.UtcNow.AddDays(-1).ToUnixTimeMilliseconds();
+
+    public void ToggleWindow() {
+        IsOpen = !IsOpen;
+        if (IsOpen) RecordOpening(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
     }
+
+    public void RecordOpening(long timestamp) => LastOpenTime = timestamp;
+
+    public void DepleteBattery(int amount = 1) => BatteryLevel = Math.Max(5, BatteryLevel - amount);
+}
+
+public class WaterSensor(Room room, string deviceId)
+    : Device(room, DeviceType.WaterSensor, true, deviceId) {
+    public int  BatteryLevel  { get; set; } = 95;
+    public bool WaterDetected { get; set; } = false;
+    public int  WaterLevel    { get; set; } = 0; // 0-100 scale
+
+    public void DetectWater(bool hasWater = true) {
+        WaterDetected = hasWater;
+        if (!hasWater) WaterLevel = 0;
+    }
+
+    public void UpdateWaterLevel(int level) {
+        WaterLevel = Math.Max(0, Math.Min(100, level));
+        WaterDetected = WaterLevel > 0;
+    }
+
+    public void DepleteBattery(int amount = 1) => BatteryLevel = Math.Max(5, BatteryLevel - amount);
 }

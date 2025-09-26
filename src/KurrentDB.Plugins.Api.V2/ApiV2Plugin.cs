@@ -12,13 +12,13 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 
 namespace KurrentDB.Plugins.Api.V2;
 
 [UsedImplicitly]
 public class ApiV2Plugin() : SubsystemsPlugin("APIV2") {
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
-        services.TryAddSingleton<NodeSystemInfoProvider>(); // required cause its a new one...
         services.TryAddSingleton(TimeProvider.System);
 
         services.AddSingleton(ctx => {
@@ -26,15 +26,19 @@ public class ApiV2Plugin() : SubsystemsPlugin("APIV2") {
             return new AppendRecordValidatorOptions(serverOptions.Application.MaxAppendEventSize);
         });
 
-        services.AddSingleton(ctx => {
-            var serverOptions = ctx.GetRequiredService<ClusterVNodeOptions>();
-            return new AppendRecordValidatorOptions(serverOptions.Application.MaxAppendEventSize);
-        });
+        services.AddNodeSystemInfoProvider(); // required cause its a new one...
 
         services
-            .AddGrpc(x => {
-                x.EnableDetailedErrors = true; // on development only?
-                x.Interceptors.Add<RequestValidationInterceptor>();
+            .AddGrpc(options => {
+                var serviceProvider = services.BuildServiceProvider();
+                var serverOptions   = serviceProvider.GetRequiredService<ClusterVNodeOptions>();
+                var hostEnvironment = serviceProvider.GetRequiredService<IHostEnvironment>();
+
+                options.EnableDetailedErrors = hostEnvironment.IsDevelopment()
+                                            || hostEnvironment.IsStaging()
+                                            || serverOptions.DevMode.Dev;
+
+                options.Interceptors.Add<RequestValidationInterceptor>();
             })
             .AddRequestValidation(new RequestValidationOptions {
                 ExceptionFactory = (_, errors) => ApiErrors.InvalidRequest(errors.ToArray())

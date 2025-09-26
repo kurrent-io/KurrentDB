@@ -43,7 +43,6 @@
 		<PackageReference Include="System.Reactive" />
 		<PackageReference Include="TUnit" />
 		<PackageReference Include="WaffleGenerator.Bogus" />
-
         <PackageReference Include="Grpc.StatusProto" />
 	</ItemGroup>
 

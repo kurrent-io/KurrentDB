@@ -11,7 +11,7 @@
     <Project Path="src\KurrentDB.Api.V2.Tests\KurrentDB.Api.V2.Tests.csproj" Type="Classic C#" />
     <Project Path="src\KurrentDB.Api.V2\KurrentDB.Api.V2.csproj" Type="Classic C#" />
     <Project Path="src\KurrentDB.Plugins.Api.V2\KurrentDB.Plugins.Api.V2.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.Testing.ClusterNode\KurrentDB.Testing.ClusterNode.csproj" Type="Classic C#" />
+    <Project Path="src\KurrentDB.Testing.ClusterVNodeApp\KurrentDB.Testing.ClusterVNodeApp.csproj" Type="Classic C#" />
     <Project Path="src\KurrentDB.Testing\KurrentDB.Testing.csproj" Type="Classic C#" />
   </Folder>
   <Folder Name="/Plugins/">

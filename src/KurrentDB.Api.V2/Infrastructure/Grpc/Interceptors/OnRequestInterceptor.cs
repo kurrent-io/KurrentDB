@@ -67,16 +67,41 @@ public abstract class OnRequestInterceptor : Interceptor {
 /// <summary>
 /// Adapter to convert IAsyncEnumerable back to IAsyncStreamReader
 /// </summary>
-public class AsyncEnumerableStreamReader<T>(IAsyncEnumerable<T> source, CancellationToken cancellationToken = default) : IAsyncStreamReader<T> {
-    readonly IAsyncEnumerator<T> _enumerator = source.GetAsyncEnumerator(cancellationToken);
+public class AsyncEnumerableStreamReader<T>(IAsyncEnumerable<T> requestStream, CancellationToken cancellationToken = default) : IAsyncStreamReader<T> {
+    readonly IAsyncEnumerator<T> _enumerator = requestStream.GetAsyncEnumerator(cancellationToken);
 
     public T Current => _enumerator.Current;
 
     public async Task<bool> MoveNext(CancellationToken cancellationToken) =>
-        await _enumerator.MoveNextAsync(cancellationToken); // this one or only the main one or both?
+        await _enumerator.MoveNextAsync(cancellationToken);
 }
 
 public static class AsyncEnumerableStreamReaderExtensions {
     public static IAsyncStreamReader<T> ToAsyncStreamReader<T>(this IAsyncEnumerable<T> source, CancellationToken cancellationToken = default) =>
         new AsyncEnumerableStreamReader<T>(source, cancellationToken);
 }
+
+public class StreamReaderInterceptor<T, TState>(IAsyncStreamReader<T> requestStream,  TState state, InterceptRequest<T, TState> intercept) : IAsyncStreamReader<T> {
+    public T Current { get; private set; } = default(T)!;
+
+    public async Task<bool> MoveNext(CancellationToken cancellationToken) {
+        var hasNext = await requestStream.MoveNext(cancellationToken);
+
+        if (hasNext)
+            await intercept(requestStream.Current, state);
+
+        Current = requestStream.Current;
+
+        return hasNext;
+    }
+}
+
+/// <summary>
+/// A delegate that defines a method signature for intercepting gRPC requests.
+/// </summary>
+public delegate ValueTask InterceptRequest<in TRequest>(TRequest request);
+
+/// <summary>
+/// A delegate that defines a method signature for intercepting gRPC requests with additional state.
+/// </summary>
+public delegate ValueTask InterceptRequest<in TRequest, in TState>(TRequest request, TState state);

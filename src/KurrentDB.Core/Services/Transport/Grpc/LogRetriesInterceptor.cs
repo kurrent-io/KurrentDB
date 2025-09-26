@@ -10,8 +10,8 @@ namespace KurrentDB.Core.Services.Transport.Grpc;
 
 // Detect calls that have been automatically retried per https://github.com/grpc/proposal/blob/master/A6-client-retries.md
 // such calls may not have been intended by the user and as such may disguise a network interruption as a slow server response
-class RetryInterceptor : Interceptor {
-	static readonly ILogger Log = Serilog.Log.ForContext<RetryInterceptor>();
+class LogRetriesInterceptor : Interceptor {
+	static readonly ILogger Log = Serilog.Log.ForContext<LogRetriesInterceptor>();
 
 	public override Task<TResponse> ClientStreamingServerHandler<TRequest, TResponse>(
 		IAsyncStreamReader<TRequest> requestStream,

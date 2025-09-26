@@ -117,6 +117,7 @@ public class ClusterVNodeApp : IAsyncDisposable {
 			// we use full keys so everything is correctly mapped
 			return (configurationRoot.GetRequiredSection("KurrentDB").Get<ClusterVNodeOptions>() ?? new()) with {
 				ConfigurationRoot = configurationRoot
+                // Note: these are all available if needed
 				// Unknown           = ClusterVNodeOptions.UnknownOptions.FromConfiguration(configurationRoot.GetRequiredSection("EventStore")),
 				// LoadedOptions     = ClusterVNodeOptions.GetLoadedOptions(configurationRoot)
 			};

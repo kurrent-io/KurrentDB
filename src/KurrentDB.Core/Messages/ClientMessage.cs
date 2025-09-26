@@ -186,74 +186,6 @@ public static partial class ClientMessage {
 		}
 	}
 
-	#region . Write Records .
-
-	public enum RecordSchemaFormat {
-		Unspecified = 0,
-		Json        = 1,
-		Protobuf    = 2,
-		Avro        = 3,
-		Bytes       = 4,
-	}
-
-	public readonly record struct NewRecord {
-		public Guid               RecordId     { get; init; }
-		public long               Timestamp    { get; init; }
-		public string             SchemaName   { get; init; }
-		public RecordSchemaFormat SchemaFormat { get; init; }
-		public Guid?              SchemaId     { get; init; }
-		public byte[]             Data         { get; init; }
-		public byte[]             Properties   { get; init; }
-	}
-
-	public readonly record struct WriteRecordsRequest(string Stream, long ExpectedRevision, NewRecord[] Records);
-
-	[DerivedMessage(CoreMessage.Client)]
-	public partial class WriteRecords(WriteRecordsRequest[] requests, IEnvelope envelope, ClaimsPrincipal user, CancellationToken token) : WriteRequestMessage(envelope, user, token) {
-		public WriteRecordsRequest[] Requests { get; } = requests;
-	}
-
-	public readonly record struct WriteRecordsResult {
-		public string Stream         { get; init; }
-		public long   FirstRevision  { get; init; }
-		public long   LastRevision   { get; init; }
-		public long   ActualRevision { get; init; }
-	}
-
-	public abstract record WriteRecordsError {
-		public record AccessDenied(string Stream) : WriteRecordsError;
-		public record StreamTombstoned(string Stream) : WriteRecordsError;
-		public record StreamRevisionConflict(string Stream, long Expected, long Actual) : WriteRecordsError;
-		public record CommitTimeout(string Stream) : WriteRecordsError;
-		public record UnexpectedError(Exception Exception) : WriteRecordsError;
-	}
-
-	[DerivedMessage(CoreMessage.Client)]
-	public partial class WriteRecordsCompleted(Guid correlationId) : Message {
-		public Guid CorrelationId { get; } = correlationId;
-
-		public class Success(Guid correlationId, long position, WriteRecordsResult[] results) : WriteRecordsCompleted(correlationId) {
-			public long                 Position { get; } = position;
-			public WriteRecordsResult[] Results  { get; } = results;
-		}
-
-		public class Failure : WriteRecordsCompleted {
-			public Failure(Guid correlationId, WriteRecordsError[] errors) : base(correlationId) {
-				Debug.Assert(errors is { Length: > 0 }, "There must be at least one error");
-				Errors = errors;
-			}
-
-			public Failure(Guid correlationId, Exception exception)
-				: this(correlationId, [new WriteRecordsError.UnexpectedError(exception)]) { }
-
-			public WriteRecordsError[] Errors { get; }
-
-			public bool IsException => Errors[0] is WriteRecordsError.UnexpectedError;
-		}
-	}
-
-	#endregion
-
 	[DerivedMessage(CoreMessage.Client)]
 	public partial class WriteEvents : WriteRequestMessage {
 		// one per Stream being written to
@@ -267,21 +199,6 @@ public static partial class ClientMessage {
 		// EventStreamIndexes is     [] => stream of event e == EventStreamIds[0]
 		// EventStreamIndexes is not [] => stream of event e == EventStreamIds[EventStreamIndexes[index of e in Events]]
 		public readonly LowAllocReadOnlyMemory<int> EventStreamIndexes;
-
-		// public WriteEvents(
-		// 	IEnvelope envelope,
-		// 	LowAllocReadOnlyMemory<string> eventStreamIds,
-		// 	LowAllocReadOnlyMemory<long> expectedVersions,
-		// 	LowAllocReadOnlyMemory<Event> events,
-		// 	LowAllocReadOnlyMemory<int> eventStreamIndexes,
-		// 	ClaimsPrincipal user,
-		// 	CancellationToken cancellationToken)
-		// 	: base(envelope, user, cancellationToken) {
-		// 	EventStreamIds     = eventStreamIds;
-		// 	ExpectedVersions   = expectedVersions;
-		// 	Events             = events;
-		// 	EventStreamIndexes = eventStreamIndexes;
-		// }
 
 		public WriteEvents(
 			Guid internalCorrId,

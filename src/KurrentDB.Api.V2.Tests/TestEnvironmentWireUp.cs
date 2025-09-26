@@ -37,7 +37,7 @@ public class TestEnvironmentWireUp {
         var testUid = context.TestUid();
         var elapsed = context.Result?.Duration ?? context.TestStart - context.TestEnd ?? TimeSpan.Zero;
 
-        // using static Log since we have already pushed the context in the Executor
+        // using static Log since the context was already disposed of in the Executor
         Log.ForContext(nameof(TestUid), testUid).Verbose(
             "{TestClass} {TestName} {Status} in {Elapsed}",
             context.TestDetails.ClassType.Name,

@@ -1,8 +1,5 @@
-using Google.Protobuf;
 using KurrentDB.Api.Tests.Fixtures;
-using KurrentDB.Core;
 using KurrentDB.Protocol.V2.Streams;
-using KurrentDB.Testing.Sample.HomeAutomation;
 using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.Api.Tests.Streams;
@@ -12,158 +9,107 @@ public class StreamsServiceTests {
     public required ClusterVNodeTestContext Fixture { get; init; }
 
     [Test]
-    public async ValueTask appends_one_record(CancellationToken cancellationToken) {
+    [Arguments(1, 1)]
+    [Arguments(1, 50)]
+    [Arguments(10, 1)]
+    [Arguments(10, 50)]
+    [Arguments(50, 1)]
+    [Arguments(50, 50)]
+    public async ValueTask appends_records(int numberOfStreams, int numberOfEvents, CancellationToken cancellationToken) {
         // Arrange
-        var game = Fixture.SimulateGame(take: 1);
-
-        // Act
-        Fixture.Logger.LogInformation(
-            "Starting append session for {Stream} stream with a total of {Records} records",
-            game.Stream, game.Count());
-
-        using var session = Fixture.StreamsClient.AppendSession(cancellationToken: cancellationToken);
-
-        await session.RequestStream.WriteAsync(game, cancellationToken);
-        await session.RequestStream.CompleteAsync();
-
-        Fixture.Logger.LogInformation("Append request sent, awaiting response...");
-
-        var response = await session.ResponseAsync;
-
-        Fixture.Logger.LogInformation("Append session completed at position {Position}", response.Position);
-
-        // Assert
-        await Assert.That(response.Output).HasCount(1);
-        await Assert.That(response.Position).IsGreaterThanOrEqualTo(1);
-    }
-
-    [Test]
-    public async ValueTask appends_one_record2(CancellationToken cancellationToken) {
-        // Arrange
-
-        var iotEvents = HomeAutomationSimulator.ForHome("").Simulate(100);
-
-        var game = Fixture.SimulateGame(take: 1);
-
-        var currentPosition = await Fixture.SystemClient.GetLastPosition(cancellationToken);
-        Fixture.Logger.LogInformation("Current log position {Position}", currentPosition);
-
-        // Act
-        Fixture.Logger.LogInformation(
-            "Appending {Records} records to {Stream} stream",
-            game.Count(),  game.Stream);
-
-         var response = await Fixture.StreamsClient
-             .AppendAsync(game, cancellationToken: cancellationToken);
-
-        Fixture.Logger.LogInformation(
-            "{TotalRecords} records appended to {Stream} stream v{Revision} at position {Position}",
-            game.Count(), game.Stream, response.StreamRevision, response.Position);
-
-        // Assert
-        await Assert.That(response.Stream).IsEqualTo(game.Stream);
-        await Assert.That(response.StreamRevision).IsEqualTo(game.Count());
-        await Assert.That(response.Position).IsGreaterThanOrEqualTo(currentPosition + game.Count());
-    }
-
-    [Test]
-    [Arguments(5)]
-    [Arguments(10)]
-    [Arguments(20)]
-    public async ValueTask appends_records_to_many_streams(int numberOfStreams, CancellationToken cancellationToken) {
-        // Arrange
-        var games = Enumerable.Range(1, numberOfStreams).Select(_ => Fixture.SimulateGame()).ToList();
+        var requests = HomeAutomationTestData
+            .SimulateHousingComplexActivity(numberOfStreams, numberOfEvents);
 
         // Act
         Fixture.Logger.LogInformation(
             "Starting append session for {Streams} streams with a total of {Records} records",
-            numberOfStreams, games.Sum(g => g.Count()));
+            numberOfStreams, numberOfStreams * numberOfEvents);
 
         using var session = Fixture.StreamsClient.AppendSession(cancellationToken: cancellationToken);
 
-        foreach (var game in games) {
-            Fixture.Logger.LogInformation("Appending {Count} records to stream {Stream}", game.Count(), game.Stream);
-            await session.RequestStream.WriteAsync(game, cancellationToken);
+        foreach (var request in requests) {
+            Fixture.Logger.LogInformation("Appending {Count} records to stream {Stream}", request.Records.Count, request.Stream);
+            await session.RequestStream.WriteAsync(request, cancellationToken);
         }
 
         await session.RequestStream.CompleteAsync();
 
-        Fixture.Logger.LogInformation("All {Streams} requests sent, awaiting response...", numberOfStreams);
+        Fixture.Logger.LogInformation("All {Count} requests sent, awaiting response...", numberOfStreams);
 
         var response = await session.ResponseAsync;
 
         Fixture.Logger.LogInformation("Append session completed at position {Position}", response.Position);
 
         // Assert
-        await Assert.That(response.Output).HasCount(games.Count);
+        await Assert.That(response.Output).HasCount(numberOfStreams);
         await Assert.That(response.Position).IsGreaterThanOrEqualTo(numberOfStreams);
     }
 
-
     [Test]
-    [Arguments(ExpectedRevisionConstants.Exists)]
-    public async ValueTask appends_records_with_expected_revision(long expectedRevision, CancellationToken cancellationToken) {
+    public async ValueTask appends_records_with_expected_revision(CancellationToken cancellationToken) {
         // Arrange
-        var game = Fixture.SimulateGame(take: 1);
+        var seededActivity = await Fixture.SeedSmartHomeActivity(cancellationToken);
+
+        var request = HomeAutomationTestData
+            .SimulateHomeActivity(seededActivity.Activity.Home)
+            .WithExpectedRevision(seededActivity.StreamRevision);
+
+        var nextExpectedRevision = seededActivity.StreamRevision + request.Records.Count;
 
         // Act
-        Fixture.Logger.LogInformation(
-            "Starting append session for {Stream} stream with a total of {Records} records",
-            game.Stream, game.Count());
-
-        using var session = Fixture.StreamsClient.AppendSession(cancellationToken: cancellationToken);
-
-        await session.RequestStream.WriteAsync(game, cancellationToken);
-        await session.RequestStream.CompleteAsync();
-
-        Fixture.Logger.LogInformation("Append request sent, awaiting response...");
-
-        var response = await session.ResponseAsync;
-
-        Fixture.Logger.LogInformation("Append session completed at position {Position}", response.Position);
+        var response = await Fixture.StreamsClient.AppendAsync(request, cancellationToken: cancellationToken);
 
         // Assert
-        await Assert.That(response.Output).HasCount(1);
-        await Assert.That(response.Position).IsGreaterThanOrEqualTo(1);
+        await Assert.That(response.StreamRevision).IsEqualTo(nextExpectedRevision);
+    }
+
+    [Test]
+    public async ValueTask appends_records_expecting_the_stream_to_not_exist(CancellationToken cancellationToken) {
+        // Arrange
+        var request = HomeAutomationTestData.SimulateHomeActivity()
+            .WithExpectedRevision(ExpectedRevisionConstants.NoStream.GetHashCode());
+
+        var nextExpectedRevision = request.Records.Count - 1;
+
+        // Act
+        var response = await Fixture.StreamsClient.AppendAsync(request, cancellationToken: cancellationToken);
+
+        // Assert
+        await Assert.That(response.StreamRevision).IsEqualTo(nextExpectedRevision);
+
+
+        // Fixture.SystemClient.Reading.Read()
     }
 
     [Test]
     [Skip("Skipped with SkipAttribute")]
-    public Task throws_when_user_does_not_have_permissions() => throw new NotImplementedException();
+    public Task throws_when_expecting_stream_to_not_exist_but_it_does() {
+        //   4,194,304 (4 MB).
+        throw new NotImplementedException();
+    }
+
 
     [Test]
     [Skip("Skipped with SkipAttribute")]
-    public async Task throws_when_stream_already_tracked() {
+    public ValueTask throws_when_user_does_not_have_permissions() => throw new NotImplementedException();
+
+    [Test]
+    public async ValueTask throws_when_stream_already_tracked(CancellationToken cancellationToken) {
         // Arrange
-        var names = new[] { "James", "Jo", "Lee" };
+        var request = HomeAutomationTestData.SimulateHomeActivity();
 
         // Act
-        using var session = Fixture.StreamsClient.AppendSession();
+        using var session = Fixture.StreamsClient.AppendSession(cancellationToken: cancellationToken);
 
-        foreach (var name in names) {
-            var req = new AppendRequest {
-                Stream           = "name",
-                ExpectedRevision = 1,
-                Records = {
-                    new AppendRecord {
-                        Schema = new SchemaInfo {
-                            Format = SchemaFormat.Bytes,
-                            Name   = "name"
-                        },
-                        Data = ByteString.CopyFromUtf8(name),
-                    }
-                }
-            };
-
-            await session.RequestStream.WriteAsync(req);
-        }
+        await session.RequestStream.WriteAsync(request, cancellationToken);
+        await session.RequestStream.WriteAsync(request.SimulateMoreEvents(), cancellationToken);
 
         await session.RequestStream.CompleteAsync();
 
         var response = await session.ResponseAsync;
 
         // Assert
-        await Assert.That(response.Output).IsNotEmpty();
+        Assert.Fail("Nop");
     }
 
     [Test]

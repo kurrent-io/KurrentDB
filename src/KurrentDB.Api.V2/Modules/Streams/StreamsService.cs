@@ -6,7 +6,6 @@
 
 // ReSharper disable MethodHasAsyncOverload
 
-using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Security.Claims;
 using EventStore.Plugins.Authorization;
@@ -22,10 +21,8 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Metrics;
-using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Protocol.V2.Streams;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using static KurrentDB.Core.Messages.ClientMessage;
 using static KurrentDB.Protocol.V2.Streams.StreamsService;
@@ -63,7 +60,7 @@ public class StreamsService : StreamsServiceBase {
         Node        = node;
         Time        = time;
         Validation  = validation;
-        Logger = logger;
+        Logger      = logger;
 
         //TODO SS: -_-' move to interceptor or just use proper asp.net grpc instrumentation
         AppendDuration = trackers[MetricsConfiguration.ApiV2Method.StreamAppendSession];
