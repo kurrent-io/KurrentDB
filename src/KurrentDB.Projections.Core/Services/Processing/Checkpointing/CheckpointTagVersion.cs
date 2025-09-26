@@ -13,10 +13,10 @@ public struct CheckpointTagVersion {
 	public Dictionary<string, JToken> ExtraMetadata;
 
 	public CheckpointTag AdjustBy(PositionTagger tagger, ProjectionVersion version) {
-		if (SystemVersion == ProjectionsSubsystem.VERSION && Version.Version == version.Version
-														  && Version.ProjectionId == version.ProjectionId)
-			return Tag;
-
-		return tagger.AdjustTag(Tag);
+		return SystemVersion == ProjectionsSubsystem.VERSION
+		       && Version.Version == version.Version
+		       && Version.ProjectionId == version.ProjectionId
+			? Tag
+			: tagger.AdjustTag(Tag);
 	}
 }

@@ -12,29 +12,22 @@ using KurrentDB.Projections.Core.Services.Processing.Strategies;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Subscriptions;
 
-public class EventReorderingReaderSubscription : ReaderSubscriptionBase, IReaderSubscription {
-	private readonly SortedList<long, ReaderSubscriptionMessage.CommittedEventDistributed> _buffer =
-		new SortedList<long, ReaderSubscriptionMessage.CommittedEventDistributed>();
-
-	private readonly int _processingLagMs;
-
-	public EventReorderingReaderSubscription(
-		IPublisher publisher,
-		Guid subscriptionId,
-		CheckpointTag @from,
-		IReaderStrategy readerStrategy,
-		ITimeProvider timeProvider,
-		long? checkpointUnhandledBytesThreshold,
-		int? checkpointProcessedEventsThreshold,
-		int checkpointAfterMs,
-		int processingLagMs,
-		bool stopOnEof,
-		int? stopAfterNEvents,
-		bool enableContentTypeValidation)
-		: base(
-			publisher,
+public class EventReorderingReaderSubscription(
+	IPublisher publisher,
+	Guid subscriptionId,
+	CheckpointTag from,
+	IReaderStrategy readerStrategy,
+	ITimeProvider timeProvider,
+	long? checkpointUnhandledBytesThreshold,
+	int? checkpointProcessedEventsThreshold,
+	int checkpointAfterMs,
+	int processingLagMs,
+	bool stopOnEof,
+	int? stopAfterNEvents,
+	bool enableContentTypeValidation)
+	: ReaderSubscriptionBase(publisher,
 			subscriptionId,
-			@from,
+			from,
 			readerStrategy,
 			timeProvider,
 			checkpointUnhandledBytesThreshold,
@@ -42,9 +35,9 @@ public class EventReorderingReaderSubscription : ReaderSubscriptionBase, IReader
 			checkpointAfterMs,
 			stopOnEof,
 			stopAfterNEvents,
-			enableContentTypeValidation) {
-		_processingLagMs = processingLagMs;
-	}
+			enableContentTypeValidation),
+		IReaderSubscription {
+	private readonly SortedList<long, ReaderSubscriptionMessage.CommittedEventDistributed> _buffer = new();
 
 	public void Handle(ReaderSubscriptionMessage.CommittedEventDistributed message) {
 		if (message.Data == null)
@@ -70,7 +63,7 @@ public class EventReorderingReaderSubscription : ReaderSubscriptionBase, IReader
 		if (_buffer.Count == 0)
 			return false;
 		var first = _buffer.ElementAt(0);
-		if ((maxTimestamp - first.Value.Data.Timestamp).TotalMilliseconds > _processingLagMs) {
+		if ((maxTimestamp - first.Value.Data.Timestamp).TotalMilliseconds > processingLagMs) {
 			_buffer.RemoveAt(0);
 			ProcessOne(first.Value);
 			return true;

@@ -8,32 +8,27 @@ using KurrentDB.Projections.Core.Messages;
 namespace KurrentDB.Projections.Core.Services.Processing;
 
 public sealed class SourceDefinitionBuilder : IQuerySources {
-	private readonly QuerySourceOptions _options = new QuerySourceOptions();
-	private bool _allStreams;
+	private readonly QuerySourceOptions _options = new();
 	private List<string> _categories;
 	private List<string> _streams;
 	private bool _allEvents;
 	private List<string> _events;
-	private bool _byStream;
-	private bool _byCustomPartitions;
 
 	public SourceDefinitionBuilder() {
 		_options.DefinesFold = true;
 	}
 
 	public void FromAll() {
-		_allStreams = true;
+		AllStreams = true;
 	}
 
 	public void FromCategory(string categoryName) {
-		if (_categories == null)
-			_categories = new List<string>();
+		_categories ??= [];
 		_categories.Add(categoryName);
 	}
 
 	public void FromStream(string streamName) {
-		if (_streams == null)
-			_streams = new List<string>();
+		_streams ??= [];
 		_streams.Add(streamName);
 	}
 
@@ -50,17 +45,16 @@ public sealed class SourceDefinitionBuilder : IQuerySources {
 	}
 
 	public void IncludeEvent(string eventName) {
-		if (_events == null)
-			_events = new List<string>();
+		_events ??= [];
 		_events.Add(eventName);
 	}
 
 	public void SetByStream() {
-		_byStream = true;
+		ByStreams = true;
 	}
 
 	public void SetByCustomPartitions() {
-		_byCustomPartitions = true;
+		ByCustomPartitions = true;
 	}
 
 	public void SetDefinesStateTransform() {
@@ -80,11 +74,11 @@ public sealed class SourceDefinitionBuilder : IQuerySources {
 	}
 
 	public void SetResultStreamNameOption(string resultStreamName) {
-		_options.ResultStreamName = String.IsNullOrWhiteSpace(resultStreamName) ? null : resultStreamName;
+		_options.ResultStreamName = string.IsNullOrWhiteSpace(resultStreamName) ? null : resultStreamName;
 	}
 
 	public void SetPartitionResultStreamNamePatternOption(string partitionResultStreamNamePattern) {
-		_options.PartitionResultStreamNamePattern = String.IsNullOrWhiteSpace(partitionResultStreamNamePattern)
+		_options.PartitionResultStreamNamePattern = string.IsNullOrWhiteSpace(partitionResultStreamNamePattern)
 			? null
 			: partitionResultStreamNamePattern;
 	}
@@ -105,73 +99,39 @@ public sealed class SourceDefinitionBuilder : IQuerySources {
 		_options.HandlesDeletedNotifications = value;
 	}
 
-	public bool AllStreams {
-		get { return _allStreams; }
-	}
+	public bool AllStreams { get; private set; }
 
-	public string[] Categories {
-		get { return _categories != null ? _categories.ToArray() : null; }
-	}
+	public string[] Categories => _categories?.ToArray();
 
-	public string[] Streams {
-		get { return _streams != null ? _streams.ToArray() : null; }
-	}
+	public string[] Streams => _streams?.ToArray();
 
-	bool IQuerySources.AllEvents {
-		get { return _allEvents; }
-	}
+	bool IQuerySources.AllEvents => _allEvents;
 
-	public string[] Events {
-		get { return _events != null ? _events.ToArray() : null; }
-	}
+	public string[] Events => _events?.ToArray();
 
-	public bool ByStreams {
-		get { return _byStream; }
-	}
+	public bool ByStreams { get; private set; }
 
-	public bool ByCustomPartitions {
-		get { return _byCustomPartitions; }
-	}
+	public bool ByCustomPartitions { get; private set; }
 
-	public bool DefinesStateTransform {
-		get { return _options.DefinesStateTransform; }
-	}
+	public bool DefinesStateTransform => _options.DefinesStateTransform;
 
-	public bool ProducesResults {
-		get { return _options.ProducesResults; }
-	}
+	public bool ProducesResults => _options.ProducesResults;
 
-	public bool DefinesFold {
-		get { return _options.DefinesFold; }
-	}
+	public bool DefinesFold => _options.DefinesFold;
 
-	public bool HandlesDeletedNotifications {
-		get { return _options.HandlesDeletedNotifications; }
-	}
+	public bool HandlesDeletedNotifications => _options.HandlesDeletedNotifications;
 
-	public bool IncludeLinksOption {
-		get { return _options.IncludeLinks; }
-	}
+	public bool IncludeLinksOption => _options.IncludeLinks;
 
-	public string ResultStreamNameOption {
-		get { return _options.ResultStreamName; }
-	}
+	public string ResultStreamNameOption => _options.ResultStreamName;
 
-	public string PartitionResultStreamNamePatternOption {
-		get { return _options.PartitionResultStreamNamePattern; }
-	}
+	public string PartitionResultStreamNamePatternOption => _options.PartitionResultStreamNamePattern;
 
-	public bool ReorderEventsOption {
-		get { return _options.ReorderEvents; }
-	}
+	public bool ReorderEventsOption => _options.ReorderEvents;
 
-	public int? ProcessingLagOption {
-		get { return _options.ProcessingLag; }
-	}
+	public int? ProcessingLagOption => _options.ProcessingLag;
 
-	public bool IsBiState {
-		get { return _options.IsBiState; }
-	}
+	public bool IsBiState => _options.IsBiState;
 
 	public static IQuerySources From(Action<SourceDefinitionBuilder> configure) {
 		var b = new SourceDefinitionBuilder();

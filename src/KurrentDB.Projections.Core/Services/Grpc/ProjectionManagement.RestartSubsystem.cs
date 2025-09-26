@@ -32,7 +32,7 @@ internal partial class ProjectionManagement {
 
 		void OnMessage(Message message) {
 			switch (message) {
-				case ProjectionSubsystemMessage.SubsystemRestarting _:
+				case ProjectionSubsystemMessage.SubsystemRestarting:
 					restart.TrySetResult(true);
 					break;
 				case ProjectionSubsystemMessage.InvalidSubsystemRestart fail:

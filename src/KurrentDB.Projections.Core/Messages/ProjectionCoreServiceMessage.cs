@@ -8,65 +8,34 @@ namespace KurrentDB.Projections.Core.Messages;
 
 public static partial class ProjectionCoreServiceMessage {
 	[DerivedMessage(ProjectionMessage.ServiceMessage)]
-	public partial class StartCore : Message {
-		public readonly Guid InstanceCorrelationId;
-
-		public StartCore(Guid instanceCorrelationId) {
-			InstanceCorrelationId = instanceCorrelationId;
-		}
+	public partial class StartCore(Guid instanceCorrelationId) : Message {
+		public Guid InstanceCorrelationId { get; } = instanceCorrelationId;
 	}
 
 	[DerivedMessage(ProjectionMessage.ServiceMessage)]
-	public partial class StopCore : Message {
-		public Guid QueueId { get; }
-
-		public StopCore(Guid queueId) {
-			QueueId = queueId;
-		}
+	public partial class StopCore(Guid queueId) : Message {
+		public Guid QueueId { get; } = queueId;
 	}
 
 	[DerivedMessage(ProjectionMessage.ServiceMessage)]
-	public partial class StopCoreTimeout : Message {
-		public Guid QueueId { get; }
-
-		public StopCoreTimeout(Guid queueId) {
-			QueueId = queueId;
-		}
+	public partial class StopCoreTimeout(Guid queueId) : Message {
+		public Guid QueueId { get; } = queueId;
 	}
 
 	[DerivedMessage(ProjectionMessage.ServiceMessage)]
-	public partial class CoreTick : Message {
-		private readonly Action _action;
-
-		public CoreTick(Action action) {
-			_action = action;
-		}
-
-		public Action Action {
-			get { return _action; }
-		}
+	public partial class CoreTick(Action action) : Message {
+		public Action Action { get; } = action;
 	}
 
 	[DerivedMessage(ProjectionMessage.ServiceMessage)]
-	public partial class SubComponentStarted : Message {
-		public string SubComponent { get; }
-		public Guid InstanceCorrelationId { get; }
-
-		public SubComponentStarted(string subComponent, Guid instanceCorrelationId) {
-			InstanceCorrelationId = instanceCorrelationId;
-			SubComponent = subComponent;
-		}
+	public partial class SubComponentStarted(string subComponent, Guid instanceCorrelationId) : Message {
+		public string SubComponent { get; } = subComponent;
+		public Guid InstanceCorrelationId { get; } = instanceCorrelationId;
 	}
 
 	[DerivedMessage(ProjectionMessage.ServiceMessage)]
-	public partial class SubComponentStopped : Message {
-		public readonly string SubComponent;
-
-		public Guid QueueId { get; }
-
-		public SubComponentStopped(string subComponent, Guid queueId) {
-			SubComponent = subComponent;
-			QueueId = queueId;
-		}
+	public partial class SubComponentStopped(string subComponent, Guid queueId) : Message {
+		public string SubComponent { get; } = subComponent;
+		public Guid QueueId { get; } = queueId;
 	}
 }

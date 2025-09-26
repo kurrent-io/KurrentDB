@@ -12,16 +12,18 @@ using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Strategies;
 
-public class ContinuousProjectionProcessingStrategy : DefaultProjectionProcessingStrategy {
-	public ContinuousProjectionProcessingStrategy(
-		string name, ProjectionVersion projectionVersion, IProjectionStateHandler stateHandler,
-		ProjectionConfig projectionConfig, IQuerySources sourceDefinition, ILogger logger,
-		ReaderSubscriptionDispatcher subscriptionDispatcher, bool enableContentTypeValidation, int maxProjectionStateSize)
-		: base(
-			name, projectionVersion, stateHandler, projectionConfig, sourceDefinition, logger,
-			subscriptionDispatcher, enableContentTypeValidation, maxProjectionStateSize) {
-	}
-
+public class ContinuousProjectionProcessingStrategy(
+	string name,
+	ProjectionVersion projectionVersion,
+	IProjectionStateHandler stateHandler,
+	ProjectionConfig projectionConfig,
+	IQuerySources sourceDefinition,
+	ILogger logger,
+	ReaderSubscriptionDispatcher subscriptionDispatcher,
+	bool enableContentTypeValidation,
+	int maxProjectionStateSize)
+	: DefaultProjectionProcessingStrategy(name, projectionVersion, stateHandler, projectionConfig, sourceDefinition, logger,
+		subscriptionDispatcher, enableContentTypeValidation, maxProjectionStateSize) {
 	public override bool GetStopOnEof() {
 		return false;
 	}
@@ -36,19 +38,18 @@ public class ContinuousProjectionProcessingStrategy : DefaultProjectionProcessin
 
 	protected override IProjectionProcessingPhase[] CreateProjectionProcessingPhases(
 		IPublisher publisher,
-		IPublisher inputQueue,
 		Guid projectionCorrelationId,
 		ProjectionNamesBuilder namingBuilder,
 		PartitionStateCache partitionStateCache,
 		CoreProjection coreProjection,
 		IODispatcher ioDispatcher,
 		IProjectionProcessingPhase firstPhase) {
-		return new IProjectionProcessingPhase[] { firstPhase };
+		return [firstPhase];
 	}
 
 	protected override IResultEventEmitter CreateFirstPhaseResultEmitter(ProjectionNamesBuilder namingBuilder) {
 		return _sourceDefinition.ProducesResults
 			? new ResultEventEmitter(namingBuilder)
-			: (IResultEventEmitter)new NoopResultEventEmitter();
+			: new NoopResultEventEmitter();
 	}
 }

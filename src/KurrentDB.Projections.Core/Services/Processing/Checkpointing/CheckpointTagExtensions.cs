@@ -14,43 +14,34 @@ public static class CheckpointTagExtensions {
 		if (string.IsNullOrEmpty(source))
 			return null;
 		var reader = new JsonTextReader(new StringReader(source));
-		return CheckpointTag.FromJson(reader, default(ProjectionVersion)).Tag;
+		return CheckpointTag.FromJson(reader, default).Tag;
 	}
 
 	public static CheckpointTag ParseCheckpointTagJson(this byte[] source) {
 		if (source == null || source.Length == 0)
 			return null;
 		var reader = new JsonTextReader(new StreamReader(new MemoryStream(source)));
-		return CheckpointTag.FromJson(reader, default(ProjectionVersion)).Tag;
+		return CheckpointTag.FromJson(reader, default).Tag;
 	}
 
 	public static CheckpointTag ParseCheckpointTagJson(this ReadOnlyMemory<byte> source) {
-		if (source.Length == 0)
-			return null;
-		var reader = new JsonTextReader(new StreamReader(new MemoryStream(source.ToArray())));
-		return CheckpointTag.FromJson(reader, default(ProjectionVersion)).Tag;
+		return ParseCheckpointTagJson(source.ToArray());
 	}
 
-	public static CheckpointTagVersion ParseCheckpointTagVersionExtraJson(this byte[] source,
-		ProjectionVersion current) {
+	public static CheckpointTagVersion ParseCheckpointTagVersionExtraJson(this byte[] source, ProjectionVersion current) {
 		if (source == null || source.Length == 0)
-			return new CheckpointTagVersion { Version = new ProjectionVersion(current.ProjectionId, 0, 0), Tag = null };
+			return new() { Version = new(current.ProjectionId, 0, 0), Tag = null };
 		var reader = new JsonTextReader(new StreamReader(new MemoryStream(source)));
 		return CheckpointTag.FromJson(reader, current);
 	}
 
-	public static CheckpointTagVersion ParseCheckpointTagVersionExtraJson(this ReadOnlyMemory<byte> source,
-		ProjectionVersion current) {
-		if (source.Length == 0)
-			return new CheckpointTagVersion { Version = new ProjectionVersion(current.ProjectionId, 0, 0), Tag = null };
-		var reader = new JsonTextReader(new StreamReader(new MemoryStream(source.ToArray())));
-		return CheckpointTag.FromJson(reader, current);
+	public static CheckpointTagVersion ParseCheckpointTagVersionExtraJson(this ReadOnlyMemory<byte> source, ProjectionVersion current) {
+		return ParseCheckpointTagVersionExtraJson(source.ToArray(), current);
 	}
 
-	public static CheckpointTagVersion ParseCheckpointTagVersionExtraJson(this string source,
-		ProjectionVersion current) {
+	public static CheckpointTagVersion ParseCheckpointTagVersionExtraJson(this string source, ProjectionVersion current) {
 		if (string.IsNullOrEmpty(source))
-			return new CheckpointTagVersion { Version = new ProjectionVersion(current.ProjectionId, 0, 0), Tag = null };
+			return new() { Version = new(current.ProjectionId, 0, 0), Tag = null };
 		var reader = new JsonTextReader(new StringReader(source));
 		return CheckpointTag.FromJson(reader, current);
 	}
@@ -59,7 +50,7 @@ public static class CheckpointTagExtensions {
 		if (string.IsNullOrEmpty(source))
 			return null;
 		var reader = new JsonTextReader(new StringReader(source));
-		return CheckpointTag.FromJson(reader, default(ProjectionVersion)).ExtraMetadata;
+		return CheckpointTag.FromJson(reader, default).ExtraMetadata;
 	}
 
 	public static string ParseCheckpointTagCorrelationId(this string source) {
@@ -72,7 +63,7 @@ public static class CheckpointTagExtensions {
 			if (reader.TokenType != JsonToken.StartObject)
 				return null;
 			while (true) {
-				CheckpointTag.Check(reader.Read(), reader);
+				CheckpointTag.Check(reader.Read());
 				if (reader.TokenType == JsonToken.EndObject)
 					break;
 				if (reader.TokenType != JsonToken.PropertyName)

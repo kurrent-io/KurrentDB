@@ -20,7 +20,7 @@ public class CategorizeStreamByPath : IProjectionStateHandler {
 		_streamCategoryExtractor = extractor;
 	}
 
-	public void ConfigureSourceProcessingStrategy(SourceDefinitionBuilder builder) {
+	private static void ConfigureSourceProcessingStrategy(SourceDefinitionBuilder builder) {
 		builder.FromAll();
 		builder.AllEvents();
 		builder.SetIncludeLinks();
@@ -57,12 +57,12 @@ public class CategorizeStreamByPath : IProjectionStateHandler {
 		if (category == null)
 			return true; // handled but not interesting
 
-		emittedEvents = new[] {
-			new EmittedEventEnvelope(
+		emittedEvents = [
+			new(
 				new EmittedDataEvent(
-					"$category" + "-" + category, Guid.NewGuid(), SystemEventTypes.StreamReference, false,
+					$"$category-{category}", Guid.NewGuid(), SystemEventTypes.StreamReference, false,
 					data.PositionStreamId, null, eventPosition, expectedTag: null))
-		};
+		];
 
 		return true;
 	}

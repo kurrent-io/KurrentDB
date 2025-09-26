@@ -7,11 +7,7 @@ using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 
 namespace KurrentDB.Projections.Core.Services.Processing.TransactionFile;
 
-public class TransactionFilePositionTagger : PositionTagger {
-	public TransactionFilePositionTagger(int phase)
-		: base(phase) {
-	}
-
+public class TransactionFilePositionTagger(int phase) : PositionTagger(phase) {
 	public override bool IsCompatible(CheckpointTag checkpointTag) {
 		return checkpointTag.Mode_ == CheckpointTag.Mode.Position;
 	}
@@ -21,29 +17,23 @@ public class TransactionFilePositionTagger : PositionTagger {
 			return tag;
 		if (tag.Phase > Phase)
 			throw new ArgumentException(
-				string.Format("Invalid checkpoint tag phase.  Expected less or equal to: {0} Was: {1}", Phase,
-					tag.Phase), "tag");
+				$"Invalid checkpoint tag phase.  Expected less or equal to: {Phase} Was: {tag.Phase}", nameof(tag));
 
 		if (tag.Mode_ == CheckpointTag.Mode.Position)
 			return tag;
 
-		switch (tag.Mode_) {
-			case CheckpointTag.Mode.EventTypeIndex:
-				return CheckpointTag.FromPosition(
-					tag.Phase, tag.Position.CommitPosition, tag.Position.PreparePosition);
-			case CheckpointTag.Mode.Stream:
-				throw new NotSupportedException("Conversion from Stream to Position position tag is not supported");
-			case CheckpointTag.Mode.MultiStream:
-				throw new NotSupportedException(
-					"Conversion from MultiStream to Position position tag is not supported");
-			case CheckpointTag.Mode.PreparePosition:
-				throw new NotSupportedException(
-					"Conversion from PreparePosition to Position position tag is not supported");
-			default:
-				throw new NotSupportedException(string.Format(
-					"The given checkpoint is invalid. Possible causes might include having written an event to the projection's managed stream. The bad checkpoint: {0}",
-					tag.ToString()));
-		}
+		return tag.Mode_ switch {
+			CheckpointTag.Mode.EventTypeIndex => CheckpointTag.FromPosition(tag.Phase, tag.Position.CommitPosition,
+				tag.Position.PreparePosition),
+			CheckpointTag.Mode.Stream =>
+				throw new NotSupportedException("Conversion from Stream to Position position tag is not supported"),
+			CheckpointTag.Mode.MultiStream => throw new NotSupportedException(
+				"Conversion from MultiStream to Position position tag is not supported"),
+			CheckpointTag.Mode.PreparePosition => throw new NotSupportedException(
+				"Conversion from PreparePosition to Position position tag is not supported"),
+			_ => throw new NotSupportedException(
+				$"The given checkpoint is invalid. Possible causes might include having written an event to the projection's managed stream. The bad checkpoint: {tag}")
+		};
 	}
 
 	public override bool IsMessageAfterCheckpointTag(
@@ -51,30 +41,20 @@ public class TransactionFilePositionTagger : PositionTagger {
 		if (previous.Phase < Phase)
 			return true;
 		if (previous.Mode_ != CheckpointTag.Mode.Position)
-			throw new ArgumentException("Mode.Position expected", "previous");
+			throw new ArgumentException("Mode.Position expected", nameof(previous));
 		return committedEvent.Data.Position > previous.Position;
 	}
 
-	public override CheckpointTag MakeCheckpointTag(
-		CheckpointTag previous, ReaderSubscriptionMessage.CommittedEventDistributed committedEvent) {
-		if (previous.Phase != Phase)
-			throw new ArgumentException(
-				string.Format("Invalid checkpoint tag phase.  Expected: {0} Was: {1}", Phase, previous.Phase));
-
-		return CheckpointTag.FromPosition(previous.Phase, committedEvent.Data.Position);
+	public override CheckpointTag MakeCheckpointTag(CheckpointTag previous, ReaderSubscriptionMessage.CommittedEventDistributed committedEvent) {
+		return previous.Phase != Phase ? throw new ArgumentException($"Invalid checkpoint tag phase.  Expected: {Phase} Was: {previous.Phase}") : CheckpointTag.FromPosition(previous.Phase, committedEvent.Data.Position);
 	}
 
 	public override CheckpointTag MakeCheckpointTag(CheckpointTag previous,
 		ReaderSubscriptionMessage.EventReaderPartitionDeleted partitionDeleted) {
 		if (previous.Phase != Phase)
-			throw new ArgumentException(
-				string.Format("Invalid checkpoint tag phase.  Expected: {0} Was: {1}", Phase, previous.Phase));
+			throw new ArgumentException($"Invalid checkpoint tag phase.  Expected: {Phase} Was: {previous.Phase}");
 
-		if (partitionDeleted.DeleteLinkOrEventPosition == null)
-			throw new ArgumentException(
-				"Invalid partiton deleted message. deleteEventOrLinkTargetPosition required");
-
-		return CheckpointTag.FromPosition(previous.Phase, partitionDeleted.DeleteLinkOrEventPosition.Value);
+		return partitionDeleted.DeleteLinkOrEventPosition == null ? throw new ArgumentException("Invalid partition deleted message. deleteEventOrLinkTargetPosition required") : CheckpointTag.FromPosition(previous.Phase, partitionDeleted.DeleteLinkOrEventPosition.Value);
 	}
 
 	public override CheckpointTag MakeZeroCheckpointTag() {

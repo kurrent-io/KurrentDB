@@ -22,7 +22,7 @@ using TelemetryMessage = KurrentDB.Core.Telemetry.TelemetryMessage;
 
 namespace KurrentDB.Projections.Core;
 
-public class ProjectionManagerNode {
+public static class ProjectionManagerNode {
 	public static void CreateManagerService(
 		StandardComponents standardComponents,
 		ProjectionsStandardComponents projectionsStandardComponents,
@@ -140,8 +140,7 @@ public class ProjectionManagerNode {
 
 		managerOutput.Subscribe<TimerMessage.Schedule>(standardComponents.TimerService);
 		managerOutput.Subscribe(Forwarder.Create<AwakeServiceMessage.SubscribeAwake>(standardComponents.MainQueue));
-		managerOutput.Subscribe(
-			Forwarder.Create<AwakeServiceMessage.UnsubscribeAwake>(standardComponents.MainQueue));
+		managerOutput.Subscribe(Forwarder.Create<AwakeServiceMessage.UnsubscribeAwake>(standardComponents.MainQueue));
 		managerOutput.Subscribe<SystemMessage.SubSystemInitialized>(forwarder);
 
 		// self forward all

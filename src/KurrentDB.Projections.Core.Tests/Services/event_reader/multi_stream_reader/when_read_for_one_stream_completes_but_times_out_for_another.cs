@@ -35,8 +35,7 @@ public class when_read_for_one_stream_completes_but_times_out_for_another<TLogFo
 		_ab12Tag = new Dictionary<string, long> { { "a", 1 }, { "b", 2 } };
 		_abStreams = new[] { "a", "b" };
 		_distibutionPointCorrelationId = Guid.NewGuid();
-		_eventReader = new MultiStreamEventReader(
-			_ioDispatcher, _bus, _distibutionPointCorrelationId, null, 0, _abStreams, _ab12Tag, false,
+		_eventReader = new MultiStreamEventReader(_bus, _distibutionPointCorrelationId, null, 0, _abStreams, _ab12Tag, false,
 			new RealTimeProvider());
 		_eventReader.Resume();
 		var correlationId = _consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>()

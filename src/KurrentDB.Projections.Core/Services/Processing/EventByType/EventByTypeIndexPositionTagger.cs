@@ -18,16 +18,14 @@ public class EventByTypeIndexPositionTagger : PositionTagger {
 	public EventByTypeIndexPositionTagger(
 		int phase, string[] eventTypes, bool includeStreamDeletedNotification = false)
 		: base(phase) {
-		if (eventTypes == null)
-			throw new ArgumentNullException("eventTypes");
+		ArgumentNullException.ThrowIfNull(eventTypes);
 		if (eventTypes.Length == 0)
 			throw new ArgumentException("eventTypes");
-		_eventTypes = new HashSet<string>(eventTypes);
+		_eventTypes = new(eventTypes);
 		if (includeStreamDeletedNotification)
 			_eventTypes.Add("$deleted");
-		_streams = new HashSet<string>(from eventType in eventTypes
-									   select "$et-" + eventType);
-		_streamToEventType = eventTypes.ToDictionary(v => "$et-" + v, v => v);
+		_streams = new(eventTypes.Select(eventType => $"$et-{eventType}"));
+		_streamToEventType = eventTypes.ToDictionary(v => $"$et-{v}", v => v);
 	}
 
 	public override bool IsMessageAfterCheckpointTag(
@@ -35,9 +33,9 @@ public class EventByTypeIndexPositionTagger : PositionTagger {
 		if (previous.Phase < Phase)
 			return true;
 		if (previous.Mode_ != CheckpointTag.Mode.EventTypeIndex)
-			throw new ArgumentException("Mode.EventTypeIndex expected", "previous");
+			throw new ArgumentException("Mode.EventTypeIndex expected", nameof(previous));
 		if (committedEvent.Data.EventOrLinkTargetPosition.CommitPosition <= 0)
-			throw new ArgumentException("complete TF position required", "committedEvent");
+			throw new ArgumentException("complete TF position required", nameof(committedEvent));
 
 		return committedEvent.Data.EventOrLinkTargetPosition > previous.Position;
 	}
@@ -45,14 +43,11 @@ public class EventByTypeIndexPositionTagger : PositionTagger {
 	public override CheckpointTag MakeCheckpointTag(
 		CheckpointTag previous, ReaderSubscriptionMessage.CommittedEventDistributed committedEvent) {
 		if (previous.Phase != Phase)
-			throw new ArgumentException(
-				string.Format("Invalid checkpoint tag phase.  Expected: {0} Was: {1}", Phase, previous.Phase));
+			throw new ArgumentException($"Invalid checkpoint tag phase.  Expected: {Phase} Was: {previous.Phase}");
 
 		if (committedEvent.Data.EventOrLinkTargetPosition < previous.Position)
 			throw new InvalidOperationException(
-				string.Format(
-					"Cannot make a checkpoint tag at earlier position. '{0}' < '{1}'",
-					committedEvent.Data.EventOrLinkTargetPosition, previous.Position));
+				$"Cannot make a checkpoint tag at earlier position. '{committedEvent.Data.EventOrLinkTargetPosition}' < '{previous.Position}'");
 		var byIndex = _streams.Contains(committedEvent.Data.PositionStreamId);
 		return byIndex
 			? previous.UpdateEventTypeIndexPosition(
@@ -65,14 +60,11 @@ public class EventByTypeIndexPositionTagger : PositionTagger {
 	public override CheckpointTag MakeCheckpointTag(
 		CheckpointTag previous, ReaderSubscriptionMessage.EventReaderPartitionDeleted partitionDeleted) {
 		if (previous.Phase != Phase)
-			throw new ArgumentException(
-				string.Format("Invalid checkpoint tag phase.  Expected: {0} Was: {1}", Phase, previous.Phase));
+			throw new ArgumentException($"Invalid checkpoint tag phase.  Expected: {Phase} Was: {previous.Phase}");
 
 		if (partitionDeleted.DeleteEventOrLinkTargetPosition < previous.Position)
 			throw new InvalidOperationException(
-				string.Format(
-					"Cannot make a checkpoint tag at earlier position. '{0}' < '{1}'",
-					partitionDeleted.DeleteEventOrLinkTargetPosition, previous.Position));
+				$"Cannot make a checkpoint tag at earlier position. '{partitionDeleted.DeleteEventOrLinkTargetPosition}' < '{previous.Position}'");
 		var byIndex = _streams.Contains(partitionDeleted.PositionStreamId);
 		//TODO: handle invalid partition deleted messages without required values
 		return byIndex
@@ -85,7 +77,7 @@ public class EventByTypeIndexPositionTagger : PositionTagger {
 
 	public override CheckpointTag MakeZeroCheckpointTag() {
 		return CheckpointTag.FromEventTypeIndexPositions(
-			Phase, new TFPos(0, -1), _eventTypes.ToDictionary(v => v, v => ExpectedVersion.NoStream));
+			Phase, new TFPos(0, -1), _eventTypes.ToDictionary(v => v, _ => ExpectedVersion.NoStream));
 	}
 
 	public override bool IsCompatible(CheckpointTag checkpointTag) {
@@ -99,33 +91,25 @@ public class EventByTypeIndexPositionTagger : PositionTagger {
 			return tag;
 		if (tag.Phase > Phase)
 			throw new ArgumentException(
-				string.Format("Invalid checkpoint tag phase.  Expected less or equal to: {0} Was: {1}", Phase,
-					tag.Phase), "tag");
+				$"Invalid checkpoint tag phase.  Expected less or equal to: {Phase} Was: {tag.Phase}", nameof(tag));
 
 		if (tag.Mode_ == CheckpointTag.Mode.EventTypeIndex) {
-			long p;
 			return CheckpointTag.FromEventTypeIndexPositions(
 				tag.Phase, tag.Position,
-				_eventTypes.ToDictionary(v => v, v => tag.Streams.TryGetValue(v, out p) ? p : -1));
+				_eventTypes.ToDictionary(v => v, v => tag.Streams.TryGetValue(v, out var p) ? p : -1));
 		}
 
-		switch (tag.Mode_) {
-			case CheckpointTag.Mode.MultiStream:
-				throw new NotSupportedException(
-					"Conversion from MultiStream to EventTypeIndex position tag is not supported");
-			case CheckpointTag.Mode.Stream:
-				throw new NotSupportedException(
-					"Conversion from Stream to EventTypeIndex position tag is not supported");
-			case CheckpointTag.Mode.PreparePosition:
-				throw new NotSupportedException(
-					"Conversion from PreparePosition to EventTypeIndex position tag is not supported");
-			case CheckpointTag.Mode.Position:
-				return CheckpointTag.FromEventTypeIndexPositions(
-					tag.Phase, tag.Position, _eventTypes.ToDictionary(v => v, v => (long)-1));
-			default:
-				throw new NotSupportedException(string.Format(
-					"The given checkpoint is invalid. Possible causes might include having written an event to the projection's managed stream. The bad checkpoint: {0}",
-					tag.ToString()));
-		}
+		return tag.Mode_ switch {
+			CheckpointTag.Mode.MultiStream => throw new NotSupportedException(
+				"Conversion from MultiStream to EventTypeIndex position tag is not supported"),
+			CheckpointTag.Mode.Stream => throw new NotSupportedException(
+				"Conversion from Stream to EventTypeIndex position tag is not supported"),
+			CheckpointTag.Mode.PreparePosition => throw new NotSupportedException(
+				"Conversion from PreparePosition to EventTypeIndex position tag is not supported"),
+			CheckpointTag.Mode.Position => CheckpointTag.FromEventTypeIndexPositions(tag.Phase, tag.Position,
+				_eventTypes.ToDictionary(v => v, _ => (long)-1)),
+			_ => throw new NotSupportedException(
+				$"The given checkpoint is invalid. Possible causes might include having written an event to the projection's managed stream. The bad checkpoint: {tag}")
+		};
 	}
 }

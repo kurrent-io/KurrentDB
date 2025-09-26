@@ -19,13 +19,11 @@ public abstract class WriteQueryResultProjectionProcessingPhaseBase : IProjectio
 	protected readonly string _resultStream;
 	private readonly ICoreProjectionForProcessingPhase _coreProjection;
 	protected readonly PartitionStateCache _stateCache;
-	protected readonly ICoreProjectionCheckpointManager _checkpointManager;
-	protected readonly IEmittedEventWriter _emittedEventWriter;
-	protected readonly IEmittedStreamsTracker _emittedStreamsTracker;
+	private readonly IEmittedEventWriter _emittedEventWriter;
 	private bool _subscribed;
 	private PhaseState _projectionState;
 
-	public WriteQueryResultProjectionProcessingPhaseBase(
+	protected WriteQueryResultProjectionProcessingPhaseBase(
 		IPublisher publisher,
 		int phase,
 		string resultStream,
@@ -34,45 +32,33 @@ public abstract class WriteQueryResultProjectionProcessingPhaseBase : IProjectio
 		ICoreProjectionCheckpointManager checkpointManager,
 		IEmittedEventWriter emittedEventWriter,
 		IEmittedStreamsTracker emittedStreamsTracker) {
-		if (resultStream == null)
-			throw new ArgumentNullException("resultStream");
-		if (coreProjection == null)
-			throw new ArgumentNullException("coreProjection");
-		if (stateCache == null)
-			throw new ArgumentNullException("stateCache");
-		if (checkpointManager == null)
-			throw new ArgumentNullException("checkpointManager");
-		if (emittedEventWriter == null)
-			throw new ArgumentNullException("emittedEventWriter");
-		if (emittedStreamsTracker == null)
-			throw new ArgumentNullException("emittedStreamsTracker");
-		if (string.IsNullOrEmpty(resultStream))
-			throw new ArgumentException("resultStream");
+		ArgumentException.ThrowIfNullOrEmpty(resultStream);
+		ArgumentNullException.ThrowIfNull(coreProjection);
+		ArgumentNullException.ThrowIfNull(stateCache);
+		ArgumentNullException.ThrowIfNull(checkpointManager);
+		ArgumentNullException.ThrowIfNull(emittedEventWriter);
+		ArgumentNullException.ThrowIfNull(emittedStreamsTracker);
 
 		_publisher = publisher;
 		_phase = phase;
 		_resultStream = resultStream;
 		_coreProjection = coreProjection;
 		_stateCache = stateCache;
-		_checkpointManager = checkpointManager;
+		CheckpointManager = checkpointManager;
 		_emittedEventWriter = emittedEventWriter;
-		_emittedStreamsTracker = emittedStreamsTracker;
+		EmittedStreamsTracker = emittedStreamsTracker;
 	}
 
-	public ICoreProjectionCheckpointManager CheckpointManager {
-		get { return _checkpointManager; }
-	}
+	public ICoreProjectionCheckpointManager CheckpointManager { get; }
 
-	public IEmittedStreamsTracker EmittedStreamsTracker {
-		get { return _emittedStreamsTracker; }
-	}
+	public IEmittedStreamsTracker EmittedStreamsTracker { get; }
 
 	public void Dispose() {
 	}
 
 	public void Handle(CoreProjectionManagementMessage.GetState message) {
 		var state = _stateCache.TryGetPartitionState(message.Partition);
-		var stateString = state != null ? state.State : null;
+		var stateString = state?.State;
 		_publisher.Publish(
 			new CoreProjectionStatusMessage.StateReport(
 				message.CorrelationId,
@@ -84,7 +70,7 @@ public abstract class WriteQueryResultProjectionProcessingPhaseBase : IProjectio
 
 	public void Handle(CoreProjectionManagementMessage.GetResult message) {
 		var state = _stateCache.TryGetPartitionState(message.Partition);
-		var resultString = state != null ? state.Result : null;
+		var resultString = state?.Result;
 		_publisher.Publish(
 			new CoreProjectionStatusMessage.ResultReport(
 				message.CorrelationId,
@@ -119,12 +105,11 @@ public abstract class WriteQueryResultProjectionProcessingPhaseBase : IProjectio
 
 		_emittedEventWriter.EventsEmitted(writeResults.Concat(writeEofResults).ToArray(), Guid.Empty, null);
 
-		_checkpointManager.EventProcessed(phaseCheckpointTag, 100.0f);
+		CheckpointManager.EventProcessed(phaseCheckpointTag, 100.0f);
 		_coreProjection.CompletePhase();
 	}
 
 	private IEnumerable<EmittedEventEnvelope> WriteEofEvent(CheckpointTag phaseCheckpointTag) {
-		EmittedStream.WriterConfiguration.StreamMetadata streamMetadata = null;
 		yield return
 			new EmittedEventEnvelope(
 				new EmittedDataEvent(
@@ -135,8 +120,7 @@ public abstract class WriteQueryResultProjectionProcessingPhaseBase : IProjectio
 					null,
 					null,
 					phaseCheckpointTag,
-					null),
-				streamMetadata);
+					null));
 	}
 
 	protected abstract IEnumerable<EmittedEventEnvelope> WriteResults(CheckpointTag phaseCheckpointTag);
@@ -151,7 +135,7 @@ public abstract class WriteQueryResultProjectionProcessingPhaseBase : IProjectio
 	}
 
 	public void GetStatistics(ProjectionStatistics info) {
-		info.Status = info.Status + "/Writing results";
+		info.Status += "/Writing results";
 	}
 
 	public CheckpointTag MakeZeroCheckpointTag() {

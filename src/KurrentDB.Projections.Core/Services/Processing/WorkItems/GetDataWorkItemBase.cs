@@ -25,8 +25,7 @@ abstract class GetDataWorkItemBase : WorkItem {
 		IProjectionPhaseStateManager projection,
 		string partition)
 		: base(null) {
-		if (partition == null)
-			throw new ArgumentNullException("partition");
+		ArgumentNullException.ThrowIfNull(partition);
 		_publisher = publisher;
 		_partition = partition;
 		_correlationId = correlationId;
@@ -38,7 +37,7 @@ abstract class GetDataWorkItemBase : WorkItem {
 		NextStage(_partition);
 	}
 
-	protected override void Load(CheckpointTag checkpointTag) {
+	protected override void Load() {
 		_lastProcessedCheckpointTag = _projection.LastProcessedEventPosition;
 		_projection.BeginGetPartitionStateAt(
 			_partition,

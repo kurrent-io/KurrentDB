@@ -5,16 +5,9 @@ using KurrentDB.Projections.Core.Services.Processing.Phases;
 
 namespace KurrentDB.Projections.Core.Services.Processing.WorkItems;
 
-class CompletedWorkItem : CheckpointWorkItemBase {
-	private readonly IProjectionPhaseCompleter _projection;
-
-	public CompletedWorkItem(IProjectionPhaseCompleter projection)
-		: base() {
-		_projection = projection;
-	}
-
+internal class CompletedWorkItem(IProjectionPhaseCompleter projection) : CheckpointWorkItemBase {
 	protected override void WriteOutput() {
-		_projection.Complete();
+		projection.Complete();
 		NextStage();
 	}
 }

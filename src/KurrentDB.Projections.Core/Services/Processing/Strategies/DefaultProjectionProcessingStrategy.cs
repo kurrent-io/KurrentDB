@@ -12,18 +12,19 @@ using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Strategies;
 
-public abstract class DefaultProjectionProcessingStrategy : EventReaderBasedProjectionProcessingStrategy {
-	private readonly IProjectionStateHandler _stateHandler;
-
-	protected DefaultProjectionProcessingStrategy(
-		string name, ProjectionVersion projectionVersion, IProjectionStateHandler stateHandler,
-		ProjectionConfig projectionConfig, IQuerySources sourceDefinition, ILogger logger,
-		ReaderSubscriptionDispatcher subscriptionDispatcher, bool enableContentTypeValidation, int maxProjectionStateSize)
-		: base(name, projectionVersion, projectionConfig, sourceDefinition, logger, subscriptionDispatcher,
-			enableContentTypeValidation, maxProjectionStateSize) {
-		_stateHandler = stateHandler;
-	}
-
+public abstract class DefaultProjectionProcessingStrategy(
+	string name,
+	ProjectionVersion projectionVersion,
+	IProjectionStateHandler stateHandler,
+	ProjectionConfig projectionConfig,
+	IQuerySources sourceDefinition,
+	ILogger logger,
+	ReaderSubscriptionDispatcher subscriptionDispatcher,
+	bool enableContentTypeValidation,
+	int maxProjectionStateSize)
+	: EventReaderBasedProjectionProcessingStrategy(name, projectionVersion, projectionConfig, sourceDefinition, logger,
+		subscriptionDispatcher,
+		enableContentTypeValidation, maxProjectionStateSize) {
 	protected override IProjectionProcessingPhase CreateFirstProcessingPhase(
 		IPublisher publisher,
 		IPublisher inputQueue,
@@ -47,7 +48,7 @@ public abstract class DefaultProjectionProcessingStrategy : EventReaderBasedProj
 			inputQueue,
 			_projectionConfig,
 			updateStatistics,
-			_stateHandler,
+			stateHandler,
 			partitionStateCache,
 			_sourceDefinition.DefinesStateTransform,
 			_name,
@@ -59,18 +60,18 @@ public abstract class DefaultProjectionProcessingStrategy : EventReaderBasedProj
 			readerStrategy,
 			resultWriter,
 			_projectionConfig.CheckpointsEnabled,
-			this.GetStopOnEof(),
+			GetStopOnEof(),
 			_sourceDefinition.IsBiState,
 			orderedPartitionProcessing: orderedPartitionProcessing,
 			emittedStreamsTracker: emittedStreamsTracker,
 			enableContentTypeValidation: _enableContentTypeValidation);
 	}
 
-	protected virtual StatePartitionSelector CreateStatePartitionSelector() {
+	protected StatePartitionSelector CreateStatePartitionSelector() {
 		return _sourceDefinition.ByCustomPartitions
-			? new ByHandleStatePartitionSelector(_stateHandler)
-			: (_sourceDefinition.ByStreams
-				? (StatePartitionSelector)new ByStreamStatePartitionSelector()
-				: new NoopStatePartitionSelector());
+			? new ByHandleStatePartitionSelector(stateHandler)
+			: _sourceDefinition.ByStreams
+				? new ByStreamStatePartitionSelector()
+				: new NoopStatePartitionSelector();
 	}
 }

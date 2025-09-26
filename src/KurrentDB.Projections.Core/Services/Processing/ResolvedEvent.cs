@@ -14,24 +14,11 @@ using Newtonsoft.Json.Linq;
 namespace KurrentDB.Projections.Core.Services.Processing;
 
 public class ResolvedEvent {
-	private readonly string _eventStreamId;
-	private readonly long _eventSequenceNumber;
-	private readonly bool _resolvedLinkTo;
-
-	private readonly string _positionStreamId;
-	private readonly long _positionSequenceNumber;
-	private readonly TFPos _position;
-	private readonly TFPos _eventOrLinkTargetPosition;
-	private readonly TFPos _linkOrEventPosition;
-
-
 	public readonly Guid EventId;
 	public readonly string EventType;
 	public readonly bool IsJson;
 	public readonly DateTime Timestamp;
-
 	public readonly ReadOnlyMemory<byte> DataMemory;
-
 	public readonly string Data;
 	public readonly string Metadata;
 	public readonly string PositionMetadata;
@@ -41,14 +28,14 @@ public class ResolvedEvent {
 
 	public ResolvedEvent(KurrentDB.Core.Data.ResolvedEvent resolvedEvent, byte[] streamMetadata) {
 		var positionEvent = resolvedEvent.Link ?? resolvedEvent.Event;
-		_linkOrEventPosition = resolvedEvent.OriginalPosition.GetValueOrDefault();
+		LinkOrEventPosition = resolvedEvent.OriginalPosition.GetValueOrDefault();
 		var @event = resolvedEvent.Event;
-		_positionStreamId = positionEvent.EventStreamId;
-		_positionSequenceNumber = positionEvent.EventNumber;
-		_eventStreamId = @event != null ? @event.EventStreamId : null;
-		_eventSequenceNumber = @event != null ? @event.EventNumber : -1;
-		_resolvedLinkTo = positionEvent != @event;
-		_position = resolvedEvent.OriginalPosition ?? new TFPos(-1, positionEvent.LogPosition);
+		PositionStreamId = positionEvent.EventStreamId;
+		PositionSequenceNumber = positionEvent.EventNumber;
+		EventStreamId = @event != null ? @event.EventStreamId : null;
+		EventSequenceNumber = @event != null ? @event.EventNumber : -1;
+		ResolvedLinkTo = positionEvent != @event;
+		Position = resolvedEvent.OriginalPosition ?? new TFPos(-1, positionEvent.LogPosition);
 		EventId = @event != null ? @event.EventId : Guid.Empty;
 		EventType = @event != null ? @event.EventType : null;
 		IsJson = @event != null && (@event.Flags & PrepareFlags.IsJson) != 0;
@@ -59,15 +46,15 @@ public class ResolvedEvent {
 		//TODO: handle utf-8 conversion exception
 		Data = @event != null && @event.Data.Length > 0 ? Helper.UTF8NoBom.GetString(@event.Data.Span) : null;
 		Metadata = @event != null && @event.Metadata.Length > 0 ? Helper.UTF8NoBom.GetString(@event.Metadata.Span) : null;
-		PositionMetadata = _resolvedLinkTo
+		PositionMetadata = ResolvedLinkTo
 			? (positionEvent.Metadata.Length > 0 ? Helper.UTF8NoBom.GetString(positionEvent.Metadata.Span) : null)
 			: null;
 		StreamMetadata = streamMetadata != null ? Helper.UTF8NoBom.GetString(streamMetadata) : null;
 
 		TFPos eventOrLinkTargetPosition;
-		if (_resolvedLinkTo) {
+		if (ResolvedLinkTo) {
 			Dictionary<string, JToken> extraMetadata = null;
-			if (positionEvent.Metadata.Length > 0 && positionEvent.Metadata.Length > 0) {
+			if (positionEvent.Metadata.Length > 0) {
 				//TODO: parse JSON only when unresolved link and just tag otherwise
 				CheckpointTag tag;
 				if (resolvedEvent.Link != null && resolvedEvent.Event == null) {
@@ -102,22 +89,18 @@ public class ResolvedEvent {
 					: new TFPos(-1, positionEvent.LogPosition);
 			}
 
-			JToken deletedValue;
-			IsLinkToDeletedStreamTombstone = extraMetadata != null
-											 && extraMetadata.TryGetValue("$deleted", out deletedValue);
+			IsLinkToDeletedStreamTombstone = extraMetadata != null && extraMetadata.TryGetValue("$deleted", out _);
 			if (resolvedEvent.ResolveResult == ReadEventResult.NoStream
 				|| resolvedEvent.ResolveResult == ReadEventResult.StreamDeleted || IsLinkToDeletedStreamTombstone) {
 				IsLinkToDeletedStream = true;
-				var streamId = SystemEventTypes.StreamReferenceEventToStreamId(
-					SystemEventTypes.LinkTo, resolvedEvent.Link.Data);
-				_eventStreamId = streamId;
+				EventStreamId = SystemEventTypes.StreamReferenceEventToStreamId(SystemEventTypes.LinkTo, resolvedEvent.Link.Data);
 			}
 		} else {
 			// not a link
 			eventOrLinkTargetPosition = resolvedEvent.OriginalPosition ?? new TFPos(-1, positionEvent.LogPosition);
 		}
 
-		_eventOrLinkTargetPosition = eventOrLinkTargetPosition;
+		EventOrLinkTargetPosition = eventOrLinkTargetPosition;
 	}
 
 	// Called from tests only
@@ -126,13 +109,13 @@ public class ResolvedEvent {
 		bool resolvedLinkTo, TFPos position, TFPos eventOrLinkTargetPosition, Guid eventId, string eventType,
 		bool isJson, byte[] data,
 		byte[] metadata, byte[] positionMetadata, byte[] streamMetadata, DateTime timestamp) {
-		_positionStreamId = positionStreamId;
-		_positionSequenceNumber = positionSequenceNumber;
-		_eventStreamId = eventStreamId;
-		_eventSequenceNumber = eventSequenceNumber;
-		_resolvedLinkTo = resolvedLinkTo;
-		_position = position;
-		_eventOrLinkTargetPosition = eventOrLinkTargetPosition;
+		PositionStreamId = positionStreamId;
+		PositionSequenceNumber = positionSequenceNumber;
+		EventStreamId = eventStreamId;
+		EventSequenceNumber = eventSequenceNumber;
+		ResolvedLinkTo = resolvedLinkTo;
+		Position = position;
+		EventOrLinkTargetPosition = eventOrLinkTargetPosition;
 		EventId = eventId;
 		EventType = eventType;
 		IsJson = isJson;
@@ -158,12 +141,12 @@ public class ResolvedEvent {
 		if (string.IsNullOrEmpty(eventType))
 			throw new ArgumentException("Empty eventType provided.");
 
-		_positionStreamId = positionStreamId;
-		_positionSequenceNumber = positionSequenceNumber;
-		_eventStreamId = eventStreamId;
-		_eventSequenceNumber = eventSequenceNumber;
-		_resolvedLinkTo = resolvedLinkTo;
-		_position = position;
+		PositionStreamId = positionStreamId;
+		PositionSequenceNumber = positionSequenceNumber;
+		EventStreamId = eventStreamId;
+		EventSequenceNumber = eventSequenceNumber;
+		ResolvedLinkTo = resolvedLinkTo;
+		Position = position;
 		EventId = eventId;
 		EventType = eventType;
 		IsJson = isJson;
@@ -176,42 +159,21 @@ public class ResolvedEvent {
 		StreamMetadata = streamMetadata;
 	}
 
-	public string EventStreamId {
-		get { return _eventStreamId; }
-	}
+	public string EventStreamId { get; }
 
-	public long EventSequenceNumber {
-		get { return _eventSequenceNumber; }
-	}
+	public long EventSequenceNumber { get; }
 
-	public bool ResolvedLinkTo {
-		get { return _resolvedLinkTo; }
-	}
+	public bool ResolvedLinkTo { get; }
 
-	public string PositionStreamId {
-		get { return _positionStreamId; }
-	}
+	public string PositionStreamId { get; }
 
-	public long PositionSequenceNumber {
-		get { return _positionSequenceNumber; }
-	}
+	public long PositionSequenceNumber { get; }
 
-	public TFPos Position {
-		get { return _position; }
-	}
+	public TFPos Position { get; }
 
-	public TFPos EventOrLinkTargetPosition {
-		get { return _eventOrLinkTargetPosition; }
-	}
+	public TFPos EventOrLinkTargetPosition { get; }
 
-	public TFPos LinkOrEventPosition {
-		get { return _linkOrEventPosition; }
-	}
+	public TFPos LinkOrEventPosition { get; }
 
-	public bool IsStreamDeletedEvent {
-		get {
-			string temp;
-			return StreamDeletedHelper.IsStreamDeletedEvent(EventStreamId, EventType, Data, out temp);
-		}
-	}
+	public bool IsStreamDeletedEvent => StreamDeletedHelper.IsStreamDeletedEvent(EventStreamId, EventType, Data, out _);
 }

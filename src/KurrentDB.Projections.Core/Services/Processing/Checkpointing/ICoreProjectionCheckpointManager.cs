@@ -12,10 +12,7 @@ public interface ICoreProjectionCheckpointManager {
 	void Stopping();
 	void Stopped();
 	void GetStatistics(ProjectionStatistics info);
-
-
 	void StateUpdated(string partition, PartitionState oldState, PartitionState newState);
-	void PartitionCompleted(string partition);
 	void EventProcessed(CheckpointTag checkpointTag, float progress);
 
 	/// <summary>

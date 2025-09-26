@@ -34,8 +34,7 @@ public class when_handling_an_emit_the_started_in_recovery_stream<TLogFormat, TS
 			new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
 				new EmittedStream.WriterConfiguration.StreamMetadata(), null, maxWriteBatchLength: 50),
 			new ProjectionVersion(1, 0, 0), new TransactionFilePositionTagger(0),
-			CheckpointTag.FromPosition(0, 40, 30),
-			_bus, _ioDispatcher, _readyHandler);
+			CheckpointTag.FromPosition(0, 40, 30), _ioDispatcher, _readyHandler);
 		_stream.Start();
 	}
 

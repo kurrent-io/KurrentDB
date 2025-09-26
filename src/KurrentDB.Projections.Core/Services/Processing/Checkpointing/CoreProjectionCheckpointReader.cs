@@ -26,7 +26,7 @@ public class CoreProjectionCheckpointReader : ICoreProjectionCheckpointReader {
 	private bool _stateRequested;
 
 	private long _nextStateIndexToRequest;
-	private ProjectionVersion _projectionVersion;
+	private readonly ProjectionVersion _projectionVersion;
 	private Guid _readRequestId;
 	private long _lastWrittenCheckpointEventNumber;
 
@@ -59,12 +59,12 @@ public class CoreProjectionCheckpointReader : ICoreProjectionCheckpointReader {
 		_stateRequested = false;
 	}
 
-	protected void BeforeBeginLoadState() {
+	private void BeforeBeginLoadState() {
 		_lastWrittenCheckpointEventNumber = ExpectedVersion.NoStream;
 		_nextStateIndexToRequest = -1; // from the end
 	}
 
-	protected void RequestLoadState() {
+	private void RequestLoadState() {
 		const int recordsToRequest = 10;
 		_readRequestId = Guid.NewGuid();
 		_ioDispatcher.ReadBackward(
@@ -111,11 +111,9 @@ public class CoreProjectionCheckpointReader : ICoreProjectionCheckpointReader {
 	}
 
 
-	protected void CheckpointLoaded(CheckpointTag checkpointTag, string checkpointData) {
+	private void CheckpointLoaded(CheckpointTag checkpointTag, string checkpointData) {
 		if (checkpointTag == null) // no checkpoint data found
-		{
 			checkpointData = null;
-		}
 
 		_publisher.Publish(
 			new CoreProjectionProcessingMessage.CheckpointLoaded(

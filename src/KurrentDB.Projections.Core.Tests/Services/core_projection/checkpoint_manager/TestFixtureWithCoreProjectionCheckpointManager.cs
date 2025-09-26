@@ -25,8 +25,6 @@ public abstract class TestFixtureWithCoreProjectionCheckpointManager<TLogFormat,
 	protected bool _trackEmittedStreams;
 	protected int _checkpointAfterMs;
 	protected int _maximumAllowedWritesInFlight;
-	protected bool _producesResults;
-	protected bool _definesFold = true;
 	protected Guid _projectionCorrelationId;
 	private string _projectionCheckpointStreamId;
 	protected bool _createTempStreams;
@@ -62,9 +60,8 @@ public abstract class TestFixtureWithCoreProjectionCheckpointManager<TLogFormat,
 
 	protected virtual DefaultCheckpointManager GivenCheckpointManager() {
 		return new DefaultCheckpointManager(
-			_bus, _projectionCorrelationId, _projectionVersion, null, _ioDispatcher, _config, _projectionName,
-			new StreamPositionTagger(0, "stream"), _namingBuilder, _checkpointsEnabled, _producesResults,
-			_definesFold,
+			_bus, _projectionCorrelationId, _projectionVersion, null, _ioDispatcher, _config,
+			new StreamPositionTagger(0, "stream"), _namingBuilder, _checkpointsEnabled,
 			_checkpointWriter, _maxProjectionStateSize);
 	}
 
@@ -96,8 +93,6 @@ public abstract class TestFixtureWithCoreProjectionCheckpointManager<TLogFormat,
 		_maximumAllowedWritesInFlight = 1;
 		_emitEventEnabled = true;
 		_checkpointsEnabled = true;
-		_producesResults = true;
-		_definesFold = true;
 		_createTempStreams = false;
 		_stopOnEof = false;
 		NoStream(_projectionCheckpointStreamId);

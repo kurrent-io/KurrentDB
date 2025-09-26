@@ -15,9 +15,8 @@ using KurrentDB.Core.Messaging;
 // ReSharper disable CheckNamespace
 
 namespace EventStore.Client.Projections {
-	partial class Projections {
-		partial class ProjectionsBase : ServiceBase {
-		}
+	internal partial class Projections {
+		partial class ProjectionsBase : ServiceBase;
 	}
 }
 
@@ -27,10 +26,8 @@ namespace EventStore.Projections.Core.Services.Grpc {
 		private readonly IAuthorizationProvider _authorizationProvider;
 
 		public ProjectionManagement(IPublisher publisher, IAuthorizationProvider authorizationProvider) {
-			if (publisher == null)
-				throw new ArgumentNullException(nameof(publisher));
-			if (authorizationProvider == null)
-				throw new ArgumentNullException(nameof(authorizationProvider));
+			ArgumentNullException.ThrowIfNull(publisher);
+			ArgumentNullException.ThrowIfNull(authorizationProvider);
 			_publisher = publisher;
 			_authorizationProvider = authorizationProvider;
 		}

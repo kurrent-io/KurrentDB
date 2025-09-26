@@ -55,7 +55,6 @@ public class when_creating_a_projection {
 				SystemAccounts.System,
 				new FakePublisher(),
 				_ioDispatcher,
-				_subscriptionDispatcher,
 				new RealTimeProvider());
 		});
 	}
@@ -82,7 +81,6 @@ public class when_creating_a_projection {
 				SystemAccounts.System,
 				new FakePublisher(),
 				_ioDispatcher,
-				_subscriptionDispatcher,
 				new RealTimeProvider());
 		});
 	}
@@ -107,7 +105,6 @@ public class when_creating_a_projection {
 				SystemAccounts.System,
 				new FakePublisher(),
 				null,
-				_subscriptionDispatcher,
 				new RealTimeProvider());
 		});
 	}
@@ -132,7 +129,6 @@ public class when_creating_a_projection {
 				SystemAccounts.System,
 				new FakePublisher(),
 				_ioDispatcher,
-				_subscriptionDispatcher,
 				new RealTimeProvider());
 		});
 	}
@@ -157,7 +153,6 @@ public class when_creating_a_projection {
 				SystemAccounts.System,
 				null,
 				_ioDispatcher,
-				_subscriptionDispatcher,
 				new RealTimeProvider());
 		});
 	}
@@ -182,7 +177,6 @@ public class when_creating_a_projection {
 				SystemAccounts.System,
 				new FakePublisher(),
 				_ioDispatcher,
-				_subscriptionDispatcher,
 				new RealTimeProvider());
 		});
 	}
@@ -206,7 +200,6 @@ public class when_creating_a_projection {
 			null,
 			new FakePublisher(),
 			_ioDispatcher,
-			_subscriptionDispatcher,
 			new RealTimeProvider());
 	}
 
@@ -230,7 +223,6 @@ public class when_creating_a_projection {
 				SystemAccounts.System,
 				new FakePublisher(),
 				_ioDispatcher,
-				null,
 				new RealTimeProvider());
 		});
 	}
@@ -255,7 +247,6 @@ public class when_creating_a_projection {
 				SystemAccounts.System,
 				new FakePublisher(),
 				_ioDispatcher,
-				_subscriptionDispatcher,
 				null);
 		});
 	}
@@ -282,7 +273,6 @@ public class when_creating_a_projection {
 				SystemAccounts.System,
 				new FakePublisher(),
 				_ioDispatcher,
-				_subscriptionDispatcher,
 				new RealTimeProvider());
 		});
 	}
@@ -307,7 +297,6 @@ public class when_creating_a_projection {
 				SystemAccounts.System,
 				new FakePublisher(),
 				_ioDispatcher,
-				_subscriptionDispatcher,
 				new RealTimeProvider());
 		});
 	}

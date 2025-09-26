@@ -2,13 +2,12 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Projections.Core.Messages;
-using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Partitioning;
 using KurrentDB.Projections.Core.Services.Processing.Phases;
 
 namespace KurrentDB.Projections.Core.Services.Processing.WorkItems;
 
-class CommittedEventWorkItem : WorkItem {
+internal class CommittedEventWorkItem : WorkItem {
 	private readonly EventReaderSubscriptionMessage.CommittedEventReceived _message;
 	private string _partition;
 	private readonly IEventProcessingProjectionPhase _projection;
@@ -38,7 +37,7 @@ class CommittedEventWorkItem : WorkItem {
 			NextStage(_partition);
 	}
 
-	protected override void Load(CheckpointTag checkpointTag) {
+	protected override void Load() {
 		if (_partition == null) {
 			NextStage();
 			return;

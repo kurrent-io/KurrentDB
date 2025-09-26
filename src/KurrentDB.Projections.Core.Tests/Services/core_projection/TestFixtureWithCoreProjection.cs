@@ -78,7 +78,6 @@ public abstract class TestFixtureWithCoreProjection<TLogFormat, TStreamId> : Tes
 			SystemAccounts.System,
 			_bus,
 			_ioDispatcher,
-			_subscriptionDispatcher,
 			_timeProvider);
 	}
 

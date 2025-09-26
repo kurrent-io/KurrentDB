@@ -32,7 +32,7 @@ public class FeedReader : IHandle<EventReaderSubscriptionMessage.CommittedEventR
 	private readonly int _maxEvents;
 	private readonly Guid _requestCorrelationId;
 
-	private readonly List<TaggedResolvedEvent> _batch = new List<TaggedResolvedEvent>();
+	private readonly List<TaggedResolvedEvent> _batch = [];
 	private readonly IEnvelope _replyEnvelope;
 	private readonly ITimeProvider _timeProvider;
 
@@ -73,7 +73,6 @@ public class FeedReader : IHandle<EventReaderSubscriptionMessage.CommittedEventR
 			0,
 			_querySource,
 			_timeProvider,
-			stopOnEof: true,
 			runAs: _user);
 
 		//TODO: make reader mode explicit

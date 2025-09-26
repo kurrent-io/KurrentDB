@@ -48,7 +48,7 @@ public class
 
 	[Test]
 	public void can_begin_load_state() {
-		_checkpointWriter.StartFrom(CheckpointTag.FromPosition(0, 0, -1), ExpectedVersion.NoStream);
+		_checkpointWriter.StartFrom(ExpectedVersion.NoStream);
 	}
 
 	[Test]

@@ -14,7 +14,7 @@ using AwakeServiceMessage = KurrentDB.Core.Services.AwakeReaderService.AwakeServ
 namespace KurrentDB.Projections.Core.Services.Processing.EventByType;
 
 public partial class EventByTypeIndexEventReader : EventReader {
-	public const int MaxReadCount = 50;
+	private const int MaxReadCount = 50;
 	private readonly HashSet<string> _eventTypes;
 	private readonly bool _resolveLinkTos;
 	private readonly bool _includeDeletedStreamNotification;
@@ -38,19 +38,17 @@ public partial class EventByTypeIndexEventReader : EventReader {
 		ITimeProvider timeProvider,
 		bool stopOnEof = false)
 		: base(publisher, eventReaderCorrelationId, readAs, stopOnEof) {
-		if (eventTypes == null)
-			throw new ArgumentNullException("eventTypes");
-		if (timeProvider == null)
-			throw new ArgumentNullException("timeProvider");
+		ArgumentNullException.ThrowIfNull(eventTypes);
+		ArgumentNullException.ThrowIfNull(timeProvider);
 		if (eventTypes.Length == 0)
-			throw new ArgumentException("empty", "eventTypes");
+			throw new ArgumentException("empty", nameof(eventTypes));
 
 		_includeDeletedStreamNotification = includeDeletedStreamNotification;
 		_timeProvider = timeProvider;
-		_eventTypes = new HashSet<string>(eventTypes);
+		_eventTypes = new(eventTypes);
 		if (includeDeletedStreamNotification)
 			_eventTypes.Add("$deleted");
-		_streamToEventType = eventTypes.ToDictionary(v => "$et-" + v, v => v);
+		_streamToEventType = eventTypes.ToDictionary(v => $"$et-{v}", v => v);
 		_lastEventPosition = fromTfPosition;
 		_resolveLinkTos = resolveLinkTos;
 
@@ -62,14 +60,12 @@ public partial class EventByTypeIndexEventReader : EventReader {
 
 	private void ValidateTag(Dictionary<string, long> fromPositions) {
 		if (_eventTypes.Count != fromPositions.Count)
-			throw new ArgumentException("Number of streams does not match", "fromPositions");
+			throw new ArgumentException("Number of streams does not match", nameof(fromPositions));
 
 		foreach (var stream in _streamToEventType.Keys.Where(stream => !fromPositions.ContainsKey(stream))) {
-			throw new ArgumentException(
-				String.Format("The '{0}' stream position has not been set", stream), "fromPositions");
+			throw new ArgumentException($"The '{stream}' stream position has not been set", nameof(fromPositions));
 		}
 	}
-
 
 	public override void Dispose() {
 		_state.Dispose();
@@ -82,12 +78,9 @@ public partial class EventByTypeIndexEventReader : EventReader {
 		_state.RequestEvents();
 	}
 
-	protected override bool AreEventsRequested() {
-		return _state.AreEventsRequested();
-	}
+	protected override bool AreEventsRequested() => _state.AreEventsRequested();
 
-	private void PublishIORequest(bool delay, Message readEventsForward, Message timeoutMessage,
-		Guid correlationId) {
+	private void PublishIORequest(bool delay, Message readEventsForward, Message timeoutMessage, Guid correlationId) {
 		if (delay) {
 			_publisher.Publish(
 				new AwakeServiceMessage.SubscribeAwake(
@@ -100,8 +93,7 @@ public partial class EventByTypeIndexEventReader : EventReader {
 	}
 
 	private void UpdateNextStreamPosition(string eventStreamId, long nextPosition) {
-		long streamPosition;
-		if (!_fromPositions.TryGetValue(eventStreamId, out streamPosition))
+		if (!_fromPositions.TryGetValue(eventStreamId, out var streamPosition))
 			streamPosition = -1;
 		if (nextPosition > streamPosition)
 			_fromPositions[eventStreamId] = nextPosition;
@@ -116,7 +108,7 @@ public partial class EventByTypeIndexEventReader : EventReader {
 		if (lastKnownIndexCheckpointPosition > _lastEventPosition)
 			_lastEventPosition = lastKnownIndexCheckpointPosition;
 
-		_state = new TfBased(_timeProvider, this, _lastEventPosition, this._publisher, ReadAs);
+		_state = new TfBased(_timeProvider, this, _lastEventPosition, _publisher, ReadAs);
 		_state.RequestEvents();
 	}
 }

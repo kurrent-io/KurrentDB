@@ -56,7 +56,7 @@ public abstract class with_multi_stream_checkpoint_manager<TLogFormat, TStreamId
 
 		_checkpointManager = new MultiStreamMultiOutputCheckpointManager(_bus, _projectionId, _projectionVersion,
 			SystemAccounts.System,
-			_ioDispatcher, _projectionConfig, _projectionName, _positionTagger, _namingBuilder, true, true, false,
+			_ioDispatcher, _projectionConfig, _positionTagger, _namingBuilder, true,
 			_coreProjectionCheckpointWriter, Opts.MaxProjectionStateSizeDefault);
 
 		When();

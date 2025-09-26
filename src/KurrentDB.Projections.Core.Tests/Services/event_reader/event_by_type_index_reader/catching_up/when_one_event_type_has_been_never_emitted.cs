@@ -55,7 +55,6 @@ namespace KurrentDB.Projections.Core.Tests.Services.event_reader.event_by_type_i
 					0,
 					_sourceDefinition,
 					_timeProvider,
-					stopOnEof: false,
 					runAs: null);
 				_readerSubscriptionOptions = new ReaderSubscriptionOptions(
 					checkpointUnhandledBytesThreshold: 10000, checkpointProcessedEventsThreshold: 100,
