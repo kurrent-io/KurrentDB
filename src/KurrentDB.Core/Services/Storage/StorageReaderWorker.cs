@@ -97,7 +97,7 @@ public class StorageReaderWorker<TStreamId> :
 		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts.Token) {
 			throw new OperationCanceledException(ex.Message, ex, cts.CancellationOrigin);
 		} finally {
-			await cts.DisposeAsync().ConfigureAwait(false);
+			await cts.DisposeAsync();
 		}
 	}
 
