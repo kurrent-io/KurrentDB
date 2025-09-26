@@ -23,7 +23,6 @@ public partial class InMemoryBus : ISubscriber, IAsyncHandle<Message> {
 	public static InMemoryBus CreateTest(bool watchSlowMsg = true) =>
 		new("Test", watchSlowMsg);
 
-	public static readonly TimeSpan DefaultSlowMessageThreshold = TimeSpan.FromMilliseconds(48);
 	private static readonly ILogger Log = Serilog.Log.ForContext<InMemoryBus>();
 
 	private readonly FrozenDictionary<Type, MessageTypeHandler> _handlers;
@@ -34,7 +33,7 @@ public partial class InMemoryBus : ISubscriber, IAsyncHandle<Message> {
 		Name = name;
 
 		if (watchSlowMsg)
-			_slowMsgThresholdMs = slowMsgThreshold.GetValueOrDefault(DefaultSlowMessageThreshold).TotalMilliseconds;
+			_slowMsgThresholdMs = slowMsgThreshold.GetValueOrDefault(TimeSpan.FromMilliseconds(ClusterVNodeOptions.InMemoryBusOptions.DefaultSlowMessageThreshold)).TotalMilliseconds;
 	}
 
 	public string Name { get; }
