@@ -345,10 +345,10 @@ public class StorageReaderWorker<TStreamId> :
 		try {
 			var acl = await _readIndex.GetEffectiveAcl(_readIndex.GetStreamId(msg.StreamId), cts.Token);
 			reply = new StorageMessage.EffectiveStreamAclResponse(acl);
-		} catch (OperationCanceledException e) when (e.CausedBy(cts, msg.CancellationToken)) {
+		} catch (OperationCanceledException ex) when (ex.CausedBy(cts, msg.CancellationToken)) {
 			reply = new StorageMessage.OperationCancelledMessage(msg.CancellationToken);
-		} catch (OperationCanceledException e) when (e.CancellationToken == cts.Token) {
-			throw new OperationCanceledException(null, e, cts.CancellationOrigin);
+		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts.Token) {
+			throw new OperationCanceledException(null, ex, cts.CancellationOrigin);
 		} finally {
 			await cts.DisposeAsync();
 		}
