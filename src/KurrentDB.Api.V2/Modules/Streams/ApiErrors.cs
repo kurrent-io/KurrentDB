@@ -55,8 +55,8 @@ public static partial class ApiErrors {
 
 	public static RpcException StreamRevisionConflict(string stream, long expectedRevision, long actualRevision) {
 		Debug.Assert(!string.IsNullOrWhiteSpace(stream), "The stream cannot be empty!");
-		Debug.Assert(expectedRevision >= 0, "The expectedRevision must be non-negative!");
-		Debug.Assert(actualRevision >= 0, "The actualRevision must be non-negative!");
+		// Debug.Assert(expectedRevision >= 0, "The expectedRevision must be non-negative!");
+		// Debug.Assert(actualRevision >= 0, "The actualRevision must be non-negative!");
 
 		var message = $"Append failed due to a revision conflict on stream '{stream}'. " +
 		              $"Expected revision: {expectedRevision}. Actual revision: {actualRevision}.";

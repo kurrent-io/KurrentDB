@@ -88,7 +88,7 @@ public class Room {
 /// <summary>
 /// Represents a home with rooms
 /// </summary>
-public class Home {
+public class SmartHome {
     public string       Id        { get; set; } = "";
     public string       Name      { get; set; } = "";
     public List<Room>   Rooms     { get; set; } = [];

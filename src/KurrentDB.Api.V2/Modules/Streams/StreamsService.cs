@@ -34,15 +34,6 @@ public record StreamsServiceOptions {
 	public int MaxRecordSize { get; init; } = TFConsts.EffectiveMaxLogRecordSize;
 }
 
-static class AsyncEnumerableExtensions {
-
-    public static IAsyncEnumerable<AppendRequest> AuthorizeStreamWrite(this IAsyncEnumerable<AppendRequest> source, ClaimsPrincipal user, IAuthorizationProvider authz) =>
-        source.SelectAwaitWithCancellation(async (req, ct) => {
-            await authz.AuthorizeStreamWrite(req.Stream, user, ct);
-            return req;
-        });
-}
-
 public class StreamsService : StreamsServiceBase {
     public StreamsService(
         StreamsServiceOptions options,
@@ -62,7 +53,7 @@ public class StreamsService : StreamsServiceBase {
         Validation  = validation;
         Logger      = logger;
 
-        //TODO SS: -_-' move to interceptor or just use proper asp.net grpc instrumentation
+        //TODO SS: -_-' consider moving to interceptor and/or using proper asp.net grpc instrumentation
         AppendDuration = trackers[MetricsConfiguration.ApiV2Method.StreamAppendSession];
     }
 
@@ -75,12 +66,11 @@ public class StreamsService : StreamsServiceBase {
     RequestValidation       Validation     { get; }
     ILogger<StreamsService> Logger         { get; }
 
-    public override Task<AppendResponse> Append(AppendRequest request, ServerCallContext context) =>
-        AppendDuration.Record(
-            static state => state.Service
-                .AppendSession(state.Requests, state.Context)
-                .ContinueWith(t => t.IsCompletedSuccessfully ? t.Result.Output[0] : throw t.Exception!),
-            (Service: this, Requests: new[] { request }.ToAsyncEnumerable(), Context: context));
+    public override async Task<AppendResponse> Append(AppendRequest request, ServerCallContext context) {
+        var sessionResponse = await AppendSession(new[] { request }.ToAsyncEnumerable(), context);
+        var response = sessionResponse.Output[0].With(r => r.Position = sessionResponse.Position);
+        return response;
+    }
 
     public override Task<AppendSessionResponse> AppendSession(IAsyncStreamReader<AppendRequest> requests, ServerCallContext context) =>
         AppendDuration.Record(
@@ -107,9 +97,9 @@ public class StreamsService : StreamsServiceBase {
        try {
            return await command.Execute(user, context.CancellationToken);
        }
-       catch (Exception ex) {
+       catch (AggregateException ex) {
            Logger.LogError(ex, "Error processing append request");
-           throw;
+           throw ex.InnerException ?? ex;
        }
     }
 
@@ -232,16 +222,13 @@ public class StreamsService : StreamsServiceBase {
 
         protected override AppendSessionResponse MapToApiResponse(Message message, IndexedSet<AppendRequest> requests) {
             var completed = (WriteEventsCompleted)message;
-
-            var output = new List<AppendResponse>();
+            var output    = new List<AppendResponse>();
 
             for (var i = 0; i < completed.LastEventNumbers.Length; i++)
-                output.Add(
-                    new() {
-                        Stream         = requests.ElementAt(i).Stream,
-                        StreamRevision = completed.LastEventNumbers.Span[i]
-                    }
-                );
+                output.Add(new() {
+                    Stream         = requests.ElementAt(i).Stream,
+                    StreamRevision = completed.LastEventNumbers.Span[i]
+                });
 
             return new() {
                 Output   = { output },

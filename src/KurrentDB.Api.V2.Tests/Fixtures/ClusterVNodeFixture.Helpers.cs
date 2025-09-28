@@ -15,16 +15,13 @@ using StreamRevision = KurrentDB.Api.Streams.StreamRevision;
 namespace KurrentDB.Api.Tests.Fixtures;
 
 public record SeededSmartHomeActivity(SmartHomeActivity Activity, StreamRevision StreamRevision, long Position) {
-    public Home Home => Activity.Home;
-
-    public StreamName Stream => Activity.Stream;
-
-    public RepeatedField<AppendRecord> Records => Activity.Records;
-
-    public long LastTimestamp => Activity.LastTimestamp;
+    public SmartHome                   Home          => Activity.Home;
+    public StreamName                  Stream        => Activity.Stream;
+    public RepeatedField<AppendRecord> Records       => Activity.Records;
+    public long                        LastTimestamp => Activity.LastTimestamp;
 
     public SmartHomeActivity SimulateMoreEvents(int? numberOfEvents = null) =>
-        Activity.SimulateMoreEvents(numberOfEvents).WithExpectedRevision(StreamRevision.Value + Activity.Records.Count);
+        Activity.SimulateMoreEvents(numberOfEvents);
 
     public SmartHomeActivity WithExpectedRevision(long expectedRevision) =>
         Activity.WithExpectedRevision(expectedRevision);
@@ -32,20 +29,46 @@ public record SeededSmartHomeActivity(SmartHomeActivity Activity, StreamRevision
     public static implicit operator AppendRequest(SeededSmartHomeActivity _) => _.Activity;
 }
 
+// public record SeededHousingComplexActivity(IReadOnlyList<SeededSmartHomeActivity> Activity, long Position) {
+//     public int TotalHomes  => Activity.Count;
+//     public int TotalEvents => Activity.Sum(a => a.Records.Count);
+//
+//     public IEnumerable<StreamName> Streams() => Activity.Select(a => a.Stream);
+// }
+
 public partial class ClusterVNodeTestContext {
     public async ValueTask<SeededSmartHomeActivity> SeedSmartHomeActivity(int numberOfEvents, CancellationToken cancellationToken) {
         var request  = HomeAutomationTestData.SimulateHomeActivity(numberOfEvents);
         var response = await StreamsClient.AppendAsync(request, cancellationToken: cancellationToken);
-        return new(request, response.StreamRevision, response.Position);
+        return new(request, response.StreamRevision, response.HasPosition ? response.Position : -1);
     }
 
     public async ValueTask<SeededSmartHomeActivity> SeedSmartHomeActivity(CancellationToken cancellationToken) =>
         await SeedSmartHomeActivity(Random.Shared.Next(5, 15), cancellationToken);
 
-    // public async ValueTask<SeededSmartHomeActivity> SeedSmartHomeActivity(int homes, int eventsPerHome, CancellationToken cancellationToken) {
-    //     var requests  = HomeAutomation.SimulateActivity(homes, eventsPerHome);
-    //     var response = await StreamsClient.AppendSession(request, cancellationToken: cancellationToken);
-    //     return new(request, response.StreamRevision, response.Position);
+    // public async ValueTask<SeededHousingComplexActivity> SeedHousingComplexActivity(int homes, int eventsPerHome, CancellationToken cancellationToken) {
+    //     var requests = HomeAutomationTestData
+    //         .SimulateHousingComplexActivity(homes, eventsPerHome);
+    //
+    //     // Act
+    //     Logger.LogInformation(
+    //         "Seeding smart home activity for append session for {Homes} homes with a total of {Events} events",
+    //         homes, homes * eventsPerHome);
+    //
+    //     using var session = StreamsClient.AppendSession(cancellationToken: cancellationToken);
+    //
+    //     foreach (var request in requests) {
+    //         Logger.LogInformation("Appending {Count} records to stream {Stream}", request.Records.Count, request.Stream);
+    //         await session.RequestStream.WriteAsync(request, cancellationToken);
+    //     }
+    //
+    //     await session.RequestStream.CompleteAsync();
+    //
+    //     var response = await session.ResponseAsync;
+    //
+    //     Logger.LogInformation("Seeding smart home activity seeded at position {Position}", response.Position);
+    //
+    //     return new(requests.Se response.Output.StreamRevision, response.Position);
     // }
 
     /// <summary>

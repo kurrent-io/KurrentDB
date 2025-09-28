@@ -35,8 +35,9 @@ public sealed partial class ClusterVNodeTestContext : IAsyncInitializer, IAsyncD
         services.EnableGrpcClientsAddressDiscovery();
 
         // ====================================================================
-        // Adds gRPC clients for every service that is available on the server
+        // gRPC clients for every service that is available on the server
         // ====================================================================
+
         services.AddGrpcClient<StreamsServiceClient>();
     }
 
@@ -102,32 +103,3 @@ public sealed partial class ClusterVNodeTestContext : IAsyncInitializer, IAsyncD
         await Server.DisposeAsync();
     }
 }
-
-class ToolkitTestLoggerFactory : ILoggerFactory {
-    readonly ILoggerFactory _defaultLoggerFactory = new LoggerFactory();
-
-    public ILogger CreateLogger(string categoryName) {
-        return TestContext.Current.TryGetLoggerFactory(out var factory)
-            ? factory.CreateLogger(categoryName)
-            : _defaultLoggerFactory.CreateLogger(categoryName);
-    }
-
-    public void AddProvider(ILoggerProvider provider) =>
-        throw new NotImplementedException();
-
-    public void Dispose() {
-        // No-op; the TestExecutor is responsible for disposing of any logger providers
-    }
-}
-
-//
-// [ProviderAlias("TUnit")]
-// public sealed class ToolkitTestLoggerProvider : ILoggerProvider
-// {
-//     public Microsoft.Extensions.Logging.ILogger CreateLogger(string categoryName) =>
-//         TUnitLoggerWrapper.Instance;
-//
-//     public void Dispose()
-//     {
-//     }
-// }

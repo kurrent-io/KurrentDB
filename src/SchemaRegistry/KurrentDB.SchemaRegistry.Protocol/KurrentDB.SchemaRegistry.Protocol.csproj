@@ -16,24 +16,24 @@
   </ItemGroup>
 
   <ItemGroup>
-		<!-- v2  -->
-		<Protobuf
-			ProtoRoot="../../../proto/kurrentdb/protocol/v2"
-			Include="../../../proto/kurrentdb/protocol/v2/**/*.proto"
-			Exclude="../../../proto/kurrentdb/protocol/v2/streams/**/*.proto"
-			Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"
-			GrpcServices="Both"
-			Access="Public"
-			AdditionalImportDirs="../../../proto"
-		/>
+    <!-- v2  -->
+    <Protobuf
+        ProtoRoot="../../../proto/kurrentdb/protocol/v2"
+        Include="../../../proto/kurrentdb/protocol/v2/**/*.proto"
+        Exclude="../../../proto/kurrentdb/protocol/v2/streams/**/*.proto;../../../proto/kurrentdb/protocol/v2/registry/errors.proto;../../../proto/kurrentdb/protocol/v2/errors.proto;../../../proto/kurrentdb/protocol/v2/rpc.proto"
+        Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"
+        GrpcServices="Both"
+        Access="Public"
+        AdditionalImportDirs="../../../proto"
+    />
 
-		<!-- google -->
-		<Protobuf
-			ProtoRoot="../../../proto/google"
-			Include="../../../proto/google/**/*.proto"
-			Link="proto\google\%(RecursiveDir)/%(FileName)%(Extension)"
-			Access="Internal"
-			ProtoCompile="false"
-		/>
+    <!-- google -->
+    <Protobuf
+        ProtoRoot="../../../proto/google"
+        Include="../../../proto/google/**/*.proto"
+        Link="proto\google\%(RecursiveDir)/%(FileName)%(Extension)"
+        Access="Internal"
+        ProtoCompile="false"
+    />
   </ItemGroup>
 </Project>

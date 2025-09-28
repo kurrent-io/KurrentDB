@@ -4,12 +4,13 @@
 using System.Diagnostics;
 using FluentValidation;
 using Humanizer;
+using KurrentDB.Api.Infrastructure.Grpc.Validation;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Protocol.V2.Streams;
 
 namespace KurrentDB.Api.Streams.Validators;
 
-class AppendRecordValidator : AbstractValidator<AppendRecord> {
+class AppendRecordValidator : RequestValidator<AppendRecord> {
 	public static readonly AppendRecordValidator Instance = new(AppendRecordValidatorOptions.Default);
 
 	public AppendRecordValidator(AppendRecordValidatorOptions options) {

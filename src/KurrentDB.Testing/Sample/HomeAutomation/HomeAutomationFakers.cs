@@ -354,7 +354,7 @@ public class DeviceFaker : Faker<Device> {
 }
 
 public class HomeDeviceCollectionFaker : Faker<List<Device>> {
-    public HomeDeviceCollectionFaker(Home home, int deviceCount) {
+    public HomeDeviceCollectionFaker(SmartHome home, int deviceCount) {
         CustomInstantiator(f => {
                 var devices             = new List<Device>();
                 var usedRoomDevicePairs = new HashSet<string>();
@@ -384,7 +384,7 @@ public class HomeDeviceCollectionFaker : Faker<List<Device>> {
     }
 }
 
-public class HomeFaker : Faker<Home> {
+public class HomeFaker : Faker<SmartHome> {
     public HomeFaker() {
         CustomInstantiator(f => {
                 // Generate home properties
@@ -414,7 +414,7 @@ public class HomeFaker : Faker<Home> {
                 baseRooms.AddRange(additionalRooms);
 
                 // Create temporary home to pass to device faker
-                var tempHome = new Home {
+                var tempHome = new SmartHome {
                     Id        = homeId,
                     Name      = homeName,
                     Rooms     = baseRooms,
@@ -427,7 +427,7 @@ public class HomeFaker : Faker<Home> {
                 var devices               = deviceCollectionFaker.Generate();
 
                 // Return complete home with devices
-                return new Home {
+                return new SmartHome {
                     Id        = homeId,
                     Name      = homeName,
                     Rooms     = baseRooms,

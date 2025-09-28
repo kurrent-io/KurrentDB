@@ -16,14 +16,14 @@ public partial class HomeAutomationDataSet : DataSet {
     /// <summary>
     /// Generate a random home with optional configuration parameters
     /// </summary>
-    public Home Home(int? rooms = null, int? devicesPerRoom = null, params DeviceType[] deviceTypes) {
+    public SmartHome Home(int? rooms = null, int? devicesPerRoom = null, params DeviceType[] deviceTypes) {
         rooms          ??= Faker.Random.Number(2, 4);
         devicesPerRoom ??= Faker.Random.Number(3, 7);
 
         return GenerateCustomHome(rooms, devicesPerRoom, deviceTypes);
     }
 
-    public List<Home> Homes(int? count = null, int? averageNumberOfRooms = null, int? averageNumberOfDevicesPerRoom = null, params DeviceType[] deviceTypes) {
+    public List<SmartHome> Homes(int? count = null, int? averageNumberOfRooms = null, int? averageNumberOfDevicesPerRoom = null, params DeviceType[] deviceTypes) {
         count ??= Faker.Random.Number(3, 7);
 
         averageNumberOfRooms = averageNumberOfRooms is null
@@ -47,7 +47,7 @@ public partial class HomeAutomationDataSet : DataSet {
         var targetRooms = rooms ?? GenerateDefaultRooms();
         var deviceCount = count ?? Faker.Random.Number(5, 15);
 
-        var tempHome = new Home {
+        var tempHome = new SmartHome {
             Id        = Faker.Random.AlphaNumeric(6).ToLower(),
             Name      = "Temp Home",
             Rooms     = targetRooms,
@@ -143,7 +143,7 @@ public partial class HomeAutomationDataSet : DataSet {
     /// <summary>
     /// Generate events for a home's devices
     /// </summary>
-    public List<object> Events(Home home, int count, long? startTime = null, int maxIntervalMinutes = 30) =>
+    public List<object> Events(SmartHome home, int count, long? startTime = null, int maxIntervalMinutes = 30) =>
         Events(home.Devices, count, startTime, maxIntervalMinutes);
 
     /// <summary>
@@ -154,7 +154,7 @@ public partial class HomeAutomationDataSet : DataSet {
         return Events(randomDevices, count, startTime, maxIntervalMinutes);
     }
 
-    Home GenerateCustomHome(int? rooms, int? devicesPerRoom, params DeviceType[] deviceTypes) {
+    SmartHome GenerateCustomHome(int? rooms, int? devicesPerRoom, params DeviceType[] deviceTypes) {
         var roomCount          = rooms ?? Faker.Random.Number(3, 8);
         var deviceCountPerRoom = devicesPerRoom ?? Faker.Random.Number(1, 3);
 
@@ -178,7 +178,7 @@ public partial class HomeAutomationDataSet : DataSet {
             ? Devices(totalDevices, rooms: homeRooms)
             : GenerateTypedDevices(homeRooms, totalDevices, deviceTypes);
 
-        return new Home {
+        return new SmartHome {
             Id        = homeId,
             Name      = homeName,
             Rooms     = homeRooms,

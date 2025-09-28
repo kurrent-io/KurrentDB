@@ -8,11 +8,13 @@ using KurrentDB.Api.Infrastructure.Grpc.Validation;
 using KurrentDB.Api.Streams;
 using KurrentDB.Api.Streams.Validators;
 using KurrentDB.Core;
+using KurrentDB.Protocol.V2.Streams;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using StreamsService = KurrentDB.Api.Streams.StreamsService;
 
 namespace KurrentDB.Plugins.Api.V2;
 
@@ -30,19 +32,25 @@ public class ApiV2Plugin() : SubsystemsPlugin("APIV2") {
 
         services
             .AddGrpc(options => {
-                var serviceProvider = services.BuildServiceProvider();
-                var serverOptions   = serviceProvider.GetRequiredService<ClusterVNodeOptions>();
-                var hostEnvironment = serviceProvider.GetRequiredService<IHostEnvironment>();
+                    var serviceProvider = services.BuildServiceProvider();
+                    var serverOptions   = serviceProvider.GetRequiredService<ClusterVNodeOptions>();
+                    var hostEnvironment = serviceProvider.GetRequiredService<IHostEnvironment>();
 
-                options.EnableDetailedErrors = hostEnvironment.IsDevelopment()
-                                            || hostEnvironment.IsStaging()
-                                            || serverOptions.DevMode.Dev;
+                    options.EnableDetailedErrors = hostEnvironment.IsDevelopment()
+                                                || hostEnvironment.IsStaging()
+                                                || serverOptions.DevMode.Dev;
 
-                options.Interceptors.Add<RequestValidationInterceptor>();
-            })
-            .AddRequestValidation(new RequestValidationOptions {
-                ExceptionFactory = (_, errors) => ApiErrors.InvalidRequest(errors.ToArray())
-            });
+                    options.Interceptors.Add<RequestValidationInterceptor>();
+                }
+            )
+            .AddRequestValidation(
+                new RequestValidationOptions {
+                    ExceptionFactory = (_, errors) => ApiErrors.InvalidRequest(errors.ToArray())
+                }, validation => {
+                    validation.AddValidatorFor<AppendRecord>();
+                    validation.AddValidatorFor<AppendRequest>();
+                }
+            );
 
         services
             .AddSingleton<StreamsService>()

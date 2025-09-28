@@ -34,9 +34,7 @@ public abstract record ToolkitTestLoggerProvider<T>(T GlobalProvider)
 	}
 }
 
-public abstract record TestLoggerProvider
-    : ILoggerProvider {
-
+public abstract record TestLoggerProvider : ILoggerProvider {
     static readonly ILoggerProvider DefaultProvider = new SerilogLoggerProvider(dispose: false);
 
     public ILogger CreateLogger(string categoryName) =>
@@ -78,5 +76,34 @@ public sealed record ToolkitTestLoggerProvider() : ToolkitTestLoggerProvider<Ser
 //
 //     public void Dispose() {
 //         // No-op; the TestExecutor is responsible for disposing of any logger providers
+//     }
+// }
+
+public class ToolkitTestLoggerFactory : ILoggerFactory {
+    readonly ILoggerFactory _defaultLoggerFactory = new LoggerFactory();
+
+    public ILogger CreateLogger(string categoryName) {
+        return TestContext.Current.TryGetLoggerFactory(out var factory)
+            ? factory.CreateLogger(categoryName)
+            : _defaultLoggerFactory.CreateLogger(categoryName);
+    }
+
+    public void AddProvider(ILoggerProvider provider) =>
+        throw new NotImplementedException();
+
+    public void Dispose() {
+        // No-op; the TestExecutor is responsible for disposing of any logger providers
+    }
+}
+
+//
+// [ProviderAlias("TUnit")]
+// public sealed class ToolkitTestLoggerProvider : ILoggerProvider
+// {
+//     public Microsoft.Extensions.Logging.ILogger CreateLogger(string categoryName) =>
+//         TUnitLoggerWrapper.Instance;
+//
+//     public void Dispose()
+//     {
 //     }
 // }

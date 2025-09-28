@@ -13,12 +13,10 @@ using SchemaInfo = KurrentDB.Protocol.V2.Streams.SchemaInfo;
 
 namespace KurrentDB.Api.Tests.Fixtures;
 
-public record SmartHomeActivity(Home Home, AppendRequest AppendRequest) {
-    public StreamName Stream => AppendRequest.Stream;
-
-    public RepeatedField<AppendRecord> Records => AppendRequest.Records;
-
-    public long LastTimestamp => AppendRequest.Records.Last().Timestamp;
+public record SmartHomeActivity(SmartHome Home, AppendRequest AppendRequest) {
+    public StreamName                  Stream        => AppendRequest.Stream;
+    public RepeatedField<AppendRecord> Records       => AppendRequest.Records;
+    public long                        LastTimestamp => AppendRequest.Records.Last().Timestamp;
 
     public SmartHomeActivity SimulateMoreEvents(int? numberOfEvents = null) =>
         this with { AppendRequest = HomeAutomationTestData.SimulateHomeActivity(Home, numberOfEvents, LastTimestamp) };
@@ -40,7 +38,7 @@ public static class HomeAutomationTestData {
             .ToList();
     }
 
-    public static SmartHomeActivity SimulateHomeActivity(Home home, int? numberOfEvents = null, long? startTime = null) {
+    public static SmartHomeActivity SimulateHomeActivity(SmartHome home, int? numberOfEvents = null, long? startTime = null) {
         var events  = HomeAutomationDataSet.Default.Events(home, numberOfEvents ?? Random.Shared.Next(5, 15), startTime);
         var records = events.Aggregate(new List<AppendRecord>(), (seed, evt) => {
             seed.Add(CreateRecord(evt, seed.Count + 1));
