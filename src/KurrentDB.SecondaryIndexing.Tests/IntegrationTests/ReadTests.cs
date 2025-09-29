@@ -7,7 +7,6 @@ using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
-using KurrentDB.SecondaryIndexing.Indexes;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;

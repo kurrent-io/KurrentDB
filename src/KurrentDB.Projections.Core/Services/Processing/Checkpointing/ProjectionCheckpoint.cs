@@ -27,9 +27,9 @@ public class ProjectionCheckpoint : IDisposable, IEmittedStreamContainer, IEvent
 	private readonly IProjectionCheckpointManager _readyHandler;
 	private readonly PositionTagger _positionTagger;
 
-	private bool _checkpointRequested = false;
+	private bool _checkpointRequested;
 	private int _requestedCheckpoints;
-	private bool _started = false;
+	private bool _started;
 
 	private readonly IODispatcher _ioDispatcher;
 	private readonly IPublisher _publisher;
@@ -38,8 +38,8 @@ public class ProjectionCheckpoint : IDisposable, IEmittedStreamContainer, IEvent
 
 	private List<IEnvelope> _awaitingStreams;
 
-	private Guid[] _writeQueueIds;
-	private int _maximumAllowedWritesInFlight;
+	private readonly Guid[] _writeQueueIds;
+	private readonly int _maximumAllowedWritesInFlight;
 
 	public ProjectionCheckpoint(
 		IPublisher publisher,
@@ -52,16 +52,12 @@ public class ProjectionCheckpoint : IDisposable, IEmittedStreamContainer, IEvent
 		int maxWriteBatchLength,
 		int maximumAllowedWritesInFlight,
 		ILogger logger = null) {
-		if (publisher == null)
-			throw new ArgumentNullException("publisher");
-		if (ioDispatcher == null)
-			throw new ArgumentNullException("ioDispatcher");
-		if (readyHandler == null)
-			throw new ArgumentNullException("readyHandler");
-		if (positionTagger == null)
-			throw new ArgumentNullException("positionTagger");
+		ArgumentNullException.ThrowIfNull(publisher);
+		ArgumentNullException.ThrowIfNull(ioDispatcher);
+		ArgumentNullException.ThrowIfNull(readyHandler);
+		ArgumentNullException.ThrowIfNull(positionTagger);
 		if (from.CommitPosition < from.PreparePosition)
-			throw new ArgumentException("from");
+			throw new ArgumentException(null, nameof(from));
 		//NOTE: fromCommit can be equal fromPrepare on 0 position.  Is it possible anytime later? Ignoring for now.
 		_maximumAllowedWritesInFlight = maximumAllowedWritesInFlight;
 		_publisher = publisher;
@@ -73,7 +69,7 @@ public class ProjectionCheckpoint : IDisposable, IEmittedStreamContainer, IEvent
 		_from = _last = from;
 		_maxWriteBatchLength = maxWriteBatchLength;
 		_logger = logger;
-		_writeQueueIds = Enumerable.Range(0, _maximumAllowedWritesInFlight).Select(x => Guid.NewGuid()).ToArray();
+		_writeQueueIds = Enumerable.Range(0, _maximumAllowedWritesInFlight).Select(_ => Guid.NewGuid()).ToArray();
 	}
 
 	public void Start() {
@@ -105,14 +101,10 @@ public class ProjectionCheckpoint : IDisposable, IEmittedStreamContainer, IEvent
 	private void ValidateCheckpointPosition(CheckpointTag position) {
 		if (position <= _from)
 			throw new InvalidOperationException(
-				string.Format(
-					"Checkpoint position before or equal to the checkpoint start position. Requested: '{0}' Started: '{1}'",
-					position, _from));
+				$"Checkpoint position before or equal to the checkpoint start position. Requested: '{position}' Started: '{_from}'");
 		if (position < _last)
 			throw new InvalidOperationException(
-				string.Format(
-					"Checkpoint position before last handled position. Requested: '{0}' Last: '{1}'", position,
-					_last));
+				$"Checkpoint position before last handled position. Requested: '{position}' Last: '{_last}'");
 	}
 
 	public void Prepare(CheckpointTag position) {
@@ -136,27 +128,22 @@ public class ProjectionCheckpoint : IDisposable, IEmittedStreamContainer, IEvent
 	}
 
 	private void EmitEventsToStream(string streamId, EmittedEventEnvelope[] emittedEvents) {
-		if (string.IsNullOrEmpty(streamId))
-			throw new ArgumentNullException("streamId");
-		EmittedStream stream;
-		if (!_emittedStreams.TryGetValue(streamId, out stream)) {
+		ArgumentException.ThrowIfNullOrEmpty(streamId);
+		if (!_emittedStreams.TryGetValue(streamId, out var stream)) {
 			var streamMetadata = emittedEvents.Length > 0 ? emittedEvents[0].StreamMetadata : null;
 
 			var writeQueueId = _maximumAllowedWritesInFlight == AllowedWritesInFlight.Unbounded
 				? (Guid?)null
 				: _writeQueueIds[_emittedStreams.Count % _maximumAllowedWritesInFlight];
 
-			IEmittedStreamsWriter writer;
-			if (writeQueueId == null)
-				writer = new EmittedStreamsWriter(_ioDispatcher);
-			else
-				writer = new QueuedEmittedStreamsWriter(_ioDispatcher, writeQueueId.Value);
+			IEmittedStreamsWriter writer = writeQueueId == null
+				? new EmittedStreamsWriter(_ioDispatcher)
+				: new QueuedEmittedStreamsWriter(_ioDispatcher, writeQueueId.Value);
 
 			var writerConfiguration = new EmittedStream.WriterConfiguration(
 				writer, streamMetadata, _runAs, maxWriteBatchLength: _maxWriteBatchLength, logger: _logger);
 
-			stream = new EmittedStream(streamId, writerConfiguration, _projectionVersion, _positionTagger, _from,
-				_publisher, _ioDispatcher, this);
+			stream = new(streamId, writerConfiguration, _projectionVersion, _positionTagger, _from, _ioDispatcher, this);
 
 			if (_started)
 				stream.Start();
@@ -204,8 +191,7 @@ public class ProjectionCheckpoint : IDisposable, IEmittedStreamContainer, IEvent
 	}
 
 	public void Handle(CoreProjectionProcessingMessage.EmittedStreamAwaiting message) {
-		if (_awaitingStreams == null)
-			_awaitingStreams = new List<IEnvelope>();
+		_awaitingStreams ??= [];
 		_awaitingStreams.Add(message.Envelope);
 	}
 

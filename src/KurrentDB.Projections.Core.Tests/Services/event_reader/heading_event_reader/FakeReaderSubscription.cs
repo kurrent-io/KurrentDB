@@ -122,8 +122,7 @@ public class FakeReaderSubscription : IReaderSubscription {
 		get { return _eventReader; }
 	}
 
-	public IEventReader CreatePausedEventReader(
-		IPublisher publisher, IODispatcher ioDispatcher, Guid forkedEventReaderId) {
+	public IEventReader CreatePausedEventReader(IPublisher publisher, Guid forkedEventReaderId) {
 		_eventReader = new FakeEventReader(forkedEventReaderId);
 		return _eventReader;
 	}
@@ -159,8 +158,8 @@ public class FakeReaderStrategy : IReaderStrategy {
 		get { return _subscription.EventReader.EventReaderId; }
 	}
 
-	public IEventReader CreatePausedEventReader(Guid eventReaderId, IPublisher publisher, IODispatcher ioDispatcher,
-		CheckpointTag checkpointTag, bool stopOnEof, int? stopAfterNEvents) {
+	public IEventReader CreatePausedEventReader(Guid eventReaderId, IPublisher publisher,
+		CheckpointTag checkpointTag, bool stopOnEof) {
 		throw new NotImplementedException();
 	}
 

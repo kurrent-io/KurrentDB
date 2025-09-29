@@ -57,8 +57,7 @@ public class
 			new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
 				new EmittedStream.WriterConfiguration.StreamMetadata(), null, maxWriteBatchLength: 50),
 			new ProjectionVersion(1, 0, 0), new TransactionFilePositionTagger(0),
-			CheckpointTag.FromPosition(0, 20, 10),
-			_bus, _ioDispatcher, _readyHandler);
+			CheckpointTag.FromPosition(0, 20, 10), _ioDispatcher, _readyHandler);
 		_stream.Start();
 		_stream.EmitEvents(CreateEventBatch());
 		OneWriteCompletes();

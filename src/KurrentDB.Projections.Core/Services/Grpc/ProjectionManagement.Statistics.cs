@@ -33,7 +33,7 @@ internal partial class ProjectionManagement {
 			ModeOneofCase.Continuous => ProjectionMode.Continuous,
 			ModeOneofCase.Transient => ProjectionMode.Transient,
 			ModeOneofCase.OneTime => ProjectionMode.OneTime,
-			_ => default(Nullable<ProjectionMode>)
+			_ => default(ProjectionMode?)
 		};
 
 		var envelope = new CallbackEnvelope(OnMessage);

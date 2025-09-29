@@ -57,10 +57,12 @@ public sealed class ReaderSubscriptionDispatcher {
 	private void Handle<T>(T message) where T : EventReaderSubscriptionMessageBase {
 		var correlationId = message.SubscriptionId;
 		if (_map.TryGetValue(correlationId, out var subscriber)) {
-			if (subscriber is IHandle<T> h) {
-				h.Handle(message);
-			} else if (subscriber is IAsyncHandle<T>) {
-				throw new Exception($"ReaderSubscriptionDispatcher does not support asynchronous subscribers. Subscriber: {subscriber}");
+			switch (subscriber) {
+				case IHandle<T> h:
+					h.Handle(message);
+					break;
+				case IAsyncHandle<T>:
+					throw new Exception($"ReaderSubscriptionDispatcher does not support asynchronous subscribers. Subscriber: {subscriber}");
 			}
 		}
 	}
@@ -69,16 +71,10 @@ public sealed class ReaderSubscriptionDispatcher {
 		_map.TryAdd(correlationId, subscriber);
 	}
 
-	private class Subscriber<T> : IHandle<T> where T : EventReaderSubscriptionMessageBase {
-		private readonly ReaderSubscriptionDispatcher _host;
-
-		public Subscriber(
-			ReaderSubscriptionDispatcher host) {
-			_host = host;
-		}
-
+	private class Subscriber<T>(ReaderSubscriptionDispatcher host) : IHandle<T>
+		where T : EventReaderSubscriptionMessageBase {
 		public void Handle(T message) {
-			_host.Handle(message);
+			host.Handle(message);
 		}
 	}
 }

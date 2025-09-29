@@ -3,46 +3,22 @@
 
 namespace KurrentDB.Projections.Core.Services.Processing.Subscriptions;
 
-public class ReaderSubscriptionOptions {
-	private readonly long _checkpointUnhandledBytesThreshold;
-	private readonly int? _checkpointProcessedEventsThreshold;
-	private readonly int _checkpointAfterMs;
-	private readonly bool _stopOnEof;
-	private readonly int? _stopAfterNEvents;
-	private readonly bool _enableContentTypeValidation;
+public class ReaderSubscriptionOptions(
+	long checkpointUnhandledBytesThreshold,
+	int? checkpointProcessedEventsThreshold,
+	int checkpointAfterMs,
+	bool stopOnEof,
+	int? stopAfterNEvents,
+	bool enableContentTypeValidation) {
+	public long CheckpointUnhandledBytesThreshold { get; } = checkpointUnhandledBytesThreshold;
 
-	public ReaderSubscriptionOptions(
-		long checkpointUnhandledBytesThreshold, int? checkpointProcessedEventsThreshold, int checkpointAfterMs,
-		bool stopOnEof, int? stopAfterNEvents, bool enableContentTypeValidation) {
-		_checkpointUnhandledBytesThreshold = checkpointUnhandledBytesThreshold;
-		_checkpointProcessedEventsThreshold = checkpointProcessedEventsThreshold;
-		_checkpointAfterMs = checkpointAfterMs;
-		_stopOnEof = stopOnEof;
-		_stopAfterNEvents = stopAfterNEvents;
-		_enableContentTypeValidation = enableContentTypeValidation;
-	}
+	public int? CheckpointProcessedEventsThreshold { get; } = checkpointProcessedEventsThreshold;
 
-	public long CheckpointUnhandledBytesThreshold {
-		get { return _checkpointUnhandledBytesThreshold; }
-	}
+	public int CheckpointAfterMs { get; } = checkpointAfterMs;
 
-	public int? CheckpointProcessedEventsThreshold {
-		get { return _checkpointProcessedEventsThreshold; }
-	}
+	public bool StopOnEof { get; } = stopOnEof;
 
-	public int CheckpointAfterMs {
-		get { return _checkpointAfterMs; }
-	}
+	public int? StopAfterNEvents { get; } = stopAfterNEvents;
 
-	public bool StopOnEof {
-		get { return _stopOnEof; }
-	}
-
-	public int? StopAfterNEvents {
-		get { return _stopAfterNEvents; }
-	}
-
-	public bool EnableContentTypeValidation {
-		get { return _enableContentTypeValidation; }
-	}
+	public bool EnableContentTypeValidation { get; } = enableContentTypeValidation;
 }

@@ -61,9 +61,7 @@ public abstract class TestFixtureWithProjectionSubscription {
 	}
 
 	protected virtual IReaderSubscription CreateProjectionSubscription() {
-		return new ReaderSubscription(
-			"Test Subscription",
-			_bus,
+		return new ReaderSubscription(_bus,
 			_projectionCorrelationId,
 			_readerStrategy.PositionTagger.MakeZeroCheckpointTag(),
 			_readerStrategy,
@@ -98,7 +96,6 @@ public abstract class TestFixtureWithProjectionSubscription {
 			0,
 			sources,
 			_timeProvider,
-			stopOnEof: false,
 			runAs: config.RunAs);
 		return readerStrategy;
 	}

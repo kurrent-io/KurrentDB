@@ -6,17 +6,10 @@ using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 namespace KurrentDB.Projections.Core.Services.Processing.MultiStream;
 
 public partial class MultiStreamMultiOutputCheckpointManager {
-	private class Item {
+	private class Item(CheckpointTag tag) {
 		internal KurrentDB.Core.Data.ResolvedEvent? _result;
-		private readonly CheckpointTag _tag;
 
-		public Item(CheckpointTag tag) {
-			_tag = tag;
-		}
-
-		public CheckpointTag Tag {
-			get { return _tag; }
-		}
+		public CheckpointTag Tag { get; } = tag;
 
 		public void SetLoadedEvent(KurrentDB.Core.Data.ResolvedEvent eventLinkPair) {
 			_result = eventLinkPair;

@@ -14,18 +14,15 @@ using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Strategies;
 
-public abstract class ProjectionProcessingStrategy {
-	protected readonly string _name;
-	protected readonly ProjectionVersion _projectionVersion;
-	protected readonly ILogger _logger;
-	protected readonly int _maxProjectionStateSize;
-
-	protected ProjectionProcessingStrategy(string name, ProjectionVersion projectionVersion, ILogger logger, int maxProjectionStateSize) {
-		_name = name;
-		_projectionVersion = projectionVersion;
-		_logger = logger;
-		_maxProjectionStateSize = maxProjectionStateSize;
-	}
+public abstract class ProjectionProcessingStrategy(
+	string name,
+	ProjectionVersion projectionVersion,
+	ILogger logger,
+	int maxProjectionStateSize) {
+	protected readonly string _name = name;
+	protected readonly ProjectionVersion _projectionVersion = projectionVersion;
+	protected readonly ILogger _logger = logger;
+	protected readonly int _maxProjectionStateSize = maxProjectionStateSize;
 
 	public CoreProjection Create(
 		Guid projectionCorrelationId,
@@ -34,17 +31,11 @@ public abstract class ProjectionProcessingStrategy {
 		ClaimsPrincipal runAs,
 		IPublisher publisher,
 		IODispatcher ioDispatcher,
-		ReaderSubscriptionDispatcher subscriptionDispatcher,
 		ITimeProvider timeProvider) {
-		if (inputQueue == null)
-			throw new ArgumentNullException("inputQueue");
-		//if (runAs == null) throw new ArgumentNullException("runAs");
-		if (publisher == null)
-			throw new ArgumentNullException("publisher");
-		if (ioDispatcher == null)
-			throw new ArgumentNullException("ioDispatcher");
-		if (timeProvider == null)
-			throw new ArgumentNullException("timeProvider");
+		ArgumentNullException.ThrowIfNull(inputQueue);
+		ArgumentNullException.ThrowIfNull(publisher);
+		ArgumentNullException.ThrowIfNull(ioDispatcher);
+		ArgumentNullException.ThrowIfNull(timeProvider);
 
 		var namingBuilder = new ProjectionNamesBuilder(_name, GetSourceDefinition());
 
@@ -66,7 +57,6 @@ public abstract class ProjectionProcessingStrategy {
 			runAs,
 			publisher,
 			ioDispatcher,
-			subscriptionDispatcher,
 			_logger,
 			namingBuilder,
 			coreProjectionCheckpointWriter,

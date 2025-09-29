@@ -353,8 +353,8 @@ abstract class specification_with_multi_phase_core_projection<TLogFormat, TStrea
 		}
 
 		public IEventReader CreatePausedEventReader(
-			Guid eventReaderId, IPublisher publisher, IODispatcher ioDispatcher, CheckpointTag checkpointTag,
-			bool stopOnEof, int? stopAfterNEvents) {
+			Guid eventReaderId, IPublisher publisher, CheckpointTag checkpointTag,
+			bool stopOnEof) {
 			throw new NotImplementedException();
 		}
 	}

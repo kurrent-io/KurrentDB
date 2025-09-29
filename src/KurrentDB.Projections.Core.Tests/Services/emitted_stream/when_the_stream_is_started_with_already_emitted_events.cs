@@ -34,7 +34,7 @@ public class when_the_stream_is_started_with_already_emitted_events<TLogFormat, 
 			"test",
 			new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
 				new EmittedStream.WriterConfiguration.StreamMetadata(), null, 50), new ProjectionVersion(1, 0, 0),
-			new TransactionFilePositionTagger(0), CheckpointTag.FromPosition(0, 0, -1), _bus, _ioDispatcher,
+			new TransactionFilePositionTagger(0), CheckpointTag.FromPosition(0, 0, -1), _ioDispatcher,
 			_readyHandler);
 		_stream.EmitEvents(
 			new[] {

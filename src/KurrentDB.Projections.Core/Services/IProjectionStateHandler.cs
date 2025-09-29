@@ -69,12 +69,11 @@ public static class ProjectionStateHandlerTestExtensions {
 		this IProjectionStateHandler self, string partition, CheckpointTag eventPosition, string streamId,
 		string eventType, string category, Guid eventId, long eventSequenceNumber, string metadata, string data,
 		out string state, out EmittedEventEnvelope[] emittedEvents, bool isJson = true) {
-		string ignoredSharedState;
 		return self.ProcessEvent(
 			partition, eventPosition, category,
 			new ResolvedEvent(
 				streamId, eventSequenceNumber, streamId, eventSequenceNumber, false, new TFPos(0, -1), eventId,
-				eventType, isJson, data, metadata), out state, out ignoredSharedState, out emittedEvents);
+				eventType, isJson, data, metadata), out state, out _, out emittedEvents);
 	}
 
 	public static bool ProcessEvent(
@@ -86,9 +85,5 @@ public static class ProjectionStateHandlerTestExtensions {
 			new ResolvedEvent(
 				streamId, eventSequenceNumber, streamId, eventSequenceNumber, false, new TFPos(0, -1), eventId,
 				eventType, isJson, data, metadata), out state, out sharedState, out emittedEvents);
-	}
-
-	public static string GetNativeHandlerName(this Type handlerType) {
-		return "native:" + handlerType.Namespace + "." + handlerType.Name;
 	}
 }

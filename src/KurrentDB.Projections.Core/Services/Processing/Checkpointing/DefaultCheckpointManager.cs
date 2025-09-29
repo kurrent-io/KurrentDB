@@ -16,13 +16,14 @@ using KurrentDB.Projections.Core.Services.Processing.Partitioning;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 
-public class DefaultCheckpointManager : CoreProjectionCheckpointManager,
-	IHandle<CoreProjectionCheckpointWriterMessage.CheckpointWritten>,
-	IHandle<CoreProjectionCheckpointWriterMessage.RestartRequested> {
+public class DefaultCheckpointManager
+	: CoreProjectionCheckpointManager,
+		IHandle<CoreProjectionCheckpointWriterMessage.CheckpointWritten>,
+		IHandle<CoreProjectionCheckpointWriterMessage.RestartRequested> {
 	private readonly ClaimsPrincipal _runAs;
 	private readonly CheckpointTag _zeroTag;
 	private int _readRequestsInProgress;
-	private readonly HashSet<Guid> _loadStateRequests = new HashSet<Guid>();
+	private readonly HashSet<Guid> _loadStateRequests = [];
 
 	protected readonly ProjectionVersion _projectionVersion;
 	protected readonly IODispatcher _ioDispatcher;
@@ -31,16 +32,21 @@ public class DefaultCheckpointManager : CoreProjectionCheckpointManager,
 	private PartitionStateUpdateManager _partitionStateUpdateManager;
 
 	public DefaultCheckpointManager(
-		IPublisher publisher, Guid projectionCorrelationId, ProjectionVersion projectionVersion, ClaimsPrincipal runAs,
-		IODispatcher ioDispatcher, ProjectionConfig projectionConfig, string name, PositionTagger positionTagger,
-		ProjectionNamesBuilder namingBuilder, bool usePersistentCheckpoints, bool producesRunningResults,
-		bool definesFold,
-		CoreProjectionCheckpointWriter coreProjectionCheckpointWriter, int maxProjectionStateSize)
+		IPublisher publisher,
+		Guid projectionCorrelationId,
+		ProjectionVersion projectionVersion,
+		ClaimsPrincipal runAs,
+		IODispatcher ioDispatcher,
+		ProjectionConfig projectionConfig,
+		PositionTagger positionTagger,
+		ProjectionNamesBuilder namingBuilder,
+		bool usePersistentCheckpoints,
+		CoreProjectionCheckpointWriter coreProjectionCheckpointWriter,
+		int maxProjectionStateSize)
 		: base(
-			publisher, projectionCorrelationId, projectionConfig, name, positionTagger, namingBuilder,
+			publisher, projectionCorrelationId, projectionConfig, positionTagger, namingBuilder,
 			usePersistentCheckpoints, maxProjectionStateSize) {
-		if (ioDispatcher == null)
-			throw new ArgumentNullException("ioDispatcher");
+		ArgumentNullException.ThrowIfNull(ioDispatcher);
 		_projectionVersion = projectionVersion;
 		_runAs = runAs;
 		_ioDispatcher = ioDispatcher;
@@ -50,19 +56,18 @@ public class DefaultCheckpointManager : CoreProjectionCheckpointManager,
 	}
 
 	protected override void BeginWriteCheckpoint(
-		CheckpointTag requestedCheckpointPosition, string requestedCheckpointState) {
+		CheckpointTag requestedCheckpointPosition,
+		string requestedCheckpointState) {
 		_requestedCheckpointPosition = requestedCheckpointPosition;
 		_coreProjectionCheckpointWriter.BeginWriteCheckpoint(
 			new SendToThisEnvelope(this), requestedCheckpointPosition, requestedCheckpointState);
 	}
 
 	public override void RecordEventOrder(
-		ResolvedEvent resolvedEvent, CheckpointTag orderCheckpointTag, Action committed) {
+		ResolvedEvent resolvedEvent,
+		CheckpointTag orderCheckpointTag,
+		Action committed) {
 		committed();
-	}
-
-	public override void PartitionCompleted(string partition) {
-		_partitionStateUpdateManager.PartitionCompleted(partition);
 	}
 
 	public override void Initialize() {
@@ -83,24 +88,26 @@ public class DefaultCheckpointManager : CoreProjectionCheckpointManager,
 	}
 
 	public override void BeginLoadPartitionStateAt(
-		string statePartition, CheckpointTag requestedStateCheckpointTag, Action<PartitionState> loadCompleted) {
-		var stateEventType = ProjectionEventTypes.PartitionCheckpoint;
+		string statePartition,
+		CheckpointTag requestedStateCheckpointTag,
+		Action<PartitionState> loadCompleted) {
+		const string stateEventType = ProjectionEventTypes.PartitionCheckpoint;
 		var partitionCheckpointStreamName = _namingBuilder.MakePartitionCheckpointStreamName(statePartition);
 
-		ReadPartitionStream(partitionCheckpointStreamName, -1, requestedStateCheckpointTag, loadCompleted,
-			stateEventType);
+		ReadPartitionStream(partitionCheckpointStreamName, -1, requestedStateCheckpointTag, loadCompleted, stateEventType);
 	}
 
-	private void ReadPartitionStream(string partitionStreamName, long eventNumber,
+	private void ReadPartitionStream(string partitionStreamName,
+		long eventNumber,
 		CheckpointTag requestedStateCheckpointTag,
-		Action<PartitionState> loadCompleted, string stateEventType) {
+		Action<PartitionState> loadCompleted,
+		string stateEventType) {
 		_readRequestsInProgress++;
 		var requestId = Guid.NewGuid();
 		_ioDispatcher.ReadBackward(
 			partitionStreamName, eventNumber, 1, false, SystemAccounts.System,
-			m =>
-				OnLoadPartitionStateReadStreamEventsBackwardCompleted(
-					m, requestedStateCheckpointTag, loadCompleted, partitionStreamName, stateEventType),
+			m => OnLoadPartitionStateReadStreamEventsBackwardCompleted(
+				m, requestedStateCheckpointTag, loadCompleted, partitionStreamName, stateEventType),
 			() => {
 				_logger.Warning("Read backward for stream {stream} timed out. Retrying", partitionStreamName);
 				_loadStateRequests.Remove(requestId);
@@ -113,8 +120,11 @@ public class DefaultCheckpointManager : CoreProjectionCheckpointManager,
 	}
 
 	private void OnLoadPartitionStateReadStreamEventsBackwardCompleted(
-		ClientMessage.ReadStreamEventsBackwardCompleted message, CheckpointTag requestedStateCheckpointTag,
-		Action<PartitionState> loadCompleted, string partitionStreamName, string stateEventType) {
+		ClientMessage.ReadStreamEventsBackwardCompleted message,
+		CheckpointTag requestedStateCheckpointTag,
+		Action<PartitionState> loadCompleted,
+		string partitionStreamName,
+		string stateEventType) {
 		_loadStateRequests.Remove(message.CorrelationId);
 
 		_readRequestsInProgress--;
@@ -123,17 +133,17 @@ public class DefaultCheckpointManager : CoreProjectionCheckpointManager,
 			if (@event.EventType == stateEventType) {
 				var parsed = @event.Metadata.ParseCheckpointTagVersionExtraJson(_projectionVersion);
 				if (parsed.Version.ProjectionId != _projectionVersion.ProjectionId
-					|| _projectionVersion.Epoch > parsed.Version.Version) {
+				    || _projectionVersion.Epoch > parsed.Version.Version) {
 					var state = new PartitionState("", null, _zeroTag);
 					loadCompleted(state);
-					return;
 				} else {
 					var loadedStateCheckpointTag = parsed.AdjustBy(_positionTagger, _projectionVersion);
 					var state = PartitionState.Deserialize(
 						Helper.UTF8NoBom.GetString(@event.Data.Span), loadedStateCheckpointTag);
 					loadCompleted(state);
-					return;
 				}
+
+				return;
 			}
 		}
 
@@ -148,7 +158,7 @@ public class DefaultCheckpointManager : CoreProjectionCheckpointManager,
 	}
 
 	protected override ProjectionCheckpoint CreateProjectionCheckpoint(CheckpointTag checkpointPosition) {
-		return new ProjectionCheckpoint(
+		return new(
 			_publisher, _ioDispatcher, _projectionVersion, _runAs, this, checkpointPosition, _positionTagger,
 			_projectionConfig.MaxWriteBatchLength, _projectionConfig.MaximumAllowedWritesInFlight, _logger);
 	}
@@ -161,10 +171,8 @@ public class DefaultCheckpointManager : CoreProjectionCheckpointManager,
 		RequestRestart(message.Reason);
 	}
 
-	protected override void CapturePartitionStateUpdated(string partition, PartitionState oldState,
-		PartitionState newState) {
-		if (_partitionStateUpdateManager == null)
-			_partitionStateUpdateManager = new PartitionStateUpdateManager(_namingBuilder);
+	protected override void CapturePartitionStateUpdated(string partition, PartitionState oldState, PartitionState newState) {
+		_partitionStateUpdateManager ??= new(_namingBuilder);
 		_partitionStateUpdateManager.StateUpdated(partition, newState, oldState.CausedBy);
 
 		UpdateStateSizeMetrics(partition, newState.Size);

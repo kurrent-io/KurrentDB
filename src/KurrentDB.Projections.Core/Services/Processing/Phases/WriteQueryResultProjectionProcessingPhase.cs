@@ -12,23 +12,20 @@ using KurrentDB.Projections.Core.Services.Processing.Partitioning;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Phases;
 
-public sealed class WriteQueryResultProjectionProcessingPhase : WriteQueryResultProjectionProcessingPhaseBase {
-	public WriteQueryResultProjectionProcessingPhase(
-		IPublisher publisher,
-		int phase,
-		string resultStream,
-		ICoreProjectionForProcessingPhase coreProjection,
-		PartitionStateCache stateCache,
-		ICoreProjectionCheckpointManager checkpointManager,
-		IEmittedEventWriter emittedEventWriter,
-		IEmittedStreamsTracker emittedStreamsTracker)
-		: base(publisher, phase, resultStream, coreProjection, stateCache, checkpointManager, emittedEventWriter,
-			emittedStreamsTracker) {
-	}
-
+public sealed class WriteQueryResultProjectionProcessingPhase(
+	IPublisher publisher,
+	int phase,
+	string resultStream,
+	ICoreProjectionForProcessingPhase coreProjection,
+	PartitionStateCache stateCache,
+	ICoreProjectionCheckpointManager checkpointManager,
+	IEmittedEventWriter emittedEventWriter,
+	IEmittedStreamsTracker emittedStreamsTracker)
+	: WriteQueryResultProjectionProcessingPhaseBase(publisher, phase, resultStream, coreProjection, stateCache, checkpointManager,
+		emittedEventWriter,
+		emittedStreamsTracker) {
 	protected override IEnumerable<EmittedEventEnvelope> WriteResults(CheckpointTag phaseCheckpointTag) {
 		var items = _stateCache.Enumerate();
-		EmittedStream.WriterConfiguration.StreamMetadata streamMetadata = null;
 		return from item in items
 			   let partitionState = item.Item2
 			   select
@@ -41,7 +38,6 @@ public sealed class WriteQueryResultProjectionProcessingPhase : WriteQueryResult
 						   partitionState.Result,
 						   null,
 						   phaseCheckpointTag,
-						   null),
-					   streamMetadata);
+						   null));
 	}
 }

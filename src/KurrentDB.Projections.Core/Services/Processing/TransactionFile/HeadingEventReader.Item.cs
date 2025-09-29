@@ -7,12 +7,8 @@ using KurrentDB.Projections.Core.Services.Processing.Subscriptions;
 namespace KurrentDB.Projections.Core.Services.Processing.TransactionFile;
 
 public partial class HeadingEventReader {
-	private abstract class Item {
-		public readonly TFPos Position;
-
-		protected Item(TFPos position) {
-			Position = position;
-		}
+	private abstract class Item(TFPos position) {
+		public readonly TFPos Position = position;
 
 		public abstract void Handle(IReaderSubscription subscription);
 	}

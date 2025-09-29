@@ -10,16 +10,13 @@ using KurrentDB.Projections.Core.Services.Processing.Phases;
 
 namespace KurrentDB.Projections.Core.Services.Processing.WorkItems;
 
-class GetResultWorkItem : GetDataWorkItemBase {
-	public GetResultWorkItem(
-		IPublisher publisher,
-		Guid correlationId,
-		Guid projectionId,
-		IProjectionPhaseStateManager projection,
-		string partition)
-		: base(publisher, correlationId, projectionId, projection, partition) {
-	}
-
+class GetResultWorkItem(
+	IPublisher publisher,
+	Guid correlationId,
+	Guid projectionId,
+	IProjectionPhaseStateManager projection,
+	string partition)
+	: GetDataWorkItemBase(publisher, correlationId, projectionId, projection, partition) {
 	protected override void Reply(PartitionState state, CheckpointTag checkpointTag) {
 		if (state == null)
 			_publisher.Publish(

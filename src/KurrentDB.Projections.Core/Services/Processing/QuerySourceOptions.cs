@@ -8,23 +8,14 @@ namespace KurrentDB.Projections.Core.Services.Processing;
 [DataContract]
 public class QuerySourceOptions {
 	[DataMember] public string ResultStreamName { get; set; }
-
 	[DataMember] public string PartitionResultStreamNamePattern { get; set; }
-
 	[DataMember] public bool ReorderEvents { get; set; }
-
 	[DataMember] public int ProcessingLag { get; set; }
-
 	[DataMember] public bool IsBiState { get; set; }
-
 	[DataMember] public bool DefinesStateTransform { get; set; }
-
 	[DataMember] public bool ProducesResults { get; set; }
-
 	[DataMember] public bool DefinesFold { get; set; }
-
 	[DataMember] public bool HandlesDeletedNotifications { get; set; }
-
 	[DataMember] public bool IncludeLinks { get; set; }
 
 	protected bool Equals(QuerySourceOptions other) {

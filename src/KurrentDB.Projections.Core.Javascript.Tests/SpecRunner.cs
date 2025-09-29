@@ -24,13 +24,7 @@ using ResolvedEvent = KurrentDB.Projections.Core.Services.Processing.ResolvedEve
 
 namespace KurrentDB.Projections.Core.Javascript.Tests;
 
-public class SpecRunner {
-	private readonly ITestOutputHelper _output;
-
-	public SpecRunner(ITestOutputHelper output) {
-		_output = output;
-	}
-
+public class SpecRunner(ITestOutputHelper output) {
 	private static readonly Encoding Utf8NoBom = new UTF8Encoding(false, true);
 
 	public static IEnumerable<object[]> GetTestCases() {
@@ -71,10 +65,9 @@ public class SpecRunner {
 
 					var initializedPartitions = new List<string>();
 					if (e.TryGetProperty("initializedPartitions", out var partitions)) {
-						foreach (var element in partitions.EnumerateArray()) {
-							initializedPartitions.Add(element.GetString()!);
-						}
+						initializedPartitions.AddRange(partitions.EnumerateArray().Select(element => element.GetString()!));
 					}
+
 					var expectedStates = new Dictionary<string, string?>();
 					var expectedResults = new Dictionary<string, string?>();
 					int stateCount = 0;
@@ -84,9 +77,10 @@ public class SpecRunner {
 							var partition = state.GetProperty("partition").GetString()!;
 							var expectedStateNode = state.GetProperty("state");
 							var expectedState = expectedStateNode.ValueKind == JsonValueKind.Null ? null : expectedStateNode.GetRawText();
-							if (!expectedStates.TryAdd(partition, expectedState)) throw new InvalidOperationException("Duplicate expected state");
+							if (!expectedStates.TryAdd(partition, expectedState))
+								throw new InvalidOperationException("Duplicate expected state");
 
-							if (state.TryGetProperty("result", out var expectedResultNode )) {
+							if (state.TryGetProperty("result", out var expectedResultNode)) {
 								var expectedResult = expectedResultNode.ValueKind == JsonValueKind.Null
 									? null
 									: expectedResultNode.GetRawText();
@@ -96,19 +90,18 @@ public class SpecRunner {
 						}
 					}
 
-
 					if (stateCount > 2)
 						throw new InvalidOperationException("Cannot specify more than 2 states");
 
 					sequence.Events.Add(new InputEvent(et!
-							, e.GetProperty("data").GetRawText()
-							, e.TryGetProperty("metadata", out var metadata) ? metadata.GetRawText() : null
-							, initializedPartitions
-							, expectedStates
-							, expectedResults
-							, skip
-							, e.TryGetProperty("eventId", out var idElement) && idElement.TryGetGuid(out var id) ? id : Guid.NewGuid()
-							));
+						, e.GetProperty("data").GetRawText()
+						, e.TryGetProperty("metadata", out var metadata) ? metadata.GetRawText() : null
+						, initializedPartitions
+						, expectedStates
+						, expectedResults
+						, skip
+						, e.TryGetProperty("eventId", out var idElement) && idElement.TryGetGuid(out var id) ? id : Guid.NewGuid()
+					));
 				}
 			}
 
@@ -154,6 +147,7 @@ public class SpecRunner {
 						foreach (var c in item.Value.EnumerateArray()) {
 							sdb.FromCategory(c.GetString());
 						}
+
 						break;
 					case "partitioned":
 						if (item.Value.GetBoolean())
@@ -163,6 +157,7 @@ public class SpecRunner {
 						foreach (var e in item.Value.EnumerateArray()) {
 							sdb.IncludeEvent(e.GetString());
 						}
+
 						break;
 					case "allEvents":
 						if (item.Value.GetBoolean()) {
@@ -170,11 +165,13 @@ public class SpecRunner {
 						} else {
 							sdb.NotAllEvents();
 						}
+
 						break;
 					case "allStreams":
 						if (item.Value.GetBoolean()) {
 							sdb.FromAll();
 						}
+
 						break;
 					default:
 						throw new Exception($"unexpected property in expected config {item.Name}");
@@ -186,14 +183,12 @@ public class SpecRunner {
 			if (output.TryGetProperty("emitted", out var expectedEmittedElement)) {
 				foreach (var element in expectedEmittedElement.EnumerateObject()) {
 					var stream = element.Name;
-					foreach (var eventElement in element.Value.EnumerateArray()) {
-						if (eventElement.ValueKind == JsonValueKind.String) {
-							expectedEmittedEvents.Add(
-								new OutputEvent(stream, "$>", eventElement.GetString(), null));
-						}
-					}
+					expectedEmittedEvents.AddRange(from eventElement in element.Value.EnumerateArray()
+						where eventElement.ValueKind == JsonValueKind.String
+						select new OutputEvent(stream, "$>", eventElement.GetString(), null));
 				}
 			}
+
 			JintProjectionStateHandler runner = null;
 			IQuerySources definition = null;
 
@@ -213,18 +208,26 @@ public class SpecRunner {
 			yield return For($"{projection} qs.AllEvents", () => Assert.Equal(expectedDefinition.AllEvents, definition.AllEvents));
 			yield return For($"{projection} qs.Events", () => Assert.Equal(expectedDefinition.Events, definition.Events));
 			yield return For($"{projection} qs.ByStreams", () => Assert.Equal(expectedDefinition.ByStreams, definition.ByStreams));
-			yield return For($"{projection} qs.ByCustomPartitions", () => Assert.Equal(expectedDefinition.ByCustomPartitions, definition.ByCustomPartitions));
+			yield return For($"{projection} qs.ByCustomPartitions",
+				() => Assert.Equal(expectedDefinition.ByCustomPartitions, definition.ByCustomPartitions));
 			yield return For($"{projection} qs.DefinesStateTransform", () => Assert.Equal(expectedDefinition.DefinesStateTransform, definition.DefinesStateTransform));
 			yield return For($"{projection} qs.DefinesFold", () => Assert.Equal(expectedDefinition.DefinesFold, definition.DefinesFold));
-			yield return For($"{projection} qs.HandlesDeletedNotifications", () => Assert.Equal(expectedDefinition.HandlesDeletedNotifications, definition.HandlesDeletedNotifications));
-			yield return For($"{projection} qs.ProducesResults", () => Assert.Equal(expectedDefinition.ProducesResults, definition.ProducesResults));
+			yield return For($"{projection} qs.HandlesDeletedNotifications",
+				() => Assert.Equal(expectedDefinition.HandlesDeletedNotifications, definition.HandlesDeletedNotifications));
+			yield return For($"{projection} qs.ProducesResults",
+				() => Assert.Equal(expectedDefinition.ProducesResults, definition.ProducesResults));
 			yield return For($"{projection} qs.IsBiState", () => Assert.Equal(expectedDefinition.IsBiState, definition.IsBiState));
-			yield return For($"{projection} qs.IncludeLinksOption", () => Assert.Equal(expectedDefinition.IncludeLinksOption, definition.IncludeLinksOption));
-			yield return For($"{projection} qs.ResultStreamNameOption", () => Assert.Equal(expectedDefinition.ResultStreamNameOption, definition.ResultStreamNameOption));
-			yield return For($"{projection} qs.PartitionResultStreamNamePatternOption", () => Assert.Equal(expectedDefinition.PartitionResultStreamNamePatternOption,
-				definition.PartitionResultStreamNamePatternOption));
-			yield return For($"{projection} qs.ReorderEventsOption", () => Assert.Equal(expectedDefinition.ReorderEventsOption, definition.ReorderEventsOption));
-			yield return For($"{projection} qs.ProcessingLagOption", () => Assert.Equal(expectedDefinition.ProcessingLagOption, definition.ProcessingLagOption));
+			yield return For($"{projection} qs.IncludeLinksOption",
+				() => Assert.Equal(expectedDefinition.IncludeLinksOption, definition.IncludeLinksOption));
+			yield return For($"{projection} qs.ResultStreamNameOption",
+				() => Assert.Equal(expectedDefinition.ResultStreamNameOption, definition.ResultStreamNameOption));
+			yield return For($"{projection} qs.PartitionResultStreamNamePatternOption", ()
+				=> Assert.Equal(expectedDefinition.PartitionResultStreamNamePatternOption,
+					definition.PartitionResultStreamNamePatternOption));
+			yield return For($"{projection} qs.ReorderEventsOption",
+				() => Assert.Equal(expectedDefinition.ReorderEventsOption, definition.ReorderEventsOption));
+			yield return For($"{projection} qs.ProcessingLagOption",
+				() => Assert.Equal(expectedDefinition.ProcessingLagOption, definition.ProcessingLagOption));
 			var partitionedState = new Dictionary<string, string>();
 			var partitionedResult = new Dictionary<string, string>();
 			var sharedStateInitialized = false;
@@ -236,6 +239,7 @@ public class SpecRunner {
 				if (!revision.TryGetValue(sequence.Stream, out _)) {
 					revision[sequence.Stream] = 0;
 				}
+
 				for (int j = 0; j < sequences[i].Events.Count; j++) {
 					var logPosition = i * 100 + j;
 					var flags = PrepareFlags.IsJson | PrepareFlags.Data;
@@ -262,6 +266,7 @@ public class SpecRunner {
 					if (@event.Metadata != null) {
 						metadata = Utf8NoBom.GetBytes(JObject.Parse(@event.Metadata).ToString(Formatting.Indented));
 					}
+
 					var er = new EventRecord(
 						revision[sequence.Stream], logPosition, Guid.NewGuid(), @event.EventId, i, j,
 						sequence.Stream, i, DateTime.Now, flags, @event.EventType,
@@ -274,13 +279,11 @@ public class SpecRunner {
 						var expectedPartition = "";
 						if (expectedDefinition.DefinesFold) {
 							if (@event.ExpectedStates.Any()) {
-								expectedPartition = @event.ExpectedStates
-									.SingleOrDefault(x => string.Empty != x.Key).Key ?? string.Empty;
+								expectedPartition = @event.ExpectedStates.SingleOrDefault(x => string.Empty != x.Key).Key ?? string.Empty;
 								if (expectedPartition != string.Empty) {
 									yield return For(
 										$"{projection} {er.EventNumber}@{sequence.Stream} returns expected partition",
-										() => Assert.Equal(expectedPartition,
-											runner.GetStatePartition(CheckpointTag.Empty, "", e)));
+										() => Assert.Equal(expectedPartition, runner.GetStatePartition(CheckpointTag.Empty, "", e)));
 									foreach (var initializedState in @event.InitializedPartitions) {
 										yield return For(
 											$"should not have already initialized \"{initializedState}\" at {er.EventNumber}@{sequence.Stream}",
@@ -331,7 +334,8 @@ public class SpecRunner {
 								$"process event {@event.EventType} at {er.EventNumber}@{sequence.Stream}",
 								() => {
 									Assert.True(runner.ProcessEvent(expectedPartition, CheckpointTag.Empty, "", e,
-										out var newState, out var newSharedState, out var emittedEvents), "Process event should always return true");
+											out var newState, out var newSharedState, out var emittedEvents),
+										"Process event should always return true");
 									var result = runner.TransformStateToResult();
 									if (newSharedState != null) {
 										partitionedState[""] = newSharedState;
@@ -340,11 +344,9 @@ public class SpecRunner {
 									partitionedState[expectedPartition] = newState;
 									partitionedResult[expectedPartition] = result;
 
-									if (emittedEvents != null && emittedEvents.Length > 0) {
+									if (emittedEvents is { Length: > 0 }) {
 										actualEmittedEvents.AddRange(emittedEvents);
 									}
-
-
 								});
 							if (@event.ExpectedStates.Any()) {
 								foreach (var expectedState in @event.ExpectedStates) {
@@ -353,9 +355,10 @@ public class SpecRunner {
 
 									yield return For($@"state ""{expectedState.Key}"" is correct at {er.EventNumber}@{sequence.Stream}",
 										() => {
-											if (string.IsNullOrEmpty(expectedState.Value))  Assert.Null(partitionedState[expectedState.Key]);
+											if (string.IsNullOrEmpty(expectedState.Value)) Assert.Null(partitionedState[expectedState.Key]);
 											else {
-												Assert.True(partitionedState.ContainsKey(expectedState.Key), $"partition does not contain key {expectedState.Key}");
+												Assert.True(partitionedState.ContainsKey(expectedState.Key),
+													$"partition does not contain key {expectedState.Key}");
 												Assert.NotNull(partitionedState[expectedState.Key]);
 												Assert.NotEmpty(partitionedState[expectedState.Key]);
 												var expected = Sort(expectedState.Value, "expected");
@@ -365,17 +368,19 @@ public class SpecRunner {
 										});
 								}
 							}
+
 							if (@event.ExpectedResult.Any()) {
 								foreach (var expectedResult in @event.ExpectedResult) {
-
 									yield return For($@"result ""{expectedResult.Key}"" exists at {er.EventNumber}@{sequence.Stream}",
 										() => Assert.Contains(expectedResult.Key, (IReadOnlyDictionary<string, string>)partitionedResult));
 
 									yield return For($@"result ""{expectedResult.Key}"" is correct at {er.EventNumber}@{sequence.Stream}",
 										() => {
-											if (string.IsNullOrEmpty(expectedResult.Value)) Assert.Null(partitionedResult[expectedResult.Key]);
+											if (string.IsNullOrEmpty(expectedResult.Value))
+												Assert.Null(partitionedResult[expectedResult.Key]);
 											else {
-												Assert.True(partitionedResult.ContainsKey(expectedResult.Key), $"partition does not contain key {expectedResult.Key}");
+												Assert.True(partitionedResult.ContainsKey(expectedResult.Key),
+													$"partition does not contain key {expectedResult.Key}");
 												if (expectedResult.Value is null) {
 													Assert.Null(partitionedResult[expectedResult.Key]);
 												} else {
@@ -389,17 +394,11 @@ public class SpecRunner {
 										});
 								}
 							}
-
-
-
-
 						}
 					}
 
-					revision[sequence.Stream] = revision[sequence.Stream] + 1;
+					revision[sequence.Stream] += 1;
 				}
-
-
 			}
 
 			if (expectedEmittedEvents.Count == 0) {
@@ -417,17 +416,21 @@ public class SpecRunner {
 			}
 
 			object[] For(string name, Action a) {
-				return new object[]{ new TestDefinition(Name(name),_ => {
-					a();
-					return default;
-				})};
+				return new object[] {
+					new TestDefinition(Name(name), _ => {
+						a();
+						return default;
+					})
+				};
 			}
 
 			object[] WithOutput(string name, Action<ITestOutputHelper> a) {
-				return new object[]{ new TestDefinition(Name(name),o => {
-					a(o);
-					return default;
-				})};
+				return new object[] {
+					new TestDefinition(Name(name), o => {
+						a(o);
+						return default;
+					})
+				};
 			}
 
 			string Name(string name) {
@@ -444,6 +447,7 @@ public class SpecRunner {
 			} catch {
 				throw;
 			}
+
 			return new(root.Properties().OrderBy(x => x.Name));
 		}
 	}
@@ -451,7 +455,7 @@ public class SpecRunner {
 	[Theory]
 	[MemberData(nameof(GetTestCases))]
 	public Task Test(TestDefinition def) {
-		return def.Execute(_output).AsTask();
+		return def.Execute(output).AsTask();
 	}
 
 	public class TestDefinition {
@@ -492,7 +496,6 @@ public class SpecRunner {
 		IReadOnlyDictionary<string, string> expectedResults,
 		bool skip,
 		Guid eventId) {
-
 		public string EventType { get; } = eventType;
 		public string Body { get; } = body;
 		public string Metadata { get; } = metadata;
@@ -501,7 +504,6 @@ public class SpecRunner {
 		public IReadOnlyDictionary<string, string> ExpectedResult { get; } = expectedResults;
 		public bool Skip { get; } = skip;
 		public Guid EventId { get; } = eventId;
-
 	}
 
 	class OutputEvent {

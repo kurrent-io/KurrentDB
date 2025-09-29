@@ -29,7 +29,7 @@ public class when_a_default_checkpoint_manager_has_been_reinitialized<TLogFormat
 			_checkpointReader.BeginLoadState();
 			var checkpointLoaded =
 				_consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.CheckpointLoaded>().First();
-			_checkpointWriter.StartFrom(checkpointLoaded.CheckpointTag, checkpointLoaded.CheckpointEventNumber);
+			_checkpointWriter.StartFrom(checkpointLoaded.CheckpointEventNumber);
 			_manager.BeginLoadPrerecordedEvents(checkpointLoaded.CheckpointTag);
 
 			_manager.Start(CheckpointTag.FromStreamPosition(0, "stream", 10), null);

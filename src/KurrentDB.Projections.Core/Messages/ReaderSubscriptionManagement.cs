@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Strategies;
@@ -11,68 +12,28 @@ namespace KurrentDB.Projections.Core.Messages;
 
 public static partial class ReaderSubscriptionManagement {
 	[DerivedMessage]
-	public abstract partial class ReaderSubscriptionManagementMessage : Message {
-		private readonly Guid _subscriptionId;
-
-		protected ReaderSubscriptionManagementMessage(Guid subscriptionId) {
-			_subscriptionId = subscriptionId;
-		}
-
-		public Guid SubscriptionId {
-			get { return _subscriptionId; }
-		}
+	public abstract partial class ReaderSubscriptionManagementMessage(Guid subscriptionId) : Message {
+		public Guid SubscriptionId { get; } = subscriptionId;
 	}
 
 	[DerivedMessage(ProjectionMessage.ReaderSubscriptionManagement)]
-	public partial class Subscribe : ReaderSubscriptionManagementMessage {
-		private readonly CheckpointTag _fromPosition;
-		private readonly IReaderStrategy _readerStrategy;
-		private readonly ReaderSubscriptionOptions _options;
-
-		public Subscribe(
-			Guid subscriptionId, CheckpointTag from,
-			IReaderStrategy readerStrategy, ReaderSubscriptionOptions readerSubscriptionOptions) : base(
-			subscriptionId) {
-			if (@from == null)
-				throw new ArgumentNullException("from");
-			if (readerStrategy == null)
-				throw new ArgumentNullException("readerStrategy");
-			_fromPosition = @from;
-			_readerStrategy = readerStrategy;
-			_options = readerSubscriptionOptions;
-		}
-
-		public CheckpointTag FromPosition {
-			get { return _fromPosition; }
-		}
-
-		public IReaderStrategy ReaderStrategy {
-			get { return _readerStrategy; }
-		}
-
-		public ReaderSubscriptionOptions Options {
-			get { return _options; }
-		}
+	public partial class Subscribe(
+		Guid subscriptionId,
+		CheckpointTag from,
+		IReaderStrategy readerStrategy,
+		ReaderSubscriptionOptions readerSubscriptionOptions)
+		: ReaderSubscriptionManagementMessage(subscriptionId) {
+		public CheckpointTag FromPosition { get; } = Ensure.NotNull(from);
+		public IReaderStrategy ReaderStrategy { get; } = Ensure.NotNull(readerStrategy);
+		public ReaderSubscriptionOptions Options { get; } = readerSubscriptionOptions;
 	}
 
 	[DerivedMessage(ProjectionMessage.ReaderSubscriptionManagement)]
-	public partial class Pause : ReaderSubscriptionManagementMessage {
-		public Pause(Guid subscriptionId)
-			: base(subscriptionId) {
-		}
-	}
+	public partial class Pause(Guid subscriptionId) : ReaderSubscriptionManagementMessage(subscriptionId);
 
 	[DerivedMessage(ProjectionMessage.ReaderSubscriptionManagement)]
-	public partial class Resume : ReaderSubscriptionManagementMessage {
-		public Resume(Guid subscriptionId)
-			: base(subscriptionId) {
-		}
-	}
+	public partial class Resume(Guid subscriptionId) : ReaderSubscriptionManagementMessage(subscriptionId);
 
 	[DerivedMessage(ProjectionMessage.ReaderSubscriptionManagement)]
-	public partial class Unsubscribe : ReaderSubscriptionManagementMessage {
-		public Unsubscribe(Guid subscriptionId)
-			: base(subscriptionId) {
-		}
-	}
+	public partial class Unsubscribe(Guid subscriptionId) : ReaderSubscriptionManagementMessage(subscriptionId);
 }

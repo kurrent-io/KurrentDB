@@ -33,7 +33,7 @@ public class when_creating_an_emitted_stream {
 				new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
 					new EmittedStream.WriterConfiguration.StreamMetadata(), null, 50),
 				new ProjectionVersion(1, 0, 0),
-				new TransactionFilePositionTagger(0), CheckpointTag.FromPosition(0, 0, -1), _fakePublisher,
+				new TransactionFilePositionTagger(0), CheckpointTag.FromPosition(0, 0, -1),
 				_ioDispatcher,
 				new TestCheckpointManagerMessageHandler());
 		});
@@ -44,7 +44,7 @@ public class when_creating_an_emitted_stream {
 		Assert.Throws<ArgumentNullException>(() => {
 			new EmittedStream(
 				null, null, new ProjectionVersion(1, 0, 0),
-				new TransactionFilePositionTagger(0), CheckpointTag.FromPosition(0, 0, -1), _fakePublisher,
+				new TransactionFilePositionTagger(0), CheckpointTag.FromPosition(0, 0, -1),
 				_ioDispatcher,
 				new TestCheckpointManagerMessageHandler());
 		});
@@ -58,7 +58,7 @@ public class when_creating_an_emitted_stream {
 				new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
 					new EmittedStream.WriterConfiguration.StreamMetadata(), null, 50),
 				new ProjectionVersion(1, 0, 0),
-				new TransactionFilePositionTagger(0), CheckpointTag.FromPosition(0, 0, -1), _fakePublisher,
+				new TransactionFilePositionTagger(0), CheckpointTag.FromPosition(0, 0, -1),
 				_ioDispatcher,
 				new TestCheckpointManagerMessageHandler());
 		});
@@ -72,7 +72,7 @@ public class when_creating_an_emitted_stream {
 				new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
 					new EmittedStream.WriterConfiguration.StreamMetadata(), null, 50),
 				new ProjectionVersion(1, 0, 0),
-				new TransactionFilePositionTagger(0), null, _fakePublisher, _ioDispatcher,
+				new TransactionFilePositionTagger(0), null, _ioDispatcher,
 				new TestCheckpointManagerMessageHandler());
 		});
 	}
@@ -85,7 +85,7 @@ public class when_creating_an_emitted_stream {
 				new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
 					new EmittedStream.WriterConfiguration.StreamMetadata(), null, 50),
 				new ProjectionVersion(1, 0, 0),
-				new TransactionFilePositionTagger(0), CheckpointTag.FromPosition(0, 0, -1), null, _ioDispatcher,
+				new TransactionFilePositionTagger(0), CheckpointTag.FromPosition(0, 0, -1), _ioDispatcher,
 				new TestCheckpointManagerMessageHandler());
 		});
 	}
@@ -98,7 +98,7 @@ public class when_creating_an_emitted_stream {
 				new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
 					new EmittedStream.WriterConfiguration.StreamMetadata(), null, 50),
 				new ProjectionVersion(1, 0, 0),
-				new TransactionFilePositionTagger(0), CheckpointTag.FromPosition(0, 0, -1), _fakePublisher, null,
+				new TransactionFilePositionTagger(0), CheckpointTag.FromPosition(0, 0, -1), null,
 				new TestCheckpointManagerMessageHandler());
 		});
 	}
@@ -111,7 +111,7 @@ public class when_creating_an_emitted_stream {
 				new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
 					new EmittedStream.WriterConfiguration.StreamMetadata(), null, 50),
 				new ProjectionVersion(1, 0, 0),
-				new TransactionFilePositionTagger(0), CheckpointTag.FromPosition(0, 0, -1), _fakePublisher,
+				new TransactionFilePositionTagger(0), CheckpointTag.FromPosition(0, 0, -1),
 				_ioDispatcher, null);
 		});
 	}
@@ -122,7 +122,7 @@ public class when_creating_an_emitted_stream {
 			"test",
 			new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
 				new EmittedStream.WriterConfiguration.StreamMetadata(), null, 50), new ProjectionVersion(1, 0, 0),
-			new TransactionFilePositionTagger(0), CheckpointTag.FromPosition(0, 0, -1), _fakePublisher,
+			new TransactionFilePositionTagger(0), CheckpointTag.FromPosition(0, 0, -1),
 			_ioDispatcher,
 			new TestCheckpointManagerMessageHandler());
 	}

@@ -7,15 +7,7 @@ using KurrentDB.Core.Messaging;
 namespace KurrentDB.Projections.Core.Messages;
 
 [DerivedMessage]
-public abstract partial class CoreProjectionManagementControlMessage : CoreProjectionManagementMessageBase {
-	private readonly Guid _workerId;
-
-	public Guid WorkerId {
-		get { return _workerId; }
-	}
-
-	public CoreProjectionManagementControlMessage(Guid projectionId, Guid workerId)
-		: base(projectionId) {
-		_workerId = workerId;
-	}
+public abstract partial class CoreProjectionManagementControlMessage(Guid projectionId, Guid workerId)
+	: CoreProjectionManagementMessageBase(projectionId) {
+	public Guid WorkerId { get; } = workerId;
 }

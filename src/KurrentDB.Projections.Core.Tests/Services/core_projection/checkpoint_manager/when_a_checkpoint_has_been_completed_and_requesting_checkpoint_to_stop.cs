@@ -30,7 +30,7 @@ public class when_a_checkpoint_has_been_completed_and_requesting_checkpoint_to_s
 			_checkpointReader.BeginLoadState();
 			var checkpointLoaded =
 				_consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.CheckpointLoaded>().First();
-			_checkpointWriter.StartFrom(checkpointLoaded.CheckpointTag, checkpointLoaded.CheckpointEventNumber);
+			_checkpointWriter.StartFrom(checkpointLoaded.CheckpointEventNumber);
 			_manager.BeginLoadPrerecordedEvents(checkpointLoaded.CheckpointTag);
 
 			_manager.Start(CheckpointTag.FromStreamPosition(0, "stream", 10), null);

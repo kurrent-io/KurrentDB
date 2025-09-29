@@ -30,7 +30,7 @@ public class TestFixtureWithEventReaderService<TLogFormat, TStreamId> : core_pro
 
 		ICheckpoint writerCheckpoint = new InMemoryCheckpoint(1000);
 		_readerService = new EventReaderCoreService(
-			GetInputQueue(), _ioDispatcher, 10, writerCheckpoint, runHeadingReader: GivenHeadingReaderRunning(),
+			GetInputQueue(), 10, writerCheckpoint, runHeadingReader: GivenHeadingReaderRunning(),
 			faultOutOfOrderProjections: true);
 		_subscriptionDispatcher = new ReaderSubscriptionDispatcher(GetInputQueue());
 

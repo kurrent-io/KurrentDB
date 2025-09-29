@@ -28,11 +28,11 @@ public class ProjectionStateHandlerFactory {
 		int? projectionExecutionTimeout,
 		Action<string, object[]> logger = null) {
 		var colonPos = factoryType.IndexOf(':');
-		string kind = null;
+		string kind;
 		string rest = null;
 		if (colonPos > 0) {
-			kind = factoryType.Substring(0, colonPos);
-			rest = factoryType.Substring(colonPos + 1);
+			kind = factoryType[..colonPos];
+			rest = factoryType[(colonPos + 1)..];
 		} else {
 			kind = factoryType;
 		}
@@ -52,13 +52,9 @@ public class ProjectionStateHandlerFactory {
 				// Allow loading native projections from previous versions
 				rest = rest?.Replace("EventStore", "KurrentDB");
 
-				var type = Type.GetType(rest);
-				if (type == null) {
-					type =
-						AppDomain.CurrentDomain.GetAssemblies()
-							.Select(v => v.GetType(rest))
-							.FirstOrDefault(v => v != null);
-				}
+				var type = Type.GetType(rest) ?? AppDomain.CurrentDomain.GetAssemblies()
+					.Select(v => v.GetType(rest))
+					.FirstOrDefault(v => v != null);
 
 				if (type is null) {
 					throw new NotSupportedException($"Could not find type \"{rest}\"");
@@ -68,7 +64,7 @@ public class ProjectionStateHandlerFactory {
 				result = (IProjectionStateHandler)handler;
 				break;
 			default:
-				throw new NotSupportedException(string.Format("'{0}' handler type is not supported", factoryType));
+				throw new NotSupportedException($"'{factoryType}' handler type is not supported");
 		}
 
 		return result;

@@ -6,23 +6,14 @@ using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 
 namespace KurrentDB.Projections.Core.Services.Processing.WorkItems;
 
-public abstract class WorkItem : StagedTask {
-	private readonly int _lastStage;
+public abstract class WorkItem(object initialCorrelationId) : StagedTask(initialCorrelationId) {
+	private const int LastStage = 5;
 	private Action<int, object> _complete;
 	private int _onStage;
 	private CheckpointTag _checkpointTag;
 	private object _lastStageCorrelationId;
-	private CoreProjectionQueue _queue;
 	protected bool _requiresRunning;
-
-	protected WorkItem(object initialCorrelationId)
-		: base(initialCorrelationId) {
-		_lastStage = 5;
-	}
-
-	protected CoreProjectionQueue Queue {
-		get { return _queue; }
-	}
+	private CoreProjectionQueue _queue;
 
 	public override void Process(int onStage, Action<int, object> readyForStage) {
 		if (_checkpointTag == null)
@@ -30,7 +21,7 @@ public abstract class WorkItem : StagedTask {
 		_complete = readyForStage;
 		_onStage = onStage;
 		//TODO:
-		if (_requiresRunning && !Queue.IsRunning)
+		if (_requiresRunning && !_queue.IsRunning)
 			NextStage();
 		else {
 			switch (onStage) {
@@ -41,7 +32,7 @@ public abstract class WorkItem : StagedTask {
 					GetStatePartition();
 					break;
 				case 2:
-					Load(_checkpointTag);
+					Load();
 					break;
 				case 3:
 					ProcessEvent();
@@ -66,7 +57,7 @@ public abstract class WorkItem : StagedTask {
 		NextStage();
 	}
 
-	protected virtual void Load(CheckpointTag checkpointTag) {
+	protected virtual void Load() {
 		NextStage();
 	}
 
@@ -85,7 +76,7 @@ public abstract class WorkItem : StagedTask {
 
 	protected void NextStage(object newCorrelationId = null) {
 		_lastStageCorrelationId = newCorrelationId ?? _lastStageCorrelationId ?? InitialCorrelationId;
-		_complete(_onStage == _lastStage ? -1 : _onStage + 1, _lastStageCorrelationId);
+		_complete(_onStage == LastStage ? -1 : _onStage + 1, _lastStageCorrelationId);
 	}
 
 	public void SetCheckpointTag(CheckpointTag checkpointTag) {

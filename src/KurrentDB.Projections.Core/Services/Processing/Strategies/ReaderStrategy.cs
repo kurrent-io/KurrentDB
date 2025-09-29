@@ -7,7 +7,6 @@ using System.Linq;
 using System.Security.Claims;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
-using KurrentDB.Core.Helpers;
 using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
@@ -30,22 +29,11 @@ public class ReaderStrategy : IReaderStrategy {
 	private readonly bool _reorderEvents;
 	private readonly ClaimsPrincipal _runAs;
 	private readonly int _processingLag;
-
-
-	private readonly EventFilter _eventFilter;
-	private readonly PositionTagger _positionTagger;
 	private readonly ITimeProvider _timeProvider;
-
 	private readonly string _tag;
 	private readonly int _phase;
 
-	public static IReaderStrategy Create(
-		string tag,
-		int phase,
-		IQuerySources sources,
-		ITimeProvider timeProvider,
-		bool stopOnEof,
-		ClaimsPrincipal runAs) {
+	public static IReaderStrategy Create(string tag, int phase, IQuerySources sources, ITimeProvider timeProvider, ClaimsPrincipal runAs) {
 		if (!sources.AllStreams && !sources.HasCategories() && !sources.HasStreams())
 			throw new InvalidOperationException("None of streams and categories are included");
 		if (!sources.AllEvents && !sources.HasEvents())
@@ -112,42 +100,31 @@ public class ReaderStrategy : IReaderStrategy {
 		_tag = tag;
 		_phase = phase;
 		_allStreams = allStreams;
-		_categories = categories != null && categories.Length > 0 ? new HashSet<string>(categories) : null;
-		_streams = streams != null && streams.Length > 0 ? new HashSet<string>(streams) : null;
+		_categories = categories is { Length: > 0 } ? [..categories] : null;
+		_streams = streams is { Length: > 0 } ? [..streams] : null;
 		_allEvents = allEvents;
 		_includeLinks = includeLinks;
-		_events = events != null && events.Length > 0 ? new HashSet<string>(events) : null;
+		_events = events is { Length: > 0 } ? [..events] : null;
 		_includeStreamDeletedNotification = includeStreamDeletedNotification;
 		_processingLag = processingLag.GetValueOrDefault();
 		_reorderEvents = reorderEvents;
 		_runAs = runAs;
-
-		_eventFilter = CreateEventFilter();
-		_positionTagger = CreatePositionTagger();
+		EventFilter = CreateEventFilter();
+		PositionTagger = CreatePositionTagger();
 		_timeProvider = timeProvider;
 	}
 
-	public bool IsReadingOrderRepeatable {
-		get { return !(_streams != null && _streams.Count > 1); }
-	}
+	public bool IsReadingOrderRepeatable => _streams is not { Count: > 1 };
 
-	public EventFilter EventFilter {
-		get { return _eventFilter; }
-	}
+	public EventFilter EventFilter { get; }
 
-	public PositionTagger PositionTagger {
-		get { return _positionTagger; }
-	}
-
-	public int Phase {
-		get { return _phase; }
-	}
+	public PositionTagger PositionTagger { get; }
 
 	public IReaderSubscription CreateReaderSubscription(
 		IPublisher publisher, CheckpointTag fromCheckpointTag, Guid subscriptionId,
 		ReaderSubscriptionOptions readerSubscriptionOptions) {
-		if (_reorderEvents)
-			return new EventReorderingReaderSubscription(
+		return _reorderEvents
+			? new EventReorderingReaderSubscription(
 				publisher,
 				subscriptionId,
 				fromCheckpointTag,
@@ -159,11 +136,8 @@ public class ReaderStrategy : IReaderStrategy {
 				_processingLag,
 				readerSubscriptionOptions.StopOnEof,
 				readerSubscriptionOptions.StopAfterNEvents,
-				readerSubscriptionOptions.EnableContentTypeValidation);
-		else
-			return new ReaderSubscription(
-				_tag,
-				publisher,
+				readerSubscriptionOptions.EnableContentTypeValidation)
+			: new ReaderSubscription(publisher,
 				subscriptionId,
 				fromCheckpointTag,
 				this,
@@ -177,40 +151,38 @@ public class ReaderStrategy : IReaderStrategy {
 	}
 
 	public IEventReader CreatePausedEventReader(
-		Guid eventReaderId, IPublisher publisher, IODispatcher ioDispatcher, CheckpointTag checkpointTag,
-		bool stopOnEof, int? stopAfterNEvents) {
-		if (_allStreams && _events != null && _events.Count >= 1) {
-			//IEnumerable<string> streams = GetEventIndexStreams();
-			return CreatePausedEventIndexEventReader(
-				eventReaderId, ioDispatcher, publisher, checkpointTag, stopOnEof, stopAfterNEvents, true, _events,
-				_includeStreamDeletedNotification);
+		Guid eventReaderId, IPublisher publisher, CheckpointTag checkpointTag,
+		bool stopOnEof) {
+		switch (_allStreams) {
+			case true when _events is { Count: >= 1 }:
+				//IEnumerable<string> streams = GetEventIndexStreams();
+				return CreatePausedEventIndexEventReader(
+					eventReaderId, publisher, checkpointTag, stopOnEof, true, _events,
+					_includeStreamDeletedNotification);
+			case true: {
+				var eventReader = new TransactionFileEventReader(publisher, eventReaderId, _runAs,
+					new TFPos(checkpointTag.CommitPosition.Value, checkpointTag.PreparePosition.Value), _timeProvider,
+					deliverEndOfTFPosition: true, stopOnEof: stopOnEof, resolveLinkTos: false);
+				return eventReader;
+			}
 		}
 
-		if (_allStreams) {
-			var eventReader = new TransactionFileEventReader(publisher, eventReaderId, _runAs,
-				new TFPos(checkpointTag.CommitPosition.Value, checkpointTag.PreparePosition.Value), _timeProvider,
-				deliverEndOfTFPosition: true, stopOnEof: stopOnEof, resolveLinkTos: false);
-			return eventReader;
-		}
-
-		if (_streams != null && _streams.Count == 1) {
+		if (_streams is { Count: 1 }) {
 			var streamName = checkpointTag.Streams.Keys.First();
 			//TODO: handle if not the same
 			return CreatePausedStreamEventReader(
-				eventReaderId, ioDispatcher, publisher, checkpointTag, streamName, stopOnEof, resolveLinkTos: true,
-				stopAfterNEvents: stopAfterNEvents, produceStreamDeletes: _includeStreamDeletedNotification);
+				eventReaderId, publisher, checkpointTag, streamName, stopOnEof, resolveLinkTos: true, produceStreamDeletes: _includeStreamDeletedNotification);
 		}
 
-		if (_categories != null && _categories.Count == 1) {
+		if (_categories is { Count: 1 }) {
 			var streamName = checkpointTag.Streams.Keys.First();
 			return CreatePausedStreamEventReader(
-				eventReaderId, ioDispatcher, publisher, checkpointTag, streamName, stopOnEof, resolveLinkTos: true,
-				stopAfterNEvents: stopAfterNEvents, produceStreamDeletes: _includeStreamDeletedNotification);
+				eventReaderId, publisher, checkpointTag, streamName, stopOnEof, resolveLinkTos: true, produceStreamDeletes: _includeStreamDeletedNotification);
 		}
 
-		if (_streams != null && _streams.Count > 1) {
+		if (_streams is { Count: > 1 }) {
 			return CreatePausedMultiStreamEventReader(
-				eventReaderId, ioDispatcher, publisher, checkpointTag, stopOnEof, stopAfterNEvents, true, _streams);
+				eventReaderId, publisher, checkpointTag, stopOnEof, true, _streams);
 		}
 
 		throw new NotSupportedException();
@@ -219,65 +191,69 @@ public class ReaderStrategy : IReaderStrategy {
 	//TODO: clean up $deleted event notification vs $streamDeleted event
 
 	private EventFilter CreateEventFilter() {
-		if (_allStreams && _events != null && _events.Count >= 1)
-			return new EventByTypeIndexEventFilter(_events);
-		if (_allStreams)
+		switch (_allStreams) {
+			case true when _events is { Count: >= 1 }:
+				return new EventByTypeIndexEventFilter(_events);
 			//NOTE: a projection cannot handle both stream deleted notifications
 			// and real stream tombstone/stream deleted events as they have the same position
 			// and thus processing cannot be correctly checkpointed
-			return new TransactionFileEventFilter(
-				_allEvents, !_includeStreamDeletedNotification, _events, includeLinks: _includeLinks);
-		if (_categories != null && _categories.Count == 1)
+			case true:
+				return new TransactionFileEventFilter(
+					_allEvents, !_includeStreamDeletedNotification, _events, includeLinks: _includeLinks);
+		}
+
+		if (_categories is { Count: 1 })
 			return new CategoryEventFilter(_categories.First(), _allEvents, _events);
 		if (_categories != null)
 			throw new NotSupportedException();
-		if (_streams != null && _streams.Count == 1)
-			return new StreamEventFilter(_streams.First(), _allEvents, _events);
-		if (_streams != null && _streams.Count > 1)
-			return new MultiStreamEventFilter(_streams, _allEvents, _events);
-		throw new NotSupportedException();
+		return _streams switch {
+			{ Count: 1 } => new StreamEventFilter(_streams.First(), _allEvents, _events),
+			{ Count: > 1 } => new MultiStreamEventFilter(_streams, _allEvents, _events),
+			_ => throw new NotSupportedException()
+		};
 	}
 
 	private PositionTagger CreatePositionTagger() {
-		if (_allStreams && _events != null && _events.Count >= 1)
-			return new EventByTypeIndexPositionTagger(_phase, _events.ToArray(), _includeStreamDeletedNotification);
-		if (_allStreams && _reorderEvents)
-			return new PreparePositionTagger(_phase);
-		if (_allStreams)
-			return new TransactionFilePositionTagger(_phase);
-		if (_categories != null && _categories.Count == 1)
-			//TODO: '-' is a hardcoded separator
-			return new StreamPositionTagger(_phase, "$ce-" + _categories.First());
+		switch (_allStreams) {
+			case true when _events is { Count: >= 1 }:
+				return new EventByTypeIndexPositionTagger(_phase, _events.ToArray(), _includeStreamDeletedNotification);
+			case true when _reorderEvents:
+				return new PreparePositionTagger(_phase);
+			case true:
+				return new TransactionFilePositionTagger(_phase);
+		}
+
+		if (_categories is { Count: 1 })
+			return new StreamPositionTagger(_phase, $"$ce-{_categories.First()}");
 		if (_categories != null)
 			throw new NotSupportedException();
-		if (_streams != null && _streams.Count == 1)
-			return new StreamPositionTagger(_phase, _streams.First());
-		if (_streams != null && _streams.Count > 1)
-			return new MultiStreamPositionTagger(_phase, _streams.ToArray());
+		return _streams switch {
+			{ Count: 1 } => new StreamPositionTagger(_phase, _streams.First()),
+			{ Count: > 1 } => new MultiStreamPositionTagger(_phase, _streams.ToArray()),
+			_ => throw new NotSupportedException()
+		};
 		//TODO: consider passing projection phase from outside (above)
-		throw new NotSupportedException();
 	}
 
 
 	private IEventReader CreatePausedStreamEventReader(
-		Guid eventReaderId, IODispatcher ioDispatcher, IPublisher publisher, CheckpointTag checkpointTag,
-		string streamName, bool stopOnEof, int? stopAfterNEvents, bool resolveLinkTos, bool produceStreamDeletes) {
+		Guid eventReaderId, IPublisher publisher, CheckpointTag checkpointTag,
+		string streamName, bool stopOnEof, bool resolveLinkTos, bool produceStreamDeletes) {
 		var lastProcessedSequenceNumber = checkpointTag.Streams.Values.First();
 		var fromSequenceNumber = lastProcessedSequenceNumber + 1;
-		var eventReader = new StreamEventReader(publisher, eventReaderId, _runAs, streamName, fromSequenceNumber,
-			_timeProvider,
+		var eventReader = new StreamEventReader(publisher, eventReaderId, _runAs, streamName, fromSequenceNumber, _timeProvider,
 			resolveLinkTos, produceStreamDeletes, stopOnEof);
 		return eventReader;
 	}
 
 	private IEventReader CreatePausedEventIndexEventReader(
-		Guid eventReaderId, IODispatcher ioDispatcher, IPublisher publisher, CheckpointTag checkpointTag,
-		bool stopOnEof, int? stopAfterNEvents, bool resolveLinkTos, IEnumerable<string> eventTypes,
+		Guid eventReaderId, IPublisher publisher, CheckpointTag checkpointTag,
+		bool stopOnEof, bool resolveLinkTos, IEnumerable<string> eventTypes,
 		bool includeStreamDeletedNotification) {
 		//NOTE: just optimization - anyway if reading from TF events may reappear
 		long p;
 		var nextPositions = eventTypes.ToDictionary(
-			v => "$et-" + v, v => checkpointTag.Streams.TryGetValue(v, out p) ? p + 1 : 0);
+			v => $"$et-{v}", v => checkpointTag.Streams.TryGetValue(v, out p) ? p + 1 : 0);
 
 		if (includeStreamDeletedNotification)
 			nextPositions.Add("$et-$deleted", checkpointTag.Streams.TryGetValue("$deleted", out p) ? p + 1 : 0);
@@ -288,12 +264,11 @@ public class ReaderStrategy : IReaderStrategy {
 	}
 
 	private IEventReader CreatePausedMultiStreamEventReader(
-		Guid eventReaderId, IODispatcher ioDispatcher, IPublisher publisher, CheckpointTag checkpointTag,
-		bool stopOnEof, int? stopAfterNEvents, bool resolveLinkTos, IEnumerable<string> streams) {
+		Guid eventReaderId, IPublisher publisher, CheckpointTag checkpointTag,
+		bool stopOnEof, bool resolveLinkTos, IEnumerable<string> streams) {
 		var nextPositions = checkpointTag.Streams.ToDictionary(v => v.Key, v => v.Value + 1);
 
-		return new MultiStreamEventReader(
-			ioDispatcher, publisher, eventReaderId, _runAs, Phase, streams.ToArray(), nextPositions, resolveLinkTos,
-			_timeProvider, stopOnEof, stopAfterNEvents);
+		return new MultiStreamEventReader(publisher, eventReaderId, _runAs, _phase, streams.ToArray(), nextPositions, resolveLinkTos,
+			_timeProvider, stopOnEof);
 	}
 }

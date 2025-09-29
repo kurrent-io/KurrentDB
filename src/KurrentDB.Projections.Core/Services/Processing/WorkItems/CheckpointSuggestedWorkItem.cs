@@ -7,32 +7,22 @@ using KurrentDB.Projections.Core.Services.Processing.Phases;
 
 namespace KurrentDB.Projections.Core.Services.Processing.WorkItems;
 
-public class CheckpointSuggestedWorkItem : CheckpointWorkItemBase {
-	private readonly IProjectionPhaseCheckpointManager _projectionPhase;
-	private readonly EventReaderSubscriptionMessage.CheckpointSuggested _message;
-	private readonly ICoreProjectionCheckpointManager _checkpointManager;
-
-	private bool _completed = false;
-	private bool _completeRequested = false;
-
-	public CheckpointSuggestedWorkItem(
-		IProjectionPhaseCheckpointManager projectionPhase,
-		EventReaderSubscriptionMessage.CheckpointSuggested message,
-		ICoreProjectionCheckpointManager checkpointManager)
-		: base() {
-		_projectionPhase = projectionPhase;
-		_message = message;
-		_checkpointManager = checkpointManager;
-	}
+public class CheckpointSuggestedWorkItem(
+	IProjectionPhaseCheckpointManager projectionPhase,
+	EventReaderSubscriptionMessage.CheckpointSuggested message,
+	ICoreProjectionCheckpointManager checkpointManager)
+	: CheckpointWorkItemBase {
+	private bool _completed;
+	private bool _completeRequested;
 
 	protected override void WriteOutput() {
-		_projectionPhase.SetCurrentCheckpointSuggestedWorkItem(this);
-		if (_checkpointManager.CheckpointSuggested(_message.CheckpointTag, _message.Progress)) {
-			_projectionPhase.SetCurrentCheckpointSuggestedWorkItem(null);
+		projectionPhase.SetCurrentCheckpointSuggestedWorkItem(this);
+		if (checkpointManager.CheckpointSuggested(message.CheckpointTag, message.Progress)) {
+			projectionPhase.SetCurrentCheckpointSuggestedWorkItem(null);
 			_completed = true;
 		}
 
-		_projectionPhase.NewCheckpointStarted(_message.CheckpointTag);
+		projectionPhase.NewCheckpointStarted(message.CheckpointTag);
 		NextStage();
 	}
 

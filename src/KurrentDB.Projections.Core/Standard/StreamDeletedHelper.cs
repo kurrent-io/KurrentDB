@@ -39,7 +39,7 @@ public static class StreamDeletedHelper {
 		bool isMetaStream;
 		if (SystemStreams.IsMetastream(streamOrMetaStreamId)) {
 			isMetaStream = true;
-			deletedPartitionStreamId = streamOrMetaStreamId.Substring("$$".Length);
+			deletedPartitionStreamId = streamOrMetaStreamId["$$".Length..];
 		} else {
 			isMetaStream = false;
 			deletedPartitionStreamId = streamOrMetaStreamId;

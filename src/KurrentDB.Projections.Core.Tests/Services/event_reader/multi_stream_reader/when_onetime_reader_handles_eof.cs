@@ -41,8 +41,7 @@ public class when_onetime_reader_handles_eof<TLogFormat, TStreamId> : TestFixtur
 
 		_distibutionPointCorrelationId = Guid.NewGuid();
 		_fakeTimeProvider = new FakeTimeProvider();
-		_edp = new MultiStreamEventReader(
-			_ioDispatcher, _bus, _distibutionPointCorrelationId, null, 0, _abStreams, _ab12Tag, false,
+		_edp = new MultiStreamEventReader(_bus, _distibutionPointCorrelationId, null, 0, _abStreams, _ab12Tag, false,
 			_fakeTimeProvider, stopOnEof: true);
 		_edp.Resume();
 		_firstEventId = Guid.NewGuid();

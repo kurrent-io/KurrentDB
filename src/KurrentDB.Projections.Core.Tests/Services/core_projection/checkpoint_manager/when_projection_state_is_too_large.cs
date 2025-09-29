@@ -31,7 +31,7 @@ public class when_projection_state_is_too_large<TLogFormat, TStreamId> :
 			_checkpointReader.BeginLoadState();
 			var checkpointLoaded =
 				_consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.CheckpointLoaded>().First();
-			_checkpointWriter.StartFrom(checkpointLoaded.CheckpointTag, checkpointLoaded.CheckpointEventNumber);
+			_checkpointWriter.StartFrom(checkpointLoaded.CheckpointEventNumber);
 			_manager.BeginLoadPrerecordedEvents(checkpointLoaded.CheckpointTag);
 
 			// Initial checkpoint and state

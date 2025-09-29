@@ -10,12 +10,9 @@ using KurrentDB.Projections.Core.Services;
 namespace KurrentDB.Projections.Core.Metrics;
 
 public class ProjectionTracker : IProjectionTracker {
-
-	public const string Projection = "projection";
 	public static KeyValuePair<string, object> StatusRunning = new("status", "Running");
 	public static KeyValuePair<string, object> StatusFaulted = new("status", "Faulted");
 	public static KeyValuePair<string, object> StatusStopped = new("status", "Stopped");
-
 
 	private ProjectionStatistics[] _currentStats = [];
 

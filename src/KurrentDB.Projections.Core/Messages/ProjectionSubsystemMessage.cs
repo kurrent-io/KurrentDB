@@ -8,75 +8,43 @@ namespace KurrentDB.Projections.Core.Messages;
 
 public static partial class ProjectionSubsystemMessage {
 	[DerivedMessage(ProjectionMessage.Subsystem)]
-	public partial class RestartSubsystem : Message {
-		public IEnvelope ReplyEnvelope { get; }
-
-		public RestartSubsystem(IEnvelope replyEnvelope) {
-			ReplyEnvelope = replyEnvelope;
-		}
+	public partial class RestartSubsystem(IEnvelope replyEnvelope) : Message {
+		public IEnvelope ReplyEnvelope { get; } = replyEnvelope;
 	}
 
 	[DerivedMessage(ProjectionMessage.Subsystem)]
-	public partial class InvalidSubsystemRestart : Message {
-		public string SubsystemState { get; }
-		public string Reason { get; }
-
-		public InvalidSubsystemRestart(string subsystemState, string reason) {
-			SubsystemState = subsystemState;
-			Reason = reason;
-		}
+	public partial class InvalidSubsystemRestart(string subsystemState, string reason) : Message {
+		public string SubsystemState { get; } = subsystemState;
+		public string Reason { get; } = reason;
 	}
 
 	[DerivedMessage(ProjectionMessage.Subsystem)]
-	public partial class SubsystemRestarting : Message {
+	public partial class SubsystemRestarting : Message;
+
+	[DerivedMessage(ProjectionMessage.Subsystem)]
+	public partial class StartComponents(Guid instanceCorrelationId) : Message {
+		public Guid InstanceCorrelationId { get; } = instanceCorrelationId;
 	}
 
 	[DerivedMessage(ProjectionMessage.Subsystem)]
-	public partial class StartComponents : Message {
-		public Guid InstanceCorrelationId { get; }
-
-		public StartComponents(Guid instanceCorrelationId) {
-			InstanceCorrelationId = instanceCorrelationId;
-		}
+	public partial class ComponentStarted(string componentName, Guid instanceCorrelationId) : Message {
+		public string ComponentName { get; } = componentName;
+		public Guid InstanceCorrelationId { get; } = instanceCorrelationId;
 	}
 
 	[DerivedMessage(ProjectionMessage.Subsystem)]
-	public partial class ComponentStarted : Message {
-		public string ComponentName { get; }
-		public Guid InstanceCorrelationId { get; }
-
-		public ComponentStarted(string componentName, Guid instanceCorrelationId) {
-			ComponentName = componentName;
-			InstanceCorrelationId = instanceCorrelationId;
-		}
+	public partial class StopComponents(Guid instanceCorrelationId) : Message {
+		public Guid InstanceCorrelationId { get; } = instanceCorrelationId;
 	}
 
 	[DerivedMessage(ProjectionMessage.Subsystem)]
-	public partial class StopComponents : Message {
-		public Guid InstanceCorrelationId { get; }
-
-		public StopComponents(Guid instanceCorrelationId) {
-			InstanceCorrelationId = instanceCorrelationId;
-		}
+	public partial class ComponentStopped(string componentName, Guid instanceCorrelationId) : Message {
+		public string ComponentName { get; } = componentName;
+		public Guid InstanceCorrelationId { get; } = instanceCorrelationId;
 	}
 
 	[DerivedMessage(ProjectionMessage.Subsystem)]
-	public partial class ComponentStopped : Message {
-		public string ComponentName { get; }
-		public Guid InstanceCorrelationId { get; }
-
-		public ComponentStopped(string componentName, Guid instanceCorrelationId) {
-			ComponentName = componentName;
-			InstanceCorrelationId = instanceCorrelationId;
-		}
-	}
-
-	[DerivedMessage(ProjectionMessage.Subsystem)]
-	public partial class IODispatcherDrained : Message {
-		public string ComponentName { get; }
-
-		public IODispatcherDrained(string componentName) {
-			ComponentName = componentName;
-		}
+	public partial class IODispatcherDrained(string componentName) : Message {
+		public string ComponentName { get; } = componentName;
 	}
 }

@@ -28,41 +28,39 @@ using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using ILogger = Serilog.ILogger;
 
-
 #nullable enable
+
 namespace KurrentDB.Projections.Core.Services.Interpreted;
 
 public class JintProjectionStateHandler : IProjectionStateHandler {
 	private readonly ILogger _logger = Serilog.Log.ForContext<JintProjectionStateHandler>();
 	private readonly bool _enableContentTypeValidation;
-	private static readonly Stopwatch _sw = Stopwatch.StartNew();
+	private static readonly Stopwatch Watch = Stopwatch.StartNew();
 	private readonly Engine _engine;
-	private readonly SourceDefinitionBuilder _definitionBuilder;
-	private readonly List<EmittedEventEnvelope> _emitted;
+	private readonly SourceDefinitionBuilder _definitionBuilder = new();
+	private readonly List<EmittedEventEnvelope> _emitted = [];
 	private readonly InterpreterRuntime _interpreterRuntime;
 	private readonly JsonParser _parser;
 	private readonly JsSerializationMeasurer _jsSerializer;
 
 	private CheckpointTag? _currentPosition;
 
-	private JsValue _state;
-	private JsValue _sharedState;
+	private JsValue _state = JsValue.Undefined;
+	private JsValue _sharedState = JsValue.Undefined;
 
-	public JintProjectionStateHandler(string source, bool enableContentTypeValidation,
-		TimeSpan compilationTimeout, TimeSpan executionTimeout,
+	public JintProjectionStateHandler(string source,
+		bool enableContentTypeValidation,
+		TimeSpan compilationTimeout,
+		TimeSpan executionTimeout,
 		JsFunctionCallMeasurer jsFunctionCaller,
 		JsSerializationMeasurer jsSerializer) {
-
 		_enableContentTypeValidation = enableContentTypeValidation;
 		_jsSerializer = jsSerializer;
-		_definitionBuilder = new SourceDefinitionBuilder();
 		_definitionBuilder.NoWhen();
 		_definitionBuilder.AllEvents();
 		TimeConstraint timeConstraint = new(compilationTimeout, executionTimeout);
-		_engine = new Engine(opts => opts.Constraint(timeConstraint).DisableStringCompilation());
-		_state = JsValue.Undefined;
-		_sharedState = JsValue.Undefined;
-		_interpreterRuntime = new InterpreterRuntime(_engine, _definitionBuilder, jsFunctionCaller);
+		_engine = new(opts => opts.Constraint(timeConstraint).DisableStringCompilation());
+		_interpreterRuntime = new(_engine, _definitionBuilder, jsFunctionCaller);
 		_engine.Global.FastAddProperty("log", new ClrFunction(_engine, "log", Log), false, false, false);
 
 		timeConstraint.Compiling();
@@ -70,12 +68,10 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		timeConstraint.Executing();
 		_parser = _interpreterRuntime.SwitchToExecutionMode();
 
-
 		_engine.Global.FastAddProperty("emit", new ClrFunction(_engine, "emit", Emit, 4), true, false, true);
 		_engine.Global.FastAddProperty("linkTo", new ClrFunction(_engine, "linkTo", LinkTo, 3), true, false, true);
 		_engine.Global.FastAddProperty("linkStreamTo", new ClrFunction(_engine, "linkStreamTo", LinkStreamTo, 3), true, false, true);
 		_engine.Global.FastAddProperty("copyTo", new ClrFunction(_engine, "copyTo", CopyTo, 3), true, false, true);
-		_emitted = new List<EmittedEventEnvelope>();
 	}
 
 	public void Dispose() {
@@ -100,10 +96,7 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 	private void LoadCurrentState(JsValue jsValue) {
 		if (_definitionBuilder.IsBiState) {
 			if (_state == null || _state == JsValue.Undefined)
-				_state = new JsArray(_engine, new[]
-				{
-					JsValue.Undefined, JsValue.Undefined
-				});
+				_state = new JsArray(_engine, [JsValue.Undefined, JsValue.Undefined]);
 
 			_state.AsArray()[0] = jsValue;
 		} else {
@@ -124,10 +117,7 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 	private void LoadCurrentSharedState(JsValue jsValue) {
 		if (_definitionBuilder.IsBiState) {
 			if (_state == null || _state == JsValue.Undefined)
-				_state = new JsArray(_engine, new[]
-				{
-					JsValue.Undefined, JsValue.Undefined,
-				});
+				_state = new JsArray(_engine, [JsValue.Undefined, JsValue.Undefined]);
 
 			_state.AsArray()[1] = jsValue;
 		} else {
@@ -139,7 +129,6 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		_engine.Constraints.Reset();
 		var state = _interpreterRuntime.InitializeState();
 		LoadCurrentState(state);
-
 	}
 
 	public void InitializeShared() {
@@ -159,7 +148,9 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		return partition.IsNumber() ? partition.AsNumber().ToString() : partition.AsString();
 	}
 
-	public bool ProcessPartitionCreated(string partition, CheckpointTag createPosition, ResolvedEvent @event,
+	public bool ProcessPartitionCreated(string partition,
+		CheckpointTag createPosition,
+		ResolvedEvent @event,
 		out EmittedEventEnvelope[]? emittedEvents) {
 		_engine.Constraints.Reset();
 		_currentPosition = createPosition;
@@ -183,17 +174,20 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 	public string? TransformStateToResult() {
 		_engine.Constraints.Reset();
 		var result = _interpreterRuntime.TransformStateToResult(_state);
-		if (result == JsValue.Null || result == JsValue.Undefined)
-			return null;
-		return Serialize(result);
+		return result == JsValue.Null || result == JsValue.Undefined ? null : Serialize(result);
 	}
 
-	public bool ProcessEvent(string partition, CheckpointTag eventPosition, string category, ResolvedEvent @event,
-		out string? newState, out string? newSharedState, out EmittedEventEnvelope[]? emittedEvents) {
+	public bool ProcessEvent(string partition,
+		CheckpointTag eventPosition,
+		string category,
+		ResolvedEvent @event,
+		out string? newState,
+		out string? newSharedState,
+		out EmittedEventEnvelope[]? emittedEvents) {
 		_currentPosition = eventPosition;
 		_engine.Constraints.Reset();
 		if ((@event.IsJson && string.IsNullOrWhiteSpace(@event.Data)) ||
-			(!_enableContentTypeValidation && !@event.IsJson && string.IsNullOrEmpty(@event.Data))) {
+		    (!_enableContentTypeValidation && !@event.IsJson && string.IsNullOrEmpty(@event.Data))) {
 			PrepareOutput(out newState, out newSharedState, out emittedEvents);
 			return true;
 		}
@@ -210,21 +204,12 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		if (_definitionBuilder.IsBiState && _state.IsArray()) {
 			var arr = _state.AsArray();
 			if (arr.TryGetValue(0, out var state)) {
-				if (_state.IsString()) {
-					newState = _state.AsString();
-				} else {
-					newState = ConvertToStringHandlingNulls(state);
-				}
+				newState = _state.IsString() ? _state.AsString() : ConvertToStringHandlingNulls(state);
 			} else {
 				newState = "";
 			}
 
-			if (arr.TryGetValue(1, out var sharedState)) {
-				newSharedState = ConvertToStringHandlingNulls(sharedState);
-			} else {
-				newSharedState = null;
-			}
-
+			newSharedState = arr.TryGetValue(1, out var sharedState) ? ConvertToStringHandlingNulls(sharedState) : null;
 		} else if (_state.IsString()) {
 			newState = _state.AsString();
 			newSharedState = null;
@@ -234,13 +219,18 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		}
 	}
 
-	private string? ConvertToStringHandlingNulls(JsValue value) {
-		if (value.IsNull() || value.IsUndefined())
-			return null;
-		return Serialize(value);
+	private string? ConvertToStringHandlingNulls(JsValue value) => value.IsNull() || value.IsUndefined() ? null : Serialize(value);
+
+	private ExtraMetaData ToExtraMetaData(ObjectInstance md) {
+		var meta = EnsureNonNullObjectValue(md, "metaData");
+		var d = meta.GetOwnProperties()
+			.Where(kvp => kvp.Value.Value.Type is not (Types.Empty or Types.Undefined))
+			.ToDictionary(kvp => kvp.Key.AsString(), kvp => Serialize(kvp.Value.Value));
+
+		return new(d);
 	}
 
-	JsValue Emit(JsValue thisValue, JsValue[] parameters) {
+	private JsValue Emit(JsValue thisValue, JsValue[] parameters) {
 		if (parameters.Length < 3)
 			throw new ArgumentException("invalid number of parameters");
 
@@ -256,17 +246,10 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		var data = Serialize(eventBody);
 		ExtraMetaData? metadata = null;
 		if (parameters.Length == 4) {
-			var md = parameters.At(3).AsObject();
-			var d = new Dictionary<string, string?>();
-			foreach (var kvp in md.GetOwnProperties()) {
-				if (kvp.Value.Value.Type is Types.Empty or Types.Undefined)
-					continue;
-				d.Add(kvp.Key.AsString(), Serialize(kvp.Value.Value));
-			}
-
-			metadata = new ExtraMetaData(d);
+			metadata = ToExtraMetaData(parameters.At(3).AsObject());
 		}
-		_emitted.Add(new EmittedEventEnvelope(new EmittedDataEvent(stream, Guid.NewGuid(), eventType, true, data, metadata, _currentPosition, null)));
+
+		_emitted.Add(new(new EmittedDataEvent(stream, Guid.NewGuid(), eventType, true, data, metadata, _currentPosition, null)));
 		return JsValue.Undefined;
 	}
 
@@ -280,9 +263,9 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 
 	private static string EnsureNonNullStringValue(JsValue parameter, string parameterName) {
 		if (parameter != JsValue.Null &&
-			parameter.IsString() &&
-			(parameter.AsString() is { } value &&
-			 !string.IsNullOrWhiteSpace(value)))
+		    parameter.IsString() &&
+		    (parameter.AsString() is { } value &&
+		     !string.IsNullOrWhiteSpace(value)))
 			return value;
 
 		if (parameter == JsValue.Null || parameter == JsValue.Undefined || parameter.IsString())
@@ -291,106 +274,95 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		throw new ArgumentException("string expected", parameterName);
 	}
 
-	string? AsString(JsValue? value, bool formatForRaw) {
+	private string? AsString(JsValue? value, bool formatForRaw) {
 		return value switch {
 			JsBoolean b => b.AsBoolean() ? "true" : "false",
 			JsString s => formatForRaw ? $"\"{s.AsString()}\"" : s.AsString(),
 			JsNumber n => n.AsNumber().ToString(CultureInfo.InvariantCulture),
 			JsNull => null,
-			JsUndefined => null, { } v => Serialize(value),
+			JsUndefined => null,
+			not null => Serialize(value),
 			_ => null
 		};
 	}
 
-	JsValue LinkTo(JsValue thisValue, JsValue[] parameters) {
+	private JsValue LinkTo(JsValue thisValue, JsValue[] parameters) {
 		if (parameters.Length != 2 && parameters.Length != 3)
 			throw new ArgumentException("wrong number of parameters");
 		var stream = EnsureNonNullStringValue(parameters.At(0), "streamId");
 		var @event = EnsureNonNullObjectValue(parameters.At(1), "event");
 
-		if (!@event.TryGetValue("sequenceNumber", out var numberValue) | !@event.TryGetValue("streamId", out var sourceValue) || !numberValue.IsNumber()
-			 || !sourceValue.IsString()) {
+		if (!@event.TryGetValue("sequenceNumber", out var numberValue) | !@event.TryGetValue("streamId", out var sourceValue) ||
+		    !numberValue.IsNumber() || !sourceValue.IsString()) {
 			throw new Exception($"Invalid link to event {numberValue}@{sourceValue}");
 		}
 
 		var number = (long)numberValue.AsNumber();
 		var source = sourceValue.AsString();
-		ExtraMetaData? metadata = null;
-		if (parameters.Length == 3) {
-			var md = EnsureNonNullObjectValue(parameters.At(2), "metaData");
-			var d = new Dictionary<string, string?>();
-			foreach (var kvp in md.GetOwnProperties()) {
-				d.Add(kvp.Key.AsString(), AsString(kvp.Value.Value, true));
-			}
-			metadata = new ExtraMetaData(d);
-		}
+		ExtraMetaData? metadata = parameters.Length switch {
+			3 => ToExtraMetaData(parameters.At(2).AsObject()),
+			_ => null
+		};
 
-		_emitted.Add(new EmittedEventEnvelope(
-			new EmittedDataEvent(stream, Guid.NewGuid(), SystemEventTypes.LinkTo, false, $"{number}@{source}", metadata, _currentPosition, null)));
+		_emitted.Add(new(new EmittedDataEvent(stream, Guid.NewGuid(), SystemEventTypes.LinkTo, false, $"{number}@{source}", metadata,
+			_currentPosition, null)));
 		return JsValue.Undefined;
 	}
 
-	JsValue LinkStreamTo(JsValue thisValue, JsValue[] parameters) {
-
+	private JsValue LinkStreamTo(JsValue thisValue, JsValue[] parameters) {
 		var stream = EnsureNonNullStringValue(parameters.At(0), "streamId");
 		var linkedStreamId = EnsureNonNullStringValue(parameters.At(1), "linkedStreamId");
-		if (parameters.Length == 3) {
 
-		}
+		ExtraMetaData? metadata = parameters.Length switch {
+			3 => ToExtraMetaData(parameters.At(2).AsObject()),
+			_ => null
+		};
 
-		ExtraMetaData? metadata = null;
-		if (parameters.Length == 3) {
-			var md = parameters.At(4).AsObject();
-			var d = new Dictionary<string, string?>();
-			foreach (var kvp in md.GetOwnProperties()) {
-				d.Add(kvp.Key.AsString(), AsString(kvp.Value.Value, true));
-			}
-			metadata = new ExtraMetaData(d);
-		}
-		_emitted.Add(new EmittedEventEnvelope(
-			new EmittedDataEvent(stream, Guid.NewGuid(), SystemEventTypes.StreamReference, false, linkedStreamId, metadata, _currentPosition, null)));
+		_emitted.Add(new(
+			new EmittedDataEvent(stream, Guid.NewGuid(), SystemEventTypes.StreamReference, false, linkedStreamId, metadata,
+				_currentPosition, null)));
 		return JsValue.Undefined;
 	}
 
-	JsValue CopyTo(JsValue thisValue, JsValue[] parameters) {
-		return JsValue.Undefined;
-	}
+	private JsValue CopyTo(JsValue thisValue, JsValue[] parameters) => JsValue.Undefined;
 
-	void Log(string message) {
-		_logger.Debug(message, Array.Empty<object>());
+	private void Log(string message) {
+		_logger.Debug(message);
 	}
 
 	private JsValue Log(JsValue thisValue, JsValue[] parameters) {
-		if (parameters.Length == 0)
-			return JsValue.Undefined;
-		if (parameters.Length == 1) {
-			var p0 = parameters.At(0);
-			if (p0 != null && p0.IsPrimitive())
-				Log(p0.ToString());
-			if (p0 is ObjectInstance oi)
-				Log(Serialize(oi));
-			return JsValue.Undefined;
-		}
-
-
-		if (parameters.Length > 1) {
-			var sb = new StringBuilder();
-			for (int i = 0; i < parameters.Length; i++) {
-				if (i > 1)
-					sb.Append(" ,");
-				var p = parameters.At(i);
-				if (p != null && p.IsPrimitive())
-					Log(p.ToString());
-				if (p is ObjectInstance oi)
-					sb.Append(Serialize(oi));
+		switch (parameters.Length) {
+			case 0:
+				break;
+			case 1: {
+				var p0 = parameters.At(0);
+				if (p0 != null && p0.IsPrimitive())
+					Log(p0.ToString());
+				if (p0 is ObjectInstance oi)
+					Log(Serialize(oi));
+				break;
 			}
+			case > 1: {
+				var sb = new StringBuilder();
+				for (int i = 0; i < parameters.Length; i++) {
+					if (i > 1)
+						sb.Append(" ,");
+					var p = parameters.At(i);
+					if (p != null && p.IsPrimitive())
+						Log(p.ToString());
+					if (p is ObjectInstance oi)
+						sb.Append(Serialize(oi));
+				}
 
-			Log(sb.ToString());
+				Log(sb.ToString());
+				break;
+			}
 		}
+
 		return JsValue.Undefined;
 	}
 
-	class TimeConstraint : Constraint {
+	private class TimeConstraint : Constraint {
 		private readonly TimeSpan _compilationTimeout;
 		private readonly TimeSpan _executionTimeout;
 		private TimeSpan _start;
@@ -411,27 +383,27 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		public void Executing() {
 			_timeout = _executionTimeout;
 			_executing = true;
-
 		}
+
 		public override void Reset() {
-			_start = _sw.Elapsed;
+			_start = Watch.Elapsed;
 		}
 
 		public override void Check() {
-			if (_sw.Elapsed - _start >= _timeout) {
+			if (Watch.Elapsed - _start >= _timeout) {
 				if (Debugger.IsAttached)
 					return;
 				var action = _executing ? "execute" : "compile";
-				throw new TimeoutException($"Projection script took too long to {action} (took: {_sw.Elapsed - _start:c}, allowed: {_timeout:c}");
+				throw new TimeoutException(
+					$"Projection script took too long to {action} (took: {Watch.Elapsed - _start:c}, allowed: {_timeout:c}");
 			}
 		}
 	}
 
-	class InterpreterRuntime : ObjectInstance {
-
-		private readonly Dictionary<string, ScriptFunction> _handlers;
-		private readonly List<(TransformType, ScriptFunction)> _transforms;
-		private readonly List<ScriptFunction> _createdHandlers;
+	private class InterpreterRuntime : ObjectInstance {
+		private readonly Dictionary<string, ScriptFunction> _handlers = new(StringComparer.Ordinal);
+		private readonly List<(TransformType, ScriptFunction)> _transforms = [];
+		private readonly List<ScriptFunction> _createdHandlers = [];
 		private ScriptFunction? _init;
 		private ScriptFunction? _initShared;
 		private ScriptFunction? _any;
@@ -451,55 +423,56 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		private readonly JsFunctionCallMeasurer _jsFunctionCaller;
 		private readonly JsonParser _parser;
 
-		private static readonly Dictionary<string, Action<InterpreterRuntime>> _possibleProperties = new Dictionary<string, Action<InterpreterRuntime>>() {
-			["when"] = i => i.FastAddProperty("when", i._whenInstance, true, false, true),
-			["partitionBy"] = i => i.FastAddProperty("partitionBy", i._partitionByInstance, true, false, true),
-			["outputState"] = i => i.FastAddProperty("outputState", i._outputStateInstance, true, false, true),
-			["foreachStream"] = i => i.FastAddProperty("foreachStream", i._foreachStreamInstance, true, false, true),
-			["transformBy"] = i => i.FastAddProperty("transformBy", i._transformByInstance, true, false, true),
-			["filterBy"] = i => i.FastAddProperty("filterBy", i._filterByInstance, true, false, true),
-			["outputTo"] = i => i.FastAddProperty("outputTo", i._outputToInstance, true, false, true),
-			["$defines_state_transform"] = i => i.FastAddProperty("$defines_state_transform", i._definesStateTransformInstance, true, false, true),
-		};
+		private static readonly Dictionary<string, Action<InterpreterRuntime>> _possibleProperties =
+			new() {
+				["when"] = i => i.FastAddProperty("when", i._whenInstance, true, false, true),
+				["partitionBy"] = i => i.FastAddProperty("partitionBy", i._partitionByInstance, true, false, true),
+				["outputState"] = i => i.FastAddProperty("outputState", i._outputStateInstance, true, false, true),
+				["foreachStream"] = i => i.FastAddProperty("foreachStream", i._foreachStreamInstance, true, false, true),
+				["transformBy"] = i => i.FastAddProperty("transformBy", i._transformByInstance, true, false, true),
+				["filterBy"] = i => i.FastAddProperty("filterBy", i._filterByInstance, true, false, true),
+				["outputTo"] = i => i.FastAddProperty("outputTo", i._outputToInstance, true, false, true),
+				["$defines_state_transform"] = i
+					=> i.FastAddProperty("$defines_state_transform", i._definesStateTransformInstance, true, false, true),
+			};
 
-		private static readonly Dictionary<string, string[]> _availableProperties = new Dictionary<string, string[]>() {
-			["fromStream"] = new[] { "when", "partitionBy", "outputState" },
-			["fromAll"] = new[] { "when", "partitionBy", "outputState", "foreachStream" },
-			["fromStreams"] = new[] { "when", "partitionBy", "outputState" },
-			["fromCategory"] = new[] { "when", "partitionBy", "outputState", "foreachStream" },
-			["when"] = new[] { "transformBy", "filterBy", "outputState", "outputTo", "$defines_state_transform" },
-			["foreachStream"] = new[] { "when" },
-			["outputState"] = new[] { "transformBy", "filterBy", "outputTo" },
-			["partitionBy"] = new[] { "when" },
-			["transformBy"] = new[] { "transformBy", "filterBy", "outputState", "outputTo" },
-			["filterBy"] = new[] { "transformBy", "filterBy", "outputState", "outputTo" },
-			["outputTo"] = Array.Empty<string>(),
-			["execution"] = Array.Empty<string>()
+		private static readonly Dictionary<string, string[]> _availableProperties = new() {
+			["fromStream"] = ["when", "partitionBy", "outputState"],
+			["fromAll"] = ["when", "partitionBy", "outputState", "foreachStream"],
+			["fromStreams"] = ["when", "partitionBy", "outputState"],
+			["fromCategory"] = ["when", "partitionBy", "outputState", "foreachStream"],
+			["when"] = ["transformBy", "filterBy", "outputState", "outputTo", "$defines_state_transform"],
+			["foreachStream"] = ["when"],
+			["outputState"] = ["transformBy", "filterBy", "outputTo"],
+			["partitionBy"] = ["when"],
+			["transformBy"] = ["transformBy", "filterBy", "outputState", "outputTo"],
+			["filterBy"] = ["transformBy", "filterBy", "outputState", "outputTo"],
+			["outputTo"] = [],
+			["execution"] = []
 		};
 
 		private static readonly Dictionary<string, Action<SourceDefinitionBuilder, JsValue>> _setters =
-			new Dictionary<string, Action<SourceDefinitionBuilder, JsValue>>(StringComparer.OrdinalIgnoreCase) {
-				{"$includeLinks", (options, value) => options.SetIncludeLinks(value.IsBoolean()? value.AsBoolean() : throw new Exception("Invalid value"))},
-				{"reorderEvents", (options, value) => options.SetReorderEvents(value.IsBoolean()? value.AsBoolean(): throw new Exception("Invalid value"))},
-				{"processingLag", (options, value) => options.SetProcessingLag(value.IsNumber() ? (int)value.AsNumber() : throw new Exception("Invalid value"))},
-				{"resultStreamName", (options, value) => options.SetResultStreamNameOption(value.IsString() ? value.AsString() : throw new Exception("Invalid value"))},
-				{"biState", (options, value) => options.SetIsBiState(value.IsBoolean()? value.AsBoolean() : throw new Exception("Invalid value"))},
+			new(StringComparer.OrdinalIgnoreCase) {
+				["$includeLinks"] = (options, value)
+					=> options.SetIncludeLinks(value.IsBoolean() ? value.AsBoolean() : throw new("Invalid value")),
+				["reorderEvents"] = (options, value)
+					=> options.SetReorderEvents(value.IsBoolean() ? value.AsBoolean() : throw new("Invalid value")),
+				["processingLag"] = (options, value)
+					=> options.SetProcessingLag(value.IsNumber() ? (int)value.AsNumber() : throw new("Invalid value")),
+				["resultStreamName"] = (options, value)
+					=> options.SetResultStreamNameOption(value.IsString() ? value.AsString() : throw new("Invalid value")),
+				["biState"] = (options, value) => options.SetIsBiState(value.IsBoolean() ? value.AsBoolean() : throw new("Invalid value"))
 			};
 
-		private readonly List<string> _definitionFunctions;
+		private readonly List<string> _definitionFunctions = [];
 
 		public InterpreterRuntime(
 			Engine engine,
 			SourceDefinitionBuilder builder,
 			JsFunctionCallMeasurer jsFunctionCaller) : base(engine) {
-
 			_definitionBuilder = builder;
 			_jsFunctionCaller = jsFunctionCaller;
-			_handlers = new Dictionary<string, ScriptFunction>(StringComparer.Ordinal);
-			_createdHandlers = new List<ScriptFunction>();
-			_transforms = new List<(TransformType, ScriptFunction)>();
 			_parser = new JsonParser(engine);
-			_definitionFunctions = new List<string>();
 			AddDefinitionFunction("options", SetOptions, 1);
 			AddDefinitionFunction("fromStream", FromStream, 1);
 			AddDefinitionFunction("fromCategory", FromCategory, 4);
@@ -516,7 +489,6 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 			_filterByInstance = new ClrFunction(engine, "filterBy", FilterBy, 1);
 			_outputToInstance = new ClrFunction(engine, "outputTo", OutputTo, 1);
 			_definesStateTransformInstance = new ClrFunction(engine, "$defines_state_transform", DefinesStateTransform);
-
 		}
 
 		private void AddDefinitionFunction(string name, Func<JsValue, JsValue[], JsValue> func, int length) {
@@ -535,27 +507,38 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		}
 
 		private JsValue FromCategory(JsValue thisValue, JsValue[] parameters) {
-			if (parameters.Length == 0)
-				return this;
-			if (parameters.Length == 1 && parameters.At(0).IsArray()) {
-				foreach (var cat in parameters.At(0).AsArray()) {
-					if (cat is not JsString s) {
-						throw new ArgumentException("categories");
+			switch (parameters.Length) {
+				case 0:
+					return this;
+				case 1 when parameters.At(0).IsArray(): {
+					foreach (var cat in parameters.At(0).AsArray()) {
+						if (cat is not JsString s) {
+							throw new ArgumentException("categories");
+						}
+
+						_definitionBuilder.FromStream($"$ce-{s.AsString()}");
 					}
-					_definitionBuilder.FromStream($"$ce-{s.AsString()}");
+
+					break;
 				}
-			} else if (parameters.Length > 1) {
-				foreach (var cat in parameters) {
-					if (cat is not JsString s) {
-						throw new ArgumentException("categories");
+				case > 1: {
+					foreach (var cat in parameters) {
+						if (cat is not JsString s) {
+							throw new ArgumentException("categories");
+						}
+
+						_definitionBuilder.FromStream($"$ce-{s.AsString()}");
 					}
-					_definitionBuilder.FromStream($"$ce-{s.AsString()}");
+
+					break;
 				}
-			} else {
-				var p0 = parameters.At(0);
-				if (p0 is not JsString s)
-					throw new ArgumentException("category");
-				_definitionBuilder.FromCategory(s.AsString());
+				default: {
+					var p0 = parameters.At(0);
+					if (p0 is not JsString s)
+						throw new ArgumentException("category");
+					_definitionBuilder.FromCategory(s.AsString());
+					break;
+				}
 			}
 
 			RestrictProperties("fromCategory");
@@ -572,6 +555,7 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 					}
 				}
 			}
+
 			_definitionBuilder.SetDefinesFold();
 			RestrictProperties("when");
 			return this;
@@ -580,8 +564,6 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		private JsValue PartitionBy(JsValue thisValue, JsValue[] parameters) {
 			if (parameters.At(0) is ScriptFunction partitionFunction) {
 				_definitionBuilder.SetByCustomPartitions();
-
-
 				_partitionFunction = partitionFunction;
 				RestrictProperties("partitionBy");
 				return this;
@@ -625,27 +607,23 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		}
 
 		private JsValue FilterBy(JsValue thisValue, JsValue[] parameters) {
-			if (parameters.At(0) is ScriptFunction fi) {
-				_definitionBuilder.SetDefinesStateTransform();
-				_definitionBuilder.SetOutputState();
-				_transforms.Add((TransformType.Filter, fi));
-				RestrictProperties("filterBy");
-				return this;
-			}
+			if (parameters.At(0) is not ScriptFunction fi) throw new ArgumentException("expected function");
 
-			throw new ArgumentException("expected function");
+			_definitionBuilder.SetDefinesStateTransform();
+			_definitionBuilder.SetOutputState();
+			_transforms.Add((TransformType.Filter, fi));
+			RestrictProperties("filterBy");
+			return this;
 		}
 
 		private JsValue TransformBy(JsValue thisValue, JsValue[] parameters) {
-			if (parameters.At(0) is ScriptFunction fi) {
-				_definitionBuilder.SetDefinesStateTransform();
-				_definitionBuilder.SetOutputState();
-				_transforms.Add((TransformType.Transform, fi));
-				RestrictProperties("transformBy");
-				return this;
-			}
+			if (parameters.At(0) is not ScriptFunction fi) throw new ArgumentException("expected function");
 
-			throw new ArgumentException("expected function");
+			_definitionBuilder.SetDefinesStateTransform();
+			_definitionBuilder.SetOutputState();
+			_transforms.Add((TransformType.Transform, fi));
+			RestrictProperties("transformBy");
+			return this;
 		}
 
 		private JsValue OnEvent(JsValue thisValue, JsValue[] parameters) {
@@ -733,6 +711,7 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 			} else {
 				newState = eventEnvelope.BodyRaw;
 			}
+
 			return newState == Undefined ? state : newState;
 		}
 
@@ -747,6 +726,7 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 						if (!(result.IsBoolean() && result.AsBoolean()) || result == Null || result == Undefined) {
 							return Null;
 						}
+
 						break;
 					}
 					case TransformType.None:
@@ -760,16 +740,18 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 			return state;
 		}
 
-		JsValue FromAll(JsValue _, JsValue[] __) {
+		private JsValue FromAll(JsValue _, JsValue[] __) {
 			_definitionBuilder.FromAll();
 			RestrictProperties("fromAll");
 			return this;
 		}
 
-		JsValue FromStreams(JsValue _, JsValue[] parameters) {
+		private JsValue FromStreams(JsValue _, JsValue[] parameters) {
 			IEnumerator<JsValue>? streams = null;
 			try {
-				streams = parameters.At(0).IsArray() ? parameters.At(0).AsArray().GetEnumerator() : parameters.AsEnumerable().GetEnumerator();
+				streams = parameters.At(0).IsArray()
+					? parameters.At(0).AsArray().GetEnumerator()
+					: parameters.AsEnumerable().GetEnumerator();
 				while (streams.MoveNext()) {
 					if (!streams.Current.IsString())
 						throw new ArgumentException("streams");
@@ -783,8 +765,7 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 			return this;
 		}
 
-
-		JsValue SetOptions(JsValue thisValue, JsValue[] parameters) {
+		private JsValue SetOptions(JsValue thisValue, JsValue[] parameters) {
 			var p0 = parameters.At(0);
 			if (p0 is ObjectInstance opts) {
 				foreach (var kvp in opts.GetOwnProperties()) {
@@ -799,11 +780,8 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 			return Undefined;
 		}
 
-		public JsValue GetPartition(EventEnvelope envelope) {
-			if (_partitionFunction != null)
-				return _jsFunctionCaller.Call("partitionBy", _partitionFunction, envelope);
-			return Null;
-		}
+		public JsValue GetPartition(EventEnvelope envelope)
+			=> _partitionFunction != null ? _jsFunctionCaller.Call("partitionBy", _partitionFunction, envelope) : Null;
 
 		public void HandleCreated(JsValue state, EventEnvelope envelope) {
 			for (int i = 0; i < _createdHandlers.Count; i++) {
@@ -811,7 +789,7 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 			}
 		}
 
-		enum TransformType {
+		private enum TransformType {
 			None,
 			Filter,
 			Transform
@@ -822,9 +800,9 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 			foreach (var globalProp in _definitionFunctions) {
 				_engine.Global.RemoveOwnProperty(globalProp);
 			}
+
 			return _parser;
 		}
-
 
 		public void HandleDeleted(JsValue state, string partition, bool isSoftDelete) {
 			if (_deleted != null) {
@@ -833,50 +811,45 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		}
 	}
 
-	EventEnvelope CreateEnvelope(string partition, ResolvedEvent @event, string category) {
-		var envelope = new EventEnvelope(_engine, _parser, this);
-		envelope.Partition = partition;
-		envelope.BodyRaw = @event.Data;
-		envelope.MetadataRaw = @event.Metadata;
-		envelope.StreamId = @event.EventStreamId;
-		envelope.EventId = @event.EventId.ToString("D");
-		envelope.EventType = @event.EventType;
-		envelope.LinkMetadataRaw = @event.PositionMetadata;
-		envelope.IsJson = @event.IsJson;
-		envelope.Category = category;
-		envelope.SequenceNumber = @event.EventSequenceNumber;
-		return envelope;
-	}
-	sealed class EventEnvelope : ObjectInstance {
-		private readonly JsonParser _parser;
-		private readonly JintProjectionStateHandler _parent;
+	private EventEnvelope CreateEnvelope(string partition, ResolvedEvent @event, string category)
+		=> new(_engine, _parser, this) {
+			Partition = partition,
+			BodyRaw = @event.Data,
+			MetadataRaw = @event.Metadata,
+			StreamId = @event.EventStreamId,
+			EventId = @event.EventId.ToString("D"),
+			EventType = @event.EventType,
+			LinkMetadataRaw = @event.PositionMetadata,
+			IsJson = @event.IsJson,
+			Category = category,
+			SequenceNumber = @event.EventSequenceNumber
+		};
 
+	private sealed class EventEnvelope(Engine engine, JsonParser parser, JintProjectionStateHandler parent)
+		: ObjectInstance(engine) {
 		public string StreamId {
-			set => SetOwnProperty("streamId", new PropertyDescriptor(value, false, true, false));
+			set => SetOwnProperty("streamId", new(value, false, true, false));
 		}
+
 		public long SequenceNumber {
-			set => SetOwnProperty("sequenceNumber", new PropertyDescriptor(value, false, true, false));
+			set => SetOwnProperty("sequenceNumber", new(value, false, true, false));
 		}
 
 		public string EventType {
-			get => _parent.AsString(Get("eventType"), false) ?? "";
-			set => SetOwnProperty("eventType", new PropertyDescriptor(value, false, true, false));
+			get => parent.AsString(Get("eventType"), false) ?? "";
+			set => SetOwnProperty("eventType", new(value, false, true, false));
 		}
 
-		public JsValue Body {
-			get {
-				if (TryGetValue("body", out var value) && value is ObjectInstance oi)
-					return oi;
-				if (EnsureBody(out JsValue objectInstance))
-					return objectInstance;
-
-				return Undefined;
-			}
-		}
+		private JsValue Body
+			=> TryGetValue("body", out var value) && value is ObjectInstance oi
+				? oi
+				: EnsureBody(out JsValue objectInstance)
+					? objectInstance
+					: Undefined;
 
 		private bool EnsureBody(out JsValue objectInstance) {
 			if (IsJson && TryGetValue("bodyRaw", out var raw) && raw is not JsUndefined) {
-				var body = raw.IsNull() ? raw : _parser.Parse(raw.AsString());
+				var body = raw.IsNull() ? raw : parser.Parse(raw.AsString());
 				var pd = new PropertyDescriptor(body, false, true, false);
 				SetOwnProperty("body", pd);
 				SetOwnProperty("data", pd);
@@ -890,33 +863,27 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 
 		public bool IsJson {
 			get => Get("isJson").AsBoolean();
-			set => SetOwnProperty("isJson", new PropertyDescriptor(value, false, true, false));
+			set => SetOwnProperty("isJson", new(value, false, true, false));
 		}
 
 		public string? BodyRaw {
-			get => _parent.AsString(Get("bodyRaw"), false);
-			set => SetOwnProperty("bodyRaw", new PropertyDescriptor(value, false, true, false));
+			get => parent.AsString(Get("bodyRaw"), false);
+			set => SetOwnProperty("bodyRaw", new(value, false, true, false));
 		}
 
-		private JsValue Metadata {
-			get {
-				if (TryGetValue("metadata", out var value) && value is ObjectInstance oi)
-					return oi;
-				if (EnsureMetadata(out value))
-					return value;
-
-				return Undefined;
-			}
-		}
+		private JsValue Metadata
+			=> TryGetValue("metadata", out var value) && value is ObjectInstance oi
+				? oi
+				: EnsureMetadata(out value)
+					? value
+					: Undefined;
 
 		private bool EnsureMetadata(out JsValue value) {
 			if (TryGetValue("metadataRaw", out var raw) && raw is not JsUndefined) {
-				var metadata = raw.IsNull() ? raw : _parser.Parse(raw.AsString());
-				SetOwnProperty("metadata", new PropertyDescriptor(metadata, false, true, false));
-				{
-					value = metadata;
-					return true;
-				}
+				var metadata = raw.IsNull() ? raw : parser.Parse(raw.AsString());
+				SetOwnProperty("metadata", new(metadata, false, true, false));
+				value = metadata;
+				return true;
 			}
 
 			value = Undefined;
@@ -924,28 +891,22 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		}
 
 		public string MetadataRaw {
-			set => FastSetProperty("metadataRaw", new PropertyDescriptor(value, false, true, false));
+			set => FastSetProperty("metadataRaw", new(value, false, true, false));
 		}
 
-		private JsValue LinkMetadata {
-			get {
-				if (TryGetValue("linkMetadata", out var value) && value is ObjectInstance oi)
-					return oi;
-				if (EnsureLinkMetadata(out value))
-					return value;
-
-				return Undefined;
-			}
-		}
+		private JsValue LinkMetadata
+			=> TryGetValue("linkMetadata", out var value) && value is ObjectInstance oi
+				? oi
+				: EnsureLinkMetadata(out value)
+					? value
+					: Undefined;
 
 		private bool EnsureLinkMetadata(out JsValue value) {
 			if (TryGetValue("linkMetadataRaw", out var raw) && raw is not JsUndefined) {
-				var metadata = raw.IsNull() ? raw : _parser.Parse(raw.AsString());
-				SetOwnProperty("linkMetadata", new PropertyDescriptor(metadata, false, true, false));
-				{
-					value = metadata;
-					return true;
-				}
+				var metadata = raw.IsNull() ? raw : parser.Parse(raw.AsString());
+				SetOwnProperty("linkMetadata", new(metadata, false, true, false));
+				value = metadata;
+				return true;
 			}
 
 			value = Undefined;
@@ -953,39 +914,28 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		}
 
 		public string LinkMetadataRaw {
-			set => SetOwnProperty("linkMetadataRaw", new PropertyDescriptor(value, false, true, false));
+			set => SetOwnProperty("linkMetadataRaw", new(value, false, true, false));
 		}
 
 		public string Partition {
-			set => SetOwnProperty("partition", new PropertyDescriptor(value, false, true, false));
+			set => SetOwnProperty("partition", new(value, false, true, false));
 		}
 
 		public string Category {
-			set => SetOwnProperty("category", new PropertyDescriptor(value, false, true, false));
+			set => SetOwnProperty("category", new(value, false, true, false));
 		}
 
 		public string EventId {
-			set => SetOwnProperty("eventId", new PropertyDescriptor(value, false, true, false));
-		}
-
-		public EventEnvelope(Engine engine, JsonParser parser, JintProjectionStateHandler parent) : base(engine) {
-			_parser = parser;
-			_parent = parent;
+			set => SetOwnProperty("eventId", new(value, false, true, false));
 		}
 
 		public override JsValue Get(JsValue property, JsValue receiver) {
-			if (property == "body" || property == "data") {
-				return Body;
-			}
-
-			if (property == "metadata") {
-				return Metadata;
-			}
-
-			if (property == "linkMetadata") {
-				return LinkMetadata;
-			}
-			return base.Get(property, receiver);
+			return property.AsString() switch {
+				"body" or "data" => Body,
+				"metadata" => Metadata,
+				"linkMetadata" => LinkMetadata,
+				_ => base.Get(property, receiver)
+			};
 		}
 
 		public override List<JsValue> GetOwnPropertyKeys(Types types = Types.String | Types.Symbol) {
@@ -1006,9 +956,7 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 				EnsureLinkMetadata(out _);
 			}
 
-			var list = base.GetOwnProperties();
-
-			return list;
+			return base.GetOwnProperties();
 		}
 	}
 
@@ -1018,15 +966,13 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 	}
 
 	public class Serializer {
-		private readonly WriteState[] _iterators;
-		private readonly ArrayBufferWriter<byte> _bufferWriter;
+		private readonly WriteState[] _iterators = new WriteState[64];
+		private readonly ArrayBufferWriter<byte> _bufferWriter = new(1024 * 1024);
 		private readonly Utf8JsonWriter _writer;
-		private readonly Dictionary<string, JsonEncodedText> _knownPropertyNames;
+		private readonly Dictionary<string, JsonEncodedText> _knownPropertyNames = new();
 		private int _depth;
 
 		public Serializer() {
-			_iterators = new WriteState[64];
-			_bufferWriter = new ArrayBufferWriter<byte>(1024 * 1024);
 			_writer = new Utf8JsonWriter(
 				_bufferWriter,
 				new JsonWriterOptions {
@@ -1034,7 +980,6 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 					SkipValidation = true,
 					Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
 				});
-			_knownPropertyNames = new Dictionary<string, JsonEncodedText>();
 		}
 
 		public ReadOnlyMemory<byte> Serialize(JsValue value) {
@@ -1042,24 +987,23 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 			_bufferWriter.Clear();
 			_writer.Reset();
 
-			if (value is JsArray array) {
-				_iterators[_depth] = new WriteState(array);
-			} else if (value is ObjectInstance oi) {
-				_iterators[_depth] = new WriteState(oi);
-			} else {
-				_iterators[_depth] = new WriteState(value);
-			}
+			_iterators[_depth] = value switch {
+				JsArray array => new(array),
+				ObjectInstance oi => new(oi),
+				_ => new(value)
+			};
+
 			ref var current = ref _iterators[0];
 
 			while (current.Write(_writer, ref _depth, _iterators, _knownPropertyNames)) {
 				current = ref _iterators[_depth];
 			}
+
 			_writer.Flush();
 			return _bufferWriter.WrittenMemory;
-
 		}
 
-		struct WriteState {
+		private struct WriteState {
 			private enum Type {
 				Complete,
 				Array,
@@ -1067,10 +1011,9 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 				Primitive,
 			}
 
-			private static readonly IEnumerator<KeyValuePair<JsValue, PropertyDescriptor>> _emptyIterator =
-				new NoopIterator();
+			private static readonly IEnumerator<KeyValuePair<JsValue, PropertyDescriptor>> _emptyIterator = new NoopIterator();
 
-			class NoopIterator : IEnumerator<KeyValuePair<JsValue, PropertyDescriptor>> {
+			private class NoopIterator : IEnumerator<KeyValuePair<JsValue, PropertyDescriptor>> {
 				public KeyValuePair<JsValue, PropertyDescriptor> Current => default;
 
 				object? IEnumerator.Current => default;
@@ -1078,9 +1021,7 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 				public void Dispose() {
 				}
 
-				public bool MoveNext() {
-					return false;
-				}
+				public bool MoveNext() => false;
 
 				public void Reset() {
 				}
@@ -1128,27 +1069,28 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 				ref int depth,
 				WriteState[] writeStates,
 				Dictionary<string, JsonEncodedText> knownPropertyNames) {
-
 				switch (_type) {
 					case Type.Array:
 						if (_position == -1) {
 							writer.WriteStartArray();
 							_position++;
 						}
+
 						var instance = (JsArray)_instance;
 						for (; _position < _length; _position++) {
 							var value = instance[(uint)_position];
 							if (value.Type == Types.Object) {
-								if (value is JsArray ai) {
-									writeStates[++depth] = new WriteState(ai);
-								} else {
-									writeStates[++depth] = new WriteState(value.AsObject());
-								}
+								writeStates[++depth] = value is JsArray ai
+									? new(ai)
+									: new(value.AsObject());
+
 								_position++;
 								return true;
 							}
+
 							SerializePrimitive(value, writer);
 						}
+
 						writer.WriteEndArray();
 						break;
 					case Type.Object:
@@ -1156,6 +1098,7 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 							writer.WriteStartObject();
 							_started = true;
 						}
+
 						while (_iterator.MoveNext()) {
 							var (name, propertyDescriptor) = _iterator.Current;
 							var value = propertyDescriptor.Value;
@@ -1164,17 +1107,15 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 
 							WriteMaybeCachedPropertyName(name.AsString(), knownPropertyNames, writer);
 							if (value.Type == Types.Object) {
-								if (value is JsArray ai) {
-									writeStates[++depth] = new WriteState(ai);
-								} else {
-									writeStates[++depth] = new WriteState(value.AsObject());
-								}
+								writeStates[++depth] = value is JsArray ai
+									? new(ai)
+									: new(value.AsObject());
+
 								_position++;
 								return true;
-							} else {
-								SerializePrimitive(value, writer);
 							}
 
+							SerializePrimitive(value, writer);
 						}
 
 						writer.WriteEndObject();
@@ -1183,6 +1124,7 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 						SerializePrimitive(_instance, writer);
 						break;
 				}
+
 				writeStates[depth] = default;
 				depth--;
 				return depth >= 0;
@@ -1190,19 +1132,21 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-		private static void WriteMaybeCachedPropertyName(string name, Dictionary<string, JsonEncodedText> knownPropertyNames, Utf8JsonWriter writer) {
+		private static void WriteMaybeCachedPropertyName(string name,
+			Dictionary<string, JsonEncodedText> knownPropertyNames,
+			Utf8JsonWriter writer) {
 			if (!knownPropertyNames.TryGetValue(name, out var propertyName)) {
 				propertyName = JsonEncodedText.Encode(name);
 				if (knownPropertyNames.Count < 1000) {
 					knownPropertyNames.Add(name, propertyName);
 				}
 			}
+
 			writer.WritePropertyName(propertyName);
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-		static void SerializePrimitive(JsValue value, Utf8JsonWriter writer) {
-
+		private static void SerializePrimitive(JsValue value, Utf8JsonWriter writer) {
 			switch (value.Type) {
 				case Types.Null:
 				case Types.Undefined:
@@ -1210,10 +1154,7 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 					writer.WriteNullValue();
 					break;
 				case Types.Boolean:
-					if (ReferenceEquals(value, JsBoolean.False))
-						writer.WriteBooleanValue(false);
-					else
-						writer.WriteBooleanValue(true);
+					writer.WriteBooleanValue(!ReferenceEquals(value, JsBoolean.False));
 					break;
 				case Types.Number:
 					writer.WriteNumberValue(value.AsNumber());
@@ -1232,7 +1173,12 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 }
 
 internal static class ObjectInstanceExtensions {
-	public static void FastAddProperty(this ObjectInstance target, string name, JsValue value, bool writable, bool enumerable, bool configurable) {
-		target.FastSetProperty(name, new PropertyDescriptor(value, writable, enumerable, configurable));
+	public static void FastAddProperty(this ObjectInstance target,
+		string name,
+		JsValue value,
+		bool writable,
+		bool enumerable,
+		bool configurable) {
+		target.FastSetProperty(name, new(value, writable, enumerable, configurable));
 	}
 }

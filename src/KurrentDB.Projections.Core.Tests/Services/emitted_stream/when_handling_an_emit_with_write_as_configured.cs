@@ -37,8 +37,7 @@ public class when_handling_an_emit_with_write_as_configured<TLogFormat, TStreamI
 			new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
 				new EmittedStream.WriterConfiguration.StreamMetadata(), _writeAs, maxWriteBatchLength: 50),
 			new ProjectionVersion(1, 0, 0), new TransactionFilePositionTagger(0),
-			CheckpointTag.FromPosition(0, 40, 30),
-			_bus, _ioDispatcher, _readyHandler);
+			CheckpointTag.FromPosition(0, 40, 30), _ioDispatcher, _readyHandler);
 		_stream.Start();
 
 		_stream.EmitEvents(

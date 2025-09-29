@@ -29,7 +29,7 @@ public class TestFixtureWithEventFilter {
 		try {
 			var sources = _builder.Build();
 			_ef =
-				ReaderStrategy.Create("test", 0, sources, new RealTimeProvider(), stopOnEof: false, runAs: null)
+				ReaderStrategy.Create("test", 0, sources, new RealTimeProvider(), runAs: null)
 					.EventFilter;
 		} catch (Exception ex) {
 			_exception = ex;

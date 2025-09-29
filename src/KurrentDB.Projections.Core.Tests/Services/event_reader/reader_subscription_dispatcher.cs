@@ -74,7 +74,7 @@ public class reader_subscription_dispatcher<TLogFormat, TStreamId> : TestFixture
 
 		_readerService.Handle(new ReaderSubscriptionMessage.CommittedEventDistributed(
 			assignedReaderMessage.ReaderId,
-			CreateFakeEvent(), CheckpointTag.Empty));
+			CreateFakeEvent()));
 		_queue.Process();
 		var committedEventReceived = _handler.HandledMessages
 			.OfType<EventReaderSubscriptionMessage.CommittedEventReceived>()
@@ -97,7 +97,7 @@ public class reader_subscription_dispatcher<TLogFormat, TStreamId> : TestFixture
 
 		_readerService.Handle(new ReaderSubscriptionMessage.CommittedEventDistributed(
 			assignedReaderMessage.ReaderId,
-			CreateFakeEvent(), CheckpointTag.Empty));
+			CreateFakeEvent()));
 		_queue.Process();
 
 		Assert.IsEmpty(_handler.HandledMessages.OfType<EventReaderSubscriptionMessage.CommittedEventReceived>());

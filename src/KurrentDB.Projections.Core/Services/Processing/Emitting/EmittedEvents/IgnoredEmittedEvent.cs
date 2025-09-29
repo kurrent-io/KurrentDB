@@ -3,5 +3,4 @@
 
 namespace KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 
-sealed class IgnoredEmittedEvent : IValidatedEmittedEvent {
-}
+internal sealed class IgnoredEmittedEvent : IValidatedEmittedEvent;

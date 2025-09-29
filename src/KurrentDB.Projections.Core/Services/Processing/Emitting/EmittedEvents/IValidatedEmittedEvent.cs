@@ -3,4 +3,4 @@
 
 namespace KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 
-interface IValidatedEmittedEvent { }
+internal interface IValidatedEmittedEvent;

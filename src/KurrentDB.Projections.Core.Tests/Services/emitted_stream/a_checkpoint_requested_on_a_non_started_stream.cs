@@ -26,7 +26,7 @@ public class a_checkpoint_requested_on_a_non_started_stream : TestFixtureWithRea
 			"test",
 			new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
 				new EmittedStream.WriterConfiguration.StreamMetadata(), null, 50), new ProjectionVersion(1, 0, 0),
-			new TransactionFilePositionTagger(0), CheckpointTag.FromPosition(0, 0, -1), _bus, _ioDispatcher,
+			new TransactionFilePositionTagger(0), CheckpointTag.FromPosition(0, 0, -1), _ioDispatcher,
 			_readyHandler);
 		try {
 			_stream.Checkpoint();

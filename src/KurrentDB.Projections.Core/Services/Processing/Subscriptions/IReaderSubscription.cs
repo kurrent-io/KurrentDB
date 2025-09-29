@@ -3,7 +3,6 @@
 
 using System;
 using KurrentDB.Core.Bus;
-using KurrentDB.Core.Helpers;
 using KurrentDB.Projections.Core.Messages;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Subscriptions;
@@ -16,5 +15,5 @@ public interface IReaderSubscription : IHandle<ReaderSubscriptionMessage.Committ
 	IHandle<ReaderSubscriptionMessage.EventReaderNotAuthorized>,
 	IHandle<ReaderSubscriptionMessage.ReportProgress> {
 	Guid SubscriptionId { get; }
-	IEventReader CreatePausedEventReader(IPublisher publisher, IODispatcher ioDispatcher, Guid forkedEventReaderId);
+	IEventReader CreatePausedEventReader(IPublisher publisher, Guid forkedEventReaderId);
 }

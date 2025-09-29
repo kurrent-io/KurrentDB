@@ -47,7 +47,7 @@ public class when_prerecording_event_order<TLogFormat, TStreamId> : TestFixtureW
 		_checkpointReader.BeginLoadState();
 		var checkpointLoaded =
 			_consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.CheckpointLoaded>().First();
-		_checkpointWriter.StartFrom(checkpointLoaded.CheckpointTag, checkpointLoaded.CheckpointEventNumber);
+		_checkpointWriter.StartFrom(checkpointLoaded.CheckpointEventNumber);
 		_manager.BeginLoadPrerecordedEvents(checkpointLoaded.CheckpointTag);
 
 		_manager.Start(CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> { { "pa", -1 }, { "pb", -1 } }),

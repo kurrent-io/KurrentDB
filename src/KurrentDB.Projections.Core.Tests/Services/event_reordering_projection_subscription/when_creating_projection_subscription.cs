@@ -98,7 +98,6 @@ public class when_creating_projection_subscription {
 			0,
 			result.Build(),
 			new RealTimeProvider(),
-			stopOnEof: false,
 			runAs: null);
 	}
 }

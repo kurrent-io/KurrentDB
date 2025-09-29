@@ -47,8 +47,8 @@ public class MultiStreamMultiOutputCheckpointManagerTests {
 		var positionTagger = new FakePositionTagger(ProjectionPhase);
 
 		_sut = new MultiStreamMultiOutputCheckpointManager(
-			_publisher, projectionId, projectionVersion, SystemAccounts.System, _ioDispatcher, projectionConfig, ProjectionName,
-			positionTagger, namingBuilder, usePersistentCheckpoints: true, producesRunningResults: true, definesFold: false,
+			_publisher, projectionId, projectionVersion, SystemAccounts.System, _ioDispatcher, projectionConfig,
+			positionTagger, namingBuilder, usePersistentCheckpoints: true,
 			_checkpointWriter, Opts.MaxProjectionStateSizeDefault);
 	}
 
@@ -59,7 +59,7 @@ public class MultiStreamMultiOutputCheckpointManagerTests {
 		_existingStreams.HardDeleteStreams(scenario.WithHardDeletedStreams);
 
 		var checkpointTag = CheckpointTag.Empty;
-		_checkpointWriter.StartFrom(checkpointTag, 0);
+		_checkpointWriter.StartFrom(0);
 		_sut.BeginLoadPrerecordedEvents(checkpointTag);
 
 		// Read the order stream to find prerecorded events

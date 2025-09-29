@@ -6,7 +6,7 @@ using KurrentDB.Core.Time;
 namespace KurrentDB.Projections.Core.Metrics;
 
 public interface IProjectionStateSerializationTracker {
-	public static IProjectionStateSerializationTracker NoOp { get; } = NoOpTracker.Instance;
+	public static IProjectionStateSerializationTracker NoOp => NoOpTracker.Instance;
 
 	public void StateSerialized(Instant start);
 }

@@ -38,8 +38,7 @@ public class when_read_timeout_occurs<TLogFormat, TStreamId> : TestFixtureWithEx
 		_abStreams = new[] { "a", "b" };
 
 		_distibutionPointCorrelationId = Guid.NewGuid();
-		_eventReader = new MultiStreamEventReader(
-			_ioDispatcher, _bus, _distibutionPointCorrelationId, null, 0, _abStreams, _ab12Tag, false,
+		_eventReader = new MultiStreamEventReader(_bus, _distibutionPointCorrelationId, null, 0, _abStreams, _ab12Tag, false,
 			new RealTimeProvider());
 		_eventReader.Resume();
 		_streamReadACorrelationId = _consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>()

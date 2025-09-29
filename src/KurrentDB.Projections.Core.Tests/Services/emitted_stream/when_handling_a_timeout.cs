@@ -54,8 +54,7 @@ public class when_handling_a_timeout<TLogFormat, TStreamId> : TestFixtureWithExi
 			"test_stream",
 			new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
 				new EmittedStream.WriterConfiguration.StreamMetadata(), null, maxWriteBatchLength: 50),
-			new ProjectionVersion(1, 2, 2), new TransactionFilePositionTagger(0), CheckpointTag.Empty,
-			_bus, _ioDispatcher, _readyHandler);
+			new ProjectionVersion(1, 2, 2), new TransactionFilePositionTagger(0), CheckpointTag.Empty, _ioDispatcher, _readyHandler);
 		_stream.Start();
 		_stream.EmitEvents(CreateEventBatch());
 

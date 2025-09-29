@@ -44,7 +44,6 @@ namespace KurrentDB.Projections.Core.Tests.Services.event_reader.multi_stream_re
 					0,
 					_sourceDefinition,
 					_timeProvider,
-					stopOnEof: false,
 					runAs: null);
 
 				_readerSubscriptionOptions = new ReaderSubscriptionOptions(

@@ -148,9 +148,9 @@ public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFor
 	}
 
 	protected virtual Tuple<SynchronousScheduler, IPublisher, SynchronousScheduler, Guid>[] GivenProcessingQueues() {
-		return new[] {
+		return [
 			Tuple.Create(_bus, GetInputQueue(), (SynchronousScheduler)null, Guid.NewGuid())
-		};
+		];
 	}
 
 	private void SetUpCoreServices(
@@ -158,15 +158,14 @@ public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFor
 		SynchronousScheduler bus,
 		IPublisher inputQueue,
 		SynchronousScheduler output_) {
-		var output = (output_ ?? inputQueue);
+		var output = output_ ?? inputQueue;
 		ICheckpoint writerCheckpoint = new InMemoryCheckpoint(1000);
 		var readerService = new EventReaderCoreService(
 			output,
-			_ioDispatcher,
 			10,
 			writerCheckpoint,
 			runHeadingReader: true, faultOutOfOrderProjections: true);
-		_subscriptionDispatcher = new ReaderSubscriptionDispatcher(inputQueue);
+		_subscriptionDispatcher = new(inputQueue);
 
 		bus.Subscribe(
 			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.CheckpointSuggested>());

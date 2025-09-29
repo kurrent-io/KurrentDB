@@ -9,143 +9,51 @@ namespace KurrentDB.Projections.Core.Messages;
 
 public static partial class CoreProjectionProcessingMessage {
 	[DerivedMessage]
-	public abstract partial class Message : KurrentDB.Core.Messaging.Message {
-		private readonly Guid _projectionId;
-
-		protected Message(Guid projectionId) {
-			_projectionId = projectionId;
-		}
-
-		public Guid ProjectionId {
-			get { return _projectionId; }
-		}
+	public abstract partial class Message(Guid projectionId) : KurrentDB.Core.Messaging.Message {
+		public Guid ProjectionId { get; } = projectionId;
 	}
 
 	[DerivedMessage(ProjectionMessage.CoreProcessing)]
-	public partial class CheckpointLoaded : Message {
-		private readonly CheckpointTag _checkpointTag;
-		private readonly string _checkpointData;
-		private readonly long _checkpointEventNumber;
-
-		public CheckpointLoaded(
-			Guid projectionId, CheckpointTag checkpointTag, string checkpointData, long checkpointEventNumber)
-			: base(projectionId) {
-			_checkpointTag = checkpointTag;
-			_checkpointData = checkpointData;
-			_checkpointEventNumber = checkpointEventNumber;
-		}
-
-		public CheckpointTag CheckpointTag {
-			get { return _checkpointTag; }
-		}
-
-		public string CheckpointData {
-			get { return _checkpointData; }
-		}
-
-		public long CheckpointEventNumber {
-			get { return _checkpointEventNumber; }
-		}
+	public partial class CheckpointLoaded(Guid projectionId, CheckpointTag checkpointTag, string checkpointData, long checkpointEventNumber)
+		: Message(projectionId) {
+		public CheckpointTag CheckpointTag { get; } = checkpointTag;
+		public string CheckpointData { get; } = checkpointData;
+		public long CheckpointEventNumber { get; } = checkpointEventNumber;
 	}
 
 	[DerivedMessage(ProjectionMessage.CoreProcessing)]
-	public partial class PrerecordedEventsLoaded : Message {
-		private readonly CheckpointTag _checkpointTag;
-
-		public PrerecordedEventsLoaded(Guid projectionId, CheckpointTag checkpointTag)
-			: base(projectionId) {
-			_checkpointTag = checkpointTag;
-		}
-
-		public CheckpointTag CheckpointTag {
-			get { return _checkpointTag; }
-		}
+	public partial class PrerecordedEventsLoaded(Guid projectionId, CheckpointTag checkpointTag) : Message(projectionId) {
+		public CheckpointTag CheckpointTag { get; } = checkpointTag;
 	}
 
 	[DerivedMessage(ProjectionMessage.CoreProcessing)]
-	public partial class CheckpointCompleted : Message {
-		private readonly CheckpointTag _checkpointTag;
-
-		public CheckpointCompleted(Guid projectionId, CheckpointTag checkpointTag)
-			: base(projectionId) {
-			_checkpointTag = checkpointTag;
-		}
-
-		public CheckpointTag CheckpointTag {
-			get { return _checkpointTag; }
-		}
+	public partial class CheckpointCompleted(Guid projectionId, CheckpointTag checkpointTag) : Message(projectionId) {
+		public CheckpointTag CheckpointTag { get; } = checkpointTag;
 	}
 
 	[DerivedMessage(ProjectionMessage.CoreProcessing)]
-	public partial class RestartRequested : Message {
-		private readonly string _reason;
-
-		public RestartRequested(Guid projectionId, string reason)
-			: base(projectionId) {
-			_reason = reason;
-		}
-
-		public string Reason {
-			get { return _reason; }
-		}
+	public partial class RestartRequested(Guid projectionId, string reason) : Message(projectionId) {
+		public string Reason { get; } = reason;
 	}
 
 	[DerivedMessage(ProjectionMessage.CoreProcessing)]
-	public partial class Failed : Message {
-		private readonly string _reason;
-
-		public Failed(Guid projectionId, string reason)
-			: base(projectionId) {
-			_reason = reason;
-		}
-
-		public string Reason {
-			get { return _reason; }
-		}
+	public partial class Failed(Guid projectionId, string reason) : Message(projectionId) {
+		public string Reason { get; } = reason;
 	}
 
 	[DerivedMessage(ProjectionMessage.CoreProcessing)]
-	public partial class ReadyForCheckpoint : KurrentDB.Core.Messaging.Message {
-		private readonly object _sender;
-
-		public ReadyForCheckpoint(object sender) {
-			_sender = sender;
-		}
-
-		public object Sender {
-			get { return _sender; }
-		}
+	public partial class ReadyForCheckpoint(object sender) : KurrentDB.Core.Messaging.Message {
+		public object Sender { get; } = sender;
 	}
 
 	[DerivedMessage(ProjectionMessage.CoreProcessing)]
-	public partial class EmittedStreamAwaiting : KurrentDB.Core.Messaging.Message {
-		private readonly IEnvelope _envelope;
-		private readonly string _streamId;
-
-		public EmittedStreamAwaiting(string streamId, IEnvelope envelope) {
-			_envelope = envelope;
-			_streamId = streamId;
-		}
-
-		public string StreamId {
-			get { return _streamId; }
-		}
-
-		public IEnvelope Envelope {
-			get { return _envelope; }
-		}
+	public partial class EmittedStreamAwaiting(string streamId, IEnvelope envelope) : KurrentDB.Core.Messaging.Message {
+		public string StreamId { get; } = streamId;
+		public IEnvelope Envelope { get; } = envelope;
 	}
 
 	[DerivedMessage(ProjectionMessage.CoreProcessing)]
-	public partial class EmittedStreamWriteCompleted : KurrentDB.Core.Messaging.Message {
-		private readonly string _streamId;
-
-		public EmittedStreamWriteCompleted(string streamId) {
-			_streamId = streamId;
-		}
-
-		public string StreamId {
-			get { return _streamId; }
-		}
+	public partial class EmittedStreamWriteCompleted(string streamId) : KurrentDB.Core.Messaging.Message {
+		public string StreamId { get; } = streamId;
 	}
 }

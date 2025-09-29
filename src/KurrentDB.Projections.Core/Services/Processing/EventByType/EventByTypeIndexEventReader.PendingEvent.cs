@@ -6,15 +6,9 @@ using KurrentDB.Core.Data;
 namespace KurrentDB.Projections.Core.Services.Processing.EventByType;
 
 public partial class EventByTypeIndexEventReader {
-	private class PendingEvent {
-		public readonly KurrentDB.Core.Data.ResolvedEvent ResolvedEvent;
-		public readonly float Progress;
-		public readonly TFPos TfPosition;
-
-		public PendingEvent(KurrentDB.Core.Data.ResolvedEvent resolvedEvent, TFPos tfPosition, float progress) {
-			ResolvedEvent = resolvedEvent;
-			Progress = progress;
-			TfPosition = tfPosition;
-		}
+	private class PendingEvent(KurrentDB.Core.Data.ResolvedEvent resolvedEvent, TFPos tfPosition, float progress) {
+		public readonly KurrentDB.Core.Data.ResolvedEvent ResolvedEvent = resolvedEvent;
+		public readonly float Progress = progress;
+		public readonly TFPos TfPosition = tfPosition;
 	}
 }

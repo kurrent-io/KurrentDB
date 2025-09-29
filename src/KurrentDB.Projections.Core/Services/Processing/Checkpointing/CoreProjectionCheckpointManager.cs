@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Diagnostics.Contracts;
 using KurrentDB.Core.Bus;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
@@ -18,17 +17,13 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 	IEmittedEventWriter {
 	protected readonly ProjectionNamesBuilder _namingBuilder;
 	protected readonly ProjectionConfig _projectionConfig;
-	protected readonly ILogger _logger;
-	protected readonly int _maxProjectionStateSize;
+	protected readonly ILogger _logger = Log.ForContext<CoreProjectionCheckpointManager>();
+	private readonly int _maxProjectionStateSize;
 	private readonly int _maxProjectionStateSizeThreshold;
-
 	private readonly bool _usePersistentCheckpoints;
-
 	protected readonly IPublisher _publisher;
 	private readonly Guid _projectionCorrelationId;
 	private readonly CheckpointTag _zeroTag;
-
-
 	protected ProjectionCheckpoint _currentCheckpoint;
 	private ProjectionCheckpoint _closingCheckpoint;
 	internal CheckpointTag _requestedCheckpointPosition;
@@ -50,82 +45,60 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 		IPublisher publisher,
 		Guid projectionCorrelationId,
 		ProjectionConfig projectionConfig,
-		string name,
 		PositionTagger positionTagger,
 		ProjectionNamesBuilder namingBuilder,
 		bool usePersistentCheckpoints,
 		int maxProjectionStateSize) {
-		if (publisher == null)
-			throw new ArgumentNullException("publisher");
-		if (projectionConfig == null)
-			throw new ArgumentNullException("projectionConfig");
-		if (name == null)
-			throw new ArgumentNullException("name");
-		if (positionTagger == null)
-			throw new ArgumentNullException("positionTagger");
-		if (namingBuilder == null)
-			throw new ArgumentNullException("namingBuilder");
-		if (name == "")
-			throw new ArgumentException("name");
-		if (maxProjectionStateSize <= 0)
-			throw new ArgumentException(nameof(maxProjectionStateSize));
+		ArgumentNullException.ThrowIfNull(publisher);
+		ArgumentNullException.ThrowIfNull(projectionConfig);
+		ArgumentNullException.ThrowIfNull(positionTagger);
+		ArgumentNullException.ThrowIfNull(namingBuilder);
+		ArgumentOutOfRangeException.ThrowIfLessThan(maxProjectionStateSize, 1);
 
-		_lastProcessedEventPosition = new PositionTracker(positionTagger);
+		_lastProcessedEventPosition = new(positionTagger);
 		_zeroTag = positionTagger.MakeZeroCheckpointTag();
-
 		_publisher = publisher;
 		_projectionCorrelationId = projectionCorrelationId;
 		_projectionConfig = projectionConfig;
-		_logger = Log.ForContext<CoreProjectionCheckpointManager>();
 		_namingBuilder = namingBuilder;
 		_usePersistentCheckpoints = usePersistentCheckpoints;
-		_requestedCheckpointState = new PartitionState("", null, _zeroTag);
-		_currentProjectionState = new PartitionState("", null, _zeroTag);
+		_requestedCheckpointState = new("", null, _zeroTag);
+		_currentProjectionState = new("", null, _zeroTag);
 		_maxProjectionStateSize = maxProjectionStateSize;
 		_maxProjectionStateSizeThreshold = (int)(0.50 * _maxProjectionStateSize);
 	}
 
 	protected abstract ProjectionCheckpoint CreateProjectionCheckpoint(CheckpointTag checkpointPosition);
 
-	protected abstract void BeginWriteCheckpoint(
-		CheckpointTag requestedCheckpointPosition, string requestedCheckpointState);
+	protected abstract void BeginWriteCheckpoint(CheckpointTag requestedCheckpointPosition, string requestedCheckpointState);
 
-	protected abstract void CapturePartitionStateUpdated(string partition, PartitionState oldState,
-		PartitionState newState);
+	protected abstract void CapturePartitionStateUpdated(string partition, PartitionState oldState, PartitionState newState);
 
 	protected abstract void EmitPartitionCheckpoints();
 
-	public abstract void RecordEventOrder(ResolvedEvent resolvedEvent, CheckpointTag orderCheckpointTag,
-		Action committed);
+	public abstract void RecordEventOrder(ResolvedEvent resolvedEvent, CheckpointTag orderCheckpointTag, Action committed);
 
-	public abstract void BeginLoadPartitionStateAt(
-		string statePartition, CheckpointTag requestedStateCheckpointTag, Action<PartitionState> loadCompleted);
-
-	public abstract void PartitionCompleted(string partition);
+	public abstract void BeginLoadPartitionStateAt(string statePartition, CheckpointTag requestedStateCheckpointTag, Action<PartitionState> loadCompleted);
 
 	public virtual void Initialize() {
-		if (_currentCheckpoint != null)
-			_currentCheckpoint.Dispose();
-		if (_closingCheckpoint != null)
-			_closingCheckpoint.Dispose();
+		_currentCheckpoint?.Dispose();
+		_closingCheckpoint?.Dispose();
 		_currentCheckpoint = null;
 		_closingCheckpoint = null;
 		_requestedCheckpointPosition = null;
 		_inCheckpoint = false;
-		_requestedCheckpointState = new PartitionState("", null, _zeroTag);
+		_requestedCheckpointState = new("", null, _zeroTag);
 		_lastCompletedCheckpointPosition = null;
 		_lastProcessedEventPosition.Initialize();
 		_lastProcessedEventProgress = -1;
-
 		_eventsProcessedAfterRestart = 0;
 		_started = false;
 		_stopping = false;
 		_stopped = false;
-		_currentProjectionState = new PartitionState("", null, _zeroTag);
+		_currentProjectionState = new("", null, _zeroTag);
 	}
 
 	public virtual void Start(CheckpointTag checkpointTag, PartitionState rootPartitionState) {
-		Contract.Requires(_currentCheckpoint == null);
 		if (_started)
 			throw new InvalidOperationException("Already started");
 		_started = true;
@@ -156,33 +129,24 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 		_started = false;
 		_stopped = true;
 
-		if (_currentCheckpoint != null)
-			_currentCheckpoint.Dispose();
+		_currentCheckpoint?.Dispose();
 		_currentCheckpoint = null;
 
-		if (_closingCheckpoint != null)
-			_closingCheckpoint.Dispose();
+		_closingCheckpoint?.Dispose();
 		_closingCheckpoint = null;
 	}
 
 	public virtual void GetStatistics(ProjectionStatistics info) {
-		info.Position = (_lastProcessedEventPosition.LastTag ?? (object)"").ToString();
+		info.Position = _lastProcessedEventPosition.LastTag?.ToString() ?? "";
 		info.Progress = _lastProcessedEventProgress;
 		info.LastCheckpoint = _lastCompletedCheckpointPosition != null
 			? _lastCompletedCheckpointPosition.ToString()
 			: "";
 		info.EventsProcessedAfterRestart = _eventsProcessedAfterRestart;
-		info.WritePendingEventsBeforeCheckpoint = _closingCheckpoint != null
-			? _closingCheckpoint.GetWritePendingEvents()
-			: 0;
-		info.WritePendingEventsAfterCheckpoint = (_currentCheckpoint != null
-			? _currentCheckpoint.GetWritePendingEvents()
-			: 0);
-		info.ReadsInProgress = /*_readDispatcher.ActiveRequestCount*/
-			+ +(_closingCheckpoint != null ? _closingCheckpoint.GetReadsInProgress() : 0)
-			+ (_currentCheckpoint != null ? _currentCheckpoint.GetReadsInProgress() : 0);
-		info.WritesInProgress = (_closingCheckpoint != null ? _closingCheckpoint.GetWritesInProgress() : 0)
-								+ (_currentCheckpoint != null ? _currentCheckpoint.GetWritesInProgress() : 0);
+		info.WritePendingEventsBeforeCheckpoint = _closingCheckpoint?.GetWritePendingEvents() ?? 0;
+		info.WritePendingEventsAfterCheckpoint = _currentCheckpoint?.GetWritePendingEvents() ?? 0;
+		info.ReadsInProgress = (_closingCheckpoint?.GetReadsInProgress() ?? 0) + (_currentCheckpoint?.GetReadsInProgress() ?? 0);
+		info.WritesInProgress = (_closingCheckpoint?.GetWritesInProgress() ?? 0) + (_currentCheckpoint?.GetWritesInProgress() ?? 0);
 		info.CheckpointStatus = _inCheckpoint ? "Requested" : "";
 
 		foreach (var (partition, stateSize) in _stateSizeByPartition) {
@@ -282,9 +246,7 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 		_lastProcessedEventProgress = progress < -1 ? -1 : progress;
 	}
 
-	public CheckpointTag LastProcessedEventPosition {
-		get { return _lastProcessedEventPosition.LastTag; }
-	}
+	public CheckpointTag LastProcessedEventPosition => _lastProcessedEventPosition.LastTag;
 
 
 	public void Handle(CoreProjectionProcessingMessage.ReadyForCheckpoint message) {
@@ -344,7 +306,7 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 			throw new InvalidOperationException("Not started");
 	}
 
-	/// <returns>true - if checkpoint has beem completed in-sync</returns>
+	/// <returns>true - if checkpoint has been completed in-sync</returns>
 	private bool RequestCheckpoint(PositionTracker lastProcessedEventPosition,
 		bool forcePrepareCheckpoint = false) {
 		if (!forcePrepareCheckpoint && !_usePersistentCheckpoints)
@@ -356,9 +318,7 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 
 	/// <returns>true - if checkpoint has been completed in-sync</returns>
 	private bool StartCheckpoint(PositionTracker lastProcessedEventPosition, PartitionState projectionState) {
-		Contract.Requires(_closingCheckpoint == null);
-		if (projectionState == null)
-			throw new ArgumentNullException("projectionState");
+		ArgumentNullException.ThrowIfNull(projectionState);
 
 		CheckpointTag requestedCheckpointPosition = lastProcessedEventPosition.LastTag;
 		if (requestedCheckpointPosition == _lastCompletedCheckpointPosition)
@@ -381,13 +341,12 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 		KurrentDB.Core.Data.ResolvedEvent pair, CheckpointTag positionTag,
 		long prerecordedEventMessageSequenceNumber) {
 		var committedEvent = new ReaderSubscriptionMessage.CommittedEventDistributed(
-			Guid.Empty, new ResolvedEvent(pair, null), null, -1, source: this.GetType());
+			Guid.Empty, new ResolvedEvent(pair, null), null, -1, source: GetType());
 		_publisher.Publish(
 			EventReaderSubscriptionMessage.CommittedEventReceived.FromCommittedEventDistributed(
 				committedEvent, positionTag, null, _projectionCorrelationId,
 				prerecordedEventMessageSequenceNumber));
 	}
-
 
 	protected void RequestRestart(string reason) {
 		_stopped = true; // ignore messages
@@ -400,7 +359,6 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 	}
 
 	protected void CheckpointWritten(CheckpointTag lastCompletedCheckpointPosition) {
-		Contract.Requires(_closingCheckpoint != null);
 		_lastCompletedCheckpointPosition = lastCompletedCheckpointPosition;
 		_closingCheckpoint.Dispose();
 		_closingCheckpoint = null;
@@ -411,8 +369,7 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 
 		//NOTE: the next checkpoint will start by completing checkpoint work item
 		_publisher.Publish(
-			new CoreProjectionProcessingMessage.CheckpointCompleted(
-				_projectionCorrelationId, _lastCompletedCheckpointPosition));
+			new CoreProjectionProcessingMessage.CheckpointCompleted(_projectionCorrelationId, _lastCompletedCheckpointPosition));
 	}
 
 	protected void UpdateStateSizeMetrics(string partition, int newStateSize) {

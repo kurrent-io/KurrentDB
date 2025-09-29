@@ -19,8 +19,8 @@ public abstract class TestFixtureWithMultiStreamCheckpointManager<TLogFormat, TS
 
 	protected override DefaultCheckpointManager GivenCheckpointManager() {
 		return new MultiStreamMultiOutputCheckpointManager(
-			_bus, _projectionCorrelationId, _projectionVersion, null, _ioDispatcher, _config, _projectionName,
-			new MultiStreamPositionTagger(0, _streams), _namingBuilder, _checkpointsEnabled, true, true,
+			_bus, _projectionCorrelationId, _projectionVersion, null, _ioDispatcher, _config,
+			new MultiStreamPositionTagger(0, _streams), _namingBuilder, _checkpointsEnabled,
 			_checkpointWriter, Opts.MaxProjectionStateSizeDefault);
 	}
 }

@@ -37,7 +37,7 @@ public class when_handling_an_emit_with_stream_metadata_to_empty_stream<TLogForm
 		_stream = new EmittedStream(
 			"test_stream", _writerConfiguration, new ProjectionVersion(1, 0, 0),
 			new TransactionFilePositionTagger(0),
-			CheckpointTag.FromPosition(0, 40, 30), _bus, _ioDispatcher, _readyHandler);
+			CheckpointTag.FromPosition(0, 40, 30), _ioDispatcher, _readyHandler);
 		_stream.Start();
 		_stream.EmitEvents(
 			new[] {

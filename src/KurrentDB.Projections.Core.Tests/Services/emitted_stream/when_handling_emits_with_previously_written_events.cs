@@ -36,7 +36,7 @@ public class when_handling_emits_with_previously_written_events<TLogFormat, TStr
 			new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),
 				new EmittedStream.WriterConfiguration.StreamMetadata(), null, maxWriteBatchLength: 50),
 			new ProjectionVersion(1, 0, 0), new TransactionFilePositionTagger(0),
-			CheckpointTag.FromPosition(0, 100, 50), _bus, _ioDispatcher, _readyHandler);
+			CheckpointTag.FromPosition(0, 100, 50), _ioDispatcher, _readyHandler);
 		_stream.Start();
 	}
 

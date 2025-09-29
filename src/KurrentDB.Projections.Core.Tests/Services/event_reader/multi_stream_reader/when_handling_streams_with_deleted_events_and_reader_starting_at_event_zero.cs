@@ -38,8 +38,7 @@ public class
 	public new void When() {
 		_distibutionPointCorrelationId = Guid.NewGuid();
 
-		_edp = new MultiStreamEventReader(
-			_ioDispatcher, _bus, _distibutionPointCorrelationId, null, 0, _streamNames, _streamPositions, false,
+		_edp = new MultiStreamEventReader(_bus, _distibutionPointCorrelationId, null, 0, _streamNames, _streamPositions, false,
 			new RealTimeProvider());
 
 		_edp.Resume();

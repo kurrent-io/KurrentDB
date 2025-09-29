@@ -86,25 +86,20 @@ public class TestFixtureWithProjectionCoreService {
 
 	[SetUp]
 	public virtual void Setup() {
-		_consumer = new TestHandler<Message>();
+		_consumer = new();
 		_bus = new();
 		_bus.Subscribe(_consumer);
 		ICheckpoint writerCheckpoint = new InMemoryCheckpoint(1000);
 		var ioDispatcher = new IODispatcher(_bus, _bus, true);
-		_readerService = new EventReaderCoreService(_bus, ioDispatcher, 10, writerCheckpoint,
-			runHeadingReader: true, faultOutOfOrderProjections: true);
-		_subscriptionDispatcher =
-			new ReaderSubscriptionDispatcher(_bus);
+		_readerService = new(_bus, 10, writerCheckpoint, runHeadingReader: true, faultOutOfOrderProjections: true);
+		_subscriptionDispatcher = new(_bus);
 		_workerId = Guid.NewGuid();
 		var guardBus = new GuardBusToTriggerFixingIfUsed();
 		var configuration = new ProjectionsStandardComponents(1, ProjectionType.All, guardBus, guardBus, guardBus, guardBus, true,
 			 500, 250, Opts.MaxProjectionStateSizeDefault, ProjectionTrackers.NoOp);
-		_service = new ProjectionCoreService(
-			_workerId, _bus, _bus, _subscriptionDispatcher, new RealTimeProvider(), ioDispatcher, configuration);
-		_bus.Subscribe(
-			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.CheckpointSuggested>());
-		_bus.Subscribe(_subscriptionDispatcher
-			.CreateSubscriber<EventReaderSubscriptionMessage.CommittedEventReceived>());
+		_service = new(_workerId, _bus, _bus, _subscriptionDispatcher, new RealTimeProvider(), ioDispatcher, configuration);
+		_bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.CheckpointSuggested>());
+		_bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.CommittedEventReceived>());
 		_bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.EofReached>());
 		_bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.PartitionDeleted>());
 		_bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.ProgressChanged>());
@@ -128,7 +123,6 @@ public class TestFixtureWithProjectionCoreService {
 			0,
 			result.Build(),
 			new RealTimeProvider(),
-			stopOnEof: false,
 			runAs: null);
 	}
 

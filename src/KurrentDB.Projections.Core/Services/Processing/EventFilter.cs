@@ -28,12 +28,12 @@ public abstract class EventFilter {
 
 	public bool Passes(
 		bool resolvedFromLinkTo, string eventStreamId, string eventName, bool isStreamDeletedEvent = false) {
-		return (PassesSource(resolvedFromLinkTo, eventStreamId, eventName))
-			   && ((_allEvents || _events != null && _events.Contains(eventName))
-				   && (!isStreamDeletedEvent || _includeDeletedStreamEvents));
+		return PassesSource(resolvedFromLinkTo, eventStreamId, eventName)
+		       && (_allEvents || _events != null && _events.Contains(eventName))
+		       && (!isStreamDeletedEvent || _includeDeletedStreamEvents);
 	}
 
-	public bool PassesValidation(bool isJson, ReadOnlyMemory<byte> data) {
+	public static bool PassesValidation(bool isJson, ReadOnlyMemory<byte> data) {
 		return !isJson || data.IsValidUtf8Json();
 	}
 

@@ -16,10 +16,10 @@ using KurrentDB.Projections.Core.Messages;
 namespace KurrentDB.Projections.Core.Services.Processing.EventByType;
 
 public partial class EventByTypeIndexEventReader {
-	private class TfBased : State,
-		IHandle<ClientMessage.ReadAllEventsForwardCompleted>,
-		IHandle<ProjectionManagementMessage.Internal.ReadTimeout> {
-		private readonly HashSet<string> _eventTypes;
+	private class TfBased
+		: State,
+			IHandle<ClientMessage.ReadAllEventsForwardCompleted>,
+			IHandle<ProjectionManagementMessage.Internal.ReadTimeout> {
 		private readonly ITimeProvider _timeProvider;
 		private bool _tfEventsRequested;
 		private bool _disposed;
@@ -30,12 +30,15 @@ public partial class EventByTypeIndexEventReader {
 		private Guid _pendingRequestCorrelationId;
 
 		public TfBased(
-			ITimeProvider timeProvider, EventByTypeIndexEventReader reader, TFPos fromTfPosition,
-			IPublisher publisher, ClaimsPrincipal readAs)
+			ITimeProvider timeProvider,
+			EventByTypeIndexEventReader reader,
+			TFPos fromTfPosition,
+			IPublisher publisher,
+			ClaimsPrincipal readAs)
 			: base(reader, readAs) {
 			_timeProvider = timeProvider;
-			_eventTypes = reader._eventTypes;
-			_streamToEventType = _eventTypes.ToDictionary(v => "$et-" + v, v => v);
+			var eventTypes = reader._eventTypes;
+			_streamToEventType = eventTypes.ToDictionary(v => $"$et-{v}", v => v);
 			_publisher = publisher;
 			_fromTfPosition = fromTfPosition;
 		}
@@ -89,8 +92,7 @@ public partial class EventByTypeIndexEventReader {
 								_reader.UpdateNextStreamPosition(link.EventStreamId, link.EventNumber + 1);
 								// recover unresolved link event
 								var unresolvedLinkEvent =
-									KurrentDB.Core.Data.ResolvedEvent.ForUnresolvedEvent(link,
-										originalTfPosition.CommitPosition);
+									KurrentDB.Core.Data.ResolvedEvent.ForUnresolvedEvent(link, originalTfPosition.CommitPosition);
 								DeliverEventRetrievedFromTf(
 									unresolvedLinkEvent, 100.0f * link.LogPosition / message.TfLastCommitPosition,
 									originalTfPosition);
@@ -102,13 +104,9 @@ public partial class EventByTypeIndexEventReader {
 						}
 					}
 
-					if (_disposed)
-						return;
-
 					break;
 				default:
-					throw new NotSupportedException(
-						String.Format("ReadEvents result code was not recognized. Code: {0}", message.Result));
+					throw new NotSupportedException($"ReadEvents result code was not recognized. Code: {message.Result}");
 			}
 		}
 
@@ -160,7 +158,8 @@ public partial class EventByTypeIndexEventReader {
 			//TODO: check was is passed here
 		}
 
-		private void DeliverEventRetrievedFromTf(KurrentDB.Core.Data.ResolvedEvent pair, float progress,
+		private void DeliverEventRetrievedFromTf(KurrentDB.Core.Data.ResolvedEvent pair,
+			float progress,
 			TFPos position) {
 			var resolvedEvent = new ResolvedEvent(pair, null);
 

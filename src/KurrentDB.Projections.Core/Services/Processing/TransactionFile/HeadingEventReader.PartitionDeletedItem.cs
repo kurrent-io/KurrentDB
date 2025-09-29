@@ -7,16 +7,10 @@ using KurrentDB.Projections.Core.Services.Processing.Subscriptions;
 namespace KurrentDB.Projections.Core.Services.Processing.TransactionFile;
 
 public partial class HeadingEventReader {
-	private class PartitionDeletedItem : Item {
-		public readonly ReaderSubscriptionMessage.EventReaderPartitionDeleted Message;
-
-		public PartitionDeletedItem(ReaderSubscriptionMessage.EventReaderPartitionDeleted message)
-			: base(message.DeleteLinkOrEventPosition.Value) {
-			Message = message;
-		}
-
+	private class PartitionDeletedItem(ReaderSubscriptionMessage.EventReaderPartitionDeleted message)
+		: Item(message.DeleteLinkOrEventPosition.Value) {
 		public override void Handle(IReaderSubscription subscription) {
-			subscription.Handle(Message);
+			subscription.Handle(message);
 		}
 	}
 }

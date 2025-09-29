@@ -19,7 +19,7 @@ public class TransactionFileEventReader : EventReader,
 	IHandle<ClientMessage.ReadAllEventsForwardCompleted>,
 	IHandle<ProjectionManagementMessage.Internal.ReadTimeout> {
 	private bool _eventsRequested;
-	private int _maxReadCount = 250;
+	private const int MaxReadCount = 250;
 	private TFPos _from;
 	private readonly bool _deliverEndOfTfPosition;
 	private readonly bool _resolveLinkTos;
@@ -32,15 +32,14 @@ public class TransactionFileEventReader : EventReader,
 		IPublisher publisher,
 		Guid eventReaderCorrelationId,
 		ClaimsPrincipal readAs,
-		TFPos @from,
+		TFPos from,
 		ITimeProvider timeProvider,
 		bool stopOnEof = false,
 		bool deliverEndOfTFPosition = true,
 		bool resolveLinkTos = true)
 		: base(publisher, eventReaderCorrelationId, readAs, stopOnEof) {
-		if (publisher == null)
-			throw new ArgumentNullException("publisher");
-		_from = @from;
+		ArgumentNullException.ThrowIfNull(publisher);
+		_from = from;
 		_deliverEndOfTfPosition = deliverEndOfTFPosition;
 		_resolveLinkTos = resolveLinkTos;
 		_timeProvider = timeProvider;
@@ -106,8 +105,7 @@ public class TransactionFileEventReader : EventReader,
 	}
 
 	private void SendIdle() {
-		_publisher.Publish(
-			new ReaderSubscriptionMessage.EventReaderIdle(EventReaderCorrelationId, _timeProvider.UtcNow));
+		_publisher.Publish(new ReaderSubscriptionMessage.EventReaderIdle(EventReaderCorrelationId, _timeProvider.UtcNow));
 	}
 
 	protected override void RequestEvents() {
@@ -151,7 +149,7 @@ public class TransactionFileEventReader : EventReader,
 	private Message CreateReadEventsMessage(Guid correlationId) {
 		return new ClientMessage.ReadAllEventsForward(
 			correlationId, correlationId, new SendToThisEnvelope(this), _from.CommitPosition,
-			_from.PreparePosition == -1 ? _from.CommitPosition : _from.PreparePosition, _maxReadCount,
+			_from.PreparePosition == -1 ? _from.CommitPosition : _from.PreparePosition, MaxReadCount,
 			_resolveLinkTos, false, null, ReadAs, replyOnExpired: false);
 	}
 
@@ -168,35 +166,32 @@ public class TransactionFileEventReader : EventReader,
 		KurrentDB.Core.Data.ResolvedEvent @event, long lastCommitPosition, TFPos currentFrom) {
 		EventRecord linkEvent = @event.Link;
 		EventRecord targetEvent = @event.Event ?? linkEvent;
-		EventRecord positionEvent = (linkEvent ?? targetEvent);
+		EventRecord positionEvent = linkEvent ?? targetEvent;
 
 		TFPos receivedPosition = @event.OriginalPosition.Value;
 		if (currentFrom > receivedPosition)
 			throw new Exception(
-				string.Format(
-					"ReadFromTF returned events in incorrect order.  Last known position is: {0}.  Received position is: {1}",
-					currentFrom, receivedPosition));
+				$"ReadFromTF returned events in incorrect order.  Last known position is: {currentFrom}.  Received position is: {receivedPosition}");
 
 		var resolvedEvent = new ResolvedEvent(@event, null);
 
-		string deletedPartitionStreamId;
 		if (resolvedEvent.IsLinkToDeletedStream && !resolvedEvent.IsLinkToDeletedStreamTombstone)
 			return;
 
 		bool isDeletedStreamEvent = StreamDeletedHelper.IsStreamDeletedEventOrLinkToStreamDeletedEvent(
-			resolvedEvent, @event.ResolveResult, out deletedPartitionStreamId);
+			resolvedEvent, @event.ResolveResult, out var deletedPartitionStreamId);
 
 		_publisher.Publish(
 			new ReaderSubscriptionMessage.CommittedEventDistributed(
 				EventReaderCorrelationId,
 				resolvedEvent,
-				_stopOnEof ? (long?)null : receivedPosition.PreparePosition,
+				_stopOnEof ? null : receivedPosition.PreparePosition,
 				100.0f * positionEvent.LogPosition / lastCommitPosition,
-				source: this.GetType()));
+				source: GetType()));
 		if (isDeletedStreamEvent)
 			_publisher.Publish(
 				new ReaderSubscriptionMessage.EventReaderPartitionDeleted(
-					EventReaderCorrelationId, deletedPartitionStreamId, source: this.GetType(),
+					EventReaderCorrelationId, deletedPartitionStreamId, source: GetType(),
 					deleteEventOrLinkTargetPosition: resolvedEvent.EventOrLinkTargetPosition,
 					deleteLinkOrEventPosition: resolvedEvent.LinkOrEventPosition,
 					positionStreamId: positionEvent.EventStreamId, positionEventNumber: positionEvent.EventNumber));

@@ -8,20 +8,8 @@ using KurrentDB.Projections.Core.Messages;
 namespace KurrentDB.Projections.Core.Messaging;
 
 [DerivedMessage(ProjectionMessage.Misc)]
-public partial class UnwrapEnvelopeMessage : Message {
-	private readonly Action _action;
-	private readonly string _extraInformation;
+public partial class UnwrapEnvelopeMessage(Action action, string extraInformation) : Message {
+	public Action Action { get; } = action;
 
-	public UnwrapEnvelopeMessage(Action action, string extraInformation) {
-		_action = action;
-		_extraInformation = extraInformation;
-	}
-
-	public Action Action {
-		get { return _action; }
-	}
-
-	public override string ToString() =>
-		$"{base.ToString()}, " +
-		$"Extra Information: {_extraInformation}";
+	public override string ToString() => $"{base.ToString()}, Extra Information: {extraInformation}";
 }

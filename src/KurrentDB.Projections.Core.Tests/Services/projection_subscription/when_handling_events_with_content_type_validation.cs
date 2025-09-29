@@ -29,9 +29,7 @@ public class when_handling_events_with_content_type_validation {
 		}
 
 		protected override IReaderSubscription CreateProjectionSubscription() {
-			return new ReaderSubscription(
-				"Test Subscription",
-				_bus,
+			return new ReaderSubscription(_bus,
 				_projectionCorrelationId,
 				_readerStrategy.PositionTagger.MakeZeroCheckpointTag(),
 				_readerStrategy,
@@ -69,9 +67,7 @@ public class when_handling_events_with_content_type_validation {
 		}
 
 		protected override IReaderSubscription CreateProjectionSubscription() {
-			return new ReaderSubscription(
-				"Test Subscription",
-				_bus,
+			return new ReaderSubscription(_bus,
 				_projectionCorrelationId,
 				_readerStrategy.PositionTagger.MakeZeroCheckpointTag(),
 				_readerStrategy,
@@ -120,9 +116,7 @@ public class when_handling_events_with_content_type_validation {
 		}
 
 		protected override IReaderSubscription CreateProjectionSubscription() {
-			return new ReaderSubscription(
-				"Test Subscription",
-				_bus,
+			return new ReaderSubscription(_bus,
 				_projectionCorrelationId,
 				_readerStrategy.PositionTagger.MakeZeroCheckpointTag(),
 				_readerStrategy,
