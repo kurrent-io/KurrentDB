@@ -7,6 +7,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Threading;
+using EventStore.Client.Messages;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
@@ -19,8 +20,10 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
+using EventRecord = KurrentDB.Core.Data.EventRecord;
 using ILogger = Serilog.ILogger;
 using ReadStreamResult = KurrentDB.Core.Data.ReadStreamResult;
+using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 
 // ReSharper disable StaticMemberInGenericType
 
@@ -91,14 +94,16 @@ public class StorageReaderWorker<TStreamId> :
 		}
 
 		var cts = _multiplexer.Combine([token, msg.CancellationToken]);
+		ClientMessage.ReadEventCompleted ev;
 		try {
-			var ev = await ReadEvent(msg, cts.Token);
-			msg.Envelope.ReplyWith(ev);
+			ev = await ReadEvent(msg, cts.Token);
 		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts.Token) {
 			throw new OperationCanceledException(ex.Message, ex, cts.CancellationOrigin);
 		} finally {
 			await cts.DisposeAsync();
 		}
+
+		msg.Envelope.ReplyWith(ev);
 	}
 
 	async ValueTask IAsyncHandle<ClientMessage.ReadStreamEventsForward>.HandleAsync(ClientMessage.ReadStreamEventsForward msg, CancellationToken token) {
@@ -156,7 +161,8 @@ public class StorageReaderWorker<TStreamId> :
 		}
 	}
 
-	async ValueTask IAsyncHandle<ClientMessage.ReadStreamEventsBackward>.HandleAsync(ClientMessage.ReadStreamEventsBackward msg, CancellationToken token) {
+	async ValueTask IAsyncHandle<ClientMessage.ReadStreamEventsBackward>.HandleAsync(
+		ClientMessage.ReadStreamEventsBackward msg, CancellationToken token) {
 		if (msg.CancellationToken.IsCancellationRequested)
 			return;
 
@@ -169,17 +175,18 @@ public class StorageReaderWorker<TStreamId> :
 		}
 
 		var cts = _multiplexer.Combine([token, msg.CancellationToken]);
+		ClientMessage.ReadStreamEventsBackwardCompleted res;
 		try {
-			var res = await (SystemStreams.IsVirtualStream(msg.EventStreamId)
+			res = await (SystemStreams.IsVirtualStream(msg.EventStreamId)
 				? _virtualStreamReader.ReadBackwards(msg, cts.Token)
 				: ReadStreamEventsBackward(msg, cts.Token));
-
-			msg.Envelope.ReplyWith(res);
 		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts.Token) {
 			throw new OperationCanceledException(null, ex, cts.CancellationOrigin);
 		} finally {
 			await cts.DisposeAsync();
 		}
+
+		msg.Envelope.ReplyWith(res);
 	}
 
 	async ValueTask IAsyncHandle<ClientMessage.ReadAllEventsForward>.HandleAsync(ClientMessage.ReadAllEventsForward msg, CancellationToken token) {
