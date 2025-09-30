@@ -14,7 +14,7 @@ public class SchemaProjections : DuckDBProjection {
 	public SchemaProjections() {
 		Project<SchemaCreated>((msg, db, ctx) => {
 			using var scope = db.GetScopedConnection(out var connection);
-			using var tx = connection.BeginTransaction();
+			// using var tx = connection.BeginTransaction();
 
 			const string insertSchemaVersionSql =
 				"""
@@ -72,9 +72,9 @@ public class SchemaProjections : DuckDBProjection {
 						checkpoint = ctx.Record.LogPosition.CommitPosition
 					}
 				);
-				tx.Commit();
+				// tx.Commit();
 			} catch {
-				tx.Rollback();
+				// tx.Rollback();
 				throw;
 			}
 			return ValueTask.CompletedTask;
@@ -82,7 +82,7 @@ public class SchemaProjections : DuckDBProjection {
 
 		Project<SchemaVersionRegistered>((msg, db, ctx) => {
 			using var scope = db.GetScopedConnection(out var connection);
-			using var tx = connection.BeginTransaction();
+			// using var tx = connection.BeginTransaction();
 
 			const string insertSchemaVersionSql =
 				"""
@@ -130,9 +130,9 @@ public class SchemaProjections : DuckDBProjection {
 					}
 				);
 
-				tx.Commit();
+				// tx.Commit();
 			} catch {
-				tx.Rollback();
+				// tx.Rollback();
 				throw;
 			}
 			return ValueTask.CompletedTask;
@@ -203,7 +203,7 @@ public class SchemaProjections : DuckDBProjection {
 
 		Project<SchemaVersionsDeleted>((msg, db, ctx) => {
 			using var scope = db.GetScopedConnection(out var connection);
-			using var tx = connection.BeginTransaction();
+			// using var tx = connection.BeginTransaction();
 
 			try {
 				// TODO: Must figure out a better way to do this. Right now, we have to do string interpolation,
@@ -237,9 +237,9 @@ public class SchemaProjections : DuckDBProjection {
 					checkpoint = ctx.Record.LogPosition.CommitPosition
 				});
 
-				tx.Commit();
+				// tx.Commit();
 			} catch {
-				tx.Rollback();
+				// tx.Rollback();
 				throw;
 			}
 			return ValueTask.CompletedTask;
@@ -247,7 +247,7 @@ public class SchemaProjections : DuckDBProjection {
 
 		Project<SchemaDeleted>((msg, db, _) => {
 			using var scope = db.GetScopedConnection(out var connection);
-			using var tx = connection.BeginTransaction();
+			// using var tx = connection.BeginTransaction();
 
 			const string deleteSchemaVersionsSql =
 				"""
@@ -264,9 +264,9 @@ public class SchemaProjections : DuckDBProjection {
 			try {
 				connection.Execute(deleteSchemaVersionsSql, new { schema_name = msg.SchemaName });
 				connection.Execute(deleteSchemasSql, new { schema_name = msg.SchemaName });
-				tx.Commit();
+				// tx.Commit();
 			} catch {
-				tx.Rollback();
+				// tx.Rollback();
 				throw;
 			}
 			return ValueTask.CompletedTask;

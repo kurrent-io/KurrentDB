@@ -5,6 +5,7 @@
 
 using System.Text.Json;
 using Google.Protobuf.Collections;
+using Google.Protobuf.WellKnownTypes;
 using Kurrent.Quack;
 using Kurrent.Surge.DuckDB;
 using Kurrent.Surge.Schema.Validation;
@@ -12,6 +13,7 @@ using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Infrastructure.Grpc;
 using KurrentDB.SchemaRegistry.Planes.Storage;
 using static KurrentDB.SchemaRegistry.Data.SchemaQueriesMapping;
+using static KurrentDB.SchemaRegistry.Data.SchemaSql;
 using SchemaCompatibilityError = KurrentDB.Protocol.Registry.V2.SchemaCompatibilityError;
 using SchemaCompatibilityErrorKind = KurrentDB.Protocol.Registry.V2.SchemaCompatibilityErrorKind;
 using SchemaCompatibilityResult = Kurrent.Surge.Schema.Validation.SchemaCompatibilityResult;
@@ -23,210 +25,165 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 	ISchemaCompatibilityManager CompatibilityManager { get; } = compatibilityManager;
 
 	public GetSchemaResponse GetSchema(GetSchemaRequest query) {
-		const string sql =
-			"""
-			SELECT * FROM schemas
-			WHERE schema_name = $schema_name
-			""";
-
 		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
 
-		return connection.QueryOne(
-			sql, record => record is not null
-				? new GetSchemaResponse { Schema = MapToSchema(record) }
-				: throw RpcExceptions.NotFound("Schema", query.SchemaName),
-			new { schema_name = query.SchemaName }
-		);
+		var schema = connection.QueryFirstOrDefault<GetByNameArgs, SchemaRow, GetSchemaByNameQuery>(new(query.SchemaName));
+		return
+			schema.HasValue
+				? new GetSchemaResponse {
+					Schema = new() {
+						SchemaName = schema.Value.SchemaName,
+						LatestSchemaVersion = schema.Value.LatestVersionNumber,
+						CreatedAt = Timestamp.FromDateTime(schema.Value.CreatedAt.ToUniversalTime()),
+						UpdatedAt = Timestamp.FromDateTime(schema.Value.UpdatedAt.ToUniversalTime()),
+						Details = new() {
+							Description = schema.Value.Description,
+							DataFormat = (SchemaDataFormat)schema.Value.DataFormat,
+							Compatibility = (CompatibilityMode)schema.Value.Compatibility,
+							Tags = { MapToTags(schema.Value.Tags) }
+						}
+					}
+				}
+				: throw RpcExceptions.NotFound("Schema", query.SchemaName);
 	}
 
 	public LookupSchemaNameResponse LookupSchemaName(LookupSchemaNameRequest query) {
-		const string sql =
-			"""
-			SELECT schema_name FROM schema_versions
-			WHERE version_id = $schema_version_id
-			""";
-
 		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
 
-		return connection.QueryOne(
-			sql, record => record is not null
-				? new LookupSchemaNameResponse { SchemaName = record.schema_name }
-				: throw RpcExceptions.NotFound("SchemaVersion", query.SchemaVersionId),
-			new { schema_version_id = query.SchemaVersionId, }
-		);
+		var row =
+			connection.QueryFirstOrDefault<GetByVersionIdArgs, LookupSchemaNameRow, LookupSchemaNameByVersionIdQuery>(
+				new(query.SchemaVersionId));
+		return row.HasValue
+			? new LookupSchemaNameResponse { SchemaName = row.Value.SchemaName }
+			: throw RpcExceptions.NotFound("SchemaVersion", query.SchemaVersionId);
 	}
 
 	public GetSchemaVersionResponse GetSchemaVersion(GetSchemaVersionRequest query) {
-		const string sqlWithVersionNumber =
-			"""
-			SELECT
-			      version_id
-			    , version_number
-			    , decode(schema_definition) AS schema_definition
-			    , data_format
-			    , registered_at
-			FROM schema_versions
-			WHERE schema_name = $schema_name
-			  AND version_number = $version_number
-			""";
-
-		const string sqlWithoutVersionNumber =
-			"""
-			SELECT
-			      version_id
-			    , version_number
-			    , decode(schema_definition) AS schema_definition
-			    , data_format
-			    , registered_at
-			FROM schema_versions
-			WHERE schema_name = $schema_name
-			ORDER BY version_number DESC
-			LIMIT 1;
-			""";
-
 		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
 
-		return query.HasVersionNumber
-			? connection.QueryOne(
-				sqlWithVersionNumber, record => record is not null
-					? new GetSchemaVersionResponse { Version = MapToSchemaVersion(record) }
-					: throw RpcExceptions.NotFound("Schema", query.SchemaName),
-				new { schema_name = query.SchemaName, version_number = query.VersionNumber }
-			)
-			: connection.QueryOne(
-				sqlWithoutVersionNumber, record => record is not null
-					? new GetSchemaVersionResponse { Version = MapToSchemaVersion(record) }
-					: throw RpcExceptions.NotFound("SchemaVersion", query.VersionNumber.ToString()),
-				new { schema_name = query.SchemaName }
-			);
-	}
+		SchemaVersionRow? row = query.HasVersionNumber
+			? connection.QueryFirstOrDefault<GetByNameAndNumberArgs, SchemaVersionRow, GetSchemaVersionByNameAndNumberQuery>(
+				new(query.SchemaName, query.VersionNumber))
+			: connection.QueryFirstOrDefault<GetByNameArgs, SchemaVersionRow, GetLatestSchemaVersionByNameQuery>(new(query.SchemaName));
 
-	public GetSchemaVersionByIdResponse GetSchemaVersionById(GetSchemaVersionByIdRequest query) {
-		const string sql =
-			"""
-			SELECT
-			      version_id
-			    , version_number
-			    , decode(schema_definition) AS schema_definition
-			    , data_format
-			    , registered_at
-			FROM schema_versions
-			WHERE version_id = $schema_version_id
-			""";
+		if (!row.HasValue)
+			return query.HasVersionNumber
+				? throw RpcExceptions.NotFound("Schema", query.SchemaName)
+				: throw RpcExceptions.NotFound("SchemaVersion", query.VersionNumber.ToString());
 
-		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
-
-		return connection.QueryOne(
-			sql, record => record is not null
-				? new GetSchemaVersionByIdResponse { Version = MapToSchemaVersion(record) }
-				: throw RpcExceptions.NotFound("SchemaVersion", query.SchemaVersionId),
-			new { schema_version_id = query.SchemaVersionId }
-		);
-	}
-
-	public ListSchemasResponse ListSchemas(ListSchemasRequest query) {
-		const string sql =
-			"""
-			SELECT * FROM schemas
-			WHERE ($schema_name_prefix = '' OR schema_name ILIKE $schema_name_prefix)
-			  AND ($tags = '' OR json_contains(tags, $tags))
-			""";
-
-		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
-
-		var result = connection
-			.QueryMany<Schema>(
-				sql, record => MapToSchema(record),
-				new {
-					schema_name_prefix = query.HasSchemaNamePrefix ? $"{query.SchemaNamePrefix}%" : "",
-					tags = query.SchemaTags.Count > 0 ? JsonSerializer.Serialize(query.SchemaTags) : ""
-				}
-			)
-			.ToList();
-
-		return new ListSchemasResponse { Schemas = { result } };
-	}
-
-	public ListSchemaVersionsResponse ListSchemaVersions(ListSchemaVersionsRequest query) {
-		const string sqlIncludeDefinition =
-			"""
-			SELECT
-			      version_id
-			    , version_number
-			    , decode(schema_definition) AS schema_definition
-			    , data_format
-			    , registered_at
-			FROM schema_versions
-			WHERE schema_name = $schema_name
-			ORDER BY version_number
-			""";
-
-		const string sqlExcludeDefinition =
-			"""
-			SELECT
-			      version_id
-			    , version_number
-			    , data_format
-			    , registered_at
-			FROM schema_versions
-			WHERE schema_name = $schema_name
-			ORDER BY version_number
-			""";
-
-		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
-
-		var result = connection
-			.QueryMany<SchemaVersion>(
-				query.IncludeDefinition ? sqlIncludeDefinition : sqlExcludeDefinition,
-				record => MapToSchemaVersion(record),
-				new { schema_name = query.SchemaName }
-			)
-			.ToList();
-
-		if (result.Count == 0)
-			throw RpcExceptions.NotFound("Schema", query.SchemaName);
-
+		var v = row.Value;
 		return new() {
-			Versions = { result }
+			Version = new() {
+				SchemaVersionId = v.VersionId,
+				VersionNumber = v.VersionNumber,
+				SchemaDefinition = Google.Protobuf.ByteString.CopyFromUtf8(v.SchemaDefinition ?? string.Empty),
+				DataFormat = (SchemaDataFormat)v.DataFormat,
+				RegisteredAt = Timestamp.FromDateTime(v.RegisteredAt.ToUniversalTime())
+			}
 		};
 	}
 
-	public ListRegisteredSchemasResponse ListRegisteredSchemas(ListRegisteredSchemasRequest query) {
-		const string sql =
-			"""
-			SELECT
-			      s.schema_name
-			    , s.data_format
-			    , s.compatibility
-			    , s.tags
-			    , v.version_id
-			    , v.version_number
-			    , decode(v.schema_definition) AS schema_definition
-			    , v.registered_at
-			FROM schemas s
-			INNER JOIN schema_versions v ON s.latest_version_id = v.version_id
-			WHERE ($schema_version_id = '' OR v.version_id = $schema_version_id)
-			  AND ($schema_name_prefix = '' OR s.schema_name ILIKE $schema_name_prefix)
-			  AND ($tags == '' OR json_contains(s.tags, $tags))
-			""";
-
+	public GetSchemaVersionByIdResponse GetSchemaVersionById(GetSchemaVersionByIdRequest query) {
 		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
 
-		var result = connection
-			.QueryMany<RegisteredSchema>(
-				sql, record => MapToRegisteredSchema(record),
-				new {
-					schema_version_id = query.SchemaVersionId,
-					schema_name_prefix = query.HasSchemaNamePrefix ? $"{query.SchemaNamePrefix}%" : "",
-					tags = query.SchemaTags.Count > 0 ? JsonSerializer.Serialize(query.SchemaTags) : ""
-				}
-			)
-			.ToList();
+		var row =
+			connection.QueryFirstOrDefault<GetByVersionIdArgs, SchemaVersionRow, GetSchemaVersionByIdQuery>(new(query.SchemaVersionId));
+		if (!row.HasValue)
+			throw RpcExceptions.NotFound("SchemaVersion", query.SchemaVersionId);
 
-		return new() { Schemas = { result } };
+		var v = row.Value;
+		return new() {
+			Version = new() {
+				SchemaVersionId = v.VersionId,
+				VersionNumber = v.VersionNumber,
+				SchemaDefinition = Google.Protobuf.ByteString.CopyFromUtf8(v.SchemaDefinition ?? string.Empty),
+				DataFormat = (SchemaDataFormat)v.DataFormat,
+				RegisteredAt = Timestamp.FromDateTime(v.RegisteredAt.ToUniversalTime())
+			}
+		};
 	}
 
-	public async Task<CheckSchemaCompatibilityResponse> CheckSchemaCompatibility(CheckSchemaCompatibilityRequest query, CancellationToken cancellationToken) {
+	public ListSchemasResponse ListSchemas(ListSchemasRequest query) {
+		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
+
+		var args = new ListSchemasArgs(
+			query.HasSchemaNamePrefix ? $"{query.SchemaNamePrefix}%" : string.Empty,
+			query.SchemaTags.Count > 0 ? JsonSerializer.Serialize(query.SchemaTags) : string.Empty
+		);
+		var result = connection.QueryToList<ListSchemasArgs, SchemaRow, ListSchemasQuery>(args);
+
+		var list = result.Select(row => new Schema {
+			SchemaName = row.SchemaName,
+			LatestSchemaVersion = row.LatestVersionNumber,
+			CreatedAt = Timestamp.FromDateTime(row.CreatedAt.ToUniversalTime()),
+			UpdatedAt = Timestamp.FromDateTime(row.UpdatedAt.ToUniversalTime()),
+			Details = new() {
+				Description = row.Description, DataFormat = (SchemaDataFormat)row.DataFormat,
+				Compatibility = (CompatibilityMode)row.Compatibility, Tags = { MapToTags(row.Tags) }
+			}
+		});
+
+		return new() { Schemas = { list } };
+	}
+
+	public ListSchemaVersionsResponse ListSchemaVersions(ListSchemaVersionsRequest query) {
+		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
+
+		var versions = new List<SchemaVersion>();
+		if (query.IncludeDefinition) {
+			versions.AddRange(connection
+				.QueryToList<GetByNameArgs, SchemaVersionRow, ListSchemaVersionsIncludeDefinitionQuery>(new(query.SchemaName))
+				.Select(row => new SchemaVersion {
+					SchemaVersionId = row.VersionId,
+					VersionNumber = row.VersionNumber,
+					SchemaDefinition = Google.Protobuf.ByteString.CopyFromUtf8(row.SchemaDefinition),
+					DataFormat = (SchemaDataFormat)row.DataFormat,
+					RegisteredAt = Timestamp.FromDateTime(row.RegisteredAt.ToUniversalTime())
+				}));
+		} else {
+			versions.AddRange(connection
+				.QueryToList<GetByNameArgs, SchemaVersionHeaderRow, ListSchemaVersionsExcludeDefinitionQuery>(new(query.SchemaName))
+				.Select(row => new SchemaVersion {
+					SchemaVersionId = row.VersionId,
+					VersionNumber = row.VersionNumber,
+					SchemaDefinition = Google.Protobuf.ByteString.Empty,
+					DataFormat = (SchemaDataFormat)row.DataFormat,
+					RegisteredAt = Timestamp.FromDateTime(row.RegisteredAt.ToUniversalTime())
+				}));
+		}
+
+		return versions.Count == 0
+			? throw RpcExceptions.NotFound("Schema", query.SchemaName)
+			: new() { Versions = { versions } };
+	}
+
+	public ListRegisteredSchemasResponse ListRegisteredSchemas(ListRegisteredSchemasRequest query) {
+		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
+
+		var args = new ListRegisteredSchemasArgs(
+			query.SchemaVersionId,
+			query.HasSchemaNamePrefix ? $"{query.SchemaNamePrefix}%" : string.Empty,
+			query.SchemaTags.Count > 0 ? JsonSerializer.Serialize(query.SchemaTags) : string.Empty
+		);
+
+		var result = connection
+			.QueryToList<ListRegisteredSchemasArgs, RegisteredSchemaRow, ListRegisteredSchemasByArgsQuery>(args);
+		var list = result.Select(row => new RegisteredSchema {
+			SchemaName = row.SchemaName,
+			DataFormat = (SchemaDataFormat)row.DataFormat,
+			Compatibility = (CompatibilityMode)row.Compatibility,
+			Tags = { MapToTags(row.Tags) },
+			SchemaVersionId = row.VersionId,
+			SchemaDefinition = Google.Protobuf.ByteString.CopyFromUtf8(row.SchemaDefinition ?? string.Empty),
+			VersionNumber = row.VersionNumber,
+			RegisteredAt = Timestamp.FromDateTime(row.RegisteredAt.ToUniversalTime()),
+		});
+
+		return new() { Schemas = { list } };
+	}
+
+	public async Task<CheckSchemaCompatibilityResponse> CheckSchemaCompatibility(CheckSchemaCompatibilityRequest query,
+		CancellationToken cancellationToken) {
 		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
 
 		var info = query.HasSchemaVersionId
@@ -252,7 +209,8 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 		SchemaCompatibilityResult result;
 
 		if (compatibility is SchemaCompatibilityMode.Backward or SchemaCompatibilityMode.Forward or SchemaCompatibilityMode.Full) {
-			result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, info.SchemaDefinition.ToStringUtf8(), compatibility, cancellationToken);
+			result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, info.SchemaDefinition.ToStringUtf8(), compatibility,
+				cancellationToken);
 		} else {
 			var infos = query.HasSchemaVersionId
 				? GetAllSchemaValidationInfos(connection, Guid.Parse(query.SchemaVersionId))
@@ -269,92 +227,40 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 	}
 
 	static SchemaValidationInfo GetLatestSchemaValidationInfo(DuckDBAdvancedConnection connection, string schemaName) {
-		const string sql =
-			"""
-			SELECT
-			      v.version_id
-			    , decode(v.schema_definition) AS schema_definition
-			    , v.data_format
-			    , s.compatibility
-			FROM schemas s
-			INNER JOIN schema_versions v ON v.version_id = s.latest_version_id
-			WHERE s.schema_name = $schema_name
-			""";
-
-		return connection.QueryOne(
-			sql, record => record is not null
-				? MapToSchemaValidationInfo(record)
-				: throw RpcExceptions.NotFound("Schema", schemaName),
-			new { schema_name = schemaName }
-		);
+		var row =
+			connection.QueryFirstOrDefault<GetByNameArgs, SchemaValidationInfoRow, GetLatestSchemaValidationInfoByNameQuery>(
+				new(schemaName));
+		return !row.HasValue ? throw RpcExceptions.NotFound("Schema", schemaName) : row.Value.Map();
 	}
 
 	static SchemaValidationInfo GetLatestSchemaValidationInfo(DuckDBAdvancedConnection connection, Guid schemaVersionId) {
-		const string sql =
-			"""
-			SELECT
-			      v.version_id
-			    , decode(v.schema_definition) AS schema_definition
-			    , v.data_format
-			    , s.compatibility
-			FROM schemas s
-			INNER JOIN schema_versions v ON v.version_id = s.latest_version_id
-			WHERE s.schema_name = (
-			    SELECT schema_name FROM schema_versions
-			    WHERE version_id = $schema_version_id
-			)
-			""";
-
-		return connection.QueryOne(
-			sql, record => record is not null
-				? MapToSchemaValidationInfo(record)
-				: throw RpcExceptions.NotFound("SchemaVersion", schemaVersionId.ToString()),
-			new { schema_version_id = schemaVersionId }
-		);
+		var row =
+			connection.QueryFirstOrDefault<GetByVersionIdArgs, SchemaValidationInfoRow, GetLatestSchemaValidationInfoByVersionIdQuery>(
+				new(schemaVersionId.ToString()));
+		return !row.HasValue ? throw RpcExceptions.NotFound("SchemaVersion", schemaVersionId.ToString()) : row.Value.Map();
 	}
 
-	static List<SchemaValidationInfo> GetAllSchemaValidationInfos(DuckDBAdvancedConnection connection, string schemaName) {
-		const string sql =
-			"""
-			SELECT
-			      v.version_id
-			    , decode(v.schema_definition) AS schema_definition
-			    , v.data_format
-			    , s.compatibility
-			FROM schemas s
-			INNER JOIN schema_versions v ON v.schema_name = s.schema_name
-			WHERE s.schema_name = $schema_name
-			ORDER BY v.version_number
-			""";
-
-		return connection.QueryMany<SchemaValidationInfo>(
-			sql,
-			record => MapToSchemaValidationInfo(record),
-			new { schema_name = schemaName }
-		).ToList();
+	static IEnumerable<SchemaValidationInfo> GetAllSchemaValidationInfos(DuckDBAdvancedConnection connection, string schemaName) {
+		var result = connection
+			.QueryToList<GetByNameArgs, SchemaValidationInfoRow, GetAllSchemaValidationInfosByNameQuery>(new(schemaName));
+		return result.Select(row => row.Map());
 	}
 
-	static List<SchemaValidationInfo> GetAllSchemaValidationInfos(DuckDBAdvancedConnection connection, Guid schemaVersionId) {
-		const string sql =
-			"""
-			SELECT
-				v.version_id
-				, decode(v.schema_definition) AS schema_definition
-				, v.data_format
-				, s.compatibility
-			FROM schemas s
-			INNER JOIN schema_versions v ON v.schema_name = s.schema_name
-			WHERE s.schema_name = (
-				SELECT schema_name FROM schema_versions
-				WHERE version_id = $schema_version_id
-			)
-			ORDER BY v.version_number
-			""";
+	static IEnumerable<SchemaValidationInfo> GetAllSchemaValidationInfos(DuckDBAdvancedConnection connection, Guid schemaVersionId) {
+		var result =
+			connection.QueryToList<GetByVersionIdArgs, SchemaValidationInfoRow, GetAllSchemaValidationInfosByVersionIdQuery>(
+				new(schemaVersionId.ToString()));
 
-		return connection.QueryMany<SchemaValidationInfo>(
-			sql,
-			record => MapToSchemaValidationInfo(record),
-			new { schema_version_id = schemaVersionId }
-		).ToList();
+		return result.Select(row => row.Map());
 	}
+}
+
+file static class Mappings {
+	public static SchemaValidationInfo Map(this SchemaValidationInfoRow row)
+		=> new() {
+			SchemaVersionId = row.VersionId,
+			SchemaDefinition = Google.Protobuf.ByteString.CopyFromUtf8(row.SchemaDefinition),
+			DataFormat = (SchemaDataFormat)row.DataFormat,
+			Compatibility = (CompatibilityMode)row.Compatibility
+		};
 }

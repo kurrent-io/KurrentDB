@@ -40,25 +40,21 @@ public class SchemaApplication : EntityApplication<SchemaEntity> {
     protected override StreamTemplate        StreamTemplate => SchemasStreamTemplate;
 
     public SchemaApplication(ISchemaCompatibilityManager compatibilityManager, LookupSchemaNameByVersionId lookupSchemaName, GetUtcNow getUtcNow, IEventStore store) : base(store) {
-        OnAny<CreateSchemaRequest>((state, cmd) => {
-            if (state.IsNew) {
-                return [
-                    new SchemaCreated {
-                        SchemaName       = cmd.SchemaName,
-                        Description      = cmd.Details.Description,
-                        DataFormat       = cmd.Details.DataFormat,
-                        Compatibility    = cmd.Details.Compatibility,
-                        Tags             = { cmd.Details.Tags },
-                        SchemaVersionId  = Guid.NewGuid().ToString(),
-                        SchemaDefinition = cmd.SchemaDefinition,
-                        VersionNumber    = 1,
-                        CreatedAt        = getUtcNow().ToTimestamp()
-                    }
-                ];
-            }
-
-            throw new DomainExceptions.EntityAlreadyExists("Schema", cmd.SchemaName);
-        });
+        OnAny<CreateSchemaRequest>((state, cmd) => state.IsNew
+	        ? [
+		        new SchemaCreated {
+			        SchemaName = cmd.SchemaName,
+			        Description = cmd.Details.Description,
+			        DataFormat = cmd.Details.DataFormat,
+			        Compatibility = cmd.Details.Compatibility,
+			        Tags = { cmd.Details.Tags },
+			        SchemaVersionId = Guid.NewGuid().ToString(),
+			        SchemaDefinition = cmd.SchemaDefinition,
+			        VersionNumber = 1,
+			        CreatedAt = getUtcNow().ToTimestamp()
+		        }
+	        ]
+	        : throw new DomainExceptions.EntityAlreadyExists("Schema", cmd.SchemaName));
 
         OnExisting<RegisterSchemaVersionRequest>((state, cmd) => {
             state.EnsureNotDeleted();
