@@ -38,6 +38,20 @@ Query one or more available sources like streams, categories, or everything.
 
 **Consider adding `limit` to the query to constrain the scan surface.**
 
+##### Available predicates
+
+You can use top-level predicates as well as JSON predicates on payload and metadata.
+
+Top-level predicates are available on:
+* `log_position`: commit position (bigint)
+* `stream`: stream name (varchar)
+* `event_number`: event number in a stream (int)
+* `created_at`: record append time (timestamp, for example `1992-09-20 11:30:00.123`)
+
+JSON predicates are available on:
+* `data`: event payload
+* `metadata`: custom event metadata
+
 ##### Example query
 
 The query will find all events from a category `Telemetry` where the `Version` property is set, and then count the number of
