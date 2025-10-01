@@ -3,6 +3,7 @@
 
 using System;
 using KurrentDB.Core.Services.Archive.Naming;
+using KurrentDB.Core.Services.Archive.Storage.Gcp;
 using KurrentDB.Core.Services.Archive.Storage.S3;
 
 namespace KurrentDB.Core.Services.Archive.Storage;
@@ -15,6 +16,7 @@ public static class ArchiveStorageFactory {
 			StorageType.Unspecified => throw new InvalidOperationException("Please specify an Archive StorageType"),
 			StorageType.FileSystemDevelopmentOnly => new ArchiveStorage(new FileSystemBlobStorage(options.FileSystem), namingStrategy, ArchiveCheckpointFile),
 			StorageType.S3 => new ArchiveStorage(new S3BlobStorage(options.S3), namingStrategy, ArchiveCheckpointFile),
+			StorageType.GCP => new ArchiveStorage(new GcpBlobStorage(options.GCP), namingStrategy, ArchiveCheckpointFile),
 			_ => throw new ArgumentOutOfRangeException(nameof(options.StorageType))
 		};
 }

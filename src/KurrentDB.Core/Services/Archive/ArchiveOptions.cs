@@ -11,6 +11,7 @@ public class ArchiveOptions {
 	public StorageType StorageType { get; init; } = StorageType.Unspecified;
 	public FileSystemOptions FileSystem { get; init; } = new();
 	public S3Options S3 { get; init; } = new();
+	public GcpOptions GCP { get; init; } = new();
 	public RetentionOptions RetainAtLeast { get; init; } = new();
 
 	public void Validate() {
@@ -27,12 +28,15 @@ public class ArchiveOptions {
 
 		switch (StorageType) {
 			case StorageType.Unspecified:
-				throw new InvalidConfigurationException("Please specify a StorageType (e.g. S3)");
+				throw new InvalidConfigurationException("Please specify a StorageType (e.g. S3, GCP)");
 			case StorageType.FileSystemDevelopmentOnly:
 				FileSystem.Validate();
 				break;
 			case StorageType.S3:
 				S3.Validate();
+				break;
+			case StorageType.GCP:
+				GCP.Validate();
 				break;
 			default:
 				throw new InvalidConfigurationException("Unknown StorageType");
@@ -48,6 +52,7 @@ public enum StorageType {
 	// node has scavenged a chunk and replaced it.
 	FileSystemDevelopmentOnly,
 	S3,
+	GCP
 }
 
 public class FileSystemOptions {
@@ -69,6 +74,15 @@ public class S3Options {
 
 		if (string.IsNullOrEmpty(Region))
 			throw new InvalidConfigurationException("Please provide a Region for the S3 archive");
+	}
+}
+
+public class GcpOptions {
+	public string Bucket { get; init; } = "";
+
+	public void Validate() {
+		if (string.IsNullOrEmpty(Bucket))
+			throw new InvalidConfigurationException("Please provide a Bucket for the GCP archive");
 	}
 }
 

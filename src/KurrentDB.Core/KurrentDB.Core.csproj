@@ -10,6 +10,7 @@
 		<PackageReference Include="Kurrent.Quack" />
 		<PackageReference Include="FluentStorage" />
 		<PackageReference Include="FluentStorage.AWS" />
+		<PackageReference Include="Google.Cloud.Storage.V1"/>
 		<PackageReference Include="Google.Protobuf" />
 		<PackageReference Include="Grpc.AspNetCore" />
 		<PackageReference Include="Grpc.Tools">
