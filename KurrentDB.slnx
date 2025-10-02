@@ -4,9 +4,6 @@
     <Platform Name="ARM64" />
     <Platform Name="x64" />
   </Configurations>
-  <Folder Name="/Agent/">
-    <File Path="CLAUDE.md" />
-  </Folder>
   <Folder Name="/Api/">
     <Project Path="src\KurrentDB.Api.V2.Tests\KurrentDB.Api.V2.Tests.csproj" Type="Classic C#" />
     <Project Path="src\KurrentDB.Api.V2\KurrentDB.Api.V2.csproj" Type="Classic C#" />
