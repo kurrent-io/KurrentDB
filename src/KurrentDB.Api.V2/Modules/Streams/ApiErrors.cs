@@ -90,8 +90,8 @@ public static partial class ApiErrors {
 
 		var exceededBy = recordSize - maxSize;
 
-		var message = $"The size of record {recordId} ({recordSize.Bytes().Humanize("0.00")}) exceeds the maximum allowed size of "
-		            + $"{maxSize.Bytes().Humanize("0.00")} bytes by {exceededBy.Bytes().Humanize("0.00")}";
+		var message = $"The size of record {recordId} ({recordSize.Bytes().Humanize("0.000")}) exceeds the maximum allowed size of "
+		            + $"{maxSize.Bytes().Humanize("0.000")} bytes by {exceededBy.Bytes().Humanize("0.000")}";
 
 		var details = new AppendRecordSizeExceededErrorDetails {
 			Stream   = stream,

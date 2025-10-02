@@ -4,8 +4,10 @@
 using System.Collections.Concurrent;
 using DotNext.Reflection;
 using Google.Protobuf.Reflection;
+using Humanizer;
 using Kurrent.Rpc;
 using KurrentDB.Api.Infrastructure.Protobuf;
+using static System.StringComparison;
 
 namespace KurrentDB.Api.Infrastructure.Errors;
 
@@ -35,26 +37,40 @@ static class ErrorExtensions {
 		static ErrorMetadata BuildErrorMetadata(string key, T errorCode) {
 			var descriptor  = ProtobufEnums.System.GetEnumValueDescriptor(errorCode);
 			var annotations = descriptor.GetErrorAnnotations();
-			var detailsType = annotations.HasDetails ? GetDetailsType(key) : null;
+            var domain      = descriptor.EnumDescriptor.Name.Replace("Error", "", OrdinalIgnoreCase).Replace("Errors", "", OrdinalIgnoreCase).ToLowerInvariant();
+            var detailsType = annotations.HasDetails ? GetDetailsType(key) : null;
 
-			return new(
-				Code       : GetOriginalErrorCode(errorCode),
-				StatusCode : (int)annotations.StatusCode,
-				HasDetails : annotations.HasDetails,
-				DetailsType: detailsType
+            var originalCode = GetOriginalErrorCode(errorCode);
+            var code         = originalCode.Replace($"{descriptor.EnumDescriptor.Name.Underscore().ToUpperInvariant()}_", "");
+
+            ErrorMetadata err = new(
+				Code         : code,
+                OriginalCode : originalCode,
+				StatusCode   : (int)annotations.StatusCode,
+                Domain       : domain,
+				HasDetails   : annotations.HasDetails,
+				DetailsType  : detailsType
 			);
+
+            return err;
 
 			static string GetOriginalErrorCode(T errorCode) =>
 				errorCode.GetCustomAttribute<T, OriginalNameAttribute>()!.Name;
 
-			static Type GetDetailsType(string key) {
-				return Type.GetType($"{key}ErrorDetails")
-                    ?? Type.GetType(key)
-				    ?? throw new InvalidOperationException($"Error details type not found for error code '{key.Split(".")[^1]}'.");
-			}
+			static Type? GetDetailsType(string key) {
+                string[] names = [
+                    $"{key}ErrorDetails",
+                    $"{key}Error",
+                    key,
+                    $"Google.Rpc.{key.Split(".")[^1]}"
+                ];
+
+                return AssemblyScanner.System.Scan()
+                    .FirstOrDefault(t => names.Contains(t.FullName, StringComparer.Ordinal));
+            }
 		}
 
 	}
 }
 
-public readonly record struct ErrorMetadata(string Code, int StatusCode, bool HasDetails, Type? DetailsType);
+public readonly record struct ErrorMetadata(string Code, string OriginalCode, int StatusCode, string Domain, bool HasDetails, Type? DetailsType);

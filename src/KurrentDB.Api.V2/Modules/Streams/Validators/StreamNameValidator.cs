@@ -5,7 +5,7 @@ using FluentValidation;
 
 namespace KurrentDB.Api.Streams.Validators;
 
-partial class StreamNameValidator : AbstractValidator<string> {
+partial class StreamNameValidator : AbstractValidator<string?> {
 	public static readonly StreamNameValidator Instance = new();
 
 	public StreamNameValidator() =>

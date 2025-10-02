@@ -19,6 +19,7 @@
 		<PackageReference Include="Grpc.Net.Client" />
 		<PackageReference Include="GitHubActionsTestLogger" />
 		<PackageReference Include="Grpc.StatusProto" />
+		<PackageReference Include="Microsoft.Extensions.Diagnostics.Testing" />
 		<PackageReference Include="TUnit" />
 	</ItemGroup>
 

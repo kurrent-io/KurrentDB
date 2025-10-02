@@ -6,6 +6,12 @@ using System.Reflection;
 
 namespace KurrentDB.Api.Infrastructure;
 
+/// <summary>
+/// Utility class for loading assemblies from a specified directory with caching and filtering capabilities.
+/// <remarks>
+/// Experimental and intended for internal use only.
+/// </remarks>
+/// </summary>
 static class AssemblyLoader {
     static readonly ConcurrentDictionary<string, Assembly?> AssemblyCache = new();
 
@@ -15,6 +21,7 @@ static class AssemblyLoader {
 
     public static IEnumerable<Assembly> LoadFrom(string directoryPath, Predicate<string>? assemblyFileNameFilter = null) {
         ArgumentNullException.ThrowIfNull(directoryPath);
+
         foreach (var assemblyFile in Directory.EnumerateFiles(directoryPath, "*.dll", SearchOption.TopDirectoryOnly).AsParallel()) {
             // Skip if matches any excluded prefix
             if (ExcludedAssemblyPrefixes.Any(prefix => assemblyFile.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))

@@ -38,6 +38,7 @@
 		<PackageReference Include="Serilog.Sinks.Debug" />
 		<PackageReference Include="Serilog.Sinks.Map" />
 		<PackageReference Include="Serilog.Sinks.Observable" />
+		<PackageReference Include="Serilog.Sinks.OpenTelemetry" />
 		<PackageReference Include="Serilog.Sinks.Seq" />
 		<PackageReference Include="Shouldly" />
 		<PackageReference Include="System.Reactive" />

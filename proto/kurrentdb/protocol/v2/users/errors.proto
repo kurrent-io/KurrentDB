@@ -1,0 +1,31 @@
+// ******************************************************************************************
+// This protocol is UNSTABLE in the sense of being subject to change.
+// ******************************************************************************************
+
+syntax = "proto3";
+
+package kurrentdb.protocol.v2.users.errors;
+
+option csharp_namespace = "KurrentDB.Protocol.V2.Users.Errors";
+
+import "rpc.proto";
+
+enum UsersError {
+  // Default value. This value is not used.
+  // An error code MUST always be set to a non-zero value.
+  // If an error code is not explicitly set, it MUST be treated as
+  // an internal server error (INTERNAL).
+  USERS_ERROR_UNSPECIFIED = 0;
+
+  USERS_ERROR_USER_NOT_FOUND = 1 [(kurrent.rpc.error) = {
+    status_code: NOT_FOUND
+  }];
+
+  USERS_ERROR_USER_ALREADY_EXISTS = 2 [(kurrent.rpc.error) = {
+    status_code: ALREADY_EXISTS
+  }];
+
+  USERS_ERROR_USER_DELETED = 3 [(kurrent.rpc.error) = {
+    status_code: FAILED_PRECONDITION
+  }];
+}

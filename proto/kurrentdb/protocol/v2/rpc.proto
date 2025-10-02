@@ -53,11 +53,11 @@ message ErrorMetadata {
   // Indicates whether this error supports rich, typed detail messages.
   // Defaults to false (simple message string only).
   // The message type name must be derived from the enum name by convention.
-  // Mask: {EnumValue}ErrorDetails
+  // Mask: {EnumValue}ErrorDetails, {EnumValue}Error, {EnumValue}
   //
   // Examples:
-  //   ACCESS_DENIED    -> "AccessDeniedErrorDetails"
-  //   SERVER_NOT_READY -> "ServerNotReadyErrorDetails"
+  //   ACCESS_DENIED    -> "AccessDeniedErrorDetails", "AccessDeniedError" or "AccessDenied"
+  //   SERVER_NOT_READY -> "ServerNotReadyErrorDetails", "ServerNotReadyError" or "ServerNotReady"
   //
   // Code generators use the message type name to:
   // - Validate that the detail message matches the expected type
@@ -71,21 +71,4 @@ extend google.protobuf.EnumValueOptions {
   // Provides additional information about error conditions for automated
   // code generation and documentation.
   optional ErrorMetadata error = 50000;
-}
-
-// The top-level error message that must be returned by any service or operation
-// in the Kurrent platform.
-message RequestErrorInfo {
-  // The code must match one of the defined enum error codes from the module
-  // where the error originated from.
-  // A machine-readable error code that indicates the specific error condition.
-  // This should be at most 63 characters and match a regular expression of
-  // `[A-Z][A-Z0-9_]+[A-Z0-9]`, which represents UPPER_SNAKE_CASE.
-  // By convention, it will be generated from the enum value name if not
-  // explicitly specified.
-  // Conventions:
-  // - Prefix with the service name or domain to avoid collisions
-  // - Use UPPER_SNAKE_CASE with only letters, numbers, and underscores
-  // - Avoid redundant information (e.g., do not include "ERROR" suffix)
-  string code = 1;
 }

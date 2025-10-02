@@ -5,11 +5,11 @@ using FluentValidation;
 
 namespace KurrentDB.Api.Streams.Validators;
 
-class RecordIdValidator : AbstractValidator<string> {
+class RecordIdValidator : AbstractValidator<string?> {
 	public static readonly RecordIdValidator Instance = new();
 
 	public RecordIdValidator() =>
 		RuleFor(x => x)
-			.Must(value => Guid.TryParse((string?)value, out var valueGuid) && valueGuid != Guid.Empty)
+			.Must(value => Guid.TryParse(value, out var valueGuid) && valueGuid != Guid.Empty)
 			.WithMessage("Record ID must be a valid and non-empty UUID");
 }

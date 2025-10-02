@@ -23,7 +23,7 @@ partial class Enumerator {
 		private readonly bool _resolveLinks;
 		private readonly ClaimsPrincipal _user;
 		private readonly bool _requiresLeader;
-		private readonly DateTime _deadline;
+		private readonly DateTime? _deadline;
 		private readonly CancellationToken _cancellationToken;
 		private readonly SemaphoreSlim _semaphore = new(1, 1);
 		private readonly Channel<ReadResponse> _channel = Channel.CreateBounded<ReadResponse>(BoundedChannelOptions);
@@ -38,7 +38,7 @@ partial class Enumerator {
 			bool resolveLinks,
 			ClaimsPrincipal user,
 			bool requiresLeader,
-			DateTime deadline,
+			DateTime? deadline,
 			CancellationToken cancellationToken) {
 			_bus = Ensure.NotNull(bus);
 			_maxCount = maxCount;

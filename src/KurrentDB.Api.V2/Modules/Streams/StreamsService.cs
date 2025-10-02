@@ -7,12 +7,11 @@
 // ReSharper disable MethodHasAsyncOverload
 
 using System.Collections.Immutable;
-using System.Security.Claims;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
 using KurrentDB.Api.Errors;
 using KurrentDB.Api.Infrastructure;
-using KurrentDB.Api.Infrastructure.Grpc.Validation;
+using KurrentDB.Api.Infrastructure.Authorization;
 using KurrentDB.Api.Streams.Authorization;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core;
@@ -21,9 +20,11 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Metrics;
+using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Protocol.V2.Streams;
-using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Http.Features;
+
 using static KurrentDB.Core.Messages.ClientMessage;
 using static KurrentDB.Protocol.V2.Streams.StreamsService;
 
@@ -39,32 +40,37 @@ public class StreamsService : StreamsServiceBase {
         StreamsServiceOptions options,
         IPublisher publisher,
         IAuthorizationProvider authz,
-        NodeSystemInfoProvider node,
-        TimeProvider time,
-        ApiV2Trackers trackers,
-        RequestValidation validation,
-        ILogger<StreamsService> logger
+        Func<CancellationToken, ValueTask> ensureNodeIsLeader,
+        ApiV2Trackers trackers
     ) {
-        Options     = options;
-        Publisher   = publisher;
-        Authz       = authz;
-        Node        = node;
-        Time        = time;
-        Validation  = validation;
-        Logger      = logger;
+        Options            = options;
+        Publisher          = publisher;
+        Authz              = authz;
+        EnsureNodeIsLeader = ensureNodeIsLeader;
 
         //TODO SS: -_-' consider moving to interceptor and/or using proper asp.net grpc instrumentation
         AppendDuration = trackers[MetricsConfiguration.ApiV2Method.StreamAppendSession];
     }
 
-    StreamsServiceOptions   Options        { get; }
-    IPublisher              Publisher      { get; }
-    IAuthorizationProvider  Authz          { get; }
-    NodeSystemInfoProvider  Node           { get; }
-    IDurationTracker        AppendDuration { get; }
-    TimeProvider            Time           { get; }
-    RequestValidation       Validation     { get; }
-    ILogger<StreamsService> Logger         { get; }
+    public StreamsService(
+        StreamsServiceOptions options,
+        IPublisher publisher,
+        IAuthorizationProvider authz,
+        NodeSystemInfoProvider node,
+        ApiV2Trackers trackers
+    ) : this(
+        options,
+        publisher,
+        authz,
+        node.EnsureNodeIsLeader,
+        trackers
+    ) { }
+
+    StreamsServiceOptions              Options            { get; }
+    IPublisher                         Publisher          { get; }
+    IAuthorizationProvider             Authz              { get; }
+    Func<CancellationToken, ValueTask> EnsureNodeIsLeader { get; }
+    IDurationTracker                   AppendDuration     { get; }
 
     public override async Task<AppendResponse> Append(AppendRequest request, ServerCallContext context) {
         var sessionResponse = await AppendSession(new[] { request }.ToAsyncEnumerable(), context);
@@ -78,77 +84,43 @@ public class StreamsService : StreamsServiceBase {
             (Service: this, Requests: requests, Context: context));
 
     async Task<AppendSessionResponse> AppendSession(IAsyncEnumerable<AppendRequest> requests, ServerCallContext context) {
-       await Node.EnsureNodeIsLeader(context.CancellationToken);
-
-       var user = context.GetHttpContext().User;
+       await EnsureNodeIsLeader(context.CancellationToken);
 
        var command = await requests
-           .Do((req, ct) => Authz.AuthorizeStreamWrite(req.Stream, user, ct))
+           .Do((req, _) => Authz.AuthorizeOperation(StreamPermission.Append.WithStream(req.Stream), context))
            .AggregateAsync(
-               new WriteEventsCommand()
-                   .WithUser(user)
+               Publisher
+                   .NewCommand<AppendSessionCommand>()
                    .WithMaxRecordSize(Options.MaxRecordSize)
-                   .WithMaxAppendSize(Options.MaxAppendSize)
-                   .WithPublisher(Publisher)
-                   .WithTime(Time),
-               (command, req) => command.WithRequest(req),
+                   .WithMaxAppendSize(Options.MaxAppendSize),
+               (cmd, req) => cmd.WithRequest(req),
                context.CancellationToken);
 
-       try {
-           return await command.Execute(user, context.CancellationToken);
-       }
-       catch (AggregateException ex) {
-           Logger.LogError(ex, "Error processing append request");
-           throw ex.InnerException ?? ex;
-       }
+       return await command.Execute(context);
     }
 
-    class WriteEventsCommand {
-        static readonly EqualityComparer<AppendRequest> AppendRequestComparer = EqualityComparer<AppendRequest>.Create(
-            equals: (x, y) => string.Equals(x?.Stream, y?.Stream, StringComparison.OrdinalIgnoreCase),
-            getHashCode: obj => StringComparer.OrdinalIgnoreCase.GetHashCode(obj.Stream)
-        );
-
+    class AppendSessionCommand : ApiCommand<AppendSessionCommand, AppendSessionResponse> {
         IndexedSet<AppendRequest>      Requests  { get; } = new(AppendRequestComparer);
         ImmutableArray<Event>.Builder  Events    { get; } = ImmutableArray.CreateBuilder<Event>();
         ImmutableArray<string>.Builder Streams   { get; } = ImmutableArray.CreateBuilder<string>();
 		ImmutableArray<long>.Builder   Revisions { get; } = ImmutableArray.CreateBuilder<long>();
 		ImmutableArray<int>.Builder    Indexes   { get; } = ImmutableArray.CreateBuilder<int>();
 
-		int TotalAppendSize { get; set; }
+        int MaxAppendSize   { get; set; }
+        int MaxRecordSize   { get; set; }
+        int TotalAppendSize { get; set; }
 
-        IPublisher             Publisher     { get; set; } = null!;
-        TimeProvider           Time          { get; set; } = TimeProvider.System;
-        int                    MaxAppendSize { get; set; } = TFConsts.ChunkSize;
-        int                    MaxRecordSize { get; set; } = TFConsts.EffectiveMaxLogRecordSize;
-        ClaimsPrincipal        User          { get; set; } = null!;
-
-        public WriteEventsCommand WithPublisher(IPublisher publisher) {
-            Publisher = publisher;
-            return this;
-        }
-
-        public WriteEventsCommand WithTime(TimeProvider time) {
-            Time = time;
-            return this;
-        }
-
-        public WriteEventsCommand WithMaxAppendSize(int maxAppendSize) {
+        public AppendSessionCommand WithMaxAppendSize(int maxAppendSize) {
             MaxAppendSize = maxAppendSize;
             return this;
         }
 
-        public WriteEventsCommand WithMaxRecordSize(int maxRecordSize) {
+        public AppendSessionCommand WithMaxRecordSize(int maxRecordSize) {
             MaxRecordSize = maxRecordSize;
             return this;
         }
 
-        public WriteEventsCommand WithUser(ClaimsPrincipal user) {
-            User  = user;
-            return this;
-        }
-
-		public WriteEventsCommand WithRequest(AppendRequest request) {
+		public AppendSessionCommand WithRequest(AppendRequest request) {
 			// *** Temporary limitation ***
             // We do not allow appending to the same stream multiple times in a single append session.
             // This is to prevent complexity around expected revisions and ordering of events.
@@ -163,7 +135,7 @@ public class StreamsService : StreamsServiceBase {
             var eventStreamIndex = Streams.Count - 1;
 
 			foreach (var record in request.Records.Select(rec => rec.PrepareRecord(Time).EnsureValid())) {
-				var recordSize = record.CalculateSizeOnDisk(MaxRecordSize);
+				var recordSize = record.CalculateSizeOnDisk(MaxRecordSize); // still considering using the validator...
 
 				if (recordSize.ExceedsMax)
 					throw ApiErrors.AppendRecordSizeExceeded(request.Stream, record.RecordId, recordSize.TotalSize, MaxRecordSize);
@@ -178,88 +150,73 @@ public class StreamsService : StreamsServiceBase {
 			return this;
 		}
 
-        public Task<AppendSessionResponse> Execute(ClaimsPrincipal user, CancellationToken cancellationToken = default) {
-            var callback = new AppendRecordsCallback(requests: Requests);
-
-            // not yet because of all the validations
-            // in the constructor that are helpful.
-            // should actually transform it into tests.
-            // var command = new WriteEvents(
-            //     callback,
-            //     Streams.ToImmutable(),
-            //     Revisions.ToImmutable(),
-            //     Events.ToImmutable(),
-            //     Indexes.ToImmutable(),
-            //     user,
-            //     cancellationToken
-            // );
-
-            var cid = Guid.NewGuid();
-            var command = new WriteEvents(
-                internalCorrId: cid,
-                correlationId: cid,
-                envelope: callback,
-                requireLeader: true,
-                eventStreamIds: Streams.ToImmutable(),
-                expectedVersions: Revisions.ToImmutable(),
-                events: Events.ToImmutable(),
-                eventStreamIndexes: Indexes.ToImmutable(),
-                user: user,
-                tokens: null,
-                cancellationToken: cancellationToken
+        protected override Message BuildMessage(IEnvelope callback, ServerCallContext context) =>
+            new WriteEvents(
+                callback,
+                Streams.ToImmutable(),
+                Revisions.ToImmutable(),
+                Events.ToImmutable(),
+                Indexes.ToImmutable(),
+                SystemAccounts.System, // its the only thing that makes sense
+                context.CancellationToken
             );
 
-            Publisher.Publish(message: command);
-
-            return callback.WaitForReply;
-        }
-    }
-
-    class AppendRecordsCallback(IndexedSet<AppendRequest> requests)
-        : ApiCallback<IndexedSet<AppendRequest>, AppendSessionResponse, RpcException>(requests, "streams.append-session") {
-        protected override bool SuccessPredicate(Message message, IndexedSet<AppendRequest> requests) =>
+        protected override bool SuccessPredicate(Message message) =>
             message is WriteEventsCompleted { Result: OperationResult.Success };
 
-        protected override AppendSessionResponse MapToApiResponse(Message message, IndexedSet<AppendRequest> requests) {
+        protected override AppendSessionResponse MapToResult(Message message) {
             var completed = (WriteEventsCompleted)message;
             var output    = new List<AppendResponse>();
 
             for (var i = 0; i < completed.LastEventNumbers.Length; i++)
                 output.Add(new() {
-                    Stream         = requests.ElementAt(i).Stream,
+                    Stream         = Requests.ElementAt(i).Stream,
                     StreamRevision = completed.LastEventNumbers.Span[i]
                 });
 
-            return new() {
+            return new AppendSessionResponse {
                 Output   = { output },
                 Position = completed.CommitPosition
             };
         }
 
-        protected override RpcException MapToApiError(Message message, IndexedSet<AppendRequest> requests) {
-            return message switch {
-                WriteEventsCompleted completed => completed.Result switch {
-                    // because we can append to soft deleted streams, StreamDeleted means "hard deleted" AKA tombstoned
-                    OperationResult.StreamDeleted  => ApiErrors.StreamTombstoned(requests.ElementAt(completed.FailureStreamIndexes.Span[0]).Stream),
-                    OperationResult.PrepareTimeout => ApiErrors.OperationTimeout(completed.Message),
-                    OperationResult.CommitTimeout  => ApiErrors.OperationTimeout(completed.Message),
+        protected override RpcException MapToError(Message message) => message switch {
+            WriteEventsCompleted completed => completed.Result switch {
+                // because we can append to soft deleted streams, StreamDeleted means "hard deleted" AKA tombstoned
+                OperationResult.StreamDeleted  => ApiErrors.StreamTombstoned(Requests.ElementAt(completed.FailureStreamIndexes.Span[0]).Stream),
+                OperationResult.PrepareTimeout => ApiErrors.OperationTimeout(completed.Message),
+                OperationResult.CommitTimeout  => ApiErrors.OperationTimeout(completed.Message),
 
-                    // TODO SS: consider returning all StreamRevisionConflict in one go, instead of pretending to "fail fast".
-                    OperationResult.WrongExpectedVersion => ApiErrors.StreamRevisionConflict(
-                        requests.ElementAt(completed.FailureStreamIndexes.Span[0]).Stream,
-                        requests.ElementAt(completed.FailureStreamIndexes.Span[0]).ExpectedRevision,
-                        completed.FailureCurrentVersions.Span[0]
-                    ),
+                // TODO SS: consider returning all StreamRevisionConflict in one go, instead of pretending to "fail fast".
+                OperationResult.WrongExpectedVersion => ApiErrors.StreamRevisionConflict(
+                    Requests.ElementAt(completed.FailureStreamIndexes.Span[0]).Stream,
+                    Requests.ElementAt(completed.FailureStreamIndexes.Span[0]).ExpectedRevision,
+                    completed.FailureCurrentVersions.Span[0]
+                ),
 
-                    _ => ApiErrors.InternalServerError($"Append request completed in error with unexpected result: {completed.Result}")
+                _ => ApiErrors.InternalServerError($"{OperationName} completed in error with unexpected result: {completed.Result}")
 
-                    // OperationResult.InvalidTransaction is not possible here as we validate the max append size while receiving the requests
-                    // OperationResult.ForwardTimeout is not possible here as we set requireLeader=true on the request
-                    // OperationResult.PrepareTimeout is not possible here as we don't have old explicit transactions
-                    // OperationResult.AccessDenied is not possible here as we check authorization before starting the operation
-                },
-                _ => ApiErrors.InternalServerError($"Append request failed with unexpected callback message: {message.GetType().FullName}")
-            };
+                // OperationResult.InvalidTransaction is not possible here as we validate the max append size while receiving the requests
+                // OperationResult.ForwardTimeout is not possible here as we set requireLeader=true on the request
+                // OperationResult.PrepareTimeout is not possible here as we don't have old explicit transactions
+                // OperationResult.AccessDenied is not possible here as we check authorization before starting the operation
+            },
+            _ => ApiErrors.InternalServerError($"{OperationName} failed with unexpected callback message: {message.GetType().FullName}")
+        };
+
+        protected override ValueTask OnSuccess(AppendSessionResponse result, ServerCallContext context) {
+            if (context.GetHttpContext().Features.Get<IHttpMetricsTagsFeature>() is { } metrics) {
+                metrics.Tags.Add(new KeyValuePair<string, object?>("streams", Requests.Count));
+                metrics.Tags.Add(new KeyValuePair<string, object?>("records", Events.Count));
+                metrics.Tags.Add(new KeyValuePair<string, object?>("bytes", TotalAppendSize));
+            }
+
+            return ValueTask.CompletedTask;
         }
+
+        static readonly EqualityComparer<AppendRequest> AppendRequestComparer = EqualityComparer<AppendRequest>.Create(
+            equals: (x, y) => string.Equals(x?.Stream, y?.Stream, StringComparison.OrdinalIgnoreCase),
+            getHashCode: obj => StringComparer.OrdinalIgnoreCase.GetHashCode(obj.Stream)
+        );
     }
 }

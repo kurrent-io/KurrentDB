@@ -8,12 +8,17 @@ using KurrentDB.Api.Infrastructure.Grpc.Validation;
 using KurrentDB.Api.Streams;
 using KurrentDB.Api.Streams.Validators;
 using KurrentDB.Core;
+using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Protocol.V2.Streams;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using OpenTelemetry.Exporter;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using StreamsService = KurrentDB.Api.Streams.StreamsService;
 
 namespace KurrentDB.Plugins.Api.V2;
@@ -43,6 +48,7 @@ public class ApiV2Plugin() : SubsystemsPlugin("APIV2") {
                     options.Interceptors.Add<RequestValidationInterceptor>();
                 }
             )
+            .AddServiceOptions<StreamsService>(options => options.MaxReceiveMessageSize = TFConsts.ChunkSize)
             .AddRequestValidation(
                 new RequestValidationOptions {
                     ExceptionFactory = (_, errors) => ApiErrors.InvalidRequest(errors.ToArray())
@@ -61,6 +67,36 @@ public class ApiV2Plugin() : SubsystemsPlugin("APIV2") {
                     MaxRecordSize = serverOptions.Application.MaxAppendEventSize
                 };
             });
+
+        // Environment.SetEnvironmentVariable("OTEL_SERVICE_NAME", "KurrentDB.API");
+
+        services.AddOpenTelemetry()
+            .ConfigureResource(r => r
+                .AddHostDetector()
+                // .AddProcessDetector()
+                // .AddProcessRuntimeDetector()
+                .AddContainerDetector()
+                .AddEnvironmentVariableDetector()
+                // .AddOperatingSystemDetector()
+                .AddService("KurrentDB.API", serviceVersion: "2.0.0")
+                // .AddTelemetrySdk()
+            )
+            .WithMetrics(metrics => metrics
+                .AddAspNetCoreInstrumentation()
+                .AddEventCountersInstrumentation(options =>
+                {
+                    options.AddEventSources("Grpc.AspNetCore.Server");
+                })
+                // .AddProcessInstrumentation()
+                // .AddRuntimeInstrumentation()
+                // .AddMeter("Grpc.AspNetCore.Server")
+                // .AddMeter("Microsoft.AspNetCore.Hosting")
+                // .AddMeter("Microsoft.AspNetCore.Server.Kestrel")
+                // .AddOtlpExporter(options => options.Protocol = OtlpExportProtocol.HttpProtobuf)
+                .AddOtlpExporter());
+            // .WithTracing(tracing => tracing
+            //     .AddAspNetCoreInstrumentation()
+            //     .AddOtlpExporter());
     }
 
 	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {

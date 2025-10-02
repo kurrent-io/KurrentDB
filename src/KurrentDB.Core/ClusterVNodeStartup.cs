@@ -34,6 +34,7 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Serilog;
 using AuthenticationMiddleware = KurrentDB.Core.Services.Transport.Http.AuthenticationMiddleware;
 using ClientGossip = EventStore.Core.Services.Transport.Grpc.Gossip;
@@ -261,15 +262,24 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 
 		// OpenTelemetry
 		services.AddOpenTelemetry()
-            .ConfigureResource(r => r.AddService(_metricsConfiguration.ServiceName))
+            // .ConfigureResource(r => r.AddService(_metricsConfiguration.ServiceName))
+            // .WithTracing(tracing => {
+            //     tracing
+            //         .AddAspNetCoreInstrumentation()
+            //         .AddOtlpExporter();
+            // })
 			.WithMetrics(metrics => {
-                    metrics.AddAspNetCoreInstrumentation();
+                    // metrics
+                    //     .AddAspNetCoreInstrumentation()
+                    //     .AddOtlpExporter(options => {
+                    //         options.Endpoint = new Uri("http://127.0.0.1:4317");
+                    //     });
 
                     metrics
-                        .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(_metricsConfiguration.ServiceName))
-                        .AddMeter(_metricsConfiguration.Meters)
-                        .AddView(ViewConfig)
-                        .AddInternalExporter()
+                        // .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(_metricsConfiguration.ServiceName))
+                        // .AddMeter(_metricsConfiguration.Meters)
+                        // .AddView(ViewConfig)
+                        // .AddInternalExporter()
                         .AddPrometheusExporter(options => {
                                 if (_metricsConfiguration is { LegacyCoreNaming: true, LegacyProjectionsNaming: true }) {
                                     options.DisableTotalNameSuffixForCounters = true;
@@ -287,7 +297,6 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
                 }
             );
 
-
 		// gRPC
 		services
 			.AddSingleton<LogRetriesInterceptor>()
@@ -301,9 +310,8 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
                                             || _options.DevMode.Dev;
 
 				options.Interceptors.Add<LogRetriesInterceptor>();
-			});
-            // _options.Application.MaxAppendEventSize && _options.Application.MaxAppendSize
-			// .AddServiceOptions<Streams<TStreamId>>(options => options.MaxReceiveMessageSize = TFConsts.EffectiveMaxLogRecordSize);
+			})
+			.AddServiceOptions<Streams<TStreamId>>(options => options.MaxReceiveMessageSize = TFConsts.ChunkSize);
 
 		// Ask the node itself to add DI registrations
 		_configureNodeServices(services);
@@ -314,34 +322,34 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 
         return;
 
-		MetricStreamConfiguration? ViewConfig(Instrument i) {
-			if (i.Name == MetricsBootstrapper.LogicalChunkReadDistributionName(_metricsConfiguration.ServiceName))
-				// 20 buckets, 0, 1, 2, 4, 8, ...
-				return new ExplicitBucketHistogramConfiguration { Boundaries = [0, .. Enumerable.Range(0, count: 19).Select(x => 1 << x)] };
-			if (i.Name.StartsWith(_metricsConfiguration.ServiceName + "-") && (i.Name.EndsWith("-latency-seconds") || i.Name.EndsWith("-latency") && i.Unit == "seconds"))
-				return new ExplicitBucketHistogramConfiguration {
-					Boundaries = [
-						0.001, //    1 ms
-						0.005, //    5 ms
-						0.01, //   10 ms
-						0.05, //   50 ms
-						0.1, //  100 ms
-						0.5, //  500 ms
-						1, // 1000 ms
-						5, // 5000 ms
-					]
-				};
-			if (i.Name.StartsWith(_metricsConfiguration.ServiceName + "-") && (i.Name.EndsWith("-seconds") || i.Unit == "seconds"))
-				return new ExplicitBucketHistogramConfiguration {
-					Boundaries = [
-						0.000_001, // 1 microsecond
-						0.000_01, 0.000_1, 0.001, // 1 millisecond
-						0.01, 0.1, 1, // 1 second
-						10,
-					]
-				};
-			return default;
-		}
+		// MetricStreamConfiguration? ViewConfig(Instrument i) {
+		// 	if (i.Name == MetricsBootstrapper.LogicalChunkReadDistributionName(_metricsConfiguration.ServiceName))
+		// 		// 20 buckets, 0, 1, 2, 4, 8, ...
+		// 		return new ExplicitBucketHistogramConfiguration { Boundaries = [0, .. Enumerable.Range(0, count: 19).Select(x => 1 << x)] };
+		// 	if (i.Name.StartsWith(_metricsConfiguration.ServiceName + "-") && (i.Name.EndsWith("-latency-seconds") || i.Name.EndsWith("-latency") && i.Unit == "seconds"))
+		// 		return new ExplicitBucketHistogramConfiguration {
+		// 			Boundaries = [
+		// 				0.001, //    1 ms
+		// 				0.005, //    5 ms
+		// 				0.01, //   10 ms
+		// 				0.05, //   50 ms
+		// 				0.1, //  100 ms
+		// 				0.5, //  500 ms
+		// 				1, // 1000 ms
+		// 				5, // 5000 ms
+		// 			]
+		// 		};
+		// 	if (i.Name.StartsWith(_metricsConfiguration.ServiceName + "-") && (i.Name.EndsWith("-seconds") || i.Unit == "seconds"))
+		// 		return new ExplicitBucketHistogramConfiguration {
+		// 			Boundaries = [
+		// 				0.000_001, // 1 microsecond
+		// 				0.000_01, 0.000_1, 0.001, // 1 millisecond
+		// 				0.01, 0.1, 1, // 1 second
+		// 				10,
+		// 			]
+		// 		};
+		// 	return default;
+		// }
 	}
 
 	public void Handle(SystemMessage.SystemReady _) => _ready = true;

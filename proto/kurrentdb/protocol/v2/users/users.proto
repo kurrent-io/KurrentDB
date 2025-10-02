@@ -1,0 +1,56 @@
+// ******************************************************************************************
+// This protocol is UNSTABLE in the sense of being subject to change.
+// ******************************************************************************************
+
+syntax = "proto3";
+
+package kurrentdb.protocol.v2.users;
+
+option csharp_namespace = "KurrentDB.Protocol.V2.Users";
+
+import "google/protobuf/timestamp.proto";
+
+service UsersService {
+  rpc Create(CreateUserRequest) returns (CreateUserResponse);
+  rpc Update(UpdateUserRequest) returns (UpdateUserResponse);
+  rpc Delete(DeleteUserRequest) returns (DeleteUserResponse);
+  rpc Enable(EnableUserRequest) returns (EnableUserResponse);
+}
+
+message CreateUserRequest {
+  string          login_name = 1;
+  string          password   = 2;
+  optional string full_name  = 3;
+  repeated string groups     = 4;
+}
+
+message CreateUserResponse {
+  google.protobuf.Timestamp timestamp = 1;
+}
+
+message UpdateUserRequest {
+  string          login_name = 1;
+  optional string full_name  = 2;
+  repeated string groups     = 3;
+}
+
+message UpdateUserResponse {
+  google.protobuf.Timestamp timestamp = 1;
+}
+
+message DeleteUserRequest {
+  string login_name = 1;
+}
+
+message DeleteUserResponse {
+  google.protobuf.Timestamp timestamp = 1;
+}
+
+message EnableUserRequest {
+  string login_name = 1;
+  bool enable = 2;
+}
+
+message EnableUserResponse {
+  google.protobuf.Timestamp timestamp = 1;
+}

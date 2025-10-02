@@ -106,3 +106,9 @@ networks:
       driver: default
       config:
         - subnet: 172.30.240.0/24
+  kurrentdb.api.v2.tests:
+    image: kurrentdb.api.v2.tests
+    build:
+      context: .
+      dockerfile: src/KurrentDB.Api.V2.Tests/Dockerfile
+

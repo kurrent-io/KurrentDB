@@ -161,7 +161,7 @@ public class NewDeviceTypesTests {
         var smartLight = new SmartLight(room, "light-001");
         var devices = new List<Device> { motionSensor, smartLight };
 
-        var home = new Home {
+        var home = new SmartHome {
             Id = "test-home",
             Name = "Test Home",
             Rooms = [room],

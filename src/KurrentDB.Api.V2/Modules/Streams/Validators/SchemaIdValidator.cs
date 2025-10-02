@@ -5,12 +5,12 @@ using FluentValidation;
 
 namespace KurrentDB.Api.Streams.Validators;
 
-class SchemaIdValidator : AbstractValidator<string> {
+class SchemaIdValidator : AbstractValidator<string?> {
 	public static readonly SchemaIdValidator Instance = new();
 
 	public SchemaIdValidator() {
 		RuleFor(x => x)
-			.Must(value => Guid.TryParse((string?)value, out var valueGuid) && valueGuid != Guid.Empty)
+			.Must(value => Guid.TryParse(value, out var valueGuid) && valueGuid != Guid.Empty)
 			.WithMessage("Schema ID must be a valid and non-empty UUID");
 	}
 }

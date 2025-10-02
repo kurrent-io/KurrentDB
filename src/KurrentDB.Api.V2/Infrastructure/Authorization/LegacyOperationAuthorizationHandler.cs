@@ -29,7 +29,6 @@ public class LegacyOperationAuthorizationHandler(ILegacyAuthorizationProvider le
 [PublicAPI]
 public class StreamsOperationAuthorizationHandler(ILegacyAuthorizationProvider legacyProvider) : AuthorizationHandler<LegacyOperationRequirement, IMessage> {
     protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, LegacyOperationRequirement requirement, IMessage resource) {
-
         var authorized = await legacyProvider.CheckAccessAsync(context.User, requirement.Operation, CancellationToken.None);
 
         if (authorized)

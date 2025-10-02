@@ -17,5 +17,5 @@ public readonly record struct SchemaName(string Value) {
     }
 
     public static implicit operator SchemaName(string _)  => From(_);
-    public static implicit operator string(SchemaName id) => id.ToString();
+    public static implicit operator string(SchemaName _) => _.ToString();
 }

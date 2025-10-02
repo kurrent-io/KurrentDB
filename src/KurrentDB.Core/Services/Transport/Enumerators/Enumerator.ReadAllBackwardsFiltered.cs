@@ -14,21 +14,18 @@ using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
-using Serilog;
 
 namespace KurrentDB.Core.Services.Transport.Enumerators;
 
 partial class Enumerator {
 	public class ReadAllBackwardsFiltered : IAsyncEnumerator<ReadResponse> {
-		private static readonly ILogger Log = Serilog.Log.ForContext<ReadAllBackwardsFiltered>();
-
 		private readonly IPublisher _bus;
 		private readonly ulong _maxCount;
 		private readonly bool _resolveLinks;
 		private readonly IEventFilter _eventFilter;
 		private readonly ClaimsPrincipal _user;
 		private readonly bool _requiresLeader;
-		private readonly DateTime _deadline;
+		private readonly DateTime? _deadline;
 		private readonly uint _maxSearchWindow;
 		private readonly CancellationToken _cancellationToken;
 		private readonly SemaphoreSlim _semaphore = new(1, 1);
@@ -46,7 +43,7 @@ partial class Enumerator {
 			ClaimsPrincipal user,
 			bool requiresLeader,
 			uint? maxSearchWindow,
-			DateTime deadline,
+			DateTime? deadline,
 			CancellationToken cancellationToken) {
 			_bus = Ensure.NotNull(bus);
 			_maxCount = maxCount;

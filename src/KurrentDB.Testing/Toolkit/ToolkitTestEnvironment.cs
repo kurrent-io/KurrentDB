@@ -36,8 +36,8 @@ public static class ToolkitTestEnvironment {
         if (Interlocked.CompareExchange(ref _initialized, 1, 0) != 0)
             throw new InvalidOperationException("TestingContext is already initialized! Check your test setup code.");
 
-        new OtelServiceMetadata("TUnit") {
-            ServiceVersion   = "0.0.0",
+        new OtelServiceMetadata("Toolkit") {
+            ServiceVersion   = "1.0.0",
             ServiceNamespace = "KurrentDB.Testing",
         }.UpdateEnvironmentVariables();
 
@@ -89,6 +89,7 @@ public static class ToolkitTestEnvironment {
             .ReadFrom.Configuration(Configuration)
             .Enrich.WithProperty(SourceContextPropertyName, nameof(ToolkitTestEnvironment))
             .Enrich.WithProperty(nameof(TestUid), TestUid.Empty)
+            .WriteTo.OpenTelemetry()
             // .WriteTo.Debug()
             // .WriteTo.Map(nameof(TestUid), TestUid.Empty, (_, config) => {
             //     config.Console(

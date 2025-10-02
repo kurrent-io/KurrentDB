@@ -6,24 +6,27 @@
 using System.Diagnostics;
 using System.Net;
 using FluentValidation.Results;
-using Google.Protobuf;
+using Google.Protobuf.WellKnownTypes;
+using Google.Rpc;
 using Grpc.Core;
 using Humanizer;
 using KurrentDB.Api.Infrastructure.Errors;
-using KurrentDB.Protocol.V2.Common.Errors;
+using Kurrent.Rpc;
 
 namespace KurrentDB.Api.Errors;
 
 public static partial class ApiErrors {
+    static readonly TimeSpan DefaultRetryDelay = TimeSpan.FromSeconds(5);
+
 	/// <summary>
 	/// Creates an RPC exception indicating that access to a resource or operation was denied.
 	/// This method is used to create an <see cref="RpcException"/> with status code <see cref="StatusCode.PermissionDenied"/>
 	/// when a user lacks sufficient permissions to perform the requested operation.
 	/// The exception includes structured error details with scope and username information.
 	/// </summary>
-	/// <param name="scope">
-	/// The operation or resource that access was denied to.
-	/// This should specify what the user was trying to access (e.g., "read stream", "write to stream").
+	/// <param name="claim">
+	/// The claim required to perform the operation.
+    /// This should correspond to the permission or role needed to access the resource.
 	/// </param>
 	/// <param name="username">
 	/// The username of the user who was denied access. If not provided, the error message will not include username information.
@@ -33,30 +36,19 @@ public static partial class ApiErrors {
 	/// An <see cref="RpcException"/> with status code <see cref="StatusCode.PermissionDenied"/>,
 	/// including <see cref="AccessDeniedErrorDetails"/> details with scope and username information.
 	/// </returns>
-	public static RpcException AccessDenied(string scope, string? username = null) {
-		Debug.Assert(!string.IsNullOrWhiteSpace(scope), "The scope must not be empty!");
+	public static RpcException AccessDenied(string claim, string? username = null) {
+		Debug.Assert(!string.IsNullOrWhiteSpace(claim), "The claim must not be empty!");
 
 		var message = $"The user{(username is not null ? $" {username}" : "")} does not have" +
-		              $" sufficient permissions to perform the operation: '{scope}'";
+		              $" sufficient permissions to perform the operation: '{claim}'";
 
 		var details = new AccessDeniedErrorDetails {
-			Scope    = scope,
+			Claim    = claim,
 			Username = username,
 		};
 
-		return RpcExceptions.FromError(CommonError.AccessDenied, message, details);
+		return RpcExceptions.FromError(ServerError.AccessDenied, message, details);
 	}
-
-    // public static RpcException AccessDenied() {
-    //     var message = "Access to the requested operation is denied.";
-    //
-    //     var details = new AccessDeniedErrorDetails {
-    //         Scope    = scope,
-    //         Username = username,
-    //     };
-    //
-    //     return RpcExceptions.FromError(CommonError.AccessDenied, message, details);
-    // }
 
 	/// <summary>
 	/// Creates an RPC exception for requests with invalid arguments based on FluentValidation results.
@@ -70,41 +62,42 @@ public static partial class ApiErrors {
 	/// </param>
 	/// <returns>
 	/// An <see cref="RpcException"/> with status code <see cref="StatusCode.InvalidArgument"/>,
-	/// including <see cref="InvalidRequestErrorDetails"/> details with field violations.
+	/// including <see cref="BadRequest"/> details with field violations.
 	/// The error message format depends on the number of violations:
 	/// - Single violation: "The argument '{field}' is invalid: {description}"
 	/// - Multiple violations: Lists all violations with field names and descriptions.
 	/// </returns>
-	public static RpcException InvalidRequest(ValidationResult validationResult) {
-		Debug.Assert(validationResult.Errors.Count > 0, "The validation result must contain at least one error!");
+    public static RpcException InvalidRequest(ValidationResult validationResult) {
+        Debug.Assert(validationResult.Errors.Count > 0, "The validation result must contain at least one error!");
 
-		var violations = validationResult.Errors.Select(failure => {
-			Debug.Assert(!string.IsNullOrWhiteSpace(failure.PropertyName), "The property name in the validation failure must not be empty!");
-			Debug.Assert(!string.IsNullOrWhiteSpace(failure.ErrorMessage), "The error message in the validation failure must not be empty!");
+        var violations = validationResult.Errors.Select(failure => {
+            Debug.Assert(!string.IsNullOrWhiteSpace(failure.ErrorMessage), "The error message in the validation failure must not be empty!");
 
-			return new InvalidRequestErrorDetails.Types.FieldViolation {
-				Field       = failure.PropertyName,
-				Description = failure.ErrorMessage
-			};
-		});
+            return new BadRequest.Types.FieldViolation {
+                Field       = failure.PropertyName,
+                Description = failure.ErrorMessage
+            };
+        });
 
-		var details = new InvalidRequestErrorDetails {
-			Violations = { violations }
-		};
+        var details = new BadRequest {
+            FieldViolations = { violations }
+        };
 
-		string message;
-		if (validationResult.Errors.Count == 1) {
-			var failure = validationResult.Errors[0];
-			message = $"The argument '{failure.PropertyName}' is invalid: {failure.ErrorMessage}";
-		} else {
-			message = validationResult.Errors.Aggregate(
-				new System.Text.StringBuilder($"The following arguments are invalid:{Environment.NewLine}"),
-				(sb, failure) => sb.AppendLine($"- {failure.PropertyName}: {failure.ErrorMessage}")
-			).ToString();
-		}
+        string message;
+        if (validationResult.Errors.Count == 1) {
+            var failure = validationResult.Errors[0];
+            message = string.IsNullOrWhiteSpace(failure.PropertyName)
+                ? $"The request is invalid: {failure.ErrorMessage}"
+                : $"The argument '{failure.PropertyName}' is invalid: {failure.ErrorMessage}";
+        } else {
+            message = validationResult.Errors.Aggregate(
+                new System.Text.StringBuilder($"The following arguments are invalid:{Environment.NewLine}"),
+                (sb, failure) => sb.AppendLine($"- {failure.PropertyName}: {failure.ErrorMessage}")
+            ).ToString();
+        }
 
-		return RpcExceptions.FromError(CommonError.InvalidRequest, message, details);
-	}
+        return RpcExceptions.FromError(ServerError.BadRequest, message, details);
+    }
 
 	/// <summary>
 	/// Creates an RPC exception for requests with invalid arguments from individual validation failures.
@@ -116,7 +109,7 @@ public static partial class ApiErrors {
 	/// </param>
 	/// <returns>
 	/// An <see cref="RpcException"/> with status code <see cref="StatusCode.InvalidArgument"/>,
-	/// including <see cref="InvalidRequestErrorDetails"/> details with field violations.
+	/// including <see cref="BadRequest"/> details with field violations.
 	/// </returns>
 	public static RpcException InvalidRequest(params ValidationFailure[] failures) =>
 		InvalidRequest(new ValidationResult(failures));
@@ -136,7 +129,7 @@ public static partial class ApiErrors {
 	/// </param>
 	/// <returns>
 	/// An <see cref="RpcException"/> with status code <see cref="StatusCode.InvalidArgument"/>,
-	/// including <see cref="InvalidRequestErrorDetails"/> details with a single field violation.
+	/// including <see cref="BadRequest"/> details with a single field violation.
 	/// </returns>
 	public static RpcException InvalidRequest(string field, string description) =>
 		InvalidRequest(new ValidationFailure(field, description));
@@ -156,20 +149,20 @@ public static partial class ApiErrors {
 	/// </param>
 	/// <returns>
 	/// An <see cref="RpcException"/> with status code <see cref="StatusCode.DeadlineExceeded"/>,
-	/// including <see cref="RetryInfoErrorDetails"/> details with the suggested retry delay.
+	/// including <see cref="RetryInfo"/> details with the suggested retry delay.
 	/// The error message includes both the provided message and retry guidance.
 	/// </returns>
 	public static RpcException OperationTimeout(string message, TimeSpan? retryAfter = null) {
 		Debug.Assert(!string.IsNullOrWhiteSpace(message), "The message must not be empty!");
 
-		retryAfter ??= TimeSpan.FromSeconds(3);
+		retryAfter ??= DefaultRetryDelay;
 
 		message = $"Operation timed out: {message} "
 		        + $"Please try again after {retryAfter.Value.Humanize()}.";
 
-		var details = new RetryInfoErrorDetails { RetryDelayMs = (int)retryAfter.Value.TotalMilliseconds };
+        var details = new RetryInfo { RetryDelay = Duration.FromTimeSpan(retryAfter.Value) };
 
-		return RpcExceptions.FromError(CommonError.OperationTimeout, message, details);
+		return RpcExceptions.FromError(ServerError.OperationTimeout, message, details);
 	}
 
 	/// <summary>
@@ -188,14 +181,14 @@ public static partial class ApiErrors {
 	/// The error message explains that the server is not ready and includes retry guidance.
 	/// </returns>
 	public static RpcException ServerNotReady(TimeSpan? retryAfter = null) {
-		retryAfter ??= TimeSpan.FromSeconds(3);
+		retryAfter ??= DefaultRetryDelay;
 
 		var message = $"The server is not yet ready to handle requests. "
 		            + $"Please try again after {retryAfter.Value.Humanize()}.";
 
-		var details = new RetryInfoErrorDetails { RetryDelayMs = (int)retryAfter.Value.TotalMilliseconds };
+		var details = new RetryInfo { RetryDelay = Duration.FromTimeSpan(retryAfter.Value) };
 
-		return RpcExceptions.FromError(CommonError.ServerNotReady, message, details);
+		return RpcExceptions.FromError(ServerError.ServerNotReady, message, details);
 	}
 
 	/// <summary>
@@ -211,25 +204,25 @@ public static partial class ApiErrors {
 	/// </param>
 	/// <returns>
 	/// An <see cref="RpcException"/> with status code <see cref="StatusCode.Unavailable"/>,
-	/// including <see cref="RetryInfoErrorDetails"/> details with the suggested retry delay.
+	/// including <see cref="RetryInfo"/> details with the suggested retry delay.
 	/// The error message explains that the server is overloaded and includes retry guidance.
 	/// </returns>
 	public static RpcException ServerOverloaded(TimeSpan? retryAfter = null) {
-		retryAfter ??= TimeSpan.FromSeconds(5);
+        retryAfter ??= DefaultRetryDelay;
 
 		var message = "The server is currently overloaded and cannot handle the request. "
 		            + $"Please try again after {retryAfter.Value.Humanize()}.";
 
-		var details = new RetryInfoErrorDetails { RetryDelayMs = (int)retryAfter.Value.TotalMilliseconds };
+		var details = new RetryInfo { RetryDelay = Duration.FromTimeSpan(retryAfter.Value) };
 
-		return RpcExceptions.FromError(CommonError.ServerOverloaded, message, details);
+		return RpcExceptions.FromError(ServerError.ServerOverloaded, message, details);
 	}
 
 	/// <summary>
 	/// Creates an RPC exception indicating that the current node is not the leader in a clustered environment.
 	/// This method is used to create an <see cref="RpcException"/> with status code <see cref="StatusCode.FailedPrecondition"/>
 	/// when write operations are attempted on a non-leader node in a KurrentDB cluster.
-	/// The exception includes information about the current leader node and optional retry guidance.
+	/// The exception includes information about the current leader node.
 	/// </summary>
 	/// <param name="leaderNodeId">
 	/// The unique identifier of the leader node in the cluster.
@@ -237,16 +230,11 @@ public static partial class ApiErrors {
 	/// <param name="leaderEndpoint">
 	/// The network endpoint of the leader node.
 	/// </param>
-	/// <param name="retryAfter">
-	/// An optional suggested retry delay. If provided, includes retry information in the error details.
-	/// This is useful when leadership may be changing and clients should wait before retrying.
-	/// </param>
 	/// <returns>
 	/// An <see cref="RpcException"/> with status code <see cref="StatusCode.FailedPrecondition"/>,
-	/// including <see cref="NotLeaderNodeErrorDetails"/> details with leader node information
-	/// and optional <see cref="RetryInfoErrorDetails"/> if a retry delay is specified.
+	/// including <see cref="NotLeaderNodeErrorDetails"/> details with leader node information.
 	/// </returns>
-	public static RpcException NotLeaderNode(Guid leaderNodeId, DnsEndPoint leaderEndpoint, TimeSpan? retryAfter = null) {
+	public static RpcException NotLeaderNode(Guid leaderNodeId, DnsEndPoint leaderEndpoint) {
 		Debug.Assert(leaderNodeId != Guid.Empty, "The leader node ID must not be empty!");
 		Debug.Assert(!string.IsNullOrWhiteSpace(leaderEndpoint.Host), "The leader endpoint host must not be empty!");
 		Debug.Assert(leaderEndpoint.Port > 0, "The leader endpoint port must be positive!");
@@ -256,16 +244,14 @@ public static partial class ApiErrors {
 		            + $"{leaderEndpoint.Host}:{leaderEndpoint.Port}";
 
 		var notLeaderNode = new NotLeaderNodeErrorDetails {
-			NodeId = leaderNodeId.ToString(),
-			Host   = leaderEndpoint.Host,
-			Port   = leaderEndpoint.Port,
+			CurrentLeader = new NotLeaderNodeErrorDetails.Types.NodeInfo {
+                NodeId = leaderNodeId.ToString(),
+                Host   = leaderEndpoint.Host,
+                Port   = leaderEndpoint.Port,
+             }
 		};
 
-		IMessage[] details = retryAfter is not null
-			? [notLeaderNode, new RetryInfoErrorDetails { RetryDelayMs = (int)retryAfter.Value.TotalMilliseconds }]
-			: [notLeaderNode];
-
-		return RpcExceptions.FromError(CommonError.NotLeaderNode, message, details);
+		return RpcExceptions.FromError(ServerError.NotLeaderNode, message, notLeaderNode);
 	}
 
 	/// <summary>
@@ -286,7 +272,7 @@ public static partial class ApiErrors {
 		                  + $"Please contact support if the problem persists.{Environment.NewLine}"
 		                  + $"{message}";
 
-		return RpcExceptions.FromError(CommonError.ServerMalfunction, statusMessage);
+		return RpcExceptions.FromError(ServerError.ServerMalfunction, statusMessage);
 	}
 
 	/// <summary>
@@ -317,6 +303,6 @@ public static partial class ApiErrors {
 		        + $"Please contact support if the problem persists.{Environment.NewLine}"
 		        + $"{message ?? exception.Message}";
 
-		return RpcExceptions.FromError(CommonError.ServerMalfunction, message, exception.ToRpcDebugInfo());
+		return RpcExceptions.FromError(ServerError.ServerMalfunction, message, exception.ToRpcDebugInfo());
 	}
 }

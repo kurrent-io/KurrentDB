@@ -8,24 +8,11 @@ using Google.Protobuf.WellKnownTypes;
 using KurrentDB.Api.Streams;
 using KurrentDB.Protocol.V2.Streams;
 using KurrentDB.Testing.Sample.HomeAutomation;
+
 using SchemaFormat = KurrentDB.Protocol.V2.Streams.SchemaFormat;
-using SchemaInfo = KurrentDB.Protocol.V2.Streams.SchemaInfo;
+using SchemaInfo   = KurrentDB.Protocol.V2.Streams.SchemaInfo;
 
 namespace KurrentDB.Api.Tests.Fixtures;
-
-public record SmartHomeActivity(SmartHome Home, AppendRequest AppendRequest) {
-    public StreamName                  Stream        => AppendRequest.Stream;
-    public RepeatedField<AppendRecord> Records       => AppendRequest.Records;
-    public long                        LastTimestamp => AppendRequest.Records.Last().Timestamp;
-
-    public SmartHomeActivity SimulateMoreEvents(int? numberOfEvents = null) =>
-        this with { AppendRequest = HomeAutomationTestData.SimulateHomeActivity(Home, numberOfEvents, LastTimestamp) };
-
-    public SmartHomeActivity WithExpectedRevision(long expectedRevision) =>
-        this with { AppendRequest = AppendRequest.With(r => r.ExpectedRevision = expectedRevision) };
-
-    public static implicit operator AppendRequest(SmartHomeActivity _) => _.AppendRequest;
-}
 
 public static class HomeAutomationTestData {
     public static List<SmartHomeActivity> SimulateHousingComplexActivity(int homes = 3, int eventsPerHome = 100) {
@@ -78,4 +65,18 @@ public static class HomeAutomationTestData {
 
         return record;
     }
+}
+
+public record SmartHomeActivity(SmartHome Home, AppendRequest AppendRequest) {
+    public StreamName                  Stream        => AppendRequest.Stream;
+    public RepeatedField<AppendRecord> Records       => AppendRequest.Records;
+    public long                        LastTimestamp => AppendRequest.Records.Last().Timestamp;
+
+    public SmartHomeActivity SimulateMoreEvents(int? numberOfEvents = null) =>
+        this with { AppendRequest = HomeAutomationTestData.SimulateHomeActivity(Home, numberOfEvents, LastTimestamp) };
+
+    public SmartHomeActivity WithExpectedRevision(long expectedRevision) =>
+        this with { AppendRequest = AppendRequest.With(r => r.ExpectedRevision = expectedRevision) };
+
+    public static implicit operator AppendRequest(SmartHomeActivity _) => _.AppendRequest;
 }

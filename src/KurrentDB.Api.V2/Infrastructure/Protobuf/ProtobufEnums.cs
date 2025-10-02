@@ -10,7 +10,7 @@ public class ProtobufEnums(Assembly assembly) {
 	Dictionary<Type, EnumDescriptor> EnumTypes { get; } = ScanEnumDescriptors(assembly);
 
 	static Dictionary<Type, EnumDescriptor> ScanEnumDescriptors(Assembly assembly) {
-		return assembly.GetTypes()
+		return AssemblyScanner.UsingAssembly(assembly).Scan()
 			.Where(t => t.Name.EndsWith("Reflection") && t.IsClass)
 			.Select(t => t.GetProperty("Descriptor", BindingFlags.Public | BindingFlags.Static))
 			.SelectMany(prop => prop?.GetValue(null) is FileDescriptor fs ? fs.EnumTypes : [])

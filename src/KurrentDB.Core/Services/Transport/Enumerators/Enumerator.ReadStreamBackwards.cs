@@ -24,7 +24,7 @@ partial class Enumerator {
 		private readonly bool _resolveLinks;
 		private readonly ClaimsPrincipal _user;
 		private readonly bool _requiresLeader;
-		private readonly DateTime _deadline;
+		private readonly DateTime? _deadline;
 		private readonly uint _compatibility;
 		private readonly CancellationToken _cancellationToken;
 		private readonly SemaphoreSlim _semaphore = new(1, 1);
@@ -41,7 +41,7 @@ partial class Enumerator {
 			bool resolveLinks,
 			ClaimsPrincipal user,
 			bool requiresLeader,
-			DateTime deadline,
+			DateTime? deadline,
 			uint compatibility,
 			CancellationToken cancellationToken) {
 			_bus = Ensure.NotNull(bus);

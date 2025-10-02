@@ -6,38 +6,13 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Google.Rpc;
 using Grpc.Core;
-using Kurrent.Rpc;
-using Enum = System.Enum;
+
+using Enum   = System.Enum;
 using Status = Google.Rpc.Status;
 
 namespace KurrentDB.Api.Infrastructure.Errors;
 
 public static partial class RpcExceptions {
-	static RpcException Create(int statusCode, string message, params IMessage[] details) {
-		Debug.Assert(statusCode.GetHashCode() != 0, "The status code must not be the default value!");
-		Debug.Assert(!string.IsNullOrWhiteSpace(message), "The message must not be empty!");
-
-		var status = new Status {
-			Code    = statusCode,
-			Message = message,
-			Details = { details.Select(Any.Pack) }
-		};
-
-		return status.ToRpcException();
-	}
-
-	/// <summary>
-	/// Creates a generic RPC exception with the specified status code, message, and optional details.
-	/// This method is used internally to construct <see cref="RpcException"/> instances with rich
-	/// error information, including structured details that can be unpacked by clients.
-	/// Underneath, it creates a <see cref="Google.Rpc.Status"/> message and converts it to an <see cref="RpcException"/>.
-	/// The details are packed into the status message using <see cref="Any.Pack(IMessage)"/>.
-	/// This ensures that the details are properly serialized and can be deserialized by clients.
-	/// The created <see cref="Google.Rpc.Status"/> is added to the metadata with the <c>grpc-status-details-bin</c> key.
-	/// </summary>
-	static RpcException Create(StatusCode statusCode, string message, params IMessage[] details) =>
-		Create((int)statusCode, message, details);
-
 	/// <summary>
 	/// Creates a generic RPC exception based on a specific error enum value, message, and optional details.
 	/// The error enum must be annotated with <see cref="Kurrent.Rpc.ErrorMetadata"/> to provide
@@ -46,7 +21,7 @@ public static partial class RpcExceptions {
 	/// with the appropriate status code and error code in the details.
 	/// If the error is annotated to have details, at least one detail of the specified type
 	/// must be provided; otherwise, an assertion will fail in debug builds.
-	/// The created exception includes a <see cref="RequestErrorInfo"/> detail containing the error
+	/// The created exception includes a <see cref="ErrorInfo"/> detail containing the error
 	/// code, along with any additional details provided.
 	/// This ensures that clients can programmatically identify the error type and access
 	/// any structured details associated with the error.
@@ -61,14 +36,24 @@ public static partial class RpcExceptions {
             !err.HasDetails || err.HasDetails && details.Any(d => d.GetType() == err.DetailsType),
 			$"The error is annotated to have details of type '{err.DetailsType}', but none were provided!");
 
-		var info = new RequestErrorInfo { Code = err.Code };
-
         var errorInfo = new ErrorInfo {
-            Reason   = error.ToString(),
-            Domain   = "kurrentdb.api.v2.streams",
-            Metadata = { { "ErrorCode", err.Code } }
+            Reason = err.Code,
+            Domain = err.Domain
         };
 
-		return Create((StatusCode)err.StatusCode, message, details.Prepend(info).ToArray());
+		return Create(err.StatusCode, message, details.Prepend(errorInfo).ToArray());
 	}
+
+    static RpcException Create(int statusCode, string message, params IMessage[] details) {
+        Debug.Assert(statusCode.GetHashCode() != 0, "The error status code must not be OK!");
+        Debug.Assert(!string.IsNullOrWhiteSpace(message), "The message must not be empty!");
+
+        var status = new Status {
+            Code    = statusCode,
+            Message = message,
+            Details = { details.Select(Any.Pack) }
+        };
+
+        return status.ToRpcException();
+    }
 }
