@@ -108,7 +108,10 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 			Tags = { tags }
 		};
 
-		return await CreateSchema(schemaName, schemaDefinition, details, ct);
+		var response = await CreateSchema(schemaName, schemaDefinition, details, ct);
+		// TODO: Remove this delay after figuring out how to track the projection progress
+		await Task.Delay(TimeSpan.FromMilliseconds(200), ct);
+		return response;
 	}
 
 	protected async ValueTask<CreateSchemaResponse> CreateSchema(
