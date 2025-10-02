@@ -15,7 +15,9 @@ public static class ServiceCollectionExtensions {
     /// This is useful for integration tests where the server address
     /// is dynamically assigned and needs to be discovered by the gRPC client.
     /// </summary>
-    public static IServiceCollection EnableGrpcClientsAddressDiscovery(this IServiceCollection services) {
+    public static IServiceCollection EnableGrpcClientsAddressDiscovery(this IServiceCollection services, string uriSuffix = "kurrentdb") {
+        ArgumentException.ThrowIfNullOrWhiteSpace(uriSuffix);
+
         services.AddSingleton<ResolverFactory>(ctx => {
             var serverAddress   = ctx.GetServerLocalAddress();
             var balancerAddress = new BalancerAddress(serverAddress.Host, serverAddress.Port);
@@ -23,10 +25,9 @@ public static class ServiceCollectionExtensions {
         });
 
         services.ConfigureAll<GrpcClientFactoryOptions>(factory => {
-            factory.Address = new Uri("static://kurrentdb");
-            factory.ChannelOptionsActions.Add(channel => {
-                channel.Credentials = ChannelCredentials.Insecure;
-            });
+            factory.Address = new Uri($"static://{uriSuffix}");
+            factory.ChannelOptionsActions
+                .Add(channel => channel.Credentials = ChannelCredentials.Insecure);
         });
 
         return services;

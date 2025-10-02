@@ -2,13 +2,16 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics.Metrics;
+using DotNext.Collections.Generic;
 using Google.Protobuf;
 using Google.Rpc;
 using Grpc.Core;
+using Humanizer;
 using KurrentDB.Api.Tests.Fixtures;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Protocol.V2.Streams;
 using KurrentDB.Protocol.V2.Streams.Errors;
+using KurrentDB.Testing.Bogus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.Metrics.Testing;
 using Microsoft.Extensions.Logging;
@@ -18,6 +21,9 @@ namespace KurrentDB.Api.Tests.Streams;
 public class StreamsServiceTests {
     [ClassDataSource<ClusterVNodeTestContext>(Shared = SharedType.PerAssembly)]
     public required ClusterVNodeTestContext Fixture { get; init; }
+
+    [ClassDataSource<BogusFaker>(Shared = SharedType.PerAssembly)]
+    public required BogusFaker Faker { get; init; }
 
     [Test]
     [Arguments(1, 1)]
@@ -192,8 +198,29 @@ public class StreamsServiceTests {
     }
 
     [Test]
-    public ValueTask append_session_throws_when_transaction_is_too_large(CancellationToken cancellationToken) =>
-        throw new NotImplementedException();
+    public async ValueTask append_session_throws_when_transaction_is_too_large(CancellationToken cancellationToken) {
+        // Arrange
+        var numberOfRecords = TFConsts.ChunkSize / TFConsts.EffectiveMaxLogRecordSize + 1;
+
+        var request = HomeAutomationTestData.SimulateHomeActivity(numberOfRecords);
+
+        request.ForEach(r => r.Data = UnsafeByteOperations.UnsafeWrap(new byte[TFConsts.EffectiveMaxLogRecordSize]));
+
+        var totalSize = (request.Records.Count * TFConsts.EffectiveMaxLogRecordSize).Bytes();
+
+        Fixture.Logger.LogInformation(
+            "Prepared append request with {Records} records and a total size of ~{Size}",
+            request.Records.Count, totalSize.Humanize());
+
+        var appendTask = async () => await Fixture.StreamsClient.AppendAsync(request, cancellationToken: cancellationToken);
+
+        // Act & Assert
+        var rex     = await appendTask.ShouldThrowAsync<RpcException>();
+        var details = rex.GetRpcStatus()?.GetDetail<AppendTransactionSizeExceededErrorDetails>();
+
+        await Assert.That(details).IsNotNull();
+        await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.Aborted);
+    }
 
     [Test]
     public async ValueTask append_session_metrics_recorded(CancellationToken cancellationToken) {

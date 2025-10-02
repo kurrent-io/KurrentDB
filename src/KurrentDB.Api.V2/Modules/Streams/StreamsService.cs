@@ -8,6 +8,7 @@
 
 using System.Collections.Immutable;
 using EventStore.Plugins.Authorization;
+using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using KurrentDB.Api.Errors;
 using KurrentDB.Api.Infrastructure;
@@ -40,37 +41,18 @@ public class StreamsService : StreamsServiceBase {
         StreamsServiceOptions options,
         IPublisher publisher,
         IAuthorizationProvider authz,
-        Func<CancellationToken, ValueTask> ensureNodeIsLeader,
-        ApiV2Trackers trackers
+        INodeSystemInfoProvider node
     ) {
         Options            = options;
         Publisher          = publisher;
         Authz              = authz;
-        EnsureNodeIsLeader = ensureNodeIsLeader;
-
-        //TODO SS: -_-' consider moving to interceptor and/or using proper asp.net grpc instrumentation
-        AppendDuration = trackers[MetricsConfiguration.ApiV2Method.StreamAppendSession];
+        EnsureNodeIsLeader = node.EnsureNodeIsLeader;
     }
-
-    public StreamsService(
-        StreamsServiceOptions options,
-        IPublisher publisher,
-        IAuthorizationProvider authz,
-        NodeSystemInfoProvider node,
-        ApiV2Trackers trackers
-    ) : this(
-        options,
-        publisher,
-        authz,
-        node.EnsureNodeIsLeader,
-        trackers
-    ) { }
 
     StreamsServiceOptions              Options            { get; }
     IPublisher                         Publisher          { get; }
     IAuthorizationProvider             Authz              { get; }
     Func<CancellationToken, ValueTask> EnsureNodeIsLeader { get; }
-    IDurationTracker                   AppendDuration     { get; }
 
     public override async Task<AppendResponse> Append(AppendRequest request, ServerCallContext context) {
         var sessionResponse = await AppendSession(new[] { request }.ToAsyncEnumerable(), context);
@@ -79,9 +61,7 @@ public class StreamsService : StreamsServiceBase {
     }
 
     public override Task<AppendSessionResponse> AppendSession(IAsyncStreamReader<AppendRequest> requests, ServerCallContext context) =>
-        AppendDuration.Record(
-            static state => state.Service.AppendSession(state.Requests.ReadAllAsync(), state.Context),
-            (Service: this, Requests: requests, Context: context));
+        AppendSession(requests.ReadAllAsync(), context);
 
     async Task<AppendSessionResponse> AppendSession(IAsyncEnumerable<AppendRequest> requests, ServerCallContext context) {
        await EnsureNodeIsLeader(context.CancellationToken);
@@ -134,14 +114,15 @@ public class StreamsService : StreamsServiceBase {
 
             var eventStreamIndex = Streams.Count - 1;
 
-			foreach (var record in request.Records.Select(rec => rec.PrepareRecord(Time).EnsureValid())) {
-				var recordSize = record.CalculateSizeOnDisk(MaxRecordSize); // still considering using the validator...
-
+            // Prepare and validate records
+            // We do this here to ensure that if any record is invalid, we fail the entire session.
+			foreach (var record in request.Records.Select(rec => rec.PrepareRecord())) {
+				var recordSize = record.CalculateSizeOnDisk(MaxRecordSize);
 				if (recordSize.ExceedsMax)
 					throw ApiErrors.AppendRecordSizeExceeded(request.Stream, record.RecordId, recordSize.TotalSize, MaxRecordSize);
 
 				if ((TotalAppendSize += recordSize.TotalSize) > MaxAppendSize)
-					throw ApiErrors.AppendTransactionSizeExceeded(MaxAppendSize);
+					throw ApiErrors.AppendTransactionSizeExceeded(TotalAppendSize, MaxAppendSize);
 
 				Events.Add(record.MapToEvent());
                 Indexes.Add(eventStreamIndex);
@@ -157,7 +138,7 @@ public class StreamsService : StreamsServiceBase {
                 Revisions.ToImmutable(),
                 Events.ToImmutable(),
                 Indexes.ToImmutable(),
-                SystemAccounts.System, // its the only thing that makes sense
+                context.GetHttpContext().User, // SystemAccounts.System,
                 context.CancellationToken
             );
 
@@ -182,7 +163,7 @@ public class StreamsService : StreamsServiceBase {
 
         protected override RpcException MapToError(Message message) => message switch {
             WriteEventsCompleted completed => completed.Result switch {
-                // because we can append to soft deleted streams, StreamDeleted means "hard deleted" AKA tombstoned
+                // StreamDeleted means "hard deleted" AKA tombstoned
                 OperationResult.StreamDeleted  => ApiErrors.StreamTombstoned(Requests.ElementAt(completed.FailureStreamIndexes.Span[0]).Stream),
                 OperationResult.PrepareTimeout => ApiErrors.OperationTimeout(completed.Message),
                 OperationResult.CommitTimeout  => ApiErrors.OperationTimeout(completed.Message),
@@ -203,16 +184,6 @@ public class StreamsService : StreamsServiceBase {
             },
             _ => ApiErrors.InternalServerError($"{OperationName} failed with unexpected callback message: {message.GetType().FullName}")
         };
-
-        protected override ValueTask OnSuccess(AppendSessionResponse result, ServerCallContext context) {
-            if (context.GetHttpContext().Features.Get<IHttpMetricsTagsFeature>() is { } metrics) {
-                metrics.Tags.Add(new KeyValuePair<string, object?>("streams", Requests.Count));
-                metrics.Tags.Add(new KeyValuePair<string, object?>("records", Events.Count));
-                metrics.Tags.Add(new KeyValuePair<string, object?>("bytes", TotalAppendSize));
-            }
-
-            return ValueTask.CompletedTask;
-        }
 
         static readonly EqualityComparer<AppendRequest> AppendRequestComparer = EqualityComparer<AppendRequest>.Create(
             equals: (x, y) => string.Equals(x?.Stream, y?.Stream, StringComparison.OrdinalIgnoreCase),

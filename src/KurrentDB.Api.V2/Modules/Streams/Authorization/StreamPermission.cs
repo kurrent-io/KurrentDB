@@ -21,6 +21,6 @@ public sealed record StreamPermission : Permission {
 
     public static readonly StreamPermission[] All = [Read, Append, Delete, ReadMetadata, WriteMetadata];
 
-    public StreamPermission WithStream(StreamName stream) =>
+    public StreamPermission WithStream(string stream) =>
         Create<StreamPermission>(Value, Operation.WithParameter(StreamId(stream)));
 }

@@ -12,6 +12,7 @@ using Grpc.Core;
 using Humanizer;
 using KurrentDB.Api.Infrastructure.Errors;
 using Kurrent.Rpc;
+using KurrentDB.Api.Infrastructure;
 
 namespace KurrentDB.Api.Errors;
 
@@ -24,27 +25,27 @@ public static partial class ApiErrors {
 	/// when a user lacks sufficient permissions to perform the requested operation.
 	/// The exception includes structured error details with scope and username information.
 	/// </summary>
-	/// <param name="claim">
-	/// The claim required to perform the operation.
+	/// <param name="permission">
+	/// The fine-grained claim required to perform the operation.
     /// This should correspond to the permission or role needed to access the resource.
 	/// </param>
-	/// <param name="username">
-	/// The username of the user who was denied access. If not provided, the error message will not include username information.
+	/// <param name="loginName">
+	/// The login name of the user who was denied access. If not provided, the error message will not include username information.
 	/// This parameter is optional and can be null if the username is not available or relevant.
 	/// </param>
 	/// <returns>
 	/// An <see cref="RpcException"/> with status code <see cref="StatusCode.PermissionDenied"/>,
-	/// including <see cref="AccessDeniedErrorDetails"/> details with scope and username information.
+	/// including <see cref="AccessDeniedErrorDetails"/> details with scope and optionally the user login name.
 	/// </returns>
-	public static RpcException AccessDenied(string claim, string? username = null) {
-		Debug.Assert(!string.IsNullOrWhiteSpace(claim), "The claim must not be empty!");
+	public static RpcException AccessDenied(string permission, string? loginName = null) {
+		Debug.Assert(!string.IsNullOrWhiteSpace(permission), "The permission must not be empty!");
 
-		var message = $"The user{(username is not null ? $" {username}" : "")} does not have" +
-		              $" sufficient permissions to perform the operation: '{claim}'";
+		var message = $"The user{(loginName is not null ? $" {loginName}" : "")} does not have" +
+		              $" sufficient permissions to perform the operation: '{permission}'";
 
 		var details = new AccessDeniedErrorDetails {
-			Claim    = claim,
-			Username = username,
+			Permission = permission,
+			Username   = loginName,
 		};
 
 		return RpcExceptions.FromError(ServerError.AccessDenied, message, details);
@@ -218,23 +219,23 @@ public static partial class ApiErrors {
 		return RpcExceptions.FromError(ServerError.ServerOverloaded, message, details);
 	}
 
-	/// <summary>
-	/// Creates an RPC exception indicating that the current node is not the leader in a clustered environment.
-	/// This method is used to create an <see cref="RpcException"/> with status code <see cref="StatusCode.FailedPrecondition"/>
-	/// when write operations are attempted on a non-leader node in a KurrentDB cluster.
-	/// The exception includes information about the current leader node.
-	/// </summary>
-	/// <param name="leaderNodeId">
-	/// The unique identifier of the leader node in the cluster.
-	/// </param>
-	/// <param name="leaderEndpoint">
-	/// The network endpoint of the leader node.
-	/// </param>
-	/// <returns>
-	/// An <see cref="RpcException"/> with status code <see cref="StatusCode.FailedPrecondition"/>,
-	/// including <see cref="NotLeaderNodeErrorDetails"/> details with leader node information.
-	/// </returns>
-	public static RpcException NotLeaderNode(Guid leaderNodeId, DnsEndPoint leaderEndpoint) {
+    /// <summary>
+    /// Creates an RPC exception indicating that the current node is not the leader in a clustered environment.
+    /// This method is used to create an <see cref="RpcException"/> with status code <see cref="StatusCode.FailedPrecondition"/>
+    /// when write operations are attempted on a non-leader node in a KurrentDB cluster.
+    /// The exception includes information about the current leader node.
+    /// </summary>
+    /// <param name="leaderNodeId">
+    /// The unique identifier of the leader node in the cluster.
+    /// </param>
+    /// <param name="leaderEndpoint">
+    /// The network endpoint of the leader node.
+    /// </param>
+    /// <returns>
+    /// An <see cref="RpcException"/> with status code <see cref="StatusCode.FailedPrecondition"/>,
+    /// including <see cref="NotLeaderNodeErrorDetails"/> details with leader node information.
+    /// </returns>
+    public static RpcException NotLeaderNode(Guid leaderNodeId, DnsEndPoint leaderEndpoint) {
 		Debug.Assert(leaderNodeId != Guid.Empty, "The leader node ID must not be empty!");
 		Debug.Assert(!string.IsNullOrWhiteSpace(leaderEndpoint.Host), "The leader endpoint host must not be empty!");
 		Debug.Assert(leaderEndpoint.Port > 0, "The leader endpoint port must be positive!");
@@ -254,7 +255,15 @@ public static partial class ApiErrors {
 		return RpcExceptions.FromError(ServerError.NotLeaderNode, message, notLeaderNode);
 	}
 
-	/// <summary>
+    public static RpcException NotLeaderNode(NodeSystemInfo leaderInfo) {
+        Debug.Assert(leaderInfo != NodeSystemInfo.Empty, "The leader info must not be empty!");
+        return NotLeaderNode(leaderInfo.InstanceId, leaderInfo.HttpEndPoint);
+    }
+
+    public static RpcException NotLeaderNode(NodeLeadershipInfo leaderInfo) =>
+        NotLeaderNode(leaderInfo.InstanceId, leaderInfo.Endpoint);
+
+    /// <summary>
 	/// Indicates that an internal server error has occurred.
 	/// This method is used to create an <see cref="RpcException"/> with a standardized
 	/// message format for internal server errors, including a prompt to contact support.

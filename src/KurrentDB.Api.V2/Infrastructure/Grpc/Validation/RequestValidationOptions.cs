@@ -10,24 +10,24 @@ namespace KurrentDB.Api.Infrastructure.Grpc.Validation;
 /// Options for configuring gRPC request validation
 /// </summary>
 [PublicAPI]
-public record RequestValidationOptions {
+public class RequestValidationOptions {
     /// <summary>
     /// If true, an exception will be thrown if no validator is found for a given request type.
     /// If false, the request will be considered valid if no validator is found.
     /// Default is false.
     /// </summary>
-    public bool ThrowOnValidatorNotFound { get; init; }
+    public bool ThrowOnValidatorNotFound { get; set; }
 
     /// <summary>
     /// Log level to use when no validator is found for a request type and ThrowOnValidatorNotFound is false.
     /// Default is Debug.
     /// </summary>
-    public LogLevel ValidatorNotFoundLogLevel { get; init; } = LogLevel.Debug;
+    public LogLevel ValidatorNotFoundLogLevel { get; set; } = LogLevel.Debug;
 
     /// <summary>
     /// Factory for creating exceptions when calling EnsureRequestIsValid and validation fails.
     /// </summary>
-    public CreateValidationException ExceptionFactory { get; init; } = DefaultExceptionFactory;
+    public CreateValidationException ExceptionFactory { get; set; } = DefaultExceptionFactory;
 
     static CreateValidationException DefaultExceptionFactory =>
         static (requestType, errors) => new InvalidRequestException(requestType, errors);

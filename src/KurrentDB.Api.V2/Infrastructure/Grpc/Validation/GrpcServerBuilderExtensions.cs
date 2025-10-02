@@ -31,6 +31,9 @@ public static class GrpcServerBuilderExtensions {
         return builder;
     }
 
+    public static IGrpcServerBuilder AddRequestValidation(this IGrpcServerBuilder builder, Action<RequestValidationOptions> configureOptions, Action<RequestValidationConfigurator>? configure = null) =>
+        AddRequestValidation(builder, new RequestValidationOptions().With(configureOptions), configure);
+
     /// <summary>
     /// Sets up gRPC request validation
     /// </summary>
@@ -38,7 +41,7 @@ public static class GrpcServerBuilderExtensions {
     /// <param name="configure">Configuration delegate for validation setup</param>
     /// <returns>The gRPC server builder for chaining</returns>
     public static IGrpcServerBuilder AddRequestValidation(this IGrpcServerBuilder builder, Action<RequestValidationConfigurator> configure) =>
-        AddRequestValidation(builder, null, configure);
+        AddRequestValidation(builder, new RequestValidationOptions(), configure);
 }
 
 /// <summary>

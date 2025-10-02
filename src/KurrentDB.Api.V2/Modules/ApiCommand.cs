@@ -86,10 +86,10 @@ abstract class ApiCommand<TCommand, TResult>(string? operationName = null) : Api
         var self = (TCommand)this;
 
         var callback = new DelegateCallback<TCommand, TResult>(
-            Permission, self, OperationName,
-            static (msg, cmd) => cmd.SuccessPredicate(msg),
-            static (msg, cmd) => cmd.MapToResult(msg),
-            static (msg, cmd) => cmd.MapToError(msg)
+            context, self, OperationName,
+            static (msg, cmd, ctx) => cmd.SuccessPredicate(msg),
+            static (msg, cmd, ctx) => cmd.MapToResult(msg),
+            static (msg, cmd, ctx) => cmd.MapToError(msg)
         );
 
         try {

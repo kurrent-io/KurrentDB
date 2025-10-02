@@ -9,5 +9,5 @@ namespace KurrentDB.Api.Infrastructure;
 
 public static class ServiceCollectionExtensions {
     public static IServiceCollection AddNodeSystemInfoProvider(this IServiceCollection services) =>
-        services.AddSingleton<NodeSystemInfoProvider>();
+        services.AddSingleton<INodeSystemInfoProvider, NodeSystemInfoProvider>();
 }

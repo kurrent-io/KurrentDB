@@ -47,10 +47,6 @@ public class MetricsConfiguration {
 		StreamTombstone,
 	}
 
-    public enum ApiV2Method {
-        StreamAppendSession = 1
-    }
-
 	public enum GossipTracker {
 		PullFromPeer = 1,
 		PushToPeer,
@@ -163,8 +159,6 @@ public class MetricsConfiguration {
 	public Dictionary<IncomingGrpcCall, bool> IncomingGrpcCalls { get; set; } = new();
 
 	public Dictionary<GrpcMethod, string> GrpcMethods { get; set; } = new();
-
-    public Dictionary<ApiV2Method, string> ApiV2Methods { get; set; } = new();
 
 	public Dictionary<GossipTracker, bool> Gossip { get; set; } = new();
 

@@ -61,9 +61,9 @@ enum ServerError {
 }
 
 message AccessDeniedErrorDetails {
-  // The claim that was required for access.
-  // (e.g., "stream:orders:append", "registry:schema:create", etc.)
-  optional string claim = 1;
+  // The permission that was required for access.
+  // (e.g., "streams:append", "registry:schema:create", etc.)
+  optional string permission = 1;
 
   // The username of the user who was denied access.
   optional string username = 2;

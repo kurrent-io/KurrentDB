@@ -8,7 +8,7 @@ using KurrentDB.Api.Errors;
 namespace KurrentDB.Api.Infrastructure;
 
 static class NodeSystemInfoProviderExtensions {
-    public static async ValueTask EnsureNodeIsLeader(this NodeSystemInfoProvider provider, CancellationToken cancellationToken) {
+    public static async ValueTask EnsureNodeIsLeader(this INodeSystemInfoProvider provider, CancellationToken cancellationToken) {
         var info = await provider.CheckLeadership(cancellationToken);
         if (info.IsNotLeader)
             throw ApiErrors.NotLeaderNode(info.InstanceId, info.Endpoint);

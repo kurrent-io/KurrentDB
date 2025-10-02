@@ -12,19 +12,12 @@ namespace KurrentDB.Api.Streams;
 
 public static class AppendRecordExtensions {
 	/// <summary>
-	/// Prepares the AppendRecord by generating missing fields and enriching properties that are required for storage.
-	/// This method modifies the input record and returns it for convenience.
+	/// Prepares and validates the AppendRecord by generating missing fields and enriching properties
+	/// that are required for storage, while ensuring it meets all necessary criteria except size constraints.
 	/// </summary>
-	public static AppendRecord PrepareRecord(this AppendRecord record, TimeProvider time) {
-		// generate missing fields
+	public static AppendRecord PrepareRecord(this AppendRecord record) {
 		if (!record.HasRecordId)
 			record.RecordId = Guid.NewGuid().ToString();
-
-		if (!record.HasTimestamp)
-			record.Timestamp = time.GetUtcNow().ToUnixTimeMilliseconds();
-
-		// enrich properties
-		record.Properties.Add(Constants.Properties.RecordTimestampKey, Value.ForNumber(record.Timestamp));
 
 		if (record.Schema.Format != Protocol.V2.Streams.SchemaFormat.Json)
 			record.Properties.Add(Constants.Properties.SchemaFormatKey, Value.ForString(record.Schema.Format.ToString()));
@@ -32,15 +25,16 @@ public static class AppendRecordExtensions {
 		if (record.Schema.HasId)
 			record.Properties.Add(Constants.Properties.SchemaIdKey, Value.ForString(record.Schema.Id));
 
-		return record;
+		return AppendRecordValidator.Instance.EnsureValid(record);
 	}
 
-	public static AppendRecord EnsureValid(this AppendRecord record) =>
-		AppendRecordValidator.Instance.EnsureValid(record);
-
     /// <summary>
-    /// Calculates the size on disk of the AppendRecord including data, properties and schema name.
+    /// Estimates the size on disk of the AppendRecord including data, properties and schema name.
     /// Also indicates if it exceeds the maximum allowed size.
+    /// <remarks>
+    /// It is assumed that the record has been prepared using <see cref="PrepareRecord"/> before calling this method.
+    /// This method does not account for any additional overhead that may be introduced by the storage engine.
+    /// </remarks>
     /// </summary>
     public static (int TotalSize, int SizeExceededBy, bool ExceedsMax) CalculateSizeOnDisk(this AppendRecord record, int maxRecordSize) {
         Debug.Assert(maxRecordSize > 0, "maxRecordSize must be positive");
@@ -53,8 +47,4 @@ public static class AppendRecordExtensions {
 
         return size <= maxRecordSize ? (size, 0, false) : (size, size - maxRecordSize, true);
     }
-}
-
-public readonly record struct RecordSize(int TotalSize, int SizeExceededBy, bool ExceedsMax) {
-
 }

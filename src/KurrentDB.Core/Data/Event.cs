@@ -11,12 +11,12 @@ namespace KurrentDB.Core.Data;
 
 // Event for writing
 public record Event {
-	public Guid   EventId            { get; init; }
-	public string EventType          { get; init; }
-	public bool   IsJson             { get; init; }
-	public byte[] Data               { get; init; }
-	public bool   IsPropertyMetadata { get; init; }
-	public byte[] Metadata           { get; init; }
+	public Guid   EventId            { get; }
+	public string EventType          { get; }
+	public bool   IsJson             { get; }
+	public byte[] Data               { get; }
+	public bool   IsPropertyMetadata { get; }
+	public byte[] Metadata           { get; }
 
 	public Event(Guid eventId, string eventType, bool isJson, string data, string metadata)
 		: this(
@@ -28,9 +28,12 @@ public record Event {
 		: this(eventId, eventType, isJson, data, isPropertyMetadata: false, []) { }
 
 	public Event(Guid eventId, string eventType, bool isJson, byte[] data, bool isPropertyMetadata, byte[] metadata) {
-		Debug.Assert(eventId != Guid.Empty, "Empty eventId provided.");
-		Debug.Assert(!string.IsNullOrEmpty(eventType), "Empty eventType provided.");
-		Debug.Assert(!ExceedsMaximumSizeOnDisk(eventType, data, metadata), "Record is too big.");
+        if (eventId == Guid.Empty)
+            throw new ArgumentException("Empty eventId provided.", nameof(eventId));
+        if (string.IsNullOrEmpty(eventType))
+            throw new ArgumentException("Empty eventType provided.", nameof(eventType));
+        if (ExceedsMaximumSizeOnDisk(eventType, data, metadata))
+            throw new ArgumentException("Record is too big.", nameof(data));
 
 		EventId            = eventId;
 		EventType          = eventType;
@@ -40,6 +43,14 @@ public record Event {
 		Metadata           = metadata ?? [];
 	}
 
+    /// <summary>
+    /// Used in the new append API that takes raw bytes for data and properties.
+    /// <remarks>
+    /// The ubiquitous language in the codebase is "metadata" for what this constructor calls "properties".
+    /// This is to avoid confusion with the "metadata" field in the Event record.
+    /// The same goes for recordId vs eventId and schemaName vs eventType.
+    /// </remarks>
+    /// </summary>
 	public Event(Guid recordId, string schemaName, bool isJson, byte[] data, byte[] properties) {
 		EventId            = recordId;
 		EventType          = schemaName;
@@ -50,23 +61,8 @@ public record Event {
 	}
 
 	public static int SizeOnDisk(string eventType, byte[] data, byte[] metadata) =>
-		(data?.Length ?? 0) + (metadata?.Length ?? 0) + (eventType.Length * 2);
+		(data?.Length ?? 0) + (metadata?.Length ?? 0) + eventType.Length * 2;
 
 	static bool ExceedsMaximumSizeOnDisk(string eventType, byte[] data, byte[] metadata) =>
 		SizeOnDisk(eventType, data, metadata) > TFConsts.EffectiveMaxLogRecordSize;
-
-	/// <summary>
-	/// Calculates the size on disk of the event and indicates if it exceeds the maximum allowed size.
-	/// </summary>
-	/// <param name="size">
-	/// The calculated size on disk of the event.
-	/// </param>
-	/// <param name="exceeded">
-	/// The amount by which the size exceeds the maximum allowed size. If the size does not exceed the limit, this will be zero.
-	/// </param>
-	public bool CalculateSizeOnDisk(out int size, out int exceeded) {
-		size     = Data.Length + Metadata.Length + Encoding.UTF8.GetByteCount(EventType);
-		exceeded = size - TFConsts.EffectiveMaxLogRecordSize;
-		return exceeded > 0;
-	}
 }

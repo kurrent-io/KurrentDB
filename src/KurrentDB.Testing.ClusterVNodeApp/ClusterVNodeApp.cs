@@ -46,7 +46,7 @@ public class ClusterVNodeApp : IAsyncDisposable {
 
 	static ClusterVNodeApp() {
 		// required because of a bug in the configuration system that
-		// is not reading the attribute from the property itself
+		// is not reading the attributes from the respective properties
 		TypeDescriptor.AddAttributes(typeof(EndPoint[]), new TypeConverterAttribute(typeof(GossipSeedConverter)));
 		TypeDescriptor.AddAttributes(typeof(EndPoint),   new TypeConverterAttribute(typeof(GossipEndPointConverter)));
 		TypeDescriptor.AddAttributes(typeof(IPAddress),  new TypeConverterAttribute(typeof(IPAddressConverter)));

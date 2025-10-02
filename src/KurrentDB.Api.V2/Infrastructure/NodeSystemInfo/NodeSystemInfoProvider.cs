@@ -14,24 +14,41 @@ using KurrentDB.Core.Services;
 
 namespace KurrentDB.Api.Infrastructure;
 
-public sealed class NodeSystemInfoProvider(IPublisher publisher, TimeProvider time) {
+public interface INodeSystemInfoProvider {
+    /// <summary>
+    /// Gets information about the current node instance.
+    /// </summary>
+    ValueTask<NodeSystemInfo> GetInstanceInfo(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Gets information about the current cluster leader node.
+    /// </summary>
+    ValueTask<NodeSystemInfo> GetLeaderInfo(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Checks if the current node is the cluster leader and returns leadership information.
+    /// </summary>
+    ValueTask<NodeLeadershipInfo> CheckLeadership(CancellationToken cancellationToken);
+}
+
+public sealed class NodeSystemInfoProvider(IPublisher publisher, TimeProvider time) : INodeSystemInfoProvider {
     static readonly JsonSerializerOptions GossipStreamSerializerOptions = new() {
         Converters = { new JsonStringEnumConverter() }
     };
 
-    public async ValueTask<NodeSystemInfo> GetInstanceInfo(CancellationToken cancellationToken = default) {
+    public async ValueTask<NodeSystemInfo> GetInstanceInfo(CancellationToken cancellationToken) {
         var re  = await publisher.ReadStreamLastEvent(SystemStreams.GossipStream, cancellationToken);
         var evt = JsonSerializer.Deserialize<GossipUpdatedInMemory>(re!.Value.Event.Data.Span, GossipStreamSerializerOptions)!;
         return new(evt.Members.Single(node => node.InstanceId == evt.NodeId), time.GetUtcNow());
     }
 
-    public async ValueTask<NodeSystemInfo> GetLeaderInfo(CancellationToken cancellationToken = default) {
+    public async ValueTask<NodeSystemInfo> GetLeaderInfo(CancellationToken cancellationToken) {
         var re  = await publisher.ReadStreamLastEvent(SystemStreams.GossipStream, cancellationToken);
         var evt = JsonSerializer.Deserialize<GossipUpdatedInMemory>(re!.Value.Event.Data.Span, GossipStreamSerializerOptions)!;
         return new(evt.Members.Single(node => node is { State: VNodeState.Leader, IsAlive: true }), time.GetUtcNow());
     }
 
-    public async ValueTask<LeadershipInfo> CheckLeadership(CancellationToken cancellationToken = default) {
+    public async ValueTask<NodeLeadershipInfo> CheckLeadership(CancellationToken cancellationToken) {
         var re  = await publisher.ReadStreamLastEvent(SystemStreams.GossipStream, cancellationToken);
         var evt = JsonSerializer.Deserialize<GossipUpdatedInMemory>(re!.Value.Event.Data.Span, GossipStreamSerializerOptions)!;
 
@@ -51,6 +68,6 @@ public sealed class NodeSystemInfoProvider(IPublisher publisher, TimeProvider ti
     record GossipUpdatedInMemory(Guid NodeId, ClientClusterInfo.ClientMemberInfo[] Members);
 }
 
-public readonly record struct LeadershipInfo(Guid InstanceId, DnsEndPoint Endpoint, bool IsLeader) {
+public readonly record struct NodeLeadershipInfo(Guid InstanceId, DnsEndPoint Endpoint, bool IsLeader) {
     public bool IsNotLeader => !IsLeader;
 }

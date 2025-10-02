@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <LangVersion>preview</LangVersion>
@@ -17,5 +16,4 @@
         <ProjectReference Include="..\KurrentDB.Testing\KurrentDB.Testing.csproj"/>
         <ProjectReference Include="..\KurrentDB\KurrentDB.csproj"/>
     </ItemGroup>
-
 </Project>
