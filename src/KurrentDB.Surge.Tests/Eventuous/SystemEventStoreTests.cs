@@ -5,15 +5,15 @@
 
 using Eventuous;
 using Kurrent.Surge;
-using KurrentDB.Connectors.Infrastructure.Eventuous;
+using KurrentDB.Surge.Eventuous;
 using KurrentDB.Surge.Testing.Fixtures;
 using Shouldly;
 
-namespace KurrentDB.Connectors.Tests.Eventuous;
+namespace KurrentDB.Surge.Tests.Eventuous;
 
 [Trait("Category", "Integration")]
-public class SystemEventStoreTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture) : ConnectorsIntegrationTests<ConnectorsAssemblyFixture>(output, fixture) {
-    SystemEventStore NewSystemEventStore() => new SystemEventStore(Fixture.NewReader().Create(), Fixture.NewProducer().Create());
+public class SystemEventStoreTests(ITestOutputHelper output, SystemComponentsAssemblyFixture fixture) : SystemComponentsIntegrationTests(output, fixture) {
+    SystemEventStore NewSystemEventStore() => new(Fixture.NewReader().Create(), Fixture.NewProducer().Create());
 
     [Fact]
     public async Task stream_does_not_exists() {
@@ -63,7 +63,7 @@ public class SystemEventStoreTests(ITestOutputHelper output, ConnectorsAssemblyF
         var appendResult = await eventStore.AppendEvents(
             stream,
             ExpectedStreamVersion.Any,
-            new[] { streamEvent },
+            [streamEvent],
             cancellator.Token
         );
 
@@ -225,7 +225,7 @@ public class SystemEventStoreTests(ITestOutputHelper output, ConnectorsAssemblyF
         var result = await eventStore.AppendEvents(
             stream,
             ExpectedStreamVersion.Any,
-            new[] { eventMetadata },
+            [eventMetadata],
             cancellator.Token
         );
 
@@ -262,28 +262,12 @@ public class SystemEventStoreTests(ITestOutputHelper output, ConnectorsAssemblyF
         var stream = Fixture.NewStreamName();
 
         // Act & Assert
-        var ex = await eventStore
-            .ReadEvents(stream, StreamReadPosition.Start, 10, cancellator.Token)
-            .ShouldThrowAsync<StreamNotFound>();
+        await eventStore
+	        .ReadEvents(stream, StreamReadPosition.Start, 10, cancellator.Token)
+	        .ShouldThrowAsync<StreamNotFound>();
     }
 
-    // makes no sense except to validate the argument
-    // [Fact]
-    // public async Task read_zero_events_forward_from_non_existent_stream() {
-    //     // Arrange
-    //     var eventStore = NewSystemEventStore();
-    //
-    //     using var cancellator = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-    //
-    //     var stream = Fixture.NewStreamName();
-    //
-    //     // Assert
-    //     await eventStore
-    //         .ReadEvents(stream, StreamReadPosition.Start, 0, cancellator.Token)
-    //         .ShouldThrowAsync<StreamNotFoundError>();
-    // }
-
-    [Fact(Skip = "Must investigate cause it returns empty stream array instead of SteamNotFound")]
+    [Fact]
     public async Task read_some_events_backwards_from_nonexistent_stream() {
         // Arrange
         var eventStore = NewSystemEventStore();
@@ -299,6 +283,30 @@ public class SystemEventStoreTests(ITestOutputHelper output, ConnectorsAssemblyF
     }
 
     [Fact]
+    public async Task read_events_forwards() {
+	    // Arrange
+	    var eventStore = NewSystemEventStore();
+
+	    using var cancellator = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+
+	    var stream = Fixture.NewStreamName();
+
+	    // Act
+	    var events = Fixture.CreateStreamEvents(800).ToArray();
+
+	    var appendResult = await eventStore.AppendEvents(stream, ExpectedStreamVersion.Any, events, cancellator.Token);
+
+	    // Assert
+	    appendResult.GlobalPosition.ShouldBeGreaterThan<ulong>(0);
+
+	    var readResults = await eventStore.ReadEvents(stream, StreamReadPosition.Start, int.MaxValue, cancellator.Token);
+
+	    readResults.Length.ShouldBe(events.Length);
+	    events.First().Id.ShouldBe(readResults.First().Id);
+	    events.Last().Id.ShouldBe(readResults.Last().Id);
+    }
+
+    [Fact]
     public async Task read_events_backwards() {
         // Arrange
         var eventStore = NewSystemEventStore();
@@ -308,16 +316,16 @@ public class SystemEventStoreTests(ITestOutputHelper output, ConnectorsAssemblyF
         var stream = Fixture.NewStreamName();
 
         // Act
-        var events = Fixture.CreateStreamEvents(2).ToArray();
+        var events = Fixture.CreateStreamEvents(800).ToArray();
 
         var appendResult = await eventStore.AppendEvents(stream, ExpectedStreamVersion.Any, events, cancellator.Token);
 
         // Assert
         appendResult.GlobalPosition.ShouldBeGreaterThan<ulong>(0);
 
-        var readResults = await eventStore.ReadEventsBackwards(stream, new(long.MaxValue), 2, cancellator.Token);
+        var readResults = await eventStore.ReadEventsBackwards(stream, new(long.MaxValue), int.MaxValue, cancellator.Token);
 
-        readResults.Length.ShouldBe(2);
+        readResults.Length.ShouldBe(events.Length);
         events.First().Id.ShouldBe(readResults.Last().Id);
         events.Last().Id.ShouldBe(readResults.First().Id);
     }

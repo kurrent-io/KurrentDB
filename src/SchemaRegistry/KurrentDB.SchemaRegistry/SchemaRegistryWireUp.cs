@@ -16,7 +16,6 @@ using KurrentDB.SchemaRegistry.Domain;
 using KurrentDB.SchemaRegistry.Infrastructure.System.Node.NodeSystemInfo;
 using KurrentDB.SchemaRegistry.Planes.Projection;
 using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;
-using KurrentDB.Surge;
 using KurrentDB.Surge.Eventuous;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -62,9 +61,7 @@ public static class SchemaRegistryWireUp {
 					.ProducerId("EventuousProducer")
 					.Create();
 
-				var manager = ctx.GetRequiredService<SystemManager>();
-
-				return new SystemEventStore(reader, producer, manager);
+				return new SystemEventStore(reader, producer);
 			}
 		);
 
