@@ -81,9 +81,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 		await CreateSchema(schema.SchemaName, schema.SchemaDefinition, details, cancellationToken);
 
 		var listSchemasResponse = await Client.ListSchemasAsync(
-			new ListSchemasRequest {
-				SchemaTags = { new Dictionary<string, string> { [key] = value } }
-			},
+			new() { SchemaTags = { new Dictionary<string, string> { [key] = value } } },
 			cancellationToken: cancellationToken
 		);
 
@@ -113,7 +111,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 		);
 
 		var listSchemasResponse = await Client.ListRegisteredSchemasAsync(
-			new ListRegisteredSchemasRequest {
+			new() {
 				SchemaTags = { new Dictionary<string, string> { [key] = value } }
 			},
 			cancellationToken: cancellationToken
@@ -138,9 +136,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 
 		// Assert
 		var listSchemasResponse = await Client.ListRegisteredSchemasAsync(
-			new ListRegisteredSchemasRequest {
-				SchemaVersionId = createSchemaResult.SchemaVersionId
-			},
+			new() { SchemaVersionId = createSchemaResult.SchemaVersionId },
 			cancellationToken: cancellationToken
 		);
 
@@ -159,9 +155,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 
 		// Assert
 		var listSchemasResponse = await Client.ListSchemaVersionsAsync(
-			new ListSchemaVersionsRequest {
-				SchemaName = schemaName,
-			},
+			new() { SchemaName = schemaName, },
 			cancellationToken: cancellationToken
 		);
 
@@ -173,9 +167,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task list_schema_versions_not_found(CancellationToken cancellationToken) {
 		var ex = await FluentActions.Awaiting(async () => await Client.ListSchemaVersionsAsync(
-			new ListSchemaVersionsRequest {
-				SchemaName = NewSchemaName()
-			},
+			new() { SchemaName = NewSchemaName() },
 			cancellationToken: cancellationToken
 		)).Should().ThrowAsync<RpcException>();
 
@@ -185,9 +177,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task list_registered_schema_with_version_id_not_found(CancellationToken cancellationToken) {
 		var response = await Client.ListRegisteredSchemasAsync(
-			new ListRegisteredSchemasRequest {
-				SchemaVersionId = Guid.NewGuid().ToString()
-			},
+			new() { SchemaVersionId = Guid.NewGuid().ToString() },
 			cancellationToken: cancellationToken);
 
 		response.Schemas.ShouldBeEmpty();
@@ -207,9 +197,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task list_schemas_with_prefix_not_found(CancellationToken cancellationToken) {
 		var response = await Client.ListSchemasAsync(
-			new ListSchemasRequest {
-				SchemaNamePrefix = NewPrefix()
-			},
+			new() { SchemaNamePrefix = NewPrefix() },
 			cancellationToken: cancellationToken);
 
 		response.Schemas.ShouldBeEmpty();
@@ -218,7 +206,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task list_schemas_with_tags_not_found(CancellationToken cancellationToken) {
 		var response = await Client.ListSchemasAsync(
-			new ListSchemasRequest {
+			new() {
 				SchemaTags = { new Dictionary<string, string> { [Guid.NewGuid().ToString()] = Guid.NewGuid().ToString() } }
 			},
 			cancellationToken: cancellationToken

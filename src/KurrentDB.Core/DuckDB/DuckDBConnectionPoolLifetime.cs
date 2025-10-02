@@ -56,7 +56,12 @@ public class DuckDBConnectionPoolLifetime : Disposable {
 		if (disposing) {
 			_log?.LogDebug("Checkpointing DuckDB connection");
 			var connection = _pool.Open();
-			connection.Checkpoint();
+			try {
+				connection.Checkpoint();
+			} catch (Exception e) when (e.Message.Contains("FORCE CHECKPOINT")) {
+				_log?.LogWarning("Failed to checkpoint DuckDB connection, falling back to FORCE CHECKPOINT");
+				connection.ExecuteAdHocNonQuery("FORCE CHECKPOINT;");
+			}
 			connection.Dispose();
 			_pool.Dispose();
 			if (_tempPath != null) {
