@@ -20,8 +20,6 @@
     <Project Path="src\KurrentDB.Plugins.Tests\KurrentDB.Plugins.Tests.csproj" Type="Classic C#" />
     <Project Path="src\KurrentDB.Plugins\KurrentDB.Plugins.csproj" Type="Classic C#" />
     <Project Path="src\KurrentDB.POC.ConnectedSubsystemsPlugin\KurrentDB.POC.ConnectedSubsystemsPlugin.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.SecondaryIndexing.Tests\KurrentDB.SecondaryIndexing.Tests.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.SecondaryIndexing\KurrentDB.SecondaryIndexing.csproj" Type="Classic C#" />
     <Project Path="src\KurrentDB.Security.EncryptionAtRest.Tests\KurrentDB.Security.EncryptionAtRest.Tests.csproj" Type="Classic C#" />
     <Project Path="src\KurrentDB.Security.EncryptionAtRest\KurrentDB.Security.EncryptionAtRest.csproj" Type="Classic C#" />
     <Project Path="src\KurrentDB.TcpPlugin.Tests\KurrentDB.TcpPlugin.Tests.csproj" Type="Classic C#" />
@@ -54,6 +52,11 @@
     <Project Path="src\SchemaRegistry\KurrentDB.SchemaRegistry.Tests\KurrentDB.SchemaRegistry.Tests.csproj" Type="Classic C#" />
     <Project Path="src\SchemaRegistry\KurrentDB.SchemaRegistry\KurrentDB.SchemaRegistry.csproj" Type="Classic C#" />
   </Folder>
+  <Folder Name="/SecondaryIndexes/">
+    <Project Path="src\KurrentDB.SecondaryIndexing.LoadTesting\KurrentDB.SecondaryIndexing.LoadTesting.csproj" Type="Classic C#" />
+    <Project Path="src\KurrentDB.SecondaryIndexing.Tests\KurrentDB.SecondaryIndexing.Tests.csproj" Type="Classic C#" />
+    <Project Path="src\KurrentDB.SecondaryIndexing\KurrentDB.SecondaryIndexing.csproj" Type="Classic C#" />
+  </Folder>
   <Folder Name="/Solution Items/">
     <File Path="src\.editorconfig" />
     <File Path="src\..\.github\CODEOWNERS" />
@@ -82,8 +85,10 @@
   <Project Path="src\KurrentDB.ClusterNode.Web\KurrentDB.ClusterNode.Web.csproj" />
   <Project Path="src\KurrentDB.Common\KurrentDB.Common.csproj" />
   <Project Path="src\KurrentDB.Core\KurrentDB.Core.csproj" />
+  <Project Path="src\KurrentDB.DuckDB\KurrentDB.DuckDB.csproj" Type="Classic C#" />
   <Project Path="src\KurrentDB.Licensing\KurrentDB.Licensing.csproj" />
   <Project Path="src\KurrentDB.LogCommon\KurrentDB.LogCommon.csproj" />
+  <Project Path="src\KurrentDB.Logging\KurrentDB.Logging.csproj" Type="Classic C#" />
   <Project Path="src\KurrentDB.LogV3\KurrentDB.LogV3.csproj" />
   <Project Path="src\KurrentDB.MicroBenchmarks\KurrentDB.MicroBenchmarks.csproj" />
   <Project Path="src\KurrentDB.Native\KurrentDB.Native.csproj" />
