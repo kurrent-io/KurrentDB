@@ -27,7 +27,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<!-- v2  -->
+		<!-- protocol -->
 		<Protobuf
 			ProtoRoot="../../proto/kurrentdb/protocol/v2"
 			Include="../../proto/kurrentdb/protocol/v2/**/*.proto"
@@ -38,6 +38,15 @@
 			AdditionalImportDirs="../../proto"
 		/>
 
+        <!-- kurrent -->
+        <Protobuf
+            ProtoRoot="../../proto/kurrent"
+            Include="../../proto/kurrent/**/*.proto"
+            Link="proto\kurrent\%(RecursiveDir)/%(FileName)%(Extension)"
+            Access="Public"
+            AdditionalImportDirs="../../proto"
+        />
+        
 		<!-- google -->
 		<Protobuf
 			ProtoRoot="../../proto/google"
@@ -53,7 +62,6 @@
 	</ItemGroup>
 
     <ItemGroup>
-
         <InternalsVisibleTo Include="KurrentDB.Plugins.Api.V2" />
         <InternalsVisibleTo Include="KurrentDB.Api.V2.Tests" />
     </ItemGroup>

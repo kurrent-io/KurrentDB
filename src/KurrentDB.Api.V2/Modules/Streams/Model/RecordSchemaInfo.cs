@@ -1,6 +1,9 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Google.Protobuf.WellKnownTypes;
+using Enum = System.Enum;
+
 namespace KurrentDB.Api.Streams;
 
 /// <summary>
@@ -22,5 +25,30 @@ public record RecordSchemaInfo(SchemaName SchemaName, SchemaFormat DataFormat, S
     public bool HasDataFormat      => DataFormat != SchemaFormat.Unspecified;
     public bool HasSchemaVersionId => SchemaVersionId != SchemaVersionId.None;
 
+    public bool IsValid => HasSchemaName && HasDataFormat;
+
     public override string ToString() => $"{SchemaName} {DataFormat} {SchemaVersionId}";
+
+    public static RecordSchemaInfo FromProperties(Struct properties) {
+        return new RecordSchemaInfo(
+            SchemaName:      GetSchemaName(properties),
+            DataFormat:      GetSchemaFormat(properties),
+            SchemaVersionId: GetSchemaId(properties)
+        );
+
+        static SchemaFormat GetSchemaFormat(Struct source) =>
+            source.Fields.TryGetValue(Constants.Properties.SchemaFormatKey, out var value)
+                ? Enum.Parse<SchemaFormat>(value.StringValue, true)
+                : SchemaFormat.Unspecified;
+
+        static SchemaVersionId GetSchemaId(Struct source) =>
+            source.Fields.TryGetValue(Constants.Properties.SchemaIdKey, out var value)
+                ? SchemaVersionId.From(value.StringValue)
+                : SchemaVersionId.None;
+
+        static SchemaName GetSchemaName(Struct source) =>
+            source.Fields.TryGetValue(Constants.Properties.SchemaNameKey, out var value)
+                ? SchemaName.From(value.StringValue)
+                : SchemaName.None;
+    }
 }

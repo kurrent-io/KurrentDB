@@ -9,10 +9,6 @@
 		<RootNamespace>KurrentDB.Api.Tests</RootNamespace>
 		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
 		<IsPackable>false</IsPackable>
-<!--		<UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>-->
-<!--		<EnableMSTestRunner>true</EnableMSTestRunner>-->
-<!--		<TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>-->
-<!--		<TestingPlatformCaptureOutput>false</TestingPlatformCaptureOutput>-->
 	</PropertyGroup>
 
 	<ItemGroup>

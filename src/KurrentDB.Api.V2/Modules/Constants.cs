@@ -4,15 +4,9 @@
 namespace KurrentDB.Api;
 
 public static class Constants {
-	public static class Properties {
-		public const string SchemaNameKey      = "$schema.name";
-		public const string SchemaFormatKey    = "$schema.format";
-		public const string SchemaIdKey        = "$schema.id";
-		public const string SchemaUrnKey       = "$schema.urn";
-		public const string RecordTimestampKey = "$record.timestamp";
-	}
-
-	public static class Headers {
-		public const string RequiresLeader = "requires-leader";
-	}
+    public static class Properties {
+        public const string SchemaNameKey   = "$schema.name";
+        public const string SchemaFormatKey = "$schema.format";
+        public const string SchemaIdKey     = "$schema.id";
+    }
 }

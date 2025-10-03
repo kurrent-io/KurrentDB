@@ -65,8 +65,6 @@ public class EventRecord : IEquatable<EventRecord> {
 		if (IsJson)
 			props.Fields[Constants.RecordProperties.SchemaFormatKey] = JsonDataFormatValue;
 
-		// props.Fields[Constants.RecordProperties.TimestampKey] = Value.ForNumber(TimeStamp.ToUnixTimeMilliseconds());
-
 		return Encoding.UTF8.GetBytes(JsonFormatter.Default.Format(props));
 	}
 

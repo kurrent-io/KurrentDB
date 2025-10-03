@@ -1,351 +1,261 @@
 // // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 //
-// #nullable enable
-// #pragma warning disable CA1861 // Avoid constant arrays as arguments
-// #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
-// #pragma warning disable xUnit2023 // Do not use collection methods for single-item collections
-//
-// using System;
-// using System.Collections.Generic;
-// using System.Security.Claims;
-// using System.Text;
-// using System.Threading.Tasks;
+// using System.Diagnostics.Metrics;
+// using DotNext.Collections.Generic;
 // using Google.Protobuf;
+// using Google.Rpc;
 // using Grpc.Core;
-// using KurrentDB.Core.Messages;
-// using KurrentDB.Core.Metrics;
-// using KurrentDB.Core.Services.Transport.Grpc;
-// using KurrentDB.Core.Services.Transport.Grpc.V2;
-// using KurrentDB.Core.Tests.Authorization;
-// using KurrentDB.Core.Tests.Fakes;
+// using Humanizer;
+// using Humanizer.Bytes;
+// using KurrentDB.Api.Tests.Fixtures;
 // using KurrentDB.Core.TransactionLog.Chunks;
-// using KurrentDB.Protocol.V2;
-// using Microsoft.AspNetCore.Http;
-// using Xunit;
+// using KurrentDB.Protocol.V2.Streams;
+// using KurrentDB.Protocol.V2.Streams.Errors;
+// using KurrentDB.Testing.Bogus;
+// using Microsoft.Extensions.DependencyInjection;
+// using Microsoft.Extensions.Diagnostics.Metrics.Testing;
+// using Microsoft.Extensions.Logging;
 //
-// namespace KurrentDB.Core.XUnit.Tests.Services.Transport.Grpc.V2;
+// namespace KurrentDB.Api.Tests.Streams;
 //
-// public class MultiStreamAppendServiceTests {
-// 	readonly AdHocPublisher _mainQueue = new();
-// 	readonly AdHocAuthorizationProvider _authorizationProvider = new() { CheckAccess = (_, _) => true };
-// 	readonly MultiStreamAppendService _sut;
-// 	readonly TestServerCallContext _context = TestServerCallContext.Create();
+// public class StreamsServiceTests {
+//     [ClassDataSource<ClusterVNodeTestContext>(Shared = SharedType.PerAssembly)]
+//     public required ClusterVNodeTestContext Fixture { get; init; }
 //
-// 	public MultiStreamAppendServiceTests() {
-// 		_context.UserState["__HttpContext"] = new DefaultHttpContext();
-// 		_sut = new(
-// 			publisher: _mainQueue,
-// 			authorizationProvider: _authorizationProvider,
-// 			appendTracker: new DurationTracker.NoOp(),
-// 			maxAppendSize: int.MaxValue,
-// 			maxAppendEventSize: int.MaxValue,
-// 			chunkSize: TFConsts.ChunkSize);
-// 	}
+//     [ClassDataSource<BogusFaker>(Shared = SharedType.PerAssembly)]
+//     public required BogusFaker Faker { get; init; }
 //
-// 	[Fact]
-// 	public async Task when_successfully_appending_multiple_messages_to_multiple_streams() {
-// 		// write message 2 to stream-a
-// 		// write messages 5 & 6 to stream-b
-// 		// given
-// 		var event2Id = Guid.NewGuid();
-// 		var event5Id = Guid.NewGuid();
-// 		var event6Id = Guid.NewGuid();
+//     [Test]
+//     [Arguments(1, 1)]
+//     [Arguments(1, 10)]
+//     [Arguments(10, 1)]
+//     [Arguments(10, 10)]
+//     [Arguments(50, 1)]
+//     [Arguments(50, 10)]
+//     public async ValueTask append_session_appends_records(int numberOfStreams, int numberOfEvents, CancellationToken cancellationToken) {
+//         // Arrange
+//         var requests = HomeAutomationTestData
+//             .SimulateHousingComplexActivity(numberOfStreams, numberOfEvents);
 //
-// 		var request = new MultiStreamAppendRequest() {
-// 			Input = {
-// 				new AppendStreamRequest {
-// 					Stream = "stream-a",
-// 					ExpectedRevision = 1,
-// 					Records = {
-// 						new AppendRecord {
-// 							Data = ByteString.CopyFromUtf8("message-2"),
-// 							RecordId = event2Id.ToString(),
-// 							Properties = {
-// 								{ Constants.RecordProperties.SchemaNameKey, new() { StringValue = "message-2-type" } },
-// 								{ Constants.RecordProperties.SchemaFormatKey, new() { StringValue = "json" } },
-// 							},
-// 						},
-// 					},
-// 				},
-// 				new AppendStreamRequest {
-// 					Stream = "stream-b",
-// 					ExpectedRevision = -2,
-// 					Records = {
-// 						new AppendRecord {
-// 							Data = ByteString.CopyFromUtf8("message-5"),
-// 							RecordId = event5Id.ToString(),
-// 							Properties = {
-// 								{ Constants.RecordProperties.SchemaNameKey, new() { StringValue = "message-5-type" } },
-// 								{ Constants.RecordProperties.SchemaFormatKey, new() { StringValue = "json" } },
-// 							},
-// 						},
-// 						new AppendRecord {
-// 							Data = ByteString.CopyFromUtf8("message-6"),
-// 							RecordId = event6Id.ToString(),
-// 							Properties = {
-// 								{ Constants.RecordProperties.SchemaNameKey, new() { StringValue = "message-6-type" } },
-// 								{ Constants.RecordProperties.SchemaFormatKey, new() { StringValue = "avro" } },
-// 							},
-// 						},
-// 					},
-// 				},
-// 			},
-// 		};
+//         // Act
+//         Fixture.Logger.LogInformation(
+//             "Starting append session for {Streams} streams with a total of {Records} records",
+//             numberOfStreams, numberOfStreams * numberOfEvents);
 //
-// 		_mainQueue.OnPublish = message => {
-// 			// check that the request was created as expected
-// 			var writeEvents = Assert.IsType<ClientMessage.WriteEvents>(message);
-// 			Assert.Equal(["stream-a", "stream-b"], writeEvents.EventStreamIds.Span);
-// 			Assert.Equal([1, -2], writeEvents.ExpectedVersions.Span);
-// 			Assert.Equal([0, 1, 1], writeEvents.EventStreamIndexes.Span);
-// 			Assert.Equal(3, writeEvents.Events.Length);
+//         using var session = Fixture.StreamsClient.AppendSession(cancellationToken: cancellationToken);
 //
-// 			var proposedMessage2 = writeEvents.Events.Span[0];
-// 			Assert.Equal(event2Id, proposedMessage2.EventId);
-// 			Assert.Equal("message-2-type", proposedMessage2.EventType);
-// 			Assert.True(proposedMessage2.IsJson);
-// 			Assert.Equal(Encoding.UTF8.GetBytes("message-2"), proposedMessage2.Data);
+//         foreach (var request in requests) {
+//             Fixture.Logger.LogInformation("Appending {Count} records to stream {Stream}", request.Records.Count, request.Stream);
+//             await session.RequestStream.WriteAsync(request, cancellationToken);
+//         }
 //
-// 			var proposedMessage5 = writeEvents.Events.Span[1];
-// 			Assert.Equal(event5Id, proposedMessage5.EventId);
-// 			Assert.Equal("message-5-type", proposedMessage5.EventType);
-// 			Assert.True(proposedMessage5.IsJson);
-// 			Assert.Equal(Encoding.UTF8.GetBytes("message-5"), proposedMessage5.Data);
+//         await session.RequestStream.CompleteAsync();
 //
-// 			var proposedMessage6 = writeEvents.Events.Span[2];
-// 			Assert.Equal(event6Id, proposedMessage6.EventId);
-// 			Assert.Equal("message-6-type", proposedMessage6.EventType);
-// 			Assert.False(proposedMessage6.IsJson);
-// 			Assert.Equal(Encoding.UTF8.GetBytes("message-6"), proposedMessage6.Data);
+//         Fixture.Logger.LogInformation("All {Count} requests sent, awaiting response...", numberOfStreams);
 //
-// 			// send the response so that we can check that it is processed correctly
-// 			writeEvents.Envelope.ReplyWith(new ClientMessage.WriteEventsCompleted(
-// 				correlationId: writeEvents.CorrelationId,
-// 				firstEventNumbers: new[] { 2L, 5L },
-// 				lastEventNumbers: new[] { 2L, 6L },
-// 				preparePosition: 100,
-// 				commitPosition: 100));
-// 		};
+//         var response = await session.ResponseAsync;
 //
-// 		// when
-// 		var result = await _sut.MultiStreamAppend(request, _context);
+//         Fixture.Logger.LogInformation("Append session completed at position {Position}", response.Position);
 //
-// 		// then
-// 		Assert.Collection(
-// 			result.Success.Output,
-// 			x => {
-// 				Assert.Equal("stream-a", x.Stream);
-// 				Assert.Equal(2, x.StreamRevision);
-// 				Assert.Equal(100u, x.Position);
-// 			},
-// 			x => {
-// 				Assert.Equal("stream-b", x.Stream);
-// 				Assert.Equal(6, x.StreamRevision);
-// 				Assert.Equal(100u, x.Position);
-// 			});
-// 	}
+//         // Assert
+//         await Assert.That(response.Output).HasCount(numberOfStreams);
+//         await Assert.That(response.Position).IsGreaterThanOrEqualTo(numberOfStreams);
+//     }
 //
-// 	[Fact]
-// 	public async Task checks_access() {
-// 		// given
-// 		_context.GetHttpContext().User = new(new ClaimsIdentity([
-// 			new Claim(ClaimTypes.Name, "the-user"),
-// 		]));
+//     [Test]
+//     public async ValueTask append_session_appends_records_with_expected_revision(CancellationToken cancellationToken) {
+//         // Arrange
+//         var seededActivity = await Fixture.SeedSmartHomeActivity(cancellationToken);
 //
-// 		_authorizationProvider.CheckAccess = (claimsPrincipal, operation) => {
-// 			Assert.Equal("the-user", claimsPrincipal.Identity!.Name);
-// 			Assert.Equal("write", operation.Action);
-// 			Assert.Equal(1, operation.Parameters.Length);
-// 			var parameter = operation.Parameters.Span[0];
-// 			Assert.Equal("streamId", parameter.Name);
-// 			return parameter.Value == "stream-allowed";
-// 		};
+//         var request = seededActivity.SimulateMoreEvents();
 //
-// 		// when
-// 		var result = await _sut.MultiStreamAppend(
-// 			new MultiStreamAppendRequest() {
-// 				Input = {
-// 					new AppendStreamRequest {
-// 						Stream = "stream-allowed",
-// 						Records = {
-// 							new AppendRecord {
-// 								Data = ByteString.CopyFromUtf8("message-1"),
-// 								RecordId = Guid.NewGuid().ToString(),
-// 								Properties = {
-// 									{ Constants.RecordProperties.SchemaNameKey, new() { StringValue = "message-1-type" } },
-// 									{ Constants.RecordProperties.SchemaFormatKey, new() { StringValue = "json" } },
-// 								},
-// 							},
-// 						},
-// 					},
-// 					new AppendStreamRequest {
-// 						Stream = "stream-denied",
-// 						Records = {
-// 							new AppendRecord {
-// 								Data = ByteString.CopyFromUtf8("message-2"),
-// 								RecordId = Guid.NewGuid().ToString(),
-// 								Properties = {
-// 									{ Constants.RecordProperties.SchemaNameKey, new() { StringValue = "message-2-type" } },
-// 									{ Constants.RecordProperties.SchemaFormatKey, new() { StringValue = "json" } },
-// 								},
-// 							},
-// 						},
-// 					},
-// 				},
-// 			},
-// 			_context);
+//         var nextExpectedRevision = seededActivity.StreamRevision + request.Records.Count;
 //
-// 		// then
-// 		Assert.Collection(
-// 			result.Failure.Output,
-// 			x => {
-// 				Assert.Equal("stream-denied", x.Stream);
-// 				Assert.Equal("", x.AccessDenied.Reason);
-// 			});
-// 	}
+//         // Act
+//         var response = await Fixture.StreamsClient.AppendAsync(request, cancellationToken: cancellationToken);
 //
-// 	[Fact]
-// 	public async Task when_converting_WriteEventsCompleted_fails() {
-// 		// given
-// 		var request = new MultiStreamAppendRequest() {
-// 			Input = {
-// 				new AppendStreamRequest {
-// 					Stream = "my-stream",
-// 					Records = {
-// 						new AppendRecord {
-// 							Properties = {
-// 								{ Constants.RecordProperties.SchemaNameKey, new() { StringValue = "my-message-type" } },
-// 								{ Constants.RecordProperties.SchemaFormatKey, new() { StringValue = "json" } },
-// 							}
-// 						}
-// 					}
-// 				},
-// 			},
-// 		};
+//         // Assert
+//         await Assert.That(response.StreamRevision).IsEqualTo(nextExpectedRevision);
+//     }
 //
-// 		_mainQueue.OnPublish = message => {
-// 			var writeEvents = Assert.IsType<ClientMessage.WriteEvents>(message);
-// 			writeEvents.Envelope.ReplyWith(new ClientMessage.WriteEventsCompleted(
-// 				correlationId: Guid.NewGuid(),
-// 				result: OperationResult.PrepareTimeout,
-// 				message: "the details"));
-// 		};
+//     [Test]
+//     public async ValueTask append_session_throws_on_stream_revision_conflict(CancellationToken cancellationToken) {
+//         // Arrange
+//         var seededActivity = await Fixture.SeedSmartHomeActivity(cancellationToken);
 //
-// 		// when
-// 		var ex = await Assert.ThrowsAnyAsync<RpcException>(async () => {
-// 			await _sut.MultiStreamAppend(request, _context);
-// 		});
+//         var request = seededActivity.SimulateMoreEvents()
+//             .WithExpectedRevision(ExpectedRevisionConstants.NoStream.GetHashCode());
 //
-// 		// then
-// 		Assert.Equal("Operation timed out: the details", ex.Status.Detail);
-// 		Assert.Equal(StatusCode.Aborted, ex.Status.StatusCode);
-// 	}
+//         // Act
+//         var appendTask = async () => await Fixture.StreamsClient.AppendAsync(request, cancellationToken: cancellationToken);
 //
-// 	// note this as a current limitation, not necessarily permanent.
-// 	// the core supports this already, the grpc service needs additional work to
-// 	// 1. make sure there are as many AppendStreamResponses as AppendStreamRequests on success
-// 	// 2. check for internal consistency of expected versions in the request
-// 	// 3. find a way of handling if the request has expected version any for the first occurrence
-// 	//    of a stream and then expected version specific for a later occurrence.
-// 	[Fact]
-// 	public async Task throws_when_stream_present_twice() {
-// 		// given
-// 		static AppendRecord CreateRecord() => new() {
-// 			Properties = {
-// 	 			{ Constants.RecordProperties.SchemaNameKey, new() { StringValue  = "the-type" } },
-// 	 			{ Constants.RecordProperties.SchemaFormatKey, new() { StringValue = "json" } },
-// 	 		},
-// 		};
+//         // Assert
+//         var rex     = await appendTask.ShouldThrowAsync<RpcException>();
+//         var details = rex.GetRpcStatus()?.GetDetail<StreamRevisionConflictErrorDetails>();
 //
-// 		var input = new AppendStreamRequest[] {
-// 	 		new() { Stream = "stream-a", Records = { CreateRecord() } },
-// 	 		new() { Stream = "stream-b", Records = { CreateRecord() } },
-// 	 		new() { Stream = "stream-a", Records = { CreateRecord() } },
-// 	 	};
+//         await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
+//         await Assert.That(details).IsNotNull();
+//     }
 //
-// 		// when
-// 		var ex = await Assert.ThrowsAsync<RpcException>(() => _sut.MultiStreamAppend(new() { Input = { input } }, _context));
+//     [Test]
+//     public async ValueTask append_session_throws_when_request_has_no_records(CancellationToken cancellationToken) {
+//         // Arrange
+//         var request = HomeAutomationTestData.SimulateHomeActivity()
+//             .With(req => req.Records.Clear());
 //
-// 		// then
-// 		Assert.Equal(
-// 			"Two AppendStreamRequests for one stream is not currently supported: 'stream-a' is already in the request list",
-// 			ex.Status.Detail);
-// 		Assert.Equal(StatusCode.InvalidArgument, ex.Status.StatusCode);
-// 	}
+//         var appendTask = async () => await Fixture.StreamsClient.AppendAsync(request, cancellationToken: cancellationToken);
 //
-// 	[Fact]
-// 	public async Task throws_when_AppendStreamRequest_has_no_events() {
-// 		// given
-// 		var input = new AppendStreamRequest[] {
-// 			new() { Stream = "stream-a" },
-// 		};
+//         // Act & Assert
+//         var rex     = await appendTask.ShouldThrowAsync<RpcException>();
+//         var details = rex.GetRpcStatus()?.GetDetail<BadRequest>();
 //
-// 		// when
-// 		var ex = await Assert.ThrowsAsync<RpcException>(() => _sut.MultiStreamAppend(new() { Input = { input } }, _context));
+//         await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.InvalidArgument);
+//         await Assert.That(details).IsNotNull();
+//     }
 //
-// 		// then
-// 		Assert.Equal("Write to stream 'stream-a' does not have any records", ex.Status.Detail);
-// 		Assert.Equal(StatusCode.InvalidArgument, ex.Status.StatusCode);
-// 	}
+//     [Test]
+//     public async ValueTask append_session_throws_when_stream_already_in_session(CancellationToken cancellationToken) {
+//         // Arrange
+//         var request = HomeAutomationTestData.SimulateHomeActivity();
 //
-// 	[Fact]
-// 	public async Task can_call_MultiStreamAppendSession() {
-// 		// logic mostly shared with MultiStreamAppend non-streaming version.
-// 		// given
-// 		static async IAsyncEnumerable<AppendStreamRequest> GetRequests() {
-// 			yield return new AppendStreamRequest {
-// 				Stream = "stream-a",
-// 				Records = {
-// 					new AppendRecord {
-// 						Data = ByteString.CopyFromUtf8("data"),
-// 						RecordId = Guid.NewGuid().ToString(),
-// 						Properties = {
-// 							{ Constants.RecordProperties.SchemaNameKey, new() { StringValue = "the-type" } },
-// 							{ Constants.RecordProperties.SchemaFormatKey, new() { StringValue = "json" } },
-// 						},
-// 					},
-// 				},
-// 			};
+//         // Act
+//         using var session = Fixture.StreamsClient.AppendSession(cancellationToken: cancellationToken);
 //
-// 			yield return new AppendStreamRequest {
-// 				Stream = "stream-b",
-// 				Records = {
-// 					new AppendRecord {
-// 						Data = ByteString.CopyFromUtf8("data"),
-// 						RecordId = Guid.NewGuid().ToString(),
-// 						Properties = {
-// 							{ Constants.RecordProperties.SchemaNameKey, new() { StringValue = "the-type" } },
-// 							{ Constants.RecordProperties.SchemaFormatKey, new() { StringValue = "json" } },
-// 						},
-// 					},
-// 				},
-// 			};
-// 		}
+//         await session.RequestStream.WriteAsync(request, cancellationToken);
+//         await session.RequestStream.WriteAsync(request.SimulateMoreEvents(), cancellationToken);
 //
-// 		_mainQueue.OnPublish = message => {
-// 			var writeEvents = Assert.IsType<ClientMessage.WriteEvents>(message);
-// 			// both requests appear in the ClientMessage.WriteEvents message that the sut produces
-// 			Assert.Equal(["stream-a", "stream-b"], writeEvents.EventStreamIds.Span);
+//         await session.RequestStream.CompleteAsync();
 //
-// 			writeEvents.Envelope.ReplyWith(new ClientMessage.WriteEventsCompleted(
-// 				correlationId: writeEvents.CorrelationId,
-// 				firstEventNumbers: new[] { 1L, 10L },
-// 				lastEventNumbers: new[] { 3L, 12L },
-// 				preparePosition: 100,
-// 				commitPosition: 100));
-// 		};
+//         // ReSharper disable once AccessToDisposedClosure
+//         var appendTask = async () => await session.ResponseAsync;
 //
-// 		// when
-// 		var result = await _sut.MultiStreamAppendSession(
-// 			FakeAsyncStreamReader.Create(GetRequests()),
-// 			_context);
+//         // Assert
+//         var rex     = await appendTask.ShouldThrowAsync<RpcException>();
+//         var details = rex.GetRpcStatus()?.GetDetail<StreamAlreadyInAppendSessionErrorDetails>();
 //
-// 		// then
-// 		// both requests appear in the response the sut sends
-// 		Assert.Collection(
-// 			result.Success.Output,
-// 			x => Assert.Equal("stream-a", x.Stream),
-// 			x => Assert.Equal("stream-b", x.Stream));
-// 	}
+//         await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.Aborted);
+//         await Assert.That(details).IsNotNull();
+//     }
+//
+//     [Test]
+//     public async ValueTask append_session_throws_when_a_stream_is_tombstoned(CancellationToken cancellationToken) {
+//         // Arrange
+//         var seededActivity = await Fixture.SeedSmartHomeActivity(cancellationToken);
+//
+//         await Fixture.SystemClient.Management.HardDeleteStream(seededActivity.Stream, cancellationToken: cancellationToken);
+//
+//         var request = seededActivity.SimulateMoreEvents();
+//
+//         // Act
+//         var appendTask = async () => await Fixture.StreamsClient.AppendAsync(request, cancellationToken: cancellationToken);
+//
+//         // Assert
+//         var rex     = await appendTask.ShouldThrowAsync<RpcException>();
+//         var details = rex.GetRpcStatus()?.GetDetail<StreamTombstonedErrorDetails>();
+//
+//         await Assert.That(details).IsNotNull();
+//         await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
+//     }
+//
+//     [Test]
+//     public async ValueTask append_session_throws_when_user_does_not_have_permissions(CancellationToken cancellationToken) {
+//
+//         Assert.Fail("Not implemented");
+//
+//         // Arrange
+//         var seededActivity = await Fixture.SeedSmartHomeActivity(cancellationToken);
+//
+//         await Fixture.SystemClient.Management.HardDeleteStream(seededActivity.Stream, cancellationToken: cancellationToken);
+//
+//         var request = seededActivity.SimulateMoreEvents();
+//
+//         // Act
+//         var appendTask = async () => await Fixture.StreamsClient.AppendAsync(request, cancellationToken: cancellationToken);
+//
+//         // Assert
+//         var rex     = await appendTask.ShouldThrowAsync<RpcException>();
+//         var details = rex.GetRpcStatus()?.GetDetail<StreamTombstonedErrorDetails>();
+//
+//         await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
+//         await Assert.That(details).IsNotNull();
+//     }
+//
+//     [Test]
+//     public async ValueTask append_session_throws_when_record_is_too_large(CancellationToken cancellationToken) {
+//         // Arrange
+//         var request = HomeAutomationTestData.SimulateHomeActivity(1);
+//
+//         request.Records[0].Data = UnsafeByteOperations.UnsafeWrap(new byte[TFConsts.EffectiveMaxLogRecordSize]);
+//
+//         var appendTask = async () => await Fixture.StreamsClient.AppendAsync(request, cancellationToken: cancellationToken);
+//
+//         // Act & Assert
+//         var rex     = await appendTask.ShouldThrowAsync<RpcException>();
+//         var details = rex.GetRpcStatus()?.GetDetail<AppendRecordSizeExceededErrorDetails>();
+//
+//         await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.InvalidArgument);
+//         await Assert.That(details).IsNotNull();
+//     }
+//
+//     [Test]
+//     public async ValueTask append_session_throws_when_transaction_is_too_large(CancellationToken cancellationToken) {
+//         // Arrange
+//
+//
+//         var numberOfRecords = TFConsts.ChunkSize / TFConsts.EffectiveMaxLogRecordSize + 1;
+//
+//         var request = HomeAutomationTestData.SimulateHomeActivity(numberOfRecords);
+//
+//         var recordSize = 1024 * 1024 * 8; // 8MB
+//
+//         request.ForEach(r => r.Data = UnsafeByteOperations.UnsafeWrap(new byte[recordSize]));
+//
+//         var totalSize = (request.Records.Count * TFConsts.EffectiveMaxLogRecordSize).Bytes();
+//
+//         Fixture.Logger.LogInformation(
+//             "Prepared append request with {Records} records and a total size of ~{Size}",
+//             request.Records.Count, totalSize.Humanize());
+//
+//         using var session = Fixture.StreamsClient.AppendSession(cancellationToken: cancellationToken);
+//
+//         await session.RequestStream.WriteAsync(request, cancellationToken);
+//         await session.RequestStream.WriteAsync(request.SimulateMoreEvents(), cancellationToken);
+//
+//         await session.RequestStream.CompleteAsync();
+//
+//         // ReSharper disable once AccessToDisposedClosure
+//         var appendTask = async () => await session.ResponseAsync;
+//
+//         // var appendTask = async () => await Fixture.StreamsClient.AppendAsync(request, cancellationToken: cancellationToken);
+//
+//         // Act & Assert
+//         var rex     = await appendTask.ShouldThrowAsync<RpcException>();
+//         var details = rex.GetRpcStatus()?.GetDetail<AppendTransactionSizeExceededErrorDetails>();
+//
+//         await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.Aborted);
+//         await Assert.That(details).IsNotNull();
+//     }
+//
+//     [Test]
+//     public async ValueTask append_session_metrics_recorded(CancellationToken cancellationToken) {
+//         var meterFactory = Fixture.Services.GetRequiredService<IMeterFactory>();
+//         var collector = new MetricCollector<double>(meterFactory, "Microsoft.AspNetCore.Hosting", "http.server.request.duration");
+//
+//         // Act
+//         await Fixture.SeedSmartHomeActivity(cancellationToken);
+//
+//         // Assert
+//         await collector.WaitForMeasurementsAsync(minCount: 1, cancellationToken: cancellationToken).WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+//
+//         var temp = collector.GetMeasurementSnapshot();
+//
+//         // Assert.Collection(collector.GetMeasurementSnapshot(),
+//         //     measurement =>
+//         //     {
+//         //         Assert.Equal("http", measurement.Tags["url.scheme"]);
+//         //         Assert.Equal("GET", measurement.Tags["http.request.method"]);
+//         //         Assert.Equal("/", measurement.Tags["http.route"]);
+//         //     });
+//     }
 // }

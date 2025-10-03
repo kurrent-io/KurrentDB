@@ -8,10 +8,9 @@ package kurrent.rpc;
 
 option csharp_namespace = "Kurrent.Rpc";
 
-import "rpc.proto";
+import "kurrent/rpc/rpc.proto";
 
-// The canonical server error codes for KurrentDB gRPC APIs.
-
+// The canonical server error codes for the Kurrent Platform gRPC APIs.
 enum ServerError {
   // Default value. This value is not used.
   // An error code MUST always be set to a non-zero value.
@@ -49,15 +48,6 @@ enum ServerError {
   SERVER_ERROR_SERVER_MALFUNCTION = 9 [(kurrent.rpc.error) = {
     status_code: INTERNAL
   }];
-
-  //  // The operation was aborted, typically due to a concurrency issue such as a
-  //  // sequencer conflict or transaction abort.
-  //  // This error will only be used when there is no intention to create a dedicated
-  //  // error code for the specific issue, perhaps because the issue is too generic
-  //  // or too transient or temporary in terms of handling.
-  //  OPERATION_ABORTED = 10 [(kurrent.rpc.error) = {
-  //    status_code: ABORTED
-  //  }];
 }
 
 message AccessDeniedErrorDetails {

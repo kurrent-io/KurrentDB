@@ -63,7 +63,7 @@ abstract class ApiCommand<TCommand, TResult>(string? operationName = null) : Api
 
     protected abstract TResult MapToResult(Message message);
 
-    protected abstract RpcException MapToError(Message message);
+    protected abstract RpcException? MapToError(Message message);
 
     protected virtual ValueTask OnError(Exception exception, ServerCallContext context) =>
         ValueTask.CompletedTask;

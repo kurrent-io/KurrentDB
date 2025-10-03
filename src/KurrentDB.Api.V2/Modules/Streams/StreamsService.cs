@@ -62,8 +62,7 @@ public class StreamsService : StreamsServiceBase {
 
     public override async Task<AppendResponse> Append(AppendRequest request, ServerCallContext context) {
         var sessionResponse = await AppendSession(new[] { request }.ToAsyncEnumerable(), context);
-        var response = sessionResponse.Output[0].With(r => r.Position = sessionResponse.Position);
-        return response;
+        return sessionResponse.Output[0].With(r => r.Position = sessionResponse.Position);
     }
 
     public override Task<AppendSessionResponse> AppendSession(IAsyncStreamReader<AppendRequest> requests, ServerCallContext context) =>
@@ -144,7 +143,7 @@ public class StreamsService : StreamsServiceBase {
                 Revisions.ToImmutable(),
                 Events.ToImmutable(),
                 Indexes.ToImmutable(),
-                context.GetHttpContext().User, // SystemAccounts.System,
+                context.GetHttpContext().User,
                 context.CancellationToken
             );
 
@@ -167,33 +166,31 @@ public class StreamsService : StreamsServiceBase {
             };
         }
 
-        protected override RpcException MapToError(Message message) => message switch {
-            WriteEventsCompleted completed => completed.Result switch {
-                // StreamDeleted means "hard deleted" AKA tombstoned
-                OperationResult.StreamDeleted  => ApiErrors.StreamTombstoned(Requests.ElementAt(completed.FailureStreamIndexes.Span[0]).Stream),
-                OperationResult.PrepareTimeout => ApiErrors.OperationTimeout(completed.Message),
-                OperationResult.CommitTimeout  => ApiErrors.OperationTimeout(completed.Message),
-
-                // TODO SS: consider returning all StreamRevisionConflict in one go, instead of pretending to "fail fast".
-                OperationResult.WrongExpectedVersion => ApiErrors.StreamRevisionConflict(
-                    Requests.ElementAt(completed.FailureStreamIndexes.Span[0]).Stream,
-                    Requests.ElementAt(completed.FailureStreamIndexes.Span[0]).ExpectedRevision,
-                    completed.FailureCurrentVersions.Span[0]
-                ),
-
-                _ => ApiErrors.InternalServerError($"{OperationName} completed in error with unexpected result: {completed.Result}")
-
+        protected override RpcException? MapToError(Message message) =>
+            message switch {
                 // OperationResult.InvalidTransaction is not possible here as we validate the max append size while receiving the requests
                 // OperationResult.ForwardTimeout is not possible here as we set requireLeader=true on the request
                 // OperationResult.PrepareTimeout is not possible here as we don't have old explicit transactions
-                // OperationResult.AccessDenied is not possible here as we check authorization before starting the operation
-            },
-            _ => ApiErrors.InternalServerError($"{OperationName} failed with unexpected callback message: {message.GetType().FullName}")
-        };
+                WriteEventsCompleted completed => completed.Result switch {
+                    // StreamDeleted means "hard deleted" AKA tombstoned
+                    OperationResult.StreamDeleted  => ApiErrors.StreamTombstoned(Requests.ElementAt(completed.FailureStreamIndexes.Span[0]).Stream),
+                    OperationResult.PrepareTimeout => ApiErrors.OperationTimeout(completed.Message),
+                    OperationResult.CommitTimeout  => ApiErrors.OperationTimeout(completed.Message),
+
+                    OperationResult.WrongExpectedVersion => ApiErrors.StreamRevisionConflict(
+                        Requests.ElementAt(completed.FailureStreamIndexes.Span[0]).Stream,
+                        Requests.ElementAt(completed.FailureStreamIndexes.Span[0]).ExpectedRevision,
+                        completed.FailureCurrentVersions.Span[0]
+                    ),
+
+                    _ => ApiErrors.InternalServerError($"{OperationName} completed in error with unexpected result: {completed.Result}")
+                },
+                _ => null
+            };
 
         static readonly EqualityComparer<AppendRequest> AppendRequestComparer = EqualityComparer<AppendRequest>.Create(
-            equals: (x, y) => string.Equals(x?.Stream, y?.Stream, StringComparison.OrdinalIgnoreCase),
-            getHashCode: obj => StringComparer.OrdinalIgnoreCase.GetHashCode(obj.Stream)
+            (x, y) => string.Equals(x?.Stream, y?.Stream, StringComparison.OrdinalIgnoreCase),
+            obj => StringComparer.OrdinalIgnoreCase.GetHashCode(obj.Stream)
         );
     }
 }

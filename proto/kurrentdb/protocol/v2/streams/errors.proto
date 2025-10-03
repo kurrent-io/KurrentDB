@@ -8,7 +8,7 @@ package kurrentdb.protocol.v2.streams.errors;
 
 option csharp_namespace = "KurrentDB.Protocol.V2.Streams.Errors";
 
-import "rpc.proto";
+import "kurrent/rpc/rpc.proto";
 
 enum StreamsError {
   // Default value. This value is not used.

@@ -34,9 +34,8 @@ public record StreamRevision : IComparable<StreamRevision>, IComparable {
             _     => throw new ArgumentException($"Invalid stream revision: {value}")
         };
 
-    public static implicit operator long(StreamRevision _)                => _.Value;
-    public static implicit operator StreamRevision(long _)                => From(_);
-    //public static implicit operator ExpectedStreamState(StreamRevision _) => new(_.Value);
+    public static implicit operator long(StreamRevision _) => _.Value;
+    public static implicit operator StreamRevision(long _) => From(_);
 
     public override string ToString() => Value.ToString();
 

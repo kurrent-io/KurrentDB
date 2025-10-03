@@ -27,12 +27,6 @@ public class ApiV2Plugin() : SubsystemsPlugin("APIV2") {
                 val => val.AddValidatorFor<AppendRequest>(),
                 svc => svc.MaxReceiveMessageSize = TFConsts.MaxLogRecordSize
             );
-
-        // services.PostConfigure<StreamsServiceOptions>((sp, options) => {
-        //     var serverOptions = sp.GetRequiredService<ClusterVNodeOptions>();
-        //     options.MaxAppendSize = serverOptions.Application.MaxAppendSize;
-        //     options.MaxRecordSize = serverOptions.Application.MaxAppendEventSize;
-        // });
     }
 
 	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
