@@ -4,7 +4,7 @@
 using System.Diagnostics;
 using System.Text;
 using Google.Protobuf.WellKnownTypes;
-using KurrentDB.Api.Infrastructure.Validation;
+using KurrentDB.Api.Errors;
 using KurrentDB.Api.Streams.Validators;
 using KurrentDB.Protocol.V2.Streams;
 
@@ -25,8 +25,10 @@ public static class AppendRecordExtensions {
 		if (record.Schema.HasId)
 			record.Properties.Add(Constants.Properties.SchemaIdKey, Value.ForString(record.Schema.Id));
 
-		return AppendRecordValidator.Instance.EnsureValid(record);
-	}
+        var result = AppendRecordValidator.Instance.Validate(record);
+
+        return !result.IsValid ? throw ApiErrors.InvalidRequest(typeof(AppendRequest), result) : record;
+    }
 
     /// <summary>
     /// Estimates the size on disk of the AppendRecord including data, properties and schema name.

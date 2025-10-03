@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using FluentValidation.Results;
+using Grpc.Core;
 using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.Api.Infrastructure.Grpc.Validation;
@@ -11,6 +12,12 @@ namespace KurrentDB.Api.Infrastructure.Grpc.Validation;
 /// </summary>
 [PublicAPI]
 public class RequestValidationOptions {
+    /// <summary>
+    /// If true, validators will be automatically scanned for and registered from the application's assemblies.
+    /// If false, validators must be manually registered in the DI container.
+    /// </summary>
+    public bool AutoScanValidators { get; set; }
+
     /// <summary>
     /// If true, an exception will be thrown if no validator is found for a given request type.
     /// If false, the request will be considered valid if no validator is found.
@@ -27,13 +34,10 @@ public class RequestValidationOptions {
     /// <summary>
     /// Factory for creating exceptions when calling EnsureRequestIsValid and validation fails.
     /// </summary>
-    public CreateValidationException ExceptionFactory { get; set; } = DefaultExceptionFactory;
-
-    static CreateValidationException DefaultExceptionFactory =>
-        static (requestType, errors) => new InvalidRequestException(requestType, errors);
+    public CreateValidationException? ExceptionFactory { get; set; }
 }
 
 /// <summary>
 /// Delegate for creating validation exceptions.
 /// </summary>
-public delegate Exception CreateValidationException(Type requestType, IReadOnlyList<ValidationFailure> errors);
+public delegate RpcException CreateValidationException(Type requestType, List<ValidationFailure> errors);

@@ -2,6 +2,12 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using FluentValidation.Results;
+using Google.Protobuf.WellKnownTypes;
+using Google.Rpc;
+using Grpc.Core;
+
+using Status = Google.Rpc.Status;
+using Type   = System.Type;
 
 namespace KurrentDB.Api.Infrastructure.Grpc.Validation;
 
@@ -22,24 +28,28 @@ public sealed class RequestValidation {
     /// The provider to get validators for gRPC request types.
     /// </param>
     public RequestValidation(RequestValidationOptions options, IRequestValidatorProvider validatorProvider) {
-        Options           = options;
         ValidatorProvider = validatorProvider;
 
         HandleValidatorNotFound = options.ThrowOnValidatorNotFound
-            ? static t => throw new RequestValidatorNotFoundException(t)
+            ? static t => throw CreateValidatorNotFoundException(t)
             : static _ => new ValidationResult();
+
+        ExceptionFactory = options.ExceptionFactory ?? CreateValidationException;
     }
 
-    RequestValidationOptions     Options                 { get; }
     IRequestValidatorProvider    ValidatorProvider       { get; }
     Func<Type, ValidationResult> HandleValidatorNotFound { get; }
+    CreateValidationException    ExceptionFactory        { get; }
 
-    public ValidationResult ValidateRequest<TRequest>(TRequest request) {
-        if (ValidatorProvider.GetValidatorFor<TRequest>() is { } validator)
-            return validator.Validate(request);
-
-        return HandleValidatorNotFound(typeof(TRequest));
-    }
+    /// <summary>
+    /// Validates the given request using the appropriate validator.
+    /// If no validator is found, it either throws an exception or returns a valid result based
+    /// on the configured behavior.
+    /// </summary>
+    public ValidationResult ValidateRequest<TRequest>(TRequest request) =>
+        ValidatorProvider.GetValidatorFor<TRequest>() is { } validator
+            ? validator.Validate(request)
+            : HandleValidatorNotFound(typeof(TRequest));
 
     /// <summary>
     /// Ensures that the given request is valid.
@@ -47,24 +57,42 @@ public sealed class RequestValidation {
     /// </summary>
     public TRequest EnsureRequestIsValid<TRequest>(TRequest request) {
         var result = ValidateRequest(request);
-        return result.IsValid ? request : throw Options.ExceptionFactory(typeof(TRequest), result.Errors);
+        return result.IsValid ? request : throw ExceptionFactory(typeof(TRequest), result.Errors);
     }
-}
 
-/// <summary>
-/// Exception thrown when no validator is found for a gRPC request type and ThrowOnNoValidator is true.
-/// </summary>
-public class RequestValidatorNotFoundException(Type requestType)
-    : Exception($"gRPC request {requestType.Name} validator not found! Ensure a validator is registered for this request type.");
+    /// <summary>
+    /// Exception thrown when a gRPC request fails validation.
+    /// </summary>
+    static RpcException CreateValidationException(Type requestType, List<ValidationFailure> errors) {
+        var violations = errors.Select(failure => new BadRequest.Types.FieldViolation {
+            Field       = failure.PropertyName,
+            Description = failure.ErrorMessage
+        });
 
-/// <summary>
-/// Exception thrown when a gRPC request validation fails.
-/// </summary>
-/// <param name="requestType"></param>
-/// <param name="errors"></param>
-public class InvalidRequestException(Type requestType, IReadOnlyList<ValidationFailure> errors) : Exception(ErrorMessage(requestType)) {
-    public IReadOnlyList<ValidationFailure> Errors { get; } = errors;
+        var details = new BadRequest { FieldViolations = { violations } };
 
-    static string ErrorMessage(Type requestType) =>
-        $"gRPC request {requestType.Name} is invalid! See Errors property for details.";
+        var message = $"gRPC request {requestType.Name} is invalid! See attached details for more information.";
+
+        var status = new Status {
+            Code    = (int)Code.InvalidArgument,
+            Message = message,
+            Details = { Any.Pack(details) }
+        };
+
+        return status.ToRpcException();
+    }
+
+    /// <summary>
+    /// Exception thrown when no validator is found for a gRPC request type and ThrowOnNoValidator is true.
+    /// </summary>
+    static RpcException CreateValidatorNotFoundException(Type requestType) {
+        var message = $"gRPC validator for {requestType.Name} was not found!";
+
+        var status = new Status {
+            Code    = (int)Code.Internal,
+            Message = message,
+        };
+
+        return status.ToRpcException();
+    }
 }

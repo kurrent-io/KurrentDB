@@ -44,7 +44,7 @@ public static partial class RpcExceptions {
 		return Create(err.StatusCode, message, details.Prepend(errorInfo).ToArray());
 	}
 
-    static RpcException Create(int statusCode, string message, params IMessage[] details) {
+    public static RpcException Create(int statusCode, string message, params IMessage[] details) {
         Debug.Assert(statusCode.GetHashCode() != 0, "The error status code must not be OK!");
         Debug.Assert(!string.IsNullOrWhiteSpace(message), "The message must not be empty!");
 

@@ -6,9 +6,7 @@ using KurrentDB.Api.Infrastructure.Grpc.Interceptors;
 
 namespace KurrentDB.Api.Infrastructure.Grpc.Validation;
 
-public class RequestValidationInterceptor(RequestValidation validation) : OnRequestInterceptor {
-    protected override ValueTask Intercept<TRequest>(TRequest request, ServerCallContext context) {
+public class RequestValidationInterceptor(RequestValidation validation) : ServerRequestInterceptor {
+    protected override TRequest InterceptRequest<TRequest>(TRequest request, ServerCallContext context) =>
         validation.EnsureRequestIsValid(request);
-        return ValueTask.CompletedTask;
-    }
 }

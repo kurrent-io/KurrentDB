@@ -5,6 +5,7 @@
 
 using System.Diagnostics;
 using System.Net;
+using System.Text;
 using FluentValidation.Results;
 using Google.Protobuf.WellKnownTypes;
 using Google.Rpc;
@@ -13,6 +14,7 @@ using Humanizer;
 using KurrentDB.Api.Infrastructure.Errors;
 using Kurrent.Rpc;
 using KurrentDB.Api.Infrastructure;
+using Type = System.Type;
 
 namespace KurrentDB.Api.Errors;
 
@@ -51,27 +53,29 @@ public static partial class ApiErrors {
 		return RpcExceptions.FromError(ServerError.AccessDenied, message, details);
 	}
 
-	/// <summary>
-	/// Creates an RPC exception for requests with invalid arguments based on FluentValidation results.
-	/// This method is used to create an <see cref="RpcException"/> with status code <see cref="StatusCode.InvalidArgument"/>
-	/// when request validation fails. The exception includes structured error details with field violations.
-	/// </summary>
-	/// <param name="validationResult">
-	/// A FluentValidation result containing validation failures.
-	/// Must contain at least one validation error to be processed.
-	/// Each validation failure should have a property name and error message.
-	/// </param>
-	/// <returns>
-	/// An <see cref="RpcException"/> with status code <see cref="StatusCode.InvalidArgument"/>,
-	/// including <see cref="BadRequest"/> details with field violations.
-	/// The error message format depends on the number of violations:
-	/// - Single violation: "The argument '{field}' is invalid: {description}"
-	/// - Multiple violations: Lists all violations with field names and descriptions.
-	/// </returns>
-    public static RpcException InvalidRequest(ValidationResult validationResult) {
+    /// <summary>
+    /// Creates an RPC exception for requests with invalid arguments based on FluentValidation results.
+    /// This method is used to create an <see cref="RpcException"/> with status code <see cref="StatusCode.InvalidArgument"/>
+    /// when request validation fails. The exception includes structured error details with field violations.
+    /// </summary>
+    /// <param name="requestType">
+    /// The type of the request being validated.
+    /// This is used to include the request type name in the error message for context.
+    /// </param>
+    /// <param name="validationResult">
+    /// A FluentValidation result containing validation failures.
+    /// Must contain at least one validation error to be processed.
+    /// Each validation failure should have a property name and error message.
+    /// </param>
+    /// <returns>
+    /// An <see cref="RpcException"/> with status code <see cref="StatusCode.InvalidArgument"/>,
+    /// including <see cref="BadRequest"/> details with field violations.
+    /// </returns>
+    public static RpcException InvalidRequest(Type requestType, ValidationResult validationResult) {
+        Debug.Assert(requestType != Type.Missing.GetType(), "The validation result must contain at least one error!");
         Debug.Assert(validationResult.Errors.Count > 0, "The validation result must contain at least one error!");
 
-        var violations = validationResult.Errors.Select(failure => {
+        var violations = validationResult.Errors.Select(static failure => {
             Debug.Assert(!string.IsNullOrWhiteSpace(failure.ErrorMessage), "The error message in the validation failure must not be empty!");
 
             return new BadRequest.Types.FieldViolation {
@@ -85,55 +89,55 @@ public static partial class ApiErrors {
         };
 
         string message;
-        if (validationResult.Errors.Count == 1) {
-            var failure = validationResult.Errors[0];
-            message = string.IsNullOrWhiteSpace(failure.PropertyName)
-                ? $"The request is invalid: {failure.ErrorMessage}"
-                : $"The argument '{failure.PropertyName}' is invalid: {failure.ErrorMessage}";
-        } else {
+
+        if (validationResult.Errors.Count == 1 && validationResult.Errors.FirstOrDefault() is { } failure)
+            message = $"The '{requestType.Name}' is invalid: {failure.ErrorMessage}";
+        else
             message = validationResult.Errors.Aggregate(
-                new System.Text.StringBuilder($"The following arguments are invalid:{Environment.NewLine}"),
-                (sb, failure) => sb.AppendLine($"- {failure.PropertyName}: {failure.ErrorMessage}")
+                new StringBuilder($"The following '{requestType.Name}' fields are invalid:{Environment.NewLine}"),
+                static (sb, failure) => sb.AppendLine($"- {failure.PropertyName}: {failure.ErrorMessage}")
             ).ToString();
-        }
 
         return RpcExceptions.FromError(ServerError.BadRequest, message, details);
     }
 
-	/// <summary>
-	/// Creates an RPC exception for requests with invalid arguments from individual validation failures.
-	/// This method is an overload that accepts individual validation failures and creates a ValidationResult internally.
-	/// </summary>
-	/// <param name="failures">
-	/// An array of validation failures representing invalid request arguments.
-	/// Each failure should contain a field name and error description.
-	/// </param>
-	/// <returns>
-	/// An <see cref="RpcException"/> with status code <see cref="StatusCode.InvalidArgument"/>,
-	/// including <see cref="BadRequest"/> details with field violations.
-	/// </returns>
-	public static RpcException InvalidRequest(params ValidationFailure[] failures) =>
-		InvalidRequest(new ValidationResult(failures));
+	// /// <summary>
+    // /// Creates an RPC exception for requests with invalid arguments from individual validation failures.
+    // /// This method is an overload that accepts individual validation failures and creates a ValidationResult internally.
+    // /// </summary>
+    //    /// <param name="requestType">
+    //    /// The type of the request being validated.
+    //    /// This is used to include the request type name in the error message for context.
+    //    /// </param>
+    // /// <param name="failures">
+    // /// An array of validation failures representing invalid request arguments.
+    // /// Each failure should contain a field name and error description.
+    // /// </param>
+    // /// <returns>
+    // /// An <see cref="RpcException"/> with status code <see cref="StatusCode.InvalidArgument"/>,
+    // /// including <see cref="BadRequest"/> details with field violations.
+    // /// </returns>
+    // public static RpcException InvalidRequest(Type requestType, params ValidationFailure[] failures) =>
+    // 	InvalidRequest(requestType, new ValidationResult(failures));
 
-	/// <summary>
-	/// Creates an RPC exception for a single invalid argument.
-	/// This method is a convenience overload for reporting a single field validation error.
-	/// </summary>
-	/// <param name="field">
-	/// The name of the invalid field or argument.
-	/// This should correspond to the request parameter or property name.
-	/// It can also be a request header or other input identifier.
-	/// </param>
-	/// <param name="description">
-	/// A description of why the field is invalid.
-	/// This should explain what was wrong with the provided value.
-	/// </param>
-	/// <returns>
-	/// An <see cref="RpcException"/> with status code <see cref="StatusCode.InvalidArgument"/>,
-	/// including <see cref="BadRequest"/> details with a single field violation.
-	/// </returns>
-	public static RpcException InvalidRequest(string field, string description) =>
-		InvalidRequest(new ValidationFailure(field, description));
+    /// <summary>
+    /// Creates an RPC exception for requests with invalid arguments from individual validation failures.
+    /// This method is an overload that accepts individual validation failures and creates a ValidationResult internally.
+    /// </summary>
+    /// <param name="requestType">
+    /// The type of the request being validated.
+    /// This is used to include the request type name in the error message for context.
+    /// </param>
+    /// <param name="failures">
+    /// An array of validation failures representing invalid request arguments.
+    /// Each failure should contain a field name and error description.
+    /// </param>
+    /// <returns>
+    /// An <see cref="RpcException"/> with status code <see cref="StatusCode.InvalidArgument"/>,
+    /// including <see cref="BadRequest"/> details with field violations.
+    /// </returns>
+    public static RpcException InvalidRequest(Type requestType, List<ValidationFailure> failures) =>
+        InvalidRequest(requestType, new ValidationResult(failures));
 
 	/// <summary>
 	/// Creates an RPC exception for operations that exceed their deadline or timeout.

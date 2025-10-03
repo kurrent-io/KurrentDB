@@ -1,4 +1,5 @@
 using Bogus;
+using KurrentDB.Testing.Bogus;
 using Serilog;
 
 namespace KurrentDB.Testing.Sample.HomeAutomation;
@@ -7,6 +8,9 @@ namespace KurrentDB.Testing.Sample.HomeAutomation;
 /// Test class to verify HomeAutomation DataSet functionality
 /// </summary>
 public class HomeAutomationDataSetTests {
+    [ClassDataSource<BogusFaker>(Shared = SharedType.PerAssembly)]
+    public required BogusFaker Faker { get; init; }
+
     [Test]
     public async Task BasicHomeFaker_ShouldGenerateValidHome() {
         // Arrange
@@ -52,11 +56,8 @@ public class HomeAutomationDataSetTests {
 
     [Test]
     public async Task FakerExtension_ShouldProvideHomeAutomationAccess() {
-        // Arrange
-        var faker = new Faker();
-
         // Act
-        var home = faker.HomeAutomation().Home();
+        var home = Faker.HomeAutomation().Home();
 
         // Assert
         Log.Information("Extension generated home: {HomeName} with {RoomCount} rooms and {DeviceCount} devices",
@@ -71,11 +72,10 @@ public class HomeAutomationDataSetTests {
     [Test]
     public async Task FlexibleHomeGeneration_WithSpecificRoomCount_ShouldRespectParameter() {
         // Arrange
-        var faker = new Faker();
         const int expectedRooms = 5;
 
         // Act
-        var home = faker.HomeAutomation().Home(rooms: expectedRooms);
+        var home = Faker.HomeAutomation().Home(rooms: expectedRooms);
 
         // Assert
         Log.Information("Home with {ExpectedRooms} rooms: {ActualRooms} rooms generated",
@@ -88,13 +88,12 @@ public class HomeAutomationDataSetTests {
     [Test]
     public async Task FlexibleHomeGeneration_WithDevicesPerRoom_ShouldGenerateApproximateDeviceCount() {
         // Arrange
-        var faker = new Faker();
         const int rooms = 3;
         const int devicesPerRoom = 2;
         const int expectedDevices = rooms * devicesPerRoom;
 
         // Act
-        var home = faker.HomeAutomation().Home(rooms: rooms, devicesPerRoom: devicesPerRoom);
+        var home = Faker.HomeAutomation().Home(rooms: rooms, devicesPerRoom: devicesPerRoom);
 
         // Assert
         Log.Information("Home with {Rooms} rooms, {DevicesPerRoom} devices per room: {ActualDevices} devices generated",
@@ -126,11 +125,8 @@ public class HomeAutomationDataSetTests {
 
     [Test]
     public async Task DeviceGeneration_Random_ShouldGenerateValidDevices() {
-        // Arrange
-        var faker = new Faker();
-
         // Act
-        var devices = faker.HomeAutomation().Devices();
+        var devices = Faker.HomeAutomation().Devices();
 
         // Assert
         Log.Information("Generated {DeviceCount} random devices", devices.Count);
@@ -162,12 +158,11 @@ public class HomeAutomationDataSetTests {
     [Test]
     public async Task DeviceGeneration_WithSpecificTypes_ShouldOnlyGenerateAllowedTypes() {
         // Arrange
-        var faker = new Faker();
         var allowedTypes = new[] { DeviceType.Thermostat, DeviceType.SmartLight };
         const int count = 5;
 
         // Act
-        var devices = faker.HomeAutomation().Devices(count: count, types: allowedTypes);
+        var devices        = Faker.HomeAutomation().Devices(count: count, types: allowedTypes);
         var generatedTypes = devices.Select(d => d.DeviceType).Distinct().ToList();
 
         // Assert
@@ -183,11 +178,10 @@ public class HomeAutomationDataSetTests {
     [Test]
     public async Task EventGeneration_ForRandomDevices_ShouldGenerateValidEvents() {
         // Arrange
-        var faker = new Faker();
         const int eventCount = 5;
 
         // Act
-        var events = faker.HomeAutomation().Events(count: eventCount);
+        var events = Faker.HomeAutomation().Events(count: eventCount);
 
         // Assert
         Log.Information("Generated {EventCount} events for random devices", events.Count);
@@ -201,12 +195,11 @@ public class HomeAutomationDataSetTests {
     [Test]
     public async Task EventGeneration_ForSpecificHome_ShouldGenerateValidEvents() {
         // Arrange
-        var faker = new Faker();
-        var home = faker.HomeAutomation().Home();
+        var       home       = Faker.HomeAutomation().Home();
         const int eventCount = 10;
 
         // Act
-        var events = faker.HomeAutomation().Events(home, count: eventCount);
+        var events = Faker.HomeAutomation().Events(home, count: eventCount);
 
         // Assert
         Log.Information("Generated {EventCount} events for home '{HomeName}'",
@@ -221,12 +214,12 @@ public class HomeAutomationDataSetTests {
     [Test]
     public async Task EventGeneration_ForSpecificDevices_ShouldGenerateValidEvents() {
         // Arrange
-        var faker = new Faker();
-        var devices = faker.HomeAutomation().Devices(count: 3);
+        var devices = Faker.HomeAutomation().Devices(3);
+
         const int eventCount = 8;
 
         // Act
-        var events = faker.HomeAutomation().Events(devices, count: eventCount);
+        var events = Faker.HomeAutomation().Events(devices, count: eventCount);
 
         // Assert
         Log.Information("Generated {EventCount} events for {DeviceCount} specific devices",

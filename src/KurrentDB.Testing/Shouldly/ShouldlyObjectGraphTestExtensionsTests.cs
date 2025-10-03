@@ -39,17 +39,17 @@ public class ShouldlyObjectGraphTestExtensionsTests {
         var fixedDate1 = new DateTime(2025, 1, 1, 12, 0, 0, DateTimeKind.Utc);
         var fixedDate2 = new DateTime(2025, 1, 1, 13, 0, 0, DateTimeKind.Utc);
         var user1 = new User {
-            Id      = 1,
-            Name    = "John",
+            Id        = 1,
+            Name      = "John",
             CreatedAt = fixedDate1,
-            Profile = new Profile { FirstName = "John", LastName = "Doe", LastModified = fixedDate1 }
+            Profile   = new Profile { FirstName = "John", LastName = "Doe", LastModified = fixedDate1 }
         };
 
         var user2 = new User {
-            Id      = 1,
-            Name    = "John",
+            Id        = 1,
+            Name      = "John",
             CreatedAt = fixedDate1,
-            Profile = new Profile { FirstName = "John", LastName = "Doe", LastModified = fixedDate2 }
+            Profile   = new Profile { FirstName = "John", LastName = "Doe", LastModified = fixedDate2 }
         };
 
         // Act & Assert - Should ignore nested Profile.LastModified
@@ -77,14 +77,14 @@ public class ShouldlyObjectGraphTestExtensionsTests {
     public void should_use_numeric_tolerance_when_configured() {
         // Arrange
         var fixedDate = new DateTime(2025, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+
         var order1 = new Order { Id = 1, Total = 100.0m, CreatedAt = fixedDate, Items = new List<string>() };
         var order2 = new Order { Id = 1, Total = 100.05m, CreatedAt = fixedDate, Items = new List<string>() };
 
         // Act & Assert - Should allow small numeric differences
         order1.ShouldBeEquivalentTo(
             order2, config => config
-                .WithNumericTolerance(0.1)
-        );
+                .WithNumericTolerance(0.1));
     }
 
     [Test]
@@ -108,8 +108,7 @@ public class ShouldlyObjectGraphTestExtensionsTests {
         // Act & Assert - Should ignore order differences
         order1.ShouldBeEquivalentTo(
             order2, config => config
-                .IgnoringCollectionOrder()
-        );
+                .IgnoringCollectionOrder());
     }
 
     [Test]
@@ -132,8 +131,7 @@ public class ShouldlyObjectGraphTestExtensionsTests {
         // Act & Assert - Should use custom DateTime comparer with 1-minute tolerance
         order1.ShouldBeEquivalentTo(
             order2, config => config
-                .Using<DateTime>((x, y) => Math.Abs((x - y).TotalSeconds) < 60)
-        );
+                .Using<DateTime>((x, y) => Math.Abs((x - y).TotalSeconds) < 60));
     }
 
     [Test]
@@ -172,8 +170,7 @@ public class ShouldlyObjectGraphTestExtensionsTests {
                 .Excluding<User>(x => x.Id)
                 .Excluding("Profile.LastModified")
                 .WithStringComparison(StringComparison.OrdinalIgnoreCase)
-                .Using<DateTime>((x, y) => Math.Abs((x - y).TotalHours) < 2)
-        );
+                .Using<DateTime>((x, y) => Math.Abs((x - y).TotalHours) < 2));
     }
 
     // Test classes for demonstration

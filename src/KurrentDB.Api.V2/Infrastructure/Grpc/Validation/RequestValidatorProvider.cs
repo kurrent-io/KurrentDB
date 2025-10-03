@@ -17,15 +17,6 @@ public interface IRequestValidatorProvider {
     public bool TryGetValidatorFor<TRequest>(out IRequestValidator validator);
 
     /// <summary>
-    /// Gets a validator for the specified gRPC request type.
-    /// Throws RequestValidatorNotFoundException if no validator is found.
-    /// </summary>
-    public IRequestValidator GetRequiredValidatorFor<TRequest>() =>
-        TryGetValidatorFor<TRequest>(out var validator)
-            ? validator
-            : throw new RequestValidatorNotFoundException(typeof(TRequest));
-
-    /// <summary>
     /// Gets a validator for the specified gRPC request type, or null if none is found.
     /// </summary>
     public IRequestValidator? GetValidatorFor<TRequest>() =>

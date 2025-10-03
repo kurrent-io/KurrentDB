@@ -8,32 +8,26 @@
 
 using System.Collections.Immutable;
 using EventStore.Plugins.Authorization;
-using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using KurrentDB.Api.Errors;
 using KurrentDB.Api.Infrastructure;
 using KurrentDB.Api.Infrastructure.Authorization;
 using KurrentDB.Api.Streams.Authorization;
-using KurrentDB.Common.Configuration;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
-using KurrentDB.Core.Metrics;
-using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Protocol.V2.Streams;
-using Microsoft.AspNetCore.Http.Features;
-
 using static KurrentDB.Core.Messages.ClientMessage;
 using static KurrentDB.Protocol.V2.Streams.StreamsService;
 
 namespace KurrentDB.Api.Streams;
 
-public record StreamsServiceOptions {
-	public int MaxAppendSize { get; init; } = TFConsts.ChunkSize;
-	public int MaxRecordSize { get; init; } = TFConsts.EffectiveMaxLogRecordSize;
+public class StreamsServiceOptions {
+    public int MaxAppendSize { get; set; } = TFConsts.ChunkSize;
+    public int MaxRecordSize { get; set; } = TFConsts.EffectiveMaxLogRecordSize;
 }
 
 public class StreamsService : StreamsServiceBase {
@@ -48,6 +42,18 @@ public class StreamsService : StreamsServiceBase {
         Authz              = authz;
         EnsureNodeIsLeader = node.EnsureNodeIsLeader;
     }
+
+    public StreamsService(
+        ClusterVNodeOptions options,
+        IPublisher publisher,
+        IAuthorizationProvider authz,
+        INodeSystemInfoProvider node
+    ) : this(
+        new StreamsServiceOptions {
+            MaxAppendSize = options.Application.MaxAppendSize,
+            MaxRecordSize = options.Application.MaxAppendEventSize
+        }, publisher, authz, node
+    ) { }
 
     StreamsServiceOptions              Options            { get; }
     IPublisher                         Publisher          { get; }

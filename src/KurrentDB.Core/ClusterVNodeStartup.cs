@@ -299,7 +299,7 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 
 				options.Interceptors.Add<LogRetriesInterceptor>();
 			})
-			.AddServiceOptions<Streams<TStreamId>>(options => options.MaxReceiveMessageSize = TFConsts.ChunkSize);
+            .AddServiceOptions<Streams<TStreamId>>(options => options.MaxReceiveMessageSize = TFConsts.EffectiveMaxLogRecordSize);
 
 		// Ask the node itself to add DI registrations
 		_configureNodeServices(services);

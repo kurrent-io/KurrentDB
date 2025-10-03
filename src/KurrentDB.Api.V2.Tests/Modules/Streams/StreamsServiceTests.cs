@@ -7,6 +7,7 @@ using Google.Protobuf;
 using Google.Rpc;
 using Grpc.Core;
 using Humanizer;
+using Humanizer.Bytes;
 using KurrentDB.Api.Tests.Fixtures;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Protocol.V2.Streams;
@@ -93,8 +94,8 @@ public class StreamsServiceTests {
         var rex     = await appendTask.ShouldThrowAsync<RpcException>();
         var details = rex.GetRpcStatus()?.GetDetail<StreamRevisionConflictErrorDetails>();
 
-        await Assert.That(details).IsNotNull();
         await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
+        await Assert.That(details).IsNotNull();
     }
 
     [Test]
@@ -109,8 +110,8 @@ public class StreamsServiceTests {
         var rex     = await appendTask.ShouldThrowAsync<RpcException>();
         var details = rex.GetRpcStatus()?.GetDetail<BadRequest>();
 
-        await Assert.That(details).IsNotNull();
         await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.InvalidArgument);
+        await Assert.That(details).IsNotNull();
     }
 
     [Test]
@@ -133,8 +134,8 @@ public class StreamsServiceTests {
         var rex     = await appendTask.ShouldThrowAsync<RpcException>();
         var details = rex.GetRpcStatus()?.GetDetail<StreamAlreadyInAppendSessionErrorDetails>();
 
-        await Assert.That(details).IsNotNull();
         await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.Aborted);
+        await Assert.That(details).IsNotNull();
     }
 
     [Test]
@@ -176,8 +177,8 @@ public class StreamsServiceTests {
         var rex     = await appendTask.ShouldThrowAsync<RpcException>();
         var details = rex.GetRpcStatus()?.GetDetail<StreamTombstonedErrorDetails>();
 
-        await Assert.That(details).IsNotNull();
         await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
+        await Assert.That(details).IsNotNull();
     }
 
     [Test]
@@ -193,18 +194,22 @@ public class StreamsServiceTests {
         var rex     = await appendTask.ShouldThrowAsync<RpcException>();
         var details = rex.GetRpcStatus()?.GetDetail<AppendRecordSizeExceededErrorDetails>();
 
-        await Assert.That(details).IsNotNull();
         await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.InvalidArgument);
+        await Assert.That(details).IsNotNull();
     }
 
     [Test]
     public async ValueTask append_session_throws_when_transaction_is_too_large(CancellationToken cancellationToken) {
         // Arrange
+
+
         var numberOfRecords = TFConsts.ChunkSize / TFConsts.EffectiveMaxLogRecordSize + 1;
 
         var request = HomeAutomationTestData.SimulateHomeActivity(numberOfRecords);
 
-        request.ForEach(r => r.Data = UnsafeByteOperations.UnsafeWrap(new byte[TFConsts.EffectiveMaxLogRecordSize]));
+        var recordSize = 1024 * 1024 * 8; // 8MB
+
+        request.ForEach(r => r.Data = UnsafeByteOperations.UnsafeWrap(new byte[recordSize]));
 
         var totalSize = (request.Records.Count * TFConsts.EffectiveMaxLogRecordSize).Bytes();
 
@@ -212,14 +217,24 @@ public class StreamsServiceTests {
             "Prepared append request with {Records} records and a total size of ~{Size}",
             request.Records.Count, totalSize.Humanize());
 
-        var appendTask = async () => await Fixture.StreamsClient.AppendAsync(request, cancellationToken: cancellationToken);
+        using var session = Fixture.StreamsClient.AppendSession(cancellationToken: cancellationToken);
+
+        await session.RequestStream.WriteAsync(request, cancellationToken);
+        await session.RequestStream.WriteAsync(request.SimulateMoreEvents(), cancellationToken);
+
+        await session.RequestStream.CompleteAsync();
+
+        // ReSharper disable once AccessToDisposedClosure
+        var appendTask = async () => await session.ResponseAsync;
+
+        // var appendTask = async () => await Fixture.StreamsClient.AppendAsync(request, cancellationToken: cancellationToken);
 
         // Act & Assert
         var rex     = await appendTask.ShouldThrowAsync<RpcException>();
         var details = rex.GetRpcStatus()?.GetDetail<AppendTransactionSizeExceededErrorDetails>();
 
-        await Assert.That(details).IsNotNull();
         await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.Aborted);
+        await Assert.That(details).IsNotNull();
     }
 
     [Test]
