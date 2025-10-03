@@ -1,0 +1,16 @@
+<JsonViewer @ref="_viewer"></JsonViewer>
+
+@code {
+    [Parameter]
+    public string JsonString { get; set; }
+
+    JsonViewer _viewer = null!;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (!firstRender) return;
+        await _viewer.Render(JsonString!);
+    }
+
+}

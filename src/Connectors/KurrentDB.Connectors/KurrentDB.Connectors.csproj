@@ -25,6 +25,8 @@
 
 	<!-- Required packages -->
 	<ItemGroup>
+		<PackageReference Include="Google.Api.CommonProtos" />
+		<PackageReference Include="Kurrent.Surge" />
 		<PackageReference Include="Kurrent.Surge.Core" />
 		<PackageReference Include="Kurrent.Surge.DataProtection" />
 		<PackageReference Include="Kurrent.Connectors.Elasticsearch" />

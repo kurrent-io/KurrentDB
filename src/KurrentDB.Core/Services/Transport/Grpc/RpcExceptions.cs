@@ -246,13 +246,19 @@ static class RpcExceptions {
 			{ Constants.Exceptions.LoginName, loginName }
 		});
 
+	public static RpcException IndexNotFound(string indexName) =>
+		new(new Status(StatusCode.NotFound, $"Index '{indexName}' not found."), new Metadata {
+			{ Constants.Exceptions.ExceptionKey, Constants.Exceptions.IndexNotFound },
+			{ Constants.Exceptions.IndexName, indexName }
+		});
+
 	public static RpcException InvalidArgument(string errorMessage) =>
 		new(new Status(StatusCode.InvalidArgument, errorMessage));
 
 	public static RpcException InvalidArgument<T>(T argument) =>
 		new(new Status(StatusCode.InvalidArgument, $"'{argument}' is not a valid {typeof(T)}"));
 
-	public static RpcException RequiredArgument<T>(string name, T argument) =>
+	public static RpcException RequiredArgument<T>(string name) =>
 		new(new Status(StatusCode.InvalidArgument, $"'{name}' is a required argument of type {typeof(T)}"));
 
 	public static RpcException InvalidCombination<T>(T combination) where T : ITuple

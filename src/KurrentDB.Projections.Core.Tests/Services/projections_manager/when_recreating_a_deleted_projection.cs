@@ -59,7 +59,7 @@ public class when_recreating_a_deleted_projection<TLogFormat, TStreamId> : TestF
 	[Test, Category("v8")]
 	public void it_can_be_listed() {
 		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, null, false));
+			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, null));
 
 		Assert.AreEqual(
 			1,

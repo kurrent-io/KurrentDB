@@ -16,7 +16,6 @@ using EventStore.Plugins.Authorization;
 using EventStore.Plugins.Subsystems;
 using EventStore.Plugins.Transforms;
 using KurrentDB.Common.Utils;
-using KurrentDB.Core.Authentication;
 using KurrentDB.Core.Authentication.InternalAuthentication;
 using KurrentDB.Core.Authorization;
 using KurrentDB.Core.Authorization.AuthorizationPolicies;
@@ -25,13 +24,13 @@ using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Monitoring;
+using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Tests.Http;
 using KurrentDB.Core.Tests.Index.Hashers;
 using KurrentDB.Core.Tests.Services.Transport.Tcp;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.Util;
-using KurrentDB.SecondaryIndexing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -96,7 +95,8 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 		string transform = "identity",
 		IConfiguration configuration = null,
 		IReadOnlyList<IDbTransform> newTransforms = null,
-		int maxAppendEventSize = TFConsts.EffectiveMaxLogRecordSize) {
+		int maxAppendEventSize = TFConsts.EffectiveMaxLogRecordSize,
+		SecondaryIndexReaders secondaryIndexReaders = null) {
 
 		_httpClientTimeoutSec = httpClientTimeoutSec;
 		RunningTime.Start();
@@ -217,10 +217,7 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 			});
 
 		Node = new ClusterVNode<TStreamId>(options, logFormatFactory,
-			new AuthenticationProviderFactory(
-				c => authenticationProviderFactory ?? new InternalAuthenticationProviderFactory(
-					c,
-					options.DefaultUser)),
+			new(c => authenticationProviderFactory ?? new InternalAuthenticationProviderFactory(c, options.DefaultUser)),
 			new AuthorizationProviderFactory(
 				c => authorizationProviderFactory ?? new InternalAuthorizationProviderFactory(
 					new StaticAuthorizationPolicyRegistry([new LegacyPolicySelectorFactory(
@@ -230,7 +227,8 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 			expiryStrategy: expiryStrategy,
 			certificateProvider: new OptionsCertificateProvider(),
 			configuration: inMemConf,
-			configureAdditionalNodeServices: services => ConfigureMiniNodeServices(services, newTransforms));
+			configureAdditionalNodeServices: services => ConfigureMiniNodeServices(services, newTransforms),
+			secondaryIndexReaders: secondaryIndexReaders);
 		Db = Node.Db;
 
 		Node.HttpService.SetupController(new TestController(Node.MainQueue));

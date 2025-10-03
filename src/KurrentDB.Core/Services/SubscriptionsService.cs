@@ -13,6 +13,7 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.TimerService;
@@ -39,6 +40,7 @@ public class SubscriptionsService<TStreamId> :
 	IHandle<SystemMessage.SystemStart>,
 	IHandle<SystemMessage.BecomeShuttingDown>,
 	IHandle<TcpMessage.ConnectionClosed>,
+	IHandle<ClientMessage.SubscribeToIndex>,
 	IAsyncHandle<ClientMessage.SubscribeToStream>,
 	IAsyncHandle<ClientMessage.FilteredSubscribeToStream>,
 	IHandle<ClientMessage.UnsubscribeFromStream>,
@@ -46,12 +48,13 @@ public class SubscriptionsService<TStreamId> :
 	IHandle<SubscriptionMessage.PollStream>,
 	IHandle<SubscriptionMessage.CheckPollTimeout>,
 	IAsyncHandle<StorageMessage.InMemoryEventCommitted>,
-	IAsyncHandle<StorageMessage.EventCommitted> {
-
+	IAsyncHandle<StorageMessage.EventCommitted>,
+	IAsyncHandle<StorageMessage.SecondaryIndexCommitted> {
 	private const int DontReportCheckpointReached = -1;
 
 	// ReSharper disable once StaticMemberInGenericType
 	private static readonly TimeSpan TimeoutPeriod = TimeSpan.FromSeconds(1);
+
 	// ReSharper disable once StaticMemberInGenericType
 	private static readonly char[] LinkToSeparator = ['@'];
 
@@ -61,6 +64,7 @@ public class SubscriptionsService<TStreamId> :
 
 	private long _lastSeenCommitPosition = -1;
 	private long _lastSeenInMemoryCommitPosition = -1;
+	private long _lastSeenSecondaryIndexLogPosition = -1;
 
 	private readonly IPublisher _bus;
 	private readonly IEnvelope _busEnvelope;
@@ -68,19 +72,22 @@ public class SubscriptionsService<TStreamId> :
 	private readonly IReadIndex<TStreamId> _readIndex;
 	private readonly IVirtualStreamReader _virtualStreamReader;
 	private readonly IAuthorizationProvider _authorizationProvider;
+	private readonly SecondaryIndexReaders _secondaryIndexReaders;
 
 	public SubscriptionsService(
 		IPublisher bus,
 		IQueuedHandler queuedHandler,
 		IAuthorizationProvider authorizationProvider,
 		IReadIndex<TStreamId> readIndex,
-		IVirtualStreamReader inMemReader) {
+		IVirtualStreamReader inMemReader,
+		SecondaryIndexReaders secondaryIndexReaders) {
 		_bus = Ensure.NotNull(bus);
 		_busEnvelope = bus;
 		_queuedHandler = Ensure.NotNull(queuedHandler);
 		_readIndex = Ensure.NotNull(readIndex);
 		_virtualStreamReader = Ensure.NotNull(inMemReader);
 		_authorizationProvider = Ensure.NotNull(authorizationProvider);
+		_secondaryIndexReaders = Ensure.NotNull(secondaryIndexReaders);
 	}
 
 	public void Handle(SystemMessage.SystemStart message) {
@@ -120,8 +127,25 @@ public class SubscriptionsService<TStreamId> :
 		}
 	}
 
+	void IHandle<ClientMessage.SubscribeToIndex>.Handle(ClientMessage.SubscribeToIndex msg) {
+		var isIndexStream = SystemStreams.IsIndexStream(msg.IndexName);
+		var canRead = isIndexStream && _secondaryIndexReaders.CanReadIndex(msg.IndexName);
+
+		if (!canRead) {
+			msg.Envelope.ReplyWith(new ClientMessage.SubscriptionDropped(Guid.Empty, SubscriptionDropReason.NotFound));
+			return;
+		}
+
+		var lastIndexedPos = _secondaryIndexReaders.GetLastIndexedPosition(msg.IndexName).CommitPosition;
+
+		SubscribeToStream(msg.CorrelationId, msg.Envelope, msg.ConnectionId, msg.IndexName, false, lastIndexedPos, null, msg.User, null);
+
+		var subscribedMessage = new ClientMessage.SubscriptionConfirmation(msg.CorrelationId, lastIndexedPos, null);
+		msg.Envelope.ReplyWith(subscribedMessage);
+	}
+
 	async ValueTask IAsyncHandle<ClientMessage.SubscribeToStream>.HandleAsync(ClientMessage.SubscribeToStream msg, CancellationToken token) {
-		var isVirtualStream = SystemStreams.IsVirtualStream(msg.EventStreamId);
+		var isVirtualStream = SystemStreams.IsInMemoryStream(msg.EventStreamId);
 
 		long? lastEventNumber = null;
 		if (isVirtualStream) {
@@ -143,13 +167,12 @@ public class SubscriptionsService<TStreamId> :
 			msg.ResolveLinkTos, lastIndexedPos, lastEventNumber,
 			msg.User, msg.EventStreamId.IsEmptyString() ? EventFilter.DefaultAllFilter : EventFilter.DefaultStreamFilter);
 
-		var subscribedMessage =
-			new ClientMessage.SubscriptionConfirmation(msg.CorrelationId, lastIndexedPos, lastEventNumber);
+		var subscribedMessage = new ClientMessage.SubscriptionConfirmation(msg.CorrelationId, lastIndexedPos, lastEventNumber);
 		msg.Envelope.ReplyWith(subscribedMessage);
 	}
 
 	async ValueTask IAsyncHandle<ClientMessage.FilteredSubscribeToStream>.HandleAsync(ClientMessage.FilteredSubscribeToStream msg, CancellationToken token) {
-		var isVirtualStream = SystemStreams.IsVirtualStream(msg.EventStreamId);
+		var isVirtualStream = SystemStreams.IsInMemoryStream(msg.EventStreamId);
 
 		long? lastEventNumber = null;
 		if (isVirtualStream) {
@@ -179,8 +202,7 @@ public class SubscriptionsService<TStreamId> :
 
 	private void SubscribeToStream(Guid correlationId, IEnvelope envelope, Guid connectionId,
 		string eventStreamId, bool resolveLinkTos, long lastIndexedPosition, long? lastEventNumber,
-		ClaimsPrincipal user,
-		IEventFilter eventFilter, int? checkpointInterval = null, int checkpointIntervalCurrent = 0) {
+		ClaimsPrincipal user, IEventFilter eventFilter, int? checkpointInterval = null, int checkpointIntervalCurrent = 0) {
 		if (!_subscriptionTopics.TryGetValue(eventStreamId, out var subscribers)) {
 			subscribers = [];
 			_subscriptionTopics.Add(eventStreamId, subscribers);
@@ -222,7 +244,7 @@ public class SubscriptionsService<TStreamId> :
 
 	/* LONG POLL SECTION */
 	public void Handle(SubscriptionMessage.PollStream message) {
-		if (MissedEvents(message.StreamId, message.LastIndexedPosition, message.LastEventNumber)) {
+		if (MissedEvents(message.StreamId, message.LastIndexedPosition)) {
 			_bus.Publish(CloneReadRequestWithNoPollFlag(message.OriginalRequest));
 			return;
 		}
@@ -230,10 +252,12 @@ public class SubscriptionsService<TStreamId> :
 		SubscribePoller(message.StreamId, message.ExpireAt, message.LastIndexedPosition, message.LastEventNumber, message.OriginalRequest);
 	}
 
-	private bool MissedEvents(string streamId, long lastIndexedPosition, long? lastEventNumber) {
-		return SystemStreams.IsVirtualStream(streamId)
-			? _lastSeenInMemoryCommitPosition > lastIndexedPosition
-			: _lastSeenCommitPosition > lastIndexedPosition;
+	private bool MissedEvents(string streamId, long lastIndexedPosition) {
+		return SystemStreams.IsIndexStream(streamId)
+			? _lastSeenSecondaryIndexLogPosition > lastIndexedPosition
+			: SystemStreams.IsInMemoryStream(streamId)
+				? _lastSeenInMemoryCommitPosition > lastIndexedPosition
+				: _lastSeenCommitPosition > lastIndexedPosition;
 	}
 
 	private void SubscribePoller(string streamId, DateTime expireAt, long lastIndexedPosition, long? lastEventNumber, Message originalRequest) {
@@ -278,9 +302,12 @@ public class SubscriptionsService<TStreamId> :
 		return originalRequest switch {
 			ClientMessage.ReadStreamEventsForward streamReq => new ClientMessage.ReadStreamEventsForward(streamReq.InternalCorrId, streamReq.CorrelationId, streamReq.Envelope, streamReq.EventStreamId,
 				streamReq.FromEventNumber, streamReq.MaxCount, streamReq.ResolveLinkTos, streamReq.RequireLeader, streamReq.ValidationStreamVersion, streamReq.User,
-				replyOnExpired: streamReq.ReplyOnExpired),
+				streamReq.ReplyOnExpired),
 			ClientMessage.ReadAllEventsForward allReq => new ClientMessage.ReadAllEventsForward(allReq.InternalCorrId, allReq.CorrelationId, allReq.Envelope, allReq.CommitPosition,
-				allReq.PreparePosition, allReq.MaxCount, allReq.ResolveLinkTos, allReq.RequireLeader, allReq.ValidationTfLastCommitPosition, allReq.User, replyOnExpired: allReq.ReplyOnExpired),
+				allReq.PreparePosition, allReq.MaxCount, allReq.ResolveLinkTos, allReq.RequireLeader, allReq.ValidationTfLastCommitPosition, allReq.User, allReq.ReplyOnExpired),
+			ClientMessage.ReadIndexEventsForward indexReq => new ClientMessage.ReadIndexEventsForward(indexReq.InternalCorrId, indexReq.CorrelationId, indexReq.Envelope, indexReq.IndexName,
+				indexReq.CommitPosition, indexReq.PreparePosition, indexReq.ExcludeStart, indexReq.MaxCount, indexReq.RequireLeader, indexReq.ValidationTfLastCommitPosition, indexReq.User,
+				indexReq.ReplyOnExpired),
 			_ => throw new Exception($"Unexpected read request of type {originalRequest.GetType()} for long polling: {originalRequest}.")
 		};
 	}
@@ -288,9 +315,8 @@ public class SubscriptionsService<TStreamId> :
 	async ValueTask IAsyncHandle<StorageMessage.EventCommitted>.HandleAsync(StorageMessage.EventCommitted message, CancellationToken token) {
 		_lastSeenCommitPosition = message.CommitPosition;
 
-		var resolvedEvent =
-			await ProcessEventCommited(AllStreamsSubscriptionId, message.CommitPosition, message.Event, null, token);
-		await ProcessEventCommited(message.Event.EventStreamId, message.CommitPosition, message.Event, resolvedEvent, token);
+		var resolvedEvent = await ProcessEventCommitted(AllStreamsSubscriptionId, message.CommitPosition, message.Event, null, token);
+		await ProcessEventCommitted(message.Event.EventStreamId, message.CommitPosition, message.Event, resolvedEvent, token);
 
 		ProcessStreamMetadataChanges(message.Event.EventStreamId);
 		ProcessSettingsStreamChanges(message.Event.EventStreamId);
@@ -301,13 +327,40 @@ public class SubscriptionsService<TStreamId> :
 
 	async ValueTask IAsyncHandle<StorageMessage.InMemoryEventCommitted>.HandleAsync(StorageMessage.InMemoryEventCommitted message, CancellationToken token) {
 		_lastSeenInMemoryCommitPosition = message.CommitPosition;
-		await ProcessEventCommited(message.Event.EventStreamId, message.CommitPosition, message.Event, null, token);
+		await ProcessEventCommitted(message.Event.EventStreamId, message.CommitPosition, message.Event, null, token);
 		ProcessStreamMetadataChanges(message.Event.EventStreamId);
 		ProcessSettingsStreamChanges(message.Event.EventStreamId);
 		ReissueReadsFor(message.Event.EventStreamId, message.CommitPosition, message.Event.EventNumber);
 	}
 
-	private async ValueTask<ResolvedEvent?> ProcessEventCommited(string eventStreamId, long commitPosition, EventRecord evnt, ResolvedEvent? resolvedEvent, CancellationToken token) {
+	ValueTask IAsyncHandle<StorageMessage.SecondaryIndexCommitted>.HandleAsync(StorageMessage.SecondaryIndexCommitted message, CancellationToken token) {
+		if (ProcessSecondaryIndexEvent(message.IndexName, message.Event)) {
+			return ValueTask.CompletedTask;
+		}
+
+		ReissueReadsFor(message.IndexName, message.Event.Event.LogPosition, long.MaxValue);
+		return ValueTask.CompletedTask;
+
+		bool ProcessSecondaryIndexEvent(string indexName, ResolvedEvent resolvedEvent) {
+			var indexEvent = resolvedEvent.Event;
+			var logPosition = _lastSeenSecondaryIndexLogPosition = indexEvent.LogPosition;
+
+			if (!_subscriptionTopics.TryGetValue(indexName, out var subscriptions))
+				return true;
+
+			for (int i = 0, n = subscriptions.Count; i < n; i++) {
+				var sub = subscriptions[i];
+				if (logPosition <= sub.LastIndexedPosition)
+					continue;
+
+				sub.Envelope.ReplyWith(new ClientMessage.StreamEventAppeared(sub.CorrelationId, resolvedEvent));
+			}
+
+			return false;
+		}
+	}
+
+	private async ValueTask<ResolvedEvent?> ProcessEventCommitted(string eventStreamId, long commitPosition, EventRecord evnt, ResolvedEvent? resolvedEvent, CancellationToken token) {
 		if (!_subscriptionTopics.TryGetValue(eventStreamId, out var subscriptions))
 			return resolvedEvent;
 		for (int i = 0, n = subscriptions.Count; i < n; i++) {
@@ -330,7 +383,7 @@ public class SubscriptionsService<TStreamId> :
 			subscr.CheckpointIntervalCurrent++;
 
 			if (subscr.CheckpointInterval != null &&
-				subscr.CheckpointIntervalCurrent >= subscr.CheckpointInterval) {
+			    subscr.CheckpointIntervalCurrent >= subscr.CheckpointInterval) {
 				subscr.Envelope.ReplyWith(new ClientMessage.CheckpointReached(subscr.CorrelationId, pair.OriginalPosition));
 				subscr.CheckpointIntervalCurrent = 0;
 			}

@@ -284,6 +284,10 @@ Example:
 curl https://user:password@localhost:2113/admin/logs/log20240205.json --output log20240205.json
 ```
 
+### Exporting logs
+
+Logs can be exported via the [Open Telemetry Integration](./integrations.md#opentelemetry-exporter).
+
 ### Troubleshooting
 
 - **404 Not Found:** Verify that you have a valid license key.

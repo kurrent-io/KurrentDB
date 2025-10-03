@@ -26,7 +26,7 @@ public partial class EnumeratorTests {
 
 		return new EnumeratorWrapper(new Enumerator.StreamSubscription<TStreamId>(
 			bus: publisher,
-			expiryStrategy: new DefaultExpiryStrategy(),
+			expiryStrategy: DefaultExpiryStrategy.Instance,
 			streamName: streamName,
 			checkpoint: checkpoint,
 			resolveLinks: false,

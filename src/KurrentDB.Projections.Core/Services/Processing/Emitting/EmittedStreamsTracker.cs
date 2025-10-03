@@ -21,7 +21,7 @@ public class EmittedStreamsTracker : IEmittedStreamsTracker {
 	private readonly ProjectionNamesBuilder _projectionNamesBuilder;
 
 	private readonly BoundedCache<string, string> _streamIdCache = new BoundedCache<string, string>(int.MaxValue,
-		ESConsts.CommitedEventsMemCacheLimit, x => 16 + 4 + IntPtr.Size + 2 * x.Length);
+		ESConsts.CommittedEventsMemCacheLimit, x => 16 + 4 + IntPtr.Size + 2 * x.Length);
 
 	private const int MaxRetryCount = 3;
 	private readonly object _locker = new object();

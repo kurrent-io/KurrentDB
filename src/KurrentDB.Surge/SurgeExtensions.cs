@@ -7,7 +7,6 @@ using Kurrent.Surge.Processors.Configuration;
 using Kurrent.Surge.Producers.Configuration;
 using Kurrent.Surge.Readers.Configuration;
 using Kurrent.Surge.Schema;
-using Kurrent.Surge.Schema.Serializers;
 using KurrentDB.Core;
 using KurrentDB.Surge.Consumers;
 using KurrentDB.Surge.Processors;
@@ -75,10 +74,4 @@ public static class SurgeExtensions {
 
         return services;
     }
-
-    public static IServiceCollection AddSurgeSchemaRegistry(this IServiceCollection services, SchemaRegistry schemaRegistry) =>
-        services
-            .AddSingleton(schemaRegistry)
-            .AddSingleton<ISchemaRegistry>(schemaRegistry)
-            .AddSingleton<ISchemaSerializer>(schemaRegistry);
 }

@@ -63,11 +63,11 @@ partial class Enumerator {
 			_eventFilter = Ensure.NotNull(eventFilter);
 			_user = user;
 			_requiresLeader = requiresLeader;
-			_maxSearchWindow = maxSearchWindow ?? ReadBatchSize;
+			_maxSearchWindow = maxSearchWindow ?? DefaultReadBatchSize;
 			_checkpointInterval = checkpointIntervalMultiplier * _maxSearchWindow;
 			_cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-			_channel = Channel.CreateBounded<ReadResponse>(BoundedChannelOptions);
-			_liveEvents = Channel.CreateBounded<(ulong, ResolvedEvent?, TFPos?)>(LiveChannelOptions);
+			_channel = Channel.CreateBounded<ReadResponse>(DefaultCatchUpChannelOptions);
+			_liveEvents = Channel.CreateBounded<(ulong, ResolvedEvent?, TFPos?)>(DefaultLiveChannelOptions);
 
 			SubscriptionId = _subscriptionId.ToString();
 
@@ -462,7 +462,7 @@ ReadLoop:
 
 			_bus.Publish(new ClientMessage.FilteredReadAllEventsForward(
 				correlationId, correlationId, envelope,
-				startPos.CommitPosition, startPos.PreparePosition, ReadBatchSize, _resolveLinks, _requiresLeader,
+				startPos.CommitPosition, startPos.PreparePosition, DefaultReadBatchSize, _resolveLinks, _requiresLeader,
 				(int)_maxSearchWindow, null, _eventFilter, _user,
 				replyOnExpired: true,
 				expires: _expiryStrategy.GetExpiry(),

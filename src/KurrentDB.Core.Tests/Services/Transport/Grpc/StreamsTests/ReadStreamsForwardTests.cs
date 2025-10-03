@@ -26,6 +26,9 @@ public class ReadStreamsForwardTests {
 		private const ulong MaxCount = 10;
 		private const int EventCount = 100;
 
+		public when_reading_forward_from_stream_that_has_been_truncated() : base(new LotsOfExpiriesStrategy()) {
+		}
+
 		protected override async Task Given() {
 			await AppendToStreamBatch(new BatchAppendReq {
 				Options = new() {
@@ -119,6 +122,9 @@ public class ReadStreamsForwardTests {
 		private readonly List<ReadResp> _responses = new();
 		private const ulong MaxCount = 50;
 		private const int EventCount = 100;
+
+		public when_reading_forward_from_the_start_of_the_stream() : base(new LotsOfExpiriesStrategy()) {
+		}
 
 		protected override async Task Given() {
 			await AppendToStreamBatch(new BatchAppendReq {
@@ -220,6 +226,9 @@ public class ReadStreamsForwardTests {
 		private const ulong MaxCount = 20;
 		private const int EventCount = 100;
 
+		public when_reading_forward_from_the_middle_of_the_stream() : base(new LotsOfExpiriesStrategy()) {
+		}
+
 		protected override async Task Given() {
 			await AppendToStreamBatch(new BatchAppendReq {
 				Options = new() {
@@ -279,6 +288,9 @@ public class ReadStreamsForwardTests {
 		private readonly string _streamName = Guid.NewGuid().ToString();
 		private readonly List<ReadResp> _responses = new();
 		private const ulong MaxCount = 50;
+
+		public when_reading_forward_from_stream_with_no_events_after_position() : base(new LotsOfExpiriesStrategy()) {
+		}
 
 		protected override async Task Given() {
 			await AppendToStreamBatch(new BatchAppendReq {

@@ -16,7 +16,8 @@ public static class DirectoryDeleter {
 			await Task.Delay(1000);
 		}
 	}
-	private static bool TryForceDeleteDirectory(string path) {
+
+	public static bool TryForceDeleteDirectory(string path) {
 		try {
 			ForceDeleteDirectory(path);
 			return true;

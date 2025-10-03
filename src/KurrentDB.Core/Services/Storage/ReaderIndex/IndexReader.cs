@@ -24,6 +24,7 @@ public interface IIndexReader<TStreamId> {
 	long CachedStreamInfo { get; }
 	long NotCachedStreamInfo { get; }
 	long HashCollisions { get; }
+	IIndexBackend<TStreamId> Backend { get; }
 
 	// streamId drives the read, streamName is only for populating on the result.
 	// this was less messy than safely adding the streamName to the EventRecord at some point after construction
@@ -48,6 +49,7 @@ public interface IIndexReader<TStreamId> {
 	ValueTask<long> GetStreamLastEventNumber(TStreamId streamId, CancellationToken token);
 	ValueTask<long> GetStreamLastEventNumber_KnownCollisions(TStreamId streamId, long beforePosition, CancellationToken token);
 	ValueTask<long> GetStreamLastEventNumber_NoCollisions(ulong stream, Func<ulong, TStreamId> getStreamId, long beforePosition, CancellationToken token);
+	TFReaderLease BorrowReader();
 }
 
 public abstract class IndexReader {
@@ -69,6 +71,8 @@ public class IndexReader<TStreamId> : IndexReader, IIndexReader<TStreamId> {
 	public long HashCollisions {
 		get { return Interlocked.Read(ref _hashCollisions); }
 	}
+
+	public IIndexBackend<TStreamId> Backend => _backend;
 
 	private readonly IIndexBackend<TStreamId> _backend;
 	private readonly ITableIndex<TStreamId> _tableIndex;
@@ -218,9 +222,9 @@ public class IndexReader<TStreamId> : IndexReader, IIndexReader<TStreamId> {
 
 		using (var reader = _backend.BorrowReader()) {
 			var lastEventNumber = await GetStreamLastEventNumberCached(reader, streamId, token);
-			var metadata = await GetStreamMetadataCached(reader, streamId, token);
 			if (lastEventNumber is EventNumber.DeletedStream)
 				return new(fromEventNumber, maxCount, ReadStreamResult.StreamDeleted, StreamMetadata.Empty, lastEventNumber);
+			var metadata = await GetStreamMetadataCached(reader, streamId, token);
 			if (lastEventNumber == ExpectedVersion.NoStream || metadata.TruncateBefore == EventNumber.DeletedStream)
 				return new(fromEventNumber, maxCount, ReadStreamResult.NoStream, metadata, lastEventNumber);
 			if (lastEventNumber == EventNumber.Invalid)
@@ -829,6 +833,8 @@ public class IndexReader<TStreamId> : IndexReader, IIndexReader<TStreamId> {
 		using var reader = _backend.BorrowReader();
 		return await GetStreamLastEventNumber_NoCollisions(stream, getStreamId, beforePosition, reader, token);
 	}
+
+	public TFReaderLease BorrowReader() => _backend.BorrowReader();
 
 	private async ValueTask<long> GetStreamLastEventNumber_NoCollisions(
 		ulong stream,

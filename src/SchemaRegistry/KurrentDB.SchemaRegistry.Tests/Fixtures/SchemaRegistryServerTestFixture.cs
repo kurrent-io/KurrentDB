@@ -4,7 +4,6 @@
 // ReSharper disable ArrangeTypeMemberModifiers
 
 using Bogus;
-
 using Kurrent.Surge.DuckDB;
 using Kurrent.Surge.Schema;
 using Kurrent.Surge.Schema.Serializers;
@@ -22,14 +21,14 @@ namespace KurrentDB.SchemaRegistry.Tests.Fixtures;
 public abstract class SchemaRegistryServerTestFixture : ITestStartEventReceiver, ITestEndEventReceiver {
 	protected Faker Faker => TestingToolkitAutoWireUp.Faker;
 
-	protected string                      FixtureName              { get; private set; } = null!;
-	protected ILoggerFactory              LoggerFactory            { get; private set; } = null!;
-	protected FakeTimeProvider            TimeProvider             { get; private set; } = null!;
-	protected IServiceProvider            NodeServices             { get; private set; } = null!;
-	protected SchemaRegistryServiceClient Client                   { get; private set; } = null!;
-	protected ISchemaRegistry             SchemaRegistry           { get; private set; } = null!;
-	protected DuckDBConnectionProvider    DuckDbConnectionProvider { get; private set; } = null!;
-	SequenceIdGenerator                   SequenceIdGenerator      { get; } = new();
+	protected string FixtureName { get; private set; } = null!;
+	protected ILoggerFactory LoggerFactory { get; private set; } = null!;
+	protected FakeTimeProvider TimeProvider { get; private set; } = null!;
+	protected IServiceProvider NodeServices { get; private set; } = null!;
+	protected SchemaRegistryServiceClient Client { get; private set; } = null!;
+	protected ISchemaRegistry SchemaRegistry { get; private set; } = null!;
+	protected IDuckDBConnectionProvider DuckDbConnectionProvider { get; private set; } = null!;
+	SequenceIdGenerator SequenceIdGenerator { get; } = new();
 
 
 	public async ValueTask OnTestStart(TestContext context) {
@@ -41,7 +40,7 @@ public abstract class SchemaRegistryServerTestFixture : ITestStartEventReceiver,
 		LoggerFactory            = NodeServices.GetRequiredService<ILoggerFactory>();
 		TimeProvider             = NodeServices.GetRequiredService<FakeTimeProvider>();
 		SchemaRegistry           = NodeServices.GetRequiredService<ISchemaRegistry>();
-		DuckDbConnectionProvider = NodeServices.GetRequiredKeyedService<DuckDBConnectionProvider>("schema-registry");
+		DuckDbConnectionProvider = NodeServices.GetRequiredKeyedService<IDuckDBConnectionProvider>("schema-registry");
 	}
 	public async ValueTask OnTestEnd(TestContext context) =>
 		await TestingToolkitAutoWireUp.TestCleanUp(context);
@@ -74,7 +73,8 @@ public abstract class SchemaRegistryServerTestFixture : ITestStartEventReceiver,
 	}
 
 	protected async IAsyncEnumerable<SurgeRecord> GenerateRecords<T>(
-		int recordCount = 3, string? streamId = null,
+		int recordCount = 3,
+		string? streamId = null,
 		Func<int, T, T>? configureMessage = null,
 		Func<int, SurgeRecord, SurgeRecord>? configureRecord = null
 	) where T : new() {

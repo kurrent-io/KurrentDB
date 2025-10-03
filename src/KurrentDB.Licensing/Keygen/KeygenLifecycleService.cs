@@ -11,9 +11,9 @@ using Serilog;
 namespace KurrentDB.Licensing.Keygen;
 
 // Uses a client to try to create and maintain a license activation for this machine fingerprint.
-// current status is available via the Licenses observable.
-// responsible for navigating the keygen lifecycle
-// not responsible for business decisions
+// The current status is available via the Licenses observable.
+// Responsible for navigating the keygen lifecycle
+// Not responsible for business decisions
 public sealed class KeygenLifecycleService : IHostedService, IDisposable {
 	private static readonly ILogger Log = Serilog.Log.ForContext<KeygenLifecycleService>();
 

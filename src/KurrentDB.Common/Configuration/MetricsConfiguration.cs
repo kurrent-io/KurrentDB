@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Configuration;
+using OpenTelemetry.Metrics;
 
 namespace KurrentDB.Common.Configuration;
 
@@ -191,7 +192,31 @@ public class MetricsConfiguration {
 
 	public Dictionary<QueueTracker, bool> Queues { get; set; } = new();
 
-	public LabelMappingCase[] QueueLabels { get; set; } = Array.Empty<LabelMappingCase>();
+	public LabelMappingCase[] QueueLabels { get; set; } = [];
 
-	public LabelMappingCase[] MessageTypes { get; set; } = Array.Empty<LabelMappingCase>();
+	public LabelMappingCase[] MessageTypes { get; set; } = [];
+
+	public static ExplicitBucketHistogramConfiguration SecondsHistogramBucketConfiguration { get; set; } =
+		new() {
+			Boundaries = [
+				0.000_001, // 1 microsecond
+				0.000_01, 0.000_1, 0.001, // 1 millisecond
+				0.01, 0.1, 1, // 1 second
+				10,
+			]
+		};
+
+	public static ExplicitBucketHistogramConfiguration LatencySecondsHistogramBucketConfiguration { get; set; } =
+		new() {
+			Boundaries = [
+				0.001, //    1 ms
+				0.005, //    5 ms
+				0.01,  //   10 ms
+				0.05,  //   50 ms
+				0.1,   //  100 ms
+				0.5,   //  500 ms
+				1,     // 1000 ms
+				5,     // 5000 ms
+			]
+		};
 }

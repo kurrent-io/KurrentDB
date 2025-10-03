@@ -61,7 +61,7 @@ public static class EventFilter {
 		public bool IsEventAllowed(EventRecord eventRecord) => true;
 	}
 
-	private sealed class DefaultAllFilterStrategy : IEventFilter {
+	public sealed class DefaultAllFilterStrategy : IEventFilter {
 		//first rule that matches from the top is applied
 		private readonly (IEventFilter filter, bool allow)[] _allFilters = {
 			//immediately allow all non-system events
@@ -92,7 +92,7 @@ public static class EventFilter {
 
 		public override string ToString() => nameof(DefaultAllFilterStrategy);
 
-		private class NonSystemStreamStrategy : IEventFilter {
+		public class NonSystemStreamStrategy : IEventFilter {
 			[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
 			public bool IsEventAllowed(EventRecord eventRecord) => eventRecord.EventStreamId[0] != '$';
 

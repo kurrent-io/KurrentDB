@@ -26,6 +26,10 @@ public class FakeReadIndex<TLogFormat, TStreamId> : IReadIndex<TStreamId> {
 		get { throw new NotImplementedException(); }
 	}
 
+	public IIndexReader<TStreamId> IndexReader  {
+		get { throw new NotImplementedException(); }
+	}
+
 	private readonly Func<TStreamId, bool> _isStreamDeleted;
 
 	public FakeReadIndex(
@@ -45,7 +49,7 @@ public class FakeReadIndex<TLogFormat, TStreamId> : IReadIndex<TStreamId> {
 		throw new NotImplementedException();
 	}
 
-	public void Commit(IList<IPrepareLogRecord<TStreamId>> commitedPrepares) {
+	public void Commit(IList<IPrepareLogRecord<TStreamId>> committedPrepares) {
 		throw new NotImplementedException();
 	}
 

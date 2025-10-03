@@ -9,6 +9,7 @@
 		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
 		<PackageReference Include="OpenTelemetry.Extensions.Hosting" />
 		<PackageReference Include="Serilog" />
+		<PackageReference Include="Serilog.Sinks.OpenTelemetry" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -18,5 +19,9 @@
 		<None Update="otlp-exporter-example.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\KurrentDB.Logging\KurrentDB.Logging.csproj" />
 	</ItemGroup>
 </Project>

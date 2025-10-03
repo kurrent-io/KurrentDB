@@ -288,7 +288,8 @@ public sealed class IODispatcher : IHandle<IODispatcherDelayedMessage>, IHandle<
 					false,
 					null,
 					principal,
-					expires: expires),
+					expires: expires,
+					replyOnExpired: false),
 			new ReadStreamEventsBackwardHandlers.Optimistic(action));
 	}
 
@@ -321,7 +322,8 @@ public sealed class IODispatcher : IHandle<IODispatcherDelayedMessage>, IHandle<
 				resolveLinks,
 				false,
 				null,
-				principal),
+				principal,
+				replyOnExpired: false),
 			handler);
 
 		Delay(TimeSpan.FromMilliseconds(ReadTimeoutMs), BackwardReader, corrId);
@@ -351,7 +353,8 @@ public sealed class IODispatcher : IHandle<IODispatcherDelayedMessage>, IHandle<
 				resolveLinks,
 				false,
 				null,
-				principal),
+				principal,
+				replyOnExpired: false),
 			trackingHandler);
 
 		Delay(TimeSpan.FromMilliseconds(ReadTimeoutMs), BackwardReader, corrId);
@@ -524,7 +527,8 @@ public sealed class IODispatcher : IHandle<IODispatcherDelayedMessage>, IHandle<
 				resolveLinks,
 				requireLeader,
 				validationTfLastCommitPosition,
-				user
+				user,
+				replyOnExpired: false
 			),
 			res => {
 				if (_requestTracker.RemovePendingRead(res.CorrelationId)) {
@@ -615,7 +619,8 @@ public sealed class IODispatcher : IHandle<IODispatcherDelayedMessage>, IHandle<
 				maxSearchWindow,
 				validationTfLastCommitPosition,
 				eventFilter,
-				user
+				user,
+				replyOnExpired: false
 			),
 			res => {
 				if (_requestTracker.RemovePendingRead(res.CorrelationId)) {

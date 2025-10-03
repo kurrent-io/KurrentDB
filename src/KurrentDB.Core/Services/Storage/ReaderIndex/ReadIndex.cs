@@ -28,6 +28,10 @@ public sealed class ReadIndex<TStreamId> : IDisposable, IReadIndex<TStreamId> {
 		get { return _indexWriter; }
 	}
 
+	public IIndexReader<TStreamId> IndexReader {
+		get { return _indexReader; }
+	}
+
 	public IIndexCommitter<TStreamId> IndexCommitter {
 		get { return _indexCommitter; }
 	}
@@ -39,7 +43,8 @@ public sealed class ReadIndex<TStreamId> : IDisposable, IReadIndex<TStreamId> {
 	private readonly IValueLookup<TStreamId> _streamIds;
 	private readonly INameLookup<TStreamId> _streamNames;
 
-	public ReadIndex(IPublisher bus,
+	public ReadIndex(
+		IPublisher bus,
 		ObjectPool<ITransactionFileReader> readerPool,
 		ITableIndex<TStreamId> tableIndex,
 		INameIndexConfirmer<TStreamId> streamNameIndex,

@@ -22,7 +22,7 @@ public class A_Projection {
 			// for some reason, if GetStatistics is called multiple times, then the stats are duplicated;
 			if (noStatsYet) {
 				_manager.Handle(
-					new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName, false));
+					new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
 				var s = _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>();
 				_projectionMetricTracker.OnNewStats(s.Single().Projections);
 				noStatsYet = false;
@@ -35,7 +35,7 @@ public class A_Projection {
 			// for some reason, if GetStatistics is called multiple times, then the stats are duplicated;
 			if (noStatsYet) {
 				_manager.Handle(
-					new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName, false));
+					new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
 				var s = _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>();
 				_projectionMetricTracker.OnNewStats(s.Single().Projections);
 				noStatsYet = false;

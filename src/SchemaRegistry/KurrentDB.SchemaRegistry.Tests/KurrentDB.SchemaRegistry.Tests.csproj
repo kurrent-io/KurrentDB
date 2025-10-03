@@ -16,6 +16,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Kurrent.Surge" />
+    <PackageReference Include="Kurrent.Surge.DuckDB" />
 		<PackageReference Include="TUnit" />
 		<PackageReference Include="Microsoft.Testing.Extensions.TrxReport" />
 		<PackageReference Include="Microsoft.Testing.Extensions.CrashDump" />

@@ -46,6 +46,7 @@ public interface IReadIndex {
 
 public interface IReadIndex<TStreamId> : IReadIndex {
 	IIndexWriter<TStreamId> IndexWriter { get; }
+	IIndexReader<TStreamId> IndexReader { get; }
 
 	// ReadEvent() / ReadStreamEvents*() :
 	// - deleted events are filtered out

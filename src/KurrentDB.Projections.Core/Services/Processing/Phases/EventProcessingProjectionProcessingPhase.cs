@@ -18,7 +18,6 @@ namespace KurrentDB.Projections.Core.Services.Processing.Phases;
 
 public class EventProcessingProjectionProcessingPhase : EventSubscriptionBasedProjectionProcessingPhase,
 	IHandle<EventReaderSubscriptionMessage.CommittedEventReceived>,
-	IHandle<EventReaderSubscriptionMessage.PartitionEofReached>,
 	IHandle<EventReaderSubscriptionMessage.PartitionDeleted>,
 	IEventProcessingProjectionPhase {
 	private readonly IProjectionStateHandler _projectionStateHandler;
@@ -113,21 +112,6 @@ public class EventProcessingProjectionProcessingPhase : EventSubscriptionBasedPr
 				if (_state == PhaseState.Running) // prevent processing mostly one projection
 					EnsureTickPending();
 			}
-		} catch (Exception ex) {
-			_coreProjection.SetFaulted(ex);
-		}
-	}
-
-	public void Handle(EventReaderSubscriptionMessage.PartitionEofReached message) {
-		if (IsOutOfOrderSubscriptionMessage(message))
-			return;
-		RegisterSubscriptionMessage(message);
-		try {
-			var partitionCompletedWorkItem = new PartitionCompletedWorkItem(
-				this, _checkpointManager, message.Partition, message.CheckpointTag);
-			_processingQueue.EnqueueTask(
-				partitionCompletedWorkItem, message.CheckpointTag, allowCurrentPosition: true);
-			ProcessEvent();
 		} catch (Exception ex) {
 			_coreProjection.SetFaulted(ex);
 		}

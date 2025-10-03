@@ -46,7 +46,7 @@ fromStream('stream').when({
 	public void state_becomes_completed() {
 		_manager.Handle(
 			new ProjectionManagementMessage.Command.GetStatistics(
-				_bus, null, _projectionName, false));
+				_bus, null, _projectionName));
 
 		Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
 		Assert.AreEqual(

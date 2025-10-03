@@ -65,10 +65,6 @@ public class StagedProcessingQueue {
 		_maxStage = _orderedStage.Length - 1;
 	}
 
-	public bool IsEmpty {
-		get { return _count == 0; }
-	}
-
 	public int Count {
 		get { return _count; }
 	}

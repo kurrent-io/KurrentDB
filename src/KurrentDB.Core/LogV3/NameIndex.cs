@@ -112,7 +112,7 @@ public class NameIndex :
 
 	// todo: TC: could be sensible to take this code out of here altogether. that will save this
 	// class from having to know which _recordTypeToHandle, and save the indexcommitter from
-	// having to commit to two indexes (which will both look for what they need). instead the index commiter
+	// having to commit to two indexes (which will both look for what they need). instead the index committer
 	// (perhaps using another class) can commit the right stuff to the right indexes itself.
 	//
 	// this is stream specific and will need to be generalised for eventtypes

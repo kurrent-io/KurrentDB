@@ -63,7 +63,7 @@ public class EncryptionAtRestPlugin() : SubsystemsPlugin(requiredEntitlements: [
 		}
 
 		masterKeySource = null;
-		LogErrorAndThrow($"Encryption-At-Rest: No supported master key source was specified");
+		LogErrorAndThrow("Encryption-At-Rest: No supported master key source was specified");
 		return false;
 	}
 
@@ -75,7 +75,7 @@ public class EncryptionAtRestPlugin() : SubsystemsPlugin(requiredEntitlements: [
 		if (masterKeys.DistinctBy(x => x.Id).Count() != masterKeys.Count)
 			LogErrorAndThrow("All master keys should have a unique numeric ID");
 
-		_logger.Information($"Encryption-At-Rest: Active master key ID: {masterKeys[^1].Id}");
+		_logger.Information("Encryption-At-Rest: Active master key ID: {Id}", masterKeys[^1].Id);
 		return masterKeys;
 	}
 
@@ -94,7 +94,7 @@ public class EncryptionAtRestPlugin() : SubsystemsPlugin(requiredEntitlements: [
 		}
 
 		if (encryptionTransforms.Count == 0) {
-			LogErrorAndThrow($"Encryption-At-Rest: No supported encryption algorithm was specified");
+			LogErrorAndThrow("Encryption-At-Rest: No supported encryption algorithm was specified");
 		}
 
 		return true;

@@ -11,105 +11,105 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
+using static KurrentDB.Core.Messages.ClientMessage;
 
 namespace KurrentDB.Core.Services;
 
-public sealed class AuthorizationGateway {
-	private readonly IAuthorizationProvider _authorizationProvider;
+public sealed class AuthorizationGateway(IAuthorizationProvider authorizationProvider) {
 	private const string AccessDenied = "Access Denied";
 
-	private static readonly Func<ClientMessage.ReadEvent, Message> ReadEventDenied = msg =>
-		new ClientMessage.ReadEventCompleted(msg.CorrelationId, msg.EventStreamId, ReadEventResult.AccessDenied,
+	private static readonly Func<ReadEvent, Message> ReadEventDenied = msg =>
+		new ReadEventCompleted(msg.CorrelationId, msg.EventStreamId, ReadEventResult.AccessDenied,
 			ResolvedEvent.EmptyEvent, StreamMetadata.Empty, false, AccessDenied);
 
-	private static readonly Func<ClientMessage.ReadAllEventsForward, Message> ReadAllEventsForwardDenied = msg =>
-		new ClientMessage.ReadAllEventsForwardCompleted(msg.CorrelationId, ReadAllResult.AccessDenied, AccessDenied,
-			Array.Empty<ResolvedEvent>(), StreamMetadata.Empty, false, 0, TFPos.Invalid, TFPos.Invalid,
+	private static readonly Func<ReadStreamEventsForward, Message> ReadStreamEventsForwardDenied =
+		msg => new ReadStreamEventsForwardCompleted(msg.CorrelationId, msg.EventStreamId, msg.FromEventNumber, msg.MaxCount, ReadStreamResult.AccessDenied, Array.Empty<ResolvedEvent>(), StreamMetadata.Empty, false, AccessDenied, -1, default, true, default);
+
+	private static readonly Func<ReadStreamEventsBackward, Message> ReadStreamEventsBackwardDenied =
+		msg => new ReadStreamEventsBackwardCompleted(msg.CorrelationId, msg.EventStreamId, msg.FromEventNumber, msg.MaxCount,
+			ReadStreamResult.AccessDenied, [], StreamMetadata.Empty, default, AccessDenied, -1, default, true, default);
+
+	private static readonly Func<WriteEvents, Message> WriteEventsDenied = msg =>
+		new WriteEventsCompleted(msg.CorrelationId, OperationResult.AccessDenied, AccessDenied);
+
+	private static readonly Func<DeleteStream, Message> DeleteStreamDenied = msg =>
+		new DeleteStreamCompleted(msg.CorrelationId, OperationResult.AccessDenied, AccessDenied);
+
+	private static readonly Func<SubscribeToStream, Message> SubscribeToStreamDenied = msg =>
+		new SubscriptionDropped(msg.CorrelationId, SubscriptionDropReason.AccessDenied);
+
+	private static readonly Func<FilteredSubscribeToStream, Message> FilteredSubscribeToStreamDenied =
+		msg => new SubscriptionDropped(msg.CorrelationId, SubscriptionDropReason.AccessDenied);
+
+	private static readonly Func<ReadAllEventsForward, Message> ReadAllEventsForwardDenied = msg =>
+		new ReadAllEventsForwardCompleted(msg.CorrelationId, ReadAllResult.AccessDenied, AccessDenied,
+			[], StreamMetadata.Empty, false, 0, TFPos.Invalid, TFPos.Invalid,
 			TFPos.Invalid, default);
 
-	private static readonly Func<ClientMessage.ReadStreamEventsForward, Message> ReadStreamEventsForwardDenied =
-		msg => new ClientMessage.ReadStreamEventsForwardCompleted(msg.CorrelationId, msg.EventStreamId, msg.FromEventNumber, msg.MaxCount, ReadStreamResult.AccessDenied, Array.Empty<ResolvedEvent>(), StreamMetadata.Empty, false, AccessDenied, -1, default, true, default);
+	private static readonly Func<ReadAllEventsBackward, Message> ReadAllEventsBackwardDenied = msg =>
+		new ReadAllEventsBackwardCompleted(msg.CorrelationId, ReadAllResult.AccessDenied,
+			AccessDenied, [], StreamMetadata.Empty, false, 0, TFPos.Invalid, TFPos.Invalid, TFPos.Invalid, default);
 
-	private static readonly Func<ClientMessage.ReadStreamEventsBackward, Message> ReadStreamEventsBackwardDenied =
-		msg => new ClientMessage.ReadStreamEventsBackwardCompleted(msg.CorrelationId, msg.EventStreamId, msg.FromEventNumber, msg.MaxCount,
-			ReadStreamResult.AccessDenied, Array.Empty<ResolvedEvent>(), StreamMetadata.Empty, default, AccessDenied, -1, default, true, default);
+	private static readonly Func<ReadIndexEventsForward, Message> ReadIndexEventsForwardDenied = _ =>
+		new ReadIndexEventsForwardCompleted(ReadIndexResult.AccessDenied, [], TFPos.Invalid, 0, false, AccessDenied);
 
-	private static readonly Func<ClientMessage.WriteEvents, Message> WriteEventsDenied = msg =>
-		new ClientMessage.WriteEventsCompleted(msg.CorrelationId, OperationResult.AccessDenied, AccessDenied);
+	private static readonly Func<ReadIndexEventsBackward, Message> ReadIndexEventsBackwardDenied = _ =>
+		new ReadIndexEventsBackwardCompleted(ReadIndexResult.AccessDenied, [], TFPos.Invalid, 0, false, AccessDenied);
 
-	private static readonly Func<ClientMessage.DeleteStream, Message> DeleteStreamDenied = msg =>
-		new ClientMessage.DeleteStreamCompleted(msg.CorrelationId, OperationResult.AccessDenied, AccessDenied);
+	private static readonly Func<SubscribeToIndex, Message> SubscribeToIndexDenied = msg =>
+		new SubscriptionDropped(msg.CorrelationId, SubscriptionDropReason.AccessDenied);
 
-	private static readonly Func<ClientMessage.SubscribeToStream, Message> SubscribeToStreamDenied = msg =>
-		new ClientMessage.SubscriptionDropped(msg.CorrelationId, SubscriptionDropReason.AccessDenied);
-	private static readonly Func<ClientMessage.FilteredSubscribeToStream, Message> FilteredSubscribeToStreamDenied =
-		msg =>
-			new ClientMessage.SubscriptionDropped(msg.CorrelationId, SubscriptionDropReason.AccessDenied);
-
-	private static readonly Func<ClientMessage.ReadAllEventsBackward, Message> ReadAllEventsBackwardDenied = msg =>
-		new ClientMessage.ReadAllEventsBackwardCompleted(msg.CorrelationId, ReadAllResult.AccessDenied,
-			AccessDenied,
-			Array.Empty<ResolvedEvent>(), StreamMetadata.Empty, false, 0, TFPos.Invalid, TFPos.Invalid,
-			TFPos.Invalid, default);
-
-	private static readonly Func<ClientMessage.FilteredReadAllEventsForward, Message>
+	private static readonly Func<FilteredReadAllEventsForward, Message>
 		FilteredReadAllEventsForwardDenied = msg =>
-			new ClientMessage.ReadAllEventsForwardCompleted(msg.CorrelationId, ReadAllResult.AccessDenied,
-				AccessDenied,
-				Array.Empty<ResolvedEvent>(), StreamMetadata.Empty, false, 0, TFPos.Invalid, TFPos.Invalid,
+			new ReadAllEventsForwardCompleted(msg.CorrelationId, ReadAllResult.AccessDenied,
+				AccessDenied, [], StreamMetadata.Empty, false, 0, TFPos.Invalid, TFPos.Invalid,
 				TFPos.Invalid, default);
 
-	private static readonly Func<ClientMessage.FilteredReadAllEventsBackward, Message>
+	private static readonly Func<FilteredReadAllEventsBackward, Message>
 		FilteredReadAllEventsBackwardDenied = msg =>
-			new ClientMessage.ReadAllEventsBackwardCompleted(msg.CorrelationId, ReadAllResult.AccessDenied,
-				AccessDenied,
-				Array.Empty<ResolvedEvent>(), StreamMetadata.Empty, false, 0, TFPos.Invalid, TFPos.Invalid,
+			new ReadAllEventsBackwardCompleted(msg.CorrelationId, ReadAllResult.AccessDenied,
+				AccessDenied, [], StreamMetadata.Empty, false, 0, TFPos.Invalid, TFPos.Invalid,
 				TFPos.Invalid, default);
 
-	private static readonly Func<ClientMessage.ConnectToPersistentSubscriptionToStream, Message>
+	private static readonly Func<ConnectToPersistentSubscriptionToStream, Message>
 		ConnectToPersistentSubscriptionDenied = msg =>
-			new ClientMessage.SubscriptionDropped(msg.CorrelationId, SubscriptionDropReason.AccessDenied);
+			new SubscriptionDropped(msg.CorrelationId, SubscriptionDropReason.AccessDenied);
 
-	private static readonly Func<ClientMessage.ReadNextNPersistentMessages, Message>
+	private static readonly Func<ReadNextNPersistentMessages, Message>
 		ReadNextNPersistedMessagesDenied = msg =>
-			new ClientMessage.ReadNextNPersistentMessagesCompleted(msg.CorrelationId,
-				ClientMessage.ReadNextNPersistentMessagesCompleted.ReadNextNPersistentMessagesResult.AccessDenied,
-				AccessDenied, Array.Empty<(ResolvedEvent, int)>());
+			new ReadNextNPersistentMessagesCompleted(msg.CorrelationId,
+				ReadNextNPersistentMessagesCompleted.ReadNextNPersistentMessagesResult.AccessDenied,
+				AccessDenied, []);
 
-	private static readonly Func<ClientMessage.CreatePersistentSubscriptionToStream, Message>
+	private static readonly Func<CreatePersistentSubscriptionToStream, Message>
 		CreatePersistentSubscriptionDenied = msg =>
-			new ClientMessage.CreatePersistentSubscriptionToStreamCompleted(msg.CorrelationId,
-				ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult.AccessDenied,
+			new CreatePersistentSubscriptionToStreamCompleted(msg.CorrelationId,
+				CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult.AccessDenied,
 				AccessDenied);
 
-	private static readonly Func<ClientMessage.UpdatePersistentSubscriptionToStream, Message>
+	private static readonly Func<UpdatePersistentSubscriptionToStream, Message>
 		UpdatePersistentSubscriptionDenied = msg =>
-			new ClientMessage.UpdatePersistentSubscriptionToStreamCompleted(msg.CorrelationId,
-				ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.AccessDenied,
+			new UpdatePersistentSubscriptionToStreamCompleted(msg.CorrelationId,
+				UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.AccessDenied,
 				AccessDenied);
 
-	private static readonly Func<ClientMessage.ReplayParkedMessages, Message> ReplayAllParkedMessagesDenied =
-		msg => new ClientMessage.ReplayMessagesReceived(msg.CorrelationId,
-			ClientMessage.ReplayMessagesReceived.ReplayMessagesReceivedResult.AccessDenied, AccessDenied);
+	private static readonly Func<ReplayParkedMessages, Message> ReplayAllParkedMessagesDenied =
+		msg => new ReplayMessagesReceived(msg.CorrelationId, ReplayMessagesReceived.ReplayMessagesReceivedResult.AccessDenied, AccessDenied);
 
-	private static readonly Func<ClientMessage.DeletePersistentSubscriptionToStream, Message>
+	private static readonly Func<DeletePersistentSubscriptionToStream, Message>
 		DeletePersistentSubscriptionDenied =
-			msg => new ClientMessage.DeletePersistentSubscriptionToStreamCompleted(msg.CorrelationId,
-				ClientMessage.DeletePersistentSubscriptionToStreamCompleted.DeletePersistentSubscriptionToStreamResult.AccessDenied,
+			msg => new DeletePersistentSubscriptionToStreamCompleted(msg.CorrelationId,
+				DeletePersistentSubscriptionToStreamCompleted.DeletePersistentSubscriptionToStreamResult.AccessDenied,
 				AccessDenied);
 
-	private static readonly Func<ClientMessage.TransactionStart, Message> TransactionStartDenied = msg =>
-		new ClientMessage.TransactionStartCompleted(msg.CorrelationId, -1, OperationResult.AccessDenied,
-			AccessDenied);
+	private static readonly Func<TransactionStart, Message> TransactionStartDenied = msg =>
+		new TransactionStartCompleted(msg.CorrelationId, -1, OperationResult.AccessDenied, AccessDenied);
 
-	private static readonly Func<ClientMessage.TransactionWrite, Message> TransactionWriteDenied = msg =>
-		new ClientMessage.TransactionWriteCompleted(msg.CorrelationId, msg.TransactionId,
-			OperationResult.AccessDenied, AccessDenied);
+	private static readonly Func<TransactionWrite, Message> TransactionWriteDenied = msg =>
+		new TransactionWriteCompleted(msg.CorrelationId, msg.TransactionId, OperationResult.AccessDenied, AccessDenied);
 
-	private static readonly Func<ClientMessage.TransactionCommit, Message> TransactionCommitDenied = msg =>
-		new ClientMessage.TransactionCommitCompleted(msg.CorrelationId, msg.TransactionId,
-			OperationResult.AccessDenied, AccessDenied);
-
+	private static readonly Func<TransactionCommit, Message> TransactionCommitDenied = msg =>
+		new TransactionCommitCompleted(msg.CorrelationId, msg.TransactionId, OperationResult.AccessDenied, AccessDenied);
 
 	private static readonly Operation ReadStream = new Operation(Operations.Streams.Read);
 	private static readonly Operation WriteStream = new Operation(Operations.Streams.Write);
@@ -118,96 +118,96 @@ public sealed class AuthorizationGateway {
 	private static readonly Operation FilteredSubscribeToStream = ReadStream;
 
 	private static readonly Operation ReadAllStream =
-		new Operation(Operations.Streams.Read).WithParameter(
-			Operations.Streams.Parameters.StreamId(SystemStreams.AllStream));
+		new Operation(Operations.Streams.Read).WithParameter(Operations.Streams.Parameters.StreamId(SystemStreams.AllStream));
 
 	private static readonly Operation CreatePersistentSubscription = new Operation(Operations.Subscriptions.Create);
 	private static readonly Operation UpdatePersistentSubscription = new Operation(Operations.Subscriptions.Update);
 	private static readonly Operation DeletePersistentSubscription = new Operation(Operations.Subscriptions.Delete);
-
-	private static readonly Operation
-		ReplayAllParkedMessages = new Operation(Operations.Subscriptions.ReplayParked);
-
-	private static readonly Operation ConnectToPersistentSubscription =
-		new Operation(Operations.Subscriptions.ProcessMessages);
-
-	public AuthorizationGateway(IAuthorizationProvider authorizationProvider) {
-		_authorizationProvider = authorizationProvider;
-	}
+	private static readonly Operation ReplayAllParkedMessages = new Operation(Operations.Subscriptions.ReplayParked);
+	private static readonly Operation ConnectToPersistentSubscription = new Operation(Operations.Subscriptions.ProcessMessages);
 
 	public void Authorize(Message toValidate, IPublisher destination) {
 		Ensure.NotNull(toValidate, nameof(toValidate));
 		Ensure.NotNull(destination, nameof(destination));
 		switch (toValidate) {
-			case ClientMessage.ReadNextNPersistentMessages msg:
+			case ReadNextNPersistentMessages msg:
 				Authorize(msg, destination);
 				break;
-			case ClientMessage.ReadStreamEventsBackward msg:
+			case ReadStreamEventsBackward msg:
 				Authorize(msg, destination);
 				break;
-			case ClientMessage.ReadStreamEventsForward msg:
+			case ReadStreamEventsForward msg:
 				Authorize(msg, destination);
 				break;
-			case ClientMessage.UpdatePersistentSubscriptionToStream msg:
+			case UpdatePersistentSubscriptionToStream msg:
 				Authorize(msg, destination);
 				break;
-			case ClientMessage.SubscribeToStream msg:
+			case SubscribeToStream msg:
 				Authorize(msg, destination);
 				break;
-			case ClientMessage.ConnectToPersistentSubscriptionToStream msg:
+			case SubscribeToIndex msg:
 				Authorize(msg, destination);
 				break;
-			case ClientMessage.CreatePersistentSubscriptionToStream msg:
+			case ConnectToPersistentSubscriptionToStream msg:
 				Authorize(msg, destination);
 				break;
-			case ClientMessage.DeletePersistentSubscriptionToStream msg:
+			case CreatePersistentSubscriptionToStream msg:
 				Authorize(msg, destination);
 				break;
-			case ClientMessage.DeleteStream msg:
+			case DeletePersistentSubscriptionToStream msg:
 				Authorize(msg, destination);
 				break;
-			case ClientMessage.FilteredReadAllEventsBackward msg:
+			case DeleteStream msg:
 				Authorize(msg, destination);
 				break;
-			case ClientMessage.FilteredReadAllEventsForward msg:
+			case FilteredReadAllEventsBackward msg:
 				Authorize(msg, destination);
 				break;
-			case ClientMessage.FilteredSubscribeToStream msg:
+			case FilteredReadAllEventsForward msg:
 				Authorize(msg, destination);
 				break;
-			case ClientMessage.ReadAllEventsBackward msg:
+			case FilteredSubscribeToStream msg:
 				Authorize(msg, destination);
 				break;
-			case ClientMessage.ReadAllEventsForward msg:
+			case ReadAllEventsBackward msg:
 				Authorize(msg, destination);
 				break;
-			case ClientMessage.ReplayParkedMessages msg:
+			case ReadAllEventsForward msg:
 				Authorize(msg, destination);
 				break;
-			case ClientMessage.ReadEvent msg:
+			case ReadIndexEventsBackward msg:
 				Authorize(msg, destination);
 				break;
-			case ClientMessage.WriteEvents msg:
+			case ReadIndexEventsForward msg:
 				Authorize(msg, destination);
 				break;
-			case ClientMessage.TransactionStart msg:
+			case ReplayParkedMessages msg:
 				Authorize(msg, destination);
 				break;
-			case ClientMessage.TransactionWrite msg:
+			case ReadEvent msg:
 				Authorize(msg, destination);
 				break;
-			case ClientMessage.TransactionCommit msg:
+			case WriteEvents msg:
 				Authorize(msg, destination);
 				break;
-			case ClientMessage.PersistentSubscriptionAckEvents _:
-			case ClientMessage.PersistentSubscriptionNackEvents _:
-			case ClientMessage.UnsubscribeFromStream _:
-			case ClientMessage.NotHandled _:
-			case ClientMessage.WriteEventsCompleted _:
-			case ClientMessage.TransactionStartCompleted _:
-			case ClientMessage.TransactionWriteCompleted _:
-			case ClientMessage.TransactionCommitCompleted _:
-			case ClientMessage.DeleteStreamCompleted _:
+			case TransactionStart msg:
+				Authorize(msg, destination);
+				break;
+			case TransactionWrite msg:
+				Authorize(msg, destination);
+				break;
+			case TransactionCommit msg:
+				Authorize(msg, destination);
+				break;
+			case PersistentSubscriptionAckEvents _:
+			case PersistentSubscriptionNackEvents _:
+			case UnsubscribeFromStream _:
+			case NotHandled _:
+			case WriteEventsCompleted _:
+			case TransactionStartCompleted _:
+			case TransactionWriteCompleted _:
+			case TransactionCommitCompleted _:
+			case DeleteStreamCompleted _:
 				destination.Publish(toValidate);
 				break;
 			case ReplicationMessage.AckLogPosition _:
@@ -246,17 +246,23 @@ public sealed class AuthorizationGateway {
 		}
 	}
 
-	private void Authorize(ClientMessage.SubscribeToStream msg, IPublisher destination) {
+	private void Authorize(SubscribeToStream msg, IPublisher destination) {
 		Authorize(msg.User, ReadStream.WithParameter(Operations.Streams.Parameters.StreamId(msg.EventStreamId)),
 			msg.Envelope, destination, msg, SubscribeToStreamDenied);
 	}
 
-	private void Authorize(ClientMessage.ReadEvent msg, IPublisher destination) {
+	private void Authorize(SubscribeToIndex msg, IPublisher destination) {
+		// Using empty stream id to simulate $all subscription. Needs refactoring when we support auth for index reads.
+		Authorize(msg.User, ReadStream.WithParameter(Operations.Streams.Parameters.StreamId(string.Empty)),
+			msg.Envelope, destination, msg, SubscribeToIndexDenied);
+	}
+
+	private void Authorize(ReadEvent msg, IPublisher destination) {
 		Authorize(msg.User, ReadEvent.WithParameter(Operations.Streams.Parameters.StreamId(msg.EventStreamId)),
 			msg.Envelope, destination, msg, ReadEventDenied);
 	}
 
-	private void Authorize(ClientMessage.WriteEvents msg, IPublisher destination) {
+	private void Authorize(WriteEvents msg, IPublisher destination) {
 		if (msg.EventStreamIds.Length > 1)
 			throw new NotSupportedException("Authorization of multi-stream writes is not supported");
 
@@ -264,85 +270,93 @@ public sealed class AuthorizationGateway {
 			msg.Envelope, destination, msg, WriteEventsDenied);
 	}
 
-	private void Authorize(ClientMessage.ReplayParkedMessages msg, IPublisher destination) {
+	private void Authorize(ReplayParkedMessages msg, IPublisher destination) {
 		Authorize(msg.User, ReplayAllParkedMessages, msg.Envelope, destination, msg, ReplayAllParkedMessagesDenied);
 	}
 
-	private void Authorize(ClientMessage.ReadAllEventsForward msg, IPublisher destination) {
+	private void Authorize(ReadAllEventsForward msg, IPublisher destination) {
 		Authorize(msg.User, ReadAllStream, msg.Envelope, destination, msg, ReadAllEventsForwardDenied);
 	}
 
-	private void Authorize(ClientMessage.ReadAllEventsBackward msg, IPublisher destination) {
+	private void Authorize(ReadAllEventsBackward msg, IPublisher destination) {
 		Authorize(msg.User, ReadAllStream, msg.Envelope, destination, msg, ReadAllEventsBackwardDenied);
 	}
 
-	private void Authorize(ClientMessage.FilteredSubscribeToStream msg, IPublisher destination) {
+	private void Authorize(FilteredSubscribeToStream msg, IPublisher destination) {
 		Authorize(msg.User,
 			FilteredSubscribeToStream.WithParameter(Operations.Streams.Parameters.StreamId(msg.EventStreamId)),
 			msg.Envelope, destination, msg, FilteredSubscribeToStreamDenied);
 	}
 
-	private void Authorize(ClientMessage.FilteredReadAllEventsForward msg, IPublisher destination) {
+	private void Authorize(FilteredReadAllEventsForward msg, IPublisher destination) {
 		Authorize(msg.User, ReadAllStream, msg.Envelope, destination, msg, FilteredReadAllEventsForwardDenied);
 	}
 
-	private void Authorize(ClientMessage.FilteredReadAllEventsBackward msg, IPublisher destination) {
+	private void Authorize(FilteredReadAllEventsBackward msg, IPublisher destination) {
 		Authorize(msg.User, ReadAllStream, msg.Envelope, destination, msg, FilteredReadAllEventsBackwardDenied);
 	}
 
-	private void Authorize(ClientMessage.DeleteStream msg, IPublisher destination) {
+	private void Authorize(ReadIndexEventsForward msg, IPublisher destination) {
+		// Using ReadAllStream to simulate $all read. Needs refactoring when we support auth for index reads.
+		Authorize(msg.User, ReadAllStream, msg.Envelope, destination, msg, ReadIndexEventsForwardDenied);
+	}
+
+	private void Authorize(ReadIndexEventsBackward msg, IPublisher destination) {
+		// Using ReadAllStream to simulate $all read. Needs refactoring when we support auth for index reads.
+		Authorize(msg.User, ReadAllStream, msg.Envelope, destination, msg, ReadIndexEventsBackwardDenied);
+	}
+
+	private void Authorize(DeleteStream msg, IPublisher destination) {
 		Authorize(msg.User, DeleteStream.WithParameter(Operations.Streams.Parameters.StreamId(msg.EventStreamId)),
 			msg.Envelope, destination, msg, DeleteStreamDenied);
 	}
 
-	private void Authorize(ClientMessage.DeletePersistentSubscriptionToStream msg, IPublisher destination) {
-		Authorize(msg.User, DeletePersistentSubscription, msg.Envelope, destination, msg,
-			DeletePersistentSubscriptionDenied);
+	private void Authorize(DeletePersistentSubscriptionToStream msg, IPublisher destination) {
+		Authorize(msg.User, DeletePersistentSubscription, msg.Envelope, destination, msg, DeletePersistentSubscriptionDenied);
 	}
 
-	private void Authorize(ClientMessage.CreatePersistentSubscriptionToStream msg, IPublisher destination) {
-		Authorize(msg.User, CreatePersistentSubscription, msg.Envelope, destination, msg,
-			CreatePersistentSubscriptionDenied);
+	private void Authorize(CreatePersistentSubscriptionToStream msg, IPublisher destination) {
+		Authorize(msg.User, CreatePersistentSubscription, msg.Envelope, destination, msg, CreatePersistentSubscriptionDenied);
 	}
 
-	private void Authorize(ClientMessage.ConnectToPersistentSubscriptionToStream msg, IPublisher destination) {
+	private void Authorize(ConnectToPersistentSubscriptionToStream msg, IPublisher destination) {
 		Authorize(msg.User,
-			ConnectToPersistentSubscription.WithParameter(
-				Operations.Subscriptions.Parameters.StreamId(msg.EventStreamId)), msg.Envelope, destination, msg,
+			ConnectToPersistentSubscription.WithParameter(Operations.Subscriptions.Parameters.StreamId(msg.EventStreamId)),
+			msg.Envelope, destination, msg,
 			ConnectToPersistentSubscriptionDenied);
 	}
 
-	private void Authorize(ClientMessage.UpdatePersistentSubscriptionToStream msg, IPublisher destination) {
+	private void Authorize(UpdatePersistentSubscriptionToStream msg, IPublisher destination) {
 		Authorize(msg.User, UpdatePersistentSubscription, msg.Envelope, destination, msg,
 			UpdatePersistentSubscriptionDenied);
 	}
 
-	private void Authorize(ClientMessage.ReadStreamEventsForward msg, IPublisher destination) {
+	private void Authorize(ReadStreamEventsForward msg, IPublisher destination) {
 		Authorize(msg.User, ReadStream.WithParameter(Operations.Streams.Parameters.StreamId(msg.EventStreamId)),
 			msg.Envelope, destination, msg, ReadStreamEventsForwardDenied);
 	}
 
-	private void Authorize(ClientMessage.ReadStreamEventsBackward msg, IPublisher destination) {
+	private void Authorize(ReadStreamEventsBackward msg, IPublisher destination) {
 		Authorize(msg.User, ReadStream.WithParameter(Operations.Streams.Parameters.StreamId(msg.EventStreamId)),
 			msg.Envelope, destination, msg, ReadStreamEventsBackwardDenied);
 	}
 
-	private void Authorize(ClientMessage.ReadNextNPersistentMessages msg, IPublisher destination) {
+	private void Authorize(ReadNextNPersistentMessages msg, IPublisher destination) {
 		Authorize(msg.User, ReadStream.WithParameter(Operations.Streams.Parameters.StreamId(msg.EventStreamId)),
 			msg.Envelope, destination, msg, ReadNextNPersistedMessagesDenied);
 	}
 
-	private void Authorize(ClientMessage.TransactionStart msg, IPublisher destination) {
+	private void Authorize(TransactionStart msg, IPublisher destination) {
 		Authorize(msg.User, WriteStream.WithParameter(Operations.Streams.Parameters.StreamId(msg.EventStreamId)),
 			msg.Envelope, destination, msg, TransactionStartDenied);
 	}
 
-	private void Authorize(ClientMessage.TransactionWrite msg, IPublisher destination) {
+	private void Authorize(TransactionWrite msg, IPublisher destination) {
 		Authorize(msg.User, WriteStream.WithParameter(Operations.Streams.Parameters.TransactionId(msg.TransactionId)),
 			msg.Envelope, destination, msg, TransactionWriteDenied);
 	}
 
-	private void Authorize(ClientMessage.TransactionCommit msg, IPublisher destination) {
+	private void Authorize(TransactionCommit msg, IPublisher destination) {
 		Authorize(msg.User, WriteStream.WithParameter(Operations.Streams.Parameters.TransactionId(msg.TransactionId)),
 			msg.Envelope, destination, msg, TransactionCommitDenied);
 	}
@@ -351,7 +365,7 @@ public sealed class AuthorizationGateway {
 	void Authorize<TRequest>(ClaimsPrincipal user, Operation operation, IEnvelope replyTo,
 			IPublisher destination, TRequest request, Func<TRequest, Message> createAccessDenied)
 			where TRequest : Message {
-		var accessCheck = _authorizationProvider.CheckAccessAsync(user, operation, CancellationToken.None);
+		var accessCheck = authorizationProvider.CheckAccessAsync(user, operation, CancellationToken.None);
 		if (!accessCheck.IsCompleted)
 			AuthorizeAsync(accessCheck, replyTo, destination, request, createAccessDenied);
 		else {
@@ -363,7 +377,7 @@ public sealed class AuthorizationGateway {
 		}
 	}
 
-	async void AuthorizeAsync<TRequest>(ValueTask<bool> accessCheck, IEnvelope replyTo, IPublisher destination, TRequest request,
+	static async void AuthorizeAsync<TRequest>(ValueTask<bool> accessCheck, IEnvelope replyTo, IPublisher destination, TRequest request,
 		Func<TRequest, Message> createAccessDenied) where TRequest : Message {
 		if (await accessCheck) {
 			destination.Publish(request);

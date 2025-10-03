@@ -11,6 +11,7 @@ using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using ReadStreamResult = KurrentDB.Core.Data.ReadStreamResult;
 
@@ -24,11 +25,12 @@ partial class Enumerator {
 		private readonly bool _resolveLinks;
 		private readonly ClaimsPrincipal _user;
 		private readonly bool _requiresLeader;
-		private readonly DateTime? _deadline;
+		private readonly IExpiryStrategy _expiryStrategy;
 		private readonly uint _compatibility;
+		private readonly int _batchSize;
 		private readonly CancellationToken _cancellationToken;
 		private readonly SemaphoreSlim _semaphore = new(1, 1);
-		private readonly Channel<ReadResponse> _channel = Channel.CreateBounded<ReadResponse>(BoundedChannelOptions);
+		private readonly Channel<ReadResponse> _channel = Channel.CreateBounded<ReadResponse>(DefaultCatchUpChannelOptions);
 
 		private ReadResponse _current;
 
@@ -41,17 +43,19 @@ partial class Enumerator {
 			bool resolveLinks,
 			ClaimsPrincipal user,
 			bool requiresLeader,
-			DateTime? deadline,
+			IExpiryStrategy expiryStrategy,
 			uint compatibility,
-			CancellationToken cancellationToken) {
+			int batchSize = DefaultReadBatchSize,
+			CancellationToken cancellationToken = default) {
 			_bus = Ensure.NotNull(bus);
 			_streamName = Ensure.NotNullOrEmpty(streamName);
 			_maxCount = maxCount;
 			_resolveLinks = resolveLinks;
 			_user = user;
 			_requiresLeader = requiresLeader;
-			_deadline = deadline;
+			_expiryStrategy = expiryStrategy;
 			_compatibility = compatibility;
+			_batchSize = batchSize;
 			_cancellationToken = cancellationToken;
 
 			ReadPage(startRevision);
@@ -77,8 +81,8 @@ partial class Enumerator {
 
 			_bus.Publish(new ClientMessage.ReadStreamEventsForward(
 				correlationId, correlationId, new ContinuationEnvelope(OnMessage, _semaphore, _cancellationToken),
-				_streamName, startRevision.ToInt64(), (int)Math.Min(ReadBatchSize, _maxCount), _resolveLinks,
-				_requiresLeader, null, _user, replyOnExpired: false, expires: _deadline,
+				_streamName, startRevision.ToInt64(), (int)Math.Min((ulong)_batchSize, _maxCount), _resolveLinks,
+				_requiresLeader, null, _user, replyOnExpired: true, expires: _expiryStrategy.GetExpiry(),
 				cancellationToken: _cancellationToken));
 
 			async Task OnMessage(Message message, CancellationToken ct) {
@@ -127,6 +131,9 @@ partial class Enumerator {
 					case ReadStreamResult.NoStream:
 						await _channel.Writer.WriteAsync(new ReadResponse.StreamNotFound(_streamName), ct);
 						_channel.Writer.TryComplete();
+						return;
+					case ReadStreamResult.Expired:
+						ReadPage(StreamRevision.FromInt64(completed.FromEventNumber), readCount);
 						return;
 					case ReadStreamResult.StreamDeleted:
 						_channel.Writer.TryComplete(new ReadResponseException.StreamDeleted(_streamName));

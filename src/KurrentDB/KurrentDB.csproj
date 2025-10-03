@@ -10,6 +10,7 @@
 		<RuntimeHostConfigurationOption Include="System.GC.HeapHardLimitPercent" Value="60" />
 	</ItemGroup>
 	<ItemGroup>
+		<PackageReference Include="BlazorMonaco" />
 		<PackageReference Include="Extensions.MudBlazor.StaticInput" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
 		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" />
@@ -51,7 +52,7 @@
 		<None Update="..\..\LICENSE_CONTRIBUTIONS.md">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
-		<None Update="..\..\NOTICE.html">
+		<None Update="..\..\NOTICE.md">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 		<None Update="metricsconfig.json">
