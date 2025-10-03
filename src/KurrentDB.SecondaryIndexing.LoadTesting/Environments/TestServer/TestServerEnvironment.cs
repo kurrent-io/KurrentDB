@@ -14,7 +14,7 @@ public class TestServerEnvironment : ILoadTestEnvironment {
 	public IIndexingSummaryAssertion AssertThat { get; }
 
 	public TestServerEnvironment() {
-		_fixture = new SecondaryIndexingEnabledFixture();
+		_fixture = new();
 		MessageBatchAppender = new TestServerMessageBatchAppender(_fixture);
 		AssertThat = new DummyIndexingSummaryAssertion();
 	}

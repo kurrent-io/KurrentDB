@@ -18,10 +18,11 @@ public static class EventFilter {
 	public const string RegexType = "regex";
 	public const string PrefixType = "prefix";
 
-	public static IEventFilter DefaultAllFilter { get; } = new DefaultAllFilterStrategy();
+	public static IEventFilter DefaultAllFilter    { get; } = new DefaultAllFilterStrategy();
 	public static IEventFilter DefaultStreamFilter { get; } = new DefaultStreamFilterStrategy();
+    public static IEventFilter Unfiltered          { get; } = new UnfilteredEventFilter();
 
-	public static class StreamName {
+    public static class StreamName {
 		public static IEventFilter Prefixes(bool isAllStream, params string[] prefixes)
 			=> new StreamIdPrefixStrategy(isAllStream, prefixes);
 
@@ -37,7 +38,7 @@ public static class EventFilter {
 			=> new EventTypeRegexStrategy(isAllStream, regex);
 	}
 
-	public static IEventFilter Get(bool isAllStream, Filter filter) {
+	internal static IEventFilter Get(bool isAllStream, Filter filter) {
 		if (filter == null || filter.Data.Count == 0) {
 			return isAllStream ? new DefaultAllFilterStrategy() : new DefaultStreamFilterStrategy();
 		}
@@ -50,6 +51,10 @@ public static class EventFilter {
 			_ => throw new Exception() // Invalid filter
 		};
 	}
+
+    private sealed class UnfilteredEventFilter : IEventFilter {
+        public bool IsEventAllowed(EventRecord eventRecord) => true;
+    }
 
 	private sealed class DefaultStreamFilterStrategy : IEventFilter {
 		[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]

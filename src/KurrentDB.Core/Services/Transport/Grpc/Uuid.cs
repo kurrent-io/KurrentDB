@@ -18,7 +18,7 @@ public readonly struct Uuid : IEquatable<Uuid> {
 	public static Uuid Parse(string value) => new(value);
 	public static Uuid FromInt64(long msb, long lsb) => new(msb, lsb);
 
-	public static Uuid FromDto(UUID dto) {
+	internal static Uuid FromDto(UUID dto) {
 		return dto == null
 			? throw new ArgumentNullException(nameof(dto))
 			: dto.ValueCase switch {
@@ -57,7 +57,7 @@ public readonly struct Uuid : IEquatable<Uuid> {
 		_lsb = lsb;
 	}
 
-	public UUID ToDto() => new() {
+	internal UUID ToDto() => new() {
 		Structured = new() {
 			LeastSignificantBits = _lsb,
 			MostSignificantBits = _msb
