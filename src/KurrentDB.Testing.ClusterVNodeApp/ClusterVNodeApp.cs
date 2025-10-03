@@ -6,7 +6,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Net;
-using DotNext.Collections.Generic;
 using Humanizer;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
@@ -95,7 +94,9 @@ public class ClusterVNodeApp : IAsyncDisposable {
 		});
 
 		// finally, build the app and configure all the routes and grpc services
-		Web = builder.Build().With(x => svc.Node.Startup.Configure(x));
+		Web = builder.Build();
+
+        svc.Node.Startup.Configure(Web);
 
 		// grab the logger for later use
 		Logger = Web.Services.GetRequiredService<ILogger<ClusterVNodeApp>>();
@@ -106,9 +107,10 @@ public class ClusterVNodeApp : IAsyncDisposable {
 		return;
 
 		static ClusterVNodeOptions GetOptions(Dictionary<string, string?> settings, Dictionary<string, string?>? overrides = null) {
-			settings = overrides is not null
-				? settings.ToDictionary().With(x => overrides.ForEach((key, value) => x[key] = value))
-				: settings;
+            if (overrides is not null) {
+                foreach (var entry in overrides)
+                    settings[entry.Key] = entry.Value;
+            }
 
 			var configurationRoot = new ConfigurationBuilder()
 				.AddInMemoryCollection(settings)
@@ -136,11 +138,6 @@ public class ClusterVNodeApp : IAsyncDisposable {
     /// The service provider instance configured for the Server.
     /// </summary>
     public IServiceProvider Services => Web.Services;
-
-    /// <summary>
-    /// The URLs the Server is listening on.
-    /// </summary>
-    public ICollection<string> ServerUrls => Web.Urls;
 
     /// <summary>
     /// Starts the server and waits until it is ready to accept requests.

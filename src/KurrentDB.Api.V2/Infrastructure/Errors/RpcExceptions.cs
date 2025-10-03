@@ -12,7 +12,7 @@ using Status = Google.Rpc.Status;
 
 namespace KurrentDB.Api.Infrastructure.Errors;
 
-public static partial class RpcExceptions {
+public static class RpcExceptions {
 	/// <summary>
 	/// Creates a generic RPC exception based on a specific error enum value, message, and optional details.
 	/// The error enum must be annotated with <see cref="Kurrent.Rpc.ErrorMetadata"/> to provide
