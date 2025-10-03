@@ -174,8 +174,6 @@ public class StreamsService : StreamsServiceBase {
                 WriteEventsCompleted completed => completed.Result switch {
                     // StreamDeleted means "hard deleted" AKA tombstoned
                     OperationResult.StreamDeleted  => ApiErrors.StreamTombstoned(Requests.ElementAt(completed.FailureStreamIndexes.Span[0]).Stream),
-                    OperationResult.PrepareTimeout => ApiErrors.OperationTimeout(completed.Message),
-                    OperationResult.CommitTimeout  => ApiErrors.OperationTimeout(completed.Message),
 
                     OperationResult.WrongExpectedVersion => ApiErrors.StreamRevisionConflict(
                         Requests.ElementAt(completed.FailureStreamIndexes.Span[0]).Stream,

@@ -2,6 +2,29 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## What's New in 25.1
+
+KurrentDB 25.1 introduces several major features and improvements:
+
+### Major Features
+- **Secondary Indexing** - Query optimization with DuckDB-backed indexes for category, event type, and custom indexes
+- **Schema Registry** - Event validation and schema management with Surge framework integration
+- **Multi-stream Appends** - Atomic writes across multiple streams with optimistic concurrency checks
+- **Log Record Properties** - Structured event metadata support (client support in progress)
+- **Windows Service** - Native Windows Service deployment option
+- **OpenTelemetry Logs Export** - Extended observability with OTLP log export (license required)
+
+### Configuration Changes
+- **ServerGC** - Enabled by default for improved performance
+- **StreamInfoCacheCapacity** - Default changed to 100,000 (from 0/dynamic sizing)
+- **SecondaryIndexing** - Enabled by default
+- **MemDb** - Deprecated, will be removed in future version
+
+### New Metrics
+- Projection state size, serialization duration, and execution duration metrics
+- Persistent subscription parked message and replay metrics
+- Garbage collection suspension logging for performance troubleshooting
+
 ## Development Commands
 
 ### Build
@@ -23,6 +46,7 @@ Navigate to the test project directory and use:
 - Start server: `dotnet ./src/KurrentDB/bin/Release/net8.0/KurrentDB.dll --dev --db ./tmp/data --index ./tmp/index --log ./tmp/log`
 - Default ports: HTTP/gRPC on 2113, Internal TCP on 1112
 - Admin UI: `http://localhost:2113` (new embedded UI) or `http://localhost:2113/web` (legacy)
+- Windows Service: KurrentDB can now be run as a Windows Service (see installation docs)
 
 ### Configuration & Diagnostics
 - Configuration files use YAML format (`kurrentdb.conf`)
@@ -48,11 +72,24 @@ KurrentDB is an event-native database with a distributed, plugin-based architect
 - Authorization plugins (StreamPolicy, Legacy)
 - Infrastructure plugins (AutoScavenge, OTLP Exporter, Archiving)
 - Connectors for external systems (HTTP, Kafka, MongoDB, RabbitMQ, Elasticsearch, Serilog)
+- Secondary Indexing plugin - DuckDB-backed query optimization (enabled by default)
+- Schema Registry plugin - Event validation and schema management
+- API v2 plugin - Next-generation protocol support
 
 **Protocol Buffers** - Located in `/proto` directory:
 - gRPC service definitions for streams, persistent subscriptions, operations
 - Schema registry protocols in `kurrentdb/protocol/v2/registry/`
 - Multi-version protocol support (legacy, v1, v2)
+
+**API v2 Architecture** - Next-generation API (`src/KurrentDB.Api.V2/` + `src/KurrentDB.Plugins.Api.V2/`):
+- **Evolving rapidly** - This is an active development area with frequent changes
+- Modular plugin-based architecture via `ApiV2Plugin`
+- gRPC service implementations with request validation
+- Infrastructure: DependencyInjection, Error handling, Validation framework
+- Streams service with multi-stream append support
+- Protocol v2 integration (`KurrentDB.Protocol.V2.Streams`)
+- Separate from legacy API to allow parallel evolution
+- **Note**: When working with API v2, expect ongoing refactoring and protocol changes
 
 ### Key Services Architecture
 
@@ -77,14 +114,37 @@ KurrentDB is an event-native database with a distributed, plugin-based architect
 - Custom JavaScript projections with state management
 - Real-time event processing and stream linking
 
+**Secondary Indexing** (`KurrentDB.SecondaryIndexing/`):
+- DuckDB-powered secondary indexes for optimized queries
+- Default indexes: Category, EventType, and configurable custom indexes
+- In-flight record tracking and batch processing (default 50,000 events)
+- Telemetry and statistics collection
+
+**Schema Registry** (`SchemaRegistry/`):
+- Event schema validation and versioning
+- Surge framework integration for event processing
+- Protocol support in `kurrentdb/protocol/v2/registry/`
+- Pluggable architecture with dedicated service layer
+
 ### Project Structure
 
 - **Core Projects**: KurrentDB.Core, KurrentDB.Common, KurrentDB.LogV3
 - **Transport**: KurrentDB.Transport.Http, KurrentDB.Transport.Tcp
+- **API Projects**: KurrentDB.Api.V2, KurrentDB.Plugins.Api.V2 (Protocol v2 support)
 - **Plugins**: Individual plugin projects with naming `KurrentDB.*.PluginName`
-- **Testing**: Projects ending in `.Tests` use various testing frameworks
-- **UI**: KurrentDB.UI (Blazor), KurrentDB.ClusterNode.Web
+  - Authentication: KurrentDB.Auth.Ldaps, KurrentDB.Auth.OAuth, KurrentDB.Auth.UserCertificates
+  - Authorization: KurrentDB.Auth.StreamPolicyPlugin, KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled
+  - Infrastructure: KurrentDB.AutoScavenge, KurrentDB.OtlpExporterPlugin, KurrentDB.Security.EncryptionAtRest
+  - Diagnostics: KurrentDB.Diagnostics.LogsEndpointPlugin
+- **Secondary Indexing**: KurrentDB.SecondaryIndexing, KurrentDB.DuckDB (90+ total projects)
+- **Schema Registry**: SchemaRegistry/ (4 projects: KurrentDB.SchemaRegistry, KurrentDB.SchemaRegistry.Protocol, KurrentDB.Plugins.SchemaRegistry, KurrentDB.SchemaRegistry.Tests)
+- **Testing**: Projects ending in `.Tests` use xUnit, NUnit, and TUnit frameworks
+  - KurrentDB.Testing - Shared testing infrastructure
+  - KurrentDB.Surge.Testing - Surge framework testing utilities
+- **UI**: KurrentDB.UI (Blazor embedded UI), KurrentDB.ClusterNode.Web (legacy)
 - **Connectors**: Server-side data integration via catch-up subscriptions and sinks
+  - Connectors/ (5 projects: KurrentDB.Connectors, KurrentDB.Plugins.Connectors, KurrentDB.Connectors.Contracts, etc.)
+- **Supporting Libraries**: KurrentDB.Surge (event processing), KurrentDB.SystemRuntime, KurrentDB.BufferManagement, KurrentDB.Logging
 
 ### Configuration
 
@@ -104,17 +164,24 @@ Uses centralized package management:
 - Leader election with configurable timeouts and priorities
 
 **Performance & Scaling**:
+- Server GC enabled by default for improved performance
+- StreamInfoCacheCapacity default of 100,000 (changed from dynamic sizing)
 - Configurable thread pools (reader, worker threads)
 - Chunk caching and memory management
 - Index optimization with bloom filters and stream existence filters
+- Secondary indexes with DuckDB for optimized queries
 - Scavenging for disk space management and performance
 
 **Monitoring & Operations**:
-- Structured JSON logging with configurable levels
-- Prometheus metrics on `/metrics` endpoint
-- Integration with OpenTelemetry, Datadog, ElasticSearch
+- Structured JSON logging with configurable levels (Microsoft log levels required)
+- Prometheus metrics on `/metrics` endpoint (prefixed with `kurrentdb_`)
+- Integration with OpenTelemetry (metrics and logs export with license), Datadog, ElasticSearch
 - Statistics collection and HTTP stats endpoint
-- Embedded admin UI and legacy web interface
+- Embedded admin UI (new) and legacy web interface (`/web`)
+- License status monitoring in embedded UI
+- New projection metrics: state size, serialization duration, execution duration
+- New persistent subscription metrics: parked message replays, park requests
+- GC suspension logging for performance troubleshooting (>48ms logged as Info, >600ms as Warning)
 
 ### Development Notes
 
@@ -124,6 +191,43 @@ Uses centralized package management:
 - Extensive use of dependency injection and hosted services pattern
 - Plugin discovery via assembly scanning and configuration files
 - Event-native design with write-ahead log and immutable event streams
+- DuckDB integration for secondary indexing capabilities
+- Surge framework for event processing and schema registry
+- TUnit testing framework adoption (alongside xUnit and NUnit)
+- 90+ projects in solution as of v25.1
+
+### Active Development Areas (Expect Frequent Changes)
+
+**API v2** (`src/KurrentDB.Api.V2/` and `src/KurrentDB.Plugins.Api.V2/`):
+- This is the next-generation API layer currently under rapid development
+- Implements protocol v2 with new features like multi-stream appends and log record properties
+- Modular architecture: Infrastructure layer (DI, errors, validation) + Service modules (Streams, etc.)
+- Plugin-based activation via `ApiV2Plugin`
+- When working in this area, expect ongoing protocol changes, refactoring, and architectural evolution
+- Coexists with legacy API to allow gradual migration and experimentation
+
+**Schema Registry** (`src/SchemaRegistry/`):
+- Event validation and schema management system
+- Integrates with Surge framework for event processing
+- Protocol definitions in `proto/kurrentdb/protocol/v2/registry/`
+- Plugin system for extensibility
+
+**Secondary Indexing** (`src/KurrentDB.SecondaryIndexing/`):
+- DuckDB-backed query optimization layer
+- Active development on index strategies and performance tuning
+
+### Important Configuration Defaults (v25.1)
+
+- **SecondaryIndexing:Enabled** - `true` (enabled by default)
+- **ServerGC** - `true` (enabled by default)
+- **StreamInfoCacheCapacity** - `100000` (changed from `0`/dynamic)
+- **TcpReadTimeoutMs** - `10000` (10 seconds)
+
+### Deprecated/Removed Options
+
+- **MemDb** - Deprecated in v25.1, will be removed in future version
+- **DisableFirstLevelHttpAuthorization** - Removed in v25.1 (had no effect since v20.6.0)
+- See `docs/server/quick-start/upgrade-guide.md` for complete list of breaking changes
 
 ## MCP Server Configuration
 

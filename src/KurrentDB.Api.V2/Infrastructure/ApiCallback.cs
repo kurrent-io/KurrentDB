@@ -86,6 +86,7 @@ abstract class ApiCallbackBase<TState, TResponse> : IEnvelope {
                     case OperationResult.AccessDenied:
                         Operation.TrySetException(ApiErrors.AccessDenied(CallContext.Method, CallContext.GetHttpContext().User.Identity?.Name));
                         return;
+
                     case OperationResult.ForwardTimeout:
                         Operation.TrySetException(ApiErrors.OperationTimeout($"{OperationName} timed out while waiting to be forwarded to the leader"));
                         return;
