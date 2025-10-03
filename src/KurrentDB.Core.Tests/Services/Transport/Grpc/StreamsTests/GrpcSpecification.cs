@@ -13,6 +13,7 @@ using EventStore.Client.Streams;
 using Google.Protobuf;
 using Grpc.Core;
 using Grpc.Net.Client;
+using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Core.Tests.Helpers;
@@ -32,11 +33,13 @@ public abstract class GrpcSpecification<TLogFormat, TStreamId> {
 	private BatchAppender _batchAppender;
 
 	protected GrpcSpecification(IExpiryStrategy expiryStrategy = null,
-		int maxAppendEventSize = TFConsts.EffectiveMaxLogRecordSize) {
+		int maxAppendEventSize = TFConsts.EffectiveMaxLogRecordSize,
+		SecondaryIndexReaders secondaryIndexReaders = null) {
 		_node = new MiniNode<TLogFormat, TStreamId>(GetType().FullName,
 			inMemDb: true,
 			expiryStrategy: expiryStrategy,
-			maxAppendEventSize: maxAppendEventSize);
+			maxAppendEventSize: maxAppendEventSize,
+			secondaryIndexReaders: secondaryIndexReaders);
 	}
 
 	protected abstract Task Given();

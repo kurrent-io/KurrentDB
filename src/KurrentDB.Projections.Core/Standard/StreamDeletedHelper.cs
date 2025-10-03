@@ -1,10 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services;
-using KurrentDB.Projections.Core.Utils;
 using ResolvedEvent = KurrentDB.Projections.Core.Services.Processing.ResolvedEvent;
 
 namespace KurrentDB.Projections.Core.Standard;
@@ -51,34 +49,6 @@ public static class StreamDeletedHelper {
 		if (isMetaStream) {
 			if (eventType == SystemEventTypes.StreamMetadata) {
 				var metadata = StreamMetadata.FromJson(eventData);
-				//NOTE: we do not ignore JSON deserialization exceptions here assuming that metadata stream events must be deserializable
-
-				if (metadata.TruncateBefore == EventNumber.DeletedStream)
-					isStreamDeletedEvent = true;
-			}
-		} else {
-			if (eventType == SystemEventTypes.StreamDeleted)
-				isStreamDeletedEvent = true;
-		}
-
-		return isStreamDeletedEvent;
-	}
-
-	public static bool IsStreamDeletedEvent(
-		string streamOrMetaStreamId, string eventType, ReadOnlyMemory<byte> eventData, out string deletedPartitionStreamId) {
-		bool isMetaStream;
-		if (SystemStreams.IsMetastream(streamOrMetaStreamId)) {
-			isMetaStream = true;
-			deletedPartitionStreamId = streamOrMetaStreamId.Substring("$$".Length);
-		} else {
-			isMetaStream = false;
-			deletedPartitionStreamId = streamOrMetaStreamId;
-		}
-
-		var isStreamDeletedEvent = false;
-		if (isMetaStream) {
-			if (eventType == SystemEventTypes.StreamMetadata) {
-				var metadata = StreamMetadata.FromJson(eventData.FromUtf8());
 				//NOTE: we do not ignore JSON deserialization exceptions here assuming that metadata stream events must be deserializable
 
 				if (metadata.TruncateBefore == EventNumber.DeletedStream)

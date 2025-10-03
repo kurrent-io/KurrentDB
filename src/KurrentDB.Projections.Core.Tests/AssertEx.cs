@@ -18,7 +18,6 @@ public static class AssertEx {
 
 		Assert.AreEqual(expected.IncludeLinksOption, actual.IncludeLinksOption, $"Expected {nameof(expected.IncludeLinksOption)} to be {expected.IncludeLinksOption} but was {actual.IncludeLinksOption}");
 		Assert.AreEqual(expected.IsBiState, actual.IsBiState, $"Expected {nameof(expected.IsBiState)} to be {expected.IsBiState} but was {actual.IsBiState}");
-		Assert.AreEqual(expected.LimitingCommitPosition, actual.LimitingCommitPosition, $"Expected {nameof(expected.LimitingCommitPosition)} to be {expected.LimitingCommitPosition} but was {actual.LimitingCommitPosition}");
 		Assert.AreEqual(expected.PartitionResultStreamNamePatternOption, actual.PartitionResultStreamNamePatternOption, $"Expected {nameof(expected.PartitionResultStreamNamePatternOption)} to be {expected.PartitionResultStreamNamePatternOption} but was {actual.PartitionResultStreamNamePatternOption}");
 		Assert.AreEqual(expected.ProcessingLagOption, actual.ProcessingLagOption, $"Expected {nameof(expected.ProcessingLagOption)} to be {expected.ProcessingLagOption} but was {actual.ProcessingLagOption}");
 		Assert.AreEqual(expected.ProducesResults, actual.ProducesResults, $"Expected {nameof(expected.ProducesResults)} to be {expected.ProducesResults} but was {actual.ProducesResults}");

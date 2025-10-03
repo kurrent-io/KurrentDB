@@ -15,6 +15,7 @@ using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using Polly;
 using StreamRevision = Kurrent.Surge.StreamRevision;
+using CoreStreamRevision = KurrentDB.Core.Services.Transport.Common.StreamRevision;
 
 namespace KurrentDB.Surge.Readers;
 
@@ -30,13 +31,6 @@ public class SystemReader : IReader {
 			? (_, _) => ValueTask.FromResult<object?>(null)
 			: (data, headers) => options.SchemaRegistry.As<ISchemaSerializer>().Deserialize(data, headers);
 
-        // if (options.EnableLogging)
-        //     options.Interceptors.TryAddUniqueFirst(new ReaderLogger(nameof(SystemReader)));
-        //
-        // Interceptors = new(Options.Interceptors, Options.LoggerFactory.CreateLogger(nameof(SystemReader)));
-        //
-        // Intercept = evt => Interceptors.Intercept(evt);
-
         ResiliencePipeline = options.ResiliencePipelineBuilder
             .With(x => x.InstanceName = "SystemReaderResiliencePipeline")
             .Build();
@@ -47,9 +41,6 @@ public class SystemReader : IReader {
     ISystemClient      Client             { get; }
     ResiliencePipeline ResiliencePipeline { get; }
     Deserialize        Deserialize        { get; }
-
-    // InterceptorController              Interceptors       { get; }
-    // Func<ConsumerLifecycleEvent, Task> Intercept          { get; }
 
     public string ReaderId => Options.ReaderId;
 
@@ -87,34 +78,12 @@ public class SystemReader : IReader {
         else {
             events = Client.Reading.Read(
                 startPosition,
-                ConsumeFilterExtensions.ToEventFilter(filter),
+                filter.ToEventFilter(),
                 maxCount,
                 readForwards,
                 cancellator.Token
             );
         }
-
-        // but how since we are using IAsyncEnumerable, pipes?
-        // try {
-        //
-        //
-        // }
-        // catch (Exception ex) {
-        //     StreamingError error = ex switch {
-        //         ReadResponseException.Timeout when filter.IsStreamIdFilter        => new RequestTimeoutError(filter.Expression, ex.Message),
-        //         ReadResponseException.StreamNotFound when filter.IsStreamIdFilter => new StreamNotFoundError(filter.Expression),
-        //         ReadResponseException.StreamDeleted when filter.IsStreamIdFilter  => new StreamDeletedError(filter.Expression),
-        //         ReadResponseException.AccessDenied when filter.IsStreamIdFilter   => new StreamAccessDeniedError(filter.Expression),
-        //
-        //         ReadResponseException.NotHandled.ServerNotReady => new ServerNotReadyError(),
-        //         ReadResponseException.NotHandled.ServerBusy     => new ServerTooBusyError(),
-        //         ReadResponseException.NotHandled.LeaderInfo li  => new ServerNotLeaderError(li.Host, li.Port),
-        //         ReadResponseException.NotHandled.NoLeaderInfo   => new ServerNotLeaderError(),
-        //         _                                               => new StreamingCriticalError(ex.Message, ex)
-        //     };
-        //
-        //     throw error;
-        // }
 
         await foreach (var re in events) {
             if (cancellator.IsCancellationRequested)
@@ -129,8 +98,12 @@ public class SystemReader : IReader {
         }
     }
 
-    public IAsyncEnumerable<SurgeRecord> Read(StreamId streamId, StreamRevision revision, ReadDirection direction, int maxCount, CancellationToken cancellationToken = default) =>
-        throw new NotImplementedException();
+    public IAsyncEnumerable<SurgeRecord> Read(StreamId streamId, StreamRevision revision, ReadDirection direction, int maxCount, CancellationToken cancellationToken = default) {
+	    var forwards = direction == ReadDirection.Forwards;
+	    return Client.Reading
+		    .ReadStream(streamId, CoreStreamRevision.FromInt64(revision.Value), maxCount, forwards, cancellationToken)
+		    .SelectAwait(async record => await record.ToRecord(Deserialize, (int)record.Event.EventNumber + 1));
+    }
 
     public async ValueTask<SurgeRecord> ReadLastStreamRecord(StreamId stream, CancellationToken cancellationToken = default) {
         try {

@@ -106,8 +106,6 @@ public class TestFixtureWithProjectionCoreService {
 		_bus.Subscribe(_subscriptionDispatcher
 			.CreateSubscriber<EventReaderSubscriptionMessage.CommittedEventReceived>());
 		_bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.EofReached>());
-		_bus.Subscribe(
-			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.PartitionEofReached>());
 		_bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.PartitionDeleted>());
 		_bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.ProgressChanged>());
 		_bus.Subscribe(

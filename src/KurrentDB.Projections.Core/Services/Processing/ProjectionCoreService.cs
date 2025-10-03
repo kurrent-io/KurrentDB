@@ -79,10 +79,6 @@ public class ProjectionCoreService
 			trackers: configuration.ProjectionTrackers);
 	}
 
-	public ILogger Logger {
-		get { return _logger; }
-	}
-
 	public void Handle(ProjectionCoreServiceMessage.StartCore message) {
 		_publisher.Publish(new ProjectionCoreServiceMessage.SubComponentStarted(
 			SubComponentName, message.InstanceCorrelationId));

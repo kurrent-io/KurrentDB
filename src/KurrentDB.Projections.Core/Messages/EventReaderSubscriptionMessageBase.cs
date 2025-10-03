@@ -89,22 +89,6 @@ public static partial class EventReaderSubscriptionMessage {
 		}
 	}
 
-	[DerivedMessage(ProjectionMessage.EventReaderSubscription)]
-	public partial class PartitionEofReached : EventReaderSubscriptionMessageBase {
-		private readonly string _partition;
-
-		public string Partition {
-			get { return _partition; }
-		}
-
-		public PartitionEofReached(
-			Guid subscriptionId, CheckpointTag checkpointTag, string partition,
-			long subscriptionMessageSequenceNumber, object source = null)
-			: base(subscriptionId, checkpointTag, 100.0f, subscriptionMessageSequenceNumber, source) {
-			_partition = partition;
-		}
-	}
-
 	/// <summary>
 	/// NOTEL the PartitionDeleted may appear out-of-order and is not guaranteed
 	/// to appear at the same sequence position in a recovery

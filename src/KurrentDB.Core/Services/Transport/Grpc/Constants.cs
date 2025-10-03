@@ -12,6 +12,7 @@ public static class Constants {
 		public const string StreamDeleted = "stream-deleted";
 		public const string WrongExpectedVersion = "wrong-expected-version";
 		public const string StreamNotFound = "stream-not-found";
+		public const string IndexNotFound = "index-not-found";
 		public const string MaximumAppendSizeExceeded = "maximum-append-size-exceeded";
 		public const string MaximumAppendEventSizeExceeded = "maximum-append-event-size-exceeded";
 		public const string MissingRequiredMetadataProperty = "missing-required-metadata-property";
@@ -36,6 +37,7 @@ public static class Constants {
 		public const string ExpectedVersion = "expected-version";
 		public const string ActualVersion = "actual-version";
 		public const string StreamName = "stream-name";
+		public const string IndexName = "index-name";
 		public const string GroupName = "group-name";
 		public const string Reason = "reason";
 		public const string MaximumAppendSize = "maximum-append-size";

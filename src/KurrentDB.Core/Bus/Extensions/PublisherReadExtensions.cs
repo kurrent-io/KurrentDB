@@ -3,7 +3,6 @@
 
 // ReSharper disable CheckNamespace
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -44,7 +43,7 @@ public static class PublisherReadExtensions {
                     user: SystemAccounts.System,
                     requiresLeader: false,
                     maxSearchWindow: null,
-                    deadline: null,
+                    expiryStrategy: DefaultExpiryStrategy.Instance,
                     cancellationToken: cancellationToken
                 )
                 : new Enumerator.ReadAllBackwardsFiltered(
@@ -56,7 +55,7 @@ public static class PublisherReadExtensions {
                     user: SystemAccounts.System,
                     requiresLeader: false,
                     maxSearchWindow: null,
-                    deadline: null,
+                    expiryStrategy: DefaultExpiryStrategy.Instance,
                     cancellationToken: cancellationToken
                 );
         }
@@ -90,7 +89,7 @@ public static class PublisherReadExtensions {
 					resolveLinks: false,
 					user: SystemAccounts.System,
 					requiresLeader: false,
-					deadline: null,
+					expiryStrategy: DefaultExpiryStrategy.Instance,
 					cancellationToken: cancellationToken
 				)
 				: new Enumerator.ReadAllBackwards(
@@ -100,7 +99,7 @@ public static class PublisherReadExtensions {
 					resolveLinks: false,
 					user: SystemAccounts.System,
 					requiresLeader: false,
-					deadline: null,
+					expiryStrategy: DefaultExpiryStrategy.Instance,
 					cancellationToken: cancellationToken
 				);
 		}
@@ -159,7 +158,7 @@ public static class PublisherReadExtensions {
 					resolveLinks: false,
 					user: SystemAccounts.System,
 					requiresLeader: false,
-					deadline: null,
+					expiryStrategy: DefaultExpiryStrategy.Instance,
 					cancellationToken: cancellationToken,
 					compatibility: 1 // whats this?
 				)
@@ -171,7 +170,7 @@ public static class PublisherReadExtensions {
 					resolveLinks: false,
 					user: SystemAccounts.System,
 					requiresLeader: false,
-					deadline: null,
+					expiryStrategy: DefaultExpiryStrategy.Instance,
 					cancellationToken: cancellationToken,
 					compatibility: 1 // whats this?
 				);
@@ -231,5 +230,43 @@ public static class PublisherReadExtensions {
 			.FirstOrDefaultAsync(cancellationToken);
 
 		return result;
+	}
+
+	public static async IAsyncEnumerable<ResolvedEvent> ReadIndex(this IPublisher publisher, string indexName, Position startPosition, long maxCount, bool forwards = true, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
+		await using var enumerator = GetEnumerator();
+
+		while (!cancellationToken.IsCancellationRequested) {
+			if (!await enumerator.MoveNextAsync())
+				break;
+
+			if (enumerator.Current is ReadResponse.EventReceived eventReceived)
+				yield return eventReceived.Event;
+		}
+
+		yield break;
+
+		IAsyncEnumerator<ReadResponse> GetEnumerator() {
+			return forwards
+				? new Enumerator.ReadIndexForwards(
+					bus: publisher,
+					indexName: indexName,
+					position: startPosition,
+					maxCount: (ulong)maxCount,
+					user: SystemAccounts.System,
+					requiresLeader: false,
+					expiryStrategy: DefaultExpiryStrategy.Instance,
+					cancellationToken: cancellationToken
+				)
+				: new Enumerator.ReadIndexBackwards(
+					bus: publisher,
+					indexName: indexName,
+					position: startPosition,
+					maxCount: (ulong)maxCount,
+					user: SystemAccounts.System,
+					requiresLeader: false,
+					expiryStrategy: DefaultExpiryStrategy.Instance,
+					cancellationToken: cancellationToken
+				);
+		}
 	}
 }

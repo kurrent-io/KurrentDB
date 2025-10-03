@@ -23,6 +23,9 @@ public class ReadAllBackwardsTests {
 		private readonly List<ReadResp> _responses = new();
 		private Position _positionOfLastWrite;
 
+		public when_reading_all_backwards() : base(new LotsOfExpiriesStrategy()) {
+		}
+
 		protected override async Task Given() {
 			var response = await AppendToStreamBatch(new BatchAppendReq {
 				Options = new() {
@@ -85,6 +88,9 @@ public class ReadAllBackwardsTests {
 		when_reading_all_backwards_from_end<TLogFormat, TStreamId> : GrpcSpecification<TLogFormat, TStreamId> {
 		private readonly List<ReadResp> _responses = new();
 		private const string StreamId = nameof(when_reading_all_backwards_from_end<TLogFormat, TStreamId>);
+
+		public when_reading_all_backwards_from_end() : base(new LotsOfExpiriesStrategy()) {
+		}
 
 		protected override async Task Given() {
 			await AppendToStreamBatch(new BatchAppendReq {

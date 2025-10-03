@@ -703,7 +703,7 @@ public class AtomController : CommunicationController {
 		var corrId = Guid.NewGuid();
 		Publish(new ClientMessage.ReadAllEventsBackward(corrId, corrId, envelope,
 			position.CommitPosition, position.PreparePosition, count, resolveLinkTos,
-			requireLeader, GetETagTFPosition(manager), manager.User));
+			requireLeader, GetETagTFPosition(manager), manager.User, replyOnExpired: false));
 	}
 
 	private void GetAllEventsBackwardFiltered(HttpEntityManager manager, UriTemplateMatch match) {
@@ -744,7 +744,7 @@ public class AtomController : CommunicationController {
 		var corrId = Guid.NewGuid();
 		Publish(new ClientMessage.FilteredReadAllEventsBackward(corrId, corrId, envelope,
 			position.CommitPosition, position.PreparePosition, count,
-			requireLeader, true, count, GetETagTFPosition(manager), filter, manager.User));
+			requireLeader, true, count, GetETagTFPosition(manager), filter, manager.User, replyOnExpired: false));
 	}
 
 
@@ -1039,7 +1039,7 @@ public class AtomController : CommunicationController {
 			(args, msg) => Configure.GetStreamEventsBackward(args, msg, headOfStream));
 		var corrId = Guid.NewGuid();
 		Publish(new ClientMessage.ReadStreamEventsBackward(corrId, corrId, envelope, stream, eventNumber, count,
-			resolveLinkTos, requireLeader, GetETagStreamVersion(manager), manager.User));
+			resolveLinkTos, requireLeader, GetETagStreamVersion(manager), manager.User, replyOnExpired: false));
 	}
 
 	private void GetStreamEventsForward(HttpEntityManager manager, string stream, long eventNumber, int count,

@@ -4,4 +4,7 @@
 		<Nullable>enable</Nullable>
 		<IsPlugin>true</IsPlugin>
 	</PropertyGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
+	</ItemGroup>
 </Project>

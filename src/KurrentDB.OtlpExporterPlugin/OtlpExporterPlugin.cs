@@ -2,35 +2,34 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using EventStore.Plugins;
+using KurrentDB.Common.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using Serilog;
+using static KurrentDB.Common.Configuration.ConfigConstants;
 
 namespace KurrentDB.OtlpExporterPlugin;
 
-public class OtlpExporterPlugin : SubsystemsPlugin {
-	public const string KurrentConfigurationPrefix = "KurrentDB";
+public class OtlpExporterPlugin(ILogger logger) : SubsystemsPlugin(requiredEntitlements: ["OTLP_EXPORTER"]) {
+	private const string KurrentConfigurationPrefix = RootPrefix;
 	private static readonly ILogger _staticLogger = Log.ForContext<OtlpExporterPlugin>();
-	private readonly ILogger _logger;
 
 	public OtlpExporterPlugin() : this(_staticLogger) {
 	}
 
-	public OtlpExporterPlugin(ILogger logger)
-		: base(
-			requiredEntitlements: ["OTLP_EXPORTER"]) {
-
-		_logger = logger;
-	}
-
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {
-		var enabled = configuration.GetSection($"{KurrentConfigurationPrefix}:OpenTelemetry:Otlp").Exists();
-		return (enabled, $"No {KurrentConfigurationPrefix}:OpenTelemetry:Otlp configuration found. Not exporting metrics.");
+		var enabled = configuration.OtlpMetricsEnabled() || configuration.OtlpLogsEnabled();
+		return (enabled, $"No {KurrentConfigurationPrefix}:OpenTelemetry:Otlp configuration found. Not exporting metrics and logs.");
 	}
 
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
+		if (!configuration.OtlpMetricsEnabled()) {
+			// no metrics config, so no metrics
+			return;
+		}
+
 		// there are two related settings
 		//
 		// "KurrentDB:Metrics:ExpectedScrapeIntervalSeconds"
@@ -52,23 +51,23 @@ public class OtlpExporterPlugin : SubsystemsPlugin {
 		var scrapeIntervalSeconds = configuration.GetValue<int>($"{KurrentConfigurationPrefix}:Metrics:ExpectedScrapeIntervalSeconds");
 
 		services
-			.Configure<OtlpExporterOptions>(configuration.GetSection($"{KurrentConfigurationPrefix}:OpenTelemetry:Otlp"))
-			.Configure<MetricReaderOptions>(configuration.GetSection($"{KurrentConfigurationPrefix}:OpenTelemetry:Metrics"))
+			.Configure<OtlpExporterOptions>(configuration.GetSection(OtlpConfigPrefix))
+			.Configure<MetricReaderOptions>(configuration.GetSection(OtlpMetricsPrefix))
 			.AddOpenTelemetry()
-			.WithMetrics(o => o
+			.WithMetrics(configure => configure
 				.AddOtlpExporter((exporterOptions, metricReaderOptions) => {
 					var periodicOptions = metricReaderOptions.PeriodicExportingMetricReaderOptions;
 					if (periodicOptions.ExportIntervalMilliseconds is null) {
 						periodicOptions.ExportIntervalMilliseconds = scrapeIntervalSeconds * 1000;
 					} else if (periodicOptions.ExportIntervalMilliseconds != scrapeIntervalSeconds * 1000) {
-						_logger.Warning(
-							$"OtlpExporter: {KurrentConfigurationPrefix}:OpenTelemetry:Metrics:PeriodicExportingMetricReaderOptions:ExportIntervalMilliseconds " +
+						logger.Warning(
+							$"OtlpExporter: {OtlpMetricsPrefix}:PeriodicExportingMetricReaderOptions:ExportIntervalMilliseconds " +
 							$"({{exportInterval}} ms) does not match {KurrentConfigurationPrefix}:Metrics:ExpectedScrapeIntervalSeconds " +
 							"({scrapeInterval} s). Periodic maximum metrics may not be reported correctly.",
 							periodicOptions.ExportIntervalMilliseconds, scrapeIntervalSeconds);
 					}
 
-					_logger.Information("OtlpExporter: Exporting metrics to {endpoint} every {interval:N1} seconds",
+					logger.Information("OtlpExporter: Exporting metrics to {endpoint} every {interval:N1} seconds",
 						exporterOptions.Endpoint,
 						periodicOptions.ExportIntervalMilliseconds / 1000.0);
 				}));

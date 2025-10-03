@@ -89,7 +89,6 @@ public class ProjectionManagerNode {
 			mainBus.Subscribe<ProjectionManagementMessage.Command.Disable>(projectionManager);
 			mainBus.Subscribe<ProjectionManagementMessage.Command.Enable>(projectionManager);
 			mainBus.Subscribe<ProjectionManagementMessage.Command.Abort>(projectionManager);
-			mainBus.Subscribe<ProjectionManagementMessage.Command.SetRunAs>(projectionManager);
 			mainBus.Subscribe<ProjectionManagementMessage.Command.Reset>(projectionManager);
 			mainBus.Subscribe<ProjectionManagementMessage.Command.GetConfig>(projectionManager);
 			mainBus.Subscribe<ProjectionManagementMessage.Command.UpdateConfig>(projectionManager);

@@ -104,6 +104,7 @@ public abstract class ClusterVNode {
 		AuthenticationProviderFactory authenticationProviderFactory = null,
 		AuthorizationProviderFactory authorizationProviderFactory = null,
 		VirtualStreamReader virtualStreamReader = null,
+		SecondaryIndexReaders secondaryIndexReaders = null,
 		IReadOnlyList<IPersistentSubscriptionConsumerStrategyFactory> factories = null,
 		CertificateProvider certificateProvider = null,
 		IConfiguration configuration = null,
@@ -116,6 +117,7 @@ public abstract class ClusterVNode {
 			authenticationProviderFactory,
 			authorizationProviderFactory,
 			virtualStreamReader,
+			secondaryIndexReaders,
 			factories,
 			certificateProvider,
 			configuration,
@@ -214,10 +216,7 @@ public class ClusterVNode<TStreamId> :
 	private int _stopCalled;
 	private int _reloadingConfig;
 	private PosixSignalRegistration _reloadConfigSignalRegistration;
-
-	public IEnumerable<Task> Tasks {
-		get { return _tasks; }
-	}
+	readonly CompositeHasher<TStreamId> _longHasher;
 
 	public override CertificateDelegates.ClientCertificateValidator InternalClientCertificateValidator => _internalClientCertificateValidator;
 	public override Func<X509Certificate2> CertificateSelector => _certificateSelector;
@@ -236,6 +235,7 @@ public class ClusterVNode<TStreamId> :
 		AuthenticationProviderFactory authenticationProviderFactory = null,
 		AuthorizationProviderFactory authorizationProviderFactory = null,
 		VirtualStreamReader virtualStreamReader = null,
+		SecondaryIndexReaders secondaryIndexReaders = null,
 		IReadOnlyList<IPersistentSubscriptionConsumerStrategyFactory>
 			additionalPersistentSubscriptionConsumerStrategyFactories = null,
 		CertificateProvider certificateProvider = null,
@@ -245,6 +245,7 @@ public class ClusterVNode<TStreamId> :
 		Action<IServiceCollection> configureAdditionalNodeServices = null) {
 
 		configuration ??= new ConfigurationBuilder().Build();
+		secondaryIndexReaders ??= new();
 
 		LogPluginSubsectionWarnings(configuration);
 
@@ -692,8 +693,7 @@ public class ClusterVNode<TStreamId> :
 			logFormat.LowHasher,
 			logFormat.HighHasher,
 			logFormat.EmptyStreamId,
-			() => new HashListMemTable(options.IndexBitnessVersion,
-				maxSize: options.Database.MaxMemTableSize * 2),
+			() => new HashListMemTable(options.IndexBitnessVersion, maxSize: options.Database.MaxMemTableSize * 2),
 			() => new TFReaderLease(readerPool),
 			options.IndexBitnessVersion,
 			maxSizeForMemory: options.Database.MaxMemTableSize,
@@ -790,9 +790,9 @@ public class ClusterVNode<TStreamId> :
 
 		// Storage Reader
 		var storageReader = new StorageReaderService<TStreamId>(_mainQueue, _mainBus, readIndex,
-			logFormat.SystemStreams,
-			readerThreadsCount, Db.Config.WriterCheckpoint.AsReadOnly(), virtualStreamReader, _queueStatsManager,
-			trackers.QueueTrackers);
+			logFormat.SystemStreams, readerThreadsCount, Db.Config.WriterCheckpoint.AsReadOnly(),
+			virtualStreamReader, secondaryIndexReaders,
+			_queueStatsManager, trackers.QueueTrackers);
 
 		_mainBus.Subscribe<SystemMessage.SystemInit>(storageReader);
 		_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(storageReader);
@@ -947,6 +947,8 @@ public class ClusterVNode<TStreamId> :
 			HttpService = _httpService,
 		};
 
+		_longHasher = new CompositeHasher<TStreamId>(logFormat.LowHasher, logFormat.HighHasher);
+
 		// AUTHENTICATION INFRASTRUCTURE - delegate to plugins
 		authorizationProviderFactory ??= !options.Application.Insecure
 			? throw new InvalidConfigurationException($"An {nameof(AuthorizationProviderFactory)} is required when running securely.")
@@ -954,8 +956,7 @@ public class ClusterVNode<TStreamId> :
 		authenticationProviderFactory ??= !options.Application.Insecure
 			? throw new InvalidConfigurationException($"An {nameof(AuthenticationProviderFactory)} is required when running securely.")
 			: new AuthenticationProviderFactory(_ => new PassthroughAuthenticationProviderFactory());
-		additionalPersistentSubscriptionConsumerStrategyFactories ??=
-			Array.Empty<IPersistentSubscriptionConsumerStrategyFactory>();
+		additionalPersistentSubscriptionConsumerStrategyFactories ??= [];
 
 		_authenticationProvider = new DelegatedAuthenticationProvider(
 			authenticationProviderFactory
@@ -1150,25 +1151,29 @@ public class ClusterVNode<TStreamId> :
 		_mainBus.Subscribe<TcpMessage.ConnectionClosed>(subscrQueue);
 		_mainBus.Subscribe<ClientMessage.SubscribeToStream>(subscrQueue);
 		_mainBus.Subscribe<ClientMessage.FilteredSubscribeToStream>(subscrQueue);
+		_mainBus.Subscribe<ClientMessage.SubscribeToIndex>(subscrQueue);
 		_mainBus.Subscribe<ClientMessage.UnsubscribeFromStream>(subscrQueue);
 		_mainBus.Subscribe<SubscriptionMessage.DropSubscription>(subscrQueue);
 		_mainBus.Subscribe<SubscriptionMessage.PollStream>(subscrQueue);
 		_mainBus.Subscribe<SubscriptionMessage.CheckPollTimeout>(subscrQueue);
 		_mainBus.Subscribe<StorageMessage.EventCommitted>(subscrQueue);
 		_mainBus.Subscribe<StorageMessage.InMemoryEventCommitted>(subscrQueue);
+		_mainBus.Subscribe<StorageMessage.SecondaryIndexCommitted>(subscrQueue);
 
-		var subscription = new SubscriptionsService<TStreamId>(_mainQueue, subscrQueue, _authorizationProvider, readIndex, virtualStreamReader);
+		var subscription = new SubscriptionsService<TStreamId>(_mainQueue, subscrQueue, _authorizationProvider, readIndex, virtualStreamReader, secondaryIndexReaders);
 		subscrBus.Subscribe<SystemMessage.SystemStart>(subscription);
 		subscrBus.Subscribe<SystemMessage.BecomeShuttingDown>(subscription);
 		subscrBus.Subscribe<TcpMessage.ConnectionClosed>(subscription);
 		subscrBus.Subscribe<ClientMessage.SubscribeToStream>(subscription);
 		subscrBus.Subscribe<ClientMessage.FilteredSubscribeToStream>(subscription);
+		subscrBus.Subscribe<ClientMessage.SubscribeToIndex>(subscription);
 		subscrBus.Subscribe<ClientMessage.UnsubscribeFromStream>(subscription);
 		subscrBus.Subscribe<SubscriptionMessage.DropSubscription>(subscription);
 		subscrBus.Subscribe<SubscriptionMessage.PollStream>(subscription);
 		subscrBus.Subscribe<SubscriptionMessage.CheckPollTimeout>(subscription);
 		subscrBus.Subscribe<StorageMessage.EventCommitted>(subscription);
 		subscrBus.Subscribe<StorageMessage.InMemoryEventCommitted>(subscription);
+		subscrBus.Subscribe<StorageMessage.SecondaryIndexCommitted>(subscription);
 
 		// PERSISTENT SUBSCRIPTIONS
 		// IO DISPATCHER
@@ -1241,7 +1246,6 @@ public class ClusterVNode<TStreamId> :
 		perSubscrBus.Subscribe<SubscriptionMessage.PersistentSubscriptionsRestart>(persistentSubscription);
 
 		// STORAGE SCAVENGER
-		ScavengerFactory scavengerFactory;
 		var scavengerDispatcher = new IODispatcher(_mainQueue, _mainQueue);
 		_mainBus.Subscribe<ClientMessage.ReadStreamEventsBackwardCompleted>(scavengerDispatcher.BackwardReader);
 		_mainBus.Subscribe<ClientMessage.NotHandled>(scavengerDispatcher.BackwardReader);
@@ -1252,7 +1256,7 @@ public class ClusterVNode<TStreamId> :
 		// reuse the same buffer; it's quite big.
 		var calculatorBuffer = new Calculator<TStreamId>.Buffer(32_768);
 
-		scavengerFactory = new ScavengerFactory((message, scavengerLogger, logger) => {
+		var scavengerFactory = new ScavengerFactory((message, scavengerLogger, logger) => {
 			// currently on the main queue
 			var optionsCalculator = new ScavengeOptionsCalculator(options, archiveOptions, message);
 
@@ -1270,14 +1274,12 @@ public class ClusterVNode<TStreamId> :
 
 			var cancellationCheckPeriod = 1024;
 
-			var longHasher = new CompositeHasher<TStreamId>(logFormat.LowHasher, logFormat.HighHasher);
-
 			// the backends (and therefore connections) are scoped to the run of the scavenge
 			// so that we don't keep hold of memory used for the page caches between scavenges
 			var backendPool = new ObjectPool<IScavengeStateBackend<TStreamId>>(
 				objectPoolName: "scavenge backend pool",
-				initialCount: 0, // so that factory is not called on the main queue
-				maxCount: TFChunkScavenger.MaxThreadCount + 1,
+				initialCount: 0, maxCount // so that factory is not called on the main queue
+				: TFChunkScavenger.MaxThreadCount + 1,
 				factory: () => {
 					// not on the main queue
 					var scavengeDirectory = Path.Combine(indexPath, "scavenging");
@@ -1302,7 +1304,7 @@ public class ClusterVNode<TStreamId> :
 
 			var state = new ScavengeState<TStreamId>(
 				logger,
-				longHasher,
+				_longHasher,
 				logFormat.Metastreams,
 				backendPool,
 				options.Database.ScavengeHashUsersCacheCapacity);
@@ -1393,11 +1395,11 @@ public class ClusterVNode<TStreamId> :
 				cleaner: cleaner,
 				scavengePointSource: scavengePointSource,
 				scavengerLogger: scavengerLogger,
-				statusTracker: trackers.ScavengeStatusTracker,
+				statusTracker: trackers.ScavengeStatusTracker, thresholdForNewScavenge
 				// threshold < 0: execute all chunks, even those with no weight
 				// threshold = 0: execute all chunks with weight greater than 0
 				// threshold > 0: execute all chunks above a certain weight
-				thresholdForNewScavenge: optionsCalculator.ChunkExecutionThreshold,
+				: optionsCalculator.ChunkExecutionThreshold,
 				syncOnly: message.SyncOnly,
 				getThrottleStats: () => throttle.PrettyPrint());
 		});
@@ -1586,25 +1588,28 @@ public class ClusterVNode<TStreamId> :
 		_subsystems = options.Subsystems;
 
 		var standardComponents = new StandardComponents(Db.Config, _mainQueue, _mainBus, _timerService, _timeProvider,
-			httpSendService, new IHttpService[] { _httpService }, _workersHandler, _queueStatsManager, trackers.QueueTrackers, metricsConfiguration);
+			httpSendService, [_httpService], _workersHandler, _queueStatsManager, trackers.QueueTrackers, metricsConfiguration);
 
 		IServiceCollection ConfigureNodeServices(IServiceCollection services) {
 			services
+				.AddSingleton<ILongHasher<TStreamId>>(_longHasher)
 				.AddSingleton(telemetryService) // for correct disposal
 				.AddSingleton(_readIndex)
+				.AddSingleton(_readIndex.IndexReader.Backend)
 				.AddSingleton(standardComponents)
 				.AddSingleton(authorizationGateway)
 				.AddSingleton(certificateProvider)
 				.AddSingleton(_authenticationProvider)
 				.AddSingleton<IReadOnlyList<IDbTransform>>(new List<IDbTransform> { new IdentityDbTransform() })
-				.AddSingleton<IReadOnlyList<IClusterVNodeStartupTask>>(new List<IClusterVNodeStartupTask> { })
+				.AddSingleton<IReadOnlyList<IClusterVNodeStartupTask>>(new List<IClusterVNodeStartupTask>())
 				.AddSingleton<IReadOnlyList<IHttpAuthenticationProvider>>(httpAuthenticationProviders)
 				.AddSingleton<Func<(X509Certificate2 Node, X509Certificate2Collection Intermediates,
 						X509Certificate2Collection Roots)>>
 					(() => (_certificateSelector(), _intermediateCertsSelector(), _trustedRootCertsSelector()))
 				.AddSingleton(_nodeHttpClientFactory)
 				.AddSingleton<IChunkRegistry<IChunkBlob>>(Db.Manager)
-				.AddSingleton<IVersionedFileNamingStrategy>(Db.Manager.FileSystem.LocalNamingStrategy);
+				.AddSingleton<IVersionedFileNamingStrategy>(Db.Manager.FileSystem.LocalNamingStrategy)
+				.AddSingleton(dbConfig);
 
 			configureAdditionalNodeServices?.Invoke(services);
 			return services;
@@ -1680,7 +1685,7 @@ public class ClusterVNode<TStreamId> :
 			modifiedOptions.PlugableComponents,
 			_mainQueue, monitoringQueue, _mainBus, _workersHandler,
 			_authenticationProvider, _authorizationProvider,
-			expiryStrategy ?? new DefaultExpiryStrategy(),
+			expiryStrategy ?? DefaultExpiryStrategy.Instance,
 			_httpService,
 			configuration,
 			trackers,
@@ -1964,14 +1969,14 @@ public class ClusterVNode<TStreamId> :
 	private void ReloadTransform(ClusterVNodeOptions options) {
 		var transform = options.Database.Transform;
 		if (!Db.TransformManager.TrySetActiveTransform(transform))
-			Log.Error($"Unknown {nameof(options.Database.Transform)} specified: {options.Database.Transform}");
+			Log.Error("Unknown {DatabaseTransformName} specified: {DatabaseTransform}", nameof(options.Database.Transform), options.Database.Transform);
 	}
 
-	private void ReloadLogOptions(ClusterVNodeOptions options) {
+	private static void ReloadLogOptions(ClusterVNodeOptions options) {
 		if (options.Logging.LogLevel != LogLevel.Default) {
-			var changed = EventStoreLoggerConfiguration.AdjustMinimumLogLevel(options.Logging.LogLevel);
+			var changed = KurrentLoggerConfiguration.AdjustMinimumLogLevel(options.Logging.LogLevel);
 			if (changed) {
-				Log.Information($"The log level was adjusted to: {options.Logging.LogLevel}");
+				Log.Information("The log level was adjusted to: {LoggingLogLevel}", options.Logging.LogLevel);
 
 				if (options.Logging.LogLevel > LogLevel.Information) {
 					Console.WriteLine($"The log level was adjusted to: {options.Logging.LogLevel}");

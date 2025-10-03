@@ -142,7 +142,7 @@ public class InternalClient : IClient {
 			"SUBSCRIPTION TO $all",
 			() => new Enumerator.AllSubscription(
 				bus: _publisher,
-				expiryStrategy: new DefaultExpiryStrategy(),
+				expiryStrategy: DefaultExpiryStrategy.Instance,
 				checkpoint: Convert(start),
 				resolveLinks: false,
 				user: SystemAccounts.System,
@@ -155,7 +155,7 @@ public class InternalClient : IClient {
 			() => new Enumerator.StreamSubscription<string>(
 				streamName: stream,
 				bus: _publisher,
-				expiryStrategy: new DefaultExpiryStrategy(),
+				expiryStrategy: DefaultExpiryStrategy.Instance,
 				checkpoint: null,
 				resolveLinks: false,
 				user: SystemAccounts.System,
@@ -173,7 +173,7 @@ public class InternalClient : IClient {
 				resolveLinks: false,
 				user: SystemAccounts.System,
 				requiresLeader: _requiresLeader,
-				deadline: DateTime.UtcNow.AddSeconds(10),
+				expiryStrategy: DefaultExpiryStrategy.Instance,
 				cancellationToken: token,
 				compatibility: 1));
 
@@ -186,7 +186,27 @@ public class InternalClient : IClient {
 				resolveLinks: false,
 				user: SystemAccounts.System,
 				requiresLeader: _requiresLeader,
-				deadline: DateTime.UtcNow.AddSeconds(10),
+				expiryStrategy: DefaultExpiryStrategy.Instance,
+				cancellationToken: token
+			));
+
+	public IAsyncEnumerable<Event> ReadAllBackwardsFilteredAsync(
+		Position position,
+		long maxCount,
+		IEventFilter eventFilter,
+		CancellationToken token
+	) =>
+		Create($"Reading from $all Backwards filtered", () =>
+			new Enumerator.ReadAllBackwardsFiltered(
+				bus: _publisher,
+				position: Convert(position),
+				maxCount: (ulong)maxCount,
+				resolveLinks: false,
+				eventFilter,
+				user: SystemAccounts.System,
+				requiresLeader: _requiresLeader,
+				maxSearchWindow: null,
+				expiryStrategy: DefaultExpiryStrategy.Instance,
 				cancellationToken: token
 			));
 
@@ -201,7 +221,7 @@ public class InternalClient : IClient {
 				resolveLinks: false,
 				user: SystemAccounts.System,
 				requiresLeader: _requiresLeader,
-				deadline: DateTime.UtcNow.AddSeconds(10),
+				expiryStrategy: DefaultExpiryStrategy.Instance,
 				cancellationToken: token,
 				compatibility: 1));
 

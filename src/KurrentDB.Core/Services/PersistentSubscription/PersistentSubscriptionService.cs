@@ -56,7 +56,7 @@ public class PersistentSubscriptionService<TStreamId> :
 	IHandle<MonitoringMessage.GetPersistentSubscriptionStats>,
 	IHandle<MonitoringMessage.GetStreamPersistentSubscriptionStats> {
 
-	// for constant time lookups in ProcessEventCommited
+	// for constant time lookups in ProcessEventCommitted
 	private Dictionary<string, List<PersistentSubscription>> _subscriptionTopics;
 	// for quick indexing into stable pages of topics
 	private SortedList<string, List<PersistentSubscription>> _sortedSubscriptionTopics;
@@ -995,11 +995,11 @@ public class PersistentSubscriptionService<TStreamId> :
 
 	ValueTask IAsyncHandle<StorageMessage.EventCommitted>.HandleAsync(StorageMessage.EventCommitted message, CancellationToken token) {
 		return _started
-			? ProcessEventCommited(message.Event.EventStreamId, message.CommitPosition, message.Event, token)
+			? ProcessEventCommitted(message.Event.EventStreamId, message.CommitPosition, message.Event, token)
 			: ValueTask.CompletedTask;
 	}
 
-	private async ValueTask ProcessEventCommited(string eventStreamId, long commitPosition, EventRecord evnt, CancellationToken token) {
+	private async ValueTask ProcessEventCommitted(string eventStreamId, long commitPosition, EventRecord evnt, CancellationToken token) {
 		var subscriptions = new List<PersistentSubscription>();
 		if (EventFilter.DefaultStreamFilter.IsEventAllowed(evnt)
 			&& _subscriptionTopics.TryGetValue(eventStreamId, out var subscriptionsToStream)) {

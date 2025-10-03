@@ -225,7 +225,6 @@ public class SpecRunner {
 				definition.PartitionResultStreamNamePatternOption));
 			yield return For($"{projection} qs.ReorderEventsOption", () => Assert.Equal(expectedDefinition.ReorderEventsOption, definition.ReorderEventsOption));
 			yield return For($"{projection} qs.ProcessingLagOption", () => Assert.Equal(expectedDefinition.ProcessingLagOption, definition.ProcessingLagOption));
-			yield return For($"{projection} qs.LimitingCommitPosition", () => Assert.Equal(expectedDefinition.LimitingCommitPosition, definition.LimitingCommitPosition));
 			var partitionedState = new Dictionary<string, string>();
 			var partitionedResult = new Dictionary<string, string>();
 			var sharedStateInitialized = false;

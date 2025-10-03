@@ -123,10 +123,9 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 		_maxProjectionStateSize = projectionSubsystemOptions.MaxProjectionStateSize;
 	}
 
-	public IPublisher LeaderOutputQueue => _leaderOutputQueue;
 	public IPublisher LeaderInputQueue => _leaderInputQueue;
-	public ISubscriber LeaderOutputBus => _leaderOutputBus;
 	public ISubscriber LeaderInputBus => _leaderInputBus;
+	public ISubscriber LeaderOutputBus => _leaderOutputBus;
 
 	public string Name => "Projections";
 	public string DiagnosticsName => Name;
@@ -195,8 +194,6 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 
 		projectionTracker = IProjectionTracker.NoOp;
 
-		Func<string, IProjectionExecutionTracker> executionTrackerFactory =
-			_ => IProjectionExecutionTracker.NoOp;
 		Func<string, IProjectionStateSerializationTracker> serializationTrackerFactory =
 			_ => IProjectionStateSerializationTracker.NoOp;
 
@@ -253,13 +250,11 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 				new ProjectionExecutionHistogramTracker(name, executionDurationMetric));
 		}
 
-		executionTrackerFactory = name =>
-			new CompositeProjectionExecutionTracker(
-				executionTrackerFactories.Select(f => f(name)).ToArray());
+		projectionTrackers = new(ExecutionTrackerFactory, serializationTrackerFactory);
+		return;
 
-		projectionTrackers = new(
-			executionTrackerFactory,
-			serializationTrackerFactory);
+		IProjectionExecutionTracker ExecutionTrackerFactory(string name)
+			=> new CompositeProjectionExecutionTracker(executionTrackerFactories.Select(f => f(name)).ToArray());
 	}
 
 	public void ConfigureServices(IServiceCollection services, IConfiguration configuration) =>

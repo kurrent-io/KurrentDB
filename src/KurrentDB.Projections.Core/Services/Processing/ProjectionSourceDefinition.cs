@@ -23,8 +23,6 @@ public class ProjectionSourceDefinition : IQuerySources {
 
 	[DataMember] public string[] Streams { get; set; }
 
-	[DataMember] public long? LimitingCommitPosition { get; set; }
-
 	[DataMember] public QuerySourceOptions Options { get; set; }
 
 	bool IQuerySources.DefinesStateTransform {
@@ -80,7 +78,6 @@ public class ProjectionSourceDefinition : IQuerySources {
 			Categories = (sources.Categories ?? new string[0]).ToArray(),
 			Events = (sources.Events ?? new string[0]).ToArray(),
 			Streams = (sources.Streams ?? new string[0]).ToArray(),
-			LimitingCommitPosition = sources.LimitingCommitPosition,
 			Options =
 				new QuerySourceOptions {
 					DefinesStateTransform = sources.DefinesStateTransform,
@@ -114,8 +111,7 @@ public class ProjectionSourceDefinition : IQuerySources {
 												 && Equals(Categories, other.Categories) &&
 												 Equals(Events, other.Events)
 												 && Equals(Streams, other.Streams)
-												 && LimitingCommitPosition == other.LimitingCommitPosition &&
-												 Equals(Options, other.Options);
+												 && Equals(Options, other.Options);
 	}
 
 	public override bool Equals(object obj) {
@@ -134,7 +130,6 @@ public class ProjectionSourceDefinition : IQuerySources {
 			hashCode = (hashCode * 397) ^ AllStreams.GetHashCode();
 			hashCode = (hashCode * 397) ^ ByStream.GetHashCode();
 			hashCode = (hashCode * 397) ^ ByCustomPartitions.GetHashCode();
-			hashCode = (hashCode * 397) ^ LimitingCommitPosition.GetHashCode();
 			hashCode = (hashCode * 397) ^ (Options != null ? Options.GetHashCode() : 0);
 			return hashCode;
 		}

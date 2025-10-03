@@ -2,69 +2,84 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Metrics;
 using EventStore.Plugins;
-using EventStore.Plugins.Subsystems;
-using KurrentDB.Core.Bus;
+using EventStore.Plugins.Diagnostics;
+using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Configuration.Sources;
-using KurrentDB.Core.Services.Storage.InMemory;
-using KurrentDB.SecondaryIndexing.Builders;
-using KurrentDB.SecondaryIndexing.Indices;
+using KurrentDB.Core.Services.Storage;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.DuckDB;
+using KurrentDB.SecondaryIndexing.Diagnostics;
+using KurrentDB.SecondaryIndexing.Indexes;
+using KurrentDB.SecondaryIndexing.Indexes.Category;
+using KurrentDB.SecondaryIndexing.Indexes.Default;
+using KurrentDB.SecondaryIndexing.Indexes.EventType;
+using KurrentDB.SecondaryIndexing.Stats;
+using KurrentDB.SecondaryIndexing.Storage;
+using KurrentDB.SecondaryIndexing.Telemetry;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace KurrentDB.SecondaryIndexing;
 
-public interface ISecondaryIndexingPlugin : ISubsystemsPlugin;
-
 public sealed class SecondaryIndexingPluginOptions {
-	public int? CheckpointCommitBatchSize { get; set; }
-	public uint? CheckpointCommitDelayMs { get; set; }
+	public int CommitBatchSize { get; set; } = 50_000;
+	public string? DbPath { get; set; }
 }
 
-public static class SecondaryIndexingPluginFactory {
-	public static ISecondaryIndexingPlugin Create<TStreamId>(VirtualStreamReader virtualStreamReader) =>
-		new SecondaryIndexingPlugin<TStreamId>(virtualStreamReader);
+public static class SecondaryIndexingConstants {
+	public const string MeterName = "KurrentDB.SecondaryIndexes";
+	public const string InjectionKey = "secondary-index";
 }
 
-internal class SecondaryIndexingPlugin<TStreamId>(VirtualStreamReader virtualStreamReader)
-	: SubsystemsPlugin(name: "secondary-indexing"), ISecondaryIndexingPlugin {
+public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders)
+	: SubsystemsPlugin(name: PluginNames.SecondaryIndexes) {
 	[Experimental("SECONDARY_INDEX")]
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
-		var options = configuration.GetSection($"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Options")
-			.Get<SecondaryIndexingPluginOptions>();
+		var options = configuration
+			.GetSection($"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Options")
+			.Get<SecondaryIndexingPluginOptions>() ?? new();
+		services.AddSingleton(options);
 
-		services.AddHostedService(sp =>
-			new SecondaryIndexBuilder(
-				sp.GetRequiredService<ISecondaryIndex>(),
-				sp.GetRequiredService<IPublisher>(),
-				sp.GetRequiredService<ISubscriber>(),
-				options
-			)
+		services.AddDuckDBSetup<IndexingDbSchema>();
+		services.AddDuckDBSetup<InFlightSetup>();
+		services.AddHostedService<SecondaryIndexBuilder>();
+		services.AddSingleton<DefaultIndexInFlightRecords>();
+
+		var meter = new Meter(SecondaryIndexingConstants.MeterName, "1.0.0");
+
+		services.AddKeyedSingleton(SecondaryIndexingConstants.InjectionKey, meter);
+		services.AddSingleton<ISecondaryIndexProcessor>(sp => sp.GetRequiredService<DefaultIndexProcessor>());
+		services.AddSingleton<DefaultIndexProcessor>();
+
+		services.AddSingleton<ISecondaryIndexReader, DefaultIndexReader>();
+		services.AddSingleton<ISecondaryIndexReader, CategoryIndexReader>();
+		services.AddSingleton<ISecondaryIndexReader, EventTypeIndexReader>();
+
+		services.AddSingleton<StatsService>();
+		services.AddHostedService(sp => new DbStatsTelemetryService(
+			sp.GetRequiredService<StatsService>(),
+			telemetry => PublishDiagnosticsData(telemetry, PluginDiagnosticsDataCollectionMode.Snapshot))
 		);
+		services.AddSingleton<GetLastPosition>(sp => sp.GetRequiredService<TFChunkDbConfig>().WriterCheckpoint.Read);
 	}
 
 	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
 		base.ConfigureApplication(app, configuration);
 
-		var index = app.ApplicationServices.GetService<ISecondaryIndex>();
+		var indexReaders = app.ApplicationServices.GetServices<ISecondaryIndexReader>();
 
-		if (index != null)
-			virtualStreamReader.Register(index.Readers.ToArray());
+		secondaryIndexReaders.AddReaders(indexReaders.ToArray());
 	}
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {
-		var enabledOption =
-			configuration.GetValue<bool?>($"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Enabled");
-		var devMode = configuration.GetValue($"{KurrentConfigurationKeys.Prefix}:Dev", defaultValue: false);
-
-		// Enabled by default only in the dev mode
-		// TODO: Change it to be enabled by default when work on secondary indexing is finished
-		bool enabled = enabledOption ?? devMode;
+		var enabledOption = configuration.GetValue<bool?>($"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Enabled");
+		bool enabled = enabledOption ?? true;
 
 		return enabled
 			? (true, "")
-			: (false,
-				$"To enable Second Level Indexing Set '{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Enabled' to 'true'");
+			: (false, $"To enable Second Level Indexing Set '{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Enabled' to 'true'");
 	}
 }

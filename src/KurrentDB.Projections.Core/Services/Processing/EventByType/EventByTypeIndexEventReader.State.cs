@@ -45,8 +45,7 @@ public partial class EventByTypeIndexEventReader {
 					_reader._publisher.Publish(
 						//TODO: publish both link and event data
 						new ReaderSubscriptionMessage.EventReaderPartitionDeleted(
-							_reader.EventReaderCorrelationId, deletedPartition, source: this.GetType(),
-							lastEventNumber: -1, deleteEventOrLinkTargetPosition: position,
+							_reader.EventReaderCorrelationId, deletedPartition, source: this.GetType(), deleteEventOrLinkTargetPosition: position,
 							deleteLinkOrEventPosition: resolvedEvent.EventOrLinkTargetPosition,
 							positionStreamId: resolvedEvent.PositionStreamId,
 							positionEventNumber: resolvedEvent.PositionSequenceNumber));

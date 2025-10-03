@@ -7,6 +7,7 @@
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
 	</ItemGroup>
 	<ItemGroup>
+		<PackageReference Include="Kurrent.Quack" />
 		<PackageReference Include="FluentStorage" />
 		<PackageReference Include="FluentStorage.AWS" />
 		<PackageReference Include="Google.Protobuf" />
@@ -16,7 +17,7 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="librdkafka.redist" />
-        <PackageReference Include="DuckDB.NET.Data.Full" />
+    <PackageReference Include="DuckDB.NET.Data.Full" />
 		<PackageReference Include="Microsoft.FASTER.Core" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />
 		<PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" />
@@ -46,7 +47,9 @@
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
+		<ProjectReference Include="..\KurrentDB.DuckDB\KurrentDB.DuckDB.csproj" />
 		<ProjectReference Include="..\KurrentDB.Licensing\KurrentDB.Licensing.csproj" />
+		<ProjectReference Include="..\KurrentDB.Logging\KurrentDB.Logging.csproj" />
 		<ProjectReference Include="..\KurrentDB.LogV3\KurrentDB.LogV3.csproj" />
 		<ProjectReference Include="..\KurrentDB.Native\KurrentDB.Native.csproj" />
 		<ProjectReference Include="..\KurrentDB.Plugins\KurrentDB.Plugins.csproj" />
@@ -129,6 +132,12 @@
 	  </Compile>
 	  <Compile Update="Services\Transport\Grpc\Users.*.cs">
 	    <DependentUpon>Users.cs</DependentUpon>
+	  </Compile>
+	  <Compile Update="Services\Storage\StorageReaderWorker.*.cs">
+	    <DependentUpon>StorageReaderWorker.cs</DependentUpon>
+	  </Compile>
+	  <Compile Update="Messages\ClientMessage.*.cs">
+	    <DependentUpon>ClientMessage.cs</DependentUpon>
 	  </Compile>
 	</ItemGroup>
 </Project>

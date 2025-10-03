@@ -40,8 +40,7 @@ public class
 	[Test, Category("v8")]
 	public void projection_status_is_running() {
 		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName,
-				true));
+			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
 		Assert.AreEqual(
 			ManagedProjectionState.Running,
 			_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Single().Projections[0]

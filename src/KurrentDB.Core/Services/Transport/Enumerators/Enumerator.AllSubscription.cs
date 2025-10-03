@@ -28,6 +28,7 @@ static partial class Enumerator {
 		private readonly bool _resolveLinks;
 		private readonly ClaimsPrincipal _user;
 		private readonly bool _requiresLeader;
+		private readonly int _readBatchSize;
 		private readonly CancellationTokenSource _cts;
 		private readonly Channel<ReadResponse> _channel;
 		private readonly Channel<(ulong SequenceNumber, ResolvedEvent ResolvedEvent)> _liveEvents;
@@ -46,16 +47,20 @@ static partial class Enumerator {
 			bool resolveLinks,
 			ClaimsPrincipal user,
 			bool requiresLeader,
-			CancellationToken cancellationToken) {
+			int liveBufferSize = DefaultLiveBufferSize,
+			int catchUpBufferSize = DefaultCatchUpBufferSize,
+			int readBatchSize = DefaultReadBatchSize,
+			CancellationToken cancellationToken = default) {
 			_expiryStrategy = expiryStrategy;
 			_subscriptionId = Guid.NewGuid();
 			_bus = Ensure.NotNull(bus);
 			_resolveLinks = resolveLinks;
 			_user = user;
 			_requiresLeader = requiresLeader;
+			_readBatchSize = Ensure.Positive(readBatchSize);
 			_cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-			_channel = Channel.CreateBounded<ReadResponse>(BoundedChannelOptions);
-			_liveEvents = Channel.CreateBounded<(ulong, ResolvedEvent)>(LiveChannelOptions);
+			_channel = CreateCatchUpChannel(catchUpBufferSize);
+			_liveEvents = CreateLiveChannel<(ulong SequenceNumber, ResolvedEvent ResolvedEvent)>(liveBufferSize);
 
 			SubscriptionId = _subscriptionId.ToString();
 
@@ -79,7 +84,7 @@ static partial class Enumerator {
 		}
 
 		public async ValueTask<bool> MoveNextAsync() {
-ReadLoop:
+			ReadLoop:
 
 			if (!await _channel.Reader.WaitToReadAsync(_cts.Token)) {
 				return false;
@@ -146,6 +151,9 @@ ReadLoop:
 					checkpoint = await CatchUp(checkpoint, ct);
 					(checkpoint, sequenceNumber) = await GoLive(checkpoint, sequenceNumber, ct);
 				}
+			} catch (ReadResponseException.NotHandled.ServerNotReady ex) {
+				Log.Warning("Subscription {subscriptionId} to $all terminated because server is not ready.", _subscriptionId);
+				_channel.Writer.TryComplete(ex);
 			} catch (Exception ex) {
 				if (ex is not (OperationCanceledException or ReadResponseException.InvalidPosition))
 					Log.Error(ex, "Subscription {subscriptionId} to $all experienced an error.", _subscriptionId);
@@ -228,7 +236,7 @@ ReadLoop:
 			async Task OnMessage(Message message, CancellationToken ct) {
 				try {
 					if (message is ClientMessage.NotHandled notHandled &&
-						TryHandleNotHandled(notHandled, out var ex))
+					    TryHandleNotHandled(notHandled, out var ex))
 						throw ex;
 
 					if (message is not ClientMessage.ReadAllEventsForwardCompleted completed)
@@ -352,7 +360,7 @@ ReadLoop:
 
 			_bus.Publish(new ClientMessage.ReadAllEventsForward(
 				correlationId, correlationId, envelope,
-				startPos.CommitPosition, startPos.PreparePosition, ReadBatchSize, _resolveLinks, _requiresLeader, null, _user,
+				startPos.CommitPosition, startPos.PreparePosition, _readBatchSize, _resolveLinks, _requiresLeader, null, _user,
 				replyOnExpired: true,
 				expires: _expiryStrategy.GetExpiry(),
 				cancellationToken: ct));

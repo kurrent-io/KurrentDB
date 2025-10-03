@@ -46,7 +46,7 @@ public class when_writing_delete_prepare_but_no_commit_read_index_should<TLogFor
 	}
 
 	[Test]
-	public async Task read_single_events_should_return_commited_records() {
+	public async Task read_single_events_should_return_committed_records() {
 		var result = await ReadIndex.ReadEvent("ES", 0, CancellationToken.None);
 		Assert.AreEqual(ReadEventResult.Success, result.Result);
 		Assert.AreEqual(_event0, result.Record);
@@ -57,7 +57,7 @@ public class when_writing_delete_prepare_but_no_commit_read_index_should<TLogFor
 	}
 
 	[Test]
-	public async Task read_stream_events_forward_should_return_commited_records() {
+	public async Task read_stream_events_forward_should_return_committed_records() {
 		var result = await ReadIndex.ReadStreamEventsForward("ES", 0, 100, CancellationToken.None);
 		Assert.AreEqual(ReadStreamResult.Success, result.Result);
 		Assert.AreEqual(2, result.Records.Length);
@@ -66,7 +66,7 @@ public class when_writing_delete_prepare_but_no_commit_read_index_should<TLogFor
 	}
 
 	[Test]
-	public async Task read_stream_events_backward_should_return_commited_records() {
+	public async Task read_stream_events_backward_should_return_committed_records() {
 		var result = await ReadIndex.ReadStreamEventsBackward("ES", -1, 100, CancellationToken.None);
 		Assert.AreEqual(ReadStreamResult.Success, result.Result);
 		Assert.AreEqual(2, result.Records.Length);
@@ -75,7 +75,7 @@ public class when_writing_delete_prepare_but_no_commit_read_index_should<TLogFor
 	}
 
 	[Test]
-	public async Task read_all_forward_should_return_all_stream_records_except_uncommited() {
+	public async Task read_all_forward_should_return_all_stream_records_except_uncommitted() {
 		var events = (await ReadIndex.ReadAllEventsForward(new TFPos(0, 0), 100, CancellationToken.None))
 			.EventRecords()
 			.Select(r => r.Event)
@@ -86,7 +86,7 @@ public class when_writing_delete_prepare_but_no_commit_read_index_should<TLogFor
 	}
 
 	[Test]
-	public async Task read_all_backward_should_return_all_stream_records_except_uncommited() {
+	public async Task read_all_backward_should_return_all_stream_records_except_uncommitted() {
 		var events = (await ReadIndex.ReadAllEventsBackward(GetBackwardReadPos(), 100, CancellationToken.None))
 			.EventRecords()
 			.Select(r => r.Event)

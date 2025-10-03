@@ -335,7 +335,7 @@ public partial class EnumeratorTests {
 				new SubscriptionProperties(CheckpointType.Start, EventFilterType.StreamPrefix),
 				new LiveProperties()
 			),
-			.. Enumerable.Range(0, Enumerator.ReadBatchSize).Select(i => CreateTestData(
+			.. Enumerable.Range(0, Enumerator.DefaultReadBatchSize).Select(i => CreateTestData(
 				$"subscription to filtered $all receives checkpoints during catch-up (6-{i})",
 				new StreamProperties(NumEvents: i),
 				new SubscriptionProperties(CheckpointType.Start, EventFilterType.StreamPrefix),

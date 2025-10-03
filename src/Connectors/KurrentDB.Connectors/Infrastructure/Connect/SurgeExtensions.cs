@@ -6,7 +6,6 @@
 using KurrentDB.Connect.Connectors;
 using KurrentDB.Connect.Schema;
 using KurrentDB.Core;
-using KurrentDB.Core.Bus;
 using Kurrent.Surge;
 using Kurrent.Surge.Connectors;
 using Kurrent.Surge.DataProtection;

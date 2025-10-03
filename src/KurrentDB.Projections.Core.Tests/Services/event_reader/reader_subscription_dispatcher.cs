@@ -76,10 +76,10 @@ public class reader_subscription_dispatcher<TLogFormat, TStreamId> : TestFixture
 			assignedReaderMessage.ReaderId,
 			CreateFakeEvent(), CheckpointTag.Empty));
 		_queue.Process();
-		var commitedEventReceived = _handler.HandledMessages
+		var committedEventReceived = _handler.HandledMessages
 			.OfType<EventReaderSubscriptionMessage.CommittedEventReceived>()
 			.SingleOrDefault();
-		Assert.NotNull(commitedEventReceived);
+		Assert.NotNull(committedEventReceived);
 	}
 
 	[Test]
