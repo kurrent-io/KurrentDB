@@ -23,7 +23,7 @@
     <PackageVersion Include="Eventuous.Testing" Version="0.15.0" />
     <PackageVersion Include="Extensions.MudBlazor.StaticInput" Version="3.2.1" />
     <PackageVersion Include="FluentAssertions" Version="6.12.2" />
-    <PackageVersion Include="FluentAssertions.Analyzers" Version="0.34.1" />
+    <PackageVersion Include="FluentAssertions.Analyzers" Version="0.33.0" />
     <PackageVersion Include="FluentStorage" Version="5.6.0" />
     <PackageVersion Include="FluentStorage.AWS" Version="5.5.0" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="11.10.0" />
