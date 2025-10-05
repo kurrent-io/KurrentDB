@@ -33,6 +33,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0-${CONTAINER_RUNTIME} AS test
 WORKDIR /build
 COPY --from=build ./build/src ./src
 COPY --from=build ./build/ci ./ci
+COPY --from=build ./build/proto ./proto
 COPY --from=build ./build/LICENSE.md ./LICENSE.md
 COPY --from=build ./build/NOTICE.md ./NOTICE.md
 COPY --from=build ./build/LICENSE_CONTRIBUTIONS.md ./LICENSE_CONTRIBUTIONS.md
