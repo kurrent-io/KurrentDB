@@ -97,12 +97,12 @@ services:
     restart: unless-stopped
     depends_on:
       - cert-gen
-
-  kurrentdb.api.v2.tests:
-    image: kurrentdb.api.v2.tests
-    build:
-      context: .
-      dockerfile: src/KurrentDB.Api.V2.Tests/Dockerfile
+#
+#  kurrentdb.api.v2.tests:
+#    image: kurrentdb.api.v2.tests
+#    build:
+#      context: .
+#      dockerfile: src/KurrentDB.Api.V2.Tests/Dockerfile
 
 networks:
   clusternetwork:
