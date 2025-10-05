@@ -49,7 +49,7 @@ public abstract record TestLoggerProvider : ILoggerProvider {
 
 /// <summary>
 /// The logger provider that integrates Serilog with the Microsoft.Extensions.Logging framework.
-/// It dinamically returns loggers with context about the current test being executed or
+/// It dynamically returns loggers with context about the current test being executed or
 /// the default logger if no test context is available.
 /// </summary>
 /// <remarks>
