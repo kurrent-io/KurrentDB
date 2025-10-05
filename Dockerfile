@@ -12,6 +12,9 @@ COPY ./NOTICE.md .
 WORKDIR /build/ci
 COPY ./ci ./
 
+WORKDIR /build/proto
+COPY ./proto ./
+
 WORKDIR /build/src
 COPY ./src/Connectors/*/*.csproj ./Connectors/
 COPY ./src/SchemaRegistry/*/*.csproj ./SchemaRegistry/
