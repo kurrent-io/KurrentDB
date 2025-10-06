@@ -32,8 +32,8 @@ public sealed partial class ClusterVNodeTestContext : IAsyncInitializer, IAsyncD
     }
 
     static readonly Dictionary<string, object?> ConfigurationOverrides = new() {
-        { "KurrentDB:Application:MaxAppendEventSize", 8.Megabytes().Bytes },
-        { "KurrentDB:Application:MaxAppendSize", 16.Megabytes().Bytes }
+        { "KurrentDB:Application:MaxAppendEventSize", 4.Megabytes().Bytes },
+        { "KurrentDB:Application:MaxAppendSize", 24.Megabytes().Bytes }
     };
 
     static void ConfigureServices(ClusterVNodeOptions options, IServiceCollection services) {

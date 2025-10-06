@@ -31,18 +31,13 @@ public class ApiV2Plugin() : SubsystemsPlugin("APIV2") {
         services.Configure<GrpcServiceOptions<StreamsService>>((sp, options) => {
             var serverOptions = sp.GetRequiredService<ClusterVNodeOptions>();
 
-            // MaxReceiveMessageSize must always be  larger than the max append event
-            // size so that the server can return proper error messages when the client
+            // MaxReceiveMessageSize must always be larger than the max append size
+            // so that the server can return proper error messages when the client
             // exceeds the limit.
-            // For example, if the max append event size is 8MB, the max receive message size
-            // will be 8.4MB if we use a 5% buffer.
-            options.MaxReceiveMessageSize = (int)(serverOptions.Application.MaxAppendEventSize * 1.05);
+            // For example, if the max append size is 8MB, and we use a 50% buffer,
+            // the max receive message size will be set to 12MB.
+            options.MaxReceiveMessageSize = (int)(serverOptions.Application.MaxAppendSize * 1.50);
         });
-
-        Environment.SetEnvironmentVariable("OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_ENABLE_GRPC_INSTRUMENTATION", "True");
-
-        services.AddOpenTelemetry()
-            .WithMetrics(metrics => metrics.AddMeter("Grpc.AspNetCore.Server"));
     }
 
 	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {

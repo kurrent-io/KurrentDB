@@ -1,20 +1,73 @@
 # KurrentDB.Testing.ClusterVNodeApp
 
-A production-like KurrentDB test harness designed for integration tests that need a real database instance **without using Docker**.
+**The production-like KurrentDB test harness for integration tests.**
 
-## Purpose
+## Why Use This?
 
-This library provides `ClusterVNodeApp`, a testing infrastructure that creates a fully functional KurrentDB instance that's **as close to production as possible**, but optimized for test scenarios:
+**Always use `ClusterVNodeApp` for integration tests.** Here's why:
 
-- ✅ Uses the same `ClusterVNode` and `ClusterVNodeHostedService` as the production server
-- ✅ Supports the same configuration options and plugins
-- ✅ Runs the same gRPC services and HTTP endpoints
-- ✅ Uses the same startup/shutdown lifecycle
-- ❌ No Docker required
-- ❌ No disk I/O (runs in-memory by default)
-- ❌ No authentication/TLS overhead (insecure mode)
+### ✅ Production Fidelity
+- **Same codebase** - Uses the exact same `ClusterVNode`, `ClusterVNodeHostedService`, and `ClusterVNodeStartup` as production
+- **Same services** - All gRPC services, HTTP controllers, and plugins run identically
+- **Same configuration** - Supports all production configuration options
+- **Same lifecycle** - Startup, shutdown, and message bus behavior is identical
 
-**Use this when:** You need integration tests that exercise the full KurrentDB stack (gRPC, projections, persistent subscriptions, etc.) without the overhead of Docker containers.
+### ✅ Test Performance
+- **No Docker overhead** - Starts in milliseconds, not seconds
+- **In-memory by default** - Fast test execution without disk I/O
+- **Configurable for persistence** - Can test with disk storage and restarts when needed
+- **Dynamic ports** - Run multiple instances in parallel without conflicts
+
+### ✅ Developer Experience
+- **Simple setup** - One class, minimal configuration
+- **Full DI access** - Inject and resolve any internal service
+- **Easy debugging** - Step through production code directly
+- **TUnit integration** - Shared fixtures with `ClassDataSource`
+
+**The goal:** Provide a single-node production-like environment for testing - the only missing piece is a working dev certificate provider for macOS Sequoia to enable full auth/TLS testing.
+
+## Migration from MiniNode (Legacy)
+
+**⚠️ CRITICAL: Do NOT use `MiniNode` for new tests.**
+
+`MiniNode` (found in `KurrentDB.Core.Tests/Helpers/MiniNode.cs`) is legacy test infrastructure that **does not use the production code path**. Tests written with `MiniNode` provide **false confidence** because they don't validate actual production behavior.
+
+### Why MiniNode is Problematic
+
+| Issue | MiniNode | ClusterVNodeApp |
+|-------|----------|-----------------|
+| **Startup Path** | Manual configuration, bypasses `ClusterVNodeHostedService` | ✅ Uses real `ClusterVNodeHostedService` |
+| **Service Registration** | Custom test services, manual setup | ✅ Uses real `ClusterVNodeStartup.ConfigureServices()` |
+| **HTTP Stack** | `TestServer` with custom `TestController` | ✅ Real Kestrel with production controllers |
+| **Initialization** | Hardcoded test behaviors | ✅ Real subsystem initialization |
+| **Production Fidelity** | ❌ Fake test harness | ✅ Actual production components |
+
+**Example of the problem:**
+```csharp
+// MiniNode bypasses production startup entirely
+Node = new ClusterVNode<TStreamId>(options, logFormatFactory, ...);
+Node.HttpService.SetupController(new TestController(Node.MainQueue)); // Fake!
+var builder = WebApplication.CreateBuilder();
+builder.Services.AddSerilog();
+Node.Startup.ConfigureServices(builder.Services); // Manual, not via HostedService
+```
+
+vs.
+
+```csharp
+// ClusterVNodeApp uses the REAL production path
+var svc = new ClusterVNodeHostedService(options, certProvider, config); // Real!
+svc.Node.Startup.ConfigureServices(builder.Services); // Same as production
+svc.Node.Startup.Configure(app); // Same as production
+```
+
+### Migration Guide
+
+1. **New tests**: Always use `ClusterVNodeApp` with TUnit fixtures
+2. **Existing tests**: Migrate when touching MiniNode-based tests
+3. **No exceptions**: MiniNode should be considered deprecated
+
+**Why this matters:** Tests using MiniNode can pass while production code is broken because they don't exercise the real initialization path, service registration, or HTTP pipeline.
 
 ## Architecture Overview
 
@@ -178,31 +231,7 @@ var nodePort = server.ServerOptions.Interface.NodePort;
 
 ## Integration with Tests
 
-### xUnit Example
-
-```csharp
-public class MyIntegrationTests : IAsyncLifetime {
-    ClusterVNodeApp _server = null!;
-
-    public async Task InitializeAsync() {
-        _server = new ClusterVNodeApp();
-        await _server.Start();
-    }
-
-    public async Task DisposeAsync() {
-        await _server.DisposeAsync();
-    }
-
-    [Fact]
-    public async Task Should_Append_Events() {
-        var client = _server.Services.GetRequiredService<Streams.StreamsClient>();
-
-        // Your test code...
-    }
-}
-```
-
-### TUnit Example (with Fixture)
+### TUnit Example (Recommended)
 
 TUnit supports shared fixtures via `ClassDataSource`. This is the recommended pattern for ClusterVNodeApp:
 
@@ -254,52 +283,26 @@ public class MyIntegrationTests {
 }
 ```
 
-### NUnit Example
-
-```csharp
-[TestFixture]
-public class MyIntegrationTests {
-    ClusterVNodeApp _server = null!;
-
-    [OneTimeSetUp]
-    public async Task Setup() {
-        _server = new ClusterVNodeApp();
-        await _server.Start();
-    }
-
-    [OneTimeTearDown]
-    public async Task Cleanup() {
-        await _server.DisposeAsync();
-    }
-
-    [Test]
-    public async Task Should_Append_Events() {
-        var client = _server.Services.GetRequiredService<Streams.StreamsClient>();
-
-        // Your test code...
-    }
-}
-```
+> **Note:** All new tests should use TUnit. The fixture pattern above is the recommended approach for integration tests.
 
 ## Known Limitations
 
-### 1. Development Certificate Authentication (Disabled)
-Dev certificate-based authentication is currently **disabled** due to issues on macOS Sequoia. The `ConfigureCertificateProvider` method always returns `OptionsCertificateProvider` instead of `DevCertificateProvider`.
+### 1. Authentication/TLS (macOS Sequoia Issue)
+The server runs in **insecure mode by default** because dev certificate generation is broken on macOS Sequoia. Until this is resolved, certificate-based authentication and TLS are disabled.
 
-**Impact:** Tests requiring certificate-based authentication must provide their own certificates via configuration overrides.
+**Impact:** Authentication and authorization testing requires manual certificate configuration.
 
-**Workaround:**
+**Workaround:** Provide certificates manually via configuration:
 ```csharp
 var overrides = new Dictionary<string, object?> {
+    ["KurrentDB:Application:Insecure"] = false,
     ["KurrentDB:Certificates:CertificateFile"] = "/path/to/cert.pfx",
     ["KurrentDB:Certificates:CertificatePassword"] = "password"
 };
-
-await using var server = new ClusterVNodeApp(overrides: overrides);
 ```
 
-### 2. No UI Access
-The Admin UI is disabled by default. If you need UI for debugging, override the setting:
+### 2. Admin UI Disabled
+The Admin UI is disabled by default for faster startup. Enable it for debugging:
 
 ```csharp
 var overrides = new Dictionary<string, object?> {
@@ -307,70 +310,20 @@ var overrides = new Dictionary<string, object?> {
 };
 ```
 
-### 3. Dynamic Port Assignment
-The server listens on a **random port** (0) by default. Always retrieve the actual address:
-
-```csharp
-var actualAddress = server.Services.GetServerLocalAddress();
-Console.WriteLine($"Server listening on: {actualAddress}");
-```
-
 ## Comparison: ClusterVNodeApp vs Program.cs
 
-### Startup Flow
+Both follow the **same core initialization path**. The differences are minimal and only related to how configuration is loaded and default settings:
 
-**Production (Program.cs):**
-```
-Configuration Loading → Option Validation → Certificate Setup →
-ClusterVNodeHostedService Creation → WebApplication Build →
-Kestrel Configuration → Service Registration → App.Run()
-```
-
-**ClusterVNodeApp:**
-```
-In-Memory Config → Option Creation → ClusterVNodeHostedService Creation →
-Slim WebApplication Build → Service Registration → Custom Config Hook →
-Readiness Probe Setup → Web.Build() → Start() → Wait for Ready
-```
-
-### Service Registration
-
-Both use the same service registration pipeline:
-1. `ClusterVNodeStartup.ConfigureServices()` - Core services
-2. Plugin service registration
-3. gRPC service registration
-4. Custom configuration hook (ClusterVNodeApp only)
-
-### Key Architectural Similarities
-
-- ✅ Same `ClusterVNode` instance
-- ✅ Same `ClusterVNodeHostedService` lifecycle
-- ✅ Same plugin loading mechanism
-- ✅ Same gRPC service implementations
-- ✅ Same HTTP controller routing
-- ✅ Same authentication/authorization providers (when configured)
-- ✅ Same message bus and queuing infrastructure
-
-### Key Architectural Differences
-
-- ❌ Configuration source (files vs in-memory)
-- ❌ Web host (full vs slim)
-- ❌ Certificate provider (production vs test)
-- ❌ Default settings (production-ready vs test-optimized)
-- ❌ Readiness detection (external health check vs internal probe)
-
-## When to Use This vs Docker
-
-| Scenario                     | Use ClusterVNodeApp | Use Docker |
-|------------------------------|---------------------|------------|
-| Unit/integration tests       | ✅ Yes               | ❌ No       |
-| Fast test execution          | ✅ Yes               | ❌ No       |
-| CI/CD pipelines              | ✅ Yes               | ⚠️ Maybe   |
-| Multi-node cluster testing   | ❌ No                | ✅ Yes      |
-| Production-like environment  | ⚠️ Maybe            | ✅ Yes      |
-| Testing with persistent data | ❌ No                | ✅ Yes      |
-| Testing across restarts      | ❌ No                | ✅ Yes      |
-| Local development            | ✅ Yes               | ✅ Yes      |
+| Aspect                   | Program.cs (Production)                             | ClusterVNodeApp (Test)  |
+|--------------------------|-----------------------------------------------------|-------------------------|
+| **Initialization**       | `ClusterVNodeHostedService` → `ClusterVNodeStartup` | ✅ Same                  |
+| **Service Registration** | `ClusterVNodeStartup.ConfigureServices()`           | ✅ Same                  |
+| **Middleware Pipeline**  | `ClusterVNodeStartup.Configure()`                   | ✅ Same                  |
+| **ClusterVNode**         | Production instance with all subsystems             | ✅ Same                  |
+| **Configuration Source** | YAML/ENV/CLI                                        | In-memory dictionary    |
+| **Web Host**             | Full `WebApplication`                               | Slim `WebApplication`   |
+| **Port**                 | Fixed (2113)                                        | Dynamic (random)        |
+| **Defaults**             | Production settings                                 | Test-optimized settings |
 
 ## See Also
 

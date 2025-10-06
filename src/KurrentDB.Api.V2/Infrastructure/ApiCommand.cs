@@ -5,7 +5,6 @@ using System.Diagnostics;
 using Google.Protobuf;
 using Grpc.Core;
 using Humanizer;
-using KurrentDB.Api.Infrastructure.Authorization;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messaging;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,8 +13,8 @@ using static System.StringComparison;
 namespace KurrentDB.Api;
 
 abstract class ApiCommand<TCommand> where TCommand : ApiCommand<TCommand> {
-    protected ApiCommand(string? operationName = null) {
-        OperationName = operationName ?? GetType().Name
+    protected ApiCommand(string? friendlyName = null) {
+        FriendlyName = friendlyName ?? GetType().Name
             .Replace("command", "", OrdinalIgnoreCase)
             .Replace("request", "", OrdinalIgnoreCase)
             .Replace("callback", "", OrdinalIgnoreCase)
@@ -23,11 +22,10 @@ abstract class ApiCommand<TCommand> where TCommand : ApiCommand<TCommand> {
             .Humanize();
     }
 
-    protected string OperationName { get; }
+    protected string FriendlyName { get; }
 
-    protected IPublisher   Publisher  { get; private set; } = null!;
-    protected TimeProvider Time       { get; private set; } = TimeProvider.System;
-    protected Permission   Permission { get; private set; } = Permission.None;
+    protected IPublisher   Publisher { get; private set; } = null!;
+    protected TimeProvider Time      { get; private set; } = TimeProvider.System;
 
     /// <summary>
     /// Sets the message bus publisher to be used by the command.
@@ -45,18 +43,9 @@ abstract class ApiCommand<TCommand> where TCommand : ApiCommand<TCommand> {
         Time = time;
         return (TCommand)this;
     }
-
-    /// <summary>
-    /// Sets the required permission for the command.
-    /// This is used for authorization checks and enriching access denied errors.
-    /// </summary>
-    public TCommand WithPermission(Permission permission) {
-        Permission = permission;
-        return (TCommand)this;
-    }
 }
 
-abstract class ApiCommand<TCommand, TResult>(string? operationName = null) : ApiCommand<TCommand>(operationName) where TCommand : ApiCommand<TCommand, TResult> where TResult : IMessage {
+abstract class ApiCommand<TCommand, TResult>(string? friendlyName = null) : ApiCommand<TCommand>(friendlyName) where TCommand : ApiCommand<TCommand, TResult> where TResult : IMessage {
     protected abstract Message BuildMessage(IEnvelope callback, ServerCallContext context);
 
     protected abstract bool SuccessPredicate(Message message);
@@ -86,10 +75,10 @@ abstract class ApiCommand<TCommand, TResult>(string? operationName = null) : Api
         var self = (TCommand)this;
 
         var callback = new DelegateCallback<TCommand, TResult>(
-            context, self, OperationName,
-            static (msg, cmd, ctx) => cmd.SuccessPredicate(msg),
-            static (msg, cmd, ctx) => cmd.MapToResult(msg),
-            static (msg, cmd, ctx) => cmd.MapToError(msg)
+            context, self, FriendlyName,
+            static (msg, cmd, _) => cmd.SuccessPredicate(msg),
+            static (msg, cmd, _) => cmd.MapToResult(msg),
+            static (msg, cmd, _) => cmd.MapToError(msg)
         );
 
         try {
@@ -103,6 +92,10 @@ abstract class ApiCommand<TCommand, TResult>(string? operationName = null) : Api
             var ex = aex.InnerException ?? aex.Flatten();
             await OnError(ex, context);
             throw ex;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException) {
+            await OnError(ex, context);
+            throw;
         }
     }
 }

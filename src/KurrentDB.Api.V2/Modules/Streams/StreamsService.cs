@@ -12,29 +12,22 @@ using Grpc.Core;
 using KurrentDB.Api.Errors;
 using KurrentDB.Api.Infrastructure;
 using KurrentDB.Api.Infrastructure.Authorization;
-using KurrentDB.Api.Streams.Authorization;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
-using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Protocol.V2.Streams;
-using Microsoft.AspNetCore.Authorization;
+
+using static EventStore.Plugins.Authorization.Operations.Streams.Parameters;
 using static KurrentDB.Core.Messages.ClientMessage;
 using static KurrentDB.Protocol.V2.Streams.StreamsService;
 
 namespace KurrentDB.Api.Streams;
 
-public class StreamsServiceOptions {
-    public int MaxAppendSize { get; set; } = TFConsts.ChunkSize;
-    public int MaxRecordSize { get; set; } = TFConsts.EffectiveMaxLogRecordSize;
-}
-
-[Authorize]
 public class StreamsService : StreamsServiceBase {
     public StreamsService(
-        StreamsServiceOptions options,
+        ClusterVNodeOptions options,
         IPublisher publisher,
         IAuthorizationProvider authz,
         INodeSystemInfoProvider node
@@ -45,37 +38,22 @@ public class StreamsService : StreamsServiceBase {
         EnsureNodeIsLeader = node.EnsureNodeIsLeader;
     }
 
-    public StreamsService(
-        ClusterVNodeOptions options,
-        IPublisher publisher,
-        IAuthorizationProvider authz,
-        INodeSystemInfoProvider node
-    ) : this(
-        new StreamsServiceOptions {
-            MaxAppendSize = options.Application.MaxAppendSize,
-            MaxRecordSize = options.Application.MaxAppendEventSize
-        }, publisher, authz, node
-    ) { }
-
-    StreamsServiceOptions              Options            { get; }
+    ClusterVNodeOptions                Options            { get; }
     IPublisher                         Publisher          { get; }
     IAuthorizationProvider             Authz              { get; }
     Func<CancellationToken, ValueTask> EnsureNodeIsLeader { get; }
 
     public override async Task<AppendSessionResponse> AppendSession(IAsyncStreamReader<AppendRequest> requests, ServerCallContext context) {
-        // check scope-level permission for appending to streams
-        await Authz.AuthorizeOperation(StreamPermission.Append, context);
-
         await EnsureNodeIsLeader(context.CancellationToken);
 
         var command = await requests
             .ReadAllAsync()
-            .Do((req, _) => Authz.AuthorizeOperation(StreamPermission.Append.WithStream(req.Stream), context))
+            .Do((req, _) => Authz.AuthorizeOperation(Operations.Streams.Write, StreamId(req.Stream), context))
             .AggregateAsync(
                 Publisher
                     .NewCommand<AppendSessionCommand>()
-                    .WithMaxRecordSize(Options.MaxRecordSize)
-                    .WithMaxAppendSize(Options.MaxAppendSize),
+                    .WithMaxRecordSize(Options.Application.MaxAppendEventSize)
+                    .WithMaxAppendSize(Options.Application.MaxAppendSize),
                 (cmd, req) => cmd.WithRequest(req),
                 context.CancellationToken
             );
@@ -120,7 +98,7 @@ public class StreamsService : StreamsServiceBase {
 
             // Prepare and validate records
             // We do this here to ensure that if any record is invalid, we fail the entire session.
-			foreach (var record in request.Records.Select(rec => rec.PrepareRecord())) {
+			foreach (var record in request.Records.Select(static rec => rec.PreProcessRecord())) {
 				var recordSize = record.CalculateSizeOnDisk(MaxRecordSize);
 				if (recordSize.ExceedsMax)
 					throw ApiErrors.AppendRecordSizeExceeded(request.Stream, record.RecordId, recordSize.TotalSize, MaxRecordSize);
@@ -135,16 +113,21 @@ public class StreamsService : StreamsServiceBase {
 			return this;
 		}
 
-        protected override Message BuildMessage(IEnvelope callback, ServerCallContext context) =>
-            new WriteEvents(
-                callback,
-                Streams.ToImmutable(),
-                Revisions.ToImmutable(),
-                Events.ToImmutable(),
-                Indexes.ToImmutable(),
-                context.GetHttpContext().User,
-                context.CancellationToken
+        protected override Message BuildMessage(IEnvelope callback, ServerCallContext context) {
+            var cid = Guid.NewGuid();
+            return new WriteEvents(
+                internalCorrId: cid,
+                correlationId: cid,
+                envelope: callback,
+                requireLeader: true,
+                eventStreamIds: Streams.ToImmutable(),
+                expectedVersions: Revisions.ToImmutable(),
+                events: Events.ToImmutable(),
+                eventStreamIndexes: Indexes.ToImmutable(),
+                user: context.GetHttpContext().User,
+                cancellationToken: context.CancellationToken
             );
+        }
 
         protected override bool SuccessPredicate(Message message) =>
             message is WriteEventsCompleted { Result: OperationResult.Success };
@@ -179,7 +162,7 @@ public class StreamsService : StreamsServiceBase {
                         completed.FailureCurrentVersions.Span[0]
                     ),
 
-                    _ => ApiErrors.InternalServerError($"{OperationName} completed in error with unexpected result: {completed.Result}")
+                    _ => ApiErrors.InternalServerError($"{FriendlyName} completed in error with unexpected result: {completed.Result}")
                 },
                 _ => null
             };

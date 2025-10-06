@@ -31,11 +31,11 @@ namespace KurrentDB.Api;
 /// The type of the successful API response.
 /// </typeparam>
 abstract class ApiCallbackBase<TState, TResponse> : IEnvelope {
-    protected ApiCallbackBase(ServerCallContext context, in TState state, string? operationName = null) {
+    protected ApiCallbackBase(ServerCallContext context, in TState state, string? friendlyName = null) {
         CallContext = context;
         State       = state;
 
-        OperationName = operationName ?? GetType().Name
+        FriendlyName = friendlyName ?? GetType().Name
             .Replace("callback", "", OrdinalIgnoreCase)
             .Replace("envelope", "", OrdinalIgnoreCase)
             .Replace("reply", "", OrdinalIgnoreCase)
@@ -48,16 +48,16 @@ abstract class ApiCallbackBase<TState, TResponse> : IEnvelope {
     TaskCompletionSource<TResponse> Operation { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     /// <summary>
-    /// The name of the operation being performed.
+    /// The friendly name of the request being handled.
     /// This is used for logging and error messages to provide context about the operation.
-    /// It should describe the action being performed, e.g., "ReadEvent", "WriteEvents", etc.
+    /// It should describe the action being performed, e.g., "Read Event", "Write Events", etc.
     /// <remarks>
     /// It is automatically derived from the class name if not provided,
     /// by removing common suffixes like "Callback", "Envelope", and "Reply".
-    /// This ensures that the operation name is always meaningful and consistent.
+    /// This ensures that it is always meaningful and consistent.
     /// </remarks>
     /// </summary>
-    protected string OperationName { get; }
+    protected string FriendlyName { get; }
 
     /// <summary>
     /// A task that completes when the operation is finished, either successfully or with an error.
@@ -80,15 +80,16 @@ abstract class ApiCallbackBase<TState, TResponse> : IEnvelope {
     /// </typeparam>
     public void ReplyWith<T>(T message) where T : Message {
         try {
+            // TODO SS: in hindsight, it seems that Pre-Success validtion logic only applies to certain message types and should not be in the base class
             // check for pre-success errors
             if (message.TryGetOperationResult(out var operationResult))
                 switch (operationResult) {
                     case OperationResult.AccessDenied:
-                        Operation.TrySetException(ApiErrors.AccessDenied(CallContext.Method, CallContext.GetHttpContext().User.Identity?.Name));
+                        Operation.TrySetException(ApiErrors.AccessDenied(CallContext));
                         return;
 
                     case OperationResult.ForwardTimeout:
-                        Operation.TrySetException(ApiErrors.OperationTimeout($"{OperationName} timed out while waiting to be forwarded to the leader"));
+                        Operation.TrySetException(ApiErrors.OperationTimeout($"{FriendlyName} timed out while waiting to be forwarded to the leader"));
                         return;
                 }
 
@@ -98,7 +99,7 @@ abstract class ApiCallbackBase<TState, TResponse> : IEnvelope {
                     Operation.TrySetResult(MapToResponse(message, State, CallContext));
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException) {
-                    Operation.TrySetException(ApiErrors.InternalServerError(ex, $"{OperationName} failed to map response: {ex.Message}"));
+                    Operation.TrySetException(ApiErrors.InternalServerError(ex, $"{FriendlyName} failed to map response: {ex.Message}"));
                 }
 
                 return;
@@ -121,19 +122,19 @@ abstract class ApiCallbackBase<TState, TResponse> : IEnvelope {
             // otherwise, treat as a normal post-success error
             try {
                 var err = MapToError(message, State, CallContext)
-                       ?? ApiErrors.InternalServerError($"{OperationName} failed with unexpected callback message: {message.GetType().FullName}");
+                       ?? ApiErrors.InternalServerError($"{FriendlyName} failed with unexpected callback message: {message.GetType().FullName}");
 
                 Operation.TrySetException(err);
             }
             catch (Exception ex) when (ex is not OperationCanceledException) {
-                Operation.TrySetException(ApiErrors.InternalServerError(ex, $"{OperationName} failed to map error: {ex.Message}"));
+                Operation.TrySetException(ApiErrors.InternalServerError(ex, $"{FriendlyName} failed to map error: {ex.Message}"));
             }
         }
         catch (OperationCanceledException ex) {
             Operation.TrySetCanceled(ex.CancellationToken);
         }
         catch (Exception ex) {
-            Operation.TrySetException(ApiErrors.InternalServerError(ex, $"{OperationName} failed to process callback message: {ex.Message}"));
+            Operation.TrySetException(ApiErrors.InternalServerError(ex, $"{FriendlyName} failed to process callback message: {ex.Message}"));
         }
     }
 
@@ -185,13 +186,11 @@ static class MessageExtensions {
 }
 
 sealed class DelegateCallback<TState, TResponse>(
-    ServerCallContext context,
-    in TState state,
-    string? operationName,
+    ServerCallContext context, in TState state, string? friendlyName,
     Func<Message, TState, ServerCallContext, bool> successPredicate,
     Func<Message, TState, ServerCallContext, TResponse> responseMapper,
     Func<Message, TState, ServerCallContext, RpcException?> errorMapper
-) : ApiCallbackBase<TState, TResponse>(context, state, operationName) {
+) : ApiCallbackBase<TState, TResponse>(context, state, friendlyName) {
     protected override bool          SuccessPredicate(Message msg, TState state, ServerCallContext ctx) => successPredicate(msg, state, ctx);
     protected override TResponse     MapToResponse(Message msg, TState state, ServerCallContext ctx)    => responseMapper(msg, state, ctx);
     protected override RpcException? MapToError(Message msg, TState state, ServerCallContext ctx)       => errorMapper(msg, state, ctx);

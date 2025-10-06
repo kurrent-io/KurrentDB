@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Text;
 using FluentValidation.Results;
+using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Google.Rpc;
 using Grpc.Core;
@@ -52,6 +53,9 @@ public static partial class ApiErrors {
 
 		return RpcExceptions.FromError(ServerError.AccessDenied, message, details);
 	}
+
+    public static RpcException AccessDenied(ServerCallContext callContext) =>
+        AccessDenied(callContext.Method, callContext.GetHttpContext().User.Identity?.Name);
 
     /// <summary>
     /// Creates an RPC exception for requests with invalid arguments based on FluentValidation results.
@@ -101,24 +105,25 @@ public static partial class ApiErrors {
         return RpcExceptions.FromError(ServerError.BadRequest, message, details);
     }
 
-	// /// <summary>
-    // /// Creates an RPC exception for requests with invalid arguments from individual validation failures.
-    // /// This method is an overload that accepts individual validation failures and creates a ValidationResult internally.
-    // /// </summary>
-    //    /// <param name="requestType">
-    //    /// The type of the request being validated.
-    //    /// This is used to include the request type name in the error message for context.
-    //    /// </param>
-    // /// <param name="failures">
-    // /// An array of validation failures representing invalid request arguments.
-    // /// Each failure should contain a field name and error description.
-    // /// </param>
-    // /// <returns>
-    // /// An <see cref="RpcException"/> with status code <see cref="StatusCode.InvalidArgument"/>,
-    // /// including <see cref="BadRequest"/> details with field violations.
-    // /// </returns>
-    // public static RpcException InvalidRequest(Type requestType, params ValidationFailure[] failures) =>
-    // 	InvalidRequest(requestType, new ValidationResult(failures));
+    /// <summary>
+    /// Creates an RPC exception for requests with invalid arguments based on FluentValidation results.
+    /// This method is a generic overload that infers the request type from the type parameter.
+    /// </summary>
+    /// <param name="validationResult">
+    /// A FluentValidation result containing validation failures.
+    /// Must contain at least one validation error to be processed.
+    /// Each validation failure should have a property name and error message.
+    /// </param>
+    /// <typeparam name="T">
+    /// The type of the request being validated.
+    /// This is used to include the request type name in the error message for context.
+    /// </typeparam>
+    /// <returns>
+    /// An <see cref="RpcException"/> with status code <see cref="StatusCode.InvalidArgument"/>,
+    /// including <see cref="BadRequest"/> details with field violations.
+    /// </returns>
+    public static RpcException InvalidRequest<T>(ValidationResult validationResult) where T : IMessage =>
+        InvalidRequest(typeof(T), validationResult);
 
     /// <summary>
     /// Creates an RPC exception for requests with invalid arguments from individual validation failures.

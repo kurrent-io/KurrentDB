@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Net;
 using System.Security.Claims;
 using System.Threading;
@@ -62,17 +61,6 @@ public static partial class ClientMessage {
 			RequireLeader = requireLeader;
 			User = user;
 			Tokens = tokens;
-		}
-
-		protected WriteRequestMessage(IEnvelope envelope, ClaimsPrincipal user, CancellationToken token) : base(token) {
-            var cid = Guid.NewGuid();
-
-			InternalCorrId = cid;
-			CorrelationId = cid;
-			Envelope = envelope;
-            RequireLeader = true;
-			User = user;
-			Tokens = new Dictionary<string, string>();
 		}
 	}
 
@@ -236,75 +224,7 @@ public static partial class ClientMessage {
 			EventStreamIndexes = eventStreamIndexes;
 		}
 
-        /// <summary>
-        /// New streamlined constructor used in the new append API that takes raw bytes for data and properties.
-        /// </summary>
-        public WriteEvents(
-			IEnvelope envelope,
-			LowAllocReadOnlyMemory<string> eventStreamIds,
-			LowAllocReadOnlyMemory<long> expectedVersions,
-			LowAllocReadOnlyMemory<Event> events,
-			LowAllocReadOnlyMemory<int> eventStreamIndexes,
-			ClaimsPrincipal user,
-			CancellationToken cancellationToken = default)
-			: base(envelope, user, cancellationToken) {
-
-			// there must be at least one stream
-			Debug.Assert(eventStreamIds.Length > 0, "eventStreamIds must not be empty");
-
-			// each stream must correspond to an expected version at the same index
-			Debug.Assert(
-				expectedVersions.Length == eventStreamIds.Length,
-				"expectedVersions length must match eventStreamIds length");
-
-			// when empty: all events implicitly are for the single stream which is at index 0.
-			// when non-empty: eventStreamIndexes maps each event to the index of its stream
-			if (eventStreamIndexes.Length is not 0)
-				Debug.Assert(
-					eventStreamIndexes.Length == events.Length,
-					"eventStreamIndexes length must match events length when non-empty");
-#if DEBUG
-			foreach (var eventStreamId in eventStreamIds.Span)
-				Debug.Assert(!SystemStreams.IsInvalidStream(eventStreamId), $"Invalid stream ID: {eventStreamId}");
-
-			foreach (var expectedVersion in expectedVersions.Span)
-				Debug.Assert(
-					expectedVersion >= ExpectedVersion.StreamExists && expectedVersion != ExpectedVersion.Invalid,
-					$"Invalid expected version: {expectedVersion}");
-
-			var nextEventStreamIndex = 0;
-			if (eventStreamIndexes.Length is not 0) {
-				foreach (var eventStreamIndex in eventStreamIndexes.Span) {
-					Debug.Assert(
-						eventStreamIndex >= 0 && eventStreamIndex < eventStreamIds.Length,
-						$"Stream index is out of range: {eventStreamIndex}. Number of streams: {eventStreamIds.Length}");
-
-					if (eventStreamIndex == nextEventStreamIndex)
-						nextEventStreamIndex++;
-					else
-						Debug.Assert(
-							eventStreamIndex <= nextEventStreamIndex,
-							"Indexes must be assigned to streams in the order in which they first appear in the list of events being written");
-				}
-			}
-			else nextEventStreamIndex = 1;
-
-			Debug.Assert(
-				events.Length == 0 || nextEventStreamIndex == eventStreamIds.Length,
-				"Not all streams have events being written to them");
-
-			Debug.Assert(
-				events.Length > 0 || eventStreamIds.Length == 1,
-				"Empty writes to multiple streams is not supported");
-#endif
-
-			EventStreamIds = eventStreamIds;
-			ExpectedVersions = expectedVersions;
-			Events = events;
-			EventStreamIndexes = eventStreamIndexes;
-		}
-
-        public static WriteEvents ForSingleStream(
+		public static WriteEvents ForSingleStream(
 			Guid internalCorrId,
 			Guid correlationId,
 			IEnvelope envelope,
@@ -375,10 +295,8 @@ public static partial class ClientMessage {
 			LowAllocReadOnlyMemory<long> firstEventNumbers,
 			LowAllocReadOnlyMemory<long> lastEventNumbers,
 			long preparePosition, long commitPosition) {
+			ArgumentOutOfRangeException.ThrowIfNotEqual(firstEventNumbers.Length, lastEventNumbers.Length, nameof(firstEventNumbers));
 
-			Debug.Assert(firstEventNumbers.Length == lastEventNumbers.Length, "firstEventNumbers length must match lastEventNumbers length");
-
-			#if DEBUG
 			for (var i = 0; i < firstEventNumbers.Length; i++) {
 				var firstEventNumber = firstEventNumbers.Span[i];
 				var lastEventNumber = lastEventNumbers.Span[i];
@@ -391,7 +309,6 @@ public static partial class ClientMessage {
 					throw new ArgumentOutOfRangeException(nameof(lastEventNumbers),
 						$"LastEventNumber {lastEventNumber}, FirstEventNumber {firstEventNumber}.");
 			}
-			#endif
 
 			CorrelationId = correlationId;
 			Result = OperationResult.Success;
@@ -403,11 +320,12 @@ public static partial class ClientMessage {
 		}
 
 		/// <summary>Failure constructor</summary>
-		public WriteEventsCompleted(
-			Guid correlationId, OperationResult result, string message,
+		public WriteEventsCompleted(Guid correlationId, OperationResult result, string message,
 			LowAllocReadOnlyMemory<int> failureStreamIndexes = default, LowAllocReadOnlyMemory<long> failureCurrentVersions = default) {
-			Debug.Assert(failureStreamIndexes.Length == failureCurrentVersions.Length, "failureStreamIndexes length must match failureCurrentVersions length");
-			Debug.Assert(result != OperationResult.Success, "Invalid constructor used for successful write.");
+			ArgumentOutOfRangeException.ThrowIfNotEqual(failureStreamIndexes.Length, failureCurrentVersions.Length, nameof(failureStreamIndexes));
+
+			if (result == OperationResult.Success)
+				throw new ArgumentException("Invalid constructor used for successful write.", nameof(result));
 
 			CorrelationId = correlationId;
 			Result = result;

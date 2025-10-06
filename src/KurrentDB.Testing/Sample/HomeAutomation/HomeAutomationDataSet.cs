@@ -141,6 +141,39 @@ public partial class HomeAutomationDataSet : DataSet {
     }
 
     /// <summary>
+    /// Generate events for specific devices forever
+    /// </summary>
+    public IEnumerable<object> Events() {
+        var devices = Devices(Faker.Random.Number(2, 4));
+
+        var timestamp = DateTimeOffset.UtcNow.AddDays(-1).ToUnixTimeMilliseconds();
+
+        while (true) {
+            timestamp += Faker.Random.Number(1, 30) * 60000L;
+
+            var device = Faker.PickRandom(devices);
+            var evt    = GenerateEventForDevice(device, timestamp)!;
+
+            yield return evt;
+        }
+
+        static object? GenerateEventForDevice(Device device, long timestamp) {
+            return device switch {
+                Thermostat thermostat         => new TemperatureReadingFaker(thermostat, timestamp).Generate(),
+                MotionSensor motionSensor     => new MotionDetectedFaker(motionSensor, timestamp).Generate(),
+                SmartLight smartLight         => new LightStateChangedFaker(smartLight, timestamp).Generate(),
+                DoorLock doorLock             => new DoorStateChangedFaker(doorLock, timestamp).Generate(),
+                SmokeDetector smokeDetector   => new SmokeDetectedFaker(smokeDetector, timestamp).Generate(),
+                HumiditySensor humiditySensor => new HumidityReadingFaker(humiditySensor, timestamp).Generate(),
+                WindowSensor windowSensor     => new WindowStateChangedFaker(windowSensor, timestamp).Generate(),
+                WaterSensor waterSensor       => new WaterLeakDetectedFaker(waterSensor, timestamp).Generate(),
+                _                             => null // Skip unsupported device types
+            };
+        }
+        // ReSharper disable once IteratorNeverReturns
+    }
+
+    /// <summary>
     /// Generate events for a home's devices
     /// </summary>
     public List<object> Events(SmartHome home, int count, long? startTime = null, int maxIntervalMinutes = 30) =>

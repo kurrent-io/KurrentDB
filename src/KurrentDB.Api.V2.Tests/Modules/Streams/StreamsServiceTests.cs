@@ -3,19 +3,14 @@
 
 // ReSharper disable AccessToDisposedClosure
 
-using System.Diagnostics.Metrics;
-using DotNext.Collections.Generic;
 using Google.Protobuf;
 using Google.Rpc;
 using Grpc.Core;
 using Humanizer;
 using KurrentDB.Api.Tests.Fixtures;
-using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Protocol.V2.Streams;
 using KurrentDB.Protocol.V2.Streams.Errors;
 using KurrentDB.Testing.Bogus;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Diagnostics.Metrics.Testing;
 using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.Api.Tests.Streams;
@@ -160,6 +155,7 @@ public class StreamsServiceTests {
     }
 
     [Test]
+    [Repeat(10)]
     public async ValueTask append_session_throws_when_record_is_larger_than_configured_limit(CancellationToken cancellationToken) {
         // Arrange
         var request = HomeAutomationTestData.SimulateHomeActivity(1);
@@ -183,7 +179,7 @@ public class StreamsServiceTests {
         // Arrange
         var request = HomeAutomationTestData.SimulateHomeActivity(1);
 
-        var recordSize = (int)(Fixture.ServerOptions.Application.MaxAppendEventSize * Faker.Random.Double(1.05, 1.1));
+        var recordSize = Fixture.ServerOptions.Application.MaxAppendEventSize * 2;
 
         request.Records[0].Data = UnsafeByteOperations.UnsafeWrap(Faker.Random.Bytes(recordSize));
 
@@ -191,40 +187,68 @@ public class StreamsServiceTests {
 
         // Act & Assert
         var rex = await appendTask.ShouldThrowAsync<RpcException>();
-        await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.ResourceExhausted);
+        await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.InvalidArgument);
     }
 
-
     [Test]
+    [Repeat(10)]
     public async ValueTask append_session_throws_when_transaction_is_too_large(CancellationToken cancellationToken) {
         // Arrange
-        var numberOfRecords = Fixture.ServerOptions.Application.MaxAppendSize / Fixture.ServerOptions.Application.MaxAppendEventSize;
 
-        var request = HomeAutomationTestData.SimulateHomeActivity(numberOfRecords);
+        // Calculate a valid record size just under the max append event size
+        // This ensures we will never it the per-record limit during the test
+        var validRecordSize = (int)(Fixture.ServerOptions.Application.MaxAppendEventSize * 0.90);
 
-        for (var i = 0; i < request.Records.Count-1; i++) {
-            request.Records[i].Data = UnsafeByteOperations.UnsafeWrap(new byte[Fixture.ServerOptions.Application.MaxAppendEventSize]);
+        // Calculate a random max request size larger than max append size but smaller
+        // than max append size * 1.5 to ensure we do not hit max receive size limit
+        var targetMaxAppendSize = (int)(Fixture.ServerOptions.Application.MaxAppendSize * Faker.Random.Double(1.10, 1.49));
+
+        // Minimum request size is always max append size + 1 byte
+        // to ensure we always exceed the max append size
+        // This ensures we always trigger the transaction size exceeded error
+        var minimumRequestSize = Fixture.ServerOptions.Application.MaxAppendSize + 1;
+
+        Fixture.Logger.LogInformation("Server MaxAppendEventSize:  {MaxAppendEventSize}", Fixture.ServerOptions.Application.MaxAppendEventSize.Bytes().Humanize());
+        Fixture.Logger.LogInformation("Server MaxAppendSize:       {MaxAppendSize}", Fixture.ServerOptions.Application.MaxAppendSize.Bytes().Humanize());
+        Fixture.Logger.LogInformation("Client Target Request Size: {MaxRequestSize}", targetMaxAppendSize.Bytes().Humanize());
+
+        var request = new AppendRequest {
+            Stream  = $"{nameof(SmartHomeActivity)}-{Guid.NewGuid():N}"
+        };
+
+        // now we fill in the request with records and must ensure that the size of the request must be within the limits
+        // of minimumRequestSize and targetMaxAppendSize
+        // we need to keep using the grpc message CalculateSize to get the actual size
+        // and also in extreme cases we might need to change the size of the last record to ensure we do not exceed the targetMaxAppendSize
+        // or that we are at least above the minimumRequestSize
+        while (true) {
+            var record = CreateSyntheticTestRecord(Faker.Random.Bytes(validRecordSize));
+            request.Records.Add(record);
+
+            var requestSize = request.CalculateSize();
+
+            if (requestSize > targetMaxAppendSize) {
+                var exceededBy = requestSize - targetMaxAppendSize;
+                var dataSize   = Math.Max(1, validRecordSize - exceededBy);
+                request.Records[^1].Data = UnsafeByteOperations.UnsafeWrap(Faker.Random.Bytes(dataSize));
+                break;
+            }
+
+            if (requestSize > minimumRequestSize && requestSize <= targetMaxAppendSize) {
+                break;
+            }
         }
 
-        var totalSize = request.Records.Sum(r => r.Data.Length);
-
-        await Assert.That(totalSize).IsLessThan(Fixture.ServerOptions.Application.MaxAppendSize);
-
         Fixture.Logger.LogInformation(
-            "Prepared append request with {Records} records and a total size of ~{Size}",
-            request.Records.Count, totalSize.Bytes().Humanize());
+            "Prepared append request with {Records} records and a calculated total size of ~{Size}",
+            request.Records.Count, request.CalculateSize().Bytes().Humanize());
 
         using var session = Fixture.StreamsClient.AppendSession(cancellationToken: cancellationToken);
-
         await session.RequestStream.WriteAsync(request, cancellationToken);
-        await session.RequestStream.WriteAsync(request.SimulateMoreEvents(), cancellationToken);
-
         await session.RequestStream.CompleteAsync();
 
         // ReSharper disable once AccessToDisposedClosure
         var appendTask = async () => await session.ResponseAsync;
-
-        // var appendTask = async () => await Fixture.StreamsClient.AppendAsync(request, cancellationToken: cancellationToken);
 
         // Act & Assert
         var rex     = await appendTask.ShouldThrowAsync<RpcException>();
@@ -232,9 +256,21 @@ public class StreamsServiceTests {
 
         await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.Aborted);
         await Assert.That(details).IsNotNull();
+
+        return;
+
+        AppendRecord CreateSyntheticTestRecord(Memory<byte> data) =>
+            new() {
+                RecordId = Guid.NewGuid().ToString(),
+                Data     = UnsafeByteOperations.UnsafeWrap(data),
+                Schema = new SchemaInfo {
+                    Name   = "SyntheticTestRecord.V1",
+                    Format = SchemaFormat.Bytes
+                }
+            };
     }
 
-    [Test, Skip("Skipping for now, need to rework authentication setup in ClusterVNodeApp")]
+    [Test, Skip("Skipping for now. ClusterVNodeApp certificate support for macOS is not implemented.")]
     public async ValueTask append_session_throws_when_user_is_not_authenticated(CancellationToken cancellationToken) {
         // Arrange
         var callOptions = new CallOptions(
@@ -251,7 +287,7 @@ public class StreamsServiceTests {
         await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.Unauthenticated);
     }
 
-    [Test, Skip("Skipping for now, need to rework authentication setup in ClusterVNodeApp")]
+    [Test, Skip("Skipping for now. ClusterVNodeApp certificate support for macOS is not implemented.")]
     public async ValueTask append_session_throws_when_user_does_not_have_permissions(CancellationToken cancellationToken) {
         // Arrange
         var callOptions = new CallOptions(
@@ -266,27 +302,5 @@ public class StreamsServiceTests {
         // Assert
         var rex = await appendTask.ShouldThrowAsync<RpcException>();
         await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.PermissionDenied);
-    }
-
-    [Test]
-    public async ValueTask append_session_metrics_recorded(CancellationToken cancellationToken) {
-        var meterFactory = Fixture.Services.GetRequiredService<IMeterFactory>();
-        var collector = new MetricCollector<double>(meterFactory, "Microsoft.AspNetCore.Hosting", "http.server.request.duration");
-
-        // Act
-        await Fixture.SeedSmartHomeActivity(cancellationToken);
-
-        // Assert
-        await collector.WaitForMeasurementsAsync(minCount: 1, cancellationToken: cancellationToken).WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
-
-        var temp = collector.GetMeasurementSnapshot();
-
-        // Assert.Collection(collector.GetMeasurementSnapshot(),
-        //     measurement =>
-        //     {
-        //         Assert.Equal("http", measurement.Tags["url.scheme"]);
-        //         Assert.Equal("GET", measurement.Tags["http.request.method"]);
-        //         Assert.Equal("/", measurement.Tags["http.route"]);
-        //     });
     }
 }

@@ -5,16 +5,13 @@
 
 // ReSharper disable InconsistentNaming
 
-using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Google.Protobuf.Collections;
 using Grpc.Core;
-using Grpc.Net.Client;
 using KurrentDB.Api.Streams;
 using KurrentDB.Protocol.V2.Streams;
 using KurrentDB.Testing.Sample.HomeAutomation;
-using Microsoft.Extensions.Logging;
 using StreamRevision = KurrentDB.Api.Streams.StreamRevision;
 using StreamsService = KurrentDB.Protocol.V2.Streams.StreamsService;
 
