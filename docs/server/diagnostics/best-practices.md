@@ -7,11 +7,11 @@ order: 4
 
 ## Background
 
-When monitoring the health of a KurrentDB cluster, one should investigate and alert on multiple factors. Here we discuss those in detail
+When monitoring the health of a KurrentDB cluster, one should investigate and alert on multiple factors. Here we discuss them in detail
 
 ## Metrics-based Monitoring
 
-The items in this section may be monitored using metrics from KurrentDB's Prometheus endpoint / Grafana dashboard, or via metrics from the operating system / machine / cloud provider
+The items in this section can be monitored using metrics from KurrentDB's Prometheus endpoint / Grafana dashboard, or via metrics from the operating system / machine / cloud provider
 
 ### IOPS
 
@@ -19,7 +19,7 @@ One should **monitor IOPS usage** to ensure it does not increase over 80% of all
 
 One should also **evaluate IOPS bursts** during extremely heavy periods, start of day / week, etc. to ensure they do not cause exhaustion. This should take place at the operating system or machine level
 
-Finally, **monitoring reader queue lengths** would help organizations understand if IOPS are exhausted as those queues will continue to grow in length, meaning the server never catches up with all read requests. This should take place using Kurrent's Grafana Dashboard
+Finally, **monitoring reader queue lengths** would help organizations understand if IOPS are exhausted as these queues will continue to grow in length, meaning the server never catches up with all read requests. This should take place using Kurrent's Grafana Dashboard
 
 ![Reader Queue Lengths](./images/1-reader-queue-lengths.png)
 
@@ -27,13 +27,13 @@ Finally, **monitoring reader queue lengths** would help organizations understand
 
 ### Memory Utilization
 
-As a database, we seek to use memory efficiently for improved processing. Organizations should perform a memory capacity confirmation test to establish baseline utilization, and monitoring should be performed to look for deviations from this baseline
+As a database, we seek to use memory efficiently for improved processing. Organizations should perform a memory capacity confirmation test to establish baseline utilization, and monitoring should be performed to look for deviations from this baseline.
 
-Further, monitoring at the operating system level to ensure that **memory utilization does not exceed 85% of physical memory** mitigates allocation exceptions
+Further, monitoring at the operating system level to ensure that **memory utilization does not exceed 85% of physical memory** helps mitigate allocation exceptions
 
 ### Garbage Collection Pauses
 
-Garbage collection monitoring largely is concerned with gen2 memory, where longer-lived objects are allocated. The length of **application pauses for compacting garbage collection** of this generation should be monitored using the Kurrent Grafana Dashboard. Steadily increasing durations may eventually cause a leader election as the database will be unresponsive to heartbeats during compacting garbage collections. Monitor this metric to be below the configured Heartbeat Timeout value (default is 10 seconds, so for most customers, 8 seconds should be appropriate)
+Garbage collection monitoring is largely concerned with gen2 memory, where longer-lived objects are allocated. The length of **application pauses for compacting garbage collection** of this generation should be monitored using the Kurrent Grafana Dashboard. Steadily increasing durations may eventually cause a leader election as the database will be unresponsive to heartbeats during compacting garbage collections. Monitor this metric to be below the configured Heartbeat Timeout value (default is 10 seconds, so for most customers, 8 seconds should be appropriate)
 
 ![Garbage Collection Pauses](./images/2-garbage-collection-pauses.png)
 
@@ -56,7 +56,7 @@ To avoid thrashing, monitor **sustained CPU utilization remains below 80%**. Thi
 
 ### Disk Utilization
 
-Kurrent recommends that organizations configure log, data, and index disk locations separately to avoid one impacting the other. Monitoring of these spaces should be at the operating system level. Ensure that **log and data disk utilizations are under 90%**. **Index disk utilization should be under 40%**, as additional disk space is required when performing index merges
+Kurrent recommends that organizations configure separate disk locations for logs, data, and indexes to avoid one impacting the other. Monitoring of these spaces should be at the operating system level. Ensure that **log and data disk utilizations are under 90%**. **Index disk utilization should be under 40%**, as additional disk space is required when performing index merges
 
 ### Projection Progress
 
@@ -98,7 +98,7 @@ If your Cache Hit Ratio is below 80%, or declining, consider increasing the **St
 
 ### Bytes Read and Bytes Written
 
-**Bytes Read and Bytes Written metrics should be relatively even during regular processing**, with few spikes indicating irregular load. Spikes in load may be indicative of upstream or downstream application issues, and cause uneven performance. NOTE: these spikes may also be innocuous and part of regular business process load changes
+**Bytes Read and Bytes Written metrics should be relatively even during regular processing**, with minimal spikes indicating irregular load. Spikes in load may indicate upstream or downstream application issues, and cause uneven performance. NOTE: these spikes may also be innocuous and part of regular business process load changes
 
 ![Bytes Read and Bytes Written](./images/9-bytes-read-and-written.png)
 
@@ -130,11 +130,11 @@ Failed gRPC calls can be monitored on the Kurrent Grafana dashboard, and indicat
 
 ## Log-based Monitoring
 
-These items appear in the KurrentDB log files
+These items may appear in the KurrentDB log files
 
 ### Projection State Size
 
-The **maximum projection state size is 16 MB**. Projection states that exceed this size will fail to checkpoint and enter a faulted state. Once the projection state reaches 8 MB in size \- 50% of the limit \- the server will begin logging messages such as the following:
+The **maximum projection state size is 16 MB**. Projection states exceeding this size will fail to checkpoint and enter a faulted state. Once the projection state reaches 8 MB in size \- 50% of the limit \- the server will begin logging messages such as the following:
 
 ```
 "messageTmpl": "Checkpoint size for the Projection {projectionName} is greater than 8 MB. Checkpoint size for a projection should be less than 16 MB. Current checkpoint size for Projection {projectionName} is {stateSize} MB."
@@ -144,7 +144,7 @@ Customers should alert on this log message, and reduce the size of the Projectio
 
 ### Long Index Merge
 
-While not directly a cause for concern, organizations may wish to **monitor the duration of index merges to ensure their regular maintenance scripts are completing during scheduled windows**, and not impacting performance of their solutions. Index merge times are logged with messages such as the following:
+While not directly a cause for concern, organizations may wish to **monitor the duration of index merges to ensure their regular maintenance scripts are completing during scheduled windows**, and are not impacting performance of their solutions. Index merge times are logged with messages such as the following:
 
 ```
 "PTables merge finished in 15:32:13.5846974 ([128000257, 128000194, 128000135, 128000181, 128000211, 46303330995] entries merged into 46943331973)."
@@ -188,11 +188,11 @@ Except during rolling upgrades, **cluster nodes should be running the exact same
 
 ## General Health Tips
 
-Below we present some general health tips
+Below are some some general health tips
 
 ### Scavenge Regularly
 
-Scavenging removes deleted events and streams, and should be done regularly. Not scavenging or not removing a significant amount of data is not, however, an indicator of poor cluster health. Log entries do report how much space was reclaimed from scavenging, and can in fact be a negative number if the scavenging activity did not remove a large number of events.
+Scavenging removes deleted events and streams, and should be done regularly. Not scavenging or not removing a significant amount of data is not, however, an indicator of poor cluster health. Log entries do report how much space was reclaimed from scavenging, and can, in fact, be a negative number if the scavenging activity did not remove a large number of events.
 
 ```json
 {
@@ -214,7 +214,7 @@ Kurrent will release patch versions from time to time that contain important fix
 
 ### Few Errors / Warnings
 
-During normal operation, KurrentDB produces few errors or warnings. Logs should generally be clean. Customers may wish to monitor for spikes in the error / warning rates emitted into log files
+During normal operation, KurrentDB produces few errors or warnings. Logs should generally be clean. Customers may wish to monitor for spikes in error / warning rates emitted into log files
 
 ### KurrentDB Health Endpoint
 
