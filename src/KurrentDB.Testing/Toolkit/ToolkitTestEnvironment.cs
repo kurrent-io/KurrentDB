@@ -108,7 +108,7 @@ public static class ToolkitTestEnvironment {
 
     public static (ILogger Logger, IAsyncDisposable Release) CaptureTestLogs(string testUid, string? sourceContext) {
         var logger = new LoggerConfiguration()
-            .MinimumLevel.Verbose()
+            .MinimumLevel.Debug()
             .Enrich.WithThreadId()
             .Enrich.WithProcessId()
             .Enrich.WithMachineName()
@@ -133,8 +133,6 @@ public static class ToolkitTestEnvironment {
         //                 logEvent.AddOrUpdateProperty(prop);
         //             }
         //         }
-        //
-        //
         //
         //         // if (TestContext.Current.TestUid() == testUid)
         //         //     logEvent.AddOrUpdateProperty(prop);
