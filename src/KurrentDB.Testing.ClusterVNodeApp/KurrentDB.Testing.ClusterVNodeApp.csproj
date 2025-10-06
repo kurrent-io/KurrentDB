@@ -10,6 +10,7 @@
 
     <ItemGroup>
         <PackageReference Include="Grpc.Net.Client"/>
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
     </ItemGroup>
 
     <ItemGroup>

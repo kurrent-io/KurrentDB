@@ -78,10 +78,10 @@ public class TestingToolkitAutoWireUp {
 	    if (context.TryGetLoggerFactory(out var loggerFactory))
 		    loggerFactory.Dispose();
 
-	    Log.Verbose(
+        Log.Verbose(
             "#### Test {TestName} finished in {Elapsed}",
             GetTestMethodName(context.TestDetails.TestId),
-            ((context.TestEnd ?? TimeProvider.System.GetUtcNow()) - context.TestStart).Humanize(precision: 2)
+            ((context.TestEnd ?? TimeProvider.System.GetUtcNow()) - context.TestStart.GetValueOrDefault()).Humanize(precision: 2)
         );
 
 	    return Task.CompletedTask;

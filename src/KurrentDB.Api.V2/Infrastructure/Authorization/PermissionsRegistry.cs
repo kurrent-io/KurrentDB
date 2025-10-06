@@ -6,9 +6,9 @@ using KurrentDB.Api.Streams.Authorization;
 
 namespace KurrentDB.Api.Infrastructure.Authorization;
 
-public static class PermissionsCatalog {
+public static class PermissionsRegistry {
     static readonly Dictionary<string, Permission> Permissions = new Dictionary<string, Permission>(StringComparer.OrdinalIgnoreCase) {
-        { "/kurrentdb.api.v2.Streams/Append", StreamPermission.Append }
+        { "/kurrentdb.protocol.v2.streams/StreamsService/AppendSession", StreamPermission.Append }
     };
 
     public static Permission? GetPermission(string method) =>

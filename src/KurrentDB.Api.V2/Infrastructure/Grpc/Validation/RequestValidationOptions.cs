@@ -13,12 +13,6 @@ namespace KurrentDB.Api.Infrastructure.Grpc.Validation;
 [PublicAPI]
 public class RequestValidationOptions {
     /// <summary>
-    /// If true, validators will be automatically scanned for and registered from the application's assemblies.
-    /// If false, validators must be manually registered in the DI container.
-    /// </summary>
-    public bool AutoScanValidators { get; set; }
-
-    /// <summary>
     /// If true, an exception will be thrown if no validator is found for a given request type.
     /// If false, the request will be considered valid if no validator is found.
     /// Default is false.

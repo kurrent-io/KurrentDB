@@ -9,12 +9,12 @@ namespace KurrentDB.Api.Infrastructure.DependencyInjection;
 public static class GrpcServerBuilderExtensions {
     public static void WithGrpcService<TService>(
         this IGrpcServerBuilder builder,
-        Action<RequestValidationConfigurator>? configureValidation = null,
+        Action<RequestValidationBuilder>? configureValidation = null,
         Action<GrpcServiceOptions<TService>>? configureGrpc = null
     ) where TService : class {
         builder.Services.TryAddSingleton<TService>();
 
-        configureValidation?.Invoke(new RequestValidationConfigurator(builder.Services));
+        configureValidation?.Invoke(new RequestValidationBuilder(builder.Services));
 
         builder.AddServiceOptions<TService>(options => {
             options.WithCompression();

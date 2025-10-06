@@ -20,6 +20,7 @@ using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Protocol.V2.Streams;
+using Microsoft.AspNetCore.Authorization;
 using static KurrentDB.Core.Messages.ClientMessage;
 using static KurrentDB.Protocol.V2.Streams.StreamsService;
 
@@ -30,6 +31,7 @@ public class StreamsServiceOptions {
     public int MaxRecordSize { get; set; } = TFConsts.EffectiveMaxLogRecordSize;
 }
 
+[Authorize]
 public class StreamsService : StreamsServiceBase {
     public StreamsService(
         StreamsServiceOptions options,
@@ -60,28 +62,25 @@ public class StreamsService : StreamsServiceBase {
     IAuthorizationProvider             Authz              { get; }
     Func<CancellationToken, ValueTask> EnsureNodeIsLeader { get; }
 
-    public override async Task<AppendResponse> Append(AppendRequest request, ServerCallContext context) {
-        var sessionResponse = await AppendSession(new[] { request }.ToAsyncEnumerable(), context);
-        return sessionResponse.Output[0].With(r => r.Position = sessionResponse.Position);
-    }
+    public override async Task<AppendSessionResponse> AppendSession(IAsyncStreamReader<AppendRequest> requests, ServerCallContext context) {
+        // check scope-level permission for appending to streams
+        await Authz.AuthorizeOperation(StreamPermission.Append, context);
 
-    public override Task<AppendSessionResponse> AppendSession(IAsyncStreamReader<AppendRequest> requests, ServerCallContext context) =>
-        AppendSession(requests.ReadAllAsync(), context);
+        await EnsureNodeIsLeader(context.CancellationToken);
 
-    async Task<AppendSessionResponse> AppendSession(IAsyncEnumerable<AppendRequest> requests, ServerCallContext context) {
-       await EnsureNodeIsLeader(context.CancellationToken);
+        var command = await requests
+            .ReadAllAsync()
+            .Do((req, _) => Authz.AuthorizeOperation(StreamPermission.Append.WithStream(req.Stream), context))
+            .AggregateAsync(
+                Publisher
+                    .NewCommand<AppendSessionCommand>()
+                    .WithMaxRecordSize(Options.MaxRecordSize)
+                    .WithMaxAppendSize(Options.MaxAppendSize),
+                (cmd, req) => cmd.WithRequest(req),
+                context.CancellationToken
+            );
 
-       var command = await requests
-           .Do((req, _) => Authz.AuthorizeOperation(StreamPermission.Append.WithStream(req.Stream), context))
-           .AggregateAsync(
-               Publisher
-                   .NewCommand<AppendSessionCommand>()
-                   .WithMaxRecordSize(Options.MaxRecordSize)
-                   .WithMaxAppendSize(Options.MaxAppendSize),
-               (cmd, req) => cmd.WithRequest(req),
-               context.CancellationToken);
-
-       return await command.Execute(context);
+        return await command.Execute(context);
     }
 
     class AppendSessionCommand : ApiCommand<AppendSessionCommand, AppendSessionResponse> {
@@ -172,7 +171,6 @@ public class StreamsService : StreamsServiceBase {
                 // OperationResult.ForwardTimeout is not possible here as we set requireLeader=true on the request
                 // OperationResult.PrepareTimeout is not possible here as we don't have old explicit transactions
                 WriteEventsCompleted completed => completed.Result switch {
-                    // StreamDeleted means "hard deleted" AKA tombstoned
                     OperationResult.StreamDeleted  => ApiErrors.StreamTombstoned(Requests.ElementAt(completed.FailureStreamIndexes.Span[0]).Stream),
 
                     OperationResult.WrongExpectedVersion => ApiErrors.StreamRevisionConflict(

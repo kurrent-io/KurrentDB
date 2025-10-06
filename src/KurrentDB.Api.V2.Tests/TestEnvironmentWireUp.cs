@@ -12,11 +12,13 @@ using TUnit.Core.Executors;
 namespace KurrentDB.Api.Tests;
 
 public class TestEnvironmentWireUp {
-    [BeforeEvery(Assembly)]
-    public static ValueTask BeforeEveryAssembly(AssemblyHookContext context) => ToolkitTestEnvironment.Initialize(context.Assembly);
+    [Before(Assembly)]
+    public static ValueTask BeforeAssembly(AssemblyHookContext context) =>
+        ToolkitTestEnvironment.Initialize(context.Assembly);
 
-    [AfterEvery(Assembly)]
-    public static ValueTask AfterEveryAssembly(AssemblyHookContext context) => ToolkitTestEnvironment.Reset(context.Assembly);
+    [After(Assembly)]
+    public static ValueTask AfterAssembly(AssemblyHookContext context) =>
+        ToolkitTestEnvironment.Reset(context.Assembly);
 
     [BeforeEvery(Test)]
     public static void BeforeEveryTest(TestContext context) {

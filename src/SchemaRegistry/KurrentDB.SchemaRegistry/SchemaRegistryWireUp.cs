@@ -33,7 +33,7 @@ public static class SchemaRegistryWireUp {
 
 		services.AddSingleton<GetUtcNow>(ctx => ctx.GetRequiredService<TimeProvider>().GetUtcNow);
 
-		services.AddGrpc(x => x.EnableDetailedErrors = true);
+		services.AddGrpc();
 		services.AddGrpcRequestValidation();
 
 		services.AddSingleton<ISchemaCompatibilityManager>(new NJsonSchemaCompatibilityManager());

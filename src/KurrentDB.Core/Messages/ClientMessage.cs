@@ -68,10 +68,11 @@ public static partial class ClientMessage {
             var cid = Guid.NewGuid();
 
 			InternalCorrId = cid;
-			CorrelationId  = cid;
-			Envelope       = envelope;
-			User           = user;
-			Tokens         = new Dictionary<string, string>();
+			CorrelationId = cid;
+			Envelope = envelope;
+            RequireLeader = true;
+			User = user;
+			Tokens = new Dictionary<string, string>();
 		}
 	}
 
@@ -247,73 +248,6 @@ public static partial class ClientMessage {
 			ClaimsPrincipal user,
 			CancellationToken cancellationToken = default)
 			: base(envelope, user, cancellationToken) {
-
-			// there must be at least one stream
-			Debug.Assert(eventStreamIds.Length > 0, "eventStreamIds must not be empty");
-
-			// each stream must correspond to an expected version at the same index
-			Debug.Assert(
-				expectedVersions.Length == eventStreamIds.Length,
-				"expectedVersions length must match eventStreamIds length");
-
-			// when empty: all events implicitly are for the single stream which is at index 0.
-			// when non-empty: eventStreamIndexes maps each event to the index of its stream
-			if (eventStreamIndexes.Length is not 0)
-				Debug.Assert(
-					eventStreamIndexes.Length == events.Length,
-					"eventStreamIndexes length must match events length when non-empty");
-#if DEBUG
-			foreach (var eventStreamId in eventStreamIds.Span)
-				Debug.Assert(!SystemStreams.IsInvalidStream(eventStreamId), $"Invalid stream ID: {eventStreamId}");
-
-			foreach (var expectedVersion in expectedVersions.Span)
-				Debug.Assert(
-					expectedVersion >= ExpectedVersion.StreamExists && expectedVersion != ExpectedVersion.Invalid,
-					$"Invalid expected version: {expectedVersion}");
-
-			var nextEventStreamIndex = 0;
-			if (eventStreamIndexes.Length is not 0) {
-				foreach (var eventStreamIndex in eventStreamIndexes.Span) {
-					Debug.Assert(
-						eventStreamIndex >= 0 && eventStreamIndex < eventStreamIds.Length,
-						$"Stream index is out of range: {eventStreamIndex}. Number of streams: {eventStreamIds.Length}");
-
-					if (eventStreamIndex == nextEventStreamIndex)
-						nextEventStreamIndex++;
-					else
-						Debug.Assert(
-							eventStreamIndex <= nextEventStreamIndex,
-							"Indexes must be assigned to streams in the order in which they first appear in the list of events being written");
-				}
-			}
-			else nextEventStreamIndex = 1;
-
-			Debug.Assert(
-				events.Length == 0 || nextEventStreamIndex == eventStreamIds.Length,
-				"Not all streams have events being written to them");
-
-			Debug.Assert(
-				events.Length > 0 || eventStreamIds.Length == 1,
-				"Empty writes to multiple streams is not supported");
-#endif
-
-			EventStreamIds = eventStreamIds;
-			ExpectedVersions = expectedVersions;
-			Events = events;
-			EventStreamIndexes = eventStreamIndexes;
-		}
-
-          /// <summary>
-        /// New streamlined constructor used in the new append API that takes raw bytes for data and properties.
-        /// </summary>
-        public WriteEvents(
-			IEnvelope envelope,
-			LowAllocReadOnlyMemory<string> eventStreamIds,
-			LowAllocReadOnlyMemory<long> expectedVersions,
-			LowAllocReadOnlyMemory<Event> events,
-			LowAllocReadOnlyMemory<int> eventStreamIndexes,
-			CancellationToken cancellationToken)
-			: base(envelope, null, cancellationToken) { // SystemAccounts.System is used when user is null
 
 			// there must be at least one stream
 			Debug.Assert(eventStreamIds.Length > 0, "eventStreamIds must not be empty");

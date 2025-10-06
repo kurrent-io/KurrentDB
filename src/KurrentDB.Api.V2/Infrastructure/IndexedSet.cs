@@ -44,11 +44,6 @@ public class IndexedSet<T> : IReadOnlyList<T> {
 	public int Count => _list.Count;
 
 	/// <summary>
-	/// Gets a value indicating whether the IndexedSet is read-only (always false)
-	/// </summary>
-	public bool IsReadOnly => false;
-
-	/// <summary>
 	/// Gets or sets the element at the specified index
 	/// </summary>
 	/// <param name="index">The zero-based index of the element</param>

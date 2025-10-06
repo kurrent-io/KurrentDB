@@ -1,13 +1,14 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+// ReSharper disable AccessToDisposedClosure
+
 using System.Diagnostics.Metrics;
 using DotNext.Collections.Generic;
 using Google.Protobuf;
 using Google.Rpc;
 using Grpc.Core;
 using Humanizer;
-using Humanizer.Bytes;
 using KurrentDB.Api.Tests.Fixtures;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Protocol.V2.Streams;
@@ -21,10 +22,10 @@ namespace KurrentDB.Api.Tests.Streams;
 
 public class StreamsServiceTests {
     [ClassDataSource<ClusterVNodeTestContext>(Shared = SharedType.PerAssembly)]
-    public required ClusterVNodeTestContext Fixture { get; init; }
+    public required ClusterVNodeTestContext Fixture { get; [UsedImplicitly] init; }
 
     [ClassDataSource<BogusFaker>(Shared = SharedType.PerAssembly)]
-    public required BogusFaker Faker { get; init; }
+    public required BogusFaker Faker { get; [UsedImplicitly] init; }
 
     [Test]
     [Arguments(1, 1)]
@@ -159,34 +160,13 @@ public class StreamsServiceTests {
     }
 
     [Test]
-    public async ValueTask append_session_throws_when_user_does_not_have_permissions(CancellationToken cancellationToken) {
-
-        Assert.Fail("Not implemented");
-
-        // Arrange
-        var seededActivity = await Fixture.SeedSmartHomeActivity(cancellationToken);
-
-        await Fixture.SystemClient.Management.HardDeleteStream(seededActivity.Stream, cancellationToken: cancellationToken);
-
-        var request = seededActivity.SimulateMoreEvents();
-
-        // Act
-        var appendTask = async () => await Fixture.StreamsClient.AppendAsync(request, cancellationToken: cancellationToken);
-
-        // Assert
-        var rex     = await appendTask.ShouldThrowAsync<RpcException>();
-        var details = rex.GetRpcStatus()?.GetDetail<StreamTombstonedErrorDetails>();
-
-        await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
-        await Assert.That(details).IsNotNull();
-    }
-
-    [Test]
-    public async ValueTask append_session_throws_when_record_is_too_large(CancellationToken cancellationToken) {
+    public async ValueTask append_session_throws_when_record_is_larger_than_configured_limit(CancellationToken cancellationToken) {
         // Arrange
         var request = HomeAutomationTestData.SimulateHomeActivity(1);
 
-        request.Records[0].Data = UnsafeByteOperations.UnsafeWrap(new byte[TFConsts.EffectiveMaxLogRecordSize]);
+        var recordSize = (int)(Fixture.ServerOptions.Application.MaxAppendEventSize * Faker.Random.Double(1.01, 1.04));
+
+        request.Records[0].Data = UnsafeByteOperations.UnsafeWrap(Faker.Random.Bytes(recordSize));
 
         var appendTask = async () => await Fixture.StreamsClient.AppendAsync(request, cancellationToken: cancellationToken);
 
@@ -199,23 +179,40 @@ public class StreamsServiceTests {
     }
 
     [Test]
+    public async ValueTask append_session_throws_when_record_is_larger_than_max_receive_message_size(CancellationToken cancellationToken) {
+        // Arrange
+        var request = HomeAutomationTestData.SimulateHomeActivity(1);
+
+        var recordSize = (int)(Fixture.ServerOptions.Application.MaxAppendEventSize * Faker.Random.Double(1.05, 1.1));
+
+        request.Records[0].Data = UnsafeByteOperations.UnsafeWrap(Faker.Random.Bytes(recordSize));
+
+        var appendTask = async () => await Fixture.StreamsClient.AppendAsync(request, cancellationToken: cancellationToken);
+
+        // Act & Assert
+        var rex = await appendTask.ShouldThrowAsync<RpcException>();
+        await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.ResourceExhausted);
+    }
+
+
+    [Test]
     public async ValueTask append_session_throws_when_transaction_is_too_large(CancellationToken cancellationToken) {
         // Arrange
-
-
-        var numberOfRecords = TFConsts.ChunkSize / TFConsts.EffectiveMaxLogRecordSize + 1;
+        var numberOfRecords = Fixture.ServerOptions.Application.MaxAppendSize / Fixture.ServerOptions.Application.MaxAppendEventSize;
 
         var request = HomeAutomationTestData.SimulateHomeActivity(numberOfRecords);
 
-        var recordSize = 1024 * 1024 * 8; // 8MB
+        for (var i = 0; i < request.Records.Count-1; i++) {
+            request.Records[i].Data = UnsafeByteOperations.UnsafeWrap(new byte[Fixture.ServerOptions.Application.MaxAppendEventSize]);
+        }
 
-        request.ForEach(r => r.Data = UnsafeByteOperations.UnsafeWrap(new byte[recordSize]));
+        var totalSize = request.Records.Sum(r => r.Data.Length);
 
-        var totalSize = (request.Records.Count * TFConsts.EffectiveMaxLogRecordSize).Bytes();
+        await Assert.That(totalSize).IsLessThan(Fixture.ServerOptions.Application.MaxAppendSize);
 
         Fixture.Logger.LogInformation(
             "Prepared append request with {Records} records and a total size of ~{Size}",
-            request.Records.Count, totalSize.Humanize());
+            request.Records.Count, totalSize.Bytes().Humanize());
 
         using var session = Fixture.StreamsClient.AppendSession(cancellationToken: cancellationToken);
 
@@ -235,6 +232,40 @@ public class StreamsServiceTests {
 
         await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.Aborted);
         await Assert.That(details).IsNotNull();
+    }
+
+    [Test, Skip("Skipping for now, need to rework authentication setup in ClusterVNodeApp")]
+    public async ValueTask append_session_throws_when_user_is_not_authenticated(CancellationToken cancellationToken) {
+        // Arrange
+        var callOptions = new CallOptions(
+            credentials: Fixture.CreateCallCredentials(("invalid", "credentials")),
+            cancellationToken: cancellationToken);
+
+        // Act
+        using var session = Fixture.StreamsClient.AppendSession(callOptions);
+
+        var appendTask = async () => await session.ResponseAsync;
+
+        // Assert
+        var rex = await appendTask.ShouldThrowAsync<RpcException>();
+        await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.Unauthenticated);
+    }
+
+    [Test, Skip("Skipping for now, need to rework authentication setup in ClusterVNodeApp")]
+    public async ValueTask append_session_throws_when_user_does_not_have_permissions(CancellationToken cancellationToken) {
+        // Arrange
+        var callOptions = new CallOptions(
+            credentials: Fixture.AdminCredentials,
+            cancellationToken: cancellationToken);
+
+        // Act
+        using var session = Fixture.StreamsClient.AppendSession(callOptions);
+
+        var appendTask = async () => await session.ResponseAsync;
+
+        // Assert
+        var rex = await appendTask.ShouldThrowAsync<RpcException>();
+        await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.PermissionDenied);
     }
 
     [Test]

@@ -11,12 +11,6 @@ option csharp_namespace = "KurrentDB.Protocol.V2.Streams";
 import "google/protobuf/struct.proto";
 
 service StreamsService {
-  // Appends records to a specific stream.
-  // If the stream does not exist, it will be created.
-  // The append will fail if the expected revision does not match the current
-  // revision of the stream.
-  rpc Append(AppendRequest) returns (AppendResponse);
-
   // Executes an atomic operation to append records to multiple streams.
   // This transactional method ensures that all appends either succeed
   // completely, or are entirely rolled back, thereby maintaining strict

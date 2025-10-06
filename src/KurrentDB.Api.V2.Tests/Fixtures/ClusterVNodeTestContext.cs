@@ -4,11 +4,18 @@
 // ReSharper disable ArrangeTypeMemberModifiers
 
 using System.Diagnostics.CodeAnalysis;
+using System.IdentityModel.Tokens.Jwt;
+using System.Net;
+using System.Security.Claims;
+using Grpc.Net.ClientFactory;
+using Humanizer;
 using KurrentDB.Core;
 using KurrentDB.Testing.TUnit;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
+using Microsoft.IdentityModel.Tokens;
 using TUnit.Core.Interfaces;
 using static KurrentDB.Protocol.V2.Streams.StreamsService;
 
@@ -18,11 +25,16 @@ namespace KurrentDB.Api.Tests.Fixtures;
 [SuppressMessage("Performance", "CA1822:Mark members as static")]
 public sealed partial class ClusterVNodeTestContext : IAsyncInitializer, IAsyncDisposable {
     public ClusterVNodeTestContext() {
-        Server = new ClusterVNodeApp(ConfigureServices);
+        Server = new ClusterVNodeApp(ConfigureServices, ConfigurationOverrides);
 
         ServerOptions = Server.ServerOptions;
         Services      = Server.Services;
     }
+
+    static readonly Dictionary<string, object?> ConfigurationOverrides = new() {
+        { "KurrentDB:Application:MaxAppendEventSize", 8.Megabytes().Bytes },
+        { "KurrentDB:Application:MaxAppendSize", 16.Megabytes().Bytes }
+    };
 
     static void ConfigureServices(ClusterVNodeOptions options, IServiceCollection services) {
         services
@@ -30,9 +42,23 @@ public sealed partial class ClusterVNodeTestContext : IAsyncInitializer, IAsyncD
             //.AddTestLogging()
             .AddTestTimeProvider();
 
-        // Configures gRPC client address discovery to use a static resolver
-        // that points to the test server's address.
-        services.EnableGrpcClientsAddressDiscovery();
+        services.ConfigureAll<HttpClientFactoryOptions>(factory => {
+            // //this must be switched on before creation of the HttpMessageHandler
+            // AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+
+            factory.HttpMessageHandlerBuilderActions.Add(builder => {
+                if (builder.PrimaryHandler is SocketsHttpHandler { } handler) {
+                    handler.AutomaticDecompression = DecompressionMethods.All;
+                    handler.SslOptions             = new() { RemoteCertificateValidationCallback = (_, _, _, _) => true };
+                }
+            });
+        });
+
+        services.ConfigureAll<GrpcClientFactoryOptions>(factory =>
+            factory.ChannelOptionsActions.Add(channel => {
+                channel.UnsafeUseInsecureChannelCallCredentials = true;
+            })
+        );
 
         // ====================================================================
         // gRPC clients for every service that is available on the server
@@ -99,7 +125,19 @@ public sealed partial class ClusterVNodeTestContext : IAsyncInitializer, IAsyncD
         StreamsClient = Server.Services.GetRequiredService<StreamsServiceClient>();
     }
 
-    public async ValueTask DisposeAsync() {
+    public async ValueTask DisposeAsync() =>
         await Server.DisposeAsync();
+
+    string GenerateJwtToken(string username) {
+        ArgumentException.ThrowIfNullOrWhiteSpace(username);
+
+        var claims      = new[] { new Claim(ClaimTypes.Name, username) };
+        var credentials = new SigningCredentials(SecurityKey, SecurityAlgorithms.HmacSha256);
+        var token = new JwtSecurityToken("KurrentDB", "Clients", claims, signingCredentials: credentials);
+
+        return JwtTokenHandler.WriteToken(token);
     }
+
+    static readonly JwtSecurityTokenHandler JwtTokenHandler = new JwtSecurityTokenHandler();
+    static readonly SymmetricSecurityKey    SecurityKey     = new SymmetricSecurityKey(Guid.NewGuid().ToByteArray());
 }

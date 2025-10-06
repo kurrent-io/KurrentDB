@@ -24,7 +24,7 @@ services:
       - volumes-provisioner
 
   esdb-node1:
-    build: 
+    build:
       context: .
       args:
         RUNTIME: ${RUNTIME}
@@ -49,7 +49,7 @@ services:
       - cert-gen
 
   esdb-node2:
-    build: 
+    build:
       context: .
       args:
         RUNTIME: ${RUNTIME}
@@ -74,7 +74,7 @@ services:
       - cert-gen
 
   esdb-node3:
-    build: 
+    build:
       context: .
       args:
         RUNTIME: ${RUNTIME}
@@ -106,9 +106,3 @@ networks:
       driver: default
       config:
         - subnet: 172.30.240.0/24
-  kurrentdb.api.v2.tests:
-    image: kurrentdb.api.v2.tests
-    build:
-      context: .
-      dockerfile: src/KurrentDB.Api.V2.Tests/Dockerfile
-

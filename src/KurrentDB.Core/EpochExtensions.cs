@@ -12,9 +12,4 @@ internal static class EpochExtensions {
 
 	public static long ToTicksSinceEpoch(this DateTime value) =>
 		(value - DateTime.UnixEpoch).Ticks;
-
-	public static long ToUnixTimeMilliseconds(this DateTime value) {
-		Debug.Assert(value.Kind == DateTimeKind.Utc, "The Kind must be DateTimeKind.Utc");
-		return (long)(value - DateTime.UnixEpoch).TotalMilliseconds;
-	}
 }

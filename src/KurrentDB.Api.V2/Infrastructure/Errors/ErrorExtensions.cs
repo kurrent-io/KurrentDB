@@ -73,4 +73,4 @@ static class ErrorExtensions {
 	}
 }
 
-public readonly record struct ErrorMetadata(string Code, string OriginalCode, int StatusCode, string Domain, bool HasDetails, Type? DetailsType);
+public record ErrorMetadata(string Code, string OriginalCode, int StatusCode, string Domain, bool HasDetails, Type? DetailsType);

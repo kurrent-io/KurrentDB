@@ -19,6 +19,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using OpenTelemetry.Metrics;
 using Serilog;
 
 using ILogger = Microsoft.Extensions.Logging.ILogger;
@@ -29,10 +30,13 @@ namespace KurrentDB.Testing;
 /// Represents a single node in a KurrentDB cluster for testing purposes.
 /// This class sets up an in-memory KurrentDB instance with configurable options,
 /// allowing for isolated testing of cluster behaviors and interactions.
+/// <remarks>
+/// Important: AuthZ and AuthN are not enforced, because of lack of macOS support for self-signed certificate.
+/// </remarks>
 /// </summary>
 [PublicAPI]
 public class ClusterVNodeApp : IAsyncDisposable {
-	static readonly Dictionary<string, string?> DefaultSettings = new() {
+    static readonly Dictionary<string, string?> DefaultSettings = new() {
         { "KurrentDB:Application:TelemetryOptout", "true" },
         { "KurrentDB:Application:Insecure", "true" },
         { "KurrentDB:Database:MemDb", "true" },
@@ -42,6 +46,8 @@ public class ClusterVNodeApp : IAsyncDisposable {
         { "KurrentDB:Logging:LogLevel", "Default" },
         { "KurrentDB:Logging:DisableLogFile", "true" }
     };
+
+    static readonly Serilog.ILogger Log = Serilog.Log.ForContext<ClusterVNodeApp>();
 
 	static ClusterVNodeApp() {
 		// required because of a bug in the configuration system that
@@ -53,13 +59,69 @@ public class ClusterVNodeApp : IAsyncDisposable {
 
 	long _started;
 
+    CertificateProvider ConfigureCertificateProvider(ClusterVNodeOptions options) {
+        return new OptionsCertificateProvider();
+
+        //TODO SS: enable dev certs to allow proper auth testing once we are able to support macOS where it currently fails
+
+        // if (!options.DevMode.Dev)
+        //     return new OptionsCertificateProvider();
+        //
+        // var result = CertificateManager.Instance
+        //     .EnsureDevelopmentCertificate(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddMonths(1), trust: true);
+        //
+        // if (result is not (EnsureCertificateResult.Succeeded or EnsureCertificateResult.ValidCertificatePresent))
+        //     throw new Exception($"Failed to create or validate the development certificate. Result: {result}");
+        //
+        // var certs = CertificateManager.Instance.ListCertificates(StoreName.My, StoreLocation.CurrentUser, true)
+        //     .Concat(CertificateManager.Instance.ListCertificates(StoreName.My, StoreLocation.LocalMachine, true))
+        //     .ToList();
+        //
+        // if (certs.Count == 0)
+        //     throw new Exception("Failed to find the development certificate after it was just created.");
+        //
+        // Log.Information(
+        //     "Found {Count} development certificates in the system: {Certificates}",
+        //     certs.Count, certs.Select(c => $"{c.Thumbprint}: {c.FriendlyName}"));
+        //
+        // Log.Information(
+        //     "Running in dev mode using {Trusted} certificate: {Certificate}",
+        //     CertificateManager.Instance.IsTrusted(certs[0]) ? "trusted" : "untrusted", certs[0]);
+        //
+        // if (!CertificateManager.Instance.IsTrusted(certs[0]) && RuntimeInformation.IsWindows) {
+        //     Log.Information("Dev certificate {cert} is not trusted. Adding it to the trusted store.", certs[0]);
+        //     CertificateManager.Instance.TrustCertificate(certs[0]);
+        // }
+        // else {
+        //     Log.Warning(
+        //         "Automatically trusting dev certs is only supported on Windows.\n" +
+        //         "Please trust certificate {cert} if it's not trusted already.", certs[0]
+        //     );
+        // }
+        //
+        // return new DevCertificateProvider(certs[0]);
+    }
+
 	/// <summary>
 	/// Initializes a new instance of the <see cref="ClusterVNodeApp"/> class.
 	/// </summary>
-	public ClusterVNodeApp(Action<ClusterVNodeOptions, IServiceCollection>? configureServices = null, Dictionary<string, string?>? overrides = null) {
+	public ClusterVNodeApp(Action<ClusterVNodeOptions, IServiceCollection>? configureServices = null, Dictionary<string, object?>? overrides = null) {
 		ServerOptions = GetOptions(DefaultSettings, overrides);
 
-		var svc = new ClusterVNodeHostedService(ServerOptions, new OptionsCertificateProvider(), ServerOptions.ConfigurationRoot);
+        if (ServerOptions.DevMode.Dev) {
+            const string logMessage = """
+                ==============================================================================================================
+                DEV MODE ENABLED 
+                ==============================================================================================================
+                """;
+
+            Log.Warning(logMessage);
+        }
+
+		var svc = new ClusterVNodeHostedService(
+            ServerOptions,
+            ConfigureCertificateProvider(ServerOptions),
+            ServerOptions.ConfigurationRoot);
 
 		var builder = WebApplication.CreateSlimBuilder();
 
@@ -71,8 +133,20 @@ public class ClusterVNodeApp : IAsyncDisposable {
 		// configure services first so we can override things
 		svc.Node.Startup.ConfigureServices(builder.Services);
 
-		// then add the hosted service
-		builder.Services.AddSingleton<IHostedService>(svc);
+        builder.Services
+            .AddOpenTelemetry()
+            .WithMetrics(metrics => metrics
+                .AddOtlpExporter());
+
+        // then add the hosted service
+        builder.Services.AddSingleton<IHostedService>(svc);
+
+        // Configures gRPC client address discovery to use a static resolver
+        // that points to the test server's address.
+        builder.Services.EnableGrpcClientsAddressDiscovery();
+
+        // Configures gRPC clients to use gzip compression for requests
+        builder.Services.EnableGrpcClientsCompression();
 
 		// allow the caller to override anything they want
 		// before we do some final configuration of our own
@@ -106,10 +180,10 @@ public class ClusterVNodeApp : IAsyncDisposable {
 
 		return;
 
-		static ClusterVNodeOptions GetOptions(Dictionary<string, string?> settings, Dictionary<string, string?>? overrides = null) {
+		static ClusterVNodeOptions GetOptions(Dictionary<string, string?> settings, Dictionary<string, object?>? overrides = null) {
             if (overrides is not null) {
                 foreach (var entry in overrides)
-                    settings[entry.Key] = entry.Value;
+                    settings[entry.Key] = entry.Value?.ToString();
             }
 
 			var configurationRoot = new ConfigurationBuilder()

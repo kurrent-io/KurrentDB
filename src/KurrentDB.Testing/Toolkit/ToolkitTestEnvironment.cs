@@ -75,9 +75,6 @@ public static class ToolkitTestEnvironment {
     static void InitLogging() {
         DenyConsoleSinks(Configuration);
 
-        // const string consoleOutputTemplate =
-        //     "[{Timestamp:mm:ss.fff} {Level:u3}] {TestUid} ({ThreadId:000}) {SourceContext} {NewLine}{Message}{NewLine}{Exception}{NewLine}";
-
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Verbose()
             .Enrich.WithThreadId()
@@ -90,29 +87,7 @@ public static class ToolkitTestEnvironment {
             .Enrich.WithProperty(SourceContextPropertyName, nameof(ToolkitTestEnvironment))
             .Enrich.WithProperty(nameof(TestUid), TestUid.Empty)
             .WriteTo.OpenTelemetry()
-            // .WriteTo.Debug()
-            // .WriteTo.Map(nameof(TestUid), TestUid.Empty, (_, config) => {
-            //     config.Console(
-            //         theme: AnsiConsoleTheme.Literate,
-            //         outputTemplate: ConsoleOutputTemplate,
-            //         applyThemeToRedirectedOutput: true
-            //     );
-            // })
             .WriteTo.Observers(o => o.Subscribe(LogEvents.OnNext))
-            // .WriteTo.Conditional(
-            //     evt => {
-            //         if (evt.Properties.TryGetValue(nameof(TestUid), out var uid)) {
-            //             && uid.ToString() != TestUid.Empty.ToString()
-            //         }
-            //
-            //         return false;
-            //     },
-            //     sink => sink.Console(
-            //         theme: AnsiConsoleTheme.Literate,
-            //         outputTemplate: ConsoleOutputTemplate,
-            //         applyThemeToRedirectedOutput: true
-            //     )
-            // )
             .WriteTo.Console(
                 theme: AnsiConsoleTheme.Literate,
                 outputTemplate: ConsoleOutputTemplate,

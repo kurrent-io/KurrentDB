@@ -151,11 +151,11 @@ public partial record ClusterVNodeOptions {
 					 "to stop reading duplicates.")]
 		public bool SkipIndexScanOnReads { get; init; } = false;
 
-        [Description("The maximum size of appends, in bytes. This is the total size of all records in the append request. May not exceed 16MB.")]
-        public int MaxAppendSize { get; init; } = 1_024 * 1_024; // shouldn't this be equal to TFConsts.ChunkSize ?!
+        [Description("The maximum size of appends, in bytes. This is the total size of all records in the append request. May not exceed 256MB.")]
+        public int MaxAppendSize { get; init; } = TFConsts.ChunkSize;
 
         [Description("The maximum size of an individual record in an append request received over gRPC or HTTP, in bytes.")]
-        public int MaxAppendEventSize { get; init; } = TFConsts.EffectiveMaxLogRecordSize;
+        public int MaxAppendEventSize { get; init; } = TFConsts.MaxLogRecordSize;
 
 		[Description("Disable Authentication, Authorization and TLS on all TCP/HTTP interfaces.")]
 		public bool Insecure { get; init; } = false;

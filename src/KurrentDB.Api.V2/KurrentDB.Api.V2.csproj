@@ -16,13 +16,6 @@
 		<PackageReference Include="Grpc.Tools" />
 		<PackageReference Include="Grpc.StatusProto" />
 		<PackageReference Include="Humanizer.Core" />
-		<PackageReference Include="OpenTelemetry.Exporter.Console" />
-		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
-        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
-		<PackageReference Include="OpenTelemetry.Instrumentation.EventCounters" />
-		<PackageReference Include="OpenTelemetry.Resources.Container" />
-        <PackageReference Include="OpenTelemetry.Resources.OperatingSystem" />
-        <PackageReference Include="OpenTelemetry.Resources.ProcessRuntime" />
 		<PackageReference Include="Scrutor" />
 	</ItemGroup>
 

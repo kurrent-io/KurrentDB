@@ -1,3 +1,6 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
 using System.Collections;
 using System.Text.Json;
 using Google.Protobuf;
@@ -11,6 +14,11 @@ using SchemaInfo = KurrentDB.Protocol.V2.Streams.SchemaInfo;
 
 namespace KurrentDB.Api.Tests.Fixtures;
 
+/// <summary>
+/// Provides methods to simulate home automation activities and generate test data for smart home scenarios.
+/// This includes creating streams of events for multiple homes in a housing complex.
+/// It is useful for testing and development purposes.
+/// </summary>
 public static class HomeAutomationTestData {
     public static List<SmartHomeActivity> SimulateHousingComplexActivity(int homes = 3, int eventsPerHome = 100) {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(homes, nameof(homes));
