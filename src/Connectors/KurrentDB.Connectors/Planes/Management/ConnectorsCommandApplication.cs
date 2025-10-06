@@ -7,13 +7,16 @@ using KurrentDB.Connectors.Management.Contracts.Events;
 using Eventuous;
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Surge;
+using Kurrent.Surge.Connectors;
 using Kurrent.Surge.Connectors.Sinks;
-
+using KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
 using KurrentDB.Connectors.Infrastructure.Eventuous;
 using KurrentDB.Connectors.Planes.Management.Domain;
 using Microsoft.Extensions.Configuration;
+using static System.StringComparison;
 using static KurrentDB.Connectors.Planes.Management.Domain.ConnectorDomainExceptions;
 using static KurrentDB.Connectors.Planes.Management.Domain.ConnectorDomainServices;
+using ConnectorState = KurrentDB.Connectors.Management.Contracts.ConnectorState;
 
 namespace KurrentDB.Connectors.Planes.Management;
 
@@ -95,6 +98,10 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
 
             connector.EnsureNotDeleted();
 
+            var instanceType = GetInstanceTypeFromSettings(connector.CurrentRevision.Settings);
+            if (ConnectorCatalogue.TryGetConnector(instanceType, out var item) && item.IsSource && cmd.StartFrom != null)
+	            throw new DomainException($"Connector {connector.Id} cannot be started from a specific position");
+
             if (connector.State
                 is ConnectorState.Running
                 or ConnectorState.Activating)
@@ -117,6 +124,10 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
 
             connector.EnsureNotDeleted();
             connector.EnsureStopped();
+
+            var instanceType = GetInstanceTypeFromSettings(connector.CurrentRevision.Settings);
+            if (ConnectorCatalogue.TryGetConnector(instanceType, out var item) && item.IsSource && cmd.StartFrom != null)
+	            throw new DomainException($"Connector {connector.Id} cannot be started from a specific position");
 
             return [
                 new ConnectorActivating {
@@ -229,5 +240,11 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
 
         if (!licenseService.CheckLicense(instanceType, out var info))
             throw new ConnectorAccessDeniedException($"Usage of the {info.ConnectorType.Name} connector is not authorized");
+    }
+
+    static string GetInstanceTypeFromSettings(IEnumerable<KeyValuePair<string, string>> settings) {
+        return settings
+            .FirstOrDefault(kvp => kvp.Key.Equals(nameof(IConnectorOptions.InstanceTypeName), OrdinalIgnoreCase))
+            .Value;
     }
 }
