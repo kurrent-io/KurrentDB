@@ -11,6 +11,7 @@ public class ArchiveOptions {
 	public StorageType StorageType { get; init; } = StorageType.Unspecified;
 	public FileSystemOptions FileSystem { get; init; } = new();
 	public S3Options S3 { get; init; } = new();
+	public AzureOptions Azure { get; init; }
 	public RetentionOptions RetainAtLeast { get; init; } = new();
 
 	public void Validate() {
@@ -34,6 +35,9 @@ public class ArchiveOptions {
 			case StorageType.S3:
 				S3.Validate();
 				break;
+			case StorageType.Azure:
+				Azure.Validate();
+				break;
 			default:
 				throw new InvalidConfigurationException("Unknown StorageType");
 		}
@@ -48,6 +52,7 @@ public enum StorageType {
 	// node has scavenged a chunk and replaced it.
 	FileSystemDevelopmentOnly,
 	S3,
+	Azure,
 }
 
 public class FileSystemOptions {
@@ -69,6 +74,78 @@ public class S3Options {
 
 		if (string.IsNullOrEmpty(Region))
 			throw new InvalidConfigurationException("Please provide a Region for the S3 archive");
+	}
+}
+
+public class AzureOptions {
+	public required string Container { get; init; }
+
+	/// <summary>
+	/// Gets or sets service URL or connection string if <see cref="Authentication"/>
+	/// is <see cref="AuthenticationType.ConnectionString"/>.
+	/// </summary>
+	public required string ConnectionString { get; init; }
+
+	/// <summary>
+	/// Gets or sets the user identity.
+	/// </summary>
+	/// <remarks>
+	/// Applicable when <see cref="Authentication"/> is <see cref="AuthenticationType.UserAssignedClientId"/>.
+	/// </remarks>
+	public string UserIdentity { get; init; }
+
+	/// <summary>
+	/// Gets or sets the authentication type.
+	/// </summary>
+	public required AuthenticationType Authentication { get; init; }
+
+	public void Validate() {
+		string message;
+		if (string.IsNullOrWhiteSpace(Container)) {
+			message = "Please provide a Container for the Azure archive";
+		} else {
+			switch (Authentication) {
+				case AuthenticationType.ConnectionString when string.IsNullOrWhiteSpace(ConnectionString):
+					message = "Please provide connection string for Azure BLOB";
+					break;
+				case AuthenticationType.UserAssignedClientId when string.IsNullOrWhiteSpace(UserIdentity):
+					message = "Please provide user identity";
+					break;
+				default:
+					return;
+			}
+		}
+
+		throw new InvalidConfigurationException(message);
+	}
+
+	public enum AuthenticationType {
+		/// <summary>
+		/// Combining credentials used in Azure hosting environments with credentials used in local development environment
+		/// (including Azure CLI).
+		/// </summary>
+		/// <remarks>
+		/// This type is not recommended for production use.
+		/// </remarks>
+		Default = 0,
+
+		/// <summary>
+		/// System-assigned managed identity (suitable when the code is running within Azure)
+		/// </summary>
+		/// <seealso href="https://learn.microsoft.com/en-us/dotnet/azure/sdk/authentication/system-assigned-managed-identity?"/>
+		SystemAssignedIdentity,
+
+		/// <summary>
+		/// User-assigned managed identity.
+		/// </summary>
+		/// <seealso href="https://learn.microsoft.com/en-us/dotnet/azure/sdk/authentication/user-assigned-managed-identity"/>
+		UserAssignedClientId,
+
+		/// <summary>
+		/// Uses connection string and Shared Access Signature (SAS).
+		/// </summary>
+		/// <seealso href="https://learn.microsoft.com/en-us/azure/storage/common/storage-configure-connection-string"/>
+		ConnectionString,
 	}
 }
 
