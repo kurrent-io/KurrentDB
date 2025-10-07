@@ -65,9 +65,13 @@ static class ErrorExtensions {
                     $"Google.Rpc.{key.Split(".")[^1]}"
                 ];
 
-                return AssemblyScanner.System.Scan()
-                    .FirstOrDefault(t => names.Contains(t.FullName, StringComparer.Ordinal));
-            }
+				return AssemblyScanner
+					.UsingAssemblies([
+						typeof(T).Assembly,
+						typeof(Google.Rpc.BadRequest).Assembly])
+					.Scan()
+					.FirstOrDefault(t => names.Contains(t.FullName, StringComparer.Ordinal));
+			}
 		}
 
 	}
