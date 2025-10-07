@@ -67,35 +67,3 @@ public abstract class ServerRequestInterceptor : ServerRequestAsyncInterceptor {
     protected abstract TRequest InterceptRequest<TRequest>(TRequest request, ServerCallContext context) where TRequest : class;
 }
 
-public abstract class ServerRequestSyncInterceptor : Interceptor {
-    /// <summary>
-    /// Intercepts the incoming request message.
-    /// </summary>
-    protected abstract TRequest InterceptRequest<TRequest>(TRequest request, ServerCallContext context) where TRequest : class;
-
-    public override Task<TResponse> UnaryServerHandler<TRequest, TResponse>(
-        TRequest request,
-        ServerCallContext context,
-        UnaryServerMethod<TRequest, TResponse> continuation
-    ) => continuation(InterceptRequest(request, context), context);
-
-    public override Task<TResponse> ClientStreamingServerHandler<TRequest, TResponse>(
-        IAsyncStreamReader<TRequest> requestStream,
-        ServerCallContext context,
-        ClientStreamingServerMethod<TRequest, TResponse> continuation
-    ) => continuation(requestStream.Intercept(context, InterceptRequest), context);
-
-    public override Task ServerStreamingServerHandler<TRequest, TResponse>(
-        TRequest request,
-        IServerStreamWriter<TResponse> responseStream,
-        ServerCallContext context,
-        ServerStreamingServerMethod<TRequest, TResponse> continuation
-    ) => continuation(InterceptRequest(request, context), responseStream, context);
-
-    public override Task DuplexStreamingServerHandler<TRequest, TResponse>(
-        IAsyncStreamReader<TRequest> requestStream,
-        IServerStreamWriter<TResponse> responseStream,
-        ServerCallContext context,
-        DuplexStreamingServerMethod<TRequest, TResponse> continuation) =>
-        continuation(requestStream.Intercept(context, InterceptRequest), responseStream, context);
-}
