@@ -68,7 +68,7 @@ public static class Logging {
 
     static LoggerConfiguration Console(this LoggerSinkConfiguration config) =>
 	    config.Console(
-            theme: Serilog.Sinks.SystemConsole.Themes.AnsiConsoleTheme.Literate,
+            theme: Serilog.Sinks.SystemConsole.Themes.AnsiConsoleTheme.Code,
             outputTemplate: "[{Timestamp:mm:ss.fff} {Level:u3} {ShortTestUid}] ({ThreadId:000}) {SourceContext} {NewLine}{Message}{NewLine}{Exception}{NewLine}",
             applyThemeToRedirectedOutput: true
         );

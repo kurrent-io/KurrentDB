@@ -11,7 +11,6 @@ using Google.Protobuf.Collections;
 using Grpc.Core;
 using KurrentDB.Protocol.V2.Streams;
 using KurrentDB.Testing.Sample.HomeAutomation;
-using StreamRevision = KurrentDB.Api.Streams.StreamRevision;
 using StreamsService = KurrentDB.Protocol.V2.Streams.StreamsService;
 
 namespace KurrentDB.Api.Tests.Fixtures;
@@ -55,7 +54,7 @@ public partial class ClusterVNodeTestContext {
     public CallCredentials DefaultCredentials => CreateCallCredentials(default);
 }
 
-public record SeededSmartHomeActivity(SmartHomeActivity Activity, StreamRevision StreamRevision, long Position) {
+public record SeededSmartHomeActivity(SmartHomeActivity Activity, long StreamRevision, long Position) {
     public SmartHome                   Home          => Activity.Home;
     public string                      Stream        => Activity.Stream;
     public RepeatedField<AppendRecord> Records       => Activity.Records;

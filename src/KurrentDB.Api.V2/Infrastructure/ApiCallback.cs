@@ -80,7 +80,7 @@ abstract class ApiCallbackBase<TState, TResponse> : IEnvelope {
     /// </typeparam>
     public void ReplyWith<T>(T message) where T : Message {
         try {
-            // TODO SS: in hindsight, it seems that Pre-Success validtion logic only applies to certain message types and should not be in the base class
+            // TODO SS: in hindsight, it seems that Pre-Success validation logic only applies to certain message types and should not be in the base class
             // check for pre-success errors
             if (message.TryGetOperationResult(out var operationResult))
                 switch (operationResult) {

@@ -6,8 +6,8 @@
   <ItemGroup>
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.2" />
     <PackageVersion Include="BlazorMonaco" Version="3.3.0" />
-    <PackageVersion Include="Bogus" Version="35.6.3" />
-    <PackageVersion Include="DiffEngine" Version="16.3.0" />
+    <PackageVersion Include="Bogus" Version="35.6.4" />
+    <PackageVersion Include="DiffEngine" Version="16.7.1" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="Dapper" Version="2.1.66" />
     <PackageVersion Include="DotNext" Version="5.24.0" />
@@ -32,7 +32,7 @@
     <PackageVersion Include="GitHubActionsTestLogger" Version="2.4.1" />
     <PackageVersion Include="GitInfo" Version="3.3.3" />
     <PackageVersion Include="Google.Api.CommonProtos" Version="2.17.0" />
-    <PackageVersion Include="Google.Protobuf" Version="3.32.0" />
+    <PackageVersion Include="Google.Protobuf" Version="3.32.1" />
     <PackageVersion Include="Grpc.AspNetCore" Version="2.71.0" />
     <PackageVersion Include="Grpc.AspNetCore.Web" Version="2.71.0" />
     <PackageVersion Include="Grpc.Core" Version="2.46.6" />
@@ -91,7 +91,7 @@
     <PackageVersion Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.1" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.9" />
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.9" />
-    <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.8.0" />
+    <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.9.0" />
     <PackageVersion Include="Microsoft.FASTER.Core" Version="1.9.16" />
     <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.14.0" />
     <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.14.0" />
@@ -99,10 +99,10 @@
     <PackageVersion Include="Microsoft.Net.Http.Headers" Version="8.0.20" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageVersion Include="Microsoft.OpenApi.Readers" Version="1.6.23" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="1.8.4" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.8.4" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="1.8.4" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.0.4" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="1.9.0" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.9.0" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="1.9.0" />
     <PackageVersion Include="Mono.Posix.NETStandard" Version="1.0.0" />
     <PackageVersion Include="MudBlazor" Version="8.12.0" />
     <PackageVersion Include="MudBlazor.Markdown" Version="8.11.0" />
@@ -169,7 +169,7 @@
     <PackageVersion Include="System.Net.Http" Version="4.3.4" />
     <!-- upgrade because of transitive dependency vulnerability https://github.com/advisories/GHSA-5f2m-466j-3848 and https://github.com/advisories/GHSA-xhfc-gr8f-ffwc -->
     <PackageVersion Include="System.Private.Uri" Version="4.3.2" />
-    <PackageVersion Include="System.Reactive" Version="6.0.2" />
+    <PackageVersion Include="System.Reactive" Version="6.1.0" />
     <!-- CVE-2023-29331 -->
     <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="9.0.9" />
     <PackageVersion Include="System.Security.Cryptography.Xml" Version="9.0.9" />
