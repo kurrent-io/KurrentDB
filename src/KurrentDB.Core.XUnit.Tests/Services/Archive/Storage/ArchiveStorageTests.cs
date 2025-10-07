@@ -15,6 +15,7 @@ namespace KurrentDB.Core.XUnit.Tests.Services.Archive.Storage;
 public class ArchiveStorageTests : ArchiveStorageTestsBase<ArchiveStorageTests> {
 	[Theory]
 	[StorageData.S3]
+	[StorageData.Azure]
 	[StorageData.FileSystem]
 	public async Task can_read_chunk_entirely(StorageType storageType) {
 		var sut = CreateSut(storageType);
@@ -36,6 +37,7 @@ public class ArchiveStorageTests : ArchiveStorageTestsBase<ArchiveStorageTests> 
 
 	[Theory]
 	[StorageData.S3]
+	[StorageData.Azure]
 	[StorageData.FileSystem]
 	public async Task can_read_chunk_partially(StorageType storageType) {
 		var sut = CreateSut(storageType);
@@ -59,6 +61,7 @@ public class ArchiveStorageTests : ArchiveStorageTestsBase<ArchiveStorageTests> 
 
 	[Theory]
 	[StorageData.S3]
+	[StorageData.Azure]
 	[StorageData.FileSystem]
 	public async Task can_read_outside_of_range(StorageType storageType) {
 		var sut = CreateSut(storageType);
@@ -76,6 +79,7 @@ public class ArchiveStorageTests : ArchiveStorageTestsBase<ArchiveStorageTests> 
 	// not useful in practice but to ensure consistency across the implementations
 	[Theory]
 	[StorageData.S3]
+	[StorageData.Azure]
 	[StorageData.FileSystem]
 	public async Task can_read_with_zero_length_buffer(StorageType storageType) {
 		var sut = CreateSut(storageType);
@@ -91,6 +95,7 @@ public class ArchiveStorageTests : ArchiveStorageTestsBase<ArchiveStorageTests> 
 
 	[Theory]
 	[StorageData.S3]
+	[StorageData.Azure]
 	[StorageData.FileSystem]
 	public async Task read_with_negative_offset_throws(StorageType storageType) {
 		var sut = CreateSut(storageType);
@@ -108,6 +113,7 @@ public class ArchiveStorageTests : ArchiveStorageTestsBase<ArchiveStorageTests> 
 
 	[Theory]
 	[StorageData.S3]
+	[StorageData.Azure]
 	[StorageData.FileSystem]
 	public async Task read_missing_chunk_throws_ChunkDeletedException(StorageType storageType) {
 		var sut = CreateSut(storageType);

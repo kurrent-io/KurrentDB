@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using DotNext.Buffers;
 using KurrentDB.Core.Services.Archive;
 using KurrentDB.Core.Services.Archive.Storage;
+using KurrentDB.Core.Services.Archive.Storage.Azure;
 using KurrentDB.Core.Services.Archive.Storage.S3;
 using Xunit;
 
@@ -17,29 +18,41 @@ namespace KurrentDB.Core.XUnit.Tests.Services.Archive.Storage;
 // some of the behavior of the blob storage implementations is covered by ArchiveStorageTests.cs
 [Collection("ArchiveStorageTests")]
 public class BlobStorageTests : DirectoryPerTest<BlobStorageTests> {
-	protected const string AwsRegion = "eu-west-1";
-	protected const string AwsBucket = "archiver-unit-tests";
+	private const string AwsRegion = "eu-west-1";
+	private const string AwsBucket = "archiver-unit-tests";
 
-	protected string ArchivePath => Path.Combine(Fixture.Directory, "archive");
-	protected string LocalPath => Path.Combine(Fixture.Directory, "local");
+	private string ArchivePath => Path.Combine(Fixture.Directory, "archive");
+	private string LocalPath => Path.Combine(Fixture.Directory, "local");
 
 	public BlobStorageTests() {
 		Directory.CreateDirectory(ArchivePath);
 		Directory.CreateDirectory(LocalPath);
 	}
 
-	IBlobStorage CreateSut(StorageType storageType) => storageType switch {
-		StorageType.FileSystemDevelopmentOnly =>
-			new FileSystemBlobStorage(new() {
-				Path = ArchivePath
-			}),
-		StorageType.S3 =>
-			new S3BlobStorage(new() {
-				Bucket = AwsBucket,
-				Region = AwsRegion,
-			}),
-		_ => throw new NotImplementedException(),
-	};
+	IBlobStorage CreateSut(StorageType storageType) {
+		IBlobStorage storage;
+		switch (storageType) {
+			case StorageType.FileSystemDevelopmentOnly:
+				storage = new FileSystemBlobStorage(new() {
+					Path = ArchivePath
+				});
+				break;
+			case StorageType.S3:
+				storage = new S3BlobStorage(new() {
+					Bucket = AwsBucket,
+					Region = AwsRegion,
+				});
+				break;
+			case StorageType.Azure:
+				storage = new AzureBlobStorage(AzuriteHelpers.Options);
+				AzuriteHelpers.ConfigureEnvironment();
+				break;
+			default:
+				throw new NotImplementedException();
+		}
+
+		return storage;
+	}
 
 	private async ValueTask<FileStream> CreateFile(string fileName, int fileSize) {
 		var path = Path.Combine(LocalPath, fileName);
@@ -54,6 +67,7 @@ public class BlobStorageTests : DirectoryPerTest<BlobStorageTests> {
 
 	[Theory]
 	[StorageData.S3]
+	[StorageData.Azure]
 	[StorageData.FileSystem]
 	public async Task can_read_file_entirely(StorageType storageType) {
 		var sut = CreateSut(storageType);
@@ -79,6 +93,7 @@ public class BlobStorageTests : DirectoryPerTest<BlobStorageTests> {
 
 	[Theory]
 	[StorageData.S3]
+	[StorageData.Azure]
 	[StorageData.FileSystem]
 	public async Task can_store_and_read_file_partially(StorageType storageType) {
 		var sut = CreateSut(storageType);
@@ -106,6 +121,7 @@ public class BlobStorageTests : DirectoryPerTest<BlobStorageTests> {
 
 	[Theory]
 	[StorageData.S3]
+	[StorageData.Azure]
 	[StorageData.FileSystem]
 	public async Task can_retrieve_metadata(StorageType storageType) {
 		var sut = CreateSut(storageType);
@@ -125,12 +141,13 @@ public class BlobStorageTests : DirectoryPerTest<BlobStorageTests> {
 
 	[Theory]
 	[StorageData.S3]
+	[StorageData.Azure]
 	[StorageData.FileSystem]
 	public async Task read_missing_file_throws_FileNotFoundException(StorageType storageType) {
 		var sut = CreateSut(storageType);
 
 		await Assert.ThrowsAsync<FileNotFoundException>(async () => {
-			await sut.ReadAsync("missing-from-archive.file", Memory<byte>.Empty, offset: 0, CancellationToken.None);
+			await sut.ReadAsync("missing-from-archive.file", new byte[1], offset: 0, CancellationToken.None);
 		});
 	}
 }

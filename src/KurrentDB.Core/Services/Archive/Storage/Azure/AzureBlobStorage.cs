@@ -17,12 +17,16 @@ namespace KurrentDB.Core.Services.Archive.Storage.Azure;
 public class AzureBlobStorage : IBlobStorage {
 	private static readonly ILogger Logger = Log.ForContext<AzureBlobStorage>();
 
-	private readonly BlobContainerClient _client;
+	public AzureBlobStorage(AzureOptions options) => NativeClient = options.CreateClient();
 
-	public AzureBlobStorage(AzureOptions options) => _client = options.CreateClient();
+	public BlobContainerClient NativeClient { get; }
 
 	public async ValueTask<int> ReadAsync(string name, Memory<byte> buffer, long offset, CancellationToken token) {
-		var blobClient = _client.GetBlobClient(name);
+		// The check is required, otherwise, HttpRange throws ArgumentOutOfRangeException
+		if (buffer.IsEmpty)
+			return 0;
+
+		var blobClient = NativeClient.GetBlobClient(name);
 		var blobStream = default(Stream);
 		try {
 			var response = await blobClient.DownloadStreamingAsync(new BlobDownloadOptions {
@@ -47,7 +51,7 @@ public class AzureBlobStorage : IBlobStorage {
 	}
 
 	public async ValueTask<BlobMetadata> GetMetadataAsync(string name, CancellationToken token) {
-		var blobClient = _client.GetBlobClient(name);
+		var blobClient = NativeClient.GetBlobClient(name);
 		BlobProperties metadata;
 		try {
 			metadata = await blobClient.GetPropertiesAsync(cancellationToken: token);
@@ -60,7 +64,7 @@ public class AzureBlobStorage : IBlobStorage {
 	}
 
 	public async ValueTask StoreAsync(Stream readableStream, string name, CancellationToken ct) {
-		var blobClient = _client.GetBlobClient(name);
+		var blobClient = NativeClient.GetBlobClient(name);
 		try {
 			await blobClient.UploadAsync(readableStream, ct);
 		} catch (RequestFailedException ex) {
