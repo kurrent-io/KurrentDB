@@ -1,7 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using Google.Protobuf;
 using Grpc.AspNetCore.Server;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -23,16 +22,12 @@ public static class GrpcServerBuilderExtensions {
 
 public static class ServiceCollectionExtensions {
     public static IServiceCollection AddGrpcRequestValidator<TValidator>(this IServiceCollection services) where TValidator : class, IRequestValidator {
-
         services.TryAddSingleton(typeof(IRequestValidator), typeof(TValidator));
-
         return services;
     }
 
     public static IServiceCollection AddGrpcRequestValidator<TValidator>(this IServiceCollection services, TValidator validator) where TValidator : class, IRequestValidator {
-
         services.TryAddSingleton<IRequestValidator>(validator);
-
         return services;
     }
 }

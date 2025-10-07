@@ -4,7 +4,6 @@
 using EventStore.Plugins;
 using Grpc.AspNetCore.Server;
 using KurrentDB.Api.Errors;
-using KurrentDB.Api.Infrastructure;
 using KurrentDB.Api.Infrastructure.DependencyInjection;
 using KurrentDB.Api.Infrastructure.Grpc.Validation;
 using KurrentDB.Api.Streams.Validators;
@@ -19,8 +18,6 @@ namespace KurrentDB.Plugins.Api.V2;
 [UsedImplicitly]
 public class ApiV2Plugin() : SubsystemsPlugin("APIV2") {
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
-        services.AddNodeSystemInfoProvider();
-
         services
             .AddGrpc()
             .WithRequestValidation(x => x.ExceptionFactory = ApiErrors.InvalidRequest)

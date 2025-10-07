@@ -7,7 +7,6 @@ using System.Diagnostics;
 using Grpc.Core;
 using Humanizer;
 using KurrentDB.Api.Infrastructure.Errors;
-using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Protocol.V2.Streams.Errors;
 
 namespace KurrentDB.Api.Errors;

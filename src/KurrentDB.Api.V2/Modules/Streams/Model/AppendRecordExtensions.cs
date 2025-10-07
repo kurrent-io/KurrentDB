@@ -19,7 +19,7 @@ static class AppendRecordExtensions {
 		if (!record.HasRecordId)
 			record.RecordId = Guid.NewGuid().ToString();
 
-		if (record.Schema.Format != Protocol.V2.Streams.SchemaFormat.Json)
+		if (record.Schema.Format != SchemaFormat.Json)
 			record.Properties.Add(Constants.Properties.SchemaFormatKey, Value.ForString(record.Schema.Format.ToString()));
 
 		if (record.Schema.HasId)

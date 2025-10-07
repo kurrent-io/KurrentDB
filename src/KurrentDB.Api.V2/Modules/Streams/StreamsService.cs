@@ -148,13 +148,10 @@ public class StreamsService : StreamsServiceBase {
 
         protected override RpcException? MapToError(Message message) =>
             message switch {
-                // OperationResult.InvalidTransaction is not possible here as we validate the max append size while receiving the requests
-                // OperationResult.ForwardTimeout is not possible here as we set requireLeader=true on the request
-                // OperationResult.PrepareTimeout is not possible here as we don't have old explicit transactions
                 WriteEventsCompleted completed => completed.Result switch {
                     OperationResult.CommitTimeout => ApiErrors.OperationTimeout($"{FriendlyName} timed out while waiting for commit"),
 
-                    OperationResult.StreamDeleted  => ApiErrors.StreamTombstoned(Requests.ElementAt(completed.FailureStreamIndexes.Span[0]).Stream),
+                    OperationResult.StreamDeleted => ApiErrors.StreamTombstoned(Requests.ElementAt(completed.FailureStreamIndexes.Span[0]).Stream),
 
                     OperationResult.WrongExpectedVersion => ApiErrors.StreamRevisionConflict(
                         Requests.ElementAt(completed.FailureStreamIndexes.Span[0]).Stream,

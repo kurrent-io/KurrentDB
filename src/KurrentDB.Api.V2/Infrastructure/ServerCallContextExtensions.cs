@@ -23,10 +23,6 @@ static class ServerCallContextExtensions {
     public static TimeProvider GetTimeProvider(this ServerCallContext context) =>
         context.GetHttpContext().RequestServices.GetRequiredService<TimeProvider>();
 
-    public static NodeSystemInfo GetLeaderInfo(this ServerCallContext context) =>
-        context.GetHttpContext().RequestServices.GetRequiredService<INodeSystemInfoProvider>()
-            .GetLeaderInfo(context.CancellationToken).Wait();
-
     public static GrpcServiceOptions GetGrpcServiceOptions(this ServerCallContext context) =>
         context.GetHttpContext().RequestServices
             .GetRequiredService<IOptions<GrpcServiceOptions>>().Value;

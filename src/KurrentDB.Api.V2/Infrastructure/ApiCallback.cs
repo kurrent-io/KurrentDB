@@ -95,7 +95,7 @@ abstract class ApiCallbackBase<TState, TResponse>(ServerCallContext context, in 
                     ClientMessage.NotHandled.Types.NotHandledReason.NotReady   => ApiErrors.ServerNotReady(),
                     ClientMessage.NotHandled.Types.NotHandledReason.TooBusy    => ApiErrors.ServerOverloaded(),
                     ClientMessage.NotHandled.Types.NotHandledReason.IsReadOnly => ApiErrors.InternalServerError("Server is in read-only mode"),
-                    ClientMessage.NotHandled.Types.NotHandledReason.NotLeader  => ApiErrors.NotLeaderNode(CallContext),
+                    ClientMessage.NotHandled.Types.NotHandledReason.NotLeader  => ApiErrors.NotLeaderNode(notHandled.LeaderInfo.LeaderId, notHandled.LeaderInfo.Http)
                 });
 
                 return;

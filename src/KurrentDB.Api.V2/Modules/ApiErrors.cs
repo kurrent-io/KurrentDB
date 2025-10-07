@@ -6,6 +6,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Text;
+using DotNext.Net.Http;
 using FluentValidation.Results;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
@@ -312,14 +313,20 @@ public static partial class ApiErrors {
 		return RpcExceptions.FromError(ServerError.NotLeaderNode, message, notLeaderNode);
 	}
 
-    // public static RpcException NotLeaderNode(NodeSystemInfo leaderInfo) {
-    //     Debug.Assert(leaderInfo != NodeSystemInfo.Empty, "The leader info must not be empty!");
-    //     return NotLeaderNode(leaderInfo.InstanceId, leaderInfo.HttpEndPoint);
-    // }
+    /// <summary>
+    /// Creates an RPC exception indicating that the current node is not the leader in a clustered environment.
+    /// This method is used to create an <see cref="RpcException"/> with status code <see cref="StatusCode.FailedPrecondition"/>
+    /// when write operations are attempted on a non-leader node in a KurrentDB cluster.
+    /// The exception includes information about the current leader node.
+    /// </summary>
+    public static RpcException NotLeaderNode(Guid leaderNodeId, EndPoint leaderEndpoint) {
+        var endpoint = leaderEndpoint switch {
+            IPEndPoint ip   => new DnsEndPoint(ip.Address.ToString(), ip.Port),
+            DnsEndPoint dns => dns,
+            _               => throw new ArgumentOutOfRangeException(nameof(leaderEndpoint), leaderEndpoint, null)
+        };
 
-    public static RpcException NotLeaderNode(ServerCallContext context) {
-        var leaderInfo = context.GetLeaderInfo();
-        return NotLeaderNode(leaderInfo.InstanceId, leaderInfo.HttpEndPoint);
+        return NotLeaderNode(leaderNodeId, endpoint);
     }
 
     /// <summary>
