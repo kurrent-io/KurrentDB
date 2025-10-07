@@ -4,34 +4,31 @@
 using Kurrent.Surge.Consumers.Configuration;
 using Kurrent.Surge.DuckDB;
 using Kurrent.Surge.DuckDB.Projectors;
-using Kurrent.Surge.Projectors;
 using KurrentDB.Core.Bus;
 using KurrentDB.SchemaRegistry.Data;
 using KurrentDB.SchemaRegistry.Infrastructure.System.Node;
-using KurrentDB.SchemaRegistry.Infrastructure.System.Node.NodeSystemInfo;
 
 namespace KurrentDB.SchemaRegistry.Planes.Projection;
 
 public class DuckDBProjectorService(
-	IPublisher publisher,
-	ISubscriber subscriber,
-	IDuckDBConnectionProvider connectionProvider,
-	IConsumerBuilder consumerBuilder,
-	ILoggerFactory loggerFactory,
-	GetNodeSystemInfo getNodeSystemInfo)
-	: LeaderNodeBackgroundService(publisher, subscriber, getNodeSystemInfo, loggerFactory, "DuckDBProjector") {
-	private readonly ILoggerFactory _loggerFactory  = loggerFactory;
+    IPublisher publisher, IDuckDBConnectionProvider connectionProvider, IConsumerBuilder consumerBuilder, ILoggerFactory loggerFactory)
+    : NodeBackgroundService(publisher, loggerFactory.CreateLogger<NodeBackgroundService>(), "DuckDBProjector") {
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
+        var options = new DuckDBProjectorOptions(connectionProvider) {
+            Filter          = SchemaRegistryConventions.Filters.SchemasFilter,
+            InitialPosition = SubscriptionInitialPosition.Latest,
+            AutoCommit = new() {
+                Interval         = TimeSpan.FromSeconds(5),
+                RecordsThreshold = 500
+            }
+        };
 
-	protected override async Task Execute(NodeSystemInfo nodeInfo, CancellationToken stoppingToken) {
-		var options = new DuckDBProjectorOptions(connectionProvider) {
-			Filter = SchemaRegistryConventions.Filters.SchemasFilter,
-			InitialPosition = SubscriptionInitialPosition.Latest,
-			AutoCommit = new() {
-				Interval = TimeSpan.FromSeconds(5),
-				RecordsThreshold = 500
-			}
-		};
-		var projector = new DuckDBProjector(options, new SchemaProjections(), consumerBuilder, _loggerFactory);
-		await projector.RunUntilStopped(stoppingToken);
-	}
+        var projector = new DuckDBProjector(
+            options, new SchemaProjections(),
+            consumerBuilder,
+            loggerFactory
+        );
+
+        await projector.RunUntilStopped(stoppingToken);
+    }
 }

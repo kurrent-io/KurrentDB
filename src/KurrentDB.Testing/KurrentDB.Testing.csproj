@@ -1,56 +1,56 @@
 <Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
-		<LangVersion>preview</LangVersion>
-		<Nullable>enable</Nullable>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<EnablePreviewFeatures>true</EnablePreviewFeatures>
-		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-	</PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>preview</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnablePreviewFeatures>true</EnablePreviewFeatures>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
 
-	<ItemGroup>
-		<PackageReference Include="Bogus" />
-		<PackageReference Include="DiffEngine" />
-		<PackageReference Include="DotNext" />
-		<PackageReference Include="GitHubActionsTestLogger" />
-		<PackageReference Include="Humanizer.Core" />
-		<PackageReference Include="Microsoft.Extensions.Configuration" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Json" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" />
-		<PackageReference Include="Microsoft.Extensions.Logging" />
-		<PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
-		<PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
-		<PackageReference Include="Microsoft.Testing.Extensions.CrashDump" />
-		<PackageReference Include="Microsoft.Testing.Extensions.HangDump" />
-		<PackageReference Include="Microsoft.Testing.Extensions.TrxReport" />
-		<PackageReference Include="Serilog" />
-		<PackageReference Include="Serilog.Enrichers.Demystifier" />
-		<PackageReference Include="Serilog.Enrichers.Environment" />
-		<PackageReference Include="Serilog.Enrichers.Process" />
-		<PackageReference Include="Serilog.Enrichers.Thread" />
-		<PackageReference Include="Serilog.Exceptions" />
-		<PackageReference Include="Serilog.Expressions" />
-		<PackageReference Include="Serilog.Extensions.Hosting" />
-		<PackageReference Include="Serilog.Extensions.Logging" />
-		<PackageReference Include="Serilog.Settings.Configuration" />
-		<PackageReference Include="Serilog.Sinks.Console" />
-		<PackageReference Include="Serilog.Sinks.Debug" />
-		<PackageReference Include="Serilog.Sinks.Map" />
-		<PackageReference Include="Serilog.Sinks.Observable" />
-		<PackageReference Include="Serilog.Sinks.OpenTelemetry" />
-		<PackageReference Include="Serilog.Sinks.Seq" />
-		<PackageReference Include="Shouldly" />
-		<PackageReference Include="System.Reactive" />
-		<PackageReference Include="TUnit" />
-		<PackageReference Include="WaffleGenerator.Bogus" />
-        <PackageReference Include="Grpc.StatusProto" />
-	</ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Bogus" />
+    <PackageReference Include="DiffEngine" />
+    <PackageReference Include="DotNext" />
+    <PackageReference Include="GitHubActionsTestLogger" />
+    <PackageReference Include="Humanizer.Core" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CrashDump" />
+    <PackageReference Include="Microsoft.Testing.Extensions.HangDump" />
+    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" />
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.Enrichers.Demystifier" />
+    <PackageReference Include="Serilog.Enrichers.Environment" />
+    <PackageReference Include="Serilog.Enrichers.Process" />
+    <PackageReference Include="Serilog.Enrichers.Thread" />
+    <PackageReference Include="Serilog.Exceptions" />
+    <PackageReference Include="Serilog.Expressions" />
+    <PackageReference Include="Serilog.Extensions.Hosting" />
+    <PackageReference Include="Serilog.Extensions.Logging" />
+    <PackageReference Include="Serilog.Settings.Configuration" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Serilog.Sinks.Debug" />
+    <PackageReference Include="Serilog.Sinks.Map" />
+    <PackageReference Include="Serilog.Sinks.Observable" />
+    <PackageReference Include="Serilog.Sinks.OpenTelemetry" />
+    <PackageReference Include="Serilog.Sinks.Seq" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="System.Reactive" />
+    <PackageReference Include="TUnit" />
+    <PackageReference Include="WaffleGenerator.Bogus" />
+    <PackageReference Include="Grpc.StatusProto" />
+  </ItemGroup>
 
-	<ItemGroup>
-		<None Update="appsettings.json">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</None>
-		<None Remove="KurrentDB.Testing.csproj.DotSettings" />
-	</ItemGroup>
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Remove="KurrentDB.Testing.csproj.DotSettings" />
+  </ItemGroup>
 </Project>

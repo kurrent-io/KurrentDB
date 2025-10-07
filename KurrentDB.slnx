@@ -98,7 +98,6 @@
   <Project Path="src\KurrentDB.Projections.Core\KurrentDB.Projections.Core.csproj" />
   <Project Path="src\KurrentDB.SourceGenerators\KurrentDB.SourceGenerators.csproj" />
   <Project Path="src\KurrentDB.Surge.Testing.Messages\KurrentDB.Surge.Testing.Messages.csproj" Type="Classic C#" />
-  <Project Path="src\KurrentDB.Surge.Testing.TUnit\KurrentDB.Surge.Testing.TUnit.csproj" Type="Classic C#" />
   <Project Path="src\KurrentDB.Surge.Testing\KurrentDB.Surge.Testing.csproj" Type="Classic C#" />
   <Project Path="src\KurrentDB.Surge.Tests\KurrentDB.Surge.Tests.csproj" Type="Classic C#" />
   <Project Path="src\KurrentDB.Surge\KurrentDB.Surge.csproj" Type="Classic C#" />
