@@ -72,16 +72,6 @@ public static partial class TestContextExtensions {
 	}
 }
 
-public static partial class TestContextExtensions {
-	const string TestUidKey = "$TestUid";
-
-	public static TestUid AssignTestUid(this TestContext ctx) =>
-		ctx.InjectItem(Testing.TestUid.New(), TestUidKey);
-
-	public static TestUid TestUid(this TestContext? ctx) =>
-		ctx.ExtractItem<TestUid>(TestUidKey);
-}
-
 public static partial class TestContextLoggingExtensions {
 	const string LoggerFactoryKey = "$TestLoggerFactory";
     const string LoggerKey        = "$TestLogger";

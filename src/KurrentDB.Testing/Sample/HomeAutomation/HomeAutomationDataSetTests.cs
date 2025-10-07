@@ -1,3 +1,6 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
 using Bogus;
 using KurrentDB.Testing.Bogus;
 using Serilog;
@@ -7,12 +10,12 @@ namespace KurrentDB.Testing.Sample.HomeAutomation;
 /// <summary>
 /// Test class to verify HomeAutomation DataSet functionality
 /// </summary>
+[Skip("Only run manually to verify the HomeAutomationDataSet functionality")]
 public class HomeAutomationDataSetTests {
-    [ClassDataSource<BogusFaker>(Shared = SharedType.PerAssembly)]
-    public required BogusFaker Faker { get; init; }
+    BogusFaker Faker { get; init; } = new();
 
     [Test]
-    public async Task BasicHomeFaker_ShouldGenerateValidHome() {
+    public async Task basic_home_faker_generates_valid_home() {
         // Arrange
         var homeFaker = new HomeFaker();
 
@@ -20,7 +23,8 @@ public class HomeAutomationDataSetTests {
         var home = homeFaker.Generate();
 
         // Assert
-        Log.Information("Generated home: {HomeName} with {RoomCount} rooms and {DeviceCount} devices",
+        Log.Information(
+            "Generated home: {HomeName} with {RoomCount} rooms and {DeviceCount} devices",
             home.Name, home.Rooms.Count, home.Devices.Count);
 
         await Assert.That(home.Name).IsNotNull();
@@ -37,7 +41,7 @@ public class HomeAutomationDataSetTests {
     }
 
     [Test]
-    public async Task HomeAutomationDataSet_DirectUsage_ShouldGenerateValidHome() {
+    public async Task home_automation_dataset_direct_usage_generates_valid_home() {
         // Arrange
         var dataset = new HomeAutomationDataSet();
 
@@ -45,7 +49,8 @@ public class HomeAutomationDataSetTests {
         var home = dataset.Home();
 
         // Assert
-        Log.Information("DataSet generated home: {HomeName} with {RoomCount} rooms and {DeviceCount} devices",
+        Log.Information(
+            "DataSet generated home: {HomeName} with {RoomCount} rooms and {DeviceCount} devices",
             home.Name, home.Rooms.Count, home.Devices.Count);
 
         await Assert.That(home).IsNotNull();
@@ -55,7 +60,7 @@ public class HomeAutomationDataSetTests {
     }
 
     [Test]
-    public async Task FakerExtension_ShouldProvideHomeAutomationAccess() {
+    public async Task faker_extension_provides_home_automation_access() {
         // Act
         var home = Faker.HomeAutomation().Home();
 
@@ -70,7 +75,7 @@ public class HomeAutomationDataSetTests {
     }
 
     [Test]
-    public async Task FlexibleHomeGeneration_WithSpecificRoomCount_ShouldRespectParameter() {
+    public async Task flexible_home_generation_with_specific_room_count_respects_parameter() {
         // Arrange
         const int expectedRooms = 5;
 
@@ -86,7 +91,7 @@ public class HomeAutomationDataSetTests {
     }
 
     [Test]
-    public async Task FlexibleHomeGeneration_WithDevicesPerRoom_ShouldGenerateApproximateDeviceCount() {
+    public async Task flexible_home_generation_with_devices_per_room_generates_approximate_device_count() {
         // Arrange
         const int rooms = 3;
         const int devicesPerRoom = 2;
@@ -104,7 +109,7 @@ public class HomeAutomationDataSetTests {
     }
 
     [Test]
-    public async Task FlexibleHomeGeneration_WithSpecificDeviceTypes_ShouldOnlyGenerateAllowedTypes() {
+    public async Task flexible_home_generation_with_specific_device_types_only_generates_allowed_types() {
         // Arrange
         var faker = new Faker();
         var allowedTypes = new[] { DeviceType.SmartLight, DeviceType.MotionSensor };
@@ -124,7 +129,7 @@ public class HomeAutomationDataSetTests {
     }
 
     [Test]
-    public async Task DeviceGeneration_Random_ShouldGenerateValidDevices() {
+    public async Task device_generation_random_generates_valid_devices() {
         // Act
         var devices = Faker.HomeAutomation().Devices();
 
@@ -140,7 +145,7 @@ public class HomeAutomationDataSetTests {
     }
 
     [Test]
-    public async Task DeviceGeneration_WithSpecificCount_ShouldRespectCount() {
+    public async Task device_generation_with_specific_count_respects_count() {
         // Arrange
         var faker = new Faker();
         const int expectedCount = 10;
@@ -156,7 +161,7 @@ public class HomeAutomationDataSetTests {
     }
 
     [Test]
-    public async Task DeviceGeneration_WithSpecificTypes_ShouldOnlyGenerateAllowedTypes() {
+    public async Task device_generation_with_specific_types_only_generates_allowed_types() {
         // Arrange
         var allowedTypes = new[] { DeviceType.Thermostat, DeviceType.SmartLight };
         const int count = 5;
@@ -176,7 +181,7 @@ public class HomeAutomationDataSetTests {
     }
 
     [Test]
-    public async Task EventGeneration_ForRandomDevices_ShouldGenerateValidEvents() {
+    public async Task event_generation_for_random_devices_generates_valid_events() {
         // Arrange
         const int eventCount = 5;
 
@@ -193,7 +198,7 @@ public class HomeAutomationDataSetTests {
     }
 
     [Test]
-    public async Task EventGeneration_ForSpecificHome_ShouldGenerateValidEvents() {
+    public async Task event_generation_for_specific_home_generates_valid_events() {
         // Arrange
         var       home       = Faker.HomeAutomation().Home();
         const int eventCount = 10;
@@ -212,7 +217,7 @@ public class HomeAutomationDataSetTests {
     }
 
     [Test]
-    public async Task EventGeneration_ForSpecificDevices_ShouldGenerateValidEvents() {
+    public async Task event_generation_for_specific_devices_generates_valid_events() {
         // Arrange
         var devices = Faker.HomeAutomation().Devices(3);
 

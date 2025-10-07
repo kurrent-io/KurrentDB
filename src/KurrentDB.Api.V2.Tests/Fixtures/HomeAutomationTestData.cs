@@ -78,7 +78,7 @@ public static class HomeAutomationTestData {
 }
 
 public record SmartHomeActivity(SmartHome Home, AppendRequest AppendRequest, long LastTimestamp) : IEnumerable<AppendRecord> {
-    public StreamName                  Stream  => AppendRequest.Stream;
+    public string                      Stream  => AppendRequest.Stream;
     public RepeatedField<AppendRecord> Records => AppendRequest.Records;
 
     public SmartHomeActivity SimulateMoreEvents(int? numberOfEvents = null) =>

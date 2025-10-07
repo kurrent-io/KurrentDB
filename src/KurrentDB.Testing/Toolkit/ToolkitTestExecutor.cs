@@ -4,62 +4,47 @@
 using System.Diagnostics;
 using Grpc.Core;
 using KurrentDB.Testing.TUnit;
-using Serilog.Context;
-using Serilog.Core;
-using Serilog.Core.Enrichers;
 using TUnit.Core.Interfaces;
-using static Serilog.Core.Constants;
 
 namespace KurrentDB.Testing;
 
 public class ToolkitTestExecutor : ITestExecutor {
     public async ValueTask ExecuteTest(TestContext context, Func<ValueTask> action) {
-         context.AddAsyncLocalValues();
+        var (logger, capturedLogs) = ToolkitTestEnvironment.CaptureTestLogs(context.Id);
 
-         var testUid = context.TestUid();
+        await using var logging = context.AddLogging(logger);
 
-         var (logger, capturedLogs) = ToolkitTestEnvironment.CaptureTestLogs(testUid, context.TestDetails.ClassType.FullName);
+        try {
+            await action();
+        }
+        catch (RpcException ex) {
+            var status = ex.GetRpcStatus()!;
 
-         await using var logging = context.AddLogging(logger);
+            logger.Error(
+                ex.Status.DebugException,
+                "{TestClass} {TestName} {State} {ErrorMessage}",
+                context.TestDetails.ClassType.Name, context.TestDetails.TestName, TestState.Failed,
+                ex.Status.Detail
+            );
 
-         ILogEventEnricher[] enrichers = [
-             new PropertyEnricher(nameof(TestUid), testUid),
-             new PropertyEnricher(SourceContextPropertyName, context.TestDetails.ClassType.FullName)
-         ];
+            var errorMessage =
+                $"*** gRPC Request Failed ***{Environment.NewLine}"
+              + $"Status:  {ex.StatusCode} ({ex.StatusCode.GetHashCode()}){Environment.NewLine}"
+              + $"Error:   {ex.Status.Detail}{Environment.NewLine}"
+              + $"Details:{Environment.NewLine}{string.Join($"{Environment.NewLine}", status.Details.Select(d => $"  - {d.TypeUrl}"))}{Environment.NewLine}";
 
-         using var _ = LogContext.Push(enrichers);
+            throw new Exception(errorMessage, ex.Status.DebugException).Demystify();
+        }
+        catch (Exception ex) {
+            logger.Error(
+                ex, "{TestClass} {TestName} {State} {ErrorMessage}", context.TestDetails.ClassType.Name,
+                context.TestDetails.TestName, TestState.Failed, ex.Message
+            );
 
-         try {
-             await action();
-         }
-         catch (RpcException ex) {
-             var status = ex.GetRpcStatus()!;
-
-             logger.Error(
-                 ex.Status.DebugException,
-                 "{TestClass} {TestName} {State} {ErrorMessage}",
-                 context.TestDetails.ClassType.Name, context.TestDetails.TestName, TestState.Failed,
-                 ex.Status.Detail
-             );
-
-             var errorMessage =
-                 $"*** gRPC Request Failed ***{Environment.NewLine}"
-               + $"Status:  {ex.StatusCode} ({ex.StatusCode.GetHashCode()}){Environment.NewLine}"
-               + $"Error:   {ex.Status.Detail}{Environment.NewLine}"
-               + $"Details:{Environment.NewLine}{string.Join($"{Environment.NewLine}", status.Details.Select(d => $"  - {d.TypeUrl}"))}{Environment.NewLine}";
-
-             throw new Exception(errorMessage, ex.Status.DebugException).Demystify();
-         }
-         catch (Exception ex) {
-             logger.Error(
-                 ex, "{TestClass} {TestName} {State} {ErrorMessage}", context.TestDetails.ClassType.Name,
-                 context.TestDetails.TestName, TestState.Failed, ex.Message
-             );
-
-             throw ex.Demystify();
-         }
-         finally {
-             await capturedLogs.DisposeAsync();
-         }
+            throw ex.Demystify();
+        }
+        finally {
+            await capturedLogs.DisposeAsync();
+        }
     }
 }

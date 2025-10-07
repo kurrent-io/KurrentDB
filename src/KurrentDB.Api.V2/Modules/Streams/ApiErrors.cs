@@ -103,15 +103,15 @@ public static partial class ApiErrors {
 		return RpcExceptions.FromError(StreamsError.AppendRecordSizeExceeded, message, details);
 	}
 
-	public static RpcException AppendTransactionSizeExceeded(int size, int maxSize) {
+	public static RpcException AppendTransactionSizeExceeded(int records, int size, int maxSize) {
 		Debug.Assert(size > 0, "The size must be positive!");
 		Debug.Assert(maxSize > 0, "The max size must be positive!");
 		Debug.Assert(size > maxSize, "The size must be greater than the max size!");
 
 		var exceededBy = size - maxSize;
 
-		var message = $"The total size of the append transaction ({size.Bytes().Humanize("0.000")}) exceeds the maximum allowed size of "
-		            + $"{maxSize.Bytes().Humanize("0.000")} by {exceededBy.Bytes().Humanize("0.000")}";
+        var message = $"Transaction size ({size.Bytes().Humanize("0.000")}) exceeded the maximum allowed size of "
+                    + $"{maxSize.Bytes().Humanize("0.000")} by {exceededBy.Bytes().Humanize("0.000")}, after {records} record(s).";
 
 		var details = new AppendTransactionSizeExceededErrorDetails {
 			Size	= size,

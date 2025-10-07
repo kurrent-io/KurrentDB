@@ -104,7 +104,7 @@ public class StreamsService : StreamsServiceBase {
 					throw ApiErrors.AppendRecordSizeExceeded(request.Stream, record.RecordId, recordSize.TotalSize, MaxRecordSize);
 
 				if ((TotalAppendSize += recordSize.TotalSize) > MaxAppendSize)
-					throw ApiErrors.AppendTransactionSizeExceeded(TotalAppendSize, MaxAppendSize);
+					throw ApiErrors.AppendTransactionSizeExceeded(Events.Count + 1, TotalAppendSize, MaxAppendSize);
 
 				Events.Add(record.MapToEvent());
                 Indexes.Add(eventStreamIndex);

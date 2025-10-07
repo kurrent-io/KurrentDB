@@ -1,27 +1,28 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
 using Bogus;
 using Serilog;
-using TUnit.Core;
-using TUnit.Assertions;
-using TUnit.Assertions.Extensions;
 
 namespace KurrentDB.Testing.Sample.HomeAutomation;
 
 /// <summary>
-/// Test class to verify new device types functionality (HumiditySensor, WindowSensor, WaterSensor)
+/// Test class to verify device types functionality (HumiditySensor, WindowSensor, WaterSensor)
 /// </summary>
+[Skip("Only run manually to verify the HomeAutomation device types functionality")]
 public class NewDeviceTypesTests {
-
     [Test]
-    public async Task HumiditySensor_ShouldGenerateValidDeviceAndEvents() {
+    public async Task humidity_sensor_generates_valid_device_and_events() {
         // Arrange
         var room = new RoomFaker().Generate();
+
         var deviceFaker = new DeviceFaker(room, DeviceType.HumiditySensor);
 
         // Act
-        var device = deviceFaker.Generate();
+        var device         = deviceFaker.Generate();
         var humidityDevice = device as HumiditySensor;
-        var eventFaker = new HumidityReadingFaker(humidityDevice!, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
-        var humidityEvent = eventFaker.Generate();
+        var eventFaker     = new HumidityReadingFaker(humidityDevice!, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        var humidityEvent  = eventFaker.Generate();
 
         // Assert
         Log.Information("Generated HumiditySensor: {DeviceName} in {RoomName}",
@@ -41,16 +42,17 @@ public class NewDeviceTypesTests {
     }
 
     [Test]
-    public async Task WindowSensor_ShouldGenerateValidDeviceAndEvents() {
+    public async Task window_sensor_generates_valid_device_and_events() {
         // Arrange
         var room = new RoomFaker().Generate();
+
         var deviceFaker = new DeviceFaker(room, DeviceType.WindowSensor);
 
         // Act
-        var device = deviceFaker.Generate();
+        var device       = deviceFaker.Generate();
         var windowDevice = device as WindowSensor;
-        var eventFaker = new WindowStateChangedFaker(windowDevice!, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
-        var windowEvent = eventFaker.Generate();
+        var eventFaker   = new WindowStateChangedFaker(windowDevice!, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        var windowEvent  = eventFaker.Generate();
 
         // Assert
         Log.Information("Generated WindowSensor: {DeviceName} in {RoomName}",
@@ -69,16 +71,17 @@ public class NewDeviceTypesTests {
     }
 
     [Test]
-    public async Task WaterSensor_ShouldGenerateValidDeviceAndEvents() {
+    public async Task water_sensor_generates_valid_device_and_events() {
         // Arrange
         var room = new RoomFaker().Generate();
+
         var deviceFaker = new DeviceFaker(room, DeviceType.WaterSensor);
 
         // Act
-        var device = deviceFaker.Generate();
+        var device      = deviceFaker.Generate();
         var waterDevice = device as WaterSensor;
-        var eventFaker = new WaterLeakDetectedFaker(waterDevice!, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
-        var waterEvent = eventFaker.Generate();
+        var eventFaker  = new WaterLeakDetectedFaker(waterDevice!, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        var waterEvent  = eventFaker.Generate();
 
         // Assert
         Log.Information("Generated WaterSensor: {DeviceName} in {RoomName}",
@@ -97,9 +100,10 @@ public class NewDeviceTypesTests {
     }
 
     [Test]
-    public async Task HomeGeneration_WithNewDeviceTypes_ShouldIncludeAllTypes() {
+    public async Task home_generation_with_new_device_types_includes_all_types() {
         // Arrange
         var faker = new Faker();
+
         var allowedTypes = new[] { DeviceType.HumiditySensor, DeviceType.WindowSensor, DeviceType.WaterSensor };
 
         // Act
@@ -125,9 +129,10 @@ public class NewDeviceTypesTests {
     }
 
     [Test]
-    public async Task DeviceGeneration_WithSpecificNewTypes_ShouldRespectTypeFilter() {
+    public async Task device_generation_with_specific_new_types_respects_type_filter() {
         // Arrange
         var faker = new Faker();
+
         var specificTypes = new[] { DeviceType.HumiditySensor, DeviceType.WaterSensor };
 
         // Act
@@ -145,16 +150,16 @@ public class NewDeviceTypesTests {
 
         // Ensure we have the right device classes
         var humidityDevices = devices.OfType<HumiditySensor>().ToList();
-        var waterDevices = devices.OfType<WaterSensor>().ToList();
+        var waterDevices    = devices.OfType<WaterSensor>().ToList();
 
         await Assert.That(humidityDevices.Count + waterDevices.Count).IsEqualTo(devices.Count);
     }
 
     [Test]
-    public async Task EventGeneration_ShouldIncludeCorrelatedEvents() {
+    public async Task event_generation_includes_correlated_events() {
         // Arrange
         var faker = new Faker();
-        var room = new Room(Guid.NewGuid(), "Living Room", RoomType.LivingRoom);
+        var room  = new Room(Guid.NewGuid(), "Living Room", RoomType.LivingRoom);
 
         // Create a home with motion sensor and smart light in same room
         var motionSensor = new MotionSensor(room, "motion-001");
@@ -162,10 +167,10 @@ public class NewDeviceTypesTests {
         var devices = new List<Device> { motionSensor, smartLight };
 
         var home = new SmartHome {
-            Id = "test-home",
-            Name = "Test Home",
-            Rooms = [room],
-            Devices = devices,
+            Id        = "test-home",
+            Name      = "Test Home",
+            Rooms     = [room],
+            Devices   = devices,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -179,7 +184,8 @@ public class NewDeviceTypesTests {
 
         // Count event types
         var eventTypeCounts = events.GroupBy(e => e.GetType().Name).ToDictionary(g => g.Key, g => g.Count());
-        Log.Information("Event type distribution: {EventTypes}",
+        Log.Information(
+            "Event type distribution: {EventTypes}",
             string.Join(", ", eventTypeCounts.Select(kvp => $"{kvp.Key}: {kvp.Value}")));
 
         // Should have motion events (because we're generating 100 events)
@@ -198,20 +204,24 @@ public class NewDeviceTypesTests {
         // Verify that some light events have timestamps shortly after motion events
         // (this indicates correlation)
         var motionTimestamps = motionEvents.Select(e => e.Timestamp).OrderBy(t => t).ToList();
-        var lightTimestamps = lightEvents.Select(e => e.Timestamp).OrderBy(t => t).ToList();
+        var lightTimestamps  = lightEvents.Select(e => e.Timestamp).OrderBy(t => t).ToList();
 
-        bool foundCorrelation = false;
+        var foundCorrelation = false;
         foreach (var motionTime in motionTimestamps) {
             // Look for light events within 10 seconds (10000ms) after motion
-            var correlatedLights = lightTimestamps.Where(lightTime =>
-                lightTime > motionTime && lightTime <= motionTime + 10000L);
+            var correlatedLights = lightTimestamps
+                .Where(lightTime => lightTime > motionTime && lightTime <= motionTime + 10000L)
+                .ToList();
 
-            if (correlatedLights.Any()) {
-                foundCorrelation = true;
-                Log.Information("Found correlated light event at {LightTime} following motion at {MotionTime}",
-                    correlatedLights.First(), motionTime);
-                break;
-            }
+            if (correlatedLights.Count == 0) continue;
+
+            foundCorrelation = true;
+
+            Log.Information(
+                "Found correlated light event at {LightTime} following motion at {MotionTime}",
+                correlatedLights.First(), motionTime);
+
+            break;
         }
 
         // Note: Due to randomness (30% chance), we might not always find correlations in a small sample

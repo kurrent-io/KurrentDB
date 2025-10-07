@@ -22,25 +22,21 @@ public class TestEnvironmentWireUp {
 
     [BeforeEvery(Test)]
     public static void BeforeEveryTest(TestContext context) {
-        var testUid = context.TestUid();
-
         // using static Log since the context has not been pushed yet in the Executor
-        Log.ForContext(nameof(TestUid), testUid).Verbose(
-            "{TestClass} {TestName} {Status} TestUid: {TestUid}",
+        Log.ForContext("TestUid", context.Id).Verbose(
+            "{TestClass} {TestName} {Status}",
             context.TestDetails.ClassType.Name,
             context.TestDetails.TestName,
-            TestState.NotStarted,
-            context.TestUid()
+            TestState.NotStarted
         );
     }
 
     [AfterEvery(Test)]
     public static void AfterEveryTest(TestContext context) {
-        var testUid = context.TestUid();
         var elapsed = context.Result?.Duration ?? context.TestStart - context.TestEnd ?? TimeSpan.Zero;
 
         // using static Log since the context was already disposed of in the Executor
-        Log.ForContext(nameof(TestUid), testUid).Verbose(
+        Log.ForContext("TestUid", context.Id).Verbose(
             "{TestClass} {TestName} {Status} in {Elapsed}",
             context.TestDetails.ClassType.Name,
             context.TestDetails.TestName,

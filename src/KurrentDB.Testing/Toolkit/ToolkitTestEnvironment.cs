@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Reflection;
 using KurrentDB.Testing.OpenTelemetry;
@@ -11,6 +12,7 @@ using Serilog.Exceptions;
 using Serilog.Sinks.SystemConsole.Themes;
 
 using static Serilog.Core.Constants;
+
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Testing;
@@ -69,27 +71,29 @@ public static class ToolkitTestEnvironment {
             .Build();
     }
 
+    static LoggerConfiguration DefaultLoggerConfig => new LoggerConfiguration()
+        .Enrich.WithProperty(SourceContextPropertyName, nameof(ToolkitTestEnvironment))
+        .Enrich.WithThreadId()
+        .Enrich.WithProcessId()
+        .Enrich.WithMachineName()
+        .Enrich.FromLogContext()
+        .Enrich.WithExceptionDetails()
+        .Enrich.WithDemystifiedStackTraces()
+        .MinimumLevel.Debug();
+
     const string ConsoleOutputTemplate =
         "[{Timestamp:mm:ss.fff} {Level:u3}] {TestUid} ({ThreadId:000}) {SourceContext} {NewLine}{Message}{NewLine}{Exception}{NewLine}";
 
     static void InitLogging() {
         DenyConsoleSinks(Configuration);
 
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Verbose()
-            .Enrich.WithThreadId()
-            .Enrich.WithProcessId()
-            .Enrich.WithMachineName()
-            .Enrich.FromLogContext()
-            .Enrich.WithExceptionDetails()
-            .Enrich.WithDemystifiedStackTraces()
+        Log.Logger = DefaultLoggerConfig
             .ReadFrom.Configuration(Configuration)
-            .Enrich.WithProperty(SourceContextPropertyName, nameof(ToolkitTestEnvironment))
-            .Enrich.WithProperty(nameof(TestUid), TestUid.Empty)
+            .Enrich.WithProperty("TestUid", Guid.Empty)
             .WriteTo.OpenTelemetry()
             .WriteTo.Observers(o => o.Subscribe(LogEvents.OnNext))
             .WriteTo.Console(
-                theme: AnsiConsoleTheme.Literate,
+                theme: AnsiConsoleTheme.Code,
                 outputTemplate: ConsoleOutputTemplate,
                 applyThemeToRedirectedOutput: true
             )
@@ -106,45 +110,28 @@ public static class ToolkitTestEnvironment {
         }
     }
 
-    public static (ILogger Logger, IAsyncDisposable Release) CaptureTestLogs(string testUid, string? sourceContext) {
-        var logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .Enrich.WithThreadId()
-            .Enrich.WithProcessId()
-            .Enrich.WithMachineName()
-            .Enrich.FromLogContext()
-            .Enrich.WithExceptionDetails()
-            .Enrich.WithDemystifiedStackTraces()
+    public static (ILogger Logger, IAsyncDisposable Release) CaptureTestLogs(Guid testUid) {
+        var logger = DefaultLoggerConfig
             .ReadFrom.Configuration(Configuration)
-            .Enrich.WithProperty(SourceContextPropertyName, sourceContext ?? nameof(ToolkitTestEnvironment))
-            .Enrich.WithProperty(nameof(TestUid), testUid)
+            .Enrich.WithProperty("TestUid", testUid)
             .WriteTo.Console(
-                theme: AnsiConsoleTheme.Literate,
+                theme: AnsiConsoleTheme.Code,
                 outputTemplate: ConsoleOutputTemplate,
                 applyThemeToRedirectedOutput: true
             )
             .CreateLogger();
 
-        // var prop = new LogEventProperty(nameof(TestUid), new ScalarValue(testUid));
-        // var sub = LogEvents
-        //     .Do(logEvent => {
-        //         if (TestContext.Current.TryExtractItem<TestUid>("$TestUid", out var uid)) {
-        //             if (uid.ToString() == testUid) {
-        //                 logEvent.AddOrUpdateProperty(prop);
-        //             }
-        //         }
-        //
-        //         // if (TestContext.Current.TestUid() == testUid)
-        //         //     logEvent.AddOrUpdateProperty(prop);
-        //     })
-        //     .Subscribe();
+        var prop = new LogEventProperty("TestUid", new ScalarValue(testUid));
+
+        var sub = LogEvents
+            .Where(_ => TestContext.Current?.Id == testUid)
+            .Subscribe(logEvent => logEvent.AddOrUpdateProperty(prop));
 
         var disposable = new Disposable(async () => {
-                //sub.Dispose();
-                logger.Information("Disposing test logger for {TestUid}", testUid);
-                await logger.DisposeAsync();
-            }
-        );
+            logger.Information("Disposing test logger for {TestUid}", testUid);
+            await logger.DisposeAsync();
+            sub.Dispose();
+        });
 
         return (logger, disposable);
     }

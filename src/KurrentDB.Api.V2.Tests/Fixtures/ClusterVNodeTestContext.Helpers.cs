@@ -9,7 +9,6 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using Google.Protobuf.Collections;
 using Grpc.Core;
-using KurrentDB.Api.Streams;
 using KurrentDB.Protocol.V2.Streams;
 using KurrentDB.Testing.Sample.HomeAutomation;
 using StreamRevision = KurrentDB.Api.Streams.StreamRevision;
@@ -42,7 +41,7 @@ public partial class ClusterVNodeTestContext {
     /// </summary>
     /// <param name="category">The category associated with the stream name.</param>
     /// <returns>A StreamName instance containing the generated stream name.</returns>
-    public StreamName NewStreamName([CallerMemberName] string category = "") => StreamName.From($"{category}-{TestUid.New()}");
+    public string NewStreamName([CallerMemberName] string category = "") => $"{category}-{Guid.NewGuid():N}";
 
     public CallCredentials CreateCallCredentials((string Username, string Password) credentials) {
         var token = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{credentials.Username}:{credentials.Password}"));
@@ -58,7 +57,7 @@ public partial class ClusterVNodeTestContext {
 
 public record SeededSmartHomeActivity(SmartHomeActivity Activity, StreamRevision StreamRevision, long Position) {
     public SmartHome                   Home          => Activity.Home;
-    public StreamName                  Stream        => Activity.Stream;
+    public string                      Stream        => Activity.Stream;
     public RepeatedField<AppendRecord> Records       => Activity.Records;
     public long                        LastTimestamp => Activity.LastTimestamp;
 

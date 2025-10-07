@@ -191,26 +191,19 @@ public class StreamsServiceTests {
     }
 
     [Test]
-    [Repeat(10)]
+    [Repeat(50)]
     public async ValueTask append_session_throws_when_transaction_is_too_large(CancellationToken cancellationToken) {
         // Arrange
-
-        // Calculate a valid record size just under the max append event size
-        // This ensures we will never it the per-record limit during the test
-        var validRecordSize = (int)(Fixture.ServerOptions.Application.MaxAppendEventSize * 0.90);
 
         // Calculate a random max request size larger than max append size but smaller
         // than max append size * 1.5 to ensure we do not hit max receive size limit
         var targetMaxAppendSize = (int)(Fixture.ServerOptions.Application.MaxAppendSize * Faker.Random.Double(1.10, 1.49));
 
-        // Minimum request size is always max append size + 1 byte
-        // to ensure we always exceed the max append size
-        // This ensures we always trigger the transaction size exceeded error
-        var minimumRequestSize = Fixture.ServerOptions.Application.MaxAppendSize + 1;
-
-        Fixture.Logger.LogInformation("Server MaxAppendEventSize:  {MaxAppendEventSize}", Fixture.ServerOptions.Application.MaxAppendEventSize.Bytes().Humanize());
-        Fixture.Logger.LogInformation("Server MaxAppendSize:       {MaxAppendSize}", Fixture.ServerOptions.Application.MaxAppendSize.Bytes().Humanize());
-        Fixture.Logger.LogInformation("Client Target Request Size: {MaxRequestSize}", targetMaxAppendSize.Bytes().Humanize());
+        Fixture.Logger.LogInformation(
+            "Target Request Size: {MaxRequestSize} (MaxAppendEventSize: {MaxAppendEventSize} | MaxAppendSize: {MaxAppendSize})",
+            targetMaxAppendSize.Bytes().Humanize("0.000"),
+            Fixture.ServerOptions.Application.MaxAppendEventSize.Bytes().Humanize("0"),
+            Fixture.ServerOptions.Application.MaxAppendSize.Bytes().Humanize("0"));
 
         var request = new AppendRequest {
             Stream  = $"{nameof(SmartHomeActivity)}-{Guid.NewGuid():N}"
@@ -222,26 +215,39 @@ public class StreamsServiceTests {
         // and also in extreme cases we might need to change the size of the last record to ensure we do not exceed the targetMaxAppendSize
         // or that we are at least above the minimumRequestSize
         while (true) {
-            var record = CreateSyntheticTestRecord(Faker.Random.Bytes(validRecordSize));
-            request.Records.Add(record);
+            // Create a random valid record size
+            var validRecordSize = Faker.Random.Int(
+                Math.Min(Fixture.ServerOptions.Application.MaxAppendSize / 4, 1024),
+                Fixture.ServerOptions.Application.MaxAppendEventSize);
+
+            request.Records.Add(CreateSyntheticTestRecord(Faker.Random.Bytes(validRecordSize)));
 
             var requestSize = request.CalculateSize();
-
             if (requestSize > targetMaxAppendSize) {
                 var exceededBy = requestSize - targetMaxAppendSize;
                 var dataSize   = Math.Max(1, validRecordSize - exceededBy);
+
                 request.Records[^1].Data = UnsafeByteOperations.UnsafeWrap(Faker.Random.Bytes(dataSize));
+
+                Fixture.Logger.LogDebug(
+                    "Adjusted last record size from {OriginalSize} to {NewSize} to fit within target max append size of {TargetMaxAppendSize}",
+                    validRecordSize.Bytes().Humanize("0.000"),
+                    dataSize.Bytes().Humanize("0.000"),
+                    targetMaxAppendSize.Bytes().Humanize("0.000"));
+
                 break;
             }
 
-            if (requestSize > minimumRequestSize && requestSize <= targetMaxAppendSize) {
-                break;
-            }
+            Fixture.Logger.LogTrace(
+                "Added record of size {RecordSize}, total request size is now {RequestSize} with {Records} records",
+                validRecordSize.Bytes().Humanize("0.000"),
+                requestSize.Bytes().Humanize("0.000"),
+                request.Records.Count);
         }
 
         Fixture.Logger.LogInformation(
-            "Prepared append request with {Records} records and a calculated total size of ~{Size}",
-            request.Records.Count, request.CalculateSize().Bytes().Humanize());
+            "Created request with {Records} records and a calculated total size of {Size}",
+            request.Records.Count, request.CalculateSize().Bytes().Humanize("0.000"));
 
         using var session = Fixture.StreamsClient.AppendSession(cancellationToken: cancellationToken);
         await session.RequestStream.WriteAsync(request, cancellationToken);
