@@ -10,158 +10,70 @@ using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 namespace KurrentDB.Projections.Core.Messages;
 
 public static partial class CoreProjectionStatusMessage {
+	[DerivedMessage]
+	public abstract partial class CoreProjectionStatusMessageBase(Guid projectionId) : CoreProjectionManagementMessageBase(projectionId);
+
 	[DerivedMessage(ProjectionMessage.CoreStatus)]
-	public partial class CoreProjectionStatusMessageBase : CoreProjectionManagementMessageBase {
-		protected CoreProjectionStatusMessageBase(Guid projectionId)
-			: base(projectionId) {
-		}
+	public partial class Started(Guid projectionId, string name) : CoreProjectionStatusMessageBase(projectionId) {
+		public string Name { get; } = name;
 	}
 
 	[DerivedMessage(ProjectionMessage.CoreStatus)]
-	public partial class Started : CoreProjectionStatusMessageBase {
-		public string Name { get; }
-		public Started(Guid projectionId, string name)
-			: base(projectionId) {
-			Name = name;
-		}
-	}
-
-	[DerivedMessage(ProjectionMessage.CoreStatus)]
-	public partial class Faulted : CoreProjectionStatusMessageBase {
-		private readonly string _faultedReason;
-
-		public Faulted(Guid projectionId, string faultedReason)
-			: base(projectionId) {
-			_faultedReason = faultedReason;
-		}
-
-		public string FaultedReason {
-			get { return _faultedReason; }
-		}
+	public partial class Faulted(Guid projectionId, string faultedReason) : CoreProjectionStatusMessageBase(projectionId) {
+		public string FaultedReason { get; } = faultedReason;
 	}
 
 	[DerivedMessage]
-	public abstract partial class DataReportBase : CoreProjectionStatusMessageBase {
-		private readonly Guid _correlationId;
-		private readonly string _partition;
-		private readonly CheckpointTag _position;
-
-		protected DataReportBase(Guid correlationId, Guid projectionId, string partition, CheckpointTag position)
-			: base(projectionId) {
-			_correlationId = correlationId;
-			_partition = partition;
-			_position = position;
-		}
-
-		public string Partition {
-			get { return _partition; }
-		}
-
-		public Guid CorrelationId {
-			get { return _correlationId; }
-		}
-
-		public CheckpointTag Position {
-			get { return _position; }
-		}
+	public abstract partial class DataReportBase(Guid correlationId, Guid projectionId, string partition, CheckpointTag position)
+		: CoreProjectionStatusMessageBase(projectionId) {
+		public string Partition { get; } = partition;
+		public Guid CorrelationId { get; } = correlationId;
+		public CheckpointTag Position { get; } = position;
 	}
 
 	[DerivedMessage(ProjectionMessage.CoreStatus)]
-	public partial class StateReport : DataReportBase {
-		private readonly string _state;
-
-		public StateReport(
-			Guid correlationId,
-			Guid projectionId,
-			string partition,
-			string state,
-			CheckpointTag position)
-			: base(correlationId, projectionId, partition, position) {
-			_state = state;
-		}
-
-		public string State {
-			get { return _state; }
-		}
+	public partial class StateReport(
+		Guid correlationId,
+		Guid projectionId,
+		string partition,
+		string state,
+		CheckpointTag position)
+		: DataReportBase(correlationId, projectionId, partition, position) {
+		public string State { get; } = state;
 	}
 
 	[DerivedMessage(ProjectionMessage.CoreStatus)]
-	public partial class ResultReport : DataReportBase {
-		private readonly string _result;
-
-		public ResultReport(
-			Guid correlationId,
-			Guid projectionId,
-			string partition,
-			string result,
-			CheckpointTag position)
-			: base(correlationId, projectionId, partition, position) {
-			_result = result;
-		}
-
-		public string Result {
-			get { return _result; }
-		}
+	public partial class ResultReport(
+		Guid correlationId,
+		Guid projectionId,
+		string partition,
+		string result,
+		CheckpointTag position)
+		: DataReportBase(correlationId, projectionId, partition, position) {
+		public string Result { get; } = result;
 	}
 
 	[DerivedMessage(ProjectionMessage.CoreStatus)]
-	public partial class StatisticsReport : CoreProjectionStatusMessageBase {
-		private readonly ProjectionStatistics _statistics;
-		private readonly int _sequentialNumber;
+	public partial class StatisticsReport(Guid projectionId, ProjectionStatistics statistics, int sequentialNumber)
+		: CoreProjectionStatusMessageBase(projectionId) {
+		public ProjectionStatistics Statistics { get; } = statistics;
 
-		public StatisticsReport(Guid projectionId, ProjectionStatistics statistics, int sequentialNumber)
-			: base(projectionId) {
-			_statistics = statistics;
-			_sequentialNumber = sequentialNumber;
-		}
-
-		public ProjectionStatistics Statistics {
-			get { return _statistics; }
-		}
-
-		public int SequentialNumber {
-			get { return _sequentialNumber; }
-		}
+		public int SequentialNumber { get; } = sequentialNumber;
 	}
 
 	[DerivedMessage(ProjectionMessage.CoreStatus)]
-	public partial class Prepared : CoreProjectionStatusMessageBase {
-		private readonly ProjectionSourceDefinition _sourceDefinition;
-
-		public Prepared(Guid projectionId, ProjectionSourceDefinition sourceDefinition)
-			: base(projectionId) {
-			_sourceDefinition = sourceDefinition;
-		}
-
-		public ProjectionSourceDefinition SourceDefinition {
-			get { return _sourceDefinition; }
-		}
+	public partial class Prepared(Guid projectionId, ProjectionSourceDefinition sourceDefinition)
+		: CoreProjectionStatusMessageBase(projectionId) {
+		public ProjectionSourceDefinition SourceDefinition { get; } = sourceDefinition;
 	}
 
 	[DerivedMessage(ProjectionMessage.CoreStatus)]
-	public partial class Suspended : CoreProjectionStatusMessageBase {
-		public Suspended(Guid projectionId)
-			: base(projectionId) {
-		}
-	}
+	public partial class Suspended(Guid projectionId) : CoreProjectionStatusMessageBase(projectionId);
 
 	[DerivedMessage(ProjectionMessage.CoreStatus)]
-	public partial class Stopped : CoreProjectionStatusMessageBase {
-		private readonly bool _completed;
-		private readonly string _name;
+	public partial class Stopped(Guid projectionId, string name, bool completed) : CoreProjectionStatusMessageBase(projectionId) {
+		public bool Completed { get; } = completed;
 
-		public Stopped(Guid projectionId, string name, bool completed)
-			: base(projectionId) {
-			_completed = completed;
-			_name = name;
-		}
-
-		public bool Completed {
-			get { return _completed; }
-		}
-
-		public string Name {
-			get { return _name; }
-		}
+		public string Name { get; } = name;
 	}
 }

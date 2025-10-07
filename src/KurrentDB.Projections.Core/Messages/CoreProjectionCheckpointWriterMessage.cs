@@ -8,28 +8,12 @@ namespace KurrentDB.Projections.Core.Messages;
 
 public static partial class CoreProjectionCheckpointWriterMessage {
 	[DerivedMessage(ProjectionMessage.CoreProcessing)]
-	public sealed partial class CheckpointWritten : Message {
-		private readonly CheckpointTag _position;
-
-		public CheckpointWritten(CheckpointTag position) {
-			_position = position;
-		}
-
-		public CheckpointTag Position {
-			get { return _position; }
-		}
+	public sealed partial class CheckpointWritten(CheckpointTag position) : Message {
+		public CheckpointTag Position { get; } = position;
 	}
 
 	[DerivedMessage(ProjectionMessage.CoreProcessing)]
-	public sealed partial class RestartRequested : Message {
-		public string Reason {
-			get { return _reason; }
-		}
-
-		private readonly string _reason;
-
-		public RestartRequested(string reason) {
-			_reason = reason;
-		}
+	public sealed partial class RestartRequested(string reason) : Message {
+		public string Reason { get; } = reason;
 	}
 }

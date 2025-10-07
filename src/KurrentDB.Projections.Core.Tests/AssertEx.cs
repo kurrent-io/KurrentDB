@@ -15,7 +15,6 @@ public static class AssertEx {
 		Assert.AreEqual(expected.ByStreams, actual.ByStreams, $"Expected {nameof(expected.ByStreams)} to be {expected.ByStreams} but was {actual.ByStreams}");
 		Assert.AreEqual(expected.DefinesFold, actual.DefinesFold, $"Expected {nameof(expected.DefinesFold)} to be {expected.DefinesFold} but was {actual.DefinesFold}");
 		Assert.AreEqual(expected.DefinesStateTransform, actual.DefinesStateTransform, $"Expected {nameof(expected.DefinesStateTransform)} to be {expected.DefinesStateTransform} but was {actual.DefinesStateTransform}");
-
 		Assert.AreEqual(expected.IncludeLinksOption, actual.IncludeLinksOption, $"Expected {nameof(expected.IncludeLinksOption)} to be {expected.IncludeLinksOption} but was {actual.IncludeLinksOption}");
 		Assert.AreEqual(expected.IsBiState, actual.IsBiState, $"Expected {nameof(expected.IsBiState)} to be {expected.IsBiState} but was {actual.IsBiState}");
 		Assert.AreEqual(expected.PartitionResultStreamNamePatternOption, actual.PartitionResultStreamNamePatternOption, $"Expected {nameof(expected.PartitionResultStreamNamePatternOption)} to be {expected.PartitionResultStreamNamePatternOption} but was {actual.PartitionResultStreamNamePatternOption}");

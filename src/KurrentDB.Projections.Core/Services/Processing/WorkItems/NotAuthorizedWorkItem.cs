@@ -5,11 +5,7 @@ using System;
 
 namespace KurrentDB.Projections.Core.Services.Processing.WorkItems;
 
-class NotAuthorizedWorkItem : CheckpointWorkItemBase {
-	public NotAuthorizedWorkItem()
-		: base(null) {
-	}
-
+internal class NotAuthorizedWorkItem() : CheckpointWorkItemBase(null) {
 	protected override void ProcessEvent() {
 		throw new Exception("Projection cannot read its source. Not authorized.");
 	}

@@ -9,11 +9,19 @@ using KurrentDB.Projections.Core.Services.Processing.WorkItems;
 
 namespace KurrentDB.Projections.Core.Services.Processing;
 
-public class CoreProjectionQueue {
-	private readonly StagedProcessingQueue _queuePendingEvents;
-
-	private readonly IPublisher _publisher;
-	private readonly int _pendingEventsThreshold;
+public class CoreProjectionQueue(IPublisher publisher, int pendingEventsThreshold, bool orderedPartitionProcessing) {
+	private readonly StagedProcessingQueue _queuePendingEvents = new(
+	[
+		true /* record event order - async with ordered output*/, true
+		/* get state partition - ordered as it may change correlation id - sync */,
+		false
+		/* load foreach state - async- unordered completion*/,
+		orderedPartitionProcessing
+		/* process Js - unordered/ordered - inherently unordered/ordered completion*/,
+		true
+		/* write emits - ordered - async ordered completion*/,
+		false /* complete item */
+	]);
 
 	private CheckpointTag _lastEnqueuedEventTag;
 	private bool _justInitialized;
@@ -24,42 +32,30 @@ public class CoreProjectionQueue {
 		remove { _queuePendingEvents.EnsureTickPending -= value; }
 	}
 
-	public CoreProjectionQueue(IPublisher publisher, int pendingEventsThreshold, bool orderedPartitionProcessing) {
-		_queuePendingEvents =
-			new StagedProcessingQueue(
-				new[] {
-					true /* record event order - async with ordered output*/, true
-					/* get state partition - ordered as it may change correlation id - sync */,
-					false
-					/* load foreach state - async- unordered completion*/,
-					orderedPartitionProcessing
-					/* process Js - unordered/ordered - inherently unordered/ordered completion*/,
-					true
-					/* write emits - ordered - async ordered completion*/,
-					false /* complete item */
-				});
-		_publisher = publisher;
-		_pendingEventsThreshold = pendingEventsThreshold;
-	}
+	/* record event order - async with ordered output*/
+	/* get state partition - ordered as it may change correlation id - sync */
+	/* load foreach state - async- unordered completion*/
+	/* process Js - unordered/ordered - inherently unordered/ordered completion*/
+	/* write emits - ordered - async ordered completion*/
+	/* complete item */
 
-	public bool IsRunning {
-		get { return _isRunning; }
-	}
+	public bool IsRunning { get; private set; }
 
 	public bool ProcessEvent() {
 		var processed = false;
-		if (_queuePendingEvents.Count > 0) {
-			processed = ProcessOneEventBatch();
-		} else if (_queuePendingEvents.Count == 0 && _subscriptionPaused && !_unsubscribed) {
-			ResumeSubscription();
+		switch (_queuePendingEvents.Count) {
+			case > 0:
+				processed = ProcessOneEventBatch();
+				break;
+			case 0 when _subscriptionPaused && !_unsubscribed:
+				ResumeSubscription();
+				break;
 		}
 
 		return processed;
 	}
 
-	public int GetBufferedEventCount() {
-		return _queuePendingEvents.Count;
-	}
+	public int GetBufferedEventCount() => _queuePendingEvents.Count;
 
 	public void EnqueueTask(WorkItem workItem, CheckpointTag workItemCheckpointTag,
 		bool allowCurrentPosition = false) {
@@ -89,17 +85,13 @@ public class CoreProjectionQueue {
 		_justInitialized = true;
 	}
 
-	public string GetStatus() {
-		return (_subscriptionPaused ? "/Paused" : "");
-	}
+	public string GetStatus() => _subscriptionPaused ? "/Paused" : "";
 
 	private void ValidateQueueingOrder(CheckpointTag eventTag, bool allowCurrentPosition = false) {
 		if (eventTag < _lastEnqueuedEventTag ||
 			(!(allowCurrentPosition || _justInitialized) && eventTag <= _lastEnqueuedEventTag))
 			throw new InvalidOperationException(
-				string.Format(
-					"Invalid order.  Last known tag is: '{0}'.  Current tag is: '{1}'", _lastEnqueuedEventTag,
-					eventTag));
+				$"Invalid order.  Last known tag is: '{_lastEnqueuedEventTag}'.  Current tag is: '{eventTag}'");
 		_justInitialized = _justInitialized && (eventTag == _lastEnqueuedEventTag);
 		_lastEnqueuedEventTag = eventTag;
 	}
@@ -109,8 +101,7 @@ public class CoreProjectionQueue {
 			throw new InvalidOperationException("Not subscribed");
 		if (!_subscriptionPaused && !_unsubscribed) {
 			_subscriptionPaused = true;
-			_publisher.Publish(
-				new ReaderSubscriptionManagement.Pause(_subscriptionId));
+			publisher.Publish(new ReaderSubscriptionManagement.Pause(_subscriptionId));
 		}
 	}
 
@@ -119,20 +110,18 @@ public class CoreProjectionQueue {
 			throw new InvalidOperationException("Not subscribed");
 		if (_subscriptionPaused && !_unsubscribed) {
 			_subscriptionPaused = false;
-			_publisher.Publish(
-				new ReaderSubscriptionManagement.Resume(_subscriptionId));
+			publisher.Publish(new ReaderSubscriptionManagement.Resume(_subscriptionId));
 		}
 	}
 
 	private bool _unsubscribed;
 	private Guid _subscriptionId;
-	private bool _isRunning;
 
 	private bool ProcessOneEventBatch() {
-		if (_queuePendingEvents.Count > _pendingEventsThreshold)
+		if (_queuePendingEvents.Count > pendingEventsThreshold)
 			PauseSubscription();
 		var processed = _queuePendingEvents.Process(max: 30);
-		if (_subscriptionPaused && _queuePendingEvents.Count < _pendingEventsThreshold / 2)
+		if (_subscriptionPaused && _queuePendingEvents.Count < pendingEventsThreshold / 2)
 			ResumeSubscription();
 
 		return processed;
@@ -151,6 +140,6 @@ public class CoreProjectionQueue {
 	}
 
 	public void SetIsRunning(bool isRunning) {
-		_isRunning = isRunning;
+		IsRunning = isRunning;
 	}
 }

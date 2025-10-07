@@ -14,31 +14,25 @@ using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Emitting;
 
-public class EmittedStreamsTracker : IEmittedStreamsTracker {
+public class EmittedStreamsTracker(
+	IODispatcher ioDispatcher,
+	ProjectionConfig projectionConfig,
+	ProjectionNamesBuilder projectionNamesBuilder)
+	: IEmittedStreamsTracker {
 	private static readonly ILogger Log = Serilog.Log.ForContext<EmittedStreamsTracker>();
-	private readonly IODispatcher _ioDispatcher;
-	private readonly ProjectionConfig _projectionConfig;
-	private readonly ProjectionNamesBuilder _projectionNamesBuilder;
 
-	private readonly BoundedCache<string, string> _streamIdCache = new BoundedCache<string, string>(int.MaxValue,
+	private readonly BoundedCache<string, string> _streamIdCache = new(int.MaxValue,
 		ESConsts.CommittedEventsMemCacheLimit, x => 16 + 4 + IntPtr.Size + 2 * x.Length);
 
 	private const int MaxRetryCount = 3;
-	private readonly object _locker = new object();
-
-	public EmittedStreamsTracker(IODispatcher ioDispatcher, ProjectionConfig projectionConfig,
-		ProjectionNamesBuilder projectionNamesBuilder) {
-		_ioDispatcher = ioDispatcher;
-		_projectionConfig = projectionConfig;
-		_projectionNamesBuilder = projectionNamesBuilder;
-	}
+	private readonly object _locker = new();
 
 	public void Initialize() {
 		ReadEmittedStreamStreamIdsIntoCache(0); //start from the beginning
 	}
 
 	private void ReadEmittedStreamStreamIdsIntoCache(long position) {
-		_ioDispatcher.ReadForward(_projectionNamesBuilder.GetEmittedStreamsName(), position, 1, false,
+		ioDispatcher.ReadForward(projectionNamesBuilder.GetEmittedStreamsName(), position, 1, false,
 			SystemAccounts.System, x => {
 				if (x.Events is not []) {
 					for (int i = 0; i < x.Events.Count; i++) {
@@ -55,16 +49,15 @@ public class EmittedStreamsTracker : IEmittedStreamsTracker {
 			}, () => {
 				Log.Error(
 					"Timed out reading emitted stream ids into cache from {streamName} at position {position}.",
-					_projectionNamesBuilder.GetEmittedStreamsName(), position);
+					projectionNamesBuilder.GetEmittedStreamsName(), position);
 			}, Guid.NewGuid());
 	}
 
 	public void TrackEmittedStream(EmittedEvent[] emittedEvents) {
-		if (!_projectionConfig.TrackEmittedStreams)
+		if (!projectionConfig.TrackEmittedStreams)
 			return;
 		foreach (var emittedEvent in emittedEvents) {
-			string streamId;
-			if (!_streamIdCache.TryGetRecord(emittedEvent.StreamId, out streamId)) {
+			if (!_streamIdCache.TryGetRecord(emittedEvent.StreamId, out _)) {
 				var trackEvent = new Event(Guid.NewGuid(), ProjectionEventTypes.StreamTracked, false,
 					Helper.UTF8NoBom.GetBytes(emittedEvent.StreamId));
 				lock (_locker) {
@@ -77,7 +70,7 @@ public class EmittedStreamsTracker : IEmittedStreamsTracker {
 	}
 
 	private void WriteEvent(Event evnt, int retryCount) {
-		_ioDispatcher.WriteEvent(_projectionNamesBuilder.GetEmittedStreamsName(), ExpectedVersion.Any, evnt,
+		ioDispatcher.WriteEvent(projectionNamesBuilder.GetEmittedStreamsName(), ExpectedVersion.Any, evnt,
 			SystemAccounts.System,
 			x => OnWriteComplete(x, evnt, Helper.UTF8NoBom.GetString(evnt.Data), retryCount));
 	}
@@ -90,7 +83,7 @@ public class EmittedStreamsTracker : IEmittedStreamsTracker {
 			} else {
 				Log.Error(
 					"PROJECTIONS: Failed to write a tracked stream id of {stream} to the {emittedStream} stream. Retry limit of {maxRetryCount} reached. Reason: {e}",
-					streamId, _projectionNamesBuilder.GetEmittedStreamsName(), MaxRetryCount, completed.Result);
+					streamId, projectionNamesBuilder.GetEmittedStreamsName(), MaxRetryCount, completed.Result);
 			}
 		}
 	}

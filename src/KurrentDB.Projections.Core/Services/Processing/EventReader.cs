@@ -7,57 +7,44 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Projections.Core.Messages;
-using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 
 namespace KurrentDB.Projections.Core.Services.Processing;
 
 public abstract class EventReader : IEventReader {
 	protected readonly Guid EventReaderCorrelationId;
-	private readonly ClaimsPrincipal _readAs;
 	protected readonly IPublisher _publisher;
-
 	protected readonly bool _stopOnEof;
-	private bool _paused = true;
-	private bool _pauseRequested = true;
 	protected bool _disposed;
 	private bool _startingSent;
 
 	protected EventReader(IPublisher publisher, Guid eventReaderCorrelationId, ClaimsPrincipal readAs, bool stopOnEof) {
-		if (publisher == null)
-			throw new ArgumentNullException("publisher");
+		ArgumentNullException.ThrowIfNull(publisher);
 		if (eventReaderCorrelationId == Guid.Empty)
-			throw new ArgumentException("eventReaderCorrelationId");
+			throw new ArgumentException(null, nameof(eventReaderCorrelationId));
 		_publisher = publisher;
 		EventReaderCorrelationId = eventReaderCorrelationId;
-		_readAs = readAs;
+		ReadAs = readAs;
 		_stopOnEof = stopOnEof;
 	}
 
-	protected bool PauseRequested {
-		get { return _pauseRequested; }
-	}
+	protected bool PauseRequested { get; private set; } = true;
 
-	protected bool Paused {
-		get { return _paused; }
-	}
+	protected bool Paused { get; private set; } = true;
 
-	protected ClaimsPrincipal ReadAs {
-		get { return _readAs; }
-	}
+	protected ClaimsPrincipal ReadAs { get; }
 
 	public void Resume() {
 		if (_disposed)
 			throw new InvalidOperationException("Disposed");
-		if (!_pauseRequested)
+		if (!PauseRequested)
 			throw new InvalidOperationException("Is not paused");
-		if (!_paused) {
-			_pauseRequested = false;
+		if (!Paused) {
+			PauseRequested = false;
 			return;
 		}
 
-		_paused = false;
-		_pauseRequested = false;
-		//            _logger.Trace("Resuming event distribution {eventReaderCorrelationId} at '{at}'", EventReaderCorrelationId, FromAsText());
+		Paused = false;
+		PauseRequested = false;
 		RequestEvents();
 	}
 
@@ -65,12 +52,11 @@ public abstract class EventReader : IEventReader {
 		if (_disposed)
 			return; // due to possible self disposed
 
-		if (_pauseRequested)
+		if (PauseRequested)
 			throw new InvalidOperationException("Pause has been already requested");
-		_pauseRequested = true;
+		PauseRequested = true;
 		if (!AreEventsRequested())
-			_paused = true;
-		//            _logger.Trace("Pausing event distribution {eventReaderCorrelationId} at '{at}'", EventReaderCorrelationId, FromAsText());
+			Paused = true;
 	}
 
 	public virtual void Dispose() {
@@ -88,7 +74,7 @@ public abstract class EventReader : IEventReader {
 	}
 
 	protected void SendPartitionDeleted_WhenReadingDataStream(
-		string partition, long? lastEventNumber, TFPos? deletedLinkOrEventPosition, TFPos? deletedEventPosition,
+		string partition, TFPos? deletedLinkOrEventPosition, TFPos? deletedEventPosition,
 		string positionStreamId, int? positionEventNumber) {
 		if (_disposed)
 			return;
@@ -109,23 +95,21 @@ public abstract class EventReader : IEventReader {
 		return (msg.IsEndOfStream
 				|| msg.Result == ReadStreamResult.NoStream
 				|| msg.Result == ReadStreamResult.StreamDeleted)
-			? (msg.TfLastCommitPosition == -1 ? (long?)null : msg.TfLastCommitPosition)
-			: (long?)null;
+			? msg.TfLastCommitPosition == -1 ? null : msg.TfLastCommitPosition
+			: null;
 	}
 
 	protected void PauseOrContinueProcessing() {
 		if (_disposed)
 			return;
-		if (_pauseRequested)
-			_paused = !AreEventsRequested();
+		if (PauseRequested)
+			Paused = !AreEventsRequested();
 		else
 			RequestEvents();
 	}
 
 	private void SendStarting(long startingLastCommitPosition) {
-		_publisher.Publish(
-			new ReaderSubscriptionMessage.EventReaderStarting(EventReaderCorrelationId,
-				startingLastCommitPosition));
+		_publisher.Publish(new ReaderSubscriptionMessage.EventReaderStarting(EventReaderCorrelationId, startingLastCommitPosition));
 	}
 
 	protected void NotifyIfStarting(long startingLastCommitPosition) {

@@ -42,8 +42,7 @@ public class when_handling_eof_for_all_streams_and_idle_eof<TLogFormat, TStreamI
 
 		_distibutionPointCorrelationId = Guid.NewGuid();
 		_fakeTimeProvider = new FakeTimeProvider();
-		_edp = new MultiStreamEventReader(
-			_ioDispatcher, _bus, _distibutionPointCorrelationId, null, 0, _abStreams, _ab12Tag, false,
+		_edp = new MultiStreamEventReader(_bus, _distibutionPointCorrelationId, null, 0, _abStreams, _ab12Tag, false,
 			_fakeTimeProvider);
 		_edp.Resume();
 		_firstEventId = Guid.NewGuid();

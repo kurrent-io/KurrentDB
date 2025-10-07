@@ -54,7 +54,7 @@ public class when_starting_with_prerecorded_events_after_the_last_checkpoint<TLo
 		_checkpointReader.BeginLoadState();
 		var checkpointLoaded =
 			_consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.CheckpointLoaded>().First();
-		_checkpointWriter.StartFrom(checkpointLoaded.CheckpointTag, checkpointLoaded.CheckpointEventNumber);
+		_checkpointWriter.StartFrom(checkpointLoaded.CheckpointEventNumber);
 		_manager.BeginLoadPrerecordedEvents(checkpointLoaded.CheckpointTag);
 	}
 

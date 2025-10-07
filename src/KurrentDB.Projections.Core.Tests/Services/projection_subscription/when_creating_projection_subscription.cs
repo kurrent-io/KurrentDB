@@ -17,9 +17,7 @@ namespace KurrentDB.Projections.Core.Tests.Services.projection_subscription;
 public class when_creating_projection_subscription {
 	[Test]
 	public void it_can_be_created() {
-		new ReaderSubscription(
-			"Test Subscription",
-			new FakePublisher(),
+		new ReaderSubscription(new FakePublisher(),
 			Guid.NewGuid(),
 			CheckpointTag.FromPosition(0, 0, -1),
 			CreateReaderStrategy(),
@@ -35,9 +33,7 @@ public class when_creating_projection_subscription {
 	[Test]
 	public void null_publisher_throws_argument_null_exception() {
 		Assert.Throws<ArgumentNullException>(() => {
-			new ReaderSubscription(
-				"Test Subscription",
-				null,
+			new ReaderSubscription(null,
 				Guid.NewGuid(),
 				CheckpointTag.FromPosition(0, 0, -1),
 				CreateReaderStrategy(),
@@ -54,9 +50,7 @@ public class when_creating_projection_subscription {
 	[Test]
 	public void null_checkpoint_strategy_throws_argument_null_exception() {
 		Assert.Throws<ArgumentNullException>(() => {
-			new ReaderSubscription(
-				"Test Subscription",
-				new FakePublisher(),
+			new ReaderSubscription(new FakePublisher(),
 				Guid.NewGuid(),
 				CheckpointTag.FromPosition(0, 0, -1),
 				null,
@@ -73,9 +67,7 @@ public class when_creating_projection_subscription {
 	[Test]
 	public void null_time_provider_throws_argument_null_exception() {
 		Assert.Throws<ArgumentNullException>(() => {
-			new ReaderSubscription(
-				"Test Subscription",
-				new FakePublisher(),
+			new ReaderSubscription(new FakePublisher(),
 				Guid.NewGuid(),
 				CheckpointTag.FromPosition(0, 0, -1),
 				CreateReaderStrategy(),
@@ -98,7 +90,6 @@ public class when_creating_projection_subscription {
 			0,
 			result.Build(),
 			new RealTimeProvider(),
-			stopOnEof: false,
 			runAs: null);
 	}
 }

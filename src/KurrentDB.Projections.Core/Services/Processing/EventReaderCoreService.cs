@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
-using KurrentDB.Core.Helpers;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.Services.UserManagement;
@@ -37,18 +36,14 @@ public class EventReaderCoreService :
 	public const string SubComponentName = "EventReaderCoreService";
 
 	private readonly IPublisher _publisher;
-	private readonly IODispatcher _ioDispatcher;
 	private readonly ILogger _logger = Log.ForContext<ProjectionCoreService>();
 	private bool _stopped = true;
 
-	private readonly Dictionary<Guid, IReaderSubscription> _subscriptions =
-		new Dictionary<Guid, IReaderSubscription>();
-
-	private readonly Dictionary<Guid, IEventReader> _eventReaders = new Dictionary<Guid, IEventReader>();
-
-	private readonly Dictionary<Guid, Guid> _subscriptionEventReaders = new Dictionary<Guid, Guid>();
-	private readonly Dictionary<Guid, Guid> _eventReaderSubscriptions = new Dictionary<Guid, Guid>();
-	private readonly HashSet<Guid> _pausedSubscriptions = new HashSet<Guid>();
+	private readonly Dictionary<Guid, IReaderSubscription> _subscriptions = new();
+	private readonly Dictionary<Guid, IEventReader> _eventReaders = new();
+	private readonly Dictionary<Guid, Guid> _subscriptionEventReaders = new();
+	private readonly Dictionary<Guid, Guid> _eventReaderSubscriptions = new();
+	private readonly HashSet<Guid> _pausedSubscriptions = [];
 	private readonly HeadingEventReader _headingEventReader;
 	private readonly ICheckpoint _writerCheckpoint;
 	private readonly bool _runHeadingReader;
@@ -58,12 +53,11 @@ public class EventReaderCoreService :
 	private Guid _reportProgressId;
 
 	public EventReaderCoreService(
-		IPublisher publisher, IODispatcher ioDispatcher, int eventCacheSize,
+		IPublisher publisher, int eventCacheSize,
 		ICheckpoint writerCheckpoint, bool runHeadingReader, bool faultOutOfOrderProjections) {
 		_publisher = publisher;
-		_ioDispatcher = ioDispatcher;
 		if (runHeadingReader)
-			_headingEventReader = new HeadingEventReader(eventCacheSize, _publisher);
+			_headingEventReader = new(eventCacheSize, _publisher);
 		_writerCheckpoint = writerCheckpoint;
 		_runHeadingReader = runHeadingReader;
 		_faultOutOfOrderProjections = faultOutOfOrderProjections;
@@ -74,8 +68,7 @@ public class EventReaderCoreService :
 		if (!_pausedSubscriptions.Add(message.SubscriptionId))
 			throw new InvalidOperationException("Already paused projection");
 
-		IReaderSubscription projectionSubscription;
-		if (!_subscriptions.TryGetValue(message.SubscriptionId, out projectionSubscription))
+		if (!_subscriptions.TryGetValue(message.SubscriptionId, out var projectionSubscription))
 			return; // may be already unsubscribed when self-unsubscribing
 
 		var eventReaderId = _subscriptionEventReaders[message.SubscriptionId];
@@ -84,8 +77,7 @@ public class EventReaderCoreService :
 			_subscriptionEventReaders.Remove(message.SubscriptionId);
 			_headingEventReader.Unsubscribe(message.SubscriptionId);
 			var forkedEventReaderId = Guid.NewGuid();
-			var forkedEventReader = projectionSubscription.CreatePausedEventReader(
-				_publisher, _ioDispatcher, forkedEventReaderId);
+			var forkedEventReader = projectionSubscription.CreatePausedEventReader(_publisher, forkedEventReaderId);
 			_subscriptionEventReaders.Add(message.SubscriptionId, forkedEventReaderId);
 			_eventReaderSubscriptions.Add(forkedEventReaderId, message.SubscriptionId);
 			_eventReaders.Add(forkedEventReaderId, forkedEventReader);
@@ -121,7 +113,7 @@ public class EventReaderCoreService :
 
 			var distributionPointCorrelationId = Guid.NewGuid();
 			var eventReader = projectionSubscription.CreatePausedEventReader(
-				_publisher, _ioDispatcher, distributionPointCorrelationId);
+				_publisher, distributionPointCorrelationId);
 			_eventReaders.Add(distributionPointCorrelationId, eventReader);
 			_subscriptionEventReaders.Add(subscriptionId, distributionPointCorrelationId);
 			_eventReaderSubscriptions.Add(distributionPointCorrelationId, subscriptionId);
@@ -153,12 +145,11 @@ public class EventReaderCoreService :
 	}
 
 	public void Handle(ReaderSubscriptionMessage.CommittedEventDistributed message) {
-		Guid projectionId;
 		if (_stopped)
 			return;
 		if (_runHeadingReader && _headingEventReader.Handle(message))
 			return;
-		if (!_eventReaderSubscriptions.TryGetValue(message.CorrelationId, out projectionId))
+		if (!_eventReaderSubscriptions.TryGetValue(message.CorrelationId, out var projectionId))
 			return; // unsubscribed
 
 		if (TrySubscribeHeadingEventReader(message, projectionId))
@@ -170,61 +161,51 @@ public class EventReaderCoreService :
 				var subscription = _subscriptions[projectionId];
 				Handle(new ReaderSubscriptionManagement.Unsubscribe(subscription.SubscriptionId));
 				_publisher.Publish(new EventReaderSubscriptionMessage.Failed(subscription.SubscriptionId,
-					string.Format("The subscription failed to handle an event {0}:{1}@{2} because {3}",
-						message.Data.EventStreamId, message.Data.EventType, message.Data.EventSequenceNumber,
-						ex.Message)));
+					$"The subscription failed to handle an event {message.Data.EventStreamId}:{message.Data.EventType}@{message.Data.EventSequenceNumber} because {ex.Message}"));
 			}
 		}
 	}
 
 	public void Handle(ReaderSubscriptionMessage.EventReaderIdle message) {
-		Guid projectionId;
 		if (_stopped)
 			return;
 		if (_runHeadingReader && _headingEventReader.Handle(message))
 			return;
-		if (!_eventReaderSubscriptions.TryGetValue(message.CorrelationId, out projectionId))
+		if (!_eventReaderSubscriptions.TryGetValue(message.CorrelationId, out var projectionId))
 			return; // unsubscribed
 		_subscriptions[projectionId].Handle(message);
 	}
 
 	public void Handle(ReaderSubscriptionMessage.EventReaderStarting message) {
-		Guid projectionId;
 		if (_stopped)
 			return;
-		if (!_eventReaderSubscriptions.TryGetValue(message.CorrelationId, out projectionId))
+		if (!_eventReaderSubscriptions.TryGetValue(message.CorrelationId, out var projectionId))
 			return; // unsubscribed
 		_subscriptions[projectionId].Handle(message);
 	}
 
 	public void Handle(ReaderSubscriptionMessage.EventReaderEof message) {
-		Guid projectionId;
 		if (_stopped)
 			return;
-		if (!_eventReaderSubscriptions.TryGetValue(message.CorrelationId, out projectionId))
+		if (!_eventReaderSubscriptions.TryGetValue(message.CorrelationId, out var projectionId))
 			return; // unsubscribed
 		_subscriptions[projectionId].Handle(message);
-
-		//            _pausedSubscriptions.Add(projectionId); // it is actually disposed -- workaround
-		//            Handle(new ReaderSubscriptionManagement.Unsubscribe(projectionId));
 	}
 
 	public void Handle(ReaderSubscriptionMessage.EventReaderPartitionDeleted message) {
-		Guid projectionId;
 		if (_stopped)
 			return;
 		if (_runHeadingReader && _headingEventReader.Handle(message))
 			return;
-		if (!_eventReaderSubscriptions.TryGetValue(message.CorrelationId, out projectionId))
+		if (!_eventReaderSubscriptions.TryGetValue(message.CorrelationId, out var projectionId))
 			return; // unsubscribed
 		_subscriptions[projectionId].Handle(message);
 	}
 
 	public void Handle(ReaderSubscriptionMessage.EventReaderNotAuthorized message) {
-		Guid projectionId;
 		if (_stopped)
 			return;
-		if (!_eventReaderSubscriptions.TryGetValue(message.CorrelationId, out projectionId))
+		if (!_eventReaderSubscriptions.TryGetValue(message.CorrelationId, out var projectionId))
 			return; // unsubscribed
 		_subscriptions[projectionId].Handle(message);
 
@@ -233,10 +214,9 @@ public class EventReaderCoreService :
 	}
 
 	public void Handle(ReaderSubscriptionMessage.Faulted message) {
-		Guid projectionId;
 		if (_stopped)
 			return;
-		if (!_eventReaderSubscriptions.TryGetValue(message.CorrelationId, out projectionId))
+		if (!_eventReaderSubscriptions.TryGetValue(message.CorrelationId, out var projectionId))
 			return; // unsubscribed
 
 		if (!_faultOutOfOrderProjections && message.Reason.Contains("was expected in the stream")) {

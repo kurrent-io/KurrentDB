@@ -9,68 +9,28 @@ namespace KurrentDB.Projections.Core.Services.Processing.Emitting;
 
 public partial class EmittedStream {
 	public class WriterConfiguration {
-		private readonly ClaimsPrincipal _writeAs;
-		private readonly int _maxWriteBatchLength;
-		private readonly ILogger _logger;
-
-		private readonly int? maxCount;
-		private readonly TimeSpan? maxAge;
-
-		private readonly IEmittedStreamsWriter _writer;
-
-		public class StreamMetadata {
-			private readonly int? _maxCount;
-			private readonly TimeSpan? _maxAge;
-
-			public StreamMetadata(int? maxCount = null, TimeSpan? maxAge = null) {
-				_maxCount = maxCount;
-				_maxAge = maxAge;
-			}
-
-			public int? MaxCount {
-				get { return _maxCount; }
-			}
-
-			public TimeSpan? MaxAge {
-				get { return _maxAge; }
-			}
+		public class StreamMetadata(int? maxCount = null, TimeSpan? maxAge = null) {
+			public int? MaxCount { get; } = maxCount;
+			public TimeSpan? MaxAge { get; } = maxAge;
 		}
 
-		public WriterConfiguration(
-			IEmittedStreamsWriter writer, StreamMetadata streamMetadata, ClaimsPrincipal writeAs,
+		public WriterConfiguration(IEmittedStreamsWriter writer, StreamMetadata streamMetadata, ClaimsPrincipal writeAs,
 			int maxWriteBatchLength, ILogger logger = null) {
-			_writer = writer;
-			_writeAs = writeAs;
-			_maxWriteBatchLength = maxWriteBatchLength;
-			_logger = logger;
+			Writer = writer;
+			WriteAs = writeAs;
+			MaxWriteBatchLength = maxWriteBatchLength;
+			Logger = logger;
 			if (streamMetadata != null) {
-				this.maxCount = streamMetadata.MaxCount;
-				this.maxAge = streamMetadata.MaxAge;
+				MaxCount = streamMetadata.MaxCount;
+				MaxAge = streamMetadata.MaxAge;
 			}
 		}
 
-		public ClaimsPrincipal WriteAs {
-			get { return _writeAs; }
-		}
-
-		public int MaxWriteBatchLength {
-			get { return _maxWriteBatchLength; }
-		}
-
-		public ILogger Logger {
-			get { return _logger; }
-		}
-
-		public int? MaxCount {
-			get { return maxCount; }
-		}
-
-		public TimeSpan? MaxAge {
-			get { return maxAge; }
-		}
-
-		public IEmittedStreamsWriter Writer {
-			get { return _writer; }
-		}
+		public ClaimsPrincipal WriteAs { get; }
+		public int MaxWriteBatchLength { get; }
+		public ILogger Logger { get; }
+		public int? MaxCount { get; }
+		public TimeSpan? MaxAge { get; }
+		public IEmittedStreamsWriter Writer { get; }
 	}
 }

@@ -21,11 +21,8 @@ namespace KurrentDB.Projections.Core;
 public class ProjectionWorkerNode {
 	private readonly ProjectionType _runProjections;
 	private readonly ProjectionCoreService _projectionCoreService;
-	private readonly ISubscriber _coreOutputBus;
 	private readonly EventReaderCoreService _eventReaderCoreService;
-
 	private readonly ReaderSubscriptionDispatcher _subscriptionDispatcher;
-
 	private readonly FeedReaderService _feedReaderService;
 	private readonly IODispatcher _ioDispatcher;
 	private readonly IPublisher _leaderOutputQueue;
@@ -42,23 +39,20 @@ public class ProjectionWorkerNode {
 		IPublisher leaderOutputQueue,
 		ProjectionsStandardComponents configuration) {
 		_runProjections = runProjections;
-		Ensure.NotNull(dbConfig, "dbConfig");
+		Ensure.NotNull(dbConfig);
 
 		_leaderOutputQueue = leaderOutputQueue;
-		_coreOutputBus = outputBus;
-
-		_subscriptionDispatcher = new ReaderSubscriptionDispatcher(outputQueue);
-
-		_ioDispatcher = new IODispatcher(outputQueue, inputQueue, true);
-		_eventReaderCoreService = new EventReaderCoreService(
+		CoreOutputBus = outputBus;
+		_subscriptionDispatcher = new(outputQueue);
+		_ioDispatcher = new(outputQueue, inputQueue, true);
+		_eventReaderCoreService = new(
 			outputQueue,
-			_ioDispatcher,
 			10,
 			dbConfig.WriterCheckpoint,
 			runHeadingReader: runProjections >= ProjectionType.System,
 			faultOutOfOrderProjections: faultOutOfOrderProjections);
 
-		_feedReaderService = new FeedReaderService(_subscriptionDispatcher, timeProvider);
+		_feedReaderService = new(_subscriptionDispatcher, timeProvider);
 		if (runProjections >= ProjectionType.System) {
 			_projectionCoreService = new ProjectionCoreService(
 				workerId,
@@ -71,17 +65,14 @@ public class ProjectionWorkerNode {
 		}
 	}
 
-	public ISubscriber CoreOutputBus {
-		get { return _coreOutputBus; }
-	}
+	public ISubscriber CoreOutputBus { get; }
 
 	public void SetupMessaging(ISubscriber coreInputBus) {
 		coreInputBus.Subscribe(_subscriptionDispatcher
 			.CreateSubscriber<EventReaderSubscriptionMessage.CheckpointSuggested>());
 		coreInputBus.Subscribe(_subscriptionDispatcher
 			.CreateSubscriber<EventReaderSubscriptionMessage.CommittedEventReceived>());
-		coreInputBus.Subscribe(
-			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.EofReached>());
+		coreInputBus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.EofReached>());
 		coreInputBus.Subscribe(_subscriptionDispatcher
 			.CreateSubscriber<EventReaderSubscriptionMessage.PartitionDeleted>());
 		coreInputBus.Subscribe(_subscriptionDispatcher

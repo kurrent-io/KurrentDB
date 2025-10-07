@@ -11,22 +11,16 @@ using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Projections.Core.Services.Management;
 
-public class ProjectionManagerMessageDispatcher
+public class ProjectionManagerMessageDispatcher(IDictionary<Guid, IPublisher> queueMap)
 	: IHandle<CoreProjectionManagementControlMessage> {
 	private readonly ILogger _logger = Log.ForContext<ProjectionManager>();
-	private readonly IDictionary<Guid, IPublisher> _queueMap;
-
-	public ProjectionManagerMessageDispatcher(IDictionary<Guid, IPublisher> queueMap) {
-		_queueMap = queueMap;
-	}
 
 	public void Handle(CoreProjectionManagementControlMessage message) {
 		DispatchWorkerMessage(message, message.WorkerId);
 	}
 
 	private void DispatchWorkerMessage(Message message, Guid workerId) {
-		IPublisher worker;
-		if (_queueMap.TryGetValue(workerId, out worker))
+		if (queueMap.TryGetValue(workerId, out var worker))
 			worker.Publish(message);
 		else
 			_logger.Information("Cannot find a worker with ID: {workerId}", workerId);

@@ -32,8 +32,7 @@ public class when_resuming<TLogFormat, TStreamId> : TestFixtureWithExistingEvent
 		_abStreams = new[] { "a", "b" };
 
 		_distibutionPointCorrelationId = Guid.NewGuid();
-		_edp = new MultiStreamEventReader(
-			_ioDispatcher, _bus, _distibutionPointCorrelationId, null, 0, _abStreams, _ab12Tag, false,
+		_edp = new MultiStreamEventReader(_bus, _distibutionPointCorrelationId, null, 0, _abStreams, _ab12Tag, false,
 			new RealTimeProvider());
 
 		_edp.Resume();

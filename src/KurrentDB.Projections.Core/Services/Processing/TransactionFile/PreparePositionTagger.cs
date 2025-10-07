@@ -2,34 +2,23 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using static KurrentDB.Projections.Core.Messages.ReaderSubscriptionMessage;
 
 namespace KurrentDB.Projections.Core.Services.Processing.TransactionFile;
 
-public class PreparePositionTagger : PositionTagger {
-	public PreparePositionTagger(int phase)
-		: base(phase) {
+public class PreparePositionTagger(int phase) : PositionTagger(phase) {
+	public override bool IsMessageAfterCheckpointTag(CheckpointTag previous, CommittedEventDistributed committedEvent) {
+		return previous.Phase < Phase || committedEvent.Data.Position.PreparePosition > previous.PreparePosition;
 	}
 
-	public override bool IsMessageAfterCheckpointTag(
-		CheckpointTag previous, ReaderSubscriptionMessage.CommittedEventDistributed committedEvent) {
-		if (previous.Phase < Phase)
-			return true;
-		return committedEvent.Data.Position.PreparePosition > previous.PreparePosition;
+	public override CheckpointTag MakeCheckpointTag(CheckpointTag previous, CommittedEventDistributed committedEvent) {
+		return previous.Phase != Phase
+			? throw new ArgumentException($"Invalid checkpoint tag phase.  Expected: {Phase} Was: {previous.Phase}")
+			: CheckpointTag.FromPreparePosition(previous.Phase, committedEvent.Data.Position.PreparePosition);
 	}
 
-	public override CheckpointTag MakeCheckpointTag(
-		CheckpointTag previous, ReaderSubscriptionMessage.CommittedEventDistributed committedEvent) {
-		if (previous.Phase != Phase)
-			throw new ArgumentException(
-				string.Format("Invalid checkpoint tag phase.  Expected: {0} Was: {1}", Phase, previous.Phase));
-
-		return CheckpointTag.FromPreparePosition(previous.Phase, committedEvent.Data.Position.PreparePosition);
-	}
-
-	public override CheckpointTag MakeCheckpointTag(
-		CheckpointTag previous, ReaderSubscriptionMessage.EventReaderPartitionDeleted partitionDeleted) {
+	public override CheckpointTag MakeCheckpointTag(CheckpointTag previous, EventReaderPartitionDeleted partitionDeleted) {
 		throw new NotSupportedException();
 	}
 
@@ -46,30 +35,19 @@ public class PreparePositionTagger : PositionTagger {
 			return tag;
 		if (tag.Phase > Phase)
 			throw new ArgumentException(
-				string.Format(
-					"Invalid checkpoint tag phase.  Expected less or equal to: {0} Was: {1}", Phase, tag.Phase),
-				"tag");
+				$"Invalid checkpoint tag phase.  Expected less or equal to: {Phase} Was: {tag.Phase}",
+				nameof(tag));
 
 		if (tag.Mode_ == CheckpointTag.Mode.PreparePosition)
 			return tag;
 
-		switch (tag.Mode_) {
-			case CheckpointTag.Mode.EventTypeIndex:
-				throw new NotSupportedException(
-					"Conversion from EventTypeIndex to PreparePosition position tag is not supported");
-			case CheckpointTag.Mode.Stream:
-				throw new NotSupportedException(
-					"Conversion from Stream to PreparePosition position tag is not supported");
-			case CheckpointTag.Mode.MultiStream:
-				throw new NotSupportedException(
-					"Conversion from MultiStream to PreparePosition position tag is not supported");
-			case CheckpointTag.Mode.Position:
-				throw new NotSupportedException(
-					"Conversion from Position to PreparePosition position tag is not supported");
-			default:
-				throw new NotSupportedException(string.Format(
-					"The given checkpoint is invalid. Possible causes might include having written an event to the projection's managed stream. The bad checkpoint: {0}",
-					tag.ToString()));
-		}
+		throw tag.Mode_ switch {
+			CheckpointTag.Mode.EventTypeIndex => new("Conversion from EventTypeIndex to PreparePosition position tag is not supported"),
+			CheckpointTag.Mode.Stream => new("Conversion from Stream to PreparePosition position tag is not supported"),
+			CheckpointTag.Mode.MultiStream => new("Conversion from MultiStream to PreparePosition position tag is not supported"),
+			CheckpointTag.Mode.Position => new("Conversion from Position to PreparePosition position tag is not supported"),
+			_ => new NotSupportedException(
+				$"The given checkpoint is invalid. Possible causes might include having written an event to the projection's managed stream. The bad checkpoint: {tag}")
+		};
 	}
 }

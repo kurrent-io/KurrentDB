@@ -31,7 +31,7 @@ internal partial class ProjectionManagement {
 
 		_publisher.Publish(options.WriteCheckpoint
 			? new ProjectionManagementMessage.Command.Disable(envelope, name, runAs)
-			: (Message)new ProjectionManagementMessage.Command.Abort(envelope, name, runAs));
+			: new ProjectionManagementMessage.Command.Abort(envelope, name, runAs));
 
 		await disableSource.Task;
 

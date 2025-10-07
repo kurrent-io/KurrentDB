@@ -93,8 +93,8 @@ public class when_handling_subscribe_requests<TLogFormat, TStreamId> : TestFixtu
 			return new FakeReaderSubscription();
 		}
 
-		public IEventReader CreatePausedEventReader(Guid eventReaderId, IPublisher publisher, IODispatcher ioDispatcher,
-			CheckpointTag checkpointTag, bool stopOnEof, int? stopAfterNEvents) {
+		public IEventReader CreatePausedEventReader(Guid eventReaderId, IPublisher publisher,
+			CheckpointTag checkpointTag, bool stopOnEof) {
 			throw new NotImplementedException();
 		}
 	}
@@ -130,7 +130,7 @@ public class when_handling_subscribe_requests<TLogFormat, TStreamId> : TestFixtu
 
 		public string Tag { get; }
 		public Guid SubscriptionId { get; }
-		public IEventReader CreatePausedEventReader(IPublisher publisher, IODispatcher ioDispatcher, Guid forkedEventReaderId) {
+		public IEventReader CreatePausedEventReader(IPublisher publisher, Guid forkedEventReaderId) {
 			throw new ArgumentException(nameof(FakeReaderSubscriptionThatThrows));
 		}
 	}
