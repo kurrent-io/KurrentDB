@@ -125,6 +125,7 @@ public class ArchiveStorageTests : ArchiveStorageTestsBase<ArchiveStorageTests> 
 
 	[Theory]
 	[StorageData.S3]
+	[StorageData.Azure]
 	[StorageData.FileSystem]
 	public async Task can_store_a_chunk(StorageType storageType) {
 		var sut = CreateSut(storageType);
@@ -140,6 +141,7 @@ public class ArchiveStorageTests : ArchiveStorageTestsBase<ArchiveStorageTests> 
 
 	[Theory]
 	[StorageData.S3]
+	[StorageData.Azure]
 	[StorageData.FileSystem]
 	public async Task can_write_and_read_checkpoint(StorageType storageType) {
 		var checkpoint = Random.Shared.NextInt64();
