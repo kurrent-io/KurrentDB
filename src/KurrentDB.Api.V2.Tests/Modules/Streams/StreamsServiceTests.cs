@@ -3,7 +3,9 @@
 
 // ReSharper disable AccessToDisposedClosure
 
+using System.Reflection;
 using Google.Protobuf;
+using Google.Protobuf.Reflection;
 using Google.Rpc;
 using Grpc.Core;
 using Humanizer;
@@ -111,6 +113,34 @@ public class StreamsServiceTests {
     }
 
     [Test]
+    public async ValueTask append_session_throws_when_no_requests_are_sent(CancellationToken cancellationToken) {
+        // Act
+        using var session = Fixture.StreamsClient.AppendSession(cancellationToken: cancellationToken);
+        await session.RequestStream.CompleteAsync();
+
+        // ReSharper disable once AccessToDisposedClosure
+        var appendTask = async () => await session.ResponseAsync;
+
+        // Assert
+        var rex     = await appendTask.ShouldThrowAsync<RpcException>();
+        var errorInfo = rex.GetRpcStatus()?.GetDetail<ErrorInfo>();
+
+        await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
+        await Assert.That(errorInfo).IsNotNull();
+
+        await Assert.That(errorInfo!.Reason).IsEqualTo("APPEND_SESSION_NO_REQUESTS");
+
+        var temp = GetEnumOriginalName(StreamsError.AppendSessionNoRequests);
+
+        return;
+
+        static string GetEnumOriginalName(object enumValue) =>
+            enumValue.GetType().GetField(enumValue.ToString()!)!
+                .GetCustomAttribute<OriginalNameAttribute>()!.Name;
+
+    }
+
+    [Test]
     public async ValueTask append_session_throws_when_stream_already_in_session(CancellationToken cancellationToken) {
         // Arrange
         var request = HomeAutomationTestData.SimulateHomeActivity();
@@ -209,11 +239,7 @@ public class StreamsServiceTests {
             Stream  = $"{nameof(SmartHomeActivity)}-{Guid.NewGuid():N}"
         };
 
-        // now we fill in the request with records and must ensure that the size of the request must be within the limits
-        // of minimumRequestSize and targetMaxAppendSize
-        // we need to keep using the grpc message CalculateSize to get the actual size
-        // and also in extreme cases we might need to change the size of the last record to ensure we do not exceed the targetMaxAppendSize
-        // or that we are at least above the minimumRequestSize
+        // Fill the request with records and must ensure that the size of the request must be within the limits
         while (true) {
             // Create a random valid record size
             var validRecordSize = Faker.Random.Int(

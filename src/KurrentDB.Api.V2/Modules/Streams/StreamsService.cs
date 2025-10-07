@@ -109,6 +109,9 @@ public class StreamsService : StreamsServiceBase {
 		}
 
         protected override Message BuildMessage(IEnvelope callback, ServerCallContext context) {
+            if (Requests.Count == 0)
+                throw ApiErrors.AppendTransactionNoRequests();
+
             var cid = Guid.NewGuid();
             return new WriteEvents(
                 internalCorrId: cid,

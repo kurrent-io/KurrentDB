@@ -83,28 +83,6 @@ abstract class ApiCommand<TCommand, TResult> : ApiCommand<TCommand> where TComma
     protected abstract RpcException? MapToError(Message message);
 
     /// <summary>
-    /// Called when an error occurs during command execution.
-    /// <remarks>
-    /// This can be overridden to implement custom error handling logic,
-    /// such as logging the error, transforming it, or performing cleanup actions.
-    /// The default implementation does nothing.
-    /// </remarks>
-    /// </summary>
-    protected virtual ValueTask OnError(Exception exception, ServerCallContext context) =>
-        ValueTask.CompletedTask;
-
-    /// <summary>
-    /// Called when the command completes successfully.
-    /// <remarks>
-    /// This can be overridden to implement custom success handling logic,
-    /// such as logging the success or performing additional actions based on the result.
-    /// The default implementation does nothing.
-    /// </remarks>
-    /// </summary>
-    protected virtual ValueTask OnSuccess(TResult result, ServerCallContext context) =>
-        ValueTask.CompletedTask;
-
-    /// <summary>
     /// Executes the command asynchronously.
     /// <remarks>
     /// It constructs a DelegateCallback with the provided predicates and mappers, publishes the message,
@@ -124,47 +102,22 @@ abstract class ApiCommand<TCommand, TResult> : ApiCommand<TCommand> where TComma
             context, self, FriendlyName,
             static (msg, cmd, _) => cmd.SuccessPredicate(msg),
             static (msg, cmd, _) => cmd.MapToResult(msg),
-            static (msg, cmd, _) => cmd.MapToError(msg)
-        );
+            static (msg, cmd, _) => cmd.MapToError(msg));
 
         try {
             var message = BuildMessage(callback, context);
             Publisher.Publish(message);
             var result = await callback.WaitForReply;
-            await HandleOnSuccess(result, context);
             return result;
         }
         catch (AggregateException aex) {
             var ex = aex.InnerException ?? aex.Flatten();
-            await HandleOnError(ex, context);
             throw ex;
         }
         catch (Exception ex) when (ex is not OperationCanceledException) {
-            await HandleOnError(ex, context);
             throw;
         }
     }
-
-    ValueTask HandleOnError(Exception exception, ServerCallContext context) {
-        try {
-            return OnError(exception, context);
-        }
-        catch (Exception ex) {
-            context.GetLogger<TCommand>().LogWarning(ex, "OnError handling failed: {Error}", ex.Message);
-            return ValueTask.CompletedTask;
-        }
-    }
-
-    ValueTask HandleOnSuccess(TResult result, ServerCallContext context) {
-        try {
-            return OnSuccess(result, context);
-        }
-        catch (Exception ex) {
-            context.GetLogger<TCommand>().LogWarning(ex, "OnSuccess handling failed: {Error}", ex.Message);
-            return ValueTask.CompletedTask;
-        }
-    }
-
 }
 
 static class PublisherExtensions {

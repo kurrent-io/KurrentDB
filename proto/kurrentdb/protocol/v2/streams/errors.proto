@@ -72,6 +72,11 @@ enum StreamsError {
     status_code: ABORTED,
     has_details: true
   }];
+
+  // An append session was started, but no append requests were sent before ending the session.
+  STREAMS_ERROR_APPEND_SESSION_NO_REQUESTS = 9 [(kurrent.rpc.error) = {
+    status_code: FAILED_PRECONDITION
+  }];
 }
 
 message StreamNotFoundErrorDetails {

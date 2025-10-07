@@ -120,4 +120,9 @@ public static partial class ApiErrors {
 
 		return RpcExceptions.FromError(StreamsError.AppendTransactionSizeExceeded, message, details);
 	}
+
+    public static RpcException AppendTransactionNoRequests() {
+        const string message = "Append session started, but no append requests were sent before ending the session.";
+        return RpcExceptions.FromError(StreamsError.AppendSessionNoRequests, message);
+    }
 }

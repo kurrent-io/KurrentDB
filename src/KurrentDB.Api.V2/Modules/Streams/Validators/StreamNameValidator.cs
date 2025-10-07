@@ -12,6 +12,5 @@ class StreamNameValidator : AbstractValidator<string?> {
         RuleFor(x => x)
             .NotEmpty()
             .NotEqual("$$")
-            .WithMessage("Stream name must not be empty and cannot be '$$'.")
-            .Must(x => x is null || x.Length <= 256);
+            .WithMessage("Stream name must not be empty and cannot be '$$'.");
 }
