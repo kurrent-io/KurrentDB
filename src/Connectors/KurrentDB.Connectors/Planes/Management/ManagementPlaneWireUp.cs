@@ -53,7 +53,7 @@ public static class ManagementPlaneWireUp {
         services.AddConnectorsManagementSchemaRegistration();
 
         services
-            .AddGrpc(x => x.EnableDetailedErrors = true)
+            .AddGrpc()
             .AddJsonTranscoding();
 
         services.PostConfigure<GrpcJsonTranscodingOptions>(options => {

@@ -10,7 +10,7 @@ KurrentDB.Testing is an opinionated testing framework designed to standardize an
 - **Test Environment Management**: Automated configuration, dependency injection, and logging setup
 - **Test Data Generation**: Powerful fake data generation using Bogus with custom DataSets
 - **Advanced Assertions**: Deep object graph comparison with configurable equivalency testing
-- **Observability**: Integrated logging (Serilog), OpenTelemetry, and test correlation
+- **Observability**: Integrated logging (Serilog), OpenTelemetry, and test correlation via TUnit
 - **Developer Experience**: Rich tooling support with Seq log aggregation and Aspire Dashboard
 
 ## ⚠️ CRITICAL: Required Setup
@@ -42,59 +42,6 @@ public class TestEnvironmentWireUp {
 }
 ```
 
-### Enhanced Version (Optional)
-
-You can optionally add test-level hooks for logging test lifecycle events:
-
-```csharp
-using KurrentDB.Testing.TUnit;
-using Serilog;
-using TUnit.Core.Executors;
-
-[assembly: ToolkitTestConfigurator]
-[assembly: TestExecutor<ToolkitTestExecutor>]
-
-namespace YourProject.Tests;
-
-public class TestEnvironmentWireUp {
-    [Before(Assembly)]
-    public static ValueTask BeforeAssembly(AssemblyHookContext context) =>
-        ToolkitTestEnvironment.Initialize(context.Assembly);
-
-    [After(Assembly)]
-    public static ValueTask AfterAssembly(AssemblyHookContext context) =>
-        ToolkitTestEnvironment.Reset(context.Assembly);
-
-    // Optional: Log test lifecycle events
-    [BeforeEvery(Test)]
-    public static void BeforeEveryTest(TestContext context) {
-        var testUid = context.TestUid();
-        Log.ForContext(nameof(TestUid), testUid).Verbose(
-            "{TestClass} {TestName} {Status} TestUid: {TestUid}",
-            context.TestDetails.ClassType.Name,
-            context.TestDetails.TestName,
-            TestState.NotStarted,
-            testUid
-        );
-    }
-
-    [AfterEvery(Test)]
-    public static void AfterEveryTest(TestContext context) {
-        var testUid = context.TestUid();
-        var elapsed = context.Result?.Duration ?? TimeSpan.Zero;
-        Log.ForContext(nameof(TestUid), testUid).Verbose(
-            "{TestClass} {TestName} {Status} in {Elapsed}",
-            context.TestDetails.ClassType.Name,
-            context.TestDetails.TestName,
-            context.Result!.State,
-            elapsed.Humanize(2)
-        );
-    }
-}
-```
-
-**See [KurrentDB.Api.V2.Tests/TestEnvironmentWireUp.cs](../KurrentDB.Api.V2.Tests/TestEnvironmentWireUp.cs) for a real example.**
-
 ## Table of Contents
 
 - [Getting Started](#getting-started)
@@ -105,8 +52,7 @@ public class TestEnvironmentWireUp {
 - [Logging & Observability](#logging--observability)
 - [HomeAutomation Sample](#homeautomation-sample)
 - [Infrastructure](#infrastructure)
-- [Best Practices](#best-practices)
-- [API Reference](#api-reference)
+- [Contributing](#contributing)
 
 ## Getting Started
 
@@ -153,7 +99,7 @@ The `ToolkitTestEnvironment` class provides:
 - **Configuration Management**: Loads `appsettings.json` and environment variables
 - **Logging Setup**: Configures Serilog with multiple sinks (Console, Seq, Debug, Observable)
 - **Service Collection**: Dependency injection support for test services
-- **Test Correlation**: Automatic TestUid generation for log correlation
+- **Test Correlation**: Integrates with TUnit's built-in test correlation - `TestUid` property is automatically added to all log events
 
 ### Test Execution
 
@@ -167,108 +113,35 @@ The `ToolkitTestExecutor` manages test execution lifecycle:
 
 Enhanced test context with utilities:
 
-- `context.TestUid()`: Get unique identifier for test correlation
 - `context.InjectItem<T>()`: Store data in test context
 - `context.ExtractItem<T>()`: Retrieve stored data
 - Logging extensions for structured test output
 
-## Test Environment Setup
-
-### Configuration
-
-Place an `appsettings.json` in your test project:
-
-```json
-{
-  "Serilog": {
-    "MinimumLevel": {
-      "Default": "Verbose",
-      "Override": {
-        "Microsoft": "Warning",
-        "System": "Warning"
-      }
-    },
-    "WriteTo": [
-      {
-        "Name": "Seq",
-        "Args": {
-          "serverUrl": "http://localhost:5341"
-        }
-      }
-    ]
-  }
-}
-```
-
-### Logging
-
-Serilog is configured with multiple enrichers:
-
-- **Demystifier**: Clean stack traces
-- **Environment**: Machine and user info
-- **Process**: Process ID and name
-- **Thread**: Thread information
-
-Output template:
-```
-[{Timestamp:HH:mm:ss.fff} {Level:u4} <{ThreadId:000}> {SourceContext}] {Message:lj}{NewLine}{Exception}
-```
-
 ## Test Data Generation
 
-### Using Bogus Directly
+### Using Bogus with TUnit
+
+Bogus should be used as a TUnit ClassDataSource for test data generation:
 
 ```csharp
-[Test]
-public async Task GenerateRandomPerson() {
-    var faker = new Faker();
-    var name = faker.Name.FullName();
-    var email = faker.Internet.Email();
+public class MyTests {
+    [ClassDataSource<BogusFaker>(Shared = SharedType.PerAssembly)]
+    public required BogusFaker Faker { get; init; }
 
-    await Assert.That(name).IsNotNull();
-}
-```
+    [Test]
+    public async Task GenerateRandomPerson() {
+        var name = Faker.Name.FullName();
+        var email = Faker.Internet.Email();
 
-### Creating Custom DataSets
-
-DataSets provide reusable, composable fake data generators:
-
-```csharp
-public class ProductDataSet : DataSet {
-    public ProductDataSet(string locale = "en") : base(locale) {
-        Faker = new Faker(locale);
-    }
-
-    Faker Faker { get; }
-
-    public Product Product() {
-        return new Product {
-            Id = Faker.Random.Guid(),
-            Name = Faker.Commerce.ProductName(),
-            Price = Faker.Finance.Amount(1, 1000),
-            Description = Faker.Commerce.ProductDescription()
-        };
-    }
-
-    public List<Product> Products(int count = 5) {
-        return Enumerable.Range(0, count)
-            .Select(_ => Product())
-            .ToList();
+        await Assert.That(name).IsNotNull();
     }
 }
 ```
 
-### Using Extension Methods
-
-```csharp
-public static class ProductDataSetExtensions {
-    public static ProductDataSet Products(this Faker faker) =>
-        new ProductDataSet(faker.Locale);
-}
-
-// Usage
-var product = new Faker().Products().Product();
-```
+This approach ensures:
+- Faker instances are properly shared across tests
+- Consistent test data generation patterns
+- Better integration with TUnit's lifecycle management
 
 ## Advanced Assertions
 
@@ -322,37 +195,19 @@ public async Task SubsetComparison() {
 
 ## Logging & Observability
 
-### Test Correlation with TestUid
+### Test Correlation with TUnit
 
-Every test gets a unique 12-character hexadecimal identifier:
+Test correlation is built into TUnit. The testing toolkit automatically adds a `TestUid` property to all log events, allowing you to correlate logs with specific tests.
+
+All logs generated during test execution are automatically tagged with the test's unique identifier for easy filtering and debugging in Seq or other log aggregation tools.
 
 ```csharp
 [Test]
 public async Task MyTest(TestContext context) {
-    var testUid = context.TestUid();
+    // TestUid is automatically added to all logs
+    Log.Information("Processing test");
 
-    Log.ForContext(nameof(TestUid), testUid)
-       .Information("Processing test with ID: {TestUid}", testUid);
-
-    // All logs will be tagged with this TestUid for correlation
-}
-```
-
-### Capturing Test Logs
-
-```csharp
-[Test]
-public async Task CaptureTestLogs(TestContext context) {
-    var logs = new List<LogEvent>();
-
-    await ToolkitTestEnvironment.CaptureTestLogs(context, logEvent => {
-        logs.Add(logEvent);
-    }, async () => {
-        Log.Information("This log will be captured");
-        await DoSomething();
-    });
-
-    await Assert.That(logs).IsNotEmpty();
+    // All logs will be tagged with TestUid for correlation
 }
 ```
 
@@ -440,52 +295,9 @@ var events = faker.HomeAutomation().Events(home, count: 10);
 // 2. LightStateChanged (Living Room light turns on) - correlated 2-10 seconds later
 ```
 
-### Creating Your Own DataSet
-
-Use HomeAutomation as a template:
-
-1. **Create a DataSet class**:
-   ```csharp
-   public class YourDataSet : DataSet {
-       public YourDataSet(string locale = "en") : base(locale) {
-           Faker = new Faker(locale);
-       }
-
-       Faker Faker { get; }
-
-       // Add generation methods
-   }
-   ```
-
-2. **Create Faker classes** for complex types:
-   ```csharp
-   public class YourEntityFaker : Faker<YourEntity> {
-       public YourEntityFaker() {
-           RuleFor(x => x.Id, f => f.Random.Guid());
-           RuleFor(x => x.Name, f => f.Company.CompanyName());
-       }
-   }
-   ```
-
-3. **Add extension methods** for convenient access:
-   ```csharp
-   public static class YourDataSetExtensions {
-       public static YourDataSet YourDomain(this Faker faker) =>
-           new YourDataSet(faker.Locale);
-   }
-   ```
-
 ## Infrastructure
 
-### Docker Compose
-
-Start the testing infrastructure:
-
-```bash
-docker-compose up -d
-```
-
-This starts:
+The testing toolkit includes a docker-compose configuration that runs:
 
 1. **Seq** (http://localhost:5341)
    - Centralized log aggregation
@@ -497,228 +309,10 @@ This starts:
    - Distributed tracing
    - Metrics and logs
 
-### Services Configuration
+Start the infrastructure:
 
-```yaml
-services:
-  seq:
-    image: datalust/seq:latest
-    ports:
-      - "5341:80"
-    environment:
-      - ACCEPT_EULA=Y
-      - SEQ_FIRSTRUN_NOAUTHENTICATION=True
-
-  aspire-dashboard:
-    image: mcr.microsoft.com/dotnet/aspire-dashboard:latest
-    ports:
-      - "18888:18888"  # Dashboard UI
-      - "4317:18889"   # OTLP ingestion
-    environment:
-      - ASPIRE_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS=true
-```
-
-### Viewing Test Logs in Seq
-
-1. Navigate to http://localhost:5341
-2. Filter by TestUid to see all logs for a specific test:
-   ```
-   TestUid = "A1B2C3D4E5F6"
-   ```
-3. Use structured queries:
-   ```
-   TestClass = "HomeAutomationTests" and Level = "Error"
-   ```
-
-## Best Practices
-
-### 1. Always Create TestEnvironmentWireUp (MANDATORY)
-
-**Every test project MUST have a `TestEnvironmentWireUp.cs` file** with assembly-level hooks to bootstrap the test environment. See the [Required Setup](#️-critical-required-setup) section for the minimal required implementation. Test-level hooks for logging are optional enhancements.
-
-### 2. Use TestUid for Correlation
-
-Always include TestUid in log contexts for debugging:
-
-```csharp
-Log.ForContext(nameof(TestUid), context.TestUid())
-   .Information("Processing {Entity}", entity);
-```
-
-### 3. Organize DataSets by Domain
-
-Create domain-specific DataSets rather than generic "TestData" classes:
-
-```csharp
-// Good
-var order = faker.Orders().Order();
-var customer = faker.Customers().Customer();
-
-// Avoid
-var order = TestDataGenerator.GenerateOrder();
-```
-
-### 4. Use Equivalency Testing for Complex Objects
-
-Prefer `ShouldBeEquivalentTo` over manual property comparisons:
-
-```csharp
-// Good
-actual.ShouldBeEquivalentTo(expected, config => config
-    .Excluding(x => x.CreatedAt));
-
-// Avoid
-Assert.That(actual.Id).IsEqualTo(expected.Id);
-Assert.That(actual.Name).IsEqualTo(expected.Name);
-// ... 20 more properties
-```
-
-### 5. Configure Logging Appropriately
-
-Use appropriate log levels in tests:
-
-```csharp
-Log.Verbose("Detailed diagnostic info");
-Log.Debug("Debug information");
-Log.Information("Important milestones");
-Log.Warning("Unexpected but handled");
-Log.Error("Failures and exceptions");
-```
-
-### 6. Clean Up Resources
-
-Use proper disposal patterns:
-
-```csharp
-[Test]
-public async Task TestWithResources() {
-    await using var resource = CreateResource();
-
-    // Test code
-}
-```
-
-## API Reference
-
-### ToolkitTestEnvironment
-
-```csharp
-public static class ToolkitTestEnvironment {
-    // Initialize the test environment for an assembly
-    public static ValueTask Initialize(Assembly assembly);
-
-    // Reset the test environment
-    public static ValueTask Reset(Assembly assembly);
-
-    // Capture logs during test execution
-    public static Task CaptureTestLogs(
-        TestContext context,
-        Action<LogEvent> onLogEvent,
-        Func<Task> testAction);
-
-    // Access configuration
-    public static IConfiguration Configuration { get; }
-
-    // Access captured log events
-    public static IObservable<LogEvent> LogEvents { get; }
-}
-```
-
-### TestContext Extensions
-
-```csharp
-public static class TestContextExtensions {
-    // Get unique test identifier
-    public static TestUid TestUid(this TestContext context);
-
-    // Assign custom test identifier
-    public static void AssignTestUid(this TestContext context, TestUid uid);
-
-    // Store and retrieve data
-    public static void InjectItem<T>(this TestContext context, T item);
-    public static T ExtractItem<T>(this TestContext context);
-    public static bool TryExtractItem<T>(this TestContext context, out T? item);
-}
-```
-
-### TestUid
-
-```csharp
-public readonly record struct TestUid {
-    // Generate new unique identifier
-    public static TestUid New();
-
-    // Parse from string
-    public static TestUid Parse(string input);
-    public static bool TryParse(string input, out TestUid uid);
-
-    // Empty instance
-    public static readonly TestUid Empty;
-
-    // 12-character hex value
-    public string Value { get; }
-}
-```
-
-### Shouldly Extensions
-
-```csharp
-public static class ShouldlyObjectGraphTestExtensions {
-    // Deep equivalency comparison
-    public static void ShouldBeEquivalentTo(
-        this object actual,
-        object expected,
-        Action<EquivalencyConfiguration>? configure = null,
-        string? customMessage = null);
-
-    // Subset comparison
-    public static void ShouldBeSubsetOf<T>(
-        this IEnumerable<T> subset,
-        IEnumerable<T> collection,
-        Action<EquivalencyConfiguration>? configure = null,
-        string? customMessage = null);
-}
-
-public class EquivalencyConfiguration {
-    // Exclude properties
-    public EquivalencyConfiguration Excluding<T>(Expression<Func<T, object>> property);
-    public EquivalencyConfiguration Excluding(string propertyPath);
-
-    // Custom comparers
-    public EquivalencyConfiguration Using<T>(Func<T, T, bool> comparer);
-
-    // String comparison
-    public EquivalencyConfiguration WithStringComparison(StringComparison comparison);
-
-    // Numeric tolerance
-    public EquivalencyConfiguration WithNumericTolerance(double tolerance);
-
-    // Collection ordering
-    public EquivalencyConfiguration IgnoringCollectionOrder();
-}
-```
-
-### DataSet (Bogus)
-
-```csharp
-// Inherit from Bogus.DataSet
-public class YourDataSet : DataSet {
-    public YourDataSet(string locale = "en") : base(locale);
-
-    // Add your generation methods
-    public YourEntity Entity() { ... }
-    public List<YourEntity> Entities(int count) { ... }
-}
-```
-
-### Extension Utilities
-
-```csharp
-public static class WithExtensions {
-    // Fluent property setters
-    public static T With<T>(this T obj, Action<T> action);
-    public static T With<T, TValue>(this T obj, Action<T> action, TValue value);
-}
+```bash
+docker-compose up -d
 ```
 
 ## Contributing
@@ -729,7 +323,3 @@ When adding new testing utilities:
 2. Include XML documentation
 3. Add tests demonstrating usage
 4. Update this README with examples
-
-## License
-
-Kurrent License v1 (see LICENSE.md)

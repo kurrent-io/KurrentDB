@@ -10,11 +10,14 @@ using FluentValidation.Results;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Google.Rpc;
+using Grpc.AspNetCore.Server;
 using Grpc.Core;
 using Humanizer;
 using KurrentDB.Api.Infrastructure.Errors;
 using Kurrent.Rpc;
 using KurrentDB.Api.Infrastructure;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Type = System.Type;
 
 namespace KurrentDB.Api.Errors;
@@ -22,40 +25,85 @@ namespace KurrentDB.Api.Errors;
 public static partial class ApiErrors {
     static readonly TimeSpan DefaultRetryDelay = TimeSpan.FromSeconds(5);
 
-	/// <summary>
-	/// Creates an RPC exception indicating that access to a resource or operation was denied.
-	/// This method is used to create an <see cref="RpcException"/> with status code <see cref="StatusCode.PermissionDenied"/>
-	/// when a user lacks sufficient permissions to perform the requested operation.
-	/// The exception includes structured error details with scope and username information.
-	/// </summary>
-	/// <param name="permission">
-	/// The fine-grained claim required to perform the operation.
+    /// <summary>
+    /// Creates an RPC exception indicating that access to a resource or operation was denied.
+    /// This method is used to create an <see cref="RpcException"/> with status code <see cref="StatusCode.PermissionDenied"/>
+    /// when a user lacks sufficient permissions to perform the requested operation.
+    /// The exception includes structured error details with scope and username information.
+    /// </summary>
+    /// <param name="operation">
+    /// A friendly name for the operation or action being attempted that requires specific permissions.
+    /// This should correspond to the action the user was trying to perform when access was denied.
+    /// </param>
+    /// <param name="username">
+    /// The login name of the user who was denied access. If not provided, the error message will not include username information.
+    /// This parameter is optional and can be null if the username is not available or relevant.
+    /// Use with caution as it should only be provided if Grpc Enabled Detailed Errors is set to true in the server options.
+    /// </param>
+    /// <param name="permission">
+    /// The fine-grained claim required to perform the operation.
     /// This should correspond to the permission or role needed to access the resource.
-	/// </param>
-	/// <param name="loginName">
-	/// The login name of the user who was denied access. If not provided, the error message will not include username information.
-	/// This parameter is optional and can be null if the username is not available or relevant.
-	/// </param>
-	/// <returns>
-	/// An <see cref="RpcException"/> with status code <see cref="StatusCode.PermissionDenied"/>,
-	/// including <see cref="AccessDeniedErrorDetails"/> details with scope and optionally the user login name.
-	/// </returns>
-	public static RpcException AccessDenied(string permission, string? loginName = null) {
-		Debug.Assert(!string.IsNullOrWhiteSpace(permission), "The permission must not be empty!");
+    /// This parameter is optional and can be null if the operation name sufficiently describes the required permission.
+    /// Use with caution as it should only be provided if Grpc Enabled Detailed Errors is set to true in the server options.
+    /// </param>
+    /// <returns>
+    /// An <see cref="RpcException"/> with status code <see cref="StatusCode.PermissionDenied"/>,
+    /// including <see cref="AccessDeniedErrorDetails"/> details with scope and optionally the user login name
+    /// if detailed errors are enabled; otherwise, a more generic error without sensitive details.
+    /// </returns>
+    public static RpcException AccessDenied(string operation, string? username = null, string? permission = null) {
+        Debug.Assert(!string.IsNullOrWhiteSpace(operation), "The operation must not be empty!");
 
-		var message = $"The user{(loginName is not null ? $" {loginName}" : "")} does not have" +
-		              $" sufficient permissions to perform the operation: '{permission}'";
+        var message = $"Access denied. Insufficient permissions to perform {operation}";
 
-		var details = new AccessDeniedErrorDetails {
-			Permission = permission,
-			Username   = loginName,
-		};
+        var details = new AccessDeniedErrorDetails {
+            Operation = operation
+        };
 
-		return RpcExceptions.FromError(ServerError.AccessDenied, message, details);
-	}
+        if (username is not null)
+            details.Username = username;
 
-    public static RpcException AccessDenied(ServerCallContext callContext) =>
-        AccessDenied(callContext.Method, callContext.GetHttpContext().User.Identity?.Name);
+        if (permission is not null)
+            details.Permission = permission;
+
+        return RpcExceptions.FromError(ServerError.AccessDenied, message, details);
+    }
+
+    /// <summary>
+    /// Creates an RPC exception indicating that access to a resource or operation was denied.
+    /// This method is used within a gRPC service context to create an <see cref="RpcException"/>
+    /// with status code <see cref="StatusCode.PermissionDenied"/> when a user lacks sufficient permissions
+    /// to perform the requested operation. It automatically retrieves the username from the call context
+    /// and respects the server's detailed error settings to include or omit sensitive information.
+    /// </summary>
+    /// <param name="callContext">
+    /// The gRPC server call context, providing access to request metadata and user information.
+    /// This context is used to extract the current user's identity and server options.
+    /// </param>
+    /// <param name="operation">
+    /// A friendly name override for the operation or action being attempted that requires specific permissions.
+    /// If not provided, a default friendly name will be derived from the method in the call context.
+    /// </param>
+    /// <param name="permission">
+    /// The fine-grained claim required to perform the operation.
+    /// This should correspond to the permission or role needed to access the resource.
+    /// This parameter is optional and can be null if the operation name sufficiently describes the required permission.
+    /// Use with caution as it should only be provided if Grpc Enabled Detailed Errors is set to true in the server options.
+    /// </param>
+    /// <returns>
+    /// An <see cref="RpcException"/> with status code <see cref="StatusCode.PermissionDenied"/>,
+    /// including <see cref="AccessDeniedErrorDetails"/> details with scope and optionally the user login name
+    /// if detailed errors are enabled; otherwise, a more generic error without sensitive details
+    /// </returns>
+    public static RpcException AccessDenied(ServerCallContext callContext, string? operation = null, string? permission = null) {
+        operation ??= callContext.GetFriendlyOperationName();
+
+        var detailedErrorsEnabled = callContext.GetGrpcServiceOptions().EnableDetailedErrors ?? false;
+
+        return detailedErrorsEnabled
+            ? AccessDenied(operation, callContext.GetUser().Identity?.Name, permission)
+            : AccessDenied(operation);
+    }
 
     /// <summary>
     /// Creates an RPC exception for requests with invalid arguments based on FluentValidation results.
@@ -264,13 +312,15 @@ public static partial class ApiErrors {
 		return RpcExceptions.FromError(ServerError.NotLeaderNode, message, notLeaderNode);
 	}
 
-    public static RpcException NotLeaderNode(NodeSystemInfo leaderInfo) {
-        Debug.Assert(leaderInfo != NodeSystemInfo.Empty, "The leader info must not be empty!");
+    // public static RpcException NotLeaderNode(NodeSystemInfo leaderInfo) {
+    //     Debug.Assert(leaderInfo != NodeSystemInfo.Empty, "The leader info must not be empty!");
+    //     return NotLeaderNode(leaderInfo.InstanceId, leaderInfo.HttpEndPoint);
+    // }
+
+    public static RpcException NotLeaderNode(ServerCallContext context) {
+        var leaderInfo = context.GetLeaderInfo();
         return NotLeaderNode(leaderInfo.InstanceId, leaderInfo.HttpEndPoint);
     }
-
-    public static RpcException NotLeaderNode(NodeLeadershipInfo leaderInfo) =>
-        NotLeaderNode(leaderInfo.InstanceId, leaderInfo.Endpoint);
 
     /// <summary>
 	/// Indicates that an internal server error has occurred.

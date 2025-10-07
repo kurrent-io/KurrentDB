@@ -9,6 +9,7 @@ namespace KurrentDB.Api.Tests;
 
 public class TestEnvironmentWireUpTests {
     [Test]
+    [Repeat(10)]
     public void logging_configured() {
         TestContext.Current.Logger()
             .LogInformation("Logger() is effective. TestContext TestUid: {CurrentTestUid}", TestContext.Current?.Id);
@@ -18,9 +19,12 @@ public class TestEnvironmentWireUpTests {
 
         TestContext.Current.CreateLogger("TestEnvironmentWireUpTestsFromString")
             .LogInformation("CreateLogger(string categoryName) is effective. TestContext TestUid: {CurrentTestUid}", TestContext.Current?.Id);
+
+        Log.Information("Logging from Serilog Static Log. Current TestUid: {CurrentTestUid}", TestContext.Current?.Id);
     }
 
     [Test]
+    [Repeat(10)]
     public async ValueTask logs_are_scoped_to_test() {
         TestContext.Current.Logger()
             .LogInformation("Logger() is effective. Current TestUid: {CurrentTestUid}", TestContext.Current?.Id);

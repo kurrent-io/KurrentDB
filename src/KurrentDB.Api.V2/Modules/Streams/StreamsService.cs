@@ -29,23 +29,18 @@ public class StreamsService : StreamsServiceBase {
     public StreamsService(
         ClusterVNodeOptions options,
         IPublisher publisher,
-        IAuthorizationProvider authz,
-        INodeSystemInfoProvider node
+        IAuthorizationProvider authz
     ) {
-        Options            = options;
-        Publisher          = publisher;
-        Authz              = authz;
-        EnsureNodeIsLeader = node.EnsureNodeIsLeader;
+        Options   = options;
+        Publisher = publisher;
+        Authz     = authz;
     }
 
-    ClusterVNodeOptions                Options            { get; }
-    IPublisher                         Publisher          { get; }
-    IAuthorizationProvider             Authz              { get; }
-    Func<CancellationToken, ValueTask> EnsureNodeIsLeader { get; }
+    ClusterVNodeOptions    Options   { get; }
+    IPublisher             Publisher { get; }
+    IAuthorizationProvider Authz     { get; }
 
     public override async Task<AppendSessionResponse> AppendSession(IAsyncStreamReader<AppendRequest> requests, ServerCallContext context) {
-        await EnsureNodeIsLeader(context.CancellationToken);
-
         var command = await requests
             .ReadAllAsync()
             .Do((req, _) => Authz.AuthorizeOperation(Operations.Streams.Write, StreamId(req.Stream), context))

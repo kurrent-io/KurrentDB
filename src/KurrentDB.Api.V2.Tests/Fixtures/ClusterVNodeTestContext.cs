@@ -4,9 +4,7 @@
 // ReSharper disable ArrangeTypeMemberModifiers
 
 using System.Diagnostics.CodeAnalysis;
-using System.IdentityModel.Tokens.Jwt;
 using System.Net;
-using System.Security.Claims;
 using Grpc.Net.ClientFactory;
 using Humanizer;
 using KurrentDB.Core;
@@ -15,7 +13,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
-using Microsoft.IdentityModel.Tokens;
 using TUnit.Core.Interfaces;
 using static KurrentDB.Protocol.V2.Streams.StreamsService;
 
@@ -127,17 +124,4 @@ public sealed partial class ClusterVNodeTestContext : IAsyncInitializer, IAsyncD
 
     public async ValueTask DisposeAsync() =>
         await Server.DisposeAsync();
-
-    string GenerateJwtToken(string username) {
-        ArgumentException.ThrowIfNullOrWhiteSpace(username);
-
-        var claims      = new[] { new Claim(ClaimTypes.Name, username) };
-        var credentials = new SigningCredentials(SecurityKey, SecurityAlgorithms.HmacSha256);
-        var token = new JwtSecurityToken("KurrentDB", "Clients", claims, signingCredentials: credentials);
-
-        return JwtTokenHandler.WriteToken(token);
-    }
-
-    static readonly JwtSecurityTokenHandler JwtTokenHandler = new JwtSecurityTokenHandler();
-    static readonly SymmetricSecurityKey    SecurityKey     = new SymmetricSecurityKey(Guid.NewGuid().ToByteArray());
 }

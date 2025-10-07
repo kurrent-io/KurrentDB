@@ -4,28 +4,27 @@
 using System.Diagnostics;
 using Google.Protobuf;
 using Grpc.Core;
-using Humanizer;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messaging;
-using Microsoft.Extensions.DependencyInjection;
-using static System.StringComparison;
+using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.Api;
 
 abstract class ApiCommand<TCommand> where TCommand : ApiCommand<TCommand> {
-    protected ApiCommand(string? friendlyName = null) {
-        FriendlyName = friendlyName ?? GetType().Name
-            .Replace("command", "", OrdinalIgnoreCase)
-            .Replace("request", "", OrdinalIgnoreCase)
-            .Replace("callback", "", OrdinalIgnoreCase)
-            .Replace("envelope", "", OrdinalIgnoreCase)
-            .Humanize();
-    }
+    /// <summary>
+    /// The message bus publisher to be used by the command.
+    /// This must be set before executing the command.
+    /// It is typically provided via dependency injection or a factory method.
+    /// Attempting to execute the command without setting the publisher will result in an assertion failure.
+    /// </summary>
+    protected IPublisher Publisher { get; private set; } = null!;
 
-    protected string FriendlyName { get; }
-
-    protected IPublisher   Publisher { get; private set; } = null!;
-    protected TimeProvider Time      { get; private set; } = TimeProvider.System;
+    /// <summary>
+    /// The time provider to be used by the command.
+    /// Default is TimeProvider.System.
+    /// This can be overridden for testing or custom time sources.
+    /// </summary>
+    protected TimeProvider Time { get; private set; } = TimeProvider.System;
 
     /// <summary>
     /// Sets the message bus publisher to be used by the command.
@@ -45,18 +44,63 @@ abstract class ApiCommand<TCommand> where TCommand : ApiCommand<TCommand> {
     }
 }
 
-abstract class ApiCommand<TCommand, TResult>(string? friendlyName = null) : ApiCommand<TCommand>(friendlyName) where TCommand : ApiCommand<TCommand, TResult> where TResult : IMessage {
+abstract class ApiCommand<TCommand, TResult> : ApiCommand<TCommand> where TCommand : ApiCommand<TCommand, TResult> where TResult : IMessage {
+    /// <summary>
+    /// The friendly name of the command being executed.
+    /// This is used for logging and error messages to provide context about the operation.
+    /// It should describe the action being performed, e.g., "Read Event", "Write Events", etc.
+    /// <remarks>
+    /// It is automatically derived from the server call context if not provided.
+    /// </remarks>
+    /// </summary>
+    protected string FriendlyName { get; private set; } = null!;
+
+    /// <summary>
+    /// Builds the message to be published to the message bus.
+    /// </summary>
     protected abstract Message BuildMessage(IEnvelope callback, ServerCallContext context);
 
+    /// <summary>
+    /// Predicate to determine if the incoming message indicates a successful operation.
+    /// This is used to decide whether to map the message to a successful result or an error.
+    /// The implementation should inspect the message and return true if it represents success, false otherwise.
+    /// </summary>
     protected abstract bool SuccessPredicate(Message message);
 
+    /// <summary>
+    /// Maps the incoming message to a successful API result.
+    /// This method is called when the SuccessPredicate returns true.
+    /// The implementation should extract the relevant data from the message and construct the TResult object.
+    /// </summary>
     protected abstract TResult MapToResult(Message message);
 
+    /// <summary>
+    /// Maps the incoming message to an RPC exception representing an error.
+    /// This method is called when the SuccessPredicate returns false.
+    /// Returning null indicates that the message type was unexpected
+    /// and a generic internal server error will be generated instead.
+    /// </summary>
     protected abstract RpcException? MapToError(Message message);
 
+    /// <summary>
+    /// Called when an error occurs during command execution.
+    /// <remarks>
+    /// This can be overridden to implement custom error handling logic,
+    /// such as logging the error, transforming it, or performing cleanup actions.
+    /// The default implementation does nothing.
+    /// </remarks>
+    /// </summary>
     protected virtual ValueTask OnError(Exception exception, ServerCallContext context) =>
         ValueTask.CompletedTask;
 
+    /// <summary>
+    /// Called when the command completes successfully.
+    /// <remarks>
+    /// This can be overridden to implement custom success handling logic,
+    /// such as logging the success or performing additional actions based on the result.
+    /// The default implementation does nothing.
+    /// </remarks>
+    /// </summary>
     protected virtual ValueTask OnSuccess(TResult result, ServerCallContext context) =>
         ValueTask.CompletedTask;
 
@@ -67,10 +111,12 @@ abstract class ApiCommand<TCommand, TResult>(string? friendlyName = null) : ApiC
     /// and awaits the result, handling success and error cases appropriately.
     /// </remarks>
     /// </summary>
-    public async Task<TResult> Execute(ServerCallContext context) {
+    public async ValueTask<TResult> Execute(ServerCallContext context) {
         Debug.Assert(Publisher is not null, "Publisher must be set before executing the command.");
 
-        WithTime(context.GetHttpContext().RequestServices.GetRequiredService<TimeProvider>());
+        WithTime(context.GetTimeProvider());
+
+        FriendlyName = context.GetFriendlyOperationName();
 
         var self = (TCommand)this;
 
@@ -85,19 +131,40 @@ abstract class ApiCommand<TCommand, TResult>(string? friendlyName = null) : ApiC
             var message = BuildMessage(callback, context);
             Publisher.Publish(message);
             var result = await callback.WaitForReply;
-            await OnSuccess(result, context);
+            await HandleOnSuccess(result, context);
             return result;
         }
         catch (AggregateException aex) {
             var ex = aex.InnerException ?? aex.Flatten();
-            await OnError(ex, context);
+            await HandleOnError(ex, context);
             throw ex;
         }
         catch (Exception ex) when (ex is not OperationCanceledException) {
-            await OnError(ex, context);
+            await HandleOnError(ex, context);
             throw;
         }
     }
+
+    ValueTask HandleOnError(Exception exception, ServerCallContext context) {
+        try {
+            return OnError(exception, context);
+        }
+        catch (Exception ex) {
+            context.GetLogger<TCommand>().LogWarning(ex, "OnError handling failed: {Error}", ex.Message);
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    ValueTask HandleOnSuccess(TResult result, ServerCallContext context) {
+        try {
+            return OnSuccess(result, context);
+        }
+        catch (Exception ex) {
+            context.GetLogger<TCommand>().LogWarning(ex, "OnSuccess handling failed: {Error}", ex.Message);
+            return ValueTask.CompletedTask;
+        }
+    }
+
 }
 
 static class PublisherExtensions {

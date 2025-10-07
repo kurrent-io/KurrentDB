@@ -51,12 +51,15 @@ enum ServerError {
 }
 
 message AccessDeniedErrorDetails {
-  // The permission that was required for access.
-  // (e.g., "streams:append", "registry:schema:create", etc.)
-  optional string permission = 1;
-
   // The username of the user who was denied access.
+  string operation = 1;
+  // The username of the user who was denied access.
+  // It will only be included if grpc has detailed error information enabled.
   optional string username = 2;
+  // The permission that was required for access.
+  // It will only be included if grpc has detailed error information enabled.
+  // (e.g., "streams:append", "registry:schema:create", etc.)
+  optional string permission = 3;
 }
 
 message NotLeaderNodeErrorDetails {

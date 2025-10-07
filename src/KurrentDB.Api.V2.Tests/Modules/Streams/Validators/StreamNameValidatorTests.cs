@@ -13,6 +13,7 @@ public class StreamNameValidatorTests {
     [Test]
     [Arguments("Orders-B8333F7B-32C3-46D4-862D-29823DB6B494")]
     [Arguments("Planets-41")]
+    [Arguments("$Cars-Bmw")]
     public async ValueTask validates_correctly(string? value) {
         var result = StreamNameValidator.Instance.Validate(value);
         await Assert.That(result.IsValid).IsTrue();
@@ -21,8 +22,7 @@ public class StreamNameValidatorTests {
     [Test]
     [Arguments("")]
     [Arguments(" ")]
-    [Arguments("Invalid/Stream\\Name")]
-    [Arguments("Planets:41")]
+    [Arguments("$$")]
     public async Task throws_when_invalid(string? value) {
         await Assert
             .That(() => StreamNameValidator.Instance.ValidateAndThrow(value))

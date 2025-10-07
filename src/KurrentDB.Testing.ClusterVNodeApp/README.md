@@ -26,48 +26,9 @@
 
 **The goal:** Provide a single-node production-like environment for testing - the only missing piece is a working dev certificate provider for macOS Sequoia to enable full auth/TLS testing.
 
-## Migration from MiniNode (Legacy)
+## ClusterVNodeApp vs MiniNode
 
-**⚠️ CRITICAL: Do NOT use `MiniNode` for new tests.**
-
-`MiniNode` (found in `KurrentDB.Core.Tests/Helpers/MiniNode.cs`) is legacy test infrastructure that **does not use the production code path**. Tests written with `MiniNode` provide **false confidence** because they don't validate actual production behavior.
-
-### Why MiniNode is Problematic
-
-| Issue | MiniNode | ClusterVNodeApp |
-|-------|----------|-----------------|
-| **Startup Path** | Manual configuration, bypasses `ClusterVNodeHostedService` | ✅ Uses real `ClusterVNodeHostedService` |
-| **Service Registration** | Custom test services, manual setup | ✅ Uses real `ClusterVNodeStartup.ConfigureServices()` |
-| **HTTP Stack** | `TestServer` with custom `TestController` | ✅ Real Kestrel with production controllers |
-| **Initialization** | Hardcoded test behaviors | ✅ Real subsystem initialization |
-| **Production Fidelity** | ❌ Fake test harness | ✅ Actual production components |
-
-**Example of the problem:**
-```csharp
-// MiniNode bypasses production startup entirely
-Node = new ClusterVNode<TStreamId>(options, logFormatFactory, ...);
-Node.HttpService.SetupController(new TestController(Node.MainQueue)); // Fake!
-var builder = WebApplication.CreateBuilder();
-builder.Services.AddSerilog();
-Node.Startup.ConfigureServices(builder.Services); // Manual, not via HostedService
-```
-
-vs.
-
-```csharp
-// ClusterVNodeApp uses the REAL production path
-var svc = new ClusterVNodeHostedService(options, certProvider, config); // Real!
-svc.Node.Startup.ConfigureServices(builder.Services); // Same as production
-svc.Node.Startup.Configure(app); // Same as production
-```
-
-### Migration Guide
-
-1. **New tests**: Always use `ClusterVNodeApp` with TUnit fixtures
-2. **Existing tests**: Migrate when touching MiniNode-based tests
-3. **No exceptions**: MiniNode should be considered deprecated
-
-**Why this matters:** Tests using MiniNode can pass while production code is broken because they don't exercise the real initialization path, service registration, or HTTP pipeline.
+`ClusterVNodeApp` is similar to `MiniNode` but is much closer to a production deployment because it includes the `ClusterVNodeHostedService`.
 
 ## Architecture Overview
 
@@ -204,15 +165,6 @@ var client = new Streams.StreamsClient(channel);
 var grpcClient = server.Services.GetRequiredService<Streams.StreamsClient>();
 ```
 
-### Custom Readiness Timeout
-
-```csharp
-await using var server = new ClusterVNodeApp();
-
-// Wait up to 30 seconds for node to be ready
-await server.Start(readinessTimeout: TimeSpan.FromSeconds(30));
-```
-
 ### Accessing Internal Services
 
 ```csharp
@@ -320,10 +272,12 @@ Both follow the **same core initialization path**. The differences are minimal a
 | **Service Registration** | `ClusterVNodeStartup.ConfigureServices()`           | ✅ Same                  |
 | **Middleware Pipeline**  | `ClusterVNodeStartup.Configure()`                   | ✅ Same                  |
 | **ClusterVNode**         | Production instance with all subsystems             | ✅ Same                  |
-| **Configuration Source** | YAML/ENV/CLI                                        | In-memory dictionary    |
+| **Configuration Source** | YAML/ENV/CLI                                        | ✅ +In-memory dictionary |
 | **Web Host**             | Full `WebApplication`                               | Slim `WebApplication`   |
 | **Port**                 | Fixed (2113)                                        | Dynamic (random)        |
 | **Defaults**             | Production settings                                 | Test-optimized settings |
+
+Going forward, it should be possible to **converge the two code paths further** by using the MS Test host that calls `Program.cs` directly.
 
 ## See Also
 

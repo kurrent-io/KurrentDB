@@ -5,15 +5,10 @@
 
 using System.Collections.Concurrent;
 using System.Reflection;
-using DotNext.Threading.Tasks;
 using Grpc.Core;
-using Humanizer;
 using KurrentDB.Api.Errors;
-using KurrentDB.Api.Infrastructure;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
-using Microsoft.Extensions.DependencyInjection;
-using static System.StringComparison;
 
 namespace KurrentDB.Api;
 
@@ -30,20 +25,9 @@ namespace KurrentDB.Api;
 /// <typeparam name="TResponse">
 /// The type of the successful API response.
 /// </typeparam>
-abstract class ApiCallbackBase<TState, TResponse> : IEnvelope {
-    protected ApiCallbackBase(ServerCallContext context, in TState state, string? friendlyName = null) {
-        CallContext = context;
-        State       = state;
-
-        FriendlyName = friendlyName ?? GetType().Name
-            .Replace("callback", "", OrdinalIgnoreCase)
-            .Replace("envelope", "", OrdinalIgnoreCase)
-            .Replace("reply", "", OrdinalIgnoreCase)
-            .Humanize();
-    }
-
-    ServerCallContext CallContext { get; }
-    TState            State       { get; }
+abstract class ApiCallbackBase<TState, TResponse>(ServerCallContext context, in TState state, string? friendlyName = null) : IEnvelope {
+    ServerCallContext CallContext { get; } = context;
+    TState            State       { get; } = state;
 
     TaskCompletionSource<TResponse> Operation { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -57,7 +41,7 @@ abstract class ApiCallbackBase<TState, TResponse> : IEnvelope {
     /// This ensures that it is always meaningful and consistent.
     /// </remarks>
     /// </summary>
-    protected string FriendlyName { get; }
+    protected string FriendlyName { get; } = friendlyName ?? context.GetFriendlyOperationName();
 
     /// <summary>
     /// A task that completes when the operation is finished, either successfully or with an error.
@@ -111,9 +95,7 @@ abstract class ApiCallbackBase<TState, TResponse> : IEnvelope {
                     ClientMessage.NotHandled.Types.NotHandledReason.NotReady   => ApiErrors.ServerNotReady(),
                     ClientMessage.NotHandled.Types.NotHandledReason.TooBusy    => ApiErrors.ServerOverloaded(),
                     ClientMessage.NotHandled.Types.NotHandledReason.IsReadOnly => ApiErrors.InternalServerError("Server is in read-only mode"),
-                    ClientMessage.NotHandled.Types.NotHandledReason.NotLeader  => ApiErrors.NotLeaderNode(
-                        CallContext.GetHttpContext().RequestServices.GetRequiredService<INodeSystemInfoProvider>()
-                            .GetLeaderInfo(CallContext.CancellationToken).Wait()),
+                    ClientMessage.NotHandled.Types.NotHandledReason.NotLeader  => ApiErrors.NotLeaderNode(CallContext),
                 });
 
                 return;

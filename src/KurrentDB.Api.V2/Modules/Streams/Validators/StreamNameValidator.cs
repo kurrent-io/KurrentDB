@@ -5,15 +5,13 @@ using FluentValidation;
 
 namespace KurrentDB.Api.Streams.Validators;
 
-partial class StreamNameValidator : AbstractValidator<string?> {
+class StreamNameValidator : AbstractValidator<string?> {
 	public static readonly StreamNameValidator Instance = new();
 
-	public StreamNameValidator() =>
-		RuleFor(x => x)
-			.NotEmpty()
-			.Matches(RegEx())
-			.WithMessage("Stream name must not be empty and can only contain alphanumeric characters, underscores, dashes, and periods");
-
-	[System.Text.RegularExpressions.GeneratedRegex("^[a-zA-Z0-9_.-]+$")]
-	private static partial System.Text.RegularExpressions.Regex RegEx();
+    public StreamNameValidator() =>
+        RuleFor(x => x)
+            .NotEmpty()
+            .NotEqual("$$")
+            .WithMessage("Stream name must not be empty and cannot be '$$'.")
+            .Must(x => x is null || x.Length <= 256);
 }
