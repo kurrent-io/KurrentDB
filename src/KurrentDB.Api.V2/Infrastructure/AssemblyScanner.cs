@@ -12,14 +12,6 @@ namespace KurrentDB.Api.Infrastructure;
 /// </remarks>
 /// </summary>
 class AssemblyScanner {
-    public static readonly AssemblyScanner System = new(AssemblyLoader.LoadFrom(AppDomain.CurrentDomain.BaseDirectory), includeInternalTypes: true);
-
-    public static AssemblyScanner UsingAssembliesAt(string directoryPath, Predicate<string>? assemblyFileNameFilter = null, bool includeInternalTypes = false) =>
-        new(AssemblyLoader.LoadFrom(directoryPath, assemblyFileNameFilter), includeInternalTypes);
-
-    public static AssemblyScanner UsingCurrentDomainAssemblies(Predicate<string>? assemblyFileNameFilter = null, bool includeInternalTypes = false) =>
-        new(AssemblyLoader.LoadFrom(AppDomain.CurrentDomain.BaseDirectory, assemblyFileNameFilter), includeInternalTypes);
-
     public static AssemblyScanner UsingAssemblies(IEnumerable<Assembly?> assemblies, bool includeInternalTypes = false) =>
         new(assemblies.Where(x => x is not null).Cast<Assembly>(), includeInternalTypes);
 

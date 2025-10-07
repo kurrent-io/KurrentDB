@@ -23,9 +23,7 @@ public struct Duration : IDisposable {
 		_failed = false;
 	}
 
-    public void Failed() => _failed = true;
-
-    public void SetException(Exception ex) {
+	public void SetException(Exception ex) {
 		_failed = true;
 	}
 

@@ -14,10 +14,11 @@ public static class Mapping {
 		Debug.Assert(Guid.TryParse(record.RecordId, out _), "Record ID should have been validated by now");
 
 		return new(
-			recordId: Guid.Parse(record.RecordId),
-			schemaName: record.Schema.Name,
-			isJson: record.Schema.Format == Protocol.V2.Streams.SchemaFormat.Json,
+			eventId: Guid.Parse(record.RecordId),
+			eventType: record.Schema.Name,
+			isJson: record.Schema.Format == SchemaFormat.Json,
 			data: record.Data.ToByteArray(),
-			properties: new Struct { Fields = { record.Properties } }.ToByteArray());
+			isPropertyMetadata: true,
+			metadata: new Struct { Fields = { record.Properties } }.ToByteArray());
 	}
 }

@@ -19,13 +19,6 @@
 		<IsTestProject>false</IsTestProject>
 	</PropertyGroup>
 
-<!--	<ItemGroup>-->
-<!--		<None Include="$(MSBuildThisFileDirectory)..\LICENSE.md" Pack="true" PackagePath="\" />-->
-<!--		<None Include="$(MSBuildThisFileDirectory)..\LICENSE_CONTRIBUTIONS.md" Pack="true" PackagePath="\" />-->
-<!--		<None Include="$(MSBuildThisFileDirectory)..\NOTICE.html" Pack="true" PackagePath="\" />-->
-<!--		<None Include="$(MSBuildThisFileDirectory)..\ouro.png" Pack="true" PackagePath="\" />-->
-<!--	</ItemGroup>-->
-
 	<ItemGroup Condition="'$(IsPlugin)' == 'true'">
 		<ProjectReference Include="$(MSBuildThisFileDirectory)\KurrentDB.Plugins\KurrentDB.Plugins.csproj" />
 	</ItemGroup>

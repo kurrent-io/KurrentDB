@@ -892,7 +892,9 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		envelope.ReplyWith(
 			new ClientMessage.NotHandled(correlationId,
 				ClientMessage.NotHandled.Types.NotHandledReason.NotLeader,
-				new ClientMessage.NotHandled.Types.LeaderInfo(endpoints.AdvertisedTcpEndPoint,
+				new ClientMessage.NotHandled.Types.LeaderInfo(
+					_leader?.InstanceId ?? Guid.Empty,
+					endpoints.AdvertisedTcpEndPoint,
 					endpoints.IsTcpEndPointSecure,
 					endpoints.AdvertisedHttpEndPoint
 					)));
@@ -981,7 +983,9 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		envelope.ReplyWith(
 			new ClientMessage.NotHandled(correlationId,
 				ClientMessage.NotHandled.Types.NotHandledReason.IsReadOnly,
-				new ClientMessage.NotHandled.Types.LeaderInfo(endpoints.AdvertisedTcpEndPoint,
+				new ClientMessage.NotHandled.Types.LeaderInfo(
+					_leader?.InstanceId ?? Guid.Empty,
+					endpoints.AdvertisedTcpEndPoint,
 					endpoints.IsTcpEndPointSecure,
 					endpoints.AdvertisedHttpEndPoint
 					)));

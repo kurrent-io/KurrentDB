@@ -143,14 +143,6 @@ static class RpcExceptions {
 				{ Constants.Exceptions.RequiredMetadataProperties, string.Join(",", Constants.Metadata.RequiredMetadata) }
 			});
 
-	// public static RpcException RequiredPropertyMissing(string missingProperty) =>
-	// 	new(
-	// 		new Status(StatusCode.InvalidArgument, $"Required Property '{missingProperty}' is missing"),
-	// 		new Metadata {
-	// 				{ Constants.Exceptions.ExceptionKey, Constants.Exceptions.MissingRequiredProperty },
-	// 				{ Constants.Exceptions.RequiredProperties, Constants.Properties.RequiredProperties }
-	// 		});
-
 	public static bool TryHandleNotHandled(ClientMessage.NotHandled notHandled, out Exception exception) {
 		exception = null;
 		switch (notHandled.Reason) {

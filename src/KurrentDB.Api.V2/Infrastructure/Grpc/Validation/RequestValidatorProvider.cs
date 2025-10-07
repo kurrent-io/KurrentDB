@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Frozen;
-using FluentStorage.Utils.Extensions;
 
 namespace KurrentDB.Api.Infrastructure.Grpc.Validation;
 
@@ -17,10 +16,8 @@ public interface IRequestValidatorProvider {
 }
 
 public sealed class RequestValidatorProvider : IRequestValidatorProvider {
-    public static RequestValidatorProviderBuilder New() => new();
-
     public RequestValidatorProvider(IEnumerable<IRequestValidator> validators) =>
-        Validators = validators.ToFrozenDictionary(v => v.GetRequestType(), v => v);
+        Validators = validators.ToFrozenDictionary(v => v.RequestType, v => v);
 
     public RequestValidatorProvider(Dictionary<Type, IRequestValidator> validators) =>
         Validators = validators.ToFrozenDictionary();

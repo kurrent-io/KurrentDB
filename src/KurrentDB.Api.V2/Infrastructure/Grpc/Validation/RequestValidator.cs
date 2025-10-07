@@ -10,7 +10,9 @@ namespace KurrentDB.Api.Infrastructure.Grpc.Validation;
 /// <summary>
 /// Marker interface for gRPC request validators.
 /// </summary>
-public interface IRequestValidator : IValidator;
+public interface IRequestValidator : IValidator {
+	Type RequestType { get; }
+}
 
 /// <summary>
 /// Marker interface for gRPC request validators.
@@ -26,7 +28,9 @@ public interface IRequestValidator<in TRequest> : IValidator<TRequest>, IRequest
 /// <typeparam name="TRequest">
 /// The type of the gRPC request to validate.
 /// </typeparam>
-public abstract class RequestValidator<TRequest> : AbstractValidator<TRequest>, IRequestValidator<TRequest> where TRequest : IMessage;
+public abstract class RequestValidator<TRequest> : AbstractValidator<TRequest>, IRequestValidator<TRequest> where TRequest : IMessage {
+	public Type RequestType { get; } = typeof(TRequest);
+}
 
 public static class RequestValidatorExtensions {
     public static ValidationResult Validate<T>(this IRequestValidator validator, T request) =>
