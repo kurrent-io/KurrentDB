@@ -488,8 +488,10 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 
 		var leaderInfo = leaderInfoDto switch {
 			{ ExternalTcpAddress: not null } => new(
+				Guid.Empty, //qq check this
 				new DnsEndPoint(leaderInfoDto.ExternalTcpAddress, leaderInfoDto.ExternalTcpPort), false, new DnsEndPoint(leaderInfoDto.HttpAddress, leaderInfoDto.HttpPort)),
 			{ ExternalSecureTcpAddress: not null } => new ClientMessage.NotHandled.Types.LeaderInfo(
+				Guid.Empty, //qq check this
 				new DnsEndPoint(leaderInfoDto.ExternalSecureTcpAddress, leaderInfoDto.ExternalSecureTcpPort), true, new DnsEndPoint(leaderInfoDto.HttpAddress, leaderInfoDto.HttpPort)),
 			_ => null
 		};
