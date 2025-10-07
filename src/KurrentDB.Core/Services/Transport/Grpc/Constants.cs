@@ -16,7 +16,6 @@ public static class Constants {
 		public const string MaximumAppendSizeExceeded = "maximum-append-size-exceeded";
 		public const string MaximumAppendEventSizeExceeded = "maximum-append-event-size-exceeded";
 		public const string MissingRequiredMetadataProperty = "missing-required-metadata-property";
-		// public const string MissingRequiredProperty = "missing-required-property";
 		public const string NotLeader = "not-leader";
 
 		public const string PersistentSubscriptionFailed = "persistent-subscription-failed";
