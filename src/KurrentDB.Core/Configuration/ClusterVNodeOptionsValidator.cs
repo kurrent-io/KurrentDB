@@ -72,7 +72,7 @@ public static class ClusterVNodeOptionsValidator {
 
         if (options.Application.MaxAppendEventSize > options.Application.MaxAppendSize) {
             throw new ArgumentOutOfRangeException(nameof(options.Application.MaxAppendEventSize),
-                $"{nameof(options.Application.MaxAppendEventSize)} must be less than {nameof(options.Application.MaxAppendSize)}.");
+                $"{nameof(options.Application.MaxAppendEventSize)} must be less than or equal to {nameof(options.Application.MaxAppendSize)}.");
         }
 
 		if (options.Cluster.DiscoverViaDns && string.IsNullOrWhiteSpace(options.Cluster.ClusterDns))
