@@ -9,6 +9,13 @@ on:
       arch:
         required: true
         type: string
+      azurite:
+        required: false
+        type: boolean
+      cs_symbols:
+        required: false
+        type: string
+        default: ""
 
 jobs:
   build:
@@ -21,6 +28,13 @@ jobs:
     runs-on: ${{ inputs.os }}
     name: ci/github/build-${{ inputs.os }}
     steps:
+    -  
+      name: Install Azurite
+      if: ${{ contains(inputs.cs_symbols, 'RUN_AZ_TESTS') }}
+      run: |
+        npm install -g azurite
+        azurite &
+        curl -I http://127.0.0.1:10000/ --retry 5 --retry-delay 1
     -  
       name: Free Disk Space (Ubuntu)
       if: ${{ !startsWith(inputs.os, 'windows') }}
@@ -76,6 +90,7 @@ jobs:
         dotnet test
         --configuration ${{ matrix.configuration }}
         -p:Platform=${{ inputs.arch }}
+        -p:DefineConstants=${{ inputs.cs_symbols }}
         --blame
         --blame-hang-timeout 5min
         --blame-hang-dump-type mini
