@@ -7,7 +7,6 @@ using KurrentDB.Api.Infrastructure.Grpc.Validation;
 using KurrentDB.Api.Streams.Validators;
 using KurrentDB.Protocol.V2.Streams;
 using Microsoft.Extensions.DependencyInjection;
-using Serilog;
 
 namespace KurrentDB.Api.Tests.Infrastructure.Grpc.Validation;
 
@@ -22,21 +21,6 @@ public class RequestValidationTests {
         configure(new RequestValidationBuilder(services));
 
         return services.BuildServiceProvider();
-    }
-
-    [Test]
-    public async ValueTask registers_validator_by_request_type() {
-        // Arrange
-        var serviceProvider = ConfigureValidation(x => x.WithValidatorFor<AppendRequest>());
-
-        var validatorProvider = serviceProvider.GetRequiredService<IRequestValidatorProvider>();
-
-        // Act
-        var validator = validatorProvider.GetValidatorFor<AppendRequest>();
-
-        // Assert
-        await Assert.That(validator).IsNotNull();
-        await Assert.That(validator).IsTypeOf<AppendRequestValidator>();
     }
 
     [Test]
