@@ -6,7 +6,6 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.ClientPublisher;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
-using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.SecondaryIndexing.Subscriptions;

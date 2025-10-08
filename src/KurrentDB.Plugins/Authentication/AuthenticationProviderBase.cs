@@ -27,7 +27,7 @@ public abstract class AuthenticationProviderBase(PluginOptions options) : Plugin
 	public abstract void Authenticate(AuthenticationRequest authenticationRequest);
 
 	public virtual IEnumerable<KeyValuePair<string, string>> GetPublicProperties() => [];
-	
+
 	public virtual void ConfigureEndpoints(IEndpointRouteBuilder endpointRouteBuilder) { }
 
 	public virtual IReadOnlyList<string> GetSupportedAuthenticationSchemes() => [];

@@ -10,10 +10,10 @@ using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Storage;
 using KurrentDB.SecondaryIndexing.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Tests.Fixtures;
-using static KurrentDB.SecondaryIndexing.Tests.Fakes.TestResolvedEventFactory;
 using static KurrentDB.SecondaryIndexing.Indexes.Category.CategorySql;
 using static KurrentDB.SecondaryIndexing.Indexes.Default.DefaultSql;
 using static KurrentDB.SecondaryIndexing.Indexes.EventType.EventTypeSql;
+using static KurrentDB.SecondaryIndexing.Tests.Fakes.TestResolvedEventFactory;
 
 namespace KurrentDB.SecondaryIndexing.Tests.Indexes;
 

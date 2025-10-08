@@ -9,18 +9,19 @@ using Microsoft.JSInterop;
 namespace KurrentDB.Components.Tools;
 
 public partial class JsonViewer : ComponentBase {
-    [Inject]
-    public IJSRuntime JsRuntime { get; set; } = null!;
+	[Inject]
+	public IJSRuntime JsRuntime { get; set; } = null!;
 
-    IJSObjectReference _libraryReference;
+	IJSObjectReference _libraryReference;
 
-    string Id { get; } = $"TJV{Random.Shared.Next()}";
+	string Id { get; } = $"TJV{Random.Shared.Next()}";
 
-    protected override async Task OnAfterRenderAsync(bool firstRender) {
-        if (!firstRender) return;
+	protected override async Task OnAfterRenderAsync(bool firstRender) {
+		if (!firstRender)
+			return;
 
-        _libraryReference = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js");
-    }
+		_libraryReference = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js");
+	}
 
-    public ValueTask Render(string json) => JsRuntime.InvokeVoidAsync("eval", $"document.querySelector('#{Id}').data = {json};");
+	public ValueTask Render(string json) => JsRuntime.InvokeVoidAsync("eval", $"document.querySelector('#{Id}').data = {json};");
 }

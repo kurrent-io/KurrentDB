@@ -110,7 +110,7 @@ public partial class StorageReaderWorker<TStreamId> {
 			var streamName = msg.EventStreamId;
 			var streamId = _readIndex.GetStreamId(msg.EventStreamId);
 			if (msg.ValidationStreamVersion.HasValue &&
-			    await _readIndex.GetStreamLastEventNumber(streamId, token) == msg.ValidationStreamVersion)
+				await _readIndex.GetStreamLastEventNumber(streamId, token) == msg.ValidationStreamVersion)
 				return NoData(ReadStreamResult.NotModified, lastIndexPosition, msg.ValidationStreamVersion.Value);
 
 			var result = await _readIndex.ReadStreamEventsForward(streamName, streamId, msg.FromEventNumber, msg.MaxCount, token);
@@ -152,7 +152,7 @@ public partial class StorageReaderWorker<TStreamId> {
 			var streamName = msg.EventStreamId;
 			var streamId = _readIndex.GetStreamId(msg.EventStreamId);
 			if (msg.ValidationStreamVersion.HasValue &&
-			    await _readIndex.GetStreamLastEventNumber(streamId, token) == msg.ValidationStreamVersion)
+				await _readIndex.GetStreamLastEventNumber(streamId, token) == msg.ValidationStreamVersion)
 				return NoData(ReadStreamResult.NotModified, msg.ValidationStreamVersion.Value);
 
 			var result = await _readIndex.ReadStreamEventsBackward(streamName, streamId, msg.FromEventNumber, msg.MaxCount, token);

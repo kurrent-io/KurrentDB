@@ -11,8 +11,8 @@ using KurrentDB.Core.Tests;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;
-using ResolvedEvent = KurrentDB.Projections.Core.Services.Processing.ResolvedEvent;
 using ClientMessage = KurrentDB.Core.Tests.TestAdapters.ClientMessage;
+using ResolvedEvent = KurrentDB.Projections.Core.Services.Processing.ResolvedEvent;
 
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection.checkpoint_manager.multi_stream;
 

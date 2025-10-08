@@ -9,7 +9,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using KurrentDB.Common.Configuration;
-using KurrentDB.Common.Exceptions;
 using KurrentDB.Core.Configuration.Sources;
 using Microsoft.Extensions.Configuration;
 

@@ -61,7 +61,7 @@ public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFor
 	private bool _initializeSystemProjections;
 	protected Tuple<SynchronousScheduler, IPublisher, SynchronousScheduler, Guid>[] _processingQueues;
 	private ProjectionCoreCoordinator _coordinator;
-	protected readonly ProjectionTracker _projectionMetricTracker= new();
+	protected readonly ProjectionTracker _projectionMetricTracker = new();
 
 	protected override void Given1() {
 		base.Given1();

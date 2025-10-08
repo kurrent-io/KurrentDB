@@ -6,7 +6,7 @@ using KurrentDB.SecondaryIndexing.LoadTesting.Assertions;
 
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Environments.InMemory;
 
-public sealed class InMemoryLoadTestEnvironment: ILoadTestEnvironment {
+public sealed class InMemoryLoadTestEnvironment : ILoadTestEnvironment {
 	public IMessageBatchAppender MessageBatchAppender { get; } = new PublisherBasedMessageBatchAppender(new DummyPublisher());
 	public IIndexingSummaryAssertion AssertThat { get; } = new DummyIndexingSummaryAssertion();
 	public ValueTask InitializeAsync(CancellationToken ct = default) => ValueTask.CompletedTask;

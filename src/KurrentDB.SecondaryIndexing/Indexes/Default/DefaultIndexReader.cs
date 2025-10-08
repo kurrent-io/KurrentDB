@@ -6,7 +6,6 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Storage;
-using Microsoft.Extensions.Logging;
 using static KurrentDB.SecondaryIndexing.Indexes.Default.DefaultSql;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;

@@ -10,7 +10,6 @@ using System.Text.RegularExpressions;
 using Dapper;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
-using Serilog;
 
 namespace KurrentDB.Components.Query;
 
@@ -19,7 +18,8 @@ public static partial class QueryService {
 		var matches = ExtractionRegex().Matches(query);
 		List<string> ctes = [AllCte];
 		foreach (Match match in matches) {
-			if (!match.Success) continue;
+			if (!match.Success)
+				continue;
 			var tokens = match.Value.Split(':');
 			var cteName = ReplaceSpecialCharsWithUnderscore($"{tokens[0]}_{tokens[1]}");
 			var where = $"where {tokens[0] switch {
@@ -88,7 +88,7 @@ public static partial class QueryService {
 		[JsonPropertyName("error")] public bool Error { get; init; }
 		[JsonPropertyName("error_message")] public string ErrorMessage { get; init; } = "";
 		[JsonPropertyName("error_subtype")] public string ErrorSubtype { get; init; } = "";
-		[JsonPropertyName("position")]  public string Position { get; init; }
+		[JsonPropertyName("position")] public string Position { get; init; }
 	}
 
 	public struct Sql2Json : IQuery<Sql2Json.Args, Sql2Json.Result> {

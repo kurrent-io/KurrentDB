@@ -9,6 +9,6 @@ public interface IIndexingSummaryAssertion {
 	ValueTask IndexesMatch(IndexingSummary summary);
 }
 
-public class DummyIndexingSummaryAssertion: IIndexingSummaryAssertion {
+public class DummyIndexingSummaryAssertion : IIndexingSummaryAssertion {
 	public ValueTask IndexesMatch(IndexingSummary summary) => ValueTask.CompletedTask;
 }

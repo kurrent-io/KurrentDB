@@ -560,7 +560,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 				Debugger.Break();
 			else
 				throw new Exception($"Trying to add duplicate event #{indexEntry.Version} to stream {prepare.EventStreamId} \nCommit: {commit}\n" +
-				                    $"Prepare: {prepare}.");
+									$"Prepare: {prepare}.");
 		}
 	}
 

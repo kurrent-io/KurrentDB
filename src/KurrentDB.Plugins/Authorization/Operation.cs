@@ -15,8 +15,8 @@ public readonly struct Operation {
 	public Operation(string resource, string action) : this(resource, action, Array.Empty<Parameter>()) { }
 
 	public Operation(string resource, string action, Parameter parameter) {
-		Resource   = resource;
-		Action     = action;
+		Resource = resource;
+		Action = action;
 		Parameters = new([parameter]);
 	}
 
@@ -27,7 +27,8 @@ public readonly struct Operation {
 
 	public Operation WithParameters(ReadOnlyMemory<Parameter> parameters) {
 		var memory = new Memory<Parameter>(new Parameter[Parameters.Length + parameters.Length]);
-		if (!Parameters.IsEmpty) Parameters.CopyTo(memory);
+		if (!Parameters.IsEmpty)
+			Parameters.CopyTo(memory);
 		parameters.CopyTo(memory.Slice(Parameters.Length));
 		return new(Resource, Action, memory);
 	}
@@ -40,7 +41,7 @@ public readonly struct Operation {
 		Parameters = parameters;
 	}
 
-	public static implicit operator OperationDefinition(Operation operation)  => new(operation.Resource, operation.Action);
+	public static implicit operator OperationDefinition(Operation operation) => new(operation.Resource, operation.Action);
 
 	public override string ToString() {
 		var sb = new StringBuilder();

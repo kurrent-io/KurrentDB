@@ -57,7 +57,8 @@ public class RawQuackMessageBatchAppender : IMessageBatchAppender {
 				row.AppendDefault();
 			}
 
-			if (LastSequence < LastCommittedSequence + _commitSize) continue;
+			if (LastSequence < LastCommittedSequence + _commitSize)
+				continue;
 
 			LastCommittedSequence = LastSequence;
 			try {

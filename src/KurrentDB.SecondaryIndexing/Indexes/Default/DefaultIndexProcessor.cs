@@ -61,7 +61,8 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	}
 
 	public void Index(ResolvedEvent resolvedEvent) {
-		if (IsDisposingOrDisposed) return;
+		if (IsDisposingOrDisposed)
+			return;
 
 		string? schemaFormat = null;
 		string? schemaId = null;
