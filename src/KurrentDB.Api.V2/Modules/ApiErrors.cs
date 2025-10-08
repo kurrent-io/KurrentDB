@@ -141,14 +141,14 @@ public static partial class ApiErrors {
             FieldViolations = { violations }
         };
 
-        string message;
+        var message = $"The '{requestType.Name}' is invalid:";
 
         if (validationResult.Errors.Count == 1 && validationResult.Errors.FirstOrDefault() is { } failure)
-            message = $"The '{requestType.Name}' is invalid: {failure.ErrorMessage}";
+            message = $"{message} {failure.ErrorMessage}";
         else
             message = validationResult.Errors.Aggregate(
-                new StringBuilder($"The following '{requestType.Name}' fields are invalid:{Environment.NewLine}"),
-                static (sb, failure) => sb.AppendLine($"- {failure.PropertyName}: {failure.ErrorMessage}")
+                new StringBuilder($"{message}{Environment.NewLine}"),
+                static (sb, failure) => sb.AppendLine($" -- {failure.ErrorMessage}")
             ).ToString();
 
         return RpcExceptions.FromError(ServerError.BadRequest, message, details);

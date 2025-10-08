@@ -14,9 +14,14 @@ namespace KurrentDB.Api.Infrastructure.FluentValidation;
 /// <param name="errors">
 /// The validation errors that caused the exception.
 /// </param>
-public class DetailedValidationException(Type instanceType, params ValidationFailure[] errors) : Exception(BuildErrorMessage(instanceType, errors)) {
+public class DetailedValidationException(string instanceDisplayName, Type instanceType, params ValidationFailure[] errors) : Exception(BuildErrorMessage(instanceDisplayName, errors)) {
     /// <summary>
-    /// The type of the instance that failed validation.
+    /// The display name of the instance that failed validation.
+    /// </summary>
+    public string InstanceDisplayName { get; } = instanceDisplayName;
+
+    /// <summary>
+    /// The type of the value that failed validation.
     /// </summary>
     public Type InstanceType { get; } = instanceType;
 
@@ -25,8 +30,8 @@ public class DetailedValidationException(Type instanceType, params ValidationFai
     /// </summary>
     public IReadOnlyList<ValidationFailure> Errors { get; } = errors;
 
-    static string BuildErrorMessage(Type instanceType, IEnumerable<ValidationFailure> errors) {
+    static string BuildErrorMessage(string displayName, IEnumerable<ValidationFailure> errors) {
         var arr = errors.Select(x => $"{Environment.NewLine} -- {x.ErrorMessage}");
-        return $"{instanceType.Name} validation failed: {string.Join(string.Empty, arr)}";
+        return $"{displayName} validation failed: {string.Join(string.Empty, arr)}";
     }
 }

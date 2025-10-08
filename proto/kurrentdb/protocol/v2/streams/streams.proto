@@ -47,11 +47,6 @@ message AppendRequest {
   // - An ExpectedRevisionConstants value (-4, -2, -1) for special semantics
   //
   // If omitted, defaults to EXPECTED_REVISION_CONSTANTS_ANY (-2).
-  //
-  // Examples:
-  //   expected_revision = 5   // Only succeed if stream is at revision 5
-  //   expected_revision = -1  // Only succeed if stream doesn't exist yet (NO_STREAM)
-  //   expected_revision = 0   // Only succeed if stream has single event at revision 0 (SINGLE_EVENT)
   optional sint64 expected_revision = 3;
 }
 
@@ -61,7 +56,7 @@ message AppendResponse {
   string stream = 1;
 
   // The actual/current revision of the stream after the append.
-  // This is the revision number of the last event written to this stream.
+  // This is the revision number of the last record written to this stream.
   sint64 stream_revision = 2;
 
   // The position of the last appended record in the global log.
@@ -131,7 +126,7 @@ message AppendRecord {
   //     - "$timestamp": "2025-01-15T10:30:00.000Z"         // ISO 8601 timestamp
   map<string, google.protobuf.Value> properties = 2;
 
-  // Schema information for this record (MANDATORY).
+  // Schema information for this record.
   SchemaInfo schema = 3;
 
   // The record payload as raw bytes.
@@ -154,7 +149,7 @@ enum ExpectedRevisionConstants {
   // The write will succeed regardless of the stream's current revision.
   EXPECTED_REVISION_CONSTANTS_ANY = -2;
 
-  // The stream must exist (have at least one event).
+  // The stream must exist (have at least one record).
   // Fails if the stream doesn't exist yet.
   EXPECTED_REVISION_CONSTANTS_EXISTS = -4;
 }

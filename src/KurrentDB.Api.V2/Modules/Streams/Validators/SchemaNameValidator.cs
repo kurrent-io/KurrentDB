@@ -10,10 +10,11 @@ partial class SchemaNameValidator : ValidatorBase<SchemaNameValidator, string?> 
 	public SchemaNameValidator() =>
 		RuleFor(x => x)
 			.NotEmpty()
+            .WithMessage("{PropertyName} must not be empty.")
 			.Matches(RegEx())
-			.WithMessage("{PropertyName} can only contain alphanumeric characters, underscores, dashes, periods, and colons.")
-            .WithName(x => $"Schema name '{x}'");
+			.WithMessage("{PropertyName} can only contain alphanumeric characters, underscores, dashes, periods, colons, and dollar signs. Attempted Value: {PropertyValue}")
+            .WithName("Schema name");
 
-	[System.Text.RegularExpressions.GeneratedRegex("^[a-zA-Z0-9_.:-]+$")]
+	[System.Text.RegularExpressions.GeneratedRegex("^[a-zA-Z0-9_.$:-]+$")]
 	private static partial System.Text.RegularExpressions.Regex RegEx();
 }

@@ -10,6 +10,6 @@ class RecordIdValidator : ValidatorBase<RecordIdValidator, string?> {
 	public RecordIdValidator() =>
 		RuleFor(x => x)
 			.Must(value => Guid.TryParse(value, out var valueGuid) && valueGuid != Guid.Empty)
-			.WithMessage("'{PropertyName}' must be a valid and non-empty UUID.")
+			.WithMessage("{PropertyName} must be a valid and non-empty UUID.")
             .WithName("Record ID");
 }

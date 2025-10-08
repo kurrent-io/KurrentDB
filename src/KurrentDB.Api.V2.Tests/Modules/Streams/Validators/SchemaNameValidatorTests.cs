@@ -17,6 +17,7 @@ public class SchemaNameValidatorTests {
     [Arguments("urn:com:kurrentdb:schemas:orders:v2")]
     [Arguments("OrderDetails.V2")]
     [Arguments("event-type")]
+    [Arguments("$connectors-kakfa-001")]
     public async ValueTask validates_correctly(string? value) {
         var result = SchemaNameValidator.Instance.Validate(value);
         await Assert.That(result.IsValid).IsTrue();

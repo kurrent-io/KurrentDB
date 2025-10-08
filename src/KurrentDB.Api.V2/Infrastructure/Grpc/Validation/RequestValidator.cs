@@ -46,7 +46,7 @@ public abstract class RequestValidator<TRequest> : AbstractValidator<TRequest>, 
     public Type RequestType { get; }
 
     protected override void RaiseValidationException(ValidationContext<TRequest> context, ValidationResult result) =>
-        throw new DetailedValidationException(typeof(TRequest), result.Errors.ToArray());
+        throw new DetailedValidationException(context.DisplayName, typeof(TRequest), result.Errors.ToArray());
 }
 
 public static class RequestValidatorExtensions {

@@ -8,8 +8,8 @@ class SchemaFormatValidator : ValidatorBase<SchemaFormatValidator, SchemaFormat>
     public SchemaFormatValidator() =>
         RuleFor(x => x)
             .IsInEnum()
-            .WithMessage("'{PropertyName}' must be one of Json, Protobuf or Bytes.")
+            .WithMessage("{PropertyName} must be one of Json, Protobuf or Bytes.")
             .NotEqual(SchemaFormat.Unspecified)
-            .WithMessage("'{PropertyName}' must not be Unspecified.")
+            .WithMessage("{PropertyName} must not be Unspecified.")
             .WithName("Schema format");
 }

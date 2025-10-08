@@ -11,6 +11,7 @@ option csharp_namespace = "Kurrent.Rpc";
 import "kurrent/rpc/rpc.proto";
 
 // The canonical server error codes for the Kurrent Platform gRPC APIs.
+// These errors represent common failure modes across all Kurrent services.
 enum ServerError {
   // Default value. This value is not used.
   // An error code MUST always be set to a non-zero value.
@@ -18,61 +19,134 @@ enum ServerError {
   // an internal server error (INTERNAL).
   UNSPECIFIED = 0;
 
+  // Authentication or authorization failure.
+  // The client lacks valid credentials or sufficient permissions to perform the requested operation.
+  //
+  // Common causes:
+  // - Missing or invalid authentication tokens
+  // - Insufficient permissions for the operation
+  // - Expired credentials
+  //
+  // Client action: Check credentials, verify permissions, and re-authenticate if necessary.
+  // Not retriable without fixing the underlying authorization issue.
   SERVER_ERROR_ACCESS_DENIED = 1 [(kurrent.rpc.error) = {
     status_code: PERMISSION_DENIED,
     has_details: true
   }];
 
+  // The request is malformed or contains invalid data.
+  // The server cannot process the request due to client error.
+  //
+  // Common causes:
+  // - Invalid field values (e.g., empty required fields, out-of-range numbers)
+  // - Malformed data formats
+  // - Validation failures
+  //
+  // Client action: Fix the request data and retry.
+  // Not retriable without modifying the request.
   SERVER_ERROR_BAD_REQUEST = 2 [(kurrent.rpc.error) = {
     status_code: INVALID_ARGUMENT,
     has_details: true
   }];
 
+  // The server is not the cluster leader and cannot process write operations.
+  // In a clustered deployment, only the leader node can accept write operations.
+  //
+  // Common causes:
+  // - Client connected to a follower node
+  // - Leader election in progress
+  // - Network partition
+  //
+  // Client action: Redirect the request to the leader node indicated in the error details.
+  // Retriable after redirecting to the correct leader node.
   SERVER_ERROR_NOT_LEADER_NODE = 5 [(kurrent.rpc.error) = {
     status_code: FAILED_PRECONDITION,
     has_details: true
   }];
 
+  // The operation did not complete within the configured timeout period.
+  //
+  // Common causes:
+  // - Slow disk I/O during writes
+  // - Cluster consensus delays
+  // - Network latency
+  // - Heavy server load
+  //
+  // Client action: Retry with exponential backoff. Consider increasing timeout values.
+  // Retriable - the operation may succeed on retry.
   SERVER_ERROR_OPERATION_TIMEOUT = 6 [(kurrent.rpc.error) = {
     status_code: DEADLINE_EXCEEDED
   }];
 
+  // The server is starting up or shutting down and cannot process requests.
+  //
+  // Common causes:
+  // - Server is initializing (loading indexes, recovering state)
+  // - Server is performing graceful shutdown
+  // - Server is performing maintenance operations
+  //
+  // Client action: Retry with exponential backoff. Wait for server to become ready.
+  // Retriable - the server will become available after initialization completes.
   SERVER_ERROR_SERVER_NOT_READY = 7 [(kurrent.rpc.error) = {
     status_code: UNAVAILABLE
   }];
 
+  // The server is temporarily overloaded and cannot accept more requests.
+  // This is a backpressure mechanism to prevent server overload.
+  //
+  // Common causes:
+  // - Too many concurrent requests
+  // - Resource exhaustion (CPU, memory, disk I/O)
+  // - Rate limiting triggered
+  //
+  // Client action: Retry with exponential backoff. Reduce request rate.
+  // Retriable - the server may accept requests after load decreases.
   SERVER_ERROR_SERVER_OVERLOADED = 8 [(kurrent.rpc.error) = {
     status_code: UNAVAILABLE
   }];
 
+  // An internal server error occurred.
+  // This indicates a bug or unexpected condition in the server.
+  //
+  // Common causes:
+  // - Unhandled exceptions
+  // - Assertion failures
+  // - Corrupted internal state
+  // - Programming errors
+  //
+  // Client action: Report to server administrators with request details.
+  // May be retriable, but likely indicates a server-side issue requiring investigation.
   SERVER_ERROR_SERVER_MALFUNCTION = 9 [(kurrent.rpc.error) = {
     status_code: INTERNAL
   }];
 }
 
+// Details for ACCESS_DENIED errors.
 message AccessDeniedErrorDetails {
-  // The username of the user who was denied access.
+  // The friendly name of the operation that was denied.
   string operation = 1;
+
   // The username of the user who was denied access.
-  // It will only be included if grpc has detailed error information enabled.
   optional string username = 2;
-  // The permission that was required for access.
-  // It will only be included if grpc has detailed error information enabled.
-  // (e.g., "streams:append", "registry:schema:create", etc.)
+
+  // The permission that was required for this operation.
   optional string permission = 3;
 }
 
+// Details for NOT_LEADER_NODE errors.
 message NotLeaderNodeErrorDetails {
+  // Information about the current cluster leader node.
   NodeInfo current_leader = 1;
 
+  // Information about a cluster node.
   message NodeInfo {
-    // The host of the node
+    // The hostname or IP address of the node.
     string host = 1;
 
-    // The port of the node
+    // The gRPC port of the node.
     int32 port = 2;
 
-    // The instance ID of the node
+    // The unique instance ID of the node.
     optional string node_id = 3;
   }
 }

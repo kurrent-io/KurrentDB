@@ -10,7 +10,8 @@ class StreamNameValidator : ValidatorBase<StreamNameValidator, string?> {
 	public StreamNameValidator() =>
         RuleFor(x => x)
             .NotEmpty()
+            .WithMessage("{PropertyName} must not be empty.")
             .NotEqual("$$")
-            .WithMessage("'{PropertyName}' must not be '$$'.")
+            .WithMessage("{PropertyName} must not be '$$'.")
             .WithName("Stream");
 }

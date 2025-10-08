@@ -37,6 +37,6 @@ public abstract class ValidatorBase<TValidator, TInstance> : AbstractValidator<T
     public Type InstanceType  { get; }
 
     protected override void RaiseValidationException(ValidationContext<TInstance> context, ValidationResult result) {
-        throw new DetailedValidationException(typeof(TInstance), result.Errors.ToArray());
+        throw new DetailedValidationException(context.DisplayName, typeof(TInstance), result.Errors.ToArray());
     }
 }
