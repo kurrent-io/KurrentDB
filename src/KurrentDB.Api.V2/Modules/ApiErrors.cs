@@ -6,19 +6,14 @@
 using System.Diagnostics;
 using System.Net;
 using System.Text;
-using DotNext.Net.Http;
 using FluentValidation.Results;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Google.Rpc;
-using Grpc.AspNetCore.Server;
 using Grpc.Core;
 using Humanizer;
 using KurrentDB.Api.Infrastructure.Errors;
 using Kurrent.Rpc;
-using KurrentDB.Api.Infrastructure;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Type = System.Type;
 
 namespace KurrentDB.Api.Errors;

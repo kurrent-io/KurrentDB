@@ -6,7 +6,6 @@ using Google.Protobuf;
 using Grpc.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messaging;
-using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.Api;
 

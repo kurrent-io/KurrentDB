@@ -295,7 +295,7 @@ public class StreamsServiceTests {
             new() {
                 RecordId = Guid.NewGuid().ToString(),
                 Data     = UnsafeByteOperations.UnsafeWrap(data),
-                Schema = new SchemaInfo {
+                Schema   = new SchemaInfo {
                     Name   = "SyntheticTestRecord.V1",
                     Format = SchemaFormat.Bytes
                 }

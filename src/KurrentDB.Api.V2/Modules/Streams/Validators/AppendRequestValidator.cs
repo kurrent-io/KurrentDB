@@ -11,9 +11,9 @@ class AppendRequestValidator : RequestValidator<AppendRequest> {
 	public static readonly AppendRequestValidator Instance = new();
 
     static readonly List<long> ValidExpectedRevisions = [
-        ExpectedRevisionConstants.Any.GetHashCode(),
-        ExpectedRevisionConstants.NoStream.GetHashCode(),
-        ExpectedRevisionConstants.Exists.GetHashCode()
+        (long)ExpectedRevisionConstants.Any,
+        (long)ExpectedRevisionConstants.NoStream,
+        (long)ExpectedRevisionConstants.Exists
     ];
 
 	public AppendRequestValidator() {

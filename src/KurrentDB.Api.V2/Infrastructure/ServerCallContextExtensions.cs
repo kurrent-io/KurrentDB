@@ -2,11 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Security.Claims;
-using DotNext.Threading.Tasks;
 using Grpc.AspNetCore.Server;
 using Grpc.Core;
 using Humanizer;
-using KurrentDB.Api.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
