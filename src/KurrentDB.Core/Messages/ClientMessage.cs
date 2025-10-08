@@ -135,8 +135,7 @@ public static partial class ClientMessage {
 				IsReadOnly
 			}
 
-			public class LeaderInfo(Guid leaderId, EndPoint externalTcp, bool isSecure, EndPoint http) {
-				public Guid LeaderId { get; } = leaderId;
+			public class LeaderInfo(EndPoint externalTcp, bool isSecure, EndPoint http) {
 				public bool IsSecure { get; } = isSecure;
 				public EndPoint ExternalTcp { get; } = externalTcp;
 				public EndPoint Http { get; } = http;
