@@ -12,8 +12,8 @@ partial class SchemaNameValidator : AbstractValidator<string?> {
 		RuleFor(x => x)
 			.NotEmpty()
 			.Matches(RegEx())
-			.WithMessage("Schema name must not be empty and can only contain alphanumeric characters, underscores, dashes, periods, and colons");
+			.WithMessage(x => $"Schema name '{x}' must not be empty and can only contain alphanumeric characters, underscores, dashes, periods, and colons");
 
-	[System.Text.RegularExpressions.GeneratedRegex("^[a-zA-Z0-9_.-:]+$")]
+	[System.Text.RegularExpressions.GeneratedRegex("^[a-zA-Z0-9_.:-]+$")]
 	private static partial System.Text.RegularExpressions.Regex RegEx();
 }
