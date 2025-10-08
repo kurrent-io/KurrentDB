@@ -50,11 +50,11 @@ jobs:
           return;
         }
         Remove-Item $env:APPDATA\NuGet\NuGet.Config
-    -  
+    -
       name: Compile
       shell: bash
       run: |
-        dotnet build --configuration ${{ matrix.configuration }} -p:Platform=${{ inputs.arch }} src/KurrentDB.sln
+        dotnet build --configuration ${{ matrix.configuration }} -p:Platform=${{ inputs.arch }} KurrentDB.slnx
     -  
       name: Verify Build
       shell: bash
@@ -69,7 +69,7 @@ jobs:
         load: true
         target: runtime
         tags: ${{ env.DB_IMAGE }}
-    -  
+    -
       name: Run Tests
       shell: bash
       run: >
@@ -84,7 +84,7 @@ jobs:
         --logger:trx
         --logger:"console;verbosity=normal"
         --results-directory $(pwd)/test-results
-        src/KurrentDB.sln
+        KurrentDB.slnx
         -- --report-trx --results-directory $(pwd)/test-results
     -  
       name: Publish Test Results (All)
