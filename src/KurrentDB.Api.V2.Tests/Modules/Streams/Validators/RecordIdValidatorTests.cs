@@ -4,11 +4,13 @@
 // ReSharper disable MethodHasAsyncOverload
 
 using FluentValidation;
+using KurrentDB.Api.Infrastructure.FluentValidation;
 using KurrentDB.Api.Streams.Validators;
-using ValidationException = FluentValidation.ValidationException;
+using KurrentDB.Api.Tests.Infrastructure;
 
 namespace KurrentDB.Api.Tests.Streams.Validators;
 
+[Category("Validation")]
 public class RecordIdValidatorTests {
     [Test]
     [Arguments("98EACFBF-E6B6-401F-8FE0-EDC0F161B087")]
@@ -22,9 +24,11 @@ public class RecordIdValidatorTests {
     [Arguments(" ")]
     [Arguments("Invalid/Record\\Id")]
     [Arguments("00000000-0000-0000-0000-00000000000")]
-    public async ValueTask throws_when_invalid(string? value) {
-        await Assert
+    public async ValueTask throws_when_invalid(string value) {
+        var vex = await Assert
             .That(() => RecordIdValidator.Instance.ValidateAndThrow(value))
-            .Throws<ValidationException>();
+            .Throws<DetailedValidationException>();
+
+        vex.LogValidationErrors<RecordIdValidator>();
     }
 }

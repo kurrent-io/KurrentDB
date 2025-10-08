@@ -10,9 +10,19 @@ namespace KurrentDB.Api.Streams.Validators;
 class AppendRequestValidator : RequestValidator<AppendRequest> {
 	public static readonly AppendRequestValidator Instance = new();
 
+    static readonly List<long> ValidExpectedRevisions = [
+        ExpectedRevisionConstants.Any.GetHashCode(),
+        ExpectedRevisionConstants.NoStream.GetHashCode(),
+        ExpectedRevisionConstants.Exists.GetHashCode()
+    ];
+
 	public AppendRequestValidator() {
 		RuleFor(x => x.Stream)
 			.SetValidator(StreamNameValidator.Instance);
+
+        RuleFor(x => x.ExpectedRevision)
+            .Must(x => x >= 0 || ValidExpectedRevisions.Contains(x))
+            .WithMessage("Expected revision must be positive or one of the allowed constants: NoStream (-1), Any (-2) or Exists (-4).");
 
 		RuleFor(x => x.Records)
 			.NotEmpty()

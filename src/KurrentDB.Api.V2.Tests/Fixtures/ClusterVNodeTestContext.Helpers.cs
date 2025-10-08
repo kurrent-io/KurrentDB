@@ -23,6 +23,14 @@ public static class StreamsClientExtensions {
         var response = await session.ResponseAsync;
         return response.Output[0];
     }
+
+    public static async ValueTask<AppendResponse> AppendAsync(this StreamsService.StreamsServiceClient client, AppendRequest request, CallOptions callOptions) {
+        using var session = client.AppendSession(cancellationToken: callOptions.CancellationToken);
+        await session.RequestStream.WriteAsync(request, callOptions.CancellationToken);
+        await session.RequestStream.CompleteAsync();
+        var response = await session.ResponseAsync;
+        return response.Output[0];
+    }
 }
 
 public partial class ClusterVNodeTestContext {

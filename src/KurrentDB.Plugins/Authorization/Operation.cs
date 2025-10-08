@@ -40,7 +40,8 @@ public readonly struct Operation {
 		Parameters = parameters;
 	}
 
-	public static implicit operator OperationDefinition(Operation operation) => new(operation.Resource, operation.Action);
+	public static implicit operator OperationDefinition(Operation operation)  => new(operation.Resource, operation.Action);
+    public static implicit operator Operation(OperationDefinition definition) => new(definition);
 
 	public override string ToString() {
 		var sb = new StringBuilder();

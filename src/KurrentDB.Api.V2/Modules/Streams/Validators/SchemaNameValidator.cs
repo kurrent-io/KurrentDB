@@ -2,17 +2,17 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using FluentValidation;
+using KurrentDB.Api.Infrastructure.FluentValidation;
 
 namespace KurrentDB.Api.Streams.Validators;
 
-partial class SchemaNameValidator : AbstractValidator<string?> {
-	public static readonly SchemaNameValidator Instance = new();
-
+partial class SchemaNameValidator : ValidatorBase<SchemaNameValidator, string?> {
 	public SchemaNameValidator() =>
 		RuleFor(x => x)
 			.NotEmpty()
 			.Matches(RegEx())
-			.WithMessage("Schema name must not be empty and can only contain alphanumeric characters, underscores, dashes, periods, and colons");
+			.WithMessage("'{PropertyName}' can only contain alphanumeric characters, underscores, dashes, periods, and colons.")
+            .WithName("Schema name");
 
 	[System.Text.RegularExpressions.GeneratedRegex("^[a-zA-Z0-9_.-:]+$")]
 	private static partial System.Text.RegularExpressions.Regex RegEx();

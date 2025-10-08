@@ -24,5 +24,30 @@ class AppendRecordValidator : RequestValidator<AppendRecord> {
         RuleFor(x => x.Schema.Id)
             .SetValidator(SchemaIdValidator.Instance)
             .When(x => x.Schema.HasId);
+
+        RuleForEach(x => x.Properties)
+            .ChildRules(v => {
+                v.RuleFor(x => x.Key)
+                    .NotEmpty()
+                    .WithMessage("Property keys must not be empty.");
+            });
+
+        // ------------------------------------------------------------------------------
+        // Uncomment for debugging purposes
+        // ------------------------------------------------------------------------------
+        // This will validate that the properties can be serialized to a Protobuf Struct
+        // which is what we use to store them internally.
+        // And also validates that the struct can be serialized to json.
+        // ------------------------------------------------------------------------------
+        // RuleFor(x => x.Properties)
+        //     .Custom((entry, ctx) => {
+        //         try {
+        //             _ = JsonFormatter.Default.Format(new Struct { Fields = { entry } });
+        //         }
+        //         catch (Exception ex) {
+        //             ctx.AddFailure(ex.Message);
+        //         }
+        //     });
+
     }
 }

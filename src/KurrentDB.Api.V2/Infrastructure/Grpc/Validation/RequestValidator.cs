@@ -4,6 +4,7 @@
 using FluentValidation;
 using FluentValidation.Results;
 using Google.Protobuf;
+using KurrentDB.Api.Infrastructure.FluentValidation;
 
 namespace KurrentDB.Api.Infrastructure.Grpc.Validation;
 
@@ -29,7 +30,23 @@ public interface IRequestValidator<in TRequest> : IValidator<TRequest>, IRequest
 /// The type of the gRPC request to validate.
 /// </typeparam>
 public abstract class RequestValidator<TRequest> : AbstractValidator<TRequest>, IRequestValidator<TRequest> where TRequest : IMessage {
-	public Type RequestType { get; } = typeof(TRequest);
+    protected RequestValidator() {
+        ValidatorType = GetType();
+        RequestType   = typeof(TRequest);
+    }
+
+    /// <summary>
+    /// The type of the validator.
+    /// </summary>
+    public Type ValidatorType { get; }
+
+    /// <summary>
+    /// The type of the gRPC request being validated.
+    /// </summary>
+    public Type RequestType { get; }
+
+    protected override void RaiseValidationException(ValidationContext<TRequest> context, ValidationResult result) =>
+        throw new DetailedValidationException(typeof(TRequest), result.Errors.ToArray());
 }
 
 public static class RequestValidatorExtensions {

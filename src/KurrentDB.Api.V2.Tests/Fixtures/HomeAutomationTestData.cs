@@ -6,7 +6,6 @@ using System.Text.Json;
 using Google.Protobuf;
 using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
-using KurrentDB.Api.Streams;
 using KurrentDB.Protocol.V2.Streams;
 using KurrentDB.Testing.Sample.HomeAutomation;
 using SchemaFormat = KurrentDB.Protocol.V2.Streams.SchemaFormat;

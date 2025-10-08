@@ -4,12 +4,14 @@
 // ReSharper disable MethodHasAsyncOverload
 
 using FluentValidation;
+using KurrentDB.Api.Infrastructure.FluentValidation;
 using KurrentDB.Api.Streams.Validators;
+using KurrentDB.Api.Tests.Infrastructure;
 using KurrentDB.Protocol.V2.Streams;
-using ValidationException = FluentValidation.ValidationException;
 
 namespace KurrentDB.Api.Tests.Streams.Validators;
 
+[Category("Validation")]
 public class SchemaFormatValidatorTests {
     [Test]
     [Arguments(SchemaFormat.Json)]
@@ -25,8 +27,10 @@ public class SchemaFormatValidatorTests {
     [Arguments(SchemaFormat.Unspecified)]
     [Arguments((SchemaFormat)999)]
     public async ValueTask throws_when_invalid(SchemaFormat value) {
-        await Assert
+        var vex = await Assert
             .That(() => SchemaFormatValidator.Instance.ValidateAndThrow(value))
-            .Throws<ValidationException>();
+            .Throws<DetailedValidationException>();
+
+        vex.LogValidationErrors<SchemaFormatValidator>();
     }
 }

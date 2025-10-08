@@ -4,11 +4,14 @@
 // ReSharper disable MethodHasAsyncOverload
 
 using FluentValidation;
+using KurrentDB.Api.Infrastructure.FluentValidation;
 using KurrentDB.Api.Streams.Validators;
-using ValidationException = FluentValidation.ValidationException;
+using KurrentDB.Api.Tests.Infrastructure;
+using TUnit.Assertions.AssertConditions;
 
 namespace KurrentDB.Api.Tests.Streams.Validators;
 
+[Category("Validation")]
 public class StreamNameValidatorTests {
     [Test]
     [Arguments("Orders-B8333F7B-32C3-46D4-862D-29823DB6B494")]
@@ -20,13 +23,15 @@ public class StreamNameValidatorTests {
     }
 
     [Test]
-    [Arguments("", "'Stream name' must not be empty")]
-    [Arguments(" ", "'Stream name' must not be empty")]
-    [Arguments("$$", "'Stream name' must not be '$$'")]
-    public async Task throws_when_invalid(string? value, string expectedMessage) {
-        await Assert
+    [Arguments("", "*must not be empty*")]
+    [Arguments(" ", "*must not be empty*")]
+    [Arguments("$$", "*must not be '$$'*")]
+    public async Task throws_when_invalid(string? value, string match) {
+        var vex = await Assert
             .That(() => StreamNameValidator.Instance.ValidateAndThrow(value))
-            .Throws<ValidationException>()
-            .WithMessageContaining(expectedMessage);
+            .Throws<DetailedValidationException>()
+            .WithMessageMatching(StringMatcher.AsWildcard(match));
+
+        vex.LogValidationErrors<StreamNameValidator>();
     }
 }

@@ -302,7 +302,7 @@ public class StreamsServiceTests {
             };
     }
 
-    [Test, Skip("Skipping for now. ClusterVNodeApp certificate support for macOS is not implemented.")]
+    [Test, Skip("Skipping for now.")]
     public async ValueTask append_session_throws_when_user_is_not_authenticated(CancellationToken cancellationToken) {
         // Arrange
         var callOptions = new CallOptions(
@@ -319,20 +319,8 @@ public class StreamsServiceTests {
         await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.Unauthenticated);
     }
 
-    [Test, Skip("Skipping for now. ClusterVNodeApp certificate support for macOS is not implemented.")]
-    public async ValueTask append_session_throws_when_user_does_not_have_permissions(CancellationToken cancellationToken) {
-        // Arrange
-        var callOptions = new CallOptions(
-            credentials: Fixture.AdminCredentials,
-            cancellationToken: cancellationToken);
-
-        // Act
-        using var session = Fixture.StreamsClient.AppendSession(callOptions);
-
-        var appendTask = async () => await session.ResponseAsync;
-
-        // Assert
-        var rex = await appendTask.ShouldThrowAsync<RpcException>();
-        await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.PermissionDenied);
+    [Test, Skip("Skipping for now.")]
+    public ValueTask append_session_throws_when_user_does_not_have_permissions(CancellationToken cancellationToken) {
+        throw new NotImplementedException();
     }
 }

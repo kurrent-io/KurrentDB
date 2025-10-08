@@ -29,7 +29,7 @@ public static class AuthorizationExtensions {
 
 public static class OperationsExtensions {
     public static string GetClaimName(this Operation operation) =>
-        ClaimName.Create(operation.Resource, operation.Action);
+        ClaimName.Create(operation.Resource, operation.Action, operation.Parameters.IsEmpty ? null : string.Join(",", operation.Parameters.ToArray().Select(p => p.Value)));
 }
 
 public static class ClaimName {
@@ -38,10 +38,10 @@ public static class ClaimName {
     /// The resource can be a scope or a chain (e.g., "streams", "node/scavenge"), and the action will be converted to snake_case.
     /// The resulting format will be "resource:action" (e.g., "streams:append").
     /// </summary>
-    public static string Create(string resource, string action) {
+    public static string Create(string resource, string action, string? parameter = null) {
         // Replace '/' with ':' in resource and convert action to snake_case using Humanizer
         var processedResource = resource.Replace('/', ':');
         var snakeCaseAction   = action.Underscore();
-        return $"{processedResource}:{snakeCaseAction}";
+        return $"{processedResource}:{snakeCaseAction}:{parameter}".ToLowerInvariant();
     }
 }

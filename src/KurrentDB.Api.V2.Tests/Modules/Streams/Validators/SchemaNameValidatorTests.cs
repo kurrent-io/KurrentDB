@@ -4,11 +4,14 @@
 // ReSharper disable MethodHasAsyncOverload
 
 using FluentValidation;
+using KurrentDB.Api.Infrastructure.FluentValidation;
 using KurrentDB.Api.Streams.Validators;
-using ValidationException = FluentValidation.ValidationException;
+using KurrentDB.Api.Tests.Infrastructure;
+using TUnit.Assertions.AssertConditions;
 
 namespace KurrentDB.Api.Tests.Streams.Validators;
 
+[Category("Validation")]
 public class SchemaNameValidatorTests {
     [Test]
     [Arguments("urn:com:kurrentdb:schemas:orders:v2")]
@@ -21,10 +24,26 @@ public class SchemaNameValidatorTests {
     [Test]
     [Arguments("")]
     [Arguments(" ")]
-    [Arguments("Invalid/Schema\\Name")]
-    public async ValueTask throws_when_invalid(string? value) {
-        await Assert
+    public async ValueTask throws_when_value_is_empty(string? value) {
+        var vex = await Assert
             .That(() => SchemaNameValidator.Instance.ValidateAndThrow(value))
-            .Throws<ValidationException>();
+            .Throws<DetailedValidationException>()
+            .WithMessageMatching(StringMatcher.AsWildcard("*must not be empty*"));
+
+        vex.LogValidationErrors<SchemaNameValidator>();
+    }
+
+    [Test]
+    [Arguments("Invalid/Schema\\Name")]
+    [Arguments("Invalid?Schema*Name")]
+    [Arguments("Invalid|Schema\"Name")]
+    [Arguments("Invalid<Schema>Name")]
+    public async ValueTask throws_when_value_as_invalid_format(string? value) {
+        var vex = await Assert
+            .That(() => SchemaNameValidator.Instance.ValidateAndThrow(value))
+            .Throws<DetailedValidationException>()
+            .WithMessageMatching(StringMatcher.AsWildcard("*can only contain *"));
+
+        vex.LogValidationErrors<SchemaNameValidator>();
     }
 }

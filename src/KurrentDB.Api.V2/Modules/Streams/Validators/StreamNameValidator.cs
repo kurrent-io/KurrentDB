@@ -2,16 +2,15 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using FluentValidation;
+using KurrentDB.Api.Infrastructure.FluentValidation;
 
 namespace KurrentDB.Api.Streams.Validators;
 
-class StreamNameValidator : AbstractValidator<string?> {
-	public static readonly StreamNameValidator Instance = new();
-
-    public StreamNameValidator() =>
+class StreamNameValidator : ValidatorBase<StreamNameValidator, string?> {
+	public StreamNameValidator() =>
         RuleFor(x => x)
             .NotEmpty()
-            .WithName("Stream name")
             .NotEqual("$$")
-            .WithMessage("'Stream name' must not be '$$'.");
+            .WithMessage("'{PropertyName}' must not be '$$'.")
+            .WithName("Stream");
 }
