@@ -33,7 +33,7 @@ jobs:
       if: ${{ contains(inputs.cs_symbols, 'RUN_AZ_TESTS') }}
       run: |
         npm install -g azurite
-        azurite &
+        azurite --location /tmp/azurite &
         curl -I http://127.0.0.1:10000/ --retry 5 --retry-delay 1 --retry-connrefused
     -  
       name: Free Disk Space (Ubuntu)
