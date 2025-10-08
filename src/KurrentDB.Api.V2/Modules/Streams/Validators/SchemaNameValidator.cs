@@ -11,9 +11,9 @@ partial class SchemaNameValidator : ValidatorBase<SchemaNameValidator, string?> 
 		RuleFor(x => x)
 			.NotEmpty()
 			.Matches(RegEx())
-			.WithMessage("'{PropertyName}' can only contain alphanumeric characters, underscores, dashes, periods, and colons.")
-            .WithName("Schema name");
+			.WithMessage("{PropertyName} can only contain alphanumeric characters, underscores, dashes, periods, and colons.")
+            .WithName(x => $"Schema name '{x}'");
 
-	[System.Text.RegularExpressions.GeneratedRegex("^[a-zA-Z0-9_.-:]+$")]
+	[System.Text.RegularExpressions.GeneratedRegex("^[a-zA-Z0-9_.:-]+$")]
 	private static partial System.Text.RegularExpressions.Regex RegEx();
 }

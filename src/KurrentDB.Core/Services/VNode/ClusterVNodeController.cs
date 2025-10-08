@@ -887,16 +887,15 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private void DenyRequestBecauseNotLeader(Guid correlationId, IEnvelope envelope) {
-		LeaderInfoProvider leaderInfoProvider = new LeaderInfoProvider(_node.GossipAdvertiseInfo, _leader);
+		LeaderInfoProvider leaderInfoProvider = new LeaderInfoProvider(_node.GossipAdvertiseInfo, _leader, _nodeInfo.InstanceId);
 		var endpoints = leaderInfoProvider.GetLeaderInfoEndPoints();
 		envelope.ReplyWith(
 			new ClientMessage.NotHandled(correlationId,
 				ClientMessage.NotHandled.Types.NotHandledReason.NotLeader,
-				new ClientMessage.NotHandled.Types.LeaderInfo(
-					_leader?.InstanceId ?? Guid.Empty,
-					endpoints.AdvertisedTcpEndPoint,
+				new ClientMessage.NotHandled.Types.LeaderInfo(endpoints.AdvertisedTcpEndPoint,
 					endpoints.IsTcpEndPointSecure,
-					endpoints.AdvertisedHttpEndPoint
+					endpoints.AdvertisedHttpEndPoint,
+					endpoints.InstanceId
 					)));
 	}
 
@@ -978,16 +977,15 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private void DenyRequestBecauseReadOnly(Guid correlationId, IEnvelope envelope) {
-		LeaderInfoProvider leaderInfoProvider = new LeaderInfoProvider(_node.GossipAdvertiseInfo, _leader);
+		LeaderInfoProvider leaderInfoProvider = new LeaderInfoProvider(_node.GossipAdvertiseInfo, _leader, _nodeInfo.InstanceId);
 		var endpoints = leaderInfoProvider.GetLeaderInfoEndPoints();
 		envelope.ReplyWith(
 			new ClientMessage.NotHandled(correlationId,
 				ClientMessage.NotHandled.Types.NotHandledReason.IsReadOnly,
-				new ClientMessage.NotHandled.Types.LeaderInfo(
-					_leader?.InstanceId ?? Guid.Empty,
-					endpoints.AdvertisedTcpEndPoint,
+				new ClientMessage.NotHandled.Types.LeaderInfo(endpoints.AdvertisedTcpEndPoint,
 					endpoints.IsTcpEndPointSecure,
-					endpoints.AdvertisedHttpEndPoint
+					endpoints.AdvertisedHttpEndPoint,
+					endpoints.InstanceId
 					)));
 	}
 

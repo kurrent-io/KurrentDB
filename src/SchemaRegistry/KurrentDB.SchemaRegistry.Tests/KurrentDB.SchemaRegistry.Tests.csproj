@@ -11,6 +11,7 @@
     <IsPackable>false</IsPackable>
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     <EnableMSTestRunner>true</EnableMSTestRunner>
+    <EnablePreviewFeatures>true</EnablePreviewFeatures>
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
     <TestingPlatformCaptureOutput>false</TestingPlatformCaptureOutput>
   </PropertyGroup>
