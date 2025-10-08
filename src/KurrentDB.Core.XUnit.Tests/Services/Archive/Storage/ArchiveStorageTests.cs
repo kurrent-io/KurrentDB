@@ -119,7 +119,7 @@ public class ArchiveStorageTests : ArchiveStorageTestsBase<ArchiveStorageTests> 
 		var sut = CreateSut(storageType);
 
 		await Assert.ThrowsAsync<ChunkDeletedException>(async () => {
-			await sut.ReadAsync(33, Memory<byte>.Empty, offset: 0, CancellationToken.None);
+			await sut.ReadAsync(33, new byte[1], offset: 0, CancellationToken.None);
 		});
 	}
 

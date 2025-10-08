@@ -22,6 +22,8 @@ public class AzureBlobStorage : IBlobStorage {
 	public BlobContainerClient NativeClient { get; }
 
 	public async ValueTask<int> ReadAsync(string name, Memory<byte> buffer, long offset, CancellationToken token) {
+		ArgumentOutOfRangeException.ThrowIfNegative(offset);
+
 		// The check is required, otherwise, HttpRange throws ArgumentOutOfRangeException
 		if (buffer.IsEmpty)
 			return 0;
