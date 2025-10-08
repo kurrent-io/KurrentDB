@@ -20,12 +20,13 @@ public class StreamNameValidatorTests {
     }
 
     [Test]
-    [Arguments("")]
-    [Arguments(" ")]
-    [Arguments("$$")]
-    public async Task throws_when_invalid(string? value) {
+    [Arguments("", "'Stream name' must not be empty")]
+    [Arguments(" ", "'Stream name' must not be empty")]
+    [Arguments("$$", "'Stream name' must not be '$$'")]
+    public async Task throws_when_invalid(string? value, string expectedMessage) {
         await Assert
             .That(() => StreamNameValidator.Instance.ValidateAndThrow(value))
-            .Throws<ValidationException>();
+            .Throws<ValidationException>()
+            .WithMessageContaining(expectedMessage);
     }
 }
