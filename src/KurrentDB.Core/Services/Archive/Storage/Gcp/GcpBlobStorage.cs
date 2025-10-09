@@ -7,7 +7,6 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
-using DotNext;
 using DotNext.Buffers;
 using DotNext.IO;
 using Google;
@@ -83,10 +82,10 @@ public class GcpBlobStorage : IBlobStorage {
 		from: offset,
 		to: offset + length - 1L);
 
-	private sealed class MemoryWriter(Memory<byte> buffer) : IReadOnlySpanConsumer<byte>, IFlushable {
-		void IReadOnlySpanConsumer<byte>.Invoke(ReadOnlySpan<byte> span) {
-			span.CopyTo(buffer.Span, out var bytesCopied);
-			buffer = buffer.Slice(bytesCopied);
+	private sealed class MemoryWriter(Memory<byte> output) : IReadOnlySpanConsumer<byte>, IFlushable {
+		void IReadOnlySpanConsumer<byte>.Invoke(ReadOnlySpan<byte> input) {
+			input.CopyTo(output.Span);
+			output = output.Slice(input.Length);
 		}
 
 		void IFlushable.Flush() {
