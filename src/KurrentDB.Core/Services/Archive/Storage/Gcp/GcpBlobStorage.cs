@@ -7,11 +7,12 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
+using DotNext;
 using DotNext.Buffers;
+using DotNext.IO;
 using Google;
 using Google.Cloud.Storage.V1;
 using KurrentDB.Common.Exceptions;
-using Microsoft.IO;
 using Serilog;
 
 namespace KurrentDB.Core.Services.Archive.Storage.Gcp;
@@ -19,7 +20,6 @@ namespace KurrentDB.Core.Services.Archive.Storage.Gcp;
 public class GcpBlobStorage : IBlobStorage {
 	private readonly GcpOptions _options;
 	private readonly StorageClient _storageClient;
-	private readonly RecyclableMemoryStreamManager _memoryStreamManager = new();
 
 	private static readonly ILogger Logger = Log.ForContext<GcpBlobStorage>();
 
@@ -35,21 +35,17 @@ public class GcpBlobStorage : IBlobStorage {
 	public async ValueTask<int> ReadAsync(string name, Memory<byte> buffer, long offset, CancellationToken ct) {
 		ArgumentOutOfRangeException.ThrowIfNegative(offset);
 
+		var destination = StreamSource.AsSynchronousStream(new MemoryWriter(buffer));
 		try {
-			await using (var stream = _memoryStreamManager.GetStream(nameof(GcpBlobStorage), requiredSize: buffer.Length)) {
-				await _storageClient.DownloadObjectAsync(
-					bucket: _options.Bucket,
-					objectName: name,
-					destination: stream,
-					options: new DownloadObjectOptions {
-						Range = GetRange(offset, buffer.Length)
-					}, cancellationToken: ct);
-				buffer = buffer.TrimLength(int.CreateSaturating(stream.Length));
-				stream.Seek(0, SeekOrigin.Begin);
-				await stream.ReadExactlyAsync(buffer, ct);
-			}
+			var obj = await _storageClient.DownloadObjectAsync(
+				bucket: _options.Bucket,
+				objectName: name,
+				destination: destination,
+				options: new DownloadObjectOptions {
+					Range = GetRange(offset, buffer.Length)
+				}, cancellationToken: ct);
 
-			return buffer.Length;
+			return int.CreateSaturating(obj.Size.GetValueOrDefault());
 		} catch (GoogleApiException ex) when (
 			ex.HttpStatusCode is HttpStatusCode.NotFound &&
 			ex.Error.ErrorResponseContent.StartsWith("No such object:")) {
@@ -59,6 +55,8 @@ public class GcpBlobStorage : IBlobStorage {
 		} catch (GoogleApiException ex) {
 			Logger.Error(ex, "Failed to read object '{name}' at offset: {offset}, length: {length}", name, offset, buffer.Length);
 			throw;
+		} finally {
+			await destination.DisposeAsync();
 		}
 	}
 
@@ -84,4 +82,17 @@ public class GcpBlobStorage : IBlobStorage {
 	private static RangeHeaderValue GetRange(long offset, int length) => new(
 		from: offset,
 		to: offset + length - 1L);
+
+	private sealed class MemoryWriter(Memory<byte> buffer) : IReadOnlySpanConsumer<byte>, IFlushable {
+		void IReadOnlySpanConsumer<byte>.Invoke(ReadOnlySpan<byte> span) {
+			span.CopyTo(buffer.Span, out var bytesCopied);
+			buffer = buffer.Slice(bytesCopied);
+		}
+
+		void IFlushable.Flush() {
+			// nothing to do
+		}
+
+		Task IFlushable.FlushAsync(CancellationToken token) => Task.CompletedTask;
+	}
 }
