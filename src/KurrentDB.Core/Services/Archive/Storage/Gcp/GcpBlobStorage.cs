@@ -34,7 +34,8 @@ public class GcpBlobStorage : IBlobStorage {
 	public async ValueTask<int> ReadAsync(string name, Memory<byte> buffer, long offset, CancellationToken ct) {
 		ArgumentOutOfRangeException.ThrowIfNegative(offset);
 
-		var destination = StreamSource.AsSynchronousStream(new MemoryWriter(buffer));
+		var writer = new MemoryWriter(buffer);
+		var destination = StreamSource.AsSynchronousStream(writer);
 		try {
 			var obj = await _storageClient.DownloadObjectAsync(
 				bucket: _options.Bucket,
@@ -44,7 +45,7 @@ public class GcpBlobStorage : IBlobStorage {
 					Range = GetRange(offset, buffer.Length)
 				}, cancellationToken: ct);
 
-			return int.CreateSaturating(obj.Size.GetValueOrDefault());
+			return writer.BytesWritten;
 		} catch (GoogleApiException ex) when (
 			ex.HttpStatusCode is HttpStatusCode.NotFound &&
 			ex.Error.ErrorResponseContent.StartsWith("No such object:")) {
@@ -83,9 +84,13 @@ public class GcpBlobStorage : IBlobStorage {
 		to: offset + length - 1L);
 
 	private sealed class MemoryWriter(Memory<byte> output) : IReadOnlySpanConsumer<byte>, IFlushable {
+		private int _bytesWritten;
+
+		public int BytesWritten => _bytesWritten;
+
 		void IReadOnlySpanConsumer<byte>.Invoke(ReadOnlySpan<byte> input) {
-			input.CopyTo(output.Span);
-			output = output.Slice(input.Length);
+			input.CopyTo(output.Span.Slice(_bytesWritten));
+			_bytesWritten += input.Length;
 		}
 
 		void IFlushable.Flush() {
