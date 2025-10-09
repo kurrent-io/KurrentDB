@@ -5,196 +5,202 @@
 
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using KurrentDB.SchemaRegistry.Tests.Fixtures;
 using KurrentDB.Protocol.Registry.V2;
-using Shouldly;
+using KurrentDB.SchemaRegistry.Tests.Fixtures;
+using KurrentDB.Testing.TUnit;
 using CompatibilityMode = KurrentDB.Protocol.Registry.V2.CompatibilityMode;
 using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
 public class UpdateSchemaIntegrationTests : SchemaApplicationTestFixture {
-	[Test]
-	public async Task updates_schema_successfully(CancellationToken cancellationToken) {
-		// Arrange
-		var prefix = NewPrefix();
-		var schemaName = NewSchemaName(prefix);
-		var originalTags = new Dictionary<string, string> { [Faker.Lorem.Word()] = Faker.Lorem.Word() };
-		var newTags = new Dictionary<string, string> { [Faker.Lorem.Word()] = Faker.Lorem.Word() };
+    [Test]
+    public async ValueTask updates_schema_successfully(CancellationToken cancellationToken) {
+        // Arrange
+        var prefix       = NewPrefix();
+        var schemaName   = NewSchemaName(prefix);
+        var originalTags = new Dictionary<string, string> { [Faker.Lorem.Word()] = Faker.Lorem.Word() };
+        var newTags      = new Dictionary<string, string> { [Faker.Lorem.Word()] = Faker.Lorem.Word() };
 
-		await CreateSchema(
-			schemaName,
-			new SchemaDetails {
-				Tags = { originalTags },
-				Compatibility = CompatibilityMode.Forward,
-				DataFormat = SchemaFormat.Json
-			},
-			cancellationToken
-		);
+        await Fixture.CreateSchema(
+            schemaName,
+            new SchemaDetails {
+                Tags          = { originalTags },
+                Compatibility = CompatibilityMode.Forward,
+                DataFormat    = SchemaFormat.Json
+            },
+            cancellationToken
+        );
 
-		// Act
-		await UpdateSchema(
-			schemaName,
-			new SchemaDetails {
-				Tags = { newTags },
-				Compatibility = CompatibilityMode.Forward,
-				DataFormat = SchemaFormat.Json
-			},
-			new FieldMask { Paths = { "Details.Tags" } },
-			cancellationToken
-		);
+        // Act
+        await Fixture.UpdateSchema(
+            schemaName,
+            new SchemaDetails {
+                Tags          = { newTags },
+                Compatibility = CompatibilityMode.Forward,
+                DataFormat    = SchemaFormat.Json
+            },
+            new FieldMask { Paths = { "Details.Tags" } },
+            cancellationToken
+        );
 
-		// Assert
-		var listSchemasResult = await ListRegisteredSchemas(prefix, cancellationToken);
+        // Assert
+        var listSchemasResult = await Fixture.ListRegisteredSchemas(prefix, cancellationToken);
 
-		listSchemasResult
-			.Schemas.ShouldHaveSingleItem()
-			.Tags.ShouldBe(newTags);
-	}
+        listSchemasResult
+            .Schemas.ShouldHaveSingleItem()
+            .Tags.ShouldBe(newTags);
+    }
 
-	[Test]
-	public async Task throws_exception_when_schema_is_deleted(CancellationToken cancellationToken) {
-		// Arrange
-		var schemaName = NewSchemaName();
+    [Test]
+    public async ValueTask throws_exception_when_schema_is_deleted(CancellationToken cancellationToken) {
+        // Arrange
+        var schemaName = NewSchemaName();
 
-		await CreateSchema(schemaName, cancellationToken);
-		await DeleteSchema(schemaName, cancellationToken);
+        await Fixture.CreateSchema(schemaName, cancellationToken);
+        await Fixture.DeleteSchema(schemaName, cancellationToken);
 
-		// Act
-		var updateSchema = async () => await UpdateSchema(
-			schemaName,
-			new SchemaDetails {
-				Description = Faker.Lorem.Sentence(),
-				Compatibility = CompatibilityMode.Backward,
-				DataFormat = SchemaFormat.Json
-			},
-			new FieldMask { Paths = { "Details.Description" } },
-			cancellationToken
-		);
+        // Act
+        var action = async () => await Fixture.UpdateSchema(
+            schemaName,
+            new SchemaDetails {
+                Description   = Faker.Lorem.Sentence(),
+                Compatibility = CompatibilityMode.Backward,
+                DataFormat    = SchemaFormat.Json
+            },
+            new FieldMask { Paths = { "Details.Description" } },
+            cancellationToken
+        );
 
-		// Assert
-		var updateSchemaException = await updateSchema.Should().ThrowAsync<RpcException>();
-		updateSchemaException.Which.Status.StatusCode.Should().Be(StatusCode.NotFound);
-		updateSchemaException.Which.Message.Should().Contain($"Schema schemas/{schemaName} not found");
-	}
+        // Assert
+        var rex = await action.ShouldThrowAsync<RpcException>();
+        rex.Status.StatusCode.ShouldBe(StatusCode.NotFound);
+        rex.Message.ShouldContain($"Schema schemas/{schemaName} not found");
+    }
 
-	[Test]
-	public async Task throws_exception_when_update_mask_contains_unknown_field(CancellationToken cancellationToken) {
-		// Arrange
-		var schemaName = NewSchemaName();
+    [Test]
+    public async ValueTask throws_exception_when_update_mask_contains_unknown_field(CancellationToken cancellationToken) {
+        // Arrange
+        var schemaName = NewSchemaName();
 
-		await CreateSchema(schemaName: schemaName, cancellationToken: cancellationToken);
+        await Fixture.CreateSchema(schemaName, cancellationToken);
 
-		// Act
-		var updateSchema = async () => await UpdateSchema(
-			schemaName,
-			new SchemaDetails {
-				Description = Faker.Lorem.Sentence(),
-				Compatibility = CompatibilityMode.Backward,
-				DataFormat = SchemaFormat.Json
-			},
-			new FieldMask { Paths = { "Details.UnknownField" } },
-			cancellationToken
-		);
+        // Act
+        var action = async () => await Fixture.UpdateSchema(
+            schemaName,
+            new SchemaDetails {
+                Description   = Faker.Lorem.Sentence(),
+                Compatibility = CompatibilityMode.Backward,
+                DataFormat    = SchemaFormat.Json
+            },
+            new FieldMask { Paths = { "Details.UnknownField" } },
+            cancellationToken
+        );
 
-		// Assert
-		var updateSchemaException = await updateSchema.Should().ThrowAsync<RpcException>();
-		updateSchemaException.Which.Status.StatusCode.Should().Be(StatusCode.FailedPrecondition);
-		updateSchemaException.Which.Message.Should().Contain("Unknown field Details.UnknownField in update mask");
-	}
+        // Assert
+        var rex = await action.ShouldThrowAsync<RpcException>();
+        rex.Status.StatusCode.ShouldBe(StatusCode.FailedPrecondition);
+        rex.Message.ShouldContain("Unknown field Details.UnknownField in update mask");
+    }
 
-	[Test, NotModifiableTestCases]
-	public async Task throws_exception_when_trying_to_update_non_modifiable_fields(
-		SchemaDetails schemaDetails, string maskPath, string errorMessage, CancellationToken cancellationToken
-	) {
-		// Arrange
-		var schemaName = NewSchemaName();
-		await CreateSchema(schemaName, cancellationToken);
+    [Test]
+    [NotModifiableTestCases]
+    public async ValueTask throws_exception_when_trying_to_update_non_modifiable_fields(
+        SchemaDetails schemaDetails, string maskPath, string errorMessage, CancellationToken cancellationToken
+    ) {
+        // Arrange
+        var schemaName = NewSchemaName();
+        await Fixture.CreateSchema(schemaName, cancellationToken);
 
-		// Act
-		var updateSchema = async () => await UpdateSchema(
-			schemaName,
-			schemaDetails,
-			new FieldMask { Paths = { maskPath } },
-			cancellationToken
-		);
+        // Act
+        var action = async () => await Fixture.UpdateSchema(
+            schemaName,
+            schemaDetails,
+            new FieldMask { Paths = { maskPath } },
+            cancellationToken
+        );
 
-		// Assert
-		var updateSchemaException = await updateSchema.Should().ThrowAsync<RpcException>();
-		updateSchemaException.Which.Status.StatusCode.Should().Be(StatusCode.FailedPrecondition);
-		updateSchemaException.Which.Message.Should().Contain(errorMessage);
-	}
+        // Assert
+        var rex = await action.ShouldThrowAsync<RpcException>();
+        rex.Status.StatusCode.ShouldBe(StatusCode.FailedPrecondition);
+        rex.Message.ShouldContain(errorMessage);
+    }
 
-	[Test, UnchangedFieldsTestCases]
-	public async Task throws_exception_when_fields_has_not_changed(SchemaDetails schemaDetails, string maskPath, string errorMessage,
-		CancellationToken cancellationToken) {
-		// Arrange
-		var schemaName = NewSchemaName();
+    [Test]
+    [UnchangedFieldsTestCases]
+    public async ValueTask throws_exception_when_fields_has_not_changed(
+        SchemaDetails schemaDetails, string maskPath, string errorMessage,
+        CancellationToken cancellationToken
+    ) {
+        // Arrange
+        var schemaName = NewSchemaName();
 
-		var details = new SchemaDetails {
-			Description = schemaDetails.Description,
-			Compatibility = CompatibilityMode.None,
-			DataFormat = SchemaFormat.Json,
-			Tags = { new Dictionary<string, string>(schemaDetails.Tags) }
-		};
+        var details = new SchemaDetails {
+            Description   = schemaDetails.Description,
+            Compatibility = CompatibilityMode.None,
+            DataFormat    = SchemaFormat.Json,
+            Tags          = { new Dictionary<string, string>(schemaDetails.Tags) }
+        };
 
-		await CreateSchema(schemaName, details, cancellationToken);
+        await Fixture.CreateSchema(schemaName, details, cancellationToken);
 
-		// Act
-		var updateSchema = async () => await UpdateSchema(
-			schemaName,
-			schemaDetails,
-			new FieldMask { Paths = { maskPath } },
-			cancellationToken
-		);
+        // Act
+        var action = async () => await Fixture.UpdateSchema(
+            schemaName,
+            schemaDetails,
+            new FieldMask { Paths = { maskPath } },
+            cancellationToken
+        );
 
-		// Assert
-		var exception = await updateSchema.Should().ThrowAsync<RpcException>();
-		exception.Which.Status.StatusCode.Should().Be(StatusCode.FailedPrecondition);
-		exception.Which.Message.Should().Contain(errorMessage);
-	}
+        // Assert
+        var rex = await action.ShouldThrowAsync<RpcException>();
+        rex.Status.StatusCode.ShouldBe(StatusCode.FailedPrecondition);
+        rex.Message.ShouldContain(errorMessage);
+    }
 
-	public class NotModifiableTestCases : TestCaseGenerator<SchemaDetails, string, string> {
-		protected override IEnumerable<(SchemaDetails, string, string)> Data() {
-			yield return (
-				new SchemaDetails {
-					Compatibility = CompatibilityMode.Forward,
-					DataFormat = SchemaFormat.Json
-				},
-				"Details.Compatibility",
-				"Compatibility mode is not modifiable"
-			);
-			yield return (
-				new SchemaDetails {
-					Compatibility = CompatibilityMode.Forward,
-					DataFormat = SchemaFormat.Protobuf
-				},
-				"Details.DataFormat",
-				"DataFormat is not modifiable"
-			);
-		}
-	}
+    public class NotModifiableTestCases : TestCaseGenerator<SchemaDetails, string, string> {
+        protected override IEnumerable<(SchemaDetails, string, string)> Data() {
+            yield return (
+                new SchemaDetails {
+                    Compatibility = CompatibilityMode.Forward,
+                    DataFormat    = SchemaFormat.Json
+                },
+                "Details.Compatibility",
+                "Compatibility mode is not modifiable"
+            );
 
-	public class UnchangedFieldsTestCases : TestCaseGenerator<SchemaDetails, string, string> {
-		protected override IEnumerable<(SchemaDetails, string, string)> Data() {
-			yield return (
-				new SchemaDetails {
-					Description = "Unchanged description",
-					Compatibility = CompatibilityMode.Backward,
-					DataFormat = SchemaFormat.Json
-				},
-				"Details.Description",
-				"Description has not changed"
-			);
-			yield return (
-				new SchemaDetails {
-					Tags = { ["env"] = "test" },
-					Compatibility = CompatibilityMode.Backward,
-					DataFormat = SchemaFormat.Json
-				},
-				"Details.Tags",
-				"Tags have not changed"
-			);
-		}
-	}
+            yield return (
+                new SchemaDetails {
+                    Compatibility = CompatibilityMode.Forward,
+                    DataFormat    = SchemaFormat.Protobuf
+                },
+                "Details.DataFormat",
+                "DataFormat is not modifiable"
+            );
+        }
+    }
+
+    public class UnchangedFieldsTestCases : TestCaseGenerator<SchemaDetails, string, string> {
+        protected override IEnumerable<(SchemaDetails, string, string)> Data() {
+            yield return (
+                new SchemaDetails {
+                    Description   = "Unchanged description",
+                    Compatibility = CompatibilityMode.Backward,
+                    DataFormat    = SchemaFormat.Json
+                },
+                "Details.Description",
+                "Description has not changed"
+            );
+
+            yield return (
+                new SchemaDetails {
+                    Tags          = { ["env"] = "test" },
+                    Compatibility = CompatibilityMode.Backward,
+                    DataFormat    = SchemaFormat.Json
+                },
+                "Details.Tags",
+                "Tags have not changed"
+            );
+        }
+    }
 }

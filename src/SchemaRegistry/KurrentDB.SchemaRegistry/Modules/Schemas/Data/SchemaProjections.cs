@@ -47,36 +47,31 @@ public class SchemaProjections : DuckDBProjection {
 				   );
 				""";
 
-			try {
-				connection.Execute(insertSchemaVersionSql,
-					new {
-						version_id = msg.SchemaVersionId,
-						schema_name = msg.SchemaName,
-						version_number = msg.VersionNumber,
-						schema_definition = msg.SchemaDefinition.ToByteArray(),
-						data_format = msg.DataFormat,
-						created_at = msg.CreatedAt.ToDateTime(),
-						checkpoint = ctx.Record.LogPosition.CommitPosition
-					}
-				);
-				connection.Execute(insertSchemaSql,
-					new {
-						schema_name = msg.SchemaName,
-						description = msg.Description,
-						data_format = msg.DataFormat,
-						version_number = msg.VersionNumber,
-						version_id = msg.SchemaVersionId,
-						compatibility = msg.Compatibility,
-						tags = JsonSerializer.Serialize(msg.Tags),
-						created_at = msg.CreatedAt.ToDateTime(),
-						checkpoint = ctx.Record.LogPosition.CommitPosition
-					}
-				);
-				tx.Commit();
-			} catch {
-				tx.Rollback();
-				throw;
-			}
+			connection.Execute(insertSchemaVersionSql,
+				new {
+					version_id = msg.SchemaVersionId,
+					schema_name = msg.SchemaName,
+					version_number = msg.VersionNumber,
+					schema_definition = msg.SchemaDefinition.ToByteArray(),
+					data_format = msg.DataFormat,
+					created_at = msg.CreatedAt.ToDateTime(),
+					checkpoint = ctx.Record.LogPosition.CommitPosition
+				}
+			);
+			connection.Execute(insertSchemaSql,
+				new {
+					schema_name = msg.SchemaName,
+					description = msg.Description,
+					data_format = msg.DataFormat,
+					version_number = msg.VersionNumber,
+					version_id = msg.SchemaVersionId,
+					compatibility = msg.Compatibility,
+					tags = JsonSerializer.Serialize(msg.Tags),
+					created_at = msg.CreatedAt.ToDateTime(),
+					checkpoint = ctx.Record.LogPosition.CommitPosition
+				}
+			);
+			tx.CommitOnDispose();
 			return ValueTask.CompletedTask;
 		});
 
@@ -106,35 +101,30 @@ public class SchemaProjections : DuckDBProjection {
 				WHERE schema_name = $schema_name;
 				""";
 
-			try {
-				connection.Execute(
-					insertSchemaVersionSql,
-					new {
-						version_id = msg.SchemaVersionId,
-						version_number = msg.VersionNumber,
-						schema_name = msg.SchemaName,
-						schema_definition = msg.SchemaDefinition.ToByteArray(),
-						data_format = msg.DataFormat,
-						registered_at = msg.RegisteredAt.ToDateTime(),
-						checkpoint = ctx.Record.LogPosition.CommitPosition
-					}
-				);
+			connection.Execute(
+				insertSchemaVersionSql,
+				new {
+					version_id = msg.SchemaVersionId,
+					version_number = msg.VersionNumber,
+					schema_name = msg.SchemaName,
+					schema_definition = msg.SchemaDefinition.ToByteArray(),
+					data_format = msg.DataFormat,
+					registered_at = msg.RegisteredAt.ToDateTime(),
+					checkpoint = ctx.Record.LogPosition.CommitPosition
+				}
+			);
 
-				connection.Execute(
-					updateSchemaLatestVersionSql,
-					new {
-						version_number = msg.VersionNumber,
-						version_id = msg.SchemaVersionId,
-						schema_name = msg.SchemaName,
-						checkpoint = ctx.Record.LogPosition.CommitPosition
-					}
-				);
+			connection.Execute(
+				updateSchemaLatestVersionSql,
+				new {
+					version_number = msg.VersionNumber,
+					version_id = msg.SchemaVersionId,
+					schema_name = msg.SchemaName,
+					checkpoint = ctx.Record.LogPosition.CommitPosition
+				}
+			);
 
-				tx.Commit();
-			} catch {
-				tx.Rollback();
-				throw;
-			}
+			tx.CommitOnDispose();
 			return ValueTask.CompletedTask;
 		});
 
@@ -205,43 +195,38 @@ public class SchemaProjections : DuckDBProjection {
 			using var scope = db.GetScopedConnection(out var connection);
 			using var tx = connection.BeginTransaction();
 
-			try {
-				// TODO: Must figure out a better way to do this. Right now, we have to do string interpolation,
-				// but ideally, we would want to simply pass the list of versions
-				string deleteSelectedSchemaVersionsSql =
-					$"""
-					 DELETE FROM schema_versions
-					 WHERE schema_name = $schema_name AND version_id IN ({string.Join(", ", msg.Versions.Select(v => $"'{v}'"))});
-					 """;
+			// TODO: Must figure out a better way to do this. Right now, we have to do string interpolation,
+			// but ideally, we would want to simply pass the list of versions
+			string deleteSelectedSchemaVersionsSql =
+				$"""
+				 DELETE FROM schema_versions
+				 WHERE schema_name = $schema_name AND version_id IN ({string.Join(", ", msg.Versions.Select(v => $"'{v}'"))});
+				 """;
 
-				const string updateSchemaLatestVersionSql =
-					"""
-					UPDATE schemas
-					SET latest_version_number = $latest_version_number
-					  , latest_version_id = $latest_version_id
-					  , checkpoint = $checkpoint
-					  , updated_at = $deleted_at
-					WHERE schema_name = $schema_name;
-					""";
+			const string updateSchemaLatestVersionSql =
+				"""
+				UPDATE schemas
+				SET latest_version_number = $latest_version_number
+				  , latest_version_id = $latest_version_id
+				  , checkpoint = $checkpoint
+				  , updated_at = $deleted_at
+				WHERE schema_name = $schema_name;
+				""";
 
-				connection.Execute(deleteSelectedSchemaVersionsSql, new {
-					schema_name = msg.SchemaName,
-					versions = msg.Versions.ToList()
-				});
+			connection.Execute(deleteSelectedSchemaVersionsSql, new {
+				schema_name = msg.SchemaName,
+				versions = msg.Versions.ToList()
+			});
 
-				connection.Execute(updateSchemaLatestVersionSql, new {
-					schema_name = msg.SchemaName,
-					latest_version_id = msg.LatestSchemaVersionId,
-					latest_version_number = msg.LatestSchemaVersionNumber,
-					deleted_at = msg.DeletedAt.ToDateTime(),
-					checkpoint = ctx.Record.LogPosition.CommitPosition
-				});
+			connection.Execute(updateSchemaLatestVersionSql, new {
+				schema_name = msg.SchemaName,
+				latest_version_id = msg.LatestSchemaVersionId,
+				latest_version_number = msg.LatestSchemaVersionNumber,
+				deleted_at = msg.DeletedAt.ToDateTime(),
+				checkpoint = ctx.Record.LogPosition.CommitPosition
+			});
 
-				tx.Commit();
-			} catch {
-				tx.Rollback();
-				throw;
-			}
+			tx.CommitOnDispose();
 			return ValueTask.CompletedTask;
 		});
 
@@ -261,14 +246,9 @@ public class SchemaProjections : DuckDBProjection {
 				WHERE schema_name = $schema_name;
 				""";
 
-			try {
-				connection.Execute(deleteSchemaVersionsSql, new { schema_name = msg.SchemaName });
-				connection.Execute(deleteSchemasSql, new { schema_name = msg.SchemaName });
-				tx.Commit();
-			} catch {
-				tx.Rollback();
-				throw;
-			}
+			connection.Execute(deleteSchemaVersionsSql, new { schema_name = msg.SchemaName });
+			connection.Execute(deleteSchemasSql, new { schema_name = msg.SchemaName });
+			tx.CommitOnDispose();
 			return ValueTask.CompletedTask;
 		});
 	}

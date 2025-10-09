@@ -60,8 +60,8 @@ internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions option
 		var currentVer = _version;
 		var result = new List<IndexQueryRecord>();
 		for (int i = 0, count = Volatile.Read(in _count), remaining = maxCount;
-		     i < count && remaining > 0 && TryRead(currentVer, i, out var current);
-		     i++) {
+			 i < count && remaining > 0 && TryRead(currentVer, i, out var current);
+			 i++) {
 			if (current.LogPosition >= startPosition) {
 				if (i == 0 && current.LogPosition == startPosition) {
 					isComplete = true;
@@ -97,11 +97,11 @@ internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions option
 		bool first = true;
 
 		if (count > 0
-		    && TryRead(currentVer, 0, out var current)
-		    && current.LogPosition <= startPosition) {
+			&& TryRead(currentVer, 0, out var current)
+			&& current.LogPosition <= startPosition) {
 			for (int i = count - 1, remaining = maxCount;
-			     i >= 0 && remaining > 0 && TryRead(currentVer, i, out current);
-			     i--) {
+				 i >= 0 && remaining > 0 && TryRead(currentVer, i, out current);
+				 i--) {
 				if (current.LogPosition <= startPosition && query(current)) {
 					if (first && excludeFirst && current.LogPosition == startPosition) {
 						first = false;
@@ -120,8 +120,8 @@ internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions option
 	public IEnumerable<InFlightRecord> GetInFlightRecords() {
 		var currentVer = _version;
 		for (int i = 0, count = Volatile.Read(in _count);
-		     i < count && TryRead(currentVer, i, out var current);
-		     i++) {
+			 i < count && TryRead(currentVer, i, out var current);
+			 i++) {
 			yield return current;
 		}
 	}

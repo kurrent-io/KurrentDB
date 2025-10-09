@@ -17,9 +17,6 @@
     <PackageReference Include="Kurrent.Surge.DuckDB" />
     <PackageReference Include="Kurrent.Surge.Core" />
     <PackageReference Include="NJsonSchema" />
-
-		<!-- Required to remove conflicts -->
-    <PackageReference Include="Google.Api.CommonProtos" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>

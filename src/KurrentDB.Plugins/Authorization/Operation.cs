@@ -14,13 +14,21 @@ public readonly struct Operation {
 
 	public Operation(string resource, string action) : this(resource, action, Array.Empty<Parameter>()) { }
 
-	public Operation WithParameter(string name, string value) => WithParameters(new Parameter(name, value));
+	public Operation(string resource, string action, Parameter parameter) {
+		Resource = resource;
+		Action = action;
+		Parameters = new([parameter]);
+	}
+
+	public Operation(OperationDefinition definition, Parameter parameter)
+		: this(definition.Resource, definition.Action, parameter) { }
 
 	public Operation WithParameter(Parameter parameter) => WithParameters(parameter);
 
 	public Operation WithParameters(ReadOnlyMemory<Parameter> parameters) {
 		var memory = new Memory<Parameter>(new Parameter[Parameters.Length + parameters.Length]);
-		if (!Parameters.IsEmpty) Parameters.CopyTo(memory);
+		if (!Parameters.IsEmpty)
+			Parameters.CopyTo(memory);
 		parameters.CopyTo(memory.Slice(Parameters.Length));
 		return new(Resource, Action, memory);
 	}

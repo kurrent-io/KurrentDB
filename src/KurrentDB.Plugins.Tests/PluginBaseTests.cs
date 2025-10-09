@@ -4,13 +4,11 @@
 // ReSharper disable AccessToDisposedClosure
 
 using System.Reactive.Subjects;
-using System.Security.Cryptography;
 using EventStore.Plugins.Diagnostics;
 using EventStore.Plugins.Licensing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using static System.Convert;
 using License = EventStore.Plugins.Licensing.License;
 
 namespace EventStore.Plugins.Tests;
@@ -47,11 +45,11 @@ public class PluginBaseTests {
 	public void plugin_diagnostics_snapshot_is_not_overriden_internally() {
 		// Arrange
 		var userDiagnosticsData = new Dictionary<string, object?> {
-			["first_value"]  = 1,
+			["first_value"] = 1,
 			["second_value"] = 2
 		};
 
-		IPlugableComponent plugin = new NightCityPlugin(new(){ Name = Guid.NewGuid().ToString() }) {
+		IPlugableComponent plugin = new NightCityPlugin(new() { Name = Guid.NewGuid().ToString() }) {
 			OnConfigureServices = x => x.PublishDiagnosticsData(userDiagnosticsData),
 			OnConfigureApplication = x => x.Disable("Disabled on ConfigureApplication because I can")
 		};
@@ -176,7 +174,7 @@ public class PluginBaseTests {
 	[Fact]
 	public void plugin_can_be_disabled_on_ConfigureServices() {
 		// Arrange
-		IPlugableComponent plugin = new NightCityPlugin(new(){ Name = Guid.NewGuid().ToString() }) {
+		IPlugableComponent plugin = new NightCityPlugin(new() { Name = Guid.NewGuid().ToString() }) {
 			OnConfigureServices = x => x.Disable("Disabled on ConfigureServices because I can")
 		};
 
@@ -199,7 +197,7 @@ public class PluginBaseTests {
 	[Fact]
 	public void plugin_can_be_disabled_on_ConfigureApplication() {
 		// Arrange
-		IPlugableComponent plugin = new NightCityPlugin(new(){ Name = Guid.NewGuid().ToString() }) {
+		IPlugableComponent plugin = new NightCityPlugin(new() { Name = Guid.NewGuid().ToString() }) {
 			OnConfigureApplication = x => x.Disable("Disabled on ConfigureApplication because I can")
 		};
 
@@ -270,7 +268,7 @@ public class PluginBaseTests {
 
 		public PluginOptions Options { get; }
 
-		public Action<Plugin>? OnConfigureServices    { get; set; }
+		public Action<Plugin>? OnConfigureServices { get; set; }
 		public Action<Plugin>? OnConfigureApplication { get; set; }
 
 		public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) =>

@@ -2,9 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Reflection;
-using DotNext.Threading;
 using DuckDB.NET.Data;
-using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 using KurrentDB.DuckDB;
 

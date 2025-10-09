@@ -34,7 +34,8 @@ public class IndexMessageBatchAppender : IMessageBatchAppender {
 		foreach (var resolvedEvent in batch.ToResolvedEvents()) {
 			_processor.Index(resolvedEvent);
 
-			if (++_indexedCount < _commitSize) continue;
+			if (++_indexedCount < _commitSize)
+				continue;
 
 			_processor.Commit();
 			_indexedCount = 0;

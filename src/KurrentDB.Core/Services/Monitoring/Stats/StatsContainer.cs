@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using JetBrains.Annotations;
 using KurrentDB.Common.Utils;
 
 namespace KurrentDB.Core.Services.Monitoring.Stats;

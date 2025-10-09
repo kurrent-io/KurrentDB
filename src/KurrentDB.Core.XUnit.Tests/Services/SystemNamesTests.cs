@@ -8,8 +8,7 @@ namespace KurrentDB.Core.XUnit.Tests.Services;
 
 public class SystemNamesTests {
 	[Fact]
-	public void IsMemoryStream_WithInMemoryStreamPrefix_ReturnsTrue()
-	{
+	public void IsMemoryStream_WithInMemoryStreamPrefix_ReturnsTrue() {
 		const string streamId = SystemStreams.InMemoryStreamPrefix + "custom";
 
 		Assert.True(SystemStreams.IsInMemoryStream(streamId));
@@ -17,8 +16,7 @@ public class SystemNamesTests {
 	}
 
 	[Fact]
-	public void IsIndexStream_WithIndexStreamPrefix_ReturnsTrue()
-	{
+	public void IsIndexStream_WithIndexStreamPrefix_ReturnsTrue() {
 		const string streamId = SystemStreams.IndexStreamPrefix + "custom";
 
 		Assert.True(SystemStreams.IsIndexStream(streamId));
@@ -26,8 +24,7 @@ public class SystemNamesTests {
 	}
 
 	[Fact]
-	public void IsVirtualStream_WithPredefinedVirtualStreams_ReturnsTrue()
-	{
+	public void IsVirtualStream_WithPredefinedVirtualStreams_ReturnsTrue() {
 		Assert.True(SystemStreams.IsInMemoryStream(SystemStreams.NodeStateStream));
 		Assert.True(SystemStreams.IsInMemoryStream(SystemStreams.GossipStream));
 	}
@@ -43,8 +40,7 @@ public class SystemNamesTests {
 	[InlineData("idx-withoutdollar")]
 	[InlineData("mem-withoutdollar")]
 	[InlineData("")]
-	public void IsVirtualStream_WithoutMemOrIdxPrefix_ReturnsFalse(string streamId)
-	{
+	public void IsVirtualStream_WithoutMemOrIdxPrefix_ReturnsFalse(string streamId) {
 		Assert.False(SystemStreams.IsInMemoryStream(streamId));
 		Assert.False(SystemStreams.IsIndexStream(streamId));
 	}

@@ -1,0 +1,35 @@
+---
+Language: Proto
+BasedOnStyle: Google
+
+# Width & indentation
+ColumnLimit: 100
+IndentWidth: 2
+TabWidth: 2
+UseTab: Never
+
+# Alignment for readability
+AlignConsecutiveAssignments:
+  Enabled: true
+AlignConsecutiveDeclarations:
+  Enabled: true
+AlignOperands: AlignAfterOperator
+AlignTrailingComments:
+  Kind: Always
+
+# Keep multi-line constructs clear
+AllowShortBlocksOnASingleLine: Never
+AllowShortEnumsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+
+# Comment handling
+ReflowComments: Always      # wrap comments to ColumnLimit
+# Protect specific comments (e.g., diagrams, formatted blocks) from reflow.
+# Any comment line matching this regex will be preserved as-is.
+CommentPragmas: '^[[:space:]]*(clang-format off|NOLINT|ASCII_ART|MARKDOWN)'
+
+# Misc polish
+SpaceBeforeAssignmentOperators: true
+
+...

@@ -14,6 +14,10 @@ using Microsoft.Extensions.Logging;
 using Shouldly;
 using MemberInfo = KurrentDB.Core.Cluster.MemberInfo;
 
+
+using NodeSystemInfo = KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo.NodeSystemInfo;
+
+
 namespace KurrentDB.Connectors.Tests.System;
 
 [Trait("Category", "ControlPlane/Leadership")]

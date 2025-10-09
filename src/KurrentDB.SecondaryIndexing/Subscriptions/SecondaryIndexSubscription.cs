@@ -108,7 +108,7 @@ public sealed partial class SecondaryIndexSubscription(
 		if (_processingTask != null) {
 			try {
 				await _processingTask.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing |
-				                                     ConfigureAwaitOptions.ContinueOnCapturedContext);
+													 ConfigureAwaitOptions.ContinueOnCapturedContext);
 			} catch (Exception ex) {
 				log.LogError(ex, "Error during processing task completion");
 			}

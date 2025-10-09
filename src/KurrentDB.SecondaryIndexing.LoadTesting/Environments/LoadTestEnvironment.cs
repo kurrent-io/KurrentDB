@@ -11,7 +11,7 @@ using KurrentDB.SecondaryIndexing.LoadTesting.Environments.TestServer;
 
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Environments;
 
-public interface ILoadTestEnvironment: IAsyncDisposable {
+public interface ILoadTestEnvironment : IAsyncDisposable {
 	IMessageBatchAppender MessageBatchAppender { get; }
 	IIndexingSummaryAssertion AssertThat { get; }
 	public ValueTask InitializeAsync(CancellationToken ct = default);

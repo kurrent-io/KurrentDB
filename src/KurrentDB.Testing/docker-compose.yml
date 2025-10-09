@@ -1,0 +1,33 @@
+services:
+  seq:
+    image: datalust/seq:latest
+    container_name: seq
+    restart: unless-stopped
+    environment:
+      - ACCEPT_EULA=Y
+      - SEQ_FIRSTRUN_NOAUTHENTICATION=True
+    volumes:
+      - seq-data:/data
+    ports:
+      - "5341:80"
+    networks:
+      - kurrentdb-net
+
+  aspire-dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:latest
+    container_name: aspire-dashboard
+    restart: unless-stopped
+    environment:
+      - ASPIRE_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS=true
+      - ASPIRE_ALLOW_UNSECURED_TRANSPORT=true
+    ports:
+      - "18888:18888" # Dashboard UI
+      - "4317:18889"  # OpenTelemetry Protocol (OTLP) data ingestion
+
+volumes:
+  seq-data:
+    name: seq-data
+
+networks:
+  kurrentdb-net:
+    name: kurrentdb-net

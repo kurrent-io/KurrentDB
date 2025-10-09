@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace KurrentDB.DuckDB;
 
 public static class DuckDBSetupDIExtensions {
-	public static void AddDuckDBSetup<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]T>(this IServiceCollection services)
+	public static void AddDuckDBSetup<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(this IServiceCollection services)
 		where T : class, IDuckDBSetup {
 		services.AddSingleton<IDuckDBSetup, T>();
 	}

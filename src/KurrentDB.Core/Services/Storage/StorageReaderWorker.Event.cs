@@ -46,9 +46,9 @@ public partial class StorageReaderWorker<TStreamId> {
 			if (record is null)
 				return NoData(ReadEventResult.AccessDenied);
 			if (result.Result is ReadEventResult.NoStream or ReadEventResult.NotFound &&
-			    _systemStreams.IsMetaStream(streamId) &&
-			    result.OriginalStreamExists.HasValue &&
-			    result.OriginalStreamExists.Value) {
+				_systemStreams.IsMetaStream(streamId) &&
+				result.OriginalStreamExists.HasValue &&
+				result.OriginalStreamExists.Value) {
 				return NoData(ReadEventResult.Success);
 			}
 

@@ -19,7 +19,6 @@ using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;
 using KurrentDB.Surge.Eventuous;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using static KurrentDB.SchemaRegistry.SchemaRegistryConventions;
 
@@ -29,14 +28,12 @@ public static class SchemaRegistryWireUp {
 	public static IServiceCollection AddSchemaRegistryService(this IServiceCollection services) {
 		services.AddNodeSystemInfoProvider();
 
-		services.TryAddSingleton(TimeProvider.System);
-
 		services.AddSingleton<GetUtcNow>(ctx => ctx.GetRequiredService<TimeProvider>().GetUtcNow);
 
-		services.AddGrpc(x => x.EnableDetailedErrors = true);
+		services.AddGrpc();
 		services.AddGrpcRequestValidation();
 
-		services.AddSingleton<ISchemaCompatibilityManager>(new NJsonSchemaCompatibilityManager());
+		services.AddSingleton<ISchemaCompatibilityManager, NJsonSchemaCompatibilityManager>();
 
 		services.AddDuckDBConnectionProvider();
 		services.AddDuckDBSetup<SchemaDbSchema>();

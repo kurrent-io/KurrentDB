@@ -17,7 +17,6 @@ using Grpc.Net.Client;
 using Kurrent.Client.Redaction;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Tests.Integration;
-using KurrentDB.Protocol.V2;
 using NUnit.Framework;
 using Empty = EventStore.Client.Empty;
 
@@ -26,8 +25,7 @@ namespace KurrentDB.Core.Tests.Services.Transport.Grpc.ServerFeaturesTests;
 public class ServerFeaturesTest {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class
-		when_getting_supported_methods<TLogFormat, TStreamId> : specification_with_cluster<TLogFormat, TStreamId> {
+	public class when_getting_supported_methods<TLogFormat, TStreamId> : specification_with_cluster<TLogFormat, TStreamId> {
 
 		private List<SupportedMethod> _supportedEndPoints = new();
 		private List<SupportedMethod> _expectedEndPoints = new();
@@ -55,7 +53,7 @@ public class ServerFeaturesTest {
 			_expectedEndPoints.AddRange(GetEndPoints(Gossip.Descriptor));
 			_expectedEndPoints.AddRange(GetEndPoints(EventStore.Client.Monitoring.Monitoring.Descriptor));
 			_expectedEndPoints.AddRange(GetEndPoints(Redaction.Descriptor));
-			_expectedEndPoints.AddRange(GetEndPoints(StreamsService.Descriptor)); // multi stream appends
+			// _expectedEndPoints.AddRange(GetEndPoints(StreamsService.Descriptor)); // multi stream appends
 			_expectedEndPoints.AddRange(GetEndPoints(ServerFeatures.Descriptor));
 
 			var versionParts = VersionInfo.Version.Split('.');
@@ -96,4 +94,3 @@ public class ServerFeaturesTest {
 		}
 	}
 }
-

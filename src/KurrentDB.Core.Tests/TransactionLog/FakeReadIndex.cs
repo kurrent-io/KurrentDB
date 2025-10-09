@@ -26,7 +26,7 @@ public class FakeReadIndex<TLogFormat, TStreamId> : IReadIndex<TStreamId> {
 		get { throw new NotImplementedException(); }
 	}
 
-	public IIndexReader<TStreamId> IndexReader  {
+	public IIndexReader<TStreamId> IndexReader {
 		get { throw new NotImplementedException(); }
 	}
 

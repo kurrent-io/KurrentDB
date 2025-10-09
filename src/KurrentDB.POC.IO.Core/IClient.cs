@@ -54,7 +54,7 @@ public interface IClient {
 		long maxCount,
 		IEventFilter eventFilter,
 		CancellationToken token
-	) ;
+	);
 	Task DeleteStreamAsync(string stream, long expectedVersion, CancellationToken cancellationToken);
 
 	async Task<long> WriteAsyncRetry(string stream, EventToWrite[] events, long expectedVersion,
