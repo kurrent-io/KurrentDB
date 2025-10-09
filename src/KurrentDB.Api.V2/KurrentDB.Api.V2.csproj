@@ -16,6 +16,9 @@
     <PackageReference Include="Grpc.StatusProto" />
     <PackageReference Include="Humanizer.Core" />
     <PackageReference Include="Scrutor" />
+    <PackageReference Include="System.Linq.Async">
+      <ExcludeAssets>compile</ExcludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>

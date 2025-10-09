@@ -40,8 +40,8 @@ public class ConnectorQueries {
             .Where(Filter())
             .Skip(skip)
             .Take(query.Paging.PageSize)
-            .SelectAwaitWithCancellation(Map(query, cancellationToken))
-            .SelectAwaitWithCancellation(EnrichWithPosition())
+            .Select(Map(query, cancellationToken))
+            .Select(EnrichWithPosition())
             .ToListAsync(cancellationToken);
 
         return new ListConnectorsResult {

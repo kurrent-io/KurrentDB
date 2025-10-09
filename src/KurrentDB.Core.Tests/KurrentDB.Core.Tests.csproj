@@ -23,6 +23,9 @@
 		<PackageReference Include="Scrutor" />
 		<PackageReference Include="Serilog.Sinks.InMemory" />
 		<PackageReference Include="Serilog.AspNetCore" />
+		<PackageReference Include="System.Linq.Async">
+			<ExcludeAssets>compile</ExcludeAssets>
+		</PackageReference>
 		<!-- Workaround because there's no compiler support for the IgnoresAccessChecksTo attribute. -->
 		<!-- See: https://github.com/aelij/IgnoresAccessChecksToGenerator?tab=readme-ov-file -->
 		<PackageReference Include="IgnoresAccessChecksToGenerator" PrivateAssets="All" />

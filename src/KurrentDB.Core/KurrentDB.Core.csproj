@@ -28,7 +28,9 @@
 		<PackageReference Include="System.Diagnostics.DiagnosticSource" />
 		<PackageReference Include="System.Diagnostics.PerformanceCounter" />
 		<PackageReference Include="System.IO.Pipelines" />
-		<PackageReference Include="System.Linq.Async" />
+		<PackageReference Include="System.Linq.Async">
+			<ExcludeAssets>compile</ExcludeAssets>
+		</PackageReference>
 		<PackageReference Include="System.Net.Http" />
 		<PackageReference Include="Microsoft.Diagnostics.NETCore.Client" />
 		<PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" />

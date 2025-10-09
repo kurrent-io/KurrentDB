@@ -15,6 +15,9 @@
 		<PackageReference Include="Eventuous.Application" />
 		<PackageReference Include="Eventuous.Extensions.AspNetCore" />
 		<PackageReference Include="Eventuous.Extensions.DependencyInjection" />
+		<PackageReference Include="System.Linq.Async">
+			<ExcludeAssets>compile</ExcludeAssets>
+		</PackageReference>
 	</ItemGroup>
 	<ItemGroup>
 	  <ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />

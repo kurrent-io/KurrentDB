@@ -32,7 +32,6 @@
 		<PackageReference Include="Newtonsoft.Json" />
 		<PackageReference Include="NuGet.Protocol" />
 		<PackageReference Include="System.Formats.Asn1" />
-		<PackageReference Include="System.Linq.Async" />
 		<PackageReference Include="System.Net.Http" />
 		<PackageReference Include="System.Text.RegularExpressions" />
 		<PackageReference Include="xunit" />

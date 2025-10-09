@@ -56,6 +56,9 @@
 		<PackageReference Include="Serilog.Sinks.Debug" />
 		<PackageReference Include="Serilog.Sinks.Seq" />
 		<PackageReference Include="Serilog.Enrichers.Environment" />
+		<PackageReference Include="System.Linq.Async">
+			<ExcludeAssets>compile</ExcludeAssets>
+		</PackageReference>
 	</ItemGroup>
 
   <ItemGroup>
