@@ -17,7 +17,7 @@ using static KurrentDB.SecondaryIndexing.Tests.Fakes.TestResolvedEventFactory;
 
 namespace KurrentDB.SecondaryIndexing.Tests.Indexes;
 
-public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
+public class DefaultIndexProcessorTests : DuckDbIntegrationTest<DefaultIndexProcessorTests> {
 	[Fact]
 	public void WhenNoEventsProcessedYet_HasDefaultValues() {
 		Assert.Equal(-1, _processor.LastIndexedPosition.PreparePosition);

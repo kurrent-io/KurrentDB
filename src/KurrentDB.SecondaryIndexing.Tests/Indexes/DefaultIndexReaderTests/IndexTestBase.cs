@@ -10,7 +10,7 @@ using KurrentDB.SecondaryIndexing.Tests.Fixtures;
 
 namespace KurrentDB.SecondaryIndexing.Tests.Indexes.DefaultIndexReaderTests;
 
-public abstract class IndexTestBase : DuckDbIntegrationTest {
+public abstract class IndexTestBase : DuckDbIntegrationTest<IndexTestBase> {
 	private readonly DefaultIndexProcessor _processor;
 	private protected readonly DefaultIndexReader Sut;
 	protected readonly Guid InternalCorrId = Guid.NewGuid();
