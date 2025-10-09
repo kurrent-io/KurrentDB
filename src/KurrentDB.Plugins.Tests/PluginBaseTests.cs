@@ -18,7 +18,7 @@ public class PluginBaseTests {
 	public void plugin_base_sets_defaults_automatically() {
 		var expectedOptions = new PluginOptions {
 			Name = "NightCity",
-			Version = "25.1.0.0",
+			Version = "26.0.0.0",
 			DiagnosticsName = "NightCity",
 		};
 
@@ -31,7 +31,7 @@ public class PluginBaseTests {
 	public void subsystems_plugin_base_sets_defaults_automatically() {
 		var expectedOptions = new SubsystemsPluginOptions {
 			Name = "PhantomLiberty",
-			Version = "25.1.0.0",
+			Version = "26.0.0.0",
 			DiagnosticsName = "PhantomLiberty",
 			CommandLineName = "phantom-liberty"
 		};
