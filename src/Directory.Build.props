@@ -10,8 +10,8 @@
 		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
 		<Copyright>Copyright 2012-2025 Kurrent, Inc</Copyright>
 		<PackageReleaseNotes>https://docs.kurrent.io/server/latest/release-schedule/release-notes</PackageReleaseNotes>
-		<TargetFramework>net8.0</TargetFramework>
-		<LangVersion>12.0</LangVersion>
+		<TargetFramework>net10.0</TargetFramework>
+		<LangVersion>14.0</LangVersion>
 		<Platforms>AnyCPU;x64;ARM64</Platforms>
 		<IsPackable>false</IsPackable>
 		<VersionPrefix>25.1.0</VersionPrefix>

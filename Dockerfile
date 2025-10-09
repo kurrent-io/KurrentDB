@@ -57,7 +57,7 @@ FROM build AS publish
 ARG RUNTIME=linux-x64
 
 RUN dotnet publish --configuration=Release --runtime=${RUNTIME} --self-contained \
-     --framework=net8.0 --output /publish /build/src/KurrentDB
+     --framework=net10.0 --output /publish /build/src/KurrentDB
 
 # "runtime" image
 FROM mcr.microsoft.com/dotnet/runtime-deps:8.0-${CONTAINER_RUNTIME} AS runtime

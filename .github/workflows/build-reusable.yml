@@ -37,10 +37,10 @@ jobs:
       if: ${{ !startsWith(inputs.os, 'windows') }}
       uses: docker/setup-buildx-action@v2
     -  
-      name: Install net8.0
+      name: Install net10.0
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: 10.0.x
     -  
       name: Clear Nuget Cache
       shell: powershell
