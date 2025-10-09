@@ -9,9 +9,6 @@ on:
       arch:
         required: true
         type: string
-      azurite:
-        required: false
-        type: boolean
       cs_symbols:
         required: false
         type: string
