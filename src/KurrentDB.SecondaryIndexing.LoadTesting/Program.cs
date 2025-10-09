@@ -8,12 +8,6 @@ using KurrentDB.SecondaryIndexing.Tests.Observability;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 
-// currently Microsoft.Testing.Platform is running this executable, probably to discover the tests that are in it,
-// probably because it has transitive dependencies on Microsoft.Testing.Platform.
-// This temporary workaround returns early in that case.
-if (args.Contains("--diagnostic-output-directory"))
-	return;
-
 var config =
 	new ConfigurationBuilder()
 		.AddJsonFile("appsettings.json", optional: true)
