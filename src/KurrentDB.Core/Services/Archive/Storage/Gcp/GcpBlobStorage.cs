@@ -37,7 +37,7 @@ public class GcpBlobStorage : IBlobStorage {
 		var writer = new MemoryWriter(buffer);
 		var destination = StreamSource.AsSynchronousStream(writer);
 		try {
-			var obj = await _storageClient.DownloadObjectAsync(
+			await _storageClient.DownloadObjectAsync(
 				bucket: _options.Bucket,
 				objectName: name,
 				destination: destination,
