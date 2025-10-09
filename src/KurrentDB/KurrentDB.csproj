@@ -46,13 +46,13 @@
         <ProjectReference Include="..\KurrentDB.Plugins.Api.V2\KurrentDB.Plugins.Api.V2.csproj" />
 	</ItemGroup>
 	<ItemGroup>
-		<None Update="..\..\LICENSE.md">
+		<None Include="..\..\LICENSE.md" Pack="true" PackagePath="\">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
-		<None Update="..\..\LICENSE_CONTRIBUTIONS.md">
+		<None Include="..\..\LICENSE_CONTRIBUTIONS.md" Pack="true" PackagePath="\">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
-		<None Update="..\..\NOTICE.md">
+		<None Include="..\..\NOTICE.md" Pack="true" PackagePath="\">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 		<None Update="metricsconfig.json">
