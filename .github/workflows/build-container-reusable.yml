@@ -41,7 +41,7 @@ jobs:
         key: "${{ inputs.container-runtime }}"
         map: |
           {
-            "jammy": {
+            "noble": {
               "runtime": "linux-x64"
             },
             "bookworm-slim": {

@@ -1,7 +1,7 @@
 # "build" image
-ARG CONTAINER_RUNTIME=jammy
-# NOT A BUG: we can't build on alpine so we use jammy as a base image
-FROM mcr.microsoft.com/dotnet/sdk:8.0-jammy AS build
+ARG CONTAINER_RUNTIME=noble
+# NOT A BUG: we can't build on alpine so we use noble as a base image
+FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS build
 ARG RUNTIME=linux-x64
 
 WORKDIR /build
@@ -29,7 +29,7 @@ WORKDIR /build/.git
 COPY ./.git/ .
 
 # "test" image
-FROM mcr.microsoft.com/dotnet/sdk:8.0-${CONTAINER_RUNTIME} AS test
+FROM mcr.microsoft.com/dotnet/sdk:10.0-${CONTAINER_RUNTIME} AS test
 WORKDIR /build
 COPY --from=build ./build/src ./src
 COPY --from=build ./build/ci ./ci
@@ -60,7 +60,7 @@ RUN dotnet publish --configuration=Release --runtime=${RUNTIME} --self-contained
      --framework=net10.0 --output /publish /build/src/KurrentDB
 
 # "runtime" image
-FROM mcr.microsoft.com/dotnet/runtime-deps:8.0-${CONTAINER_RUNTIME} AS runtime
+FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-${CONTAINER_RUNTIME} AS runtime
 ARG RUNTIME=linux-x64
 ARG UID=1000
 ARG GID=1000
