@@ -5,10 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
+using DotNext;
 using DotNext.Buffers.Text;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.DataStructures;
@@ -1192,14 +1192,11 @@ public partial class PTable : ISearchTable, IDisposable {
 		var workItem = GetWorkItem();
 		try {
 			var streamHash = stream.Hash;
-			return _bloomFilter.MightContain(GetSpan(ref streamHash));
+			return _bloomFilter.MightContain(Span.AsReadOnlyBytes(in streamHash));
 		} finally {
 			ReturnWorkItem(workItem);
 		}
 	}
-
-	private static ReadOnlySpan<byte> GetSpan(ref ulong streamHash) =>
-		MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref streamHash, 1));
 
 	// construct this struct with a 64 bit hash and it will convert it to a hash
 	// for the specified table version
