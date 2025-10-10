@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
+using DotNext;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.DataStructures;
 using KurrentDB.Core.DataStructures.ProbabilisticFilter;
@@ -105,8 +106,7 @@ public partial class PTable {
 					// WRITE BLOOM FILTER ENTRY
 					if (bloomFilter != null && rec.Stream != previousHash) {
 						// we are creating a PTable of the same version as the Memtable. therefore the hash is the right format
-						var streamHash = rec.Stream;
-						bloomFilter.Add(GetSpan(ref streamHash));
+						bloomFilter.Add(Span.AsReadOnlyBytes(in rec.Stream));
 						previousHash = rec.Stream;
 					}
 
@@ -227,8 +227,7 @@ public partial class PTable {
 
 						// WRITE BLOOM FILTER ENTRY
 						if (bloomFilter != null && current.Stream != previousHash) {
-							var streamHash = current.Stream;
-							bloomFilter.Add(GetSpan(ref streamHash));
+							bloomFilter.Add(Span.AsReadOnlyBytes(in current.Stream));
 							previousHash = current.Stream;
 						}
 
@@ -369,8 +368,7 @@ public partial class PTable {
 						// WRITE BLOOM FILTER ENTRY
 						if (bloomFilter != null && current.Stream != previousHash) {
 							// upgradeHash has already ensured the hash is in the right format for the target
-							var streamHash = current.Stream;
-							bloomFilter.Add(GetSpan(ref streamHash));
+							bloomFilter.Add(Span.AsReadOnlyBytes(in current.Stream));
 							previousHash = current.Stream;
 						}
 
@@ -475,8 +473,7 @@ public partial class PTable {
 								AppendRecordTo(bs, buffer, version, enumerator.Current, indexEntrySize);
 								// WRITE BLOOM FILTER ENTRY
 								if (bloomFilter != null && current.Stream != previousHash) {
-									var streamHash = current.Stream;
-									bloomFilter.Add(GetSpan(ref streamHash));
+									bloomFilter.Add(Span.AsReadOnlyBytes(in current.Stream));
 									previousHash = current.Stream;
 								}
 								keptCount++;
