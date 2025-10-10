@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -25,21 +25,16 @@
 		<PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
 		<PackageReference Include="Polly.Core" />
 		<PackageReference Include="Quickenshtein" />
-		<PackageReference Include="System.Diagnostics.DiagnosticSource" />
 		<PackageReference Include="System.Diagnostics.PerformanceCounter" />
-		<PackageReference Include="System.IO.Pipelines" />
 		<PackageReference Include="System.Linq.Async">
 			<ExcludeAssets>compile</ExcludeAssets>
 		</PackageReference>
-		<PackageReference Include="System.Net.Http" />
 		<PackageReference Include="Microsoft.Diagnostics.NETCore.Client" />
 		<PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" />
 		<PackageReference Include="Microsoft.Data.Sqlite" />
 		<PackageReference Include="DotNext.IO" />
 		<PackageReference Include="DotNext.Threading" />
 		<PackageReference Include="DotNext.Unsafe" />
-		<PackageReference Include="System.Text.RegularExpressions" />
-		<PackageReference Include="System.Threading.Channels" />
 		<PackageReference Include="Scrutor" />
 	</ItemGroup>
 	<ItemGroup>

@@ -8,7 +8,6 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
-		<PackageReference Include="System.Diagnostics.DiagnosticSource" />
 		<PackageReference Include="YamlDotNet" />
 		<PackageReference Include="System.Reactive" />
 	</ItemGroup>
