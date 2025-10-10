@@ -4,7 +4,6 @@
     <!-- Error MSB6004 : The specified task executable location "/macosx_x64/protoc" is invalid. -->
     <!--suppress MsbuildTargetFrameworkTagInspection-->
     <TargetFrameworks>net10.0</TargetFrameworks>
-    <LangVersion>preview</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>

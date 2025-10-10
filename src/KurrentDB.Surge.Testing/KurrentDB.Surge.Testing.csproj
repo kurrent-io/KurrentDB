@@ -7,7 +7,6 @@
 		<OutputType>Library</OutputType>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>true</ImplicitUsings>
-		<LangVersion>preview</LangVersion>
 <!--		<Deterministic>true</Deterministic>-->
 		<NoWarn>xUnit1041</NoWarn>
 		<IsTestProject>false</IsTestProject>
