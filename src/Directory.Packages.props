@@ -68,7 +68,7 @@
     <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="9.0.9" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.7.0" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing.XUnit" Version="1.1.1" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing.XUnit" Version="1.1.2" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.7.0" />
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="9.0.9" />
     <PackageVersion Include="Microsoft.Diagnostics.NETCore.Client" Version="0.2.621003" />
@@ -80,7 +80,7 @@
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.9" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.9" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.AutoActivation" Version="9.8.0" />
-    <PackageVersion Include="Microsoft.Extensions.Diagnostics.Testing" Version="9.8.0" />
+    <PackageVersion Include="Microsoft.Extensions.Diagnostics.Testing" Version="9.9.0" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.9" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="9.4.2" />
     <PackageVersion Include="Serilog.Enrichers.Demystifier" Version="1.0.3" />
@@ -112,6 +112,8 @@
     <!-- upgrade because of transitive dependency vulnerability -->
     <PackageVersion Include="NuGet.Protocol" Version="6.7.1" />
     <PackageVersion Include="NUnit" Version="3.14.0" />
+    <!-- cannot upgrade to 5.2.0 yet, it introduces MTP to Core.Tests which is depended on by some XUnit project  -->
+    <!-- after the net10 upgrade we can refactor those dependences away and/or upgrade to MTP across the board -->
     <PackageVersion Include="NUnit3TestAdapter" Version="4.5.0" />
     <PackageVersion Include="ObjectLayoutInspector" Version="0.1.4" />
     <PackageVersion Include="OpenTelemetry" Version="1.13.0" />
@@ -169,7 +171,7 @@
     <PackageVersion Include="Verify.TUnit" Version="30.11.0" />
     <PackageVersion Include="WaffleGenerator.Bogus" Version="4.2.2" />
     <PackageVersion Include="xunit" Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
     <PackageVersion Include="YamlDotnet" Version="16.3.0" />
   </ItemGroup>
 </Project>
