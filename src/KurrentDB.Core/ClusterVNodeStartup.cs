@@ -247,12 +247,12 @@ public class ClusterVNodeStartup<TStreamId>
 		);
 
 		// Other dependencies
-        services
-            .TryAddSingleton(TimeProvider.System);
+		services
+			.TryAddSingleton(TimeProvider.System);
 
 		services
-            .AddSingleton(_options)
-            .AddSingleton(_metricsConfiguration)
+			.AddSingleton(_options)
+			.AddSingleton(_metricsConfiguration)
 			.AddSingleton<ISubscriber>(_mainBus)
 			.AddSingleton<IPublisher>(_mainQueue)
 			.AddSingleton<ISystemClient, SystemClient>()
@@ -273,49 +273,49 @@ public class ClusterVNodeStartup<TStreamId>
 			.AddSingleton(new Redaction(_mainQueue, _authorizationProvider))
 			.AddSingleton<ServerFeatures>();
 
-        // OpenTelemetry
-        services.AddOpenTelemetry()
-            // Configure resource ONCE at the top level - applies to ALL signals
-            .ConfigureResource(resource => resource
-                .AddService(_metricsConfiguration.ServiceName)
-                .AddEnvironmentVariableDetector())
-            .WithMetrics(meterOptions => meterOptions
-                .AddAspNetCoreInstrumentation()
-                .AddMeter(_metricsConfiguration.Meters)
-                .AddView(ViewConfig)
-                .AddInternalExporter()
-                .AddPrometheusExporter(options => {
-                    if (_metricsConfiguration is { LegacyCoreNaming: true, LegacyProjectionsNaming: true }) {
-                        options.DisableTotalNameSuffixForCounters = true;
-                    } else if (_metricsConfiguration.LegacyCoreNaming || _metricsConfiguration.LegacyProjectionsNaming) {
-                        Log.Error("Inconsistent Meter names: {names}. Please use EventStore or KurrentDB for all.",
-                            string.Join(", ", _metricsConfiguration.Meters));
-                    }
+		// OpenTelemetry
+		services.AddOpenTelemetry()
+			// Configure resource ONCE at the top level - applies to ALL signals
+			.ConfigureResource(resource => resource
+				.AddService(_metricsConfiguration.ServiceName)
+				.AddEnvironmentVariableDetector())
+			.WithMetrics(meterOptions => meterOptions
+				.AddAspNetCoreInstrumentation()
+				.AddMeter(_metricsConfiguration.Meters)
+				.AddView(ViewConfig)
+				.AddInternalExporter()
+				.AddPrometheusExporter(options => {
+					if (_metricsConfiguration is { LegacyCoreNaming: true, LegacyProjectionsNaming: true }) {
+						options.DisableTotalNameSuffixForCounters = true;
+					} else if (_metricsConfiguration.LegacyCoreNaming || _metricsConfiguration.LegacyProjectionsNaming) {
+						Log.Error("Inconsistent Meter names: {names}. Please use EventStore or KurrentDB for all.",
+							string.Join(", ", _metricsConfiguration.Meters));
+					}
 
-                    options.ScrapeResponseCacheDurationMilliseconds = 1000;
-                }));
+					options.ScrapeResponseCacheDurationMilliseconds = 1000;
+				}));
 
 		// gRPC
 		services
 			.AddSingleton<LogRetriesInterceptor>()
 			.AddGrpc(options => {
-                var hostEnvironment = services
-                    .BuildServiceProvider()
-                    .GetRequiredService<IHostEnvironment>();
+				var hostEnvironment = services
+					.BuildServiceProvider()
+					.GetRequiredService<IHostEnvironment>();
 
-                options.EnableDetailedErrors = hostEnvironment.IsDevelopment()
-                                            || hostEnvironment.IsStaging()
-                                            || _options.DevMode.Dev;
+				options.EnableDetailedErrors = hostEnvironment.IsDevelopment()
+											|| hostEnvironment.IsStaging()
+											|| _options.DevMode.Dev;
 
 				options.Interceptors.Add<LogRetriesInterceptor>();
 
-                // Enable gzip compression
-                // The client must still need to opt-in
-                options.ResponseCompressionAlgorithm = "gzip";
-                options.ResponseCompressionLevel = CompressionLevel.Optimal;
-                options.CompressionProviders.Add(new GzipCompressionProvider(CompressionLevel.Optimal));
+				// Enable gzip compression
+				// The client must still need to opt-in
+				options.ResponseCompressionAlgorithm = "gzip";
+				options.ResponseCompressionLevel = CompressionLevel.Optimal;
+				options.CompressionProviders.Add(new GzipCompressionProvider(CompressionLevel.Optimal));
 			})
-            .AddServiceOptions<Streams<TStreamId>>(options => options.MaxReceiveMessageSize = TFConsts.EffectiveMaxLogRecordSize);
+			.AddServiceOptions<Streams<TStreamId>>(options => options.MaxReceiveMessageSize = TFConsts.EffectiveMaxLogRecordSize);
 
 		services.AddSingleton<DuckDBConnectionPoolLifetime>();
 		services.AddDuckDBSetup<KdbGetEventSetup>();
@@ -328,14 +328,14 @@ public class ClusterVNodeStartup<TStreamId>
 		foreach (var component in _plugableComponents)
 			component.ConfigureServices(services, _configuration);
 
-        return;
+		return;
 
 		MetricStreamConfiguration? ViewConfig(Instrument i) {
 			if (i.Name == MetricsBootstrapper.LogicalChunkReadDistributionName(_metricsConfiguration.ServiceName))
 				// 20 buckets, 0, 1, 2, 4, 8, ...
 				return new ExplicitBucketHistogramConfiguration { Boundaries = [0, .. Enumerable.Range(0, count: 19).Select(x => 1 << x)] };
 			if (i.Name.StartsWith(_metricsConfiguration.ServiceName + "-") &&
-			    (i.Name.EndsWith("-latency-seconds") || i.Name.EndsWith("-latency") && i.Unit == "seconds"))
+				(i.Name.EndsWith("-latency-seconds") || i.Name.EndsWith("-latency") && i.Unit == "seconds"))
 				return MetricsConfiguration.LatencySecondsHistogramBucketConfiguration;
 			if (i.Name.StartsWith(_metricsConfiguration.ServiceName + "-") && (i.Name.EndsWith("-seconds") || i.Unit == "seconds"))
 				return MetricsConfiguration.SecondsHistogramBucketConfiguration;

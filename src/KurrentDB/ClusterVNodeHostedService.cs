@@ -288,7 +288,7 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 			plugins.Add(new TcpApiPlugin());
 			plugins.Add(new ConnectorsPlugin());
 			plugins.Add(new SchemaRegistryPlugin());
-            plugins.Add(new ApiV2Plugin());
+			plugins.Add(new ApiV2Plugin());
 
 			foreach (var plugin in plugins) {
 				Log.Information("Loaded SubsystemsPlugin plugin: {plugin} {version}.",
@@ -310,7 +310,7 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 			} catch {
 				// didn't work, we are probably in a fips environment, try to load a plugin
 				provider = GetMD5ProviderFactories().FirstOrDefault()?.Build() ??
-				           throw new ApplicationInitializationException("Could not find an enabled FileHashProviderFactory");
+						   throw new ApplicationInitializationException("Could not find an enabled FileHashProviderFactory");
 				MD5.UseProvider(provider);
 			}
 

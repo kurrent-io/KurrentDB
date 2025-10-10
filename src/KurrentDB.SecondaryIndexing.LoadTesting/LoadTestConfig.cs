@@ -18,9 +18,9 @@ public class LoadTestConfig {
 	public int TotalMessagesCount { get; set; } = 126000000;
 	public LoadTestEnvironmentType EnvironmentType { get; set; } = LoadTestEnvironmentType.TestServer;
 	public required string KurrentDBConnectionString { get; set; } = "Dummy";
-	public required string DuckDbConnectionString { get; set; }= "Dummy";
+	public required string DuckDbConnectionString { get; set; } = "Dummy";
 	public DuckDbTestEnvironmentOptions DuckDb { get; set; } = new();
-	public IndexesLoadTestEnvironmentOptions Index { get; set; } =  new IndexesLoadTestEnvironmentOptions();
+	public IndexesLoadTestEnvironmentOptions Index { get; set; } = new IndexesLoadTestEnvironmentOptions();
 
 
 	public LoadTestPartitionConfig[] GeneratePartitions() {

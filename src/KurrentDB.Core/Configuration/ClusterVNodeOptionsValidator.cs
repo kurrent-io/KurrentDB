@@ -65,15 +65,15 @@ public static class ClusterVNodeOptionsValidator {
 				$"{nameof(options.Application.MaxAppendSize)} exceeded {TFConsts.ChunkSize} bytes.");
 		}
 
-        if (options.Application.MaxAppendEventSize > TFConsts.MaxLogRecordSize) {
-            throw new ArgumentOutOfRangeException(nameof(options.Application.MaxAppendEventSize),
-                $"{nameof(options.Application.MaxAppendEventSize)} exceeded {TFConsts.MaxLogRecordSize} bytes.");
-        }
+		if (options.Application.MaxAppendEventSize > TFConsts.MaxLogRecordSize) {
+			throw new ArgumentOutOfRangeException(nameof(options.Application.MaxAppendEventSize),
+				$"{nameof(options.Application.MaxAppendEventSize)} exceeded {TFConsts.MaxLogRecordSize} bytes.");
+		}
 
-        if (options.Application.MaxAppendEventSize > options.Application.MaxAppendSize) {
-            throw new ArgumentOutOfRangeException(nameof(options.Application.MaxAppendEventSize),
-                $"{nameof(options.Application.MaxAppendEventSize)} must be less than or equal to {nameof(options.Application.MaxAppendSize)}.");
-        }
+		if (options.Application.MaxAppendEventSize > options.Application.MaxAppendSize) {
+			throw new ArgumentOutOfRangeException(nameof(options.Application.MaxAppendEventSize),
+				$"{nameof(options.Application.MaxAppendEventSize)} must be less than or equal to {nameof(options.Application.MaxAppendSize)}.");
+		}
 
 		if (options.Cluster.DiscoverViaDns && string.IsNullOrWhiteSpace(options.Cluster.ClusterDns))
 			throw new ArgumentException(

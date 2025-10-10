@@ -42,7 +42,8 @@ public class MessageGenerator : IMessageGenerator {
 			eventsLeft -= batchSize;
 			logPosition += batchSize;
 
-			if (eventsLeft % 10 == 0) await Task.Yield();
+			if (eventsLeft % 10 == 0)
+				await Task.Yield();
 		} while (eventsLeft > 0);
 	}
 

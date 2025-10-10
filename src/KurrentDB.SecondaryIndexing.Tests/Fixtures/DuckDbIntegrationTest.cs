@@ -2,37 +2,24 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Kurrent.Quack.ConnectionPool;
-using KurrentDB.Core.Tests;
+using KurrentDB.Core.XUnit.Tests;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Tests.Fixtures;
 
-public abstract class DuckDbIntegrationTest : IAsyncLifetime {
+public abstract class DuckDbIntegrationTest<T> : DirectoryPerTest<T> {
 	protected readonly DuckDBConnectionPool DuckDb;
-	private readonly string _directory;
 
 	protected DuckDbIntegrationTest() {
-		_directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-
-		if (!Directory.Exists(_directory))
-			Directory.CreateDirectory(_directory);
-
-		var dbPath = Path.Combine(_directory, $"{GetType().Name}.db");
-
-		if (File.Exists(dbPath))
-			File.Delete(dbPath);
+		var dbPath = Fixture.GetFilePathFor($"{GetType().Name}.db");
 
 		DuckDb = new($"Data Source={dbPath};");
 		var schema = new IndexingDbSchema();
 		schema.CreateSchema(DuckDb);
 	}
 
-	public virtual Task InitializeAsync() =>
-		Task.CompletedTask;
-
-	public virtual Task DisposeAsync() {
+	public override async Task DisposeAsync() {
 		DuckDb.Dispose();
-		DirectoryDeleter.TryForceDeleteDirectory(_directory);
-		return Task.CompletedTask;
+		await base.DisposeAsync();
 	}
 }

@@ -187,16 +187,16 @@ public class EventRecord : IEquatable<EventRecord> {
 
 	public override string ToString() {
 		return $"EventNumber: {EventNumber}, " +
-		       $"LogPosition: {LogPosition}, " +
-		       $"CorrelationId: {CorrelationId}, " +
-		       $"EventId: {EventId}, " +
-		       $"TransactionPosition: {TransactionPosition}, " +
-		       $"TransactionOffset: {TransactionOffset}, " +
-		       $"EventStreamId: {EventStreamId}, " +
-		       $"ExpectedVersion: {ExpectedVersion}, " +
-		       $"TimeStamp: {TimeStamp}, " +
-		       $"Flags: {Flags}, " +
-		       $"EventType: {EventType}";
+			   $"LogPosition: {LogPosition}, " +
+			   $"CorrelationId: {CorrelationId}, " +
+			   $"EventId: {EventId}, " +
+			   $"TransactionPosition: {TransactionPosition}, " +
+			   $"TransactionOffset: {TransactionOffset}, " +
+			   $"EventStreamId: {EventStreamId}, " +
+			   $"ExpectedVersion: {ExpectedVersion}, " +
+			   $"TimeStamp: {TimeStamp}, " +
+			   $"Flags: {Flags}, " +
+			   $"EventType: {EventType}";
 	}
 
 #if DEBUG

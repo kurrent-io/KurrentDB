@@ -236,7 +236,7 @@ static partial class Enumerator {
 			async Task OnMessage(Message message, CancellationToken ct) {
 				try {
 					if (message is ClientMessage.NotHandled notHandled &&
-					    TryHandleNotHandled(notHandled, out var ex))
+						TryHandleNotHandled(notHandled, out var ex))
 						throw ex;
 
 					if (message is not ClientMessage.ReadAllEventsForwardCompleted completed)

@@ -29,6 +29,7 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\KurrentDB.Core.Tests\KurrentDB.Core.Tests.csproj" />
+	  <ProjectReference Include="..\KurrentDB.Core.XUnit.Tests\KurrentDB.Core.XUnit.Tests.csproj" />
 	  <ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
 	  <ProjectReference Include="..\KurrentDB.Surge.Testing\KurrentDB.Surge.Testing.csproj" />
 	</ItemGroup>

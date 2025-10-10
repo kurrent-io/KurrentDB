@@ -65,10 +65,10 @@ public static class Constants {
 	}
 
 	public static class RecordProperties {
-		public const string SchemaNameKey   = "$schema.name";
+		public const string SchemaNameKey = "$schema.name";
 		public const string SchemaFormatKey = "$schema.format";
-		public const string SchemaIdKey     = "$schema.id";
-		public const string TimestampKey    = "$record.timestamp";
+		public const string SchemaIdKey = "$schema.id";
+		public const string TimestampKey = "$record.timestamp";
 	}
 
 	public static class Headers {

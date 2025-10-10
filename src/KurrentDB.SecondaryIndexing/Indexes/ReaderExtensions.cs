@@ -42,8 +42,8 @@ internal static class ReaderExtensions {
 			return null;
 
 		if (r.LogRecord.RecordType is not LogRecordType.Prepare
-		    and not LogRecordType.Stream
-		    and not LogRecordType.EventType)
+			and not LogRecordType.Stream
+			and not LogRecordType.EventType)
 			throw new($"Incorrect type of log record {r.LogRecord.RecordType}, expected Prepare record.");
 		return (IPrepareLogRecord<TStreamId>)r.LogRecord;
 	}

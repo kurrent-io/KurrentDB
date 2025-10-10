@@ -1,14 +1,13 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using KurrentDB.SecondaryIndexing.Storage;
-using KurrentDB.SecondaryIndexing.Tests.Observability;
 using Dapper;
 using Kurrent.Quack.ConnectionPool;
+using KurrentDB.SecondaryIndexing.Tests.Observability;
 
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Assertions.DuckDb;
 
-public class DuckDbIndexingSummaryAssertion(DuckDBConnectionPool db): IIndexingSummaryAssertion {
+public class DuckDbIndexingSummaryAssertion(DuckDBConnectionPool db) : IIndexingSummaryAssertion {
 	public async ValueTask IndexesMatch(IndexingSummary summary) {
 		await AssertCategoriesAreIndexed(summary);
 		await AssertEventTypesAreIndexed(summary);

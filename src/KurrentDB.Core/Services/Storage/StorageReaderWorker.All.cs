@@ -46,7 +46,7 @@ public partial class StorageReaderWorker<TStreamId> {
 				break;
 			case ReadAllResult.NotModified:
 				if (msg.LongPollTimeout.HasValue && res.IsEndOfStream &&
-				    res.CurrentPos.CommitPosition > res.TfLastCommitPosition) {
+					res.CurrentPos.CommitPosition > res.TfLastCommitPosition) {
 					_publisher.Publish(new SubscriptionMessage.PollStream(
 						SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
 						DateTime.UtcNow + msg.LongPollTimeout.Value, msg));

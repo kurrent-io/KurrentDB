@@ -3,7 +3,6 @@
 
 using DotNext.Threading;
 using DuckDB.NET.Data;
-using Serilog;
 
 namespace KurrentDB.DuckDB;
 

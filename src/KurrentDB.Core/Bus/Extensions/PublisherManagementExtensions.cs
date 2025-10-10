@@ -42,8 +42,7 @@ public static class PublisherManagementExtensions {
 			);
 
 			publisher.Publish(command);
-		}
-		catch (Exception ex) {
+		} catch (Exception ex) {
 			operation.TrySetException(new Exception($"{nameof(DeleteStream)}: Unable to execute request!", ex));
 		}
 
@@ -57,24 +56,23 @@ public static class PublisherManagementExtensions {
 				var streamRevision = StreamRevision.FromInt64(completed.CurrentVersion);
 
 				operation.TrySetResult(new(position, streamRevision));
-			}
-			else
+			} else
 				operation.TrySetException(MapToError(message));
 		}
 
 		ReadResponseException MapToError(Message message) {
 			return message switch {
 				ClientMessage.DeleteStreamCompleted completed => completed.Result switch {
-					OperationResult.PrepareTimeout       => new ReadResponseException.Timeout($"{completed.Result}"),
-					OperationResult.CommitTimeout        => new ReadResponseException.Timeout($"{completed.Result}"),
-					OperationResult.ForwardTimeout       => new ReadResponseException.Timeout($"{completed.Result}"),
-					OperationResult.StreamDeleted        => new ReadResponseException.StreamDeleted(stream),
+					OperationResult.PrepareTimeout => new ReadResponseException.Timeout($"{completed.Result}"),
+					OperationResult.CommitTimeout => new ReadResponseException.Timeout($"{completed.Result}"),
+					OperationResult.ForwardTimeout => new ReadResponseException.Timeout($"{completed.Result}"),
+					OperationResult.StreamDeleted => new ReadResponseException.StreamDeleted(stream),
 					OperationResult.WrongExpectedVersion => new ReadResponseException.WrongExpectedRevision(stream, expectedRevision, completed.CurrentVersion),
-					OperationResult.AccessDenied         => new ReadResponseException.AccessDenied(),
-					_                                    => ReadResponseException.UnknownError.Create(completed.Result)
+					OperationResult.AccessDenied => new ReadResponseException.AccessDenied(),
+					_ => ReadResponseException.UnknownError.Create(completed.Result)
 				},
 				ClientMessage.NotHandled notHandled => notHandled.MapToException(),
-				not null                            => new ReadResponseException.UnknownMessage(message.GetType(), typeof(ClientMessage.DeleteStreamCompleted))
+				not null => new ReadResponseException.UnknownMessage(message.GetType(), typeof(ClientMessage.DeleteStreamCompleted))
 			};
 		}
 	}
@@ -83,9 +81,9 @@ public static class PublisherManagementExtensions {
 		this IPublisher publisher, string stream, long expectedRevision = -2, CancellationToken cancellationToken = default) =>
 		publisher.DeleteStream(stream, expectedRevision, false, cancellationToken);
 
-    public static Task<(Position Position, StreamRevision Revision)> SoftDeleteStream(
-        this IPublisher publisher, string stream, CancellationToken cancellationToken = default) =>
-        publisher.DeleteStream(stream, -2, false, cancellationToken);
+	public static Task<(Position Position, StreamRevision Revision)> SoftDeleteStream(
+		this IPublisher publisher, string stream, CancellationToken cancellationToken = default) =>
+		publisher.DeleteStream(stream, -2, false, cancellationToken);
 
 	public static Task<(Position Position, StreamRevision Revision)> HardDeleteStream(
 		this IPublisher publisher, string stream, long expectedRevision = -2, CancellationToken cancellationToken = default) =>
@@ -112,8 +110,7 @@ public static class PublisherManagementExtensions {
 			return lastEvent is not null
 				? (StreamMetadata.FromJsonBytes(lastEvent.Value.Event.Data), lastEvent.Value.Event.EventNumber)
 				: (StreamMetadata.Empty, -2);
-		}
-		catch (ReadResponseException.StreamNotFound) {
+		} catch (ReadResponseException.StreamNotFound) {
 			return (StreamMetadata.Empty, -2);
 		}
 	}
@@ -122,8 +119,7 @@ public static class PublisherManagementExtensions {
 		try {
 			_ = await publisher.ReadStreamLastEvent(stream, cancellationToken);
 			return true;
-		}
-		catch (ReadResponseException.StreamNotFound) {
+		} catch (ReadResponseException.StreamNotFound) {
 			return false;
 		}
 	}
@@ -173,20 +169,20 @@ public static class PublisherManagementExtensions {
 			: null;
 	}
 
-    /// <summary>
-    /// Returns the revision of the stream at the given position.
-    /// If the stream does not exist at the given position, it returns StreamRevision.Start.
-    /// </summary>
-    public static async Task<StreamRevision> GetStreamRevision(this IPublisher publisher, Position? position, CancellationToken cancellationToken = default) {
-	    if (position is null || position == Position.Start)
-            return StreamRevision.Start;
+	/// <summary>
+	/// Returns the revision of the stream at the given position.
+	/// If the stream does not exist at the given position, it returns StreamRevision.Start.
+	/// </summary>
+	public static async Task<StreamRevision> GetStreamRevision(this IPublisher publisher, Position? position, CancellationToken cancellationToken = default) {
+		if (position is null || position == Position.Start)
+			return StreamRevision.Start;
 
-        if (position == Position.End)
-            return StreamRevision.End;
+		if (position == Position.End)
+			return StreamRevision.End;
 
-        var info     = await publisher.GetStreamInfoByPosition(position.GetValueOrDefault(), cancellationToken);
-        var revision = info?.Revision ?? StreamRevision.Start;
+		var info = await publisher.GetStreamInfoByPosition(position.GetValueOrDefault(), cancellationToken);
+		var revision = info?.Revision ?? StreamRevision.Start;
 
-        return revision;
-    }
+		return revision;
+	}
 }
