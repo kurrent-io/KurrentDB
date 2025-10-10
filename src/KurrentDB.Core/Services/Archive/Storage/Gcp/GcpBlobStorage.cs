@@ -8,6 +8,7 @@ using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using DotNext;
 using DotNext.Buffers;
 using DotNext.IO;
 using Google;
@@ -85,7 +86,23 @@ public class GcpBlobStorage : IBlobStorage {
 
 	[StructLayout(LayoutKind.Auto)]
 	private struct MemoryWriter(Memory<byte> output) : IReadOnlySpanConsumer<byte>, IFlushable {
-		void IReadOnlySpanConsumer<byte>.Invoke(ReadOnlySpan<byte> input) {
+		void IReadOnlySpanConsumer<byte>.Invoke(ReadOnlySpan<byte> input) => Copy(input);
+
+		// We need to replace default interface implementation because .NET Runtime
+		// causes boxing when calling default impl on structs
+		ValueTask ISupplier<ReadOnlyMemory<byte>, CancellationToken, ValueTask>.
+			Invoke(ReadOnlyMemory<byte> input, CancellationToken token) {
+			var task = ValueTask.CompletedTask;
+			try {
+				Copy(input.Span);
+			} catch (Exception e) {
+				task = ValueTask.FromException(e);
+			}
+
+			return task;
+		}
+
+		private void Copy(ReadOnlySpan<byte> input) {
 			input.CopyTo(output.Span);
 			output = output.Slice(input.Length);
 		}
