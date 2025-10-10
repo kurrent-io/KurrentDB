@@ -332,7 +332,7 @@ public partial class PTable : ISearchTable, IDisposable {
 										   _midpointsCacheSize;
 						stream.Seek(startOffset, SeekOrigin.Begin);
 						for (int k = 0; k < (int)_midpointsCached; k++) {
-							stream.Read(buffer, 0, _indexEntrySize);
+							stream.ReadExactly(buffer, 0, _indexEntrySize);
 							IndexEntryKey key;
 							long index;
 							if (_version == PTableVersions.IndexV4) {
@@ -367,7 +367,7 @@ public partial class PTable : ISearchTable, IDisposable {
 
 				if (!skipIndexVerify) {
 					stream.Seek(0, SeekOrigin.Begin);
-					stream.Read(buffer, 0, PTableHeader.Size);
+					stream.ReadExactly(buffer, 0, PTableHeader.Size);
 					md5.TransformBlock(buffer, 0, PTableHeader.Size, null, 0);
 				}
 
