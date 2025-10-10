@@ -16,7 +16,7 @@ internal static class AzureOptionsExtensions {
 		TokenCredential credential;
 		switch (options.Authentication) {
 			case AzureOptions.AuthenticationType.ConnectionString:
-				return new(options.ConnectionString);
+				return new(options.ConnectionStringOrServiceUrl);
 			case AzureOptions.AuthenticationType.SystemAssignedIdentity:
 				credential = new ManagedIdentityCredential(ManagedIdentityId.SystemAssigned);
 				break;
@@ -28,6 +28,6 @@ internal static class AzureOptionsExtensions {
 				break;
 		}
 
-		return new(new Uri(options.ConnectionString, UriKind.Absolute), credential);
+		return new(new Uri(options.ConnectionStringOrServiceUrl, UriKind.Absolute), credential);
 	}
 }

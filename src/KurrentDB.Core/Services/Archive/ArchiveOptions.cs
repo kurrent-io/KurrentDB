@@ -84,7 +84,7 @@ public class AzureOptions {
 	/// Gets or sets service URL or connection string if <see cref="Authentication"/>
 	/// is <see cref="AuthenticationType.ConnectionString"/>.
 	/// </summary>
-	public required string ConnectionString { get; init; }
+	public required string ConnectionStringOrServiceUrl { get; init; }
 
 	/// <summary>
 	/// Gets or sets the user identity.
@@ -105,7 +105,7 @@ public class AzureOptions {
 			message = "Please provide a Container for the Azure archive";
 		} else {
 			switch (Authentication) {
-				case AuthenticationType.ConnectionString when string.IsNullOrWhiteSpace(ConnectionString):
+				case AuthenticationType.ConnectionString when string.IsNullOrWhiteSpace(ConnectionStringOrServiceUrl):
 					message = "Please provide connection string for Azure BLOB";
 					break;
 				case AuthenticationType.UserAssignedClientId when string.IsNullOrWhiteSpace(UserIdentity):

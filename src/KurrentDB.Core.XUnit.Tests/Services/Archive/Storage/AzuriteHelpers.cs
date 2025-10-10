@@ -23,7 +23,7 @@ internal static class AzuriteHelpers {
 	}
 
 	public static AzureOptions Options { get; } = new() {
-		ConnectionString = AzureConnectionString,
+		ConnectionStringOrServiceUrl = AzureConnectionString,
 		Container = AzureContainerName,
 		Authentication = AzureOptions.AuthenticationType.ConnectionString,
 	};
