@@ -143,7 +143,7 @@ public partial class PTable : ISearchTable, IDisposable {
 			File.SetAttributes(filename, FileAttributes.ReadOnly | FileAttributes.NotContentIndexed);
 		});
 
-		_workItems = new ObjectPool<WorkItem>(string.Format("PTable {0} work items", _id),
+		_workItems = new ObjectPool<WorkItem>($"PTable {_id} work items",
 			initialReaders,
 			maxReaders,
 			() => new WorkItem(filename, DefaultBufferSize),
@@ -155,88 +155,68 @@ public partial class PTable : ISearchTable, IDisposable {
 			readerWorkItem.Stream.Seek(0, SeekOrigin.Begin);
 			var header = PTableHeader.FromStream(readerWorkItem.Stream);
 
-			if (header.Version == PTableVersions.IndexV1) {
-				throw new CorruptIndexException(new UnsupportedFileVersionException(
-					_filename, header.Version, Version,
-					"Detected a V1 index file, which is no longer supported. " +
-					"The index will be backed up and rebuilt in a supported format. " +
-					"This may take a long time for large databases. " +
-					"You can also use a version of ESDB (>= 3.9.0 and < 24.10.0) to upgrade the " +
-					"indexes to a supported format by performing an index merge."));
-			}
+			switch (_version = header.Version) {
+				case PTableVersions.IndexV1:
+					throw new CorruptIndexException(new UnsupportedFileVersionException(
+						_filename, header.Version, Version,
+						"Detected a V1 index file, which is no longer supported. " +
+						"The index will be backed up and rebuilt in a supported format. " +
+						"This may take a long time for large databases. " +
+						"You can also use a version of ESDB (>= 3.9.0 and < 24.10.0) to upgrade the " +
+						"indexes to a supported format by performing an index merge."));
+				case PTableVersions.IndexV2:
+					_indexEntrySize = IndexEntryV2Size;
+					_indexKeySize = IndexKeyV2Size;
+					break;
+				case PTableVersions.IndexV3:
+					_indexEntrySize = IndexEntryV3Size;
+					_indexKeySize = IndexKeyV3Size;
+					break;
+				case PTableVersions.IndexV4:
+					//read the PTable footer
+					var previousPosition = readerWorkItem.Stream.Position;
+					readerWorkItem.Stream.Seek(readerWorkItem.Stream.Length - MD5Size - PTableFooter.GetSize(_version),
+						SeekOrigin.Begin);
+					var footer = PTableFooter.FromStream(readerWorkItem.Stream);
+					if (footer.Version != header.Version)
+						throw new CorruptIndexException(
+							$"PTable header/footer version mismatch: {header.Version}/{footer.Version}", new InvalidFileException("Invalid PTable file."));
 
-			if ((header.Version != PTableVersions.IndexV2) &&
-				(header.Version != PTableVersions.IndexV3) &&
-				(header.Version != PTableVersions.IndexV4))
-				throw new CorruptIndexException(new UnsupportedFileVersionException(_filename, header.Version, Version));
-			_version = header.Version;
-
-			if (_version == PTableVersions.IndexV1) {
-				_indexEntrySize = IndexEntryV1Size;
-				_indexKeySize = IndexKeyV1Size;
-			}
-
-			if (_version == PTableVersions.IndexV2) {
-				_indexEntrySize = IndexEntryV2Size;
-				_indexKeySize = IndexKeyV2Size;
-			}
-
-			if (_version == PTableVersions.IndexV3) {
-				_indexEntrySize = IndexEntryV3Size;
-				_indexKeySize = IndexKeyV3Size;
-			}
-
-			if (_version >= PTableVersions.IndexV4) {
-				//read the PTable footer
-				var previousPosition = readerWorkItem.Stream.Position;
-				readerWorkItem.Stream.Seek(readerWorkItem.Stream.Length - MD5Size - PTableFooter.GetSize(_version),
-					SeekOrigin.Begin);
-				var footer = PTableFooter.FromStream(readerWorkItem.Stream);
-				if (footer.Version != header.Version)
-					throw new CorruptIndexException(
-						String.Format("PTable header/footer version mismatch: {0}/{1}", header.Version,
-							footer.Version), new InvalidFileException("Invalid PTable file."));
-
-				if (_version == PTableVersions.IndexV4) {
 					_indexEntrySize = IndexEntryV4Size;
 					_indexKeySize = IndexKeyV4Size;
-				} else
-					throw new InvalidOperationException("Unknown PTable version: " + _version);
 
-				_midpointsCached = footer.NumMidpointsCached;
-				_midpointsCacheSize = _midpointsCached * _indexEntrySize;
-				readerWorkItem.Stream.Seek(previousPosition, SeekOrigin.Begin);
+					_midpointsCached = footer.NumMidpointsCached;
+					_midpointsCacheSize = _midpointsCached * _indexEntrySize;
+					readerWorkItem.Stream.Seek(previousPosition, SeekOrigin.Begin);
+					break;
+				default:
+					throw new CorruptIndexException(new UnsupportedFileVersionException(_filename, header.Version, Version));
 			}
 
-			long indexEntriesTotalSize = (_size - PTableHeader.Size - _midpointsCacheSize -
-										  PTableFooter.GetSize(_version) - MD5Size);
+			long indexEntriesTotalSize = _size - PTableHeader.Size - _midpointsCacheSize -
+			                             PTableFooter.GetSize(_version) - MD5Size;
 
 			if (indexEntriesTotalSize < 0) {
-				throw new CorruptIndexException(String.Format(
-					"Total size of index entries < 0: {0}. _size: {1}, header size: {2}, _midpointsCacheSize: {3}, footer size: {4}, md5 size: {5}",
-					indexEntriesTotalSize, _size, PTableHeader.Size, _midpointsCacheSize,
-					PTableFooter.GetSize(_version), MD5Size));
-			} else if (indexEntriesTotalSize % _indexEntrySize != 0) {
-				throw new CorruptIndexException(String.Format(
-					"Total size of index entries: {0} is not divisible by index entry size: {1}",
-					indexEntriesTotalSize, _indexEntrySize));
+				throw new CorruptIndexException(
+					$"Total size of index entries < 0: {indexEntriesTotalSize}. _size: {_size}, header size: {PTableHeader.Size}, _midpointsCacheSize: {_midpointsCacheSize}, footer size: {PTableFooter.GetSize(_version)}, md5 size: {MD5Size}");
+			} else if (indexEntriesTotalSize % _indexEntrySize is not 0) {
+				throw new CorruptIndexException(
+					$"Total size of index entries: {indexEntriesTotalSize} is not divisible by index entry size: {_indexEntrySize}");
 			}
 
 			_count = indexEntriesTotalSize / _indexEntrySize;
 
-			if (_version >= PTableVersions.IndexV4 && _count > 0 && _midpointsCached > 0 && _midpointsCached < 2) {
+			if (_version >= PTableVersions.IndexV4 && _count > 0 && _midpointsCached is > 0 and < 2) {
 				//if there is at least 1 index entry with version>=4 and there are cached midpoints, there should always be at least 2 midpoints cached
-				throw new CorruptIndexException(String.Format(
-					"Less than 2 midpoints cached in PTable. Index entries: {0}, Midpoints cached: {1}", _count,
-					_midpointsCached));
+				throw new CorruptIndexException(
+					$"Less than 2 midpoints cached in PTable. Index entries: {_count}, Midpoints cached: {_midpointsCached}");
 			} else if (_count >= 2 && _midpointsCached > _count) {
 				//if there are at least 2 index entries, midpoints count should be at most the number of index entries
-				throw new CorruptIndexException(String.Format(
-					"More midpoints cached in PTable than index entries. Midpoints: {0} , Index entries: {1}",
-					_midpointsCached, _count));
+				throw new CorruptIndexException(
+					$"More midpoints cached in PTable than index entries. Midpoints: {_midpointsCached} , Index entries: {_count}");
 			}
 
-			if (Count == 0) {
+			if (Count is 0) {
 				_minEntry = new IndexEntryKey(ulong.MaxValue, long.MaxValue);
 				_maxEntry = new IndexEntryKey(ulong.MinValue, long.MinValue);
 			} else {
