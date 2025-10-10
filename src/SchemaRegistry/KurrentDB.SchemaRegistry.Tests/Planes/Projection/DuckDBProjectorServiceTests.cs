@@ -23,6 +23,7 @@ public class DuckDBProjectorServiceTests : SchemaApplicationTestFixture {
 		// Arrange
 		var sut = new TestDuckDBProjectorService(
 			MessageBus,
+			MessageBus,
 			Fixture.DuckDbConnectionProvider,
 			Fixture.Services.GetRequiredService<IConsumerBuilder>(),
 			Fixture.LoggerFactory
@@ -50,10 +51,11 @@ public class DuckDBProjectorServiceTests : SchemaApplicationTestFixture {
 
 class TestDuckDBProjectorService(
 	IPublisher publisher,
+	ISubscriber subscriber,
 	IDuckDBConnectionProvider connectionProvider,
 	IConsumerBuilder consumerBuilder,
 	ILoggerFactory loggerFactory
-) : DuckDBProjectorService(publisher, connectionProvider, consumerBuilder, loggerFactory) {
+) : DuckDBProjectorService(publisher, subscriber, connectionProvider, consumerBuilder, loggerFactory) {
 	volatile TaskCompletionSource<CancellationToken> _executingCompletionSource = new();
 	volatile TaskCompletionSource<CancellationToken> _executedCompletionSource = new();
 
