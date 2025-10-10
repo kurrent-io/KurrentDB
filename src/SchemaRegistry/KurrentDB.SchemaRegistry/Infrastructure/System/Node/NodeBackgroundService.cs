@@ -8,17 +8,24 @@ using Microsoft.Extensions.Hosting;
 namespace KurrentDB.SchemaRegistry.Infrastructure.System.Node;
 
 public abstract class NodeBackgroundService : IHostedService, IDisposable {
-    Task?                    _executeTask;
-    CancellationTokenSource? _stoppingCts;
+	Task? _executeTask;
+	CancellationTokenSource? _stoppingCts;
 
-    protected NodeBackgroundService(IPublisher publisher, ILogger<NodeBackgroundService> logger, string? serviceName = null) {
+    protected NodeBackgroundService(IPublisher publisher, ISubscriber subscriber, ILoggerFactory loggerFactory, string? serviceName = null) {
         Publisher   = publisher;
-        Logger      = logger;
+        Logger      = loggerFactory.CreateLogger<NodeBackgroundService>();
         ServiceName = serviceName ?? GetType().Name;
+
+        NodeLifetimeService = new NodeLifetimeService(
+	        ServiceName, publisher, subscriber,
+	        loggerFactory.CreateLogger<NodeLifetimeService>()
+		);
     }
 
     IPublisher Publisher { get; }
     ILogger    Logger    { get; }
+
+    public INodeLifetimeService NodeLifetimeService { get; }
 
     public string ServiceName { get; }
 
@@ -46,6 +53,8 @@ public abstract class NodeBackgroundService : IHostedService, IDisposable {
                     Publisher.Publish(
                         new SystemMessage.RegisterForGracefulTermination(ServiceName, () => _ = StopAsync(CancellationToken.None))
                     );
+
+                    await NodeLifetimeService.WaitForSystemReadyAsync(_stoppingCts.Token);
 
                     Logger.LogNodeBackgroundServiceOperationExecuting(ServiceName);
 
