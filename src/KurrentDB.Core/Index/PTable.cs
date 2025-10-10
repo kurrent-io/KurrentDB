@@ -9,13 +9,13 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
+using DotNext.Buffers.Text;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.DataStructures;
 using KurrentDB.Core.DataStructures.ProbabilisticFilter;
 using KurrentDB.Core.Exceptions;
 using KurrentDB.Core.TransactionLog.Unbuffered;
 using ILogger = Serilog.ILogger;
-using MD5 = KurrentDB.Core.Hashing.MD5;
 using Range = KurrentDB.Core.Data.Range;
 using RuntimeInformation = System.Runtime.RuntimeInformation;
 
@@ -46,8 +46,8 @@ public partial class PTable : ISearchTable, IDisposable {
 	public const int IndexKeyV3Size = sizeof(long) + sizeof(long);
 	public const int IndexKeyV4Size = IndexKeyV3Size;
 	public const int MD5Size = 16;
-	public const int DefaultBufferSize = 8192;
-	public const int DefaultSequentialBufferSize = 65536;
+	private const int DefaultBufferSize = 8192;
+	private const int DefaultSequentialBufferSize = 65536;
 	private static readonly ILogger Log = Serilog.Log.ForContext<PTable>();
 
 	public Guid Id {
@@ -312,48 +312,47 @@ public partial class PTable : ISearchTable, IDisposable {
 
 		UnmanagedMemoryAppendOnlyList<Midpoint> midpoints = null;
 
+		var md5 = IncrementalHash.CreateHash(HashAlgorithmName.MD5);
 		try {
-			using (var md5 = MD5.Create()) {
-				int midpointsCount;
-				try {
-					midpointsCount = (int)Math.Max(2L, Math.Min((long)1 << depth, count));
-					midpoints = new UnmanagedMemoryAppendOnlyList<Midpoint>(midpointsCount);
-				} catch (OutOfMemoryException exc) {
-					throw new PossibleToHandleOutOfMemoryException("Failed to allocate memory for Midpoint cache.",
-						exc);
-				}
+			int midpointsCount;
+			try {
+				midpointsCount = (int)Math.Max(2L, Math.Min((long)1 << depth, count));
+				midpoints = new UnmanagedMemoryAppendOnlyList<Midpoint>(midpointsCount);
+			} catch (OutOfMemoryException exc) {
+				throw new PossibleToHandleOutOfMemoryException("Failed to allocate memory for Midpoint cache.",
+					exc);
+			}
 
-				if (skipIndexVerify && (_version >= PTableVersions.IndexV4)) {
+			switch (skipIndexVerify) {
+				case true when _version >= PTableVersions.IndexV4:
 					if (_midpointsCached == midpointsCount) {
 						//index verification is disabled and cached midpoints with the same depth requested are available
 						//so, we can load them directly from the PTable file
 						Log.Debug("Loading {midpointsCached} cached midpoints from PTable", _midpointsCached);
 						long startOffset = stream.Length - MD5Size - PTableFooter.GetSize(_version) -
-										   _midpointsCacheSize;
+						                   _midpointsCacheSize;
 						stream.Seek(startOffset, SeekOrigin.Begin);
 						for (int k = 0; k < (int)_midpointsCached; k++) {
 							stream.ReadExactly(buffer, 0, _indexEntrySize);
 							IndexEntryKey key;
 							long index;
-							if (_version == PTableVersions.IndexV4) {
+							if (_version is PTableVersions.IndexV4) {
 								key = new IndexEntryKey(BitConverter.ToUInt64(buffer, 8),
 									BitConverter.ToInt64(buffer, 0));
 								index = BitConverter.ToInt64(buffer, 8 + 8);
-							} else
+							} else {
 								throw new InvalidOperationException("Unknown PTable version: " + _version);
+							}
 
 							midpoints.Add(new Midpoint(key, index));
 
 							if (k > 0) {
 								if (midpoints[k].Key.GreaterThan(midpoints[k - 1].Key)) {
-									throw new CorruptIndexException(String.Format(
-										"Index entry key for midpoint {0} (stream: {1}, version: {2}) < index entry key for midpoint {3} (stream: {4}, version: {5})",
-										k - 1, midpoints[k - 1].Key.Stream, midpoints[k - 1].Key.Version, k,
-										midpoints[k].Key.Stream, midpoints[k].Key.Version));
+									throw new CorruptIndexException(
+										$"Index entry key for midpoint {k - 1} (stream: {midpoints[k - 1].Key.Stream}, version: {midpoints[k - 1].Key.Version}) < index entry key for midpoint {k} (stream: {midpoints[k].Key.Stream}, version: {midpoints[k].Key.Version})");
 								} else if (midpoints[k - 1].ItemIndex > midpoints[k].ItemIndex) {
-									throw new CorruptIndexException(String.Format(
-										"Item index for midpoint {0} ({1}) > Item index for midpoint {2} ({3})",
-										k - 1, midpoints[k - 1].ItemIndex, k, midpoints[k].ItemIndex));
+									throw new CorruptIndexException(
+										$"Item index for midpoint {k - 1} ({midpoints[k - 1].ItemIndex}) > Item index for midpoint {k} ({midpoints[k].ItemIndex})");
 								}
 							}
 						}
@@ -363,72 +362,71 @@ public partial class PTable : ISearchTable, IDisposable {
 						Log.Debug(
 							"Skipping loading of cached midpoints from PTable due to count mismatch, cached midpoints: {midpointsCached} / required midpoints: {midpointsCount}",
 							_midpointsCached, midpointsCount);
-				}
 
-				if (!skipIndexVerify) {
+					break;
+				case false:
 					stream.Seek(0, SeekOrigin.Begin);
 					stream.ReadExactly(buffer, 0, PTableHeader.Size);
-					md5.TransformBlock(buffer, 0, PTableHeader.Size, null, 0);
-				}
-
-				long previousNextIndex = long.MinValue;
-				var previousKey = new IndexEntryKey(long.MaxValue, long.MaxValue);
-				for (int k = 0; k < midpointsCount; ++k) {
-					long nextIndex = GetMidpointIndex(k, count, midpointsCount);
-					if (previousNextIndex != nextIndex) {
-						if (!skipIndexVerify) {
-							ReadUntilWithMd5(PTableHeader.Size + _indexEntrySize * nextIndex, stream, md5);
-							stream.ReadExactly(buffer, 0, _indexKeySize);
-							md5.TransformBlock(buffer, 0, _indexKeySize, null, 0);
-						} else {
-							stream.Seek(PTableHeader.Size + _indexEntrySize * nextIndex, SeekOrigin.Begin);
-							stream.ReadExactly(buffer, 0, _indexKeySize);
-						}
-
-						IndexEntryKey key;
-						if (_version == PTableVersions.IndexV1) {
-							key = new IndexEntryKey(BitConverter.ToUInt32(buffer, 4),
-								BitConverter.ToInt32(buffer, 0));
-						} else if (_version == PTableVersions.IndexV2) {
-							key = new IndexEntryKey(BitConverter.ToUInt64(buffer, 4),
-								BitConverter.ToInt32(buffer, 0));
-						} else {
-							key = new IndexEntryKey(BitConverter.ToUInt64(buffer, 8),
-								BitConverter.ToInt64(buffer, 0));
-						}
-
-						midpoints.Add(new Midpoint(key, nextIndex));
-						previousNextIndex = nextIndex;
-						previousKey = key;
-					} else {
-						midpoints.Add(new Midpoint(previousKey, previousNextIndex));
-					}
-
-					if (k > 0) {
-						if (midpoints[k].Key.GreaterThan(midpoints[k - 1].Key)) {
-							throw new CorruptIndexException(String.Format(
-								"Index entry key for midpoint {0} (stream: {1}, version: {2}) < index entry key for midpoint {3} (stream: {4}, version: {5})",
-								k - 1, midpoints[k - 1].Key.Stream, midpoints[k - 1].Key.Version, k,
-								midpoints[k].Key.Stream, midpoints[k].Key.Version));
-						} else if (midpoints[k - 1].ItemIndex > midpoints[k].ItemIndex) {
-							throw new CorruptIndexException(String.Format(
-								"Item index for midpoint {0} ({1}) > Item index for midpoint {2} ({3})", k - 1,
-								midpoints[k - 1].ItemIndex, k, midpoints[k].ItemIndex));
-						}
-					}
-				}
-
-				if (!skipIndexVerify) {
-					ReadUntilWithMd5(stream.Length - MD5Size, stream, md5);
-					//verify hash (should be at stream.length - MD5Size)
-					md5.TransformFinalBlock(Empty.ByteArray, 0, 0);
-					var fileHash = new byte[MD5Size];
-					stream.ReadExactly(fileHash, 0, MD5Size);
-					ValidateHash(md5.Hash, fileHash);
-				}
-
-				return midpoints;
+					md5.AppendData(buffer, 0, PTableHeader.Size);
+					break;
 			}
+
+			long previousNextIndex = long.MinValue;
+			var previousKey = new IndexEntryKey(long.MaxValue, long.MaxValue);
+			for (int k = 0; k < midpointsCount; ++k) {
+				long nextIndex = GetMidpointIndex(k, count, midpointsCount);
+				if (previousNextIndex != nextIndex) {
+					if (!skipIndexVerify) {
+						ReadUntilWithMd5(PTableHeader.Size + _indexEntrySize * nextIndex, stream, md5);
+						stream.ReadExactly(buffer, 0, _indexKeySize);
+						md5.AppendData(buffer, 0, _indexKeySize);
+					} else {
+						stream.Seek(PTableHeader.Size + _indexEntrySize * nextIndex, SeekOrigin.Begin);
+						stream.ReadExactly(buffer, 0, _indexKeySize);
+					}
+
+					IndexEntryKey key;
+					if (_version == PTableVersions.IndexV1) {
+						key = new IndexEntryKey(BitConverter.ToUInt32(buffer, 4),
+							BitConverter.ToInt32(buffer, 0));
+					} else if (_version == PTableVersions.IndexV2) {
+						key = new IndexEntryKey(BitConverter.ToUInt64(buffer, 4),
+							BitConverter.ToInt32(buffer, 0));
+					} else {
+						key = new IndexEntryKey(BitConverter.ToUInt64(buffer, 8),
+							BitConverter.ToInt64(buffer, 0));
+					}
+
+					midpoints.Add(new Midpoint(key, nextIndex));
+					previousNextIndex = nextIndex;
+					previousKey = key;
+				} else {
+					midpoints.Add(new Midpoint(previousKey, previousNextIndex));
+				}
+
+				if (k > 0) {
+					if (midpoints[k].Key.GreaterThan(midpoints[k - 1].Key)) {
+						throw new CorruptIndexException(String.Format(
+							"Index entry key for midpoint {0} (stream: {1}, version: {2}) < index entry key for midpoint {3} (stream: {4}, version: {5})",
+							k - 1, midpoints[k - 1].Key.Stream, midpoints[k - 1].Key.Version, k,
+							midpoints[k].Key.Stream, midpoints[k].Key.Version));
+					} else if (midpoints[k - 1].ItemIndex > midpoints[k].ItemIndex) {
+						throw new CorruptIndexException(String.Format(
+							"Item index for midpoint {0} ({1}) > Item index for midpoint {2} ({3})", k - 1,
+							midpoints[k - 1].ItemIndex, k, midpoints[k].ItemIndex));
+					}
+				}
+			}
+
+			if (!skipIndexVerify) {
+				ReadUntilWithMd5(stream.Length - MD5Size, stream, md5);
+				//verify hash (should be at stream.length - MD5Size)
+				Span<byte> fileHash = stackalloc byte[MD5Size];
+				stream.ReadExactly(fileHash);
+				ValidateHash(fileHash, md5);
+			}
+
+			return midpoints;
 		} catch (PossibleToHandleOutOfMemoryException) {
 			midpoints?.Dispose();
 			throw;
@@ -437,6 +435,7 @@ public partial class PTable : ISearchTable, IDisposable {
 			Dispose();
 			throw;
 		} finally {
+			md5.Dispose();
 			if (RuntimeInformation.IsUnix) {
 				if (workItem != null)
 					ReturnWorkItem(workItem);
@@ -475,42 +474,30 @@ public partial class PTable : ISearchTable, IDisposable {
 
 	private readonly byte[] TmpReadBuf = new byte[DefaultBufferSize];
 
-	private void ReadUntilWithMd5(long nextPos, Stream fileStream, HashAlgorithm md5) {
+	private void ReadUntilWithMd5(long nextPos, Stream fileStream, IncrementalHash md5) {
 		long toRead = nextPos - fileStream.Position;
 		if (toRead < 0)
 			throw new Exception("should not do negative reads.");
 		while (toRead > 0) {
 			var localReadCount = Math.Min(toRead, TmpReadBuf.Length);
 			int read = fileStream.Read(TmpReadBuf, 0, (int)localReadCount);
-			md5.TransformBlock(TmpReadBuf, 0, read, null, 0);
+			md5.AppendData(TmpReadBuf, 0, read);
 			toRead -= read;
 		}
 	}
 
-	void ValidateHash(byte[] fromFile, byte[] computed) {
-		if (computed == null)
-			throw new CorruptIndexException(new HashValidationException("Calculated MD5 hash is null!"));
-		if (fromFile == null)
-			throw new CorruptIndexException(new HashValidationException("Read from file MD5 hash is null!"));
+	void ValidateHash(Span<byte> expected, IncrementalHash actual) {
+		Debug.Assert(actual is not null);
 
-		if (computed.Length != fromFile.Length)
+		Span<byte> actualHash = stackalloc byte[MD5Size];
+		var bytesWritten = actual.GetCurrentHash(actualHash);
+		Debug.Assert(bytesWritten is MD5Size);
+
+		// Perf: use hardware accelerated byte array comparison
+		if (!expected.SequenceEqual(actualHash)) {
 			throw new CorruptIndexException(
 				new HashValidationException(
-					string.Format(
-						"Hash sizes differ! FileHash({0}): {1}, hash({2}): {3}.",
-						computed.Length,
-						BitConverter.ToString(computed),
-						fromFile.Length,
-						BitConverter.ToString(fromFile))));
-
-		for (int i = 0; i < fromFile.Length; i++) {
-			if (fromFile[i] != computed[i])
-				throw new CorruptIndexException(
-					new HashValidationException(
-						string.Format(
-							"Hashes are different! computed: {0}, hash: {1}.",
-							BitConverter.ToString(computed),
-							BitConverter.ToString(fromFile))));
+					$"Hashes are different! computed: {Hex.EncodeToUtf16(actualHash)}, hash: {Hex.EncodeToUtf16(expected)}."));
 		}
 	}
 
