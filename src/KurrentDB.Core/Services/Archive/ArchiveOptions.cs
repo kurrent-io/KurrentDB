@@ -11,7 +11,7 @@ public class ArchiveOptions {
 	public StorageType StorageType { get; init; } = StorageType.Unspecified;
 	public FileSystemOptions FileSystem { get; init; } = new();
 	public S3Options S3 { get; init; } = new();
-	public AzureOptions Azure { get; init; }
+	public AzureOptions Azure { get; init; } = new();
 	public RetentionOptions RetainAtLeast { get; init; } = new();
 
 	public void Validate() {
@@ -78,13 +78,12 @@ public class S3Options {
 }
 
 public class AzureOptions {
-	public required string Container { get; init; }
+	public string Container { get; init; } = "";
 
 	/// <summary>
-	/// Gets or sets service URL or connection string if <see cref="Authentication"/>
-	/// is <see cref="AuthenticationType.ConnectionString"/>.
+	/// Gets or sets service URL or connection string depending on <see cref="Authentication"/> type
 	/// </summary>
-	public required string ConnectionStringOrServiceUrl { get; init; }
+	public string ConnectionStringOrServiceUrl { get; init; } = "";
 
 	/// <summary>
 	/// Gets or sets the user identity.
@@ -92,34 +91,47 @@ public class AzureOptions {
 	/// <remarks>
 	/// Applicable when <see cref="Authentication"/> is <see cref="AuthenticationType.UserAssignedClientId"/>.
 	/// </remarks>
-	public string UserIdentity { get; init; }
+	public string UserIdentity { get; init; } = "";
 
 	/// <summary>
 	/// Gets or sets the authentication type.
 	/// </summary>
-	public required AuthenticationType Authentication { get; init; }
+	public AuthenticationType Authentication { get; init; } = AuthenticationType.Unspecified;
 
 	public void Validate() {
-		string message;
+		string error = null;
 		if (string.IsNullOrWhiteSpace(Container)) {
-			message = "Please provide a Container for the Azure archive";
+			error = "Please provide a Container for the Azure archive";
 		} else {
 			switch (Authentication) {
-				case AuthenticationType.ConnectionString when string.IsNullOrWhiteSpace(ConnectionStringOrServiceUrl):
-					message = "Please provide connection string for Azure BLOB";
+				case AuthenticationType.Unspecified:
+					error = "Please specify an Authentication type (e.g. Default)";
 					break;
-				case AuthenticationType.UserAssignedClientId when string.IsNullOrWhiteSpace(UserIdentity):
-					message = "Please provide user identity";
+				case AuthenticationType.ConnectionString:
+					if (string.IsNullOrWhiteSpace(ConnectionStringOrServiceUrl))
+						error = "Please provide a connection string (using ConnectionStringOrServiceUrl) for the Azure archive's storage account";
+					break;
+				case AuthenticationType.UserAssignedClientId:
+					if (string.IsNullOrWhiteSpace(UserIdentity))
+						error = "Please provide a UserIdentity for the Azure archive";
+					break;
+				case AuthenticationType.Default:
+					if (string.IsNullOrWhiteSpace(ConnectionStringOrServiceUrl))
+						error = "Please provide a Service URL (using ConnectionStringOrServiceUrl) for the Azure archive's storage account";
 					break;
 				default:
-					return;
+					error = "Unknown Authentication type";
+					break;
 			}
 		}
 
-		throw new InvalidConfigurationException(message);
+		if (error is not null)
+			throw new InvalidConfigurationException(error);
 	}
 
 	public enum AuthenticationType {
+		Unspecified = 0,
+
 		/// <summary>
 		/// Combining credentials used in Azure hosting environments with credentials used in local development environment
 		/// (including Azure CLI).
@@ -127,7 +139,7 @@ public class AzureOptions {
 		/// <remarks>
 		/// This type is not recommended for production use.
 		/// </remarks>
-		Default = 0,
+		Default,
 
 		/// <summary>
 		/// System-assigned managed identity (suitable when the code is running within Azure)
