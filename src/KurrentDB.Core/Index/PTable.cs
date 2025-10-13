@@ -102,6 +102,9 @@ public partial class PTable : ISearchTable, IDisposable {
 	private readonly LRUCache<StreamHash, bool> _lruConfirmedNotPresent;
 
 	private readonly IndexEntryKey _minEntry, _maxEntry;
+
+	// Handle lifetime is managed by AcquireFileHandle() and ReleaseFileHandle() methods
+	// and built-in reference counting mechanism provided by SafeHandle class
 	private readonly SafeFileHandle _handle;
 	private readonly byte _version;
 	private readonly int _indexEntrySize;
@@ -378,11 +381,7 @@ public partial class PTable : ISearchTable, IDisposable {
 			}
 
 			if (!skipIndexVerify) {
-				ReadUntilWithMd5(stream.Length - MD5Size, stream, md5, tmpBuffer.Span);
-				//verify hash (should be at stream.length - MD5Size)
-				Span<byte> fileHash = stackalloc byte[MD5Size];
-				stream.ReadExactly(fileHash);
-				ValidateHash(fileHash, md5);
+				ValidateHash(stream, md5, tmpBuffer.Span);
 			}
 
 			return midpoints;
@@ -453,11 +452,18 @@ public partial class PTable : ISearchTable, IDisposable {
 		if (toRead < 0)
 			throw new Exception("should not do negative reads.");
 		while (toRead > 0) {
-			var localReadCount = Math.Min(toRead, tmpBuffer.Length);
-			int read = fileStream.Read(tmpBuffer.TrimLength((int)localReadCount));
+			int read = fileStream.Read(tmpBuffer.TrimLength(int.CreateSaturating(toRead)));
 			md5.AppendData(tmpBuffer.Slice(0, read));
 			toRead -= read;
 		}
+	}
+
+	private static void ValidateHash(Stream stream, IncrementalHash actual, Span<byte> buffer) {
+		ReadUntilWithMd5(stream.Length - MD5Size, stream, actual, buffer);
+		//verify hash (should be at stream.length - MD5Size)
+		Span<byte> fileHash = stackalloc byte[MD5Size];
+		stream.ReadExactly(fileHash);
+		ValidateHash(fileHash, actual);
 	}
 
 	private static void ValidateHash(Span<byte> expected, IncrementalHash actual) {
