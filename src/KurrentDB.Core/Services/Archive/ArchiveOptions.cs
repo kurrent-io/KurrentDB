@@ -81,7 +81,7 @@ public class AzureOptions {
 	public string Container { get; init; } = "";
 
 	/// <summary>
-	/// Gets or sets service URL or connection string depending on <see cref="Authentication"/> type
+	/// Gets or sets service URL or connection string depending on <see cref="Authentication"/> type.
 	/// </summary>
 	public string ConnectionStringOrServiceUrl { get; init; } = "";
 
