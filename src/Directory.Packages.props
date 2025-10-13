@@ -25,9 +25,11 @@
     <PackageVersion Include="Eventuous.Testing" Version="0.15.0" />
     <PackageVersion Include="Extensions.MudBlazor.StaticInput" Version="3.2.1" />
     <PackageVersion Include="FluentAssertions" Version="6.12.2" />
-    <PackageVersion Include="FluentAssertions.Analyzers" Version="0.34.1" />
+    <PackageVersion Include="FluentAssertions.Analyzers" Version="0.33.0" />
     <PackageVersion Include="FluentStorage" Version="5.6.0" />
     <PackageVersion Include="FluentStorage.AWS" Version="5.5.0" />
+		<PackageVersion Include="Azure.Storage.Blobs" Version="12.25.1" />
+		<PackageVersion Include="Azure.Identity" Version="1.16.0" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
     <PackageVersion Include="GitHubActionsTestLogger" Version="2.4.1" />
     <PackageVersion Include="GitInfo" Version="3.3.3" />
