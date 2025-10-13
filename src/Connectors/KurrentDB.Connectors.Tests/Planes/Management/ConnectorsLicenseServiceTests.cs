@@ -4,8 +4,8 @@
 using Kurrent.Connectors.Elasticsearch;
 using Kurrent.Connectors.Http;
 using Kurrent.Connectors.Kafka;
-using Kurrent.Connectors.KurrentDB;
 using Kurrent.Connectors.MongoDB;
+using Kurrent.Connectors.Pulsar;
 using Kurrent.Connectors.RabbitMQ;
 using Kurrent.Connectors.Serilog;
 using KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
@@ -59,7 +59,7 @@ public class ConnectorsLicenseServiceTests(ITestOutputHelper output, LicensingFi
         sut.CheckLicense<KafkaSink>().Should().BeFalse();
         sut.CheckLicense<RabbitMqSink>().Should().BeFalse();
         sut.CheckLicense<MongoDbSink>().Should().BeFalse();
-        sut.CheckLicense<KurrentDbSink>().Should().BeFalse();
+        sut.CheckLicense<PulsarSink>().Should().BeFalse();
         sut.CheckLicense<ElasticsearchSink>().Should().BeFalse();
     }
 
