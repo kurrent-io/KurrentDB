@@ -50,7 +50,6 @@
     <PackageVersion Include="Kurrent.Connectors.Elasticsearch" Version="1.1.1-alpha.1.29" />
     <PackageVersion Include="Kurrent.Connectors.Http" Version="1.1.1-alpha.1.29" />
     <PackageVersion Include="Kurrent.Connectors.Kafka" Version="1.1.1-alpha.1.29" />
-    <PackageVersion Include="Kurrent.Connectors.KurrentDB" Version="1.1.1-alpha.1.29" />
     <PackageVersion Include="Kurrent.Connectors.MongoDB" Version="1.1.1-alpha.1.29" />
     <PackageVersion Include="Kurrent.Connectors.RabbitMQ" Version="1.1.1-alpha.1.29" />
     <PackageVersion Include="Kurrent.Connectors.Pulsar" Version="1.1.1-alpha.1.29" />

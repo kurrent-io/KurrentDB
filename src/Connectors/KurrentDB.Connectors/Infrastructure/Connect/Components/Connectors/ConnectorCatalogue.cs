@@ -6,7 +6,6 @@ using Humanizer;
 using Kurrent.Connectors.Elasticsearch;
 using Kurrent.Connectors.Http;
 using Kurrent.Connectors.Kafka;
-using Kurrent.Connectors.KurrentDB;
 using Kurrent.Connectors.MongoDB;
 using Kurrent.Connectors.RabbitMQ;
 using Kurrent.Connectors.Serilog;
@@ -30,7 +29,6 @@ public class ConnectorCatalogue {
             [typeof(KafkaSink)]         = For<KafkaSink, KafkaSinkValidator, KafkaSinkConnectorDataProtector>([$"{EntitlementPrefix}_KAFKA_SINK"], true),
             [typeof(PulsarSink)]         = For<PulsarSink, PulsarSinkValidator, PulsarSinkConnectorDataProtector>([$"{EntitlementPrefix}_PULSAR_SINK"], true),
             [typeof(RabbitMqSink)]      = For<RabbitMqSink, RabbitMqSinkValidator, RabbitMqSinkConnectorDataProtector>([$"{EntitlementPrefix}_RABBITMQ_SINK"], true),
-            [typeof(KurrentDbSink)]     = For<KurrentDbSink, KurrentDbSinkValidator, KurrentDbSinkConnectorDataProtector>([$"{EntitlementPrefix}_KURRENTDB_SINK", $"{EntitlementPrefix}_KURRENTDB_SOURCE"], true),
             [typeof(ElasticsearchSink)] = For<ElasticsearchSink, ElasticsearchSinkValidator, ElasticsearchSinkConnectorDataProtector>([$"{EntitlementPrefix}_ELASTICSEARCH_SINK", $"{EntitlementPrefix}_ELASTICSEARCH_SOURCE"], true),
             [typeof(MongoDbSink)]       = For<MongoDbSink, MongoDbSinkValidator, MongoDbSinkConnectorDataProtector>([$"{EntitlementPrefix}_MONGODB_SINK"], true),
         }.ToFrozenDictionary();
