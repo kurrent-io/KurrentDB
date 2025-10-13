@@ -898,19 +898,19 @@ public partial class PTable : ISearchTable, IDisposable {
 
 	private static IndexEntry ReadEntry(SafeFileHandle handle, long fileOffset, int ptableVersion, out int bytesRead) {
 		// allocate buffer for the worst case
-		Span<byte> buffer = stackalloc byte[sizeof(long) + sizeof(ulong) + sizeof(long)];
+		Span<byte> buffer = stackalloc byte[IndexEntryV4Size];
 		var reader = new SpanReader<byte>(buffer);
 		long version;
 		ulong stream;
 		switch (ptableVersion) {
 			case PTableVersions.IndexV1:
-				buffer = buffer.Slice(0, sizeof(int) + sizeof(uint) + sizeof(long));
+				buffer = buffer.Slice(0, IndexEntryV1Size);
 				RandomAccess.Read(handle, buffer, fileOffset);
 				version = reader.ReadLittleEndian<int>();
 				stream = reader.ReadLittleEndian<uint>();
 				break;
 			case PTableVersions.IndexV2:
-				buffer = buffer.Slice(0, sizeof(int) + sizeof(ulong) + sizeof(long));
+				buffer = buffer.Slice(0, IndexEntryV2Size);
 				RandomAccess.Read(handle, buffer, fileOffset);
 				version = reader.ReadLittleEndian<int>();
 				stream = reader.ReadLittleEndian<ulong>();
