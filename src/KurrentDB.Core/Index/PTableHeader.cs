@@ -14,28 +14,24 @@ namespace KurrentDB.Core.Index;
 [StructLayout(LayoutKind.Auto)]
 public readonly struct PTableHeader : IBinaryFormattable<PTableHeader> {
 	public const int Size = 128;
+	private const byte FileType = (byte)Index.FileType.PTableFile;
 
-	public readonly FileType FileType;
 	public readonly byte Version;
 
 	public PTableHeader(byte version) {
-		FileType = FileType.PTableFile;
 		Version = version;
 	}
 
-	private PTableHeader(ReadOnlySpan<byte> buffer) {
-		var reader = new SpanReader<byte>(buffer);
-
-		FileType = reader.Read() is (byte)FileType.PTableFile
-			? FileType.PTableFile
-			: throw new CorruptIndexException("Corrupted PTable.", new InvalidFileException("Wrong type of PTable."));
+	private PTableHeader(ref SpanReader<byte> reader) {
+		if (reader.Read() is not FileType)
+			throw new CorruptIndexException("Corrupted PTable.", new InvalidFileException("Wrong type of PTable."));
 
 		Version = reader.Read();
 	}
 
 	public void Format(Span<byte> destination) {
 		var writer = new SpanWriter<byte>(destination);
-		writer.Add((byte)FileType.PTableFile);
+		writer.Add(FileType);
 		writer.Add(Version);
 	}
 
@@ -45,7 +41,10 @@ public readonly struct PTableHeader : IBinaryFormattable<PTableHeader> {
 		return result;
 	}
 
-	public static PTableHeader Parse(ReadOnlySpan<byte> source) => new(source);
+	public static PTableHeader Parse(ReadOnlySpan<byte> source) {
+		var reader = new SpanReader<byte>(source);
+		return new(ref reader);
+	}
 
 	public static PTableHeader Parse(SafeFileHandle handle, long fileOffset) {
 		Span<byte> buffer = stackalloc byte[Size];

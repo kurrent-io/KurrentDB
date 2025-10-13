@@ -14,21 +14,19 @@ namespace KurrentDB.Core.Index;
 [StructLayout(LayoutKind.Auto)]
 public readonly struct PTableFooter : IBinaryFormattable<PTableFooter> {
 	public const int Size = 128;
-	public readonly FileType FileType;
+	private const byte FileType = (byte)Index.FileType.PTableFile;
+
 	public readonly byte Version;
 	public readonly uint NumMidpointsCached;
 
 	public PTableFooter(byte version, uint numMidpointsCached) {
-		FileType = FileType.PTableFile;
 		Version = version;
 		NumMidpointsCached = numMidpointsCached;
 	}
 
-	private PTableFooter(ReadOnlySpan<byte> buffer) {
-		var reader = new SpanReader<byte>(buffer);
-		FileType = reader.Read() is (byte)FileType.PTableFile
-			? FileType.PTableFile
-			: throw new CorruptIndexException("Corrupted PTable.", new InvalidFileException("Wrong type of PTable."));
+	private PTableFooter(ref SpanReader<byte> reader) {
+		if (reader.Read() is not FileType)
+			throw new CorruptIndexException("Corrupted PTable.", new InvalidFileException("Wrong type of PTable."));
 
 		Version = reader.Read();
 		if (Version < PTableVersions.IndexV4)
@@ -44,7 +42,10 @@ public readonly struct PTableFooter : IBinaryFormattable<PTableFooter> {
 
 	static int IBinaryFormattable<PTableFooter>.Size => Size;
 
-	public static PTableFooter Parse(ReadOnlySpan<byte> source) => new(source);
+	public static PTableFooter Parse(ReadOnlySpan<byte> source) {
+		var reader = new SpanReader<byte>(source);
+		return new(ref reader);
+	}
 
 	public static PTableFooter Parse(SafeFileHandle handle, long fileOffset) {
 		Span<byte> buffer = stackalloc byte[Size];
@@ -55,7 +56,7 @@ public readonly struct PTableFooter : IBinaryFormattable<PTableFooter> {
 
 	public void Format(Span<byte> buffer) {
 		var writer = new SpanWriter<byte>(buffer);
-		writer.Add((byte)FileType);
+		writer.Add(FileType);
 		writer.Add(Version);
 		writer.WriteLittleEndian(NumMidpointsCached);
 	}

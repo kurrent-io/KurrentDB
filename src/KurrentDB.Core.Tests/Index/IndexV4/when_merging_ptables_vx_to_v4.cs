@@ -104,7 +104,6 @@ public class when_merging_ptables_vx_to_v4 : SpecificationWithDirectoryPerTestFi
 			               requiredMidpoints * PTable.IndexEntryV4Size;
 
 			var ptableFooter = PTableFooter.Parse(filestream.SafeFileHandle, footerOffset);
-			Assert.AreEqual(FileType.PTableFile, ptableFooter.FileType);
 			Assert.AreEqual(PTableVersions.IndexV4, ptableFooter.Version);
 			Assert.AreEqual(requiredMidpoints, ptableFooter.NumMidpointsCached);
 		}
@@ -222,7 +221,6 @@ public class when_merging_to_ptable_v4_with_deleted_entries : SpecificationWithD
 			                   requiredMidpoints * PTable.IndexEntryV4Size;
 
 			var ptableFooter = PTableFooter.Parse(filestream.SafeFileHandle, footerOffset);
-			Assert.AreEqual(FileType.PTableFile, ptableFooter.FileType);
 			Assert.AreEqual(PTableVersions.IndexV4, ptableFooter.Version);
 			Assert.AreEqual(requiredMidpoints, ptableFooter.NumMidpointsCached);
 		}
