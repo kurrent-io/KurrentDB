@@ -10,6 +10,7 @@ using Kurrent.Connectors.KurrentDB;
 using Kurrent.Connectors.MongoDB;
 using Kurrent.Connectors.RabbitMQ;
 using Kurrent.Connectors.Serilog;
+using Kurrent.Connectors.Pulsar;
 using static KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors.ConnectorCatalogueItem;
 
 namespace KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
@@ -27,6 +28,7 @@ public class ConnectorCatalogue {
             [typeof(HttpSink)]          = For<HttpSink, HttpSinkValidator, HttpSinkConnectorDataProtector>([$"{EntitlementPrefix}_HTTP_SINK"], false),
             [typeof(SerilogSink)]       = For<SerilogSink, SerilogSinkValidator, SerilogSinkConnectorDataProtector>([$"{EntitlementPrefix}_SERILOG_SINK"], false),
             [typeof(KafkaSink)]         = For<KafkaSink, KafkaSinkValidator, KafkaSinkConnectorDataProtector>([$"{EntitlementPrefix}_KAFKA_SINK"], true),
+            [typeof(PulsarSink)]         = For<PulsarSink, PulsarSinkValidator, PulsarSinkConnectorDataProtector>([$"{EntitlementPrefix}_PULSAR_SINK"], true),
             [typeof(RabbitMqSink)]      = For<RabbitMqSink, RabbitMqSinkValidator, RabbitMqSinkConnectorDataProtector>([$"{EntitlementPrefix}_RABBITMQ_SINK"], true),
             [typeof(KurrentDbSink)]     = For<KurrentDbSink, KurrentDbSinkValidator, KurrentDbSinkConnectorDataProtector>([$"{EntitlementPrefix}_KURRENTDB_SINK", $"{EntitlementPrefix}_KURRENTDB_SOURCE"], true),
             [typeof(ElasticsearchSink)] = For<ElasticsearchSink, ElasticsearchSinkValidator, ElasticsearchSinkConnectorDataProtector>([$"{EntitlementPrefix}_ELASTICSEARCH_SINK", $"{EntitlementPrefix}_ELASTICSEARCH_SOURCE"], true),
