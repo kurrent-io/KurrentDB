@@ -14,12 +14,25 @@ public abstract class LeaderNodeBackgroundService : NodeBackgroundService {
         GetNodeSystemInfo getNodeSystemInfo,
         ILoggerFactory loggerFactory,
         string? serviceName = null
-    ) : base(publisher, subscriber, loggerFactory, serviceName) {
-	    GetNodeSystemInfo = getNodeSystemInfo;
-	    Logger = loggerFactory.CreateLogger(GetType());
+    ) : base(publisher, loggerFactory.CreateLogger<NodeBackgroundService>(), serviceName) {
+        // GetNodeLifetimeService = component => new NodeLifetimeService(
+        //     component, publisher, subscriber,
+        //     loggerFactory.CreateLogger<NodeLifetimeService>()
+        // );
+
+        NodeLifetimeService = new NodeLifetimeService(
+            ServiceName, publisher, subscriber,
+            loggerFactory.CreateLogger<NodeLifetimeService>()
+        );
+
+        GetNodeSystemInfo = getNodeSystemInfo;
+
+        Logger = loggerFactory.CreateLogger(GetType());
     }
 
-    GetNodeSystemInfo GetNodeSystemInfo { get; }
+    // GetNodeLifetimeService GetNodeLifetimeService { get; }
+    INodeLifetimeService   NodeLifetimeService    { get; }
+    GetNodeSystemInfo      GetNodeSystemInfo      { get; }
 
     protected ILogger Logger { get; }
 
@@ -27,6 +40,8 @@ public abstract class LeaderNodeBackgroundService : NodeBackgroundService {
         stoppingToken.Register(() => Logger.LogLeaderNodeBackgroundServiceShuttingDown(ServiceName));
 
         if (stoppingToken.IsCancellationRequested) return;
+
+        // INodeLifetimeService nodeLifetime = GetNodeLifetimeService(ServiceName);
 
         while (!stoppingToken.IsCancellationRequested) {
             var lifetimeToken = await NodeLifetimeService.WaitForLeadershipAsync(stoppingToken);

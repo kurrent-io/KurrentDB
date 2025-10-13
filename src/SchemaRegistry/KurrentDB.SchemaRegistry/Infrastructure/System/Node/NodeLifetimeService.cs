@@ -12,13 +12,11 @@ public delegate INodeLifetimeService GetNodeLifetimeService(string componentName
 
 public interface INodeLifetimeService {
     Task<CancellationToken> WaitForLeadershipAsync(CancellationToken cancellationToken);
-    Task WaitForSystemReadyAsync(CancellationToken cancellationToken);
 }
 
 [UsedImplicitly]
-public sealed class NodeLifetimeService : IHandle<SystemMessage.StateChangeMessage>, IHandle<SystemMessage.SystemReady>, INodeLifetimeService, IDisposable {
+public sealed class NodeLifetimeService : IHandle<SystemMessage.StateChangeMessage>, INodeLifetimeService, IDisposable {
     volatile TokenCompletionSource?  _leadershipEvent = new();
-    readonly TaskCompletionSource _systemReadyEvent = new();
 
     public NodeLifetimeService(string componentName, IPublisher publisher, ISubscriber subscriber, ILogger<NodeLifetimeService>? logger = null) {
         ComponentName = componentName;
@@ -26,8 +24,7 @@ public sealed class NodeLifetimeService : IHandle<SystemMessage.StateChangeMessa
         Subscriber    = subscriber;
         Logger        = logger ?? NullLoggerFactory.Instance.CreateLogger<NodeLifetimeService>();
 
-        Subscriber.Subscribe<SystemMessage.StateChangeMessage>(this);
-        Subscriber.Subscribe<SystemMessage.SystemReady>(this);
+        Subscriber.Subscribe(this);
     }
 
     ILogger     Logger        { get; }
@@ -51,11 +48,6 @@ public sealed class NodeLifetimeService : IHandle<SystemMessage.StateChangeMessa
         }
     }
 
-    public void Handle(SystemMessage.SystemReady message) {
-        Logger.LogSystemReady(ComponentName);
-        _systemReadyEvent.TrySetResult();
-    }
-
     public async Task<CancellationToken> WaitForLeadershipAsync(CancellationToken cancellationToken) {
         if (_leadershipEvent is null)
             return new CancellationToken(canceled: true);
@@ -68,15 +60,6 @@ public sealed class NodeLifetimeService : IHandle<SystemMessage.StateChangeMessa
         }
         catch (OperationCanceledException) {
             return cancellationToken;
-        }
-    }
-
-    public async Task WaitForSystemReadyAsync(CancellationToken cancellationToken) {
-        try {
-            await _systemReadyEvent.Task.WaitAsync(cancellationToken);
-        }
-        catch (OperationCanceledException) {
-	        // ignore
         }
     }
 
@@ -102,7 +85,4 @@ static partial class NodeLifetimeServiceLogMessages {
 
     [LoggerMessage(LogLevel.Debug, "{ComponentName} node state ignored: {NodeState}")]
     internal static partial void LogNodeStateChangeIgnored(this ILogger logger, string componentName, VNodeState nodeState);
-
-    [LoggerMessage(LogLevel.Debug, "{ComponentName} system ready")]
-    internal static partial void LogSystemReady(this ILogger logger, string componentName);
 }

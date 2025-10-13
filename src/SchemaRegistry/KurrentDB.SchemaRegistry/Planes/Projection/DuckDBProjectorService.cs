@@ -10,25 +10,11 @@ using KurrentDB.SchemaRegistry.Infrastructure.System.Node;
 
 namespace KurrentDB.SchemaRegistry.Planes.Projection;
 
-public class DuckDBProjectorService : NodeBackgroundService {
-	readonly ILoggerFactory _loggerFactory;
-	private readonly IDuckDBConnectionProvider _connectionProvider;
-	private readonly IConsumerBuilder _consumerBuilder;
-
-	public DuckDBProjectorService(
-		IPublisher publisher,
-		ISubscriber subscriber,
-		IDuckDBConnectionProvider connectionProvider,
-		IConsumerBuilder consumerBuilder,
-		ILoggerFactory loggerFactory
-	) : base(publisher, subscriber, loggerFactory, "DuckDBProjector") {
-		_connectionProvider = connectionProvider;
-		_consumerBuilder = consumerBuilder;
-		_loggerFactory = loggerFactory;
-	}
-
-	protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-        var options = new DuckDBProjectorOptions(_connectionProvider) {
+public class DuckDBProjectorService(
+    IPublisher publisher, IDuckDBConnectionProvider connectionProvider, IConsumerBuilder consumerBuilder, ILoggerFactory loggerFactory)
+    : NodeBackgroundService(publisher, loggerFactory.CreateLogger<NodeBackgroundService>(), "DuckDBProjector") {
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
+        var options = new DuckDBProjectorOptions(connectionProvider) {
             Filter          = SchemaRegistryConventions.Filters.SchemasFilter,
             InitialPosition = SubscriptionInitialPosition.Latest,
             AutoCommit = new() {
@@ -39,8 +25,8 @@ public class DuckDBProjectorService : NodeBackgroundService {
 
         var projector = new DuckDBProjector(
             options, new SchemaProjections(),
-            _consumerBuilder,
-            _loggerFactory
+            consumerBuilder,
+            loggerFactory
         );
 
         await projector.RunUntilStopped(stoppingToken);
