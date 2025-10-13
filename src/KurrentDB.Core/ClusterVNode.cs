@@ -327,8 +327,7 @@ public class ClusterVNode<TStreamId> :
 			httpEndPoint, options.Cluster.ReadOnlyReplica);
 
 		var dbConfig = CreateDbConfig(
-			out var statsHelper,
-			out var readerThreadsCount);
+			out var statsHelper);
 
 		var trackers = new Trackers();
 		var metricsConfiguration = MetricsConfiguration.Get(configuration);
@@ -364,8 +363,7 @@ public class ClusterVNode<TStreamId> :
 			});
 
 		TFChunkDbConfig CreateDbConfig(
-			out SystemStatsHelper statsHelper,
-			out int readerThreadsCount) {
+			out SystemStatsHelper statsHelper) {
 
 			ICheckpoint writerChk;
 			ICheckpoint chaserChk;
@@ -454,12 +452,6 @@ public class ClusterVNode<TStreamId> :
 				? (long)options.Application.StatsPeriodSec * 1000
 				: Timeout.Infinite;
 			statsHelper = new SystemStatsHelper(Log, writerChk.AsReadOnly(), dbPath, statsCollectionPeriod);
-
-			var processorCount = Environment.ProcessorCount;
-
-			readerThreadsCount =
-				ThreadCountCalculator.CalculateReaderThreadCount(options.Database.ReaderThreadsCount,
-					processorCount, isRunningInContainer);
 
 			return new TFChunkDbConfig(dbPath,
 				options.Database.ChunkSize,
@@ -608,15 +600,11 @@ public class ClusterVNode<TStreamId> :
 		monitoringInnerBus.Subscribe<MonitoringMessage.GetFreshTcpConnectionStats>(monitoring);
 
 		var indexPath = options.Database.Index ?? Path.Combine(Db.Config.Path, ESConsts.DefaultIndexDirectoryName);
-
-		var pTableMaxReaderCount = GetPTableMaxReaderCount(readerThreadsCount);
 		var tfReader = new TFChunkReader(Db, Db.Config.WriterCheckpoint.AsReadOnly());
 
 		var logFormat = logFormatAbstractorFactory.Create(new() {
 			InMemory = options.Database.MemDb,
 			IndexDirectory = indexPath,
-			InitialReaderCount = ESConsts.PTableInitialReaderCount,
-			MaxReaderCount = pTableMaxReaderCount,
 			StreamExistenceFilterSize = options.Database.StreamExistenceFilterSize,
 			StreamExistenceFilterCheckpoint = Db.Config.StreamExistenceFilterCheckpoint,
 			TFReader = tfReader,
@@ -685,7 +673,6 @@ public class ClusterVNode<TStreamId> :
 			initializationThreads: options.Database.InitializationThreads,
 			additionalReclaim: false,
 			maxAutoMergeIndexLevel: options.Database.MaxAutoMergeIndexLevel,
-			pTableMaxReaderCount: pTableMaxReaderCount,
 			statusTracker: trackers.IndexStatusTracker);
 		logFormat.StreamNamesProvider.SetTableIndex(tableIndex);
 
@@ -1674,19 +1661,6 @@ public class ClusterVNode<TStreamId> :
 		var periodicLogging = new PeriodicallyLoggingService(_mainQueue, VersionInfo.Version, Log);
 		_mainBus.Subscribe<SystemMessage.SystemStart>(periodicLogging);
 		_mainBus.Subscribe<MonitoringMessage.CheckEsVersion>(periodicLogging);
-	}
-
-	static int GetPTableMaxReaderCount(int readerThreadsCount) {
-		var ptableMaxReaderCount =
-			1 /* StorageWriter */
-			+ 1 /* StorageChaser */
-			+ 1 /* Projections */
-			+ TFChunkScavenger.MaxThreadCount /* Scavenging (1 per thread) */
-			+ 1 /* Redaction */
-			+ 1 /* Subscription LinkTos resolving */
-			+ readerThreadsCount
-			+ 5 /* just in case reserve :) */;
-		return Math.Max(ptableMaxReaderCount, ESConsts.PTableInitialReaderCount);
 	}
 
 	private static void CreateStaticStreamInfoCache(

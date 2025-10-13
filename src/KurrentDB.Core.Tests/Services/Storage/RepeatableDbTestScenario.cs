@@ -65,7 +65,6 @@ public abstract class RepeatableDbTestScenario<TLogFormat, TStreamId> : Specific
 			reader,
 			PTableVersions.IndexV3,
 			int.MaxValue,
-			Constants.PTableMaxReaderCountDefault,
 			MaxEntriesInMemTable);
 		_logFormat.StreamNamesProvider.SetTableIndex(TableIndex);
 

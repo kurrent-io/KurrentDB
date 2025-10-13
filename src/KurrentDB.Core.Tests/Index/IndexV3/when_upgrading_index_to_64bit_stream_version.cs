@@ -37,7 +37,7 @@ public class when_upgrading_index_to_64bit_stream_version : SpecificationWithDir
 			() => new HashListMemTable(PTableVersions.IndexV2, maxSize: 5),
 			fakeReader,
 			PTableVersions.IndexV2,
-			5, Constants.PTableMaxReaderCountDefault,
+			5,
 			maxSizeForMemory: 5,
 			maxTablesPerLevel: 2);
 		_tableIndex.Initialize(long.MaxValue);
@@ -54,7 +54,7 @@ public class when_upgrading_index_to_64bit_stream_version : SpecificationWithDir
 			() => new HashListMemTable(_ptableVersion, maxSize: 5),
 			fakeReader,
 			_ptableVersion,
-			5, Constants.PTableMaxReaderCountDefault,
+			5,
 			maxSizeForMemory: 5,
 			maxTablesPerLevel: 2);
 		_tableIndex.Initialize(long.MaxValue);

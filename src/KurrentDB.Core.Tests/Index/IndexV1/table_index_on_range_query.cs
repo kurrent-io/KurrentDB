@@ -38,7 +38,7 @@ public class table_index_on_range_query : SpecificationWithDirectoryPerTestFixtu
 			() => new HashListMemTable(version: _ptableVersion, maxSize: 40),
 			new FakeTfReader(),
 			_ptableVersion,
-			5, Constants.PTableMaxReaderCountDefault,
+			5,
 			maxSizeForMemory: 5,
 			skipIndexVerify: _skipIndexVerify);
 		_tableIndex.Initialize(long.MaxValue);

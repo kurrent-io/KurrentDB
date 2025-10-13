@@ -72,7 +72,6 @@ public class TableIndex<TStreamId> : TableIndex, ITableIndex<TStreamId> {
 
 	private bool _initialized;
 	private readonly int _maxAutoMergeIndexLevel;
-	private readonly int _pTableMaxReaderCount;
 
 	public TableIndex(string directory,
 		IHasher<TStreamId> lowHasher,
@@ -82,7 +81,6 @@ public class TableIndex<TStreamId> : TableIndex, ITableIndex<TStreamId> {
 		ITransactionFileReader tfReader,
 		byte ptableVersion,
 		int maxAutoMergeIndexLevel,
-		int pTableMaxReaderCount,
 		int maxSizeForMemory = 1000000,
 		int maxTablesPerLevel = 4,
 		bool additionalReclaim = false,
@@ -100,7 +98,6 @@ public class TableIndex<TStreamId> : TableIndex, ITableIndex<TStreamId> {
 		Ensure.NotNull(highHasher, "highHasher");
 		ArgumentNullException.ThrowIfNull(tfReader);
 		Ensure.Positive(initializationThreads, "initializationThreads");
-		Ensure.Positive(pTableMaxReaderCount, "pTableMaxReaderCount");
 
 		ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(maxTablesPerLevel, 1);
 
@@ -129,7 +126,6 @@ public class TableIndex<TStreamId> : TableIndex, ITableIndex<TStreamId> {
 		_emptyStreamId = emptyStreamId;
 
 		_maxAutoMergeIndexLevel = maxAutoMergeIndexLevel;
-		_pTableMaxReaderCount = pTableMaxReaderCount;
 	}
 
 	public void Initialize(long chaserCheckpoint) {
@@ -141,7 +137,7 @@ public class TableIndex<TStreamId> : TableIndex, ITableIndex<TStreamId> {
 		_initialized = true;
 
 		if (_inMem) {
-			_indexMap = IndexMap.CreateEmpty(_maxTablesPerLevel, int.MaxValue, _pTableMaxReaderCount);
+			_indexMap = IndexMap.CreateEmpty(_maxTablesPerLevel, int.MaxValue);
 			_prepareCheckpoint = _indexMap.PrepareCheckpoint;
 			_commitCheckpoint = _indexMap.CommitCheckpoint;
 			return;
@@ -163,8 +159,7 @@ public class TableIndex<TStreamId> : TableIndex, ITableIndex<TStreamId> {
 				useBloomFilter: _useBloomFilter,
 				lruCacheSize: _lruCacheSize,
 				threads: _initializationThreads,
-				maxAutoMergeLevel: _maxAutoMergeIndexLevel,
-				pTableMaxReaderCount: _pTableMaxReaderCount);
+				maxAutoMergeLevel: _maxAutoMergeIndexLevel);
 			if (_indexMap.CommitCheckpoint >= chaserCheckpoint) {
 				_indexMap.Dispose(TimeSpan.FromMilliseconds(5000));
 				throw new CorruptIndexException(String.Format(
@@ -186,8 +181,7 @@ public class TableIndex<TStreamId> : TableIndex, ITableIndex<TStreamId> {
 				useBloomFilter: _useBloomFilter,
 				lruCacheSize: _lruCacheSize,
 				threads: _initializationThreads,
-				maxAutoMergeLevel: _maxAutoMergeIndexLevel,
-				pTableMaxReaderCount: _pTableMaxReaderCount);
+				maxAutoMergeLevel: _maxAutoMergeIndexLevel);
 		}
 
 		_prepareCheckpoint = _indexMap.PrepareCheckpoint;
@@ -343,8 +337,6 @@ public class TableIndex<TStreamId> : TableIndex, ITableIndex<TStreamId> {
 				if (memtable != null) {
 					memtable.MarkForConversion();
 					ptable = PTable.FromMemtable(memtable, _fileNameProvider.GetFilenameNewTable(),
-						ESConsts.PTableInitialReaderCount,
-						_pTableMaxReaderCount,
 						_indexCacheDepth,
 						_skipIndexVerify,
 						useBloomFilter: _useBloomFilter,
@@ -511,8 +503,6 @@ public class TableIndex<TStreamId> : TableIndex, ITableIndex<TStreamId> {
 			Log.Debug("Putting awaiting file as PTable instead of MemTable [{id}].", memtable.Id);
 
 			var ptable = PTable.FromMemtable(memtable, _fileNameProvider.GetFilenameNewTable(),
-				ESConsts.PTableInitialReaderCount,
-				_pTableMaxReaderCount,
 				_indexCacheDepth,
 				_skipIndexVerify,
 				useBloomFilter: _useBloomFilter,

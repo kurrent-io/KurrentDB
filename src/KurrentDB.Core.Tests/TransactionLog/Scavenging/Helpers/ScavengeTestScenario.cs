@@ -67,7 +67,7 @@ public abstract class ScavengeTestScenario<TLogFormat, TStreamId> : Specificatio
 			() => new HashListMemTable(PTableVersions.IndexV3, maxSize: 200),
 			reader,
 			PTableVersions.IndexV3,
-			5, Constants.PTableMaxReaderCountDefault,
+			5,
 			maxSizeForMemory: 100,
 			maxTablesPerLevel: 2);
 		_logFormat.StreamNamesProvider.SetTableIndex(tableIndex);

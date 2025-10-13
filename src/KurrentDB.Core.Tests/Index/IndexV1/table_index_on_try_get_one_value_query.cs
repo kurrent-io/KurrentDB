@@ -41,7 +41,7 @@ public class table_index_on_try_get_one_value_query : SpecificationWithDirectory
 			() => new HashListMemTable(_ptableVersion, maxSize: 10),
 			fakeReader,
 			_ptableVersion,
-			5, Constants.PTableMaxReaderCountDefault,
+			5,
 			maxSizeForMemory: 5,
 			skipIndexVerify: _skipIndexVerify);
 		_tableIndex.Initialize(long.MaxValue);

@@ -64,7 +64,6 @@ public abstract class SimpleDbTestScenario<TLogFormat, TStreamId> : Specificatio
 			reader,
 			PTableVersions.IndexV2,
 			int.MaxValue,
-			Constants.PTableMaxReaderCountDefault,
 			MaxEntriesInMemTable);
 		_logFormat.StreamNamesProvider.SetTableIndex(TableIndex);
 

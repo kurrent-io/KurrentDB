@@ -35,7 +35,7 @@ public class table_index_should : SpecificationWithDirectoryPerTestFixture {
 			() => new HashListMemTable(_ptableVersion, maxSize: 20),
 			new FakeTfReader(),
 			_ptableVersion,
-			5, Constants.PTableMaxReaderCountDefault,
+			5,
 			maxSizeForMemory: 10,
 			skipIndexVerify: _skipIndexVerify);
 		_tableIndex.Initialize(long.MaxValue);

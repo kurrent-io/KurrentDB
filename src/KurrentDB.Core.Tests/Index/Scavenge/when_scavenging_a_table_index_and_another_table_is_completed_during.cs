@@ -50,7 +50,7 @@ class
 			() => new HashListMemTable(PTableVersions.IndexV4, maxSize: 5),
 			fakeReader,
 			PTableVersions.IndexV4,
-			5, Constants.PTableMaxReaderCountDefault,
+			5,
 			maxSizeForMemory: 2,
 			maxTablesPerLevel: 5,
 			useBloomFilter: _useBloomFilter);
@@ -83,7 +83,7 @@ class
 			() => new HashListMemTable(PTableVersions.IndexV4, maxSize: 5),
 			fakeReader,
 			PTableVersions.IndexV4,
-			5, Constants.PTableMaxReaderCountDefault,
+			5,
 			maxSizeForMemory: 2,
 			maxTablesPerLevel: 5,
 			useBloomFilter: _useBloomFilter);

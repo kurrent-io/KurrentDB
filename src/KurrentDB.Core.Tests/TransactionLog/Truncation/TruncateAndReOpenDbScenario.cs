@@ -42,7 +42,6 @@ public abstract class TruncateAndReOpenDbScenario<TLogFormat, TStreamId> : Trunc
 			reader,
 			PTableVersions.IndexV3,
 			int.MaxValue,
-			Constants.PTableMaxReaderCountDefault,
 			MaxEntriesInMemTable);
 		_logFormat.StreamNamesProvider.SetTableIndex(TableIndex);
 		var readIndex = new ReadIndex<TStreamId>(new NoopPublisher(),

@@ -62,7 +62,7 @@ public class HashCollisionTestFixture : SpecificationWithDirectoryPerTestFixture
 			() => new HashListMemTable(PTableVersions.IndexV4, maxSize: _maxMemTableSize),
 			_fakeReader,
 			PTableVersions.IndexV4,
-			5, Constants.PTableMaxReaderCountDefault,
+			5,
 			maxSizeForMemory: _maxMemTableSize,
 			maxTablesPerLevel: 2);
 		_logFormat.StreamNamesProvider.SetTableIndex(_tableIndex);
@@ -319,7 +319,7 @@ public class
 			() => new HashListMemTable(PTableVersions.IndexV2, maxSize: _maxMemTableSize),
 			_fakeReader,
 			PTableVersions.IndexV2,
-			5, Constants.PTableMaxReaderCountDefault,
+			5,
 			maxSizeForMemory: _maxMemTableSize,
 			maxTablesPerLevel: 2);
 		_tableIndex.Initialize(long.MaxValue);

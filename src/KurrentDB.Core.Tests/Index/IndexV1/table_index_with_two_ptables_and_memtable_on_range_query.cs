@@ -40,7 +40,7 @@ public class table_index_with_two_ptables_and_memtable_on_range_query : Specific
 			() => new HashListMemTable(_ptableVersion, maxSize: 10),
 			fakeReader,
 			_ptableVersion,
-			5, Constants.PTableMaxReaderCountDefault,
+			5,
 			maxSizeForMemory: 2,
 			maxTablesPerLevel: 2,
 			skipIndexVerify: _skipIndexVerify);

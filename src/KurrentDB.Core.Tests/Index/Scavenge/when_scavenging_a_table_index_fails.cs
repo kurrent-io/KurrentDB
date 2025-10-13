@@ -40,7 +40,7 @@ class when_scavenging_a_table_index_fails : SpecificationWithDirectoryPerTestFix
 			() => new HashListMemTable(PTableVersions.IndexV4, maxSize: 5),
 			fakeReader /* throw an exception when the first PTable scavenge starts and tries to acquire a reader */,
 			PTableVersions.IndexV4,
-			5, Constants.PTableMaxReaderCountDefault,
+			5,
 			maxSizeForMemory: 2,
 			maxTablesPerLevel: 5,
 			useBloomFilter: _useBloomFilter);
@@ -64,7 +64,7 @@ class when_scavenging_a_table_index_fails : SpecificationWithDirectoryPerTestFix
 			() => new HashListMemTable(PTableVersions.IndexV4, maxSize: 5),
 			fakeReader,
 			PTableVersions.IndexV4,
-			5, Constants.PTableMaxReaderCountDefault,
+			5,
 			maxSizeForMemory: 2,
 			maxTablesPerLevel: 5,
 			useBloomFilter: _useBloomFilter);

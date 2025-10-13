@@ -29,7 +29,7 @@ public class table_index_with_corrupt_index_entries_should : SpecificationWithDi
 			() => new HashListMemTable(version, maxSize: NumIndexEntries),
 			fakeReader,
 			version,
-			int.MaxValue, Constants.PTableMaxReaderCountDefault,
+			int.MaxValue,
 			maxSizeForMemory: NumIndexEntries,
 			skipIndexVerify: skipIndexVerify);
 		_tableIndex.Initialize(long.MaxValue);
@@ -70,7 +70,7 @@ public class table_index_with_corrupt_index_entries_should : SpecificationWithDi
 			() => new HashListMemTable(version, maxSize: NumIndexEntries),
 			fakeReader,
 			version,
-			int.MaxValue, Constants.PTableMaxReaderCountDefault,
+			int.MaxValue,
 			maxSizeForMemory: NumIndexEntries,
 			skipIndexVerify: skipIndexVerify,
 			indexCacheDepth: 8);
