@@ -460,7 +460,7 @@ public partial class PTable : ISearchTable, IDisposable {
 		}
 	}
 
-	void ValidateHash(Span<byte> expected, IncrementalHash actual) {
+	private static void ValidateHash(Span<byte> expected, IncrementalHash actual) {
 		Debug.Assert(actual is not null);
 
 		Span<byte> actualHash = stackalloc byte[MD5Size];
