@@ -64,7 +64,7 @@ public class FileSystemOptions {
 	public string Path { get; init; } = "";
 
 	public void Validate() {
-		if (string.IsNullOrEmpty(Path))
+		if (string.IsNullOrWhiteSpace(Path))
 			throw new InvalidConfigurationException("Please provide a Path for the FileSystem archive");
 	}
 }
@@ -74,10 +74,10 @@ public class S3Options {
 	public string Region { get; init; } = "";
 
 	public void Validate() {
-		if (string.IsNullOrEmpty(Bucket))
+		if (string.IsNullOrWhiteSpace(Bucket))
 			throw new InvalidConfigurationException("Please provide a Bucket for the S3 archive");
 
-		if (string.IsNullOrEmpty(Region))
+		if (string.IsNullOrWhiteSpace(Region))
 			throw new InvalidConfigurationException("Please provide a Region for the S3 archive");
 	}
 }
@@ -170,7 +170,7 @@ public class GcpOptions {
 	public string Bucket { get; init; } = "";
 
 	public void Validate() {
-		if (string.IsNullOrEmpty(Bucket))
+		if (string.IsNullOrWhiteSpace(Bucket))
 			throw new InvalidConfigurationException("Please provide a Bucket for the GCP archive");
 	}
 }
