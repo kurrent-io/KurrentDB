@@ -8,6 +8,7 @@ using Kurrent.Connectors.KurrentDB;
 using Kurrent.Connectors.MongoDB;
 using Kurrent.Connectors.RabbitMQ;
 using Kurrent.Connectors.Serilog;
+using Kurrent.Connectors.Pulsar;
 using Kurrent.Surge.DataProtection;
 
 namespace KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
@@ -65,5 +66,12 @@ public class HttpSinkConnectorDataProtector(IDataProtector dataProtector) : Conn
 public class KurrentDbSinkConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<KurrentDbSinkOptions>(dataProtector) {
     protected override string[] ConfigureSensitiveKeys() => [
         "ConnectionString"
+    ];
+}
+
+[PublicAPI]
+public class PulsarSinkConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<PulsarSinkOptions>(dataProtector) {
+    protected override string[] ConfigureSensitiveKeys() => [
+        "Authentication:Token"
     ];
 }
