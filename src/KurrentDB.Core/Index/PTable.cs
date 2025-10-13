@@ -6,7 +6,6 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,7 +23,6 @@ using KurrentDB.Core.TransactionLog.Unbuffered;
 using Microsoft.Win32.SafeHandles;
 using ILogger = Serilog.ILogger;
 using Range = KurrentDB.Core.Data.Range;
-using RuntimeInformation = System.Runtime.RuntimeInformation;
 
 namespace KurrentDB.Core.Index;
 
