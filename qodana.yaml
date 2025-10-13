@@ -3,7 +3,7 @@ version: "1.0"
 linter: jetbrains/qodana-dotnet:2024.3
 
 dotnet:
-  solution: src/KurrentDB.sln
+  solution: KurrentDB.slnx
 
 exclude:
   - name: RedundantTypeArgumentsOfMethod

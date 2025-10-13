@@ -18,7 +18,8 @@ COPY ./proto ./
 WORKDIR /build/src
 COPY ./src/Connectors/*/*.csproj ./Connectors/
 COPY ./src/SchemaRegistry/*/*.csproj ./SchemaRegistry/
-COPY ./src/KurrentDB.sln ./src/*/*.csproj ./src/Directory.Build.* ./src/Directory.Packages.props ./
+COPY ./src/*/*.csproj ./src/Directory.Build.* ./src/Directory.Packages.props ./
+COPY ./KurrentDB.slnx /build/
 RUN for file in $(ls Connectors/*.csproj); do mkdir -p ./${file%.*}/ && mv $file ./${file%.*}/; done && \
     for file in $(ls SchemaRegistry/*.csproj); do mkdir -p ./${file%.*}/ && mv $file ./${file%.*}/; done && \
     for file in $(ls *.csproj); do mkdir -p ./${file%.*}/ && mv $file ./${file%.*}/; done && \
@@ -49,7 +50,7 @@ CMD dotnet test \
     --logger:"GitHubActions;report-warnings=false" \
     --logger:"console;verbosity=normal" \
     --results-directory "/build/test-results" \
-    /build/src/KurrentDB.sln \
+    /build/KurrentDB.slnx \
     -- --report-trx --results-directory "/build/test-results"
 
 # "publish" image

@@ -138,7 +138,7 @@ dotnet ./src/KurrentDB/bin/Release/net8.0/KurrentDB.dll --dev --db ./tmp/data --
 You can launch the tests as follows:
 
 ```
-dotnet test src/KurrentDB.sln
+dotnet test KurrentDB.slnx
 ```
 
 ### Build KurrentDB Docker image

@@ -30,10 +30,10 @@ KurrentDB 25.1 introduces several major features and improvements:
 ### Build
 - `./build.sh [version] [configuration]` - Build KurrentDB (Linux/MacOS)
 - `./build.ps1 [version] [configuration]` - Build KurrentDB (Windows)
-- `dotnet build -c Release /p:Platform=x64 --framework=net8.0 src/KurrentDB.sln` - Direct dotnet build
+- `dotnet build -c Release /p:Platform=x64 --framework=net8.0 KurrentDB.slnx` - Direct dotnet build
 
 ### Test
-- `dotnet test src/KurrentDB.sln` - Run all tests
+- `dotnet test KurrentDB.slnx` - Run all tests
 - `dotnet test src/ProjectName.Tests/` - Run tests for a specific project
 - Tests use xunit, NUnit, and TUnit frameworks depending on the project
 
@@ -603,7 +603,7 @@ await foreach (var response in enumerator) {
 **Running Tests**:
 ```bash
 # All tests
-dotnet test src/KurrentDB.sln
+dotnet test KurrentDB.slnx
 
 # Specific project
 dotnet test src/KurrentDB.Api.V2.Tests/
