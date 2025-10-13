@@ -36,6 +36,9 @@ public class GcpBlobStorage : IBlobStorage {
 	public async ValueTask<int> ReadAsync(string name, Memory<byte> buffer, long offset, CancellationToken ct) {
 		ArgumentOutOfRangeException.ThrowIfNegative(offset);
 
+		if (buffer.IsEmpty)
+			return 0;
+
 		var destination = StreamSource.AsSynchronousStream(new MemoryWriter(buffer));
 		try {
 			await _storageClient.DownloadObjectAsync(
