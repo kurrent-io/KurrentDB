@@ -53,7 +53,7 @@ public class DuckDBProjectorBackgroundService : NodeBackgroundService, IHandle<S
 
 	protected async Task WaitForSystemReady(CancellationToken cancellationToken) {
 		await _systemReady.Task.WaitAsync(cancellationToken);
-		Logger.LogDuckDBProjectorSystemReadyCompleted(ServiceName);
+		Logger.LogDuckDBProjectorSystemReady(ServiceName);
 	}
 
 	protected override Task ExecuteAsync(CancellationToken stoppingToken) {
@@ -63,5 +63,5 @@ public class DuckDBProjectorBackgroundService : NodeBackgroundService, IHandle<S
 
 static partial class DuckDBProjectorBackgroundServiceLogMessages {
 	[LoggerMessage(LogLevel.Debug, "{ServiceName} system is ready")]
-	internal static partial void LogDuckDBProjectorSystemReadyCompleted(this ILogger logger, string serviceName);
+	internal static partial void LogDuckDBProjectorSystemReady(this ILogger logger, string serviceName);
 }
