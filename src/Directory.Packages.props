@@ -60,6 +60,7 @@
     <PackageVersion Include="Kurrent.Quack" Version="0.0.0-alpha.79" />
     <PackageVersion Include="KurrentDB.Client" Version="1.0.0" />
     <PackageVersion Include="librdkafka.redist" Version="2.5.0" />
+    <PackageVersion Include="Microsoft.Extensions.ObjectPool" Version="9.0.7" />
     <PackageVersion Include="LruCacheNet" Version="1.2.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="8.0.13" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.13" />
