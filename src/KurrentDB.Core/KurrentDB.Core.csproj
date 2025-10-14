@@ -19,6 +19,7 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="librdkafka.redist" />
+		<PackageReference Include="Microsoft.Extensions.ObjectPool" />
 		<PackageReference Include="Microsoft.FASTER.Core" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />
 		<PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" />
