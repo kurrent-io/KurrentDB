@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+	</PropertyGroup>
+	<ItemGroup>
+	  <PackageReference Include="Serilog" />
+	</ItemGroup>
+</Project>

@@ -1,0 +1,7 @@
+{
+  "KurrentDB": {
+    "Authorization": {
+      "PolicyType": "streampolicy"
+    }
+  }
+}

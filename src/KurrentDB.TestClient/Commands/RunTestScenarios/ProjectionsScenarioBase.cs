@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading;
-using EventStore.Transport.Http.Codecs;
+using KurrentDB.Transport.Http.Codecs;
 
 namespace KurrentDB.TestClient.Commands.RunTestScenarios;
 

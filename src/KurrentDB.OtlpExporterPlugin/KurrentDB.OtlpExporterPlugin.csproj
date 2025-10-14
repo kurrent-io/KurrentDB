@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<Nullable>enable</Nullable>
+		<IsPlugin>true</IsPlugin>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+		<PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+		<PackageReference Include="Serilog" />
+		<PackageReference Include="Serilog.Sinks.OpenTelemetry" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="otlp-exporter-example.yaml">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="otlp-exporter-example.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\KurrentDB.Logging\KurrentDB.Logging.csproj" />
+	</ItemGroup>
+</Project>

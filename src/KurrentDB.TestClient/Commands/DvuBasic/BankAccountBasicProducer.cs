@@ -3,9 +3,9 @@
 
 using System;
 using System.Globalization;
-using EventStore.Common.Utils;
-using EventStore.Core.Data;
-using EventStore.Transport.Http.Codecs;
+using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
+using KurrentDB.Transport.Http.Codecs;
 using ILogger = Serilog.ILogger;
 #pragma warning disable 1591
 
@@ -23,7 +23,7 @@ internal class BankAccountBasicProducer : IBasicProducer {
 
 		var serializedObject = Codec.Json.To(accountObject);
 		var @event = new Event(Guid.NewGuid(), accountObject.GetType().Name, true,
-			Helper.UTF8NoBom.GetBytes(serializedObject), new byte[0]);
+			Helper.UTF8NoBom.GetBytes(serializedObject));
 
 		return @event;
 	}

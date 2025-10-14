@@ -2,6 +2,8 @@ changelog:
   exclude:
     labels:
       - ignore-for-release
+      - documentation
+      - patched
   categories:
     - title: Added
       labels:
@@ -9,15 +11,12 @@ changelog:
     - title: Fixed
       labels:
         - bug
-    - title: Changed
-      labels:
-        - "*"
     - title: Deprecated
       labels:
         - deprecated
     - title: Breaking Changes
       labels:
         - breaking
-    - title: Documentation
+    - title: Changed
       labels:
-        - documentation
+        - "*"

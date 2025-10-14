@@ -473,3 +473,17 @@ MigrationBackup/
 certs/
 /es-gencert-cli
 .temp/
+
+
+# DuckDB
+*.db
+*.db.wal
+*.duck
+*.duck.wal
+*.quack
+*.quack.wal
+*.ddb
+*.ddb.wal
+
+# MCP Configuration with local paths
+.mcp.json

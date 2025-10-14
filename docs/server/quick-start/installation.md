@@ -50,7 +50,7 @@ For most features that require a license, KurrentDB will not start if the featur
 
 Packages for KurrentDB are hosted on [Cloudsmith](https://cloudsmith.io/~eventstore), in the following repositories:
 
-* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts) containing only production-ready [LTS](../release-schedule/#long-term-support-releases) packages.
+<!--* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts) containing only production-ready [LTS](../release-schedule/#long-term-support-releases) packages.-->
 * [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-latest) containing production-ready LTS and [STS](../release-schedule/#short-term-support-releases) packages.
 * [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-preview) containing non-production preview packages.
 
@@ -63,7 +63,7 @@ The name of the KurrentDB package is `kurrentdb`.
 
 Debian packages can be found in the following repositories:
 
-* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts/packages/?q=format%3Adeb+name%3Akurrentdb) containing only production-ready [LTS](../release-schedule/#long-term-support-releases) packages.
+<!--* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts/packages/?q=format%3Adeb+name%3Akurrentdb) containing only production-ready [LTS](../release-schedule/#long-term-support-releases) packages.-->
 * [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-latest/packages/?q=format%3Adeb+name%3Akurrentdb) containing production-ready LTS and [STS](../release-schedule/#short-term-support-releases) packages.
 * [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-preview/packages/?q=format%3Adeb+name%3Akurrentdb) containing non-production preview packages.
 
@@ -77,12 +77,12 @@ curl -1sLf \
   'https://packages.kurrent.io/public/kurrent-latest/setup.deb.sh' \
   | sudo -E bash
 ```
-@tab kurrent-lts
+<!--@tab kurrent-lts
 ```bash
 curl -1sLf \
   'https://packages.kurrent.io/public/kurrent-lts/setup.deb.sh' \
   | sudo -E bash
-```
+```-->
 @tab kurrent-preview
 ```bash
 curl -1sLf \
@@ -100,12 +100,12 @@ curl -1sLf \
   'https://packages.kurrent.io/public/kurrent-latest/setup.deb.sh' \
   | sudo -E distro=DISTRO codename=CODENAME arch=ARCH component=COMPONENT bash
 ```
-@tab kurrent-lts
+<!--@tab kurrent-lts
 ```bash
 curl -1sLf \
   'https://packages.kurrent.io/public/kurrent-lts/setup.deb.sh' \
   | sudo -E distro=DISTRO codename=CODENAME arch=ARCH component=COMPONENT bash
-```
+```-->
 @tab kurrent-preview
 ```bash
 curl -1sLf \
@@ -115,16 +115,16 @@ curl -1sLf \
 :::
 
 Alternatively, you can find instructions to manually configure it yourself on Cloudsmith:
-* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-staging/setup/#formats-deb)
-* [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-staging/setup/#formats-deb)
-* [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-staging/setup/#formats-deb)
+<!--* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts/setup/#formats-deb)-->
+* [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-latest/setup/#formats-deb)
+* [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-preview/setup/#formats-deb)
 
 #### Install with apt-get
 
 Install the package:
 
 ```bash
-apt-get install kurrentdb=25.0.0
+apt-get install kurrentdb=25.1.0
 ```
 
 #### Uninstall with apt-get
@@ -145,7 +145,7 @@ apt-get purge kurrentdb
 
 RedHat packages can be found in the following repositories:
 
-* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts/packages/?q=format%3Arpm+name%3Akurrentdb) containing only production-ready [LTS](../release-schedule/#long-term-support-releases) packages.
+<!--* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts/packages/?q=format%3Arpm+name%3Akurrentdb) containing only production-ready [LTS](../release-schedule/#long-term-support-releases) packages.-->
 * [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-latest/packages/?q=format%3Arpm+name%3Akurrentdb) containing production-ready LTS and [STS](../release-schedule/#short-term-support-releases) packages.
 * [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-preview/packages/?q=format%3Arpm+name%3Akurrentdb) containing non-production preview packages.
 
@@ -160,12 +160,12 @@ curl -1sLf \
   'https://packages.kurrent.io/public/kurrent-latest/setup.rpm.sh' \
   | sudo -E bash
 ```
-@tab kurrent-lts
+<!--@tab kurrent-lts
 ```bash
 curl -1sLf \
   'https://packages.kurrent.io/public/kurrent-lts/setup.rpm.sh' \
   | sudo -E bash
-```
+```-->
 @tab kurrent-preview
 ```bash
 curl -1sLf \
@@ -183,12 +183,12 @@ curl -1sLf \
   'https://packages.kurrent.io/public/kurrent-latest/setup.rpm.sh' \
   | sudo -E distro=DISTRO codename=CODENAME arch=ARCH bash
 ```
-@tab kurrent-lts
+<!--@tab kurrent-lts
 ```bash
 curl -1sLf \
   'https://packages.kurrent.io/public/kurrent-lts/setup.rpm.sh' \
   | sudo -E distro=DISTRO codename=CODENAME arch=ARCH bash
-```
+```-->
 @tab kurrent-preview
 ```bash
 curl -1sLf \
@@ -198,8 +198,8 @@ curl -1sLf \
 :::
 
 Alternatively, you can find instructions to manually configure it yourself on Cloudsmith:
+<!--* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts/setup/#formats-rpm).-->
 * [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-latest/setup/#formats-rpm).
-* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts/setup/#formats-rpm).
 * [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-preview/setup/#formats-rpm).
 
 #### Install with yum
@@ -207,7 +207,7 @@ Alternatively, you can find instructions to manually configure it yourself on Cl
 Install the package:
 
 ```bash
-yum install kurrentdb-25.0.0-1.x86_64
+yum install kurrentdb-25.1.0-1.x86_64
 ```
 
 #### Uninstall with yum
@@ -234,11 +234,6 @@ We recommend that when using Linux you set the 'open file limit' to a high numbe
 
 ## Windows
 
-::: warning
-KurrentDB doesn't install as a Windows service. You need to ensure that the server executable
-starts automatically.
-:::
-
 ### NuGet
 
 KurrentDB has NuGet packages available on [Chocolatey](https://community.chocolatey.org/packages/kurrentdb).
@@ -248,7 +243,7 @@ KurrentDB has NuGet packages available on [Chocolatey](https://community.chocola
 You can install KurrentDB through Chocolatey:
 
 ```powershell
-choco install kurrentdb --version=25.0.0
+choco install kurrentdb --version=25.1.0
 ```
 
 KurrentDB can then be run with `KurrentDB.exe`:
@@ -265,6 +260,47 @@ You can uninstall KurrentDB through Chocolatey with:
 choco uninstall kurrentdb
 ```
 
+#### Running as a service
+
+KurrentDB can be run as a windows service. The following commands are for example. Consult the [sc.exe documentation](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/sc-config) for details. 
+
+Create the service:
+
+```powershell
+sc.exe create "KurrentDB" `
+  start= delayed-auto     `
+  binpath= "C:\ProgramData\chocolatey\lib\kurrentdb\kurrentdb-25.1.0-windows.x64\KurrentDB.exe --config=c:\path\to\kurrentdb-config.yaml"
+```
+
+Configure the restart policy:
+
+```powershell
+sc.exe failure "KurrentDB" `
+  reset= 0                 `
+  actions= restart/5000/restart/5000/restart/5000
+```
+
+Start the service:
+
+```powershell
+sc.exe start "KurrentDB"
+```
+
+Logs will still be written to the usual log file location. By default on windows this is the `logs` directory within the directory that contains `KurrentDB.exe`.
+
+::: warning
+In this version the the service restart policy does not guarantee that the service is running. If running as a Windows Service, we recommend configuring
+the Windows Task Scheduler to start the service regularly (say, every 10 seconds), which will do nothing if the service is already running.
+
+This is for two reasons, both of which we intend to address in a future version:
+
+1. If the service shuts down gracefully, such as when going offline for truncation, it will be not be restarted by the policy.
+2. If the service does not start within 30s (by default), it will not be restarted by the policy. The 'start' that the service manager is looking for
+usually only takes a second or two, and is not related to the size of the database, but none the less there is some risk of timeout.
+
+Important: it is not recommended to run KurrentDB directly using Task Scheduler. By default Task Scheduler runs processes with low priority which will significantly impact performance.
+:::
+
 ## Docker
 
 You can run KurrentDB in a Docker container as a single node, using insecure mode. It is useful in most
@@ -275,7 +311,7 @@ closer to what you'd run in production.
 
 KurrentDB Docker images are hosted in the following registries:
 
-* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts/packages/?q=format%3Adocker+name%3Akurrentdb) containing only production-ready [LTS](../release-schedule/#long-term-support-releases) containers.
+<!--* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts/packages/?q=format%3Adocker+name%3Akurrentdb) containing only production-ready [LTS](../release-schedule/#long-term-support-releases) containers.-->
 * [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-latest/packages/?q=format%3Adocker+name%3Akurrentdb) containing production-ready LTS and [STS](../release-schedule/#short-term-support-releases) containers.
 * [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-preview/packages/?q=format%3Adocker+name%3Akurrentdb) containing non-production preview containers.
 
@@ -288,14 +324,10 @@ Pull the container with:
 ```bash
 docker pull docker.kurrent.io/kurrent-latest/kurrentdb:latest
 ```
-@tab kurrent-lts
+<!--@tab kurrent-lts
 ```bash
-docker pull docker.kurrent.io/kurrent-lts/kurrentdb:lts
-```
-@tab kurrent-preview
-```bash
-docker pull docker.kurrent.io/kurrent-preview/kurrentdb:latest
-```
+docker pull docker.kurrent.io/kurrent-lts/kurrentdb:latest
+```-->
 :::
 
 The following command will start the KurrentDB node using the default HTTP port, without security. You can then connect to it using one of the clients and the `kurrentdb://localhost:2113?tls=false` connection string. You can also access the Admin UI by opening http://localhost:2113 in your browser.
@@ -304,21 +336,15 @@ The following command will start the KurrentDB node using the default HTTP port,
 @tab kurrent-latest
 ```bash
 docker run --name kurrentdb-node -it -p 2113:2113 \
-    docker.kurrent.io/kurrent-latest/kurrentdb --insecure --run-projections=All
+    docker.kurrent.io/kurrent-latest/kurrentdb:latest --insecure --run-projections=All \
     --enable-atom-pub-over-http
 ```
-@tab kurrent-lts
+<!--@tab kurrent-lts
 ```bash
 docker run --name kurrentdb-node -it -p 2113:2113 \
-    docker.kurrent.io/kurrent-lts/kurrentdb --insecure --run-projections=All
+    docker.kurrent.io/kurrent-lts/kurrentdb:latest --insecure --run-projections=All \
     --enable-atom-pub-over-http
-```
-@tab kurrent-preview
-```bash
-docker run --name kurrentdb-node -it -p 2113:2113 \
-    docker.kurrent.io/kurrent-preview/kurrentdb --insecure --run-projections=All
-    --enable-atom-pub-over-http
-```
+```-->
 :::
 
 Then, you'd be able to connect to KurrentDB with gRPC clients. Also, the Stream Browser will work
@@ -336,7 +362,7 @@ You can use Docker Compose to run KurrentDB in the same setup as the `docker run
 
 Create a file `docker-compose.yaml` with the following content:
 
-@[code{curl}](@samples/docker-compose.yaml)
+@[code{curl}](@samples/server/docker-compose.yaml)
 
 Run the instance:
 
@@ -346,10 +372,6 @@ docker compose up
 
 The command above would run KurrentDB as a single node without SSL. You also get AtomPub protocol enabled, so you can get the stream browser to work in the Admin UI.
 
-::: warning
-The legacy TCP client protocol is disabled by default and is no longer be available from version 24.10. 
-:::
-
 #### Secure cluster
 
 With Docker Compose, you can also run a three-node cluster with security enabled. This kind of setup is
@@ -357,12 +379,12 @@ something you'd expect to use in production.
 
 Create file `docker-compose.yaml` with following content:
 
-@[code{curl}](@samples/docker-compose-cluster.yaml)
+@[code{curl}](@samples/server/docker-compose-cluster.yaml)
 
 Quite a few settings are shared between the nodes and we use the `env` file to avoid repeating those settings.
 So, add the `vars.env` file to the same location:
 
-@[code{curl}](@samples/vars.env)
+@[code{curl}](@samples/server/vars.env)
 
 Containers will use the shared volume using the local `./certs` directory for certificates. However, if you
 let Docker create the directory on startup, the container won't be able to get write access to it.

@@ -212,9 +212,9 @@ message Filter{
 		Prefix = 1;
     }
 
-    FilterContext context = 1;    
-    FilterType type = 2;    
-    repeated string data = 3;    
+    FilterContext context = 1;
+    FilterType type = 2;
+    repeated string data = 3;
 }
 
 message FilteredReadAllEvents {
@@ -235,7 +235,7 @@ message FilteredReadAllEventsCompleted {
         Error = 2;
         AccessDenied = 3;
     }
-    
+
     int64 commit_position = 1;
     int64 prepare_position = 2;
     repeated ResolvedEvent events = 3;
@@ -399,19 +399,19 @@ message SubscriptionDropped {
 		PersistentSubscriptionDeleted=3;
 		SubscriberMaxCountReached=4;
 	}
-	
+
 	SubscriptionDropReason reason = 1;
 }
 
 message NotHandled {
-	
+
 	enum NotHandledReason {
 		NotReady = 0;
 		TooBusy = 1;
 		NotLeader = 2;
 		IsReadOnly = 3;
 	}
-	
+
 	NotHandledReason reason = 1;
 	bytes additional_info = 2;
 
@@ -429,16 +429,16 @@ message ScavengeDatabase {
 }
 
 message ScavengeDatabaseResponse {
-	
+
 	enum ScavengeResult {
 		Started = 0;
 		InProgress = 1;
 		Unauthorized = 2;
 	}
-	
+
 	ScavengeResult result = 1;
 	string scavengeId = 2;
-	
+
 }
 
 message IdentifyClient {

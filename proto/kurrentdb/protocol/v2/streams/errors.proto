@@ -1,0 +1,213 @@
+// ******************************************************************************************
+// This protocol is UNSTABLE in the sense of being subject to change.
+// ******************************************************************************************
+
+syntax = "proto3";
+
+package kurrentdb.protocol.v2.streams.errors;
+
+option csharp_namespace = "KurrentDB.Protocol.V2.Streams.Errors";
+
+import "kurrent/rpc/rpc.proto";
+
+// Error codes specific to the Streams API.
+// These errors represent failure modes when working with streams of records.
+enum StreamsError {
+  // Default value. This value is not used.
+  // An error code MUST always be set to a non-zero value.
+  // If an error code is not explicitly set, it MUST be treated as
+  // an internal server error (INTERNAL).
+  STREAMS_ERROR_UNSPECIFIED = 0;
+
+  // The requested stream does not exist in the database.
+  //
+  // Common causes:
+  // - Stream name typo or incorrect stream identifier
+  // - Stream was never created (no events appended yet)
+  // - Stream was deleted and not yet recreated
+  //
+  // Client action: Verify the stream name is correct. Create the stream by appending to it.
+  // Recoverable by creating the stream first (append with NO_STREAM expected revision).
+  STREAMS_ERROR_STREAM_NOT_FOUND = 1 [(kurrent.rpc.error) = {
+    status_code: NOT_FOUND,
+    has_details: true,
+  }];
+
+  // The stream already exists when an operation expected it not to exist.
+  //
+  // Common causes:
+  // - Attempting to create a stream that already has events
+  // - Using NO_STREAM expected revision on an existing stream
+  // - Race condition with concurrent stream creation
+  //
+  // Client action: Use the existing stream or use a different expected revision.
+  // Recoverable by adjusting the expected revision or using the existing stream.
+  STREAMS_ERROR_STREAM_ALREADY_EXISTS = 2 [(kurrent.rpc.error) = {
+    status_code: ALREADY_EXISTS,
+    has_details: true
+  }];
+
+  // The stream has been soft deleted.
+  // Soft-deleted streams are hidden from stream lists but can be restored by appending to them.
+  //
+  // Common causes:
+  // - Stream was explicitly soft-deleted via delete operation
+  // - Attempting to read from a soft-deleted stream
+  //
+  // Client action: Restore the stream by appending new events, or accept that the stream is deleted.
+  // Recoverable by appending to the stream to restore it.
+  STREAMS_ERROR_STREAM_DELETED = 3 [(kurrent.rpc.error) = {
+    status_code: FAILED_PRECONDITION,
+    has_details: true
+  }];
+
+  // The stream has been tombstoned (permanently deleted).
+  // Tombstoned streams cannot be restored and will never accept new events.
+  //
+  // Common causes:
+  // - Stream was explicitly tombstoned via tombstone operation
+  // - Administrative deletion of sensitive data
+  // - Attempting to write to or read from a tombstoned stream
+  //
+  // Client action: Stream is permanently removed. Create a new stream with a different name if needed.
+  // Not recoverable - the stream cannot be restored.
+  STREAMS_ERROR_STREAM_TOMBSTONED = 4 [(kurrent.rpc.error) = {
+    status_code: FAILED_PRECONDITION,
+    has_details: true
+  }];
+
+  // The expected revision does not match the actual stream revision.
+  // This is an optimistic concurrency control failure.
+  //
+  // Common causes:
+  // - Another client modified the stream concurrently
+  // - Client has stale state about the stream revision
+  // - Race condition in distributed system
+  //
+  // Client action: Fetch the current stream revision and retry with the correct expected revision.
+  // Recoverable by reading the current state and retrying with proper optimistic concurrency control.
+  STREAMS_ERROR_STREAM_REVISION_CONFLICT = 5 [(kurrent.rpc.error) = {
+    status_code: FAILED_PRECONDITION,
+    has_details: true
+  }];
+
+  // A single record being appended exceeds the maximum allowed size.
+  //
+  // Common causes:
+  // - Record payload is too large (exceeds server's max record size configuration)
+  // - Excessive metadata in properties
+  // - Large binary data without chunking
+  //
+  // Client action: Reduce record size, split large payloads across multiple records, or increase server limits.
+  // Recoverable by reducing record size or adjusting server configuration.
+  STREAMS_ERROR_APPEND_RECORD_SIZE_EXCEEDED = 6 [(kurrent.rpc.error) = {
+    status_code: INVALID_ARGUMENT,
+    has_details: true
+  }];
+
+  // The total size of all records in a single append session exceeds the maximum allowed transaction size.
+  //
+  // Common causes:
+  // - Too many records in a single append session
+  // - Combined payload size exceeds server's max transaction size
+  // - Attempting to write very large batches
+  //
+  // Client action: Split the append into multiple smaller transactions.
+  // Recoverable by reducing the number of records per append session.
+  STREAMS_ERROR_APPEND_TRANSACTION_SIZE_EXCEEDED = 7 [(kurrent.rpc.error) = {
+    status_code: ABORTED,
+    has_details: true
+  }];
+
+  // The same stream appears multiple times in a single append session.
+  // This is currently not supported to prevent complexity with expected revisions and ordering.
+  //
+  // Common causes:
+  // - Accidentally appending to the same stream twice in one session
+  // - Application logic error in batch operations
+  //
+  // Client action: Remove duplicate streams from the append session or split into multiple sessions.
+  // Recoverable by restructuring the append session to reference each stream only once.
+  STREAMS_ERROR_STREAM_ALREADY_IN_APPEND_SESSION = 8 [(kurrent.rpc.error) = {
+    status_code: ABORTED,
+    has_details: true
+  }];
+
+  // An append session was started but no append requests were sent before completing the stream.
+  //
+  // Common causes:
+  // - Client completed the stream without sending any AppendRequest messages
+  // - Application logic error
+  //
+  // Client action: Ensure at least one AppendRequest is sent before completing the stream.
+  // Recoverable by properly implementing the append session protocol.
+  STREAMS_ERROR_APPEND_SESSION_NO_REQUESTS = 9 [(kurrent.rpc.error) = {
+    status_code: FAILED_PRECONDITION
+  }];
+}
+
+// Details for STREAM_NOT_FOUND errors.
+message StreamNotFoundErrorDetails {
+  // The name of the stream that was not found.
+  string stream = 1;
+}
+
+// Details for STREAM_ALREADY_EXISTS errors.
+message StreamAlreadyExistsErrorDetails {
+  // The name of the stream that already exists.
+  string stream = 1;
+}
+
+// Details for STREAM_DELETED errors.
+message StreamDeletedErrorDetails {
+  // The name of the stream that was deleted.
+  string stream = 1;
+}
+
+// Details for STREAM_TOMBSTONED errors.
+message StreamTombstonedErrorDetails {
+  // The name of the stream that was tombstoned.
+  string stream = 1;
+}
+
+// Details for STREAM_REVISION_CONFLICT errors.
+message StreamRevisionConflictErrorDetails {
+  // The name of the stream that had a revision conflict.
+  string stream = 1;
+
+  // The expected revision that was provided in the append request.
+  sint64 expected_revision = 2;
+
+  // The actual current revision of the stream.
+  sint64 actual_revision = 3;
+}
+
+// Details for APPEND_RECORD_SIZE_EXCEEDED errors.
+message AppendRecordSizeExceededErrorDetails {
+  // The name of the stream where the append was attempted.
+  string stream = 1;
+
+  // The identifier of the record that exceeded the size limit.
+  string record_id = 2;
+
+  // The actual size of the record in bytes.
+  int32 size = 3;
+
+  // The maximum allowed size of a single record in bytes.
+  int32 max_size = 4;
+}
+
+// Details for APPEND_TRANSACTION_SIZE_EXCEEDED errors.
+message AppendTransactionSizeExceededErrorDetails {
+  // The actual size of the transaction in bytes.
+  int32 size = 1;
+
+  // The maximum allowed size of an append transaction in bytes.
+  int32 max_size = 2;
+}
+
+// Details for STREAM_ALREADY_IN_APPEND_SESSION errors.
+message StreamAlreadyInAppendSessionErrorDetails {
+  // The name of the stream that appears multiple times.
+  string stream = 1;
+}

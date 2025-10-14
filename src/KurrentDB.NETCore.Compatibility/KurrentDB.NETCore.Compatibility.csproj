@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="System.ServiceModel.Http" />
+		<PackageReference Include="System.Security.Cryptography.Pkcs" />
+		<PackageReference Include="System.Security.Cryptography.Xml" />
+		<PackageReference Include="System.Formats.Asn1" />
+	</ItemGroup>
+</Project>

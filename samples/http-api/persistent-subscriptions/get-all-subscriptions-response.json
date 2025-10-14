@@ -2,39 +2,127 @@
   {
     "links": [
       {
-        "href": "http://localhost:2113/subscriptions/newstream/competing_consumers_group1/info",
+        "href": "https://localhost:2113/subscriptions/teststream0/testgroup-0/info",
         "rel": "detail"
       }
     ],
-    "eventStreamId": "newstream",
-    "groupName": "competing_consumers_group1",
-    "parkedMessageUri": "http://localhost:2113/streams/$persistentsubscription-newstream::competing_consumers_group1-parked",
-    "getMessagesUri": "http://localhost:2113/subscriptions/newstream/competing_consumers_group1/1",
+    "eventStreamId": "teststream0",
+    "groupName": "testgroup-0",
+    "parkedMessageUri": "https://localhost:2113/streams/%24persistentsubscription-teststream0::testgroup-0-parked",
+    "getMessagesUri": "https://localhost:2113/subscriptions/teststream0/testgroup-0/1",
     "status": "Live",
     "averageItemsPerSecond": 0.0,
     "totalItemsProcessed": 0,
-    "lastProcessedEventNumber": -1,
-    "lastKnownEventNumber": 5,
-    "connectionCount": 0,
+    "lastProcessedEventNumber": 0,
+    "lastCheckpointedEventPosition": null,
+    "lastKnownEventNumber": 0,
+    "lastKnownEventPosition": null,
+    "connectionCount": 1,
     "totalInFlightMessages": 0
   },
   {
     "links": [
       {
-        "href": "http://localhost:2113/subscriptions/another_newstream/competing_consumers_group1/info",
+        "href": "https://localhost:2113/subscriptions/teststream1/testgroup-1/info",
         "rel": "detail"
       }
     ],
-    "eventStreamId": "another_newstream",
-    "groupName": "competing_consumers_group1",
-    "parkedMessageUri": "http://localhost:2113/streams/$persistentsubscription-another_newstream::competing_consumers_group1-parked",
-    "getMessagesUri": "http://localhost:2113/subscriptions/another_newstream/competing_consumers_group1/1",
+    "eventStreamId": "teststream1",
+    "groupName": "testgroup-1",
+    "parkedMessageUri": "https://localhost:2113/streams/%24persistentsubscription-teststream1::testgroup-1-parked",
+    "getMessagesUri": "https://localhost:2113/subscriptions/teststream1/testgroup-1/1",
+    "status": "Live",
+    "averageItemsPerSecond": 0.0,
+    "totalItemsProcessed": 5,
+    "lastProcessedEventNumber": 0,
+    "lastCheckpointedEventPosition": null,
+    "lastKnownEventNumber": 4,
+    "lastKnownEventPosition": "4",
+    "connectionCount": 1,
+    "totalInFlightMessages": 0
+  },
+  {
+    "links": [
+      {
+        "href": "https://localhost:2113/subscriptions/teststream2/testgroup-2/info",
+        "rel": "detail"
+      }
+    ],
+    "eventStreamId": "teststream2",
+    "groupName": "testgroup-2",
+    "parkedMessageUri": "https://localhost:2113/streams/%24persistentsubscription-teststream2::testgroup-2-parked",
+    "getMessagesUri": "https://localhost:2113/subscriptions/teststream2/testgroup-2/1",
+    "status": "Live",
+    "averageItemsPerSecond": 0.0,
+    "totalItemsProcessed": 10,
+    "lastProcessedEventNumber": 9,
+    "lastCheckpointedEventPosition": "9",
+    "lastKnownEventNumber": 9,
+    "lastKnownEventPosition": "9",
+    "connectionCount": 1,
+    "totalInFlightMessages": 0
+  },
+  {
+    "links": [
+      {
+        "href": "https://localhost:2113/subscriptions/teststream3/testgroup-3/info",
+        "rel": "detail"
+      }
+    ],
+    "eventStreamId": "teststream3",
+    "groupName": "testgroup-3",
+    "parkedMessageUri": "https://localhost:2113/streams/%24persistentsubscription-teststream3::testgroup-3-parked",
+    "getMessagesUri": "https://localhost:2113/subscriptions/teststream3/testgroup-3/1",
+    "status": "Live",
+    "averageItemsPerSecond": 0.0,
+    "totalItemsProcessed": 6,
+    "lastProcessedEventNumber": 0,
+    "lastCheckpointedEventPosition": null,
+    "lastKnownEventNumber": 5,
+    "lastKnownEventPosition": "5",
+    "connectionCount": 1,
+    "totalInFlightMessages": 0
+  },
+  {
+    "links": [
+      {
+        "href": "https://localhost:2113/subscriptions/teststream4/testgroup-4/info",
+        "rel": "detail"
+      }
+    ],
+    "eventStreamId": "teststream4",
+    "groupName": "testgroup-4",
+    "parkedMessageUri": "https://localhost:2113/streams/%24persistentsubscription-teststream4::testgroup-4-parked",
+    "getMessagesUri": "https://localhost:2113/subscriptions/teststream4/testgroup-4/1",
+    "status": "Live",
+    "averageItemsPerSecond": 0.0,
+    "totalItemsProcessed": 6,
+    "lastProcessedEventNumber": 0,
+    "lastCheckpointedEventPosition": null,
+    "lastKnownEventNumber": 5,
+    "lastKnownEventPosition": "5",
+    "connectionCount": 1,
+    "totalInFlightMessages": 0
+  },
+  {
+    "links": [
+      {
+        "href": "https://localhost:2113/subscriptions/teststream5/testgroup-5/info",
+        "rel": "detail"
+      }
+    ],
+    "eventStreamId": "teststream5",
+    "groupName": "testgroup-5",
+    "parkedMessageUri": "https://localhost:2113/streams/%24persistentsubscription-teststream5::testgroup-5-parked",
+    "getMessagesUri": "https://localhost:2113/subscriptions/teststream5/testgroup-5/1",
     "status": "Live",
     "averageItemsPerSecond": 0.0,
     "totalItemsProcessed": 0,
-    "lastProcessedEventNumber": -1,
-    "lastKnownEventNumber": -1,
-    "connectionCount": 0,
+    "lastProcessedEventNumber": 0,
+    "lastCheckpointedEventPosition": null,
+    "lastKnownEventNumber": 0,
+    "lastKnownEventPosition": null,
+    "connectionCount": 1,
     "totalInFlightMessages": 0
   }
 ]

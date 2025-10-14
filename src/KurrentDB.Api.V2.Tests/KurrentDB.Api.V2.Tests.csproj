@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>KurrentDB.Api.Tests</RootNamespace>
+    <EnablePreviewFeatures>true</EnablePreviewFeatures>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Grpc.Net.Client" />
+    <PackageReference Include="GitHubActionsTestLogger" />
+    <PackageReference Include="Grpc.StatusProto" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.Testing" />
+    <PackageReference Include="TUnit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Bogus" />
+    <Using Include="Shouldly" />
+    <Using Include="TUnit" />
+    <Using Include="TUnit.Core" />
+    <Using Include="KurrentDB.Testing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\KurrentDB.Testing.ClusterVNodeApp\KurrentDB.Testing.ClusterVNodeApp.csproj" />
+    <ProjectReference Include="..\KurrentDB.Testing\KurrentDB.Testing.csproj" />
+    <ProjectReference Include="..\KurrentDB.Api.V2\KurrentDB.Api.V2.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="KurrentDB.Api.V2.Tests.csproj.DotSettings" />
+  </ItemGroup>
+</Project>

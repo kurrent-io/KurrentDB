@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 using KurrentDB.TestClient.Commands;
 using KurrentDB.TestClient.Commands.DvuBasic;
 using ILogger = Serilog.ILogger;

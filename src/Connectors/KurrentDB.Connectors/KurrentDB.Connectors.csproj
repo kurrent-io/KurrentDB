@@ -1,0 +1,74 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>true</ImplicitUsings>
+		<LangVersion>preview</LangVersion>
+		<IsPackable>false</IsPackable>
+		<IsPlugin>true</IsPlugin>
+		<Deterministic>true</Deterministic>
+		<InvariantGlobalization>true</InvariantGlobalization>
+		<OutputType>library</OutputType>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+		<NoWarn>$(NoWarn);CS1591;CS1998;CS8618;CS8524;CS8655;RCS1194</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\KurrentDB.Common\KurrentDB.Common.csproj" ExcludeAssets="all" Private="false" />
+		<ProjectReference Include="..\..\KurrentDB.Core\KurrentDB.Core.csproj" ExcludeAssets="all" Private="false" />
+		<ProjectReference Include="..\..\KurrentDB.Surge\KurrentDB.Surge.csproj" />
+		<ProjectReference Include="..\..\KurrentDB.SystemRuntime\KurrentDB.SystemRuntime.csproj" ExcludeAssets="all" Private="false" />
+		<ProjectReference Include="..\KurrentDB.Connectors.Contracts\KurrentDB.Connectors.Contracts.csproj" />
+	</ItemGroup>
+
+	<!-- Required packages -->
+	<ItemGroup>
+		<PackageReference Include="Google.Api.CommonProtos" />
+		<PackageReference Include="Kurrent.Surge" />
+		<PackageReference Include="Kurrent.Surge.Core" />
+		<PackageReference Include="Kurrent.Surge.DataProtection" />
+		<PackageReference Include="Kurrent.Connectors.Elasticsearch" />
+		<PackageReference Include="Kurrent.Connectors.Http" />
+		<PackageReference Include="Kurrent.Connectors.Kafka" />
+		<PackageReference Include="Kurrent.Connectors.MongoDB" />
+		<PackageReference Include="Kurrent.Connectors.RabbitMQ" />
+		<PackageReference Include="Kurrent.Connectors.Pulsar" />
+		<PackageReference Include="Eventuous.Application" />
+		<PackageReference Include="Eventuous.Extensions.AspNetCore" />
+		<PackageReference Include="Eventuous.Extensions.DependencyInjection" />
+		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+		<PackageReference Include="Grpc.StatusProto" />
+		<PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" />
+
+		<PackageReference Include="Serilog" />
+		<PackageReference Include="Serilog.Enrichers.Process" />
+		<PackageReference Include="Serilog.Enrichers.Thread" />
+		<PackageReference Include="Serilog.Expressions" />
+		<PackageReference Include="Serilog.Extensions.Logging" />
+		<PackageReference Include="Serilog.Settings.Configuration" />
+		<PackageReference Include="Serilog.Sinks.Async" />
+		<PackageReference Include="Serilog.Sinks.File" />
+		<PackageReference Include="Serilog.Sinks.Console" />
+
+		<PackageReference Include="Serilog.Formatting.Compact" />
+		<PackageReference Include="Serilog.Settings.Reloader" />
+		<PackageReference Include="Serilog.Sinks.Debug" />
+		<PackageReference Include="Serilog.Sinks.Seq" />
+		<PackageReference Include="Serilog.Enrichers.Environment" />
+	</ItemGroup>
+
+  <ItemGroup>
+		<InternalsVisibleTo Include="KurrentDB.Plugins.Connectors" />
+		<InternalsVisibleTo Include="KurrentDB.Connectors.Tests" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Remove="KurrentDB.Extensions.Connectors.csproj.DotSettings" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Infrastructure\Connect\Components\Producers\" />
+	</ItemGroup>
+</Project>

@@ -1,9 +1,9 @@
 import type {PluginWithOptions} from "markdown-it";
 import type {MarkdownEnv} from "../types";
-import {resolveImportCode} from "./resolveImportCode";
 import {createImportCodeBlockRule} from "./createImportCodeBlockRule";
-import {type ExtendedCodeImportPluginOptions} from "./types";
-import { normalizeWhitespace } from "./normalizeWhitespace";
+import {normalizeWhitespace} from "./normalizeWhitespace";
+import {resolveImportCode} from "./resolveImportCode";
+import type {ExtendedCodeImportPluginOptions} from "./types";
 
 export const importCodePlugin: PluginWithOptions<ExtendedCodeImportPluginOptions> = (
     md,

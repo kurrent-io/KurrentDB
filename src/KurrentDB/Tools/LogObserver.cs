@@ -4,7 +4,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using EventStore.Common.Log;
+using KurrentDB.Common.Log;
 using Serilog.Events;
 
 namespace KurrentDB.Tools;

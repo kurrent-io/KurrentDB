@@ -5,4 +5,6 @@ dir:
 index: false
 ---
 
+# Features
+
 Features of KurrentDB.

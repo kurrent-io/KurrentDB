@@ -23,13 +23,16 @@ jobs:
     runs-on: ubuntu-latest
     name: ci/github/scan-vulnerabilities
     steps:
-    - name: Checkout
+    -  
+      name: Checkout
       uses: actions/checkout@v4
-    - name: Install net8.0
+    -  
+      name: Install net8.0
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 8.0.x
-    - name: Scan for Vulnerabilities
+    -  
+      name: Scan for Vulnerabilities
       run: |
         cd src
         dotnet restore
@@ -39,25 +42,29 @@ jobs:
     runs-on: ubuntu-latest
     name: ci/github/protolock
     steps:
-    - name: Checkout
+    -  
+      name: Checkout
       uses: actions/checkout@v4
-    - name: Protolock Status
-      shell: bash
+    -  
+      name: Protolock Status
       run: |
         ./protolock.sh status --uptodate
   docker-compose:
     runs-on: ubuntu-latest
     name: ci/github/docker-compose
     steps:
-    - name: Checkout
+    -  
+      name: Checkout
       uses: actions/checkout@v4
-    - name: Github Registry Docker Login
+    -  
+      name: Github Registry Docker Login
       uses: azure/docker-login@v1
       with:
         login-server: docker.pkg.github.com/eventstore
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-    - name: Docker Compose Smoke Test
+    -  
+      name: Docker Compose Smoke Test
       run: |
         RUNTIME=linux-amd64 docker compose build
         docker compose up --detach

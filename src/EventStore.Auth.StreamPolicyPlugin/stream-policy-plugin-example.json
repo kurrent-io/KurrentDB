@@ -1,7 +1,0 @@
-{
-  "EventStore": {
-    "Authorization": {
-      "PolicyType": "streampolicy"
-    }
-  }
-}

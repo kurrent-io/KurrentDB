@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<OutputType>Library</OutputType>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+		<ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+		<IsPlugin>true</IsPlugin>
+	</PropertyGroup>
+	<PropertyGroup>
+		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
+	  <DebugSymbols>true</DebugSymbols>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="IdentityModel" />
+		<PackageReference Include="LruCacheNet" />
+		<PackageReference Include="Newtonsoft.Json" />
+		<PackageReference Include="System.ComponentModel.Composition" />
+		<PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+		<PackageReference Include="Serilog" />
+	</ItemGroup>
+</Project>

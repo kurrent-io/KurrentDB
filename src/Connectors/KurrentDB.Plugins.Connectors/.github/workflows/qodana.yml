@@ -1,0 +1,39 @@
+name: Qodana
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - 'release/v.*.*.*'
+    tags:
+      - 'v*.*.*'
+    paths:
+      - '.github/workflows/qodana.yml'
+      - 'qodana.yaml'
+
+jobs:
+  qodana:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}  # to check out the actual pull request commit, not the merge commit
+          fetch-depth: 0  # a full history is required for pull request analysis
+          submodules: recursive
+          token: ${{ secrets.ORG_GH_BOT_READONLY}}
+
+      - name: 'Qodana Scan'
+        uses: JetBrains/qodana-action@v2024.2
+        with:
+          upload-result: true
+        env:
+          QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
+          QODANA_NUGET_URL: https://nuget.pkg.github.com/EventStore/index.json
+          QODANA_NUGET_NAME: EventStore
+          QODANA_NUGET_USER: ${{ vars.ORG_GH_BOT_USERNAME }}
+          QODANA_NUGET_PASSWORD: ${{ secrets.ORG_GH_BOT_AUTOMATION }}

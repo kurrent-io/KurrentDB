@@ -1,6 +1,6 @@
-import {type ResolvedImport} from "../markdown/xode/types";
-import version from "./version";
 import {path} from "vuepress/utils";
+import type {ResolvedImport} from "../markdown/xode/types";
+import version from "./version";
 
 const base = "../../samples";
 
@@ -25,14 +25,9 @@ export function resolveSamplesPath(src: string, srcCat: string | undefined) {
     if (!includesCat && srcCat === undefined) return def(src);
 
     const cats = {
-        "@httpapi": {
-            "default": {
-                path: "../../samples/http-api"
-            }
-        },
         "@samples": {
             "default": {
-                path: "../../samples/server"
+                path: "../../samples"
             }
         },
         "@grpc": {
@@ -83,7 +78,7 @@ export function resolveSamplesPath(src: string, srcCat: string | undefined) {
         return def(src);
     }
 
-    let lang = cat[ext] ?? cat["default"];
+    const lang = cat[ext] ?? cat["default"];
     if (lang === undefined && cat.path === undefined) {
         console.log(`Unknown extension ${ext} in ${cat}`);
         return def(src);

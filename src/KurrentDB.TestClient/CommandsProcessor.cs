@@ -15,7 +15,7 @@ internal class CommandsProcessor {
 		get { return _processors.Values; }
 	}
 
-	private readonly Serilog.ILogger _log;
+	private readonly ILogger _log;
 	private readonly IDictionary<string, ICmdProcessor> _processors = new Dictionary<string, ICmdProcessor>();
 	private ICmdProcessor _regCommandsProcessor;
 

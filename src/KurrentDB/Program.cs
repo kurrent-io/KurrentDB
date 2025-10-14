@@ -10,17 +10,20 @@ using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.DevCertificates;
-using EventStore.Common.Exceptions;
-using EventStore.Common.Log;
-using EventStore.Common.Utils;
-using EventStore.Core;
-using EventStore.Core.Certificates;
-using EventStore.Core.Configuration;
-using EventStore.Core.Configuration.Sources;
-using EventStore.Core.Services.Transport.Http;
 using KurrentDB;
+using KurrentDB.Common.DevCertificates;
+using KurrentDB.Common.Exceptions;
+using KurrentDB.Common.Log;
+using KurrentDB.Common.Utils;
 using KurrentDB.Components;
+using KurrentDB.Components.Cluster;
+using KurrentDB.Components.Plugins;
+using KurrentDB.Core;
+using KurrentDB.Core.Certificates;
+using KurrentDB.Core.Configuration;
+using KurrentDB.Core.Configuration.Sources;
+using KurrentDB.Core.Services.Transport.Http;
+using KurrentDB.Logging;
 using KurrentDB.Services;
 using KurrentDB.Tools;
 using KurrentDB.UI.Services;
@@ -30,11 +33,13 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
 using MudBlazor.Services;
 using Serilog;
 using Serilog.Events;
+using _Imports = KurrentDB.UI._Imports;
 using RuntimeInformation = System.Runtime.RuntimeInformation;
 
 var optionsWithLegacyDefaults = LocationOptionWithLegacyDefault.SupportedLegacyLocations;
@@ -43,17 +48,14 @@ var configuration = KurrentConfiguration.Build(optionsWithLegacyDefaults, args);
 ThreadPool.SetMaxThreads(1000, 1000);
 var exitCodeSource = new TaskCompletionSource<int>();
 
-Log.Logger = EventStoreLoggerConfiguration.ConsoleLog;
+Log.Logger = KurrentLoggerConfiguration.ConsoleLog;
 try {
 	var options = ClusterVNodeOptions.FromConfiguration(configuration);
 
-	EventStoreLoggerConfiguration.Initialize(options.Logging.Log, options.GetComponentName(),
-		options.Logging.LogConsoleFormat,
-		options.Logging.LogFileSize,
-		options.Logging.LogFileInterval,
-		options.Logging.LogFileRetentionCount,
-		options.Logging.DisableLogFile,
-		options.Logging.LogConfig);
+	Log.Logger = KurrentLoggerConfiguration
+		.CreateLoggerConfiguration(options.Logging, options.GetComponentName())
+		.AddOpenTelemetryLogger(configuration, options.GetComponentName())
+		.CreateLogger();
 
 	if (options.Application.Help) {
 		await Console.Out.WriteLineAsync(ClusterVNodeOptions.HelpText);
@@ -85,6 +87,7 @@ try {
 		GCSettings.IsServerGC,
 		GCSettings.LatencyMode);
 	Log.Information("{description,-25} {logsDirectory}", "LOGS:", options.Logging.Log);
+	Log.Information("{description,-25} {isWindowsService}", "IsWindowsService:", WindowsServiceHelpers.IsWindowsService());
 
 	var gcSettings = string.Join($"{Environment.NewLine}    ", GC.GetConfigurationVariables().Select(kvp => $"{kvp.Key}: {kvp.Value}"));
 	Log.Information($"GC Configuration settings:{Environment.NewLine}    {{settings}}", gcSettings);
@@ -214,6 +217,8 @@ try {
 
 			var builder = WebApplication.CreateBuilder(applicationOptions);
 			builder.Configuration.AddConfiguration(configuration);
+			// AddWindowsService adds EventLog logging, which we remove afterwards.
+			builder.Services.AddWindowsService();
 			builder.Logging.ClearProviders().AddSerilog();
 			builder.Services.Configure<KestrelServerOptions>(configuration.GetSection("Kestrel"));
 			builder.Services.Configure<HostOptions>(x => {
@@ -249,12 +254,12 @@ try {
 			builder.Services.AddCascadingAuthenticationState();
 			builder.Services.AddMudServices();
 			builder.Services.AddMudMarkdownServices();
-			builder.Services.AddSingleton(options);
 			builder.Services.AddScoped<LogObserver>();
 			builder.Services.AddScoped<IdentityRedirectManager>();
 			builder.Services.AddSingleton(monitoringService);
 			builder.Services.AddSingleton(metricsObserver);
-
+			builder.Services.AddSingleton<PluginsService>();
+			builder.Services.AddSingleton(TimeProvider.System);
 			Log.Information("Environment Name: {0}", builder.Environment.EnvironmentName);
 			Log.Information("ContentRoot Path: {0}", builder.Environment.ContentRootPath);
 
@@ -268,7 +273,7 @@ try {
 				.DisableAntiforgery()
 				.AddInteractiveServerRenderMode()
 				.AddInteractiveWebAssemblyRenderMode()
-				.AddAdditionalAssemblies(typeof(KurrentDB.UI._Imports).Assembly);
+				.AddAdditionalAssemblies(typeof(_Imports).Assembly);
 			await app.RunAsync(token);
 
 			exitCodeSource.TrySetResult(0);

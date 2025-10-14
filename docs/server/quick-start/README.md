@@ -25,7 +25,7 @@ Find out [what's new](whatsnew.md) in this release to get details on new feature
 
 ## Getting started
 
-Check the [getting started guide](/getting-started/) for an introduction to KurrentDB and its features, along with detailed instructions to quickly get started.
+Check the [getting started guide](/getting-started/quickstart/README.md) for an introduction to KurrentDB and its features, along with detailed instructions to quickly get started.
 
 ## Support
 
@@ -35,7 +35,7 @@ Users of KurrentDB can use the [community forum](https://www.kurrent.io/communit
 
 ### Enterprise customers
 
-Customers with a paid subscription can open tickets using the [support portal](https://eventstore.freshdesk.com). For additional information on supported versions, users can access KurrentDB's [release and support schedule](../release-schedule/).
+Customers with a paid subscription can open tickets using the [support portal](https://eventstore.freshdesk.com). For additional information on supported versions, users can access KurrentDB's [release and support schedule](../release-schedule/README.md).
 
 ### Issues
 
@@ -82,7 +82,7 @@ The current AtomPub-based HTTP application API is disabled by default. You can e
 You need to enable the AtomPub protocol to have a fully functioning database user interface.
 :::
 
-Learn more about the KurrentDB HTTP interface in the [HTTP documentation](@clients/http-api/README.md). 
+Learn more about the KurrentDB HTTP interface in the [HTTP documentation](../http-api/README.md). 
 
 #### Community-developed clients
 

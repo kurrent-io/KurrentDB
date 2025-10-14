@@ -3,7 +3,7 @@
 
 using System;
 using System.Net.Sockets;
-using EventStore.Core.Services.Transport.Tcp;
+using KurrentDB.Core.Services.Transport.Tcp;
 
 namespace KurrentDB.TestClient.Commands;
 

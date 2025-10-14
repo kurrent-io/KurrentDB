@@ -1,0 +1,21 @@
+IntIp: 127.0.0.1
+ExtIp: 127.0.0.1
+AuthenticationType: ldaps
+LdapsAuth:
+  Host: 13.64.104.29
+  Port: 389
+  ValidateServerCertificate: false
+  UseSSL: false
+  AnonymousBind: false
+  BindUser: mycompany\binder
+  BindPassword: p@ssw0rd!
+  ObjectClass: organizationalPerson
+  BaseDn: ou=Lab,dc=mycompany,dc=local
+  RequireGroupMembership: false
+  GroupMembershipAttribute: memberOf
+  RequiredGroupDn: "RequiredGroupDn"
+  PrincipalCacheDurationSec: 120
+  LdapGroupRoles:
+    'CN=ES-Accounting,CN=Users,DC=mycompany,DC=local': accounting
+    'CN=ES-Operations,CN=Users,DC=mycompany,DC=local': it
+    'CN=ES-Admins,CN=Users,DC=mycompany,DC=local': '$admins'

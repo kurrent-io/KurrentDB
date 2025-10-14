@@ -4,21 +4,20 @@
 @page "/ui/logs"
 @rendermode InteractiveServer
 @attribute [Authorize]
+@inject LogObserver LogObserver
+@inherits KurrentDB.Components.Licensed.LicensedPage
 @using System.ComponentModel
 @using KurrentDB.Tools
 @using Microsoft.AspNetCore.Authorization
 @using Serilog.Events
-@using KurrentDB.Components.Licensed
-@inject LogObserver LogObserver
-@inherits LicensedPage
 @implements IDisposable
 
 <MudDataGrid @ref="_dataGrid" Items="@LogObserver.Items" Dense="@true" Filterable="true">
 	<Columns>
 		<PropertyColumn Property="x => x.Timestamp" Title="Timestamp" Format="HH:mm:ss" Filterable="@false"/>
-		<PropertyColumn Property="x => x.Level" Title="Level" CellStyleFunc="_cellStyleFunc"/>
+		<PropertyColumn Property="x => x.Level" Title="Level" CellStyleFunc="CellStyleFunc"/>
 		<PropertyColumn Property="x => x.MessageTemplate.Render(x.Properties, null)" Title="Message"
-		                CellStyleFunc="_cellStyleFunc"/>
+		                CellStyleFunc="CellStyleFunc"/>
 	</Columns>
 </MudDataGrid>
 @if (LogObserver.Items.Count == 0) {
@@ -44,11 +43,12 @@
 			StateHasChanged();
 		}
 	}
+
 	void HandleUpdate(object sender, PropertyChangedEventArgs e) {
 		Task.Run(() => InvokeAsync(Update));
 	}
 
-	Func<LogEvent, string> _cellStyleFunc => x => {
+	Func<LogEvent, string> CellStyleFunc => x => {
 		var color = x.Level switch {
 			LogEventLevel.Verbose => "--mud-palette-text-disabled",
 			LogEventLevel.Debug => "--mud-palette-text-secondary",

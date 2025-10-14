@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- It must be `TargetFrameworks` plural to work on macos -->
+    <!-- Error MSB6004 : The specified task executable location "/macosx_x64/protoc" is invalid. -->
+    <!--suppress MsbuildTargetFrameworkTagInspection-->
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <IncludeHttpRuleProtos>true</IncludeHttpRuleProtos>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" />
+    <PackageReference Include="Grpc.Net.ClientFactory" />
+    <PackageReference Include="Grpc.StatusProto" />
+    <PackageReference Include="Grpc.Tools" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- v2  -->
+    <Protobuf
+        ProtoRoot="../../../proto/kurrentdb/protocol/v2"
+        Include="../../../proto/kurrentdb/protocol/v2/**/*.proto"
+        Exclude="../../../proto/kurrentdb/protocol/v2/streams/**/*.proto;../../../proto/kurrentdb/protocol/v2/users/**/*.proto;../../../proto/kurrentdb/protocol/v2/registry/errors.proto;../../../proto/kurrentdb/protocol/v2/errors.proto;../../../proto/kurrentdb/protocol/v2/rpc.proto"
+        Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"
+        GrpcServices="Both"
+        Access="Public"
+        AdditionalImportDirs="../../../proto"
+    />
+
+    <!-- google -->
+    <Protobuf
+        ProtoRoot="../../../proto/google"
+        Include="../../../proto/google/**/*.proto"
+        Link="proto\google\%(RecursiveDir)/%(FileName)%(Extension)"
+        Access="Internal"
+        ProtoCompile="false"
+    />
+  </ItemGroup>
+</Project>

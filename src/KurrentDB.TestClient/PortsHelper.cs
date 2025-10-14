@@ -9,13 +9,14 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using Serilog.Core;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.TestClient;
 
 internal static class PortsHelper {
 	private static readonly ILogger Log =
-		Serilog.Log.ForContext(Serilog.Core.Constants.SourceContextPropertyName, "PortsHelper");
+		Serilog.Log.ForContext(Constants.SourceContextPropertyName, "PortsHelper");
 
 	public const int PortStart = 45000;
 	public const int PortCount = 200;

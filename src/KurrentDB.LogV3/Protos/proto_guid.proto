@@ -1,0 +1,6 @@
+syntax = "proto3";
+package KurrentDB.LogV3;
+
+message ProtoGuid {
+	bytes bytes = 1;
+}

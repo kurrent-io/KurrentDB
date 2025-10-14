@@ -1,6 +1,6 @@
 ---
 title: User authentication
-order: 2
+order: 3
 ---
 
 # Authentication
@@ -34,7 +34,7 @@ An `$ops` user can do everything that an `$admin` can do except manage users and
 
 New users can be created through the following means:
 
-- The [HTTP API](@httpapi/security.md#creating-users)
+- The [HTTP API](../http-api/security.md#creating-users)
 - The [Admin UI](../features/admin-ui.md#users)
 <!-- TODO A [gRPC client]() -->
 
@@ -74,12 +74,6 @@ Use the following option to enable this feature:
 | Command line         | `--enable-trusted-auth`          |
 | YAML                 | `EnableTrustedAuth`              |
 | Environment variable | `KURRENTDB_ENABLE_TRUSTED_AUTH`  |
-
-### Disable HTTP authentication
-
-It is possible to disable authentication on all protected HTTP endpoints by setting
-the `DisableFirstLevelHttpAuthorization` setting to `true`. The setting is set to `false` by default. When
-`true`, the setting will force KurrentDB to use the supplied credentials only to check [stream access](./user-authorization.md#stream-access).
 
 ## User X.509 Certificates 
 

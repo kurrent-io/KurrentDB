@@ -1,6 +1,6 @@
 ---
 title: User authorization
-order: 3
+order: 4
 ---
 
 # Authorization
@@ -136,7 +136,7 @@ shown below:
 
 You can rewrite these to the `$settings` stream with the following request:
 
-@[code{curl}](@samples/default-settings.sh)
+@[code{curl}](@samples/server/default-settings.sh)
 
 The `$userStreamAcl` controls the default ACL for user streams, while all system streams use
 the `$systemStreamAcl` as the default.

@@ -5,9 +5,9 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using EventStore.Client.Messages;
-using EventStore.Common.Utils;
-using EventStore.Core.Data;
-using EventStore.Core.Services.Transport.Tcp;
+using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.Transport.Tcp;
 
 namespace KurrentDB.TestClient.Commands;
 
@@ -53,7 +53,7 @@ internal class MultiWriteProcessor : ICmdProcessor {
 						"type",
 						0, 0,
 						Helper.UTF8NoBom.GetBytes(data),
-						new byte[0])).ToArray(),
+						[])).ToArray(),
 					false);
 				var package = new TcpPackage(TcpCommand.WriteEvents, Guid.NewGuid(), writeDto.Serialize())
 					.AsByteArray();
@@ -70,7 +70,7 @@ internal class MultiWriteProcessor : ICmdProcessor {
 				}
 
 				var dto = pkg.Data.Deserialize<WriteEventsCompleted>();
-				if (dto.Result == EventStore.Client.Messages.OperationResult.Success) {
+				if (dto.Result == OperationResult.Success) {
 					context.Log.Information("Successfully written {writeCount} events.", writeCount);
 					PerfUtils.LogTeamCityGraphData(string.Format("{0}-latency-ms", Keyword),
 						(int)Math.Round(sw.Elapsed.TotalMilliseconds));

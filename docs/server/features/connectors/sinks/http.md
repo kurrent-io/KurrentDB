@@ -1,6 +1,5 @@
 ---
 title: "HTTP Sink"
-order: 4
 ---
 
 ## Overview
@@ -95,13 +94,13 @@ The HTTP sink connector supports both [Basic](https://datatracker.ietf.org/doc/h
 | Name                            | Details                                                                                                  |
 | ------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | `authentication:basic:username` | **Type**: string<br><br>**Description:** The username for basic authentication.<br><br>**Default**: `""` |
-| `authentication:basic:password` | _protected_<br><br>**Type**: string<br><br>**Description:** The password for basic authentication.<br><br>**Default**: `""` |
+| `authentication:basic:password` | **Type**: string<br><br>**Description:** The password for basic authentication.<br><br>**Default**: `""` |
 
 #### Bearer Authentication
 
 | Name                          | Details                                                                                                |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `authentication:bearer:token` | _protected_<br><br>**Type**: string<br><br>**Description:** The token for bearer authentication.<br><br>**Default**: `""` |
+| `authentication:bearer:token` | **Type**: string<br><br>**Description:** The token for bearer authentication.<br><br>**Default**: `""` |
 
 ## Template parameters
 
@@ -132,9 +131,9 @@ https://api.example.com/{schema-subject}
 For an event with schema subject "TestEvent", this would result in the URL:
 
 ```
-https://api.example.com/TestEvent
+https://api.example.com/test-event
 ```
 
 ### Tutorial
 
-[Learn how to configure and use a connector using the HTTP Sink in KurrentDB through a tutorial.](/tutorials/http.md)
+[Learn how to configure and use a connector using the HTTP Sink in KurrentDB through a tutorial.](/tutorials/HTTP_Connector.md)

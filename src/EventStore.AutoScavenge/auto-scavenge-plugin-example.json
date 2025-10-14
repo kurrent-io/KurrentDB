@@ -1,7 +1,0 @@
-{
-  "EventStore": {
-    "AutoScavenge": {
-      "Enabled": true
-    }
-  }
-}

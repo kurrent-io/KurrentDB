@@ -1,0 +1,74 @@
+// ******************************************************************************************
+// This protocol is UNSTABLE in the sense of being subject to change.
+// ******************************************************************************************
+
+syntax = "proto3";
+
+package kurrent.rpc;
+
+option csharp_namespace = "Kurrent.Rpc";
+
+import "google/protobuf/descriptor.proto";
+import "google/rpc/code.proto";
+
+// ErrorMetadata provides actionable information for error enum values to enable automated
+// code generation, documentation, and consistent error handling across the Kurrent platform.
+//
+// It was modeled to support a single details type per error code to simplify code generation and
+// validation. If multiple detail types are needed for a single error code, consider defining
+// separate error codes for each detail type. Or, use a union type (oneof) in the detail message
+// to encapsulate multiple detail variants within a single detail message.
+//
+// More however DebugInfo and RetryInfo can and should be added to any error regardless of
+// this setting, when applicable.
+//
+// This annotation is applied to enum values using the google.protobuf.EnumValueOptions
+// extension mechanism. It enables:
+// - Automatic gRPC status code mapping
+// - Code generation for error handling utilities
+// - Documentation generation
+// - Type-safe error detail validation
+//
+// Usage Example:
+//   enum StreamErrorCode {
+//     REVISION_CONFLICT = 5 [(kurrent.rpc.error) = {
+//       status_code: FAILED_PRECONDITION,
+//       has_details: true
+//     }];
+//   }
+//
+// See individual field documentation for conventions and defaults.
+message ErrorMetadata {
+  // Maps the error to a standard gRPC status code for transport-level compatibility.
+  // This field is REQUIRED for every error annotation.
+  //
+  // Use standard gRPC status codes from `google.rpc.code`.
+  //
+  // Code generators use this to:
+  // - Map errors to gRPC status codes automatically
+  // - Generate HTTP status code mappings
+  // - Create transport-agnostic error handling
+  google.rpc.Code status_code = 1;
+
+  // Indicates whether this error supports rich, typed detail messages.
+  // Defaults to false (simple message string only).
+  // The message type name must be derived from the enum name by convention.
+  // Mask: {EnumValue}ErrorDetails, {EnumValue}Error, {EnumValue}
+  //
+  // Examples:
+  //   ACCESS_DENIED    -> "AccessDeniedErrorDetails", "AccessDeniedError" or "AccessDenied"
+  //   SERVER_NOT_READY -> "ServerNotReadyErrorDetails", "ServerNotReadyError" or "ServerNotReady"
+  //
+  // Code generators use the message type name to:
+  // - Validate that the detail message matches the expected type
+  // - Generate type-safe error handling code
+  // - Create accurate documentation
+  bool has_details = 2;
+}
+
+// Extend EnumValueOptions to include error information for enum values
+extend google.protobuf.EnumValueOptions {
+  // Provides additional information about error conditions for automated
+  // code generation and documentation.
+  optional ErrorMetadata error = 50000;
+}
