@@ -1196,8 +1196,7 @@ public partial class PTable : ISearchTable, IDisposable {
 		// wont get disposed
 		AcquireFileHandle();
 		try {
-			var streamHash = stream.Hash;
-			return _bloomFilter.MightContain(Span.AsReadOnlyBytes(in streamHash));
+			return _bloomFilter.MightContain(Span.AsReadOnlyBytes(in stream.Hash));
 		} finally {
 			ReleaseFileHandle();
 		}
@@ -1206,11 +1205,11 @@ public partial class PTable : ISearchTable, IDisposable {
 	// construct this struct with a 64 bit hash and it will convert it to a hash
 	// for the specified table version
 	public readonly struct StreamHash : IEquatable<StreamHash> {
-		public StreamHash(byte version, ulong hash) {
-			Hash = version == PTableVersions.IndexV1 ? hash >> 32 : hash;
-		}
+		public readonly ulong Hash;
 
-		public ulong Hash { get; init; }
+		public StreamHash(byte version, ulong hash) {
+			Hash = version is PTableVersions.IndexV1 ? hash >> 32 : hash;
+		}
 
 		public override int GetHashCode() =>
 			Hash.GetHashCode();
