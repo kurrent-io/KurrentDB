@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text.Json;
 using DuckDB.NET.Data;
 using DuckDB.NET.Data.DataChunk.Reader;
 using DuckDB.NET.Data.DataChunk.Writer;
@@ -37,22 +36,12 @@ public class KdbGetEventSetup(IPublisher publisher) : IDuckDBSetup {
 		}
 	}
 
-	private static bool IsValidJson(ReadOnlySpan<byte> data)
-	{
-		try {
-			var reader = new Utf8JsonReader(data);
-			return JsonDocument.TryParseValue(ref reader, out _);
-		} catch {
-			return false;
-		}
-	}
-
 	private static string AsDuckEvent(string stream,
 		string eventType,
 		DateTime created,
 		ReadOnlyMemory<byte> data,
 		ReadOnlyMemory<byte> meta) {
-		var dataString = IsValidJson(data.Span) ? Helper.UTF8NoBom.GetString(data.Span) : "\"<raw data>\"";
+		var dataString = data.IsValidUtf8Json() ? Helper.UTF8NoBom.GetString(data.Span) : "\"<raw data>\"";
 		var metaString = meta.Length == 0 ? "{}" : Helper.UTF8NoBom.GetString(meta.Span);
 		return
 			$"{{ \"data\": {dataString}, \"metadata\": {metaString}, \"stream_id\": \"{stream}\", \"created\": \"{created:u}\", \"event_type\": \"{eventType}\" }}";
