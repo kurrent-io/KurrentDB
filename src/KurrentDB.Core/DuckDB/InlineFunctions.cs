@@ -41,7 +41,7 @@ public class KdbGetEventSetup(IPublisher publisher) : IDuckDBSetup {
 		DateTime created,
 		ReadOnlyMemory<byte> data,
 		ReadOnlyMemory<byte> meta) {
-		var dataString = Helper.UTF8NoBom.GetString(data.Span);
+		var dataString = data.IsValidUtf8Json() ? Helper.UTF8NoBom.GetString(data.Span) : "\"<non-json data>\"";
 		var metaString = meta.Length == 0 ? "{}" : Helper.UTF8NoBom.GetString(meta.Span);
 		return
 			$"{{ \"data\": {dataString}, \"metadata\": {metaString}, \"stream_id\": \"{stream}\", \"created\": \"{created:u}\", \"event_type\": \"{eventType}\" }}";
