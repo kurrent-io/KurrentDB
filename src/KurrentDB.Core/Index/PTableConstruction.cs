@@ -284,7 +284,7 @@ public partial class PTable {
 		}
 	}
 
-	public static int GetIndexEntrySize(byte version) => version switch {
+	private static int GetIndexEntrySize(byte version) => version switch {
 		PTableVersions.IndexV1 => IndexEntryV1Size,
 		PTableVersions.IndexV2 => IndexEntryV2Size,
 		PTableVersions.IndexV3 => IndexEntryV3Size,

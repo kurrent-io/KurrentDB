@@ -890,7 +890,7 @@ public partial class PTable : ISearchTable, IDisposable {
 	private static long PositionAtEntry(int indexEntrySize, long indexNum)
 		=> indexEntrySize * indexNum + PTableHeader.Size;
 
-	private static IndexEntry ReadEntry(SafeFileHandle handle, int indexEntrySize, long indexNum, int ptableVersion)
+	private static IndexEntry ReadEntry(SafeFileHandle handle, int indexEntrySize, long indexNum, byte ptableVersion)
 		=> ReadEntry(handle, PositionAtEntry(indexEntrySize, indexNum), ptableVersion, out _);
 
 	private IndexEntry ReadEntry(long indexNum) {
@@ -902,7 +902,7 @@ public partial class PTable : ISearchTable, IDisposable {
 		}
 	}
 
-	private static IndexEntry ReadEntry(SafeFileHandle handle, long fileOffset, int ptableVersion, out int bytesRead) {
+	private static IndexEntry ReadEntry(SafeFileHandle handle, long fileOffset, byte ptableVersion, out int bytesRead) {
 		// allocate buffer for the worst case
 		Span<byte> buffer = stackalloc byte[IndexEntryV4Size];
 		var reader = new SpanReader<byte>(buffer);
@@ -931,6 +931,8 @@ public partial class PTable : ISearchTable, IDisposable {
 
 		var position = reader.ReadLittleEndian<long>();
 		bytesRead = reader.ConsumedCount;
+
+		Debug.Assert(bytesRead == GetIndexEntrySize(ptableVersion));
 		return new(stream, version, position);
 	}
 
