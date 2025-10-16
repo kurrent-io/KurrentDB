@@ -31,7 +31,7 @@ public class ToolkitTestExecutor : ITestExecutor {
                 $"*** gRPC Request Failed ***{Environment.NewLine}"
               + $"Status:  {ex.StatusCode} ({ex.StatusCode.GetHashCode()}){Environment.NewLine}"
               + $"Error:   {ex.Status.Detail}{Environment.NewLine}"
-              + $"Details:{Environment.NewLine}{string.Join($"{Environment.NewLine}", status.Details.Select(d => $"  - {d.TypeUrl}"))}{Environment.NewLine}";
+              + $"Details:{Environment.NewLine}{string.Join($"{Environment.NewLine}", (status?.Details ?? []).Select(d => $"  - {d.TypeUrl}"))}{Environment.NewLine}";
 
             throw new Exception(errorMessage, ex.Status.DebugException).Demystify();
         }

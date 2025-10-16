@@ -186,6 +186,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.DuckDB", "Kurrent
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.SecondaryIndexing.Tests", "KurrentDB.SecondaryIndexing.Tests\KurrentDB.SecondaryIndexing.Tests.csproj", "{3106AEC8-6E9B-4EF6-B63A-CF2FA53C21D9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Ammeter", "KurrentDB.Ammeter\KurrentDB.Ammeter.csproj", "{C2A45C25-7412-88CE-1576-75B656C54F05}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1132,6 +1134,18 @@ Global
 		{3106AEC8-6E9B-4EF6-B63A-CF2FA53C21D9}.Release|ARM64.Build.0 = Release|ARM64
 		{3106AEC8-6E9B-4EF6-B63A-CF2FA53C21D9}.Release|x64.ActiveCfg = Release|x64
 		{3106AEC8-6E9B-4EF6-B63A-CF2FA53C21D9}.Release|x64.Build.0 = Release|x64
+		{C2A45C25-7412-88CE-1576-75B656C54F05}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C2A45C25-7412-88CE-1576-75B656C54F05}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C2A45C25-7412-88CE-1576-75B656C54F05}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{C2A45C25-7412-88CE-1576-75B656C54F05}.Debug|ARM64.Build.0 = Debug|ARM64
+		{C2A45C25-7412-88CE-1576-75B656C54F05}.Debug|x64.ActiveCfg = Debug|x64
+		{C2A45C25-7412-88CE-1576-75B656C54F05}.Debug|x64.Build.0 = Debug|x64
+		{C2A45C25-7412-88CE-1576-75B656C54F05}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C2A45C25-7412-88CE-1576-75B656C54F05}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C2A45C25-7412-88CE-1576-75B656C54F05}.Release|ARM64.ActiveCfg = Release|ARM64
+		{C2A45C25-7412-88CE-1576-75B656C54F05}.Release|ARM64.Build.0 = Release|ARM64
+		{C2A45C25-7412-88CE-1576-75B656C54F05}.Release|x64.ActiveCfg = Release|x64
+		{C2A45C25-7412-88CE-1576-75B656C54F05}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

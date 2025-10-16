@@ -184,6 +184,7 @@
     <PackageVersion Include="System.Threading.Channels" Version="9.0.9" />
     <PackageVersion Include="TestableIO.System.IO.Abstractions" Version="21.3.1" />
     <PackageVersion Include="TestableIO.System.IO.Abstractions.TestingHelpers" Version="21.3.1" />
+    <PackageVersion Include="Testcontainers" Version="4.7.0" />
     <PackageVersion Include="TUnit" Version="0.63.3" />
     <PackageVersion Include="TUnit.Core" Version="0.63.3" />
     <PackageVersion Include="Verify.TUnit" Version="30.11.0" />
