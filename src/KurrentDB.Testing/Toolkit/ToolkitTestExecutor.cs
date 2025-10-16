@@ -23,7 +23,7 @@ public class ToolkitTestExecutor : ITestExecutor {
             logger.Error(
                 ex.Status.DebugException,
                 "{TestClass} {TestName} {State} {ErrorMessage}",
-                context.TestDetails.ClassType.Name, context.TestDetails.TestName, TestState.Failed,
+                context.Metadata.TestDetails.ClassType.Name, context.Metadata.TestDetails.TestName, TestState.Failed,
                 ex.Status.Detail
             );
 
@@ -31,14 +31,14 @@ public class ToolkitTestExecutor : ITestExecutor {
                 $"*** gRPC Request Failed ***{Environment.NewLine}"
               + $"Status:  {ex.StatusCode} ({ex.StatusCode.GetHashCode()}){Environment.NewLine}"
               + $"Error:   {ex.Status.Detail}{Environment.NewLine}"
-              + $"Details:{Environment.NewLine}{string.Join($"{Environment.NewLine}", status.Details.Select(d => $"  - {d.TypeUrl}"))}{Environment.NewLine}";
+              + $"Details:{Environment.NewLine}{string.Join($"{Environment.NewLine}", (status?.Details ?? []).Select(d => $"  - {d.TypeUrl}"))}{Environment.NewLine}";
 
             throw new Exception(errorMessage, ex.Status.DebugException).Demystify();
         }
         catch (Exception ex) {
             logger.Error(
-                ex, "{TestClass} {TestName} {State} {ErrorMessage}", context.TestDetails.ClassType.Name,
-                context.TestDetails.TestName, TestState.Failed, ex.Message
+                ex, "{TestClass} {TestName} {State} {ErrorMessage}", context.Metadata.TestDetails.ClassType.Name,
+                context.Metadata.TestDetails.TestName, TestState.Failed, ex.Message
             );
 
             throw ex.Demystify();

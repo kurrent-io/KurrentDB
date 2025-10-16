@@ -125,7 +125,7 @@ Bogus should be used as a TUnit ClassDataSource for test data generation:
 
 ```csharp
 public class MyTests {
-    [ClassDataSource<BogusFaker>(Shared = SharedType.PerAssembly)]
+    [ClassDataSource<BogusFaker>(Shared = SharedType.PerTestSession)]
     public required BogusFaker Faker { get; init; }
 
     [Test]

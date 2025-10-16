@@ -32,11 +32,21 @@
 	<!-- TUnit -->
 	<ItemGroup Condition="'$(IsKurrentTUnit)' == 'True'">
 		<PackageReference Include="TUnit" />
+		<!-- MTP 2 -->
+		<PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.1.0" />
+		<PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="2.0.1" />
+		<PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="2.0.1" />
+		<PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.0.1" />
 	</ItemGroup>
 
 	<!-- XUnit -->
 	<ItemGroup Condition="'$(IsKurrentXUnit)' == 'True'">
 		<PackageReference Include="xunit.v3" />
+		<!-- MTP 1 -->
+		<PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.0.4" />
+		<PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="1.9.0" />
+		<PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="1.9.0" />
+		<PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.9.0" />
 	</ItemGroup>
 
 	<!-- NUnit -->
@@ -46,6 +56,11 @@
 	<ItemGroup Condition="'$(IsKurrentNUnit)' == 'True'">
 		<PackageReference Include="NUnit" />
 		<PackageReference Include="NUnit3TestAdapter" />
+		<!-- MTP 1 -->
+		<PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.0.4" />
+		<PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="1.9.0" />
+		<PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="1.9.0" />
+		<PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.9.0" />
 	</ItemGroup>
 
 	<!-- All test projects -->

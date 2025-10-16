@@ -3,11 +3,11 @@
 
 // ReSharper disable MethodHasAsyncOverload
 
+using System.Text.RegularExpressions;
 using FluentValidation;
 using KurrentDB.Api.Infrastructure.FluentValidation;
 using KurrentDB.Api.Streams.Validators;
 using KurrentDB.Api.Tests.Infrastructure;
-using TUnit.Assertions.AssertConditions;
 
 namespace KurrentDB.Api.Tests.Streams.Validators;
 
@@ -30,7 +30,8 @@ public class StreamNameValidatorTests {
         var vex = await Assert
             .That(() => StreamNameValidator.Instance.ValidateAndThrow(value))
             .Throws<DetailedValidationException>()
-            .WithMessageMatching(StringMatcher.AsWildcard(match));
+            // StringMatcher.AsWildcard recently stopped matching multiline.
+            .WithMessageMatching(StringMatcher.AsRegex(Regex.Escape(match).Replace("\\*", ".*").Replace("\\?", ".")));
 
         vex.LogValidationErrors<StreamNameValidator>();
     }

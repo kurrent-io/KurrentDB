@@ -95,10 +95,6 @@
     <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.14.0" />
     <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="8.14.0" />
     <PackageVersion Include="Microsoft.OpenApi.Readers" Version="1.6.28" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.0.4" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="1.9.0" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.9.0" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="1.9.0" />
     <PackageVersion Include="Mono.Posix.NETStandard" Version="1.0.0" />
     <PackageVersion Include="MudBlazor" Version="8.12.0" />
     <PackageVersion Include="MudBlazor.Markdown" Version="8.11.0" />
@@ -163,8 +159,9 @@
     <PackageVersion Include="System.ServiceModel.Http" Version="8.1.2" />
     <PackageVersion Include="TestableIO.System.IO.Abstractions" Version="21.3.1" />
     <PackageVersion Include="TestableIO.System.IO.Abstractions.TestingHelpers" Version="21.3.1" />
-    <PackageVersion Include="TUnit" Version="0.63.3" />
-    <PackageVersion Include="TUnit.Core" Version="0.63.3" />
+    <PackageVersion Include="Testcontainers" Version="4.7.0" />
+    <PackageVersion Include="TUnit" Version="1.0.39" />
+    <PackageVersion Include="TUnit.Core" Version="1.0.39" />
     <PackageVersion Include="Verify.TUnit" Version="30.11.0" />
     <PackageVersion Include="WaffleGenerator.Bogus" Version="4.2.2" />
     <PackageVersion Include="xunit.v3" Version="3.1.0" />

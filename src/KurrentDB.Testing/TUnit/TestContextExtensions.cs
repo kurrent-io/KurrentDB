@@ -9,11 +9,15 @@ namespace KurrentDB.Testing.TUnit;
 
 [PublicAPI]
 public static partial class TestContextExtensions {
+	extension(TestContext) {
+		public static CancellationToken CancellationToken => TestContext.Current!.Execution.CancellationToken;
+	}
+
 	/// <summary>
 	/// Attempts to extract an item from the TestContext's ObjectBag.
 	/// </summary>
 	public static bool TryExtractItem(this TestContext? ctx, string key, [MaybeNullWhen(false)] out object item) {
-		if (ctx is not null && ctx.ObjectBag.TryGetValue(key, out var val)) {
+		if (ctx is not null && ctx.StateBag.Items.TryGetValue(key, out var val)) {
 			item = val!;
 			return true;
 		}
@@ -58,7 +62,7 @@ public static partial class TestContextExtensions {
 	/// </summary>
 	public static bool TryInjectItem<T>(this TestContext? ctx, T item, string? key = null) where T : notnull {
 		key ??= $"${typeof(T).FullName ?? typeof(T).Name}";
-		return ctx?.ObjectBag.TryAdd(key, item) ?? throw new InvalidOperationException("No current TestContext available!");
+		return ctx?.StateBag.Items.TryAdd(key, item) ?? throw new InvalidOperationException("No current TestContext available!");
 	}
 
 	/// <summary>
@@ -85,8 +89,8 @@ public static partial class TestContextLoggingExtensions {
     }
 
     public static void RemoveLogging(this TestContext ctx) {
-        ctx.ObjectBag.Remove(LoggerFactoryKey);
-        ctx.ObjectBag.Remove(LoggerKey);
+        ctx.StateBag.Items.Remove(LoggerFactoryKey, out _);
+        ctx.StateBag.Items.Remove(LoggerKey, out _);
     }
 
     public static bool TryGetLoggerFactory(this TestContext? ctx, out ILoggerFactory loggerFactory) =>
