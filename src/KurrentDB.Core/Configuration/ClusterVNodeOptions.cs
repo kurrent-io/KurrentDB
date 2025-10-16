@@ -427,7 +427,7 @@ public partial record ClusterVNodeOptions {
 		public int InitializationThreads { get; init; } = 1;
 
 		[Description("The number of reader threads to use for processing reads. Set to '0' to scale automatically (Default)")]
-		[Deprecated("This setting no longer has an effect. The workers automatically scale as necessary")]
+		[Deprecated("The ReaderThreadsCount parameter has been deprecated as of version 26.0.0 and currently has no effect. The workers automatically scale as necessary."")]
 		public int ReaderThreadsCount { get; init; } = 0;
 
 		[Description("During large Index Merge operations, writes may be slowed down. Set this to the maximum " +
