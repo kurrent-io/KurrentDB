@@ -60,12 +60,12 @@ The Kafka sink can be configured with the following options:
 
 ### Authentication
 
-| Name                              | Details                                                                                                                                                                |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `authentication:securityProtocol` | **Description:**<br>Protocol used for Kafka broker communication.<br><br>**Default**: `"plaintext"`<br><br>**Accepted Values:** `"plaintext"` or `"saslPlaintext"`     |
-| `authentication:saslMechanism`    | **Description:**<br>SASL mechanism to use for authentication.<br><br>**Default**: `"plain"`<br><br>**Accepted Values:** `"plain"`, `"scramSha256"`, or `"scramSha512"` |
-| `authentication:username`         | **Description:**<br>SASL username                                                                                                                                      |
-| `authentication:password`         | **Description:**<br>SASL password                                                                                                                                      |
+| Name                              | Details                                                                                                                                                                         |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `authentication:securityProtocol` | **Description:**<br>Protocol used for Kafka broker communication.<br><br>**Default**: `"plaintext"`<br><br>**Accepted Values:**<br> - `"plaintext"`, `"saslPlaintext"` or `"saslSsl"` |
+| `authentication:saslMechanism`    | **Description:**<br>SASL mechanism to use for authentication.<br><br>**Default**: `"plain"`<br><br>**Accepted Values:**<br> - `"plain"`, `"scramSha256"`, or `"scramSha512"`          |
+| `authentication:username`         | **Description:**<br>SASL username                                                                                                                                               |
+| `authentication:password`         | **Description:**<br>SASL password                                                                                                                                               |
 
 
 ### Partitioning
@@ -179,10 +179,16 @@ These headers will be included in every message sent by the connector, in additi
 The Kafka sink connector supports secure communication with Kafka brokers using
 **SASL authentication**. By default, the connector communicates in **plaintext**
 without authentication. However, you can configure it to use SASL with different
-authentication mechanisms.
+security protocols and authentication mechanisms.
 
-#### SASL/PLAINTEXT Authentication
+::: note
+When using `saslSsl`, the connector uses your system's trusted CA certificates
+for SSL/TLS encryption. This works with managed services like **AWS MSK**,
+**Confluent Cloud**, and **Azure Event Hubs**. For self-signed or private CA
+certificates, add them to your system's trust store first.
+:::
 
+#### SASL/PLAINTEXT with PLAIN Authentication
 ```http
 PUT /connectors/{{id}}/settings
 Host: localhost:2113
@@ -196,8 +202,7 @@ Content-Type: application/json
 }
 ```
 
-#### SASL/SCRAM-SHA-256 Authentication
-
+#### SASL/PLAINTEXT with SCRAM-SHA-256 Authentication
 ```http
 PUT /connectors/{{id}}/settings
 Host: localhost:2113
@@ -211,8 +216,7 @@ Content-Type: application/json
 }
 ```
 
-#### SASL/SCRAM-SHA-512 Authentication
-
+#### SASL/PLAINTEXT with SCRAM-SHA-512 Authentication
 ```http
 PUT /connectors/{{id}}/settings
 Host: localhost:2113
@@ -220,6 +224,50 @@ Content-Type: application/json
 
 {
   "authentication:securityProtocol": "saslPlaintext",
+  "authentication:saslMechanism": "scramSha512",
+  "authentication:username": "my-username",
+  "authentication:password": "my-password"
+}
+```
+
+#### SASL/SSL with PLAIN Authentication
+
+For production environments with encryption (recommended for managed Kafka services):
+```http
+PUT /connectors/{{id}}/settings
+Host: localhost:2113
+Content-Type: application/json
+
+{
+  "authentication:securityProtocol": "saslSsl",
+  "authentication:saslMechanism": "plain",
+  "authentication:username": "my-username",
+  "authentication:password": "my-password"
+}
+```
+
+#### SASL/SSL with SCRAM-SHA-256 Authentication
+```http
+PUT /connectors/{{id}}/settings
+Host: localhost:2113
+Content-Type: application/json
+
+{
+  "authentication:securityProtocol": "saslSsl",
+  "authentication:saslMechanism": "scramSha256",
+  "authentication:username": "my-username",
+  "authentication:password": "my-password"
+}
+```
+
+#### SASL/SSL with SCRAM-SHA-512 Authentication
+```http
+PUT /connectors/{{id}}/settings
+Host: localhost:2113
+Content-Type: application/json
+
+{
+  "authentication:securityProtocol": "saslSsl",
   "authentication:saslMechanism": "scramSha512",
   "authentication:username": "my-username",
   "authentication:password": "my-password"
