@@ -55,7 +55,7 @@ The Elasticsearch sink can be configured with the following options:
 | `url`                                       | _required_<br><br>**Description:**<br>The URL of the Elasticsearch cluster to which the connector connects.<br><br>**Default**: `"http://localhost:9200"`                                                                                                                                                                                                                                          |
 | `indexName`                                 | _required_<br><br>**Description:**<br>The index name to which the connector writes messages.<br><br>**Default**: `""`                                                                                                                                                                                                                                                                              |
 | `refresh`                                   | **Description:**<br>Specifies whether Elasticsearch should refresh the affected shards to make this operation visible to search. If set to `"true"`, Elasticsearch refreshes the affected shards. If set to `"wait_for"`, Elasticsearch waits for a refresh to make this operation visible to search. If set to `"false"`, Elasticsearch does nothing with refreshes.<br><br>**Default**: `"true"` |
-| `documentId:source`                         | **Description:**<br>The attribute used to generate the document id.<br><br>**Default**: `"recordId"`<br><br>**Accepted Values:** `"recordId"`, `"stream"`, `"headers"`, `"streamSuffix"`, or `"partitionKey"`.                                                                                                                                                                                     |
+| `documentId:source`                         | **Description:**<br>The attribute used to generate the document id.<br><br>**Default**: `"recordId"`<br><br>**Accepted Values:** `"recordId"`, `"stream"`, `"headers"` or `"streamSuffix"`.                                                                                                                                                                                     |
 | `documentId:expression`                     | **Description:**<br>The expression used to format the document id based on the selected source. This allows for custom id generation logic.<br><br>**Default**: `""`                                                                                                                                                                                                                               |
 | `authentication:method`                     | **Description:**<br>The authentication method used by the connector to connect to the Elasticsearch cluster.<br><br>**Default**: `"basic"`<br><br>**Accepted Values:** `"basic"`, `"token"`, `"apiKey"`                                                                                                                                                                                            |
 | `authentication:username`                   | _protected_<br><br>**Description:**<br>The username used by the connector to connect to the Elasticsearch cluster. If username is set, then password should also be provided.<br><br>**Default**: `"elastic"`                                                                                                                                                                                      |
@@ -76,6 +76,8 @@ The Elasticsearch sink can be configured with the following options:
 | `resilience:dnsRefreshTimeout`              | **Type**: long<br><br>**Description:**<br>The time in milliseconds after which to refresh the DNS information.<br><br>**Default**: `"300000"`                                                                                                                                                                                                                                                      |
 | `resilience:pingTimeout`                    | **Type**: long<br><br>**Description:**<br>The timeout in milliseconds for a ping request.<br><br>**Default**: `"120000"`                                                                                                                                                                                                                                                                           |
 | `resilience:retryOnErrorTypes`              | **Description:**<br>Comma-separated list of error types to retry on.<br><br>**Default**: `""`                                                                                                                                                                                                                                                                                                      |
+
+Other resilience options can be found in the [Resilience Configuration](../settings.md#resilience-configuration) section.
 
 ## Authentication
 
@@ -194,9 +196,7 @@ example, if the stream is named `user-123`, the document ID would be `123`.
 
 **Set Document ID from Headers**
 
-You can generate the document ID by concatenating values from specific event
-headers. In this case, two header values (`key1` and `key2`) are combined to
-form the ID.
+You can create the document ID by combining values from a record's metadata.
 
 ```http
 PUT /connectors/{{id}}/settings
@@ -209,45 +209,9 @@ Content-Type: application/json
 }
 ```
 
-The `Headers` source allows you to pull values from the event's metadata. The
-`documentId:expression` field lists the header keys (in this case, `key1` and
-`key2`), and their values are concatenated to generate the document ID. This is
-useful when headers hold important metadata that should define the document's
-unique identifier, such as region, user ID, or other identifiers.
+Specify the header keys you want to use in the `documentId:expression` field (e.g., `key1,key2`). The connector will concatenate the header values with a hyphen (`-`) to create the partition key.
 
-::: details Click here to see an example
-
-```http
-PUT /connectors/{{id}}/settings
-Host: localhost:2113
-Content-Type: application/json
-
-{
-  "key1": "value1",
-  "key2": "value2"
-}
-
-// outputs "value1-value2"
-```
-
-:::
-
-**Set Document ID from Partition Key**
-
-If your event has a partition key, you can use it as the document ID. The
-`partitionKey` source directly uses this key without requiring an expression.
-
-```http
-PUT /connectors/{{id}}/settings
-Host: localhost:2113
-Content-Type: application/json
-
-{
-  "documentId:source": "partitionKey"
-}
-```
-
-This uses the record's partition key as a unique document ID.
+For example, if your event has headers `key1: regionA` and `key2: zone1`, the partition key will be `regionA-zone1`.
 
 ## Resilience Configuration
 

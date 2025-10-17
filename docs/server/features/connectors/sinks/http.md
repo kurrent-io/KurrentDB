@@ -76,6 +76,10 @@ The HTTP sink connector supports both [Basic](https://datatracker.ietf.org/doc/h
 | ----------------------------- | --------------------------------------------------------------------------------- |
 | `authentication:bearer:token` | **Description:**<br>The token for bearer authentication.<br><br>**Default**: `""` |
 
+#### Resilience
+
+Resilience options can be found in the [Resilience Configuration](../settings.md#resilience-configuration) section.
+
 ## Headers
 
 In addition to the [default headers](../features.md#headers) that are included with every request, the HTTP sink connector also includes the following headers in the HTTP request:
