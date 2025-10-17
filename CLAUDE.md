@@ -28,9 +28,7 @@ KurrentDB 25.1 introduces several major features and improvements:
 ## Development Commands
 
 ### Build
-- `./build.sh [version] [configuration]` - Build KurrentDB (Linux/MacOS)
-- `./build.ps1 [version] [configuration]` - Build KurrentDB (Windows)
-- `dotnet build -c Release /p:Platform=x64 --framework=net8.0 src/KurrentDB.sln` - Direct dotnet build
+- `dotnet build -c Release /p:Platform=x64 --framework=net10.0 src/KurrentDB.sln` - Direct dotnet build
 
 ### Test
 - `dotnet test src/KurrentDB.sln` - Run all tests
@@ -43,7 +41,7 @@ Navigate to the test project directory and use:
 - `dotnet test --filter "TestClass"`
 
 ### Development Server
-- Start server: `dotnet ./src/KurrentDB/bin/Release/net8.0/KurrentDB.dll --dev --db ./tmp/data --index ./tmp/index --log ./tmp/log`
+- Start server: `dotnet ./src/KurrentDB/bin/Release/net10.0/KurrentDB.dll --dev --db ./tmp/data --index ./tmp/index --log ./tmp/log`
 - Default ports: HTTP/gRPC on 2113, Internal TCP on 1112
 - Admin UI: `http://localhost:2113` (new embedded UI) or `http://localhost:2113/web` (legacy)
 - Windows Service: KurrentDB can now be run as a Windows Service (see installation docs)
@@ -185,7 +183,7 @@ Uses centralized package management:
 
 ### Development Notes
 
-- Target framework: .NET 8.0 with Server GC enabled by default
+- Target framework: .NET 10.0 with Server GC enabled by default
 - Uses unsafe code blocks for performance-critical operations
 - Protocol buffer generation integrated into build process (`KurrentDB.Protocol` project)
 - Extensive use of dependency injection and hosted services pattern

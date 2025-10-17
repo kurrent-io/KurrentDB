@@ -90,7 +90,7 @@ public class when_truncating_into_the_middle_of_completed_chunk : SpecificationW
 		var contents = new byte[_config.ChunkSize];
 		using (var fs = File.OpenRead(GetFilePathFor("chunk-000000.000001"))) {
 			fs.Position = ChunkHeader.Size;
-			fs.Read(contents, 0, contents.Length);
+			fs.ReadExactly(contents, 0, contents.Length);
 			Assert.AreEqual(_file1Contents, contents);
 		}
 	}
@@ -106,14 +106,14 @@ public class when_truncating_into_the_middle_of_completed_chunk : SpecificationW
 			var shouldBeZeros = new byte[_config.ChunkSize - leftDataSize + ChunkFooter.Size];
 
 			fs.Position = ChunkHeader.Size;
-			fs.Read(leftData, 0, leftData.Length);
+			fs.ReadExactly(leftData, 0, leftData.Length);
 
 			var shouldBeLeft = new byte[leftDataSize];
 			Buffer.BlockCopy(_file2Contents, 0, shouldBeLeft, 0, leftDataSize);
 			Assert.AreEqual(shouldBeLeft, leftData);
 
 			fs.Position = ChunkHeader.Size + _config.WriterCheckpoint.Read() % _config.ChunkSize;
-			fs.Read(shouldBeZeros, 0, shouldBeZeros.Length);
+			fs.ReadExactly(shouldBeZeros, 0, shouldBeZeros.Length);
 
 			Assert.IsTrue(shouldBeZeros.All(x => x == 0), "Chunk is not zeroed.");
 		}

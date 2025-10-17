@@ -426,7 +426,7 @@ KurrentDB can be deployed and managed using the [Operator](/server/kubernetes-op
 
 ## Building from source
 
-You can also build [KurrentDB from source](https://github.com/EventStore/EventStore?tab=readme-ov-file#building-kurrentdb). Before doing that, you need to install the .NET 8 SDK. KurrentDB packages have the .NET Runtime embedded, so you don't need to install anything except the KurrentDB package.
+You can also build [KurrentDB from source](https://github.com/EventStore/EventStore?tab=readme-ov-file#building-kurrentdb). Before doing that, you need to install the .NET 10 SDK. KurrentDB packages have the .NET Runtime embedded, so you don't need to install anything except the KurrentDB package.
 
 ## Compatibility notes
 

@@ -5,7 +5,6 @@
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <Nullable>enable</Nullable>
     <ImplicitUsings>true</ImplicitUsings>
-    <LangVersion>preview</LangVersion>
     <IsPackable>false</IsPackable>
     <Deterministic>true</Deterministic>
     <InvariantGlobalization>true</InvariantGlobalization>

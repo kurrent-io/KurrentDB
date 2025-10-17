@@ -11,9 +11,6 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.Extensions.Configuration.Json" />
-		<PackageReference Include="Microsoft.Extensions.FileProviders.Composite" />
-		<PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" />
 		<PackageReference Include="NetEscapades.Configuration.Yaml" />
 		<PackageReference Include="Newtonsoft.Json" />
 		<PackageReference Include="OpenTelemetry" />
@@ -30,11 +27,7 @@
 		<PackageReference Include="Serilog.Sinks.Console" />
 
 		<PackageReference Include="System.Security.Cryptography.Pkcs" />
-		<PackageReference Include="System.Text.RegularExpressions" />
 		<PackageReference Include="YamlDotnet" />
-		<PackageReference Include="System.Text.Json" />
-		<PackageReference Include="System.Formats.Asn1" />
-		<PackageReference Include="System.Private.Uri" />
 	</ItemGroup>
 	<ItemGroup>
 	  <None Update="Utils\version.properties">

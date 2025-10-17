@@ -70,7 +70,7 @@ public class TFChunkManagerTests : DirectoryPerTest<TFChunkManagerTests> {
 	IAsyncEnumerable<string> ActualChunks => Enumerable
 		.Range(0, _sut.ChunksCount)
 		.ToAsyncEnumerable()
-		.SelectAwaitWithCancellation(async (chunkNum, ct) => (await _sut.GetInitializedChunk(chunkNum, ct)).ChunkLocator);
+		.Select(async (chunkNum, ct) => (await _sut.GetInitializedChunk(chunkNum, ct)).ChunkLocator);
 
 	[Theory]
 	[InlineData(1, 4, "too big")]

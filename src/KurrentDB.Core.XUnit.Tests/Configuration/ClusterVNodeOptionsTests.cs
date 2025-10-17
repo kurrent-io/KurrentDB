@@ -234,7 +234,7 @@ public class ClusterVNodeOptionsTests {
 			ClusterVNodeOptions.FromConfiguration(config));
 
 		Assert.Equal(
-			$"Failed to convert configuration value at '{KurrentPrefix}:GossipSeed' to type 'System.Net.EndPoint[]'. " + expectedError,
+			$"Failed to convert configuration value '{gossipSeed}' at '{KurrentPrefix}:GossipSeed' to type 'System.Net.EndPoint[]'. " + expectedError,
 			ex.Message);
 	}
 
@@ -253,7 +253,7 @@ public class ClusterVNodeOptionsTests {
 			ClusterVNodeOptions.FromConfiguration(config));
 
 		Assert.Equal(
-			$"Failed to convert configuration value at '{KurrentPrefix}:NodeIp' to type 'System.Net.IPAddress'. " + expectedError,
+			$"Failed to convert configuration value '{nodeIp}' at '{KurrentPrefix}:NodeIp' to type 'System.Net.IPAddress'. " + expectedError,
 			ex.Message);
 	}
 

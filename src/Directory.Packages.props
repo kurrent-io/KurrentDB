@@ -62,20 +62,19 @@
     <PackageVersion Include="KurrentDB.Client" Version="1.0.0" />
     <PackageVersion Include="librdkafka.redist" Version="2.5.0" />
     <PackageVersion Include="LruCacheNet" Version="1.2.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="8.0.13" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.13" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="8.0.13" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.13" />
-    <PackageVersion Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="8.0.20" />
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.20" />
-    <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="8.0.20" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="9.0.9" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.9" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="9.0.9" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.9" />
+    <PackageVersion Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="9.0.9" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.9" />
+    <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="9.0.9" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.7.0" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing.XUnit" Version="1.1.1" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing.XUnit" Version="1.1.2" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.7.0" />
-    <PackageVersion Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageVersion Include="Microsoft.Data.Sqlite" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.Diagnostics.NETCore.Client" Version="0.2.553101" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="9.0.9" />
+    <PackageVersion Include="Microsoft.Diagnostics.NETCore.Client" Version="0.2.621003" />
     <PackageVersion Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="3.1.24" />
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.9" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.9" />
@@ -84,14 +83,12 @@
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.9" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.9" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.AutoActivation" Version="9.8.0" />
-    <PackageVersion Include="Microsoft.Extensions.Diagnostics.Testing" Version="9.8.0" />
-    <PackageVersion Include="Microsoft.Extensions.FileProviders.Composite" Version="9.0.9" />
-    <PackageVersion Include="Microsoft.Extensions.FileProviders.Embedded" Version="9.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.Diagnostics.Testing" Version="9.9.0" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.9" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="9.4.2" />
     <PackageVersion Include="Serilog.Enrichers.Demystifier" Version="1.0.3" />
     <PackageVersion Include="Serilog.Extensions.Hosting" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.WindowsServices" Version="9.0.9" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.9" />
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.9" />
     <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.9.0" />
@@ -99,13 +96,12 @@
     <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.14.0" />
     <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.14.0" />
     <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="8.14.0" />
-    <PackageVersion Include="Microsoft.Net.Http.Headers" Version="8.0.20" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
-    <PackageVersion Include="Microsoft.OpenApi.Readers" Version="1.6.23" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.0.4" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="1.9.0" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.9.0" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="1.9.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
+    <PackageVersion Include="Microsoft.OpenApi.Readers" Version="1.6.28" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.1.0" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="2.0.0" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.0.0" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="2.0.0" />
     <PackageVersion Include="Mono.Posix.NETStandard" Version="1.0.0" />
     <PackageVersion Include="MudBlazor" Version="8.12.0" />
     <PackageVersion Include="MudBlazor.Markdown" Version="8.11.0" />
@@ -119,6 +115,8 @@
     <!-- upgrade because of transitive dependency vulnerability -->
     <PackageVersion Include="NuGet.Protocol" Version="6.7.1" />
     <PackageVersion Include="NUnit" Version="3.14.0" />
+    <!-- cannot upgrade to 5.2.0 yet, it introduces MTP to Core.Tests which is depended on by some XUnit project  -->
+    <!-- after the net10 upgrade we can refactor those dependences away and/or upgrade to MTP across the board -->
     <PackageVersion Include="NUnit3TestAdapter" Version="4.5.0" />
     <PackageVersion Include="ObjectLayoutInspector" Version="0.1.4" />
     <PackageVersion Include="OpenTelemetry" Version="1.13.0" />
@@ -161,27 +159,14 @@
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="System.CommandLine.DragonFruit" Version="0.3.0-alpha.21216.1" />
     <PackageVersion Include="System.ComponentModel.Composition" Version="9.0.9" />
-    <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="9.0.9" />
     <PackageVersion Include="System.Diagnostics.PerformanceCounter" Version="9.0.9" />
-    <!-- upgrade because of transitive dependency vulnerability https://github.com/advisories/GHSA-447r-wph3-92pm -->
-    <PackageVersion Include="System.Formats.Asn1" Version="9.0.9" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
-    <PackageVersion Include="System.IO.Pipelines" Version="9.0.9" />
     <PackageVersion Include="System.Linq.Async" Version="6.0.3" />
-    <!-- upgrade because of transitive dependency vulnerability -->
-    <PackageVersion Include="System.Net.Http" Version="4.3.4" />
-    <!-- upgrade because of transitive dependency vulnerability https://github.com/advisories/GHSA-5f2m-466j-3848 and https://github.com/advisories/GHSA-xhfc-gr8f-ffwc -->
-    <PackageVersion Include="System.Private.Uri" Version="4.3.2" />
     <PackageVersion Include="System.Reactive" Version="6.1.0" />
     <!-- CVE-2023-29331 -->
     <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="9.0.9" />
     <PackageVersion Include="System.Security.Cryptography.Xml" Version="9.0.9" />
     <PackageVersion Include="System.ServiceModel.Http" Version="8.1.2" />
-    <!-- upgrade because of transitive dependency vulnerability https://github.com/advisories/GHSA-8g4q-xg66-9fp4 -->
-    <PackageVersion Include="System.Text.Json" Version="9.0.9" />
-    <!-- upgrade because of transitive dependency vulnerability -->
-    <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1" />
-    <PackageVersion Include="System.Threading.Channels" Version="9.0.9" />
     <PackageVersion Include="TestableIO.System.IO.Abstractions" Version="21.3.1" />
     <PackageVersion Include="TestableIO.System.IO.Abstractions.TestingHelpers" Version="21.3.1" />
     <PackageVersion Include="TUnit" Version="0.63.3" />
@@ -189,7 +174,7 @@
     <PackageVersion Include="Verify.TUnit" Version="30.11.0" />
     <PackageVersion Include="WaffleGenerator.Bogus" Version="4.2.2" />
     <PackageVersion Include="xunit" Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
     <PackageVersion Include="YamlDotnet" Version="16.3.0" />
   </ItemGroup>
 </Project>

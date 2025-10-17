@@ -11,7 +11,6 @@ public sealed class AesGcmChunkTransform : IChunkTransform {
 	public IChunkWriteTransform Write { get; }
 
 	public AesGcmChunkTransform(ReadOnlyMemory<byte> key, int transformHeaderSize) {
-		ArgumentNullException.ThrowIfNull(key);
 		ArgumentOutOfRangeException.ThrowIfNegative(transformHeaderSize);
 
 		Read = new AesGcmChunkReadTransform(key, transformHeaderSize);

@@ -4,7 +4,6 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
-		<PackageReference Include="Microsoft.Net.Http.Headers" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.BufferManagement\KurrentDB.BufferManagement.csproj" />

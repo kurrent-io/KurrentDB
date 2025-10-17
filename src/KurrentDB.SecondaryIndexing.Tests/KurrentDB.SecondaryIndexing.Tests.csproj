@@ -16,6 +16,9 @@
 		<PackageReference Include="GitHubActionsTestLogger" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" />
 		<PackageReference Include="NSubstitute" />
+		<PackageReference Include="System.Linq.Async">
+			<ExcludeAssets>compile</ExcludeAssets>
+		</PackageReference>
 		<PackageReference Include="xunit" />
 		<PackageReference Include="xunit.runner.visualstudio">
 		  <PrivateAssets>all</PrivateAssets>

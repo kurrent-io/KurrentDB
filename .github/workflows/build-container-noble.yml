@@ -1,4 +1,4 @@
-name: Build Jammy Container
+name: Build Noble Container
 
 on:
   pull_request:
@@ -22,5 +22,5 @@ jobs:
   build-container:
     uses: ./.github/workflows/build-container-reusable.yml
     with:
-      container-runtime: jammy
+      container-runtime: noble
 

@@ -18,7 +18,8 @@ public class mono_uritemplate_bug {
 	}
 }
 
-
+// TODO: we no longer support mono and can remove this test, but we can also remove whatever production code change
+// this test is ensuring too.
 [TestFixture, Ignore("Known bug in Mono, waiting for fix.")]
 public class mono_filestream_bug {
 	[Test]
@@ -34,7 +35,7 @@ public class mono_filestream_bug {
 
 		using (var file = new FileStream(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.Read,
 			bufferSize, FileOptions.SequentialScan)) {
-			file.Read(new byte[pos], 0, pos); // THIS READ IS CRITICAL, WITHOUT IT EVERYTHING WORKS
+			file.ReadExactly(new byte[pos], 0, pos); // THIS READ IS CRITICAL, WITHOUT IT EVERYTHING WORKS
 			Assert.AreEqual(pos,
 				file.Position); // !!! here it says position is correct, but writes at different position !!!
 								// file.Position = pos; // !!! this fixes test !!!
@@ -46,7 +47,7 @@ public class mono_filestream_bug {
 		using (var filestream = File.Open(filename, FileMode.Open, FileAccess.Read)) {
 			var bb = new byte[bytes.Length];
 			filestream.Position = pos;
-			filestream.Read(bb, 0, bb.Length);
+			filestream.ReadExactly(bb, 0, bb.Length);
 			Assert.AreEqual(bytes, bb);
 		}
 	}
