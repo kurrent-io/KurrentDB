@@ -16,6 +16,7 @@
 		<PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" />
 		<PackageReference Include="NetEscapades.Configuration.Yaml" />
 		<PackageReference Include="Newtonsoft.Json" />
+		<PackageReference Include="OpenTelemetry" />
 
 		<PackageReference Include="Serilog" />
 		<PackageReference Include="Serilog.Enrichers.Process" />

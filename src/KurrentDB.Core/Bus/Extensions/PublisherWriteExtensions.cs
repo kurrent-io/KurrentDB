@@ -24,35 +24,35 @@ using WriteEventsResult = (Position Position, StreamRevision StreamRevision);
 [PublicAPI]
 public static class PublisherWriteExtensions {
 	public static async Task<WriteEventsResult> WriteEvents(
-        this IPublisher publisher,
-        string stream, Event[] events,
-        long expectedRevision = ExpectedVersion.Any,
-        CancellationToken cancellationToken = default
-    ) {
-        var cid = Guid.NewGuid();
+		this IPublisher publisher,
+		string stream, Event[] events,
+		long expectedRevision = ExpectedVersion.Any,
+		CancellationToken cancellationToken = default
+	) {
+		var cid = Guid.NewGuid();
 
-        var operation = new WriteEventsOperation(stream, expectedRevision);
+		var operation = new WriteEventsOperation(stream, expectedRevision);
 
-        try {
-            var command = ClientMessage.WriteEvents.ForSingleStream(
-                internalCorrId: cid,
-                correlationId: cid,
-                envelope: operation,
-                requireLeader: false,
-                eventStreamId: stream,
-                expectedVersion: expectedRevision,
-                events: events,
-                user: SystemAccounts.System,
-                cancellationToken: cancellationToken
-            );
+		try {
+			var command = ClientMessage.WriteEvents.ForSingleStream(
+				internalCorrId: cid,
+				correlationId: cid,
+				envelope: operation,
+				requireLeader: false,
+				eventStreamId: stream,
+				expectedVersion: expectedRevision,
+				events: events,
+				user: SystemAccounts.System,
+				cancellationToken: cancellationToken
+			);
 
-            publisher.Publish(command);
-        } catch (Exception ex) {
-            throw new($"{nameof(WriteEvents)}: Unable to execute request!", ex);
-        }
+			publisher.Publish(command);
+		} catch (Exception ex) {
+			throw new($"{nameof(WriteEvents)}: Unable to execute request!", ex);
+		}
 
-        return await operation.WaitForReply;
-    }
+		return await operation.WaitForReply;
+	}
 }
 
 class WriteEventsOperation(string stream, long expectedRevision) : IEnvelope {
@@ -69,7 +69,7 @@ class WriteEventsOperation(string stream, long expectedRevision) : IEnvelope {
 		static WriteEventsResult MapToResult(ClientMessage.WriteEventsCompleted completed) {
 			Debug.Assert(completed.CommitPosition >= 0);
 			Debug.Assert(completed.PreparePosition >= 0);
-			var position       = Position.FromInt64(completed.CommitPosition, completed.PreparePosition);
+			var position = Position.FromInt64(completed.CommitPosition, completed.PreparePosition);
 			var streamRevision = StreamRevision.FromInt64(completed.LastEventNumbers.Single);
 			return new(position, streamRevision);
 		}
@@ -77,17 +77,17 @@ class WriteEventsOperation(string stream, long expectedRevision) : IEnvelope {
 		static ReadResponseException MapToError(Message message, string stream, long expectedRevision) {
 			return message switch {
 				ClientMessage.WriteEventsCompleted completed => completed.Result switch {
-					OperationResult.PrepareTimeout       => new ReadResponseException.Timeout($"{completed.Result}"),
-					OperationResult.CommitTimeout        => new ReadResponseException.Timeout($"{completed.Result}"),
-					OperationResult.ForwardTimeout       => new ReadResponseException.Timeout($"{completed.Result}"),
-					OperationResult.StreamDeleted        => new ReadResponseException.StreamDeleted(stream),
-					OperationResult.AccessDenied         => new ReadResponseException.AccessDenied(),
+					OperationResult.PrepareTimeout => new ReadResponseException.Timeout($"{completed.Result}"),
+					OperationResult.CommitTimeout => new ReadResponseException.Timeout($"{completed.Result}"),
+					OperationResult.ForwardTimeout => new ReadResponseException.Timeout($"{completed.Result}"),
+					OperationResult.StreamDeleted => new ReadResponseException.StreamDeleted(stream),
+					OperationResult.AccessDenied => new ReadResponseException.AccessDenied(),
 					OperationResult.WrongExpectedVersion => new ReadResponseException.WrongExpectedRevision(stream, expectedRevision, completed.FailureCurrentVersions.Single),
-					_                                    => ReadResponseException.UnknownError.Create(completed.Result)
+					_ => ReadResponseException.UnknownError.Create(completed.Result)
 				},
 				ClientMessage.NotHandled notHandled => notHandled.MapToException(),
-				not null                            => new ReadResponseException.UnknownMessage(message.GetType(), typeof(ClientMessage.WriteEventsCompleted)),
-				_                                   => throw new ArgumentOutOfRangeException(nameof(message), message, null)
+				not null => new ReadResponseException.UnknownMessage(message.GetType(), typeof(ClientMessage.WriteEventsCompleted)),
+				_ => throw new ArgumentOutOfRangeException(nameof(message), message, null)
 			};
 		}
 	}

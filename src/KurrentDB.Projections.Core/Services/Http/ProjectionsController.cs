@@ -287,8 +287,7 @@ public class ProjectionsController : CommunicationController {
 					_networkSendQueue, http, DefaultFormatter, OkNoCacheResponseConfigurator,
 					status => new ProjectionStatisticsHttpFormatted(status.Projections[0], s => MakeUrl(http, s)),
 					CreateErrorEnvelope(http));
-		Publish(new ProjectionManagementMessage.Command.GetStatistics(envelope, null, match.BoundVariables["name"],
-			true));
+		Publish(new ProjectionManagementMessage.Command.GetStatistics(envelope, null, match.BoundVariables["name"]));
 	}
 
 	private void OnProjectionDelete(HttpEntityManager http, UriTemplateMatch match) {
@@ -315,8 +314,7 @@ public class ProjectionsController : CommunicationController {
 					_networkSendQueue, http, DefaultFormatter, OkNoCacheResponseConfigurator,
 					status => new ProjectionsStatisticsHttpFormatted(status, s => MakeUrl(http, s)),
 					CreateErrorEnvelope(http));
-		Publish(new ProjectionManagementMessage.Command.GetStatistics(envelope, null, match.BoundVariables["name"],
-			true));
+		Publish(new ProjectionManagementMessage.Command.GetStatistics(envelope, null, match.BoundVariables["name"]));
 	}
 
 	private void OnProjectionStateGet(HttpEntityManager http, UriTemplateMatch match) {
@@ -383,7 +381,7 @@ public class ProjectionsController : CommunicationController {
 				_networkSendQueue, http, DefaultFormatter, OkNoCacheResponseConfigurator,
 				status => new ProjectionsStatisticsHttpFormatted(status, s => MakeUrl(http, s)),
 				CreateErrorEnvelope(http));
-		Publish(new ProjectionManagementMessage.Command.GetStatistics(envelope, mode, null, true));
+		Publish(new ProjectionManagementMessage.Command.GetStatistics(envelope, mode, null));
 	}
 
 	private void ProjectionsPost(HttpEntityManager http, UriTemplateMatch match, ProjectionMode mode, string name) {

@@ -4,43 +4,64 @@
 using Kurrent.Surge.Consumers.Configuration;
 using Kurrent.Surge.DuckDB;
 using Kurrent.Surge.DuckDB.Projectors;
-using Kurrent.Surge.Projectors;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messages;
 using KurrentDB.SchemaRegistry.Data;
 using KurrentDB.SchemaRegistry.Infrastructure.System.Node;
-using KurrentDB.SchemaRegistry.Infrastructure.System.Node.NodeSystemInfo;
 
 namespace KurrentDB.SchemaRegistry.Planes.Projection;
 
-public class DuckDBProjectorService : LeaderNodeBackgroundService {
-	public DuckDBProjectorService(
-		IPublisher publisher,
-		ISubscriber subscriber,
-		DuckDBConnectionProvider connectionProvider,
-		IConsumerBuilder consumerBuilder,
-		ILoggerFactory loggerFactory,
-		GetNodeSystemInfo getNodeSystemInfo
-	) : base(publisher, subscriber, getNodeSystemInfo, loggerFactory, "DuckDBProjector") {
-		ConnectionProvider = connectionProvider;
-		ConsumerBuilder = consumerBuilder;
-		LoggerFactory = loggerFactory;
+public class DuckDBProjectorService(
+    IPublisher publisher, ISubscriber subscriber, IDuckDBConnectionProvider connectionProvider, IConsumerBuilder consumerBuilder, ILoggerFactory loggerFactory)
+    : DuckDBProjectorBackgroundService(publisher, subscriber, loggerFactory.CreateLogger<DuckDBProjectorBackgroundService>(), "DuckDBProjector") {
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
+        await WaitForSystemReady(stoppingToken);
+
+        var options = new DuckDBProjectorOptions(connectionProvider) {
+            Filter          = SchemaRegistryConventions.Filters.SchemasFilter,
+            InitialPosition = SubscriptionInitialPosition.Latest,
+            AutoCommit = new() {
+                Interval         = TimeSpan.FromSeconds(5),
+                RecordsThreshold = 500
+            }
+        };
+
+        var projector = new DuckDBProjector(
+            options, new SchemaProjections(),
+            consumerBuilder,
+            loggerFactory
+        );
+
+        await projector.RunUntilStopped(stoppingToken);
+    }
+}
+
+// TODO: Refactor to ensure both connector and registry use a unified system readiness component
+public class DuckDBProjectorBackgroundService : NodeBackgroundService, IHandle<SystemMessage.SystemReady> {
+	readonly TaskCompletionSource _systemReady = new();
+
+	public DuckDBProjectorBackgroundService(IPublisher publisher, ISubscriber subscriber, ILogger<NodeBackgroundService> logger, string? serviceName = null) : base(publisher, logger, serviceName) {
+		Logger = logger;
+		subscriber.Subscribe(this);
 	}
 
-	DuckDBConnectionProvider ConnectionProvider { get; }
-	IConsumerBuilder ConsumerBuilder { get; }
-	ILoggerFactory LoggerFactory { get; }
+    protected ILogger Logger { get; }
 
-	protected override async Task Execute(NodeSystemInfo nodeInfo, CancellationToken stoppingToken) {
-		var options = new DuckDBProjectorOptions(ConnectionProvider) {
-			ConnectionProvider = ConnectionProvider,
-			Filter = SchemaRegistryConventions.Filters.SchemasFilter,
-			InitialPosition = SubscriptionInitialPosition.Latest,
-			AutoCommit = new ProjectorAutoCommitOptions {
-				Interval = TimeSpan.FromSeconds(5),
-				RecordsThreshold = 500
-			}
-		};
-		var projector = new DuckDBProjector(options, new SchemaProjections(), ConsumerBuilder, LoggerFactory);
-		await projector.RunUntilStopped(stoppingToken);
+	public void Handle(SystemMessage.SystemReady message) {
+		_systemReady.TrySetResult();
 	}
+
+	protected async Task WaitForSystemReady(CancellationToken cancellationToken) {
+		await _systemReady.Task.WaitAsync(cancellationToken);
+		Logger.LogDuckDBProjectorSystemReady(ServiceName);
+	}
+
+	protected override Task ExecuteAsync(CancellationToken stoppingToken) {
+		return Task.CompletedTask;
+	}
+}
+
+static partial class DuckDBProjectorBackgroundServiceLogMessages {
+	[LoggerMessage(LogLevel.Debug, "{ServiceName} system is ready")]
+	internal static partial void LogDuckDBProjectorSystemReady(this ILogger logger, string serviceName);
 }

@@ -9,7 +9,6 @@ using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Messages;
-using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.TransactionLog.Checkpoint;
@@ -21,7 +20,8 @@ public abstract class StorageReaderService {
 	protected static readonly ILogger Log = Serilog.Log.ForContext<StorageReaderService>();
 }
 
-public class StorageReaderService<TStreamId> : StorageReaderService, IHandle<SystemMessage.SystemInit>,
+public class StorageReaderService<TStreamId> : StorageReaderService,
+	IHandle<SystemMessage.SystemInit>,
 	IAsyncHandle<SystemMessage.BecomeShuttingDown>,
 	IHandle<SystemMessage.BecomeShutdown>,
 	IHandle<MonitoringMessage.InternalStatsRequest> {
@@ -37,8 +37,7 @@ public class StorageReaderService<TStreamId> : StorageReaderService, IHandle<Sys
 		ISystemStreamLookup<TStreamId> systemStreams,
 		IReadOnlyCheckpoint writerCheckpoint,
 		IVirtualStreamReader inMemReader,
-		QueueStatsManager queueStatsManager,
-		QueueTrackers trackers) {
+		SecondaryIndexReaders secondaryIndexReaders) {
 		Ensure.NotNull(subscriber);
 		Ensure.NotNull(systemStreams);
 		Ensure.NotNull(writerCheckpoint);
@@ -46,7 +45,7 @@ public class StorageReaderService<TStreamId> : StorageReaderService, IHandle<Sys
 		_bus = Ensure.NotNull(bus);
 		_readIndex = Ensure.NotNull(readIndex);
 
-		var worker = new StorageReaderWorker<TStreamId>(bus, readIndex, systemStreams, writerCheckpoint, inMemReader);
+		var worker = new StorageReaderWorker<TStreamId>(bus, readIndex, systemStreams, writerCheckpoint, inMemReader, secondaryIndexReaders);
 		var storageReaderBus = new InMemoryBus("StorageReaderBus", watchSlowMsg: false);
 
 		storageReaderBus.Subscribe<ClientMessage.ReadEvent>(worker);
@@ -59,6 +58,9 @@ public class StorageReaderService<TStreamId> : StorageReaderService, IHandle<Sys
 		storageReaderBus.Subscribe<StorageMessage.BatchLogExpiredMessages>(worker);
 		storageReaderBus.Subscribe<StorageMessage.EffectiveStreamAclRequest>(worker);
 		storageReaderBus.Subscribe<StorageMessage.StreamIdFromTransactionIdRequest>(worker);
+		storageReaderBus.Subscribe<ClientMessage.ReadLogEvents>(worker);
+		storageReaderBus.Subscribe<ClientMessage.ReadIndexEventsForward>(worker);
+		storageReaderBus.Subscribe<ClientMessage.ReadIndexEventsBackward>(worker);
 
 		_workersHandler = new ThreadPoolMessageScheduler("StorageReaderQueue", storageReaderBus) {
 			SynchronizeMessagesWithUnknownAffinity = false,
@@ -75,6 +77,9 @@ public class StorageReaderService<TStreamId> : StorageReaderService, IHandle<Sys
 		subscriber.Subscribe<StorageMessage.BatchLogExpiredMessages>(_workersHandler);
 		subscriber.Subscribe<StorageMessage.EffectiveStreamAclRequest>(_workersHandler);
 		subscriber.Subscribe<StorageMessage.StreamIdFromTransactionIdRequest>(_workersHandler);
+		subscriber.Subscribe<ClientMessage.ReadLogEvents>(_workersHandler);
+		subscriber.Subscribe<ClientMessage.ReadIndexEventsForward>(_workersHandler);
+		subscriber.Subscribe<ClientMessage.ReadIndexEventsBackward>(_workersHandler);
 	}
 
 	void IHandle<SystemMessage.SystemInit>.Handle(SystemMessage.SystemInit message) {

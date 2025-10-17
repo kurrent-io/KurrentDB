@@ -96,7 +96,8 @@ public record LicenseSummary(
 			}
 			value = default;
 			return false;
-		};
+		}
+		;
 
 		return dict;
 	}

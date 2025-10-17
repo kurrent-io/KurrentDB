@@ -37,9 +37,6 @@ public class FakeReaderSubscription : IReaderSubscription {
 	private readonly List<ReaderSubscriptionMessage.EventReaderEof> _receivedEofNotifications =
 		new List<ReaderSubscriptionMessage.EventReaderEof>();
 
-	private readonly List<ReaderSubscriptionMessage.EventReaderPartitionEof> _receivedPartitionEofNotifications =
-		new List<ReaderSubscriptionMessage.EventReaderPartitionEof>();
-
 	private readonly List<ReaderSubscriptionMessage.EventReaderPartitionDeleted>
 		_receivedPartitionDeletedNotifications =
 			new List<ReaderSubscriptionMessage.EventReaderPartitionDeleted>();
@@ -75,10 +72,6 @@ public class FakeReaderSubscription : IReaderSubscription {
 		get { return _receivedEofNotifications; }
 	}
 
-	public List<ReaderSubscriptionMessage.EventReaderPartitionEof> ReceivedPartitionEofNotifications {
-		get { return _receivedPartitionEofNotifications; }
-	}
-
 	public List<ReaderSubscriptionMessage.EventReaderPartitionDeleted> ReceivedPartitionDeletedNotifications {
 		get { return _receivedPartitionDeletedNotifications; }
 	}
@@ -97,10 +90,6 @@ public class FakeReaderSubscription : IReaderSubscription {
 
 	public void Handle(ReaderSubscriptionMessage.EventReaderEof message) {
 		_receivedEofNotifications.Add(message);
-	}
-
-	public void Handle(ReaderSubscriptionMessage.EventReaderPartitionEof message) {
-		_receivedPartitionEofNotifications.Add(message);
 	}
 
 	public void Handle(ReaderSubscriptionMessage.EventReaderPartitionDeleted message) {

@@ -48,14 +48,20 @@ internal static class Program {
 		int timeout = Timeout.Infinite, int readWindow = 2000, int writeWindow = 2000, int pingWindow = 2000,
 		bool reconnect = true, bool useTls = false, bool tlsValidateServer = false, string connectionString = "",
 		StatsFormat statsFormat = StatsFormat.Csv) {
-		Log.Logger = EventStoreLoggerConfiguration.ConsoleLog;
+		Log.Logger = KurrentLoggerConfiguration.ConsoleLog;
 
 		try {
 			var logsDirectory = log?.FullName ?? Locations.DefaultTestClientLogDirectory;
-			EventStoreLoggerConfiguration.Initialize(logsDirectory, "client", LogConsoleFormat.Plain,
-				1024 * 1024 * 1024, RollingInterval.Day, 31, false);
+			var logOptions = new LoggingOptions {
+				Log = logsDirectory,
+				LogConsoleFormat = LogConsoleFormat.Plain,
+				LogFileInterval = RollingInterval.Day,
+				LogFileRetentionCount = 31,
+				DisableLogFile = false
+			};
+			Log.Logger = KurrentLoggerConfiguration.CreateLoggerConfiguration(logOptions, "client").CreateLogger();
 			var statsLog = statsFormat == StatsFormat.Csv
-				? TestClientCsvLoggerConfiguration.Initialize(logsDirectory, "client")
+				? TestClientCsvLoggerConfiguration.CreateLogger(logsDirectory, "client")
 				: Log.ForContext(Constants.SourceContextPropertyName, "REGULAR-STATS-LOGGER");
 
 			var options = new ClientOptions {

@@ -44,10 +44,6 @@ public class PartitionState {
 		return new PartitionState(stateJson, resultJson, causedBy);
 	}
 
-	private static void Error(JsonTextReader reader, string message) {
-		throw new Exception(string.Format("{0} (At: {1}, {2})", message, reader.LineNumber, reader.LinePosition));
-	}
-
 	private readonly string _state;
 	private readonly string _result;
 	private readonly CheckpointTag _causedBy;

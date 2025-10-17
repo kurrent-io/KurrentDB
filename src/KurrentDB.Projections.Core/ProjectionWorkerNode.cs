@@ -83,8 +83,6 @@ public class ProjectionWorkerNode {
 		coreInputBus.Subscribe(
 			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.EofReached>());
 		coreInputBus.Subscribe(_subscriptionDispatcher
-			.CreateSubscriber<EventReaderSubscriptionMessage.PartitionEofReached>());
-		coreInputBus.Subscribe(_subscriptionDispatcher
 			.CreateSubscriber<EventReaderSubscriptionMessage.PartitionDeleted>());
 		coreInputBus.Subscribe(_subscriptionDispatcher
 			.CreateSubscriber<EventReaderSubscriptionMessage.ProgressChanged>());
@@ -150,7 +148,6 @@ public class ProjectionWorkerNode {
 		coreInputBus.Subscribe<ReaderSubscriptionMessage.EventReaderIdle>(_eventReaderCoreService);
 		coreInputBus.Subscribe<ReaderSubscriptionMessage.EventReaderStarting>(_eventReaderCoreService);
 		coreInputBus.Subscribe<ReaderSubscriptionMessage.EventReaderEof>(_eventReaderCoreService);
-		coreInputBus.Subscribe<ReaderSubscriptionMessage.EventReaderPartitionEof>(_eventReaderCoreService);
 		coreInputBus.Subscribe<ReaderSubscriptionMessage.EventReaderPartitionDeleted>(_eventReaderCoreService);
 		coreInputBus.Subscribe<ReaderSubscriptionMessage.EventReaderNotAuthorized>(_eventReaderCoreService);
 		coreInputBus.Subscribe<ReaderSubscriptionMessage.Faulted>(_eventReaderCoreService);

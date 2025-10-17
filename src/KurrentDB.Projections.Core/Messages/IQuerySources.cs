@@ -37,8 +37,6 @@ public interface IQuerySources {
 	bool ReorderEventsOption { get; }
 
 	int? ProcessingLagOption { get; }
-
-	long? LimitingCommitPosition { get; }
 }
 
 public static class QuerySourcesExtensions {

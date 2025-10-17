@@ -18,11 +18,12 @@ using KurrentDB.Core.TransactionLog.FileNamingStrategy;
 namespace KurrentDB.Core.XUnit.Tests.Services.Archive.Storage;
 
 public abstract class ArchiveStorageTestsBase<T> : DirectoryPerTest<T> {
-	protected const string AwsRegion = "eu-west-1";
-	protected const string AwsBucket = "archiver-unit-tests";
+	private const string AwsRegion = "eu-west-1";
+	private const string AwsBucket = "archiver-unit-tests";
+	private const string GcpBucket = "archiver-unit-tests";
 
-	protected const string ChunkPrefix = "chunk-";
-	protected string ArchivePath => Path.Combine(Fixture.Directory, "archive");
+	private const string ChunkPrefix = "chunk-";
+	private string ArchivePath => Path.Combine(Fixture.Directory, "archive");
 	protected string DbPath => Path.Combine(Fixture.Directory, "db");
 
 	public ArchiveStorageTestsBase() {
@@ -34,17 +35,28 @@ public abstract class ArchiveStorageTestsBase<T> : DirectoryPerTest<T> {
 		var namingStrategy = new VersionedPatternFileNamingStrategy(ArchivePath, ChunkPrefix);
 		var archiveNamingStrategy = new ArchiveNamingStrategy(namingStrategy);
 		var archiveStorage = ArchiveStorageFactory.Create(
-				new() {
-					StorageType = storageType,
-					FileSystem = new() {
-						Path = ArchivePath
-					},
-					S3 = new() {
-						Bucket = AwsBucket,
-						Region = AwsRegion,
-					}
+			new() {
+				StorageType = storageType,
+				FileSystem = new() {
+					Path = ArchivePath
 				},
-				archiveNamingStrategy);
+				S3 = new() {
+					Bucket = AwsBucket,
+					Region = AwsRegion,
+				},
+				Azure = AzuriteHelpers.Options,
+				GCP = new () {
+					Bucket = GcpBucket,
+				},
+			},
+			archiveNamingStrategy);
+
+		switch (storageType) {
+			case StorageType.Azure:
+				AzuriteHelpers.ConfigureEnvironment();
+				break;
+		}
+
 		return archiveStorage;
 	}
 

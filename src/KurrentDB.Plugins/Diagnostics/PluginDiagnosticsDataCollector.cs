@@ -17,7 +17,8 @@ public delegate void OnEventCollected(PluginDiagnosticsData diagnosticsData);
 public class PluginDiagnosticsDataCollector : IDisposable {
 	public PluginDiagnosticsDataCollector(string[] sources, int capacity = 10, OnEventCollected? onEventCollected = null) {
 		Listener = new(sources, capacity, (source, data) => {
-			if (data is not PluginDiagnosticsData pluginData) return;
+			if (data is not PluginDiagnosticsData pluginData)
+				return;
 
 			CollectedEventsByPlugin.AddOrUpdate(
 				source,
@@ -42,7 +43,7 @@ public class PluginDiagnosticsDataCollector : IDisposable {
 
 							// if no snapshot exists, create new
 							if (snapshots.Length == 0)
-								collected.Add(state.PluginData with { CollectionMode = PluginDiagnosticsDataCollectionMode.Snapshot});
+								collected.Add(state.PluginData with { CollectionMode = PluginDiagnosticsDataCollectionMode.Snapshot });
 							else {
 								// update the snapshot (there should be one)
 								foreach (var evt in snapshots) {
@@ -65,8 +66,7 @@ public class PluginDiagnosticsDataCollector : IDisposable {
 
 			try {
 				onEventCollected?.Invoke(pluginData);
-			}
-			catch (Exception) {
+			} catch (Exception) {
 				// stay on target
 			}
 		});

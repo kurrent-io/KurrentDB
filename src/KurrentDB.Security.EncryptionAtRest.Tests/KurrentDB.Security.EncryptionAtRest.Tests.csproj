@@ -28,6 +28,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
 		<ProjectReference Include="..\KurrentDB.Security.EncryptionAtRest\KurrentDB.Security.EncryptionAtRest.csproj" />
 	</ItemGroup>
 

@@ -3,7 +3,6 @@
 
 // ReSharper disable CheckNamespace
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -20,58 +19,55 @@ namespace KurrentDB.Core.ClientPublisher;
 
 [PublicAPI]
 public static class PublisherReadExtensions {
-	//TODO SS: what should I do with this deadline?
-	public static readonly DateTime DefaultDeadline = DateTime.UtcNow.AddYears(1);
+	public static async IAsyncEnumerable<ResolvedEvent> Read(this IPublisher publisher, Position startPosition, IEventFilter filter, long maxCount, bool forwards = true, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
+		await using var enumerator = GetEnumerator();
 
-    public static async IAsyncEnumerable<ResolvedEvent> Read(this IPublisher publisher, Position startPosition, IEventFilter filter, long maxCount, bool forwards = true, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
-        await using var enumerator = GetEnumerator();
+		while (!cancellationToken.IsCancellationRequested) {
+			if (!await enumerator.MoveNextAsync())
+				break;
 
-        while (!cancellationToken.IsCancellationRequested) {
-            if (!await enumerator.MoveNextAsync())
-                break;
+			if (enumerator.Current is ReadResponse.EventReceived eventReceived)
+				yield return eventReceived.Event;
+		}
 
-            if (enumerator.Current is ReadResponse.EventReceived eventReceived)
-                yield return eventReceived.Event;
-        }
+		yield break;
 
-        yield break;
+		IAsyncEnumerator<ReadResponse> GetEnumerator() {
+			return forwards
+				? new Enumerator.ReadAllForwardsFiltered(
+					bus: publisher,
+					position: startPosition,
+					maxCount: (ulong)maxCount,
+					resolveLinks: false,
+					eventFilter: filter,
+					user: SystemAccounts.System,
+					requiresLeader: false,
+					maxSearchWindow: null,
+					expiryStrategy: DefaultExpiryStrategy.Instance,
+					cancellationToken: cancellationToken
+				)
+				: new Enumerator.ReadAllBackwardsFiltered(
+					bus: publisher,
+					position: startPosition,
+					maxCount: (ulong)maxCount,
+					resolveLinks: false,
+					eventFilter: filter,
+					user: SystemAccounts.System,
+					requiresLeader: false,
+					maxSearchWindow: null,
+					expiryStrategy: DefaultExpiryStrategy.Instance,
+					cancellationToken: cancellationToken
+				);
+		}
+	}
 
-        IAsyncEnumerator<ReadResponse> GetEnumerator() {
-            return forwards
-                ? new Enumerator.ReadAllForwardsFiltered(
-                    bus: publisher,
-                    position: startPosition,
-                    maxCount: (ulong)maxCount,
-                    resolveLinks: false,
-                    eventFilter: filter,
-                    user: SystemAccounts.System,
-                    requiresLeader: false,
-                    maxSearchWindow: null,
-                    deadline: DefaultDeadline,
-                    cancellationToken: cancellationToken
-                )
-                : new Enumerator.ReadAllBackwardsFiltered(
-                    bus: publisher,
-                    position: startPosition,
-                    maxCount: (ulong)maxCount,
-                    resolveLinks: false,
-                    eventFilter: filter,
-                    user: SystemAccounts.System,
-                    requiresLeader: false,
-                    maxSearchWindow: null,
-                    deadline: DefaultDeadline,
-                    cancellationToken: cancellationToken
-                );
-        }
-    }
+	public static IAsyncEnumerable<ResolvedEvent> ReadForwards(this IPublisher publisher, Position startPosition, IEventFilter filter, long maxCount, CancellationToken cancellationToken = default) =>
+		publisher.Read(startPosition, filter, maxCount, true, cancellationToken);
 
-    public static IAsyncEnumerable<ResolvedEvent> ReadForwards(this IPublisher publisher, Position startPosition, IEventFilter filter, long maxCount, CancellationToken cancellationToken = default) =>
-        publisher.Read(startPosition, filter, maxCount, true, cancellationToken);
+	public static IAsyncEnumerable<ResolvedEvent> ReadBackwards(this IPublisher publisher, Position startPosition, IEventFilter filter, long maxCount, CancellationToken cancellationToken = default) =>
+		publisher.Read(startPosition, filter, maxCount, false, cancellationToken);
 
-    public static IAsyncEnumerable<ResolvedEvent> ReadBackwards(this IPublisher publisher, Position startPosition, IEventFilter filter, long maxCount, CancellationToken cancellationToken = default) =>
-        publisher.Read(startPosition, filter, maxCount, false, cancellationToken);
-
-    public static async IAsyncEnumerable<ResolvedEvent> Read(this IPublisher publisher, Position startPosition, long maxCount, bool forwards = true, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
+	public static async IAsyncEnumerable<ResolvedEvent> Read(this IPublisher publisher, Position startPosition, long maxCount, bool forwards = true, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
 		await using var enumerator = GetEnumerator();
 
 		while (!cancellationToken.IsCancellationRequested) {
@@ -93,7 +89,7 @@ public static class PublisherReadExtensions {
 					resolveLinks: false,
 					user: SystemAccounts.System,
 					requiresLeader: false,
-					deadline: DefaultDeadline,
+					expiryStrategy: DefaultExpiryStrategy.Instance,
 					cancellationToken: cancellationToken
 				)
 				: new Enumerator.ReadAllBackwards(
@@ -103,7 +99,7 @@ public static class PublisherReadExtensions {
 					resolveLinks: false,
 					user: SystemAccounts.System,
 					requiresLeader: false,
-					deadline: DefaultDeadline,
+					expiryStrategy: DefaultExpiryStrategy.Instance,
 					cancellationToken: cancellationToken
 				);
 		}
@@ -115,6 +111,24 @@ public static class PublisherReadExtensions {
 	public static IAsyncEnumerable<ResolvedEvent> ReadBackwards(this IPublisher publisher, Position startPosition, long maxCount, CancellationToken cancellationToken = default) =>
 		publisher.Read(startPosition, maxCount, false, cancellationToken);
 
+	public static async ValueTask<ResolvedEvent?> ReadFirstEvent(this IPublisher publisher, CancellationToken cancellationToken = default) {
+		var first = await publisher.Read(
+			Position.Start, EventFilter.Unfiltered, 1,
+			true, cancellationToken
+		).FirstOrDefaultAsync(cancellationToken);
+
+		return first == ResolvedEvent.EmptyEvent ? null : first;
+	}
+
+	public static async ValueTask<ResolvedEvent?> ReadLastEvent(this IPublisher publisher, CancellationToken cancellationToken = default) {
+		var last = await publisher.Read(
+			Position.End, EventFilter.Unfiltered, 1,
+			false, cancellationToken
+		).FirstOrDefaultAsync(cancellationToken);
+
+		return last == ResolvedEvent.EmptyEvent ? null : last;
+	}
+
 	public static async IAsyncEnumerable<ResolvedEvent> ReadStream(this IPublisher publisher, string stream, StreamRevision startRevision, long maxCount, bool forwards, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
 		await using var enumerator = GetEnumerator();
 
@@ -122,8 +136,8 @@ public static class PublisherReadExtensions {
 			if (!await enumerator.MoveNextAsync())
 				break;
 
-            // if (enumerator.Current is ReadResponse.LastStreamPositionReceived lastStreamPositionReceived)
-            //     break;
+			// if (enumerator.Current is ReadResponse.LastStreamPositionReceived lastStreamPositionReceived)
+			//     break;
 
 			if (enumerator.Current is ReadResponse.EventReceived eventReceived)
 				yield return eventReceived.Event;
@@ -144,7 +158,7 @@ public static class PublisherReadExtensions {
 					resolveLinks: false,
 					user: SystemAccounts.System,
 					requiresLeader: false,
-					deadline: DefaultDeadline,
+					expiryStrategy: DefaultExpiryStrategy.Instance,
 					cancellationToken: cancellationToken,
 					compatibility: 1 // whats this?
 				)
@@ -156,7 +170,7 @@ public static class PublisherReadExtensions {
 					resolveLinks: false,
 					user: SystemAccounts.System,
 					requiresLeader: false,
-					deadline: DefaultDeadline,
+					expiryStrategy: DefaultExpiryStrategy.Instance,
 					cancellationToken: cancellationToken,
 					compatibility: 1 // whats this?
 				);
@@ -178,7 +192,7 @@ public static class PublisherReadExtensions {
 		if (result is null)
 			throw new("Stream not found by position");
 
-		await foreach(var re in publisher.ReadStream(result.Value.Stream, result.Value.Revision, maxCount, forwards, cancellationToken))
+		await foreach (var re in publisher.ReadStream(result.Value.Stream, result.Value.Revision, maxCount, forwards, cancellationToken))
 			yield return re;
 	}
 
@@ -216,5 +230,43 @@ public static class PublisherReadExtensions {
 			.FirstOrDefaultAsync(cancellationToken);
 
 		return result;
+	}
+
+	public static async IAsyncEnumerable<ResolvedEvent> ReadIndex(this IPublisher publisher, string indexName, Position startPosition, long maxCount, bool forwards = true, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
+		await using var enumerator = GetEnumerator();
+
+		while (!cancellationToken.IsCancellationRequested) {
+			if (!await enumerator.MoveNextAsync())
+				break;
+
+			if (enumerator.Current is ReadResponse.EventReceived eventReceived)
+				yield return eventReceived.Event;
+		}
+
+		yield break;
+
+		IAsyncEnumerator<ReadResponse> GetEnumerator() {
+			return forwards
+				? new Enumerator.ReadIndexForwards(
+					bus: publisher,
+					indexName: indexName,
+					position: startPosition,
+					maxCount: (ulong)maxCount,
+					user: SystemAccounts.System,
+					requiresLeader: false,
+					expiryStrategy: DefaultExpiryStrategy.Instance,
+					cancellationToken: cancellationToken
+				)
+				: new Enumerator.ReadIndexBackwards(
+					bus: publisher,
+					indexName: indexName,
+					position: startPosition,
+					maxCount: (ulong)maxCount,
+					user: SystemAccounts.System,
+					requiresLeader: false,
+					expiryStrategy: DefaultExpiryStrategy.Instance,
+					cancellationToken: cancellationToken
+				);
+		}
 	}
 }

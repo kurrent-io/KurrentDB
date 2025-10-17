@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Services.UserManagement;
@@ -24,7 +25,7 @@ public partial class EnumeratorTests {
 			resolveLinks: false,
 			user: SystemAccounts.System,
 			requiresLeader: false,
-			deadline: DateTime.Now,
+			expiryStrategy: DefaultExpiryStrategy.Instance,
 			cancellationToken: CancellationToken.None));
 	}
 

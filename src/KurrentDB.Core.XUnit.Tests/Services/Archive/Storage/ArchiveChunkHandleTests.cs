@@ -14,6 +14,7 @@ namespace KurrentDB.Core.XUnit.Tests.Services.Archive.Storage;
 public class ArchiveChunkHandleTests : ArchiveStorageTestsBase<ArchiveChunkHandleTests> {
 	[Theory]
 	[StorageData.S3]
+	[StorageData.Azure]
 	[StorageData.FileSystem]
 	public async Task can_read_chunk_via_stream(StorageType storageType) {
 		var archive = CreateSut(storageType);

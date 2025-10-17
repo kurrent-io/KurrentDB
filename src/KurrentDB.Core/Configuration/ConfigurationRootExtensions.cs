@@ -9,7 +9,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using KurrentDB.Common.Configuration;
-using KurrentDB.Common.Exceptions;
 using KurrentDB.Core.Configuration.Sources;
 using Microsoft.Extensions.Configuration;
 
@@ -96,17 +95,5 @@ public static class ConfigurationRootExtensions {
 		}
 
 		return warnings.ToArray();
-	}
-
-	public static T BindOptions<T>(this IConfiguration configuration) where T : new() {
-		try {
-			return configuration.Get<T>() ?? new T();
-		} catch (InvalidOperationException ex) {
-			var messages = new string?[] { ex.Message, ex.InnerException?.Message }
-				.Where(x => !string.IsNullOrWhiteSpace(x))
-				.Select(x => x?.TrimEnd('.'));
-
-			throw new InvalidConfigurationException(string.Join(". ", messages) + ".");
-		}
 	}
 }

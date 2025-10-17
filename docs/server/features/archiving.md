@@ -112,7 +112,6 @@ The panels are available in the `Events Served` section of the [miscellaneous pa
 This initial release has several limitations that we intend to improve in future releases.
 
 Work to improve the following limitations is in progress:
-- The headers of archived chunks are read on startup, just as for local chunks. This will increase startup times significantly when there are a lot of chunks in the archive.
 - Requests that read the archive can cause other reads to be queued behind them, resulting in higher read latency if the archive is being accessed frequently.
 
 Work to improve the following limitations is planned:

@@ -11,5 +11,9 @@ public interface IExpiryStrategy {
 
 // Generates null expiry. Default expiry of now + ESConsts.ReadRequestTimeout will be in effect.
 public class DefaultExpiryStrategy : IExpiryStrategy {
+	public static readonly DefaultExpiryStrategy Instance = new();
+
+	private DefaultExpiryStrategy() { }
+
 	public DateTime? GetExpiry() => null;
 }

@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Linq;
 using KurrentDB.Common.Utils;
 
 namespace KurrentDB.Core.Services;
@@ -51,6 +52,9 @@ public static class SystemStreams {
 	public const string NodeStateStream = $"{InMemoryStreamPrefix}node-state";
 	public const string GossipStream = $"{InMemoryStreamPrefix}gossip";
 	public const string IndexStreamPrefix = "$idx-";
+	public const string DefaultSecondaryIndex = $"{IndexStreamPrefix}all";
+	public const string CategorySecondaryIndexPrefix = $"{IndexStreamPrefix}ce-";
+	public const string EventTypeSecondaryIndexPrefix = $"{IndexStreamPrefix}et-";
 
 	public static bool IsSystemStream(string streamId) => streamId is ['$', ..];
 
@@ -69,9 +73,16 @@ public static class SystemStreams {
 		return metastreamId[2..];
 	}
 
-	public static bool IsVirtualStream(string streamId) {
-		return streamId.StartsWith(InMemoryStreamPrefix) || streamId.StartsWith(IndexStreamPrefix);
-	}
+	public static bool IsInMemoryStream(string streamId) =>
+		streamId.StartsWith(InMemoryStreamPrefix);
+
+	public static bool IsIndexStream(string streamId) =>
+		streamId.StartsWith(IndexStreamPrefix);
+
+	[CanBeNull]
+	public static string GetStreamCategory(string streamName) =>
+		streamName.Split('-').FirstOrDefault();
+
 }
 
 public static class SystemMetadata {

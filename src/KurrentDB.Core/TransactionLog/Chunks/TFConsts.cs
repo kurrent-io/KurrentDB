@@ -11,11 +11,10 @@ public static class TFConsts {
 	public const int EffectiveMaxLogRecordSize = MaxLogRecordSize - LogRecordOverheadSize;
 	public const int MidpointsDepth = 10;
 
-	public const int ChunkSize = 256 * 1024 * 1024;
+	public const int ChunkSize = 256 * 1024 * 1024; // 256MiB
 	public const int ChunkHeaderSize = 128;
 	public const int ChunkFooterSize = 128;
 	public const int ChunksCacheSize = 2 * (ChunkSize + ChunkHeaderSize + ChunkFooterSize);
 
-
-	public static TimeSpan MinFlushDelayMs = TimeSpan.FromMilliseconds(2);
+	public static readonly TimeSpan MinFlushDelayMs = TimeSpan.FromMilliseconds(2);
 }

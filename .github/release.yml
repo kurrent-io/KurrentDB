@@ -3,6 +3,7 @@ changelog:
     labels:
       - ignore-for-release
       - documentation
+      - patched
   categories:
     - title: Added
       labels:

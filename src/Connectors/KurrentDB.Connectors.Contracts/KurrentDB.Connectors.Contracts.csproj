@@ -13,7 +13,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Google.Api.CommonProtos" PrivateAssets="All" />
+		<PackageReference Include="Google.Api.CommonProtos" />
 		<PackageReference Include="Google.Protobuf" PrivateAssets="All" />
 		<PackageReference Include="Grpc.AspNetCore" PrivateAssets="All" />
 	</ItemGroup>

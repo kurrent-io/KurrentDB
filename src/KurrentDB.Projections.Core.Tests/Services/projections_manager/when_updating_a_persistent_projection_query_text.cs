@@ -71,8 +71,7 @@ public class when_updating_a_persistent_projection_query_text<TLogFormat, TStrea
 	[Test, Category("v8")]
 	public void the_projection_status_is_still_running() {
 		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName,
-				false));
+			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
 
 		Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
 		Assert.AreEqual(

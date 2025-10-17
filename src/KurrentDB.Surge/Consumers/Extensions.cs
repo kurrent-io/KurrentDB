@@ -68,55 +68,6 @@ public static class ResolvedEventExtensions {
             nextSequenceId);
     }
 
-    // public static async ValueTask<SurgeRecord> MySSToRecord(this ResolvedEvent resolvedEvent, Deserialize deserialize, Func<SequenceId> nextSequenceId) {
-    //     // for now headers will always be encoded as json.
-    //     // makes it easier and more consistent to work with.
-    //     // we can even check the keys in the admin ui for
-    //     // debugging purposes out of the box.
-    //
-    //     var headers = Headers.Decode(resolvedEvent.OriginalEvent.Metadata);
-    //
-    //     // handle backwards compatibility with old schema
-    //     // by injecting the legacy schema in the headers.
-    //     // the legacy schema is generated using the event
-    //     // type and content type from the resolved event.
-    //     var schema = headers.ContainsKey(HeaderKeys.SchemaSubject)
-    //         ? SchemaInfo.FromHeaders(headers)
-    //         : SchemaInfo.FromContentType(
-    //             resolvedEvent.OriginalEvent.EventType,
-    //             resolvedEvent.OriginalEvent.IsJson ?  "application/json" : "application/octet-stream" //TODO SS: fix magic strings
-    //         ).InjectIntoHeaders(headers);
-    //
-    //     var value = await deserialize(resolvedEvent.Event.Data, headers);
-    //
-    //     var position = RecordPosition.ForStream(
-    //         StreamId.From(resolvedEvent.OriginalEvent.EventStreamId),
-    //         StreamRevision.From(resolvedEvent.OriginalEvent.EventNumber),
-    //         LogPosition.From(
-    //             resolvedEvent.OriginalPosition!.Value.CommitPosition,
-    //             resolvedEvent.OriginalPosition!.Value.PreparePosition
-    //         )
-    //     );
-    //
-    //     var isRedacted = resolvedEvent.OriginalEvent.Flags
-    //         .HasAllOf(PrepareFlags.IsRedacted);
-    //
-    //     var record = new SurgeRecord {
-    //         Id         = RecordId.From(resolvedEvent.OriginalEvent.EventId),
-    //         Position   = position,
-    //         Timestamp  = resolvedEvent.OriginalEvent.TimeStamp,
-    //         SequenceId = nextSequenceId(),
-    //         Headers    = headers,
-    //         SchemaInfo = schema,
-    //         Value      = value!,
-    //         ValueType  = value is not null ? value.GetType() : SchemaRegistry.MissingType,
-    //         Data       = resolvedEvent.Event.Data,
-    //         IsRedacted = isRedacted
-    //     };
-    //
-    //     return record;
-    // }
-
     public static ValueTask<SurgeRecord> ToRecord(this ResolvedEvent resolvedEvent, Deserialize deserialize, int nextSequenceId) =>
         resolvedEvent.ToRecord(deserialize, () => SequenceId.From((ulong)nextSequenceId));
 
@@ -145,7 +96,7 @@ public static class ResolvedEventExtensions {
             Headers    = headers,
             SchemaInfo = schemaInfo,
             Value      = value!,
-            ValueType  = value is not null ? value.GetType() : Kurrent.Surge.Schema.SchemaRegistry.MissingType,
+            ValueType  = value is not null ? value.GetType() : SchemaRegistry.MissingType,
             Data       = data,
             IsRedacted = isRedacted
         };

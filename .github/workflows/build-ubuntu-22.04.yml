@@ -24,4 +24,5 @@ jobs:
     with:
       os: ubuntu-22.04
       arch: x64
+      cs_symbols: "RUN_AZ_TESTS"
     secrets: inherit

@@ -24,6 +24,9 @@ public class ReadStreamsBackwardTests {
 		private const ulong MaxCount = 20;
 		private const int EventCount = 30;
 
+		public when_reading_backward_from_past_the_end_of_the_stream() : base(new LotsOfExpiriesStrategy()) {
+		}
+
 		protected override async Task Given() {
 			await AppendToStreamBatch(new BatchAppendReq {
 				Options = new() {
@@ -87,6 +90,9 @@ public class ReadStreamsBackwardTests {
 		private readonly List<ReadResp> _responses = new();
 		private const ulong MaxCount = 20;
 		private const int EventCount = 30;
+
+		public when_reading_backward_from_the_end_of_the_stream() : base(new LotsOfExpiriesStrategy()) {
+		}
 
 		protected override async Task Given() {
 			await AppendToStreamBatch(new BatchAppendReq {
@@ -152,6 +158,9 @@ public class ReadStreamsBackwardTests {
 		private const ulong MaxCount = 20;
 		private const int EventCount = 100;
 
+		public when_reading_backward_from_the_middle_of_the_stream() : base(new LotsOfExpiriesStrategy()) {
+		}
+
 		protected override async Task Given() {
 			await AppendToStreamBatch(new BatchAppendReq {
 				Options = new() {
@@ -215,6 +224,9 @@ public class ReadStreamsBackwardTests {
 		private readonly List<ReadResp> _responses = new();
 		private const ulong _maxCount = 20;
 		private const int EventCount = 10;
+
+		public when_reading_backward_from_the_start_of_the_stream() : base(new LotsOfExpiriesStrategy()) {
+		}
 
 		protected override async Task Given() {
 			await AppendToStreamBatch(new BatchAppendReq {

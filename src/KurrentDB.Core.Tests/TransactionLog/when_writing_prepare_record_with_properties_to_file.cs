@@ -5,13 +5,12 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
+using Google.Protobuf.WellKnownTypes;
 using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.LogCommon;
-using KurrentDB.Protobuf;
-using KurrentDB.Protobuf.Server;
 using NUnit.Framework;
 
 namespace KurrentDB.Core.Tests.TransactionLog;
@@ -25,7 +24,7 @@ public class when_writing_prepare_record_with_properties_to_file<TLogFormat, TSt
 
 	private IPrepareLogRecord<TStreamId> _record;
 	private TFChunkDb _db;
-	private Properties _properties;
+	private Struct _recordProperties;
 
 	[OneTimeSetUp]
 	public async Task SetUp() {
@@ -39,24 +38,13 @@ public class when_writing_prepare_record_with_properties_to_file<TLogFormat, TSt
 		var recordFactory = LogFormatHelper<TLogFormat, TStreamId>.RecordFactory;
 		var streamId = LogFormatHelper<TLogFormat, TStreamId>.StreamId;
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
-		_properties = new Properties {
-			PropertiesValues = {
-				{
-					"property-key-1",
-					new DynamicValue { Int32Value = 123 }
-				},
-				{
-					"property-key-2",
-					new DynamicValue { DoubleValue = 123.45 }
-				},
-				{
-					"property-key-3",
-					new DynamicValue { StringValue = "my-string-value" }
-				},
-				{
-					"property-key-4",
-					new DynamicValue { BytesValue = ByteString.CopyFromUtf8("my-bytes-value") }
-				}
+
+		_recordProperties = new() {
+			Fields = {
+				{ "property-key-1", Value.ForNumber(123) },
+				{ "property-key-2", Value.ForNumber(123.45) },
+				{ "property-key-3", Value.ForString("my-string-value") },
+				{ "property-key-4", Value.ForBool(true) }
 			}
 		};
 
@@ -73,7 +61,7 @@ public class when_writing_prepare_record_with_properties_to_file<TLogFormat, TSt
 			flags: PrepareFlags.SingleWrite | PrepareFlags.IsPropertyMetadata,
 			eventType: eventTypeId,
 			data: new byte[] { 1, 2, 3, 4, 5 },
-			metadata: _properties.ToByteArray());
+			metadata: _recordProperties.ToByteArray());
 
 		await _writer.Write(_record, CancellationToken.None);
 		await _writer.Flush(CancellationToken.None);
@@ -114,9 +102,9 @@ public class when_writing_prepare_record_with_properties_to_file<TLogFormat, TSt
 		Assert.AreEqual(p.Version, PrepareLogRecordVersion.V1);
 		Assert.AreEqual(p.EventType, eventTypeId);
 		Assert.AreEqual(p.Data.Length, 5);
-		Assert.AreEqual(p.Metadata.Length, _properties.CalculateSize());
-		var actualProperties = Properties.Parser.ParseFrom(p.Metadata.Span);
-		Assert.AreEqual(_properties, actualProperties);
+		Assert.AreEqual(p.Metadata.Length, _recordProperties.CalculateSize());
+		var actualProperties = Struct.Parser.ParseFrom(p.Metadata.Span);
+		Assert.AreEqual(_recordProperties, actualProperties);
 	}
 
 	[Test]

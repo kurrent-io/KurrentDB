@@ -67,7 +67,7 @@ public abstract class StreamBasedPolicySelector : IPolicySelector {
 		Logger.Information("Subscribing to {policyStream} at {checkpoint}", _stream, checkpoint);
 		await using var sub = new Enumerator.StreamSubscription<string>(
 			bus: _publisher,
-			expiryStrategy: new DefaultExpiryStrategy(),
+			expiryStrategy: DefaultExpiryStrategy.Instance,
 			streamName: _stream,
 			resolveLinks: false,
 			user: _user,
@@ -107,7 +107,7 @@ public abstract class StreamBasedPolicySelector : IPolicySelector {
 			resolveLinks: false,
 			user: _user,
 			requiresLeader: false,
-			deadline: DateTime.MaxValue,
+			expiryStrategy: DefaultExpiryStrategy.Instance,
 			compatibility: 0,
 			cancellationToken: ct);
 

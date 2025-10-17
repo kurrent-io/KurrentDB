@@ -22,11 +22,7 @@ public readonly struct RecordReadResult {
 	}
 
 	public override string ToString() {
-		return string.Format("Success: {0}, NextPosition: {1}, RecordLength: {2}, LogRecord: {3}",
-			Success,
-			NextPosition,
-			RecordLength,
-			LogRecord);
+		return $"Success: {Success}, NextPosition: {NextPosition}, RecordLength: {RecordLength}, LogRecord: {LogRecord}";
 	}
 }
 
@@ -69,12 +65,6 @@ public readonly struct SeqReadResult {
 	public bool Success => LogRecord is not null;
 
 	public override string ToString() {
-		return string.Format(
-			"Success: {0}, RecordLength: {1}, RecordPrePosition: {2}, RecordPostPosition: {3}, LogRecord: {4}",
-			Success,
-			RecordLength,
-			RecordPrePosition,
-			RecordPostPosition,
-			LogRecord);
+		return $"Success: {Success}, RecordLength: {RecordLength}, RecordPrePosition: {RecordPrePosition}, RecordPostPosition: {RecordPostPosition}, LogRecord: {LogRecord}";
 	}
 }

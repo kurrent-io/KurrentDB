@@ -67,8 +67,7 @@ public class when_starting_the_projection_manager_with_existing_projection<TLogF
 	[Test]
 	public void projection_status_can_be_retrieved() {
 		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, "projection1",
-				true));
+			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, "projection1"));
 		Assert.IsNotNull(
 			_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().SingleOrDefault(
 				v => v.Projections[0].Name == "projection1"));
@@ -77,8 +76,7 @@ public class when_starting_the_projection_manager_with_existing_projection<TLogF
 	[Test]
 	public void projection_status_is_starting() {
 		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, "projection1",
-				true));
+			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, "projection1"));
 		Assert.AreEqual(
 			ManagedProjectionState.Preparing,
 			_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().SingleOrDefault(

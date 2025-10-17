@@ -8,85 +8,93 @@ using KurrentDB.SchemaRegistry.Tests.Fixtures;
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
 public class GetSchemaVersionIntegrationTests : SchemaApplicationTestFixture {
-	[Test]
-	public async Task get_schema_version(CancellationToken cancellationToken) {
-		// Arrange
-		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchema();
+    [Test]
+    public async ValueTask get_schema_version(CancellationToken cancellationToken) {
+        // Arrange
+        var schemaName = NewSchemaName();
+        var v1         = NewJsonSchema();
 
-		var details = new SchemaDetails {
-			Description = Faker.Lorem.Word(),
-			DataFormat = SchemaDataFormat.Json,
-			Compatibility = CompatibilityMode.Backward
-		};
+        var details = new SchemaDetails {
+            Description   = Faker.Lorem.Word(),
+            DataFormat    = SchemaDataFormat.Json,
+            Compatibility = CompatibilityMode.Backward
+        };
 
-		// Act
-		var result = await CreateSchema(schemaName, v1, details, cancellationToken);
+        // Act
+        var result = await Fixture.CreateSchema(
+            schemaName, v1, details,
+            cancellationToken
+        );
 
-		// Assert
-		var getSchemaResponse = await Client.GetSchemaVersionAsync(
-			new GetSchemaVersionRequest {
-				SchemaName = schemaName,
-				VersionNumber = result.VersionNumber
-			},
-			cancellationToken: cancellationToken
-		);
+        // Assert
+        var response = await Fixture.RegistryClient.GetSchemaVersionAsync(
+            new GetSchemaVersionRequest {
+                SchemaName    = schemaName,
+                VersionNumber = result.VersionNumber
+            },
+            cancellationToken: cancellationToken
+        );
 
-		getSchemaResponse.Should().NotBeNull();
-		getSchemaResponse.Version.SchemaVersionId.Should().Be(result.SchemaVersionId);
-		getSchemaResponse.Version.VersionNumber.Should().Be(result.VersionNumber);
-	}
+        response.ShouldNotBeNull();
+        response.Version.SchemaVersionId.ShouldBe(result.SchemaVersionId);
+        response.Version.VersionNumber.ShouldBe(result.VersionNumber);
+    }
 
-	[Test]
-	public async Task get_schema_version_by_id(CancellationToken cancellationToken) {
-		// Arrange
-		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchema();
+    [Test]
+    public async ValueTask get_schema_version_by_id(CancellationToken cancellationToken) {
+        // Arrange
+        var schemaName = NewSchemaName();
+        var v1         = NewJsonSchema();
 
-		var details = new SchemaDetails {
-			Description = Faker.Lorem.Word(),
-			DataFormat = SchemaDataFormat.Json,
-			Compatibility = CompatibilityMode.Backward
-		};
+        var details = new SchemaDetails {
+            Description   = Faker.Lorem.Word(),
+            DataFormat    = SchemaDataFormat.Json,
+            Compatibility = CompatibilityMode.Backward
+        };
 
-		// Act
-		var result = await CreateSchema(schemaName, v1, details, cancellationToken);
+        // Act
+        var result = await Fixture.CreateSchema(
+            schemaName, v1, details,
+            cancellationToken
+        );
 
-		// Assert
-		var getSchemaResponse = await Client.GetSchemaVersionByIdAsync(
-			new GetSchemaVersionByIdRequest {
-				SchemaVersionId = result.SchemaVersionId
-			},
-			cancellationToken: cancellationToken
-		);
+        // Assert
+        var response = await Fixture.RegistryClient.GetSchemaVersionByIdAsync(
+            new GetSchemaVersionByIdRequest {
+                SchemaVersionId = result.SchemaVersionId
+            },
+            cancellationToken: cancellationToken
+        );
 
-		getSchemaResponse.Should().NotBeNull();
-		getSchemaResponse.Version.SchemaVersionId.Should().Be(result.SchemaVersionId);
-		getSchemaResponse.Version.VersionNumber.Should().Be(result.VersionNumber);
-	}
+        response.ShouldNotBeNull();
+        response.Version.SchemaVersionId.ShouldBe(result.SchemaVersionId);
+        response.Version.VersionNumber.ShouldBe(result.VersionNumber);
+    }
 
-	[Test]
-	public async Task get_schema_version_with_stream_name_not_found(CancellationToken cancellationToken) {
-		var ex = await FluentActions.Awaiting(async () => await Client.GetSchemaVersionAsync(
-			new GetSchemaVersionRequest {
-				SchemaName = Guid.NewGuid().ToString(),
-				VersionNumber = 1,
-			},
-			cancellationToken: cancellationToken
-		)).Should().ThrowAsync<RpcException>();
+    [Test]
+    public async ValueTask get_schema_version_with_stream_name_not_found(CancellationToken cancellationToken) {
+        var action = async () => await Fixture.RegistryClient.GetSchemaVersionAsync(
+            new GetSchemaVersionRequest {
+                SchemaName    = Guid.NewGuid().ToString(),
+                VersionNumber = 1
+            },
+            cancellationToken: cancellationToken
+        );
 
-		ex.Which.StatusCode.Should().Be(StatusCode.NotFound);
-	}
+        var rex = await action.ShouldThrowAsync<RpcException>();
+        rex.StatusCode.ShouldBe(StatusCode.NotFound);
+    }
 
-	[Test]
-	public async Task get_schema_version_with_version_id_not_found(CancellationToken cancellationToken) {
-		var ex = await FluentActions.Awaiting(async () => await Client.GetSchemaVersionByIdAsync(
-			new GetSchemaVersionByIdRequest {
-				SchemaVersionId = Guid.NewGuid().ToString()
-			},
-			cancellationToken: cancellationToken
-		)).Should().ThrowAsync<RpcException>();
+    [Test]
+    public async ValueTask get_schema_version_with_version_id_not_found(CancellationToken cancellationToken) {
+        var action = async () => await Fixture.RegistryClient.GetSchemaVersionByIdAsync(
+            new GetSchemaVersionByIdRequest {
+                SchemaVersionId = Guid.NewGuid().ToString()
+            },
+            cancellationToken: cancellationToken
+        );
 
-		ex.Which.StatusCode.Should().Be(StatusCode.NotFound);
-	}
+        var rex = await action.ShouldThrowAsync<RpcException>();
+        rex.StatusCode.ShouldBe(StatusCode.NotFound);
+    }
 }

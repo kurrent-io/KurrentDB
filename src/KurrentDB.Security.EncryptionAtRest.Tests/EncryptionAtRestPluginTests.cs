@@ -7,6 +7,7 @@ using EventStore.Plugins.Diagnostics;
 using EventStore.Plugins.Licensing;
 using EventStore.Plugins.Transforms;
 using FluentAssertions;
+using KurrentDB.Common.Configuration;
 using KurrentDB.Plugins.TestHelpers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -26,9 +27,9 @@ public class EncryptionAtTestPluginTests {
 
 		if (enabled)
 			configBuilder = configBuilder.AddInMemoryCollection(new Dictionary<string, string?> {
-				{$"{KurrentConfigurationConstants.Prefix}:EncryptionAtRest:Enabled", "true"},
-				{$"{KurrentConfigurationConstants.Prefix}:EncryptionAtRest:MasterKey:File:KeyPath", "./keys"},
-				{$"{KurrentConfigurationConstants.Prefix}:EncryptionAtRest:Encryption:AesGcm:Enabled", "true"},
+				{$"{ConfigConstants.RootPrefix}:EncryptionAtRest:Enabled", "true"},
+				{$"{ConfigConstants.RootPrefix}:EncryptionAtRest:MasterKey:File:KeyPath", "./keys"},
+				{$"{ConfigConstants.RootPrefix}:EncryptionAtRest:Encryption:AesGcm:Enabled", "true"},
 			});
 
 		var config = configBuilder.Build();
@@ -68,9 +69,9 @@ public class EncryptionAtTestPluginTests {
 
 		if (enabled)
 			configBuilder = configBuilder.AddInMemoryCollection(new Dictionary<string, string?> {
-				{$"{KurrentConfigurationConstants.Prefix}:EncryptionAtRest:Enabled", "true"},
-				{$"{KurrentConfigurationConstants.Prefix}:EncryptionAtRest:MasterKey:File:KeyPath", "./keys"},
-				{$"{KurrentConfigurationConstants.Prefix}:EncryptionAtRest:Encryption:AesGcm:Enabled", "true"},
+				{$"{ConfigConstants.RootPrefix}:EncryptionAtRest:Enabled", "true"},
+				{$"{ConfigConstants.RootPrefix}:EncryptionAtRest:MasterKey:File:KeyPath", "./keys"},
+				{$"{ConfigConstants.RootPrefix}:EncryptionAtRest:Encryption:AesGcm:Enabled", "true"},
 			});
 
 		var config = configBuilder.Build();
@@ -105,9 +106,9 @@ public class EncryptionAtTestPluginTests {
 
 		IConfigurationBuilder configBuilder = new ConfigurationBuilder()
 			.AddInMemoryCollection(new Dictionary<string, string?> {
-				{$"{KurrentConfigurationConstants.Prefix}:EncryptionAtRest:Enabled", "true"},
-				{$"{KurrentConfigurationConstants.Prefix}:EncryptionAtRest:MasterKey:File:KeyPath", "./keys"},
-				{$"{KurrentConfigurationConstants.Prefix}:EncryptionAtRest:Encryption:AesGcm:Enabled", "true"},
+				{$"{ConfigConstants.RootPrefix}:EncryptionAtRest:Enabled", "true"},
+				{$"{ConfigConstants.RootPrefix}:EncryptionAtRest:MasterKey:File:KeyPath", "./keys"},
+				{$"{ConfigConstants.RootPrefix}:EncryptionAtRest:Encryption:AesGcm:Enabled", "true"},
 			});
 
 		var config = configBuilder.Build();

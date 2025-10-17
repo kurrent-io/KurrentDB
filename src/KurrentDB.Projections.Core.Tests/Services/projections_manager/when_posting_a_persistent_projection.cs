@@ -39,8 +39,7 @@ public class when_posting_a_persistent_projection<TLogFormat, TStreamId> : TestF
 	[Test, Category("v8")]
 	public void the_projection_status_is_writing() {
 		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName,
-				true));
+			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
 		Assert.AreEqual(
 			ManagedProjectionState.Prepared,
 			_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Single().Projections[0]

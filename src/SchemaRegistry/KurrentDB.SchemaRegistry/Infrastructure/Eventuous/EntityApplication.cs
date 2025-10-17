@@ -66,6 +66,4 @@ public abstract class EntityApplication<TEntity>(IEventStore store)
         .InState(ExpectedState.Any)
         .GetStream(cmd => new(StreamTemplate.GetStream(GetEntityId(cmd))))
         .ActAsync(async (entity, _, cmd, ct) => await executeCommand(entity, cmd, ct));
-
-
 }

@@ -9,12 +9,12 @@ namespace KurrentDB.Core.Data;
 
 // Event for writing
 public class Event {
-	public readonly Guid EventId;
-	public readonly string EventType;
-	public readonly bool IsJson;
-	public readonly byte[] Data;
-	public readonly bool IsPropertyMetadata;
-	public readonly byte[] Metadata;
+	public Guid EventId { get; }
+	public string EventType { get; }
+	public bool IsJson { get; }
+	public byte[] Data { get; }
+	public bool IsPropertyMetadata { get; }
+	public byte[] Metadata { get; }
 
 	public Event(Guid eventId, string eventType, bool isJson, string data, string metadata)
 		: this(
@@ -22,12 +22,6 @@ public class Event {
 			isPropertyMetadata: false,
 			metadata != null ? Helper.UTF8NoBom.GetBytes(metadata) : null) {
 	}
-
-	public static int SizeOnDisk(string eventType, byte[] data, byte[] metadata) =>
-		(data?.Length ?? 0) + (metadata?.Length ?? 0) + (eventType.Length * 2);
-
-	private static bool ExceedsMaximumSizeOnDisk(string eventType, byte[] data, byte[] metadata) =>
-		SizeOnDisk(eventType, data, metadata) > TFConsts.EffectiveMaxLogRecordSize;
 
 	public Event(Guid eventId, string eventType, bool isJson, byte[] data)
 		: this(eventId, eventType, isJson, data, isPropertyMetadata: false, []) {
@@ -48,4 +42,10 @@ public class Event {
 		IsPropertyMetadata = isPropertyMetadata;
 		Metadata = metadata ?? [];
 	}
+
+	public static int SizeOnDisk(string eventType, byte[] data, byte[] metadata) =>
+		(data?.Length ?? 0) + (metadata?.Length ?? 0) + (eventType.Length * 2);
+
+	static bool ExceedsMaximumSizeOnDisk(string eventType, byte[] data, byte[] metadata) =>
+		SizeOnDisk(eventType, data, metadata) > TFConsts.EffectiveMaxLogRecordSize;
 }

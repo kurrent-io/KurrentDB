@@ -26,7 +26,7 @@ public partial class EnumeratorTests {
 
 		return new EnumeratorWrapper(new Enumerator.AllSubscription(
 			bus: publisher,
-			expiryStrategy: new DefaultExpiryStrategy(),
+			expiryStrategy: DefaultExpiryStrategy.Instance,
 			checkpoint: checkpoint,
 			resolveLinks: false,
 			user: user ?? SystemAccounts.System,

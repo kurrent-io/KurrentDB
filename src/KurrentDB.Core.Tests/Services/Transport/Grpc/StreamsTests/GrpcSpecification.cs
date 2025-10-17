@@ -13,6 +13,7 @@ using EventStore.Client.Streams;
 using Google.Protobuf;
 using Grpc.Core;
 using Grpc.Net.Client;
+using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Core.Tests.Helpers;
@@ -28,16 +29,17 @@ public abstract class GrpcSpecification<TLogFormat, TStreamId> {
 	protected GrpcChannel Channel;
 	private readonly MiniNode<TLogFormat, TStreamId> _node;
 	internal Streams.StreamsClient StreamsClient { get; set; }
-	internal Protocol.V2.StreamsService.StreamsServiceClient StreamsClientV2 { get; set; }
 	internal PersistentSubscriptions.PersistentSubscriptionsClient PersistentSubscriptionsClient { get; set; }
 	private BatchAppender _batchAppender;
 
 	protected GrpcSpecification(IExpiryStrategy expiryStrategy = null,
-		int maxAppendEventSize = TFConsts.EffectiveMaxLogRecordSize) {
+		int maxAppendEventSize = TFConsts.EffectiveMaxLogRecordSize,
+		SecondaryIndexReaders secondaryIndexReaders = null) {
 		_node = new MiniNode<TLogFormat, TStreamId>(GetType().FullName,
 			inMemDb: true,
 			expiryStrategy: expiryStrategy,
-			maxAppendEventSize: maxAppendEventSize);
+			maxAppendEventSize: maxAppendEventSize,
+			secondaryIndexReaders: secondaryIndexReaders);
 	}
 
 	protected abstract Task Given();
@@ -56,7 +58,6 @@ public abstract class GrpcSpecification<TLogFormat, TStreamId> {
 				DisposeHttpClient = false,
 			});
 		StreamsClient = new(Channel);
-		StreamsClientV2 = new(Channel);
 		PersistentSubscriptionsClient = new(Channel);
 		_batchAppender = new(StreamsClient);
 		_batchAppender.Start();

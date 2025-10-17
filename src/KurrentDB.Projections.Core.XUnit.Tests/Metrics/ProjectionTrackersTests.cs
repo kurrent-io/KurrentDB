@@ -26,7 +26,7 @@ public class ProjectionTrackersTest {
 
 		var meterListener = SetUpMeterListener(meter, (_, measurement, tags, _) => {
 			seenMeasurements.Add(measurement);
-			foreach(var tag in tags)
+			foreach (var tag in tags)
 				seenTags.Add([tag.Key, tag.Value as string]);
 		});
 

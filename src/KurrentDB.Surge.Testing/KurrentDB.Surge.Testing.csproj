@@ -43,8 +43,6 @@
     <PackageReference Include="Serilog.Sinks.File" />
 		<PackageReference Include="System.Reactive" />
 		<PackageReference Include="xunit" />
-		<PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
-		<PackageReference Include="Microsoft.Testing.Extensions.TrxReport" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -446,8 +446,15 @@ public abstract partial class EventSubscriptionBasedProjectionProcessingPhase : 
 		}
 
 		return new EventProcessedResult(
-			partition, deletePosition, oldState, partitionState, oldSharedState, null, null, Guid.Empty, null,
-			isPartitionTombstone: true);
+			partition: partition,
+			checkpointTag: deletePosition,
+			oldState: oldState,
+			newState: partitionState,
+			oldSharedState: oldSharedState,
+			newSharedState: null,
+			emittedEvents: null,
+			causedBy: Guid.Empty,
+			correlationId: null);
 	}
 
 	public void BeginGetPartitionStateAt(

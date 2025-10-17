@@ -20,6 +20,7 @@ public static class EventFilter {
 
 	public static IEventFilter DefaultAllFilter { get; } = new DefaultAllFilterStrategy();
 	public static IEventFilter DefaultStreamFilter { get; } = new DefaultStreamFilterStrategy();
+	public static IEventFilter Unfiltered { get; } = new UnfilteredEventFilter();
 
 	public static class StreamName {
 		public static IEventFilter Prefixes(bool isAllStream, params string[] prefixes)
@@ -37,7 +38,7 @@ public static class EventFilter {
 			=> new EventTypeRegexStrategy(isAllStream, regex);
 	}
 
-	public static IEventFilter Get(bool isAllStream, Filter filter) {
+	internal static IEventFilter Get(bool isAllStream, Filter filter) {
 		if (filter == null || filter.Data.Count == 0) {
 			return isAllStream ? new DefaultAllFilterStrategy() : new DefaultStreamFilterStrategy();
 		}
@@ -51,12 +52,16 @@ public static class EventFilter {
 		};
 	}
 
+	private sealed class UnfilteredEventFilter : IEventFilter {
+		public bool IsEventAllowed(EventRecord eventRecord) => true;
+	}
+
 	private sealed class DefaultStreamFilterStrategy : IEventFilter {
 		[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
 		public bool IsEventAllowed(EventRecord eventRecord) => true;
 	}
 
-	private sealed class DefaultAllFilterStrategy : IEventFilter {
+	public sealed class DefaultAllFilterStrategy : IEventFilter {
 		//first rule that matches from the top is applied
 		private readonly (IEventFilter filter, bool allow)[] _allFilters = {
 			//immediately allow all non-system events
@@ -87,7 +92,7 @@ public static class EventFilter {
 
 		public override string ToString() => nameof(DefaultAllFilterStrategy);
 
-		private class NonSystemStreamStrategy : IEventFilter {
+		public class NonSystemStreamStrategy : IEventFilter {
 			[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
 			public bool IsEventAllowed(EventRecord eventRecord) => eventRecord.EventStreamId[0] != '$';
 

@@ -16,9 +16,9 @@ namespace KurrentDB.Core;
 public static class ClientMessageExtensions {
 	public static ReadResponseException MapToException(this ClientMessage.NotHandled notHandled) {
 		return notHandled.Reason switch {
-			NotHandledReason.NotReady   => new ServerNotReady(),
-			NotHandledReason.TooBusy    => new ServerBusy(),
-			NotHandledReason.NotLeader  => LeaderException(),
+			NotHandledReason.NotReady => new ServerNotReady(),
+			NotHandledReason.TooBusy => new ServerBusy(),
+			NotHandledReason.NotLeader => LeaderException(),
 			NotHandledReason.IsReadOnly => LeaderException(),
 			_ => throw new ArgumentOutOfRangeException(nameof(notHandled.Reason), notHandled.Reason, null)
 		};

@@ -38,7 +38,7 @@ internal partial class ProjectionManagement {
 
 		var envelope = new CallbackEnvelope(OnMessage);
 
-		_publisher.Publish(new ProjectionManagementMessage.Command.GetStatistics(envelope, mode, name, true));
+		_publisher.Publish(new ProjectionManagementMessage.Command.GetStatistics(envelope, mode, name));
 
 		foreach (var stats in Array.ConvertAll(await statsSource.Task, s => new StatisticsResp.Types.Details {
 			BufferedEvents = s.BufferedEvents,

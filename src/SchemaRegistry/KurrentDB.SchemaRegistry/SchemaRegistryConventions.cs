@@ -6,7 +6,6 @@
 using System.Text.RegularExpressions;
 using Eventuous;
 using Humanizer;
-using Kurrent.Surge;
 using Kurrent.Surge.Consumers;
 using Kurrent.Surge.Schema;
 

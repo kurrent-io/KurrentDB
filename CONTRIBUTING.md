@@ -1,6 +1,6 @@
 # Contributing to KurrentDB
 
-## Working with the Git
+## Working with Git
 
 KurrentDB uses `master` as the main development branch. It contains all changes to the upcoming release. Older releases of KurrentDB have dedicated feature branches with the format `release/v{version}`. E.g., `release/v25.0`. Specific releases are tagged from the release branch commits.
 

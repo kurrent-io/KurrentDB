@@ -38,8 +38,8 @@ public static class ProcessStats {
 						}
 
 						if (result is {
-							    ReadBytes: not 0UL, ReadOps: not 0UL, WriteOps: not 0UL, WrittenBytes: not 0UL
-						    })
+							ReadBytes: not 0UL, ReadOps: not 0UL, WriteOps: not 0UL, WrittenBytes: not 0UL
+						})
 							break;
 					}
 				} catch (Exception ex) {

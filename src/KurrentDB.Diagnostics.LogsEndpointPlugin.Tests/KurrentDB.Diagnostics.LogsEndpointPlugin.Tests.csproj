@@ -27,6 +27,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
 		<ProjectReference Include="..\KurrentDB.Diagnostics.LogsEndpointPlugin\KurrentDB.Diagnostics.LogsEndpointPlugin.csproj" />
 	</ItemGroup>
 </Project>

@@ -23,7 +23,7 @@ namespace KurrentDB.Core.XUnit.Tests.LogAbstraction;
 // check that lookups of the various combinations of virtual/normal/meta
 // work in both directions and in the stream index.
 public class LogFormatAbstractorV3Tests : IAsyncLifetime {
-	readonly static string _outputDir = $"testoutput/{nameof(LogFormatAbstractorV3Tests)}";
+	static readonly string _outputDir = $"testoutput/{nameof(LogFormatAbstractorV3Tests)}";
 	readonly LogFormatAbstractor<StreamId> _sut = new LogV3FormatAbstractorFactory().Create(new() {
 		IndexDirectory = _outputDir,
 		InMemory = false,
@@ -340,6 +340,7 @@ public class LogFormatAbstractorV3Tests : IAsyncLifetime {
 		public long NotCachedStreamInfo => throw new NotImplementedException();
 
 		public long HashCollisions => throw new NotImplementedException();
+		public IIndexBackend<StreamId> Backend => throw new NotImplementedException();
 
 		public ValueTask<StorageMessage.EffectiveAcl> GetEffectiveAcl(StreamId streamId, CancellationToken token) =>
 			ValueTask.FromException<StorageMessage.EffectiveAcl>(new NotImplementedException());
@@ -409,6 +410,10 @@ public class MockIndexBackend<TStreamId> : IIndexBackend<TStreamId> {
 		return null;
 	}
 
+	public long? SetStreamSecondaryIndexId(TStreamId streamId, long secondaryIndexId) {
+		return null;
+	}
+
 	public StreamMetadata SetStreamMetadata(TStreamId streamId, StreamMetadata metadata) {
 		throw new NotImplementedException();
 	}
@@ -426,6 +431,10 @@ public class MockIndexBackend<TStreamId> : IIndexBackend<TStreamId> {
 	}
 
 	public long? UpdateStreamLastEventNumber(int cacheVersion, TStreamId streamId, long? lastEventNumber) {
+		throw new NotImplementedException();
+	}
+
+	public long? UpdateStreamSecondaryIndexId(int cacheVersion, TStreamId streamId, long? secondaryIndexId) {
 		throw new NotImplementedException();
 	}
 

@@ -5,6 +5,7 @@ using EventStore.Plugins;
 using EventStore.Plugins.Diagnostics;
 using EventStore.Plugins.Licensing;
 using FluentAssertions;
+using KurrentDB.Common.Configuration;
 using KurrentDB.Plugins.TestHelpers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -27,7 +28,7 @@ public class OtlpExporterPluginTests {
 
 		if (enabled)
 			configBuilder = configBuilder.AddInMemoryCollection(new Dictionary<string, string?> {
-				{$"{KurrentConfigurationConstants.Prefix}:OpenTelemetry:Otlp:Endpoint", "http://localhost:1234"},
+				{$"{ConfigConstants.OtlpConfigPrefix}:Endpoint", "http://localhost:1234"},
 			});
 
 		var config = configBuilder.Build();
@@ -65,7 +66,7 @@ public class OtlpExporterPluginTests {
 
 		if (enabled)
 			configBuilder = configBuilder.AddInMemoryCollection(new Dictionary<string, string?> {
-				{$"{KurrentConfigurationConstants.Prefix}:OpenTelemetry:Otlp:Endpoint", "http://localhost:1234"},
+				{$"{ConfigConstants.OtlpConfigPrefix}:Endpoint", "http://localhost:1234"},
 			});
 
 		var config = configBuilder.Build();
@@ -75,9 +76,7 @@ public class OtlpExporterPluginTests {
 		var licenseService = new Fixtures.FakeLicenseService(licensePresent, entitlement);
 		builder.Services.AddSingleton<ILicenseService>(licenseService);
 
-		((IPlugableComponent)sut).ConfigureServices(
-			builder.Services,
-			config);
+		((IPlugableComponent)sut).ConfigureServices(builder.Services, config);
 
 		var app = builder.Build();
 

@@ -9,22 +9,20 @@ using Serilog.Events;
 namespace KurrentDB.Licensing.Keygen;
 
 // This abstracts Keygen away from the rest of the system
-// responsible for translating the keygen output into an ESDB license (or not)
-// responsible for the business decisions of under what circumstances we want to grant an
-//    ESDB license to the rest of the system.
+// responsible for translating the keygen output into a KurrentDB license (or not)
+// responsible for the business decisions of under what circumstances we want to grant a
+// KurrentDB license to the rest of the system.
 public class KeygenLicenseProvider : ILicenseProvider {
 	private static readonly ILogger Log = Serilog.Log.ForContext<KeygenLicenseProvider>();
 
-	public KeygenLicenseProvider(
-		IObservable<LicenseInfo> keygenLicenses) {
-
+	public KeygenLicenseProvider(IObservable<LicenseInfo> keygenLicenses) {
 		// not sure that another subject is the right answer here
 		var licenses = keygenLicenses
 			.Select(licenseInfo => licenseInfo switch {
 				// we aren't yet sure what the license status is, grant everything so we don't break a production system
 				LicenseInfo.Inconclusive inconclusive => CreateLicense(inconclusive),
 
-				// we are sure what the license status is, turn it into a ESDB license or throw
+				// we are sure what the license status is, turn it into a KurrentDB license or throw
 				LicenseInfo.Conclusive conclusion => CreateLicense(conclusion),
 
 				_ => null,
@@ -36,10 +34,10 @@ public class KeygenLicenseProvider : ILicenseProvider {
 		Licenses = licenses;
 	}
 
-	public IObservable<License> Licenses { get; private set; }
+	public IObservable<License> Licenses { get; }
 
-	// For some reason we were not able to detect if the users license is valid or not
-	// we play it safe and grant a license that allows access to all features, to avoid
+	// For some reason we were not able to detect if the user's license is valid or not
+	// we play it safe and grant a license that allows access to all features to avoid
 	// technical problems taking down production deployments.
 	// The primary means of protection against license tampering is the license agreement
 	static License CreateLicense(LicenseInfo.Inconclusive licenseInfo) {
@@ -88,9 +86,7 @@ public class KeygenLicenseProvider : ILicenseProvider {
 	}
 
 	static License CreateLicense(LicenseSummary summary, string[] entitlements) {
-		var claims = entitlements.ToDictionary(
-			x => x,
-			x => (object)"true");
+		var claims = entitlements.ToDictionary(x => x, object (_) => "true");
 
 		summary?.ExportClaims(claims);
 

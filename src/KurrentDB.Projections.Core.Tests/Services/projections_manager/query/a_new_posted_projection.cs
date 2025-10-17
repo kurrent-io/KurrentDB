@@ -117,8 +117,7 @@ public static class a_new_posted_projection {
 		[Test]
 		public void the_projection_status_becomes_faulted() {
 			_manager.Handle(
-				new ProjectionManagementMessage.Command.GetStatistics(
-					_bus, null, _projectionName, false));
+				new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
 
 			Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
 			Assert.AreEqual(

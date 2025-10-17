@@ -16,6 +16,8 @@ namespace KurrentDB.Core.Tests.Services.VNode;
 [TestFixture]
 public class leader_info_provider {
 	private const string DefaultHttpEndPoint = "9.9.9.9:9";
+	private static readonly Guid LeaderInstanceId = Guid.NewGuid();
+	private static readonly Guid NodeInstanceId = Guid.NewGuid();
 
 	public static IEnumerable<object[]> TestCases() {
 		var leaderInfoCases = new TestCase[] {
@@ -74,12 +76,12 @@ public class leader_info_provider {
 			new ("Leader: AdvertiseHttpPort & AdvertiseHost",
 				Given: new (Leader: new(AdvertiseHttpPort: 8, AdvertiseHost: "host", HttpEndPoint: "3.3.3.3:3")),
 				Expected: new (HttpEndPoint: "host:8")),
-		};
+		}.Select(x => x with { Expected = x.Expected with { InstanceId = LeaderInstanceId } });
 
 		var nodeInfoCases = new TestCase[] {
 			new ("Gossip: NoEndPoints",
 				Given: new (Gossip: new()),
-				Expected: new (TcpEndPoint: null)),
+				Expected: new (TcpEndPoint: null, InstanceId: NodeInstanceId)),
 			new ("Gossip: TcpEndPoint",
 				Given: new (Gossip: new(TcpEndPoint: "4.4.4.4:4")),
 				Expected: new (TcpEndPoint: "4.4.4.4:4", IsTcpSecure: false)),
@@ -103,7 +105,7 @@ public class leader_info_provider {
 			new ("Gossip: HttpEndPoint & AdvertiseHost + Port",
 				Given: new (Gossip: new(HttpEndPoint: "8.8.8.8:8", AdvertiseHost: "host", AdvertiseHttpPort: 9)),
 				Expected: new (HttpEndPoint: "host:9")),
-		};
+		}.Select(x => x with { Expected = x.Expected with { InstanceId = NodeInstanceId } });
 
 		foreach (var testCase in leaderInfoCases.Concat(nodeInfoCases)) {
 			yield return new object[] { testCase };
@@ -118,13 +120,15 @@ public class leader_info_provider {
 
 		LeaderInfoProvider leaderInfoProvider = new LeaderInfoProvider(
 			given.GossipInfo,
-			given.LeaderInfo);
+			given.LeaderInfo,
+			NodeInstanceId);
 
 		var result = leaderInfoProvider.GetLeaderInfoEndPoints();
 
 		AssertAreEqual(expected.TcpEndPoint, result.AdvertisedTcpEndPoint, "TcpEndPoint");
 		AssertAreEqual(expected.HttpEndPoint, result.AdvertisedHttpEndPoint, "HttpEndPoint");
 		Assert.AreEqual(expected.IsSecure, result.IsTcpEndPointSecure);
+		Assert.AreEqual(expected.InstanceId, result.InstanceId);
 	}
 
 	private void AssertAreEqual(EndPoint expected, EndPoint actual, string msg) {
@@ -147,7 +151,7 @@ public class leader_info_provider {
 
 	public record Given(MemberInfo LeaderInfo, GossipAdvertiseInfo GossipInfo);
 
-	public record Expected(EndPoint TcpEndPoint, bool IsSecure, EndPoint HttpEndPoint);
+	public record Expected(EndPoint TcpEndPoint, bool IsSecure, EndPoint HttpEndPoint, Guid InstanceId);
 
 	public record LeaderInput(
 		string TcpEndPoint = null,
@@ -175,7 +179,7 @@ public class leader_info_provider {
 			}
 
 			return MemberInfo.Initial(
-				instanceId: Guid.NewGuid(),
+				instanceId: LeaderInstanceId,
 				timeStamp: DateTime.Now,
 				state: VNodeState.Initializing,
 				isAlive: false,
@@ -213,12 +217,13 @@ public class leader_info_provider {
 		}
 	}
 
-	public record ExpectedInput(string TcpEndPoint = null, string HttpEndPoint = null, bool IsTcpSecure = false) {
+	public record ExpectedInput(string TcpEndPoint = null, string HttpEndPoint = null, bool IsTcpSecure = false, Guid InstanceId = default) {
 		public Expected Build() {
 			return new Expected(
 				ParseEndPoint(TcpEndPoint),
 				IsTcpSecure,
-				ParseEndPoint(HttpEndPoint ?? DefaultHttpEndPoint));
+				ParseEndPoint(HttpEndPoint ?? DefaultHttpEndPoint),
+				InstanceId);
 		}
 	}
 

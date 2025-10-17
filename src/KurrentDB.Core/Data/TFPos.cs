@@ -21,19 +21,17 @@ public readonly struct TFPos : IEquatable<TFPos>, IComparable<TFPos> {
 
 	[System.Diagnostics.Contracts.Pure]
 	public string AsString() {
-		return string.Format("{0:X16}{1:X16}", CommitPosition, PreparePosition);
+		return $"{CommitPosition:X16}{PreparePosition:X16}";
 	}
 
 	public static bool TryParse(string s, out TFPos pos) {
 		pos = Invalid;
-		if (s == null || s.Length != 32)
+		if (s is not { Length: 32 })
 			return false;
 
-		long commitPos;
-		long preparePos;
-		if (!long.TryParse(s.Substring(0, 16), NumberStyles.HexNumber, null, out commitPos))
+		if (!long.TryParse(s.AsSpan(0, 16), NumberStyles.HexNumber, null, out var commitPos))
 			return false;
-		if (!long.TryParse(s.Substring(16, 16), NumberStyles.HexNumber, null, out preparePos))
+		if (!long.TryParse(s.AsSpan(16, 16), NumberStyles.HexNumber, null, out var preparePos))
 			return false;
 		pos = new TFPos(commitPos, preparePos);
 		return true;
@@ -54,7 +52,7 @@ public readonly struct TFPos : IEquatable<TFPos>, IComparable<TFPos> {
 	public override bool Equals(object obj) {
 		if (ReferenceEquals(null, obj))
 			return false;
-		return obj is TFPos && Equals((TFPos)obj);
+		return obj is TFPos pos && Equals(pos);
 	}
 
 	public override int GetHashCode() {
@@ -90,6 +88,6 @@ public readonly struct TFPos : IEquatable<TFPos>, IComparable<TFPos> {
 	}
 
 	public override string ToString() {
-		return string.Format("C:{0}/P:{1}", CommitPosition, PreparePosition);
+		return $"C:{CommitPosition}/P:{PreparePosition}";
 	}
 }

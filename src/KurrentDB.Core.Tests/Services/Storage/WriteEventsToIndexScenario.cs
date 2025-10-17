@@ -113,7 +113,7 @@ public abstract class WriteEventsToIndexScenario<TLogFormat, TStreamId> : Specif
 	public void PreCommitToIndex(IEnumerable<IPrepareLogRecord<TStreamId>> prepares) {
 		var preparesArray = prepares.ToArray();
 		_indexWriter.PreCommit(
-			commitedPrepares: preparesArray,
+			committedPrepares: preparesArray,
 			eventStreamIndexes: null);
 	}
 

@@ -14,7 +14,7 @@ public class PluginDiagnosticsDataTests {
 	[InlineData("some-value")]
 	public void can_get_value_from_data(dynamic expectedValue) =>
 		gets_value_from_data(expectedValue);
-	
+
 	[Theory]
 	[InlineData(true)]
 	[InlineData(23)]
@@ -23,7 +23,7 @@ public class PluginDiagnosticsDataTests {
 	[InlineData("some-value")]
 	public void can_get_default_value_from_data(dynamic expectedValue) =>
 		gets_default_value_from_data(expectedValue);
-	
+
 	static void gets_value_from_data<T>(T expectedValue) {
 		var sut = new PluginDiagnosticsData {
 			Data = new() { ["value"] = expectedValue }

@@ -238,7 +238,7 @@ public class StreamEventReader : EventReader,
 				_publisher.Publish(
 					//TODO: publish both link and event data
 					new ReaderSubscriptionMessage.EventReaderPartitionDeleted(
-						EventReaderCorrelationId, deletedPartition, source: this.GetType(), lastEventNumber: -1,
+						EventReaderCorrelationId, deletedPartition, source: this.GetType(),
 						deleteEventOrLinkTargetPosition: null,
 						deleteLinkOrEventPosition: resolvedEvent.EventOrLinkTargetPosition,
 						positionStreamId: resolvedEvent.PositionStreamId,

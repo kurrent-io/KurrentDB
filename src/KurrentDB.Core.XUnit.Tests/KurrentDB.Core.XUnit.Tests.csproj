@@ -3,7 +3,7 @@
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<!--uncomment to run various cloud-based storage tests-->
-		<!--<DefineConstants>RUN_S3_TESTS</DefineConstants>-->
+		<!--<DefineConstants>RUN_S3_TESTS;RUN_AZ_TESTS;RUN_GCP_TESTS</DefineConstants>-->
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="GitHubActionsTestLogger" />

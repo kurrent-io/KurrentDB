@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System;
 using System.Net;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Cluster;
@@ -13,15 +14,16 @@ namespace KurrentDB.Core.Services.VNode;
 public class LeaderInfoProvider {
 	private readonly GossipAdvertiseInfo _gossipInfo;
 	private readonly MemberInfo _leaderInfo;
+	private readonly Guid _nodeInstanceId;
 
-	public LeaderInfoProvider(GossipAdvertiseInfo gossipInfo, MemberInfo leaderInfo) {
+	public LeaderInfoProvider(GossipAdvertiseInfo gossipInfo, MemberInfo leaderInfo, Guid nodeInstanceId) {
 		Ensure.NotNull(gossipInfo, "gossipInfo");
-
 		_gossipInfo = gossipInfo;
 		_leaderInfo = leaderInfo;
+		_nodeInstanceId = nodeInstanceId;
 	}
 
-	public (EndPoint AdvertisedTcpEndPoint, bool IsTcpEndPointSecure, EndPoint AdvertisedHttpEndPoint)
+	public (EndPoint AdvertisedTcpEndPoint, bool IsTcpEndPointSecure, EndPoint AdvertisedHttpEndPoint, Guid InstanceId)
 		GetLeaderInfoEndPoints() {
 
 		var endpoints = _leaderInfo != null
@@ -30,13 +32,16 @@ public class LeaderInfoProvider {
 				HttpEndPoint: _leaderInfo.HttpEndPoint,
 				AdvertiseHost: _leaderInfo.AdvertiseHostToClientAs,
 				AdvertiseHttpPort: _leaderInfo.AdvertiseHttpPortToClientAs,
-				AdvertiseTcpPort: _leaderInfo.AdvertiseTcpPortToClientAs)
+				AdvertiseTcpPort: _leaderInfo.AdvertiseTcpPortToClientAs,
+				InstanceId: _leaderInfo.InstanceId)
+			// TC: if we don't know who the leader is we return our own info. is this ideal?
 			: (TcpEndPoint: _gossipInfo.ExternalTcp ?? _gossipInfo.ExternalSecureTcp,
 				IsTcpEndPointSecure: _gossipInfo.ExternalSecureTcp != null,
 				HttpEndPoint: _gossipInfo.HttpEndPoint,
 				AdvertiseHost: _gossipInfo.AdvertiseHostToClientAs,
 				AdvertiseHttpPort: _gossipInfo.AdvertiseHttpPortToClientAs,
-				AdvertiseTcpPort: _gossipInfo.AdvertiseTcpPortToClientAs);
+				AdvertiseTcpPort: _gossipInfo.AdvertiseTcpPortToClientAs,
+				InstanceId: _nodeInstanceId);
 
 		var advertisedTcpEndPoint = endpoints.TcpEndPoint == null
 			? null
@@ -51,6 +56,6 @@ public class LeaderInfoProvider {
 				: endpoints.AdvertiseHost,
 			endpoints.AdvertiseHttpPort == 0 ? endpoints.HttpEndPoint.GetPort() : endpoints.AdvertiseHttpPort);
 
-		return (advertisedTcpEndPoint, endpoints.IsTcpEndPointSecure, advertisedHttpEndPoint);
+		return (advertisedTcpEndPoint, endpoints.IsTcpEndPointSecure, advertisedHttpEndPoint, endpoints.InstanceId);
 	}
 }

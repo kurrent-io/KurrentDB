@@ -29,7 +29,7 @@ public partial class EnumeratorTests {
 
 		return new EnumeratorWrapper(new Enumerator.AllSubscriptionFiltered(
 			bus: publisher,
-			expiryStrategy: new DefaultExpiryStrategy(),
+			expiryStrategy: DefaultExpiryStrategy.Instance,
 			checkpoint: checkpoint,
 			resolveLinks: false,
 			eventFilter: eventFilter,

@@ -36,7 +36,7 @@ public abstract class with_projections_subsystem<TLogFormat, TStreamId> : TestFi
 		if (_startSystemProjections) {
 			yield return
 				new ProjectionManagementMessage.Command.GetStatistics(Envelope, ProjectionMode.AllNonTransient,
-					null, false)
+					null)
 				;
 			var statistics = HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Last();
 			foreach (var projection in statistics.Projections) {

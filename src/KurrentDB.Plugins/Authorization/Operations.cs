@@ -90,7 +90,6 @@ public static class Operations {
 		public static readonly OperationDefinition Write = new(Resource, "write");
 		public static readonly OperationDefinition Delete = new(Resource, "delete");
 		public static readonly OperationDefinition MetadataRead = new(Resource, "metadataRead");
-
 		public static readonly OperationDefinition MetadataWrite = new(Resource, "metadataWrite");
 
 		public static class Parameters {

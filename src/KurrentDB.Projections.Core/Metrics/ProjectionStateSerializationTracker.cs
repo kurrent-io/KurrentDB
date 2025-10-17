@@ -6,7 +6,7 @@ using KurrentDB.Core.Time;
 
 namespace KurrentDB.Projections.Core.Metrics;
 
-public class ProjectionStateSerializationTracker(IDurationMaxTracker tracker): IProjectionStateSerializationTracker {
+public class ProjectionStateSerializationTracker(IDurationMaxTracker tracker) : IProjectionStateSerializationTracker {
 	public void StateSerialized(Instant start) {
 		tracker.RecordNow(start);
 	}

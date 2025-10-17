@@ -84,9 +84,10 @@ public class SpecRunner {
 							var partition = state.GetProperty("partition").GetString()!;
 							var expectedStateNode = state.GetProperty("state");
 							var expectedState = expectedStateNode.ValueKind == JsonValueKind.Null ? null : expectedStateNode.GetRawText();
-							if (!expectedStates.TryAdd(partition, expectedState)) throw new InvalidOperationException("Duplicate expected state");
+							if (!expectedStates.TryAdd(partition, expectedState))
+								throw new InvalidOperationException("Duplicate expected state");
 
-							if (state.TryGetProperty("result", out var expectedResultNode )) {
+							if (state.TryGetProperty("result", out var expectedResultNode)) {
 								var expectedResult = expectedResultNode.ValueKind == JsonValueKind.Null
 									? null
 									: expectedResultNode.GetRawText();
@@ -225,7 +226,6 @@ public class SpecRunner {
 				definition.PartitionResultStreamNamePatternOption));
 			yield return For($"{projection} qs.ReorderEventsOption", () => Assert.Equal(expectedDefinition.ReorderEventsOption, definition.ReorderEventsOption));
 			yield return For($"{projection} qs.ProcessingLagOption", () => Assert.Equal(expectedDefinition.ProcessingLagOption, definition.ProcessingLagOption));
-			yield return For($"{projection} qs.LimitingCommitPosition", () => Assert.Equal(expectedDefinition.LimitingCommitPosition, definition.LimitingCommitPosition));
 			var partitionedState = new Dictionary<string, string>();
 			var partitionedResult = new Dictionary<string, string>();
 			var sharedStateInitialized = false;
@@ -354,7 +354,8 @@ public class SpecRunner {
 
 									yield return For($@"state ""{expectedState.Key}"" is correct at {er.EventNumber}@{sequence.Stream}",
 										() => {
-											if (string.IsNullOrEmpty(expectedState.Value))  Assert.Null(partitionedState[expectedState.Key]);
+											if (string.IsNullOrEmpty(expectedState.Value))
+												Assert.Null(partitionedState[expectedState.Key]);
 											else {
 												Assert.True(partitionedState.ContainsKey(expectedState.Key), $"partition does not contain key {expectedState.Key}");
 												Assert.NotNull(partitionedState[expectedState.Key]);
@@ -374,7 +375,8 @@ public class SpecRunner {
 
 									yield return For($@"result ""{expectedResult.Key}"" is correct at {er.EventNumber}@{sequence.Stream}",
 										() => {
-											if (string.IsNullOrEmpty(expectedResult.Value)) Assert.Null(partitionedResult[expectedResult.Key]);
+											if (string.IsNullOrEmpty(expectedResult.Value))
+												Assert.Null(partitionedResult[expectedResult.Key]);
 											else {
 												Assert.True(partitionedResult.ContainsKey(expectedResult.Key), $"partition does not contain key {expectedResult.Key}");
 												if (expectedResult.Value is null) {

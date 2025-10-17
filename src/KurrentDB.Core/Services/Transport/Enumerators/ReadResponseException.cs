@@ -12,6 +12,10 @@ public abstract class ReadResponseException : Exception {
 		public string StreamName { get; } = streamName;
 	}
 
+	public class IndexNotFound(string indexName) : ReadResponseException {
+		public string IndexName { get; } = indexName;
+	}
+
 	public class WrongExpectedRevision(string stream, long expectedRevision, long actualRevision) : ReadResponseException {
 		public string Stream { get; } = stream;
 
