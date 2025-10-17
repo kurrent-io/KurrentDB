@@ -54,7 +54,7 @@ The Kafka sink can be configured with the following options:
 | `bootstrapServers` | **Description:**<br>Comma-separated list of Kafka broker addresses.<br><br>**Default**: `"localhost:9092"` |
 | `defaultHeaders`   | **Description:**<br>Headers included in all produced messages.<br><br>**Default**: Empty                   |
 
-### Authentication
+#### Authentication
 
 | Name                              | Details                                                                                                                                                                         |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -64,7 +64,7 @@ The Kafka sink can be configured with the following options:
 | `authentication:password`         | **Description:**<br>SASL password                                                                                                                                               |
 
 
-### Partitioning
+#### Partitioning
 
 | Name                                | Details                                                                                                                                                                                     |
 | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -74,7 +74,9 @@ The Kafka sink can be configured with the following options:
 
 See the [Partitioning](#partitioning-1) section for examples.
 
-### Resilience
+#### Resilience
+
+The Kafka sink connector relies on its own RabbitMQ retry mechanism and doesn't include the configuration from [Resilience configuration](../settings.md#resilience-configuration).
 
 | Name                               | Details                                                                                                                                                                                                   |
 | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -82,7 +84,7 @@ See the [Partitioning](#partitioning-1) section for examples.
 | `resilience:reconnectBackoffMaxMs` | **Description:**<br>The maximum time to wait before reconnecting to a broker after the connection has been closed.<br><br>**Default**: `"20000"`                                                          |
 | `resilience:messageSendMaxRetries` | **Description:**<br>How many times to retry sending a failing Message.<br><br>**Default**: `"2147483647"`                                                                                                 |
 
-### Miscellaneous
+#### Miscellaneous
 
 | Name                  | Details                                                                                                                                                  |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |

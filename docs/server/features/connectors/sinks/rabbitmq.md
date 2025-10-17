@@ -64,13 +64,16 @@ The RabbitMQ sink can be configured with the following options:
 | `authentication:password`         | **Description:**<br>Password for authentication.<br><br>**Default**: `"guest"`                                                                                                                                                                                                 |
 | `autoDelete`                      | **Description:**<br>Whether the exchange is automatically deleted when no longer in use.<br><br>**Default**: `"false"`                                                                                                                                                         |
 | `durable`                         | **Description:**<br>Whether the exchange is durable.<br><br>**Default**: `"true"`                                                                                                                                                                                              |
+
+#### Resilience
+
+The RabbitMQ sink connector relies on its own RabbitMQ retry mechanism and doesn't include the configuration from [Resilience configuration](../settings.md#resilience-configuration).
+
+| Option                            | Description                                                                                                                                                                                                                                                                    |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `resilience:connectionTimeoutMs`  | **Description:**<br>Connection TCP establishment timeout in milliseconds. 0 for infinite.<br><br>**Default**: `"60000"`                                                                                                                                                        |
 | `resilience:handshakeTimeoutMs`   | **Description:**<br>The protocol handshake timeout in milliseconds.<br><br>**Default**: `"10000"`                                                                                                                                                                              |
 | `resilience:requestedHeartbeatMs` | **Description:**<br>The requested heartbeat timeout in milliseconds. 0 means "heartbeats are disabled". Should be no lower than 1 second.<br><br>**Default**: `"60000"`                                                                                                        |
-
-## Resilience
-
-The RabbitMQ sink connector relies on its own RabbitMQ retry mechanism and doesn't include the configuration from [Resilience configuration](../settings.md#resilience-configuration).
 
 ## Broker Acknowledgment
 

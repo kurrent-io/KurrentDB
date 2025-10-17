@@ -63,11 +63,19 @@ The MongoDB sink can be configured with the following options:
 
 Resilience options can be found in the [Resilience Configuration](../settings.md#resilience-configuration) section.
 
-## Authentication
+## Metadata
+
+The MongoDB sink connector automatically includes these [default headers](../features.md#headers) in each document sent to the collection. These
+headers provide metadata about the event and are stored in a `_metadata` field
+within the document.
+
+## Examples
+
+### Authentication
 
 This MongoDB sink connector currently only supports [SCRAM](./mongo.md#scram) and [X.509 certificate authentication](./mongo.md#x509-certificate-authentication).
 
-### SCRAM
+#### SCRAM
 
 To use SCRAM for authentication, include the username and password in the
 connection string and set the `authMechanism` parameter in the connection string
@@ -79,7 +87,7 @@ refer to the official MongoDB documentation on [Authentication Mechanism](https:
 MongoDB version 4.0 and later uses SCRAM-SHA-256 as the default authentication mechanism if the MongoDB server version supports it.
 :::
 
-### X.509 certificate authentication
+#### X.509 certificate authentication
 
 To use X.509 certificate authentication, include the base64 encoded x509
 certificate and the password in the settings. You can use an online tool like
@@ -96,13 +104,7 @@ Content-Type: application/json
 }
 ```
 
-## Metadata
-
-The MongoDB sink connector automatically includes these [default headers](../features.md#headers) in each document sent to the collection. These
-headers provide metadata about the event and are stored in a `_metadata` field
-within the document.
-
-## Document ID
+### Document ID Strategy
 
 The id of the document can be generated automatically based on the source specified and expression if needed. The following options are available:
 
@@ -161,6 +163,7 @@ Content-Type: application/json
 Specify the header keys you want to use in the `documentId:expression` field (e.g., `key1,key2`). The connector will concatenate the header values with a hyphen (`-`) to create the partition key.
 
 For example, if your event has headers `key1: regionA` and `key2: zone1`, the partition key will be `regionA-zone1`.
+
 
 ## Tutorial
 [Learn how to set up and use a MongoDB Sink connector in KurrentDB through a tutorial.](/tutorials/MongoDB_Sink.md)
