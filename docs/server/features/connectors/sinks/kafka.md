@@ -52,15 +52,21 @@ the [Sink Options](../settings.md#sink-options) page.
 
 The Kafka sink can be configured with the following options:
 
-| Name                              | Details                                                                                                                                                                          |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `topic`                           | _required_<br><br>**Description:**<br>The Kafka topic to produce records to.                                                                                                     |
-| `bootstrapServers`                | **Description:**<br>Comma-separated list of Kafka broker addresses.<br><br>**Default**: `"localhost:9092"`                                                                       |
-| `defaultHeaders`                  | **Description:**<br>Headers included in all produced messages.<br><br>**Default**: `"None"`                                                                                      |
-| `authentication:securityProtocol` | **Description:**<br>Protocol used for Kafka broker communication.<br><br>**Default**: `"plaintext"`<br><br>**Accepted Values:** `"plaintext"`, `"saslSsl"`, or `"saslPlaintext"` |
-| `authentication:saslMechanism`    | **Description:**<br>SASL mechanism to use for authentication.<br><br>**Default**: `"plain"`<br><br>**Accepted Values:** `"plain"`, `"scramSha256"`, `"ScramSha512"`              |
-| `authentication:username`         | **Description:**<br>SASL username                                                                                                                                                |
-| `authentication:password`         | **Description:**<br>SASL password                                                                                                                                                |
+| Name               | Details                                                                                                    |
+| ------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `topic`            | _required_<br><br>**Description:**<br>The Kafka topic to produce records to.                               |
+| `bootstrapServers` | **Description:**<br>Comma-separated list of Kafka broker addresses.<br><br>**Default**: `"localhost:9092"` |
+| `defaultHeaders`   | **Description:**<br>Headers included in all produced messages.<br><br>**Default**: `"None"`                |
+
+### Authentication
+
+| Name                              | Details                                                                                                                                                                |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `authentication:securityProtocol` | **Description:**<br>Protocol used for Kafka broker communication.<br><br>**Default**: `"plaintext"`<br><br>**Accepted Values:** `"plaintext"` or `"saslPlaintext"`     |
+| `authentication:saslMechanism`    | **Description:**<br>SASL mechanism to use for authentication.<br><br>**Default**: `"plain"`<br><br>**Accepted Values:** `"plain"`, `"scramSha256"`, or `"scramSha512"` |
+| `authentication:username`         | **Description:**<br>SASL username                                                                                                                                      |
+| `authentication:password`         | **Description:**<br>SASL password                                                                                                                                      |
+
 
 ### Partitioning
 
@@ -168,7 +174,7 @@ These headers will be included in every message sent by the connector, in additi
 
 ## Examples
 
-### SASL Authentication
+### SASL/PLAINTEXT Authentication
 
 ```http
 PUT /connectors/{{id}}/settings
@@ -183,7 +189,7 @@ Content-Type: application/json
 }
 ```
 
-### SASL/SCRAM Authentication
+### SASL/SCRAM-SHA-256 Authentication
 
 ```http
 PUT /connectors/{{id}}/settings
@@ -191,13 +197,12 @@ Host: localhost:2113
 Content-Type: application/json
 
 {
-  "authentication:securityProtocol": "saslSsl",
+  "authentication:securityProtocol": "saslPlaintext",
   "authentication:saslMechanism": "scramSha256",
   "authentication:username": "my-username",
   "authentication:password": "my-password"
 }
 ```
-
 
 ### Partitioning
 
