@@ -46,8 +46,6 @@ The HTTP sink inherits a set of common settings that are used to configure the c
 the [Sink Options](../settings.md#sink-options) page.
 :::
 
-### HTTP settings
-
 | Name                       | Details                                                                                                                                                                                                      |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `url`                      | _required_<br><br> **Description:**<br>The URL or endpoint to which the request or message will be sent. See [Template Parameters](http#template-parameters) for advanced settings.<br><br>**Default**: `""` |
@@ -55,7 +53,7 @@ the [Sink Options](../settings.md#sink-options) page.
 | `defaultHeaders`           | **Description:**<br>Custom headers to include in the request. See [Specifying Custom Headers](#specifying-custom-headers).<br><br>**Default**: `"Accept-Encoding:*"`                                         |
 | `pooledConnectionLifetime` | **Description:**<br>Maximum time a connection can stay in the pool before it is no longer reusable.<br><br>**Default**: `"00:05:00"` (5 minutes)                                                             |
 
-### Authentication
+#### Authentication
 
 The HTTP sink connector supports both [Basic](https://datatracker.ietf.org/doc/html/rfc7617) and [Bearer](https://datatracker.ietf.org/doc/html/rfc6750) authentication methods.
 
@@ -63,14 +61,14 @@ The HTTP sink connector supports both [Basic](https://datatracker.ietf.org/doc/h
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `authentication:method` | **Description:**<br>The authentication method to use.<br><br>**Default**: `"None"`<br><br>**Accepted Values:** `"None"`,`"Basic"`, or `"Bearer"` |
 
-#### Basic Authentication
+##### Basic Authentication
 
 | Name                            | Details                                                                             |
 | ------------------------------- | ----------------------------------------------------------------------------------- |
 | `authentication:basic:username` | **Description:**<br>The username for basic authentication.<br><br>**Default**: `""` |
 | `authentication:basic:password` | **Description:**<br>The password for basic authentication.<br><br>**Default**: `""` |
 
-#### Bearer Authentication
+##### Bearer Authentication
 
 | Name                          | Details                                                                           |
 | ----------------------------- | --------------------------------------------------------------------------------- |

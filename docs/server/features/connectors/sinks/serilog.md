@@ -90,7 +90,7 @@ The Serilog sink can be configured with the following options:
 }
 ```
 
-@tab cURL
+@tab Example Request
 
 ```http
 POST /connectors/{{id}}
