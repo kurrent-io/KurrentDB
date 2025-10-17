@@ -1,0 +1,21 @@
+{
+	"ParallelLimit": -1, // -1 limits to Environment.ProcessorCount
+	"Node": {
+		"Insecure": true,
+		"Username": "admin",
+		"Password": "changeit", // irl override via command line
+		"NodeType": "embedded", // container, embedded, external
+		"Container": {
+			"CleanUp": true,
+			"Registry": "docker.kurrent.io/kurrent-staging",
+			"Repository": "kurrentdb",
+			"Tag": "25.1.0-x64-8.0-jammy"
+		},
+		"Embedded": {
+		},
+		"External": {
+			"Host": "localhost",
+			"Port": 2111
+		}
+	}
+}
