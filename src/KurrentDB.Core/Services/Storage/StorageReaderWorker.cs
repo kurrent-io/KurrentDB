@@ -169,6 +169,12 @@ public partial class StorageReaderWorker<TStreamId> :
 			return;
 
 		if (msg.Expires < DateTime.UtcNow) {
+			if (msg.ReplyOnExpired) {
+				msg.Envelope.ReplyWith(new ClientMessage.ReadStreamEventsBackwardCompleted(
+					msg.CorrelationId, msg.EventStreamId, msg.FromEventNumber, msg.MaxCount, ReadStreamResult.Expired,
+					ResolvedEvent.EmptyArray, default, default, default, -1, default, true, default));
+			}
+
 			if (LogExpiredMessage())
 				Log.Debug(
 					"Read Stream Events Backward operation has expired for Stream: {stream}, From Event Number: {fromEventNumber}, Max Count: {maxCount}. Operation Expired at {expiryDateTime} after {lifetime:N0} ms.",
