@@ -204,6 +204,21 @@ Content-Type: application/json
 }
 ```
 
+### SASL/SCRAM-SHA-512 Authentication
+
+```http
+PUT /connectors/{{id}}/settings
+Host: localhost:2113
+Content-Type: application/json
+
+{
+  "authentication:securityProtocol": "saslPlaintext",
+  "authentication:saslMechanism": "scramSha512",
+  "authentication:username": "my-username",
+  "authentication:password": "my-password"
+}
+```
+
 ### Partitioning
 
 The Kafka sink connector allows customizing the partition keys that are sent
