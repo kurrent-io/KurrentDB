@@ -174,7 +174,14 @@ These headers will be included in every message sent by the connector, in additi
 
 ## Examples
 
-### SASL/PLAINTEXT Authentication
+### Authentication
+
+The Kafka sink connector supports secure communication with Kafka brokers using
+**SASL authentication**. By default, the connector communicates in **plaintext**
+without authentication. However, you can configure it to use SASL with different
+authentication mechanisms.
+
+#### SASL/PLAINTEXT Authentication
 
 ```http
 PUT /connectors/{{id}}/settings
@@ -189,7 +196,7 @@ Content-Type: application/json
 }
 ```
 
-### SASL/SCRAM-SHA-256 Authentication
+#### SASL/SCRAM-SHA-256 Authentication
 
 ```http
 PUT /connectors/{{id}}/settings
@@ -204,7 +211,7 @@ Content-Type: application/json
 }
 ```
 
-### SASL/SCRAM-SHA-512 Authentication
+#### SASL/SCRAM-SHA-512 Authentication
 
 ```http
 PUT /connectors/{{id}}/settings
