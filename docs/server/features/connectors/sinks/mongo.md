@@ -13,54 +13,25 @@ documents, so the data must be valid for BSON format.
 
 ## Quickstart
 
-You can create the MongoDB Sink connector as follows:
+You can create the MongoDB Sink connector as follows. Replace `id` with a unique connector name or ID:
 
-::: tabs
-@tab Powershell
+```http
+POST /connectors/{{id}}
+Host: localhost:2113
+Content-Type: application/json
 
-```powershell
-$JSON = @"
 {
   "settings": {
     "instanceTypeName": "mongo-db-sink",
     "connectionString": "mongodb://127.0.0.1:27020",
-    "database": "sampleDB",
-    "collection": "sampleCollection",
+    "database": "my_database",
+    "collection": "my_collection",
     "subscription:filter:scope": "stream",
     "subscription:filter:filterType": "streamId",
     "subscription:filter:expression": "example-stream"
   }
 }
-"@ `
-
-curl.exe -X POST `
-  -H "Content-Type: application/json" `
-  -d $JSON `
-  http://localhost:2113/connectors/mongo-sink-connector
 ```
-
-@tab Bash
-
-```bash
-JSON='{
-  "settings": {
-    "instanceTypeName": "mongo-db-sink",
-    "connectionString": "mongodb://127.0.0.1:27020",
-    "database": "sampleDB",
-    "collection": "sampleCollection",
-    "subscription:filter:scope": "stream",
-    "subscription:filter:filterType": "streamId",
-    "subscription:filter:expression": "example-stream"
-  }
-}'
-
-curl -X POST \
-  -H "Content-Type: application/json" \
-  -d "$JSON" \
-  http://localhost:2113/connectors/mongo-sink-connector
-```
-
-:::
 
 After creating and starting the MongoDB sink connector, every time an event is
 appended to the `example-stream`, the MongoDB sink connector will send the
@@ -78,23 +49,33 @@ the [Sink Options](../settings.md#sink-options) page.
 
 The MongoDB sink can be configured with the following options:
 
-| Name                      | Details                                                                                                                                                                                                                                                                                          |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `database`                | _required_<br><br>**Type**: string<br><br>**Description:** The name of the database where the records will be stored.                                                                                                                                                                            |
-| `collection`              | _required_<br><br>**Type**: string<br><br>**Description:** The collection name that resides in the database to push records to.                                                                                                                                                                  |
-| `connectionString`        | _required_<br><br>**Type**: string<br><br>**Description:** The MongoDB URI to which the connector connects. <br><br>See [connection string URI format](https://www.mongodb.com/docs/manual/reference/connection-string/)<br><br>**Default**: `mongodb://mongoadmin:secret@localhost:27017/admin` |
-| `documentId:source`       | **Type**: string<br><br>**Description:** The attribute used to generate the document id.<br><br>**Default**: `recordId`<br><br>**Accepted Values:**<br>- `recordId`, `stream`, `headers`, `streamSuffix`, `PartitionKey`.                                                                        |
-| `documentId:expression`   | **Type**: string<br><br>**Description:** The expression used to format the document id based on the selected source. This allows for custom id generation logic.<br><br>**Default**: `250`                                                                                                       |
-| `certificate:rawData`     | **Type**: string<br><br>**Description:** Base64 encoded x509 certificate.<br><br>**Default**: ""                                                                                                                                                                                                 |
-| `certificate:password`    | **Type**: string<br><br>**Description:** The password used to access the x509 certificate for secure connections.<br><br>**Default**: ""                                                                                                                                                         |
-| `batching:batchSize`      | **Type**: string<br><br>**Description:** Threshold batch size at which the sink will push the batch of records to the MongoDB collection.<br><br>**Default**: `1000`                                                                                                                             |
-| `batching:batchTimeoutMs` | **Type**: string<br><br>**Description:** Threshold time in milliseconds at which the sink will push the current batch of records to the MongoDB collection, regardless of the batch size.<br><br>**Default**: `250`                                                                              |
+| Name                      | Details                                                                                                                                                                                          |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `database`                | _required_<br><br>**Description:**<br>The name of the database where the records will be stored.                                                                                                 |
+| `collection`              | _required_<br><br>**Description:**<br>The collection name that resides in the database to push records to.                                                                                       |
+| `connectionString`        | _required_<br><br>**Description:**<br>The MongoDB URI to which the connector connects.<br><br>**Default**: `"mongodb://mongoadmin:secret@localhost:27017/admin"`                                 |
+| `documentId:source`       | **Description:**<br>The attribute used to generate the document id.<br><br>**Default**: `"recordId"`<br><br>**Accepted Values:**<br>- `"recordId"`, `"stream"`, `"headers"`, or `"streamSuffix"` |
+| `documentId:expression`   | **Description:**<br>The expression used to format the document id based on the selected source. This allows for custom id generation logic.<br><br>**Default**: `"250"`                          |
+| `certificate:rawData`     | **Description:**<br>Base64 encoded x509 certificate.<br><br>**Default**: ""                                                                                                                      |
+| `certificate:password`    | **Description:**<br>The password used to access the x509 certificate for secure connections.<br><br>**Default**: ""                                                                              |
+| `batching:batchSize`      | **Description:**<br>Threshold batch size at which the sink will push the batch of records to the MongoDB collection.<br><br>**Default**: `"1000"`                                                |
+| `batching:batchTimeoutMs` | **Description:**<br>Threshold time in milliseconds at which the sink will push the current batch of records to the MongoDB collection, regardless of the batch size.<br><br>**Default**: `"250"` |
 
-## Authentication
+Resilience options can be found in the [Resilience Configuration](../settings.md#resilience-configuration) section.
+
+## Metadata
+
+The MongoDB sink connector automatically includes these [default headers](../features.md#headers) in each document sent to the collection. These
+headers provide metadata about the event and are stored in a `_metadata` field
+within the document.
+
+## Examples
+
+### Authentication
 
 This MongoDB sink connector currently only supports [SCRAM](./mongo.md#scram) and [X.509 certificate authentication](./mongo.md#x509-certificate-authentication).
 
-### SCRAM
+#### SCRAM
 
 To use SCRAM for authentication, include the username and password in the
 connection string and set the `authMechanism` parameter in the connection string
@@ -106,26 +87,28 @@ refer to the official MongoDB documentation on [Authentication Mechanism](https:
 MongoDB version 4.0 and later uses SCRAM-SHA-256 as the default authentication mechanism if the MongoDB server version supports it.
 :::
 
-### X.509 certificate authentication
+#### X.509 certificate authentication
 
 To use X.509 certificate authentication, include the base64 encoded x509
 certificate and the password in the settings. You can use an online tool like
 [base64encode](https://www.base64encode.org/) to encode your certificate.
 
-```json
+```http
+POST /connectors/{{id}}
+Host: localhost:2113
+Content-Type: application/json
+
 {
   "certificate:rawData": "base64encodedstring",
   "certificate:password": "password"
 }
 ```
 
-## Document ID
+### Document ID Strategy
 
 The id of the document can be generated automatically based on the source specified and expression if needed. The following options are available:
 
-By default, the MongoDB sink uses the `recordId` as the document ID. This is the unique identifier generated for every record in KurrentDB.
-
-Here are some examples that demonstrate how to configure the MongoDB sink to generate document IDs based on different sources.
+By default, the MongoDB sink connector uses the record's Id as the document ID. This is the unique identifier generated for every record in KurrentDB.
 
 **Set Document ID using Stream ID**
 
@@ -134,7 +117,11 @@ define the document id. The expression is optional and can be customized based
 on your naming convention. In this example, the expression captures the stream
 name up to `_data`.
 
-```json
+```http
+POST /connectors/{{id}}
+Host: localhost:2113
+Content-Type: application/json
+
 {
   "documentId:source": "stream",
   "documentId:expression": "^(.*)_data$"
@@ -145,7 +132,11 @@ Alternatively, if you only need the last segment of the stream name (after a
 hyphen), you can use the `streamSuffix` source. This
 doesn't require an expression since it automatically extracts the suffix.
 
-```json
+```http
+POST /connectors/{{id}}
+Host: localhost:2113
+Content-Type: application/json
+
 {
   "documentId:source": "streamSuffix"
 }
@@ -157,45 +148,22 @@ example, if the stream is named `user-123`, the document ID would be `123`.
 
 **Set Document ID from Headers**
 
-You can generate the document ID by concatenating values from specific event headers. In this case, two header values (`key1` and `key2`) are combined to form the ID.
+You can create the document ID by combining values from a record's metadata.
 
-```json
+```http
+POST /connectors/{{id}}
+Host: localhost:2113
+Content-Type: application/json
+
 {
   "documentId:source": "headers",
   "documentId:expression": "key1,key2"
 }
 ```
+Specify the header keys you want to use in the `documentId:expression` field (e.g., `key1,key2`). The connector will concatenate the header values with a hyphen (`-`) to create the partition key.
 
-The `Headers` source allows you to pull values from the event's metadata. The
-`documentId:expression` field lists the header keys (in this case, `key1` and
-`key2`), and their values are concatenated to generate the document ID. This is
-useful when headers hold important metadata that should define the document's
-unique identifier, such as region, user ID, or other identifiers.
+For example, if your event has headers `key1: regionA` and `key2: zone1`, the partition key will be `regionA-zone1`.
 
-::: details Click here to see an example
-
-```json
-{
-  "key1": "value1",
-  "key2": "value2"
-}
-
-// outputs "value1-value2"
-```
-
-:::
-
-**4. Set Document ID from Partition Key**
-
-If your event has a partition key, you can use it as the document ID. The `PartitionKey` source directly uses this key without requiring an expression.
-
-```json
-{
-  "documentId:source": "PartitionKey"
-}
-```
-
-This uses the record's partition key as a unique document ID.
 
 ## Tutorial
 [Learn how to set up and use a MongoDB Sink connector in KurrentDB through a tutorial.](/tutorials/MongoDB_Sink.md)
