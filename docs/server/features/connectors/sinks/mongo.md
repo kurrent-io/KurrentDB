@@ -49,17 +49,19 @@ the [Sink Options](../settings.md#sink-options) page.
 
 The MongoDB sink can be configured with the following options:
 
-| Name                      | Details                                                                                                                                                                                                          |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `database`                | _required_<br><br>**Description:**<br>The name of the database where the records will be stored.                                                                                                                 |
-| `collection`              | _required_<br><br>**Description:**<br>The collection name that resides in the database to push records to.                                                                                                       |
-| `connectionString`        | _required_<br><br>**Description:**<br>The MongoDB URI to which the connector connects.<br><br>**Default**: `"mongodb://mongoadmin:secret@localhost:27017/admin"`                                                 |
-| `documentId:source`       | **Description:**<br>The attribute used to generate the document id.<br><br>**Default**: `"recordId"`<br><br>**Accepted Values:**<br>- `"recordId"`, `"stream"`, `"headers"`, `"streamSuffix"`, `"PartitionKey"`. |
-| `documentId:expression`   | **Description:**<br>The expression used to format the document id based on the selected source. This allows for custom id generation logic.<br><br>**Default**: `"250"`                                          |
-| `certificate:rawData`     | **Description:**<br>Base64 encoded x509 certificate.<br><br>**Default**: ""                                                                                                                                      |
-| `certificate:password`    | **Description:**<br>The password used to access the x509 certificate for secure connections.<br><br>**Default**: ""                                                                                              |
-| `batching:batchSize`      | **Description:**<br>Threshold batch size at which the sink will push the batch of records to the MongoDB collection.<br><br>**Default**: `"1000"`                                                                |
-| `batching:batchTimeoutMs` | **Description:**<br>Threshold time in milliseconds at which the sink will push the current batch of records to the MongoDB collection, regardless of the batch size.<br><br>**Default**: `"250"`                 |
+| Name                      | Details                                                                                                                                                                                          |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `database`                | _required_<br><br>**Description:**<br>The name of the database where the records will be stored.                                                                                                 |
+| `collection`              | _required_<br><br>**Description:**<br>The collection name that resides in the database to push records to.                                                                                       |
+| `connectionString`        | _required_<br><br>**Description:**<br>The MongoDB URI to which the connector connects.<br><br>**Default**: `"mongodb://mongoadmin:secret@localhost:27017/admin"`                                 |
+| `documentId:source`       | **Description:**<br>The attribute used to generate the document id.<br><br>**Default**: `"recordId"`<br><br>**Accepted Values:**<br>- `"recordId"`, `"stream"`, `"headers"`, or `"streamSuffix"` |
+| `documentId:expression`   | **Description:**<br>The expression used to format the document id based on the selected source. This allows for custom id generation logic.<br><br>**Default**: `"250"`                          |
+| `certificate:rawData`     | **Description:**<br>Base64 encoded x509 certificate.<br><br>**Default**: ""                                                                                                                      |
+| `certificate:password`    | **Description:**<br>The password used to access the x509 certificate for secure connections.<br><br>**Default**: ""                                                                              |
+| `batching:batchSize`      | **Description:**<br>Threshold batch size at which the sink will push the batch of records to the MongoDB collection.<br><br>**Default**: `"1000"`                                                |
+| `batching:batchTimeoutMs` | **Description:**<br>Threshold time in milliseconds at which the sink will push the current batch of records to the MongoDB collection, regardless of the batch size.<br><br>**Default**: `"250"` |
+
+Resilience options can be found in the [Resilience Configuration](../settings.md#resilience-configuration) section.
 
 ## Authentication
 
@@ -104,9 +106,7 @@ within the document.
 
 The id of the document can be generated automatically based on the source specified and expression if needed. The following options are available:
 
-By default, the MongoDB sink uses the `recordId` as the document ID. This is the unique identifier generated for every record in KurrentDB.
-
-Here are some examples that demonstrate how to configure the MongoDB sink to generate document IDs based on different sources.
+By default, the MongoDB sink connector uses the record's Id as the document ID. This is the unique identifier generated for every record in KurrentDB.
 
 **Set Document ID using Stream ID**
 
@@ -146,7 +146,7 @@ example, if the stream is named `user-123`, the document ID would be `123`.
 
 **Set Document ID from Headers**
 
-You can generate the document ID by concatenating values from specific event headers. In this case, two header values (`key1` and `key2`) are combined to form the ID.
+You can create the document ID by combining values from a record's metadata.
 
 ```http
 POST /connectors/{{id}}
@@ -158,45 +158,9 @@ Content-Type: application/json
   "documentId:expression": "key1,key2"
 }
 ```
+Specify the header keys you want to use in the `documentId:expression` field (e.g., `key1,key2`). The connector will concatenate the header values with a hyphen (`-`) to create the partition key.
 
-The `Headers` source allows you to pull values from the event's metadata. The
-`documentId:expression` field lists the header keys (in this case, `key1` and
-`key2`), and their values are concatenated to generate the document ID. This is
-useful when headers hold important metadata that should define the document's
-unique identifier, such as region, user ID, or other identifiers.
-
-::: details Click here to see an example
-
-```http
-POST /connectors/{{id}}
-Host: localhost:2113
-Content-Type: application/json
-
-{
-  "key1": "value1",
-  "key2": "value2"
-}
-
-// outputs "value1-value2"
-```
-
-:::
-
-**4. Set Document ID from Partition Key**
-
-If your event has a partition key, you can use it as the document ID. The `partitionKey` source directly uses this key without requiring an expression.
-
-```http
-POST /connectors/{{id}}
-Host: localhost:2113
-Content-Type: application/json
-
-{
-  "documentId:source": "partitionKey"
-}
-```
-
-This uses the record's partition key as a unique document ID.
+For example, if your event has headers `key1: regionA` and `key2: zone1`, the partition key will be `regionA-zone1`.
 
 ## Tutorial
 [Learn how to set up and use a MongoDB Sink connector in KurrentDB through a tutorial.](/tutorials/MongoDB_Sink.md)

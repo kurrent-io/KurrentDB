@@ -54,7 +54,11 @@ For details and examples on transformations, see [Transformations](./features.md
 | `resilience:thirdDelayBound:upperLimitMs`  | **Description:**<br>The upper limit for the third delay bound in milliseconds. A value of `"-1"` indicates forever.<br><br>**Default**: `"-1"` |
 | `resilience:thirdDelayBound:delayMs`       | **Description:**<br>The delay for the third delay bound in milliseconds.<br><br>**Default**: `"3600000"`                                       |
 
-For details on resilience, see [Resilience](./features.md#resilience).
+::: note
+Not all connectors use every resilience setting listed here. Some may have additional or different resilience options. If a connector’s individual documentation page does not explicitly mention support for these settings, it does not use them.
+:::
+
+For more details on resilience, see [Resilience](./features.md#resilience).
 
 ### Auto-Commit configuration
 
