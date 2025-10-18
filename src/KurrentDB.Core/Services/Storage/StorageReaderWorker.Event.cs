@@ -4,6 +4,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using DotNext;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using static KurrentDB.Core.Messages.ClientMessage;
@@ -41,19 +42,23 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadEvent> {
 			var streamName = msg.EventStreamId;
 			var streamId = _readIndex.GetStreamId(streamName);
 			var result = await _readIndex.ReadEvent(streamName, streamId, msg.EventNumber, token);
-			var record = result.Result is ReadEventResult.Success && msg.ResolveLinkTos
-				? await ResolveLinkToEvent(result.Record, null, token)
-				: ResolvedEvent.ForUnresolvedEvent(result.Record);
-			if (record is null)
-				return NoData(ReadEventResult.AccessDenied);
-			if (result.Result is ReadEventResult.NoStream or ReadEventResult.NotFound &&
-			    _systemStreams.IsMetaStream(streamId) &&
-			    result.OriginalStreamExists.HasValue &&
-			    result.OriginalStreamExists.Value) {
-				return NoData(ReadEventResult.Success);
+
+			ResolvedEvent record;
+			switch (result) {
+				case { Result: ReadEventResult.Success } when msg.ResolveLinkTos:
+					if ((await ResolveLinkToEvent(result.Record, null, token)).TryGetValue(out record))
+						break;
+
+					return NoData(ReadEventResult.AccessDenied);
+				case { Result: ReadEventResult.NoStream or ReadEventResult.NotFound, OriginalStreamExists: true }
+					when _systemStreams.IsMetaStream(streamId):
+					return NoData(ReadEventResult.Success);
+				default:
+					record = ResolvedEvent.ForUnresolvedEvent(result.Record);
+					break;
 			}
 
-			return new(msg.CorrelationId, msg.EventStreamId, result.Result, record.Value, result.Metadata, false, null);
+			return new(msg.CorrelationId, msg.EventStreamId, result.Result, record, result.Metadata, false, null);
 		} catch (Exception exc) when (exc is not OperationCanceledException oce || oce.CancellationToken != token) {
 			Log.Error(exc, "Error during processing ReadEvent request.");
 			return NoData(ReadEventResult.Error, exc.Message);

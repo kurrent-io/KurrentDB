@@ -39,11 +39,11 @@ partial class StorageReaderWorker<TStreamId> :
 
 		var res = await _secondaryIndexReaders.ReadForwards(msg, token);
 		switch (res.Result) {
-			case ReadIndexResult.Success:
-			case ReadIndexResult.NotModified:
-			case ReadIndexResult.Error:
-			case ReadIndexResult.InvalidPosition:
-			case ReadIndexResult.IndexNotFound:
+			case ReadIndexResult.Success
+				or ReadIndexResult.NotModified
+				or ReadIndexResult.Error
+				or ReadIndexResult.InvalidPosition
+				or ReadIndexResult.IndexNotFound:
 				msg.Envelope.ReplyWith(res);
 				break;
 			default:
@@ -77,11 +77,11 @@ partial class StorageReaderWorker<TStreamId> :
 
 		var res = await _secondaryIndexReaders.ReadBackwards(msg, token);
 		switch (res.Result) {
-			case ReadIndexResult.Success:
-			case ReadIndexResult.NotModified:
-			case ReadIndexResult.Error:
-			case ReadIndexResult.InvalidPosition:
-			case ReadIndexResult.IndexNotFound:
+			case ReadIndexResult.Success
+				or ReadIndexResult.NotModified
+				or ReadIndexResult.Error
+				or ReadIndexResult.InvalidPosition
+				or ReadIndexResult.IndexNotFound:
 				msg.Envelope.ReplyWith(res);
 				break;
 			default:

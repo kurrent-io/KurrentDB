@@ -5,7 +5,6 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using DotNext.Threading;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
@@ -46,7 +45,7 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadLogEvents> {
 	private async ValueTask<ReadLogEventsCompleted> ReadLogEvents(ReadLogEvents msg, CancellationToken token) {
 		try {
 			var reader = _readIndex.IndexReader;
-			var readPrepares = msg.LogPositions.Select(async (pos, index) => (Index: index, Prepare: await reader.ReadPrepare<TStreamId>(pos, token)));
+			var readPrepares = msg.LogPositions.Select(async (pos, index) => (Index: index, Prepare: await reader.Backend.ReadPrepare(pos, token)));
 			// This way to read is unusual and might cause issues. Observe the impact in the field and revisit.
 			var prepared = (await Task.WhenAll(readPrepares))
 				.Select(x => ResolvedEvent.ForUnresolvedEvent(new(x.Index, x.Prepare, x.Prepare!.EventStreamId!.ToString()!, x.Prepare.EventType.ToString())));
@@ -63,15 +62,12 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadLogEvents> {
 }
 
 file static class ReaderExtensions {
-	internal static async ValueTask<IPrepareLogRecord<TStreamId>> ReadPrepare<TStreamId>(this IIndexReader<TStreamId> localReader, long logPosition, CancellationToken ct) {
-		var r = await localReader.Backend.TFReader.TryReadAt(logPosition, couldBeScavenged: true, ct);
-		if (!r.Success)
-			return null;
-
-		if (r.LogRecord.RecordType is not LogRecordType.Prepare
-			and not LogRecordType.Stream
-			and not LogRecordType.EventType)
-			throw new($"Incorrect type of log record {r.LogRecord.RecordType}, expected Prepare record.");
-		return (IPrepareLogRecord<TStreamId>)r.LogRecord;
-	}
+	internal static async ValueTask<IPrepareLogRecord<TStreamId>> ReadPrepare<TStreamId>(this IIndexBackend<TStreamId> localReader,
+		long logPosition,
+		CancellationToken ct)
+		=> await localReader.TFReader.TryReadAt(logPosition, couldBeScavenged: true, ct) switch {
+			{ Success: false } => null,
+			{ LogRecord: IPrepareLogRecord<TStreamId> { RecordType: LogRecordType.Prepare or LogRecordType.Stream or LogRecordType.EventType } r } => r,
+			var r => throw new($"Incorrect type of log record {r.LogRecord.RecordType}, expected Prepare record.")
+		};
 }
