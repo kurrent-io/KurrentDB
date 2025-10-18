@@ -19,6 +19,7 @@ public class ReadIndexStub {
 		_transactionalFileReader = Substitute.For<ITransactionFileReader>();
 
 		var backend = Substitute.For<IIndexBackend<string>>();
+		backend.TFReader.Returns(_transactionalFileReader);
 
 		var indexReader = Substitute.For<IIndexReader<string>>();
 		indexReader.Backend.Returns(backend);
