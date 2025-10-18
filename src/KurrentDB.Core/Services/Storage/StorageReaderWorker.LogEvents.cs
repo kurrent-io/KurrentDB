@@ -9,14 +9,13 @@ using DotNext.Threading;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
-using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.LogCommon;
 using static KurrentDB.Core.Messages.ClientMessage;
 
 namespace KurrentDB.Core.Services.Storage;
 
-public partial class StorageReaderWorker<TStreamId> {
+partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadLogEvents> {
 	async ValueTask IAsyncHandle<ReadLogEvents>.HandleAsync(ReadLogEvents msg, CancellationToken token) {
 		if (msg.CancellationToken.IsCancellationRequested)
 			return;
@@ -32,8 +31,13 @@ public partial class StorageReaderWorker<TStreamId> {
 		}
 
 		ReadLogEventsCompleted ev;
-		using (token.LinkTo(msg.CancellationToken)) {
-			ev = await ReadLogEvents(msg, token);
+		var cts = _multiplexer.Combine([token, msg.CancellationToken]);
+		try {
+			ev = await ReadLogEvents(msg, cts.Token);
+		} catch (OperationCanceledException e) when (e.CancellationToken == cts.Token) {
+			throw new OperationCanceledException(e.Message, e, cts.CancellationOrigin);
+		} finally {
+			await cts.DisposeAsync();
 		}
 
 		msg.Envelope.ReplyWith(ev);
