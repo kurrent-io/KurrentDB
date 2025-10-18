@@ -36,27 +36,20 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<FilteredReadAllEvent
 
 		var res = await FilteredReadAllEventsForward(msg, token);
 		switch (res.Result) {
-			case FilteredReadAllResult.Success:
-				if (msg.LongPollTimeout.HasValue && res.IsEndOfStream && res.Events.Count is 0) {
-					_publisher.Publish(new PollStream(
-						SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
-						DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
-				} else
-					msg.Envelope.ReplyWith(res);
+			case FilteredReadAllResult.Success when msg.LongPollTimeout.HasValue && res is { IsEndOfStream: true, Events: [] }:
+			case FilteredReadAllResult.NotModified when msg.LongPollTimeout.HasValue && res.IsEndOfStream
+			                                                                         && res.CurrentPos.CommitPosition >
+			                                                                         res.TfLastCommitPosition:
+				_publisher.Publish(new PollStream(
+					SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
+					DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
 
 				break;
-			case FilteredReadAllResult.NotModified:
-				if (msg.LongPollTimeout.HasValue && res.IsEndOfStream && res.CurrentPos.CommitPosition > res.TfLastCommitPosition) {
-					_publisher.Publish(new PollStream(
-						SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
-						DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
-				} else
-					msg.Envelope.ReplyWith(res);
-
-				break;
-			case FilteredReadAllResult.Error:
-			case FilteredReadAllResult.AccessDenied:
-			case FilteredReadAllResult.InvalidPosition:
+			case FilteredReadAllResult.Error
+				or FilteredReadAllResult.AccessDenied
+				or FilteredReadAllResult.InvalidPosition
+				or FilteredReadAllResult.Success
+				or FilteredReadAllResult.NotModified:
 				msg.Envelope.ReplyWith(res);
 				break;
 			default:
@@ -85,27 +78,19 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<FilteredReadAllEvent
 
 		var res = await FilteredReadAllEventsBackward(msg, token);
 		switch (res.Result) {
-			case FilteredReadAllResult.Success:
-				if (msg.LongPollTimeout.HasValue && res.IsEndOfStream && res.Events.Count is 0) {
-					_publisher.Publish(new PollStream(
-						SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
-						DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
-				} else
-					msg.Envelope.ReplyWith(res);
+			case FilteredReadAllResult.Success when msg.LongPollTimeout.HasValue && res is { IsEndOfStream: true, Events: [] }:
+			case FilteredReadAllResult.NotModified when msg.LongPollTimeout.HasValue && res.IsEndOfStream &&
+			                                            res.CurrentPos.CommitPosition > res.TfLastCommitPosition:
+				_publisher.Publish(new PollStream(
+					SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
+					DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
 
 				break;
-			case FilteredReadAllResult.NotModified:
-				if (msg.LongPollTimeout.HasValue && res.IsEndOfStream && res.CurrentPos.CommitPosition > res.TfLastCommitPosition) {
-					_publisher.Publish(new PollStream(
-						SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
-						DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
-				} else
-					msg.Envelope.ReplyWith(res);
-
-				break;
-			case FilteredReadAllResult.Error:
-			case FilteredReadAllResult.AccessDenied:
-			case FilteredReadAllResult.InvalidPosition:
+			case FilteredReadAllResult.Error
+				or FilteredReadAllResult.AccessDenied
+				or FilteredReadAllResult.InvalidPosition
+				or FilteredReadAllResult.Success
+				or FilteredReadAllResult.NotModified:
 				msg.Envelope.ReplyWith(res);
 				break;
 			default:

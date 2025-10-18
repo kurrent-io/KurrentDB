@@ -46,21 +46,20 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadStreamEventsBack
 		}
 
 		switch (res.Result) {
-			case ReadStreamResult.Success:
-			case ReadStreamResult.NoStream:
-			case ReadStreamResult.NotModified:
-				if (msg.LongPollTimeout.HasValue && res.FromEventNumber > res.LastEventNumber) {
-					_publisher.Publish(new PollStream(
-						msg.EventStreamId, res.TfLastCommitPosition, res.LastEventNumber,
-						DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
-				} else {
-					msg.Envelope.ReplyWith(res);
-				}
+			case ReadStreamResult.Success
+				or ReadStreamResult.NoStream
+				or ReadStreamResult.NotModified when msg.LongPollTimeout.HasValue && res.FromEventNumber > res.LastEventNumber:
+				_publisher.Publish(new PollStream(
+					msg.EventStreamId, res.TfLastCommitPosition, res.LastEventNumber,
+					DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
 
 				break;
-			case ReadStreamResult.StreamDeleted:
-			case ReadStreamResult.Error:
-			case ReadStreamResult.AccessDenied:
+			case ReadStreamResult.StreamDeleted
+				or ReadStreamResult.Error
+				or ReadStreamResult.AccessDenied
+				or ReadStreamResult.Success
+				or ReadStreamResult.NoStream
+				or ReadStreamResult.NotModified:
 				msg.Envelope.ReplyWith(res);
 				break;
 			default:
@@ -120,8 +119,7 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadStreamEventsBack
 			if (await ResolveLinkToEvents(result.Records, msg.ResolveLinkTos, msg.User, token) is not { } resolvedPairs)
 				return NoData(ReadStreamResult.AccessDenied, lastIndexPosition);
 
-			return new ReadStreamEventsForwardCompleted(
-				msg.CorrelationId, msg.EventStreamId, msg.FromEventNumber, msg.MaxCount,
+			return new(msg.CorrelationId, msg.EventStreamId, msg.FromEventNumber, msg.MaxCount,
 				(ReadStreamResult)result.Result, resolvedPairs, result.Metadata, false, string.Empty,
 				result.NextEventNumber, result.LastEventNumber, result.IsEndOfStream, lastIndexPosition);
 		} catch (Exception exc) when (exc is not OperationCanceledException oce || oce.CancellationToken != token) {
@@ -162,8 +160,7 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadStreamEventsBack
 			if (await ResolveLinkToEvents(result.Records, msg.ResolveLinkTos, msg.User, token) is not { } resolvedPairs)
 				return NoData(ReadStreamResult.AccessDenied);
 
-			return new ReadStreamEventsBackwardCompleted(
-				msg.CorrelationId, msg.EventStreamId, result.FromEventNumber, result.MaxCount,
+			return new(msg.CorrelationId, msg.EventStreamId, result.FromEventNumber, result.MaxCount,
 				(ReadStreamResult)result.Result, resolvedPairs, result.Metadata, false, string.Empty,
 				result.NextEventNumber, result.LastEventNumber, result.IsEndOfStream, lastIndexedPosition);
 		} catch (Exception exc) when (exc is not OperationCanceledException oce || oce.CancellationToken != token) {

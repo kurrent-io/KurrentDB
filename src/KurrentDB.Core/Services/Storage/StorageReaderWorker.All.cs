@@ -38,28 +38,20 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadAllEventsForward
 
 		var res = await ReadAllEventsForward(msg, token);
 		switch (res.Result) {
-			case ReadAllResult.Success:
-				if (msg.LongPollTimeout.HasValue && res.IsEndOfStream && res.Events.Count is 0) {
-					_publisher.Publish(new PollStream(
-						SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
-						DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
-				} else
-					msg.Envelope.ReplyWith(res);
+			case ReadAllResult.Success when msg.LongPollTimeout.HasValue && res is { IsEndOfStream: true, Events: [] }:
+			case ReadAllResult.NotModified when msg.LongPollTimeout.HasValue
+			                                    && res.IsEndOfStream
+			                                    && res.CurrentPos.CommitPosition > res.TfLastCommitPosition:
+				_publisher.Publish(new PollStream(
+					SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
+					DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
 
 				break;
-			case ReadAllResult.NotModified:
-				if (msg.LongPollTimeout.HasValue && res.IsEndOfStream &&
-					res.CurrentPos.CommitPosition > res.TfLastCommitPosition) {
-					_publisher.Publish(new PollStream(
-						SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
-						DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
-				} else
-					msg.Envelope.ReplyWith(res);
-
-				break;
-			case ReadAllResult.Error:
-			case ReadAllResult.AccessDenied:
-			case ReadAllResult.InvalidPosition:
+			case ReadAllResult.Error
+				or ReadAllResult.AccessDenied
+				or ReadAllResult.InvalidPosition
+				or ReadAllResult.Success
+				or ReadAllResult.NotModified:
 				msg.Envelope.ReplyWith(res);
 				break;
 			default:
@@ -113,9 +105,8 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadAllEventsForward
 				return NoData(ReadAllResult.AccessDenied);
 
 			var metadata = await _readIndex.GetStreamMetadata(_systemStreams.AllStream, token);
-			return new ReadAllEventsForwardCompleted(
-				msg.CorrelationId, ReadAllResult.Success, null, resolved, metadata, false, msg.MaxCount,
-				res.CurrentPos, res.NextPos, res.PrevPos, lastIndexedPosition);
+			return new(msg.CorrelationId, ReadAllResult.Success, null, resolved, metadata,
+				false, msg.MaxCount, res.CurrentPos, res.NextPos, res.PrevPos, lastIndexedPosition);
 		} catch (Exception exc) when (exc is InvalidReadException or UnableToReadPastEndOfStreamException) {
 			Log.Warning(exc, "Error during processing ReadAllEventsBackward request. The read appears to be at an invalid position.");
 			return NoData(ReadAllResult.InvalidPosition, exc.Message);
@@ -124,12 +115,9 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadAllEventsForward
 			return NoData(ReadAllResult.Error, exc.Message);
 		}
 
-		ReadAllEventsForwardCompleted NoData(ReadAllResult result, string error = null) {
-			return new(
-				msg.CorrelationId, result, error, ResolvedEvent.EmptyArray, null, false,
+		ReadAllEventsForwardCompleted NoData(ReadAllResult result, string error = null)
+			=> new(msg.CorrelationId, result, error, ResolvedEvent.EmptyArray, null, false,
 				msg.MaxCount, pos, TFPos.Invalid, TFPos.Invalid, lastIndexedPosition);
-		}
-
 	}
 
 	private async ValueTask<ReadAllEventsBackwardCompleted> ReadAllEventsBackward(ReadAllEventsBackward msg, CancellationToken token) {
@@ -155,9 +143,8 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadAllEventsForward
 				return NoData(ReadAllResult.AccessDenied);
 
 			var metadata = await _readIndex.GetStreamMetadata(_systemStreams.AllStream, token);
-			return new ReadAllEventsBackwardCompleted(
-				msg.CorrelationId, ReadAllResult.Success, null, resolved, metadata, false, msg.MaxCount,
-				res.CurrentPos, res.NextPos, res.PrevPos, lastIndexedPosition);
+			return new(msg.CorrelationId, ReadAllResult.Success, null, resolved, metadata,
+				false, msg.MaxCount, res.CurrentPos, res.NextPos, res.PrevPos, lastIndexedPosition);
 		} catch (Exception exc) when (exc is InvalidReadException or UnableToReadPastEndOfStreamException) {
 			Log.Warning(exc, "Error during processing ReadAllEventsBackward request. The read appears to be at an invalid position.");
 			return NoData(ReadAllResult.InvalidPosition, exc.Message);
@@ -166,10 +153,8 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadAllEventsForward
 			return NoData(ReadAllResult.Error, exc.Message);
 		}
 
-		ReadAllEventsBackwardCompleted NoData(ReadAllResult result, string error = null) {
-			return new(
-				msg.CorrelationId, result, error, ResolvedEvent.EmptyArray, null, false,
+		ReadAllEventsBackwardCompleted NoData(ReadAllResult result, string error = null)
+			=> new(msg.CorrelationId, result, error, ResolvedEvent.EmptyArray, null, false,
 				msg.MaxCount, pos, TFPos.Invalid, TFPos.Invalid, lastIndexedPosition);
-		}
 	}
 }
