@@ -396,17 +396,11 @@ public class LogFormatAbstractorV3Tests : IAsyncLifetime {
 		public ValueTask<long> GetStreamLastEventNumber_NoCollisions(ulong stream, Func<ulong, uint> getStreamId,
 			long beforePosition, CancellationToken token) =>
 			ValueTask.FromException<long>(new NotImplementedException());
-
-		public TFReaderLease BorrowReader() {
-			throw new NotImplementedException();
-		}
 	}
 }
 
 public class MockIndexBackend<TStreamId> : IIndexBackend<TStreamId> {
-	public TFReaderLease BorrowReader() {
-		throw new NotImplementedException();
-	}
+	public ITransactionFileReader TFReader => throw new NotImplementedException();
 
 	public SystemSettings GetSystemSettings() {
 		throw new NotImplementedException();

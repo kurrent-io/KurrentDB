@@ -39,12 +39,12 @@ public class
 				table.Add((ulong)(0x010100000000 << i), j, i * 10 + j);
 			}
 
-			_tables.Add(PTable.FromMemtable(table, _files[i], Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, skipIndexVerify: _skipIndexVerify));
+			_tables.Add(PTable.FromMemtable(table, _files[i], skipIndexVerify: _skipIndexVerify));
 		}
 
 		_files.Add(GetTempFilePath());
 		_newtable = PTable.MergeTo(_tables, _files[4],
-			_ptableVersion, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault,
+			_ptableVersion,
 			skipIndexVerify: _skipIndexVerify);
 	}
 

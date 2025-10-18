@@ -30,14 +30,14 @@ public class when_upgrading_index_to_64bit_stream_version : SpecificationWithDir
 		await base.TestFixtureSetUp();
 
 		_indexDir = PathName;
-		var fakeReader = new TFReaderLease(new FakeIndexReader());
+		var fakeReader = new FakeIndexReader();
 		_lowHasher = new XXHashUnsafe();
 		_highHasher = new Murmur3AUnsafe();
 		_tableIndex = new TableIndex<string>(_indexDir, _lowHasher, _highHasher, "",
 			() => new HashListMemTable(PTableVersions.IndexV2, maxSize: 5),
-			() => fakeReader,
+			fakeReader,
 			PTableVersions.IndexV2,
-			5, Constants.PTableMaxReaderCountDefault,
+			5,
 			maxSizeForMemory: 5,
 			maxTablesPerLevel: 2);
 		_tableIndex.Initialize(long.MaxValue);
@@ -52,9 +52,9 @@ public class when_upgrading_index_to_64bit_stream_version : SpecificationWithDir
 
 		_tableIndex = new TableIndex<string>(_indexDir, _lowHasher, _highHasher, "",
 			() => new HashListMemTable(_ptableVersion, maxSize: 5),
-			() => fakeReader,
+			fakeReader,
 			_ptableVersion,
-			5, Constants.PTableMaxReaderCountDefault,
+			5,
 			maxSizeForMemory: 5,
 			maxTablesPerLevel: 2);
 		_tableIndex.Initialize(long.MaxValue);
@@ -132,14 +132,12 @@ public class when_upgrading_index_to_64bit_stream_version : SpecificationWithDir
 }
 
 public class FakeIndexReader : ITransactionFileReader {
-	public void Reposition(long position) {
-		throw new NotImplementedException();
-	}
-
-	public ValueTask<SeqReadResult> TryReadNext(CancellationToken token)
+	public ValueTask<SeqReadResult> TryReadNext<TCursor>(TCursor cursor, CancellationToken token)
+		where TCursor : IReadCursor
 		=> ValueTask.FromException<SeqReadResult>(new NotImplementedException());
 
-	public ValueTask<SeqReadResult> TryReadPrev(CancellationToken token)
+	public ValueTask<SeqReadResult> TryReadPrev<TCursor>(TCursor cursor, CancellationToken token)
+		where TCursor : IReadCursor
 		=> ValueTask.FromException<SeqReadResult>(new NotImplementedException());
 
 	public ValueTask<RecordReadResult> TryReadAt(long position, bool couldBeScavenged, CancellationToken token) {

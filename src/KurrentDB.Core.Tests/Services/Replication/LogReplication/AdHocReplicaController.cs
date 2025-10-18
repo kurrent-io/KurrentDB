@@ -8,7 +8,6 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
-using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.VNode;
 
 namespace KurrentDB.Core.Tests.Services.Replication.LogReplication;
@@ -44,11 +43,9 @@ internal class AdHocReplicaController<TStreamId> : IAsyncHandle<Message> {
 	public int NumWriterFlushes => Interlocked.CompareExchange(ref _numWriterFlushes, 0, 0);
 
 	public AdHocReplicaController(IPublisher outputBus, LeaderInfo<TStreamId> leaderInfo) {
-		_inputQueue = new QueuedHandlerThreadPool(
-			consumer: this,
-			name: "InputQueue",
-			queueStatsManager: new QueueStatsManager(),
-			trackers: new QueueTrackers());
+		_inputQueue = new ThreadPoolMessageScheduler("InputQueue", this) {
+			SynchronizeMessagesWithUnknownAffinity = true,
+		};
 		_outputBus = outputBus;
 		_leaderInfo = leaderInfo;
 

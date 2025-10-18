@@ -36,7 +36,7 @@ public class saving_index_with_six_items_to_a_file : SpecificationWithDirectory 
 		_map = IndexMapTestFactory.FromFile(_filename, maxTablesPerLevel: 4);
 		var memtable = new HashListMemTable(_ptableVersion, maxSize: 10);
 		memtable.Add(0, 2, 123);
-		var table = PTable.FromMemtable(memtable, _tablename, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault);
+		var table = PTable.FromMemtable(memtable, _tablename);
 		_result = _map.AddAndMergePTable(table, 0, 0,
 			new FakeFilenameProvider(_mergeFile), _ptableVersion, 0);
 		_result = _result.MergedMap.AddAndMergePTable(table, 0, 0,

@@ -148,10 +148,7 @@ public abstract class WriteEventsToIndexScenario<TLogFormat, TStreamId> : Specif
 		_tfReader = new FakeInMemoryTfReader(RecordOffset);
 		_tableIndex = new FakeInMemoryTableIndex<TStreamId>();
 		_provider.SetTableIndex(_tableIndex);
-		_readerPool = new ObjectPool<ITransactionFileReader>(
-			"ReadIndex readers pool", 5, 100,
-			() => _tfReader);
-		_indexBackend = new IndexBackend<TStreamId>(_readerPool,
+		_indexBackend = new IndexBackend<TStreamId>(_tfReader,
 			new LRUCache<TStreamId, IndexBackend<TStreamId>.EventNumberCached>("LastEventNumber", 100_000),
 			new LRUCache<TStreamId, IndexBackend<TStreamId>.MetadataCached>("StreamMetadata", 100_000));
 		_streamIds = _logFormat.StreamIds;

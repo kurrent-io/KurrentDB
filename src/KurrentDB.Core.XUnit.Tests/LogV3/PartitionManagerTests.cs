@@ -184,15 +184,20 @@ class FakeWriter : ITransactionFileWriter {
 	public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
 
-class FakeReader : ITransactionFileReader {
+file sealed class FakeReader : ITransactionFileReader {
 	private readonly List<SeqReadResult> _results = new();
-	private int _resultIndex = 0;
 	private int _readCount = 0;
 
 	public int ReadCount => _readCount;
 
 	public FakeReader(ILogRecord record) {
-		_results.Add(new SeqReadResult(true, false, record, 0, 0, 0));
+		_results.Add(new() {
+			Eof = false,
+			LogRecord = record,
+			RecordLength = 0,
+			RecordPostPosition = 0L,
+			RecordPrePosition = 0L
+		});
 	}
 
 	public FakeReader(bool withoutRecords = false) : this(Guid.NewGuid(), Guid.NewGuid(), withoutRecords) {
@@ -208,30 +213,42 @@ class FakeReader : ITransactionFileReader {
 			var rootPartitionType = new PartitionTypeLogRecord(
 					DateTime.UtcNow, 2, rootPartitionTypeId.Value, Guid.Empty, "Root");
 
-			_results.Add(new SeqReadResult(true, false, rootPartitionType, 0, 0, 0));
+			_results.Add(new()
+			{
+				Eof = false,
+				LogRecord = rootPartitionType,
+				RecordLength = 0,
+				RecordPostPosition = 0L,
+				RecordPrePosition = 0L,
+			});
 		}
 
 		if (rootPartitionId.HasValue && rootPartitionTypeId.HasValue) {
 			var rootPartition = new PartitionLogRecord(
 					DateTime.UtcNow, 3, rootPartitionId.Value, rootPartitionTypeId.Value, Guid.Empty, 0, 0, "Root");
 
-			_results.Add(new SeqReadResult(true, false, rootPartition, 0, 0, 0));
+			_results.Add(new()
+			{
+				Eof = false,
+				LogRecord = rootPartition,
+				RecordLength = 0,
+				RecordPrePosition = 0L,
+				RecordPostPosition = 0L,
+			});
 		}
 	}
 
-	public void Reposition(long position) {
-		_resultIndex = (int)position;
-	}
-
-	public ValueTask<SeqReadResult> TryReadNext(CancellationToken token) {
+	public ValueTask<SeqReadResult> TryReadNext<TCursor>(TCursor cursor, CancellationToken token)
+		where TCursor : IReadCursor{
 		_readCount++;
 
-		return new(_resultIndex < _results.Count
-			? _results[_resultIndex++]
+		return new(cursor.Position < _results.Count
+			? _results[int.CreateChecked(cursor.Position++)]
 			: SeqReadResult.Failure);
 	}
 
-	public ValueTask<SeqReadResult> TryReadPrev(CancellationToken token)
+	public ValueTask<SeqReadResult> TryReadPrev<TCursor>(TCursor cursor, CancellationToken token)
+		where TCursor : IReadCursor
 		=> ValueTask.FromException<SeqReadResult>(new NotImplementedException());
 
 	public ValueTask<RecordReadResult> TryReadAt(long position, bool couldBeScavenged, CancellationToken token)

@@ -36,8 +36,6 @@ public class when_trying_to_get_oldest_entry : SpecificationWithFile {
 		return PTable.FromMemtable(
 			memTable,
 			Filename,
-			Constants.PTableInitialReaderCount,
-			Constants.PTableMaxReaderCountDefault,
 			skipIndexVerify: _skipIndexVerify,
 			useBloomFilter: _useBloomFilter,
 			lruCacheSize: _lruCacheSize);

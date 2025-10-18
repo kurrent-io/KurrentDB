@@ -10,7 +10,6 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Helpers;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
-using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Tests.Bus.Helpers;
 using KurrentDB.Core.Tests.Services.TimeService;
 using NUnit.Framework;
@@ -54,10 +53,9 @@ public abstract class TestFixtureWithReadWriteDispatchers {
 		_envelope = null;
 		_timeProvider = new FakeTimeProvider();
 		_bus = new SynchronousScheduler();
-		_publisher = new QueuedHandlerThreadPool(_bus,
-			"TestQueue",
-			new QueueStatsManager(),
-			new QueueTrackers(), watchSlowMsg: false);
+		_publisher = new ThreadPoolMessageScheduler("TestQueue", _bus) {
+			SynchronizeMessagesWithUnknownAffinity = true,
+		};
 		_publisher.Start();
 		_consumer = new TestHandler<Message>();
 		_consumer.AddConverter(typeof(ClientMessage.WriteEvents), msg => {

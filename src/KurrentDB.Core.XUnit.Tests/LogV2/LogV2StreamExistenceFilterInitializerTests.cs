@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 using KurrentDB.Core.Index;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.LogV2;
+using KurrentDB.Core.Tests.Fakes;
 using KurrentDB.Core.Tests.Services.Storage;
-using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using Xunit;
 
@@ -33,14 +33,13 @@ public class LogV2StreamExistenceFilterInitializerTests : DirectoryPerTest<LogV2
 				version: PTableVersions.IndexV4,
 				maxSize: 1_000_000 * 2),
 			maxSizeForMemory: 100_000,
-			tfReaderFactory: () => new TFReaderLease(_log),
+			tfReader: _log,
 			ptableVersion: PTableVersions.IndexV4,
-			maxAutoMergeIndexLevel: int.MaxValue,
-			pTableMaxReaderCount: 5);
+			maxAutoMergeIndexLevel: int.MaxValue);
 		_tableIndex.Initialize(0);
 
 		_sut = new LogV2StreamExistenceFilterInitializer(
-			tfReaderFactory: () => new TFReaderLease(_log),
+			tfReader: _log,
 			tableIndex: _tableIndex);
 		var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
 		_filter = new MockExistenceFilter(hasher);
@@ -186,14 +185,13 @@ public class LogV2StreamExistenceFilterInitializerTests : DirectoryPerTest<LogV2
 			memTableFactory: () => new HashListMemTable(
 				version: PTableVersions.IndexV1,
 				maxSize: 1_000_000 * 2),
-			tfReaderFactory: () => throw new Exception("index tried to read the log"),
+			new FakeTfReader(),
 			ptableVersion: PTableVersions.IndexV1,
-			maxAutoMergeIndexLevel: int.MaxValue,
-			pTableMaxReaderCount: 5);
+			maxAutoMergeIndexLevel: int.MaxValue);
 		tableIndex.Initialize(0);
 
 		var sut = new LogV2StreamExistenceFilterInitializer(
-			tfReaderFactory: () => throw new Exception("initializer tried to read the log"),
+			tfReader: new FakeTfReader(),
 			tableIndex: tableIndex);
 
 		var filter = new MockExistenceFilter(hasher: null);

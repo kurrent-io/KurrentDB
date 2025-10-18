@@ -30,10 +30,9 @@ public class IndexMap {
 	private readonly List<List<PTable>> _map;
 	private readonly int _maxTablesPerLevel;
 	private readonly int _maxTableLevelsForAutomaticMerge;
-	private readonly int _pTableMaxReaderCount;
 
 	private IndexMap(int version, List<List<PTable>> tables, long prepareCheckpoint, long commitCheckpoint,
-		int maxTablesPerLevel, int maxTableLevelsForAutomaticMerge, int pTableMaxReaderCount) {
+		int maxTablesPerLevel, int maxTableLevelsForAutomaticMerge) {
 		Ensure.Nonnegative(version, "version");
 		if (prepareCheckpoint < -1)
 			throw new ArgumentOutOfRangeException("prepareCheckpoint");
@@ -50,7 +49,6 @@ public class IndexMap {
 		_map = CopyFrom(tables);
 		_maxTablesPerLevel = maxTablesPerLevel;
 		_maxTableLevelsForAutomaticMerge = maxTableLevelsForAutomaticMerge;
-		_pTableMaxReaderCount = pTableMaxReaderCount;
 		VerifyStructure();
 	}
 
@@ -118,9 +116,9 @@ public class IndexMap {
 			   select table.Filename;
 	}
 
-	public static IndexMap CreateEmpty(int maxTablesPerLevel, int maxTableLevelsForAutomaticMerge, int pTableMaxReaderCount) {
+	public static IndexMap CreateEmpty(int maxTablesPerLevel, int maxTableLevelsForAutomaticMerge) {
 		return new IndexMap(IndexMapVersion, new List<List<PTable>>(), -1, -1, maxTablesPerLevel,
-			maxTableLevelsForAutomaticMerge, pTableMaxReaderCount);
+			maxTableLevelsForAutomaticMerge);
 	}
 
 	public static IndexMap FromFile(
@@ -132,10 +130,9 @@ public class IndexMap {
 		bool useBloomFilter,
 		int lruCacheSize,
 		int threads,
-		int maxAutoMergeLevel,
-		int pTableMaxReaderCount) {
+		int maxAutoMergeLevel) {
 		if (!File.Exists(filename))
-			return CreateEmpty(maxTablesPerLevel, maxAutoMergeLevel, pTableMaxReaderCount);
+			return CreateEmpty(maxTablesPerLevel, maxAutoMergeLevel);
 
 		using (var f = File.OpenRead(filename)) {
 			// calculate real MD5 hash except first 32 bytes which are string representation of stored hash
@@ -164,7 +161,7 @@ public class IndexMap {
 				//we are doing a logical upgrade of the version to have the new data, so we will change the version to match so that new files are saved with the right version
 				version = IndexMapVersion;
 				var tables = loadPTables
-					? LoadPTables(reader, filename, checkpoints, cacheDepth, skipIndexVerify, useBloomFilter, lruCacheSize, threads, pTableMaxReaderCount)
+					? LoadPTables(reader, filename, checkpoints, cacheDepth, skipIndexVerify, useBloomFilter, lruCacheSize, threads)
 					: new List<List<PTable>>();
 
 				if (!loadPTables && reader.ReadLine() != null)
@@ -173,7 +170,7 @@ public class IndexMap {
 							checkpoints));
 
 				return new IndexMap(version, tables, prepareCheckpoint, commitCheckpoint, maxTablesPerLevel,
-					maxAutoMergeLevel, pTableMaxReaderCount);
+					maxAutoMergeLevel);
 			}
 		}
 	}
@@ -255,8 +252,7 @@ public class IndexMap {
 	private static List<List<PTable>> LoadPTables(StreamReader reader, string indexmapFilename, TFPos checkpoints,
 		int cacheDepth, bool skipIndexVerify,
 		bool useBloomFilter, int lruCacheSize,
-		int threads,
-		int pTableMaxReaderCount) {
+		int threads) {
 		var tables = new List<List<PTable>>();
 		try {
 			try {
@@ -279,7 +275,8 @@ public class IndexMap {
 							var path = Path.GetDirectoryName(indexmapFilename);
 							var ptablePath = Path.Combine(path, file);
 
-							ptable = PTable.FromFile(ptablePath, ESConsts.PTableInitialReaderCount, pTableMaxReaderCount, cacheDepth, skipIndexVerify, useBloomFilter, lruCacheSize);
+							ptable = PTable.FromFile(ptablePath, cacheDepth, skipIndexVerify, useBloomFilter,
+								lruCacheSize);
 
 							lock (tables) {
 								InsertTableToTables(tables, level, position, ptable);
@@ -394,7 +391,7 @@ public class IndexMap {
 		AddTableToTables(tables, 0, tableToAdd);
 
 		var indexMap = new IndexMap(Version, tables, prepareCheckpoint, commitCheckpoint, _maxTablesPerLevel,
-			_maxTableLevelsForAutomaticMerge, _pTableMaxReaderCount);
+			_maxTableLevelsForAutomaticMerge);
 
 		var canMergeAny = false;
 		var maxTableLevelsToMerge = Math.Min(tables.Count, _maxTableLevelsForAutomaticMerge);
@@ -433,8 +430,6 @@ public class IndexMap {
 					tables[level],
 					filename,
 					version,
-					ESConsts.PTableInitialReaderCount,
-					_pTableMaxReaderCount,
 					indexCacheDepth,
 					skipIndexVerify,
 					useBloomFilter,
@@ -448,7 +443,7 @@ public class IndexMap {
 		}
 
 		var indexMap = new IndexMap(Version, tables, PrepareCheckpoint, CommitCheckpoint, _maxTablesPerLevel,
-			_maxTableLevelsForAutomaticMerge, _pTableMaxReaderCount);
+			_maxTableLevelsForAutomaticMerge);
 		return new MergeResult(indexMap, toDelete, hasMergedAny, canMergeAny);
 	}
 
@@ -476,8 +471,6 @@ public class IndexMap {
 			tablesToMerge,
 			filename,
 			version,
-			ESConsts.PTableInitialReaderCount,
-			_pTableMaxReaderCount,
 			indexCacheDepth,
 			skipIndexVerify,
 			useBloomFilter,
@@ -492,7 +485,7 @@ public class IndexMap {
 		toDelete.AddRange(tablesToMerge);
 
 		var indexMap = new IndexMap(Version, tables, PrepareCheckpoint, CommitCheckpoint, _maxTablesPerLevel,
-			_maxTableLevelsForAutomaticMerge, _pTableMaxReaderCount);
+			_maxTableLevelsForAutomaticMerge);
 		return new MergeResult(indexMap, toDelete, true, false);
 	}
 
@@ -517,8 +510,6 @@ public class IndexMap {
 						filename,
 						version,
 						shouldKeep,
-						ESConsts.PTableInitialReaderCount,
-						_pTableMaxReaderCount,
 						indexCacheDepth,
 						skipIndexVerify,
 						useBloomFilter,
@@ -532,7 +523,7 @@ public class IndexMap {
 					scavengedMap[level][i] = scavenged;
 
 					var indexMap = new IndexMap(Version, scavengedMap, PrepareCheckpoint, CommitCheckpoint,
-						_maxTablesPerLevel, _maxTableLevelsForAutomaticMerge, _pTableMaxReaderCount);
+						_maxTablesPerLevel, _maxTableLevelsForAutomaticMerge);
 
 					return ScavengeResult.Success(indexMap, oldTable, scavenged, spaceSaved, level, i);
 				}

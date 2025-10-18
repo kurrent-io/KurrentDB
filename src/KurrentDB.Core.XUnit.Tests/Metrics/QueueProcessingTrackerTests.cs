@@ -61,7 +61,7 @@ public class QueueProcessingTrackerNoOpTests {
 	// the noop tracker doesn't track anything but it still needs to return the current time
 	[Fact]
 	public async Task noop_returns_current_time() {
-		var sut = new QueueProcessingTracker.NoOp();
+		var sut = IQueueProcessingTracker.NoOp;
 		var start = Instant.Now;
 		await Task.Delay(1);
 		var end = sut.RecordNow(start, "some message type");

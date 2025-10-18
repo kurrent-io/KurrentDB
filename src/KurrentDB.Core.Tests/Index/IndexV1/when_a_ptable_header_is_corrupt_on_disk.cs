@@ -29,7 +29,7 @@ public class when_a_ptable_header_is_corrupt_on_disk : SpecificationWithDirector
 		var mtable = new HashListMemTable(_ptableVersion, maxSize: 10);
 		mtable.Add(0x010100000000, 0x0001, 0x0001);
 		mtable.Add(0x010500000000, 0x0001, 0x0002);
-		_table = PTable.FromMemtable(mtable, _filename, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault);
+		_table = PTable.FromMemtable(mtable, _filename);
 		_table.Dispose();
 		File.Copy(_filename, _copiedfilename);
 		using (var f = new FileStream(_copiedfilename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite)) {
@@ -40,14 +40,14 @@ public class when_a_ptable_header_is_corrupt_on_disk : SpecificationWithDirector
 
 	[Test]
 	public void the_hash_is_invalid() {
-		var exc = Assert.Throws<CorruptIndexException>(() => _table = PTable.FromFile(_copiedfilename, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, 16, false));
+		var exc = Assert.Throws<CorruptIndexException>(() => _table = PTable.FromFile(_copiedfilename, 16, false));
 		Assert.IsInstanceOf<HashValidationException>(exc.InnerException);
 	}
 
 	[Test]
 	public void no_error_if_index_verification_disabled() {
 		Assert.DoesNotThrow(
-			() => _table = PTable.FromFile(_copiedfilename, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, 16, true)
+			() => _table = PTable.FromFile(_copiedfilename, 16, true)
 		);
 	}
 

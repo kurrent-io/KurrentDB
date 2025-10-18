@@ -12,7 +12,6 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Tests.Fakes;
 using KurrentDB.Core.Tests.TransactionLog;
 using KurrentDB.Core.Tests.TransactionLog.Scavenging.Helpers;
-using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.Util;
 using NUnit.Framework;
@@ -55,23 +54,21 @@ public abstract class SimpleDbTestScenario<TLogFormat, TStreamId> : Specificatio
 		DbRes.Db.Config.ChaserCheckpoint.Write(DbRes.Db.Config.WriterCheckpoint.Read());
 		DbRes.Db.Config.ChaserCheckpoint.Flush();
 
-		var readers = new ObjectPool<ITransactionFileReader>(
-			"Readers", 2, 2, () => new TFChunkReader(DbRes.Db, DbRes.Db.Config.WriterCheckpoint));
+		var reader = new TFChunkReader(DbRes.Db, DbRes.Db.Config.WriterCheckpoint);
 
 		var lowHasher = _logFormat.LowHasher;
 		var highHasher = _logFormat.HighHasher;
 		var emptyStreamId = _logFormat.EmptyStreamId;
 		TableIndex = new TableIndex<TStreamId>(indexDirectory, lowHasher, highHasher, emptyStreamId,
 			() => new HashListMemTable(PTableVersions.IndexV2, MaxEntriesInMemTable * 2),
-			() => new TFReaderLease(readers),
+			reader,
 			PTableVersions.IndexV2,
 			int.MaxValue,
-			Constants.PTableMaxReaderCountDefault,
 			MaxEntriesInMemTable);
 		_logFormat.StreamNamesProvider.SetTableIndex(TableIndex);
 
 		var readIndex = new ReadIndex<TStreamId>(new NoopPublisher(),
-			readers,
+			reader,
 			TableIndex,
 			_logFormat.StreamNameIndexConfirmer,
 			_logFormat.StreamIds,

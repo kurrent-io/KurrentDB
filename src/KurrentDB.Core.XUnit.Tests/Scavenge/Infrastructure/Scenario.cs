@@ -21,7 +21,6 @@ using KurrentDB.Core.Tests.Fakes;
 using KurrentDB.Core.Tests.Index.Hashers;
 using KurrentDB.Core.Tests.TransactionLog;
 using KurrentDB.Core.Tests.TransactionLog.Scavenging.Helpers;
-using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
 using KurrentDB.Core.TransactionLog.LogRecords;
@@ -289,11 +288,7 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 		dbResult.Db.Config.ReplicationCheckpoint.Write(dbResult.Db.Config.WriterCheckpoint.Read());
 		dbResult.Db.Config.ReplicationCheckpoint.Flush();
 
-		var readerPool = new ObjectPool<ITransactionFileReader>(
-			objectPoolName: "ReadIndex readers pool",
-			initialCount: ESConsts.PTableInitialReaderCount,
-			maxCount: ESConsts.PTableInitialReaderCount,
-			factory: () => new TFChunkReader(dbResult.Db, dbResult.Db.Config.WriterCheckpoint));
+		var reader = new TFChunkReader(dbResult.Db, dbResult.Db.Config.WriterCheckpoint);
 
 		var lowHasher = logFormat.LowHasher;
 		var highHasher = logFormat.HighHasher;
@@ -319,10 +314,9 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 			highHasher: highHasher,
 			emptyStreamId: logFormat.EmptyStreamId,
 			memTableFactory: () => new HashListMemTable(PTableVersions.IndexV4, maxSize: 200),
-			tfReaderFactory: () => new TFReaderLease(readerPool),
+			reader,
 			ptableVersion: PTableVersions.IndexV4,
 			maxAutoMergeIndexLevel: int.MaxValue,
-			pTableMaxReaderCount: ESConsts.PTableInitialReaderCount,
 			maxSizeForMemory: _skipIndexCheck
 				? 1_000_000 // we aren't going to check the index so no need to convert to ptables
 				: 1, // convert everything to ptables immediately so we can check the index
@@ -332,7 +326,7 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 
 		var readIndex = new ReadIndex<TStreamId>(
 			bus: new NoopPublisher(),
-			readerPool: readerPool,
+			reader,
 			tableIndex: tableIndex,
 			logFormat.StreamNameIndexConfirmer,
 			logFormat.StreamIds,
@@ -398,7 +392,7 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 			var calculatorIndexReader = new AdHocIndexReaderInterceptor<TStreamId>(
 				new IndexReaderForCalculator<TStreamId>(
 					readIndex,
-					() => new TFReaderLease(readerPool),
+					reader,
 					scavengeState.LookupUniqueHashUser),
 				(f, handle, from, maxCount, x, token) => {
 					if (_calculatingCancellationTrigger != null)
@@ -502,7 +496,7 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 			IIndexExecutor<TStreamId> indexExecutor = new IndexExecutor<TStreamId>(
 				logger: logger,
 				indexScavenger: cancellationWrappedIndexScavenger,
-				streamLookup: new ChunkReaderForIndexExecutor<TStreamId>(() => new TFReaderLease(readerPool)),
+				streamLookup: new ChunkReaderForIndexExecutor<TStreamId>(reader),
 				unsafeIgnoreHardDeletes: _unsafeIgnoreHardDeletes,
 				restPeriod: restPeriod,
 				throttle: throttle);

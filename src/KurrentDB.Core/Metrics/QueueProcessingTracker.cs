@@ -9,6 +9,8 @@ namespace KurrentDB.Core.Metrics;
 public interface IQueueProcessingTracker {
 	// returns the current time
 	Instant RecordNow(Instant start, string messageType);
+
+	public static IQueueProcessingTracker NoOp { get; } = new NoOpQueueProcessingTracker();
 }
 
 public class QueueProcessingTracker : IQueueProcessingTracker {
@@ -26,8 +28,8 @@ public class QueueProcessingTracker : IQueueProcessingTracker {
 			new KeyValuePair<string, object>("queue", _queueName),
 			new KeyValuePair<string, object>("message-type", messageType));
 	}
+}
 
-	public class NoOp : IQueueProcessingTracker {
-		public Instant RecordNow(Instant start, string messageType) => Instant.Now;
-	}
+file sealed class NoOpQueueProcessingTracker : IQueueProcessingTracker {
+	public Instant RecordNow(Instant start, string messageType) => Instant.Now;
 }

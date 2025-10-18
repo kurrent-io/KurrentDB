@@ -73,7 +73,7 @@ public class ClusterVNodeStartup<TStreamId>
 
 	private bool _ready;
 	private readonly IAuthorizationProvider _authorizationProvider;
-	private readonly MultiQueuedHandler _httpMessageHandler;
+	private readonly IPublisher _httpMessageHandler;
 	private readonly string? _clusterDns;
 
 	public ClusterVNodeStartup(
@@ -82,7 +82,7 @@ public class ClusterVNodeStartup<TStreamId>
 		IPublisher mainQueue,
 		IPublisher monitoringQueue,
 		ISubscriber mainBus,
-		MultiQueuedHandler httpMessageHandler,
+		IPublisher httpMessageHandler,
 		IAuthenticationProvider authenticationProvider,
 		IAuthorizationProvider authorizationProvider,
 		IExpiryStrategy expiryStrategy,

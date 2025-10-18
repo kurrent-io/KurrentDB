@@ -13,9 +13,7 @@ public class when_constructing_v1_ptable : SpecificationWithDirectoryPerTestFixt
 		Assert.Throws<CorruptIndexException>(() => {
 			using var table = PTable.FromMemtable(
 				new HashListMemTable(PTableVersions.IndexV1, maxSize: 20),
-				GetTempFilePath(),
-				Constants.PTableInitialReaderCount,
-				Constants.PTableMaxReaderCountDefault);
+				GetTempFilePath());
 		});
 	}
 }

@@ -6,21 +6,21 @@ using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
-using KurrentDB.Core.Messages;
+using static KurrentDB.Core.Messages.ClientMessage;
 
 namespace KurrentDB.Core.Services.Storage;
 
-public partial class StorageReaderWorker<TStreamId> :
-	IAsyncHandle<ClientMessage.ReadIndexEventsForward>,
-	IAsyncHandle<ClientMessage.ReadIndexEventsBackward> {
-	public async ValueTask HandleAsync(ClientMessage.ReadIndexEventsForward msg, CancellationToken token) {
+partial class StorageReaderWorker<TStreamId> :
+	IAsyncHandle<ReadIndexEventsForward>,
+	IAsyncHandle<ReadIndexEventsBackward> {
+	public async ValueTask HandleAsync(ReadIndexEventsForward msg, CancellationToken token) {
 		if (msg.CancellationToken.IsCancellationRequested)
 			return;
 
 		if (msg.Expires < DateTime.UtcNow) {
 			if (msg.ReplyOnExpired) {
 				msg.Envelope.ReplyWith(
-					new ClientMessage.ReadIndexEventsForwardCompleted(
+					new ReadIndexEventsForwardCompleted(
 						ReadIndexResult.Expired,
 						ResolvedEvent.EmptyArray,
 						new(msg.CommitPosition, msg.PreparePosition),
@@ -39,11 +39,11 @@ public partial class StorageReaderWorker<TStreamId> :
 
 		var res = await _secondaryIndexReaders.ReadForwards(msg, token);
 		switch (res.Result) {
-			case ReadIndexResult.Success:
-			case ReadIndexResult.NotModified:
-			case ReadIndexResult.Error:
-			case ReadIndexResult.InvalidPosition:
-			case ReadIndexResult.IndexNotFound:
+			case ReadIndexResult.Success
+				or ReadIndexResult.NotModified
+				or ReadIndexResult.Error
+				or ReadIndexResult.InvalidPosition
+				or ReadIndexResult.IndexNotFound:
 				msg.Envelope.ReplyWith(res);
 				break;
 			default:
@@ -51,14 +51,14 @@ public partial class StorageReaderWorker<TStreamId> :
 		}
 	}
 
-	public async ValueTask HandleAsync(ClientMessage.ReadIndexEventsBackward msg, CancellationToken token) {
+	public async ValueTask HandleAsync(ReadIndexEventsBackward msg, CancellationToken token) {
 		if (msg.CancellationToken.IsCancellationRequested)
 			return;
 
 		if (msg.Expires < DateTime.UtcNow) {
 			if (msg.ReplyOnExpired) {
 				msg.Envelope.ReplyWith(
-					new ClientMessage.ReadIndexEventsBackwardCompleted(
+					new ReadIndexEventsBackwardCompleted(
 						ReadIndexResult.Expired,
 						ResolvedEvent.EmptyArray,
 						new(msg.CommitPosition, msg.PreparePosition),
@@ -77,11 +77,11 @@ public partial class StorageReaderWorker<TStreamId> :
 
 		var res = await _secondaryIndexReaders.ReadBackwards(msg, token);
 		switch (res.Result) {
-			case ReadIndexResult.Success:
-			case ReadIndexResult.NotModified:
-			case ReadIndexResult.Error:
-			case ReadIndexResult.InvalidPosition:
-			case ReadIndexResult.IndexNotFound:
+			case ReadIndexResult.Success
+				or ReadIndexResult.NotModified
+				or ReadIndexResult.Error
+				or ReadIndexResult.InvalidPosition
+				or ReadIndexResult.IndexNotFound:
 				msg.Envelope.ReplyWith(res);
 				break;
 			default:

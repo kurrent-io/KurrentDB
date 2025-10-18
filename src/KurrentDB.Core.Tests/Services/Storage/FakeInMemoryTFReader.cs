@@ -12,7 +12,6 @@ namespace KurrentDB.Core.Tests.Services.Storage;
 
 public class FakeInMemoryTfReader : ITransactionFileReader {
 	private Dictionary<long, ILogRecord> _records = new();
-	private long _curPosition = 0;
 	private int _recordOffset;
 
 	public int NumReads { get; private set; }
@@ -25,26 +24,30 @@ public class FakeInMemoryTfReader : ITransactionFileReader {
 		_records.Add(position, record);
 	}
 
-	public void Reposition(long position) {
-		_curPosition = position;
-	}
-
-	public ValueTask<SeqReadResult> TryReadNext(CancellationToken token) {
+	public ValueTask<SeqReadResult> TryReadNext<TCursor>(TCursor cursor, CancellationToken token)
+		where TCursor : IReadCursor {
 		NumReads++;
 
 		SeqReadResult result;
-		if (_records.ContainsKey(_curPosition)) {
-			var pos = _curPosition;
-			_curPosition += _recordOffset;
-			result = new(true, false, _records[pos], _recordOffset, pos, pos + _recordOffset);
+		if (_records.ContainsKey(cursor.Position)) {
+			var pos = cursor.Position;
+			cursor.Position = pos + _recordOffset;
+			result = new() {
+				Eof = false,
+				LogRecord = _records[pos],
+				RecordLength = _recordOffset,
+				RecordPrePosition = pos,
+				RecordPostPosition = pos + _recordOffset,
+			};
 		} else {
-			result = new(false, false, null, 0, 0, 0);
+			result = SeqReadResult.Failure;
 		}
 
 		return new(result);
 	}
 
-	public ValueTask<SeqReadResult> TryReadPrev(CancellationToken token)
+	public ValueTask<SeqReadResult> TryReadPrev<TCursor>(TCursor cursor, CancellationToken token)
+		where TCursor : IReadCursor
 		=> ValueTask.FromException<SeqReadResult>(new NotImplementedException());
 
 	public ValueTask<RecordReadResult> TryReadAt(long position, bool couldBeScavenged, CancellationToken token) {

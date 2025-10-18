@@ -28,7 +28,7 @@ public class destroying_ptable : SpecificationWithFile {
 		var mtable = new HashListMemTable(_ptableVersion, maxSize: 10);
 		mtable.Add(0x010100000000, 0x0001, 0x0001);
 		mtable.Add(0x010500000000, 0x0001, 0x0002);
-		_table = PTable.FromMemtable(mtable, Filename, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault,
+		_table = PTable.FromMemtable(mtable, Filename,
 			skipIndexVerify: _skipIndexVerify,
 			useBloomFilter: true);
 		_table.MarkForDestruction();

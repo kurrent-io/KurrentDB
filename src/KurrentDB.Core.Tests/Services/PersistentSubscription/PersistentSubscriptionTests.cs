@@ -16,7 +16,6 @@ using KurrentDB.Core.Helpers;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
-using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.PersistentSubscription;
 using KurrentDB.Core.Services.PersistentSubscription.ConsumerStrategy;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
@@ -190,7 +189,7 @@ public class when_updating_all_stream_subscription_with_filter<TLogFormat, TStre
 		bus.Subscribe<ClientMessage.WriteEventsCompleted>(ioDispatcher.Writer);
 
 		_sut = new PersistentSubscriptionService<TStreamId>(
-			new QueuedHandlerThreadPool(bus, "test", new QueueStatsManager(), new QueueTrackers()),
+			new ThreadPoolMessageScheduler("test", bus) { SynchronizeMessagesWithUnknownAffinity = true },
 			new FakeReadIndex<TLogFormat, TStreamId>(_ => false, new MetaStreamLookup()),
 			ioDispatcher, bus,
 			new PersistentSubscriptionConsumerStrategyRegistry(bus, bus,

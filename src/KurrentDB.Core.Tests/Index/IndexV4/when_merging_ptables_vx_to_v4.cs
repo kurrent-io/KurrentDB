@@ -46,7 +46,7 @@ public class when_merging_ptables_vx_to_v4 : SpecificationWithDirectoryPerTestFi
 			table.Add(0x0104, 0, 0x0104);
 		}
 
-		_tables.Add(PTable.FromMemtable(table, GetTempFilePath(), Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, skipIndexVerify: _skipIndexVerify));
+		_tables.Add(PTable.FromMemtable(table, GetTempFilePath(), skipIndexVerify: _skipIndexVerify));
 		table = new HashListMemTable(_fromVersion, maxSize: 20);
 
 		if (_fromVersion == PTableVersions.IndexV1) {
@@ -61,10 +61,10 @@ public class when_merging_ptables_vx_to_v4 : SpecificationWithDirectoryPerTestFi
 			table.Add(0x0108, 0, 0x0108);
 		}
 
-		_tables.Add(PTable.FromMemtable(table, GetTempFilePath(), Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, skipIndexVerify: _skipIndexVerify));
+		_tables.Add(PTable.FromMemtable(table, GetTempFilePath(), skipIndexVerify: _skipIndexVerify));
 		_newtableFile = GetTempFilePath();
 		_newtable = PTable.MergeTo(_tables, _newtableFile,
-			PTableVersions.IndexV4, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault,
+			PTableVersions.IndexV4,
 			skipIndexVerify: _skipIndexVerify);
 	}
 
@@ -96,16 +96,14 @@ public class when_merging_ptables_vx_to_v4 : SpecificationWithDirectoryPerTestFi
 		var newTableFileCopy = GetTempFilePath();
 		File.Copy(_newtableFile, newTableFileCopy);
 		using (var filestream = File.Open(newTableFileCopy, FileMode.Open, FileAccess.Read)) {
-			var footerSize = PTableFooter.GetSize(PTableVersions.IndexV4);
+			var footerSize = PTableFooter.Size;
 			Assert.AreEqual(filestream.Length,
 				PTableHeader.Size + numIndexEntries * PTable.IndexEntryV4Size +
 				requiredMidpoints * PTable.IndexEntryV4Size + footerSize + PTable.MD5Size);
-			filestream.Seek(
-				PTableHeader.Size + numIndexEntries * PTable.IndexEntryV4Size +
-				requiredMidpoints * PTable.IndexEntryV4Size, SeekOrigin.Begin);
+			var footerOffset = PTableHeader.Size + numIndexEntries * PTable.IndexEntryV4Size +
+			               requiredMidpoints * PTable.IndexEntryV4Size;
 
-			var ptableFooter = PTableFooter.FromStream(filestream);
-			Assert.AreEqual(FileType.PTableFile, ptableFooter.FileType);
+			var ptableFooter = PTableFooter.Parse(filestream.SafeFileHandle, footerOffset);
 			Assert.AreEqual(PTableVersions.IndexV4, ptableFooter.Version);
 			Assert.AreEqual(requiredMidpoints, ptableFooter.NumMidpointsCached);
 		}
@@ -167,24 +165,24 @@ public class when_merging_to_ptable_v4_with_deleted_entries : SpecificationWithD
 		table.Add(0x010200000000, 0, 2);
 		table.Add(0x010300000000, 0, 3);
 		table.Add(0x010300000000, 1, 4);
-		_tables.Add(PTable.FromMemtable(table, GetTempFilePath(), Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, skipIndexVerify: _skipIndexVerify));
+		_tables.Add(PTable.FromMemtable(table, GetTempFilePath(), skipIndexVerify: _skipIndexVerify));
 		table = new HashListMemTable(_fromVersion, maxSize: 20);
 		table.Add(0x010100000000, 2, 5);
 		table.Add(0x010200000000, 1, 6);
 		table.Add(0x010200000000, 2, 7);
 		table.Add(0x010400000000, 0, 8);
 		table.Add(0x010400000000, 1, 9);
-		_tables.Add(PTable.FromMemtable(table, GetTempFilePath(), Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, skipIndexVerify: _skipIndexVerify));
+		_tables.Add(PTable.FromMemtable(table, GetTempFilePath(), skipIndexVerify: _skipIndexVerify));
 		table = new HashListMemTable(_fromVersion, maxSize: 20);
 		table.Add(0x010100000000, 1, 10);
 		table.Add(0x010100000000, 2, 11);
 		table.Add(0x010500000000, 1, 12);
 		table.Add(0x010500000000, 2, 13);
 		table.Add(0x010500000000, 3, 14);
-		_tables.Add(PTable.FromMemtable(table, GetTempFilePath(), Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, skipIndexVerify: _skipIndexVerify));
+		_tables.Add(PTable.FromMemtable(table, GetTempFilePath(), skipIndexVerify: _skipIndexVerify));
 		_newtableFile = GetTempFilePath();
 		_newtable = PTable.MergeTo(_tables, _newtableFile,
-			PTableVersions.IndexV4, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, skipIndexVerify: _skipIndexVerify);
+			PTableVersions.IndexV4, skipIndexVerify: _skipIndexVerify);
 	}
 
 	[OneTimeTearDown]
@@ -215,16 +213,14 @@ public class when_merging_to_ptable_v4_with_deleted_entries : SpecificationWithD
 		var newTableFileCopy = GetTempFilePath();
 		File.Copy(_newtableFile, newTableFileCopy);
 		using (var filestream = File.Open(newTableFileCopy, FileMode.Open, FileAccess.Read)) {
-			var footerSize = PTableFooter.GetSize(PTableVersions.IndexV4);
+			var footerSize = PTableFooter.Size;
 			Assert.AreEqual(filestream.Length,
 				PTableHeader.Size + numIndexEntries * PTable.IndexEntryV4Size +
 				requiredMidpoints * PTable.IndexEntryV4Size + footerSize + PTable.MD5Size);
-			filestream.Seek(
-				PTableHeader.Size + numIndexEntries * PTable.IndexEntryV4Size +
-				requiredMidpoints * PTable.IndexEntryV4Size, SeekOrigin.Begin);
+			var footerOffset = PTableHeader.Size + numIndexEntries * PTable.IndexEntryV4Size +
+			                   requiredMidpoints * PTable.IndexEntryV4Size;
 
-			var ptableFooter = PTableFooter.FromStream(filestream);
-			Assert.AreEqual(FileType.PTableFile, ptableFooter.FileType);
+			var ptableFooter = PTableFooter.Parse(filestream.SafeFileHandle, footerOffset);
 			Assert.AreEqual(PTableVersions.IndexV4, ptableFooter.Version);
 			Assert.AreEqual(requiredMidpoints, ptableFooter.NumMidpointsCached);
 		}

@@ -52,8 +52,6 @@ public class when_trying_to_get_next_entry : SpecificationWithFile {
 		_pTable = PTable.FromMemtable(
 			table: _memTable,
 			filename: Filename,
-			initialReaders: Constants.PTableInitialReaderCount,
-			maxReaders: Constants.PTableMaxReaderCountDefault,
 			skipIndexVerify: _skipIndexVerify);
 	}
 
