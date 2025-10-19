@@ -10,9 +10,10 @@ These are the new features and important changes and in KurrentDB 25.1:
 
 Features
 * [Secondary Indexing](#secondary-indexing)
-* [Schema Registry](#schema-registry)
 * [Multi-stream Appends](#multi-stream-appends)
-* [Log Record Properties](#)
+* [Log Record Properties](#log-record-properties)
+* [Database Stats](#database-stats)
+* [Ad-hoc SQL Queries](#ad-hoc-sql-queries)
 * [Windows Service](#windows-service)
 * [Open Telemetry Logs Export](#open-telemetry-logs-export)
 
@@ -60,6 +61,12 @@ KurrentDB can now be run as a Windows Service. See the [documentation](installat
 <Badge type="info" vertical="middle" text="License Required"/>
 
 The embedded Web UI now includes a Database Stats page showing detailed statistics about database content, such as number of streams, events, etc. This feature only works with secondary indexes enabled.
+
+### Ad-hoc SQL queries
+
+<Badge type="info" vertical="middle" text="License Required"/>
+
+The embedded Web UI now includes a Queries page allowing you to run ad-hoc SQL queries against event data stored in KurrentDB. This feature only works with secondary indexes enabled. Learn more about [the Queries UI](../features/queries/ui.md).
 
 ### OpenTelemetry logs export
 

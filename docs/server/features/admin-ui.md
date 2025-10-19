@@ -70,6 +70,7 @@ The _Plugins_ page shows the list of plugins and subsystems loaded in the cluste
 ### Other Pages
 
 Other pages of the embedded UI are:
+- **Query**: Has a code editor field where you can create transient and short-lived queries to analyze your event streams quickly. Refer to the [Queries UI](../features/queries/ui.md) documentation for more details.
 - **License**: Shows the license status of the cluster node. You can view the license type, expiration date, and other details.
 - **Navigator**: Has a link to the Kurrent Navigator app download page, where you can also find supported features table in comparison with the legacy admin UI.
 - **Legacy UI**: Has a link to the legacy web UI, which is still available for now. The legacy UI will be deprecated in the future, and you should use the new embedded UI or Kurrent Navigator instead.
