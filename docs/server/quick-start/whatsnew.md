@@ -29,15 +29,11 @@ For breaking changes and deprecation notices, see the [upgrade guide](upgrade-gu
 
 ### Secondary Indexing
 
-```
-TODO: Description and link to documentation.
-```
+In addition to the [default index](../features/indexes/default.md), KurrentDB v25.1 introduces default secondary indexes for categories and event types. These indexes provide functionality that is similar to the existing `$by-category` and `$by-event-type` system projections, but with significant performance and storage efficiency improvements.
 
-### Schema Registry
+Future releases will add support for custom secondary indexes, aiming to mitigate the need to use custom projections that produce link records.
 
-```
-TODO: Description and link to documentation.
-```
+Learn more about [secondary indexes](../features/indexes/secondary.md).
 
 ### Multi-stream Appends
 
@@ -45,29 +41,31 @@ The server now supports appending to multiple streams atomically in one write re
 
 Events `e1, ..., eN` can be appended to stream `s1` and events `f1, ..., fN` being appended to stream `s2`, and so on with other streams, all in one atomic operation.
 
-An optimistic concurrency check can be provided for each stream, and the write will only take effect if all of the checks are successful.
+An optimistic concurrency check can be provided for each stream, and the write operation will only succeed if all the checks are successful.
 
-Client support for this feature is in progress.
+Using this feature requires the latest client libraries that support it.
 
 ### Log record properties
 
-Historically events have been appended with optional bytes for event metadata. The server now supports receiving this data in a structured way.
+Historically events have been appended with optional bytes for event metadata. The server now supports receiving this data in a structured way. The primary goal is to allow adding and retrieving event properties without serialization and deserialization overhead. In KurrentDB, log record (event) properties are stored as key-value pairs, where keys are strings and values can be of various types (string, int, bool, etc). This makes properties close to the Headers concept that is known in HTTP, messaging systems, and other similar technologies.
 
-```
-TODO: devex to write something here
-```
-
-Client support for this feature is in progress.
+In client libraries, log record properties are surfaced as a dictionary-like structure that allows adding, retrieving, and removing properties by key. Currently, properties are only supported for multi-stream appends, but in the future, we plan to extend support to other operations.
 
 ### Windows Service
 
 KurrentDB can now be run as a Windows Service. See the [documentation](installation.md#running-as-a-service) for more information.
 
-### Open Telemetry logs export
+### Database stats
 
 <Badge type="info" vertical="middle" text="License Required"/>
 
-The [Open Telemetry Integration](../diagnostics/integrations.md#opentelemetry-exporter) can now be used to export logs as well as metrics.
+The embedded Web UI now includes a Database Stats page showing detailed statistics about database content, such as number of streams, events, etc. This feature only works with secondary indexes enabled.
+
+### OpenTelemetry logs export
+
+<Badge type="info" vertical="middle" text="License Required"/>
+
+The [OpenTelemetry Integration](../diagnostics/integrations.md#opentelemetry-exporter) can now be used to export logs as well as metrics.
 
 ### Server garbage collection
 

@@ -1,7 +1,7 @@
 ---
 dir:
   text: "Connectors"
-  order: 1
+  order: 4
 ---
 
 # Understanding Connectors

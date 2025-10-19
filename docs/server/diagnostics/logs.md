@@ -286,7 +286,7 @@ curl https://user:password@localhost:2113/admin/logs/log20240205.json --output l
 
 ### Exporting logs
 
-Logs can be exported via the [Open Telemetry Integration](./integrations.md#opentelemetry-exporter).
+Logs can be exported via the [OpenTelemetry Integration](./integrations.md#opentelemetry-exporter).
 
 ### Troubleshooting
 
