@@ -40,7 +40,10 @@ public class GrpcTrackers {
 	private readonly IDurationTracker[] _trackers;
 
 	public GrpcTrackers() {
-		_trackers = new IDurationTracker[Enum.GetValues<Conf.GrpcMethod>().Cast<int>().Max() + 1];
+		//qq temporarily workaround entrypointnotfound runtime bug that results from call to cast
+		// https://github.com/dotnet/runtime/issues/120270
+		//_trackers = new IDurationTracker[Enum.GetValues<Conf.GrpcMethod>().Cast<int>().Max() + 1];
+		_trackers = new IDurationTracker[Enum.GetValues<Conf.GrpcMethod>().Select(x => (int)x).Max() + 1];
 		var noOp = new DurationTracker.NoOp();
 		for (var i = 0; i < _trackers.Length; i++)
 			_trackers[i] = noOp;
