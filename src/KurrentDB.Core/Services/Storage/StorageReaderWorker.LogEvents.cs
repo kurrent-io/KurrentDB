@@ -14,7 +14,7 @@ using static KurrentDB.Core.Messages.ClientMessage;
 
 namespace KurrentDB.Core.Services.Storage;
 
-partial class StorageReaderWorker<TStreamId> {
+partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadLogEvents> {
 	async ValueTask IAsyncHandle<ReadLogEvents>.HandleAsync(ReadLogEvents msg, CancellationToken token) {
 		if (msg.CancellationToken.IsCancellationRequested)
 			return;
