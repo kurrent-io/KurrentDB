@@ -6,7 +6,7 @@ dir:
 
 # Understanding Connectors
 
-Connectors make it easy to integrate EventStoreDB data into other systems.
+Connectors make it easy to integrate data from EventStoreDB into other systems.
 
 Each connector runs on the server-side and uses a catch-up subscription to receive events, filter or transform them, and push them to an external system via a [sink](https://en.wikipedia.org/wiki/Sink_(computing)).
 
@@ -15,15 +15,18 @@ Each connector runs on the server-side and uses a catch-up subscription to recei
 
 ```mermaid
 graph TD
-    A[EventStore DB] --> B[Subscription]
+    A[Streams] --> B[Subscription]
     B --> C[Filter]
     C --> D[Sink]
     D --> E[External System]
-    
-    subgraph Connector
-    B
-    C
-    D
+
+    subgraph EventStoreDB
+    A
+        subgraph Connector
+        B
+        C
+        D
+        end
     end
 ```
 
