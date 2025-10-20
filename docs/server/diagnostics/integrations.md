@@ -92,23 +92,27 @@ OpenTelemetry:
 
 The configuration can specify:
 
-| Name                                                                                   | Description          |
-|----------------------------------------------------------------------------------------|----------------------|
-| `OpenTelemetry__Logs__Enabled`                                                         | Set to true to enable logs export to the Otlp Endpoint. |
-| `OpenTelemetry__Logs__BatchExportProcessorOptions`<br/>`__ExporterTimeoutMilliseconds` | Maximum time to keep retrying failed batches for. Default: 30000. |
-| `OpenTelemetry__Logs__BatchExportProcessorOptions`<br/>`__MaxExportBatchSize`          | Maximum number of log entries included in each batch. Default: 512. |
+| Name                                                                                   | Description                                                                                            |
+|----------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|
+| `OpenTelemetry__Logs__Enabled`                                                         | Set to true to enable logs export to the Otlp Endpoint.                                                |
+| `OpenTelemetry__Logs__BatchExportProcessorOptions`<br/>`__ExporterTimeoutMilliseconds` | Maximum time to keep retrying failed batches for. Default: 30000.                                      |
+| `OpenTelemetry__Logs__BatchExportProcessorOptions`<br/>`__MaxExportBatchSize`          | Maximum number of log entries included in each batch. Default: 512.                                    |
 | `OpenTelemetry__Logs__BatchExportProcessorOptions`<br/>`__MaxQueueSize`                | Maximum number of log entries to queue. When the limit is exceeded, logs are discarded. Default: 2048. |
-| `OpenTelemetry__Logs__BatchExportProcessorOptions`<br/>`__ScheduledDelayMilliseconds`  | Maximum delay between batches. Default: 5000. |
+| `OpenTelemetry__Logs__BatchExportProcessorOptions`<br/>`__ScheduledDelayMilliseconds`  | Maximum delay between batches. Default: 5000.                                                          |
+
+### OTel environment variables
+
+KurrentDB OpenTelemetry exporter also supports the default OTel environment variables for configuring the OTLP exporter. Read more about them in the [OpenTelemetry documentation](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/).
 
 ### Troubleshooting
 
-| Symptom                                                                      | Solution                                                                                                                                                                                                                                                                                    |
-|------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| KurrentDB logs a message on startup that it cannot find the configuration | The server logs a message: `OtlpExporter: No OpenTelemetry:Otlp configuration found. Not exporting metrics.`.<br/><br/> Check the configuration steps above.                                                                                                                                |
+| Symptom                                                                   | Solution                                                                                                                                                     |
+|---------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| KurrentDB logs a message on startup that it cannot find the configuration | The server logs a message: `OtlpExporter: No OpenTelemetry:Otlp configuration found. Not exporting metrics.`.<br/><br/> Check the configuration steps above. |
 
 ## Datadog
 
-The best way to integrate KurrentDB metrics with Datadog today is by using the [OpenTelemetry exporter](#opentelemetry-exporter). We currently don't support exporting logs via the exporter.
+The best way to integrate KurrentDB metrics with Datadog today is by using the [OpenTelemetry exporter](#opentelemetry-exporter). Learn more about [Datadog OpenTelemetry integration](https://docs.datadoghq.com/opentelemetry/getting_started/).
 
 You can use the community-supported integration to collect KurrentDB logs and metrics in Datadog.
 
