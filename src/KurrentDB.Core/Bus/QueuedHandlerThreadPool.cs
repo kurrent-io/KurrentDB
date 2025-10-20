@@ -71,7 +71,7 @@ public class QueuedHandlerThreadPool : IQueuedHandler, IMonitoredQueue, IThreadP
 		_lifetimeToken = _lifetimeSource.Token;
 
 		_watchSlowMsg = watchSlowMsg;
-		_slowMsgThreshold = slowMsgThreshold ?? InMemoryBus.DefaultSlowMessageThreshold;
+		_slowMsgThreshold = slowMsgThreshold ?? TimeSpan.FromMilliseconds(ClusterVNodeOptions.InMemoryBusOptions.DefaultSlowMessageThreshold);
 		_threadStopWaitTimeout = threadStopWaitTimeout ?? DefaultStopWaitTimeout;
 
 		_queueMonitor = QueueMonitor.Default;
