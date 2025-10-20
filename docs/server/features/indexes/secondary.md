@@ -92,6 +92,7 @@ In terms of storage and performance, using secondary indexes can lead to:
 ## Limitations
 
 The first version of secondary indexes has some limitations that will be addressed in future releases:
+- Category index cannot be configured like the category projection (`first` vs `last` and a custom separator character). It always behaves like the `first` mode with `-` as the separator character.
 - Deletion of events does not remove entries from secondary indexes. This may lead to index entries pointing to non-existent events. It might impact speed of read operations but won't produce any errors as index records that cannot be resolved would be skipped on the server side. Future releases will implement automatic cleanup of index entries when events are deleted.
 - The previous point also indicates that reading from secondary indexes would not grant retention policies such as `MaxAge` or `MaxCount`. Events that have been deleted may still be returned by index reads until they are scavenged.
 - Because read and subscribe operations using secondary indexes currently rely on client API for reading `$all`, those operations can only be performed by users that are part of the `$admins` group. Future releases will enable reading from `$all` and secondary indexes without requiring admin privileges.
