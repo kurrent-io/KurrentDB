@@ -14,13 +14,13 @@ supports Basic Authentication and Bearer Token Authentication. See [Authenticati
 
 ## Quickstart
 
-You can create the HTTP Sink connector as follows:
+You can create the HTTP Sink connector as follows. Replace `id` with a unique connector name or ID:
 
-::: tabs
-@tab Powershell
+```http
+POST /connectors/{{id}}
+Host: localhost:2113
+Content-Type: application/json
 
-```powershell
-$JSON = @"
 {
   "settings": {
     "instanceTypeName": "http-sink",
@@ -30,33 +30,7 @@ $JSON = @"
     "subscription:filter:expression": "example-stream"
   }
 }
-"@ `
-
-curl.exe -X POST `
-  -H "Content-Type: application/json" `
-  -d $JSON `
-  http://localhost:2113/connectors/http-sink-connector
 ```
-
-@tab Bash
-
-```bash
-JSON='{
-  "settings": {
-    "instanceTypeName": "http-sink",
-    "url": "https://api.example.com/",
-    "subscription:filter:scope": "stream",
-    "subscription:filter:filterType": "streamId",
-    "subscription:filter:expression": "example-stream"
-  }
-}'
-
-curl -X POST \
-  -H "Content-Type: application/json" \
-  -d "$JSON" \
-  http://localhost:2113/connectors/http-sink-connector
-```
-:::
 
 After creating and starting the HTTP sink connector, every time an event is
 appended to the `example-stream`, the HTTP sink connector will send the record
@@ -72,35 +46,74 @@ The HTTP sink inherits a set of common settings that are used to configure the c
 the [Sink Options](../settings.md#sink-options) page.
 :::
 
-### HTTP settings
+| Name                       | Details                                                                                                                                                                                                      |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `url`                      | _required_<br><br> **Description:**<br>The URL or endpoint to which the request or message will be sent. See [Template Parameters](http#template-parameters) for advanced settings.<br><br>**Default**: `""` |
+| `method`                   | **Description:**<br>The method or operation to use for the request or message.<br><br>**Default**: `"POST"`                                                                                                  |
+| `defaultHeaders`           | **Description:**<br>Custom headers to include in the request. See [Specifying Custom Headers](#specifying-custom-headers).<br><br>**Default**: `"Accept-Encoding:*"`                                         |
+| `pooledConnectionLifetime` | **Description:**<br>Maximum time a connection can stay in the pool before it is no longer reusable.<br><br>**Default**: `"00:05:00"` (5 minutes)                                                             |
 
-| Name                       | Details                                                                                                                                                                                                                           |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `url`                      | _required_<br><br> **Type**: string<br><br>**Description:** The URL or endpoint to which the request or message will be sent. See [Template Parameters](http#template-parameters) for advanced settings.<br><br>**Default**: `""` |
-| `method`                   | **Type**: string<br><br>**Description:** The method or operation to use for the request or message.<br><br>**Default**: `"POST"`                                                                                                  |
-| `defaultHeaders`           | **Type**: string<br><br>**Description:** Headers included in all messages.<br><br>**Default**: `Accept-Encoding:*`                                                                                                                |
-| `pooledConnectionLifetime` | **Type**: TimeSpan<br><br>**Description:** Maximum time a connection can stay in the pool before it is no longer reusable.<br><br>**Default**: `00:05:00` (5 minutes)                                                             |
-
-### Authentication
+#### Authentication
 
 The HTTP sink connector supports both [Basic](https://datatracker.ietf.org/doc/html/rfc7617) and [Bearer](https://datatracker.ietf.org/doc/html/rfc6750) authentication methods.
 
-| Name                    | Details                                                                                                                                                   |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `authentication:method` | **Type**: string<br><br>**Description:** The authentication method to use.<br><br>**Default**: `None`<br><br>**Accepted Values:** `None`,`Basic`,`Bearer` |
+| Name                    | Details                                                                                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `authentication:method` | **Description:**<br>The authentication method to use.<br><br>**Default**: `"None"`<br><br>**Accepted Values:** `"None"`,`"Basic"`, or `"Bearer"` |
 
-#### Basic Authentication
+##### Basic Authentication
 
-| Name                            | Details                                                                                                  |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `authentication:basic:username` | **Type**: string<br><br>**Description:** The username for basic authentication.<br><br>**Default**: `""` |
-| `authentication:basic:password` | **Type**: string<br><br>**Description:** The password for basic authentication.<br><br>**Default**: `""` |
+| Name                            | Details                                                                             |
+| ------------------------------- | ----------------------------------------------------------------------------------- |
+| `authentication:basic:username` | **Description:**<br>The username for basic authentication.<br><br>**Default**: `""` |
+| `authentication:basic:password` | **Description:**<br>The password for basic authentication.<br><br>**Default**: `""` |
 
-#### Bearer Authentication
+##### Bearer Authentication
 
-| Name                          | Details                                                                                                |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `authentication:bearer:token` | **Type**: string<br><br>**Description:** The token for bearer authentication.<br><br>**Default**: `""` |
+| Name                          | Details                                                                           |
+| ----------------------------- | --------------------------------------------------------------------------------- |
+| `authentication:bearer:token` | **Description:**<br>The token for bearer authentication.<br><br>**Default**: `""` |
+
+#### Resilience
+
+Resilience options can be found in the [Resilience Configuration](../settings.md#resilience-configuration) section.
+
+## Headers
+
+In addition to the [default headers](../features.md#headers) that are included with every request, the HTTP sink connector also includes the following headers in the HTTP request:
+
+| Header              | Description                                                    |
+| ------------------- | -------------------------------------------------------------- |
+| `esdb-request-id`   | A unique identifier for the request                            |
+| `esdb-request-date` | The timestamp when the request was processed                   |
+| `content-type`      | The media type of the resource                                 |
+| `accept-encoding`   | The encoding types the client can handle. Default value is `*` |
+
+### Specifying Custom Headers
+
+The HTTP sink connector lets you include custom headers in the HTTP requests it
+sends to your specified URL. To add custom headers, use the `defaultHeaders`
+setting in your connector configuration. Each custom header should be specified
+with the prefix `defaultHeaders:` followed by the header name.
+
+**Example Request**:
+
+```http
+PUT /connectors/{{id}}
+Host: localhost:2113
+Content-Type: application/json
+
+{
+  "defaultHeaders:X-API-Key": "your-api-key-here",
+  "defaultHeaders:X-Tenant-ID": "production-tenant",
+  "defaultHeaders:X-Source-System": "KurrentDB"
+}
+```
+
+With this configuration, every HTTP request sent by the connector will include
+the specified custom headers along with their respective values, in addition to
+the [default headers](../features.md#headers) that are automatically added by
+the connector's plugin.
 
 ## Template parameters
 
@@ -134,6 +147,6 @@ For an event with schema subject "TestEvent", this would result in the URL:
 https://api.example.com/TestEvent
 ```
 
-### Tutorial
+## Tutorial
 
 [Learn how to configure and use a connector using the HTTP Sink in KurrentDB through a tutorial.](/tutorials/HTTP_Connector.md)
