@@ -52,10 +52,14 @@ The exact name and location are dependent on your configuration.
 
 - `db/ ` contains:
     - the chunks files named `chk-X.Y` where `X` is the chunk number and `Y` the version.
-    - the checkpoints files `*.chk` (`chaser.chk`, `epoch.chk`, `proposal.chk`, `truncate.chk`, `writer.chk`)
+    - the checkpoint files `*.chk` (`chaser.chk`, `epoch.chk`, `proposal.chk`, `truncate.chk`, `writer.chk`)
+    - DuckDB files `kurrent.ddb` and `kurrent.ddb.wal`
 - `index/ ` contains:
     - the index map: `indexmap`
-    - the indexes: UUID named files , e.g `5a1a8395-94ee-40c1-bf93-aa757b5887f8`
+    - the indexes: UUID named files, e.g `5a1a8395-94ee-40c1-bf93-aa757b5887f8`
+    - bloom filters: UUID named files with `.bloomfilter` suffix, e.g. `5a1a8395-94ee-40c1-bf93-aa757b5887f8.bloomfilter`
+    - the scavenging database: `scavenging/scavenging.db`
+    - the stream existence filter files: `stream-existence/streamExistenceFilter.chk` and `stream-existence/streamExistenceFilter.dat`
 
 ## Disks snapshot
 
@@ -65,6 +69,11 @@ However, if they are on different volumes, take first a snapshot of the volume c
 directory and then a snapshot of the volume containing the `db/ ` directory.
 
 ## Simple full backup & restore
+
+::: warning
+Online backup using file copy is not supported when using secondary indexes due to the risk of
+inconsistent backups. It is recommended to use volume snapshots instead, or take the node offline before copying the files. Refer to the [secondary indexes backup and restore](../features/indexes/secondary.md#backup-and-restore) section for more details.
+:::
 
 ### Backup
 
@@ -94,6 +103,11 @@ rsync -a data/*.0* backup
 
 The following procedure is designed to minimize the backup storage space, and can be used to do a full and
 differential backup.
+
+::: warning
+Online backup using file copy is not supported when using secondary indexes due to the risk of
+inconsistent backups. It is recommended to use volume snapshots instead, or take the node offline before copying the files. Refer to the [secondary indexes backup and restore](../features/indexes/secondary.md#backup-and-restore) section for more details.
+:::
 
 ### Backup
 
@@ -133,6 +147,7 @@ Then backup the log:
 3. Create a copy of `chaser.chk` and call it `truncate.chk`.
 
 ## Stopping an ongoing scavenge before taking a backup
+
 It is extremely important to stop any ongoing scavenge before taking a backup. If this step is not followed, the backed up data may have missing or corrupted files. Your backup script can include the following steps to ensure that any ongoing scavenge is stopped before a node is backed up:
 
 1. Do an HTTP `GET` request to `/admin/scavenge/current` or `/admin/scavenge/last` to determine if there is an ongoing scavenge on the node.

@@ -1,5 +1,6 @@
 ---
 title: Persistent subscriptions
+order: 6
 ---
 
 ## Persistent subscription

@@ -1,7 +1,9 @@
 ---
-title: "Indexing"
-order: 5
+title: "Default index"
+order: 1
 ---
+
+The default index is the main indexing mechanism used by KurrentDB to locate events in streams quickly. Each entry in the default index maps the stream name hash and the event number to a logical position in the log files.
 
 KurrentDB stores indexes separately from the main data files, accessing records by stream name.
 
@@ -18,12 +20,12 @@ Indexes are sorted lists based on the hashes of stream names. To speed up seekin
 file of an entry for a stream, KurrentDB keeps midpoints to relate the stream hash to the physical offset
 in the file.
 
-As KurrentDB saves more files, they are automatically merged together whenever there are 2 or more files
+As KurrentDB saves more files, they are automatically merged together whenever there are two or more files
 at the same level into a single file at the next level. Each index entry is 24 bytes and the index file size
 is approximately 24Mb per 1M events. The Bloom filter files are approximately 1% of the size of the rest of
 the index.
 
-Level 0 is the level of the _memtable_ that is kept in memory. Generally there is only 1 level 0 table unless
+Level 0 is the level of the _memtable_ that is kept in memory. Generally there is only one level 0 table unless
 an ongoing merge operation produces multiple level 0 tables.
 
 Assuming the default `MaxMemTableSize` of 1M, the index files by level are:
@@ -40,12 +42,9 @@ Assuming the default `MaxMemTableSize` of 1M, the index files by level are:
 | 8     | 128M              | 3072MB         |
 | n     | 2^(n-1) * 1M      | 2^(n-1) * 24Mb |
 
-Each index entry is 24 bytes and the index file size is approximately 24Mb per M events.
-
 ## Indexing in depth
 
-For general operation of KurrentDB the following information is not critical but useful for developers
-wanting to make changes in the indexing subsystem and for understanding crash recovery and tuning scenarios.
+For general operation of KurrentDB the following information is not critical but useful for understanding crash recovery and tuning scenarios.
 
 ### Index map files
 
@@ -66,7 +65,7 @@ The _indexmap_ structure is as follows:
 
 KurrentDB writes _indexmap_ files to a temporary file and then deletes the original and renames the
 temporary file. KurrentDB attempts this 5 times before failing. Because of the order, this operation can
-only fail if there is an issue with the underlying file system or the disk is full. This is a 2 phase process,
+only fail if there is an issue with the underlying file system or the disk is full. This is a two phase process,
 and in the unlikely event of a crash during this process, KurrentDB recovers by rebuilding the indexes
 using the same process used if it detects corrupted files during startup.
 
@@ -75,23 +74,23 @@ using the same process used if it detects corrupted files during startup.
 Merging _ptables_, updating the _indexmap_ and persisting _memtable_ operations happen on a background thread.
 These operations are performed on a single thread with any additional operations queued and completed later.
 KurrentDB runs these operations on a thread pool thread rather than a dedicated thread. Generally there is
-only one operation queued at a time, but if merging to _ptables_ at one level causes 2 tables to be available
+only one operation queued at a time, but if merging to _ptables_ at one level causes two tables to be available
 at the next level, then the next merge operation is immediately queued. While merge operations are in
-progress, if KurrentDB is appending large numbers of events, it may queue 1 or more _memtables_ for
+progress, if KurrentDB is appending large numbers of events, it may queue one or more _memtables_ for
 persistence. The number of pending operations is logged.
 
-For safety _ptables_ KurrentDB is currently merging are only deleted after the new _ptable_ has persisted
-and the _indexmap_  updated. In the event of a crash, KurrentDB recovers by deleting any files not in the
+For safety, _ptables_ that are being merged are only deleted after the new _ptable_ was persisted
+and the _indexmap_ was updated. In the event of a crash, KurrentDB recovers by deleting any files not in the
 _indexmap_ and reindexing from the prepare/commit position stored in the _indexmap_ file.
 
 ### Manual merging
 
 If you have set the maximum level ([`MaxAutoMergeIndexLevel`](#auto-merge-index-level)) for automatically
 merging indexes, then you need to trigger merging indexes above this level manually by using
-the `/admin/mergeindexes` endpoint, or the es-cli tool.
+the `/admin/mergeindexes` endpoint, or the `es-cli` tool.
 
 Triggering a manual merge causes KurrentDB to merge all tables that have a level equal to the maximum merge
-level or above into a single table. If there is only 1 table at the maximum level or above, no merge is
+level or above into a single table. If there is only one table at the maximum level or above, no merge is
 performed.
 
 ### Stream existence filter
@@ -188,7 +187,7 @@ disk, up to a maximum level of 2 TB where the seek distance starts to grow. Redu
 small amount of memory pressure in highly constrained environments. Increasing it causes index files larger
 than 1.5 GB, and less than 2 TB to have more dense midpoint populations which means the binary search is not
 used for long before switching back to scanning the entries between. The maximum number of entries scanned in
-this way is `distance/24b`, so with the default setting and a 2TB index file this is approximately 170
+this way is `distance/24b`, so with the default setting and a 2 TB index file this is approximately 170
 entries. Most clusters should not need to change this setting.
 
 ### Skip index verification
@@ -221,13 +220,13 @@ indexes from scratch.
 
 **Default**: `2147483647`
 
-`MaxAutoMergeIndexLevel` allows you to specify the maximum index file level to automatically merge. By default
+`MaxAutoMergeIndexLevel` allows you to specify the maximum index file level to automatically merge. By default,
 KurrentDB merges all levels. Depending on the specification of the host running KurrentDB, at some point
 index merges will use a large amount of disk IO.
 
-For example:
-
-> Merging 2 level 7 files results in at least 3072 MB reads (2 \* 1536 MB), and 3072 MB writes while merging 2 level 8 files together results in at least 6144 MB reads (2 \* 3072 MB) and 6144 MB writes. Setting `MaxAutoMergeLevel` to 7 allows all levels up to and including level 7 to be automatically merged, but to merge the level 8 files together, you need to trigger a manual merge. This manual merge allows better control over when these larger merges happen and which nodes they happen on. Due to the replication process, all nodes tend to merge at about the same time.
+::: note Example
+Merging two level 7 files results in at least 3072 MB reads (2 \* 1536 MB), and 3072 MB writes while merging two level 8 files together results in at least 6144 MB reads (2 \* 3072 MB) and 6144 MB writes. Setting `MaxAutoMergeLevel` to 7 allows all levels up to and including level 7 to be automatically merged, but to merge the level 8 files together, you need to trigger a manual merge. This manual merge allows better control over when these larger merges happen and which nodes they happen on. Due to the replication process, all nodes tend to merge at about the same time.
+:::
 
 ### Stream existence filter size
 
@@ -240,9 +239,9 @@ For example:
 **Default**: `256000000`
 
 `StreamExistenceFilterSize` is the amount of memory & disk space, in bytes, to use for the stream existence
-filter. This should be set to roughly the maximum number of streams you expect to have in your database, i.e
-if you expect to have a max of 500 million streams, use a value of 500000000. The value you select should also
-fit entirely in memory to avoid any performance degradation. Use 0 to disable the filter.
+filter. This should be set to roughly the maximum number of streams you expect to have in your database, i.e.
+if you expect to have a max of 500 million streams, use a value of `500000000`. The value you select should also
+fit entirely in memory to avoid any performance degradation. Use `0` to disable the filter.
 
 Upgrading to a version of KurrentDB that supports the Stream Existence Filter requires the filter to be
 built - unless it is disabled. This will take approximately as long as it takes to read through the whole
@@ -302,6 +301,6 @@ between triggering manual merges (operational cost) and automatic merges (IOPS) 
 this varies between environments due to IOPS generated by other operations such as read and write load on the
 cluster.
 
-For example:
-
-> A cluster with 3000 256b IOPS can read/write about 0.73Gb/sec (This level of IOPS represents a small cloud instance). Assuming sustained read/write throughput of 0.73Gb/s. When an index merge of level 7 or above starts, it consumes as many IOPS up to all on the node until it completes. Because KurrentDB has a shared nothing architecture for clustering this operation is likely to cause all nodes to appear to stall simultaneously as they all try and perform an index merge at the same time. By setting `MaxAutoMergeLevel` to 6 or below you can avoid this, and you can run the merge on each node individually keeping read/write latency in the cluster consistent.
+::: note Example
+ A cluster with 3000 256b IOPS can read/write about 0.73 Gb/sec (this level of IOPS represents a small cloud instance). Assuming sustained read/write throughput of 0.73 Gb/s. When an index merge of level 7 or above starts, it consumes as many IOPS up to all on the node until it completes. Because KurrentDB has a shared nothing architecture for clustering, this operation is likely to cause all nodes to appear to stall simultaneously as they all try and perform an index merge at the same time. By setting `MaxAutoMergeLevel` to 6 or below you can avoid this, and you can run the merge on each node individually keeping read/write latency in the cluster consistent.
+:::

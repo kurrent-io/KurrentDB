@@ -13,6 +13,6 @@ KurrentDB requires regular maintenance with three operational concerns:
 - [Certificate update](cert-update.md) to renew certificates.
 
 You might also be interested learning about KurrentDB [diagnostics](../diagnostics/README.md)
-and [indexes](../configuration/indexes.md), which might require some Ops attention.
+and [indexes](../features/indexes/default.md), which might require some Ops attention.
 
 <Catalog/>
