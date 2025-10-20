@@ -18,13 +18,13 @@ Features
 * [OpenTelemetry Logs Export](#opentelemetry-logs-export)
 
 Changes / Improvements
-* [ServerGC](#server-garbage-collection)
+* [Server Garbage Collection](#server-garbage-collection)
 * [StreamInfoCacheCapacity default](#streaminfocachecapacity-default)
-* [Connectors Improvements](#)
-* [Archiving Improvements](#)
+* [Connectors](#connectors)
+* [Archiving](#archiving)
 * [Additional Projection Metrics](#additional-projection-metrics)
-* [Additional other metrics? incorporate? ](#)
-* [Misc Quality of Life Improvements]()
+* [Additional Persistent Subscription Metrics](#additional-persistent-subscription-metrics)
+* [Miscellaneous Quality of Life Improvements](#miscellaneous-quality-of-life-improvements)
 
 For breaking changes and deprecation notices, see the [upgrade guide](upgrade-guide.md).
 
@@ -52,10 +52,6 @@ Historically events have been appended with optional bytes for event metadata. T
 
 In client libraries, log record properties are surfaced as a dictionary-like structure that allows adding, retrieving, and removing properties by key. Using this feature requires the latest client libraries that support it.
 
-### Windows Service
-
-KurrentDB can now be run as a Windows Service. See the [documentation](installation.md#running-as-a-service) for more information.
-
 ### Database stats
 
 <Badge type="info" vertical="middle" text="License Required"/>
@@ -67,6 +63,10 @@ The embedded Web UI now includes a Database Stats page showing detailed statisti
 <Badge type="info" vertical="middle" text="License Required"/>
 
 The embedded Web UI now includes a Queries page allowing you to run ad-hoc SQL queries against event data stored in KurrentDB. This feature only works with secondary indexes enabled. Learn more about [the Queries UI](../features/queries/ui.md).
+
+### Windows Service
+
+KurrentDB can now be run as a Windows Service. See the [documentation](installation.md#running-as-a-service) for more information.
 
 ### OpenTelemetry logs export
 
@@ -104,7 +104,7 @@ Since connectors now run only on the leader node, leases are no longer needed an
 
 Header keys now retain their original casing when delivered to connector destinations. The default headers `esdb-record-partition-key` and `esdb-record-is-transformed` are no longer added to outgoing messages. You can also choose whether to include system headers in sink metadata.
 
-### Archiving Improvements
+### Archiving
 
 The headers of remote chunks are now only read on demand and not on startup, improving startup times when there are a large number of remote chunks.
 
@@ -194,8 +194,8 @@ See [the documentation](../diagnostics/metrics.md#persistent-subscriptions) for 
 
 These are the new features in KurrentDB 25.0:
 
-* [Archiving](#archiving)
-* [Connectors](#connectors)
+* [Archiving](#archiving-1)
+* [Connectors](#connectors-1)
 * [KurrentDB rebranding](#kurrentdb-rebranding)
 * [New embedded Web UI](#new-embedded-web-ui)
 * [New versioning scheme and release schedule](#new-versioning-scheme-and-release-schedule)
@@ -297,7 +297,7 @@ Packages for KurrentDB will still be published to [Cloudsmith](https://cloudsmit
 
 These are the new features that were added in EventStoreDB 24.10:
 
-* [Connectors](#connectors):
+* [Connectors](#connectors-2):
     * Kafka
     * MongoDB
     * RabbitMQ
