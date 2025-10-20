@@ -18,18 +18,18 @@ Individual connectors also include their own specific settings. To view them, go
 
 ### Instance configuration
 
-| Name               | Details                                                                                                                                                                                             |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `instanceTypeName` | _required_<br><br>**Type**: string<br><br>**Description:** The name of the instance type for the sink.<br><br>Refer to the sink's individual page for more details on the available instance types. |
+| Name               | Details                                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `instanceTypeName` | _required_<br><br>**Description:**<br>Specifies the type of sink connector instance.<br><br>**Accepted Values:**<br><ul><li>`serilog-sink`</li><li>`http-sink`</li><li>`kafka-sink`</li><li>`elasticsearch-sink`</li><li>`rabbit-mq-sink`</li><li>`mongo-db-sink`</li></ul>For details about each type, see the individual sink's [page](/server/features/connectors/sinks/). |
 
 ### Subscription configuration
 
 | Name                             | Details                                                                                                                                                                                                                                                                                            |
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `subscription:filter:scope`      | **Type**: enum<br><br>**Description:** Determines the scope of event filtering for the subscription. Use `stream` to filter events by stream ID, or `record` to filter events by event type.<br><br>**Accepted Values:**<br>- `stream`, `record`, `unspecified`.<br><br>**Default**: `unspecified` |
-| `subscription:filter:filterType` | **Type**: enum<br><br>**Description:** Specifies the method used to filter events.<br><br>**Accepted Values:**<br>- `streamId`, `regex`, `prefix`, `jsonPath`, `unspecified`.<br><br>**Default**: `unspecified`                                                                                    |
-| `subscription:filter:expression` | **Type**: string<br><br>**Description:** A filter expression (regex, JsonPath, or prefix) for records. If `scope` is specified and the expression is empty, it consumes from `$all` including system events. If `scope` is unspecified, it consumes from `$all` excluding system events.<br><br>**Default**: `""`                                                                     |
-| `subscription:initialPosition`   | **Type**: enum<br><br>**Description:** The position in the message stream from which a consumer starts consuming messages when there is no prior checkpoint.<br><br>**Accepted Values:**<br>- `latest`, `earliest`.<br><br>**Default**: `latest`                                                   |
+| `subscription:filter:scope`      | **Description:**<br>Determines the scope of event filtering for the subscription. Use `"stream"` to filter events by stream ID, or `"record"` to filter events by event type.<br><br>**Accepted Values:**<br>- `"stream"`, `"record"`, `"unspecified"`.<br><br>**Default**: `"unspecified"`        |
+| `subscription:filter:filterType` | **Description:**<br>Specifies the method used to filter events.<br><br>**Accepted Values:**<br>- `"streamId"`, `"regex"`, `"prefix"`, `"jsonPath"`, `"unspecified"`.<br><br>**Default**: `"unspecified"`                                                                                           |
+| `subscription:filter:expression` | **Description:**<br>A filter expression (regex, JsonPath, or prefix) for records. If `scope` is specified and the expression is empty, it consumes from `$all` including system events. If `scope` is unspecified, it consumes from `$all` excluding system events.<br><br>**Default**: `""` |
+| `subscription:initialPosition`   | **Description:**<br>The position in the message stream from which a consumer starts consuming messages when there is no prior checkpoint.<br><br>**Accepted Values:**<br>- `"latest"`, `"earliest"`.<br><br>**Default**: `"latest"`                                                                |
 
 For details and examples on subscriptions, see [Filters](./features.md#filters).
 
@@ -37,38 +37,42 @@ For details and examples on subscriptions, see [Filters](./features.md#filters).
 
 | Name                   | Details                                                                                                                                                                                                                         |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `transformer:enabled`  | **Type**: bool<br><br>**Description:** Enables or disables the event transformer.<br><br>**Default**: `false`                                                                                                                   |
-| `transformer:function` | _required (if enabled)_<br><br>**Type**: string<br><br>**Description:** Base64 encoded JavaScript function for transforming events. See [Transformations](./features.md#transformations) for examples.<br><br>**Default**: `""` |
+| `transformer:enabled`  | **Description:**<br>Enables or disables the event transformer.<br><br>**Default**: `"false"`                                                                                                                   |
+| `transformer:function` | _required_<br><br>**Description:**<br>Base64 encoded JavaScript function for transforming events. See [Transformations](./features.md#transformations) for examples.<br><br>**Default**: `""` |
 
 For details and examples on transformations, see [Transformations](./features.md#transformations).
 
 ### Resilience configuration
 
-| Name                                       | Details                                                                                                                                                                |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `resilience:enabled`                       | **Type**: bool<br><br>**Description:** Enables or disables resilience.<br><br>**Default**: `true`                                                                      |
-| `resilience:firstDelayBound:upperLimitMs`  | **Type**: int<br><br>**Description:** The upper limit for the first delay bound in milliseconds.<br><br>**Default**: `60000` (1 minute)                                |
-| `resilience:firstDelayBound:delayMs`       | **Type**: int<br><br>**Description:** The delay for the first delay bound in milliseconds.<br><br>**Default**: `5000` (5 seconds)                                      |
-| `resilience:secondDelayBound:upperLimitMs` | **Type**: int<br><br>**Description:** The upper limit for the second delay bound in milliseconds.<br><br>**Default**: `3600000` (1 hour)                               |
-| `resilience:secondDelayBound:delayMs`      | **Type**: int<br><br>**Description:** The delay for the second delay bound in milliseconds.<br><br>**Default**: `600000` (10 minutes)                                  |
-| `resilience:thirdDelayBound:upperLimitMs`  | **Type**: int<br><br>**Description:** The upper limit for the third delay bound in milliseconds. A value of `-1` indicates forever.<br><br>**Default**: `-1` (forever) |
-| `resilience:thirdDelayBound:delayMs`       | **Type**: int<br><br>**Description:** The delay for the third delay bound in milliseconds.<br><br>**Default**: `3600000` (1 hour)                                      |
+| Name                                       | Details                                                                                                                                        |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `resilience:enabled`                       | **Description:**<br>Enables or disables resilience.<br><br>**Default**: `"true"`                                                               |
+| `resilience:firstDelayBound:upperLimitMs`  | **Description:**<br>The upper limit for the first delay bound in milliseconds.<br><br>**Default**: `"60000"`                                   |
+| `resilience:firstDelayBound:delayMs`       | **Description:**<br>The delay for the first delay bound in milliseconds.<br><br>**Default**: `"5000"`                                          |
+| `resilience:secondDelayBound:upperLimitMs` | **Description:**<br>The upper limit for the second delay bound in milliseconds.<br><br>**Default**: `"3600000"`                                |
+| `resilience:secondDelayBound:delayMs`      | **Description:**<br>The delay for the second delay bound in milliseconds.<br><br>**Default**: `"600000"`                                       |
+| `resilience:thirdDelayBound:upperLimitMs`  | **Description:**<br>The upper limit for the third delay bound in milliseconds. A value of `"-1"` indicates forever.<br><br>**Default**: `"-1"` |
+| `resilience:thirdDelayBound:delayMs`       | **Description:**<br>The delay for the third delay bound in milliseconds.<br><br>**Default**: `"3600000"`                                       |
 
-For details on resilience, see [Resilience](./features.md#resilience).
+::: note
+Not all connectors use every resilience setting listed here. Some may have additional or different resilience options. If a connector’s individual documentation page does not explicitly mention support for these settings, it does not use them.
+:::
+
+For more details on resilience, see [Resilience](./features.md#resilience).
 
 ### Auto-Commit configuration
 
-| Name                          | Details                                                                                                                    |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `autocommit:enabled`          | **Type**: bool<br><br>**Description:** Enable or disables auto-commit<br><br>**Default:** `true`                           |
-| `autocommit:interval`         | **Type**: int<br><br>**Description:** The interval, in milliseconds at which auto-commit occurs<br><br>**Default**: `5000` |
-| `autocommit:recordsThreshold` | **Type**: int<br><br>**Description:** The threshold of records that triggers an auto-commit<br><br>**Default**: `1000`     |
+| Name                          | Details                                                                                                    |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `autocommit:enabled`          | **Description:**<br>Enable or disables auto-commit<br><br>**Default:** `"true"`                            |
+| `autocommit:interval`         | **Description:**<br>The interval, in milliseconds at which auto-commit occurs<br><br>**Default**: `"5000"` |
+| `autocommit:recordsThreshold` | **Description:**<br>The threshold of records that triggers an auto-commit<br><br>**Default**: `"1000"`     |
 
 ### Logging configuration
 
-| Name              | Details                                                                                        |
-| ----------------- | ---------------------------------------------------------------------------------------------- |
-| `logging:enabled` | **Type**: bool<br><br>**Description:** Enables or disables logging.<br><br>**Default**: `true` |
+| Name              | Details                                                                       |
+| ----------------- | ----------------------------------------------------------------------------- |
+| `logging:enabled` | **Description:**<br>Enables or disables logging.<br><br>**Default**: `"true"` |
 
 ## Disable the Plugin
 

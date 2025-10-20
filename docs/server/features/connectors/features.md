@@ -3,35 +3,28 @@ title: 'Features'
 order: 2
 ---
 
-## Filters
+This page describes the features available in KurrentDB connectors. Before diving into the features, it's important to understand the structure of records that connectors consume from KurrentDB.
 
-All sink connectors supports filtering events using regular expressions, JsonPath expressions, or prefixes. The expression is first checked as a JsonPath, then as a regex, and if neither, it's used as a prefix for filtering.
+## KurrentDB Record
 
-::: info
-By default, if no filter is specified, the system will consume from the `$all` stream, excluding system events.
-:::
-
-#### KurrentDB Record
-
-When a connector consumes events from KurrentDB, you have access to the following objects that represent KurrentDB records:
+When a connector consumes events from KurrentDB, it receives records with the following structure:
 
 ```json
 {
   "recordId": "string",
   "position": {
     "streamId": "string",
-    "partitionId": "number"
+    "logPosition": "number",
   },
-  "sequenceId": "number",
-  "isRedacted": "boolean",
+  "isTransformed": "boolean",
   "schemaInfo": {
-    "subject": "string",
-    "type": "string"
+    "Subject": "string",
+    "Type": "number",
   },
-  "headers": {},
-  "value": {},
-  "streamId": "string",
-  "partitionId": "number"
+  "headers": {
+    "key1": "string"
+  },
+  "value": "object"
 }
 ```
 
@@ -39,36 +32,91 @@ When a connector consumes events from KurrentDB, you have access to the followin
 
 ```json
 {
-  "recordId": "46ed7c22-38c9-4a62-bbaf-e40f3d5b84c9",
+  "recordId": "af0d90b7-bc4a-4220-949f-4e92df3175c2",
   "position": {
-    "streamId": "VehicleRegistration-5b27b19d80814adeb13471c7a6a1e285",
-    "partitionId": -1
+    "streamId": "user-profile-stream",
+    "logPosition": 42123
   },
-  "sequenceId": 1,
-  "isRedacted": false,
+  "isTransformed": false,
   "schemaInfo": {
-    "subject": "VehicleRegistered",
-    "type": "json"
+    "subject": "UserProfileUpdated",
+    "type": 1
   },
-  "headers": {},
+  "headers": {
+    "contentType": "application/json",
+    "correlationId": "corr-xyz-789",
+    "userId": "user-456"
+  },
   "value": {
-    "registrationId": "5b27b19d-8081-4ade-b134-71c7a6a1e285",
-    "registrationNumber": 4474795452,
-    "vehicle": {
-      "make": "Audi",
-      "model": "A6",
-      "year": 2018,
-      "engineType": "petrol"
-    }
-  },
-  "streamId": "VehicleRegistration-5b27b19d80814adeb13471c7a6a1e285",
-  "partitionId": -1
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john.doe@example.com"
+  }
 }
 ```
 
 :::
 
-You can use this schema as a reference when creating your filters. The `value` object contains the actual event data, while the `schemaInfo` object contains the event type and subject. The `streamId` and `partitionId` properties are used to identify the stream and partition from which the event originated.
+This schema serves as a reference when creating filters or transformation functions. Key components include:
+
+- **`value`**: Contains the actual event data
+- **`schemaInfo`**: Contains the event type and subject information
+- **`streamId`**: Identifies the source stream of the event
+- **`headers`**: Contains additional metadata, including both internal properties and custom properties
+
+### Headers
+
+When sink connectors process records, they automatically inject internal headers alongside any custom headers from your events. These headers provide additional metadata about the record and are prefixed with `esdb-` to distinguish them from user-defined headers.
+
+The following internal headers are automatically added to each record:
+
+| Header                        | Description                                                    |
+| ----------------------------- | -------------------------------------------------------------- |
+| `esdb-connector-id`           | The unique identifier of the connector processing the record   |
+| `esdb-request-id`             | A unique identifier for the processing request                 |
+| `esdb-request-date`           | The timestamp when the request was processed                   |
+| `esdb-record-id`              | The unique identifier of the record                            |
+| `esdb-record-timestamp`       | The timestamp of the record                                    |
+| `esdb-record-redacted`        | A boolean value that indicates if the record has been redacted |
+| `esdb-record-stream-id`       | The stream ID where the event originated                       |
+| `esdb-record-stream-revision` | The revision number of the event in its stream                 |
+| `esdb-record-log-position`    | The global log position of the event                           |
+| `esdb-record-schema-subject`  | The schema subject/name of the event                           |
+| `esdb-record-schema-type`     | The schema data format type                                    |
+
+::: warning
+Some connectors may send additional headers specific to their implementation
+beyond the standard set listed above. Refer to the documentation for each
+connector for details on any extra headers that may be included.
+:::
+
+#### User Defined Headers
+
+If the connector allows sending headers to the sink, user-defined headers from
+your events are automatically prefixed with `esdb-record-headers-`, followed by
+the header name. 
+
+By default, headers prefixed with `$` are treated as system headers and are excluded from the output. You can modify this behavior using the `"headers:ignoreSystem"` configuration setting:
+
+```json
+{
+  "headers:ignoreSystem": "true"
+}
+```
+
+When set to `"true"`, system headers (those prefixed with `$`) will be included in the connector output.
+
+::: tip
+Some connectors support passing extra headers beyond those listed above. See each connector's documentation for details.
+:::
+
+## Filters
+
+All sink connectors support filtering events using regular expressions, JsonPath expressions, or prefixes. The expression is first checked as a JsonPath, then as a regex, and if neither, it's used as a prefix for filtering.
+
+::: info
+By default, if no filter is specified, the system will consume from the `$all` stream, excluding system events.
+:::
 
 ### Stream ID Filter
 
@@ -145,61 +193,100 @@ options.
 
 ## Transformations
 
-```mermaid
-graph TD
-    A[Input Record] --> B[Transformation Applied?]
-    B -- Yes --> C[Transformed Record]
-    B -- No --> D[Original Record]
-```
+Sink connectors support transformations using JavaScript, allowing you to modify records received from KurrentDB streams before they are sent to the destination. This feature enables you to tailor the data to meet your specific requirements, such as combining fields, converting values, or enriching records.
 
-Connectors support transformations using JavaScript, allowing you
-to modify the records received from the KurrentDB stream. This feature
-enables you to tailor the data to meet your specific requirements before it is
-processed further. Transformations can be applied to any part of the record,
-providing flexibility in how the data is handled and utilized within your
-application. It takes a `base64` encoded string as input for the
-transformations.
-
-:::tip
-You can use an [base64encode](https://www.base64encode.org/) to encode your JavaScript function. All sinks supports transformation.
+::: info
+Transformations apply exclusively to events with the `application/json` content type. Transformations are not applied to events with other content types.
 :::
 
-All records that are transformed will receive a property `IsTransformed` that will be set to `true`.
+### How Transformations Work
 
-Below is an example of a valid JavaScript function, which will then be encoded into a base64 string:
+Transformations are implemented as JavaScript functions that are encoded in base64 format and configured on the connector. The transformation function receives a KurrentDB record that follows the this [record structure](#kurrentdb-record) and any part of it can be modified before it's processed by the sink.
+
+### Creating a Transformation
+
+Follow these steps to create and apply a transformation to your connector:
+
+#### 1. Write the transformation function in JavaScript
+
+The transformation function must adhere to the following requirements:
+
+- **Function name**: Must be named `transform`
+- **Parameters**: Must accept a single parameter called `record` that follows the [record structure](#kurrentdb-record)
+- **Mutation style**: Must directly mutate the `record` object passed as its argument. Returning a new object using immutable will not work and throw an error.
+
+Here's an example that combines first and last names into a full name and normalizes the email address:
 
 ```js
 function transform(record) {
-  let { make, model } = record.value.vehicle;
-  record.schemaInfo.subject = 'Vehicle';
-  record.value.vehicle.makemodel = `${make} ${model}`;
+  const { firstName, lastName, email } = record.value;
+  record.value.fullName = `${firstName} ${lastName}`;
+  record.value.email = email.toLowerCase();
 }
 ```
 
-The transformation function must be a JavaScript function named **transform**.
+**Input:**
 
-Additionally, it must adhere to the KurrentDB Record structure. Otherwise, it will not start. For example, the following will **NOT** work:
-
-```js
-{
-  function transform(record) {
-    return {
-      name: 'invalid',
-    };
-  }
-}
-```
-
-It also doesn't support advanced Javascript syntax such as generators and tail calls.
-
-Transformation can be configured as follows:
+This function assumes the `record.value` is a JSON object with the following structure:
 
 ```json
 {
-  "transformer:enabled": "true",
-  "transformer:function": "ZnVuY3Rpb24gdHJhbnNmb3JtKHJlY29yZCkgewogIGxldCB7IG1ha2UsIG1vZGVsIH0gPSByZWNvcmQudmFsdWUudmVoaWNsZTsKICByZWNvcmQuc2NoZW1hSW5mby5zdWJqZWN0ID0gJ1ZlaGljbGUnOwogIHJlY29yZC52YWx1ZS52ZWhpY2xlLm1ha2Vtb2RlbCA9IGAke21ha2V9ICR7bW9kZWx9YDsKfQ=="
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "John.Doe@example.com"
 }
 ```
+
+**Output:**
+
+After transformation, the record will contain:
+
+```json
+{
+  "email": "john.doe@example.com",
+  "firstName": "John",
+  "fullName": "John Doe",
+  "lastName": "Doe"
+}
+```
+
+#### 2. Encode the transformation function to base64
+
+Convert your JavaScript function to a base64-encoded string. The transformation must be base64-encoded before being configured on the connector.
+
+#### 3. Configure the connector with the encoded transformation
+
+If you have already created your connector without transformation enabled, you can easily update its configuration to enable transformations and provide the transformation function. Use the following API call to reconfigure your sink connector:
+
+```http
+POST /connectors/{{id}}
+Host: localhost:2113
+Content-Type: application/json
+
+{
+  "transformer:enabled": "true",
+  "transformer:function": "ZnVuY3Rpb24gdHJhbnNmb3JtKHJlY29yZCkgewogIGNvbnN0IHsgZmlyc3ROYW1lLCBsYXN0TmFtZSwgZW1haWwgfSA9IHJlY29yZC52YWx1ZTsKICByZWNvcmQudmFsdWUuZnVsbE5hbWUgPSBgJHtmaXJzdE5hbWV9ICR7bGFzdE5hbWV9YDsKICByZWNvcmQudmFsdWUuZW1haWwgPSBlbWFpbC50b0xvd2VyQ2FzZSgpOwp9"
+}
+```
+
+You can find the list of available management API endpoints in the [API Reference](./manage.md).
+
+#### 4. Start the connector
+
+Once configured, start the connector to begin processing events with the transformation applied:
+
+```http
+POST /connectors/{{id}}/start
+Host: localhost:2113
+Content-Type: application/json
+```
+
+When you append an event to the target KurrentDB stream, the connector will apply the transformation function to each record before sending it to the destination.
+
+::: info
+All records that have been transformed will automatically receive a header property called `esdb-record-is-transformed` set to `true`. This header can be used in filters to identify or filter out transformed records.
+:::
+
 
 ## Checkpointing
 
@@ -315,27 +402,12 @@ Connectors:
 If you provide both `Token` and `TokenFile`, the system will use the token file and ignore the `Token` setting.
 :::
 
-### Key Vault Configuration
+### Key Vault
 
-KurrentDB Connectors currently only supports the Surge key vault for storing
-encryption keys:
+KurrentDB Connectors uses the Surge key vault internally to manage encryption keys. Surge is KurrentDB's native key storage mechanism that stores encrypted keys in internal system streams. This is the default and only key vault currently available, and it is used automatically by the data protection framework without requiring any user configuration.
 
-The Surge key vault is KurrentDB's native key storage mechanism that stores
-encryption keys directly within KurrentDB itself. Rather than requiring a
-separate external key management system, Surge stores the encrypted keys in
-internal system streams. More key vault options will be available in the future.
-
-```yaml {6-8}
-Connectors:
-  Enabled: true
-  DataProtection:
-    Token: "<your-secret-token>"
-    
-    KeyVaults:
-      Surge:
-        KeyMaxHistory: 10
-```
-
-::: tip
-The default value for `KeyMaxHistory` is `-1`, which means unlimited key history. You can set it to a specific number to limit the number of historical keys stored.
+::: warning
+The Surge key vault is managed internally by the data protection framework and should not be configured directly by users. The system handles all key vault operations automatically.
 :::
+
+Support for additional key vault options, including external key management systems, is planned for future releases.
