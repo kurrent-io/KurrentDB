@@ -7,7 +7,7 @@ The KurrentDB Web Admin UI provides a basic interface to write and run ad-hoc qu
 ::: important
 The query feature is intended for temporary and exploratory use. For long-running or production workloads, consider using persistent projections or external tools.
 
-KurrentDB currently does not have an advance query planning and is only able to use the default [secondary indexes](../indexes/secondary.md) for queries. Therefore, complex queries may not perform optimally.
+KurrentDB currently does not have advanced query planning and is only able to use the default [secondary indexes](../indexes/secondary.md) for queries. Therefore, complex queries may not perform optimally.
 
 When querying event data and metadata, keep in mind that the query engine processes events sequentially. For large datasets, this may lead to longer query execution times and emit a large number of read requests.
 :::
@@ -16,9 +16,9 @@ When querying event data and metadata, keep in mind that the query engine proces
 
 Before v25.1, KurrentDB users had to rely on projections or external tools to query event data. We now want to offer a simpler way to run ad-hoc queries directly from the Web Admin UI, and using other protocols in the future.
 
-There's a way to run ad-hoc queries using [JavaScript projections](../projections/custom.md) using the Projections - Query screen, but that requires leaning the projections API and JavaScript. The new Queries UI provides a more straightforward way to run simple queries using a well-known SQL language. It became possible with the introduction of the [Secondary Indexes](../indexes/secondary.md) feature, which allows querying event data.
+There was already a way to run ad-hoc queries using [JavaScript projections](../projections/custom.md) using the Projections - Query screen, but that requires leaning the projections API and JavaScript. The new Queries UI provides a more straightforward way to run simple queries using SQL. It is powered by the [Secondary Indexes](../indexes/secondary.md) feature.
 
-The primary goal of this feature in KurrentDB v25.1 is not is to provide a way to run ad-hoc queries for quick data exploration and analysis. It doesn't aim to replace the need for read models that would be used in production and address complex querying needs, at least not in its current shape.
+The primary goal of this feature in KurrentDB v25.1 is to provide a way to run ad-hoc queries for quick data exploration and analysis. It doesn't yet aim to replace the need for read models that would be used in production and address complex querying needs.
 
 ## Internals
 

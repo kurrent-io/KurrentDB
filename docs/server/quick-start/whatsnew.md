@@ -15,7 +15,7 @@ Features
 * [Database Stats](#database-stats)
 * [Ad-hoc SQL Queries](#ad-hoc-sql-queries)
 * [Windows Service](#windows-service)
-* [Open Telemetry Logs Export](#open-telemetry-logs-export)
+* [OpenTelemetry Logs Export](#opentelemetry-logs-export)
 
 Changes / Improvements
 * [ServerGC](#server-garbage-collection)
@@ -50,7 +50,7 @@ Using this feature requires the latest client libraries that support it.
 
 Historically events have been appended with optional bytes for event metadata. The server now supports receiving this data in a structured way. The primary goal is to allow adding and retrieving event properties without serialization and deserialization overhead. In KurrentDB, log record (event) properties are stored as key-value pairs, where keys are strings and values can be of various types (string, int, bool, etc). This makes properties close to the Headers concept that is known in HTTP, messaging systems, and other similar technologies.
 
-In client libraries, log record properties are surfaced as a dictionary-like structure that allows adding, retrieving, and removing properties by key. Currently, properties are only supported for multi-stream appends, but in the future, we plan to extend support to other operations.
+In client libraries, log record properties are surfaced as a dictionary-like structure that allows adding, retrieving, and removing properties by key. Using this feature requires the latest client libraries that support it.
 
 ### Windows Service
 

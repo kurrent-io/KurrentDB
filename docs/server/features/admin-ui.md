@@ -34,7 +34,7 @@ When [secondary indexes](../features/indexes/secondary.md) are enabled, the _Sta
     - **Streams**: Number of streams per stream category
     - **Events**: Number of events per stream category
     - **Avg. stream length**: Average stream length per stream category
-- **Explicit transactions**: Shows if the database has event records that are part of explicit transactions, with the number of explicit transactions found. Explicit transactions feature is deprecated and not supported by the current client APIs.
+- **Explicit transactions**: Shows if the database has event records that are part of explicit transactions, with the number of explicit transactions found. Writing explicit transactions is deprecated and not supported by the current client APIs.
 - **Stream stats**: Shows the longest stream per category.
 
 ![Embedded UI Stats page](images/ui/stats.png)

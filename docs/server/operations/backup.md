@@ -71,8 +71,8 @@ directory and then a snapshot of the volume containing the `db/ ` directory.
 ## Simple full backup & restore
 
 ::: warning
-Backup and restore using file copy is not recommended when using secondary indexes due to the risk of
-inconsistent backups. It is recommended to use volume snapshots instead. Refer to the
+Online backup using file copy is not supported when using secondary indexes due to the risk of
+inconsistent backups. It is recommended to use volume snapshots instead, or take the node offline before copying the files. Refer to the
 [secondary indexes backup and restore](../features/indexes/secondary.md#backup-and-restore) section for more details.
 :::
 
@@ -104,6 +104,12 @@ rsync -a data/*.0* backup
 
 The following procedure is designed to minimize the backup storage space, and can be used to do a full and
 differential backup.
+
+::: warning
+Backup and restore using file copy is not recommended when using secondary indexes due to the risk of
+inconsistent backups. It is recommended to use volume snapshots instead. Refer to the
+[secondary indexes backup and restore](../features/indexes/secondary.md#backup-and-restore) section for more details.
+:::
 
 ### Backup
 
