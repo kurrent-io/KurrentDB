@@ -76,7 +76,7 @@ See the [Partitioning](#partitioning-1) section for examples.
 
 #### Resilience
 
-The Kafka sink connector relies on its own RabbitMQ retry mechanism and doesn't include the configuration from [Resilience configuration](../settings.md#resilience-configuration).
+The Kafka sink connector relies on its own Kafka retry mechanism and doesn't include the configuration from [Resilience configuration](../settings.md#resilience-configuration).
 
 | Name                               | Details                                                                                                                                                                                                   |
 | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
