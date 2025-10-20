@@ -6,7 +6,7 @@ $commonArgs = @(
   "--exclude-projects-matching ignored-projects.json"
   "--include-transitive"
   "--ignored-packages ignored-packages.json"
-  "--input ../../src/KurrentDB.sln"
+  "--input ../../KurrentDB.slnx"
   "--licenseurl-to-license-mappings license-url-mappings.json"
   "--override-package-information overridden-packages.json"
 )
