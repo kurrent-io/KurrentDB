@@ -86,9 +86,23 @@ StreamInfoCache dynamic sizing was introduced introduced in v21.10 and enabled b
 
 Users wishing to keep dynamic sizing can enable it by setting StreamInfoCacheCapacity to 0. Additional can be found in the [StreamInfoCache documentation](../configuration/README.md#streaminfocachecapacity)
 
-### Connectors improvements
+### Connectors
 
-Connectors no longer periodically acquire leases, reducing the number of events they write to the database.
+#### Pulsar sink connector
+
+<Badge type="info" vertical="middle" text="License Required"/>
+
+The Apache Pulsar sink connector writes events from your KurrentDB stream to a specified Pulsar topic. 
+
+Refer to the [documentation](../features/connectors/sinks/pulsar.md) for instructions on setting up a Pulsar sink.
+
+#### Connectors no longer periodically acquire leases
+
+Since connectors now run only on the leader node, leases are no longer needed and have been disabled, reducing the number of events written to the database.
+
+#### Connector headers improvements
+
+Header keys now retain their original casing when delivered to connector destinations. The default headers `esdb-record-partition-key` and `esdb-record-is-transformed` are no longer added to outgoing messages. You can also choose whether to include system headers in sink metadata.
 
 ### Archiving Improvements
 
