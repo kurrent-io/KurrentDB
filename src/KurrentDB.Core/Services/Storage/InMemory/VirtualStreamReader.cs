@@ -12,7 +12,7 @@ public class VirtualStreamReader(IVirtualStreamReader[] readers = null) : IVirtu
 	private IVirtualStreamReader[] _readers = readers ?? [];
 
 	public void Register(params IVirtualStreamReader[] readers) =>
-		_readers = [.._readers, ..readers];
+		_readers = [.. _readers, .. readers];
 
 	public ValueTask<ReadStreamEventsForwardCompleted> ReadForwards(ReadStreamEventsForward msg, CancellationToken token) {
 		if (TryGetReader(msg.EventStreamId, out var reader))

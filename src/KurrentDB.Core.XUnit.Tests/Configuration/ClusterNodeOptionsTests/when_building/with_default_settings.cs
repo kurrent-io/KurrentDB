@@ -40,7 +40,6 @@ public class with_default_node_as_single_node<TLogFormat, TStreamId> : SingleNod
 	public void should_set_command_line_args_to_default_values() {
 		Assert.AreEqual(false, _options.Interface.EnableTrustedAuth, "EnableTrustedAuth");
 		Assert.AreEqual(false, _options.Application.LogHttpRequests, "LogHttpRequests");
-		Assert.AreEqual(0, _options.Application.WorkerThreads, "WorkerThreads");
 		Assert.AreEqual(true, _options.Cluster.DiscoverViaDns, "DiscoverViaDns");
 		Assert.AreEqual(30, _options.Application.StatsPeriodSec, "StatsPeriod");
 		Assert.AreEqual(false, _options.Application.DisableHttpCaching, "DisableHTTPCaching");

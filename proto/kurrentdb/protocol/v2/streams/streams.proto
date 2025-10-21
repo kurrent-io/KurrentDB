@@ -1,0 +1,155 @@
+// ******************************************************************************************
+// This protocol is UNSTABLE in the sense of being subject to change.
+// ******************************************************************************************
+
+syntax = "proto3";
+
+package kurrentdb.protocol.v2.streams;
+
+option csharp_namespace = "KurrentDB.Protocol.V2.Streams";
+
+import "google/protobuf/struct.proto";
+
+service StreamsService {
+  // Appends records to multiple streams atomically within a single transaction.
+  //
+  // This is a client-streaming RPC where the client sends multiple AppendRequest messages
+  // (one per stream) and receives a single AppendSessionResponse upon commit.
+  //
+  // Guarantees:
+  // - Atomicity: All writes succeed or all fail together
+  // - Optimistic Concurrency: Expected revisions are validated for all streams before commit
+  // - Ordering: Records within each stream maintain send order
+  //
+  // Current Limitations:
+  // - Each stream can only appear once per session (no multiple appends to same stream)
+  //
+  // Example flow:
+  //   1. Client opens stream
+  //   2. Client sends AppendRequest for stream "orders" with 3 records
+  //   3. Client sends AppendRequest for stream "inventory" with 2 records
+  //   4. Client completes the stream
+  //   5. Server validates, commits, returns AppendSessionResponse with positions
+  rpc AppendSession(stream AppendRequest) returns (AppendSessionResponse);
+}
+
+// Represents the input for appending records to a specific stream.
+message AppendRequest {
+  // The stream to append records to.
+  string stream = 1;
+
+  // The records to append to the stream.
+  repeated AppendRecord records = 2;
+
+  // The expected revision for optimistic concurrency control.
+  // Can be either:
+  // - A specific revision number (0, 1, 2, ...) - the stream must be at exactly this revision
+  // - An ExpectedRevisionConstants value (-4, -2, -1) for special semantics
+  //
+  // If omitted, defaults to EXPECTED_REVISION_CONSTANTS_ANY (-2).
+  optional sint64 expected_revision = 3;
+}
+
+// Represents the outcome of an append operation.
+message AppendResponse {
+  // The stream to which records were appended.
+  string stream = 1;
+
+  // The actual/current revision of the stream after the append.
+  // This is the revision number of the last record written to this stream.
+  sint64 stream_revision = 2;
+
+  // The position of the last appended record in the global log.
+  optional sint64 position = 3;
+}
+
+message AppendSessionResponse {
+  // The results of each append request in the session.
+  repeated AppendResponse output = 1;
+
+  // The global commit position of the last appended record in the session.
+  sint64 position = 2;
+}
+
+// Represents the data format of the schema.
+enum SchemaFormat {
+  // Default value, should not be used.
+  SCHEMA_FORMAT_UNSPECIFIED = 0;
+  SCHEMA_FORMAT_JSON        = 1;
+  SCHEMA_FORMAT_PROTOBUF    = 2;
+  SCHEMA_FORMAT_AVRO        = 3;
+  SCHEMA_FORMAT_BYTES       = 4;
+}
+
+// Schema information for record validation and interpretation.
+message SchemaInfo {
+  // The format of the data payload.
+  // Determines how the bytes in AppendRecord.data should be interpreted.
+  SchemaFormat format = 1;
+
+  // The schema name (replaces the legacy "event type" concept).
+  // Identifies what kind of data this record contains.
+  //
+  // Common naming formats:
+  //   - Kebab-case: "order-placed", "customer-registered"
+  //   - URN format: "urn:kurrentdb:events:order-placed:v1"
+  //   - Dotted namespace: "Teams.Player.V1", "Orders.OrderPlaced.V2"
+  //   - Reverse domain: "com.acme.orders.placed"
+  string name = 2;
+
+  // The identifier of the specific version of the schema that the record payload
+  // conforms to. This should match a registered schema version in the system.
+  // Not necessary when not enforcing schema validation.
+  optional string id = 3;
+}
+
+// Record to be appended to a stream.
+message AppendRecord {
+  // Unique identifier for this record (must be a valid UUID/GUID).
+  // If not provided, the server will generate a new one.
+  optional string record_id = 1;
+
+  // A collection of properties providing additional information about the
+  // record. Can contain user-defined or system propreties.
+  // System keys will be prefixed with "$" (e.g., "$timestamp").
+  // User-defined keys MUST NOT start with "$".
+  //
+  // Common examples:
+  //   User metadata:
+  //     - "user-id": "12345"
+  //     - "tenant": "acme-corp"
+  //     - "source": "mobile-app"
+  //
+  //   System metadata (with $ prefix):
+  //     - "$trace-id": "4bf92f3577b34da6a3ce929d0e0e4736"  // OpenTelemetry trace ID
+  //     - "$span-id": "00f067aa0ba902b7"                   // OpenTelemetry span ID
+  //     - "$timestamp": "2025-01-15T10:30:00.000Z"         // ISO 8601 timestamp
+  map<string, google.protobuf.Value> properties = 2;
+
+  // Schema information for this record.
+  SchemaInfo schema = 3;
+
+  // The record payload as raw bytes.
+  // The format specified in SchemaInfo determines how to interpret these bytes.
+  bytes data = 4;
+}
+
+// Constants for expected revision validation in optimistic concurrency control.
+// These can be used in the expected_revision field, or you can specify an actual revision number.
+enum ExpectedRevisionConstants {
+  // The stream must have exactly one event at revision 0.
+  // Used for scenarios requiring strict single-event semantics.
+  EXPECTED_REVISION_CONSTANTS_SINGLE_EVENT = 0;
+
+  // The stream must not exist yet (first write to the stream).
+  // Fails if the stream already has events.
+  EXPECTED_REVISION_CONSTANTS_NO_STREAM = -1;
+
+  // Accept any current state of the stream (no optimistic concurrency check).
+  // The write will succeed regardless of the stream's current revision.
+  EXPECTED_REVISION_CONSTANTS_ANY = -2;
+
+  // The stream must exist (have at least one record).
+  // Fails if the stream doesn't exist yet.
+  EXPECTED_REVISION_CONSTANTS_EXISTS = -4;
+}

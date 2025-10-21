@@ -199,7 +199,7 @@ internal partial class Streams<TStreamId> {
 			var filter = request.Options.Filter;
 			// Index reads require StreamIdentifier filter with one element that is the index name
 			if (filter.FilterCase == ReadReq.Types.Options.Types.FilterOptions.FilterOneofCase.StreamIdentifier
-			    && string.IsNullOrEmpty(filter.StreamIdentifier.Regex)) {
+				&& string.IsNullOrEmpty(filter.StreamIdentifier.Regex)) {
 				var indexName = filter.StreamIdentifier.Prefix.FirstOrDefault(SystemStreams.IsIndexStream);
 				if (indexName != null) {
 					return filter.StreamIdentifier.Prefix.Count > 1
@@ -288,7 +288,7 @@ internal partial class Streams<TStreamId> {
 	}
 }
 
-public static class ResponseConverter {
+static class ResponseConverter {
 	public static bool TryConvertReadResponse(ReadResponse readResponse, ReadReq.Types.Options.Types.UUIDOption uuidOption, out ReadResp readResp) {
 		readResp = readResponse switch {
 			ReadResponse.EventReceived eventReceived => new ReadResp {

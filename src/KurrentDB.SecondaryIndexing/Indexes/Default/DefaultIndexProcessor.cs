@@ -4,6 +4,7 @@
 using System.Diagnostics.Metrics;
 using DotNext;
 using DotNext.Threading;
+using Google.Protobuf.WellKnownTypes;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Common.Configuration;
@@ -20,7 +21,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using static KurrentDB.SecondaryIndexing.Indexes.Default.DefaultSql;
-using static KurrentDB.Protobuf.Server.Properties;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
@@ -61,22 +61,23 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	}
 
 	public void Index(ResolvedEvent resolvedEvent) {
-		if (IsDisposingOrDisposed) return;
+		if (IsDisposingOrDisposed)
+			return;
 
 		string? schemaFormat = null;
 		string? schemaId = null;
 		if (resolvedEvent.Event.Properties.Length > 0) {
-			var props = Parser.ParseFrom(resolvedEvent.Event.Properties.Span);
-			schemaId = props.PropertiesValues.TryGetValue(Constants.Properties.SchemaId, out var schemaIdValue)
+			var props = Struct.Parser.ParseFrom(resolvedEvent.Event.Properties.Span);
+			schemaId = props.Fields.TryGetValue(Constants.RecordProperties.SchemaIdKey, out var schemaIdValue)
 				? schemaIdValue.StringValue
 				: null;
-			schemaFormat = props.PropertiesValues.TryGetValue(Constants.Properties.DataFormatKey, out var dataFormatValue)
+			schemaFormat = props.Fields.TryGetValue(Constants.RecordProperties.SchemaFormatKey, out var dataFormatValue)
 				? dataFormatValue.StringValue
 				: null;
 		}
 
 		var schemaName = resolvedEvent.Event.EventType;
-		schemaFormat ??= resolvedEvent.Event.IsJson ? Constants.Properties.DataFormats.Json : Constants.Properties.DataFormats.Bytes;
+		schemaFormat ??= resolvedEvent.Event.IsJson ? "Json" : "Bytes";
 
 		var stream = resolvedEvent.Event.EventStreamId;
 		var logPosition = resolvedEvent.Event.LogPosition;

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using KurrentDB.Core.Index;
 using KurrentDB.Core.Index.Hashes;
+using KurrentDB.Core.Tests.Fakes;
 using NUnit.Framework;
 
 namespace KurrentDB.Core.Tests.Index.IndexV1;
@@ -32,9 +33,9 @@ public class table_index_should : SpecificationWithDirectoryPerTestFixture {
 		var highHasher = new Murmur3AUnsafe();
 		_tableIndex = new TableIndex<string>(PathName, lowHasher, highHasher, "",
 			() => new HashListMemTable(_ptableVersion, maxSize: 20),
-			() => { throw new InvalidOperationException(); },
+			new FakeTfReader(),
 			_ptableVersion,
-			5, Constants.PTableMaxReaderCountDefault,
+			5,
 			maxSizeForMemory: 10,
 			skipIndexVerify: _skipIndexVerify);
 		_tableIndex.Initialize(long.MaxValue);

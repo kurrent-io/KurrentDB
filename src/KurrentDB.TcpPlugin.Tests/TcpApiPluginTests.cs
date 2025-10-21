@@ -2,9 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using DotNext.Net.Http;
@@ -21,7 +19,6 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Messages;
-using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.TimerService;
@@ -31,44 +28,35 @@ using KurrentDB.Core.Tests.TransactionLog;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Serilog;
 using Xunit;
-using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.TcpPlugin.Tests;
 
 public class TcpApiPluginTests {
 	private const string LicenseToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJlc2RiIiwiaXNzIjoiZXNkYiIsImV4cCI6MTgyNDQ1NjgyOSwianRpIjoiOTVmZTY2YzAtMDRkMi00MjExLWI1ZGQtNTAyM2MyYTAxMGFiIiwic3ViIjoiRVNEQiBUZXN0cyIsIklzVHJpYWwiOiJUcnVlIiwiSXNFeHBpcmVkIjoiRmFsc2UiLCJJc1ZhbGlkIjoiVHJ1ZSIsIklzRmxvYXRpbmciOiJUcnVlIiwiRGF5c1JlbWFpbmluZyI6IjEiLCJTdGFydERhdGUiOiIyNi8wNC8yMDI0IDAwOjAwOjAwICswMTowMCIsIk5PTkUiOiJ0cnVlIiwiaWF0IjoxNzI5ODQ4ODI5LCJuYmYiOjE3Mjk4NDg4Mjl9.R24i-ZAow3BhRaST3n25Uc_nQ184k83YRZZ0oRcWbU9B9XNLRH0Iegj0HmkyzkT50I4gcIJOIfcO6mIPp4Y959CP7aTAlt7XEnXoGF0GwsfXatAxy4iXG8Gpya7INgMoWEeN0v8eDH8_OVmnieOxeba9ex5j1oAW_FtQDMzcFjAeErpW__8zmkCsn6GzvlhdLE4e3r2wjshvrTTcS_1fvSVjQZov5ce2sVBJPegjCLO_QGiIBK9QTnpHrhe6KCYje6fSTjgty0V1Qj22bftvrXreYzQijPrnC_ek1BwV-A1JvacZugMCPIy8WvE5jE3hVYRWGGUzQZ-CibPGsjudYA";
-	private static readonly ILogger _logger = Log.ForContext<TcpApiPluginTests>();
 	private readonly TcpApiPlugin _sut;
 	private readonly StandardComponents _components;
 	private readonly int _port;
 	private readonly WebApplicationBuilder _builder;
 	private readonly WebApplication _app;
-	private readonly List<Message> _buffer;
 	private readonly TcpMessageCollector _collector;
 
 	public TcpApiPluginTests() {
 		_collector = new TcpMessageCollector();
-		_buffer = new List<Message>();
 		_builder = WebApplication.CreateBuilder();
 		_sut = new TcpApiPlugin();
 		_port = PortsHelper.GetAvailablePort(IPAddress.Loopback);
 		var httpPort = PortsHelper.GetAvailablePort(IPAddress.Loopback);
 
-		_builder.Configuration.AddInMemoryCollection(new KeyValuePair<string, string?>[] {
+		_builder.Configuration.AddInMemoryCollection([
 			new($"{KurrentConfigurationKeys.Prefix}:Insecure", "true"),
 			new($"{KurrentConfigurationKeys.Prefix}:TcpPlugin:NodeTcpPort", _port.ToString()),
-			new($"{KurrentConfigurationKeys.Prefix}:TcpPlugin:EnableExternalTcp", "true"),
-		});
-		var workerThreadsCount = 2;
-		var workerBuses = Enumerable.Range(0, workerThreadsCount).Select(queueNum =>
-			new InMemoryBus($"Worker #{queueNum + 1} Bus",
-				watchSlowMsg: true,
-				slowMsgThreshold: TimeSpan.FromMilliseconds(200))).ToArray();
+			new($"{KurrentConfigurationKeys.Prefix}:TcpPlugin:EnableExternalTcp", "true")
+		]);
+		var workerBus = new InMemoryBus("Worker Bus", watchSlowMsg: true,
+			slowMsgThreshold: TimeSpan.FromMilliseconds(200));
 
-
-		_components = CreateStandardComponents(workerThreadsCount, workerBuses);
+		_components = CreateStandardComponents(workerBus);
 		var httpPipe = new HttpMessagePipe();
 		var httpSendService = new HttpSendService(httpPipe, true, delegate { return (true, ""); });
 		var httpService = new KestrelHttpService(ServiceAccessibility.Public, _components.MainQueue, new TrieUriRouter(),
@@ -80,7 +68,7 @@ public class TcpApiPluginTests {
 		var components = new AuthenticationProviderFactoryComponents {
 			MainBus = _components.MainBus,
 			MainQueue = _components.MainQueue,
-			WorkerBuses = workerBuses,
+			WorkerBus = workerBus,
 			WorkersQueue = _components.NetworkSendService,
 			HttpSendService = httpSendService,
 			HttpService = httpService,
@@ -118,23 +106,18 @@ public class TcpApiPluginTests {
 		_components.MainQueue.Publish(new SystemMessage.SystemInit());
 	}
 
-	private static StandardComponents CreateStandardComponents(int workerThreadsCount, InMemoryBus[] workerBuses) {
+	private static StandardComponents CreateStandardComponents(InMemoryBus workerBus) {
 		var queueStatsManager = new QueueStatsManager();
 		var queueTrackers = new QueueTrackers();
-		var workersHandler = new MultiQueuedHandler(
-			workerThreadsCount,
-			queueNum => new QueuedHandlerThreadPool(workerBuses[queueNum],
-				$"Worker #{queueNum + 1}",
-				queueStatsManager,
-				queueTrackers,
-				groupName: "Workers",
-				watchSlowMsg: true,
-				slowMsgThreshold: TimeSpan.FromMilliseconds(200)));
+		var workersHandler = new ThreadPoolMessageScheduler("Worker Scheduler", workerBus) {
+			SynchronizeMessagesWithUnknownAffinity = false,
+		};
 
 		var dbConfig = TFChunkHelper.CreateDbConfig(Path.GetTempPath(), 0);
 		var mainBus = new InMemoryBus("mainBus");
-		var mainQueue = new QueuedHandlerThreadPool(
-			mainBus, "MainQueue", queueStatsManager, queueTrackers);
+		var mainQueue = new ThreadPoolMessageScheduler("MainQueue", mainBus) {
+			SynchronizeMessagesWithUnknownAffinity = true,
+		};
 		mainQueue.Start();
 		var threadBasedScheduler = new ThreadBasedScheduler(queueStatsManager, queueTrackers);
 		var timerService = new TimerService(threadBasedScheduler);

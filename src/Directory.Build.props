@@ -14,17 +14,10 @@
 		<LangVersion>12.0</LangVersion>
 		<Platforms>AnyCPU;x64;ARM64</Platforms>
 		<IsPackable>false</IsPackable>
-		<VersionPrefix>25.1.0</VersionPrefix>
+		<VersionPrefix>26.0.0</VersionPrefix>
 		<VersionSuffix>prerelease</VersionSuffix>
 		<IsTestProject>false</IsTestProject>
 	</PropertyGroup>
-
-	<ItemGroup>
-		<None Include="$(MSBuildThisFileDirectory)..\LICENSE.md" Pack="true" PackagePath="\" />
-		<None Include="$(MSBuildThisFileDirectory)..\LICENSE_CONTRIBUTIONS.md" Pack="true" PackagePath="\" />
-		<None Include="$(MSBuildThisFileDirectory)..\NOTICE.md" Pack="true" PackagePath="\" />
-		<None Include="$(MSBuildThisFileDirectory)..\ouro.png" Pack="true" PackagePath="\" />
-	</ItemGroup>
 
 	<ItemGroup Condition="'$(IsPlugin)' == 'true'">
 		<ProjectReference Include="$(MSBuildThisFileDirectory)\KurrentDB.Plugins\KurrentDB.Plugins.csproj" />

@@ -4,10 +4,10 @@
 using Kurrent.Connectors.Elasticsearch;
 using Kurrent.Connectors.Http;
 using Kurrent.Connectors.Kafka;
-using Kurrent.Connectors.KurrentDB;
 using Kurrent.Connectors.MongoDB;
 using Kurrent.Connectors.RabbitMQ;
 using Kurrent.Connectors.Serilog;
+using Kurrent.Connectors.Pulsar;
 using Kurrent.Surge.DataProtection;
 
 namespace KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
@@ -64,9 +64,9 @@ public class HttpSinkConnectorDataProtector(IDataProtector dataProtector) : Conn
 }
 
 [PublicAPI]
-public class KurrentDbSinkConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<KurrentDbSinkOptions>(dataProtector) {
+public class PulsarSinkConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<PulsarSinkOptions>(dataProtector) {
     protected override string[] ConfigureSensitiveKeys() => [
-        "ConnectionString"
+        "Authentication:Token"
     ];
 }
 

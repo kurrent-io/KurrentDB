@@ -1,8 +1,12 @@
+---
+order: 7
+---
+
 # Archiving
 
 ## Introducing Archiving
 
-KurrentDB 25.0 introduces the initial release of Archiving: a new major feature to reduce costs and increase scalability of a KurrentDB cluster.
+KurrentDB 25.0 introduced the initial release of Archiving: a new major feature to reduce costs and increase scalability of a KurrentDB cluster.
 
 Future releases of KurrentDB will build on and improve this feature.
 
@@ -55,7 +59,7 @@ Read requests that read the archive will have comparatively high latency and at 
 
 Sample configuration:
 
-The following can be placed on all nodes (including the Archiver Node)
+The following settings are required on all nodes (including the Archiver Node) to enable archiving:
 
 ```yaml
 Licensing:
@@ -78,7 +82,7 @@ Archive:
 Do not use the same archive bucket for multiple clusters, and do not run more than one Archiver node in a single cluster.
 :::
 
-Additionally this can be placed on the Archiver Node to designate it as the Archive Node.
+Additionally, this must be placed on the Archiver Node:
 
 ```yaml
 ReadOnlyReplica: true
@@ -112,7 +116,6 @@ The panels are available in the `Events Served` section of the [miscellaneous pa
 This initial release has several limitations that we intend to improve in future releases.
 
 Work to improve the following limitations is in progress:
-- The headers of archived chunks are read on startup, just as for local chunks. This will increase startup times significantly when there are a lot of chunks in the archive.
 - Requests that read the archive can cause other reads to be queued behind them, resulting in higher read latency if the archive is being accessed frequently.
 
 Work to improve the following limitations is planned:

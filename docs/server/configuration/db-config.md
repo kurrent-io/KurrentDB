@@ -26,7 +26,7 @@ Normally, you'd want to keep the database files separated from the OS and other 
 
 ### In-memory database
 
-When running KurrentDB for educational purposes or in an automated test environment, you might want to prevent it from saving any data to the disk. KurrentDB can keep the data in memory as soon as it has enough available RAM. When you shut down the instance that uses in-memory database, all the data will be lost.
+When running KurrentDB for educational purposes or in an automated test environment, you might want to prevent it from saving any data to the disk. KurrentDB can keep the data in memory as long as it has enough available RAM. When you shut down the instance that uses in-memory database, all the data will be lost.
 
 | Format               | Syntax              |
 |:---------------------|:--------------------|
@@ -35,6 +35,10 @@ When running KurrentDB for educational purposes or in an automated test environm
 | Environment variable | `KURRENTDB_MEM_DB`  |
 
 **Default**: `false`
+
+:::warning
+`--mem-db` has been deprecated as of version 25.1.0 and will be removed in a future version to allow us to simplify and unify some core code paths. Users wishing to continue to run KurrentDB in memory can do so with ramfs or similar. Please reach out to us if this is problematic for your use case.
+:::
 
 ### Skip database verification
 

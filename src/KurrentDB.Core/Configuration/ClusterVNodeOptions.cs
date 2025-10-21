@@ -133,6 +133,7 @@ public partial record ClusterVNodeOptions {
 		public int StatsPeriodSec { get; init; } = 30;
 
 		[Description("The number of threads to use for pool of worker services. Set to '0' to scale automatically (Default)")]
+		[Deprecated("This setting no longer has an effect. The workers automatically scale as necessary")]
 		public int WorkerThreads { get; init; } = 0;
 
 		[Description("Enables the tracking of various histograms in the backend, " +
@@ -151,12 +152,11 @@ public partial record ClusterVNodeOptions {
 					 "to stop reading duplicates.")]
 		public bool SkipIndexScanOnReads { get; init; } = false;
 
-		[Description("The maximum size of appends, in bytes. This is the total size of all events in the append request. " +
-					 "May not exceed 16MB.")]
-		public int MaxAppendSize { get; init; } = 1_024 * 1_024;
+		[Description("The maximum size of appends, in bytes. This is the total size of all records in the append request. May not exceed 256MB.")]
+		public int MaxAppendSize { get; init; } = TFConsts.ChunkSize;
 
-		[Description("The maximum size of an individual event in an append request received over gRPC or HTTP, in bytes.")]
-		public int MaxAppendEventSize { get; init; } = int.MaxValue;
+		[Description("The maximum size of an individual record in an append request received over gRPC or HTTP, in bytes.")]
+		public int MaxAppendEventSize { get; init; } = TFConsts.MaxLogRecordSize;
 
 		[Description("Disable Authentication, Authorization and TLS on all TCP/HTTP interfaces.")]
 		public bool Insecure { get; init; } = false;
@@ -255,7 +255,7 @@ public partial record ClusterVNodeOptions {
 		[Description("The number of nodes in the cluster.")]
 		public int ClusterSize { get; init; } = 1;
 
-		[Description("The node priority used during leader election.")]
+		[Description("The node priority used during leader election. This is a hint to the election algorithm but does not guarantee the outcome of the election.")]
 		public int NodePriority { get; init; } = 0;
 
 		[Description("Whether to use DNS lookup to discover other cluster nodes.")]
@@ -399,6 +399,7 @@ public partial record ClusterVNodeOptions {
 		public int InitializationThreads { get; init; } = 1;
 
 		[Description("The number of reader threads to use for processing reads. Set to '0' to scale automatically (Default)")]
+		[Deprecated("The ReaderThreadsCount parameter has been deprecated as of version 26.0.0 and currently has no effect. The workers automatically scale as necessary.")]
 		public int ReaderThreadsCount { get; init; } = 0;
 
 		[Description("During large Index Merge operations, writes may be slowed down. Set this to the maximum " +

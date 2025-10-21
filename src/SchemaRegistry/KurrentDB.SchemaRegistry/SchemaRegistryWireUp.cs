@@ -16,11 +16,9 @@ using KurrentDB.SchemaRegistry.Domain;
 using KurrentDB.SchemaRegistry.Infrastructure.System.Node.NodeSystemInfo;
 using KurrentDB.SchemaRegistry.Planes.Projection;
 using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;
-using KurrentDB.Surge;
 using KurrentDB.Surge.Eventuous;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using static KurrentDB.SchemaRegistry.SchemaRegistryConventions;
 
@@ -30,14 +28,12 @@ public static class SchemaRegistryWireUp {
 	public static IServiceCollection AddSchemaRegistryService(this IServiceCollection services) {
 		services.AddNodeSystemInfoProvider();
 
-		services.TryAddSingleton(TimeProvider.System);
-
 		services.AddSingleton<GetUtcNow>(ctx => ctx.GetRequiredService<TimeProvider>().GetUtcNow);
 
-		services.AddGrpc(x => x.EnableDetailedErrors = true);
+		services.AddGrpc();
 		services.AddGrpcRequestValidation();
 
-		services.AddSingleton<ISchemaCompatibilityManager>(new NJsonSchemaCompatibilityManager());
+		services.AddSingleton<ISchemaCompatibilityManager, NJsonSchemaCompatibilityManager>();
 
 		services.AddDuckDBConnectionProvider();
 		services.AddDuckDBSetup<SchemaDbSchema>();
@@ -62,9 +58,7 @@ public static class SchemaRegistryWireUp {
 					.ProducerId("EventuousProducer")
 					.Create();
 
-				var manager = ctx.GetRequiredService<SystemManager>();
-
-				return new SystemEventStore(reader, producer, manager);
+				return new SystemEventStore(reader, producer);
 			}
 		);
 

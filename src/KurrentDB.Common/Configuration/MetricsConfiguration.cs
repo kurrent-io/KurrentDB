@@ -116,8 +116,7 @@ public class MetricsConfiguration {
 	}
 
 	public enum QueueTracker {
-		Busy = 1,
-		Length,
+		Length = 1,
 		Processing,
 	}
 

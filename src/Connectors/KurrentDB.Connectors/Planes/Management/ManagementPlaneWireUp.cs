@@ -26,6 +26,7 @@ using KurrentDB.Connectors.Planes.Management.Migrations;
 using KurrentDB.Connectors.Planes.Management.Projectors;
 using KurrentDB.Connectors.Planes.Management.Queries;
 using KurrentDB.Core;
+using KurrentDB.Surge.Eventuous;
 using KurrentDB.Surge.Producers;
 using KurrentDB.Surge.Readers;
 using Microsoft.AspNetCore.Builder;
@@ -52,7 +53,7 @@ public static class ManagementPlaneWireUp {
         services.AddConnectorsManagementSchemaRegistration();
 
         services
-            .AddGrpc(x => x.EnableDetailedErrors = true)
+            .AddGrpc()
             .AddJsonTranscoding();
 
         services.PostConfigure<GrpcJsonTranscodingOptions>(options => {
@@ -124,7 +125,7 @@ public static class ManagementPlaneWireUp {
                     .ProducerId("EventuousProducer")
                     .Create();
 
-                return new SystemEventStore(reader, producer);
+                return new(reader, producer);
             })
             .AddCommandService<ConnectorsCommandApplication, ConnectorEntity>();
 

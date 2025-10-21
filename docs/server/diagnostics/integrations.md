@@ -24,17 +24,19 @@ Older versions can be monitored by Prometheus using the community-supported expo
 
 <wbr><Badge type="info" vertical="middle" text="License Required"/>
 
-KurrentDB passively exposes metrics for scraping on the `/metrics` endpoint. If you would like KurrentDB to actively export the metrics, the _OpenTelemetry Exporter_ feature can be used.
+KurrentDB passively exposes metrics for scraping on the `/metrics` endpoint. If you would like KurrentDB to actively export the metrics, the _OpenTelemetry Exporter_ feature can be used. This feature can now also be used to export log files.
 
-The OpenTelemetry Exporter feature allows you to export KurrentDB metrics to a specified endpoint using the [OpenTelemetry Protocol](https://opentelemetry.io/docs/specs/otel/protocol/) (OTLP). The following instructions will help you set up the exporter and customize its configuration, so you can receive, process, export and monitor metrics as needed.
+The OpenTelemetry Exporter feature allows you to export KurrentDB metrics and logs to a specified endpoint using the [OpenTelemetry Protocol](https://opentelemetry.io/docs/specs/otel/protocol/) (OTLP). The following instructions will help you set up the exporter and customize its configuration, so you can receive, process, export and monitor metrics and logs as needed.
 
-A number of APM providers natively support ingesting metrics using the OTLP protocol, so you might be able to directly use the OpenTelemetry Exporter to send metrics to your APM provider. Alternatively, you can export metrics to the OpenTelemetry Collector, which can then be configured to send metrics to a variety of backends. You can find out more about the [OpenTelemetry collector](https://opentelemetry.io/docs/collector/).
+A number of APM providers natively support ingesting data using the OTLP protocol, so you might be able to directly use the OpenTelemetry Exporter to send metrics and logs to your APM provider. Alternatively, you can export to the OpenTelemetry Collector, which can then be configured to send the data to a variety of backends. You can find out more about the [OpenTelemetry collector](https://opentelemetry.io/docs/collector/).
 
 ### Configuration
 
 You require a [license key](../quick-start/installation.md#license-keys) to use this feature.
 
 Refer to the [configuration guide](../configuration/README.md) for configuration mechanisms other than YAML.
+
+#### Metrics Export
 
 Sample configuration:
 
@@ -47,10 +49,10 @@ OpenTelemetry:
 
 The configuration can specify:
 
-| Name                          | Description                                            |
-|-------------------------------|--------------------------------------------------------|
-| OpenTelemetry__Otlp__Endpoint | Destination where the OTLP exporter will send the data |
-| OpenTelemetry__Otlp__Headers  | Optional headers for the connection                    |
+| Name                            | Description                                            |
+|---------------------------------|--------------------------------------------------------|
+| `OpenTelemetry__Otlp__Endpoint` | Destination where the OTLP exporter will send the data |
+| `OpenTelemetry__Otlp__Headers`  | Optional headers for the connection                    |
 
 Headers are key-value pairs separated by commas. For example:
 
@@ -70,15 +72,47 @@ The interval is taken from the `ExpectedScrapeIntervalSeconds` value in `metrics
 "ExpectedScrapeIntervalSeconds": 15
 ```
 
+#### Logs Export
+
+Sample configuration:
+
+```yaml
+OpenTelemetry:
+  Otlp:
+    Endpoint: "http://localhost:4317"
+  Logs:
+    Enabled: true
+    # the following options are integers and optional. These are the defaults:
+    BatchExportProcessorOptions:
+      ExporterTimeoutMilliseconds: 30000
+      MaxExportBatchSize: 512
+      MaxQueueSize: 2048
+      ScheduledDelayMilliseconds: 5000
+```
+
+The configuration can specify:
+
+| Name                                                                                   | Description                                                                                            |
+|----------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|
+| `OpenTelemetry__Logs__Enabled`                                                         | Set to true to enable logs export to the Otlp Endpoint.                                                |
+| `OpenTelemetry__Logs__BatchExportProcessorOptions`<br/>`__ExporterTimeoutMilliseconds` | Maximum time to keep retrying failed batches for. Default: 30000.                                      |
+| `OpenTelemetry__Logs__BatchExportProcessorOptions`<br/>`__MaxExportBatchSize`          | Maximum number of log entries included in each batch. Default: 512.                                    |
+| `OpenTelemetry__Logs__BatchExportProcessorOptions`<br/>`__MaxQueueSize`                | Maximum number of log entries to queue. When the limit is exceeded, logs are discarded. Default: 2048. |
+| `OpenTelemetry__Logs__BatchExportProcessorOptions`<br/>`__ScheduledDelayMilliseconds`  | Maximum delay between batches. Default: 5000.                                                          |
+
+### OTel environment variables
+
+KurrentDB OpenTelemetry exporter also supports the default OTel environment variables for configuring the OTLP exporter. Read more about them in the [OpenTelemetry documentation](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/).
+
 ### Troubleshooting
 
-| Symptom                                                                      | Solution                                                                                                                                                                                                                                                                                    |
-|------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| KurrentDB logs a message on startup that it cannot find the configuration | The server logs a message: `OtlpExporter: No OpenTelemetry:Otlp configuration found. Not exporting metrics.`.<br/><br/> Check the configuration steps above.                                                                                                                                |
+| Symptom                                                                   | Solution                                                                                                                                                     |
+|---------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| KurrentDB logs a message on startup that it cannot find the configuration | The server logs a message: `OtlpExporter: No OpenTelemetry:Otlp configuration found. Not exporting metrics.`.<br/><br/> Check the configuration steps above. |
 
 ## Datadog
 
-The best way to integrate KurrentDB metrics with Datadog today is by using the [OpenTelemetry exporter](#opentelemetry-exporter). We currently don't support exporting logs via the exporter.
+The best way to integrate KurrentDB metrics with Datadog today is by using the [OpenTelemetry exporter](#opentelemetry-exporter). Learn more about [Datadog OpenTelemetry integration](https://docs.datadoghq.com/opentelemetry/getting_started/).
 
 You can use the community-supported integration to collect KurrentDB logs and metrics in Datadog.
 

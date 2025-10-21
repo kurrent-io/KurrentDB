@@ -20,14 +20,14 @@ public class PluginDiagnosticsDataCollectorTests {
 		diagnosticsData.Data["enabled"].Should().Be(plugin.Enabled);
 		diagnosticsData.CollectionMode.Should().Be(PluginDiagnosticsDataCollectionMode.Snapshot);
 	}
-	
+
 	[Fact]
 	public void can_collect_diagnostics_data_from_multiple_plugins() {
 		using var pluginOne = new TestPlugin(pluginName: Guid.NewGuid().ToString());
 		using var pluginTwo = new TestPlugin(pluginName: Guid.NewGuid().ToString());
 
 		using var sut = PluginDiagnosticsDataCollector.Start(
-			pluginOne.DiagnosticsName, 
+			pluginOne.DiagnosticsName,
 			pluginTwo.DiagnosticsName
 		);
 
@@ -36,11 +36,11 @@ public class PluginDiagnosticsDataCollectorTests {
 
 		sut.CollectedEvents(pluginOne.DiagnosticsName).Should().ContainSingle().Which
 			.Data["works"].Should().Be(pluginOne.Enabled);
-		
+
 		sut.CollectedEvents(pluginTwo.DiagnosticsName).Should().ContainSingle().Which
 			.Data["works"].Should().Be(pluginTwo.Enabled);
 	}
-	
+
 	[Fact]
 	public void can_handle_diagnostics_data_from_multiple_plugins() {
 		using var pluginOne = new TestPlugin(pluginName: Guid.NewGuid().ToString());
@@ -50,19 +50,19 @@ public class PluginDiagnosticsDataCollectorTests {
 			data => {
 				data.Source.Should().BeOneOf(pluginOne.DiagnosticsName, pluginTwo.DiagnosticsName);
 				data.Data.TryGetValue("works", out var value).Should().BeTrue();
-			}, 
-			pluginOne.DiagnosticsName, 
+			},
+			pluginOne.DiagnosticsName,
 			pluginTwo.DiagnosticsName
 		);
 	}
-	
+
 	[Fact]
 	public void can_collect_diagnostics_data_from_multiple_subsystems_plugins() {
 		using var pluginOne = new TestSubsystemsPlugin(pluginName: Guid.NewGuid().ToString());
 		using var pluginTwo = new TestSubsystemsPlugin(pluginName: Guid.NewGuid().ToString());
 
 		using var sut = PluginDiagnosticsDataCollector.Start(
-			pluginOne.DiagnosticsName, 
+			pluginOne.DiagnosticsName,
 			pluginTwo.DiagnosticsName
 		);
 
@@ -71,11 +71,11 @@ public class PluginDiagnosticsDataCollectorTests {
 
 		sut.CollectedEvents(pluginOne.DiagnosticsName).Should().ContainSingle().Which
 			.Data["works"].Should().Be(pluginOne.Enabled);
-		
+
 		sut.CollectedEvents(pluginTwo.DiagnosticsName).Should().ContainSingle().Which
 			.Data["works"].Should().Be(pluginTwo.Enabled);
 	}
-	
+
 	[Fact]
 	public void can_handle_diagnostics_data_from_multiple_subsystems_plugins() {
 		using var pluginOne = new TestSubsystemsPlugin(pluginName: Guid.NewGuid().ToString());
@@ -85,8 +85,8 @@ public class PluginDiagnosticsDataCollectorTests {
 			data => {
 				data.Source.Should().BeOneOf(pluginOne.DiagnosticsName, pluginTwo.DiagnosticsName);
 				data.Data.TryGetValue("works", out var value).Should().BeTrue();
-			}, 
-			pluginOne.DiagnosticsName, 
+			},
+			pluginOne.DiagnosticsName,
 			pluginTwo.DiagnosticsName
 		);
 	}

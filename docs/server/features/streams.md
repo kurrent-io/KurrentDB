@@ -1,3 +1,7 @@
+---
+order: 1
+---
+
 # Event streams
 
 KurrentDB is purpose-built for event storage. Unlike traditional state-based databases, which retain only the most recent entity state, KurrentDB allows you to store each state alteration as an independent event.
@@ -17,7 +21,7 @@ KurrentDB uses a **`$`** prefix for all internal data, such as **`$maxCount`** i
 The supported internal settings are:
 
 | Property name       | Description                                                                                                                                                                                                                                                                                                                                                            |
-| :------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|:--------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **`$maxAge`**       | Sets a sliding window based on dates. When data reaches a certain age, it automatically disappears from the stream and becomes eligible for scavenging. This value is set as an integer representing the number of seconds (must be >= 1).                                                                                                                             |
 | **`$maxCount`**     | Sets a sliding window based on the number of items in the stream. When data reaches a certain length, it automatically disappears from the stream and becomes eligible for scavenging. This value is set as an integer representing the count of items (must be >= 1).                                                                                                 |
 | **`$cacheControl`** | Controls the cache of the head of a stream. While most URIs in a stream are infinitely cacheable, the head, by default, will not cache. In some situations, it may be preferable to set a small amount of caching on the head to allow intermediaries to handle polls (e.g., 10 seconds). The argument is an integer representing the seconds to cache (must be >= 1). |

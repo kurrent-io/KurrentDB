@@ -1,26 +1,26 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<IsTestProject>true</IsTestProject>
 		<IsPackable>false</IsPackable>
 		<IsPublishable>false</IsPublishable>
 		<IsPluginsTestProject>true</IsPluginsTestProject>
-		<RootNamespace>KurrentDB.SecondaryIndexing.Tests</RootNamespace>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Bogus" />
 		<PackageReference Include="coverlet.collector" />
-		<PackageReference Include="KurrentDB.Client" />
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
 		<PackageReference Include="GitHubActionsTestLogger" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" />
 		<PackageReference Include="NSubstitute" />
 		<PackageReference Include="xunit" />
-		<PackageReference Include="xunit.runner.visualstudio" />
+		<PackageReference Include="xunit.runner.visualstudio">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
 	</ItemGroup>
 
 	<ItemGroup>
@@ -28,13 +28,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Connectors\KurrentDB.Connectors.Tests\KurrentDB.Connectors.Tests.csproj" />
-		<ProjectReference Include="..\KurrentDB.SecondaryIndexing\KurrentDB.SecondaryIndexing.csproj" />
-		<ProjectReference Include="..\KurrentDB.Core.Tests\KurrentDB.Core.Tests.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="ClientTests\" />
+	  <ProjectReference Include="..\KurrentDB.Core.Tests\KurrentDB.Core.Tests.csproj" />
+	  <ProjectReference Include="..\KurrentDB.Core.XUnit.Tests\KurrentDB.Core.XUnit.Tests.csproj" />
+	  <ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
+	  <ProjectReference Include="..\KurrentDB.Surge.Testing\KurrentDB.Surge.Testing.csproj" />
 	</ItemGroup>
 
 </Project>

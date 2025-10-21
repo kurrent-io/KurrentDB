@@ -11,7 +11,7 @@ using KurrentDB.Core.TransactionLog;
 namespace KurrentDB.Core.Services.Storage.ReaderIndex;
 
 public interface IIndexBackend {
-	TFReaderLease BorrowReader();
+	ITransactionFileReader TFReader { get; }
 	void SetSystemSettings(SystemSettings systemSettings);
 	SystemSettings GetSystemSettings();
 }
@@ -30,21 +30,20 @@ public interface IIndexBackend<TStreamId> : IIndexBackend {
 }
 
 public class IndexBackend<TStreamId> : IIndexBackend<TStreamId> {
-	private readonly ObjectPool<ITransactionFileReader> _readers;
 	private readonly ILRUCache<TStreamId, EventNumberCached> _streamLastEventNumberCache;
 	private readonly ILRUCache<TStreamId, MetadataCached> _streamMetadataCache;
 	private SystemSettings _systemSettings;
 
 	public IndexBackend(
-		ObjectPool<ITransactionFileReader> readers,
+		ITransactionFileReader tfReader,
 		ILRUCache<TStreamId, EventNumberCached> streamLastEventNumberCache,
 		ILRUCache<TStreamId, MetadataCached> streamMetadataCache) {
-		_readers = Ensure.NotNull(readers);
+		TFReader = Ensure.NotNull(tfReader);
 		_streamLastEventNumberCache = Ensure.NotNull(streamLastEventNumberCache);
 		_streamMetadataCache = Ensure.NotNull(streamMetadataCache);
 	}
 
-	public TFReaderLease BorrowReader() => new(_readers);
+	public ITransactionFileReader TFReader { get; }
 
 	public EventNumberCached TryGetStreamLastEventNumber(TStreamId streamId) {
 		_streamLastEventNumberCache.TryGet(streamId, out var cacheInfo);

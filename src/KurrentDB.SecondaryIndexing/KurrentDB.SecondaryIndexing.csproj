@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<EnableDynamicLoading>true</EnableDynamicLoading>
@@ -14,8 +13,6 @@
 
 	<ItemGroup>
 		<PackageReference Include="Kurrent.Quack"/>
-		<ProjectReference Include="..\KurrentDB.POC.ConnectedSubsystemsPlugin\KurrentDB.POC.ConnectedSubsystemsPlugin.csproj"/>
-		<ProjectReference Include="..\KurrentDB.POC.IO.Core\KurrentDB.POC.IO.Core.csproj"/>
 	</ItemGroup>
 
 	<ItemGroup>
@@ -24,7 +21,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<InternalsVisibleTo Include="KurrentDB.SecondaryIndexing.Tests"/>
+	  <ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
+	  <ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
 	</ItemGroup>
 
 </Project>

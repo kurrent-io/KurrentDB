@@ -383,7 +383,7 @@ public class SubscriptionsService<TStreamId> :
 			subscr.CheckpointIntervalCurrent++;
 
 			if (subscr.CheckpointInterval != null &&
-			    subscr.CheckpointIntervalCurrent >= subscr.CheckpointInterval) {
+				subscr.CheckpointIntervalCurrent >= subscr.CheckpointInterval) {
 				subscr.Envelope.ReplyWith(new ClientMessage.CheckpointReached(subscr.CorrelationId, pair.OriginalPosition));
 				subscr.CheckpointIntervalCurrent = 0;
 			}

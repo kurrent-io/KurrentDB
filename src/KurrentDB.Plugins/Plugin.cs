@@ -61,8 +61,8 @@ public abstract class Plugin : IPlugableComponent, IDisposable {
 			const string defaultVersion = "1.0.0.0-preview";
 
 			var version = pluginVersion
-			              ?? pluginType.Assembly.GetName().Version?.ToString()
-			              ?? emptyVersion;
+						  ?? pluginType.Assembly.GetName().Version?.ToString()
+						  ?? emptyVersion;
 
 			return version != emptyVersion ? version : defaultVersion;
 		}
@@ -200,11 +200,11 @@ public abstract class Plugin : IPlugableComponent, IDisposable {
 	/// <param name="mode">The mode of data collection for a plugin event.</param>
 	protected internal void PublishDiagnosticsData(string eventName, Dictionary<string, object?> eventData, PluginDiagnosticsDataCollectionMode mode = Event) {
 		if (eventName == nameof(PluginDiagnosticsData))
-		    throw new ArgumentException("Event name cannot be PluginDiagnosticsData", nameof(eventName));
+			throw new ArgumentException("Event name cannot be PluginDiagnosticsData", nameof(eventName));
 
 		DiagnosticListener.Write(
 			eventName,
-			new PluginDiagnosticsData{
+			new PluginDiagnosticsData {
 				Source = DiagnosticsName,
 				EventName = eventName,
 				Data = eventData,

@@ -38,7 +38,7 @@
 		"Written": true
 	},
 
-	// maps grpc methods to labels that they are to be recorded under
+	// maps api v1 grpc methods to labels that they are to be recorded under
 	"GrpcMethods": {
 		"StreamRead": "read",
 		"StreamAppend": "append",

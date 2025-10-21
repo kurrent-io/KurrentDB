@@ -486,11 +486,14 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 			_ => null
 		};
 
+		// we do not have the leaderId here, but it is ok because we only need it for the V2 gRPC API
+		// and it does not forward writes so this unwrap is for someone else.
+		var leaderId = Guid.Empty;
 		var leaderInfo = leaderInfoDto switch {
 			{ ExternalTcpAddress: not null } => new(
-				new DnsEndPoint(leaderInfoDto.ExternalTcpAddress, leaderInfoDto.ExternalTcpPort), false, new DnsEndPoint(leaderInfoDto.HttpAddress, leaderInfoDto.HttpPort)),
+				new DnsEndPoint(leaderInfoDto.ExternalTcpAddress, leaderInfoDto.ExternalTcpPort), false, new DnsEndPoint(leaderInfoDto.HttpAddress, leaderInfoDto.HttpPort), leaderId),
 			{ ExternalSecureTcpAddress: not null } => new ClientMessage.NotHandled.Types.LeaderInfo(
-				new DnsEndPoint(leaderInfoDto.ExternalSecureTcpAddress, leaderInfoDto.ExternalSecureTcpPort), true, new DnsEndPoint(leaderInfoDto.HttpAddress, leaderInfoDto.HttpPort)),
+				new DnsEndPoint(leaderInfoDto.ExternalSecureTcpAddress, leaderInfoDto.ExternalSecureTcpPort), true, new DnsEndPoint(leaderInfoDto.HttpAddress, leaderInfoDto.HttpPort), leaderId),
 			_ => null
 		};
 		return new(package.CorrelationId, reason, leaderInfo);

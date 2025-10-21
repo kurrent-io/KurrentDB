@@ -34,7 +34,7 @@ public class HashCollisionTestFixture : SpecificationWithDirectoryPerTestFixture
 	protected IHasher<string> _lowHasher;
 	protected IHasher<string> _highHasher;
 	protected string _indexDir;
-	protected TFReaderLease _fakeReader;
+	protected FakeReader _fakeReader;
 	protected LogFormatAbstractor<string> _logFormat;
 
 	protected virtual void given() {
@@ -47,7 +47,7 @@ public class HashCollisionTestFixture : SpecificationWithDirectoryPerTestFixture
 	public void Setup() {
 		given();
 		_indexDir = PathName;
-		_fakeReader = new TFReaderLease(new FakeReader());
+		_fakeReader = new();
 		_indexBackend = new FakeIndexBackend<string>(_fakeReader);
 
 		_logFormat = LogFormatHelper<LogFormat.V2, string>.LogFormatFactory.Create(new() {
@@ -60,9 +60,9 @@ public class HashCollisionTestFixture : SpecificationWithDirectoryPerTestFixture
 		_highHasher = _logFormat.HighHasher;
 		_tableIndex = new TableIndex<string>(_indexDir, _lowHasher, _highHasher, _logFormat.EmptyStreamId,
 			() => new HashListMemTable(PTableVersions.IndexV4, maxSize: _maxMemTableSize),
-			() => _fakeReader,
+			_fakeReader,
 			PTableVersions.IndexV4,
-			5, Constants.PTableMaxReaderCountDefault,
+			5,
 			maxSizeForMemory: _maxMemTableSize,
 			maxTablesPerLevel: 2);
 		_logFormat.StreamNamesProvider.SetTableIndex(_tableIndex);
@@ -317,9 +317,9 @@ public class
 		_tableIndex.Close(false);
 		_tableIndex = new TableIndex<string>(_indexDir, _lowHasher, _highHasher, "",
 			() => new HashListMemTable(PTableVersions.IndexV2, maxSize: _maxMemTableSize),
-			() => _fakeReader,
+			_fakeReader,
 			PTableVersions.IndexV2,
-			5, Constants.PTableMaxReaderCountDefault,
+			5,
 			maxSizeForMemory: _maxMemTableSize,
 			maxTablesPerLevel: 2);
 		_tableIndex.Initialize(long.MaxValue);
@@ -418,16 +418,12 @@ public class when_stream_has_max_age : HashCollisionTestFixture {
 }
 
 public class FakeIndexBackend<TStreamId> : IIndexBackend<TStreamId> {
-	private readonly TFReaderLease _readerLease;
-	private readonly Dictionary<TStreamId, IndexBackend<TStreamId>.MetadataCached> _streamMetadata = new();
+	private readonly Dictionary<TStreamId, IndexBackend<TStreamId>.MetadataCached> _streamMetadata =
+		new();
 
-	public FakeIndexBackend(TFReaderLease readerLease) {
-		_readerLease = readerLease;
-	}
+	public FakeIndexBackend(ITransactionFileReader reader) => TFReader = reader;
 
-	public TFReaderLease BorrowReader() {
-		return _readerLease;
-	}
+	public ITransactionFileReader TFReader { get; }
 
 	public IndexBackend<TStreamId>.EventNumberCached TryGetStreamLastEventNumber(TStreamId streamId) {
 		return new(-1, null, null); //always return uncached
@@ -474,14 +470,12 @@ public class FakeIndexBackend<TStreamId> : IIndexBackend<TStreamId> {
 }
 
 public class FakeReader : ITransactionFileReader {
-	public void Reposition(long position) {
-		throw new NotImplementedException();
-	}
-
-	public ValueTask<SeqReadResult> TryReadNext(CancellationToken token)
+	public ValueTask<SeqReadResult> TryReadNext<TCursor>(TCursor cursor, CancellationToken token)
+		where TCursor : IReadCursor
 		=> ValueTask.FromException<SeqReadResult>(new NotImplementedException());
 
-	public ValueTask<SeqReadResult> TryReadPrev(CancellationToken token)
+	public ValueTask<SeqReadResult> TryReadPrev<TCursor>(TCursor cursor, CancellationToken token)
+		where TCursor : IReadCursor
 		=> ValueTask.FromException<SeqReadResult>(new NotImplementedException());
 
 	public ValueTask<RecordReadResult> TryReadAt(long position, bool couldBeScavenged, CancellationToken token) {

@@ -35,7 +35,8 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 	public readonly int CommitSize = 500;
 
 	protected SecondaryIndexingFixture(bool isSecondaryIndexingPluginEnabled) {
-		if (!isSecondaryIndexingPluginEnabled) return;
+		if (!isSecondaryIndexingPluginEnabled)
+			return;
 
 		SetUpDatabaseDirectory();
 
@@ -109,7 +110,8 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 			if (count == maxCount)
 				yield break;
 
-			if (response is not ReadResponse.EventReceived eventReceived) continue;
+			if (response is not ReadResponse.EventReceived eventReceived)
+				continue;
 
 			count++;
 			yield return eventReceived.Event;
