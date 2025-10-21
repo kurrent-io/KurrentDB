@@ -62,8 +62,8 @@ RUN dotnet publish --configuration=Release --runtime=${RUNTIME} --self-contained
 # "runtime" image
 FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-${CONTAINER_RUNTIME} AS runtime
 ARG RUNTIME=linux-x64
-ARG UID=1000
-ARG GID=1000
+ARG UID=1001
+ARG GID=1001
 
 RUN if [[ "${RUNTIME}" = "linux-musl-x64" ]];\
     then \
