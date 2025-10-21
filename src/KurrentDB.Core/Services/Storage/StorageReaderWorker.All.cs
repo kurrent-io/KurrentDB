@@ -18,9 +18,6 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadAllEventsForward
 	IAsyncHandle<ReadAllEventsBackward> {
 
 	async ValueTask IAsyncHandle<ReadAllEventsForward>.HandleAsync(ReadAllEventsForward msg, CancellationToken token) {
-		if (msg.CancellationToken.IsCancellationRequested)
-			return;
-
 		if (msg.Expires < DateTime.UtcNow) {
 			if (msg.ReplyOnExpired) {
 				msg.Envelope.ReplyWith(new ReadAllEventsForwardCompleted(
@@ -61,9 +58,6 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadAllEventsForward
 	}
 
 	async ValueTask IAsyncHandle<ReadAllEventsBackward>.HandleAsync(ReadAllEventsBackward msg, CancellationToken token) {
-		if (msg.CancellationToken.IsCancellationRequested)
-			return;
-
 		if (msg.Expires < DateTime.UtcNow) {
 			if (msg.ReplyOnExpired) {
 				msg.Envelope.ReplyWith(new ReadAllEventsBackwardCompleted(
@@ -86,6 +80,7 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadAllEventsForward
 	private async ValueTask<ReadAllEventsForwardCompleted> ReadAllEventsForward(ReadAllEventsForward msg, CancellationToken token) {
 		var pos = new TFPos(msg.CommitPosition, msg.PreparePosition);
 		var lastIndexedPosition = _readIndex.LastIndexedPosition;
+		var cts = _multiplexer.Combine([token, msg.CancellationToken]);
 		try {
 			if (msg.MaxCount > MaxPageSize) {
 				throw new ArgumentException($"Read size too big, should be less than {MaxPageSize} items");
@@ -101,19 +96,23 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadAllEventsForward
 			if (msg.ValidationTfLastCommitPosition == lastIndexedPosition)
 				return NoData(ReadAllResult.NotModified);
 
-			var res = await _readIndex.ReadAllEventsForward(pos, msg.MaxCount, token);
-			if (await ResolveReadAllResult(res.Records, msg.ResolveLinkTos, msg.User, token) is not { } resolved)
+			var res = await _readIndex.ReadAllEventsForward(pos, msg.MaxCount, cts.Token);
+			if (await ResolveReadAllResult(res.Records, msg.ResolveLinkTos, msg.User, cts.Token) is not { } resolved)
 				return NoData(ReadAllResult.AccessDenied);
 
-			var metadata = await _readIndex.GetStreamMetadata(_systemStreams.AllStream, token);
+			var metadata = await _readIndex.GetStreamMetadata(_systemStreams.AllStream, cts.Token);
 			return new(msg.CorrelationId, ReadAllResult.Success, null, resolved, metadata,
 				false, msg.MaxCount, res.CurrentPos, res.NextPos, res.PrevPos, lastIndexedPosition);
+		} catch (OperationCanceledException e) when (e.CancellationToken == cts.Token) {
+			throw new OperationCanceledException(null, e, cts.CancellationOrigin);
 		} catch (Exception exc) when (exc is InvalidReadException or UnableToReadPastEndOfStreamException) {
 			Log.Warning(exc, "Error during processing ReadAllEventsBackward request. The read appears to be at an invalid position.");
 			return NoData(ReadAllResult.InvalidPosition, exc.Message);
-		} catch (Exception exc) when (exc is not OperationCanceledException oce || oce.CancellationToken != token) {
+		} catch (Exception exc) {
 			Log.Error(exc, "Error during processing ReadAllEventsForward request.");
 			return NoData(ReadAllResult.Error, exc.Message);
+		} finally {
+			await cts.DisposeAsync();
 		}
 
 		ReadAllEventsForwardCompleted NoData(ReadAllResult result, string error = null)
@@ -124,6 +123,7 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadAllEventsForward
 	private async ValueTask<ReadAllEventsBackwardCompleted> ReadAllEventsBackward(ReadAllEventsBackward msg, CancellationToken token) {
 		var pos = new TFPos(msg.CommitPosition, msg.PreparePosition);
 		var lastIndexedPosition = _readIndex.LastIndexedPosition;
+		var cts = _multiplexer.Combine([token, msg.CancellationToken]);
 		try {
 			if (msg.MaxCount > MaxPageSize) {
 				throw new ArgumentException($"Read size too big, should be less than {MaxPageSize} items");
@@ -139,19 +139,23 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadAllEventsForward
 			if (msg.ValidationTfLastCommitPosition == lastIndexedPosition)
 				return NoData(ReadAllResult.NotModified);
 
-			var res = await _readIndex.ReadAllEventsBackward(pos, msg.MaxCount, token);
-			if (await ResolveReadAllResult(res.Records, msg.ResolveLinkTos, msg.User, token) is not { } resolved)
+			var res = await _readIndex.ReadAllEventsBackward(pos, msg.MaxCount, cts.Token);
+			if (await ResolveReadAllResult(res.Records, msg.ResolveLinkTos, msg.User, cts.Token) is not { } resolved)
 				return NoData(ReadAllResult.AccessDenied);
 
-			var metadata = await _readIndex.GetStreamMetadata(_systemStreams.AllStream, token);
+			var metadata = await _readIndex.GetStreamMetadata(_systemStreams.AllStream, cts.Token);
 			return new(msg.CorrelationId, ReadAllResult.Success, null, resolved, metadata,
 				false, msg.MaxCount, res.CurrentPos, res.NextPos, res.PrevPos, lastIndexedPosition);
+		} catch (OperationCanceledException e) when (e.CancellationToken == cts.Token) {
+			throw new OperationCanceledException(null, e, cts.CancellationOrigin);
 		} catch (Exception exc) when (exc is InvalidReadException or UnableToReadPastEndOfStreamException) {
 			Log.Warning(exc, "Error during processing ReadAllEventsBackward request. The read appears to be at an invalid position.");
 			return NoData(ReadAllResult.InvalidPosition, exc.Message);
-		} catch (Exception exc) when (exc is not OperationCanceledException oce || oce.CancellationToken != token) {
+		} catch (Exception exc) {
 			Log.Error(exc, "Error during processing ReadAllEventsBackward request.");
 			return NoData(ReadAllResult.Error, exc.Message);
+		} finally {
+			await cts.DisposeAsync();
 		}
 
 		ReadAllEventsBackwardCompleted NoData(ReadAllResult result, string error = null)

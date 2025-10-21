@@ -14,9 +14,6 @@ partial class StorageReaderWorker<TStreamId> :
 	IAsyncHandle<ReadIndexEventsForward>,
 	IAsyncHandle<ReadIndexEventsBackward> {
 	public async ValueTask HandleAsync(ReadIndexEventsForward msg, CancellationToken token) {
-		if (msg.CancellationToken.IsCancellationRequested)
-			return;
-
 		if (msg.Expires < DateTime.UtcNow) {
 			if (msg.ReplyOnExpired) {
 				msg.Envelope.ReplyWith(
@@ -37,7 +34,16 @@ partial class StorageReaderWorker<TStreamId> :
 			return;
 		}
 
-		var res = await _secondaryIndexReaders.ReadForwards(msg, token);
+		ReadIndexEventsForwardCompleted res;
+		var cts = _multiplexer.Combine([token, msg.CancellationToken]);
+		try {
+			res = await _secondaryIndexReaders.ReadForwards(msg, cts.Token);
+		} catch (OperationCanceledException e) when (e.CancellationToken == cts.Token) {
+			throw new OperationCanceledException(null, e, cts.CancellationOrigin);
+		} finally {
+			await cts.DisposeAsync();
+		}
+
 		switch (res.Result) {
 			case ReadIndexResult.Success
 				or ReadIndexResult.NotModified
@@ -52,9 +58,6 @@ partial class StorageReaderWorker<TStreamId> :
 	}
 
 	public async ValueTask HandleAsync(ReadIndexEventsBackward msg, CancellationToken token) {
-		if (msg.CancellationToken.IsCancellationRequested)
-			return;
-
 		if (msg.Expires < DateTime.UtcNow) {
 			if (msg.ReplyOnExpired) {
 				msg.Envelope.ReplyWith(
@@ -75,7 +78,16 @@ partial class StorageReaderWorker<TStreamId> :
 			return;
 		}
 
-		var res = await _secondaryIndexReaders.ReadBackwards(msg, token);
+		ReadIndexEventsBackwardCompleted res;
+		var cts = _multiplexer.Combine([token, msg.CancellationToken]);
+		try {
+			res = await _secondaryIndexReaders.ReadBackwards(msg, cts.Token);
+		} catch (OperationCanceledException e) when (e.CancellationToken == cts.Token) {
+			throw new OperationCanceledException(null, e, cts.CancellationOrigin);
+		} finally {
+			await cts.DisposeAsync();
+		}
+
 		switch (res.Result) {
 			case ReadIndexResult.Success
 				or ReadIndexResult.NotModified

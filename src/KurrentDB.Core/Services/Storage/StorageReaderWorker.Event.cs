@@ -13,9 +13,6 @@ namespace KurrentDB.Core.Services.Storage;
 
 partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadEvent> {
 	async ValueTask IAsyncHandle<ReadEvent>.HandleAsync(ReadEvent msg, CancellationToken token) {
-		if (msg.CancellationToken.IsCancellationRequested)
-			return;
-
 		if (msg.Expires < DateTime.UtcNow) {
 			if (LogExpiredMessage())
 				Log.Debug(
@@ -24,20 +21,11 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadEvent> {
 			return;
 		}
 
-		var cts = _multiplexer.Combine([token, msg.CancellationToken]);
-		ReadEventCompleted ev;
-		try {
-			ev = await ReadEvent(msg, cts.Token);
-		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts.Token) {
-			throw new OperationCanceledException(ex.Message, ex, cts.CancellationOrigin);
-		} finally {
-			await cts.DisposeAsync();
-		}
-
-		msg.Envelope.ReplyWith(ev);
+		msg.Envelope.ReplyWith(await ReadEvent(msg, token));
 	}
 
 	private async ValueTask<ReadEventCompleted> ReadEvent(ReadEvent msg, CancellationToken token) {
+		var cts = _multiplexer.Combine([token, msg.CancellationToken]);
 		try {
 			var streamName = msg.EventStreamId;
 			var streamId = _readIndex.GetStreamId(streamName);
@@ -59,9 +47,13 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadEvent> {
 			}
 
 			return new(msg.CorrelationId, msg.EventStreamId, result.Result, record, result.Metadata, false, null);
-		} catch (Exception exc) when (exc is not OperationCanceledException oce || oce.CancellationToken != token) {
+		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts.Token) {
+			throw new OperationCanceledException(ex.Message, ex, cts.CancellationOrigin);
+		} catch (Exception exc) {
 			Log.Error(exc, "Error during processing ReadEvent request.");
 			return NoData(ReadEventResult.Error, exc.Message);
+		} finally {
+			await cts.DisposeAsync();
 		}
 
 		ReadEventCompleted NoData(ReadEventResult result, string error = null)

@@ -16,9 +16,6 @@ namespace KurrentDB.Core.Services.Storage;
 partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadStreamEventsBackward>,
 	IAsyncHandle<ReadStreamEventsForward> {
 	async ValueTask IAsyncHandle<ReadStreamEventsForward>.HandleAsync(ReadStreamEventsForward msg, CancellationToken token) {
-		if (msg.CancellationToken.IsCancellationRequested)
-			return;
-
 		if (msg.Expires < DateTime.UtcNow) {
 			if (msg.ReplyOnExpired) {
 				msg.Envelope.ReplyWith(new ReadStreamEventsForwardCompleted(
@@ -33,18 +30,7 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadStreamEventsBack
 			return;
 		}
 
-		ReadStreamEventsForwardCompleted res;
-		var cts = _multiplexer.Combine([token, msg.CancellationToken]);
-		try {
-			res = await (SystemStreams.IsInMemoryStream(msg.EventStreamId)
-				? _virtualStreamReader.ReadForwards(msg, cts.Token)
-				: ReadStreamEventsForward(msg, cts.Token));
-		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts.Token) {
-			throw new OperationCanceledException(null, ex, cts.CancellationOrigin);
-		} finally {
-			await cts.DisposeAsync();
-		}
-
+		var res = await ReadStreamEventsForward(msg, token);
 		switch (res.Result) {
 			case ReadStreamResult.Success
 				or ReadStreamResult.NoStream
@@ -70,9 +56,6 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadStreamEventsBack
 
 	async ValueTask IAsyncHandle<ReadStreamEventsBackward>.HandleAsync(
 		ReadStreamEventsBackward msg, CancellationToken token) {
-		if (msg.CancellationToken.IsCancellationRequested)
-			return;
-
 		if (msg.Expires < DateTime.UtcNow) {
 			if (msg.ReplyOnExpired) {
 				msg.Envelope.ReplyWith(new ReadStreamEventsBackwardCompleted(
@@ -87,24 +70,16 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadStreamEventsBack
 			return;
 		}
 
-		var cts = _multiplexer.Combine([token, msg.CancellationToken]);
-		ReadStreamEventsBackwardCompleted res;
-		try {
-			res = await (SystemStreams.IsInMemoryStream(msg.EventStreamId)
-				? _virtualStreamReader.ReadBackwards(msg, cts.Token)
-				: ReadStreamEventsBackward(msg, cts.Token));
-		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts.Token) {
-			throw new OperationCanceledException(null, ex, cts.CancellationOrigin);
-		} finally {
-			await cts.DisposeAsync();
-		}
-
-		msg.Envelope.ReplyWith(res);
+		msg.Envelope.ReplyWith(await ReadStreamEventsBackward(msg, token));
 	}
 
 	private async ValueTask<ReadStreamEventsForwardCompleted> ReadStreamEventsForward(ReadStreamEventsForward msg, CancellationToken token) {
 		var lastIndexPosition = _readIndex.LastIndexedPosition;
+		var cts = _multiplexer.Combine([token, msg.CancellationToken]);
 		try {
+			if (SystemStreams.IsInMemoryStream(msg.EventStreamId))
+				return await _virtualStreamReader.ReadForwards(msg, cts.Token);
+
 			if (msg.MaxCount > MaxPageSize) {
 				throw new ArgumentException($"Read size too big, should be less than {MaxPageSize} items");
 			}
@@ -112,20 +87,24 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadStreamEventsBack
 			var streamName = msg.EventStreamId;
 			var streamId = _readIndex.GetStreamId(msg.EventStreamId);
 			if (msg.ValidationStreamVersion is { } streamVer &&
-			    await _readIndex.GetStreamLastEventNumber(streamId, token) == streamVer)
+			    await _readIndex.GetStreamLastEventNumber(streamId, cts.Token) == streamVer)
 				return NoData(ReadStreamResult.NotModified, lastIndexPosition, streamVer);
 
-			var result = await _readIndex.ReadStreamEventsForward(streamName, streamId, msg.FromEventNumber, msg.MaxCount, token);
+			var result = await _readIndex.ReadStreamEventsForward(streamName, streamId, msg.FromEventNumber, msg.MaxCount, cts.Token);
 			CheckEventsOrder(msg, result);
-			if (await ResolveLinkToEvents(result.Records, msg.ResolveLinkTos, msg.User, token) is not { } resolvedPairs)
+			if (await ResolveLinkToEvents(result.Records, msg.ResolveLinkTos, msg.User, cts.Token) is not { } resolvedPairs)
 				return NoData(ReadStreamResult.AccessDenied, lastIndexPosition);
 
 			return new(msg.CorrelationId, msg.EventStreamId, msg.FromEventNumber, msg.MaxCount,
 				(ReadStreamResult)result.Result, resolvedPairs, result.Metadata, false, string.Empty,
 				result.NextEventNumber, result.LastEventNumber, result.IsEndOfStream, lastIndexPosition);
-		} catch (Exception exc) when (exc is not OperationCanceledException oce || oce.CancellationToken != token) {
+		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts.Token) {
+			throw new OperationCanceledException(null, ex, cts.CancellationOrigin);
+		} catch (Exception exc) {
 			Log.Error(exc, "Error during processing ReadStreamEventsForward request.");
 			return NoData(ReadStreamResult.Error, lastIndexPosition, error: exc.Message);
+		} finally {
+			await cts.DisposeAsync();
 		}
 
 		static void CheckEventsOrder(ReadStreamEventsForward msg, IndexReadStreamResult result) {
@@ -145,7 +124,11 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadStreamEventsBack
 
 	private async ValueTask<ReadStreamEventsBackwardCompleted> ReadStreamEventsBackward(ReadStreamEventsBackward msg, CancellationToken token) {
 		var lastIndexedPosition = _readIndex.LastIndexedPosition;
+		var cts = _multiplexer.Combine([token, msg.CancellationToken]);
 		try {
+			if (SystemStreams.IsInMemoryStream(msg.EventStreamId))
+				return await _virtualStreamReader.ReadBackwards(msg, cts.Token);
+
 			if (msg.MaxCount > MaxPageSize) {
 				throw new ArgumentException($"Read size too big, should be less than {MaxPageSize} items");
 			}
@@ -153,20 +136,24 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadStreamEventsBack
 			var streamName = msg.EventStreamId;
 			var streamId = _readIndex.GetStreamId(msg.EventStreamId);
 			if (msg.ValidationStreamVersion is { } streamVer &&
-			    await _readIndex.GetStreamLastEventNumber(streamId, token) == streamVer)
+			    await _readIndex.GetStreamLastEventNumber(streamId, cts.Token) == streamVer)
 				return NoData(ReadStreamResult.NotModified, streamVer);
 
-			var result = await _readIndex.ReadStreamEventsBackward(streamName, streamId, msg.FromEventNumber, msg.MaxCount, token);
+			var result = await _readIndex.ReadStreamEventsBackward(streamName, streamId, msg.FromEventNumber, msg.MaxCount, cts.Token);
 			CheckEventsOrder(msg, result);
-			if (await ResolveLinkToEvents(result.Records, msg.ResolveLinkTos, msg.User, token) is not { } resolvedPairs)
+			if (await ResolveLinkToEvents(result.Records, msg.ResolveLinkTos, msg.User, cts.Token) is not { } resolvedPairs)
 				return NoData(ReadStreamResult.AccessDenied);
 
 			return new(msg.CorrelationId, msg.EventStreamId, result.FromEventNumber, result.MaxCount,
 				(ReadStreamResult)result.Result, resolvedPairs, result.Metadata, false, string.Empty,
 				result.NextEventNumber, result.LastEventNumber, result.IsEndOfStream, lastIndexedPosition);
-		} catch (Exception exc) when (exc is not OperationCanceledException oce || oce.CancellationToken != token) {
+		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts.Token) {
+			throw new OperationCanceledException(null, ex, cts.CancellationOrigin);
+		} catch (Exception exc) {
 			Log.Error(exc, "Error during processing ReadStreamEventsBackward request.");
 			return NoData(ReadStreamResult.Error, error: exc.Message);
+		} finally {
+			await cts.DisposeAsync();
 		}
 
 		static void CheckEventsOrder(ReadStreamEventsBackward msg, IndexReadStreamResult result) {

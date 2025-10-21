@@ -16,9 +16,6 @@ namespace KurrentDB.Core.Services.Storage;
 
 partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadLogEvents> {
 	async ValueTask IAsyncHandle<ReadLogEvents>.HandleAsync(ReadLogEvents msg, CancellationToken token) {
-		if (msg.CancellationToken.IsCancellationRequested)
-			return;
-
 		if (msg.Expires < DateTime.UtcNow) {
 			if (msg.ReplyOnExpired) {
 				msg.Envelope.ReplyWith(new ReadLogEventsCompleted(msg.CorrelationId, ReadEventResult.Expired, [], null));
@@ -29,30 +26,27 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadLogEvents> {
 			return;
 		}
 
-		ReadLogEventsCompleted ev;
-		var cts = _multiplexer.Combine([token, msg.CancellationToken]);
-		try {
-			ev = await ReadLogEvents(msg, cts.Token);
-		} catch (OperationCanceledException e) when (e.CancellationToken == cts.Token) {
-			throw new OperationCanceledException(e.Message, e, cts.CancellationOrigin);
-		} finally {
-			await cts.DisposeAsync();
-		}
-
-		msg.Envelope.ReplyWith(ev);
+		msg.Envelope.ReplyWith(await ReadLogEvents(msg, token));
 	}
 
 	private async ValueTask<ReadLogEventsCompleted> ReadLogEvents(ReadLogEvents msg, CancellationToken token) {
+		var cts = _multiplexer.Combine([token, msg.CancellationToken]);
 		try {
 			var reader = _readIndex.IndexReader;
-			var readPrepares = msg.LogPositions.Select(async (pos, index) => (Index: index, Prepare: await reader.Backend.ReadPrepare(pos, token)));
+			var readPrepares =
+				msg.LogPositions.Select(async (pos, index) => (Index: index, Prepare: await reader.Backend.ReadPrepare(pos, token)));
 			// This way to read is unusual and might cause issues. Observe the impact in the field and revisit.
 			var prepared = (await Task.WhenAll(readPrepares))
-				.Select(x => ResolvedEvent.ForUnresolvedEvent(new(x.Index, x.Prepare, x.Prepare!.EventStreamId!.ToString()!, x.Prepare.EventType.ToString())));
+				.Select(x => ResolvedEvent.ForUnresolvedEvent(new(x.Index, x.Prepare, x.Prepare!.EventStreamId!.ToString()!,
+					x.Prepare.EventType.ToString())));
 			return new(msg.CorrelationId, ReadEventResult.Success, prepared.ToArray(), null);
+		} catch (OperationCanceledException e) when (e.CancellationToken == cts.Token) {
+			throw new OperationCanceledException(e.Message, e, cts.CancellationOrigin);
 		} catch (Exception e) {
 			Log.Error(e, "Error during processing ReadEvent request.");
 			return NoData(msg, ReadEventResult.Error, e.Message);
+		} finally {
+			await cts.DisposeAsync();
 		}
 
 		static ReadLogEventsCompleted NoData(ReadLogEvents msg, ReadEventResult result, string error = null) {
