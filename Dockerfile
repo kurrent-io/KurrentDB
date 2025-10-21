@@ -73,6 +73,7 @@ RUN if [[ "${RUNTIME}" = "linux-musl-x64" ]];\
     else \
         apt update && \
         apt install -y \
+        adduser \
         curl && \
         rm -rf /var/lib/apt/lists/*; \
     fi
