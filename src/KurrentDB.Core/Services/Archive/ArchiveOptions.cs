@@ -91,12 +91,12 @@ public class AzureOptions {
 	public string ConnectionStringOrServiceUrl { get; init; } = "";
 
 	/// <summary>
-	/// Gets or sets the user identity.
+	/// Gets or sets the client ID for the user-assigned managed identity.
 	/// </summary>
 	/// <remarks>
-	/// Applicable when <see cref="Authentication"/> is <see cref="AuthenticationType.UserAssignedClientId"/>.
+	/// Applicable when <see cref="Authentication"/> is <see cref="AuthenticationType.UserAssignedIdentity"/>.
 	/// </remarks>
-	public string UserIdentity { get; init; } = "";
+	public string UserAssignedClientId { get; init; } = "";
 
 	/// <summary>
 	/// Gets or sets the authentication type.
@@ -116,9 +116,11 @@ public class AzureOptions {
 					if (string.IsNullOrWhiteSpace(ConnectionStringOrServiceUrl))
 						error = "Please provide a connection string (using ConnectionStringOrServiceUrl) for the Azure archive's storage account";
 					break;
-				case AuthenticationType.UserAssignedClientId:
-					if (string.IsNullOrWhiteSpace(UserIdentity))
-						error = "Please provide a UserIdentity for the Azure archive";
+				case AuthenticationType.SystemAssignedIdentity:
+					break;
+				case AuthenticationType.UserAssignedIdentity:
+					if (string.IsNullOrWhiteSpace(UserAssignedClientId))
+						error = "Please provide a UserAssignedClientId for the Azure archive";
 					break;
 				case AuthenticationType.Default:
 					if (string.IsNullOrWhiteSpace(ConnectionStringOrServiceUrl))
@@ -156,7 +158,7 @@ public class AzureOptions {
 		/// User-assigned managed identity.
 		/// </summary>
 		/// <seealso href="https://learn.microsoft.com/en-us/dotnet/azure/sdk/authentication/user-assigned-managed-identity"/>
-		UserAssignedClientId,
+		UserAssignedIdentity,
 
 		/// <summary>
 		/// Uses connection string and Shared Access Signature (SAS).
