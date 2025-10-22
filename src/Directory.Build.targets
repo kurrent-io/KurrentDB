@@ -1,6 +1,5 @@
 <Project>
 	<PropertyGroup>
-		<!--//qq temporary-->
-		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 	</PropertyGroup>
 </Project>

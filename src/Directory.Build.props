@@ -17,9 +17,8 @@
 		<VersionPrefix>25.1.0</VersionPrefix>
 		<VersionSuffix>prerelease</VersionSuffix>
 		<IsTestProject>false</IsTestProject>
-		<!-- Adjust for SYSLIB0057 and SYSLIB0057 separately to .NET 10 upgrade -->
-		<!-- //qq SYSLIB0057  -->
-		<NoWarn>SYSLIB0057;SYSLIB0058</NoWarn>
+		<!-- Adjust for SYSLIB0057 separately to .NET 10 upgrade -->
+		<NoWarn>SYSLIB0057</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup Condition="'$(IsPlugin)' == 'true'">
