@@ -18,8 +18,8 @@
 		<VersionSuffix>prerelease</VersionSuffix>
 		<IsTestProject>false</IsTestProject>
 		<!-- Adjust for SYSLIB0057 and SYSLIB0057 separately to .NET 10 upgrade -->
-		<!-- //qq CS0436 SYSLIB0057  -->
-		<NoWarn>SYSLIB0057;SYSLIB0058;CS0436</NoWarn>
+		<!-- //qq SYSLIB0057  -->
+		<NoWarn>SYSLIB0057;SYSLIB0058</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup Condition="'$(IsPlugin)' == 'true'">
