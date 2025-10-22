@@ -15,7 +15,6 @@ namespace KurrentDB.Core.Tests;
 public class TestsInitFixture {
 	[OneTimeSetUp]
 	public void SetUp() {
-		ServicePointManager.DefaultConnectionLimit = 1000;
 		LogEnvironmentInfo();
 	}
 
