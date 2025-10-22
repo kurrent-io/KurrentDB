@@ -60,6 +60,7 @@ jobs:
       shell: bash
       run: |
         dotnet run --project src/KurrentDB --configuration ${{ matrix.configuration }} -- --insecure --what-if
+    # so that the oauth tests have an up to date server image to run against
     -  
       name: Build Test Image
       if: ${{ !startsWith(inputs.os, 'windows') }}

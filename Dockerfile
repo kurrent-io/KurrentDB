@@ -22,7 +22,7 @@ COPY ./src/KurrentDB.sln ./src/*/*.csproj ./src/Directory.Build.* ./src/Director
 RUN for file in $(ls Connectors/*.csproj); do mkdir -p ./${file%.*}/ && mv $file ./${file%.*}/; done && \
     for file in $(ls SchemaRegistry/*.csproj); do mkdir -p ./${file%.*}/ && mv $file ./${file%.*}/; done && \
     for file in $(ls *.csproj); do mkdir -p ./${file%.*}/ && mv $file ./${file%.*}/; done && \
-    dotnet restore --runtime=${RUNTIME}
+    dotnet restore
 COPY ./src .
 
 WORKDIR /build/.git
