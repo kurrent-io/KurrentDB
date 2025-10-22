@@ -72,7 +72,7 @@ Archive:
     Days: 30
     LogicalBytes: 500000000
 
-  StorageType: S3
+  StorageType: S3 # or GCP / Azure (examples below) 
   S3:
     Region: eu-west-1
     Bucket: kurrentdb-cluster-123-archive
@@ -95,11 +95,87 @@ The Archiver Node is a read-only replica and does not participate in quorum acti
 
 On startup, up to `MaxMemTableSize` events can be read from the log. It is recommended to keep at least this much data locally for faster startup.
 
-`StorageType` must currently be set to `S3`. Other cloud providers may be supported in the future, please contact us if you are interested.
+`StorageType` must be set to `S3`, `GCP` or `Azure`. Other cloud providers may be supported in the future, please contact us if you are interested.
 
-### Credentials
+### Amazon S3 Configuration
+_Example:_  
+```yaml
+  StorageType: S3
+  S3:
+    Region: eu-west-1
+    Bucket: kurrentdb-cluster-123-archive
+```
 
 The KurrentDB nodes authenticate with S3 by looking for credentials from the standard providers. Please see the documentation for [S3 in general](https://docs.aws.amazon.com/sdkref/latest/guide/standardized-credentials.html) and [.NET in particular](https://docs.aws.amazon.com/sdk-for-net/v3/developer-guide/creds-assign.html).
+
+### Google Cloud Platform Configuration
+_Example:_  
+```yaml
+  StorageType: GCP
+  GCP:
+    Bucket: kurrentdb-cluster-123-archive
+```
+
+The KurrentDB nodes authenticate with Google Cloud using _Application Default Credentials_. Please see the documentation for [GCP in general](https://cloud.google.com/docs/authentication/application-default-credentials) and [.NET in particular](https://cloud.google.com/dotnet/docs/setup#authn).
+
+### Microsoft Azure Configuration
+The basic configuration format is as follows:
+```yaml
+  StorageType: Azure
+  Azure:
+    Container: kurrentdb-cluster-123-archive
+    Authentication: <authentication method> # Default / ConnectionString / SystemAssignedIdentity / UserAssignedIdentity
+```
+
+The following `Authentication` methods are supported:
+- `Default`  
+  This method uses the [DefaultAzureCredential](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential?view=azure-dotnet) class and loads credentials from a list of predefined locations.
+  A service URL must be provided using the `ConnectionStringOrServiceUrl` configuration option. This authentication method is not recommended for production use by Microsoft. You can use it with the _Azure CLI_ (among other methods) to quickly test if your setup works.  
+  _Example:_  
+```yaml
+  StorageType: Azure
+  Azure:
+    Container: kurrentdb-cluster-123-archive
+    Authentication: Default
+    ConnectionStringOrServiceUrl: https://your-storage-account.blob.core.windows.net/
+```
+
+- `ConnectionString`  
+  This method uses a [connection string](https://learn.microsoft.com/en-us/azure/storage/common/storage-configure-connection-string) to authenticate with Azure.
+  The connection string must be supplied using the `ConnectionStringOrServiceUrl` configuration option. This authentication method is suitable when your KurrentDB cluster runs outside Azure.  
+  _Example:_  
+```yaml
+  StorageType: Azure
+  Azure:
+    Container: kurrentdb-cluster-123-archive
+    Authentication: ConnectionString
+    ConnectionStringOrServiceUrl: DefaultEndpointsProtocol=https;AccountName=<your-storage-account>;AccountKey=<your-account-key>;EndpointSuffix=core.windows.net
+```
+
+- `SystemAssignedIdentity`  
+  This method uses a [system-assigned managed identity](https://learn.microsoft.com/en-us/entra/identity/managed-identities-azure-resources/overview#managed-identity-types) to authenticate with Azure.
+  A service URL must be provided using the `ConnectionStringOrServiceUrl` configuration option. This authentication method is suitable when your KurrentDB cluster runs in virtual machines inside Azure.  
+  _Example:_  
+```yaml
+  StorageType: Azure
+  Azure:
+    Container: kurrentdb-cluster-123-archive
+    Authentication: SystemAssignedIdentity
+    ConnectionStringOrServiceUrl: https://your-storage-account.blob.core.windows.net/
+```
+
+- `UserAssignedIdentity`  
+  This method uses a [user-assigned managed identity](https://learn.microsoft.com/en-us/entra/identity/managed-identities-azure-resources/overview#managed-identity-types) to authenticate with Azure.
+  A service URL must be provided using the `ConnectionStringOrServiceUrl` configuration option and the client ID of the user-assigned managed identity must be supplied with the `UserAssignedClientId` configuration option. This authentication method is suitable when your KurrentDB cluster runs in virtual machines inside Azure.  
+  _Example:_  
+```yaml
+  StorageType: Azure
+  Azure:
+    Container: kurrentdb-cluster-123-archive
+    Authentication: UserAssignedIdentity
+    UserAssignedClientId: 2d8e2e8c-8b17-4d63-8c20-3b7e8a7cbb6b
+    ConnectionStringOrServiceUrl: https://your-storage-account.blob.core.windows.net/
+```
 
 ## Metrics
 
