@@ -29,12 +29,12 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadEvent> {
 		try {
 			var streamName = msg.EventStreamId;
 			var streamId = _readIndex.GetStreamId(streamName);
-			var result = await _readIndex.ReadEvent(streamName, streamId, msg.EventNumber, token);
+			var result = await _readIndex.ReadEvent(streamName, streamId, msg.EventNumber, cts.Token);
 
 			ResolvedEvent record;
 			switch (result) {
 				case { Result: ReadEventResult.Success } when msg.ResolveLinkTos:
-					if ((await ResolveLinkToEvent(result.Record, null, token)).TryGetValue(out record))
+					if ((await ResolveLinkToEvent(result.Record, null, cts.Token)).TryGetValue(out record))
 						break;
 
 					return NoData(ReadEventResult.AccessDenied);
