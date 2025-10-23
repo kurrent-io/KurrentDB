@@ -34,7 +34,7 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadLogEvents> {
 		try {
 			var reader = _readIndex.IndexReader;
 			var readPrepares =
-				msg.LogPositions.Select(async (pos, index) => (Index: index, Prepare: await reader.Backend.ReadPrepare(pos, token)));
+				msg.LogPositions.Select(async (pos, index) => (Index: index, Prepare: await reader.Backend.ReadPrepare(pos, cts.Token)));
 			// This way to read is unusual and might cause issues. Observe the impact in the field and revisit.
 			var prepared = (await Task.WhenAll(readPrepares))
 				.Select(x => ResolvedEvent.ForUnresolvedEvent(new(x.Index, x.Prepare, x.Prepare!.EventStreamId!.ToString()!,
