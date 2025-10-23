@@ -58,9 +58,6 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<FilteredReadAllEvent
 	}
 
 	async ValueTask IAsyncHandle<FilteredReadAllEventsBackward>.HandleAsync(FilteredReadAllEventsBackward msg, CancellationToken token) {
-		if (msg.CancellationToken.IsCancellationRequested)
-			return;
-
 		if (msg.Expires < DateTime.UtcNow) {
 			if (msg.ReplyOnExpired) {
 				msg.Envelope.ReplyWith(new FilteredReadAllEventsBackwardCompleted(
