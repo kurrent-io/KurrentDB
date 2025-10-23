@@ -44,9 +44,6 @@ jobs:
             "noble": {
               "runtime": "linux-x64"
             },
-            "bookworm-slim": {
-              "runtime": "linux-x64"
-            },
             "alpine": {
               "runtime": "linux-musl-x64"
             }

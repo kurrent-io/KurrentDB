@@ -153,7 +153,7 @@ For instance:
 
 ```
 docker build --tag mykurrentdb . \
---build-arg CONTAINER_RUNTIME=bookworm-slim \
+--build-arg CONTAINER_RUNTIME=noble \
 --build-arg RUNTIME=linux-x64
 ```
 
@@ -161,26 +161,16 @@ docker build --tag mykurrentdb . \
 
 ```
 $env:DOCKER_BUILDKIT=0; docker build --tag mykurrentdb . `
---build-arg CONTAINER_RUNTIME=bookworm-slim `
+--build-arg CONTAINER_RUNTIME=noble `
 --build-arg RUNTIME=linux-x64
 ```
 
 Currently, we support the following configurations:
 
-1. Bookworm slim:
-
-- `CONTAINER_RUNTIME=bookworm-slim`
-- `RUNTIME=linux-x64`
-
-2. Noble:
+1. Noble:
 
 - `CONTAINER_RUNTIME=noble`
 - `RUNTIME=linux-x64`
-
-3. Alpine:
-
-- `CONTAINER_RUNTIME=alpine`
-- `RUNTIME=linux-musl-x64`
 
 You can verify the built image by running:
 
