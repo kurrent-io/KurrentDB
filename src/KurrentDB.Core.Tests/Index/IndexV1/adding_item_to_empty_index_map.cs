@@ -41,7 +41,7 @@ public class adding_item_to_empty_index_map : SpecificationWithDirectoryPerTestF
 		_map = IndexMapTestFactory.FromFile(_filename, maxAutoMergeLevel: _maxAutoMergeIndexLevel);
 		var memtable = new HashListMemTable(_ptableVersion, maxSize: 10);
 		memtable.Add(0, 1, 0);
-		var table = PTable.FromMemtable(memtable, _tablename, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, skipIndexVerify: _skipIndexVerify);
+		var table = PTable.FromMemtable(memtable, _tablename, skipIndexVerify: _skipIndexVerify);
 		_result = _map.AddAndMergePTable(table, 7, 11,
 			new FakeFilenameProvider(_mergeFile), _ptableVersion, 0, skipIndexVerify: _skipIndexVerify);
 		table.MarkForDestruction();

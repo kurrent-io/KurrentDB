@@ -8,7 +8,6 @@ using System.Linq;
 using KurrentDB.Core.Exceptions;
 using KurrentDB.Core.Index;
 using KurrentDB.Core.Index.Hashes;
-using KurrentDB.Core.TransactionLog;
 using NUnit.Framework;
 
 namespace KurrentDB.Core.Tests.Index.IndexV1;
@@ -24,13 +23,13 @@ public class table_index_with_corrupt_index_entries_should : SpecificationWithDi
 		bool createForceVerifyFile = false) {
 		var lowHasher = new XXHashUnsafe();
 		var highHasher = new Murmur3AUnsafe();
-		var fakeReader = new TFReaderLease(new FakeIndexReader());
+		var fakeReader = new FakeIndexReader();
 
 		_tableIndex = new TableIndex<string>(PathName, lowHasher, highHasher, "",
 			() => new HashListMemTable(version, maxSize: NumIndexEntries),
-			() => fakeReader,
+			fakeReader,
 			version,
-			int.MaxValue, Constants.PTableMaxReaderCountDefault,
+			int.MaxValue,
 			maxSizeForMemory: NumIndexEntries,
 			skipIndexVerify: skipIndexVerify);
 		_tableIndex.Initialize(long.MaxValue);
@@ -69,9 +68,9 @@ public class table_index_with_corrupt_index_entries_should : SpecificationWithDi
 		//load table index again
 		_tableIndex = new TableIndex<string>(PathName, lowHasher, highHasher, "",
 			() => new HashListMemTable(version, maxSize: NumIndexEntries),
-			() => fakeReader,
+			fakeReader,
 			version,
-			int.MaxValue, Constants.PTableMaxReaderCountDefault,
+			int.MaxValue,
 			maxSizeForMemory: NumIndexEntries,
 			skipIndexVerify: skipIndexVerify,
 			indexCacheDepth: 8);

@@ -10,34 +10,31 @@ These are the new features and important changes and in KurrentDB 25.1:
 
 Features
 * [Secondary Indexing](#secondary-indexing)
-* [Schema Registry](#schema-registry)
 * [Multi-stream Appends](#multi-stream-appends)
-* [Log Record Properties](#)
+* [Log Record Properties](#log-record-properties)
+* [Database Stats](#database-stats)
+* [Ad-hoc SQL Queries](#ad-hoc-sql-queries)
 * [Windows Service](#windows-service)
-* [Open Telemetry Logs Export](#open-telemetry-logs-export)
+* [OpenTelemetry Logs Export](#opentelemetry-logs-export)
 
 Changes / Improvements
-* [ServerGC](#server-garbage-collection)
+* [Server Garbage Collection](#server-garbage-collection)
 * [StreamInfoCacheCapacity default](#streaminfocachecapacity-default)
-* [Connectors Improvements](#)
-* [Archiving Improvements](#)
+* [Connectors](#connectors)
+* [Archiving](#archiving)
 * [Additional Projection Metrics](#additional-projection-metrics)
-* [Additional other metrics? incorporate? ](#)
-* [Misc Quality of Life Improvements]()
+* [Additional Persistent Subscription Metrics](#additional-persistent-subscription-metrics)
+* [Miscellaneous Quality of Life Improvements](#miscellaneous-quality-of-life-improvements)
 
 For breaking changes and deprecation notices, see the [upgrade guide](upgrade-guide.md).
 
 ### Secondary Indexing
 
-```
-TODO: Description and link to documentation.
-```
+In addition to the [default index](../features/indexes/default.md), KurrentDB v25.1 introduces default secondary indexes for categories and event types. These indexes provide functionality that is similar to the existing `$by-category` and `$by-event-type` system projections, but with significant performance and storage efficiency improvements.
 
-### Schema Registry
+Future releases will add support for custom secondary indexes, aiming to mitigate the need to use custom projections that produce link records.
 
-```
-TODO: Description and link to documentation.
-```
+Learn more about [secondary indexes](../features/indexes/secondary.md).
 
 ### Multi-stream Appends
 
@@ -45,29 +42,37 @@ The server now supports appending to multiple streams atomically in one write re
 
 Events `e1, ..., eN` can be appended to stream `s1` and events `f1, ..., fN` being appended to stream `s2`, and so on with other streams, all in one atomic operation.
 
-An optimistic concurrency check can be provided for each stream, and the write will only take effect if all of the checks are successful.
+An optimistic concurrency check can be provided for each stream, and the write operation will only succeed if all the checks are successful.
 
-Client support for this feature is in progress.
+Using this feature requires the latest client libraries that support it.
 
 ### Log record properties
 
-Historically events have been appended with optional bytes for event metadata. The server now supports receiving this data in a structured way.
+Historically events have been appended with optional bytes for event metadata. The server now supports receiving this data in a structured way. The primary goal is to allow adding and retrieving event properties without serialization and deserialization overhead. In KurrentDB, log record (event) properties are stored as key-value pairs, where keys are strings and values can be of various types (string, int, bool, etc). This makes properties close to the Headers concept that is known in HTTP, messaging systems, and other similar technologies.
 
-```
-TODO: devex to write something here
-```
+In client libraries, log record properties are surfaced as a dictionary-like structure that allows adding, retrieving, and removing properties by key. Using this feature requires the latest client libraries that support it.
 
-Client support for this feature is in progress.
+### Database stats
+
+<Badge type="info" vertical="middle" text="License Required"/>
+
+The embedded Web UI now includes a Database Stats page showing detailed statistics about database content, such as number of streams, events, etc. This feature only works with secondary indexes enabled.
+
+### Ad-hoc SQL queries
+
+<Badge type="info" vertical="middle" text="License Required"/>
+
+The embedded Web UI now includes a Queries page allowing you to run ad-hoc SQL queries against event data stored in KurrentDB. This feature only works with secondary indexes enabled. Learn more about [the Queries UI](../features/queries/ui.md).
 
 ### Windows Service
 
 KurrentDB can now be run as a Windows Service. See the [documentation](installation.md#running-as-a-service) for more information.
 
-### Open Telemetry logs export
+### OpenTelemetry logs export
 
 <Badge type="info" vertical="middle" text="License Required"/>
 
-The [Open Telemetry Integration](../diagnostics/integrations.md#opentelemetry-exporter) can now be used to export logs as well as metrics.
+The [OpenTelemetry Integration](../diagnostics/integrations.md#opentelemetry-exporter) can now be used to export logs as well as metrics.
 
 ### Server garbage collection
 
@@ -81,11 +86,25 @@ StreamInfoCache dynamic sizing was introduced introduced in v21.10 and enabled b
 
 Users wishing to keep dynamic sizing can enable it by setting StreamInfoCacheCapacity to 0. Additional can be found in the [StreamInfoCache documentation](../configuration/README.md#streaminfocachecapacity)
 
-### Connectors improvements
+### Connectors
 
-Connectors no longer periodically acquire leases, reducing the number of events they write to the database.
+#### Pulsar sink connector
 
-### Archiving Improvements
+<Badge type="info" vertical="middle" text="License Required"/>
+
+The Apache Pulsar sink connector writes events from your KurrentDB stream to a specified Pulsar topic. 
+
+Refer to the [documentation](../features/connectors/sinks/pulsar.md) for instructions on setting up a Pulsar sink.
+
+#### Connectors no longer periodically acquire leases
+
+Since connectors now run only on the leader node, leases are no longer needed and have been disabled, reducing the number of events written to the database.
+
+#### Connector headers improvements
+
+Header keys now retain their original casing when delivered to connector destinations. The default headers `esdb-record-partition-key` and `esdb-record-is-transformed` are no longer added to outgoing messages. You can also choose whether to include system headers in sink metadata.
+
+### Archiving
 
 The headers of remote chunks are now only read on demand and not on startup, improving startup times when there are a large number of remote chunks.
 
@@ -175,8 +194,8 @@ See [the documentation](../diagnostics/metrics.md#persistent-subscriptions) for 
 
 These are the new features in KurrentDB 25.0:
 
-* [Archiving](#archiving)
-* [Connectors](#connectors)
+* [Archiving](#archiving-1)
+* [Connectors](#connectors-1)
 * [KurrentDB rebranding](#kurrentdb-rebranding)
 * [New embedded Web UI](#new-embedded-web-ui)
 * [New versioning scheme and release schedule](#new-versioning-scheme-and-release-schedule)
@@ -278,7 +297,7 @@ Packages for KurrentDB will still be published to [Cloudsmith](https://cloudsmit
 
 These are the new features that were added in EventStoreDB 24.10:
 
-* [Connectors](#connectors):
+* [Connectors](#connectors-2):
     * Kafka
     * MongoDB
     * RabbitMQ

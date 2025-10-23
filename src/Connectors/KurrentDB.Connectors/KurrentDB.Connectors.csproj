@@ -30,9 +30,9 @@
 		<PackageReference Include="Kurrent.Connectors.Elasticsearch" />
 		<PackageReference Include="Kurrent.Connectors.Http" />
 		<PackageReference Include="Kurrent.Connectors.Kafka" />
-		<PackageReference Include="Kurrent.Connectors.KurrentDB" />
 		<PackageReference Include="Kurrent.Connectors.MongoDB" />
 		<PackageReference Include="Kurrent.Connectors.RabbitMQ" />
+		<PackageReference Include="Kurrent.Connectors.Pulsar" />
 		<PackageReference Include="Eventuous.Application" />
 		<PackageReference Include="Eventuous.Extensions.AspNetCore" />
 		<PackageReference Include="Eventuous.Extensions.DependencyInjection" />

@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Numerics;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,7 +17,9 @@ using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.TransactionLog.Checkpoint;
+using EventRecord = KurrentDB.Core.Data.EventRecord;
 using ILogger = Serilog.ILogger;
+using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 
 // ReSharper disable StaticMemberInGenericType
 
@@ -30,18 +31,11 @@ public abstract class StorageReaderWorker {
 
 public partial class StorageReaderWorker<TStreamId> :
 	StorageReaderWorker,
-	IAsyncHandle<ClientMessage.ReadEvent>,
-	IAsyncHandle<ClientMessage.ReadLogEvents>,
-	IAsyncHandle<ClientMessage.ReadStreamEventsBackward>,
-	IAsyncHandle<ClientMessage.ReadStreamEventsForward>,
-	IAsyncHandle<ClientMessage.ReadAllEventsForward>,
-	IAsyncHandle<ClientMessage.ReadAllEventsBackward>,
-	IAsyncHandle<ClientMessage.FilteredReadAllEventsForward>,
-	IAsyncHandle<ClientMessage.FilteredReadAllEventsBackward>,
 	IAsyncHandle<StorageMessage.EffectiveStreamAclRequest>,
 	IAsyncHandle<StorageMessage.StreamIdFromTransactionIdRequest>,
 	IHandle<StorageMessage.BatchLogExpiredMessages> {
-	private static readonly ResolvedEvent[] EmptyRecords = [];
+
+	private static IReadOnlyList<ResolvedEvent> EmptyRecords => [];
 	private static readonly char[] LinkToSeparator = ['@'];
 
 	private readonly IReadIndex<TStreamId> _readIndex;
@@ -49,12 +43,13 @@ public partial class StorageReaderWorker<TStreamId> :
 	private readonly IReadOnlyCheckpoint _writerCheckpoint;
 	private readonly IPublisher _publisher;
 	private readonly IVirtualStreamReader _virtualStreamReader;
+	private readonly CancellationTokenMultiplexer _multiplexer;
 	private readonly SecondaryIndexReaders _secondaryIndexReaders;
-	private readonly IBinaryInteger<int> _queueId;
 	private const int MaxPageSize = 4096;
-	private DateTime? _lastExpireTime;
-	private long _expiredBatchCount;
-	private bool _batchLoggingEnabled;
+
+	private readonly Message _scheduleBatchPeriodCompletion;
+	private Atomic.Boolean _expiryPeriodRunning;
+	private long _messagesExpiredInPeriod;
 
 	public StorageReaderWorker(
 		IPublisher publisher,
@@ -62,48 +57,38 @@ public partial class StorageReaderWorker<TStreamId> :
 		ISystemStreamLookup<TStreamId> systemStreams,
 		IReadOnlyCheckpoint writerCheckpoint,
 		IVirtualStreamReader virtualStreamReader,
-		SecondaryIndexReaders secondaryIndexReaders,
-		int queueId) {
+		SecondaryIndexReaders secondaryIndexReaders) {
+
 		_publisher = publisher;
 		_readIndex = Ensure.NotNull(readIndex);
 		_systemStreams = Ensure.NotNull(systemStreams);
 		_writerCheckpoint = Ensure.NotNull(writerCheckpoint);
 		_virtualStreamReader = virtualStreamReader;
 		_secondaryIndexReaders = secondaryIndexReaders;
-		_queueId = queueId;
+
+		_multiplexer = new() { MaximumRetained = 100 };
+		_scheduleBatchPeriodCompletion = TimerMessage.Schedule.Create(
+			TimeSpan.FromSeconds(10),
+			_publisher,
+			new StorageMessage.BatchLogExpiredMessages());
 	}
 
 	async ValueTask IAsyncHandle<StorageMessage.EffectiveStreamAclRequest>.HandleAsync(StorageMessage.EffectiveStreamAclRequest msg, CancellationToken token) {
 		Message reply;
-		var cts = token.LinkTo(msg.CancellationToken);
+		var cts = _multiplexer.Combine([token, msg.CancellationToken]);
 
 		try {
-			var acl = await _readIndex.GetEffectiveAcl(_readIndex.GetStreamId(msg.StreamId), token);
+			var acl = await _readIndex.GetEffectiveAcl(_readIndex.GetStreamId(msg.StreamId), cts.Token);
 			reply = new StorageMessage.EffectiveStreamAclResponse(acl);
-		} catch (OperationCanceledException e) when (e.CausedBy(cts, msg.CancellationToken)) {
+		} catch (OperationCanceledException ex) when (ex.CausedBy(cts, msg.CancellationToken)) {
 			reply = new StorageMessage.OperationCancelledMessage(msg.CancellationToken);
-		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts?.Token) {
+		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts.Token) {
 			throw new OperationCanceledException(null, ex, cts.CancellationOrigin);
 		} finally {
-			cts?.Dispose();
+			await cts.DisposeAsync();
 		}
 
 		msg.Envelope.ReplyWith(reply);
-	}
-
-
-	public void Handle(StorageMessage.BatchLogExpiredMessages message) {
-		if (!_batchLoggingEnabled)
-			return;
-		if (_expiredBatchCount == 0) {
-			_batchLoggingEnabled = false;
-			Log.Warning("StorageReaderWorker #{0}: Batch logging disabled, read load is back to normal", _queueId);
-			return;
-		}
-
-		Log.Warning("StorageReaderWorker #{0}: {1} read operations have expired", _queueId, _expiredBatchCount);
-		_expiredBatchCount = 0;
-		_publisher.Publish(TimerMessage.Schedule.Create(TimeSpan.FromSeconds(2), _publisher, new StorageMessage.BatchLogExpiredMessages(_queueId)));
 	}
 
 	private async ValueTask<IReadOnlyList<ResolvedEvent>> ResolveLinkToEvents(IReadOnlyList<EventRecord> records, bool resolveLinks, ClaimsPrincipal user, CancellationToken token) {
@@ -170,56 +155,41 @@ public partial class StorageReaderWorker<TStreamId> :
 		return result;
 	}
 
-	private bool LogExpiredMessage(DateTime expire) {
-		if (!_lastExpireTime.HasValue) {
-			_expiredBatchCount = 1;
-			_lastExpireTime = expire;
-			return true;
-		}
+	public void Handle(StorageMessage.BatchLogExpiredMessages message) {
+		_expiryPeriodRunning.Value = false;
+		var count = Interlocked.Exchange(ref _messagesExpiredInPeriod, 0);
+		Log.Warning("StorageReader {0} read operations expired during the period", count);
+	}
 
-		if (_batchLoggingEnabled) {
-			_expiredBatchCount++;
-			_lastExpireTime = expire;
-			return false;
-		}
+	// Counts expired messages and ensures the count is logged at the end of the period.
+	// Returns whether the caller should additionally log a detailed message (limited to 5 per period).
+	// Can run concurrently with the handling of BatchLogExpiredMessages.
+	private bool LogExpiredMessage() {
+		const int MaxDetailedExpiriesPerPeriod = 5;
+		var count = Interlocked.Increment(ref _messagesExpiredInPeriod);
 
-		_expiredBatchCount++;
-		if (_expiredBatchCount < 50)
-			return true;
+		if (count == MaxDetailedExpiriesPerPeriod + 1)
+			Log.Warning("StorageReaderWorker: High rate of expired read messages detected. Stopping detailed expiry logs for remainder of period.");
 
-		if (expire - _lastExpireTime.Value > TimeSpan.FromSeconds(1)) {
-			_expiredBatchCount = 1;
-			_lastExpireTime = expire;
+		if (_expiryPeriodRunning.FalseToTrue())
+			_publisher.Publish(_scheduleBatchPeriodCompletion);
 
-			return true;
-		}
-
-		//heuristic to match approximately >= 50 expired messages / second
-		_batchLoggingEnabled = true;
-		Log.Warning("StorageReaderWorker #{0}: Batch logging enabled, high rate of expired read messages detected", _queueId);
-		_publisher.Publish(
-			TimerMessage.Schedule.Create(TimeSpan.FromSeconds(2),
-				_publisher,
-				new StorageMessage.BatchLogExpiredMessages(_queueId))
-		);
-		_expiredBatchCount = 1;
-		_lastExpireTime = expire;
-		return false;
+		return count <= MaxDetailedExpiriesPerPeriod;
 	}
 
 	async ValueTask IAsyncHandle<StorageMessage.StreamIdFromTransactionIdRequest>.HandleAsync(StorageMessage.StreamIdFromTransactionIdRequest message, CancellationToken token) {
-		var cts = token.LinkTo(message.CancellationToken);
+		var cts = _multiplexer.Combine([token, message.CancellationToken]);
 		Message reply;
 		try {
-			var streamId = await _readIndex.GetEventStreamIdByTransactionId(message.TransactionId, token);
-			var streamName = await _readIndex.GetStreamName(streamId, token);
+			var streamId = await _readIndex.GetEventStreamIdByTransactionId(message.TransactionId, cts.Token);
+			var streamName = await _readIndex.GetStreamName(streamId, cts.Token);
 			reply = new StorageMessage.StreamIdFromTransactionIdResponse(streamName);
 		} catch (OperationCanceledException ex) when (ex.CausedBy(cts, message.CancellationToken)) {
 			reply = new StorageMessage.OperationCancelledMessage(message.CancellationToken);
-		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts?.Token) {
+		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts.Token) {
 			throw new OperationCanceledException(null, ex, cts.CancellationOrigin);
 		} finally {
-			cts?.Dispose();
+			await cts.DisposeAsync();
 		}
 
 		message.Envelope.ReplyWith(reply);

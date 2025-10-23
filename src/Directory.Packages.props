@@ -10,10 +10,10 @@
     <PackageVersion Include="DiffEngine" Version="16.7.1" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="Dapper" Version="2.1.66" />
-    <PackageVersion Include="DotNext" Version="5.24.0" />
-    <PackageVersion Include="DotNext.IO" Version="5.24.0" />
-    <PackageVersion Include="DotNext.Threading" Version="5.24.0" />
-    <PackageVersion Include="DotNext.Unsafe" Version="5.24.0" />
+		<PackageVersion Include="DotNext" Version="5.25.1" />
+		<PackageVersion Include="DotNext.IO" Version="5.25.0" />
+		<PackageVersion Include="DotNext.Threading" Version="5.25.2" />
+		<PackageVersion Include="DotNext.Unsafe" Version="5.25.0" />
     <PackageVersion Include="Ductus.FluentDocker" Version="2.85.0" />
     <PackageVersion Include="Ductus.FluentDocker.XUnit" Version="2.85.0" />
     <PackageVersion Include="DuckDB.NET.Data.Full" Version="1.3.2" />
@@ -25,13 +25,16 @@
     <PackageVersion Include="Eventuous.Testing" Version="0.15.0" />
     <PackageVersion Include="Extensions.MudBlazor.StaticInput" Version="3.2.1" />
     <PackageVersion Include="FluentAssertions" Version="6.12.2" />
-    <PackageVersion Include="FluentAssertions.Analyzers" Version="0.34.1" />
+    <PackageVersion Include="FluentAssertions.Analyzers" Version="0.33.0" />
     <PackageVersion Include="FluentStorage" Version="5.6.0" />
     <PackageVersion Include="FluentStorage.AWS" Version="5.5.0" />
+		<PackageVersion Include="Azure.Storage.Blobs" Version="12.25.1" />
+		<PackageVersion Include="Azure.Identity" Version="1.16.0" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
     <PackageVersion Include="GitHubActionsTestLogger" Version="2.4.1" />
     <PackageVersion Include="GitInfo" Version="3.3.3" />
     <PackageVersion Include="Google.Api.CommonProtos" Version="2.17.0" />
+    <PackageVersion Include="Google.Cloud.Storage.V1" Version="4.13.0" />
     <PackageVersion Include="Google.Protobuf" Version="3.32.1" />
     <PackageVersion Include="Grpc.AspNetCore" Version="2.71.0" />
     <PackageVersion Include="Grpc.AspNetCore.Web" Version="2.71.0" />
@@ -45,16 +48,16 @@
     <PackageVersion Include="IgnoresAccessChecksToGenerator" Version="0.8.0" />
     <PackageVersion Include="JetBrains.Annotations" Version="2025.2.2" />
     <PackageVersion Include="Jint" Version="4.0.3" />
-    <PackageVersion Include="Kurrent.Connectors.Elasticsearch" Version="1.1.1-alpha.1.1" />
-    <PackageVersion Include="Kurrent.Connectors.Http" Version="1.1.1-alpha.1.1" />
-    <PackageVersion Include="Kurrent.Connectors.Kafka" Version="1.1.1-alpha.1.1" />
-    <PackageVersion Include="Kurrent.Connectors.KurrentDB" Version="1.1.1-alpha.1.1" />
-    <PackageVersion Include="Kurrent.Connectors.MongoDB" Version="1.1.1-alpha.1.1" />
-    <PackageVersion Include="Kurrent.Connectors.RabbitMQ" Version="1.1.1-alpha.1.1" />
-    <PackageVersion Include="Kurrent.Surge" Version="1.1.1-alpha.1.24" />
-    <PackageVersion Include="Kurrent.Surge.Core" Version="1.1.1-alpha.1.24" />
-    <PackageVersion Include="Kurrent.Surge.DataProtection" Version="1.1.1-alpha.1.24" />
-    <PackageVersion Include="Kurrent.Surge.DuckDB" Version="1.1.1-alpha.1.24" />
+    <PackageVersion Include="Kurrent.Connectors.Elasticsearch" Version="1.1.1-alpha.1.30" />
+    <PackageVersion Include="Kurrent.Connectors.Http" Version="1.1.1-alpha.1.30" />
+    <PackageVersion Include="Kurrent.Connectors.Kafka" Version="1.1.1-alpha.1.30" />
+    <PackageVersion Include="Kurrent.Connectors.MongoDB" Version="1.1.1-alpha.1.30" />
+    <PackageVersion Include="Kurrent.Connectors.RabbitMQ" Version="1.1.1-alpha.1.30" />
+    <PackageVersion Include="Kurrent.Connectors.Pulsar" Version="1.1.1-alpha.1.30" />
+    <PackageVersion Include="Kurrent.Surge" Version="1.1.1-alpha.1.30" />
+    <PackageVersion Include="Kurrent.Surge.Core" Version="1.1.1-alpha.1.30" />
+    <PackageVersion Include="Kurrent.Surge.DataProtection" Version="1.1.1-alpha.1.30" />
+    <PackageVersion Include="Kurrent.Surge.DuckDB" Version="1.1.1-alpha.1.30" />
     <PackageVersion Include="Kurrent.Quack" Version="0.0.0-alpha.79" />
     <PackageVersion Include="KurrentDB.Client" Version="1.0.0" />
     <PackageVersion Include="librdkafka.redist" Version="2.5.0" />

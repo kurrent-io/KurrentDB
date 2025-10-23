@@ -4,16 +4,18 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using DotNext;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Exceptions;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
 using static KurrentDB.Core.Messages.ClientMessage;
+using static KurrentDB.Core.Messages.SubscriptionMessage;
 
 namespace KurrentDB.Core.Services.Storage;
 
-public partial class StorageReaderWorker<TStreamId> {
+partial class StorageReaderWorker<TStreamId> : IAsyncHandle<FilteredReadAllEventsForward>,
+	IAsyncHandle<FilteredReadAllEventsBackward> {
 	async ValueTask IAsyncHandle<FilteredReadAllEventsForward>.HandleAsync(FilteredReadAllEventsForward msg, CancellationToken token) {
 		if (msg.CancellationToken.IsCancellationRequested)
 			return;
@@ -35,27 +37,22 @@ public partial class StorageReaderWorker<TStreamId> {
 
 		var res = await FilteredReadAllEventsForward(msg, token);
 		switch (res.Result) {
-			case FilteredReadAllResult.Success:
-				if (msg.LongPollTimeout.HasValue && res.IsEndOfStream && res.Events.Count is 0) {
-					_publisher.Publish(new SubscriptionMessage.PollStream(
-						SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
-						DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
-				} else
-					msg.Envelope.ReplyWith(res);
+			case FilteredReadAllResult.Success
+				when msg.LongPollTimeout is { } longPollTimeout && res is { IsEndOfStream: true, Events: [] }:
+			case FilteredReadAllResult.NotModified
+				when msg.LongPollTimeout.TryGetValue(out longPollTimeout)
+				     && res.IsEndOfStream
+				     && res.CurrentPos.CommitPosition > res.TfLastCommitPosition:
+				_publisher.Publish(new PollStream(
+					SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
+					DateTime.UtcNow + longPollTimeout, msg));
 
 				break;
-			case FilteredReadAllResult.NotModified:
-				if (msg.LongPollTimeout.HasValue && res.IsEndOfStream && res.CurrentPos.CommitPosition > res.TfLastCommitPosition) {
-					_publisher.Publish(new SubscriptionMessage.PollStream(
-						SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
-						DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
-				} else
-					msg.Envelope.ReplyWith(res);
-
-				break;
-			case FilteredReadAllResult.Error:
-			case FilteredReadAllResult.AccessDenied:
-			case FilteredReadAllResult.InvalidPosition:
+			case FilteredReadAllResult.Error
+				or FilteredReadAllResult.AccessDenied
+				or FilteredReadAllResult.InvalidPosition
+				or FilteredReadAllResult.Success
+				or FilteredReadAllResult.NotModified:
 				msg.Envelope.ReplyWith(res);
 				break;
 			default:
@@ -84,27 +81,22 @@ public partial class StorageReaderWorker<TStreamId> {
 
 		var res = await FilteredReadAllEventsBackward(msg, token);
 		switch (res.Result) {
-			case FilteredReadAllResult.Success:
-				if (msg.LongPollTimeout.HasValue && res.IsEndOfStream && res.Events.Count is 0) {
-					_publisher.Publish(new SubscriptionMessage.PollStream(
-						SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
-						DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
-				} else
-					msg.Envelope.ReplyWith(res);
+			case FilteredReadAllResult.Success
+				when msg.LongPollTimeout is { } longPollTimeout && res is { IsEndOfStream: true, Events: [] }:
+			case FilteredReadAllResult.NotModified
+				when msg.LongPollTimeout.TryGetValue(out longPollTimeout)
+				     && res.IsEndOfStream
+				     && res.CurrentPos.CommitPosition > res.TfLastCommitPosition:
+				_publisher.Publish(new PollStream(
+					SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
+					DateTime.UtcNow + longPollTimeout, msg));
 
 				break;
-			case FilteredReadAllResult.NotModified:
-				if (msg.LongPollTimeout.HasValue && res.IsEndOfStream && res.CurrentPos.CommitPosition > res.TfLastCommitPosition) {
-					_publisher.Publish(new SubscriptionMessage.PollStream(
-						SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
-						DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
-				} else
-					msg.Envelope.ReplyWith(res);
-
-				break;
-			case FilteredReadAllResult.Error:
-			case FilteredReadAllResult.AccessDenied:
-			case FilteredReadAllResult.InvalidPosition:
+			case FilteredReadAllResult.Error
+				or FilteredReadAllResult.AccessDenied
+				or FilteredReadAllResult.InvalidPosition
+				or FilteredReadAllResult.Success
+				or FilteredReadAllResult.NotModified:
 				msg.Envelope.ReplyWith(res);
 				break;
 			default:

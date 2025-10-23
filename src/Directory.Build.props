@@ -14,7 +14,7 @@
 		<LangVersion>14.0</LangVersion>
 		<Platforms>AnyCPU;x64;ARM64</Platforms>
 		<IsPackable>false</IsPackable>
-		<VersionPrefix>25.1.0</VersionPrefix>
+		<VersionPrefix>26.0.0</VersionPrefix>
 		<VersionSuffix>prerelease</VersionSuffix>
 		<IsTestProject>false</IsTestProject>
 		<!-- Adjust for SYSLIB0057 separately to .NET 10 upgrade -->

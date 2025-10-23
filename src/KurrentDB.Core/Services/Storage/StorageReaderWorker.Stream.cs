@@ -4,17 +4,17 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using DotNext.Threading;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using static KurrentDB.Core.Messages.ClientMessage;
+using static KurrentDB.Core.Messages.SubscriptionMessage;
 using ReadStreamResult = KurrentDB.Core.Data.ReadStreamResult;
 
 namespace KurrentDB.Core.Services.Storage;
 
-public partial class StorageReaderWorker<TStreamId> {
+partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadStreamEventsBackward>,
+	IAsyncHandle<ReadStreamEventsForward> {
 	async ValueTask IAsyncHandle<ReadStreamEventsForward>.HandleAsync(ReadStreamEventsForward msg, CancellationToken token) {
 		if (msg.CancellationToken.IsCancellationRequested)
 			return;
@@ -26,7 +26,7 @@ public partial class StorageReaderWorker<TStreamId> {
 					ResolvedEvent.EmptyArray, default, default, default, -1, default, true, default));
 			}
 
-			if (LogExpiredMessage(msg.Expires))
+			if (LogExpiredMessage())
 				Log.Debug(
 					"Read Stream Events Forward operation has expired for Stream: {stream}, From Event Number: {fromEventNumber}, Max Count: {maxCount}. Operation Expired at {expiryDateTime} after {lifetime:N0} ms.",
 					msg.EventStreamId, msg.FromEventNumber, msg.MaxCount, msg.Expires, msg.Lifetime.TotalMilliseconds);
@@ -34,33 +34,33 @@ public partial class StorageReaderWorker<TStreamId> {
 		}
 
 		ReadStreamEventsForwardCompleted res;
-		var cts = token.LinkTo(msg.CancellationToken);
+		var cts = _multiplexer.Combine([token, msg.CancellationToken]);
 		try {
-			res = SystemStreams.IsInMemoryStream(msg.EventStreamId)
-				? await _virtualStreamReader.ReadForwards(msg, token)
-				: await ReadStreamEventsForward(msg, token);
-		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts?.Token) {
+			res = await (SystemStreams.IsInMemoryStream(msg.EventStreamId)
+				? _virtualStreamReader.ReadForwards(msg, cts.Token)
+				: ReadStreamEventsForward(msg, cts.Token));
+		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts.Token) {
 			throw new OperationCanceledException(null, ex, cts.CancellationOrigin);
 		} finally {
-			cts?.Dispose();
+			await cts.DisposeAsync();
 		}
 
 		switch (res.Result) {
-			case ReadStreamResult.Success:
-			case ReadStreamResult.NoStream:
-			case ReadStreamResult.NotModified:
-				if (msg.LongPollTimeout.HasValue && res.FromEventNumber > res.LastEventNumber) {
-					_publisher.Publish(new SubscriptionMessage.PollStream(
-						msg.EventStreamId, res.TfLastCommitPosition, res.LastEventNumber,
-						DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
-				} else {
-					msg.Envelope.ReplyWith(res);
-				}
+			case ReadStreamResult.Success
+				or ReadStreamResult.NoStream
+				or ReadStreamResult.NotModified
+				when msg.LongPollTimeout is { } longPollTimeout && res.FromEventNumber > res.LastEventNumber:
+				_publisher.Publish(new PollStream(
+					msg.EventStreamId, res.TfLastCommitPosition, res.LastEventNumber,
+					DateTime.UtcNow + longPollTimeout, msg));
 
 				break;
-			case ReadStreamResult.StreamDeleted:
-			case ReadStreamResult.Error:
-			case ReadStreamResult.AccessDenied:
+			case ReadStreamResult.StreamDeleted
+				or ReadStreamResult.Error
+				or ReadStreamResult.AccessDenied
+				or ReadStreamResult.Success
+				or ReadStreamResult.NoStream
+				or ReadStreamResult.NotModified:
 				msg.Envelope.ReplyWith(res);
 				break;
 			default:
@@ -68,7 +68,8 @@ public partial class StorageReaderWorker<TStreamId> {
 		}
 	}
 
-	async ValueTask IAsyncHandle<ReadStreamEventsBackward>.HandleAsync(ReadStreamEventsBackward msg, CancellationToken token) {
+	async ValueTask IAsyncHandle<ReadStreamEventsBackward>.HandleAsync(
+		ReadStreamEventsBackward msg, CancellationToken token) {
 		if (msg.CancellationToken.IsCancellationRequested)
 			return;
 
@@ -79,25 +80,26 @@ public partial class StorageReaderWorker<TStreamId> {
 					ResolvedEvent.EmptyArray, default, default, default, -1, default, true, default));
 			}
 
-			if (LogExpiredMessage(msg.Expires))
+			if (LogExpiredMessage())
 				Log.Debug(
 					"Read Stream Events Backward operation has expired for Stream: {stream}, From Event Number: {fromEventNumber}, Max Count: {maxCount}. Operation Expired at {expiryDateTime} after {lifetime:N0} ms.",
 					msg.EventStreamId, msg.FromEventNumber, msg.MaxCount, msg.Expires, msg.Lifetime.TotalMilliseconds);
 			return;
 		}
 
-		var cts = token.LinkTo(msg.CancellationToken);
+		var cts = _multiplexer.Combine([token, msg.CancellationToken]);
+		ReadStreamEventsBackwardCompleted res;
 		try {
-			var res = SystemStreams.IsInMemoryStream(msg.EventStreamId)
-				? await _virtualStreamReader.ReadBackwards(msg, token)
-				: await ReadStreamEventsBackward(msg, token);
-
-			msg.Envelope.ReplyWith(res);
-		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts?.Token) {
+			res = await (SystemStreams.IsInMemoryStream(msg.EventStreamId)
+				? _virtualStreamReader.ReadBackwards(msg, cts.Token)
+				: ReadStreamEventsBackward(msg, cts.Token));
+		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts.Token) {
 			throw new OperationCanceledException(null, ex, cts.CancellationOrigin);
 		} finally {
-			cts?.Dispose();
+			await cts.DisposeAsync();
 		}
+
+		msg.Envelope.ReplyWith(res);
 	}
 
 	private async ValueTask<ReadStreamEventsForwardCompleted> ReadStreamEventsForward(ReadStreamEventsForward msg, CancellationToken token) {
@@ -109,17 +111,16 @@ public partial class StorageReaderWorker<TStreamId> {
 
 			var streamName = msg.EventStreamId;
 			var streamId = _readIndex.GetStreamId(msg.EventStreamId);
-			if (msg.ValidationStreamVersion.HasValue &&
-				await _readIndex.GetStreamLastEventNumber(streamId, token) == msg.ValidationStreamVersion)
-				return NoData(ReadStreamResult.NotModified, lastIndexPosition, msg.ValidationStreamVersion.Value);
+			if (msg.ValidationStreamVersion is { } streamVer &&
+			    await _readIndex.GetStreamLastEventNumber(streamId, token) == streamVer)
+				return NoData(ReadStreamResult.NotModified, lastIndexPosition, streamVer);
 
 			var result = await _readIndex.ReadStreamEventsForward(streamName, streamId, msg.FromEventNumber, msg.MaxCount, token);
 			CheckEventsOrder(msg, result);
 			if (await ResolveLinkToEvents(result.Records, msg.ResolveLinkTos, msg.User, token) is not { } resolvedPairs)
 				return NoData(ReadStreamResult.AccessDenied, lastIndexPosition);
 
-			return new ReadStreamEventsForwardCompleted(
-				msg.CorrelationId, msg.EventStreamId, msg.FromEventNumber, msg.MaxCount,
+			return new(msg.CorrelationId, msg.EventStreamId, msg.FromEventNumber, msg.MaxCount,
 				(ReadStreamResult)result.Result, resolvedPairs, result.Metadata, false, string.Empty,
 				result.NextEventNumber, result.LastEventNumber, result.IsEndOfStream, lastIndexPosition);
 		} catch (Exception exc) when (exc is not OperationCanceledException oce || oce.CancellationToken != token) {
@@ -151,17 +152,16 @@ public partial class StorageReaderWorker<TStreamId> {
 
 			var streamName = msg.EventStreamId;
 			var streamId = _readIndex.GetStreamId(msg.EventStreamId);
-			if (msg.ValidationStreamVersion.HasValue &&
-				await _readIndex.GetStreamLastEventNumber(streamId, token) == msg.ValidationStreamVersion)
-				return NoData(ReadStreamResult.NotModified, msg.ValidationStreamVersion.Value);
+			if (msg.ValidationStreamVersion is { } streamVer &&
+			    await _readIndex.GetStreamLastEventNumber(streamId, token) == streamVer)
+				return NoData(ReadStreamResult.NotModified, streamVer);
 
 			var result = await _readIndex.ReadStreamEventsBackward(streamName, streamId, msg.FromEventNumber, msg.MaxCount, token);
 			CheckEventsOrder(msg, result);
 			if (await ResolveLinkToEvents(result.Records, msg.ResolveLinkTos, msg.User, token) is not { } resolvedPairs)
 				return NoData(ReadStreamResult.AccessDenied);
 
-			return new ReadStreamEventsBackwardCompleted(
-				msg.CorrelationId, msg.EventStreamId, result.FromEventNumber, result.MaxCount,
+			return new(msg.CorrelationId, msg.EventStreamId, result.FromEventNumber, result.MaxCount,
 				(ReadStreamResult)result.Result, resolvedPairs, result.Metadata, false, string.Empty,
 				result.NextEventNumber, result.LastEventNumber, result.IsEndOfStream, lastIndexedPosition);
 		} catch (Exception exc) when (exc is not OperationCanceledException oce || oce.CancellationToken != token) {
