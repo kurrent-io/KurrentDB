@@ -12,5 +12,3 @@ create table if not exists idx_all (
 	schema_id varchar null,
 	schema_format varchar not null
 );
-
-create index if not exists idx_stream on idx_all (stream);
