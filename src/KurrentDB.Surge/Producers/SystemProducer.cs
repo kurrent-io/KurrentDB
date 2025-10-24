@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+// ReSharper disable ArrangeTypeMemberModifiers
+
 using DotNext;
 using Kurrent.Surge;
 using Kurrent.Surge.Interceptors;
@@ -11,6 +13,7 @@ using Kurrent.Surge.Schema.Serializers;
 using KurrentDB.Core;
 using KurrentDB.Core.Data;
 using Polly;
+using StreamRevision = Kurrent.Surge.StreamRevision;
 
 namespace KurrentDB.Surge.Producers;
 
@@ -45,13 +48,13 @@ public class SystemProducer : IProducer {
             .Build();
     }
 
-    SystemProducerOptions              Options            { get; }
-    ISystemClient                      Client             { get; }
-    Serialize                          Serialize          { get; }
-    ManualResetEventSlim               Flushing           { get; }
-    InterceptorController              Interceptors       { get; }
-    Func<ProducerLifecycleEvent, Task> Intercept          { get; }
-    ResiliencePipeline                 ResiliencePipeline { get; }
+    SystemProducerOptions Options { get; }
+    ISystemClient Client { get; }
+    Serialize Serialize { get; }
+    ManualResetEventSlim Flushing { get; }
+    InterceptorController Interceptors { get; }
+    Func<ProducerLifecycleEvent, Task> Intercept { get; }
+    ResiliencePipeline ResiliencePipeline { get; }
 
     public string  ProducerId       => Options.ProducerId;
     public string  ClientId         => Options.ClientId;
@@ -59,107 +62,200 @@ public class SystemProducer : IProducer {
     public int     InFlightMessages => 0;
 
     public Task Produce(ProduceRequest request, OnProduceResult onResult) =>
-        ProduceInternal(request, new ProduceResultCallback(onResult));
+	    Produce(request, new ProduceResultCallback(onResult));
 
     public Task Produce<TState>(ProduceRequest request, OnProduceResult<TState> onResult, TState state) =>
-        ProduceInternal(request, new ProduceResultCallback<TState>(onResult, state));
+	    Produce(request, new ProduceResultCallback<TState>(onResult, state));
 
     public Task Produce<TState>(ProduceRequest request, ProduceResultCallback<TState> callback) =>
-        ProduceInternal(request, callback);
+	    ProduceInternal([request], callback);
 
     public Task Produce(ProduceRequest request, ProduceResultCallback callback) =>
-        ProduceInternal(request, callback);
+	    ProduceInternal([request], callback);
 
-    async Task ProduceInternal(ProduceRequest request, IProduceResultCallback callback) {
-        Ensure.NotDefault(request, ProduceRequest.Empty);
-        Ensure.NotNull(callback);
+    public Task Produce(ProduceRequest[] requests, OnProduceResult onResult) =>
+	    ProduceInternal(requests, new ProduceResultCallback(onResult));
 
-        if (request.Messages.Count == 0)
-            throw new Exception("No events received");
+    public Task Produce<TState>(ProduceRequest[] requests, OnProduceResult<TState> onResult, TState state) =>
+	    ProduceInternal(requests, new ProduceResultCallback<TState>(onResult, state));
 
-        var validRequest = request.EnsureStreamIsSet(Options.DefaultStream);
+    async Task ProduceInternal(ProduceRequest[] requests, IProduceResultCallback callback) {
+	    Ensure.NotNull(requests);
+	    Ensure.NotNull(callback);
 
-        await Intercept(new ProduceRequestReceived(this, validRequest));
+	    if (requests.Length == 0)
+		    throw new ArgumentException("No requests provided", nameof(requests));
 
-        Flushing.Wait();
+	    foreach (var request in requests) {
+		    Ensure.NotDefault(request, ProduceRequest.Empty);
+		    if (request.Messages.Count == 0)
+			    throw new Exception("No events in request for stream");
+	    }
 
-        var events = await validRequest
-            .ToEvents(
-                headers => headers
-                    .Set(HeaderKeys.ProducerId, ProducerId)
-                    .Set(HeaderKeys.ProducerRequestId, validRequest.RequestId),
-                Serialize
-            );
+	    var validRequests = requests.Select(r => r.EnsureStreamIsSet(Options.DefaultStream)).ToArray();
 
-        await Intercept(new ProduceRequestReady(this, request));
+	    foreach (var request in validRequests)
+		    await Intercept(new ProduceRequestReceived(this, request));
 
-        var expectedRevision = request.ExpectedStreamRevision != StreamRevision.Unset
-            ? request.ExpectedStreamRevision.Value
-            : request.ExpectedStreamState switch {
-                StreamState.Missing => ExpectedVersion.NoStream,
-                StreamState.Exists  => ExpectedVersion.StreamExists,
-                StreamState.Any     => ExpectedVersion.Any,
-                _ => throw new ArgumentOutOfRangeException(nameof(request.ExpectedStreamState), request.ExpectedStreamState, null)
-            };
+	    Flushing.Wait();
 
-        var result = await WriteEvents(Client, validRequest, events, expectedRevision, ResiliencePipeline);
+	    await ProcessRequest(validRequests, callback);
+    }
 
-        await Intercept(new ProduceRequestProcessed(this, result));
+    async ValueTask ProcessRequest(ProduceRequest request, IProduceResultCallback callback) {
+	    var expectedRevision = request.ExpectedStreamRevision != StreamRevision.Unset
+		    ? request.ExpectedStreamRevision.Value
+		    : request.ExpectedStreamState switch {
+			    StreamState.Missing => ExpectedVersion.NoStream,
+			    StreamState.Exists => ExpectedVersion.StreamExists,
+			    StreamState.Any => ExpectedVersion.Any,
+			    _ => throw new ArgumentOutOfRangeException(nameof(request.ExpectedStreamState), request.ExpectedStreamState, null)
+		    };
 
-        try {
-            await callback.Execute(result);
-        } catch (Exception uex) {
-            await Intercept(new ProduceRequestCallbackError(this, result, uex));
-        }
+	    var events = await request.ToEvents(
+		    headers => headers
+			    .Set(HeaderKeys.ProducerId, ProducerId)
+			    .Set(HeaderKeys.ProducerRequestId, request.RequestId),
+		    Serialize
+	    );
 
-        return;
+	    await Intercept(new ProduceRequestReady(this, request));
 
-        static async Task<ProduceResult> WriteEvents(ISystemClient client, ProduceRequest request, Event[] events, long expectedRevision, ResiliencePipeline resiliencePipeline) {
-            var state = (Client: client, Request: request, Events: events, ExpectedRevision: expectedRevision);
+	    var result = await WriteEvents(Client, request, events, expectedRevision, ResiliencePipeline);
 
-            try {
-                return await resiliencePipeline.ExecuteAsync(
-                    static async (state, token) => {
-                        var result = await WriteEvents(state.Client, state.Request, state.Events, state.ExpectedRevision, token);
+	    await Intercept(new ProduceRequestProcessed(this, result));
 
-                        // If it is the wrong version but the stream is empty,
-                        // it means the stream was deleted or truncated.
-                        // Therefore, we can retry immediately
-                        if (state.Request.ExpectedStreamState == StreamState.Missing && result.Error is ExpectedStreamRevisionError revisionError) {
-                            result = await state.Client
-                                .Reading
-                                .ReadStreamLastEvent(state.Request.Stream, CancellationToken.None)
-                                .Then(async re => re is null || re == ResolvedEvent.EmptyEvent
-                                    ? await WriteEvents(state.Client, state.Request, state.Events, revisionError.ActualStreamRevision, token)
-                                    : result);
-                        }
+	    try {
+		    await callback.Execute(result);
+	    } catch (Exception uex) {
+		    await Intercept(new ProduceRequestCallbackError(this, result, uex));
+	    }
 
-                        return result.Error is null ? result : throw result.Error;
-                    }, state
-                );
-            }
-            // we have to recreate the error result... must rethink this
-            catch (StreamingError err) {
-                return ProduceResult.Failed(request, err);
-            }
+	    return;
 
-            static async Task<ProduceResult> WriteEvents(ISystemClient client, ProduceRequest request, Event[] events, long expectedRevision, CancellationToken cancellationToken) {
-                try {
-                    var (position, streamRevision) = await client.Writing.WriteEvents(request.Stream, events, expectedRevision, cancellationToken);
+	    static async ValueTask<ProduceResult> WriteEvents(
+		    ISystemClient client,
+		    ProduceRequest request,
+		    Event[] events,
+		    long expectedRevision,
+		    ResiliencePipeline resiliencePipeline) {
+		    var state = (Client: client, Request: request, Events: events, ExpectedRevision: expectedRevision);
 
-                    var recordPosition = RecordPosition.ForStream(
-                        StreamId.From(request.Stream),
-                        StreamRevision.From(streamRevision.ToInt64()),
-                        LogPosition.From(position.CommitPosition, position.PreparePosition)
-                    );
+		    try {
+			    return await resiliencePipeline.ExecuteAsync(static async (state, token) => {
+				    var result = await WriteEvents(
+					    state.Client,
+					    state.Request,
+					    state.Events,
+					    state.ExpectedRevision,
+					    token);
 
-                    return ProduceResult.Succeeded(request, recordPosition);
-                }
-                catch (Exception ex) {
-                    return ProduceResult.Failed(request, ex.ToProducerStreamingError(request.Stream));
-                }
-            }
-        }
+				    return result.Error is null ? result : throw result.Error;
+			    }, state);
+		    } catch (StreamingError err) {
+			    return ProduceResult.Failed(request, err);
+		    }
+
+		    static async ValueTask<ProduceResult> WriteEvents(
+			    ISystemClient client,
+			    ProduceRequest request,
+			    Event[] events,
+			    long expectedRevision,
+			    CancellationToken cancellationToken) {
+			    try {
+				    var (position, streamRevision) = await client.Writing.WriteEvents(
+					    request.Stream,
+					    events,
+					    expectedRevision,
+					    cancellationToken);
+
+				    var recordPosition = RecordPosition.ForStream(
+					    StreamId.From(request.Stream),
+					    StreamRevision.From(streamRevision.ToInt64()),
+					    LogPosition.From(position.CommitPosition, position.PreparePosition)
+				    );
+
+				    return ProduceResult.Succeeded(request, recordPosition);
+			    } catch (Exception ex) {
+				    return ProduceResult.Failed(request, ex.ToProducerStreamingError(request.Stream));
+			    }
+		    }
+	    }
+    }
+
+    async ValueTask ProcessRequest(ProduceRequest[] requests, IProduceResultCallback callback) {
+	    var streamIds = requests.Select(r => r.Stream).ToArray();
+	    var expectedVersions = requests.Select(GetExpectedVersion).ToArray();
+	    var allEvents = new List<Event>();
+	    var streamIndexes = new List<int>();
+
+	    for (var i = 0; i < requests.Length; i++) {
+			var events = await requests[i].ToEvents(
+				headers => headers
+					.Set(HeaderKeys.ProducerId, ProducerId)
+					.Set(HeaderKeys.ProducerRequestId, requests[i].RequestId),
+				Serialize
+			);
+
+		    allEvents.AddRange(events);
+		    streamIndexes.AddRange(Enumerable.Repeat(i, events.Length));
+	    }
+
+	    await Intercept(new ProduceRequestReady(this, requests[0]));
+
+	    var state = (
+		    Client,
+		    Events: allEvents.ToArray(),
+		    StreamIndexes: streamIndexes.ToArray(),
+		    requests,
+		    streamIds,
+		    expectedVersions
+		);
+
+	    ProduceResult[] results;
+
+	    try {
+		    results = await ResiliencePipeline.ExecuteAsync(
+			    async (ctx, token) => {
+					var (position, revisions) = await ctx.Client.Writing
+						.WriteEvents(ctx.streamIds, ctx.expectedVersions, ctx.Events, ctx.StreamIndexes, token)
+						.ConfigureAwait(false);
+
+					var logPosition = LogPosition.From(position.CommitPosition, position.PreparePosition);
+
+					return ctx.requests.Select((req, i) =>
+						ProduceResult.Succeeded(req,
+							RecordPosition.ForStream(
+								StreamId.From(ctx.streamIds[i]),
+								StreamRevision.From(revisions[i].ToInt64()),
+								logPosition
+							))).ToArray();
+				}, state);
+	    } catch (StreamingError err) {
+		    results = requests.Select(r => ProduceResult.Failed(r, err)).ToArray();
+	    } catch (Exception ex) {
+		    throw ex.ToProducerStreamingError(streamIds[0]);
+	    }
+
+	    foreach (var result in results) {
+		    await Intercept(new ProduceRequestProcessed(this, result));
+		    try {
+			    await callback.Execute(result);
+		    } catch (Exception uex) {
+			    await Intercept(new ProduceRequestCallbackError(this, result, uex));
+		    }
+	    }
+
+	    return;
+
+	    static long GetExpectedVersion(ProduceRequest r) => r.ExpectedStreamRevision != StreamRevision.Unset
+		    ? r.ExpectedStreamRevision.Value
+		    : r.ExpectedStreamState switch {
+			    StreamState.Missing => ExpectedVersion.NoStream,
+			    StreamState.Exists => ExpectedVersion.StreamExists,
+			    StreamState.Any => ExpectedVersion.Any,
+			    _ => throw new ArgumentOutOfRangeException(nameof(r.ExpectedStreamState), r.ExpectedStreamState, null)
+		    };
     }
 
     public async Task<(int Flushed, int Inflight)> Flush(CancellationToken cancellationToken = default) {
@@ -175,7 +271,6 @@ public class SystemProducer : IProducer {
     public virtual async ValueTask DisposeAsync() {
         try {
             await Flush();
-
             await Intercept(new ProducerStopped(this));
         } catch (Exception ex) {
             await Intercept(new ProducerStopped(this, ex)); //not sure about this...

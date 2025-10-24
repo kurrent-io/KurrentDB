@@ -25,6 +25,7 @@ using DeleteStreamResult = (Position Position, StreamRevision Revision);
 using StreamInfo = (string Stream, StreamRevision Revision);
 using StreamMetadataResult = (StreamMetadata Metadata, long Revision);
 using WriteEventsResult = (Position Position, StreamRevision StreamRevision);
+using MultiStreamWriteResult = (Position Position, StreamRevision[] StreamRevisions);
 
 public interface ISystemClient {
 	IManagementOperations Management { get; }
@@ -68,6 +69,7 @@ public interface IReadOperations {
 
 public interface IWriteOperations {
 	Task<WriteEventsResult> WriteEvents(string stream, Event[] events, long expectedRevision = -2, CancellationToken cancellationToken = default);
+	Task<MultiStreamWriteResult> WriteEvents(string[] streamIds, long[] expectedVersions, Event[] events, int[] eventStreamIndexes, CancellationToken cancellationToken = default);
 }
 
 public interface ISubscriptionsOperations {
@@ -140,6 +142,9 @@ public class SystemClient : ISystemClient {
 	public record WriteOperations(IPublisher Publisher, ILogger Logger) : IWriteOperations {
 		public Task<WriteEventsResult> WriteEvents(string stream, Event[] events, long expectedRevision = -2, CancellationToken cancellationToken = default) =>
 			Publisher.WriteEvents(stream, events, expectedRevision, cancellationToken);
+
+		public Task<MultiStreamWriteResult> WriteEvents(string[] streamIds, long[] expectedVersions, Event[] events, int[] eventStreamIndexes, CancellationToken cancellationToken = default) =>
+			Publisher.WriteEventsToMultipleStreams(streamIds, expectedVersions, events, eventStreamIndexes, cancellationToken);
 	}
 
 	#endregion . Write .
