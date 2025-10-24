@@ -26,6 +26,7 @@ public sealed partial class SecondaryIndexSubscription(
 	private Enumerator.AllSubscription? _subscription;
 	private Task? _processingTask;
 	private Task? _receivingTask;
+	private bool _rebuilding;
 
 	private readonly Channel<ResolvedEvent> _channel = Channel.CreateBounded<ResolvedEvent>(
 		new BoundedChannelOptions(options.CommitBatchSize * 2) {
@@ -38,6 +39,10 @@ public sealed partial class SecondaryIndexSubscription(
 		var startFrom = position == TFPos.Invalid ? Position.Start : Position.FromInt64(position.CommitPosition, position.PreparePosition);
 		log.LogInformation("Using commit batch size {CommitBatchSize}", _commitBatchSize);
 		log.LogInformation("Starting indexing subscription from {StartFrom}", startFrom);
+		if (startFrom == Position.Start) {
+			log.LogInformation("Rebuilding secondary index from scratch");
+			_rebuilding = true;
+		}
 
 		_subscription = new(
 			bus: publisher,
@@ -70,7 +75,13 @@ public sealed partial class SecondaryIndexSubscription(
 			}
 
 			if (_subscription.Current is ReadResponse.SubscriptionCaughtUp caughtUp) {
-				LogDefaultIndexingSubscriptionCaughtUpAtTime(log, caughtUp.Timestamp);
+				if (_rebuilding) {
+					LogIndexRebuildComplete(log, caughtUp.Timestamp);
+				} else {
+					LogDefaultIndexingSubscriptionCaughtUp(log, caughtUp.Timestamp);
+				}
+
+				_rebuilding = false;
 				continue;
 			}
 
@@ -154,6 +165,12 @@ public sealed partial class SecondaryIndexSubscription(
 		}
 	}
 
-	[LoggerMessage(LogLevel.Trace, "Default indexing subscription caught up at {time}")]
-	static partial void LogDefaultIndexingSubscriptionCaughtUpAtTime(ILogger logger, DateTime time);
+	private const string IndexCaughtUpMessage = "Default secondary indexing subscription caught up at {time}";
+	private const string IndexRebuildCompleteMessage = "Default secondary indexes rebuild complete at {time}";
+
+	[LoggerMessage(LogLevel.Trace, IndexCaughtUpMessage)]
+	static partial void LogDefaultIndexingSubscriptionCaughtUp(ILogger logger, DateTime time);
+
+	[LoggerMessage(LogLevel.Information, IndexRebuildCompleteMessage)]
+	static partial void LogIndexRebuildComplete(ILogger logger, DateTime time);
 }
