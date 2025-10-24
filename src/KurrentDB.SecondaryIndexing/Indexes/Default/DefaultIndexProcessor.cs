@@ -150,7 +150,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			return;
 
 		try {
-			using var duration = Tracker.StartCommitDuration();
+			using var duration = Tracker.StartCommitDuration(_inFlightRecords.Count);
 			_appender.Flush();
 		} catch (Exception e) {
 			_log.LogError(e, "Failed to commit {Count} records to index at log position {LogPosition}",

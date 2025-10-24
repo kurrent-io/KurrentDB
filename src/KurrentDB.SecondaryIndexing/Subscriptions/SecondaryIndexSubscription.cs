@@ -29,6 +29,7 @@ public sealed partial class SecondaryIndexSubscription(
 	public void Subscribe() {
 		var position = indexProcessor.GetLastPosition();
 		var startFrom = position == TFPos.Invalid ? Position.Start : Position.FromInt64(position.CommitPosition, position.PreparePosition);
+		log.LogInformation("Using commit batch size {CommitBatchSize}", _commitBatchSize);
 		log.LogInformation("Starting indexing subscription from {StartFrom}", startFrom);
 
 		_subscription = new(
@@ -57,8 +58,9 @@ public sealed partial class SecondaryIndexSubscription(
 				if (!await _subscription.MoveNextAsync())
 					break;
 			} catch (ReadResponseException.NotHandled.ServerNotReady) {
-				log.LogInformation("Default indexing subscription is stopping because server is not ready");
-				break;
+				log.LogWarning("Default indexing subscription is paused because server is not ready");
+				await Task.Delay(TimeSpan.FromSeconds(10), token);
+				continue;
 			}
 
 			if (_subscription.Current is ReadResponse.SubscriptionCaughtUp caughtUp) {
