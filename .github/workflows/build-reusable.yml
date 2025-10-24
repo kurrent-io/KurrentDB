@@ -89,16 +89,8 @@ jobs:
         --configuration ${{ matrix.configuration }}
         -p:Platform=${{ inputs.arch }}
         -p:DefineConstants=${{ inputs.cs_symbols }}
-        --blame
-        --blame-hang-timeout 5min
-        --blame-hang-dump-type mini
-        --settings ./ci/ci.local.runsettings
-        --logger:GitHubActions
-        --logger:trx
-        --logger:"console;verbosity=normal"
         --results-directory $(pwd)/test-results
-        src/KurrentDB.sln
-        -- --report-trx --results-directory $(pwd)/test-results
+        --solution src/KurrentDB.sln
     -  
       name: Publish Test Results (All)
       uses: actions/upload-artifact@v4

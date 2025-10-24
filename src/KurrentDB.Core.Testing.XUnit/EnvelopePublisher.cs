@@ -6,7 +6,7 @@ using KurrentDB.Core.Messaging;
 
 namespace KurrentDB.Core.XUnit.Tests;
 
-class EnvelopePublisher : IPublisher {
+public class EnvelopePublisher : IPublisher {
 	private readonly IEnvelope _envelope;
 
 	public EnvelopePublisher(IEnvelope envelope) {

@@ -15,12 +15,12 @@ public class SqliteDbPerTest<T> : IAsyncLifetime {
 		Fixture = new SqliteDbFixture<T>(DirFixture.Directory);
 	}
 
-	public async Task InitializeAsync() {
+	public async ValueTask InitializeAsync() {
 		await DirFixture.InitializeAsync();
 		await Fixture.InitializeAsync();
 	}
 
-	public async Task DisposeAsync() {
+	public async ValueTask DisposeAsync() {
 		await Fixture.DisposeAsync();
 		await DirFixture.DisposeAsync();
 	}

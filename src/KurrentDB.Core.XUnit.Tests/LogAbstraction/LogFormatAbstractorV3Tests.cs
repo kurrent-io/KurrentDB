@@ -22,7 +22,7 @@ namespace KurrentDB.Core.XUnit.Tests.LogAbstraction;
 
 // check that lookups of the various combinations of virtual/normal/meta
 // work in both directions and in the stream index.
-public class LogFormatAbstractorV3Tests : IAsyncLifetime {
+public sealed class LogFormatAbstractorV3Tests : IAsyncLifetime {
 	static readonly string _outputDir = $"testoutput/{nameof(LogFormatAbstractorV3Tests)}";
 	readonly LogFormatAbstractor<StreamId> _sut = new LogV3FormatAbstractorFactory().Create(new() {
 		IndexDirectory = _outputDir,
@@ -41,7 +41,7 @@ public class LogFormatAbstractorV3Tests : IAsyncLifetime {
 	int _numStreams;
 	int _numEventTypes;
 
-	async Task IAsyncLifetime.InitializeAsync() {
+	async ValueTask IAsyncLifetime.InitializeAsync() {
 		TryDeleteDirectory();
 		_sut.StreamNamesProvider.SetReader(_mockIndexReader);
 		await _sut.StreamExistenceFilter.Initialize(_sut.StreamExistenceFilterInitializer, 0, CancellationToken.None);
@@ -53,13 +53,13 @@ public class LogFormatAbstractorV3Tests : IAsyncLifetime {
 		_numEventTypes = 1;
 	}
 
-	Task IAsyncLifetime.DisposeAsync() {
-		var task = Task.CompletedTask;
+	ValueTask IAsyncDisposable.DisposeAsync() {
+		var task = ValueTask.CompletedTask;
 		try {
 			_sut.Dispose();
 			TryDeleteDirectory();
 		} catch (Exception e) {
-			task = Task.FromException(e);
+			task = ValueTask.FromException(e);
 		}
 
 		return task;

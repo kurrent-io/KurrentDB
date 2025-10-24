@@ -8,7 +8,6 @@ using KurrentDB.Core.TransactionLog.Scavenging.Data;
 using KurrentDB.Core.TransactionLog.Scavenging.Sqlite;
 using Serilog;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace KurrentDB.Core.XUnit.Tests.Scavenge.Sqlite;
 

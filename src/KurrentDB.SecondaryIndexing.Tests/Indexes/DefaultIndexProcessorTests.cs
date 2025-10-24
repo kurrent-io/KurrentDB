@@ -171,7 +171,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest<DefaultIndexProc
 		_processor = new(DuckDb, inflightRecordsCache, publisher, hasher, new("test"));
 	}
 
-	public override Task DisposeAsync() {
+	public override ValueTask DisposeAsync() {
 		_processor.Dispose();
 		return base.DisposeAsync();
 	}
