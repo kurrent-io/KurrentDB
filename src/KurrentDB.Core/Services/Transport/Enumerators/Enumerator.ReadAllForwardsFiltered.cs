@@ -83,7 +83,7 @@ partial class Enumerator {
 				commitPosition, preparePosition, (int)Math.Min(DefaultReadBatchSize, _maxCount), _resolveLinks,
 				_requiresLeader, (int)_maxSearchWindow, null, _eventFilter, _user,
 				replyOnExpired: true,
-				expires: _expiryStrategy.GetExpiry() ?? DateTime.MaxValue,
+				expires: _expiryStrategy.GetExpiry() ?? ClientMessage.ReadRequestMessage.NeverExpires,
 				cancellationToken: _cancellationToken)
 			);
 

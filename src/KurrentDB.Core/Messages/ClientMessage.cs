@@ -67,6 +67,8 @@ public static partial class ClientMessage {
 
 	[DerivedMessage]
 	public abstract partial class ReadRequestMessage : Message {
+		public static DateTime NeverExpires => DateTime.MaxValue;
+
 		public readonly Guid InternalCorrId;
 		public readonly Guid CorrelationId;
 		public readonly IEnvelope Envelope;
@@ -78,9 +80,9 @@ public static partial class ClientMessage {
 
 		public TimeSpan Lifetime {
 			get {
-				return Expires == DateTime.MaxValue
-					? Timeout.InfiniteTimeSpan
-					: Normalize(Expires - Created);
+				return CanExpire
+					? Normalize(Expires - Created)
+					: Timeout.InfiniteTimeSpan;
 
 				static TimeSpan Normalize(TimeSpan value) => value.Ticks switch {
 					< 0L => TimeSpan.Zero,
@@ -89,6 +91,8 @@ public static partial class ClientMessage {
 				};
 			}
 		}
+
+		public bool CanExpire => Expires != NeverExpires;
 
 		protected ReadRequestMessage(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
 			ClaimsPrincipal user, DateTime? expires,
