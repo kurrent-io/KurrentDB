@@ -4,6 +4,7 @@
 using Kurrent.Surge.Producers.Configuration;
 using Kurrent.Surge.Resilience;
 using KurrentDB.Core;
+using static KurrentDB.Protocol.V2.Streams.StreamsService;
 
 namespace KurrentDB.Surge.Producers;
 
@@ -17,4 +18,5 @@ public record SystemProducerOptions : ProducerOptions {
     }
 
     public ISystemClient Client { get; init; } = null!;
+    public StreamsServiceClient? StreamsClient { get; init; } = null!;
 }

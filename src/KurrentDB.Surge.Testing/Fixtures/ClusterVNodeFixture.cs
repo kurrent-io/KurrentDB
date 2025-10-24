@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Extensions.Logging;
+using static KurrentDB.Protocol.V2.Streams.StreamsService;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace KurrentDB.Surge.Testing;
@@ -44,9 +45,10 @@ public abstract class ClusterVNodeFixture : IAsyncLifetime {
     public ClusterVNodeOptions NodeOptions  { get; private set; } = null!;
     public IServiceProvider    NodeServices { get; private set; } = null!;
 
-    public IPublisher  Publisher  => NodeServices.GetRequiredService<IPublisher>();
+    public IPublisher Publisher => NodeServices.GetRequiredService<IPublisher>();
     public ISubscriber Subscriber => NodeServices.GetRequiredService<ISubscriber>();
-    public ISystemClient Client =>   NodeServices.GetRequiredService<ISystemClient>();
+    public ISystemClient Client => NodeServices.GetRequiredService<ISystemClient>();
+    public StreamsServiceClient StreamsClient => NodeServices.GetRequiredService<StreamsServiceClient>();
 
     public async Task InitializeAsync() {
         var (options, services) = await ClusterVNodeApp.Start(

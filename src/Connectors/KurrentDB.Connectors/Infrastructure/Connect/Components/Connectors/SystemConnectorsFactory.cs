@@ -21,6 +21,7 @@ using Kurrent.Surge.Transformers;
 using KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
 using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
 using KurrentDB.Core;
+using KurrentDB.Protocol.V2.Streams;
 using KurrentDB.Surge.Processors;
 using KurrentDB.Surge.Producers;
 using Microsoft.Extensions.Configuration;
@@ -180,7 +181,8 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ISe
     }
 
     IProcessor ConfigureSourceProcessor(ConnectorId connectorId, LinkedList<InterceptorModule> interceptors, SourceOptions sourceOptions, SourceProxy sourceProxy) {
-        var client         = Services.GetRequiredService<ISystemClient>();
+	    var client = Services.GetRequiredService<ISystemClient>();
+	    var streamsClient = Services.GetRequiredService<StreamsService.StreamsServiceClient>();
 	    var loggerFactory = Services.GetRequiredService<ILoggerFactory>();
 	    var schemaRegistry = Services.GetRequiredService<SchemaRegistry>();
 
@@ -192,6 +194,7 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ISe
 
 	    var producer = SystemProducer.Builder
 		    .Client(client)
+		    .Client(streamsClient)
 		    .ClientId(connectorId)
 		    .ProducerId(connectorId)
 		    .SchemaRegistry(schemaRegistry)

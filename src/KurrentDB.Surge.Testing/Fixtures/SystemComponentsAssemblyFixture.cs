@@ -63,7 +63,7 @@ public partial class SystemComponentsAssemblyFixture : ClusterVNodeFixture {
 	SequenceIdGenerator SequenceIdGenerator { get; } = new();
 
 	public SystemProducerBuilder NewProducer() => SystemProducer.Builder
-		.Client(Client)
+		.Client(StreamsClient)
 		.LoggerFactory(LoggerFactory)
 		.SchemaRegistry(SchemaRegistry);
 

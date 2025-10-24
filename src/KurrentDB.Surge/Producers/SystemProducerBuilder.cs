@@ -4,6 +4,7 @@
 using Kurrent.Surge;
 using Kurrent.Surge.Producers.Configuration;
 using KurrentDB.Core;
+using KurrentDB.Protocol.V2.Streams;
 
 namespace KurrentDB.Surge.Producers;
 
@@ -14,6 +15,15 @@ public record SystemProducerBuilder : ProducerBuilder<SystemProducerBuilder, Sys
 		return new() {
 			Options = Options with {
 				Client = client
+			}
+		};
+	}
+
+	public SystemProducerBuilder Client(StreamsService.StreamsServiceClient client) {
+		Ensure.NotNull(client);
+		return new() {
+			Options = Options with {
+				StreamsClient = client
 			}
 		};
 	}

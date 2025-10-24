@@ -36,6 +36,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using static KurrentDB.Connectors.Planes.ConnectorsFeatureConventions;
 using static KurrentDB.Connectors.Planes.Management.Queries.ConnectorQueryConventions;
+using static KurrentDB.Protocol.V2.Streams.StreamsService;
 
 namespace KurrentDB.Connectors.Planes.Management;
 
@@ -55,6 +56,19 @@ public static class ManagementPlaneWireUp {
         services
             .AddGrpc()
             .AddJsonTranscoding();
+
+        services.AddGrpcClient<StreamsServiceClient>((serviceProvider, options) => {
+	        var nodeOptions = serviceProvider.GetRequiredService<ClusterVNodeOptions>();
+
+	        var hasCertificate = !string.IsNullOrEmpty(nodeOptions.CertificateFile.CertificateFile) ||
+	                             !string.IsNullOrEmpty(nodeOptions.CertificateStore.CertificateStoreLocation);
+
+	        var protocol = hasCertificate && !nodeOptions.Application.Insecure ? "https" : "http";
+
+	        var host = nodeOptions.Interface.NodeIp.ToString();
+
+	        options.Address = new Uri($"{protocol}://{host}");
+        });
 
         services.PostConfigure<GrpcJsonTranscodingOptions>(options => {
             // https://github.com/dotnet/aspnetcore/issues/50401

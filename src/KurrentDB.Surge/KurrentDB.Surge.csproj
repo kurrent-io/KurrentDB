@@ -17,6 +17,7 @@
 		<PackageReference Include="Eventuous.Extensions.DependencyInjection" />
 	</ItemGroup>
 	<ItemGroup>
+	  <ProjectReference Include="..\KurrentDB.Api.V2\KurrentDB.Api.V2.csproj" />
 	  <ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
 	</ItemGroup>
 </Project>
