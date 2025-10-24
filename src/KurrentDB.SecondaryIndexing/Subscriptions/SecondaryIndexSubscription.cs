@@ -28,7 +28,7 @@ public sealed partial class SecondaryIndexSubscription(
 	private Task? _receivingTask;
 
 	private readonly Channel<ResolvedEvent> _channel = Channel.CreateBounded<ResolvedEvent>(
-		new BoundedChannelOptions(options.CommitBatchSize) {
+		new BoundedChannelOptions(options.CommitBatchSize * 2) {
 			SingleReader = true,
 			SingleWriter = true,
 		});
