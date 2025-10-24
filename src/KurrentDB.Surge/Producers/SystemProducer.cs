@@ -151,13 +151,7 @@ public class SystemProducer : IProducer {
             try {
                 return await resiliencePipeline.ExecuteAsync(
                     static async (state, token) => {
-                        var result = await WriteEvents(
-                            state.StreamsClient,
-                            state.Request,
-                            state.Records,
-                            state.ExpectedRevision,
-                            token);
-
+                        var result = await WriteEvents(state.StreamsClient, state.Request, state.Records, state.ExpectedRevision, token);
                         return result.Error is null ? result : throw result.Error;
                     }, state
                 );
