@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<OutputType>Library</OutputType>
+		<IsKurrentXUnit>true</IsKurrentXUnit>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<IsPackable>false</IsPackable>
 		<IsPublishable>false</IsPublishable>
@@ -10,18 +10,8 @@
 	<ItemGroup>
 		<PackageReference Include="Ductus.FluentDocker.XUnit" />
 		<PackageReference Include="EventStore.Client.Grpc.Streams" />
-		<PackageReference Include="GitHubActionsTestLogger">
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		  <PrivateAssets>all</PrivateAssets>
-		</PackageReference>
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" />
 		<PackageReference Include="Polly" />
-		<PackageReference Include="xunit" />
-		<PackageReference Include="xunit.runner.visualstudio">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-		</PackageReference>
 	</ItemGroup>
 	<ItemGroup>
 	  <ProjectReference Include="..\KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled\KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled.csproj" />

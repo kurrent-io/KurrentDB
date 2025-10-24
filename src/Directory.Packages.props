@@ -8,7 +8,6 @@
     <PackageVersion Include="BlazorMonaco" Version="3.3.0" />
     <PackageVersion Include="Bogus" Version="35.6.4" />
     <PackageVersion Include="DiffEngine" Version="16.7.1" />
-    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="Dapper" Version="2.1.66" />
 		<PackageVersion Include="DotNext" Version="5.26.0" />
 		<PackageVersion Include="DotNext.IO" Version="5.26.0" />
@@ -31,7 +30,6 @@
 		<PackageVersion Include="Azure.Storage.Blobs" Version="12.25.1" />
 		<PackageVersion Include="Azure.Identity" Version="1.16.0" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
-    <PackageVersion Include="GitHubActionsTestLogger" Version="2.4.1" />
     <PackageVersion Include="GitInfo" Version="3.3.3" />
     <PackageVersion Include="Google.Api.CommonProtos" Version="2.17.0" />
     <PackageVersion Include="Google.Cloud.Storage.V1" Version="4.13.0" />
@@ -96,7 +94,6 @@
     <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.14.0" />
     <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.14.0" />
     <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="8.14.0" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
     <PackageVersion Include="Microsoft.OpenApi.Readers" Version="1.6.28" />
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.0.4" />
     <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="1.9.0" />
@@ -115,9 +112,7 @@
     <!-- upgrade because of transitive dependency vulnerability -->
     <PackageVersion Include="NuGet.Protocol" Version="6.7.1" />
     <PackageVersion Include="NUnit" Version="3.14.0" />
-    <!-- cannot upgrade to 5.2.0 yet, it introduces MTP to Core.Tests which is depended on by some XUnit project  -->
-    <!-- after the net10 upgrade we can refactor those dependences away and/or upgrade to MTP across the board -->
-    <PackageVersion Include="NUnit3TestAdapter" Version="4.5.0" />
+    <PackageVersion Include="NUnit3TestAdapter" Version="5.2.0" />
     <PackageVersion Include="ObjectLayoutInspector" Version="0.1.4" />
     <PackageVersion Include="OpenTelemetry" Version="1.13.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.12.0" />
@@ -154,7 +149,6 @@
     <PackageVersion Include="Serilog.Sinks.Seq" Version="9.0.0" />
     <PackageVersion Include="Serilog.Sinks.TestCorrelator" Version="4.0.0" />
     <PackageVersion Include="Serilog.Sinks.TextWriter" Version="3.0.0" />
-    <PackageVersion Include="Serilog.Sinks.XUnit" Version="3.0.19" />
     <PackageVersion Include="SharpDotYaml.Extensions.Configuration" Version="0.3.1" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="System.CommandLine.DragonFruit" Version="0.3.0-alpha.21216.1" />
@@ -173,8 +167,8 @@
     <PackageVersion Include="TUnit.Core" Version="0.63.3" />
     <PackageVersion Include="Verify.TUnit" Version="30.11.0" />
     <PackageVersion Include="WaffleGenerator.Bogus" Version="4.2.2" />
-    <PackageVersion Include="xunit" Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageVersion Include="xunit.v3" Version="3.1.0" />
+    <PackageVersion Include="xunit.v3.extensibility.core" Version="3.1.0" />
     <PackageVersion Include="YamlDotnet" Version="16.3.0" />
   </ItemGroup>
 </Project>

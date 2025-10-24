@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+		<IsKurrentNUnit>true</IsKurrentNUnit>
 	</PropertyGroup>
 	<ItemGroup>
 		<Compile Remove="Services\checkpoint_strategy\**" />
@@ -17,11 +18,7 @@
 		<None Remove="Services\Jint\Serialization\big_state.json" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="GitHubActionsTestLogger" />
 		<PackageReference Include="Newtonsoft.Json" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" />
-		<PackageReference Include="NUnit" />
-		<PackageReference Include="NUnit3TestAdapter" />
 		<PackageReference Include="Serilog.Sinks.TextWriter" />
 		<PackageReference Include="Google.Protobuf" />
 		<PackageReference Include="Grpc.Tools">
@@ -31,8 +28,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
-		<ProjectReference Include="..\KurrentDB.Core.Tests\KurrentDB.Core.Tests.csproj" />
-		<ProjectReference Include="..\KurrentDB.Core.Tests\KurrentDB.Core.Tests.csproj" />
+		<ProjectReference Include="..\KurrentDB.Core.Testing.NUnit\KurrentDB.Core.Testing.NUnit.csproj" />
 		<ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
 		<ProjectReference Include="..\KurrentDB.Projections.Core\KurrentDB.Projections.Core.csproj" />
 	</ItemGroup>

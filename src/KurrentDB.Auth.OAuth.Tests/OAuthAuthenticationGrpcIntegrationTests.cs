@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using EventStore.Client;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace KurrentDB.Auth.OAuth.Tests;
 

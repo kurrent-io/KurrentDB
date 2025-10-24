@@ -1,3 +1,4 @@
+# for CI
 # "build" image
 ARG CONTAINER_RUNTIME=noble
 # NOT A BUG: we can't build on alpine so we use noble as a base image
@@ -8,6 +9,7 @@ WORKDIR /build
 COPY ./LICENSE.md .
 COPY ./LICENSE_CONTRIBUTIONS.md .
 COPY ./NOTICE.md .
+COPY ./global.json .
 
 WORKDIR /build/ci
 COPY ./ci ./
@@ -37,20 +39,11 @@ COPY --from=build ./build/proto ./proto
 COPY --from=build ./build/LICENSE.md ./LICENSE.md
 COPY --from=build ./build/NOTICE.md ./NOTICE.md
 COPY --from=build ./build/LICENSE_CONTRIBUTIONS.md ./LICENSE_CONTRIBUTIONS.md
-COPY --from=build ./build/src/KurrentDB.Core.Tests/Services/Transport/Tcp/test_certificates/ca/ca.crt /usr/local/share/ca-certificates/ca_kurrentdb_test.crt
+COPY --from=build ./build/global.json ./global.json
+COPY --from=build ./build/src/KurrentDB.Core.Testing/Services/Transport/Tcp/test_certificates/ca/ca.crt /usr/local/share/ca-certificates/ca_kurrentdb_test.crt
 RUN mkdir ./test-results
 
 SHELL ["/bin/bash", "-c"]
-CMD dotnet test \
-    --settings "/build/ci/ci.container.runsettings" \
-    --blame \
-    --blame-hang-timeout 5min \
-    --logger:trx \
-    --logger:"GitHubActions;report-warnings=false" \
-    --logger:"console;verbosity=normal" \
-    --results-directory "/build/test-results" \
-    /build/src/KurrentDB.sln \
-    -- --report-trx --results-directory "/build/test-results"
 
 # "publish" image
 FROM build AS publish

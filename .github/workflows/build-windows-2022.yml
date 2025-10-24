@@ -23,5 +23,4 @@ jobs:
     uses: ./.github/workflows/build-reusable.yml
     with:
       os: windows-2022
-      arch: x64
     secrets: inherit

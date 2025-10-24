@@ -3,6 +3,7 @@
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+		<IsKurrentXUnit>true</IsKurrentXUnit>
 	</PropertyGroup>
 	<ItemGroup>
 		<Compile Remove="Messaging\Cases\AbstractWithGroup.NOTCOMPILED.g.cs" />
@@ -25,21 +26,10 @@
 		</None>
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="GitHubActionsTestLogger" />
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" />
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" />
 		<PackageReference Include="Newtonsoft.Json" />
 		<PackageReference Include="NuGet.Protocol" />
-		<PackageReference Include="xunit" />
-		<PackageReference Include="xunit.runner.visualstudio">
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-			<PrivateAssets>all</PrivateAssets>
-		</PackageReference>
-		<PackageReference Include="coverlet.collector">
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-			<PrivateAssets>all</PrivateAssets>
-		</PackageReference>
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.SourceGenerators\KurrentDB.SourceGenerators.csproj" />
