@@ -19,7 +19,7 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadLogEvents> {
 		ReadLogEventsCompleted res;
 		var cts = _multiplexer.Combine(msg.Lifetime, [token, msg.CancellationToken]);
 		try {
-			res = await ReadLogEvents(msg, token);
+			res = await ReadLogEvents(msg, cts.Token);
 		} catch (OperationCanceledException e) when (e.CancellationToken == cts.Token) {
 			if (!cts.IsTimedOut)
 				throw new OperationCanceledException(e.Message, e, cts.CancellationOrigin);

@@ -23,7 +23,7 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadAllEventsForward
 		ReadAllEventsForwardCompleted res;
 		var cts = _multiplexer.Combine(msg.Lifetime, [token, msg.CancellationToken]);
 		try {
-			res = await ReadAllEventsForward(msg, pos, lastIndexedPosition, token);
+			res = await ReadAllEventsForward(msg, pos, lastIndexedPosition, cts.Token);
 		} catch (OperationCanceledException e) when (e.CancellationToken == cts.Token) {
 			if (!cts.IsTimedOut)
 				throw new OperationCanceledException(null, e, cts.CancellationOrigin);
@@ -79,7 +79,7 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadAllEventsForward
 		ReadAllEventsBackwardCompleted res;
 		var cts = _multiplexer.Combine(msg.Lifetime, [token, msg.CancellationToken]);
 		try {
-			res = await ReadAllEventsBackward(msg, pos, lastIndexedPosition, token);
+			res = await ReadAllEventsBackward(msg, pos, lastIndexedPosition, cts.Token);
 		} catch (OperationCanceledException e) when (e.CancellationToken == cts.Token) {
 			if (!cts.IsTimedOut)
 				throw new OperationCanceledException(null, e, cts.CancellationOrigin);
