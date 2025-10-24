@@ -2,4 +2,7 @@
 	<PropertyGroup>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 	</PropertyGroup>
+	<PropertyGroup Condition="'$(IsTestingPlatformApplication)' == 'True'">
+		<OutputType>Exe</OutputType>
+	</PropertyGroup>
 </Project>

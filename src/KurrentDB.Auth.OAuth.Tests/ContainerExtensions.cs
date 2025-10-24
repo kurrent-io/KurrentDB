@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Services;
 using Ductus.FluentDocker.Services.Extensions;
-using Xunit.Abstractions;
+using Xunit;
 
 namespace KurrentDB.Auth.OAuth.Tests;
 

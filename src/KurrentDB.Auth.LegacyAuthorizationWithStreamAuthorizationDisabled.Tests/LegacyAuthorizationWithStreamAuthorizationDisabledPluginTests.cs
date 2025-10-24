@@ -14,7 +14,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled.Tests;
 

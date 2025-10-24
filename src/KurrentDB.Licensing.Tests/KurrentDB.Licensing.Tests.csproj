@@ -3,21 +3,17 @@
 	<PropertyGroup>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<Nullable>enable</Nullable>
+		<IsTestingPlatformApplication>true</IsTestingPlatformApplication>
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\KurrentDB.Core.Tests\KurrentDB.Core.Tests.csproj" />
-	  <ProjectReference Include="..\KurrentDB.Licensing\KurrentDB.Licensing.csproj" />
+		<ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
+		<ProjectReference Include="..\KurrentDB.Licensing\KurrentDB.Licensing.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="GitHubActionsTestLogger" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" />
-		<PackageReference Include="xunit" />
-		<PackageReference Include="xunit.runner.visualstudio">
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-			<PrivateAssets>all</PrivateAssets>
-		</PackageReference>
+		<PackageReference Include="xunit.v3" />
 		<PackageReference Include="coverlet.collector">
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 			<PrivateAssets>all</PrivateAssets>

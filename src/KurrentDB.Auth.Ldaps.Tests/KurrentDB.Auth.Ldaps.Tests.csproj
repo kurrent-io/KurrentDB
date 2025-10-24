@@ -5,6 +5,7 @@
       <IsPublishable>false</IsPublishable>
 	  <IsPluginsTestProject>true</IsPluginsTestProject>
       <Configurations>Release;Debug</Configurations>
+      <IsTestingPlatformApplication>true</IsTestingPlatformApplication>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
@@ -19,12 +20,7 @@
 			  <PrivateAssets>all</PrivateAssets>
 			</PackageReference>
 			<PackageReference Include="Microsoft.AspNetCore.TestHost" />
-			<PackageReference Include="Microsoft.NET.Test.Sdk" />
-			<PackageReference Include="xunit" />
-      <PackageReference Include="xunit.runner.visualstudio">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      </PackageReference>
+			<PackageReference Include="xunit.v3" />
     </ItemGroup>
 
     <ItemGroup>

@@ -4,7 +4,6 @@
 using System;
 using ObjectLayoutInspector;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace KurrentDB.LogV3.Tests;
 

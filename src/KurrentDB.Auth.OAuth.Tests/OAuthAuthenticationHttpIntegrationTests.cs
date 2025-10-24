@@ -8,7 +8,6 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace KurrentDB.Auth.OAuth.Tests;
 

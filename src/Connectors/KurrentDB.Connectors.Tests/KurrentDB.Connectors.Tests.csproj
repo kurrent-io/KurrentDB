@@ -1,11 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
-		<NoWarn>xUnit1041</NoWarn>
-		<IsTestProject>true</IsTestProject>
+		<NoWarn>xUnit1041;xUnit1051</NoWarn>
+		<IsTestingPlatformApplication>true</IsTestingPlatformApplication>
 		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-		<TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -13,12 +12,7 @@
 		<PackageReference Include="Kurrent.Surge" />
 		<PackageReference Include="Eventuous.Testing" />
 		<PackageReference Include="GitHubActionsTestLogger" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" />
-		<PackageReference Include="xunit" />
-		<PackageReference Include="xunit.runner.visualstudio">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-		</PackageReference>
+		<PackageReference Include="xunit.v3" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -33,7 +27,6 @@
 		<Using Include="FluentAssertions" />
 		<Using Include="Microsoft.Extensions.Time.Testing" />
 		<Using Include="Xunit" />
-		<Using Include="Xunit.Abstractions" />
 	</ItemGroup>
 
 	<ItemGroup>

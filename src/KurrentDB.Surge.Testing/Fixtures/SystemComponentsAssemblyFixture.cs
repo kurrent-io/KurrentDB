@@ -12,11 +12,9 @@ using KurrentDB.Surge.Processors;
 using KurrentDB.Surge.Producers;
 using KurrentDB.Surge.Readers;
 using KurrentDB.Surge.Testing.Fixtures;
-using KurrentDB.Surge.Testing.Xunit.Extensions.AssemblyFixture;
 using Microsoft.Extensions.DependencyInjection;
 using FakeTimeProvider = Microsoft.Extensions.Time.Testing.FakeTimeProvider;
 
-[assembly: TestFramework(XunitTestFrameworkWithAssemblyFixture.TypeName, XunitTestFrameworkWithAssemblyFixture.AssemblyName)]
 [assembly: AssemblyFixture(typeof(SystemComponentsAssemblyFixture))]
 
 namespace KurrentDB.Surge.Testing.Fixtures;
