@@ -75,7 +75,7 @@ partial class Enumerator {
 			_bus.Publish(new ClientMessage.ReadAllEventsForward(
 				correlationId, correlationId, new ContinuationEnvelope(OnMessage, _semaphore, _cancellationToken),
 				commitPosition, preparePosition, (int)Math.Min(DefaultReadBatchSize, _maxCount), _resolveLinks,
-				_requiresLeader, default, _user, replyOnExpired: true, expires: _expiryStrategy.GetExpiry(),
+				_requiresLeader, default, _user, replyOnExpired: true, expires: _expiryStrategy.GetExpiry() ?? ClientMessage.ReadRequestMessage.NeverExpires,
 				cancellationToken: _cancellationToken)
 			);
 

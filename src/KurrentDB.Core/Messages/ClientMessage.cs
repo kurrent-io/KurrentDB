@@ -12,6 +12,7 @@ using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Settings;
+using static DotNext.Threading.Timeout;
 using FilteredReadAllResult = KurrentDB.Core.Data.FilteredReadAllResult;
 using ReadStreamResult = KurrentDB.Core.Data.ReadStreamResult;
 
@@ -66,6 +67,8 @@ public static partial class ClientMessage {
 
 	[DerivedMessage]
 	public abstract partial class ReadRequestMessage : Message {
+		public static DateTime NeverExpires => DateTime.MaxValue;
+
 		public readonly Guid InternalCorrId;
 		public readonly Guid CorrelationId;
 		public readonly IEnvelope Envelope;
@@ -75,7 +78,21 @@ public static partial class ClientMessage {
 		public readonly DateTime Created;
 		public readonly DateTime Expires;
 
-		public TimeSpan Lifetime => Expires - Created;
+		public TimeSpan Lifetime {
+			get {
+				return CanExpire
+					? Normalize(Expires - Created)
+					: Timeout.InfiniteTimeSpan;
+
+				static TimeSpan Normalize(TimeSpan value) => value.Ticks switch {
+					< 0L => TimeSpan.Zero,
+					> MaxTimeoutParameterTicks => new(MaxTimeoutParameterTicks),
+					_ => value,
+				};
+			}
+		}
+
+		public bool CanExpire => Expires != NeverExpires;
 
 		protected ReadRequestMessage(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
 			ClaimsPrincipal user, DateTime? expires,

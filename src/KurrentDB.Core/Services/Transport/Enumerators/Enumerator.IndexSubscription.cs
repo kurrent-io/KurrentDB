@@ -323,7 +323,7 @@ partial class Enumerator {
 				validationTfLastCommitPosition: null,
 				user: _user,
 				replyOnExpired: true,
-				expires: _expiryStrategy.GetExpiry(),
+				expires: _expiryStrategy.GetExpiry() ?? ReadRequestMessage.NeverExpires,
 				cancellationToken: ct));
 		}
 

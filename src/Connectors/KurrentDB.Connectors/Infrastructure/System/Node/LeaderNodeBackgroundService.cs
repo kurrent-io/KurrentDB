@@ -9,6 +9,8 @@ using Microsoft.Extensions.Logging;
 namespace KurrentDB.Connectors.Infrastructure.System.Node;
 
 public abstract class LeaderNodeBackgroundService : NodeBackgroundService {
+	private readonly CancellationTokenMultiplexer _multiplexer;
+
     protected LeaderNodeBackgroundService(
         IPublisher publisher,
         ISubscriber subscriber,
@@ -29,6 +31,8 @@ public abstract class LeaderNodeBackgroundService : NodeBackgroundService {
         GetNodeSystemInfo = getNodeSystemInfo;
 
         Logger = loggerFactory.CreateLogger<LeaderNodeBackgroundService>();
+
+        _multiplexer = new() { MaximumRetained = 10 };
     }
 
     // GetNodeLifetimeService GetNodeLifetimeService { get; }
@@ -52,15 +56,13 @@ public abstract class LeaderNodeBackgroundService : NodeBackgroundService {
 
             Logger.LogLeaderNodeBackgroundServiceLeadershipAssigned(ServiceName);
 
-            var token       = lifetimeToken;
-            var cancellator = token.LinkTo(stoppingToken);
-
+            var cancellator = _multiplexer.Combine([lifetimeToken, stoppingToken]);
             try {
                 var nodeInfo = await GetNodeSystemInfo(stoppingToken);
 
                 // it only runs on a leader node, so if the cancellation
                 // token is canceled, it means the node lost leadership
-                await Execute(nodeInfo, cancellator!.Token);
+                await Execute(nodeInfo, cancellator.Token);
 
                 if (cancellator.CancellationOrigin != stoppingToken)
                     Logger.LogLeaderNodeBackgroundServiceLeadershipRevoked(ServiceName);
@@ -73,7 +75,7 @@ public abstract class LeaderNodeBackgroundService : NodeBackgroundService {
                 break;
             }
             finally {
-                cancellator?.Dispose();
+                await cancellator.DisposeAsync();
             }
         }
 

@@ -728,7 +728,7 @@ public class ProjectionManager
 				validationStreamVersion: null,
 				user: SystemAccounts.System,
 				replyOnExpired: false,
-				expires: DateTime.MaxValue),
+				expires: ClientMessage.ReadRequestMessage.NeverExpires),
 			m => OnProjectionsListReadCompleted(m, registeredProjections, from, completedAction));
 	}
 
@@ -1068,7 +1068,7 @@ public class ProjectionManager
 				requireLeader: false,
 				validationStreamVersion: null,
 				user: SystemAccounts.System,
-				expires: DateTime.MaxValue,
+				expires: ClientMessage.ReadRequestMessage.NeverExpires,
 				replyOnExpired: false),
 			new ReadStreamEventsBackwardHandlers.Optimistic(onComplete));
 	}

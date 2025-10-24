@@ -1158,7 +1158,7 @@ public class PersistentSubscriptionService<TStreamId> :
 
 	private void LoadConfiguration(Action continueWith) {
 		_ioDispatcher.ReadBackward(SystemStreams.PersistentSubscriptionConfig, -1, 1, false,
-			SystemAccounts.System, x => HandleLoadCompleted(continueWith, x), expires: DateTime.MaxValue);
+			SystemAccounts.System, x => HandleLoadCompleted(continueWith, x), expires: ClientMessage.ReadRequestMessage.NeverExpires);
 	}
 
 	private void HandleLoadCompleted(Action continueWith,

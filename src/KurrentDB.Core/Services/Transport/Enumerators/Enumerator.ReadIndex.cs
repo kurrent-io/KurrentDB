@@ -41,7 +41,7 @@ partial class Enumerator {
 			IndexName, commitPosition, preparePosition, excludeStart, (int)Math.Min(DefaultIndexReadSize, MaxCount),
 			RequiresLeader, null, User,
 			replyOnExpired: true,
-			expires: ExpiryStrategy.GetExpiry(),
+			expires: ExpiryStrategy.GetExpiry() ?? ReadRequestMessage.NeverExpires,
 			cancellationToken: CancellationToken);
 	}
 
@@ -66,7 +66,7 @@ partial class Enumerator {
 			IndexName, commitPosition, preparePosition, excludeStart, (int)Math.Min(DefaultIndexReadSize, MaxCount),
 			RequiresLeader, null, User,
 			replyOnExpired: true,
-			expires: ExpiryStrategy.GetExpiry(),
+			expires: ExpiryStrategy.GetExpiry() ?? ReadRequestMessage.NeverExpires,
 			cancellationToken: CancellationToken);
 	}
 
