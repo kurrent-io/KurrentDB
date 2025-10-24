@@ -14,7 +14,14 @@ partial class StorageReaderWorker<TStreamId> :
 	IAsyncHandle<ReadIndexEventsForward>,
 	IAsyncHandle<ReadIndexEventsBackward> {
 	public async ValueTask HandleAsync(ReadIndexEventsForward msg, CancellationToken token) {
-		if (msg.Expires < DateTime.UtcNow) {
+		ReadIndexEventsForwardCompleted res;
+		var cts = _multiplexer.Combine(msg.Lifetime, [token, msg.CancellationToken]);
+		try {
+			res = await _secondaryIndexReaders.ReadForwards(msg, cts.Token);
+		} catch (OperationCanceledException e) when (e.CancellationToken == cts.Token) {
+			if (!cts.IsTimedOut)
+				throw new OperationCanceledException(null, e, cts.CancellationOrigin);
+
 			if (msg.ReplyOnExpired) {
 				msg.Envelope.ReplyWith(
 					new ReadIndexEventsForwardCompleted(
@@ -32,14 +39,6 @@ partial class StorageReaderWorker<TStreamId> :
 				"ReadIndexEventsForward operation has expired for C:{CommitPosition}/P:{PreparePosition}. Operation expired at {ExpiredAt} after {lifetime:N0} ms.",
 				msg.CommitPosition, msg.PreparePosition, msg.Expires, msg.Lifetime.TotalMilliseconds);
 			return;
-		}
-
-		ReadIndexEventsForwardCompleted res;
-		var cts = _multiplexer.Combine([token, msg.CancellationToken]);
-		try {
-			res = await _secondaryIndexReaders.ReadForwards(msg, cts.Token);
-		} catch (OperationCanceledException e) when (e.CancellationToken == cts.Token) {
-			throw new OperationCanceledException(null, e, cts.CancellationOrigin);
 		} finally {
 			await cts.DisposeAsync();
 		}
@@ -58,7 +57,14 @@ partial class StorageReaderWorker<TStreamId> :
 	}
 
 	public async ValueTask HandleAsync(ReadIndexEventsBackward msg, CancellationToken token) {
-		if (msg.Expires < DateTime.UtcNow) {
+		ReadIndexEventsBackwardCompleted res;
+		var cts = _multiplexer.Combine(msg.Lifetime, [token, msg.CancellationToken]);
+		try {
+			res = await _secondaryIndexReaders.ReadBackwards(msg, cts.Token);
+		} catch (OperationCanceledException e) when (e.CancellationToken == cts.Token) {
+			if (!cts.IsTimedOut)
+				throw new OperationCanceledException(null, e, cts.CancellationOrigin);
+
 			if (msg.ReplyOnExpired) {
 				msg.Envelope.ReplyWith(
 					new ReadIndexEventsBackwardCompleted(
@@ -76,14 +82,6 @@ partial class StorageReaderWorker<TStreamId> :
 				"ReadIndexEventsBackward operation has expired for C:{CommitPosition}/P:{PreparePosition}. Operation expired at {ExpiredAt} after {lifetime:N0} ms.",
 				msg.CommitPosition, msg.PreparePosition, msg.Expires, msg.Lifetime.TotalMilliseconds);
 			return;
-		}
-
-		ReadIndexEventsBackwardCompleted res;
-		var cts = _multiplexer.Combine([token, msg.CancellationToken]);
-		try {
-			res = await _secondaryIndexReaders.ReadBackwards(msg, cts.Token);
-		} catch (OperationCanceledException e) when (e.CancellationToken == cts.Token) {
-			throw new OperationCanceledException(null, e, cts.CancellationOrigin);
 		} finally {
 			await cts.DisposeAsync();
 		}
