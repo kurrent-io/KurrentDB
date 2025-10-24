@@ -60,7 +60,7 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadEvent> {
 	}
 }
 
-file static class ReadEventExtensions {
+file static class EmptyDataProvider {
 	public static ReadEventCompleted NoData(this ReadEvent msg, ReadEventResult result, string error = null)
 		=> new(msg.CorrelationId, msg.EventStreamId, result, ResolvedEvent.EmptyEvent, null, false, error);
 }
