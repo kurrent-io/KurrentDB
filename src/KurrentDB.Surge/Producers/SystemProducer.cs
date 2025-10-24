@@ -3,6 +3,7 @@
 
 using DotNext;
 using Google.Protobuf.Collections;
+using Google.Rpc;
 using Grpc.Core;
 using Kurrent.Surge;
 using Kurrent.Surge.Interceptors;
@@ -15,6 +16,7 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Protocol.V2.Streams;
+using KurrentDB.Protocol.V2.Streams.Errors;
 using Polly;
 using Serilog;
 using StreamRevision = Kurrent.Surge.StreamRevision;
@@ -191,22 +193,11 @@ public class SystemProducer : IProducer {
                     return ProduceResult.Succeeded(request, recordPosition);
                 }
                 catch (RpcException rpcEx) {
-                    return ProduceResult.Failed(request, MapRpcExceptionToStreamingError(rpcEx, request.Stream));
+                    return ProduceResult.Failed(request, rpcEx.ToProducerStreamingError(request.Stream));
                 }
                 catch (Exception ex) {
                     return ProduceResult.Failed(request, ex.ToProducerStreamingError(request.Stream));
                 }
-            }
-
-            static StreamingError MapRpcExceptionToStreamingError(RpcException rpcEx, string stream) {
-                return rpcEx.StatusCode switch {
-                    StatusCode.DeadlineExceeded => new RequestTimeoutError(stream, "Deadline exceeded"),
-                    StatusCode.PermissionDenied => new StreamAccessDeniedError(stream),
-                    StatusCode.NotFound => new StreamDeletedError(stream),
-                    StatusCode.FailedPrecondition when rpcEx.Status.Detail.Contains("WrongExpectedVersion")
-                        => new ExpectedStreamRevisionError(stream, StreamRevision.From(-1), StreamRevision.From(-1)),
-                    _ => new StreamingCriticalError(rpcEx.Status.Detail, rpcEx)
-                };
             }
         }
 
@@ -282,10 +273,9 @@ public class SystemProducer : IProducer {
     public virtual async ValueTask DisposeAsync() {
         try {
             await Flush();
-
             await Intercept(new ProducerStopped(this));
         } catch (Exception ex) {
-            await Intercept(new ProducerStopped(this, ex)); //not sure about this...
+            await Intercept(new ProducerStopped(this, ex));
             throw;
         } finally {
             await Interceptors.DisposeAsync();

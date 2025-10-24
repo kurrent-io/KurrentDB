@@ -3,6 +3,8 @@
 
 using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
+using Google.Rpc;
+using Grpc.Core;
 using Kurrent.Surge;
 using Kurrent.Surge.Producers;
 using Kurrent.Surge.Schema;
@@ -11,6 +13,7 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Protocol.V2.Streams;
+using KurrentDB.Protocol.V2.Streams.Errors;
 using SchemaInfo = Kurrent.Surge.Schema.SchemaInfo;
 
 namespace KurrentDB.Surge.Producers;
@@ -104,4 +107,28 @@ public static class StreamingErrorConverters {
             ReadResponseException.NotHandled.NoLeaderInfo   => new ServerNotLeaderError(),
             _                                               => new StreamingCriticalError(ex.Message, ex)
         };
+
+    public static StreamingError ToProducerStreamingError(this RpcException ex, string targetStream) {
+		var status = ex.GetRpcStatus()!;
+		return status.GetDetail<ErrorInfo>() switch {
+			{ Reason: "STREAM_REVISION_CONFLICT" } => ex.ToExpectedStreamRevisionError(targetStream),
+			{ Reason: "STREAM_TOMBSTONED" } => ex.ToStreamDeletedError(targetStream),
+			// TODO: Add more mappings here.
+			_ => new StreamingCriticalError(ex.Status.Detail, ex)
+		};
+    }
+
+    // TODO: Move to Surge.
+    public static ExpectedStreamRevisionError ToExpectedStreamRevisionError(this RpcException ex, string targetStream) {
+	    var status = ex.GetRpcStatus()!;
+	    var detail = status.GetDetail<StreamRevisionConflictErrorDetails>();
+	    return new ExpectedStreamRevisionError(
+		    targetStream,
+		    StreamRevision.From(detail.ExpectedRevision),
+		    StreamRevision.From(detail.ActualRevision)
+	    );
+    }
+
+    // TODO: Move to Surge.
+    public static StreamDeletedError ToStreamDeletedError(this RpcException ex, string targetStream) => new(targetStream);
 }
