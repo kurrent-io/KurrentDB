@@ -43,11 +43,9 @@ RUN mkdir ./test-results
 SHELL ["/bin/bash", "-c"]
 CMD dotnet test \
     --settings "/build/ci/ci.container.runsettings" \
-    --blame \
-    --blame-hang-timeout 5min \
-    --logger:trx \
-    --logger:"GitHubActions;report-warnings=false" \
-    --logger:"console;verbosity=normal" \
+    --hangdump \
+    --hangdump-timeout 30min \
+    --hangdump-type Mini \
     --results-directory "/build/test-results" \
     --solution /build/src/KurrentDB.sln \
     --report-trx

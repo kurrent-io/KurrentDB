@@ -89,13 +89,10 @@ jobs:
         --configuration ${{ matrix.configuration }}
         -p:Platform=${{ inputs.arch }}
         -p:DefineConstants=${{ inputs.cs_symbols }}
-        --blame
-        --blame-hang-timeout 5min
-        --blame-hang-dump-type mini
+        --hangdump
+        --hangdump-timeout 30min
+        --hangdump-type Mini
         --settings ./ci/ci.local.runsettings
-        --logger:GitHubActions
-        --logger:trx
-        --logger:"console;verbosity=normal"
         --results-directory $(pwd)/test-results
         --solution src/KurrentDB.sln
         --report-trx
