@@ -8,6 +8,7 @@ WORKDIR /build
 COPY ./LICENSE.md .
 COPY ./LICENSE_CONTRIBUTIONS.md .
 COPY ./NOTICE.md .
+COPY ./global.json .
 
 WORKDIR /build/ci
 COPY ./ci ./
