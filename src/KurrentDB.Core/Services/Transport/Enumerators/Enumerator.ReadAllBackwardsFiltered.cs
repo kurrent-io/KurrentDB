@@ -82,7 +82,7 @@ partial class Enumerator {
 				correlationId, correlationId, new ContinuationEnvelope(OnMessage, _semaphore, _cancellationToken),
 				commitPosition, preparePosition, (int)Math.Min(DefaultReadBatchSize, _maxCount), _resolveLinks,
 				_requiresLeader, (int)_maxSearchWindow, null, _eventFilter, _user, replyOnExpired: true,
-				expires: _expiryStrategy.GetExpiry(), cancellationToken: _cancellationToken));
+				expires: _expiryStrategy.GetExpiry() ?? DateTime.MaxValue, cancellationToken: _cancellationToken));
 
 			async Task OnMessage(Message message, CancellationToken ct) {
 				if (message is ClientMessage.NotHandled notHandled &&

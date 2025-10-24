@@ -362,7 +362,7 @@ static partial class Enumerator {
 				correlationId, correlationId, envelope,
 				startPos.CommitPosition, startPos.PreparePosition, _readBatchSize, _resolveLinks, _requiresLeader, null, _user,
 				replyOnExpired: true,
-				expires: _expiryStrategy.GetExpiry(),
+				expires: _expiryStrategy.GetExpiry() ?? DateTime.MaxValue,
 				cancellationToken: ct));
 		}
 

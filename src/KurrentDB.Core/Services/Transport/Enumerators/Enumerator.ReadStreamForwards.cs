@@ -82,7 +82,7 @@ partial class Enumerator {
 			_bus.Publish(new ClientMessage.ReadStreamEventsForward(
 				correlationId, correlationId, new ContinuationEnvelope(OnMessage, _semaphore, _cancellationToken),
 				_streamName, startRevision.ToInt64(), (int)Math.Min((ulong)_batchSize, _maxCount), _resolveLinks,
-				_requiresLeader, null, _user, replyOnExpired: true, expires: _expiryStrategy.GetExpiry(),
+				_requiresLeader, null, _user, replyOnExpired: true, expires: _expiryStrategy.GetExpiry() ?? DateTime.MaxValue,
 				cancellationToken: _cancellationToken));
 
 			async Task OnMessage(Message message, CancellationToken ct) {
