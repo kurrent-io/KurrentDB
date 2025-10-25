@@ -5,11 +5,15 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Threading.Tasks;
 using KurrentDB.Core.Services.Archive;
+using Xunit;
 using Xunit.Sdk;
+using Xunit.v3;
 
 namespace KurrentDB.Core.XUnit.Tests.Services.Archive.Storage;
 
@@ -32,9 +36,12 @@ public static class StorageData {
 			_storageType = storageType;
 		}
 
-		public sealed override IEnumerable<object[]> GetData(MethodInfo testMethod) => [[_storageType, .. _extraArgs]];
+		public sealed override ValueTask<IReadOnlyCollection<ITheoryDataRow>> GetData(MethodInfo testMethod, DisposalTracker _) =>
+			new(((object[][])[[_storageType, .. _extraArgs]]).Select(ConvertDataRow).ToList());
 
 		protected delegate void PrerequisiteChecker(ref bool symbolSet);
+
+		public override bool SupportsDiscoveryEnumeration() => false;
 	}
 
 

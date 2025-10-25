@@ -14,7 +14,7 @@ using Xunit;
 
 namespace KurrentDB.Core.XUnit.Tests.LogAbstraction.Common;
 
-public class StreamExistenceFilterTests :
+public sealed class StreamExistenceFilterTests :
 	INameExistenceFilterTests,
 	IAsyncLifetime,
 	IClassFixture<DirectoryFixture<StreamExistenceFilterTests>> {
@@ -24,17 +24,17 @@ public class StreamExistenceFilterTests :
 		_fixture = fixture;
 	}
 
-	async Task IAsyncLifetime.InitializeAsync() {
+	async ValueTask IAsyncLifetime.InitializeAsync() {
 		Sut = GenSut();
 		await Sut.Initialize(new MockExistenceFilterInitializer(), 0, CancellationToken.None);
 	}
 
-	Task IAsyncLifetime.DisposeAsync() {
-		var task = Task.CompletedTask;
+	ValueTask IAsyncDisposable.DisposeAsync() {
+		var task = ValueTask.CompletedTask;
 		try {
 			Dispose();
 		} catch (Exception e) {
-			task = Task.FromException(e);
+			task = ValueTask.FromException(e);
 		}
 
 		return task;

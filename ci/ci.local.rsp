@@ -1,0 +1,2 @@
+--filter
+(FullyQualifiedName!~EventStore.Core.Tests.LogFormat+V3) & (FullyQualifiedName!~KurrentDB.Core.Tests.LogFormat+V3)

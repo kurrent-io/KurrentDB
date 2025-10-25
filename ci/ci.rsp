@@ -1,0 +1,9 @@
+--hangdump
+
+--hangdump-timeout
+30min
+
+--hangdump-type
+Mini
+
+--report-trx

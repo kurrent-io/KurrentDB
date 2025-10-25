@@ -52,14 +52,14 @@ public abstract class SubsystemScenario : IHandle<Message>, IAsyncLifetime {
 
 	protected virtual void OnMainBusMessage(Message msg) { }
 
-	public async Task InitializeAsync() {
+	public async ValueTask InitializeAsync() {
 		_mainQueue.Start();
 		_mainQueue.Publish(new SystemMessage.SystemCoreReady());
 		_mainQueue.Publish(new SystemMessage.BecomeLeader(Guid.NewGuid()));
 		await _ready.WaitAsync(TestTimeout);
 	}
 
-	public async Task DisposeAsync() {
+	public async ValueTask DisposeAsync() {
 		_miniStore.Complete();
 		await _complete;
 		await _stop();

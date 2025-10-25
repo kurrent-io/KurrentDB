@@ -2,12 +2,17 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Runtime.CompilerServices;
 using Xunit;
 
 namespace KurrentDB.Auth.OAuth.Tests;
 
 public sealed class FactRequiringDockerAttribute : FactAttribute {
-	public FactRequiringDockerAttribute() {
+	public FactRequiringDockerAttribute(
+		[CallerFilePath] string sourceFilePath = null,
+		[CallerLineNumber] int sourceLineNumber = -1)
+		: base(sourceFilePath, sourceLineNumber) {
+
 		if (OperatingSystem.IsWindows()) {
 			var gha = Environment.GetEnvironmentVariable("GITHUB_ACTIONS") ?? "false";
 			if (gha.Equals("true", StringComparison.InvariantCultureIgnoreCase)) {

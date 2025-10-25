@@ -3,10 +3,11 @@
     <PropertyGroup>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <IsTestingPlatformApplication>true</IsTestingPlatformApplication>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\KurrentDB.Core.Tests\KurrentDB.Core.Tests.csproj" />
+      <ProjectReference Include="..\KurrentDB.Core.Testing\KurrentDB.Core.Testing.csproj" />
       <ProjectReference Include="..\KurrentDB.Projections.Core\KurrentDB.Projections.Core.csproj" />
     </ItemGroup>
 
@@ -15,12 +16,7 @@
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
-      <PackageReference Include="Microsoft.NET.Test.Sdk" />
-      <PackageReference Include="xunit" />
-      <PackageReference Include="xunit.runner.visualstudio">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      </PackageReference>
+      <PackageReference Include="xunit.v3" />
     </ItemGroup>
 
 </Project>

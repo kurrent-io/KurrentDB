@@ -3,19 +3,15 @@
 <PropertyGroup>
 	<ImplicitUsings>enable</ImplicitUsings>
 	<Nullable>enable</Nullable>
+	<IsTestingPlatformApplication>true</IsTestingPlatformApplication>
 </PropertyGroup>
 
 <ItemGroup>
-	<PackageReference Include="Microsoft.NET.Test.Sdk" />
-	<PackageReference Include="xunit" />
-	<PackageReference Include="xunit.runner.visualstudio">
-		<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		<PrivateAssets>all</PrivateAssets>
-	</PackageReference>
+	<PackageReference Include="xunit.v3" />
 </ItemGroup>
 
 <ItemGroup>
-	<ProjectReference Include="..\KurrentDB.Core.Tests\KurrentDB.Core.Tests.csproj" />
+	<ProjectReference Include="..\KurrentDB.Core.Testing\KurrentDB.Core.Testing.csproj" />
 	<ProjectReference Include="..\KurrentDB.Auth.StreamPolicyPlugin\KurrentDB.Auth.StreamPolicyPlugin.csproj" />
 </ItemGroup>
 
