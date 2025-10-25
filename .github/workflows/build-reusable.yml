@@ -89,13 +89,10 @@ jobs:
         --configuration ${{ matrix.configuration }}
         -p:Platform=${{ inputs.arch }}
         -p:DefineConstants=${{ inputs.cs_symbols }}
-        --hangdump
-        --hangdump-timeout 30min
-        --hangdump-type Mini
-        --settings ./ci/ci.local.runsettings
+        @"./ci/ci.rsp"
+        @"./ci/ci.local.rsp"
         --results-directory $(pwd)/test-results
         --solution src/KurrentDB.sln
-        --report-trx
     -  
       name: Publish Test Results (All)
       uses: actions/upload-artifact@v4
