@@ -19,7 +19,6 @@ using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Xunit;
-using Xunit.Abstractions;
 using ResolvedEvent = KurrentDB.Projections.Core.Services.Processing.ResolvedEvent;
 
 namespace KurrentDB.Projections.Core.Javascript.Tests;

@@ -9,11 +9,11 @@ namespace KurrentDB.Core.XUnit.Tests;
 public class DirectoryPerTest<T> : IAsyncLifetime {
 	protected DirectoryFixture<T> Fixture { get; private set; } = new();
 
-	public virtual async Task InitializeAsync() {
+	public virtual async ValueTask InitializeAsync() {
 		await Fixture.InitializeAsync();
 	}
 
-	public virtual async Task DisposeAsync() {
+	public virtual async ValueTask DisposeAsync() {
 		await Fixture.DisposeAsync();
 	}
 }

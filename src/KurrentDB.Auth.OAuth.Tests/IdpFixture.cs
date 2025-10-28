@@ -11,7 +11,7 @@ using Ductus.FluentDocker.Model.Builders;
 using Ductus.FluentDocker.Services;
 using IdentityModel.Client;
 using Polly;
-using Xunit.Abstractions;
+using Xunit;
 
 namespace KurrentDB.Auth.OAuth.Tests;
 

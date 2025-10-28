@@ -13,7 +13,6 @@ using KurrentDB.SecondaryIndexing.Indexes.EventType;
 using KurrentDB.SecondaryIndexing.Tests.Generators;
 using KurrentDB.Surge.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace KurrentDB.SecondaryIndexing.Tests.IntegrationTests;
 

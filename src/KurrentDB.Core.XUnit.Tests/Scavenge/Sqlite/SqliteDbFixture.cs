@@ -10,7 +10,7 @@ using Xunit;
 
 namespace KurrentDB.Core.XUnit.Tests.Scavenge.Sqlite;
 
-public class SqliteDbFixture<T> : IAsyncLifetime {
+public sealed class SqliteDbFixture<T> : IAsyncLifetime {
 	private readonly string _connectionString;
 
 	public SqliteConnection DbConnection { get; set; }
@@ -27,7 +27,7 @@ public class SqliteDbFixture<T> : IAsyncLifetime {
 		_connectionString = connectionStringBuilder.ConnectionString;
 	}
 
-	public Task InitializeAsync() {
+	public async ValueTask InitializeAsync() {
 		DbConnection = new SqliteConnection(_connectionString);
 		DbConnectionPool = new ObjectPool<SqliteConnection>(
 			objectPoolName: "sqlite connections",
@@ -42,13 +42,13 @@ public class SqliteDbFixture<T> : IAsyncLifetime {
 				dbConnection.Close();
 				dbConnection.Dispose();
 			});
-		return DbConnection.OpenAsync();
+		await DbConnection.OpenAsync();
 	}
 
-	public Task DisposeAsync() {
+	public ValueTask DisposeAsync() {
 		DbConnection.Close();
 		DbConnection.Dispose();
 		DbConnectionPool.Dispose();
-		return Task.CompletedTask;
+		return ValueTask.CompletedTask;
 	}
 }

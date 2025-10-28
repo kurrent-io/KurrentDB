@@ -6,21 +6,17 @@
     <TargetFrameworks>net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <IsTestProject>true</IsTestProject>
+    <IsKurrentTUnit>true</IsKurrentTUnit>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <IsPackable>false</IsPackable>
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
-    <EnableMSTestRunner>true</EnableMSTestRunner>
     <EnablePreviewFeatures>true</EnablePreviewFeatures>
-    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
-    <TestingPlatformCaptureOutput>false</TestingPlatformCaptureOutput>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Kurrent.Surge" />
     <PackageReference Include="Kurrent.Surge.DuckDB" />
     <PackageReference Include="Shouldly" />
-    <PackageReference Include="TUnit" />
   </ItemGroup>
 
   <ItemGroup>

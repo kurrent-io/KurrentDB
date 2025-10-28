@@ -2,4 +2,7 @@
 	<PropertyGroup>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 	</PropertyGroup>
+	<PropertyGroup Condition="'$(IsKurrentTUnit)' == 'True' Or '$(IsKurrentXUnit)' == 'True' Or '$(IsKurrentNUnit)' == 'True'">
+		<OutputType>Exe</OutputType>
+	</PropertyGroup>
 </Project>
