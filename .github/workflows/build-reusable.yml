@@ -12,6 +12,8 @@ on:
         default: ""
 
 jobs:
+# todo, consider matrix of slnf files to group assemblies together. each job could run a separate slnf.
+# this may be more practical after githubactionstestrunner supports MTP, making failures easier to understand at a glance.
   discover_projects:
     runs-on: ubuntu-latest
     outputs:
@@ -24,7 +26,7 @@ jobs:
 
       - id: set-modules
         run: |
-          modules=$(sed 's#.*/##; s#.csproj##;' projects.txt | jq -R . | jq -sc .)
+          modules=$(cat projects.txt | jq -R . | jq -sc .)
           echo "modules=$modules" >> $GITHUB_OUTPUT
   build:
     needs: discover_projects
@@ -90,17 +92,17 @@ jobs:
         dotnet build
         --configuration ${{ matrix.configuration }}
         -p:DefineConstants=${{ inputs.cs_symbols }}
-        src/${{ matrix.module }}
+        ${{ matrix.module }}
     -  
       name: Verify Build
-      if: ${{ matrix.module == 'KurrentDB' }}
+      if: ${{ matrix.module == 'src/KurrentDB/KurrentDB.csproj' }}
       shell: bash
       run: |
-        dotnet run --project src/${{ matrix.module }} --configuration ${{ matrix.configuration }} -- --insecure --what-if
+        dotnet run --project ${{ matrix.module }} --configuration ${{ matrix.configuration }} -- --insecure --what-if
     # so that the oauth tests have an up to date server image to run against
     -  
       name: Build Test Image
-      if: ${{ matrix.module == 'KurrentDB' && !startsWith(inputs.os, 'windows') }}
+      if: ${{ matrix.module == 'src/KurrentDB/KurrentDB.csproj' && !startsWith(inputs.os, 'windows') }}
       uses: docker/build-push-action@v4
       with:
         context: .
@@ -109,19 +111,19 @@ jobs:
         tags: ${{ env.DB_IMAGE }}
     -  
       name: Run Tests
-      if: ${{ endsWith(matrix.module, '.Tests') }}
+      if: ${{ endsWith(matrix.module, '.Tests.csproj') }}
       shell: bash
       run: >
         dotnet test
         --results-directory $(pwd)/test-results
         --no-build
         --configuration ${{ matrix.configuration }}
-        --project src/${{ matrix.module }}
+        --project ${{ matrix.module }}
     -  
       name: Publish Test Results (All)
       uses: actions/upload-artifact@v4
-      if: ${{ contains(matrix.module, '.Tests') }}
+      if: ${{ endsWith(matrix.module, '.Tests.csproj') }}
       with:
-        name: test-results-${{ inputs.os }}-${{ matrix.module }}
+        name: test-results-${{ inputs.os }}-${{ replace(matrix.module, '/', '-') }}
         path: |
           test-results/*.trx
