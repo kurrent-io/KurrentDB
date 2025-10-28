@@ -12,18 +12,29 @@ on:
         default: ""
 
 jobs:
+  discover_projects:
+    runs-on: ubuntu-latest
+    outputs:
+      modules: ${{ steps.set-modules.outputs.modules }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: find
+        run: |
+          find src -maxdepth 3 -name "*.csproj" > projects.txt
+
+      - id: set-modules
+        run: |
+          modules=$(sed 's#.*/##; s#.csproj##;' projects.txt | jq -R . | jq -sc .)
+          echo "modules=$modules" >> $GITHUB_OUTPUT
   build:
+    needs: discover_projects
     env:
       DB_IMAGE: kurrentdb-test-container
     strategy:
       fail-fast: false
       matrix:
         configuration: [release]
-        # todo: a way to not accidentally miss any modules
-        module:
-        - "KurrentDB"
-        - "KurrentDB.AutoScavenge.Tests"
-        - "KurrentDB.BufferManagement.Tests"
+        module: ${{ fromJson(needs.discover_projects.outputs.modules) }}
     runs-on: ${{ inputs.os }}
     name: ${{ inputs.os }}-${{ matrix.module }}
     steps:
@@ -79,7 +90,7 @@ jobs:
         dotnet build
         --configuration ${{ matrix.configuration }}
         -p:DefineConstants=${{ inputs.cs_symbols }}
-        src/${{ matrix.module }}/${{ matrix.module }}.csproj
+        src/${{ matrix.module }}
     -  
       name: Verify Build
       if: ${{ matrix.module == 'KurrentDB' }}
@@ -105,8 +116,7 @@ jobs:
         --results-directory $(pwd)/test-results
         --no-build
         --configuration ${{ matrix.configuration }}
-        --project src/${{ matrix.module }}/${{ matrix.module }}.csproj
-#        --test-modules **/bin/**/${{ matrix.module }}.dll
+        --project src/${{ matrix.module }}
     -  
       name: Publish Test Results (All)
       uses: actions/upload-artifact@v4
