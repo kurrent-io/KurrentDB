@@ -6,9 +6,6 @@ on:
       os:
         required: true
         type: string
-      arch:
-        required: true
-        type: string
       cs_symbols:
         required: false
         type: string
@@ -72,7 +69,6 @@ jobs:
       run: >
         dotnet build
         --configuration ${{ matrix.configuration }}
-        -p:Platform=${{ inputs.arch }}
         -p:DefineConstants=${{ inputs.cs_symbols }}
         src/${{ matrix.module }}/${{ matrix.module }}.csproj
     -  
@@ -97,7 +93,6 @@ jobs:
       shell: bash
       run: >
         dotnet test
-        -p:Platform=${{ inputs.arch }}
         --results-directory $(pwd)/test-results
         --no-build
         --configuration ${{ matrix.configuration }}
