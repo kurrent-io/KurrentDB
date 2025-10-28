@@ -80,4 +80,65 @@ public class SystemProducerTests(ITestOutputHelper output, SystemComponentsAssem
 		var streams = Enumerable.Range(1, numberOfStreams).Select(_ => Fixture.NewStreamId()).ToList();
 		await Parallel.ForEachAsync(streams, async (streamId, _) => await sends_messages(numberOfRequests, batchSize, streamId));
 	}
+
+	[Theory]
+	[InlineData(2, 1)]
+	[InlineData(3, 1)]
+	[InlineData(2, 5)]
+	[InlineData(5, 3)]
+	public async Task produces_to_multiple_streams(int numberOfStreams, int batchSize) {
+		// Arrange
+		var streamIds = Enumerable.Range(1, numberOfStreams).Select(_ => Fixture.NewStreamId()).ToList();
+
+		var requests = streamIds
+			.Select(streamId => Fixture.GenerateTestProduceRequest(streamId, batchSize))
+			.ToArray();
+
+		await using var producer = Fixture.NewProducer()
+			.ProducerId($"pdr-multiple-{numberOfStreams}-{batchSize}")
+			.Create();
+
+		ProduceResult? result = null;
+
+		// Act
+		await producer.ProduceMultiple(requests, r => {
+			result = r;
+			return Task.CompletedTask;
+		});
+
+		// Assert
+		result.Should().NotBeNull();
+
+		for (var streamIndex = 0; streamIndex < streamIds.Count; streamIndex++) {
+			var streamId = streamIds[streamIndex];
+			var request = requests[streamIndex];
+
+			var actualEvents = await Fixture.Client.Reading.ReadFullStream(streamId).ToListAsync();
+
+			actualEvents.Should().HaveCount(batchSize);
+
+			for (var i = 0; i < actualEvents.Count; i++) {
+				var actualRecord = await actualEvents[i].ToRecord((data, headers) => Fixture.SchemaSerializer.Deserialize(data, new(headers)), i + 1);
+				var actualMessage = MapRecordToMessage(actualRecord);
+				var sentMessage = request.Messages[i];
+
+				actualMessage.Should().BeEquivalentTo(sentMessage,
+					options => options.WithTracing()
+						.Excluding(x => x.Schema.SchemaName)
+						.Excluding(x => x.Schema.SchemaNameMissing)
+						.ComparingByValue(typeof(PartitionKey)));
+			}
+		}
+
+		return;
+
+		static Message MapRecordToMessage(SurgeRecord record) =>
+			new() {
+				Value    = record.Value,
+				Key      = record.Key,
+				Headers  = record.Headers,
+				RecordId = record.Id,
+				Schema   = record.SchemaInfo
+			};
+	}
 }

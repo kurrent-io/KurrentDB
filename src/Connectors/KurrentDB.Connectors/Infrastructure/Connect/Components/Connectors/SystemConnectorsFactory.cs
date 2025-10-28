@@ -180,8 +180,8 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ISe
     }
 
     IProcessor ConfigureSourceProcessor(ConnectorId connectorId, LinkedList<InterceptorModule> interceptors, SourceOptions sourceOptions, SourceProxy sourceProxy) {
-        var client         = Services.GetRequiredService<ISystemClient>();
-	    var loggerFactory = Services.GetRequiredService<ILoggerFactory>();
+	    var client         = Services.GetRequiredService<ISystemClient>();
+	    var loggerFactory  = Services.GetRequiredService<ILoggerFactory>();
 	    var schemaRegistry = Services.GetRequiredService<SchemaRegistry>();
 
 	    var loggingOptions = new Kurrent.Surge.Configuration.LoggingOptions {
