@@ -22,8 +22,13 @@ jobs:
       fail-fast: false
       matrix:
         configuration: [release]
+        # todo: a way to not accidentally miss any modules
+        module:
+        - "KurrentDB"
+        - "KurrentDB.AutoScavenge.Tests"
+        - "KurrentDB.BufferManagement.Tests"
     runs-on: ${{ inputs.os }}
-    name: ci/github/build-${{ inputs.os }}
+    name: ${{ inputs.os }}-${{ matrix.module }}
     steps:
     -  
       name: Install Azure Emulator
@@ -64,17 +69,22 @@ jobs:
     -  
       name: Compile
       shell: bash
-      run: |
-        dotnet build --configuration ${{ matrix.configuration }} -p:Platform=${{ inputs.arch }} src/KurrentDB.sln
+      run: >
+        dotnet build
+        --configuration ${{ matrix.configuration }}
+        -p:Platform=${{ inputs.arch }}
+        -p:DefineConstants=${{ inputs.cs_symbols }}
+        src/${{ matrix.module }}/${{ matrix.module }}.csproj
     -  
       name: Verify Build
+      if: ${{ matrix.module == 'KurrentDB' }}
       shell: bash
       run: |
-        dotnet run --project src/KurrentDB --configuration ${{ matrix.configuration }} -- --insecure --what-if
+        dotnet run --project src/${{ matrix.module }} --configuration ${{ matrix.configuration }} -- --insecure --what-if
     # so that the oauth tests have an up to date server image to run against
     -  
       name: Build Test Image
-      if: ${{ !startsWith(inputs.os, 'windows') }}
+      if: ${{ matrix.module == 'KurrentDB' && !startsWith(inputs.os, 'windows') }}
       uses: docker/build-push-action@v4
       with:
         context: .
@@ -83,19 +93,21 @@ jobs:
         tags: ${{ env.DB_IMAGE }}
     -  
       name: Run Tests
+      if: ${{ endsWith(matrix.module, '.Tests') }}
       shell: bash
       run: >
         dotnet test
-        --configuration ${{ matrix.configuration }}
         -p:Platform=${{ inputs.arch }}
-        -p:DefineConstants=${{ inputs.cs_symbols }}
         --results-directory $(pwd)/test-results
-        --solution src/KurrentDB.sln
+        --no-build
+        --configuration ${{ matrix.configuration }}
+        --project src/${{ matrix.module }}/${{ matrix.module }}.csproj
+#        --test-modules **/bin/**/${{ matrix.module }}.dll
     -  
       name: Publish Test Results (All)
       uses: actions/upload-artifact@v4
-      if: always()
+      if: ${{ contains(matrix.module, '.Tests') }}
       with:
-        name: test-results-${{ matrix.configuration }}-${{ inputs.os }}
+        name: test-results-${{ inputs.os }}-${{ matrix.module }}
         path: |
           test-results/*.trx
