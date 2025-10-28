@@ -9,9 +9,12 @@
   <ItemGroup>
     <PackageReference Include="Grpc.Net.Client" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
-  </ItemGroup>
+    <PackageReference Include="RestSharp" />
+    <PackageReference Include="Testcontainers" />
+	</ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\KurrentDB.Testing\KurrentDB.Testing.csproj" />
     <ProjectReference Include="..\KurrentDB\KurrentDB.csproj" />
   </ItemGroup>
 </Project>
