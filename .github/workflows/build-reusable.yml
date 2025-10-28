@@ -54,8 +54,17 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 10.0.x
+    # //qq check this
+    -
+      name: Use nuget cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          nuget-${{ runner.os }}-
     -  
-      name: Clear Nuget Cache
+      name: Clear Nuget Config
       shell: powershell
       if: ${{ startsWith(inputs.os, 'windows') }}
       run: |
