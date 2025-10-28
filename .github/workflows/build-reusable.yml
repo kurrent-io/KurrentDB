@@ -17,15 +17,13 @@ jobs:
   discover_projects:
     runs-on: ubuntu-latest
     outputs:
-      modules: ${{ steps.set-modules.outputs.modules }}
+      modules: ${{ steps.discover.outputs.modules }}
     steps:
       - uses: actions/checkout@v4
-      - id: find
+      - id: discover
         run: |
-          find src -maxdepth 3 -name "*.csproj" > projects.txt
-
-      - id: set-modules
-        run: |
+          find src -maxdepth 3 -name "*.Tests.csproj" > projects.txt
+          echo "src/KurrentDB/KurrentDB.csproj" >> projects.txt
           modules=$(cat projects.txt | jq -R . | jq -sc .)
           echo "modules=$modules" >> $GITHUB_OUTPUT
   build:
@@ -38,7 +36,7 @@ jobs:
         configuration: [release]
         module: ${{ fromJson(needs.discover_projects.outputs.modules) }}
     runs-on: ${{ inputs.os }}
-    name: ${{ inputs.os }}-${{ matrix.module }}
+    name: ${{ matrix.module }}
     steps:
     -  
       name: Install Azure Emulator
@@ -47,14 +45,14 @@ jobs:
         npm install -g azurite
         azurite --location /tmp/azurite &
         curl -I http://127.0.0.1:10000/ --retry 5 --retry-delay 1 --retry-connrefused
-    -  
-      name: Free Disk Space (Ubuntu)
-      if: ${{ !startsWith(inputs.os, 'windows') }}
-      uses: jlumbroso/free-disk-space@v1.3.1
-      with:
-        tool-cache: false
-        dotnet: false
-        docker-images: false
+#    -  
+#      name: Free Disk Space (Ubuntu)
+#      if: ${{ !startsWith(inputs.os, 'windows') }}
+#      uses: jlumbroso/free-disk-space@v1.3.1
+#      with:
+#        tool-cache: false
+#        dotnet: false
+#        docker-images: false
     -  
       name: Checkout
       uses: actions/checkout@v4
@@ -119,11 +117,20 @@ jobs:
         --no-build
         --configuration ${{ matrix.configuration }}
         --project ${{ matrix.module }}
+    -
+      name: Remove slashes
+      if: ${{ endsWith(matrix.module, '.Tests.csproj') }}
+      id: remove_slashes
+      shell: bash
+      run: |
+        base="${{ matrix.module }}"
+        safe="${base//\//-}"
+        echo "value=$safe" >> $GITHUB_OUTPUT
     -  
       name: Publish Test Results (All)
       uses: actions/upload-artifact@v4
       if: ${{ endsWith(matrix.module, '.Tests.csproj') }}
       with:
-        name: test-results-${{ inputs.os }}-${{ replace(matrix.module, '/', '-') }}
+        name: test-results-${{ steps.remove_slashes.outputs.value }}
         path: |
           test-results/*.trx
