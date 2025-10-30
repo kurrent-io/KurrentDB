@@ -35,6 +35,7 @@
 		<PackageReference Include="Kurrent.Connectors.MongoDB" />
 		<PackageReference Include="Kurrent.Connectors.RabbitMQ" />
 		<PackageReference Include="Kurrent.Connectors.Pulsar" />
+		<PackageReference Include="Kurrent.Connectors.Sql" />
 		<PackageReference Include="Eventuous.Application" />
 		<PackageReference Include="Eventuous.Extensions.AspNetCore" />
 		<PackageReference Include="Eventuous.Extensions.DependencyInjection" />
