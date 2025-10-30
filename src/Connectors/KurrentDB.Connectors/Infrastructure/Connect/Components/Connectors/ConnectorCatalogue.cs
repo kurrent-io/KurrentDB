@@ -10,6 +10,7 @@ using Kurrent.Connectors.MongoDB;
 using Kurrent.Connectors.RabbitMQ;
 using Kurrent.Connectors.Serilog;
 using Kurrent.Connectors.Pulsar;
+using Kurrent.Connectors.Sql;
 using Kurrent.Surge.Connectors.Sinks;
 using Kurrent.Surge.Connectors.Sources;
 using static KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors.ConnectorCatalogueItem;
@@ -28,9 +29,10 @@ public class ConnectorCatalogue {
         Items = new Dictionary<Type, ConnectorCatalogueItem> {
             [typeof(HttpSink)]          = For<HttpSink, HttpSinkValidator, HttpSinkConnectorDataProtector>([$"{EntitlementPrefix}_HTTP_SINK"], false),
             [typeof(SerilogSink)]       = For<SerilogSink, SerilogSinkValidator, SerilogSinkConnectorDataProtector>([$"{EntitlementPrefix}_SERILOG_SINK"], false),
+            [typeof(SqlSink)]           = For<SqlSink, SqlSinkValidator, SqlSinkConnectorDataProtector>([$"{EntitlementPrefix}_SQL_SINK"], false), // TODO: require license once it's ready
             [typeof(KafkaSink)]         = For<KafkaSink, KafkaSinkValidator, KafkaSinkConnectorDataProtector>([$"{EntitlementPrefix}_KAFKA_SINK"], true),
             [typeof(KafkaSource)]       = For<KafkaSource, KafkaSourceValidator, KafkaSourceConnectorDataProtector>([$"{EntitlementPrefix}_KAFKA_SOURCE"], true),
-            [typeof(PulsarSink)]         = For<PulsarSink, PulsarSinkValidator, PulsarSinkConnectorDataProtector>([$"{EntitlementPrefix}_PULSAR_SINK"], true),
+            [typeof(PulsarSink)]        = For<PulsarSink, PulsarSinkValidator, PulsarSinkConnectorDataProtector>([$"{EntitlementPrefix}_PULSAR_SINK"], true),
             [typeof(RabbitMqSink)]      = For<RabbitMqSink, RabbitMqSinkValidator, RabbitMqSinkConnectorDataProtector>([$"{EntitlementPrefix}_RABBITMQ_SINK"], true),
             [typeof(ElasticsearchSink)] = For<ElasticsearchSink, ElasticsearchSinkValidator, ElasticsearchSinkConnectorDataProtector>([$"{EntitlementPrefix}_ELASTICSEARCH_SINK", $"{EntitlementPrefix}_ELASTICSEARCH_SOURCE"], true),
             [typeof(MongoDbSink)]       = For<MongoDbSink, MongoDbSinkValidator, MongoDbSinkConnectorDataProtector>([$"{EntitlementPrefix}_MONGODB_SINK"], true),

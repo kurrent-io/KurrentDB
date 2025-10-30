@@ -4,6 +4,7 @@
 // ReSharper disable InconsistentNaming
 // ReSharper disable CheckNamespace
 
+using Kurrent.Connectors.Sql;
 using Kurrent.Surge.Connectors.Sinks;
 using Kurrent.Surge;
 using Kurrent.Surge.Connectors;
@@ -15,6 +16,7 @@ using Kurrent.Surge.Consumers.Configuration;
 using Kurrent.Surge.Interceptors;
 using Kurrent.Surge.Persistence.State;
 using Kurrent.Surge.Processors;
+using Kurrent.Surge.Reducers;
 using Kurrent.Surge.Schema;
 using Kurrent.Surge.Transformers;
 
@@ -65,12 +67,25 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ISe
         SinkConnector CreateSinkConnector() {
 	        var sinkOptions = config.GetRequiredOptions<SinkOptions>();
 
+	        if (ConnectorCatalogue.TryGetConnector(connector.GetType(), out ConnectorCatalogueItem item) && item.ConnectorType == typeof(SqlSink)) {
+		        sinkOptions = sinkOptions with { Reducer = sinkOptions.Reducer with { Enabled = true } };
+	        }
+
 	        if (sinkOptions.Transformer.Enabled) {
 		        var transformer = new JintRecordTransformer(sinkOptions.Transformer.DecodeFunction()) {
 			        // ReSharper disable once AccessToModifiedClosure
 			        ErrorCallback = errorType => SinkMetrics.TrackTransformError(connectorId, connector.MetricsLabel, errorType)
 		        };
 		        connector = new RecordTransformerSink(connector, transformer);
+	        }
+
+	        if (sinkOptions.Reducer.Enabled) {
+                var reducer = new JintSqlReducer(sinkOptions.Reducer.DecodeQuery()) {
+                    // ReSharper disable once AccessToModifiedClosure
+                    ErrorCallback = errorType => SinkMetrics.TrackReduceError(connectorId, connector.MetricsLabel, errorType)
+                };
+
+                connector = new SqlReducerSink(connector, reducer);
 	        }
 
 	        ConnectorMetrics.TrackSinkConnectorCreated(connector.GetType(), connectorId);

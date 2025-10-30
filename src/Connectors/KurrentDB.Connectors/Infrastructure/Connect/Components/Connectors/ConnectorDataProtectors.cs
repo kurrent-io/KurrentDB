@@ -8,6 +8,7 @@ using Kurrent.Connectors.MongoDB;
 using Kurrent.Connectors.RabbitMQ;
 using Kurrent.Connectors.Serilog;
 using Kurrent.Connectors.Pulsar;
+using Kurrent.Connectors.Sql;
 using Kurrent.Surge.DataProtection;
 
 namespace KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
@@ -17,6 +18,16 @@ namespace KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
 [PublicAPI]
 public class SerilogSinkConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<SerilogSinkOptions>(dataProtector) {
     protected override string[] ConfigureSensitiveKeys() => [];
+}
+
+[PublicAPI]
+public class SqlSinkConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<SqlSinkOptions>(dataProtector) {
+    protected override string[] ConfigureSensitiveKeys() => [
+	    "ConnectionString",
+	    "Authentication:Password",
+	    "Authentication:ClientCertificate",
+	    "Authentication:CertificatePassword"
+    ];
 }
 
 [PublicAPI]
