@@ -17,7 +17,7 @@ services:
       - ./certs:/certs
 
   node1.eventstore: &template
-    image: eventstore/eventstore:23.10.7-bookworm-slim
+    image: eventstore/eventstore:23.10.8-bookworm-slim
     container_name: node1.eventstore
     env_file:
       - vars.env

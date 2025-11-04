@@ -6,6 +6,16 @@ order: 1
 
 This page contains the release notes for EventStoreDB 23.10 and 23.6
 
+## [23.10.8](https://github.com/kurrent-io/KurrentDB/releases/tag/oss-v23.10.8)
+
+4 November 2025
+
+### Add forwards compatibility with new persistent subscription checkpoints (PR [#5244](https://github.com/kurrent-io/KurrentDB/pull/5244))
+
+24.10+ writes Persistent Subscription Checkpoints prefixed with a $. 23.10.8 will find these checkpoints and continue as normal, but earlier versions will not, and so reset the persistent subscriptions which could be slow on large databases.
+
+When upgrading from 23.10 to 24.10+, consider upgrading to 23.10.8 first so that in the event of a rollback persistent subscriptions will continue smoothly.
+
 ## [23.10.7](https://github.com/kurrent-io/KurrentDB/releases/tag/oss-v23.10.7)
 
 19 June 2025
