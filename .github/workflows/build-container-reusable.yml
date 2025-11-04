@@ -99,12 +99,12 @@ jobs:
       if: always() && github.event_name == 'push'
       shell: bash
       run: |
-        docker tag eventstore ghcr.io/eventstore/eventstore:${{ env.VERSION }}
-        docker push ghcr.io/eventstore/eventstore:${{ env.VERSION }}
+        docker tag eventstore ghcr.io/kurrent-io/eventstore:${{ env.VERSION }}
+        docker push ghcr.io/kurrent-io/eventstore:${{ env.VERSION }}
     - name: Push GitHub Container Registry (CI)
       if: always() && github.event_name == 'push' && inputs.container-runtime == 'jammy' && github.ref == 'refs/heads/master'
       shell: bash
       run: |
-        docker tag eventstore ghcr.io/eventstore/eventstore:ci
-        docker push ghcr.io/eventstore/eventstore:ci
+        docker tag eventstore ghcr.io/kurrent-io/eventstore:ci
+        docker push ghcr.io/kurrent-io/eventstore:ci
 
