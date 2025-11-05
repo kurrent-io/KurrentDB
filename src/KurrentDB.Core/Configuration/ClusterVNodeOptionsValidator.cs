@@ -112,6 +112,8 @@ public static class ClusterVNodeOptionsValidator {
 			throw new InvalidConfigurationException(
 				"The Archiving feature is not compatible with UnsafeIgnoreHardDelete.");
 		}
+
+		ValidateConcurrency(options.Database);
 	}
 
 	public static bool ValidateForStartup(ClusterVNodeOptions options) {
@@ -141,5 +143,17 @@ public static class ClusterVNodeOptionsValidator {
 		}
 
 		return true;
+	}
+
+	private static void ValidateConcurrency(ClusterVNodeOptions.DatabaseOptions options) {
+		switch (options.ReaderThreadsCount, options.MaxConcurrentReadersCount) {
+			case (ReaderThreadsCount: > 0, MaxConcurrentReadersCount: > 0)
+				when options.MaxConcurrentReadersCount != options.ReaderThreadsCount:
+				throw new InvalidConfigurationException(
+					"ReaderThreadsCount and MaxConcurrentReadersCount cannot be set to different positive values.");
+			case (ReaderThreadsCount: > 0, MaxConcurrentReadersCount: 0):
+				options.MaxConcurrentReadersCount = options.ReaderThreadsCount;
+				break;
+		}
 	}
 }
