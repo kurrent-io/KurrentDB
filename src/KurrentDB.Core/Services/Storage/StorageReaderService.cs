@@ -37,7 +37,8 @@ public class StorageReaderService<TStreamId> : StorageReaderService,
 		ISystemStreamLookup<TStreamId> systemStreams,
 		IReadOnlyCheckpoint writerCheckpoint,
 		IVirtualStreamReader inMemReader,
-		SecondaryIndexReaders secondaryIndexReaders) {
+		SecondaryIndexReaders secondaryIndexReaders,
+		long maxConcurrentReadersCount) {
 		Ensure.NotNull(subscriber);
 		Ensure.NotNull(systemStreams);
 		Ensure.NotNull(writerCheckpoint);
@@ -45,7 +46,8 @@ public class StorageReaderService<TStreamId> : StorageReaderService,
 		_bus = Ensure.NotNull(bus);
 		_readIndex = Ensure.NotNull(readIndex);
 
-		var worker = new StorageReaderWorker<TStreamId>(bus, readIndex, systemStreams, writerCheckpoint, inMemReader, secondaryIndexReaders);
+		var worker = new StorageReaderWorker<TStreamId>(bus, readIndex, systemStreams, writerCheckpoint, inMemReader, secondaryIndexReaders,
+			maxConcurrentReadersCount);
 		var storageReaderBus = new InMemoryBus("StorageReaderBus", watchSlowMsg: false);
 
 		storageReaderBus.Subscribe<ClientMessage.ReadEvent>(worker);

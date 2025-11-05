@@ -57,7 +57,8 @@ public partial class StorageReaderWorker<TStreamId> :
 		ISystemStreamLookup<TStreamId> systemStreams,
 		IReadOnlyCheckpoint writerCheckpoint,
 		IVirtualStreamReader virtualStreamReader,
-		SecondaryIndexReaders secondaryIndexReaders) {
+		SecondaryIndexReaders secondaryIndexReaders,
+		long maxConcurrentReadersCount) {
 
 		_publisher = publisher;
 		_readIndex = Ensure.NotNull(readIndex);
@@ -71,6 +72,13 @@ public partial class StorageReaderWorker<TStreamId> :
 			TimeSpan.FromSeconds(10),
 			_publisher,
 			new StorageMessage.BatchLogExpiredMessages());
+
+		// Perf: HasConcurrencyLimit set to false means that the capacity of the internal IValueTaskSource pool is limited to avoid
+		// inflation of the pool in the case of high (but rare) workloads, and let GC collect the sources that cannot be returned
+		// to the pool
+		_rateLimiter = maxConcurrentReadersCount > 0
+			? new(maxConcurrentReadersCount) { ConcurrencyLevel = maxConcurrentReadersCount, HasConcurrencyLimit = false }
+			: null;
 	}
 
 	async ValueTask IAsyncHandle<StorageMessage.EffectiveStreamAclRequest>.HandleAsync(StorageMessage.EffectiveStreamAclRequest msg, CancellationToken token) {
