@@ -399,16 +399,15 @@ public partial record ClusterVNodeOptions {
 		public int InitializationThreads { get; init; } = 1;
 
 		[Description("The number of reader threads to use for processing reads. Set to '0' to scale automatically (Default)")]
-		[Deprecated(
-			"The ReaderThreadsCount parameter has been deprecated as of version 26.0.0 and currently has no effect. The workers automatically scale as necessary.")]
+		[Deprecated("The ReaderThreadsCount parameter has been deprecated as of version 26.0.0 and currently has no effect. The workers automatically scale as necessary.")]
 		public int ReaderThreadsCount { get; init; } = 0;
 
 		[Description("The maximum number of read requests that can be processed concurrently. Set to '0' for unlimited (Default)")]
 		public long MaxConcurrentReadersCount { get; set; } = 0;
 
 		[Description("During large Index Merge operations, writes may be slowed down. Set this to the maximum " +
-		             "index file level for which automatic merges should happen. Merging indexes above this level " +
-		             "should be done manually.")]
+					 "index file level for which automatic merges should happen. Merging indexes above this level " +
+					 "should be done manually.")]
 		public int MaxAutoMergeIndexLevel { get; init; } = int.MaxValue;
 
 		[Description("Set this option to write statistics to the database.")]
