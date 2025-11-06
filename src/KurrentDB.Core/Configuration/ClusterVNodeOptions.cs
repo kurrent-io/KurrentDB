@@ -403,7 +403,7 @@ public partial record ClusterVNodeOptions {
 		public int ReaderThreadsCount { get; init; } = 0;
 
 		[Description("The maximum number of read requests that can be processed concurrently. Set to '0' for unlimited (Default)")]
-		public long MaxConcurrentReadersCount { get; set; } = 0;
+		public long ConcurrentReadsLimit { get; set; } = 0;
 
 		[Description("During large Index Merge operations, writes may be slowed down. Set this to the maximum " +
 					 "index file level for which automatic merges should happen. Merging indexes above this level " +

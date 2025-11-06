@@ -146,13 +146,13 @@ public static class ClusterVNodeOptionsValidator {
 	}
 
 	private static void ValidateConcurrency(ClusterVNodeOptions.DatabaseOptions options) {
-		switch (options.ReaderThreadsCount, options.MaxConcurrentReadersCount) {
-			case (ReaderThreadsCount: > 0, MaxConcurrentReadersCount: > 0)
-				when options.MaxConcurrentReadersCount != options.ReaderThreadsCount:
+		switch (options.ReaderThreadsCount, options.ConcurrentReadsLimit) {
+			case (ReaderThreadsCount: > 0, ConcurrentReadsLimit: > 0)
+				when options.ConcurrentReadsLimit != options.ReaderThreadsCount:
 				throw new InvalidConfigurationException(
-					"ReaderThreadsCount and MaxConcurrentReadersCount cannot be set to different positive values.");
-			case (ReaderThreadsCount: > 0, MaxConcurrentReadersCount: 0):
-				options.MaxConcurrentReadersCount = options.ReaderThreadsCount;
+					$"{nameof(options.ReaderThreadsCount)} and {nameof(options.ConcurrentReadsLimit)} cannot be set to different positive values.");
+			case (ReaderThreadsCount: > 0, ConcurrentReadsLimit: 0):
+				options.ConcurrentReadsLimit = options.ReaderThreadsCount;
 				break;
 		}
 	}

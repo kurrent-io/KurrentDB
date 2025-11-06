@@ -58,7 +58,7 @@ public partial class StorageReaderWorker<TStreamId> :
 		IReadOnlyCheckpoint writerCheckpoint,
 		IVirtualStreamReader virtualStreamReader,
 		SecondaryIndexReaders secondaryIndexReaders,
-		long maxConcurrentReadersCount) {
+		long concurrentReadsLimit) {
 
 		_publisher = publisher;
 		_readIndex = Ensure.NotNull(readIndex);
@@ -76,8 +76,8 @@ public partial class StorageReaderWorker<TStreamId> :
 		// Perf: HasConcurrencyLimit set to false means that the capacity of the internal IValueTaskSource pool is limited to avoid
 		// inflation of the pool in the case of high (but rare) workloads, and let GC collect the sources that cannot be returned
 		// to the pool
-		_rateLimiter = maxConcurrentReadersCount > 0
-			? new(maxConcurrentReadersCount) { ConcurrencyLevel = maxConcurrentReadersCount, HasConcurrencyLimit = false }
+		_rateLimiter = concurrentReadsLimit > 0
+			? new(concurrentReadsLimit) { ConcurrencyLevel = concurrentReadsLimit, HasConcurrencyLimit = false }
 			: null;
 	}
 
