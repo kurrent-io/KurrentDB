@@ -629,3 +629,12 @@ public partial record ClusterVNodeOptions {
 		}
 	}
 }
+
+internal static class DatabaseOptionsExtensions {
+	extension(ClusterVNodeOptions.DatabaseOptions self) {
+		public long InternalConcurrentReadsLimit => self switch {
+			{ ReaderThreadsCount: > 0, ConcurrentReadsLimit: 0 } => self.ReaderThreadsCount,
+			_ => self.ConcurrentReadsLimit,
+		};
+	}
+}
