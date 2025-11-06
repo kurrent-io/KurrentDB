@@ -483,6 +483,12 @@ UserCertificates:
 
 ### From version 23.10 and earlier
 
+#### Persistent Subscriptions checkpoints compatibility
+
+24.10+ writes Persistent Subscription Checkpoints prefixed with a `$`, to bring them into line with other system events. The change is backwards compatible (new versions of the server will understand the old checkpoints), but old versions of the server will not understand the new checkpoints.
+
+The 23.10 series has been patched to understand the new checkpoints starting with 23.10.8. Consider upgrading to 23.10.8 (or a more recent patch) before upgrading to 24.10+ so that in the event of a rollback persistent subscriptions will continue smoothly.
+
 #### External TCP API removed
 
 The external TCP API was removed in 24.2.0. This affects external clients using the TCP API and its related configurations.
