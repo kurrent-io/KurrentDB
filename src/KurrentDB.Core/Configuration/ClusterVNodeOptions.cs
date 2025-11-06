@@ -399,7 +399,7 @@ public partial record ClusterVNodeOptions {
 		public int InitializationThreads { get; init; } = 1;
 
 		[Description("The number of reader threads to use for processing reads. Set to '0' to scale automatically (Default)")]
-		[Deprecated("The ReaderThreadsCount parameter has been deprecated as of version 26.0.0 and currently has no effect. The workers automatically scale as necessary.")]
+		[Deprecated($"The ReaderThreadsCount parameter has been deprecated as of version 26.0.0. Set the value in {nameof(ConcurrentReadsLimit)} instead if still desired.")]
 		public int ReaderThreadsCount { get; init; } = 0;
 
 		[Description("The maximum number of read requests that can be processed concurrently. Set to '0' for unlimited (Default)")]
