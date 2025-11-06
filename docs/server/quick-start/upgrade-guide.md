@@ -35,7 +35,7 @@ Upgrading the cluster this way keeps the cluster online and able to service requ
 If you modified the Linux service file to increase the open files limit, those changes will be overridden during the upgrade. You will need to reapply them after the upgrade.
 :::
 
-## 25.1 upgrade notes
+## To 25.1
 
 General changes, features and fixes are described in the [what's new](./whatsnew.md) and [release notes](../release-schedule/release-notes.md).
 
@@ -60,7 +60,7 @@ This option has had no effect since v20.6.0 and has been removed from the server
 
 The `MemDb` option has been deprecated and will be removed in a future version to allow us to simplify and unify some core code paths. Users wishing to continue to run KurrentDB in memory can do so with ramfs or similar. Please reach out to us if this is problematic for your use case.
 
-## 25.0 upgrade notes
+## To 25.0
 
 Event Store – the company and the product – have rebranded as Kurrent.
 
@@ -271,7 +271,7 @@ Deprecated headers provided by the server in certain responses:
 | `ES-Position`       | `Kurrent-Position`        |
 | `ES-CurrentVersion` | `Kurrent-CurrentVersion`  |
 
-## 24.10 upgrade notes
+## To 24.10
 
 #### Persistent Subscriptions checkpoints compatibility
 
@@ -372,10 +372,6 @@ UserCertificates:
   Enabled: true
 ```
 
-## v23.10 upgrade notes
-
-### Breaking changes
-
 #### External TCP API removed
 
 The external TCP API was removed in EventStoreDB 24.2.0. This affects external clients using the TCP API and its related configurations.
@@ -421,7 +417,7 @@ In this case, you will see the following logs:
 
 You can correct this by regenerating the certificates with the correct key usages. See the [Certificate Configuration](../security/protocol-security.md#certificates-configuration) documentation for more information about configuring and generating certificates.
 
-## v22.10 upgrade notes
+## To v23.10
 
 ### Breaking changes
 
