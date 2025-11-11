@@ -4,6 +4,7 @@
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Tests.Fakes;
+using KurrentDB.SecondaryIndexing.Indexes;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Tests.Fixtures;
@@ -20,7 +21,7 @@ public abstract class IndexTestBase : DuckDbIntegrationTest<IndexTestBase> {
 	protected IndexTestBase() {
 		const int commitBatchSize = 9;
 		var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
-		var inFlightRecords = new DefaultIndexInFlightRecords(new() { CommitBatchSize = commitBatchSize });
+		var inFlightRecords = new IndexInFlightRecords(new() { CommitBatchSize = commitBatchSize });
 		var publisher = new FakePublisher();
 
 		_processor = new(DuckDb, inFlightRecords, publisher, hasher, new("test"));
@@ -32,7 +33,7 @@ public abstract class IndexTestBase : DuckDbIntegrationTest<IndexTestBase> {
 		_readIndexStub.IndexEvents(events);
 
 		foreach (var resolvedEvent in events) {
-			_processor.Index(resolvedEvent);
+			_processor.TryIndex(resolvedEvent);
 		}
 
 		if (shouldCommit)

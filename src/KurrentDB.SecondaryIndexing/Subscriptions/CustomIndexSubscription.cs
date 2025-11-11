@@ -9,27 +9,34 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Services.UserManagement;
-using KurrentDB.SecondaryIndexing.Indexes;
-using Microsoft.Extensions.Logging;
+using KurrentDB.SecondaryIndexing.Indexes.Custom;
+using Serilog;
 
 namespace KurrentDB.SecondaryIndexing.Subscriptions;
 
-public sealed partial class SecondaryIndexSubscription(
+internal abstract class CustomIndexSubscription {
+	protected static readonly ILogger Log = Serilog.Log.ForContext<CustomIndexSubscription>();
+
+	public abstract ValueTask Start();
+	public abstract ValueTask Stop();
+	public abstract ValueTask Delete();
+}
+
+internal sealed class CustomIndexSubscription<TPartitionKey>(
 	IPublisher publisher,
-	ISecondaryIndexProcessor indexProcessor,
+	CustomIndexProcessor<TPartitionKey> indexProcessor,
 	SecondaryIndexingPluginOptions options,
-	ILogger log
-) : IAsyncDisposable {
+	CancellationToken token) : CustomIndexSubscription, IAsyncDisposable where TPartitionKey : ITPartitionKey {
 
 	private readonly int _commitBatchSize = options.CommitBatchSize;
-	private CancellationTokenSource? _cts = new();
+	private CancellationTokenSource? _cts = CancellationTokenSource.CreateLinkedTokenSource(token);
 	private Enumerator.AllSubscription? _subscription;
 	private Task? _processingTask;
 
-	public void Subscribe() {
+	private void Subscribe() {
 		var position = indexProcessor.GetLastPosition();
 		var startFrom = position == TFPos.Invalid ? Position.Start : Position.FromInt64(position.CommitPosition, position.PreparePosition);
-		log.LogInformation("Starting indexing subscription from {StartFrom}", startFrom);
+		Log.Information("Custom index subscription: {index} is starting from {position}", indexProcessor.IndexName, startFrom);
 
 		_subscription = new(
 			bus: publisher,
@@ -51,18 +58,19 @@ public sealed partial class SecondaryIndexSubscription(
 			throw new InvalidOperationException("Subscription not initialized");
 
 		var indexedCount = 0;
+		var processedCount = 0;
 
 		while (!token.IsCancellationRequested) {
 			try {
 				if (!await _subscription.MoveNextAsync())
 					break;
 			} catch (ReadResponseException.NotHandled.ServerNotReady) {
-				log.LogInformation("Default indexing subscription is stopping because server is not ready");
+				Log.Information("Custom index: {index} is stopping because server is not ready", indexProcessor.IndexName);
 				break;
 			}
 
 			if (_subscription.Current is ReadResponse.SubscriptionCaughtUp caughtUp) {
-				LogDefaultIndexingSubscriptionCaughtUpAtTime(log, caughtUp.Timestamp);
+				Log.Verbose("Custom index: {index} caught up at {time}", indexProcessor.IndexName, caughtUp.Timestamp);
 				continue;
 			}
 
@@ -77,16 +85,29 @@ public sealed partial class SecondaryIndexSubscription(
 					continue;
 				}
 
-				indexProcessor.Index(resolvedEvent);
+				processedCount++;
+				if (indexProcessor.TryIndex(resolvedEvent))
+					indexedCount++;
 
-				if (++indexedCount >= _commitBatchSize) {
-					indexProcessor.Commit();
+				if (processedCount >= _commitBatchSize) {
+					if (indexedCount > 0) {
+						Log.Verbose("Custom index: {index} is committing {count} events", indexProcessor.IndexName, indexedCount);
+						indexProcessor.Commit();
+					}
+
+					var lastProcessedPosition = resolvedEvent.OriginalPosition!.Value;
+					var lastProcessedTimestamp = resolvedEvent.OriginalEvent.TimeStamp;
+					indexProcessor.Checkpoint(lastProcessedPosition, lastProcessedTimestamp);
+
 					indexedCount = 0;
+					processedCount = 0;
 				}
 			} catch (OperationCanceledException) {
+				Log.Verbose("Custom index: {index} is stopping as cancellation was requested", indexProcessor.IndexName);
 				break;
-			} catch (Exception e) {
-				log.LogError(e, "Error while processing event {EventType}", eventReceived.Event.Event.EventType);
+			} catch (Exception ex) {
+				Log.Error(ex, "Custom index: {index} failed to process event: {eventNumber}@{streamId} ({position})",
+					indexProcessor.IndexName, eventReceived.Event.OriginalEventNumber, eventReceived.Event.OriginalStreamId, eventReceived.Event.OriginalPosition);
 				throw;
 			}
 		}
@@ -110,7 +131,7 @@ public sealed partial class SecondaryIndexSubscription(
 				await _processingTask.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing |
 													 ConfigureAwaitOptions.ContinueOnCapturedContext);
 			} catch (Exception ex) {
-				log.LogError(ex, "Error during processing task completion");
+				Log.Error(ex, "Error during processing task completion");
 			}
 		}
 
@@ -119,6 +140,18 @@ public sealed partial class SecondaryIndexSubscription(
 		}
 	}
 
-	[LoggerMessage(LogLevel.Trace, "Default indexing subscription caught up at {time}")]
-	static partial void LogDefaultIndexingSubscriptionCaughtUpAtTime(ILogger logger, DateTime time);
+	public override ValueTask Start() {
+		Subscribe();
+		return ValueTask.CompletedTask;
+	}
+
+	public override async ValueTask Stop() {
+		Log.Verbose("Stopping custom index subscription for: {index}", indexProcessor.IndexName);
+		await DisposeAsync();
+		indexProcessor.Dispose();
+	}
+
+	public override ValueTask Delete() {
+		throw new NotImplementedException();
+	}
 }

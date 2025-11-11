@@ -3,7 +3,7 @@
 
 using KurrentDB.SecondaryIndexing.Storage;
 
-namespace KurrentDB.SecondaryIndexing.Indexes.Default;
+namespace KurrentDB.SecondaryIndexing.Indexes;
 
 internal record struct InFlightRecord(
 	long LogPosition,
@@ -15,13 +15,25 @@ internal record struct InFlightRecord(
 	long Created
 );
 
-internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions options) {
+internal class IndexInFlightRecords(SecondaryIndexingPluginOptions options) {
 	private readonly InFlightRecord[] _records = new InFlightRecord[options.CommitBatchSize];
 
 	private uint _version; // used for optimistic lock
 	private int _count;
 
 	public int Count => _count;
+
+	public void Append(long logPosition, long commitPosition, long eventNumber) {
+		var count = _count;
+		_records[count] = new InFlightRecord {
+			LogPosition = logPosition,
+			CommitPosition = commitPosition,
+			EventNumber = eventNumber
+		};
+
+		// Fence: make sure that the array modification cannot be done after the increment
+		Volatile.Write(ref _count, count + 1);
+	}
 
 	public void Append(long logPosition, long commitPosition, string category, string eventType, string stream, long eventNumber, long created) {
 		var count = _count;

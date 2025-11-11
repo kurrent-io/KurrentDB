@@ -16,6 +16,7 @@
 		<PackageReference Include="System.Linq.Async">
 			<ExcludeAssets>compile</ExcludeAssets>
 		</PackageReference>
+		<PackageReference Include="Jint" />
 	</ItemGroup>
 
 	<ItemGroup>

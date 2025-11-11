@@ -4,7 +4,7 @@
 using System.Diagnostics.Metrics;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Data;
-using Microsoft.Extensions.Logging;
+using Serilog;
 
 namespace KurrentDB.SecondaryIndexing.Diagnostics;
 
@@ -14,7 +14,6 @@ public class SecondaryIndexProgressTracker {
 	private readonly KeyValuePair<string, object?>[] _tag;
 	private readonly Histogram<double> _histogram;
 	private readonly TimeProvider _clock;
-	private readonly ILogger _log;
 	private readonly string _indexName;
 
 	private long _lastIndexedPosition = -1;
@@ -24,15 +23,14 @@ public class SecondaryIndexProgressTracker {
 
 	private const string MeterPrefix = "indexes.secondary";
 
+	private static readonly ILogger Log = Serilog.Log.ForContext<SecondaryIndexProgressTracker>();
+
 	public SecondaryIndexProgressTracker(
 		string indexName,
 		string serviceName,
 		Meter meter,
-		TimeProvider clock,
-		ILogger log
-	) {
+		TimeProvider clock) {
 		_clock = clock;
-		_log = log;
 		_indexName = indexName;
 
 		meter.CreateObservableGauge(
@@ -71,7 +69,7 @@ public class SecondaryIndexProgressTracker {
 		_lastIndexedTimestamp = resolvedEvent.OriginalEvent.TimeStamp;
 	}
 
-	public CommitDuration StartCommitDuration() => new(_histogram, _clock, _tag[0], _indexName, _log);
+	public CommitDuration StartCommitDuration() => new(_histogram, _clock, _tag[0], _indexName, Log);
 
 	private IEnumerable<Measurement<long>> ObserveGap() {
 		var lastAppendedPos = _lastAppendedPosition;
@@ -96,12 +94,12 @@ public class SecondaryIndexProgressTracker {
 		TimeProvider clock,
 		KeyValuePair<string, object?> tag,
 		string indexName,
-		ILogger logger) : IDisposable {
+		ILogger log) : IDisposable {
 		private readonly long _start = clock.GetTimestamp();
 
 		public void Dispose() {
 			var elapsed = clock.GetElapsedTime(_start).Milliseconds;
-			logger.LogDebug("Secondary index {Index} records committed in {Duration} ms", indexName, elapsed);
+			log.Debug("Secondary index {Index} records committed in {Duration} ms", indexName, elapsed);
 			histogram.Record(elapsed, tag);
 		}
 	}
