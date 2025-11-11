@@ -7,7 +7,6 @@ using FluentValidation;
 using KurrentDB.Api.Infrastructure.FluentValidation;
 using KurrentDB.Api.Streams.Validators;
 using KurrentDB.Api.Tests.Infrastructure;
-using TUnit.Assertions.AssertConditions;
 
 namespace KurrentDB.Api.Tests.Streams.Validators;
 
@@ -30,7 +29,8 @@ public class SchemaNameValidatorTests {
         var vex = await Assert
             .That(() => SchemaNameValidator.Instance.ValidateAndThrow(value))
             .Throws<DetailedValidationException>()
-            .WithMessageMatching(StringMatcher.AsWildcard("*must not be empty*"));
+            // StringMatcher.AsWildcard recently stopped matching multiline.
+            .WithMessageMatching(StringMatcher.AsRegex(".*must not be empty.*"));
 
         vex.LogValidationErrors<SchemaNameValidator>();
     }
@@ -44,7 +44,8 @@ public class SchemaNameValidatorTests {
         var vex = await Assert
             .That(() => SchemaNameValidator.Instance.ValidateAndThrow(value))
             .Throws<DetailedValidationException>()
-            .WithMessageMatching(StringMatcher.AsWildcard("*can only contain *"));
+            // StringMatcher.AsWildcard recently stopped matching multiline.
+            .WithMessageMatching(StringMatcher.AsRegex(".*can only contain.*"));
 
         vex.LogValidationErrors<SchemaNameValidator>();
     }

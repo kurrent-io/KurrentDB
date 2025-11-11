@@ -84,6 +84,7 @@
     <Project Path="src\KurrentDB.SourceGenerators.Tests\KurrentDB.SourceGenerators.Tests.csproj" />
     <Project Path="src\KurrentDB.SystemRuntime.Tests\KurrentDB.SystemRuntime.Tests.csproj" />
   </Folder>
+  <Project Path="src\KurrentDB.Ammeter\KurrentDB.Ammeter.csproj" />
   <Project Path="src\KurrentDB.BufferManagement\KurrentDB.BufferManagement.csproj" />
   <Project Path="src\KurrentDB.ClusterNode.Web\KurrentDB.ClusterNode.Web.csproj" />
   <Project Path="src\KurrentDB.Common\KurrentDB.Common.csproj" />

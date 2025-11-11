@@ -14,7 +14,6 @@ using KurrentDB.Core.Configuration;
 using KurrentDB.Core.Messages;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -162,7 +161,12 @@ public class ClusterVNodeApp : IAsyncDisposable {
 
 		// configure kestrel to use http2 and the grpc ports
 		builder.WebHost.ConfigureKestrel(kestrel => {
-			kestrel.ListenAnyIP(0, listen => listen.Protocols = HttpProtocols.Http2);
+			kestrel.ListenAnyIP(0, listen => {
+				KestrelHelpers.ConfigureHttpOptions(
+					listenOptions: listen,
+					hostedService: svc,
+					useHttps: !ServerOptions.Application.Insecure);
+			});
 			kestrel.Limits.Http2.KeepAlivePingDelay   = TimeSpan.FromMilliseconds(ServerOptions.Grpc.KeepAliveInterval);
 			kestrel.Limits.Http2.KeepAlivePingTimeout = TimeSpan.FromMilliseconds(ServerOptions.Grpc.KeepAliveTimeout);
 		});
