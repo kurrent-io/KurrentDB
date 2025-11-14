@@ -73,6 +73,7 @@ public class ConnectorsStateProjection : SnapshotProjectionsModule<ConnectorsSna
                 conn.State           = ConnectorState.Running;
                 conn.StateUpdateTime = evt.Timestamp;
                 conn.UpdateTime      = evt.Timestamp;
+                conn.ErrorDetails    = null;
             }));
 
         UpdateWhen<ConnectorStopped>((snapshot, evt) =>
@@ -80,6 +81,7 @@ public class ConnectorsStateProjection : SnapshotProjectionsModule<ConnectorsSna
                 conn.State           = ConnectorState.Stopped;
                 conn.StateUpdateTime = evt.Timestamp;
                 conn.UpdateTime      = evt.Timestamp;
+                conn.ErrorDetails    = null;
             }));
 
         UpdateWhen<ConnectorFailed>((snapshot, evt) =>
