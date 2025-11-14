@@ -816,14 +816,9 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 			}
 
 			long logPos = Writer.Position;
-			long transactionPos = default;
+			long transactionPos = logPos;
 
 			for (int i = 0; i < prepares.Count; i++) {
-				// the prepares may be from different streams due to the stream & event type records
-				// we thus adjust the transaction position to the correct value on each stream id change
-				if (i is 0 || !StreamIdComparer.Equals(prepares[i].EventStreamId, prepares[i - 1].EventStreamId))
-					transactionPos = logPos;
-
 				prepares[i] = prepares[i].CopyForRetry(logPos, transactionPos);
 				logPos += prepares[i].GetSizeWithLengthPrefixAndSuffix();
 			}
