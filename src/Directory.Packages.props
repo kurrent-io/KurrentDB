@@ -45,16 +45,16 @@
     <PackageVersion Include="IgnoresAccessChecksToGenerator" Version="0.8.0" />
     <PackageVersion Include="JetBrains.Annotations" Version="2025.2.2" />
     <PackageVersion Include="Jint" Version="4.0.3" />
-    <PackageVersion Include="Kurrent.Connectors.Elasticsearch" Version="1.1.1-alpha.1.30" />
-    <PackageVersion Include="Kurrent.Connectors.Http" Version="1.1.1-alpha.1.30" />
-    <PackageVersion Include="Kurrent.Connectors.Kafka" Version="1.1.1-alpha.1.30" />
-    <PackageVersion Include="Kurrent.Connectors.MongoDB" Version="1.1.1-alpha.1.30" />
-    <PackageVersion Include="Kurrent.Connectors.RabbitMQ" Version="1.1.1-alpha.1.30" />
-    <PackageVersion Include="Kurrent.Connectors.Pulsar" Version="1.1.1-alpha.1.30" />
-    <PackageVersion Include="Kurrent.Surge" Version="1.1.1-alpha.1.30" />
-    <PackageVersion Include="Kurrent.Surge.Core" Version="1.1.1-alpha.1.30" />
-    <PackageVersion Include="Kurrent.Surge.DataProtection" Version="1.1.1-alpha.1.30" />
-    <PackageVersion Include="Kurrent.Surge.DuckDB" Version="1.1.1-alpha.1.30" />
+    <PackageVersion Include="Kurrent.Connectors.Elasticsearch" Version="1.1.1-alpha.1.38" />
+    <PackageVersion Include="Kurrent.Connectors.Http" Version="1.1.1-alpha.1.38" />
+    <PackageVersion Include="Kurrent.Connectors.Kafka" Version="1.1.1-alpha.1.38" />
+    <PackageVersion Include="Kurrent.Connectors.MongoDB" Version="1.1.1-alpha.1.38" />
+    <PackageVersion Include="Kurrent.Connectors.RabbitMQ" Version="1.1.1-alpha.1.38" />
+    <PackageVersion Include="Kurrent.Connectors.Pulsar" Version="1.1.1-alpha.1.38" />
+    <PackageVersion Include="Kurrent.Surge" Version="1.1.1-alpha.1.38" />
+    <PackageVersion Include="Kurrent.Surge.Core" Version="1.1.1-alpha.1.38" />
+    <PackageVersion Include="Kurrent.Surge.DataProtection" Version="1.1.1-alpha.1.38" />
+    <PackageVersion Include="Kurrent.Surge.DuckDB" Version="1.1.1-alpha.1.38" />
     <PackageVersion Include="Kurrent.Quack" Version="0.0.0-alpha.79" />
     <PackageVersion Include="KurrentDB.Client" Version="1.0.0" />
     <PackageVersion Include="librdkafka.redist" Version="2.5.0" />
