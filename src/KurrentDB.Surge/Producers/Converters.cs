@@ -15,10 +15,10 @@ public static class ProduceRequestExtensions {
     public static ValueTask<Event[]> ToEvents(this ProduceRequest request, Action<Headers> configureHeaders, Serialize serialize) {
         return request.Messages
             .ToAsyncEnumerable()
-            .SelectAwait(async msg => await Map(msg.With(x => configureHeaders(x.Headers)), serialize))
+            .Select((Message msg, CancellationToken _) => Map(msg.With(x => configureHeaders(x.Headers)), serialize))
             .ToArrayAsync();
 
-        static async Task<Event> Map(Message message, Serialize serialize) {
+        static async ValueTask<Event> Map(Message message, Serialize serialize) {
             var data = await serialize(message.Value, message.Headers);
 
             var eventId  = Uuid.FromGuid(message.RecordId).ToGuid(); // not sure if needed...

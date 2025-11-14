@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Google.Protobuf.WellKnownTypes;
 using KurrentDB.Connectors.Management.Contracts;
 using KurrentDB.Connectors.Management.Contracts.Events;
 using Kurrent.Surge;
@@ -8,10 +9,13 @@ using Kurrent.Surge.Connectors;
 
 using KurrentDB.Connectors.Infrastructure.System.Node;
 using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
+using KurrentDB.Connectors.Management.Contracts.Commands;
+using KurrentDB.Connectors.Planes.Management;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Surge.Consumers;
 using Microsoft.Extensions.Logging;
+using ConnectorState = KurrentDB.Connectors.Management.Contracts.ConnectorState;
 
 namespace KurrentDB.Connectors.Planes.Control;
 
@@ -21,12 +25,15 @@ public class ConnectorsControlService : LeaderNodeBackgroundService {
         ISubscriber subscriber,
         ISystemClient client,
         ConnectorsActivator activator,
+        ConnectorsCommandApplication commandApplication,
         GetActiveConnectors getActiveConnectors,
         GetNodeSystemInfo getNodeSystemInfo,
         Func<SystemConsumerBuilder> getConsumerBuilder,
-        ILoggerFactory loggerFactory
-    ) : base(publisher, subscriber, getNodeSystemInfo, loggerFactory, "ConnectorsController") {
+        ILoggerFactory loggerFactory,
+        string? serviceName = null
+    ) : base(publisher, subscriber, getNodeSystemInfo, loggerFactory, serviceName ?? "ConnectorsController") {
         Activator           = activator;
+        CommandApplication  = commandApplication;
         GetActiveConnectors = getActiveConnectors;
 
         ConsumerBuilder = getConsumerBuilder()
@@ -37,9 +44,10 @@ public class ConnectorsControlService : LeaderNodeBackgroundService {
             .DisableAutoCommit();
     }
 
-    ConnectorsActivator   Activator           { get; }
-    GetActiveConnectors   GetActiveConnectors { get; }
-    SystemConsumerBuilder ConsumerBuilder     { get; }
+    ConnectorsActivator          Activator           { get; }
+    GetActiveConnectors          GetActiveConnectors { get; }
+    ConnectorsCommandApplication CommandApplication  { get; }
+    SystemConsumerBuilder        ConsumerBuilder     { get; }
 
     protected override async Task Execute(NodeSystemInfo nodeInfo, CancellationToken stoppingToken) {
         GetConnectorsResult connectors = new();
@@ -100,6 +108,24 @@ public class ConnectorsControlService : LeaderNodeBackgroundService {
                     : LogLevel.Information,
                 activationResult.Error, nodeInfo.InstanceId, connectorId, activationResult.Type
             );
+
+            if (activationResult.Failure) {
+                try {
+                    await CommandApplication.Handle(
+                        new RecordConnectorStateChange {
+                            ConnectorId  = connectorId,
+                            FromState    = ConnectorState.Activating,
+                            ToState      = ConnectorState.Stopped,
+                            ErrorDetails = activationResult.Error.MapErrorDetails(),
+                            Timestamp    = TimeProvider.System.GetUtcNow().ToTimestamp()
+                        },
+                        stoppingToken
+                    );
+                }
+                catch (Exception ex) {
+                    Logger.LogActivationRecordFailure(ex, nodeInfo.InstanceId, connectorId);
+                }
+            }
         }
 
         async Task DeactivateConnector(ConnectorId connectorId) {
@@ -111,6 +137,24 @@ public class ConnectorsControlService : LeaderNodeBackgroundService {
                     : LogLevel.Information,
                 deactivationResult.Error, nodeInfo.InstanceId, connectorId, deactivationResult.Type
             );
+
+            if (deactivationResult.Failure) {
+                try {
+                    await CommandApplication.Handle(
+                        new RecordConnectorStateChange {
+                            ConnectorId  = connectorId,
+                            FromState    = ConnectorState.Deactivating,
+                            ToState      = ConnectorState.Stopped,
+                            ErrorDetails = deactivationResult.Error.MapErrorDetails(),
+                            Timestamp    = TimeProvider.System.GetUtcNow().ToTimestamp()
+                        },
+                        stoppingToken
+                    );
+                }
+                catch (Exception ex) {
+                    Logger.LogDeactivationRecordFailure(ex, nodeInfo.InstanceId, connectorId);
+                }
+            }
         }
     }
 }
@@ -125,4 +169,18 @@ static partial class ConnectorsControlServiceLogMessages {
     internal static partial void LogConnectorDeactivationResult(
         this ILogger logger, LogLevel logLevel, Exception? error, Guid nodeId, string connectorId, DeactivateResultType resultType
     );
+
+    [LoggerMessage(
+        Level = LogLevel.Critical,
+        Message = "ConnectorsControlService [Node Id: {NodeId}] Failed to record connector {ConnectorId} activation failure",
+        SkipEnabledCheck = true
+    )]
+    internal static partial void LogActivationRecordFailure(this ILogger logger, Exception error, Guid nodeId, string connectorId);
+
+    [LoggerMessage(
+        Level = LogLevel.Critical,
+        Message = "ConnectorsControlService [Node Id: {NodeId}] Failed to record connector {ConnectorId} deactivation failure",
+        SkipEnabledCheck = true
+    )]
+    internal static partial void LogDeactivationRecordFailure(this ILogger logger, Exception error, Guid nodeId, string connectorId);
 }

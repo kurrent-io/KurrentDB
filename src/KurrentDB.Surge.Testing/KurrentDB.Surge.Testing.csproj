@@ -1,16 +1,15 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
+		<IsKurrentXUnit>true</IsKurrentXUnit>
     <!-- It must be `TargetFrameworks` plural to work on macos -->
     <!-- Error MSB6004 : The specified task executable location "/macosx_x64/protoc" is invalid. -->
     <!--suppress MsbuildTargetFrameworkTagInspection-->
-		<TargetFrameworks>net8.0</TargetFrameworks>
-		<OutputType>Library</OutputType>
+		<TargetFrameworks>net10.0</TargetFrameworks>
+
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>true</ImplicitUsings>
-		<LangVersion>preview</LangVersion>
 <!--		<Deterministic>true</Deterministic>-->
 		<NoWarn>xUnit1041</NoWarn>
-		<IsTestProject>false</IsTestProject>
 		<IsPackable>false</IsPackable>
 	</PropertyGroup>
 
@@ -18,14 +17,11 @@
 		<PackageReference Include="Bogus" />
 		<PackageReference Include="DotNext" />
 		<PackageReference Include="FluentAssertions" />
-		<PackageReference Include="GitHubActionsTestLogger" />
 		<PackageReference Include="Humanizer.Core" />
 		<PackageReference Include="Eventuous.Testing" />
 		<PackageReference Include="Kurrent.Surge" />
 		<PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Json" />
 		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" />
 		<PackageReference Include="Serilog" />
@@ -39,12 +35,8 @@
 		<PackageReference Include="Serilog.Sinks.Console" />
 		<PackageReference Include="Serilog.Sinks.Observable" />
 		<PackageReference Include="Serilog.Sinks.Seq" />
-		<PackageReference Include="Serilog.Sinks.XUnit" />
     <PackageReference Include="Serilog.Sinks.File" />
 		<PackageReference Include="System.Reactive" />
-		<PackageReference Include="xunit" />
-		<PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
-		<PackageReference Include="Microsoft.Testing.Extensions.TrxReport" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -63,7 +55,6 @@
 		<Using Include="FluentAssertions" />
 		<Using Include="Microsoft.Extensions.Time.Testing" />
 		<Using Include="Xunit" />
-		<Using Include="Xunit.Abstractions" />
 	</ItemGroup>
 
 	<ItemGroup>

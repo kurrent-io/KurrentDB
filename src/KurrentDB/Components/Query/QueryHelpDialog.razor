@@ -1,0 +1,72 @@
+@using KurrentDB.UI.Services
+@inject Preferences Preferences
+
+<MudDialog Style="height: 70%;">
+	<DialogContent>
+		<MudMarkdown Styling="@_styling" Value="@HelpText"/>
+	</DialogContent>
+	<DialogActions>
+		<MudButton Color="Color.Primary" OnClick="Ok">Close</MudButton>
+	</DialogActions>
+</MudDialog>
+
+@code {
+	readonly MudMarkdownStyling _styling = new();
+
+	protected override void OnInitialized() {
+		base.OnInitialized();
+		var theme = Preferences.DarkMode ? CodeBlockTheme.GithubDark : CodeBlockTheme.StackoverflowLight;
+		_styling.CodeBlock.Theme = theme;
+	}
+
+	[CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
+
+	private void Ok() => MudDialog.Close(DialogResult.Ok(true));
+
+	const string HelpText = @"
+##### Available sources
+
+Query one or more available sources like streams, categories, or everything.
+
+**Beware that querying the whole log will trigger a full log scan, which impact performance of the database.**
+
+| Source | Description | Example |
+|----------|------------|-------------|
+| `stream:<name>` | Query a stream | `select * from stream:Order-123` |
+| `category:<name>` | Query a category | `select * from category:Order where data->>'customerId'='bob'` |
+| `all_events` | Query all log records | `select * from all_events limit 10` |
+
+**Consider adding `limit` to the query to constrain the scan surface.**
+
+##### Available predicates
+
+You can use top-level predicates as well as JSON predicates on payload and metadata.
+
+Top-level predicates are available on:
+* `log_position`: commit position (bigint)
+* `stream`: stream name (varchar)
+* `category`: stream category (varchar)
+* `event_type`: event type (varchar)
+* `event_number`: event number in a stream (int)
+* `created_at`: record append time (timestamp, for example `1992-09-20 11:30:00.123`)
+
+JSON predicates are available on:
+* `data`: event payload
+* `metadata`: custom event metadata
+
+##### Example query
+
+The query will find all events from a category `Telemetry` where the `Version` property is set, and then count the number of
+streams per found version value.
+```
+select version, count(*) as count from (
+  select distinct version, stream from (
+    select data->>'Version' as version, stream
+    from category:Telemetry
+    where version is not null
+  )
+) group by version
+```
+";
+
+}

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
@@ -22,7 +22,7 @@ public class A_Projection {
 			// for some reason, if GetStatistics is called multiple times, then the stats are duplicated;
 			if (noStatsYet) {
 				_manager.Handle(
-					new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName, false));
+					new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
 				var s = _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>();
 				_projectionMetricTracker.OnNewStats(s.Single().Projections);
 				noStatsYet = false;
@@ -35,7 +35,7 @@ public class A_Projection {
 			// for some reason, if GetStatistics is called multiple times, then the stats are duplicated;
 			if (noStatsYet) {
 				_manager.Handle(
-					new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName, false));
+					new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
 				var s = _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>();
 				_projectionMetricTracker.OnNewStats(s.Single().Projections);
 				noStatsYet = false;
@@ -64,7 +64,8 @@ public class A_Projection {
 		}
 
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var m in base.When()) yield return m;
+			foreach (var m in base.When())
+				yield return m;
 			yield return
 				new ProjectionManagementMessage.Command.Disable(
 					_bus,
@@ -91,7 +92,8 @@ public class A_Projection {
 		}
 
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var m in base.When()) yield return m;
+			foreach (var m in base.When())
+				yield return m;
 			var readerAssignedMessage = _consumer.HandledMessages
 				.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>()
 				.LastOrDefault();

@@ -7,7 +7,6 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Projections.Core.Messages;
-using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 
 namespace KurrentDB.Projections.Core.Services.Processing;
 
@@ -87,23 +86,15 @@ public abstract class EventReader : IEventReader {
 		}
 	}
 
-	protected void SendPartitionEof(string partition, CheckpointTag preTagged) {
-		if (_disposed)
-			return;
-		_publisher.Publish(
-			new ReaderSubscriptionMessage.EventReaderPartitionEof(EventReaderCorrelationId, partition, preTagged));
-	}
-
 	protected void SendPartitionDeleted_WhenReadingDataStream(
 		string partition, long? lastEventNumber, TFPos? deletedLinkOrEventPosition, TFPos? deletedEventPosition,
-		string positionStreamId,
-		int? positionEventNumber, CheckpointTag preTagged = null) {
+		string positionStreamId, int? positionEventNumber) {
 		if (_disposed)
 			return;
 		_publisher.Publish(
 			new ReaderSubscriptionMessage.EventReaderPartitionDeleted(
-				EventReaderCorrelationId, partition, lastEventNumber, deletedLinkOrEventPosition,
-				deletedEventPosition, positionStreamId, positionEventNumber, preTagged));
+				EventReaderCorrelationId, partition, deletedLinkOrEventPosition,
+				deletedEventPosition, positionStreamId, positionEventNumber));
 	}
 
 	public void SendNotAuthorized() {

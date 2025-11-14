@@ -1,0 +1,66 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>KurrentDB.Api</AssemblyName>
+    <RootNamespace>KurrentDB.Api</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <PackageReference Include="Google.Protobuf" />
+    <PackageReference Include="Grpc.AspNetCore" />
+    <PackageReference Include="Grpc.AspNetCore.Web" />
+    <PackageReference Include="Grpc.Tools" />
+    <PackageReference Include="Grpc.StatusProto" />
+    <PackageReference Include="Humanizer.Core" />
+    <PackageReference Include="Scrutor" />
+    <PackageReference Include="System.Linq.Async">
+      <ExcludeAssets>compile</ExcludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- protocol -->
+    <Protobuf
+        ProtoRoot="../../proto/kurrentdb/protocol/v2"
+        Include="../../proto/kurrentdb/protocol/v2/**/*.proto"
+        Exclude="../../proto/kurrentdb/protocol/v2/registry/**/*.proto"
+        Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"
+        GrpcServices="Both"
+        Access="Public"
+        AdditionalImportDirs="../../proto"
+    />
+
+    <!-- kurrent -->
+    <Protobuf
+        ProtoRoot="../../proto/kurrent"
+        Include="../../proto/kurrent/**/*.proto"
+        Link="proto\kurrent\%(RecursiveDir)/%(FileName)%(Extension)"
+        Access="Public"
+        AdditionalImportDirs="../../proto"
+    />
+
+    <!-- google -->
+    <Protobuf
+        ProtoRoot="../../proto/google"
+        Include="../../proto/google/**/*.proto"
+        Link="proto\google\%(RecursiveDir)/%(FileName)%(Extension)"
+        Access="Internal"
+        ProtoCompile="false"
+    />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="KurrentDB.Plugins.Api.V2" />
+    <InternalsVisibleTo Include="KurrentDB.Api.V2.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="KurrentDB.Api.V2.csproj.DotSettings" />
+  </ItemGroup>
+</Project>

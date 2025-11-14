@@ -31,12 +31,14 @@ public class SystemProducer : IProducer {
 
         Flushing = new(true);
 
+        var interceptors = new LinkedList<InterceptorModule>(options.Interceptors);
+
         if (options.Logging.Enabled)
-            options.Interceptors.TryAddUniqueFirst(new ProducerLogger());
+            interceptors.TryAddUniqueFirst(new ProducerLogger());
 
-        Options.Interceptors.TryAddUniqueFirst(new ProducerMetrics());
+        interceptors.TryAddUniqueFirst(new ProducerMetrics());
 
-        Interceptors = new(Options.Interceptors, logger);
+        Interceptors = new(interceptors, logger);
 
         Intercept = evt => Interceptors.Intercept(evt, CancellationToken.None);
 

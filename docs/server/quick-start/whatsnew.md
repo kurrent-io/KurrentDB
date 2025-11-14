@@ -6,13 +6,109 @@ order: 2
 
 ## New in 25.1
 
-These are the new features in KurrentDB 25.1:
+These are the new features and important changes and in KurrentDB 25.1:
 
-* [Additional Projection Metrics](#additional-projection-metrics)
-* [ServerGC](#server-garbage-collection)
+Features
+* [Secondary Indexing](#secondary-indexing)
+* [Multi-stream Appends](#multi-stream-appends)
+* [Log Record Properties](#log-record-properties)
+* [Database Stats](#database-stats)
+* [Ad-hoc SQL Queries](#ad-hoc-sql-queries)
+* [Windows Service](#windows-service)
+* [OpenTelemetry Logs Export](#opentelemetry-logs-export)
+
+Changes / Improvements
+* [Server Garbage Collection](#server-garbage-collection)
 * [StreamInfoCacheCapacity default](#streaminfocachecapacity-default)
+* [Connectors](#connectors)
+* [Archiving](#archiving)
+* [Additional Projection Metrics](#additional-projection-metrics)
+* [Additional Persistent Subscription Metrics](#additional-persistent-subscription-metrics)
+* [Miscellaneous Quality of Life Improvements](#miscellaneous-quality-of-life-improvements)
 
-### Additional Projection Metrics
+For breaking changes and deprecation notices, see the [upgrade guide](upgrade-guide.md).
+
+### Secondary Indexing
+
+In addition to the [default index](../features/indexes/default.md), KurrentDB v25.1 introduces default secondary indexes for categories and event types. These indexes provide functionality that is similar to the existing `$by-category` and `$by-event-type` system projections, but with significant performance and storage efficiency improvements.
+
+Future releases will add support for custom secondary indexes, aiming to mitigate the need to use custom projections that produce link records.
+
+Learn more about [secondary indexes](../features/indexes/secondary.md).
+
+### Multi-stream Appends
+
+The server now supports appending to multiple streams atomically in one write request.
+
+Events `e1, ..., eN` can be appended to stream `s1` and events `f1, ..., fN` being appended to stream `s2`, and so on with other streams, all in one atomic operation.
+
+An optimistic concurrency check can be provided for each stream, and the write operation will only succeed if all the checks are successful.
+
+Using this feature requires the latest client libraries that support it.
+
+### Log record properties
+
+Historically events have been appended with optional bytes for event metadata. The server now supports receiving this data in a structured way. The primary goal is to allow adding and retrieving event properties without serialization and deserialization overhead. In KurrentDB, log record (event) properties are stored as key-value pairs, where keys are strings and values can be of various types (string, int, bool, etc). This makes properties close to the Headers concept that is known in HTTP, messaging systems, and other similar technologies.
+
+In client libraries, log record properties are surfaced as a dictionary-like structure that allows adding, retrieving, and removing properties by key. Using this feature requires the latest client libraries that support it.
+
+### Database stats
+
+<Badge type="info" vertical="middle" text="License Required"/>
+
+The embedded Web UI now includes a Database Stats page showing detailed statistics about database content, such as number of streams, events, etc. This feature only works with secondary indexes enabled.
+
+### Ad-hoc SQL queries
+
+<Badge type="info" vertical="middle" text="License Required"/>
+
+The embedded Web UI now includes a Queries page allowing you to run ad-hoc SQL queries against event data stored in KurrentDB. This feature only works with secondary indexes enabled. Learn more about [the Queries UI](../features/queries/ui.md).
+
+### Windows Service
+
+KurrentDB can now be run as a Windows Service. See the [documentation](installation.md#running-as-a-service) for more information.
+
+### OpenTelemetry logs export
+
+<Badge type="info" vertical="middle" text="License Required"/>
+
+The [OpenTelemetry Integration](../diagnostics/integrations.md#opentelemetry-exporter) can now be used to export logs as well as metrics.
+
+### Server garbage collection
+
+The .NET runtime Server Garbage Collection is now enabled by default, increasing the performance of the server. See [the documentation](../configuration/db-config.md#garbage-collection) for more information.
+
+### StreamInfoCacheCapacity default
+
+`StreamInfoCacheCapacity` is now `100,000` by default rather than `0` (dynamically sized).
+
+StreamInfoCache dynamic sizing was introduced introduced in v21.10 and enabled by default. It allows the StreamInfoCache to grow much larger, according to the amount of free memory which is reevaluated periodically. This is desirable for some workloads, but it comes with a tradeoff of very significantly increased managed memory usage, which in turn causes additional GC pressure and can lead to more frequent elections. On balance we have decided that a default of 100,000 (which is the value used before v21.10) is a better default, favouring its predictability and stability.
+
+Users wishing to keep dynamic sizing can enable it by setting StreamInfoCacheCapacity to 0. Additional can be found in the [StreamInfoCache documentation](../configuration/README.md#streaminfocachecapacity)
+
+### Connectors
+
+#### Pulsar sink connector
+
+<Badge type="info" vertical="middle" text="License Required"/>
+
+The Apache Pulsar sink connector writes events from your KurrentDB stream to a specified Pulsar topic. 
+
+Refer to the [documentation](../features/connectors/sinks/pulsar.md) for instructions on setting up a Pulsar sink.
+
+#### Connectors no longer periodically acquire leases
+
+Since connectors now run only on the leader node, leases are no longer needed and have been disabled, reducing the number of events written to the database.
+
+#### Connector headers improvements
+
+Header keys now retain their original casing when delivered to connector destinations. The default headers `esdb-record-partition-key` and `esdb-record-is-transformed` are no longer added to outgoing messages. You can also choose whether to include system headers in sink metadata.
+
+### Archiving
+
+The headers of remote chunks are now only read on demand and not on startup, improving startup times when there are a large number of remote chunks.
+
+### Additional projection metrics
 
 Several new metrics have been added to track important properties of projections.
 
@@ -32,24 +128,74 @@ Several new metrics have been added to track important properties of projections
 
 See [the documentation](../diagnostics/metrics.md#projections) for more information.
 
-### Server Garbage Collection
+### Additional persistent subscription metrics
 
-The .NET runtime Server Garbage Collection is now enabled by default, increasing the performance of the server. See [the documentation](../configuration/db-config.md#garbage-collection) for more information.
+- `kurrentdb_persistent_sub_parked_message_replays` counts the number of messages that have been parked by stream, group, and reason. Reason can be `client-nak` meaning that the client `nak`ed the message, or `max-retries` meaning that the server retried sending it to the clients until the maximum attempts was reached.
 
-### StreamInfoCacheCapacity Default
+- `kurrentdb_persistent_sub_park_message_requests` counts the number of requests to replay parked messages by stream and group.
 
-`StreamInfoCacheCapacity` is now `100,000` by default rather than `0` (dynamically sized).
+See [the documentation](../diagnostics/metrics.md#persistent-subscriptions) for more information.
 
-StreamInfoCache dynamic sizing was introduced introduced in v21.10 and enabled by default. It allows the StreamInfoCache to grow much larger, according to the amount of free memory which is reevaluated periodically. This is desirable for some workloads, but it comes with a tradeoff of very significantly increased managed memory usage, which in turn causes additional GC pressure and can lead to more frequent elections. On balance we have decided that a default of 100,000 (which is the value used before v21.10) is a better default, favouring its predictability and stability.
+### Miscellaneous quality of life improvements
 
-Users wishing to keep dynamic sizing can enable it by setting StreamInfoCacheCapacity to 0. Additional can be found in the [StreamInfoCache documentation](../configuration/README.md#streaminfocachecapacity)
+- Added server configuration option for TCP read expiry
+
+  The option is `TcpReadTimeoutMs` and it defaults to 10000 (10s, which matches the previous behavior).
+
+  It applies to reads received via the TCP client API. When a read has been in the server queue for longer than this, it will be discarded without being executed. If your TCP clients are configured to timeout after X milliseconds, it is advisable to set this server option to be the same, so that the server will not execute reads that the client is no longer waiting for.
+
+  For gRPC clients, the server-side discarding is already driven by the deadline on the read itself without requiring server configuration.
+
+- Log output to `Seq`
+
+  You can now configure a [Seq](https://datalust.co/) log output by adding the following to `logconfig.json`:
+  ```
+      "Serilog": {
+          "WriteTo": [
+              {
+                  "Name": "Seq",
+                  "Args": {
+                      "serverUrl": "http://localhost:5341",
+                      "restrictedToMinimumLevel": "Information"
+                  }
+              }
+          ]
+      }
+  ```
+
+- Added logging for significant garbage collections
+
+  This makes it clear from the logs if slow messages or leader elections are attributable to Garbage Collection (GC).
+
+  Execution engine (EE) suspensions longer than 48ms are logged as Information. Execution engine suspensions longer than 600ms are logged as Warnings. Full compacting GC start/end are logged as Information.
+
+  Note that the Start/End log messages may both be logged AFTER the execution engine pause has completed.
+
+  These will be logged even if the node shortly goes offline for truncation, which would likely prevent the EE suspension from appearing in the metrics.
+
+  If GC is determined as the cause of a leader election, a sensible course of action could be to reduce the Stream Info Cache Capacity (say, to the 100k traditional value) and/or consider enabling ServerGC.
+
+  Example logs:
+  ```
+  [34144,13,11:03:05.307,INF] Start of full blocking garbage collection at 06/06/2025 10:02:49. GC: #210548. Generation: 2. Reason: LargeObjectHeapAllocation. Type: BlockingOutsideBackgroundGC.
+  [34144,13,11:03:05.307,INF] End of full blocking garbage collection at 06/06/2025 10:03:05. GC: #210548. Took: 15,727ms
+  [34144,13,11:03:05.307,WRN] Garbage collection: Very long Execution Engine Suspension. Reason: GarbageCollection. Took: 15,727ms
+  ```
+
+- Lower Scavenge API GET calls to Verbose
+
+  The auto-scavenge checks on the status of in-progress scavenges frequently, which was producing unnecessary logs.
+
+- Added extra logging when UnwrapEnvelopeMessage is slow
+
+  When `UnwrapEnvelopeMessage` triggers a `SLOW QUEUE MESSAGE` log, it now includes the name of the action it was unwrapping.
 
 ## New in 25.0
 
 These are the new features in KurrentDB 25.0:
 
-* [Archiving](#archiving)
-* [Connectors](#connectors)
+* [Archiving](#archiving-1)
+* [Connectors](#connectors-1)
 * [KurrentDB rebranding](#kurrentdb-rebranding)
 * [New embedded Web UI](#new-embedded-web-ui)
 * [New versioning scheme and release schedule](#new-versioning-scheme-and-release-schedule)
@@ -151,7 +297,7 @@ Packages for KurrentDB will still be published to [Cloudsmith](https://cloudsmit
 
 These are the new features that were added in EventStoreDB 24.10:
 
-* [Connectors](#connectors):
+* [Connectors](#connectors-2):
     * Kafka
     * MongoDB
     * RabbitMQ

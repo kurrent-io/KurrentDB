@@ -1,9 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>true</ImplicitUsings>
-		<LangVersion>preview</LangVersion>
 		<IsPackable>false</IsPackable>
 		<Deterministic>true</Deterministic>
 		<InvariantGlobalization>true</InvariantGlobalization>
@@ -13,7 +11,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Google.Api.CommonProtos" PrivateAssets="All" />
+		<PackageReference Include="Google.Api.CommonProtos" />
 		<PackageReference Include="Google.Protobuf" PrivateAssets="All" />
 		<PackageReference Include="Grpc.AspNetCore" PrivateAssets="All" />
 	</ItemGroup>
@@ -23,6 +21,6 @@
 
 		<Protobuf ProtoRoot="protos" Include="protos/controlplane/**/*.proto" Link="protos\controlplane\%(RecursiveDir)/%(FileName)%(Extension)" GrpcServices="None" />
 
-		<Protobuf ProtoRoot="protos" Include="protos/managementplane/**/*.proto" Link="protos\managementplane\%(RecursiveDir)/%(FileName)%(Extension)" GrpcServices="Server" />
+		<Protobuf ProtoRoot="protos" Include="protos/managementplane/**/*.proto" Link="protos\managementplane\%(RecursiveDir)/%(FileName)%(Extension)" GrpcServices="Both" />
 	</ItemGroup>
 </Project>

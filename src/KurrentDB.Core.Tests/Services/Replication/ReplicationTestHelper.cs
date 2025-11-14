@@ -84,7 +84,7 @@ public static class ReplicationTestHelper {
 						readResult = (ClientMessage.ReadAllEventsBackwardCompleted)msg;
 						resetEvent.Set();
 					}),
-				-1, -1, 100, false, false, null, SystemAccounts.System);
+				-1, -1, 100, false, false, null, SystemAccounts.System, false);
 			node.Node.MainQueue.Publish(read);
 
 			if (!resetEvent.Wait(_timeout)) {
@@ -134,7 +134,7 @@ public static class ReplicationTestHelper {
 					readResult = (ClientMessage.ReadStreamEventsBackwardCompleted)msg;
 					resetEvent.Set();
 				}), streamId, 9, 10,
-			false, false, null, SystemAccounts.System);
+			false, false, null, SystemAccounts.System, false);
 		node.Node.MainQueue.Publish(read);
 
 		if (!resetEvent.Wait(_timeout)) {

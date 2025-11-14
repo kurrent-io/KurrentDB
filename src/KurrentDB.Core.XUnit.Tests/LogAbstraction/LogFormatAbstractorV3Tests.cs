@@ -22,8 +22,8 @@ namespace KurrentDB.Core.XUnit.Tests.LogAbstraction;
 
 // check that lookups of the various combinations of virtual/normal/meta
 // work in both directions and in the stream index.
-public class LogFormatAbstractorV3Tests : IAsyncLifetime {
-	readonly static string _outputDir = $"testoutput/{nameof(LogFormatAbstractorV3Tests)}";
+public sealed class LogFormatAbstractorV3Tests : IAsyncLifetime {
+	static readonly string _outputDir = $"testoutput/{nameof(LogFormatAbstractorV3Tests)}";
 	readonly LogFormatAbstractor<StreamId> _sut = new LogV3FormatAbstractorFactory().Create(new() {
 		IndexDirectory = _outputDir,
 		InMemory = false,
@@ -41,7 +41,7 @@ public class LogFormatAbstractorV3Tests : IAsyncLifetime {
 	int _numStreams;
 	int _numEventTypes;
 
-	async Task IAsyncLifetime.InitializeAsync() {
+	async ValueTask IAsyncLifetime.InitializeAsync() {
 		TryDeleteDirectory();
 		_sut.StreamNamesProvider.SetReader(_mockIndexReader);
 		await _sut.StreamExistenceFilter.Initialize(_sut.StreamExistenceFilterInitializer, 0, CancellationToken.None);
@@ -53,13 +53,13 @@ public class LogFormatAbstractorV3Tests : IAsyncLifetime {
 		_numEventTypes = 1;
 	}
 
-	Task IAsyncLifetime.DisposeAsync() {
-		var task = Task.CompletedTask;
+	ValueTask IAsyncDisposable.DisposeAsync() {
+		var task = ValueTask.CompletedTask;
 		try {
 			_sut.Dispose();
 			TryDeleteDirectory();
 		} catch (Exception e) {
-			task = Task.FromException(e);
+			task = ValueTask.FromException(e);
 		}
 
 		return task;
@@ -340,6 +340,7 @@ public class LogFormatAbstractorV3Tests : IAsyncLifetime {
 		public long NotCachedStreamInfo => throw new NotImplementedException();
 
 		public long HashCollisions => throw new NotImplementedException();
+		public IIndexBackend<StreamId> Backend => throw new NotImplementedException();
 
 		public ValueTask<StorageMessage.EffectiveAcl> GetEffectiveAcl(StreamId streamId, CancellationToken token) =>
 			ValueTask.FromException<StorageMessage.EffectiveAcl>(new NotImplementedException());
@@ -399,15 +400,17 @@ public class LogFormatAbstractorV3Tests : IAsyncLifetime {
 }
 
 public class MockIndexBackend<TStreamId> : IIndexBackend<TStreamId> {
-	public TFReaderLease BorrowReader() {
-		throw new NotImplementedException();
-	}
+	public ITransactionFileReader TFReader => throw new NotImplementedException();
 
 	public SystemSettings GetSystemSettings() {
 		throw new NotImplementedException();
 	}
 
 	public long? SetStreamLastEventNumber(TStreamId streamId, long lastEventNumber) {
+		return null;
+	}
+
+	public long? SetStreamSecondaryIndexId(TStreamId streamId, long secondaryIndexId) {
 		return null;
 	}
 
@@ -428,6 +431,10 @@ public class MockIndexBackend<TStreamId> : IIndexBackend<TStreamId> {
 	}
 
 	public long? UpdateStreamLastEventNumber(int cacheVersion, TStreamId streamId, long? lastEventNumber) {
+		throw new NotImplementedException();
+	}
+
+	public long? UpdateStreamSecondaryIndexId(int cacheVersion, TStreamId streamId, long? secondaryIndexId) {
 		throw new NotImplementedException();
 	}
 

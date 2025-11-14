@@ -1,22 +1,21 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
-		<OutputType>library</OutputType>
-		<EnableDynamicLoading>true</EnableDynamicLoading>
-		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-		<Nullable>enable</Nullable>
-		<ImplicitUsings>true</ImplicitUsings>
-		<LangVersion>preview</LangVersion>
-		<IsPackable>false</IsPackable>
-		<Deterministic>true</Deterministic>
-		<InvariantGlobalization>true</InvariantGlobalization>
-		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-	</PropertyGroup>
+  <PropertyGroup>
+    <OutputType>library</OutputType>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>true</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <Deterministic>true</Deterministic>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
 
-	<ItemGroup>
-		<ProjectReference Include="..\KurrentDB.SchemaRegistry\KurrentDB.SchemaRegistry.csproj" />
-	</ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\KurrentDB.SchemaRegistry\KurrentDB.SchemaRegistry.csproj" />
+  </ItemGroup>
 
-	<ItemGroup>
-		<InternalsVisibleTo Include="KurrentDB.SchemaRegistry.Tests" />
-	</ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="KurrentDB.SchemaRegistry.Tests" />
+  </ItemGroup>
 </Project>

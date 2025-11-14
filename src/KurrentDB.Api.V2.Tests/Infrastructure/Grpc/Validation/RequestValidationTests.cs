@@ -1,0 +1,68 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
+using Grpc.Core;
+using KurrentDB.Api.Errors;
+using KurrentDB.Api.Infrastructure.Grpc.Validation;
+using KurrentDB.Api.Streams.Validators;
+using KurrentDB.Protocol.V2.Streams;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace KurrentDB.Api.Tests.Infrastructure.Grpc.Validation;
+
+public class RequestValidationTests {
+    static IServiceProvider ConfigureValidation(Action<RequestValidationBuilder> configure) {
+        var services = new ServiceCollection();
+
+        services
+            .AddGrpc()
+            .WithRequestValidation(x => x.ExceptionFactory = ApiErrors.InvalidRequest);
+
+        configure(new RequestValidationBuilder(services));
+
+        return services.BuildServiceProvider();
+    }
+
+    [Test]
+    public async ValueTask registers_validator_by_type() {
+        // Arrange
+        var serviceProvider = ConfigureValidation(x => x.WithValidator<AppendRequestValidator>());
+
+        var validatorProvider = serviceProvider.GetRequiredService<IRequestValidatorProvider>();
+
+        // Act
+        var validator = validatorProvider.GetValidatorFor<AppendRequest>();
+
+        // Assert
+        await Assert.That(validator).IsNotNull();
+        await Assert.That(validator).IsTypeOf<AppendRequestValidator>();
+    }
+
+    [Test]
+    public async ValueTask validates_request() {
+        // Arrange
+        var serviceProvider = ConfigureValidation(x => x.WithValidator<AppendRequestValidator>());
+
+        var requestValidation = serviceProvider.GetRequiredService<RequestValidation>();
+
+        // Act
+        var validate = () => requestValidation.ValidateRequest(new AppendRequest());
+
+        // Assert
+        var result = validate.ShouldNotThrow();
+
+        await Assert.That(result.IsValid).IsFalse();
+    }
+
+    [Test]
+    public void ensures_request_is_valid() {
+        // Arrange
+        var serviceProvider = ConfigureValidation(x => x.WithValidator<AppendRequestValidator>());
+
+        var requestValidation = serviceProvider.GetRequiredService<RequestValidation>();
+
+        // Act & Assert
+        Assert.Throws<RpcException>(() => requestValidation.EnsureRequestIsValid(new AppendRequest()))
+            .StatusCode.ShouldBe(StatusCode.InvalidArgument);
+    }
+}

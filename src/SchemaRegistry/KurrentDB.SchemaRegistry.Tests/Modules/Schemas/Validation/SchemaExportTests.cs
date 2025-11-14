@@ -5,16 +5,17 @@ using System.Text.Json;
 using Bogus;
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Surge.Schema.Serializers.Json;
-using KurrentDB.Surge.Testing.Messages.Telemetry;
 using Kurrent.Surge.Schema.Validation;
+using KurrentDB.Surge.Testing.Messages.Telemetry;
 
 namespace Kurrent.Surge.Core.Tests.Schema.Validation;
 
 public class SchemaExportTests {
-    [Test, Skip("temporary")]
+    [Test]
+    [Skip("temporary")]
     public void exports_from_type() {
         // lang=json
-        var expectedDefinition = """
+        const string expectedDefinition = """
             {
               "$schema": "http://json-schema.org/draft-04/schema#",
               "title": "PowerConsumption",
@@ -71,39 +72,38 @@ public class SchemaExportTests {
             """;
 
         var extract = () => NJsonSchemaAgent.Instance.ExportSchema<PowerConsumption>();
-        var schema  = extract.Should().NotThrow().Subject;
-
-        schema.Definition.Should().BeEquivalentTo(expectedDefinition);
+        extract.ShouldNotThrow()
+            .Definition.ShouldBeEquivalentTo(expectedDefinition);
     }
 
     [Test]
     public void parses_schema() {
         var schema       = NJsonSchemaAgent.Instance.ExportSchema<PowerConsumption>();
         var loadedSchema = NJsonSchemaAgent.Instance.ParseSchema(schema.Definition);
-        loadedSchema.Definition.Should().BeEquivalentTo(schema.Definition);
+        loadedSchema.Definition.ShouldBeEquivalentTo(schema.Definition);
     }
 
     [Test]
     public void generates_schema() {
-      var expectedResult = SchemaValidationResult.Success();
+        var expectedResult = SchemaValidationResult.Success();
 
-      var sample = new Faker<PowerConsumption>()
-        .RuleFor(x => x.Timestamp, (f, x) => x.Timestamp = Timestamp.FromDateTimeOffset(f.Date.SoonOffset()))
-        .RuleFor(x => x.Value    , (f, x) => x.Value = f.Random.Double())
-        .RuleFor(x => x.DeviceId , (f, x) => x.DeviceId = f.Random.Guid().ToString())
-        .RuleFor(x => x.Unit     , "celsius")
-        .Generate();
+        var sample = new Faker<PowerConsumption>()
+            .RuleFor(x => x.Timestamp, (f, x) => x.Timestamp = Timestamp.FromDateTimeOffset(f.Date.SoonOffset()))
+            .RuleFor(x => x.Value, (f, x) => x.Value = f.Random.Double())
+            .RuleFor(x => x.DeviceId, (f, x) => x.DeviceId = f.Random.Guid().ToString())
+            .RuleFor(x => x.Unit, "celsius")
+            .Generate();
 
-      var content         = JsonSerializer.Serialize(sample, SystemJsonSchemaSerializerOptions.Default);
-      var generatedSchema = NJsonSchemaExporter.Instance.GetJsonSchemaFromData(content, nameof(PowerConsumption));
-      var schema          = NJsonSchemaAgent.Instance.ExportSchema<PowerConsumption>();
+        var content         = JsonSerializer.Serialize(sample, SystemJsonSchemaSerializerOptions.Default);
+        var generatedSchema = NJsonSchemaExporter.Instance.GetJsonSchemaFromData(content, nameof(PowerConsumption));
+        var schema          = NJsonSchemaAgent.Instance.ExportSchema<PowerConsumption>();
 
-      var oldJson = generatedSchema.ToJson();
+        var oldJson = generatedSchema.ToJson();
 
-      var anotherResult = generatedSchema.Validate(content);
-      var actualResult  = schema.Validate(content);
+        var anotherResult = generatedSchema.Validate(content);
+        var actualResult  = schema.Validate(content);
 
-      actualResult.Should().BeEquivalentTo(expectedResult);
+        actualResult.ShouldBeEquivalentTo(expectedResult);
     }
 }
 

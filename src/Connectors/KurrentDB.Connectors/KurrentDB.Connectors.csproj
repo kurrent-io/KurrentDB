@@ -1,9 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>true</ImplicitUsings>
-		<LangVersion>preview</LangVersion>
 		<IsPackable>false</IsPackable>
 		<IsPlugin>true</IsPlugin>
 		<Deterministic>true</Deterministic>
@@ -25,14 +23,16 @@
 
 	<!-- Required packages -->
 	<ItemGroup>
+		<PackageReference Include="Google.Api.CommonProtos" />
+		<PackageReference Include="Kurrent.Surge" />
 		<PackageReference Include="Kurrent.Surge.Core" />
 		<PackageReference Include="Kurrent.Surge.DataProtection" />
 		<PackageReference Include="Kurrent.Connectors.Elasticsearch" />
 		<PackageReference Include="Kurrent.Connectors.Http" />
 		<PackageReference Include="Kurrent.Connectors.Kafka" />
-		<PackageReference Include="Kurrent.Connectors.KurrentDB" />
 		<PackageReference Include="Kurrent.Connectors.MongoDB" />
 		<PackageReference Include="Kurrent.Connectors.RabbitMQ" />
+		<PackageReference Include="Kurrent.Connectors.Pulsar" />
 		<PackageReference Include="Eventuous.Application" />
 		<PackageReference Include="Eventuous.Extensions.AspNetCore" />
 		<PackageReference Include="Eventuous.Extensions.DependencyInjection" />
@@ -55,6 +55,9 @@
 		<PackageReference Include="Serilog.Sinks.Debug" />
 		<PackageReference Include="Serilog.Sinks.Seq" />
 		<PackageReference Include="Serilog.Enrichers.Environment" />
+		<PackageReference Include="System.Linq.Async">
+			<ExcludeAssets>compile</ExcludeAssets>
+		</PackageReference>
 	</ItemGroup>
 
   <ItemGroup>

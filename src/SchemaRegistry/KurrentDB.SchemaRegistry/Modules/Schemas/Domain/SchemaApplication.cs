@@ -127,8 +127,8 @@ public class SchemaApplication : EntityApplication<SchemaEntity> {
 
             if (nonModifiableField != null) {
 	            var fieldDisplayName = nonModifiableField switch {
-		            var p when p.Equals("Details.Compatibility", StringComparison.OrdinalIgnoreCase) => "Compatibility mode",
-		            var p when p.Equals("Details.DataFormat", StringComparison.OrdinalIgnoreCase) => "DataFormat",
+		            _ when nonModifiableField.Equals("Details.Compatibility", StringComparison.OrdinalIgnoreCase) => "Compatibility mode",
+		            _ when nonModifiableField.Equals("Details.DataFormat", StringComparison.OrdinalIgnoreCase)    => "DataFormat",
 		            _ => nonModifiableField
 	            };
 	            throw new DomainExceptions.EntityNotModified("Schema", state.SchemaName, $"{fieldDisplayName} is not modifiable");

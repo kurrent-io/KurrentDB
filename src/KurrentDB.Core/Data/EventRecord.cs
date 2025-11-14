@@ -5,11 +5,11 @@
 
 using System;
 using System.Text;
+using Google.Protobuf;
+using Google.Protobuf.WellKnownTypes;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Core.TransactionLog.LogRecords;
-using KurrentDB.Protobuf;
-using static KurrentDB.Protobuf.Server.Properties;
 
 namespace KurrentDB.Core.Data;
 
@@ -55,20 +55,17 @@ public class EventRecord : IEquatable<EventRecord> {
 		}
 	}
 
-	static readonly DynamicValue JsonDataFormatDynamicValue  = new() { StringValue = Constants.Properties.DataFormats.Json };
-	static readonly DynamicValue BytesDataFormatDynamicValue = new() { StringValue =  Constants.Properties.DataFormats.Bytes };
+	static readonly Value JsonDataFormatValue = Value.ForString("Json");
 
 	ReadOnlyMemory<byte> SynthesizeMetadataFromProperties() {
-		var props = Parser.ParseFrom(Properties.Span);
+		var props = Struct.Parser.ParseFrom(Properties.Span);
+
+		props.Fields[Constants.RecordProperties.SchemaNameKey] = Value.ForString(EventType);
 
 		if (IsJson)
-			props.PropertiesValues[Constants.Properties.DataFormatKey] = JsonDataFormatDynamicValue;
-		else if (!props.PropertiesValues.ContainsKey(Constants.Properties.DataFormatKey))
-			props.PropertiesValues[Constants.Properties.DataFormatKey] = BytesDataFormatDynamicValue;
+			props.Fields[Constants.RecordProperties.SchemaFormatKey] = JsonDataFormatValue;
 
-		props.PropertiesValues[Constants.Properties.EventTypeKey] = new() { StringValue = EventType };
-
-		return props.SerializeToBytes();
+		return Encoding.UTF8.GetBytes(JsonFormatter.Default.Format(props));
 	}
 
 	public EventRecord(long eventNumber, IPrepareLogRecord prepare, string eventStreamId, string? eventType) {
@@ -190,16 +187,16 @@ public class EventRecord : IEquatable<EventRecord> {
 
 	public override string ToString() {
 		return $"EventNumber: {EventNumber}, " +
-		       $"LogPosition: {LogPosition}, " +
-		       $"CorrelationId: {CorrelationId}, " +
-		       $"EventId: {EventId}, " +
-		       $"TransactionPosition: {TransactionPosition}, " +
-		       $"TransactionOffset: {TransactionOffset}, " +
-		       $"EventStreamId: {EventStreamId}, " +
-		       $"ExpectedVersion: {ExpectedVersion}, " +
-		       $"TimeStamp: {TimeStamp}, " +
-		       $"Flags: {Flags}, " +
-		       $"EventType: {EventType}";
+			   $"LogPosition: {LogPosition}, " +
+			   $"CorrelationId: {CorrelationId}, " +
+			   $"EventId: {EventId}, " +
+			   $"TransactionPosition: {TransactionPosition}, " +
+			   $"TransactionOffset: {TransactionOffset}, " +
+			   $"EventStreamId: {EventStreamId}, " +
+			   $"ExpectedVersion: {ExpectedVersion}, " +
+			   $"TimeStamp: {TimeStamp}, " +
+			   $"Flags: {Flags}, " +
+			   $"EventType: {EventType}";
 	}
 
 #if DEBUG

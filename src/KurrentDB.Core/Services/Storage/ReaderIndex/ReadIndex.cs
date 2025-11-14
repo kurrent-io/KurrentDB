@@ -28,6 +28,10 @@ public sealed class ReadIndex<TStreamId> : IDisposable, IReadIndex<TStreamId> {
 		get { return _indexWriter; }
 	}
 
+	public IIndexReader<TStreamId> IndexReader {
+		get { return _indexReader; }
+	}
+
 	public IIndexCommitter<TStreamId> IndexCommitter {
 		get { return _indexCommitter; }
 	}
@@ -40,7 +44,7 @@ public sealed class ReadIndex<TStreamId> : IDisposable, IReadIndex<TStreamId> {
 	private readonly INameLookup<TStreamId> _streamNames;
 
 	public ReadIndex(IPublisher bus,
-		ObjectPool<ITransactionFileReader> readerPool,
+		ITransactionFileReader reader,
 		ITableIndex<TStreamId> tableIndex,
 		INameIndexConfirmer<TStreamId> streamNameIndex,
 		IValueLookup<TStreamId> streamIds,
@@ -64,7 +68,7 @@ public sealed class ReadIndex<TStreamId> : IDisposable, IReadIndex<TStreamId> {
 		ICacheHitsMissesTracker cacheTracker) {
 
 		Ensure.NotNull(bus, "bus");
-		Ensure.NotNull(readerPool, "readerPool");
+		Ensure.NotNull(reader, nameof(reader));
 		Ensure.NotNull(tableIndex, "tableIndex");
 		Ensure.NotNull(streamIds, nameof(streamIds));
 		Ensure.NotNull(streamNamesProvider, nameof(streamNamesProvider));
@@ -80,7 +84,7 @@ public sealed class ReadIndex<TStreamId> : IDisposable, IReadIndex<TStreamId> {
 
 		var metastreamMetadata = new StreamMetadata(maxCount: metastreamMaxCount);
 
-		var indexBackend = new IndexBackend<TStreamId>(readerPool, streamLastEventNumberCache, streamMetadataCache);
+		var indexBackend = new IndexBackend<TStreamId>(reader, streamLastEventNumberCache, streamMetadataCache);
 
 		_indexReader = new IndexReader<TStreamId>(indexBackend, tableIndex, streamNamesProvider, streamIdValidator,
 			streamExistenceFilterReader, metastreamMetadata, hashCollisionReadLimit, skipIndexScanOnReads);

@@ -2,11 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.IO;
 using System.Linq;
-using System.Net.Security;
 using System.Runtime;
-using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,11 +13,13 @@ using KurrentDB.Common.Exceptions;
 using KurrentDB.Common.Log;
 using KurrentDB.Common.Utils;
 using KurrentDB.Components;
+using KurrentDB.Components.Cluster;
+using KurrentDB.Components.Plugins;
 using KurrentDB.Core;
 using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Configuration;
 using KurrentDB.Core.Configuration.Sources;
-using KurrentDB.Core.Services.Transport.Http;
+using KurrentDB.Logging;
 using KurrentDB.Services;
 using KurrentDB.Tools;
 using KurrentDB.UI.Services;
@@ -45,17 +44,14 @@ var configuration = KurrentConfiguration.Build(optionsWithLegacyDefaults, args);
 ThreadPool.SetMaxThreads(1000, 1000);
 var exitCodeSource = new TaskCompletionSource<int>();
 
-Log.Logger = EventStoreLoggerConfiguration.ConsoleLog;
+Log.Logger = KurrentLoggerConfiguration.ConsoleLog;
 try {
 	var options = ClusterVNodeOptions.FromConfiguration(configuration);
 
-	EventStoreLoggerConfiguration.Initialize(options.Logging.Log, options.GetComponentName(),
-		options.Logging.LogConsoleFormat,
-		options.Logging.LogFileSize,
-		options.Logging.LogFileInterval,
-		options.Logging.LogFileRetentionCount,
-		options.Logging.DisableLogFile,
-		options.Logging.LogConfig);
+	Log.Logger = KurrentLoggerConfiguration
+		.CreateLoggerConfiguration(options.Logging, options.GetComponentName())
+		.AddOpenTelemetryLogger(configuration, options.GetComponentName())
+		.CreateLogger();
 
 	if (options.Application.Help) {
 		await Console.Out.WriteLineAsync(ClusterVNodeOptions.HelpText);
@@ -217,6 +213,8 @@ try {
 
 			var builder = WebApplication.CreateBuilder(applicationOptions);
 			builder.Configuration.AddConfiguration(configuration);
+			// AddWindowsService adds EventLog logging, which we remove afterwards.
+			builder.Services.AddWindowsService();
 			builder.Logging.ClearProviders().AddSerilog();
 			builder.Services.Configure<KestrelServerOptions>(configuration.GetSection("Kestrel"));
 			builder.Services.Configure<HostOptions>(x => {
@@ -233,10 +231,10 @@ try {
 					server.Limits.Http2.KeepAlivePingTimeout = TimeSpan.FromMilliseconds(options.Grpc.KeepAliveTimeout);
 
 					server.Listen(options.Interface.NodeIp, options.Interface.NodePort, listenOptions =>
-						ConfigureHttpOptions(listenOptions, hostedService, useHttps: !hostedService.Node.DisableHttps));
+						KestrelHelpers.ConfigureHttpOptions(listenOptions, hostedService, useHttps: !hostedService.Node.DisableHttps));
 
 					if (hostedService.Node.EnableUnixSocket)
-						TryListenOnUnixSocket(hostedService, server);
+						KestrelHelpers.TryListenOnUnixSocket(hostedService, server);
 				});
 			hostedService.Node.Startup.ConfigureServices(builder.Services);
 			// Order is important, configure IHostedService after the WebHost to make the sure
@@ -252,12 +250,12 @@ try {
 			builder.Services.AddCascadingAuthenticationState();
 			builder.Services.AddMudServices();
 			builder.Services.AddMudMarkdownServices();
-			builder.Services.AddSingleton(options);
 			builder.Services.AddScoped<LogObserver>();
 			builder.Services.AddScoped<IdentityRedirectManager>();
 			builder.Services.AddSingleton(monitoringService);
 			builder.Services.AddSingleton(metricsObserver);
-			builder.Services.AddWindowsService();
+			builder.Services.AddSingleton<PluginsService>();
+			builder.Services.AddSingleton(TimeProvider.System);
 			Log.Information("Environment Name: {0}", builder.Environment.EnvironmentName);
 			Log.Information("ContentRoot Path: {0}", builder.Environment.ContentRootPath);
 
@@ -290,87 +288,4 @@ try {
 	return 1;
 } finally {
 	await Log.CloseAndFlushAsync();
-}
-
-static void ConfigureHttpOptions(ListenOptions listenOptions, ClusterVNodeHostedService hostedService, bool useHttps) {
-	if (useHttps)
-		listenOptions.UseHttps(CreateServerOptionsSelectionCallback(hostedService), null);
-	else
-		listenOptions.Use(next => new ClearTextHttpMultiplexingMiddleware(next).OnConnectAsync);
-}
-
-static void TryListenOnUnixSocket(ClusterVNodeHostedService hostedService, KestrelServerOptions server) {
-	if (hostedService.Node.Db.Config.InMemDb) {
-		Log.Information("Not listening on a UNIX domain socket since the database is running in memory.");
-		return;
-	}
-
-	if (!RuntimeInformation.IsLinux && !OperatingSystem.IsWindowsVersionAtLeast(10, 0, 17063)) {
-		Log.Error("Not listening on a UNIX domain socket since it is not supported by the operating system.");
-		return;
-	}
-
-	try {
-		var legacyUnixSocket = Path.GetFullPath(Path.Combine(hostedService.Node.Db.Config.Path, "eventstore.sock"));
-		var unixSocket = Path.GetFullPath(Path.Combine(hostedService.Node.Db.Config.Path, "kurrent.sock"));
-
-		CleanupStaleSocket(legacyUnixSocket);
-		CleanupStaleSocket(unixSocket);
-
-		server.ListenUnixSocket(unixSocket, listenOptions => {
-			listenOptions.Use(next => new UnixSocketConnectionMiddleware(next).OnConnectAsync);
-			ConfigureHttpOptions(listenOptions, hostedService, useHttps: false);
-		});
-		Log.Information("Listening on UNIX domain socket: {unixSocket}", unixSocket);
-	} catch (Exception ex) {
-		Log.Error(ex, "Failed to listen on UNIX domain socket.");
-		throw;
-	}
-
-	return;
-
-	void CleanupStaleSocket(string socketPath) {
-		if (File.Exists(socketPath)) {
-			try {
-				File.Delete(socketPath);
-				Log.Information("Cleaned up stale UNIX domain socket: {unixSocket}", socketPath);
-			} catch (Exception ex) {
-				Log.Error(ex, "Failed to clean up stale UNIX domain socket: {unixSocket}. Please delete the file manually.", socketPath);
-				throw;
-			}
-		}
-	}
-}
-
-static ServerOptionsSelectionCallback CreateServerOptionsSelectionCallback(ClusterVNodeHostedService hostedService) {
-	return (_, _, _, _) => {
-		var serverOptions = new SslServerAuthenticationOptions {
-			ServerCertificateContext = SslStreamCertificateContext.Create(
-				hostedService.Node.CertificateSelector(),
-				hostedService.Node.IntermediateCertificatesSelector(),
-				offline: true),
-			ClientCertificateRequired = true, // request a client certificate but it's not necessary for the client to supply one
-			RemoteCertificateValidationCallback = (_, certificate, chain, sslPolicyErrors) => {
-				if (certificate == null) // not necessary to have a client certificate
-					return true;
-
-				var (isValid, error) =
-					hostedService.Node.InternalClientCertificateValidator(
-						certificate,
-						chain,
-						sslPolicyErrors);
-				if (!isValid && error != null) {
-					Log.Error("Client certificate validation error: {e}", error);
-				}
-
-				return isValid;
-			},
-			CertificateRevocationCheckMode = X509RevocationMode.NoCheck,
-			EnabledSslProtocols = SslProtocols.None, // let the OS choose a secure TLS protocol
-			ApplicationProtocols = [SslApplicationProtocol.Http2, SslApplicationProtocol.Http11],
-			AllowRenegotiation = false
-		};
-
-		return ValueTask.FromResult(serverOptions);
-	};
 }

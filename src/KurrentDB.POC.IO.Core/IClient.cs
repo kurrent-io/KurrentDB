@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
 
 namespace KurrentDB.POC.IO.Core;
 
@@ -48,6 +49,12 @@ public interface IClient {
 	IAsyncEnumerable<Event> ReadStreamForwards(string stream, long maxCount, CancellationToken cancellationToken);
 	IAsyncEnumerable<Event> ReadStreamBackwards(string stream, long maxCount, CancellationToken cancellationToken);
 	IAsyncEnumerable<Event> ReadAllBackwardsAsync(Position position, long maxCount, CancellationToken cancellationToken);
+	IAsyncEnumerable<Event> ReadAllBackwardsFilteredAsync(
+		Position position,
+		long maxCount,
+		IEventFilter eventFilter,
+		CancellationToken token
+	);
 	Task DeleteStreamAsync(string stream, long expectedVersion, CancellationToken cancellationToken);
 
 	async Task<long> WriteAsyncRetry(string stream, EventToWrite[] events, long expectedVersion,
@@ -95,6 +102,14 @@ public interface IClient {
 		public IAsyncEnumerable<Event> ReadAllBackwardsAsync(Position position, long maxCount, CancellationToken cancellationToken) {
 			throw new NotImplementedException();
 		}
+
+		public IAsyncEnumerable<Event> ReadAllBackwardsFilteredAsync(
+			Position position,
+			long maxCount,
+			IEventFilter eventFilter,
+			CancellationToken token
+		) =>
+			throw new NotImplementedException();
 
 		public Task DeleteStreamAsync(string stream, long expectedVersion, CancellationToken cancellationToken) {
 			throw new NotImplementedException();

@@ -22,7 +22,6 @@ public abstract class TestFixtureWithProjectionSubscription {
 	protected TestHandler<EventReaderSubscriptionMessage.SubscriptionStarted> _subscriptionStartedHandler;
 	protected TestHandler<EventReaderSubscriptionMessage.NotAuthorized> _notAuthorizedHandler;
 	protected TestHandler<EventReaderSubscriptionMessage.EofReached> _eofHandler;
-	protected TestHandler<EventReaderSubscriptionMessage.PartitionEofReached> _partitionEofHandler;
 	protected TestHandler<EventReaderSubscriptionMessage.PartitionDeleted> _partitionDeletedHandler;
 	protected IReaderSubscription _subscription;
 	protected ITimeProvider _timeProvider;
@@ -48,14 +47,12 @@ public abstract class TestFixtureWithProjectionSubscription {
 		_subscriptionStartedHandler = new TestHandler<EventReaderSubscriptionMessage.SubscriptionStarted>();
 		_notAuthorizedHandler = new TestHandler<EventReaderSubscriptionMessage.NotAuthorized>();
 		_eofHandler = new TestHandler<EventReaderSubscriptionMessage.EofReached>();
-		_partitionEofHandler = new TestHandler<EventReaderSubscriptionMessage.PartitionEofReached>();
 		_partitionDeletedHandler = new TestHandler<EventReaderSubscriptionMessage.PartitionDeleted>();
 
 		_bus.Subscribe(_eventHandler);
 		_bus.Subscribe(_checkpointHandler);
 		_bus.Subscribe(_progressHandler);
 		_bus.Subscribe(_eofHandler);
-		_bus.Subscribe(_partitionEofHandler);
 		_readerStrategy = CreateCheckpointStrategy();
 		_subscription = CreateProjectionSubscription();
 

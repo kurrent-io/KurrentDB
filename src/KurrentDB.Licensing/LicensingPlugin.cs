@@ -24,14 +24,10 @@ public class LicensingPlugin : Plugin {
 	private readonly ILicenseProvider? _licenseProvider;
 	private readonly Action<Exception> _requestShutdown;
 
-	public LicensingPlugin(Action<Exception> requestShutdown) : this(requestShutdown, null) {
-	}
-
-	public LicensingPlugin(Action<Exception> requestShutdown, ILicenseProvider? licenseProvider) : base() {
+	public LicensingPlugin(Action<Exception> requestShutdown, ILicenseProvider? licenseProvider = null) {
 		_licenseProvider = licenseProvider;
 		_requestShutdown = requestShutdown;
 	}
-
 
 	public override void ConfigureApplication(IApplicationBuilder builder, IConfiguration configuration) {
 		var licenseService = builder.ApplicationServices.GetRequiredService<ILicenseService>();
@@ -49,20 +45,20 @@ public class LicensingPlugin : Plugin {
 			});
 
 		builder.UseEndpoints(endpoints => endpoints
-			.MapGet("/license", (HttpContext context) => {
+			.MapGet("/license", (HttpContext _) => {
 				if (currentLicense is { } license)
 					return Results.Json(LicenseSummary.SelectForEndpoint(license));
 
 				if (licenseError is NoLicenseKeyException)
 					return Results.NotFound();
 
-				return Results.NotFound(licenseError?.Message ?? "Unknown eror");
+				return Results.NotFound(licenseError?.Message ?? "Unknown error");
 			})
 			.RequireAuthorization());
 	}
 
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
-		var baseUrl = $"https://licensing.kurrent.io/v1/";
+		var baseUrl = "https://licensing.kurrent.io/v1/";
 		var clientOptions = configuration.GetSection("KurrentDB").Get<KeygenClientOptions>() ?? new();
 		if (clientOptions.Licensing.BaseUrl is not null) {
 			baseUrl = clientOptions.Licensing.BaseUrl;
@@ -88,26 +84,19 @@ public class LicensingPlugin : Plugin {
 				revalidationDelay: TimeSpan.FromSeconds(10));
 
 			licenses = lifecycleService.Licenses;
-			services.AddHostedService(sp => lifecycleService);
+			services.AddHostedService(_ => lifecycleService);
 		}
 
 		services
 			// other components such as plugins can use this to subscribe to the licenses, inspect them, and reject them
-			.AddSingleton<ILicenseService>(sp => {
-				var licenseProvider =
-					_licenseProvider ??
-					new KeygenLicenseProvider(licenses);
-
-				return new LicenseService(
-					sp.GetRequiredService<IHostApplicationLifetime>(),
-					_requestShutdown,
-					licenseProvider);
-			})
+			.AddSingleton<ILicenseService>(sp => new LicenseService(
+				sp.GetRequiredService<IHostApplicationLifetime>(),
+				_requestShutdown,
+				_licenseProvider ?? new KeygenLicenseProvider(licenses)))
 			.AddHostedService(sp => new LicenseTelemetryService(
 				sp.GetRequiredService<ILicenseService>(),
 				telemetry => PublishDiagnosticsData(telemetry, PluginDiagnosticsDataCollectionMode.Snapshot)));
 	}
 
-	class NoLicenseKeyException : Exception {
-	}
+	class NoLicenseKeyException : Exception;
 }

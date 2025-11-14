@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Common.Utils;
@@ -308,6 +307,12 @@ public static partial class StorageMessage {
 	}
 
 	[DerivedMessage(CoreMessage.Storage)]
+	public partial class SecondaryIndexCommitted(string indexName, ResolvedEvent @event) : Message {
+		public readonly ResolvedEvent Event = @event;
+		public readonly string IndexName = indexName;
+	}
+
+	[DerivedMessage(CoreMessage.Storage)]
 	public partial class InMemoryEventCommitted : Message {
 		public readonly long CommitPosition;
 		public readonly EventRecord Event;
@@ -439,12 +444,6 @@ public static partial class StorageMessage {
 
 	[DerivedMessage(CoreMessage.Storage)]
 	public partial class BatchLogExpiredMessages : Message {
-		public sealed override IBinaryInteger<int> Affinity { get; }
-
-		public BatchLogExpiredMessages(IBinaryInteger<int> affinity) {
-			ArgumentNullException.ThrowIfNull(affinity);
-			Affinity = affinity;
-		}
 	}
 
 	[DerivedMessage(CoreMessage.Storage)]

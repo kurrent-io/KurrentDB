@@ -16,7 +16,6 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Tests.Fakes;
 using KurrentDB.Core.Tests.TransactionLog;
 using KurrentDB.Core.Tests.TransactionLog.Scavenging.Helpers;
-using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.TransactionLog.LogRecords;
@@ -109,20 +108,18 @@ public abstract class ReadIndexTestScenario<TLogFormat, TStreamId> : Specificati
 		ChaserCheckpoint.Write(WriterCheckpoint.Read());
 		ChaserCheckpoint.Flush();
 
-		var readers = new ObjectPool<ITransactionFileReader>("Readers", 2, 5,
-			() => new TFChunkReader(Db, Db.Config.WriterCheckpoint));
+		var reader = new TFChunkReader(Db, Db.Config.WriterCheckpoint);
 		var emptyStreamId = _logFormat.EmptyStreamId;
 		TableIndex = TransformTableIndex(new TableIndex<TStreamId>(indexDirectory, LowHasher, HighHasher, emptyStreamId,
 			() => new HashListMemTable(IndexBitnessVersion, MaxEntriesInMemTable * 2),
-			() => new TFReaderLease(readers),
+			reader,
 			IndexBitnessVersion,
 			int.MaxValue,
-			Constants.PTableMaxReaderCountDefault,
 			MaxEntriesInMemTable));
 		_logFormat.StreamNamesProvider.SetTableIndex(TableIndex);
 
 		var readIndex = new ReadIndex<TStreamId>(new NoopPublisher(),
-			readers,
+			reader,
 			TableIndex,
 			_logFormat.StreamNameIndexConfirmer,
 			_logFormat.StreamIds,

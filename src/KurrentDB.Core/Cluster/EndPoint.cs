@@ -4,7 +4,7 @@
 // ReSharper disable once CheckNamespace
 namespace EventStore.Cluster;
 
-public partial class EndPoint {
+internal partial class EndPoint {
 	public EndPoint(string address, uint port) {
 		address_ = address;
 		port_ = port;

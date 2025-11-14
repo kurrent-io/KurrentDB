@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -7,8 +7,12 @@
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
 	</ItemGroup>
 	<ItemGroup>
+		<PackageReference Include="Kurrent.Quack" />
 		<PackageReference Include="FluentStorage" />
 		<PackageReference Include="FluentStorage.AWS" />
+		<PackageReference Include="Azure.Storage.Blobs" />
+		<PackageReference Include="Azure.Identity" />
+		<PackageReference Include="Google.Cloud.Storage.V1"/>
 		<PackageReference Include="Google.Protobuf" />
 		<PackageReference Include="Grpc.AspNetCore" />
 		<PackageReference Include="Grpc.Tools">
@@ -16,32 +20,31 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="librdkafka.redist" />
-    <PackageReference Include="DuckDB.NET.Data.Full" />
 		<PackageReference Include="Microsoft.FASTER.Core" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />
 		<PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" />
 		<PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" />
 		<PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+		<PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
 		<PackageReference Include="Polly.Core" />
 		<PackageReference Include="Quickenshtein" />
-		<PackageReference Include="System.Diagnostics.DiagnosticSource" />
 		<PackageReference Include="System.Diagnostics.PerformanceCounter" />
-		<PackageReference Include="System.IO.Pipelines" />
-		<PackageReference Include="System.Linq.Async" />
-		<PackageReference Include="System.Net.Http" />
+		<PackageReference Include="System.Linq.Async">
+			<ExcludeAssets>compile</ExcludeAssets>
+		</PackageReference>
 		<PackageReference Include="Microsoft.Diagnostics.NETCore.Client" />
 		<PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" />
 		<PackageReference Include="Microsoft.Data.Sqlite" />
 		<PackageReference Include="DotNext.IO" />
 		<PackageReference Include="DotNext.Threading" />
 		<PackageReference Include="DotNext.Unsafe" />
-		<PackageReference Include="System.Text.RegularExpressions" />
-		<PackageReference Include="System.Threading.Channels" />
 		<PackageReference Include="Scrutor" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
+		<ProjectReference Include="..\KurrentDB.DuckDB\KurrentDB.DuckDB.csproj" />
 		<ProjectReference Include="..\KurrentDB.Licensing\KurrentDB.Licensing.csproj" />
+		<ProjectReference Include="..\KurrentDB.Logging\KurrentDB.Logging.csproj" />
 		<ProjectReference Include="..\KurrentDB.LogV3\KurrentDB.LogV3.csproj" />
 		<ProjectReference Include="..\KurrentDB.Native\KurrentDB.Native.csproj" />
 		<ProjectReference Include="..\KurrentDB.Plugins\KurrentDB.Plugins.csproj" />
@@ -50,54 +53,54 @@
 		<ProjectReference Include="..\KurrentDB.NETCore.Compatibility\KurrentDB.NETCore.Compatibility.csproj" />
 		<ProjectReference Include="..\KurrentDB.SourceGenerators\KurrentDB.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 	</ItemGroup>
+
 	<ItemGroup>
-		<Protobuf Include="..\Protos\ClientAPI\ClientMessageDtos.proto">
+		<InternalsVisibleTo Include="KurrentDB.Projections.Core" />
+		<InternalsVisibleTo Include="KurrentDB.Core.Tests" />
+		<InternalsVisibleTo Include="KurrentDB.Core.XUnit.Tests" />
+		<InternalsVisibleTo Include="KurrentDB.Projections.Core.Tests" />
+		<InternalsVisibleTo Include="KurrentDB.TestClient" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Protobuf Include="..\Protos\ClientAPI\ClientMessageDtos.proto" Access="Internal">
 			<Link>Services\Transport\Tcp\protos\ClientMessageDtos.proto</Link>
 		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\code.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
+		<Protobuf Include="..\Protos\Grpc\code.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc" Access="Internal">
 			<Link>Services\Transport\Grpc\Protos\code.proto</Link>
 		</Protobuf>
-		<Protobuf Include="../Protos/Grpc/cluster.proto" GrpcServices="Both" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
+		<Protobuf Include="../Protos/Grpc/cluster.proto" GrpcServices="Both" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc" Access="Internal">
 			<Link>Services\Transport\Grpc\Protos\cluster.proto</Link>
 		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\gossip.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
+		<Protobuf Include="..\Protos\Grpc\gossip.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc" Access="Internal">
 			<Link>Services\Transport\Grpc\Protos\gossip.proto</Link>
 		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\operations.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
+		<Protobuf Include="..\Protos\Grpc\operations.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc" Access="Internal">
 			<Link>Services\Transport\Grpc\Protos\operations.proto</Link>
 		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\persistent.proto" GrpcServices="Both" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
+		<Protobuf Include="..\Protos\Grpc\persistent.proto" GrpcServices="Both" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc" Access="Internal">
 			<Link>Services\Transport\Grpc\Protos\persistent.proto</Link>
 		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\shared.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
+		<Protobuf Include="..\Protos\Grpc\shared.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc" Access="Internal">
 			<Link>Services\Transport\Grpc\Protos\shared.proto</Link>
 		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\status.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
+		<Protobuf Include="..\Protos\Grpc\status.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc" Access="Internal" >
 			<Link>Services\Transport\Grpc\Protos\status.proto</Link>
 		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\streams.proto" GrpcServices="Both" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
+		<Protobuf Include="..\Protos\Grpc\streams.proto" GrpcServices="Both" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc" Access="Internal">
 			<Link>Services\Transport\Grpc\Protos\streams.proto</Link>
 		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\users.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
+		<Protobuf Include="..\Protos\Grpc\users.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc" Access="Internal">
 			<Link>Services\Transport\Grpc\Protos\users.proto</Link>
 		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\monitoring.proto" GrpcServices="Both" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
+		<Protobuf Include="..\Protos\Grpc\monitoring.proto" GrpcServices="Both" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc" Access="Internal">
 			<Link>Services\Transport\Grpc\Protos\monitoring.proto</Link>
 		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\serverfeatures.proto" GrpcServices="Both" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
+		<Protobuf Include="..\Protos\Grpc\serverfeatures.proto" GrpcServices="Both" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc" Access="Internal">
 			<Link>Services\Transport\Grpc\Protos\serverfeatures.proto</Link>
 		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\redaction.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
+		<Protobuf Include="..\Protos\Grpc\redaction.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc" Access="Internal">
 			<Link>Services\Transport\Grpc\Protos\redaction.proto</Link>
-		</Protobuf>
-		<Protobuf Include="..\Protos\dynamic-value.proto" ProtoRoot="../Protos">
-			<Link>Protos\dynamic-value.proto</Link>
-		</Protobuf>
-		<Protobuf Include="..\Protos\Server\properties.proto" ProtoRoot="../Protos">
-			<Link>Protos\Server\properties.proto</Link>
-		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\streams.v2.proto" GrpcServices="Both" ProtoRoot="../Protos">
-			<Link>Protos\Server\streams.v2.proto</Link>
 		</Protobuf>
 	</ItemGroup>
 	<ItemGroup>
@@ -124,6 +127,12 @@
 	  </Compile>
 	  <Compile Update="Services\Transport\Grpc\Users.*.cs">
 	    <DependentUpon>Users.cs</DependentUpon>
+	  </Compile>
+	  <Compile Update="Services\Storage\StorageReaderWorker.*.cs">
+	    <DependentUpon>StorageReaderWorker.cs</DependentUpon>
+	  </Compile>
+	  <Compile Update="Messages\ClientMessage.*.cs">
+	    <DependentUpon>ClientMessage.cs</DependentUpon>
 	  </Compile>
 	</ItemGroup>
 </Project>

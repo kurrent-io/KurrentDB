@@ -34,14 +34,14 @@ public class ConnectorQueries {
 
         var snapshot = await LoadSnapshot(cancellationToken);
 
-        var skip = query.Paging.Page - (1 * query.Paging.PageSize);
+        var skip = (query.Paging.Page - 1) * query.Paging.PageSize;
 
         var items = await snapshot.Connectors.ToAsyncEnumerable()
             .Where(Filter())
             .Skip(skip)
             .Take(query.Paging.PageSize)
-            .SelectAwaitWithCancellation(Map(query, cancellationToken))
-            .SelectAwaitWithCancellation(EnrichWithPosition())
+            .Select(Map(query, cancellationToken))
+            .Select(EnrichWithPosition())
             .ToListAsync(cancellationToken);
 
         return new ListConnectorsResult {

@@ -191,7 +191,6 @@ StyleCopReport.xml
 *.ipdb
 *.pgc
 *.pgd
-*.rsp
 *.sbr
 *.tlb
 *.tli
@@ -484,3 +483,6 @@ certs/
 *.quack.wal
 *.ddb
 *.ddb.wal
+
+# MCP Configuration with local paths
+.mcp.json

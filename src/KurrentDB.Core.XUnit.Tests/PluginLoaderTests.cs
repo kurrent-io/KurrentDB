@@ -12,14 +12,14 @@ using Xunit;
 
 namespace KurrentDB.PluginHosting.Tests;
 
-public class PluginLoaderTests : IAsyncLifetime {
+public sealed class PluginLoaderTests : IAsyncLifetime {
 	private readonly DirectoryFixture<PluginLoaderTests> _fixture = new();
 
-	public async Task InitializeAsync() {
+	public async ValueTask InitializeAsync() {
 		await _fixture.InitializeAsync();
 	}
 
-	public async Task DisposeAsync() {
+	public async ValueTask DisposeAsync() {
 		for (int i = 0; i < 3; i++) {
 			GC.Collect();
 			GC.WaitForPendingFinalizers();
@@ -90,7 +90,7 @@ public class PluginLoaderTests : IAsyncLifetime {
 		using var process = new Process {
 			StartInfo = new ProcessStartInfo {
 				FileName = "dotnet",
-				Arguments = $"publish --configuration {BuildConfiguration} --framework=net8.0 --output {outputFolder.FullName}",
+				Arguments = $"publish --configuration {BuildConfiguration} --framework=net10.0 --output {outputFolder.FullName}",
 				WorkingDirectory = PluginSourceDirectory,
 				UseShellExecute = false,
 				RedirectStandardError = true,

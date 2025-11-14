@@ -73,7 +73,7 @@ public class a_running_projection {
 		public void the_projection_status_becomes_stopped_disabled() {
 			_manager.Handle(
 				new ProjectionManagementMessage.Command.GetStatistics(
-					_bus, null, _projectionName, false));
+					_bus, null, _projectionName));
 
 			Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
 			Assert.AreEqual(
@@ -118,7 +118,7 @@ public class a_running_projection {
 		public void the_projection_status_remains_running_enabled() {
 			_manager.Handle(
 				new ProjectionManagementMessage.Command.GetStatistics(
-					_bus, null, _projectionName, false));
+					_bus, null, _projectionName));
 
 			Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
 			Assert.AreEqual(
@@ -168,7 +168,7 @@ public class a_running_projection {
 		public void the_projection_epoch_changes() {
 			_manager.Handle(
 				new ProjectionManagementMessage.Command.GetStatistics(
-					_bus, null, _projectionName, false));
+					_bus, null, _projectionName));
 
 			Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
 			Assert.AreEqual(
@@ -194,7 +194,7 @@ public class a_running_projection {
 		public void the_projection_status_is_enabled_running() {
 			_manager.Handle(
 				new ProjectionManagementMessage.Command.GetStatistics(
-					_bus, null, _projectionName, false));
+					_bus, null, _projectionName));
 
 			Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
 			Assert.AreEqual(
@@ -243,8 +243,7 @@ public class a_running_projection {
 		[Test]
 		public void the_projection_epoch_changes() {
 			_manager.Handle(
-				new ProjectionManagementMessage.Command.GetStatistics(
-					_bus, null, _projectionName, false));
+				new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
 
 			Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
 			Assert.AreEqual(
@@ -270,7 +269,7 @@ public class a_running_projection {
 		public void the_projection_status_is_enabled_running() {
 			_manager.Handle(
 				new ProjectionManagementMessage.Command.GetStatistics(
-					_bus, null, _projectionName, false));
+					_bus, null, _projectionName));
 
 			Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
 			Assert.AreEqual(

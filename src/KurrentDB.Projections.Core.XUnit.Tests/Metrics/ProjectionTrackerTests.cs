@@ -92,7 +92,6 @@ public class ProjectionTrackerTests {
 
 		actualMeasurement => {
 			Assert.Equal(expectedValue, actualMeasurement.Value);
-			if (actualMeasurement.Tags == null) return;
 			var actualTags = actualMeasurement.Tags.ToArray();
 			Assert.Equal(tags, actualTags!, (a, b) => a.Key == b.Key && a.Value.Equals(b.Value));
 		};

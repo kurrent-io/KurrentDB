@@ -52,7 +52,7 @@ Learn more about [replication configuration](networking.md#replication-protocol)
 
 Cluster nodes use the gossip protocol to discover each other and elect the cluster leader.
 
-Cluster nodes need to know about one another to gossip. To start this process, you provide gossip seeds for each node. 
+Cluster nodes need to know about one another to gossip. To start this process, you provide gossip seeds for each node.
 
 Configure cluster nodes to discover other nodes in one of two ways:
 - [via a DNS entry](#cluster-with-dns) and a well-known [gossip port](#gossip-port)
@@ -200,7 +200,7 @@ A cluster assigns the follower role based on an election process. A cluster uses
 
 You can add read-only replica nodes, which will not become cluster members and will not take part in elections. Read-only replicas can be used for scaling up reads if you have many catch-up subscriptions and want to off-load cluster members.
 
-A cluster asynchronously replicates data one way to a node with the read-only replica role. The read-only replica node is not part of the cluster, so does not add to the replication requirements needed to acknowledge a write. For this reason a node with a read-only replica role does not add much overhead to the other nodes.
+A cluster asynchronously replicates data one way to a node with the read-only replica role. The read-only replica node is not part of the cluster, so does not add to the replication requirements needed to acknowledge a write. For this reason a node with a read-only replica role does not add much overhead to the other nodes, and read-only replicas should not be included in the `ClusterSize`.
 
 You need to explicitly configure the node as a read-only replica using this setting:
 
@@ -216,7 +216,7 @@ The replica node needs to have the cluster gossip DNS or seed configured. For th
 
 ### Node priority
 
-You can control which clones the cluster promotes with the `NodePriority` setting. The default value is `0`, and the cluster is more likely to promote nodes with higher values.
+You can influence which clones the cluster promotes with the `NodePriority` setting. The default value is `0`, and the cluster is more likely to promote nodes with higher values.
 
 | Format               | Syntax                    |
 |:---------------------|:--------------------------|

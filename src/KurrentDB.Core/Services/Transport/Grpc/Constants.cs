@@ -12,10 +12,10 @@ public static class Constants {
 		public const string StreamDeleted = "stream-deleted";
 		public const string WrongExpectedVersion = "wrong-expected-version";
 		public const string StreamNotFound = "stream-not-found";
+		public const string IndexNotFound = "index-not-found";
 		public const string MaximumAppendSizeExceeded = "maximum-append-size-exceeded";
 		public const string MaximumAppendEventSizeExceeded = "maximum-append-event-size-exceeded";
 		public const string MissingRequiredMetadataProperty = "missing-required-metadata-property";
-		public const string MissingRequiredProperty = "missing-required-property";
 		public const string NotLeader = "not-leader";
 
 		public const string PersistentSubscriptionFailed = "persistent-subscription-failed";
@@ -36,6 +36,7 @@ public static class Constants {
 		public const string ExpectedVersion = "expected-version";
 		public const string ActualVersion = "actual-version";
 		public const string StreamName = "stream-name";
+		public const string IndexName = "index-name";
 		public const string GroupName = "group-name";
 		public const string Reason = "reason";
 		public const string MaximumAppendSize = "maximum-append-size";
@@ -63,23 +64,11 @@ public static class Constants {
 		}
 	}
 
-	public static class Properties {
-		public const string EventTypeKey = "$schema.name";
-		public const string DataFormatKey = "$schema.data-format";
-		public const string CreatedKey = "$record.timestamp";
-		public const string LegacyMetadataKey = "$legacy-metadata";
-
-		public static class DataFormats {
-			public const string Json = "Json";
-			public const string Bytes = "Bytes";
-			public const string Avro = "Avro";
-			public const string Protobuf = "Protobuf";
-		}
-
-		// for write
-		public const string RequiredProperties =
-			$"{EventTypeKey} (bytes), " +
-			$"{DataFormatKey} (bytes)";
+	public static class RecordProperties {
+		public const string SchemaNameKey = "$schema.name";
+		public const string SchemaFormatKey = "$schema.format";
+		public const string SchemaIdKey = "$schema.id";
+		public const string TimestampKey = "$record.timestamp";
 	}
 
 	public static class Headers {

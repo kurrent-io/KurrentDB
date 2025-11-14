@@ -4,6 +4,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.TransactionLog.LogRecords;
@@ -21,8 +22,9 @@ public class when_reading_an_empty_chunked_transaction_log<TLogFormat, TStreamId
 		await using var db = new TFChunkDb(TFChunkHelper.CreateDbConfig(PathName, writerchk, chaserchk));
 		await db.Open();
 
-		var reader = new TFChunkReader(db, writerchk, 0);
-		Assert.IsTrue(await reader.TryReadNext(CancellationToken.None) is { Success: false });
+		var reader = new TFChunkReader(db, writerchk);
+		using var cursorScope = new AsyncReadCursor.Scope();
+		Assert.IsTrue(await reader.TryReadNext(cursorScope.Cursor, CancellationToken.None) is { Success: false });
 	}
 
 	[Test]
@@ -35,9 +37,10 @@ public class when_reading_an_empty_chunked_transaction_log<TLogFormat, TStreamId
 		var writer = new TFChunkWriter(db);
 		await writer.Open(CancellationToken.None);
 
-		var reader = new TFChunkReader(db, writerchk, 0);
+		var reader = new TFChunkReader(db, writerchk);
+		using var cursorScope = new AsyncReadCursor.Scope();
 
-		Assert.IsTrue(await reader.TryReadNext(CancellationToken.None) is { Success: false });
+		Assert.IsTrue(await reader.TryReadNext(cursorScope.Cursor, CancellationToken.None) is { Success: false });
 
 		var recordFactory = LogFormatHelper<TLogFormat, TStreamId>.RecordFactory;
 		var streamId = LogFormatHelper<TLogFormat, TStreamId>.StreamId;
@@ -47,7 +50,7 @@ public class when_reading_an_empty_chunked_transaction_log<TLogFormat, TStreamId
 		Assert.IsTrue(await writer.Write(rec, CancellationToken.None) is (true, _));
 		await writer.DisposeAsync();
 
-		var res = await reader.TryReadNext(CancellationToken.None);
+		var res = await reader.TryReadNext(cursorScope.Cursor, CancellationToken.None);
 		Assert.IsTrue(res.Success);
 		Assert.AreEqual(rec, res.LogRecord);
 	}

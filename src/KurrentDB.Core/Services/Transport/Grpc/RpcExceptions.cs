@@ -10,7 +10,7 @@ using KurrentDB.Core.Messaging;
 
 namespace KurrentDB.Core.Services.Transport.Grpc;
 
-public static class RpcExceptions {
+static class RpcExceptions {
 	public static Exception Timeout(string message) => new RpcException(new Status(StatusCode.Aborted, $"Operation timed out: {message}"));
 
 	public static RpcException ServerNotReady() =>
@@ -143,14 +143,6 @@ public static class RpcExceptions {
 				{ Constants.Exceptions.RequiredMetadataProperties, string.Join(",", Constants.Metadata.RequiredMetadata) }
 			});
 
-	public static RpcException RequiredPropertyMissing(string missingProperty) =>
-		new(
-			new Status(StatusCode.InvalidArgument, $"Required Property '{missingProperty}' is missing"),
-			new Metadata {
-					{ Constants.Exceptions.ExceptionKey, Constants.Exceptions.MissingRequiredProperty },
-					{ Constants.Exceptions.RequiredProperties, Constants.Properties.RequiredProperties }
-			});
-
 	public static bool TryHandleNotHandled(ClientMessage.NotHandled notHandled, out Exception exception) {
 		exception = null;
 		switch (notHandled.Reason) {
@@ -246,13 +238,19 @@ public static class RpcExceptions {
 			{ Constants.Exceptions.LoginName, loginName }
 		});
 
+	public static RpcException IndexNotFound(string indexName) =>
+		new(new Status(StatusCode.NotFound, $"Index '{indexName}' not found."), new Metadata {
+			{ Constants.Exceptions.ExceptionKey, Constants.Exceptions.IndexNotFound },
+			{ Constants.Exceptions.IndexName, indexName }
+		});
+
 	public static RpcException InvalidArgument(string errorMessage) =>
 		new(new Status(StatusCode.InvalidArgument, errorMessage));
 
 	public static RpcException InvalidArgument<T>(T argument) =>
 		new(new Status(StatusCode.InvalidArgument, $"'{argument}' is not a valid {typeof(T)}"));
 
-	public static RpcException RequiredArgument<T>(string name, T argument) =>
+	public static RpcException RequiredArgument<T>(string name) =>
 		new(new Status(StatusCode.InvalidArgument, $"'{name}' is a required argument of type {typeof(T)}"));
 
 	public static RpcException InvalidCombination<T>(T combination) where T : ITuple

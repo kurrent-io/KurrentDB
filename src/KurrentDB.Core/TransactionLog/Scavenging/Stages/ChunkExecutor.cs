@@ -381,7 +381,7 @@ public class ChunkExecutor<TStreamId, TRecord> : IChunkExecutor<TStreamId> {
 				// keep it all.
 				// we could discard from transactions sometimes, either by accumulating a state for them
 				// or doing a similar trick as old scavenge and limiting it to transactions that were
-				// stated and commited in the same chunk. however for now this isn't considered so
+				// stated and committed in the same chunk. however for now this isn't considered so
 				// important because someone with transactions to scavenge has probably scavenged them
 				// already with old scavenge. could be added later
 				return false;

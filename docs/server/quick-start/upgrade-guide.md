@@ -3,31 +3,16 @@ title: "Upgrade guide"
 order: 5
 ---
 
-# Upgrade guide for KurrentDB 25.0
-
-Event Store – the company and the product – are rebranding as Kurrent.
-
-As part of this rebrand, EventStoreDB has been renamed to KurrentDB, with the first release of KurrentDB being version 25.0.
-
-Read more about the rebrand in the [rebrand FAQ](https://www.kurrent.io/blog/kurrent-re-brand-faq).
-
-Packages for KurrentDB are still hosted on [Cloudsmith](https://cloudsmith.io/~eventstore), in the following repositories:
-
-* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts) containing only production-ready [LTS](../release-schedule/#long-term-support-releases) packages.
-* [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-latest) containing production-ready LTS and [STS](../release-schedule/#short-term-support-releases) packages.
-* [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-preview) containing non-production preview packages.
-
-Packages are available for [Ubuntu/Debian](./installation.md#ubuntu-debian-packages), [RedHat](./installation.md#redhat-packages), [Docker](./installation.md#docker), and [NuGet](./installation.md#nuget).
-
 ## Should you upgrade?
 
-KurrentDB 25.0 is a short term support (STS) feature release and will be supported until the next major or minor release of KurrentDB.
+KurrentDB 25.1 is a short term support (STS) feature release and will be supported until the next major or minor release of KurrentDB.
 
-Upgrade to this version if you want to use the new archiving feature, or want to prepare for some of the changes caused by the rebrand from EventStoreDB to KurrentDB.
+Upgrade to this version if you want to try the new features and changes in this release and are able to the next release in a few months time.
 
 ## Upgrade procedure
 
-You can perform an online rolling upgrade directly to KurrentDB 25.0 from these versions of EventStoreDB:
+You can perform an online rolling upgrade directly to KurrentDB 25.1 from these earlier versions:
+- 25.0
 - 24.10
 - 23.10
 - 22.10
@@ -36,7 +21,7 @@ Follow the upgrade procedure below on each node, starting with a follower node:
 
 1. Stop the node.
 1. Uninstall any previous versions of EventStoreDB.
-1. Install KurrentDB 25.0 and update the configuration. If you use licensed features, ensure that you configure a [license key](../quick-start/installation.md#license-keys).
+1. Install the new version and update the configuration. If you use licensed features, ensure that you configure a [license key](../quick-start/installation.md#license-keys).
 1. Start the node.
 1. Wait for the node to become a follower or read-only replica.
 1. Repeat the process for the next node.
@@ -50,18 +35,51 @@ Upgrading the cluster this way keeps the cluster online and able to service requ
 If you modified the Linux service file to increase the open files limit, those changes will be overridden during the upgrade. You will need to reapply them after the upgrade.
 :::
 
-## Breaking changes
+## To 25.1
 
-### File and location changes when upgrading from EventStoreDB
+General changes, features and fixes are described in the [what's new](./whatsnew.md) and [release notes](../release-schedule/release-notes.md).
+
+- Consider if the new `StreamInfoCacheCapacity` default is appropriate for your workload.
+- Consider whether to leave `SecondaryIndexing:Enabled` at its default of `true`.
+
+### Breaking Changes
+
+#### Unix socket rename (PR [#4951](https://github.com/kurrent-io/KurrentDB/pull/4951))
+
+As part of the rebrand, the unix socket file has been renamed from `eventstore.sock` to `kurrent.sock`.
+
+This only affects users of the redactor tool, who will need to download the latest version.
+
+#### DisableFirstLevelHttpAuthorization option removed (PR [#5237](https://github.com/kurrent-io/KurrentDB/pull/5237))
+
+This option has had no effect since v20.6.0 and has been removed from the server. Remove this option if it is present in your configuration.
+
+### Deprecation Notices
+
+#### MemDb (PR [#5274](https://github.com/kurrent-io/KurrentDB/pull/5274))
+
+The `MemDb` option has been deprecated and will be removed in a future version to allow us to simplify and unify some core code paths. Users wishing to continue to run KurrentDB in memory can do so with ramfs or similar. Please reach out to us if this is problematic for your use case.
+
+## To 25.0
+
+Event Store – the company and the product – have rebranded as Kurrent.
+
+As part of this rebrand, EventStoreDB has been renamed to KurrentDB, with the first release of KurrentDB being version 25.0.
+
+Read more about the rebrand in the [rebrand FAQ](https://www.kurrent.io/blog/kurrent-re-brand-faq).
+
+### Breaking changes
+
+#### File and location changes when upgrading from EventStoreDB
 
 You will need to take the following changes into account when upgrading from EventStoreDB:
 
-#### On Windows
+##### On Windows
 
 1. The executable `EventStore.ClusterNode.exe` has been renamed to `KurrentDB.exe`.
 1. The test client executable `EventStore.TestClient.exe` has been renamed to `KurrentDB.TestClient.exe`.
 
-#### On Linux
+##### On Linux
 
 1. The `eventstore` service has been renamed to `kurrentdb`.
 1. The `eventstored` executable has been renamed to `kurrentd`.
@@ -88,14 +106,14 @@ If you install KurrentDB through a package manager, it will create a default con
 If you are running KurrentDB as a service, you will need to grant the `kurrent` user access to any data, logs, or configuration directories that the `eventstore` user had access to.
 :::
 
-### Log Levels supported in logconfig.json
+#### Log Levels supported in logconfig.json
 
 The log levels specified in `logconfig.json` must now be Microsoft levels rather than Serilog levels.
 
 If you have customized your `logconfig.json` you will need to change `Fatal` to `Critical` and `Verbose` to `Trace`.
 [#4837](https://github.com/kurrent-io/EventStore/pull/4837)
 
-### Metrics name changes
+#### Metrics name changes
 
 ::: info
 The old EventStore metric names can still be used by changing the two meter names in `metricsconfig.json` to have `EventStore` prefixes:
@@ -151,7 +169,7 @@ The following metric names have changed generally
 | `eventstore_gc_total_allocated` | `kurrentdb_gc_allocated_bytes_total`    |
 | `eventstore_proc_up_time`       | `kurrentdb_proc_up_time_seconds_total`  |
 
-### Removed configuration options
+#### Removed configuration options
 
 A number of configuration options have been removed in 25.0. KurrentDB will not start by default if any of these options are present in the database configuration.
 
@@ -178,7 +196,7 @@ The following deprecated options were removed as they had no effect:
 - `DisableInternalTcpTls`
 - `OptimizeIndexMerge`
 
-### New OAuth redirect uri
+#### New OAuth redirect uri
 
 The new embedded web UI requires a new redirect uri in order to work with the OAuth plugin.
 
@@ -204,7 +222,64 @@ Then you would need to update it to this:
 ]
 ```
 
-### From v24.6 and earlier
+### Deprecation Notices
+
+#### Configuration sections and prefixes
+
+The `EventStore` configuration section and configuration root has been renamed to `KurrentDB`.
+
+The `EVENTSTORE_` environment variable prefix has been changed to `KURRENTDB_`
+
+#### Custom HTTP content types
+
+The `vnd.eventstore.*` content types have been renamed to `vnd.kurrent.*`:
+
+| Deprecated                                      | Use instead                                   |
+| ----------------------------------------------- | --------------------------------------------- |
+| `application/vnd.eventstore.atom+json`          | `application/vnd.kurrent.atom+json`           |
+| `application/vnd.eventstore.event+json`         | `application/vnd.kurrent.event+json`          |
+| `application/vnd.eventstore.events+json`        | `application/vnd.kurrent.events+json`         |
+| `application/vnd.eventstore.streamdesc+json`    | `application/vnd.kurrent.streamdesc+json`     |
+| `application/vnd.eventstore.competingatom+json` | `application/vnd.kurrent.competingatom+json`  |
+
+The `application/vnd.eventstore.atomsvc+json` content type has been removed and replaced with `application/vnd.kurrent.atomsvc+json`.
+
+Xml content types are unchanged.
+
+#### Custom HTTP headers
+
+The `ES-*` HTTP headers have been renamed to `Kurrent-*`.
+
+Deprecated headers accepted by the server:
+
+| Deprecated            | Use instead               |
+| --------------------- | ------------------------- |
+| `ES-ExpectedVersion`  | `Kurrent-ExpectedVersion` |
+| `ES-RequireLeader`    | `Kurrent-RequireLeader`   |
+| `ES-RequireMaster`    | `Kurrent-RequireLeader`   |
+| `ES-ResolveLinkTos`   | `Kurrent-ResolveLinkTos`  |
+| `ES-LongPoll`         | `Kurrent-LongPoll`        |
+| `ES-TrustedAuth`      | `Kurrent-TrustedAuth`     |
+| `ES-HardDelete`       | `Kurrent-HardDelete`      |
+| `ES-EventId`          | `Kurrent-EventId`         |
+| `ES-EventType`        | `Kurrent-EventType`       |
+
+Deprecated headers provided by the server in certain responses:
+
+| Deprecated          | Use instead               |
+| ------------------- | ------------------------- |
+| `ES-Position`       | `Kurrent-Position`        |
+| `ES-CurrentVersion` | `Kurrent-CurrentVersion`  |
+
+## To 24.10
+
+#### Persistent Subscriptions checkpoints compatibility
+
+24.10+ writes Persistent Subscription Checkpoints prefixed with a `$`, to bring them into line with other system events. The change is backwards compatible (new versions of the server will understand the old checkpoints), but old versions of the server will not understand the new checkpoints.
+
+The 23.10 series has been patched to understand the new checkpoints starting with 23.10.8. Consider upgrading to 23.10.8 (or a more recent patch) before upgrading to 24.10+ so that in the event of a rollback persistent subscriptions will continue smoothly.
+
+### Breaking changes
 
 #### Histograms endpoint has been removed
 
@@ -216,11 +291,11 @@ Any tooling that relies on the histogram endpoint will receive a 404 when reques
 
 Support for extremely old PTables (v1) has been removed.
 
-This will only affect databases created on EventStoreDB version 3.9.0 and before, and which have not upgraded their PTables since EventStoreDB version 3.9.0.
+This will only affect databases created before EventStoreDB version 3.9.0, and which have not upgraded their PTables since EventStoreDB version 3.9.0.
 
-PTables are automatically upgraded when merged or when the PTables are rebuilt. So, if your EventStoreDB has been running for some time on a version greater than 3.9.0, then you are unlikely to be affected by this change.
+PTables are automatically upgraded when merged or when the PTables are rebuilt. So, if your EventStoreDB has been running for some time on a version >= 3.9.0, then you are unlikely to be affected by this change.
 
-If 32bit PTables are present, we detect them on startup and exit. If this happens, you can use a version between v3.9.0 and v24.10.0 to upgrade the PTables or rebuild the index.
+If 32bit PTables are present, we detect them on startup and exit. If this happens, you can use a version >= v3.9.0 and < v24.10.0 to upgrade the PTables, or alternatively you can delete the index and it will be rebuilt. The rebuild would involve reading the whole database, which can take a long time on large databases.
 
 #### Otel Exporter commercial plugin configuration changes
 
@@ -297,8 +372,6 @@ UserCertificates:
   Enabled: true
 ```
 
-### From v23.10 and earlier
-
 #### External TCP API removed
 
 The external TCP API was removed in EventStoreDB 24.2.0. This affects external clients using the TCP API and its related configurations.
@@ -344,7 +417,9 @@ In this case, you will see the following logs:
 
 You can correct this by regenerating the certificates with the correct key usages. See the [Certificate Configuration](../security/protocol-security.md#certificates-configuration) documentation for more information about configuring and generating certificates.
 
-### From v22.10 and earlier
+## To v23.10
+
+### Breaking changes
 
 The updates to anonymous access described in the [release notes](https://www.kurrent.io/releases/kurrentdb/23-10/) have introduced some breaking changes. We have also removed, renamed, and deprecated some options in KurrentDB.
 
@@ -379,52 +454,3 @@ These options did not have any effect and can be safely removed from your config
 We have renamed the event type used to store a persistent subscription configuration from `PersistentConfig1` to `$PersistentConfig`. This event type is a system event, so naming it as such will allow certain filters to exclude it correctly.
 
 If you have any tools or clients relying on this event type, you will need to update them before upgrading.
-
-## Deprecations
-
-### Configuration sections and prefixes
-
-The `EventStore` configuration section and configuration root has been renamed to `KurrentDB`.
-
-The `EVENTSTORE_` environment variable prefix has been changed to `KURRENTDB_`
-
-### Custom HTTP content types
-
-The `vnd.eventstore.*` content types have been renamed to `vnd.kurrent.*`:
-
-| Deprecated                                      | Use instead                                   |
-| ----------------------------------------------- | --------------------------------------------- |
-| `application/vnd.eventstore.atom+json`          | `application/vnd.kurrent.atom+json`           |
-| `application/vnd.eventstore.event+json`         | `application/vnd.kurrent.event+json`          |
-| `application/vnd.eventstore.events+json`        | `application/vnd.kurrent.events+json`         |
-| `application/vnd.eventstore.streamdesc+json`    | `application/vnd.kurrent.streamdesc+json`     |
-| `application/vnd.eventstore.competingatom+json` | `application/vnd.kurrent.competingatom+json`  |
-
-The `application/vnd.eventstore.atomsvc+json` content type has been removed and replaced with `application/vnd.kurrent.atomsvc+json`.
-
-Xml content types are unchanged.
-
-### Custom HTTP headers
-
-The `ES-*` HTTP headers have been renamed to `Kurrent-*`.
-
-Deprecated headers accepted by the server:
-
-| Deprecated            | Use instead               |
-| --------------------- | ------------------------- |
-| `ES-ExpectedVersion`  | `Kurrent-ExpectedVersion` |
-| `ES-RequireLeader`    | `Kurrent-RequireLeader`   |
-| `ES-RequireMaster`    | `Kurrent-RequireLeader`   |
-| `ES-ResolveLinkTos`   | `Kurrent-ResolveLinkTos`  |
-| `ES-LongPoll`         | `Kurrent-LongPoll`        |
-| `ES-TrustedAuth`      | `Kurrent-TrustedAuth`     |
-| `ES-HardDelete`       | `Kurrent-HardDelete`      |
-| `ES-EventId`          | `Kurrent-EventId`         |
-| `ES-EventType`        | `Kurrent-EventType`       |
-
-Deprecated headers provided by the server in certain responses:
-
-| Deprecated          | Use instead               |
-| ------------------- | ------------------------- |
-| `ES-Position`       | `Kurrent-Position`        |
-| `ES-CurrentVersion` | `Kurrent-CurrentVersion`  |

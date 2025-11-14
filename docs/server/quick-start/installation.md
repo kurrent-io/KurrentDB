@@ -124,7 +124,7 @@ Alternatively, you can find instructions to manually configure it yourself on Cl
 Install the package:
 
 ```bash
-apt-get install kurrentdb=25.0.0
+apt-get install kurrentdb=25.1.0
 ```
 
 #### Uninstall with apt-get
@@ -207,7 +207,7 @@ Alternatively, you can find instructions to manually configure it yourself on Cl
 Install the package:
 
 ```bash
-yum install kurrentdb-25.0.0-1.x86_64
+yum install kurrentdb-25.1.0-1.x86_64
 ```
 
 #### Uninstall with yum
@@ -243,7 +243,7 @@ KurrentDB has NuGet packages available on [Chocolatey](https://community.chocola
 You can install KurrentDB through Chocolatey:
 
 ```powershell
-choco install kurrentdb --version=25.0.0
+choco install kurrentdb --version=25.1.0
 ```
 
 KurrentDB can then be run with `KurrentDB.exe`:
@@ -287,6 +287,19 @@ sc.exe start "KurrentDB"
 ```
 
 Logs will still be written to the usual log file location. By default on windows this is the `logs` directory within the directory that contains `KurrentDB.exe`.
+
+::: warning
+In this version the the service restart policy does not guarantee that the service is running. If running as a Windows Service, we recommend configuring
+the Windows Task Scheduler to start the service regularly (say, every 10 seconds), which will do nothing if the service is already running.
+
+This is for two reasons, both of which we intend to address in a future version:
+
+1. If the service shuts down gracefully, such as when going offline for truncation, it will be not be restarted by the policy.
+2. If the service does not start within 30s (by default), it will not be restarted by the policy. The 'start' that the service manager is looking for
+usually only takes a second or two, and is not related to the size of the database, but none the less there is some risk of timeout.
+
+Important: it is not recommended to run KurrentDB directly using Task Scheduler. By default Task Scheduler runs processes with low priority which will significantly impact performance.
+:::
 
 ## Docker
 
@@ -359,10 +372,6 @@ docker compose up
 
 The command above would run KurrentDB as a single node without SSL. You also get AtomPub protocol enabled, so you can get the stream browser to work in the Admin UI.
 
-::: warning
-The legacy TCP client protocol is disabled by default and is no longer be available from version 24.10. 
-:::
-
 #### Secure cluster
 
 With Docker Compose, you can also run a three-node cluster with security enabled. This kind of setup is
@@ -417,7 +426,7 @@ KurrentDB can be deployed and managed using the [Operator](/server/kubernetes-op
 
 ## Building from source
 
-You can also build [KurrentDB from source](https://github.com/EventStore/EventStore?tab=readme-ov-file#building-kurrentdb). Before doing that, you need to install the .NET 8 SDK. KurrentDB packages have the .NET Runtime embedded, so you don't need to install anything except the KurrentDB package.
+You can also build [KurrentDB from source](https://github.com/EventStore/EventStore?tab=readme-ov-file#building-kurrentdb). Before doing that, you need to install the .NET 10 SDK. KurrentDB packages have the .NET Runtime embedded, so you don't need to install anything except the KurrentDB package.
 
 ## Compatibility notes
 

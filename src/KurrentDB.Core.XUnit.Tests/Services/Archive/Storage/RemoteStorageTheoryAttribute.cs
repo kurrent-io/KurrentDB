@@ -5,9 +5,15 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
+using System.Threading.Tasks;
 using KurrentDB.Core.Services.Archive;
+using Xunit;
 using Xunit.Sdk;
+using Xunit.v3;
 
 namespace KurrentDB.Core.XUnit.Tests.Services.Archive.Storage;
 
@@ -30,9 +36,12 @@ public static class StorageData {
 			_storageType = storageType;
 		}
 
-		public sealed override IEnumerable<object[]> GetData(MethodInfo testMethod) => [[_storageType, .. _extraArgs]];
+		public sealed override ValueTask<IReadOnlyCollection<ITheoryDataRow>> GetData(MethodInfo testMethod, DisposalTracker _) =>
+			new(((object[][])[[_storageType, .. _extraArgs]]).Select(ConvertDataRow).ToList());
 
 		protected delegate void PrerequisiteChecker(ref bool symbolSet);
+
+		public override bool SupportsDiscoveryEnumeration() => false;
 	}
 
 
@@ -54,10 +63,63 @@ public static class StorageData {
 		}
 	}
 
+	public sealed class GCPAttribute(params object[] args) : RemoteStorageDataAttribute(
+		StorageType.GCP,
+		args,
+		Symbol,
+		static (ref bool isSet) => CheckPrerequisites(ref isSet)) {
+		const string Symbol = "RUN_GCP_TESTS";
+
+		[Conditional(Symbol)]
+		private static void CheckPrerequisites(ref bool symbolSet) {
+			symbolSet = true;
+			const string gcpDirectoryNameLinux = ".config/gcloud";
+			const string gcpDirectoryNameWindows = "gcloud";
+			var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+			if (OperatingSystem.IsLinux())
+				homeDir = Path.Combine(homeDir, gcpDirectoryNameLinux);
+			else if (OperatingSystem.IsWindows())
+				homeDir = Path.Combine(homeDir, gcpDirectoryNameWindows);
+			else
+				throw new NotSupportedException();
+
+			if (!Directory.Exists(homeDir))
+				throw new GcpCliDirectoryNotFoundException(homeDir);
+		}
+	}
+
 	public sealed class FileSystemAttribute(params object[] args) : RemoteStorageDataAttribute(
 		StorageType.FileSystemDevelopmentOnly,
 		args,
 		string.Empty,
-		static (ref bool isSet) => isSet = true) {
+		static (ref bool isSet) => isSet = true);
+
+	public sealed class AzureAttribute(params object[] args) : RemoteStorageDataAttribute(
+		StorageType.Azure,
+		args,
+		Symbol,
+		static (ref bool isSet) => CheckPrerequisites(ref isSet)) {
+		private const string Symbol = "RUN_AZ_TESTS";
+
+		[Conditional(Symbol)]
+		private static void CheckPrerequisites(ref bool symbolSet) {
+			symbolSet = true;
+
+			CheckAzuriteLocalEndPoint();
+		}
+
+		private static void CheckAzuriteLocalEndPoint() {
+			var azuriteBlobEndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 10_000);
+
+			var socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+			try {
+				socket.Connect(azuriteBlobEndPoint);
+			} catch (SocketException e) when (e.SocketErrorCode is SocketError.ConnectionRefused) {
+				throw new AzuriteNotStartedException();
+			} finally {
+				socket.Dispose();
+			}
+		}
 	}
 }

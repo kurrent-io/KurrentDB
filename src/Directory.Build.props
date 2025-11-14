@@ -10,20 +10,65 @@
 		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
 		<Copyright>Copyright 2012-2025 Kurrent, Inc</Copyright>
 		<PackageReleaseNotes>https://docs.kurrent.io/server/latest/release-schedule/release-notes</PackageReleaseNotes>
-		<TargetFramework>net8.0</TargetFramework>
-		<LangVersion>12.0</LangVersion>
+		<TargetFramework>net10.0</TargetFramework>
+		<LangVersion>14.0</LangVersion>
 		<Platforms>AnyCPU;x64;ARM64</Platforms>
 		<IsPackable>false</IsPackable>
-		<VersionPrefix>25.1.0</VersionPrefix>
+		<VersionPrefix>26.0.0</VersionPrefix>
 		<VersionSuffix>prerelease</VersionSuffix>
-		<IsTestProject>false</IsTestProject>
+		<!-- Adjust for SYSLIB0057 separately to .NET 10 upgrade -->
+		<!-- Adjust for XUNIT1051 separately. Lots of lines but very simple -->
+		<NoWarn>SYSLIB0057;xUnit1051</NoWarn>
+
+		<TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) @"$(MSBuildThisFileDirectory)../ci/ci.rsp"</TestingPlatformCommandLineArguments>
+		<!-- we put these two here and not only for explicitly labelled test projects to make sure that -->
+		<!-- we don't accidentally mix MTP with VSTest, which is not supported -->
+		<!-- tell xunit projects to use MTP -->
+		<UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+		<!-- tell nunit projects to use MTP -->
+		<EnableNUnitRunner>true</EnableNUnitRunner>
 	</PropertyGroup>
 
-	<ItemGroup>
-		<None Include="$(MSBuildThisFileDirectory)..\LICENSE.md" Pack="true" PackagePath="\" />
-		<None Include="$(MSBuildThisFileDirectory)..\LICENSE_CONTRIBUTIONS.md" Pack="true" PackagePath="\" />
-		<None Include="$(MSBuildThisFileDirectory)..\NOTICE.html" Pack="true" PackagePath="\" />
-		<None Include="$(MSBuildThisFileDirectory)..\ouro.png" Pack="true" PackagePath="\" />
+	<!-- TUnit -->
+	<ItemGroup Condition="'$(IsKurrentTUnit)' == 'True'">
+		<PackageReference Include="TUnit" />
+		<!-- MTP 2 -->
+		<PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.1.0" />
+		<PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="2.0.1" />
+		<PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="2.0.1" />
+		<PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.0.1" />
+	</ItemGroup>
+
+	<!-- XUnit -->
+	<ItemGroup Condition="'$(IsKurrentXUnit)' == 'True'">
+		<PackageReference Include="xunit.v3" />
+		<!-- MTP 1 -->
+		<PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.0.4" />
+		<PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="1.9.0" />
+		<PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="1.9.0" />
+		<PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.9.0" />
+	</ItemGroup>
+
+	<!-- NUnit -->
+	<PropertyGroup Condition="'$(IsKurrentNUnit)' == 'True'">
+		<TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --settings $(MSBuildThisFileDirectory)../ci/ci.runsettings</TestingPlatformCommandLineArguments>
+	</PropertyGroup>
+	<ItemGroup Condition="'$(IsKurrentNUnit)' == 'True'">
+		<PackageReference Include="NUnit" />
+		<PackageReference Include="NUnit3TestAdapter" />
+		<!-- MTP 1 -->
+		<PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.0.4" />
+		<PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="1.9.0" />
+		<PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="1.9.0" />
+		<PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.9.0" />
+	</ItemGroup>
+
+	<!-- All test projects -->
+	<ItemGroup Condition="'$(IsKurrentTUnit)' == 'True' Or '$(IsKurrentXUnit)' == 'True' Or '$(IsKurrentNUnit)' == 'True'">
+		<PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+		<PackageReference Include="Microsoft.Testing.Extensions.CrashDump" />
+		<PackageReference Include="Microsoft.Testing.Extensions.HangDump" />
+		<PackageReference Include="Microsoft.Testing.Extensions.TrxReport" />
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(IsPlugin)' == 'true'">

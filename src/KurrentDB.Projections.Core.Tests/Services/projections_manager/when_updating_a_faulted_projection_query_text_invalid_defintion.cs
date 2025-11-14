@@ -59,8 +59,7 @@ public class when_updating_a_faulted_projection_query_text_invalid_defintion<TLo
 	[Test, Category("v8")]
 	public void the_projection_status_is_stopped() {
 		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName,
-				false));
+			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName));
 
 		Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
 		Assert.AreEqual(

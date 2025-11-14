@@ -3,6 +3,7 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<InvariantGlobalization>true</InvariantGlobalization>
+		<IsKurrentXUnit>true</IsKurrentXUnit>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -12,13 +13,6 @@
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Microsoft.Extensions.Diagnostics.Testing" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" />
-		<PackageReference Include="GitHubActionsTestLogger" />
-		<PackageReference Include="xunit" />
-		<PackageReference Include="xunit.runner.visualstudio">
-		  <PrivateAssets>all</PrivateAssets>
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
 	</ItemGroup>
 
 	<ItemGroup>

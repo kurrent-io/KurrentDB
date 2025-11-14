@@ -48,7 +48,7 @@ public abstract class ClusterVNodeFixture : IAsyncLifetime {
     public ISubscriber Subscriber => NodeServices.GetRequiredService<ISubscriber>();
     public ISystemClient Client =>   NodeServices.GetRequiredService<ISystemClient>();
 
-    public async Task InitializeAsync() {
+    public async ValueTask InitializeAsync() {
         var (options, services) = await ClusterVNodeApp.Start(
 	        configureServices: ConfigureServices,
 	        overrides: Configuration
@@ -60,7 +60,7 @@ public abstract class ClusterVNodeFixture : IAsyncLifetime {
         await OnSetup();
     }
 
-    public async Task DisposeAsync() {
+    public async ValueTask DisposeAsync() {
         try {
             await OnTearDown();
             await ClusterVNodeApp.DisposeAsync();
@@ -112,8 +112,8 @@ public abstract class ClusterVNodeFixture : IAsyncLifetime {
         TestWithTimeout(TimeSpan.FromSeconds(10), test);
 }
 
-public abstract class ClusterVNodeTests<TFixture> where TFixture : ClusterVNodeFixture {
-    protected ClusterVNodeTests(ITestOutputHelper output, TFixture fixture) => Fixture = fixture.With(x => x.CaptureTestRun(output));
+public abstract class ClusterVNodeTests<TFixture> : IClassFixture<TFixture> where TFixture : ClusterVNodeFixture {
+    protected ClusterVNodeTests(TFixture fixture, ITestOutputHelper output) => Fixture = fixture.With(x => x.CaptureTestRun(output));
 
     protected TFixture Fixture { get; }
 }

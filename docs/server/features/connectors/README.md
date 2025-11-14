@@ -1,7 +1,7 @@
 ---
 dir:
   text: "Connectors"
-  order: 1
+  order: 4
 ---
 
 # Understanding Connectors
@@ -15,15 +15,18 @@ Each connector runs on the server-side and uses a catch-up subscription to recei
 
 ```mermaid
 graph TD
-    A[KurrentDB] --> B[Subscription]
+    A[Streams] --> B[Subscription]
     B --> C[Filter]
     C --> D[Sink]
     D --> E[External System]
     
-    subgraph Connector
-    B
-    C
-    D
+    subgraph KurrentDB
+    A
+        subgraph Connector
+        B
+        C
+        D
+        end
     end
 ```
 

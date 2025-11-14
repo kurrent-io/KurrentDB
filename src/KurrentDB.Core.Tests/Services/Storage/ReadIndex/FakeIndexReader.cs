@@ -15,6 +15,7 @@ class FakeIndexReader<TStreamId> : IIndexReader<TStreamId> {
 	public long CachedStreamInfo { get; }
 	public long NotCachedStreamInfo { get; }
 	public long HashCollisions { get; }
+	public IIndexBackend<TStreamId> Backend { get; }
 
 	public ValueTask<IndexReadEventResult> ReadEvent(string streamName, TStreamId streamId, long eventNumber,
 		CancellationToken token)

@@ -28,7 +28,7 @@ public interface IIndexWriter<TStreamId> {
 	ValueTask<CommitCheckResult<TStreamId>> CheckCommitStartingAt(long transactionPosition, long commitPosition, CancellationToken token);
 	ValueTask<CommitCheckResult<TStreamId>> CheckCommit(TStreamId streamId, long expectedVersion, LowAllocReadOnlyMemory<Guid> eventIds, bool streamMightExist, CancellationToken token);
 	ValueTask PreCommit(CommitLogRecord commit, CancellationToken token);
-	void PreCommit(ReadOnlySpan<IPrepareLogRecord<TStreamId>> commitedPrepares, LowAllocReadOnlyMemory<int> eventStreamIndexes);
+	void PreCommit(ReadOnlySpan<IPrepareLogRecord<TStreamId>> committedPrepares, LowAllocReadOnlyMemory<int> eventStreamIndexes);
 	void UpdateTransactionInfo(long transactionId, long logPosition, TransactionInfo<TStreamId> transactionInfo);
 	ValueTask<TransactionInfo<TStreamId>> GetTransactionInfo(long writerCheckpoint, long transactionId, CancellationToken token);
 	void PurgeNotProcessedCommitsTill(long checkpoint);
@@ -87,7 +87,7 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 		ISystemStreamLookup<TStreamId> systemStreams,
 		TStreamId emptyStreamId,
 		ISizer<TStreamId> inMemorySizer) {
-		_committedEvents = new(int.MaxValue, ESConsts.CommitedEventsMemCacheLimit, x => 16 + 4 + IntPtr.Size + Ensure.NotNull(inMemorySizer).GetSizeInBytes(x.StreamId));
+		_committedEvents = new(int.MaxValue, ESConsts.CommittedEventsMemCacheLimit, x => 16 + 4 + IntPtr.Size + Ensure.NotNull(inMemorySizer).GetSizeInBytes(x.StreamId));
 		_indexBackend = Ensure.NotNull(indexBackend);
 		_indexReader = Ensure.NotNull(indexReader);
 		_streamIds = Ensure.NotNull(streamIds);
@@ -107,21 +107,19 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 	public async ValueTask<CommitCheckResult<TStreamId>> CheckCommitStartingAt(long transactionPosition, long commitPosition, CancellationToken token) {
 		TStreamId streamId;
 		long expectedVersion;
-		using (var reader = _indexBackend.BorrowReader()) {
-			try {
-				if (await GetPrepare(reader, transactionPosition, token) is not { } prepare) {
-					Log.Error("Could not read first prepare of to-be-committed transaction. "
-							  + "Transaction pos: {transactionPosition}, commit pos: {commitPosition}.",
-						transactionPosition, commitPosition);
-					var message = "Could not read first prepare of to-be-committed transaction. " + $"Transaction pos: {transactionPosition}, commit pos: {commitPosition}.";
-					throw new InvalidOperationException(message);
-				}
-
-				streamId = prepare.EventStreamId;
-				expectedVersion = prepare.ExpectedVersion;
-			} catch (InvalidOperationException) {
-				return new(CommitDecision.InvalidTransaction, _emptyStreamId, -1, -1, -1, false);
+		try {
+			if (await GetPrepare(_indexBackend.TFReader, transactionPosition, token) is not { } prepare) {
+				Log.Error("Could not read first prepare of to-be-committed transaction. "
+				          + "Transaction pos: {transactionPosition}, commit pos: {commitPosition}.",
+					transactionPosition, commitPosition);
+				var message = "Could not read first prepare of to-be-committed transaction. " + $"Transaction pos: {transactionPosition}, commit pos: {commitPosition}.";
+				throw new InvalidOperationException(message);
 			}
+
+			streamId = prepare.EventStreamId;
+			expectedVersion = prepare.ExpectedVersion;
+		} catch (InvalidOperationException) {
+			return new(CommitDecision.InvalidTransaction, _emptyStreamId, -1, -1, -1, false);
 		}
 
 		// we should skip prepares without data, as they don't mean anything for idempotency
@@ -133,8 +131,8 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 		return await CheckCommit(streamId, expectedVersion, eventIds, streamMightExist: true, token);
 	}
 
-	private static async ValueTask<IPrepareLogRecord<TStreamId>> GetPrepare(TFReaderLease reader, long logPosition, CancellationToken token) {
-		RecordReadResult result = await reader.TryReadAt(logPosition, couldBeScavenged: true, token);
+	private static async ValueTask<IPrepareLogRecord<TStreamId>> GetPrepare(ITransactionFileReader tfReader, long logPosition, CancellationToken token) {
+		RecordReadResult result = await tfReader.TryReadAt(logPosition, couldBeScavenged: true, token);
 		if (!result.Success)
 			return null;
 		if (result.LogRecord.RecordType != LogRecordType.Prepare)
@@ -358,10 +356,9 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 	}
 
 	private async ValueTask<(bool, TransactionInfo<TStreamId>)> GetTransactionInfoUncached(long writerCheckpoint, long transactionId, CancellationToken token) {
-		using (var reader = _indexBackend.BorrowReader()) {
-			reader.Reposition(writerCheckpoint);
+		using (var cursorScope = new AsyncReadCursor.Scope(writerCheckpoint)) {
 			SeqReadResult result;
-			while ((result = await reader.TryReadPrev(token)).Success) {
+			while ((result = await _indexBackend.TFReader.TryReadPrev(cursorScope.Cursor, token)).Success) {
 				if (result.LogRecord.LogPosition < transactionId)
 					break;
 				if (result.LogRecord.RecordType != LogRecordType.Prepare)
@@ -420,12 +417,11 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 	}
 
 	private async IAsyncEnumerable<IPrepareLogRecord<TStreamId>> GetTransactionPrepares(long transactionPos, long commitPos, [EnumeratorCancellation] CancellationToken token) {
-		using var reader = _indexBackend.BorrowReader();
-		reader.Reposition(transactionPos);
+		using var cursorScope = new AsyncReadCursor.Scope(transactionPos);
 
 		// in case all prepares were scavenged, we should not read past Commit LogPosition
 		SeqReadResult result;
-		while ((result = await reader.TryReadNext(token)).Success && result.RecordPrePosition <= commitPos) {
+		while ((result = await _indexBackend.TFReader.TryReadNext(cursorScope.Cursor, token)).Success && result.RecordPrePosition <= commitPos) {
 			if (result.LogRecord.RecordType is not LogRecordType.Prepare)
 				continue;
 
