@@ -34,7 +34,7 @@ public class ConnectorQueries {
 
         var snapshot = await LoadSnapshot(cancellationToken);
 
-        var skip = query.Paging.Page - (1 * query.Paging.PageSize);
+        var skip = (query.Paging.Page - 1) * query.Paging.PageSize;
 
         var items = await snapshot.Connectors.ToAsyncEnumerable()
             .Where(Filter())
