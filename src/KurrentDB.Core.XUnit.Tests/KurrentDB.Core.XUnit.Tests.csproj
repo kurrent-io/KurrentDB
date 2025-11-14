@@ -1,31 +1,21 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<IsKurrentXUnit>true</IsKurrentXUnit>
 		<!--uncomment to run various cloud-based storage tests-->
 		<!--<DefineConstants>RUN_S3_TESTS;RUN_AZ_TESTS;RUN_GCP_TESTS</DefineConstants>-->
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="GitHubActionsTestLogger" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" />
 		<PackageReference Include="TestableIO.System.IO.Abstractions" />
 		<PackageReference Include="TestableIO.System.IO.Abstractions.TestingHelpers" />
-		<PackageReference Include="xunit" />
-		<PackageReference Include="xunit.runner.visualstudio">
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-			<PrivateAssets>all</PrivateAssets>
-		</PackageReference>
-		<PackageReference Include="coverlet.collector">
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-			<PrivateAssets>all</PrivateAssets>
-		</PackageReference>
 		<PackageReference Include="Microsoft.Extensions.Diagnostics.Testing" />
 		<PackageReference Include="System.Linq.Async">
 			<ExcludeAssets>compile</ExcludeAssets>
 		</PackageReference>
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\KurrentDB.Core.Tests\KurrentDB.Core.Tests.csproj" />
+		<ProjectReference Include="..\KurrentDB.Core.Testing.XUnit\KurrentDB.Core.Testing.XUnit.csproj" />
 		<ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
 		<ProjectReference Include="..\KurrentDB.SourceGenerators\KurrentDB.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 	</ItemGroup>
@@ -40,14 +30,14 @@
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 		<None Update="Configuration\test.eventstore.json">
-		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 		<None Update="Configuration\test.kurrentdb.json">
-		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 		<None Include="..\KurrentDB.Common\Utils\version.properties">
-		  <Link>version.properties</Link>
-		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<Link>version.properties</Link>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
 </Project>

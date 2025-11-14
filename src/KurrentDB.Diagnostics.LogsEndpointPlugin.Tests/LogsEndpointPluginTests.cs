@@ -128,7 +128,7 @@ public class LogsEndpointPluginFixture : IAsyncLifetime {
 		_licensed = licensed;
 	}
 
-	public async Task InitializeAsync() {
+	public async ValueTask InitializeAsync() {
 		var ip = "1.2.3.4";
 		var port = "99";
 		var fullPath = Path.Combine(Directory.GetCurrentDirectory(), $"{ip}-{port}-cluster-node");
@@ -169,7 +169,7 @@ public class LogsEndpointPluginFixture : IAsyncLifetime {
 		_unauthenticatedClient.BaseAddress = new Uri(_app!.Urls.First());
 	}
 
-	public async Task DisposeAsync() {
+	public async ValueTask DisposeAsync() {
 		if (_app != null) {
 			await _app.DisposeAsync();
 		}

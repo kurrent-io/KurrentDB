@@ -17,7 +17,7 @@ using Xunit;
 using static KurrentDB.Core.TransactionLog.Chunks.TFChunk.TFChunk;
 
 namespace KurrentDB.Core.XUnit.Tests.TransactionLog.Chunks;
-public class TFChunkManagerTests : DirectoryPerTest<TFChunkManagerTests> {
+public sealed class TFChunkManagerTests : DirectoryPerTest<TFChunkManagerTests> {
 	private readonly TFChunkManager _sut;
 	private readonly ILocatorCodec _locatorCodec;
 	private readonly List<ChunkInfo> _onSwitched = [];
@@ -39,7 +39,7 @@ public class TFChunkManagerTests : DirectoryPerTest<TFChunkManagerTests> {
 		};
 	}
 
-	public override async Task DisposeAsync() {
+	public override async ValueTask DisposeAsync() {
 		await _sut.TryClose(CancellationToken.None);
 		await Fixture.DisposeAsync();
 	}

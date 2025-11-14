@@ -215,8 +215,8 @@ public sealed class ClusterVNodeTestContext : IAsyncInitializer, IAsyncDisposabl
 
 // 2. Use the fixture in your tests
 public class MyIntegrationTests {
-    // Shared fixture - created once per test class (or assembly)
-    [ClassDataSource<ClusterVNodeTestContext>(Shared = SharedType.PerClass)]
+    // Shared fixture - created once per test session
+    [ClassDataSource<ClusterVNodeTestContext>(Shared = SharedType.PerTestSession)]
     public required ClusterVNodeTestContext Fixture { get; init; }
 
     [Test]

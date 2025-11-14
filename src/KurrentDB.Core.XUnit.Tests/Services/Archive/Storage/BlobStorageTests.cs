@@ -218,4 +218,19 @@ public class BlobStorageTests : DirectoryPerTest<BlobStorageTests> {
 			await sut.ReadAsync("missing-from-archive.file", new byte[1], offset: 0, CancellationToken.None);
 		});
 	}
+
+	[Theory]
+	[StorageData.S3]
+	[StorageData.Azure]
+	[StorageData.GCP]
+	[StorageData.FileSystem]
+	public async Task can_overwrite_file(StorageType storageType) {
+		var sut = CreateSut(storageType);
+
+		await using var fs1 = await CreateFile("local1.file", fileSize: 1024);
+		await sut.StoreAsync(fs1, "output.file", CancellationToken.None);
+
+		await using var fs2 = await CreateFile("local2.file", fileSize: 1024);
+		await sut.StoreAsync(fs2, "output.file", CancellationToken.None);
+	}
 }

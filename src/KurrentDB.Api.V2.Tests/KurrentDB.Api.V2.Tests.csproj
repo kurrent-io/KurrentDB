@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <IsKurrentTUnit>true</IsKurrentTUnit>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
@@ -13,10 +13,8 @@
 
   <ItemGroup>
     <PackageReference Include="Grpc.Net.Client" />
-    <PackageReference Include="GitHubActionsTestLogger" />
     <PackageReference Include="Grpc.StatusProto" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.Testing" />
-    <PackageReference Include="TUnit" />
   </ItemGroup>
 
   <ItemGroup>

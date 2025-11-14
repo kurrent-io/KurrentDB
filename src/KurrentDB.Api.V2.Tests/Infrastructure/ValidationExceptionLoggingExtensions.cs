@@ -11,7 +11,7 @@ namespace KurrentDB.Api.Tests.Infrastructure;
 
 public static class ValidationExceptionLoggingExtensions {
     public static void LogValidationErrors<T>(this DetailedValidationException? vex) where T : IValidator {
-        Log.ForContext(Serilog.Core.Constants.SourceContextPropertyName, TestContext.Current?.GetDisplayName())
+        Log.ForContext(Serilog.Core.Constants.SourceContextPropertyName, TestContext.Current?.Metadata.DisplayName)
             .ForContext("ValidatorType", typeof(T).FullName)
             .Information(vex!.Message.Replace("\r\n", @"\r\n"));
     }

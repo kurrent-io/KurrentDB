@@ -1,27 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<IsKurrentNUnit>true</IsKurrentNUnit>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="EventStore.Client" />
-		<PackageReference Include="FluentAssertions" />
-		<PackageReference Include="GitHubActionsTestLogger" />
-		<PackageReference Include="Grpc.Core" />
-		<PackageReference Include="Grpc.Net.Client" />
-		<PackageReference Include="Microsoft.AspNetCore.TestHost" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" />
-		<PackageReference Include="NUnit" />
-		<PackageReference Include="NUnit3TestAdapter" />
 		<PackageReference Include="Microsoft.OpenApi.Readers" />
-		<PackageReference Include="Google.Protobuf" />
-		<PackageReference Include="Grpc.Tools">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-		</PackageReference>
-		<PackageReference Include="Scrutor" />
-		<PackageReference Include="Serilog.Sinks.InMemory" />
-		<PackageReference Include="Serilog.AspNetCore" />
 		<PackageReference Include="System.Linq.Async">
 			<ExcludeAssets>compile</ExcludeAssets>
 		</PackageReference>
@@ -30,29 +14,10 @@
 		<PackageReference Include="IgnoresAccessChecksToGenerator" PrivateAssets="All" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
-		<ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
-		<ProjectReference Include="..\KurrentDB.PluginHosting\KurrentDB.PluginHosting.csproj" />
-		<ProjectReference Include="..\KurrentDB.SecondaryIndexing\KurrentDB.SecondaryIndexing.csproj" />
-		<ProjectReference Include="..\KurrentDB.Transport.Http\KurrentDB.Transport.Http.csproj" />
-		<ProjectReference Include="..\KurrentDB.Transport.Tcp\KurrentDB.Transport.Tcp.csproj" />
+		<ProjectReference Include="..\KurrentDB.Core.Testing.NUnit\KurrentDB.Core.Testing.NUnit.csproj" />
 	</ItemGroup>
 	<ItemGroup>
-		<EmbeddedResource Include="Services\Transport\Tcp\test_certificates\**\*.crt" />
-		<EmbeddedResource Include="Services\Transport\Tcp\test_certificates\**\*.key" />
-		<EmbeddedResource Remove="FakePlugin\**" />
-	</ItemGroup>
-	<ItemGroup>
-		<None Include="..\KurrentDB.Common\Utils\version.properties">
-		  <Link>version.properties</Link>
-		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
 		<None Include="TestConfigs\*.yaml">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</None>
-	</ItemGroup>
-	<ItemGroup>
-		<None Include="TestCertificates\*.*">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
@@ -67,11 +32,11 @@
 		</None>
 	</ItemGroup>
 	<ItemGroup>
-		<None Remove="FakePlugin\**" />
-		<Compile Remove="FakePlugin\**" />
-		<Content Include="FakePlugin\**" CopyToOutputDirectory="Always" />
+		<IgnoresAccessChecksTo Include="EventStore.ClientAPI" />
 	</ItemGroup>
 	<ItemGroup>
-		<IgnoresAccessChecksTo Include="EventStore.ClientAPI" />
+		<None Update="Configuration\test.eventstore.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 	</ItemGroup>
 </Project>

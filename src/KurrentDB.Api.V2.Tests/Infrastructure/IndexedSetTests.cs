@@ -7,7 +7,7 @@ using KurrentDB.Testing.Bogus;
 namespace KurrentDB.Api.Tests.Infrastructure;
 
 public class IndexedSetTests {
-    [ClassDataSource<BogusFaker>(Shared = SharedType.PerAssembly)]
+    [ClassDataSource<BogusFaker>(Shared = SharedType.PerTestSession)]
     public required BogusFaker Faker { get; init; }
 
     [Test]

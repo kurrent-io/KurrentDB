@@ -18,7 +18,11 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadLogEvents> {
 	async ValueTask IAsyncHandle<ReadLogEvents>.HandleAsync(ReadLogEvents msg, CancellationToken token) {
 		ReadLogEventsCompleted res;
 		var cts = _multiplexer.Combine(msg.Lifetime, [token, msg.CancellationToken]);
+		var leaseTaken = false;
 		try {
+			await AcquireRateLimitLeaseAsync(cts.Token);
+			leaseTaken = true;
+
 			res = await ReadLogEvents(msg, cts.Token);
 		} catch (OperationCanceledException e) when (e.CancellationToken == cts.Token) {
 			if (!cts.IsTimedOut)
@@ -36,6 +40,9 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadLogEvents> {
 			res = msg.NoData(ReadEventResult.Error, e.Message);
 		} finally {
 			await cts.DisposeAsync();
+
+			if (leaseTaken)
+				ReleaseRateLimitLease();
 		}
 
 		msg.Envelope.ReplyWith(res);

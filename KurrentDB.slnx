@@ -1,115 +1,114 @@
-﻿<Solution>
+<Solution>
   <Configurations>
     <Platform Name="Any CPU" />
     <Platform Name="ARM64" />
     <Platform Name="x64" />
   </Configurations>
   <Folder Name="/Api/">
-    <Project Path="src\KurrentDB.Api.V2.Tests\KurrentDB.Api.V2.Tests.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.Api.V2\KurrentDB.Api.V2.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.Plugins.Api.V2\KurrentDB.Plugins.Api.V2.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.Testing.ClusterVNodeApp\KurrentDB.Testing.ClusterVNodeApp.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.Testing\KurrentDB.Testing.csproj" Type="Classic C#" />
+    <Project Path="src\KurrentDB.Api.V2.Tests\KurrentDB.Api.V2.Tests.csproj" />
+    <Project Path="src\KurrentDB.Api.V2\KurrentDB.Api.V2.csproj" />
+    <Project Path="src\KurrentDB.Plugins.Api.V2\KurrentDB.Plugins.Api.V2.csproj" />
+    <Project Path="src\KurrentDB.Testing.ClusterVNodeApp\KurrentDB.Testing.ClusterVNodeApp.csproj" />
+    <Project Path="src\KurrentDB.Testing\KurrentDB.Testing.csproj" />
   </Folder>
   <Folder Name="/Plugins/">
-    <Project Path="src\KurrentDB.AutoScavenge.Tests\KurrentDB.AutoScavenge.Tests.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.AutoScavenge\KurrentDB.AutoScavenge.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.Diagnostics.LogsEndpointPlugin.Tests\KurrentDB.Diagnostics.LogsEndpointPlugin.Tests.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.Diagnostics.LogsEndpointPlugin\KurrentDB.Diagnostics.LogsEndpointPlugin.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.OtlpExporterPlugin\KurrentDB.OtlpExporterPlugin.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.Plugins.Tests\KurrentDB.Plugins.Tests.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.Plugins\KurrentDB.Plugins.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.POC.ConnectedSubsystemsPlugin\KurrentDB.POC.ConnectedSubsystemsPlugin.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.Security.EncryptionAtRest.Tests\KurrentDB.Security.EncryptionAtRest.Tests.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.Security.EncryptionAtRest\KurrentDB.Security.EncryptionAtRest.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.TcpPlugin.Tests\KurrentDB.TcpPlugin.Tests.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.TcpPlugin\KurrentDB.TcpPlugin.csproj" Type="Classic C#" />
+    <Project Path="src\KurrentDB.AutoScavenge.Tests\KurrentDB.AutoScavenge.Tests.csproj" />
+    <Project Path="src\KurrentDB.AutoScavenge\KurrentDB.AutoScavenge.csproj" />
+    <Project Path="src\KurrentDB.Diagnostics.LogsEndpointPlugin.Tests\KurrentDB.Diagnostics.LogsEndpointPlugin.Tests.csproj" />
+    <Project Path="src\KurrentDB.Diagnostics.LogsEndpointPlugin\KurrentDB.Diagnostics.LogsEndpointPlugin.csproj" />
+    <Project Path="src\KurrentDB.OtlpExporterPlugin\KurrentDB.OtlpExporterPlugin.csproj" />
+    <Project Path="src\KurrentDB.Plugins.Tests\KurrentDB.Plugins.Tests.csproj" />
+    <Project Path="src\KurrentDB.Plugins\KurrentDB.Plugins.csproj" />
+    <Project Path="src\KurrentDB.POC.ConnectedSubsystemsPlugin\KurrentDB.POC.ConnectedSubsystemsPlugin.csproj" />
+    <Project Path="src\KurrentDB.Security.EncryptionAtRest.Tests\KurrentDB.Security.EncryptionAtRest.Tests.csproj" />
+    <Project Path="src\KurrentDB.Security.EncryptionAtRest\KurrentDB.Security.EncryptionAtRest.csproj" />
+    <Project Path="src\KurrentDB.TcpPlugin.Tests\KurrentDB.TcpPlugin.Tests.csproj" />
+    <Project Path="src\KurrentDB.TcpPlugin\KurrentDB.TcpPlugin.csproj" />
   </Folder>
   <Folder Name="/Plugins/Auth/">
-    <Project Path="src\KurrentDB.Auth.Ldaps.Tests\KurrentDB.Auth.Ldaps.Tests.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.Auth.Ldaps\KurrentDB.Auth.Ldaps.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled.Tests\KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled.Tests.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled\KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.Auth.OAuth.Tests\KurrentDB.Auth.OAuth.Tests.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.Auth.OAuth\KurrentDB.Auth.OAuth.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.Auth.StreamPolicyPlugin.Tests\KurrentDB.Auth.StreamPolicyPlugin.Tests.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.Auth.StreamPolicyPlugin\KurrentDB.Auth.StreamPolicyPlugin.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.Auth.UserCertificates.Tests\KurrentDB.Auth.UserCertificates.Tests.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.Auth.UserCertificates\KurrentDB.Auth.UserCertificates.csproj" Type="Classic C#" />
+    <Project Path="src\KurrentDB.Auth.Ldaps.Tests\KurrentDB.Auth.Ldaps.Tests.csproj" />
+    <Project Path="src\KurrentDB.Auth.Ldaps\KurrentDB.Auth.Ldaps.csproj" />
+    <Project Path="src\KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled.Tests\KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled.Tests.csproj" />
+    <Project Path="src\KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled\KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled.csproj" />
+    <Project Path="src\KurrentDB.Auth.OAuth.Tests\KurrentDB.Auth.OAuth.Tests.csproj" />
+    <Project Path="src\KurrentDB.Auth.OAuth\KurrentDB.Auth.OAuth.csproj" />
+    <Project Path="src\KurrentDB.Auth.StreamPolicyPlugin.Tests\KurrentDB.Auth.StreamPolicyPlugin.Tests.csproj" />
+    <Project Path="src\KurrentDB.Auth.StreamPolicyPlugin\KurrentDB.Auth.StreamPolicyPlugin.csproj" />
+    <Project Path="src\KurrentDB.Auth.UserCertificates.Tests\KurrentDB.Auth.UserCertificates.Tests.csproj" />
+    <Project Path="src\KurrentDB.Auth.UserCertificates\KurrentDB.Auth.UserCertificates.csproj" />
   </Folder>
   <Folder Name="/Plugins/Connectors/">
-    <Project Path="src\Connectors\KurrentDB.Connectors.Contracts\KurrentDB.Connectors.Contracts.csproj" Type="Classic C#" />
-    <Project Path="src\Connectors\KurrentDB.Connectors\KurrentDB.Connectors.csproj" Type="Classic C#" />
-    <Project Path="src\Connectors\KurrentDB.Plugins.Connectors\KurrentDB.Plugins.Connectors.csproj" Type="Classic C#" />
+    <Project Path="src\Connectors\KurrentDB.Connectors.Contracts\KurrentDB.Connectors.Contracts.csproj" />
+    <Project Path="src\Connectors\KurrentDB.Connectors\KurrentDB.Connectors.csproj" />
+    <Project Path="src\Connectors\KurrentDB.Plugins.Connectors\KurrentDB.Plugins.Connectors.csproj" />
   </Folder>
   <Folder Name="/Plugins/Connectors/Tests/">
-    <Project Path="src\Connectors\KurrentDB.Connectors.TestServer\KurrentDB.Connectors.TestServer.csproj" Type="Classic C#" />
-    <Project Path="src\Connectors\KurrentDB.Connectors.Tests\KurrentDB.Connectors.Tests.csproj" Type="Classic C#" />
+    <Project Path="src\Connectors\KurrentDB.Connectors.TestServer\KurrentDB.Connectors.TestServer.csproj" />
+    <Project Path="src\Connectors\KurrentDB.Connectors.Tests\KurrentDB.Connectors.Tests.csproj" />
   </Folder>
   <Folder Name="/Schema Registry/">
-    <Project Path="src\SchemaRegistry\KurrentDB.Plugins.SchemaRegistry\KurrentDB.Plugins.SchemaRegistry.csproj" Type="Classic C#" />
-    <Project Path="src\SchemaRegistry\KurrentDB.SchemaRegistry.Protocol\KurrentDB.SchemaRegistry.Protocol.csproj" Type="Classic C#" />
-    <Project Path="src\SchemaRegistry\KurrentDB.SchemaRegistry.Tests\KurrentDB.SchemaRegistry.Tests.csproj" Type="Classic C#" />
-    <Project Path="src\SchemaRegistry\KurrentDB.SchemaRegistry\KurrentDB.SchemaRegistry.csproj" Type="Classic C#" />
+    <Project Path="src\SchemaRegistry\KurrentDB.Plugins.SchemaRegistry\KurrentDB.Plugins.SchemaRegistry.csproj" />
+    <Project Path="src\SchemaRegistry\KurrentDB.SchemaRegistry.Protocol\KurrentDB.SchemaRegistry.Protocol.csproj" />
+    <Project Path="src\SchemaRegistry\KurrentDB.SchemaRegistry.Tests\KurrentDB.SchemaRegistry.Tests.csproj" />
+    <Project Path="src\SchemaRegistry\KurrentDB.SchemaRegistry\KurrentDB.SchemaRegistry.csproj" />
   </Folder>
   <Folder Name="/SecondaryIndexes/">
-    <Project Path="src\KurrentDB.SecondaryIndexing.LoadTesting\KurrentDB.SecondaryIndexing.LoadTesting.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.SecondaryIndexing.Tests\KurrentDB.SecondaryIndexing.Tests.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.SecondaryIndexing\KurrentDB.SecondaryIndexing.csproj" Type="Classic C#" />
+    <Project Path="src\KurrentDB.SecondaryIndexing.LoadTesting\KurrentDB.SecondaryIndexing.LoadTesting.csproj" />
+    <Project Path="src\KurrentDB.SecondaryIndexing.Tests\KurrentDB.SecondaryIndexing.Tests.csproj" />
+    <Project Path="src\KurrentDB.SecondaryIndexing\KurrentDB.SecondaryIndexing.csproj" />
   </Folder>
   <Folder Name="/Solution Items/">
+    <File Path=".github/CODEOWNERS" />
+    <File Path="Dockerfile" />
+    <File Path="qodana.yaml" />
     <File Path="src\.editorconfig" />
-    <File Path="src\..\.github\CODEOWNERS" />
     <File Path="src\Directory.Build.props" />
     <File Path="src\Directory.Build.targets" />
     <File Path="src\Directory.Packages.props" />
-    <File Path="src\..\Dockerfile" />
-    <File Path="src\..\qodana.yaml" />
   </Folder>
   <Folder Name="/Tests/">
+    <Project Path="src\KurrentDB.Core.Testing.NUnit\KurrentDB.Core.Testing.NUnit.csproj" />
+    <Project Path="src\KurrentDB.Core.Testing.XUnit\KurrentDB.Core.Testing.XUnit.csproj" />
+    <Project Path="src\KurrentDB.Core.Testing\KurrentDB.Core.Testing.csproj" />
     <Project Path="src\KurrentDB.BufferManagement.Tests\KurrentDB.BufferManagement.Tests.csproj" />
     <Project Path="src\KurrentDB.Common.Tests\KurrentDB.Common.Tests.csproj" />
     <Project Path="src\KurrentDB.Core.Tests\KurrentDB.Core.Tests.csproj" />
     <Project Path="src\KurrentDB.Core.XUnit.Tests\KurrentDB.Core.XUnit.Tests.csproj" />
     <Project Path="src\KurrentDB.Licensing.Tests\KurrentDB.Licensing.Tests.csproj" />
     <Project Path="src\KurrentDB.LogV3.Tests\KurrentDB.LogV3.Tests.csproj" />
-    <Project Path="src\KurrentDB.OtlpExporterPlugin.Tests\KurrentDB.OtlpExporterPlugin.Tests.csproj" Type="Classic C#" />
-    <Project Path="src\KurrentDB.Plugins.TestHelpers\KurrentDB.Plugins.TestHelpers.csproj" Type="Classic C#" />
+    <Project Path="src\KurrentDB.OtlpExporterPlugin.Tests\KurrentDB.OtlpExporterPlugin.Tests.csproj" />
+    <Project Path="src\KurrentDB.Plugins.TestHelpers\KurrentDB.Plugins.TestHelpers.csproj" />
     <Project Path="src\KurrentDB.Projections.Core.Javascript.Tests\KurrentDB.Projections.Core.Javascript.Tests.csproj" />
     <Project Path="src\KurrentDB.Projections.Core.Tests\KurrentDB.Projections.Core.Tests.csproj" />
     <Project Path="src\KurrentDB.Projections.Core.XUnit.Tests\KurrentDB.Projections.Core.XUnit.Tests.csproj" />
     <Project Path="src\KurrentDB.SourceGenerators.Tests\KurrentDB.SourceGenerators.Tests.csproj" />
     <Project Path="src\KurrentDB.SystemRuntime.Tests\KurrentDB.SystemRuntime.Tests.csproj" />
   </Folder>
+  <Project Path="src\KurrentDB.Ammeter\KurrentDB.Ammeter.csproj" />
   <Project Path="src\KurrentDB.BufferManagement\KurrentDB.BufferManagement.csproj" />
   <Project Path="src\KurrentDB.ClusterNode.Web\KurrentDB.ClusterNode.Web.csproj" />
   <Project Path="src\KurrentDB.Common\KurrentDB.Common.csproj" />
   <Project Path="src\KurrentDB.Core\KurrentDB.Core.csproj" />
-  <Project Path="src\KurrentDB.DuckDB\KurrentDB.DuckDB.csproj" Type="Classic C#" />
+  <Project Path="src\KurrentDB.DuckDB\KurrentDB.DuckDB.csproj" />
   <Project Path="src\KurrentDB.Licensing\KurrentDB.Licensing.csproj" />
   <Project Path="src\KurrentDB.LogCommon\KurrentDB.LogCommon.csproj" />
-  <Project Path="src\KurrentDB.Logging\KurrentDB.Logging.csproj" Type="Classic C#" />
+  <Project Path="src\KurrentDB.Logging\KurrentDB.Logging.csproj" />
   <Project Path="src\KurrentDB.LogV3\KurrentDB.LogV3.csproj" />
   <Project Path="src\KurrentDB.MicroBenchmarks\KurrentDB.MicroBenchmarks.csproj" />
   <Project Path="src\KurrentDB.Native\KurrentDB.Native.csproj" />
   <Project Path="src\KurrentDB.NETCore.Compatibility\KurrentDB.NETCore.Compatibility.csproj" />
   <Project Path="src\KurrentDB.PluginHosting\KurrentDB.PluginHosting.csproj" />
-  <Project Path="src\KurrentDB.POC.IO.Core\KurrentDB.POC.IO.Core.csproj" Type="Classic C#" />
+  <Project Path="src\KurrentDB.POC.IO.Core\KurrentDB.POC.IO.Core.csproj" />
   <Project Path="src\KurrentDB.Projections.Core\KurrentDB.Projections.Core.csproj" />
   <Project Path="src\KurrentDB.SourceGenerators\KurrentDB.SourceGenerators.csproj" />
-  <Project Path="src\KurrentDB.Surge.Testing.Messages\KurrentDB.Surge.Testing.Messages.csproj" Type="Classic C#" />
-  <Project Path="src\KurrentDB.Surge.Testing\KurrentDB.Surge.Testing.csproj" Type="Classic C#" />
-  <Project Path="src\KurrentDB.Surge.Tests\KurrentDB.Surge.Tests.csproj" Type="Classic C#" />
-  <Project Path="src\KurrentDB.Surge\KurrentDB.Surge.csproj" Type="Classic C#" />
+  <Project Path="src\KurrentDB.Surge.Testing.Messages\KurrentDB.Surge.Testing.Messages.csproj" />
+  <Project Path="src\KurrentDB.Surge.Testing\KurrentDB.Surge.Testing.csproj" />
+  <Project Path="src\KurrentDB.Surge.Tests\KurrentDB.Surge.Tests.csproj" />
+  <Project Path="src\KurrentDB.Surge\KurrentDB.Surge.csproj" />
   <Project Path="src\KurrentDB.SystemRuntime\KurrentDB.SystemRuntime.csproj" />
   <Project Path="src\KurrentDB.TestClient\KurrentDB.TestClient.csproj" />
   <Project Path="src\KurrentDB.Transport.Http\KurrentDB.Transport.Http.csproj" />
   <Project Path="src\KurrentDB.Transport.Tcp\KurrentDB.Transport.Tcp.csproj" />
-  <Project Path="src\KurrentDB.UI\KurrentDB.UI.csproj" Type="Classic C#">
-    <Configuration Solution="Debug|ARM64" Project="Debug|Any CPU" />
-    <Configuration Solution="Debug|x64" Project="Debug|Any CPU" />
-    <Configuration Solution="Release|ARM64" Project="Release|Any CPU" />
-    <Configuration Solution="Release|x64" Project="Release|Any CPU" />
-  </Project>
+  <Project Path="src\KurrentDB.UI\KurrentDB.UI.csproj" />
   <Project Path="src\KurrentDB\KurrentDB.csproj" />
 </Solution>
