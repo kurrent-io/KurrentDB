@@ -170,46 +170,37 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 	public async Task succeeds_when_reaching_chunk_boundary() {
 		const string test = nameof(succeeds_when_reaching_chunk_boundary);
 
-		var A = $"{test}-a";
-		var B = $"{test}-b";
+		var streamA = $"{test}-a";
+		var streamB = $"{test}-b";
+		var streamC = $"{test}-c";
 
 		var client = new SystemClient(fixture.MiniNode.Node.MainQueue);
 		var chunkSize = fixture.MiniNode.Options.Database.ChunkSize;
+
+		// Use up 2/3 of the remaining space in the chunk so that the next write does not fit
+		var writer = fixture.MiniNode.Node.Db.Config.WriterCheckpoint.Read();
+		var spaceLeftInChunk = chunkSize - (int)writer % chunkSize;
+		if (spaceLeftInChunk > 10_000) {
+			await client.Writing.WriteEvents(streamA, [CreateEvent(spaceLeftInChunk * 2 / 3)]);
+		}
+
+		// A write that does not fit in chunk and so creates a new one
 		var thirdOfAChunk = chunkSize / 3;
-
-		// A write to use up some space so that the next write 
 		var completed = await WriteEvents(
-			eventStreamIds: [A, B],
+			eventStreamIds: [streamB, streamC],
 			expectedVersions: [ExpectedVersion.NoStream, ExpectedVersion.NoStream],
-			events: [CreateEvent(thirdOfAChunk), CreateEvent(thirdOfAChunk)], // fill more than half the chunk
-			eventStreamIndexes: [0, 1]);
-
-		var lastA = await client.Reading.ReadStreamBackwards(A, StreamRevision.End, maxCount: 1).SingleAsync();
-		var lastB = await client.Reading.ReadStreamBackwards(B, StreamRevision.End, maxCount: 1).SingleAsync();
-
-		Assert.Equal(OperationResult.Success, completed.Result);
-		Assert.Equal(0, completed.CommitPosition / chunkSize);
-		Assert.Equal([0, 0], completed.FirstEventNumbers.ToArray());
-		Assert.Equal([0, 0], completed.LastEventNumbers.ToArray());
-		Assert.Equal(0, lastA.OriginalEventNumber);
-		Assert.Equal(0, lastB.OriginalEventNumber);
-
-		// A write that creates a new chunk
-		completed = await WriteEvents(
-			eventStreamIds: [A, B],
-			expectedVersions: [0, 0],
 			events: [CreateEvent(thirdOfAChunk), CreateEvent(thirdOfAChunk)],
 			eventStreamIndexes: [0, 1]);
 
-		lastA = await client.Reading.ReadStreamBackwards(A, StreamRevision.End, maxCount: 1).SingleAsync();
-		lastB = await client.Reading.ReadStreamBackwards(B, StreamRevision.End, maxCount: 1).SingleAsync();
-
 		Assert.Equal(OperationResult.Success, completed.Result);
-		Assert.Equal(1, completed.CommitPosition / chunkSize); // important: wrote to the next chunk
-		Assert.Equal([1, 1], completed.FirstEventNumbers.ToArray());
-		Assert.Equal([1, 1], completed.LastEventNumbers.ToArray());
-		Assert.Equal(1, lastA.OriginalEventNumber);
-		Assert.Equal(1, lastB.OriginalEventNumber);
+		Assert.Equal((writer / chunkSize) + 1, completed.CommitPosition / chunkSize); // important: wrote to the next chunk
+		Assert.Equal([0, 0], completed.FirstEventNumbers.ToArray());
+		Assert.Equal([0, 0], completed.LastEventNumbers.ToArray());
+
+		var lastA = await client.Reading.ReadStreamBackwards(streamB, StreamRevision.End, maxCount: 1).SingleAsync();
+		var lastB = await client.Reading.ReadStreamBackwards(streamC, StreamRevision.End, maxCount: 1).SingleAsync();
+		Assert.Equal(0, lastA.OriginalEventNumber);
+		Assert.Equal(0, lastB.OriginalEventNumber);
 	}
 
 	[Fact]
