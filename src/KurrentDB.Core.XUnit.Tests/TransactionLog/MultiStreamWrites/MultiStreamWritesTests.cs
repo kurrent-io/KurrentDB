@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.UserManagement;
 using Xunit;
 using Assert = Xunit.Assert;
@@ -16,7 +17,13 @@ namespace KurrentDB.Core.XUnit.Tests.TransactionLog.MultiStreamWrites;
 
 public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixture)
 	: IClassFixture<MiniNodeFixture<MultiStreamWritesTests>> {
-	private static Event NewEvent => new(Guid.NewGuid(), "type", false, "data", "metadata");
+	private static Event NewEvent => CreateEvent();
+	private static Event CreateEvent(int dataSize = 4) => new(
+		eventId: Guid.NewGuid(),
+		eventType: "type",
+		isJson: false,
+		data: new string('#', dataSize),
+		metadata: "metadata");
 
 	[Fact]
 	public async Task succeeds() {
@@ -157,6 +164,52 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		Assert.Equal(OperationResult.Success, completed.Result);
 		Assert.Equal([2, 1], completed.FirstEventNumbers.ToArray());
 		Assert.Equal([3, 2], completed.LastEventNumbers.ToArray());
+	}
+
+	[Fact]
+	public async Task succeeds_when_reaching_chunk_boundary() {
+		const string test = nameof(succeeds_when_reaching_chunk_boundary);
+
+		var A = $"{test}-a";
+		var B = $"{test}-b";
+
+		var client = new SystemClient(fixture.MiniNode.Node.MainQueue);
+		var chunkSize = fixture.MiniNode.Options.Database.ChunkSize;
+		var thirdOfAChunk = chunkSize / 3;
+
+		// A write to use up some space so that the next write 
+		var completed = await WriteEvents(
+			eventStreamIds: [A, B],
+			expectedVersions: [ExpectedVersion.NoStream, ExpectedVersion.NoStream],
+			events: [CreateEvent(thirdOfAChunk), CreateEvent(thirdOfAChunk)], // fill more than half the chunk
+			eventStreamIndexes: [0, 1]);
+
+		var lastA = await client.Reading.ReadStreamBackwards(A, StreamRevision.End, maxCount: 1).SingleAsync();
+		var lastB = await client.Reading.ReadStreamBackwards(B, StreamRevision.End, maxCount: 1).SingleAsync();
+
+		Assert.Equal(OperationResult.Success, completed.Result);
+		Assert.Equal(0, completed.CommitPosition / chunkSize);
+		Assert.Equal([0, 0], completed.FirstEventNumbers.ToArray());
+		Assert.Equal([0, 0], completed.LastEventNumbers.ToArray());
+		Assert.Equal(0, lastA.OriginalEventNumber);
+		Assert.Equal(0, lastB.OriginalEventNumber);
+
+		// A write that creates a new chunk
+		completed = await WriteEvents(
+			eventStreamIds: [A, B],
+			expectedVersions: [0, 0],
+			events: [CreateEvent(thirdOfAChunk), CreateEvent(thirdOfAChunk)],
+			eventStreamIndexes: [0, 1]);
+
+		lastA = await client.Reading.ReadStreamBackwards(A, StreamRevision.End, maxCount: 1).SingleAsync();
+		lastB = await client.Reading.ReadStreamBackwards(B, StreamRevision.End, maxCount: 1).SingleAsync();
+
+		Assert.Equal(OperationResult.Success, completed.Result);
+		Assert.Equal(1, completed.CommitPosition / chunkSize); // important: wrote to the next chunk
+		Assert.Equal([1, 1], completed.FirstEventNumbers.ToArray());
+		Assert.Equal([1, 1], completed.LastEventNumbers.ToArray());
+		Assert.Equal(1, lastA.OriginalEventNumber);
+		Assert.Equal(1, lastB.OriginalEventNumber);
 	}
 
 	[Fact]
