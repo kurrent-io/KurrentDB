@@ -15,7 +15,7 @@ service ConnectorsQueryService {
     option (google.api.http) = {
       get: "/connectors"
       additional_bindings {
-        post: "/connectors"
+        post: "/connectors/list"
         body: "*"
       }
     };
