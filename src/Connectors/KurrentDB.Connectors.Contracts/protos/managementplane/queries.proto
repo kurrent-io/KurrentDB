@@ -14,6 +14,10 @@ service ConnectorsQueryService {
   rpc List(ListConnectors) returns (ListConnectorsResult) {
     option (google.api.http) = {
       get: "/connectors"
+      additional_bindings {
+        post: "/connectors"
+        body: "*"
+      }
     };
   }
 
