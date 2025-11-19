@@ -23,6 +23,6 @@
 
 		<Protobuf ProtoRoot="protos" Include="protos/controlplane/**/*.proto" Link="protos\controlplane\%(RecursiveDir)/%(FileName)%(Extension)" GrpcServices="None" />
 
-		<Protobuf ProtoRoot="protos" Include="protos/managementplane/**/*.proto" Link="protos\managementplane\%(RecursiveDir)/%(FileName)%(Extension)" GrpcServices="Server" />
+		<Protobuf ProtoRoot="protos" Include="protos/managementplane/**/*.proto" Link="protos\managementplane\%(RecursiveDir)/%(FileName)%(Extension)" GrpcServices="Both" />
 	</ItemGroup>
 </Project>
