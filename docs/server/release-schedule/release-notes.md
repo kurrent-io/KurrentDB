@@ -6,8 +6,16 @@ order: 1
 
 This page contains the release notes for KurrentDB v25.1.
 
+## [25.1.1](https://github.com/EventStore/EventStore/releases/tag/v25.1.1)
+
+19 November 2025
+
+### Fixed multi-stream-append that completes a chunk (PR [#5363](https://github.com/kurrent-io/KurrentDB/pull/5363))
+
+A multi-stream-append that causes a new chunk to be created could result in incorrect last event numbers being calculated for the associated streams.
+
 ## [25.1.0](https://github.com/EventStore/EventStore/releases/tag/v25.1.0)
 
-Day Month 2025
+15 October 2025
 
 Find out [what's new](../quick-start/whatsnew.md) in this release.
