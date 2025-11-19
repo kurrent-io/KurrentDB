@@ -10,7 +10,7 @@ This page contains the release notes for KurrentDB v25.1.
 
 19 November 2025
 
-### Fixed multi-stream-append that completes a chunk (PR [#5363](https://github.com/kurrent-io/KurrentDB/pull/5363))
+### Fixed multi-stream-append that completes a chunk (PR [#5362](https://github.com/kurrent-io/KurrentDB/pull/5362))
 
 A multi-stream-append that causes a new chunk to be created could result in incorrect last event numbers being calculated for the associated streams.
 
