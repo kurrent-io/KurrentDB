@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsKurrentTUnit>true</IsKurrentTUnit>
+		<EnablePreviewFeatures>true</EnablePreviewFeatures>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="RestSharp" />
+		<PackageReference Include="Testcontainers" />
+		<PackageReference Include="Microsoft.Extensions.Configuration" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\KurrentDB.Api.V2.Tests\KurrentDB.Api.V2.Tests.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="appsettings.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+</Project>

@@ -65,6 +65,7 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 	public readonly string DbPath;
 	public HttpClient HttpClient;
 	public HttpMessageHandler HttpMessageHandler;
+	public readonly ClusterVNodeOptions Options;
 
 	private readonly WebApplication _webHost;
 	private readonly TaskCompletionSource<bool> _started;
@@ -260,6 +261,7 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 		Node.Startup.Configure(_webHost);
 		_started = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 		_adminUserCreated = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+		Options = options;
 	}
 
 	public async Task StartTestServer() {

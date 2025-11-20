@@ -8,10 +8,10 @@ using NJsonSchema;
 namespace KurrentDB.SchemaRegistry.Tests.Fixtures;
 
 public class SchemaApplicationTestFixture {
-    [ClassDataSource<BogusFaker>(Shared = SharedType.PerAssembly)]
+    [ClassDataSource<BogusFaker>(Shared = SharedType.PerTestSession)]
     public required BogusFaker Faker { get; [UsedImplicitly] init; }
 
-    [ClassDataSource<ClusterVNodeTestContext>(Shared = SharedType.PerAssembly)]
+    [ClassDataSource<ClusterVNodeTestContext>(Shared = SharedType.PerTestSession)]
     public required ClusterVNodeTestContext Fixture { get; [UsedImplicitly] init; }
 
     public static string NewPrefix([CallerMemberName] string? name = null) =>

@@ -6,6 +6,7 @@
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Google.Protobuf.Reflection;
 using KurrentDB.Connect.Connectors;
 using KurrentDB.Connect.Schema;
 using KurrentDB.Connectors.Infrastructure;
@@ -13,11 +14,11 @@ using KurrentDB.Connectors.Management.Contracts.Events;
 using KurrentDB.Connectors.Management.Contracts.Queries;
 using EventStore.Plugins.Licensing;
 using FluentValidation;
+using Google.Rpc;
 using Kurrent.Surge;
 using Kurrent.Surge.Connectors;
 using Kurrent.Surge.DataProtection;
 using KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
-using KurrentDB.Connectors.Infrastructure.Eventuous;
 using KurrentDB.Connectors.Infrastructure.System.Node;
 using KurrentDB.Connectors.Management;
 using KurrentDB.Connectors.Planes.Management.Data;
@@ -54,7 +55,17 @@ public static class ManagementPlaneWireUp {
 
         services
             .AddGrpc()
-            .AddJsonTranscoding();
+            .AddJsonTranscoding(options => {
+                options.TypeRegistry = TypeRegistry.FromMessages(
+                    BadRequest.Descriptor,
+                    ErrorInfo.Descriptor,
+                    DebugInfo.Descriptor,
+                    PreconditionFailure.Descriptor,
+                    QuotaFailure.Descriptor,
+                    ResourceInfo.Descriptor,
+                    RetryInfo.Descriptor
+                );
+            });
 
         services.PostConfigure<GrpcJsonTranscodingOptions>(options => {
             // https://github.com/dotnet/aspnetcore/issues/50401

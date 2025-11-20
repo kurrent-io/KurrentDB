@@ -13,33 +13,33 @@ namespace KurrentDB.Api.Tests;
 public class TestEnvironmentWireUp {
     [Before(Assembly)]
     public static ValueTask BeforeAssembly(AssemblyHookContext context) =>
-        ToolkitTestEnvironment.Initialize(context.Assembly);
+        ToolkitTestEnvironment.Initialize();
 
     [After(Assembly)]
     public static ValueTask AfterAssembly(AssemblyHookContext context) =>
-        ToolkitTestEnvironment.Reset(context.Assembly);
+        ToolkitTestEnvironment.Reset();
 
     [BeforeEvery(Test)]
     public static void BeforeEveryTest(TestContext context) {
         // using static Log since the context has not been pushed yet in the Executor
         Log.ForContext("TestUid", context.Id).Verbose(
             "{TestClass} {TestName} {Status}",
-            context.TestDetails.ClassType.Name,
-            context.TestDetails.TestName,
+            context.Metadata.TestDetails.ClassType.Name,
+            context.Metadata.TestDetails.TestName,
             TestState.NotStarted
         );
     }
 
     [AfterEvery(Test)]
     public static void AfterEveryTest(TestContext context) {
-        var elapsed = context.Result?.Duration ?? context.TestStart - context.TestEnd ?? TimeSpan.Zero;
+        var elapsed = context.Execution.Result?.Duration ?? context.Execution.TestStart - context.Execution.TestEnd ?? TimeSpan.Zero;
 
         // using static Log since the context was already disposed of in the Executor
         Log.ForContext("TestUid", context.Id).Verbose(
             "{TestClass} {TestName} {Status} in {Elapsed}",
-            context.TestDetails.ClassType.Name,
-            context.TestDetails.TestName,
-            context.Result!.State,
+            context.Metadata.TestDetails.ClassType.Name,
+            context.Metadata.TestDetails.TestName,
+            context.Execution.Result!.State,
             elapsed.Humanize(2)
         );
     }

@@ -9,6 +9,7 @@ using Serilog;
 
 namespace KurrentDB.Core.Services;
 
+// Called by worker bus concurrently. Thread Safe.
 public class GrpcSendService :
 	IHandle<GrpcMessage.SendOverGrpc> {
 

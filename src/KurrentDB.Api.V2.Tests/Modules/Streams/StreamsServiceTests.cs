@@ -18,10 +18,10 @@ using Microsoft.Extensions.Logging;
 namespace KurrentDB.Api.Tests.Streams;
 
 public class StreamsServiceTests {
-    [ClassDataSource<ClusterVNodeTestContext>(Shared = SharedType.PerAssembly)]
+    [ClassDataSource<ClusterVNodeTestContext>(Shared = SharedType.PerTestSession)]
     public required ClusterVNodeTestContext Fixture { get; [UsedImplicitly] init; }
 
-    [ClassDataSource<BogusFaker>(Shared = SharedType.PerAssembly)]
+    [ClassDataSource<BogusFaker>(Shared = SharedType.PerTestSession)]
     public required BogusFaker Faker { get; [UsedImplicitly] init; }
 
     [Test]

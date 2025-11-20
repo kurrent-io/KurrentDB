@@ -51,12 +51,14 @@ public class SystemConsumer : IConsumer {
 
 		Sequence = new SequenceIdGenerator();
 
+        var interceptors = new LinkedList<InterceptorModule>(options.Interceptors);
+
 		if (options.Logging.Enabled)
-			options.Interceptors.TryAddUniqueFirst(new ConsumerLogger());
+			interceptors.TryAddUniqueFirst(new ConsumerLogger());
 
-        Options.Interceptors.TryAddUniqueFirst(new ConsumerMetrics());
+        interceptors.TryAddUniqueFirst(new ConsumerMetrics());
 
-        Interceptors = new(Options.Interceptors, logger);
+        Interceptors = new(interceptors, logger);
 
 		Intercept = evt => Interceptors.Intercept(evt);
 
