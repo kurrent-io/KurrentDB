@@ -46,6 +46,9 @@ public class IndexBackend<TStreamId> : IIndexBackend<TStreamId> {
 
 	public TFReaderLease BorrowReader() => new(_readers);
 
+	public ILRUCache<TStreamId, EventNumberCached> StreamLastEventNumberCache => _streamLastEventNumberCache;
+	public ILRUCache<TStreamId, MetadataCached> StreamMetadataCache => _streamMetadataCache;
+
 	public EventNumberCached TryGetStreamLastEventNumber(TStreamId streamId) {
 		_streamLastEventNumberCache.TryGet(streamId, out var cacheInfo);
 		return cacheInfo;

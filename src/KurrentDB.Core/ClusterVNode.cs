@@ -134,6 +134,7 @@ public abstract class ClusterVNode {
 	abstract public IAuthenticationProvider AuthenticationProvider { get; }
 	abstract public IHttpService HttpService { get; }
 	abstract public VNodeInfo NodeInfo { get; }
+	abstract public IReadIndex ReadIndex { get; }
 	abstract public CertificateDelegates.ClientCertificateValidator InternalClientCertificateValidator { get; }
 	abstract public Func<X509Certificate2> CertificateSelector { get; }
 	abstract public Func<X509Certificate2Collection> IntermediateCertificatesSelector { get; }
@@ -180,6 +181,7 @@ public class ClusterVNode<TStreamId> :
 
 	public override VNodeInfo NodeInfo { get; }
 
+	public override IReadIndex<TStreamId> ReadIndex => _readIndex;
 
 	private readonly IPublisher _mainQueue;
 	private readonly ISubscriber _mainBus;
