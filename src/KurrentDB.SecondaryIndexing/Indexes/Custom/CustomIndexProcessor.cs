@@ -20,11 +20,18 @@ using static KurrentDB.SecondaryIndexing.Indexes.Custom.CustomSql;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom;
 
-internal abstract class CustomIndexProcessor: Disposable {
+internal abstract class CustomIndexProcessor: Disposable, ISecondaryIndexProcessor {
 	protected static readonly ILogger Log = Serilog.Log.ForContext<CustomIndexProcessor>();
+	public abstract void Commit();
+	public abstract bool TryIndex(ResolvedEvent evt);
+	public abstract TFPos GetLastPosition();
+	public abstract SecondaryIndexProgressTracker Tracker { get; }
+	public abstract string TableName { get; }
+	public static string GetTableName(string indexName) => $"idx_custom__{indexName}";
 }
 
-internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor, ISecondaryIndexProcessor where TPartitionKey : ITPartitionKey {
+internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where TPartitionKey : ITPartitionKey {
+	private readonly DuckDBConnectionPool _db;
 	private readonly string _tableName;
 	private readonly Function _eventFilter;
 	private readonly Function? _partitionKeySelector;
@@ -33,14 +40,16 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor, ISeco
 	private readonly IndexInFlightRecords _inFlightRecords;
 	private readonly DuckDBAdvancedConnection _connection;
 	private readonly IPublisher _publisher;
-	private readonly TFPos _lastPosition;
 
+	private TFPos _lastPosition;
 	private Appender _appender;
 	private Atomic.Boolean _committing;
 
 	public string IndexName { get; }
-	public TFPos GetLastPosition() => _lastPosition;
-	public SecondaryIndexProgressTracker Tracker { get; }
+	public override string TableName => _tableName;
+
+	public override TFPos GetLastPosition() => _lastPosition;
+	public override SecondaryIndexProgressTracker Tracker { get; }
 
 	public CustomIndexProcessor(
 		string indexName,
@@ -54,6 +63,8 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor, ISeco
 		MetricsConfiguration? metricsConfiguration = null,
 		TimeProvider? clock = null) {
 		IndexName = indexName;
+		_db = db;
+
 		_inFlightRecords = inFlightRecords;
 		_publisher = publisher;
 
@@ -79,19 +90,28 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor, ISeco
 	}
 
 	private void TryCreateTable() {
-		var partitionKeySqlStatement = TPartitionKey.GetDuckDbColumnCreateStatement("partition_key");
-		partitionKeySqlStatement = partitionKeySqlStatement is null ? string.Empty : $",{partitionKeySqlStatement}";
-
+		var partitionKeySqlStatement = TPartitionKey.GetDuckDbColumnCreateStatement();
+		if (partitionKeySqlStatement != string.Empty)
+			partitionKeySqlStatement = $",{partitionKeySqlStatement}";
 		_connection.CreateCustomIndexNonQuery(_tableName, partitionKeySqlStatement);
 	}
 
-	private static string GetTableName(string indexName) => $"idx_custom__{indexName}";
+	public void Delete() {
+		if (!IsDisposed)
+			throw new Exception("Cannot delete as the index processor has not been disposed yet.");
 
-	public bool TryIndex(ResolvedEvent resolvedEvent) {
+		using (_db.Rent(out var connection)) {
+			// during deletion, we rent a connection from the pool as _connection has already been disposed at this point
+			connection.DeleteCustomIndexNonQuery(_tableName);
+		}
+	}
+
+	public override bool TryIndex(ResolvedEvent resolvedEvent) {
 		if (IsDisposingOrDisposed)
 			return false;
 
 		var canHandle = CanHandleEvent(resolvedEvent, out var partitionKey);
+		_lastPosition = resolvedEvent.OriginalPosition!.Value;
 
 		if (!canHandle)
 			return false;
@@ -101,9 +121,10 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor, ISeco
 		var eventNumber = resolvedEvent.Event.EventNumber;
 		var streamId = resolvedEvent.Event.EventStreamId;
 		var created = new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds();
+		var partitionKeyStr = partitionKey?.ToString();
 
 		Log.Verbose("Custom index: {index} is appending event: {eventNumber}@{stream} ({position}). Partition key = {partitionKey}.",
-			IndexName, eventNumber, streamId, resolvedEvent.OriginalPosition, partitionKey);
+			IndexName, eventNumber, streamId, resolvedEvent.OriginalPosition, partitionKeyStr);
 
 		using (var row = _appender.CreateRow()) {
 			row.Append(preparePosition);
@@ -115,15 +136,15 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor, ISeco
 
 			row.Append(eventNumber);
 			row.Append(created);
-
-			if (partitionKey is not null)
-				partitionKey.AppendTo(row);
-			else
-				row.Append(DBNull.Value);
+			partitionKey?.AppendTo(row);
 		}
 
-		_inFlightRecords.Append(preparePosition, commitPosition ?? preparePosition, eventNumber);
-		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(IndexName, resolvedEvent));
+		_inFlightRecords.Append(preparePosition, commitPosition ?? preparePosition, eventNumber, partitionKeyStr);
+
+		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(CustomIndex.GetStreamName(IndexName), resolvedEvent));
+		if (partitionKey is not null)
+			_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(CustomIndex.GetStreamName(IndexName, partitionKeyStr), resolvedEvent));
+
 		Tracker.RecordIndexed(resolvedEvent);
 
 		return true;
@@ -147,7 +168,7 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor, ISeco
 
 			if (_partitionKeySelector is not null) {
 				var partitionKeyJsValue = _partitionKeySelector.Call(_resolvedEventJsObject);
-				partitionKey = TPartitionKey.ExtractFrom(partitionKeyJsValue);
+				partitionKey = TPartitionKey.ParseFrom(partitionKeyJsValue);
 			}
 
 			return true;
@@ -197,7 +218,7 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor, ISeco
 		_connection.ExecuteNonQuery<SetCheckpointQueryArgs, SetCheckpointNonQuery>(checkpointArgs);
 	}
 
-	public void Commit() => Commit(true);
+	public override void Commit() => Commit(true);
 
 	/// <summary>
 	/// Commits all in-flight records to the index.

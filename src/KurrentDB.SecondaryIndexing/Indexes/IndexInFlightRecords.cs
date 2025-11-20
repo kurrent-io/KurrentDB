@@ -12,7 +12,8 @@ internal record struct InFlightRecord(
 	string EventType,
 	string StreamName,
 	long EventNumber,
-	long Created
+	long Created,
+	string? PartitionKey
 );
 
 internal class IndexInFlightRecords(SecondaryIndexingPluginOptions options) {
@@ -23,21 +24,24 @@ internal class IndexInFlightRecords(SecondaryIndexingPluginOptions options) {
 
 	public int Count => _count;
 
-	public void Append(long logPosition, long commitPosition, long eventNumber) {
+	// used by default index
+	public void Append(long logPosition, long commitPosition, string category, string eventType, string stream, long eventNumber, long created) {
 		var count = _count;
-		_records[count] = new InFlightRecord {
-			LogPosition = logPosition,
-			CommitPosition = commitPosition,
-			EventNumber = eventNumber
-		};
+		_records[count] = new(logPosition, commitPosition, category, eventType, stream, eventNumber, created, null);
 
 		// Fence: make sure that the array modification cannot be done after the increment
 		Volatile.Write(ref _count, count + 1);
 	}
 
-	public void Append(long logPosition, long commitPosition, string category, string eventType, string stream, long eventNumber, long created) {
+	// used by custom indexes
+	public void Append(long logPosition, long commitPosition, long eventNumber, string? partitionKey) {
 		var count = _count;
-		_records[count] = new(logPosition, commitPosition, category, eventType, stream, eventNumber, created);
+		_records[count] = new InFlightRecord {
+			LogPosition = logPosition,
+			CommitPosition = commitPosition,
+			EventNumber = eventNumber,
+			PartitionKey = partitionKey
+		};
 
 		// Fence: make sure that the array modification cannot be done after the increment
 		Volatile.Write(ref _count, count + 1);

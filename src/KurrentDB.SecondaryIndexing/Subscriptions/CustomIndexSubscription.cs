@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using DotNext.Runtime.CompilerServices;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
@@ -20,11 +21,16 @@ internal abstract class CustomIndexSubscription {
 	public abstract ValueTask Start();
 	public abstract ValueTask Stop();
 	public abstract ValueTask Delete();
+	public abstract ValueTask<ClientMessage.ReadIndexEventsForwardCompleted> ReadForwards(ClientMessage.ReadIndexEventsForward msg, CancellationToken token);
+	public abstract ValueTask<ClientMessage.ReadIndexEventsBackwardCompleted> ReadBackwards(ClientMessage.ReadIndexEventsBackward msg, CancellationToken token);
+	public abstract TFPos GetLastIndexedPosition();
+	public abstract ReaderWriterLockSlim RWLock { get; }
 }
 
 internal sealed class CustomIndexSubscription<TPartitionKey>(
 	IPublisher publisher,
 	CustomIndexProcessor<TPartitionKey> indexProcessor,
+	CustomIndexReader<TPartitionKey> indexReader,
 	SecondaryIndexingPluginOptions options,
 	CancellationToken token) : CustomIndexSubscription, IAsyncDisposable where TPartitionKey : ITPartitionKey {
 
@@ -152,6 +158,17 @@ internal sealed class CustomIndexSubscription<TPartitionKey>(
 	}
 
 	public override ValueTask Delete() {
-		throw new NotImplementedException();
+		indexProcessor.Delete();
+		return ValueTask.CompletedTask;
 	}
+
+	public override ValueTask<ClientMessage.ReadIndexEventsForwardCompleted> ReadForwards(ClientMessage.ReadIndexEventsForward msg, CancellationToken token) =>
+		indexReader.ReadForwards(msg, token);
+
+	public override ValueTask<ClientMessage.ReadIndexEventsBackwardCompleted> ReadBackwards(ClientMessage.ReadIndexEventsBackward msg, CancellationToken token) =>
+		indexReader.ReadBackwards(msg, token);
+
+	public override TFPos GetLastIndexedPosition() => indexProcessor.GetLastPosition();
+
+	public override ReaderWriterLockSlim RWLock { get; } = new();
 }

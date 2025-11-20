@@ -44,10 +44,13 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 			.Get<SecondaryIndexingPluginOptions>() ?? new();
 		services.AddSingleton(options);
 
+		services.AddSingleton<CustomIndexManager>();
 		services.AddDuckDBSetup<IndexingDbSchema>();
 		services.AddDuckDBSetup<InFlightSetup>();
+
 		services.AddHostedService<DefaultIndexBuilder>();
-		services.AddHostedService<CustomIndexBuilder>();
+		services.AddHostedService(sp => sp.GetRequiredService<CustomIndexManager>());
+
 		services.AddSingleton<IndexInFlightRecords>();
 
 		var meter = new Meter(SecondaryIndexingConstants.MeterName, "1.0.0");
@@ -59,6 +62,7 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddSingleton<ISecondaryIndexReader, DefaultIndexReader>();
 		services.AddSingleton<ISecondaryIndexReader, CategoryIndexReader>();
 		services.AddSingleton<ISecondaryIndexReader, EventTypeIndexReader>();
+		services.AddSingleton<ISecondaryIndexReader>(sp => sp.GetRequiredService<CustomIndexManager>());
 
 		services.AddSingleton<StatsService>();
 		services.AddHostedService(sp => new DbStatsTelemetryService(
