@@ -48,6 +48,24 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		Assert.Equal(0, completed.FailureStreamIndexes.Length);
 		Assert.True(completed.PreparePosition > 0);
 		Assert.Equal(completed.PreparePosition, completed.CommitPosition);
+
+		// check we can read
+		var client = new SystemClient(fixture.MiniNode.Node.MainQueue);
+		var lastA = await client.Reading.ReadStreamBackwards(A, StreamRevision.End, maxCount: 1).SingleAsync();
+		var lastB = await client.Reading.ReadStreamBackwards(B, StreamRevision.End, maxCount: 1).SingleAsync();
+		Assert.Equal(0, lastA.OriginalEventNumber);
+		Assert.Equal(0, lastB.OriginalEventNumber);
+
+		// check we can still read after clearing the caches
+		var readIndex = fixture.MiniNode.Node.ReadIndex as Core.Services.Storage.ReaderIndex.IReadIndex<string>;
+		var indexBackend = readIndex.IndexReader.Backend as Core.Services.Storage.ReaderIndex.IndexBackend<string>;
+		indexBackend.StreamLastEventNumberCache.Clear();
+		indexBackend.StreamMetadataCache.Clear();
+
+		lastA = await client.Reading.ReadStreamBackwards(A, StreamRevision.End, maxCount: 1).SingleAsync();
+		lastB = await client.Reading.ReadStreamBackwards(B, StreamRevision.End, maxCount: 1).SingleAsync();
+		Assert.Equal(0, lastA.OriginalEventNumber);
+		Assert.Equal(0, lastB.OriginalEventNumber);
 	}
 
 	[Fact]
@@ -65,6 +83,24 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		Assert.Equal(OperationResult.Success, completed.Result);
 		Assert.Equal([0, 0], completed.FirstEventNumbers.ToArray());
 		Assert.Equal([1, 0], completed.LastEventNumbers.ToArray());
+
+		// check we can read
+		var client = new SystemClient(fixture.MiniNode.Node.MainQueue);
+		var lastA = await client.Reading.ReadStreamBackwards(A, StreamRevision.End, maxCount: 1).SingleAsync();
+		var lastB = await client.Reading.ReadStreamBackwards(B, StreamRevision.End, maxCount: 1).SingleAsync();
+		Assert.Equal(1, lastA.OriginalEventNumber);
+		Assert.Equal(0, lastB.OriginalEventNumber);
+
+		// check we can still read after clearing the caches
+		var readIndex = fixture.MiniNode.Node.ReadIndex as Core.Services.Storage.ReaderIndex.IReadIndex<string>;
+		var indexBackend = readIndex.IndexReader.Backend as Core.Services.Storage.ReaderIndex.IndexBackend<string>;
+		indexBackend.StreamLastEventNumberCache.Clear();
+		indexBackend.StreamMetadataCache.Clear();
+
+		lastA = await client.Reading.ReadStreamBackwards(A, StreamRevision.End, maxCount: 1).SingleAsync();
+		lastB = await client.Reading.ReadStreamBackwards(B, StreamRevision.End, maxCount: 1).SingleAsync();
+		Assert.Equal(1, lastA.OriginalEventNumber);
+		Assert.Equal(0, lastB.OriginalEventNumber);
 	}
 
 	[Fact]
