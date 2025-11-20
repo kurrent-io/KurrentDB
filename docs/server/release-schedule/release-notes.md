@@ -8,11 +8,15 @@ This page contains the release notes for KurrentDB v25.1.
 
 ## [25.1.1](https://github.com/EventStore/EventStore/releases/tag/v25.1.1)
 
-19 November 2025
+20 November 2025
 
 ### Fixed multi-stream-append that completes a chunk (PR [#5362](https://github.com/kurrent-io/KurrentDB/pull/5362))
 
 A multi-stream-append that causes a new chunk to be created could result in incorrect last event numbers being calculated for the associated streams.
+
+### Fixed multi-stream-append stream existence (PR [#5376](https://github.com/kurrent-io/KurrentDB/pull/5376))
+
+A stream created in a multi-stream-append was not captured correctly in the stream existence filter. The stream would appear not to exist after the server was restarted.
 
 ### Clear error details on successful recovery and stop of connectors (PR [#5361](https://github.com/kurrent-io/KurrentDB/pull/5361))
 
