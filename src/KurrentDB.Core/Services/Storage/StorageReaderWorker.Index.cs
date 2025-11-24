@@ -6,21 +6,29 @@ using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
-using KurrentDB.Core.Messages;
+using static KurrentDB.Core.Messages.ClientMessage;
 
 namespace KurrentDB.Core.Services.Storage;
 
-public partial class StorageReaderWorker<TStreamId> :
-	IAsyncHandle<ClientMessage.ReadIndexEventsForward>,
-	IAsyncHandle<ClientMessage.ReadIndexEventsBackward> {
-	public async ValueTask HandleAsync(ClientMessage.ReadIndexEventsForward msg, CancellationToken token) {
-		if (msg.CancellationToken.IsCancellationRequested)
-			return;
+partial class StorageReaderWorker<TStreamId> :
+	IAsyncHandle<ReadIndexEventsForward>,
+	IAsyncHandle<ReadIndexEventsBackward> {
+	public async ValueTask HandleAsync(ReadIndexEventsForward msg, CancellationToken token) {
+		ReadIndexEventsForwardCompleted res;
+		var cts = _multiplexer.Combine(msg.Lifetime, [token, msg.CancellationToken]);
+		var leaseTaken = false;
+		try {
+			await AcquireRateLimitLeaseAsync(cts.Token);
+			leaseTaken = true;
 
-		if (msg.Expires < DateTime.UtcNow) {
+			res = await _secondaryIndexReaders.ReadForwards(msg, cts.Token);
+		} catch (OperationCanceledException e) when (e.CancellationToken == cts.Token) {
+			if (!cts.IsTimedOut)
+				throw new OperationCanceledException(null, e, cts.CancellationOrigin);
+
 			if (msg.ReplyOnExpired) {
 				msg.Envelope.ReplyWith(
-					new ClientMessage.ReadIndexEventsForwardCompleted(
+					new ReadIndexEventsForwardCompleted(
 						ReadIndexResult.Expired,
 						ResolvedEvent.EmptyArray,
 						new(msg.CommitPosition, msg.PreparePosition),
@@ -35,15 +43,19 @@ public partial class StorageReaderWorker<TStreamId> :
 				"ReadIndexEventsForward operation has expired for C:{CommitPosition}/P:{PreparePosition}. Operation expired at {ExpiredAt} after {lifetime:N0} ms.",
 				msg.CommitPosition, msg.PreparePosition, msg.Expires, msg.Lifetime.TotalMilliseconds);
 			return;
+		} finally {
+			await cts.DisposeAsync();
+
+			if (leaseTaken)
+				ReleaseRateLimitLease();
 		}
 
-		var res = await _secondaryIndexReaders.ReadForwards(msg, token);
 		switch (res.Result) {
-			case ReadIndexResult.Success:
-			case ReadIndexResult.NotModified:
-			case ReadIndexResult.Error:
-			case ReadIndexResult.InvalidPosition:
-			case ReadIndexResult.IndexNotFound:
+			case ReadIndexResult.Success
+				or ReadIndexResult.NotModified
+				or ReadIndexResult.Error
+				or ReadIndexResult.InvalidPosition
+				or ReadIndexResult.IndexNotFound:
 				msg.Envelope.ReplyWith(res);
 				break;
 			default:
@@ -51,14 +63,22 @@ public partial class StorageReaderWorker<TStreamId> :
 		}
 	}
 
-	public async ValueTask HandleAsync(ClientMessage.ReadIndexEventsBackward msg, CancellationToken token) {
-		if (msg.CancellationToken.IsCancellationRequested)
-			return;
+	public async ValueTask HandleAsync(ReadIndexEventsBackward msg, CancellationToken token) {
+		ReadIndexEventsBackwardCompleted res;
+		var cts = _multiplexer.Combine(msg.Lifetime, [token, msg.CancellationToken]);
+		var leaseTaken = false;
+		try {
+			await AcquireRateLimitLeaseAsync(cts.Token);
+			leaseTaken = true;
 
-		if (msg.Expires < DateTime.UtcNow) {
+			res = await _secondaryIndexReaders.ReadBackwards(msg, cts.Token);
+		} catch (OperationCanceledException e) when (e.CancellationToken == cts.Token) {
+			if (!cts.IsTimedOut)
+				throw new OperationCanceledException(null, e, cts.CancellationOrigin);
+
 			if (msg.ReplyOnExpired) {
 				msg.Envelope.ReplyWith(
-					new ClientMessage.ReadIndexEventsBackwardCompleted(
+					new ReadIndexEventsBackwardCompleted(
 						ReadIndexResult.Expired,
 						ResolvedEvent.EmptyArray,
 						new(msg.CommitPosition, msg.PreparePosition),
@@ -73,15 +93,19 @@ public partial class StorageReaderWorker<TStreamId> :
 				"ReadIndexEventsBackward operation has expired for C:{CommitPosition}/P:{PreparePosition}. Operation expired at {ExpiredAt} after {lifetime:N0} ms.",
 				msg.CommitPosition, msg.PreparePosition, msg.Expires, msg.Lifetime.TotalMilliseconds);
 			return;
+		} finally {
+			await cts.DisposeAsync();
+
+			if (leaseTaken)
+				ReleaseRateLimitLease();
 		}
 
-		var res = await _secondaryIndexReaders.ReadBackwards(msg, token);
 		switch (res.Result) {
-			case ReadIndexResult.Success:
-			case ReadIndexResult.NotModified:
-			case ReadIndexResult.Error:
-			case ReadIndexResult.InvalidPosition:
-			case ReadIndexResult.IndexNotFound:
+			case ReadIndexResult.Success
+				or ReadIndexResult.NotModified
+				or ReadIndexResult.Error
+				or ReadIndexResult.InvalidPosition
+				or ReadIndexResult.IndexNotFound:
 				msg.Envelope.ReplyWith(res);
 				break;
 			default:

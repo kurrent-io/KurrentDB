@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="EventStore.Client" />
+		<PackageReference Include="FluentAssertions" />
+		<PackageReference Include="Microsoft.AspNetCore.TestHost" />
+		<PackageReference Include="Serilog.Sinks.InMemory" />
+		<PackageReference Include="Serilog.AspNetCore" />
+		<!-- Workaround because there's no compiler support for the IgnoresAccessChecksTo attribute. -->
+		<!-- See: https://github.com/aelij/IgnoresAccessChecksToGenerator?tab=readme-ov-file -->
+		<PackageReference Include="IgnoresAccessChecksToGenerator" PrivateAssets="All" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
+		<ProjectReference Include="..\KurrentDB.PluginHosting\KurrentDB.PluginHosting.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="Services\Transport\Tcp\test_certificates\**\*.crt" />
+		<EmbeddedResource Include="Services\Transport\Tcp\test_certificates\**\*.key" />
+		<EmbeddedResource Remove="FakePlugin\**" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Include="..\KurrentDB.Common\Utils\version.properties">
+			<Link>version.properties</Link>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+	<ItemGroup>
+		<None Include="TestCertificates\*.*">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+	<ItemGroup>
+		<None Remove="FakePlugin\**" />
+		<Compile Remove="FakePlugin\**" />
+		<Content Include="FakePlugin\**" CopyToOutputDirectory="Always" />
+	</ItemGroup>
+	<ItemGroup>
+		<IgnoresAccessChecksTo Include="EventStore.ClientAPI" />
+	</ItemGroup>
+</Project>

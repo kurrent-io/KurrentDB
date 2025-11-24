@@ -8,7 +8,6 @@ using KurrentDB.Core.Configuration.Sources;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.FileProviders;
 using Xunit;
-using Assert = NUnit.Framework.Assert;
 
 namespace KurrentDB.Core.XUnit.Tests.Configuration.Sources.Legacy;
 

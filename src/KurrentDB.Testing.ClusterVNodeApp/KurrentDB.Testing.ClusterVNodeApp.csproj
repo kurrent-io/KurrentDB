@@ -1,7 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <LangVersion>preview</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EnablePreviewFeatures>true</EnablePreviewFeatures>
@@ -11,9 +9,12 @@
   <ItemGroup>
     <PackageReference Include="Grpc.Net.Client" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
-  </ItemGroup>
+    <PackageReference Include="RestSharp" />
+    <PackageReference Include="Testcontainers" />
+	</ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\KurrentDB.Testing\KurrentDB.Testing.csproj" />
     <ProjectReference Include="..\KurrentDB\KurrentDB.csproj" />
   </ItemGroup>
 </Project>

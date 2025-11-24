@@ -48,7 +48,7 @@ public class ConnectorsCommandService(
             _ => {
                 logger.LogDebug(
                     "{TraceIdentifier} {CommandType} executed [connector_id, {ConnectorId}]",
-                    http.TraceIdentifier, command.GetType().Name, http.Request.RouteValues.First().Value
+                    http.TraceIdentifier, command.GetType().Name, http.Request.RouteValues.FirstOrDefault().Value
                 );
 
                 return new Empty();

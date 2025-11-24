@@ -110,17 +110,10 @@ public class QueueTrackersTests {
 	QueueTrackers GenSut(params Conf.LabelMappingCase[] map) =>
 		new(map,
 			x => new FakeTracker { Name = x },
-			x => new FakeTracker { Name = x },
 			x => new FakeTracker { Name = x });
 
-	class FakeTracker : IDurationMaxTracker, IQueueProcessingTracker, IQueueBusyTracker {
+	class FakeTracker : IDurationMaxTracker, IQueueProcessingTracker {
 		public string Name { get; init; }
-
-		public void EnterBusy() {
-		}
-
-		public void EnterIdle() {
-		}
 
 		public Instant RecordNow(Instant start) => start;
 

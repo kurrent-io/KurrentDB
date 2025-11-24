@@ -117,7 +117,7 @@ KurrentDB is written in a mixture of C# and JavaScript. It can run on Windows, L
 
 **Prerequisites**
 
-- [.NET SDK 8.0](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [.NET SDK 10.0](https://dotnet.microsoft.com/download/dotnet/10.0)
 
 Once you've installed the prerequisites for your system, you can launch a `Release` build of KurrentDB as follows:
 
@@ -125,12 +125,10 @@ Once you've installed the prerequisites for your system, you can launch a `Relea
 dotnet build -c Release src
 ```
 
-The build scripts: `build.sh` and `build.ps1` are also available for Linux and Windows respectively to simplify the build process.
-
 To start a single node, you can then run:
 
 ```
-dotnet ./src/KurrentDB/bin/Release/net8.0/KurrentDB.dll --dev --db ./tmp/data --index ./tmp/index --log ./tmp/log
+dotnet ./src/KurrentDB/bin/Release/net10.0/KurrentDB.dll --dev --db ./tmp/data --index ./tmp/index --log ./tmp/log
 ```
 
 ### Running the tests
@@ -138,7 +136,7 @@ dotnet ./src/KurrentDB/bin/Release/net8.0/KurrentDB.dll --dev --db ./tmp/data --
 You can launch the tests as follows:
 
 ```
-dotnet test src/KurrentDB.sln
+dotnet test --solution src/KurrentDB.sln
 ```
 
 ### Build KurrentDB Docker image
@@ -155,7 +153,7 @@ For instance:
 
 ```
 docker build --tag mykurrentdb . \
---build-arg CONTAINER_RUNTIME=bookworm-slim \
+--build-arg CONTAINER_RUNTIME=noble \
 --build-arg RUNTIME=linux-x64
 ```
 
@@ -163,26 +161,16 @@ docker build --tag mykurrentdb . \
 
 ```
 $env:DOCKER_BUILDKIT=0; docker build --tag mykurrentdb . `
---build-arg CONTAINER_RUNTIME=bookworm-slim `
+--build-arg CONTAINER_RUNTIME=noble `
 --build-arg RUNTIME=linux-x64
 ```
 
 Currently, we support the following configurations:
 
-1. Bookworm slim:
+1. Noble:
 
-- `CONTAINER_RUNTIME=bookworm-slim`
+- `CONTAINER_RUNTIME=noble`
 - `RUNTIME=linux-x64`
-
-2. Jammy:
-
-- `CONTAINER_RUNTIME=Jammy`
-- `RUNTIME=linux-x64`
-
-3. Alpine:
-
-- `CONTAINER_RUNTIME=alpine`
-- `RUNTIME=linux-musl-x64`
 
 You can verify the built image by running:
 

@@ -6,7 +6,7 @@ order: 4
 This page offers a detailed list of operations for effectively managing your connectors.
 
 ::: info
-This page uses the `serilog-sink` connector as an example. Replace `instanceTypeName` with the unique identifier of your chosen connector. For more information on the instance type name, refer to the [individual documentation](./sinks/) for each connector.
+This page uses the `serilog-sink` connector as an example. Replace `instanceTypeName` with the unique identifier of your chosen connector. For more information on the instance type name, refer to the [configuration](./settings.md/) page.
 :::
 
 <template>
@@ -33,11 +33,11 @@ export default {
 
 Create a connector by sending a `POST` request to `connectors/{connector_id}`, where `{connector_id}` is a unique identifier of your choice for the connector.
 
-::: tabs
-@tab Powershell
+```http
+POST /connectors/serilog-sink
+Host: localhost:2113
+Content-Type: application/json
 
-```powershell
-$JSON = @"
 {
   "name": "Demo Serilog Sink",
   "settings": {
@@ -47,34 +47,7 @@ $JSON = @"
     "subscription:initialPosition": "earliest"
   }
 }
-"@ `
-
-curl.exe -X POST `
-  -H "Content-Type: application/json" `
-  -d $JSON `
-  http://localhost:2113/connectors/serilog-sink
 ```
-
-@tab Bash
-
-```bash
-JSON='{
-  "name": "Demo Serilog Sink",
-  "settings": {
-    "instanceTypeName": "serilog-sink",
-    "subscription:filter:scope": "stream",
-    "subscription:filter:expression": "some-stream",
-    "subscription:initialPosition": "earliest"
-  }
-}'
-
-curl -X POST \
-  -H "Content-Type: application/json" \
-  -d "$JSON" \
-  http://localhost:2113/connectors/serilog-sink
-```
-
-:::
 
 When you start the connector using the [Start command](#start), and append an
 event to the stream `some-stream`, the connector will consume the event and log
@@ -88,40 +61,20 @@ The name field is optional and can be used to provide a human-readable name for 
 
 Start a connector by sending a `POST` request to `connectors/{connector_id}/start`, where `{connector_id}` is the unique identifier used when the connector was created.
 
-::: tabs
-@tab Powershell
-
-```powershell
-curl.exe -i -X POST http://localhost:2113/connectors/serilog-sink/start
+```http
+POST /connectors/serilog-sink/start
+Host: localhost:2113
 ```
-
-@tab Bash
-
-```bash
-curl -i -X POST -H http://localhost:2113/connectors/serilog-sink/start
-```
-
-:::
 
 You can also start from a specific position by providing the start position in
 the query parameter. Do this by sending a `POST` request to
 `connectors/{connector_id}/start/{log_position}` where `{log_position}` is the position
 from which to start consuming events.
 
-::: tabs
-@tab Powershell
-
-```powershell
-curl.exe -i -X POST http://localhost:2113/connectors/serilog-sink/start/32789
+```http
+POST /connectors/serilog-sink/start/32789
+Host: localhost:2113
 ```
-
-@tab Bash
-
-```bash
-curl -i -X POST http://localhost:2113/connectors/serilog-sink/start/32789
-```
-
-:::
 
 ::: note
 If you do not provide a start position, the connector will start consuming
@@ -133,11 +86,11 @@ initial position if no checkpoint exists.
 
 List all connectors by sending a `GET` request to `/connectors`.
 
-::: tabs
-@tab Powershell
+```http
+GET /connectors
+Host: localhost:2113
+Content-Type: application/json
 
-```powershell
-$JSON = @"
 {
   "state": ["CONNECTOR_STATE_STOPPED", "CONNECTOR_STATE_RUNNING"],
   "instanceTypeName": ["serilog-sink"],
@@ -148,43 +101,18 @@ $JSON = @"
       "pageSize": 100
   }
 }
-"@ `
-
-curl.exe -X GET `
-  -H "Content-Type: application/json" `
-  -d $JSON `
-  http://localhost:2113/connectors
 ```
-
-@tab Bash
-
-```bash
-JSON='{
-  "state": ["CONNECTOR_STATE_STOPPED", "CONNECTOR_STATE_RUNNING"],
-  "instanceTypeName": ["serilog-sink"],
-  "connectorId": ["serilog-sink"],
-  "includeSettings": "true",
-  "paging": {
-      "page": 1,
-      "pageSize": 100
-  }
-}'
-
-curl -X GET \
-  -H "Content-Type: application/json" \
-  -d "$JSON" \
-  http://localhost:2113/connectors
-```
-
-:::
 
 You can paginate the results by specifying the `pageSize` and `page` parameters.
 Additionally, you can filter the results using the `state`, `instanceType`, and
 `connectorId` parameters.
 
-::: details Click here to see a list example
+::: details Example response
 
-```json
+```HTTP
+HTTP/1.1 200 OK
+Content-Type: application/json
+
 {
   "items": [
     {
@@ -243,24 +171,17 @@ View the settings for a connector by sending a `GET` request to
 `/connectors/{connector_id}/settings`, where `{connector_id}` is the unique
 identifier used when the connector was created.
 
-::: tabs
-@tab Powershell
-
-```powershell
-curl.exe -X GET http://localhost:2113/connectors/serilog-sink/settings
+```http
+GET /connectors/serilog-sink/settings
+Host: localhost:2113
 ```
 
-@tab Bash
+::: details Example response
 
-```bash
-curl -X GET http://localhost:2113/connectors/serilog-sink/settings
-```
+```HTTP
+HTTP/1.1 200 OK
+Content-Type: application/json
 
-:::
-
-::: details Click here to see an example of the settings
-
-```json
 {
   "settings": {
     "instanceTypeName": "serilog-sink",
@@ -278,40 +199,20 @@ curl -X GET http://localhost:2113/connectors/serilog-sink/settings
 
 Reset a connector by sending a `POST` request to `/connectors/{connector_id}/reset`, where `{connector_id}` is the unique identifier used when the connector was created.
 
-::: tabs
-@tab Powershell
-
-```powershell
-curl.exe -i -X POST http://localhost:2113/connectors/serilog-sink/reset
+```http
+POST /connectors/serilog-sink/reset
+Host: localhost:2113
 ```
-
-@tab Bash
-
-```bash
-curl -i -X POST http://localhost:2113/connectors/serilog-sink/reset
-```
-
-:::
 
 You can also reset the connector to a specific position by providing the reset
 position in the query parameter. Do this by sending a `POST` request to
 `/connectors/{connector_id}/reset/{log_position}` where `{log_position}` is the position
 to which the connector should be reset.
 
-::: tabs
-@tab Powershell
-
-```powershell
-curl.exe -i -X POST http://localhost:2113/connectors/serilog-sink/reset/25123
+```http
+POST /connectors/serilog-sink/reset/25123
+Host: localhost:2113
 ```
-
-@tab Bash
-
-```bash
-curl -i -X POST http://localhost:2113/connectors/serilog-sink/reset/25123
-```
-
-:::
 
 ::: note
 If no reset position is provided, the connector will reset the position to the beginning of the stream.
@@ -321,20 +222,10 @@ If no reset position is provided, the connector will reset the position to the b
 
 Stop a connector by sending a `POST` request to `/connectors/{connector_id}/stop`, where `{connector_id}` is the unique identifier used when the connector was created.
 
-::: tabs
-@tab Powershell
-
-```powershell
-curl.exe -i -X POST http://localhost:2113/connectors/serilog-sink/stop
+```http
+POST /connectors/serilog-sink/stop
+Host: localhost:2113
 ```
-
-@tab Bash
-
-```bash
-curl -i -X POST http://localhost:2113/connectors/serilog-sink/stop
-```
-
-:::
 
 ## Reconfigure
 
@@ -343,38 +234,16 @@ Reconfigure an existing connector by sending a `PUT` request to
 identifier used when the connector was created. This endpoint allows you to
 modify the settings of a connector without having to delete and recreate it.
 
-::: tabs
-@tab Powershell
+```http
+PUT /connectors/serilog-sink/settings
+Host: localhost:2113
+Content-Type: application/json
 
-```powershell
-$JSON = @"
 {
   "instanceTypeName": "serilog-sink",
   "logging:enabled": "false"
 }
-"@ `
-
-curl.exe -X PUT `
-  -H "Content-Type: application/json" `
-  -d $JSON `
-  http://localhost:2113/connectors/serilog-sink/settings
 ```
-
-@tab Bash
-
-```bash
-JSON='{
-  "instanceTypeName": "serilog-sink",
-  "logging:Enabled": "false"
-}'
-
-curl -X PUT \
-  -H "Content-Type: application/json" \
-  -d "$JSON" \
-  http://localhost:2113/connectors/serilog-sink/settings
-```
-
-:::
 
 For a comprehensive list of available configuration options available for all sinks, please refer to the [Connector Settings](./settings.md) page.
 
@@ -390,20 +259,10 @@ Delete a connector by sending a `DELETE` request to
 `/connectors/{connector_id}`, where `{connector_id}` is the unique
 identifier used when the connector was created.
 
-::: tabs
-@tab Powershell
-
-```powershell
-curl.exe -X DELETE http://localhost:2113/connectors/serilog-sink
+```http
+DELETE /connectors/serilog-sink
+Host: localhost:2113
 ```
-
-@tab Bash
-
-```bash
-curl -X DELETE http://localhost:2113/connectors/serilog-sink
-```
-
-:::
 
 ## Rename
 
@@ -411,33 +270,12 @@ To rename a connector, send a `PUT` request to
 `/connectors/{connector_id}/rename`, where `{connector_id}` is the unique
 identifier used when the connector was created.
 
-::: tabs
-@tab Powershell
+```http
+PUT /connectors/serilog-sink/rename
+Host: localhost:2113
+Content-Type: application/json
 
-```powershell
-$JSON = @"
 {
   "name": "New connector name"
 }
-"@ `
-
-curl.exe -X PUT `
-  -H "Content-Type: application/json" `
-  -d $JSON `
-  http://localhost:2113/connectors/serilog-sink/rename
 ```
-
-@tab Bash
-
-```bash
-JSON='{
-  "name": "New connector name"
-}'
-
-curl -X PUT \
-  -H "Content-Type: application/json" \
-  -d "$JSON" \
-  http://localhost:2113/connectors/serilog-sink/rename
-```
-
-:::

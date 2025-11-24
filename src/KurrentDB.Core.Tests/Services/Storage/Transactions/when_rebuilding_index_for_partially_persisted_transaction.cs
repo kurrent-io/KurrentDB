@@ -11,7 +11,6 @@ using KurrentDB.Core.Index;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Tests.Fakes;
-using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.Core.Util;
@@ -32,19 +31,18 @@ public class when_rebuilding_index_for_partially_persisted_transaction<TLogForma
 		ReadIndex.Dispose();
 		TableIndex.Close(removeFiles: false);
 
-		var readers =
-			new ObjectPool<ITransactionFileReader>("Readers", 2, 2, () => new TFChunkReader(Db, WriterCheckpoint));
+		var reader = new TFChunkReader(Db, WriterCheckpoint);
 		var lowHasher = _logFormat.LowHasher;
 		var highHasher = _logFormat.HighHasher;
 		var emptyStreamId = _logFormat.EmptyStreamId;
 		TableIndex = new TableIndex<TStreamId>(GetFilePathFor("index"), lowHasher, highHasher, emptyStreamId,
 			() => new HashListMemTable(PTableVersions.IndexV2, maxSize: MaxEntriesInMemTable * 2),
-			() => new TFReaderLease(readers),
+			reader,
 			PTableVersions.IndexV2,
-			5, Constants.PTableMaxReaderCountDefault,
+			5,
 			MaxEntriesInMemTable);
 		var readIndex = new ReadIndex<TStreamId>(new NoopPublisher(),
-			readers,
+			reader,
 			TableIndex,
 			_logFormat.StreamNameIndexConfirmer,
 			_logFormat.StreamIds,

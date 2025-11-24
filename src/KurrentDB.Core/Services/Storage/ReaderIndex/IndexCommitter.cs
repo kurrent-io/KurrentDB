@@ -143,14 +143,14 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 
 		_indexRebuild = true;
 		using (_statusTracker.StartRebuilding())
-		using (var reader = _backend.BorrowReader()) {
+		using (var cursorScope = new AsyncReadCursor.Scope()) {
 			var startPosition = Math.Max(0, _persistedCommitPos);
 			var fullRebuild = startPosition == 0;
-			reader.Reposition(startPosition);
+			cursorScope.Cursor.Position = startPosition;
 
 			long processed = 0;
 			SeqReadResult result;
-			while ((result = await reader.TryReadNext(token)).Success && result.LogRecord.LogPosition < buildToPosition) {
+			while ((result = await _backend.TFReader.TryReadNext(cursorScope.Cursor, token)).Success && result.LogRecord.LogPosition < buildToPosition) {
 				switch (result.LogRecord.RecordType) {
 					case LogRecordType.Stream:
 					case LogRecordType.EventType:
@@ -517,12 +517,11 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 	}
 
 	private async IAsyncEnumerable<IPrepareLogRecord<TStreamId>> GetTransactionPrepares(long transactionPos, long commitPos, [EnumeratorCancellation] CancellationToken token) {
-		using var reader = _backend.BorrowReader();
-		reader.Reposition(transactionPos);
+		using var cursorScope = new AsyncReadCursor.Scope(transactionPos);
 
 		// in case all prepares were scavenged, we should not read past Commit LogPosition
 		SeqReadResult result;
-		while ((result = await reader.TryReadNext(token)).Success && result.RecordPrePosition <= commitPos) {
+		while ((result = await _backend.TFReader.TryReadNext(cursorScope.Cursor, token)).Success && result.RecordPrePosition <= commitPos) {
 			if (result.LogRecord.RecordType != LogRecordType.Prepare)
 				continue;
 

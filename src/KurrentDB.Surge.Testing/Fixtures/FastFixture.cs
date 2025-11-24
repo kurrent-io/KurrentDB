@@ -50,7 +50,7 @@ public partial class FastFixture : IAsyncLifetime, IAsyncDisposable {
         FixtureLogger.Information(">>> test run {TestRunId} {Operation} <<<", testRunId, "started");
     }
 
-    public async Task InitializeAsync() {
+    public async ValueTask InitializeAsync() {
         await OnSetup();
     }
 

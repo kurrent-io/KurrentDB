@@ -43,13 +43,13 @@ public class when_merging_two_ptables : SpecificationWithDirectoryPerTestFixture
 				table.Add((ulong)(0x010100000000 << (j + 1)), i + 1, i * j);
 			}
 
-			_tables.Add(PTable.FromMemtable(table, _files[i], Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault,
+			_tables.Add(PTable.FromMemtable(table, _files[i],
 				skipIndexVerify: _skipIndexVerify, useBloomFilter: true));
 		}
 
 		_files.Add(GetTempFilePath());
 		_newtable = PTable.MergeTo(_tables, _files[2],
-			_ptableVersion, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault,
+			_ptableVersion,
 			skipIndexVerify: _skipIndexVerify, useBloomFilter: true);
 	}
 

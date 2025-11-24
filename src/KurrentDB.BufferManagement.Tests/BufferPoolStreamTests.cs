@@ -39,7 +39,7 @@ public class when_reading_from_the_stream : has_buffer_pool_fixture {
 		stream.Write(new byte[500], 0, 500);
 		stream.Seek(0, SeekOrigin.Begin);
 		Assert.AreEqual(0, stream.Position);
-		stream.Read(new byte[50], 0, 50);
+		stream.ReadExactly(new byte[50], 0, 50);
 		Assert.AreEqual(50, stream.Position);
 	}
 

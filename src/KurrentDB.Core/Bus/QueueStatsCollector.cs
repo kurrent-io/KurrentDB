@@ -10,7 +10,39 @@ using KurrentDB.Core.Services.Monitoring.Stats;
 
 namespace KurrentDB.Core.Bus;
 
-public class QueueStatsCollector {
+public interface IQueueStatsCollector {
+	void ProcessingStarted(Type msgType, int queueLength);
+	void ProcessingEnded(int itemsProcessed);
+
+	QueueStats GetStatistics(int currentQueueLength);
+
+	public static IQueueStatsCollector NoOp { get; } = new NoOpQueueStatsCollector();
+}
+
+file sealed class NoOpQueueStatsCollector : IQueueStatsCollector {
+	void IQueueStatsCollector.ProcessingStarted(Type msgType, int queueLength) {
+	}
+
+	void IQueueStatsCollector.ProcessingEnded(int itemsProcessed) {
+	}
+
+	QueueStats IQueueStatsCollector.GetStatistics(int currentQueueLength) => new(
+		"no-op",
+		groupName: null,
+		currentQueueLength,
+		avgItemsPerSecond: 0,
+		avgProcessingTime: 0,
+		idleTimePercent: 0D,
+		currentItemProcessingTime: null,
+		currentIdleTime: null,
+		totalItemsProcessed: 0L,
+		lengthCurrentTryPeak: 0L,
+		lengthLifetimePeak: 0L,
+		lastProcessedMessageType: null,
+		inProgressMessageType: null);
+}
+
+public class QueueStatsCollector : IQueueStatsCollector {
 	private static readonly TimeSpan MinRefreshPeriod = TimeSpan.FromMilliseconds(100);
 
 	public readonly string Name;

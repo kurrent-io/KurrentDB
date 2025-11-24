@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using KurrentDB.Core.Index;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Tests.TransactionLog.Scavenging.Helpers;
-using KurrentDB.Core.TransactionLog;
 using NUnit.Framework;
 
 namespace KurrentDB.Core.Tests.Index.Scavenge;
@@ -38,20 +37,20 @@ class
 		var scavengeBlocker = new ManualResetEventSlim(false);
 		var scavengeStarted = new ManualResetEventSlim(false);
 
-		var fakeReader = new TFReaderLease(new FakeIndexReader(l => {
+		var fakeReader = new FakeIndexReader(l => {
 			scavengeStarted.Set();
 			if (!scavengeBlocker.Wait(5000))
 				throw new Exception("Failed to continue.");
 			return false;
-		}));
+		});
 
 		_lowHasher = new XXHashUnsafe();
 		_highHasher = new Murmur3AUnsafe();
 		_tableIndex = new TableIndex<string>(_indexDir, _lowHasher, _highHasher, "",
 			() => new HashListMemTable(PTableVersions.IndexV4, maxSize: 5),
-			() => fakeReader,
+			fakeReader,
 			PTableVersions.IndexV4,
-			5, Constants.PTableMaxReaderCountDefault,
+			5,
 			maxSizeForMemory: 2,
 			maxTablesPerLevel: 5,
 			useBloomFilter: _useBloomFilter);
@@ -82,9 +81,9 @@ class
 
 		_tableIndex = new TableIndex<string>(_indexDir, _lowHasher, _highHasher, "",
 			() => new HashListMemTable(PTableVersions.IndexV4, maxSize: 5),
-			() => fakeReader,
+			fakeReader,
 			PTableVersions.IndexV4,
-			5, Constants.PTableMaxReaderCountDefault,
+			5,
 			maxSizeForMemory: 2,
 			maxTablesPerLevel: 5,
 			useBloomFilter: _useBloomFilter);

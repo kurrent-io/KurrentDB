@@ -7,7 +7,7 @@ using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Tests.Bus.Helpers;
 using NUnit.Framework;
 
-namespace KurrentDB.Core.Tests.Bus;
+namespace KurrentDB.Projections.Core.Tests.Bus;
 
 [TestFixture]
 public abstract class queued_handler_should : QueuedHandlerTestWithNoopConsumer {
@@ -31,7 +31,7 @@ public abstract class queued_handler_should : QueuedHandlerTestWithNoopConsumer 
 [TestFixture]
 public class queued_handler_threadpool_should : queued_handler_should {
 	public queued_handler_threadpool_should()
-		: base((consumer, name, timeout) =>
+		: base(static (consumer, name, timeout) =>
 			new QueuedHandlerThreadPool(consumer, name, new QueueStatsManager(), new(), false, null, timeout)) {
 	}
 }

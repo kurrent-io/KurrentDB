@@ -11,6 +11,8 @@ namespace KurrentDB.Core.Metrics;
 public interface IDurationMaxTracker {
 	// Returns the current instant
 	Instant RecordNow(Instant start);
+
+	public static IDurationMaxTracker NoOp { get; } = new NoOpDurationMaxTracker();
 }
 
 // When observed, this returns the max duration that it has been asked to record over the last x
@@ -66,8 +68,8 @@ public class DurationMaxTracker : IDurationMaxTracker {
 		var value = _recentMax.Observe(_clock.Now);
 		return new(value, _maxTags.AsSpan());
 	}
+}
 
-	public class NoOp : IDurationMaxTracker {
-		public Instant RecordNow(Instant start) => Instant.Now;
-	}
+file sealed class NoOpDurationMaxTracker : IDurationMaxTracker {
+	public Instant RecordNow(Instant start) => Instant.Now;
 }

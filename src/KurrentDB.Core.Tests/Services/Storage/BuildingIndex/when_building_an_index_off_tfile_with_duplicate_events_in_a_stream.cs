@@ -15,7 +15,6 @@ using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Tests.Fakes;
 using KurrentDB.Core.Tests.TransactionLog;
-using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.TransactionLog.LogRecords;
@@ -135,22 +134,20 @@ public abstract class DuplicateReadIndexTestScenario<TLogFormat, TStreamId> : Sp
 		chaserCheckpoint.Write(writerCheckpoint.Read());
 		chaserCheckpoint.Flush();
 
-		var readers = new ObjectPool<ITransactionFileReader>("Readers", 2, 5,
-			() => new TFChunkReader(_db, _db.Config.WriterCheckpoint));
+		var reader = new TFChunkReader(_db, _db.Config.WriterCheckpoint);
 		var lowHasher = _logFormat.LowHasher;
 		var highHasher = _logFormat.HighHasher;
 		var emptyStreamId = _logFormat.EmptyStreamId;
 		_tableIndex = new TableIndex<TStreamId>(indexDirectory, lowHasher, highHasher, emptyStreamId,
 			() => new HashListMemTable(IndexBitnessVersion, MaxEntriesInMemTable * 2),
-			() => new TFReaderLease(readers),
+			reader,
 			IndexBitnessVersion,
 			int.MaxValue,
-			Constants.PTableMaxReaderCountDefault,
 			MaxEntriesInMemTable);
 		_logFormat.StreamNamesProvider.SetTableIndex(_tableIndex);
 
 		var readIndex = new ReadIndex<TStreamId>(new NoopPublisher(),
-			readers,
+			reader,
 			_tableIndex,
 			_logFormat.StreamNameIndexConfirmer,
 			_logFormat.StreamIds,
@@ -191,14 +188,13 @@ public abstract class DuplicateReadIndexTestScenario<TLogFormat, TStreamId> : Sp
 
 		_tableIndex = new TableIndex<TStreamId>(indexDirectory, lowHasher, highHasher, emptyStreamId,
 			() => new HashListMemTable(IndexBitnessVersion, MaxEntriesInMemTable * 2),
-			() => new TFReaderLease(readers),
+			reader,
 			IndexBitnessVersion,
 			int.MaxValue,
-			Constants.PTableMaxReaderCountDefault,
 			MaxEntriesInMemTable);
 
 		readIndex = new ReadIndex<TStreamId>(new NoopPublisher(),
-			readers,
+			reader,
 			_tableIndex,
 			_logFormat.StreamNameIndexConfirmer,
 			_logFormat.StreamIds,

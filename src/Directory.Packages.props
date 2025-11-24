@@ -8,12 +8,11 @@
     <PackageVersion Include="BlazorMonaco" Version="3.3.0" />
     <PackageVersion Include="Bogus" Version="35.6.4" />
     <PackageVersion Include="DiffEngine" Version="16.7.1" />
-    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="Dapper" Version="2.1.66" />
-    <PackageVersion Include="DotNext" Version="5.24.0" />
-    <PackageVersion Include="DotNext.IO" Version="5.24.0" />
-    <PackageVersion Include="DotNext.Threading" Version="5.24.0" />
-    <PackageVersion Include="DotNext.Unsafe" Version="5.24.0" />
+		<PackageVersion Include="DotNext" Version="5.26.1" />
+		<PackageVersion Include="DotNext.IO" Version="5.26.1" />
+		<PackageVersion Include="DotNext.Threading" Version="5.26.1" />
+		<PackageVersion Include="DotNext.Unsafe" Version="5.26.1" />
     <PackageVersion Include="Ductus.FluentDocker" Version="2.85.0" />
     <PackageVersion Include="Ductus.FluentDocker.XUnit" Version="2.85.0" />
     <PackageVersion Include="DuckDB.NET.Data.Full" Version="1.3.2" />
@@ -31,7 +30,6 @@
 		<PackageVersion Include="Azure.Storage.Blobs" Version="12.25.1" />
 		<PackageVersion Include="Azure.Identity" Version="1.16.0" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
-    <PackageVersion Include="GitHubActionsTestLogger" Version="2.4.1" />
     <PackageVersion Include="GitInfo" Version="3.3.3" />
     <PackageVersion Include="Google.Api.CommonProtos" Version="2.17.0" />
     <PackageVersion Include="Google.Cloud.Storage.V1" Version="4.13.0" />
@@ -48,64 +46,55 @@
     <PackageVersion Include="IgnoresAccessChecksToGenerator" Version="0.8.0" />
     <PackageVersion Include="JetBrains.Annotations" Version="2025.2.2" />
     <PackageVersion Include="Jint" Version="4.0.3" />
-    <PackageVersion Include="Kurrent.Connectors.Elasticsearch" Version="1.1.1-alpha.1.30" />
-    <PackageVersion Include="Kurrent.Connectors.Http" Version="1.1.1-alpha.1.30" />
-    <PackageVersion Include="Kurrent.Connectors.Kafka" Version="1.1.1-alpha.1.30" />
-    <PackageVersion Include="Kurrent.Connectors.MongoDB" Version="1.1.1-alpha.1.30" />
-    <PackageVersion Include="Kurrent.Connectors.RabbitMQ" Version="1.1.1-alpha.1.30" />
-    <PackageVersion Include="Kurrent.Connectors.Pulsar" Version="1.1.1-alpha.1.30" />
-    <PackageVersion Include="Kurrent.Surge" Version="1.1.1-alpha.1.30" />
-    <PackageVersion Include="Kurrent.Surge.Core" Version="1.1.1-alpha.1.30" />
-    <PackageVersion Include="Kurrent.Surge.DataProtection" Version="1.1.1-alpha.1.30" />
-    <PackageVersion Include="Kurrent.Surge.DuckDB" Version="1.1.1-alpha.1.30" />
+    <PackageVersion Include="Kurrent.Connectors.Elasticsearch" Version="1.1.1-alpha.1.38" />
+    <PackageVersion Include="Kurrent.Connectors.Http" Version="1.1.1-alpha.1.38" />
+    <PackageVersion Include="Kurrent.Connectors.Kafka" Version="1.1.1-alpha.1.38" />
+    <PackageVersion Include="Kurrent.Connectors.MongoDB" Version="1.1.1-alpha.1.38" />
+    <PackageVersion Include="Kurrent.Connectors.RabbitMQ" Version="1.1.1-alpha.1.38" />
+    <PackageVersion Include="Kurrent.Connectors.Pulsar" Version="1.1.1-alpha.1.38" />
+    <PackageVersion Include="Kurrent.Surge" Version="1.1.1-alpha.1.38" />
+    <PackageVersion Include="Kurrent.Surge.Core" Version="1.1.1-alpha.1.38" />
+    <PackageVersion Include="Kurrent.Surge.DataProtection" Version="1.1.1-alpha.1.38" />
+    <PackageVersion Include="Kurrent.Surge.DuckDB" Version="1.1.1-alpha.1.38" />
     <PackageVersion Include="Kurrent.Quack" Version="0.0.0-alpha.79" />
     <PackageVersion Include="KurrentDB.Client" Version="1.0.0" />
     <PackageVersion Include="librdkafka.redist" Version="2.5.0" />
     <PackageVersion Include="LruCacheNet" Version="1.2.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="8.0.13" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.13" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="8.0.13" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.13" />
-    <PackageVersion Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="8.0.20" />
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.20" />
-    <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="8.0.20" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="10.0.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.7.0" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing.XUnit" Version="1.1.1" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.2" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.7.0" />
-    <PackageVersion Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageVersion Include="Microsoft.Data.Sqlite" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.Diagnostics.NETCore.Client" Version="0.2.553101" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Diagnostics.NETCore.Client" Version="0.2.621003" />
     <PackageVersion Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="3.1.24" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.9" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.9" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="9.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.CommandLine" Version="9.0.9" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.9" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.AutoActivation" Version="9.8.0" />
-    <PackageVersion Include="Microsoft.Extensions.Diagnostics.Testing" Version="9.8.0" />
-    <PackageVersion Include="Microsoft.Extensions.FileProviders.Composite" Version="9.0.9" />
-    <PackageVersion Include="Microsoft.Extensions.FileProviders.Embedded" Version="9.0.9" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.Diagnostics.Testing" Version="9.10.0" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="9.4.2" />
     <PackageVersion Include="Serilog.Enrichers.Demystifier" Version="1.0.3" />
     <PackageVersion Include="Serilog.Extensions.Hosting" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.1" />
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.9" />
-    <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.9.0" />
+    <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.10.0" />
     <PackageVersion Include="Microsoft.FASTER.Core" Version="1.9.16" />
     <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.14.0" />
     <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.14.0" />
     <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="8.14.0" />
-    <PackageVersion Include="Microsoft.Net.Http.Headers" Version="8.0.20" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
-    <PackageVersion Include="Microsoft.OpenApi.Readers" Version="1.6.23" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.0.4" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="1.9.0" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.9.0" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="1.9.0" />
+    <PackageVersion Include="Microsoft.OpenApi.Readers" Version="1.6.28" />
     <PackageVersion Include="Mono.Posix.NETStandard" Version="1.0.0" />
     <PackageVersion Include="MudBlazor" Version="8.12.0" />
     <PackageVersion Include="MudBlazor.Markdown" Version="8.11.0" />
@@ -119,7 +108,7 @@
     <!-- upgrade because of transitive dependency vulnerability -->
     <PackageVersion Include="NuGet.Protocol" Version="6.7.1" />
     <PackageVersion Include="NUnit" Version="3.14.0" />
-    <PackageVersion Include="NUnit3TestAdapter" Version="4.5.0" />
+    <PackageVersion Include="NUnit3TestAdapter" Version="5.2.0" />
     <PackageVersion Include="ObjectLayoutInspector" Version="0.1.4" />
     <PackageVersion Include="OpenTelemetry" Version="1.13.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.12.0" />
@@ -156,40 +145,27 @@
     <PackageVersion Include="Serilog.Sinks.Seq" Version="9.0.0" />
     <PackageVersion Include="Serilog.Sinks.TestCorrelator" Version="4.0.0" />
     <PackageVersion Include="Serilog.Sinks.TextWriter" Version="3.0.0" />
-    <PackageVersion Include="Serilog.Sinks.XUnit" Version="3.0.19" />
     <PackageVersion Include="SharpDotYaml.Extensions.Configuration" Version="0.3.1" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="System.CommandLine.DragonFruit" Version="0.3.0-alpha.21216.1" />
-    <PackageVersion Include="System.ComponentModel.Composition" Version="9.0.9" />
-    <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="9.0.9" />
-    <PackageVersion Include="System.Diagnostics.PerformanceCounter" Version="9.0.9" />
-    <!-- upgrade because of transitive dependency vulnerability https://github.com/advisories/GHSA-447r-wph3-92pm -->
-    <PackageVersion Include="System.Formats.Asn1" Version="9.0.9" />
+    <PackageVersion Include="System.ComponentModel.Composition" Version="10.0.0" />
+    <PackageVersion Include="System.Diagnostics.PerformanceCounter" Version="10.0.0" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
-    <PackageVersion Include="System.IO.Pipelines" Version="9.0.9" />
     <PackageVersion Include="System.Linq.Async" Version="6.0.3" />
-    <!-- upgrade because of transitive dependency vulnerability -->
-    <PackageVersion Include="System.Net.Http" Version="4.3.4" />
-    <!-- upgrade because of transitive dependency vulnerability https://github.com/advisories/GHSA-5f2m-466j-3848 and https://github.com/advisories/GHSA-xhfc-gr8f-ffwc -->
-    <PackageVersion Include="System.Private.Uri" Version="4.3.2" />
     <PackageVersion Include="System.Reactive" Version="6.1.0" />
     <!-- CVE-2023-29331 -->
-    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="9.0.9" />
-    <PackageVersion Include="System.Security.Cryptography.Xml" Version="9.0.9" />
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.0" />
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.0" />
     <PackageVersion Include="System.ServiceModel.Http" Version="8.1.2" />
-    <!-- upgrade because of transitive dependency vulnerability https://github.com/advisories/GHSA-8g4q-xg66-9fp4 -->
-    <PackageVersion Include="System.Text.Json" Version="9.0.9" />
-    <!-- upgrade because of transitive dependency vulnerability -->
-    <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1" />
-    <PackageVersion Include="System.Threading.Channels" Version="9.0.9" />
     <PackageVersion Include="TestableIO.System.IO.Abstractions" Version="21.3.1" />
     <PackageVersion Include="TestableIO.System.IO.Abstractions.TestingHelpers" Version="21.3.1" />
-    <PackageVersion Include="TUnit" Version="0.63.3" />
-    <PackageVersion Include="TUnit.Core" Version="0.63.3" />
+    <PackageVersion Include="Testcontainers" Version="4.7.0" />
+    <PackageVersion Include="TUnit" Version="1.0.39" />
+    <PackageVersion Include="TUnit.Core" Version="1.0.39" />
     <PackageVersion Include="Verify.TUnit" Version="30.11.0" />
     <PackageVersion Include="WaffleGenerator.Bogus" Version="4.2.2" />
-    <PackageVersion Include="xunit" Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <PackageVersion Include="xunit.v3" Version="3.1.0" />
+    <PackageVersion Include="xunit.v3.extensibility.core" Version="3.1.0" />
     <PackageVersion Include="YamlDotnet" Version="16.3.0" />
   </ItemGroup>
 </Project>

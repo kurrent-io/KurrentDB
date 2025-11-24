@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Core.Data;
-using KurrentDB.Core.DataStructures;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.LogRecords;
@@ -19,13 +18,11 @@ public class ReadIndexStub {
 	public ReadIndexStub() {
 		_transactionalFileReader = Substitute.For<ITransactionFileReader>();
 
-		var lease = new TFReaderLease(new ObjectPool<ITransactionFileReader>("dummy", 1, 1, () => _transactionalFileReader));
-
 		var backend = Substitute.For<IIndexBackend<string>>();
+		backend.TFReader.Returns(_transactionalFileReader);
 
 		var indexReader = Substitute.For<IIndexReader<string>>();
 		indexReader.Backend.Returns(backend);
-		indexReader.BorrowReader().Returns(lease);
 
 		ReadIndex = Substitute.For<IReadIndex<string>>();
 		ReadIndex.IndexReader.Returns(indexReader);

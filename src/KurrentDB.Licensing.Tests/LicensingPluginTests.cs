@@ -18,10 +18,10 @@ using Xunit;
 
 namespace KurrentDB.Licensing.Tests;
 
-public class LicensingPluginTests : IAsyncLifetime {
+public sealed class LicensingPluginTests : IAsyncLifetime {
 	private TestServer? _server;
 
-	public Task InitializeAsync() => Task.CompletedTask;
+	public ValueTask InitializeAsync() => ValueTask.CompletedTask;
 
 	private static LicensingPlugin CreateUnLicensedSutAsync() {
 		return new LicensingPlugin(
@@ -42,7 +42,7 @@ public class LicensingPluginTests : IAsyncLifetime {
 		return server;
 	}
 
-	public async Task DisposeAsync() {
+	public async ValueTask DisposeAsync() {
 		if (_server != null) {
 			await _server.DisposeAsync();
 		}
@@ -124,7 +124,7 @@ public class LicensingPluginTests : IAsyncLifetime {
 	}
 }
 
-public class TestServer(LicensingPlugin sut) : IAsyncLifetime {
+public sealed class TestServer(LicensingPlugin sut) : IAsyncLifetime {
 	private WebApplication? _app;
 	private HttpClient? _authenticatedClient;
 	private HttpClient? _unauthenticatedClient;
@@ -132,7 +132,7 @@ public class TestServer(LicensingPlugin sut) : IAsyncLifetime {
 	public HttpClient AuthenticatedClient => _authenticatedClient!;
 	public HttpClient UnauthenticatedClient => _unauthenticatedClient!;
 
-	public async Task InitializeAsync() {
+	public async ValueTask InitializeAsync() {
 		var builder = WebApplication.CreateBuilder();
 		builder.WebHost.UseUrls("http://127.0.0.1:0");
 		builder.Services.AddAuthorization();
@@ -165,7 +165,7 @@ public class TestServer(LicensingPlugin sut) : IAsyncLifetime {
 		_unauthenticatedClient.BaseAddress = new Uri(_app!.Urls.First());
 	}
 
-	public async Task DisposeAsync() {
+	public async ValueTask DisposeAsync() {
 		if (_app != null) {
 			await _app.DisposeAsync();
 		}

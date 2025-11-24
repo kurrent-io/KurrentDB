@@ -66,7 +66,7 @@ partial class Enumerator {
 
 			_bus.Publish(new ClientMessage.ReadLogEvents(
 				correlationId, correlationId, new ContinuationEnvelope(OnMessage, _semaphore, CancellationToken.None),
-				logPositions, _user, replyOnExpired: true, expires: null, cancellationToken: CancellationToken.None));
+				logPositions, _user, replyOnExpired: true, expires: ClientMessage.ReadRequestMessage.NeverExpires, cancellationToken: CancellationToken.None));
 			return;
 
 			Task OnMessage(Message message, CancellationToken ct) {

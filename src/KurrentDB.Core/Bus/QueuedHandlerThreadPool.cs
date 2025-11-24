@@ -15,18 +15,14 @@ using ILogger = Serilog.ILogger;
 namespace KurrentDB.Core.Bus;
 
 /// <summary>
-/// Lightweight in-memory queue with a separate thread in which it passes messages
-/// to the consumer. It also tracks statistics about the message processing to help
-/// in identifying bottlenecks
+/// Handles messages by putting them in a queue.
+/// Messages in the queue are consumed sequentially one at a time by the on the consumer.
+/// Messages are consumed on a thread pool thread. The is occupied until the queue becomes empty.
 /// </summary>
 public class QueuedHandlerThreadPool : IQueuedHandler, IMonitoredQueue, IThreadPoolWorkItem {
 	private static readonly TimeSpan DefaultStopWaitTimeout = TimeSpan.FromSeconds(10);
 	public static readonly TimeSpan VerySlowMsgThreshold = TimeSpan.FromSeconds(7);
 	private static readonly ILogger Log = Serilog.Log.ForContext<QueuedHandlerThreadPool>();
-
-	public int MessageCount {
-		get { return _queue.Count; }
-	}
 
 	public string Name {
 		get { return _queueStats.Name; }
@@ -61,8 +57,8 @@ public class QueuedHandlerThreadPool : IQueuedHandler, IMonitoredQueue, IThreadP
 		TimeSpan? slowMsgThreshold = null,
 		TimeSpan? threadStopWaitTimeout = null,
 		string groupName = null) {
-		Ensure.NotNull(consumer, "consumer");
-		Ensure.NotNull(name, "name");
+		Ensure.NotNull(consumer);
+		Ensure.NotNull(name);
 
 		// Pef: devirt interface
 		_consumer = consumer.HandleAsync;
@@ -130,7 +126,6 @@ public class QueuedHandlerThreadPool : IQueuedHandler, IMonitoredQueue, IThreadP
 			bool proceed = true;
 			while (proceed) {
 				_queueStats.EnterBusy();
-				_tracker.EnterBusy();
 
 				while (!_lifetimeToken.IsCancellationRequested && _queue.TryDequeue(out var item)) {
 					var start = _tracker.RecordMessageDequeued(item.EnqueuedAt);
@@ -180,7 +175,6 @@ public class QueuedHandlerThreadPool : IQueuedHandler, IMonitoredQueue, IThreadP
 				}
 
 				_queueStats.EnterIdle();
-				_tracker.EnterIdle();
 				Interlocked.CompareExchange(ref _isRunning, 0, 1);
 				if (_lifetimeToken.IsCancellationRequested) {
 					TryStopQueueStats();
