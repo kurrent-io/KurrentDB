@@ -11,10 +11,18 @@
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
     <PackageReference Include="RestSharp" />
     <PackageReference Include="Testcontainers" />
-	</ItemGroup>
+    <PackageReference Include="Grpc.Tools">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\KurrentDB.Testing\KurrentDB.Testing.csproj" />
     <ProjectReference Include="..\KurrentDB\KurrentDB.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Protobuf Include="..\Protos\Grpc\persistent.proto" GrpcServices="Client" />
   </ItemGroup>
 </Project>

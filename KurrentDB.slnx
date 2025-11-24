@@ -73,6 +73,7 @@
     <Project Path="src\KurrentDB.BufferManagement.Tests\KurrentDB.BufferManagement.Tests.csproj" />
     <Project Path="src\KurrentDB.Common.Tests\KurrentDB.Common.Tests.csproj" />
     <Project Path="src\KurrentDB.Core.Tests\KurrentDB.Core.Tests.csproj" />
+    <Project Path="src\KurrentDB.Core.TUnit.Tests\KurrentDB.Core.TUnit.Tests.csproj" />
     <Project Path="src\KurrentDB.Core.XUnit.Tests\KurrentDB.Core.XUnit.Tests.csproj" />
     <Project Path="src\KurrentDB.Licensing.Tests\KurrentDB.Licensing.Tests.csproj" />
     <Project Path="src\KurrentDB.LogV3.Tests\KurrentDB.LogV3.Tests.csproj" />

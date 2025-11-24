@@ -26,6 +26,7 @@
       "KurrentDB.Core.Testing.XUnit\\KurrentDB.Core.Testing.XUnit.csproj",
       "KurrentDB.Core.Testing\\KurrentDB.Core.Testing.csproj",
       "KurrentDB.Core.Tests\\KurrentDB.Core.Tests.csproj",
+      "KurrentDB.Core.TUnit.Tests\\KurrentDB.Core.TUnit.Tests.csproj",
       "KurrentDB.Core.XUnit.Tests\\KurrentDB.Core.XUnit.Tests.csproj",
       "KurrentDB.Core\\KurrentDB.Core.csproj",
       "KurrentDB.Diagnostics.LogsEndpointPlugin\\KurrentDB.Diagnostics.LogsEndpointPlugin.csproj",

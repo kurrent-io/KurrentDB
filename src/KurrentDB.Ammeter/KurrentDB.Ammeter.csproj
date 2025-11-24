@@ -15,6 +15,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.Api.V2.Tests\KurrentDB.Api.V2.Tests.csproj" />
+		<ProjectReference Include="..\KurrentDB.Core.TUnit.Tests\KurrentDB.Core.TUnit.Tests.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

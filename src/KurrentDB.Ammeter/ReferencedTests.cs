@@ -6,3 +6,6 @@ namespace KurrentDB.Ammeter;
 // Discover all the tests in KurrentDB.Api.Tests
 [InheritsTests]
 public class ApiTestsDiscoverer : KurrentDB.Api.Tests.DummyTests { }
+
+[InheritsTests]
+public class ApiTestsDiscovererCore : KurrentDB.Core.TUnit.Tests.DummyTests { }
