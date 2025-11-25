@@ -1,0 +1,84 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
+using Eventuous;
+
+namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
+
+// The name of this class drives the custom index stream names
+public class CustomIndex : Aggregate<CustomIndexState> {
+	public void Create(
+		string eventFilter,
+		string partitionKeySelector,
+		PartitionKeyType partitionKeyType,
+		bool enabled) {
+
+		switch (State.Status) {
+			case CustomIndexStatus.NonExistent: {
+				// new
+				Apply(new CustomIndexEvents.Created {
+					EventFilter = eventFilter,
+					PartitionKeySelector = partitionKeySelector,
+					PartitionKeyType = partitionKeyType,
+				});
+
+				if (enabled) {
+					Enable();
+				}
+				break;
+			}
+			case CustomIndexStatus.Disabled:
+			case CustomIndexStatus.Enabled: {
+				// already exists
+				if (State.Status is CustomIndexStatus.Disabled && enabled ||
+					State.Status is CustomIndexStatus.Enabled && !enabled ||
+					State.EventFilter != eventFilter ||
+					State.PartitionKeySelector != partitionKeySelector ||
+					State.PartitionKeyType != partitionKeyType)
+					throw new CustomIndexException("Custom Index already exists");
+
+				break; // idempotent
+			}
+
+			case CustomIndexStatus.Deleted:
+				//qq tbd if we should allow this, likely too much room for confusion in consumers
+				throw new CustomIndexException("Custom Index cannot be recreated");
+		}
+	}
+
+	public void Enable() {
+		switch (State.Status) {
+			case CustomIndexStatus.NonExistent:
+			case CustomIndexStatus.Deleted:
+				throw new CustomIndexException("Custom Index does not exist");
+			case CustomIndexStatus.Disabled:
+				Apply(new CustomIndexEvents.Enabled());
+				break;
+			case CustomIndexStatus.Enabled:
+				break; // idempotent
+		}
+	}
+
+	public void Disable() {
+		switch (State.Status) {
+			case CustomIndexStatus.NonExistent:
+			case CustomIndexStatus.Deleted:
+				throw new CustomIndexException("Custom Index does not exist");
+			case CustomIndexStatus.Disabled:
+				break; // idempotent
+			case CustomIndexStatus.Enabled:
+				Apply(new CustomIndexEvents.Disabled());
+				break;
+		}
+	}
+
+	public void Delete() {
+		if (State.Status is CustomIndexStatus.NonExistent or CustomIndexStatus.Deleted)
+			return; // idempotent
+
+		if (State.Status is CustomIndexStatus.Enabled)
+			Disable();
+
+		Apply(new CustomIndexEvents.Deleted());
+	}
+}

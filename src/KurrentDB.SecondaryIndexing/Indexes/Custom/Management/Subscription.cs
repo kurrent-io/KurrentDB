@@ -7,10 +7,13 @@ using System.Text.Json;
 using System.Threading.Channels;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
+using Kurrent.Surge.Schema;
+using Kurrent.Surge.Schema.Serializers;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
+using KurrentDB.Core.Resilience;
 using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
@@ -22,9 +25,10 @@ using Serilog;
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 
 public class Subscription : ISecondaryIndexReader {
-	private const string ManagementStream = "$secondary-indexes-custom";
-
+	private const string ManagementStream = CustomIndexConstants.ManagementStream;
+	private readonly ISystemClient _client;
 	private readonly IPublisher _publisher;
+	private readonly ISchemaSerializer _serializer;
 	private readonly SecondaryIndexingPluginOptions _options;
 	private readonly DuckDBConnectionPool _db;
 	private readonly Meter _meter;
@@ -36,20 +40,25 @@ public class Subscription : ISecondaryIndexReader {
 	private static readonly ILogger Log = Serilog.Log.ForContext<Subscription>();
 
 	public Subscription(
+		ISystemClient client,
 		IPublisher publisher,
+		ISchemaSerializer serializer,
 		SecondaryIndexingPluginOptions options,
 		DuckDBConnectionPool db,
 		IReadIndex<string> readIndex,
 		Meter meter,
 		CancellationToken token) {
+
+		_client = client;
 		_publisher = publisher;
+		_serializer = serializer;
 		_options = options;
 		_db = db;
 		_meter = meter;
 		_readIndex = readIndex;
 
 		_cts = CancellationTokenSource.CreateLinkedTokenSource(token);
-		_channel = Channel.CreateUnbounded<ReadResponse>();
+		_channel = Channel.CreateBounded<ReadResponse>(new BoundedChannelOptions(capacity: 20));
 	}
 
 	public async Task Start() {
@@ -79,9 +88,14 @@ public class Subscription : ISecondaryIndexReader {
 	private async Task StartInternal() {
 		_cts.Token.ThrowIfCancellationRequested();
 
-		await _publisher.SubscribeToStream(StreamRevision.Start, ManagementStream, _channel, ResiliencePipeline.Empty, _cts.Token);
+		await _client.Subscriptions.SubscribeToIndex(
+			position: Position.Start,
+			indexName: ManagementStream,
+			channel: _channel,
+			resiliencePipeline: ResiliencePipelines.RetryForever,
+			cancellationToken: _cts.Token);
 
-		Dictionary<string, CreatedEvent> createdIndexes = new();
+		Dictionary<string, CustomIndexEvents.Created> createdIndexes = new();
 		HashSet<string> deletedIndexes = new();
 
 		bool caughtUp = false;
@@ -107,7 +121,7 @@ public class Subscription : ISecondaryIndexReader {
 					}
 
 					foreach (var createdIndex in createdIndexes)
-						await CreateCustomIndex(createdIndex.Value);
+						await CreateCustomIndex(createdIndex.Key, createdIndex.Value);
 
 					break;
 				case ReadResponse.EventReceived eventReceived:
@@ -115,26 +129,32 @@ public class Subscription : ISecondaryIndexReader {
 
 					Log.Verbose("Subscription to: {stream} received event type: {type}", ManagementStream, evt.OriginalEvent.EventType);
 
-					switch (evt.OriginalEvent.EventType) {
-						case "$created":
-							var createdEvent = JsonSerializer.Deserialize<CreatedEvent>(evt.Event.Data.Span);
+					var deserializedEvent = await _serializer.Deserialize(
+						data: evt.Event.Data,
+						schemaInfo: new(evt.Event.EventType, SchemaDataFormat.Json));
+
+					//qq refactor, put place that writes and reads stream names together.
+					var streamName = evt.Event.EventStreamId;
+					var customIndexName = streamName[(streamName.IndexOf('-') + 1) ..];
+
+					switch (deserializedEvent) {
+						case CustomIndexEvents.Created createdEvent:
 
 							if (caughtUp)
-								await CreateCustomIndex(createdEvent);
+								await CreateCustomIndex(customIndexName, createdEvent);
 							else {
-								createdIndexes[createdEvent.Name] = createdEvent;
-								deletedIndexes.Remove(createdEvent.Name);
+								createdIndexes[customIndexName] = createdEvent;
+								deletedIndexes.Remove(customIndexName);
 							}
 
 							break;
-						case "$deleted":
-							var deletedEvent = JsonSerializer.Deserialize<DeletedEvent>(evt.Event.Data.Span);
+						case CustomIndexEvents.Deleted deletedEvent:
 
 							if (caughtUp)
-								await DeleteCustomIndex(deletedEvent);
+								await DeleteCustomIndex(customIndexName);
 							else {
-								deletedIndexes.Add(deletedEvent.Name);
-								createdIndexes.Remove(deletedEvent.Name);
+								deletedIndexes.Add(customIndexName);
+								createdIndexes.Remove(customIndexName);
 							}
 
 							break;
@@ -148,28 +168,27 @@ public class Subscription : ISecondaryIndexReader {
 		}
 	}
 
-	private ValueTask CreateCustomIndex(CreatedEvent createdEvent) {
+	private ValueTask CreateCustomIndex(string indexName, CustomIndexEvents.Created createdEvent) {
 		return createdEvent.PartitionKeyType switch {
-			null => CreateCustomIndex<NullPartitionKey>(createdEvent),
-			"number" => CreateCustomIndex<NumberPartitionKey>(createdEvent),
-			"string" => CreateCustomIndex<StringPartitionKey>(createdEvent),
-			"int16" => CreateCustomIndex<Int16PartitionKey>(createdEvent),
-			"int32" => CreateCustomIndex<Int32PartitionKey>(createdEvent),
-			"int64" => CreateCustomIndex<Int64PartitionKey>(createdEvent),
-			"uint32" => CreateCustomIndex<UInt32PartitionKey>(createdEvent),
-			"uint64" => CreateCustomIndex<UInt64PartitionKey>(createdEvent),
+			PartitionKeyType.None => CreateCustomIndex<NullPartitionKey>(indexName, createdEvent),
+			PartitionKeyType.Number => CreateCustomIndex<NumberPartitionKey>(indexName, createdEvent),
+			PartitionKeyType.String => CreateCustomIndex<StringPartitionKey>(indexName, createdEvent),
+			PartitionKeyType.Int16 => CreateCustomIndex<Int16PartitionKey>(indexName, createdEvent),
+			PartitionKeyType.Int32 => CreateCustomIndex<Int32PartitionKey>(indexName, createdEvent),
+			PartitionKeyType.Int64 => CreateCustomIndex<Int64PartitionKey>(indexName, createdEvent),
+			PartitionKeyType.UInt32 => CreateCustomIndex<UInt32PartitionKey>(indexName, createdEvent),
+			PartitionKeyType.UInt64 => CreateCustomIndex<UInt64PartitionKey>(indexName, createdEvent),
 			_ => throw new ArgumentOutOfRangeException(nameof(createdEvent.PartitionKeyType))
 		};
 	}
 
-	private async ValueTask CreateCustomIndex<TPartitionKey>(CreatedEvent createdEvent) where TPartitionKey : ITPartitionKey {
-		var indexName = createdEvent.Name;
+	private async ValueTask CreateCustomIndex<TPartitionKey>(string indexName, CustomIndexEvents.Created createdEvent) where TPartitionKey : ITPartitionKey {
 		Log.Debug("Creating custom index: {index}", indexName);
 
 		var inFlightRecords = new IndexInFlightRecords(_options);
 
 		var processor = new CustomIndexProcessor<TPartitionKey>(
-			indexName: createdEvent.Name,
+			indexName: indexName,
 			jsEventFilter: createdEvent.EventFilter,
 			jsPartitionKeySelector: createdEvent.PartitionKeySelector,
 			db: _db,
@@ -186,12 +205,11 @@ public class Subscription : ISecondaryIndexReader {
 			options: _options,
 			token: _cts.Token);
 
-		_subscriptions.TryAdd(createdEvent.Name, subscription);
+		_subscriptions.TryAdd(indexName, subscription);
 		await subscription.Start();
 	}
 
-	private async Task DeleteCustomIndex(DeletedEvent deletedEvent) {
-		var indexName = deletedEvent.Name;
+	private async Task DeleteCustomIndex(string indexName) {
 		Log.Debug("Deleting custom index: {index}", indexName);
 
 		var writeLock = AcquireWriteLockForIndex(indexName, out var index);
@@ -206,7 +224,7 @@ public class Subscription : ISecondaryIndexReader {
 
 	private void DropSubscriptions(string indexName) {
 		Log.Verbose("Dropping subscriptions to custom index: {index}", indexName);
-		_publisher.Publish(new StorageMessage.SecondaryIndexDeleted(CustomIndex.GetStreamNameRegex(indexName)));
+		_publisher.Publish(new StorageMessage.SecondaryIndexDeleted(Custom.CustomIndex.GetStreamNameRegex(indexName)));
 	}
 
 	private static void DeleteCustomIndexTable(DuckDBAdvancedConnection connection, string indexName) {
@@ -215,12 +233,12 @@ public class Subscription : ISecondaryIndexReader {
 	}
 
 	public bool CanReadIndex(string indexStream) {
-		CustomIndex.ParseStreamName(indexStream, out var indexName, out _);
+		Custom.CustomIndex.ParseStreamName(indexStream, out var indexName, out _);
 		return _subscriptions.ContainsKey(indexName);
 	}
 
 	public TFPos GetLastIndexedPosition(string indexStream) {
-		CustomIndex.ParseStreamName(indexStream, out var indexName, out _);
+		Custom.CustomIndex.ParseStreamName(indexStream, out var indexName, out _);
 		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var index))
 			return TFPos.Invalid;
 
@@ -229,7 +247,7 @@ public class Subscription : ISecondaryIndexReader {
 	}
 
 	public ValueTask<ClientMessage.ReadIndexEventsForwardCompleted> ReadForwards(ClientMessage.ReadIndexEventsForward msg, CancellationToken token) {
-		CustomIndex.ParseStreamName(msg.IndexName, out var indexName, out _);
+		Custom.CustomIndex.ParseStreamName(msg.IndexName, out var indexName, out _);
 		Log.Verbose("Custom index: {index} received read forwards request", indexName);
 		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var index)) {
 			var result = new ClientMessage.ReadIndexEventsForwardCompleted(
@@ -244,7 +262,7 @@ public class Subscription : ISecondaryIndexReader {
 	}
 
 	public ValueTask<ClientMessage.ReadIndexEventsBackwardCompleted> ReadBackwards(ClientMessage.ReadIndexEventsBackward msg, CancellationToken token) {
-		CustomIndex.ParseStreamName(msg.IndexName, out var indexName, out _);
+		Custom.CustomIndex.ParseStreamName(msg.IndexName, out var indexName, out _);
 		Log.Verbose("Custom index: {index} received read backwards request", indexName);
 		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var index)) {
 			var result = new ClientMessage.ReadIndexEventsBackwardCompleted(

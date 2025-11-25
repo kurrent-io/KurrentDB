@@ -4,6 +4,8 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
 using Kurrent.Quack.ConnectionPool;
+using Kurrent.Surge.Schema.Serializers;
+using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
@@ -22,7 +24,9 @@ public sealed class CustomIndexManager :
 	IHostedService,
 	ISecondaryIndexReader {
 
+	private readonly ISystemClient _client;
 	private readonly IPublisher _publisher;
+	private readonly ISchemaSerializer _serializer;
 	private readonly SecondaryIndexingPluginOptions _options;
 	private readonly DuckDBConnectionPool _db;
 	private readonly IReadIndex<string> _index;
@@ -35,13 +39,18 @@ public sealed class CustomIndexManager :
 
 	[Experimental("SECONDARY_INDEX")]
 	public CustomIndexManager(
+		ISystemClient client,
 		IPublisher publisher,
 		ISubscriber subscriber,
+		ISchemaSerializer serializer,
 		SecondaryIndexingPluginOptions options,
 		DuckDBConnectionPool db,
 		IReadIndex<string> index,
 		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)] Meter meter) {
+
+		_client = client;
 		_publisher = publisher;
+		_serializer = serializer;
 		_options = options;
 		_db = db;
 		_index = index;
@@ -54,7 +63,7 @@ public sealed class CustomIndexManager :
 
 	private async Task InitializeManagementStreamSubscription() {
 		Log.Verbose("Custom indexes: Initializing subscription to management stream");
-		_subscription = new Subscription(_publisher, _options, _db, _index, _meter, _cts!.Token);
+		_subscription = new Subscription(_client, _publisher, _serializer, _options, _db, _index, _meter, _cts!.Token);
 		await _subscription.Start();
 	}
 

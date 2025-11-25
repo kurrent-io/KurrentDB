@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
 using EventStore.Plugins;
 using EventStore.Plugins.Diagnostics;
+using Kurrent.Surge.Schema;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services.Storage;
@@ -14,6 +15,7 @@ using KurrentDB.SecondaryIndexing.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.Custom;
+using KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
 using KurrentDB.SecondaryIndexing.Stats;
@@ -78,6 +80,22 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		var indexReaders = app.ApplicationServices.GetServices<ISecondaryIndexReader>();
 
 		secondaryIndexReaders.AddReaders(indexReaders.ToArray());
+
+		var ct = CancellationToken.None;
+		_ = RegisterType<CustomIndexEvents.Created>(ct);
+		_ = RegisterType<CustomIndexEvents.Enabled>(ct);
+		_ = RegisterType<CustomIndexEvents.Disabled>(ct);
+		_ = RegisterType<CustomIndexEvents.Deleted>(ct);
+
+		//qq hack. exceptions. how come this is async anyway, what does this actually do
+		async Task RegisterType<T>(CancellationToken ct) {
+			await app.ApplicationServices
+				.GetRequiredService<ISchemaRegistry>()
+				.RegisterSchema<T>(
+					new SchemaInfo(SchemaName: $"{CustomIndexConstants.Category}{typeof(T).Name}", SchemaDataFormat.Json),
+					cancellationToken: ct);
+
+		}
 	}
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {

@@ -10,6 +10,7 @@ using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.SecondaryIndexing.Indexes;
+using KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.SecondaryIndexing.Subscriptions;
@@ -73,8 +74,9 @@ public sealed partial class DefaultIndexSubscription(
 				var resolvedEvent = eventReceived.Event;
 
 				if (resolvedEvent.Event.EventType.StartsWith('$') || resolvedEvent.Event.EventStreamId.StartsWith('$')) {
-					// ignore system events
-					continue;
+					if (!resolvedEvent.Event.EventStreamId.StartsWith(CustomIndexConstants.Category)) //qq
+						// ignore system events
+						continue;
 				}
 
 				indexProcessor.TryIndex(resolvedEvent);

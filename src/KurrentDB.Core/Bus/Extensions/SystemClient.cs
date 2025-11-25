@@ -73,6 +73,7 @@ public interface IWriteOperations {
 public interface ISubscriptionsOperations {
 	Task SubscribeToAll(Position? position, IEventFilter filter, uint maxSearchWindow, Channel<ReadResponse> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken);
 	Task SubscribeToStream(StreamRevision? revision, string stream, Channel<ReadResponse> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken);
+	Task SubscribeToIndex(Position? position, string indexName, Channel<ReadResponse> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken);
 }
 
 [PublicAPI]
@@ -151,6 +152,8 @@ public class SystemClient : ISystemClient {
 			Publisher.SubscribeToAll(position, filter, maxSearchWindow, channel, resiliencePipeline, cancellationToken);
 		public Task SubscribeToStream(StreamRevision? revision, string stream, Channel<ReadResponse> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken) =>
 			Publisher.SubscribeToStream(revision, stream, channel, resiliencePipeline, cancellationToken);
+		public Task SubscribeToIndex(Position? position, string indexName, Channel<ReadResponse> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken) =>
+			Publisher.SubscribeToIndex(position, indexName, channel, resiliencePipeline, cancellationToken);
 	}
 
 	#endregion . Subscriptions .

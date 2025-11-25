@@ -176,4 +176,48 @@ public static class PublisherSubscribeExtensions {
 
 		return Task.CompletedTask;
 	}
+
+	public static Task SubscribeToIndex(this IPublisher publisher, Position? position, string indexName, Channel<ReadResponse> channel, ResiliencePipeline resiliencePipeline,
+		CancellationToken cancellationToken) {
+		_ = Task.Run(async () => {
+			var resilienceContext = ResilienceContextPool.Shared
+				.Get(nameof(SubscribeToIndex), cancellationToken);
+
+			try {
+				await resiliencePipeline.ExecuteAsync(
+					static async (ctx, state) => {
+						await foreach (var response in state.Publisher.SubscribeToIndex(state.IndexName, state.Checkpoint, ctx.CancellationToken)) {
+							// keeping track of the last position before an error occurs
+							// so we can let the policy know where to start from
+							if (response is ReadResponse.EventReceived eventReceived) {
+								state.Checkpoint = new Position(
+									(ulong)eventReceived.Event.OriginalPosition!.Value.CommitPosition,
+									(ulong)eventReceived.Event.OriginalPosition!.Value.PreparePosition
+								);
+							}
+
+							await state.Channel.Writer.WriteAsync(response, ctx.CancellationToken);
+						}
+					},
+					resilienceContext, (
+						Publisher: publisher,
+						Checkpoint: position,
+						IndexName: indexName,
+						Channel: channel
+					)
+				);
+
+				channel.Writer.TryComplete();
+			} catch (OperationCanceledException) {
+				channel.Writer.TryComplete();
+			} catch (Exception ex) {
+				channel.Writer.TryComplete(ex);
+			} finally {
+				ResilienceContextPool.Shared
+					.Return(resilienceContext);
+			}
+		}, cancellationToken);
+
+		return Task.CompletedTask;
+	}
 }
