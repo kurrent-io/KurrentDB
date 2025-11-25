@@ -661,8 +661,8 @@ public class PersistentSubscription {
 
 			TryPushingMessagesToClients();
 			TryMarkCheckpoint(true);
-			if ((_state & PersistentSubscriptionState.Behind |
-				 PersistentSubscriptionState.OutstandingPageRequest) ==
+			if ((_state & (PersistentSubscriptionState.Behind |
+				 PersistentSubscriptionState.OutstandingPageRequest)) ==
 				PersistentSubscriptionState.Behind)
 				TryReadingNewBatch();
 		}
