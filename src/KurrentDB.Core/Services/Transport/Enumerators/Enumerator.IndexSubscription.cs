@@ -87,7 +87,11 @@ partial class Enumerator {
 					(checkpoint, sequenceNumber) = await GoLive(checkpoint, sequenceNumber, ct);
 				}
 			} catch (Exception ex) {
-				if (ex is not (OperationCanceledException or ReadResponseException.InvalidPosition)) {
+				if (ex is not (
+				    OperationCanceledException or
+				    ReadResponseException.InvalidPosition or
+				    ReadResponseException.IndexNotFound or
+				    ReadResponseException.StreamDeleted)) {
 					Log.Error(ex, "Subscription {SubscriptionId} to {IndexName} experienced an error.", _subscriptionId, _indexName);
 				}
 
@@ -271,7 +275,8 @@ partial class Enumerator {
 									return;
 								case SubscriptionDropReason.NotFound:
 									throw new ReadResponseException.IndexNotFound(_indexName);
-								case SubscriptionDropReason.StreamDeleted: // applies only to regular streams
+								case SubscriptionDropReason.StreamDeleted: // applies only to custom indexes
+									throw new ReadResponseException.StreamDeleted(_indexName);
 								default:
 									throw ReadResponseException.UnknownError.Create(dropped.Reason);
 							}

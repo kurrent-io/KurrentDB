@@ -201,6 +201,12 @@ public class Subscription : ISecondaryIndexReader {
 
 		await index.Stop();
 		await index.Delete();
+		DropSubscriptions(indexName);
+	}
+
+	private void DropSubscriptions(string indexName) {
+		Log.Verbose("Dropping subscriptions to custom index: {index}", indexName);
+		_publisher.Publish(new StorageMessage.SecondaryIndexDeleted(CustomIndex.GetStreamNameRegex(indexName)));
 	}
 
 	private static void DeleteCustomIndexTable(DuckDBAdvancedConnection connection, string indexName) {

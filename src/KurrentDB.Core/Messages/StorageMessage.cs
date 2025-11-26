@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Common.Utils;
@@ -310,6 +311,11 @@ public static partial class StorageMessage {
 	public partial class SecondaryIndexCommitted(string indexName, ResolvedEvent @event) : Message {
 		public readonly ResolvedEvent Event = @event;
 		public readonly string IndexName = indexName;
+	}
+
+	[DerivedMessage(CoreMessage.Storage)]
+	public partial class SecondaryIndexDeleted(Regex streamIdRegex) : Message {
+		public readonly Regex StreamIdRegex = streamIdRegex;
 	}
 
 	[DerivedMessage(CoreMessage.Storage)]
