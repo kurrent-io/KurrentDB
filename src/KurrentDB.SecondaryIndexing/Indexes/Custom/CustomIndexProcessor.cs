@@ -16,7 +16,6 @@ using KurrentDB.Core.Messages;
 using KurrentDB.SecondaryIndexing.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
-using static KurrentDB.SecondaryIndexing.Indexes.Custom.CustomSql;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom;
 
@@ -26,27 +25,23 @@ internal abstract class CustomIndexProcessor: Disposable, ISecondaryIndexProcess
 	public abstract bool TryIndex(ResolvedEvent evt);
 	public abstract TFPos GetLastPosition();
 	public abstract SecondaryIndexProgressTracker Tracker { get; }
-	public abstract string TableName { get; }
-	public static string GetTableName(string indexName) => $"idx_custom__{indexName}";
 }
 
 internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where TPartitionKey : ITPartitionKey {
 	private readonly DuckDBConnectionPool _db;
-	private readonly string _tableName;
 	private readonly Function _eventFilter;
 	private readonly Function? _partitionKeySelector;
 	private readonly ResolvedEventJsObject _resolvedEventJsObject;
-
 	private readonly IndexInFlightRecords _inFlightRecords;
-	private readonly DuckDBAdvancedConnection _connection;
 	private readonly IPublisher _publisher;
+	private readonly DuckDBAdvancedConnection _connection;
+	private readonly CustomIndexSql<TPartitionKey> _sql;
 
 	private TFPos _lastPosition;
 	private Appender _appender;
 	private Atomic.Boolean _committing;
 
 	public string IndexName { get; }
-	public override string TableName => _tableName;
 
 	public override TFPos GetLastPosition() => _lastPosition;
 	public override SecondaryIndexProgressTracker Tracker { get; }
@@ -56,6 +51,7 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 		string jsEventFilter,
 		string? jsPartitionKeySelector,
 		DuckDBConnectionPool db,
+		CustomIndexSql<TPartitionKey> sql,
 		IndexInFlightRecords inFlightRecords,
 		IPublisher publisher,
 		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)]
@@ -64,6 +60,7 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 		TimeProvider? clock = null) {
 		IndexName = indexName;
 		_db = db;
+		_sql = sql;
 
 		_inFlightRecords = inFlightRecords;
 		_publisher = publisher;
@@ -76,10 +73,9 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 		_resolvedEventJsObject = new(engine);
 
 		_connection = db.Open();
+		_sql.CreateCustomIndex(_connection);
 
-		_tableName = GetTableName(indexName);
-		TryCreateTable();
-		_appender = new(_connection, _tableName.ToUtf8Bytes().Span);
+		_appender = new(_connection, _sql.TableName.Span);
 
 		var serviceName = metricsConfiguration?.ServiceName ?? "kurrentdb";
 		Tracker = new(indexName, serviceName, meter, clock ?? TimeProvider.System);
@@ -89,20 +85,13 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 		Tracker.InitLastIndexed(_lastPosition.CommitPosition, lastTimestamp);
 	}
 
-	private void TryCreateTable() {
-		var partitionKeySqlStatement = TPartitionKey.GetDuckDbColumnCreateStatement();
-		if (partitionKeySqlStatement != string.Empty)
-			partitionKeySqlStatement = $",{partitionKeySqlStatement}";
-		_connection.CreateCustomIndexNonQuery(_tableName, partitionKeySqlStatement);
-	}
-
 	public void Delete() {
 		if (!IsDisposed)
 			throw new Exception("Cannot delete as the index processor has not been disposed yet.");
 
 		using (_db.Rent(out var connection)) {
 			// during deletion, we rent a connection from the pool as _connection has already been disposed at this point
-			connection.DeleteCustomIndexNonQuery(_tableName);
+			_sql.DeleteCustomIndex(connection);
 		}
 	}
 
@@ -183,7 +172,7 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 		(TFPos pos, DateTimeOffset timestamp) result = (TFPos.Invalid, DateTimeOffset.MinValue);
 
 		var checkpointArgs = new GetCheckpointQueryArgs(IndexName);
-		var checkpoint = _connection.QueryFirstOrDefault<GetCheckpointQueryArgs, GetCheckpointResult, GetCheckpointQuery>(checkpointArgs);
+		var checkpoint = _sql.GetCheckpoint(_connection, checkpointArgs);
 		if (checkpoint != null) {
 			var pos = new TFPos(checkpoint.Value.CommitPosition ?? checkpoint.Value.PreparePosition, checkpoint.Value.PreparePosition);
 			var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(checkpoint.Value.Timestamp);
@@ -192,7 +181,7 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 			result = (pos, timestamp);
 		}
 
-		var lastIndexed = _connection.GetLastIndexedRecordQuery(_tableName);
+		var lastIndexed = _sql.GetLastIndexedRecord(_connection);
 		if (lastIndexed != null) {
 			var pos = new TFPos(lastIndexed.Value.CommitPosition ?? lastIndexed.Value.PreparePosition, lastIndexed.Value.PreparePosition);
 			var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(lastIndexed.Value.Timestamp);
@@ -215,7 +204,7 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 			Created = new DateTimeOffset(timestamp).ToUnixTimeMilliseconds()
 		};
 
-		_connection.ExecuteNonQuery<SetCheckpointQueryArgs, SetCheckpointNonQuery>(checkpointArgs);
+		_sql.SetCheckpoint(_connection, checkpointArgs);
 	}
 
 	public override void Commit() => Commit(true);

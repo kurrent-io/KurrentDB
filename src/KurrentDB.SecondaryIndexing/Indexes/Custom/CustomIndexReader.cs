@@ -5,13 +5,12 @@ using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Storage;
-using static KurrentDB.SecondaryIndexing.Indexes.Custom.CustomSql;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom;
 
 internal class CustomIndexReader<TPartitionKey>(
-	string tableName,
 	DuckDBConnectionPool db,
+	CustomIndexSql<TPartitionKey> sql,
 	IndexInFlightRecords inFlightRecords,
 	IReadIndex<string> index
 ) : SecondaryIndexReaderBase(db, index) where TPartitionKey : ITPartitionKey {
@@ -34,13 +33,13 @@ internal class CustomIndexReader<TPartitionKey>(
 			Count = maxCount
 		};
 
-		if (!TryGetPartitionQuery(id, out var partitionQuery))
+		if (!TryGetPartitionKey(id, out var partitionKey))
 			return [];
 
 		using (Db.Rent(out var connection)) {
 			return excludeFirst ?
-				connection.ReadCustomIndexQueryExcl(tableName, partitionQuery, args).ToList():
-				connection.ReadCustomIndexQueryIncl(tableName, partitionQuery, args).ToList();
+				sql.ReadCustomIndexQueryExcl(connection, partitionKey, args).ToList():
+				sql.ReadCustomIndexQueryIncl(connection, partitionKey, args).ToList();
 		}
 	}
 
@@ -55,27 +54,27 @@ internal class CustomIndexReader<TPartitionKey>(
 			Count = maxCount
 		};
 
-		if (!TryGetPartitionQuery(id, out var partitionQuery))
+		if (!TryGetPartitionKey(id, out var partitionKey))
 			return [];
 
 		using (Db.Rent(out var connection)) {
 			return excludeFirst ?
-				connection.ReadCustomIndexBackQueryExcl(tableName, partitionQuery, args).ToList():
-				connection.ReadCustomIndexBackQueryIncl(tableName, partitionQuery, args).ToList();
+				sql.ReadCustomIndexBackQueryExcl(connection, partitionKey, args).ToList():
+				sql.ReadCustomIndexBackQueryIncl(connection, partitionKey, args).ToList();
 		}
 	}
 
 	public override TFPos GetLastIndexedPosition(string _) => throw new NotSupportedException(); // never called
 	public override bool CanReadIndex(string _) => throw new NotSupportedException(); // never called
 
-	private static bool TryGetPartitionQuery(string id, out string partitionQuery) {
-		partitionQuery = string.Empty;
+	private static bool TryGetPartitionKey(string id, out ITPartitionKey partitionKey) {
+		partitionKey = new NullPartitionKey();
+
 		if (id == string.Empty)
 			return true;
 
 		try {
-			var partitionKey = TPartitionKey.ParseFrom(id);
-			partitionQuery = $"and {partitionKey.GetDuckDbColumnQueryStatement()}";
+			partitionKey = TPartitionKey.ParseFrom(id);
 			return true;
 		} catch {
 			// invalid partition key

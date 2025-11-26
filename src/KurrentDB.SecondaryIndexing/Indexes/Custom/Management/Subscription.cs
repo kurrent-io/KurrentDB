@@ -187,16 +187,19 @@ public class Subscription : ISecondaryIndexReader {
 
 		var inFlightRecords = new IndexInFlightRecords(_options);
 
+		var sql = new CustomIndexSql<TPartitionKey>(indexName);
+
 		var processor = new CustomIndexProcessor<TPartitionKey>(
 			indexName: indexName,
 			jsEventFilter: createdEvent.EventFilter,
 			jsPartitionKeySelector: createdEvent.PartitionKeySelector,
 			db: _db,
+			sql: sql,
 			inFlightRecords: inFlightRecords,
 			publisher: _publisher,
 			meter: _meter);
 
-		var reader = new CustomIndexReader<TPartitionKey>(processor.TableName, _db, inFlightRecords, _readIndex);
+		var reader = new CustomIndexReader<TPartitionKey>(_db, sql, inFlightRecords, _readIndex);
 
 		CustomIndexSubscription subscription = new CustomIndexSubscription<TPartitionKey>(
 			publisher: _publisher,
@@ -228,8 +231,7 @@ public class Subscription : ISecondaryIndexReader {
 	}
 
 	private static void DeleteCustomIndexTable(DuckDBAdvancedConnection connection, string indexName) {
-		var tableName = CustomIndexProcessor.GetTableName(indexName);
-		connection.DeleteCustomIndexNonQuery(tableName);
+		CustomIndexSql.DeleteCustomIndex(connection, indexName);
 	}
 
 	public bool CanReadIndex(string indexStream) {
