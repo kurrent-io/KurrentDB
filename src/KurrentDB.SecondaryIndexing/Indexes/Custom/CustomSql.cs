@@ -111,8 +111,6 @@ internal static class CustomSql {
 
 		public static ReadOnlySpan<byte> CommandText => "select log_position, commit_position, created from idx_custom_checkpoints where index_name=$1 limit 1"u8;
 
-		public static bool UseStreamingMode => false;
-
 		public static GetCheckpointResult Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.TryReadInt64(), row.ReadInt64());
 	}
 
