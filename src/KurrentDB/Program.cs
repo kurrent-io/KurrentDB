@@ -265,6 +265,7 @@ try {
 			}
 
 			hostedService.Node.Startup.Configure(app);
+			app.MapStaticAssets();
 			app.MapRazorComponents<App>()
 				.DisableAntiforgery()
 				.AddInteractiveServerRenderMode()
