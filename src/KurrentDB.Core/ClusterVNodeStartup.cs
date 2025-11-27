@@ -139,7 +139,6 @@ public class ClusterVNodeStartup<TStreamId>
 			component.ConfigureApplication(app, _configuration);
 
 		_authenticationProvider.ConfigureEndpoints(app);
-		app.UseStaticFiles();
 
 		// Select an appropriate controller action and codec.
 		//    Success -> Add InternalContext (HttpEntityManager, urimatch, ...) to HttpContext
