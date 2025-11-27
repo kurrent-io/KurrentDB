@@ -6,6 +6,18 @@ order: 1
 
 This page contains the release notes for EventStoreDB 24.10
 
+## [24.10.8](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.8)
+
+27 November 2025
+
+### Fixed persistent subscription stall if client sends no Acks or Naks (PR [#5384](https://github.com/kurrent-io/KurrentDB/pull/5384))
+
+Previously, if a client is subscribed with a persistent subscription but neither ACKS nor NAKS any events, the server would continue to retry them per the persistent subscription configuration and then eventually park them. However, eventually the buffer would become empty and the subscription would stall until the leader changes or the subsystem is restarted. With the default settings it would take 4 hours of no ACKS or NAKS for the buffer to empty.
+
+The behavior is now fixed so the server will continue sending and parking messages.
+
+Note that the stall can only occur if the client does not send any ACKS or NAKS, which is an indicator of a problem in the client code.
+
 ## [24.10.7](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.7)
 
 05 September 2025
