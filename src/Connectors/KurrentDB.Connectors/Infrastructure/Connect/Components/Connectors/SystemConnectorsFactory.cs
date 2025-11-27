@@ -67,9 +67,6 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ISe
         SinkConnector CreateSinkConnector() {
 	        var sinkOptions = config.GetRequiredOptions<SinkOptions>();
 
-	        if (ConnectorCatalogue.TryGetConnector(connector.GetType(), out ConnectorCatalogueItem item) && item.ConnectorType == typeof(SqlSink)) {
-		        sinkOptions = sinkOptions with { Reducer = sinkOptions.Reducer with { Enabled = true } };
-	        }
 
 	        if (sinkOptions.Transformer.Enabled) {
 		        var transformer = new JintRecordTransformer(sinkOptions.Transformer.DecodeFunction()) {
@@ -79,8 +76,9 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ISe
 		        connector = new RecordTransformerSink(connector, transformer);
 	        }
 
-	        if (sinkOptions.Reducer.Enabled) {
-                var reducer = new JintSqlReducer(sinkOptions.Reducer.DecodeQuery()) {
+	        if (ConnectorCatalogue.TryGetConnector(connector.GetType(), out ConnectorCatalogueItem item) && item.ConnectorType == typeof(SqlSink)) {
+                var mappings = sinkOptions.Reducer.DecodeMappings();
+                var reducer = new JintSqlReducer(mappings) {
                     // ReSharper disable once AccessToModifiedClosure
                     ErrorCallback = errorType => SinkMetrics.TrackReduceError(connectorId, connector.MetricsLabel, errorType)
                 };
