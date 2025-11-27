@@ -20,7 +20,6 @@ internal abstract class CustomIndexSubscription {
 
 	public abstract ValueTask Start();
 	public abstract ValueTask Stop();
-	public abstract ValueTask Delete();
 	public abstract ValueTask<ClientMessage.ReadIndexEventsForwardCompleted> ReadForwards(ClientMessage.ReadIndexEventsForward msg, CancellationToken token);
 	public abstract ValueTask<ClientMessage.ReadIndexEventsBackwardCompleted> ReadBackwards(ClientMessage.ReadIndexEventsBackward msg, CancellationToken token);
 	public abstract TFPos GetLastIndexedPosition();
@@ -155,11 +154,6 @@ internal sealed class CustomIndexSubscription<TPartitionKey>(
 		Log.Verbose("Stopping custom index subscription for: {index}", indexProcessor.IndexName);
 		await DisposeAsync();
 		indexProcessor.Dispose();
-	}
-
-	public override ValueTask Delete() {
-		indexProcessor.Delete();
-		return ValueTask.CompletedTask;
 	}
 
 	public override ValueTask<ClientMessage.ReadIndexEventsForwardCompleted> ReadForwards(ClientMessage.ReadIndexEventsForward msg, CancellationToken token) =>

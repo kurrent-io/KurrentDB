@@ -19,7 +19,6 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.SecondaryIndexing.Subscriptions;
-using Polly;
 using Serilog;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
@@ -85,6 +84,11 @@ public class Subscription : ISecondaryIndexReader {
 		}
 	}
 
+	class CustomIndexReadState {
+		public CustomIndexEvents.Created Created { get; set; } = null!;
+		public bool Enabled { get; set; }
+	}
+
 	private async Task StartInternal() {
 		_cts.Token.ThrowIfCancellationRequested();
 
@@ -95,8 +99,8 @@ public class Subscription : ISecondaryIndexReader {
 			resiliencePipeline: ResiliencePipelines.RetryForever,
 			cancellationToken: _cts.Token);
 
-		Dictionary<string, CustomIndexEvents.Created> createdIndexes = new();
-		HashSet<string> deletedIndexes = new();
+		Dictionary<string, CustomIndexReadState> customIndexes = [];
+		HashSet<string> deletedIndexes = [];
 
 		bool caughtUp = false;
 
@@ -120,8 +124,11 @@ public class Subscription : ISecondaryIndexReader {
 						}
 					}
 
-					foreach (var createdIndex in createdIndexes)
-						await CreateCustomIndex(createdIndex.Key, createdIndex.Value);
+					foreach (var (name, state) in customIndexes) {
+						if (state.Enabled) {
+							await EnableCustomIndex(name, state.Created);
+						}
+					}
 
 					break;
 				case ReadResponse.EventReceived eventReceived:
@@ -138,26 +145,45 @@ public class Subscription : ISecondaryIndexReader {
 					var customIndexName = streamName[(streamName.IndexOf('-') + 1) ..];
 
 					switch (deserializedEvent) {
-						case CustomIndexEvents.Created createdEvent:
+						case CustomIndexEvents.Created createdEvent: {
+							deletedIndexes.Remove(customIndexName);
+							customIndexes[customIndexName] = new() {
+								Created = createdEvent,
+								Enabled = false,
+							};
+							break;
+						}
+						case CustomIndexEvents.Enabled enabledEvent: {
+							if (!customIndexes.TryGetValue(customIndexName, out var state))
+								break;
+
+							state.Enabled = true;
 
 							if (caughtUp)
-								await CreateCustomIndex(customIndexName, createdEvent);
-							else {
-								createdIndexes[customIndexName] = createdEvent;
-								deletedIndexes.Remove(customIndexName);
-							}
+								await EnableCustomIndex(customIndexName, state.Created);
 
 							break;
-						case CustomIndexEvents.Deleted deletedEvent:
+						}
+						case CustomIndexEvents.Disabled disabledEvent: {
+							if (!customIndexes.TryGetValue(customIndexName, out var state))
+								break;
+
+							state.Enabled = false;
 
 							if (caughtUp)
-								await DeleteCustomIndex(customIndexName);
-							else {
-								deletedIndexes.Add(customIndexName);
-								createdIndexes.Remove(customIndexName);
-							}
+								await DisableCustomIndex(customIndexName);
 
 							break;
+						}
+						case CustomIndexEvents.Deleted deletedEvent: {
+							deletedIndexes.Add(customIndexName);
+							customIndexes.Remove(customIndexName);
+
+							if (caughtUp)
+								DeleteCustomIndex(customIndexName);
+
+							break;
+						}
 						default:
 							Log.Warning("Subscription to: {stream} received unknown event type: {type} at event number: {eventNumber}",
 								ManagementStream, evt.OriginalEvent.EventType, evt.OriginalEventNumber);
@@ -168,21 +194,21 @@ public class Subscription : ISecondaryIndexReader {
 		}
 	}
 
-	private ValueTask CreateCustomIndex(string indexName, CustomIndexEvents.Created createdEvent) {
+	private ValueTask EnableCustomIndex(string indexName, CustomIndexEvents.Created createdEvent) {
 		return createdEvent.PartitionKeyType switch {
-			PartitionKeyType.None => CreateCustomIndex<NullPartitionKey>(indexName, createdEvent),
-			PartitionKeyType.Number => CreateCustomIndex<NumberPartitionKey>(indexName, createdEvent),
-			PartitionKeyType.String => CreateCustomIndex<StringPartitionKey>(indexName, createdEvent),
-			PartitionKeyType.Int16 => CreateCustomIndex<Int16PartitionKey>(indexName, createdEvent),
-			PartitionKeyType.Int32 => CreateCustomIndex<Int32PartitionKey>(indexName, createdEvent),
-			PartitionKeyType.Int64 => CreateCustomIndex<Int64PartitionKey>(indexName, createdEvent),
-			PartitionKeyType.UInt32 => CreateCustomIndex<UInt32PartitionKey>(indexName, createdEvent),
-			PartitionKeyType.UInt64 => CreateCustomIndex<UInt64PartitionKey>(indexName, createdEvent),
+			PartitionKeyType.None => EnableCustomIndex<NullPartitionKey>(indexName, createdEvent),
+			PartitionKeyType.Number => EnableCustomIndex<NumberPartitionKey>(indexName, createdEvent),
+			PartitionKeyType.String => EnableCustomIndex<StringPartitionKey>(indexName, createdEvent),
+			PartitionKeyType.Int16 => EnableCustomIndex<Int16PartitionKey>(indexName, createdEvent),
+			PartitionKeyType.Int32 => EnableCustomIndex<Int32PartitionKey>(indexName, createdEvent),
+			PartitionKeyType.Int64 => EnableCustomIndex<Int64PartitionKey>(indexName, createdEvent),
+			PartitionKeyType.UInt32 => EnableCustomIndex<UInt32PartitionKey>(indexName, createdEvent),
+			PartitionKeyType.UInt64 => EnableCustomIndex<UInt64PartitionKey>(indexName, createdEvent),
 			_ => throw new ArgumentOutOfRangeException(nameof(createdEvent.PartitionKeyType))
 		};
 	}
 
-	private async ValueTask CreateCustomIndex<TPartitionKey>(string indexName, CustomIndexEvents.Created createdEvent) where TPartitionKey : ITPartitionKey {
+	private async ValueTask EnableCustomIndex<TPartitionKey>(string indexName, CustomIndexEvents.Created createdEvent) where TPartitionKey : ITPartitionKey {
 		Log.Debug("Creating custom index: {index}", indexName);
 
 		var inFlightRecords = new IndexInFlightRecords(_options);
@@ -212,8 +238,8 @@ public class Subscription : ISecondaryIndexReader {
 		await subscription.Start();
 	}
 
-	private async Task DeleteCustomIndex(string indexName) {
-		Log.Debug("Deleting custom index: {index}", indexName);
+	private async Task DisableCustomIndex(string indexName) {
+		Log.Debug("Disabling custom index: {index}", indexName);
 
 		var writeLock = AcquireWriteLockForIndex(indexName, out var index);
 		using (writeLock) {
@@ -221,8 +247,15 @@ public class Subscription : ISecondaryIndexReader {
 		}
 
 		await index.Stop();
-		await index.Delete();
 		DropSubscriptions(indexName);
+	}
+
+	private void DeleteCustomIndex(string indexName) {
+		Log.Debug("Deleting custom index: {index}", indexName);
+
+		using (_db.Rent(out var connection)) {
+			DeleteCustomIndexTable(connection, indexName);
+		}
 	}
 
 	private void DropSubscriptions(string indexName) {
