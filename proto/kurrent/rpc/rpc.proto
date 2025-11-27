@@ -70,5 +70,5 @@ message ErrorMetadata {
 extend google.protobuf.EnumValueOptions {
   // Provides additional information about error conditions for automated
   // code generation and documentation.
-  optional ErrorMetadata error = 50000;
+  optional ErrorMetadata error = 2113;
 }

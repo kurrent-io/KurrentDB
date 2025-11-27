@@ -6,24 +6,40 @@ on:
       os:
         required: true
         type: string
-      arch:
-        required: true
-        type: string
       cs_symbols:
         required: false
         type: string
         default: ""
 
 jobs:
+# todo, consider matrix of slnf files to group assemblies together. each job could run a separate slnf.
+# this may be more practical after githubactionstestrunner supports MTP, making failures easier to understand at a glance.
+  discover-projects:
+    runs-on: ubuntu-latest
+    name: discover-projects-${{ inputs.os }}
+    outputs:
+      modules: ${{ steps.discover.outputs.modules }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: discover
+        run: |
+          find src -maxdepth 3 -name "*.Tests.csproj" > projects.txt
+          echo "src/KurrentDB/KurrentDB.csproj" >> projects.txt
+          modules=$(cat projects.txt | jq -R . | jq -sc .)
+          echo "modules=$modules" >> $GITHUB_OUTPUT
+  # each assembly is built in its own job because the repo is small and the build is fairly quick.
+  # building it once and copying the build output between jobs is much slower
   build:
+    needs: discover-projects
     env:
       DB_IMAGE: kurrentdb-test-container
     strategy:
       fail-fast: false
       matrix:
         configuration: [release]
+        module: ${{ fromJson(needs.discover-projects.outputs.modules) }}
     runs-on: ${{ inputs.os }}
-    name: ci/github/build-${{ inputs.os }}
+    name: ${{ matrix.module }}
     steps:
     -  
       name: Install Azure Emulator
@@ -32,14 +48,15 @@ jobs:
         npm install -g azurite
         azurite --location /tmp/azurite &
         curl -I http://127.0.0.1:10000/ --retry 5 --retry-delay 1 --retry-connrefused
-    -  
-      name: Free Disk Space (Ubuntu)
-      if: ${{ !startsWith(inputs.os, 'windows') }}
-      uses: jlumbroso/free-disk-space@v1.3.1
-      with:
-        tool-cache: false
-        dotnet: false
-        docker-images: false
+# takes time and may no longer be necessary now that each step only does one assembly
+#    -  
+#      name: Free Disk Space (Ubuntu)
+#      if: ${{ !startsWith(inputs.os, 'windows') }}
+#      uses: jlumbroso/free-disk-space@v1.3.1
+#      with:
+#        tool-cache: false
+#        dotnet: false
+#        docker-images: false
     -  
       name: Checkout
       uses: actions/checkout@v4
@@ -48,12 +65,20 @@ jobs:
       if: ${{ !startsWith(inputs.os, 'windows') }}
       uses: docker/setup-buildx-action@v2
     -  
-      name: Install net8.0
+      name: Install net10.0
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: 10.0.x
+    -
+      name: Use nuget cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          nuget-${{ runner.os }}-
     -  
-      name: Clear Nuget Cache
+      name: Clear Nuget Config
       shell: powershell
       if: ${{ startsWith(inputs.os, 'windows') }}
       run: |
@@ -64,16 +89,21 @@ jobs:
     -  
       name: Compile
       shell: bash
-      run: |
-        dotnet build --configuration ${{ matrix.configuration }} -p:Platform=${{ inputs.arch }} src/KurrentDB.sln
+      run: >
+        dotnet build
+        --configuration ${{ matrix.configuration }}
+        -p:DefineConstants=${{ inputs.cs_symbols }}
+        ${{ matrix.module }}
     -  
       name: Verify Build
+      if: ${{ matrix.module == 'src/KurrentDB/KurrentDB.csproj' }}
       shell: bash
       run: |
-        dotnet run --project src/KurrentDB --configuration ${{ matrix.configuration }} -- --insecure --what-if
+        dotnet run --project ${{ matrix.module }} --configuration ${{ matrix.configuration }} -- --insecure --what-if
+    # so that the oauth tests have an up to date server image to run against
     -  
       name: Build Test Image
-      if: ${{ !startsWith(inputs.os, 'windows') }}
+      if: ${{ matrix.module == 'src/KurrentDB.Auth.OAuth.Tests/KurrentDB.Auth.OAuth.Tests.csproj' && !startsWith(inputs.os, 'windows') }}
       uses: docker/build-push-action@v4
       with:
         context: .
@@ -82,27 +112,28 @@ jobs:
         tags: ${{ env.DB_IMAGE }}
     -  
       name: Run Tests
+      if: ${{ endsWith(matrix.module, '.Tests.csproj') }}
       shell: bash
       run: >
         dotnet test
-        --configuration ${{ matrix.configuration }}
-        -p:Platform=${{ inputs.arch }}
-        -p:DefineConstants=${{ inputs.cs_symbols }}
-        --blame
-        --blame-hang-timeout 5min
-        --blame-hang-dump-type mini
-        --settings ./ci/ci.local.runsettings
-        --logger:GitHubActions
-        --logger:trx
-        --logger:"console;verbosity=normal"
         --results-directory $(pwd)/test-results
-        src/KurrentDB.sln
-        -- --report-trx --results-directory $(pwd)/test-results
+        --no-build
+        --configuration ${{ matrix.configuration }}
+        --project ${{ matrix.module }}
+    -
+      name: Remove slashes
+      if: ${{ endsWith(matrix.module, '.Tests.csproj') }}
+      id: remove_slashes
+      shell: bash
+      run: |
+        base="${{ matrix.module }}"
+        safe="${base//\//-}"
+        echo "value=$safe" >> $GITHUB_OUTPUT
     -  
       name: Publish Test Results (All)
       uses: actions/upload-artifact@v4
-      if: always()
+      if: ${{ endsWith(matrix.module, '.Tests.csproj') }}
       with:
-        name: test-results-${{ matrix.configuration }}-${{ inputs.os }}
+        name: test-results-${{ steps.remove_slashes.outputs.value }}
         path: |
           test-results/*.trx

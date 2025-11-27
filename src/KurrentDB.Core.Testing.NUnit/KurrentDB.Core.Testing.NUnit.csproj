@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+		<IsKurrentNUnit>true</IsKurrentNUnit>
+	</PropertyGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\KurrentDB.Core.Testing\KurrentDB.Core.Testing.csproj" />
+	</ItemGroup>
+</Project>

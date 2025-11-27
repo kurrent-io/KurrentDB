@@ -842,12 +842,12 @@ public partial class PTable : ISearchTable, IDisposable {
 		lowKeyOut = new IndexEntryKey(ulong.MaxValue, long.MaxValue);
 		highKeyOut = new IndexEntryKey(ulong.MinValue, long.MinValue);
 
-		ReadOnlySpan<Midpoint> midpoints = null;
+		ReadOnlySpan<Midpoint> midpoints = default;
 		if (_midpoints != null) {
 			midpoints = _midpoints.AsSpan();
 		}
 
-		if (midpoints == null)
+		if (midpoints.IsEmpty)
 			return new Range(0, Count - 1);
 
 		long lowerMidpoint = LowerMidpointBound(midpoints, lowKey);

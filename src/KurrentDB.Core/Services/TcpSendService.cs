@@ -6,6 +6,7 @@ using KurrentDB.Core.Messages;
 
 namespace KurrentDB.Core.Services;
 
+// Called by worker bus concurrently. Thread Safe.
 public class TcpSendService : IHandle<TcpMessage.TcpSend> {
 	public void Handle(TcpMessage.TcpSend message) {
 		// todo: histogram metric?

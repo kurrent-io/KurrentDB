@@ -604,7 +604,7 @@ public partial class PTable {
 				midpoints.Add(new Midpoint(previousKey, previousIndex));
 			} else {
 				fs.Seek(PTableHeader.Size + index * indexEntrySize, SeekOrigin.Begin);
-				fs.Read(buffer, 0, indexKeySize);
+				fs.ReadExactly(buffer, 0, indexKeySize);
 				IndexEntryKey key = new IndexEntryKey(BitConverter.ToUInt64(buffer, 8),
 					BitConverter.ToInt64(buffer, 0));
 				midpoints.Add(new Midpoint(key, index));

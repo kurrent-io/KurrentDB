@@ -1,9 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>true</ImplicitUsings>
-		<LangVersion>preview</LangVersion>
 		<IsPackable>false</IsPackable>
 		<IsPlugin>true</IsPlugin>
 		<Deterministic>true</Deterministic>
@@ -58,6 +56,9 @@
 		<PackageReference Include="Serilog.Sinks.Debug" />
 		<PackageReference Include="Serilog.Sinks.Seq" />
 		<PackageReference Include="Serilog.Enrichers.Environment" />
+		<PackageReference Include="System.Linq.Async">
+			<ExcludeAssets>compile</ExcludeAssets>
+		</PackageReference>
 	</ItemGroup>
 
   <ItemGroup>

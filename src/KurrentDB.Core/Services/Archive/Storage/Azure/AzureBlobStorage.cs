@@ -68,7 +68,7 @@ public class AzureBlobStorage : IBlobStorage {
 	public async ValueTask StoreAsync(Stream readableStream, string name, CancellationToken ct) {
 		var blobClient = NativeClient.GetBlobClient(name);
 		try {
-			await blobClient.UploadAsync(readableStream, ct);
+			await blobClient.UploadAsync(readableStream, overwrite: true, ct);
 		} catch (RequestFailedException ex) {
 			Logger.Error(ex, "Failed to store object '{name}'", name);
 			throw;

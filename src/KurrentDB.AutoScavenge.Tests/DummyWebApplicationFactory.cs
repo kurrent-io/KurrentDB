@@ -10,7 +10,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace KurrentDB.AutoScavenge.Tests;
 
-public class DummyWebApplicationFactory : WebApplicationFactory<DummyStartup>, IAsyncLifetime {
+public sealed class DummyWebApplicationFactory : WebApplicationFactory<DummyStartup>, IAsyncLifetime {
 	protected override void ConfigureWebHost(IWebHostBuilder builder) {
 		builder.UseContentRoot(Directory.GetCurrentDirectory());
 		builder.ConfigureAppConfiguration((_, config) => {
@@ -29,11 +29,11 @@ public class DummyWebApplicationFactory : WebApplicationFactory<DummyStartup>, I
 			});
 	}
 
-	public async Task InitializeAsync() {
+	public async ValueTask InitializeAsync() {
 		await Services.GetRequiredService<AutoScavengePlugin>().Start();
 	}
 
-	async Task IAsyncLifetime.DisposeAsync() {
+	async ValueTask IAsyncDisposable.DisposeAsync() {
 		await Services.GetRequiredService<AutoScavengePlugin>().Stop();
 	}
 }

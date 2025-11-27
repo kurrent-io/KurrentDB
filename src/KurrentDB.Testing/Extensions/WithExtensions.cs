@@ -13,7 +13,7 @@ public static class WithExtensions {
     }
 
     [DebuggerStepThrough]
-    public static T With<T>(this T instance, Func<T, T> update) {
+    public static U Apply<T, U>(this T instance, Func<T, U> update) {
         return update(instance);
     }
 }

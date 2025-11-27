@@ -24,7 +24,6 @@ public class RequestValidatorProviderTests {
         var actualValidator = sut.GetValidatorFor<AppendRequest>();
 
         // Assert
-        await Assert.That(actualValidator).IsEquivalentTo(validator);
         await Assert.That(actualValidator).IsSameReferenceAs(validator);
     }
 

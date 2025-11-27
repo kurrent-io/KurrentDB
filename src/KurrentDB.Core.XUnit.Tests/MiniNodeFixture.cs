@@ -7,16 +7,16 @@ using KurrentDB.Core.Tests.Helpers;
 
 namespace KurrentDB.Core.XUnit.Tests;
 
-public class MiniNodeFixture<T> : DirectoryFixture<T> {
+public sealed class MiniNodeFixture<T> : DirectoryFixture<T> {
 	public MiniNode<LogFormat.V2, string> MiniNode { get; private set; }
 
-	public override async Task InitializeAsync() {
+	public override async ValueTask InitializeAsync() {
 		await base.InitializeAsync();
 		MiniNode = new MiniNode<LogFormat.V2, string>(Directory, inMemDb: false);
 		await MiniNode.Start();
 	}
 
-	public override async Task DisposeAsync() {
+	public override async ValueTask DisposeAsync() {
 		await MiniNode.Shutdown(keepDb: false);
 		await base.DisposeAsync();
 	}

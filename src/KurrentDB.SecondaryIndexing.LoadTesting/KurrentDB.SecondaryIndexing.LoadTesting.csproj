@@ -2,17 +2,16 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <IsTestingPlatformApplication>false</IsTestingPlatformApplication>
+        <NoWarn>CS7022</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\Connectors\KurrentDB.Connectors.TestServer\KurrentDB.Connectors.TestServer.csproj" />
-      <ProjectReference Include="..\KurrentDB.Core.Tests\KurrentDB.Core.Tests.csproj" />
       <ProjectReference Include="..\KurrentDB.SecondaryIndexing.Tests\KurrentDB.SecondaryIndexing.Tests.csproj" />
       <ProjectReference Include="..\KurrentDB.SecondaryIndexing\KurrentDB.SecondaryIndexing.csproj" />
-      <ProjectReference Include="..\KurrentDB.Surge.Testing\KurrentDB.Surge.Testing.csproj" />
     </ItemGroup>
 
 	<ItemGroup>

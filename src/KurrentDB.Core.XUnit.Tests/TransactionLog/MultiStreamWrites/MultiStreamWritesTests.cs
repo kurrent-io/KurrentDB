@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.UserManagement;
 using Xunit;
 using Assert = Xunit.Assert;
@@ -16,7 +17,13 @@ namespace KurrentDB.Core.XUnit.Tests.TransactionLog.MultiStreamWrites;
 
 public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixture)
 	: IClassFixture<MiniNodeFixture<MultiStreamWritesTests>> {
-	private static Event NewEvent => new(Guid.NewGuid(), "type", false, "data", "metadata");
+	private static Event NewEvent => CreateEvent();
+	private static Event CreateEvent(int dataSize = 4) => new(
+		eventId: Guid.NewGuid(),
+		eventType: "type",
+		isJson: false,
+		data: new string('#', dataSize),
+		metadata: "metadata");
 
 	[Fact]
 	public async Task succeeds() {
@@ -41,6 +48,24 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		Assert.Equal(0, completed.FailureStreamIndexes.Length);
 		Assert.True(completed.PreparePosition > 0);
 		Assert.Equal(completed.PreparePosition, completed.CommitPosition);
+
+		// check we can read
+		var client = new SystemClient(fixture.MiniNode.Node.MainQueue);
+		var lastA = await client.Reading.ReadStreamBackwards(A, StreamRevision.End, maxCount: 1).SingleAsync();
+		var lastB = await client.Reading.ReadStreamBackwards(B, StreamRevision.End, maxCount: 1).SingleAsync();
+		Assert.Equal(0, lastA.OriginalEventNumber);
+		Assert.Equal(0, lastB.OriginalEventNumber);
+
+		// check we can still read after clearing the caches
+		var readIndex = fixture.MiniNode.Node.ReadIndex as Core.Services.Storage.ReaderIndex.IReadIndex<string>;
+		var indexBackend = readIndex.IndexReader.Backend as Core.Services.Storage.ReaderIndex.IndexBackend<string>;
+		indexBackend.StreamLastEventNumberCache.Clear();
+		indexBackend.StreamMetadataCache.Clear();
+
+		lastA = await client.Reading.ReadStreamBackwards(A, StreamRevision.End, maxCount: 1).SingleAsync();
+		lastB = await client.Reading.ReadStreamBackwards(B, StreamRevision.End, maxCount: 1).SingleAsync();
+		Assert.Equal(0, lastA.OriginalEventNumber);
+		Assert.Equal(0, lastB.OriginalEventNumber);
 	}
 
 	[Fact]
@@ -58,6 +83,24 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		Assert.Equal(OperationResult.Success, completed.Result);
 		Assert.Equal([0, 0], completed.FirstEventNumbers.ToArray());
 		Assert.Equal([1, 0], completed.LastEventNumbers.ToArray());
+
+		// check we can read
+		var client = new SystemClient(fixture.MiniNode.Node.MainQueue);
+		var lastA = await client.Reading.ReadStreamBackwards(A, StreamRevision.End, maxCount: 1).SingleAsync();
+		var lastB = await client.Reading.ReadStreamBackwards(B, StreamRevision.End, maxCount: 1).SingleAsync();
+		Assert.Equal(1, lastA.OriginalEventNumber);
+		Assert.Equal(0, lastB.OriginalEventNumber);
+
+		// check we can still read after clearing the caches
+		var readIndex = fixture.MiniNode.Node.ReadIndex as Core.Services.Storage.ReaderIndex.IReadIndex<string>;
+		var indexBackend = readIndex.IndexReader.Backend as Core.Services.Storage.ReaderIndex.IndexBackend<string>;
+		indexBackend.StreamLastEventNumberCache.Clear();
+		indexBackend.StreamMetadataCache.Clear();
+
+		lastA = await client.Reading.ReadStreamBackwards(A, StreamRevision.End, maxCount: 1).SingleAsync();
+		lastB = await client.Reading.ReadStreamBackwards(B, StreamRevision.End, maxCount: 1).SingleAsync();
+		Assert.Equal(1, lastA.OriginalEventNumber);
+		Assert.Equal(0, lastB.OriginalEventNumber);
 	}
 
 	[Fact]
@@ -157,6 +200,43 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		Assert.Equal(OperationResult.Success, completed.Result);
 		Assert.Equal([2, 1], completed.FirstEventNumbers.ToArray());
 		Assert.Equal([3, 2], completed.LastEventNumbers.ToArray());
+	}
+
+	[Fact]
+	public async Task succeeds_when_reaching_chunk_boundary() {
+		const string test = nameof(succeeds_when_reaching_chunk_boundary);
+
+		var streamA = $"{test}-a";
+		var streamB = $"{test}-b";
+		var streamC = $"{test}-c";
+
+		var client = new SystemClient(fixture.MiniNode.Node.MainQueue);
+		var chunkSize = fixture.MiniNode.Options.Database.ChunkSize;
+
+		// Use up 2/3 of the remaining space in the chunk so that the next write does not fit
+		var writer = fixture.MiniNode.Node.Db.Config.WriterCheckpoint.Read();
+		var spaceLeftInChunk = chunkSize - (int)writer % chunkSize;
+		if (spaceLeftInChunk > 10_000) {
+			await client.Writing.WriteEvents(streamA, [CreateEvent(spaceLeftInChunk * 2 / 3)]);
+		}
+
+		// A write that does not fit in chunk and so creates a new one
+		var thirdOfAChunk = chunkSize / 3;
+		var completed = await WriteEvents(
+			eventStreamIds: [streamB, streamC],
+			expectedVersions: [ExpectedVersion.NoStream, ExpectedVersion.NoStream],
+			events: [CreateEvent(thirdOfAChunk), CreateEvent(thirdOfAChunk)],
+			eventStreamIndexes: [0, 1]);
+
+		Assert.Equal(OperationResult.Success, completed.Result);
+		Assert.Equal((writer / chunkSize) + 1, completed.CommitPosition / chunkSize); // important: wrote to the next chunk
+		Assert.Equal([0, 0], completed.FirstEventNumbers.ToArray());
+		Assert.Equal([0, 0], completed.LastEventNumbers.ToArray());
+
+		var lastA = await client.Reading.ReadStreamBackwards(streamB, StreamRevision.End, maxCount: 1).SingleAsync();
+		var lastB = await client.Reading.ReadStreamBackwards(streamC, StreamRevision.End, maxCount: 1).SingleAsync();
+		Assert.Equal(0, lastA.OriginalEventNumber);
+		Assert.Equal(0, lastB.OriginalEventNumber);
 	}
 
 	[Fact]

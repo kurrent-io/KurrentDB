@@ -13,8 +13,7 @@ option csharp_namespace = "KurrentDB.Connectors.Management.Contracts.Queries";
 service ConnectorsQueryService {
   rpc List(ListConnectors) returns (ListConnectorsResult) {
     option (google.api.http) = {
-      get: "/connectors",
-      body: "*"
+      get: "/connectors"
     };
   }
 

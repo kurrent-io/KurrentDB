@@ -26,6 +26,7 @@ public class EventNumberCachedTests {
 
 		// initialize any underlying data structures (the dictionary in this case)
 		lruCache.Put("test", new EventNumberCached(0, 0, null));
+		lruCache.Put("test2", new EventNumberCached(0, 0, null));
 
 		var mem = MemUsage.Calculate(() =>
 			lruCache.Put(new string('x', 10), new EventNumberCached(10, 23, null)));
@@ -45,6 +46,7 @@ public class EventNumberCachedTests {
 
 		// initialize any underlying data structures (the dictionary in this case)
 		lruCache.Put(123, new EventNumberCached(0, 0, null));
+		lruCache.Put(124, new EventNumberCached(0, 0, null));
 
 		var mem = MemUsage.Calculate(() =>
 			lruCache.Put(456, new EventNumberCached(10, 123, null)));

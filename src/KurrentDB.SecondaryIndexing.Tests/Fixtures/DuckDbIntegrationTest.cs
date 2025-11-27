@@ -18,7 +18,7 @@ public abstract class DuckDbIntegrationTest<T> : DirectoryPerTest<T> {
 		schema.CreateSchema(DuckDb);
 	}
 
-	public override async Task DisposeAsync() {
+	public override async ValueTask DisposeAsync() {
 		DuckDb.Dispose();
 		await base.DisposeAsync();
 	}

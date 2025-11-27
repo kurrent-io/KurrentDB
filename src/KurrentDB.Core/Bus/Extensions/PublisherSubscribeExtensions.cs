@@ -38,7 +38,7 @@ public static class PublisherSubscribeExtensions {
 		);
 
 		while (!cancellationToken.IsCancellationRequested) {
-			if (!await sub.MoveNextAsync(cancellationToken))
+			if (!await sub.MoveNextAsync())
 				break;
 
 			yield return sub.Current;
@@ -84,7 +84,7 @@ public static class PublisherSubscribeExtensions {
 		);
 
 		while (!cancellationToken.IsCancellationRequested) {
-			if (!await sub.MoveNextAsync(cancellationToken))
+			if (!await sub.MoveNextAsync())
 				break;
 
 			yield return sub.Current;

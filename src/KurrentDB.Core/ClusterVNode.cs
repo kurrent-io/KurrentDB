@@ -133,6 +133,7 @@ public abstract class ClusterVNode {
 	abstract public IAuthenticationProvider AuthenticationProvider { get; }
 	abstract public IHttpService HttpService { get; }
 	abstract public VNodeInfo NodeInfo { get; }
+	abstract public IReadIndex ReadIndex { get; }
 	abstract public CertificateDelegates.ClientCertificateValidator InternalClientCertificateValidator { get; }
 	abstract public Func<X509Certificate2> CertificateSelector { get; }
 	abstract public Func<X509Certificate2Collection> IntermediateCertificatesSelector { get; }
@@ -179,6 +180,7 @@ public class ClusterVNode<TStreamId> :
 
 	public override VNodeInfo NodeInfo { get; }
 
+	public override IReadIndex<TStreamId> ReadIndex => _readIndex;
 
 	private readonly IPublisher _mainQueue;
 	private readonly ISubscriber _mainBus;
@@ -759,7 +761,7 @@ public class ClusterVNode<TStreamId> :
 		// Storage Reader
 		var storageReader = new StorageReaderService<TStreamId>(_mainQueue, _mainBus, readIndex,
 			logFormat.SystemStreams, Db.Config.WriterCheckpoint.AsReadOnly(),
-			virtualStreamReader, secondaryIndexReaders);
+			virtualStreamReader, secondaryIndexReaders, options.Database.InternalConcurrentReadsLimit);
 
 		_mainBus.Subscribe<SystemMessage.SystemInit>(storageReader);
 		_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(storageReader);
