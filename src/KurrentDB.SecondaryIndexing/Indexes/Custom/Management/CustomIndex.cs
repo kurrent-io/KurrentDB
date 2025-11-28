@@ -11,20 +11,13 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 		string eventFilter,
 		string partitionKeySelector,
 		PartitionKeyType partitionKeyType,
-		bool enabled) {
+		bool enabled,
+		bool force) {
 
 		switch (State.Status) {
 			case CustomIndexStatus.NonExistent: {
 				// new
-				Apply(new CustomIndexEvents.Created {
-					EventFilter = eventFilter,
-					PartitionKeySelector = partitionKeySelector,
-					PartitionKeyType = partitionKeyType,
-				});
-
-				if (enabled) {
-					Enable();
-				}
+				CreateCustomIndex();
 				break;
 			}
 			case CustomIndexStatus.Disabled:
@@ -40,9 +33,26 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 				break; // idempotent
 			}
 
-			case CustomIndexStatus.Deleted:
-				//qq tbd if we should allow this, likely too much room for confusion in consumers
-				throw new CustomIndexException("Custom Index cannot be recreated");
+			case CustomIndexStatus.Deleted: {
+				if (!force)
+					throw new CustomIndexException("Custom Index cannot be recreated unless forced");
+				CreateCustomIndex();
+				break;
+			}
+		}
+
+		return;
+
+		void CreateCustomIndex() {
+			Apply(new CustomIndexEvents.Created {
+				EventFilter = eventFilter,
+				PartitionKeySelector = partitionKeySelector,
+				PartitionKeyType = partitionKeyType,
+			});
+
+			if (enabled) {
+				Enable();
+			}
 		}
 	}
 

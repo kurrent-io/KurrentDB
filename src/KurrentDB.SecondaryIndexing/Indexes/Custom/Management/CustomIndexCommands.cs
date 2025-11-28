@@ -14,6 +14,8 @@ public static class CustomIndexCommands {
 		public PartitionKeyType PartitionKeyType { get; set; }
 
 		public bool Enabled { get; set; }
+
+		public bool Force { get; set; }
 	}
 
 	public partial class Enable {

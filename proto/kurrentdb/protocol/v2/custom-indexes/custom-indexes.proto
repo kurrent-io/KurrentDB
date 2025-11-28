@@ -51,6 +51,7 @@ message CreateCustomIndexRequest {
   string partition_key_selector = 3;
   KeyType partition_key_type = 4;
   bool enabled = 5;
+  bool force = 6;
 }
 
 message CreateCustomIndexResponse {

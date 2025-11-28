@@ -102,6 +102,7 @@ file static class Extensions {
 			PartitionKeySelector = self.PartitionKeySelector,
 			PartitionKeyType = self.PartitionKeyType.Convert(),
 			Enabled = self.Enabled,
+			Force = self.Force,
 		};
 
 	public static CustomIndexCommands.Enable Convert(this EnableCustomIndexRequest self) =>
