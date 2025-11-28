@@ -43,7 +43,7 @@ public class CustomIndexesServiceHttpTests {
 	[Test]
 	public async ValueTask foo() {
 		var response = await Client.PostAsync<Response>(
-			new RestRequest("/v2/custom-indexes/create")
+			new RestRequest("/v2/custom-indexes")
 			.AddJsonBody(
 				new {
 					Name = "my-index-via-http",

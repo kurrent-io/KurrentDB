@@ -21,7 +21,7 @@ service CustomIndexesService {
   //qq decide on route prefix
   rpc CreateCustomIndex(CreateCustomIndexRequest) returns (CreateCustomIndexResponse) {
     option (google.api.http) = {
-      post: "/v2/custom-indexes/create/{name}",
+      post: "/v2/custom-indexes/{name}",
       body: "*"
     };
   };
