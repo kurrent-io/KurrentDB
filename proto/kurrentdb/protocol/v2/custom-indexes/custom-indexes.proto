@@ -28,13 +28,13 @@ service CustomIndexesService {
 
   rpc EnableCustomIndex(EnableCustomIndexRequest) returns (EnableCustomIndexResponse) {
     option (google.api.http) = {
-      post: "/v2/custom-indexes/enable/{name}",
+      post: "/v2/custom-indexes/{name}/enable",
     };
   }
 
   rpc DisableCustomIndex(DisableCustomIndexRequest) returns (DisableCustomIndexResponse) {
     option (google.api.http) = {
-      post: "/v2/custom-indexes/disable/{name}",
+      post: "/v2/custom-indexes/{name}/disable",
     };
   }
 
