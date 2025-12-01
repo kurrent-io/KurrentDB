@@ -73,14 +73,9 @@
 		<Content Include="app2.ico" />
 		<None Remove="certs\**\*" />
 		<Content Include="certs\**\*" CopyToOutputDirectory="PreserveNewest" />
-		<Content Remove="tmp\log\127.0.0.1-2113-cluster-node\log-err20251201.json" />
 	</ItemGroup>
 	<ItemGroup>
 	  <_ContentIncludedByDefault Remove="Components\Layout\CheckAuthorization.razor" />
-	</ItemGroup>
-	<ItemGroup>
-	  <Folder Include="tmp\index\stream-existence\" />
-	  <Folder Include="tmp\log\127.0.0.1-2113-cluster-node\" />
 	</ItemGroup>
 	<!-- TODO(jen20): Investigate which of these are correct -->
 	<PropertyGroup>
