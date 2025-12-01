@@ -27,6 +27,10 @@ public sealed partial class SecondaryIndexSubscription(
 	private Task? _processingTask;
 
 	public void Subscribe() {
+		if (_cts == null) {
+			log.LogWarning("Subscription already terminated");
+			return;
+		}
 		var position = indexProcessor.GetLastPosition();
 		var startFrom = position == TFPos.Invalid ? Position.Start : Position.FromInt64(position.CommitPosition, position.PreparePosition);
 		log.LogInformation("Starting indexing subscription from {StartFrom}", startFrom);

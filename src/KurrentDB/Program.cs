@@ -265,12 +265,17 @@ try {
 			}
 
 			hostedService.Node.Startup.Configure(app);
+
+			// MapStaticAssets now works correctly because legacy API middleware
+			// is configured to run before UseRouting() in ClusterVNodeStartup.cs
 			app.MapStaticAssets();
+
 			app.MapRazorComponents<App>()
 				.DisableAntiforgery()
 				.AddInteractiveServerRenderMode()
 				.AddInteractiveWebAssemblyRenderMode()
 				.AddAdditionalAssemblies(typeof(_Imports).Assembly);
+
 			await app.RunAsync(token);
 
 			exitCodeSource.TrySetResult(0);
