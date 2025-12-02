@@ -18,7 +18,7 @@ public class CustomIndexDomainService : CommandService<CustomIndex, CustomIndexS
 				eventFilter: cmd.EventFilter,
 				partitionKeySelector: cmd.PartitionKeySelector,
 				partitionKeyType: cmd.PartitionKeyType,
-				enabled: cmd.Enabled,
+				enable: cmd.Enable,
 				force: cmd.Force));
 
 		On<CustomIndexCommands.Enable>()

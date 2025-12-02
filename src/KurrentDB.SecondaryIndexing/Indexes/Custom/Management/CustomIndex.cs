@@ -12,7 +12,7 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 		string eventFilter,
 		string partitionKeySelector,
 		PartitionKeyType partitionKeyType,
-		bool enabled,
+		bool enable,
 		bool force) {
 
 		switch (State.Status) {
@@ -24,8 +24,8 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 			case CustomIndexStatus.Disabled:
 			case CustomIndexStatus.Enabled: {
 				// already exists
-				if (State.Status is CustomIndexStatus.Disabled && enabled ||
-					State.Status is CustomIndexStatus.Enabled && !enabled ||
+				if (State.Status is CustomIndexStatus.Disabled && enable ||
+					State.Status is CustomIndexStatus.Enabled && !enable ||
 					State.EventFilter != eventFilter ||
 					State.PartitionKeySelector != partitionKeySelector ||
 					State.PartitionKeyType != partitionKeyType)
@@ -51,7 +51,7 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 				PartitionKeyType = partitionKeyType,
 			});
 
-			if (enabled) {
+			if (enable) {
 				Enable();
 			}
 		}

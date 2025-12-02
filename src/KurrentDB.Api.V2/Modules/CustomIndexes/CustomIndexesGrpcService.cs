@@ -135,7 +135,7 @@ file static class Extensions {
 			EventFilter = self.Filter,
 			PartitionKeySelector = self.PartitionKeySelector,
 			PartitionKeyType = self.PartitionKeyType.Convert(),
-			Enabled = self.Enabled,
+			Enable = self.Enable,
 			Force = self.Force,
 		};
 
