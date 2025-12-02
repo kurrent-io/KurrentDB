@@ -10,11 +10,12 @@ using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.SecondaryIndexing.Indexes;
+using KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.SecondaryIndexing.Subscriptions;
 
-public sealed partial class SecondaryIndexSubscription(
+public sealed partial class DefaultIndexSubscription(
 	IPublisher publisher,
 	ISecondaryIndexProcessor indexProcessor,
 	SecondaryIndexingPluginOptions options,
@@ -73,11 +74,12 @@ public sealed partial class SecondaryIndexSubscription(
 				var resolvedEvent = eventReceived.Event;
 
 				if (resolvedEvent.Event.EventType.StartsWith('$') || resolvedEvent.Event.EventStreamId.StartsWith('$')) {
-					// ignore system events
-					continue;
+					if (!resolvedEvent.Event.EventStreamId.StartsWith(CustomIndexConstants.Category)) //qq
+						// ignore system events
+						continue;
 				}
 
-				indexProcessor.Index(resolvedEvent);
+				indexProcessor.TryIndex(resolvedEvent);
 
 				if (++indexedCount >= _commitBatchSize) {
 					indexProcessor.Commit();

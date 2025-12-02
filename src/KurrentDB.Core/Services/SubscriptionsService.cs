@@ -49,7 +49,8 @@ public class SubscriptionsService<TStreamId> :
 	IHandle<SubscriptionMessage.CheckPollTimeout>,
 	IAsyncHandle<StorageMessage.InMemoryEventCommitted>,
 	IAsyncHandle<StorageMessage.EventCommitted>,
-	IAsyncHandle<StorageMessage.SecondaryIndexCommitted> {
+	IAsyncHandle<StorageMessage.SecondaryIndexCommitted>,
+	IAsyncHandle<StorageMessage.SecondaryIndexDeleted> {
 	private const int DontReportCheckpointReached = -1;
 
 	// ReSharper disable once StaticMemberInGenericType
@@ -358,6 +359,19 @@ public class SubscriptionsService<TStreamId> :
 
 			return false;
 		}
+	}
+
+	ValueTask IAsyncHandle<StorageMessage.SecondaryIndexDeleted>.HandleAsync(StorageMessage.SecondaryIndexDeleted message, CancellationToken token) {
+		var subscriptionsToDrop = new List<Subscription>();
+		foreach (var (streamId, subscriptions) in _subscriptionTopics) {
+			if (message.StreamIdRegex.IsMatch(streamId))
+				subscriptionsToDrop.AddRange(subscriptions);
+		}
+
+		foreach (var subscription in subscriptionsToDrop)
+			DropSubscription(subscription, SubscriptionDropReason.StreamDeleted, sendDropNotification: true);
+
+		return ValueTask.CompletedTask;
 	}
 
 	private async ValueTask<ResolvedEvent?> ProcessEventCommitted(string eventStreamId, long commitPosition, EventRecord evnt, ResolvedEvent? resolvedEvent, CancellationToken token) {

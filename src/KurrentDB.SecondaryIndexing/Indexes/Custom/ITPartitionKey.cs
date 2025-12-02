@@ -1,0 +1,103 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
+using System.Globalization;
+using Jint;
+using Jint.Native;
+using Kurrent.Quack;
+
+namespace KurrentDB.SecondaryIndexing.Indexes.Custom;
+
+internal interface ITPartitionKey {
+	static abstract ITPartitionKey ParseFrom(JsValue value);
+	static abstract ITPartitionKey ParseFrom(string value);
+	static abstract ReadOnlySpan<byte> GetCreateStatement();
+	ReadOnlySpan<byte> GetQueryStatement();
+	void BindTo(PreparedStatement statement, ref int index);
+	void AppendTo(Appender.Row row);
+}
+
+internal readonly struct Int16PartitionKey(short key) : ITPartitionKey {
+	public static ITPartitionKey ParseFrom(JsValue value) => new Int16PartitionKey(Convert.ToInt16(value.AsNumber()));
+	public static ITPartitionKey ParseFrom(string value) => new Int16PartitionKey(Convert.ToInt16(value));
+	public static ReadOnlySpan<byte> GetCreateStatement() => ", partition_key smallint not null"u8;
+	public ReadOnlySpan<byte> GetQueryStatement() => "and partition_key = ?"u8;
+	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
+	public void AppendTo(Appender.Row row) => row.Append(key);
+	public override string ToString() => key.ToString();
+}
+
+internal readonly struct Int32PartitionKey(int key) : ITPartitionKey {
+	public static ITPartitionKey ParseFrom(JsValue value) => new Int32PartitionKey(Convert.ToInt32(value.AsNumber()));
+	public static ITPartitionKey ParseFrom(string value) => new Int32PartitionKey(Convert.ToInt32(value));
+	public static ReadOnlySpan<byte> GetCreateStatement() => ", partition_key int not null"u8;
+	public ReadOnlySpan<byte> GetQueryStatement() => "and partition_key = ?"u8;
+	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
+	public void AppendTo(Appender.Row row) => row.Append(key);
+	public override string ToString() => key.ToString();
+}
+
+internal readonly struct Int64PartitionKey(long key) : ITPartitionKey {
+	public static ITPartitionKey ParseFrom(JsValue value) => new Int64PartitionKey(Convert.ToInt64(value.AsNumber()));
+	public static ITPartitionKey ParseFrom(string value) => new Int64PartitionKey(Convert.ToInt64(value));
+	public static ReadOnlySpan<byte> GetCreateStatement() => ", partition_key bigint not null"u8;
+	public ReadOnlySpan<byte> GetQueryStatement() => "and partition_key = ?"u8;
+	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
+	public void AppendTo(Appender.Row row) => row.Append(key);
+	public override string ToString() => key.ToString();
+}
+
+internal readonly struct UInt32PartitionKey(uint key) : ITPartitionKey {
+	public static ITPartitionKey ParseFrom(JsValue value) => new UInt32PartitionKey(Convert.ToUInt32(value.AsNumber()));
+	public static ITPartitionKey ParseFrom(string value) => new UInt32PartitionKey(Convert.ToUInt32(value));
+	public static ReadOnlySpan<byte> GetCreateStatement() => ", partition_key uint not null"u8;
+	public ReadOnlySpan<byte> GetQueryStatement() => "and partition_key = ?"u8;
+	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
+	public void AppendTo(Appender.Row row) => row.Append(key);
+	public override string ToString() => key.ToString();
+}
+
+internal readonly struct UInt64PartitionKey(ulong key) : ITPartitionKey {
+	public static ITPartitionKey ParseFrom(JsValue value) => new UInt64PartitionKey(Convert.ToUInt64(value.AsNumber()));
+	public static ITPartitionKey ParseFrom(string value) => new UInt64PartitionKey(Convert.ToUInt64(value));
+	public static ReadOnlySpan<byte> GetCreateStatement() => ", partition_key ubigint not null"u8;
+	public ReadOnlySpan<byte> GetQueryStatement() => "and partition_key = ?"u8;
+	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
+	public void AppendTo(Appender.Row row) => row.Append(key);
+	public override string ToString() => key.ToString();
+}
+
+internal readonly struct NumberPartitionKey(double key) : ITPartitionKey {
+	public static ITPartitionKey ParseFrom(JsValue value) => new NumberPartitionKey(value.AsNumber());
+	public static ITPartitionKey ParseFrom(string value) => new NumberPartitionKey(Convert.ToDouble(value));
+	public static ReadOnlySpan<byte> GetCreateStatement() => ", partition_key double not null"u8;
+	public ReadOnlySpan<byte> GetQueryStatement() => "and partition_key = ?"u8;
+	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
+	public void AppendTo(Appender.Row row) => row.Append(key);
+	public override string ToString() => key.ToString(CultureInfo.InvariantCulture);
+}
+
+internal readonly struct StringPartitionKey(string key) : ITPartitionKey {
+	public static ITPartitionKey ParseFrom(JsValue value) => new StringPartitionKey(value.AsString());
+	public static ITPartitionKey ParseFrom(string value) => new StringPartitionKey(value);
+	public static ReadOnlySpan<byte> GetCreateStatement() => ", partition_key varchar not null"u8;
+	public ReadOnlySpan<byte> GetQueryStatement() => "and partition_key = ?"u8;
+	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
+	public void AppendTo(Appender.Row row) => row.Append(key);
+	public override string ToString() => key;
+}
+
+internal readonly struct NullPartitionKey : ITPartitionKey {
+	public static ITPartitionKey ParseFrom(JsValue value) {
+		if (!value.IsNull())
+			throw new ArgumentException(nameof(value));
+
+		return new NullPartitionKey();
+	}
+
+	public static ITPartitionKey ParseFrom(string value) => throw new NotSupportedException();
+	public static ReadOnlySpan<byte> GetCreateStatement() => ReadOnlySpan<byte>.Empty;
+	public ReadOnlySpan<byte> GetQueryStatement() => ReadOnlySpan<byte>.Empty;
+	public void BindTo(PreparedStatement statement, ref int index) { }
+	public void AppendTo(Appender.Row row) { }
+}

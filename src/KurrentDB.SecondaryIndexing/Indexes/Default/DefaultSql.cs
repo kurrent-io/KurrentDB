@@ -69,8 +69,6 @@ internal static class DefaultSql {
 	public struct GetLastLogPositionQuery : IQuery<LastPositionResult> {
 		public static ReadOnlySpan<byte> CommandText => "select log_position, commit_position, created from idx_all order by rowid desc limit 1"u8;
 
-		public static bool UseStreamingMode => false;
-
 		public static LastPositionResult Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.TryReadInt64(), row.ReadInt64());
 	}
 }

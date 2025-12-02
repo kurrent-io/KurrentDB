@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
 using EventStore.Plugins;
 using EventStore.Plugins.Diagnostics;
+using Kurrent.Surge.Schema;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services.Storage;
@@ -13,6 +14,8 @@ using KurrentDB.DuckDB;
 using KurrentDB.SecondaryIndexing.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
+using KurrentDB.SecondaryIndexing.Indexes.Custom;
+using KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
 using KurrentDB.SecondaryIndexing.Stats;
@@ -43,10 +46,14 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 			.Get<SecondaryIndexingPluginOptions>() ?? new();
 		services.AddSingleton(options);
 
+		services.AddSingleton<CustomIndexManager>();
 		services.AddDuckDBSetup<IndexingDbSchema>();
 		services.AddDuckDBSetup<InFlightSetup>();
-		services.AddHostedService<SecondaryIndexBuilder>();
-		services.AddSingleton<DefaultIndexInFlightRecords>();
+
+		services.AddHostedService<DefaultIndexBuilder>();
+		services.AddHostedService(sp => sp.GetRequiredService<CustomIndexManager>());
+
+		services.AddSingleton<IndexInFlightRecords>();
 
 		var meter = new Meter(SecondaryIndexingConstants.MeterName, "1.0.0");
 
@@ -57,6 +64,7 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddSingleton<ISecondaryIndexReader, DefaultIndexReader>();
 		services.AddSingleton<ISecondaryIndexReader, CategoryIndexReader>();
 		services.AddSingleton<ISecondaryIndexReader, EventTypeIndexReader>();
+		services.AddSingleton<ISecondaryIndexReader>(sp => sp.GetRequiredService<CustomIndexManager>());
 
 		services.AddSingleton<StatsService>();
 		services.AddHostedService(sp => new DbStatsTelemetryService(
@@ -72,6 +80,22 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		var indexReaders = app.ApplicationServices.GetServices<ISecondaryIndexReader>();
 
 		secondaryIndexReaders.AddReaders(indexReaders.ToArray());
+
+		var ct = CancellationToken.None;
+		_ = RegisterType<CustomIndexEvents.Created>(ct);
+		_ = RegisterType<CustomIndexEvents.Enabled>(ct);
+		_ = RegisterType<CustomIndexEvents.Disabled>(ct);
+		_ = RegisterType<CustomIndexEvents.Deleted>(ct);
+
+		//qq hack. exceptions. how come this is async anyway, what does this actually do
+		async Task RegisterType<T>(CancellationToken ct) {
+			await app.ApplicationServices
+				.GetRequiredService<ISchemaRegistry>()
+				.RegisterSchema<T>(
+					new SchemaInfo(SchemaName: $"{CustomIndexConstants.Category}{typeof(T).Name}", SchemaDataFormat.Json),
+					cancellationToken: ct);
+
+		}
 	}
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {

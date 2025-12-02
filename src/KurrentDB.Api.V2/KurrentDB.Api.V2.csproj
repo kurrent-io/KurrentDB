@@ -4,9 +4,11 @@
     <Nullable>enable</Nullable>
     <AssemblyName>KurrentDB.Api</AssemblyName>
     <RootNamespace>KurrentDB.Api</RootNamespace>
+    <IncludeHttpRuleProtos>true</IncludeHttpRuleProtos>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Eventuous.Extensions.DependencyInjection" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
     <PackageReference Include="Google.Protobuf" />
     <PackageReference Include="Grpc.AspNetCore" />
@@ -14,6 +16,7 @@
     <PackageReference Include="Grpc.Tools" />
     <PackageReference Include="Grpc.StatusProto" />
     <PackageReference Include="Humanizer.Core" />
+    <PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" />
     <PackageReference Include="Scrutor" />
     <PackageReference Include="System.Linq.Async">
       <ExcludeAssets>compile</ExcludeAssets>
@@ -53,6 +56,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
+    <ProjectReference Include="..\KurrentDB.SecondaryIndexing\KurrentDB.SecondaryIndexing.csproj" />
   </ItemGroup>
 
   <ItemGroup>

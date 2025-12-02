@@ -4,6 +4,7 @@
 using EventStore.Client.PersistentSubscriptions;
 using KurrentDB.Connectors.Management.Contracts.Commands;
 using KurrentDB.Protocol.V2.Streams;
+using KurrentDB.Protocol.V2.CustomIndexes;
 using TUnit.Core.Interfaces;
 
 namespace KurrentDB.Testing;
@@ -22,11 +23,13 @@ public sealed class KurrentContext : IAsyncInitializer {
 	public ConnectorsCommandService.ConnectorsCommandServiceClient ConnectorsClient { get; private set; } = null!;
 	public PersistentSubscriptions.PersistentSubscriptionsClient PersistentSubscriptionsClient { get; private set; } = null!;
 	public StreamsService.StreamsServiceClient StreamsV2Client { get; private set; } = null!;
+	public CustomIndexesService.CustomIndexesServiceClient CustomIndexesClient { get; private set; } = null!;
 
 	public Task InitializeAsync() {
 		ConnectorsClient = new(GrpcChannelShim.GrpcChannel);
 		PersistentSubscriptionsClient = new(GrpcChannelShim.GrpcChannel);
 		StreamsV2Client = new(GrpcChannelShim.GrpcChannel);
+		CustomIndexesClient = new(GrpcChannelShim.GrpcChannel);
 		return Task.CompletedTask;
 	}
 }
