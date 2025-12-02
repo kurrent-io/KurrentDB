@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Eventuous;
+using Grpc.Core;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 
@@ -28,14 +29,14 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 					State.EventFilter != eventFilter ||
 					State.PartitionKeySelector != partitionKeySelector ||
 					State.PartitionKeyType != partitionKeyType)
-					throw new CustomIndexException("Custom Index already exists");
+					throw new CustomIndexException(StatusCode.AlreadyExists, "Custom Index already exists");
 
 				break; // idempotent
 			}
 
 			case CustomIndexStatus.Deleted: {
 				if (!force)
-					throw new CustomIndexException("Custom Index cannot be recreated unless forced");
+					throw new CustomIndexException(StatusCode.FailedPrecondition, "Custom Index cannot be recreated unless forced");
 				CreateCustomIndex();
 				break;
 			}
@@ -60,7 +61,7 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 		switch (State.Status) {
 			case CustomIndexStatus.NonExistent:
 			case CustomIndexStatus.Deleted:
-				throw new CustomIndexException("Custom Index does not exist");
+				throw new CustomIndexException(StatusCode.NotFound, "Custom Index does not exist");
 			case CustomIndexStatus.Disabled:
 				Apply(new CustomIndexEvents.Enabled());
 				break;
@@ -73,7 +74,7 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 		switch (State.Status) {
 			case CustomIndexStatus.NonExistent:
 			case CustomIndexStatus.Deleted:
-				throw new CustomIndexException("Custom Index does not exist");
+				throw new CustomIndexException(StatusCode.NotFound, "Custom Index does not exist");
 			case CustomIndexStatus.Disabled:
 				break; // idempotent
 			case CustomIndexStatus.Enabled:
