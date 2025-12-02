@@ -84,8 +84,11 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 	}
 
 	public void Delete() {
-		if (State.Status is CustomIndexStatus.NonExistent or CustomIndexStatus.Deleted)
+		if (State.Status is CustomIndexStatus.Deleted)
 			return; // idempotent
+
+		if (State.Status is CustomIndexStatus.NonExistent)
+			throw new CustomIndexException(StatusCode.NotFound, "Custom Index does not exist");
 
 		if (State.Status is CustomIndexStatus.Enabled)
 			Disable();
