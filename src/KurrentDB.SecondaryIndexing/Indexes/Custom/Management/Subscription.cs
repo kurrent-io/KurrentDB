@@ -311,6 +311,19 @@ public class Subscription : ISecondaryIndexReader {
 			return index!.ReadBackwards(msg, token);
 	}
 
+	public bool TryGetCustomIndexTableNames(string indexName, out string tableName, out string inFlightTableName) {
+		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var index)) {
+			tableName = null!;
+			inFlightTableName = null!;
+			return false;
+		}
+
+		using (readLock) {
+			index!.GetCustomIndexTableNames(out tableName, out inFlightTableName);
+			return true;
+		}
+	}
+
 	private bool TryAcquireReadLockForIndex(string index, out ReadLock? readLock, out CustomIndexSubscription? subscription) {
 		// note: a write lock is acquired only when deleting the index. so, if we cannot acquire a read lock,
 		// it means that the custom index is being/has been deleted.

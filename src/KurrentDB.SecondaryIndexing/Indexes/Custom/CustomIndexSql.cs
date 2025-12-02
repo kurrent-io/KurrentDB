@@ -19,6 +19,10 @@ internal static class CustomIndexSql {
 		return Encoding.UTF8.GetBytes(tableName);
 	}
 
+	public static string GenerateInFlightTableNameFor(string indexName) {
+		return $"inflight_idx_custom__{indexName}_{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+	}
+
 	public static void DeleteCustomIndex(DuckDBAdvancedConnection connection, string indexName) {
 		Span<byte> buffer = stackalloc byte[512];
 		var tableName = GetTableNameFor(indexName);

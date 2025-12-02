@@ -34,13 +34,14 @@ internal class IndexInFlightRecords(SecondaryIndexingPluginOptions options) {
 	}
 
 	// used by custom indexes
-	public void Append(long logPosition, long commitPosition, long eventNumber, string? partitionKey) {
+	public void Append(long logPosition, long commitPosition, long eventNumber, string? partitionKey, long created) {
 		var count = _count;
 		_records[count] = new InFlightRecord {
 			LogPosition = logPosition,
 			CommitPosition = commitPosition,
 			EventNumber = eventNumber,
-			PartitionKey = partitionKey
+			PartitionKey = partitionKey,
+			Created = created
 		};
 
 		// Fence: make sure that the array modification cannot be done after the increment

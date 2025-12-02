@@ -2,14 +2,16 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics.Metrics;
+using System.Text;
 using DotNext;
 using DotNext.Threading;
+using DuckDB.NET.Data;
+using DuckDB.NET.Data.DataChunk.Writer;
 using Jint;
 using Jint.Native.Function;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Common.Configuration;
-using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
@@ -33,6 +35,7 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 	private readonly Function? _partitionKeySelector;
 	private readonly ResolvedEventJsObject _resolvedEventJsObject;
 	private readonly IndexInFlightRecords _inFlightRecords;
+	private readonly string _inFlightTableName;
 	private readonly IPublisher _publisher;
 	private readonly DuckDBAdvancedConnection _connection;
 	private readonly CustomIndexSql<TPartitionKey> _sql;
@@ -63,6 +66,8 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 		_sql = sql;
 
 		_inFlightRecords = inFlightRecords;
+		_inFlightTableName = CustomIndexSql.GenerateInFlightTableNameFor(IndexName);
+
 		_publisher = publisher;
 
 		var engine = new Engine();
@@ -74,6 +79,7 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 
 		_connection = db.Open();
 		_sql.CreateCustomIndex(_connection);
+		RegisterTableFunction();
 
 		_appender = new(_connection, _sql.TableName.Span);
 
@@ -128,7 +134,7 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 			partitionKey?.AppendTo(row);
 		}
 
-		_inFlightRecords.Append(preparePosition, commitPosition ?? preparePosition, eventNumber, partitionKeyStr);
+		_inFlightRecords.Append(preparePosition, commitPosition ?? preparePosition, eventNumber, partitionKeyStr, created);
 
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(CustomIndex.GetStreamName(IndexName), resolvedEvent));
 		if (partitionKey is not null)
@@ -231,6 +237,34 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 		if (clearInflight) {
 			_inFlightRecords.Clear();
 		}
+	}
+
+	private void RegisterTableFunction() {
+#pragma warning disable DuckDBNET001
+		_connection.RegisterTableFunction(_inFlightTableName, ResultCallback, MapperCallback);
+
+		TableFunction ResultCallback() {
+			var records = _inFlightRecords.GetInFlightRecords();
+			IReadOnlyList<ColumnInfo> columnInfos = [
+				new("log_position", typeof(long)),
+				new("event_number", typeof(long)),
+				new("created", typeof(long)),
+			];
+			return new(columnInfos, records);
+		}
+
+		void MapperCallback(object? item, IDuckDBDataWriter[] writers, ulong rowIndex) {
+			var record = (InFlightRecord)item!;
+			writers[0].WriteValue(record.LogPosition, rowIndex);
+			writers[1].WriteValue(record.EventNumber, rowIndex);
+			writers[2].WriteValue(record.Created, rowIndex);
+		}
+#pragma warning restore DuckDBNET001
+	}
+
+	public void GetCustomIndexTableNames(out string tableName, out string inFlightTableName) {
+		tableName = Encoding.UTF8.GetString(_sql.TableName.Span);
+		inFlightTableName = _inFlightTableName;
 	}
 
 	protected override void Dispose(bool disposing) {

@@ -13,10 +13,12 @@
 @using KurrentDB.Common.Configuration
 @using KurrentDB.Components.Plugins
 @using KurrentDB.Components.Tools
+@using KurrentDB.SecondaryIndexing.Indexes.Custom
 @using KurrentDB.UI.Services
 @using Microsoft.AspNetCore.Authorization
 @using Serilog
 @inject DuckDBConnectionPool Db
+@inject CustomIndexManager CustomIndexManager
 @inject Preferences Preferences
 @inject IDialogService DialogService
 @inject PluginsService Plugins
@@ -130,7 +132,7 @@
 		watch.Start();
 
 		try {
-			_items = Db.ExecuteAdHocUserQuery(sql);
+			_items = Db.ExecuteAdHocUserQuery(CustomIndexManager.TryGetCustomIndexTableNames, sql);
 			watch.Stop();
 			_message = $"Query executed in {watch}";
 		}
