@@ -27,7 +27,8 @@ public sealed partial class SecondaryIndexSubscription(
 	private Task? _processingTask;
 
 	public void Subscribe() {
-		if (_cts == null) {
+		var cts = _cts;
+		if (cts == null) {
 			log.LogWarning("Subscription already terminated");
 			return;
 		}
@@ -43,10 +44,10 @@ public sealed partial class SecondaryIndexSubscription(
 			user: SystemAccounts.System,
 			requiresLeader: false,
 			catchUpBufferSize: options.CommitBatchSize * 2,
-			cancellationToken: _cts!.Token
+			cancellationToken: cts.Token
 		);
 
-		_processingTask = ProcessEvents(_cts.Token);
+		_processingTask = ProcessEvents(cts.Token);
 	}
 
 	[AsyncMethodBuilder(typeof(SpawningAsyncTaskMethodBuilder))]
