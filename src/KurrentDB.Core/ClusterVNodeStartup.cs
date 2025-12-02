@@ -125,20 +125,6 @@ public class ClusterVNodeStartup<TStreamId>
 		// the resulting ClaimsPrinciple to HttpContext.User
 		app.UseMiddleware<AuthenticationMiddleware>();
 
-		// Select an appropriate controller action and codec BEFORE routing
-		// This allows legacy API middleware to handle requests before MapStaticAssets endpoints are evaluated
-		//    Success -> Add InternalContext (HttpEntityManager, urimatch, ...) to HttpContext
-		//    Fail -> Pipeline terminated with response.
-		app.UseMiddleware<KestrelToInternalBridgeMiddleware>();
-
-		// Looks up the InternalContext to perform the check.
-		// Terminal if auth check is not successful.
-		app.UseMiddleware<AuthorizationMiddleware>();
-
-		// Internal dispatcher handles legacy API requests before routing
-		// If it can't handle the request, it calls next() and lets routing take over
-		app.Use((ctx, next) => internalDispatcher.InvokeAsync(ctx, next));
-
 		// UseAuthentication/UseAuthorization allow the rest of the pipeline to access auth
 		// in a conventional way (e.g. with AuthorizeAttribute). The server doesn't make use
 		// of this yet but plugins may. The registered authentication scheme (kurrent auth)
@@ -153,6 +139,15 @@ public class ClusterVNodeStartup<TStreamId>
 			component.ConfigureApplication(app, _configuration);
 
 		_authenticationProvider.ConfigureEndpoints(app);
+
+		// Select an appropriate controller action and codec.
+		//    Success -> Add InternalContext (HttpEntityManager, urimatch, ...) to HttpContext
+		//    Fail -> Pipeline terminated with response.
+		app.UseMiddleware<KestrelToInternalBridgeMiddleware>();
+
+		// Looks up the InternalContext to perform the check.
+		// Terminal if auth check is not successful.
+		app.UseMiddleware<AuthorizationMiddleware>();
 
 		// Open telemetry currently guarded by our custom authz for consistency with stats
 		app.UseOpenTelemetryPrometheusScrapingEndpoint(x => {
@@ -169,6 +164,9 @@ public class ClusterVNodeStartup<TStreamId>
 				x.Request.Headers.Remove("Accept");
 			return true;
 		});
+
+		// Internal dispatcher looks up the InternalContext to call the appropriate controller
+		app.Use((ctx, next) => internalDispatcher.InvokeAsync(ctx, next));
 
 		app.MapGrpcService<PersistentSubscriptions>();
 		app.MapGrpcService<Users>();

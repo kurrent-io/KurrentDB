@@ -37,28 +37,6 @@ public class KestrelToInternalBridgeMiddleware : IMiddleware {
 		try {
 			var allMatches = uriRouter.GetAllUriMatches(request.Url);
 			if (allMatches.Count == 0) {
-				// No legacy API match - check if this is a Blazor/static asset path
-				var path = request.Url.AbsolutePath;
-				var isBlazorOrStaticPath = path.StartsWith("/ui", StringComparison.OrdinalIgnoreCase) ||
-				                           path.StartsWith("/_blazor", StringComparison.OrdinalIgnoreCase) ||
-				                            path.StartsWith("/_content/", StringComparison.OrdinalIgnoreCase) ||
-				                            path.StartsWith("/_framework/", StringComparison.OrdinalIgnoreCase) ||
-				                            path.EndsWith(".css", StringComparison.OrdinalIgnoreCase) ||
-				                            path.EndsWith(".js", StringComparison.OrdinalIgnoreCase) ||
-				                            path.EndsWith(".wasm", StringComparison.OrdinalIgnoreCase) ||
-				                            path.EndsWith(".ico", StringComparison.OrdinalIgnoreCase) ||
-				                            path.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
-				                            path.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
-				                            path.EndsWith(".svg", StringComparison.OrdinalIgnoreCase) ||
-				                            path.EndsWith(".woff", StringComparison.OrdinalIgnoreCase) ||
-				                            path.EndsWith(".woff2", StringComparison.OrdinalIgnoreCase);
-
-				if (isBlazorOrStaticPath) {
-					// Let Blazor/static assets handle these paths
-					return true;
-				}
-
-				// Legacy API path that doesn't match any route - return 404
 				NotFound(httpEntity);
 				return false;
 			}

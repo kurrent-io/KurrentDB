@@ -23,7 +23,7 @@ public class AuthorizationMiddleware(IAuthorizationProvider authorization) : IMi
 			return;
 		}
 
-		// No internal context - this is not a legacy API request, continue to routing/Blazor
-		await next(context);
+		Log.Error("Failed to get internal http components for request {requestId}", context.TraceIdentifier);
+		context.Response.StatusCode = HttpStatusCode.InternalServerError;
 	}
 }
