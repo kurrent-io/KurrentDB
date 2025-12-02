@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.UserManagement;
@@ -12,20 +13,22 @@ namespace KurrentDB.Core.Tests.Helpers.IODispatcherTests.QueueWriteEventsTests;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
+[SuppressMessage("Reliability", "CA2021:Do not call Enumerable.Cast<T> or Enumerable.OfType<T> with incompatible types")]
+[SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
 public class when_requesting_multiple_writes_with_the_same_key<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	protected override void Given() {
 		AllWritesQueueUp();
 
 		var key = Guid.NewGuid();
 		_ioDispatcher.QueueWriteEvents(key, $"stream-{Guid.NewGuid()}", ExpectedVersion.Any,
-			new Event[] { new Event(Guid.NewGuid(), "event-type", false, string.Empty, string.Empty) },
-			SystemAccounts.System, (msg) => { });
+			[new(Guid.NewGuid(), "event-type", false, string.Empty, string.Empty)],
+			SystemAccounts.System, _ => { });
 		_ioDispatcher.QueueWriteEvents(key, $"stream-{Guid.NewGuid()}", ExpectedVersion.Any,
-			new Event[] { new Event(Guid.NewGuid(), "event-type", false, string.Empty, string.Empty) },
-			SystemAccounts.System, (msg) => { });
+			[new(Guid.NewGuid(), "event-type", false, string.Empty, string.Empty)],
+			SystemAccounts.System, _ => { });
 		_ioDispatcher.QueueWriteEvents(key, $"stream-{Guid.NewGuid()}", ExpectedVersion.Any,
-			new Event[] { new Event(Guid.NewGuid(), "event-type", false, string.Empty, string.Empty) },
-			SystemAccounts.System, (msg) => { });
+			[new(Guid.NewGuid(), "event-type", false, string.Empty, string.Empty)],
+			SystemAccounts.System, _ => { });
 	}
 
 	[Test]

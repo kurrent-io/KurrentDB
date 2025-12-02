@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -17,15 +18,14 @@ using ClientMessage = KurrentDB.Core.Tests.TestAdapters.ClientMessage;
 
 namespace KurrentDB.Core.Tests.Services.UserManagementService;
 
+[SuppressMessage("Reliability", "CA2021:Do not call Enumerable.Cast<T> or Enumerable.OfType<T> with incompatible types")]
 public static class user_management_service {
-	public abstract class TestFixtureWithUserManagementService<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
+	public abstract class
+		TestFixtureWithUserManagementService<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 		protected KurrentDB.Core.Authentication.InternalAuthentication.UserManagementService _users;
-		protected readonly ClaimsPrincipal _ordinaryUser = new ClaimsPrincipal(new ClaimsIdentity(
-				new[] {
-					new Claim(ClaimTypes.Name,"user1"),
-					new Claim(ClaimTypes.Role,"role1")
-				}
-				, "ES-Test"));
+
+		protected readonly ClaimsPrincipal _ordinaryUser = new(new ClaimsIdentity(
+			[new Claim(ClaimTypes.Name, "user1"), new Claim(ClaimTypes.Role, "role1")], "ES-Test"));
 
 		protected override void Given() {
 			base.Given();
@@ -35,9 +35,8 @@ public static class user_management_service {
 			NoOtherStreams();
 			AllWritesSucceed();
 
-			_users = new KurrentDB.Core.Authentication.InternalAuthentication.UserManagementService(
-				_ioDispatcher, new StubPasswordHashAlgorithm(), skipInitializeStandardUsersCheck: true,
-				new TaskCompletionSource<bool>(), DefaultData.DefaultUserOptions);
+			_users = new(_ioDispatcher, new StubPasswordHashAlgorithm(), skipInitializeStandardUsersCheck: true,
+				new(), DefaultData.DefaultUserOptions);
 
 			_bus.Subscribe<UserManagementMessage.Get>(_users);
 			_bus.Subscribe<UserManagementMessage.GetAll>(_users);
@@ -71,22 +70,20 @@ public static class user_management_service {
 
 		protected ClientMessage.WriteEvents[] HandledPasswordChangedNotificationWrites() {
 			return HandledMessages.OfType<ClientMessage.WriteEvents>()
-				.Where(
-					v =>
-						v.EventStreamId
-						== KurrentDB.Core.Authentication.InternalAuthentication.UserManagementService
-							.UserPasswordNotificationsStreamId).ToArray();
+				.Where(v =>
+					v.EventStreamId
+					== KurrentDB.Core.Authentication.InternalAuthentication.UserManagementService
+						.UserPasswordNotificationsStreamId).ToArray();
 		}
 
 		protected ClientMessage.WriteEvents[] HandledPasswordChangedNotificationMetaStreamWrites() {
 			return
 				HandledMessages.OfType<ClientMessage.WriteEvents>()
-					.Where(
-						v =>
-							v.EventStreamId
-							== SystemStreams.MetastreamOf(
-								KurrentDB.Core.Authentication.InternalAuthentication.UserManagementService
-									.UserPasswordNotificationsStreamId))
+					.Where(v =>
+						v.EventStreamId
+						== SystemStreams.MetastreamOf(
+							KurrentDB.Core.Authentication.InternalAuthentication.UserManagementService
+								.UserPasswordNotificationsStreamId))
 					.ToArray();
 		}
 	}
@@ -97,7 +94,7 @@ public static class user_management_service {
 		protected override IEnumerable<WhenStep> When() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
+					Envelope, SystemAccounts.System, "user1", "John Doe", ["admin", "other"], "Johny123!");
 		}
 
 		[Test]
@@ -143,11 +140,12 @@ public static class user_management_service {
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_ordinary_user_attempts_to_create_a_user<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
+	public class when_ordinary_user_attempts_to_create_a_user<TLogFormat, TStreamId>
+		: TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> When() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, _ordinaryUser, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
+					Envelope, _ordinaryUser, "user1", "John Doe", ["admin", "other"], "Johny123!");
 		}
 
 		[Test]
@@ -171,18 +169,19 @@ public static class user_management_service {
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_creating_an_already_existing_user_account<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
+	public class when_creating_an_already_existing_user_account<TLogFormat, TStreamId>
+		: TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "Existing John", new[] { "admin", "other" },
+					Envelope, SystemAccounts.System, "user1", "Existing John", ["admin", "other"],
 					"existing!");
 		}
 
 		protected override IEnumerable<WhenStep> When() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "John Doe", new[] { "bad" }, "Johny123!");
+					Envelope, SystemAccounts.System, "user1", "John Doe", ["bad"], "Johny123!");
 		}
 
 		[Test]
@@ -226,13 +225,13 @@ public static class user_management_service {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
+					Envelope, SystemAccounts.System, "user1", "John Doe", ["admin", "other"], "Johny123!");
 		}
 
 		protected override IEnumerable<WhenStep> When() {
 			yield return
 				new UserManagementMessage.Update(
-					Envelope, SystemAccounts.System, "user1", "Doe John", new[] { "good" });
+					Envelope, SystemAccounts.System, "user1", "Doe John", ["good"]);
 		}
 
 		[Test]
@@ -288,16 +287,17 @@ public static class user_management_service {
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_ordinary_user_attempts_to_update_its_own_details<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
+	public class when_ordinary_user_attempts_to_update_its_own_details<TLogFormat, TStreamId>
+		: TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
+					Envelope, SystemAccounts.System, "user1", "John Doe", ["admin", "other"], "Johny123!");
 		}
 
 		protected override IEnumerable<WhenStep> When() {
 			yield return
-				new UserManagementMessage.Update(Envelope, _ordinaryUser, "user1", "Doe John", new[] { "good" });
+				new UserManagementMessage.Update(Envelope, _ordinaryUser, "user1", "Doe John", ["good"]);
 		}
 
 		[Test]
@@ -346,7 +346,8 @@ public static class user_management_service {
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_updating_non_existing_user_details<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
+	public class when_updating_non_existing_user_details<TLogFormat, TStreamId>
+		: TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield break;
 		}
@@ -354,7 +355,7 @@ public static class user_management_service {
 		protected override IEnumerable<WhenStep> When() {
 			yield return
 				new UserManagementMessage.Update(
-					Envelope, SystemAccounts.System, "user1", "Doe John", new[] { "admin", "other" });
+					Envelope, SystemAccounts.System, "user1", "Doe John", ["admin", "other"]);
 		}
 
 		[Test]
@@ -386,19 +387,20 @@ public static class user_management_service {
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_updating_a_disabled_user_account_details<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
+	public class when_updating_a_disabled_user_account_details<TLogFormat, TStreamId>
+		: TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			var replyTo = Envelope;
 			yield return
 				new UserManagementMessage.Create(
-					replyTo, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
+					replyTo, SystemAccounts.System, "user1", "John Doe", ["admin", "other"], "Johny123!");
 			yield return new UserManagementMessage.Disable(replyTo, SystemAccounts.System, "user1");
 		}
 
 		protected override IEnumerable<WhenStep> When() {
 			yield return
 				new UserManagementMessage.Update(
-					Envelope, SystemAccounts.System, "user1", "Doe John", new[] { "good" });
+					Envelope, SystemAccounts.System, "user1", "Doe John", ["good"]);
 		}
 
 		[Test]
@@ -420,11 +422,12 @@ public static class user_management_service {
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_disabling_an_enabled_user_account<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
+	public class when_disabling_an_enabled_user_account<TLogFormat, TStreamId>
+		: TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
+					Envelope, SystemAccounts.System, "user1", "John Doe", ["admin", "other"], "Johny123!");
 		}
 
 		protected override IEnumerable<WhenStep> When() {
@@ -457,11 +460,12 @@ public static class user_management_service {
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_an_ordinary_user_attempts_to_disable_a_user_account<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
+	public class when_an_ordinary_user_attempts_to_disable_a_user_account<TLogFormat, TStreamId>
+		: TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
+					Envelope, SystemAccounts.System, "user1", "John Doe", ["admin", "other"], "Johny123!");
 		}
 
 		protected override IEnumerable<WhenStep> When() {
@@ -488,12 +492,13 @@ public static class user_management_service {
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_disabling_a_disabled_user_account<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
+	public class when_disabling_a_disabled_user_account<TLogFormat, TStreamId>
+		: TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			var replyTo = Envelope;
 			yield return
 				new UserManagementMessage.Create(
-					replyTo, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
+					replyTo, SystemAccounts.System, "user1", "John Doe", ["admin", "other"], "Johny123!");
 			yield return new UserManagementMessage.Disable(replyTo, SystemAccounts.System, "user1");
 		}
 
@@ -521,12 +526,13 @@ public static class user_management_service {
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_enabling_a_disabled_user_account<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
+	public class when_enabling_a_disabled_user_account<TLogFormat, TStreamId>
+		: TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			var replyTo = Envelope;
 			yield return
 				new UserManagementMessage.Create(
-					replyTo, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
+					replyTo, SystemAccounts.System, "user1", "John Doe", ["admin", "other"], "Johny123!");
 			yield return new UserManagementMessage.Disable(replyTo, SystemAccounts.System, "user1");
 		}
 
@@ -554,12 +560,13 @@ public static class user_management_service {
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_an_ordinary_user_attempts_to_enable_a_user_account<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
+	public class when_an_ordinary_user_attempts_to_enable_a_user_account<TLogFormat, TStreamId>
+		: TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			var replyTo = Envelope;
 			yield return
 				new UserManagementMessage.Create(
-					replyTo, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
+					replyTo, SystemAccounts.System, "user1", "John Doe", ["admin", "other"], "Johny123!");
 			yield return new UserManagementMessage.Disable(replyTo, SystemAccounts.System, "user1");
 		}
 
@@ -587,11 +594,12 @@ public static class user_management_service {
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_enabling_an_enabled_user_account<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
+	public class when_enabling_an_enabled_user_account<TLogFormat, TStreamId>
+		: TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
+					Envelope, SystemAccounts.System, "user1", "John Doe", ["admin", "other"], "Johny123!");
 		}
 
 		protected override IEnumerable<WhenStep> When() {
@@ -622,7 +630,7 @@ public static class user_management_service {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
+					Envelope, SystemAccounts.System, "user1", "John Doe", ["admin", "other"], "Johny123!");
 		}
 
 		protected override IEnumerable<WhenStep> When() {
@@ -680,7 +688,7 @@ public static class user_management_service {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
+					Envelope, SystemAccounts.System, "user1", "John Doe", ["admin", "other"], "Johny123!");
 		}
 
 		protected override IEnumerable<WhenStep> When() {
@@ -710,11 +718,12 @@ public static class user_management_service {
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_ordinary_user_attempts_to_reset_its_own_password<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
+	public class when_ordinary_user_attempts_to_reset_its_own_password<TLogFormat, TStreamId>
+		: TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
+					Envelope, SystemAccounts.System, "user1", "John Doe", ["admin", "other"], "Johny123!");
 		}
 
 		protected override IEnumerable<WhenStep> When() {
@@ -745,11 +754,12 @@ public static class user_management_service {
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_changing_a_password_with_correct_current_password<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
+	public class when_changing_a_password_with_correct_current_password<TLogFormat, TStreamId>
+		: TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
+					Envelope, SystemAccounts.System, "user1", "John Doe", ["admin", "other"], "Johny123!");
 		}
 
 		protected override IEnumerable<WhenStep> When() {
@@ -812,11 +822,12 @@ public static class user_management_service {
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_changing_a_password_with_incorrect_current_password<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
+	public class when_changing_a_password_with_incorrect_current_password<TLogFormat, TStreamId>
+		: TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
+					Envelope, SystemAccounts.System, "user1", "John Doe", ["admin", "other"], "Johny123!");
 		}
 
 		protected override IEnumerable<WhenStep> When() {
@@ -866,11 +877,12 @@ public static class user_management_service {
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_deleting_an_existing_user_account<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
+	public class when_deleting_an_existing_user_account<TLogFormat, TStreamId>
+		: TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
+					Envelope, SystemAccounts.System, "user1", "John Doe", ["admin", "other"], "Johny123!");
 		}
 
 		protected override IEnumerable<WhenStep> When() {
@@ -916,19 +928,19 @@ public static class user_management_service {
 			var replyTo = Envelope;
 			yield return
 				new UserManagementMessage.Create(
-					replyTo, SystemAccounts.System, "user1", "John Doe 1", new[] { "admin1", "other" },
+					replyTo, SystemAccounts.System, "user1", "John Doe 1", ["admin1", "other"],
 					"Johny123!");
 			yield return
 				new UserManagementMessage.Create(
-					replyTo, SystemAccounts.System, "user2", "John Doe 2", new[] { "admin2", "other" },
+					replyTo, SystemAccounts.System, "user2", "John Doe 2", ["admin2", "other"],
 					"Johny123!");
 			yield return
 				new UserManagementMessage.Create(
-					replyTo, SystemAccounts.System, "user3", "Another Doe 1", new[] { "admin3", "other" },
+					replyTo, SystemAccounts.System, "user3", "Another Doe 1", ["admin3", "other"],
 					"Johny123!");
 			yield return
 				new UserManagementMessage.Create(
-					replyTo, SystemAccounts.System, "another_user", "Another Doe 2", new[] { "admin4", "other" },
+					replyTo, SystemAccounts.System, "another_user", "Another Doe 2", ["admin4", "other"],
 					"Johny123!");
 		}
 
@@ -947,8 +959,7 @@ public static class user_management_service {
 		public void returns_in_the_login_name_order() {
 			var users = HandledMessages.OfType<UserManagementMessage.AllUserDetailsResult>().Single().Data;
 
-			Assert.That(
-				new[] { "another_user", "user1", "user2", "user3" }.SequenceEqual(users.Select(v => v.LoginName)));
+			Assert.That(new[] { "another_user", "user1", "user2", "user3" }.SequenceEqual(users.Select(v => v.LoginName)));
 		}
 
 		[Test]

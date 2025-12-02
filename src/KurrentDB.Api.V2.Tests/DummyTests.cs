@@ -6,6 +6,7 @@ namespace KurrentDB.Api.Tests;
 // Referencing this test class causes Ammeter to discover all the tests in this project
 public class DummyTests {
 	[Test]
-	public async ValueTask DummyTest() {
+	public ValueTask DummyTest() {
+		return default;
 	}
 }

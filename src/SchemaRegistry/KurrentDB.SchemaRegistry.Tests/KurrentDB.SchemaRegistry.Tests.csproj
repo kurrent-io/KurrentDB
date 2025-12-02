@@ -11,6 +11,7 @@
     <IsPackable>false</IsPackable>
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     <EnablePreviewFeatures>true</EnablePreviewFeatures>
+		<NoWarn>TUnit0038</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

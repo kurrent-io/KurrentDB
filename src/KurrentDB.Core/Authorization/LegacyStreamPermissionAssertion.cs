@@ -75,7 +75,9 @@ public class
 			"delete" => Check(cp, operation, action, streamId, policy, context),
 			"metadataWrite" => Check(cp, operation, action, streamId, policy, context),
 			"metadataRead" => Check(cp, operation, action, streamId, policy, context),
+#pragma warning disable CA2012
 			null => InvalidMetadataOperation(operation, policy, context),
+#pragma warning restore CA2012
 			_ => throw new ArgumentOutOfRangeException(nameof(operation.Action), action)
 		};
 	}

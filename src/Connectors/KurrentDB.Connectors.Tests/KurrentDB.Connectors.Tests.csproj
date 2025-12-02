@@ -2,7 +2,7 @@
 	<PropertyGroup>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
-		<NoWarn>xUnit1041;xUnit1051</NoWarn>
+		<NoWarn>xUnit1041;xUnit1051;xUnit1007;xUnit1003</NoWarn>
 		<IsKurrentXUnit>true</IsKurrentXUnit>
 		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
 	</PropertyGroup>
