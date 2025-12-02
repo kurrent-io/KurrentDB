@@ -2,8 +2,10 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using EventStore.Plugins.Authorization;
+using FluentValidation;
 using Grpc.Core;
 using KurrentDB.Api.Infrastructure.Authorization;
+using KurrentDB.Api.Modules.CustomIndexes.Validators;
 using KurrentDB.Protocol.V2.CustomIndexes;
 using KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 using Polly;
@@ -31,23 +33,31 @@ public class CustomIndexesGrpcService(
 			})
 			.Build();
 
-	async Task<TResponse> StandardHandle<TRequest, TResponse>(
-		Operation operation,
+	async Task<TResponse> StandardHandle<TRequest, TCommand, TResponse>(
 		TRequest request,
+		IValidator<TRequest> validator,
+		Operation operation,
+		TCommand command,
 		Func<Eventuous.Result<CustomIndexState>, TResponse> getResponse,
 		ServerCallContext context)
-		where TRequest : class
+		where TCommand : class
 		where TResponse : new() {
+
+		var validationResult = await validator.ValidateAsync(request, context.CancellationToken);
+		if (!validationResult.IsValid) {
+			var errorMsg = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+			throw new RpcException(new Status(StatusCode.InvalidArgument, errorMsg));
+		}
 
 		await authz.AuthorizeOperation(operation, context);
 
 		var result = await _resilience.ExecuteAsync(
 			static async (args, ct) => {
-				var result = await args.domainService.Handle(args.request, ct);
+				var result = await args.domainService.Handle(args.command, ct);
 				result.ThrowIfError();
 				return result;
 			},
-			(domainService, request),
+			(domainService, command),
 			context.CancellationToken);
 
 		return getResponse(result);
@@ -58,44 +68,48 @@ public class CustomIndexesGrpcService(
 		ServerCallContext context) =>
 
 		StandardHandle(
+			request,
+			CreateCustomIndexValidator.Instance,
 			new Operation(Operations.CustomIndexes.Create),
-			request.Convert(),
-			response => new CreateCustomIndexResponse(),
-			context);
+			request.ToCommand(),
+			response => new CreateCustomIndexResponse(), context);
 
 	public override Task<EnableCustomIndexResponse> EnableCustomIndex(
 		EnableCustomIndexRequest request,
 		ServerCallContext context) =>
 
 		StandardHandle(
+			request,
+			EnableCustomIndexValidator.Instance,
 			new Operation(Operations.CustomIndexes.Enable),
-			request.Convert(),
-			_ => new EnableCustomIndexResponse(),
-			context);
+			request.ToCommand(),
+			_ => new EnableCustomIndexResponse(), context);
 
 	public override Task<DisableCustomIndexResponse> DisableCustomIndex(
 		DisableCustomIndexRequest request,
 		ServerCallContext context) =>
 
 		StandardHandle(
+			request,
+			DisableCustomIndexValidator.Instance,
 			new Operation(Operations.CustomIndexes.Disable),
-			request.Convert(),
-			_ => new DisableCustomIndexResponse(),
-			context);
+			request.ToCommand(),
+			_ => new DisableCustomIndexResponse(), context);
 
 	public override Task<DeleteCustomIndexResponse> DeleteCustomIndex(
 		DeleteCustomIndexRequest request,
 		ServerCallContext context) =>
 
 		StandardHandle(
+			request,
+			DeleteCustomIndexValidator.Instance,
 			new Operation(Operations.CustomIndexes.Delete),
-			request.Convert(),
-			_ => new DeleteCustomIndexResponse(),
-			context);
+			request.ToCommand(),
+			_ => new DeleteCustomIndexResponse(), context);
 }
 
 file static class Extensions {
-	public static CustomIndexCommands.Create Convert(this CreateCustomIndexRequest self) =>
+	public static CustomIndexCommands.Create ToCommand(this CreateCustomIndexRequest self) =>
 		new() {
 			Name = self.Name,
 			EventFilter = self.Filter,
@@ -105,22 +119,22 @@ file static class Extensions {
 			Force = self.Force,
 		};
 
-	public static CustomIndexCommands.Enable Convert(this EnableCustomIndexRequest self) =>
+	public static CustomIndexCommands.Enable ToCommand(this EnableCustomIndexRequest self) =>
 		new() {
 			Name = self.Name,
 		};
 
-	public static CustomIndexCommands.Disable Convert(this DisableCustomIndexRequest self) =>
+	public static CustomIndexCommands.Disable ToCommand(this DisableCustomIndexRequest self) =>
 		new() {
 			Name = self.Name,
 		};
 
-	public static CustomIndexCommands.Delete Convert(this DeleteCustomIndexRequest self) =>
+	public static CustomIndexCommands.Delete ToCommand(this DeleteCustomIndexRequest self) =>
 		new() {
 			Name = self.Name,
 		};
 
-	public static PartitionKeyType Convert(this KeyType target) =>
+	private static PartitionKeyType Convert(this KeyType target) =>
 		target switch {
 			KeyType.Unspecified => PartitionKeyType.None,
 			KeyType.String => PartitionKeyType.String,
