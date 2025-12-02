@@ -26,6 +26,8 @@ namespace KurrentDB.Plugins.Api.V2;
 public class ApiV2Plugin() : SubsystemsPlugin("APIV2") {
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
         services
+            .AddSingleton<CustomIndexStreamNameMap>()
+            .AddSingleton<CustomIndexReadsideService>()
             .AddCommandService<CustomIndexDomainService, CustomIndexState>()
             .AddGrpc()
             .AddJsonTranscoding(options => {

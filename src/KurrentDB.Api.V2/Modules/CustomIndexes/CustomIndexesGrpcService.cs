@@ -16,6 +16,7 @@ namespace KurrentDB.Api.Modules.CustomIndexes;
 //qq error types in the proto?
 public class CustomIndexesGrpcService(
 	CustomIndexDomainService domainService,
+	CustomIndexReadsideService readSideService,
 	IAuthorizationProvider authz)
 	: CustomIndexesServiceBase {
 
@@ -106,6 +107,25 @@ public class CustomIndexesGrpcService(
 			new Operation(Operations.CustomIndexes.Delete),
 			request.ToCommand(),
 			_ => new DeleteCustomIndexResponse(), context);
+
+	public override async Task<ListCustomIndexesResponse> ListCustomIndexes(
+		ListCustomIndexesRequest request,
+		ServerCallContext context) {
+
+		var response = await readSideService.List(context.CancellationToken);
+		return response.Convert();
+	}
+
+	public override async Task<GetCustomIndexResponse> GetCustomIndex(
+		GetCustomIndexRequest request,
+		ServerCallContext context) {
+
+		var response = await readSideService.Get(request.Name, context.CancellationToken);
+		return new() {
+			CustomIndex = response.Convert(),
+		};
+	}
+
 }
 
 file static class Extensions {
@@ -146,4 +166,31 @@ file static class Extensions {
 			KeyType.UnsignedInt64 => PartitionKeyType.UInt64,
 			_ => throw new ArgumentOutOfRangeException(nameof(target), target, null),
 		};
+
+	private static KeyType Convert(this PartitionKeyType target) =>
+		target switch {
+			PartitionKeyType.None => KeyType.Unspecified,
+			PartitionKeyType.String => KeyType.String,
+			PartitionKeyType.Number => KeyType.Number,
+			PartitionKeyType.Int16 => KeyType.Int16,
+			PartitionKeyType.Int32 => KeyType.Int32,
+			PartitionKeyType.Int64 => KeyType.Int64,
+			PartitionKeyType.UInt32 => KeyType.UnsignedInt32,
+			PartitionKeyType.UInt64 => KeyType.UnsignedInt64,
+			_ => throw new ArgumentOutOfRangeException(nameof(target), target, null),
+		};
+
+	public static Protocol.V2.CustomIndexes.CustomIndex Convert(this CustomIndexReadsideService.CustomIndexState self) => new() {
+		Filter = self.EventFilter,
+		PartitionKeySelector = self.PartitionKeySelector,
+		PartitionKeyType = self.PartitionKeyType.Convert(),
+		Enabled = self.Enabled,
+	};
+
+	public static ListCustomIndexesResponse Convert(this CustomIndexReadsideService.CustomIndexesState self) {
+		var result = new ListCustomIndexesResponse();
+		foreach (var (name, customIndex) in self.CustomIndexes)
+			result.CustomIndexes[name] = customIndex.Convert();
+		return result;
+	}
 }

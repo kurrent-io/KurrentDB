@@ -64,6 +64,8 @@ public interface IReadOperations {
 	Task<ResolvedEvent?> ReadStreamLastEvent(string stream, CancellationToken cancellationToken = default);
 	Task<ResolvedEvent?> ReadStreamFirstEvent(string stream, CancellationToken cancellationToken = default);
 	Task<ResolvedEvent> ReadEvent(Position position, CancellationToken cancellationToken = default);
+	IAsyncEnumerable<ResolvedEvent> ReadIndexForwards(string indexName, Position startPosition, long maxCount, CancellationToken cancellationToken = default);
+	IAsyncEnumerable<ResolvedEvent> ReadIndexBackwards(string indexName, Position startPosition, long maxCount, CancellationToken cancellationToken = default);
 }
 
 public interface IWriteOperations {
@@ -214,6 +216,12 @@ public class SystemClient : ISystemClient {
 
 		public Task<ResolvedEvent> ReadEvent(Position position, CancellationToken cancellationToken = default) =>
 			Publisher.ReadEvent(position, cancellationToken);
+
+		public IAsyncEnumerable<ResolvedEvent> ReadIndexForwards(string indexName, Position startPosition, long maxCount, CancellationToken cancellationToken = default) =>
+			Publisher.ReadIndex(indexName, startPosition, maxCount, true, cancellationToken);
+
+		public IAsyncEnumerable<ResolvedEvent> ReadIndexBackwards(string indexName, Position startPosition, long maxCount, CancellationToken cancellationToken = default) =>
+			Publisher.ReadIndex(indexName, startPosition, maxCount, false, cancellationToken);
 	}
 
 	#endregion . Read .

@@ -137,11 +137,11 @@ public class Subscription : ISecondaryIndexReader {
 					Log.Verbose("Subscription to: {stream} received event type: {type}", ManagementStream, evt.OriginalEvent.EventType);
 
 					var deserializedEvent = await _serializer.Deserialize(
-						data: evt.Event.Data,
-						schemaInfo: new(evt.Event.EventType, SchemaDataFormat.Json));
+						data: evt.OriginalEvent.Data,
+						schemaInfo: new(evt.OriginalEvent.EventType, SchemaDataFormat.Json));
 
 					//qq refactor, put place that writes and reads stream names together.
-					var streamName = evt.Event.EventStreamId;
+					var streamName = evt.OriginalEvent.EventStreamId;
 					var customIndexName = streamName[(streamName.IndexOf('-') + 1) ..];
 
 					switch (deserializedEvent) {

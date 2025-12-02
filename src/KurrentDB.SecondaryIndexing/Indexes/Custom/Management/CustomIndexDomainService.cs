@@ -8,8 +8,8 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 public record CustomIndexId(string Name) : Id(Name);
 
 public class CustomIndexDomainService : CommandService<CustomIndex, CustomIndexState, CustomIndexId> {
-	public CustomIndexDomainService(IEventStore store)
-		: base(store: store, streamNameMap: CreateStreamNameMap()) {
+	public CustomIndexDomainService(IEventStore store, CustomIndexStreamNameMap streamNameMap)
+		: base(store: store, streamNameMap: streamNameMap) {
 
 		On<CustomIndexCommands.Create>()
 			.InState(ExpectedState.Any) // facilitate idempotent create
@@ -35,11 +35,5 @@ public class CustomIndexDomainService : CommandService<CustomIndex, CustomIndexS
 			.InState(ExpectedState.Any)
 			.GetId(cmd => new(cmd.Name))
 			.Act((x, cmd) => x.Delete());
-	}
-
-	static StreamNameMap CreateStreamNameMap() {
-		var streamNameMap = new StreamNameMap();
-		streamNameMap.Register<CustomIndexId>(id => new StreamName($"{CustomIndexConstants.Category}-{id}"));
-		return streamNameMap;
 	}
 }

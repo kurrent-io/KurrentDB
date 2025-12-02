@@ -19,6 +19,9 @@ enum KeyType {
 
 service CustomIndexesService {
   //qq decide on route prefix
+  //
+  // Write-side Services
+  //
   rpc CreateCustomIndex(CreateCustomIndexRequest) returns (CreateCustomIndexResponse) {
     option (google.api.http) = {
       post: "/v2/custom-indexes/{name}",
@@ -43,7 +46,26 @@ service CustomIndexesService {
       delete: "/v2/custom-indexes/{name}"
     };
   }
+
+  //
+  // Read-side Services
+  //
+  rpc ListCustomIndexes(ListCustomIndexesRequest) returns (ListCustomIndexesResponse) {
+    option (google.api.http) = {
+      get: "/v2/custom-indexes",
+    };
+  }
+
+  rpc GetCustomIndex(GetCustomIndexRequest) returns (GetCustomIndexResponse) {
+    option (google.api.http) = {
+      get: "/v2/custom-indexes/{name}",
+    };
+  }
 }
+
+//
+// Write-side messages
+//
 
 message CreateCustomIndexRequest {
   string name = 1;
@@ -76,4 +98,30 @@ message DeleteCustomIndexRequest {
 }
 
 message DeleteCustomIndexResponse {
+}
+
+//
+// Read-side messages
+//
+
+message ListCustomIndexesRequest {
+}
+
+message ListCustomIndexesResponse {
+  map<string, CustomIndex> custom_indexes = 1;
+}
+
+message GetCustomIndexRequest {
+  string name = 1;
+}
+
+message GetCustomIndexResponse {
+  CustomIndex custom_index = 1;
+}
+
+message CustomIndex {
+  string filter = 1;
+  string partition_key_selector = 2;
+  KeyType partition_key_type = 3;
+  bool enabled = 4;
 }

@@ -4,7 +4,7 @@
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 
 public static class CustomIndexCommands {
-	public partial class Create {
+	public class Create {
 		public string Name { get; set; } = "";
 
 		public string EventFilter { get; set; } = "";
@@ -18,15 +18,15 @@ public static class CustomIndexCommands {
 		public bool Force { get; set; }
 	}
 
-	public partial class Enable {
+	public class Enable {
 		public string Name { get; set; } = "";
 	}
 
-	public partial class Disable {
+	public class Disable {
 		public string Name { get; set; } = "";
 	}
 
-	public partial class Delete {
+	public class Delete {
 		public string Name { get; set; } = "";
 	}
 }
