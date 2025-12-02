@@ -71,7 +71,7 @@ public class SecondaryIndexProgressTracker {
 		_lastIndexedTimestamp = resolvedEvent.OriginalEvent.TimeStamp;
 	}
 
-	public CommitDuration StartCommitDuration() => new(_histogram, _clock, _tag[0], _indexName, _log);
+	public CommitDuration StartCommitDuration(int count) => new(_histogram, _clock, _tag[0], _indexName, _log, count);
 
 	private IEnumerable<Measurement<long>> ObserveGap() {
 		var lastAppendedPos = _lastAppendedPosition;
@@ -96,12 +96,13 @@ public class SecondaryIndexProgressTracker {
 		TimeProvider clock,
 		KeyValuePair<string, object?> tag,
 		string indexName,
-		ILogger logger) : IDisposable {
+		ILogger logger,
+		int count) : IDisposable {
 		private readonly long _start = clock.GetTimestamp();
 
 		public void Dispose() {
 			var elapsed = clock.GetElapsedTime(_start).Milliseconds;
-			logger.LogDebug("Secondary index {Index} records committed in {Duration} ms", indexName, elapsed);
+			logger.LogDebug("Secondary index [{Index}]: {Count} records committed in {Duration} ms", indexName, count, elapsed);
 			histogram.Record(elapsed, tag);
 		}
 	}

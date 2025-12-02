@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Runtime.CompilerServices;
+using System.Threading.Channels;
 using DotNext.Runtime.CompilerServices;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
@@ -20,16 +21,28 @@ public sealed partial class SecondaryIndexSubscription(
 	SecondaryIndexingPluginOptions options,
 	ILogger log
 ) : IAsyncDisposable {
-
 	private readonly int _commitBatchSize = options.CommitBatchSize;
 	private CancellationTokenSource? _cts = new();
 	private Enumerator.AllSubscription? _subscription;
 	private Task? _processingTask;
+	private Task? _receivingTask;
+	private bool _rebuilding;
+
+	private readonly Channel<ResolvedEvent> _channel = Channel.CreateBounded<ResolvedEvent>(
+		new BoundedChannelOptions(options.CommitBatchSize * 2) {
+			SingleReader = true,
+			SingleWriter = true,
+		});
 
 	public void Subscribe() {
 		var position = indexProcessor.GetLastPosition();
 		var startFrom = position == TFPos.Invalid ? Position.Start : Position.FromInt64(position.CommitPosition, position.PreparePosition);
+		log.LogInformation("Using commit batch size {CommitBatchSize}", _commitBatchSize);
 		log.LogInformation("Starting indexing subscription from {StartFrom}", startFrom);
+		if (startFrom == Position.Start) {
+			log.LogInformation("Rebuilding secondary index from scratch");
+			_rebuilding = true;
+		}
 
 		_subscription = new(
 			bus: publisher,
@@ -42,27 +55,33 @@ public sealed partial class SecondaryIndexSubscription(
 			cancellationToken: _cts!.Token
 		);
 
-		_processingTask = ProcessEvents(_cts.Token);
+		_receivingTask = ReceiveRecords(_cts.Token);
+		_processingTask = ProcessRecords(_cts.Token);
 	}
 
 	[AsyncMethodBuilder(typeof(SpawningAsyncTaskMethodBuilder))]
-	async Task ProcessEvents(CancellationToken token) {
+	async Task ReceiveRecords(CancellationToken token) {
 		if (_subscription == null)
 			throw new InvalidOperationException("Subscription not initialized");
-
-		var indexedCount = 0;
 
 		while (!token.IsCancellationRequested) {
 			try {
 				if (!await _subscription.MoveNextAsync())
 					break;
 			} catch (ReadResponseException.NotHandled.ServerNotReady) {
-				log.LogInformation("Default indexing subscription is stopping because server is not ready");
-				break;
+				log.LogWarning("Default indexing subscription is paused because server is not ready");
+				await Task.Delay(TimeSpan.FromSeconds(10), token);
+				continue;
 			}
 
 			if (_subscription.Current is ReadResponse.SubscriptionCaughtUp caughtUp) {
-				LogDefaultIndexingSubscriptionCaughtUpAtTime(log, caughtUp.Timestamp);
+				if (_rebuilding) {
+					LogIndexRebuildComplete(log, caughtUp.Timestamp);
+				} else {
+					LogDefaultIndexingSubscriptionCaughtUp(log, caughtUp.Timestamp);
+				}
+
+				_rebuilding = false;
 				continue;
 			}
 
@@ -77,17 +96,36 @@ public sealed partial class SecondaryIndexSubscription(
 					continue;
 				}
 
-				indexProcessor.Index(resolvedEvent);
+				await _channel.Writer.WriteAsync(resolvedEvent, token);
+			} catch (OperationCanceledException) {
+				break;
+			} catch (Exception e) {
+				log.LogError(e, "Error while processing event {EventType}", eventReceived.Event.Event.EventType);
+				throw;
+			}
+		}
+		_channel.Writer.Complete();
+	}
 
+	[AsyncMethodBuilder(typeof(SpawningAsyncTaskMethodBuilder))]
+	private async Task ProcessRecords(CancellationToken token) {
+		var indexedCount = 0;
+		while (!token.IsCancellationRequested && !_channel.Reader.Completion.IsCompleted) {
+			try {
+				var resolvedEvent = await _channel.Reader.ReadAsync(token);
+				try {
+
+				} catch (Exception e) {
+					log.LogError(e, "Error while processing event {EventType}", resolvedEvent.Event.EventType);
+					throw;
+				}
+				indexProcessor.Index(resolvedEvent);
 				if (++indexedCount >= _commitBatchSize) {
 					indexProcessor.Commit();
 					indexedCount = 0;
 				}
 			} catch (OperationCanceledException) {
 				break;
-			} catch (Exception e) {
-				log.LogError(e, "Error while processing event {EventType}", eventReceived.Event.Event.EventType);
-				throw;
 			}
 		}
 	}
@@ -105,20 +143,34 @@ public sealed partial class SecondaryIndexSubscription(
 	}
 
 	private async ValueTask DisposeCoreAsync() {
-		if (_processingTask != null) {
-			try {
-				await _processingTask.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing |
-													 ConfigureAwaitOptions.ContinueOnCapturedContext);
-			} catch (Exception ex) {
-				log.LogError(ex, "Error during processing task completion");
-			}
-		}
+		await CompleteTask(_receivingTask);
+		await CompleteTask(_processingTask);
 
 		if (_subscription != null) {
 			await _subscription.DisposeAsync();
 		}
+
+		return;
+
+		async Task CompleteTask(Task? task) {
+			if (task == null) {
+				return;
+			}
+
+			try {
+				await task.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing | ConfigureAwaitOptions.ContinueOnCapturedContext);
+			} catch (Exception ex) {
+				log.LogError(ex, "Error during processing task completion");
+			}
+		}
 	}
 
-	[LoggerMessage(LogLevel.Trace, "Default indexing subscription caught up at {time}")]
-	static partial void LogDefaultIndexingSubscriptionCaughtUpAtTime(ILogger logger, DateTime time);
+	private const string IndexCaughtUpMessage = "Default secondary indexing subscription caught up at {time}";
+	private const string IndexRebuildCompleteMessage = "Default secondary indexes rebuild complete at {time}";
+
+	[LoggerMessage(LogLevel.Trace, IndexCaughtUpMessage)]
+	static partial void LogDefaultIndexingSubscriptionCaughtUp(ILogger logger, DateTime time);
+
+	[LoggerMessage(LogLevel.Information, IndexRebuildCompleteMessage)]
+	static partial void LogIndexRebuildComplete(ILogger logger, DateTime time);
 }
