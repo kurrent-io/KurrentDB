@@ -121,6 +121,13 @@ public class CustomIndexesGrpcService(
 		ServerCallContext context) {
 
 		var response = await readSideService.Get(request.Name, context.CancellationToken);
+
+		if (response is null)
+			throw new CustomIndexException(StatusCode.NotFound, "Custom Index does not exist");
+
+		if (response.Deleted)
+			throw new CustomIndexException(StatusCode.NotFound, "Custom Index was deleted");
+
 		return new() {
 			CustomIndex = response.Convert(),
 		};

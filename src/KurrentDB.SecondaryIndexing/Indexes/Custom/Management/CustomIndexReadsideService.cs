@@ -39,14 +39,19 @@ public class CustomIndexReadsideService(
 		return state;
 	}
 
-	public async ValueTask<CustomIndexState> Get(string name, CancellationToken ct) {
+	public async ValueTask<CustomIndexState?> Get(string name, CancellationToken ct) {
 		var streamName = streamNameMap.GetStreamName<CustomIndexId>(new(name));
-		var state = await store.LoadState<CustomIndexState>(
-			streamName: streamName,
-			failIfNotFound: true,
-			cancellationToken: ct);
 
-		return state.State;
+		try {
+			var state = await store.LoadState<CustomIndexState>(
+				streamName: streamName,
+				failIfNotFound: true,
+				cancellationToken: ct);
+
+			return state.State;
+		} catch(StreamNotFound) {
+			return null;
+		}
 	}
 
 	public record CustomIndexesState : MultiEntityState<CustomIndexesState, CustomIndexId> {
@@ -82,6 +87,7 @@ public class CustomIndexReadsideService(
 		public string PartitionKeySelector { get; init; } = "";
 		public PartitionKeyType PartitionKeyType { get; init; }
 		public bool Enabled { get; init; }
+		public bool Deleted { get; init; }
 
 		public CustomIndexState() {
 			On<CustomIndexEvents.Created>((state, evt) =>
@@ -90,6 +96,7 @@ public class CustomIndexReadsideService(
 					PartitionKeySelector = evt.PartitionKeySelector,
 					PartitionKeyType = evt.PartitionKeyType,
 					Enabled = false,
+					Deleted = false,
 				});
 
 			On<CustomIndexEvents.Enabled>((state, evt) =>
@@ -97,6 +104,9 @@ public class CustomIndexReadsideService(
 
 			On<CustomIndexEvents.Disabled>((state, evt) =>
 				state with { Enabled = false });
+
+			On<CustomIndexEvents.Deleted>((state, evt) =>
+				state with { Deleted = true });
 		}
 	}
 
