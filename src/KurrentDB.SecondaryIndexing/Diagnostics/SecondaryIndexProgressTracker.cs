@@ -20,6 +20,7 @@ public class SecondaryIndexProgressTracker {
 	private DateTime _lastIndexedTimestamp = DateTime.MinValue;
 	private long _lastAppendedPosition = -1;
 	private DateTime _lastAppendedTimestamp = DateTime.MinValue;
+	private readonly Func<(long, DateTime)> _getLastAppendedRecord;
 
 	private const string MeterPrefix = "indexes.secondary";
 
@@ -29,9 +30,11 @@ public class SecondaryIndexProgressTracker {
 		string indexName,
 		string serviceName,
 		Meter meter,
-		TimeProvider clock) {
+		TimeProvider clock,
+		Func<(long, DateTime)>? getLastAppendedRecord = null) {
 		_clock = clock;
 		_indexName = indexName;
+		_getLastAppendedRecord = getLastAppendedRecord ?? GetLastAppendedRecord;
 
 		meter.CreateObservableGauge(
 			$"{serviceName}.{MeterPrefix}.gap",
@@ -54,6 +57,10 @@ public class SecondaryIndexProgressTracker {
 		_tag = [new("index", indexName)];
 	}
 
+	private (long, DateTime) GetLastAppendedRecord() {
+		return (_lastAppendedPosition, _lastAppendedTimestamp);
+	}
+
 	public void RecordAppended(EventRecord eventRecord, long commitPosition) {
 		_lastAppendedPosition = commitPosition;
 		_lastAppendedTimestamp = eventRecord.TimeStamp;
@@ -72,7 +79,7 @@ public class SecondaryIndexProgressTracker {
 	public CommitDuration StartCommitDuration() => new(_histogram, _clock, _tag[0], _indexName, Log);
 
 	private IEnumerable<Measurement<long>> ObserveGap() {
-		var lastAppendedPos = _lastAppendedPosition;
+		var (lastAppendedPos, _) = _getLastAppendedRecord();
 		var lastIndexedPos = _lastIndexedPosition;
 
 		if (lastAppendedPos < 0 || lastIndexedPos < 0)
@@ -82,10 +89,12 @@ public class SecondaryIndexProgressTracker {
 	}
 
 	private IEnumerable<Measurement<double>> ObserveLag() {
-		if (_lastAppendedTimestamp == DateTime.MinValue || _lastIndexedTimestamp == DateTime.MinValue)
+		var (_, lastAppendedTimestamp) = _getLastAppendedRecord();
+
+		if (lastAppendedTimestamp == DateTime.MinValue || _lastIndexedTimestamp == DateTime.MinValue)
 			yield break;
 
-		var lag = _lastAppendedTimestamp - _lastIndexedTimestamp;
+		var lag = lastAppendedTimestamp - _lastIndexedTimestamp;
 		yield return new(lag.TotalSeconds, _tag);
 	}
 

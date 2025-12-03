@@ -31,6 +31,7 @@ public class Subscription : ISecondaryIndexReader {
 	private readonly SecondaryIndexingPluginOptions _options;
 	private readonly DuckDBConnectionPool _db;
 	private readonly Meter _meter;
+	private readonly Func<(long, DateTime)> _getLastAppendedRecord;
 	private readonly IReadIndex<string> _readIndex;
 	private readonly Channel<ReadResponse> _channel;
 	private readonly ConcurrentDictionary<string, CustomIndexSubscription> _subscriptions = new();
@@ -46,6 +47,7 @@ public class Subscription : ISecondaryIndexReader {
 		DuckDBConnectionPool db,
 		IReadIndex<string> readIndex,
 		Meter meter,
+		Func<(long, DateTime)> getLastAppendedRecord,
 		CancellationToken token) {
 
 		_client = client;
@@ -54,6 +56,7 @@ public class Subscription : ISecondaryIndexReader {
 		_options = options;
 		_db = db;
 		_meter = meter;
+		_getLastAppendedRecord = getLastAppendedRecord;
 		_readIndex = readIndex;
 
 		_cts = CancellationTokenSource.CreateLinkedTokenSource(token);
@@ -223,7 +226,8 @@ public class Subscription : ISecondaryIndexReader {
 			sql: sql,
 			inFlightRecords: inFlightRecords,
 			publisher: _publisher,
-			meter: _meter);
+			meter: _meter,
+			getLastAppendedRecord: _getLastAppendedRecord);
 
 		var reader = new CustomIndexReader<TPartitionKey>(_db, sql, inFlightRecords, _readIndex);
 

@@ -7,10 +7,12 @@ using Kurrent.Quack.ConnectionPool;
 using Kurrent.Surge.Schema.Serializers;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.ClientPublisher;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -21,6 +23,7 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Custom;
 public sealed class CustomIndexManager :
 	IHandle<SystemMessage.SystemReady>,
 	IHandle<SystemMessage.BecomeShuttingDown>,
+	IHandle<StorageMessage.EventCommitted>,
 	IHostedService,
 	ISecondaryIndexReader {
 
@@ -34,6 +37,9 @@ public sealed class CustomIndexManager :
 
 	private Subscription? _subscription;
 	private CancellationTokenSource? _cts;
+
+	private long _lastAppendedRecordPosition = -1;
+	private DateTime _lastAppendedRecordTimestamp = DateTime.MinValue;
 
 	private static readonly ILogger Log = Serilog.Log.ForContext<CustomIndexManager>();
 
@@ -59,12 +65,17 @@ public sealed class CustomIndexManager :
 
 		subscriber.Subscribe<SystemMessage.SystemReady>(this);
 		subscriber.Subscribe<SystemMessage.BecomeShuttingDown>(this);
+		subscriber.Subscribe<StorageMessage.EventCommitted>(this);
 	}
 
 	private async Task InitializeManagementStreamSubscription() {
 		Log.Verbose("Custom indexes: Initializing subscription to management stream");
-		_subscription = new Subscription(_client, _publisher, _serializer, _options, _db, _index, _meter, _cts!.Token);
+		_subscription = new Subscription(_client, _publisher, _serializer, _options, _db, _index, _meter, GetLastAppendedRecord, _cts!.Token);
 		await _subscription.Start();
+	}
+
+	private (long, DateTime) GetLastAppendedRecord() {
+		return (_lastAppendedRecordPosition, _lastAppendedRecordTimestamp);
 	}
 
 	public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
@@ -85,7 +96,10 @@ public sealed class CustomIndexManager :
 	}
 
 	public void Handle(SystemMessage.SystemReady message) {
-		Task.Run(InitializeManagementStreamSubscription);
+		Task.Run(async () => {
+			await ReadTail();
+			await InitializeManagementStreamSubscription();
+		});
 	}
 
 	public void Handle(SystemMessage.BecomeShuttingDown message) {
@@ -95,6 +109,25 @@ public sealed class CustomIndexManager :
 				cts.Cancel();
 			}
 		}
+	}
+
+	private async Task ReadTail() {
+		var lastRecord = await _publisher.ReadBackwards(Position.End, new Filter(), 1).FirstOrDefaultAsync();
+		if (lastRecord != default && _lastAppendedRecordPosition == -1 && _lastAppendedRecordTimestamp == DateTime.MinValue) {
+			_lastAppendedRecordPosition = lastRecord.OriginalPosition!.Value.CommitPosition;
+			_lastAppendedRecordTimestamp = lastRecord.Event.TimeStamp;
+		}
+	}
+
+	public void Handle(StorageMessage.EventCommitted message) {
+		if (!message.Event.EventStreamId.StartsWith('$')) {
+			_lastAppendedRecordPosition = message.CommitPosition;
+			_lastAppendedRecordTimestamp = message.Event.TimeStamp;
+		}
+	}
+
+	private class Filter : IEventFilter {
+		public bool IsEventAllowed(EventRecord eventRecord) => !eventRecord.EventStreamId.StartsWith('$');
 	}
 
 	public bool CanReadIndex(string indexStream) => _subscription?.CanReadIndex(indexStream) ?? false;

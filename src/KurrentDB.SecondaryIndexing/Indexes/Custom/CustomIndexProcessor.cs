@@ -59,6 +59,7 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 		IPublisher publisher,
 		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)]
 		Meter meter,
+		Func<(long, DateTime)> getLastAppendedRecord,
 		MetricsConfiguration? metricsConfiguration = null,
 		TimeProvider? clock = null) {
 		IndexName = indexName;
@@ -84,11 +85,13 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 		_appender = new(_connection, _sql.TableName.Span);
 
 		var serviceName = metricsConfiguration?.ServiceName ?? "kurrentdb";
-		Tracker = new(indexName, serviceName, meter, clock ?? TimeProvider.System);
+		var tracker = new SecondaryIndexProgressTracker(indexName, serviceName, meter, clock ?? TimeProvider.System, getLastAppendedRecord);
 
 		(_lastPosition, var lastTimestamp) = GetLastKnownRecord();
 		Log.Information("Custom index: {index} loaded its last known log position: {position} ({timestamp})", IndexName, _lastPosition, lastTimestamp);
-		Tracker.InitLastIndexed(_lastPosition.CommitPosition, lastTimestamp);
+		tracker.InitLastIndexed(_lastPosition.CommitPosition, lastTimestamp);
+
+		Tracker = tracker;
 	}
 
 	public override bool TryIndex(ResolvedEvent resolvedEvent) {
@@ -98,8 +101,10 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 		var canHandle = CanHandleEvent(resolvedEvent, out var partitionKey);
 		_lastPosition = resolvedEvent.OriginalPosition!.Value;
 
-		if (!canHandle)
+		if (!canHandle) {
+			Tracker.RecordIndexed(resolvedEvent);
 			return false;
+		}
 
 		var preparePosition = resolvedEvent.Event.LogPosition;
 		var commitPosition = resolvedEvent.EventPosition?.CommitPosition;
