@@ -53,17 +53,6 @@ public static partial class QueryService {
 		return $"with\r\n{string.Join(",\r\n", ctes)}\r\n{query}";
 	}
 
-	private static string BuildCustomIndexWhereClause(string partitionKey) {
-		if (partitionKey == string.Empty)
-			return string.Empty;
-
-		if (!double.TryParse(partitionKey, out _))
-			partitionKey = $"'{partitionKey}'";
-
-		return $"WHERE partition_key={partitionKey}" ;
-	}
-
-
 	private static void ValidateQuery(DuckDBConnectionPool pool, string query) {
 		// var result = pool.QueryFirstOrDefault<Sql2Json.Args, Sql2Json.Result, Sql2Json>(new(query));
 		using var _ = pool.Rent(out var connection);

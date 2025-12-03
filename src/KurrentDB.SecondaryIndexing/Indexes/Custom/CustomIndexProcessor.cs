@@ -91,16 +91,6 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 		Tracker.InitLastIndexed(_lastPosition.CommitPosition, lastTimestamp);
 	}
 
-	public void Delete() {
-		if (!IsDisposed)
-			throw new Exception("Cannot delete as the index processor has not been disposed yet.");
-
-		using (_db.Rent(out var connection)) {
-			// during deletion, we rent a connection from the pool as _connection has already been disposed at this point
-			_sql.DeleteCustomIndex(connection);
-		}
-	}
-
 	public override bool TryIndex(ResolvedEvent resolvedEvent) {
 		if (IsDisposingOrDisposed)
 			return false;
