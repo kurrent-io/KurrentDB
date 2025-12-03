@@ -29,4 +29,11 @@ public record CustomIndexState : State<CustomIndexState> {
 		On<CustomIndexEvents.Deleted>((state, evt) =>
 			state with { Status = CustomIndexStatus.Deleted });
 	}
+
+	public enum CustomIndexStatus {
+		NonExistent,
+		Disabled,
+		Enabled,
+		Deleted,
+	}
 }

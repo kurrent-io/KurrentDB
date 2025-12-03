@@ -122,11 +122,11 @@ public class CustomIndexesGrpcService(
 
 		var response = await readSideService.Get(request.Name, context.CancellationToken);
 
-		if (response is null)
+		if (response.Status is CustomIndexReadsideService.Status.None)
 			throw new CustomIndexException(StatusCode.NotFound, "Custom Index does not exist");
 
-		if (response.Deleted)
-			throw new CustomIndexException(StatusCode.NotFound, "Custom Index was deleted");
+		if (response.Status is CustomIndexReadsideService.Status.Deleted)
+			throw new CustomIndexException(StatusCode.NotFound, "Custom Index has been deleted");
 
 		return new() {
 			CustomIndex = response.Convert(),
@@ -187,11 +187,20 @@ file static class Extensions {
 			_ => throw new ArgumentOutOfRangeException(nameof(target), target, null),
 		};
 
+	private static CustomIndexStatus Convert(this CustomIndexReadsideService.Status target) =>
+		target switch {
+			CustomIndexReadsideService.Status.None => CustomIndexStatus.StatusUnspecified,
+			CustomIndexReadsideService.Status.Disabled => CustomIndexStatus.StatusDisabled,
+			CustomIndexReadsideService.Status.Enabled => CustomIndexStatus.StatusEnabled,
+			CustomIndexReadsideService.Status.Deleted => CustomIndexStatus.StatusDeleted,
+			_ => throw new ArgumentOutOfRangeException(nameof(target), target, null),
+		};
+
 	public static Protocol.V2.CustomIndexes.CustomIndex Convert(this CustomIndexReadsideService.CustomIndexState self) => new() {
 		Filter = self.EventFilter,
 		PartitionKeySelector = self.PartitionKeySelector,
 		PartitionKeyType = self.PartitionKeyType.Convert(),
-		Enabled = self.Enabled,
+		Status = self.Status.Convert(),
 	};
 
 	public static ListCustomIndexesResponse Convert(this CustomIndexReadsideService.CustomIndexesState self) {

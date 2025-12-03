@@ -16,16 +16,16 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 		bool force) {
 
 		switch (State.Status) {
-			case CustomIndexStatus.NonExistent: {
+			case CustomIndexState.CustomIndexStatus.NonExistent: {
 				// new
 				CreateCustomIndex();
 				break;
 			}
-			case CustomIndexStatus.Disabled:
-			case CustomIndexStatus.Enabled: {
+			case CustomIndexState.CustomIndexStatus.Disabled:
+			case CustomIndexState.CustomIndexStatus.Enabled: {
 				// already exists
-				if (State.Status is CustomIndexStatus.Disabled && enable ||
-					State.Status is CustomIndexStatus.Enabled && !enable ||
+				if (State.Status is CustomIndexState.CustomIndexStatus.Disabled && enable ||
+					State.Status is CustomIndexState.CustomIndexStatus.Enabled && !enable ||
 					State.EventFilter != eventFilter ||
 					State.PartitionKeySelector != partitionKeySelector ||
 					State.PartitionKeyType != partitionKeyType)
@@ -34,7 +34,7 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 				break; // idempotent
 			}
 
-			case CustomIndexStatus.Deleted: {
+			case CustomIndexState.CustomIndexStatus.Deleted: {
 				if (!force)
 					throw new CustomIndexException(StatusCode.FailedPrecondition, "Custom Index cannot be recreated unless forced");
 				CreateCustomIndex();
@@ -59,38 +59,38 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 
 	public void Enable() {
 		switch (State.Status) {
-			case CustomIndexStatus.NonExistent:
-			case CustomIndexStatus.Deleted:
+			case CustomIndexState.CustomIndexStatus.NonExistent:
+			case CustomIndexState.CustomIndexStatus.Deleted:
 				throw new CustomIndexException(StatusCode.NotFound, "Custom Index does not exist");
-			case CustomIndexStatus.Disabled:
+			case CustomIndexState.CustomIndexStatus.Disabled:
 				Apply(new CustomIndexEvents.Enabled());
 				break;
-			case CustomIndexStatus.Enabled:
+			case CustomIndexState.CustomIndexStatus.Enabled:
 				break; // idempotent
 		}
 	}
 
 	public void Disable() {
 		switch (State.Status) {
-			case CustomIndexStatus.NonExistent:
-			case CustomIndexStatus.Deleted:
+			case CustomIndexState.CustomIndexStatus.NonExistent:
+			case CustomIndexState.CustomIndexStatus.Deleted:
 				throw new CustomIndexException(StatusCode.NotFound, "Custom Index does not exist");
-			case CustomIndexStatus.Disabled:
+			case CustomIndexState.CustomIndexStatus.Disabled:
 				break; // idempotent
-			case CustomIndexStatus.Enabled:
+			case CustomIndexState.CustomIndexStatus.Enabled:
 				Apply(new CustomIndexEvents.Disabled());
 				break;
 		}
 	}
 
 	public void Delete() {
-		if (State.Status is CustomIndexStatus.Deleted)
+		if (State.Status is CustomIndexState.CustomIndexStatus.Deleted)
 			return; // idempotent
 
-		if (State.Status is CustomIndexStatus.NonExistent)
+		if (State.Status is CustomIndexState.CustomIndexStatus.NonExistent)
 			throw new CustomIndexException(StatusCode.NotFound, "Custom Index does not exist");
 
-		if (State.Status is CustomIndexStatus.Enabled)
+		if (State.Status is CustomIndexState.CustomIndexStatus.Enabled)
 			Disable();
 
 		Apply(new CustomIndexEvents.Deleted());

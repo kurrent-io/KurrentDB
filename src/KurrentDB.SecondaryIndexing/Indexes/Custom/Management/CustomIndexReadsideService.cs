@@ -39,19 +39,15 @@ public class CustomIndexReadsideService(
 		return state;
 	}
 
-	public async ValueTask<CustomIndexState?> Get(string name, CancellationToken ct) {
+	public async ValueTask<CustomIndexState> Get(string name, CancellationToken ct) {
 		var streamName = streamNameMap.GetStreamName<CustomIndexId>(new(name));
 
-		try {
-			var state = await store.LoadState<CustomIndexState>(
-				streamName: streamName,
-				failIfNotFound: true,
-				cancellationToken: ct);
+		var state = await store.LoadState<CustomIndexState>(
+			streamName: streamName,
+			failIfNotFound: false,
+			cancellationToken: ct);
 
-			return state.State;
-		} catch(StreamNotFound) {
-			return null;
-		}
+		return state.State;
 	}
 
 	public record CustomIndexesState : MultiEntityState<CustomIndexesState, CustomIndexId> {
@@ -82,12 +78,18 @@ public class CustomIndexReadsideService(
 		}
 	}
 
+	public enum Status {
+		None,
+		Disabled,
+		Enabled,
+		Deleted,
+	}
+
 	public record CustomIndexState : State<CustomIndexState> {
 		public string EventFilter { get; init; } = "";
 		public string PartitionKeySelector { get; init; } = "";
 		public PartitionKeyType PartitionKeyType { get; init; }
-		public bool Enabled { get; init; }
-		public bool Deleted { get; init; }
+		public Status Status { get; init; }
 
 		public CustomIndexState() {
 			On<CustomIndexEvents.Created>((state, evt) =>
@@ -95,18 +97,17 @@ public class CustomIndexReadsideService(
 					EventFilter = evt.EventFilter,
 					PartitionKeySelector = evt.PartitionKeySelector,
 					PartitionKeyType = evt.PartitionKeyType,
-					Enabled = false,
-					Deleted = false,
+					Status = Status.Disabled,
 				});
 
 			On<CustomIndexEvents.Enabled>((state, evt) =>
-				state with { Enabled = true });
+				state with { Status = Status.Enabled });
 
 			On<CustomIndexEvents.Disabled>((state, evt) =>
-				state with { Enabled = false });
+				state with { Status = Status.Disabled });
 
 			On<CustomIndexEvents.Deleted>((state, evt) =>
-				state with { Deleted = true });
+				state with { Status = Status.Deleted });
 		}
 	}
 
