@@ -13,8 +13,10 @@ internal static class JsFunctionValidator {
 			return false;
 
 		try {
-			var function = Engine.Evaluate(jsFunction).AsFunctionInstance();
-			return function.FunctionDeclaration!.Params.Count == 1;
+			lock (Engine) {
+				var function = Engine.Evaluate(jsFunction).AsFunctionInstance();
+				return function.FunctionDeclaration!.Params.Count == 1;
+			}
 		} catch {
 			return false;
 		}
