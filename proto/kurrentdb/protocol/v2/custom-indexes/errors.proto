@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package kurrentdb.protocol.v2.custom_indexes.errors;
+
+option csharp_namespace = "KurrentDB.Protocol.V2.CustomIndexes.Errors";
+
+import "kurrent/rpc/rpc.proto";
+
+enum CustomIndexesError {
+  // Default value. This value is not used.
+  // An error code MUST always be set to a non-zero value.
+  // If an error code is not explicitly set, it MUST be treated as
+  // an internal server error (INTERNAL).
+  CUSTOM_INDEXES_ERROR_UNSPECIFIED = 0;
+
+  // The requested custom index does not exist.
+  CUSTOM_INDEXES_ERROR_CUSTOM_INDEX_NOT_FOUND = 1 [(kurrent.rpc.error) = {
+    status_code: NOT_FOUND,
+    has_details: true,
+  }];
+
+  // The requested custom index already exists
+  CUSTOM_INDEXES_ERROR_CUSTOM_INDEX_ALREADY_EXISTS = 2 [(kurrent.rpc.error) = {
+    status_code: ALREADY_EXISTS,
+    has_details: true,
+  }];
+
+  // The requested custom index already exists and has been deleted.
+  // It can be recreated by setting the force flag to true, but beware of the risk to
+  // consumers that might not be expecting the change.
+  CUSTOM_INDEXES_ERROR_CUSTOM_INDEX_ALREADY_EXISTS_DELETED = 3 [(kurrent.rpc.error) = {
+    status_code: ALREADY_EXISTS,
+    has_details: true,
+  }];
+}
+
+// Details for CUSTOM_INDEXES_ERROR_CUSTOM_INDEX_NOT_FOUND errors.
+message CustomIndexNotFoundErrorDetails {
+  string name = 1;
+}
+
+// Details for CUSTOM_INDEXES_ERROR_CUSTOM_INDEX_ALREADY_EXISTS errors.
+message CustomIndexAlreadyExistsErrorDetails {
+  string name = 1;
+}
+
+// Details for CUSTOM_INDEXES_ERROR_CUSTOM_INDEX_ALREADY_EXISTS_DELETED errors.
+message CustomIndexAlreadyExistsDeletedErrorDetails {
+  string name = 1;
+}

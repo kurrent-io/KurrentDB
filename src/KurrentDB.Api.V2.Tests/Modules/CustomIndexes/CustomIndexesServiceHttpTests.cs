@@ -27,10 +27,10 @@ public class CustomIndexesServiceHttpTests {
 				}
 				""");
 
-		var response = await Client.PostAsync(request, TestContext.CancellationToken);
+		var response = await Client.ExecutePostAsync(request, TestContext.CancellationToken);
 
-		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
 		await Assert.That(response.Content).IsJson("{}");
+		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
 		await can_get(status: "STATUS_DISABLED");
 	}
 
@@ -41,8 +41,8 @@ public class CustomIndexesServiceHttpTests {
 			new RestRequest($"/v2/custom-indexes/{CustomIndexName}/enable"),
 			TestContext.CancellationToken);
 
-		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
 		await Assert.That(response.Content).IsJson("{}");
+		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
 		await can_get(status: "STATUS_ENABLED");
 	}
 
@@ -53,8 +53,8 @@ public class CustomIndexesServiceHttpTests {
 			new RestRequest($"/v2/custom-indexes/{CustomIndexName}/disable"),
 			TestContext.CancellationToken);
 
-		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
 		await Assert.That(response.Content).IsJson("{}");
+		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
 		await can_get(status: "STATUS_DISABLED");
 	}
 
@@ -65,7 +65,6 @@ public class CustomIndexesServiceHttpTests {
 			new RestRequest($"/v2/custom-indexes/"),
 			TestContext.CancellationToken);
 
-		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
 		await Assert.That(response.Content).IsJson($$"""
 			{
 				"customIndexes": {
@@ -78,6 +77,7 @@ public class CustomIndexesServiceHttpTests {
 				}
 			}
 			""");
+		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
 	}
 
 	[Test]
@@ -87,35 +87,46 @@ public class CustomIndexesServiceHttpTests {
 			new RestRequest($"/v2/custom-indexes/{CustomIndexName}"),
 			TestContext.CancellationToken);
 
-		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
 		await Assert.That(response.Content).IsJson("{}");
+		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
 
 		// get -> 404
 		var getResponse = await Client.GetAsync(
 			new RestRequest($"/v2/custom-indexes/{CustomIndexName}"),
 			TestContext.CancellationToken);
 
-		await Assert.That(getResponse.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
-		await Assert.That(getResponse.Content).IsJson("""
+		await Assert.That(getResponse.Content).IsJson($$"""
 			{
 				"code":5,
-				"message":"Custom Index has been deleted",
-				"details":[]
+				"message": "Custom Index '{{CustomIndexName}}' does not exist",
+				"details":[
+					{
+						"@type": "type.googleapis.com/google.rpc.ErrorInfo",
+						"reason": "CUSTOM_INDEX_NOT_FOUND",
+						"domain": "customindexes",
+						"metadata": {}
+					},
+					{
+						"@type": "type.googleapis.com/kurrentdb.protocol.v2.custom_indexes.errors.CustomIndexNotFoundErrorDetails",
+						"name": "{{CustomIndexName}}"
+					}
+				]
 			}
 			""");
+		await Assert.That(getResponse.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
 
 		// no longer listed
 		var listResponse = await Client.GetAsync(
 			new RestRequest($"/v2/custom-indexes/"),
 			TestContext.CancellationToken);
 
-		await Assert.That(listResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
 		await Assert.That(listResponse.Content).IsJson("""
 			{
 				"customIndexes": {
 				}
 			}
 			""");
+		await Assert.That(listResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
 	}
 
 	async ValueTask can_get(string status) {
@@ -123,7 +134,6 @@ public class CustomIndexesServiceHttpTests {
 			new RestRequest($"/v2/custom-indexes/{CustomIndexName}"),
 			TestContext.CancellationToken);
 
-		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
 		await Assert.That(response.Content).IsJson($$"""
 			{
 				"customIndex": {
@@ -134,26 +144,32 @@ public class CustomIndexesServiceHttpTests {
 				}
 			}
 			""");
+		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
 	}
 
-	//qq
-	//[Test]
-	//public async ValueTask cannot_create_with_illegal_name() {
-	//	var illegalName = "UPPER CASE NOT ALLOWED";
-	//	var request = new RestRequest($"/v2/custom-indexes/{illegalName}")
-	//		//qq probably don't need the body?
-	//		.AddJsonBody("""
-	//			{
-	//				"Filter": "e => e.type == 'my-event-type'",
-	//				"PartitionKeySelector": "e => e.number",
-	//				"PartitionKeyType": "KEY_TYPE_INT_32"
-	//			}
-	//			""");
+	[Test]
+	public async ValueTask cannot_create_with_illegal_name() {
+		var illegalName = "UPPER CASE NOT ALLOWED";
+		var request = new RestRequest($"/v2/custom-indexes/{illegalName}")
+			.AddJsonBody("""
+				{
+					"Filter": "e => e.type == 'my-event-type'",
+					"PartitionKeySelector": "e => e.number",
+					"PartitionKeyType": "KEY_TYPE_INT_32"
+				}
+				""");
 
-	//	var response = await Client.PostAsync(request, TestContext.CancellationToken);
+		var response = await Client.ExecutePostAsync(request, TestContext.CancellationToken);
 
-	//	await Assert.That(response.Content).IsJson("{}");
-	//}
+		await Assert.That(response.Content).IsJson("""
+			{
+				"code": 3,
+				"message": "Name can contain only lowercase alphanumeric characters, underscores and dashes",
+				"details": []
+			}
+			""");
+		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+	}
 
 	[Test]
 	public async ValueTask cannot_delete_non_existant() {
@@ -161,29 +177,51 @@ public class CustomIndexesServiceHttpTests {
 			new RestRequest($"/v2/custom-indexes/non-existant-index"),
 			TestContext.CancellationToken);
 
-		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
 		await Assert.That(response.Content).IsJson("""
 			{
 				"code":5,
-				"message":"Custom Index does not exist",
-				"details":[]
+				"message":"Custom Index 'non-existant-index' does not exist",
+				"details":[
+					{
+						"@type": "type.googleapis.com/google.rpc.ErrorInfo",
+						"reason": "CUSTOM_INDEX_NOT_FOUND",
+						"domain": "customindexes",
+						"metadata": {}
+					},
+					{
+						"@type": "type.googleapis.com/kurrentdb.protocol.v2.custom_indexes.errors.CustomIndexNotFoundErrorDetails",
+						"name": "non-existant-index"
+					}
+				]
 			}
 			""");
+		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
 	}
 
 	[Test]
 	public async ValueTask cannot_get_non_existant() {
-		var response = await Client.GetAsync(
+		var response = await Client.ExecuteGetAsync(
 			new RestRequest($"/v2/custom-indexes/non-existant-index"),
 			TestContext.CancellationToken);
 
-		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
 		await Assert.That(response.Content).IsJson("""
 			{
 				"code":5,
-				"message":"Custom Index does not exist",
-				"details":[]
+				"message":"Custom Index 'non-existant-index' does not exist",
+				"details":[
+					{
+						"@type": "type.googleapis.com/google.rpc.ErrorInfo",
+						"reason": "CUSTOM_INDEX_NOT_FOUND",
+						"domain": "customindexes",
+						"metadata": {}
+					},
+					{
+						"@type": "type.googleapis.com/kurrentdb.protocol.v2.custom_indexes.errors.CustomIndexNotFoundErrorDetails",
+						"name": "non-existant-index"
+					}
+				]
 			}
 			""");
+		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
 	}
 }

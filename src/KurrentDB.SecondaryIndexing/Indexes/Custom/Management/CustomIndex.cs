@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Eventuous;
-using Grpc.Core;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 
@@ -29,14 +28,14 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 					State.EventFilter != eventFilter ||
 					State.PartitionKeySelector != partitionKeySelector ||
 					State.PartitionKeyType != partitionKeyType)
-					throw new CustomIndexException(StatusCode.AlreadyExists, "Custom Index already exists");
+					throw new CustomIndexAlreadyExistsException(State.Id.Name);
 
 				break; // idempotent
 			}
 
 			case CustomIndexState.CustomIndexStatus.Deleted: {
 				if (!force)
-					throw new CustomIndexException(StatusCode.FailedPrecondition, "Custom Index cannot be recreated unless forced");
+					throw new CustomIndexAlreadyExistsDeletedException(State.Id.Name);
 				CreateCustomIndex();
 				break;
 			}
@@ -61,7 +60,7 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 		switch (State.Status) {
 			case CustomIndexState.CustomIndexStatus.NonExistent:
 			case CustomIndexState.CustomIndexStatus.Deleted:
-				throw new CustomIndexException(StatusCode.NotFound, "Custom Index does not exist");
+				throw new CustomIndexNotFoundException(State.Id.Name);
 			case CustomIndexState.CustomIndexStatus.Disabled:
 				Apply(new CustomIndexEvents.Enabled());
 				break;
@@ -74,7 +73,7 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 		switch (State.Status) {
 			case CustomIndexState.CustomIndexStatus.NonExistent:
 			case CustomIndexState.CustomIndexStatus.Deleted:
-				throw new CustomIndexException(StatusCode.NotFound, "Custom Index does not exist");
+				throw new CustomIndexNotFoundException(State.Id.Name);
 			case CustomIndexState.CustomIndexStatus.Disabled:
 				break; // idempotent
 			case CustomIndexState.CustomIndexStatus.Enabled:
@@ -88,7 +87,7 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 			return; // idempotent
 
 		if (State.Status is CustomIndexState.CustomIndexStatus.NonExistent)
-			throw new CustomIndexException(StatusCode.NotFound, "Custom Index does not exist");
+				throw new CustomIndexNotFoundException(State.Id.Name);
 
 		if (State.Status is CustomIndexState.CustomIndexStatus.Enabled)
 			Disable();

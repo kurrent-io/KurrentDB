@@ -4,6 +4,7 @@
 using EventStore.Plugins.Authorization;
 using FluentValidation;
 using Grpc.Core;
+using KurrentDB.Api.Errors;
 using KurrentDB.Api.Infrastructure.Authorization;
 using KurrentDB.Api.Modules.CustomIndexes.Validators;
 using KurrentDB.Protocol.V2.CustomIndexes;
@@ -29,7 +30,7 @@ public class CustomIndexesGrpcService(
 					ValueTask.FromResult(args.Outcome.Exception
 						is not null
 						and not Kurrent.Surge.ExpectedStreamRevisionError
-						and not CustomIndexException
+						and not CustomIndexDomainException
 						and not OperationCanceledException),
 			})
 			.Build();
@@ -52,17 +53,30 @@ public class CustomIndexesGrpcService(
 
 		await authz.AuthorizeOperation(operation, context);
 
-		var result = await _resilience.ExecuteAsync(
-			static async (args, ct) => {
-				var result = await args.domainService.Handle(args.command, ct);
-				result.ThrowIfError();
-				return result;
-			},
-			(domainService, command),
-			context.CancellationToken);
+		try {
+			var result = await _resilience.ExecuteAsync(
+				static async (args, ct) => {
+					var result = await args.domainService.Handle(args.command, ct);
+					result.ThrowIfError();
+					return result;
+				},
+				(domainService, command),
+				context.CancellationToken);
 
-		return getResponse(result);
+			return getResponse(result);
+		} catch (CustomIndexDomainException ex) {
+			if (MapException(ex) is { } mapped)
+				throw mapped;
+			throw;
+		}
 	}
+
+	static RpcException? MapException(CustomIndexDomainException ex) => ex switch {
+		CustomIndexNotFoundException => ApiErrors.CustomIndexNotFound(ex.CustomIndexName),
+		CustomIndexAlreadyExistsException => ApiErrors.CustomIndexAlreadyExists(ex.CustomIndexName),
+		CustomIndexAlreadyExistsDeletedException => ApiErrors.CustomIndexAlreadyExistsDeleted(ex.CustomIndexName),
+		_ => null,
+	};
 
 	public override Task<CreateCustomIndexResponse> CreateCustomIndex(
 		CreateCustomIndexRequest request,
@@ -122,11 +136,10 @@ public class CustomIndexesGrpcService(
 
 		var response = await readSideService.Get(request.Name, context.CancellationToken);
 
-		if (response.Status is CustomIndexReadsideService.Status.None)
-			throw new CustomIndexException(StatusCode.NotFound, "Custom Index does not exist");
-
-		if (response.Status is CustomIndexReadsideService.Status.Deleted)
-			throw new CustomIndexException(StatusCode.NotFound, "Custom Index has been deleted");
+		if (response.Status
+			is CustomIndexReadsideService.Status.None
+			or CustomIndexReadsideService.Status.Deleted)
+			throw ApiErrors.CustomIndexNotFound(request.Name);
 
 		return new() {
 			CustomIndex = response.Convert(),

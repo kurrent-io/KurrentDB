@@ -5,7 +5,7 @@ using Eventuous;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 
-public record CustomIndexState : State<CustomIndexState> {
+public record CustomIndexState : State<CustomIndexState, CustomIndexId> {
 	public string EventFilter { get; init; } = "";
 	public string PartitionKeySelector { get; init; } = "";
 	public PartitionKeyType PartitionKeyType { get; init; }
