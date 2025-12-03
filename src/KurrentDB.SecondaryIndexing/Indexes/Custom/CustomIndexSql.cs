@@ -25,6 +25,8 @@ internal static class CustomIndexSql {
 	}
 
 	public static void DeleteCustomIndex(DuckDBAdvancedConnection connection, string indexName) {
+		connection.ExecuteNonQuery<DeleteCheckpointNonQueryArgs, DeleteCheckpointNonQuery>(new DeleteCheckpointNonQueryArgs(indexName));
+
 		Span<byte> buffer = stackalloc byte[512];
 		var tableName = GetTableNameFor(indexName);
 		var cmd = new SqlCommandBuilder(buffer) { "drop table if exists \""u8, tableName.Span, "\""u8 }.Command;
@@ -54,17 +56,6 @@ internal class CustomIndexSql<TPartitionKey>(string indexName) where TPartitionK
 			");"u8
 		}.Command;
 
-		connection.ExecuteAdHocNonQuery(cmd);
-	}
-
-	/// <summary>
-	/// Delete a custom index
-	/// </summary>
-	public void DeleteCustomIndex(DuckDBAdvancedConnection connection) {
-		Span<byte> buffer = stackalloc byte[MaxSqlCommandLength];
-		var cmd = new SqlCommandBuilder(buffer) {
-			"drop table if exists \""u8, TableName.Span,"\""u8
-		}.Command;
 		connection.ExecuteAdHocNonQuery(cmd);
 	}
 
@@ -217,3 +208,10 @@ public struct SetCheckpointNonQuery : IPreparedStatement<SetCheckpointQueryArgs>
 	public static ReadOnlySpan<byte> CommandText => "insert or replace into idx_custom_checkpoints (index_name,log_position,commit_position,created) VALUES ($1,$2,$3,$4)"u8;
 }
 
+public record struct DeleteCheckpointNonQueryArgs(string IndexName);
+public struct DeleteCheckpointNonQuery : IPreparedStatement<DeleteCheckpointNonQueryArgs> {
+	public static BindingContext Bind(in DeleteCheckpointNonQueryArgs args, PreparedStatement statement)
+		=> new(statement) { args.IndexName };
+
+	public static ReadOnlySpan<byte> CommandText => "delete from idx_custom_checkpoints where index_name=$1"u8;
+}
