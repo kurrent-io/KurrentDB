@@ -9,7 +9,7 @@ namespace KurrentDB.Api.Modules.CustomIndexes.Validators;
 class NameValidator : ValidatorBase<NameValidator, string?> {
 	public NameValidator() =>
 		RuleFor(x => x)
-			.Matches("^[a-zA-Z0-9_]+$")
-			.WithMessage("Name can contain only alphanumeric characters and underscore")
+			.Matches("^[a-z0-9_-]+$")
+			.WithMessage("Name can contain only lowercase alphanumeric characters, underscores and dashes")
             .WithName("Name");
 }

@@ -9,12 +9,13 @@ using KurrentDB.SecondaryIndexing.Storage;
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom;
 
 internal static class CustomIndexSql {
-	private static readonly Regex TableNameRegex = new("^[A-Za-z_][A-Za-z0-9_]*$", RegexOptions.Compiled);
+	private static readonly Regex TableNameRegex = new("^[a-z][a-z0-9_-]*$", RegexOptions.Compiled);
 	public static ReadOnlyMemory<byte> GetTableNameFor(string indexName) {
 		var tableName = $"idx_custom__{indexName}";
 
+		// we validate the table name for safety reasons although DuckDB allows a large set of characters when using quoted identifiers
 		if (!TableNameRegex.IsMatch(tableName))
-			throw new Exception($"Invalid DuckDB table name: {tableName}");
+			throw new Exception($"Invalid table name: {tableName}");
 
 		return Encoding.UTF8.GetBytes(tableName);
 	}
@@ -26,7 +27,7 @@ internal static class CustomIndexSql {
 	public static void DeleteCustomIndex(DuckDBAdvancedConnection connection, string indexName) {
 		Span<byte> buffer = stackalloc byte[512];
 		var tableName = GetTableNameFor(indexName);
-		var cmd = new SqlCommandBuilder(buffer) { "drop table if exists "u8, tableName.Span }.Command;
+		var cmd = new SqlCommandBuilder(buffer) { "drop table if exists \""u8, tableName.Span, "\""u8 }.Command;
 		connection.ExecuteAdHocNonQuery(cmd);
 	}
 }
@@ -41,7 +42,7 @@ internal class CustomIndexSql<TPartitionKey>(string indexName) where TPartitionK
 	public void CreateCustomIndex(DuckDBAdvancedConnection connection) {
 		Span<byte> buffer = stackalloc byte[MaxSqlCommandLength];
 		var cmd = new SqlCommandBuilder(buffer) {
-			"create table if not exists "u8, TableName.Span,
+			"create table if not exists \""u8, TableName.Span, "\""u8,
 			"""
 			 (
 			 	log_position bigint not null,
@@ -62,7 +63,7 @@ internal class CustomIndexSql<TPartitionKey>(string indexName) where TPartitionK
 	public void DeleteCustomIndex(DuckDBAdvancedConnection connection) {
 		Span<byte> buffer = stackalloc byte[MaxSqlCommandLength];
 		var cmd = new SqlCommandBuilder(buffer) {
-			"drop table if exists "u8, TableName.Span
+			"drop table if exists \""u8, TableName.Span,"\""u8
 		}.Command;
 		connection.ExecuteAdHocNonQuery(cmd);
 	}
@@ -73,8 +74,7 @@ internal class CustomIndexSql<TPartitionKey>(string indexName) where TPartitionK
 	public IEnumerable<IndexQueryRecord> ReadCustomIndexQueryExcl(DuckDBAdvancedConnection connection, ITPartitionKey partitionKey, ReadCustomIndexQueryArgs args) {
 		Span<byte> buffer = stackalloc byte[MaxSqlCommandLength];
 		var cmd = new SqlCommandBuilder(buffer) {
-			"select log_position, commit_position, event_number from "u8,
-			TableName.Span,
+			"select log_position, commit_position, event_number from \""u8, TableName.Span, "\""u8,
 			" where log_position > ? and log_position < ? "u8,
 			partitionKey.GetQueryStatement(),
 			" order by rowid limit ?"u8
@@ -89,8 +89,7 @@ internal class CustomIndexSql<TPartitionKey>(string indexName) where TPartitionK
 	public IEnumerable<IndexQueryRecord> ReadCustomIndexQueryIncl(DuckDBAdvancedConnection connection, ITPartitionKey partitionKey, ReadCustomIndexQueryArgs args) {
 		Span<byte> buffer = stackalloc byte[MaxSqlCommandLength];
 		var cmd = new SqlCommandBuilder(buffer) {
-			"select log_position, commit_position, event_number from "u8,
-			TableName.Span,
+			"select log_position, commit_position, event_number from \""u8, TableName.Span, "\""u8,
 			" where log_position >= ? and log_position < ? "u8,
 			partitionKey.GetQueryStatement(),
 			" order by rowid limit ?"u8
@@ -104,8 +103,7 @@ internal class CustomIndexSql<TPartitionKey>(string indexName) where TPartitionK
 	public IEnumerable<IndexQueryRecord> ReadCustomIndexBackQueryExcl(DuckDBAdvancedConnection connection, ITPartitionKey partitionKey, ReadCustomIndexQueryArgs args) {
 		Span<byte> buffer = stackalloc byte[MaxSqlCommandLength];
 		var cmd = new SqlCommandBuilder(buffer) {
-			"select log_position, commit_position, event_number from "u8,
-			TableName.Span,
+			"select log_position, commit_position, event_number from \""u8, TableName.Span, "\""u8,
 			" where log_position < ? "u8,
 			partitionKey.GetQueryStatement(),
 			" order by rowid limit ?"u8
@@ -119,8 +117,7 @@ internal class CustomIndexSql<TPartitionKey>(string indexName) where TPartitionK
 	public IEnumerable<IndexQueryRecord> ReadCustomIndexBackQueryIncl(DuckDBAdvancedConnection connection, ITPartitionKey partitionKey, ReadCustomIndexQueryArgs args) {
 		Span<byte> buffer = stackalloc byte[MaxSqlCommandLength];
 		var cmd = new SqlCommandBuilder(buffer) {
-			"select log_position, commit_position, event_number from "u8,
-			TableName.Span,
+			"select log_position, commit_position, event_number from \""u8, TableName.Span, "\""u8,
 			" where log_position <= ? "u8,
 			partitionKey.GetQueryStatement(),
 			" order by rowid limit ?"u8
@@ -148,8 +145,7 @@ internal class CustomIndexSql<TPartitionKey>(string indexName) where TPartitionK
 	public LastIndexedRecordResult? GetLastIndexedRecord(DuckDBAdvancedConnection connection) {
 		Span<byte> buffer = stackalloc byte[MaxSqlCommandLength];
 		var cmd = new SqlCommandBuilder(buffer) {
-			"select log_position, commit_position, created from "u8,
-			TableName.Span,
+			"select log_position, commit_position, created from \""u8, TableName.Span, "\""u8,
 			" order by rowid desc limit 1"u8,
 		}.Command;
 
