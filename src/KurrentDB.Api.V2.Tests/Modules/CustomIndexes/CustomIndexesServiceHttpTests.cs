@@ -100,9 +100,9 @@ public class CustomIndexesServiceHttpTests {
 
 		await Assert.That(getResponse.Content).IsJson($$"""
 			{
-				"code":5,
+				"code": 5,
 				"message": "Custom Index '{{CustomIndexName}}' does not exist",
-				"details":[
+				"details": [
 					{
 						"@type": "type.googleapis.com/google.rpc.ErrorInfo",
 						"reason": "CUSTOM_INDEX_NOT_FOUND",
@@ -145,7 +145,7 @@ public class CustomIndexesServiceHttpTests {
 	}
 
 	[Test]
-	public async ValueTask cannot_create_with_illegal_name() {
+	public async ValueTask cannot_create_with_invalid_name() {
 		var illegalName = "UPPER CASE NOT ALLOWED";
 		var request = new RestRequest($"/v2/custom-indexes/{illegalName}")
 			.AddJsonBody("""
@@ -176,9 +176,9 @@ public class CustomIndexesServiceHttpTests {
 
 		await Assert.That(response.Content).IsJson("""
 			{
-				"code":5,
-				"message":"Custom Index 'non-existant-index' does not exist",
-				"details":[
+				"code": 5,
+				"message": "Custom Index 'non-existant-index' does not exist",
+				"details": [
 					{
 						"@type": "type.googleapis.com/google.rpc.ErrorInfo",
 						"reason": "CUSTOM_INDEX_NOT_FOUND",
@@ -203,9 +203,9 @@ public class CustomIndexesServiceHttpTests {
 
 		await Assert.That(response.Content).IsJson("""
 			{
-				"code":5,
-				"message":"Custom Index 'non-existant-index' does not exist",
-				"details":[
+				"code": 5,
+				"message": "Custom Index 'non-existant-index' does not exist",
+				"details": [
 					{
 						"@type": "type.googleapis.com/google.rpc.ErrorInfo",
 						"reason": "CUSTOM_INDEX_NOT_FOUND",

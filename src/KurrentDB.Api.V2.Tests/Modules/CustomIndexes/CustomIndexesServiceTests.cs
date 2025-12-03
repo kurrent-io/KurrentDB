@@ -12,7 +12,7 @@ public class CustomIndexesServiceTests {
 
 	CustomIndexesService.CustomIndexesServiceClient Client => KurrentContext.CustomIndexesClient;
 
-	static readonly string CustomIndexName = $"my-custom-index-{Guid.NewGuid()}";
+	static readonly string CustomIndexName = $"my-custom-index_{Guid.NewGuid()}";
 
 	[Test]
 	public async ValueTask can_create() {
@@ -125,6 +125,84 @@ public class CustomIndexesServiceTests {
 		});
 		await cannot_get("non-existant-index");
 	}
+
+	[Test]
+	[Arguments("UPPER_CASE_NOT_ALLOWED")]
+	[Arguments("space not allowed")]
+	[Arguments("不允許使用中文字符")]
+	public async ValueTask cannot_create_with_invalid_name(string name) {
+		var ex = await Assert
+			.That(async () => {
+				await Client.CreateCustomIndexAsync(new() {
+					Name = name,
+					Filter = "e => e.type == 'my-event-type'",
+					PartitionKeySelector = "e => e.number",
+					PartitionKeyType = KeyType.Int32,
+				});
+			})
+			.Throws<RpcException>();
+
+		await Assert.That(ex!.Status.Detail).IsEqualTo("Name can contain only lowercase alphanumeric characters, underscores and dashes");
+		await Assert.That(ex!.Status.StatusCode).IsEqualTo(StatusCode.InvalidArgument);
+	}
+
+	[Test]
+	[Arguments("foo")]
+	[Arguments("e => e.type ==> 'my-event-type'")]
+	[Arguments("(e, f) => e.type == 'my-event-type'")]
+	public async ValueTask cannot_create_with_invalid_filter(string filter) {
+		var ex = await Assert
+			.That(async () => {
+				await Client.CreateCustomIndexAsync(new() {
+					Name = $"{nameof(cannot_create_with_invalid_filter)}-{Guid.NewGuid()}",
+					Filter = filter,
+					PartitionKeySelector = "e => e.number",
+					PartitionKeyType = KeyType.Int32,
+				});
+			})
+			.Throws<RpcException>();
+
+		await Assert.That(ex!.Status.Detail).IsEqualTo("Filter must be a valid JavaScript function with exactly one argument");
+		await Assert.That(ex!.Status.StatusCode).IsEqualTo(StatusCode.InvalidArgument);
+	}
+
+	[Test]
+	[Arguments("foo")]
+	[Arguments("e => e.type ==> 'my-event-type'")]
+	[Arguments("(e, f) => e.type == 'my-event-type'")]
+	public async ValueTask cannot_create_with_invalid_key_selector(string keySelector) {
+		var ex = await Assert
+			.That(async () => {
+				await Client.CreateCustomIndexAsync(new() {
+					Name = $"{nameof(cannot_create_with_invalid_filter)}-{Guid.NewGuid()}",
+					Filter = "e => e.type == 'my-event-type'",
+					PartitionKeySelector = keySelector,
+					PartitionKeyType = KeyType.Int32,
+				});
+			})
+			.Throws<RpcException>();
+
+		await Assert.That(ex!.Status.Detail).IsEqualTo("Partition key selector must be a valid JavaScript function with exactly one argument");
+		await Assert.That(ex!.Status.StatusCode).IsEqualTo(StatusCode.InvalidArgument);
+	}
+
+	//qq currently deosn't throw, what key type do we end up with, may be missing validation
+	//[Test]
+	//public async ValueTask cannot_create_with_invalid_key_type() {
+	//	var ex = await Assert
+	//		.That(async () => {
+	//			await Client.CreateCustomIndexAsync(new() {
+	//				Name = $"{nameof(cannot_create_with_invalid_filter)}-{Guid.NewGuid()}",
+	//				Filter = "e => e.type == 'my-event-type'",
+	//				PartitionKeySelector = "e => e.number",
+	//				PartitionKeyType = KeyType.Unspecified,
+	//			});
+	//		})
+	//		.Throws<RpcException>();
+
+	//	await Assert.That(ex!.Status.Detail).IsEqualTo("Partition key selector must be a valid JavaScript function with exactly one argument");
+	//	await Assert.That(ex!.Status.StatusCode).IsEqualTo(StatusCode.InvalidArgument);
+	//}
 
 	[Test]
 	public async ValueTask cannot_enable_non_existant() {
