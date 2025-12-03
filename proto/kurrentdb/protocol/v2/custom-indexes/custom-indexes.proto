@@ -7,7 +7,7 @@ option csharp_namespace = "KurrentDB.Protocol.V2.CustomIndexes";
 import "google/api/annotations.proto";
 
 service CustomIndexesService {
-  //qq decide on route prefix
+  //qq decide on route prefix.. /custom-indexes/v1/ ?
   //
   // Write-side Services
   //
@@ -128,8 +128,8 @@ message CustomIndex {
 }
 
 enum CustomIndexStatus {
-  STATUS_UNSPECIFIED = 0;
-  STATUS_DISABLED = 1;
-  STATUS_ENABLED = 2;
-  STATUS_DELETED = 3;
+  CUSTOM_INDEX_STATUS_UNSPECIFIED = 0;
+  CUSTOM_INDEX_STATUS_DISABLED = 1;
+  CUSTOM_INDEX_STATUS_ENABLED = 2;
+  CUSTOM_INDEX_STATUS_DELETED = 3;
 }

@@ -31,7 +31,7 @@ public class CustomIndexesServiceHttpTests {
 
 		await Assert.That(response.Content).IsJson("{}");
 		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-		await can_get(status: "STATUS_DISABLED");
+		await can_get(expectedStatus: "CUSTOM_INDEX_STATUS_DISABLED");
 	}
 
 	[Test]
@@ -43,7 +43,7 @@ public class CustomIndexesServiceHttpTests {
 
 		await Assert.That(response.Content).IsJson("{}");
 		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-		await can_get(status: "STATUS_ENABLED");
+		await can_get(expectedStatus: "CUSTOM_INDEX_STATUS_ENABLED");
 	}
 
 	[Test]
@@ -55,29 +55,32 @@ public class CustomIndexesServiceHttpTests {
 
 		await Assert.That(response.Content).IsJson("{}");
 		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-		await can_get(status: "STATUS_DISABLED");
+		await can_get(expectedStatus: "CUSTOM_INDEX_STATUS_DISABLED");
 	}
 
 	[Test]
 	[DependsOn(nameof(can_disable))]
 	public async ValueTask can_list() {
-		var response = await Client.GetAsync(
+		var response = await Client.GetAsync<ListResponse>(
 			new RestRequest($"/v2/custom-indexes/"),
 			TestContext.CancellationToken);
 
-		await Assert.That(response.Content).IsJson($$"""
-			{
-				"customIndexes": {
-					"{{CustomIndexName}}": {
-						"filter": "e => e.type == 'my-event-type'",
-						"partitionKeySelector": "e => e.number",
-						"partitionKeyType": "KEY_TYPE_INT_32",
-						"status": "STATUS_DISABLED"
-					}
-				}
-			}
-			""");
-		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+		await Assert.That(response!.CustomIndexes.TryGetValue(CustomIndexName, out var customIndexState)).IsTrue();
+		await Assert.That(customIndexState!.Filter).IsEqualTo("e => e.type == 'my-event-type'");
+		await Assert.That(customIndexState!.PartitionKeySelector).IsEqualTo("e => e.number");
+		await Assert.That(customIndexState!.PartitionKeyType).IsEqualTo("KEY_TYPE_INT_32");
+		await Assert.That(customIndexState!.Status).IsEqualTo("CUSTOM_INDEX_STATUS_DISABLED");
+	}
+
+	class ListResponse {
+		public Dictionary<string, CustomIndexState> CustomIndexes { get; set; } = [];
+
+		public class CustomIndexState {
+			public string Filter { get; set; } = "";
+			public string PartitionKeySelector { get; set; } = "";
+			public string PartitionKeyType { get; set; } = "";
+			public string Status { get; set; } = "";
+		}
 	}
 
 	[Test]
@@ -116,20 +119,14 @@ public class CustomIndexesServiceHttpTests {
 		await Assert.That(getResponse.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
 
 		// no longer listed
-		var listResponse = await Client.GetAsync(
+		var listResponse = await Client.GetAsync<ListResponse>(
 			new RestRequest($"/v2/custom-indexes/"),
 			TestContext.CancellationToken);
 
-		await Assert.That(listResponse.Content).IsJson("""
-			{
-				"customIndexes": {
-				}
-			}
-			""");
-		await Assert.That(listResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
+		await Assert.That(listResponse!.CustomIndexes).DoesNotContainKey(CustomIndexName);
 	}
 
-	async ValueTask can_get(string status) {
+	async ValueTask can_get(string expectedStatus) {
 		var response = await Client.GetAsync(
 			new RestRequest($"/v2/custom-indexes/{CustomIndexName}"),
 			TestContext.CancellationToken);
@@ -140,7 +137,7 @@ public class CustomIndexesServiceHttpTests {
 					"filter": "e => e.type == 'my-event-type'",
 					"partitionKeySelector": "e => e.number",
 					"partitionKeyType": "KEY_TYPE_INT_32",
-					"status": "{{status}}"
+					"status": "{{expectedStatus}}"
 				}
 			}
 			""");

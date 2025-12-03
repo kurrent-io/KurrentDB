@@ -14,7 +14,6 @@ using static KurrentDB.Protocol.V2.CustomIndexes.CustomIndexesService;
 
 namespace KurrentDB.Api.Modules.CustomIndexes;
 
-//qq error types in the proto?
 public class CustomIndexesGrpcService(
 	CustomIndexDomainService domainService,
 	CustomIndexReadsideService readSideService,
@@ -29,7 +28,6 @@ public class CustomIndexesGrpcService(
 				ShouldHandle = args =>
 					ValueTask.FromResult(args.Outcome.Exception
 						is not null
-						and not Kurrent.Surge.ExpectedStreamRevisionError
 						and not CustomIndexDomainException
 						and not OperationCanceledException),
 			})
@@ -202,10 +200,10 @@ file static class Extensions {
 
 	private static CustomIndexStatus Convert(this CustomIndexReadsideService.Status target) =>
 		target switch {
-			CustomIndexReadsideService.Status.None => CustomIndexStatus.StatusUnspecified,
-			CustomIndexReadsideService.Status.Disabled => CustomIndexStatus.StatusDisabled,
-			CustomIndexReadsideService.Status.Enabled => CustomIndexStatus.StatusEnabled,
-			CustomIndexReadsideService.Status.Deleted => CustomIndexStatus.StatusDeleted,
+			CustomIndexReadsideService.Status.None => CustomIndexStatus.Unspecified,
+			CustomIndexReadsideService.Status.Disabled => CustomIndexStatus.Disabled,
+			CustomIndexReadsideService.Status.Enabled => CustomIndexStatus.Enabled,
+			CustomIndexReadsideService.Status.Deleted => CustomIndexStatus.Deleted,
 			_ => throw new ArgumentOutOfRangeException(nameof(target), target, null),
 		};
 
