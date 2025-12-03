@@ -368,8 +368,11 @@ public class SubscriptionsService<TStreamId> :
 				subscriptionsToDrop.AddRange(subscriptions);
 		}
 
-		foreach (var subscription in subscriptionsToDrop)
-			DropSubscription(subscription, SubscriptionDropReason.StreamDeleted, sendDropNotification: true);
+		foreach (var subscription in subscriptionsToDrop) {
+			// we use `SubscriptionDropReason.NotFound` for consistency with reads which also return `Not Found`
+			// if an index is deleted while being read.
+			DropSubscription(subscription, SubscriptionDropReason.NotFound, sendDropNotification: true);
+		}
 
 		return ValueTask.CompletedTask;
 	}

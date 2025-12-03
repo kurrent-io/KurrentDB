@@ -247,7 +247,6 @@ public class Subscription : ISecondaryIndexReader {
 		}
 
 		await index.Stop();
-		DropSubscriptions(indexName);
 	}
 
 	private void DeleteCustomIndex(string indexName) {
@@ -256,6 +255,8 @@ public class Subscription : ISecondaryIndexReader {
 		using (_db.Rent(out var connection)) {
 			DeleteCustomIndexTable(connection, indexName);
 		}
+
+		DropSubscriptions(indexName);
 	}
 
 	private void DropSubscriptions(string indexName) {

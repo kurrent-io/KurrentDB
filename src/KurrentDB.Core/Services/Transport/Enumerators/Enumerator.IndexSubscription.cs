@@ -275,8 +275,7 @@ partial class Enumerator {
 									return;
 								case SubscriptionDropReason.NotFound:
 									throw new ReadResponseException.IndexNotFound(_indexName);
-								case SubscriptionDropReason.StreamDeleted: // applies only to custom indexes
-									throw new ReadResponseException.StreamDeleted(_indexName);
+								case SubscriptionDropReason.StreamDeleted: // applies only to regular streams
 								default:
 									throw ReadResponseException.UnknownError.Create(dropped.Reason);
 							}
