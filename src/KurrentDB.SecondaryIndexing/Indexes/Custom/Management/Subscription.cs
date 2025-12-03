@@ -345,7 +345,9 @@ public class Subscription : ISecondaryIndexReader {
 		if (!_subscriptions.TryGetValue(index, out var sub))
 			throw new Exception($"Failed to acquire write lock for index: {index}");
 
-		sub.RWLock.EnterWriteLock();
+		if (!sub.RWLock.TryEnterWriteLock(TimeSpan.FromMinutes(1)))
+			throw new Exception($"Timed out when acquiring write lock for index: {index}");
+
 		subscription = sub;
 		return new WriteLock(sub.RWLock);
 	}
