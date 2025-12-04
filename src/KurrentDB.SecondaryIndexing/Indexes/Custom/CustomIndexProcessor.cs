@@ -52,7 +52,7 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 	public CustomIndexProcessor(
 		string indexName,
 		string jsEventFilter,
-		string? jsPartitionKeySelector,
+		string jsPartitionKeySelector,
 		DuckDBConnectionPool db,
 		CustomIndexSql<TPartitionKey> sql,
 		IndexInFlightRecords inFlightRecords,
@@ -73,7 +73,7 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 
 		var engine = new Engine();
 		_eventFilter = engine.Evaluate(jsEventFilter).AsFunctionInstance();
-		if (jsPartitionKeySelector is not null)
+		if (jsPartitionKeySelector != string.Empty)
 			_partitionKeySelector = engine.Evaluate(jsPartitionKeySelector).AsFunctionInstance();
 
 		_resolvedEventJsObject = new(engine);
