@@ -82,8 +82,8 @@ public static partial class TestContextLoggingExtensions {
 
     public static Disposable AddLogging(this TestContext ctx, Serilog.ILogger scopedTestLogger) {
         ILoggerFactory factory = new SerilogLoggerFactory(scopedTestLogger, true);
-        ctx.InjectItem(factory, LoggerFactoryKey);
-        ctx.InjectItem(factory.CreateLogger(null!), LoggerKey);
+        ctx.TryInjectItem(factory, LoggerFactoryKey);
+        ctx.TryInjectItem(factory.CreateLogger(null!), LoggerKey);
 
         return Disposable.Create.With(ctx.RemoveLogging);
     }
