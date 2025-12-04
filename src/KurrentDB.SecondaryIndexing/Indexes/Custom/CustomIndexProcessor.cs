@@ -247,7 +247,7 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 			];
 
 			if (TPartitionKey.Type is { } type)
-				columnInfos.Add(new ColumnInfo("partition_key", type));
+				columnInfos.Add(new ColumnInfo("partition", type));
 
 			return new(columnInfos, records);
 		}

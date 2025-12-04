@@ -39,7 +39,7 @@ public static partial class QueryService {
 					if (!exists)
 						throw new("Index does not exist");
 
-					cte = string.Format(CustomIndexCteTemplate, cteName, $"\"{tableName}\"", $"\"{tableFunctionName}\"", hasPartitionKey ? ", partition_key" : string.Empty);
+					cte = string.Format(CustomIndexCteTemplate, cteName, $"\"{tableName}\"", $"\"{tableFunctionName}\"", hasPartitionKey ? ", partition" : string.Empty);
 					break;
 				default:
 					throw new("Invalid token");
