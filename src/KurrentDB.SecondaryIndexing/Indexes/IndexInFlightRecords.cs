@@ -13,7 +13,7 @@ internal record struct InFlightRecord(
 	string StreamName,
 	long EventNumber,
 	long Created,
-	string? PartitionKey
+	string? Partition
 );
 
 internal class IndexInFlightRecords(SecondaryIndexingPluginOptions options) {
@@ -34,13 +34,13 @@ internal class IndexInFlightRecords(SecondaryIndexingPluginOptions options) {
 	}
 
 	// used by custom indexes
-	public void Append(long logPosition, long commitPosition, long eventNumber, string? partitionKey, long created) {
+	public void Append(long logPosition, long commitPosition, long eventNumber, string? partition, long created) {
 		var count = _count;
 		_records[count] = new InFlightRecord {
 			LogPosition = logPosition,
 			CommitPosition = commitPosition,
 			EventNumber = eventNumber,
-			PartitionKey = partitionKey,
+			Partition = partition,
 			Created = created
 		};
 

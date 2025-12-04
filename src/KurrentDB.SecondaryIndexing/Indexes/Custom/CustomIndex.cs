@@ -8,9 +8,9 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Custom;
 using static Core.Services.SystemStreams;
 
 public static class CustomIndex {
-	public static string GetStreamName(string indexName, string? partitionKey = null) {
-		partitionKey = partitionKey is null ? string.Empty : $"{CustomIndexPartitionKeyDelimiter}{partitionKey}";
-		return $"{IndexStreamPrefix}{indexName}{partitionKey}";
+	public static string GetStreamName(string indexName, string? partition = null) {
+		partition = partition is null ? string.Empty : $"{CustomIndexPartitionKeyDelimiter}{partition}";
+		return $"{IndexStreamPrefix}{indexName}{partition}";
 	}
 
 	public static Regex GetStreamNameRegex(string indexName) {
@@ -19,14 +19,14 @@ public static class CustomIndex {
 		return new Regex(pattern, RegexOptions.Compiled);
 	}
 
-	public static void ParseStreamName(string streamName, out string indexName, out string? partitionKey) {
+	public static void ParseStreamName(string streamName, out string indexName, out string? partition) {
 		var delimiterIdx = streamName.IndexOf(CustomIndexPartitionKeyDelimiter, IndexStreamPrefix.Length);
 		if (delimiterIdx < 0) {
 			indexName = streamName[IndexStreamPrefix.Length..];
-			partitionKey = null;
+			partition = null;
 		} else {
 			indexName = streamName[IndexStreamPrefix.Length..delimiterIdx];
-			partitionKey = streamName[(delimiterIdx + 1)..];
+			partition = streamName[(delimiterIdx + 1)..];
 		}
 	}
 

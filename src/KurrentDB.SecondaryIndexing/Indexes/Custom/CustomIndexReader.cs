@@ -16,14 +16,14 @@ internal class CustomIndexReader<TPartitionKey>(
 ) : SecondaryIndexReaderBase(db, index) where TPartitionKey : ITPartitionKey {
 
 	protected override string GetId(string indexStream) {
-		// the partition key is used as the ID
-		CustomIndex.ParseStreamName(indexStream, out _, out var partitionKey);
-		return partitionKey ?? string.Empty;
+		// the partition is used as the ID
+		CustomIndex.ParseStreamName(indexStream, out _, out var partition);
+		return partition ?? string.Empty;
 	}
 
 	protected override (List<IndexQueryRecord> Records, bool IsFinal) GetInflightForwards(string id, long startPosition, int maxCount, bool excludeFirst) {
 		return inFlightRecords.GetInFlightRecordsForwards(startPosition, maxCount, excludeFirst, Filter);
-		bool Filter(InFlightRecord r) => id == string.Empty || r.PartitionKey == id;
+		bool Filter(InFlightRecord r) => id == string.Empty || r.Partition == id;
 	}
 
 	protected override List<IndexQueryRecord> GetDbRecordsForwards(string id, long startPosition, long endPosition, int maxCount, bool excludeFirst) {
@@ -45,7 +45,7 @@ internal class CustomIndexReader<TPartitionKey>(
 
 	protected override IEnumerable<IndexQueryRecord> GetInflightBackwards(string id, long startPosition, int maxCount, bool excludeFirst) {
 		return inFlightRecords.GetInFlightRecordsBackwards(startPosition, maxCount, excludeFirst, Filter);
-		bool Filter(InFlightRecord r) => id == string.Empty || r.PartitionKey == id;
+		bool Filter(InFlightRecord r) => id == string.Empty || r.Partition == id;
 	}
 
 	protected override List<IndexQueryRecord> GetDbRecordsBackwards(string id, long startPosition, int maxCount, bool excludeFirst) {
@@ -77,7 +77,7 @@ internal class CustomIndexReader<TPartitionKey>(
 			partitionKey = TPartitionKey.ParseFrom(id);
 			return true;
 		} catch {
-			// invalid partition key
+			// invalid partition
 			return false;
 		}
 	}

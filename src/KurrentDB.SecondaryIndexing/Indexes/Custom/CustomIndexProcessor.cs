@@ -98,7 +98,7 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 		if (IsDisposingOrDisposed)
 			return false;
 
-		var canHandle = CanHandleEvent(resolvedEvent, out var partitionKey);
+		var canHandle = CanHandleEvent(resolvedEvent, out var partition);
 		_lastPosition = resolvedEvent.OriginalPosition!.Value;
 
 		if (!canHandle) {
@@ -111,10 +111,10 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 		var eventNumber = resolvedEvent.Event.EventNumber;
 		var streamId = resolvedEvent.Event.EventStreamId;
 		var created = new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds();
-		var partitionKeyStr = partitionKey?.ToString();
+		var partitionStr = partition?.ToString();
 
-		Log.Verbose("Custom index: {index} is appending event: {eventNumber}@{stream} ({position}). Partition key = {partitionKey}.",
-			IndexName, eventNumber, streamId, resolvedEvent.OriginalPosition, partitionKeyStr);
+		Log.Verbose("Custom index: {index} is appending event: {eventNumber}@{stream} ({position}). Partition = {partition}.",
+			IndexName, eventNumber, streamId, resolvedEvent.OriginalPosition, partition);
 
 		using (var row = _appender.CreateRow()) {
 			row.Append(preparePosition);
@@ -126,22 +126,22 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 
 			row.Append(eventNumber);
 			row.Append(created);
-			partitionKey?.AppendTo(row);
+			partition?.AppendTo(row);
 		}
 
-		_inFlightRecords.Append(preparePosition, commitPosition ?? preparePosition, eventNumber, partitionKeyStr, created);
+		_inFlightRecords.Append(preparePosition, commitPosition ?? preparePosition, eventNumber, partitionStr, created);
 
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(CustomIndex.GetStreamName(IndexName), resolvedEvent));
-		if (partitionKey is not null)
-			_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(CustomIndex.GetStreamName(IndexName, partitionKeyStr), resolvedEvent));
+		if (partition is not null)
+			_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(CustomIndex.GetStreamName(IndexName, partitionStr), resolvedEvent));
 
 		Tracker.RecordIndexed(resolvedEvent);
 
 		return true;
 	}
 
-	private bool CanHandleEvent(ResolvedEvent resolvedEvent, out ITPartitionKey? partitionKey) {
-		partitionKey = null;
+	private bool CanHandleEvent(ResolvedEvent resolvedEvent, out ITPartitionKey? partition) {
+		partition = null;
 
 		try {
 			_resolvedEventJsObject.StreamId = resolvedEvent.OriginalEvent.EventStreamId;
@@ -157,8 +157,8 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 				return false;
 
 			if (_partitionKeySelector is not null) {
-				var partitionKeyJsValue = _partitionKeySelector.Call(_resolvedEventJsObject);
-				partitionKey = TPartitionKey.ParseFrom(partitionKeyJsValue);
+				var partitionJsValue = _partitionKeySelector.Call(_resolvedEventJsObject);
+				partition = TPartitionKey.ParseFrom(partitionJsValue);
 			}
 
 			return true;
@@ -259,7 +259,7 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 			writers[2].WriteValue(record.Created, rowIndex);
 
 			if (TPartitionKey.Type is { } type) {
-				var value = Convert.ChangeType(record.PartitionKey, type);
+				var value = Convert.ChangeType(record.Partition, type);
 				writers[3].WriteValue(value, rowIndex);
 			}
 		}
