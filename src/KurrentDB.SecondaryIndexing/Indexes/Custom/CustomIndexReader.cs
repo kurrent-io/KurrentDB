@@ -9,11 +9,11 @@ using KurrentDB.SecondaryIndexing.Storage;
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom;
 
 internal class CustomIndexReader<TPartitionKey>(
-	DuckDBConnectionPool db,
+	DuckDBConnectionPool sharedPool,
 	CustomIndexSql<TPartitionKey> sql,
 	IndexInFlightRecords inFlightRecords,
 	IReadIndex<string> index
-) : SecondaryIndexReaderBase(db, index) where TPartitionKey : ITPartitionKey {
+) : SecondaryIndexReaderBase(sharedPool, index) where TPartitionKey : ITPartitionKey {
 
 	protected override string GetId(string indexStream) {
 		// the partition is used as the ID
@@ -26,7 +26,7 @@ internal class CustomIndexReader<TPartitionKey>(
 		bool Filter(InFlightRecord r) => id == string.Empty || r.Partition == id;
 	}
 
-	protected override List<IndexQueryRecord> GetDbRecordsForwards(string id, long startPosition, long endPosition, int maxCount, bool excludeFirst) {
+	protected override List<IndexQueryRecord> GetDbRecordsForwards(DuckDBConnectionPool db, string id, long startPosition, long endPosition, int maxCount, bool excludeFirst) {
 		var args = new ReadCustomIndexQueryArgs {
 			StartPosition = startPosition,
 			EndPosition = endPosition,
@@ -36,7 +36,7 @@ internal class CustomIndexReader<TPartitionKey>(
 		if (!TryGetPartitionKey(id, out var partitionKey))
 			return [];
 
-		using (Db.Rent(out var connection)) {
+		using (db.Rent(out var connection)) {
 			return excludeFirst ?
 				sql.ReadCustomIndexQueryExcl(connection, partitionKey, args).ToList():
 				sql.ReadCustomIndexQueryIncl(connection, partitionKey, args).ToList();
@@ -48,7 +48,7 @@ internal class CustomIndexReader<TPartitionKey>(
 		bool Filter(InFlightRecord r) => id == string.Empty || r.Partition == id;
 	}
 
-	protected override List<IndexQueryRecord> GetDbRecordsBackwards(string id, long startPosition, int maxCount, bool excludeFirst) {
+	protected override List<IndexQueryRecord> GetDbRecordsBackwards(DuckDBConnectionPool db, string id, long startPosition, int maxCount, bool excludeFirst) {
 		var args = new ReadCustomIndexQueryArgs {
 			StartPosition = startPosition,
 			Count = maxCount
@@ -57,7 +57,7 @@ internal class CustomIndexReader<TPartitionKey>(
 		if (!TryGetPartitionKey(id, out var partitionKey))
 			return [];
 
-		using (Db.Rent(out var connection)) {
+		using (db.Rent(out var connection)) {
 			return excludeFirst ?
 				sql.ReadCustomIndexBackQueryExcl(connection, partitionKey, args).ToList():
 				sql.ReadCustomIndexBackQueryIncl(connection, partitionKey, args).ToList();

@@ -229,7 +229,7 @@ public class Subscription : ISecondaryIndexReader {
 			meter: _meter,
 			getLastAppendedRecord: _getLastAppendedRecord);
 
-		var reader = new CustomIndexReader<TPartitionKey>(_db, sql, inFlightRecords, _readIndex);
+		var reader = new CustomIndexReader<TPartitionKey>(sharedPool: _db, sql, inFlightRecords, _readIndex);
 
 		CustomIndexSubscription subscription = new CustomIndexSubscription<TPartitionKey>(
 			publisher: _publisher,

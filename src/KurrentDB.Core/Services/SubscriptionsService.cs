@@ -308,7 +308,7 @@ public class SubscriptionsService<TStreamId> :
 				allReq.PreparePosition, allReq.MaxCount, allReq.ResolveLinkTos, allReq.RequireLeader, allReq.ValidationTfLastCommitPosition, allReq.User, allReq.ReplyOnExpired),
 			ClientMessage.ReadIndexEventsForward indexReq => new ClientMessage.ReadIndexEventsForward(indexReq.InternalCorrId, indexReq.CorrelationId, indexReq.Envelope, indexReq.IndexName,
 				indexReq.CommitPosition, indexReq.PreparePosition, indexReq.ExcludeStart, indexReq.MaxCount, indexReq.RequireLeader, indexReq.ValidationTfLastCommitPosition, indexReq.User,
-				indexReq.ReplyOnExpired),
+				indexReq.ReplyOnExpired, indexReq.Pool),
 			_ => throw new Exception($"Unexpected read request of type {originalRequest.GetType()} for long polling: {originalRequest}.")
 		};
 	}

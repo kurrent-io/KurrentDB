@@ -11,13 +11,17 @@ using EventStore.Client;
 using EventStore.Client.Streams;
 using Google.Protobuf;
 using Grpc.Core;
+using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.DuckDB;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Services.Transport.Grpc;
+using Microsoft.AspNetCore.Connections.Features;
+using Microsoft.AspNetCore.Http;
 using static EventStore.Client.Streams.ReadResp.Types;
 using static EventStore.Plugins.Authorization.Operations.Streams;
 using CountOptionOneofCase = EventStore.Client.Streams.ReadReq.Types.Options.CountOptionOneofCase;
@@ -46,7 +50,8 @@ internal partial class Streams<TStreamId> {
 			var filterOptionsCase = options.FilterOptionCase;
 			var compatibility = options.ControlOption?.Compatibility ?? 0;
 
-			var user = context.GetHttpContext().User;
+			var httpContext = context.GetHttpContext();
+			var user = httpContext.User;
 			var requiresLeader = GetRequiresLeader(context.RequestHeaders);
 
 			var uuidOption = options.UuidOption;
@@ -74,6 +79,7 @@ internal partial class Streams<TStreamId> {
 					countOptionsCase,
 					readDirection,
 					filterOptionsCase,
+					httpContext,
 					context.CancellationToken);
 
 				async void DisposeEnumerator() => await enumerator.DisposeAsync();
@@ -104,6 +110,7 @@ internal partial class Streams<TStreamId> {
 		CountOptionOneofCase countOptionsCase,
 		ReadDirection readDirection,
 		FilterOptionOneofCase filterOptionsCase,
+		HttpContext httpContext,
 		CancellationToken cancellationToken) {
 		return (streamOptionsCase, countOptionsCase, readDirection, filterOptionsCase) switch {
 			(StreamOptionOneofCase.Stream,
@@ -215,7 +222,7 @@ internal partial class Streams<TStreamId> {
 			GetFilterOrIndexEnumerator(
 				indexName => new Enumerator.ReadIndexForwards(
 					_publisher, indexName, request.Options.All.ToPosition(),
-					request.Options.Count, user, requiresLeader, _expiryStrategy, cancellationToken
+					request.Options.Count, user, requiresLeader, _expiryStrategy, GetDuckDbConnectionPool(), cancellationToken
 				),
 				filter => new Enumerator.ReadAllForwardsFiltered(
 					_publisher,
@@ -234,7 +241,7 @@ internal partial class Streams<TStreamId> {
 			GetFilterOrIndexEnumerator(
 				indexName => new Enumerator.ReadIndexBackwards(
 					_publisher, indexName, request.Options.All.ToPosition(),
-					request.Options.Count, user, requiresLeader, _expiryStrategy, cancellationToken
+					request.Options.Count, user, requiresLeader, _expiryStrategy, GetDuckDbConnectionPool(), cancellationToken
 				),
 				filter => new Enumerator.ReadAllBackwardsFiltered(
 					_publisher,
@@ -253,7 +260,7 @@ internal partial class Streams<TStreamId> {
 			GetFilterOrIndexEnumerator(
 				indexName => new Enumerator.IndexSubscription(
 					_publisher, _expiryStrategy, request.Options.All.ToSubscriptionPosition(),
-					indexName, user, requiresLeader, cancellationToken
+					indexName, user, requiresLeader, GetDuckDbConnectionPool(), cancellationToken
 				),
 				filter => new Enumerator.AllSubscriptionFiltered(
 					_publisher,
@@ -267,6 +274,19 @@ internal partial class Streams<TStreamId> {
 					request.Options.Filter.CheckpointIntervalMultiplier,
 					cancellationToken)
 			);
+
+		[CanBeNull]
+		Lazy<DuckDBConnectionPool> GetDuckDbConnectionPool() {
+			var connectionItemsFeature = httpContext.Features.Get<IConnectionItemsFeature>();
+			if (connectionItemsFeature is null)
+				return null;
+
+			lock (connectionItemsFeature.Items) {
+				if (connectionItemsFeature.Items.TryGetValue(DuckDbConnectionPoolMiddleware.Key, out var item))
+					return item as Lazy<DuckDBConnectionPool>;
+			}
+			return null;
+		}
 
 		static uint? ConvertToWindow(ReadReq.Types.Options.Types.FilterOptions filter) =>
 			filter.WindowCase switch {

@@ -220,6 +220,7 @@ public class ReadBackwardsTests : IndexTestBase {
 			validationStreamVersion,
 			user,
 			replyOnExpired,
+			pool: null,
 			longPollTimeout,
 			expires,
 			CancellationToken.None

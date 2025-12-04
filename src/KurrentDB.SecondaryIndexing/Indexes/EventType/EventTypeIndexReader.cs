@@ -11,29 +11,29 @@ using static KurrentDB.SecondaryIndexing.Indexes.EventType.EventTypeSql;
 namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
 
 internal class EventTypeIndexReader(
-	DuckDBConnectionPool db,
+	DuckDBConnectionPool sharedPool,
 	DefaultIndexProcessor processor,
 	IReadIndex<string> index,
 	IndexInFlightRecords inFlightRecords)
-	: SecondaryIndexReaderBase(db, index) {
+	: SecondaryIndexReaderBase(sharedPool, index) {
 	protected override string GetId(string streamName) =>
 		EventTypeIndex.TryParseEventType(streamName, out var eventTypeName) ? eventTypeName : string.Empty;
 
 	protected override (List<IndexQueryRecord>, bool) GetInflightForwards(string id, long startPosition, int maxCount, bool excludeFirst)
 		=> inFlightRecords.GetInFlightRecordsForwards(startPosition, maxCount, excludeFirst, r => r.EventType == id);
 
-	protected override List<IndexQueryRecord> GetDbRecordsForwards(string id, long startPosition, long endPosition, int maxCount, bool excludeFirst)
+	protected override List<IndexQueryRecord> GetDbRecordsForwards(DuckDBConnectionPool db, string id, long startPosition, long endPosition, int maxCount, bool excludeFirst)
 		=> excludeFirst
-			? Db.QueryToList<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryExcl>(new(id, startPosition, endPosition, maxCount))
-			: Db.QueryToList<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(new(id, startPosition, endPosition, maxCount));
+			? db.QueryToList<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryExcl>(new(id, startPosition, endPosition, maxCount))
+			: db.QueryToList<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(new(id, startPosition, endPosition, maxCount));
 
 	protected override IEnumerable<IndexQueryRecord> GetInflightBackwards(string id, long startPosition, int maxCount, bool excludeFirst)
 		=> inFlightRecords.GetInFlightRecordsBackwards(startPosition, maxCount, excludeFirst, r => r.EventType == id);
 
-	protected override List<IndexQueryRecord> GetDbRecordsBackwards(string id, long startPosition, int maxCount, bool excludeFirst)
+	protected override List<IndexQueryRecord> GetDbRecordsBackwards(DuckDBConnectionPool db, string id, long startPosition, int maxCount, bool excludeFirst)
 		=> excludeFirst
-			? Db.QueryToList<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexBackQueryExcl>(new(id, startPosition, 0, maxCount))
-			: Db.QueryToList<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexBackQueryIncl>(new(id, startPosition, 0, maxCount));
+			? db.QueryToList<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexBackQueryExcl>(new(id, startPosition, 0, maxCount))
+			: db.QueryToList<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexBackQueryIncl>(new(id, startPosition, 0, maxCount));
 
 	public override TFPos GetLastIndexedPosition(string indexName) => processor.LastIndexedPosition;
 

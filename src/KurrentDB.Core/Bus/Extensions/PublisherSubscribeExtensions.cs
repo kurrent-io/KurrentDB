@@ -80,6 +80,7 @@ public static class PublisherSubscribeExtensions {
 			checkpoint: position,
 			user: SystemAccounts.System,
 			requiresLeader: false,
+			pool: null,
 			cancellationToken: cancellationToken
 		);
 

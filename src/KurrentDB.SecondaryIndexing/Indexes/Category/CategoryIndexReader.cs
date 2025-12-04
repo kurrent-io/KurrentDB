@@ -13,11 +13,11 @@ using static KurrentDB.SecondaryIndexing.Indexes.Category.CategorySql;
 namespace KurrentDB.SecondaryIndexing.Indexes.Category;
 
 internal class CategoryIndexReader(
-	DuckDBConnectionPool db,
+	DuckDBConnectionPool sharedPool,
 	DefaultIndexProcessor processor,
 	IReadIndex<string> index,
 	IndexInFlightRecords inFlightRecords)
-	: SecondaryIndexReaderBase(db, index) {
+	: SecondaryIndexReaderBase(sharedPool, index) {
 	protected override string GetId(string indexName) =>
 		CategoryIndex.TryParseCategoryName(indexName, out var categoryName)
 			? categoryName
@@ -26,18 +26,18 @@ internal class CategoryIndexReader(
 	protected override (List<IndexQueryRecord>, bool) GetInflightForwards(string id, long startPosition, int maxCount, bool excludeFirst)
 		=> inFlightRecords.GetInFlightRecordsForwards(startPosition, maxCount, excludeFirst, r => r.Category == id);
 
-	protected override List<IndexQueryRecord> GetDbRecordsForwards(string id, long startPosition, long endPosition, int maxCount, bool excludeFirst)
+	protected override List<IndexQueryRecord> GetDbRecordsForwards(DuckDBConnectionPool db, string id, long startPosition, long endPosition, int maxCount, bool excludeFirst)
 		=> excludeFirst
-			? Db.QueryToList<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryExcl>(new(id, startPosition, endPosition, maxCount))
-			: Db.QueryToList<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryIncl>(new(id, startPosition, endPosition, maxCount));
+			? db.QueryToList<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryExcl>(new(id, startPosition, endPosition, maxCount))
+			: db.QueryToList<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryIncl>(new(id, startPosition, endPosition, maxCount));
 
 	protected override IEnumerable<IndexQueryRecord> GetInflightBackwards(string id, long startPosition, int maxCount, bool excludeFirst)
 		=> inFlightRecords.GetInFlightRecordsBackwards(startPosition, maxCount, excludeFirst, r => r.Category == id);
 
-	protected override List<IndexQueryRecord> GetDbRecordsBackwards(string id, long startPosition, int maxCount, bool excludeFirst)
+	protected override List<IndexQueryRecord> GetDbRecordsBackwards(DuckDBConnectionPool db, string id, long startPosition, int maxCount, bool excludeFirst)
 		=> excludeFirst
-			? Db.QueryToList<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexBackQueryExcl>(new(id, startPosition, 0, maxCount))
-			: Db.QueryToList<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexBackQueryIncl>(new(id, startPosition, 0, maxCount));
+			? db.QueryToList<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexBackQueryExcl>(new(id, startPosition, 0, maxCount))
+			: db.QueryToList<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexBackQueryIncl>(new(id, startPosition, 0, maxCount));
 
 	public override TFPos GetLastIndexedPosition(string indexName) => processor.LastIndexedPosition;
 
