@@ -34,7 +34,7 @@ Query one or more available sources like streams, categories, or everything.
 |----------|------------|-------------|
 | `stream:<name>` | Query a stream | `select * from stream:Order-123` |
 | `category:<name>` | Query a category | `select * from category:Order where data->>'customerId'='bob'` |
-| `index:<name>` | Query a custom index | `select * from index:MyIndex where data->>'customerId'='bob'` |
+| `index:<name>` | Query a custom index | `select * from index:orders-by-country where partition_key='Mauritius'` |
 | `all_events` | Query all log records | `select * from all_events limit 10` |
 
 **Consider adding `limit` to the query to constrain the scan surface.**
