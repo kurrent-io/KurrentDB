@@ -60,8 +60,9 @@ internal sealed class ResolvedEventJsObject: ObjectInstance {
 	private JsValue TryParseJson(ReadOnlyMemory<byte> rawBytes, string propertyName) => TryParseJson(rawBytes, propertyName, static () => true);
 
 	private JsValue TryParseJson(ReadOnlyMemory<byte> rawBytes, string propertyName, Func<bool> checkPrerequisites) {
-		if (TryGetValue(propertyName, out var value) && value is ObjectInstance objectInstance)
-			return objectInstance;
+		//qq this does some caching that isn't cleared when we assign to Data etc. commenting for the minute.
+		//if (TryGetValue(propertyName, out var value) && value is ObjectInstance objectInstance)
+		//	return objectInstance;
 
 		if (!checkPrerequisites())
 			return Undefined;

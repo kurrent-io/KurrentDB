@@ -21,15 +21,17 @@ public sealed class KurrentContext : IAsyncInitializer {
 
 	public INode Node => NodeShim.Node;
 	public ConnectorsCommandService.ConnectorsCommandServiceClient ConnectorsClient { get; private set; } = null!;
-	public PersistentSubscriptions.PersistentSubscriptionsClient PersistentSubscriptionsClient { get; private set; } = null!;
-	public StreamsService.StreamsServiceClient StreamsV2Client { get; private set; } = null!;
 	public CustomIndexesService.CustomIndexesServiceClient CustomIndexesClient { get; private set; } = null!;
+	public PersistentSubscriptions.PersistentSubscriptionsClient PersistentSubscriptionsClient { get; private set; } = null!;
+	public EventStore.Client.Streams.Streams.StreamsClient StreamsClient { get; private set; } = null!;
+	public StreamsService.StreamsServiceClient StreamsV2Client { get; private set; } = null!;
 
 	public Task InitializeAsync() {
 		ConnectorsClient = new(GrpcChannelShim.GrpcChannel);
-		PersistentSubscriptionsClient = new(GrpcChannelShim.GrpcChannel);
-		StreamsV2Client = new(GrpcChannelShim.GrpcChannel);
 		CustomIndexesClient = new(GrpcChannelShim.GrpcChannel);
+		PersistentSubscriptionsClient = new(GrpcChannelShim.GrpcChannel);
+		StreamsClient = new(GrpcChannelShim.GrpcChannel);
+		StreamsV2Client = new(GrpcChannelShim.GrpcChannel);
 		return Task.CompletedTask;
 	}
 }
