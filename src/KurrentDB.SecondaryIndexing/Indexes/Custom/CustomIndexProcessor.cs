@@ -240,11 +240,15 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 
 		TableFunction ResultCallback() {
 			var records = _inFlightRecords.GetInFlightRecords();
-			IReadOnlyList<ColumnInfo> columnInfos = [
+			List<ColumnInfo> columnInfos = [
 				new("log_position", typeof(long)),
 				new("event_number", typeof(long)),
 				new("created", typeof(long)),
 			];
+
+			if (TPartitionKey.Type is { } type)
+				columnInfos.Add(new ColumnInfo("partition_key", type));
+
 			return new(columnInfos, records);
 		}
 
@@ -253,13 +257,19 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 			writers[0].WriteValue(record.LogPosition, rowIndex);
 			writers[1].WriteValue(record.EventNumber, rowIndex);
 			writers[2].WriteValue(record.Created, rowIndex);
+
+			if (TPartitionKey.Type is { } type) {
+				var value = Convert.ChangeType(record.PartitionKey, type);
+				writers[3].WriteValue(value, rowIndex);
+			}
 		}
 #pragma warning restore DuckDBNET001
 	}
 
-	public void GetCustomIndexTableNames(out string tableName, out string inFlightTableName) {
+	public void GetCustomIndexTableNames(out string tableName, out string inFlightTableName, out bool hasPartitionKey) {
 		tableName = Encoding.UTF8.GetString(_sql.TableName.Span);
 		inFlightTableName = _inFlightTableName;
+		hasPartitionKey = TPartitionKey.Type is not null;
 	}
 
 	protected override void Dispose(bool disposing) {

@@ -14,7 +14,7 @@ using Kurrent.Quack.ConnectionPool;
 namespace KurrentDB.Components.Query;
 
 public static partial class QueryService {
-	internal delegate bool TryGetCustomIndexTableNames(string indexName, out string tableName, out string inFlightTableName);
+	internal delegate bool TryGetCustomIndexTableNames(string indexName, out string tableName, out string inFlightTableName, out bool hasPartitionKey);
 
 	private static string AmendQuery(DuckDBConnectionPool pool, TryGetCustomIndexTableNames tryGetCustomIndexTableNames, string query) {
 		var matches = ExtractionRegex().Matches(query);
@@ -35,11 +35,11 @@ public static partial class QueryService {
 					break;
 				case "index":
 					var indexName = tokens[1];
-					var exists = tryGetCustomIndexTableNames(indexName, out var tableName, out var tableFunctionName);
+					var exists = tryGetCustomIndexTableNames(indexName, out var tableName, out var tableFunctionName, out var hasPartitionKey);
 					if (!exists)
 						throw new("Index does not exist");
 
-					cte = string.Format(CustomIndexCteTemplate, cteName, tableName, tableFunctionName);
+					cte = string.Format(CustomIndexCteTemplate, cteName, tableName, tableFunctionName, hasPartitionKey ? ", partition_key" : string.Empty);
 					break;
 				default:
 					throw new("Invalid token");
@@ -103,13 +103,13 @@ public static partial class QueryService {
 
 	private const string CustomIndexCteTemplate = """
 	                                      {0} AS (
-	                                          select log_position, event->>'stream_id' as stream, event_number, event->>'event_type' as event_type, epoch_ms(created) as created_at, event->>'data' as data, event->>'metadata' as metadata
+	                                          select log_position, event->>'stream_id' as stream, event_number, event->>'event_type' as event_type, epoch_ms(created) as created_at, event->>'data' as data, event->>'metadata' as metadata{3}
 	                                          from (
 	                                              select *, kdb_get(log_position)::JSON as event
 	                                              from (
-	                                                  select log_position, event_number, created from {1}
+	                                                  select log_position, event_number, created{3} from {1}
 	                                                  union all
-	                                                  select log_position, event_number, created from {2}()
+	                                                  select log_position, event_number, created{3} from {2}()
 	                                              )
 	                                          )
 	                                      )

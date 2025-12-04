@@ -316,15 +316,16 @@ public class Subscription : ISecondaryIndexReader {
 			return index!.ReadBackwards(msg, token);
 	}
 
-	public bool TryGetCustomIndexTableNames(string indexName, out string tableName, out string inFlightTableName) {
+	public bool TryGetCustomIndexTableNames(string indexName, out string tableName, out string inFlightTableName, out bool hasPartitionKey) {
 		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var index)) {
 			tableName = null!;
 			inFlightTableName = null!;
+			hasPartitionKey = false;
 			return false;
 		}
 
 		using (readLock) {
-			index!.GetCustomIndexTableNames(out tableName, out inFlightTableName);
+			index!.GetCustomIndexTableNames(out tableName, out inFlightTableName, out hasPartitionKey);
 			return true;
 		}
 	}

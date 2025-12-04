@@ -140,6 +140,6 @@ public sealed class CustomIndexManager :
 	public ValueTask<ClientMessage.ReadIndexEventsBackwardCompleted> ReadBackwards(ClientMessage.ReadIndexEventsBackward msg, CancellationToken token) =>
 		_subscription!.ReadBackwards(msg, token);
 
-	public bool TryGetCustomIndexTableNames(string indexName, out string tableName, out string inFlightTableName) =>
-		_subscription!.TryGetCustomIndexTableNames(indexName, out tableName, out inFlightTableName);
+	public bool TryGetCustomIndexTableNames(string indexName, out string tableName, out string inFlightTableName, out bool hasPartitionKey) =>
+		_subscription!.TryGetCustomIndexTableNames(indexName, out tableName, out inFlightTableName, out hasPartitionKey);
 }
