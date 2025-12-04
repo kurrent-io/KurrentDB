@@ -14,7 +14,7 @@ using Kurrent.Quack.ConnectionPool;
 namespace KurrentDB.Components.Query;
 
 public static partial class QueryService {
-	internal delegate bool TryGetCustomIndexTableNames(string indexName, out string tableName, out string inFlightTableName, out bool hasPartitionKey);
+	internal delegate bool TryGetCustomIndexTableNames(string indexName, out string tableName, out string inFlightTableName, out bool hasPartitions);
 
 	private static string AmendQuery(DuckDBConnectionPool pool, TryGetCustomIndexTableNames tryGetCustomIndexTableNames, string query) {
 		var matches = ExtractionRegex().Matches(query);
@@ -35,11 +35,11 @@ public static partial class QueryService {
 					break;
 				case "index":
 					var indexName = tokens[1];
-					var exists = tryGetCustomIndexTableNames(indexName, out var tableName, out var tableFunctionName, out var hasPartitionKey);
+					var exists = tryGetCustomIndexTableNames(indexName, out var tableName, out var tableFunctionName, out var hasPartitions);
 					if (!exists)
 						throw new("Index does not exist");
 
-					cte = string.Format(CustomIndexCteTemplate, cteName, $"\"{tableName}\"", $"\"{tableFunctionName}\"", hasPartitionKey ? ", partition" : string.Empty);
+					cte = string.Format(CustomIndexCteTemplate, cteName, $"\"{tableName}\"", $"\"{tableFunctionName}\"", hasPartitions ? ", partition" : string.Empty);
 					break;
 				default:
 					throw new("Invalid token");
