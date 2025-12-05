@@ -11,5 +11,5 @@ class NameValidator : ValidatorBase<NameValidator, string?> {
 		RuleFor(x => x)
 			.Matches("^[a-z0-9_-]+$")
 			.WithMessage("Name can contain only lowercase alphanumeric characters, underscores and dashes")
-            .WithName("Name");
+			.WithName("Name");
 }

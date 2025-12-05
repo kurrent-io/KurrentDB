@@ -7,10 +7,10 @@ using KurrentDB.Protocol.V2.CustomIndexes;
 namespace KurrentDB.Api.Modules.CustomIndexes.Validators;
 
 class DisableCustomIndexValidator : RequestValidator<DisableCustomIndexRequest> {
-    public static readonly DisableCustomIndexValidator Instance = new();
+	public static readonly DisableCustomIndexValidator Instance = new();
 
-    private DisableCustomIndexValidator() {
-	    RuleFor(x => x.Name)
-		    .SetValidator(NameValidator.Instance);
-    }
+	private DisableCustomIndexValidator() {
+		RuleFor(x => x.Name)
+			.SetValidator(NameValidator.Instance);
+	}
 }

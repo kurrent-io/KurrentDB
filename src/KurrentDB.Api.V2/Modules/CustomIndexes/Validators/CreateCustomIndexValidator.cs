@@ -8,17 +8,17 @@ using KurrentDB.Protocol.V2.CustomIndexes;
 namespace KurrentDB.Api.Modules.CustomIndexes.Validators;
 
 class CreateCustomIndexValidator : RequestValidator<CreateCustomIndexRequest> {
-    public static readonly CreateCustomIndexValidator Instance = new();
+	public static readonly CreateCustomIndexValidator Instance = new();
 
-    private CreateCustomIndexValidator() {
-	    RuleFor(x => x.Name)
-		    .SetValidator(NameValidator.Instance);
+	private CreateCustomIndexValidator() {
+		RuleFor(x => x.Name)
+			.SetValidator(NameValidator.Instance);
 
-	    RuleFor(x => x.Filter)
-		    .SetValidator(FilterValidator.Instance);
+		RuleFor(x => x.Filter)
+			.SetValidator(FilterValidator.Instance);
 
-	    RuleFor(x => x.PartitionKeySelector)
-		    .SetValidator(PartitionKeySelectorValidator.Instance)
-		    .When(x => x.PartitionKeySelector != string.Empty);
-    }
+		RuleFor(x => x.PartitionKeySelector)
+			.SetValidator(PartitionKeySelectorValidator.Instance)
+			.When(x => x.PartitionKeySelector != string.Empty);
+	}
 }
