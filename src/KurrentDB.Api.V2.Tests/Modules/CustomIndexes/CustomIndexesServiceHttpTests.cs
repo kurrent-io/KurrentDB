@@ -23,7 +23,8 @@ public class CustomIndexesServiceHttpTests {
 				{
 					"Filter": "e => e.type == 'my-event-type'",
 					"PartitionKeySelector": "e => e.number",
-					"PartitionKeyType": "KEY_TYPE_INT_32"
+					"PartitionKeyType": "KEY_TYPE_INT_32",
+					"Enable": false
 				}
 				""");
 

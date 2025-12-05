@@ -143,7 +143,6 @@ public class CustomIndexesGrpcService(
 			CustomIndex = response.Convert(),
 		};
 	}
-
 }
 
 file static class Extensions {
@@ -153,7 +152,7 @@ file static class Extensions {
 			EventFilter = self.Filter,
 			PartitionKeySelector = self.PartitionKeySelector,
 			PartitionKeyType = self.PartitionKeyType.Convert(),
-			Enable = self.Enable,
+			Enable = !self.HasEnable || self.Enable,
 			Force = self.Force,
 		};
 

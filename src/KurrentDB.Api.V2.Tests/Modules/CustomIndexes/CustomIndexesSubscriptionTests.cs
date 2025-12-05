@@ -3,7 +3,6 @@
 
 using System.Text;
 using Grpc.Core;
-using KurrentDB.Core.Resilience;
 using KurrentDB.Protocol.V2.CustomIndexes;
 using KurrentDB.Protocol.V2.Streams;
 using KurrentDB.Testing.TUnit;
@@ -47,27 +46,25 @@ public class CustomIndexesSubscriptionTests {
 		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "C", "country": "Mauritius" }""", ct);
 
 		// create index
-		await Client.CreateCustomIndexAsync(new() {
-			Name = CustomIndexName,
-			Filter = $"e => e.type == '{EventType}'",
-			PartitionKeySelector = "e => e.data.country",
-			PartitionKeyType = KeyType.String,
-			Enable = true,
-		});
+		await Client.CreateCustomIndexAsync(
+			new() {
+				Name = CustomIndexName,
+				Filter = $"e => e.type == '{EventType}'",
+				PartitionKeySelector = "e => e.data.country",
+				PartitionKeyType = KeyType.String,
+			},
+			cancellationToken: ct);
 
 		var allPartitions = $"$idx-{CustomIndexName}";
 		var mauritiusPartition = $"{allPartitions}:Mauritius";
 
 		// wait for index to become available
-		await ResiliencePipelines.RetrySlow.ExecuteAsync(ct =>
-			StreamsReadClient.SubscribeToAllFiltered(allPartitions, ct).FirstAsync(ct));
-
-		await ResiliencePipelines.RetrySlow.ExecuteAsync(ct =>
-			StreamsReadClient.SubscribeToAllFiltered(mauritiusPartition, ct).FirstAsync(ct));
+		await StreamsReadClient.WaitForCustomIndexEvents(allPartitions, 1, ct);
+		await StreamsReadClient.WaitForCustomIndexEvents(mauritiusPartition, 1, ct);
 
 		// subscribe
-		await using var allPartitionsEnumerator = StreamsReadClient.SubscribeToAllFiltered(allPartitions, ct).GetAsyncEnumerator();
-		await using var mauritiusEnumerator = StreamsReadClient.SubscribeToAllFiltered(mauritiusPartition, ct).GetAsyncEnumerator();
+		await using var allPartitionsEnumerator = StreamsReadClient.SubscribeToAllFiltered(allPartitions, ct).GetAsyncEnumerator(ct);
+		await using var mauritiusEnumerator = StreamsReadClient.SubscribeToAllFiltered(mauritiusPartition, ct).GetAsyncEnumerator(ct);
 
 		await Assert.That((await allPartitionsEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "A", """);
 		await Assert.That((await allPartitionsEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "B", """);
@@ -86,7 +83,7 @@ public class CustomIndexesSubscriptionTests {
 		await Assert.That((await mauritiusEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "D", """);
 
 		// disable
-		await Client.DisableCustomIndexAsync(new() { Name = CustomIndexName });
+		await Client.DisableCustomIndexAsync(new() { Name = CustomIndexName }, cancellationToken: ct);
 
 		await Task.Delay(500); // todo better way to wait for it to disable
 
@@ -101,7 +98,7 @@ public class CustomIndexesSubscriptionTests {
 		await Assert.That(nextMauritiusResult.IsCompleted).IsFalse();
 
 		// enable and receive the extra events
-		await Client.EnableCustomIndexAsync(new() { Name = CustomIndexName });
+		await Client.EnableCustomIndexAsync(new() { Name = CustomIndexName }, cancellationToken: ct);
 
 		await Assert.That((await nextAllResult).Data.ToStringUtf8()).Contains(""" "orderId": "F", """);
 		await Assert.That((await allPartitionsEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "G", """);
@@ -109,7 +106,7 @@ public class CustomIndexesSubscriptionTests {
 		await Assert.That((await nextMauritiusResult).Data.ToStringUtf8()).Contains(""" "orderId": "F", """);
 
 		// delete
-		await Client.DeleteCustomIndexAsync(new() { Name = CustomIndexName });
+		await Client.DeleteCustomIndexAsync(new() { Name = CustomIndexName }, cancellationToken: ct);
 
 		var ex = await Assert
 			.That(async () => await allPartitionsEnumerator.ConsumeNext())

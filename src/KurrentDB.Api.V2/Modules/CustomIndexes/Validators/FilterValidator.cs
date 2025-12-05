@@ -9,7 +9,7 @@ namespace KurrentDB.Api.Modules.CustomIndexes.Validators;
 class FilterValidator : ValidatorBase<FilterValidator, string?> {
 	public FilterValidator() =>
 		RuleFor(x => x)
-			.Must(JsFunctionValidator.IsValidFunctionWithOneArgument)
-			.WithMessage("Filter must be a valid JavaScript function with exactly one argument")
+			.Must(x => x is "" || JsFunctionValidator.IsValidFunctionWithOneArgument(x))
+			.WithMessage("Filter must be empty or a valid JavaScript function with exactly one argument")
 			.WithName("Filter");
 }

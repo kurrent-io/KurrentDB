@@ -21,6 +21,11 @@ public class CustomIndexesReadTests {
 	static readonly string Category = $"Orders_{CorrelationId:N}";
 	static readonly string EventType = $"OrderCreated-{CorrelationId}";
 	static readonly string Stream = $"{Category}-{CorrelationId}";
+	//qq need a different pattern so that user names do not conflict with the default indexes
+	static readonly string ReadFilter = $"$idx-{CustomIndexName}";
+	static readonly string CategoryFilter = $"$idx-ce-{Category}";
+	static readonly string EventTypeFilter = $"$idx-et-{EventType}";
+
 
 	[Test]
 	public async ValueTask can_setup() {
@@ -29,13 +34,14 @@ public class CustomIndexesReadTests {
 		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "B", "country": "United Kingdom" }""", ct);
 		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "C", "country": "Mauritius" }""", ct);
 
-		await Client.CreateCustomIndexAsync(new() {
-			Name = CustomIndexName,
-			Filter = $"e => e.type == '{EventType}'",
-			PartitionKeySelector = "e => e.data.country",
-			PartitionKeyType = KeyType.String,
-			Enable = true,
-		});
+		await Client.CreateCustomIndexAsync(
+			new() {
+				Name = CustomIndexName,
+				Filter = $"e => e.type == '{EventType}'",
+				PartitionKeySelector = "e => e.data.country",
+				PartitionKeyType = KeyType.String,
+			},
+			cancellationToken: ct);
 	}
 
 	[Test]
@@ -46,11 +52,12 @@ public class CustomIndexesReadTests {
 	[Arguments("United Kingdom", 1)]
 	[Arguments("united kingdom", 0)]
 	public async ValueTask can_read_custom_index_forwards(string partition, int expectedCount) {
+		var ct = TestContext.CancellationToken;
+
 		var partitionSuffix = partition is "" ? "" : $":{partition}";
 		var events = await StreamsReadClient
-			//qq need a different pattern so that user names do not conflict with the default indexes
-			.ReadAllForwardFiltered($"$idx-{CustomIndexName}{partitionSuffix}", TestContext.CancellationToken)
-			.ToArrayAsync(TestContext.CancellationToken);
+			.ReadAllForwardFiltered($"{ReadFilter}{partitionSuffix}", ct)
+			.ToArrayAsync(ct);
 
 		await Assert.That(events.Count).IsEqualTo(expectedCount);
 		await Assert.That(events).IsOrderedBy(x => x.EventNumber);
@@ -68,7 +75,7 @@ public class CustomIndexesReadTests {
 	public async ValueTask can_read_custom_index_backwards(string partition, int expectedCount) {
 		var partitionSuffix = partition is "" ? "" : $":{partition}";
 		var events = await StreamsReadClient
-			.ReadAllBackwardFiltered($"$idx-{CustomIndexName}{partitionSuffix}", TestContext.CancellationToken)
+			.ReadAllBackwardFiltered($"{ReadFilter}{partitionSuffix}", TestContext.CancellationToken)
 			.ToArrayAsync(TestContext.CancellationToken);
 
 		await Assert.That(events.Count).IsEqualTo(expectedCount);
@@ -81,14 +88,17 @@ public class CustomIndexesReadTests {
 	// - test the properties available to the functions
 	// - test if the js throws, returns the wrong type, etc.
 	// - subscribe from a position
+	// - range partitions?
 
 	[Test]
 	[DependsOn(nameof(can_setup))]
 	[Retry(5)] // because index processing is asynchronous to the write
 	public async ValueTask can_read_category_index_forwards() {
+		var ct = TestContext.CancellationToken;
+
 		var events = await StreamsReadClient
-			.ReadAllForwardFiltered($"$idx-ce-{Category}", TestContext.CancellationToken)
-			.ToArrayAsync(TestContext.CancellationToken);
+			.ReadAllForwardFiltered(CategoryFilter, ct)
+			.ToArrayAsync(ct);
 
 		await Assert.That(events.Count).IsEqualTo(3);
 		await Assert.That(events).IsOrderedBy(x => x.Position.PreparePosition);
@@ -99,9 +109,11 @@ public class CustomIndexesReadTests {
 	[DependsOn(nameof(can_setup))]
 	[Retry(5)] // because index processing is asynchronous to the write
 	public async ValueTask can_read_category_index_backwards() {
+		var ct = TestContext.CancellationToken;
+
 		var events = await StreamsReadClient
-			.ReadAllBackwardFiltered($"$idx-ce-{Category}", TestContext.CancellationToken)
-			.ToArrayAsync(TestContext.CancellationToken);
+			.ReadAllBackwardFiltered(CategoryFilter, ct)
+			.ToArrayAsync(ct);
 
 		await Assert.That(events.Count).IsEqualTo(3);
 		await Assert.That(events).IsOrderedByDescending(x => x.Position.PreparePosition);
@@ -112,9 +124,11 @@ public class CustomIndexesReadTests {
 	[DependsOn(nameof(can_setup))]
 	[Retry(5)] // because index processing is asynchronous to the write
 	public async ValueTask can_read_event_type_index_forwards() {
+		var ct = TestContext.CancellationToken;
+
 		var events = await StreamsReadClient
-			.ReadAllForwardFiltered($"$idx-et-{EventType}", TestContext.CancellationToken)
-			.ToArrayAsync(TestContext.CancellationToken);
+			.ReadAllForwardFiltered(EventTypeFilter, ct)
+			.ToArrayAsync(ct);
 
 		await Assert.That(events.Count).IsEqualTo(3);
 		await Assert.That(events).IsOrderedBy(x => x.Position.PreparePosition);
@@ -125,9 +139,11 @@ public class CustomIndexesReadTests {
 	[DependsOn(nameof(can_setup))]
 	[Retry(5)] // because index processing is asynchronous to the write
 	public async ValueTask can_read_event_type_index_backwards() {
+		var ct = TestContext.CancellationToken;
+
 		var events = await StreamsReadClient
-			.ReadAllBackwardFiltered($"$idx-et-{EventType}", TestContext.CancellationToken)
-			.ToArrayAsync(TestContext.CancellationToken);
+			.ReadAllBackwardFiltered(EventTypeFilter, ct)
+			.ToArrayAsync(ct);
 
 		await Assert.That(events.Count).IsEqualTo(3);
 		await Assert.That(events).IsOrderedByDescending(x => x.Position.PreparePosition);

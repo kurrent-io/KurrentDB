@@ -73,8 +73,8 @@ message CreateCustomIndexRequest {
   string filter = 2;
   string partition_key_selector = 3;
   KeyType partition_key_type = 4;
-  bool enable = 5;
-  bool force = 6;
+  optional bool enable = 5; // if unspecified: treated as true
+  optional bool force = 6;
 }
 
 message CreateCustomIndexResponse {
