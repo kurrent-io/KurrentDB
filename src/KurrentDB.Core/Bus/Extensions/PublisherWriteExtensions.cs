@@ -21,7 +21,6 @@ using KurrentDB.Core.Services.UserManagement;
 
 namespace KurrentDB.Core.ClientPublisher;
 
-// TODO: We can remove usages of WriteEvents later
 using WriteEventsResult = (Position Position, StreamRevision StreamRevision);
 using MultiStreamWriteResult = (Position Position, StreamRevision[] StreamRevisions);
 
