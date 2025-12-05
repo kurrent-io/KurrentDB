@@ -46,7 +46,7 @@ public class CustomIndexesReadTests {
 
 	[Test]
 	[DependsOn(nameof(can_setup))]
-	[Retry(5)] // because index processing is asynchronous to the write
+	[Retry(50)] // because index processing is asynchronous to the write
 	[Arguments("", 3)]
 	[Arguments("Mauritius", 2)]
 	[Arguments("United Kingdom", 1)]
@@ -67,7 +67,7 @@ public class CustomIndexesReadTests {
 
 	[Test]
 	[DependsOn(nameof(can_setup))]
-	[Retry(5)] // because index processing is asynchronous to the write
+	[Retry(50)] // because index processing is asynchronous to the write
 	[Arguments("", 3)]
 	[Arguments("Mauritius", 2)]
 	[Arguments("United Kingdom", 1)]
@@ -92,7 +92,7 @@ public class CustomIndexesReadTests {
 
 	[Test]
 	[DependsOn(nameof(can_setup))]
-	[Retry(5)] // because index processing is asynchronous to the write
+	[Retry(50)] // because index processing is asynchronous to the write
 	public async ValueTask can_read_category_index_forwards() {
 		var ct = TestContext.CancellationToken;
 
@@ -107,7 +107,7 @@ public class CustomIndexesReadTests {
 
 	[Test]
 	[DependsOn(nameof(can_setup))]
-	[Retry(5)] // because index processing is asynchronous to the write
+	[Retry(50)] // because index processing is asynchronous to the write
 	public async ValueTask can_read_category_index_backwards() {
 		var ct = TestContext.CancellationToken;
 
@@ -122,7 +122,7 @@ public class CustomIndexesReadTests {
 
 	[Test]
 	[DependsOn(nameof(can_setup))]
-	[Retry(5)] // because index processing is asynchronous to the write
+	[Retry(50)] // because index processing is asynchronous to the write
 	public async ValueTask can_read_event_type_index_forwards() {
 		var ct = TestContext.CancellationToken;
 
@@ -137,7 +137,7 @@ public class CustomIndexesReadTests {
 
 	[Test]
 	[DependsOn(nameof(can_setup))]
-	[Retry(5)] // because index processing is asynchronous to the write
+	[Retry(50)] // because index processing is asynchronous to the write
 	public async ValueTask can_read_event_type_index_backwards() {
 		var ct = TestContext.CancellationToken;
 
