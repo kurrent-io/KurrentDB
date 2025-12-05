@@ -102,87 +102,6 @@ public class SystemProducer : IProducer {
 	    await ProcessRequest(validRequests, callback);
     }
 
-    async ValueTask ProcessRequest(ProduceRequest request, IProduceResultCallback callback) {
-	    var expectedRevision = request.ExpectedStreamRevision != StreamRevision.Unset
-		    ? request.ExpectedStreamRevision.Value
-		    : request.ExpectedStreamState switch {
-			    StreamState.Missing => ExpectedVersion.NoStream,
-			    StreamState.Exists => ExpectedVersion.StreamExists,
-			    StreamState.Any => ExpectedVersion.Any,
-			    _ => throw new ArgumentOutOfRangeException(nameof(request.ExpectedStreamState), request.ExpectedStreamState, null)
-		    };
-
-	    var events = await request.ToEvents(
-		    headers => headers
-			    .Set(HeaderKeys.ProducerId, ProducerId)
-			    .Set(HeaderKeys.ProducerRequestId, request.RequestId),
-		    Serialize
-	    );
-
-	    await Intercept(new ProduceRequestReady(this, request));
-
-	    var result = await WriteEvents(Client, request, events, expectedRevision, ResiliencePipeline);
-
-	    await Intercept(new ProduceRequestProcessed(this, result));
-
-	    try {
-		    await callback.Execute(result);
-	    } catch (Exception uex) {
-		    await Intercept(new ProduceRequestCallbackError(this, result, uex));
-	    }
-
-	    return;
-
-	    static async ValueTask<ProduceResult> WriteEvents(
-		    ISystemClient client,
-		    ProduceRequest request,
-		    Event[] events,
-		    long expectedRevision,
-		    ResiliencePipeline resiliencePipeline) {
-		    var state = (Client: client, Request: request, Events: events, ExpectedRevision: expectedRevision);
-
-		    try {
-			    return await resiliencePipeline.ExecuteAsync(static async (state, token) => {
-				    var result = await WriteEvents(
-					    state.Client,
-					    state.Request,
-					    state.Events,
-					    state.ExpectedRevision,
-					    token);
-
-				    return result.Error is null ? result : throw result.Error;
-			    }, state);
-		    } catch (StreamingError err) {
-			    return ProduceResult.Failed(request, err);
-		    }
-
-		    static async ValueTask<ProduceResult> WriteEvents(
-			    ISystemClient client,
-			    ProduceRequest request,
-			    Event[] events,
-			    long expectedRevision,
-			    CancellationToken cancellationToken) {
-			    try {
-				    var (position, streamRevision) = await client.Writing.WriteEvents(
-					    request.Stream,
-					    events,
-					    expectedRevision,
-					    cancellationToken);
-
-				    var recordPosition = RecordPosition.ForStream(
-					    StreamId.From(request.Stream),
-					    StreamRevision.From(streamRevision.ToInt64()),
-					    LogPosition.From(position.CommitPosition, position.PreparePosition)
-				    );
-
-				    return ProduceResult.Succeeded(request, recordPosition);
-			    } catch (Exception ex) {
-				    return ProduceResult.Failed(request, ex.ToProducerStreamingError(request.Stream));
-			    }
-		    }
-	    }
-    }
-
     async ValueTask ProcessRequest(ProduceRequest[] requests, IProduceResultCallback callback) {
 	    var streamIds = requests.Select(r => r.Stream).ToArray();
 	    var expectedVersions = requests.Select(GetExpectedVersion).ToArray();
@@ -190,18 +109,19 @@ public class SystemProducer : IProducer {
 	    var streamIndexes = new List<int>();
 
 	    for (var i = 0; i < requests.Length; i++) {
-			var events = await requests[i].ToEvents(
-				headers => headers
-					.Set(HeaderKeys.ProducerId, ProducerId)
-					.Set(HeaderKeys.ProducerRequestId, requests[i].RequestId),
-				Serialize
-			);
+		    var events = await requests[i].ToEvents(
+			    headers => headers
+				    .Set(HeaderKeys.ProducerId, ProducerId)
+				    .Set(HeaderKeys.ProducerRequestId, requests[i].RequestId),
+			    Serialize
+		    );
 
 		    allEvents.AddRange(events);
 		    streamIndexes.AddRange(Enumerable.Repeat(i, events.Length));
 	    }
 
-	    await Intercept(new ProduceRequestReady(this, requests[0]));
+	    foreach (var request in requests)
+		    await Intercept(new ProduceRequestReady(this, request));
 
 	    var state = (
 		    Client,
@@ -234,7 +154,8 @@ public class SystemProducer : IProducer {
 	    } catch (StreamingError err) {
 		    results = requests.Select(r => ProduceResult.Failed(r, err)).ToArray();
 	    } catch (Exception ex) {
-		    throw ex.ToProducerStreamingError(streamIds[0]);
+		    var streams = string.Join(", ", streamIds);
+		    throw ex.ToProducerStreamingError($"[{streams}]");
 	    }
 
 	    foreach (var result in results) {

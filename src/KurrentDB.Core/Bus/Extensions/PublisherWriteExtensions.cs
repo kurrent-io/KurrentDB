@@ -21,30 +21,43 @@ using KurrentDB.Core.Services.UserManagement;
 
 namespace KurrentDB.Core.ClientPublisher;
 
-using WriteEventsResult = (Position Position, StreamRevision StreamRevision);
-using MultiStreamWriteResult = (Position Position, StreamRevision[] StreamRevisions);
+using WriteEventsResult = (Position Position, StreamRevision[] StreamRevisions);
 
 [PublicAPI]
 public static class PublisherWriteExtensions {
-	public static async Task<WriteEventsResult> WriteEvents(
+	public static async Task<(Position Position, StreamRevision StreamRevision)> WriteEvents(
 		this IPublisher publisher,
-		string stream, Event[] events,
+		string stream,
+		Event[] events,
 		long expectedRevision = ExpectedVersion.Any,
 		CancellationToken cancellationToken = default
 	) {
-		var cid = Guid.NewGuid();
+		var result = await publisher.WriteEvents([stream], [expectedRevision], events, [0], cancellationToken);
+		return (result.Position, result.StreamRevisions[0]);
+	}
 
-		var operation = new WriteEventsOperation(stream, expectedRevision);
+	public static async Task<WriteEventsResult> WriteEvents(
+		this IPublisher publisher,
+		string[] eventStreamIds,
+		long[] expectedVersions,
+		Event[] events,
+		int[] eventStreamIndexes,
+		CancellationToken cancellationToken = default
+	) {
+		var correlationId = Guid.NewGuid();
+
+		var envelope = new WriteEventsOperation(eventStreamIds, expectedVersions);
 
 		try {
-			var command = ClientMessage.WriteEvents.ForSingleStream(
-				internalCorrId: cid,
-				correlationId: cid,
-				envelope: operation,
-				requireLeader: false,
-				eventStreamId: stream,
-				expectedVersion: expectedRevision,
+			var command = new ClientMessage.WriteEvents(
+				internalCorrId: correlationId,
+				correlationId,
+				envelope,
+				requireLeader: true,
+				eventStreamIds,
+				expectedVersions,
 				events: events,
+				eventStreamIndexes,
 				user: SystemAccounts.System,
 				cancellationToken: cancellationToken
 			);
@@ -54,86 +67,12 @@ public static class PublisherWriteExtensions {
 			throw new($"{nameof(WriteEvents)}: Unable to execute request!", ex);
 		}
 
-		return await operation.WaitForReply;
-	}
-
-	public static async Task<MultiStreamWriteResult> WriteEventsToMultipleStreams(
-		this IPublisher publisher,
-		string[] eventStreamIds,
-		long[] expectedVersions,
-		Event[] events,
-		int[] eventStreamIndexes,
-		CancellationToken cancellationToken = default
-	) {
-		var cid = Guid.NewGuid();
-
-		var operation = new MultiStreamWriteEventsOperation(eventStreamIds, expectedVersions);
-
-		try {
-			var command = new ClientMessage.WriteEvents(
-				internalCorrId: cid,
-				correlationId: cid,
-				envelope: operation,
-				requireLeader: false,
-				eventStreamIds: eventStreamIds,
-				expectedVersions: expectedVersions,
-				events: events,
-				eventStreamIndexes: eventStreamIndexes,
-				user: SystemAccounts.System,
-				cancellationToken: cancellationToken
-			);
-
-			publisher.Publish(command);
-		} catch (Exception ex) {
-			throw new($"{nameof(WriteEventsToMultipleStreams)}: Unable to execute request!", ex);
-		}
-
-		return await operation.WaitForReply;
+		return await envelope.WaitForReply;
 	}
 }
 
-class WriteEventsOperation(string stream, long expectedRevision) : IEnvelope {
+class WriteEventsOperation(string[] streams, long[] expectedVersions) : IEnvelope {
 	TaskCompletionSource<WriteEventsResult> Operation { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-	public void ReplyWith<T>(T message) where T : Message {
-		if (message is ClientMessage.WriteEventsCompleted { Result: OperationResult.Success } success)
-			Operation.TrySetResult(MapToResult(success));
-		else
-			Operation.TrySetException(MapToError(message, stream, expectedRevision));
-
-		return;
-
-		static WriteEventsResult MapToResult(ClientMessage.WriteEventsCompleted completed) {
-			Debug.Assert(completed.CommitPosition >= 0);
-			Debug.Assert(completed.PreparePosition >= 0);
-			var position = Position.FromInt64(completed.CommitPosition, completed.PreparePosition);
-			var streamRevision = StreamRevision.FromInt64(completed.LastEventNumbers.Single);
-			return new(position, streamRevision);
-		}
-
-		static ReadResponseException MapToError(Message message, string stream, long expectedRevision) {
-			return message switch {
-				ClientMessage.WriteEventsCompleted completed => completed.Result switch {
-					OperationResult.PrepareTimeout => new ReadResponseException.Timeout($"{completed.Result}"),
-					OperationResult.CommitTimeout => new ReadResponseException.Timeout($"{completed.Result}"),
-					OperationResult.ForwardTimeout => new ReadResponseException.Timeout($"{completed.Result}"),
-					OperationResult.StreamDeleted => new ReadResponseException.StreamDeleted(stream),
-					OperationResult.AccessDenied => new ReadResponseException.AccessDenied(),
-					OperationResult.WrongExpectedVersion => new ReadResponseException.WrongExpectedRevision(stream, expectedRevision, completed.FailureCurrentVersions.Single),
-					_ => ReadResponseException.UnknownError.Create(completed.Result)
-				},
-				ClientMessage.NotHandled notHandled => notHandled.MapToException(),
-				not null => new ReadResponseException.UnknownMessage(message.GetType(), typeof(ClientMessage.WriteEventsCompleted)),
-				_ => throw new ArgumentOutOfRangeException(nameof(message), message, null)
-			};
-		}
-	}
-
-	public Task<WriteEventsResult> WaitForReply => Operation.Task;
-}
-
-class MultiStreamWriteEventsOperation(string[] streams, long[] expectedVersions) : IEnvelope {
-	TaskCompletionSource<MultiStreamWriteResult> Operation { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
 	public void ReplyWith<T>(T message) where T : Message {
 		if (message is ClientMessage.WriteEventsCompleted { Result: OperationResult.Success } success)
@@ -143,7 +82,7 @@ class MultiStreamWriteEventsOperation(string[] streams, long[] expectedVersions)
 
 		return;
 
-		static MultiStreamWriteResult MapToResult(ClientMessage.WriteEventsCompleted completed) {
+		static WriteEventsResult MapToResult(ClientMessage.WriteEventsCompleted completed) {
 			Debug.Assert(completed.CommitPosition >= 0);
 			Debug.Assert(completed.PreparePosition >= 0);
 			var position = Position.FromInt64(completed.CommitPosition, completed.PreparePosition);
@@ -151,7 +90,7 @@ class MultiStreamWriteEventsOperation(string[] streams, long[] expectedVersions)
 			for (int i = 0; i < completed.LastEventNumbers.Length; i++) {
 				streamRevisions[i] = StreamRevision.FromInt64(completed.LastEventNumbers.Span[i]);
 			}
-			return new MultiStreamWriteResult(position, streamRevisions);
+			return new WriteEventsResult(position, streamRevisions);
 		}
 
 		static ReadResponseException MapToError(Message message, string[] streams, long[] expectedVersions) {
@@ -183,5 +122,5 @@ class MultiStreamWriteEventsOperation(string[] streams, long[] expectedVersions)
 		}
 	}
 
-	public Task<MultiStreamWriteResult> WaitForReply => Operation.Task;
+	public Task<WriteEventsResult> WaitForReply => Operation.Task;
 }

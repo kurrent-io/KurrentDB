@@ -140,11 +140,11 @@ public class SystemClient : ISystemClient {
 	#region . Write .
 
 	public record WriteOperations(IPublisher Publisher, ILogger Logger) : IWriteOperations {
-		public Task<WriteEventsResult> WriteEvents(string stream, Event[] events, long expectedRevision = -2, CancellationToken cancellationToken = default) =>
+		public Task<WriteEventsResult> WriteEvents(string stream, Event[] events, long expectedRevision = ExpectedVersion.Any, CancellationToken cancellationToken = default) =>
 			Publisher.WriteEvents(stream, events, expectedRevision, cancellationToken);
 
 		public Task<MultiStreamWriteResult> WriteEvents(string[] streamIds, long[] expectedVersions, Event[] events, int[] eventStreamIndexes, CancellationToken cancellationToken = default) =>
-			Publisher.WriteEventsToMultipleStreams(streamIds, expectedVersions, events, eventStreamIndexes, cancellationToken);
+			Publisher.WriteEvents(streamIds, expectedVersions, events, eventStreamIndexes, cancellationToken);
 	}
 
 	#endregion . Write .
