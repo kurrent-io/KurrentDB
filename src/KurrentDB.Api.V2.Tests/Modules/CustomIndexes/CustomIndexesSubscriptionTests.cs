@@ -37,9 +37,7 @@ public class CustomIndexesSubscriptionTests {
 	static readonly string Stream = $"{Category}-{CorrelationId}";
 
 	[Test]
-	public async ValueTask can_subscribe() {
-		var ct = TestContext.CancellationToken;
-
+	public async ValueTask can_subscribe(CancellationToken ct) {
 		// events that existed before index
 		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "A", "country": "Mauritius" }""", ct);
 		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "B", "country": "United Kingdom" }""", ct);
@@ -126,14 +124,14 @@ public class CustomIndexesSubscriptionTests {
 	[Test]
 	[Arguments("")]
 	[Arguments("Mauritius")]
-	public async ValueTask cannot_subscribe_to_non_existent_custom_index(string partition) {
+	public async ValueTask cannot_subscribe_to_non_existent_custom_index(string partition, CancellationToken ct) {
 		var partitionSuffix = partition is "" ? "" : $":{partition}";
 		var index = $"$idx-does-not-exist{partitionSuffix}";
 		var ex = await Assert
 			.That(async () => {
 				await StreamsReadClient
-					.SubscribeToAllFiltered(index, TestContext.CancellationToken)
-					.ToArrayAsync(TestContext.CancellationToken);
+					.SubscribeToAllFiltered(index, ct)
+					.ToArrayAsync(ct);
 			})
 			.Throws<RpcException>();
 

@@ -3,7 +3,6 @@
 
 using Grpc.Core;
 using KurrentDB.Protocol.V2.CustomIndexes;
-using KurrentDB.Testing.TUnit;
 
 namespace KurrentDB.Api.Tests.Modules.CustomIndexes;
 
@@ -16,7 +15,7 @@ public class CustomIndexesServiceTests {
 	static readonly string CustomIndexName = $"my-custom-index_{Guid.NewGuid()}";
 
 	[Test]
-	public async ValueTask can_create_enabled_by_default() {
+	public async ValueTask can_create_enabled_by_default(CancellationToken ct) {
 		var customIndexName = nameof(can_create_enabled_by_default) + Guid.NewGuid();
 		await Client.CreateCustomIndexAsync(
 			new() {
@@ -25,12 +24,12 @@ public class CustomIndexesServiceTests {
 				PartitionKeySelector = "e => e.number",
 				PartitionKeyType = KeyType.Int32,
 			},
-			cancellationToken: TestContext.CancellationToken);
-		await can_get(customIndexName, CustomIndexStatus.Enabled);
+			cancellationToken: ct);
+		await can_get(customIndexName, CustomIndexStatus.Enabled, ct);
 	}
 
 	[Test]
-	public async ValueTask can_create() {
+	public async ValueTask can_create(CancellationToken ct) {
 		await Client.CreateCustomIndexAsync(
 			new() {
 				Name = CustomIndexName,
@@ -39,13 +38,13 @@ public class CustomIndexesServiceTests {
 				PartitionKeyType = KeyType.Int32,
 				Enable = false,
 			},
-			cancellationToken: TestContext.CancellationToken);
-		await can_get(CustomIndexName, CustomIndexStatus.Disabled);
+			cancellationToken: ct);
+		await can_get(CustomIndexName, CustomIndexStatus.Disabled, ct);
 	}
 
 	[Test]
 	[DependsOn(nameof(can_create))]
-	public async ValueTask can_create_idempotent() {
+	public async ValueTask can_create_idempotent(CancellationToken ct) {
 		await Client.CreateCustomIndexAsync(
 			new() {
 				Name = CustomIndexName,
@@ -54,13 +53,13 @@ public class CustomIndexesServiceTests {
 				PartitionKeyType = KeyType.Int32,
 				Enable = false,
 			},
-			cancellationToken: TestContext.CancellationToken);
-		await can_get(CustomIndexName, CustomIndexStatus.Disabled);
+			cancellationToken: ct);
+		await can_get(CustomIndexName, CustomIndexStatus.Disabled, ct);
 	}
 
 	[Test]
 	[DependsOn(nameof(can_create_idempotent))]
-	public async ValueTask cannot_create_different() {
+	public async ValueTask cannot_create_different(CancellationToken ct) {
 		var ex = await Assert
 			.That(async () => {
 				await Client.CreateCustomIndexAsync(
@@ -70,7 +69,7 @@ public class CustomIndexesServiceTests {
 						PartitionKeySelector = "e => e.number",
 						PartitionKeyType = KeyType.Int32,
 					},
-					cancellationToken: TestContext.CancellationToken);
+					cancellationToken: ct);
 			})
 			.Throws<RpcException>();
 
@@ -80,44 +79,44 @@ public class CustomIndexesServiceTests {
 
 	[Test]
 	[DependsOn(nameof(cannot_create_different))]
-	public async ValueTask can_enable() {
+	public async ValueTask can_enable(CancellationToken ct) {
 		await Client.EnableCustomIndexAsync(
 			new() { Name = CustomIndexName },
-			cancellationToken: TestContext.CancellationToken);
-		await can_get(CustomIndexName, CustomIndexStatus.Enabled);
+			cancellationToken: ct);
+		await can_get(CustomIndexName, CustomIndexStatus.Enabled, ct);
 	}
 
 	[Test]
 	[DependsOn(nameof(can_enable))]
-	public async ValueTask can_enable_idempotent() {
+	public async ValueTask can_enable_idempotent(CancellationToken ct) {
 		await Client.EnableCustomIndexAsync(
 			new() { Name = CustomIndexName },
-			cancellationToken: TestContext.CancellationToken);
-		await can_get(CustomIndexName, CustomIndexStatus.Enabled);
+			cancellationToken: ct);
+		await can_get(CustomIndexName, CustomIndexStatus.Enabled, ct);
 	}
 
 	[Test]
 	[DependsOn(nameof(can_enable_idempotent))]
-	public async ValueTask can_disable() {
+	public async ValueTask can_disable(CancellationToken ct) {
 		await Client.DisableCustomIndexAsync(
 			new() { Name = CustomIndexName },
-			cancellationToken: TestContext.CancellationToken);
-		await can_get(CustomIndexName, CustomIndexStatus.Disabled);
+			cancellationToken: ct);
+		await can_get(CustomIndexName, CustomIndexStatus.Disabled, ct);
 	}
 
 	[Test]
 	[DependsOn(nameof(can_disable))]
-	public async ValueTask can_disable_idempotent() {
+	public async ValueTask can_disable_idempotent(CancellationToken ct) {
 		await Client.DisableCustomIndexAsync(
 			new() { Name = CustomIndexName },
-			cancellationToken: TestContext.CancellationToken);
-		await can_get(CustomIndexName, CustomIndexStatus.Disabled);
+			cancellationToken: ct);
+		await can_get(CustomIndexName, CustomIndexStatus.Disabled, ct);
 	}
 
 	[Test]
 	[DependsOn(nameof(can_disable_idempotent))]
-	public async ValueTask can_list() {
-		var response = await Client.ListCustomIndexesAsync(new(), cancellationToken: TestContext.CancellationToken);
+	public async ValueTask can_list(CancellationToken ct) {
+		var response = await Client.ListCustomIndexesAsync(new(), cancellationToken: ct);
 
 		await Assert.That(response!.CustomIndexes.TryGetValue(CustomIndexName, out var customIndexState)).IsTrue();
 		await Assert.That(customIndexState!.Filter).IsEqualTo("e => e.type == 'my-event-type'");
@@ -128,13 +127,12 @@ public class CustomIndexesServiceTests {
 
 	[Test]
 	[DependsOn(nameof(can_list))]
-	public async ValueTask can_delete() {
-		var ct = TestContext.CancellationToken;
+	public async ValueTask can_delete(CancellationToken ct) {
 		await Client.DeleteCustomIndexAsync(
 			new() { Name = CustomIndexName },
 			cancellationToken: ct);
 
-		await cannot_get("non-existant-index");
+		await cannot_get("non-existant-index", ct);
 
 		// no longer listed
 		var response = await Client.ListCustomIndexesAsync(new(), cancellationToken: ct);
@@ -143,18 +141,18 @@ public class CustomIndexesServiceTests {
 
 	[Test]
 	[DependsOn(nameof(can_delete))]
-	public async ValueTask can_delete_idempotent() {
+	public async ValueTask can_delete_idempotent(CancellationToken ct) {
 		await Client.DeleteCustomIndexAsync(
 			new() { Name = CustomIndexName },
-			cancellationToken: TestContext.CancellationToken);
-		await cannot_get("non-existant-index");
+			cancellationToken: ct);
+		await cannot_get("non-existant-index", ct);
 	}
 
 	[Test]
 	[Arguments("UPPER_CASE_NOT_ALLOWED")]
 	[Arguments("space not allowed")]
 	[Arguments("不允許使用中文字符")]
-	public async ValueTask cannot_create_with_invalid_name(string name) {
+	public async ValueTask cannot_create_with_invalid_name(string name, CancellationToken ct) {
 		var ex = await Assert
 			.That(async () => {
 				await Client.CreateCustomIndexAsync(
@@ -164,7 +162,7 @@ public class CustomIndexesServiceTests {
 						PartitionKeySelector = "e => e.number",
 						PartitionKeyType = KeyType.Int32,
 					},
-					cancellationToken: TestContext.CancellationToken);
+					cancellationToken: ct);
 			})
 			.Throws<RpcException>();
 
@@ -176,7 +174,7 @@ public class CustomIndexesServiceTests {
 	[Arguments("foo")]
 	[Arguments("e => e.type ==> 'my-event-type'")]
 	[Arguments("(e, f) => e.type == 'my-event-type'")]
-	public async ValueTask cannot_create_with_invalid_filter(string filter) {
+	public async ValueTask cannot_create_with_invalid_filter(string filter, CancellationToken ct) {
 		var ex = await Assert
 			.That(async () => {
 				await Client.CreateCustomIndexAsync(
@@ -186,7 +184,7 @@ public class CustomIndexesServiceTests {
 						PartitionKeySelector = "e => e.number",
 						PartitionKeyType = KeyType.Int32,
 					},
-					cancellationToken: TestContext.CancellationToken);
+					cancellationToken: ct);
 			})
 			.Throws<RpcException>();
 
@@ -198,7 +196,7 @@ public class CustomIndexesServiceTests {
 	[Arguments("foo")]
 	[Arguments("e => e.type ==> 'my-event-type'")]
 	[Arguments("(e, f) => e.type == 'my-event-type'")]
-	public async ValueTask cannot_create_with_invalid_key_selector(string keySelector) {
+	public async ValueTask cannot_create_with_invalid_key_selector(string keySelector, CancellationToken ct) {
 		var ex = await Assert
 			.That(async () => {
 				await Client.CreateCustomIndexAsync(
@@ -208,7 +206,7 @@ public class CustomIndexesServiceTests {
 						PartitionKeySelector = keySelector,
 						PartitionKeyType = KeyType.Int32,
 					},
-					cancellationToken: TestContext.CancellationToken);
+					cancellationToken: ct);
 			})
 			.Throws<RpcException>();
 
@@ -219,7 +217,7 @@ public class CustomIndexesServiceTests {
 	//qq add other validation tests
 	//qq currently deosn't throw, what key type do we end up with, may be missing validation
 	//[Test]
-	//public async ValueTask cannot_create_with_invalid_key_type() {
+	//public async ValueTask cannot_create_with_invalid_key_type(CancellationToken ct) {
 	//	var ex = await Assert
 	//		.That(async () => {
 	//			await Client.CreateCustomIndexAsync(new() {
@@ -236,12 +234,12 @@ public class CustomIndexesServiceTests {
 	//}
 
 	[Test]
-	public async ValueTask cannot_enable_non_existant() {
+	public async ValueTask cannot_enable_non_existant(CancellationToken ct) {
 		var ex = await Assert
 			.That(async () => {
 				await Client.EnableCustomIndexAsync(
 					new() { Name = "non-existant-index" },
-					cancellationToken: TestContext.CancellationToken);
+					cancellationToken: ct);
 			})
 			.Throws<RpcException>();
 
@@ -250,12 +248,12 @@ public class CustomIndexesServiceTests {
 	}
 
 	[Test]
-	public async ValueTask cannot_disable_non_existant() {
+	public async ValueTask cannot_disable_non_existant(CancellationToken ct) {
 		var ex = await Assert
 			.That(async () => {
 				await Client.DisableCustomIndexAsync(
 					new() { Name = "non-existant-index" },
-					cancellationToken: TestContext.CancellationToken);
+					cancellationToken: ct);
 			})
 			.Throws<RpcException>();
 
@@ -264,12 +262,12 @@ public class CustomIndexesServiceTests {
 	}
 
 	[Test]
-	public async ValueTask cannot_delete_non_existant() {
+	public async ValueTask cannot_delete_non_existant(CancellationToken ct) {
 		var ex = await Assert
 			.That(async () => {
 				await Client.DeleteCustomIndexAsync(
 					new() { Name = "non-existant-index" },
-					cancellationToken: TestContext.CancellationToken);
+					cancellationToken: ct);
 			})
 			.Throws<RpcException>();
 
@@ -278,26 +276,26 @@ public class CustomIndexesServiceTests {
 	}
 
 	[Test]
-	public async ValueTask cannot_get_non_existant() {
-		await cannot_get("non-existant-index");
+	public async ValueTask cannot_get_non_existant(CancellationToken ct) {
+		await cannot_get("non-existant-index", ct);
 	}
 
-	async ValueTask can_get(string customIndexName, CustomIndexStatus expectedStatus) {
+	async ValueTask can_get(string customIndexName, CustomIndexStatus expectedStatus, CancellationToken ct) {
 		var response = await Client.GetCustomIndexAsync(
 			new() { Name = customIndexName },
-			cancellationToken: TestContext.CancellationToken);
+			cancellationToken: ct);
 		await Assert.That(response.CustomIndex.Filter).IsEqualTo("e => e.type == 'my-event-type'");
 		await Assert.That(response.CustomIndex.PartitionKeySelector).IsEqualTo("e => e.number");
 		await Assert.That(response.CustomIndex.PartitionKeyType).IsEqualTo(KeyType.Int32);
 		await Assert.That(response.CustomIndex.Status).IsEqualTo(expectedStatus);
 	}
 
-	async ValueTask cannot_get(string name) {
+	async ValueTask cannot_get(string name, CancellationToken ct) {
 		var ex = await Assert
 			.That(async () => {
 				await Client.GetCustomIndexAsync(
 					new() { Name = name },
-					cancellationToken: TestContext.CancellationToken);
+					cancellationToken: ct);
 			})
 			.Throws<RpcException>();
 

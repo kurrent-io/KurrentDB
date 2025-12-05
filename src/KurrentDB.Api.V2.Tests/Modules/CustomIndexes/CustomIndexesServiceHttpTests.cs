@@ -17,7 +17,7 @@ public class CustomIndexesServiceHttpTests {
 	static readonly string CustomIndexName = $"my-custom-index-{Guid.NewGuid()}";
 
 	[Test]
-	public async ValueTask can_create() {
+	public async ValueTask can_create(CancellationToken ct) {
 		var request = new RestRequest($"/v2/custom-indexes/{CustomIndexName}")
 			.AddJsonBody("""
 				{
@@ -28,43 +28,43 @@ public class CustomIndexesServiceHttpTests {
 				}
 				""");
 
-		var response = await Client.ExecutePostAsync(request, TestContext.CancellationToken);
+		var response = await Client.ExecutePostAsync(request, ct);
 
 		await Assert.That(response.Content).IsJson("{}");
 		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-		await can_get(expectedStatus: "CUSTOM_INDEX_STATUS_DISABLED");
+		await can_get(expectedStatus: "CUSTOM_INDEX_STATUS_DISABLED", ct);
 	}
 
 	[Test]
 	[DependsOn(nameof(can_create))]
-	public async ValueTask can_enable() {
+	public async ValueTask can_enable(CancellationToken ct) {
 		var response = await Client.PostAsync(
 			new RestRequest($"/v2/custom-indexes/{CustomIndexName}/enable"),
-			TestContext.CancellationToken);
+			ct);
 
 		await Assert.That(response.Content).IsJson("{}");
 		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-		await can_get(expectedStatus: "CUSTOM_INDEX_STATUS_ENABLED");
+		await can_get(expectedStatus: "CUSTOM_INDEX_STATUS_ENABLED", ct);
 	}
 
 	[Test]
 	[DependsOn(nameof(can_enable))]
-	public async ValueTask can_disable() {
+	public async ValueTask can_disable(CancellationToken ct) {
 		var response = await Client.PostAsync(
 			new RestRequest($"/v2/custom-indexes/{CustomIndexName}/disable"),
-			TestContext.CancellationToken);
+			ct);
 
 		await Assert.That(response.Content).IsJson("{}");
 		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-		await can_get(expectedStatus: "CUSTOM_INDEX_STATUS_DISABLED");
+		await can_get(expectedStatus: "CUSTOM_INDEX_STATUS_DISABLED", ct);
 	}
 
 	[Test]
 	[DependsOn(nameof(can_disable))]
-	public async ValueTask can_list() {
+	public async ValueTask can_list(CancellationToken ct) {
 		var response = await Client.GetAsync<ListResponse>(
 			new RestRequest($"/v2/custom-indexes/"),
-			TestContext.CancellationToken);
+			ct);
 
 		await Assert.That(response!.CustomIndexes.TryGetValue(CustomIndexName, out var customIndexState)).IsTrue();
 		await Assert.That(customIndexState!.Filter).IsEqualTo("e => e.type == 'my-event-type'");
@@ -86,10 +86,10 @@ public class CustomIndexesServiceHttpTests {
 
 	[Test]
 	[DependsOn(nameof(can_list))]
-	public async ValueTask can_delete() {
+	public async ValueTask can_delete(CancellationToken ct) {
 		var response = await Client.DeleteAsync(
 			new RestRequest($"/v2/custom-indexes/{CustomIndexName}"),
-			TestContext.CancellationToken);
+			ct);
 
 		await Assert.That(response.Content).IsJson("{}");
 		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
@@ -97,7 +97,7 @@ public class CustomIndexesServiceHttpTests {
 		// get -> 404
 		var getResponse = await Client.GetAsync(
 			new RestRequest($"/v2/custom-indexes/{CustomIndexName}"),
-			TestContext.CancellationToken);
+			ct);
 
 		await Assert.That(getResponse.Content).IsJson($$"""
 			{
@@ -122,15 +122,15 @@ public class CustomIndexesServiceHttpTests {
 		// no longer listed
 		var listResponse = await Client.GetAsync<ListResponse>(
 			new RestRequest($"/v2/custom-indexes/"),
-			TestContext.CancellationToken);
+			ct);
 
 		await Assert.That(listResponse!.CustomIndexes).DoesNotContainKey(CustomIndexName);
 	}
 
-	async ValueTask can_get(string expectedStatus) {
+	async ValueTask can_get(string expectedStatus, CancellationToken ct) {
 		var response = await Client.GetAsync(
 			new RestRequest($"/v2/custom-indexes/{CustomIndexName}"),
-			TestContext.CancellationToken);
+			ct);
 
 		await Assert.That(response.Content).IsJson($$"""
 			{
@@ -146,7 +146,7 @@ public class CustomIndexesServiceHttpTests {
 	}
 
 	[Test]
-	public async ValueTask cannot_create_with_invalid_name() {
+	public async ValueTask cannot_create_with_invalid_name(CancellationToken ct) {
 		var illegalName = "UPPER CASE NOT ALLOWED";
 		var request = new RestRequest($"/v2/custom-indexes/{illegalName}")
 			.AddJsonBody("""
@@ -157,7 +157,7 @@ public class CustomIndexesServiceHttpTests {
 				}
 				""");
 
-		var response = await Client.ExecutePostAsync(request, TestContext.CancellationToken);
+		var response = await Client.ExecutePostAsync(request, ct);
 
 		await Assert.That(response.Content).IsJson("""
 			{
@@ -170,10 +170,10 @@ public class CustomIndexesServiceHttpTests {
 	}
 
 	[Test]
-	public async ValueTask cannot_delete_non_existant() {
+	public async ValueTask cannot_delete_non_existant(CancellationToken ct) {
 		var response = await Client.DeleteAsync(
 			new RestRequest($"/v2/custom-indexes/non-existant-index"),
-			TestContext.CancellationToken);
+			ct);
 
 		await Assert.That(response.Content).IsJson("""
 			{
@@ -197,10 +197,10 @@ public class CustomIndexesServiceHttpTests {
 	}
 
 	[Test]
-	public async ValueTask cannot_get_non_existant() {
+	public async ValueTask cannot_get_non_existant(CancellationToken ct) {
 		var response = await Client.ExecuteGetAsync(
 			new RestRequest($"/v2/custom-indexes/non-existant-index"),
-			TestContext.CancellationToken);
+			ct);
 
 		await Assert.That(response.Content).IsJson("""
 			{

@@ -76,9 +76,7 @@ public class CustomIndexesJavascriptTests {
 	[Arguments(KeyType.Number,        """ 0.0 """, """ 1.0 """, "1")]
 	[Arguments(KeyType.Number,        """ 1234.56 """, """ 6543.21 """, "6543.21")]
 	//[Arguments(KeyType.Number,        """ 1234.56 """, """ 6543.21 """, "6543.210")] //qq why doesn't this work
-	public async ValueTask can_partition_by_all_key_types(KeyType keyType, string partition1, string partition2, string partitionFilter) {
-		var ct = TestContext.CancellationToken;
-
+	public async ValueTask can_partition_by_all_key_types(KeyType keyType, string partition1, string partition2, string partitionFilter, CancellationToken ct) {
 		await Client.CreateCustomIndexAsync(
 			new() {
 				Name = CustomIndexName,
@@ -107,9 +105,7 @@ public class CustomIndexesJavascriptTests {
 	}
 
 	[Test]
-	public async ValueTask can_partition_by_unspecified_key_type() {
-		var ct = TestContext.CancellationToken;
-
+	public async ValueTask can_partition_by_unspecified_key_type(CancellationToken ct) {
 		await Client.CreateCustomIndexAsync(
 			new() {
 				Name = CustomIndexName,

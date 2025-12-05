@@ -4,7 +4,6 @@
 using Grpc.Core;
 using KurrentDB.Protocol.V2.CustomIndexes;
 using KurrentDB.Protocol.V2.Streams;
-using KurrentDB.Testing.TUnit;
 
 namespace KurrentDB.Api.Tests.Modules.CustomIndexes;
 
@@ -28,8 +27,7 @@ public class CustomIndexesReadTests {
 
 
 	[Test]
-	public async ValueTask can_setup() {
-		var ct = TestContext.CancellationToken;
+	public async ValueTask can_setup(CancellationToken ct) {
 		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "A", "country": "Mauritius" }""", ct);
 		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "B", "country": "United Kingdom" }""", ct);
 		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "C", "country": "Mauritius" }""", ct);
@@ -51,8 +49,7 @@ public class CustomIndexesReadTests {
 	[Arguments("Mauritius", 2)]
 	[Arguments("United Kingdom", 1)]
 	[Arguments("united kingdom", 0)]
-	public async ValueTask can_read_custom_index_forwards(string partition, int expectedCount) {
-		var ct = TestContext.CancellationToken;
+	public async ValueTask can_read_custom_index_forwards(string partition, int expectedCount, CancellationToken ct) {
 
 		var partitionSuffix = partition is "" ? "" : $":{partition}";
 		var events = await StreamsReadClient
@@ -72,11 +69,11 @@ public class CustomIndexesReadTests {
 	[Arguments("Mauritius", 2)]
 	[Arguments("United Kingdom", 1)]
 	[Arguments("united kingdom", 0)]
-	public async ValueTask can_read_custom_index_backwards(string partition, int expectedCount) {
+	public async ValueTask can_read_custom_index_backwards(string partition, int expectedCount, CancellationToken ct) {
 		var partitionSuffix = partition is "" ? "" : $":{partition}";
 		var events = await StreamsReadClient
-			.ReadAllBackwardFiltered($"{ReadFilter}{partitionSuffix}", TestContext.CancellationToken)
-			.ToArrayAsync(TestContext.CancellationToken);
+			.ReadAllBackwardFiltered($"{ReadFilter}{partitionSuffix}", ct)
+			.ToArrayAsync(ct);
 
 		await Assert.That(events.Count).IsEqualTo(expectedCount);
 		await Assert.That(events).IsOrderedByDescending(x => x.EventNumber);
@@ -93,8 +90,7 @@ public class CustomIndexesReadTests {
 	[Test]
 	[DependsOn(nameof(can_setup))]
 	[Retry(50)] // because index processing is asynchronous to the write
-	public async ValueTask can_read_category_index_forwards() {
-		var ct = TestContext.CancellationToken;
+	public async ValueTask can_read_category_index_forwards(CancellationToken ct) {
 
 		var events = await StreamsReadClient
 			.ReadAllForwardFiltered(CategoryFilter, ct)
@@ -108,8 +104,7 @@ public class CustomIndexesReadTests {
 	[Test]
 	[DependsOn(nameof(can_setup))]
 	[Retry(50)] // because index processing is asynchronous to the write
-	public async ValueTask can_read_category_index_backwards() {
-		var ct = TestContext.CancellationToken;
+	public async ValueTask can_read_category_index_backwards(CancellationToken ct) {
 
 		var events = await StreamsReadClient
 			.ReadAllBackwardFiltered(CategoryFilter, ct)
@@ -123,8 +118,7 @@ public class CustomIndexesReadTests {
 	[Test]
 	[DependsOn(nameof(can_setup))]
 	[Retry(50)] // because index processing is asynchronous to the write
-	public async ValueTask can_read_event_type_index_forwards() {
-		var ct = TestContext.CancellationToken;
+	public async ValueTask can_read_event_type_index_forwards(CancellationToken ct) {
 
 		var events = await StreamsReadClient
 			.ReadAllForwardFiltered(EventTypeFilter, ct)
@@ -138,8 +132,7 @@ public class CustomIndexesReadTests {
 	[Test]
 	[DependsOn(nameof(can_setup))]
 	[Retry(50)] // because index processing is asynchronous to the write
-	public async ValueTask can_read_event_type_index_backwards() {
-		var ct = TestContext.CancellationToken;
+	public async ValueTask can_read_event_type_index_backwards(CancellationToken ct) {
 
 		var events = await StreamsReadClient
 			.ReadAllBackwardFiltered(EventTypeFilter, ct)
@@ -155,15 +148,15 @@ public class CustomIndexesReadTests {
 	[Arguments("Mauritius")]
 	[Arguments("United Kingdom")]
 	[Arguments("united kingdom")]
-	public async ValueTask cannot_read_non_existent_custom_index(string partition) {
+	public async ValueTask cannot_read_non_existent_custom_index(string partition, CancellationToken ct) {
 		var partitionSuffix = partition is "" ? "" : $":{partition}";
 		var index = $"$idx-does-not-exist{partitionSuffix}";
 		var ex = await Assert
 			.That(async () => {
 				await StreamsReadClient
 					//qq need a different pattern so that user names do not conflict with the default indexes
-					.ReadAllForwardFiltered(index, TestContext.CancellationToken)
-					.ToArrayAsync(TestContext.CancellationToken);
+					.ReadAllForwardFiltered(index, ct)
+					.ToArrayAsync(ct);
 			})
 			.Throws<RpcException>();
 
