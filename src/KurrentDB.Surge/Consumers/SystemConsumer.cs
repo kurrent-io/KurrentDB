@@ -100,15 +100,15 @@ public class SystemConsumer : IConsumer {
 
 	internal SystemConsumerOptions Options { get; }
 
-    ISystemClient                      Client               { get; }
-    ResiliencePipeline                 ResiliencePipeline   { get; }
-    Deserialize                        Deserialize          { get; }
-    CheckpointController               CheckpointController { get; }
-    ICheckpointStore                   CheckpointStore      { get; }
-    Channel<ReadResponse>              InboundChannel       { get; }
-    SequenceIdGenerator                Sequence             { get; }
-	InterceptorController              Interceptors         { get; }
-	Func<ConsumerLifecycleEvent, Task> Intercept            { get; }
+    ISystemClient                           Client               { get; }
+    ResiliencePipeline                      ResiliencePipeline   { get; }
+    Deserialize                             Deserialize          { get; }
+    CheckpointController                    CheckpointController { get; }
+    ICheckpointStore                        CheckpointStore      { get; }
+    Channel<ReadResponse>                   InboundChannel       { get; }
+    SequenceIdGenerator                     Sequence             { get; }
+	InterceptorController                   Interceptors         { get; }
+	Func<ConsumerLifecycleEvent, ValueTask> Intercept            { get; }
 
 	public string                        ConsumerId       => Options.ConsumerId;
     public string                        ClientId         => Options.ClientId;
@@ -218,7 +218,7 @@ public class SystemConsumer : IConsumer {
 		}
     }
 
-    public async Task<IReadOnlyList<RecordPosition>> Track(SurgeRecord record, CancellationToken cancellationToken = default) {
+    public async ValueTask<IReadOnlyList<RecordPosition>> Track(SurgeRecord record, CancellationToken cancellationToken = default) {
 	    if (record.Value is ReadResponse.CheckpointReceived or ReadResponse.SubscriptionCaughtUp)
 		    return CheckpointController.TrackedPositions;
 
@@ -227,7 +227,7 @@ public class SystemConsumer : IConsumer {
         return trackedPositions;
     }
 
-    public async Task<IReadOnlyList<RecordPosition>> Commit(SurgeRecord record, CancellationToken cancellationToken = default) {
+    public async ValueTask<IReadOnlyList<RecordPosition>> Commit(SurgeRecord record, CancellationToken cancellationToken = default) {
 	    if (record.Value is ReadResponse.CheckpointReceived or ReadResponse.SubscriptionCaughtUp)
 		    return CheckpointController.TrackedPositions;
 
@@ -239,10 +239,10 @@ public class SystemConsumer : IConsumer {
     /// <summary>
     /// Commits all tracked positions that are ready to be committed (complete sequences).
     /// </summary>
-    public async Task<IReadOnlyList<RecordPosition>> CommitAll(CancellationToken cancellationToken = default) =>
+    public async ValueTask<IReadOnlyList<RecordPosition>> CommitAll(CancellationToken cancellationToken = default) =>
         await CheckpointController.CommitAll();
 
-    public async Task<IReadOnlyList<RecordPosition>> GetLatestPositions(CancellationToken cancellationToken = default) =>
+    public async ValueTask<IReadOnlyList<RecordPosition>> GetLatestPositions(CancellationToken cancellationToken = default) =>
 		await CheckpointStore.LoadPositions(cancellationToken);
 
     public async ValueTask DisposeAsync() {

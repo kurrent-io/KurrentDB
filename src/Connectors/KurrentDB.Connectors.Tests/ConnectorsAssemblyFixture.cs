@@ -137,15 +137,15 @@ class FakeConsumer : IConsumer {
 
     public IAsyncEnumerable<SurgeRecord> Records(CancellationToken stoppingToken = new CancellationToken()) => throw new NotImplementedException();
 
-    public Task<IReadOnlyList<RecordPosition>> Track(SurgeRecord record, CancellationToken cancellationToken = new CancellationToken()) =>
-        Task.FromResult<IReadOnlyList<RecordPosition>>(new List<RecordPosition>());
+    public ValueTask<IReadOnlyList<RecordPosition>> Track(SurgeRecord record, CancellationToken cancellationToken = new CancellationToken()) =>
+        ValueTask.FromResult<IReadOnlyList<RecordPosition>>(new List<RecordPosition>());
 
-    public Task<IReadOnlyList<RecordPosition>> Commit(SurgeRecord record, CancellationToken cancellationToken = new CancellationToken()) =>
-        Task.FromResult<IReadOnlyList<RecordPosition>>(new List<RecordPosition>());
+    public ValueTask<IReadOnlyList<RecordPosition>> Commit(SurgeRecord record, CancellationToken cancellationToken = new CancellationToken()) =>
+        ValueTask.FromResult<IReadOnlyList<RecordPosition>>(new List<RecordPosition>());
 
-    public Task<IReadOnlyList<RecordPosition>> CommitAll(CancellationToken cancellationToken = new CancellationToken()) =>
-        Task.FromResult<IReadOnlyList<RecordPosition>>(new List<RecordPosition>());
+    public ValueTask<IReadOnlyList<RecordPosition>> CommitAll(CancellationToken cancellationToken = new CancellationToken()) =>
+        ValueTask.FromResult<IReadOnlyList<RecordPosition>>(new List<RecordPosition>());
 
-    public Task<IReadOnlyList<RecordPosition>> GetLatestPositions(CancellationToken cancellationToken = new CancellationToken()) =>
-        Task.FromResult<IReadOnlyList<RecordPosition>>(new List<RecordPosition>());
+    public ValueTask<IReadOnlyList<RecordPosition>> GetLatestPositions(CancellationToken cancellationToken = new CancellationToken()) =>
+        ValueTask.FromResult<IReadOnlyList<RecordPosition>>(new List<RecordPosition>());
 }
