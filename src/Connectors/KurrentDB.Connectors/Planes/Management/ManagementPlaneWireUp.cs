@@ -181,6 +181,6 @@ public static class ManagementPlaneWireUp {
                     RegisterQueryMessages<ConnectorsSnapshot>(registry, token)
                 ];
 
-                await tasks.WhenAll();
+                await tasks.WhenAll().ConfigureAwait(false);
             });
 }

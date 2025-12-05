@@ -74,15 +74,15 @@ public class SystemConsumer : IConsumer {
             async (positions, token) => {
                 try {
                     if (positions.Count > 0) {
-                        await CheckpointStore.CommitPositions(positions, token);
+                        await CheckpointStore.CommitPositions(positions, token).ConfigureAwait(false);
                         LastCommitedPosition = positions[^1];
                     }
 
-                    await Intercept(new PositionsCommitted(this, positions));
+                    await Intercept(new PositionsCommitted(this, positions)).ConfigureAwait(false);
                     return positions;
                 }
                 catch (Exception ex) {
-                    await Intercept(new PositionsCommitError(this, positions, ex));
+                    await Intercept(new PositionsCommitError(this, positions, ex)).ConfigureAwait(false);
                     throw;
                 }
             },
@@ -100,15 +100,15 @@ public class SystemConsumer : IConsumer {
 
 	internal SystemConsumerOptions Options { get; }
 
-    ISystemClient                      Client               { get; }
-    ResiliencePipeline                 ResiliencePipeline   { get; }
-    Deserialize                        Deserialize          { get; }
-    CheckpointController               CheckpointController { get; }
-    ICheckpointStore                   CheckpointStore      { get; }
-    Channel<ReadResponse>              InboundChannel       { get; }
-    SequenceIdGenerator                Sequence             { get; }
-	InterceptorController              Interceptors         { get; }
-	Func<ConsumerLifecycleEvent, Task> Intercept            { get; }
+    ISystemClient                           Client               { get; }
+    ResiliencePipeline                      ResiliencePipeline   { get; }
+    Deserialize                             Deserialize          { get; }
+    CheckpointController                    CheckpointController { get; }
+    ICheckpointStore                        CheckpointStore      { get; }
+    Channel<ReadResponse>                   InboundChannel       { get; }
+    SequenceIdGenerator                     Sequence             { get; }
+	InterceptorController                   Interceptors         { get; }
+	Func<ConsumerLifecycleEvent, ValueTask> Intercept            { get; }
 
 	public string                        ConsumerId       => Options.ConsumerId;
     public string                        ClientId         => Options.ClientId;
@@ -127,13 +127,14 @@ public class SystemConsumer : IConsumer {
 
 		var cancellatorToken = Cancellator.Token;
 
-		await CheckpointStore.Initialize(Cancellator.Token);
+		await CheckpointStore.Initialize(Cancellator.Token).ConfigureAwait(false);
 
-        StartPosition = await CheckpointStore
-            .ResolveStartPosition(Options.StartPosition, Options.InitialPosition, cancellatorToken);
+		StartPosition = await CheckpointStore
+			.ResolveStartPosition(Options.StartPosition, Options.InitialPosition, cancellatorToken)
+			.ConfigureAwait(false);
 
-        if (Options.Filter.IsStreamIdFilter) {
-            var startRevision = await Client.Management.GetStreamRevision(StartPosition.ToPosition() ?? Position.Start, stoppingToken);
+		if (Options.Filter.IsStreamIdFilter) {
+            var startRevision = await Client.Management.GetStreamRevision(StartPosition.ToPosition() ?? Position.Start, stoppingToken).ConfigureAwait(false);
 
             await Client.Subscriptions.SubscribeToStream(
 	            startRevision,
@@ -141,7 +142,7 @@ public class SystemConsumer : IConsumer {
                 InboundChannel,
                 ResiliencePipeline,
                 cancellatorToken
-	        );
+	        ).ConfigureAwait(false);
         } else {
             await Client.Subscriptions.SubscribeToAll(
 	            StartPosition.ToPosition(),
@@ -150,21 +151,21 @@ public class SystemConsumer : IConsumer {
                 InboundChannel,
                 ResiliencePipeline,
 	            cancellatorToken
-	        );
+	        ).ConfigureAwait(false);
         }
 
-		await CheckpointController.Activate();
+		await CheckpointController.Activate().ConfigureAwait(false);
 
 		var lastReadRecord = SurgeRecord.None;
 
-		await foreach (var response in InboundChannel.Reader.ReadAllAsync(CancellationToken.None)) {
+		await foreach (var response in InboundChannel.Reader.ReadAllAsync(CancellationToken.None).ConfigureAwait(false)) {
 			if (cancellatorToken.IsCancellationRequested)
 				yield break; // get out regardless of the number of events still in the channel
 
 			if (response is ReadResponse.EventReceived eventReceived) {
 				var resolvedEvent = eventReceived.Event;
 
-				lastReadRecord = await resolvedEvent.ToRecord(Deserialize, Sequence.FetchNext);
+				lastReadRecord = await resolvedEvent.ToRecord(Deserialize, Sequence.FetchNext).ConfigureAwait(false);
 
                 // TODO WC: To be reviewed. We should be able to delete this because it should never happen
 				if (lastReadRecord == SurgeRecord.None)
@@ -173,7 +174,7 @@ public class SystemConsumer : IConsumer {
 				if (Options.Filter.IsJsonPathFilter && !Options.Filter.JsonPath.IsMatch(lastReadRecord))
 					continue;
 
-				await Intercept(new RecordReceived(this, lastReadRecord));
+				await Intercept(new RecordReceived(this, lastReadRecord)).ConfigureAwait(false);
 
 				yield return lastReadRecord;
 			}
@@ -188,10 +189,10 @@ public class SystemConsumer : IConsumer {
 					SchemaInfo = new SchemaInfo("$checkpoint-received", SchemaDataFormat.Json)
 				};
 
-				await Intercept(new RecordReceived(this, lastReadRecord));
+				await Intercept(new RecordReceived(this, lastReadRecord)).ConfigureAwait(false);
 
 				await CheckpointController.Track(lastReadRecord);
-				await Intercept(new RecordTracked(this, lastReadRecord));
+				await Intercept(new RecordTracked(this, lastReadRecord)).ConfigureAwait(false);
 
 				yield return lastReadRecord;
 			}
@@ -206,65 +207,65 @@ public class SystemConsumer : IConsumer {
 					SchemaInfo = new SchemaInfo("$subscription-caughtUp", SchemaDataFormat.Json)
 				};
 
-				await Intercept(new RecordReceived(this, record));
+				await Intercept(new RecordReceived(this, record)).ConfigureAwait(false);
 
 				// it is not required to track this record because the CheckpointReceived event
 				// is the one that actually gets tracked.
 				if (Options.AutoCommit.Enabled)
-					await CheckpointController.CommitAll();
+					await CheckpointController.CommitAll().ConfigureAwait(false);
 
 				yield return record;
 			}
 		}
     }
 
-    public async Task<IReadOnlyList<RecordPosition>> Track(SurgeRecord record, CancellationToken cancellationToken = default) {
+    public async ValueTask<IReadOnlyList<RecordPosition>> Track(SurgeRecord record, CancellationToken cancellationToken = default) {
 	    if (record.Value is ReadResponse.CheckpointReceived or ReadResponse.SubscriptionCaughtUp)
 		    return CheckpointController.TrackedPositions;
 
-	    var trackedPositions = await CheckpointController.Track(record);
-        await Intercept(new RecordTracked(this, record));
+	    var trackedPositions = await CheckpointController.Track(record).ConfigureAwait(false);
+        await Intercept(new RecordTracked(this, record)).ConfigureAwait(false);
         return trackedPositions;
     }
 
-    public async Task<IReadOnlyList<RecordPosition>> Commit(SurgeRecord record, CancellationToken cancellationToken = default) {
+    public async ValueTask<IReadOnlyList<RecordPosition>> Commit(SurgeRecord record, CancellationToken cancellationToken = default) {
 	    if (record.Value is ReadResponse.CheckpointReceived or ReadResponse.SubscriptionCaughtUp)
 		    return CheckpointController.TrackedPositions;
 
-	    var trackedPositions = await CheckpointController.Commit(record);
-	    await Intercept(new RecordTracked(this, record));
+	    var trackedPositions = await CheckpointController.Commit(record).ConfigureAwait(false);
+	    await Intercept(new RecordTracked(this, record)).ConfigureAwait(false);
 	    return trackedPositions;
     }
 
     /// <summary>
     /// Commits all tracked positions that are ready to be committed (complete sequences).
     /// </summary>
-    public async Task<IReadOnlyList<RecordPosition>> CommitAll(CancellationToken cancellationToken = default) =>
-        await CheckpointController.CommitAll();
+    public async ValueTask<IReadOnlyList<RecordPosition>> CommitAll(CancellationToken cancellationToken = default) =>
+        await CheckpointController.CommitAll().ConfigureAwait(false);
 
-    public async Task<IReadOnlyList<RecordPosition>> GetLatestPositions(CancellationToken cancellationToken = default) =>
-		await CheckpointStore.LoadPositions(cancellationToken);
+    public async ValueTask<IReadOnlyList<RecordPosition>> GetLatestPositions(CancellationToken cancellationToken = default) =>
+		await CheckpointStore.LoadPositions(cancellationToken).ConfigureAwait(false);
 
     public async ValueTask DisposeAsync() {
         try {
 			// stops the subscription if it was not already stopped
 	        if (!Cancellator.IsCancellationRequested)
-                await Cancellator.CancelAsync();
+                await Cancellator.CancelAsync().ConfigureAwait(false);
 
             // stops the periodic commit if it was not already stopped
             // we might not need to implement this if we can guarantee that
-            await CheckpointController.DisposeAsync();
+            await CheckpointController.DisposeAsync().ConfigureAwait(false);
 
             Cancellator.Dispose();
 
-            await Intercept(new ConsumerStopped(this));
+            await Intercept(new ConsumerStopped(this)).ConfigureAwait(false);
         }
         catch (Exception ex) {
-            await Intercept(new ConsumerStopped(this, ex));
+            await Intercept(new ConsumerStopped(this, ex)).ConfigureAwait(false);
             throw;
         }
         finally {
-            await Interceptors.DisposeAsync();
+            await Interceptors.DisposeAsync().ConfigureAwait(false);
         }
     }
 }

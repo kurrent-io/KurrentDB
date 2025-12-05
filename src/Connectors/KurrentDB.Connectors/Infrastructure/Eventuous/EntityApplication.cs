@@ -23,7 +23,7 @@ public abstract class EntityApplication<TEntity>(Func<dynamic, string> getEntity
 
             return await Store.StreamExists(stream, token).Then(exists => exists
                 ? throw new DomainExceptions.EntityAlreadyExists(EntityName, entityId)
-                : executeCommand(cmd));
+                : executeCommand(cmd)).ConfigureAwait(false);
         });
 
     protected void OnExisting<T>(Func<TEntity, T, IEnumerable<object>> executeCommand) where T : class => On<T>()
@@ -35,7 +35,7 @@ public abstract class EntityApplication<TEntity>(Func<dynamic, string> getEntity
 
             return await Store.StreamExists(stream, token).Then(exists => !exists
                 ? throw new DomainExceptions.EntityNotFound(EntityName, entityId)
-                : executeCommand(entity, cmd));
+                : executeCommand(entity, cmd)).ConfigureAwait(false);
         });
 
     protected void OnAny<T>(Func<TEntity, T, IEnumerable<object>> executeCommand) where T : class => On<T>()

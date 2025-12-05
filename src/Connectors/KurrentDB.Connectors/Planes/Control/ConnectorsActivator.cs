@@ -19,7 +19,7 @@ public class ConnectorsActivator(CreateConnector createConnector) {
     CreateConnector     CreateConnector { get; } = createConnector;
     ActivatedConnectors Connectors      { get; } = [];
 
-    public async Task<ActivateResult> Activate(
+    public async ValueTask<ActivateResult> Activate(
         ConnectorId connectorId,
         IDictionary<string, string?> settings,
         int revision,
@@ -30,13 +30,13 @@ public class ConnectorsActivator(CreateConnector createConnector) {
             if (connector.Revision == revision && connector.Instance.State is ConnectorState.Activating or ConnectorState.Running)
                 return ActivateResult.RevisionAlreadyRunning();
 
-            await Teardown();
+            await Teardown().ConfigureAwait(false);
         }
 
         try {
             connector = Connectors[connectorId] = (CreateConnector(connectorId, settings), revision);
 
-            await connector.Instance.Connect(stoppingToken);
+            await connector.Instance.Connect(stoppingToken).ConfigureAwait(false);
 
             // For debugging purposes
             // _ = connector.Instance.Stopped
@@ -45,31 +45,31 @@ public class ConnectorsActivator(CreateConnector createConnector) {
             return ActivateResult.Activated();
         }
         catch (ValidationException ex) {
-            await Teardown();
+            await Teardown().ConfigureAwait(false);
             return ActivateResult.InvalidConfiguration(ex);
         }
         catch (Exception ex) {
-            await Teardown();
+            await Teardown().ConfigureAwait(false);
             return ActivateResult.UnknownError(ex);
         }
 
-        async Task Teardown() {
+        async ValueTask Teardown() {
 	        try {
-		        await connector.Instance.DisposeAsync();
-		        await connector.Instance.Stopped;
+		        await connector.Instance.DisposeAsync().ConfigureAwait(false);
+		        await connector.Instance.Stopped.ConfigureAwait(false);
 	        } catch {
 		        // ignore
 	        }
         }
     }
 
-    public async Task<DeactivateResult> Deactivate(ConnectorId connectorId) {
+    public async ValueTask<DeactivateResult> Deactivate(ConnectorId connectorId) {
         if (!Connectors.TryRemove(connectorId, out var connector))
             return DeactivateResult.ConnectorNotFound();
 
         try {
-            await connector.Instance.DisposeAsync();
-            await connector.Instance.Stopped;
+            await connector.Instance.DisposeAsync().ConfigureAwait(false);
+            await connector.Instance.Stopped.ConfigureAwait(false);
             return DeactivateResult.Deactivated();
         }
         catch (Exception ex) {
@@ -77,12 +77,12 @@ public class ConnectorsActivator(CreateConnector createConnector) {
         }
     }
 
-    public async Task<DeactivateResult> WaitForDeactivation(ConnectorId connectorId) {
+    public async ValueTask<DeactivateResult> WaitForDeactivation(ConnectorId connectorId) {
         if (!Connectors.TryRemove(connectorId, out var connector))
             return DeactivateResult.ConnectorNotFound();
 
         try {
-            await connector.Instance.Stopped;
+            await connector.Instance.Stopped.ConfigureAwait(false);
             return DeactivateResult.Deactivated();
         }
         catch (Exception ex) {

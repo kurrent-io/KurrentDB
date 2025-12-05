@@ -47,32 +47,32 @@ public class SystemProducer : IProducer {
             .Build();
     }
 
-    SystemProducerOptions              Options            { get; }
-    ISystemClient                      Client             { get; }
-    Serialize                          Serialize          { get; }
-    ManualResetEventSlim               Flushing           { get; }
-    InterceptorController              Interceptors       { get; }
-    Func<ProducerLifecycleEvent, Task> Intercept          { get; }
-    ResiliencePipeline                 ResiliencePipeline { get; }
+    SystemProducerOptions                   Options            { get; }
+    ISystemClient                           Client             { get; }
+    Serialize                               Serialize          { get; }
+    ManualResetEventSlim                    Flushing           { get; }
+    InterceptorController                   Interceptors       { get; }
+    Func<ProducerLifecycleEvent, ValueTask> Intercept          { get; }
+    ResiliencePipeline                      ResiliencePipeline { get; }
 
     public string  ProducerId       => Options.ProducerId;
     public string  ClientId         => Options.ClientId;
     public string? Stream           => Options.DefaultStream;
     public int     InFlightMessages => 0;
 
-    public Task Produce(ProduceRequest request, OnProduceResult onResult) =>
+    public ValueTask Produce(ProduceRequest request, OnProduceResult onResult) =>
         ProduceInternal(request, new ProduceResultCallback(onResult));
 
-    public Task Produce<TState>(ProduceRequest request, OnProduceResult<TState> onResult, TState state) =>
+    public ValueTask Produce<TState>(ProduceRequest request, OnProduceResult<TState> onResult, TState state) =>
         ProduceInternal(request, new ProduceResultCallback<TState>(onResult, state));
 
-    public Task Produce<TState>(ProduceRequest request, ProduceResultCallback<TState> callback) =>
+    public ValueTask Produce<TState>(ProduceRequest request, ProduceResultCallback<TState> callback) =>
         ProduceInternal(request, callback);
 
-    public Task Produce(ProduceRequest request, ProduceResultCallback callback) =>
+    public ValueTask Produce(ProduceRequest request, ProduceResultCallback callback) =>
         ProduceInternal(request, callback);
 
-    async Task ProduceInternal(ProduceRequest request, IProduceResultCallback callback) {
+    async ValueTask ProduceInternal(ProduceRequest request, IProduceResultCallback callback) {
         Ensure.NotDefault(request, ProduceRequest.Empty);
         Ensure.NotNull(callback);
 
@@ -81,7 +81,7 @@ public class SystemProducer : IProducer {
 
         var validRequest = request.EnsureStreamIsSet(Options.DefaultStream);
 
-        await Intercept(new ProduceRequestReceived(this, validRequest));
+        await Intercept(new ProduceRequestReceived(this, validRequest)).ConfigureAwait(false);
 
         Flushing.Wait();
 
@@ -91,9 +91,9 @@ public class SystemProducer : IProducer {
                     .Set(HeaderKeys.ProducerId, ProducerId)
                     .Set(HeaderKeys.ProducerRequestId, validRequest.RequestId),
                 Serialize
-            );
+            ).ConfigureAwait(false);
 
-        await Intercept(new ProduceRequestReady(this, request));
+        await Intercept(new ProduceRequestReady(this, request)).ConfigureAwait(false);
 
         var expectedRevision = request.ExpectedStreamRevision != StreamRevision.Unset
             ? request.ExpectedStreamRevision.Value
@@ -104,25 +104,25 @@ public class SystemProducer : IProducer {
                 _ => throw new ArgumentOutOfRangeException(nameof(request.ExpectedStreamState), request.ExpectedStreamState, null)
             };
 
-        var result = await WriteEvents(Client, validRequest, events, expectedRevision, ResiliencePipeline);
+        var result = await WriteEvents(Client, validRequest, events, expectedRevision, ResiliencePipeline).ConfigureAwait(false);
 
-        await Intercept(new ProduceRequestProcessed(this, result));
+        await Intercept(new ProduceRequestProcessed(this, result)).ConfigureAwait(false);
 
         try {
-            await callback.Execute(result);
+            await callback.Execute(result).ConfigureAwait(false);
         } catch (Exception uex) {
-            await Intercept(new ProduceRequestCallbackError(this, result, uex));
+            await Intercept(new ProduceRequestCallbackError(this, result, uex)).ConfigureAwait(false);
         }
 
         return;
 
-        static async Task<ProduceResult> WriteEvents(ISystemClient client, ProduceRequest request, Event[] events, long expectedRevision, ResiliencePipeline resiliencePipeline) {
+        static async ValueTask<ProduceResult> WriteEvents(ISystemClient client, ProduceRequest request, Event[] events, long expectedRevision, ResiliencePipeline resiliencePipeline) {
             var state = (Client: client, Request: request, Events: events, ExpectedRevision: expectedRevision);
 
             try {
                 return await resiliencePipeline.ExecuteAsync(
                     static async (state, token) => {
-                        var result = await WriteEvents(state.Client, state.Request, state.Events, state.ExpectedRevision, token);
+                        var result = await WriteEvents(state.Client, state.Request, state.Events, state.ExpectedRevision, token).ConfigureAwait(false);
 
                         // If it is the wrong version but the stream is empty,
                         // it means the stream was deleted or truncated.
@@ -132,7 +132,7 @@ public class SystemProducer : IProducer {
                                 .Reading
                                 .ReadStreamLastEvent(state.Request.Stream, CancellationToken.None)
                                 .Then(async re => re is null || re == ResolvedEvent.EmptyEvent
-                                    ? await WriteEvents(state.Client, state.Request, state.Events, revisionError.ActualStreamRevision, token)
+                                    ? await WriteEvents(state.Client, state.Request, state.Events, revisionError.ActualStreamRevision, token).ConfigureAwait(false)
                                     : result);
                         }
 
@@ -145,9 +145,9 @@ public class SystemProducer : IProducer {
                 return ProduceResult.Failed(request, err);
             }
 
-            static async Task<ProduceResult> WriteEvents(ISystemClient client, ProduceRequest request, Event[] events, long expectedRevision, CancellationToken cancellationToken) {
+            static async ValueTask<ProduceResult> WriteEvents(ISystemClient client, ProduceRequest request, Event[] events, long expectedRevision, CancellationToken cancellationToken) {
                 try {
-                    var (position, streamRevision) = await client.Writing.WriteEvents(request.Stream, events, expectedRevision, cancellationToken);
+                    var (position, streamRevision) = await client.Writing.WriteEvents(request.Stream, events, expectedRevision, cancellationToken).ConfigureAwait(false);
 
                     var recordPosition = RecordPosition.ForStream(
                         StreamId.From(request.Stream),
@@ -164,10 +164,10 @@ public class SystemProducer : IProducer {
         }
     }
 
-    public async Task<(int Flushed, int Inflight)> Flush(CancellationToken cancellationToken = default) {
+    public async ValueTask<(int Flushed, int Inflight)> Flush(CancellationToken cancellationToken = default) {
         try {
             Flushing.Reset();
-            await Intercept(new ProducerFlushed(this, 0, 0));
+            await Intercept(new ProducerFlushed(this, 0, 0)).ConfigureAwait(false);
             return (0, 0);
         } finally {
             Flushing.Set();
@@ -176,14 +176,14 @@ public class SystemProducer : IProducer {
 
     public virtual async ValueTask DisposeAsync() {
         try {
-            await Flush();
+            await Flush().ConfigureAwait(false);
 
-            await Intercept(new ProducerStopped(this));
+            await Intercept(new ProducerStopped(this)).ConfigureAwait(false);
         } catch (Exception ex) {
-            await Intercept(new ProducerStopped(this, ex)); //not sure about this...
+            await Intercept(new ProducerStopped(this, ex)).ConfigureAwait(false); //not sure about this...
             throw;
         } finally {
-            await Interceptors.DisposeAsync();
+            await Interceptors.DisposeAsync().ConfigureAwait(false);
         }
     }
 }

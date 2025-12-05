@@ -58,7 +58,7 @@ public class SerilogSink : ISink {
             });
 
         if (options.HasConfiguration) {
-            var serilogConfiguration = await options.DecodeConfiguration();
+            var serilogConfiguration = await options.DecodeConfiguration().ConfigureAwait(false);
             Logger = new SwitchableLogger(loggerConfiguration
                 .ReadFrom.Configuration(serilogConfiguration)
                 .CreateLogger());
@@ -125,7 +125,7 @@ public class SerilogSinkValidator : SinkConnectorValidator<SerilogSinkOptions> {
             () => RuleFor(x => x)
                 .Custom(async void (options, ctx) => {
                     try {
-                        await options.DecodeConfiguration();
+                        await options.DecodeConfiguration().ConfigureAwait(false);
                     } catch (Exception) {
                         ctx.AddFailure(new Failures.ConfigurationEncodingFailure());
                     }

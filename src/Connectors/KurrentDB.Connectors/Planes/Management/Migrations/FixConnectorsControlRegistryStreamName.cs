@@ -27,12 +27,12 @@ public async Task OnStartup(NodeSystemInfo nodeInfo, IServiceProvider servicePro
         var reader   = getReaderBuilder().ReaderId(nameof(FixConnectorsControlRegistryStreamName)).Create();
         var producer = getProducerBuilder().ProducerId(nameof(FixConnectorsControlRegistryStreamName)).Create();
 
-        var snapshotRecord = await reader.ReadLastStreamRecord(options.SnapshotStreamId, cancellationToken);
+        var snapshotRecord = await reader.ReadLastStreamRecord(options.SnapshotStreamId, cancellationToken).ConfigureAwait(false);
         if (snapshotRecord.Value is ActivatedConnectorsSnapshot)
             return;
 
         var unwantedStreamName = $"${options.SnapshotStreamId}";
-        var unwantedSnapshotRecord = await reader.ReadLastStreamRecord(unwantedStreamName, cancellationToken);
+        var unwantedSnapshotRecord = await reader.ReadLastStreamRecord(unwantedStreamName, cancellationToken).ConfigureAwait(false);
 
         if (unwantedSnapshotRecord.Value is not ActivatedConnectorsSnapshot previousSnapshot)
             return;
@@ -47,12 +47,12 @@ public async Task OnStartup(NodeSystemInfo nodeInfo, IServiceProvider servicePro
             .ExpectedStreamState(StreamState.Any)
             .Create();
 
-        await producer.Produce(request);
+        await producer.Produce(request).ConfigureAwait(false);
         logger.LogInformation("Successfully migrated pre-existing connector registry snapshot ");
 
         var unwantedRegularStreamName = options.SnapshotStreamId.Value[1..];
         await client.Management.SoftDeleteStream(unwantedRegularStreamName, ExpectedVersion.NoStream, cancellationToken)
-            .OnError(ex => logger.LogWarning("Did not delete incorrect connector registry stream: {Error}", ex));
+	        .OnError(ex => logger.LogWarning("Did not delete incorrect connector registry stream: {Error}", ex)).ConfigureAwait(false);
 
         logger.LogInformation("Migration of incorrect connector registry stream completed.");
     }
