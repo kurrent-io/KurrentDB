@@ -76,11 +76,11 @@ public class ControlPlaneMetrics {
     // 	);
     // }
 
-    public async Task RecordConnectorActivationDuration(Func<Task> action, Guid nodeInstanceId, ClusterNodeState nodeState, string connectorId, string connectorType) {
+    public async ValueTask RecordConnectorActivationDuration(Func<Task> action, Guid nodeInstanceId, ClusterNodeState nodeState, string connectorId, string connectorType) {
         try {
             var startTime = Time.GetTimestamp();
 
-            await action();
+            await action().ConfigureAwait(false);
 
             ActivationDuration.Record(
                 Time.GetElapsedTime(startTime).TotalMilliseconds,

@@ -45,7 +45,7 @@ public abstract class ConnectorDataProtector<T> : IConnectorDataProtector where 
 
         foreach (var (key, value) in settings) {
             if (SensitiveKeys.Contains(key) && !string.IsNullOrEmpty(value))
-                settings[key] = await DataProtector.Protect(value, keyIdentifier: connectorId, ct);
+                settings[key] = await DataProtector.Protect(value, keyIdentifier: connectorId, ct).ConfigureAwait(false);
         }
 
         return settings;
@@ -57,7 +57,7 @@ public abstract class ConnectorDataProtector<T> : IConnectorDataProtector where 
 
         foreach (var (key, value) in configuration.AsEnumerable()) {
             if (SensitiveKeys.Contains(key) && !string.IsNullOrEmpty(value))
-                configuration[key] = await DataProtector.Unprotect(value, ct);
+                configuration[key] = await DataProtector.Unprotect(value, ct).ConfigureAwait(false);
         }
 
         return configuration;

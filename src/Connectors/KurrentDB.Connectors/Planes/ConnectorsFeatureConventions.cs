@@ -61,12 +61,12 @@ public partial class ConnectorsFeatureConventions {
 
 	public static async Task<RegisteredSchema> RegisterControlMessages<T>(ISchemaRegistry registry, CancellationToken token = default) {
 		var schemaInfo = new SchemaInfo(Messages.GetControlSystemMessageSubject(typeof(T).Name), SchemaDataFormat.Json);
-		return await registry.RegisterSchema<T>(schemaInfo, cancellationToken: token);
+		return await registry.RegisterSchema<T>(schemaInfo, cancellationToken: token).ConfigureAwait(false);
 	}
 
 	public static async Task<RegisteredSchema> RegisterManagementMessages<T>(ISchemaRegistry registry, CancellationToken token = default) {
 		var schemaInfo = new SchemaInfo(Messages.GetManagementMessageSubject(typeof(T).Name), SchemaDataFormat.Json);
-		return await registry.RegisterSchema<T>(schemaInfo, cancellationToken: token);
+		return await registry.RegisterSchema<T>(schemaInfo, cancellationToken: token).ConfigureAwait(false);
 	}
 }
 

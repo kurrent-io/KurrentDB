@@ -23,7 +23,7 @@ abstract class SchemaRegistryStartupTask : IHostedService {
 
     async Task IHostedService.StartAsync(CancellationToken cancellationToken) {
         try {
-            await OnStartup(Registry, cancellationToken);
+            await OnStartup(Registry, cancellationToken).ConfigureAwait(false);
             Logger.LogDebug("{TaskName} completed", TaskName);
         }
         catch (Exception ex) {

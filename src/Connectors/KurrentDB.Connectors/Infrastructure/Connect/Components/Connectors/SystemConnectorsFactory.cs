@@ -154,13 +154,13 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ISe
         public Task Stopped => processor.Stopped;
 
         public async Task Connect(CancellationToken stoppingToken) {
-            await sinkProxy.Initialize(stoppingToken);
-            await processor.Activate(stoppingToken);
+            await sinkProxy.Initialize(stoppingToken).ConfigureAwait(false);
+            await processor.Activate(stoppingToken).ConfigureAwait(false);
         }
 
         public async ValueTask DisposeAsync() {
-            await sinkProxy.DisposeAsync();
-            await processor.DisposeAsync();
+            await sinkProxy.DisposeAsync().ConfigureAwait(false);
+            await processor.DisposeAsync().ConfigureAwait(false);
             OnDisposeCallback?.Invoke();
         }
     }

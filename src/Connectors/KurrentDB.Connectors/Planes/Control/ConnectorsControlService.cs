@@ -53,11 +53,11 @@ public class ConnectorsControlService : LeaderNodeBackgroundService {
         GetConnectorsResult connectors = new();
 
         try {
-            connectors = await GetActiveConnectors(stoppingToken);
+            connectors = await GetActiveConnectors(stoppingToken).ConfigureAwait(false);
 
             await connectors
                 .Select(connector => ActivateConnector(connector.ConnectorId, connector.Settings, connector.Revision))
-                .WhenAll();
+                .WhenAll().ConfigureAwait(false);
 
             await using var consumer = ConsumerBuilder.StartPosition(connectors.Position).Create();
 
@@ -66,11 +66,11 @@ public class ConnectorsControlService : LeaderNodeBackgroundService {
                     case ConnectorActivating evt:
                         var connector = new RegisteredConnector(evt.ConnectorId, evt.Revision, EnrichWithStartPosition(evt.Settings, evt.StartFrom));
                         connectors.Connectors.Add(connector);
-                        await ActivateConnector(connector.ConnectorId, connector.Settings, connector.Revision);
+                        await ActivateConnector(connector.ConnectorId, connector.Settings, connector.Revision).ConfigureAwait(false);
                         break;
                     case ConnectorDeactivating evt:
                         connectors.Connectors.RemoveAll(x => x.ConnectorId == evt.ConnectorId);
-                        await DeactivateConnector(evt.ConnectorId);
+                        await DeactivateConnector(evt.ConnectorId).ConfigureAwait(false);
                         break;
                 }
             }
@@ -100,7 +100,7 @@ public class ConnectorsControlService : LeaderNodeBackgroundService {
         }
 
         async Task ActivateConnector(ConnectorId connectorId, IDictionary<string, string?> settings, int revision) {
-            var activationResult = await Activator.Activate(connectorId, settings, revision, stoppingToken);
+            var activationResult = await Activator.Activate(connectorId, settings, revision, stoppingToken).ConfigureAwait(false);
 
             Logger.LogConnectorActivationResult(
                 activationResult.Failure
@@ -120,7 +120,7 @@ public class ConnectorsControlService : LeaderNodeBackgroundService {
                             Timestamp    = TimeProvider.System.GetUtcNow().ToTimestamp()
                         },
                         stoppingToken
-                    );
+                    ).ConfigureAwait(false);
                 }
                 catch (Exception ex) {
                     Logger.LogActivationRecordFailure(ex, nodeInfo.InstanceId, connectorId);
@@ -129,7 +129,7 @@ public class ConnectorsControlService : LeaderNodeBackgroundService {
         }
 
         async Task DeactivateConnector(ConnectorId connectorId) {
-            var deactivationResult = await Activator.Deactivate(connectorId);
+            var deactivationResult = await Activator.Deactivate(connectorId).ConfigureAwait(false);
 
             Logger.LogConnectorDeactivationResult(
                 deactivationResult.Failure
@@ -149,7 +149,7 @@ public class ConnectorsControlService : LeaderNodeBackgroundService {
                             Timestamp    = TimeProvider.System.GetUtcNow().ToTimestamp()
                         },
                         stoppingToken
-                    );
+                    ).ConfigureAwait(false);
                 }
                 catch (Exception ex) {
                     Logger.LogDeactivationRecordFailure(ex, nodeInfo.InstanceId, connectorId);

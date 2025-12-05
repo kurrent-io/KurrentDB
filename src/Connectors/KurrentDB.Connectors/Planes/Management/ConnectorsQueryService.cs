@@ -35,7 +35,7 @@ public class ConnectorsQueryService(
             throw RpcExceptions.InvalidArgument(validationResult);
 
         try {
-            var result = await runQuery(query, context.CancellationToken);
+            var result = await runQuery(query, context.CancellationToken).ConfigureAwait(false);
 
             logger.LogDebug(
                 "{TraceIdentifier} {QueryType} executed {Query}",
