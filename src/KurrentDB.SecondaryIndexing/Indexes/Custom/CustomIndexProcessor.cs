@@ -31,7 +31,7 @@ internal abstract class CustomIndexProcessor: Disposable, ISecondaryIndexProcess
 
 internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where TPartitionKey : ITPartitionKey {
 	private readonly DuckDBConnectionPool _db;
-	private readonly Function _eventFilter;
+	private readonly Function? _eventFilter;
 	private readonly Function? _partitionKeySelector;
 	private readonly ResolvedEventJsObject _resolvedEventJsObject;
 	private readonly IndexInFlightRecords _inFlightRecords;
@@ -71,9 +71,12 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 
 		_publisher = publisher;
 
-		var engine = new Engine();
-		_eventFilter = engine.Evaluate(jsEventFilter).AsFunctionInstance();
-		if (jsPartitionKeySelector != string.Empty)
+		var engine = new Engine(); //qq  does thsi get disposed
+
+		if (jsEventFilter is not "")
+			_eventFilter = engine.Evaluate(jsEventFilter).AsFunctionInstance();
+
+		if (jsPartitionKeySelector is not "")
 			_partitionKeySelector = engine.Evaluate(jsPartitionKeySelector).AsFunctionInstance();
 
 		_resolvedEventJsObject = new(engine);
@@ -152,9 +155,12 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 			_resolvedEventJsObject.Data = resolvedEvent.OriginalEvent.Data;
 			_resolvedEventJsObject.Metadata = resolvedEvent.OriginalEvent.Metadata;
 
-			var passesFilter = _eventFilter.Call(_resolvedEventJsObject).AsBoolean();
-			if (!passesFilter)
-				return false;
+			//qq find out if it is more performance to combine the two functions once and call that here
+			if (_eventFilter is not null) {
+				var passesFilter = _eventFilter.Call(_resolvedEventJsObject).AsBoolean();
+				if (!passesFilter)
+					return false;
+			}
 
 			if (_partitionKeySelector is not null) {
 				var partitionJsValue = _partitionKeySelector.Call(_resolvedEventJsObject);
