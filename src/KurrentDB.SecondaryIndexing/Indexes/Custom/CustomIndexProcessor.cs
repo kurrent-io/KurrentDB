@@ -39,6 +39,7 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 	private readonly IPublisher _publisher;
 	private readonly DuckDBAdvancedConnection _connection;
 	private readonly CustomIndexSql<TPartitionKey> _sql;
+	private readonly object _skip = new();
 
 	private TFPos _lastPosition;
 	private Appender _appender;
@@ -72,6 +73,9 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 		_publisher = publisher;
 
 		var engine = new Engine(); //qq  does thsi get disposed
+
+		engine.SetValue("skip", new object());
+		_skip = engine.Evaluate("skip");
 
 		if (jsEventFilter is not "")
 			_eventFilter = engine.Evaluate(jsEventFilter).AsFunctionInstance();
@@ -164,6 +168,8 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 
 			if (_partitionKeySelector is not null) {
 				var partitionJsValue = _partitionKeySelector.Call(_resolvedEventJsObject);
+				if (_skip.Equals(partitionJsValue))
+					return false;
 				partition = TPartitionKey.ParseFrom(partitionJsValue);
 			}
 

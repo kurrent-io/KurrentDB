@@ -23,6 +23,46 @@ public class CustomIndexesJavascriptTests {
 	string ReadFilter => $"$idx-{CustomIndexName}";
 
 	[Test]
+	public async ValueTask can_filter_by_skipping(CancellationToken ct) {
+		await Client.CreateCustomIndexAsync(
+			new() {
+				Name = CustomIndexName,
+				Filter = $"e => e.type == '{EventType}'",
+				PartitionKeySelector = """
+					e => {
+						let color = e.data.color;
+						if (color == 'green')
+							return skip;
+						return color;
+					}
+				""",
+				PartitionKeyType = KeyType.String,
+			},
+			cancellationToken: ct);
+
+		// write an event that doesn't pass the filter
+		await StreamsWriteClient.AppendEvent(Stream, EventType, $$"""{ "orderId": "A1", "color": "green" }""", ct);
+		// write an event that passes the filter
+		await StreamsWriteClient.AppendEvent(Stream, EventType, $$"""{ "orderId": "B", "color": "blue" }""", ct);
+
+		// ensure the index only contains the one event
+		await StreamsReadClient.WaitForCustomIndexEvents(ReadFilter, 1, ct);
+		var evts = await StreamsReadClient.ReadAllForwardFiltered($"{ReadFilter}", ct).ToArrayAsync(ct);
+		await Assert.That(evts.Count).IsEqualTo(1);
+		await Assert.That(evts[0].Data.ToStringUtf8()).Contains(""" "orderId": "B", """);
+
+		// ensure the blue partition only contains the one event
+		await StreamsReadClient.WaitForCustomIndexEvents($"{ReadFilter}:blue", 1, ct);
+		evts = await StreamsReadClient.ReadAllForwardFiltered($"{ReadFilter}:blue", ct).ToArrayAsync(ct);
+		await Assert.That(evts.Count).IsEqualTo(1);
+		await Assert.That(evts[0].Data.ToStringUtf8()).Contains(""" "orderId": "B", """);
+
+		// ensure the green partition contains no events
+		evts = await StreamsReadClient.ReadAllForwardFiltered($"{ReadFilter}:green", ct).ToArrayAsync(ct);
+		await Assert.That(evts.Count).IsEqualTo(0);
+	}
+
+	[Test]
 	[Arguments(KeyType.String, """ "blue" """, """ "red" """, "red")]
 	[Arguments(KeyType.String, """ "blue:2" """, """ "red:3" """, "red:3")]
 
