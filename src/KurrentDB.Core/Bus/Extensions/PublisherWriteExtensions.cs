@@ -68,13 +68,13 @@ public static class PublisherWriteExtensions {
 	) {
 		var cid = Guid.NewGuid();
 
-		var envelope = new MultiStreamWriteEventsOperation(eventStreamIds, expectedVersions);
+		var operation = new MultiStreamWriteEventsOperation(eventStreamIds, expectedVersions);
 
 		try {
 			var command = new ClientMessage.WriteEvents(
 				internalCorrId: cid,
 				correlationId: cid,
-				envelope,
+				envelope: operation,
 				requireLeader: false,
 				eventStreamIds: eventStreamIds,
 				expectedVersions: expectedVersions,
@@ -89,7 +89,7 @@ public static class PublisherWriteExtensions {
 			throw new($"{nameof(WriteEventsToMultipleStreams)}: Unable to execute request!", ex);
 		}
 
-		return await envelope.WaitForReply;
+		return await operation.WaitForReply;
 	}
 }
 
