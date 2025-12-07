@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using DotNext;
@@ -19,7 +20,9 @@ public class DuckDBConnectionPoolLifetime : Disposable {
 	private readonly ILogger<DuckDBConnectionPoolLifetime> _log;
 	[CanBeNull] private string _tempPath;
 
-	public DuckDBConnectionPoolLifetime(TFChunkDbConfig config, IEnumerable<IDuckDBSetup> setups, [CanBeNull] ILogger<DuckDBConnectionPoolLifetime> log) {
+	public DuckDBConnectionPoolLifetime(TFChunkDbConfig config,
+		IEnumerable<IDuckDBSetup> setups,
+		[CanBeNull] ILogger<DuckDBConnectionPoolLifetime> log) {
 		var path = config.InMemDb ? GetTempPath() : $"{config.Path}/kurrent.ddb";
 		var repeated = new List<IDuckDBSetup>();
 		var once = new List<IDuckDBSetup>();
@@ -31,7 +34,10 @@ public class DuckDBConnectionPoolLifetime : Disposable {
 			}
 		}
 
-		_pool = new ConnectionPoolWithFunctions($"Data Source={path}", repeated.ToArray());
+		var (total, used) = CalculateRam();
+		var availableRam = total - used;
+		var duckDbRam = (int)Math.Round(availableRam / 2);
+		_pool = new ConnectionPoolWithFunctions($"Data Source={path};memory_limit={duckDbRam}GB", repeated.ToArray());
 		log?.LogInformation("Created DuckDB connection pool at {path}", path);
 		_log = log;
 		using var connection = _pool.Open();
@@ -45,6 +51,15 @@ public class DuckDBConnectionPoolLifetime : Disposable {
 			_tempPath = Path.GetTempFileName();
 			File.Delete(_tempPath);
 			return _tempPath;
+		}
+
+		(double Total, double Used) CalculateRam() {
+			var process = Process.GetCurrentProcess();
+			var processRam = process.WorkingSet64;
+			var totalRam = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
+			var totalGb = (double)totalRam / 1024 / 1024 / 1024;
+			var processGb = (double)processRam / 1024 / 1024 / 1024;
+			return (totalGb, processGb);
 		}
 	}
 
@@ -64,6 +79,7 @@ public class DuckDBConnectionPoolLifetime : Disposable {
 					// let the file stay and be cleaned up by the OS
 				}
 			}
+
 			_log?.LogInformation("Disposed DuckDB connection pool");
 		}
 
