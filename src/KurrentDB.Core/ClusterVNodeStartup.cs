@@ -143,33 +143,7 @@ public class ClusterVNodeStartup<TStreamId>
 
 		_authenticationProvider.ConfigureEndpoints(app);
 
-		// Select an appropriate controller action and codec.
-		//    Success -> Add InternalContext (HttpEntityManager, urimatch, ...) to HttpContext
-		//    Fail -> Pipeline terminated with response.
-		app.UseMiddleware<KestrelToInternalBridgeMiddleware>();
-
-		// Looks up the InternalContext to perform the check.
-		// Terminal if auth check is not successful.
-		app.UseMiddleware<AuthorizationMiddleware>();
-
-		// Open telemetry currently guarded by our custom authz for consistency with stats
-		app.UseOpenTelemetryPrometheusScrapingEndpoint(x => {
-			if (x.Request.Path != "/metrics")
-				return false;
-
-			// Prometheus scrapes preferring application/openmetrics-text, but the prometheus exporter
-			// these days adds `_total` suffix to counters when outputting openmetrics format (as
-			// required by the spec). DisableTotalNameSuffixForCounters only affects plain text output.
-			// So if we are exporting legacy metrics, where we do not want the _total suffix for
-			// backwards compatibility, then force the exporter to respond with plain text metrics as it
-			// did in 23.10 and 24.10.
-			if (forcePlainTextMetrics)
-				x.Request.Headers.Remove("Accept");
-			return true;
-		});
-
-		// Internal dispatcher looks up the InternalContext to call the appropriate controller
-		app.Use((ctx, next) => internalDispatcher.InvokeAsync(ctx, next));
+		app.MapLegacyPipeline(_httpService, internalDispatcher, forcePlainTextMetrics);
 
 		app.MapGrpcService<PersistentSubscriptions>();
 		app.MapGrpcService<Users>();

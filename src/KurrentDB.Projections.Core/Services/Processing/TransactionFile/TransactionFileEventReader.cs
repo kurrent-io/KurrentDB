@@ -141,15 +141,15 @@ public class TransactionFileEventReader : EventReader,
 		_publisher.Publish(CreateReadTimeoutMessage(correlationId, streamId));
 	}
 
-	private Message CreateReadTimeoutMessage(Guid correlationId, string streamId) {
+	private TimerMessage.Schedule CreateReadTimeoutMessage(Guid correlationId, string streamId) {
 		return TimerMessage.Schedule.Create(
 			TimeSpan.FromMilliseconds(ESConsts.ReadRequestTimeout),
 			new SendToThisEnvelope(this),
 			new ProjectionManagementMessage.Internal.ReadTimeout(correlationId, streamId));
 	}
 
-	private Message CreateReadEventsMessage(Guid correlationId) {
-		return new ClientMessage.ReadAllEventsForward(
+	private ClientMessage.ReadAllEventsForward CreateReadEventsMessage(Guid correlationId) {
+		return new(
 			correlationId, correlationId, new SendToThisEnvelope(this), _from.CommitPosition,
 			_from.PreparePosition == -1 ? _from.CommitPosition : _from.PreparePosition, _maxReadCount,
 			_resolveLinkTos, false, null, ReadAs, replyOnExpired: false);
