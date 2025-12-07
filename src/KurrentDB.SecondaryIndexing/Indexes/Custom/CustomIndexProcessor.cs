@@ -89,7 +89,7 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 		_sql.CreateCustomIndex(_connection);
 		RegisterTableFunction();
 
-		_appender = new(_connection, _sql.TableName.Span);
+		_appender = new(_connection, _sql.TableNameUtf8.Span);
 
 		var serviceName = metricsConfiguration?.ServiceName ?? "kurrentdb";
 		var tracker = new SecondaryIndexProgressTracker(indexName, serviceName, meter, clock ?? TimeProvider.System, getLastAppendedRecord);
@@ -279,7 +279,7 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 	}
 
 	public void GetCustomIndexTableNames(out string tableName, out string inFlightTableName, out bool hasPartitions) {
-		tableName = Encoding.UTF8.GetString(_sql.TableName.Span);
+		tableName = Encoding.UTF8.GetString(_sql.TableNameUtf8.Span);
 		inFlightTableName = _inFlightTableName;
 		hasPartitions = TPartitionKey.Type is not null;
 	}

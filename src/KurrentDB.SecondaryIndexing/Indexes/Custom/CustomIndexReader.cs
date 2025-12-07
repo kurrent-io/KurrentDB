@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
@@ -27,20 +28,19 @@ internal class CustomIndexReader<TPartitionKey>(
 	}
 
 	protected override List<IndexQueryRecord> GetDbRecordsForwards(DuckDBConnectionPool db, string id, long startPosition, long endPosition, int maxCount, bool excludeFirst) {
+		if (!TryGetPartition(id, out var partition))
+			return [];
+
 		var args = new ReadCustomIndexQueryArgs {
 			StartPosition = startPosition,
 			EndPosition = endPosition,
-			Count = maxCount
+			ExcludeFirst = excludeFirst,
+			Count = maxCount,
+			Partition = partition
 		};
 
-		if (!TryGetPartitionKey(id, out var partitionKey))
-			return [];
-
-		using (db.Rent(out var connection)) {
-			return excludeFirst ?
-				sql.ReadCustomIndexQueryExcl(connection, partitionKey, args).ToList():
-				sql.ReadCustomIndexQueryIncl(connection, partitionKey, args).ToList();
-		}
+		using (db.Rent(out var connection))
+			return sql.ReadCustomIndexForwardsQuery(connection, args);
 	}
 
 	protected override IEnumerable<IndexQueryRecord> GetInflightBackwards(string id, long startPosition, int maxCount, bool excludeFirst) {
@@ -49,32 +49,31 @@ internal class CustomIndexReader<TPartitionKey>(
 	}
 
 	protected override List<IndexQueryRecord> GetDbRecordsBackwards(DuckDBConnectionPool db, string id, long startPosition, int maxCount, bool excludeFirst) {
-		var args = new ReadCustomIndexQueryArgs {
-			StartPosition = startPosition,
-			Count = maxCount
-		};
-
-		if (!TryGetPartitionKey(id, out var partitionKey))
+		if (!TryGetPartition(id, out var partition))
 			return [];
 
-		using (db.Rent(out var connection)) {
-			return excludeFirst ?
-				sql.ReadCustomIndexBackQueryExcl(connection, partitionKey, args).ToList():
-				sql.ReadCustomIndexBackQueryIncl(connection, partitionKey, args).ToList();
-		}
+		var args = new ReadCustomIndexQueryArgs {
+			StartPosition = startPosition,
+			Count = maxCount,
+			ExcludeFirst = excludeFirst,
+			Partition = partition
+		};
+
+		using (db.Rent(out var connection))
+			return sql.ReadCustomIndexBackwardsQuery(connection, args);
 	}
 
 	public override TFPos GetLastIndexedPosition(string _) => throw new NotSupportedException(); // never called
 	public override bool CanReadIndex(string _) => throw new NotSupportedException(); // never called
 
-	private static bool TryGetPartitionKey(string id, out ITPartitionKey partitionKey) {
-		partitionKey = new NullPartitionKey();
+	private static bool TryGetPartition(string id, out ITPartitionKey partition) {
+		partition = new NullPartitionKey();
 
 		if (id == string.Empty)
 			return true;
 
 		try {
-			partitionKey = TPartitionKey.ParseFrom(id);
+			partition = TPartitionKey.ParseFrom(id);
 			return true;
 		} catch {
 			// invalid partition
