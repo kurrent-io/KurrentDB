@@ -4,6 +4,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using Kurrent.Quack;
+using Kurrent.Quack.ConnectionPool;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom;
@@ -41,14 +42,16 @@ internal class CustomIndexSql<TPartitionKey>(string indexName) where TPartitionK
 		var query = new CreateCustomIndexNonQuery(TableName, TPartitionKey.GetCreateStatement());
 		connection.ExecuteNonQuery(ref query);
 	}
-	public List<IndexQueryRecord> ReadCustomIndexForwardsQuery(DuckDBAdvancedConnection connection, ReadCustomIndexQueryArgs args) {
+	public List<IndexQueryRecord> ReadCustomIndexForwardsQuery(DuckDBConnectionPool db, ReadCustomIndexQueryArgs args) {
 		var query = new ReadCustomIndexForwardsQuery(TableName, args.ExcludeFirst, args.Partition.GetQueryStatement());
-		return connection.ExecuteQuery<ReadCustomIndexQueryArgs, IndexQueryRecord, ReadCustomIndexForwardsQuery>(ref query, args).ToList();
+		using (db.Rent(out var connection))
+			return connection.ExecuteQuery<ReadCustomIndexQueryArgs, IndexQueryRecord, ReadCustomIndexForwardsQuery>(ref query, args).ToList();
 	}
 
-	public List<IndexQueryRecord> ReadCustomIndexBackwardsQuery(DuckDBAdvancedConnection connection, ReadCustomIndexQueryArgs args) {
+	public List<IndexQueryRecord> ReadCustomIndexBackwardsQuery(DuckDBConnectionPool db, ReadCustomIndexQueryArgs args) {
 		var query = new ReadCustomIndexBackwardsQuery(TableName, args.ExcludeFirst, args.Partition.GetQueryStatement());
-		return connection.ExecuteQuery<ReadCustomIndexQueryArgs, IndexQueryRecord, ReadCustomIndexBackwardsQuery>(ref query, args).ToList();
+		using (db.Rent(out var connection))
+			return connection.ExecuteQuery<ReadCustomIndexQueryArgs, IndexQueryRecord, ReadCustomIndexBackwardsQuery>(ref query, args).ToList();
 	}
 
 	public GetCheckpointResult? GetCheckpoint(DuckDBAdvancedConnection connection, GetCheckpointQueryArgs args) {

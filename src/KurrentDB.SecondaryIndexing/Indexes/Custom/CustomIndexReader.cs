@@ -39,8 +39,7 @@ internal class CustomIndexReader<TPartitionKey>(
 			Partition = partition
 		};
 
-		using (db.Rent(out var connection))
-			return sql.ReadCustomIndexForwardsQuery(connection, args);
+		return sql.ReadCustomIndexForwardsQuery(db, args);
 	}
 
 	protected override IEnumerable<IndexQueryRecord> GetInflightBackwards(string id, long startPosition, int maxCount, bool excludeFirst) {
@@ -59,8 +58,7 @@ internal class CustomIndexReader<TPartitionKey>(
 			Partition = partition
 		};
 
-		using (db.Rent(out var connection))
-			return sql.ReadCustomIndexBackwardsQuery(connection, args);
+		return sql.ReadCustomIndexBackwardsQuery(db, args);
 	}
 
 	public override TFPos GetLastIndexedPosition(string _) => throw new NotSupportedException(); // never called
