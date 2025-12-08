@@ -10,5 +10,3 @@ public class CustomIndexDomainException(string customIndexName) : Exception {
 public class CustomIndexNotFoundException(string customIndexName) : CustomIndexDomainException(customIndexName);
 
 public class CustomIndexAlreadyExistsException(string customIndexName) : CustomIndexDomainException(customIndexName);
-
-public class CustomIndexAlreadyExistsDeletedException(string customIndexName) : CustomIndexDomainException(customIndexName);

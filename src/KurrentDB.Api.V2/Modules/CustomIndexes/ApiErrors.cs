@@ -17,9 +17,4 @@ public static partial class ApiErrors {
 		error: CustomIndexesError.CustomIndexAlreadyExists,
 		message: $"Custom Index '{customIndexName}' already exists",
 		details: new CustomIndexAlreadyExistsErrorDetails { Name = customIndexName });
-
-	public static RpcException CustomIndexAlreadyExistsDeleted(string customIndexName) => RpcExceptions.FromError(
-		error: CustomIndexesError.CustomIndexAlreadyExistsDeleted,
-		message: $"Custom Index '{customIndexName}' existed previously. To recreate it set the force flag to true on the request.",
-		details: new CustomIndexAlreadyExistsDeletedErrorDetails { Name = customIndexName });
 }

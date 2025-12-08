@@ -18,8 +18,7 @@ public class CustomIndexDomainService : CommandService<CustomIndex, CustomIndexS
 				eventFilter: cmd.EventFilter,
 				partitionKeySelector: cmd.PartitionKeySelector,
 				partitionKeyType: cmd.PartitionKeyType,
-				start: cmd.Start,
-				force: cmd.Force));
+				start: cmd.Start));
 
 		On<CustomIndexCommands.Start>()
 			.InState(ExpectedState.Any) // facilitate throwing our own exceptions if not existing

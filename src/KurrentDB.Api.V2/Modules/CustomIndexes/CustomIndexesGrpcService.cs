@@ -72,7 +72,6 @@ public class CustomIndexesGrpcService(
 	static RpcException? MapException(CustomIndexDomainException ex) => ex switch {
 		CustomIndexNotFoundException => ApiErrors.CustomIndexNotFound(ex.CustomIndexName),
 		CustomIndexAlreadyExistsException => ApiErrors.CustomIndexAlreadyExists(ex.CustomIndexName),
-		CustomIndexAlreadyExistsDeletedException => ApiErrors.CustomIndexAlreadyExistsDeleted(ex.CustomIndexName),
 		_ => null,
 	};
 
@@ -153,7 +152,6 @@ file static class Extensions {
 			PartitionKeySelector = self.PartitionKeySelector,
 			PartitionKeyType = self.PartitionKeyType.Convert(),
 			Start = !self.HasStart || self.Start,
-			Force = self.Force,
 		};
 
 	public static CustomIndexCommands.Start ToCommand(this StartCustomIndexRequest self) =>

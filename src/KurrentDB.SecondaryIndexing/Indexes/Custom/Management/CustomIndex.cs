@@ -11,8 +11,7 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 		string eventFilter,
 		string partitionKeySelector,
 		PartitionKeyType partitionKeyType,
-		bool start,
-		bool force) {
+		bool start) {
 
 		switch (State.Status) {
 			case CustomIndexState.CustomIndexStatus.NonExistent: {
@@ -34,8 +33,6 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 			}
 
 			case CustomIndexState.CustomIndexStatus.Deleted: {
-				if (!force)
-					throw new CustomIndexAlreadyExistsDeletedException(State.Id.Name);
 				CreateCustomIndex();
 				break;
 			}
