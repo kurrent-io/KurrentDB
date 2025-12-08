@@ -132,7 +132,7 @@
 		watch.Start();
 
 		try {
-			_items = Db.ExecuteAdHocUserQuery(CustomIndexManager.TryGetCustomIndexTableNames, sql);
+			_items = Db.ExecuteAdHocUserQuery(CustomIndexManager.TryGetCustomIndexTableDetails, sql);
 			watch.Stop();
 			_message = $"Query executed in {watch}";
 		}

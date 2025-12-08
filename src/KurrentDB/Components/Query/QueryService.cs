@@ -14,9 +14,9 @@ using Kurrent.Quack.ConnectionPool;
 namespace KurrentDB.Components.Query;
 
 public static partial class QueryService {
-	internal delegate bool TryGetCustomIndexTableNames(string indexName, out string tableName, out string inFlightTableName, out bool hasPartitions);
+	internal delegate bool TryGetCustomIndexTableDetails(string indexName, out string tableName, out string inFlightTableName, out bool hasPartitions);
 
-	private static string AmendQuery(DuckDBConnectionPool pool, TryGetCustomIndexTableNames tryGetCustomIndexTableNames, string query) {
+	private static string AmendQuery(DuckDBConnectionPool pool, TryGetCustomIndexTableDetails tryGetCustomIndexTableDetails, string query) {
 		var matches = ExtractionRegex().Matches(query);
 		List<string> ctes = [AllCte];
 		foreach (Match match in matches) {
@@ -35,7 +35,7 @@ public static partial class QueryService {
 					break;
 				case "index":
 					var indexName = tokens[1];
-					var exists = tryGetCustomIndexTableNames(indexName, out var tableName, out var tableFunctionName, out var hasPartitions);
+					var exists = tryGetCustomIndexTableDetails(indexName, out var tableName, out var tableFunctionName, out var hasPartitions);
 					if (!exists)
 						throw new("Index does not exist");
 
@@ -69,8 +69,8 @@ public static partial class QueryService {
 		}
 	}
 
-	internal static List<Dictionary<string, object>> ExecuteAdHocUserQuery(this DuckDBConnectionPool pool, TryGetCustomIndexTableNames tryGetCustomIndexTableNames, string sql) {
-		var query = AmendQuery(pool, tryGetCustomIndexTableNames, sql);
+	internal static List<Dictionary<string, object>> ExecuteAdHocUserQuery(this DuckDBConnectionPool pool, TryGetCustomIndexTableDetails tryGetCustomIndexTableDetails, string sql) {
+		var query = AmendQuery(pool, tryGetCustomIndexTableDetails, sql);
 		using var scope = pool.Rent(out var connection);
 		var items = (IEnumerable<IDictionary<string, object>>)connection.Query(query);
 		return items.Select(x => x.ToDictionary(y => y.Key, y => y.Value)).ToList();

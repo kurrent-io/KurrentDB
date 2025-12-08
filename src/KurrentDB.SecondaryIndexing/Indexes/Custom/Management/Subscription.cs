@@ -316,7 +316,7 @@ public class Subscription : ISecondaryIndexReader {
 			return index!.ReadBackwards(msg, token);
 	}
 
-	public bool TryGetCustomIndexTableNames(string indexName, out string tableName, out string inFlightTableName, out bool hasPartitions) {
+	public bool TryGetCustomIndexTableDetails(string indexName, out string tableName, out string inFlightTableName, out bool hasPartitions) {
 		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var index)) {
 			tableName = null!;
 			inFlightTableName = null!;
@@ -325,7 +325,7 @@ public class Subscription : ISecondaryIndexReader {
 		}
 
 		using (readLock) {
-			index!.GetCustomIndexTableNames(out tableName, out inFlightTableName, out hasPartitions);
+			index!.GetCustomIndexTableDetails(out tableName, out inFlightTableName, out hasPartitions);
 			return true;
 		}
 	}

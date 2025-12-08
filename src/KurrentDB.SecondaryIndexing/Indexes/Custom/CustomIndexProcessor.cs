@@ -278,7 +278,7 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 #pragma warning restore DuckDBNET001
 	}
 
-	public void GetCustomIndexTableNames(out string tableName, out string inFlightTableName, out bool hasPartitions) {
+	public void GetCustomIndexTableDetails(out string tableName, out string inFlightTableName, out bool hasPartitions) {
 		tableName = Encoding.UTF8.GetString(_sql.TableNameUtf8.Span);
 		inFlightTableName = _inFlightTableName;
 		hasPartitions = TPartitionKey.Type is not null;
