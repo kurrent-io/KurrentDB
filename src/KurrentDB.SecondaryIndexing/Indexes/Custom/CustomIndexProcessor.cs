@@ -279,7 +279,7 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 	}
 
 	public void GetCustomIndexTableDetails(out string tableName, out string inFlightTableName, out bool hasPartitions) {
-		tableName = Encoding.UTF8.GetString(_sql.TableNameUtf8.Span);
+		tableName = _sql.TableName;
 		inFlightTableName = _inFlightTableName;
 		hasPartitions = TPartitionKey.Type is not null;
 	}

@@ -35,7 +35,7 @@ internal static class CustomIndexSql {
 }
 
 internal class CustomIndexSql<TPartitionKey>(string indexName) where TPartitionKey : ITPartitionKey {
-	private string TableName { get; } = CustomIndexSql.GetTableNameFor(indexName);
+	public string TableName { get; } = CustomIndexSql.GetTableNameFor(indexName);
 	public ReadOnlyMemory<byte> TableNameUtf8 { get; } = Encoding.UTF8.GetBytes(CustomIndexSql.GetTableNameFor(indexName));
 
 	public void CreateCustomIndex(DuckDBAdvancedConnection connection) {
