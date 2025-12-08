@@ -18,7 +18,6 @@ class CreateCustomIndexValidator : RequestValidator<CreateCustomIndexRequest> {
 			.SetValidator(FilterValidator.Instance);
 
 		RuleFor(x => x.PartitionKeySelector)
-			.SetValidator(PartitionKeySelectorValidator.Instance)
-			.When(x => x.PartitionKeySelector != string.Empty);
+			.SetValidator(PartitionKeySelectorValidator.Instance);
 	}
 }
