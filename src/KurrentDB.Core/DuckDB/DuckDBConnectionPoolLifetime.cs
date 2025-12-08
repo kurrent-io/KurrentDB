@@ -56,7 +56,7 @@ public class DuckDBConnectionPoolLifetime : Disposable {
 	private DuckDBConnectionPool CreatePool(bool isReadOnly) {
 		var accessMode = isReadOnly ? "READ_ONLY" : "READ_WRITE";
 		var pool = new ConnectionPoolWithFunctions($"Data Source={_path};access_mode={accessMode};", _repeated);
-		_log?.LogInformation("Created {type} DuckDB connection pool at {path}", accessMode, _path);
+		_log?.LogTrace("Created {type} DuckDB connection pool at {path}", accessMode, _path);
 		return pool;
 	}
 
