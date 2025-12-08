@@ -9,18 +9,18 @@ using static Core.Services.SystemStreams;
 
 public static class CustomIndex {
 	public static string GetStreamName(string indexName, string? partition = null) {
-		partition = partition is null ? string.Empty : $"{CustomIndexPartitionKeyDelimiter}{partition}";
+		partition = partition is null ? string.Empty : $"{CustomIndexPartitionDelimiter}{partition}";
 		return $"{IndexStreamPrefix}{indexName}{partition}";
 	}
 
 	public static Regex GetStreamNameRegex(string indexName) {
 		var streamName = GetStreamName(indexName);
-		var pattern = $"^{Regex.Escape(streamName)}({CustomIndexPartitionKeyDelimiter}.*)?$";
+		var pattern = $"^{Regex.Escape(streamName)}({CustomIndexPartitionDelimiter}.*)?$";
 		return new Regex(pattern, RegexOptions.Compiled);
 	}
 
 	public static void ParseStreamName(string streamName, out string indexName, out string? partition) {
-		var delimiterIdx = streamName.IndexOf(CustomIndexPartitionKeyDelimiter, IndexStreamPrefix.Length);
+		var delimiterIdx = streamName.IndexOf(CustomIndexPartitionDelimiter, IndexStreamPrefix.Length);
 		if (delimiterIdx < 0) {
 			indexName = streamName[IndexStreamPrefix.Length..];
 			partition = null;

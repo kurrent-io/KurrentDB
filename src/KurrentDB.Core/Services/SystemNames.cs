@@ -55,7 +55,7 @@ public static class SystemStreams {
 	public const string DefaultSecondaryIndex = $"{IndexStreamPrefix}all";
 	public const string CategorySecondaryIndexPrefix = $"{IndexStreamPrefix}ce-";
 	public const string EventTypeSecondaryIndexPrefix = $"{IndexStreamPrefix}et-";
-	public const char CustomIndexPartitionKeyDelimiter = ':';
+	public const char CustomIndexPartitionDelimiter = ':';
 
 	public static bool IsSystemStream(string streamId) => streamId is ['$', ..];
 
