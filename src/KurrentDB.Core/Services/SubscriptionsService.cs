@@ -370,7 +370,7 @@ public class SubscriptionsService<TStreamId> :
 
 		foreach (var subscription in subscriptionsToDrop) {
 			// we use `SubscriptionDropReason.NotFound` for consistency with reads which also return `Not Found`
-			// if an index is deleted while being read.
+			// when an index is deleted while being read.
 			DropSubscription(subscription, SubscriptionDropReason.NotFound, sendDropNotification: true);
 		}
 
