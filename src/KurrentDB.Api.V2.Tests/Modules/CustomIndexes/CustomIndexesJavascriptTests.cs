@@ -66,16 +66,16 @@ public class CustomIndexesJavascriptTests {
 	[Arguments(KeyType.String, """ "blue" """, """ "red" """, "red")]
 	[Arguments(KeyType.String, """ "blue:2" """, """ "red:3" """, "red:3")]
 
-	[Arguments(KeyType.Int16,         """ 0.0 """, """ 1.0 """, "1")]
-	[Arguments(KeyType.Int32,         """ 0.0 """, """ 1.0 """, "1")]
-	[Arguments(KeyType.Int64,         """ 0.0 """, """ 1.0 """, "1")]
-	[Arguments(KeyType.UnsignedInt32, """ 0.0 """, """ 1.0 """, "1")]
-	[Arguments(KeyType.UnsignedInt64, """ 0.0 """, """ 1.0 """, "1")]
+	[Arguments(KeyType.Int16,  """ 0.0 """, """ 1.0 """, "1")]
+	[Arguments(KeyType.Int32,  """ 0.0 """, """ 1.0 """, "1")]
+	[Arguments(KeyType.Int64,  """ 0.0 """, """ 1.0 """, "1")]
+	[Arguments(KeyType.Uint32, """ 0.0 """, """ 1.0 """, "1")]
+	[Arguments(KeyType.Uint64, """ 0.0 """, """ 1.0 """, "1")]
 
-	[Arguments(KeyType.Number,        """ 0   """, """ 1   """, "1")]
-	[Arguments(KeyType.Number,        """ 0.0 """, """ 1.0 """, "1")]
-	[Arguments(KeyType.Number,        """ 1234.56 """, """ 6543.21 """, "6543.21")]
-	//[Arguments(KeyType.Number,        """ 1234.56 """, """ 6543.21 """, "6543.210")] //qq why doesn't this work
+	[Arguments(KeyType.Double, """ 0   """, """ 1   """, "1")]
+	[Arguments(KeyType.Double, """ 0.0 """, """ 1.0 """, "1")]
+	[Arguments(KeyType.Double, """ 1234.56 """, """ 6543.21 """, "6543.21")]
+	//[Arguments(KeyType.Double,        """ 1234.56 """, """ 6543.21 """, "6543.210")] //qq why doesn't this work
 	public async ValueTask can_partition_by_all_key_types(KeyType keyType, string partition1, string partition2, string partitionFilter, CancellationToken ct) {
 		await Client.CreateCustomIndexAsync(
 			new() {
