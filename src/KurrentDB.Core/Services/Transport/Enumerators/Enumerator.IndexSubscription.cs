@@ -94,8 +94,7 @@ partial class Enumerator {
 				if (ex is not (
 				    OperationCanceledException or
 				    ReadResponseException.InvalidPosition or
-				    ReadResponseException.IndexNotFound or
-				    ReadResponseException.StreamDeleted)) {
+				    ReadResponseException.IndexNotFound)) {
 					Log.Error(ex, "Subscription {SubscriptionId} to {IndexName} experienced an error.", _subscriptionId, _indexName);
 				}
 
