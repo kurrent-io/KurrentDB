@@ -16,18 +16,18 @@ internal class CustomIndexReader<TPartitionKey>(
 	IReadIndex<string> index
 ) : SecondaryIndexReaderBase(sharedPool, index) where TPartitionKey : ITPartitionKey {
 
-	protected override string GetId(string indexStream) {
+	protected override string? GetId(string indexStream) {
 		// the partition is used as the ID
 		CustomIndex.ParseStreamName(indexStream, out _, out var partition);
-		return partition ?? string.Empty;
+		return partition;
 	}
 
-	protected override (List<IndexQueryRecord> Records, bool IsFinal) GetInflightForwards(string id, long startPosition, int maxCount, bool excludeFirst) {
+	protected override (List<IndexQueryRecord> Records, bool IsFinal) GetInflightForwards(string? id, long startPosition, int maxCount, bool excludeFirst) {
 		return inFlightRecords.GetInFlightRecordsForwards(startPosition, maxCount, excludeFirst, Filter);
-		bool Filter(InFlightRecord r) => id == string.Empty || r.Partition == id;
+		bool Filter(InFlightRecord r) => id is null || r.Partition == id;
 	}
 
-	protected override List<IndexQueryRecord> GetDbRecordsForwards(DuckDBConnectionPool db, string id, long startPosition, long endPosition, int maxCount, bool excludeFirst) {
+	protected override List<IndexQueryRecord> GetDbRecordsForwards(DuckDBConnectionPool db, string? id, long startPosition, long endPosition, int maxCount, bool excludeFirst) {
 		if (!TryGetPartition(id, out var partition))
 			return [];
 
@@ -42,12 +42,12 @@ internal class CustomIndexReader<TPartitionKey>(
 		return sql.ReadCustomIndexForwardsQuery(db, args);
 	}
 
-	protected override IEnumerable<IndexQueryRecord> GetInflightBackwards(string id, long startPosition, int maxCount, bool excludeFirst) {
+	protected override IEnumerable<IndexQueryRecord> GetInflightBackwards(string? id, long startPosition, int maxCount, bool excludeFirst) {
 		return inFlightRecords.GetInFlightRecordsBackwards(startPosition, maxCount, excludeFirst, Filter);
-		bool Filter(InFlightRecord r) => id == string.Empty || r.Partition == id;
+		bool Filter(InFlightRecord r) => id is null || r.Partition == id;
 	}
 
-	protected override List<IndexQueryRecord> GetDbRecordsBackwards(DuckDBConnectionPool db, string id, long startPosition, int maxCount, bool excludeFirst) {
+	protected override List<IndexQueryRecord> GetDbRecordsBackwards(DuckDBConnectionPool db, string? id, long startPosition, int maxCount, bool excludeFirst) {
 		if (!TryGetPartition(id, out var partition))
 			return [];
 
@@ -64,10 +64,10 @@ internal class CustomIndexReader<TPartitionKey>(
 	public override TFPos GetLastIndexedPosition(string _) => throw new NotSupportedException(); // never called
 	public override bool CanReadIndex(string _) => throw new NotSupportedException(); // never called
 
-	private static bool TryGetPartition(string id, out ITPartitionKey partition) {
+	private static bool TryGetPartition(string? id, out ITPartitionKey partition) {
 		partition = new NullPartitionKey();
 
-		if (id == string.Empty)
+		if (id is null)
 			return true;
 
 		try {
