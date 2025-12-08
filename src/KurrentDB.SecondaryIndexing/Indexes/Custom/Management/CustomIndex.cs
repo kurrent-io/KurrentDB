@@ -8,9 +8,9 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 // The name of this class drives the custom index stream names
 public class CustomIndex : Aggregate<CustomIndexState> {
 	public void Create(
-		string eventFilter,
-		string partitionKeySelector,
-		PartitionKeyType partitionKeyType,
+		string filter,
+		string valueSelector,
+		CustomIndexValueType valueType,
 		bool start) {
 
 		switch (State.Status) {
@@ -24,9 +24,9 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 				// already exists
 				if (State.Status is CustomIndexState.CustomIndexStatus.Stopped && start ||
 					State.Status is CustomIndexState.CustomIndexStatus.Started && !start ||
-					State.EventFilter != eventFilter ||
-					State.PartitionKeySelector != partitionKeySelector ||
-					State.PartitionKeyType != partitionKeyType)
+					State.Filter != filter ||
+					State.ValueSelector != valueSelector ||
+					State.ValueType != valueType)
 					throw new CustomIndexAlreadyExistsException(State.Id.Name);
 
 				break; // idempotent
@@ -42,9 +42,9 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 
 		void CreateCustomIndex() {
 			Apply(new CustomIndexEvents.Created {
-				EventFilter = eventFilter,
-				PartitionKeySelector = partitionKeySelector,
-				PartitionKeyType = partitionKeyType,
+				Filter = filter,
+				ValueSelector = valueSelector,
+				ValueType = valueType,
 			});
 
 			if (start) {

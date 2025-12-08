@@ -9,9 +9,9 @@ public static class CustomIndexCommands {
 
 		public string EventFilter { get; set; } = "";
 
-		public string PartitionKeySelector { get; set; } = "";
+		public string ValueSelector { get; set; } = "";
 
-		public PartitionKeyType PartitionKeyType { get; set; }
+		public CustomIndexValueType ValueType { get; set; }
 
 		public bool Start { get; set; }
 	}

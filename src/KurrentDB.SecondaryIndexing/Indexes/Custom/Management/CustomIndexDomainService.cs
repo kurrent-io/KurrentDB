@@ -15,9 +15,9 @@ public class CustomIndexDomainService : CommandService<CustomIndex, CustomIndexS
 			.InState(ExpectedState.Any) // facilitate idempotent create
 			.GetId(cmd => new(cmd.Name))
 			.Act((x, cmd) => x.Create(
-				eventFilter: cmd.EventFilter,
-				partitionKeySelector: cmd.PartitionKeySelector,
-				partitionKeyType: cmd.PartitionKeyType,
+				filter: cmd.EventFilter,
+				valueSelector: cmd.ValueSelector,
+				valueType: cmd.ValueType,
 				start: cmd.Start));
 
 		On<CustomIndexCommands.Start>()

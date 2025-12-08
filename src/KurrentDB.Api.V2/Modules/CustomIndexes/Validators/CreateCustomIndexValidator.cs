@@ -17,7 +17,7 @@ class CreateCustomIndexValidator : RequestValidator<CreateCustomIndexRequest> {
 		RuleFor(x => x.Filter)
 			.SetValidator(FilterValidator.Instance);
 
-		RuleFor(x => x.PartitionKeySelector)
-			.SetValidator(PartitionKeySelectorValidator.Instance);
+		RuleFor(x => x.ValueSelector)
+			.SetValidator(ValueSelectorValidator.Instance);
 	}
 }

@@ -6,10 +6,10 @@ using KurrentDB.Api.Infrastructure.FluentValidation;
 
 namespace KurrentDB.Api.Modules.CustomIndexes.Validators;
 
-class PartitionKeySelectorValidator : ValidatorBase<PartitionKeySelectorValidator, string?> {
-	public PartitionKeySelectorValidator() =>
+class ValueSelectorValidator : ValidatorBase<ValueSelectorValidator, string?> {
+	public ValueSelectorValidator() =>
 		RuleFor(x => x)
 			.Must(x => x is "" || JsFunctionValidator.IsValidFunctionWithOneArgument(x))
-			.WithMessage("Partition key selector must be empty or a valid JavaScript function with exactly one argument")
-			.WithName("Partition key selector");
+			.WithMessage("ValueSelector must be empty or a valid JavaScript function with exactly one argument")
+			.WithName("ValueSelector");
 }

@@ -198,30 +198,30 @@ public class Subscription : ISecondaryIndexReader {
 	}
 
 	private ValueTask StartCustomIndex(string indexName, CustomIndexEvents.Created createdEvent) {
-		return createdEvent.PartitionKeyType switch {
-			PartitionKeyType.None => StartCustomIndex<NullPartitionKey>(indexName, createdEvent),
-			PartitionKeyType.Double => StartCustomIndex<DoublePartitionKey>(indexName, createdEvent),
-			PartitionKeyType.String => StartCustomIndex<StringPartitionKey>(indexName, createdEvent),
-			PartitionKeyType.Int16 => StartCustomIndex<Int16PartitionKey>(indexName, createdEvent),
-			PartitionKeyType.Int32 => StartCustomIndex<Int32PartitionKey>(indexName, createdEvent),
-			PartitionKeyType.Int64 => StartCustomIndex<Int64PartitionKey>(indexName, createdEvent),
-			PartitionKeyType.UInt32 => StartCustomIndex<UInt32PartitionKey>(indexName, createdEvent),
-			PartitionKeyType.UInt64 => StartCustomIndex<UInt64PartitionKey>(indexName, createdEvent),
-			_ => throw new ArgumentOutOfRangeException(nameof(createdEvent.PartitionKeyType))
+		return createdEvent.ValueType switch {
+			CustomIndexValueType.None => StartCustomIndex<NullValueType>(indexName, createdEvent),
+			CustomIndexValueType.Double => StartCustomIndex<DoubleValueType>(indexName, createdEvent),
+			CustomIndexValueType.String => StartCustomIndex<StringValueType>(indexName, createdEvent),
+			CustomIndexValueType.Int16 => StartCustomIndex<Int16ValueType>(indexName, createdEvent),
+			CustomIndexValueType.Int32 => StartCustomIndex<Int32ValueType>(indexName, createdEvent),
+			CustomIndexValueType.Int64 => StartCustomIndex<Int64ValueType>(indexName, createdEvent),
+			CustomIndexValueType.UInt32 => StartCustomIndex<UInt32ValueType>(indexName, createdEvent),
+			CustomIndexValueType.UInt64 => StartCustomIndex<UInt64ValueType>(indexName, createdEvent),
+			_ => throw new ArgumentOutOfRangeException(nameof(createdEvent.ValueType))
 		};
 	}
 
-	private async ValueTask StartCustomIndex<TPartitionKey>(string indexName, CustomIndexEvents.Created createdEvent) where TPartitionKey : ITPartitionKey {
+	private async ValueTask StartCustomIndex<TValueType>(string indexName, CustomIndexEvents.Created createdEvent) where TValueType : IValueType {
 		Log.Debug("Starting custom index: {index}", indexName);
 
 		var inFlightRecords = new IndexInFlightRecords(_options);
 
-		var sql = new CustomIndexSql<TPartitionKey>(indexName);
+		var sql = new CustomIndexSql<TValueType>(indexName);
 
-		var processor = new CustomIndexProcessor<TPartitionKey>(
+		var processor = new CustomIndexProcessor<TValueType>(
 			indexName: indexName,
-			jsEventFilter: createdEvent.EventFilter,
-			jsPartitionKeySelector: createdEvent.PartitionKeySelector,
+			filter: createdEvent.Filter,
+			valueSelector: createdEvent.ValueSelector,
 			db: _db,
 			sql: sql,
 			inFlightRecords: inFlightRecords,
@@ -229,9 +229,9 @@ public class Subscription : ISecondaryIndexReader {
 			meter: _meter,
 			getLastAppendedRecord: _getLastAppendedRecord);
 
-		var reader = new CustomIndexReader<TPartitionKey>(sharedPool: _db, sql, inFlightRecords, _readIndex);
+		var reader = new CustomIndexReader<TValueType>(sharedPool: _db, sql, inFlightRecords, _readIndex);
 
-		CustomIndexSubscription subscription = new CustomIndexSubscription<TPartitionKey>(
+		CustomIndexSubscription subscription = new CustomIndexSubscription<TValueType>(
 			publisher: _publisher,
 			indexProcessor: processor,
 			indexReader: reader,

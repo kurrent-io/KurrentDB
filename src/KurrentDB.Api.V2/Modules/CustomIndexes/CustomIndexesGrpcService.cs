@@ -11,6 +11,8 @@ using KurrentDB.Protocol.V2.CustomIndexes;
 using KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 using Polly;
 using static KurrentDB.Protocol.V2.CustomIndexes.CustomIndexesService;
+using API = KurrentDB.Protocol.V2.CustomIndexes;
+using Domain = KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 
 namespace KurrentDB.Api.Modules.CustomIndexes;
 
@@ -149,8 +151,8 @@ file static class Extensions {
 		new() {
 			Name = self.Name,
 			EventFilter = self.Filter,
-			PartitionKeySelector = self.PartitionKeySelector,
-			PartitionKeyType = self.PartitionKeyType.Convert(),
+			ValueSelector = self.ValueSelector,
+			ValueType = self.ValueType.Convert(),
 			Start = !self.HasStart || self.Start,
 		};
 
@@ -169,29 +171,29 @@ file static class Extensions {
 			Name = self.Name,
 		};
 
-	private static PartitionKeyType Convert(this KeyType target) =>
+	private static Domain.CustomIndexValueType Convert(this API.CustomIndexValueType target) =>
 		target switch {
-			KeyType.Unspecified => PartitionKeyType.None,
-			KeyType.String => PartitionKeyType.String,
-			KeyType.Double => PartitionKeyType.Double,
-			KeyType.Int16 => PartitionKeyType.Int16,
-			KeyType.Int32 => PartitionKeyType.Int32,
-			KeyType.Int64 => PartitionKeyType.Int64,
-			KeyType.Uint32 => PartitionKeyType.UInt32,
-			KeyType.Uint64 => PartitionKeyType.UInt64,
+			API.CustomIndexValueType.Unspecified => Domain.CustomIndexValueType.None,
+			API.CustomIndexValueType.String => Domain.CustomIndexValueType.String,
+			API.CustomIndexValueType.Double => Domain.CustomIndexValueType.Double,
+			API.CustomIndexValueType.Int16 => Domain.CustomIndexValueType.Int16,
+			API.CustomIndexValueType.Int32 => Domain.CustomIndexValueType.Int32,
+			API.CustomIndexValueType.Int64 => Domain.CustomIndexValueType.Int64,
+			API.CustomIndexValueType.Uint32 => Domain.CustomIndexValueType.UInt32,
+			API.CustomIndexValueType.Uint64 => Domain.CustomIndexValueType.UInt64,
 			_ => throw new ArgumentOutOfRangeException(nameof(target), target, null),
 		};
 
-	private static KeyType Convert(this PartitionKeyType target) =>
+	private static API.CustomIndexValueType Convert(this Domain.CustomIndexValueType target) =>
 		target switch {
-			PartitionKeyType.None => KeyType.Unspecified,
-			PartitionKeyType.String => KeyType.String,
-			PartitionKeyType.Double => KeyType.Double,
-			PartitionKeyType.Int16 => KeyType.Int16,
-			PartitionKeyType.Int32 => KeyType.Int32,
-			PartitionKeyType.Int64 => KeyType.Int64,
-			PartitionKeyType.UInt32 => KeyType.Uint32,
-			PartitionKeyType.UInt64 => KeyType.Uint64,
+			Domain.CustomIndexValueType.None => API.CustomIndexValueType.Unspecified,
+			Domain.CustomIndexValueType.String => API.CustomIndexValueType.String,
+			Domain.CustomIndexValueType.Double => API.CustomIndexValueType.Double,
+			Domain.CustomIndexValueType.Int16 => API.CustomIndexValueType.Int16,
+			Domain.CustomIndexValueType.Int32 => API.CustomIndexValueType.Int32,
+			Domain.CustomIndexValueType.Int64 => API.CustomIndexValueType.Int64,
+			Domain.CustomIndexValueType.UInt32 => API.CustomIndexValueType.Uint32,
+			Domain.CustomIndexValueType.UInt64 => API.CustomIndexValueType.Uint64,
 			_ => throw new ArgumentOutOfRangeException(nameof(target), target, null),
 		};
 
@@ -205,9 +207,9 @@ file static class Extensions {
 		};
 
 	public static Protocol.V2.CustomIndexes.CustomIndex Convert(this CustomIndexReadsideService.CustomIndexState self) => new() {
-		Filter = self.EventFilter,
-		PartitionKeySelector = self.PartitionKeySelector,
-		PartitionKeyType = self.PartitionKeyType.Convert(),
+		Filter = self.Filter,
+		ValueSelector = self.ValueSelector,
+		ValueType = self.ValueType.Convert(),
 		Status = self.Status.Convert(),
 	};
 
