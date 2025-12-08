@@ -200,7 +200,7 @@ public class Subscription : ISecondaryIndexReader {
 	private ValueTask EnableCustomIndex(string indexName, CustomIndexEvents.Created createdEvent) {
 		return createdEvent.PartitionKeyType switch {
 			PartitionKeyType.None => EnableCustomIndex<NullPartitionKey>(indexName, createdEvent),
-			PartitionKeyType.Number => EnableCustomIndex<NumberPartitionKey>(indexName, createdEvent),
+			PartitionKeyType.Double => EnableCustomIndex<DoublePartitionKey>(indexName, createdEvent),
 			PartitionKeyType.String => EnableCustomIndex<StringPartitionKey>(indexName, createdEvent),
 			PartitionKeyType.Int16 => EnableCustomIndex<Int16PartitionKey>(indexName, createdEvent),
 			PartitionKeyType.Int32 => EnableCustomIndex<Int32PartitionKey>(indexName, createdEvent),

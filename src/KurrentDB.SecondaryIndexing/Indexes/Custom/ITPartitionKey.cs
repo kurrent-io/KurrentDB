@@ -73,10 +73,10 @@ internal readonly struct UInt64PartitionKey(ulong key) : ITPartitionKey {
 	public override string ToString() => key.ToString();
 }
 
-internal readonly struct NumberPartitionKey(double key) : ITPartitionKey {
+internal readonly struct DoublePartitionKey(double key) : ITPartitionKey {
 	public static Type Type { get; } = typeof(double);
-	public static ITPartitionKey ParseFrom(JsValue value) => new NumberPartitionKey(value.AsNumber());
-	public static ITPartitionKey ParseFrom(string value) => new NumberPartitionKey(Convert.ToDouble(value));
+	public static ITPartitionKey ParseFrom(JsValue value) => new DoublePartitionKey(value.AsNumber());
+	public static ITPartitionKey ParseFrom(string value) => new DoublePartitionKey(Convert.ToDouble(value));
 	public static string GetCreateStatement() => ", partition DOUBLE not null";
 	public string GetQueryStatement() => "and partition = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);

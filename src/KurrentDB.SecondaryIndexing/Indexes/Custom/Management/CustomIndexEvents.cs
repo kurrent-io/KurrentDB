@@ -6,7 +6,7 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 public enum PartitionKeyType {
 	None,
 	String,
-	Number,
+	Double,
 	Int16,
 	Int32,
 	Int64,

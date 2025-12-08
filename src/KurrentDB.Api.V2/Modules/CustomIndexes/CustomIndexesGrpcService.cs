@@ -175,12 +175,12 @@ file static class Extensions {
 		target switch {
 			KeyType.Unspecified => PartitionKeyType.None,
 			KeyType.String => PartitionKeyType.String,
-			KeyType.Number => PartitionKeyType.Number,
+			KeyType.Double => PartitionKeyType.Double,
 			KeyType.Int16 => PartitionKeyType.Int16,
 			KeyType.Int32 => PartitionKeyType.Int32,
 			KeyType.Int64 => PartitionKeyType.Int64,
-			KeyType.UnsignedInt32 => PartitionKeyType.UInt32,
-			KeyType.UnsignedInt64 => PartitionKeyType.UInt64,
+			KeyType.Uint32 => PartitionKeyType.UInt32,
+			KeyType.Uint64 => PartitionKeyType.UInt64,
 			_ => throw new ArgumentOutOfRangeException(nameof(target), target, null),
 		};
 
@@ -188,12 +188,12 @@ file static class Extensions {
 		target switch {
 			PartitionKeyType.None => KeyType.Unspecified,
 			PartitionKeyType.String => KeyType.String,
-			PartitionKeyType.Number => KeyType.Number,
+			PartitionKeyType.Double => KeyType.Double,
 			PartitionKeyType.Int16 => KeyType.Int16,
 			PartitionKeyType.Int32 => KeyType.Int32,
 			PartitionKeyType.Int64 => KeyType.Int64,
-			PartitionKeyType.UInt32 => KeyType.UnsignedInt32,
-			PartitionKeyType.UInt64 => KeyType.UnsignedInt64,
+			PartitionKeyType.UInt32 => KeyType.Uint32,
+			PartitionKeyType.UInt64 => KeyType.Uint64,
 			_ => throw new ArgumentOutOfRangeException(nameof(target), target, null),
 		};
 
