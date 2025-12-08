@@ -50,7 +50,7 @@ public class ConnectorsLicenseService {
     }
 
     async void OnLicense(License license) {
-        var isValid = await license.TryValidateAsync(PublicKey).ConfigureAwait(false);
+        var isValid = await license.TryValidateAsync(PublicKey);
         if (isValid) {
             if (license.HasEntitlements([AllWildcardEntitlement], out _)) {
                 lock (Locker) {

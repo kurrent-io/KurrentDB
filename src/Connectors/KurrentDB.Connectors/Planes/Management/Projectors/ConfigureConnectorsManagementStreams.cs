@@ -18,8 +18,8 @@ public class ConfigureConnectorsManagementStreams : ISystemStartupTask {
         var client    = serviceProvider.GetRequiredService<ISystemClient>();
         var logger    = serviceProvider.GetRequiredService<ILogger<SystemStartupTaskService>>();
 
-        await TryConfigureStream(ConnectorQueryConventions.Streams.ConnectorsStateProjectionStream, maxCount: 10).ConfigureAwait(false);
-        await TryConfigureStream(ConnectorQueryConventions.Streams.ConnectorsStateProjectionCheckpointsStream, maxCount: 10).ConfigureAwait(false);
+        await TryConfigureStream(ConnectorQueryConventions.Streams.ConnectorsStateProjectionStream, maxCount: 10);
+        await TryConfigureStream(ConnectorQueryConventions.Streams.ConnectorsStateProjectionCheckpointsStream, maxCount: 10);
 
         return;
 

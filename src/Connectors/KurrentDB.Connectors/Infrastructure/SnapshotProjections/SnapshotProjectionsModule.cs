@@ -41,7 +41,7 @@ public abstract class SnapshotProjectionsModule<TSnapshot>(ISnapshotProjectionsS
                     throw new Exception("Failed to read message timestamp", ex);
                 }
 
-                var (snapshot, position, snapshotTimestamp) = await Store.LoadSnapshot<TSnapshot>(SnapshotStreamId).ConfigureAwait(false);
+                var (snapshot, position, snapshotTimestamp) = await Store.LoadSnapshot<TSnapshot>(SnapshotStreamId);
 
                 // if (eventTimestamp <= snapshotTimestamp) {
                 //     ctx.Logger.LogTrace(
@@ -68,7 +68,7 @@ public abstract class SnapshotProjectionsModule<TSnapshot>(ISnapshotProjectionsS
                     return;
                 }
 
-                await Store.SaveSnapshot(SnapshotStreamId, position.StreamRevision, eventTimestamp, snapshot).ConfigureAwait(false);
+                await Store.SaveSnapshot(SnapshotStreamId, position.StreamRevision, eventTimestamp, snapshot);
 
                 ctx.Logger.LogTrace(
                     "Updated {SnapshotName} v{SnapshotRevision} on {EventName}",

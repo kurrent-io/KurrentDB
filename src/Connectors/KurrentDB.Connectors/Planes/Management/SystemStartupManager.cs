@@ -25,7 +25,7 @@ internal class SystemStartupManager(IServiceProvider serviceProvider) : Backgrou
 
 		try {
 			logger.LogInformation("System startup tasks started");
-			await Task.WhenAll(workers.Select(w => w.ExecuteAsync(linked.Token))).ConfigureAwait(false);
+			await Task.WhenAll(workers.Select(w => w.ExecuteAsync(linked.Token)));
 			logger.LogInformation("System startup tasks completed");
 			_completed.TrySetResult();
 		} catch (OperationCanceledException ex) when (ex.CancellationToken == linked.Token) {

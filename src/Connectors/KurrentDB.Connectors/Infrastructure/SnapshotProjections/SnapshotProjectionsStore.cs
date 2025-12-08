@@ -28,7 +28,7 @@ public class SystemSnapshotProjectionsStore(
 
     public async ValueTask<(TSnapshot Snapshot, RecordPosition Position, DateTimeOffset Timestamp)> LoadSnapshot<TSnapshot>(StreamId snapshotStreamId) where TSnapshot : class, new() {
         try {
-            var snapshotRecord = await Reader.ReadLastStreamRecord(snapshotStreamId).ConfigureAwait(false); // dont cancel here...
+            var snapshotRecord = await Reader.ReadLastStreamRecord(snapshotStreamId); // dont cancel here...
 
             return snapshotRecord.Value is not TSnapshot snapshot
                 ? (new TSnapshot(), snapshotRecord.Position, DateTimeOffset.MinValue)
@@ -48,7 +48,7 @@ public class SystemSnapshotProjectionsStore(
             .Create();
 
         try {
-            await Producer.Produce(produceRequest, throwOnError: true).ConfigureAwait(false);
+            await Producer.Produce(produceRequest, throwOnError: true);
         }
         catch (Exception ex) {
             throw new Exception($"Unable to save snapshot to stream {snapshotStreamId} with expected revision v{expectedRevision}", ex);

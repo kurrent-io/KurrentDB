@@ -37,7 +37,7 @@ public class ConnectorsStreamSupervisor(ConnectorsStreamSupervisorOptions option
         await Task.WhenAll(
             // TryConfigureStream(GetLeasesStream(connectorId), LeasesMetadata),
             TryConfigureStream(GetCheckpointsStream(connectorId), CheckpointsMetadata)
-        ).ConfigureAwait(false);
+        );
 
         return true;
 
@@ -59,7 +59,7 @@ public class ConnectorsStreamSupervisor(ConnectorsStreamSupervisorOptions option
             // we found a last minute bug here before releasing v25.0.0
             // we will address this later with a cleanup task on migration
             // Protector.Forget(connectorId, ct).AsTask()
-        ).ConfigureAwait(false);
+        );
 
         return true;
 

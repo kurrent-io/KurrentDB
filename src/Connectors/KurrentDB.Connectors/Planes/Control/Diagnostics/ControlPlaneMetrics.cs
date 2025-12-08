@@ -80,7 +80,7 @@ public class ControlPlaneMetrics {
         try {
             var startTime = Time.GetTimestamp();
 
-            await action().ConfigureAwait(false);
+            await action();
 
             ActivationDuration.Record(
                 Time.GetElapsedTime(startTime).TotalMilliseconds,

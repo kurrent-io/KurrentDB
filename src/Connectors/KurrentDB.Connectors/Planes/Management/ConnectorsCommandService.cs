@@ -42,7 +42,7 @@ public class ConnectorsCommandService(
         if (!validationResult.IsValid)
             throw RpcExceptions.InvalidArgument(validationResult);
 
-        var result = await application.Handle(command, context.CancellationToken).ConfigureAwait(false);
+        var result = await application.Handle(command, context.CancellationToken);
 
         return result.Match(
             _ => {

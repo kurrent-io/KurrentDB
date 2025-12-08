@@ -30,13 +30,13 @@ public class ConnectorsActivator(CreateConnector createConnector) {
             if (connector.Revision == revision && connector.Instance.State is ConnectorState.Activating or ConnectorState.Running)
                 return ActivateResult.RevisionAlreadyRunning();
 
-            await Teardown().ConfigureAwait(false);
+            await Teardown();
         }
 
         try {
             connector = Connectors[connectorId] = (CreateConnector(connectorId, settings), revision);
 
-            await connector.Instance.Connect(stoppingToken).ConfigureAwait(false);
+            await connector.Instance.Connect(stoppingToken);
 
             // For debugging purposes
             // _ = connector.Instance.Stopped
@@ -45,18 +45,18 @@ public class ConnectorsActivator(CreateConnector createConnector) {
             return ActivateResult.Activated();
         }
         catch (ValidationException ex) {
-            await Teardown().ConfigureAwait(false);
+            await Teardown();
             return ActivateResult.InvalidConfiguration(ex);
         }
         catch (Exception ex) {
-            await Teardown().ConfigureAwait(false);
+            await Teardown();
             return ActivateResult.UnknownError(ex);
         }
 
         async ValueTask Teardown() {
 	        try {
-		        await connector.Instance.DisposeAsync().ConfigureAwait(false);
-		        await connector.Instance.Stopped.ConfigureAwait(false);
+		        await connector.Instance.DisposeAsync();
+		        await connector.Instance.Stopped;
 	        } catch {
 		        // ignore
 	        }
@@ -68,8 +68,8 @@ public class ConnectorsActivator(CreateConnector createConnector) {
             return DeactivateResult.ConnectorNotFound();
 
         try {
-            await connector.Instance.DisposeAsync().ConfigureAwait(false);
-            await connector.Instance.Stopped.ConfigureAwait(false);
+            await connector.Instance.DisposeAsync();
+            await connector.Instance.Stopped;
             return DeactivateResult.Deactivated();
         }
         catch (Exception ex) {
@@ -82,7 +82,7 @@ public class ConnectorsActivator(CreateConnector createConnector) {
             return DeactivateResult.ConnectorNotFound();
 
         try {
-            await connector.Instance.Stopped.ConfigureAwait(false);
+            await connector.Instance.Stopped;
             return DeactivateResult.Deactivated();
         }
         catch (Exception ex) {

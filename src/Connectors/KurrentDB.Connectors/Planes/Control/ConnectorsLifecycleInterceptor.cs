@@ -25,7 +25,7 @@ class ConnectorsLifecycleInterceptor : InterceptorModule {
                     Timestamp    = evt.Timestamp.ToTimestamp()
                 };
 
-                await application.Handle(cmd, ctx.CancellationToken).ConfigureAwait(false);
+                await application.Handle(cmd, ctx.CancellationToken);
             }
             catch (Exception ex) {
                 ctx.Logger.LogError(ex, "{ProcessorId} Failed to record connector state change", evt.Processor.ProcessorId);
