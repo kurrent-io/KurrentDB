@@ -144,8 +144,8 @@ public static class Operations {
 		const string Resource = "custom-indexes";
 
 		public static readonly OperationDefinition Create = new(Resource, "create");
-		public static readonly OperationDefinition Enable = new(Resource, "enable");
-		public static readonly OperationDefinition Disable = new(Resource, "disable");
+		public static readonly OperationDefinition Start = new(Resource, "start");
+		public static readonly OperationDefinition Stop = new(Resource, "stop");
 		public static readonly OperationDefinition Delete = new(Resource, "delete");
 	}
 

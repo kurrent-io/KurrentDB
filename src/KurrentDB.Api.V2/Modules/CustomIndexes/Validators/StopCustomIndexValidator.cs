@@ -6,10 +6,10 @@ using KurrentDB.Protocol.V2.CustomIndexes;
 
 namespace KurrentDB.Api.Modules.CustomIndexes.Validators;
 
-class EnableCustomIndexValidator : RequestValidator<EnableCustomIndexRequest> {
-	public static readonly EnableCustomIndexValidator Instance = new();
+class StopCustomIndexValidator : RequestValidator<StopCustomIndexRequest> {
+	public static readonly StopCustomIndexValidator Instance = new();
 
-	private EnableCustomIndexValidator() {
+	private StopCustomIndexValidator() {
 		RuleFor(x => x.Name)
 			.SetValidator(NameValidator.Instance);
 	}

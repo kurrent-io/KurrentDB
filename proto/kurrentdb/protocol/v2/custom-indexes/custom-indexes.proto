@@ -17,15 +17,15 @@ service CustomIndexesService {
     };
   };
 
-  rpc EnableCustomIndex(EnableCustomIndexRequest) returns (EnableCustomIndexResponse) {
+  rpc StartCustomIndex(StartCustomIndexRequest) returns (StartCustomIndexResponse) {
     option (google.api.http) = {
-      post: "/v2/custom-indexes/{name}/enable",
+      post: "/v2/custom-indexes/{name}/start",
     };
   }
 
-  rpc DisableCustomIndex(DisableCustomIndexRequest) returns (DisableCustomIndexResponse) {
+  rpc StopCustomIndex(StopCustomIndexRequest) returns (StopCustomIndexResponse) {
     option (google.api.http) = {
-      post: "/v2/custom-indexes/{name}/disable",
+      post: "/v2/custom-indexes/{name}/stop",
     };
   }
 
@@ -72,25 +72,25 @@ message CreateCustomIndexRequest {
   string filter = 2;
   string partition_key_selector = 3;
   KeyType partition_key_type = 4;
-  optional bool enable = 5; // if unspecified: treated as true
+  optional bool start = 5; // if unspecified: treated as true
   optional bool force = 6;
 }
 
 message CreateCustomIndexResponse {
 }
 
-message EnableCustomIndexRequest {
+message StartCustomIndexRequest {
   string name = 1;
 }
 
-message EnableCustomIndexResponse {
+message StartCustomIndexResponse {
 }
 
-message DisableCustomIndexRequest {
+message StopCustomIndexRequest {
   string name = 1;
 }
 
-message DisableCustomIndexResponse {
+message StopCustomIndexResponse {
 }
 
 message DeleteCustomIndexRequest {
@@ -128,7 +128,7 @@ message CustomIndex {
 
 enum CustomIndexStatus {
   CUSTOM_INDEX_STATUS_UNSPECIFIED = 0;
-  CUSTOM_INDEX_STATUS_DISABLED = 1;
-  CUSTOM_INDEX_STATUS_ENABLED = 2;
+  CUSTOM_INDEX_STATUS_STARTED = 1;
+  CUSTOM_INDEX_STATUS_STOPPED = 2;
   CUSTOM_INDEX_STATUS_DELETED = 3;
 }

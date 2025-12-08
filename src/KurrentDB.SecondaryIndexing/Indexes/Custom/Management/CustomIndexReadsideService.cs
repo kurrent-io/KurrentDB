@@ -59,13 +59,13 @@ public class CustomIndexReadsideService(
 				return this;
 			});
 
-			On<CustomIndexEvents.Enabled>((state, customIndexId, evt) => {
+			On<CustomIndexEvents.Started>((state, customIndexId, evt) => {
 				if (CustomIndexes.TryGetValue(customIndexId.Name, out var customIndexState))
 					CustomIndexes[customIndexId.Name] = customIndexState.When(evt);
 				return this;
 			});
 
-			On<CustomIndexEvents.Disabled>((state, customIndexId, evt) => {
+			On<CustomIndexEvents.Stopped>((state, customIndexId, evt) => {
 				if (CustomIndexes.TryGetValue(customIndexId.Name, out var customIndexState))
 					CustomIndexes[customIndexId.Name] = customIndexState.When(evt);
 				return this;
@@ -80,8 +80,8 @@ public class CustomIndexReadsideService(
 
 	public enum Status {
 		None,
-		Disabled,
-		Enabled,
+		Stopped,
+		Started,
 		Deleted,
 	}
 
@@ -97,14 +97,14 @@ public class CustomIndexReadsideService(
 					EventFilter = evt.EventFilter,
 					PartitionKeySelector = evt.PartitionKeySelector,
 					PartitionKeyType = evt.PartitionKeyType,
-					Status = Status.Disabled,
+					Status = Status.Stopped,
 				});
 
-			On<CustomIndexEvents.Enabled>((state, evt) =>
-				state with { Status = Status.Enabled });
+			On<CustomIndexEvents.Started>((state, evt) =>
+				state with { Status = Status.Started });
 
-			On<CustomIndexEvents.Disabled>((state, evt) =>
-				state with { Status = Status.Disabled });
+			On<CustomIndexEvents.Stopped>((state, evt) =>
+				state with { Status = Status.Stopped });
 
 			On<CustomIndexEvents.Deleted>((state, evt) =>
 				state with { Status = Status.Deleted });

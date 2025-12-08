@@ -24,10 +24,10 @@ public static class CustomIndexEvents {
 		public PartitionKeyType PartitionKeyType { get; set; }
 	}
 
-	public class Enabled {
+	public class Started {
 	}
 
-	public class Disabled {
+	public class Stopped {
 	}
 
 	public class Deleted {

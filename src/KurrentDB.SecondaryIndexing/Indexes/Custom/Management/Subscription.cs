@@ -89,7 +89,7 @@ public class Subscription : ISecondaryIndexReader {
 
 	class CustomIndexReadState {
 		public CustomIndexEvents.Created Created { get; set; } = null!;
-		public bool Enabled { get; set; }
+		public bool Started { get; set; }
 	}
 
 	private async Task StartInternal() {
@@ -128,8 +128,8 @@ public class Subscription : ISecondaryIndexReader {
 					}
 
 					foreach (var (name, state) in customIndexes) {
-						if (state.Enabled) {
-							await EnableCustomIndex(name, state.Created);
+						if (state.Started) {
+							await StartCustomIndex(name, state.Created);
 						}
 					}
 
@@ -152,33 +152,33 @@ public class Subscription : ISecondaryIndexReader {
 							deletedIndexes.Remove(customIndexName);
 							customIndexes[customIndexName] = new() {
 								Created = createdEvent,
-								Enabled = false,
+								Started = false,
 							};
 							break;
 						}
-						case CustomIndexEvents.Enabled enabledEvent: {
+						case CustomIndexEvents.Started: {
 							if (!customIndexes.TryGetValue(customIndexName, out var state))
 								break;
 
-							state.Enabled = true;
+							state.Started = true;
 
 							if (caughtUp)
-								await EnableCustomIndex(customIndexName, state.Created);
+								await StartCustomIndex(customIndexName, state.Created);
 
 							break;
 						}
-						case CustomIndexEvents.Disabled disabledEvent: {
+						case CustomIndexEvents.Stopped: {
 							if (!customIndexes.TryGetValue(customIndexName, out var state))
 								break;
 
-							state.Enabled = false;
+							state.Started = false;
 
 							if (caughtUp)
-								await DisableCustomIndex(customIndexName);
+								await StopCustomIndex(customIndexName);
 
 							break;
 						}
-						case CustomIndexEvents.Deleted deletedEvent: {
+						case CustomIndexEvents.Deleted: {
 							deletedIndexes.Add(customIndexName);
 							customIndexes.Remove(customIndexName);
 
@@ -197,22 +197,22 @@ public class Subscription : ISecondaryIndexReader {
 		}
 	}
 
-	private ValueTask EnableCustomIndex(string indexName, CustomIndexEvents.Created createdEvent) {
+	private ValueTask StartCustomIndex(string indexName, CustomIndexEvents.Created createdEvent) {
 		return createdEvent.PartitionKeyType switch {
-			PartitionKeyType.None => EnableCustomIndex<NullPartitionKey>(indexName, createdEvent),
-			PartitionKeyType.Double => EnableCustomIndex<DoublePartitionKey>(indexName, createdEvent),
-			PartitionKeyType.String => EnableCustomIndex<StringPartitionKey>(indexName, createdEvent),
-			PartitionKeyType.Int16 => EnableCustomIndex<Int16PartitionKey>(indexName, createdEvent),
-			PartitionKeyType.Int32 => EnableCustomIndex<Int32PartitionKey>(indexName, createdEvent),
-			PartitionKeyType.Int64 => EnableCustomIndex<Int64PartitionKey>(indexName, createdEvent),
-			PartitionKeyType.UInt32 => EnableCustomIndex<UInt32PartitionKey>(indexName, createdEvent),
-			PartitionKeyType.UInt64 => EnableCustomIndex<UInt64PartitionKey>(indexName, createdEvent),
+			PartitionKeyType.None => StartCustomIndex<NullPartitionKey>(indexName, createdEvent),
+			PartitionKeyType.Double => StartCustomIndex<DoublePartitionKey>(indexName, createdEvent),
+			PartitionKeyType.String => StartCustomIndex<StringPartitionKey>(indexName, createdEvent),
+			PartitionKeyType.Int16 => StartCustomIndex<Int16PartitionKey>(indexName, createdEvent),
+			PartitionKeyType.Int32 => StartCustomIndex<Int32PartitionKey>(indexName, createdEvent),
+			PartitionKeyType.Int64 => StartCustomIndex<Int64PartitionKey>(indexName, createdEvent),
+			PartitionKeyType.UInt32 => StartCustomIndex<UInt32PartitionKey>(indexName, createdEvent),
+			PartitionKeyType.UInt64 => StartCustomIndex<UInt64PartitionKey>(indexName, createdEvent),
 			_ => throw new ArgumentOutOfRangeException(nameof(createdEvent.PartitionKeyType))
 		};
 	}
 
-	private async ValueTask EnableCustomIndex<TPartitionKey>(string indexName, CustomIndexEvents.Created createdEvent) where TPartitionKey : ITPartitionKey {
-		Log.Debug("Creating custom index: {index}", indexName);
+	private async ValueTask StartCustomIndex<TPartitionKey>(string indexName, CustomIndexEvents.Created createdEvent) where TPartitionKey : ITPartitionKey {
+		Log.Debug("Starting custom index: {index}", indexName);
 
 		var inFlightRecords = new IndexInFlightRecords(_options);
 
@@ -242,8 +242,8 @@ public class Subscription : ISecondaryIndexReader {
 		await subscription.Start();
 	}
 
-	private async Task DisableCustomIndex(string indexName) {
-		Log.Debug("Disabling custom index: {index}", indexName);
+	private async Task StopCustomIndex(string indexName) {
+		Log.Debug("Stopping custom index: {index}", indexName);
 
 		var writeLock = AcquireWriteLockForIndex(indexName, out var index);
 		using (writeLock) {

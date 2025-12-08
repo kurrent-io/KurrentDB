@@ -87,27 +87,27 @@ public class CustomIndexesGrpcService(
 			request.ToCommand(),
 			response => new CreateCustomIndexResponse(), context);
 
-	public override Task<EnableCustomIndexResponse> EnableCustomIndex(
-		EnableCustomIndexRequest request,
+	public override Task<StartCustomIndexResponse> StartCustomIndex(
+		StartCustomIndexRequest request,
 		ServerCallContext context) =>
 
 		StandardHandle(
 			request,
-			EnableCustomIndexValidator.Instance,
-			new Operation(Operations.CustomIndexes.Enable),
+			StartCustomIndexValidator.Instance,
+			new Operation(Operations.CustomIndexes.Start),
 			request.ToCommand(),
-			_ => new EnableCustomIndexResponse(), context);
+			_ => new StartCustomIndexResponse(), context);
 
-	public override Task<DisableCustomIndexResponse> DisableCustomIndex(
-		DisableCustomIndexRequest request,
+	public override Task<StopCustomIndexResponse> StopCustomIndex(
+		StopCustomIndexRequest request,
 		ServerCallContext context) =>
 
 		StandardHandle(
 			request,
-			DisableCustomIndexValidator.Instance,
-			new Operation(Operations.CustomIndexes.Disable),
+			StopCustomIndexValidator.Instance,
+			new Operation(Operations.CustomIndexes.Stop),
 			request.ToCommand(),
-			_ => new DisableCustomIndexResponse(), context);
+			_ => new StopCustomIndexResponse(), context);
 
 	public override Task<DeleteCustomIndexResponse> DeleteCustomIndex(
 		DeleteCustomIndexRequest request,
@@ -152,16 +152,16 @@ file static class Extensions {
 			EventFilter = self.Filter,
 			PartitionKeySelector = self.PartitionKeySelector,
 			PartitionKeyType = self.PartitionKeyType.Convert(),
-			Enable = !self.HasEnable || self.Enable,
+			Start = !self.HasStart || self.Start,
 			Force = self.Force,
 		};
 
-	public static CustomIndexCommands.Enable ToCommand(this EnableCustomIndexRequest self) =>
+	public static CustomIndexCommands.Start ToCommand(this StartCustomIndexRequest self) =>
 		new() {
 			Name = self.Name,
 		};
 
-	public static CustomIndexCommands.Disable ToCommand(this DisableCustomIndexRequest self) =>
+	public static CustomIndexCommands.Stop ToCommand(this StopCustomIndexRequest self) =>
 		new() {
 			Name = self.Name,
 		};
@@ -200,8 +200,8 @@ file static class Extensions {
 	private static CustomIndexStatus Convert(this CustomIndexReadsideService.Status target) =>
 		target switch {
 			CustomIndexReadsideService.Status.None => CustomIndexStatus.Unspecified,
-			CustomIndexReadsideService.Status.Disabled => CustomIndexStatus.Disabled,
-			CustomIndexReadsideService.Status.Enabled => CustomIndexStatus.Enabled,
+			CustomIndexReadsideService.Status.Stopped => CustomIndexStatus.Stopped,
+			CustomIndexReadsideService.Status.Started => CustomIndexStatus.Started,
 			CustomIndexReadsideService.Status.Deleted => CustomIndexStatus.Deleted,
 			_ => throw new ArgumentOutOfRangeException(nameof(target), target, null),
 		};

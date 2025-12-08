@@ -83,8 +83,8 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 
 		var ct = CancellationToken.None;
 		_ = RegisterType<CustomIndexEvents.Created>(ct);
-		_ = RegisterType<CustomIndexEvents.Enabled>(ct);
-		_ = RegisterType<CustomIndexEvents.Disabled>(ct);
+		_ = RegisterType<CustomIndexEvents.Started>(ct);
+		_ = RegisterType<CustomIndexEvents.Stopped>(ct);
 		_ = RegisterType<CustomIndexEvents.Deleted>(ct);
 
 		//qq hack. exceptions. how come this is async anyway, what does this actually do

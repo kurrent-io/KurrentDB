@@ -11,7 +11,7 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 		string eventFilter,
 		string partitionKeySelector,
 		PartitionKeyType partitionKeyType,
-		bool enable,
+		bool start,
 		bool force) {
 
 		switch (State.Status) {
@@ -20,11 +20,11 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 				CreateCustomIndex();
 				break;
 			}
-			case CustomIndexState.CustomIndexStatus.Disabled:
-			case CustomIndexState.CustomIndexStatus.Enabled: {
+			case CustomIndexState.CustomIndexStatus.Stopped:
+			case CustomIndexState.CustomIndexStatus.Started: {
 				// already exists
-				if (State.Status is CustomIndexState.CustomIndexStatus.Disabled && enable ||
-					State.Status is CustomIndexState.CustomIndexStatus.Enabled && !enable ||
+				if (State.Status is CustomIndexState.CustomIndexStatus.Stopped && start ||
+					State.Status is CustomIndexState.CustomIndexStatus.Started && !start ||
 					State.EventFilter != eventFilter ||
 					State.PartitionKeySelector != partitionKeySelector ||
 					State.PartitionKeyType != partitionKeyType)
@@ -50,34 +50,34 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 				PartitionKeyType = partitionKeyType,
 			});
 
-			if (enable) {
-				Enable();
+			if (start) {
+				Start();
 			}
 		}
 	}
 
-	public void Enable() {
+	public void Start() {
 		switch (State.Status) {
 			case CustomIndexState.CustomIndexStatus.NonExistent:
 			case CustomIndexState.CustomIndexStatus.Deleted:
 				throw new CustomIndexNotFoundException(State.Id.Name);
-			case CustomIndexState.CustomIndexStatus.Disabled:
-				Apply(new CustomIndexEvents.Enabled());
+			case CustomIndexState.CustomIndexStatus.Stopped:
+				Apply(new CustomIndexEvents.Started());
 				break;
-			case CustomIndexState.CustomIndexStatus.Enabled:
+			case CustomIndexState.CustomIndexStatus.Started:
 				break; // idempotent
 		}
 	}
 
-	public void Disable() {
+	public void Stop() {
 		switch (State.Status) {
 			case CustomIndexState.CustomIndexStatus.NonExistent:
 			case CustomIndexState.CustomIndexStatus.Deleted:
 				throw new CustomIndexNotFoundException(State.Id.Name);
-			case CustomIndexState.CustomIndexStatus.Disabled:
+			case CustomIndexState.CustomIndexStatus.Stopped:
 				break; // idempotent
-			case CustomIndexState.CustomIndexStatus.Enabled:
-				Apply(new CustomIndexEvents.Disabled());
+			case CustomIndexState.CustomIndexStatus.Started:
+				Apply(new CustomIndexEvents.Stopped());
 				break;
 		}
 	}
@@ -89,8 +89,8 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 		if (State.Status is CustomIndexState.CustomIndexStatus.NonExistent)
 				throw new CustomIndexNotFoundException(State.Id.Name);
 
-		if (State.Status is CustomIndexState.CustomIndexStatus.Enabled)
-			Disable();
+		if (State.Status is CustomIndexState.CustomIndexStatus.Started)
+			Stop();
 
 		Apply(new CustomIndexEvents.Deleted());
 	}

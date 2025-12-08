@@ -17,14 +17,14 @@ public record CustomIndexState : State<CustomIndexState, CustomIndexId> {
 				EventFilter = evt.EventFilter,
 				PartitionKeySelector = evt.PartitionKeySelector,
 				PartitionKeyType = evt.PartitionKeyType,
-				Status = CustomIndexStatus.Disabled,
+				Status = CustomIndexStatus.Stopped,
 			});
 
-		On<CustomIndexEvents.Enabled>((state, evt) =>
-			state with { Status = CustomIndexStatus.Enabled });
+		On<CustomIndexEvents.Started>((state, evt) =>
+			state with { Status = CustomIndexStatus.Started });
 
-		On<CustomIndexEvents.Disabled>((state, evt) =>
-			state with { Status = CustomIndexStatus.Disabled });
+		On<CustomIndexEvents.Stopped>((state, evt) =>
+			state with { Status = CustomIndexStatus.Stopped });
 
 		On<CustomIndexEvents.Deleted>((state, evt) =>
 			state with { Status = CustomIndexStatus.Deleted });
@@ -32,8 +32,8 @@ public record CustomIndexState : State<CustomIndexState, CustomIndexId> {
 
 	public enum CustomIndexStatus {
 		NonExistent,
-		Disabled,
-		Enabled,
+		Stopped,
+		Started,
 		Deleted,
 	}
 }

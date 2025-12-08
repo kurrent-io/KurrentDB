@@ -5,7 +5,6 @@ using System.Text;
 using Grpc.Core;
 using KurrentDB.Protocol.V2.CustomIndexes;
 using KurrentDB.Protocol.V2.Streams;
-using KurrentDB.Testing.TUnit;
 
 namespace KurrentDB.Api.Tests.Modules.CustomIndexes;
 
@@ -80,10 +79,10 @@ public class CustomIndexesSubscriptionTests {
 
 		await Assert.That((await mauritiusEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "D", """);
 
-		// disable
-		await Client.DisableCustomIndexAsync(new() { Name = CustomIndexName }, cancellationToken: ct);
+		// stop
+		await Client.StopCustomIndexAsync(new() { Name = CustomIndexName }, cancellationToken: ct);
 
-		await Task.Delay(500); // todo better way to wait for it to disable
+		await Task.Delay(500); // todo better way to wait for it to stop
 
 		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "F", "country": "Mauritius" }""", ct);
 		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "G", "country": "United Kingdom" }""", ct);
@@ -95,8 +94,8 @@ public class CustomIndexesSubscriptionTests {
 		await Assert.That(nextAllResult.IsCompleted).IsFalse();
 		await Assert.That(nextMauritiusResult.IsCompleted).IsFalse();
 
-		// enable and receive the extra events
-		await Client.EnableCustomIndexAsync(new() { Name = CustomIndexName }, cancellationToken: ct);
+		// start and receive the extra events
+		await Client.StartCustomIndexAsync(new() { Name = CustomIndexName }, cancellationToken: ct);
 
 		await Assert.That((await nextAllResult).Data.ToStringUtf8()).Contains(""" "orderId": "F", """);
 		await Assert.That((await allPartitionsEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "G", """);

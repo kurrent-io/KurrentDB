@@ -15,8 +15,8 @@ public class CustomIndexesServiceTests {
 	static readonly string CustomIndexName = $"my-custom-index_{Guid.NewGuid()}";
 
 	[Test]
-	public async ValueTask can_create_enabled_by_default(CancellationToken ct) {
-		var customIndexName = nameof(can_create_enabled_by_default) + Guid.NewGuid();
+	public async ValueTask can_create_started_by_default(CancellationToken ct) {
+		var customIndexName = nameof(can_create_started_by_default) + Guid.NewGuid();
 		await Client.CreateCustomIndexAsync(
 			new() {
 				Name = customIndexName,
@@ -25,7 +25,7 @@ public class CustomIndexesServiceTests {
 				PartitionKeyType = KeyType.Int32,
 			},
 			cancellationToken: ct);
-		await can_get(customIndexName, CustomIndexStatus.Enabled, ct);
+		await can_get(customIndexName, CustomIndexStatus.Started, ct);
 	}
 
 	[Test]
@@ -36,10 +36,10 @@ public class CustomIndexesServiceTests {
 				Filter = "e => e.type == 'my-event-type'",
 				PartitionKeySelector = "e => e.number",
 				PartitionKeyType = KeyType.Int32,
-				Enable = false,
+				Start = false,
 			},
 			cancellationToken: ct);
-		await can_get(CustomIndexName, CustomIndexStatus.Disabled, ct);
+		await can_get(CustomIndexName, CustomIndexStatus.Stopped, ct);
 	}
 
 	[Test]
@@ -51,10 +51,10 @@ public class CustomIndexesServiceTests {
 				Filter = "e => e.type == 'my-event-type'",
 				PartitionKeySelector = "e => e.number",
 				PartitionKeyType = KeyType.Int32,
-				Enable = false,
+				Start = false,
 			},
 			cancellationToken: ct);
-		await can_get(CustomIndexName, CustomIndexStatus.Disabled, ct);
+		await can_get(CustomIndexName, CustomIndexStatus.Stopped, ct);
 	}
 
 	[Test]
@@ -79,42 +79,42 @@ public class CustomIndexesServiceTests {
 
 	[Test]
 	[DependsOn(nameof(cannot_create_different))]
-	public async ValueTask can_enable(CancellationToken ct) {
-		await Client.EnableCustomIndexAsync(
+	public async ValueTask can_start(CancellationToken ct) {
+		await Client.StartCustomIndexAsync(
 			new() { Name = CustomIndexName },
 			cancellationToken: ct);
-		await can_get(CustomIndexName, CustomIndexStatus.Enabled, ct);
+		await can_get(CustomIndexName, CustomIndexStatus.Started, ct);
 	}
 
 	[Test]
-	[DependsOn(nameof(can_enable))]
-	public async ValueTask can_enable_idempotent(CancellationToken ct) {
-		await Client.EnableCustomIndexAsync(
+	[DependsOn(nameof(can_start))]
+	public async ValueTask can_start_idempotent(CancellationToken ct) {
+		await Client.StartCustomIndexAsync(
 			new() { Name = CustomIndexName },
 			cancellationToken: ct);
-		await can_get(CustomIndexName, CustomIndexStatus.Enabled, ct);
+		await can_get(CustomIndexName, CustomIndexStatus.Started, ct);
 	}
 
 	[Test]
-	[DependsOn(nameof(can_enable_idempotent))]
-	public async ValueTask can_disable(CancellationToken ct) {
-		await Client.DisableCustomIndexAsync(
+	[DependsOn(nameof(can_start_idempotent))]
+	public async ValueTask can_stop(CancellationToken ct) {
+		await Client.StopCustomIndexAsync(
 			new() { Name = CustomIndexName },
 			cancellationToken: ct);
-		await can_get(CustomIndexName, CustomIndexStatus.Disabled, ct);
+		await can_get(CustomIndexName, CustomIndexStatus.Stopped, ct);
 	}
 
 	[Test]
-	[DependsOn(nameof(can_disable))]
-	public async ValueTask can_disable_idempotent(CancellationToken ct) {
-		await Client.DisableCustomIndexAsync(
+	[DependsOn(nameof(can_stop))]
+	public async ValueTask can_stop_idempotent(CancellationToken ct) {
+		await Client.StopCustomIndexAsync(
 			new() { Name = CustomIndexName },
 			cancellationToken: ct);
-		await can_get(CustomIndexName, CustomIndexStatus.Disabled, ct);
+		await can_get(CustomIndexName, CustomIndexStatus.Stopped, ct);
 	}
 
 	[Test]
-	[DependsOn(nameof(can_disable_idempotent))]
+	[DependsOn(nameof(can_stop_idempotent))]
 	public async ValueTask can_list(CancellationToken ct) {
 		var response = await Client.ListCustomIndexesAsync(new(), cancellationToken: ct);
 
@@ -122,7 +122,7 @@ public class CustomIndexesServiceTests {
 		await Assert.That(customIndexState!.Filter).IsEqualTo("e => e.type == 'my-event-type'");
 		await Assert.That(customIndexState!.PartitionKeySelector).IsEqualTo("e => e.number");
 		await Assert.That(customIndexState!.PartitionKeyType).IsEqualTo(KeyType.Int32);
-		await Assert.That(customIndexState!.Status).IsEqualTo(CustomIndexStatus.Disabled);
+		await Assert.That(customIndexState!.Status).IsEqualTo(CustomIndexStatus.Stopped);
 	}
 
 	[Test]
@@ -234,10 +234,10 @@ public class CustomIndexesServiceTests {
 	//}
 
 	[Test]
-	public async ValueTask cannot_enable_non_existant(CancellationToken ct) {
+	public async ValueTask cannot_start_non_existant(CancellationToken ct) {
 		var ex = await Assert
 			.That(async () => {
-				await Client.EnableCustomIndexAsync(
+				await Client.StartCustomIndexAsync(
 					new() { Name = "non-existant-index" },
 					cancellationToken: ct);
 			})
@@ -248,10 +248,10 @@ public class CustomIndexesServiceTests {
 	}
 
 	[Test]
-	public async ValueTask cannot_disable_non_existant(CancellationToken ct) {
+	public async ValueTask cannot_stop_non_existant(CancellationToken ct) {
 		var ex = await Assert
 			.That(async () => {
-				await Client.DisableCustomIndexAsync(
+				await Client.StopCustomIndexAsync(
 					new() { Name = "non-existant-index" },
 					cancellationToken: ct);
 			})

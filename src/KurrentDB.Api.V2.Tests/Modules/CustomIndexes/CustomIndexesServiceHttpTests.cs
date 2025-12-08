@@ -24,7 +24,7 @@ public class CustomIndexesServiceHttpTests {
 					"Filter": "e => e.type == 'my-event-type'",
 					"PartitionKeySelector": "e => e.number",
 					"PartitionKeyType": "KEY_TYPE_INT_32",
-					"Enable": false
+					"Start": false
 				}
 				""");
 
@@ -32,35 +32,35 @@ public class CustomIndexesServiceHttpTests {
 
 		await Assert.That(response.Content).IsJson("{}");
 		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-		await can_get(expectedStatus: "CUSTOM_INDEX_STATUS_DISABLED", ct);
+		await can_get(expectedStatus: "CUSTOM_INDEX_STATUS_STOPPED", ct);
 	}
 
 	[Test]
 	[DependsOn(nameof(can_create))]
-	public async ValueTask can_enable(CancellationToken ct) {
+	public async ValueTask can_start(CancellationToken ct) {
 		var response = await Client.PostAsync(
-			new RestRequest($"/v2/custom-indexes/{CustomIndexName}/enable"),
+			new RestRequest($"/v2/custom-indexes/{CustomIndexName}/start"),
 			ct);
 
 		await Assert.That(response.Content).IsJson("{}");
 		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-		await can_get(expectedStatus: "CUSTOM_INDEX_STATUS_ENABLED", ct);
+		await can_get(expectedStatus: "CUSTOM_INDEX_STATUS_STARTED", ct);
 	}
 
 	[Test]
-	[DependsOn(nameof(can_enable))]
-	public async ValueTask can_disable(CancellationToken ct) {
+	[DependsOn(nameof(can_start))]
+	public async ValueTask can_stop(CancellationToken ct) {
 		var response = await Client.PostAsync(
-			new RestRequest($"/v2/custom-indexes/{CustomIndexName}/disable"),
+			new RestRequest($"/v2/custom-indexes/{CustomIndexName}/stop"),
 			ct);
 
 		await Assert.That(response.Content).IsJson("{}");
 		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-		await can_get(expectedStatus: "CUSTOM_INDEX_STATUS_DISABLED", ct);
+		await can_get(expectedStatus: "CUSTOM_INDEX_STATUS_STOPPED", ct);
 	}
 
 	[Test]
-	[DependsOn(nameof(can_disable))]
+	[DependsOn(nameof(can_stop))]
 	public async ValueTask can_list(CancellationToken ct) {
 		var response = await Client.GetAsync<ListResponse>(
 			new RestRequest($"/v2/custom-indexes/"),
@@ -70,7 +70,7 @@ public class CustomIndexesServiceHttpTests {
 		await Assert.That(customIndexState!.Filter).IsEqualTo("e => e.type == 'my-event-type'");
 		await Assert.That(customIndexState!.PartitionKeySelector).IsEqualTo("e => e.number");
 		await Assert.That(customIndexState!.PartitionKeyType).IsEqualTo("KEY_TYPE_INT_32");
-		await Assert.That(customIndexState!.Status).IsEqualTo("CUSTOM_INDEX_STATUS_DISABLED");
+		await Assert.That(customIndexState!.Status).IsEqualTo("CUSTOM_INDEX_STATUS_STOPPED");
 	}
 
 	class ListResponse {

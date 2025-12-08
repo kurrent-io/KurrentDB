@@ -13,16 +13,16 @@ public static class CustomIndexCommands {
 
 		public PartitionKeyType PartitionKeyType { get; set; }
 
-		public bool Enable { get; set; }
+		public bool Start { get; set; }
 
 		public bool Force { get; set; }
 	}
 
-	public class Enable {
+	public class Start {
 		public string Name { get; set; } = "";
 	}
 
-	public class Disable {
+	public class Stop {
 		public string Name { get; set; } = "";
 	}
 
