@@ -30,7 +30,7 @@ internal abstract class CustomIndexProcessor: Disposable, ISecondaryIndexProcess
 }
 
 internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where TPartitionKey : ITPartitionKey {
-	private readonly DuckDBConnectionPool _db;
+	private readonly Engine _engine = new();
 	private readonly Function? _eventFilter;
 	private readonly Function? _partitionKeySelector;
 	private readonly ResolvedEventJsObject _resolvedEventJsObject;
@@ -64,7 +64,6 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 		MetricsConfiguration? metricsConfiguration = null,
 		TimeProvider? clock = null) {
 		IndexName = indexName;
-		_db = db;
 		_sql = sql;
 
 		_inFlightRecords = inFlightRecords;
@@ -72,18 +71,16 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 
 		_publisher = publisher;
 
-		var engine = new Engine(); //qq  does thsi get disposed
-
-		engine.SetValue("skip", new object());
-		_skip = engine.Evaluate("skip");
+		_engine.SetValue("skip", new object());
+		_skip = _engine.Evaluate("skip");
 
 		if (jsEventFilter is not "")
-			_eventFilter = engine.Evaluate(jsEventFilter).AsFunctionInstance();
+			_eventFilter = _engine.Evaluate(jsEventFilter).AsFunctionInstance();
 
 		if (jsPartitionKeySelector is not "")
-			_partitionKeySelector = engine.Evaluate(jsPartitionKeySelector).AsFunctionInstance();
+			_partitionKeySelector = _engine.Evaluate(jsPartitionKeySelector).AsFunctionInstance();
 
-		_resolvedEventJsObject = new(engine);
+		_resolvedEventJsObject = new(_engine);
 
 		_connection = db.Open();
 		_sql.CreateCustomIndex(_connection);
@@ -290,6 +287,7 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 			Commit();
 			_appender.Dispose();
 			_connection.Dispose();
+			_engine.Dispose();
 		}
 
 		base.Dispose(disposing);
