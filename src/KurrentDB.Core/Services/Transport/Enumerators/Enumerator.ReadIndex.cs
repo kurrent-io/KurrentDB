@@ -14,7 +14,6 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
-using Microsoft.AspNetCore.Http;
 using static KurrentDB.Core.Messages.ClientMessage;
 
 namespace KurrentDB.Core.Services.Transport.Enumerators;

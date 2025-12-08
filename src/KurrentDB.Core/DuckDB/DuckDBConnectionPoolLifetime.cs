@@ -14,6 +14,8 @@ using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.Core.DuckDB;
 
+// Manages the lifetime of the Shared pool
+// Also produces additional pools on demand that the caller should dispose.
 public class DuckDBConnectionPoolLifetime : Disposable {
 	private readonly string _path;
 	private readonly IReadOnlyList<IDuckDBSetup> _repeated;
@@ -37,7 +39,7 @@ public class DuckDBConnectionPoolLifetime : Disposable {
 		}
 		_repeated = repeated;
 
-		Shared = CreatePool(isReadOnly: false); // Writes can be done to DuckDB only with the shared pool
+		Shared = CreatePool(isReadOnly: false);
 		using var connection = Shared.Open();
 		foreach (var s in once)
 			s.Execute(connection);
@@ -51,7 +53,7 @@ public class DuckDBConnectionPoolLifetime : Disposable {
 		}
 	}
 
-	public DuckDBConnectionPool CreatePool() => CreatePool(isReadOnly: true);
+	public DuckDBConnectionPool CreatePool() => CreatePool(isReadOnly: true); // no writes go through here so set read only
 
 	private DuckDBConnectionPool CreatePool(bool isReadOnly) {
 		var accessMode = isReadOnly ? "READ_ONLY" : "READ_WRITE";

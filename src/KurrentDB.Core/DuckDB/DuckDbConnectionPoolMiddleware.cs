@@ -10,6 +10,10 @@ using Serilog;
 
 namespace KurrentDB.Core.DuckDB;
 
+// Attaches a (lazy) duck connection pool to the kestrel connection because issuing secondary index reads will
+// build query plans and cache them on the (pooled) duckdb connection and we dont want to end up with too many of these over time.
+// If a pool is not attached to the connection the reading infra will use the shared pool.
+// It's lazy because not all connections will make use of duck.
 public class DuckDbConnectionPoolMiddleware(DuckDBConnectionPoolLifetime duckDbConnectionPoolLifetime) : IMiddleware {
 	public const string Key = "DuckDbConnectionPool";
 
@@ -34,7 +38,7 @@ public class DuckDbConnectionPoolMiddleware(DuckDBConnectionPoolLifetime duckDbC
 			if (itemsFeature.Items.ContainsKey(Key))
 				return next(context);
 
-			Log.Verbose("Creating DuckDB connection pool for connection ID: {connectionId}", id);
+			Log.Verbose("Creating lazy DuckDB connection pool for connection ID: {connectionId}", id);
 			var pool = new Lazy<DuckDBConnectionPool>(duckDbConnectionPoolLifetime.CreatePool);
 			lifetimeFeature.ConnectionClosed.Register(DisposePool);
 			itemsFeature.Items[Key] = pool;

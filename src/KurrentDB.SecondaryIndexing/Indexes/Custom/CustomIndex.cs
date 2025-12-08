@@ -13,6 +13,7 @@ public static class CustomIndex {
 		return $"{IndexStreamPrefix}{indexName}{partition}";
 	}
 
+	// For the SubscriptionService to drop all subscriptions to this custom index or any of its partitions
 	public static Regex GetStreamNameRegex(string indexName) {
 		var streamName = GetStreamName(indexName);
 		var pattern = $"^{Regex.Escape(streamName)}({CustomIndexPartitionDelimiter}.*)?$";

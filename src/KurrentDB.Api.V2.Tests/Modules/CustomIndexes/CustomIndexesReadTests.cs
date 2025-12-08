@@ -105,7 +105,6 @@ public class CustomIndexesReadTests {
 	[DependsOn(nameof(can_setup))]
 	[Retry(50)] // because index processing is asynchronous to the write
 	public async ValueTask can_read_category_index_backwards(CancellationToken ct) {
-
 		var events = await StreamsReadClient
 			.ReadAllBackwardFiltered(CategoryFilter, ct)
 			.ToArrayAsync(ct);

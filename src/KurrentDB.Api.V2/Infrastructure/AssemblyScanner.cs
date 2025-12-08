@@ -35,8 +35,6 @@ class AssemblyScanner {
 
     static Type[] LoadAllTypes(Assembly[] assemblies, bool includeInternalTypes = true) {
         return assemblies
-//            .AsParallel() //qq this slows the CustomIndexesServiceHttpTests down from ~200ms to ~20s. maybve other tests too?
-// maybe it's saturating the thread pool with tasks that synchronise on the same resources?
             .SelectMany(ass => GetAllTypes(ass, includeInternalTypes))
             .Distinct()
             .ToArray();
