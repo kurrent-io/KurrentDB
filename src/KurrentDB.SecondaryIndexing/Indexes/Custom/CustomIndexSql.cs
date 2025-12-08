@@ -118,7 +118,7 @@ file readonly record struct ReadCustomIndexForwardsQuery(string TableName, bool 
 }
 
 file readonly record struct ReadCustomIndexBackwardsQuery(string TableName, bool ExcludeFirst, string PartitionQuery) : IDynamicQuery<ReadCustomIndexQueryArgs, IndexQueryRecord> {
-	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse("select log_position, commit_position, event_number from \"{0}\" where log_position <{1} ? {2} order by rowid limit ?");
+	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse("select log_position, commit_position, event_number from \"{0}\" where log_position <{1} ? {2} order by rowid desc limit ?");
 
 	public void FormatCommandTemplate(Span<object?> args) {
 		args[0] = TableName;
