@@ -33,14 +33,13 @@ public class CustomIndexesGrpcService(
 			})
 			.Build();
 
-	async Task<TResponse> StandardHandle<TRequest, TCommand, TResponse>(
+	async Task<TResponse> StandardHandle<TRequest, TResponse>(
 		TRequest request,
 		IValidator<TRequest> validator,
 		Operation operation,
-		TCommand command, //qq shouldn't need separate command paramter any more, it is just the request
 		Func<Eventuous.Result<CustomIndexState>, TResponse> getResponse,
 		ServerCallContext context)
-		where TCommand : class
+		where TRequest : class
 		where TResponse : new() {
 
 		var validationResult = await validator.ValidateAsync(request, context.CancellationToken);
@@ -54,11 +53,11 @@ public class CustomIndexesGrpcService(
 		try {
 			var result = await _resilience.ExecuteAsync(
 				static async (args, ct) => {
-					var result = await args.domainService.Handle(args.command, ct);
+					var result = await args.domainService.Handle(args.request, ct);
 					result.ThrowIfError();
 					return result;
 				},
-				(domainService, command),
+				(domainService, request),
 				context.CancellationToken);
 
 			return getResponse(result);
@@ -83,7 +82,6 @@ public class CustomIndexesGrpcService(
 			request,
 			CreateCustomIndexValidator.Instance,
 			new Operation(Operations.CustomIndexes.Create),
-			request,
 			response => new CreateCustomIndexResponse(), context);
 
 	public override Task<StartCustomIndexResponse> StartCustomIndex(
@@ -94,7 +92,6 @@ public class CustomIndexesGrpcService(
 			request,
 			StartCustomIndexValidator.Instance,
 			new Operation(Operations.CustomIndexes.Start),
-			request,
 			_ => new StartCustomIndexResponse(), context);
 
 	public override Task<StopCustomIndexResponse> StopCustomIndex(
@@ -105,7 +102,6 @@ public class CustomIndexesGrpcService(
 			request,
 			StopCustomIndexValidator.Instance,
 			new Operation(Operations.CustomIndexes.Stop),
-			request,
 			_ => new StopCustomIndexResponse(), context);
 
 	public override Task<DeleteCustomIndexResponse> DeleteCustomIndex(
@@ -116,7 +112,6 @@ public class CustomIndexesGrpcService(
 			request,
 			DeleteCustomIndexValidator.Instance,
 			new Operation(Operations.CustomIndexes.Delete),
-			request,
 			_ => new DeleteCustomIndexResponse(), context);
 
 	public override async Task<ListCustomIndexesResponse> ListCustomIndexes(
