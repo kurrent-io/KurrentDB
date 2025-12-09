@@ -89,7 +89,7 @@ public class Subscription : ISecondaryIndexReader {
 	}
 
 	class CustomIndexReadState {
-		public CustomIndexEvents.Created Created { get; set; } = null!;
+		public CustomIndexCreated Created { get; set; } = null!;
 		public bool Started { get; set; }
 	}
 
@@ -149,7 +149,7 @@ public class Subscription : ISecondaryIndexReader {
 					var customIndexName = streamName[(streamName.IndexOf('-') + 1) ..];
 
 					switch (deserializedEvent) {
-						case CustomIndexEvents.Created createdEvent: {
+						case CustomIndexCreated createdEvent: {
 							deletedIndexes.Remove(customIndexName);
 							customIndexes[customIndexName] = new() {
 								Created = createdEvent,
@@ -157,7 +157,7 @@ public class Subscription : ISecondaryIndexReader {
 							};
 							break;
 						}
-						case CustomIndexEvents.Started: {
+						case CustomIndexStarted: {
 							if (!customIndexes.TryGetValue(customIndexName, out var state))
 								break;
 
@@ -168,7 +168,7 @@ public class Subscription : ISecondaryIndexReader {
 
 							break;
 						}
-						case CustomIndexEvents.Stopped: {
+						case CustomIndexStopped: {
 							if (!customIndexes.TryGetValue(customIndexName, out var state))
 								break;
 
@@ -179,7 +179,7 @@ public class Subscription : ISecondaryIndexReader {
 
 							break;
 						}
-						case CustomIndexEvents.Deleted: {
+						case CustomIndexDeleted: {
 							deletedIndexes.Add(customIndexName);
 							customIndexes.Remove(customIndexName);
 
@@ -198,7 +198,7 @@ public class Subscription : ISecondaryIndexReader {
 		}
 	}
 
-	private ValueTask StartCustomIndex(string indexName, CustomIndexEvents.Created createdEvent) {
+	private ValueTask StartCustomIndex(string indexName, CustomIndexCreated createdEvent) {
 		return createdEvent.PartitionKeyType switch {
 			KeyType.Unspecified => StartCustomIndex<NullPartitionKey>(indexName, createdEvent),
 			KeyType.Double => StartCustomIndex<DoublePartitionKey>(indexName, createdEvent),
@@ -212,7 +212,7 @@ public class Subscription : ISecondaryIndexReader {
 		};
 	}
 
-	private async ValueTask StartCustomIndex<TPartitionKey>(string indexName, CustomIndexEvents.Created createdEvent) where TPartitionKey : ITPartitionKey {
+	private async ValueTask StartCustomIndex<TPartitionKey>(string indexName, CustomIndexCreated createdEvent) where TPartitionKey : ITPartitionKey {
 		Log.Debug("Starting custom index: {index}", indexName);
 
 		var inFlightRecords = new IndexInFlightRecords(_options);
@@ -221,7 +221,7 @@ public class Subscription : ISecondaryIndexReader {
 
 		var processor = new CustomIndexProcessor<TPartitionKey>(
 			indexName: indexName,
-			jsEventFilter: createdEvent.EventFilter,
+			jsEventFilter: createdEvent.Filter,
 			jsPartitionKeySelector: createdEvent.PartitionKeySelector,
 			db: _db,
 			sql: sql,

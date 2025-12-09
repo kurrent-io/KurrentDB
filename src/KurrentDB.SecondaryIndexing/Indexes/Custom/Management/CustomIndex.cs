@@ -9,7 +9,7 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 // The name of this class drives the custom index stream names
 public class CustomIndex : Aggregate<CustomIndexState> {
 	public void Create(
-		string eventFilter,
+		string filter,
 		string partitionKeySelector,
 		KeyType partitionKeyType,
 		bool start) {
@@ -25,7 +25,7 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 				// already exists
 				if (State.Status is CustomIndexState.CustomIndexStatus.Stopped && start ||
 					State.Status is CustomIndexState.CustomIndexStatus.Started && !start ||
-					State.EventFilter != eventFilter ||
+					State.Filter != filter ||
 					State.PartitionKeySelector != partitionKeySelector ||
 					State.PartitionKeyType != partitionKeyType)
 					throw new CustomIndexAlreadyExistsException(State.Id.Name);
@@ -42,8 +42,8 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 		return;
 
 		void CreateCustomIndex() {
-			Apply(new CustomIndexEvents.Created {
-				EventFilter = eventFilter,
+			Apply(new CustomIndexCreated {
+				Filter = filter,
 				PartitionKeySelector = partitionKeySelector,
 				PartitionKeyType = partitionKeyType,
 			});
@@ -60,7 +60,7 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 			case CustomIndexState.CustomIndexStatus.Deleted:
 				throw new CustomIndexNotFoundException(State.Id.Name);
 			case CustomIndexState.CustomIndexStatus.Stopped:
-				Apply(new CustomIndexEvents.Started());
+				Apply(new CustomIndexStarted());
 				break;
 			case CustomIndexState.CustomIndexStatus.Started:
 				break; // idempotent
@@ -75,7 +75,7 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 			case CustomIndexState.CustomIndexStatus.Stopped:
 				break; // idempotent
 			case CustomIndexState.CustomIndexStatus.Started:
-				Apply(new CustomIndexEvents.Stopped());
+				Apply(new CustomIndexStopped());
 				break;
 		}
 	}
@@ -90,6 +90,6 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 		if (State.Status is CustomIndexState.CustomIndexStatus.Started)
 			Stop();
 
-		Apply(new CustomIndexEvents.Deleted());
+		Apply(new CustomIndexDeleted());
 	}
 }

@@ -7,31 +7,31 @@ using KurrentDB.Protocol.V2.CustomIndexes;
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 
 public record CustomIndexState : State<CustomIndexState, CustomIndexId> {
-	public string EventFilter { get; init; } = "";
+	public string Filter { get; init; } = "";
 	public string PartitionKeySelector { get; init; } = "";
 	public KeyType PartitionKeyType { get; init; }
 	public CustomIndexStatus Status { get; init; }
 
 	public CustomIndexState() {
-		On<CustomIndexEvents.Created>((state, evt) =>
+		On<CustomIndexCreated>((state, evt) =>
 			state with {
-				EventFilter = evt.EventFilter,
+				Filter = evt.Filter,
 				PartitionKeySelector = evt.PartitionKeySelector,
 				PartitionKeyType = evt.PartitionKeyType,
 				Status = CustomIndexStatus.Stopped,
 			});
 
-		On<CustomIndexEvents.Started>((state, evt) =>
+		On<CustomIndexStarted>((state, evt) =>
 			state with { Status = CustomIndexStatus.Started });
 
-		On<CustomIndexEvents.Stopped>((state, evt) =>
+		On<CustomIndexStopped>((state, evt) =>
 			state with { Status = CustomIndexStatus.Stopped });
 
-		On<CustomIndexEvents.Deleted>((state, evt) =>
+		On<CustomIndexDeleted>((state, evt) =>
 			state with { Status = CustomIndexStatus.Deleted });
 	}
 
-	public enum CustomIndexStatus {
+	public enum CustomIndexStatus { //qq can remove
 		NonExistent,
 		Stopped,
 		Started,

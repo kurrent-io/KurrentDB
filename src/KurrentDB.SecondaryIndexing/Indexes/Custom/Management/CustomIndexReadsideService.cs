@@ -55,24 +55,24 @@ public class CustomIndexReadsideService(
 		public Dictionary<string, CustomIndexState> CustomIndexes { get; } = [];
 
 		public CustomIndexesState() {
-			On<CustomIndexEvents.Created>((state, customIndexId, evt) => {
+			On<CustomIndexCreated>((state, customIndexId, evt) => {
 				CustomIndexes[customIndexId.Name] = new CustomIndexState().When(evt);
 				return this;
 			});
 
-			On<CustomIndexEvents.Started>((state, customIndexId, evt) => {
+			On<CustomIndexStarted>((state, customIndexId, evt) => {
 				if (CustomIndexes.TryGetValue(customIndexId.Name, out var customIndexState))
 					CustomIndexes[customIndexId.Name] = customIndexState.When(evt);
 				return this;
 			});
 
-			On<CustomIndexEvents.Stopped>((state, customIndexId, evt) => {
+			On<CustomIndexStopped>((state, customIndexId, evt) => {
 				if (CustomIndexes.TryGetValue(customIndexId.Name, out var customIndexState))
 					CustomIndexes[customIndexId.Name] = customIndexState.When(evt);
 				return this;
 			});
 
-			On<CustomIndexEvents.Deleted>((state, customIndexId, evt) => {
+			On<CustomIndexDeleted>((state, customIndexId, evt) => {
 				CustomIndexes.Remove(customIndexId.Name);
 				return this;
 			});
@@ -93,21 +93,21 @@ public class CustomIndexReadsideService(
 		public Status Status { get; init; }
 
 		public CustomIndexState() {
-			On<CustomIndexEvents.Created>((state, evt) =>
+			On<CustomIndexCreated>((state, evt) =>
 				state with {
-					EventFilter = evt.EventFilter,
+					EventFilter = evt.Filter,
 					PartitionKeySelector = evt.PartitionKeySelector,
 					PartitionKeyType = evt.PartitionKeyType,
 					Status = Status.Stopped,
 				});
 
-			On<CustomIndexEvents.Started>((state, evt) =>
+			On<CustomIndexStarted>((state, evt) =>
 				state with { Status = Status.Started });
 
-			On<CustomIndexEvents.Stopped>((state, evt) =>
+			On<CustomIndexStopped>((state, evt) =>
 				state with { Status = Status.Stopped });
 
-			On<CustomIndexEvents.Deleted>((state, evt) =>
+			On<CustomIndexDeleted>((state, evt) =>
 				state with { Status = Status.Deleted });
 		}
 	}

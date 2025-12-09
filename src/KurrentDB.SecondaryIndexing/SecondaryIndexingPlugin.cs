@@ -11,6 +11,7 @@ using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.DuckDB;
+using KurrentDB.Protocol.V2.CustomIndexes;
 using KurrentDB.SecondaryIndexing.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
@@ -85,10 +86,10 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		secondaryIndexReaders.AddReaders(indexReaders.ToArray());
 
 		var ct = CancellationToken.None;
-		_ = RegisterType<CustomIndexEvents.Created>(ct);
-		_ = RegisterType<CustomIndexEvents.Started>(ct);
-		_ = RegisterType<CustomIndexEvents.Stopped>(ct);
-		_ = RegisterType<CustomIndexEvents.Deleted>(ct);
+		_ = RegisterType<CustomIndexCreated>(ct);
+		_ = RegisterType<CustomIndexStarted>(ct);
+		_ = RegisterType<CustomIndexStopped>(ct);
+		_ = RegisterType<CustomIndexDeleted>(ct);
 
 		//qq hack. exceptions. how come this is async anyway, what does this actually do
 		async Task RegisterType<T>(CancellationToken ct) {
