@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 using DotNext;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
@@ -34,11 +35,13 @@ public class DuckDBConnectionPoolLifetime : Disposable {
 			}
 		}
 
-		var (total, used) = CalculateRam();
-		var availableRam = total - used;
-		var duckDbRam = (int)Math.Round(availableRam / 2);
-		_pool = new ConnectionPoolWithFunctions($"Data Source={path};memory_limit={duckDbRam}GB", repeated.ToArray());
-		log?.LogInformation("Created DuckDB connection pool at {path}", path);
+		var total = CalculateRam();
+		var duckDbRam = (int)total * 0.25;
+		var settings = new Dictionary<string, string> {
+			["memory_limit"] = $"{duckDbRam}MB"
+		};
+		_pool = new ConnectionPoolWithFunctions($"Data Source={path};{GetParamsString()}", repeated.ToArray());
+		log?.LogInformation("Created DuckDB connection pool at {path} with {settings}", path, settings);
 		_log = log;
 		using var connection = _pool.Open();
 		foreach (var s in once) {
@@ -53,13 +56,14 @@ public class DuckDBConnectionPoolLifetime : Disposable {
 			return _tempPath;
 		}
 
-		(double Total, double Used) CalculateRam() {
-			var process = Process.GetCurrentProcess();
-			var processRam = process.WorkingSet64;
+		long CalculateRam() {
 			var totalRam = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
-			var totalGb = (double)totalRam / 1024 / 1024 / 1024;
-			var processGb = (double)processRam / 1024 / 1024 / 1024;
-			return (totalGb, processGb);
+			return totalRam / 1024 / 1024;
+		}
+
+		string GetParamsString() {
+			var list = settings.Keys.Select(x => $"{x}={settings[x]}");
+			return string.Join(";", list);
 		}
 	}
 
