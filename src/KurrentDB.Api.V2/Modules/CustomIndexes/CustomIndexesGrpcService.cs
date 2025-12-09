@@ -82,7 +82,8 @@ public class CustomIndexesGrpcService(
 			request,
 			CreateCustomIndexValidator.Instance,
 			new Operation(Operations.CustomIndexes.Create),
-			response => new CreateCustomIndexResponse(), context);
+			response => new CreateCustomIndexResponse(),
+			context);
 
 	public override Task<StartCustomIndexResponse> StartCustomIndex(
 		StartCustomIndexRequest request,
@@ -92,7 +93,8 @@ public class CustomIndexesGrpcService(
 			request,
 			StartCustomIndexValidator.Instance,
 			new Operation(Operations.CustomIndexes.Start),
-			_ => new StartCustomIndexResponse(), context);
+			_ => new StartCustomIndexResponse(),
+			context);
 
 	public override Task<StopCustomIndexResponse> StopCustomIndex(
 		StopCustomIndexRequest request,
@@ -102,7 +104,8 @@ public class CustomIndexesGrpcService(
 			request,
 			StopCustomIndexValidator.Instance,
 			new Operation(Operations.CustomIndexes.Stop),
-			_ => new StopCustomIndexResponse(), context);
+			_ => new StopCustomIndexResponse(),
+			context);
 
 	public override Task<DeleteCustomIndexResponse> DeleteCustomIndex(
 		DeleteCustomIndexRequest request,
@@ -112,54 +115,28 @@ public class CustomIndexesGrpcService(
 			request,
 			DeleteCustomIndexValidator.Instance,
 			new Operation(Operations.CustomIndexes.Delete),
-			_ => new DeleteCustomIndexResponse(), context);
+			_ => new DeleteCustomIndexResponse(),
+			context);
 
 	public override async Task<ListCustomIndexesResponse> ListCustomIndexes(
 		ListCustomIndexesRequest request,
 		ServerCallContext context) {
 
 		var response = await readSideService.List(context.CancellationToken);
-		return response.Convert();
+		return response;
 	}
 
 	public override async Task<GetCustomIndexResponse> GetCustomIndex(
 		GetCustomIndexRequest request,
 		ServerCallContext context) {
 
-		var response = await readSideService.Get(request.Name, context.CancellationToken);
-
-		if (response.Status
-			is CustomIndexReadsideService.Status.None
-			or CustomIndexReadsideService.Status.Deleted)
-			throw ApiErrors.CustomIndexNotFound(request.Name);
-
-		return new() {
-			CustomIndex = response.Convert(),
-		};
-	}
-}
-
-file static class Extensions {
-	private static CustomIndexStatus Convert(this CustomIndexReadsideService.Status target) =>
-		target switch {
-			CustomIndexReadsideService.Status.None => CustomIndexStatus.Unspecified,
-			CustomIndexReadsideService.Status.Stopped => CustomIndexStatus.Stopped,
-			CustomIndexReadsideService.Status.Started => CustomIndexStatus.Started,
-			CustomIndexReadsideService.Status.Deleted => CustomIndexStatus.Deleted,
-			_ => throw new ArgumentOutOfRangeException(nameof(target), target, null),
-		};
-
-	public static Protocol.V2.CustomIndexes.CustomIndex Convert(this CustomIndexReadsideService.CustomIndexState self) => new() {
-		Filter = self.EventFilter,
-		PartitionKeySelector = self.PartitionKeySelector,
-		PartitionKeyType = self.PartitionKeyType,
-		Status = self.Status.Convert(),
-	};
-
-	public static ListCustomIndexesResponse Convert(this CustomIndexReadsideService.CustomIndexesState self) {
-		var result = new ListCustomIndexesResponse();
-		foreach (var (name, customIndex) in self.CustomIndexes)
-			result.CustomIndexes[name] = customIndex.Convert();
-		return result;
+		try {
+			var response = await readSideService.Get(request.Name, context.CancellationToken);
+			return response;
+		} catch (CustomIndexDomainException ex) {
+			if (MapException(ex) is { } mapped)
+				throw mapped;
+			throw;
+		}
 	}
 }

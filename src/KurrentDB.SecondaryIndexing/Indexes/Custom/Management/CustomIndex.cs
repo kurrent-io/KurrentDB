@@ -15,16 +15,16 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 		bool start) {
 
 		switch (State.Status) {
-			case CustomIndexState.CustomIndexStatus.NonExistent: {
+			case CustomIndexStatus.Unspecified: {
 				// new
 				CreateCustomIndex();
 				break;
 			}
-			case CustomIndexState.CustomIndexStatus.Stopped:
-			case CustomIndexState.CustomIndexStatus.Started: {
+			case CustomIndexStatus.Stopped:
+			case CustomIndexStatus.Started: {
 				// already exists
-				if (State.Status is CustomIndexState.CustomIndexStatus.Stopped && start ||
-					State.Status is CustomIndexState.CustomIndexStatus.Started && !start ||
+				if (State.Status is CustomIndexStatus.Stopped && start ||
+					State.Status is CustomIndexStatus.Started && !start ||
 					State.Filter != filter ||
 					State.PartitionKeySelector != partitionKeySelector ||
 					State.PartitionKeyType != partitionKeyType)
@@ -33,7 +33,7 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 				break; // idempotent
 			}
 
-			case CustomIndexState.CustomIndexStatus.Deleted: {
+			case CustomIndexStatus.Deleted: {
 				CreateCustomIndex();
 				break;
 			}
@@ -56,38 +56,38 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 
 	public void Start() {
 		switch (State.Status) {
-			case CustomIndexState.CustomIndexStatus.NonExistent:
-			case CustomIndexState.CustomIndexStatus.Deleted:
+			case CustomIndexStatus.Unspecified:
+			case CustomIndexStatus.Deleted:
 				throw new CustomIndexNotFoundException(State.Id.Name);
-			case CustomIndexState.CustomIndexStatus.Stopped:
+			case CustomIndexStatus.Stopped:
 				Apply(new CustomIndexStarted());
 				break;
-			case CustomIndexState.CustomIndexStatus.Started:
+			case CustomIndexStatus.Started:
 				break; // idempotent
 		}
 	}
 
 	public void Stop() {
 		switch (State.Status) {
-			case CustomIndexState.CustomIndexStatus.NonExistent:
-			case CustomIndexState.CustomIndexStatus.Deleted:
+			case CustomIndexStatus.Unspecified:
+			case CustomIndexStatus.Deleted:
 				throw new CustomIndexNotFoundException(State.Id.Name);
-			case CustomIndexState.CustomIndexStatus.Stopped:
+			case CustomIndexStatus.Stopped:
 				break; // idempotent
-			case CustomIndexState.CustomIndexStatus.Started:
+			case CustomIndexStatus.Started:
 				Apply(new CustomIndexStopped());
 				break;
 		}
 	}
 
 	public void Delete() {
-		if (State.Status is CustomIndexState.CustomIndexStatus.Deleted)
+		if (State.Status is CustomIndexStatus.Deleted)
 			return; // idempotent
 
-		if (State.Status is CustomIndexState.CustomIndexStatus.NonExistent)
-				throw new CustomIndexNotFoundException(State.Id.Name);
+		if (State.Status is CustomIndexStatus.Unspecified)
+			throw new CustomIndexNotFoundException(State.Id.Name);
 
-		if (State.Status is CustomIndexState.CustomIndexStatus.Started)
+		if (State.Status is CustomIndexStatus.Started)
 			Stop();
 
 		Apply(new CustomIndexDeleted());

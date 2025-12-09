@@ -30,11 +30,4 @@ public record CustomIndexState : State<CustomIndexState, CustomIndexId> {
 		On<CustomIndexDeleted>((state, evt) =>
 			state with { Status = CustomIndexStatus.Deleted });
 	}
-
-	public enum CustomIndexStatus { //qq can remove
-		NonExistent,
-		Stopped,
-		Started,
-		Deleted,
-	}
 }

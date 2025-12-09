@@ -17,7 +17,7 @@ public class CustomIndexReadsideService(
 	ISchemaSerializer serializer,
 	CustomIndexStreamNameMap streamNameMap) {
 
-	public async ValueTask<CustomIndexesState> List(CancellationToken ct) {
+	public async ValueTask<ListCustomIndexesResponse> List(CancellationToken ct) {
 		var state = new CustomIndexesState();
 
 		await foreach (var evt in client.Reading.ReadIndexForwards(
@@ -37,10 +37,10 @@ public class CustomIndexReadsideService(
 			state.When(new CustomIndexId(customIndexName), deserializedEvent!);
 		}
 
-		return state;
+		return state.Convert();
 	}
 
-	public async ValueTask<CustomIndexState> Get(string name, CancellationToken ct) {
+	public async ValueTask<GetCustomIndexResponse> Get(string name, CancellationToken ct) {
 		var streamName = streamNameMap.GetStreamName<CustomIndexId>(new(name));
 
 		var state = await store.LoadState<CustomIndexState>(
@@ -48,7 +48,14 @@ public class CustomIndexReadsideService(
 			failIfNotFound: false,
 			cancellationToken: ct);
 
-		return state.State;
+		if (state.State.Status
+			is CustomIndexStatus.Unspecified
+			or CustomIndexStatus.Deleted)
+			throw new CustomIndexNotFoundException(name);
+
+		return new() {
+			CustomIndex = state.State.Convert(),
+		};
 	}
 
 	public record CustomIndexesState : MultiEntityState<CustomIndexesState, CustomIndexId> {
@@ -79,18 +86,11 @@ public class CustomIndexReadsideService(
 		}
 	}
 
-	public enum Status {
-		None,
-		Stopped,
-		Started,
-		Deleted,
-	}
-
 	public record CustomIndexState : State<CustomIndexState> {
 		public string EventFilter { get; init; } = "";
 		public string PartitionKeySelector { get; init; } = "";
 		public KeyType PartitionKeyType { get; init; }
-		public Status Status { get; init; }
+		public CustomIndexStatus Status { get; init; }
 
 		public CustomIndexState() {
 			On<CustomIndexCreated>((state, evt) =>
@@ -98,17 +98,17 @@ public class CustomIndexReadsideService(
 					EventFilter = evt.Filter,
 					PartitionKeySelector = evt.PartitionKeySelector,
 					PartitionKeyType = evt.PartitionKeyType,
-					Status = Status.Stopped,
+					Status = CustomIndexStatus.Stopped,
 				});
 
 			On<CustomIndexStarted>((state, evt) =>
-				state with { Status = Status.Started });
+				state with { Status = CustomIndexStatus.Started });
 
 			On<CustomIndexStopped>((state, evt) =>
-				state with { Status = Status.Stopped });
+				state with { Status = CustomIndexStatus.Stopped });
 
 			On<CustomIndexDeleted>((state, evt) =>
-				state with { Status = Status.Deleted });
+				state with { Status = CustomIndexStatus.Deleted });
 		}
 	}
 
@@ -132,5 +132,21 @@ public class CustomIndexReadsideService(
 				throw new Exceptions.DuplicateTypeException<TEvent>();
 			}
 		}
+	}
+}
+
+file static class Extensions {
+	public static Protocol.V2.CustomIndexes.CustomIndex Convert(this CustomIndexReadsideService.CustomIndexState self) => new() {
+		Filter = self.EventFilter,
+		PartitionKeySelector = self.PartitionKeySelector,
+		PartitionKeyType = self.PartitionKeyType,
+		Status = self.Status,
+	};
+
+	public static ListCustomIndexesResponse Convert(this CustomIndexReadsideService.CustomIndexesState self) {
+		var result = new ListCustomIndexesResponse();
+		foreach (var (name, customIndex) in self.CustomIndexes)
+			result.CustomIndexes[name] = customIndex.Convert();
+		return result;
 	}
 }
