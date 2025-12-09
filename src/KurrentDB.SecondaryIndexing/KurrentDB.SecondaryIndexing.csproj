@@ -30,14 +30,23 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<!-- //qq consider separate project like schemareg .protocol' does -->
+		<!-- //qq consider separate project like schemareg.protocol' does -->
 		<Protobuf
 			ProtoRoot="../../proto/kurrentdb/protocol/v2"
-			Include="../../proto/kurrentdb/protocol/v2/custom-indexes/custom-indexes.proto"
+			Include="../../proto/kurrentdb/protocol/v2/**/*.proto"
+			Exclude="../../proto/kurrentdb/protocol/v2/custom-indexes/errors.proto;../../proto/kurrentdb/protocol/v2/errors.proto;../../proto/kurrentdb/protocol/v2/rpc.proto;../../proto/kurrentdb/protocol/v2/registry/**/*.proto;../../proto/kurrentdb/protocol/v2/streams/**/*.proto"
 			Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"
 			GrpcServices="Both"
 			Access="Public"
 			AdditionalImportDirs="../../proto" />
+
+		<!-- google -->
+		<Protobuf
+			ProtoRoot="../../../proto/google"
+			Include="../../../proto/google/**/*.proto"
+			Link="proto\google\%(RecursiveDir)/%(FileName)%(Extension)"
+			Access="Internal"
+			ProtoCompile="false" />
 	</ItemGroup>
 
 		<ItemGroup>
