@@ -200,29 +200,29 @@ public class Subscription : ISecondaryIndexReader {
 
 	private ValueTask StartCustomIndex(string indexName, CustomIndexCreated createdEvent) {
 		return createdEvent.Fields[0].Type switch {
-			FieldType.Unspecified => StartCustomIndex<NullPartitionKey>(indexName, createdEvent),
-			FieldType.Double => StartCustomIndex<DoublePartitionKey>(indexName, createdEvent),
-			FieldType.String => StartCustomIndex<StringPartitionKey>(indexName, createdEvent),
-			FieldType.Int16 => StartCustomIndex<Int16PartitionKey>(indexName, createdEvent),
-			FieldType.Int32 => StartCustomIndex<Int32PartitionKey>(indexName, createdEvent),
-			FieldType.Int64 => StartCustomIndex<Int64PartitionKey>(indexName, createdEvent),
-			FieldType.Uint32 => StartCustomIndex<UInt32PartitionKey>(indexName, createdEvent),
-			FieldType.Uint64 => StartCustomIndex<UInt64PartitionKey>(indexName, createdEvent),
+			FieldType.Unspecified => StartCustomIndex<NullField>(indexName, createdEvent),
+			FieldType.Double => StartCustomIndex<DoubleField>(indexName, createdEvent),
+			FieldType.String => StartCustomIndex<StringField>(indexName, createdEvent),
+			FieldType.Int16 => StartCustomIndex<Int16Field>(indexName, createdEvent),
+			FieldType.Int32 => StartCustomIndex<Int32Field>(indexName, createdEvent),
+			FieldType.Int64 => StartCustomIndex<Int64Field>(indexName, createdEvent),
+			FieldType.Uint32 => StartCustomIndex<UInt32Field>(indexName, createdEvent),
+			FieldType.Uint64 => StartCustomIndex<UInt64Field>(indexName, createdEvent),
 			_ => throw new ArgumentOutOfRangeException("Field type")
 		};
 	}
 
-	private async ValueTask StartCustomIndex<TPartitionKey>(string indexName, CustomIndexCreated createdEvent) where TPartitionKey : ITPartitionKey {
+	private async ValueTask StartCustomIndex<TField>(string indexName, CustomIndexCreated createdEvent) where TField : IField {
 		Log.Debug("Starting custom index: {index}", indexName);
 
 		var inFlightRecords = new IndexInFlightRecords(_options);
 
-		var sql = new CustomIndexSql<TPartitionKey>(indexName);
+		var sql = new CustomIndexSql<TField>(indexName);
 
-		var processor = new CustomIndexProcessor<TPartitionKey>(
+		var processor = new CustomIndexProcessor<TField>(
 			indexName: indexName,
 			jsEventFilter: createdEvent.Filter,
-			jsPartitionKeySelector: createdEvent.Fields[0].Selector,
+			jsFieldSelector: createdEvent.Fields[0].Selector,
 			db: _db,
 			sql: sql,
 			inFlightRecords: inFlightRecords,
@@ -230,9 +230,9 @@ public class Subscription : ISecondaryIndexReader {
 			meter: _meter,
 			getLastAppendedRecord: _getLastAppendedRecord);
 
-		var reader = new CustomIndexReader<TPartitionKey>(sharedPool: _db, sql, inFlightRecords, _readIndex);
+		var reader = new CustomIndexReader<TField>(sharedPool: _db, sql, inFlightRecords, _readIndex);
 
-		CustomIndexSubscription subscription = new CustomIndexSubscription<TPartitionKey>(
+		CustomIndexSubscription subscription = new CustomIndexSubscription<TField>(
 			publisher: _publisher,
 			indexProcessor: processor,
 			indexReader: reader,

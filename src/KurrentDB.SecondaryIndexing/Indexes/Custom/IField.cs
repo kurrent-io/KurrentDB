@@ -8,9 +8,9 @@ using Kurrent.Quack;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom;
 
-public interface ITPartitionKey {
-	static abstract ITPartitionKey ParseFrom(JsValue value);
-	static abstract ITPartitionKey ParseFrom(string value);
+public interface IField {
+	static abstract IField ParseFrom(JsValue value);
+	static abstract IField ParseFrom(string value);
 	static abstract string GetCreateStatement();
 	static abstract Type? Type { get; }
 	string GetQueryStatement();
@@ -18,10 +18,10 @@ public interface ITPartitionKey {
 	void AppendTo(Appender.Row row);
 }
 
-internal readonly struct Int16PartitionKey(short key) : ITPartitionKey {
+internal readonly struct Int16Field(short key) : IField {
 	public static Type Type { get; } = typeof(short);
-	public static ITPartitionKey ParseFrom(JsValue value) => new Int16PartitionKey(Convert.ToInt16(value.AsNumber()));
-	public static ITPartitionKey ParseFrom(string value) => new Int16PartitionKey(Convert.ToInt16(value));
+	public static IField ParseFrom(JsValue value) => new Int16Field(Convert.ToInt16(value.AsNumber()));
+	public static IField ParseFrom(string value) => new Int16Field(Convert.ToInt16(value));
 	public static string GetCreateStatement() => ", partition SMALLINT not null";
 	public string GetQueryStatement() => "and partition = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
@@ -29,10 +29,10 @@ internal readonly struct Int16PartitionKey(short key) : ITPartitionKey {
 	public override string ToString() => key.ToString();
 }
 
-internal readonly struct Int32PartitionKey(int key) : ITPartitionKey {
+internal readonly struct Int32Field(int key) : IField {
 	public static Type Type { get; } = typeof(int);
-	public static ITPartitionKey ParseFrom(JsValue value) => new Int32PartitionKey(Convert.ToInt32(value.AsNumber()));
-	public static ITPartitionKey ParseFrom(string value) => new Int32PartitionKey(Convert.ToInt32(value));
+	public static IField ParseFrom(JsValue value) => new Int32Field(Convert.ToInt32(value.AsNumber()));
+	public static IField ParseFrom(string value) => new Int32Field(Convert.ToInt32(value));
 	public static string GetCreateStatement() => ", partition INTEGER not null";
 	public string GetQueryStatement() => "and partition = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
@@ -40,10 +40,10 @@ internal readonly struct Int32PartitionKey(int key) : ITPartitionKey {
 	public override string ToString() => key.ToString();
 }
 
-internal readonly struct Int64PartitionKey(long key) : ITPartitionKey {
+internal readonly struct Int64Field(long key) : IField {
 	public static Type Type { get; } = typeof(long);
-	public static ITPartitionKey ParseFrom(JsValue value) => new Int64PartitionKey(Convert.ToInt64(value.AsNumber()));
-	public static ITPartitionKey ParseFrom(string value) => new Int64PartitionKey(Convert.ToInt64(value));
+	public static IField ParseFrom(JsValue value) => new Int64Field(Convert.ToInt64(value.AsNumber()));
+	public static IField ParseFrom(string value) => new Int64Field(Convert.ToInt64(value));
 	public static string GetCreateStatement() => ", partition BIGINT not null";
 	public string GetQueryStatement() => "and partition = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
@@ -51,10 +51,10 @@ internal readonly struct Int64PartitionKey(long key) : ITPartitionKey {
 	public override string ToString() => key.ToString();
 }
 
-internal readonly struct UInt32PartitionKey(uint key) : ITPartitionKey {
+internal readonly struct UInt32Field(uint key) : IField {
 	public static Type Type { get; } = typeof(uint);
-	public static ITPartitionKey ParseFrom(JsValue value) => new UInt32PartitionKey(Convert.ToUInt32(value.AsNumber()));
-	public static ITPartitionKey ParseFrom(string value) => new UInt32PartitionKey(Convert.ToUInt32(value));
+	public static IField ParseFrom(JsValue value) => new UInt32Field(Convert.ToUInt32(value.AsNumber()));
+	public static IField ParseFrom(string value) => new UInt32Field(Convert.ToUInt32(value));
 	public static string GetCreateStatement() => ", partition UINTEGER not null";
 	public string GetQueryStatement() => "and partition = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
@@ -62,10 +62,10 @@ internal readonly struct UInt32PartitionKey(uint key) : ITPartitionKey {
 	public override string ToString() => key.ToString();
 }
 
-internal readonly struct UInt64PartitionKey(ulong key) : ITPartitionKey {
+internal readonly struct UInt64Field(ulong key) : IField {
 	public static Type Type { get; } = typeof(ulong);
-	public static ITPartitionKey ParseFrom(JsValue value) => new UInt64PartitionKey(Convert.ToUInt64(value.AsNumber()));
-	public static ITPartitionKey ParseFrom(string value) => new UInt64PartitionKey(Convert.ToUInt64(value));
+	public static IField ParseFrom(JsValue value) => new UInt64Field(Convert.ToUInt64(value.AsNumber()));
+	public static IField ParseFrom(string value) => new UInt64Field(Convert.ToUInt64(value));
 	public static string GetCreateStatement() => ", partition UBIGINT not null";
 	public string GetQueryStatement() => "and partition = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
@@ -74,10 +74,10 @@ internal readonly struct UInt64PartitionKey(ulong key) : ITPartitionKey {
 }
 
 //qq rename
-internal readonly struct DoublePartitionKey(double key) : ITPartitionKey {
+internal readonly struct DoubleField(double key) : IField {
 	public static Type Type { get; } = typeof(double);
-	public static ITPartitionKey ParseFrom(JsValue value) => new DoublePartitionKey(value.AsNumber());
-	public static ITPartitionKey ParseFrom(string value) => new DoublePartitionKey(Convert.ToDouble(value));
+	public static IField ParseFrom(JsValue value) => new DoubleField(value.AsNumber());
+	public static IField ParseFrom(string value) => new DoubleField(Convert.ToDouble(value));
 	public static string GetCreateStatement() => ", partition DOUBLE not null";
 	public string GetQueryStatement() => "and partition = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
@@ -85,10 +85,10 @@ internal readonly struct DoublePartitionKey(double key) : ITPartitionKey {
 	public override string ToString() => key.ToString(CultureInfo.InvariantCulture);
 }
 
-internal readonly struct StringPartitionKey(string key) : ITPartitionKey {
+internal readonly struct StringField(string key) : IField {
 	public static Type Type { get; } = typeof(string);
-	public static ITPartitionKey ParseFrom(JsValue value) => new StringPartitionKey(value.AsString());
-	public static ITPartitionKey ParseFrom(string value) => new StringPartitionKey(value);
+	public static IField ParseFrom(JsValue value) => new StringField(value.AsString());
+	public static IField ParseFrom(string value) => new StringField(value);
 	public static string GetCreateStatement() => ", partition VARCHAR not null";
 	public string GetQueryStatement() => "and partition = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
@@ -96,16 +96,16 @@ internal readonly struct StringPartitionKey(string key) : ITPartitionKey {
 	public override string ToString() => key;
 }
 
-internal readonly struct NullPartitionKey : ITPartitionKey {
+internal readonly struct NullField : IField {
 	public static Type? Type { get => null; }
-	public static ITPartitionKey ParseFrom(JsValue value) {
+	public static IField ParseFrom(JsValue value) {
 		if (!value.IsNull())
 			throw new ArgumentException(nameof(value));
 
-		return new NullPartitionKey();
+		return new NullField();
 	}
 
-	public static ITPartitionKey ParseFrom(string value) => throw new NotSupportedException();
+	public static IField ParseFrom(string value) => throw new NotSupportedException();
 	public static string GetCreateStatement() => string.Empty;
 	public string GetQueryStatement() => string.Empty;
 	public void BindTo(PreparedStatement statement, ref int index) { }

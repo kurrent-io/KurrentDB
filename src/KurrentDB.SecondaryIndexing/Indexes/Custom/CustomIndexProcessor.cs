@@ -29,16 +29,16 @@ internal abstract class CustomIndexProcessor: Disposable, ISecondaryIndexProcess
 	public abstract SecondaryIndexProgressTracker Tracker { get; }
 }
 
-internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where TPartitionKey : ITPartitionKey {
+internal class CustomIndexProcessor<TField> : CustomIndexProcessor where TField : IField {
 	private readonly Engine _engine = new();
-	private readonly Function? _eventFilter;
-	private readonly Function? _partitionKeySelector;
+	private readonly Function? _filter;
+	private readonly Function? _fieldSelector;
 	private readonly ResolvedEventJsObject _resolvedEventJsObject;
 	private readonly IndexInFlightRecords _inFlightRecords;
 	private readonly string _inFlightTableName;
 	private readonly IPublisher _publisher;
 	private readonly DuckDBAdvancedConnection _connection;
-	private readonly CustomIndexSql<TPartitionKey> _sql;
+	private readonly CustomIndexSql<TField> _sql;
 	private readonly object _skip = new();
 
 	private TFPos _lastPosition;
@@ -53,9 +53,9 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 	public CustomIndexProcessor(
 		string indexName,
 		string jsEventFilter,
-		string jsPartitionKeySelector,
+		string jsFieldSelector,
 		DuckDBConnectionPool db,
-		CustomIndexSql<TPartitionKey> sql,
+		CustomIndexSql<TField> sql,
 		IndexInFlightRecords inFlightRecords,
 		IPublisher publisher,
 		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)]
@@ -75,10 +75,10 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 		_skip = _engine.Evaluate("skip");
 
 		if (jsEventFilter is not "")
-			_eventFilter = _engine.Evaluate(jsEventFilter).AsFunctionInstance();
+			_filter = _engine.Evaluate(jsEventFilter).AsFunctionInstance();
 
-		if (jsPartitionKeySelector is not "")
-			_partitionKeySelector = _engine.Evaluate(jsPartitionKeySelector).AsFunctionInstance();
+		if (jsFieldSelector is not "")
+			_fieldSelector = _engine.Evaluate(jsFieldSelector).AsFunctionInstance();
 
 		_resolvedEventJsObject = new(_engine);
 
@@ -144,7 +144,7 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 		return true;
 	}
 
-	private bool CanHandleEvent(ResolvedEvent resolvedEvent, out ITPartitionKey? partition) {
+	private bool CanHandleEvent(ResolvedEvent resolvedEvent, out IField? partition) {
 		partition = null;
 
 		try {
@@ -157,17 +157,17 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 			_resolvedEventJsObject.Metadata = resolvedEvent.OriginalEvent.Metadata;
 
 			//qq find out if it is more performance to combine the two functions once and call that here
-			if (_eventFilter is not null) {
-				var passesFilter = _eventFilter.Call(_resolvedEventJsObject).AsBoolean();
+			if (_filter is not null) {
+				var passesFilter = _filter.Call(_resolvedEventJsObject).AsBoolean();
 				if (!passesFilter)
 					return false;
 			}
 
-			if (_partitionKeySelector is not null) {
-				var partitionJsValue = _partitionKeySelector.Call(_resolvedEventJsObject);
+			if (_fieldSelector is not null) {
+				var partitionJsValue = _fieldSelector.Call(_resolvedEventJsObject);
 				if (_skip.Equals(partitionJsValue))
 					return false;
-				partition = TPartitionKey.ParseFrom(partitionJsValue);
+				partition = TField.ParseFrom(partitionJsValue);
 			}
 
 			return true;
@@ -255,7 +255,7 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 				new("created", typeof(long)),
 			];
 
-			if (TPartitionKey.Type is { } type)
+			if (TField.Type is { } type)
 				columnInfos.Add(new ColumnInfo("partition", type));
 
 			return new(columnInfos, records);
@@ -267,7 +267,7 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 			writers[1].WriteValue(record.EventNumber, rowIndex);
 			writers[2].WriteValue(record.Created, rowIndex);
 
-			if (TPartitionKey.Type is { } type) {
+			if (TField.Type is { } type) {
 				var value = Convert.ChangeType(record.Partition, type);
 				writers[3].WriteValue(value, rowIndex);
 			}
@@ -278,7 +278,7 @@ internal class CustomIndexProcessor<TPartitionKey> : CustomIndexProcessor where 
 	public void GetCustomIndexTableDetails(out string tableName, out string inFlightTableName, out bool hasPartitions) {
 		tableName = _sql.TableName;
 		inFlightTableName = _inFlightTableName;
-		hasPartitions = TPartitionKey.Type is not null;
+		hasPartitions = TField.Type is not null;
 	}
 
 	protected override void Dispose(bool disposing) {
