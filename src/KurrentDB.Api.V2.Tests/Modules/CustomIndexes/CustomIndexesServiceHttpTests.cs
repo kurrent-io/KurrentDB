@@ -21,10 +21,10 @@ public class CustomIndexesServiceHttpTests {
 		var request = new RestRequest($"/v2/indexes/{CustomIndexName}")
 			.AddJsonBody("""
 				{
-					"Filter": "e => e.type == 'my-event-type'",
+					"Filter": "rec => rec.type == 'my-event-type'",
 					"Fields": [{
 						"Name": "number",
-						"Selector": "e => e.number",
+						"Selector": "rec => rec.number",
 						"Type": "FIELD_TYPE_INT_32"
 					}],
 					"Start": false
@@ -70,9 +70,9 @@ public class CustomIndexesServiceHttpTests {
 			ct);
 
 		await Assert.That(response!.CustomIndexes.TryGetValue(CustomIndexName, out var customIndexState)).IsTrue();
-		await Assert.That(customIndexState!.Filter).IsEqualTo("e => e.type == 'my-event-type'");
+		await Assert.That(customIndexState!.Filter).IsEqualTo("rec => rec.type == 'my-event-type'");
 		await Assert.That(customIndexState!.Fields.Length).IsEqualTo(1);
-		await Assert.That(customIndexState!.Fields[0].Selector).IsEqualTo("e => e.number");
+		await Assert.That(customIndexState!.Fields[0].Selector).IsEqualTo("rec => rec.number");
 		await Assert.That(customIndexState!.Fields[0].Type).IsEqualTo("FIELD_TYPE_INT_32");
 		await Assert.That(customIndexState!.Status).IsEqualTo("CUSTOM_INDEX_STATUS_STOPPED");
 	}
@@ -144,10 +144,10 @@ public class CustomIndexesServiceHttpTests {
 		await Assert.That(response.Content).IsJson($$"""
 			{
 				"customIndex": {
-					"filter": "e => e.type == 'my-event-type'",
+					"filter": "rec => rec.type == 'my-event-type'",
 					"fields": [{
 						"name": "number",
-						"selector": "e => e.number",
+						"selector": "rec => rec.number",
 						"type": "FIELD_TYPE_INT_32"
 					}],
 					"status": "{{expectedStatus}}"
@@ -163,10 +163,10 @@ public class CustomIndexesServiceHttpTests {
 		var request = new RestRequest($"/v2/indexes/{illegalName}")
 			.AddJsonBody("""
 				{
-					"Filter": "e => e.type == 'my-event-type'",
+					"Filter": "rec => rec.type == 'my-event-type'",
 					"Fields": [{
 						"Name": "number",
-						"Selector": "e => e.number",
+						"Selector": "rec => rec.number",
 						"Type": "FIELD_TYPE_INT_32"
 					}]
 				}

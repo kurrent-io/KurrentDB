@@ -35,11 +35,11 @@ public class CustomIndexesReadTests {
 		await Client.CreateCustomIndexAsync(
 			new() {
 				Name = CustomIndexName,
-				Filter = $"e => e.type == '{EventType}'",
+				Filter = $"rec => rec.type == '{EventType}'",
 				Fields = {
 					new Field() {
 						Name = "country",
-						Selector = "e => e.data.country",
+						Selector = "rec => rec.data.country",
 						Type = FieldType.String,
 					}
 				}

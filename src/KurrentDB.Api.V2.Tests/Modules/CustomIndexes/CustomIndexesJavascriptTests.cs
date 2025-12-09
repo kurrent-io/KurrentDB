@@ -27,13 +27,13 @@ public class CustomIndexesJavascriptTests {
 		await Client.CreateCustomIndexAsync(
 			new() {
 				Name = CustomIndexName,
-				Filter = $"e => e.type == '{EventType}'",
+				Filter = $"rec => rec.type == '{EventType}'",
 				Fields = {
 					new Field {
 						Name = "color",
 						Selector = """
-							e => {
-								let color = e.data.color;
+							rec => {
+								let color = rec.data.color;
 								if (color == 'green')
 									return skip;
 								return color;
@@ -86,11 +86,11 @@ public class CustomIndexesJavascriptTests {
 		await Client.CreateCustomIndexAsync(
 			new() {
 				Name = CustomIndexName,
-				Filter = $"e => e.type == '{EventType}'",
+				Filter = $"rec => rec.type == '{EventType}'",
 				Fields = {
 					new Field() {
 						Name = "color",
-						Selector = "e => e.data.color",
+						Selector = "rec => rec.data.color",
 						Type = fieldType,
 					},
 				},
@@ -120,11 +120,11 @@ public class CustomIndexesJavascriptTests {
 		await Client.CreateCustomIndexAsync(
 			new() {
 				Name = CustomIndexName,
-				Filter = $"e => e.type == '{EventType}'",
+				Filter = $"rec => rec.type == '{EventType}'",
 				Fields = {
 					new Field() {
 						Name = "null", //qq we could consider making name unnecessary when there is only one field
-						Selector = "e => null", //qq todo: when the field type is unspecified we probably shouldn't call the selector
+						Selector = "rec => null", //qq todo: when the field type is unspecified we probably shouldn't call the selector
 						Type = FieldType.Unspecified,
 					},
 				},

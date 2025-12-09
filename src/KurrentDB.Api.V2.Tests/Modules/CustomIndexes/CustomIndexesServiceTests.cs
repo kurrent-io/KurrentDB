@@ -20,11 +20,11 @@ public class CustomIndexesServiceTests {
 		await Client.CreateCustomIndexAsync(
 			new() {
 				Name = customIndexName,
-				Filter = "e => e.type == 'my-event-type'",
+				Filter = "rec => rec.type == 'my-event-type'",
 				Fields = {
 					new Field() {
 						Name = "number",
-						Selector = "e => e.number",
+						Selector = "rec => rec.number",
 						Type = FieldType.Int32,
 					},
 				},
@@ -38,11 +38,11 @@ public class CustomIndexesServiceTests {
 		await Client.CreateCustomIndexAsync(
 			new() {
 				Name = CustomIndexName,
-				Filter = "e => e.type == 'my-event-type'",
+				Filter = "rec => rec.type == 'my-event-type'",
 				Fields = {
 					new Field() {
 						Name = "number",
-						Selector = "e => e.number",
+						Selector = "rec => rec.number",
 						Type = FieldType.Int32,
 					},
 				},
@@ -58,11 +58,11 @@ public class CustomIndexesServiceTests {
 		await Client.CreateCustomIndexAsync(
 			new() {
 				Name = CustomIndexName,
-				Filter = "e => e.type == 'my-event-type'",
+				Filter = "rec => rec.type == 'my-event-type'",
 				Fields = {
 					new Field() {
 						Name = "number",
-						Selector = "e => e.number",
+						Selector = "rec => rec.number",
 						Type = FieldType.Int32,
 					},
 				},
@@ -80,11 +80,11 @@ public class CustomIndexesServiceTests {
 				await Client.CreateCustomIndexAsync(
 					new() {
 						Name = CustomIndexName,
-						Filter = "e => e.type == 'my-OTHER-event-type'",
+						Filter = "rec => rec.type == 'my-OTHER-event-type'",
 						Fields = {
 							new Field() {
 								Name = "number",
-								Selector = "e => e.number",
+								Selector = "rec => rec.number",
 								Type = FieldType.Int32,
 							},
 						},
@@ -139,9 +139,9 @@ public class CustomIndexesServiceTests {
 		var response = await Client.ListCustomIndexesAsync(new(), cancellationToken: ct);
 
 		await Assert.That(response!.CustomIndexes.TryGetValue(CustomIndexName, out var customIndexState)).IsTrue();
-		await Assert.That(customIndexState!.Filter).IsEqualTo("e => e.type == 'my-event-type'");
+		await Assert.That(customIndexState!.Filter).IsEqualTo("rec => rec.type == 'my-event-type'");
 		await Assert.That(customIndexState!.Fields.Count).IsEqualTo(1);
-		await Assert.That(customIndexState!.Fields[0].Selector).IsEqualTo("e => e.number");
+		await Assert.That(customIndexState!.Fields[0].Selector).IsEqualTo("rec => rec.number");
 		await Assert.That(customIndexState!.Fields[0].Type).IsEqualTo(FieldType.Int32);
 		await Assert.That(customIndexState!.Status).IsEqualTo(CustomIndexStatus.Stopped);
 	}
@@ -179,11 +179,11 @@ public class CustomIndexesServiceTests {
 				await Client.CreateCustomIndexAsync(
 					new() {
 						Name = name,
-						Filter = "e => e.type == 'my-event-type'",
+						Filter = "rec => rec.type == 'my-event-type'",
 						Fields = {
 							new Field() {
 								Name = "number",
-								Selector = "e => e.number",
+								Selector = "rec => rec.number",
 								Type = FieldType.Int32,
 							},
 						},
@@ -198,8 +198,8 @@ public class CustomIndexesServiceTests {
 
 	[Test]
 	[Arguments("foo")]
-	[Arguments("e => e.type ==> 'my-event-type'")]
-	[Arguments("(e, f) => e.type == 'my-event-type'")]
+	[Arguments("rec => rec.type ==> 'my-event-type'")]
+	[Arguments("(rec, f) => rec.type == 'my-event-type'")]
 	public async ValueTask cannot_create_with_invalid_filter(string filter, CancellationToken ct) {
 		var ex = await Assert
 			.That(async () => {
@@ -210,7 +210,7 @@ public class CustomIndexesServiceTests {
 						Fields = {
 							new Field() {
 								Name = "number",
-								Selector = "e => e.number",
+								Selector = "rec => rec.number",
 								Type = FieldType.Int32,
 							},
 						},
@@ -225,15 +225,15 @@ public class CustomIndexesServiceTests {
 
 	[Test]
 	[Arguments("foo")]
-	[Arguments("e => e.type ==> 'my-event-type'")]
-	[Arguments("(e, f) => e.type == 'my-event-type'")]
+	[Arguments("rec => rec.type ==> 'my-event-type'")]
+	[Arguments("(rec, f) => rec.type == 'my-event-type'")]
 	public async ValueTask cannot_create_with_invalid_key_selector(string keySelector, CancellationToken ct) {
 		var ex = await Assert
 			.That(async () => {
 				await Client.CreateCustomIndexAsync(
 					new() {
 						Name = $"{nameof(cannot_create_with_invalid_filter)}-{Guid.NewGuid()}",
-						Filter = "e => e.type == 'my-event-type'",
+						Filter = "rec => rec.type == 'my-event-type'",
 						Fields = {
 							new Field() {
 								Name = "the-field",
@@ -258,11 +258,11 @@ public class CustomIndexesServiceTests {
 	//		.That(async () => {
 	//			await Client.CreateCustomIndexAsync(new() {
 	//				Name = $"{nameof(cannot_create_with_invalid_filter)}-{Guid.NewGuid()}",
-	//				Filter = "e => e.type == 'my-event-type'",
+	//				Filter = "rec => rec.type == 'my-event-type'",
 	//				Fields = {
 	//					new Field() {
 	//						Name = "number",
-	//						Selector = "e => e.number",
+	//						Selector = "rec => rec.number",
 	//						Type = FieldType.Unspecified,
 	//					},
 	//				},
@@ -325,9 +325,9 @@ public class CustomIndexesServiceTests {
 		var response = await Client.GetCustomIndexAsync(
 			new() { Name = customIndexName },
 			cancellationToken: ct);
-		await Assert.That(response.CustomIndex.Filter).IsEqualTo("e => e.type == 'my-event-type'");
+		await Assert.That(response.CustomIndex.Filter).IsEqualTo("rec => rec.type == 'my-event-type'");
 		await Assert.That(response.CustomIndex.Fields.Count).IsEqualTo(1);
-		await Assert.That(response.CustomIndex.Fields[0].Selector).IsEqualTo("e => e.number");
+		await Assert.That(response.CustomIndex.Fields[0].Selector).IsEqualTo("rec => rec.number");
 		await Assert.That(response.CustomIndex.Fields[0].Type).IsEqualTo(FieldType.Int32);
 		await Assert.That(response.CustomIndex.Status).IsEqualTo(expectedStatus);
 	}
