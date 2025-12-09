@@ -22,8 +22,8 @@ internal readonly struct Int16Field(short key) : IField {
 	public static Type Type { get; } = typeof(short);
 	public static IField ParseFrom(JsValue value) => new Int16Field(Convert.ToInt16(value.AsNumber()));
 	public static IField ParseFrom(string value) => new Int16Field(Convert.ToInt16(value));
-	public static string GetCreateStatement() => ", partition SMALLINT not null";
-	public string GetQueryStatement() => "and partition = ?";
+	public static string GetCreateStatement() => ", field SMALLINT not null";
+	public string GetQueryStatement() => "and field = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
 	public void AppendTo(Appender.Row row) => row.Append(key);
 	public override string ToString() => key.ToString();
@@ -33,8 +33,8 @@ internal readonly struct Int32Field(int key) : IField {
 	public static Type Type { get; } = typeof(int);
 	public static IField ParseFrom(JsValue value) => new Int32Field(Convert.ToInt32(value.AsNumber()));
 	public static IField ParseFrom(string value) => new Int32Field(Convert.ToInt32(value));
-	public static string GetCreateStatement() => ", partition INTEGER not null";
-	public string GetQueryStatement() => "and partition = ?";
+	public static string GetCreateStatement() => ", field INTEGER not null";
+	public string GetQueryStatement() => "and field = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
 	public void AppendTo(Appender.Row row) => row.Append(key);
 	public override string ToString() => key.ToString();
@@ -44,8 +44,8 @@ internal readonly struct Int64Field(long key) : IField {
 	public static Type Type { get; } = typeof(long);
 	public static IField ParseFrom(JsValue value) => new Int64Field(Convert.ToInt64(value.AsNumber()));
 	public static IField ParseFrom(string value) => new Int64Field(Convert.ToInt64(value));
-	public static string GetCreateStatement() => ", partition BIGINT not null";
-	public string GetQueryStatement() => "and partition = ?";
+	public static string GetCreateStatement() => ", field BIGINT not null";
+	public string GetQueryStatement() => "and field = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
 	public void AppendTo(Appender.Row row) => row.Append(key);
 	public override string ToString() => key.ToString();
@@ -55,8 +55,8 @@ internal readonly struct UInt32Field(uint key) : IField {
 	public static Type Type { get; } = typeof(uint);
 	public static IField ParseFrom(JsValue value) => new UInt32Field(Convert.ToUInt32(value.AsNumber()));
 	public static IField ParseFrom(string value) => new UInt32Field(Convert.ToUInt32(value));
-	public static string GetCreateStatement() => ", partition UINTEGER not null";
-	public string GetQueryStatement() => "and partition = ?";
+	public static string GetCreateStatement() => ", field UINTEGER not null";
+	public string GetQueryStatement() => "and field = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
 	public void AppendTo(Appender.Row row) => row.Append(key);
 	public override string ToString() => key.ToString();
@@ -66,20 +66,19 @@ internal readonly struct UInt64Field(ulong key) : IField {
 	public static Type Type { get; } = typeof(ulong);
 	public static IField ParseFrom(JsValue value) => new UInt64Field(Convert.ToUInt64(value.AsNumber()));
 	public static IField ParseFrom(string value) => new UInt64Field(Convert.ToUInt64(value));
-	public static string GetCreateStatement() => ", partition UBIGINT not null";
-	public string GetQueryStatement() => "and partition = ?";
+	public static string GetCreateStatement() => ", field UBIGINT not null";
+	public string GetQueryStatement() => "and field = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
 	public void AppendTo(Appender.Row row) => row.Append(key);
 	public override string ToString() => key.ToString();
 }
 
-//qq rename
 internal readonly struct DoubleField(double key) : IField {
 	public static Type Type { get; } = typeof(double);
 	public static IField ParseFrom(JsValue value) => new DoubleField(value.AsNumber());
 	public static IField ParseFrom(string value) => new DoubleField(Convert.ToDouble(value));
-	public static string GetCreateStatement() => ", partition DOUBLE not null";
-	public string GetQueryStatement() => "and partition = ?";
+	public static string GetCreateStatement() => ", field DOUBLE not null";
+	public string GetQueryStatement() => "and field = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
 	public void AppendTo(Appender.Row row) => row.Append(key);
 	public override string ToString() => key.ToString(CultureInfo.InvariantCulture);
@@ -89,8 +88,8 @@ internal readonly struct StringField(string key) : IField {
 	public static Type Type { get; } = typeof(string);
 	public static IField ParseFrom(JsValue value) => new StringField(value.AsString());
 	public static IField ParseFrom(string value) => new StringField(value);
-	public static string GetCreateStatement() => ", partition VARCHAR not null";
-	public string GetQueryStatement() => "and partition = ?";
+	public static string GetCreateStatement() => ", field VARCHAR not null";
+	public string GetQueryStatement() => "and field = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
 	public void AppendTo(Appender.Row row) => row.Append(key);
 	public override string ToString() => key;

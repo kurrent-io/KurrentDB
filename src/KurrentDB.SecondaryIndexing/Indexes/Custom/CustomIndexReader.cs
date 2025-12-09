@@ -17,18 +17,18 @@ internal class CustomIndexReader<TField>(
 ) : SecondaryIndexReaderBase(sharedPool, index) where TField : IField {
 
 	protected override string? GetId(string indexStream) {
-		// the partition is used as the ID
-		CustomIndex.ParseStreamName(indexStream, out _, out var partition);
-		return partition;
+		// the field is used as the ID
+		CustomIndex.ParseStreamName(indexStream, out _, out var field);
+		return field;
 	}
 
 	protected override (List<IndexQueryRecord> Records, bool IsFinal) GetInflightForwards(string? id, long startPosition, int maxCount, bool excludeFirst) {
 		return inFlightRecords.GetInFlightRecordsForwards(startPosition, maxCount, excludeFirst, Filter);
-		bool Filter(InFlightRecord r) => id is null || r.Partition == id;
+		bool Filter(InFlightRecord r) => id is null || r.Field == id;
 	}
 
 	protected override List<IndexQueryRecord> GetDbRecordsForwards(DuckDBConnectionPool db, string? id, long startPosition, long endPosition, int maxCount, bool excludeFirst) {
-		if (!TryGetPartition(id, out var partition))
+		if (!TryGetField(id, out var field))
 			return [];
 
 		var args = new ReadCustomIndexQueryArgs {
@@ -36,7 +36,7 @@ internal class CustomIndexReader<TField>(
 			EndPosition = endPosition,
 			ExcludeFirst = excludeFirst,
 			Count = maxCount,
-			Partition = partition
+			Field = field
 		};
 
 		return sql.ReadCustomIndexForwardsQuery(db, args);
@@ -44,18 +44,18 @@ internal class CustomIndexReader<TField>(
 
 	protected override IEnumerable<IndexQueryRecord> GetInflightBackwards(string? id, long startPosition, int maxCount, bool excludeFirst) {
 		return inFlightRecords.GetInFlightRecordsBackwards(startPosition, maxCount, excludeFirst, Filter);
-		bool Filter(InFlightRecord r) => id is null || r.Partition == id;
+		bool Filter(InFlightRecord r) => id is null || r.Field == id;
 	}
 
 	protected override List<IndexQueryRecord> GetDbRecordsBackwards(DuckDBConnectionPool db, string? id, long startPosition, int maxCount, bool excludeFirst) {
-		if (!TryGetPartition(id, out var partition))
+		if (!TryGetField(id, out var field))
 			return [];
 
 		var args = new ReadCustomIndexQueryArgs {
 			StartPosition = startPosition,
 			Count = maxCount,
 			ExcludeFirst = excludeFirst,
-			Partition = partition
+			Field = field
 		};
 
 		return sql.ReadCustomIndexBackwardsQuery(db, args);
@@ -64,17 +64,17 @@ internal class CustomIndexReader<TField>(
 	public override TFPos GetLastIndexedPosition(string _) => throw new NotSupportedException(); // never called
 	public override bool CanReadIndex(string _) => throw new NotSupportedException(); // never called
 
-	private static bool TryGetPartition(string? id, out IField partition) {
-		partition = new NullField();
+	private static bool TryGetField(string? id, out IField field) {
+		field = new NullField();
 
 		if (id is null)
 			return true;
 
 		try {
-			partition = TField.ParseFrom(id);
+			field = TField.ParseFrom(id);
 			return true;
 		} catch {
-			// invalid partition
+			// invalid field
 			return false;
 		}
 	}

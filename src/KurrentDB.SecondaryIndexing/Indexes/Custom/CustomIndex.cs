@@ -8,26 +8,26 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Custom;
 using static Core.Services.SystemStreams;
 
 public static class CustomIndex {
-	public static string GetStreamName(string indexName, string? partition = null) {
-		partition = partition is null ? string.Empty : $"{CustomIndexPartitionDelimiter}{partition}";
-		return $"{IndexStreamPrefix}{indexName}{partition}";
+	public static string GetStreamName(string indexName, string? field = null) {
+		field = field is null ? string.Empty : $"{CustomIndexFieldDelimiter}{field}";
+		return $"{IndexStreamPrefix}{indexName}{field}";
 	}
 
-	// For the SubscriptionService to drop all subscriptions to this custom index or any of its partitions
+	// For the SubscriptionService to drop all subscriptions to this custom index or any of its fields
 	public static Regex GetStreamNameRegex(string indexName) {
 		var streamName = GetStreamName(indexName);
-		var pattern = $"^{Regex.Escape(streamName)}({CustomIndexPartitionDelimiter}.*)?$";
+		var pattern = $"^{Regex.Escape(streamName)}({CustomIndexFieldDelimiter}.*)?$";
 		return new Regex(pattern, RegexOptions.Compiled);
 	}
 
-	public static void ParseStreamName(string streamName, out string indexName, out string? partition) {
-		var delimiterIdx = streamName.IndexOf(CustomIndexPartitionDelimiter, IndexStreamPrefix.Length);
+	public static void ParseStreamName(string streamName, out string indexName, out string? field) {
+		var delimiterIdx = streamName.IndexOf(CustomIndexFieldDelimiter, IndexStreamPrefix.Length);
 		if (delimiterIdx < 0) {
 			indexName = streamName[IndexStreamPrefix.Length..];
-			partition = null;
+			field = null;
 		} else {
 			indexName = streamName[IndexStreamPrefix.Length..delimiterIdx];
-			partition = streamName[(delimiterIdx + 1)..];
+			field = streamName[(delimiterIdx + 1)..];
 		}
 	}
 

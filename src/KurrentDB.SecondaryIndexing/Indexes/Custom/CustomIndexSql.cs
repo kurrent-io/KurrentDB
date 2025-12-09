@@ -43,13 +43,13 @@ internal class CustomIndexSql<TField>(string indexName) where TField : IField {
 		connection.ExecuteNonQuery(ref query);
 	}
 	public List<IndexQueryRecord> ReadCustomIndexForwardsQuery(DuckDBConnectionPool db, ReadCustomIndexQueryArgs args) {
-		var query = new ReadCustomIndexForwardsQuery(TableName, args.ExcludeFirst, args.Partition.GetQueryStatement());
+		var query = new ReadCustomIndexForwardsQuery(TableName, args.ExcludeFirst, args.Field.GetQueryStatement());
 		using (db.Rent(out var connection))
 			return connection.ExecuteQuery<ReadCustomIndexQueryArgs, IndexQueryRecord, ReadCustomIndexForwardsQuery>(ref query, args).ToList();
 	}
 
 	public List<IndexQueryRecord> ReadCustomIndexBackwardsQuery(DuckDBConnectionPool db, ReadCustomIndexQueryArgs args) {
-		var query = new ReadCustomIndexBackwardsQuery(TableName, args.ExcludeFirst, args.Partition.GetQueryStatement());
+		var query = new ReadCustomIndexBackwardsQuery(TableName, args.ExcludeFirst, args.Field.GetQueryStatement());
 		using (db.Rent(out var connection))
 			return connection.ExecuteQuery<ReadCustomIndexQueryArgs, IndexQueryRecord, ReadCustomIndexBackwardsQuery>(ref query, args).ToList();
 	}
@@ -68,7 +68,7 @@ internal class CustomIndexSql<TField>(string indexName) where TField : IField {
 	}
 }
 
-file readonly record struct CreateCustomIndexNonQuery(string TableName, string CreatePartitionStatement) : IDynamicParameterlessStatement {
+file readonly record struct CreateCustomIndexNonQuery(string TableName, string CreateFieldStatement) : IDynamicParameterlessStatement {
 	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse(
 		"""
 		create table if not exists "{0}"
@@ -84,7 +84,7 @@ file readonly record struct CreateCustomIndexNonQuery(string TableName, string C
 
 	public void FormatCommandTemplate(Span<object?> args) {
 		args[0] = TableName;
-		args[1] = CreatePartitionStatement;
+		args[1] = CreateFieldStatement;
 	}
 }
 
@@ -93,22 +93,22 @@ file readonly record struct DeleteCustomIndexNonQuery(string TableName) : IDynam
 	public void FormatCommandTemplate(Span<object?> args) => args[0] = TableName;
 }
 
-internal record struct ReadCustomIndexQueryArgs(long StartPosition, long EndPosition, bool ExcludeFirst, int Count, IField Partition);
+internal record struct ReadCustomIndexQueryArgs(long StartPosition, long EndPosition, bool ExcludeFirst, int Count, IField Field);
 
-file readonly record struct ReadCustomIndexForwardsQuery(string TableName, bool ExcludeFirst, string PartitionQuery) : IDynamicQuery<ReadCustomIndexQueryArgs, IndexQueryRecord> {
+file readonly record struct ReadCustomIndexForwardsQuery(string TableName, bool ExcludeFirst, string FieldQuery) : IDynamicQuery<ReadCustomIndexQueryArgs, IndexQueryRecord> {
 	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse("select log_position, commit_position, event_number from \"{0}\" where log_position >{1} ? and log_position < ? {2} order by rowid limit ?");
 
 	public void FormatCommandTemplate(Span<object?> args) {
 		args[0] = TableName;
 		args[1] = ExcludeFirst ? string.Empty : "=";
-		args[2] = PartitionQuery;
+		args[2] = FieldQuery;
 	}
 
 	public static BindingContext Bind(in ReadCustomIndexQueryArgs args, PreparedStatement statement) {
 		var index = 1;
 		statement.Bind(index++, args.StartPosition);
 		statement.Bind(index++, args.EndPosition);
-		args.Partition.BindTo(statement, ref index);
+		args.Field.BindTo(statement, ref index);
 		statement.Bind(index, args.Count);
 
 		return new BindingContext(statement, completed: true);
@@ -117,19 +117,19 @@ file readonly record struct ReadCustomIndexForwardsQuery(string TableName, bool 
 	public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.TryReadInt64(), row.ReadInt64());
 }
 
-file readonly record struct ReadCustomIndexBackwardsQuery(string TableName, bool ExcludeFirst, string PartitionQuery) : IDynamicQuery<ReadCustomIndexQueryArgs, IndexQueryRecord> {
+file readonly record struct ReadCustomIndexBackwardsQuery(string TableName, bool ExcludeFirst, string FieldQuery) : IDynamicQuery<ReadCustomIndexQueryArgs, IndexQueryRecord> {
 	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse("select log_position, commit_position, event_number from \"{0}\" where log_position <{1} ? {2} order by rowid desc limit ?");
 
 	public void FormatCommandTemplate(Span<object?> args) {
 		args[0] = TableName;
 		args[1] = ExcludeFirst ? string.Empty : "=";
-		args[2] = PartitionQuery;
+		args[2] = FieldQuery;
 	}
 
 	public static BindingContext Bind(in ReadCustomIndexQueryArgs args, PreparedStatement statement) {
 		var index = 1;
 		statement.Bind(index++, args.StartPosition);
-		args.Partition.BindTo(statement, ref index);
+		args.Field.BindTo(statement, ref index);
 		statement.Bind(index, args.Count);
 
 		return new BindingContext(statement, completed: true);

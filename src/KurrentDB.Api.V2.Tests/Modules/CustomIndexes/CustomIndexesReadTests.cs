@@ -54,17 +54,17 @@ public class CustomIndexesReadTests {
 	[Arguments("Mauritius", 2)]
 	[Arguments("United Kingdom", 1)]
 	[Arguments("united kingdom", 0)]
-	public async ValueTask can_read_custom_index_forwards(string partition, int expectedCount, CancellationToken ct) {
+	public async ValueTask can_read_custom_index_forwards(string field, int expectedCount, CancellationToken ct) {
 
-		var partitionSuffix = partition is "" ? "" : $":{partition}";
+		var fieldSuffix = field is "" ? "" : $":{field}";
 		var events = await StreamsReadClient
-			.ReadAllForwardFiltered($"{ReadFilter}{partitionSuffix}", ct)
+			.ReadAllForwardFiltered($"{ReadFilter}{fieldSuffix}", ct)
 			.ToArrayAsync(ct);
 
 		await Assert.That(events.Count).IsEqualTo(expectedCount);
 		await Assert.That(events).IsOrderedBy(x => x.EventNumber);
-		if (partition is not "")
-			await Assert.That(events).All(x => x.Data.ToStringUtf8().Contains($""" "country": "{partition}" """));
+		if (field is not "")
+			await Assert.That(events).All(x => x.Data.ToStringUtf8().Contains($""" "country": "{field}" """));
 	}
 
 	[Test]
@@ -74,23 +74,23 @@ public class CustomIndexesReadTests {
 	[Arguments("Mauritius", 2)]
 	[Arguments("United Kingdom", 1)]
 	[Arguments("united kingdom", 0)]
-	public async ValueTask can_read_custom_index_backwards(string partition, int expectedCount, CancellationToken ct) {
-		var partitionSuffix = partition is "" ? "" : $":{partition}";
+	public async ValueTask can_read_custom_index_backwards(string field, int expectedCount, CancellationToken ct) {
+		var fieldSuffix = field is "" ? "" : $":{field}";
 		var events = await StreamsReadClient
-			.ReadAllBackwardFiltered($"{ReadFilter}{partitionSuffix}", ct)
+			.ReadAllBackwardFiltered($"{ReadFilter}{fieldSuffix}", ct)
 			.ToArrayAsync(ct);
 
 		await Assert.That(events.Count).IsEqualTo(expectedCount);
 		await Assert.That(events).IsOrderedByDescending(x => x.EventNumber);
-		if (partition is not "")
-			await Assert.That(events).All(x => x.Data.ToStringUtf8().Contains($""" "country": "{partition}" """));
+		if (field is not "")
+			await Assert.That(events).All(x => x.Data.ToStringUtf8().Contains($""" "country": "{field}" """));
 	}
 
 	//qq
 	// - test the properties available to the functions
 	// - test if the js throws, returns the wrong type, etc.
 	// - subscribe from a position
-	// - range partitions?
+	// - ranges over fields?
 
 	[Test]
 	[DependsOn(nameof(can_setup))]
@@ -152,9 +152,9 @@ public class CustomIndexesReadTests {
 	[Arguments("Mauritius")]
 	[Arguments("United Kingdom")]
 	[Arguments("united kingdom")]
-	public async ValueTask cannot_read_non_existent_custom_index(string partition, CancellationToken ct) {
-		var partitionSuffix = partition is "" ? "" : $":{partition}";
-		var index = $"$idx-does-not-exist{partitionSuffix}";
+	public async ValueTask cannot_read_non_existent_custom_index(string field, CancellationToken ct) {
+		var fieldSuffix = field is "" ? "" : $":{field}";
+		var index = $"$idx-does-not-exist{fieldSuffix}";
 		var ex = await Assert
 			.That(async () => {
 				await StreamsReadClient

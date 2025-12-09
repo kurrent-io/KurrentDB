@@ -57,13 +57,13 @@ public class CustomIndexesJavascriptTests {
 		await Assert.That(evts.Count).IsEqualTo(1);
 		await Assert.That(evts[0].Data.ToStringUtf8()).Contains(""" "orderId": "B", """);
 
-		// ensure the blue partition only contains the one event
+		// ensure blue only contains the one event
 		await StreamsReadClient.WaitForCustomIndexEvents($"{ReadFilter}:blue", 1, ct);
 		evts = await StreamsReadClient.ReadAllForwardFiltered($"{ReadFilter}:blue", ct).ToArrayAsync(ct);
 		await Assert.That(evts.Count).IsEqualTo(1);
 		await Assert.That(evts[0].Data.ToStringUtf8()).Contains(""" "orderId": "B", """);
 
-		// ensure the green partition contains no events
+		// ensure green contains no events
 		evts = await StreamsReadClient.ReadAllForwardFiltered($"{ReadFilter}:green", ct).ToArrayAsync(ct);
 		await Assert.That(evts.Count).IsEqualTo(0);
 	}
@@ -82,7 +82,7 @@ public class CustomIndexesJavascriptTests {
 	[Arguments(FieldType.Double, """ 0.0 """, """ 1.0 """, "1")]
 	[Arguments(FieldType.Double, """ 1234.56 """, """ 6543.21 """, "6543.21")]
 	//[Arguments(KeyType.Double,        """ 1234.56 """, """ 6543.21 """, "6543.210")] //qq why doesn't this work
-	public async ValueTask can_partition_by_all_key_types(FieldType fieldType, string partition1, string partition2, string partitionFilter, CancellationToken ct) {
+	public async ValueTask can_use_all_field_types(FieldType fieldType, string field1, string field2, string fieldFilter, CancellationToken ct) {
 		await Client.CreateCustomIndexAsync(
 			new() {
 				Name = CustomIndexName,
@@ -97,10 +97,10 @@ public class CustomIndexesJavascriptTests {
 			},
 			cancellationToken: ct);
 
-		// write an event for one partition
-		await StreamsWriteClient.AppendEvent(Stream, EventType, $$"""{ "orderId": "A", "color": {{partition1}} }""", ct);
-		// write an event for another partition
-		await StreamsWriteClient.AppendEvent(Stream, EventType, $$"""{ "orderId": "B", "color": {{partition2}} }""", ct);
+		// write an event for one field
+		await StreamsWriteClient.AppendEvent(Stream, EventType, $$"""{ "orderId": "A", "color": {{field1}} }""", ct);
+		// write an event for another field
+		await StreamsWriteClient.AppendEvent(Stream, EventType, $$"""{ "orderId": "B", "color": {{field2}} }""", ct);
 
 		// ensure both events are processed by the custom index
 		var evts = await StreamsReadClient.WaitForCustomIndexEvents(ReadFilter, 2, ct);
@@ -108,15 +108,15 @@ public class CustomIndexesJavascriptTests {
 		await Assert.That(evts[0].Data.ToStringUtf8()).Contains(""" "orderId": "A", """);
 		await Assert.That(evts[1].Data.ToStringUtf8()).Contains(""" "orderId": "B", """);
 
-		// ensure the target partition only contains the one event
-		await StreamsReadClient.WaitForCustomIndexEvents($"{ReadFilter}:{partitionFilter}", 1, ct);
-		evts = await StreamsReadClient.ReadAllForwardFiltered($"{ReadFilter}:{partitionFilter}", ct).ToArrayAsync(ct);
+		// ensure the target field only contains the one event
+		await StreamsReadClient.WaitForCustomIndexEvents($"{ReadFilter}:{fieldFilter}", 1, ct);
+		evts = await StreamsReadClient.ReadAllForwardFiltered($"{ReadFilter}:{fieldFilter}", ct).ToArrayAsync(ct);
 		await Assert.That(evts.Count).IsEqualTo(1);
 		await Assert.That(evts[0].Data.ToStringUtf8()).Contains(""" "orderId": "B", """);
 	}
 
 	[Test]
-	public async ValueTask can_partition_by_unspecified_key_type(CancellationToken ct) {
+	public async ValueTask can_use_unspecified_field_type(CancellationToken ct) {
 		await Client.CreateCustomIndexAsync(
 			new() {
 				Name = CustomIndexName,
@@ -124,7 +124,7 @@ public class CustomIndexesJavascriptTests {
 				Fields = {
 					new Field() {
 						Name = "null", //qq we could consider making name unnecessary when there is only one field
-						Selector = "e => null", //qq todo: when the partition type is unspecified we probably shouldn't call the selector
+						Selector = "e => null", //qq todo: when the field type is unspecified we probably shouldn't call the selector
 						Type = FieldType.Unspecified,
 					},
 				},

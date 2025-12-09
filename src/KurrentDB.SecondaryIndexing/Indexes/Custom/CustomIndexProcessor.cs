@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics.Metrics;
-using System.Text;
 using DotNext;
 using DotNext.Threading;
 using DuckDB.NET.Data;
@@ -102,7 +101,7 @@ internal class CustomIndexProcessor<TField> : CustomIndexProcessor where TField 
 		if (IsDisposingOrDisposed)
 			return false;
 
-		var canHandle = CanHandleEvent(resolvedEvent, out var partition);
+		var canHandle = CanHandleEvent(resolvedEvent, out var field);
 		_lastPosition = resolvedEvent.OriginalPosition!.Value;
 
 		if (!canHandle) {
@@ -115,10 +114,10 @@ internal class CustomIndexProcessor<TField> : CustomIndexProcessor where TField 
 		var eventNumber = resolvedEvent.Event.EventNumber;
 		var streamId = resolvedEvent.Event.EventStreamId;
 		var created = new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds();
-		var partitionStr = partition?.ToString();
+		var fieldStr = field?.ToString();
 
-		Log.Verbose("Custom index: {index} is appending event: {eventNumber}@{stream} ({position}). Partition = {partition}.",
-			IndexName, eventNumber, streamId, resolvedEvent.OriginalPosition, partition);
+		Log.Verbose("Custom index: {index} is appending event: {eventNumber}@{stream} ({position}). Field = {field}.",
+			IndexName, eventNumber, streamId, resolvedEvent.OriginalPosition, field);
 
 		using (var row = _appender.CreateRow()) {
 			row.Append(preparePosition);
@@ -130,22 +129,22 @@ internal class CustomIndexProcessor<TField> : CustomIndexProcessor where TField 
 
 			row.Append(eventNumber);
 			row.Append(created);
-			partition?.AppendTo(row);
+			field?.AppendTo(row);
 		}
 
-		_inFlightRecords.Append(preparePosition, commitPosition ?? preparePosition, eventNumber, partitionStr, created);
+		_inFlightRecords.Append(preparePosition, commitPosition ?? preparePosition, eventNumber, fieldStr, created);
 
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(CustomIndex.GetStreamName(IndexName), resolvedEvent));
-		if (partition is not null)
-			_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(CustomIndex.GetStreamName(IndexName, partitionStr), resolvedEvent));
+		if (field is not null)
+			_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(CustomIndex.GetStreamName(IndexName, fieldStr), resolvedEvent));
 
 		Tracker.RecordIndexed(resolvedEvent);
 
 		return true;
 	}
 
-	private bool CanHandleEvent(ResolvedEvent resolvedEvent, out IField? partition) {
-		partition = null;
+	private bool CanHandleEvent(ResolvedEvent resolvedEvent, out IField? field) {
+		field = null;
 
 		try {
 			_resolvedEventJsObject.StreamId = resolvedEvent.OriginalEvent.EventStreamId;
@@ -164,10 +163,10 @@ internal class CustomIndexProcessor<TField> : CustomIndexProcessor where TField 
 			}
 
 			if (_fieldSelector is not null) {
-				var partitionJsValue = _fieldSelector.Call(_resolvedEventJsObject);
-				if (_skip.Equals(partitionJsValue))
+				var fieldJsValue = _fieldSelector.Call(_resolvedEventJsObject);
+				if (_skip.Equals(fieldJsValue))
 					return false;
-				partition = TField.ParseFrom(partitionJsValue);
+				field = TField.ParseFrom(fieldJsValue);
 			}
 
 			return true;
@@ -256,7 +255,7 @@ internal class CustomIndexProcessor<TField> : CustomIndexProcessor where TField 
 			];
 
 			if (TField.Type is { } type)
-				columnInfos.Add(new ColumnInfo("partition", type));
+				columnInfos.Add(new ColumnInfo("field", type)); //qq probably need to use the name of the field
 
 			return new(columnInfos, records);
 		}
@@ -268,17 +267,17 @@ internal class CustomIndexProcessor<TField> : CustomIndexProcessor where TField 
 			writers[2].WriteValue(record.Created, rowIndex);
 
 			if (TField.Type is { } type) {
-				var value = Convert.ChangeType(record.Partition, type);
+				var value = Convert.ChangeType(record.Field, type);
 				writers[3].WriteValue(value, rowIndex);
 			}
 		}
 #pragma warning restore DuckDBNET001
 	}
 
-	public void GetCustomIndexTableDetails(out string tableName, out string inFlightTableName, out bool hasPartitions) {
+	public void GetCustomIndexTableDetails(out string tableName, out string inFlightTableName, out bool hasFields) {
 		tableName = _sql.TableName;
 		inFlightTableName = _inFlightTableName;
-		hasPartitions = TField.Type is not null;
+		hasFields = TField.Type is not null;
 	}
 
 	protected override void Dispose(bool disposing) {

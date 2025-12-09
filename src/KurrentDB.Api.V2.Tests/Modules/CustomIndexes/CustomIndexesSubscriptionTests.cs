@@ -57,20 +57,20 @@ public class CustomIndexesSubscriptionTests {
 			},
 			cancellationToken: ct);
 
-		var allPartitions = $"$idx-{CustomIndexName}";
-		var mauritiusPartition = $"{allPartitions}:Mauritius";
+		var allFields = $"$idx-{CustomIndexName}";
+		var mauritiusField = $"{allFields}:Mauritius";
 
 		// wait for index to become available
-		await StreamsReadClient.WaitForCustomIndexEvents(allPartitions, 1, ct);
-		await StreamsReadClient.WaitForCustomIndexEvents(mauritiusPartition, 1, ct);
+		await StreamsReadClient.WaitForCustomIndexEvents(allFields, 1, ct);
+		await StreamsReadClient.WaitForCustomIndexEvents(mauritiusField, 1, ct);
 
 		// subscribe
-		await using var allPartitionsEnumerator = StreamsReadClient.SubscribeToAllFiltered(allPartitions, ct).GetAsyncEnumerator(ct);
-		await using var mauritiusEnumerator = StreamsReadClient.SubscribeToAllFiltered(mauritiusPartition, ct).GetAsyncEnumerator(ct);
+		await using var allFieldsEnumerator = StreamsReadClient.SubscribeToAllFiltered(allFields, ct).GetAsyncEnumerator(ct);
+		await using var mauritiusEnumerator = StreamsReadClient.SubscribeToAllFiltered(mauritiusField, ct).GetAsyncEnumerator(ct);
 
-		await Assert.That((await allPartitionsEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "A", """);
-		await Assert.That((await allPartitionsEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "B", """);
-		await Assert.That((await allPartitionsEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "C", """);
+		await Assert.That((await allFieldsEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "A", """);
+		await Assert.That((await allFieldsEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "B", """);
+		await Assert.That((await allFieldsEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "C", """);
 
 		await Assert.That((await mauritiusEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "A", """);
 		await Assert.That((await mauritiusEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "C", """);
@@ -79,8 +79,8 @@ public class CustomIndexesSubscriptionTests {
 		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "D", "country": "Mauritius" }""", ct);
 		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "E", "country": "United Kingdom" }""", ct);
 
-		await Assert.That((await allPartitionsEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "D", """);
-		await Assert.That((await allPartitionsEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "E", """);
+		await Assert.That((await allFieldsEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "D", """);
+		await Assert.That((await allFieldsEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "E", """);
 
 		await Assert.That((await mauritiusEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "D", """);
 
@@ -92,7 +92,7 @@ public class CustomIndexesSubscriptionTests {
 		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "F", "country": "Mauritius" }""", ct);
 		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "G", "country": "United Kingdom" }""", ct);
 
-		var nextAllResult = allPartitionsEnumerator.ConsumeNext();
+		var nextAllResult = allFieldsEnumerator.ConsumeNext();
 		var nextMauritiusResult = mauritiusEnumerator.ConsumeNext();
 		await Task.Delay(500);
 
@@ -103,7 +103,7 @@ public class CustomIndexesSubscriptionTests {
 		await Client.StartCustomIndexAsync(new() { Name = CustomIndexName }, cancellationToken: ct);
 
 		await Assert.That((await nextAllResult).Data.ToStringUtf8()).Contains(""" "orderId": "F", """);
-		await Assert.That((await allPartitionsEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "G", """);
+		await Assert.That((await allFieldsEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "G", """);
 
 		await Assert.That((await nextMauritiusResult).Data.ToStringUtf8()).Contains(""" "orderId": "F", """);
 
@@ -111,26 +111,26 @@ public class CustomIndexesSubscriptionTests {
 		await Client.DeleteCustomIndexAsync(new() { Name = CustomIndexName }, cancellationToken: ct);
 
 		var ex = await Assert
-			.That(async () => await allPartitionsEnumerator.ConsumeNext())
+			.That(async () => await allFieldsEnumerator.ConsumeNext())
 			.Throws<RpcException>();
 
-		await Assert.That(ex!.Status.Detail).IsEqualTo($"Index '{allPartitions}' not found.");
+		await Assert.That(ex!.Status.Detail).IsEqualTo($"Index '{allFields}' not found.");
 		await Assert.That(ex!.Status.StatusCode).IsEqualTo(StatusCode.NotFound);
 
 		ex = await Assert
 			.That(async () => await mauritiusEnumerator.ConsumeNext())
 			.Throws<RpcException>();
 
-		await Assert.That(ex!.Status.Detail).IsEqualTo($"Index '{mauritiusPartition}' not found.");
+		await Assert.That(ex!.Status.Detail).IsEqualTo($"Index '{mauritiusField}' not found.");
 		await Assert.That(ex!.Status.StatusCode).IsEqualTo(StatusCode.NotFound);
 	}
 
 	[Test]
 	[Arguments("")]
 	[Arguments("Mauritius")]
-	public async ValueTask cannot_subscribe_to_non_existent_custom_index(string partition, CancellationToken ct) {
-		var partitionSuffix = partition is "" ? "" : $":{partition}";
-		var index = $"$idx-does-not-exist{partitionSuffix}";
+	public async ValueTask cannot_subscribe_to_non_existent_custom_index(string field, CancellationToken ct) {
+		var fieldSuffix = field is "" ? "" : $":{field}";
+		var index = $"$idx-does-not-exist{fieldSuffix}";
 		var ex = await Assert
 			.That(async () => {
 				await StreamsReadClient

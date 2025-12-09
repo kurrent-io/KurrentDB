@@ -23,7 +23,7 @@ internal abstract class CustomIndexSubscription {
 	public abstract ValueTask<ClientMessage.ReadIndexEventsForwardCompleted> ReadForwards(ClientMessage.ReadIndexEventsForward msg, CancellationToken token);
 	public abstract ValueTask<ClientMessage.ReadIndexEventsBackwardCompleted> ReadBackwards(ClientMessage.ReadIndexEventsBackward msg, CancellationToken token);
 	public abstract TFPos GetLastIndexedPosition();
-	public abstract void GetCustomIndexTableDetails(out string tableName, out string inFlightTableName, out bool hasPartitions);
+	public abstract void GetCustomIndexTableDetails(out string tableName, out string inFlightTableName, out bool hasFields);
 	public abstract ReaderWriterLockSlim RWLock { get; }
 }
 
@@ -165,8 +165,8 @@ internal sealed class CustomIndexSubscription<TField>(
 
 	public override TFPos GetLastIndexedPosition() => indexProcessor.GetLastPosition();
 
-	public override void GetCustomIndexTableDetails(out string tableName, out string inFlightTableName, out bool hasPartitions) =>
-		indexProcessor.GetCustomIndexTableDetails(out tableName, out inFlightTableName, out hasPartitions);
+	public override void GetCustomIndexTableDetails(out string tableName, out string inFlightTableName, out bool hasFields) =>
+		indexProcessor.GetCustomIndexTableDetails(out tableName, out inFlightTableName, out hasFields);
 
 	public override ReaderWriterLockSlim RWLock { get; } = new();
 }
