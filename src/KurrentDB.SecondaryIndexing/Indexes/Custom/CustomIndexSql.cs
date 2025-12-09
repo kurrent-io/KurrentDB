@@ -34,12 +34,12 @@ internal static class CustomIndexSql {
 	}
 }
 
-internal class CustomIndexSql<TValueType>(string indexName) where TValueType : IValueType {
+internal class CustomIndexSql<TPartitionKey>(string indexName) where TPartitionKey : ITPartitionKey {
 	public string TableName { get; } = CustomIndexSql.GetTableNameFor(indexName);
 	public ReadOnlyMemory<byte> TableNameUtf8 { get; } = Encoding.UTF8.GetBytes(CustomIndexSql.GetTableNameFor(indexName));
 
 	public void CreateCustomIndex(DuckDBAdvancedConnection connection) {
-		var query = new CreateCustomIndexNonQuery(TableName, TValueType.GetCreateStatement());
+		var query = new CreateCustomIndexNonQuery(TableName, TPartitionKey.GetCreateStatement());
 		connection.ExecuteNonQuery(ref query);
 	}
 	public List<IndexQueryRecord> ReadCustomIndexForwardsQuery(DuckDBConnectionPool db, ReadCustomIndexQueryArgs args) {
@@ -93,7 +93,7 @@ file readonly record struct DeleteCustomIndexNonQuery(string TableName) : IDynam
 	public void FormatCommandTemplate(Span<object?> args) => args[0] = TableName;
 }
 
-internal record struct ReadCustomIndexQueryArgs(long StartPosition, long EndPosition, bool ExcludeFirst, int Count, IValueType Partition);
+internal record struct ReadCustomIndexQueryArgs(long StartPosition, long EndPosition, bool ExcludeFirst, int Count, ITPartitionKey Partition);
 
 file readonly record struct ReadCustomIndexForwardsQuery(string TableName, bool ExcludeFirst, string PartitionQuery) : IDynamicQuery<ReadCustomIndexQueryArgs, IndexQueryRecord> {
 	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse("select log_position, commit_position, event_number from \"{0}\" where log_position >{1} ? and log_position < ? {2} order by rowid limit ?");

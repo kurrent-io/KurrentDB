@@ -86,17 +86,17 @@ public class CustomIndexReadsideService(
 	}
 
 	public record CustomIndexState : State<CustomIndexState> {
-		public string Filter { get; init; } = "";
-		public string ValueSelector { get; init; } = "";
-		public CustomIndexValueType ValueType { get; init; }
+		public string EventFilter { get; init; } = "";
+		public string PartitionKeySelector { get; init; } = "";
+		public PartitionKeyType PartitionKeyType { get; init; }
 		public Status Status { get; init; }
 
 		public CustomIndexState() {
 			On<CustomIndexEvents.Created>((state, evt) =>
 				state with {
-					Filter = evt.Filter,
-					ValueSelector = evt.ValueSelector,
-					ValueType = evt.ValueType,
+					EventFilter = evt.EventFilter,
+					PartitionKeySelector = evt.PartitionKeySelector,
+					PartitionKeyType = evt.PartitionKeyType,
 					Status = Status.Stopped,
 				});
 

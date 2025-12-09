@@ -51,15 +51,15 @@ service CustomIndexesService {
   }
 }
 
-enum CustomIndexValueType {
-  CUSTOM_INDEX_VALUE_TYPE_UNSPECIFIED = 0;
-  CUSTOM_INDEX_VALUE_TYPE_STRING = 1;
-  CUSTOM_INDEX_VALUE_TYPE_DOUBLE = 2;
-  CUSTOM_INDEX_VALUE_TYPE_INT_16 = 3;
-  CUSTOM_INDEX_VALUE_TYPE_INT_32 = 4;
-  CUSTOM_INDEX_VALUE_TYPE_INT_64 = 5;
-  CUSTOM_INDEX_VALUE_TYPE_UINT_32 = 6;
-  CUSTOM_INDEX_VALUE_TYPE_UINT_64 = 7;
+enum KeyType {
+  KEY_TYPE_UNSPECIFIED = 0;
+  KEY_TYPE_STRING = 1;
+  KEY_TYPE_DOUBLE = 2;
+  KEY_TYPE_INT_16 = 3;
+  KEY_TYPE_INT_32 = 4;
+  KEY_TYPE_INT_64 = 5;
+  KEY_TYPE_UINT_32 = 6;
+  KEY_TYPE_UINT_64 = 7;
 }
 
 
@@ -70,8 +70,8 @@ enum CustomIndexValueType {
 message CreateCustomIndexRequest {
   string name = 1;
   string filter = 2;
-  string value_selector = 3;
-  CustomIndexValueType value_type = 4;
+  string partition_key_selector = 3;
+  KeyType partition_key_type = 4;
   optional bool start = 5; // if unspecified: treated as true
 }
 
@@ -120,8 +120,8 @@ message GetCustomIndexResponse {
 
 message CustomIndex {
   string filter = 1;
-  string value_selector = 2;
-  CustomIndexValueType value_type = 3;
+  string partition_key_selector = 2;
+  KeyType partition_key_type = 3;
   CustomIndexStatus status = 4;
 }
 

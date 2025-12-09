@@ -3,7 +3,7 @@
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 
-public enum CustomIndexValueType { 
+public enum PartitionKeyType {
 	None,
 	String,
 	Double,
@@ -14,13 +14,14 @@ public enum CustomIndexValueType {
 	UInt64,
 }
 
+//qq consider the names here
 public static class CustomIndexEvents {
 	public class Created {
-		public string Filter { get; set; } = "";
+		public string EventFilter { get; set; } = "";
 
-		public string ValueSelector { get; set; } = "";
+		public string PartitionKeySelector { get; set; } = "";
 
-		public CustomIndexValueType ValueType { get; set; }
+		public PartitionKeyType PartitionKeyType { get; set; }
 	}
 
 	public class Started {

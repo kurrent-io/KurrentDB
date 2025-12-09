@@ -13,7 +13,7 @@ internal record struct InFlightRecord(
 	string StreamName,
 	long EventNumber,
 	long Created,
-	string? Partition //qq consider name
+	string? Partition
 );
 
 internal class IndexInFlightRecords(SecondaryIndexingPluginOptions options) {

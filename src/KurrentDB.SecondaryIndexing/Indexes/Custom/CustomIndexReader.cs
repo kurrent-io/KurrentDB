@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
@@ -8,12 +9,12 @@ using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom;
 
-internal class CustomIndexReader<TValueType>(
+internal class CustomIndexReader<TPartitionKey>(
 	DuckDBConnectionPool sharedPool,
-	CustomIndexSql<TValueType> sql,
+	CustomIndexSql<TPartitionKey> sql,
 	IndexInFlightRecords inFlightRecords,
 	IReadIndex<string> index
-) : SecondaryIndexReaderBase(sharedPool, index) where TValueType : IValueType {
+) : SecondaryIndexReaderBase(sharedPool, index) where TPartitionKey : ITPartitionKey {
 
 	protected override string? GetId(string indexStream) {
 		// the partition is used as the ID
@@ -63,14 +64,14 @@ internal class CustomIndexReader<TValueType>(
 	public override TFPos GetLastIndexedPosition(string _) => throw new NotSupportedException(); // never called
 	public override bool CanReadIndex(string _) => throw new NotSupportedException(); // never called
 
-	private static bool TryGetPartition(string? id, out IValueType partition) {
-		partition = new NullValueType();
+	private static bool TryGetPartition(string? id, out ITPartitionKey partition) {
+		partition = new NullPartitionKey();
 
 		if (id is null)
 			return true;
 
 		try {
-			partition = TValueType.ParseFrom(id);
+			partition = TPartitionKey.ParseFrom(id);
 			return true;
 		} catch {
 			// invalid partition

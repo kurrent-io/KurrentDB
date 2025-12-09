@@ -27,12 +27,12 @@ internal abstract class CustomIndexSubscription {
 	public abstract ReaderWriterLockSlim RWLock { get; }
 }
 
-internal sealed class CustomIndexSubscription<TValueType>(
+internal sealed class CustomIndexSubscription<TPartitionKey>(
 	IPublisher publisher,
-	CustomIndexProcessor<TValueType> indexProcessor,
-	CustomIndexReader<TValueType> indexReader,
+	CustomIndexProcessor<TPartitionKey> indexProcessor,
+	CustomIndexReader<TPartitionKey> indexReader,
 	SecondaryIndexingPluginOptions options,
-	CancellationToken token) : CustomIndexSubscription, IAsyncDisposable where TValueType : IValueType {
+	CancellationToken token) : CustomIndexSubscription, IAsyncDisposable where TPartitionKey : ITPartitionKey {
 
 	private readonly int _commitBatchSize = options.CommitBatchSize;
 	private CancellationTokenSource? _cts = CancellationTokenSource.CreateLinkedTokenSource(token);
