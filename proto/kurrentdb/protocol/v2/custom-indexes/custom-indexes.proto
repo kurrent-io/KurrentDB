@@ -12,26 +12,26 @@ service CustomIndexesService {
   //
   rpc CreateCustomIndex(CreateCustomIndexRequest) returns (CreateCustomIndexResponse) {
     option (google.api.http) = {
-      post: "/v2/custom-indexes/{name}",
+      post: "/v2/indexes/{name}",
       body: "*"
     };
   };
 
   rpc StartCustomIndex(StartCustomIndexRequest) returns (StartCustomIndexResponse) {
     option (google.api.http) = {
-      post: "/v2/custom-indexes/{name}/start",
+      post: "/v2/indexes/{name}/start",
     };
   }
 
   rpc StopCustomIndex(StopCustomIndexRequest) returns (StopCustomIndexResponse) {
     option (google.api.http) = {
-      post: "/v2/custom-indexes/{name}/stop",
+      post: "/v2/indexes/{name}/stop",
     };
   }
 
   rpc DeleteCustomIndex(DeleteCustomIndexRequest) returns (DeleteCustomIndexResponse) {
     option (google.api.http) = {
-      delete: "/v2/custom-indexes/{name}"
+      delete: "/v2/indexes/{name}"
     };
   }
 
@@ -40,13 +40,13 @@ service CustomIndexesService {
   //
   rpc ListCustomIndexes(ListCustomIndexesRequest) returns (ListCustomIndexesResponse) {
     option (google.api.http) = {
-      get: "/v2/custom-indexes",
+      get: "/v2/indexes",
     };
   }
 
   rpc GetCustomIndex(GetCustomIndexRequest) returns (GetCustomIndexResponse) {
     option (google.api.http) = {
-      get: "/v2/custom-indexes/{name}",
+      get: "/v2/indexes/{name}",
     };
   }
 }
