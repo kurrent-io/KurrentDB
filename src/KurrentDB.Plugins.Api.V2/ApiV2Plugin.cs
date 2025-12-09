@@ -12,7 +12,6 @@ using KurrentDB.Api.Infrastructure.Grpc.Validation;
 using KurrentDB.Api.Modules.CustomIndexes;
 using KurrentDB.Api.Streams.Validators;
 using KurrentDB.Core;
-using KurrentDB.Protocol.V2.CustomIndexes;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,7 +27,6 @@ public class ApiV2Plugin() : SubsystemsPlugin("APIV2") {
             .AddGrpc()
             .AddJsonTranscoding(options => {
                 options.TypeRegistry = TypeRegistry.FromFiles(
-                    CustomIndexesReflection.Descriptor,
                     KurrentDB.Protocol.V2.CustomIndexes.Errors.ErrorsReflection.Descriptor,
                     ErrorsReflection.Descriptor,
                     RpcReflection.Descriptor,

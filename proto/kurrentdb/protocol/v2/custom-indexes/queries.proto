@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package kurrentdb.protocol.v2.custom_indexes;
+
+option csharp_namespace = "KurrentDB.Protocol.V2.CustomIndexes";
+
+import "custom-indexes/shared.proto";
+
+message ListCustomIndexesRequest {
+}
+
+message ListCustomIndexesResponse {
+  map<string, CustomIndex> custom_indexes = 1;
+}
+
+message GetCustomIndexRequest {
+  string name = 1;
+}
+
+message GetCustomIndexResponse {
+  CustomIndex custom_index = 1;
+}
+
+message CustomIndex {
+  string filter = 1;
+  string partition_key_selector = 2;
+  KeyType partition_key_type = 3;
+  CustomIndexStatus status = 4;
+}
+
+enum CustomIndexStatus {
+  CUSTOM_INDEX_STATUS_UNSPECIFIED = 0;
+  CUSTOM_INDEX_STATUS_STARTED = 1;
+  CUSTOM_INDEX_STATUS_STOPPED = 2;
+  CUSTOM_INDEX_STATUS_DELETED = 3;
+}

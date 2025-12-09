@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package kurrentdb.protocol.v2.custom_indexes;
+
+option csharp_namespace = "KurrentDB.Protocol.V2.CustomIndexes";
+
+import "google/api/annotations.proto";
+import "custom-indexes/commands.proto";
+import "custom-indexes/queries.proto";
+
+service CustomIndexesService {
+  //
+  // Write-side Services
+  //
+  rpc CreateCustomIndex(CreateCustomIndexRequest) returns (CreateCustomIndexResponse) {
+    option (google.api.http) = {
+      post: "/v2/indexes/{name}",
+      body: "*"
+    };
+  };
+
+  rpc StartCustomIndex(StartCustomIndexRequest) returns (StartCustomIndexResponse) {
+    option (google.api.http) = {
+      post: "/v2/indexes/{name}/start",
+    };
+  }
+
+  rpc StopCustomIndex(StopCustomIndexRequest) returns (StopCustomIndexResponse) {
+    option (google.api.http) = {
+      post: "/v2/indexes/{name}/stop",
+    };
+  }
+
+  rpc DeleteCustomIndex(DeleteCustomIndexRequest) returns (DeleteCustomIndexResponse) {
+    option (google.api.http) = {
+      delete: "/v2/indexes/{name}"
+    };
+  }
+
+  //
+  // Read-side Services
+  //
+  rpc ListCustomIndexes(ListCustomIndexesRequest) returns (ListCustomIndexesResponse) {
+    option (google.api.http) = {
+      get: "/v2/indexes",
+    };
+  }
+
+  rpc GetCustomIndex(GetCustomIndexRequest) returns (GetCustomIndexResponse) {
+    option (google.api.http) = {
+      get: "/v2/indexes/{name}",
+    };
+  }
+}
