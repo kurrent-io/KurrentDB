@@ -2,13 +2,14 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Eventuous;
+using KurrentDB.Protocol.V2.CustomIndexes;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 
 public record CustomIndexState : State<CustomIndexState, CustomIndexId> {
 	public string EventFilter { get; init; } = "";
 	public string PartitionKeySelector { get; init; } = "";
-	public PartitionKeyType PartitionKeyType { get; init; }
+	public KeyType PartitionKeyType { get; init; }
 	public CustomIndexStatus Status { get; init; }
 
 	public CustomIndexState() {

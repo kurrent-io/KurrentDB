@@ -7,6 +7,7 @@ using Kurrent.Surge.Schema.Serializers;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core;
 using KurrentDB.Core.Services.Transport.Common;
+using KurrentDB.Protocol.V2.CustomIndexes;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 
@@ -88,7 +89,7 @@ public class CustomIndexReadsideService(
 	public record CustomIndexState : State<CustomIndexState> {
 		public string EventFilter { get; init; } = "";
 		public string PartitionKeySelector { get; init; } = "";
-		public PartitionKeyType PartitionKeyType { get; init; }
+		public KeyType PartitionKeyType { get; init; }
 		public Status Status { get; init; }
 
 		public CustomIndexState() {

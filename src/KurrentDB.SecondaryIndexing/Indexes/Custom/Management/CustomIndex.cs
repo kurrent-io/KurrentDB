@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Eventuous;
+using KurrentDB.Protocol.V2.CustomIndexes;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 
@@ -10,7 +11,7 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 	public void Create(
 		string eventFilter,
 		string partitionKeySelector,
-		PartitionKeyType partitionKeyType,
+		KeyType partitionKeyType,
 		bool start) {
 
 		switch (State.Status) {

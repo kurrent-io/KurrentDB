@@ -28,7 +28,7 @@
     <Protobuf
         ProtoRoot="../../proto/kurrentdb/protocol/v2"
         Include="../../proto/kurrentdb/protocol/v2/**/*.proto"
-        Exclude="../../proto/kurrentdb/protocol/v2/registry/**/*.proto"
+        Exclude="../../proto/kurrentdb/protocol/v2/registry/**/*.proto;../../proto/kurrentdb/protocol/v2/custom-indexes/custom-indexes.proto"
         Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"
         GrpcServices="Both"
         Access="Public"

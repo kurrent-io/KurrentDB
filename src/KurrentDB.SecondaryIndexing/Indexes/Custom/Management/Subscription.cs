@@ -18,6 +18,7 @@ using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
+using KurrentDB.Protocol.V2.CustomIndexes;
 using KurrentDB.SecondaryIndexing.Subscriptions;
 using Serilog;
 
@@ -199,14 +200,14 @@ public class Subscription : ISecondaryIndexReader {
 
 	private ValueTask StartCustomIndex(string indexName, CustomIndexEvents.Created createdEvent) {
 		return createdEvent.PartitionKeyType switch {
-			PartitionKeyType.None => StartCustomIndex<NullPartitionKey>(indexName, createdEvent),
-			PartitionKeyType.Double => StartCustomIndex<DoublePartitionKey>(indexName, createdEvent),
-			PartitionKeyType.String => StartCustomIndex<StringPartitionKey>(indexName, createdEvent),
-			PartitionKeyType.Int16 => StartCustomIndex<Int16PartitionKey>(indexName, createdEvent),
-			PartitionKeyType.Int32 => StartCustomIndex<Int32PartitionKey>(indexName, createdEvent),
-			PartitionKeyType.Int64 => StartCustomIndex<Int64PartitionKey>(indexName, createdEvent),
-			PartitionKeyType.UInt32 => StartCustomIndex<UInt32PartitionKey>(indexName, createdEvent),
-			PartitionKeyType.UInt64 => StartCustomIndex<UInt64PartitionKey>(indexName, createdEvent),
+			KeyType.Unspecified => StartCustomIndex<NullPartitionKey>(indexName, createdEvent),
+			KeyType.Double => StartCustomIndex<DoublePartitionKey>(indexName, createdEvent),
+			KeyType.String => StartCustomIndex<StringPartitionKey>(indexName, createdEvent),
+			KeyType.Int16 => StartCustomIndex<Int16PartitionKey>(indexName, createdEvent),
+			KeyType.Int32 => StartCustomIndex<Int32PartitionKey>(indexName, createdEvent),
+			KeyType.Int64 => StartCustomIndex<Int64PartitionKey>(indexName, createdEvent),
+			KeyType.Uint32 => StartCustomIndex<UInt32PartitionKey>(indexName, createdEvent),
+			KeyType.Uint64 => StartCustomIndex<UInt64PartitionKey>(indexName, createdEvent),
 			_ => throw new ArgumentOutOfRangeException(nameof(createdEvent.PartitionKeyType))
 		};
 	}

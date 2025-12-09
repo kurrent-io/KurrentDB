@@ -37,7 +37,7 @@ public class CustomIndexesGrpcService(
 		TRequest request,
 		IValidator<TRequest> validator,
 		Operation operation,
-		TCommand command,
+		TCommand command, //qq shouldn't need separate command paramter any more, it is just the request
 		Func<Eventuous.Result<CustomIndexState>, TResponse> getResponse,
 		ServerCallContext context)
 		where TCommand : class
@@ -83,7 +83,7 @@ public class CustomIndexesGrpcService(
 			request,
 			CreateCustomIndexValidator.Instance,
 			new Operation(Operations.CustomIndexes.Create),
-			request.ToCommand(),
+			request,
 			response => new CreateCustomIndexResponse(), context);
 
 	public override Task<StartCustomIndexResponse> StartCustomIndex(
@@ -94,7 +94,7 @@ public class CustomIndexesGrpcService(
 			request,
 			StartCustomIndexValidator.Instance,
 			new Operation(Operations.CustomIndexes.Start),
-			request.ToCommand(),
+			request,
 			_ => new StartCustomIndexResponse(), context);
 
 	public override Task<StopCustomIndexResponse> StopCustomIndex(
@@ -105,7 +105,7 @@ public class CustomIndexesGrpcService(
 			request,
 			StopCustomIndexValidator.Instance,
 			new Operation(Operations.CustomIndexes.Stop),
-			request.ToCommand(),
+			request,
 			_ => new StopCustomIndexResponse(), context);
 
 	public override Task<DeleteCustomIndexResponse> DeleteCustomIndex(
@@ -116,7 +116,7 @@ public class CustomIndexesGrpcService(
 			request,
 			DeleteCustomIndexValidator.Instance,
 			new Operation(Operations.CustomIndexes.Delete),
-			request.ToCommand(),
+			request,
 			_ => new DeleteCustomIndexResponse(), context);
 
 	public override async Task<ListCustomIndexesResponse> ListCustomIndexes(
@@ -145,56 +145,6 @@ public class CustomIndexesGrpcService(
 }
 
 file static class Extensions {
-	public static CustomIndexCommands.Create ToCommand(this CreateCustomIndexRequest self) =>
-		new() {
-			Name = self.Name,
-			EventFilter = self.Filter,
-			PartitionKeySelector = self.PartitionKeySelector,
-			PartitionKeyType = self.PartitionKeyType.Convert(),
-			Start = !self.HasStart || self.Start,
-		};
-
-	public static CustomIndexCommands.Start ToCommand(this StartCustomIndexRequest self) =>
-		new() {
-			Name = self.Name,
-		};
-
-	public static CustomIndexCommands.Stop ToCommand(this StopCustomIndexRequest self) =>
-		new() {
-			Name = self.Name,
-		};
-
-	public static CustomIndexCommands.Delete ToCommand(this DeleteCustomIndexRequest self) =>
-		new() {
-			Name = self.Name,
-		};
-
-	private static PartitionKeyType Convert(this KeyType target) =>
-		target switch {
-			KeyType.Unspecified => PartitionKeyType.None,
-			KeyType.String => PartitionKeyType.String,
-			KeyType.Double => PartitionKeyType.Double,
-			KeyType.Int16 => PartitionKeyType.Int16,
-			KeyType.Int32 => PartitionKeyType.Int32,
-			KeyType.Int64 => PartitionKeyType.Int64,
-			KeyType.Uint32 => PartitionKeyType.UInt32,
-			KeyType.Uint64 => PartitionKeyType.UInt64,
-			_ => throw new ArgumentOutOfRangeException(nameof(target), target, null),
-		};
-
-	private static KeyType Convert(this PartitionKeyType target) =>
-		target switch {
-			PartitionKeyType.None => KeyType.Unspecified,
-			PartitionKeyType.String => KeyType.String,
-			PartitionKeyType.Double => KeyType.Double,
-			PartitionKeyType.Int16 => KeyType.Int16,
-			PartitionKeyType.Int32 => KeyType.Int32,
-			PartitionKeyType.Int64 => KeyType.Int64,
-			PartitionKeyType.UInt32 => KeyType.Uint32,
-			PartitionKeyType.UInt64 => KeyType.Uint64,
-			_ => throw new ArgumentOutOfRangeException(nameof(target), target, null),
-		};
-
 	private static CustomIndexStatus Convert(this CustomIndexReadsideService.Status target) =>
 		target switch {
 			CustomIndexReadsideService.Status.None => CustomIndexStatus.Unspecified,
@@ -207,7 +157,7 @@ file static class Extensions {
 	public static Protocol.V2.CustomIndexes.CustomIndex Convert(this CustomIndexReadsideService.CustomIndexState self) => new() {
 		Filter = self.EventFilter,
 		PartitionKeySelector = self.PartitionKeySelector,
-		PartitionKeyType = self.PartitionKeyType.Convert(),
+		PartitionKeyType = self.PartitionKeyType,
 		Status = self.Status.Convert(),
 	};
 
