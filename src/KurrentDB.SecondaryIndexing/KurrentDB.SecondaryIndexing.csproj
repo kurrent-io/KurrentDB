@@ -4,6 +4,7 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<EnableDynamicLoading>true</EnableDynamicLoading>
+		<IncludeHttpRuleProtos>true</IncludeHttpRuleProtos>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -12,9 +13,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Grpc.Tools" />
 		<PackageReference Include="Kurrent.Quack" />
 		<PackageReference Include="Kurrent.Surge.Core" />
 		<PackageReference Include="Eventuous.Application" />
+		<PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" />
 		<PackageReference Include="System.Linq.Async">
 			<ExcludeAssets>compile</ExcludeAssets>
 		</PackageReference>
@@ -27,6 +30,17 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<!-- //qq consider separate project like schemareg .protocol' does -->
+		<Protobuf
+			ProtoRoot="../../proto/kurrentdb/protocol/v2"
+			Include="../../proto/kurrentdb/protocol/v2/custom-indexes/custom-indexes.proto"
+			Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"
+			GrpcServices="Both"
+			Access="Public"
+			AdditionalImportDirs="../../proto" />
+	</ItemGroup>
+
+		<ItemGroup>
 	  <ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
 	  <ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
 	</ItemGroup>
