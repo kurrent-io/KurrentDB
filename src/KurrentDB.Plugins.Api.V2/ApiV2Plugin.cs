@@ -13,7 +13,6 @@ using KurrentDB.Api.Modules.CustomIndexes;
 using KurrentDB.Api.Streams.Validators;
 using KurrentDB.Core;
 using KurrentDB.Protocol.V2.CustomIndexes;
-using KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,9 +25,6 @@ namespace KurrentDB.Plugins.Api.V2;
 public class ApiV2Plugin() : SubsystemsPlugin("APIV2") {
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
         services
-            .AddSingleton<CustomIndexStreamNameMap>()
-            .AddSingleton<CustomIndexReadsideService>()
-            .AddCommandService<CustomIndexDomainService, CustomIndexState>()
             .AddGrpc()
             .AddJsonTranscoding(options => {
                 options.TypeRegistry = TypeRegistry.FromFiles(

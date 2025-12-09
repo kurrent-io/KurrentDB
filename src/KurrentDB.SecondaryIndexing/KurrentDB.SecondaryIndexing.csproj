@@ -17,6 +17,7 @@
 		<PackageReference Include="Kurrent.Quack" />
 		<PackageReference Include="Kurrent.Surge.Core" />
 		<PackageReference Include="Eventuous.Application" />
+		<PackageReference Include="Eventuous.Extensions.DependencyInjection" />
 		<PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" />
 		<PackageReference Include="System.Linq.Async">
 			<ExcludeAssets>compile</ExcludeAssets>

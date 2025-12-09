@@ -46,6 +46,9 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 			.Get<SecondaryIndexingPluginOptions>() ?? new();
 		services.AddSingleton(options);
 
+		services.AddCommandService<CustomIndexDomainService, CustomIndexState>();
+		services.AddSingleton<CustomIndexStreamNameMap>();
+		services.AddSingleton<CustomIndexReadsideService>();
 		services.AddSingleton<CustomIndexManager>();
 		services.AddDuckDBSetup<IndexingDbSchema>();
 		services.AddDuckDBSetup<InFlightSetup>();
