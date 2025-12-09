@@ -23,9 +23,8 @@ message GetCustomIndexResponse {
 
 message CustomIndex {
   string filter = 1;
-  string partition_key_selector = 2;
-  KeyType partition_key_type = 3;
-  CustomIndexStatus status = 4;
+  repeated Field fields = 2;
+  CustomIndexStatus status = 3;
 }
 
 enum CustomIndexStatus {

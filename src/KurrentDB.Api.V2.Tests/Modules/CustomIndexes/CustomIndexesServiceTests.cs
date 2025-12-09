@@ -21,8 +21,13 @@ public class CustomIndexesServiceTests {
 			new() {
 				Name = customIndexName,
 				Filter = "e => e.type == 'my-event-type'",
-				PartitionKeySelector = "e => e.number",
-				PartitionKeyType = KeyType.Int32,
+				Fields = {
+					new Field() {
+						Name = "number",
+						Selector = "e => e.number",
+						Type = FieldType.Int32,
+					},
+				},
 			},
 			cancellationToken: ct);
 		await can_get(customIndexName, CustomIndexStatus.Started, ct);
@@ -34,8 +39,13 @@ public class CustomIndexesServiceTests {
 			new() {
 				Name = CustomIndexName,
 				Filter = "e => e.type == 'my-event-type'",
-				PartitionKeySelector = "e => e.number",
-				PartitionKeyType = KeyType.Int32,
+				Fields = {
+					new Field() {
+						Name = "number",
+						Selector = "e => e.number",
+						Type = FieldType.Int32,
+					},
+				},
 				Start = false,
 			},
 			cancellationToken: ct);
@@ -49,8 +59,13 @@ public class CustomIndexesServiceTests {
 			new() {
 				Name = CustomIndexName,
 				Filter = "e => e.type == 'my-event-type'",
-				PartitionKeySelector = "e => e.number",
-				PartitionKeyType = KeyType.Int32,
+				Fields = {
+					new Field() {
+						Name = "number",
+						Selector = "e => e.number",
+						Type = FieldType.Int32,
+					},
+				},
 				Start = false,
 			},
 			cancellationToken: ct);
@@ -66,8 +81,13 @@ public class CustomIndexesServiceTests {
 					new() {
 						Name = CustomIndexName,
 						Filter = "e => e.type == 'my-OTHER-event-type'",
-						PartitionKeySelector = "e => e.number",
-						PartitionKeyType = KeyType.Int32,
+						Fields = {
+							new Field() {
+								Name = "number",
+								Selector = "e => e.number",
+								Type = FieldType.Int32,
+							},
+						},
 					},
 					cancellationToken: ct);
 			})
@@ -120,8 +140,9 @@ public class CustomIndexesServiceTests {
 
 		await Assert.That(response!.CustomIndexes.TryGetValue(CustomIndexName, out var customIndexState)).IsTrue();
 		await Assert.That(customIndexState!.Filter).IsEqualTo("e => e.type == 'my-event-type'");
-		await Assert.That(customIndexState!.PartitionKeySelector).IsEqualTo("e => e.number");
-		await Assert.That(customIndexState!.PartitionKeyType).IsEqualTo(KeyType.Int32);
+		await Assert.That(customIndexState!.Fields.Count).IsEqualTo(1);
+		await Assert.That(customIndexState!.Fields[0].Selector).IsEqualTo("e => e.number");
+		await Assert.That(customIndexState!.Fields[0].Type).IsEqualTo(FieldType.Int32);
 		await Assert.That(customIndexState!.Status).IsEqualTo(CustomIndexStatus.Stopped);
 	}
 
@@ -159,8 +180,13 @@ public class CustomIndexesServiceTests {
 					new() {
 						Name = name,
 						Filter = "e => e.type == 'my-event-type'",
-						PartitionKeySelector = "e => e.number",
-						PartitionKeyType = KeyType.Int32,
+						Fields = {
+							new Field() {
+								Name = "number",
+								Selector = "e => e.number",
+								Type = FieldType.Int32,
+							},
+						},
 					},
 					cancellationToken: ct);
 			})
@@ -181,8 +207,13 @@ public class CustomIndexesServiceTests {
 					new() {
 						Name = $"{nameof(cannot_create_with_invalid_filter)}-{Guid.NewGuid()}",
 						Filter = filter,
-						PartitionKeySelector = "e => e.number",
-						PartitionKeyType = KeyType.Int32,
+						Fields = {
+							new Field() {
+								Name = "number",
+								Selector = "e => e.number",
+								Type = FieldType.Int32,
+							},
+						},
 					},
 					cancellationToken: ct);
 			})
@@ -203,14 +234,19 @@ public class CustomIndexesServiceTests {
 					new() {
 						Name = $"{nameof(cannot_create_with_invalid_filter)}-{Guid.NewGuid()}",
 						Filter = "e => e.type == 'my-event-type'",
-						PartitionKeySelector = keySelector,
-						PartitionKeyType = KeyType.Int32,
+						Fields = {
+							new Field() {
+								Name = "the-field",
+								Selector = keySelector,
+								Type = FieldType.Int32,
+							},
+						},
 					},
 					cancellationToken: ct);
 			})
 			.Throws<RpcException>();
 
-		await Assert.That(ex!.Status.Detail).IsEqualTo("Partition key selector must be empty or a valid JavaScript function with exactly one argument");
+		await Assert.That(ex!.Status.Detail).IsEqualTo("Field selector must be empty or a valid JavaScript function with exactly one argument");
 		await Assert.That(ex!.Status.StatusCode).IsEqualTo(StatusCode.InvalidArgument);
 	}
 
@@ -223,13 +259,18 @@ public class CustomIndexesServiceTests {
 	//			await Client.CreateCustomIndexAsync(new() {
 	//				Name = $"{nameof(cannot_create_with_invalid_filter)}-{Guid.NewGuid()}",
 	//				Filter = "e => e.type == 'my-event-type'",
-	//				PartitionKeySelector = "e => e.number",
-	//				PartitionKeyType = KeyType.Unspecified,
+	//				Fields = {
+	//					new Field() {
+	//						Name = "number",
+	//						Selector = "e => e.number",
+	//						Type = FieldType.Unspecified,
+	//					},
+	//				},
 	//			}); //qq ct
 	//		})
 	//		.Throws<RpcException>();
 
-	//	await Assert.That(ex!.Status.Detail).IsEqualTo("Partition key selector must be a valid JavaScript function with exactly one argument");
+	//	await Assert.That(ex!.Status.Detail).IsEqualTo("Field selector must be a valid JavaScript function with exactly one argument");
 	//	await Assert.That(ex!.Status.StatusCode).IsEqualTo(StatusCode.InvalidArgument);
 	//}
 
@@ -285,8 +326,9 @@ public class CustomIndexesServiceTests {
 			new() { Name = customIndexName },
 			cancellationToken: ct);
 		await Assert.That(response.CustomIndex.Filter).IsEqualTo("e => e.type == 'my-event-type'");
-		await Assert.That(response.CustomIndex.PartitionKeySelector).IsEqualTo("e => e.number");
-		await Assert.That(response.CustomIndex.PartitionKeyType).IsEqualTo(KeyType.Int32);
+		await Assert.That(response.CustomIndex.Fields.Count).IsEqualTo(1);
+		await Assert.That(response.CustomIndex.Fields[0].Selector).IsEqualTo("e => e.number");
+		await Assert.That(response.CustomIndex.Fields[0].Type).IsEqualTo(FieldType.Int32);
 		await Assert.That(response.CustomIndex.Status).IsEqualTo(expectedStatus);
 	}
 

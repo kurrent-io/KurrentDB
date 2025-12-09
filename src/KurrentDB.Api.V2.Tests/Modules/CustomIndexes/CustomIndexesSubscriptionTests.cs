@@ -47,8 +47,13 @@ public class CustomIndexesSubscriptionTests {
 			new() {
 				Name = CustomIndexName,
 				Filter = $"e => e.type == '{EventType}'",
-				PartitionKeySelector = "e => e.data.country",
-				PartitionKeyType = KeyType.String,
+				Fields = {
+					new Field() {
+						Name = "country",
+						Selector = "e => e.data.country",
+						Type = FieldType.String,
+					},
+				},
 			},
 			cancellationToken: ct);
 

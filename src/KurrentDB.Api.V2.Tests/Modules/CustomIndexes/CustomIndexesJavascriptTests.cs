@@ -28,15 +28,21 @@ public class CustomIndexesJavascriptTests {
 			new() {
 				Name = CustomIndexName,
 				Filter = $"e => e.type == '{EventType}'",
-				PartitionKeySelector = """
-					e => {
-						let color = e.data.color;
-						if (color == 'green')
-							return skip;
-						return color;
-					}
-				""",
-				PartitionKeyType = KeyType.String,
+				Fields = {
+					new Field {
+						Name = "color",
+						Selector = """
+							e => {
+								let color = e.data.color;
+								if (color == 'green')
+									return skip;
+								return color;
+							}
+							""",
+						Type = FieldType.String,
+						
+					},
+				},
 			},
 			cancellationToken: ct);
 
@@ -63,33 +69,38 @@ public class CustomIndexesJavascriptTests {
 	}
 
 	[Test]
-	[Arguments(KeyType.String, """ "blue" """, """ "red" """, "red")]
-	[Arguments(KeyType.String, """ "blue:2" """, """ "red:3" """, "red:3")]
+	[Arguments(FieldType.String, """ "blue" """, """ "red" """, "red")]
+	[Arguments(FieldType.String, """ "blue:2" """, """ "red:3" """, "red:3")]
 
-	[Arguments(KeyType.Int16,  """ 0.0 """, """ 1.0 """, "1")]
-	[Arguments(KeyType.Int32,  """ 0.0 """, """ 1.0 """, "1")]
-	[Arguments(KeyType.Int64,  """ 0.0 """, """ 1.0 """, "1")]
-	[Arguments(KeyType.Uint32, """ 0.0 """, """ 1.0 """, "1")]
-	[Arguments(KeyType.Uint64, """ 0.0 """, """ 1.0 """, "1")]
+	[Arguments(FieldType.Int16,  """ 0.0 """, """ 1.0 """, "1")]
+	[Arguments(FieldType.Int32,  """ 0.0 """, """ 1.0 """, "1")]
+	[Arguments(FieldType.Int64,  """ 0.0 """, """ 1.0 """, "1")]
+	[Arguments(FieldType.Uint32, """ 0.0 """, """ 1.0 """, "1")]
+	[Arguments(FieldType.Uint64, """ 0.0 """, """ 1.0 """, "1")]
 
-	[Arguments(KeyType.Double, """ 0   """, """ 1   """, "1")]
-	[Arguments(KeyType.Double, """ 0.0 """, """ 1.0 """, "1")]
-	[Arguments(KeyType.Double, """ 1234.56 """, """ 6543.21 """, "6543.21")]
+	[Arguments(FieldType.Double, """ 0   """, """ 1   """, "1")]
+	[Arguments(FieldType.Double, """ 0.0 """, """ 1.0 """, "1")]
+	[Arguments(FieldType.Double, """ 1234.56 """, """ 6543.21 """, "6543.21")]
 	//[Arguments(KeyType.Double,        """ 1234.56 """, """ 6543.21 """, "6543.210")] //qq why doesn't this work
-	public async ValueTask can_partition_by_all_key_types(KeyType keyType, string partition1, string partition2, string partitionFilter, CancellationToken ct) {
+	public async ValueTask can_partition_by_all_key_types(FieldType fieldType, string partition1, string partition2, string partitionFilter, CancellationToken ct) {
 		await Client.CreateCustomIndexAsync(
 			new() {
 				Name = CustomIndexName,
 				Filter = $"e => e.type == '{EventType}'",
-				PartitionKeySelector = "e => e.data.theKey",
-				PartitionKeyType = keyType,
+				Fields = {
+					new Field() {
+						Name = "color",
+						Selector = "e => e.data.color",
+						Type = fieldType,
+					},
+				},
 			},
 			cancellationToken: ct);
 
 		// write an event for one partition
-		await StreamsWriteClient.AppendEvent(Stream, EventType, $$"""{ "orderId": "A", "theKey": {{partition1}} }""", ct);
+		await StreamsWriteClient.AppendEvent(Stream, EventType, $$"""{ "orderId": "A", "color": {{partition1}} }""", ct);
 		// write an event for another partition
-		await StreamsWriteClient.AppendEvent(Stream, EventType, $$"""{ "orderId": "B", "theKey": {{partition2}} }""", ct);
+		await StreamsWriteClient.AppendEvent(Stream, EventType, $$"""{ "orderId": "B", "color": {{partition2}} }""", ct);
 
 		// ensure both events are processed by the custom index
 		var evts = await StreamsReadClient.WaitForCustomIndexEvents(ReadFilter, 2, ct);
@@ -110,8 +121,13 @@ public class CustomIndexesJavascriptTests {
 			new() {
 				Name = CustomIndexName,
 				Filter = $"e => e.type == '{EventType}'",
-				PartitionKeySelector = "e => null", //qq todo: when the partition type is unspecified we probably shouldn't call the selector
-				PartitionKeyType = KeyType.Unspecified,
+				Fields = {
+					new Field() {
+						Name = "null", //qq we could consider making name unnecessary when there is only one field
+						Selector = "e => null", //qq todo: when the partition type is unspecified we probably shouldn't call the selector
+						Type = FieldType.Unspecified,
+					},
+				},
 			},
 			cancellationToken: ct);
 

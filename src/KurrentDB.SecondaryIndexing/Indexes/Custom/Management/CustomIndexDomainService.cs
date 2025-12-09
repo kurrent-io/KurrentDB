@@ -15,11 +15,7 @@ public class CustomIndexDomainService : CommandService<CustomIndex, CustomIndexS
 		On<CreateCustomIndexRequest>()
 			.InState(ExpectedState.Any) // facilitate idempotent create
 			.GetId(cmd => new(cmd.Name))
-			.Act((x, cmd) => x.Create(
-				filter: cmd.Filter,
-				partitionKeySelector: cmd.PartitionKeySelector,
-				partitionKeyType: cmd.PartitionKeyType,
-				start: !cmd.HasStart || cmd.Start));
+			.Act((x, cmd) => x.Create(cmd));
 
 		On<StartCustomIndexRequest>()
 			.InState(ExpectedState.Any) // facilitate throwing our own exceptions if not existing

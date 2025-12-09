@@ -22,8 +22,11 @@ public class CustomIndexesServiceHttpTests {
 			.AddJsonBody("""
 				{
 					"Filter": "e => e.type == 'my-event-type'",
-					"PartitionKeySelector": "e => e.number",
-					"PartitionKeyType": "KEY_TYPE_INT_32",
+					"Fields": [{
+						"Name": "number",
+						"Selector": "e => e.number",
+						"Type": "FIELD_TYPE_INT_32"
+					}],
 					"Start": false
 				}
 				""");
@@ -68,8 +71,9 @@ public class CustomIndexesServiceHttpTests {
 
 		await Assert.That(response!.CustomIndexes.TryGetValue(CustomIndexName, out var customIndexState)).IsTrue();
 		await Assert.That(customIndexState!.Filter).IsEqualTo("e => e.type == 'my-event-type'");
-		await Assert.That(customIndexState!.PartitionKeySelector).IsEqualTo("e => e.number");
-		await Assert.That(customIndexState!.PartitionKeyType).IsEqualTo("KEY_TYPE_INT_32");
+		await Assert.That(customIndexState!.Fields.Length).IsEqualTo(1);
+		await Assert.That(customIndexState!.Fields[0].Selector).IsEqualTo("e => e.number");
+		await Assert.That(customIndexState!.Fields[0].Type).IsEqualTo("FIELD_TYPE_INT_32");
 		await Assert.That(customIndexState!.Status).IsEqualTo("CUSTOM_INDEX_STATUS_STOPPED");
 	}
 
@@ -78,9 +82,14 @@ public class CustomIndexesServiceHttpTests {
 
 		public class CustomIndexState {
 			public string Filter { get; set; } = "";
-			public string PartitionKeySelector { get; set; } = "";
-			public string PartitionKeyType { get; set; } = "";
+			public Field[] Fields { get; set; } = [];
 			public string Status { get; set; } = "";
+		}
+
+		public class Field {
+			public string Name { get; set; } = "";
+			public string Selector { get; set; } = "";
+			public string Type { get; set; } = "";
 		}
 	}
 
@@ -136,8 +145,11 @@ public class CustomIndexesServiceHttpTests {
 			{
 				"customIndex": {
 					"filter": "e => e.type == 'my-event-type'",
-					"partitionKeySelector": "e => e.number",
-					"partitionKeyType": "KEY_TYPE_INT_32",
+					"fields": [{
+						"name": "number",
+						"selector": "e => e.number",
+						"type": "FIELD_TYPE_INT_32"
+					}],
 					"status": "{{expectedStatus}}"
 				}
 			}
@@ -152,8 +164,11 @@ public class CustomIndexesServiceHttpTests {
 			.AddJsonBody("""
 				{
 					"Filter": "e => e.type == 'my-event-type'",
-					"PartitionKeySelector": "e => e.number",
-					"PartitionKeyType": "KEY_TYPE_INT_32"
+					"Fields": [{
+						"Name": "number",
+						"Selector": "e => e.number",
+						"Type": "FIELD_TYPE_INT_32"
+					}]
 				}
 				""");
 

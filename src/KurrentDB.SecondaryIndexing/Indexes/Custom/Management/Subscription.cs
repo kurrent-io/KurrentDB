@@ -199,16 +199,16 @@ public class Subscription : ISecondaryIndexReader {
 	}
 
 	private ValueTask StartCustomIndex(string indexName, CustomIndexCreated createdEvent) {
-		return createdEvent.PartitionKeyType switch {
-			KeyType.Unspecified => StartCustomIndex<NullPartitionKey>(indexName, createdEvent),
-			KeyType.Double => StartCustomIndex<DoublePartitionKey>(indexName, createdEvent),
-			KeyType.String => StartCustomIndex<StringPartitionKey>(indexName, createdEvent),
-			KeyType.Int16 => StartCustomIndex<Int16PartitionKey>(indexName, createdEvent),
-			KeyType.Int32 => StartCustomIndex<Int32PartitionKey>(indexName, createdEvent),
-			KeyType.Int64 => StartCustomIndex<Int64PartitionKey>(indexName, createdEvent),
-			KeyType.Uint32 => StartCustomIndex<UInt32PartitionKey>(indexName, createdEvent),
-			KeyType.Uint64 => StartCustomIndex<UInt64PartitionKey>(indexName, createdEvent),
-			_ => throw new ArgumentOutOfRangeException(nameof(createdEvent.PartitionKeyType))
+		return createdEvent.Fields[0].Type switch {
+			FieldType.Unspecified => StartCustomIndex<NullPartitionKey>(indexName, createdEvent),
+			FieldType.Double => StartCustomIndex<DoublePartitionKey>(indexName, createdEvent),
+			FieldType.String => StartCustomIndex<StringPartitionKey>(indexName, createdEvent),
+			FieldType.Int16 => StartCustomIndex<Int16PartitionKey>(indexName, createdEvent),
+			FieldType.Int32 => StartCustomIndex<Int32PartitionKey>(indexName, createdEvent),
+			FieldType.Int64 => StartCustomIndex<Int64PartitionKey>(indexName, createdEvent),
+			FieldType.Uint32 => StartCustomIndex<UInt32PartitionKey>(indexName, createdEvent),
+			FieldType.Uint64 => StartCustomIndex<UInt64PartitionKey>(indexName, createdEvent),
+			_ => throw new ArgumentOutOfRangeException("Field type")
 		};
 	}
 
@@ -222,7 +222,7 @@ public class Subscription : ISecondaryIndexReader {
 		var processor = new CustomIndexProcessor<TPartitionKey>(
 			indexName: indexName,
 			jsEventFilter: createdEvent.Filter,
-			jsPartitionKeySelector: createdEvent.PartitionKeySelector,
+			jsPartitionKeySelector: createdEvent.Fields[0].Selector,
 			db: _db,
 			sql: sql,
 			inFlightRecords: inFlightRecords,

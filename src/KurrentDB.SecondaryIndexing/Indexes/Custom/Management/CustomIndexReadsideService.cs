@@ -87,17 +87,15 @@ public class CustomIndexReadsideService(
 	}
 
 	public record CustomIndexState : State<CustomIndexState> {
-		public string EventFilter { get; init; } = "";
-		public string PartitionKeySelector { get; init; } = "";
-		public KeyType PartitionKeyType { get; init; }
+		public string Filter { get; init; } = "";
+		public IList<Field> Fields { get; init; } = [];
 		public CustomIndexStatus Status { get; init; }
 
 		public CustomIndexState() {
 			On<CustomIndexCreated>((state, evt) =>
 				state with {
-					EventFilter = evt.Filter,
-					PartitionKeySelector = evt.PartitionKeySelector,
-					PartitionKeyType = evt.PartitionKeyType,
+					Filter = evt.Filter,
+					Fields = evt.Fields,
 					Status = CustomIndexStatus.Stopped,
 				});
 
@@ -137,9 +135,8 @@ public class CustomIndexReadsideService(
 
 file static class Extensions {
 	public static Protocol.V2.CustomIndexes.CustomIndex Convert(this CustomIndexReadsideService.CustomIndexState self) => new() {
-		Filter = self.EventFilter,
-		PartitionKeySelector = self.PartitionKeySelector,
-		PartitionKeyType = self.PartitionKeyType,
+		Filter = self.Filter,
+		Fields = { self.Fields },
 		Status = self.Status,
 	};
 

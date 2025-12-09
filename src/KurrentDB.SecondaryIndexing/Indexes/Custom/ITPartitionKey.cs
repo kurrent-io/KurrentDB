@@ -73,6 +73,7 @@ internal readonly struct UInt64PartitionKey(ulong key) : ITPartitionKey {
 	public override string ToString() => key.ToString();
 }
 
+//qq rename
 internal readonly struct DoublePartitionKey(double key) : ITPartitionKey {
 	public static Type Type { get; } = typeof(double);
 	public static ITPartitionKey ParseFrom(JsValue value) => new DoublePartitionKey(value.AsNumber());

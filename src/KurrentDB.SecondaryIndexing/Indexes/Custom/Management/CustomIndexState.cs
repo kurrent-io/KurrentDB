@@ -8,16 +8,14 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 
 public record CustomIndexState : State<CustomIndexState, CustomIndexId> {
 	public string Filter { get; init; } = "";
-	public string PartitionKeySelector { get; init; } = "";
-	public KeyType PartitionKeyType { get; init; }
+	public IList<Field> Fields { get; init; } = [];
 	public CustomIndexStatus Status { get; init; }
 
 	public CustomIndexState() {
 		On<CustomIndexCreated>((state, evt) =>
 			state with {
 				Filter = evt.Filter,
-				PartitionKeySelector = evt.PartitionKeySelector,
-				PartitionKeyType = evt.PartitionKeyType,
+				Fields = evt.Fields,
 				Status = CustomIndexStatus.Stopped,
 			});
 

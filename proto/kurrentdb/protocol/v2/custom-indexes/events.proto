@@ -8,8 +8,7 @@ import "custom-indexes/shared.proto";
 
 message CustomIndexCreated {
   string filter = 1;
-  string partition_key_selector = 2;
-  KeyType partition_key_type = 3;
+  repeated Field fields = 2;
 }
 
 message CustomIndexStarted {

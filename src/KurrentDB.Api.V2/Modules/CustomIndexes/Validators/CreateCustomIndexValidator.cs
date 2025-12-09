@@ -17,7 +17,12 @@ class CreateCustomIndexValidator : RequestValidator<CreateCustomIndexRequest> {
 		RuleFor(x => x.Filter)
 			.SetValidator(FilterValidator.Instance);
 
-		RuleFor(x => x.PartitionKeySelector)
-			.SetValidator(PartitionKeySelectorValidator.Instance);
+		//qq field names will need to be unique within the request
+		RuleForEach(x => x.Fields)
+			.SetValidator(FieldValidator.Instance);
+
+		RuleFor(x => x.Fields)
+			.Must(x => x.Count == 1)
+			.WithMessage("Currently exactly one custom index field must be provided");
 	}
 }
