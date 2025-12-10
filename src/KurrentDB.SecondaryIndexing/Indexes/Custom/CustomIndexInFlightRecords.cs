@@ -5,25 +5,25 @@ using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom;
 
-internal record struct CustomIndexInFlightRecord(
+internal record struct CustomIndexInFlightRecord<TField>(
 	long LogPosition,
 	long CommitPosition,
 	long EventNumber,
 	long Created,
-	IField? Field
+	TField? Field
 );
 
-internal class CustomIndexInFlightRecords(SecondaryIndexingPluginOptions options) {
-	private readonly CustomIndexInFlightRecord[] _records = new CustomIndexInFlightRecord[options.CommitBatchSize];
+internal class CustomIndexInFlightRecords<TField>(SecondaryIndexingPluginOptions options) {
+	private readonly CustomIndexInFlightRecord<TField>[] _records = new CustomIndexInFlightRecord<TField>[options.CommitBatchSize];
 
 	private uint _version; // used for optimistic lock
 	private int _count;
 
 	public int Count => _count;
 
-	public void Append(long logPosition, long commitPosition, long eventNumber, IField? field, long created) {
+	public void Append(long logPosition, long commitPosition, long eventNumber, TField? field, long created) {
 		var count = _count;
-		_records[count] = new CustomIndexInFlightRecord {
+		_records[count] = new CustomIndexInFlightRecord<TField> {
 			LogPosition = logPosition,
 			CommitPosition = commitPosition,
 			EventNumber = eventNumber,
@@ -43,7 +43,7 @@ internal class CustomIndexInFlightRecords(SecondaryIndexingPluginOptions options
 	}
 
 	// read is protected by optimistic lock
-	private bool TryRead(uint currentVer, int index, out CustomIndexInFlightRecord record) {
+	private bool TryRead(uint currentVer, int index, out CustomIndexInFlightRecord<TField> record) {
 		record = _records[index];
 
 		// ensure that the record is copied before the comparison
@@ -55,7 +55,7 @@ internal class CustomIndexInFlightRecords(SecondaryIndexingPluginOptions options
 		long startPosition,
 		int maxCount,
 		bool excludeFirst,
-		Func<CustomIndexInFlightRecord, bool>? query = null) {
+		Func<CustomIndexInFlightRecord<TField>, bool>? query = null) {
 		query ??= True; // to avoid branching in the loop
 
 		var isComplete = false;
@@ -93,7 +93,7 @@ internal class CustomIndexInFlightRecords(SecondaryIndexingPluginOptions options
 		long startPosition,
 		int maxCount,
 		bool excludeFirst,
-		Func<CustomIndexInFlightRecord, bool>? query = null) {
+		Func<CustomIndexInFlightRecord<TField>, bool>? query = null) {
 		query ??= True; // to avoid branching in the loop
 
 		var count = Volatile.Read(in _count);
@@ -119,9 +119,9 @@ internal class CustomIndexInFlightRecords(SecondaryIndexingPluginOptions options
 		}
 	}
 
-	private static bool True(CustomIndexInFlightRecord record) => true;
+	private static bool True(CustomIndexInFlightRecord<TField> record) => true;
 
-	public IEnumerable<CustomIndexInFlightRecord> GetInFlightRecords() {
+	public IEnumerable<CustomIndexInFlightRecord<TField>> GetInFlightRecords() {
 		var currentVer = _version;
 		for (int i = 0, count = Volatile.Read(in _count);
 			 i < count && TryRead(currentVer, i, out var current);

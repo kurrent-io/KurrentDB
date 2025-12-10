@@ -11,7 +11,7 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Custom;
 internal class CustomIndexReader<TField>(
 	DuckDBConnectionPool sharedPool,
 	CustomIndexSql<TField> sql,
-	CustomIndexInFlightRecords inFlightRecords,
+	CustomIndexInFlightRecords<TField> inFlightRecords,
 	IReadIndex<string> index
 ) : SecondaryIndexReaderBase(sharedPool, index) where TField : IField {
 
@@ -26,7 +26,7 @@ internal class CustomIndexReader<TField>(
 			return ([], true);
 
 		return inFlightRecords.GetInFlightRecordsForwards(startPosition, maxCount, excludeFirst, Filter);
-		bool Filter(CustomIndexInFlightRecord r) => id is null || field.Equals(r.Field);
+		bool Filter(CustomIndexInFlightRecord<TField> r) => id is null || EqualityComparer<TField>.Default.Equals(r.Field, field!);
 	}
 
 	protected override List<IndexQueryRecord> GetDbRecordsForwards(DuckDBConnectionPool db, string? id, long startPosition, long endPosition, int maxCount, bool excludeFirst) {
@@ -38,7 +38,7 @@ internal class CustomIndexReader<TField>(
 			EndPosition = endPosition,
 			ExcludeFirst = excludeFirst,
 			Count = maxCount,
-			Field = field
+			Field = id is null ? new NullField() : field!
 		};
 
 		return sql.ReadCustomIndexForwardsQuery(db, args);
@@ -49,7 +49,7 @@ internal class CustomIndexReader<TField>(
 			return [];
 
 		return inFlightRecords.GetInFlightRecordsBackwards(startPosition, maxCount, excludeFirst, Filter);
-		bool Filter(CustomIndexInFlightRecord r) => id is null || field.Equals(r.Field);
+		bool Filter(CustomIndexInFlightRecord<TField> r) => id is null || EqualityComparer<TField>.Default.Equals(r.Field, field!);
 	}
 
 	protected override List<IndexQueryRecord> GetDbRecordsBackwards(DuckDBConnectionPool db, string? id, long startPosition, int maxCount, bool excludeFirst) {
@@ -60,7 +60,7 @@ internal class CustomIndexReader<TField>(
 			StartPosition = startPosition,
 			Count = maxCount,
 			ExcludeFirst = excludeFirst,
-			Field = field
+			Field = id is null ? new NullField() : field!
 		};
 
 		return sql.ReadCustomIndexBackwardsQuery(db, args);
@@ -69,14 +69,14 @@ internal class CustomIndexReader<TField>(
 	public override TFPos GetLastIndexedPosition(string _) => throw new NotSupportedException(); // never called
 	public override bool CanReadIndex(string _) => throw new NotSupportedException(); // never called
 
-	private static bool TryGetField(string? id, out IField field) {
-		field = new NullField();
+	private static bool TryGetField(string? id, out TField? field) {
+		field = default;
 
 		if (id is null)
 			return true;
 
 		try {
-			field = TField.ParseFrom(id);
+			field = (TField) TField.ParseFrom(id);
 			return true;
 		} catch {
 			// invalid field

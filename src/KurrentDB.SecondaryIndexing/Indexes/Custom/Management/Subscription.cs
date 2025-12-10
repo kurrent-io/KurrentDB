@@ -215,7 +215,7 @@ public class Subscription : ISecondaryIndexReader {
 	private async ValueTask StartCustomIndex<TField>(string indexName, CustomIndexCreated createdEvent) where TField : IField {
 		Log.Debug("Starting custom index: {index}", indexName);
 
-		var inFlightRecords = new CustomIndexInFlightRecords(_options);
+		var inFlightRecords = new CustomIndexInFlightRecords<TField>(_options);
 
 		var sql = new CustomIndexSql<TField>(indexName);
 

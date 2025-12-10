@@ -33,7 +33,7 @@ internal class CustomIndexProcessor<TField> : CustomIndexProcessor where TField 
 	private readonly Function? _filter;
 	private readonly Function? _fieldSelector;
 	private readonly ResolvedEventJsObject _resolvedEventJsObject;
-	private readonly CustomIndexInFlightRecords _inFlightRecords;
+	private readonly CustomIndexInFlightRecords<TField> _inFlightRecords;
 	private readonly string _inFlightTableName;
 	private readonly IPublisher _publisher;
 	private readonly DuckDBAdvancedConnection _connection;
@@ -55,7 +55,7 @@ internal class CustomIndexProcessor<TField> : CustomIndexProcessor where TField 
 		string jsFieldSelector,
 		DuckDBConnectionPool db,
 		CustomIndexSql<TField> sql,
-		CustomIndexInFlightRecords inFlightRecords,
+		CustomIndexInFlightRecords<TField> inFlightRecords,
 		IPublisher publisher,
 		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)]
 		Meter meter,
@@ -143,8 +143,8 @@ internal class CustomIndexProcessor<TField> : CustomIndexProcessor where TField 
 		return true;
 	}
 
-	private bool CanHandleEvent(ResolvedEvent resolvedEvent, out IField? field) {
-		field = null;
+	private bool CanHandleEvent(ResolvedEvent resolvedEvent, out TField? field) {
+		field = default;
 
 		try {
 			_resolvedEventJsObject.StreamId = resolvedEvent.OriginalEvent.EventStreamId;
@@ -166,7 +166,7 @@ internal class CustomIndexProcessor<TField> : CustomIndexProcessor where TField 
 				var fieldJsValue = _fieldSelector.Call(_resolvedEventJsObject);
 				if (_skip.Equals(fieldJsValue))
 					return false;
-				field = TField.ParseFrom(fieldJsValue);
+				field = (TField) TField.ParseFrom(fieldJsValue);
 			}
 
 			return true;
@@ -261,7 +261,7 @@ internal class CustomIndexProcessor<TField> : CustomIndexProcessor where TField 
 		}
 
 		void MapperCallback(object? item, IDuckDBDataWriter[] writers, ulong rowIndex) {
-			var record = (CustomIndexInFlightRecord)item!;
+			var record = (CustomIndexInFlightRecord<TField>)item!;
 			writers[0].WriteValue(record.LogPosition, rowIndex);
 			writers[1].WriteValue(record.EventNumber, rowIndex);
 			writers[2].WriteValue(record.Created, rowIndex);
