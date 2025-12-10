@@ -47,32 +47,32 @@ public class SystemProducer : IProducer {
             .Build();
     }
 
-    SystemProducerOptions              Options            { get; }
-    ISystemClient                      Client             { get; }
-    Serialize                          Serialize          { get; }
-    ManualResetEventSlim               Flushing           { get; }
-    InterceptorController              Interceptors       { get; }
-    Func<ProducerLifecycleEvent, Task> Intercept          { get; }
-    ResiliencePipeline                 ResiliencePipeline { get; }
+    SystemProducerOptions                   Options            { get; }
+    ISystemClient                           Client             { get; }
+    Serialize                               Serialize          { get; }
+    ManualResetEventSlim                    Flushing           { get; }
+    InterceptorController                   Interceptors       { get; }
+    Func<ProducerLifecycleEvent, ValueTask> Intercept          { get; }
+    ResiliencePipeline                      ResiliencePipeline { get; }
 
     public string  ProducerId       => Options.ProducerId;
     public string  ClientId         => Options.ClientId;
     public string? Stream           => Options.DefaultStream;
     public int     InFlightMessages => 0;
 
-    public Task Produce(ProduceRequest request, OnProduceResult onResult) =>
+    public ValueTask Produce(ProduceRequest request, OnProduceResult onResult) =>
         ProduceInternal(request, new ProduceResultCallback(onResult));
 
-    public Task Produce<TState>(ProduceRequest request, OnProduceResult<TState> onResult, TState state) =>
+    public ValueTask Produce<TState>(ProduceRequest request, OnProduceResult<TState> onResult, TState state) =>
         ProduceInternal(request, new ProduceResultCallback<TState>(onResult, state));
 
-    public Task Produce<TState>(ProduceRequest request, ProduceResultCallback<TState> callback) =>
+    public ValueTask Produce<TState>(ProduceRequest request, ProduceResultCallback<TState> callback) =>
         ProduceInternal(request, callback);
 
-    public Task Produce(ProduceRequest request, ProduceResultCallback callback) =>
+    public ValueTask Produce(ProduceRequest request, ProduceResultCallback callback) =>
         ProduceInternal(request, callback);
 
-    async Task ProduceInternal(ProduceRequest request, IProduceResultCallback callback) {
+    async ValueTask ProduceInternal(ProduceRequest request, IProduceResultCallback callback) {
         Ensure.NotDefault(request, ProduceRequest.Empty);
         Ensure.NotNull(callback);
 
@@ -116,7 +116,7 @@ public class SystemProducer : IProducer {
 
         return;
 
-        static async Task<ProduceResult> WriteEvents(ISystemClient client, ProduceRequest request, Event[] events, long expectedRevision, ResiliencePipeline resiliencePipeline) {
+        static async ValueTask<ProduceResult> WriteEvents(ISystemClient client, ProduceRequest request, Event[] events, long expectedRevision, ResiliencePipeline resiliencePipeline) {
             var state = (Client: client, Request: request, Events: events, ExpectedRevision: expectedRevision);
 
             try {
@@ -145,7 +145,7 @@ public class SystemProducer : IProducer {
                 return ProduceResult.Failed(request, err);
             }
 
-            static async Task<ProduceResult> WriteEvents(ISystemClient client, ProduceRequest request, Event[] events, long expectedRevision, CancellationToken cancellationToken) {
+            static async ValueTask<ProduceResult> WriteEvents(ISystemClient client, ProduceRequest request, Event[] events, long expectedRevision, CancellationToken cancellationToken) {
                 try {
                     var (position, streamRevision) = await client.Writing.WriteEvents(request.Stream, events, expectedRevision, cancellationToken);
 
@@ -164,7 +164,7 @@ public class SystemProducer : IProducer {
         }
     }
 
-    public async Task<(int Flushed, int Inflight)> Flush(CancellationToken cancellationToken = default) {
+    public async ValueTask<(int Flushed, int Inflight)> Flush(CancellationToken cancellationToken = default) {
         try {
             Flushing.Reset();
             await Intercept(new ProducerFlushed(this, 0, 0));

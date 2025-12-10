@@ -19,7 +19,7 @@ public class ConnectorsActivator(CreateConnector createConnector) {
     CreateConnector     CreateConnector { get; } = createConnector;
     ActivatedConnectors Connectors      { get; } = [];
 
-    public async Task<ActivateResult> Activate(
+    public async ValueTask<ActivateResult> Activate(
         ConnectorId connectorId,
         IDictionary<string, string?> settings,
         int revision,
@@ -53,7 +53,7 @@ public class ConnectorsActivator(CreateConnector createConnector) {
             return ActivateResult.UnknownError(ex);
         }
 
-        async Task Teardown() {
+        async ValueTask Teardown() {
 	        try {
 		        await connector.Instance.DisposeAsync();
 		        await connector.Instance.Stopped;
@@ -63,7 +63,7 @@ public class ConnectorsActivator(CreateConnector createConnector) {
         }
     }
 
-    public async Task<DeactivateResult> Deactivate(ConnectorId connectorId) {
+    public async ValueTask<DeactivateResult> Deactivate(ConnectorId connectorId) {
         if (!Connectors.TryRemove(connectorId, out var connector))
             return DeactivateResult.ConnectorNotFound();
 
@@ -77,7 +77,7 @@ public class ConnectorsActivator(CreateConnector createConnector) {
         }
     }
 
-    public async Task<DeactivateResult> WaitForDeactivation(ConnectorId connectorId) {
+    public async ValueTask<DeactivateResult> WaitForDeactivation(ConnectorId connectorId) {
         if (!Connectors.TryRemove(connectorId, out var connector))
             return DeactivateResult.ConnectorNotFound();
 

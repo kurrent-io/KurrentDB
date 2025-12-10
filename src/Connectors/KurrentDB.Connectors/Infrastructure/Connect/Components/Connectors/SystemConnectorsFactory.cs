@@ -4,24 +4,30 @@
 // ReSharper disable InconsistentNaming
 // ReSharper disable CheckNamespace
 
+using Kurrent.Connectors.Sql;
 using Kurrent.Surge.Connectors.Sinks;
 using Kurrent.Surge;
 using Kurrent.Surge.Connectors;
 using Kurrent.Surge.Connectors.Diagnostics.Metrics;
 using Kurrent.Surge.Connectors.Sinks.Diagnostics.Metrics;
+using Kurrent.Surge.Connectors.Sources;
 using Kurrent.Surge.Consumers;
 using Kurrent.Surge.Consumers.Configuration;
 using Kurrent.Surge.Interceptors;
 using Kurrent.Surge.Persistence.State;
 using Kurrent.Surge.Processors;
+using Kurrent.Surge.Reducers;
+using Kurrent.Surge.Schema;
 using Kurrent.Surge.Transformers;
 
 using KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
 using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
 using KurrentDB.Core;
 using KurrentDB.Surge.Processors;
+using KurrentDB.Surge.Producers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using AutoLockOptions = Kurrent.Surge.Processors.Configuration.AutoLockOptions;
@@ -42,6 +48,7 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ISe
     static DisposeCallback? OnDisposeCallback;
 
     public IConnector CreateConnector(ConnectorId connectorId, IConfiguration configuration) {
+        var options       = configuration.GetRequiredOptions<ConnectorOptions>();
         var validator     = Services.GetRequiredService<IConnectorValidator>();
         var dataProtector = Services.GetRequiredService<IConnectorDataProtector>();
 
@@ -49,37 +56,75 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ISe
 
         validator.EnsureValid(config);
 
-        var sinkOptions = config.GetRequiredOptions<SinkOptions>();
+        var connector = CreateConnectorInstance(options.InstanceTypeName);
 
-        var sink = CreateSink(sinkOptions.InstanceTypeName);
+        return connector switch {
+	        ISink   => CreateSinkConnector(),
+	        ISource => CreateSourceConnector(),
+	        _       => throw new InvalidOperationException($"Unexpected connector type: {connector.GetType().Name}")
+        };
 
-        if (sinkOptions.Transformer.Enabled) {
-	        var transformer = new JintRecordTransformer(sinkOptions.Transformer.DecodeFunction()) {
-                // ReSharper disable once AccessToModifiedClosure
-                ErrorCallback = errorType => SinkMetrics.TrackTransformError(connectorId, sink.MetricsLabel, errorType)
-	        };
-	        sink = new RecordTransformerSink(sink, transformer);
+        SinkConnector CreateSinkConnector() {
+	        var sinkOptions = config.GetRequiredOptions<SinkOptions>();
+
+
+	        if (sinkOptions.Transformer.Enabled) {
+		        var transformer = new JintRecordTransformer(sinkOptions.Transformer.DecodeFunction()) {
+			        // ReSharper disable once AccessToModifiedClosure
+			        ErrorCallback = errorType => SinkMetrics.TrackTransformError(connectorId, connector.MetricsLabel, errorType)
+		        };
+		        connector = new RecordTransformerSink(connector, transformer);
+	        }
+
+	        if (ConnectorCatalogue.TryGetConnector(connector.GetType(), out ConnectorCatalogueItem item) && item.ConnectorType == typeof(SqlSink)) {
+                var mappings = sinkOptions.Reducer.DecodeMappings();
+                var reducer = new JintSqlReducer(mappings) {
+                    // ReSharper disable once AccessToModifiedClosure
+                    ErrorCallback = errorType => SinkMetrics.TrackReduceError(connectorId, connector.MetricsLabel, errorType)
+                };
+
+                connector = new SqlReducerSink(connector, reducer);
+	        }
+
+	        ConnectorMetrics.TrackSinkConnectorCreated(connector.GetType(), connectorId);
+
+	        OnDisposeCallback = () => ConnectorMetrics.TrackSinkConnectorClosed(connector.GetType(), connectorId);
+
+	        var sinkProxy = new SinkProxy(connectorId, connector, config, Services);
+
+	        var processor = ConfigureSinkProcessor(connectorId, Options.Interceptors, sinkOptions, sinkProxy);
+
+	        return new SinkConnector(processor, sinkProxy);
         }
 
-        ConnectorMetrics.TrackSinkConnectorCreated(sink.GetType(), connectorId);
+        SourceConnector CreateSourceConnector() {
+	        var sourceOptions = configuration.GetRequiredOptions<SourceOptions>();
 
-        OnDisposeCallback = () => ConnectorMetrics.TrackSinkConnectorClosed(sink.GetType(), connectorId);
+	        ConnectorMetrics.TrackSourceConnectorCreated(connector.GetType(), connectorId);
 
-        var sinkProxy = new SinkProxy(connectorId, sink, config, Services);
+	        OnDisposeCallback = () => ConnectorMetrics.TrackSourceConnectorClosed(connector.GetType(), connectorId);
 
-        var processor = ConfigureProcessor(connectorId, Options.Interceptors, sinkOptions, sinkProxy);
+	        var sourceProxy = new SourceProxy(connectorId, connector, configuration, Services);
 
-        return new SinkConnector(processor, sinkProxy);
+	        var processor = ConfigureSourceProcessor(connectorId, Options.Interceptors, sourceOptions, sourceProxy);
 
-        static ISink CreateSink(string connectorTypeName) {
-            if (!ConnectorCatalogue.TryGetConnector(connectorTypeName, out var connector))
-                throw new ArgumentException($"Failed to find sink {connectorTypeName}", nameof(connectorTypeName));
+	        return new SourceConnector(connectorId, processor);
+        }
 
-            return (Activator.CreateInstance(connector.ConnectorType) as ISink)!;
+        dynamic CreateConnectorInstance(string connectorTypeName) {
+            try {
+                if (!ConnectorCatalogue.TryGetConnector(connectorTypeName, out var conn))
+                    throw new ArgumentException($"Failed to find sink {connectorTypeName}", nameof(connectorTypeName));
+
+                return Activator.CreateInstance(conn.ConnectorType)!;
+            }
+            catch (Exception ex) {
+                throw new($"Failed to create connector {connectorTypeName}", ex);
+            }
         }
     }
 
-    IProcessor ConfigureProcessor(ConnectorId connectorId, LinkedList<InterceptorModule> interceptors, SinkOptions sinkOptions, SinkProxy sinkProxy) {
+    IProcessor ConfigureSinkProcessor(ConnectorId connectorId, LinkedList<InterceptorModule> interceptors, SinkOptions sinkOptions, SinkProxy sinkProxy) {
         var client         = Services.GetRequiredService<ISystemClient>();
         var loggerFactory  = Services.GetRequiredService<ILoggerFactory>();
         var schemaRegistry = Services.GetRequiredService<Kurrent.Surge.Schema.SchemaRegistry>();
@@ -147,6 +192,29 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ISe
         return builder.Create();
     }
 
+    IProcessor ConfigureSourceProcessor(ConnectorId connectorId, LinkedList<InterceptorModule> interceptors, SourceOptions sourceOptions, SourceProxy sourceProxy) {
+        var client         = Services.GetRequiredService<ISystemClient>();
+	    var loggerFactory = Services.GetRequiredService<ILoggerFactory>();
+	    var schemaRegistry = Services.GetRequiredService<SchemaRegistry>();
+
+	    var loggingOptions = new Kurrent.Surge.Configuration.LoggingOptions {
+		    Enabled = sourceOptions.Logging.Enabled,
+		    LogName = sourceOptions.InstanceTypeName,
+		    LoggerFactory = loggerFactory
+	    };
+
+	    var producer = SystemProducer.Builder
+		    .Client(client)
+		    .ClientId(connectorId)
+		    .ProducerId(connectorId)
+		    .SchemaRegistry(schemaRegistry)
+		    .Interceptors(interceptors)
+		    .Logging(loggingOptions)
+		    .Create();
+
+        return new SourceProcessor(connectorId, interceptors, producer, sourceProxy, loggingOptions);
+    }
+
     sealed class SinkConnector(IProcessor processor, SinkProxy sinkProxy) : IConnector {
         public ConnectorId    ConnectorId { get; } = ConnectorId.From(processor.ProcessorId);
         public ConnectorState State       { get; } = (ConnectorState)processor.State;
@@ -161,6 +229,25 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ISe
         public async ValueTask DisposeAsync() {
             await sinkProxy.DisposeAsync();
             await processor.DisposeAsync();
+            OnDisposeCallback?.Invoke();
+        }
+    }
+
+    sealed class SourceConnector(ConnectorId connectorId, IProcessor SourceProcessor) : BackgroundService, IConnector {
+        public ConnectorId    ConnectorId { get; } = ConnectorId.From(connectorId);
+        public ConnectorState State       => (ConnectorState)SourceProcessor.State;
+
+        public Task Stopped => SourceProcessor.Stopped;
+
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken) =>
+            await SourceProcessor.Activate(stoppingToken).ConfigureAwait(false);
+
+        public async Task Connect(CancellationToken stoppingToken) =>
+            await StartAsync(stoppingToken).ConfigureAwait(false);
+
+        public async ValueTask DisposeAsync() {
+            await StopAsync(CancellationToken.None).ConfigureAwait(false);
+            await SourceProcessor.DisposeAsync().ConfigureAwait(false);
             OnDisposeCallback?.Invoke();
         }
     }

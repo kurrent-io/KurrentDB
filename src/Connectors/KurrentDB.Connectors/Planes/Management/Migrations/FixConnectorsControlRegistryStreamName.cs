@@ -52,7 +52,7 @@ public async Task OnStartup(NodeSystemInfo nodeInfo, IServiceProvider servicePro
 
         var unwantedRegularStreamName = options.SnapshotStreamId.Value[1..];
         await client.Management.SoftDeleteStream(unwantedRegularStreamName, ExpectedVersion.NoStream, cancellationToken)
-            .OnError(ex => logger.LogWarning("Did not delete incorrect connector registry stream: {Error}", ex));
+	        .OnError(ex => logger.LogWarning("Did not delete incorrect connector registry stream: {Error}", ex));
 
         logger.LogInformation("Migration of incorrect connector registry stream completed.");
     }

@@ -23,7 +23,7 @@ public class SystemManager : IManager {
                     cancellationToken: cancellationToken)
                 .FirstOrDefaultAsync(cancellationToken: cancellationToken);
 
-            return await read.Then(x => x != ResolvedEvent.EmptyEvent).ConfigureAwait(false);
+            return await read.Then(x => x != ResolvedEvent.EmptyEvent);
         } catch (Exception) {
             return false;
         }
@@ -47,7 +47,7 @@ public class SystemManager : IManager {
             var result = await Client
                 .Management
                 .DeleteStream(stream, expectedStreamRevision, cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
+                ;
 
             return LogPosition.From(result.Position.CommitPosition);
         } catch (ReadResponseException.WrongExpectedRevision ex) {
@@ -60,7 +60,7 @@ public class SystemManager : IManager {
     }
 
     public async ValueTask<DeleteStreamResult> DeleteStream(StreamId stream, LogPosition expectedLogPosition, CancellationToken cancellationToken) {
-        var result = await GetStreamInfo(expectedLogPosition, cancellationToken).ConfigureAwait(false);
+        var result = await GetStreamInfo(expectedLogPosition, cancellationToken);
 
         return await result.Match(
             info => DeleteStream(stream, info.Revision, cancellationToken),
@@ -71,12 +71,12 @@ public class SystemManager : IManager {
     async ValueTask<StreamMetadata> IManager.ConfigureStream(
         StreamId stream, Func<StreamMetadata, StreamMetadata> configure, CancellationToken cancellationToken
     ) {
-        var (metadata, revision) = await GetStreamMetadataInternal(stream, cancellationToken).ConfigureAwait(false);
+        var (metadata, revision) = await GetStreamMetadataInternal(stream, cancellationToken);
 
         var newMetadata = configure(metadata);
 
         if (newMetadata != metadata)
-            _ = await SetStreamMetadata(stream, newMetadata, revision, cancellationToken).ConfigureAwait(false);
+            _ = await SetStreamMetadata(stream, newMetadata, revision, cancellationToken);
 
         return newMetadata;
     }
@@ -101,12 +101,12 @@ public class SystemManager : IManager {
             var result = await Client.Management.SetStreamMetadata(stream,
                 metadata: meta,
                 expectedRevision: -1,
-                cancellationToken: cancellationToken).ConfigureAwait(false);
+                cancellationToken: cancellationToken);
 
             return (metadata, StreamRevision.From(result.Revision));
         } else {
             var metaRevision = KurrentDB.Core.Services.Transport.Common.StreamRevision.FromInt64(expectedRevision);
-            var result       = await Client.Management.SetStreamMetadata(stream, meta, metaRevision.ToInt64(), cancellationToken: cancellationToken).ConfigureAwait(false);
+            var result       = await Client.Management.SetStreamMetadata(stream, meta, metaRevision.ToInt64(), cancellationToken: cancellationToken);
             return (metadata, StreamRevision.From(result.Revision));
         }
     }
@@ -114,7 +114,7 @@ public class SystemManager : IManager {
     async ValueTask<(StreamMetadata Metadata, StreamRevision MetadataRevision)> GetStreamMetadataInternal(
         StreamId stream, CancellationToken cancellationToken = default
     ) {
-        var result = await Client.Management.GetStreamMetadata(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
+        var result = await Client.Management.GetStreamMetadata(stream, cancellationToken: cancellationToken);
 
         var meta = new StreamMetadata {
             MaxCount       = result.Metadata.MaxCount,
@@ -155,7 +155,7 @@ public class SystemManager : IManager {
             .Reading
             .ReadForwards(kdbPosition, maxCount: 1, cancellationToken: cancellationToken)
             .FirstOrDefaultAsync(cancellationToken)
-            .ConfigureAwait(false);
+            ;
 
         return (
             StreamId.From(re.Value.OriginalEvent.EventStreamId),
