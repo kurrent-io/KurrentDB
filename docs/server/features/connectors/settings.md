@@ -20,7 +20,7 @@ Individual connectors also include their own specific settings. To view them, go
 
 | Name               | Details                                                                                                                                                                                                                                                                                                                                                                       |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `instanceTypeName` | _required_<br><br>**Description:**<br>Specifies the type of connector instance.<br><br>**Accepted Values:**<br><ul><li>`kafka-source`</li><li>`elasticsearch-sink`</li><li>`http-sink`</li><li>`kafka-sink`</li><li>`mongo-db-sink`</li><li>`rabbit-mq-sink`</li><li>`serilog-sink`</li><li>`sql-sink`</li></ul>For details about each type, see the individual connector [page](/server/features/connectors/). |
+| `instanceTypeName` | _required_<br><br>**Description:**<br>Specifies the type of connector instance.<br><br>**Accepted Values:**<br><ul><li>`elasticsearch-sink`</li><li>`http-sink`</li><li>`kafka-sink`</li><li>`mongo-db-sink`</li><li>`rabbit-mq-sink`</li><li>`serilog-sink`</li><li>`sql-sink`</li></ul>For details about each type, see the individual connector [page](/server/features/connectors/). |
 
 ### Subscription configuration
 
@@ -67,6 +67,28 @@ For more details on resilience, see [Resilience](./features.md#resilience).
 | `autocommit:enabled`          | **Description:**<br>Enable or disables auto-commit<br><br>**Default:** `"true"`                            |
 | `autocommit:interval`         | **Description:**<br>The interval, in milliseconds at which auto-commit occurs<br><br>**Default**: `"5000"` |
 | `autocommit:recordsThreshold` | **Description:**<br>The threshold of records that triggers an auto-commit<br><br>**Default**: `"1000"`     |
+
+### Logging configuration
+
+| Name              | Details                                                                       |
+| ----------------- | ----------------------------------------------------------------------------- |
+| `logging:enabled` | **Description:**<br>Enables or disables logging.<br><br>**Default**: `"true"` |
+
+## Source Options
+
+Below, you will find a comprehensive list of configuration settings that you can
+use to define the connection parameters and other necessary details for your
+source connector.
+
+::: tip
+Individual connectors also include their own specific settings. To view them, go to their individual pages.
+:::
+
+### Instance configuration
+
+| Name               | Details                                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `instanceTypeName` | _required_<br><br>**Description:**<br>Specifies the type of connector instance.<br><br>**Accepted Values:**<br><ul><li>`kafka-source`</li></ul>For details about each type, see the individual connector [page](/server/features/connectors/). |
 
 ### Logging configuration
 

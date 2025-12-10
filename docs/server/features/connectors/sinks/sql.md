@@ -1,5 +1,5 @@
 ---
-title: "Sql Sink"
+title: 'Sql Sink'
 ---
 
 <Badge type="info" vertical="middle" text="License Required"/>
@@ -10,7 +10,11 @@ The SQL sink writes events to SQL databases by executing SQL statements. SQL
 statements can be configured by defining a mapping between schema names and SQL
 statements.
 
-The connector supports both Microsoft SQL Server and PostgreSQL with connection pooling, authentication, and resilience features.
+## Supported Databases
+
+The connector supports the following database systems:
+- Microsoft SQL Server
+- PostgreSQL
 
 ::: warning
 This connector only processes events with the `application/json` content type. Events with other content types will fail processing.
@@ -20,7 +24,7 @@ This connector only processes events with the `application/json` content type. E
 
 ### SQL Server
 
-You can create the SQL Server sink connector as follows. Replace `id` with a unique connector name or ID:
+You can create the SQL Server sink connector as follows. Replace `{{id}}` with your desired connector ID:
 
 ```http request
 POST /connectors/{{id}}
@@ -77,8 +81,9 @@ Define SQL statement templates with parameter placeholders (prefixed with `@`) a
 
 The configuration is passed as a base64-encoded JSON string using the `reducer:mappings` option.
 
-> [!NOTE]
-> The extractor function receives a `record` parameter following the [KurrentDB record structure](../features.md#kurrentdb-record). It must return an object with properties matching the parameter placeholders in the SQL statement (without the `@` prefix).
+::: note 
+The extractor function receives a `record` parameter following the [KurrentDB record structure](../features.md#kurrentdb-record). It must return an object with properties matching the parameter placeholders in the SQL statement (without the `@` prefix).
+:::
 
 ### Helper Functions
 
@@ -101,26 +106,23 @@ Use helper functions to ensure values are correctly typed for your database colu
 }
 ```
 
-> [!NOTE]
-> Nested objects and arrays are automatically serialized to JSON strings.
-
 ## Settings
 
-> [!NOTE]
-> The SQL sink inherits a set of common settings that are used to configure the connector.
+Adjust these settings to specify the behavior and interaction of your SQL sink connector with KurrentDB, ensuring it operates according to your requirements and preferences.
 
+::: tip
+The SQL sink connector inherits a set of common settings that are used to configure the connector. The settings can be found in
+the [Sink Options](../settings.md#sink-options) page.
+:::
+
+The SQL sink connector can be configured with the following options:
 ### Core Options
 
-| Name               | Details                                                                                                                                                          |
-|--------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `type`             | **Type**: Enum<br><br>**Description:** Type of SQL database to connect to.<br><br>**Accepted Values:** `SqlServer`, `PostgreSql`<br><br>**Default**: `SqlServer` |
-| `connectionString` | _required_<br><br>**Description:** Connection string to the SQL database. Authentication options will override credentials in the connection string.             |
-
-### Reducer
-
-| Name               | Details                                                                                                                                                                                                                                                          |
-|--------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `reducer:mappings` | **Description:** Base64-encoded JSON object mapping schema names to SQL statement templates and parameter extractors. Each mapping contains a `statement` (SQL with @parameter placeholders) and an `extractor` (JavaScript function returning parameter values). |
+| Name               | Details                                                                                                                                                             |
+| ------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `type`             | **Type**: Enum<br><br>**Description:**<br>Type of SQL database to connect to.<br><br>**Accepted Values:** `SqlServer`, `PostgreSql`<br><br>**Default**: `SqlServer` |
+| `connectionString` | _required_<br><br>**Description:**<br>Connection string to the SQL database. Authentication options will override credentials in the connection string.             |
+| `reducer:mappings` | **Description:**<br>Base64-encoded JSON object mapping schema names to SQL statement templates and parameter extractors.                                            |
 
 ### Authentication
 
@@ -162,10 +164,9 @@ The settings `commandTimeout`, `connectionTimeout`, `minPoolSize`, `maxPoolSize`
 
 ## Examples
 
-### Inserting Vehicle Registrations into Supabase (PostgreSQL)
+### Inserting into PostgreSQL
 
-This example demonstrates how to insert vehicle registration records into a local Supabase PostgreSQL database using 
-the SQL sink connector.
+This example demonstrates how to insert vehicle registration records into a local PostgreSQL instance on Supabase using the SQL sink connector.
 
 #### Prerequisites
 
@@ -232,8 +233,9 @@ Define SQL statement templates with parameter extractors for each schema name. U
 }
 ```
 
-> [!TIP]
-> The `Guid()` helper function converts the string `registrationId` to a proper `System.Guid` type, which maps to PostgreSQL's `UUID` type.
+::: tip
+The `Guid()` helper function converts the string `registrationId` to a proper `System.Guid` type, which maps to PostgreSQL's `UUID` type.
+:::
 
 #### Step 5: Encode the Mappings to Base64
 
@@ -275,7 +277,8 @@ ewogICJWZWhpY2xlUmVnaXN0ZXJlZCI6IHsKICAgICJTdGF0ZW1lbnQiOiAiSU5TRVJUIElOVE8gdmVo
 **Create the connector:**
 
 ```http
-POST http://localhost:2113/connectors/sql-sink
+POST /connectors/{{id}}
+Host: localhost:2113
 Content-Type: application/json
 
 {
@@ -294,7 +297,8 @@ Content-Type: application/json
 **Start the connector:**
 
 ```http
-POST http://localhost:2113/connectors/sql-sink/start
+POST /connectors/{{id}}/start
+Host: localhost:2113
 ```
 
 ::: tip
@@ -306,7 +310,8 @@ The connector will now listen for records on the `vehicles` stream and insert th
 Append a test event to the `vehicles` stream:
 
 ```http
-POST http://localhost:2113/streams/vehicles
+POST /streams/vehicles
+Host: localhost:2113
 Content-Type: application/vnd.eventstore.events+json
 
 [

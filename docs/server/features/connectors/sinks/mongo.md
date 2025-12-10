@@ -13,7 +13,7 @@ documents, so the data must be valid for BSON format.
 
 ## Quickstart
 
-You can create the MongoDB Sink connector as follows. Replace `id` with a unique connector name or ID:
+You can create the MongoDB Sink connector as follows. Replace `{{id}}` with your desired connector ID:
 
 ```http
 POST /connectors/{{id}}

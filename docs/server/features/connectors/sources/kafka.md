@@ -1,5 +1,5 @@
 ---
-title: "Kafka Source"
+title: 'Kafka Source'
 ---
 
 <Badge type="info" vertical="middle" text="License Required"/>
@@ -11,7 +11,7 @@ Kafka topic and append them into a KurrentDB stream.
 
 ## Quick Start
 
-You can create the Kafka Source connector as follows. Replace `id` with a unique connector name or ID:
+You can create the Kafka Source connector as follows. Replace `{{id}}` with your desired connector ID:
 
 ```http
 POST /connectors/{{id}}

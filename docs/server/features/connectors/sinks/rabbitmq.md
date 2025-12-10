@@ -14,7 +14,7 @@ production environment.
 
 ## Quickstart
 
-You can create the RabbitMQ Sink connector as follows. Replace `id` with a unique connector name or ID:
+You can create the RabbitMQ Sink connector as follows. Replace `{{id}}` with your desired connector ID:
 
 ```http
 POST /connectors/{{id}}

@@ -13,7 +13,7 @@ Elasticsearch's document structure.
 
 ## Quickstart
 
-You can create the Elasticsearch Sink connector as follows. Replace `id` with a unique connector name or ID:
+You can create the Elasticsearch Sink connector as follows. Replace `{{id}}` with your desired connector ID:
 
 ```http
 POST /connectors/{{id}}
