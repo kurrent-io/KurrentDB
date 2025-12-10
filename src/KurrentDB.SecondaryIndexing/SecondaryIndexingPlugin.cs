@@ -7,6 +7,7 @@ using EventStore.Plugins;
 using EventStore.Plugins.Diagnostics;
 using Kurrent.Surge.Schema;
 using KurrentDB.Common.Configuration;
+using KurrentDB.Core;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.TransactionLog.Chunks;
@@ -76,6 +77,9 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 			telemetry => PublishDiagnosticsData(telemetry, PluginDiagnosticsDataCollectionMode.Snapshot))
 		);
 		services.AddSingleton<GetLastPosition>(sp => sp.GetRequiredService<TFChunkDbConfig>().WriterCheckpoint.Read);
+
+		// register into the inmemory schema registry
+		services.AddStartupTask(services => new RegisterCustomIndexEvents(services));
 	}
 
 	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
@@ -84,22 +88,6 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		var indexReaders = app.ApplicationServices.GetServices<ISecondaryIndexReader>();
 
 		secondaryIndexReaders.AddReaders(indexReaders.ToArray());
-
-		var ct = CancellationToken.None;
-		_ = RegisterType<CustomIndexCreated>(ct);
-		_ = RegisterType<CustomIndexStarted>(ct);
-		_ = RegisterType<CustomIndexStopped>(ct);
-		_ = RegisterType<CustomIndexDeleted>(ct);
-
-		//qq hack. exceptions. how come this is async anyway, what does this actually do
-		async Task RegisterType<T>(CancellationToken ct) {
-			await app.ApplicationServices
-				.GetRequiredService<ISchemaRegistry>()
-				.RegisterSchema<T>(
-					new SchemaInfo(SchemaName: $"{CustomIndexConstants.Category}{typeof(T).Name}", SchemaDataFormat.Json),
-					cancellationToken: ct);
-
-		}
 	}
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {
@@ -111,3 +99,19 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 			: (false, $"To enable Second Level Indexing Set '{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Enabled' to 'true'");
 	}
 }
+
+public class RegisterCustomIndexEvents(IServiceProvider services) : IClusterVNodeStartupTask {
+	public async ValueTask Run(CancellationToken ct) {
+		await RegisterType<CustomIndexCreated>(ct);
+		await RegisterType<CustomIndexStarted>(ct);
+		await RegisterType<CustomIndexStopped>(ct);
+		await RegisterType<CustomIndexDeleted>(ct);
+
+		ValueTask<RegisteredSchema> RegisterType<T>(CancellationToken ct) => services
+			.GetRequiredService<ISchemaRegistry>()
+			.RegisterSchema<T>(
+				new SchemaInfo(SchemaName: $"${typeof(T).Name}", SchemaDataFormat.Json),
+				cancellationToken: ct);
+	}
+}
+

@@ -50,6 +50,10 @@ public class CustomIndexesServiceTests {
 			},
 			cancellationToken: ct);
 		await can_get(CustomIndexName, CustomIndexStatus.Stopped, ct);
+
+		// event type is mapped correctly
+		var evt = await KurrentContext.StreamsClient.ReadAllForwardFiltered($"$CustomIndex-{CustomIndexName}", ct).FirstAsync();
+		await Assert.That(evt.EventType).IsEqualTo("$CustomIndexCreated");
 	}
 
 	[Test]
