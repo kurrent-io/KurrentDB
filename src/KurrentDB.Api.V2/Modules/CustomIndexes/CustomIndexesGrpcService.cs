@@ -28,7 +28,7 @@ public class CustomIndexesGrpcService(
 				ShouldHandle = args =>
 					ValueTask.FromResult(args.Outcome.Exception
 						is not null
-						and not CustomIndexDomainException
+						and not CustomIndexException
 						and not OperationCanceledException),
 			})
 			.Build();
@@ -61,16 +61,17 @@ public class CustomIndexesGrpcService(
 				context.CancellationToken);
 
 			return getResponse(result);
-		} catch (CustomIndexDomainException ex) {
+		} catch (CustomIndexException ex) {
 			if (MapException(ex) is { } mapped)
 				throw mapped;
 			throw;
 		}
 	}
 
-	static RpcException? MapException(CustomIndexDomainException ex) => ex switch {
-		CustomIndexNotFoundException => ApiErrors.CustomIndexNotFound(ex.CustomIndexName),
-		CustomIndexAlreadyExistsException => ApiErrors.CustomIndexAlreadyExists(ex.CustomIndexName),
+	static RpcException? MapException(CustomIndexException ex) => ex switch {
+		CustomIndexNotFoundException e => ApiErrors.CustomIndexNotFound(e.CustomIndexName),
+		CustomIndexAlreadyExistsException e => ApiErrors.CustomIndexAlreadyExists(e.CustomIndexName),
+		CustomIndexesNotReadyException e => ApiErrors.CustomIndexesNotReady(e.CurrentPosition, e.TargetPosition),
 		_ => null,
 	};
 
@@ -133,7 +134,7 @@ public class CustomIndexesGrpcService(
 		try {
 			var response = await readSideService.Get(request.Name, context.CancellationToken);
 			return response;
-		} catch (CustomIndexDomainException ex) {
+		} catch (CustomIndexException ex) {
 			if (MapException(ex) is { } mapped)
 				throw mapped;
 			throw;

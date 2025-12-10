@@ -24,6 +24,12 @@ enum CustomIndexesError {
     status_code: ALREADY_EXISTS,
     has_details: true,
   }];
+
+  // The custom index engine is not yet ready
+  CUSTOM_INDEXES_ERROR_CUSTOM_INDEXES_NOT_READY = 3 [(kurrent.rpc.error) = {
+    status_code: FAILED_PRECONDITION,
+    has_details: true,
+  }];
 }
 
 // Details for CUSTOM_INDEXES_ERROR_CUSTOM_INDEX_NOT_FOUND errors.
@@ -34,4 +40,9 @@ message CustomIndexNotFoundErrorDetails {
 // Details for CUSTOM_INDEXES_ERROR_CUSTOM_INDEX_ALREADY_EXISTS errors.
 message CustomIndexAlreadyExistsErrorDetails {
   string name = 1;
+}
+
+message CustomIndexesNotReadyErrorDetails {
+  int64 current_position = 1;
+  int64 target_position = 2;
 }

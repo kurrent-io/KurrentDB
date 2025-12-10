@@ -13,6 +13,8 @@ using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
+using KurrentDB.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -33,6 +35,7 @@ public sealed class CustomIndexManager :
 	private readonly SecondaryIndexingPluginOptions _options;
 	private readonly DuckDBConnectionPool _db;
 	private readonly IReadIndex<string> _index;
+	private readonly IReadOnlyCheckpoint _writerCheckpoint;
 	private readonly Meter _meter;
 
 	private Subscription? _subscription;
@@ -52,6 +55,7 @@ public sealed class CustomIndexManager :
 		SecondaryIndexingPluginOptions options,
 		DuckDBConnectionPool db,
 		IReadIndex<string> index,
+		TFChunkDbConfig chunkDbConfig,
 		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)] Meter meter) {
 
 		_client = client;
@@ -60,12 +64,22 @@ public sealed class CustomIndexManager :
 		_options = options;
 		_db = db;
 		_index = index;
+		_writerCheckpoint = chunkDbConfig.WriterCheckpoint;
 		_meter = meter;
 		_cts = new CancellationTokenSource();
 
 		subscriber.Subscribe<SystemMessage.SystemReady>(this);
 		subscriber.Subscribe<SystemMessage.BecomeShuttingDown>(this);
 		subscriber.Subscribe<StorageMessage.EventCommitted>(this);
+	}
+
+	public void EnsureLive() {
+		if (_subscription is not { } subscription)
+			throw new CustomIndexesNotReadyException(0, _writerCheckpoint.Read());
+
+		if (!subscription.CaughtUp) {
+			throw new CustomIndexesNotReadyException(subscription.Checkpoint, _writerCheckpoint.Read());
+		}
 	}
 
 	private async Task InitializeManagementStreamSubscription() {

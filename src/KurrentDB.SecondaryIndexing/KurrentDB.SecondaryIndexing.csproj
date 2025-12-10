@@ -31,7 +31,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<!-- //qq consider separate project like schemareg.protocol' does -->
+		<!-- later consider separate project like schemareg.protocol' does -->
 		<Protobuf
 			ProtoRoot="../../proto/kurrentdb/protocol/v2"
 			Include="../../proto/kurrentdb/protocol/v2/**/*.proto"

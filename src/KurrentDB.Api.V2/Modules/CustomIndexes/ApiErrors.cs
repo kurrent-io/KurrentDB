@@ -17,4 +17,15 @@ public static partial class ApiErrors {
 		error: CustomIndexesError.CustomIndexAlreadyExists,
 		message: $"Custom Index '{customIndexName}' already exists",
 		details: new CustomIndexAlreadyExistsErrorDetails { Name = customIndexName });
+
+	public static RpcException CustomIndexesNotReady(long currentPosition, long targetPosition) {
+		var percent = 100 * ((double)currentPosition / targetPosition);
+		return RpcExceptions.FromError(
+			error: CustomIndexesError.CustomIndexesNotReady,
+			message: $"Custom indexes are not ready. Current Position {currentPosition:N0}/{targetPosition:N0} ({percent:N2}%)",
+			details: new CustomIndexesNotReadyErrorDetails {
+				CurrentPosition = currentPosition,
+				TargetPosition = targetPosition,
+			});
+	}
 }

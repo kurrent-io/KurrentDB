@@ -69,6 +69,9 @@ public class Subscription : ISecondaryIndexReader {
 		_channel = Channel.CreateBounded<ReadResponse>(new BoundedChannelOptions(capacity: 20));
 	}
 
+	public bool CaughtUp { get; private set; }
+	public long Checkpoint { get; private set; }
+
 	public async Task Start() {
 		try {
 			await StartInternal();
@@ -125,17 +128,15 @@ public class Subscription : ISecondaryIndexReader {
 		Dictionary<string, CustomIndexReadState> customIndexes = [];
 		HashSet<string> deletedIndexes = [];
 
-		bool caughtUp = false;
-
 		await foreach (var response in _channel.Reader.ReadAllAsync(_cts.Token)) {
 			switch (response) {
 				case ReadResponse.SubscriptionCaughtUp:
-					if (caughtUp)
+					if (CaughtUp)
 						continue;
 
 					Log.Verbose("Subscription to: {stream} caught up", ManagementStream);
 
-					caughtUp = true;
+					CaughtUp = true;
 
 					using (_db.Rent(out var connection)) {
 						// in some situations, a custom index may have already been marked as deleted in the management stream but not yet in DuckDB:
@@ -154,6 +155,12 @@ public class Subscription : ISecondaryIndexReader {
 					}
 
 					break;
+
+				case ReadResponse.CheckpointReceived checkpointReceived:
+					var p = checkpointReceived.CommitPosition;
+					Checkpoint = p <= long.MaxValue ? (long)p : 0;
+					break;
+
 				case ReadResponse.EventReceived eventReceived:
 					var evt = eventReceived.Event;
 
@@ -182,7 +189,7 @@ public class Subscription : ISecondaryIndexReader {
 
 							state.Started = true;
 
-							if (caughtUp)
+							if (CaughtUp)
 								await StartCustomIndex(customIndexName, state.Created);
 
 							break;
@@ -193,7 +200,7 @@ public class Subscription : ISecondaryIndexReader {
 
 							state.Started = false;
 
-							if (caughtUp)
+							if (CaughtUp)
 								await StopCustomIndex(customIndexName);
 
 							break;
@@ -202,7 +209,7 @@ public class Subscription : ISecondaryIndexReader {
 							deletedIndexes.Add(customIndexName);
 							customIndexes.Remove(customIndexName);
 
-							if (caughtUp)
+							if (CaughtUp)
 								DeleteCustomIndex(customIndexName);
 
 							break;

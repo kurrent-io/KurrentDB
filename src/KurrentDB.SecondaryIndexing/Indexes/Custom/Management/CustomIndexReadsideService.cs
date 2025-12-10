@@ -15,9 +15,12 @@ public class CustomIndexReadsideService(
 	IEventReader store,
 	ISystemClient client,
 	ISchemaSerializer serializer,
+	CustomIndexManager manager,
 	CustomIndexStreamNameMap streamNameMap) {
 
 	public async ValueTask<ListCustomIndexesResponse> List(CancellationToken ct) {
+		manager.EnsureLive();
+
 		var state = new CustomIndexesState();
 
 		await foreach (var evt in client.Reading.ReadIndexForwards(
@@ -41,6 +44,8 @@ public class CustomIndexReadsideService(
 	}
 
 	public async ValueTask<GetCustomIndexResponse> Get(string name, CancellationToken ct) {
+		manager.EnsureLive();
+
 		var streamName = streamNameMap.GetStreamName<CustomIndexId>(new(name));
 
 		var state = await store.LoadState<CustomIndexState>(

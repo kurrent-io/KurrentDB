@@ -55,7 +55,6 @@ public class CustomIndexesReadTests {
 	[Arguments("United Kingdom", 1)]
 	[Arguments("united kingdom", 0)]
 	public async ValueTask can_read_custom_index_forwards(string field, int expectedCount, CancellationToken ct) {
-
 		var fieldSuffix = field is "" ? "" : $":{field}";
 		var events = await StreamsReadClient
 			.ReadAllForwardFiltered($"{ReadFilter}{fieldSuffix}", ct)
