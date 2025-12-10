@@ -91,7 +91,7 @@ public abstract class NodeBackgroundService : IHostedService, IDisposable {
                 .Register(tcs => ((TaskCompletionSource)tcs!).SetCanceled(CancellationToken.None), completion);
 
             // Do not await the _executeTask because cancelling it will throw an OperationCanceledException which we are explicitly ignoring
-            await Task.WhenAny(_executeTask, completion.Task).ConfigureAwait(false);
+            await Task.WhenAny(_executeTask, completion.Task);
 
             Logger.LogNodeBackgroundServiceStopped(ServiceName);
         }

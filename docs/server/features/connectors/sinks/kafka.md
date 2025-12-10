@@ -6,10 +6,10 @@ title: "Kafka Sink"
 
 ## Overview
 
-The Kafka sink writes events to a Kafka topic. It can extract the
-partition key from the record based on specific sources such as the stream ID,
-headers, or record key and also supports basic authentication and resilience
-features to handle transient errors.
+The Kafka sink writes events to a Kafka topic using an idempotent producer for
+reliable delivery. It can extract the partition key from the record based on
+specific sources such as the stream ID, headers, or record key and also supports
+basic authentication and resilience features to handle transient errors.
 
 ## Quickstart
 
@@ -78,11 +78,11 @@ See the [Partitioning](#partitioning-1) section for examples.
 
 The Kafka sink connector relies on its own Kafka retry mechanism and doesn't include the configuration from [Resilience configuration](../settings.md#resilience-configuration).
 
-| Name                               | Details                                                                                                                                                                                                   |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `waitForBrokerAck`                 | **Description:**<br>Whether the producer waits for broker acknowledgment before considering the send operation complete. See [Broker Acknowledgment](#broker-acknowledgment)<br><br>**Default**: `"true"` |
-| `resilience:reconnectBackoffMaxMs` | **Description:**<br>The maximum time to wait before reconnecting to a broker after the connection has been closed.<br><br>**Default**: `"20000"`                                                          |
-| `resilience:messageSendMaxRetries` | **Description:**<br>How many times to retry sending a failing Message.<br><br>**Default**: `"2147483647"`                                                                                                 |
+| Name                               | Details                                                                                                                                                                                                    |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `waitForBrokerAck`                 | **Description:**<br>Whether the producer waits for broker acknowledgment before considering the send operation complete. See [Broker Acknowledgment](#broker-acknowledgment)<br><br>**Default**: `"false"` |
+| `resilience:reconnectBackoffMaxMs` | **Description:**<br>The maximum time to wait before reconnecting to a broker after the connection has been closed.<br><br>**Default**: `"20000"`                                                           |
+| `resilience:messageSendMaxRetries` | **Description:**<br>How many times to retry sending a failing Message.<br><br>**Default**: `"2147483647"`                                                                                                  |
 
 #### Miscellaneous
 
@@ -94,23 +94,26 @@ The Kafka sink connector relies on its own Kafka retry mechanism and doesn't inc
 
 ## Delivery Guarantees
 
-The Kafka sink guarantees at least once delivery through Kafka's built-in
-idempotent producer mechanism and configurable retry settings. Messages are only
-checkpointed after successful delivery confirmation from Kafka.
+The Kafka sink provides at-least-once delivery by using Kafka's idempotent
+producer and retry settings. Messages are only checkpointed after successful
+delivery confirmation from Kafka.
 
-The `waitForBrokerAck` setting controls delivery behavior:
+The `waitForBrokerAck` setting controls *when the connector waits* for the
+broker acknowledgment:
 
-- If enabled, the connector blocks until the broker confirms
-  delivery before advancing its checkpoint, trading throughput for stronger
-  delivery guarantees.
-- If disabled, messages are sent asynchronously and checkpointed after
-  confirmed delivery, yielding higher throughput at the cost of weaker ordering
-  guarantees.
+- If enabled, the connector waits for the broker to confirm
+  delivery before moving its checkpoint. This reduces throughput but increases
+  backpressure visibility.
+- If disabled, the connector does not block while waiting for the broker response. However,
+  checkpointing still only occurs after the broker confirms delivery.
 
-If a failure occurs before acknowledgment, the retry mechanism will attempt
-redelivery. If the connector restarts, it will resume from the last
-successfully checkpointed position and may reprocess messages that were sent but
-not yet checkpointed.
+The Kafka sink uses an idempotent producer by default, so when writing to a
+single partition, Kafka preserves message order regardless of which produce API
+is used.
+
+If a failure occurs before acknowledgment, the retry mechanism will redeliver.
+After a restart, the connector resumes from the last checkpointed position,
+which may cause previously sent—but uncheckpointed—messages to be reprocessed.
 
 ## Headers
 
