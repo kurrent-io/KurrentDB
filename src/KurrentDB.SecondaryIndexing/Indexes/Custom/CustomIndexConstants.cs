@@ -5,6 +5,7 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Custom;
 
 public static class CustomIndexConstants {
 	public const string Category = $"${nameof(CustomIndex)}";
-	public const string ManagementStream = $"$idx-ce-{Category}";
+	public const string ManagementIndexName = "custom-index-management";
+	public const string ManagementStream = $"$idx-{ManagementIndexName}";
 	public const char FieldDelimiter = ':';
 }

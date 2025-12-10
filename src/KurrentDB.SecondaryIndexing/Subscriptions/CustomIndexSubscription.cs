@@ -32,6 +32,7 @@ internal sealed class CustomIndexSubscription<TField>(
 	CustomIndexProcessor<TField> indexProcessor,
 	CustomIndexReader<TField> indexReader,
 	SecondaryIndexingPluginOptions options,
+	Func<EventRecord, bool> eventFilter,
 	CancellationToken token) : CustomIndexSubscription, IAsyncDisposable where TField : IField {
 
 	private readonly int _commitBatchSize = options.CommitBatchSize;
@@ -86,8 +87,7 @@ internal sealed class CustomIndexSubscription<TField>(
 			try {
 				var resolvedEvent = eventReceived.Event;
 
-				if (resolvedEvent.Event.EventType.StartsWith('$') || resolvedEvent.Event.EventStreamId.StartsWith('$')) {
-					// ignore system events
+				if (!eventFilter(resolvedEvent.Event)) {
 					continue;
 				}
 

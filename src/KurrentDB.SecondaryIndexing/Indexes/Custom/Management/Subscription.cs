@@ -40,6 +40,11 @@ public class Subscription : ISecondaryIndexReader {
 
 	private static readonly ILogger Log = Serilog.Log.ForContext<Subscription>();
 
+	// ignore system events
+	static readonly Func<EventRecord, bool> IgnoreSystemEvents = evt =>
+		!evt.EventType.StartsWith('$') &&
+		!evt.EventStreamId.StartsWith('$');
+
 	public Subscription(
 		ISystemClient client,
 		IPublisher publisher,
@@ -95,6 +100,20 @@ public class Subscription : ISecondaryIndexReader {
 
 	private async Task StartInternal() {
 		_cts.Token.ThrowIfCancellationRequested();
+
+		await StartCustomIndex<NullField>(
+			indexName: CustomIndexConstants.ManagementIndexName, //qq don't collide with user indices
+			createdEvent: new() {
+				Filter = "",
+				Fields = {
+					new Field {
+						Name = "null",
+						Selector = "rec => null",
+						Type = FieldType.Unspecified,
+					},
+				},
+			},
+			eventFilter: evt => evt.EventStreamId.StartsWith($"{CustomIndexConstants.Category}-"));
 
 		await _client.Subscriptions.SubscribeToIndex(
 			position: Position.Start,
@@ -212,7 +231,7 @@ public class Subscription : ISecondaryIndexReader {
 		};
 	}
 
-	private async ValueTask StartCustomIndex<TField>(string indexName, CustomIndexCreated createdEvent) where TField : IField {
+	private async ValueTask StartCustomIndex<TField>(string indexName, CustomIndexCreated createdEvent, Func<EventRecord, bool>? eventFilter = null) where TField : IField {
 		Log.Debug("Starting custom index: {index}", indexName);
 
 		var inFlightRecords = new CustomIndexInFlightRecords<TField>(_options);
@@ -237,6 +256,7 @@ public class Subscription : ISecondaryIndexReader {
 			indexProcessor: processor,
 			indexReader: reader,
 			options: _options,
+			eventFilter: eventFilter ?? IgnoreSystemEvents,
 			token: _cts.Token);
 
 		_subscriptions.TryAdd(indexName, subscription);

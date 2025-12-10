@@ -79,9 +79,8 @@ public sealed partial class DefaultIndexSubscription(
 				var resolvedEvent = eventReceived.Event;
 
 				if (resolvedEvent.Event.EventType.StartsWith('$') || resolvedEvent.Event.EventStreamId.StartsWith('$')) {
-					if (!resolvedEvent.Event.EventStreamId.StartsWith(CustomIndexConstants.Category)) //qq
-						// ignore system events
-						continue;
+					// ignore system events
+					continue;
 				}
 
 				indexProcessor.TryIndex(resolvedEvent);
