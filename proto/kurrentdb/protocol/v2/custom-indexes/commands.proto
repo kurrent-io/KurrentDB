@@ -9,8 +9,9 @@ import "custom-indexes/shared.proto";
 message CreateCustomIndexRequest {
   string name = 1;
   string filter = 2;
-  repeated Field fields = 3;
-  optional bool start = 4; // if unspecified: treated as true
+  reserved 3; // filter type
+  repeated Field fields = 4;
+  optional bool start = 5; // if unspecified: treated as true
 }
 
 message CreateCustomIndexResponse {

@@ -18,5 +18,6 @@ enum FieldType {
 message Field {
   string name = 1;
   string selector = 2;
-  FieldType type = 3;
+  reserved 3; // selector type
+  FieldType type = 4;
 }
