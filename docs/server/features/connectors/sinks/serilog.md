@@ -16,7 +16,7 @@ These outputs can be configured using the Serilog settings in the configuration 
 
 ## Quickstart
 
-You can create the Serilog Sink connector as follows. Replace `id` with a unique connector name or ID:
+You can create the Serilog Sink connector as follows. Replace `{{id}}` with your desired connector ID:
 
 ```http
 POST /connectors/{{id}}

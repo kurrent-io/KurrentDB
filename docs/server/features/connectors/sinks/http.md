@@ -14,7 +14,7 @@ supports Basic Authentication and Bearer Token Authentication. See [Authenticati
 
 ## Quickstart
 
-You can create the HTTP Sink connector as follows. Replace `id` with a unique connector name or ID:
+You can create the HTTP Sink connector as follows. Replace `{{id}}` with your desired connector ID:
 
 ```http
 POST /connectors/{{id}}

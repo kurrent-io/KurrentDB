@@ -13,7 +13,7 @@ basic authentication and resilience features to handle transient errors.
 
 ## Quickstart
 
-You can create the Kafka Sink connector as follows. Replace `id` with a unique connector name or ID:
+You can create the Kafka Sink connector as follows. Replace `{{id}}` with your desired connector ID:
 
 ```http
 POST /connectors/{{id}}
