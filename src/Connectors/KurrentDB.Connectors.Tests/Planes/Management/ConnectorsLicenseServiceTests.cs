@@ -56,7 +56,7 @@ public class ConnectorsLicenseServiceTests(ITestOutputHelper output, LicensingFi
         var sut     = new ConnectorsLicenseService(Fixture.NewLicenseObservable(license), Fixture.LicensingLogger);
 
         sut.CheckLicense<HttpSink>().Should().BeTrue();
-        sut.CheckLicense<SqlSink>().Should().BeTrue();
+        sut.CheckLicense<SqlSink>().Should().BeFalse();
         sut.CheckLicense<SerilogSink>().Should().BeTrue();
         sut.CheckLicense<KafkaSink>().Should().BeFalse();
         sut.CheckLicense<RabbitMqSink>().Should().BeFalse();
