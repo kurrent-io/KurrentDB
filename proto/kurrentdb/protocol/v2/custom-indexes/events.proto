@@ -5,17 +5,22 @@ package kurrentdb.protocol.v2.custom_indexes;
 option csharp_namespace = "KurrentDB.Protocol.V2.CustomIndexes";
 
 import "custom-indexes/shared.proto";
+import "google/protobuf/timestamp.proto";
 
 message CustomIndexCreated {
-  string filter = 1;
-  repeated Field fields = 2;
+  google.protobuf.Timestamp timestamp = 1;
+  string filter = 2;
+  repeated Field fields = 3;
 }
 
 message CustomIndexStarted {
+  google.protobuf.Timestamp timestamp = 1;
 }
 
 message CustomIndexStopped {
+  google.protobuf.Timestamp timestamp = 1;
 }
 
 message CustomIndexDeleted {
+  google.protobuf.Timestamp timestamp = 1;
 }

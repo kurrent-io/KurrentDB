@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Eventuous;
+using Google.Protobuf.WellKnownTypes;
 using KurrentDB.Protocol.V2.CustomIndexes;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
@@ -39,6 +40,7 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 
 		void CreateCustomIndex() {
 			Apply(new CustomIndexCreated {
+				Timestamp = DateTime.UtcNow.ToTimestamp(),
 				Filter = cmd.Filter,
 				Fields = { cmd.Fields },
 			});
@@ -55,7 +57,7 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 			case CustomIndexStatus.Deleted:
 				throw new CustomIndexNotFoundException(State.Id.Name);
 			case CustomIndexStatus.Stopped:
-				Apply(new CustomIndexStarted());
+				Apply(new CustomIndexStarted { Timestamp = DateTime.UtcNow.ToTimestamp() });
 				break;
 			case CustomIndexStatus.Started:
 				break; // idempotent
@@ -70,7 +72,7 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 			case CustomIndexStatus.Stopped:
 				break; // idempotent
 			case CustomIndexStatus.Started:
-				Apply(new CustomIndexStopped());
+				Apply(new CustomIndexStopped { Timestamp = DateTime.UtcNow.ToTimestamp() });
 				break;
 		}
 	}
@@ -85,6 +87,6 @@ public class CustomIndex : Aggregate<CustomIndexState> {
 		if (State.Status is CustomIndexStatus.Started)
 			Stop();
 
-		Apply(new CustomIndexDeleted());
+		Apply(new CustomIndexDeleted { Timestamp = DateTime.UtcNow.ToTimestamp() });
 	}
 }
