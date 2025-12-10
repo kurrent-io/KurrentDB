@@ -9,19 +9,19 @@ using static Core.Services.SystemStreams;
 
 public static class CustomIndex {
 	public static string GetStreamName(string indexName, string? field = null) {
-		field = field is null ? string.Empty : $"{CustomIndexFieldDelimiter}{field}";
+		field = field is null ? string.Empty : $"{CustomIndexConstants.FieldDelimiter}{field}";
 		return $"{IndexStreamPrefix}{indexName}{field}";
 	}
 
 	// For the SubscriptionService to drop all subscriptions to this custom index or any of its fields
 	public static Regex GetStreamNameRegex(string indexName) {
 		var streamName = GetStreamName(indexName);
-		var pattern = $"^{Regex.Escape(streamName)}({CustomIndexFieldDelimiter}.*)?$";
+		var pattern = $"^{Regex.Escape(streamName)}({CustomIndexConstants.FieldDelimiter}.*)?$";
 		return new Regex(pattern, RegexOptions.Compiled);
 	}
 
 	public static void ParseStreamName(string streamName, out string indexName, out string? field) {
-		var delimiterIdx = streamName.IndexOf(CustomIndexFieldDelimiter, IndexStreamPrefix.Length);
+		var delimiterIdx = streamName.IndexOf(CustomIndexConstants.FieldDelimiter, IndexStreamPrefix.Length);
 		if (delimiterIdx < 0) {
 			indexName = streamName[IndexStreamPrefix.Length..];
 			field = null;
