@@ -132,7 +132,7 @@ internal class CustomIndexProcessor<TField> : CustomIndexProcessor where TField 
 			field?.AppendTo(row);
 		}
 
-		_inFlightRecords.Append(preparePosition, commitPosition ?? preparePosition, eventNumber, fieldStr, created);
+		_inFlightRecords.Append(preparePosition, commitPosition ?? preparePosition, eventNumber, field, created);
 
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(CustomIndex.GetStreamName(IndexName), resolvedEvent));
 		if (field is not null)
@@ -266,9 +266,8 @@ internal class CustomIndexProcessor<TField> : CustomIndexProcessor where TField 
 			writers[1].WriteValue(record.EventNumber, rowIndex);
 			writers[2].WriteValue(record.Created, rowIndex);
 
-			if (TField.Type is { } type) {
-				var value = Convert.ChangeType(record.Field, type);
-				writers[3].WriteValue(value, rowIndex);
+			if (TField.Type is not null) {
+				record.Field!.WriteTo(writers[3], rowIndex);
 			}
 		}
 #pragma warning restore DuckDBNET001

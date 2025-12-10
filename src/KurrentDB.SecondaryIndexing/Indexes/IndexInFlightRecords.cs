@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using KurrentDB.SecondaryIndexing.Indexes.Custom;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes;
@@ -13,7 +14,7 @@ internal record struct InFlightRecord(
 	string StreamName,
 	long EventNumber,
 	long Created,
-	string? Field
+	IField? Field
 );
 
 internal class IndexInFlightRecords(SecondaryIndexingPluginOptions options) {
@@ -34,7 +35,7 @@ internal class IndexInFlightRecords(SecondaryIndexingPluginOptions options) {
 	}
 
 	// used by custom indexes
-	public void Append(long logPosition, long commitPosition, long eventNumber, string? field, long created) {
+	public void Append(long logPosition, long commitPosition, long eventNumber, IField? field, long created) {
 		var count = _count;
 		_records[count] = new InFlightRecord {
 			LogPosition = logPosition,

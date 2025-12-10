@@ -1,7 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
@@ -23,8 +22,11 @@ internal class CustomIndexReader<TField>(
 	}
 
 	protected override (List<IndexQueryRecord> Records, bool IsFinal) GetInflightForwards(string? id, long startPosition, int maxCount, bool excludeFirst) {
+		if (!TryGetField(id, out var field))
+			return ([], true);
+
 		return inFlightRecords.GetInFlightRecordsForwards(startPosition, maxCount, excludeFirst, Filter);
-		bool Filter(InFlightRecord r) => id is null || r.Field == id;
+		bool Filter(InFlightRecord r) => id is null || field.Equals(r.Field);
 	}
 
 	protected override List<IndexQueryRecord> GetDbRecordsForwards(DuckDBConnectionPool db, string? id, long startPosition, long endPosition, int maxCount, bool excludeFirst) {
@@ -43,8 +45,11 @@ internal class CustomIndexReader<TField>(
 	}
 
 	protected override IEnumerable<IndexQueryRecord> GetInflightBackwards(string? id, long startPosition, int maxCount, bool excludeFirst) {
+		if (!TryGetField(id, out var field))
+			return [];
+
 		return inFlightRecords.GetInFlightRecordsBackwards(startPosition, maxCount, excludeFirst, Filter);
-		bool Filter(InFlightRecord r) => id is null || r.Field == id;
+		bool Filter(InFlightRecord r) => id is null || field.Equals(r.Field);
 	}
 
 	protected override List<IndexQueryRecord> GetDbRecordsBackwards(DuckDBConnectionPool db, string? id, long startPosition, int maxCount, bool excludeFirst) {

@@ -1,7 +1,9 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using DuckDB.NET.Data.DataChunk.Writer;
 using Jint;
 using Jint.Native;
 using Kurrent.Quack;
@@ -16,86 +18,94 @@ public interface IField {
 	string GetQueryStatement();
 	void BindTo(PreparedStatement statement, ref int index);
 	void AppendTo(Appender.Row row);
+	[Experimental("DuckDBNET001")] void WriteTo(IDuckDBDataWriter writer, ulong rowIndex);
 }
 
-internal readonly struct Int16Field(short key) : IField {
+internal readonly record struct Int16Field(short Key) : IField {
 	public static Type Type { get; } = typeof(short);
 	public static IField ParseFrom(JsValue value) => new Int16Field(Convert.ToInt16(value.AsNumber()));
 	public static IField ParseFrom(string value) => new Int16Field(Convert.ToInt16(value));
 	public static string GetCreateStatement() => ", field SMALLINT not null";
 	public string GetQueryStatement() => "and field = ?";
-	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
-	public void AppendTo(Appender.Row row) => row.Append(key);
-	public override string ToString() => key.ToString();
+	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
+	public void AppendTo(Appender.Row row) => row.Append(Key);
+	[Experimental("DuckDBNET001")] public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
+	public override string ToString() => Key.ToString();
 }
 
-internal readonly struct Int32Field(int key) : IField {
+internal readonly record struct Int32Field(int Key) : IField {
 	public static Type Type { get; } = typeof(int);
 	public static IField ParseFrom(JsValue value) => new Int32Field(Convert.ToInt32(value.AsNumber()));
 	public static IField ParseFrom(string value) => new Int32Field(Convert.ToInt32(value));
 	public static string GetCreateStatement() => ", field INTEGER not null";
 	public string GetQueryStatement() => "and field = ?";
-	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
-	public void AppendTo(Appender.Row row) => row.Append(key);
-	public override string ToString() => key.ToString();
+	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
+	public void AppendTo(Appender.Row row) => row.Append(Key);
+	[Experimental("DuckDBNET001")] public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
+	public override string ToString() => Key.ToString();
 }
 
-internal readonly struct Int64Field(long key) : IField {
+internal readonly record struct Int64Field(long Key) : IField {
 	public static Type Type { get; } = typeof(long);
 	public static IField ParseFrom(JsValue value) => new Int64Field(Convert.ToInt64(value.AsNumber()));
 	public static IField ParseFrom(string value) => new Int64Field(Convert.ToInt64(value));
 	public static string GetCreateStatement() => ", field BIGINT not null";
 	public string GetQueryStatement() => "and field = ?";
-	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
-	public void AppendTo(Appender.Row row) => row.Append(key);
-	public override string ToString() => key.ToString();
+	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
+	public void AppendTo(Appender.Row row) => row.Append(Key);
+	[Experimental("DuckDBNET001")] public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
+	public override string ToString() => Key.ToString();
 }
 
-internal readonly struct UInt32Field(uint key) : IField {
+internal readonly record struct UInt32Field(uint Key) : IField {
 	public static Type Type { get; } = typeof(uint);
 	public static IField ParseFrom(JsValue value) => new UInt32Field(Convert.ToUInt32(value.AsNumber()));
 	public static IField ParseFrom(string value) => new UInt32Field(Convert.ToUInt32(value));
 	public static string GetCreateStatement() => ", field UINTEGER not null";
 	public string GetQueryStatement() => "and field = ?";
-	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
-	public void AppendTo(Appender.Row row) => row.Append(key);
-	public override string ToString() => key.ToString();
+	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
+	public void AppendTo(Appender.Row row) => row.Append(Key);
+	[Experimental("DuckDBNET001")] public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
+	public override string ToString() => Key.ToString();
 }
 
-internal readonly struct UInt64Field(ulong key) : IField {
+internal readonly record struct UInt64Field(ulong Key) : IField {
 	public static Type Type { get; } = typeof(ulong);
 	public static IField ParseFrom(JsValue value) => new UInt64Field(Convert.ToUInt64(value.AsNumber()));
 	public static IField ParseFrom(string value) => new UInt64Field(Convert.ToUInt64(value));
 	public static string GetCreateStatement() => ", field UBIGINT not null";
 	public string GetQueryStatement() => "and field = ?";
-	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
-	public void AppendTo(Appender.Row row) => row.Append(key);
-	public override string ToString() => key.ToString();
+	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
+	public void AppendTo(Appender.Row row) => row.Append(Key);
+	[Experimental("DuckDBNET001")] public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
+	public override string ToString() => Key.ToString();
 }
 
-internal readonly struct DoubleField(double key) : IField {
+internal readonly record struct DoubleField(double Key) : IField {
 	public static Type Type { get; } = typeof(double);
 	public static IField ParseFrom(JsValue value) => new DoubleField(value.AsNumber());
 	public static IField ParseFrom(string value) => new DoubleField(Convert.ToDouble(value));
 	public static string GetCreateStatement() => ", field DOUBLE not null";
 	public string GetQueryStatement() => "and field = ?";
-	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
-	public void AppendTo(Appender.Row row) => row.Append(key);
-	public override string ToString() => key.ToString(CultureInfo.InvariantCulture);
+	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
+	public void AppendTo(Appender.Row row) => row.Append(Key);
+	[Experimental("DuckDBNET001")] public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
+	public override string ToString() => Key.ToString(CultureInfo.InvariantCulture);
 }
 
-internal readonly struct StringField(string key) : IField {
+internal readonly record struct StringField(string Key) : IField {
 	public static Type Type { get; } = typeof(string);
 	public static IField ParseFrom(JsValue value) => new StringField(value.AsString());
 	public static IField ParseFrom(string value) => new StringField(value);
 	public static string GetCreateStatement() => ", field VARCHAR not null";
 	public string GetQueryStatement() => "and field = ?";
-	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, key);
-	public void AppendTo(Appender.Row row) => row.Append(key);
-	public override string ToString() => key;
+	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
+	public void AppendTo(Appender.Row row) => row.Append(Key);
+	[Experimental("DuckDBNET001")] public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
+	public override string ToString() => Key;
 }
 
-internal readonly struct NullField : IField {
+internal readonly record struct NullField : IField {
 	public static Type? Type { get => null; }
 	public static IField ParseFrom(JsValue value) {
 		if (!value.IsNull())
@@ -109,4 +119,5 @@ internal readonly struct NullField : IField {
 	public string GetQueryStatement() => string.Empty;
 	public void BindTo(PreparedStatement statement, ref int index) { }
 	public void AppendTo(Appender.Row row) { }
+	[Experimental("DuckDBNET001")] public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) { }
 }
