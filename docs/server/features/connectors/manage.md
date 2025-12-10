@@ -6,28 +6,8 @@ order: 4
 This page offers a detailed list of operations for effectively managing your connectors.
 
 ::: info
-This page uses the `serilog-sink` connector as an example. Replace `instanceTypeName` with the unique identifier of your chosen connector. For more information on the instance type name, refer to the [configuration](./settings.md/) page.
+This page uses the `serilog-sink` connector as an example. Replace `instanceTypeName` with the unique identifier of your chosen connector. For more information on the instance type name, refer to the [configuration](./settings.md) page.
 :::
-
-<template>
-  <div>
-    <label for="connector">Select Connector Type:</label>
-    <select id="connector" v-model="selectedConnector">
-      <option v-for="type in connectorTypes" :value="type">{{ type }}</option>
-    </select>
-  </div>
-</template>
-
-<script>
-export default {
-  data() {
-    return {
-      selectedConnector: "serilog-sink", // Default connector type
-      connectorTypes: ["serilog-sink", "http-sink", "custom-sink"], // Add more connector types as needed
-    };
-  },
-};
-</script>
 
 ## Create
 
