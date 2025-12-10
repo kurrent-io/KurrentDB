@@ -29,7 +29,7 @@ public class ConnectorCatalogue {
         Items = new Dictionary<Type, ConnectorCatalogueItem> {
             [typeof(HttpSink)]          = For<HttpSink, HttpSinkValidator, HttpSinkConnectorDataProtector>([$"{EntitlementPrefix}_HTTP_SINK"], false),
             [typeof(SerilogSink)]       = For<SerilogSink, SerilogSinkValidator, SerilogSinkConnectorDataProtector>([$"{EntitlementPrefix}_SERILOG_SINK"], false),
-            [typeof(SqlSink)]           = For<SqlSink, SqlSinkValidator, SqlSinkConnectorDataProtector>([$"{EntitlementPrefix}_SQL_SINK"], false), // TODO: require license once it's ready
+            [typeof(SqlSink)]           = For<SqlSink, SqlSinkValidator, SqlSinkConnectorDataProtector>([$"{EntitlementPrefix}_SQL_SINK"], true),
             [typeof(KafkaSink)]         = For<KafkaSink, KafkaSinkValidator, KafkaSinkConnectorDataProtector>([$"{EntitlementPrefix}_KAFKA_SINK"], true),
             [typeof(KafkaSource)]       = For<KafkaSource, KafkaSourceValidator, KafkaSourceConnectorDataProtector>([$"{EntitlementPrefix}_KAFKA_SOURCE"], true),
             [typeof(PulsarSink)]        = For<PulsarSink, PulsarSinkValidator, PulsarSinkConnectorDataProtector>([$"{EntitlementPrefix}_PULSAR_SINK"], true),
