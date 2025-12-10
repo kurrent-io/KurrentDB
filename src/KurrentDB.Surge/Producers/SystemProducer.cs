@@ -81,7 +81,7 @@ public class SystemProducer : IProducer {
 
         var validRequest = request.EnsureStreamIsSet(Options.DefaultStream);
 
-        await Intercept(new ProduceRequestReceived(this, validRequest)).ConfigureAwait(false);
+        await Intercept(new ProduceRequestReceived(this, validRequest));
 
         Flushing.Wait();
 
@@ -91,9 +91,9 @@ public class SystemProducer : IProducer {
                     .Set(HeaderKeys.ProducerId, ProducerId)
                     .Set(HeaderKeys.ProducerRequestId, validRequest.RequestId),
                 Serialize
-            ).ConfigureAwait(false);
+            );
 
-        await Intercept(new ProduceRequestReady(this, request)).ConfigureAwait(false);
+        await Intercept(new ProduceRequestReady(this, request));
 
         var expectedRevision = request.ExpectedStreamRevision != StreamRevision.Unset
             ? request.ExpectedStreamRevision.Value
@@ -104,14 +104,14 @@ public class SystemProducer : IProducer {
                 _ => throw new ArgumentOutOfRangeException(nameof(request.ExpectedStreamState), request.ExpectedStreamState, null)
             };
 
-        var result = await WriteEvents(Client, validRequest, events, expectedRevision, ResiliencePipeline).ConfigureAwait(false);
+        var result = await WriteEvents(Client, validRequest, events, expectedRevision, ResiliencePipeline);
 
-        await Intercept(new ProduceRequestProcessed(this, result)).ConfigureAwait(false);
+        await Intercept(new ProduceRequestProcessed(this, result));
 
         try {
-            await callback.Execute(result).ConfigureAwait(false);
+            await callback.Execute(result);
         } catch (Exception uex) {
-            await Intercept(new ProduceRequestCallbackError(this, result, uex)).ConfigureAwait(false);
+            await Intercept(new ProduceRequestCallbackError(this, result, uex));
         }
 
         return;
@@ -122,7 +122,7 @@ public class SystemProducer : IProducer {
             try {
                 return await resiliencePipeline.ExecuteAsync(
                     static async (state, token) => {
-                        var result = await WriteEvents(state.Client, state.Request, state.Events, state.ExpectedRevision, token).ConfigureAwait(false);
+                        var result = await WriteEvents(state.Client, state.Request, state.Events, state.ExpectedRevision, token);
 
                         // If it is the wrong version but the stream is empty,
                         // it means the stream was deleted or truncated.
@@ -132,7 +132,7 @@ public class SystemProducer : IProducer {
                                 .Reading
                                 .ReadStreamLastEvent(state.Request.Stream, CancellationToken.None)
                                 .Then(async re => re is null || re == ResolvedEvent.EmptyEvent
-                                    ? await WriteEvents(state.Client, state.Request, state.Events, revisionError.ActualStreamRevision, token).ConfigureAwait(false)
+                                    ? await WriteEvents(state.Client, state.Request, state.Events, revisionError.ActualStreamRevision, token)
                                     : result);
                         }
 
@@ -147,7 +147,7 @@ public class SystemProducer : IProducer {
 
             static async ValueTask<ProduceResult> WriteEvents(ISystemClient client, ProduceRequest request, Event[] events, long expectedRevision, CancellationToken cancellationToken) {
                 try {
-                    var (position, streamRevision) = await client.Writing.WriteEvents(request.Stream, events, expectedRevision, cancellationToken).ConfigureAwait(false);
+                    var (position, streamRevision) = await client.Writing.WriteEvents(request.Stream, events, expectedRevision, cancellationToken);
 
                     var recordPosition = RecordPosition.ForStream(
                         StreamId.From(request.Stream),
@@ -167,7 +167,7 @@ public class SystemProducer : IProducer {
     public async ValueTask<(int Flushed, int Inflight)> Flush(CancellationToken cancellationToken = default) {
         try {
             Flushing.Reset();
-            await Intercept(new ProducerFlushed(this, 0, 0)).ConfigureAwait(false);
+            await Intercept(new ProducerFlushed(this, 0, 0));
             return (0, 0);
         } finally {
             Flushing.Set();
@@ -176,14 +176,14 @@ public class SystemProducer : IProducer {
 
     public virtual async ValueTask DisposeAsync() {
         try {
-            await Flush().ConfigureAwait(false);
+            await Flush();
 
-            await Intercept(new ProducerStopped(this)).ConfigureAwait(false);
+            await Intercept(new ProducerStopped(this));
         } catch (Exception ex) {
-            await Intercept(new ProducerStopped(this, ex)).ConfigureAwait(false); //not sure about this...
+            await Intercept(new ProducerStopped(this, ex)); //not sure about this...
             throw;
         } finally {
-            await Interceptors.DisposeAsync().ConfigureAwait(false);
+            await Interceptors.DisposeAsync();
         }
     }
 }
