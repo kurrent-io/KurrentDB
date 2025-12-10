@@ -1,0 +1,26 @@
+name: Build Noble Container
+
+on:
+  pull_request:
+    paths-ignore:
+      - "docs/**"
+      - "samples/**"
+      - "**.md"
+  push:
+    branches:
+      - master
+      - release/*
+    tags:
+      - oss-v*
+      - v*
+    paths-ignore:
+      - "docs/**"
+      - "samples/**"
+      - "**.md"
+
+jobs:
+  build-container:
+    uses: ./.github/workflows/build-container-reusable.yml
+    with:
+      container-runtime: noble
+

@@ -30,13 +30,7 @@ public class ConnectorsActivator(CreateConnector createConnector) {
             if (connector.Revision == revision && connector.Instance.State is ConnectorState.Activating or ConnectorState.Running)
                 return ActivateResult.RevisionAlreadyRunning();
 
-            try {
-                await connector.Instance.DisposeAsync();
-                await connector.Instance.Stopped;
-            }
-            catch {
-                // ignore
-            }
+            await Teardown();
         }
 
         try {
@@ -51,10 +45,21 @@ public class ConnectorsActivator(CreateConnector createConnector) {
             return ActivateResult.Activated();
         }
         catch (ValidationException ex) {
+            await Teardown();
             return ActivateResult.InvalidConfiguration(ex);
         }
         catch (Exception ex) {
+            await Teardown();
             return ActivateResult.UnknownError(ex);
+        }
+
+        async Task Teardown() {
+	        try {
+		        await connector.Instance.DisposeAsync();
+		        await connector.Instance.Stopped;
+	        } catch {
+		        // ignore
+	        }
         }
     }
 

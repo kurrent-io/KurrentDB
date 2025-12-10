@@ -20,6 +20,7 @@ using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Core.Services;
 
+// Called by worker bus concurrently. Thread Safe.
 public class HttpSendService : IHttpForwarder,
 	IHandle<SystemMessage.StateChangeMessage>,
 	IHandle<HttpMessage.HttpSend> {

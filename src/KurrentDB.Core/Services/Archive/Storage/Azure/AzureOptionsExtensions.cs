@@ -20,8 +20,8 @@ internal static class AzureOptionsExtensions {
 			case AzureOptions.AuthenticationType.SystemAssignedIdentity:
 				credential = new ManagedIdentityCredential(ManagedIdentityId.SystemAssigned);
 				break;
-			case AzureOptions.AuthenticationType.UserAssignedClientId:
-				credential = new ManagedIdentityCredential(ManagedIdentityId.FromUserAssignedClientId(options.UserIdentity));
+			case AzureOptions.AuthenticationType.UserAssignedIdentity:
+				credential = new ManagedIdentityCredential(ManagedIdentityId.FromUserAssignedClientId(options.UserAssignedClientId));
 				break;
 			default:
 				credential = new DefaultAzureCredential();

@@ -14,10 +14,18 @@ partial class StorageReaderWorker<TStreamId> :
 	IAsyncHandle<ReadIndexEventsForward>,
 	IAsyncHandle<ReadIndexEventsBackward> {
 	public async ValueTask HandleAsync(ReadIndexEventsForward msg, CancellationToken token) {
-		if (msg.CancellationToken.IsCancellationRequested)
-			return;
+		ReadIndexEventsForwardCompleted res;
+		var cts = _multiplexer.Combine(msg.Lifetime, [token, msg.CancellationToken]);
+		var leaseTaken = false;
+		try {
+			await AcquireRateLimitLeaseAsync(cts.Token);
+			leaseTaken = true;
 
-		if (msg.Expires < DateTime.UtcNow) {
+			res = await _secondaryIndexReaders.ReadForwards(msg, cts.Token);
+		} catch (OperationCanceledException e) when (e.CancellationToken == cts.Token) {
+			if (!cts.IsTimedOut)
+				throw new OperationCanceledException(null, e, cts.CancellationOrigin);
+
 			if (msg.ReplyOnExpired) {
 				msg.Envelope.ReplyWith(
 					new ReadIndexEventsForwardCompleted(
@@ -35,9 +43,13 @@ partial class StorageReaderWorker<TStreamId> :
 				"ReadIndexEventsForward operation has expired for C:{CommitPosition}/P:{PreparePosition}. Operation expired at {ExpiredAt} after {lifetime:N0} ms.",
 				msg.CommitPosition, msg.PreparePosition, msg.Expires, msg.Lifetime.TotalMilliseconds);
 			return;
+		} finally {
+			await cts.DisposeAsync();
+
+			if (leaseTaken)
+				ReleaseRateLimitLease();
 		}
 
-		var res = await _secondaryIndexReaders.ReadForwards(msg, token);
 		switch (res.Result) {
 			case ReadIndexResult.Success
 				or ReadIndexResult.NotModified
@@ -52,10 +64,18 @@ partial class StorageReaderWorker<TStreamId> :
 	}
 
 	public async ValueTask HandleAsync(ReadIndexEventsBackward msg, CancellationToken token) {
-		if (msg.CancellationToken.IsCancellationRequested)
-			return;
+		ReadIndexEventsBackwardCompleted res;
+		var cts = _multiplexer.Combine(msg.Lifetime, [token, msg.CancellationToken]);
+		var leaseTaken = false;
+		try {
+			await AcquireRateLimitLeaseAsync(cts.Token);
+			leaseTaken = true;
 
-		if (msg.Expires < DateTime.UtcNow) {
+			res = await _secondaryIndexReaders.ReadBackwards(msg, cts.Token);
+		} catch (OperationCanceledException e) when (e.CancellationToken == cts.Token) {
+			if (!cts.IsTimedOut)
+				throw new OperationCanceledException(null, e, cts.CancellationOrigin);
+
 			if (msg.ReplyOnExpired) {
 				msg.Envelope.ReplyWith(
 					new ReadIndexEventsBackwardCompleted(
@@ -73,9 +93,13 @@ partial class StorageReaderWorker<TStreamId> :
 				"ReadIndexEventsBackward operation has expired for C:{CommitPosition}/P:{PreparePosition}. Operation expired at {ExpiredAt} after {lifetime:N0} ms.",
 				msg.CommitPosition, msg.PreparePosition, msg.Expires, msg.Lifetime.TotalMilliseconds);
 			return;
+		} finally {
+			await cts.DisposeAsync();
+
+			if (leaseTaken)
+				ReleaseRateLimitLease();
 		}
 
-		var res = await _secondaryIndexReaders.ReadBackwards(msg, token);
 		switch (res.Result) {
 			case ReadIndexResult.Success
 				or ReadIndexResult.NotModified

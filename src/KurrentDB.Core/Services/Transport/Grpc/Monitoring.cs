@@ -14,7 +14,7 @@ using KurrentDB.Core.Messaging;
 namespace KurrentDB.Core.Services.Transport.Grpc;
 
 internal class Monitoring(IPublisher publisher) : EventStore.Client.Monitoring.Monitoring.MonitoringBase {
-	public override Task Stats(StatsReq request, IServerStreamWriter<StatsResp> responseStream, ServerCallContext context) {
+	public override async Task Stats(StatsReq request, IServerStreamWriter<StatsResp> responseStream, ServerCallContext context) {
 		var channel = Channel.CreateBounded<StatsResp>(new BoundedChannelOptions(1) {
 			SingleReader = true,
 			SingleWriter = true
@@ -22,8 +22,9 @@ internal class Monitoring(IPublisher publisher) : EventStore.Client.Monitoring.M
 
 		_ = Receive();
 
-		return channel.Reader.ReadAllAsync(context.CancellationToken)
-			.ForEachAwaitAsync(responseStream.WriteAsync, context.CancellationToken);
+		await foreach (var statsResponse in channel.Reader.ReadAllAsync(context.CancellationToken)) {
+			await responseStream.WriteAsync(statsResponse, context.CancellationToken);
+		}
 
 		async Task Receive() {
 			var delay = TimeSpan.FromMilliseconds(request.RefreshTimePeriodInMs);

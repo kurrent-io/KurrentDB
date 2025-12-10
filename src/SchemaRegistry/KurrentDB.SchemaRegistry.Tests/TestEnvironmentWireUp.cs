@@ -11,8 +11,8 @@ namespace KurrentDB.SchemaRegistry.Tests;
 
 public class TestEnvironmentWireUp {
     [Before(Assembly)]
-    public static ValueTask BeforeAssembly(AssemblyHookContext context) => ToolkitTestEnvironment.Initialize(context.Assembly);
+    public static ValueTask BeforeAssembly(AssemblyHookContext context) => ToolkitTestEnvironment.Initialize();
 
     [After(Assembly)]
-    public static ValueTask AfterAssembly(AssemblyHookContext context) => ToolkitTestEnvironment.Reset(context.Assembly);
+    public static ValueTask AfterAssembly(AssemblyHookContext context) => ToolkitTestEnvironment.Reset();
 }

@@ -1,24 +1,8 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+		<IsKurrentXUnit>true</IsKurrentXUnit>
 	</PropertyGroup>
-	<ItemGroup>
-		<PackageReference Include="GitHubActionsTestLogger" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" />
-		<!-- CVE-2018-8292 -->
-		<PackageReference Include="System.Net.Http" />
-		<!-- CVE-2019-0820 -->
-		<PackageReference Include="System.Text.RegularExpressions" />
-		<PackageReference Include="xunit" />
-		<PackageReference Include="xunit.runner.visualstudio">
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-			<PrivateAssets>all</PrivateAssets>
-		</PackageReference>
-		<PackageReference Include="coverlet.collector">
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-			<PrivateAssets>all</PrivateAssets>
-		</PackageReference>
-	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.SystemRuntime\KurrentDB.SystemRuntime.csproj" />
 		<ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />

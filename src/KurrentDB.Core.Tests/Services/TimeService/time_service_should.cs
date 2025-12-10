@@ -20,28 +20,6 @@ public class FakeScheduler : TimerBasedScheduler {
 	}
 }
 
-public class FakeTimeProvider : ITimeProvider {
-	public DateTime UtcNow { get; private set; }
-	public DateTime LocalTime { get; private set; }
-
-	public FakeTimeProvider() {
-		UtcNow = DateTime.UtcNow;
-		LocalTime = DateTime.Now;
-	}
-
-	public void SetNewUtcTime(DateTime newTime) {
-		UtcNow = newTime;
-	}
-
-	public void AddToUtcTime(TimeSpan timeSpan) {
-		UtcNow = UtcNow.Add(timeSpan);
-	}
-
-	public void AddToLocalTime(TimeSpan timeSpan) {
-		UtcNow = LocalTime.Add(timeSpan);
-	}
-}
-
 public class FakeTimer : ITimer {
 	public void FireIn(int milliseconds, Action callback) {
 		// do smth

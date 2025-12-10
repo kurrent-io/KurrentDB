@@ -11,27 +11,8 @@ using Google.Protobuf.Collections;
 using Grpc.Core;
 using KurrentDB.Protocol.V2.Streams;
 using KurrentDB.Testing.Sample.HomeAutomation;
-using StreamsService = KurrentDB.Protocol.V2.Streams.StreamsService;
 
 namespace KurrentDB.Api.Tests.Fixtures;
-
-public static class StreamsClientExtensions {
-    public static async ValueTask<AppendResponse> AppendAsync(this StreamsService.StreamsServiceClient client, AppendRequest request, CancellationToken cancellationToken) {
-        using var session = client.AppendSession(cancellationToken: cancellationToken);
-        await session.RequestStream.WriteAsync(request, cancellationToken);
-        await session.RequestStream.CompleteAsync();
-        var response = await session.ResponseAsync;
-        return response.Output[0];
-    }
-
-    public static async ValueTask<AppendResponse> AppendAsync(this StreamsService.StreamsServiceClient client, AppendRequest request, CallOptions callOptions) {
-        using var session = client.AppendSession(cancellationToken: callOptions.CancellationToken);
-        await session.RequestStream.WriteAsync(request, callOptions.CancellationToken);
-        await session.RequestStream.CompleteAsync();
-        var response = await session.ResponseAsync;
-        return response.Output[0];
-    }
-}
 
 public partial class ClusterVNodeTestContext {
     public async ValueTask<SeededSmartHomeActivity> SeedSmartHomeActivity(int numberOfEvents, CancellationToken cancellationToken) {

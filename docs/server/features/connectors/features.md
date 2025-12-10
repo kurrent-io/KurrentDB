@@ -104,7 +104,7 @@ By default, headers prefixed with `$` are treated as system headers and are excl
 }
 ```
 
-When set to `"true"`, system headers (those prefixed with `$`) will be included in the connector output.
+When set to `"false"`, system headers (those prefixed with `$`) will be included in the connector output.
 
 ::: tip
 Some connectors support passing extra headers beyond those listed above. See each connector's documentation for details.

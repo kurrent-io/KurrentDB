@@ -2,7 +2,5 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Surge.Testing.Fixtures;
-using KurrentDB.Surge.Testing.Xunit.Extensions.AssemblyFixture;
 
-[assembly: TestFramework(XunitTestFrameworkWithAssemblyFixture.TypeName, XunitTestFrameworkWithAssemblyFixture.AssemblyName)]
 [assembly: AssemblyFixture(typeof(SystemComponentsAssemblyFixture))]

@@ -27,6 +27,11 @@ public sealed partial class SecondaryIndexSubscription(
 	private Task? _processingTask;
 
 	public void Subscribe() {
+		var cts = _cts;
+		if (cts == null) {
+			log.LogWarning("Subscription already terminated");
+			return;
+		}
 		var position = indexProcessor.GetLastPosition();
 		var startFrom = position == TFPos.Invalid ? Position.Start : Position.FromInt64(position.CommitPosition, position.PreparePosition);
 		log.LogInformation("Starting indexing subscription from {StartFrom}", startFrom);
@@ -39,10 +44,10 @@ public sealed partial class SecondaryIndexSubscription(
 			user: SystemAccounts.System,
 			requiresLeader: false,
 			catchUpBufferSize: options.CommitBatchSize * 2,
-			cancellationToken: _cts!.Token
+			cancellationToken: cts.Token
 		);
 
-		_processingTask = ProcessEvents(_cts.Token);
+		_processingTask = ProcessEvents(cts.Token);
 	}
 
 	[AsyncMethodBuilder(typeof(SpawningAsyncTaskMethodBuilder))]

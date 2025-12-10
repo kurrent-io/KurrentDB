@@ -34,9 +34,9 @@ public static class ToolkitTestEnvironment {
     /// Initializes the testing environment, setting up configuration and logging.
     /// This method should be called once before any tests are executed.
     /// </summary>
-    public static ValueTask Initialize(Assembly assembly) {
+    public static ValueTask Initialize() {
         if (Interlocked.CompareExchange(ref _initialized, 1, 0) != 0)
-            throw new InvalidOperationException("TestingContext is already initialized! Check your test setup code.");
+	        return ValueTask.CompletedTask;
 
         new OtelServiceMetadata("Toolkit") {
             ServiceVersion   = "1.0.0",
@@ -46,7 +46,7 @@ public static class ToolkitTestEnvironment {
         InitConfiguration();
         InitLogging();
 
-        Log.Verbose("{AssemblyName} | Test environment initialized", assembly.GetName().Name);
+        Log.Verbose("Test environment initialized");
 
         return ValueTask.CompletedTask;
     }
@@ -54,8 +54,8 @@ public static class ToolkitTestEnvironment {
     /// <summary>
     /// Resets the testing environment by closing and flushing the Serilog logger.
     /// </summary>
-    public static async ValueTask Reset(Assembly assembly) {
-        Log.Verbose("{AssemblyName} | Test environment reseting...", assembly.GetName().Name);
+    public static async ValueTask Reset() {
+        Log.Verbose("Test environment reseting...");
         await Log.CloseAndFlushAsync();
         Interlocked.Exchange(ref _initialized, 0);
     }
@@ -110,7 +110,7 @@ public static class ToolkitTestEnvironment {
         }
     }
 
-    public static (ILogger Logger, IAsyncDisposable Release) CaptureTestLogs(Guid testUid) {
+    public static (ILogger Logger, IAsyncDisposable Release) CaptureTestLogs(string testUid) {
         var logger = DefaultLoggerConfig
             .ReadFrom.Configuration(Configuration)
             .Enrich.WithProperty("TestUid", testUid)

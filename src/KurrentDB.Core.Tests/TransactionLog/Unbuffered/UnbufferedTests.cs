@@ -348,7 +348,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 
 		using (var stream = new FileStream(filename, FileMode.Open)) {
 			var read = new byte[128];
-			stream.Read(read, 0, 128);
+			stream.ReadExactly(read, 0, 128);
 			for (var i = 0; i < read.Length; i++) {
 				Assert.AreEqual(i, read[i]);
 			}
@@ -387,9 +387,9 @@ public class UnbufferedTests : SpecificationWithDirectory {
 			FileShare.ReadWrite, 4096, 4096, false, 4096)) {
 			stream.Seek(4096 + 15, SeekOrigin.Begin);
 			var read = new byte[1000];
-			stream.Read(read, 0, 500);
+			stream.ReadExactly(read, 0, 500);
 			Assert.AreEqual(4096 + 15 + 500, stream.Position);
-			stream.Read(read, 500, 500);
+			stream.ReadExactly(read, 500, 500);
 			Assert.AreEqual(4096 + 15 + 1000, stream.Position);
 			for (var i = 0; i < read.Length; i++) {
 				Assert.AreEqual((i + 15) % 256, read[i]);
@@ -404,9 +404,9 @@ public class UnbufferedTests : SpecificationWithDirectory {
 		using (var stream = UnbufferedFileStream.Create(filename, FileMode.Open, FileAccess.ReadWrite,
 			FileShare.ReadWrite, 4096, 4096, false, 4096)) {
 			var read = new byte[1000];
-			stream.Read(read, 0, 500);
+			stream.ReadExactly(read, 0, 500);
 			Assert.AreEqual(500, stream.Position);
-			stream.Read(read, 500, 500);
+			stream.ReadExactly(read, 500, 500);
 			Assert.AreEqual(1000, stream.Position);
 			for (var i = 0; i < read.Length; i++) {
 				Assert.AreEqual(i % 256, read[i]);
@@ -421,7 +421,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 		using (var stream = UnbufferedFileStream.Create(filename, FileMode.Open, FileAccess.ReadWrite,
 			FileShare.ReadWrite, 4096, 4096, false, 4096)) {
 			var read = new byte[6000];
-			stream.Read(read, 0, 3000);
+			stream.ReadExactly(read, 0, 3000);
 			Assert.AreEqual(3000, stream.Position);
 			var total = stream.Read(read, 3000, 3000);
 			Assert.AreEqual(3000, total);
@@ -439,7 +439,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 		using (var stream = UnbufferedFileStream.Create(filename, FileMode.Open, FileAccess.ReadWrite,
 			FileShare.ReadWrite, 4096, 4096, false, 4096)) {
 			var read = new byte[6000];
-			stream.Read(read, 0, 3000);
+			stream.ReadExactly(read, 0, 3000);
 			Assert.AreEqual(3000, stream.Position);
 			var total = stream.Read(read, 3000, 1096);
 			Assert.AreEqual(1096, total);
@@ -532,7 +532,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 		using (var stream = UnbufferedFileStream.Create(filename, FileMode.Open, FileAccess.ReadWrite,
 			FileShare.ReadWrite, 4096, 4096, false, 4096)) {
 			var read = new byte[4096];
-			stream.Read(read, 0, 4096);
+			stream.ReadExactly(read, 0, 4096);
 			for (var i = 0; i < 4096; i++) {
 				Assert.AreEqual(i % 256, read[i]);
 			}
@@ -547,7 +547,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 			FileShare.ReadWrite, 4096, 4096, false, 4096)) {
 			stream.Seek(15, SeekOrigin.Begin);
 			var read = new byte[999];
-			stream.Read(read, 0, read.Length);
+			stream.ReadExactly(read, 0, read.Length);
 			for (var i = 0; i < read.Length; i++) {
 				Assert.AreEqual((i + 15) % 256, read[i]);
 			}
@@ -563,7 +563,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 			stream.Seek(4096 + 15, SeekOrigin.Begin);
 			Assert.AreEqual(4096 + 15, stream.Position);
 			var read = new byte[999];
-			stream.Read(read, 0, read.Length);
+			stream.ReadExactly(read, 0, read.Length);
 			Assert.AreEqual(4096 + 15 + 999, stream.Position);
 			for (var i = 0; i < read.Length; i++) {
 				Assert.AreEqual((i + 15) % 256, read[i]);
@@ -615,7 +615,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 			stream.Write(buffer, 0, buffer.Length);
 			stream.Seek(4096 + 15, SeekOrigin.Begin);
 			var read = new byte[255];
-			stream.Read(read, 0, read.Length);
+			stream.ReadExactly(read, 0, read.Length);
 			for (var i = 0; i < read.Length; i++) {
 				Assert.AreEqual(i % 255, read[i]);
 			}
@@ -685,7 +685,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 	private byte[] ReadAllBytesShared(string filename) {
 		using (var fs = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
 			var ret = new byte[fs.Length];
-			fs.Read(ret, 0, (int)fs.Length);
+			fs.ReadExactly(ret, 0, (int)fs.Length);
 			return ret;
 		}
 	}

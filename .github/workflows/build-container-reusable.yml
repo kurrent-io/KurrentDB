@@ -8,18 +8,30 @@ on:
         type: string
 
 jobs:
+  # find all projects in the slnf that end .Tests.csproj.
+  discover-projects:
+    runs-on: ubuntu-latest
+    name: discover-projects
+    outputs:
+      modules: ${{ steps.discover.outputs.modules }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: discover
+        run: |
+          modules=$(cat src/KurrentDB.ContainerTests.slnf | jq -c '[.solution.projects[] | select(test("(?i)\\.tests\\.csproj$")) | gsub("\\\\"; "/")]')
+          echo "modules=$modules" >> $GITHUB_OUTPUT
   build-container:
     runs-on: ubuntu-latest
-    name: ci/github/build-${{ inputs.container-runtime }}
+    name: build-${{ inputs.container-runtime }}
     steps:
     -  
       name: Checkout
       uses: actions/checkout@v4
     -  
-      name: Install net8.0
+      name: Install net10.0
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: 10.0.x
     -  
       name: Setup QEMU
       uses: docker/setup-qemu-action@v2
@@ -41,10 +53,7 @@ jobs:
         key: "${{ inputs.container-runtime }}"
         map: |
           {
-            "jammy": {
-              "runtime": "linux-x64"
-            },
-            "bookworm-slim": {
+            "noble": {
               "runtime": "linux-x64"
             },
             "alpine": {
@@ -77,6 +86,33 @@ jobs:
         build-args: |
           CONTAINER_RUNTIME=${{ inputs.container-runtime }}
           RUNTIME=${{ steps.variables.outputs.runtime }}
+    -
+      name: Save test image as artifact
+      run: docker save kurrentdb-test -o kurrentdb-test.tar
+    -
+      uses: actions/upload-artifact@v4
+      with:
+        name: kurrentdb-test
+        path: kurrentdb-test.tar
+        retention-days: 1
+
+  run-tests:
+    needs: [discover-projects, build-container]
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJson(needs.discover-projects.outputs.modules) }}
+    runs-on: ubuntu-latest
+    name: ${{ matrix.module }}
+    steps:
+    -
+      uses: actions/download-artifact@v4
+      with:
+        name: kurrentdb-test
+    -
+      name: Load Docker image
+      run: docker load -i kurrentdb-test.tar
+
     # pass env vars so that GitHubActionsTestLogger can populate GitHub job summary 
     -  
       name: Run Tests
@@ -92,11 +128,23 @@ jobs:
         --env GITHUB_WORKSPACE=${{ github.workspace }}
         --env GITHUB_SHA=${{ github.sha }}
         kurrentdb-test
+        dotnet test
+        --results-directory /build/test-results
+        --configuration release
+        --project /build/src/${{ matrix.module }}
+    -
+      name: Remove slashes
+      id: remove_slashes
+      shell: bash
+      run: |
+        base="${{ matrix.module }}"
+        safe="${base//\//-}"
+        echo "value=$safe" >> $GITHUB_OUTPUT
     -
       name: Publish Test Results (All)
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: test-results-${{ inputs.container-runtime }}
+        name: test-results-${{ steps.remove_slashes.outputs.value }}
         path: |
           test-results/**/*.trx

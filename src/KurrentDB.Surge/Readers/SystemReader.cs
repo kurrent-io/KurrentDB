@@ -102,7 +102,7 @@ public class SystemReader : IReader {
 	    var forwards = direction == ReadDirection.Forwards;
 	    return Client.Reading
 		    .ReadStream(streamId, CoreStreamRevision.FromInt64(revision.Value), maxCount, forwards, cancellationToken)
-		    .SelectAwait(async record => await record.ToRecord(Deserialize, (int)record.Event.EventNumber + 1));
+		    .Select((ResolvedEvent record, CancellationToken _) => record.ToRecord(Deserialize, (int)record.Event.EventNumber + 1));
     }
 
     public async ValueTask<SurgeRecord> ReadLastStreamRecord(StreamId stream, CancellationToken cancellationToken = default) {
