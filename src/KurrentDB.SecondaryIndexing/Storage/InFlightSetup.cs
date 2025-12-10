@@ -5,13 +5,12 @@ using System.Diagnostics.CodeAnalysis;
 using DuckDB.NET.Data;
 using DuckDB.NET.Data.DataChunk.Writer;
 using KurrentDB.DuckDB;
-using KurrentDB.SecondaryIndexing.Indexes;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 
 namespace KurrentDB.SecondaryIndexing.Storage;
 
 [UsedImplicitly]
-internal class InFlightSetup(IndexInFlightRecords inFlightRecords) : IDuckDBSetup {
+internal class InFlightSetup(DefaultIndexInFlightRecords inFlightRecords) : IDuckDBSetup {
 	[Experimental("DuckDBNET001")]
 	public void Execute(DuckDBConnection connection) {
 		connection.RegisterTableFunction("inflight", ReadBackwardsResultCallback, ReadInFlightMapperCallback);

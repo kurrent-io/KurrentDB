@@ -25,7 +25,7 @@ using static KurrentDB.SecondaryIndexing.Indexes.Default.DefaultSql;
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
-	private readonly IndexInFlightRecords _inFlightRecords;
+	private readonly DefaultIndexInFlightRecords _inFlightRecords;
 	private readonly DuckDBAdvancedConnection _connection;
 	private readonly IPublisher _publisher;
 	private readonly ILongHasher<string> _hasher;
@@ -36,7 +36,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 	public DefaultIndexProcessor(
 		DuckDBConnectionPool db,
-		IndexInFlightRecords inFlightRecords,
+		DefaultIndexInFlightRecords inFlightRecords,
 		IPublisher publisher,
 		ILongHasher<string> hasher,
 		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)]

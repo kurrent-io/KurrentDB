@@ -22,7 +22,7 @@ public class IndexMessageBatchAppender : IMessageBatchAppender {
 		_commitSize = commitSize;
 		ReadIndexStub.Build();
 		var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
-		var inflightRecordsCache = new IndexInFlightRecords(new() { CommitBatchSize = commitSize });
+		var inflightRecordsCache = new DefaultIndexInFlightRecords(new() { CommitBatchSize = commitSize });
 
 		var publisher = new FakePublisher();
 		var schema = new IndexingDbSchema();

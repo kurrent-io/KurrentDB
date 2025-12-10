@@ -11,7 +11,7 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Custom;
 internal class CustomIndexReader<TField>(
 	DuckDBConnectionPool sharedPool,
 	CustomIndexSql<TField> sql,
-	IndexInFlightRecords inFlightRecords,
+	CustomIndexInFlightRecords inFlightRecords,
 	IReadIndex<string> index
 ) : SecondaryIndexReaderBase(sharedPool, index) where TField : IField {
 
@@ -26,7 +26,7 @@ internal class CustomIndexReader<TField>(
 			return ([], true);
 
 		return inFlightRecords.GetInFlightRecordsForwards(startPosition, maxCount, excludeFirst, Filter);
-		bool Filter(InFlightRecord r) => id is null || field.Equals(r.Field);
+		bool Filter(CustomIndexInFlightRecord r) => id is null || field.Equals(r.Field);
 	}
 
 	protected override List<IndexQueryRecord> GetDbRecordsForwards(DuckDBConnectionPool db, string? id, long startPosition, long endPosition, int maxCount, bool excludeFirst) {
@@ -49,7 +49,7 @@ internal class CustomIndexReader<TField>(
 			return [];
 
 		return inFlightRecords.GetInFlightRecordsBackwards(startPosition, maxCount, excludeFirst, Filter);
-		bool Filter(InFlightRecord r) => id is null || field.Equals(r.Field);
+		bool Filter(CustomIndexInFlightRecord r) => id is null || field.Equals(r.Field);
 	}
 
 	protected override List<IndexQueryRecord> GetDbRecordsBackwards(DuckDBConnectionPool db, string? id, long startPosition, int maxCount, bool excludeFirst) {

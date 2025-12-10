@@ -16,7 +16,7 @@ internal class CategoryIndexReader(
 	DuckDBConnectionPool sharedPool,
 	DefaultIndexProcessor processor,
 	IReadIndex<string> index,
-	IndexInFlightRecords inFlightRecords)
+	DefaultIndexInFlightRecords inFlightRecords)
 	: SecondaryIndexReaderBase(sharedPool, index) {
 	protected override string GetId(string indexName) =>
 		CategoryIndex.TryParseCategoryName(indexName, out var categoryName)

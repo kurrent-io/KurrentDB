@@ -1,10 +1,9 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using KurrentDB.SecondaryIndexing.Indexes.Custom;
 using KurrentDB.SecondaryIndexing.Storage;
 
-namespace KurrentDB.SecondaryIndexing.Indexes;
+namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 internal record struct InFlightRecord(
 	long LogPosition,
@@ -13,11 +12,10 @@ internal record struct InFlightRecord(
 	string EventType,
 	string StreamName,
 	long EventNumber,
-	long Created,
-	IField? Field
+	long Created
 );
 
-internal class IndexInFlightRecords(SecondaryIndexingPluginOptions options) {
+internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions options) {
 	private readonly InFlightRecord[] _records = new InFlightRecord[options.CommitBatchSize];
 
 	private uint _version; // used for optimistic lock
@@ -25,25 +23,9 @@ internal class IndexInFlightRecords(SecondaryIndexingPluginOptions options) {
 
 	public int Count => _count;
 
-	// used by default index
 	public void Append(long logPosition, long commitPosition, string category, string eventType, string stream, long eventNumber, long created) {
 		var count = _count;
-		_records[count] = new(logPosition, commitPosition, category, eventType, stream, eventNumber, created, null);
-
-		// Fence: make sure that the array modification cannot be done after the increment
-		Volatile.Write(ref _count, count + 1);
-	}
-
-	// used by custom indexes
-	public void Append(long logPosition, long commitPosition, long eventNumber, IField? field, long created) {
-		var count = _count;
-		_records[count] = new InFlightRecord {
-			LogPosition = logPosition,
-			CommitPosition = commitPosition,
-			EventNumber = eventNumber,
-			Field = field,
-			Created = created
-		};
+		_records[count] = new(logPosition, commitPosition, category, eventType, stream, eventNumber, created);
 
 		// Fence: make sure that the array modification cannot be done after the increment
 		Volatile.Write(ref _count, count + 1);

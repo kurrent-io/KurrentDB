@@ -14,7 +14,7 @@ internal class EventTypeIndexReader(
 	DuckDBConnectionPool sharedPool,
 	DefaultIndexProcessor processor,
 	IReadIndex<string> index,
-	IndexInFlightRecords inFlightRecords)
+	DefaultIndexInFlightRecords inFlightRecords)
 	: SecondaryIndexReaderBase(sharedPool, index) {
 	protected override string GetId(string streamName) =>
 		EventTypeIndex.TryParseEventType(streamName, out var eventTypeName) ? eventTypeName : string.Empty;

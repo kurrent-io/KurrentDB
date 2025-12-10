@@ -33,7 +33,7 @@ internal class CustomIndexProcessor<TField> : CustomIndexProcessor where TField 
 	private readonly Function? _filter;
 	private readonly Function? _fieldSelector;
 	private readonly ResolvedEventJsObject _resolvedEventJsObject;
-	private readonly IndexInFlightRecords _inFlightRecords;
+	private readonly CustomIndexInFlightRecords _inFlightRecords;
 	private readonly string _inFlightTableName;
 	private readonly IPublisher _publisher;
 	private readonly DuckDBAdvancedConnection _connection;
@@ -55,7 +55,7 @@ internal class CustomIndexProcessor<TField> : CustomIndexProcessor where TField 
 		string jsFieldSelector,
 		DuckDBConnectionPool db,
 		CustomIndexSql<TField> sql,
-		IndexInFlightRecords inFlightRecords,
+		CustomIndexInFlightRecords inFlightRecords,
 		IPublisher publisher,
 		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)]
 		Meter meter,
@@ -261,7 +261,7 @@ internal class CustomIndexProcessor<TField> : CustomIndexProcessor where TField 
 		}
 
 		void MapperCallback(object? item, IDuckDBDataWriter[] writers, ulong rowIndex) {
-			var record = (InFlightRecord)item!;
+			var record = (CustomIndexInFlightRecord)item!;
 			writers[0].WriteValue(record.LogPosition, rowIndex);
 			writers[1].WriteValue(record.EventNumber, rowIndex);
 			writers[2].WriteValue(record.Created, rowIndex);

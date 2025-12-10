@@ -57,7 +57,7 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddHostedService<DefaultIndexBuilder>();
 		services.AddHostedService(sp => sp.GetRequiredService<CustomIndexManager>());
 
-		services.AddSingleton<IndexInFlightRecords>();
+		services.AddSingleton<DefaultIndexInFlightRecords>();
 
 		var meter = new Meter(SecondaryIndexingConstants.MeterName, "1.0.0");
 

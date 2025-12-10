@@ -13,7 +13,7 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 internal class DefaultIndexReader(
 	DuckDBConnectionPool sharedPool,
 	DefaultIndexProcessor processor,
-	IndexInFlightRecords inFlightRecords,
+	DefaultIndexInFlightRecords inFlightRecords,
 	IReadIndex<string> index
 ) : SecondaryIndexReaderBase(sharedPool, index) {
 	protected override string GetId(string indexName) => string.Empty;

@@ -165,7 +165,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest<DefaultIndexProc
 
 		const int commitBatchSize = 9;
 		var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
-		var inflightRecordsCache = new IndexInFlightRecords(new() { CommitBatchSize = commitBatchSize });
+		var inflightRecordsCache = new DefaultIndexInFlightRecords(new() { CommitBatchSize = commitBatchSize });
 
 		var publisher = new FakePublisher();
 
