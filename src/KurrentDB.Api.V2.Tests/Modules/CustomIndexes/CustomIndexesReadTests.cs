@@ -85,12 +85,6 @@ public class CustomIndexesReadTests {
 			await Assert.That(events).All(x => x.Data.ToStringUtf8().Contains($""" "country": "{field}" """));
 	}
 
-	//qq
-	// - test the properties available to the functions
-	// - test if the js throws, returns the wrong type, etc.
-	// - subscribe from a position
-	// - ranges over fields?
-
 	[Test]
 	[DependsOn(nameof(can_setup))]
 	[Retry(50)] // because index processing is asynchronous to the write

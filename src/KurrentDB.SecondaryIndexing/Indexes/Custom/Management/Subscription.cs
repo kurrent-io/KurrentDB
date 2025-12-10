@@ -226,7 +226,7 @@ public class Subscription : ISecondaryIndexReader {
 
 	private ValueTask StartCustomIndex(string indexName, CustomIndexCreated createdEvent) {
 		return createdEvent.Fields[0].Type switch {
-			FieldType.Unspecified => StartCustomIndex<NullField>(indexName, createdEvent),
+			FieldType.Null => StartCustomIndex<NullField>(indexName, createdEvent),
 			FieldType.Double => StartCustomIndex<DoubleField>(indexName, createdEvent),
 			FieldType.String => StartCustomIndex<StringField>(indexName, createdEvent),
 			FieldType.Int16 => StartCustomIndex<Int16Field>(indexName, createdEvent),

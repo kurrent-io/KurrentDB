@@ -116,7 +116,7 @@ public class CustomIndexesJavascriptTests {
 	}
 
 	[Test]
-	public async ValueTask can_use_unspecified_field_type(CancellationToken ct) {
+	public async ValueTask can_use_null_field_type(CancellationToken ct) {
 		await Client.CreateCustomIndexAsync(
 			new() {
 				Name = CustomIndexName,
@@ -124,8 +124,8 @@ public class CustomIndexesJavascriptTests {
 				Fields = {
 					new Field() {
 						Name = "null", //qq we could consider making name unnecessary when there is only one field
-						Selector = "rec => null", //qq todo: when the field type is unspecified we probably shouldn't call the selector
-						Type = FieldType.Unspecified,
+						Selector = "rec => null", //qq todo: when the field type is null we probably shouldn't call the selector
+						Type = FieldType.Null,
 					},
 				},
 			},

@@ -17,6 +17,9 @@ class FieldValidator : ValidatorBase<FieldValidator, Field> {
 			.WithMessage("Field selector must be empty or a valid JavaScript function with exactly one argument")
 			.WithName("Field selector");
 
-		//qq RuleFor(x => x.Type);
+		RuleFor(x => x.Type)
+			.Must(x => x is not FieldType.Unspecified)
+			.WithMessage("Field type must not be unspecified")
+			.WithName("Field type");
 	}
 }

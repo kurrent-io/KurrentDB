@@ -254,29 +254,29 @@ public class CustomIndexesServiceTests {
 		await Assert.That(ex!.Status.StatusCode).IsEqualTo(StatusCode.InvalidArgument);
 	}
 
-	//qq add other validation tests
-	//qq currently deosn't throw, what key type do we end up with, may be missing validation
-	//[Test]
-	//public async ValueTask cannot_create_with_invalid_key_type(CancellationToken ct) {
-	//	var ex = await Assert
-	//		.That(async () => {
-	//			await Client.CreateCustomIndexAsync(new() {
-	//				Name = $"{nameof(cannot_create_with_invalid_filter)}-{Guid.NewGuid()}",
-	//				Filter = "rec => rec.type == 'my-event-type'",
-	//				Fields = {
-	//					new Field() {
-	//						Name = "number",
-	//						Selector = "rec => rec.number",
-	//						Type = FieldType.Unspecified,
-	//					},
-	//				},
-	//			}); //qq ct
-	//		})
-	//		.Throws<RpcException>();
+	[Test]
+	public async ValueTask cannot_create_with_invalid_key_type(CancellationToken ct) {
+		var ex = await Assert
+			.That(async () => {
+				await Client.CreateCustomIndexAsync(
+					new() {
+						Name = $"{nameof(cannot_create_with_invalid_filter)}-{Guid.NewGuid()}",
+						Filter = "rec => rec.type == 'my-event-type'",
+						Fields = {
+							new Field() {
+								Name = "number",
+								Selector = "rec => rec.number",
+								Type = FieldType.Unspecified,
+							},
+						},
+					},
+					cancellationToken: ct);
+			})
+			.Throws<RpcException>();
 
-	//	await Assert.That(ex!.Status.Detail).IsEqualTo("Field selector must be a valid JavaScript function with exactly one argument");
-	//	await Assert.That(ex!.Status.StatusCode).IsEqualTo(StatusCode.InvalidArgument);
-	//}
+		await Assert.That(ex!.Status.Detail).IsEqualTo("Field type must not be unspecified");
+		await Assert.That(ex!.Status.StatusCode).IsEqualTo(StatusCode.InvalidArgument);
+	}
 
 	[Test]
 	public async ValueTask cannot_start_non_existant(CancellationToken ct) {
