@@ -30,7 +30,7 @@ public class ConnectorCatalogue {
             [typeof(SerilogSink)]       = For<SerilogSink, SerilogSinkValidator, SerilogSinkConnectorDataProtector>([$"{EntitlementPrefix}_SERILOG_SINK"], false),
             [typeof(KafkaSink)]         = For<KafkaSink, KafkaSinkValidator, KafkaSinkConnectorDataProtector>([$"{EntitlementPrefix}_KAFKA_SINK"], true),
             [typeof(KafkaSource)]       = For<KafkaSource, KafkaSourceValidator, KafkaSourceConnectorDataProtector>([$"{EntitlementPrefix}_KAFKA_SOURCE"], true),
-            [typeof(PulsarSink)]         = For<PulsarSink, PulsarSinkValidator, PulsarSinkConnectorDataProtector>([$"{EntitlementPrefix}_PULSAR_SINK"], true),
+            [typeof(PulsarSink)]        = For<PulsarSink, PulsarSinkValidator, PulsarSinkConnectorDataProtector>([$"{EntitlementPrefix}_PULSAR_SINK"], true),
             [typeof(RabbitMqSink)]      = For<RabbitMqSink, RabbitMqSinkValidator, RabbitMqSinkConnectorDataProtector>([$"{EntitlementPrefix}_RABBITMQ_SINK"], true),
             [typeof(ElasticsearchSink)] = For<ElasticsearchSink, ElasticsearchSinkValidator, ElasticsearchSinkConnectorDataProtector>([$"{EntitlementPrefix}_ELASTICSEARCH_SINK", $"{EntitlementPrefix}_ELASTICSEARCH_SOURCE"], true),
             [typeof(MongoDbSink)]       = For<MongoDbSink, MongoDbSinkValidator, MongoDbSinkConnectorDataProtector>([$"{EntitlementPrefix}_MONGODB_SINK"], true),
