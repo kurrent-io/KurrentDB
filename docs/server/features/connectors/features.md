@@ -259,7 +259,7 @@ Convert your JavaScript function to a base64-encoded string. The transformation 
 If you have already created your connector without transformation enabled, you can easily update its configuration to enable transformations and provide the transformation function. Use the following API call to reconfigure your sink connector:
 
 ```http
-POST /connectors/{{id}}
+POST /connectors/{id}
 Host: localhost:2113
 Content-Type: application/json
 
@@ -276,7 +276,7 @@ You can find the list of available management API endpoints in the [API Referenc
 Once configured, start the connector to begin processing events with the transformation applied:
 
 ```http
-POST /connectors/{{id}}/start
+POST /connectors/{id}/start
 Host: localhost:2113
 Content-Type: application/json
 ```

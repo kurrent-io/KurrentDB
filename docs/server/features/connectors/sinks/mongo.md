@@ -9,14 +9,26 @@ title: "MongoDB Sink"
 The MongoDB sink pulls messages from a KurrentDB stream and stores them in a
 collection. The records will be serialized into
 [BSON](https://www.mongodb.com/docs/manual/reference/glossary/#std-term-BSON)
-documents, so the data must be valid for BSON format. 
+documents, so the data must be valid for BSON format.
+
+## Prerequisites
+
+Before using the MongoDB sink connector, ensure you have:
+
+- A data protection token configured in your KurrentDB instance (required to encrypt sensitive fields like passwords and certificate passwords)
+- A MongoDB instance with an accessible connection string
+- Appropriate authentication credentials (username/password or X.509 certificate)
+
+::: tip
+See the [Data Protection](../features.md#data-protection) documentation for instructions on configuring the encryption token.
+:::
 
 ## Quickstart
 
-You can create the MongoDB Sink connector as follows. Replace `{{id}}` with your desired connector ID:
+You can create the MongoDB Sink connector as follows. Replace `{id}` with your desired connector ID:
 
 ```http
-POST /connectors/{{id}}
+POST /connectors/{id}
 Host: localhost:2113
 Content-Type: application/json
 
@@ -94,7 +106,7 @@ certificate and the password in the settings. You can use an online tool like
 [base64encode](https://www.base64encode.org/) to encode your certificate.
 
 ```http
-POST /connectors/{{id}}
+POST /connectors/{id}
 Host: localhost:2113
 Content-Type: application/json
 
@@ -118,7 +130,7 @@ on your naming convention. In this example, the expression captures the stream
 name up to `_data`.
 
 ```http
-POST /connectors/{{id}}
+POST /connectors/{id}
 Host: localhost:2113
 Content-Type: application/json
 
@@ -133,7 +145,7 @@ hyphen), you can use the `streamSuffix` source. This
 doesn't require an expression since it automatically extracts the suffix.
 
 ```http
-POST /connectors/{{id}}
+POST /connectors/{id}
 Host: localhost:2113
 Content-Type: application/json
 
@@ -151,7 +163,7 @@ example, if the stream is named `user-123`, the document ID would be `123`.
 You can create the document ID by combining values from a record's metadata.
 
 ```http
-POST /connectors/{{id}}
+POST /connectors/{id}
 Host: localhost:2113
 Content-Type: application/json
 

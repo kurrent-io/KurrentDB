@@ -14,12 +14,19 @@ The Serilog sink supports writing logs to the following outputs:
 
 These outputs can be configured using the Serilog settings in the configuration file.
 
+## Prerequisites
+
+Before using the Serilog sink connector, ensure you have:
+
+- A KurrentDB instance with connectors enabled
+- A [Seq](https://datalust.co/) server (optional, only required when using Seq as the output destination)
+
 ## Quickstart
 
-You can create the Serilog Sink connector as follows. Replace `{{id}}` with your desired connector ID:
+You can create the Serilog Sink connector as follows. Replace `{id}` with your desired connector ID:
 
 ```http
-POST /connectors/{{id}}
+POST /connectors/{id}
 Host: localhost:2113
 Content-Type: application/json
 
@@ -93,7 +100,7 @@ The Serilog sink can be configured with the following options:
 @tab Example Request
 
 ```http
-POST /connectors/{{id}}
+POST /connectors/{id}
 Host: localhost:2113
 Content-Type: application/json
 
@@ -135,7 +142,7 @@ Encode the JSON configuration to base64, then provide the base64 encoded configu
 @tab cURL
 
 ```http
-POST /connectors/{{id}}
+POST /connectors/{id}
 Host: localhost:2113
 Content-Type: application/json
 

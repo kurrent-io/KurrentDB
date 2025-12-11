@@ -12,12 +12,24 @@ messages are routed to the appropriate destinations based on the provided routin
 reliability and supports graceful error handling and recovery mechanisms to ensure consistent message delivery in a
 production environment.
 
+## Prerequisites
+
+Before using the RabbitMQ sink connector, ensure you have:
+
+- A data protection token configured in your KurrentDB instance (required to encrypt sensitive fields like passwords)
+- A RabbitMQ server instance with accessible host and port
+- Appropriate authentication credentials (username and password)
+
+::: tip
+See the [Data Protection](../features.md#data-protection) documentation for instructions on configuring the encryption token.
+:::
+
 ## Quickstart
 
-You can create the RabbitMQ Sink connector as follows. Replace `{{id}}` with your desired connector ID:
+You can create the RabbitMQ Sink connector as follows. Replace `{id}` with your desired connector ID:
 
 ```http
-POST /connectors/{{id}}
+POST /connectors/{id}
 Host: localhost:2113
 Content-Type: application/json
 
@@ -81,7 +93,7 @@ By default, the connector waits for broker acknowledgment. Enabling broker ackno
 to RabbitMQ is confirmed by the broker before the publish operation is considered complete:
 
 ```http
-POST /connectors/{{id}}
+POST /connectors/{id}
 Host: localhost:2113
 Content-Type: application/json
 

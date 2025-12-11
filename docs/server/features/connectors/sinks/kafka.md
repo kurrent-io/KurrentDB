@@ -11,12 +11,24 @@ reliable delivery. It can extract the partition key from the record based on
 specific sources such as the stream ID, headers, or record key and also supports
 basic authentication and resilience features to handle transient errors.
 
+## Prerequisites
+
+Before using the Kafka sink connector, ensure you have:
+
+- A data protection token configured in your KurrentDB instance (required to encrypt sensitive fields like passwords)
+- A Kafka cluster with accessible broker addresses
+- Appropriate authentication credentials if using SASL
+
+::: tip
+See the [Data Protection](../features.md#data-protection) documentation for instructions on configuring the encryption token.
+:::
+
 ## Quickstart
 
-You can create the Kafka Sink connector as follows. Replace `{{id}}` with your desired connector ID:
+You can create the Kafka Sink connector as follows. Replace `{id}` with your desired connector ID:
 
 ```http
-POST /connectors/{{id}}
+POST /connectors/{id}
 Host: localhost:2113
 Content-Type: application/json
 
@@ -125,7 +137,7 @@ prefix `defaultHeaders:` followed by the header name.
 Example:
 
 ```http
-PUT /connectors/{{id}}
+PUT /connectors/{id}
 Host: localhost:2113
 Content-Type: application/json
 
@@ -156,7 +168,7 @@ certificates, add them to your system's trust store first.
 
 #### SASL/PLAINTEXT with PLAIN Authentication
 ```http
-PUT /connectors/{{id}}/settings
+PUT /connectors/{id}/settings
 Host: localhost:2113
 Content-Type: application/json
 
@@ -170,7 +182,7 @@ Content-Type: application/json
 
 #### SASL/PLAINTEXT with SCRAM-SHA-256 Authentication
 ```http
-PUT /connectors/{{id}}/settings
+PUT /connectors/{id}/settings
 Host: localhost:2113
 Content-Type: application/json
 
@@ -184,7 +196,7 @@ Content-Type: application/json
 
 #### SASL/PLAINTEXT with SCRAM-SHA-512 Authentication
 ```http
-PUT /connectors/{{id}}/settings
+PUT /connectors/{id}/settings
 Host: localhost:2113
 Content-Type: application/json
 
@@ -200,7 +212,7 @@ Content-Type: application/json
 
 For production environments with encryption (recommended for managed Kafka services):
 ```http
-PUT /connectors/{{id}}/settings
+PUT /connectors/{id}/settings
 Host: localhost:2113
 Content-Type: application/json
 
@@ -214,7 +226,7 @@ Content-Type: application/json
 
 #### SASL/SSL with SCRAM-SHA-256 Authentication
 ```http
-PUT /connectors/{{id}}/settings
+PUT /connectors/{id}/settings
 Host: localhost:2113
 Content-Type: application/json
 
@@ -228,7 +240,7 @@ Content-Type: application/json
 
 #### SASL/SSL with SCRAM-SHA-512 Authentication
 ```http
-PUT /connectors/{{id}}/settings
+PUT /connectors/{id}/settings
 Host: localhost:2113
 Content-Type: application/json
 
@@ -261,7 +273,7 @@ on your naming convention. In this example, the expression captures the stream
 name up to `_data`.
 
 ```http
-PUT /connectors/{{id}}/settings
+PUT /connectors/{id}/settings
 Host: localhost:2113
 Content-Type: application/json
 
@@ -277,7 +289,7 @@ hyphen), you can use the `streamSuffix` source. This
 doesn't require an expression since it automatically extracts the suffix.
 
 ```http
-PUT /connectors/{{id}}/settings
+PUT /connectors/{id}/settings
 Host: localhost:2113
 Content-Type: application/json
 
@@ -296,7 +308,7 @@ example, if the stream is named `user-123`, the partition key would be `123`.
 You can create partition keys by combining values from a record's metadata.
 
 ```http
-PUT /connectors/{{id}}/settings
+PUT /connectors/{id}/settings
 Host: localhost:2113
 Content-Type: application/json
 
