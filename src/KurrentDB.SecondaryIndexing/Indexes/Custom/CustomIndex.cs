@@ -31,4 +31,11 @@ public static class CustomIndex {
 		}
 	}
 
+	public static string GetManagementStreamName(string indexName) {
+		return $"{CustomIndexConstants.Category}-{indexName}";
+	}
+
+	public static void ParseManagementStreamName(string streamName, out string indexName) {
+		indexName = streamName[(streamName.IndexOf('-') + 1) ..];
+	}
 }

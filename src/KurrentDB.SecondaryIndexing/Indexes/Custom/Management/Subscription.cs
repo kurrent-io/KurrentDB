@@ -22,6 +22,8 @@ using KurrentDB.Protocol.V2.CustomIndexes;
 using KurrentDB.SecondaryIndexing.Subscriptions;
 using Serilog;
 
+using static KurrentDB.SecondaryIndexing.Indexes.Custom.CustomIndex;
+
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 
 public class Subscription : ISecondaryIndexReader {
@@ -170,9 +172,7 @@ public class Subscription : ISecondaryIndexReader {
 						data: evt.OriginalEvent.Data,
 						schemaInfo: new(evt.OriginalEvent.EventType, SchemaDataFormat.Json));
 
-					//qq refactor, put place that writes and reads stream names together.
-					var streamName = evt.OriginalEvent.EventStreamId;
-					var customIndexName = streamName[(streamName.IndexOf('-') + 1) ..];
+					ParseManagementStreamName(evt.OriginalEvent.EventStreamId, out var customIndexName);
 
 					switch (deserializedEvent) {
 						case CustomIndexCreated createdEvent: {

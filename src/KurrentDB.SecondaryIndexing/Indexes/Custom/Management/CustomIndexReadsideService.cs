@@ -9,6 +9,8 @@ using KurrentDB.Core;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Protocol.V2.CustomIndexes;
 
+using static KurrentDB.SecondaryIndexing.Indexes.Custom.CustomIndex;
+
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 
 public class CustomIndexReadsideService(
@@ -33,9 +35,7 @@ public class CustomIndexReadsideService(
 				data: evt.Event.Data,
 				schemaInfo: new(evt.Event.EventType, SchemaDataFormat.Json));
 
-			//qq refactor, put place that writes and reads stream names together.
-			var streamName = evt.Event.EventStreamId;
-			var customIndexName = streamName[(streamName.IndexOf('-') + 1) ..];
+			ParseManagementStreamName(evt.Event.EventStreamId, out var customIndexName);
 
 			state.When(new CustomIndexId(customIndexName), deserializedEvent!);
 		}
