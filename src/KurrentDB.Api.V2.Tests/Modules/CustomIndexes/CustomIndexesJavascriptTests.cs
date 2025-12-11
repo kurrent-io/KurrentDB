@@ -116,18 +116,11 @@ public class CustomIndexesJavascriptTests {
 	}
 
 	[Test]
-	public async ValueTask can_use_null_field_type(CancellationToken ct) {
+	public async ValueTask can_use_no_field(CancellationToken ct) {
 		await Client.CreateCustomIndexAsync(
 			new() {
 				Name = CustomIndexName,
 				Filter = $"rec => rec.type == '{EventType}'",
-				Fields = {
-					new Field() {
-						Name = "null", //qq we could consider making name unnecessary when there is only one field
-						Selector = "rec => null", //qq todo: when the field type is null we probably shouldn't call the selector
-						Type = FieldType.Null,
-					},
-				},
 			},
 			cancellationToken: ct);
 

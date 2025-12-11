@@ -156,7 +156,6 @@ internal class CustomIndexProcessor<TField> : CustomIndexProcessor where TField 
 			_resolvedEventJsObject.Data = resolvedEvent.OriginalEvent.Data;
 			_resolvedEventJsObject.Metadata = resolvedEvent.OriginalEvent.Metadata;
 
-			//qq find out if it is more performance to combine the two functions once and call that here
 			if (_filter is not null) {
 				var passesFilter = _filter.Call(_resolvedEventJsObject).AsBoolean();
 				if (!passesFilter)

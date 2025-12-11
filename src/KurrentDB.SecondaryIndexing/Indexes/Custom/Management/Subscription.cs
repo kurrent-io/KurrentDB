@@ -108,13 +108,7 @@ public class Subscription : ISecondaryIndexReader {
 			indexName: CustomIndexConstants.ManagementIndexName, //qq don't collide with user indices
 			createdEvent: new() {
 				Filter = "",
-				Fields = {
-					new Field {
-						Name = "null",
-						Selector = "rec => null",
-						Type = FieldType.Unspecified,
-					},
-				},
+				Fields = { },
 			},
 			eventFilter: evt => evt.EventStreamId.StartsWith($"{CustomIndexConstants.Category}-"));
 
@@ -223,8 +217,10 @@ public class Subscription : ISecondaryIndexReader {
 	}
 
 	private ValueTask StartCustomIndex(string indexName, CustomIndexCreated createdEvent) {
+		if (createdEvent.Fields.Count is 0)
+			return StartCustomIndex<NullField>(indexName, createdEvent);
+
 		return createdEvent.Fields[0].Type switch {
-			FieldType.Null => StartCustomIndex<NullField>(indexName, createdEvent),
 			FieldType.Double => StartCustomIndex<DoubleField>(indexName, createdEvent),
 			FieldType.String => StartCustomIndex<StringField>(indexName, createdEvent),
 			FieldType.Int16 => StartCustomIndex<Int16Field>(indexName, createdEvent),
@@ -246,7 +242,9 @@ public class Subscription : ISecondaryIndexReader {
 		var processor = new CustomIndexProcessor<TField>(
 			indexName: indexName,
 			jsEventFilter: createdEvent.Filter,
-			jsFieldSelector: createdEvent.Fields[0].Selector,
+			jsFieldSelector: createdEvent.Fields.Count is 0
+				? ""
+				: createdEvent.Fields[0].Selector,
 			db: _db,
 			sql: sql,
 			inFlightRecords: inFlightRecords,

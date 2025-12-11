@@ -19,7 +19,6 @@ using StreamsService = KurrentDB.Api.Streams.StreamsService;
 
 namespace KurrentDB.Plugins.Api.V2;
 
-//qq admin api working in a cluster?
 [UsedImplicitly]
 public class ApiV2Plugin() : SubsystemsPlugin("APIV2") {
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {

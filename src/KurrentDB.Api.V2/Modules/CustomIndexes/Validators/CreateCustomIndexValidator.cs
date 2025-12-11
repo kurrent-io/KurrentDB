@@ -22,7 +22,7 @@ class CreateCustomIndexValidator : RequestValidator<CreateCustomIndexRequest> {
 			.SetValidator(FieldValidator.Instance);
 
 		RuleFor(x => x.Fields)
-			.Must(x => x.Count == 1)
-			.WithMessage("Currently exactly one custom index field must be provided");
+			.Must(x => x.Count <= 1)
+			.WithMessage("Currently at most one custom index field must be provided");
 	}
 }
