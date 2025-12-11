@@ -29,16 +29,10 @@ public sealed class CustomIndexManager :
 	IHostedService,
 	ISecondaryIndexReader {
 
-	private readonly ISystemClient _client;
 	private readonly IPublisher _publisher;
-	private readonly ISchemaSerializer _serializer;
-	private readonly SecondaryIndexingPluginOptions _options;
-	private readonly DuckDBConnectionPool _db;
-	private readonly IReadIndex<string> _index;
 	private readonly IReadOnlyCheckpoint _writerCheckpoint;
-	private readonly Meter _meter;
+	private readonly Subscription _subscription;
 
-	private Subscription? _subscription;
 	private CancellationTokenSource? _cts;
 
 	private long _lastAppendedRecordPosition = -1;
@@ -58,15 +52,10 @@ public sealed class CustomIndexManager :
 		TFChunkDbConfig chunkDbConfig,
 		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)] Meter meter) {
 
-		_client = client;
 		_publisher = publisher;
-		_serializer = serializer;
-		_options = options;
-		_db = db;
-		_index = index;
 		_writerCheckpoint = chunkDbConfig.WriterCheckpoint;
-		_meter = meter;
 		_cts = new CancellationTokenSource();
+		_subscription = new Subscription(client, _publisher, serializer, options, db, index, meter, GetLastAppendedRecord, _cts!.Token);
 
 		subscriber.Subscribe<SystemMessage.SystemReady>(this);
 		subscriber.Subscribe<SystemMessage.BecomeShuttingDown>(this);
@@ -74,18 +63,9 @@ public sealed class CustomIndexManager :
 	}
 
 	public void EnsureLive() {
-		if (_subscription is not { } subscription)
-			throw new CustomIndexesNotReadyException(0, _writerCheckpoint.Read());
-
-		if (!subscription.CaughtUp) {
-			throw new CustomIndexesNotReadyException(subscription.Checkpoint, _writerCheckpoint.Read());
+		if (!_subscription.CaughtUp) {
+			throw new CustomIndexesNotReadyException(_subscription.Checkpoint, _writerCheckpoint.Read());
 		}
-	}
-
-	private async Task InitializeManagementStreamSubscription() {
-		Log.Verbose("Custom indexes: Initializing subscription to management stream");
-		_subscription = new Subscription(_client, _publisher, _serializer, _options, _db, _index, _meter, GetLastAppendedRecord, _cts!.Token);
-		await _subscription.Start();
 	}
 
 	private (long, DateTime) GetLastAppendedRecord() {
@@ -112,7 +92,8 @@ public sealed class CustomIndexManager :
 	public void Handle(SystemMessage.SystemReady message) {
 		Task.Run(async () => {
 			await ReadTail();
-			await InitializeManagementStreamSubscription();
+			Log.Verbose("Custom indexes: Initializing subscription to management stream");
+			await _subscription.Start();
 		});
 	}
 
