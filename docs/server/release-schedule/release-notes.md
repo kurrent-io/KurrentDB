@@ -6,6 +6,41 @@ order: 1
 
 This page contains the release notes for EventStoreDB 24.10
 
+## [24.10.9](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.9)
+
+11 December 2025
+
+### Connectors: Performance improvements
+
+Improved connector performance through a new position tracker and optimized asynchronous operations. Memory allocations and overhead are reduced, particularly when operations complete synchronously.
+
+### Connectors: Kafka sink waitForBrokerAck setting now defaults to false
+
+The Kafka sink connector now uses callback-based message delivery by default instead of synchronous sends. The `waitForBrokerAck` setting defaults to false. The connector maintains checkpoints to ensure at least once delivery.
+
+### Connectors: Clear error details on successful recovery and stop of connectors 
+
+Connector error details are now properly cleared when a connector successfully recovers or is stopped.
+
+### Connectors: Enable query without request body and fix pagination bug
+Connector listing now uses query parameters instead of requiring a request body. Also fixes a pagination bug.
+
+### Connectors: Record state change on activation and deactivation failures
+
+Connector state now correctly records as `deactivated` when activation fails before the processor starts.
+
+### Connectors: Fixed command service logging issue 
+
+Resolved an invalid operation exception triggered when sending commands to the connectors service over gRPC.
+
+### Connectors: Use position-based filtering when reading events
+
+Connectors now use position-based filtering instead of stream revision-based reads. This fixes system events being incorrectly included in connector results and improves error handling when reading from non-existent streams.
+
+### Connectors: Headers improvements
+
+Header keys now retain their original casing when delivered to connector destinations. The default headers `esdb-record-partition-key` and `esdb-record-is-transformed` are no longer added to outgoing messages. You can also choose whether to include system headers in sink metadata.
+
 ## [24.10.8](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.8)
 
 27 November 2025
