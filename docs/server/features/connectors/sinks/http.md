@@ -12,12 +12,24 @@ consumed from the stream, without batching. The event data is transmitted as the
 request body, and metadata can be included as HTTP headers. The connector also
 supports Basic Authentication and Bearer Token Authentication. See [Authentication](#authentication).
 
+## Prerequisites
+
+Before using the HTTP sink connector, ensure you have:
+
+- A data protection token configured in your KurrentDB instance (required to encrypt sensitive fields like passwords and bearer tokens)
+- A target HTTP/HTTPS endpoint that can receive POST requests
+- Appropriate authentication credentials if the endpoint requires authentication
+
+::: tip
+See the [Data Protection](../features.md#data-protection) documentation for instructions on configuring the encryption token.
+:::
+
 ## Quickstart
 
-You can create the HTTP Sink connector as follows. Replace `{{id}}` with your desired connector ID:
+You can create the HTTP Sink connector as follows. Replace `{id}` with your desired connector ID:
 
 ```http
-POST /connectors/{{id}}
+POST /connectors/{id}
 Host: localhost:2113
 Content-Type: application/json
 
@@ -99,7 +111,7 @@ with the prefix `defaultHeaders:` followed by the header name.
 **Example Request**:
 
 ```http
-PUT /connectors/{{id}}
+PUT /connectors/{id}
 Host: localhost:2113
 Content-Type: application/json
 

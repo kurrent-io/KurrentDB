@@ -9,14 +9,26 @@ order: 1
 
 The Elasticsearch sink retrieves messages from a KurrentDB stream and stores them in
 an Elasticsearch index. Each record is serialized as a JSON document compatible with
-Elasticsearch's document structure. 
+Elasticsearch's document structure.
+
+## Prerequisites
+
+Before using the Elasticsearch sink connector, ensure you have:
+
+- A data protection token configured in your KurrentDB instance (required to encrypt sensitive fields like passwords and API keys)
+- An Elasticsearch cluster with an accessible URL
+- Appropriate authentication credentials (basic auth, token, or API key)
+
+::: tip
+See the [Data Protection](../features.md#data-protection) documentation for instructions on configuring the encryption token.
+:::
 
 ## Quickstart
 
-You can create the Elasticsearch Sink connector as follows. Replace `{{id}}` with your desired connector ID:
+You can create the Elasticsearch Sink connector as follows. Replace `{id}` with your desired connector ID:
 
 ```http
-POST /connectors/{{id}}
+POST /connectors/{id}
 Host: localhost:2113
 Content-Type: application/json
 
@@ -116,7 +128,7 @@ on your naming convention. In this example, the expression captures the stream
 name up to `_data`.
 
 ```http
-PUT /connectors/{{id}}/settings
+PUT /connectors/{id}/settings
 Host: localhost:2113
 Content-Type: application/json
 
@@ -131,7 +143,7 @@ hyphen), you can use the `streamSuffix` source. This doesn't require an
 expression since it automatically extracts the suffix.
 
 ```http
-PUT /connectors/{{id}}/settings
+PUT /connectors/{id}/settings
 Host: localhost:2113
 Content-Type: application/json
 
@@ -149,7 +161,7 @@ example, if the stream is named `user-123`, the document ID would be `123`.
 You can create the document ID by combining values from a record's metadata.
 
 ```http
-PUT /connectors/{{id}}/settings
+PUT /connectors/{id}/settings
 Host: localhost:2113
 Content-Type: application/json
 
@@ -172,7 +184,7 @@ The Elasticsearch sink connector supports multiple authentication methods.
 To use Basic Authentication, set the method to `basic` and provide the username and password:
 
 ```http
-PUT /connectors/{{id}}/settings
+PUT /connectors/{id}/settings
 Host: localhost:2113
 Content-Type: application/json
 
@@ -188,7 +200,7 @@ Content-Type: application/json
 To use API Key authentication, set the method to `apiKey` and provide the API key:
 
 ```http
-PUT /connectors/{{id}}/settings
+PUT /connectors/{id}/settings
 Host: localhost:2113
 Content-Type: application/json
 
@@ -203,7 +215,7 @@ Content-Type: application/json
 To use Token authentication, set the method to `token` and provide the Base64 encoded API key:
 
 ```http
-PUT /connectors/{{id}}/settings
+PUT /connectors/{id}/settings
 Host: localhost:2113
 Content-Type: application/json
 
@@ -218,7 +230,7 @@ Content-Type: application/json
 To configure Mutual TLS authentication, provide the client and root certificates:
 
 ```http
-PUT /connectors/{{id}}/settings
+PUT /connectors/{id}/settings
 Host: localhost:2113
 Content-Type: application/json
 

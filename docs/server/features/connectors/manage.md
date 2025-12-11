@@ -5,54 +5,50 @@ order: 4
 
 This page offers a detailed list of operations for effectively managing your connectors.
 
-::: info
-This page uses the `serilog-sink` connector as an example. Replace `instanceTypeName` with the unique identifier of your chosen connector. For more information on the instance type name, refer to the [configuration](./settings.md) page.
-:::
-
 ## Create
 
-Create a connector by sending a `POST` request to `connectors/{connector_id}`, where `{connector_id}` is a unique identifier of your choice for the connector.
+Create a connector by sending a `POST` request to `connectors/{id}`, where `{id}` is a unique identifier of your choice for the connector.
 
 ```http
-POST /connectors/serilog-sink
+POST /connectors/{id}
 Host: localhost:2113
 Content-Type: application/json
 
 {
-  "name": "Demo Serilog Sink",
+  "name": "Example name",
   "settings": {
-    "instanceTypeName": "serilog-sink",
+    "instanceTypeName": "{instanceTypeName}",
     "subscription:filter:scope": "stream",
-    "subscription:filter:expression": "some-stream",
+    "subscription:filter:expression": "{stream-name}",
     "subscription:initialPosition": "earliest"
   }
 }
 ```
 
-When you start the connector using the [Start command](#start), and append an
-event to the stream `some-stream`, the connector will consume the event and log
-it to the console. Find out more about [Subscription configuration](./settings.md#subscription-configuration).
+When you start the connector using the [Start command](#start) and append an
+event to the stream `{stream-name}`, the connector will consume and process the event
+according to its configured sink type. Find out more about [Subscription configuration](./settings.md#subscription-configuration).
 
-::: note
+::: tip
 The name field is optional and can be used to provide a human-readable name for the connector. If not provided, the connector will be named after the connector ID.
 :::
 
 ## Start
 
-Start a connector by sending a `POST` request to `connectors/{connector_id}/start`, where `{connector_id}` is the unique identifier used when the connector was created.
+Start a connector by sending a `POST` request to `connectors/{id}/start`, where `{id}` is the unique identifier used when the connector was created.
 
 ```http
-POST /connectors/serilog-sink/start
+POST /connectors/{id}/start
 Host: localhost:2113
 ```
 
 You can also start from a specific position by providing the start position in
 the query parameter. Do this by sending a `POST` request to
-`connectors/{connector_id}/start/{log_position}` where `{log_position}` is the position
+`connectors/{id}/start/{log_position}` where `{log_position}` is the position
 from which to start consuming events.
 
 ```http
-POST /connectors/serilog-sink/start/32789
+POST /connectors/{id}/start/32789
 Host: localhost:2113
 ```
 
@@ -69,23 +65,48 @@ List all connectors by sending a `GET` request to `/connectors`.
 ```http
 GET /connectors
 Host: localhost:2113
-Content-Type: application/json
-
-{
-  "state": ["CONNECTOR_STATE_STOPPED", "CONNECTOR_STATE_RUNNING"],
-  "instanceTypeName": ["serilog-sink"],
-  "connectorId": ["serilog-sink"],
-  "includeSettings": true,
-  "paging": {
-      "page": 1,
-      "pageSize": 100
-  }
-}
 ```
 
-You can paginate the results by specifying the `pageSize` and `page` parameters.
-Additionally, you can filter the results using the `state`, `instanceType`, and
-`connectorId` parameters.
+### Query parameters
+
+You can filter and paginate the results using the following query parameters:
+
+| Parameter          | Type    | Description                                                    | Default |
+| ------------------ | ------- | -------------------------------------------------------------- | ------- |
+| `state`            | string  | Filter by connector state. Can be specified multiple times.    | -       |
+| `instanceTypeName` | string  | Filter by instance type name. Can be specified multiple times. | -       |
+| `connectorId`      | string  | Filter by connector ID. Can be specified multiple times.       | -       |
+| `includeSettings`  | boolean | Include connector settings in the response.                    | `false` |
+| `page`             | integer | Page number for pagination.                                    | `1`     |
+| `pageSize`         | integer | Number of items per page.                                      | `100`   |
+
+To specify multiple values for a parameter, repeat the query parameter:
+
+```http
+GET /connectors?state=CONNECTOR_STATE_RUNNING&state=CONNECTOR_STATE_STOPPED&instanceTypeName=serilog-sink
+Host: localhost:2113
+```
+
+### State values
+
+The `state` filter accepts the following values:
+
+| State                          | Description                                              |
+| ------------------------------ | -------------------------------------------------------- |
+| `CONNECTOR_STATE_UNKNOWN`      | The connector state is unknown or not yet determined.    |
+| `CONNECTOR_STATE_ACTIVATING`   | The connector is in the process of starting up.          |
+| `CONNECTOR_STATE_RUNNING`      | The connector is actively running and consuming events.  |
+| `CONNECTOR_STATE_DEACTIVATING` | The connector is in the process of shutting down.        |
+| `CONNECTOR_STATE_STOPPED`      | The connector is stopped and not consuming events.       |
+
+### Examples
+
+Example with filters:
+
+```http
+GET /connectors?state=CONNECTOR_STATE_RUNNING&state=CONNECTOR_STATE_STOPPED&includeSettings=true
+Host: localhost:2113
+```
 
 ::: details Example response
 
@@ -135,24 +156,14 @@ Content-Type: application/json
 
 :::
 
-The following states are available:
-
-| State                          | Description                                           |
-| ------------------------------ | ----------------------------------------------------- |
-| `CONNECTOR_STATE_UNKNOWN`      | The state of the connector is unknown.                |
-| `CONNECTOR_STATE_ACTIVATING`   | The connector is in the process of being activated.   |
-| `CONNECTOR_STATE_RUNNING`      | The connector is currently running.                   |
-| `CONNECTOR_STATE_DEACTIVATING` | The connector is in the process of being deactivated. |
-| `CONNECTOR_STATE_STOPPED`      | The connector is currently stopped.                   |
-
 ## View settings
 
 View the settings for a connector by sending a `GET` request to
-`/connectors/{connector_id}/settings`, where `{connector_id}` is the unique
+`/connectors/{id}/settings`, where `{id}` is the unique
 identifier used when the connector was created.
 
 ```http
-GET /connectors/serilog-sink/settings
+GET /connectors/{id}/settings
 Host: localhost:2113
 ```
 
@@ -177,7 +188,7 @@ Content-Type: application/json
 
 ## Reset
 
-Reset a connector by sending a `POST` request to `/connectors/{connector_id}/reset`, where `{connector_id}` is the unique identifier used when the connector was created.
+Reset a connector by sending a `POST` request to `/connectors/{id}/reset`, where `{id}` is the unique identifier used when the connector was created.
 
 ```http
 POST /connectors/serilog-sink/reset
@@ -186,11 +197,11 @@ Host: localhost:2113
 
 You can also reset the connector to a specific position by providing the reset
 position in the query parameter. Do this by sending a `POST` request to
-`/connectors/{connector_id}/reset/{log_position}` where `{log_position}` is the position
+`/connectors/{id}/reset/{log_position}` where `{log_position}` is the position
 to which the connector should be reset.
 
 ```http
-POST /connectors/serilog-sink/reset/25123
+POST /connectors/{id}/reset/25123
 Host: localhost:2113
 ```
 
@@ -200,27 +211,27 @@ If no reset position is provided, the connector will reset the position to the b
 
 ## Stop
 
-Stop a connector by sending a `POST` request to `/connectors/{connector_id}/stop`, where `{connector_id}` is the unique identifier used when the connector was created.
+Stop a connector by sending a `POST` request to `/connectors/{id}/stop`, where `{id}` is the unique identifier used when the connector was created.
 
 ```http
-POST /connectors/serilog-sink/stop
+POST /connectors/{id}/stop
 Host: localhost:2113
 ```
 
 ## Reconfigure
 
 Reconfigure an existing connector by sending a `PUT` request to
-`/connectors/{connector_id}/settings`, where `{connector_id}` is the unique
+`/connectors/{id}/settings`, where `{id}` is the unique
 identifier used when the connector was created. This endpoint allows you to
 modify the settings of a connector without having to delete and recreate it.
 
 ```http
-PUT /connectors/serilog-sink/settings
+PUT /connectors/{id}/settings
 Host: localhost:2113
 Content-Type: application/json
 
 {
-  "instanceTypeName": "serilog-sink",
+  "instanceTypeName": "{instanceTypeName}",
   "logging:enabled": "false"
 }
 ```
@@ -236,7 +247,7 @@ before attempting to reconfigure it.
 ## Delete
 
 Delete a connector by sending a `DELETE` request to
-`/connectors/{connector_id}`, where `{connector_id}` is the unique
+`/connectors/{id}`, where `{id}` is the unique
 identifier used when the connector was created.
 
 ```http
@@ -247,7 +258,7 @@ Host: localhost:2113
 ## Rename
 
 To rename a connector, send a `PUT` request to
-`/connectors/{connector_id}/rename`, where `{connector_id}` is the unique
+`/connectors/{id}/rename`, where `{id}` is the unique
 identifier used when the connector was created.
 
 ```http

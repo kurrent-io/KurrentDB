@@ -11,10 +11,10 @@ Kafka topic and append them into a KurrentDB stream.
 
 ## Quick Start
 
-You can create the Kafka Source connector as follows. Replace `{{id}}` with your desired connector ID:
+You can create the Kafka Source connector as follows. Replace `{id}` with your desired connector ID:
 
 ```http
-POST /connectors/{{id}}
+POST /connectors/{id}
 Host: localhost:2113
 Content-Type: application/json
 
@@ -88,7 +88,7 @@ The default authentication method is `plaintext`. You can configure the authenti
 #### SSL/TLS
 
 ```http
-POST /connectors/{{id}}
+POST /connectors/{id}
 Host: localhost:2113
 Content-Type: application/json
 
@@ -106,7 +106,7 @@ Content-Type: application/json
 #### SASL/PLAIN
 
 ```http
-POST /connectors/{{id}}
+POST /connectors/{id}
 Host: localhost:2113
 Content-Type: application/json
 

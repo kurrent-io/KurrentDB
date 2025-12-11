@@ -6,28 +6,37 @@ title: 'Sql Sink'
 
 ## Overview
 
-The SQL sink writes events to SQL databases by executing SQL statements. SQL
-statements can be configured by defining a mapping between schema names and SQL
-statements.
+The SQL sink connector writes events from KurrentDB to SQL databases by executing configurable SQL statements. You can define mappings between event types and SQL statement templates to control how events are persisted.
 
-## Supported Databases
+### Supported Databases
 
-The connector supports the following database systems:
 - Microsoft SQL Server
 - PostgreSQL
 
-::: warning
+::: warning Content Type Requirement
 This connector only processes events with the `application/json` content type. Events with other content types will fail processing.
+:::
+
+## Prerequisites
+
+Before using the SQL sink connector, ensure you have:
+
+- A data protection token configured in your KurrentDB instance (required to encrypt sensitive fields like passwords)
+- A supported SQL database instance (SQL Server or PostgreSQL)
+- Appropriate database credentials and network access
+
+::: tip
+See the [Data Protection](../features.md#data-protection) documentation for instructions on configuring the encryption token.
 :::
 
 ## Quick Start
 
 ### SQL Server
 
-You can create the SQL Server sink connector as follows. Replace `{{id}}` with your desired connector ID:
+You can create the SQL Server sink connector as follows. Replace `{id}` with your desired connector ID:
 
 ```http request
-POST /connectors/{{id}}
+POST /connectors/{id}
 Host: localhost:2113
 Content-Type: application/json
 
@@ -45,7 +54,7 @@ Content-Type: application/json
 ### PostgreSQL
 
 ```http request
-POST /connectors/{{id}}
+POST /connectors/{id}
 Host: localhost:2113
 Content-Type: application/json
 
@@ -188,9 +197,7 @@ Studio URL: http://127.0.0.1:54323
 ...
 ```
 
-::: tip
-Note down the **Studio URL** - you'll need it to verify the data insertion in step 6.
-:::
+Note down the **Studio URL** because you'll need it to verify the data insertion in step 6.
 
 #### Step 2: Format the Connection String
 
@@ -277,7 +284,7 @@ ewogICJWZWhpY2xlUmVnaXN0ZXJlZCI6IHsKICAgICJTdGF0ZW1lbnQiOiAiSU5TRVJUIElOVE8gdmVo
 **Create the connector:**
 
 ```http
-POST /connectors/{{id}}
+POST /connectors/{id}
 Host: localhost:2113
 Content-Type: application/json
 
@@ -297,7 +304,7 @@ Content-Type: application/json
 **Start the connector:**
 
 ```http
-POST /connectors/{{id}}/start
+POST /connectors/{id}/start
 Host: localhost:2113
 ```
 
