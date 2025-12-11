@@ -10,7 +10,7 @@ namespace KurrentDB.Api.Modules.CustomIndexes.Validators;
 class FieldValidator : ValidatorBase<FieldValidator, Field> {
 	public FieldValidator() {
 		RuleFor(x => x.Name)
-			.SetValidator(NameValidator.Instance); //qq this requires lower case but we don't necesarily want to. probably put our own validation here
+			.SetValidator(NameValidator.Instance);
 
 		RuleFor(x => x.Selector)
 			.Must(x => x is "" || JsFunctionValidator.IsValidFunctionWithOneArgument(x))

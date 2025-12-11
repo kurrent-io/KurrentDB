@@ -10,15 +10,24 @@ using KurrentDB.SecondaryIndexing.Storage;
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom;
 
 internal static class CustomIndexSql {
-	private static readonly Regex TableNameRegex = new("^[a-z][a-z0-9_-]*$", RegexOptions.Compiled);
+	// we validate the table/column names for safety reasons although DuckDB allows a large set of characters when using quoted identifiers
+	private static readonly Regex IdentifierRegex = new("^[a-z][a-z0-9_-]*$", RegexOptions.Compiled);
 	public static string GetTableNameFor(string indexName) {
 		var tableName = $"idx_custom__{indexName}";
 
-		// we validate the table name for safety reasons although DuckDB allows a large set of characters when using quoted identifiers
-		if (!TableNameRegex.IsMatch(tableName))
+		if (!IdentifierRegex.IsMatch(tableName))
 			throw new Exception($"Invalid table name: {tableName}");
 
 		return tableName;
+	}
+
+	public static string GetColumnNameFor(string fieldName) {
+		var columnName = $"field_{fieldName}";
+
+		if (!IdentifierRegex.IsMatch(columnName))
+			throw new Exception($"Invalid column name: {columnName}");
+
+		return columnName;
 	}
 
 	public static string GenerateInFlightTableNameFor(string indexName) {
@@ -34,22 +43,24 @@ internal static class CustomIndexSql {
 	}
 }
 
-internal class CustomIndexSql<TField>(string indexName) where TField : IField {
+internal class CustomIndexSql<TField>(string indexName, string fieldName) where TField : IField {
 	public string TableName { get; } = CustomIndexSql.GetTableNameFor(indexName);
+	public string FieldColumnName { get; } = CustomIndexSql.GetColumnNameFor(fieldName);
+
 	public ReadOnlyMemory<byte> TableNameUtf8 { get; } = Encoding.UTF8.GetBytes(CustomIndexSql.GetTableNameFor(indexName));
 
 	public void CreateCustomIndex(DuckDBAdvancedConnection connection) {
-		var query = new CreateCustomIndexNonQuery(TableName, TField.GetCreateStatement());
+		var query = new CreateCustomIndexNonQuery(TableName, TField.GetCreateStatement(FieldColumnName));
 		connection.ExecuteNonQuery(ref query);
 	}
 	public List<IndexQueryRecord> ReadCustomIndexForwardsQuery(DuckDBConnectionPool db, ReadCustomIndexQueryArgs args) {
-		var query = new ReadCustomIndexForwardsQuery(TableName, args.ExcludeFirst, args.Field.GetQueryStatement());
+		var query = new ReadCustomIndexForwardsQuery(TableName, args.ExcludeFirst, args.Field.GetQueryStatement(FieldColumnName));
 		using (db.Rent(out var connection))
 			return connection.ExecuteQuery<ReadCustomIndexQueryArgs, IndexQueryRecord, ReadCustomIndexForwardsQuery>(ref query, args).ToList();
 	}
 
 	public List<IndexQueryRecord> ReadCustomIndexBackwardsQuery(DuckDBConnectionPool db, ReadCustomIndexQueryArgs args) {
-		var query = new ReadCustomIndexBackwardsQuery(TableName, args.ExcludeFirst, args.Field.GetQueryStatement());
+		var query = new ReadCustomIndexBackwardsQuery(TableName, args.ExcludeFirst, args.Field.GetQueryStatement(FieldColumnName));
 		using (db.Rent(out var connection))
 			return connection.ExecuteQuery<ReadCustomIndexQueryArgs, IndexQueryRecord, ReadCustomIndexBackwardsQuery>(ref query, args).ToList();
 	}

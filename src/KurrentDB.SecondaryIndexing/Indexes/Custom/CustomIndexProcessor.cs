@@ -255,7 +255,7 @@ internal class CustomIndexProcessor<TField> : CustomIndexProcessor where TField 
 			];
 
 			if (TField.Type is { } type)
-				columnInfos.Add(new ColumnInfo("field", type)); //qq probably need to use the name of the field
+				columnInfos.Add(new ColumnInfo(_sql.FieldColumnName, type));
 
 			return new(columnInfos, records);
 		}
