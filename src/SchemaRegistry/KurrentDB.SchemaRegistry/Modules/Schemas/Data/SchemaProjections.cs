@@ -13,7 +13,7 @@ namespace KurrentDB.SchemaRegistry.Data;
 public class SchemaProjections : DuckDBProjection {
 	public SchemaProjections() {
 		Project<SchemaCreated>((msg, db, ctx) => {
-			using var connection = db.GetConnection();
+			using var scope = db.GetScopedConnection(out var connection);
 			using var tx = connection.BeginTransaction();
 
 			const string insertSchemaVersionSql =
@@ -76,7 +76,7 @@ public class SchemaProjections : DuckDBProjection {
 		});
 
 		Project<SchemaVersionRegistered>((msg, db, ctx) => {
-			using var connection = db.GetConnection();
+			using var scope = db.GetScopedConnection(out var connection);
 			using var tx = connection.BeginTransaction();
 
 			const string insertSchemaVersionSql =
@@ -129,7 +129,7 @@ public class SchemaProjections : DuckDBProjection {
 		});
 
 		Project<SchemaCompatibilityModeChanged>((msg, db, _) => {
-			using var connection = db.GetConnection();
+			using var scope = db.GetScopedConnection(out var connection);
 			const string updateSchemaCompatibilitySql =
 				"""
 				UPDATE schemas
@@ -150,7 +150,7 @@ public class SchemaProjections : DuckDBProjection {
 		});
 
 		Project<SchemaDescriptionUpdated>((msg, db, _) => {
-			using var connection = db.GetConnection();
+			using var scope = db.GetScopedConnection(out var connection);
 			const string updateSchemaDescriptionSql =
 				"""
 				UPDATE schemas
@@ -171,7 +171,7 @@ public class SchemaProjections : DuckDBProjection {
 		});
 
 		Project<SchemaTagsUpdated>((msg, db, _) => {
-			using var connection = db.GetConnection();
+			using var scope = db.GetScopedConnection(out var connection);
 			const string updateSchemaTagsSql =
 				"""
 				UPDATE schemas
@@ -192,7 +192,7 @@ public class SchemaProjections : DuckDBProjection {
 		});
 
 		Project<SchemaVersionsDeleted>((msg, db, ctx) => {
-			using var connection = db.GetConnection();
+			using var scope = db.GetScopedConnection(out var connection);
 			using var tx = connection.BeginTransaction();
 
 			// TODO: Must figure out a better way to do this. Right now, we have to do string interpolation,
@@ -231,7 +231,7 @@ public class SchemaProjections : DuckDBProjection {
 		});
 
 		Project<SchemaDeleted>((msg, db, _) => {
-			using var connection = db.GetConnection();
+			using var scope = db.GetScopedConnection(out var connection);
 			using var tx = connection.BeginTransaction();
 
 			const string deleteSchemaVersionsSql =

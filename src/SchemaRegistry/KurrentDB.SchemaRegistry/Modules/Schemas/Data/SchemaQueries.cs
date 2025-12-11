@@ -29,7 +29,7 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 			WHERE schema_name = $schema_name
 			""";
 
-		using var connection = ConnectionProvider.GetConnection();
+		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
 
 		return connection.QueryOne(
 			sql, record => record is not null
@@ -46,7 +46,7 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 			WHERE version_id = $schema_version_id
 			""";
 
-		using var connection = ConnectionProvider.GetConnection();
+		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
 
 		return connection.QueryOne(
 			sql, record => record is not null
@@ -84,7 +84,7 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 			LIMIT 1;
 			""";
 
-		using var connection = ConnectionProvider.GetConnection();
+		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
 
 		return query.HasVersionNumber
 			? connection.QueryOne(
@@ -114,7 +114,7 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 			WHERE version_id = $schema_version_id
 			""";
 
-		using var connection = ConnectionProvider.GetConnection();
+		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
 
 		return connection.QueryOne(
 			sql, record => record is not null
@@ -132,7 +132,7 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 			  AND ($tags = '' OR json_contains(tags, $tags))
 			""";
 
-		using var connection = ConnectionProvider.GetConnection();
+		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
 
 		var result = connection
 			.QueryMany<Schema>(
@@ -173,7 +173,7 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 			ORDER BY version_number
 			""";
 
-		using var connection = ConnectionProvider.GetConnection();
+		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
 
 		var result = connection
 			.QueryMany<SchemaVersion>(
@@ -210,7 +210,7 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 			  AND ($tags == '' OR json_contains(s.tags, $tags))
 			""";
 
-		using var connection = ConnectionProvider.GetConnection();
+		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
 
 		var result = connection
 			.QueryMany<RegisteredSchema>(
@@ -227,7 +227,7 @@ public class SchemaQueries(IDuckDBConnectionProvider connectionProvider, ISchema
 	}
 
 	public async Task<CheckSchemaCompatibilityResponse> CheckSchemaCompatibility(CheckSchemaCompatibilityRequest query, CancellationToken cancellationToken) {
-		using var connection = ConnectionProvider.GetConnection();
+		using var scope = ConnectionProvider.GetScopedConnection(out var connection);
 
 		var info = query.HasSchemaVersionId
 			? GetLatestSchemaValidationInfo(connection, Guid.Parse(query.SchemaVersionId))
