@@ -15,6 +15,7 @@ using Serilog;
 
 namespace KurrentDB.SecondaryIndexing.Subscriptions;
 
+// The subscription to $all used to populate a particular custom index
 internal abstract class CustomIndexSubscription {
 	protected static readonly ILogger Log = Serilog.Log.ForContext<CustomIndexSubscription>();
 

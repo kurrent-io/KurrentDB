@@ -279,9 +279,12 @@ public class Subscription : ISecondaryIndexReader {
 
 		var writeLock = AcquireWriteLockForIndex(indexName, out var index);
 		using (writeLock) {
+			// we have the write lock, there are no readers. after we release the lock the index is no longer
+			// in the dictionary so there can be no new readers.
 			_customIndexes.TryRemove(indexName, out _);
 		}
 
+		// guaranteed no readers, we can stop.
 		await index.Stop();
 	}
 

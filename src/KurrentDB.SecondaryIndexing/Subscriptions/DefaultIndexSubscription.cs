@@ -10,7 +10,6 @@ using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.SecondaryIndexing.Indexes;
-using KurrentDB.SecondaryIndexing.Indexes.Custom;
 using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.SecondaryIndexing.Subscriptions;

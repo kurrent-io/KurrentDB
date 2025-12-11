@@ -66,8 +66,8 @@ internal class CustomIndexReader<TField>(
 		return sql.ReadCustomIndexBackwardsQuery(db, args);
 	}
 
-	public override TFPos GetLastIndexedPosition(string _) => throw new NotSupportedException(); // never called
-	public override bool CanReadIndex(string _) => throw new NotSupportedException(); // never called
+	public override TFPos GetLastIndexedPosition(string _) => throw new InvalidOperationException(); // never called
+	public override bool CanReadIndex(string _) => throw new InvalidOperationException(); // never called
 
 	private static bool TryGetField(string? id, out TField? field) {
 		field = default;
