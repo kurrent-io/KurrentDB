@@ -18,6 +18,6 @@ enum FieldType {
 message Field {
   string name = 1;
   string selector = 2;
-  reserved 3; // selector type
+  reserved 3; // selector type (js, json path, surge style js)
   FieldType type = 4;
 }

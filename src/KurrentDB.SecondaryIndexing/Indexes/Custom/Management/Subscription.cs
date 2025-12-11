@@ -25,7 +25,6 @@ using Serilog;
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 
 public class Subscription : ISecondaryIndexReader {
-	private const string ManagementStream = CustomIndexConstants.ManagementStream;
 	private readonly ISystemClient _client;
 	private readonly IPublisher _publisher;
 	private readonly ISchemaSerializer _serializer;
@@ -76,9 +75,9 @@ public class Subscription : ISecondaryIndexReader {
 		try {
 			await StartInternal();
 		} catch (OperationCanceledException) {
-			Log.Verbose("Subscription to: {stream} is shutting down.", ManagementStream);
+			Log.Verbose("Subscription to: {stream} is shutting down.", CustomIndexConstants.ManagementStream);
 		} catch (Exception ex) {
-			Log.Fatal(ex, "Subscription to: {stream} has encountered a fatal error.", ManagementStream);
+			Log.Fatal(ex, "Subscription to: {stream} has encountered a fatal error.", CustomIndexConstants.ManagementStream);
 		}
 	}
 
@@ -114,7 +113,7 @@ public class Subscription : ISecondaryIndexReader {
 
 		await _client.Subscriptions.SubscribeToIndex(
 			position: Position.Start,
-			indexName: ManagementStream,
+			indexName: CustomIndexConstants.ManagementStream,
 			channel: _channel,
 			resiliencePipeline: ResiliencePipelines.RetryForever,
 			cancellationToken: _cts.Token);
@@ -128,7 +127,7 @@ public class Subscription : ISecondaryIndexReader {
 					if (CaughtUp)
 						continue;
 
-					Log.Verbose("Subscription to: {stream} caught up", ManagementStream);
+					Log.Verbose("Subscription to: {stream} caught up", CustomIndexConstants.ManagementStream);
 
 					CaughtUp = true;
 
@@ -158,7 +157,7 @@ public class Subscription : ISecondaryIndexReader {
 				case ReadResponse.EventReceived eventReceived:
 					var evt = eventReceived.Event;
 
-					Log.Verbose("Subscription to: {stream} received event type: {type}", ManagementStream, evt.OriginalEvent.EventType);
+					Log.Verbose("Subscription to: {stream} received event type: {type}", CustomIndexConstants.ManagementStream, evt.OriginalEvent.EventType);
 
 					var deserializedEvent = await _serializer.Deserialize(
 						data: evt.OriginalEvent.Data,
@@ -208,7 +207,7 @@ public class Subscription : ISecondaryIndexReader {
 						}
 						default:
 							Log.Warning("Subscription to: {stream} received unknown event type: {type} at event number: {eventNumber}",
-								ManagementStream, evt.OriginalEvent.EventType, evt.OriginalEventNumber);
+								CustomIndexConstants.ManagementStream, evt.OriginalEvent.EventType, evt.OriginalEventNumber);
 							break;
 					}
 					break;
@@ -300,13 +299,12 @@ public class Subscription : ISecondaryIndexReader {
 		CustomIndexSql.DeleteCustomIndex(connection, indexName);
 	}
 
-	public bool CanReadIndex(string indexStream) {
-		Custom.CustomIndexHelpers.ParseQueryStreamName(indexStream, out var indexName, out _);
-		return _subscriptions.ContainsKey(indexName);
-	}
+	public bool CanReadIndex(string indexStream) =>
+		CustomIndexHelpers.TryParseQueryStreamName(indexStream, out var indexName, out _) &&
+		_subscriptions.ContainsKey(indexName);
 
 	public TFPos GetLastIndexedPosition(string indexStream) {
-		Custom.CustomIndexHelpers.ParseQueryStreamName(indexStream, out var indexName, out _);
+		CustomIndexHelpers.ParseQueryStreamName(indexStream, out var indexName, out _);
 		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var index))
 			return TFPos.Invalid;
 
@@ -315,7 +313,7 @@ public class Subscription : ISecondaryIndexReader {
 	}
 
 	public ValueTask<ClientMessage.ReadIndexEventsForwardCompleted> ReadForwards(ClientMessage.ReadIndexEventsForward msg, CancellationToken token) {
-		Custom.CustomIndexHelpers.ParseQueryStreamName(msg.IndexName, out var indexName, out _);
+		CustomIndexHelpers.ParseQueryStreamName(msg.IndexName, out var indexName, out _);
 		Log.Verbose("Custom index: {index} received read forwards request", indexName);
 		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var index)) {
 			var result = new ClientMessage.ReadIndexEventsForwardCompleted(

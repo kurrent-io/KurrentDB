@@ -20,7 +20,7 @@ public class CustomIndexesJavascriptTests {
 	string Category => $"Orders_{_correlationId:N}";
 	string EventType => $"OrderCreated-{_correlationId}";
 	string Stream => $"{Category}-{_correlationId}";
-	string ReadFilter => $"$idx-{CustomIndexName}";
+	string ReadFilter => $"$idx-custom-{CustomIndexName}";
 
 	[Test]
 	public async ValueTask can_filter_by_skipping(CancellationToken ct) {

@@ -6,12 +6,10 @@ using System.Text.RegularExpressions;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom;
 
-using static Core.Services.SystemStreams;
-
 public static class CustomIndexHelpers {
 	public static string GetQueryStreamName(string indexName, string? field = null) {
 		field = field is null ? string.Empty : $"{CustomIndexConstants.FieldDelimiter}{field}";
-		return $"{IndexStreamPrefix}{indexName}{field}";
+		return $"{CustomIndexConstants.StreamPrefix}{indexName}{field}";
 	}
 
 	// For the SubscriptionService to drop all subscriptions to this custom index or any of its fields
@@ -22,17 +20,29 @@ public static class CustomIndexHelpers {
 	}
 
 	// Parses the custom index name [and field] out of the index stream that is being read
-	// $idx-<indexname>[:field]
+	// $idx-custom-<indexname>[:field]
 	public static void ParseQueryStreamName(string streamName, out string indexName, out string? field) {
-		Debug.Assert(streamName.StartsWith(IndexStreamPrefix));
-		var delimiterIdx = streamName.IndexOf(CustomIndexConstants.FieldDelimiter, IndexStreamPrefix.Length);
+		if (!TryParseQueryStreamName(streamName, out indexName, out field))
+			throw new Exception($"Unexpected error: could not parse custom index stream name {streamName}");
+	}
+
+	// Parses the custom index name [and field] out of the index stream that is being read
+	// $idx-custom-<indexname>[:field]
+	public static bool TryParseQueryStreamName(string streamName, out string indexName, out string? field) {
+		if (!streamName.StartsWith(CustomIndexConstants.StreamPrefix)) {
+			indexName = "";
+			field = null;
+			return false;
+		}
+		var delimiterIdx = streamName.IndexOf(CustomIndexConstants.FieldDelimiter, CustomIndexConstants.StreamPrefix.Length);
 		if (delimiterIdx < 0) {
-			indexName = streamName[IndexStreamPrefix.Length..];
+			indexName = streamName[CustomIndexConstants.StreamPrefix.Length..];
 			field = null;
 		} else {
-			indexName = streamName[IndexStreamPrefix.Length..delimiterIdx];
+			indexName = streamName[CustomIndexConstants.StreamPrefix.Length..delimiterIdx];
 			field = streamName[(delimiterIdx + 1)..];
 		}
+		return true;
 	}
 
 	// Gets the management stream name for a particular custom index

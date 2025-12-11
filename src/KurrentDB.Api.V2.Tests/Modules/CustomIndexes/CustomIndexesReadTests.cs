@@ -20,8 +20,7 @@ public class CustomIndexesReadTests {
 	static readonly string Category = $"Orders_{CorrelationId:N}";
 	static readonly string EventType = $"OrderCreated-{CorrelationId}";
 	static readonly string Stream = $"{Category}-{CorrelationId}";
-	//qq need a different pattern so that user names do not conflict with the default indexes
-	static readonly string ReadFilter = $"$idx-{CustomIndexName}";
+	static readonly string ReadFilter = $"$idx-custom-{CustomIndexName}";
 	static readonly string CategoryFilter = $"$idx-ce-{Category}";
 	static readonly string EventTypeFilter = $"$idx-et-{EventType}";
 
@@ -143,15 +142,30 @@ public class CustomIndexesReadTests {
 	[Test]
 	[Arguments("")]
 	[Arguments("Mauritius")]
-	[Arguments("United Kingdom")]
-	[Arguments("united kingdom")]
 	public async ValueTask cannot_read_non_existent_custom_index(string field, CancellationToken ct) {
 		var fieldSuffix = field is "" ? "" : $":{field}";
-		var index = $"$idx-does-not-exist{fieldSuffix}";
+		var index = $"$idx-custom-does-not-exist{fieldSuffix}";
 		var ex = await Assert
 			.That(async () => {
 				await StreamsReadClient
-					//qq need a different pattern so that user names do not conflict with the default indexes
+					.ReadAllForwardFiltered(index, ct)
+					.ToArrayAsync(ct);
+			})
+			.Throws<RpcException>();
+
+		await Assert.That(ex!.Status.Detail).IsEqualTo($"Index '{index}' not found.");
+		await Assert.That(ex!.Status.StatusCode).IsEqualTo(StatusCode.NotFound);
+	}
+
+	[Test]
+	[Arguments("")]
+	[Arguments("Mauritius")]
+	public async ValueTask cannot_read_malformed_custom_index(string field, CancellationToken ct) {
+		var fieldSuffix = field is "" ? "" : $":{field}";
+		var index = $"$idx-woops{fieldSuffix}";
+		var ex = await Assert
+			.That(async () => {
+				await StreamsReadClient
 					.ReadAllForwardFiltered(index, ct)
 					.ToArrayAsync(ct);
 			})

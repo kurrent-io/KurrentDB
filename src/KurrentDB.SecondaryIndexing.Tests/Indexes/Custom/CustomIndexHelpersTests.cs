@@ -7,16 +7,16 @@ namespace KurrentDB.SecondaryIndexing.Tests.Indexes.Custom;
 
 public class CustomIndexHelpersTests {
 	[Theory]
-	[InlineData("my-index", null, "$idx-my-index")]
-	[InlineData("my-index", "country", "$idx-my-index:country")]
+	[InlineData("my-index", null, "$idx-custom-my-index")]
+	[InlineData("my-index", "country", "$idx-custom-my-index:country")]
 	public void can_get_query_stream_name(string inputIndexName, string? intputField, string expectedStreamName) {
 		var actualStreamName = CustomIndexHelpers.GetQueryStreamName(inputIndexName, intputField);
 		Assert.Equal(expectedStreamName, actualStreamName);
 	}
 
 	[Theory]
-	[InlineData("$idx-my-index", "my-index", null)]
-	[InlineData("$idx-my-index:country", "my-index", "country")]
+	[InlineData("$idx-custom-my-index", "my-index", null)]
+	[InlineData("$idx-custom-my-index:country", "my-index", "country")]
 	public void can_parse_query_stream_name(string input, string expectedIndexName, string? expectedField) {
 		CustomIndexHelpers.ParseQueryStreamName(input, out var actualIndexName, out var actualField);
 		Assert.Equal(expectedIndexName, actualIndexName);

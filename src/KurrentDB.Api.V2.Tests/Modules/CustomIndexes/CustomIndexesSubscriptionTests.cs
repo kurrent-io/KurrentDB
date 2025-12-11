@@ -57,7 +57,7 @@ public class CustomIndexesSubscriptionTests {
 			},
 			cancellationToken: ct);
 
-		var allFields = $"$idx-{CustomIndexName}";
+		var allFields = $"$idx-custom-{CustomIndexName}";
 		var mauritiusField = $"{allFields}:Mauritius";
 
 		// wait for index to become available
@@ -130,7 +130,25 @@ public class CustomIndexesSubscriptionTests {
 	[Arguments("Mauritius")]
 	public async ValueTask cannot_subscribe_to_non_existent_custom_index(string field, CancellationToken ct) {
 		var fieldSuffix = field is "" ? "" : $":{field}";
-		var index = $"$idx-does-not-exist{fieldSuffix}";
+		var index = $"$idx-custom-does-not-exist{fieldSuffix}";
+		var ex = await Assert
+			.That(async () => {
+				await StreamsReadClient
+					.SubscribeToAllFiltered(index, ct)
+					.ToArrayAsync(ct);
+			})
+			.Throws<RpcException>();
+
+		await Assert.That(ex!.Status.Detail).IsEqualTo($"Index '{index}' not found.");
+		await Assert.That(ex!.Status.StatusCode).IsEqualTo(StatusCode.NotFound);
+	}
+
+	[Test]
+	[Arguments("")]
+	[Arguments("Mauritius")]
+	public async ValueTask cannot_subscribe_to_malformed_custom_index(string field, CancellationToken ct) {
+		var fieldSuffix = field is "" ? "" : $":{field}";
+		var index = $"$idx-woops{fieldSuffix}";
 		var ex = await Assert
 			.That(async () => {
 				await StreamsReadClient
