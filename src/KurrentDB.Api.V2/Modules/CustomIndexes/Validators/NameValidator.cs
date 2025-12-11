@@ -20,7 +20,7 @@ class NameValidator : ValidatorBase<NameValidator, string?> {
 			.WithName("Name");
 
 	private static bool NotBeReserved(string name) {
-		var streamName = CustomIndex.GetStreamName(name);
+		var streamName = CustomIndexHelpers.GetQueryStreamName(name);
 
 		if (streamName is SystemStreams.DefaultSecondaryIndex)
 			return false;

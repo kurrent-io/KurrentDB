@@ -22,8 +22,6 @@ using KurrentDB.Protocol.V2.CustomIndexes;
 using KurrentDB.SecondaryIndexing.Subscriptions;
 using Serilog;
 
-using static KurrentDB.SecondaryIndexing.Indexes.Custom.CustomIndex;
-
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 
 public class Subscription : ISecondaryIndexReader {
@@ -172,7 +170,7 @@ public class Subscription : ISecondaryIndexReader {
 						data: evt.OriginalEvent.Data,
 						schemaInfo: new(evt.OriginalEvent.EventType, SchemaDataFormat.Json));
 
-					ParseManagementStreamName(evt.OriginalEvent.EventStreamId, out var customIndexName);
+					var customIndexName = CustomIndexHelpers.ParseManagementStreamName(evt.OriginalEvent.EventStreamId);
 
 					switch (deserializedEvent) {
 						case CustomIndexCreated createdEvent: {
@@ -293,7 +291,7 @@ public class Subscription : ISecondaryIndexReader {
 
 	private void DropSubscriptions(string indexName) {
 		Log.Verbose("Dropping subscriptions to custom index: {index}", indexName);
-		_publisher.Publish(new StorageMessage.SecondaryIndexDeleted(Custom.CustomIndex.GetStreamNameRegex(indexName)));
+		_publisher.Publish(new StorageMessage.SecondaryIndexDeleted(Custom.CustomIndexHelpers.GetStreamNameRegex(indexName)));
 	}
 
 	private static void DeleteCustomIndexTable(DuckDBAdvancedConnection connection, string indexName) {
@@ -301,12 +299,12 @@ public class Subscription : ISecondaryIndexReader {
 	}
 
 	public bool CanReadIndex(string indexStream) {
-		Custom.CustomIndex.ParseStreamName(indexStream, out var indexName, out _);
+		Custom.CustomIndexHelpers.ParseQueryStreamName(indexStream, out var indexName, out _);
 		return _subscriptions.ContainsKey(indexName);
 	}
 
 	public TFPos GetLastIndexedPosition(string indexStream) {
-		Custom.CustomIndex.ParseStreamName(indexStream, out var indexName, out _);
+		Custom.CustomIndexHelpers.ParseQueryStreamName(indexStream, out var indexName, out _);
 		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var index))
 			return TFPos.Invalid;
 
@@ -315,7 +313,7 @@ public class Subscription : ISecondaryIndexReader {
 	}
 
 	public ValueTask<ClientMessage.ReadIndexEventsForwardCompleted> ReadForwards(ClientMessage.ReadIndexEventsForward msg, CancellationToken token) {
-		Custom.CustomIndex.ParseStreamName(msg.IndexName, out var indexName, out _);
+		Custom.CustomIndexHelpers.ParseQueryStreamName(msg.IndexName, out var indexName, out _);
 		Log.Verbose("Custom index: {index} received read forwards request", indexName);
 		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var index)) {
 			var result = new ClientMessage.ReadIndexEventsForwardCompleted(
@@ -330,7 +328,7 @@ public class Subscription : ISecondaryIndexReader {
 	}
 
 	public ValueTask<ClientMessage.ReadIndexEventsBackwardCompleted> ReadBackwards(ClientMessage.ReadIndexEventsBackward msg, CancellationToken token) {
-		Custom.CustomIndex.ParseStreamName(msg.IndexName, out var indexName, out _);
+		Custom.CustomIndexHelpers.ParseQueryStreamName(msg.IndexName, out var indexName, out _);
 		Log.Verbose("Custom index: {index} received read backwards request", indexName);
 		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var index)) {
 			var result = new ClientMessage.ReadIndexEventsBackwardCompleted(

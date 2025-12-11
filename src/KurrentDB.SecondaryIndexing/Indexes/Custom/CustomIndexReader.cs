@@ -17,7 +17,7 @@ internal class CustomIndexReader<TField>(
 
 	protected override string? GetId(string indexStream) {
 		// the field is used as the ID
-		CustomIndex.ParseStreamName(indexStream, out _, out var field);
+		CustomIndexHelpers.ParseQueryStreamName(indexStream, out _, out var field);
 		return field;
 	}
 

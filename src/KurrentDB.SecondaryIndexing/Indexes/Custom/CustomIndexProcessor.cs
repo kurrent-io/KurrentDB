@@ -134,9 +134,9 @@ internal class CustomIndexProcessor<TField> : CustomIndexProcessor where TField 
 
 		_inFlightRecords.Append(preparePosition, commitPosition ?? preparePosition, eventNumber, field, created);
 
-		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(CustomIndex.GetStreamName(IndexName), resolvedEvent));
+		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(CustomIndexHelpers.GetQueryStreamName(IndexName), resolvedEvent));
 		if (field is not null)
-			_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(CustomIndex.GetStreamName(IndexName, fieldStr), resolvedEvent));
+			_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(CustomIndexHelpers.GetQueryStreamName(IndexName, fieldStr), resolvedEvent));
 
 		Tracker.RecordIndexed(resolvedEvent);
 

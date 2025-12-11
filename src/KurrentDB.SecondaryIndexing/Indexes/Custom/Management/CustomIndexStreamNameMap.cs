@@ -5,10 +5,8 @@ using Eventuous;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 
-using static KurrentDB.SecondaryIndexing.Indexes.Custom.CustomIndex;
-
 public class CustomIndexStreamNameMap : StreamNameMap {
 	public CustomIndexStreamNameMap() {
-		Register<CustomIndexId>(id => new StreamName(GetManagementStreamName(id)));
+		Register<CustomIndexId>(id => new StreamName(CustomIndexHelpers.GetManagementStreamName(id)));
 	}
 }
