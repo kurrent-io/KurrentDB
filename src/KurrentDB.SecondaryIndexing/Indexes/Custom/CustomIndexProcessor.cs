@@ -147,6 +147,7 @@ internal class CustomIndexProcessor<TField> : CustomIndexProcessor where TField 
 		field = default;
 
 		try {
+			_resolvedEventJsObject.Reset();
 			_resolvedEventJsObject.StreamId = resolvedEvent.OriginalEvent.EventStreamId;
 			_resolvedEventJsObject.EventId = $"{resolvedEvent.OriginalEvent.EventId}";
 			_resolvedEventJsObject.EventNumber = resolvedEvent.OriginalEvent.EventNumber;
