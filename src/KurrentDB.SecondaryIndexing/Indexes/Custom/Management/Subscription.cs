@@ -34,8 +34,10 @@ public class Subscription : ISecondaryIndexReader {
 	private readonly Func<(long, DateTime)> _getLastAppendedRecord;
 	private readonly IReadIndex<string> _readIndex;
 	private readonly Channel<ReadResponse> _channel;
-	private readonly ConcurrentDictionary<string, CustomIndexSubscription> _subscriptions = new();
+	private readonly ConcurrentDictionary<string, CustomIndexPair> _customIndexes = new();
 	private readonly CancellationTokenSource _cts;
+
+	record struct CustomIndexPair(CustomIndexSubscription Subscription, SecondaryIndexReaderBase Reader);
 
 	private static readonly ILogger Log = Serilog.Log.ForContext<Subscription>();
 
@@ -85,10 +87,10 @@ public class Subscription : ISecondaryIndexReader {
 		using (_cts)
 			await _cts.CancelAsync();
 
-		foreach (var (index, sub) in _subscriptions) {
+		foreach (var (index, pair) in _customIndexes) {
 			try {
 				Log.Verbose("Stopping custom index: {index}", index);
-				await sub.Stop();
+				await pair.Subscription.Stop();
 			} catch (Exception ex) {
 				Log.Error(ex, "Failed to stop custom index: {index}", index);
 			}
@@ -231,7 +233,11 @@ public class Subscription : ISecondaryIndexReader {
 		};
 	}
 
-	private async ValueTask StartCustomIndex<TField>(string indexName, CustomIndexCreated createdEvent, Func<EventRecord, bool>? eventFilter = null) where TField : IField {
+	private async ValueTask StartCustomIndex<TField>(
+		string indexName,
+		CustomIndexCreated createdEvent,
+		Func<EventRecord, bool>? eventFilter = null) where TField : IField {
+
 		Log.Debug("Starting custom index: {index}", indexName);
 
 		var inFlightRecords = new CustomIndexInFlightRecords<TField>(_options);
@@ -260,12 +266,11 @@ public class Subscription : ISecondaryIndexReader {
 		CustomIndexSubscription subscription = new CustomIndexSubscription<TField>(
 			publisher: _publisher,
 			indexProcessor: processor,
-			indexReader: reader,
 			options: _options,
 			eventFilter: eventFilter ?? IgnoreSystemEvents,
 			token: _cts.Token);
 
-		_subscriptions.TryAdd(indexName, subscription);
+		_customIndexes.TryAdd(indexName, new(subscription, reader));
 		await subscription.Start();
 	}
 
@@ -274,7 +279,7 @@ public class Subscription : ISecondaryIndexReader {
 
 		var writeLock = AcquireWriteLockForIndex(indexName, out var index);
 		using (writeLock) {
-			_subscriptions.TryRemove(indexName, out _);
+			_customIndexes.TryRemove(indexName, out _);
 		}
 
 		await index.Stop();
@@ -301,21 +306,21 @@ public class Subscription : ISecondaryIndexReader {
 
 	public bool CanReadIndex(string indexStream) =>
 		CustomIndexHelpers.TryParseQueryStreamName(indexStream, out var indexName, out _) &&
-		_subscriptions.ContainsKey(indexName);
+		_customIndexes.ContainsKey(indexName);
 
 	public TFPos GetLastIndexedPosition(string indexStream) {
 		CustomIndexHelpers.ParseQueryStreamName(indexStream, out var indexName, out _);
-		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var index))
+		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var pair))
 			return TFPos.Invalid;
 
 		using (readLock)
-			return index!.GetLastIndexedPosition();
+			return pair.Subscription.GetLastIndexedPosition();
 	}
 
 	public ValueTask<ClientMessage.ReadIndexEventsForwardCompleted> ReadForwards(ClientMessage.ReadIndexEventsForward msg, CancellationToken token) {
 		CustomIndexHelpers.ParseQueryStreamName(msg.IndexName, out var indexName, out _);
 		Log.Verbose("Custom index: {index} received read forwards request", indexName);
-		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var index)) {
+		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var pair)) {
 			var result = new ClientMessage.ReadIndexEventsForwardCompleted(
 				ReadIndexResult.IndexNotFound, [], new(msg.CommitPosition, msg.PreparePosition), -1, true,
 				$"Index {msg.IndexName} does not exist"
@@ -324,13 +329,13 @@ public class Subscription : ISecondaryIndexReader {
 		}
 
 		using (readLock)
-			return index!.ReadForwards(msg, token);
+			return pair.Reader.ReadForwards(msg, token);
 	}
 
 	public ValueTask<ClientMessage.ReadIndexEventsBackwardCompleted> ReadBackwards(ClientMessage.ReadIndexEventsBackward msg, CancellationToken token) {
 		Custom.CustomIndexHelpers.ParseQueryStreamName(msg.IndexName, out var indexName, out _);
 		Log.Verbose("Custom index: {index} received read backwards request", indexName);
-		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var index)) {
+		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var pair)) {
 			var result = new ClientMessage.ReadIndexEventsBackwardCompleted(
 				ReadIndexResult.IndexNotFound, [], new(msg.CommitPosition, msg.PreparePosition), -1, true,
 				$"Index {msg.IndexName} does not exist"
@@ -339,11 +344,11 @@ public class Subscription : ISecondaryIndexReader {
 		}
 
 		using (readLock)
-			return index!.ReadBackwards(msg, token);
+			return pair.Reader.ReadBackwards(msg, token);
 	}
 
 	public bool TryGetCustomIndexTableDetails(string indexName, out string tableName, out string inFlightTableName, out bool hasFields) {
-		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var index)) {
+		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var pair)) {
 			tableName = null!;
 			inFlightTableName = null!;
 			hasFields = false;
@@ -351,37 +356,38 @@ public class Subscription : ISecondaryIndexReader {
 		}
 
 		using (readLock) {
-			index!.GetCustomIndexTableDetails(out tableName, out inFlightTableName, out hasFields);
+			pair.Subscription.GetCustomIndexTableDetails(out tableName, out inFlightTableName, out hasFields);
 			return true;
 		}
 	}
 
-	private bool TryAcquireReadLockForIndex(string index, out ReadLock? readLock, out CustomIndexSubscription? subscription) {
+	private bool TryAcquireReadLockForIndex(string index, out ReadLock? readLock, out CustomIndexPair pair) {
 		// note: a write lock is acquired only when deleting the index. so, if we cannot acquire a read lock,
 		// it means that the custom index is being/has been deleted.
 
 		readLock = null;
-		subscription = null;
+		pair = default;
 
-		if (!_subscriptions.TryGetValue(index, out subscription))
+		if (!_customIndexes.TryGetValue(index, out pair)) {
+			return false;
+		}
+
+		if (!pair.Subscription.RWLock.TryEnterReadLock(TimeSpan.Zero))
 			return false;
 
-		if (!subscription.RWLock.TryEnterReadLock(TimeSpan.Zero))
-			return false;
-
-		readLock = new ReadLock(subscription.RWLock);
+		readLock = new ReadLock(pair.Subscription.RWLock);
 		return true;
 	}
 
 	private WriteLock AcquireWriteLockForIndex(string index, out CustomIndexSubscription subscription) {
-		if (!_subscriptions.TryGetValue(index, out var sub))
+		if (!_customIndexes.TryGetValue(index, out var pair))
 			throw new Exception($"Failed to acquire write lock for index: {index}");
 
-		if (!sub.RWLock.TryEnterWriteLock(TimeSpan.FromMinutes(1)))
+		if (!pair.Subscription.RWLock.TryEnterWriteLock(TimeSpan.FromMinutes(1)))
 			throw new Exception($"Timed out when acquiring write lock for index: {index}");
 
-		subscription = sub;
-		return new WriteLock(sub.RWLock);
+		subscription = pair.Subscription;
+		return new WriteLock(pair.Subscription.RWLock);
 	}
 
 	private readonly record struct ReadLock(ReaderWriterLockSlim Lock) : IDisposable {

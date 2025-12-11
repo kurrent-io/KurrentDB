@@ -82,8 +82,7 @@ public sealed class CustomIndexManager :
 		}
 
 		try {
-			if (_subscription is { } sub)
-				await sub.Stop();
+			await _subscription.Stop();
 		} catch (Exception ex) {
 			Log.Error(ex, "Custom indexes: Failed to stop subscription to management stream");
 		}

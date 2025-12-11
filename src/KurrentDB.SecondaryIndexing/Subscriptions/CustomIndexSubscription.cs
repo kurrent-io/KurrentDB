@@ -20,8 +20,6 @@ internal abstract class CustomIndexSubscription {
 
 	public abstract ValueTask Start();
 	public abstract ValueTask Stop();
-	public abstract ValueTask<ClientMessage.ReadIndexEventsForwardCompleted> ReadForwards(ClientMessage.ReadIndexEventsForward msg, CancellationToken token);
-	public abstract ValueTask<ClientMessage.ReadIndexEventsBackwardCompleted> ReadBackwards(ClientMessage.ReadIndexEventsBackward msg, CancellationToken token);
 	public abstract TFPos GetLastIndexedPosition();
 	public abstract void GetCustomIndexTableDetails(out string tableName, out string inFlightTableName, out bool hasFields);
 	public abstract ReaderWriterLockSlim RWLock { get; }
@@ -30,7 +28,6 @@ internal abstract class CustomIndexSubscription {
 internal sealed class CustomIndexSubscription<TField>(
 	IPublisher publisher,
 	CustomIndexProcessor<TField> indexProcessor,
-	CustomIndexReader<TField> indexReader,
 	SecondaryIndexingPluginOptions options,
 	Func<EventRecord, bool> eventFilter,
 	CancellationToken token) : CustomIndexSubscription, IAsyncDisposable where TField : IField {
@@ -156,12 +153,6 @@ internal sealed class CustomIndexSubscription<TField>(
 		await DisposeAsync();
 		indexProcessor.Dispose();
 	}
-
-	public override ValueTask<ClientMessage.ReadIndexEventsForwardCompleted> ReadForwards(ClientMessage.ReadIndexEventsForward msg, CancellationToken token) =>
-		indexReader.ReadForwards(msg, token);
-
-	public override ValueTask<ClientMessage.ReadIndexEventsBackwardCompleted> ReadBackwards(ClientMessage.ReadIndexEventsBackward msg, CancellationToken token) =>
-		indexReader.ReadBackwards(msg, token);
 
 	public override TFPos GetLastIndexedPosition() => indexProcessor.GetLastPosition();
 
