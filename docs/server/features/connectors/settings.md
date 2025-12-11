@@ -20,15 +20,15 @@ Individual connectors also include their own specific settings. To view them, go
 
 | Name               | Details                                                                                                                                                                                                                                                                                                                                                                       |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `instanceTypeName` | _required_<br><br>**Description:**<br>Specifies the type of sink connector instance.<br><br>**Accepted Values:**<br><ul><li>`serilog-sink`</li><li>`http-sink`</li><li>`kafka-sink`</li><li>`elasticsearch-sink`</li><li>`rabbit-mq-sink`</li><li>`mongo-db-sink`</li></ul>For details about each type, see the individual sink's [page](/server/features/connectors/sinks/). |
+| `instanceTypeName` | _required_<br><br>**Description:**<br>Specifies the type of connector instance.<br><br>**Accepted Values:**<br><ul><li>`elasticsearch-sink`</li><li>`http-sink`</li><li>`kafka-sink`</li><li>`mongo-db-sink`</li><li>`rabbit-mq-sink`</li><li>`serilog-sink`</li><li>`sql-sink`</li></ul>For details about each type, see the individual connector [page](/server/features/connectors/). |
 
 ### Subscription configuration
 
 | Name                             | Details                                                                                                                                                                                                                                                                                            |
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `subscription:filter:scope`      | **Description:**<br>Determines the scope of event filtering for the subscription. Use `"stream"` to filter events by stream ID, or `"record"` to filter events by event type.<br><br>**Accepted Values:**<br>- `"stream"`, `"record"`, `"unspecified"`.<br><br>**Default**: `"unspecified"`        |
-| `subscription:filter:filterType` | **Description:**<br>Specifies the method used to filter events.<br><br>**Accepted Values:**<br>- `"streamId"`, `"regex"`, `"prefix"`, `"jsonPath"`, `"unspecified"`.<br><br>**Default**: `"unspecified"`                                                                                           |
-| `subscription:filter:expression` | **Description:**<br>A filter expression (regex, JsonPath, or prefix) for records. If `scope` is specified and the expression is empty, it consumes from `$all` including system events. If `scope` is unspecified, it consumes from `$all` excluding system events.<br><br>**Default**: `""` |
+| `subscription:filter:scope`      | **Description:**<br>Determines the scope of event filtering for the subscription. Use `"stream"` to filter events by stream ID, or `"record"` to filter events by event type.<br><br>**Accepted Values:**<br>- `"stream"`, `"record"`.<br><br>**Default**: unspecified        |
+| `subscription:filter:filterType` | **Description:**<br>Specifies the method used to filter events.<br><br>**Accepted Values:**<br>- `"streamId"`, `"regex"`, `"prefix"`, `"jsonPath"`.<br><br>**Default**: unspecified                                                                                           |
+| `subscription:filter:expression` | **Description:**<br>A filter expression (regex, JsonPath, or prefix) for records. If `scope` is specified and the expression is empty, it consumes from `$all` including system events. If `scope` is not specified, it consumes from `$all` excluding system events.<br><br>**Default**: `""` |
 | `subscription:initialPosition`   | **Description:**<br>The position in the message stream from which a consumer starts consuming messages when there is no prior checkpoint.<br><br>**Accepted Values:**<br>- `"latest"`, `"earliest"`.<br><br>**Default**: `"latest"`                                                                |
 
 For details and examples on subscriptions, see [Filters](./features.md#filters).
@@ -67,6 +67,28 @@ For more details on resilience, see [Resilience](./features.md#resilience).
 | `autocommit:enabled`          | **Description:**<br>Enable or disables auto-commit<br><br>**Default:** `"true"`                            |
 | `autocommit:interval`         | **Description:**<br>The interval, in milliseconds at which auto-commit occurs<br><br>**Default**: `"5000"` |
 | `autocommit:recordsThreshold` | **Description:**<br>The threshold of records that triggers an auto-commit<br><br>**Default**: `"1000"`     |
+
+### Logging configuration
+
+| Name              | Details                                                                       |
+| ----------------- | ----------------------------------------------------------------------------- |
+| `logging:enabled` | **Description:**<br>Enables or disables logging.<br><br>**Default**: `"true"` |
+
+## Source Options
+
+Below, you will find a comprehensive list of configuration settings that you can
+use to define the connection parameters and other necessary details for your
+source connector.
+
+::: tip
+Individual connectors also include their own specific settings. To view them, go to their individual pages.
+:::
+
+### Instance configuration
+
+| Name               | Details                                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `instanceTypeName` | _required_<br><br>**Description:**<br>Specifies the type of connector instance.<br><br>**Accepted Values:**<br><ul><li>`kafka-source`</li></ul>For details about each type, see the individual connector [page](/server/features/connectors/). |
 
 ### Logging configuration
 
