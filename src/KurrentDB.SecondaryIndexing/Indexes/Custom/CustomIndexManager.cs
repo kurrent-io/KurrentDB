@@ -29,7 +29,7 @@ public sealed class CustomIndexManager :
 	IHostedService,
 	ISecondaryIndexReader {
 
-	private readonly IPublisher _publisher;
+	private readonly ISystemClient _client;
 	private readonly IReadOnlyCheckpoint _writerCheckpoint;
 	private readonly Subscription _subscription;
 
@@ -52,10 +52,10 @@ public sealed class CustomIndexManager :
 		TFChunkDbConfig chunkDbConfig,
 		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)] Meter meter) {
 
-		_publisher = publisher;
+		_client = client;
 		_writerCheckpoint = chunkDbConfig.WriterCheckpoint;
 		_cts = new CancellationTokenSource();
-		_subscription = new Subscription(client, _publisher, serializer, options, db, index, meter, GetLastAppendedRecord, _cts!.Token);
+		_subscription = new Subscription(client, publisher, serializer, options, db, index, meter, GetLastAppendedRecord, _cts!.Token);
 
 		subscriber.Subscribe<SystemMessage.SystemReady>(this);
 		subscriber.Subscribe<SystemMessage.BecomeShuttingDown>(this);
@@ -91,9 +91,13 @@ public sealed class CustomIndexManager :
 
 	public void Handle(SystemMessage.SystemReady message) {
 		Task.Run(async () => {
-			await ReadTail();
-			Log.Verbose("Custom indexes: Initializing subscription to management stream");
-			await _subscription.Start();
+			try {
+				await ReadTail();
+				Log.Verbose("Custom indexes: Initializing subscription to management stream");
+				await _subscription.Start();
+			} catch (Exception ex) {
+				Log.Error(ex, "Custom indexes: Failed to start subscription to management stream");
+			}
 		});
 	}
 
@@ -107,7 +111,7 @@ public sealed class CustomIndexManager :
 	}
 
 	private async Task ReadTail() {
-		var lastRecord = await _publisher.ReadBackwards(Position.End, new Filter(), 1).FirstOrDefaultAsync();
+		var lastRecord = await _client.Reading.ReadBackwards(Position.End, new Filter(), 1).FirstOrDefaultAsync();
 		if (lastRecord != default && _lastAppendedRecordPosition == -1 && _lastAppendedRecordTimestamp == DateTime.MinValue) {
 			_lastAppendedRecordPosition = lastRecord.OriginalPosition!.Value.CommitPosition;
 			_lastAppendedRecordTimestamp = lastRecord.Event.TimeStamp;
