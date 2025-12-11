@@ -5,7 +5,6 @@ using System.Runtime.CompilerServices;
 using DotNext.Runtime.CompilerServices;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
@@ -23,7 +22,6 @@ internal abstract class CustomIndexSubscription {
 	public abstract ValueTask Stop();
 	public abstract TFPos GetLastIndexedPosition();
 	public abstract void GetCustomIndexTableDetails(out string tableName, out string inFlightTableName, out bool hasFields);
-	public abstract ReaderWriterLockSlim RWLock { get; }
 }
 
 internal sealed class CustomIndexSubscription<TField>(
@@ -159,6 +157,4 @@ internal sealed class CustomIndexSubscription<TField>(
 
 	public override void GetCustomIndexTableDetails(out string tableName, out string inFlightTableName, out bool hasFields) =>
 		indexProcessor.GetCustomIndexTableDetails(out tableName, out inFlightTableName, out hasFields);
-
-	public override ReaderWriterLockSlim RWLock { get; } = new();
 }
