@@ -237,7 +237,11 @@ public class Subscription : ISecondaryIndexReader {
 
 		var inFlightRecords = new CustomIndexInFlightRecords<TField>(_options);
 
-		var sql = new CustomIndexSql<TField>(indexName, createdEvent.Fields[0].Name);
+		var sql = new CustomIndexSql<TField>(
+			indexName,
+			createdEvent.Fields.Count is 0
+				? ""
+				: createdEvent.Fields[0].Name);
 
 		var processor = new CustomIndexProcessor<TField>(
 			indexName: indexName,

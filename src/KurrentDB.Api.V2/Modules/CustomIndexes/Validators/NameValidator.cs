@@ -8,6 +8,7 @@ using KurrentDB.SecondaryIndexing.Indexes.Custom;
 
 namespace KurrentDB.Api.Modules.CustomIndexes.Validators;
 
+// Lower case restriction because identifiers are case-insensitive in duckdb
 class NameValidator : ValidatorBase<NameValidator, string?> {
 	public NameValidator() =>
 		RuleFor(x => x)
