@@ -3,8 +3,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 using DotNext;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
@@ -19,7 +21,9 @@ public class DuckDBConnectionPoolLifetime : Disposable {
 	private readonly ILogger<DuckDBConnectionPoolLifetime> _log;
 	[CanBeNull] private string _tempPath;
 
-	public DuckDBConnectionPoolLifetime(TFChunkDbConfig config, IEnumerable<IDuckDBSetup> setups, [CanBeNull] ILogger<DuckDBConnectionPoolLifetime> log) {
+	public DuckDBConnectionPoolLifetime(TFChunkDbConfig config,
+		IEnumerable<IDuckDBSetup> setups,
+		[CanBeNull] ILogger<DuckDBConnectionPoolLifetime> log) {
 		var path = config.InMemDb ? GetTempPath() : $"{config.Path}/kurrent.ddb";
 		var repeated = new List<IDuckDBSetup>();
 		var once = new List<IDuckDBSetup>();
@@ -31,8 +35,13 @@ public class DuckDBConnectionPoolLifetime : Disposable {
 			}
 		}
 
-		_pool = new ConnectionPoolWithFunctions($"Data Source={path}", repeated.ToArray());
-		log?.LogInformation("Created DuckDB connection pool at {path}", path);
+		var total = CalculateRam();
+		var duckDbRam = (int)total * 0.25;
+		var settings = new Dictionary<string, string> {
+			["memory_limit"] = $"{duckDbRam}MB"
+		};
+		_pool = new ConnectionPoolWithFunctions($"Data Source={path};{GetParamsString()}", repeated.ToArray());
+		log?.LogInformation("Created DuckDB connection pool at {path} with {settings}", path, settings);
 		_log = log;
 		using var connection = _pool.Open();
 		foreach (var s in once) {
@@ -45,6 +54,16 @@ public class DuckDBConnectionPoolLifetime : Disposable {
 			_tempPath = Path.GetTempFileName();
 			File.Delete(_tempPath);
 			return _tempPath;
+		}
+
+		long CalculateRam() {
+			var totalRam = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
+			return totalRam / 1024 / 1024;
+		}
+
+		string GetParamsString() {
+			var list = settings.Keys.Select(x => $"{x}={settings[x]}");
+			return string.Join(";", list);
 		}
 	}
 
@@ -64,6 +83,7 @@ public class DuckDBConnectionPoolLifetime : Disposable {
 					// let the file stay and be cleaned up by the OS
 				}
 			}
+
 			_log?.LogInformation("Disposed DuckDB connection pool");
 		}
 
