@@ -12,26 +12,26 @@ using KurrentDB.SecondaryIndexing.Subscriptions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace KurrentDB.SecondaryIndexing.Indexes;
+namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
-public sealed class SecondaryIndexBuilder
+public sealed class DefaultIndexBuilder
 	: IHandle<SystemMessage.SystemReady>,
 		IHandle<SystemMessage.BecomeShuttingDown>,
 		IHandle<StorageMessage.EventCommitted>,
 		IHostedService,
 		IAsyncDisposable {
-	private readonly SecondaryIndexSubscription _subscription;
+	private readonly DefaultIndexSubscription _subscription;
 	private readonly ISecondaryIndexProcessor _processor;
-	private readonly ILogger<SecondaryIndexBuilder> _log;
+	private readonly ILogger<DefaultIndexBuilder> _log;
 	private readonly IPublisher _publisher;
 
 	[Experimental("SECONDARY_INDEX")]
-	public SecondaryIndexBuilder(
+	public DefaultIndexBuilder(
 		ISecondaryIndexProcessor processor,
 		IPublisher publisher,
 		ISubscriber subscriber,
 		SecondaryIndexingPluginOptions options,
-		ILogger<SecondaryIndexBuilder> log) {
+		ILogger<DefaultIndexBuilder> log) {
 		_processor = processor;
 		_subscription = new(publisher, processor, options, log);
 		_log = log;

@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.SecondaryIndexing.Subscriptions;
 
-public sealed partial class SecondaryIndexSubscription(
+public sealed partial class DefaultIndexSubscription(
 	IPublisher publisher,
 	ISecondaryIndexProcessor indexProcessor,
 	SecondaryIndexingPluginOptions options,
@@ -27,8 +27,7 @@ public sealed partial class SecondaryIndexSubscription(
 	private Task? _processingTask;
 
 	public void Subscribe() {
-		var cts = _cts;
-		if (cts == null) {
+		if (_cts is not { } cts) {
 			log.LogWarning("Subscription already terminated");
 			return;
 		}
@@ -82,7 +81,7 @@ public sealed partial class SecondaryIndexSubscription(
 					continue;
 				}
 
-				indexProcessor.Index(resolvedEvent);
+				indexProcessor.TryIndex(resolvedEvent);
 
 				if (++indexedCount >= _commitBatchSize) {
 					indexProcessor.Commit();

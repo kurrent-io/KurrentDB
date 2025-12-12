@@ -15,6 +15,9 @@
     <PackageReference Include="Grpc.Net.Client" />
     <PackageReference Include="Grpc.StatusProto" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.Testing" />
+    <PackageReference Include="System.Linq.Async">
+      <ExcludeAssets>compile</ExcludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>

@@ -12,3 +12,10 @@ create table if not exists idx_all (
 	schema_id varchar null,
 	schema_format varchar not null
 );
+
+create table if not exists idx_custom_checkpoints (
+	index_name varchar primary key,
+	log_position bigint not null,
+	commit_position bigint null,
+	created bigint not null
+);

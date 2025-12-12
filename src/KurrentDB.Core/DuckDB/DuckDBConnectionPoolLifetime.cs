@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -16,17 +15,26 @@ using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.Core.DuckDB;
 
+// Manages the lifetime of the Shared pool
+// Also produces additional pools on demand that the caller should dispose.
 public class DuckDBConnectionPoolLifetime : Disposable {
-	private readonly DuckDBConnectionPool _pool;
+	private readonly string _path;
+	private readonly IReadOnlyList<IDuckDBSetup> _repeated;
 	private readonly ILogger<DuckDBConnectionPoolLifetime> _log;
 	[CanBeNull] private string _tempPath;
 
-	public DuckDBConnectionPoolLifetime(TFChunkDbConfig config,
+	public DuckDBConnectionPool Shared { get; }
+
+	public DuckDBConnectionPoolLifetime(
+		TFChunkDbConfig config,
 		IEnumerable<IDuckDBSetup> setups,
 		[CanBeNull] ILogger<DuckDBConnectionPoolLifetime> log) {
-		var path = config.InMemDb ? GetTempPath() : $"{config.Path}/kurrent.ddb";
-		var repeated = new List<IDuckDBSetup>();
+
+		_path = config.InMemDb ? GetTempPath() : $"{config.Path}/kurrent.ddb";
+		_log = log;
+
 		var once = new List<IDuckDBSetup>();
+		var repeated = new List<IDuckDBSetup>();
 		foreach (var duckDBSetup in setups) {
 			if (duckDBSetup.OneTimeOnly) {
 				once.Add(duckDBSetup);
@@ -34,19 +42,12 @@ public class DuckDBConnectionPoolLifetime : Disposable {
 				repeated.Add(duckDBSetup);
 			}
 		}
+		_repeated = repeated;
 
-		var total = CalculateRam();
-		var duckDbRam = (int)total * 0.25;
-		var settings = new Dictionary<string, string> {
-			["memory_limit"] = $"{duckDbRam}MB"
-		};
-		_pool = new ConnectionPoolWithFunctions($"Data Source={path};{GetParamsString()}", repeated.ToArray());
-		log?.LogInformation("Created DuckDB connection pool at {path} with {settings}", path, settings);
-		_log = log;
-		using var connection = _pool.Open();
-		foreach (var s in once) {
+		Shared = CreatePool(isReadOnly: false, log: true);
+		using var connection = Shared.Open();
+		foreach (var s in once)
 			s.Execute(connection);
-		}
 
 		return;
 
@@ -55,8 +56,23 @@ public class DuckDBConnectionPoolLifetime : Disposable {
 			File.Delete(_tempPath);
 			return _tempPath;
 		}
+	}
 
-		long CalculateRam() {
+	public DuckDBConnectionPool CreatePool() => CreatePool(isReadOnly: true, log: false); // no writes go through here so set read only
+
+	private DuckDBConnectionPool CreatePool(bool isReadOnly, bool log) {
+		var availableRamMib = CalculateRam();
+		var duckDbRamMib = (int)availableRamMib * 0.25;
+		var settings = new Dictionary<string, string> {
+			["memory_limit"] = $"{duckDbRamMib}MB",
+			["access_mode"] = isReadOnly ? "READ_ONLY" : "READ_WRITE",
+		};
+		var pool = new ConnectionPoolWithFunctions($"Data Source={_path};{GetParamsString()}", _repeated);
+		if (log)
+			_log?.LogInformation("Created DuckDB connection pool at {path} with {settings}", _path, settings);
+		return pool;
+
+		static long CalculateRam() {
 			var totalRam = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
 			return totalRam / 1024 / 1024;
 		}
@@ -67,15 +83,13 @@ public class DuckDBConnectionPoolLifetime : Disposable {
 		}
 	}
 
-	public DuckDBConnectionPool GetConnectionPool() => _pool;
-
 	protected override void Dispose(bool disposing) {
 		if (disposing) {
 			_log?.LogDebug("Checkpointing DuckDB connection");
-			var connection = _pool.Open();
+			var connection = Shared.Open();
 			connection.Checkpoint();
 			connection.Dispose();
-			_pool.Dispose();
+			Shared.Dispose();
 			if (_tempPath != null) {
 				try {
 					File.Delete(_tempPath);
@@ -90,11 +104,11 @@ public class DuckDBConnectionPoolLifetime : Disposable {
 		base.Dispose(disposing);
 	}
 
-	private class ConnectionPoolWithFunctions(string connectionString, IDuckDBSetup[] setup) : DuckDBConnectionPool(connectionString) {
+	private class ConnectionPoolWithFunctions(string connectionString, IReadOnlyList<IDuckDBSetup> setup) : DuckDBConnectionPool(connectionString) {
 		[Experimental("DuckDBNET001")]
 		protected override void Initialize(DuckDBAdvancedConnection connection) {
 			base.Initialize(connection);
-			for (var i = 0; i < setup.Length; i++) {
+			for (var i = 0; i < setup.Count; i++) {
 				try {
 					setup[i].Execute(connection);
 				} catch (Exception) {

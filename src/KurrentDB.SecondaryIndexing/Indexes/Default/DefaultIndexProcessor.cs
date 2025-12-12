@@ -50,7 +50,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_inFlightRecords = inFlightRecords;
 		_log = log ?? NullLogger<DefaultIndexProcessor>.Instance;
 		var serviceName = metricsConfiguration?.ServiceName ?? "kurrentdb";
-		Tracker = new("default", serviceName, meter, clock ?? TimeProvider.System, _log);
+		Tracker = new("default", serviceName, meter, clock ?? TimeProvider.System);
 		_publisher = publisher;
 		_hasher = hasher;
 
@@ -60,9 +60,9 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		Tracker.InitLastIndexed(lastPosition.CommitPosition, lastTimestamp);
 	}
 
-	public void Index(ResolvedEvent resolvedEvent) {
+	public bool TryIndex(ResolvedEvent resolvedEvent) {
 		if (IsDisposingOrDisposed)
-			return;
+			return false;
 
 		string? schemaFormat = null;
 		string? schemaId = null;
@@ -117,7 +117,8 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(EventTypeIndex.Name(schemaName), resolvedEvent));
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(CategoryIndex.Name(category), resolvedEvent));
 		Tracker.RecordIndexed(resolvedEvent);
-		return;
+
+		return true;
 
 		static string GetStreamCategory(string streamName) {
 			var dashIndex = streamName.IndexOf('-');

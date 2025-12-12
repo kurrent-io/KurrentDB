@@ -241,6 +241,7 @@ public class ReadForwardsTests : IndexTestBase {
 			validationTfLastCommitPosition,
 			user,
 			replyOnExpired,
+			pool: null,
 			longPollTimeout,
 			expires,
 			CancellationToken.None

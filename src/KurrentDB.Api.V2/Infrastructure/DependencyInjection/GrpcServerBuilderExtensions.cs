@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 namespace KurrentDB.Api.Infrastructure.DependencyInjection;
 
 public static class GrpcServerBuilderExtensions {
-    public static void WithGrpcService<TService>(
+    public static IGrpcServerBuilder WithGrpcService<TService>(
         this IGrpcServerBuilder builder,
         Action<RequestValidationBuilder>? configureValidation = null,
         Action<GrpcServiceOptions<TService>>? configureGrpc = null
@@ -24,5 +24,7 @@ public static class GrpcServerBuilderExtensions {
             options.Interceptors.Add<RequestValidationInterceptor>();
             configureGrpc?.Invoke(options);
         });
+
+        return builder;
     }
 }
