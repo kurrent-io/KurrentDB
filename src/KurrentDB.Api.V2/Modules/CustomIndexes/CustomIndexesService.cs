@@ -15,7 +15,7 @@ using static KurrentDB.Protocol.V2.CustomIndexes.CustomIndexesService;
 namespace KurrentDB.Api.Modules.CustomIndexes;
 
 public class CustomIndexesService(
-	CustomIndexDomainService domainService,
+	CustomIndexCommandService domainService,
 	CustomIndexReadsideService readSideService,
 	IAuthorizationProvider authz)
 	: CustomIndexesServiceBase {

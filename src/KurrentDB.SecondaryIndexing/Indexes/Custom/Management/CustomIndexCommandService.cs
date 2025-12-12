@@ -8,8 +8,8 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 
 public record CustomIndexId(string Name) : Id(Name);
 
-public class CustomIndexDomainService : CommandService<CustomIndex, CustomIndexState, CustomIndexId> {
-	public CustomIndexDomainService(IEventStore store, CustomIndexStreamNameMap streamNameMap)
+public class CustomIndexCommandService : CommandService<CustomIndex, CustomIndexState, CustomIndexId> {
+	public CustomIndexCommandService(IEventStore store, CustomIndexStreamNameMap streamNameMap)
 		: base(store: store, streamNameMap: streamNameMap) {
 
 		On<CreateCustomIndexRequest>()
