@@ -38,7 +38,7 @@ public class ApiV2Plugin() : SubsystemsPlugin("APIV2") {
                     RetryInfo.Descriptor.File);
             })
             .WithRequestValidation(x => x.ExceptionFactory = ApiErrors.InvalidRequest)
-            .WithGrpcService<CustomIndexesGrpcService>()
+            .WithGrpcService<CustomIndexesService>()
             .WithGrpcService<StreamsService>(
                 validation => validation.WithValidator<AppendRequestValidator>());
 
@@ -59,7 +59,7 @@ public class ApiV2Plugin() : SubsystemsPlugin("APIV2") {
         app.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = false });
 
         app.UseEndpoints(endpoints => {
-            endpoints.MapGrpcService<CustomIndexesGrpcService>()
+            endpoints.MapGrpcService<CustomIndexesService>()
                 .EnableGrpcWeb();
             endpoints.MapGrpcService<StreamsService>()
                 .EnableGrpcWeb();
