@@ -7,7 +7,6 @@ using Kurrent.Quack.ConnectionPool;
 using Kurrent.Surge.Schema.Serializers;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
-using KurrentDB.Core.ClientPublisher;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Storage;
@@ -128,16 +127,16 @@ public sealed class CustomIndexManager :
 		public bool IsEventAllowed(EventRecord eventRecord) => !eventRecord.EventStreamId.StartsWith('$');
 	}
 
-	public bool CanReadIndex(string indexStream) => _subscription?.CanReadIndex(indexStream) ?? false;
+	public bool CanReadIndex(string indexStream) => _subscription.CanReadIndex(indexStream);
 
-	public TFPos GetLastIndexedPosition(string indexStream) => _subscription!.GetLastIndexedPosition(indexStream);
+	public TFPos GetLastIndexedPosition(string indexStream) => _subscription.GetLastIndexedPosition(indexStream);
 
 	public ValueTask<ClientMessage.ReadIndexEventsForwardCompleted> ReadForwards(ClientMessage.ReadIndexEventsForward msg, CancellationToken token) =>
-		_subscription!.ReadForwards(msg, token);
+		_subscription.ReadForwards(msg, token);
 
 	public ValueTask<ClientMessage.ReadIndexEventsBackwardCompleted> ReadBackwards(ClientMessage.ReadIndexEventsBackward msg, CancellationToken token) =>
-		_subscription!.ReadBackwards(msg, token);
+		_subscription.ReadBackwards(msg, token);
 
 	public bool TryGetCustomIndexTableDetails(string indexName, out string tableName, out string inFlightTableName, out bool hasFields) =>
-		_subscription!.TryGetCustomIndexTableDetails(indexName, out tableName, out inFlightTableName, out hasFields);
+		_subscription.TryGetCustomIndexTableDetails(indexName, out tableName, out inFlightTableName, out hasFields);
 }
