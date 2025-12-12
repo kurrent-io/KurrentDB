@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 using DotNext;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
@@ -24,7 +25,11 @@ public class DuckDBConnectionPoolLifetime : Disposable {
 
 	public DuckDBConnectionPool Shared { get; }
 
-	public DuckDBConnectionPoolLifetime(TFChunkDbConfig config, IEnumerable<IDuckDBSetup> setups, [CanBeNull] ILogger<DuckDBConnectionPoolLifetime> log) {
+	public DuckDBConnectionPoolLifetime(
+		TFChunkDbConfig config,
+		IEnumerable<IDuckDBSetup> setups,
+		[CanBeNull] ILogger<DuckDBConnectionPoolLifetime> log) {
+
 		_path = config.InMemDb ? GetTempPath() : $"{config.Path}/kurrent.ddb";
 		_log = log;
 
@@ -39,7 +44,7 @@ public class DuckDBConnectionPoolLifetime : Disposable {
 		}
 		_repeated = repeated;
 
-		Shared = CreatePool(isReadOnly: false);
+		Shared = CreatePool(isReadOnly: false, log: true);
 		using var connection = Shared.Open();
 		foreach (var s in once)
 			s.Execute(connection);
@@ -53,13 +58,29 @@ public class DuckDBConnectionPoolLifetime : Disposable {
 		}
 	}
 
-	public DuckDBConnectionPool CreatePool() => CreatePool(isReadOnly: true); // no writes go through here so set read only
+	public DuckDBConnectionPool CreatePool() => CreatePool(isReadOnly: true, log: false); // no writes go through here so set read only
 
-	private DuckDBConnectionPool CreatePool(bool isReadOnly) {
-		var accessMode = isReadOnly ? "READ_ONLY" : "READ_WRITE";
-		var pool = new ConnectionPoolWithFunctions($"Data Source={_path};access_mode={accessMode};", _repeated);
-		_log?.LogTrace("Created {type} DuckDB connection pool at {path}", accessMode, _path);
+	private DuckDBConnectionPool CreatePool(bool isReadOnly, bool log) {
+		var availableRamMib = CalculateRam();
+		var duckDbRamMib = (int)availableRamMib * 0.25;
+		var settings = new Dictionary<string, string> {
+			["memory_limit"] = $"{duckDbRamMib}MB",
+			["access_mode"] = isReadOnly ? "READ_ONLY" : "READ_WRITE",
+		};
+		var pool = new ConnectionPoolWithFunctions($"Data Source={_path};{GetParamsString()}", _repeated);
+		if (log)
+			_log?.LogInformation("Created DuckDB connection pool at {path} with {settings}", _path, settings);
 		return pool;
+
+		static long CalculateRam() {
+			var totalRam = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
+			return totalRam / 1024 / 1024;
+		}
+
+		string GetParamsString() {
+			var list = settings.Keys.Select(x => $"{x}={settings[x]}");
+			return string.Join(";", list);
+		}
 	}
 
 	protected override void Dispose(bool disposing) {
@@ -76,6 +97,7 @@ public class DuckDBConnectionPoolLifetime : Disposable {
 					// let the file stay and be cleaned up by the OS
 				}
 			}
+
 			_log?.LogInformation("Disposed DuckDB connection pool");
 		}
 
