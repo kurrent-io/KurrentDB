@@ -22,9 +22,9 @@ using KurrentDB.Protocol.V2.CustomIndexes;
 using KurrentDB.SecondaryIndexing.Subscriptions;
 using Serilog;
 
-namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
+namespace KurrentDB.SecondaryIndexing.Indexes.Custom;
 
-public class Subscription : ISecondaryIndexReader {
+public class CustomIndexEngineSubscription : ISecondaryIndexReader {
 	private readonly ISystemClient _client;
 	private readonly IPublisher _publisher;
 	private readonly ISchemaSerializer _serializer;
@@ -42,14 +42,14 @@ public class Subscription : ISecondaryIndexReader {
 		CustomIndexSubscription Subscription,
 		SecondaryIndexReaderBase Reader);
 
-	private static readonly ILogger Log = Serilog.Log.ForContext<Subscription>();
+	private static readonly ILogger Log = Serilog.Log.ForContext<CustomIndexEngineSubscription>();
 
 	// ignore system events
 	static readonly Func<EventRecord, bool> IgnoreSystemEvents = evt =>
 		!evt.EventType.StartsWith('$') &&
 		!evt.EventStreamId.StartsWith('$');
 
-	public Subscription(
+	public CustomIndexEngineSubscription(
 		ISystemClient client,
 		IPublisher publisher,
 		ISchemaSerializer serializer,

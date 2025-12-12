@@ -15,7 +15,7 @@ public class CustomIndexReadsideService(
 	IEventReader store,
 	ISystemClient client,
 	ISchemaSerializer serializer,
-	CustomIndexManager manager,
+	CustomIndexEngine manager,
 	CustomIndexStreamNameMap streamNameMap) {
 
 	public async ValueTask<ListCustomIndexesResponse> List(CancellationToken ct) {

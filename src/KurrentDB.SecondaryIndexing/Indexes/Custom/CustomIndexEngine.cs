@@ -21,7 +21,7 @@ using Serilog;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom;
 
-public sealed class CustomIndexManager :
+public sealed class CustomIndexEngine :
 	IHandle<SystemMessage.SystemReady>,
 	IHandle<SystemMessage.BecomeShuttingDown>,
 	IHandle<StorageMessage.EventCommitted>,
@@ -30,17 +30,17 @@ public sealed class CustomIndexManager :
 
 	private readonly ISystemClient _client;
 	private readonly IReadOnlyCheckpoint _writerCheckpoint;
-	private readonly Subscription _subscription;
+	private readonly CustomIndexEngineSubscription _subscription;
 
 	private CancellationTokenSource? _cts;
 
 	private long _lastAppendedRecordPosition = -1;
 	private DateTime _lastAppendedRecordTimestamp = DateTime.MinValue;
 
-	private static readonly ILogger Log = Serilog.Log.ForContext<CustomIndexManager>();
+	private static readonly ILogger Log = Serilog.Log.ForContext<CustomIndexEngine>();
 
 	[Experimental("SECONDARY_INDEX")]
-	public CustomIndexManager(
+	public CustomIndexEngine(
 		ISystemClient client,
 		IPublisher publisher,
 		ISubscriber subscriber,
@@ -54,7 +54,7 @@ public sealed class CustomIndexManager :
 		_client = client;
 		_writerCheckpoint = chunkDbConfig.WriterCheckpoint;
 		_cts = new CancellationTokenSource();
-		_subscription = new Subscription(client, publisher, serializer, options, db, index, meter, GetLastAppendedRecord, _cts!.Token);
+		_subscription = new CustomIndexEngineSubscription(client, publisher, serializer, options, db, index, meter, GetLastAppendedRecord, _cts!.Token);
 
 		subscriber.Subscribe<SystemMessage.SystemReady>(this);
 		subscriber.Subscribe<SystemMessage.BecomeShuttingDown>(this);
