@@ -37,6 +37,10 @@ internal sealed class CustomIndexSubscription<TField>(
 	private Task? _processingTask;
 
 	private void Subscribe() {
+		if (_cts is not { } cts) {
+			Log.Warning("Custom index subscription {index} already terminated", indexProcessor.IndexName);
+			return;
+		}
 		var position = indexProcessor.GetLastPosition();
 		var startFrom = position == TFPos.Invalid ? Position.Start : Position.FromInt64(position.CommitPosition, position.PreparePosition);
 		Log.Information("Custom index subscription: {index} is starting from {position}", indexProcessor.IndexName, startFrom);
@@ -49,10 +53,10 @@ internal sealed class CustomIndexSubscription<TField>(
 			user: SystemAccounts.System,
 			requiresLeader: false,
 			catchUpBufferSize: options.CommitBatchSize * 2,
-			cancellationToken: _cts!.Token
+			cancellationToken: cts.Token
 		);
 
-		_processingTask = ProcessEvents(_cts.Token);
+		_processingTask = ProcessEvents(cts.Token);
 	}
 
 	[AsyncMethodBuilder(typeof(SpawningAsyncTaskMethodBuilder))]

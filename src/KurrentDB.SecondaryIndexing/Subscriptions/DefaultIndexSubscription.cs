@@ -27,8 +27,7 @@ public sealed partial class DefaultIndexSubscription(
 	private Task? _processingTask;
 
 	public void Subscribe() {
-		var cts = _cts;
-		if (cts == null) {
+		if (_cts is not { } cts) {
 			log.LogWarning("Subscription already terminated");
 			return;
 		}
