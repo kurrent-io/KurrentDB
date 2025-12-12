@@ -20,21 +20,27 @@ public sealed partial class SecondaryIndexSubscription(
 	SecondaryIndexingPluginOptions options,
 	ILogger log
 ) : IAsyncDisposable {
-
 	private readonly int _commitBatchSize = options.CommitBatchSize;
 	private CancellationTokenSource? _cts = new();
 	private Enumerator.AllSubscription? _subscription;
 	private Task? _processingTask;
+	private bool _rebuilding;
 
 	public void Subscribe() {
 		var cts = _cts;
 		if (cts == null) {
-			log.LogWarning("Subscription already terminated");
+			LogAlreadyTerminated(log);
 			return;
 		}
+
 		var position = indexProcessor.GetLastPosition();
 		var startFrom = position == TFPos.Invalid ? Position.Start : Position.FromInt64(position.CommitPosition, position.PreparePosition);
-		log.LogInformation("Starting indexing subscription from {StartFrom}", startFrom);
+		LogUsingCommitBatchSize(log, _commitBatchSize);
+		LogStarting(log, startFrom);
+		if (startFrom == Position.Start) {
+			log.LogInformation("Rebuilding secondary index from scratch");
+			_rebuilding = true;
+		}
 
 		_subscription = new(
 			bus: publisher,
@@ -62,12 +68,18 @@ public sealed partial class SecondaryIndexSubscription(
 				if (!await _subscription.MoveNextAsync())
 					break;
 			} catch (ReadResponseException.NotHandled.ServerNotReady) {
-				log.LogInformation("Default indexing subscription is stopping because server is not ready");
+				LogStoppingBecauseServerIsNotReady(log);
 				break;
 			}
 
 			if (_subscription.Current is ReadResponse.SubscriptionCaughtUp caughtUp) {
-				LogDefaultIndexingSubscriptionCaughtUpAtTime(log, caughtUp.Timestamp);
+				if (_rebuilding) {
+					LogIndexRebuildComplete(log, caughtUp.Timestamp);
+				} else {
+					LogCaughtUpAtTime(log, caughtUp.Timestamp);
+				}
+
+				_rebuilding = false;
 				continue;
 			}
 
@@ -91,7 +103,7 @@ public sealed partial class SecondaryIndexSubscription(
 			} catch (OperationCanceledException) {
 				break;
 			} catch (Exception e) {
-				log.LogError(e, "Error while processing event {EventType}", eventReceived.Event.Event.EventType);
+				LogErrorWhileProcessing(log, e, eventReceived.Event.Event.EventType);
 				throw;
 			}
 		}
@@ -113,9 +125,9 @@ public sealed partial class SecondaryIndexSubscription(
 		if (_processingTask != null) {
 			try {
 				await _processingTask.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing |
-													 ConfigureAwaitOptions.ContinueOnCapturedContext);
+				                                     ConfigureAwaitOptions.ContinueOnCapturedContext);
 			} catch (Exception ex) {
-				log.LogError(ex, "Error during processing task completion");
+				LogErrorDuringProcessingTaskCompletion(log, ex);
 			}
 		}
 
@@ -125,5 +137,26 @@ public sealed partial class SecondaryIndexSubscription(
 	}
 
 	[LoggerMessage(LogLevel.Trace, "Default indexing subscription caught up at {time}")]
-	static partial void LogDefaultIndexingSubscriptionCaughtUpAtTime(ILogger logger, DateTime time);
+	static partial void LogCaughtUpAtTime(ILogger logger, DateTime time);
+
+	[LoggerMessage(LogLevel.Warning, "Subscription already terminated")]
+	static partial void LogAlreadyTerminated(ILogger logger);
+
+	[LoggerMessage(LogLevel.Information, "Using commit batch size {commitBatchSize}")]
+	static partial void LogUsingCommitBatchSize(ILogger logger, int commitBatchSize);
+
+	[LoggerMessage(LogLevel.Information, "Starting indexing subscription from {startFrom}")]
+	static partial void LogStarting(ILogger logger, Position startFrom);
+
+	[LoggerMessage(LogLevel.Information, "Default indexing subscription is stopping because server is not ready")]
+	static partial void LogStoppingBecauseServerIsNotReady(ILogger logger);
+
+	[LoggerMessage(LogLevel.Error, "Error while processing event {eventType}")]
+	static partial void LogErrorWhileProcessing(ILogger logger, Exception exception, string eventType);
+
+	[LoggerMessage(LogLevel.Error, "Error during processing task completion")]
+	static partial void LogErrorDuringProcessingTaskCompletion(ILogger logger, Exception exception);
+
+	[LoggerMessage(LogLevel.Information, "Default secondary indexes rebuild complete at {time}")]
+	static partial void LogIndexRebuildComplete(ILogger logger, DateTime time);
 }

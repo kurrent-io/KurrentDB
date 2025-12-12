@@ -6,6 +6,7 @@
 @attribute [ExcludeFromInteractiveRouting]
 @rendermode InteractiveServer
 @using System.Diagnostics
+@using System.Text.Json
 @using BlazorMonaco
 @using BlazorMonaco.Editor
 @using Dapper
@@ -13,6 +14,7 @@
 @using KurrentDB.Common.Configuration
 @using KurrentDB.Components.Plugins
 @using KurrentDB.Components.Tools
+@using KurrentDB.Services
 @using KurrentDB.UI.Services
 @using Microsoft.AspNetCore.Authorization
 @using Serilog
@@ -20,9 +22,10 @@
 @inject Preferences Preferences
 @inject IDialogService DialogService
 @inject PluginsService Plugins
+@inject ClipboardService Clipboard
 
 <MudPopoverProvider/>
-<MudDialogProvider />
+<MudDialogProvider/>
 
 <PageTitle>KurrentDB: Query</PageTitle>
 
@@ -62,25 +65,29 @@
 		<Columns>
 			<HierarchyColumn T="IDictionary<string, object>" ButtonDisabledFunc="HasNoJson"/>
 			@if (!_items.Any()) {
-			}
-			else {
+			} else {
 				foreach (var item in _items.First().Keys) {
 					<PropertyColumn Property="x => Shorten(x[item])" Title="@item"></PropertyColumn>
 				}
 			}
 		</Columns>
 		<ChildRowContent>
-			<MudCard>
-				<MudCardContent>
-					@foreach (var item in context.Item.Keys) {
-						if (!IsJsonString(context.Item[item])) continue;
+			<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+				@foreach (var item in context.Item.Keys) {
+					if (!IsJsonString(context.Item[item])) continue;
 
-						<MudText Typo="Typo.h6">@item</MudText>
-
-						<Json JsonString="@context.Item[item]?.ToString()"></Json>
-					}
-				</MudCardContent>
-			</MudCard>
+					<MudTabPanel Text=@item>
+						@{ var json = context.Item[item]?.ToString(); }
+						<Json JsonString="@json"></Json>
+						<MudButton Variant="Variant.Filled" Size="Size.Small" OnClick="() => CopyJson(json, false)">
+							Copy JSON
+						</MudButton>
+						<MudButton Variant="Variant.Filled" Size="Size.Small" OnClick="() => CopyJson(json, true)">
+							Copy indented JSON
+						</MudButton>
+					</MudTabPanel>
+				}
+			</MudTabs>
 		</ChildRowContent>
 		<PagerContent>
 			<MudDataGridPager T="IDictionary<string, object>"/>
@@ -89,7 +96,6 @@
 }
 
 @code {
-
 	static readonly ILogger Log = Serilog.Log.ForContext<Query>();
 	IEnumerable<IDictionary<string, object>> _items;
 	StandaloneCodeEditor _editor = null!;
@@ -159,5 +165,24 @@
 	static bool IsJsonString(object value) => value is string s && (s.StartsWith('{') && s.EndsWith('}') || s.StartsWith('[') && s.EndsWith(']'));
 
 	string EditorTheme() => Preferences.DarkMode ? "vs-dark" : "vs-light";
+
+	static readonly JsonSerializerOptions Indent = new() { WriteIndented = true };
+
+	async Task CopyJson(string jsonString, bool indent) {
+		var json = indent ? TryPrettifyJson(jsonString) : jsonString;
+		await Clipboard.WriteTextAsync(json);
+	}
+
+	static string TryPrettifyJson(string json) {
+		if (string.IsNullOrWhiteSpace(json)) return json ?? string.Empty;
+		try {
+			using var doc = JsonDocument.Parse(json);
+			return JsonSerializer.Serialize(doc.RootElement, Indent);
+		}
+		catch (JsonException) {
+			// Not valid JSON; return original (or decide to throw)
+			return json;
+		}
+	}
 }
 
