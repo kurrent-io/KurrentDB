@@ -64,8 +64,8 @@ internal sealed class CustomIndexSubscription<TField>(
 		if (_subscription == null)
 			throw new InvalidOperationException("Subscription not initialized");
 
-		var indexedCount = 0;
-		var processedCount = 0;
+		var indexedCount = 0; // number of events added to the index (must pass the filter and successfully select the field)
+		var processedCount = 0; // number of events passed to the processor regardless of whether they were added to the index
 
 		while (!token.IsCancellationRequested) {
 			try {

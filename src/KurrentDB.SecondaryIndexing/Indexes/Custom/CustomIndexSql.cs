@@ -100,14 +100,25 @@ file readonly record struct CreateCustomIndexNonQuery(string TableName, string C
 }
 
 file readonly record struct DeleteCustomIndexNonQuery(string TableName) : IDynamicParameterlessStatement {
-	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse("drop table if exists \"{0}\"");
-	public void FormatCommandTemplate(Span<object?> args) => args[0] = TableName;
+	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse(
+		"""
+		drop table if exists "{0}" 
+		""");
+
+	public void FormatCommandTemplate(Span<object?> args) =>
+		args[0] = TableName;
 }
 
 internal record struct ReadCustomIndexQueryArgs(long StartPosition, long EndPosition, bool ExcludeFirst, int Count, IField Field);
 
 file readonly record struct ReadCustomIndexForwardsQuery(string TableName, bool ExcludeFirst, string FieldQuery) : IDynamicQuery<ReadCustomIndexQueryArgs, IndexQueryRecord> {
-	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse("select log_position, commit_position, event_number from \"{0}\" where log_position >{1} ? and log_position < ? {2} order by rowid limit ?");
+	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse(
+		"""
+		select log_position, commit_position, event_number
+		from "{0}"
+		where log_position >{1} ? and log_position < ? {2}
+		order by rowid limit ?
+		""");
 
 	public void FormatCommandTemplate(Span<object?> args) {
 		args[0] = TableName;
@@ -125,11 +136,21 @@ file readonly record struct ReadCustomIndexForwardsQuery(string TableName, bool 
 		return new BindingContext(statement, completed: true);
 	}
 
-	public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.TryReadInt64(), row.ReadInt64());
+	public static IndexQueryRecord Parse(ref DataChunk.Row row) =>
+		new(row.ReadInt64(),
+			row.TryReadInt64(),
+			row.ReadInt64());
 }
 
 file readonly record struct ReadCustomIndexBackwardsQuery(string TableName, bool ExcludeFirst, string FieldQuery) : IDynamicQuery<ReadCustomIndexQueryArgs, IndexQueryRecord> {
-	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse("select log_position, commit_position, event_number from \"{0}\" where log_position <{1} ? {2} order by rowid desc limit ?");
+	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse(
+		"""
+		select log_position, commit_position, event_number
+		from "{0}"
+		where log_position <{1} ? {2}
+		order by rowid desc
+		limit ?
+		""");
 
 	public void FormatCommandTemplate(Span<object?> args) {
 		args[0] = TableName;
@@ -146,32 +167,78 @@ file readonly record struct ReadCustomIndexBackwardsQuery(string TableName, bool
 		return new BindingContext(statement, completed: true);
 	}
 
-	public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.TryReadInt64(), row.ReadInt64());
+	public static IndexQueryRecord Parse(ref DataChunk.Row row) =>
+		new(row.ReadInt64(),
+			row.TryReadInt64(),
+			row.ReadInt64());
 }
 
 internal record struct GetCheckpointQueryArgs(string IndexName);
 internal record struct GetCheckpointResult(long PreparePosition, long? CommitPosition, long Timestamp);
 file struct GetCheckpointQuery : IQuery<GetCheckpointQueryArgs, GetCheckpointResult> {
-	public static BindingContext Bind(in GetCheckpointQueryArgs args, PreparedStatement statement) => new(statement) { args.IndexName };
-	public static ReadOnlySpan<byte> CommandText => "select log_position, commit_position, created from idx_custom_checkpoints where index_name = ? limit 1"u8;
-	public static GetCheckpointResult Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.TryReadInt64(), row.ReadInt64());
+	public static BindingContext Bind(in GetCheckpointQueryArgs args, PreparedStatement statement) =>
+		new(statement) {
+			args.IndexName,
+		};
+
+	public static ReadOnlySpan<byte> CommandText =>
+		"""
+		select log_position, commit_position, created
+		from idx_custom_checkpoints
+		where index_name = ?
+		limit 1
+		"""u8;
+	public static GetCheckpointResult Parse(ref DataChunk.Row row) =>
+		new(row.ReadInt64(),
+			row.TryReadInt64(),
+			row.ReadInt64());
 }
 
 internal record struct SetCheckpointQueryArgs(string IndexName, long PreparePosition, long? CommitPosition, long Created);
 file struct SetCheckpointNonQuery : IPreparedStatement<SetCheckpointQueryArgs> {
-	public static BindingContext Bind(in SetCheckpointQueryArgs args, PreparedStatement statement) => new(statement) { args.IndexName, args.PreparePosition, args.CommitPosition, args.Created };
-	public static ReadOnlySpan<byte> CommandText => "insert or replace into idx_custom_checkpoints (index_name,log_position,commit_position,created) VALUES ($1,$2,$3,$4)"u8;
+	public static BindingContext Bind(in SetCheckpointQueryArgs args, PreparedStatement statement) =>
+		new(statement) {
+			args.IndexName,
+			args.PreparePosition,
+			args.CommitPosition,
+			args.Created,
+		};
+
+	public static ReadOnlySpan<byte> CommandText =>
+		"""
+		insert or replace
+		into idx_custom_checkpoints (index_name,log_position,commit_position,created)
+		VALUES ($1,$2,$3,$4)
+		"""u8;
 }
 
 internal record struct DeleteCheckpointNonQueryArgs(string IndexName);
 file struct DeleteCheckpointNonQuery : IPreparedStatement<DeleteCheckpointNonQueryArgs> {
-	public static BindingContext Bind(in DeleteCheckpointNonQueryArgs args, PreparedStatement statement) => new(statement) { args.IndexName };
-	public static ReadOnlySpan<byte> CommandText => "delete from idx_custom_checkpoints where index_name = ?"u8;
+	public static BindingContext Bind(in DeleteCheckpointNonQueryArgs args, PreparedStatement statement) =>
+		new(statement) {
+			args.IndexName,
+		};
+
+	public static ReadOnlySpan<byte> CommandText =>
+		"""
+		delete
+		from idx_custom_checkpoints
+		where index_name = ?
+		"""u8;
 }
 
 internal record struct GetLastIndexedRecordResult(long PreparePosition, long? CommitPosition, long Timestamp);
 file readonly record struct GetLastIndexedRecordQuery(string TableName) : IDynamicQuery<GetLastIndexedRecordResult> {
-	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse("select log_position, commit_position, created from \"{0}\" order by rowid desc limit 1");
+	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse(
+		"""
+		select log_position, commit_position, created
+		from "{0}"
+		order by rowid desc
+		limit 1
+		""");
 	public void FormatCommandTemplate(Span<object?> args) => args[0] = TableName;
-	public static GetLastIndexedRecordResult Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.TryReadInt64(), row.ReadInt64());
+	public static GetLastIndexedRecordResult Parse(ref DataChunk.Row row) =>
+		new(row.ReadInt64(),
+			row.TryReadInt64(),
+			row.ReadInt64());
 }

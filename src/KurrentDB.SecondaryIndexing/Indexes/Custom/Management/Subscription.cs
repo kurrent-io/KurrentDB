@@ -303,7 +303,7 @@ public class Subscription : ISecondaryIndexReader {
 
 	private void DropSubscriptions(string indexName) {
 		Log.Verbose("Dropping subscriptions to custom index: {index}", indexName);
-		_publisher.Publish(new StorageMessage.SecondaryIndexDeleted(Custom.CustomIndexHelpers.GetStreamNameRegex(indexName)));
+		_publisher.Publish(new StorageMessage.SecondaryIndexDeleted(CustomIndexHelpers.GetStreamNameRegex(indexName)));
 	}
 
 	private static void DeleteCustomIndexTable(DuckDBAdvancedConnection connection, string indexName) {
@@ -339,7 +339,7 @@ public class Subscription : ISecondaryIndexReader {
 	}
 
 	public ValueTask<ClientMessage.ReadIndexEventsBackwardCompleted> ReadBackwards(ClientMessage.ReadIndexEventsBackward msg, CancellationToken token) {
-		Custom.CustomIndexHelpers.ParseQueryStreamName(msg.IndexName, out var indexName, out _);
+		CustomIndexHelpers.ParseQueryStreamName(msg.IndexName, out var indexName, out _);
 		Log.Verbose("Custom index: {index} received read backwards request", indexName);
 		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var data)) {
 			var result = new ClientMessage.ReadIndexEventsBackwardCompleted(
