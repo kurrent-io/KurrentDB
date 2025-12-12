@@ -20,7 +20,7 @@ using Serilog;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom;
 
-internal abstract class CustomIndexProcessor: Disposable, ISecondaryIndexProcessor {
+internal abstract class CustomIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	protected static readonly ILogger Log = Serilog.Log.ForContext<CustomIndexProcessor>();
 	public abstract void Commit();
 	public abstract bool TryIndex(ResolvedEvent evt);
@@ -35,10 +35,11 @@ internal class CustomIndexProcessor<TField> : CustomIndexProcessor where TField 
 	private readonly ResolvedEventJsObject _resolvedEventJsObject;
 	private readonly CustomIndexInFlightRecords<TField> _inFlightRecords;
 	private readonly string _inFlightTableName;
+	private readonly string _queryStreamName;
 	private readonly IPublisher _publisher;
 	private readonly DuckDBAdvancedConnection _connection;
 	private readonly CustomIndexSql<TField> _sql;
-	private readonly object _skip = new();
+	private readonly object _skip;
 
 	private TFPos _lastPosition;
 	private Appender _appender;
@@ -67,6 +68,7 @@ internal class CustomIndexProcessor<TField> : CustomIndexProcessor where TField 
 
 		_inFlightRecords = inFlightRecords;
 		_inFlightTableName = CustomIndexSql.GenerateInFlightTableNameFor(IndexName);
+		_queryStreamName = CustomIndexHelpers.GetQueryStreamName(IndexName);
 
 		_publisher = publisher;
 
@@ -134,7 +136,7 @@ internal class CustomIndexProcessor<TField> : CustomIndexProcessor where TField 
 
 		_inFlightRecords.Append(preparePosition, commitPosition ?? preparePosition, eventNumber, field, created);
 
-		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(CustomIndexHelpers.GetQueryStreamName(IndexName), resolvedEvent));
+		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(_queryStreamName, resolvedEvent));
 		if (field is not null)
 			_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(CustomIndexHelpers.GetQueryStreamName(IndexName, fieldStr), resolvedEvent));
 

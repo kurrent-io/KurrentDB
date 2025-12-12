@@ -29,23 +29,43 @@ internal sealed class ResolvedEventJsObject: ObjectInstance {
 	}
 
 	public string StreamId {
-		set => SetOwnProperty("stream", new PropertyDescriptor(value, false, true, false));
+		set => SetOwnProperty("stream", new PropertyDescriptor(
+			value: value,
+			writable: false,
+			enumerable: true,
+			configurable: false));
 	}
 
 	public long EventNumber {
-		set => SetOwnProperty("number", new PropertyDescriptor(value, false, true, false));
+		set => SetOwnProperty("number", new PropertyDescriptor(
+			value: value,
+			writable: false,
+			enumerable: true,
+			configurable: false));
 	}
 
 	public string EventType {
-		set => SetOwnProperty("type", new PropertyDescriptor(value, false, true, false));
+		set => SetOwnProperty("type", new PropertyDescriptor(
+			value: value,
+			writable: false,
+			enumerable: true,
+			configurable: false));
 	}
 
 	public string EventId {
-		set => SetOwnProperty("id", new PropertyDescriptor(value, false, true, false));
+		set => SetOwnProperty("id", new PropertyDescriptor(
+			value: value,
+			writable: false,
+			enumerable: true,
+			configurable: false));
 	}
 
 	public bool IsJson {
-		set => SetOwnProperty("isJson", new PropertyDescriptor(value, false, true, false));
+		set => SetOwnProperty("isJson", new PropertyDescriptor(
+			value: value,
+			writable: false,
+			enumerable: true,
+			configurable: false));
 	}
 
 	public ReadOnlyMemory<byte> Data { private get; set; }
@@ -67,7 +87,11 @@ internal sealed class ResolvedEventJsObject: ObjectInstance {
 			return Undefined;
 
 		var parsedValue = _parser.Parse(Encoding.UTF8.GetString(rawBytes.Span));
-		SetOwnProperty(propertyName, new PropertyDescriptor(parsedValue, false, true, false));
+		SetOwnProperty(propertyName, new PropertyDescriptor(
+			value: parsedValue,
+			writable: false,
+			enumerable: true,
+			configurable: false));
 		return parsedValue;
 	}
 
@@ -76,7 +100,11 @@ internal sealed class ResolvedEventJsObject: ObjectInstance {
 			return objectInstance;
 
 		var arrayBuffer = FromObject(_engine, rawBytes);
-		SetOwnProperty(propertyName, new PropertyDescriptor(arrayBuffer, false, true, false));
+		SetOwnProperty(propertyName, new PropertyDescriptor(
+			value: arrayBuffer,
+			writable: false,
+			enumerable: true,
+			configurable: false));
 		return arrayBuffer;
 	}
 

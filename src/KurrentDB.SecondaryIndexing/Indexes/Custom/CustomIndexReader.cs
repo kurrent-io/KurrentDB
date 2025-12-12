@@ -16,7 +16,8 @@ internal class CustomIndexReader<TField>(
 ) : SecondaryIndexReaderBase(sharedPool, index) where TField : IField {
 
 	protected override string? GetId(string indexStream) {
-		// the field is used as the ID
+		// the field is used as the ID. null when there is no field
+		// it is only used for passing into the overrides defined in this class
 		CustomIndexHelpers.ParseQueryStreamName(indexStream, out _, out var field);
 		return field;
 	}
