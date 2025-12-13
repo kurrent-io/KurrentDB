@@ -252,6 +252,7 @@ try {
 			builder.Services.AddMudMarkdownServices();
 			builder.Services.AddScoped<LogObserver>();
 			builder.Services.AddScoped<IdentityRedirectManager>();
+			builder.Services.AddScoped<ClipboardService>();
 			builder.Services.AddSingleton(monitoringService);
 			builder.Services.AddSingleton(metricsObserver);
 			builder.Services.AddSingleton<PluginsService>();
