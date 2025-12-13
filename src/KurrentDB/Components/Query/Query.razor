@@ -174,7 +174,7 @@
 	}
 
 	static string TryPrettifyJson(string json) {
-		if (string.IsNullOrWhiteSpace(json)) return json ?? string.Empty;
+		if (string.IsNullOrWhiteSpace(json)) return string.Empty;
 		try {
 			using var doc = JsonDocument.Parse(json);
 			return JsonSerializer.Serialize(doc.RootElement, Indent);
