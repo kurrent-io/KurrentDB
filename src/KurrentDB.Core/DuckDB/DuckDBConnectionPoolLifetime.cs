@@ -36,7 +36,7 @@ public class DuckDBConnectionPoolLifetime : Disposable {
 		}
 
 		var total = CalculateRam();
-		var duckDbRam = (int)total * 0.25;
+		var duckDbRam = (int)(total * 0.25);
 		var settings = new Dictionary<string, string> {
 			["memory_limit"] = $"{duckDbRam}MB"
 		};
