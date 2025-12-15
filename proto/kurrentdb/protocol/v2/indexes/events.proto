@@ -9,18 +9,22 @@ import "google/protobuf/timestamp.proto";
 
 message IndexCreated {
   google.protobuf.Timestamp timestamp = 1;
-  string filter = 2;
-  repeated Field fields = 3;
+  string name = 2;
+  string filter = 3;
+  repeated Field fields = 4;
 }
 
 message IndexStarted {
   google.protobuf.Timestamp timestamp = 1;
+  string name = 2;
 }
 
 message IndexStopped {
   google.protobuf.Timestamp timestamp = 1;
+  string name = 2;
 }
 
 message IndexDeleted {
   google.protobuf.Timestamp timestamp = 1;
+  string name = 2;
 }

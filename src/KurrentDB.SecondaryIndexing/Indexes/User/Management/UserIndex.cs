@@ -41,6 +41,7 @@ public class UserIndex : Aggregate<UserIndexState> {
 		void CreateUserIndex() {
 			Apply(new IndexCreated {
 				Timestamp = DateTime.UtcNow.ToTimestamp(),
+				Name = cmd.Name,
 				Filter = cmd.Filter,
 				Fields = { cmd.Fields },
 			});
@@ -57,7 +58,10 @@ public class UserIndex : Aggregate<UserIndexState> {
 			case IndexStatus.Deleted:
 				throw new UserIndexNotFoundException(State.Id.Name);
 			case IndexStatus.Stopped:
-				Apply(new IndexStarted { Timestamp = DateTime.UtcNow.ToTimestamp() });
+				Apply(new IndexStarted {
+					Timestamp = DateTime.UtcNow.ToTimestamp(),
+					Name = State.Id.Name,
+				});
 				break;
 			case IndexStatus.Started:
 				break; // idempotent
@@ -72,7 +76,10 @@ public class UserIndex : Aggregate<UserIndexState> {
 			case IndexStatus.Stopped:
 				break; // idempotent
 			case IndexStatus.Started:
-				Apply(new IndexStopped { Timestamp = DateTime.UtcNow.ToTimestamp() });
+				Apply(new IndexStopped {
+					Timestamp = DateTime.UtcNow.ToTimestamp(),
+					Name = State.Id.Name,
+				});
 				break;
 		}
 	}
@@ -87,6 +94,9 @@ public class UserIndex : Aggregate<UserIndexState> {
 		if (State.Status is IndexStatus.Started)
 			Stop();
 
-		Apply(new IndexDeleted { Timestamp = DateTime.UtcNow.ToTimestamp() });
+		Apply(new IndexDeleted {
+			Timestamp = DateTime.UtcNow.ToTimestamp(),
+			Name = State.Id.Name,
+		});
 	}
 }
