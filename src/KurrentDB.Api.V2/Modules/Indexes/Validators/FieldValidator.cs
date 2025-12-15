@@ -10,7 +10,7 @@ namespace KurrentDB.Api.Modules.Indexes.Validators;
 class FieldValidator : ValidatorBase<FieldValidator, Field> {
 	public FieldValidator() {
 		RuleFor(x => x.Name)
-			.SetValidator(NameValidator.Instance);
+			.SetValidator(IndexNameValidator.Instance);
 
 		RuleFor(x => x.Selector)
 			.Must(x => x is "" || JsFunctionValidator.IsValidFunctionWithOneArgument(x))

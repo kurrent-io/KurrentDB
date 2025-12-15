@@ -7,8 +7,8 @@ using KurrentDB.Api.Infrastructure.FluentValidation;
 namespace KurrentDB.Api.Modules.Indexes.Validators;
 
 // Lower case restriction because identifiers are case-insensitive in duckdb
-class NameValidator : ValidatorBase<NameValidator, string?> {
-	public NameValidator() =>
+class IndexNameValidator : ValidatorBase<IndexNameValidator, string?> {
+	public IndexNameValidator() =>
 		RuleFor(x => x)
 			.MinimumLength(1)
 			.MaximumLength(1000)

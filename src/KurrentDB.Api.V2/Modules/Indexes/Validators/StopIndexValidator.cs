@@ -11,6 +11,6 @@ class StopIndexValidator : RequestValidator<StopIndexRequest> {
 
 	private StopIndexValidator() {
 		RuleFor(x => x.Name)
-			.SetValidator(NameValidator.Instance);
+			.SetValidator(IndexNameValidator.Instance);
 	}
 }

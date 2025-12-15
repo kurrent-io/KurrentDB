@@ -12,7 +12,7 @@ class CreateIndexValidator : RequestValidator<CreateIndexRequest> {
 
 	private CreateIndexValidator() {
 		RuleFor(x => x.Name)
-			.SetValidator(NameValidator.Instance);
+			.SetValidator(IndexNameValidator.Instance);
 
 		RuleFor(x => x.Filter)
 			.SetValidator(FilterValidator.Instance);

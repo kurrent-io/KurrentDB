@@ -11,6 +11,6 @@ class DeleteIndexValidator : RequestValidator<DeleteIndexRequest> {
 
 	private DeleteIndexValidator() {
 		RuleFor(x => x.Name)
-			.SetValidator(NameValidator.Instance);
+			.SetValidator(IndexNameValidator.Instance);
 	}
 }

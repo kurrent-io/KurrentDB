@@ -11,6 +11,6 @@ class StartIndexValidator : RequestValidator<StartIndexRequest> {
 
 	private StartIndexValidator() {
 		RuleFor(x => x.Name)
-			.SetValidator(NameValidator.Instance);
+			.SetValidator(IndexNameValidator.Instance);
 	}
 }
