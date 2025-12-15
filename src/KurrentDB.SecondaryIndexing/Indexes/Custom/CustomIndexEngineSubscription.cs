@@ -108,8 +108,9 @@ public class CustomIndexEngineSubscription : ISecondaryIndexReader {
 	private async Task StartInternal() {
 		_cts.Token.ThrowIfCancellationRequested();
 
+		// todo: don't collide with user indices, or use a default index if we add one with system events
 		await StartCustomIndex<NullField>(
-			indexName: CustomIndexConstants.ManagementIndexName, //qq don't collide with user indices
+			indexName: CustomIndexConstants.ManagementIndexName,
 			createdEvent: new() {
 				Filter = "",
 				Fields = { },
