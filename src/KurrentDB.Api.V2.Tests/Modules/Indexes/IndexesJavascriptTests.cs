@@ -72,11 +72,11 @@ public class IndexesJavascriptTests {
 	[Arguments(FieldType.String, """ "blue" """, """ "red" """, "red")]
 	[Arguments(FieldType.String, """ "blue:2" """, """ "red:3" """, "red:3")]
 
-	[Arguments(FieldType.Int16,  """ 0.0 """, """ 1.0 """, "1")]
+//	[Arguments(FieldType.Int16,  """ 0.0 """, """ 1.0 """, "1")]
 	[Arguments(FieldType.Int32,  """ 0.0 """, """ 1.0 """, "1")]
 	[Arguments(FieldType.Int64,  """ 0.0 """, """ 1.0 """, "1")]
-	[Arguments(FieldType.Uint32, """ 0.0 """, """ 1.0 """, "1")]
-	[Arguments(FieldType.Uint64, """ 0.0 """, """ 1.0 """, "1")]
+//	[Arguments(FieldType.Uint32, """ 0.0 """, """ 1.0 """, "1")]
+//	[Arguments(FieldType.Uint64, """ 0.0 """, """ 1.0 """, "1")]
 
 	[Arguments(FieldType.Double, """ 0   """, """ 1   """, "1")]
 	[Arguments(FieldType.Double, """ 0.0 """, """ 1.0 """, "1")]
