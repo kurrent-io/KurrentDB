@@ -21,3 +21,10 @@ message IndexField {
   reserved 3; // selector type (js, json path, surge style js)
   IndexFieldType type = 4;
 }
+
+enum IndexState {
+  INDEX_STATE_UNSPECIFIED = 0;
+  INDEX_STATE_STARTED = 1;
+  INDEX_STATE_STOPPED = 2;
+  INDEX_STATE_DELETED = 3;
+}

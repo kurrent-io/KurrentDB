@@ -26,10 +26,3 @@ message Index {
   repeated IndexField fields = 2;
   IndexState state = 3;
 }
-
-enum IndexState {
-  INDEX_STATE_UNSPECIFIED = 0;
-  INDEX_STATE_STARTED = 1;
-  INDEX_STATE_STOPPED = 2;
-  INDEX_STATE_DELETED = 3;
-}
