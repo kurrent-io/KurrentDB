@@ -3,17 +3,17 @@
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 
-public class CustomIndexException : Exception;
+public class UserIndexException : Exception;
 
-public class CustomIndexDomainException(string customIndexName) : CustomIndexException {
+public class UserIndexDomainException(string customIndexName) : UserIndexException {
 	public string CustomIndexName => customIndexName;
 }
 
-public class CustomIndexNotFoundException(string customIndexName) : CustomIndexDomainException(customIndexName);
+public class UserIndexNotFoundException(string customIndexName) : UserIndexDomainException(customIndexName);
 
-public class CustomIndexAlreadyExistsException(string customIndexName) : CustomIndexDomainException(customIndexName);
+public class UserIndexAlreadyExistsException(string customIndexName) : UserIndexDomainException(customIndexName);
 
-public class CustomIndexesNotReadyException(long currentPosition, long targetPosition) : CustomIndexException {
+public class UserIndexesNotReadyException(long currentPosition, long targetPosition) : UserIndexException {
 	public long CurrentPosition { get; } = currentPosition;
 	public long TargetPosition { get; } = targetPosition;
 };

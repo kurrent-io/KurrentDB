@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package kurrentdb.protocol.v2.indexes;
+
+option csharp_namespace = "KurrentDB.Protocol.V2.Indexes";
+
+import "indexes/shared.proto";
+
+message ListIndexesRequest {
+}
+
+message ListIndexesResponse {
+  map<string, Index> indexes = 1;
+}
+
+message GetIndexRequest {
+  string name = 1;
+}
+
+message GetIndexResponse {
+  Index index = 1;
+}
+
+message Index {
+  string filter = 1;
+  repeated Field fields = 2;
+  IndexStatus status = 3;
+}
+
+enum IndexStatus {
+  INDEX_STATUS_UNSPECIFIED = 0;
+  INDEX_STATUS_STARTED = 1;
+  INDEX_STATUS_STOPPED = 2;
+  INDEX_STATUS_DELETED = 3;
+}

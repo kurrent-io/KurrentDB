@@ -63,7 +63,7 @@ public sealed class CustomIndexEngine :
 
 	public void EnsureLive() {
 		if (!_subscription.CaughtUp) {
-			throw new CustomIndexesNotReadyException(_subscription.Checkpoint, _writerCheckpoint.Read());
+			throw new UserIndexesNotReadyException(_subscription.Checkpoint, _writerCheckpoint.Read());
 		}
 	}
 

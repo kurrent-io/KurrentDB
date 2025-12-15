@@ -3,7 +3,7 @@
 
 using System.Text;
 using Grpc.Core;
-using KurrentDB.Protocol.V2.CustomIndexes;
+using KurrentDB.Protocol.V2.Indexes;
 using KurrentDB.Protocol.V2.Streams;
 
 namespace KurrentDB.Api.Tests.Modules.CustomIndexes;
@@ -25,7 +25,7 @@ public class CustomIndexesSubscriptionTests {
 	[ClassDataSource<KurrentContext>(Shared = SharedType.PerTestSession)]
 	public required KurrentContext KurrentContext { get; init; }
 
-	CustomIndexesService.CustomIndexesServiceClient Client => KurrentContext.CustomIndexesClient;
+	IndexesService.IndexesServiceClient Client => KurrentContext.CustomIndexesClient;
 	StreamsService.StreamsServiceClient StreamsWriteClient => KurrentContext.StreamsV2Client;
 	EventStore.Client.Streams.Streams.StreamsClient StreamsReadClient => KurrentContext.StreamsClient;
 
@@ -43,7 +43,7 @@ public class CustomIndexesSubscriptionTests {
 		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "C", "country": "Mauritius" }""", ct);
 
 		// create index
-		await Client.CreateCustomIndexAsync(
+		await Client.CreateIndexAsync(
 			new() {
 				Name = CustomIndexName,
 				Filter = $"rec => rec.type == '{EventType}'",
@@ -85,7 +85,7 @@ public class CustomIndexesSubscriptionTests {
 		await Assert.That((await mauritiusEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "D", """);
 
 		// stop
-		await Client.StopCustomIndexAsync(new() { Name = CustomIndexName }, cancellationToken: ct);
+		await Client.StopIndexAsync(new() { Name = CustomIndexName }, cancellationToken: ct);
 
 		await Task.Delay(500); // todo better way to wait for it to stop
 
@@ -100,7 +100,7 @@ public class CustomIndexesSubscriptionTests {
 		await Assert.That(nextMauritiusResult.IsCompleted).IsFalse();
 
 		// start and receive the extra events
-		await Client.StartCustomIndexAsync(new() { Name = CustomIndexName }, cancellationToken: ct);
+		await Client.StartIndexAsync(new() { Name = CustomIndexName }, cancellationToken: ct);
 
 		await Assert.That((await nextAllResult).Data.ToStringUtf8()).Contains(""" "orderId": "F", """);
 		await Assert.That((await allFieldsEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "G", """);
@@ -108,7 +108,7 @@ public class CustomIndexesSubscriptionTests {
 		await Assert.That((await nextMauritiusResult).Data.ToStringUtf8()).Contains(""" "orderId": "F", """);
 
 		// delete
-		await Client.DeleteCustomIndexAsync(new() { Name = CustomIndexName }, cancellationToken: ct);
+		await Client.DeleteIndexAsync(new() { Name = CustomIndexName }, cancellationToken: ct);
 
 		var ex = await Assert
 			.That(async () => await allFieldsEnumerator.ConsumeNext())

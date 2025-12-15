@@ -7,7 +7,7 @@ using Kurrent.Surge.Schema.Serializers;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core;
 using KurrentDB.Core.Services.Transport.Common;
-using KurrentDB.Protocol.V2.CustomIndexes;
+using KurrentDB.Protocol.V2.Indexes;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 
@@ -18,7 +18,7 @@ public class CustomIndexReadsideService(
 	CustomIndexEngine manager,
 	CustomIndexStreamNameMap streamNameMap) {
 
-	public async ValueTask<ListCustomIndexesResponse> List(CancellationToken ct) {
+	public async ValueTask<ListIndexesResponse> List(CancellationToken ct) {
 		manager.EnsureLive();
 
 		var state = new CustomIndexesState();
@@ -41,7 +41,7 @@ public class CustomIndexReadsideService(
 		return state.Convert();
 	}
 
-	public async ValueTask<GetCustomIndexResponse> Get(string name, CancellationToken ct) {
+	public async ValueTask<GetIndexResponse> Get(string name, CancellationToken ct) {
 		manager.EnsureLive();
 
 		var streamName = streamNameMap.GetStreamName<CustomIndexId>(new(name));
@@ -52,12 +52,12 @@ public class CustomIndexReadsideService(
 			cancellationToken: ct);
 
 		if (state.State.Status
-			is CustomIndexStatus.Unspecified
-			or CustomIndexStatus.Deleted)
-			throw new CustomIndexNotFoundException(name);
+			is IndexStatus.Unspecified
+			or IndexStatus.Deleted)
+			throw new UserIndexNotFoundException(name);
 
 		return new() {
-			CustomIndex = state.State.Convert(),
+			Index = state.State.Convert(),
 		};
 	}
 
@@ -65,24 +65,24 @@ public class CustomIndexReadsideService(
 		public Dictionary<string, CustomIndexState> CustomIndexes { get; } = [];
 
 		public CustomIndexesState() {
-			On<CustomIndexCreated>((state, customIndexId, evt) => {
+			On<IndexCreated>((state, customIndexId, evt) => {
 				CustomIndexes[customIndexId.Name] = new CustomIndexState().When(evt);
 				return this;
 			});
 
-			On<CustomIndexStarted>((state, customIndexId, evt) => {
+			On<IndexStarted>((state, customIndexId, evt) => {
 				if (CustomIndexes.TryGetValue(customIndexId.Name, out var customIndexState))
 					CustomIndexes[customIndexId.Name] = customIndexState.When(evt);
 				return this;
 			});
 
-			On<CustomIndexStopped>((state, customIndexId, evt) => {
+			On<IndexStopped>((state, customIndexId, evt) => {
 				if (CustomIndexes.TryGetValue(customIndexId.Name, out var customIndexState))
 					CustomIndexes[customIndexId.Name] = customIndexState.When(evt);
 				return this;
 			});
 
-			On<CustomIndexDeleted>((state, customIndexId, evt) => {
+			On<IndexDeleted>((state, customIndexId, evt) => {
 				CustomIndexes.Remove(customIndexId.Name);
 				return this;
 			});
@@ -92,24 +92,24 @@ public class CustomIndexReadsideService(
 	public record CustomIndexState : State<CustomIndexState> {
 		public string Filter { get; init; } = "";
 		public IList<Field> Fields { get; init; } = [];
-		public CustomIndexStatus Status { get; init; }
+		public IndexStatus Status { get; init; }
 
 		public CustomIndexState() {
-			On<CustomIndexCreated>((state, evt) =>
+			On<IndexCreated>((state, evt) =>
 				state with {
 					Filter = evt.Filter,
 					Fields = evt.Fields,
-					Status = CustomIndexStatus.Stopped,
+					Status = IndexStatus.Stopped,
 				});
 
-			On<CustomIndexStarted>((state, evt) =>
-				state with { Status = CustomIndexStatus.Started });
+			On<IndexStarted>((state, evt) =>
+				state with { Status = IndexStatus.Started });
 
-			On<CustomIndexStopped>((state, evt) =>
-				state with { Status = CustomIndexStatus.Stopped });
+			On<IndexStopped>((state, evt) =>
+				state with { Status = IndexStatus.Stopped });
 
-			On<CustomIndexDeleted>((state, evt) =>
-				state with { Status = CustomIndexStatus.Deleted });
+			On<IndexDeleted>((state, evt) =>
+				state with { Status = IndexStatus.Deleted });
 		}
 	}
 
@@ -137,16 +137,16 @@ public class CustomIndexReadsideService(
 }
 
 file static class Extensions {
-	public static Protocol.V2.CustomIndexes.CustomIndex Convert(this CustomIndexReadsideService.CustomIndexState self) => new() {
+	public static Protocol.V2.Indexes.Index Convert(this CustomIndexReadsideService.CustomIndexState self) => new() {
 		Filter = self.Filter,
 		Fields = { self.Fields },
 		Status = self.Status,
 	};
 
-	public static ListCustomIndexesResponse Convert(this CustomIndexReadsideService.CustomIndexesState self) {
-		var result = new ListCustomIndexesResponse();
+	public static ListIndexesResponse Convert(this CustomIndexReadsideService.CustomIndexesState self) {
+		var result = new ListIndexesResponse();
 		foreach (var (name, customIndex) in self.CustomIndexes)
-			result.CustomIndexes[name] = customIndex.Convert();
+			result.Indexes[name] = customIndex.Convert();
 		return result;
 	}
 }

@@ -3,7 +3,7 @@
 
 using FluentValidation;
 using KurrentDB.Api.Infrastructure.FluentValidation;
-using KurrentDB.Protocol.V2.CustomIndexes;
+using KurrentDB.Protocol.V2.Indexes;
 
 namespace KurrentDB.Api.Modules.CustomIndexes.Validators;
 

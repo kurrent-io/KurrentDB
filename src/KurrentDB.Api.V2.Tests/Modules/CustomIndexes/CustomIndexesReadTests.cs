@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Grpc.Core;
-using KurrentDB.Protocol.V2.CustomIndexes;
+using KurrentDB.Protocol.V2.Indexes;
 using KurrentDB.Protocol.V2.Streams;
 
 namespace KurrentDB.Api.Tests.Modules.CustomIndexes;
@@ -11,7 +11,7 @@ public class CustomIndexesReadTests {
 	[ClassDataSource<KurrentContext>(Shared = SharedType.PerTestSession)]
 	public required KurrentContext KurrentContext { get; init; }
 
-	CustomIndexesService.CustomIndexesServiceClient Client => KurrentContext.CustomIndexesClient;
+	IndexesService.IndexesServiceClient Client => KurrentContext.CustomIndexesClient;
 	StreamsService.StreamsServiceClient StreamsWriteClient => KurrentContext.StreamsV2Client;
 	EventStore.Client.Streams.Streams.StreamsClient StreamsReadClient => KurrentContext.StreamsClient;
 
@@ -31,7 +31,7 @@ public class CustomIndexesReadTests {
 		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "B", "country": "United Kingdom" }""", ct);
 		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "C", "country": "Mauritius" }""", ct);
 
-		await Client.CreateCustomIndexAsync(
+		await Client.CreateIndexAsync(
 			new() {
 				Name = CustomIndexName,
 				Filter = $"rec => rec.type == '{EventType}'",

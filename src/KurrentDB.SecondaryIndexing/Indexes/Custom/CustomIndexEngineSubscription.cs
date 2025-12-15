@@ -18,7 +18,7 @@ using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
-using KurrentDB.Protocol.V2.CustomIndexes;
+using KurrentDB.Protocol.V2.Indexes;
 using KurrentDB.SecondaryIndexing.Subscriptions;
 using Serilog;
 
@@ -101,7 +101,7 @@ public class CustomIndexEngineSubscription : ISecondaryIndexReader {
 	}
 
 	class CustomIndexReadState {
-		public CustomIndexCreated Created { get; set; } = null!;
+		public IndexCreated Created { get; set; } = null!;
 		public bool Started { get; set; }
 	}
 
@@ -172,7 +172,7 @@ public class CustomIndexEngineSubscription : ISecondaryIndexReader {
 					var customIndexName = CustomIndexHelpers.ParseManagementStreamName(evt.OriginalEvent.EventStreamId);
 
 					switch (deserializedEvent) {
-						case CustomIndexCreated createdEvent: {
+						case IndexCreated createdEvent: {
 							deletedIndexes.Remove(customIndexName);
 							customIndexes[customIndexName] = new() {
 								Created = createdEvent,
@@ -180,7 +180,7 @@ public class CustomIndexEngineSubscription : ISecondaryIndexReader {
 							};
 							break;
 						}
-						case CustomIndexStarted: {
+						case IndexStarted: {
 							if (!customIndexes.TryGetValue(customIndexName, out var state))
 								break;
 
@@ -191,7 +191,7 @@ public class CustomIndexEngineSubscription : ISecondaryIndexReader {
 
 							break;
 						}
-						case CustomIndexStopped: {
+						case IndexStopped: {
 							if (!customIndexes.TryGetValue(customIndexName, out var state))
 								break;
 
@@ -202,7 +202,7 @@ public class CustomIndexEngineSubscription : ISecondaryIndexReader {
 
 							break;
 						}
-						case CustomIndexDeleted: {
+						case IndexDeleted: {
 							deletedIndexes.Add(customIndexName);
 							customIndexes.Remove(customIndexName);
 
@@ -221,7 +221,7 @@ public class CustomIndexEngineSubscription : ISecondaryIndexReader {
 		}
 	}
 
-	private ValueTask StartCustomIndex(string indexName, CustomIndexCreated createdEvent) {
+	private ValueTask StartCustomIndex(string indexName, IndexCreated createdEvent) {
 		if (createdEvent.Fields.Count is 0)
 			return StartCustomIndex<NullField>(indexName, createdEvent);
 
@@ -239,7 +239,7 @@ public class CustomIndexEngineSubscription : ISecondaryIndexReader {
 
 	private async ValueTask StartCustomIndex<TField>(
 		string indexName,
-		CustomIndexCreated createdEvent,
+		IndexCreated createdEvent,
 		Func<EventRecord, bool>? eventFilter = null) where TField : IField {
 
 		Log.Debug("Starting custom index: {index}", indexName);

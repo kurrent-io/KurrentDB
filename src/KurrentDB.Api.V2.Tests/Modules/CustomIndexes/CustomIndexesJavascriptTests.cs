@@ -1,7 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using KurrentDB.Protocol.V2.CustomIndexes;
+using KurrentDB.Protocol.V2.Indexes;
 using KurrentDB.Protocol.V2.Streams;
 using KurrentDB.Testing.TUnit;
 
@@ -11,7 +11,7 @@ public class CustomIndexesJavascriptTests {
 	[ClassDataSource<KurrentContext>(Shared = SharedType.PerTestSession)]
 	public required KurrentContext KurrentContext { get; init; }
 
-	CustomIndexesService.CustomIndexesServiceClient Client => KurrentContext.CustomIndexesClient;
+	IndexesService.IndexesServiceClient Client => KurrentContext.CustomIndexesClient;
 	StreamsService.StreamsServiceClient StreamsWriteClient => KurrentContext.StreamsV2Client;
 	EventStore.Client.Streams.Streams.StreamsClient StreamsReadClient => KurrentContext.StreamsClient;
 
@@ -24,7 +24,7 @@ public class CustomIndexesJavascriptTests {
 
 	[Test]
 	public async ValueTask can_filter_by_skipping(CancellationToken ct) {
-		await Client.CreateCustomIndexAsync(
+		await Client.CreateIndexAsync(
 			new() {
 				Name = CustomIndexName,
 				Filter = $"rec => rec.type == '{EventType}'",
@@ -83,7 +83,7 @@ public class CustomIndexesJavascriptTests {
 	[Arguments(FieldType.Double, """ 1234.56 """, """ 6543.21 """, "6543.21")]
 	[Arguments(FieldType.Double,        """ 1234.56 """, """ 6543.21 """, "6543.210")]
 	public async ValueTask can_use_all_field_types(FieldType fieldType, string field1, string field2, string fieldFilter, CancellationToken ct) {
-		await Client.CreateCustomIndexAsync(
+		await Client.CreateIndexAsync(
 			new() {
 				Name = CustomIndexName,
 				Filter = $"rec => rec.type == '{EventType}'",
@@ -117,7 +117,7 @@ public class CustomIndexesJavascriptTests {
 
 	[Test]
 	public async ValueTask can_use_no_field(CancellationToken ct) {
-		await Client.CreateCustomIndexAsync(
+		await Client.CreateIndexAsync(
 			new() {
 				Name = CustomIndexName,
 				Filter = $"rec => rec.type == '{EventType}'",

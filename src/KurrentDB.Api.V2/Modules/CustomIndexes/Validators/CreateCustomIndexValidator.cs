@@ -3,11 +3,11 @@
 
 using FluentValidation;
 using KurrentDB.Api.Infrastructure.Grpc.Validation;
-using KurrentDB.Protocol.V2.CustomIndexes;
+using KurrentDB.Protocol.V2.Indexes;
 
 namespace KurrentDB.Api.Modules.CustomIndexes.Validators;
 
-class CreateCustomIndexValidator : RequestValidator<CreateCustomIndexRequest> {
+class CreateCustomIndexValidator : RequestValidator<CreateIndexRequest> {
 	public static readonly CreateCustomIndexValidator Instance = new();
 
 	private CreateCustomIndexValidator() {

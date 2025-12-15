@@ -12,7 +12,7 @@ using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.DuckDB;
-using KurrentDB.Protocol.V2.CustomIndexes;
+using KurrentDB.Protocol.V2.Indexes;
 using KurrentDB.SecondaryIndexing.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
@@ -102,10 +102,10 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 
 public class RegisterCustomIndexEvents(IServiceProvider services) : IClusterVNodeStartupTask {
 	public async ValueTask Run(CancellationToken ct) {
-		await RegisterType<CustomIndexCreated>(ct);
-		await RegisterType<CustomIndexStarted>(ct);
-		await RegisterType<CustomIndexStopped>(ct);
-		await RegisterType<CustomIndexDeleted>(ct);
+		await RegisterType<IndexCreated>(ct);
+		await RegisterType<IndexStarted>(ct);
+		await RegisterType<IndexStopped>(ct);
+		await RegisterType<IndexDeleted>(ct);
 
 		ValueTask<RegisteredSchema> RegisterType<T>(CancellationToken ct) => services
 			.GetRequiredService<ISchemaRegistry>()

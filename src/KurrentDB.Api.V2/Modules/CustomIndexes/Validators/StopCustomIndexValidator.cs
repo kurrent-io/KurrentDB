@@ -2,11 +2,11 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Api.Infrastructure.Grpc.Validation;
-using KurrentDB.Protocol.V2.CustomIndexes;
+using KurrentDB.Protocol.V2.Indexes;
 
 namespace KurrentDB.Api.Modules.CustomIndexes.Validators;
 
-class StopCustomIndexValidator : RequestValidator<StopCustomIndexRequest> {
+class StopCustomIndexValidator : RequestValidator<StopIndexRequest> {
 	public static readonly StopCustomIndexValidator Instance = new();
 
 	private StopCustomIndexValidator() {

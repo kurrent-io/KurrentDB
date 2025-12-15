@@ -26,7 +26,7 @@ public class ApiV2Plugin() : SubsystemsPlugin("APIV2") {
             .AddGrpc()
             .AddJsonTranscoding(options => {
                 options.TypeRegistry = TypeRegistry.FromFiles(
-                    KurrentDB.Protocol.V2.CustomIndexes.Errors.ErrorsReflection.Descriptor,
+                    KurrentDB.Protocol.V2.Indexes.Errors.ErrorsReflection.Descriptor,
                     ErrorsReflection.Descriptor,
                     RpcReflection.Descriptor,
                     BadRequest.Descriptor.File,

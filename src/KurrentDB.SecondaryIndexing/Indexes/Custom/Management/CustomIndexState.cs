@@ -2,30 +2,30 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Eventuous;
-using KurrentDB.Protocol.V2.CustomIndexes;
+using KurrentDB.Protocol.V2.Indexes;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 
 public record CustomIndexState : State<CustomIndexState, CustomIndexId> {
 	public string Filter { get; init; } = "";
 	public IList<Field> Fields { get; init; } = [];
-	public CustomIndexStatus Status { get; init; }
+	public IndexStatus Status { get; init; }
 
 	public CustomIndexState() {
-		On<CustomIndexCreated>((state, evt) =>
+		On<IndexCreated>((state, evt) =>
 			state with {
 				Filter = evt.Filter,
 				Fields = evt.Fields,
-				Status = CustomIndexStatus.Stopped,
+				Status = IndexStatus.Stopped,
 			});
 
-		On<CustomIndexStarted>((state, evt) =>
-			state with { Status = CustomIndexStatus.Started });
+		On<IndexStarted>((state, evt) =>
+			state with { Status = IndexStatus.Started });
 
-		On<CustomIndexStopped>((state, evt) =>
-			state with { Status = CustomIndexStatus.Stopped });
+		On<IndexStopped>((state, evt) =>
+			state with { Status = IndexStatus.Stopped });
 
-		On<CustomIndexDeleted>((state, evt) =>
-			state with { Status = CustomIndexStatus.Deleted });
+		On<IndexDeleted>((state, evt) =>
+			state with { Status = IndexStatus.Deleted });
 	}
 }

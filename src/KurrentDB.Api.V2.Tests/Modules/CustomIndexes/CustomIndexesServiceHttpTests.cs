@@ -35,7 +35,7 @@ public class CustomIndexesServiceHttpTests {
 
 		await Assert.That(response.Content).IsJson("{}");
 		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-		await can_get(expectedStatus: "CUSTOM_INDEX_STATUS_STOPPED", ct);
+		await can_get(expectedStatus: "INDEX_STATUS_STOPPED", ct);
 	}
 
 	[Test]
@@ -47,7 +47,7 @@ public class CustomIndexesServiceHttpTests {
 
 		await Assert.That(response.Content).IsJson("{}");
 		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-		await can_get(expectedStatus: "CUSTOM_INDEX_STATUS_STARTED", ct);
+		await can_get(expectedStatus: "INDEX_STATUS_STARTED", ct);
 	}
 
 	[Test]
@@ -59,7 +59,7 @@ public class CustomIndexesServiceHttpTests {
 
 		await Assert.That(response.Content).IsJson("{}");
 		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-		await can_get(expectedStatus: "CUSTOM_INDEX_STATUS_STOPPED", ct);
+		await can_get(expectedStatus: "INDEX_STATUS_STOPPED", ct);
 	}
 
 	[Test]
@@ -69,16 +69,16 @@ public class CustomIndexesServiceHttpTests {
 			new RestRequest($"/v2/indexes/"),
 			ct);
 
-		await Assert.That(response!.CustomIndexes.TryGetValue(CustomIndexName, out var customIndexState)).IsTrue();
+		await Assert.That(response!.Indexes.TryGetValue(CustomIndexName, out var customIndexState)).IsTrue();
 		await Assert.That(customIndexState!.Filter).IsEqualTo("rec => rec.type == 'my-event-type'");
 		await Assert.That(customIndexState!.Fields.Length).IsEqualTo(1);
 		await Assert.That(customIndexState!.Fields[0].Selector).IsEqualTo("rec => rec.number");
 		await Assert.That(customIndexState!.Fields[0].Type).IsEqualTo("FIELD_TYPE_INT_32");
-		await Assert.That(customIndexState!.Status).IsEqualTo("CUSTOM_INDEX_STATUS_STOPPED");
+		await Assert.That(customIndexState!.Status).IsEqualTo("INDEX_STATUS_STOPPED");
 	}
 
 	class ListResponse {
-		public Dictionary<string, CustomIndexState> CustomIndexes { get; set; } = [];
+		public Dictionary<string, CustomIndexState> Indexes { get; set; } = [];
 
 		public class CustomIndexState {
 			public string Filter { get; set; } = "";
@@ -111,16 +111,16 @@ public class CustomIndexesServiceHttpTests {
 		await Assert.That(getResponse.Content).IsJson($$"""
 			{
 				"code": 5,
-				"message": "Custom Index '{{CustomIndexName}}' does not exist",
+				"message": "Index '{{CustomIndexName}}' does not exist",
 				"details": [
 					{
 						"@type": "type.googleapis.com/google.rpc.ErrorInfo",
-						"reason": "CUSTOM_INDEX_NOT_FOUND",
-						"domain": "customindexes",
+						"reason": "INDEX_NOT_FOUND",
+						"domain": "indexes",
 						"metadata": {}
 					},
 					{
-						"@type": "type.googleapis.com/kurrentdb.protocol.v2.custom_indexes.errors.CustomIndexNotFoundErrorDetails",
+						"@type": "type.googleapis.com/kurrentdb.protocol.v2.indexes.errors.IndexNotFoundErrorDetails",
 						"name": "{{CustomIndexName}}"
 					}
 				]
@@ -133,7 +133,7 @@ public class CustomIndexesServiceHttpTests {
 			new RestRequest($"/v2/indexes/"),
 			ct);
 
-		await Assert.That(listResponse!.CustomIndexes).DoesNotContainKey(CustomIndexName);
+		await Assert.That(listResponse!.Indexes).DoesNotContainKey(CustomIndexName);
 	}
 
 	async ValueTask can_get(string expectedStatus, CancellationToken ct) {
@@ -143,7 +143,7 @@ public class CustomIndexesServiceHttpTests {
 
 		await Assert.That(response.Content).IsJson($$"""
 			{
-				"customIndex": {
+				"index": {
 					"filter": "rec => rec.type == 'my-event-type'",
 					"fields": [{
 						"name": "number",
@@ -193,16 +193,16 @@ public class CustomIndexesServiceHttpTests {
 		await Assert.That(response.Content).IsJson("""
 			{
 				"code": 5,
-				"message": "Custom Index 'non-existant-index' does not exist",
+				"message": "Index 'non-existant-index' does not exist",
 				"details": [
 					{
 						"@type": "type.googleapis.com/google.rpc.ErrorInfo",
-						"reason": "CUSTOM_INDEX_NOT_FOUND",
-						"domain": "customindexes",
+						"reason": "INDEX_NOT_FOUND",
+						"domain": "indexes",
 						"metadata": {}
 					},
 					{
-						"@type": "type.googleapis.com/kurrentdb.protocol.v2.custom_indexes.errors.CustomIndexNotFoundErrorDetails",
+						"@type": "type.googleapis.com/kurrentdb.protocol.v2.indexes.errors.IndexNotFoundErrorDetails",
 						"name": "non-existant-index"
 					}
 				]
@@ -220,16 +220,16 @@ public class CustomIndexesServiceHttpTests {
 		await Assert.That(response.Content).IsJson("""
 			{
 				"code": 5,
-				"message": "Custom Index 'non-existant-index' does not exist",
+				"message": "Index 'non-existant-index' does not exist",
 				"details": [
 					{
 						"@type": "type.googleapis.com/google.rpc.ErrorInfo",
-						"reason": "CUSTOM_INDEX_NOT_FOUND",
-						"domain": "customindexes",
+						"reason": "INDEX_NOT_FOUND",
+						"domain": "indexes",
 						"metadata": {}
 					},
 					{
-						"@type": "type.googleapis.com/kurrentdb.protocol.v2.custom_indexes.errors.CustomIndexNotFoundErrorDetails",
+						"@type": "type.googleapis.com/kurrentdb.protocol.v2.indexes.errors.IndexNotFoundErrorDetails",
 						"name": "non-existant-index"
 					}
 				]

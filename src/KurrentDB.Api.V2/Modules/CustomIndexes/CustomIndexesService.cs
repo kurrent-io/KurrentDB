@@ -7,10 +7,10 @@ using Grpc.Core;
 using KurrentDB.Api.Errors;
 using KurrentDB.Api.Infrastructure.Authorization;
 using KurrentDB.Api.Modules.CustomIndexes.Validators;
-using KurrentDB.Protocol.V2.CustomIndexes;
+using KurrentDB.Protocol.V2.Indexes;
 using KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 using Polly;
-using static KurrentDB.Protocol.V2.CustomIndexes.CustomIndexesService;
+using static KurrentDB.Protocol.V2.Indexes.IndexesService;
 
 namespace KurrentDB.Api.Modules.CustomIndexes;
 
@@ -18,7 +18,7 @@ public class CustomIndexesService(
 	CustomIndexCommandService domainService,
 	CustomIndexReadsideService readSideService,
 	IAuthorizationProvider authz)
-	: CustomIndexesServiceBase {
+	: IndexesServiceBase {
 
 	readonly ResiliencePipeline _resilience = new ResiliencePipelineBuilder()
 			.AddRetry(new() {
@@ -28,7 +28,7 @@ public class CustomIndexesService(
 				ShouldHandle = args =>
 					ValueTask.FromResult(args.Outcome.Exception
 						is not null
-						and not CustomIndexException
+						and not UserIndexException
 						and not OperationCanceledException),
 			})
 			.Build();
@@ -61,80 +61,80 @@ public class CustomIndexesService(
 				context.CancellationToken);
 
 			return getResponse(result);
-		} catch (CustomIndexException ex) {
+		} catch (UserIndexException ex) {
 			if (MapException(ex) is { } mapped)
 				throw mapped;
 			throw;
 		}
 	}
 
-	static RpcException? MapException(CustomIndexException ex) => ex switch {
-		CustomIndexNotFoundException e => ApiErrors.CustomIndexNotFound(e.CustomIndexName),
-		CustomIndexAlreadyExistsException e => ApiErrors.CustomIndexAlreadyExists(e.CustomIndexName),
-		CustomIndexesNotReadyException e => ApiErrors.CustomIndexesNotReady(e.CurrentPosition, e.TargetPosition),
+	static RpcException? MapException(UserIndexException ex) => ex switch {
+		UserIndexNotFoundException e => ApiErrors.IndexNotFound(e.CustomIndexName),
+		UserIndexAlreadyExistsException e => ApiErrors.IndexAlreadyExists(e.CustomIndexName),
+		UserIndexesNotReadyException e => ApiErrors.IndexesNotReady(e.CurrentPosition, e.TargetPosition),
 		_ => null,
 	};
 
-	public override Task<CreateCustomIndexResponse> CreateCustomIndex(
-		CreateCustomIndexRequest request,
+	public override Task<CreateIndexResponse> CreateIndex(
+		CreateIndexRequest request,
 		ServerCallContext context) =>
 
 		StandardHandle(
 			request,
 			CreateCustomIndexValidator.Instance,
 			new Operation(Operations.CustomIndexes.Create),
-			response => new CreateCustomIndexResponse(),
+			response => new CreateIndexResponse(),
 			context);
 
-	public override Task<StartCustomIndexResponse> StartCustomIndex(
-		StartCustomIndexRequest request,
+	public override Task<StartIndexResponse> StartIndex(
+		StartIndexRequest request,
 		ServerCallContext context) =>
 
 		StandardHandle(
 			request,
 			StartCustomIndexValidator.Instance,
 			new Operation(Operations.CustomIndexes.Start),
-			_ => new StartCustomIndexResponse(),
+			_ => new StartIndexResponse(),
 			context);
 
-	public override Task<StopCustomIndexResponse> StopCustomIndex(
-		StopCustomIndexRequest request,
+	public override Task<StopIndexResponse> StopIndex(
+		StopIndexRequest request,
 		ServerCallContext context) =>
 
 		StandardHandle(
 			request,
 			StopCustomIndexValidator.Instance,
 			new Operation(Operations.CustomIndexes.Stop),
-			_ => new StopCustomIndexResponse(),
+			_ => new StopIndexResponse(),
 			context);
 
-	public override Task<DeleteCustomIndexResponse> DeleteCustomIndex(
-		DeleteCustomIndexRequest request,
+	public override Task<DeleteIndexResponse> DeleteIndex(
+		DeleteIndexRequest request,
 		ServerCallContext context) =>
 
 		StandardHandle(
 			request,
 			DeleteCustomIndexValidator.Instance,
 			new Operation(Operations.CustomIndexes.Delete),
-			_ => new DeleteCustomIndexResponse(),
+			_ => new DeleteIndexResponse(),
 			context);
 
-	public override async Task<ListCustomIndexesResponse> ListCustomIndexes(
-		ListCustomIndexesRequest request,
+	public override async Task<ListIndexesResponse> ListIndexes(
+		ListIndexesRequest request,
 		ServerCallContext context) {
 
 		var response = await readSideService.List(context.CancellationToken);
 		return response;
 	}
 
-	public override async Task<GetCustomIndexResponse> GetCustomIndex(
-		GetCustomIndexRequest request,
+	public override async Task<GetIndexResponse> GetIndex(
+		GetIndexRequest request,
 		ServerCallContext context) {
 
 		try {
 			var response = await readSideService.Get(request.Name, context.CancellationToken);
 			return response;
-		} catch (CustomIndexException ex) {
+		} catch (UserIndexException ex) {
 			if (MapException(ex) is { } mapped)
 				throw mapped;
 			throw;
