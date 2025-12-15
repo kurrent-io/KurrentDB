@@ -8,7 +8,7 @@ namespace KurrentDB.SecondaryIndexing.Indexes.User.Management;
 
 public record UserIndexState : State<UserIndexState, UserIndexId> {
 	public string Filter { get; init; } = "";
-	public IList<Field> Fields { get; init; } = [];
+	public IList<IndexField> Fields { get; init; } = [];
 	public IndexState State { get; init; }
 
 	public UserIndexState() {

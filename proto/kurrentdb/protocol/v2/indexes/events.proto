@@ -11,7 +11,7 @@ message IndexCreated {
   google.protobuf.Timestamp timestamp = 1;
   string name = 2;
   string filter = 3;
-  repeated Field fields = 4;
+  repeated IndexField fields = 4;
 }
 
 message IndexStarted {

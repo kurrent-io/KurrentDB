@@ -23,7 +23,7 @@ message GetIndexResponse {
 
 message Index {
   string filter = 1;
-  repeated Field fields = 2;
+  repeated IndexField fields = 2;
   IndexState state = 3;
 }
 

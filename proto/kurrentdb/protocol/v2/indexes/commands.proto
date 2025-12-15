@@ -10,7 +10,7 @@ message CreateIndexRequest {
   string name = 1;
   string filter = 2;
   reserved 3; // filter type
-  repeated Field fields = 4;
+  repeated IndexField fields = 4;
   optional bool start = 5; // if unspecified: treated as true
 }
 

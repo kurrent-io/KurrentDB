@@ -226,13 +226,13 @@ public class UserIndexEngineSubscription : ISecondaryIndexReader {
 			return StartUserIndex<NullField>(indexName, createdEvent);
 
 		return createdEvent.Fields[0].Type switch {
-			FieldType.Double => StartUserIndex<DoubleField>(indexName, createdEvent),
-			FieldType.String => StartUserIndex<StringField>(indexName, createdEvent),
-//			FieldType.Int16 => StartUserIndex<Int16Field>(indexName, createdEvent),
-			FieldType.Int32 => StartUserIndex<Int32Field>(indexName, createdEvent),
-			FieldType.Int64 => StartUserIndex<Int64Field>(indexName, createdEvent),
-//			FieldType.Uint32 => StartUserIndex<UInt32Field>(indexName, createdEvent),
-//			FieldType.Uint64 => StartUserIndex<UInt64Field>(indexName, createdEvent),
+			IndexFieldType.Double => StartUserIndex<DoubleField>(indexName, createdEvent),
+			IndexFieldType.String => StartUserIndex<StringField>(indexName, createdEvent),
+//			IndexFieldType.Int16 => StartUserIndex<Int16Field>(indexName, createdEvent),
+			IndexFieldType.Int32 => StartUserIndex<Int32Field>(indexName, createdEvent),
+			IndexFieldType.Int64 => StartUserIndex<Int64Field>(indexName, createdEvent),
+//			IndexFieldType.Uint32 => StartUserIndex<UInt32Field>(indexName, createdEvent),
+//			IndexFieldType.Uint64 => StartUserIndex<UInt64Field>(indexName, createdEvent),
 			_ => throw new ArgumentOutOfRangeException("Field type")
 		};
 	}

@@ -7,7 +7,7 @@ using KurrentDB.Protocol.V2.Indexes;
 
 namespace KurrentDB.Api.Modules.Indexes.Validators;
 
-class FieldValidator : ValidatorBase<FieldValidator, Field> {
+class FieldValidator : ValidatorBase<FieldValidator, IndexField> {
 	public FieldValidator() {
 		RuleFor(x => x.Name)
 			.SetValidator(IndexNameValidator.Instance);
@@ -18,7 +18,7 @@ class FieldValidator : ValidatorBase<FieldValidator, Field> {
 			.WithName("Field selector");
 
 		RuleFor(x => x.Type)
-			.Must(x => x is not FieldType.Unspecified)
+			.Must(x => x is not IndexFieldType.Unspecified)
 			.WithMessage("Field type must not be unspecified")
 			.WithName("Field type");
 	}

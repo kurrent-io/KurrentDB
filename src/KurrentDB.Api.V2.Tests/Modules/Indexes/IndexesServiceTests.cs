@@ -22,10 +22,10 @@ public class IndexesServiceTests {
 				Name = indexName,
 				Filter = "rec => rec.type == 'my-event-type'",
 				Fields = {
-					new Field() {
+					new IndexField() {
 						Name = "number",
 						Selector = "rec => rec.number",
-						Type = FieldType.Int32,
+						Type = IndexFieldType.Int32,
 					},
 				},
 			},
@@ -40,10 +40,10 @@ public class IndexesServiceTests {
 				Name = IndexName,
 				Filter = "rec => rec.type == 'my-event-type'",
 				Fields = {
-					new Field() {
+					new IndexField() {
 						Name = "number",
 						Selector = "rec => rec.number",
-						Type = FieldType.Int32,
+						Type = IndexFieldType.Int32,
 					},
 				},
 				Start = false,
@@ -64,10 +64,10 @@ public class IndexesServiceTests {
 				Name = IndexName,
 				Filter = "rec => rec.type == 'my-event-type'",
 				Fields = {
-					new Field() {
+					new IndexField() {
 						Name = "number",
 						Selector = "rec => rec.number",
-						Type = FieldType.Int32,
+						Type = IndexFieldType.Int32,
 					},
 				},
 				Start = false,
@@ -86,10 +86,10 @@ public class IndexesServiceTests {
 						Name = IndexName,
 						Filter = "rec => rec.type == 'my-OTHER-event-type'",
 						Fields = {
-							new Field() {
+							new IndexField() {
 								Name = "number",
 								Selector = "rec => rec.number",
-								Type = FieldType.Int32,
+								Type = IndexFieldType.Int32,
 							},
 						},
 					},
@@ -146,7 +146,7 @@ public class IndexesServiceTests {
 		await Assert.That(indexState!.Filter).IsEqualTo("rec => rec.type == 'my-event-type'");
 		await Assert.That(indexState!.Fields.Count).IsEqualTo(1);
 		await Assert.That(indexState!.Fields[0].Selector).IsEqualTo("rec => rec.number");
-		await Assert.That(indexState!.Fields[0].Type).IsEqualTo(FieldType.Int32);
+		await Assert.That(indexState!.Fields[0].Type).IsEqualTo(IndexFieldType.Int32);
 		await Assert.That(indexState!.State).IsEqualTo(IndexState.Stopped);
 	}
 
@@ -185,10 +185,10 @@ public class IndexesServiceTests {
 						Name = name,
 						Filter = "rec => rec.type == 'my-event-type'",
 						Fields = {
-							new Field() {
+							new IndexField() {
 								Name = "number",
 								Selector = "rec => rec.number",
-								Type = FieldType.Int32,
+								Type = IndexFieldType.Int32,
 							},
 						},
 					},
@@ -212,10 +212,10 @@ public class IndexesServiceTests {
 						Name = $"{nameof(cannot_create_with_invalid_filter)}-{Guid.NewGuid()}",
 						Filter = filter,
 						Fields = {
-							new Field() {
+							new IndexField() {
 								Name = "number",
 								Selector = "rec => rec.number",
-								Type = FieldType.Int32,
+								Type = IndexFieldType.Int32,
 							},
 						},
 					},
@@ -239,10 +239,10 @@ public class IndexesServiceTests {
 						Name = $"{nameof(cannot_create_with_invalid_filter)}-{Guid.NewGuid()}",
 						Filter = "rec => rec.type == 'my-event-type'",
 						Fields = {
-							new Field() {
+							new IndexField() {
 								Name = "the-field",
 								Selector = keySelector,
-								Type = FieldType.Int32,
+								Type = IndexFieldType.Int32,
 							},
 						},
 					},
@@ -263,10 +263,10 @@ public class IndexesServiceTests {
 						Name = $"{nameof(cannot_create_with_invalid_filter)}-{Guid.NewGuid()}",
 						Filter = "rec => rec.type == 'my-event-type'",
 						Fields = {
-							new Field() {
+							new IndexField() {
 								Name = "number",
 								Selector = "rec => rec.number",
-								Type = FieldType.Unspecified,
+								Type = IndexFieldType.Unspecified,
 							},
 						},
 					},
@@ -332,7 +332,7 @@ public class IndexesServiceTests {
 		await Assert.That(response.Index.Filter).IsEqualTo("rec => rec.type == 'my-event-type'");
 		await Assert.That(response.Index.Fields.Count).IsEqualTo(1);
 		await Assert.That(response.Index.Fields[0].Selector).IsEqualTo("rec => rec.number");
-		await Assert.That(response.Index.Fields[0].Type).IsEqualTo(FieldType.Int32);
+		await Assert.That(response.Index.Fields[0].Type).IsEqualTo(IndexFieldType.Int32);
 		await Assert.That(response.Index.State).IsEqualTo(expectedState);
 	}
 

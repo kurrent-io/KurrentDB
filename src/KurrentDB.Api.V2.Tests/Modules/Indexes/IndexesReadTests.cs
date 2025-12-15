@@ -36,10 +36,10 @@ public class IndexesReadTests {
 				Name = IndexName,
 				Filter = $"rec => rec.type == '{EventType}'",
 				Fields = {
-					new Field() {
+					new IndexField() {
 						Name = "country",
 						Selector = "rec => rec.data.country",
-						Type = FieldType.String,
+						Type = IndexFieldType.String,
 					}
 				}
 			},

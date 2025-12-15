@@ -29,7 +29,7 @@ public class IndexesJavascriptTests {
 				Name = IndexName,
 				Filter = $"rec => rec.type == '{EventType}'",
 				Fields = {
-					new Field {
+					new IndexField {
 						Name = "color",
 						Selector = """
 							rec => {
@@ -39,7 +39,7 @@ public class IndexesJavascriptTests {
 								return color;
 							}
 							""",
-						Type = FieldType.String,
+						Type = IndexFieldType.String,
 
 					},
 				},
@@ -69,26 +69,26 @@ public class IndexesJavascriptTests {
 	}
 
 	[Test]
-	[Arguments(FieldType.String, """ "blue" """, """ "red" """, "red")]
-	[Arguments(FieldType.String, """ "blue:2" """, """ "red:3" """, "red:3")]
+	[Arguments(IndexFieldType.String, """ "blue" """, """ "red" """, "red")]
+	[Arguments(IndexFieldType.String, """ "blue:2" """, """ "red:3" """, "red:3")]
 
-//	[Arguments(FieldType.Int16,  """ 0.0 """, """ 1.0 """, "1")]
-	[Arguments(FieldType.Int32,  """ 0.0 """, """ 1.0 """, "1")]
-	[Arguments(FieldType.Int64,  """ 0.0 """, """ 1.0 """, "1")]
-//	[Arguments(FieldType.Uint32, """ 0.0 """, """ 1.0 """, "1")]
-//	[Arguments(FieldType.Uint64, """ 0.0 """, """ 1.0 """, "1")]
+//	[Arguments(IndexFieldType.Int16,  """ 0.0 """, """ 1.0 """, "1")]
+	[Arguments(IndexFieldType.Int32,  """ 0.0 """, """ 1.0 """, "1")]
+	[Arguments(IndexFieldType.Int64,  """ 0.0 """, """ 1.0 """, "1")]
+//	[Arguments(IndexFieldType.Uint32, """ 0.0 """, """ 1.0 """, "1")]
+//	[Arguments(IndexFieldType.Uint64, """ 0.0 """, """ 1.0 """, "1")]
 
-	[Arguments(FieldType.Double, """ 0   """, """ 1   """, "1")]
-	[Arguments(FieldType.Double, """ 0.0 """, """ 1.0 """, "1")]
-	[Arguments(FieldType.Double, """ 1234.56 """, """ 6543.21 """, "6543.21")]
-	[Arguments(FieldType.Double,        """ 1234.56 """, """ 6543.21 """, "6543.210")]
-	public async ValueTask can_use_all_field_types(FieldType fieldType, string field1, string field2, string fieldFilter, CancellationToken ct) {
+	[Arguments(IndexFieldType.Double, """ 0   """, """ 1   """, "1")]
+	[Arguments(IndexFieldType.Double, """ 0.0 """, """ 1.0 """, "1")]
+	[Arguments(IndexFieldType.Double, """ 1234.56 """, """ 6543.21 """, "6543.21")]
+	[Arguments(IndexFieldType.Double,        """ 1234.56 """, """ 6543.21 """, "6543.210")]
+	public async ValueTask can_use_all_field_types(IndexFieldType fieldType, string field1, string field2, string fieldFilter, CancellationToken ct) {
 		await Client.CreateIndexAsync(
 			new() {
 				Name = IndexName,
 				Filter = $"rec => rec.type == '{EventType}'",
 				Fields = {
-					new Field() {
+					new IndexField() {
 						Name = "color",
 						Selector = "rec => rec.data.color",
 						Type = fieldType,

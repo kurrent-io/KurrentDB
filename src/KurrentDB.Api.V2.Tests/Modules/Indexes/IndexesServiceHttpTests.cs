@@ -25,7 +25,7 @@ public class IndexesServiceHttpTests {
 					"Fields": [{
 						"Name": "number",
 						"Selector": "rec => rec.number",
-						"Type": "FIELD_TYPE_INT_32"
+						"Type": "INDEX_FIELD_TYPE_INT_32"
 					}],
 					"Start": false
 				}
@@ -73,7 +73,7 @@ public class IndexesServiceHttpTests {
 		await Assert.That(indexState!.Filter).IsEqualTo("rec => rec.type == 'my-event-type'");
 		await Assert.That(indexState!.Fields.Length).IsEqualTo(1);
 		await Assert.That(indexState!.Fields[0].Selector).IsEqualTo("rec => rec.number");
-		await Assert.That(indexState!.Fields[0].Type).IsEqualTo("FIELD_TYPE_INT_32");
+		await Assert.That(indexState!.Fields[0].Type).IsEqualTo("INDEX_FIELD_TYPE_INT_32");
 		await Assert.That(indexState!.State).IsEqualTo("INDEX_STATE_STOPPED");
 	}
 
@@ -148,7 +148,7 @@ public class IndexesServiceHttpTests {
 					"fields": [{
 						"name": "number",
 						"selector": "rec => rec.number",
-						"type": "FIELD_TYPE_INT_32"
+						"type": "INDEX_FIELD_TYPE_INT_32"
 					}],
 					"state": "{{expectedState}}"
 				}
@@ -167,7 +167,7 @@ public class IndexesServiceHttpTests {
 					"Fields": [{
 						"Name": "number",
 						"Selector": "rec => rec.number",
-						"Type": "FIELD_TYPE_INT_32"
+						"Type": "INDEX_FIELD_TYPE_INT_32"
 					}]
 				}
 				""");
