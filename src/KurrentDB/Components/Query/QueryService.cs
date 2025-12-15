@@ -14,9 +14,9 @@ using Kurrent.Quack.ConnectionPool;
 namespace KurrentDB.Components.Query;
 
 public static partial class QueryService {
-	internal delegate bool TryGetCustomIndexTableDetails(string indexName, out string tableName, out string inFlightTableName, out bool hasFields);
+	internal delegate bool TryGetUserIndexTableDetails(string indexName, out string tableName, out string inFlightTableName, out bool hasFields);
 
-	private static string AmendQuery(DuckDBConnectionPool pool, TryGetCustomIndexTableDetails tryGetCustomIndexTableDetails, string query) {
+	private static string AmendQuery(DuckDBConnectionPool pool, TryGetUserIndexTableDetails tryGetUserIndexTableDetails, string query) {
 		var matches = ExtractionRegex().Matches(query);
 		List<string> ctes = [AllCte];
 		foreach (Match match in matches) {
@@ -35,11 +35,11 @@ public static partial class QueryService {
 					break;
 				case "index":
 					var indexName = tokens[1];
-					var exists = tryGetCustomIndexTableDetails(indexName, out var tableName, out var tableFunctionName, out var hasFields);
+					var exists = tryGetUserIndexTableDetails(indexName, out var tableName, out var tableFunctionName, out var hasFields);
 					if (!exists)
 						throw new("Index does not exist");
 
-					cte = string.Format(CustomIndexCteTemplate, cteName, $"\"{tableName}\"", $"\"{tableFunctionName}\"", hasFields ? ", field" : string.Empty);
+					cte = string.Format(UserIndexCteTemplate, cteName, $"\"{tableName}\"", $"\"{tableFunctionName}\"", hasFields ? ", field" : string.Empty);
 					break;
 				default:
 					throw new("Invalid token");
@@ -69,8 +69,8 @@ public static partial class QueryService {
 		}
 	}
 
-	internal static List<Dictionary<string, object>> ExecuteAdHocUserQuery(this DuckDBConnectionPool pool, TryGetCustomIndexTableDetails tryGetCustomIndexTableDetails, string sql) {
-		var query = AmendQuery(pool, tryGetCustomIndexTableDetails, sql);
+	internal static List<Dictionary<string, object>> ExecuteAdHocUserQuery(this DuckDBConnectionPool pool, TryGetUserIndexTableDetails tryGetUserIndexTableDetails, string sql) {
+		var query = AmendQuery(pool, tryGetUserIndexTableDetails, sql);
 		using var scope = pool.Rent(out var connection);
 		var items = (IEnumerable<IDictionary<string, object>>)connection.Query(query);
 		return items.Select(x => x.ToDictionary(y => y.Key, y => y.Value)).ToList();
@@ -101,7 +101,7 @@ public static partial class QueryService {
 	                                   )
 	                                   """;
 
-	private const string CustomIndexCteTemplate = """
+	private const string UserIndexCteTemplate = """
 	                                      {0} AS (
 	                                          select log_position, event->>'stream_id' as stream, event_number, event->>'event_type' as event_type, epoch_ms(created) as created_at, event->>'data' as data, event->>'metadata' as metadata{3}
 	                                          from (

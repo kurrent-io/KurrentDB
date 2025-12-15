@@ -110,10 +110,10 @@ public class LegacyAuthorizationWithStreamAuthorizationDisabledProviderFactory :
 		policy.RequireAuthenticated(Operations.Projections.Statistics);
 		policy.AddMatchAnyAssertion(Operations.Projections.Restart, Grant.Allow, OperationsOrAdmins);
 
-		policy.AddMatchAnyAssertion(Operations.CustomIndexes.Create, Grant.Allow, OperationsOrAdmins);
-		policy.AddMatchAnyAssertion(Operations.CustomIndexes.Start, Grant.Allow, OperationsOrAdmins);
-		policy.AddMatchAnyAssertion(Operations.CustomIndexes.Stop, Grant.Allow, OperationsOrAdmins);
-		policy.AddMatchAnyAssertion(Operations.CustomIndexes.Delete, Grant.Allow, OperationsOrAdmins);
+		policy.AddMatchAnyAssertion(Operations.UserIndexes.Create, Grant.Allow, OperationsOrAdmins);
+		policy.AddMatchAnyAssertion(Operations.UserIndexes.Start, Grant.Allow, OperationsOrAdmins);
+		policy.AddMatchAnyAssertion(Operations.UserIndexes.Stop, Grant.Allow, OperationsOrAdmins);
+		policy.AddMatchAnyAssertion(Operations.UserIndexes.Delete, Grant.Allow, OperationsOrAdmins);
 
 		return new LegacyAuthorizationWithStreamAuthorizationDisabledProvider(new PolicyEvaluator(policy.AsReadOnly()),
 			Log.ForContext<PolicyEvaluator>(), true, false);

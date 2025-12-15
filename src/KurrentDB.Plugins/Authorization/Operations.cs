@@ -140,8 +140,8 @@ public static class Operations {
 		}
 	}
 
-	public static class CustomIndexes {
-		const string Resource = "custom-indexes";
+	public static class UserIndexes {
+		const string Resource = "user-indexes";
 
 		public static readonly OperationDefinition Create = new(Resource, "create");
 		public static readonly OperationDefinition Start = new(Resource, "start");

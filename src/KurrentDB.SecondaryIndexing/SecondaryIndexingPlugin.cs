@@ -16,10 +16,10 @@ using KurrentDB.Protocol.V2.Indexes;
 using KurrentDB.SecondaryIndexing.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
-using KurrentDB.SecondaryIndexing.Indexes.Custom;
-using KurrentDB.SecondaryIndexing.Indexes.Custom.Management;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
+using KurrentDB.SecondaryIndexing.Indexes.User;
+using KurrentDB.SecondaryIndexing.Indexes.User.Management;
 using KurrentDB.SecondaryIndexing.Stats;
 using KurrentDB.SecondaryIndexing.Storage;
 using KurrentDB.SecondaryIndexing.Telemetry;
@@ -48,15 +48,15 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 			.Get<SecondaryIndexingPluginOptions>() ?? new();
 		services.AddSingleton(options);
 
-		services.AddCommandService<CustomIndexCommandService, CustomIndexState>();
-		services.AddSingleton<CustomIndexStreamNameMap>();
-		services.AddSingleton<CustomIndexReadsideService>();
-		services.AddSingleton<CustomIndexEngine>();
+		services.AddCommandService<UserIndexCommandService, UserIndexState>();
+		services.AddSingleton<UserIndexStreamNameMap>();
+		services.AddSingleton<UserIndexReadsideService>();
+		services.AddSingleton<UserIndexEngine>();
 		services.AddDuckDBSetup<IndexingDbSchema>();
 		services.AddDuckDBSetup<InFlightSetup>();
 
 		services.AddHostedService<DefaultIndexBuilder>();
-		services.AddHostedService(sp => sp.GetRequiredService<CustomIndexEngine>());
+		services.AddHostedService(sp => sp.GetRequiredService<UserIndexEngine>());
 
 		services.AddSingleton<DefaultIndexInFlightRecords>();
 
@@ -69,7 +69,7 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddSingleton<ISecondaryIndexReader, DefaultIndexReader>();
 		services.AddSingleton<ISecondaryIndexReader, CategoryIndexReader>();
 		services.AddSingleton<ISecondaryIndexReader, EventTypeIndexReader>();
-		services.AddSingleton<ISecondaryIndexReader>(sp => sp.GetRequiredService<CustomIndexEngine>());
+		services.AddSingleton<ISecondaryIndexReader>(sp => sp.GetRequiredService<UserIndexEngine>());
 
 		services.AddSingleton<StatsService>();
 		services.AddHostedService(sp => new DbStatsTelemetryService(
@@ -79,7 +79,7 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddSingleton<GetLastPosition>(sp => sp.GetRequiredService<TFChunkDbConfig>().WriterCheckpoint.Read);
 
 		// register into the inmemory schema registry
-		services.AddStartupTask(services => new RegisterCustomIndexEvents(services));
+		services.AddStartupTask(services => new RegisterUserIndexEvents(services));
 	}
 
 	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
@@ -100,7 +100,7 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 	}
 }
 
-public class RegisterCustomIndexEvents(IServiceProvider services) : IClusterVNodeStartupTask {
+public class RegisterUserIndexEvents(IServiceProvider services) : IClusterVNodeStartupTask {
 	public async ValueTask Run(CancellationToken ct) {
 		await RegisterType<IndexCreated>(ct);
 		await RegisterType<IndexStarted>(ct);

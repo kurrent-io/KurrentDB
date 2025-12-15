@@ -9,7 +9,7 @@ using Kurrent.Rpc;
 using KurrentDB.Api.Errors;
 using KurrentDB.Api.Infrastructure.DependencyInjection;
 using KurrentDB.Api.Infrastructure.Grpc.Validation;
-using KurrentDB.Api.Modules.CustomIndexes;
+using KurrentDB.Api.Modules.Indexes;
 using KurrentDB.Api.Streams.Validators;
 using KurrentDB.Core;
 using Microsoft.AspNetCore.Builder;
@@ -38,7 +38,7 @@ public class ApiV2Plugin() : SubsystemsPlugin("APIV2") {
                     RetryInfo.Descriptor.File);
             })
             .WithRequestValidation(x => x.ExceptionFactory = ApiErrors.InvalidRequest)
-            .WithGrpcService<CustomIndexesService>()
+            .WithGrpcService<IndexesService>()
             .WithGrpcService<StreamsService>(
                 validation => validation.WithValidator<AppendRequestValidator>());
 
@@ -59,7 +59,7 @@ public class ApiV2Plugin() : SubsystemsPlugin("APIV2") {
         app.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = false });
 
         app.UseEndpoints(endpoints => {
-            endpoints.MapGrpcService<CustomIndexesService>()
+            endpoints.MapGrpcService<IndexesService>()
                 .EnableGrpcWeb();
             endpoints.MapGrpcService<StreamsService>()
                 .EnableGrpcWeb();
