@@ -12,17 +12,17 @@ public class UserIndex : Aggregate<UserIndexState> {
 	public void Create(CreateIndexRequest cmd) {
 		var start = !cmd.HasStart || cmd.Start;
 
-		switch (State.Status) {
-			case IndexStatus.Unspecified: {
+		switch (State.State) {
+			case IndexState.Unspecified: {
 				// new
 				CreateUserIndex();
 				break;
 			}
-			case IndexStatus.Stopped:
-			case IndexStatus.Started: {
+			case IndexState.Stopped:
+			case IndexState.Started: {
 				// already exists
-				if (State.Status is IndexStatus.Stopped && start ||
-					State.Status is IndexStatus.Started && !start ||
+				if (State.State is IndexState.Stopped && start ||
+					State.State is IndexState.Started && !start ||
 					!State.Filter.Equals(cmd.Filter) ||
 					!State.Fields.Equals(cmd.Fields))
 					throw new UserIndexAlreadyExistsException(State.Id.Name);
@@ -30,7 +30,7 @@ public class UserIndex : Aggregate<UserIndexState> {
 				break; // idempotent
 			}
 
-			case IndexStatus.Deleted: {
+			case IndexState.Deleted: {
 				CreateUserIndex();
 				break;
 			}
@@ -53,29 +53,29 @@ public class UserIndex : Aggregate<UserIndexState> {
 	}
 
 	public void Start() {
-		switch (State.Status) {
-			case IndexStatus.Unspecified:
-			case IndexStatus.Deleted:
+		switch (State.State) {
+			case IndexState.Unspecified:
+			case IndexState.Deleted:
 				throw new UserIndexNotFoundException(State.Id.Name);
-			case IndexStatus.Stopped:
+			case IndexState.Stopped:
 				Apply(new IndexStarted {
 					Timestamp = DateTime.UtcNow.ToTimestamp(),
 					Name = State.Id.Name,
 				});
 				break;
-			case IndexStatus.Started:
+			case IndexState.Started:
 				break; // idempotent
 		}
 	}
 
 	public void Stop() {
-		switch (State.Status) {
-			case IndexStatus.Unspecified:
-			case IndexStatus.Deleted:
+		switch (State.State) {
+			case IndexState.Unspecified:
+			case IndexState.Deleted:
 				throw new UserIndexNotFoundException(State.Id.Name);
-			case IndexStatus.Stopped:
+			case IndexState.Stopped:
 				break; // idempotent
-			case IndexStatus.Started:
+			case IndexState.Started:
 				Apply(new IndexStopped {
 					Timestamp = DateTime.UtcNow.ToTimestamp(),
 					Name = State.Id.Name,
@@ -85,13 +85,13 @@ public class UserIndex : Aggregate<UserIndexState> {
 	}
 
 	public void Delete() {
-		if (State.Status is IndexStatus.Deleted)
+		if (State.State is IndexState.Deleted)
 			return; // idempotent
 
-		if (State.Status is IndexStatus.Unspecified)
+		if (State.State is IndexState.Unspecified)
 			throw new UserIndexNotFoundException(State.Id.Name);
 
-		if (State.Status is IndexStatus.Started)
+		if (State.State is IndexState.Started)
 			Stop();
 
 		Apply(new IndexDeleted {

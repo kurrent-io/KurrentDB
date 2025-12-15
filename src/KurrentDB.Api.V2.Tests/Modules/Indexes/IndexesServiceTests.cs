@@ -30,7 +30,7 @@ public class IndexesServiceTests {
 				},
 			},
 			cancellationToken: ct);
-		await can_get(indexName, IndexStatus.Started, ct);
+		await can_get(indexName, IndexState.Started, ct);
 	}
 
 	[Test]
@@ -49,7 +49,7 @@ public class IndexesServiceTests {
 				Start = false,
 			},
 			cancellationToken: ct);
-		await can_get(IndexName, IndexStatus.Stopped, ct);
+		await can_get(IndexName, IndexState.Stopped, ct);
 
 		// event type is mapped correctly
 		var evt = await KurrentContext.StreamsClient.ReadAllForwardFiltered($"$UserIndex-{IndexName}", ct).FirstAsync();
@@ -73,7 +73,7 @@ public class IndexesServiceTests {
 				Start = false,
 			},
 			cancellationToken: ct);
-		await can_get(IndexName, IndexStatus.Stopped, ct);
+		await can_get(IndexName, IndexState.Stopped, ct);
 	}
 
 	[Test]
@@ -107,7 +107,7 @@ public class IndexesServiceTests {
 		await Client.StartIndexAsync(
 			new() { Name = IndexName },
 			cancellationToken: ct);
-		await can_get(IndexName, IndexStatus.Started, ct);
+		await can_get(IndexName, IndexState.Started, ct);
 	}
 
 	[Test]
@@ -116,7 +116,7 @@ public class IndexesServiceTests {
 		await Client.StartIndexAsync(
 			new() { Name = IndexName },
 			cancellationToken: ct);
-		await can_get(IndexName, IndexStatus.Started, ct);
+		await can_get(IndexName, IndexState.Started, ct);
 	}
 
 	[Test]
@@ -125,7 +125,7 @@ public class IndexesServiceTests {
 		await Client.StopIndexAsync(
 			new() { Name = IndexName },
 			cancellationToken: ct);
-		await can_get(IndexName, IndexStatus.Stopped, ct);
+		await can_get(IndexName, IndexState.Stopped, ct);
 	}
 
 	[Test]
@@ -134,7 +134,7 @@ public class IndexesServiceTests {
 		await Client.StopIndexAsync(
 			new() { Name = IndexName },
 			cancellationToken: ct);
-		await can_get(IndexName, IndexStatus.Stopped, ct);
+		await can_get(IndexName, IndexState.Stopped, ct);
 	}
 
 	[Test]
@@ -147,7 +147,7 @@ public class IndexesServiceTests {
 		await Assert.That(indexState!.Fields.Count).IsEqualTo(1);
 		await Assert.That(indexState!.Fields[0].Selector).IsEqualTo("rec => rec.number");
 		await Assert.That(indexState!.Fields[0].Type).IsEqualTo(FieldType.Int32);
-		await Assert.That(indexState!.Status).IsEqualTo(IndexStatus.Stopped);
+		await Assert.That(indexState!.State).IsEqualTo(IndexState.Stopped);
 	}
 
 	[Test]
@@ -325,7 +325,7 @@ public class IndexesServiceTests {
 		await cannot_get("non-existant-index", ct);
 	}
 
-	async ValueTask can_get(string indexName, IndexStatus expectedStatus, CancellationToken ct) {
+	async ValueTask can_get(string indexName, IndexState expectedState, CancellationToken ct) {
 		var response = await Client.GetIndexAsync(
 			new() { Name = indexName },
 			cancellationToken: ct);
@@ -333,7 +333,7 @@ public class IndexesServiceTests {
 		await Assert.That(response.Index.Fields.Count).IsEqualTo(1);
 		await Assert.That(response.Index.Fields[0].Selector).IsEqualTo("rec => rec.number");
 		await Assert.That(response.Index.Fields[0].Type).IsEqualTo(FieldType.Int32);
-		await Assert.That(response.Index.Status).IsEqualTo(expectedStatus);
+		await Assert.That(response.Index.State).IsEqualTo(expectedState);
 	}
 
 	async ValueTask cannot_get(string name, CancellationToken ct) {

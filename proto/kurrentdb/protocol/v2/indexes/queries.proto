@@ -24,12 +24,12 @@ message GetIndexResponse {
 message Index {
   string filter = 1;
   repeated Field fields = 2;
-  IndexStatus status = 3;
+  IndexState state = 3;
 }
 
-enum IndexStatus {
-  INDEX_STATUS_UNSPECIFIED = 0;
-  INDEX_STATUS_STARTED = 1;
-  INDEX_STATUS_STOPPED = 2;
-  INDEX_STATUS_DELETED = 3;
+enum IndexState {
+  INDEX_STATE_UNSPECIFIED = 0;
+  INDEX_STATE_STARTED = 1;
+  INDEX_STATE_STOPPED = 2;
+  INDEX_STATE_DELETED = 3;
 }

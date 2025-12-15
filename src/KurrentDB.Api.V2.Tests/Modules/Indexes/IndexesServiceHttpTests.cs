@@ -35,7 +35,7 @@ public class IndexesServiceHttpTests {
 
 		await Assert.That(response.Content).IsJson("{}");
 		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-		await can_get(expectedStatus: "INDEX_STATUS_STOPPED", ct);
+		await can_get(expectedState: "INDEX_STATE_STOPPED", ct);
 	}
 
 	[Test]
@@ -47,7 +47,7 @@ public class IndexesServiceHttpTests {
 
 		await Assert.That(response.Content).IsJson("{}");
 		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-		await can_get(expectedStatus: "INDEX_STATUS_STARTED", ct);
+		await can_get(expectedState: "INDEX_STATE_STARTED", ct);
 	}
 
 	[Test]
@@ -59,7 +59,7 @@ public class IndexesServiceHttpTests {
 
 		await Assert.That(response.Content).IsJson("{}");
 		await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-		await can_get(expectedStatus: "INDEX_STATUS_STOPPED", ct);
+		await can_get(expectedState: "INDEX_STATE_STOPPED", ct);
 	}
 
 	[Test]
@@ -74,7 +74,7 @@ public class IndexesServiceHttpTests {
 		await Assert.That(indexState!.Fields.Length).IsEqualTo(1);
 		await Assert.That(indexState!.Fields[0].Selector).IsEqualTo("rec => rec.number");
 		await Assert.That(indexState!.Fields[0].Type).IsEqualTo("FIELD_TYPE_INT_32");
-		await Assert.That(indexState!.Status).IsEqualTo("INDEX_STATUS_STOPPED");
+		await Assert.That(indexState!.State).IsEqualTo("INDEX_STATE_STOPPED");
 	}
 
 	class ListResponse {
@@ -83,7 +83,7 @@ public class IndexesServiceHttpTests {
 		public class IndexState {
 			public string Filter { get; set; } = "";
 			public Field[] Fields { get; set; } = [];
-			public string Status { get; set; } = "";
+			public string State { get; set; } = "";
 		}
 
 		public class Field {
@@ -136,7 +136,7 @@ public class IndexesServiceHttpTests {
 		await Assert.That(listResponse!.Indexes).DoesNotContainKey(IndexName);
 	}
 
-	async ValueTask can_get(string expectedStatus, CancellationToken ct) {
+	async ValueTask can_get(string expectedState, CancellationToken ct) {
 		var response = await Client.GetAsync(
 			new RestRequest($"/v2/indexes/{IndexName}"),
 			ct);
@@ -150,7 +150,7 @@ public class IndexesServiceHttpTests {
 						"selector": "rec => rec.number",
 						"type": "FIELD_TYPE_INT_32"
 					}],
-					"status": "{{expectedStatus}}"
+					"state": "{{expectedState}}"
 				}
 			}
 			""");

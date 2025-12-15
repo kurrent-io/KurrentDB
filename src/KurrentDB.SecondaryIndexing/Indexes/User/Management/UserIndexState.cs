@@ -9,23 +9,23 @@ namespace KurrentDB.SecondaryIndexing.Indexes.User.Management;
 public record UserIndexState : State<UserIndexState, UserIndexId> {
 	public string Filter { get; init; } = "";
 	public IList<Field> Fields { get; init; } = [];
-	public IndexStatus Status { get; init; }
+	public IndexState State { get; init; }
 
 	public UserIndexState() {
 		On<IndexCreated>((state, evt) =>
 			state with {
 				Filter = evt.Filter,
 				Fields = evt.Fields,
-				Status = IndexStatus.Stopped,
+				State = IndexState.Stopped,
 			});
 
 		On<IndexStarted>((state, evt) =>
-			state with { Status = IndexStatus.Started });
+			state with { State = IndexState.Started });
 
 		On<IndexStopped>((state, evt) =>
-			state with { Status = IndexStatus.Stopped });
+			state with { State = IndexState.Stopped });
 
 		On<IndexDeleted>((state, evt) =>
-			state with { Status = IndexStatus.Deleted });
+			state with { State = IndexState.Deleted });
 	}
 }

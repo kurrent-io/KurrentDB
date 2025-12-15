@@ -51,9 +51,9 @@ public class UserIndexReadsideService(
 			failIfNotFound: false,
 			cancellationToken: ct);
 
-		if (state.State.Status
-			is IndexStatus.Unspecified
-			or IndexStatus.Deleted)
+		if (state.State.State
+			is IndexState.Unspecified
+			or IndexState.Deleted)
 			throw new UserIndexNotFoundException(name);
 
 		return new() {
@@ -92,24 +92,24 @@ public class UserIndexReadsideService(
 	public record UserIndexState : State<UserIndexState> {
 		public string Filter { get; init; } = "";
 		public IList<Field> Fields { get; init; } = [];
-		public IndexStatus Status { get; init; }
+		public IndexState State { get; init; }
 
 		public UserIndexState() {
 			On<IndexCreated>((state, evt) =>
 				state with {
 					Filter = evt.Filter,
 					Fields = evt.Fields,
-					Status = IndexStatus.Stopped,
+					State = IndexState.Stopped,
 				});
 
 			On<IndexStarted>((state, evt) =>
-				state with { Status = IndexStatus.Started });
+				state with { State = IndexState.Started });
 
 			On<IndexStopped>((state, evt) =>
-				state with { Status = IndexStatus.Stopped });
+				state with { State = IndexState.Stopped });
 
 			On<IndexDeleted>((state, evt) =>
-				state with { Status = IndexStatus.Deleted });
+				state with { State = IndexState.Deleted });
 		}
 	}
 
@@ -140,7 +140,7 @@ file static class Extensions {
 	public static Protocol.V2.Indexes.Index Convert(this UserIndexReadsideService.UserIndexState self) => new() {
 		Filter = self.Filter,
 		Fields = { self.Fields },
-		Status = self.Status,
+		State = self.State,
 	};
 
 	public static ListIndexesResponse Convert(this UserIndexReadsideService.UserIndexesState self) {
