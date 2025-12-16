@@ -130,4 +130,33 @@ public class IndexesJavascriptTests {
 		await Assert.That(evts.Count).IsEqualTo(1);
 		await Assert.That(evts[0].Data.ToStringUtf8()).Contains(""" "orderId": "A" """);
 	}
+
+	[Test]
+	[Arguments("stream", "rec => rec.stream[0]", IndexFieldType.String, "O")]
+	[Arguments("event-number", "rec => rec.number", IndexFieldType.Int32, "0")]
+	[Arguments("event-type", "rec => rec.type[0]", IndexFieldType.String, "O")]
+	[Arguments("data", "rec => JSON.stringify(rec.data)[0]", IndexFieldType.String, "{")]
+	[Arguments("metadata", "rec => JSON.stringify(rec.metadata)[0]", IndexFieldType.String, "{")]
+	[Arguments("raw-data", "rec => new Uint8Array(rec.rawData)[0]", IndexFieldType.Int32, "123")]
+	[Arguments("raw-metadata", "rec => new Uint8Array(rec.rawMetadata)[0]", IndexFieldType.Int32, "123")]
+	public async ValueTask can_select_record_properties(string fieldName, string fieldSelector, IndexFieldType fieldType, string fieldFilter, CancellationToken ct) {
+		await Client.CreateIndexAsync(
+			new() {
+				Name = IndexName,
+				Filter = $"rec => rec.type == '{EventType}'",
+				Fields = {
+					new IndexField() {
+						Name = fieldName,
+						Selector = fieldSelector,
+						Type = fieldType,
+					},
+				}
+			},
+			cancellationToken: ct);
+
+		await StreamsWriteClient.AppendEvent(Stream, EventType, "{}", ct);
+
+		var evts = await StreamsReadClient.WaitForIndexEvents($"$idx-user-{IndexName}:{fieldFilter}", 1, ct);
+		await Assert.That(evts.Count).IsEqualTo(1);
+	}
 }

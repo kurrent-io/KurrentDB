@@ -99,7 +99,7 @@ internal sealed class ResolvedEventJsObject: ObjectInstance {
 		if (TryGetValue(propertyName, out var value) && value is ObjectInstance objectInstance)
 			return objectInstance;
 
-		var arrayBuffer = FromObject(_engine, rawBytes);
+		var arrayBuffer = FromObject(_engine, rawBytes.ToArray());
 		SetOwnProperty(propertyName, new PropertyDescriptor(
 			value: arrayBuffer,
 			writable: false,
