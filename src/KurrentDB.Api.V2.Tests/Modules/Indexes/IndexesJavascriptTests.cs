@@ -133,12 +133,14 @@ public class IndexesJavascriptTests {
 
 	[Test]
 	[Arguments("stream", "rec => rec.stream[0]", IndexFieldType.String, "O")]
-	[Arguments("event-number", "rec => rec.number", IndexFieldType.Int32, "0")]
-	[Arguments("event-type", "rec => rec.type[0]", IndexFieldType.String, "O")]
+	[Arguments("number", "rec => rec.number", IndexFieldType.Int32, "0")]
+	[Arguments("type", "rec => rec.type[0]", IndexFieldType.String, "O")]
 	[Arguments("data", "rec => JSON.stringify(rec.data)[0]", IndexFieldType.String, "{")]
 	[Arguments("metadata", "rec => JSON.stringify(rec.metadata)[0]", IndexFieldType.String, "{")]
 	[Arguments("raw-data", "rec => new Uint8Array(rec.rawData)[0]", IndexFieldType.Int32, "123")]
 	[Arguments("raw-metadata", "rec => new Uint8Array(rec.rawMetadata)[0]", IndexFieldType.Int32, "123")]
+	[Arguments("id", "rec => rec.id.length", IndexFieldType.Int32, "36")]
+	[Arguments("json", "rec => rec.isJson ? 1 : 0", IndexFieldType.Int32, "1")]
 	public async ValueTask can_select_record_properties(string fieldName, string fieldSelector, IndexFieldType fieldType, string fieldFilter, CancellationToken ct) {
 		await Client.CreateIndexAsync(
 			new() {
