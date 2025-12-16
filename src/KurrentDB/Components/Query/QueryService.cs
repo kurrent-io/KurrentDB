@@ -14,7 +14,7 @@ using Kurrent.Quack.ConnectionPool;
 namespace KurrentDB.Components.Query;
 
 public static partial class QueryService {
-	internal delegate bool TryGetUserIndexTableDetails(string indexName, out string tableName, out string inFlightTableName, out bool hasFields);
+	internal delegate bool TryGetUserIndexTableDetails(string indexName, out string tableName, out string inFlightTableName, out string fieldName);
 
 	private static string AmendQuery(DuckDBConnectionPool pool, TryGetUserIndexTableDetails tryGetUserIndexTableDetails, string query) {
 		var matches = ExtractionRegex().Matches(query);
@@ -35,11 +35,16 @@ public static partial class QueryService {
 					break;
 				case "index":
 					var indexName = tokens[1];
-					var exists = tryGetUserIndexTableDetails(indexName, out var tableName, out var tableFunctionName, out var hasFields);
+					var exists = tryGetUserIndexTableDetails(indexName, out var tableName, out var tableFunctionName, out var fieldName);
 					if (!exists)
 						throw new("Index does not exist");
 
-					cte = string.Format(UserIndexCteTemplate, cteName, $"\"{tableName}\"", $"\"{tableFunctionName}\"", hasFields ? ", field" : string.Empty);
+					cte = string.Format(
+						UserIndexCteTemplate,
+						cteName,
+						$"\"{tableName}\"",
+						$"\"{tableFunctionName}\"",
+						fieldName is not null ? $", \"{fieldName}\"" : string.Empty);
 					break;
 				default:
 					throw new("Invalid token");

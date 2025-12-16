@@ -275,10 +275,10 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 #pragma warning restore DuckDBNET001
 	}
 
-	public void GetUserIndexTableDetails(out string tableName, out string inFlightTableName, out bool hasFields) {
+	public void GetUserIndexTableDetails(out string tableName, out string inFlightTableName, out string? fieldName) {
 		tableName = _sql.TableName;
 		inFlightTableName = _inFlightTableName;
-		hasFields = TField.Type is not null;
+		fieldName = _sql.FieldColumnName;
 	}
 
 	protected override void Dispose(bool disposing) {

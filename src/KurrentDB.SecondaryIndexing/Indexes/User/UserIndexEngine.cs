@@ -137,6 +137,6 @@ public sealed class UserIndexEngine :
 	public ValueTask<ClientMessage.ReadIndexEventsBackwardCompleted> ReadBackwards(ClientMessage.ReadIndexEventsBackward msg, CancellationToken token) =>
 		_subscription.ReadBackwards(msg, token);
 
-	public bool TryGetUserIndexTableDetails(string indexName, out string tableName, out string inFlightTableName, out bool hasFields) =>
-		_subscription.TryGetUserIndexTableDetails(indexName, out tableName, out inFlightTableName, out hasFields);
+	public bool TryGetUserIndexTableDetails(string indexName, out string tableName, out string inFlightTableName, out string? fieldName) =>
+		_subscription.TryGetUserIndexTableDetails(indexName, out tableName, out inFlightTableName, out fieldName);
 }

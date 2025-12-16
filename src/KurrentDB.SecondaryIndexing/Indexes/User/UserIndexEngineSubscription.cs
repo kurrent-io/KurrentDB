@@ -354,16 +354,16 @@ public class UserIndexEngineSubscription : ISecondaryIndexReader {
 			return data.Reader.ReadBackwards(msg, token);
 	}
 
-	public bool TryGetUserIndexTableDetails(string indexName, out string tableName, out string inFlightTableName, out bool hasFields) {
+	public bool TryGetUserIndexTableDetails(string indexName, out string tableName, out string inFlightTableName, out string? fieldName) {
 		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var data)) {
 			tableName = null!;
 			inFlightTableName = null!;
-			hasFields = false;
+			fieldName = null;
 			return false;
 		}
 
 		using (readLock) {
-			data.Subscription.GetUserIndexTableDetails(out tableName, out inFlightTableName, out hasFields);
+			data.Subscription.GetUserIndexTableDetails(out tableName, out inFlightTableName, out fieldName);
 			return true;
 		}
 	}

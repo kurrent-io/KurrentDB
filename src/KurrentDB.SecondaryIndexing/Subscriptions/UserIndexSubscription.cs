@@ -21,7 +21,7 @@ internal abstract class UserIndexSubscription {
 	public abstract ValueTask Start();
 	public abstract ValueTask Stop();
 	public abstract TFPos GetLastIndexedPosition();
-	public abstract void GetUserIndexTableDetails(out string tableName, out string inFlightTableName, out bool hasFields);
+	public abstract void GetUserIndexTableDetails(out string tableName, out string inFlightTableName, out string? fieldName);
 }
 
 internal sealed class UserIndexSubscription<TField>(
@@ -159,6 +159,6 @@ internal sealed class UserIndexSubscription<TField>(
 
 	public override TFPos GetLastIndexedPosition() => indexProcessor.GetLastPosition();
 
-	public override void GetUserIndexTableDetails(out string tableName, out string inFlightTableName, out bool hasFields) =>
-		indexProcessor.GetUserIndexTableDetails(out tableName, out inFlightTableName, out hasFields);
+	public override void GetUserIndexTableDetails(out string tableName, out string inFlightTableName, out string? fieldName) =>
+		indexProcessor.GetUserIndexTableDetails(out tableName, out inFlightTableName, out fieldName);
 }
