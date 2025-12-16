@@ -8,23 +8,23 @@ import "indexes/shared.proto";
 import "google/protobuf/timestamp.proto";
 
 message IndexCreated {
-  google.protobuf.Timestamp timestamp = 1;
-  string name = 2;
-  string filter = 3;
-  repeated IndexField fields = 4;
+  string name = 1;
+  string filter = 2;
+  repeated IndexField fields = 3;
+  google.protobuf.Timestamp timestamp = 4;
 }
 
 message IndexStarted {
-  google.protobuf.Timestamp timestamp = 1;
-  string name = 2;
+  string name = 1;
+  google.protobuf.Timestamp timestamp = 2;
 }
 
 message IndexStopped {
-  google.protobuf.Timestamp timestamp = 1;
-  string name = 2;
+  string name = 1;
+  google.protobuf.Timestamp timestamp = 2;
 }
 
 message IndexDeleted {
-  google.protobuf.Timestamp timestamp = 1;
-  string name = 2;
+  string name = 1;
+  google.protobuf.Timestamp timestamp = 2;
 }
