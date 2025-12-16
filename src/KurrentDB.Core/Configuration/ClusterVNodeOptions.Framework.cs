@@ -101,7 +101,7 @@ public partial record ClusterVNodeOptions {
 				var sourceDisplayName = GetSourceDisplayName(option.Value.Key, provider);
 				var isDefault = provider.GetType() == typeof(KurrentDefaultValuesConfigurationProvider);
 
-				if (!provider.TryGet(option.Value.Key, out var value) && !isDefault) {
+				if (!provider.TryGet(option.Value.Key, out var value)) {
 					// Handle options that have been configured as arrays (GossipSeed is currently the only one
 					// where this is possible)
 					if (option.Value.OptionSchema.Value<string>("type") is "array") {

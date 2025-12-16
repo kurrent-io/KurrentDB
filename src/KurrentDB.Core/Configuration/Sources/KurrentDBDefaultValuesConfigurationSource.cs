@@ -21,7 +21,8 @@ public class KurrentDBDefaultValuesConfigurationSource(IEnumerable<KeyValuePair<
 public class KurrentDefaultValuesConfigurationProvider(IEnumerable<KeyValuePair<string, string?>> initialData)
 	: MemoryConfigurationProvider(new() {
 		InitialData = initialData
-			.Where(kvp => !string.IsNullOrEmpty(kvp.Value))
+			// todo: something more permanent. exclude GossipSeed default because it overrides gossip seeds specified as arrays
+			.Where(kvp => kvp.Key is not nameof(ClusterVNodeOptions.Cluster.GossipSeed))
 			.ToDictionary(
 			kvp => $"{KurrentConfigurationKeys.Prefix}:{kvp.Key}",
 			kvp => kvp.Value,
