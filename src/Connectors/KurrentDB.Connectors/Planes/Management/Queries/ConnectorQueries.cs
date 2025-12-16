@@ -4,12 +4,12 @@
 using KurrentDB.Connectors.Management.Contracts.Queries;
 using Kurrent.Surge;
 using Kurrent.Surge.Protocol.Consumers;
-using KurrentDB.Common.Configuration;
 using KurrentDB.Common.Utils;
+using KurrentDB.Connectors.Control;
+using KurrentDB.Connectors.Infrastructure;
 using KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
 using KurrentDB.Connectors.Planes.Management.Domain;
 using KurrentDB.Surge.Readers;
-using Microsoft.Extensions.Configuration;
 
 namespace KurrentDB.Connectors.Planes.Management.Queries;
 
@@ -67,22 +67,16 @@ public class ConnectorQueries {
         async (conn, _) => {
             if (!query.IncludeSettings) {
                 return conn.With(x => {
-                    x.Settings.Clear();
+	                x.Settings.Clear();
                     return x;
                 });
             }
 
-            var unprotected = await DataProtector.Unprotect(conn.Settings.ToConfiguration(), ct);
+            var unprotected = await DataProtector.Unprotect(conn.Settings.MapToConnectorSettings(), ct);
 
             return conn.With(x => {
                 x.Settings.Clear();
-
-                var settings = unprotected.AsEnumerable()
-                    .Where(setting => setting.Value != null)
-                    .ToDictionary(setting => setting.Key, setting => setting.Value!);
-
-                x.Settings.Add(settings);
-
+                x.Configuration = unprotected.ToProtobufStruct();
                 return x;
             });
         };
@@ -95,14 +89,10 @@ public class ConnectorQueries {
         if (connector is null)
             throw new DomainExceptions.EntityNotFound("Connector", query.ConnectorId);
 
-        var unprotected   = await DataProtector.Unprotect(connector.Settings.ToConfiguration(), cancellationToken);
-
-        var settings = unprotected.AsEnumerable()
-            .Where(setting => setting.Value != null)
-            .ToDictionary(setting => setting.Key, setting => setting.Value!);
+        var unprotected = await DataProtector.Unprotect(connector.Settings.MapToConnectorSettings(), cancellationToken);
 
         return new GetConnectorSettingsResult {
-            Settings           = { settings },
+            Configuration      = unprotected.ToProtobufStruct(),
             SettingsUpdateTime = connector.SettingsUpdateTime
         };
     }
