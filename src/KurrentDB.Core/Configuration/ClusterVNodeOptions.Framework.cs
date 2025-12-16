@@ -97,28 +97,31 @@ public partial record ClusterVNodeOptions {
 		// then we can override them with the actual values.
 		foreach (var provider in configurationRoot.Providers) {
 			foreach (var option in Metadata.SelectMany(x => x.Options)) {
-				if (!provider.TryGet(option.Value.Key, out var value))
-					continue;
-
 				var title = GetTitle(option);
 				var sourceDisplayName = GetSourceDisplayName(option.Value.Key, provider);
 				var isDefault = provider.GetType() == typeof(KurrentDefaultValuesConfigurationProvider);
 
-				// Handle options that have been configured as arrays (GossipSeed is currently the only one
-				// where this is possible)
-				if (sourceDisplayName is "<UNKNOWN>" && value is null) {
-					var parentPath = option.Value.Key;
-					var childValues = new List<string>();
+				if (!provider.TryGet(option.Value.Key, out var value)) {
+					// Handle options that have been configured as arrays (GossipSeed is currently the only one
+					// where this is possible)
+					if (option.Value.OptionSchema.Value<string>("type") is "array") {
+						var parentPath = option.Value.Key;
+						var childValues = new List<string>();
 
-					foreach (var childKey in provider.GetChildKeys([], parentPath)) {
-						var absoluteChildKey = parentPath + ":" + childKey;
-						if (provider.TryGet(absoluteChildKey, out var childValue) && childValue is not null) {
-							childValues.Add(childValue);
-							sourceDisplayName = GetSourceDisplayName(absoluteChildKey, provider);
+						foreach (var childKey in provider.GetChildKeys([], parentPath)) {
+							var absoluteChildKey = parentPath + ":" + childKey;
+							if (provider.TryGet(absoluteChildKey, out var childValue) && childValue is not null) {
+								childValues.Add(childValue);
+								sourceDisplayName = GetSourceDisplayName(absoluteChildKey, provider);
+							}
 						}
-					}
 
-					value = string.Join(", ", childValues);
+						value = string.Join(", ", childValues);
+						if (childValues.Count is 0)
+							continue; // no child values. skip
+					} else {
+						continue; // no value and it is an array so don't check for children. skip.
+					}
 				}
 
 				loadedOptions[option.Value.Key] = new(
