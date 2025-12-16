@@ -26,11 +26,14 @@ public class ConnectorsStateProjection : SnapshotProjectionsModule<ConnectorsSna
     public ConnectorsStateProjection(ISnapshotProjectionsStore store, string snapshotStreamId) : base(store, snapshotStreamId) {
         UpdateWhen<ConnectorCreated>((snapshot, evt) =>
             snapshot.ApplyOrAdd(evt.ConnectorId, conn => {
-                conn.Settings.Clear();
-                conn.Settings.Add(evt.Settings);
+	            conn.Settings.Clear();
+	            conn.Settings.Add(evt.Settings);
+
+                conn.InstanceTypeName = evt.Settings
+                    .FirstOrDefault(kvp => kvp.Key.Equals(nameof(SinkOptions.InstanceTypeName), OrdinalIgnoreCase))
+                    .Value ?? string.Empty;
 
                 conn.ConnectorId        = evt.ConnectorId;
-                conn.InstanceTypeName   = evt.Settings.First(kvp => kvp.Key.Equals(nameof(SinkOptions.InstanceTypeName), OrdinalIgnoreCase)).Value;
                 conn.Name               = evt.Name;
                 conn.State              = ConnectorState.Stopped;
                 conn.StateUpdateTime    = evt.Timestamp;
@@ -42,8 +45,8 @@ public class ConnectorsStateProjection : SnapshotProjectionsModule<ConnectorsSna
 
         UpdateWhen<ConnectorReconfigured>((snapshot, evt) =>
             snapshot.Apply(evt.ConnectorId, conn => {
-                conn.Settings.Clear();
-                conn.Settings.Add(evt.Settings);
+	            conn.Settings.Clear();
+	            conn.Settings.Add(evt.Settings);
                 conn.SettingsUpdateTime = evt.Timestamp;
                 conn.UpdateTime         = evt.Timestamp;
             }));
