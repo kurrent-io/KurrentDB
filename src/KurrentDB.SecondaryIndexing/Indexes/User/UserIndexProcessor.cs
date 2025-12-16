@@ -15,6 +15,7 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.SecondaryIndexing.Diagnostics;
+using KurrentDB.SecondaryIndexing.Indexes.Custom.Surge;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
@@ -29,7 +30,7 @@ internal abstract class UserIndexProcessor : Disposable, ISecondaryIndexProcesso
 }
 
 internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IField {
-	private readonly Engine _engine = new();
+	private readonly Engine _engine = JintEngineFactory.CreateEngine(executionTimeout: TimeSpan.FromSeconds(30));
 	private readonly Function? _filter;
 	private readonly Function? _fieldSelector;
 	private readonly ResolvedEventJsObject _resolvedEventJsObject;

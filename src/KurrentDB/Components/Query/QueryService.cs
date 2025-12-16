@@ -37,7 +37,7 @@ public static partial class QueryService {
 					var indexName = tokens[1];
 					var exists = tryGetUserIndexTableDetails(indexName, out var tableName, out var tableFunctionName, out var fieldName);
 					if (!exists)
-						throw new("Index does not exist");
+						throw new("Index does not exist or is not started");
 
 					cte = string.Format(
 						UserIndexCteTemplate,
