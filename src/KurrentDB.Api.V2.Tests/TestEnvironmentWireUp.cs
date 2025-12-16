@@ -7,6 +7,7 @@ using TUnit.Core.Executors;
 
 [assembly: ToolkitTestConfigurator]
 [assembly: TestExecutor<ToolkitTestExecutor>]
+[assembly: Timeout(20_000)]
 
 namespace KurrentDB.Api.Tests;
 

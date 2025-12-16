@@ -6,6 +6,7 @@ using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Tests.Fakes;
+using KurrentDB.SecondaryIndexing.Indexes;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Storage;
 using KurrentDB.SecondaryIndexing.Tests.Fakes;
@@ -55,7 +56,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest<DefaultIndexProc
 
 		// When
 		foreach (var resolvedEvent in events) {
-			_processor.Index(resolvedEvent);
+			_processor.TryIndex(resolvedEvent);
 		}
 
 		_processor.Commit();
@@ -92,7 +93,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest<DefaultIndexProc
 
 		// When
 		foreach (var resolvedEvent in events) {
-			_processor.Index(resolvedEvent);
+			_processor.TryIndex(resolvedEvent);
 		}
 
 		_processor.Commit();

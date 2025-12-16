@@ -4,6 +4,7 @@
     <Nullable>enable</Nullable>
     <AssemblyName>KurrentDB.Api</AssemblyName>
     <RootNamespace>KurrentDB.Api</RootNamespace>
+    <IncludeHttpRuleProtos>true</IncludeHttpRuleProtos>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,6 +15,7 @@
     <PackageReference Include="Grpc.Tools" />
     <PackageReference Include="Grpc.StatusProto" />
     <PackageReference Include="Humanizer.Core" />
+    <PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" />
     <PackageReference Include="Scrutor" />
     <PackageReference Include="System.Linq.Async">
       <ExcludeAssets>compile</ExcludeAssets>
@@ -25,7 +27,16 @@
     <Protobuf
         ProtoRoot="../../proto/kurrentdb/protocol/v2"
         Include="../../proto/kurrentdb/protocol/v2/**/*.proto"
-        Exclude="../../proto/kurrentdb/protocol/v2/registry/**/*.proto"
+        Exclude="../../proto/kurrentdb/protocol/v2/registry/**/*.proto;../../proto/kurrentdb/protocol/v2/indexes/**/*.proto"
+        Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"
+        GrpcServices="Both"
+        Access="Public"
+        AdditionalImportDirs="../../proto"
+    />
+
+    <Protobuf
+        ProtoRoot="../../proto/kurrentdb/protocol/v2"
+        Include="../../proto/kurrentdb/protocol/v2/indexes/errors.proto"
         Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"
         GrpcServices="Both"
         Access="Public"
@@ -53,6 +64,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
+    <ProjectReference Include="..\KurrentDB.SecondaryIndexing\KurrentDB.SecondaryIndexing.csproj" />
   </ItemGroup>
 
   <ItemGroup>

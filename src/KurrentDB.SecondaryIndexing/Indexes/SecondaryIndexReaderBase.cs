@@ -6,22 +6,23 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Storage;
+using Serilog;
 using static KurrentDB.Core.Messages.ClientMessage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes;
 
-public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool db, IReadIndex<string> index) : ISecondaryIndexReader {
-	protected DuckDBConnectionPool Db => db;
+public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool sharedPool, IReadIndex<string> index) : ISecondaryIndexReader {
+	private static readonly ILogger Log = Serilog.Log.ForContext<SecondaryIndexReaderBase>();
 
-	protected abstract string GetId(string indexName);
+	protected abstract string? GetId(string indexName);
 
-	protected abstract (List<IndexQueryRecord> Records, bool IsFinal) GetInflightForwards(string id, long startPosition, int maxCount, bool excludeFirst);
+	protected abstract (List<IndexQueryRecord> Records, bool IsFinal) GetInflightForwards(string? id, long startPosition, int maxCount, bool excludeFirst);
 
-	protected abstract List<IndexQueryRecord> GetDbRecordsForwards(string id, long startPosition, long endPosition, int maxCount, bool excludeFirst);
+	protected abstract List<IndexQueryRecord> GetDbRecordsForwards(DuckDBConnectionPool pool, string? id, long startPosition, long endPosition, int maxCount, bool excludeFirst);
 
-	protected abstract IEnumerable<IndexQueryRecord> GetInflightBackwards(string id, long startPosition, int maxCount, bool excludeFirst);
+	protected abstract IEnumerable<IndexQueryRecord> GetInflightBackwards(string? id, long startPosition, int maxCount, bool excludeFirst);
 
-	protected abstract List<IndexQueryRecord> GetDbRecordsBackwards(string id, long startPosition, int maxCount, bool excludeFirst);
+	protected abstract List<IndexQueryRecord> GetDbRecordsBackwards(DuckDBConnectionPool pool, string? id, long startPosition, int maxCount, bool excludeFirst);
 
 	public ValueTask<ReadIndexEventsForwardCompleted> ReadForwards(ReadIndexEventsForward msg, CancellationToken token)
 		=> ReadForwards(msg, index.IndexReader, index.LastIndexedPosition, token);
@@ -70,7 +71,7 @@ public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool db, IReadInd
 			}
 
 			var end = inFlight.Count > 0 ? inFlight[0].LogPosition : lastIndexedPosition + 1;
-			var range = GetDbRecordsForwards(id, startPosition, end, maxCount, msg.ExcludeStart);
+			var range = GetDbRecordsForwards(GetPool(msg.Pool), id, startPosition, end, maxCount, msg.ExcludeStart);
 			if (range.Count == 0) {
 				return inFlight;
 			}
@@ -139,7 +140,7 @@ public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool db, IReadInd
 				start = startPosition.PreparePosition;
 				excl = msg.ExcludeStart;
 			}
-			var range = GetDbRecordsBackwards(id, start, count, excl);
+			var range = GetDbRecordsBackwards(GetPool(msg.Pool), id, start, count, excl);
 			if (range.Count == 0) {
 				return inFlight;
 			}
@@ -156,5 +157,13 @@ public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool db, IReadInd
 			var events = await reader.ReadRecords(indexPrepares, false, token);
 			return (indexPrepares.Count, events);
 		}
+	}
+
+	private DuckDBConnectionPool GetPool(Lazy<DuckDBConnectionPool>? pool) {
+		if (pool is not null)
+			return pool.Value;
+
+		Log.Verbose("Using shared DuckDBConnection pool");
+		return sharedPool;
 	}
 }

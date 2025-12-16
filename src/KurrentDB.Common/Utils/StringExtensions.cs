@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace KurrentDB.Common.Utils;
 
@@ -21,4 +22,8 @@ public static class StringExtensions {
 
 	public static bool EqualsOrdinalIgnoreCase(this IEnumerable<string> a, IEnumerable<string> b) =>
 		a.SequenceEqual(b, StringComparer.OrdinalIgnoreCase);
+
+	public static ReadOnlyMemory<byte> ToUtf8Bytes(this string s) {
+		return Encoding.UTF8.GetBytes(s);
+	}
 }

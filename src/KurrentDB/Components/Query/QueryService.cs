@@ -14,7 +14,9 @@ using Kurrent.Quack.ConnectionPool;
 namespace KurrentDB.Components.Query;
 
 public static partial class QueryService {
-	private static string AmendQuery(DuckDBConnectionPool pool, string query) {
+	internal delegate bool TryGetUserIndexTableDetails(string indexName, out string tableName, out string inFlightTableName, out string fieldName);
+
+	private static string AmendQuery(DuckDBConnectionPool pool, TryGetUserIndexTableDetails tryGetUserIndexTableDetails, string query) {
 		var matches = ExtractionRegex().Matches(query);
 		List<string> ctes = [AllCte];
 		foreach (Match match in matches) {
@@ -22,12 +24,32 @@ public static partial class QueryService {
 				continue;
 			var tokens = match.Value.Split(':');
 			var cteName = ReplaceSpecialCharsWithUnderscore($"{tokens[0]}_{tokens[1]}");
-			var where = $"where {tokens[0] switch {
-				"stream" => $"stream = '{tokens[1]}'",
-				"category" => $"category = '{tokens[1]}'",
-				_ => throw new("Invalid token")
-			}}";
-			var cte = string.Format(CteTemplate, cteName, where);
+
+			string cte;
+			switch (tokens[0]) {
+				case "stream":
+					cte = string.Format(AllCteTemplate, cteName, $"stream = '{tokens[1]}'");
+					break;
+				case "category":
+					cte = string.Format(AllCteTemplate, cteName, $"category = '{tokens[1]}'");
+					break;
+				case "index":
+					var indexName = tokens[1];
+					var exists = tryGetUserIndexTableDetails(indexName, out var tableName, out var tableFunctionName, out var fieldName);
+					if (!exists)
+						throw new("Index does not exist or is not started");
+
+					cte = string.Format(
+						UserIndexCteTemplate,
+						cteName,
+						$"\"{tableName}\"",
+						$"\"{tableFunctionName}\"",
+						fieldName is not null ? $", \"{fieldName}\"" : string.Empty);
+					break;
+				default:
+					throw new("Invalid token");
+			}
+
 			ctes.Add(cte);
 			query = query.Replace(match.Value, cteName);
 		}
@@ -52,8 +74,8 @@ public static partial class QueryService {
 		}
 	}
 
-	internal static List<Dictionary<string, object>> ExecuteAdHocUserQuery(this DuckDBConnectionPool pool, string sql) {
-		var query = AmendQuery(pool, sql);
+	internal static List<Dictionary<string, object>> ExecuteAdHocUserQuery(this DuckDBConnectionPool pool, TryGetUserIndexTableDetails tryGetUserIndexTableDetails, string sql) {
+		var query = AmendQuery(pool, tryGetUserIndexTableDetails, sql);
 		using var scope = pool.Rent(out var connection);
 		var items = (IEnumerable<IDictionary<string, object>>)connection.Query(query);
 		return items.Select(x => x.ToDictionary(y => y.Key, y => y.Value)).ToList();
@@ -62,15 +84,15 @@ public static partial class QueryService {
 	private static string ReplaceSpecialCharsWithUnderscore(string input)
 		=> string.IsNullOrEmpty(input) ? string.Empty : SpecialCharsRegex().Replace(input, "_");
 
-	[GeneratedRegex(@"\b(?:stream|category):([A-Za-z0-9_-]+)\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+	[GeneratedRegex(@"\b(?:stream|category|index):([A-Za-z0-9_-]+)\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
 	private static partial Regex ExtractionRegex();
 
 	[GeneratedRegex("[^A-Za-z0-9_]", RegexOptions.CultureInvariant)]
 	private static partial Regex SpecialCharsRegex();
 
-	private static readonly string AllCte = string.Format(CteTemplate, "all_events", "");
+	private static readonly string AllCte = string.Format(AllCteTemplate, "all_events", "");
 
-	private const string CteTemplate = """
+	private const string AllCteTemplate = """
 	                                   {0} AS (
 	                                       select log_position, stream, event_number, event_type, epoch_ms(created) as created_at, event->>'data' as data, event->>'metadata' as metadata
 	                                       from (
@@ -83,6 +105,20 @@ public static partial class QueryService {
 	                                       )
 	                                   )
 	                                   """;
+
+	private const string UserIndexCteTemplate = """
+	                                      {0} AS (
+	                                          select log_position, event->>'stream_id' as stream, event_number, event->>'event_type' as event_type, epoch_ms(created) as created_at, event->>'data' as data, event->>'metadata' as metadata{3}
+	                                          from (
+	                                              select *, kdb_get(log_position)::JSON as event
+	                                              from (
+	                                                  select log_position, event_number, created{3} from {1}
+	                                                  union all
+	                                                  select log_position, event_number, created{3} from {2}()
+	                                              )
+	                                          )
+	                                      )
+	                                      """;
 
 	private record SqlJsonResponse {
 		[JsonPropertyName("error")] public bool Error { get; init; }

@@ -4,7 +4,7 @@
 using System.Diagnostics.Metrics;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Data;
-using Microsoft.Extensions.Logging;
+using Serilog;
 
 namespace KurrentDB.SecondaryIndexing.Diagnostics;
 
@@ -14,26 +14,27 @@ public class SecondaryIndexProgressTracker {
 	private readonly KeyValuePair<string, object?>[] _tag;
 	private readonly Histogram<double> _histogram;
 	private readonly TimeProvider _clock;
-	private readonly ILogger _log;
 	private readonly string _indexName;
 
 	private long _lastIndexedPosition = -1;
 	private DateTime _lastIndexedTimestamp = DateTime.MinValue;
 	private long _lastAppendedPosition = -1;
 	private DateTime _lastAppendedTimestamp = DateTime.MinValue;
+	private readonly Func<(long, DateTime)> _getLastAppendedRecord;
 
 	private const string MeterPrefix = "indexes.secondary";
+
+	private static readonly ILogger Log = Serilog.Log.ForContext<SecondaryIndexProgressTracker>();
 
 	public SecondaryIndexProgressTracker(
 		string indexName,
 		string serviceName,
 		Meter meter,
 		TimeProvider clock,
-		ILogger log
-	) {
+		Func<(long, DateTime)>? getLastAppendedRecord = null) {
 		_clock = clock;
-		_log = log;
 		_indexName = indexName;
+		_getLastAppendedRecord = getLastAppendedRecord ?? GetLastAppendedRecord;
 
 		meter.CreateObservableGauge(
 			$"{serviceName}.{MeterPrefix}.gap",
@@ -56,6 +57,10 @@ public class SecondaryIndexProgressTracker {
 		_tag = [new("index", indexName)];
 	}
 
+	private (long, DateTime) GetLastAppendedRecord() {
+		return (_lastAppendedPosition, _lastAppendedTimestamp);
+	}
+
 	public void RecordAppended(EventRecord eventRecord, long commitPosition) {
 		_lastAppendedPosition = commitPosition;
 		_lastAppendedTimestamp = eventRecord.TimeStamp;
@@ -71,10 +76,10 @@ public class SecondaryIndexProgressTracker {
 		_lastIndexedTimestamp = resolvedEvent.OriginalEvent.TimeStamp;
 	}
 
-	public CommitDuration StartCommitDuration() => new(_histogram, _clock, _tag[0], _indexName, _log);
+	public CommitDuration StartCommitDuration() => new(_histogram, _clock, _tag[0], _indexName, Log);
 
 	private IEnumerable<Measurement<long>> ObserveGap() {
-		var lastAppendedPos = _lastAppendedPosition;
+		var (lastAppendedPos, _) = _getLastAppendedRecord();
 		var lastIndexedPos = _lastIndexedPosition;
 
 		if (lastAppendedPos < 0 || lastIndexedPos < 0)
@@ -84,10 +89,12 @@ public class SecondaryIndexProgressTracker {
 	}
 
 	private IEnumerable<Measurement<double>> ObserveLag() {
-		if (_lastAppendedTimestamp == DateTime.MinValue || _lastIndexedTimestamp == DateTime.MinValue)
+		var (_, lastAppendedTimestamp) = _getLastAppendedRecord();
+
+		if (lastAppendedTimestamp == DateTime.MinValue || _lastIndexedTimestamp == DateTime.MinValue)
 			yield break;
 
-		var lag = _lastAppendedTimestamp - _lastIndexedTimestamp;
+		var lag = lastAppendedTimestamp - _lastIndexedTimestamp;
 		yield return new(lag.TotalSeconds, _tag);
 	}
 
@@ -96,12 +103,12 @@ public class SecondaryIndexProgressTracker {
 		TimeProvider clock,
 		KeyValuePair<string, object?> tag,
 		string indexName,
-		ILogger logger) : IDisposable {
+		ILogger log) : IDisposable {
 		private readonly long _start = clock.GetTimestamp();
 
 		public void Dispose() {
 			var elapsed = clock.GetElapsedTime(_start).Milliseconds;
-			logger.LogDebug("Secondary index {Index} records committed in {Duration} ms", indexName, elapsed);
+			log.Debug("Secondary index {Index} records committed in {Duration} ms", indexName, elapsed);
 			histogram.Record(elapsed, tag);
 		}
 	}

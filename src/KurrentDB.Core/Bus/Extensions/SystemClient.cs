@@ -64,6 +64,8 @@ public interface IReadOperations {
 	Task<ResolvedEvent?> ReadStreamLastEvent(string stream, CancellationToken cancellationToken = default);
 	Task<ResolvedEvent?> ReadStreamFirstEvent(string stream, CancellationToken cancellationToken = default);
 	Task<ResolvedEvent> ReadEvent(Position position, CancellationToken cancellationToken = default);
+	IAsyncEnumerable<ResolvedEvent> ReadIndexForwards(string indexName, Position startPosition, long maxCount, CancellationToken cancellationToken = default);
+	IAsyncEnumerable<ResolvedEvent> ReadIndexBackwards(string indexName, Position startPosition, long maxCount, CancellationToken cancellationToken = default);
 }
 
 public interface IWriteOperations {
@@ -73,6 +75,7 @@ public interface IWriteOperations {
 public interface ISubscriptionsOperations {
 	Task SubscribeToAll(Position? position, IEventFilter filter, uint maxSearchWindow, Channel<ReadResponse> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken);
 	Task SubscribeToStream(StreamRevision? revision, string stream, Channel<ReadResponse> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken);
+	Task SubscribeToIndex(Position? position, string indexName, Channel<ReadResponse> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken);
 }
 
 [PublicAPI]
@@ -151,6 +154,8 @@ public class SystemClient : ISystemClient {
 			Publisher.SubscribeToAll(position, filter, maxSearchWindow, channel, resiliencePipeline, cancellationToken);
 		public Task SubscribeToStream(StreamRevision? revision, string stream, Channel<ReadResponse> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken) =>
 			Publisher.SubscribeToStream(revision, stream, channel, resiliencePipeline, cancellationToken);
+		public Task SubscribeToIndex(Position? position, string indexName, Channel<ReadResponse> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken) =>
+			Publisher.SubscribeToIndex(position, indexName, channel, resiliencePipeline, cancellationToken);
 	}
 
 	#endregion . Subscriptions .
@@ -211,6 +216,12 @@ public class SystemClient : ISystemClient {
 
 		public Task<ResolvedEvent> ReadEvent(Position position, CancellationToken cancellationToken = default) =>
 			Publisher.ReadEvent(position, cancellationToken);
+
+		public IAsyncEnumerable<ResolvedEvent> ReadIndexForwards(string indexName, Position startPosition, long maxCount, CancellationToken cancellationToken = default) =>
+			Publisher.ReadIndex(indexName, startPosition, maxCount, true, cancellationToken);
+
+		public IAsyncEnumerable<ResolvedEvent> ReadIndexBackwards(string indexName, Position startPosition, long maxCount, CancellationToken cancellationToken = default) =>
+			Publisher.ReadIndex(indexName, startPosition, maxCount, false, cancellationToken);
 	}
 
 	#endregion . Read .

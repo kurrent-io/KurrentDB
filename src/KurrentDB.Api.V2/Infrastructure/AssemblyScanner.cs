@@ -35,7 +35,6 @@ class AssemblyScanner {
 
     static Type[] LoadAllTypes(Assembly[] assemblies, bool includeInternalTypes = true) {
         return assemblies
-            .AsParallel()
             .SelectMany(ass => GetAllTypes(ass, includeInternalTypes))
             .Distinct()
             .ToArray();

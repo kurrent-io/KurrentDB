@@ -27,7 +27,7 @@ public sealed class RestClientShim : IAsyncInitializer, IDisposable {
 					password: password),
 				BaseUrl = NodeShim.Node.Uri,
 				RemoteCertificateValidationCallback = (_, _, _, _) => true,
-				ThrowOnAnyError = true,
+				ThrowOnAnyError = false,
 			}).AddDefaultHeaders(new() {
 				{ "Content-Type", "application/json"},
 			});
