@@ -15,7 +15,6 @@
 	<ItemGroup>
 		<PackageReference Include="Grpc.Tools" />
 		<PackageReference Include="Kurrent.Quack" />
-		<PackageReference Include="Kurrent.Surge.Core" />
 		<PackageReference Include="Eventuous.Application" />
 		<PackageReference Include="Eventuous.Extensions.DependencyInjection" />
 		<PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" />
@@ -53,6 +52,7 @@
 		<ItemGroup>
 	  <ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
 	  <ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
+		<ProjectReference Include="..\KurrentDB.Surge\KurrentDB.Surge.csproj" />
 	</ItemGroup>
 
 </Project>

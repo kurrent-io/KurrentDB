@@ -116,7 +116,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(SystemStreams.DefaultSecondaryIndex, resolvedEvent));
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(EventTypeIndex.Name(schemaName), resolvedEvent));
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(CategoryIndex.Name(category), resolvedEvent));
-		Tracker.RecordIndexed(resolvedEvent);
+		Tracker.RecordIndexed(resolvedEvent.OriginalPosition!.Value.CommitPosition, resolvedEvent.OriginalEvent.TimeStamp);
 
 		return true;
 

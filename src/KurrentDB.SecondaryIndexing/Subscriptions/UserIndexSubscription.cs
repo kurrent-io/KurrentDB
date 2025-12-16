@@ -3,13 +3,20 @@
 
 using System.Runtime.CompilerServices;
 using DotNext.Runtime.CompilerServices;
+using Kurrent.Surge;
+using Kurrent.Surge.Consumers;
+using Kurrent.Surge.Readers;
+using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Services.UserManagement;
+using KurrentDB.SecondaryIndexing.Indexes;
+using KurrentDB.SecondaryIndexing.Indexes.Surge;
 using KurrentDB.SecondaryIndexing.Indexes.User;
+using KurrentDB.Surge.Readers;
 using Serilog;
 
 namespace KurrentDB.SecondaryIndexing.Subscriptions;
@@ -25,15 +32,17 @@ internal abstract class UserIndexSubscription {
 }
 
 internal sealed class UserIndexSubscription<TField>(
-	IPublisher publisher,
+	ISystemClient client,
 	UserIndexProcessor<TField> indexProcessor,
 	SecondaryIndexingPluginOptions options,
-	Func<EventRecord, bool> eventFilter,
+	ConsumeFilter recordFilter,
 	CancellationToken token) : UserIndexSubscription, IAsyncDisposable where TField : IField {
 
+	private readonly SystemReader _reader = new SystemReaderBuilder()
+		.Client(client)
+		.Create();
 	private readonly int _commitBatchSize = options.CommitBatchSize;
 	private CancellationTokenSource? _cts = CancellationTokenSource.CreateLinkedTokenSource(token);
-	private Enumerator.AllSubscription? _subscription;
 	private Task? _processingTask;
 
 	private void Subscribe() {
@@ -45,76 +54,43 @@ internal sealed class UserIndexSubscription<TField>(
 		var startFrom = position == TFPos.Invalid ? Position.Start : Position.FromInt64(position.CommitPosition, position.PreparePosition);
 		Log.Information("User index subscription: {index} is starting from {position}", indexProcessor.IndexName, startFrom);
 
-		_subscription = new(
-			bus: publisher,
-			expiryStrategy: DefaultExpiryStrategy.Instance,
-			checkpoint: startFrom,
-			resolveLinks: false,
-			user: SystemAccounts.System,
-			requiresLeader: false,
-			catchUpBufferSize: options.CommitBatchSize * 2,
-			cancellationToken: cts.Token
-		);
-
-		_processingTask = ProcessEvents(cts.Token);
+		_processingTask = ProcessEvents(startFrom, cts.Token);
 	}
 
 	[AsyncMethodBuilder(typeof(SpawningAsyncTaskMethodBuilder))]
-	async Task ProcessEvents(CancellationToken token) {
-		if (_subscription == null)
-			throw new InvalidOperationException("Subscription not initialized");
-
+	async Task ProcessEvents(Position startFrom, CancellationToken token) {
 		var indexedCount = 0; // number of events added to the index (must pass the filter and successfully select the field)
 		var processedCount = 0; // number of events passed to the processor regardless of whether they were added to the index
 
+		LogPosition position = LogPosition.From(startFrom.CommitPosition, startFrom.PreparePosition);
 		while (!token.IsCancellationRequested) {
-			try {
-				if (!await _subscription.MoveNextAsync())
-					break;
-			} catch (ReadResponseException.NotHandled.ServerNotReady) {
-				Log.Information("User index: {index} is stopping because server is not ready", indexProcessor.IndexName);
-				break;
-			}
+			await foreach (var record in _reader.Read(position, ReadDirection.Forwards, recordFilter, int.MaxValue, token)) {
+				try {
+					processedCount++;
+					if (indexProcessor.TryIndex(record))
+						indexedCount++;
 
-			if (_subscription.Current is ReadResponse.SubscriptionCaughtUp caughtUp) {
-				Log.Verbose("User index: {index} caught up at {time}", indexProcessor.IndexName, caughtUp.Timestamp);
-				continue;
-			}
+					if (processedCount >= _commitBatchSize) {
+						if (indexedCount > 0) {
+							Log.Verbose("User index: {index} is committing {count} events", indexProcessor.IndexName, indexedCount);
+							indexProcessor.Commit();
+						}
 
-			if (_subscription.Current is not ReadResponse.EventReceived eventReceived)
-				continue;
+						var lastProcessedPosition = record.LogPosition.ToTFPos();
+						var lastProcessedTimestamp = record.Timestamp;
+						indexProcessor.Checkpoint(lastProcessedPosition, lastProcessedTimestamp);
 
-			try {
-				var resolvedEvent = eventReceived.Event;
-
-				if (!eventFilter(resolvedEvent.Event)) {
-					continue;
-				}
-
-				processedCount++;
-				if (indexProcessor.TryIndex(resolvedEvent))
-					indexedCount++;
-
-				if (processedCount >= _commitBatchSize) {
-					if (indexedCount > 0) {
-						Log.Verbose("User index: {index} is committing {count} events", indexProcessor.IndexName, indexedCount);
-						indexProcessor.Commit();
+						indexedCount = 0;
+						processedCount = 0;
 					}
-
-					var lastProcessedPosition = resolvedEvent.OriginalPosition!.Value;
-					var lastProcessedTimestamp = resolvedEvent.OriginalEvent.TimeStamp;
-					indexProcessor.Checkpoint(lastProcessedPosition, lastProcessedTimestamp);
-
-					indexedCount = 0;
-					processedCount = 0;
+				} catch (OperationCanceledException) {
+					Log.Verbose("User index: {index} is stopping as cancellation was requested", indexProcessor.IndexName);
+					break;
+				} catch (Exception ex) {
+					Log.Error(ex, "User index: {index} failed to process event: {eventNumber}@{streamId} ({position})",
+						indexProcessor.IndexName, record.Position.StreamRevision.Value, record.Position.StreamId.Value, record.LogPosition);
+					throw;
 				}
-			} catch (OperationCanceledException) {
-				Log.Verbose("User index: {index} is stopping as cancellation was requested", indexProcessor.IndexName);
-				break;
-			} catch (Exception ex) {
-				Log.Error(ex, "User index: {index} failed to process event: {eventNumber}@{streamId} ({position})",
-					indexProcessor.IndexName, eventReceived.Event.OriginalEventNumber, eventReceived.Event.OriginalStreamId, eventReceived.Event.OriginalPosition);
-				throw;
 			}
 		}
 	}
@@ -141,9 +117,7 @@ internal sealed class UserIndexSubscription<TField>(
 			}
 		}
 
-		if (_subscription != null) {
-			await _subscription.DisposeAsync();
-		}
+		await _reader.DisposeAsync();
 	}
 
 	public override ValueTask Start() {

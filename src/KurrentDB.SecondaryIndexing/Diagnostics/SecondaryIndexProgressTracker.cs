@@ -71,9 +71,9 @@ public class SecondaryIndexProgressTracker {
 		_lastIndexedTimestamp = timestamp.LocalDateTime;
 	}
 
-	public void RecordIndexed(ResolvedEvent resolvedEvent) {
-		_lastIndexedPosition = resolvedEvent.OriginalPosition!.Value.CommitPosition;
-		_lastIndexedTimestamp = resolvedEvent.OriginalEvent.TimeStamp;
+	public void RecordIndexed(long position,  DateTime timestamp) {
+		_lastIndexedPosition = position;
+		_lastIndexedTimestamp = timestamp;
 	}
 
 	public CommitDuration StartCommitDuration() => new(_histogram, _clock, _tag[0], _indexName, Log);

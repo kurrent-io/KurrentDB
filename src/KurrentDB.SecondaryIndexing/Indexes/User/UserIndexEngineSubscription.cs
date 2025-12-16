@@ -7,6 +7,8 @@ using System.Text.Json;
 using System.Threading.Channels;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
+using Kurrent.Surge;
+using Kurrent.Surge.Consumers;
 using Kurrent.Surge.Schema;
 using Kurrent.Surge.Schema.Serializers;
 using KurrentDB.Core;
@@ -45,9 +47,7 @@ public class UserIndexEngineSubscription : ISecondaryIndexReader {
 	private static readonly ILogger Log = Serilog.Log.ForContext<UserIndexEngineSubscription>();
 
 	// ignore system events
-	static readonly Func<EventRecord, bool> IgnoreSystemEvents = evt =>
-		!evt.EventType.StartsWith('$') &&
-		!evt.EventStreamId.StartsWith('$');
+	private static readonly ConsumeFilter IgnoreSystemEvents = ConsumeFilter.ExcludeSystemEvents();
 
 	public UserIndexEngineSubscription(
 		ISystemClient client,
@@ -115,7 +115,7 @@ public class UserIndexEngineSubscription : ISecondaryIndexReader {
 				Filter = "",
 				Fields = { },
 			},
-			eventFilter: evt => evt.EventStreamId.StartsWith($"{UserIndexConstants.Category}-"));
+			recordFilter: ConsumeFilter.FromPrefixes(ConsumeFilterScope.Stream, $"{UserIndexConstants.Category}-"));
 
 		await _client.Subscriptions.SubscribeToIndex(
 			position: Position.Start,
@@ -240,7 +240,7 @@ public class UserIndexEngineSubscription : ISecondaryIndexReader {
 	private async ValueTask StartUserIndex<TField>(
 		string indexName,
 		IndexCreated createdEvent,
-		Func<EventRecord, bool>? eventFilter = null) where TField : IField {
+		ConsumeFilter? recordFilter = null) where TField : IField {
 
 		Log.Debug("Starting user index: {index}", indexName);
 
@@ -268,10 +268,10 @@ public class UserIndexEngineSubscription : ISecondaryIndexReader {
 		var reader = new UserIndexReader<TField>(sharedPool: _db, sql, inFlightRecords, _readIndex);
 
 		UserIndexSubscription subscription = new UserIndexSubscription<TField>(
-			publisher: _publisher,
+			client: _client,
 			indexProcessor: processor,
 			options: _options,
-			eventFilter: eventFilter ?? IgnoreSystemEvents,
+			recordFilter: recordFilter ?? IgnoreSystemEvents,
 			token: _cts.Token);
 
 		_userIndexes.TryAdd(indexName, new(new ReaderWriterLockSlim(), subscription, reader));

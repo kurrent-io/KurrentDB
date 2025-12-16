@@ -2,19 +2,24 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics.Metrics;
+using System.Text.Json;
 using DotNext;
 using DotNext.Threading;
 using DuckDB.NET.Data;
 using DuckDB.NET.Data.DataChunk.Writer;
 using Jint;
+using Jint.Native;
 using Jint.Native.Function;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
+using Kurrent.Surge;
+using Kurrent.Surge.Schema.Serializers.Json;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.SecondaryIndexing.Diagnostics;
+using KurrentDB.SecondaryIndexing.Indexes.Surge;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
@@ -23,7 +28,7 @@ namespace KurrentDB.SecondaryIndexing.Indexes.User;
 internal abstract class UserIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	protected static readonly ILogger Log = Serilog.Log.ForContext<UserIndexProcessor>();
 	public abstract void Commit();
-	public abstract bool TryIndex(ResolvedEvent evt);
+	public abstract bool TryIndex(SurgeRecord record);
 	public abstract TFPos GetLastPosition();
 	public abstract SecondaryIndexProgressTracker Tracker { get; }
 }
@@ -32,7 +37,6 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 	private readonly Engine _engine = new();
 	private readonly Function? _filter;
 	private readonly Function? _fieldSelector;
-	private readonly ResolvedEventJsObject _resolvedEventJsObject;
 	private readonly UserIndexInFlightRecords<TField> _inFlightRecords;
 	private readonly string _inFlightTableName;
 	private readonly string _queryStreamName;
@@ -40,6 +44,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 	private readonly DuckDBAdvancedConnection _connection;
 	private readonly UserIndexSql<TField> _sql;
 	private readonly object _skip;
+	private readonly JsonSerializerOptions _serializerOptions = SystemJsonSchemaSerializerOptions.Default;
 
 	private TFPos _lastPosition;
 	private Appender _appender;
@@ -81,8 +86,6 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 		if (jsFieldSelector is not "")
 			_fieldSelector = _engine.Evaluate(jsFieldSelector).AsFunctionInstance();
 
-		_resolvedEventJsObject = new(_engine);
-
 		_connection = db.Open();
 		_sql.CreateUserIndex(_connection);
 		RegisterTableFunction();
@@ -99,33 +102,34 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 		Tracker = tracker;
 	}
 
-	public override bool TryIndex(ResolvedEvent resolvedEvent) {
+	public override bool TryIndex(SurgeRecord record) {
 		if (IsDisposingOrDisposed)
 			return false;
 
-		var canHandle = CanHandleEvent(resolvedEvent, out var field);
-		_lastPosition = resolvedEvent.OriginalPosition!.Value;
+		var canHandle = CanHandleRecord(record, out var field);
+		var position = record.LogPosition.ToTFPos();
+		_lastPosition = position;
 
 		if (!canHandle) {
-			Tracker.RecordIndexed(resolvedEvent);
+			Tracker.RecordIndexed(position.CommitPosition, record.Timestamp);
 			return false;
 		}
 
-		var preparePosition = resolvedEvent.Event.LogPosition;
-		var commitPosition = resolvedEvent.EventPosition?.CommitPosition;
-		var eventNumber = resolvedEvent.Event.EventNumber;
-		var streamId = resolvedEvent.Event.EventStreamId;
-		var created = new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds();
+		var preparePosition = position.PreparePosition;
+		var commitPosition = position.CommitPosition;
+		var eventNumber = record.Position.StreamRevision.Value;
+		var streamId = record.StreamId.Value;
+		var created = new DateTimeOffset(record.Timestamp).ToUnixTimeMilliseconds();
 		var fieldStr = field?.ToString();
 
 		Log.Verbose("User index: {index} is appending event: {eventNumber}@{stream} ({position}). Field = {field}.",
-			IndexName, eventNumber, streamId, resolvedEvent.OriginalPosition, field);
+			IndexName, eventNumber, streamId, position, field);
 
 		using (var row = _appender.CreateRow()) {
 			row.Append(preparePosition);
 
-			if (commitPosition.HasValue && preparePosition != commitPosition)
-				row.Append(commitPosition.Value);
+			if (preparePosition != commitPosition)
+				row.Append(commitPosition);
 			else
 				row.Append(DBNull.Value);
 
@@ -134,38 +138,32 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 			field?.AppendTo(row);
 		}
 
-		_inFlightRecords.Append(preparePosition, commitPosition ?? preparePosition, eventNumber, field, created);
+		_inFlightRecords.Append(preparePosition, commitPosition, eventNumber, field, created);
 
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(_queryStreamName, resolvedEvent));
 		if (field is not null)
 			_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(UserIndexHelpers.GetQueryStreamName(IndexName, fieldStr), resolvedEvent));
 
-		Tracker.RecordIndexed(resolvedEvent);
+		Tracker.RecordIndexed(position.CommitPosition, record.Timestamp);
 
 		return true;
 	}
 
-	private bool CanHandleEvent(ResolvedEvent resolvedEvent, out TField? field) {
+	private bool CanHandleRecord(SurgeRecord record, out TField? field) {
 		field = default;
 
 		try {
-			_resolvedEventJsObject.Reset();
-			_resolvedEventJsObject.StreamId = resolvedEvent.OriginalEvent.EventStreamId;
-			_resolvedEventJsObject.EventId = $"{resolvedEvent.OriginalEvent.EventId}";
-			_resolvedEventJsObject.EventNumber = resolvedEvent.OriginalEvent.EventNumber;
-			_resolvedEventJsObject.EventType = resolvedEvent.OriginalEvent.EventType;
-			_resolvedEventJsObject.IsJson = resolvedEvent.OriginalEvent.IsJson;
-			_resolvedEventJsObject.Data = resolvedEvent.OriginalEvent.Data;
-			_resolvedEventJsObject.Metadata = resolvedEvent.OriginalEvent.Metadata;
+			var jsRecord = record.MapToJsRecord(_serializerOptions);
+			var jsObject = JsValue.FromObject(_engine, jsRecord);
 
 			if (_filter is not null) {
-				var passesFilter = _filter.Call(_resolvedEventJsObject).AsBoolean();
+				var passesFilter = _filter.Call(jsObject).AsBoolean();
 				if (!passesFilter)
 					return false;
 			}
 
 			if (_fieldSelector is not null) {
-				var fieldJsValue = _fieldSelector.Call(_resolvedEventJsObject);
+				var fieldJsValue = _fieldSelector.Call(jsObject);
 				if (_skip.Equals(fieldJsValue))
 					return false;
 				field = (TField) TField.ParseFrom(fieldJsValue);
@@ -174,7 +172,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 			return true;
 		} catch(Exception ex) {
 			Log.Error(ex, "User index: {index} failed to process event: {eventNumber}@{streamId} ({position})",
-				IndexName, resolvedEvent.OriginalEventNumber, resolvedEvent.OriginalStreamId, resolvedEvent.OriginalPosition);
+				IndexName, record.Position.StreamRevision.Value, record.StreamId, record.LogPosition);
 			return false;
 		}
 	}
