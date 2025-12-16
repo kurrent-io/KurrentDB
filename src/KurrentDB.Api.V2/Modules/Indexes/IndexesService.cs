@@ -123,6 +123,8 @@ public class IndexesService(
 		ListIndexesRequest request,
 		ServerCallContext context) {
 
+		await authz.AuthorizeOperation(new Operation(Operations.UserIndexes.List), context);
+
 		var response = await readSideService.List(context.CancellationToken);
 		return response;
 	}
@@ -130,6 +132,8 @@ public class IndexesService(
 	public override async Task<GetIndexResponse> GetIndex(
 		GetIndexRequest request,
 		ServerCallContext context) {
+
+		await authz.AuthorizeOperation(new Operation(Operations.UserIndexes.Read), context);
 
 		try {
 			var response = await readSideService.Get(request.Name, context.CancellationToken);

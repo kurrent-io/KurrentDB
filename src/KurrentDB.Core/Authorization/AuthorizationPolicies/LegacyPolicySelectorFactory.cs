@@ -160,6 +160,8 @@ public class LegacyPolicySelectorFactory : IPolicySelectorFactory {
 		policy.AddMatchAnyAssertion(Operations.UserIndexes.Start, Grant.Allow, OperationsOrAdmins);
 		policy.AddMatchAnyAssertion(Operations.UserIndexes.Stop, Grant.Allow, OperationsOrAdmins);
 		policy.AddMatchAnyAssertion(Operations.UserIndexes.Delete, Grant.Allow, OperationsOrAdmins);
+		policy.RequireAuthenticated(Operations.UserIndexes.List);
+		policy.RequireAuthenticated(Operations.UserIndexes.Read);
 
 		return new StaticPolicySelector(policy.AsReadOnly());
 	}
