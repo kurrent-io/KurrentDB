@@ -20,7 +20,9 @@ public class KurrentDBDefaultValuesConfigurationSource(IEnumerable<KeyValuePair<
 
 public class KurrentDefaultValuesConfigurationProvider(IEnumerable<KeyValuePair<string, string?>> initialData)
 	: MemoryConfigurationProvider(new() {
-		InitialData = initialData.ToDictionary(
+		InitialData = initialData
+			.Where(kvp => !string.IsNullOrEmpty(kvp.Value))
+			.ToDictionary(
 			kvp => $"{KurrentConfigurationKeys.Prefix}:{kvp.Key}",
 			kvp => kvp.Value,
 			OrdinalIgnoreCase)
