@@ -28,10 +28,10 @@ public static partial class QueryService {
 			string cte;
 			switch (tokens[0]) {
 				case "stream":
-					cte = string.Format(AllCteTemplate, cteName, $"stream = '{tokens[1]}'");
+					cte = string.Format(AllCteTemplate, cteName, $"where stream = '{tokens[1]}'");
 					break;
 				case "category":
-					cte = string.Format(AllCteTemplate, cteName, $"category = '{tokens[1]}'");
+					cte = string.Format(AllCteTemplate, cteName, $"where category = '{tokens[1]}'");
 					break;
 				case "index":
 					var indexName = tokens[1];
