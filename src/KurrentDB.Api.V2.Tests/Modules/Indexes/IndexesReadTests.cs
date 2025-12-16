@@ -11,7 +11,7 @@ public class IndexesReadTests {
 	[ClassDataSource<KurrentContext>(Shared = SharedType.PerTestSession)]
 	public required KurrentContext KurrentContext { get; init; }
 
-	IndexesService.IndexesServiceClient Client => KurrentContext.IndexesClient;
+	IndexesService.IndexesServiceClient IndexesClient => KurrentContext.IndexesClient;
 	StreamsService.StreamsServiceClient StreamsWriteClient => KurrentContext.StreamsV2Client;
 	EventStore.Client.Streams.Streams.StreamsClient StreamsReadClient => KurrentContext.StreamsClient;
 
@@ -31,7 +31,7 @@ public class IndexesReadTests {
 		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "B", "country": "United Kingdom" }""", ct);
 		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "C", "country": "Mauritius" }""", ct);
 
-		await Client.CreateIndexAsync(
+		await IndexesClient.CreateAsync(
 			new() {
 				Name = IndexName,
 				Filter = $"rec => rec.type == '{EventType}'",

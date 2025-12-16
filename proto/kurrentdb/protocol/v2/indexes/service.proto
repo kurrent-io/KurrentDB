@@ -12,26 +12,26 @@ service IndexesService {
   //
   // Write-side Services
   //
-  rpc CreateIndex(CreateIndexRequest) returns (CreateIndexResponse) {
+  rpc Create(CreateIndexRequest) returns (CreateIndexResponse) {
     option (google.api.http) = {
       post: "/v2/indexes/{name}",
       body: "*"
     };
   };
 
-  rpc StartIndex(StartIndexRequest) returns (StartIndexResponse) {
+  rpc Start(StartIndexRequest) returns (StartIndexResponse) {
     option (google.api.http) = {
       post: "/v2/indexes/{name}/start",
     };
   }
 
-  rpc StopIndex(StopIndexRequest) returns (StopIndexResponse) {
+  rpc Stop(StopIndexRequest) returns (StopIndexResponse) {
     option (google.api.http) = {
       post: "/v2/indexes/{name}/stop",
     };
   }
 
-  rpc DeleteIndex(DeleteIndexRequest) returns (DeleteIndexResponse) {
+  rpc Delete(DeleteIndexRequest) returns (DeleteIndexResponse) {
     option (google.api.http) = {
       delete: "/v2/indexes/{name}"
     };
@@ -40,13 +40,13 @@ service IndexesService {
   //
   // Read-side Services
   //
-  rpc ListIndexes(ListIndexesRequest) returns (ListIndexesResponse) {
+  rpc List(ListIndexesRequest) returns (ListIndexesResponse) {
     option (google.api.http) = {
       get: "/v2/indexes",
     };
   }
 
-  rpc GetIndex(GetIndexRequest) returns (GetIndexResponse) {
+  rpc Get(GetIndexRequest) returns (GetIndexResponse) {
     option (google.api.http) = {
       get: "/v2/indexes/{name}",
     };

@@ -10,14 +10,14 @@ public class IndexesServiceTests {
 	[ClassDataSource<KurrentContext>(Shared = SharedType.PerTestSession)]
 	public required KurrentContext KurrentContext { get; init; }
 
-	IndexesService.IndexesServiceClient Client => KurrentContext.IndexesClient;
+	IndexesService.IndexesServiceClient IndexesClient => KurrentContext.IndexesClient;
 
 	static readonly string IndexName = $"my-user-index_{Guid.NewGuid()}";
 
 	[Test]
 	public async ValueTask can_create_started_by_default(CancellationToken ct) {
 		var indexName = nameof(can_create_started_by_default) + Guid.NewGuid();
-		await Client.CreateIndexAsync(
+		await IndexesClient.CreateAsync(
 			new() {
 				Name = indexName,
 				Filter = "rec => rec.type == 'my-event-type'",
@@ -35,7 +35,7 @@ public class IndexesServiceTests {
 
 	[Test]
 	public async ValueTask can_create(CancellationToken ct) {
-		await Client.CreateIndexAsync(
+		await IndexesClient.CreateAsync(
 			new() {
 				Name = IndexName,
 				Filter = "rec => rec.type == 'my-event-type'",
@@ -59,7 +59,7 @@ public class IndexesServiceTests {
 	[Test]
 	[DependsOn(nameof(can_create))]
 	public async ValueTask can_create_idempotent(CancellationToken ct) {
-		await Client.CreateIndexAsync(
+		await IndexesClient.CreateAsync(
 			new() {
 				Name = IndexName,
 				Filter = "rec => rec.type == 'my-event-type'",
@@ -81,7 +81,7 @@ public class IndexesServiceTests {
 	public async ValueTask cannot_create_different(CancellationToken ct) {
 		var ex = await Assert
 			.That(async () => {
-				await Client.CreateIndexAsync(
+				await IndexesClient.CreateAsync(
 					new() {
 						Name = IndexName,
 						Filter = "rec => rec.type == 'my-OTHER-event-type'",
@@ -104,7 +104,7 @@ public class IndexesServiceTests {
 	[Test]
 	[DependsOn(nameof(cannot_create_different))]
 	public async ValueTask can_start(CancellationToken ct) {
-		await Client.StartIndexAsync(
+		await IndexesClient.StartAsync(
 			new() { Name = IndexName },
 			cancellationToken: ct);
 		await can_get(IndexName, IndexState.Started, ct);
@@ -113,7 +113,7 @@ public class IndexesServiceTests {
 	[Test]
 	[DependsOn(nameof(can_start))]
 	public async ValueTask can_start_idempotent(CancellationToken ct) {
-		await Client.StartIndexAsync(
+		await IndexesClient.StartAsync(
 			new() { Name = IndexName },
 			cancellationToken: ct);
 		await can_get(IndexName, IndexState.Started, ct);
@@ -122,7 +122,7 @@ public class IndexesServiceTests {
 	[Test]
 	[DependsOn(nameof(can_start_idempotent))]
 	public async ValueTask can_stop(CancellationToken ct) {
-		await Client.StopIndexAsync(
+		await IndexesClient.StopAsync(
 			new() { Name = IndexName },
 			cancellationToken: ct);
 		await can_get(IndexName, IndexState.Stopped, ct);
@@ -131,7 +131,7 @@ public class IndexesServiceTests {
 	[Test]
 	[DependsOn(nameof(can_stop))]
 	public async ValueTask can_stop_idempotent(CancellationToken ct) {
-		await Client.StopIndexAsync(
+		await IndexesClient.StopAsync(
 			new() { Name = IndexName },
 			cancellationToken: ct);
 		await can_get(IndexName, IndexState.Stopped, ct);
@@ -140,7 +140,7 @@ public class IndexesServiceTests {
 	[Test]
 	[DependsOn(nameof(can_stop_idempotent))]
 	public async ValueTask can_list(CancellationToken ct) {
-		var response = await Client.ListIndexesAsync(new(), cancellationToken: ct);
+		var response = await IndexesClient.ListAsync(new(), cancellationToken: ct);
 
 		await Assert.That(response!.Indexes.TryGetValue(IndexName, out var indexState)).IsTrue();
 		await Assert.That(indexState!.Filter).IsEqualTo("rec => rec.type == 'my-event-type'");
@@ -153,21 +153,21 @@ public class IndexesServiceTests {
 	[Test]
 	[DependsOn(nameof(can_list))]
 	public async ValueTask can_delete(CancellationToken ct) {
-		await Client.DeleteIndexAsync(
+		await IndexesClient.DeleteAsync(
 			new() { Name = IndexName },
 			cancellationToken: ct);
 
 		await cannot_get("non-existant-index", ct);
 
 		// no longer listed
-		var response = await Client.ListIndexesAsync(new(), cancellationToken: ct);
+		var response = await IndexesClient.ListAsync(new(), cancellationToken: ct);
 		await Assert.That(response!.Indexes).DoesNotContainKey(IndexName);
 	}
 
 	[Test]
 	[DependsOn(nameof(can_delete))]
 	public async ValueTask can_delete_idempotent(CancellationToken ct) {
-		await Client.DeleteIndexAsync(
+		await IndexesClient.DeleteAsync(
 			new() { Name = IndexName },
 			cancellationToken: ct);
 		await cannot_get("non-existant-index", ct);
@@ -180,7 +180,7 @@ public class IndexesServiceTests {
 	public async ValueTask cannot_create_with_invalid_name(string name, CancellationToken ct) {
 		var ex = await Assert
 			.That(async () => {
-				await Client.CreateIndexAsync(
+				await IndexesClient.CreateAsync(
 					new() {
 						Name = name,
 						Filter = "rec => rec.type == 'my-event-type'",
@@ -207,7 +207,7 @@ public class IndexesServiceTests {
 	public async ValueTask cannot_create_with_invalid_filter(string filter, CancellationToken ct) {
 		var ex = await Assert
 			.That(async () => {
-				await Client.CreateIndexAsync(
+				await IndexesClient.CreateAsync(
 					new() {
 						Name = $"{nameof(cannot_create_with_invalid_filter)}-{Guid.NewGuid()}",
 						Filter = filter,
@@ -234,7 +234,7 @@ public class IndexesServiceTests {
 	public async ValueTask cannot_create_with_invalid_key_selector(string keySelector, CancellationToken ct) {
 		var ex = await Assert
 			.That(async () => {
-				await Client.CreateIndexAsync(
+				await IndexesClient.CreateAsync(
 					new() {
 						Name = $"{nameof(cannot_create_with_invalid_filter)}-{Guid.NewGuid()}",
 						Filter = "rec => rec.type == 'my-event-type'",
@@ -258,7 +258,7 @@ public class IndexesServiceTests {
 	public async ValueTask cannot_create_with_invalid_key_type(CancellationToken ct) {
 		var ex = await Assert
 			.That(async () => {
-				await Client.CreateIndexAsync(
+				await IndexesClient.CreateAsync(
 					new() {
 						Name = $"{nameof(cannot_create_with_invalid_filter)}-{Guid.NewGuid()}",
 						Filter = "rec => rec.type == 'my-event-type'",
@@ -282,7 +282,7 @@ public class IndexesServiceTests {
 	public async ValueTask cannot_start_non_existant(CancellationToken ct) {
 		var ex = await Assert
 			.That(async () => {
-				await Client.StartIndexAsync(
+				await IndexesClient.StartAsync(
 					new() { Name = "non-existant-index" },
 					cancellationToken: ct);
 			})
@@ -296,7 +296,7 @@ public class IndexesServiceTests {
 	public async ValueTask cannot_stop_non_existant(CancellationToken ct) {
 		var ex = await Assert
 			.That(async () => {
-				await Client.StopIndexAsync(
+				await IndexesClient.StopAsync(
 					new() { Name = "non-existant-index" },
 					cancellationToken: ct);
 			})
@@ -310,7 +310,7 @@ public class IndexesServiceTests {
 	public async ValueTask cannot_delete_non_existant(CancellationToken ct) {
 		var ex = await Assert
 			.That(async () => {
-				await Client.DeleteIndexAsync(
+				await IndexesClient.DeleteAsync(
 					new() { Name = "non-existant-index" },
 					cancellationToken: ct);
 			})
@@ -326,7 +326,7 @@ public class IndexesServiceTests {
 	}
 
 	async ValueTask can_get(string indexName, IndexState expectedState, CancellationToken ct) {
-		var response = await Client.GetIndexAsync(
+		var response = await IndexesClient.GetAsync(
 			new() { Name = indexName },
 			cancellationToken: ct);
 		await Assert.That(response.Index.Filter).IsEqualTo("rec => rec.type == 'my-event-type'");
@@ -339,7 +339,7 @@ public class IndexesServiceTests {
 	async ValueTask cannot_get(string name, CancellationToken ct) {
 		var ex = await Assert
 			.That(async () => {
-				await Client.GetIndexAsync(
+				await IndexesClient.GetAsync(
 					new() { Name = name },
 					cancellationToken: ct);
 			})

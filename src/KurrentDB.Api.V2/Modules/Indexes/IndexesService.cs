@@ -75,7 +75,7 @@ public class IndexesService(
 		_ => null,
 	};
 
-	public override Task<CreateIndexResponse> CreateIndex(
+	public override Task<CreateIndexResponse> Create(
 		CreateIndexRequest request,
 		ServerCallContext context) =>
 
@@ -86,7 +86,7 @@ public class IndexesService(
 			response => new CreateIndexResponse(),
 			context);
 
-	public override Task<StartIndexResponse> StartIndex(
+	public override Task<StartIndexResponse> Start(
 		StartIndexRequest request,
 		ServerCallContext context) =>
 
@@ -97,7 +97,7 @@ public class IndexesService(
 			_ => new StartIndexResponse(),
 			context);
 
-	public override Task<StopIndexResponse> StopIndex(
+	public override Task<StopIndexResponse> Stop(
 		StopIndexRequest request,
 		ServerCallContext context) =>
 
@@ -108,7 +108,7 @@ public class IndexesService(
 			_ => new StopIndexResponse(),
 			context);
 
-	public override Task<DeleteIndexResponse> DeleteIndex(
+	public override Task<DeleteIndexResponse> Delete(
 		DeleteIndexRequest request,
 		ServerCallContext context) =>
 
@@ -119,7 +119,7 @@ public class IndexesService(
 			_ => new DeleteIndexResponse(),
 			context);
 
-	public override async Task<ListIndexesResponse> ListIndexes(
+	public override async Task<ListIndexesResponse> List(
 		ListIndexesRequest request,
 		ServerCallContext context) {
 
@@ -129,7 +129,7 @@ public class IndexesService(
 		return response;
 	}
 
-	public override async Task<GetIndexResponse> GetIndex(
+	public override async Task<GetIndexResponse> Get(
 		GetIndexRequest request,
 		ServerCallContext context) {
 

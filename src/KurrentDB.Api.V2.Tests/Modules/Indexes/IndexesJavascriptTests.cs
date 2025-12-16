@@ -11,7 +11,7 @@ public class IndexesJavascriptTests {
 	[ClassDataSource<KurrentContext>(Shared = SharedType.PerTestSession)]
 	public required KurrentContext KurrentContext { get; init; }
 
-	IndexesService.IndexesServiceClient Client => KurrentContext.IndexesClient;
+	IndexesService.IndexesServiceClient IndexesClient => KurrentContext.IndexesClient;
 	StreamsService.StreamsServiceClient StreamsWriteClient => KurrentContext.StreamsV2Client;
 	EventStore.Client.Streams.Streams.StreamsClient StreamsReadClient => KurrentContext.StreamsClient;
 
@@ -24,7 +24,7 @@ public class IndexesJavascriptTests {
 
 	[Test]
 	public async ValueTask can_filter_by_skipping(CancellationToken ct) {
-		await Client.CreateIndexAsync(
+		await IndexesClient.CreateAsync(
 			new() {
 				Name = IndexName,
 				Filter = $"rec => rec.type == '{EventType}'",
@@ -83,7 +83,7 @@ public class IndexesJavascriptTests {
 	[Arguments(IndexFieldType.Double, """ 1234.56 """, """ 6543.21 """, "6543.21")]
 	[Arguments(IndexFieldType.Double,        """ 1234.56 """, """ 6543.21 """, "6543.210")]
 	public async ValueTask can_use_all_field_types(IndexFieldType fieldType, string field1, string field2, string fieldFilter, CancellationToken ct) {
-		await Client.CreateIndexAsync(
+		await IndexesClient.CreateAsync(
 			new() {
 				Name = IndexName,
 				Filter = $"rec => rec.type == '{EventType}'",
@@ -117,7 +117,7 @@ public class IndexesJavascriptTests {
 
 	[Test]
 	public async ValueTask can_use_no_field(CancellationToken ct) {
-		await Client.CreateIndexAsync(
+		await IndexesClient.CreateAsync(
 			new() {
 				Name = IndexName,
 				Filter = $"rec => rec.type == '{EventType}'",
@@ -142,7 +142,7 @@ public class IndexesJavascriptTests {
 	[Arguments("id", "rec => rec.id.length", IndexFieldType.Int32, "36")]
 	[Arguments("json", "rec => rec.isJson ? 1 : 0", IndexFieldType.Int32, "1")]
 	public async ValueTask can_select_record_properties(string fieldName, string fieldSelector, IndexFieldType fieldType, string fieldFilter, CancellationToken ct) {
-		await Client.CreateIndexAsync(
+		await IndexesClient.CreateAsync(
 			new() {
 				Name = IndexName,
 				Filter = $"rec => rec.type == '{EventType}'",

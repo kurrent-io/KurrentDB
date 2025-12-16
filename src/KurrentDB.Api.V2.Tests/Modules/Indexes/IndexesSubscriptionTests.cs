@@ -25,7 +25,7 @@ public class IndexesSubscriptionTests {
 	[ClassDataSource<KurrentContext>(Shared = SharedType.PerTestSession)]
 	public required KurrentContext KurrentContext { get; init; }
 
-	IndexesService.IndexesServiceClient Client => KurrentContext.IndexesClient;
+	IndexesService.IndexesServiceClient IndexesClient => KurrentContext.IndexesClient;
 	StreamsService.StreamsServiceClient StreamsWriteClient => KurrentContext.StreamsV2Client;
 	EventStore.Client.Streams.Streams.StreamsClient StreamsReadClient => KurrentContext.StreamsClient;
 
@@ -43,7 +43,7 @@ public class IndexesSubscriptionTests {
 		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "C", "country": "Mauritius" }""", ct);
 
 		// create index
-		await Client.CreateIndexAsync(
+		await IndexesClient.CreateAsync(
 			new() {
 				Name = IndexName,
 				Filter = $"rec => rec.type == '{EventType}'",
@@ -85,7 +85,7 @@ public class IndexesSubscriptionTests {
 		await Assert.That((await mauritiusEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "D", """);
 
 		// stop
-		await Client.StopIndexAsync(new() { Name = IndexName }, cancellationToken: ct);
+		await IndexesClient.StopAsync(new() { Name = IndexName }, cancellationToken: ct);
 
 		await Task.Delay(500); // todo better way to wait for it to stop
 
@@ -100,7 +100,7 @@ public class IndexesSubscriptionTests {
 		await Assert.That(nextMauritiusResult.IsCompleted).IsFalse();
 
 		// start and receive the extra events
-		await Client.StartIndexAsync(new() { Name = IndexName }, cancellationToken: ct);
+		await IndexesClient.StartAsync(new() { Name = IndexName }, cancellationToken: ct);
 
 		await Assert.That((await nextAllResult).Data.ToStringUtf8()).Contains(""" "orderId": "F", """);
 		await Assert.That((await allFieldsEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "G", """);
@@ -108,7 +108,7 @@ public class IndexesSubscriptionTests {
 		await Assert.That((await nextMauritiusResult).Data.ToStringUtf8()).Contains(""" "orderId": "F", """);
 
 		// delete
-		await Client.DeleteIndexAsync(new() { Name = IndexName }, cancellationToken: ct);
+		await IndexesClient.DeleteAsync(new() { Name = IndexName }, cancellationToken: ct);
 
 		var ex = await Assert
 			.That(async () => await allFieldsEnumerator.ConsumeNext())
