@@ -10,7 +10,7 @@ message ListIndexesRequest {
 }
 
 message ListIndexesResponse {
-  map<string, Index> indexes = 1;
+  repeated Index indexes = 1;
 }
 
 message GetIndexRequest {
@@ -22,7 +22,8 @@ message GetIndexResponse {
 }
 
 message Index {
-  string filter = 1;
-  repeated IndexField fields = 2;
-  IndexState state = 3;
+  string name = 1;
+  string filter = 2;
+  repeated IndexField fields = 3;
+  IndexState state = 4;
 }

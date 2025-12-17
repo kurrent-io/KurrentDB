@@ -142,7 +142,7 @@ public class IndexesServiceTests {
 	public async ValueTask can_list(CancellationToken ct) {
 		var response = await IndexesClient.ListAsync(new(), cancellationToken: ct);
 
-		await Assert.That(response!.Indexes.TryGetValue(IndexName, out var indexState)).IsTrue();
+		var indexState = response!.Indexes.First(x => x.Name == IndexName);
 		await Assert.That(indexState!.Filter).IsEqualTo("rec => rec.type == 'my-event-type'");
 		await Assert.That(indexState!.Fields.Count).IsEqualTo(1);
 		await Assert.That(indexState!.Fields[0].Selector).IsEqualTo("rec => rec.number");
@@ -161,7 +161,7 @@ public class IndexesServiceTests {
 
 		// no longer listed
 		var response = await IndexesClient.ListAsync(new(), cancellationToken: ct);
-		await Assert.That(response!.Indexes).DoesNotContainKey(IndexName);
+		await Assert.That(response!.Indexes).DoesNotContain(x => x.Name == IndexName);
 	}
 
 	[Test]
@@ -329,6 +329,7 @@ public class IndexesServiceTests {
 		var response = await IndexesClient.GetAsync(
 			new() { Name = indexName },
 			cancellationToken: ct);
+		await Assert.That(response.Index.Name).IsEqualTo(indexName);
 		await Assert.That(response.Index.Filter).IsEqualTo("rec => rec.type == 'my-event-type'");
 		await Assert.That(response.Index.Fields.Count).IsEqualTo(1);
 		await Assert.That(response.Index.Fields[0].Selector).IsEqualTo("rec => rec.number");
