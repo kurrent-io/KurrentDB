@@ -6,7 +6,7 @@ order: 3
 <CloudBanner />
 
 ::: warning
-v26.0 is still in preview. The latest preview is v26.0.0-rc.1 contained in the `kurrent-preview` repositories described below.
+`v26.0` is still in preview. The latest preview is `v26.0.0-rc.1` contained in the `kurrent-preview` repositories described below.
 :::
 
 ## Quick start
