@@ -164,7 +164,7 @@ A particular field value can be selected by using the stream prefix filter `$idx
 
 ## Querying
 
-User defined indexes can be queried in the Query UI (https://localhost:2113/ui/query)
+User defined indexes can be queried in the Query UI (e.g. `https://localhost:2113/ui/query`)
 
 e.g.
 ```sql
