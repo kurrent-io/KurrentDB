@@ -4,6 +4,27 @@ order: 2
 
 # What's New
 
+## New in 26.0.0-rc.1
+
+Features
+* [User defined indexes](#user-defined-indexes)
+* [Archiving support for GCP and Azure](#archiving-support-for-gcp-and-azure)
+* [Improved request processing](#improved-request-processing)
+
+### User defined indexes
+
+[Documentation](../features/indexes/user-defined.md)
+
+### Archiving support for GCP and Azure
+
+[Azure Documentation](../features/archiving.md#microsoft-azure-configuration)
+
+[GCP Documentation](../features/archiving.md#google-cloud-platform-configuration)
+
+### Improved request processing
+
+Placeholder: no more worker thread count. concurrent reads are also unlimited by default although a limit can still be set. prevents fast reads from being blocked by slow reads
+
 ## New in 25.1
 
 These are the new features and important changes and in KurrentDB 25.1:

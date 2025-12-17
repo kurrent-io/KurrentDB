@@ -35,6 +35,12 @@ Upgrading the cluster this way keeps the cluster online and able to service requ
 If you modified the Linux service file to increase the open files limit, those changes will be overridden during the upgrade. You will need to reapply them after the upgrade.
 :::
 
+## To 26.0.0
+
+### Breaking Changes
+
+### Deprecation Notices
+
 ## To 25.1
 
 General changes, features and fixes are described in the [what's new](./whatsnew.md) and [release notes](../release-schedule/release-notes.md).
