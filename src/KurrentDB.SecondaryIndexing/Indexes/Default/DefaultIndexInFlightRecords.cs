@@ -25,7 +25,14 @@ internal class DefaultIndexInFlightRecords(SecondaryIndexingPluginOptions option
 
 	public void Append(long logPosition, long commitPosition, string category, string eventType, string stream, long eventNumber, long created) {
 		var count = _count;
-		_records[count] = new(logPosition, commitPosition, category, eventType, stream, eventNumber, created);
+		_records[count] = new(
+			LogPosition: logPosition,
+			CommitPosition: commitPosition,
+			Category: category,
+			EventType: eventType,
+			StreamName: stream,
+			EventNumber: eventNumber,
+			Created: created);
 
 		// Fence: make sure that the array modification cannot be done after the increment
 		Volatile.Write(ref _count, count + 1);

@@ -2,10 +2,14 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using EventStore.Plugins;
+using Google.Protobuf.Reflection;
+using Google.Rpc;
 using Grpc.AspNetCore.Server;
+using Kurrent.Rpc;
 using KurrentDB.Api.Errors;
 using KurrentDB.Api.Infrastructure.DependencyInjection;
 using KurrentDB.Api.Infrastructure.Grpc.Validation;
+using KurrentDB.Api.Modules.Indexes;
 using KurrentDB.Api.Streams.Validators;
 using KurrentDB.Core;
 using Microsoft.AspNetCore.Builder;
@@ -20,7 +24,21 @@ public class ApiV2Plugin() : SubsystemsPlugin("APIV2") {
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
         services
             .AddGrpc()
+            .AddJsonTranscoding(options => {
+                options.TypeRegistry = TypeRegistry.FromFiles(
+                    KurrentDB.Protocol.V2.Indexes.Errors.ErrorsReflection.Descriptor,
+                    ErrorsReflection.Descriptor,
+                    RpcReflection.Descriptor,
+                    BadRequest.Descriptor.File,
+                    ErrorInfo.Descriptor.File,
+                    DebugInfo.Descriptor.File,
+                    PreconditionFailure.Descriptor.File,
+                    QuotaFailure.Descriptor.File,
+                    ResourceInfo.Descriptor.File,
+                    RetryInfo.Descriptor.File);
+            })
             .WithRequestValidation(x => x.ExceptionFactory = ApiErrors.InvalidRequest)
+            .WithGrpcService<IndexesService>()
             .WithGrpcService<StreamsService>(
                 validation => validation.WithValidator<AppendRequestValidator>());
 
@@ -41,6 +59,8 @@ public class ApiV2Plugin() : SubsystemsPlugin("APIV2") {
         app.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = false });
 
         app.UseEndpoints(endpoints => {
+            endpoints.MapGrpcService<IndexesService>()
+                .EnableGrpcWeb();
             endpoints.MapGrpcService<StreamsService>()
                 .EnableGrpcWeb();
         });

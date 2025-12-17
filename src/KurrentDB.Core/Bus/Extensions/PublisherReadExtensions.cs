@@ -255,6 +255,7 @@ public static class PublisherReadExtensions {
 					user: SystemAccounts.System,
 					requiresLeader: false,
 					expiryStrategy: DefaultExpiryStrategy.Instance,
+					pool: null,
 					cancellationToken: cancellationToken
 				)
 				: new Enumerator.ReadIndexBackwards(
@@ -265,6 +266,7 @@ public static class PublisherReadExtensions {
 					user: SystemAccounts.System,
 					requiresLeader: false,
 					expiryStrategy: DefaultExpiryStrategy.Instance,
+					pool: null,
 					cancellationToken: cancellationToken
 				);
 		}

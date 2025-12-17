@@ -58,5 +58,8 @@ public class SectionTests {
 		Assert.Equal("v section2:a2", value);
 		Assert.True(sectionProvider.TryGetProviderFor("section2:a", out var provider));
 		Assert.IsType<MemoryConfigurationProvider>(provider);
+
+		// does not report subsection as a value in its own right
+		Assert.False(sectionProvider.TryGet("section2:sub", out _));
 	}
 }

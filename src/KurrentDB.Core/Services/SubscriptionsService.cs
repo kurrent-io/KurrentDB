@@ -49,7 +49,8 @@ public class SubscriptionsService<TStreamId> :
 	IHandle<SubscriptionMessage.CheckPollTimeout>,
 	IAsyncHandle<StorageMessage.InMemoryEventCommitted>,
 	IAsyncHandle<StorageMessage.EventCommitted>,
-	IAsyncHandle<StorageMessage.SecondaryIndexCommitted> {
+	IAsyncHandle<StorageMessage.SecondaryIndexCommitted>,
+	IAsyncHandle<StorageMessage.SecondaryIndexDeleted> {
 	private const int DontReportCheckpointReached = -1;
 
 	// ReSharper disable once StaticMemberInGenericType
@@ -307,7 +308,7 @@ public class SubscriptionsService<TStreamId> :
 				allReq.PreparePosition, allReq.MaxCount, allReq.ResolveLinkTos, allReq.RequireLeader, allReq.ValidationTfLastCommitPosition, allReq.User, allReq.ReplyOnExpired),
 			ClientMessage.ReadIndexEventsForward indexReq => new ClientMessage.ReadIndexEventsForward(indexReq.InternalCorrId, indexReq.CorrelationId, indexReq.Envelope, indexReq.IndexName,
 				indexReq.CommitPosition, indexReq.PreparePosition, indexReq.ExcludeStart, indexReq.MaxCount, indexReq.RequireLeader, indexReq.ValidationTfLastCommitPosition, indexReq.User,
-				indexReq.ReplyOnExpired),
+				indexReq.ReplyOnExpired, indexReq.Pool),
 			_ => throw new Exception($"Unexpected read request of type {originalRequest.GetType()} for long polling: {originalRequest}.")
 		};
 	}
@@ -358,6 +359,22 @@ public class SubscriptionsService<TStreamId> :
 
 			return false;
 		}
+	}
+
+	ValueTask IAsyncHandle<StorageMessage.SecondaryIndexDeleted>.HandleAsync(StorageMessage.SecondaryIndexDeleted message, CancellationToken token) {
+		var subscriptionsToDrop = new List<Subscription>();
+		foreach (var (streamId, subscriptions) in _subscriptionTopics) {
+			if (message.StreamIdRegex.IsMatch(streamId))
+				subscriptionsToDrop.AddRange(subscriptions);
+		}
+
+		foreach (var subscription in subscriptionsToDrop) {
+			// we use `SubscriptionDropReason.NotFound` for consistency with reads which also return `Not Found`
+			// when an index is deleted while being read. SubscriptionDropReason.StreamDeleted is currently only used for Tombstones
+			DropSubscription(subscription, SubscriptionDropReason.NotFound, sendDropNotification: true);
+		}
+
+		return ValueTask.CompletedTask;
 	}
 
 	private async ValueTask<ResolvedEvent?> ProcessEventCommitted(string eventStreamId, long commitPosition, EventRecord evnt, ResolvedEvent? resolvedEvent, CancellationToken token) {

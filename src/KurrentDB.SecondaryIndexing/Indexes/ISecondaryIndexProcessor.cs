@@ -9,7 +9,7 @@ namespace KurrentDB.SecondaryIndexing.Indexes;
 public interface ISecondaryIndexProcessor : IDisposable {
 	void Commit();
 
-	void Index(ResolvedEvent evt);
+	bool TryIndex(ResolvedEvent evt);
 
 	TFPos GetLastPosition();
 

@@ -1,0 +1,203 @@
+// This proto file is only for to allow the integration tests to issue reads against the server using the
+// old streams gRPC endpoints.
+// We can remove it when the v2 API supports reads, and use that instead.
+// This file contains a subset of the old streams protos. We cannot directly use the originals
+// because they declare types that conflict with the google types that the v2 API uses.
+
+syntax = "proto3";
+package event_store.client.streams;
+option java_package = "com.eventstore.dbclient.proto.streams";
+
+import "google/protobuf/timestamp.proto";
+
+service Streams {
+	rpc Read (ReadReq) returns (stream ReadResp);
+}
+
+message ReadReq {
+	Options options = 1;
+
+	message Options {
+		oneof stream_option {
+			StreamOptions stream = 1;
+			AllOptions all = 2;
+		}
+		ReadDirection read_direction = 3;
+		bool resolve_links = 4;
+		oneof count_option {
+			uint64 count = 5;
+			SubscriptionOptions subscription = 6;
+		}
+		oneof filter_option {
+			FilterOptions filter = 7;
+			Empty no_filter = 8;
+		}
+		UUIDOption uuid_option = 9;
+		ControlOption control_option = 10;
+
+		enum ReadDirection {
+			Forwards = 0;
+			Backwards = 1;
+		}
+		message StreamOptions {
+			StreamIdentifier stream_identifier = 1;
+			oneof revision_option {
+				uint64 revision = 2;
+				Empty start = 3;
+				Empty end = 4;
+			}
+		}
+		message AllOptions {
+			oneof all_option {
+				Position position = 1;
+				Empty start = 2;
+				Empty end = 3;
+			}
+		}
+		message SubscriptionOptions {
+		}
+		message Position {
+			uint64 commit_position = 1;
+			uint64 prepare_position = 2;
+		}
+		message FilterOptions {
+			oneof filter {
+				Expression stream_identifier = 1;
+				Expression event_type = 2;
+			}
+			oneof window {
+				uint32 max = 3;
+				Empty count = 4;
+			}
+			uint32 checkpointIntervalMultiplier = 5;
+
+			message Expression {
+				string regex = 1;
+				repeated string prefix = 2;
+			}
+		}
+		message UUIDOption {
+			oneof content {
+				Empty structured = 1;
+				Empty string = 2;
+			}
+		}
+		message ControlOption {
+			uint32 compatibility = 1;
+		}
+	}
+}
+
+message ReadResp {
+	oneof content {
+		ReadEvent event = 1;
+		SubscriptionConfirmation confirmation = 2;
+		Checkpoint checkpoint = 3;
+		StreamNotFound stream_not_found = 4;
+		uint64 first_stream_position = 5;
+		uint64 last_stream_position = 6;
+		AllStreamPosition last_all_stream_position = 7;
+		CaughtUp caught_up = 8;
+		FellBehind fell_behind = 9;
+	}
+
+	// The $all or stream subscription has caught up and become live.
+	message CaughtUp {
+		// Current time in the server when the subscription caught up
+		google.protobuf.Timestamp timestamp = 1;
+
+		// Checkpoint for resuming a stream subscription.
+		// For stream subscriptions it is populated unless the stream is empty.
+		// For $all subscriptions it is not populated.
+		optional int64 stream_revision = 2;
+
+		// Checkpoint for resuming a $all subscription.
+		// For stream subscriptions it is not populated.
+		// For $all subscriptions it is populated unless the database is empty.
+		optional Position position = 3;
+	}
+
+	// The $all or stream subscription has fallen back into catchup mode and is no longer live.
+	message FellBehind {
+		// Current time in the server when the subscription fell behind
+		google.protobuf.Timestamp timestamp = 1;
+
+		// Checkpoint for resuming a stream subscription.
+		// For stream subscriptions it is populated unless the stream is empty.
+		// For $all subscriptions it is not populated.
+		optional int64 stream_revision = 2;
+
+		// Checkpoint for resuming a $all subscription.
+		// For stream subscriptions it is not populated.
+		// For $all subscriptions it is populated unless the database is empty.
+		optional Position position = 3;
+	}
+
+	message ReadEvent {
+		RecordedEvent event = 1;
+		RecordedEvent link = 2;
+		oneof position {
+			uint64 commit_position = 3;
+			Empty no_position = 4;
+		}
+
+		message RecordedEvent {
+			UUID id = 1;
+			StreamIdentifier stream_identifier = 2;
+			uint64 stream_revision = 3;
+			uint64 prepare_position = 4;
+			uint64 commit_position = 5;
+			map<string, string> metadata = 6;
+			bytes custom_metadata = 7;
+			bytes data = 8;
+		}
+	}
+	message SubscriptionConfirmation {
+		string subscription_id = 1;
+	}
+	message Checkpoint {
+		uint64 commit_position = 1;
+		uint64 prepare_position = 2;
+
+		// Current time in the server when the checkpoint was reached
+		google.protobuf.Timestamp timestamp = 3;
+	}
+
+	message Position {
+		uint64 commit_position = 1;
+		uint64 prepare_position = 2;
+	}
+
+	message StreamNotFound {
+		StreamIdentifier stream_identifier = 1;
+	}
+}
+
+// ----------------------------
+// messages from shared.proto
+// ----------------------------
+
+message UUID {
+	oneof value {
+		Structured structured = 1;
+		string string = 2;
+	}
+
+	message Structured {
+		int64 most_significant_bits = 1;
+		int64 least_significant_bits = 2;
+	}
+}
+
+message Empty {
+}
+
+message StreamIdentifier {
+	reserved 1 to 2;
+	bytes stream_name = 3;
+}
+
+message AllStreamPosition {
+	uint64 commit_position = 1;
+	uint64 prepare_position = 2;
+}

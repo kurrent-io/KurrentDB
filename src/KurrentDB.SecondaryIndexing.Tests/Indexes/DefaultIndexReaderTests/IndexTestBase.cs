@@ -4,6 +4,7 @@
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Tests.Fakes;
+using KurrentDB.SecondaryIndexing.Indexes;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Tests.Fixtures;
@@ -32,7 +33,7 @@ public abstract class IndexTestBase : DuckDbIntegrationTest<IndexTestBase> {
 		_readIndexStub.IndexEvents(events);
 
 		foreach (var resolvedEvent in events) {
-			_processor.Index(resolvedEvent);
+			_processor.TryIndex(resolvedEvent);
 		}
 
 		if (shouldCommit)

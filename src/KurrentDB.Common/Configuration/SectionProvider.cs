@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Primitives;
 
@@ -46,6 +47,19 @@ public sealed class SectionProvider : ConfigurationProvider, IDisposable {
 	public override void Load() {
 		var data = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 		foreach (var kvp in _configuration.AsEnumerable()) {
+			// the enumerable contains sections even if they are null,
+			//
+			// key           value
+			// GossipSeed    null
+			// GossipSeed:0  "host1:2113"
+			// GossipSeed:1  "host2:2113"
+			//
+			// since net10 nulls count as values and are not ignored, and so we only want to add
+			// the null to the data if one of the providers is truly providing it and it isn't just
+			// a section declaration.
+			if (kvp.Value is null && !_configuration.Providers.Any(p => p.TryGet(kvp.Key, out _)))
+				continue;
+
 			data[_sectionName + ":" + kvp.Key] = kvp.Value;
 		}
 		Data = data;
