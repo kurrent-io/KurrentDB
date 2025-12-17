@@ -34,9 +34,9 @@ public static class ConfigurationExtensions {
 					    : null;
 
 			    // Determine if the section represents an array
-			    if (children.All(c => int.TryParse(c.Key, out _))) {
+			    if (children.All(c => long.TryParse(c.Key, NumberStyles.Integer, CultureInfo.InvariantCulture, out _))) {
 				    return Value
-					    .ForList(children.OrderBy(c => int.Parse(c.Key))
+					    .ForList(children.OrderBy(c => long.Parse(c.Key, NumberStyles.Integer, CultureInfo.InvariantCulture))
 					    .Select(ConvertSectionToValue)
 					    .OfType<Value>().ToArray());
 			    }
@@ -104,17 +104,20 @@ public static class ConfigurationExtensions {
         if (bool.TryParse(value, out var boolValue))
             return Value.ForBool(boolValue);
 
-        if (int.TryParse(value, out var intValue))
+        if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var intValue))
             return Value.ForNumber(intValue);
 
-        if (long.TryParse(value, out var longValue))
+        if (long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var longValue))
             return Value.ForNumber(longValue);
 
         if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var doubleValue))
             return Value.ForNumber(doubleValue);
 
-        if (DateTime.TryParse(value, out var dateValue))
-            return Value.ForString(dateValue.ToString("O"));
+        if (TimeSpan.TryParse(value, CultureInfo.InvariantCulture, out _))
+	        return Value.ForString(value);
+
+        if (DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var dateValue))
+            return Value.ForString(dateValue.ToString("O", CultureInfo.InvariantCulture));
 
         if (Guid.TryParse(value, out var guidValue))
             return Value.ForString(guidValue.ToString());
