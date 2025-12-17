@@ -7,7 +7,7 @@ using Microsoft.Extensions.Configuration;
 namespace KurrentDB.Connectors.Control;
 
 public static class ConnectorSettingsExtensions {
-	public static IConfiguration MapToConnectorSettings(this MapField<string, string> source) {
+	public static IConfiguration ToConfiguration(this MapField<string, string> source) {
 		var dictionary = source.ToDictionary(kvp => kvp.Key, string? (kvp) => kvp.Value);
 		return new ConfigurationBuilder().AddInMemoryCollection(dictionary).Build();
 	}

@@ -72,7 +72,7 @@ public class ConnectorQueries {
                 });
             }
 
-            var unprotected = await DataProtector.Unprotect(conn.Settings.MapToConnectorSettings(), ct);
+            var unprotected = await DataProtector.Unprotect(conn.Settings.ToConfiguration(), ct);
 
             return conn.With(x => {
                 x.Settings.Clear();
@@ -89,7 +89,7 @@ public class ConnectorQueries {
         if (connector is null)
             throw new DomainExceptions.EntityNotFound("Connector", query.ConnectorId);
 
-        var unprotected = await DataProtector.Unprotect(connector.Settings.MapToConnectorSettings(), cancellationToken);
+        var unprotected = await DataProtector.Unprotect(connector.Settings.ToConfiguration(), cancellationToken);
 
         return new GetConnectorSettingsResult {
             Configuration      = unprotected.ToProtobufStruct(),
