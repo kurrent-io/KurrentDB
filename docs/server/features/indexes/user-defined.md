@@ -4,24 +4,16 @@ KurrentDB v26.0 introduces support for user defined indexes, building on the [se
 
 ## Introduction
 
-Secondary indexes run inside the KurrentDB server nodes using a `$all` catchup subscription to consume the log and produce index records into a `DuckDB` database kept on each node. They do not add write amplification to the main log. 
+User defined indexes allow you to create custom indexes based on record content, enabling efficient queries and subscriptions filtered by fields within your records — for example, retrieving all orders by country or users by region.
 
-The indexes can be subscribed to and read from using the existing filtered $all API, or queried in the UI. Details of this below.
+Indexes subscribe to the log and maintain index data on each node, separate from the log. This design avoids increasing the size of the log while providing fast, targeted access to records matching your criteria.
 
-User defined indexes in v26.0 can include a javascript filter to determine which log records are added to the index and, optionally, a javascript field selector which will select a value from each record passing the filter to be stored in that record's index entry. The values of the fields can then be used to filter the output of the reads/subscriptions/queries.
+You can read from and subscribe to user defined indexes using the existing gRPC clients, or query them directly in the UI.
 
-## Enabling
+A user defined index can include:
 
-User defined indexes are enabled as part of secondary indexing, which is enabled by default but can be disabled in the server configuration:
-
-```yaml
-SecondaryIndexing:
-  Enabled: false
-```
-
-Refer to the [configuration guide](../../configuration/configuration.md) for configuration mechanisms other than YAML.
-
-Note that on a large database the secondary indexes may take a while to build.
+- **A filter** - A JavaScript function that determines which records are added to the index. Only records where the filter returns `true` are indexed.
+- **A field selector** *(optional)* - A JavaScript function that extracts a value from each matching record to store in the index entry. You can then use these field values to filter reads, subscriptions, and queries.
 
 ## Managing
 
@@ -57,7 +49,7 @@ Authorization: Basic YWRtaW46Y2hhbmdlaXQ=
 - If the `filter` does not return a boolean value, the record will be excluded from the index and an error logged.
 
 `Fields`:
-- In v26.0.0 there must be 0 or 1 `"fields"`.
+- Currently there can be at most 1 `field`. Future versions will allow multiple fields.
 - The field `name` determines how the field will be read/subscribed/queried.
 - The `selector` must be deterministic based on the content of the record.
 - The `selector` can return `skip` to exclude the record from the index. This is an alternative filtering mechanism to the `filter` function. They can both be used.
@@ -90,11 +82,13 @@ rec.isJson - whether the data is json or not
 The above describes the structure in `v26.0.0-rc.1` we are looking at providing the same structure provided to the javascript functions in `connectors` and this will likely be implemented before `v26.0.0` RTM.
 :::
 
-Now if you append an event of type `OrderCreated` with a payload like
+Now if you append a record representing a `OrderCreated` event with a payload like
 
 ```json
 {
-  "country": "Mauritius"
+  "orderId": "ORD-1234",
+  "country": "Mauritius",
+  "total": 149.99
 }
 ```
 
@@ -174,6 +168,19 @@ select * from index:orders-by-country where field_country='Mauritius' limit 10
 ## Monitoring
 
 Metrics in updated grafana dashboard soon.
+
+## Configuration
+
+User defined indexes are enabled as part of secondary indexing, which is enabled by default but can be disabled in the server configuration:
+
+```yaml
+SecondaryIndexing:
+  Enabled: false
+```
+
+Refer to the [configuration guide](../../configuration/configuration.md) for configuration mechanisms other than YAML.
+
+Note that on a large database the secondary indexes may take a while to build.
 
 ## Future work
 
