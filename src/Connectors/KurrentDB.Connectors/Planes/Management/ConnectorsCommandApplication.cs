@@ -37,7 +37,7 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
             connector.EnsureIsNew();
 
             var settings = ConnectorSettings
-                .From(cmd.Settings, cmd.ConnectorId)
+                .From(cmd.Configuration, cmd.Settings, cmd.ConnectorId)
                 .EnsureValid(validateSettings)
                 .Protect(protectSettings)
                 .AsDictionary();
@@ -78,7 +78,7 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
             // until the connector is restarted, it wont use the new settings
 
             var settings = ConnectorSettings
-                .From(cmd.Settings, cmd.ConnectorId)
+                .From(cmd.Configuration, cmd.Settings, cmd.ConnectorId)
                 .EnsureValid(validateSettings)
                 .Protect(protectSettings)
                 .AsDictionary();
