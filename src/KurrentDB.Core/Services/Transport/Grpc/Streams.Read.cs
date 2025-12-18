@@ -11,16 +11,14 @@ using EventStore.Client;
 using EventStore.Client.Streams;
 using Google.Protobuf;
 using Grpc.Core;
-using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
-using KurrentDB.Core.DuckDB;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Services.Transport.Grpc;
-using Microsoft.AspNetCore.Connections.Features;
+using KurrentDB.Core.Services.Transport.Http;
 using Microsoft.AspNetCore.Http;
 using static EventStore.Client.Streams.ReadResp.Types;
 using static EventStore.Plugins.Authorization.Operations.Streams;
@@ -222,7 +220,7 @@ internal partial class Streams<TStreamId> {
 			GetFilterOrIndexEnumerator(
 				indexName => new Enumerator.ReadIndexForwards(
 					_publisher, indexName, request.Options.All.ToPosition(),
-					request.Options.Count, user, requiresLeader, _expiryStrategy, GetDuckDbConnectionPool(), cancellationToken
+					request.Options.Count, user, requiresLeader, _expiryStrategy, httpContext.GetDuckDbConnectionPool(), cancellationToken
 				),
 				filter => new Enumerator.ReadAllForwardsFiltered(
 					_publisher,
@@ -241,7 +239,7 @@ internal partial class Streams<TStreamId> {
 			GetFilterOrIndexEnumerator(
 				indexName => new Enumerator.ReadIndexBackwards(
 					_publisher, indexName, request.Options.All.ToPosition(),
-					request.Options.Count, user, requiresLeader, _expiryStrategy, GetDuckDbConnectionPool(), cancellationToken
+					request.Options.Count, user, requiresLeader, _expiryStrategy, httpContext.GetDuckDbConnectionPool(), cancellationToken
 				),
 				filter => new Enumerator.ReadAllBackwardsFiltered(
 					_publisher,
@@ -260,7 +258,7 @@ internal partial class Streams<TStreamId> {
 			GetFilterOrIndexEnumerator(
 				indexName => new Enumerator.IndexSubscription(
 					_publisher, _expiryStrategy, request.Options.All.ToSubscriptionPosition(),
-					indexName, user, requiresLeader, GetDuckDbConnectionPool(), cancellationToken
+					indexName, user, requiresLeader, httpContext.GetDuckDbConnectionPool(), cancellationToken
 				),
 				filter => new Enumerator.AllSubscriptionFiltered(
 					_publisher,
@@ -274,19 +272,6 @@ internal partial class Streams<TStreamId> {
 					request.Options.Filter.CheckpointIntervalMultiplier,
 					cancellationToken)
 			);
-
-		[CanBeNull]
-		Lazy<DuckDBConnectionPool> GetDuckDbConnectionPool() {
-			var connectionItemsFeature = httpContext.Features.Get<IConnectionItemsFeature>();
-			if (connectionItemsFeature is null)
-				return null;
-
-			lock (connectionItemsFeature.Items) {
-				if (connectionItemsFeature.Items.TryGetValue(DuckDbConnectionPoolMiddleware.Key, out var item))
-					return item as Lazy<DuckDBConnectionPool>;
-			}
-			return null;
-		}
 
 		static uint? ConvertToWindow(ReadReq.Types.Options.Types.FilterOptions filter) =>
 			filter.WindowCase switch {

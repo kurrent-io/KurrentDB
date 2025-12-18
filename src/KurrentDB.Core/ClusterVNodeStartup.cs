@@ -134,9 +134,6 @@ public class ClusterVNodeStartup<TStreamId>
 		app.UseAuthorization();
 		app.UseAntiforgery();
 
-		// associates a lazy DuckDB connection pool with each distinct HTTP connection
-		app.UseMiddleware<DuckDbConnectionPoolMiddleware>();
-
 		// allow all subsystems to register their legacy controllers before calling MapLegacyHttp
 		foreach (var component in _plugableComponents)
 			component.ConfigureApplication(app, _configuration);
@@ -215,7 +212,6 @@ public class ClusterVNodeStartup<TStreamId>
 			.AddSingleton<AuthenticationMiddleware>()
 			.AddSingleton<AuthorizationMiddleware>()
 			.AddSingleton(new KestrelToInternalBridgeMiddleware(_httpService.UriRouter, _httpService.LogHttpRequests, _httpService.AdvertiseAsHost, _httpService.AdvertiseAsPort))
-			.AddSingleton<DuckDbConnectionPoolMiddleware>()
 			.AddSingleton(_authenticationProvider)
 			.AddSingleton(_authorizationProvider);
 		services.AddCors(o => o.AddPolicy(

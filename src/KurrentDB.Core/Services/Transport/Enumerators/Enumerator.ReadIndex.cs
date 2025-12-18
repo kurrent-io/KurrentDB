@@ -29,7 +29,7 @@ partial class Enumerator {
 		ClaimsPrincipal user,
 		bool requiresLeader,
 		IExpiryStrategy expiryStrategy,
-		[CanBeNull] Lazy<DuckDBConnectionPool> pool,
+		[CanBeNull] DuckDBConnectionPool pool,
 		CancellationToken cancellationToken)
 		: ReadIndex<ReadIndexEventsForward, ReadIndexEventsForwardCompleted>(bus, indexName, position, maxCount, user, requiresLeader, expiryStrategy, cancellationToken) {
 		protected override ReadIndexEventsForward CreateRequest(
@@ -56,7 +56,7 @@ partial class Enumerator {
 		ClaimsPrincipal user,
 		bool requiresLeader,
 		IExpiryStrategy expiryStrategy,
-		[CanBeNull] Lazy<DuckDBConnectionPool> pool,
+		[CanBeNull] DuckDBConnectionPool pool,
 		CancellationToken cancellationToken)
 		: ReadIndex<ReadIndexEventsBackward, ReadIndexEventsBackwardCompleted>(bus, indexName, position, maxCount, user, requiresLeader, expiryStrategy, cancellationToken) {
 		protected override ReadIndexEventsBackward CreateRequest(
