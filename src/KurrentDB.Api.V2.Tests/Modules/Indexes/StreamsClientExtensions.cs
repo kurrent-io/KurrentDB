@@ -3,32 +3,64 @@
 
 using EventStore.Client;
 using Google.Protobuf;
+using Google.Protobuf.Collections;
+using Google.Protobuf.WellKnownTypes;
 using KurrentDB.Core.Resilience;
 using KurrentDB.Protocol.V2.Streams;
 
 namespace KurrentDB.Api.Tests.Modules.Indexes;
 
 public static class StreamsClientExtensions {
-	public static ValueTask<AppendResponse> AppendEvent(
-		this StreamsService.StreamsServiceClient self,
-		string stream, string eventType, string jsonData, CancellationToken ct) =>
+	extension(StreamsService.StreamsServiceClient self)
+	{
+		public ValueTask<AppendResponse> AppendEvent(string stream, string eventType, string jsonData, CancellationToken ct) =>
 
-		self.AppendAsync(
-			new() {
-				ExpectedRevision = (long)ExpectedRevisionConstants.Any,
-				Stream = stream,
-				Records = {
-					new AppendRecord() {
-						RecordId = Guid.NewGuid().ToString(),
-						Schema = new() {
-							Name = eventType,
-							Format = SchemaFormat.Json,
-						},
-						Data = ByteString.CopyFromUtf8(jsonData),
-					}
+			self.AppendAsync(
+				new() {
+					ExpectedRevision = (long)ExpectedRevisionConstants.Any,
+					Stream = stream,
+					Records = {
+						new AppendRecord() {
+							RecordId = Guid.NewGuid().ToString(),
+							Schema = new() {
+								Name = eventType,
+								Format = SchemaFormat.Json,
+							},
+							Data = ByteString.CopyFromUtf8(jsonData),
+						}
+					},
 				},
-			},
-			cancellationToken: ct);
+				cancellationToken: ct);
+
+		public ValueTask<AppendResponse> AppendRecord(string stream,
+			string schemaName,
+			SchemaFormat schemaFormat,
+			ReadOnlySpan<byte> data,
+			Dictionary<string, string> properties,
+			CancellationToken ct) {
+			var record = new AppendRecord {
+				RecordId = Guid.NewGuid().ToString(),
+				Schema = new() {
+					Name = schemaName,
+					Format = schemaFormat,
+				},
+				Data = ByteString.CopyFrom(data)
+			};
+
+			foreach (var (key, value) in properties)
+				record.Properties.Add(key, Value.ForString(value));
+
+			return self.AppendAsync(
+				new() {
+					ExpectedRevision = (long)ExpectedRevisionConstants.Any,
+					Stream = stream,
+					Records = {
+						record
+					},
+				},
+				cancellationToken: ct);
+		}
+	}
 }
 
 public static class StreamsReadClientExtensions {
