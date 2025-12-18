@@ -33,6 +33,7 @@ public class EventRecord : IEquatable<EventRecord> {
 
 	// Lazy initialization backing fields
 	ReadOnlyMemory<byte> _metadata;
+	string? _schemaFormat;
 	volatile bool _metadataInitialized;
 	readonly object _metadataLock = new();
 
@@ -40,32 +41,47 @@ public class EventRecord : IEquatable<EventRecord> {
 	// Log records cannot contain both Metadata and LogRecordProperties.
 	public ReadOnlyMemory<byte> Metadata {
 		get {
-			if (_metadataInitialized) {
-				return _metadata;
-			}
-
-			lock (_metadataLock) {
-				if (!_metadataInitialized) {
-					_metadata = SynthesizeMetadataFromProperties();
-					_metadataInitialized = true;
-				}
-			}
-
+			InitializeMetadata();
 			return _metadata;
 		}
 	}
 
-	static readonly Value JsonDataFormatValue = Value.ForString("Json");
+	public string SchemaFormat {
+		get {
+			InitializeMetadata();
+			return _schemaFormat!;
+		}
+	}
 
-	ReadOnlyMemory<byte> SynthesizeMetadataFromProperties() {
+	private void InitializeMetadata() {
+		if (_metadataInitialized)
+			return;
+
+		lock (_metadataLock) {
+			if (!_metadataInitialized) {
+				SynthesizeMetadataFromProperties();
+				_metadataInitialized = true;
+			}
+		}
+	}
+
+	private const string BytesFormat = "Bytes";
+	private const string JsonFormat = "Json";
+	static readonly Value JsonDataFormatValue = Value.ForString(JsonFormat);
+
+	void SynthesizeMetadataFromProperties() {
 		var props = Struct.Parser.ParseFrom(Properties.Span);
 
 		props.Fields[Constants.RecordProperties.SchemaNameKey] = Value.ForString(EventType);
 
-		if (IsJson)
+		if (IsJson) {
 			props.Fields[Constants.RecordProperties.SchemaFormatKey] = JsonDataFormatValue;
+			_schemaFormat = JsonFormat;
+		} else {
+			_schemaFormat = props.Fields[Constants.RecordProperties.SchemaFormatKey].StringValue;
+		}
 
-		return Encoding.UTF8.GetBytes(JsonFormatter.Default.Format(props));
+		_metadata = Encoding.UTF8.GetBytes(JsonFormatter.Default.Format(props));
 	}
 
 	public EventRecord(long eventNumber, IPrepareLogRecord prepare, string eventStreamId, string? eventType) {
@@ -91,6 +107,7 @@ public class EventRecord : IEquatable<EventRecord> {
 			_metadataInitialized = false;
 		} else {
 			_metadata = prepare.Metadata;
+			_schemaFormat = IsJson ? JsonFormat : BytesFormat;
 			_metadataInitialized = true;
 		}
 	}
@@ -137,6 +154,7 @@ public class EventRecord : IEquatable<EventRecord> {
 			_metadataInitialized = false;
 		} else {
 			_metadata = metadata ?? [];
+			_schemaFormat = IsJson ? JsonFormat : BytesFormat;
 			_metadataInitialized = true;
 		}
 	}
