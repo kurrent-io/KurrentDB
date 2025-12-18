@@ -69,7 +69,7 @@ public class IndexesServiceHttpTests {
 			new RestRequest($"/v2/indexes/"),
 			ct);
 
-		await Assert.That(response!.Indexes.TryGetValue(IndexName, out var indexState)).IsTrue();
+		var indexState = response!.Indexes.First(x => x.Name == IndexName);
 		await Assert.That(indexState!.Filter).IsEqualTo("rec => rec.type == 'my-event-type'");
 		await Assert.That(indexState!.Fields.Length).IsEqualTo(1);
 		await Assert.That(indexState!.Fields[0].Selector).IsEqualTo("rec => rec.number");
@@ -78,9 +78,10 @@ public class IndexesServiceHttpTests {
 	}
 
 	class ListResponse {
-		public Dictionary<string, IndexState> Indexes { get; set; } = [];
+		public IndexState[] Indexes { get; set; } = [];
 
 		public class IndexState {
+			public string Name { get; set; } = "";
 			public string Filter { get; set; } = "";
 			public Field[] Fields { get; set; } = [];
 			public string State { get; set; } = "";
@@ -133,7 +134,7 @@ public class IndexesServiceHttpTests {
 			new RestRequest($"/v2/indexes/"),
 			ct);
 
-		await Assert.That(listResponse!.Indexes).DoesNotContainKey(IndexName);
+		await Assert.That(listResponse!.Indexes).DoesNotContain(x => x.Name == IndexName);
 	}
 
 	async ValueTask can_get(string expectedState, CancellationToken ct) {
@@ -144,6 +145,7 @@ public class IndexesServiceHttpTests {
 		await Assert.That(response.Content).IsJson($$"""
 			{
 				"index": {
+					"name": "{{IndexName}}",
 					"filter": "rec => rec.type == 'my-event-type'",
 					"fields": [{
 						"name": "number",

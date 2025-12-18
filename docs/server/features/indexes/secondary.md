@@ -41,7 +41,7 @@ SecondaryIndexing:
   Enabled: false
 ```
 
-Refer to the [configuration guide](../configuration/README.md) for configuration mechanisms other than YAML.
+Refer to the [configuration guide](../../configuration/configuration.md) for configuration mechanisms other than YAML.
 
 ## Using secondary indexes
 

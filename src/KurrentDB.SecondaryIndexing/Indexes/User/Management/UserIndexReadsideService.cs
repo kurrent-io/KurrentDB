@@ -90,6 +90,7 @@ public class UserIndexReadsideService(
 	}
 
 	public record UserIndexState : State<UserIndexState> {
+		public string Name { get; init; } = "";
 		public string Filter { get; init; } = "";
 		public IList<IndexField> Fields { get; init; } = [];
 		public IndexState State { get; init; }
@@ -97,6 +98,7 @@ public class UserIndexReadsideService(
 		public UserIndexState() {
 			On<IndexCreated>((state, evt) =>
 				state with {
+					Name = evt.Name,
 					Filter = evt.Filter,
 					Fields = evt.Fields,
 					State = IndexState.Stopped,
@@ -138,6 +140,7 @@ public class UserIndexReadsideService(
 
 file static class Extensions {
 	public static Protocol.V2.Indexes.Index Convert(this UserIndexReadsideService.UserIndexState self) => new() {
+		Name = self.Name,
 		Filter = self.Filter,
 		Fields = { self.Fields },
 		State = self.State,
@@ -146,7 +149,7 @@ file static class Extensions {
 	public static ListIndexesResponse Convert(this UserIndexReadsideService.UserIndexesState self) {
 		var result = new ListIndexesResponse();
 		foreach (var (name, userIndex) in self.UserIndexes)
-			result.Indexes[name] = userIndex.Convert();
+			result.Indexes.Add(userIndex.Convert());
 		return result;
 	}
 }
