@@ -8,6 +8,7 @@ using DuckDB.NET.Data;
 using DuckDB.NET.Data.DataChunk.Writer;
 using Jint;
 using Jint.Native.Function;
+using Jint.Native.Json;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Common.Configuration;
@@ -16,6 +17,7 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.SecondaryIndexing.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes.Custom.Surge;
+using KurrentDB.SecondaryIndexing.Indexes.User.JavaScript;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -32,7 +34,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 	private readonly Engine _engine = JintEngineFactory.CreateEngine(executionTimeout: TimeSpan.FromSeconds(30));
 	private readonly Function? _filter;
 	private readonly Function? _fieldSelector;
-	private readonly ResolvedEventJsObject _resolvedEventJsObject;
+	private readonly RecordObject _jsRecord;
 	private readonly UserIndexInFlightRecords<TField> _inFlightRecords;
 	private readonly string _inFlightTableName;
 	private readonly string _queryStreamName;
@@ -42,6 +44,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 	private readonly object _skip;
 	private readonly ILogger<UserIndexProcessor> _log;
 
+	private ulong _sequenceId;
 	private TFPos _lastPosition;
 	private Appender _appender;
 	private Atomic.Boolean _committing;
@@ -84,7 +87,8 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 		if (jsFieldSelector is not "")
 			_fieldSelector = _engine.Evaluate(jsFieldSelector).AsFunctionInstance();
 
-		_resolvedEventJsObject = new(_engine);
+		var parser = new JsonParser(_engine);
+		_jsRecord = new(_engine, parser);
 
 		_connection = db.Open();
 		_sql.CreateUserIndex(_connection);
@@ -153,23 +157,16 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 		field = default;
 
 		try {
-			_resolvedEventJsObject.Reset();
-			_resolvedEventJsObject.StreamId = resolvedEvent.OriginalEvent.EventStreamId;
-			_resolvedEventJsObject.EventId = $"{resolvedEvent.OriginalEvent.EventId}";
-			_resolvedEventJsObject.EventNumber = resolvedEvent.OriginalEvent.EventNumber;
-			_resolvedEventJsObject.EventType = resolvedEvent.OriginalEvent.EventType;
-			_resolvedEventJsObject.IsJson = resolvedEvent.OriginalEvent.IsJson;
-			_resolvedEventJsObject.Data = resolvedEvent.OriginalEvent.Data;
-			_resolvedEventJsObject.Metadata = resolvedEvent.OriginalEvent.Metadata;
+			_jsRecord.MapFrom(resolvedEvent, ++_sequenceId);
 
 			if (_filter is not null) {
-				var passesFilter = _filter.Call(_resolvedEventJsObject).AsBoolean();
+				var passesFilter = _filter.Call(_jsRecord).AsBoolean();
 				if (!passesFilter)
 					return false;
 			}
 
 			if (_fieldSelector is not null) {
-				var fieldJsValue = _fieldSelector.Call(_resolvedEventJsObject);
+				var fieldJsValue = _fieldSelector.Call(_jsRecord);
 				if (_skip.Equals(fieldJsValue))
 					return false;
 				field = (TField)TField.ParseFrom(fieldJsValue);

@@ -46,11 +46,11 @@ public class IndexesSubscriptionTests {
 		await IndexesClient.CreateAsync(
 			new() {
 				Name = IndexName,
-				Filter = $"rec => rec.type == '{EventType}'",
+				Filter = $"rec => rec.schemaInfo.subject == '{EventType}'",
 				Fields = {
 					new IndexField() {
 						Name = "country",
-						Selector = "rec => rec.data.country",
+						Selector = "rec => rec.value.country",
 						Type = IndexFieldType.String,
 					},
 				},
