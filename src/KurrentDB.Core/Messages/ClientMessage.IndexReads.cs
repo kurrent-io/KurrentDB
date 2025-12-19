@@ -42,7 +42,7 @@ public partial class ClientMessage {
 		long? validationTfLastCommitPosition,
 		ClaimsPrincipal user,
 		bool replyOnExpired,
-		Lazy<DuckDBConnectionPool> pool,
+		DuckDBConnectionPool pool,
 		TimeSpan? longPollTimeout = null,
 		DateTime? expires = null,
 		CancellationToken cancellationToken = default)
@@ -56,7 +56,7 @@ public partial class ClientMessage {
 		public readonly string IndexName = indexName;
 		public readonly long? ValidationTfLastCommitPosition = validationTfLastCommitPosition;
 		public readonly TimeSpan? LongPollTimeout = longPollTimeout;
-		public readonly Lazy<DuckDBConnectionPool> Pool = pool;
+		public readonly DuckDBConnectionPool Pool = pool;
 
 		public override string ToString() =>
 			$"{base.ToString()}, " +
@@ -94,7 +94,7 @@ public partial class ClientMessage {
 		long? validationTfLastCommitPosition,
 		ClaimsPrincipal user,
 		bool replyOnExpired,
-		Lazy<DuckDBConnectionPool> pool,
+		DuckDBConnectionPool pool,
 		TimeSpan? longPollTimeout = null,
 		DateTime? expires = null,
 		CancellationToken cancellationToken = default)
@@ -108,7 +108,7 @@ public partial class ClientMessage {
 		public readonly string IndexName = indexName;
 		public readonly long? ValidationTfLastCommitPosition = validationTfLastCommitPosition;
 		public readonly TimeSpan? LongPollTimeout = longPollTimeout;
-		public readonly Lazy<DuckDBConnectionPool> Pool = pool;
+		public readonly DuckDBConnectionPool Pool = pool;
 
 		public override string ToString() =>
 			$"{base.ToString()}, " +
