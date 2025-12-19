@@ -20,6 +20,7 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.DuckDB;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Monitoring;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
@@ -204,6 +205,7 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 		builder.WebHost
 			.ConfigureKestrel(o => {
 				o.Listen(HttpEndPoint, options => {
+					options.UseDuckDbConnectionPoolPerConnection();
 					if (RuntimeInformation.IsOSX) {
 						options.Protocols = HttpProtocols.Http2;
 					} else {
