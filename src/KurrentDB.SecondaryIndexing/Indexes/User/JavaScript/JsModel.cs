@@ -35,30 +35,30 @@ public class JsSchemaInfo {
 }
 
 public class JsRecordPosition {
-	public string StreamId       { get; set; } = "";
+	public string Stream         { get; set; } = "";
 	public long   StreamRevision { get; set; } = -1;
 	public long   LogPosition    { get; set; } = -1;
 }
 
 public class JsRecord {
 	public string           Id         { get; set; } = "";
-	public ulong            SequenceId { get; set; }
+	public ulong            Sequence   { get; set; }
 	public bool             Redacted   { get; set; }
 	public DateTime         Timestamp  { get; set; }
 	public JsSchemaInfo     Schema     { get; set; } = new();
 	public JsRecordPosition Position   { get; set; } = new();
 
-	public JsValue? Value      => field ??= DecodeValue();
-	public JsValue? Properties => field ??= DecodeProperties();
+	public JsValue? Value      { get => field ??= DecodeValue(); set; }
+	public JsValue? Properties { get => field ??= DecodeProperties(); set; }
 
 	public bool HasValue => Value is not null && !Value.IsNull();
 
 	Func<JsValue> DecodeValue { get; set; }     = null!;
 	Func<JsValue> DecodeProperties { get; set; } = null!;
 
-	public void Remap(ResolvedEvent re, ulong sequenceId, JsonParser parser) {
+	public void Remap(ResolvedEvent re, ulong sequence, JsonParser parser) {
 		Id         = $"{re.OriginalEvent.EventId}";
-		SequenceId = sequenceId;
+		Sequence   = sequence;
 		Redacted   = re.OriginalEvent.Flags.HasFlag(PrepareFlags.IsRedacted);
 		Timestamp  = re.OriginalEvent.TimeStamp;
 
@@ -66,10 +66,13 @@ public class JsRecord {
 		DecodeProperties = () => parser.Decode(re.OriginalEvent.Metadata.Span);
 
 		Position.LogPosition    = re.OriginalEvent.LogPosition;
-		Position.StreamId       = re.OriginalEvent.EventStreamId;
+		Position.Stream         = re.OriginalEvent.EventStreamId;
 		Position.StreamRevision = re.OriginalEvent.EventNumber;
 
 		Schema.Name   = re.OriginalEvent.EventType;
 		Schema.Format = Enum.Parse<JsSchemaFormat>(re.OriginalEvent.SchemaFormat);
+
+		Value      = null;
+		Properties = null;
 	}
 }

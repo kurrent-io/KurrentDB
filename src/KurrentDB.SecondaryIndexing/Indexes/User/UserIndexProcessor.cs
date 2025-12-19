@@ -81,7 +81,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 		_engine.SetValue("skip", new object());
 		_skip = _engine.Evaluate("skip");
 
-		_evaluator = new JsRecordEvaluator(_engine, _skip);
+		_evaluator = new JsRecordEvaluator(_engine);
 		_filterExpression = jsEventFilter is not "" ? jsEventFilter : null;
 		_fieldSelectorExpression = jsFieldSelector is not "" ? jsFieldSelector : null;
 
@@ -156,16 +156,14 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 		try {
 			_jsRecord.Remap(resolvedEvent, ++_sequenceId, _parser);
 
-			if (_filterExpression is not null) {
-				if (!_evaluator.Match(_jsRecord, _filterExpression))
-					return false;
-			}
+			if (_filterExpression is not null && !_evaluator.Match(_jsRecord, _filterExpression))
+				return false;
 
 			if (_fieldSelectorExpression is not null) {
-				var fieldValue = (JsValue) _evaluator.Select(_jsRecord, _fieldSelectorExpression)!;
-				if (_evaluator.IsSkip(fieldValue))
+				var fieldValue = _evaluator.Select(_jsRecord, _fieldSelectorExpression);
+				if (_skip.Equals(fieldValue))
 					return false;
-				field = (TField) TField.ParseFrom(fieldValue);
+				field = (TField)TField.ParseFrom(fieldValue);
 			}
 
 			return true;

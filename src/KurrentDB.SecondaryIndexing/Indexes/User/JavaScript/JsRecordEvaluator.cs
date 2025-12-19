@@ -9,7 +9,25 @@ using Jint.Native;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.User.JavaScript;
 
-public class JsRecordEvaluator(Engine engine, object skip) : IObjectEvaluator<JsRecord> {
+public interface IObjectEvaluator<in TRecord> {
+	/// <summary>
+	/// Evaluates a predicate expression against the record.
+	/// </summary>
+	/// <param name="record">The record to evaluate against</param>
+	/// <param name="predicateExpression">Expression that returns a boolean</param>
+	/// <returns>True if the predicate passes, false otherwise</returns>
+	bool Match(TRecord record, string predicateExpression);
+
+	/// <summary>
+	/// Evaluates a selector expression against the record.
+	/// </summary>
+	/// <param name="record">The record to evaluate against</param>
+	/// <param name="selectorExpression">Expression that selects a value</param>
+	/// <returns>The selected value</returns>
+	JsValue Select(TRecord record, string selectorExpression);
+}
+
+public class JsRecordEvaluator(Engine engine) : IObjectEvaluator<JsRecord>, IDisposable {
 	readonly Dictionary<string, JsValue> CompiledFunctions = new();
 
 	public bool Match(JsRecord record, string predicateExpression) {
@@ -19,21 +37,25 @@ public class JsRecordEvaluator(Engine engine, object skip) : IObjectEvaluator<Js
 		return function.Call(jsRecordValue).AsBoolean();
 	}
 
-	public object? Select(JsRecord record, string selectorExpression) {
+	public JsValue Select(JsRecord record, string selectorExpression) {
 		var jsRecordValue = JsValue.FromObject(engine, record);
 		var function = GetOrCompile(selectorExpression);
 
 		return function.Call(jsRecordValue);
 	}
 
-	public bool IsSkip(JsValue value) => skip.Equals(value);
-
 	JsValue GetOrCompile(string expression) {
 		if (CompiledFunctions.TryGetValue(expression, out var function)) return function;
 
-		function = engine.Evaluate($"({expression})");
+		function = engine.Evaluate($"({expression})").AsFunctionInstance();
 		CompiledFunctions[expression] = function;
 
 		return function;
 	}
+
+	public void Dispose() {
+		CompiledFunctions.Clear();
+		GC.SuppressFinalize(this);
+	}
 }
+
