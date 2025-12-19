@@ -1,12 +1,13 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System;
 using Kurrent.Quack.ConnectionPool;
+using KurrentDB.DuckDB;
 using Microsoft.AspNetCore.Connections.Features;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
-using KurrentDB.DuckDB;
 
 namespace KurrentDB.Core.DuckDB;
 
@@ -15,6 +16,16 @@ public static class InjectionExtensions {
 		services.AddSingleton<DuckDBConnectionPoolLifetime>();
 		services.AddDuckDBSetup<KdbGetEventSetup>();
 		services.AddSingleton<DuckDBConnectionPool>(sp => sp.GetRequiredService<DuckDBConnectionPoolLifetime>().Shared);
+		services.AddDuckDbConnectionScopedPools();
+		return services;
+	}
+
+	public static IServiceCollection AddDuckDbConnectionScopedPools(this IServiceCollection services) {
+		services.AddHttpContextAccessor();
+		services.AddScoped(sp => sp
+			.GetRequiredService<IHttpContextAccessor>()
+			.HttpContext?
+			.GetConnectionScopedDuckDbConnectionPool());
 
 		return services;
 	}
@@ -25,20 +36,31 @@ public static class InjectionExtensions {
 	public static void UseDuckDbConnectionPoolPerConnection(this ListenOptions listenOptions) {
 		listenOptions.Use(next => async connectionContext => {
 			var poolFactory = listenOptions.ApplicationServices.GetRequiredService<DuckDBConnectionPoolLifetime>();
-			using var pool = poolFactory.CreatePool();
-			connectionContext.Items[nameof(DuckDBConnectionPool)] = pool;
-			await next(connectionContext);
+			// pool is disposed when the connection closes
+			var lazyPool = new Lazy<DuckDBConnectionPool>(poolFactory.CreatePool);
+			try {
+				// scoped wrapper is added to the context so that the scoped pool can be easily requested as opposed to the shared pool 
+				connectionContext.Items[nameof(ConnectionScopedDuckDBConnectionPool)] = new ConnectionScopedDuckDBConnectionPool(lazyPool);
+				await next(connectionContext);
+			} finally {
+				// synchronize to avoid possibility of value being created after we check IsValueCreated
+				lock (lazyPool) {
+					if (lazyPool.IsValueCreated) {
+						lazyPool.Value.Dispose();
+					}
+				}
+			}
 		});
 	}
 
-	[CanBeNull]
-	public static DuckDBConnectionPool GetDuckDbConnectionPool(this HttpContext httpContext) {
+	public static ConnectionScopedDuckDBConnectionPool GetConnectionScopedDuckDbConnectionPool(this HttpContext httpContext) {
 		var connectionItemsFeature = httpContext.Features.Get<IConnectionItemsFeature>();
 
-		if (connectionItemsFeature is null ||
-			!connectionItemsFeature.Items.TryGetValue(nameof(DuckDBConnectionPool), out var item))
-			return null;
+		if (connectionItemsFeature is not null &&
+			connectionItemsFeature.Items.TryGetValue(nameof(ConnectionScopedDuckDBConnectionPool), out var item) &&
+			item is ConnectionScopedDuckDBConnectionPool pool)
+			return pool;
 
-		return item as DuckDBConnectionPool;
+		throw new InvalidOperationException($"No {nameof(ConnectionScopedDuckDBConnectionPool)} is available for this connection");
 	}
 }
