@@ -16,6 +16,7 @@ public delegate DuckDBConnectionPool GetConnectionScopedDuckDbConnectionPool();
 public static class InjectionExtensions {
 	public static IServiceCollection AddDuckInfra(this IServiceCollection services) {
 		services.AddSingleton<DuckDBConnectionPoolLifetime>();
+		services.AddHostedService(sp => sp.GetRequiredService<DuckDBConnectionPoolLifetime>());
 		services.AddDuckDBSetup<KdbGetEventSetup>();
 		services.AddSingleton<DuckDBConnectionPool>(sp => sp.GetRequiredService<DuckDBConnectionPoolLifetime>().Shared);
 		services.AddDuckDbConnectionScopedPools();
