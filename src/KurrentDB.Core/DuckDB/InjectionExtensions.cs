@@ -42,11 +42,11 @@ public static class InjectionExtensions {
 		var connectionItemsFeature = httpContext.Features.Get<IConnectionItemsFeature>();
 
 		if (connectionItemsFeature is not null &&
-			connectionItemsFeature.Items.TryGetValue(nameof(T), out var item) &&
-			item is T pool)
-			return pool;
+			connectionItemsFeature.Items.TryGetValue(typeof(T).Name, out var item) &&
+			item is T t)
+			return t;
 
-		throw new InvalidOperationException($"No {nameof(T)} is available for this connection");
+		throw new InvalidOperationException($"No {typeof(T).Name} is available for this connection");
 	}
 
 	/// <summary>
@@ -63,12 +63,13 @@ public static class InjectionExtensions {
 			var lazyPool = new Lazy<DuckDBConnectionPool>(poolFactory.CreatePool);
 			try {
 				// scoped wrapper is added to the context so that the scoped pool can be easily requested as opposed to the shared pool 
-				connectionContext.Items[nameof(GetConnectionScopedDuckDbConnectionPool)] = () => {
+				GetConnectionScopedDuckDbConnectionPool getter = () => {
 					// synchronize with disposal
 					lock (lazyPool) {
 						return lazyPool.Value;
 					}
 				};
+				connectionContext.Items[nameof(GetConnectionScopedDuckDbConnectionPool)] = getter;
 				await next(connectionContext);
 			} finally {
 				// synchronize to avoid possibility of value being created after we check IsValueCreated
