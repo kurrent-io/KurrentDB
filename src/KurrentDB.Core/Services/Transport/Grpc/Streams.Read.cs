@@ -11,16 +11,16 @@ using EventStore.Client;
 using EventStore.Client.Streams;
 using Google.Protobuf;
 using Grpc.Core;
+using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
-using KurrentDB.Core.DuckDB;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Services.Transport.Grpc;
-using KurrentDB.Core.Services.Transport.Http;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using static EventStore.Client.Streams.ReadResp.Types;
 using static EventStore.Plugins.Authorization.Operations.Streams;
 using CountOptionOneofCase = EventStore.Client.Streams.ReadReq.Types.Options.CountOptionOneofCase;
@@ -199,7 +199,7 @@ internal partial class Streams<TStreamId> {
 		};
 
 		IAsyncEnumerator<ReadResponse> GetFilterOrIndexEnumerator(
-			Func<string, IAsyncEnumerator<ReadResponse>> getIndexEnumerator,
+			Func<string, DuckDBConnectionPool, IAsyncEnumerator<ReadResponse>> getIndexEnumerator,
 			Func<ReadReq.Types.Options.Types.FilterOptions, IAsyncEnumerator<ReadResponse>> getReadAllEnumerator
 		) {
 			var filter = request.Options.Filter;
@@ -207,10 +207,11 @@ internal partial class Streams<TStreamId> {
 			if (filter.FilterCase == ReadReq.Types.Options.Types.FilterOptions.FilterOneofCase.StreamIdentifier
 				&& string.IsNullOrEmpty(filter.StreamIdentifier.Regex)) {
 				var indexName = filter.StreamIdentifier.Prefix.FirstOrDefault(SystemStreams.IsIndexStream);
+				var pool = httpContext.RequestServices.GetRequiredService<DuckDBConnectionPool>();
 				if (indexName != null) {
 					return filter.StreamIdentifier.Prefix.Count > 1
 						? throw RpcExceptions.InvalidArgument("Index reads only work with one index name and cannot be combined with stream prefixes or other indexes")
-						: getIndexEnumerator(indexName);
+						: getIndexEnumerator(indexName, pool);
 				}
 			}
 
@@ -219,9 +220,9 @@ internal partial class Streams<TStreamId> {
 
 		IAsyncEnumerator<ReadResponse> GetReadAllForwardsFilteredEnumerator() =>
 			GetFilterOrIndexEnumerator(
-				indexName => new Enumerator.ReadIndexForwards(
+				(indexName, pool) => new Enumerator.ReadIndexForwards(
 					_publisher, indexName, request.Options.All.ToPosition(),
-					request.Options.Count, user, requiresLeader, _expiryStrategy, httpContext.GetConnectionFeature<GetConnectionScopedDuckDbConnectionPool>()(), cancellationToken
+					request.Options.Count, user, requiresLeader, _expiryStrategy, pool, cancellationToken
 				),
 				filter => new Enumerator.ReadAllForwardsFiltered(
 					_publisher,
@@ -238,9 +239,9 @@ internal partial class Streams<TStreamId> {
 
 		IAsyncEnumerator<ReadResponse> GetReadAllBackwardsFilteredEnumerator() =>
 			GetFilterOrIndexEnumerator(
-				indexName => new Enumerator.ReadIndexBackwards(
+				(indexName, pool) => new Enumerator.ReadIndexBackwards(
 					_publisher, indexName, request.Options.All.ToPosition(),
-					request.Options.Count, user, requiresLeader, _expiryStrategy, httpContext.GetConnectionFeature<GetConnectionScopedDuckDbConnectionPool>()(), cancellationToken
+					request.Options.Count, user, requiresLeader, _expiryStrategy, pool, cancellationToken
 				),
 				filter => new Enumerator.ReadAllBackwardsFiltered(
 					_publisher,
@@ -257,9 +258,9 @@ internal partial class Streams<TStreamId> {
 
 		IAsyncEnumerator<ReadResponse> GetAllSubscriptionFilteredEnumerator() =>
 			GetFilterOrIndexEnumerator(
-				indexName => new Enumerator.IndexSubscription(
+				(indexName, pool) => new Enumerator.IndexSubscription(
 					_publisher, _expiryStrategy, request.Options.All.ToSubscriptionPosition(),
-					indexName, user, requiresLeader, httpContext.GetConnectionFeature<GetConnectionScopedDuckDbConnectionPool>()(), cancellationToken
+					indexName, user, requiresLeader, pool, cancellationToken
 				),
 				filter => new Enumerator.AllSubscriptionFiltered(
 					_publisher,

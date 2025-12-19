@@ -132,6 +132,9 @@ public class ClusterVNodeStartup<TStreamId>
 		app.UseAuthorization();
 		app.UseAntiforgery();
 
+		// provides a lazy DuckDB connection pool unique to the connection
+		app.UseDuckDbConnectionPool();
+
 		// allow all subsystems to register their legacy controllers before calling MapLegacyHttp
 		foreach (var component in _plugableComponents)
 			component.ConfigureApplication(app, _configuration);

@@ -2,16 +2,16 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Threading.Tasks;
 using Kurrent.Quack.ConnectionPool;
 using KurrentDB.DuckDB;
-using Microsoft.AspNetCore.Connections.Features;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace KurrentDB.Core.DuckDB;
-
-public delegate DuckDBConnectionPool GetConnectionScopedDuckDbConnectionPool();
 
 public static class InjectionExtensions {
 	public static IServiceCollection AddDuckInfra(this IServiceCollection services) {
@@ -19,35 +19,13 @@ public static class InjectionExtensions {
 		services.AddHostedService(sp => sp.GetRequiredService<DuckDBConnectionPoolLifetime>());
 		services.AddDuckDBSetup<KdbGetEventSetup>();
 		services.AddSingleton<DuckDBConnectionPool>(sp => sp.GetRequiredService<DuckDBConnectionPoolLifetime>().Shared);
-		services.AddDuckDbConnectionScopedPools();
+		services.AddSingleton<DuckDbConnectionPoolMiddleware>();
 		return services;
 	}
 
-	public static IServiceCollection AddDuckDbConnectionScopedPools(this IServiceCollection services) {
-		services.AddHttpContextAccessor();
-		services.AddScoped<GetConnectionScopedDuckDbConnectionPool>(sp => sp
-			.GetRequiredService<IHttpContextAccessor>()
-			.HttpContext?
-			.GetConnectionFeature<GetConnectionScopedDuckDbConnectionPool>());
-
-		return services;
-	}
-
-	/// <summary>
-	/// Gets the DuckDB connection pool associated with the lifetime of this connection
-	/// </summary>
-	/// <exception cref="InvalidOperationException">
-	/// Thrown if no DuckDB connection pool is associated with the current connection
-	/// </exception>
-	public static T GetConnectionFeature<T>(this HttpContext httpContext) {
-		var connectionItemsFeature = httpContext.Features.Get<IConnectionItemsFeature>();
-
-		if (connectionItemsFeature is not null &&
-			connectionItemsFeature.Items.TryGetValue(typeof(T).Name, out var item) &&
-			item is T t)
-			return t;
-
-		throw new InvalidOperationException($"No {typeof(T).Name} is available for this connection");
+	public static IApplicationBuilder UseDuckDbConnectionPool(this IApplicationBuilder app) {
+		app.UseMiddleware<DuckDbConnectionPoolMiddleware>();
+		return app;
 	}
 
 	/// <summary>
@@ -59,27 +37,28 @@ public static class InjectionExtensions {
 	/// </remarks>
 	public static void UseDuckDbConnectionPoolPerConnection(this ListenOptions listenOptions) {
 		listenOptions.Use(next => async connectionContext => {
-			var poolFactory = listenOptions.ApplicationServices.GetRequiredService<DuckDBConnectionPoolLifetime>();
 			// pool is disposed when the connection closes
-			var lazyPool = new Lazy<DuckDBConnectionPool>(poolFactory.CreatePool);
-			try {
-				// scoped wrapper is added to the context so that the scoped pool can be easily requested as opposed to the shared pool 
-				GetConnectionScopedDuckDbConnectionPool getter = () => {
-					// synchronize with disposal
-					lock (lazyPool) {
-						return lazyPool.Value;
-					}
-				};
-				connectionContext.Items[nameof(GetConnectionScopedDuckDbConnectionPool)] = getter;
-				await next(connectionContext);
-			} finally {
-				// synchronize to avoid possibility of value being created after we check IsValueCreated
-				lock (lazyPool) {
-					if (lazyPool.IsValueCreated) {
-						lazyPool.Value.Dispose();
-					}
-				}
-			}
+			var poolFactory = listenOptions.ApplicationServices.GetRequiredService<DuckDBConnectionPoolLifetime>();
+			using var pool = new ConnectionScopedDuckDBConnectionPool(poolFactory);
+			connectionContext.Features.Set<ConnectionScopedDuckDBConnectionPool>(pool);
+			await next(connectionContext);
+			// guaranteed no request handlers are running when the pool wrapper is disposed
 		});
+	}
+}
+
+file class DuckDbConnectionPoolMiddleware : IMiddleware {
+	public Task InvokeAsync(HttpContext context, RequestDelegate next) {
+		context.RequestServices = new DuckDBConnectionPoolProvider(
+			context.Features,
+			context.RequestServices);
+		return next(context);
+	}
+
+	sealed class DuckDBConnectionPoolProvider(IFeatureCollection features, IServiceProvider inner) : IServiceProvider {
+		public object GetService(Type serviceType) =>
+			serviceType == typeof(DuckDBConnectionPool)
+				? features.Get<ConnectionScopedDuckDBConnectionPool>().GetPool()
+				: inner.GetService(serviceType);
 	}
 }
