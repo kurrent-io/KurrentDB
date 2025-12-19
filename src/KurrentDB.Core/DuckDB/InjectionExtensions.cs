@@ -30,6 +30,17 @@ public static class InjectionExtensions {
 		return services;
 	}
 
+	public static ConnectionScopedDuckDBConnectionPool GetConnectionScopedDuckDbConnectionPool(this HttpContext httpContext) {
+		var connectionItemsFeature = httpContext.Features.Get<IConnectionItemsFeature>();
+
+		if (connectionItemsFeature is not null &&
+			connectionItemsFeature.Items.TryGetValue(nameof(ConnectionScopedDuckDBConnectionPool), out var item) &&
+			item is ConnectionScopedDuckDBConnectionPool pool)
+			return pool;
+
+		throw new InvalidOperationException($"No {nameof(ConnectionScopedDuckDBConnectionPool)} is available for this connection");
+	}
+
 	// Attaches a duck connection pool (duck pond??) to the kestrel connection because issuing secondary index reads will
 	// build query plans and cache them on the (pooled) duckdb connection and we dont want to end up with too many of these over time.
 	// If a pool is not attached to the connection the reading infra will use the shared pool.
@@ -51,16 +62,5 @@ public static class InjectionExtensions {
 				}
 			}
 		});
-	}
-
-	public static ConnectionScopedDuckDBConnectionPool GetConnectionScopedDuckDbConnectionPool(this HttpContext httpContext) {
-		var connectionItemsFeature = httpContext.Features.Get<IConnectionItemsFeature>();
-
-		if (connectionItemsFeature is not null &&
-			connectionItemsFeature.Items.TryGetValue(nameof(ConnectionScopedDuckDBConnectionPool), out var item) &&
-			item is ConnectionScopedDuckDBConnectionPool pool)
-			return pool;
-
-		throw new InvalidOperationException($"No {nameof(ConnectionScopedDuckDBConnectionPool)} is available for this connection");
 	}
 }
