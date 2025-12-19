@@ -11,6 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace KurrentDB.Core.DuckDB;
 
+public delegate DuckDBConnectionPool GetConnectionScopedDuckDbConnectionPool();
+
 public static class InjectionExtensions {
 	public static IServiceCollection AddDuckInfra(this IServiceCollection services) {
 		services.AddSingleton<DuckDBConnectionPoolLifetime>();
@@ -22,10 +24,10 @@ public static class InjectionExtensions {
 
 	public static IServiceCollection AddDuckDbConnectionScopedPools(this IServiceCollection services) {
 		services.AddHttpContextAccessor();
-		services.AddScoped(sp => sp
+		services.AddScoped<GetConnectionScopedDuckDbConnectionPool>(sp => sp
 			.GetRequiredService<IHttpContextAccessor>()
 			.HttpContext?
-			.GetConnectionScopedDuckDbConnectionPool());
+			.GetConnectionFeature<GetConnectionScopedDuckDbConnectionPool>());
 
 		return services;
 	}
@@ -36,15 +38,15 @@ public static class InjectionExtensions {
 	/// <exception cref="InvalidOperationException">
 	/// Thrown if no DuckDB connection pool is associated with the current connection
 	/// </exception>
-	public static ConnectionScopedDuckDBConnectionPool GetConnectionScopedDuckDbConnectionPool(this HttpContext httpContext) {
+	public static T GetConnectionFeature<T>(this HttpContext httpContext) {
 		var connectionItemsFeature = httpContext.Features.Get<IConnectionItemsFeature>();
 
 		if (connectionItemsFeature is not null &&
-			connectionItemsFeature.Items.TryGetValue(nameof(ConnectionScopedDuckDBConnectionPool), out var item) &&
-			item is ConnectionScopedDuckDBConnectionPool pool)
+			connectionItemsFeature.Items.TryGetValue(nameof(T), out var item) &&
+			item is T pool)
 			return pool;
 
-		throw new InvalidOperationException($"No {nameof(ConnectionScopedDuckDBConnectionPool)} is available for this connection");
+		throw new InvalidOperationException($"No {nameof(T)} is available for this connection");
 	}
 
 	/// <summary>
@@ -61,7 +63,12 @@ public static class InjectionExtensions {
 			var lazyPool = new Lazy<DuckDBConnectionPool>(poolFactory.CreatePool);
 			try {
 				// scoped wrapper is added to the context so that the scoped pool can be easily requested as opposed to the shared pool 
-				connectionContext.Items[nameof(ConnectionScopedDuckDBConnectionPool)] = new ConnectionScopedDuckDBConnectionPool(lazyPool);
+				connectionContext.Items[nameof(GetConnectionScopedDuckDbConnectionPool)] = () => {
+					// synchronize with disposal
+					lock (lazyPool) {
+						return lazyPool.Value;
+					}
+				};
 				await next(connectionContext);
 			} finally {
 				// synchronize to avoid possibility of value being created after we check IsValueCreated

@@ -221,7 +221,7 @@ internal partial class Streams<TStreamId> {
 			GetFilterOrIndexEnumerator(
 				indexName => new Enumerator.ReadIndexForwards(
 					_publisher, indexName, request.Options.All.ToPosition(),
-					request.Options.Count, user, requiresLeader, _expiryStrategy, httpContext.GetConnectionScopedDuckDbConnectionPool().Pool, cancellationToken
+					request.Options.Count, user, requiresLeader, _expiryStrategy, httpContext.GetConnectionFeature<GetConnectionScopedDuckDbConnectionPool>()(), cancellationToken
 				),
 				filter => new Enumerator.ReadAllForwardsFiltered(
 					_publisher,
@@ -240,7 +240,7 @@ internal partial class Streams<TStreamId> {
 			GetFilterOrIndexEnumerator(
 				indexName => new Enumerator.ReadIndexBackwards(
 					_publisher, indexName, request.Options.All.ToPosition(),
-					request.Options.Count, user, requiresLeader, _expiryStrategy, httpContext.GetConnectionScopedDuckDbConnectionPool().Pool, cancellationToken
+					request.Options.Count, user, requiresLeader, _expiryStrategy, httpContext.GetConnectionFeature<GetConnectionScopedDuckDbConnectionPool>()(), cancellationToken
 				),
 				filter => new Enumerator.ReadAllBackwardsFiltered(
 					_publisher,
@@ -259,7 +259,7 @@ internal partial class Streams<TStreamId> {
 			GetFilterOrIndexEnumerator(
 				indexName => new Enumerator.IndexSubscription(
 					_publisher, _expiryStrategy, request.Options.All.ToSubscriptionPosition(),
-					indexName, user, requiresLeader, httpContext.GetConnectionScopedDuckDbConnectionPool().Pool, cancellationToken
+					indexName, user, requiresLeader, httpContext.GetConnectionFeature<GetConnectionScopedDuckDbConnectionPool>()(), cancellationToken
 				),
 				filter => new Enumerator.AllSubscriptionFiltered(
 					_publisher,
