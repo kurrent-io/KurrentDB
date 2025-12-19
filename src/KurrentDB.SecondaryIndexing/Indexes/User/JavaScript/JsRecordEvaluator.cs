@@ -6,6 +6,7 @@
 
 using Jint;
 using Jint.Native;
+using Jint.Native.Function;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.User.JavaScript;
 
@@ -28,7 +29,7 @@ public interface IObjectEvaluator<in TRecord> {
 }
 
 public class JsRecordEvaluator(Engine engine) : IObjectEvaluator<JsRecord>, IDisposable {
-	readonly Dictionary<string, JsValue> CompiledFunctions = new();
+	readonly Dictionary<string, Function> CompiledFunctions = new();
 
 	public bool Match(JsRecord record, string predicateExpression) {
 		var jsRecordValue = JsValue.FromObject(engine, record);
@@ -44,7 +45,7 @@ public class JsRecordEvaluator(Engine engine) : IObjectEvaluator<JsRecord>, IDis
 		return function.Call(jsRecordValue);
 	}
 
-	JsValue GetOrCompile(string expression) {
+	Function GetOrCompile(string expression) {
 		if (CompiledFunctions.TryGetValue(expression, out var function)) return function;
 
 		function = engine.Evaluate($"({expression})").AsFunctionInstance();
