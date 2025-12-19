@@ -30,6 +30,12 @@ public static class InjectionExtensions {
 		return services;
 	}
 
+	/// <summary>
+	/// Gets the DuckDB connection pool associated with the lifetime of this connection
+	/// </summary>
+	/// <exception cref="InvalidOperationException">
+	/// Thrown if no DuckDB connection pool is associated with the current connection
+	/// </exception>
 	public static ConnectionScopedDuckDBConnectionPool GetConnectionScopedDuckDbConnectionPool(this HttpContext httpContext) {
 		var connectionItemsFeature = httpContext.Features.Get<IConnectionItemsFeature>();
 
@@ -41,9 +47,13 @@ public static class InjectionExtensions {
 		throw new InvalidOperationException($"No {nameof(ConnectionScopedDuckDBConnectionPool)} is available for this connection");
 	}
 
-	// Attaches a duck connection pool (duck pond??) to the kestrel connection because issuing secondary index reads will
-	// build query plans and cache them on the (pooled) duckdb connection and we dont want to end up with too many of these over time.
-	// If a pool is not attached to the connection the reading infra will use the shared pool.
+	/// <summary>
+	/// Configures a dedicated DuckDB connection pool for each Kestrel connection.
+	/// </summary>
+	/// <remarks>
+	/// Attaching a pool to individual connections allows query plans to be cached on pooled DuckDB connections
+	/// without accumulating too many cached plans over time.
+	/// </remarks>
 	public static void UseDuckDbConnectionPoolPerConnection(this ListenOptions listenOptions) {
 		listenOptions.Use(next => async connectionContext => {
 			var poolFactory = listenOptions.ApplicationServices.GetRequiredService<DuckDBConnectionPoolLifetime>();
