@@ -12,6 +12,7 @@ using EventStore.Client.Streams;
 using Google.Protobuf;
 using Grpc.Core;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.DuckDB;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.ReaderIndex;

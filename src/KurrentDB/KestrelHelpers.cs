@@ -7,12 +7,10 @@ using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.DuckDB;
 using KurrentDB.Core.Services.Transport.Http;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using RuntimeInformation = System.Runtime.RuntimeInformation;
 
@@ -26,18 +24,6 @@ public static class KestrelHelpers {
 			listenOptions.UseHttps(CreateServerOptionsSelectionCallback(hostedService), null);
 		else
 			listenOptions.Use(next => new ClearTextHttpMultiplexingMiddleware(next).OnConnectAsync);
-	}
-
-	// Attaches a duck connection pool (duck pond??) to the kestrel connection because issuing secondary index reads will
-	// build query plans and cache them on the (pooled) duckdb connection and we dont want to end up with too many of these over time.
-	// If a pool is not attached to the connection the reading infra will use the shared pool.
-	public static void UseDuckDbConnectionPoolPerConnection(this ListenOptions listenOptions) {
-		listenOptions.Use(next => async connectionContext => {
-			var poolFactory = listenOptions.ApplicationServices.GetRequiredService<DuckDBConnectionPoolLifetime>();
-			using var pool = poolFactory.CreatePool();
-			connectionContext.Items[nameof(DuckDBConnectionPool)] = pool;
-			await next(connectionContext);
-		});
 	}
 
 	public static void TryListenOnUnixSocket(ClusterVNodeHostedService hostedService, KestrelServerOptions server) {

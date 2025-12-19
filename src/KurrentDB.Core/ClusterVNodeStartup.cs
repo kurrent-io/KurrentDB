@@ -14,7 +14,6 @@ using EventStore.Plugins;
 using EventStore.Plugins.Authentication;
 using EventStore.Plugins.Authorization;
 using Grpc.Net.Compression;
-using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
@@ -25,7 +24,6 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Core.Services.Transport.Http;
 using KurrentDB.Core.TransactionLog.Chunks;
-using KurrentDB.DuckDB;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -290,9 +288,7 @@ public class ClusterVNodeStartup<TStreamId>
 			})
 			.AddServiceOptions<Streams<TStreamId>>(options => options.MaxReceiveMessageSize = TFConsts.EffectiveMaxLogRecordSize);
 
-		services.AddSingleton<DuckDBConnectionPoolLifetime>();
-		services.AddDuckDBSetup<KdbGetEventSetup>();
-		services.AddSingleton<DuckDBConnectionPool>(sp => sp.GetRequiredService<DuckDBConnectionPoolLifetime>().Shared);
+		services.AddDuckInfra();
 
 		// Ask the node itself to add DI registrations
 		_configureNodeServices(services);
