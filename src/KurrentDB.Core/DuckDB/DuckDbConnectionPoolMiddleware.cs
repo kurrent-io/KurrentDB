@@ -15,17 +15,18 @@ namespace KurrentDB.Core.DuckDB;
 /// Dispose must be called after GetPool is no longer being called.
 /// </remarks>
 public sealed class ConnectionScopedDuckDBConnectionPool(DuckDBConnectionPoolLifetime factory) : IDisposable {
-	DuckDBConnectionPool _pool;
+	volatile DuckDBConnectionPool _pool;
 
 	public DuckDBConnectionPool GetPool() {
-		var pool = Volatile.Read(in _pool);
-		if (pool is null) {
+		if (_pool is not { } pool) {
 			pool = factory.CreatePool();
-			if (Interlocked.CompareExchange(ref _pool, pool, null) is not null) {
+			if (Interlocked.CompareExchange(ref _pool, pool, null) is { } existing) {
 				pool.Dispose();
+				pool = existing;
 			}
 		}
-		return _pool;
+
+		return pool;
 	}
 
 	public void Dispose() {
