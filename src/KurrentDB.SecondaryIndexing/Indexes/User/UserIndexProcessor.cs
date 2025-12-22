@@ -2,15 +2,15 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics.Metrics;
+using System.Text.Json;
 using DotNext;
 using DotNext.Threading;
 using DuckDB.NET.Data;
 using DuckDB.NET.Data.DataChunk.Writer;
 using Jint;
-using Jint.Native;
-using Jint.Native.Json;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
+using Kurrent.Surge.Schema.Serializers.Json;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
@@ -37,7 +37,6 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 	private readonly string? _filterExpression;
 	private readonly string? _fieldSelectorExpression;
 	private readonly JsRecord _jsRecord;
-	private readonly JsonParser _parser;
 	private readonly UserIndexInFlightRecords<TField> _inFlightRecords;
 	private readonly string _inFlightTableName;
 	private readonly string _queryStreamName;
@@ -46,6 +45,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 	private readonly UserIndexSql<TField> _sql;
 	private readonly object _skip;
 	private ulong _sequenceId;
+	private readonly JsonSerializerOptions _serializerOptions;
 
 	private TFPos _lastPosition;
 	private Appender _appender;
@@ -85,7 +85,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 		_filterExpression = jsEventFilter is not "" ? jsEventFilter : null;
 		_fieldSelectorExpression = jsFieldSelector is not "" ? jsFieldSelector : null;
 
-		_parser = new JsonParser(_engine);
+		_serializerOptions = SystemJsonSchemaSerializerOptions.Default;
 		_jsRecord = new JsRecord();
 
 		_connection = db.Open();
@@ -154,7 +154,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 		field = default;
 
 		try {
-			_jsRecord.Remap(resolvedEvent, ++_sequenceId, _parser);
+			_jsRecord.Remap(resolvedEvent, ++_sequenceId, _serializerOptions);
 
 			if (_filterExpression is not null && !_evaluator.Match(_jsRecord, _filterExpression))
 				return false;
