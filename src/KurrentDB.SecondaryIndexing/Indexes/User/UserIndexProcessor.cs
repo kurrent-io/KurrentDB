@@ -2,15 +2,15 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics.Metrics;
+using System.Text.Json;
 using DotNext;
 using DotNext.Threading;
 using DuckDB.NET.Data;
 using DuckDB.NET.Data.DataChunk.Writer;
 using Jint;
-using Jint.Native.Function;
-using Jint.Native.Json;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
+using Kurrent.Surge.Schema.Serializers.Json;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
@@ -33,9 +33,10 @@ internal abstract class UserIndexProcessor : Disposable, ISecondaryIndexProcesso
 
 internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IField {
 	private readonly Engine _engine = JintEngineFactory.CreateEngine(executionTimeout: TimeSpan.FromSeconds(30));
-	private readonly Function? _filter;
-	private readonly Function? _fieldSelector;
-	private readonly RecordObject _jsRecord;
+	private readonly JsRecordEvaluator _evaluator;
+	private readonly string? _filterExpression;
+	private readonly string? _fieldSelectorExpression;
+	private readonly JsRecord _jsRecord;
 	private readonly UserIndexInFlightRecords<TField> _inFlightRecords;
 	private readonly string _inFlightTableName;
 	private readonly string _queryStreamName;
@@ -44,6 +45,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 	private readonly UserIndexSql<TField> _sql;
 	private readonly object _skip;
 	private ulong _sequenceId;
+	private readonly JsonSerializerOptions _serializerOptions;
 
 	private TFPos _lastPosition;
 	private Appender _appender;
@@ -79,14 +81,12 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 		_engine.SetValue("skip", new object());
 		_skip = _engine.Evaluate("skip");
 
-		if (jsEventFilter is not "")
-			_filter = _engine.Evaluate(jsEventFilter).AsFunctionInstance();
+		_evaluator = new JsRecordEvaluator(_engine);
+		_filterExpression = jsEventFilter is not "" ? jsEventFilter : null;
+		_fieldSelectorExpression = jsFieldSelector is not "" ? jsFieldSelector : null;
 
-		if (jsFieldSelector is not "")
-			_fieldSelector = _engine.Evaluate(jsFieldSelector).AsFunctionInstance();
-
-		var parser = new JsonParser(_engine);
-		_jsRecord = new(_engine, parser);
+		_serializerOptions = SystemJsonSchemaSerializerOptions.Default;
+		_jsRecord = new JsRecord();
 
 		_connection = db.Open();
 		_sql.CreateUserIndex(_connection);
@@ -154,19 +154,16 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 		field = default;
 
 		try {
-			_jsRecord.MapFrom(resolvedEvent, ++_sequenceId);
+			_jsRecord.Remap(resolvedEvent, ++_sequenceId, _serializerOptions);
 
-			if (_filter is not null) {
-				var passesFilter = _filter.Call(_jsRecord).AsBoolean();
-				if (!passesFilter)
-					return false;
-			}
+			if (_filterExpression is not null && !_evaluator.Match(_jsRecord, _filterExpression))
+				return false;
 
-			if (_fieldSelector is not null) {
-				var fieldJsValue = _fieldSelector.Call(_jsRecord);
-				if (_skip.Equals(fieldJsValue))
+			if (_fieldSelectorExpression is not null) {
+				var fieldValue = _evaluator.Select(_jsRecord, _fieldSelectorExpression);
+				if (_skip.Equals(fieldValue))
 					return false;
-				field = (TField) TField.ParseFrom(fieldJsValue);
+				field = (TField)TField.ParseFrom(fieldValue);
 			}
 
 			return true;

@@ -34,7 +34,7 @@ public class IndexesReadTests {
 		await IndexesClient.CreateAsync(
 			new() {
 				Name = IndexName,
-				Filter = $"rec => rec.schemaInfo.subject == '{EventType}'",
+				Filter = $"rec => rec.schema.name == '{EventType}'",
 				Fields = {
 					new IndexField() {
 						Name = "country",

@@ -3,6 +3,8 @@
 
 using System.Globalization;
 using Jint;
+using Jint.Native;
+using Jint.Runtime.Interop;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Surge;
 
@@ -17,7 +19,22 @@ static class JintEngineFactory {
 				.Strict()
 				.Culture(CultureInfo.InvariantCulture)
 				.DisableStringCompilation()
-				.TimeoutInterval(timeout);
+				.TimeoutInterval(timeout)
+				.AddObjectConverter(EnumToStringConverter.Instance);
 		});
+	}
+
+	sealed class EnumToStringConverter : IObjectConverter {
+		public static readonly EnumToStringConverter Instance = new();
+
+		public bool TryConvert(Engine engine, object value, out JsValue result) {
+			if (value is Enum e) {
+				result = Enum.GetName(e.GetType(), e) ?? e.ToString();
+				return true;
+			}
+
+			result = JsValue.Null;
+			return false;
+		}
 	}
 }
