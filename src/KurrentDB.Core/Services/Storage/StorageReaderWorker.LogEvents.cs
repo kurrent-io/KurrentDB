@@ -31,9 +31,11 @@ public partial class StorageReaderWorker<TStreamId> {
 		}
 
 		ReadLogEventsCompleted ev;
+#pragma warning disable CS0618 // Type or member is obsolete
 		using (token.LinkTo(msg.CancellationToken)) {
 			ev = await ReadLogEvents(msg, token);
 		}
+#pragma warning restore CS0618 // Type or member is obsolete
 
 		msg.Envelope.ReplyWith(ev);
 	}

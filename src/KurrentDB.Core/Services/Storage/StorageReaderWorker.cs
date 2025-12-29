@@ -75,7 +75,9 @@ public partial class StorageReaderWorker<TStreamId> :
 
 	async ValueTask IAsyncHandle<StorageMessage.EffectiveStreamAclRequest>.HandleAsync(StorageMessage.EffectiveStreamAclRequest msg, CancellationToken token) {
 		Message reply;
+#pragma warning disable CS0618 // Type or member is obsolete
 		var cts = token.LinkTo(msg.CancellationToken);
+#pragma warning restore CS0618 // Type or member is obsolete
 
 		try {
 			var acl = await _readIndex.GetEffectiveAcl(_readIndex.GetStreamId(msg.StreamId), token);
@@ -208,7 +210,9 @@ public partial class StorageReaderWorker<TStreamId> :
 	}
 
 	async ValueTask IAsyncHandle<StorageMessage.StreamIdFromTransactionIdRequest>.HandleAsync(StorageMessage.StreamIdFromTransactionIdRequest message, CancellationToken token) {
+#pragma warning disable CS0618 // Type or member is obsolete
 		var cts = token.LinkTo(message.CancellationToken);
+#pragma warning restore CS0618 // Type or member is obsolete
 		Message reply;
 		try {
 			var streamId = await _readIndex.GetEventStreamIdByTransactionId(message.TransactionId, token);
