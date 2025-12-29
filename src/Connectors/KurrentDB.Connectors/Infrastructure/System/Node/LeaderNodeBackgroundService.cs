@@ -53,7 +53,9 @@ public abstract class LeaderNodeBackgroundService : NodeBackgroundService {
             Logger.LogLeaderNodeBackgroundServiceLeadershipAssigned(ServiceName);
 
             var token       = lifetimeToken;
-            var cancellator = token.LinkTo(stoppingToken);
+#pragma warning disable CS0618 // Type or member is obsolete
+			var cancellator = token.LinkTo(stoppingToken);
+#pragma warning restore CS0618 // Type or member is obsolete
 
             try {
                 var nodeInfo = await GetNodeSystemInfo(stoppingToken);

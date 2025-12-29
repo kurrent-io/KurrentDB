@@ -34,7 +34,9 @@ public partial class StorageReaderWorker<TStreamId> {
 		}
 
 		ReadStreamEventsForwardCompleted res;
+#pragma warning disable CS0618 // Type or member is obsolete
 		var cts = token.LinkTo(msg.CancellationToken);
+#pragma warning restore CS0618 // Type or member is obsolete
 		try {
 			res = SystemStreams.IsInMemoryStream(msg.EventStreamId)
 				? await _virtualStreamReader.ReadForwards(msg, token)
@@ -86,7 +88,9 @@ public partial class StorageReaderWorker<TStreamId> {
 			return;
 		}
 
+#pragma warning disable CS0618 // Type or member is obsolete
 		var cts = token.LinkTo(msg.CancellationToken);
+#pragma warning restore CS0618 // Type or member is obsolete
 		try {
 			var res = SystemStreams.IsInMemoryStream(msg.EventStreamId)
 				? await _virtualStreamReader.ReadBackwards(msg, token)
