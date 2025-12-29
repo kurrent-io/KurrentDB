@@ -205,7 +205,7 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 		builder.WebHost
 			.ConfigureKestrel(o => {
 				o.Listen(HttpEndPoint, options => {
-					options.UseDuckDbConnectionPoolPerConnection();
+					options.UseDuckDb();
 					if (RuntimeInformation.IsOSX) {
 						options.Protocols = HttpProtocols.Http2;
 					} else {

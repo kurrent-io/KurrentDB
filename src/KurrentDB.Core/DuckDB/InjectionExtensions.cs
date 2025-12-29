@@ -14,7 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace KurrentDB.Core.DuckDB;
 
 public static class InjectionExtensions {
-	public static IServiceCollection AddDuckInfra(this IServiceCollection services) {
+	public static IServiceCollection AddDuckDb(this IServiceCollection services) {
 		services.AddSingleton<DuckDBConnectionPoolLifetime>();
 		services.AddHostedService(sp => sp.GetRequiredService<DuckDBConnectionPoolLifetime>());
 		services.AddDuckDBSetup<KdbGetEventSetup>();
@@ -23,7 +23,7 @@ public static class InjectionExtensions {
 		return services;
 	}
 
-	public static IApplicationBuilder UseDuckDbConnectionPool(this IApplicationBuilder app) {
+	public static IApplicationBuilder UseDuckDb(this IApplicationBuilder app) {
 		app.UseMiddleware<DuckDbConnectionPoolMiddleware>();
 		return app;
 	}
@@ -35,7 +35,7 @@ public static class InjectionExtensions {
 	/// Attaching a pool to individual connections allows query plans to be cached on pooled DuckDB connections
 	/// without accumulating too many cached plans over time.
 	/// </remarks>
-	public static void UseDuckDbConnectionPoolPerConnection(this ListenOptions listenOptions) {
+	public static void UseDuckDb(this ListenOptions listenOptions) {
 		listenOptions.Use(next => async connectionContext => {
 			// pool is disposed when the connection closes
 			var poolFactory = listenOptions.ApplicationServices.GetRequiredService<DuckDBConnectionPoolLifetime>();

@@ -18,7 +18,7 @@ namespace KurrentDB;
 
 public static class KestrelHelpers {
 	public static void ConfigureHttpOptions(ListenOptions listenOptions, ClusterVNodeHostedService hostedService, bool useHttps) {
-		listenOptions.UseDuckDbConnectionPoolPerConnection();
+		listenOptions.UseDuckDb();
 
 		if (useHttps)
 			listenOptions.UseHttps(CreateServerOptionsSelectionCallback(hostedService), null);

@@ -15,6 +15,7 @@ using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.DuckDB;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace KurrentDB.Core.DuckDB;
 
@@ -34,7 +35,7 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 		[CanBeNull] ILogger<DuckDBConnectionPoolLifetime> log) {
 
 		_path = config.InMemDb ? GetTempPath() : $"{config.Path}/kurrent.ddb";
-		_log = log;
+		_log = log ?? NullLogger<DuckDBConnectionPoolLifetime>.Instance;
 
 		var once = new List<IDuckDBSetup>();
 		var repeated = new List<IDuckDBSetup>();

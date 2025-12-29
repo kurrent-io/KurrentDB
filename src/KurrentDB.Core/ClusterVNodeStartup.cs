@@ -133,7 +133,7 @@ public class ClusterVNodeStartup<TStreamId>
 		app.UseAntiforgery();
 
 		// provides a lazy DuckDB connection pool unique to the connection
-		app.UseDuckDbConnectionPool();
+		app.UseDuckDb();
 
 		// allow all subsystems to register their legacy controllers before calling MapLegacyHttp
 		foreach (var component in _plugableComponents)
@@ -291,7 +291,7 @@ public class ClusterVNodeStartup<TStreamId>
 			})
 			.AddServiceOptions<Streams<TStreamId>>(options => options.MaxReceiveMessageSize = TFConsts.EffectiveMaxLogRecordSize);
 
-		services.AddDuckInfra();
+		services.AddDuckDb();
 
 		// Ask the node itself to add DI registrations
 		_configureNodeServices(services);
