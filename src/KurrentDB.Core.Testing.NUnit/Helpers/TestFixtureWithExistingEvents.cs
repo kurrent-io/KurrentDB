@@ -484,7 +484,7 @@ public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId> : Tes
 				new StorageMessage.EventCommitted(tfPos.CommitPosition, eventRecord.record, isTfEof: false));
 		}
 
-		_bus.Publish(new StorageMessage.TfEofAtNonCommitRecord());
+		_bus.Publish(new StorageMessage.IndexedToEndOfTransactionFile());
 
 		var firstEventNumber = list.Count - events.Length;
 		envelope?.ReplyWith(writeEventsCompleted(firstEventNumber, firstEventNumber + events.Length - 1));

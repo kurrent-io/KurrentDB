@@ -18,10 +18,10 @@ namespace KurrentDB.Core.TransactionLog.LogRecords;
 [Flags]
 public enum PrepareFlags : ushort {
 	None = 0x00,
-	Data = 0x01, // prepare contains data
+	Data = 0x01, // prepare contains data, occupies an event number in its stream
 	TransactionBegin = 0x02, // prepare starts transaction
 	TransactionEnd = 0x04, // prepare ends transaction
-	StreamDelete = 0x08, // prepare deletes stream
+	StreamDelete = 0x08, // prepare hard deletes stream
 
 	IsCommitted = 0x20, // prepare should be considered committed immediately, no commit will follow in TF
 						//Update = 0x30,                  // prepare updates previous instance of the same event, DANGEROUS!
@@ -59,7 +59,10 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 	public PrepareFlags Flags { get; }
 	public long TransactionPosition { get; }
 	public int TransactionOffset { get; }
-	public long ExpectedVersion { get; } // if IsCommitted is set, this is final EventNumber
+	// if IsCommitted is set then ExpectedVersion is EventNumber - 1 else ExpectedVersion is Any (-2)
+	// we don't store the event number directly because this record does not necessarily have one.
+	// (when uncommitted, also when neither PrepareFlags.Data nor PrepareFlags.StreamDelete)
+	public long ExpectedVersion { get; }
 	public string EventStreamId { get; }
 	private int? _eventStreamIdSize;
 	public Guid EventId { get; }
