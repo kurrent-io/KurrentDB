@@ -3,7 +3,6 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics.Metrics;
-using System.Text.Json;
 using System.Threading.Channels;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
@@ -20,58 +19,36 @@ using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Protocol.V2.Indexes;
 using KurrentDB.SecondaryIndexing.Subscriptions;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.User;
 
-public class UserIndexEngineSubscription : ISecondaryIndexReader {
-	private readonly ISystemClient _client;
-	private readonly IPublisher _publisher;
-	private readonly ISchemaSerializer _serializer;
-	private readonly SecondaryIndexingPluginOptions _options;
-	private readonly DuckDBConnectionPool _db;
-	private readonly Meter _meter;
-	private readonly Func<(long, DateTime)> _getLastAppendedRecord;
-	private readonly IReadIndex<string> _readIndex;
-	private readonly Channel<ReadResponse> _channel;
+public partial class UserIndexEngineSubscription(
+	ISystemClient client,
+	IPublisher publisher,
+	ISchemaSerializer serializer,
+	SecondaryIndexingPluginOptions options,
+	DuckDBConnectionPool db,
+	IReadIndex<string> readIndex,
+	Meter meter,
+	Func<(long, DateTime)> getLastAppendedRecord,
+	ILoggerFactory logFactory,
+	CancellationToken token)
+	: ISecondaryIndexReader {
+	private readonly Channel<ReadResponse> _channel = Channel.CreateBounded<ReadResponse>(new BoundedChannelOptions(capacity: 20));
 	private readonly ConcurrentDictionary<string, UserIndexData> _userIndexes = new();
-	private readonly CancellationTokenSource _cts;
+	private readonly CancellationTokenSource _cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+	private readonly ILogger<UserIndexEngineSubscription> _log = logFactory.CreateLogger<UserIndexEngineSubscription>();
 
 	record struct UserIndexData(
 		ReaderWriterLockSlim RWLock,
 		UserIndexSubscription Subscription,
 		SecondaryIndexReaderBase Reader);
 
-	private static readonly ILogger Log = Serilog.Log.ForContext<UserIndexEngineSubscription>();
-
 	// ignore system events
 	static readonly Func<EventRecord, bool> IgnoreSystemEvents = evt =>
 		!evt.EventType.StartsWith('$') &&
 		!evt.EventStreamId.StartsWith('$');
-
-	public UserIndexEngineSubscription(
-		ISystemClient client,
-		IPublisher publisher,
-		ISchemaSerializer serializer,
-		SecondaryIndexingPluginOptions options,
-		DuckDBConnectionPool db,
-		IReadIndex<string> readIndex,
-		Meter meter,
-		Func<(long, DateTime)> getLastAppendedRecord,
-		CancellationToken token) {
-
-		_client = client;
-		_publisher = publisher;
-		_serializer = serializer;
-		_options = options;
-		_db = db;
-		_meter = meter;
-		_getLastAppendedRecord = getLastAppendedRecord;
-		_readIndex = readIndex;
-
-		_cts = CancellationTokenSource.CreateLinkedTokenSource(token);
-		_channel = Channel.CreateBounded<ReadResponse>(new BoundedChannelOptions(capacity: 20));
-	}
 
 	public bool CaughtUp { get; private set; }
 	public long Checkpoint { get; private set; }
@@ -80,9 +57,9 @@ public class UserIndexEngineSubscription : ISecondaryIndexReader {
 		try {
 			await StartInternal();
 		} catch (OperationCanceledException) {
-			Log.Verbose("Subscription to: {stream} is shutting down.", UserIndexConstants.ManagementStream);
+			LogSubscriptionToStreamIsShuttingDown(UserIndexConstants.ManagementStream);
 		} catch (Exception ex) {
-			Log.Fatal(ex, "Subscription to: {stream} has encountered a fatal error.", UserIndexConstants.ManagementStream);
+			LogSubscriptionToStreamHasEncounteredAFatalError(ex, UserIndexConstants.ManagementStream);
 		}
 	}
 
@@ -92,10 +69,10 @@ public class UserIndexEngineSubscription : ISecondaryIndexReader {
 
 		foreach (var (index, data) in _userIndexes) {
 			try {
-				Log.Verbose("Stopping user index: {index}", index);
+				LogStoppingUserIndex(LogLevel.Trace, index);
 				await data.Subscription.Stop();
 			} catch (Exception ex) {
-				Log.Error(ex, "Failed to stop user index: {index}", index);
+				LogFailedToStopUserIndex(ex, index);
 			}
 		}
 	}
@@ -113,11 +90,10 @@ public class UserIndexEngineSubscription : ISecondaryIndexReader {
 			indexName: UserIndexConstants.ManagementIndexName,
 			createdEvent: new() {
 				Filter = "",
-				Fields = { },
 			},
 			eventFilter: evt => evt.EventStreamId.StartsWith($"{UserIndexConstants.Category}-"));
 
-		await _client.Subscriptions.SubscribeToIndex(
+		await client.Subscriptions.SubscribeToIndex(
 			position: Position.Start,
 			indexName: UserIndexConstants.ManagementStream,
 			channel: _channel,
@@ -133,11 +109,11 @@ public class UserIndexEngineSubscription : ISecondaryIndexReader {
 					if (CaughtUp)
 						continue;
 
-					Log.Verbose("Subscription to: {stream} caught up", UserIndexConstants.ManagementStream);
+					LogSubscriptionToStreamCaughtUp(UserIndexConstants.ManagementStream);
 
 					CaughtUp = true;
 
-					using (_db.Rent(out var connection)) {
+					using (db.Rent(out var connection)) {
 						// in some situations, a user index may have already been marked as deleted in the management stream but not yet in DuckDB:
 						// 1) if a node was off or disconnected from the quorum for an extended period of time
 						// 2) if a crash occurred mid-deletion
@@ -163,9 +139,9 @@ public class UserIndexEngineSubscription : ISecondaryIndexReader {
 				case ReadResponse.EventReceived eventReceived:
 					var evt = eventReceived.Event;
 
-					Log.Verbose("Subscription to: {stream} received event type: {type}", UserIndexConstants.ManagementStream, evt.OriginalEvent.EventType);
+					LogSubscriptionToStreamReceivedEventType(UserIndexConstants.ManagementStream, evt.OriginalEvent.EventType);
 
-					var deserializedEvent = await _serializer.Deserialize(
+					var deserializedEvent = await serializer.Deserialize(
 						data: evt.OriginalEvent.Data,
 						schemaInfo: new(evt.OriginalEvent.EventType, SchemaDataFormat.Json));
 
@@ -212,10 +188,10 @@ public class UserIndexEngineSubscription : ISecondaryIndexReader {
 							break;
 						}
 						default:
-							Log.Warning("Subscription to: {stream} received unknown event type: {type} at event number: {eventNumber}",
-								UserIndexConstants.ManagementStream, evt.OriginalEvent.EventType, evt.OriginalEventNumber);
+							LogSubscriptionToStreamReceivedUnknownEventType(UserIndexConstants.ManagementStream, evt.OriginalEvent.EventType, evt.OriginalEventNumber);
 							break;
 					}
+
 					break;
 			}
 		}
@@ -241,10 +217,9 @@ public class UserIndexEngineSubscription : ISecondaryIndexReader {
 		string indexName,
 		IndexCreated createdEvent,
 		Func<EventRecord, bool>? eventFilter = null) where TField : IField {
+		LogStartingUserIndex(indexName);
 
-		Log.Debug("Starting user index: {index}", indexName);
-
-		var inFlightRecords = new UserIndexInFlightRecords<TField>(_options);
+		var inFlightRecords = new UserIndexInFlightRecords<TField>(options);
 
 		var sql = new UserIndexSql<TField>(
 			indexName,
@@ -258,28 +233,31 @@ public class UserIndexEngineSubscription : ISecondaryIndexReader {
 			jsFieldSelector: createdEvent.Fields.Count is 0
 				? ""
 				: createdEvent.Fields[0].Selector,
-			db: _db,
+			db: db,
 			sql: sql,
 			inFlightRecords: inFlightRecords,
-			publisher: _publisher,
-			meter: _meter,
-			getLastAppendedRecord: _getLastAppendedRecord);
+			publisher: publisher,
+			meter: meter,
+			getLastAppendedRecord: getLastAppendedRecord,
+			log: logFactory.CreateLogger<UserIndexProcessor>()
+		);
 
-		var reader = new UserIndexReader<TField>(sharedPool: _db, sql, inFlightRecords, _readIndex);
+		var reader = new UserIndexReader<TField>(sharedPool: db, sql, inFlightRecords, readIndex);
 
 		UserIndexSubscription subscription = new UserIndexSubscription<TField>(
-			publisher: _publisher,
+			publisher: publisher,
 			indexProcessor: processor,
-			options: _options,
+			options: options,
 			eventFilter: eventFilter ?? IgnoreSystemEvents,
+			log: logFactory.CreateLogger<UserIndexSubscription>(),
 			token: _cts.Token);
 
-		_userIndexes.TryAdd(indexName, new(new ReaderWriterLockSlim(), subscription, reader));
+		_userIndexes.TryAdd(indexName, new(new(), subscription, reader));
 		await subscription.Start();
 	}
 
 	private async Task StopUserIndex(string indexName) {
-		Log.Debug("Stopping user index: {index}", indexName);
+		LogStoppingUserIndex(LogLevel.Debug, indexName);
 
 		var writeLock = AcquireWriteLockForIndex(indexName, out var index);
 		using (writeLock) {
@@ -293,9 +271,9 @@ public class UserIndexEngineSubscription : ISecondaryIndexReader {
 	}
 
 	private void DeleteUserIndex(string indexName) {
-		Log.Debug("Deleting user index: {index}", indexName);
+		LogDeletingUserIndex(indexName);
 
-		using (_db.Rent(out var connection)) {
+		using (db.Rent(out var connection)) {
 			DeleteUserIndexTable(connection, indexName);
 		}
 
@@ -303,8 +281,8 @@ public class UserIndexEngineSubscription : ISecondaryIndexReader {
 	}
 
 	private void DropSubscriptions(string indexName) {
-		Log.Verbose("Dropping subscriptions to user index: {index}", indexName);
-		_publisher.Publish(new StorageMessage.SecondaryIndexDeleted(UserIndexHelpers.GetStreamNameRegex(indexName)));
+		LogDroppingSubscriptionsToUserIndex(indexName);
+		publisher.Publish(new StorageMessage.SecondaryIndexDeleted(UserIndexHelpers.GetStreamNameRegex(indexName)));
 	}
 
 	private static void DeleteUserIndexTable(DuckDBAdvancedConnection connection, string indexName) {
@@ -324,9 +302,10 @@ public class UserIndexEngineSubscription : ISecondaryIndexReader {
 			return data.Subscription.GetLastIndexedPosition();
 	}
 
-	public ValueTask<ClientMessage.ReadIndexEventsForwardCompleted> ReadForwards(ClientMessage.ReadIndexEventsForward msg, CancellationToken token) {
+	public ValueTask<ClientMessage.ReadIndexEventsForwardCompleted> ReadForwards(ClientMessage.ReadIndexEventsForward msg,
+		CancellationToken token) {
 		UserIndexHelpers.ParseQueryStreamName(msg.IndexName, out var indexName, out _);
-		Log.Verbose("User index: {index} received read forwards request", indexName);
+		LogUserIndexReceivedReadForwardsRequest(indexName);
 		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var data)) {
 			var result = new ClientMessage.ReadIndexEventsForwardCompleted(
 				ReadIndexResult.IndexNotFound, [], new(msg.CommitPosition, msg.PreparePosition), -1, true,
@@ -339,9 +318,10 @@ public class UserIndexEngineSubscription : ISecondaryIndexReader {
 			return data.Reader.ReadForwards(msg, token);
 	}
 
-	public ValueTask<ClientMessage.ReadIndexEventsBackwardCompleted> ReadBackwards(ClientMessage.ReadIndexEventsBackward msg, CancellationToken token) {
+	public ValueTask<ClientMessage.ReadIndexEventsBackwardCompleted> ReadBackwards(ClientMessage.ReadIndexEventsBackward msg,
+		CancellationToken token) {
 		UserIndexHelpers.ParseQueryStreamName(msg.IndexName, out var indexName, out _);
-		Log.Verbose("User index: {index} received read backwards request", indexName);
+		LogUserIndexReceivedReadBackwardsRequest(indexName);
 		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var data)) {
 			var result = new ClientMessage.ReadIndexEventsBackwardCompleted(
 				ReadIndexResult.IndexNotFound, [], new(msg.CommitPosition, msg.PreparePosition), -1, true,
@@ -394,7 +374,7 @@ public class UserIndexEngineSubscription : ISecondaryIndexReader {
 			throw new Exception($"Timed out when acquiring write lock for index: {index}");
 
 		subscription = data.Subscription;
-		return new WriteLock(data.RWLock);
+		return new(data.RWLock);
 	}
 
 	private readonly record struct ReadLock(ReaderWriterLockSlim Lock) : IDisposable {
@@ -407,4 +387,40 @@ public class UserIndexEngineSubscription : ISecondaryIndexReader {
 			Lock.Dispose(); // the write lock is used only once: when the user index is deleted
 		}
 	}
+
+	[LoggerMessage(LogLevel.Trace, "Subscription to: {stream} is shutting down.")]
+	partial void LogSubscriptionToStreamIsShuttingDown(string stream);
+
+	[LoggerMessage(LogLevel.Critical, "Subscription to: {stream} has encountered a fatal error.")]
+	partial void LogSubscriptionToStreamHasEncounteredAFatalError(Exception exception, string stream);
+
+	[LoggerMessage("Stopping user index: {index}")]
+	partial void LogStoppingUserIndex(LogLevel logLevel, string index);
+
+	[LoggerMessage(LogLevel.Error, "Failed to stop user index: {index}")]
+	partial void LogFailedToStopUserIndex(Exception exception, string index);
+
+	[LoggerMessage(LogLevel.Trace, "Subscription to: {stream} caught up")]
+	partial void LogSubscriptionToStreamCaughtUp(string stream);
+
+	[LoggerMessage(LogLevel.Trace, "Subscription to: {stream} received event type: {type}")]
+	partial void LogSubscriptionToStreamReceivedEventType(string stream, string type);
+
+	[LoggerMessage(LogLevel.Warning, "Subscription to: {stream} received unknown event type: {type} at event number: {eventNumber}")]
+	partial void LogSubscriptionToStreamReceivedUnknownEventType(string stream, string type, long eventNumber);
+
+	[LoggerMessage(LogLevel.Debug, "Starting user index: {index}")]
+	partial void LogStartingUserIndex(string index);
+
+	[LoggerMessage(LogLevel.Debug, "Deleting user index: {index}")]
+	partial void LogDeletingUserIndex(string index);
+
+	[LoggerMessage(LogLevel.Trace, "Dropping subscriptions to user index: {index}")]
+	partial void LogDroppingSubscriptionsToUserIndex(string index);
+
+	[LoggerMessage(LogLevel.Trace, "User index: {index} received read forwards request")]
+	partial void LogUserIndexReceivedReadForwardsRequest(string index);
+
+	[LoggerMessage(LogLevel.Trace, "User index: {index} received read backwards request")]
+	partial void LogUserIndexReceivedReadBackwardsRequest(string index);
 }

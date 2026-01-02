@@ -17,19 +17,18 @@ using KurrentDB.Core.Messages;
 using KurrentDB.SecondaryIndexing.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes.Custom.Surge;
 using Microsoft.Extensions.DependencyInjection;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.User;
 
 internal abstract class UserIndexProcessor : Disposable, ISecondaryIndexProcessor {
-	protected static readonly ILogger Log = Serilog.Log.ForContext<UserIndexProcessor>();
 	public abstract void Commit();
 	public abstract bool TryIndex(ResolvedEvent evt);
 	public abstract TFPos GetLastPosition();
 	public abstract SecondaryIndexProgressTracker Tracker { get; }
 }
 
-internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IField {
+internal partial class UserIndexProcessor<TField> : UserIndexProcessor where TField : IField {
 	private readonly Engine _engine = JintEngineFactory.CreateEngine(executionTimeout: TimeSpan.FromSeconds(30));
 	private readonly Function? _filter;
 	private readonly Function? _fieldSelector;
@@ -41,6 +40,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 	private readonly DuckDBAdvancedConnection _connection;
 	private readonly UserIndexSql<TField> _sql;
 	private readonly object _skip;
+	private readonly ILogger<UserIndexProcessor> _log;
 
 	private TFPos _lastPosition;
 	private Appender _appender;
@@ -62,10 +62,12 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)]
 		Meter meter,
 		Func<(long, DateTime)> getLastAppendedRecord,
+		ILogger<UserIndexProcessor> log,
 		MetricsConfiguration? metricsConfiguration = null,
 		TimeProvider? clock = null) {
 		IndexName = indexName;
 		_sql = sql;
+		_log = log;
 
 		_inFlightRecords = inFlightRecords;
 		_inFlightTableName = UserIndexSql.GenerateInFlightTableNameFor(IndexName);
@@ -94,7 +96,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 		var tracker = new SecondaryIndexProgressTracker(indexName, serviceName, meter, clock ?? TimeProvider.System, getLastAppendedRecord);
 
 		(_lastPosition, var lastTimestamp) = GetLastKnownRecord();
-		Log.Information("User index: {index} loaded its last known log position: {position} ({timestamp})", IndexName, _lastPosition, lastTimestamp);
+		LogUserIndexLoadedLastKnownLogPosition(IndexName, _lastPosition, lastTimestamp);
 		tracker.InitLastIndexed(_lastPosition.CommitPosition, lastTimestamp);
 
 		Tracker = tracker;
@@ -119,8 +121,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 		var created = new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds();
 		var fieldStr = field?.ToString();
 
-		Log.Verbose("User index: {index} is appending event: {eventNumber}@{stream} ({position}). Field = {field}.",
-			IndexName, eventNumber, streamId, resolvedEvent.OriginalPosition, field);
+		LogUserIndexIsAppendingEvent(IndexName, eventNumber, streamId, resolvedEvent.OriginalPosition, fieldStr);
 
 		using (var row = _appender.CreateRow()) {
 			row.Append(preparePosition);
@@ -174,8 +175,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 
 			return true;
 		} catch(Exception ex) {
-			Log.Error(ex, "User index: {index} failed to process event: {eventNumber}@{streamId} ({position})",
-				IndexName, resolvedEvent.OriginalEventNumber, resolvedEvent.OriginalStreamId, resolvedEvent.OriginalPosition);
+			LogUserIndexFailedToProcessEvent(ex, IndexName, resolvedEvent.OriginalEventNumber, resolvedEvent.OriginalStreamId, resolvedEvent.OriginalPosition);
 			return false;
 		}
 	}
@@ -188,7 +188,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 		if (checkpoint != null) {
 			var pos = new TFPos(checkpoint.Value.CommitPosition ?? checkpoint.Value.PreparePosition, checkpoint.Value.PreparePosition);
 			var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(checkpoint.Value.Timestamp);
-			Log.Verbose("User index: {index} loaded its checkpoint: {position} ({timestamp})", IndexName, pos, timestamp);
+			LogUserIndexLoadedCheckpoint(IndexName, pos, timestamp);
 
 			result = (pos, timestamp);
 		}
@@ -197,7 +197,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 		if (lastIndexed != null) {
 			var pos = new TFPos(lastIndexed.Value.CommitPosition ?? lastIndexed.Value.PreparePosition, lastIndexed.Value.PreparePosition);
 			var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(lastIndexed.Value.Timestamp);
-			Log.Verbose("User index: {index} loaded its last indexed position: {position} ({timestamp})", IndexName, pos, timestamp);
+			LogUserIndexLoadedLastIndexedPosition(IndexName, pos, timestamp);
 
 			if (pos > result.pos)
 				result = (pos, timestamp);
@@ -207,7 +207,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 	}
 
 	public void Checkpoint(TFPos position, DateTime timestamp) {
-		Log.Verbose("User index: {index} is checkpointing at: {position} ({timestamp})", IndexName, position, timestamp);
+		LogUserIndexIsCheckpointing(IndexName, position, timestamp);
 
 		var checkpointArgs = new SetCheckpointQueryArgs {
 			IndexName = IndexName,
@@ -232,9 +232,9 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 		try {
 			using var duration = Tracker.StartCommitDuration();
 			_appender.Flush();
-			Log.Verbose("User index: {index} committed {count} records", IndexName, _inFlightRecords.Count);
+			LogUserIndexCommitted(IndexName, _inFlightRecords.Count);
 		} catch (Exception ex) {
-			Log.Error(ex, "User index: {index} failed to commit {count} records", IndexName, _inFlightRecords.Count);
+			LogUserIndexFailedToCommit(ex, IndexName, _inFlightRecords.Count);
 			throw;
 		} finally {
 			_committing.TrueToFalse();
@@ -246,7 +246,6 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 	}
 
 	private void RegisterTableFunction() {
-#pragma warning disable DuckDBNET001
 		_connection.RegisterTableFunction(_inFlightTableName, ResultCallback, MapperCallback);
 
 		TableFunction ResultCallback() {
@@ -258,7 +257,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 			];
 
 			if (TField.Type is { } type)
-				columnInfos.Add(new ColumnInfo(_sql.FieldColumnName, type));
+				columnInfos.Add(new(_sql.FieldColumnName, type));
 
 			return new(columnInfos, records);
 		}
@@ -273,7 +272,6 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 				record.Field!.WriteTo(writers[3], rowIndex);
 			}
 		}
-#pragma warning restore DuckDBNET001
 	}
 
 	public void GetUserIndexTableDetails(out string tableName, out string inFlightTableName, out string? fieldName) {
@@ -283,7 +281,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 	}
 
 	protected override void Dispose(bool disposing) {
-		Log.Verbose("Stopping user index processor for: {index}", IndexName);
+		LogStoppingUserIndexProcessor(IndexName);
 		if (disposing) {
 			Commit();
 			_appender.Dispose();
@@ -293,4 +291,31 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 
 		base.Dispose(disposing);
 	}
+
+	[LoggerMessage(LogLevel.Information, "User index: {index} loaded its last known log position: {position} ({timestamp})")]
+	partial void LogUserIndexLoadedLastKnownLogPosition(string index, TFPos position, DateTimeOffset timestamp);
+
+	[LoggerMessage(LogLevel.Trace, "User index: {index} is appending event: {eventNumber}@{stream} ({position}). Field = {field}.")]
+	partial void LogUserIndexIsAppendingEvent(string index, long eventNumber, string stream, TFPos? position, string? field);
+
+	[LoggerMessage(LogLevel.Error, "User index: {index} failed to process event: {eventNumber}@{streamId} ({position})")]
+	partial void LogUserIndexFailedToProcessEvent(Exception exception, string index, long eventNumber, string streamId, TFPos? position);
+
+	[LoggerMessage(LogLevel.Trace, "User index: {index} loaded its checkpoint: {position} ({timestamp})")]
+	partial void LogUserIndexLoadedCheckpoint(string index, TFPos position, DateTimeOffset timestamp);
+
+	[LoggerMessage(LogLevel.Trace, "User index: {index} loaded its last indexed position: {position} ({timestamp})")]
+	partial void LogUserIndexLoadedLastIndexedPosition(string index, TFPos position, DateTimeOffset timestamp);
+
+	[LoggerMessage(LogLevel.Trace, "User index: {index} is checkpointing at: {position} ({timestamp})")]
+	partial void LogUserIndexIsCheckpointing(string index, TFPos position, DateTime timestamp);
+
+	[LoggerMessage(LogLevel.Trace, "User index: {index} committed {count} records")]
+	partial void LogUserIndexCommitted(string index, int count);
+
+	[LoggerMessage(LogLevel.Error, "User index: {index} failed to commit {count} records")]
+	partial void LogUserIndexFailedToCommit(Exception exception, string index, int count);
+
+	[LoggerMessage(LogLevel.Trace, "Stopping user index processor for: {index}")]
+	partial void LogStoppingUserIndexProcessor(string index);
 }
