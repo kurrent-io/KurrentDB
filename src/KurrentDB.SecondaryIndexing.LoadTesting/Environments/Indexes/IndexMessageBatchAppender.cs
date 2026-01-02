@@ -10,6 +10,7 @@ using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
 using KurrentDB.SecondaryIndexing.Storage;
 using KurrentDB.SecondaryIndexing.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Tests.Generators;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Environments.Indexes;
 
@@ -28,7 +29,7 @@ public class IndexMessageBatchAppender : IMessageBatchAppender {
 		var schema = new IndexingDbSchema();
 		schema.CreateSchema(db);
 
-		_processor = new(db, inflightRecordsCache, publisher, hasher, new("test"));
+		_processor = new(db, inflightRecordsCache, publisher, hasher, new("test"), NullLoggerFactory.Instance);
 	}
 
 	public ValueTask Append(TestMessageBatch batch) {

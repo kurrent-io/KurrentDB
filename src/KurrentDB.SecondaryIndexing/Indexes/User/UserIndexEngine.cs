@@ -20,7 +20,7 @@ using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.User;
 
-public sealed class UserIndexEngine
+public sealed partial class UserIndexEngine
 	: IHandle<SystemMessage.SystemReady>,
 		IHandle<SystemMessage.BecomeShuttingDown>,
 		IHandle<StorageMessage.EventCommitted>,
@@ -80,7 +80,7 @@ public sealed class UserIndexEngine
 		try {
 			await _subscription.Stop();
 		} catch (Exception ex) {
-			_log.LogError(ex, "User indexes: Failed to stop subscription to management stream");
+			LogUserIndexesFailedToStopSubscriptionToManagementStream(ex);
 		}
 	}
 
@@ -88,16 +88,16 @@ public sealed class UserIndexEngine
 		Task.Run(async () => {
 			try {
 				await ReadTail();
-				_log.LogTrace("User indexes: Initializing subscription to management stream");
+				LogUserIndexesInitializingSubscriptionToManagementStream();
 				await _subscription.Start();
 			} catch (Exception ex) {
-				_log.LogError(ex, "User indexes: Failed to start subscription to management stream");
+				LogUserIndexesFailedToStartSubscriptionToManagementStream(ex);
 			}
 		});
 	}
 
 	public void Handle(SystemMessage.BecomeShuttingDown message) {
-		_log.LogTrace("User indexes: Stopping processing as system is shutting down");
+		LogUserIndexesStoppingProcessingAsSystemIsShuttingDown();
 		if (Interlocked.Exchange(ref _cts, null) is { } cts) {
 			using (cts) {
 				cts.Cancel();
@@ -138,4 +138,16 @@ public sealed class UserIndexEngine
 
 	public bool TryGetUserIndexTableDetails(string indexName, out string tableName, out string inFlightTableName, out string? fieldName) =>
 		_subscription.TryGetUserIndexTableDetails(indexName, out tableName, out inFlightTableName, out fieldName);
+
+	[LoggerMessage(LogLevel.Error, "User indexes: Failed to stop subscription to management stream")]
+	partial void LogUserIndexesFailedToStopSubscriptionToManagementStream(Exception exception);
+
+	[LoggerMessage(LogLevel.Trace, "User indexes: Initializing subscription to management stream")]
+	partial void LogUserIndexesInitializingSubscriptionToManagementStream();
+
+	[LoggerMessage(LogLevel.Error, "User indexes: Failed to start subscription to management stream")]
+	partial void LogUserIndexesFailedToStartSubscriptionToManagementStream(Exception exception);
+
+	[LoggerMessage(LogLevel.Trace, "User indexes: Stopping processing as system is shutting down")]
+	partial void LogUserIndexesStoppingProcessingAsSystemIsShuttingDown();
 }

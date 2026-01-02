@@ -4,10 +4,10 @@
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Tests.Fakes;
-using KurrentDB.SecondaryIndexing.Indexes;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Tests.Fixtures;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace KurrentDB.SecondaryIndexing.Tests.Indexes.DefaultIndexReaderTests;
 
@@ -24,7 +24,7 @@ public abstract class IndexTestBase : DuckDbIntegrationTest<IndexTestBase> {
 		var inFlightRecords = new DefaultIndexInFlightRecords(new() { CommitBatchSize = commitBatchSize });
 		var publisher = new FakePublisher();
 
-		_processor = new(DuckDb, inFlightRecords, publisher, hasher, new("test"));
+		_processor = new(DuckDb, inFlightRecords, publisher, hasher, new("test"), NullLoggerFactory.Instance);
 
 		Sut = new(DuckDb, _processor, inFlightRecords, _readIndexStub.ReadIndex);
 	}

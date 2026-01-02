@@ -21,10 +21,11 @@ public sealed class GrpcChannelShim : IAsyncInitializer, IAsyncDisposable {
 			var username = NodeShim.NodeShimOptions.Username;
 			var password = NodeShim.NodeShimOptions.Password;
 
-			var credentials = CallCredentials.FromInterceptor(async (context, metadata) => {
+			var credentials = CallCredentials.FromInterceptor((_, metadata) => {
 				metadata.Add(
 					"Authorization",
 					$"Basic {Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{password}"))}");
+				return Task.CompletedTask;
 			});
 
 			var channelOptions = new GrpcChannelOptions() {

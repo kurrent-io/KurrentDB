@@ -239,7 +239,7 @@ public partial class UserIndexEngineSubscription(
 			publisher: publisher,
 			meter: meter,
 			getLastAppendedRecord: getLastAppendedRecord,
-			log: logFactory.CreateLogger<UserIndexProcessor>()
+			loggerFactory: logFactory
 		);
 
 		var reader = new UserIndexReader<TField>(sharedPool: db, sql, inFlightRecords, readIndex);

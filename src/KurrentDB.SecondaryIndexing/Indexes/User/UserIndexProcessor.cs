@@ -62,12 +62,12 @@ internal partial class UserIndexProcessor<TField> : UserIndexProcessor where TFi
 		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)]
 		Meter meter,
 		Func<(long, DateTime)> getLastAppendedRecord,
-		ILogger<UserIndexProcessor> log,
+		ILoggerFactory loggerFactory,
 		MetricsConfiguration? metricsConfiguration = null,
 		TimeProvider? clock = null) {
 		IndexName = indexName;
 		_sql = sql;
-		_log = log;
+		_log = loggerFactory.CreateLogger<UserIndexProcessor>();
 
 		_inFlightRecords = inFlightRecords;
 		_inFlightTableName = UserIndexSql.GenerateInFlightTableNameFor(IndexName);
@@ -93,7 +93,8 @@ internal partial class UserIndexProcessor<TField> : UserIndexProcessor where TFi
 		_appender = new(_connection, _sql.TableNameUtf8.Span);
 
 		var serviceName = metricsConfiguration?.ServiceName ?? "kurrentdb";
-		var tracker = new SecondaryIndexProgressTracker(indexName, serviceName, meter, clock ?? TimeProvider.System, getLastAppendedRecord);
+		var tracker = new SecondaryIndexProgressTracker(indexName, serviceName, meter, clock ?? TimeProvider.System,
+			loggerFactory.CreateLogger<SecondaryIndexProgressTracker>(), getLastAppendedRecord);
 
 		(_lastPosition, var lastTimestamp) = GetLastKnownRecord();
 		LogUserIndexLoadedLastKnownLogPosition(IndexName, _lastPosition, lastTimestamp);
@@ -140,7 +141,8 @@ internal partial class UserIndexProcessor<TField> : UserIndexProcessor where TFi
 
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(_queryStreamName, resolvedEvent));
 		if (field is not null)
-			_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(UserIndexHelpers.GetQueryStreamName(IndexName, fieldStr), resolvedEvent));
+			_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(UserIndexHelpers.GetQueryStreamName(IndexName, fieldStr),
+				resolvedEvent));
 
 		Tracker.RecordIndexed(resolvedEvent);
 
@@ -170,12 +172,13 @@ internal partial class UserIndexProcessor<TField> : UserIndexProcessor where TFi
 				var fieldJsValue = _fieldSelector.Call(_resolvedEventJsObject);
 				if (_skip.Equals(fieldJsValue))
 					return false;
-				field = (TField) TField.ParseFrom(fieldJsValue);
+				field = (TField)TField.ParseFrom(fieldJsValue);
 			}
 
 			return true;
-		} catch(Exception ex) {
-			LogUserIndexFailedToProcessEvent(ex, IndexName, resolvedEvent.OriginalEventNumber, resolvedEvent.OriginalStreamId, resolvedEvent.OriginalPosition);
+		} catch (Exception ex) {
+			LogUserIndexFailedToProcessEvent(ex, IndexName, resolvedEvent.OriginalEventNumber, resolvedEvent.OriginalStreamId,
+				resolvedEvent.OriginalPosition);
 			return false;
 		}
 	}
@@ -216,7 +219,7 @@ internal partial class UserIndexProcessor<TField> : UserIndexProcessor where TFi
 			Created = new DateTimeOffset(timestamp).ToUnixTimeMilliseconds()
 		};
 
-		_sql.SetCheckpoint(_connection, checkpointArgs);
+		UserIndexSql<TField>.SetCheckpoint(_connection, checkpointArgs);
 	}
 
 	public override void Commit() => Commit(true);

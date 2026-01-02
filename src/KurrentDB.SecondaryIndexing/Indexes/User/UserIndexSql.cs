@@ -9,25 +9,20 @@ using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.User;
 
-internal static class UserIndexSql {
-	// we validate the table/column names for safety reasons although DuckDB allows a large set of characters when using quoted identifiers
-	private static readonly Regex IdentifierRegex = new("^[a-z][a-z0-9_-]*$", RegexOptions.Compiled);
+internal static partial class UserIndexSql {
+	// we validate the table/column names for safety reasons, although DuckDB allows a large set of characters when using quoted identifiers
+	private static readonly Regex IdentifierRegex = ValidationRegex();
+
 	public static string GetTableNameFor(string indexName) {
 		var tableName = $"idx_user__{indexName}";
 
-		if (!IdentifierRegex.IsMatch(tableName))
-			throw new Exception($"Invalid table name: {tableName}");
-
-		return tableName;
+		return !IdentifierRegex.IsMatch(tableName) ? throw new($"Invalid table name: {tableName}") : tableName;
 	}
 
 	public static string GetColumnNameFor(string fieldName) {
 		var columnName = $"field_{fieldName}";
 
-		if (!IdentifierRegex.IsMatch(columnName))
-			throw new Exception($"Invalid column name: {columnName}");
-
-		return columnName;
+		return !IdentifierRegex.IsMatch(columnName) ? throw new($"Invalid column name: {columnName}") : columnName;
 	}
 
 	public static string GenerateInFlightTableNameFor(string indexName) {
@@ -35,12 +30,15 @@ internal static class UserIndexSql {
 	}
 
 	public static void DeleteUserIndex(DuckDBAdvancedConnection connection, string indexName) {
-		connection.ExecuteNonQuery<DeleteCheckpointNonQueryArgs, DeleteCheckpointNonQuery>(new DeleteCheckpointNonQueryArgs(indexName));
+		connection.ExecuteNonQuery<DeleteCheckpointNonQueryArgs, DeleteCheckpointNonQuery>(new(indexName));
 
 		var tableName = GetTableNameFor(indexName);
 		var query = new DeleteUserIndexNonQuery(tableName);
 		connection.ExecuteNonQuery(ref query);
 	}
+
+	[GeneratedRegex("^[a-z][a-z0-9_-]*$", RegexOptions.Compiled)]
+	private static partial Regex ValidationRegex();
 }
 
 internal class UserIndexSql<TField>(string indexName, string fieldName) where TField : IField {
@@ -53,6 +51,7 @@ internal class UserIndexSql<TField>(string indexName, string fieldName) where TF
 		var query = new CreateUserIndexNonQuery(TableName, TField.GetCreateStatement(FieldColumnName));
 		connection.ExecuteNonQuery(ref query);
 	}
+
 	public List<IndexQueryRecord> ReadUserIndexForwardsQuery(DuckDBConnectionPool db, ReadUserIndexQueryArgs args) {
 		var query = new ReadUserIndexForwardsQuery(TableName, args.ExcludeFirst, args.Field.GetQueryStatement(FieldColumnName));
 		using (db.Rent(out var connection))
@@ -69,7 +68,7 @@ internal class UserIndexSql<TField>(string indexName, string fieldName) where TF
 		return connection.QueryFirstOrDefault<GetCheckpointQueryArgs, GetCheckpointResult, GetCheckpointQuery>(args);
 	}
 
-	public void SetCheckpoint(DuckDBAdvancedConnection connection, SetCheckpointQueryArgs args) {
+	public static void SetCheckpoint(DuckDBAdvancedConnection connection, SetCheckpointQueryArgs args) {
 		connection.ExecuteNonQuery<SetCheckpointQueryArgs, SetCheckpointNonQuery>(args);
 	}
 
@@ -91,7 +90,7 @@ file readonly record struct CreateUserIndexNonQuery(string TableName, string Cre
 			{1}
 		)
 		"""
-		);
+	);
 
 	public void FormatCommandTemplate(Span<object?> args) {
 		args[0] = TableName;
@@ -102,7 +101,7 @@ file readonly record struct CreateUserIndexNonQuery(string TableName, string Cre
 file readonly record struct DeleteUserIndexNonQuery(string TableName) : IDynamicParameterlessStatement {
 	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse(
 		"""
-		drop table if exists "{0}" 
+		drop table if exists "{0}"
 		""");
 
 	public void FormatCommandTemplate(Span<object?> args) =>
@@ -111,7 +110,8 @@ file readonly record struct DeleteUserIndexNonQuery(string TableName) : IDynamic
 
 internal record struct ReadUserIndexQueryArgs(long StartPosition, long EndPosition, bool ExcludeFirst, int Count, IField Field);
 
-file readonly record struct ReadUserIndexForwardsQuery(string TableName, bool ExcludeFirst, string FieldQuery) : IDynamicQuery<ReadUserIndexQueryArgs, IndexQueryRecord> {
+file readonly record struct ReadUserIndexForwardsQuery(string TableName, bool ExcludeFirst, string FieldQuery)
+	: IDynamicQuery<ReadUserIndexQueryArgs, IndexQueryRecord> {
 	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse(
 		"""
 		select log_position, commit_position, event_number
@@ -142,7 +142,8 @@ file readonly record struct ReadUserIndexForwardsQuery(string TableName, bool Ex
 			row.ReadInt64());
 }
 
-file readonly record struct ReadUserIndexBackwardsQuery(string TableName, bool ExcludeFirst, string FieldQuery) : IDynamicQuery<ReadUserIndexQueryArgs, IndexQueryRecord> {
+file readonly record struct ReadUserIndexBackwardsQuery(string TableName, bool ExcludeFirst, string FieldQuery)
+	: IDynamicQuery<ReadUserIndexQueryArgs, IndexQueryRecord> {
 	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse(
 		"""
 		select log_position, commit_position, event_number
@@ -174,7 +175,9 @@ file readonly record struct ReadUserIndexBackwardsQuery(string TableName, bool E
 }
 
 internal record struct GetCheckpointQueryArgs(string IndexName);
+
 internal record struct GetCheckpointResult(long PreparePosition, long? CommitPosition, long Timestamp);
+
 file struct GetCheckpointQuery : IQuery<GetCheckpointQueryArgs, GetCheckpointResult> {
 	public static BindingContext Bind(in GetCheckpointQueryArgs args, PreparedStatement statement) =>
 		new(statement) {
@@ -188,6 +191,7 @@ file struct GetCheckpointQuery : IQuery<GetCheckpointQueryArgs, GetCheckpointRes
 		where index_name = ?
 		limit 1
 		"""u8;
+
 	public static GetCheckpointResult Parse(ref DataChunk.Row row) =>
 		new(row.ReadInt64(),
 			row.TryReadInt64(),
@@ -195,6 +199,7 @@ file struct GetCheckpointQuery : IQuery<GetCheckpointQueryArgs, GetCheckpointRes
 }
 
 internal record struct SetCheckpointQueryArgs(string IndexName, long PreparePosition, long? CommitPosition, long Created);
+
 file struct SetCheckpointNonQuery : IPreparedStatement<SetCheckpointQueryArgs> {
 	public static BindingContext Bind(in SetCheckpointQueryArgs args, PreparedStatement statement) =>
 		new(statement) {
@@ -213,6 +218,7 @@ file struct SetCheckpointNonQuery : IPreparedStatement<SetCheckpointQueryArgs> {
 }
 
 internal record struct DeleteCheckpointNonQueryArgs(string IndexName);
+
 file struct DeleteCheckpointNonQuery : IPreparedStatement<DeleteCheckpointNonQueryArgs> {
 	public static BindingContext Bind(in DeleteCheckpointNonQueryArgs args, PreparedStatement statement) =>
 		new(statement) {
@@ -228,6 +234,7 @@ file struct DeleteCheckpointNonQuery : IPreparedStatement<DeleteCheckpointNonQue
 }
 
 internal record struct GetLastIndexedRecordResult(long PreparePosition, long? CommitPosition, long Timestamp);
+
 file readonly record struct GetLastIndexedRecordQuery(string TableName) : IDynamicQuery<GetLastIndexedRecordResult> {
 	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse(
 		"""
@@ -236,7 +243,9 @@ file readonly record struct GetLastIndexedRecordQuery(string TableName) : IDynam
 		order by rowid desc
 		limit 1
 		""");
+
 	public void FormatCommandTemplate(Span<object?> args) => args[0] = TableName;
+
 	public static GetLastIndexedRecordResult Parse(ref DataChunk.Row row) =>
 		new(row.ReadInt64(),
 			row.TryReadInt64(),

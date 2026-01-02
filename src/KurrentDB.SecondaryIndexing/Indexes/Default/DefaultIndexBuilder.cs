@@ -25,7 +25,6 @@ public sealed class DefaultIndexBuilder
 	private readonly ILogger<DefaultIndexBuilder> _log;
 	private readonly IPublisher _publisher;
 
-	[Experimental("SECONDARY_INDEX")]
 	public DefaultIndexBuilder(
 		ISecondaryIndexProcessor processor,
 		IPublisher publisher,

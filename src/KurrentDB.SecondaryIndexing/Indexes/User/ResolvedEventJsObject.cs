@@ -11,12 +11,8 @@ using Jint.Runtime.Descriptors;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.User;
 
-internal sealed class ResolvedEventJsObject: ObjectInstance {
-	private readonly JsonParser _parser;
-
-	public ResolvedEventJsObject(Engine engine) : base(engine) {
-		_parser = new(engine);
-	}
+internal sealed class ResolvedEventJsObject(Engine engine) : ObjectInstance(engine) {
+	private readonly JsonParser _parser = new(engine);
 
 	public override JsValue Get(JsValue property, JsValue receiver) {
 		return property.AsString() switch {

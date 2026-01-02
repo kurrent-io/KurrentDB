@@ -8,6 +8,7 @@ namespace KurrentDB.SecondaryIndexing.Indexes.User.Management;
 
 public record UserIndexId(string Name) : Id(Name);
 
+[UsedImplicitly]
 public class UserIndexCommandService : CommandService<UserIndex, UserIndexState, UserIndexId> {
 	public UserIndexCommandService(IEventStore store, UserIndexStreamNameMap streamNameMap)
 		: base(store: store, streamNameMap: streamNameMap) {
@@ -20,16 +21,16 @@ public class UserIndexCommandService : CommandService<UserIndex, UserIndexState,
 		On<StartIndexRequest>()
 			.InState(ExpectedState.Any) // facilitate throwing our own exceptions if not existing
 			.GetId(cmd => new(cmd.Name))
-			.Act((x, cmd) => x.Start());
+			.Act((x, _) => x.Start());
 
 		On<StopIndexRequest>()
 			.InState(ExpectedState.Any)
 			.GetId(cmd => new(cmd.Name))
-			.Act((x, cmd) => x.Stop());
+			.Act((x, _) => x.Stop());
 
 		On<DeleteIndexRequest>()
 			.InState(ExpectedState.Any)
 			.GetId(cmd => new(cmd.Name))
-			.Act((x, cmd) => x.Delete());
+			.Act((x, _) => x.Delete());
 	}
 }

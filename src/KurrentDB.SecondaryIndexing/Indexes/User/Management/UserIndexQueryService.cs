@@ -11,7 +11,7 @@ using KurrentDB.Protocol.V2.Indexes;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.User.Management;
 
-public class UserIndexReadsideService(
+public class UserIndexQueryService(
 	IEventReader store,
 	ISystemClient client,
 	ISchemaSerializer serializer,
@@ -65,24 +65,24 @@ public class UserIndexReadsideService(
 		public Dictionary<string, UserIndexState> UserIndexes { get; } = [];
 
 		public UserIndexesState() {
-			On<IndexCreated>((state, userIndexId, evt) => {
+			On<IndexCreated>((_, userIndexId, evt) => {
 				UserIndexes[userIndexId.Name] = new UserIndexState().When(evt);
 				return this;
 			});
 
-			On<IndexStarted>((state, userIndexId, evt) => {
+			On<IndexStarted>((_, userIndexId, evt) => {
 				if (UserIndexes.TryGetValue(userIndexId.Name, out var userIndexState))
 					UserIndexes[userIndexId.Name] = userIndexState.When(evt);
 				return this;
 			});
 
-			On<IndexStopped>((state, userIndexId, evt) => {
+			On<IndexStopped>((_, userIndexId, evt) => {
 				if (UserIndexes.TryGetValue(userIndexId.Name, out var userIndexState))
 					UserIndexes[userIndexId.Name] = userIndexState.When(evt);
 				return this;
 			});
 
-			On<IndexDeleted>((state, userIndexId, evt) => {
+			On<IndexDeleted>((_, userIndexId, _) => {
 				UserIndexes.Remove(userIndexId.Name);
 				return this;
 			});
@@ -104,13 +104,13 @@ public class UserIndexReadsideService(
 					State = IndexState.Stopped,
 				});
 
-			On<IndexStarted>((state, evt) =>
+			On<IndexStarted>((state, _) =>
 				state with { State = IndexState.Started });
 
-			On<IndexStopped>((state, evt) =>
+			On<IndexStopped>((state, _) =>
 				state with { State = IndexState.Stopped });
 
-			On<IndexDeleted>((state, evt) =>
+			On<IndexDeleted>((state, _) =>
 				state with { State = IndexState.Deleted });
 		}
 	}
@@ -119,13 +119,10 @@ public class UserIndexReadsideService(
 	public abstract record MultiEntityState<T, TId> where T : MultiEntityState<T, TId> where TId : Id {
 		readonly Dictionary<Type, Func<T, TId, object, T>> _handlers = [];
 
-		public virtual T When(TId stream, object evt) {
+		public T When(TId stream, object evt) {
 			var eventType = evt.GetType();
 
-			if (!_handlers.TryGetValue(eventType, out var handler))
-				return (T)this;
-
-			return handler((T)this, stream, evt);
+			return !_handlers.TryGetValue(eventType, out var handler) ? (T)this : handler((T)this, stream, evt);
 		}
 
 		protected void On<TEvent>(Func<T, TId, TEvent, T> handle) {
@@ -139,16 +136,16 @@ public class UserIndexReadsideService(
 }
 
 file static class Extensions {
-	public static Protocol.V2.Indexes.Index Convert(this UserIndexReadsideService.UserIndexState self) => new() {
+	public static Protocol.V2.Indexes.Index Convert(this UserIndexQueryService.UserIndexState self) => new() {
 		Name = self.Name,
 		Filter = self.Filter,
 		Fields = { self.Fields },
 		State = self.State,
 	};
 
-	public static ListIndexesResponse Convert(this UserIndexReadsideService.UserIndexesState self) {
+	public static ListIndexesResponse Convert(this UserIndexQueryService.UserIndexesState self) {
 		var result = new ListIndexesResponse();
-		foreach (var (name, userIndex) in self.UserIndexes)
+		foreach (var (_, userIndex) in self.UserIndexes)
 			result.Indexes.Add(userIndex.Convert());
 		return result;
 	}
