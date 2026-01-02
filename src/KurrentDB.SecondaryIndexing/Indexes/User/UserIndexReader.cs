@@ -23,7 +23,9 @@ internal class UserIndexReader<TField>(
 	}
 
 	protected override (List<IndexQueryRecord> Records, bool IsFinal) GetInflightForwards(string? id, long startPosition, int maxCount, bool excludeFirst) {
-		return !TryGetField(id, out var field) ? ([], true) : inFlightRecords.GetInFlightRecordsForwards(startPosition, maxCount, excludeFirst, Filter);
+		return TryGetField(id, out var field)
+			? inFlightRecords.GetInFlightRecordsForwards(startPosition, maxCount, excludeFirst, Filter)
+			: ([], true);
 
 		bool Filter(UserIndexInFlightRecord<TField> r) => id is null || EqualityComparer<TField>.Default.Equals(r.Field, field!);
 	}
@@ -44,7 +46,9 @@ internal class UserIndexReader<TField>(
 	}
 
 	protected override IEnumerable<IndexQueryRecord> GetInflightBackwards(string? id, long startPosition, int maxCount, bool excludeFirst) {
-		return !TryGetField(id, out var field) ? [] : inFlightRecords.GetInFlightRecordsBackwards(startPosition, maxCount, excludeFirst, Filter);
+		return TryGetField(id, out var field)
+			? inFlightRecords.GetInFlightRecordsBackwards(startPosition, maxCount, excludeFirst, Filter)
+			: [];
 
 		bool Filter(UserIndexInFlightRecord<TField> r) => id is null || EqualityComparer<TField>.Default.Equals(r.Field, field!);
 	}

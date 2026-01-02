@@ -22,7 +22,7 @@ internal abstract class UserIndexSubscription {
 	public abstract void GetUserIndexTableDetails(out string tableName, out string inFlightTableName, out string? fieldName);
 }
 
-internal sealed partial class UserIndexSubscription<TField>(
+internal sealed class UserIndexSubscription<TField>(
 	IPublisher publisher,
 	UserIndexProcessor<TField> indexProcessor,
 	SecondaryIndexingPluginOptions options,
@@ -36,13 +36,13 @@ internal sealed partial class UserIndexSubscription<TField>(
 
 	private void Subscribe() {
 		if (_cts is not { } cts) {
-			LogUserIndexSubscriptionAlreadyTerminated(log, indexProcessor.IndexName);
+			log.LogUserIndexSubscriptionAlreadyTerminated(indexProcessor.IndexName);
 			return;
 		}
 
 		var position = indexProcessor.GetLastPosition();
 		var startFrom = position == TFPos.Invalid ? Position.Start : Position.FromInt64(position.CommitPosition, position.PreparePosition);
-		LogUserIndexSubscriptionIsStarting(log, indexProcessor.IndexName, startFrom);
+		log.LogUserIndexSubscriptionIsStarting(indexProcessor.IndexName, startFrom);
 
 		_subscription = new(
 			bus: publisher,
@@ -71,12 +71,12 @@ internal sealed partial class UserIndexSubscription<TField>(
 				if (!await _subscription.MoveNextAsync())
 					break;
 			} catch (ReadResponseException.NotHandled.ServerNotReady) {
-				LogUserIndexIsStoppingBecauseServerIsNotReady(log, indexProcessor.IndexName);
+				log.LogUserIndexIsStoppingBecauseServerIsNotReady(indexProcessor.IndexName);
 				break;
 			}
 
 			if (_subscription.Current is ReadResponse.SubscriptionCaughtUp caughtUp) {
-				LogUserIndexCaughtUp(log, indexProcessor.IndexName, caughtUp.Timestamp);
+				log.LogUserIndexCaughtUp(indexProcessor.IndexName, caughtUp.Timestamp);
 				continue;
 			}
 
@@ -96,7 +96,7 @@ internal sealed partial class UserIndexSubscription<TField>(
 
 				if (processedCount >= _commitBatchSize) {
 					if (indexedCount > 0) {
-						LogUserIndexIsCommitting(log, indexProcessor.IndexName, indexedCount);
+						log.LogUserIndexIsCommitting(indexProcessor.IndexName, indexedCount);
 						indexProcessor.Commit();
 					}
 
@@ -108,10 +108,10 @@ internal sealed partial class UserIndexSubscription<TField>(
 					processedCount = 0;
 				}
 			} catch (OperationCanceledException) {
-				LogUserIndexIsStopping(log, indexProcessor.IndexName);
+				log.LogUserIndexIsStopping(indexProcessor.IndexName);
 				break;
 			} catch (Exception ex) {
-				LogUserIndexFailedToProcessEvent(log, ex, indexProcessor.IndexName, eventReceived.Event.OriginalEventNumber,
+				log.LogUserIndexFailedToProcessEvent(ex, indexProcessor.IndexName, eventReceived.Event.OriginalEventNumber,
 					eventReceived.Event.OriginalStreamId, eventReceived.Event.OriginalPosition);
 				throw;
 			}
@@ -136,7 +136,7 @@ internal sealed partial class UserIndexSubscription<TField>(
 				await _processingTask.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing |
 				                                     ConfigureAwaitOptions.ContinueOnCapturedContext);
 			} catch (Exception ex) {
-				LogErrorDuringProcessingTaskCompletion(log, ex);
+				log.LogErrorDuringProcessingTaskCompletion(ex);
 			}
 		}
 
@@ -151,7 +151,7 @@ internal sealed partial class UserIndexSubscription<TField>(
 	}
 
 	public override async ValueTask Stop() {
-		LogStoppingUserIndexSubscriptionForIndex(log, indexProcessor.IndexName);
+		log.LogStoppingUserIndexSubscriptionForIndex(indexProcessor.IndexName);
 		await DisposeAsync();
 		indexProcessor.Dispose();
 	}
@@ -160,27 +160,29 @@ internal sealed partial class UserIndexSubscription<TField>(
 
 	public override void GetUserIndexTableDetails(out string tableName, out string inFlightTableName, out string? fieldName) =>
 		indexProcessor.GetUserIndexTableDetails(out tableName, out inFlightTableName, out fieldName);
+}
 
+static partial class UserIndexSubscriptionLogMessages {
 	[LoggerMessage(LogLevel.Warning, "User index subscription {index} already terminated")]
-	static partial void LogUserIndexSubscriptionAlreadyTerminated(ILogger logger, string index);
+	internal static partial void LogUserIndexSubscriptionAlreadyTerminated(this ILogger logger, string index);
 
 	[LoggerMessage(LogLevel.Information, "User index subscription: {index} is starting from {position}")]
-	static partial void LogUserIndexSubscriptionIsStarting(ILogger logger, string index, Position position);
+	internal static partial void LogUserIndexSubscriptionIsStarting(this ILogger logger, string index, Position position);
 
 	[LoggerMessage(LogLevel.Information, "User index: {index} is stopping because server is not ready")]
-	static partial void LogUserIndexIsStoppingBecauseServerIsNotReady(ILogger logger, string index);
+	internal static partial void LogUserIndexIsStoppingBecauseServerIsNotReady(this ILogger logger, string index);
 
 	[LoggerMessage(LogLevel.Trace, "User index: {index} caught up at {time}")]
-	static partial void LogUserIndexCaughtUp(ILogger logger, string index, DateTime time);
+	internal static partial void LogUserIndexCaughtUp(this ILogger logger, string index, DateTime time);
 
 	[LoggerMessage(LogLevel.Trace, "User index: {index} is committing {count} events")]
-	static partial void LogUserIndexIsCommitting(ILogger logger, string index, int count);
+	internal static partial void LogUserIndexIsCommitting(this ILogger logger, string index, int count);
 
 	[LoggerMessage(LogLevel.Trace, "User index: {index} is stopping as cancellation was requested")]
-	static partial void LogUserIndexIsStopping(ILogger logger, string index);
+	internal static partial void LogUserIndexIsStopping(this ILogger logger, string index);
 
 	[LoggerMessage(LogLevel.Error, "User index: {index} failed to process event: {eventNumber}@{streamId} ({position})")]
-	static partial void LogUserIndexFailedToProcessEvent(ILogger logger,
+	internal static partial void LogUserIndexFailedToProcessEvent(this ILogger logger,
 		Exception exception,
 		string index,
 		long eventNumber,
@@ -188,8 +190,8 @@ internal sealed partial class UserIndexSubscription<TField>(
 		TFPos? position);
 
 	[LoggerMessage(LogLevel.Error, "Error during processing task completion")]
-	static partial void LogErrorDuringProcessingTaskCompletion(ILogger logger, Exception exception);
+	internal static partial void LogErrorDuringProcessingTaskCompletion(this ILogger logger, Exception exception);
 
 	[LoggerMessage(LogLevel.Trace, "Stopping user index subscription for: {index}")]
-	static partial void LogStoppingUserIndexSubscriptionForIndex(ILogger logger, string index);
+	internal static partial void LogStoppingUserIndexSubscriptionForIndex(this ILogger logger, string index);
 }

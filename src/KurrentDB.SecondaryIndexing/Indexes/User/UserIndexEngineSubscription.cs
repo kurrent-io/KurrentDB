@@ -23,7 +23,7 @@ using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.User;
 
-public partial class UserIndexEngineSubscription(
+public class UserIndexEngineSubscription(
 	ISystemClient client,
 	IPublisher publisher,
 	ISchemaSerializer serializer,
@@ -57,9 +57,9 @@ public partial class UserIndexEngineSubscription(
 		try {
 			await StartInternal();
 		} catch (OperationCanceledException) {
-			LogSubscriptionToStreamIsShuttingDown(UserIndexConstants.ManagementStream);
+			_log.LogSubscriptionToStreamIsShuttingDown(UserIndexConstants.ManagementStream);
 		} catch (Exception ex) {
-			LogSubscriptionToStreamHasEncounteredAFatalError(ex, UserIndexConstants.ManagementStream);
+			_log.LogSubscriptionToStreamHasEncounteredAFatalError(ex, UserIndexConstants.ManagementStream);
 		}
 	}
 
@@ -69,10 +69,10 @@ public partial class UserIndexEngineSubscription(
 
 		foreach (var (index, data) in _userIndexes) {
 			try {
-				LogStoppingUserIndex(LogLevel.Trace, index);
+				_log.LogStoppingUserIndex(LogLevel.Trace, index);
 				await data.Subscription.Stop();
 			} catch (Exception ex) {
-				LogFailedToStopUserIndex(ex, index);
+				_log.LogFailedToStopUserIndex(ex, index);
 			}
 		}
 	}
@@ -109,7 +109,7 @@ public partial class UserIndexEngineSubscription(
 					if (CaughtUp)
 						continue;
 
-					LogSubscriptionToStreamCaughtUp(UserIndexConstants.ManagementStream);
+					_log.LogSubscriptionToStreamCaughtUp(UserIndexConstants.ManagementStream);
 
 					CaughtUp = true;
 
@@ -139,7 +139,7 @@ public partial class UserIndexEngineSubscription(
 				case ReadResponse.EventReceived eventReceived:
 					var evt = eventReceived.Event;
 
-					LogSubscriptionToStreamReceivedEventType(UserIndexConstants.ManagementStream, evt.OriginalEvent.EventType);
+					_log.LogSubscriptionToStreamReceivedEventType(UserIndexConstants.ManagementStream, evt.OriginalEvent.EventType);
 
 					var deserializedEvent = await serializer.Deserialize(
 						data: evt.OriginalEvent.Data,
@@ -188,7 +188,7 @@ public partial class UserIndexEngineSubscription(
 							break;
 						}
 						default:
-							LogSubscriptionToStreamReceivedUnknownEventType(UserIndexConstants.ManagementStream, evt.OriginalEvent.EventType, evt.OriginalEventNumber);
+							_log.LogSubscriptionToStreamReceivedUnknownEventType(UserIndexConstants.ManagementStream, evt.OriginalEvent.EventType, evt.OriginalEventNumber);
 							break;
 					}
 
@@ -217,7 +217,7 @@ public partial class UserIndexEngineSubscription(
 		string indexName,
 		IndexCreated createdEvent,
 		Func<EventRecord, bool>? eventFilter = null) where TField : IField {
-		LogStartingUserIndex(indexName);
+		_log.LogStartingUserIndex(indexName);
 
 		var inFlightRecords = new UserIndexInFlightRecords<TField>(options);
 
@@ -257,7 +257,7 @@ public partial class UserIndexEngineSubscription(
 	}
 
 	private async Task StopUserIndex(string indexName) {
-		LogStoppingUserIndex(LogLevel.Debug, indexName);
+		_log.LogStoppingUserIndex(LogLevel.Debug, indexName);
 
 		var writeLock = AcquireWriteLockForIndex(indexName, out var index);
 		using (writeLock) {
@@ -271,7 +271,7 @@ public partial class UserIndexEngineSubscription(
 	}
 
 	private void DeleteUserIndex(string indexName) {
-		LogDeletingUserIndex(indexName);
+		_log.LogDeletingUserIndex(indexName);
 
 		using (db.Rent(out var connection)) {
 			DeleteUserIndexTable(connection, indexName);
@@ -281,7 +281,7 @@ public partial class UserIndexEngineSubscription(
 	}
 
 	private void DropSubscriptions(string indexName) {
-		LogDroppingSubscriptionsToUserIndex(indexName);
+		_log.LogDroppingSubscriptionsToUserIndex(indexName);
 		publisher.Publish(new StorageMessage.SecondaryIndexDeleted(UserIndexHelpers.GetStreamNameRegex(indexName)));
 	}
 
@@ -305,7 +305,7 @@ public partial class UserIndexEngineSubscription(
 	public ValueTask<ClientMessage.ReadIndexEventsForwardCompleted> ReadForwards(ClientMessage.ReadIndexEventsForward msg,
 		CancellationToken token) {
 		UserIndexHelpers.ParseQueryStreamName(msg.IndexName, out var indexName, out _);
-		LogUserIndexReceivedReadForwardsRequest(indexName);
+		_log.LogUserIndexReceivedReadForwardsRequest(indexName);
 		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var data)) {
 			var result = new ClientMessage.ReadIndexEventsForwardCompleted(
 				ReadIndexResult.IndexNotFound, [], new(msg.CommitPosition, msg.PreparePosition), -1, true,
@@ -321,7 +321,7 @@ public partial class UserIndexEngineSubscription(
 	public ValueTask<ClientMessage.ReadIndexEventsBackwardCompleted> ReadBackwards(ClientMessage.ReadIndexEventsBackward msg,
 		CancellationToken token) {
 		UserIndexHelpers.ParseQueryStreamName(msg.IndexName, out var indexName, out _);
-		LogUserIndexReceivedReadBackwardsRequest(indexName);
+		_log.LogUserIndexReceivedReadBackwardsRequest(indexName);
 		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var data)) {
 			var result = new ClientMessage.ReadIndexEventsBackwardCompleted(
 				ReadIndexResult.IndexNotFound, [], new(msg.CommitPosition, msg.PreparePosition), -1, true,
@@ -387,40 +387,42 @@ public partial class UserIndexEngineSubscription(
 			Lock.Dispose(); // the write lock is used only once: when the user index is deleted
 		}
 	}
+}
 
+static partial class UserIndexEngineSubscriptionLogMessages {
 	[LoggerMessage(LogLevel.Trace, "Subscription to: {stream} is shutting down.")]
-	partial void LogSubscriptionToStreamIsShuttingDown(string stream);
+	internal static partial void LogSubscriptionToStreamIsShuttingDown(this ILogger logger, string stream);
 
 	[LoggerMessage(LogLevel.Critical, "Subscription to: {stream} has encountered a fatal error.")]
-	partial void LogSubscriptionToStreamHasEncounteredAFatalError(Exception exception, string stream);
+	internal static partial void LogSubscriptionToStreamHasEncounteredAFatalError(this ILogger logger, Exception exception, string stream);
 
 	[LoggerMessage("Stopping user index: {index}")]
-	partial void LogStoppingUserIndex(LogLevel logLevel, string index);
+	internal static partial void LogStoppingUserIndex(this ILogger logger, LogLevel logLevel, string index);
 
 	[LoggerMessage(LogLevel.Error, "Failed to stop user index: {index}")]
-	partial void LogFailedToStopUserIndex(Exception exception, string index);
+	internal static partial void LogFailedToStopUserIndex(this ILogger logger, Exception exception, string index);
 
 	[LoggerMessage(LogLevel.Trace, "Subscription to: {stream} caught up")]
-	partial void LogSubscriptionToStreamCaughtUp(string stream);
+	internal static partial void LogSubscriptionToStreamCaughtUp(this ILogger logger, string stream);
 
 	[LoggerMessage(LogLevel.Trace, "Subscription to: {stream} received event type: {type}")]
-	partial void LogSubscriptionToStreamReceivedEventType(string stream, string type);
+	internal static partial void LogSubscriptionToStreamReceivedEventType(this ILogger logger, string stream, string type);
 
 	[LoggerMessage(LogLevel.Warning, "Subscription to: {stream} received unknown event type: {type} at event number: {eventNumber}")]
-	partial void LogSubscriptionToStreamReceivedUnknownEventType(string stream, string type, long eventNumber);
+	internal static partial void LogSubscriptionToStreamReceivedUnknownEventType(this ILogger logger, string stream, string type, long eventNumber);
 
 	[LoggerMessage(LogLevel.Debug, "Starting user index: {index}")]
-	partial void LogStartingUserIndex(string index);
+	internal static partial void LogStartingUserIndex(this ILogger logger, string index);
 
 	[LoggerMessage(LogLevel.Debug, "Deleting user index: {index}")]
-	partial void LogDeletingUserIndex(string index);
+	internal static partial void LogDeletingUserIndex(this ILogger logger, string index);
 
 	[LoggerMessage(LogLevel.Trace, "Dropping subscriptions to user index: {index}")]
-	partial void LogDroppingSubscriptionsToUserIndex(string index);
+	internal static partial void LogDroppingSubscriptionsToUserIndex(this ILogger logger, string index);
 
 	[LoggerMessage(LogLevel.Trace, "User index: {index} received read forwards request")]
-	partial void LogUserIndexReceivedReadForwardsRequest(string index);
+	internal static partial void LogUserIndexReceivedReadForwardsRequest(this ILogger logger, string index);
 
 	[LoggerMessage(LogLevel.Trace, "User index: {index} received read backwards request")]
-	partial void LogUserIndexReceivedReadBackwardsRequest(string index);
+	internal static partial void LogUserIndexReceivedReadBackwardsRequest(this ILogger logger, string index);
 }

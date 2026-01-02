@@ -122,7 +122,9 @@ public class UserIndexQueryService(
 		public T When(TId stream, object evt) {
 			var eventType = evt.GetType();
 
-			return !_handlers.TryGetValue(eventType, out var handler) ? (T)this : handler((T)this, stream, evt);
+			return _handlers.TryGetValue(eventType, out var handler)
+				? handler((T)this, stream, evt)
+				: (T)this;
 		}
 
 		protected void On<TEvent>(Func<T, TId, TEvent, T> handle) {

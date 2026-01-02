@@ -10,7 +10,7 @@ namespace KurrentDB.SecondaryIndexing.Diagnostics;
 
 public delegate long GetLastPosition();
 
-public partial class SecondaryIndexProgressTracker {
+public class SecondaryIndexProgressTracker {
 	private readonly KeyValuePair<string, object?>[] _tag;
 	private readonly Histogram<double> _histogram;
 	private readonly TimeProvider _clock;
@@ -99,7 +99,7 @@ public partial class SecondaryIndexProgressTracker {
 		yield return new(lag.TotalSeconds, _tag);
 	}
 
-	public sealed partial class CommitDuration(
+	public sealed class CommitDuration(
 		Histogram<double> histogram,
 		TimeProvider clock,
 		KeyValuePair<string, object?> tag,
@@ -109,11 +109,14 @@ public partial class SecondaryIndexProgressTracker {
 
 		public void Dispose() {
 			var elapsed = clock.GetElapsedTime(_start).Milliseconds;
-			LogSecondaryIndexIndexRecordsCommitted(log, indexName, elapsed);
+			log.LogSecondaryIndexIndexRecordsCommitted(indexName, elapsed);
 			histogram.Record(elapsed, tag);
 		}
 
-		[LoggerMessage(LogLevel.Debug, "Secondary index {index} records committed in {duration} ms")]
-		static partial void LogSecondaryIndexIndexRecordsCommitted(ILogger logger, string index, int duration);
 	}
+}
+
+static partial class SecondaryIndexProgressTrackerLogMessage {
+	[LoggerMessage(LogLevel.Debug, "Secondary index {index} records committed in {duration} ms")]
+	public static partial void LogSecondaryIndexIndexRecordsCommitted(this ILogger logger, string index, int duration);
 }
