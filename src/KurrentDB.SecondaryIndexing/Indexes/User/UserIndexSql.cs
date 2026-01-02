@@ -37,7 +37,7 @@ internal static partial class UserIndexSql {
 		connection.ExecuteNonQuery(ref query);
 	}
 
-	[GeneratedRegex("^[a-z][a-z0-9_-]*$", RegexOptions.Compiled)]
+	[GeneratedRegex("^[a-z][a-z0-9_-]*$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
 	private static partial Regex ValidationRegex();
 }
 
