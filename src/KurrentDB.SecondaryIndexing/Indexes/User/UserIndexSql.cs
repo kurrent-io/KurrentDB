@@ -16,13 +16,17 @@ internal static partial class UserIndexSql {
 	public static string GetTableNameFor(string indexName) {
 		var tableName = $"idx_user__{indexName}";
 
-		return !IdentifierRegex.IsMatch(tableName) ? throw new($"Invalid table name: {tableName}") : tableName;
+		return IdentifierRegex.IsMatch(tableName)
+			? tableName
+			: throw new($"Invalid table name: {tableName}");
 	}
 
 	public static string GetColumnNameFor(string fieldName) {
 		var columnName = $"field_{fieldName}";
 
-		return !IdentifierRegex.IsMatch(columnName) ? throw new($"Invalid column name: {columnName}") : columnName;
+		return IdentifierRegex.IsMatch(columnName)
+			? columnName
+			: throw new($"Invalid column name: {columnName}");
 	}
 
 	public static string GenerateInFlightTableNameFor(string indexName) {
@@ -37,7 +41,7 @@ internal static partial class UserIndexSql {
 		connection.ExecuteNonQuery(ref query);
 	}
 
-	[GeneratedRegex("^[a-z][a-z0-9_-]*$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+	[GeneratedRegex("^[a-z][a-z0-9_-]*$", RegexOptions.Compiled)]
 	private static partial Regex ValidationRegex();
 }
 
