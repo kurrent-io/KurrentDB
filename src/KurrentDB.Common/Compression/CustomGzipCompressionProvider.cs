@@ -12,16 +12,16 @@ using Grpc.Net.Compression;
 
 namespace KurrentDB.Common.Compression;
 
-public class GzipCompressionProvider(CompressionLevel level) : ICompressionProvider {
+public class CustomGzipCompressionProvider(CompressionLevel level) : ICompressionProvider {
 	public string EncodingName => "gzip";
 
 	public Stream CreateCompressionStream(Stream outputStream, CompressionLevel? compressionLevel) =>
-		new NonEmptyGzipStream(outputStream, compressionLevel ?? level);
+		new CustomGzipStream(outputStream, compressionLevel ?? level);
 
 	public Stream CreateDecompressionStream(Stream compressedStream) =>
 		new GZipStream(compressedStream, CompressionMode.Decompress, leaveOpen: true);
 
-	class NonEmptyGzipStream(Stream outputStream, CompressionLevel compressionLevel) : GZipStream(outputStream, compressionLevel, leaveOpen: true) {
+	class CustomGzipStream(Stream outputStream, CompressionLevel compressionLevel) : GZipStream(outputStream, compressionLevel, leaveOpen: true) {
 		Stream OutputStream { get; } = outputStream ?? throw new ArgumentNullException(nameof(outputStream));
 
 		bool HasContent { get; set; }

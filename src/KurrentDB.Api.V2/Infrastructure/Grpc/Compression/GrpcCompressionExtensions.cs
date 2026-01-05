@@ -3,8 +3,8 @@
 
 using System.IO.Compression;
 using Grpc.AspNetCore.Server;
+using KurrentDB.Common.Compression;
 using Microsoft.Extensions.DependencyInjection;
-using GzipCompressionProvider = KurrentDB.Common.Compression.GzipCompressionProvider;
 
 namespace KurrentDB.Api.Infrastructure.Grpc.Compression;
 
@@ -13,7 +13,7 @@ public static class GrpcCompressionExtensions {
         builder.Services.Configure<GrpcServiceOptions>(options => {
             options.ResponseCompressionAlgorithm = "gzip";
             options.ResponseCompressionLevel     = level;
-            options.CompressionProviders.Add(new GzipCompressionProvider(level));
+            options.CompressionProviders.Add(new CustomGzipCompressionProvider(level));
         });
 
         return builder;
@@ -22,7 +22,7 @@ public static class GrpcCompressionExtensions {
     public static GrpcServiceOptions<TService> WithCompression<TService>(this GrpcServiceOptions<TService> options, CompressionLevel level = CompressionLevel.Optimal) where TService : class {
         options.ResponseCompressionAlgorithm = "gzip";
         options.ResponseCompressionLevel     = level;
-        options.CompressionProviders.Add(new GzipCompressionProvider(level));
+        options.CompressionProviders.Add(new CustomGzipCompressionProvider(level));
         return options;
     }
 

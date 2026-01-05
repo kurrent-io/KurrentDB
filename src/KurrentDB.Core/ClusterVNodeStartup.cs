@@ -13,6 +13,7 @@ using EventStore.Core.Services.Transport.Grpc.Cluster;
 using EventStore.Plugins;
 using EventStore.Plugins.Authentication;
 using EventStore.Plugins.Authorization;
+using KurrentDB.Common.Compression;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
@@ -41,7 +42,6 @@ using Serilog;
 using AuthenticationMiddleware = KurrentDB.Core.Services.Transport.Http.AuthenticationMiddleware;
 using ClientGossip = EventStore.Core.Services.Transport.Grpc.Gossip;
 using ClusterGossip = EventStore.Core.Services.Transport.Grpc.Cluster.Gossip;
-using GzipCompressionProvider = KurrentDB.Common.Compression.GzipCompressionProvider;
 using HttpMethod = KurrentDB.Transport.Http.HttpMethod;
 using Operations = EventStore.Core.Services.Transport.Grpc.Operations;
 using ServerFeatures = KurrentDB.Core.Services.Transport.Grpc.ServerFeatures;
@@ -287,7 +287,7 @@ public class ClusterVNodeStartup<TStreamId>
 				// The client must still need to opt-in
 				options.ResponseCompressionAlgorithm = "gzip";
 				options.ResponseCompressionLevel = CompressionLevel.Optimal;
-				options.CompressionProviders.Add(new GzipCompressionProvider(CompressionLevel.Optimal));
+				options.CompressionProviders.Add(new CustomGzipCompressionProvider(CompressionLevel.Optimal));
 			})
 			.AddServiceOptions<Streams<TStreamId>>(options => options.MaxReceiveMessageSize = TFConsts.EffectiveMaxLogRecordSize);
 
