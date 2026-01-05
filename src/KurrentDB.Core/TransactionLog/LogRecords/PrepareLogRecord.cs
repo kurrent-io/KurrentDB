@@ -60,7 +60,7 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 	public long TransactionPosition { get; }
 	public int TransactionOffset { get; }
 	// if IsCommitted is set then ExpectedVersion is EventNumber - 1 else ExpectedVersion is Any (-2)
-	// we don't store the event number directly because this record does not necessarily have one.
+	// we store the expected version instead of the event number directly because this record does not necessarily have one.
 	// (when uncommitted, also when neither PrepareFlags.Data nor PrepareFlags.StreamDelete)
 	public long ExpectedVersion { get; }
 	public string EventStreamId { get; }
