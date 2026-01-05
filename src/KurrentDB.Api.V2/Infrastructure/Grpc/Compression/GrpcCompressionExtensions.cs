@@ -4,7 +4,7 @@
 using System.IO.Compression;
 using Grpc.AspNetCore.Server;
 using Microsoft.Extensions.DependencyInjection;
-using GzipCompressionProvider = Grpc.Net.Compression.GzipCompressionProvider;
+using GzipCompressionProvider = KurrentDB.Common.Compression.GzipCompressionProvider;
 
 namespace KurrentDB.Api.Infrastructure.Grpc.Compression;
 
