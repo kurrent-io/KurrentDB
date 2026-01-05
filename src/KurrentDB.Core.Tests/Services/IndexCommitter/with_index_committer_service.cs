@@ -27,8 +27,9 @@ public abstract class with_index_committer_service<TLogFormat, TStreamId> {
 	protected ICheckpoint ReplicationCheckpoint;
 	protected ICheckpoint WriterCheckpoint;
 	protected SynchronousScheduler Publisher = new("publisher");
-	protected ConcurrentQueue<StorageMessage.CommitIndexed> CommitReplicatedMgs = new ConcurrentQueue<StorageMessage.CommitIndexed>();
-	protected ConcurrentQueue<ReplicationTrackingMessage.IndexedTo> IndexWrittenMgs = new ConcurrentQueue<ReplicationTrackingMessage.IndexedTo>();
+	protected ConcurrentQueue<StorageMessage.CommitIndexed> CommitReplicatedMgs = [];
+	protected ConcurrentQueue<StorageMessage.IndexedToEndOfTransactionFile> IndexedToEndOfTransactionFileMgs = [];
+	protected ConcurrentQueue<ReplicationTrackingMessage.IndexedTo> IndexWrittenMgs = [];
 
 	protected IndexCommitterService<TStreamId> Service;
 	protected FakeIndexCommitter<TStreamId> IndexCommitter;
@@ -44,6 +45,7 @@ public abstract class with_index_committer_service<TLogFormat, TStreamId> {
 		Service = new IndexCommitterService<TStreamId>(IndexCommitter, Publisher, WriterCheckpoint, ReplicationCheckpoint, TableIndex, new QueueStatsManager());
 		await Service.Init(0, CancellationToken.None);
 		Publisher.Subscribe(new AdHocHandler<StorageMessage.CommitIndexed>(m => CommitReplicatedMgs.Enqueue(m)));
+		Publisher.Subscribe(new AdHocHandler<StorageMessage.IndexedToEndOfTransactionFile>(m => IndexedToEndOfTransactionFileMgs.Enqueue(m)));
 		Publisher.Subscribe(new AdHocHandler<ReplicationTrackingMessage.IndexedTo>(m => IndexWrittenMgs.Enqueue(m)));
 		Publisher.Subscribe<ReplicationTrackingMessage.ReplicatedTo>(Service);
 		Given();
@@ -61,7 +63,7 @@ public abstract class with_index_committer_service<TLogFormat, TStreamId> {
 	protected void AddPendingPrepare(long transactionPosition, long postPosition = -1) {
 		postPosition = postPosition == -1 ? transactionPosition : postPosition;
 		var prepare = CreatePrepare(transactionPosition, transactionPosition);
-		Service.AddPendingPrepare(new[] { prepare }, postPosition);
+		Service.AddPendingPrepare(prepare.TransactionPosition, [prepare], postPosition);
 	}
 
 	protected void AddPendingPrepares(long transactionPosition, long[] logPositions) {
@@ -70,7 +72,7 @@ public abstract class with_index_committer_service<TLogFormat, TStreamId> {
 			prepares.Add(CreatePrepare(transactionPosition, pos));
 		}
 
-		Service.AddPendingPrepare(prepares.ToArray(), logPositions[^1]);
+		Service.AddPendingPrepare(prepares[0].TransactionPosition, prepares.ToArray(), logPositions[^1]);
 	}
 
 	private IPrepareLogRecord<TStreamId> CreatePrepare(long transactionPosition, long logPosition) {

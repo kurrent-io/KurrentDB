@@ -156,7 +156,7 @@ public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool sharedPool, 
 		}
 	}
 
-	private DuckDBConnectionPool GetPool(Lazy<DuckDBConnectionPool>? pool) {
-		return pool is not null ? pool.Value : sharedPool;
+	private DuckDBConnectionPool GetPool(DuckDBConnectionPool? pool) {
+		return pool is not null ? pool : sharedPool;
 	}
 }

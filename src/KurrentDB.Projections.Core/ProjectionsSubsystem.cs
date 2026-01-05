@@ -263,7 +263,7 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 	private static void CreateAwakerService(StandardComponents standardComponents) {
 		var awakeReaderService = new AwakeService();
 		standardComponents.MainBus.Subscribe<StorageMessage.EventCommitted>(awakeReaderService);
-		standardComponents.MainBus.Subscribe<StorageMessage.TfEofAtNonCommitRecord>(awakeReaderService);
+		standardComponents.MainBus.Subscribe<StorageMessage.IndexedToEndOfTransactionFile>(awakeReaderService);
 		standardComponents.MainBus.Subscribe<AwakeServiceMessage.SubscribeAwake>(awakeReaderService);
 		standardComponents.MainBus.Subscribe<AwakeServiceMessage.UnsubscribeAwake>(awakeReaderService);
 	}
