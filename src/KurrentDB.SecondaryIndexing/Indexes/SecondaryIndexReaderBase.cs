@@ -6,14 +6,11 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Storage;
-using Serilog;
 using static KurrentDB.Core.Messages.ClientMessage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes;
 
 public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool sharedPool, IReadIndex<string> index) : ISecondaryIndexReader {
-	private static readonly ILogger Log = Serilog.Log.ForContext<SecondaryIndexReaderBase>();
-
 	protected abstract string? GetId(string indexName);
 
 	protected abstract (List<IndexQueryRecord> Records, bool IsFinal) GetInflightForwards(string? id, long startPosition, int maxCount, bool excludeFirst);
@@ -160,10 +157,6 @@ public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool sharedPool, 
 	}
 
 	private DuckDBConnectionPool GetPool(DuckDBConnectionPool? pool) {
-		if (pool is not null)
-			return pool;
-
-		Log.Verbose("Using shared DuckDBConnection pool");
-		return sharedPool;
+		return pool is not null ? pool : sharedPool;
 	}
 }

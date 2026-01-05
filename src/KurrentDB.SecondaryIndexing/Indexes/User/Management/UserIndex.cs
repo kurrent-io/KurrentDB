@@ -85,14 +85,15 @@ public class UserIndex : Aggregate<UserIndexState> {
 	}
 
 	public void Delete() {
-		if (State.State is IndexState.Deleted)
-			return; // idempotent
-
-		if (State.State is IndexState.Unspecified)
-			throw new UserIndexNotFoundException(State.Id.Name);
-
-		if (State.State is IndexState.Started)
-			Stop();
+		switch (State.State) {
+			case IndexState.Deleted:
+				return; // idempotent
+			case IndexState.Unspecified:
+				throw new UserIndexNotFoundException(State.Id.Name);
+			case IndexState.Started:
+				Stop();
+				break;
+		}
 
 		Apply(new IndexDeleted {
 			Timestamp = DateTime.UtcNow.ToTimestamp(),

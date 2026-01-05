@@ -19,13 +19,13 @@ public record UserIndexState : State<UserIndexState, UserIndexId> {
 				State = IndexState.Stopped,
 			});
 
-		On<IndexStarted>((state, evt) =>
+		On<IndexStarted>((state, _) =>
 			state with { State = IndexState.Started });
 
-		On<IndexStopped>((state, evt) =>
+		On<IndexStopped>((state, _) =>
 			state with { State = IndexState.Stopped });
 
-		On<IndexDeleted>((state, evt) =>
+		On<IndexDeleted>((state, _) =>
 			state with { State = IndexState.Deleted });
 	}
 }

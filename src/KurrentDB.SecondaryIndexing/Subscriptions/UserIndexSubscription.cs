@@ -10,14 +10,12 @@ using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.SecondaryIndexing.Indexes.User;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.SecondaryIndexing.Subscriptions;
 
 // The subscription to $all used to populate a particular user index
 internal abstract class UserIndexSubscription {
-	protected static readonly ILogger Log = Serilog.Log.ForContext<UserIndexSubscription>();
-
 	public abstract ValueTask Start();
 	public abstract ValueTask Stop();
 	public abstract TFPos GetLastIndexedPosition();
@@ -29,8 +27,8 @@ internal sealed class UserIndexSubscription<TField>(
 	UserIndexProcessor<TField> indexProcessor,
 	SecondaryIndexingPluginOptions options,
 	Func<EventRecord, bool> eventFilter,
+	ILogger log,
 	CancellationToken token) : UserIndexSubscription, IAsyncDisposable where TField : IField {
-
 	private readonly int _commitBatchSize = options.CommitBatchSize;
 	private CancellationTokenSource? _cts = CancellationTokenSource.CreateLinkedTokenSource(token);
 	private Enumerator.AllSubscription? _subscription;
@@ -38,12 +36,13 @@ internal sealed class UserIndexSubscription<TField>(
 
 	private void Subscribe() {
 		if (_cts is not { } cts) {
-			Log.Warning("User index subscription {index} already terminated", indexProcessor.IndexName);
+			log.LogUserIndexSubscriptionAlreadyTerminated(indexProcessor.IndexName);
 			return;
 		}
+
 		var position = indexProcessor.GetLastPosition();
 		var startFrom = position == TFPos.Invalid ? Position.Start : Position.FromInt64(position.CommitPosition, position.PreparePosition);
-		Log.Information("User index subscription: {index} is starting from {position}", indexProcessor.IndexName, startFrom);
+		log.LogUserIndexSubscriptionIsStarting(indexProcessor.IndexName, startFrom);
 
 		_subscription = new(
 			bus: publisher,
@@ -72,12 +71,12 @@ internal sealed class UserIndexSubscription<TField>(
 				if (!await _subscription.MoveNextAsync())
 					break;
 			} catch (ReadResponseException.NotHandled.ServerNotReady) {
-				Log.Information("User index: {index} is stopping because server is not ready", indexProcessor.IndexName);
+				log.LogUserIndexIsStoppingBecauseServerIsNotReady(indexProcessor.IndexName);
 				break;
 			}
 
 			if (_subscription.Current is ReadResponse.SubscriptionCaughtUp caughtUp) {
-				Log.Verbose("User index: {index} caught up at {time}", indexProcessor.IndexName, caughtUp.Timestamp);
+				log.LogUserIndexCaughtUp(indexProcessor.IndexName, caughtUp.Timestamp);
 				continue;
 			}
 
@@ -97,7 +96,7 @@ internal sealed class UserIndexSubscription<TField>(
 
 				if (processedCount >= _commitBatchSize) {
 					if (indexedCount > 0) {
-						Log.Verbose("User index: {index} is committing {count} events", indexProcessor.IndexName, indexedCount);
+						log.LogUserIndexIsCommitting(indexProcessor.IndexName, indexedCount);
 						indexProcessor.Commit();
 					}
 
@@ -109,11 +108,11 @@ internal sealed class UserIndexSubscription<TField>(
 					processedCount = 0;
 				}
 			} catch (OperationCanceledException) {
-				Log.Verbose("User index: {index} is stopping as cancellation was requested", indexProcessor.IndexName);
+				log.LogUserIndexIsStopping(indexProcessor.IndexName);
 				break;
 			} catch (Exception ex) {
-				Log.Error(ex, "User index: {index} failed to process event: {eventNumber}@{streamId} ({position})",
-					indexProcessor.IndexName, eventReceived.Event.OriginalEventNumber, eventReceived.Event.OriginalStreamId, eventReceived.Event.OriginalPosition);
+				log.LogUserIndexFailedToProcessEvent(ex, indexProcessor.IndexName, eventReceived.Event.OriginalEventNumber,
+					eventReceived.Event.OriginalStreamId, eventReceived.Event.OriginalPosition);
 				throw;
 			}
 		}
@@ -135,9 +134,9 @@ internal sealed class UserIndexSubscription<TField>(
 		if (_processingTask != null) {
 			try {
 				await _processingTask.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing |
-													 ConfigureAwaitOptions.ContinueOnCapturedContext);
+				                                     ConfigureAwaitOptions.ContinueOnCapturedContext);
 			} catch (Exception ex) {
-				Log.Error(ex, "Error during processing task completion");
+				log.LogErrorDuringProcessingTaskCompletion(ex);
 			}
 		}
 
@@ -152,7 +151,7 @@ internal sealed class UserIndexSubscription<TField>(
 	}
 
 	public override async ValueTask Stop() {
-		Log.Verbose("Stopping user index subscription for: {index}", indexProcessor.IndexName);
+		log.LogStoppingUserIndexSubscriptionForIndex(indexProcessor.IndexName);
 		await DisposeAsync();
 		indexProcessor.Dispose();
 	}
@@ -161,4 +160,38 @@ internal sealed class UserIndexSubscription<TField>(
 
 	public override void GetUserIndexTableDetails(out string tableName, out string inFlightTableName, out string? fieldName) =>
 		indexProcessor.GetUserIndexTableDetails(out tableName, out inFlightTableName, out fieldName);
+}
+
+static partial class UserIndexSubscriptionLogMessages {
+	[LoggerMessage(LogLevel.Warning, "User index subscription {index} already terminated")]
+	internal static partial void LogUserIndexSubscriptionAlreadyTerminated(this ILogger logger, string index);
+
+	[LoggerMessage(LogLevel.Information, "User index subscription: {index} is starting from {position}")]
+	internal static partial void LogUserIndexSubscriptionIsStarting(this ILogger logger, string index, Position position);
+
+	[LoggerMessage(LogLevel.Information, "User index: {index} is stopping because server is not ready")]
+	internal static partial void LogUserIndexIsStoppingBecauseServerIsNotReady(this ILogger logger, string index);
+
+	[LoggerMessage(LogLevel.Trace, "User index: {index} caught up at {time}")]
+	internal static partial void LogUserIndexCaughtUp(this ILogger logger, string index, DateTime time);
+
+	[LoggerMessage(LogLevel.Trace, "User index: {index} is committing {count} events")]
+	internal static partial void LogUserIndexIsCommitting(this ILogger logger, string index, int count);
+
+	[LoggerMessage(LogLevel.Trace, "User index: {index} is stopping as cancellation was requested")]
+	internal static partial void LogUserIndexIsStopping(this ILogger logger, string index);
+
+	[LoggerMessage(LogLevel.Error, "User index: {index} failed to process event: {eventNumber}@{streamId} ({position})")]
+	internal static partial void LogUserIndexFailedToProcessEvent(this ILogger logger,
+		Exception exception,
+		string index,
+		long eventNumber,
+		string streamId,
+		TFPos? position);
+
+	[LoggerMessage(LogLevel.Error, "Error during processing task completion")]
+	internal static partial void LogErrorDuringProcessingTaskCompletion(this ILogger logger, Exception exception);
+
+	[LoggerMessage(LogLevel.Trace, "Stopping user index subscription for: {index}")]
+	internal static partial void LogStoppingUserIndexSubscriptionForIndex(this ILogger logger, string index);
 }

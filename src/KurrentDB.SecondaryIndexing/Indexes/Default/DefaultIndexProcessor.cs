@@ -19,7 +19,6 @@ using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using static KurrentDB.SecondaryIndexing.Indexes.Default.DefaultSql;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
@@ -30,6 +29,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	private readonly IPublisher _publisher;
 	private readonly ILongHasher<string> _hasher;
 	private readonly ILogger<DefaultIndexProcessor> _log;
+
 	private Appender _appender;
 
 	public TFPos LastIndexedPosition { get; private set; }
@@ -41,16 +41,17 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		ILongHasher<string> hasher,
 		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)]
 		Meter meter,
+		ILoggerFactory loggerFactory,
 		MetricsConfiguration? metricsConfiguration = null,
-		TimeProvider? clock = null,
-		ILogger<DefaultIndexProcessor>? log = null
+		TimeProvider? clock = null
 	) {
 		_connection = db.Open();
+		_log = loggerFactory.CreateLogger<DefaultIndexProcessor>();
 		_appender = new(_connection, "idx_all"u8);
 		_inFlightRecords = inFlightRecords;
-		_log = log ?? NullLogger<DefaultIndexProcessor>.Instance;
 		var serviceName = metricsConfiguration?.ServiceName ?? "kurrentdb";
-		Tracker = new("default", serviceName, meter, clock ?? TimeProvider.System);
+		Tracker = new("default", serviceName, meter, clock ?? TimeProvider.System,
+			loggerFactory.CreateLogger<SecondaryIndexProgressTracker>());
 		_publisher = publisher;
 		_hasher = hasher;
 

@@ -16,7 +16,7 @@ namespace KurrentDB.Api.Modules.Indexes;
 
 public class IndexesService(
 	UserIndexCommandService domainService,
-	UserIndexReadsideService readSideService,
+	UserIndexQueryService readSideService,
 	IAuthorizationProvider authz)
 	: IndexesServiceBase {
 

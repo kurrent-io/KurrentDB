@@ -11,7 +11,6 @@ namespace KurrentDB.SecondaryIndexing.Storage;
 
 [UsedImplicitly]
 internal class InFlightSetup(DefaultIndexInFlightRecords inFlightRecords) : IDuckDBSetup {
-	[Experimental("DuckDBNET001")]
 	public void Execute(DuckDBConnection connection) {
 		connection.RegisterTableFunction("inflight", ReadBackwardsResultCallback, ReadInFlightMapperCallback);
 	}
@@ -33,7 +32,6 @@ internal class InFlightSetup(DefaultIndexInFlightRecords inFlightRecords) : IDuc
 		return new(ColumnInfos, records);
 	}
 
-	[Experimental("DuckDBNET001")]
 	private static void ReadInFlightMapperCallback(object? item, IDuckDBDataWriter[] writers, ulong rowIndex) {
 		var record = (InFlightRecord)item!;
 

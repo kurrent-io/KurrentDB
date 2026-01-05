@@ -64,7 +64,7 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 
 	public DuckDBConnectionPool CreatePool() => CreatePool(isReadOnly: true, log: false); // no writes go through here so set read only
 
-	private DuckDBConnectionPool CreatePool(bool isReadOnly, bool log) {
+	private ConnectionPoolWithFunctions CreatePool(bool isReadOnly, bool log) {
 		var availableRamMib = CalculateRam();
 		var duckDbRamMib = (int)(availableRamMib * 0.25);
 		var settings = new Dictionary<string, string> {

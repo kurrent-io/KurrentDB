@@ -7,14 +7,16 @@ using Kurrent.Quack.ConnectionPool;
 namespace KurrentDB.SecondaryIndexing.Storage;
 
 public static class DuckDbExtensions {
-	public static List<TRow> QueryToList<TArgs, TRow, TQuery>(this DuckDBConnectionPool db, TArgs args)
-		where TArgs : struct
-		where TRow : struct
-		where TQuery : IQuery<TArgs, TRow>
-		=> db.QueryAsCollection<TArgs, TRow, TQuery, List<TRow>>(args);
+	extension(DuckDBConnectionPool db) {
+		public List<TRow> QueryToList<TArgs, TRow, TQuery>(TArgs args)
+			where TArgs : struct
+			where TRow : struct
+			where TQuery : IQuery<TArgs, TRow>
+			=> db.QueryAsCollection<TArgs, TRow, TQuery, List<TRow>>(args);
 
-	public static List<TRow> QueryToList<TRow, TQuery>(this DuckDBConnectionPool db)
-		where TRow : struct
-		where TQuery : IQuery<TRow>
-		=> db.QueryAsCollection<TRow, TQuery, List<TRow>>();
+		public List<TRow> QueryToList<TRow, TQuery>()
+			where TRow : struct
+			where TQuery : IQuery<TRow>
+			=> db.QueryAsCollection<TRow, TQuery, List<TRow>>();
+	}
 }

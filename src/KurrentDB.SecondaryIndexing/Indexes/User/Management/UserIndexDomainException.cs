@@ -3,7 +3,7 @@
 
 namespace KurrentDB.SecondaryIndexing.Indexes.User.Management;
 
-public class UserIndexException : Exception;
+public abstract class UserIndexException : Exception;
 
 public class UserIndexDomainException(string indexName) : UserIndexException {
 	public string IndexName => indexName;
