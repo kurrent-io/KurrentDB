@@ -72,7 +72,7 @@ public static partial class ApiErrors {
 	public static RpcException StreamAlreadyInAppendSession(string stream) {
 		Debug.Assert(!string.IsNullOrWhiteSpace(stream), "The stream cannot be empty!");
 
-		var message = $"Stream '{stream}' is has a different group of messages in this session. " +
+		var message = $"Stream '{stream}' already has a different group of messages in this session. " +
 		              $"Appends for the same stream must currently be grouped together and not interleaved with appends for other streams.";
 
         //KurrentDB.Protocol.V2.Streams.Errors.StreamsError.StreamAlreadyInAppendSessionErrorDetails
