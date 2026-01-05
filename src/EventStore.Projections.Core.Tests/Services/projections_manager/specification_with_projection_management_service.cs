@@ -104,7 +104,7 @@ public abstract class specification_with_projection_management_service<TLogForma
 
 		AwakeService = new AwakeService();
 		_bus.Subscribe<StorageMessage.EventCommitted>(AwakeService);
-		_bus.Subscribe<StorageMessage.TfEofAtNonCommitRecord>(AwakeService);
+		_bus.Subscribe<StorageMessage.IndexedToEndOfTransactionFile>(AwakeService);
 		_bus.Subscribe<AwakeServiceMessage.SubscribeAwake>(AwakeService);
 		_bus.Subscribe<AwakeServiceMessage.UnsubscribeAwake>(AwakeService);
 
