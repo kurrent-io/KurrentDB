@@ -68,7 +68,7 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 		var availableRamMib = CalculateRam();
 		var duckDbRamMib = (int)(availableRamMib * 0.25);
 		var settings = new Dictionary<string, string> {
-			["memory_limit"] = $"{duckDbRamMib}MB",
+			["memory_limit"] = $"{duckDbRamMib}MB", // total, not per connection
 			["access_mode"] = isReadOnly ? "READ_ONLY" : "READ_WRITE",
 		};
 		var pool = new ConnectionPoolWithFunctions($"Data Source={_path};{GetParamsString()}", _repeated);

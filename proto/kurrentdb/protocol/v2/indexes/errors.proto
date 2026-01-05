@@ -30,6 +30,11 @@ enum IndexesError {
     status_code: FAILED_PRECONDITION,
     has_details: true,
   }];
+
+  // Secondary indexing is disabled
+  INDEXES_ERROR_SECONDARY_INDEXING_DISABLED = 4 [(kurrent.rpc.error) = {
+    status_code: FAILED_PRECONDITION,
+  }];
 }
 
 // Details for INDEXES_ERROR_INDEX_NOT_FOUND errors.
