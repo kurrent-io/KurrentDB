@@ -4,7 +4,6 @@ package eventstore.connectors.v1;
 
 import "google/api/annotations.proto";
 import "google/protobuf/wrappers.proto";
-import "google/protobuf/struct.proto";
 import "managementplane/resources.proto";
 import "google/protobuf/timestamp.proto";
 import "protocol.proto";
@@ -30,8 +29,8 @@ message GetConnectorSettings {
 }
 
 message GetConnectorSettingsResult {
-  google.protobuf.Struct    configuration        = 1;
-  google.protobuf.Timestamp settings_update_time = 2;
+  map<string, google.protobuf.StringValue> settings             = 1;
+  google.protobuf.Timestamp                settings_update_time = 2;
 }
 
 message ListConnectors {
@@ -75,7 +74,6 @@ message Connector {
   google.protobuf.Timestamp delete_time = 12;
 
   Error error_details = 13;
-  google.protobuf.Struct configuration = 14;
 }
 
 message ConnectorsSnapshot {

@@ -4,12 +4,12 @@
 using KurrentDB.Connectors.Management.Contracts.Queries;
 using Kurrent.Surge;
 using Kurrent.Surge.Protocol.Consumers;
+using KurrentDB.Common.Configuration;
 using KurrentDB.Common.Utils;
-using KurrentDB.Connectors.Control;
-using KurrentDB.Connectors.Infrastructure;
 using KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
 using KurrentDB.Connectors.Planes.Management.Domain;
 using KurrentDB.Surge.Readers;
+using Microsoft.Extensions.Configuration;
 
 namespace KurrentDB.Connectors.Planes.Management.Queries;
 
@@ -67,7 +67,7 @@ public class ConnectorQueries {
         async (conn, _) => {
             if (!query.IncludeSettings) {
                 return conn.With(x => {
-	                x.Settings.Clear();
+                    x.Settings.Clear();
                     return x;
                 });
             }
@@ -76,7 +76,13 @@ public class ConnectorQueries {
 
             return conn.With(x => {
                 x.Settings.Clear();
-                x.Configuration = unprotected.ToProtobufStruct();
+
+                var settings = unprotected.AsEnumerable()
+                    .Where(setting => setting.Value != null)
+                    .ToDictionary(setting => setting.Key, setting => setting.Value!);
+
+                x.Settings.Add(settings);
+
                 return x;
             });
         };
@@ -89,10 +95,14 @@ public class ConnectorQueries {
         if (connector is null)
             throw new DomainExceptions.EntityNotFound("Connector", query.ConnectorId);
 
-        var unprotected = await DataProtector.Unprotect(connector.Settings.ToConfiguration(), cancellationToken);
+        var unprotected   = await DataProtector.Unprotect(connector.Settings.ToConfiguration(), cancellationToken);
+
+        var settings = unprotected.AsEnumerable()
+            .Where(setting => setting.Value != null)
+            .ToDictionary(setting => setting.Key, setting => setting.Value!);
 
         return new GetConnectorSettingsResult {
-            Configuration      = unprotected.ToProtobufStruct(),
+            Settings           = { settings },
             SettingsUpdateTime = connector.SettingsUpdateTime
         };
     }
