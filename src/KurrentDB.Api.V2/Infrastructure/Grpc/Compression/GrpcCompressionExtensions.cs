@@ -13,7 +13,7 @@ public static class GrpcCompressionExtensions {
         builder.Services.Configure<GrpcServiceOptions>(options => {
             options.ResponseCompressionAlgorithm = "gzip";
             options.ResponseCompressionLevel     = level;
-            options.CompressionProviders.Add(new CustomGzipCompressionProvider(level));
+            options.CompressionProviders.Add(new NonEmptyGzipCompressionProvider(level));
         });
 
         return builder;
@@ -22,7 +22,7 @@ public static class GrpcCompressionExtensions {
     public static GrpcServiceOptions<TService> WithCompression<TService>(this GrpcServiceOptions<TService> options, CompressionLevel level = CompressionLevel.Optimal) where TService : class {
         options.ResponseCompressionAlgorithm = "gzip";
         options.ResponseCompressionLevel     = level;
-        options.CompressionProviders.Add(new CustomGzipCompressionProvider(level));
+        options.CompressionProviders.Add(new NonEmptyGzipCompressionProvider(level));
         return options;
     }
 

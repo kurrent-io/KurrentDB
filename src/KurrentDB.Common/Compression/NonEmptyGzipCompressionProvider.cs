@@ -12,7 +12,14 @@ using Grpc.Net.Compression;
 
 namespace KurrentDB.Common.Compression;
 
-public class CustomGzipCompressionProvider(CompressionLevel level) : ICompressionProvider {
+/// <summary>
+/// Workaround for .NET 9+ GZipStream not writing gzip header/footer for empty responses.
+/// See: https://github.com/dotnet/runtime/pull/94433
+///
+/// Valid gzip requires header/footer per RFC 1952, but .NET 9+ now emits 0 bytes.
+/// This breaks some gRPC clients expecting complete gzip payloads.
+/// </summary>
+public class NonEmptyGzipCompressionProvider(CompressionLevel level) : ICompressionProvider {
 	public string EncodingName => "gzip";
 
 	public Stream CreateCompressionStream(Stream outputStream, CompressionLevel? compressionLevel) =>
@@ -55,29 +62,36 @@ public class CustomGzipCompressionProvider(CompressionLevel level) : ICompressio
 		}
 
 		protected override void Dispose(bool disposing) {
-			if (disposing)
-				WriteEmptyStream();
+			if (disposing && !HasContent)
+				WriteEmptyGZipPayload();
 
 			base.Dispose(disposing);
 		}
 
 		public override async ValueTask DisposeAsync() {
-			WriteEmptyStream();
+			if (!HasContent)
+				await WriteEmptyGZipPayloadAsync();
+
 			await base.DisposeAsync();
 		}
 
-		void WriteEmptyStream() {
-			if (HasContent) return;
-
+		void WriteEmptyGZipPayload() {
 			HasContent = true;
 
-			OutputStream.Write(EmptyGzip);
+			OutputStream.Write(EmptyGzip.Span);
 			OutputStream.Flush();
+		}
+
+		async ValueTask WriteEmptyGZipPayloadAsync(CancellationToken cancellationToken = default) {
+			HasContent = true;
+
+			await OutputStream.WriteAsync(EmptyGzip, cancellationToken);
+			await OutputStream.FlushAsync(cancellationToken);
 		}
 	}
 
 	// See RFC 1952 (https://datatracker.ietf.org/doc/html/rfc1952)
-	static ReadOnlySpan<byte> EmptyGzip => [
+	static ReadOnlyMemory<byte> EmptyGzip => new byte[] {
 		0x1f, 0x8b,             // Magic number
 		0x08,                   // Compression method: deflate
 		0x00,                   // Flags: none
@@ -88,5 +102,5 @@ public class CustomGzipCompressionProvider(CompressionLevel level) : ICompressio
 		0x00, 0x00,             // LEN = 0, NLEN = 0 (complement)
 		0x00, 0x00, 0x00, 0x00, // CRC-32 for empty data
 		0x00, 0x00, 0x00, 0x00  // Size: 0 bytes
-	];
+	};
 }

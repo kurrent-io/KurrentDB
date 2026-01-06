@@ -287,7 +287,7 @@ public class ClusterVNodeStartup<TStreamId>
 				// The client must still need to opt-in
 				options.ResponseCompressionAlgorithm = "gzip";
 				options.ResponseCompressionLevel = CompressionLevel.Optimal;
-				options.CompressionProviders.Add(new CustomGzipCompressionProvider(CompressionLevel.Optimal));
+				options.CompressionProviders.Add(new NonEmptyGzipCompressionProvider(CompressionLevel.Optimal));
 			})
 			.AddServiceOptions<Streams<TStreamId>>(options => options.MaxReceiveMessageSize = TFConsts.EffectiveMaxLogRecordSize);
 
