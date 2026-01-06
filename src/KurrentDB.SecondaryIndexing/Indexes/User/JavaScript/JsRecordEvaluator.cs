@@ -34,7 +34,7 @@ public class JsRecordEvaluator : IDisposable {
 		_record.Remap(re.OriginalEvent, sequence, _serializerOptions);
 
 	public bool Match(string? predicateExpression) =>
-		!string.IsNullOrEmpty(predicateExpression) && GetOrCompile(predicateExpression).Call(_jsValue).AsBoolean();
+		string.IsNullOrEmpty(predicateExpression) || GetOrCompile(predicateExpression).Call(_jsValue).AsBoolean();
 
 	public JsValue Select(string? selectorExpression) =>
 		!string.IsNullOrEmpty(selectorExpression) ? GetOrCompile(selectorExpression).Call(_jsValue) : JsValue.Null;
