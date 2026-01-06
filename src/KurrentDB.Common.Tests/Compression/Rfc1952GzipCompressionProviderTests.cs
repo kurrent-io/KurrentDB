@@ -6,8 +6,8 @@ using KurrentDB.Common.Compression;
 
 namespace KurrentDB.Common.Tests.Compression;
 
-public class NonEmptyGzipCompressionProviderTests {
-	readonly NonEmptyGzipCompressionProvider _sut = new(CompressionLevel.Optimal);
+public class Rfc1952GzipCompressionProviderTests {
+	readonly Rfc1952GzipCompressionProvider _sut = new(CompressionLevel.Optimal);
 
 	[Fact]
 	public async Task empty_content_produces_valid_gzip_on_dispose_async() {

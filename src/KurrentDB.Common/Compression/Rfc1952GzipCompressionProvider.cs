@@ -19,7 +19,7 @@ namespace KurrentDB.Common.Compression;
 /// Valid gzip requires header/footer per RFC 1952, but .NET 9+ now emits 0 bytes.
 /// This breaks some gRPC clients expecting complete gzip payloads.
 /// </summary>
-public class NonEmptyGzipCompressionProvider(CompressionLevel level) : ICompressionProvider {
+public class Rfc1952GzipCompressionProvider(CompressionLevel level) : ICompressionProvider {
 	public string EncodingName => "gzip";
 
 	public Stream CreateCompressionStream(Stream outputStream, CompressionLevel? compressionLevel) =>
