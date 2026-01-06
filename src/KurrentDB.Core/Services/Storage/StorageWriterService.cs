@@ -75,7 +75,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 	protected readonly IEpochManager EpochManager;
 	protected readonly IPublisher Bus;
 	private readonly ISubscriber _subscribeToBus;
-	private readonly QueuedHandlerThreadPool _writerQueue;
+	private readonly ThreadPoolMessageScheduler _writerQueue;
 	private readonly InMemoryBus _writerBus;
 
 	private readonly Clock _clock = Clock.Instance;
@@ -152,13 +152,12 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 
 		Writer = Ensure.NotNull(writer);
 
-		_writerBus = new("StorageWriterBus", watchSlowMsg: false);
-		_writerQueue = new(new AdHocHandler<Message>(CommonHandle),
-			"StorageWriterQueue",
-			queueStatsManager,
-			queueTrackers,
-			true,
-			TimeSpan.FromMilliseconds(500));
+		_writerBus = new("StorageWriterBus", watchSlowMsg: true, TimeSpan.FromMilliseconds(500));
+		_writerQueue = new("StorageWriterQueue", new AdHocHandler<Message>(CommonHandle)) {
+			SynchronizeMessagesWithUnknownAffinity = true,
+			Trackers = queueTrackers,
+			StatsManager = queueStatsManager,
+		};
 
 		SubscribeToMessage<SystemMessage.SystemInit>();
 		SubscribeToMessage<SystemMessage.StateChangeMessage>();
@@ -816,14 +815,9 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 			}
 
 			long logPos = Writer.Position;
-			long transactionPos = default;
+			long transactionPos = logPos;
 
 			for (int i = 0; i < prepares.Count; i++) {
-				// the prepares may be from different streams due to the stream & event type records
-				// we thus adjust the transaction position to the correct value on each stream id change
-				if (i is 0 || !StreamIdComparer.Equals(prepares[i].EventStreamId, prepares[i - 1].EventStreamId))
-					transactionPos = logPos;
-
 				prepares[i] = prepares[i].CopyForRetry(logPos, transactionPos);
 				logPos += prepares[i].GetSizeWithLengthPrefixAndSuffix();
 			}

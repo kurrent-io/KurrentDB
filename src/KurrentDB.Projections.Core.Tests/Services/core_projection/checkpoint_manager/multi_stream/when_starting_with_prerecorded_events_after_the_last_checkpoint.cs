@@ -76,7 +76,7 @@ public class when_starting_with_prerecorded_events_after_the_last_checkpoint<TLo
 	}
 
 	[Test]
-	public void sends_commited_event_received_messages_in_correct_order() {
+	public void sends_committed_event_received_messages_in_correct_order() {
 		var messages = HandledMessages.OfType<EventReaderSubscriptionMessage.CommittedEventReceived>().ToList();
 		Assert.AreEqual(3, messages.Count);
 
@@ -90,7 +90,7 @@ public class when_starting_with_prerecorded_events_after_the_last_checkpoint<TLo
 	}
 
 	[Test]
-	public void sends_correct_commited_event_received_messages() {
+	public void sends_correct_committed_event_received_messages() {
 		var messages = HandledMessages.OfType<EventReaderSubscriptionMessage.CommittedEventReceived>().ToList();
 		Assert.AreEqual(3, messages.Count);
 

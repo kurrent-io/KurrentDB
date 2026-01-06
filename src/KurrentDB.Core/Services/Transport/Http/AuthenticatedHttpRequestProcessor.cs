@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Threading;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.DataStructures;
 using KurrentDB.Core.Messages;
@@ -12,6 +13,7 @@ using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Core.Services.Transport.Http;
 
+// Called by worker bus concurrently. Thread Safe.
 internal class AuthenticatedHttpRequestProcessor : IHandle<HttpMessage.PurgeTimedOutRequests>, IHandle<AuthenticatedHttpRequestMessage> {
 	private static readonly ILogger Log = Serilog.Log.ForContext<AuthenticatedHttpRequestProcessor>();
 
@@ -22,6 +24,8 @@ internal class AuthenticatedHttpRequestProcessor : IHandle<HttpMessage.PurgeTime
 	}
 
 	private void PurgeTimedOutRequests() {
+		if (!Monitor.TryEnter(_pending))
+			return; // no need to wait, we can purge next time
 		try {
 			while (_pending.Count > 0) {
 				var req = _pending.FindMin();
@@ -37,6 +41,8 @@ internal class AuthenticatedHttpRequestProcessor : IHandle<HttpMessage.PurgeTime
 			}
 		} catch (Exception exc) {
 			Log.Error(exc, "Error purging timed out requests in HTTP request processor.");
+		} finally {
+			Monitor.Exit(_pending);
 		}
 	}
 
@@ -46,7 +52,8 @@ internal class AuthenticatedHttpRequestProcessor : IHandle<HttpMessage.PurgeTime
 		try {
 			var reqParams = match.RequestHandler(manager, match.TemplateMatch);
 			if (!reqParams.IsDone)
-				_pending.Add(Tuple.Create(DateTime.UtcNow + reqParams.Timeout, manager));
+				lock (_pending)
+					_pending.Add(Tuple.Create(DateTime.UtcNow + reqParams.Timeout, manager));
 		} catch (Exception exc) {
 			Log.Error(exc, "Error while handling HTTP request '{url}'.", manager.HttpEntity.Request.Url);
 			InternalServerError(manager);

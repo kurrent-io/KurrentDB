@@ -13,21 +13,15 @@ public static partial class ReaderSubscriptionMessage {
 	[DerivedMessage(ProjectionMessage.ReaderSubscription)]
 	public partial class SubscriptionMessage : Message {
 		private readonly Guid _correlationId;
-		private readonly CheckpointTag _preTagged;
 		private readonly object _source;
 
-		public SubscriptionMessage(Guid correlationId, CheckpointTag preTagged, object source) {
+		public SubscriptionMessage(Guid correlationId, object source) {
 			_correlationId = correlationId;
-			_preTagged = preTagged;
 			_source = source;
 		}
 
 		public Guid CorrelationId {
 			get { return _correlationId; }
-		}
-
-		public CheckpointTag PreTagged {
-			get { return _preTagged; }
 		}
 
 		public object Source {
@@ -40,7 +34,7 @@ public static partial class ReaderSubscriptionMessage {
 		private readonly DateTime _idleTimestampUtc;
 
 		public EventReaderIdle(Guid correlationId, DateTime idleTimestampUtc, object source = null)
-			: base(correlationId, null, source) {
+			: base(correlationId, source) {
 			_idleTimestampUtc = idleTimestampUtc;
 		}
 
@@ -54,7 +48,7 @@ public static partial class ReaderSubscriptionMessage {
 		private readonly long _lastCommitPosition;
 
 		public EventReaderStarting(Guid correlationId, long lastCommitPosition, object source = null)
-			: base(correlationId, null, source) {
+			: base(correlationId, source) {
 			_lastCommitPosition = lastCommitPosition;
 		}
 
@@ -65,49 +59,24 @@ public static partial class ReaderSubscriptionMessage {
 
 	[DerivedMessage(ProjectionMessage.ReaderSubscription)]
 	public partial class EventReaderEof : SubscriptionMessage {
-		private readonly bool _maxEventsReached;
-
-		public EventReaderEof(Guid correlationId, bool maxEventsReached = false, object source = null)
-			: base(correlationId, null, source) {
-			_maxEventsReached = maxEventsReached;
-		}
-
-		public bool MaxEventsReached {
-			get { return _maxEventsReached; }
-		}
-	}
-
-	[DerivedMessage(ProjectionMessage.ReaderSubscription)]
-	public partial class EventReaderPartitionEof : SubscriptionMessage {
-		private readonly string _partition;
-
-		public EventReaderPartitionEof(
-			Guid correlationId, string partition, CheckpointTag preTagged, object source = null)
-			: base(correlationId, preTagged, source) {
-			_partition = partition;
-		}
-
-		public string Partition {
-			get { return _partition; }
+		public EventReaderEof(Guid correlationId, object source = null)
+			: base(correlationId, source) {
 		}
 	}
 
 	[DerivedMessage(ProjectionMessage.ReaderSubscription)]
 	public partial class EventReaderPartitionDeleted : SubscriptionMessage {
 		private readonly string _partition;
-		private readonly long? _lastEventNumber;
 		private readonly TFPos? _deleteLinkOrEventPosition;
 		private readonly TFPos? _deleteEventOrLinkTargetPosition;
 		private readonly string _positionStreamId;
 		private readonly long? _positionEventNumber;
 
 		public EventReaderPartitionDeleted(
-			Guid correlationId, string partition, long? lastEventNumber, TFPos? deleteLinkOrEventPosition,
-			TFPos? deleteEventOrLinkTargetPosition, string positionStreamId, long? positionEventNumber,
-			CheckpointTag preTagged = null, object source = null)
-			: base(correlationId, preTagged, source) {
+			Guid correlationId, string partition, TFPos? deleteLinkOrEventPosition,
+			TFPos? deleteEventOrLinkTargetPosition, string positionStreamId, long? positionEventNumber, object source = null)
+			: base(correlationId, source) {
 			_partition = partition;
-			_lastEventNumber = lastEventNumber;
 			_deleteLinkOrEventPosition = deleteLinkOrEventPosition;
 			_deleteEventOrLinkTargetPosition = deleteEventOrLinkTargetPosition;
 			_positionStreamId = positionStreamId;
@@ -116,10 +85,6 @@ public static partial class ReaderSubscriptionMessage {
 
 		public string Partition {
 			get { return _partition; }
-		}
-
-		public long? LastEventNumber {
-			get { return _lastEventNumber; }
 		}
 
 		public TFPos? DeleteEventOrLinkTargetPosition {
@@ -142,7 +107,7 @@ public static partial class ReaderSubscriptionMessage {
 	[DerivedMessage(ProjectionMessage.ReaderSubscription)]
 	public sealed partial class EventReaderNotAuthorized : SubscriptionMessage {
 		public EventReaderNotAuthorized(Guid correlationId, object source = null)
-			: base(correlationId, null, source) {
+			: base(correlationId, source) {
 		}
 	}
 
@@ -188,7 +153,7 @@ public static partial class ReaderSubscriptionMessage {
 		public CommittedEventDistributed(
 			Guid correlationId, ResolvedEvent data, long? safeTransactionFileReaderJoinPosition, float progress,
 			object source = null, CheckpointTag preTagged = null)
-			: base(correlationId, preTagged, source) {
+			: base(correlationId, source) {
 			_data = data;
 			_safeTransactionFileReaderJoinPosition = safeTransactionFileReaderJoinPosition;
 			_progress = progress;
@@ -217,7 +182,7 @@ public static partial class ReaderSubscriptionMessage {
 
 		public Faulted(
 			Guid correlationId, string reason, object source = null)
-			: base(correlationId, null, source) {
+			: base(correlationId, source) {
 			_reason = reason;
 		}
 
@@ -228,6 +193,6 @@ public static partial class ReaderSubscriptionMessage {
 
 	[DerivedMessage(ProjectionMessage.ReaderSubscription)]
 	public partial class ReportProgress : SubscriptionMessage {
-		public ReportProgress(Guid correlationId, object source = null) : base(correlationId, null, source) { }
+		public ReportProgress(Guid correlationId, object source = null) : base(correlationId, source) { }
 	}
 }

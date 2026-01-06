@@ -6,67 +6,31 @@ title: "Kafka Sink"
 
 ## Overview
 
-The Kafka sink writes events to a Kafka topic. It can extract the
-partition key from the record based on specific sources such as the stream ID,
-headers, or record key and also supports basic authentication and resilience
-features to handle transient errors.
+The Kafka sink writes events to a Kafka topic using an idempotent producer for
+reliable delivery. It can extract the partition key from the record based on
+specific sources such as the stream ID, headers, or record key and also supports
+basic authentication and resilience features to handle transient errors.
 
 ## Quickstart
 
-You can create the Kafka Sink connector as follows:
+You can create the Kafka Sink connector as follows. Replace `id` with a unique connector name or ID:
 
-::: tabs
-@tab Powershell
+```http
+POST /connectors/{{id}}
+Host: localhost:2113
+Content-Type: application/json
 
-```powershell
-$JSON = @"
 {
   "settings": {
     "instanceTypeName": "kafka-sink",
-    "topic": "customers",
     "bootstrapServers": "localhost:9092",
+    "topic": "customers",
     "subscription:filter:scope": "stream",
     "subscription:filter:filterType": "streamId",
-    "subscription:filter:expression": "example-stream",
-    "authentication:username": "your-username",
-    "authentication:password": "your-password",
-    "authentication:securityProtocol": "SaslSsl",
-    "waitForBrokerAck": "true"
+    "subscription:filter:expression": "example-stream"
   }
 }
-"@ `
-
-curl.exe -X POST `
-  -H "Content-Type: application/json" `
-  -d $JSON `
-  http://localhost:2113/connectors/kafka-sink-connector
 ```
-
-@tab Bash
-
-```bash
-JSON='{
-  "settings": {
-    "instanceTypeName": "kafka-sink",
-    "topic": "your-topic",
-    "bootstrapServers": "your-kafka-cluster-address:9092",
-    "subscription:filter:scope": "stream",
-    "subscription:filter:filterType": "streamId",
-    "subscription:filter:expression": "example-stream",
-    "authentication:username": "your-username",
-    "authentication:password": "your-password",
-    "authentication:securityProtocol": "SaslSsl",
-    "waitForBrokerAck": "true"
-  }
-}'
-
-curl -X POST \
-  -H "Content-Type: application/json" \
-  -d "$JSON" \
-  http://localhost:2113/connectors/kafka-sink-connector
-```
-
-:::
 
 After creating and starting the Kafka sink connector, every time an event is
 appended to the `example-stream`, the Kafka sink connector will send the record
@@ -84,111 +48,210 @@ the [Sink Options](../settings.md#sink-options) page.
 
 The Kafka sink can be configured with the following options:
 
-| Name                              | Details                                                                                                                                                                                                                                                       |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `topic`                           | _required_<br><br>**Type**: string<br><br>**Description:** The Kafka topic to produce records to.                                                                                                                                                             |
-| `bootstrapServers`                | **Type**: string<br><br>**Description:** Comma-separated list of Kafka broker addresses.<br><br>**Default**: `localhost:9092`                                                                                                                                 |
-| `defaultHeaders`                  | **Type**: dict<string,string><br><br>**Description:** Headers included in all produced messages.<br><br>**Default**: None                                                                                                                                     |
-| `authentication:securityProtocol` | **Type**: [SecurityProtocol](https://docs.confluent.io/platform/current/clients/confluent-kafka-dotnet/_site/api/Confluent.Kafka.SecurityProtocol.html)<br><br>**Description:** Protocol used for Kafka broker communication.<br><br>**Default**: `Plaintext` |
-| `authentication:username`         | **Type**: string<br><br>**Description:** Username for authentication.                                                                                                                                                                                         |
-| `authentication:password`         | **Type**: string<br><br>**Description:** Password for authentication.                                                                                                                                                                                         |
+| Name               | Details                                                                                                    |
+| ------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `topic`            | _required_<br><br>**Description:**<br>The Kafka topic to produce records to.                               |
+| `bootstrapServers` | **Description:**<br>Comma-separated list of Kafka broker addresses.<br><br>**Default**: `"localhost:9092"` |
+| `defaultHeaders`   | **Description:**<br>Headers included in all produced messages.<br><br>**Default**: Empty                   |
 
-### Partitioning
+#### Authentication
 
-| Name                                | Details                                                                                                                                                                           |
-| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `partitionKeyExtraction:enabled`    | **Type**: boolean<br><br>**Description:** Enables partition key extraction.<br><br>**Default**: false                                                                             |
-| `partitionKeyExtraction:source`     | **Type**: Enum<br><br>**Description:** Source for extracting the partition key.<br><br>**Accepted Values:**`stream`, `streamSuffix`, `headers`<br><br>**Default**: `PartitionKey` |
-| `partitionKeyExtraction:expression` | **Type**: string<br><br>**Description:** Regular expression for extracting the partition key.                                                                                     |
+| Name                              | Details                                                                                                                                                                         |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `authentication:securityProtocol` | **Description:**<br>Protocol used for Kafka broker communication.<br><br>**Default**: `"plaintext"`<br><br>**Accepted Values:**<br> - `"plaintext"`, `"saslPlaintext"` or `"saslSsl"` |
+| `authentication:saslMechanism`    | **Description:**<br>SASL mechanism to use for authentication.<br><br>**Default**: `"plain"`<br><br>**Accepted Values:**<br> - `"plain"`, `"scramSha256"`, or `"scramSha512"`          |
+| `authentication:username`         | **Description:**<br>SASL username                                                                                                                                               |
+| `authentication:password`         | **Description:**<br>SASL password                                                                                                                                               |
+
+
+#### Partitioning
+
+| Name                                | Details                                                                                                                                                                                     |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `partitionKeyExtraction:enabled`    | **Description:**<br>Enables partition key extraction.<br><br>**Default**: `"false"`                                                                                                         |
+| `partitionKeyExtraction:source`     | **Description:**<br>Source for extracting the partition key. See [Partitioning](#partitioning-1)<br><br>**Accepted Values:**`"partitionKey"`, `"stream"`, `"streamSuffix"`, or `"headers"`<br><br>**Default**: `"partitionKey"` |
+| `partitionKeyExtraction:expression` | **Description:**<br>Regular expression for extracting the partition key.                                                                                                                    |
 
 See the [Partitioning](#partitioning-1) section for examples.
 
-### Resilience
+#### Resilience
 
-Besides the common sink settings that can be found in the [Resilience Configuration](../settings.md#resilience-configuration) page, the Kafka sink connector supports additional settings related to resilience:
+The Kafka sink connector relies on its own Kafka retry mechanism and doesn't include the configuration from [Resilience configuration](../settings.md#resilience-configuration).
 
-| Name                               | Details                                                                                                                                                                                                        |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `waitForBrokerAck`                 | **Type**: boolean<br><br>**Description:** Whether the producer waits for broker acknowledgment before considering the send operation complete.<br><br>**Default**: true                                        |
-| `resilience:enabled`               | **Type**: boolean<br><br>**Description:** Enables resilience features for message handling.<br><br>**Default**: `true`                                                                                         |
-| `resilience:maxRetries`            | **Type**: int<br><br>**Description:** Maximum number of retry attempts.<br><br>**Default**: `-1` (unlimited)                                                                                                   |
-| `resilience:transientErrorDelay`   | **Type**: TimeSpan<br><br>**Description:** Delay between retries for transient errors.<br><br>**Default**: `00:00:00`                                                                                          |
-| `resilience:reconnectBackoffMaxMs` | **Type**: int<br><br>**Description:** Maximum backoff time in milliseconds for reconnection attempts.<br><br>**Default**: `20000`                                                                              |
-| `resilience:messageSendMaxRetries` | **Type**: int<br><br>**Description:** Number of times to retry sending a failing message. **Note:** Retrying may cause reordering unless `enable.idempotence` is set to true.<br><br>**Default**: `2147483647` |
+| Name                               | Details                                                                                                                                                                                                    |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `waitForBrokerAck`                 | **Description:**<br>Whether the producer waits for broker acknowledgment before considering the send operation complete. See [Broker Acknowledgment](#broker-acknowledgment)<br><br>**Default**: `"false"` |
+| `resilience:reconnectBackoffMaxMs` | **Description:**<br>The maximum time to wait before reconnecting to a broker after the connection has been closed.<br><br>**Default**: `"20000"`                                                           |
+| `resilience:messageSendMaxRetries` | **Description:**<br>How many times to retry sending a failing Message.<br><br>**Default**: `"2147483647"`                                                                                                  |
 
-### Miscellaneous
+#### Miscellaneous
 
-| Name                  | Details                                                                                                                                                                                                                                            |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `brokerAddressFamily` | **Type**: [BrokerAddressFamily](https://docs.confluent.io/platform/current/clients/confluent-kafka-dotnet/_site/api/Confluent.Kafka.BrokerAddressFamily.html)<br><br>**Description:** Allowed broker IP address families.<br><br>**Default**: `V4` |
-| `compression:type`    | **Type**: [CompressionType](https://docs.confluent.io/platform/current/clients/confluent-kafka-dotnet/_site/api/Confluent.Kafka.CompressionType.html)<br><br>**Description:** Kafka compression type.<br><br>**Default**: `Zstd`                   |
-| `compression:level`   | **Type**: int<br><br>**Description:** Kafka compression level.<br><br>**Default**: 6                                                                                                                                                               |
+| Name                  | Details                                                                                                                                                  |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `brokerAddressFamily` | **Description:**<br>Allowed broker IP address families.<br><br>**Default**: `"V4"`<br><br>**Accepted Values:** `"Any"`,`"V4"`, or `"V6"`                 |
+| `compression:type`    | **Description:**<br>Kafka compression type.<br><br>**Default**: `"Zstd"`<br><br>**Accepted Values:** `"None"`, `"Gzip"`,`"Lz4"`, `"Zstd"`, or `"Snappy"` |
+| `compression:level`   | **Description:**<br>Kafka compression level.<br><br>**Default**: `"6"`                                                                                   |
 
-## At least once delivery
+## Delivery Guarantees
 
-The Kafka sink guarantees at least once delivery by retrying failed
-requests based on configurable resilience settings. It will continue to attempt
-delivery until the event is successfully sent or the maximum number of retries
-is reached, ensuring each event is delivered at least once.
+The Kafka sink provides at-least-once delivery by using Kafka's idempotent
+producer and retry settings. Messages are only checkpointed after successful
+delivery confirmation from Kafka.
 
-The Kafka sink currently retries transient errors based on the following error codes:
+The `waitForBrokerAck` setting controls *when the connector waits* for the
+broker acknowledgment:
 
-- **Local_AllBrokersDown**: All broker connections are down
-- **OutOfOrderSequenceNumber**: Broker received an out of order sequence number
-- **TransactionCoordinatorFenced**: Indicates that the transaction coordinator sending a WriteTxnMarker is no longer the
-  current coordinator for a given producer
-- **UnknownProducerId**: Unknown Producer Id.
+- If enabled, the connector waits for the broker to confirm
+  delivery before moving its checkpoint. This reduces throughput but increases
+  backpressure visibility.
+- If disabled, the connector does not block while waiting for the broker response. However,
+  checkpointing still only occurs after the broker confirms delivery.
 
-For detailed information on the listed error codes, refer to
-the [Kafka documentation](https://docs.confluent.io/platform/current/clients/confluent-kafka-dotnet/_site/api/Confluent.Kafka.ErrorCode.html).
+The Kafka sink uses an idempotent producer by default, so when writing to a
+single partition, Kafka preserves message order regardless of which produce API
+is used.
 
-**Configuration example**
+If a failure occurs before acknowledgment, the retry mechanism will redeliver.
+After a restart, the connector resumes from the last checkpointed position,
+which may cause previously sent—but uncheckpointed—messages to be reprocessed.
 
-```json
+## Headers
+
+The Kafka sink connector lets you include custom headers in the message headers
+it sends to your topic. To add custom headers, use the `defaultHeaders` setting
+in your connector configuration. Each custom header should be specified with the
+prefix `defaultHeaders:` followed by the header name.
+
+Example:
+
+```http
+PUT /connectors/{{id}}
+Host: localhost:2113
+Content-Type: application/json
+
 {
-  "resilience:enabled": true,
-  "resilience:requestTimeoutMs": 3000,
-  "resilience:maxRetries": -1,
-  "resilience:transientErrorDelay": "00:00:05",
-  "resilience:reconnectBackoffMaxMs": 20000,
-  "resilience:messageSendMaxRetries": 2147483647
+  "defaultHeaders:X-API-Key": "your-api-key-here",
+  "defaultHeaders:X-Tenant-ID": "production-tenant",
+  "defaultHeaders:X-Source-System": "KurrentDB"
 }
 ```
 
-## Broker Acknowledgment
-
-In the Kafka sink connector for KurrentDB, broker acknowledgment refers to
-the producer waiting for confirmation from the Kafka broker that a message has
-been successfully received. When `waitForBrokerAck` is enabled (which is the
-default setting), the producer waits for this acknowledgment, ensuring more
-reliable delivery of messages, which is crucial for systems that require
-durability and fault tolerance.
-
-While this setting improves reliability, it can slightly increase latency, as
-the producer must wait for confirmation from Kafka before continuing. If higher
-throughput is preferred over strict delivery guarantees, you can disable this
-option.
-
-For more details about Kafka broker acknowledgment, refer to [Kafka's official
-documentation](https://kafka.apache.org/documentation/#producerconfigs_acks).
-
-To learn more about authentication in Kafka,
-see [Authentication using SASL](https://kafka.apache.org/documentation/#security_sasl)
-
-For Kafka client enum types, please refer to the
-official [Kafka .NET client documentation](https://docs.confluent.io/platform/current/clients/confluent-kafka-dotnet/_site/api/Confluent.Kafka.html).
+These headers will be included in every message sent by the connector, in addition to the [default headers](../features.md#headers) automatically added by the connector's plugin.
 
 ## Examples
+
+### Authentication
+
+The Kafka sink connector supports secure communication with Kafka brokers using
+**SASL authentication**. By default, the connector communicates in **plaintext**
+without authentication. However, you can configure it to use SASL with different
+security protocols and authentication mechanisms.
+
+::: note
+When using `saslSsl`, the connector uses your system's trusted CA certificates
+for SSL/TLS encryption. This works with managed services like **AWS MSK**,
+**Confluent Cloud**, and **Azure Event Hubs**. For self-signed or private CA
+certificates, add them to your system's trust store first.
+:::
+
+#### SASL/PLAINTEXT with PLAIN Authentication
+```http
+PUT /connectors/{{id}}/settings
+Host: localhost:2113
+Content-Type: application/json
+
+{
+  "authentication:securityProtocol": "saslPlaintext",
+  "authentication:saslMechanism": "plain",
+  "authentication:username": "my-username",
+  "authentication:password": "my-password"
+}
+```
+
+#### SASL/PLAINTEXT with SCRAM-SHA-256 Authentication
+```http
+PUT /connectors/{{id}}/settings
+Host: localhost:2113
+Content-Type: application/json
+
+{
+  "authentication:securityProtocol": "saslPlaintext",
+  "authentication:saslMechanism": "scramSha256",
+  "authentication:username": "my-username",
+  "authentication:password": "my-password"
+}
+```
+
+#### SASL/PLAINTEXT with SCRAM-SHA-512 Authentication
+```http
+PUT /connectors/{{id}}/settings
+Host: localhost:2113
+Content-Type: application/json
+
+{
+  "authentication:securityProtocol": "saslPlaintext",
+  "authentication:saslMechanism": "scramSha512",
+  "authentication:username": "my-username",
+  "authentication:password": "my-password"
+}
+```
+
+#### SASL/SSL with PLAIN Authentication
+
+For production environments with encryption (recommended for managed Kafka services):
+```http
+PUT /connectors/{{id}}/settings
+Host: localhost:2113
+Content-Type: application/json
+
+{
+  "authentication:securityProtocol": "saslSsl",
+  "authentication:saslMechanism": "plain",
+  "authentication:username": "my-username",
+  "authentication:password": "my-password"
+}
+```
+
+#### SASL/SSL with SCRAM-SHA-256 Authentication
+```http
+PUT /connectors/{{id}}/settings
+Host: localhost:2113
+Content-Type: application/json
+
+{
+  "authentication:securityProtocol": "saslSsl",
+  "authentication:saslMechanism": "scramSha256",
+  "authentication:username": "my-username",
+  "authentication:password": "my-password"
+}
+```
+
+#### SASL/SSL with SCRAM-SHA-512 Authentication
+```http
+PUT /connectors/{{id}}/settings
+Host: localhost:2113
+Content-Type: application/json
+
+{
+  "authentication:securityProtocol": "saslSsl",
+  "authentication:saslMechanism": "scramSha512",
+  "authentication:username": "my-username",
+  "authentication:password": "my-password"
+}
+```
+
+#### Additional resources
+- [Azure Event Hub Security and Authentication](https://learn.microsoft.com/en-us/azure/event-hubs/azure-event-hubs-apache-kafka-overview#security-and-authentication)
+- [Set up SASL/SCRAM authentication for an Amazon MSK cluster](https://docs.aws.amazon.com/msk/latest/developerguide/msk-password-tutorial.html)
+- [Use SASL/SCRAM authentication in Confluent Platform](https://docs.confluent.io/platform/current/security/authentication/sasl/scram/overview.html#use-sasl-scram-authentication-in-cp)
 
 ### Partitioning
 
 The Kafka sink connector allows customizing the partition keys that are sent
 with the message. 
 
-Kafka partition keys can be generated from various sources. These sources
-include the event stream, stream suffix, headers, or other record fields.
-
-By default, it will use the `PartitionKey` and grab this value from the KurrentDB record.
+By default, it will use `"partitionKey"` and the message will be distributed
+using round-robin partitioning across the available partitions in the topic. 
 
 **Partition using Stream ID**
 
@@ -197,7 +260,11 @@ define the partition key. The expression is optional and can be customized based
 on your naming convention. In this example, the expression captures the stream
 name up to `_data`.
 
-```json
+```http
+PUT /connectors/{{id}}/settings
+Host: localhost:2113
+Content-Type: application/json
+
 {
   "partitionKeyExtraction:enabled": "true",
   "partitionKeyExtraction:source": "stream",
@@ -209,7 +276,11 @@ Alternatively, if you only need the last segment of the stream name (after a
 hyphen), you can use the `streamSuffix` source. This
 doesn't require an expression since it automatically extracts the suffix.
 
-```json
+```http
+PUT /connectors/{{id}}/settings
+Host: localhost:2113
+Content-Type: application/json
+
 {
   "partitionKeyExtraction:enabled": "true",
   "partitionKeyExtraction:source": "streamSuffix"
@@ -222,11 +293,13 @@ example, if the stream is named `user-123`, the partition key would be `123`.
 
 **Partition using header values**
 
-You can generate the partition key by concatenating values from specific event
-headers. In this case, two header values (`key1` and `key2`) are combined to
-form the key.
+You can create partition keys by combining values from a record's metadata.
 
-```json
+```http
+PUT /connectors/{{id}}/settings
+Host: localhost:2113
+Content-Type: application/json
+
 {
   "partitionKeyExtraction:enabled": "true",
   "partitionKeyExtraction:source": "headers",
@@ -234,22 +307,9 @@ form the key.
 }
 ```
 
-The `Headers` source allows you to pull values from the event's metadata. The
-`documentId:expression` field lists the header keys (in this case, `key1` and
-`key2`), and their values are concatenated to generate the partition key. 
+Specify the header keys you want to use in the `partitionKeyExtraction:expression` field (e.g., `key1,key2`). The connector will concatenate the header values with a hyphen (`-`) to create the partition key.
 
-::: details Click here to see an example
-
-```json
-{
-  "key1": "value1",
-  "key2": "value2"
-}
-
-// outputs "value1-value2"
-```
-
-:::
+For example, if your event has headers `key1: regionA` and `key2: zone1`, the partition key will be `regionA-zone1`.
 
 ## Tutorial
 

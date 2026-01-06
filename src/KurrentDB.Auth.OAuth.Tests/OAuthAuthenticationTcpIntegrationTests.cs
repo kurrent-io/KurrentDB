@@ -8,7 +8,6 @@ using EventStore.ClientAPI;
 using EventStore.ClientAPI.Exceptions;
 using EventStore.ClientAPI.SystemData;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace KurrentDB.Auth.OAuth.Tests;
 

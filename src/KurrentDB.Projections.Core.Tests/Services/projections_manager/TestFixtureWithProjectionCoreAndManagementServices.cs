@@ -61,7 +61,7 @@ public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFor
 	private bool _initializeSystemProjections;
 	protected Tuple<SynchronousScheduler, IPublisher, SynchronousScheduler, Guid>[] _processingQueues;
 	private ProjectionCoreCoordinator _coordinator;
-	protected readonly ProjectionTracker _projectionMetricTracker= new();
+	protected readonly ProjectionTracker _projectionMetricTracker = new();
 
 	protected override void Given1() {
 		base.Given1();
@@ -125,7 +125,6 @@ public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFor
 		_bus.Subscribe<ProjectionManagementMessage.Command.Disable>(_manager);
 		_bus.Subscribe<ProjectionManagementMessage.Command.Enable>(_manager);
 		_bus.Subscribe<ProjectionManagementMessage.Command.Abort>(_manager);
-		_bus.Subscribe<ProjectionManagementMessage.Command.SetRunAs>(_manager);
 		_bus.Subscribe<ProjectionManagementMessage.Command.Reset>(_manager);
 		_bus.Subscribe<ClientMessage.WriteEventsCompleted>(_manager);
 		_bus.Subscribe<ClientMessage.ReadStreamEventsForwardCompleted>(_manager);
@@ -174,8 +173,6 @@ public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFor
 		bus.Subscribe(
 			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.CommittedEventReceived>());
 		bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.EofReached>());
-		bus.Subscribe(
-			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.PartitionEofReached>());
 		bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.PartitionDeleted>());
 		bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.ProgressChanged>());
 		bus.Subscribe(
@@ -226,7 +223,6 @@ public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFor
 		bus.Subscribe<ProjectionCoreServiceMessage.CoreTick>(coreService);
 		bus.Subscribe<ReaderSubscriptionMessage.CommittedEventDistributed>(readerService);
 		bus.Subscribe<ReaderSubscriptionMessage.EventReaderEof>(readerService);
-		bus.Subscribe<ReaderSubscriptionMessage.EventReaderPartitionEof>(readerService);
 		bus.Subscribe<ReaderSubscriptionMessage.EventReaderPartitionDeleted>(readerService);
 		bus.Subscribe<ReaderSubscriptionMessage.EventReaderNotAuthorized>(readerService);
 		bus.Subscribe<ReaderSubscriptionMessage.EventReaderIdle>(readerService);

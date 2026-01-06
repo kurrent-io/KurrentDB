@@ -8,6 +8,7 @@ using EventStore.Plugins.Authentication;
 using EventStore.Plugins.Diagnostics;
 using EventStore.Plugins.Licensing;
 using FluentAssertions;
+using KurrentDB.Common.Configuration;
 using KurrentDB.Plugins.TestHelpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -35,18 +36,16 @@ public class UserCertificatesPluginTests {
 	[Fact]
 	public void has_parameterless_constructor() {
 		// needed for all plugins
-		Activator.CreateInstance<UserCertificatesPlugin>();
+		using var _ = Activator.CreateInstance<UserCertificatesPlugin>();
 	}
 
 	[Fact]
 	public async Task works() {
 		await using var app = await CreateServer(
-			new Dictionary<string, string?> {
-				{ $"{KurrentConfigurationConstants.Prefix}:UserCertificates:Enabled", "true" }
-			},
+			new() { { $"{ConfigConstants.RootPrefix}:UserCertificates:Enabled", "true" } },
 			ConfigureServicesCorrectly);
 
-		var client = CreateClient(app, _userCert);
+		var client = CreateClient(app.WebApplication, _userCert);
 		var result = await client.GetAsync("/test");
 		Assert.Equal(HttpStatusCode.OK, result.StatusCode);
 
@@ -59,7 +58,7 @@ public class UserCertificatesPluginTests {
 		using var collector = PluginDiagnosticsDataCollector.Start("UserCertificates");
 		await using var app = await CreateServer([], ConfigureServicesCorrectly);
 
-		var client = CreateClient(app, _userCert);
+		var client = CreateClient(app.WebApplication, _userCert);
 		var result = await client.GetAsync("/test");
 		Assert.Equal(HttpStatusCode.Forbidden, result.StatusCode);
 
@@ -71,12 +70,10 @@ public class UserCertificatesPluginTests {
 	public async Task can_be_disabled() {
 		using var collector = PluginDiagnosticsDataCollector.Start("UserCertificates");
 		await using var app = await CreateServer(
-			new Dictionary<string, string?> {
-				{ $"{KurrentConfigurationConstants.Prefix}:UserCertificates:Enabled", "false" }
-			},
+			new() { { $"{ConfigConstants.RootPrefix}:UserCertificates:Enabled", "false" } },
 			ConfigureServicesCorrectly);
 
-		var client = CreateClient(app, _userCert);
+		var client = CreateClient(app.WebApplication, _userCert);
 		var result = await client.GetAsync("/test");
 		Assert.Equal(HttpStatusCode.Forbidden, result.StatusCode);
 
@@ -87,9 +84,7 @@ public class UserCertificatesPluginTests {
 	[Fact]
 	public async Task requires_user_certificate_scheme() {
 		await using var app = await CreateServer(
-			new Dictionary<string, string?> {
-				{ $"{KurrentConfigurationConstants.Prefix}:UserCertificates:Enabled", "true" }
-			},
+			new() { { $"{ConfigConstants.RootPrefix}:UserCertificates:Enabled", "true" } },
 			services => services
 				.AddSingleton<ILicenseService>(new Fixtures.FakeLicenseService())
 				.AddSingleton<IReadOnlyList<IHttpAuthenticationProvider>>([new FakeAnonymousHttpAuthenticationProvider()])
@@ -97,7 +92,7 @@ public class UserCertificatesPluginTests {
 				.AddSingleton<Func<(X509Certificate2? Node, X509Certificate2Collection? Intermediates, X509Certificate2Collection? Roots)>>(
 				() => (_nodeCert, null, new(_rootCert))));
 
-		var client = CreateClient(app, _userCert);
+		var client = CreateClient(app.WebApplication, _userCert);
 		var result = await client.GetAsync("/test");
 		Assert.Equal(HttpStatusCode.Forbidden, result.StatusCode);
 
@@ -108,9 +103,7 @@ public class UserCertificatesPluginTests {
 	[Fact]
 	public async Task requires_anonymous_http_provider() {
 		await using var app = await CreateServer(
-			new Dictionary<string, string?> {
-				{ $"{KurrentConfigurationConstants.Prefix}:UserCertificates:Enabled", "true" }
-			},
+			new() { { $"{ConfigConstants.RootPrefix}:UserCertificates:Enabled", "true" } },
 			services => services
 				.AddSingleton<ILicenseService>(new Fixtures.FakeLicenseService())
 				.AddSingleton<IReadOnlyList<IHttpAuthenticationProvider>>([])
@@ -118,7 +111,7 @@ public class UserCertificatesPluginTests {
 				.AddSingleton<Func<(X509Certificate2? Node, X509Certificate2Collection? Intermediates, X509Certificate2Collection? Roots)>>(
 				() => (_nodeCert, null, new(_rootCert))));
 
-		var client = CreateClient(app, _userCert);
+		var client = CreateClient(app.WebApplication, _userCert);
 		var result = await client.GetAsync("/test");
 		// since there is no anonymous provider we do not get authenticated at all, hence different code
 		Assert.Equal(HttpStatusCode.Unauthorized, result.StatusCode);
@@ -127,7 +120,7 @@ public class UserCertificatesPluginTests {
 		Assert.Equal("UserCertificatesPlugin failed to load as the conditions required to load the plugin were not met", log.RenderMessage());
 	}
 
-	private async Task<WebApplication> CreateServer(
+	private async Task<WebApplicationStopper> CreateServer(
 		Dictionary<string, string?> configuration,
 		Action<IServiceCollection>? configureServices = null) {
 
@@ -157,9 +150,19 @@ public class UserCertificatesPluginTests {
 		((IPlugableComponent)sut).ConfigureApplication(app, builder.Configuration);
 
 		app.MapGet("/test", () => "Hello World!").RequireAuthorization();
+		app.Lifetime.ApplicationStopping.Register(() => {
+			sut.Dispose();
+		});
 
 		await app.StartAsync();
-		return app;
+		return (new WebApplicationStopper(app));
+	}
+
+	record WebApplicationStopper(WebApplication WebApplication) : IAsyncDisposable {
+		public async ValueTask DisposeAsync() {
+			await WebApplication.StopAsync();
+			await WebApplication.DisposeAsync();
+		}
 	}
 
 	void ConfigureServicesCorrectly(IServiceCollection services) => services
@@ -194,7 +197,7 @@ public class UserCertificatesPluginTests {
 
 		var config = new ConfigurationBuilder()
 			.AddInMemoryCollection(new Dictionary<string, string?> {
-				{$"{KurrentConfigurationConstants.Prefix}:UserCertificates:Enabled", $"{enabled}"},
+				{$"{ConfigConstants.RootPrefix}:UserCertificates:Enabled", $"{enabled}"},
 			})
 			.Build();
 
@@ -230,7 +233,7 @@ public class UserCertificatesPluginTests {
 
 		var config = new ConfigurationBuilder()
 			.AddInMemoryCollection(new Dictionary<string, string?> {
-				{$"{KurrentConfigurationConstants.Prefix}:UserCertificates:Enabled", $"{enabled}"},
+				{$"{ConfigConstants.RootPrefix}:UserCertificates:Enabled", $"{enabled}"},
 			})
 			.Build();
 

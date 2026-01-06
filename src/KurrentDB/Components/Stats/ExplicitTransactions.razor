@@ -1,0 +1,43 @@
+@using KurrentDB.SecondaryIndexing.Stats
+@inject StatsService Stats
+
+@if (_loading) {
+	<MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large"/>
+} else if (_details.Count > 0) {
+	<MudAlert Severity="Severity.Warning">
+		Database has explicit transactions. This functionality is deprecated and not supported by the current client protocol.
+		@if (_isRecent) {
+			<p class="mt-4">You seem to be using this feature still, consider changing your system to avoid using explicit transactions.</p>
+		}
+	</MudAlert>
+	<MudDataGrid Items="@_details">
+		<Columns>
+			<PropertyColumn Property="x => x.Category" Title="Category"/>
+			<PropertyColumn Property="x => x.TransactionCount" Title="Number of transactions"/>
+			<PropertyColumn Property="x => x.LastTransactionDate" Title="Last transaction date"/>
+		</Columns>
+	</MudDataGrid>
+} else {
+	<MudAlert Severity="Severity.Success">No explicit transactions found</MudAlert>
+}
+
+@code {
+	private bool _loading = true;
+	private bool _isRecent;
+	private List<StatsSql.GetExplicitTransactions.Result> _details = [];
+
+	protected override void OnAfterRender(bool firstRender) {
+		base.OnAfterRender(firstRender);
+		if (!firstRender) return;
+		Task.Run(() => InvokeAsync(LoadDetails));
+	}
+
+	void LoadDetails() {
+		_details = Stats.GetExplicitTransactions();
+		var latestTransactionDate = _details.Count > 0 ? _details.Max(x => x.LastTransactionDate) : DateTime.MinValue;
+		_isRecent = latestTransactionDate > DateTime.Today - TimeSpan.FromDays(30);
+		_loading = false;
+
+		StateHasChanged();
+	}
+}

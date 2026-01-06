@@ -16,7 +16,6 @@ public sealed class SourceDefinitionBuilder : IQuerySources {
 	private List<string> _events;
 	private bool _byStream;
 	private bool _byCustomPartitions;
-	private long? _limitingCommitPosition;
 
 	public SourceDefinitionBuilder() {
 		_options.DefinesFold = true;
@@ -134,10 +133,6 @@ public sealed class SourceDefinitionBuilder : IQuerySources {
 		get { return _byCustomPartitions; }
 	}
 
-	public long? LimitingCommitPosition {
-		get { return _limitingCommitPosition; }
-	}
-
 	public bool DefinesStateTransform {
 		get { return _options.DefinesStateTransform; }
 	}
@@ -186,9 +181,5 @@ public sealed class SourceDefinitionBuilder : IQuerySources {
 
 	public IQuerySources Build() {
 		return QuerySourcesDefinition.From(this);
-	}
-
-	public void SetLimitingCommitPosition(long limitingCommitPosition) {
-		_limitingCommitPosition = limitingCommitPosition;
 	}
 }

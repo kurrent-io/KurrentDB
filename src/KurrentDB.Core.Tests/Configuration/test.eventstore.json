@@ -1,0 +1,13 @@
+{
+	"EventStore": {
+		"Connectors": {
+			"Enabled": false
+		},
+		"AutoScavenge": {
+			"Enabled": true
+		},
+		"Licensing": {
+			"LicenseKey": "invalid"
+		}
+	}
+}

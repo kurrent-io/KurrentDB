@@ -48,9 +48,13 @@
 	[Inject] NavigationManager NavigationManager { get; set; }
 	[Inject] IAuthenticationProvider AuthProvider { get; set; }
 	[Inject] ISnackbar Snackbar { get; set; }
-	[SupplyParameterFromForm] LoginInputModel Input { get; set; } = new();
+	[SupplyParameterFromForm] LoginInputModel Input { get; set; }
 	[SupplyParameterFromQuery] string ReturnUrl { get; set; }
 	[CascadingParameter] HttpContext HttpContext { get; set; } = default!;
+
+	protected override void OnInitialized() {
+		Input ??= new();
+	}
 
 	protected override async Task OnAfterRenderAsync(bool firstRender) {
 		var authenticated = HttpContext.User.Identity?.IsAuthenticated == true;

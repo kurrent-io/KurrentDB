@@ -90,7 +90,6 @@ public static class Operations {
 		public static readonly OperationDefinition Write = new(Resource, "write");
 		public static readonly OperationDefinition Delete = new(Resource, "delete");
 		public static readonly OperationDefinition MetadataRead = new(Resource, "metadataRead");
-
 		public static readonly OperationDefinition MetadataWrite = new(Resource, "metadataWrite");
 
 		public static class Parameters {
@@ -139,6 +138,18 @@ public static class Operations {
 
 			public static Parameter User(string userId) => new(UserParameterName, userId);
 		}
+	}
+
+	public static class UserIndexes {
+		const string Resource = "user-indexes";
+
+		public static readonly OperationDefinition Create = new(Resource, "create");
+		public static readonly OperationDefinition Start = new(Resource, "start");
+		public static readonly OperationDefinition Stop = new(Resource, "stop");
+		public static readonly OperationDefinition Delete = new(Resource, "delete");
+
+		public static readonly OperationDefinition List = new(Resource, "list");
+		public static readonly OperationDefinition Read = new(Resource, "read");
 	}
 
 	public static class Projections {

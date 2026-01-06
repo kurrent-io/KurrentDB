@@ -87,7 +87,6 @@ public abstract class specification_with_projection_management_service<TLogForma
 		_bus.Subscribe<ProjectionManagementMessage.Command.Disable>(_manager);
 		_bus.Subscribe<ProjectionManagementMessage.Command.Enable>(_manager);
 		_bus.Subscribe<ProjectionManagementMessage.Command.Abort>(_manager);
-		_bus.Subscribe<ProjectionManagementMessage.Command.SetRunAs>(_manager);
 		_bus.Subscribe<ProjectionManagementMessage.Command.Reset>(_manager);
 		_bus.Subscribe<ClientMessage.WriteEventsCompleted>(_manager);
 		_bus.Subscribe<ClientMessage.ReadStreamEventsBackwardCompleted>(_manager);
@@ -106,7 +105,7 @@ public abstract class specification_with_projection_management_service<TLogForma
 
 		AwakeService = new AwakeService();
 		_bus.Subscribe<StorageMessage.EventCommitted>(AwakeService);
-		_bus.Subscribe<StorageMessage.TfEofAtNonCommitRecord>(AwakeService);
+		_bus.Subscribe<StorageMessage.IndexedToEndOfTransactionFile>(AwakeService);
 		_bus.Subscribe<AwakeServiceMessage.SubscribeAwake>(AwakeService);
 		_bus.Subscribe<AwakeServiceMessage.UnsubscribeAwake>(AwakeService);
 

@@ -49,9 +49,8 @@ public class EventReorderingReaderSubscription : ReaderSubscriptionBase, IReader
 	public void Handle(ReaderSubscriptionMessage.CommittedEventDistributed message) {
 		if (message.Data == null)
 			throw new NotSupportedException();
-		ReaderSubscriptionMessage.CommittedEventDistributed existing;
 		// ignore duplicate messages (when replaying from heading event distribution point)
-		if (!_buffer.TryGetValue(message.Data.Position.PreparePosition, out existing)) {
+		if (!_buffer.TryGetValue(message.Data.Position.PreparePosition, out _)) {
 			_buffer.Add(message.Data.Position.PreparePosition, message);
 			var maxTimestamp = _buffer.Max(v => v.Value.Data.Timestamp);
 			ProcessAllFor(maxTimestamp);
@@ -84,14 +83,9 @@ public class EventReorderingReaderSubscription : ReaderSubscriptionBase, IReader
 		ProcessAllFor(message.IdleTimestampUtc);
 	}
 
-
 	protected override void EofReached() {
 		// flush all available events as wqe reached eof (currently onetime projections only)
 		ProcessAllFor(DateTime.MaxValue);
-	}
-
-	public new void Handle(ReaderSubscriptionMessage.EventReaderPartitionEof message) {
-		throw new NotSupportedException();
 	}
 
 	public void Handle(ReaderSubscriptionMessage.EventReaderPartitionDeleted message) {

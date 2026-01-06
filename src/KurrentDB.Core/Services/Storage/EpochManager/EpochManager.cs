@@ -10,7 +10,6 @@ using DotNext.Threading;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
-using KurrentDB.Core.DataStructures;
 using KurrentDB.Core.Exceptions;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Messages;
@@ -32,7 +31,7 @@ public class EpochManager<TStreamId> : IEpochManager {
 	private readonly IPublisher _bus;
 
 	private readonly ICheckpoint _checkpoint;
-	private readonly ObjectPool<ITransactionFileReader> _readers;
+	private readonly ITransactionFileReader _reader;
 	private readonly ITransactionFileWriter _writer;
 	private readonly IRecordFactory<TStreamId> _recordFactory;
 	private readonly INameIndex<TStreamId> _streamNameIndex;
@@ -91,7 +90,7 @@ public class EpochManager<TStreamId> : IEpochManager {
 		ITransactionFileWriter writer,
 		int initialReaderCount,
 		int maxReaderCount,
-		Func<ITransactionFileReader> readerFactory,
+		ITransactionFileReader reader,
 		IRecordFactory<TStreamId> recordFactory,
 		INameIndex<TStreamId> streamNameIndex,
 		INameIndex<TStreamId> eventTypeIndex,
@@ -106,13 +105,12 @@ public class EpochManager<TStreamId> : IEpochManager {
 		if (initialReaderCount > maxReaderCount)
 			throw new ArgumentOutOfRangeException(nameof(initialReaderCount),
 				"initialReaderCount is greater than maxReaderCount.");
-		Ensure.NotNull(readerFactory, "readerFactory");
+		Ensure.NotNull(reader);
 
 		_bus = bus;
 		_cacheSize = cachedEpochCount;
 		_checkpoint = checkpoint;
-		_readers = new ObjectPool<ITransactionFileReader>("EpochManager readers pool", initialReaderCount,
-			maxReaderCount, readerFactory);
+		_reader = reader;
 		_writer = writer;
 		_recordFactory = recordFactory;
 		_streamNameIndex = streamNameIndex;
@@ -127,51 +125,46 @@ public class EpochManager<TStreamId> : IEpochManager {
 	private async ValueTask ReadEpochs(int maxEpochCount, CancellationToken token) {
 		await _locker.AcquireAsync(token);
 		try {
-			var reader = _readers.Get();
-			try {
-				long epochPos = await GetCheckpointAsync(token);
-				if (epochPos < 0) {
-					// we probably have lost/uninitialized epoch checkpoint scan back to find the most recent epoch in the log
-					Log.Information("No epoch checkpoint. Scanning log backwards for most recent epoch...");
-					reader.Reposition(_writer.FlushedPosition);
+			long epochPos = await GetCheckpointAsync(token);
+			if (epochPos < 0) {
+				// we probably have lost/uninitialized epoch checkpoint scan back to find the most recent epoch in the log
+				Log.Information("No epoch checkpoint. Scanning log backwards for most recent epoch...");
+				using var cursorScope = new AsyncReadCursor.Scope(_writer.FlushedPosition);
 
-					for (SeqReadResult result;
-						 (result = await reader.TryReadPrev(token)).Success;
-						 token.ThrowIfCancellationRequested()) {
-						var rec = result.LogRecord;
-						if (rec.RecordType is not LogRecordType.System ||
-							((ISystemLogRecord)rec).SystemRecordType is not SystemRecordType.Epoch)
-							continue;
-						epochPos = rec.LogPosition;
-						await SetCheckpointAsync(epochPos, token);
-						break;
-					}
-
-					Log.Information("Done scanning log backwards for most recent epoch.");
+				for (SeqReadResult result;
+				     (result = await _reader.TryReadPrev(cursorScope.Cursor, token)).Success;
+				     token.ThrowIfCancellationRequested()) {
+					var rec = result.LogRecord;
+					if (rec.RecordType is not LogRecordType.System ||
+					    ((ISystemLogRecord)rec).SystemRecordType is not SystemRecordType.Epoch)
+						continue;
+					epochPos = rec.LogPosition;
+					await SetCheckpointAsync(epochPos, token);
+					break;
 				}
 
-				//read back down the chain of epochs in the log until the cache is full
-				int cnt = 0;
-				while (epochPos >= 0 && cnt < maxEpochCount) {
-					var epoch = await ReadEpochAt(reader, epochPos, token);
-					_epochs.AddFirst(epoch);
-					if (epoch.EpochPosition == 0) { break; }
-
-					epochPos = epoch.PrevEpochPosition;
-					cnt += 1;
-				}
-
-				_lastCachedEpoch = _epochs.Last;
-				_firstCachedEpoch = _epochs.First;
-			} finally {
-				_readers.Return(reader);
+				Log.Information("Done scanning log backwards for most recent epoch.");
 			}
+
+			//read back down the chain of epochs in the log until the cache is full
+			int cnt = 0;
+			while (epochPos >= 0 && cnt < maxEpochCount) {
+				var epoch = await ReadEpochAt(epochPos, token);
+				_epochs.AddFirst(epoch);
+				if (epoch.EpochPosition == 0) { break; }
+
+				epochPos = epoch.PrevEpochPosition;
+				cnt += 1;
+			}
+
+			_lastCachedEpoch = _epochs.Last;
+			_firstCachedEpoch = _epochs.First;
 		} finally {
 			_locker.Release();
 		}
 	}
-	private async ValueTask<EpochRecord> ReadEpochAt(ITransactionFileReader reader, long epochPos, CancellationToken token) {
-		var result = await reader.TryReadAt(epochPos, couldBeScavenged: false, token);
+	private async ValueTask<EpochRecord> ReadEpochAt(long epochPos, CancellationToken token) {
+		var result = await _reader.TryReadAt(epochPos, couldBeScavenged: false, token);
 		if (!result.Success)
 			throw new Exception($"Could not find Epoch record at LogPosition {epochPos}.");
 		if (result.LogRecord.RecordType != LogRecordType.System)
@@ -227,32 +220,26 @@ public class EpochManager<TStreamId> : IEpochManager {
 
 		var firstEpoch = _firstCachedEpoch?.Value;
 		if (firstEpoch != null && firstEpoch.PrevEpochPosition != -1) {
-			var reader = _readers.Get();
-			try {
-				epoch = firstEpoch;
-				do {
-					var result = await reader.TryReadAt(epoch.PrevEpochPosition, couldBeScavenged: false, token);
-					if (!result.Success)
-						throw new Exception(
-							$"Could not find Epoch record at LogPosition {epoch.PrevEpochPosition}.");
-					if (result.LogRecord.RecordType != LogRecordType.System)
-						throw new Exception($"LogRecord is not SystemLogRecord: {result.LogRecord}.");
+			epoch = firstEpoch;
+			do {
+				var result = await _reader.TryReadAt(epoch.PrevEpochPosition, couldBeScavenged: false, token);
+				if (!result.Success)
+					throw new Exception(
+						$"Could not find Epoch record at LogPosition {epoch.PrevEpochPosition}.");
+				if (result.LogRecord.RecordType != LogRecordType.System)
+					throw new Exception($"LogRecord is not SystemLogRecord: {result.LogRecord}.");
 
-					var sysRec = (ISystemLogRecord)result.LogRecord;
-					if (sysRec.SystemRecordType != SystemRecordType.Epoch)
-						throw new Exception($"SystemLogRecord is not of Epoch sub-type: {result.LogRecord}.");
+				var sysRec = (ISystemLogRecord)result.LogRecord;
+				if (sysRec.SystemRecordType != SystemRecordType.Epoch)
+					throw new Exception($"SystemLogRecord is not of Epoch sub-type: {result.LogRecord}.");
 
-					var nextEpoch = sysRec.GetEpochRecord();
-					if (nextEpoch.EpochNumber == epochNumber) {
-						return epoch; //got it
-					}
+				var nextEpoch = sysRec.GetEpochRecord();
+				if (nextEpoch.EpochNumber == epochNumber) {
+					return epoch; //got it
+				}
 
-					epoch = nextEpoch;
-				} while (epoch.PrevEpochPosition != -1 && epoch.EpochNumber > epochNumber);
-
-			} finally {
-				_readers.Return(reader);
-			}
+				epoch = nextEpoch;
+			} while (epoch.PrevEpochPosition != -1 && epoch.EpochNumber > epochNumber);
 		}
 
 		if (epoch is null && throwIfNotFound) {
@@ -286,9 +273,8 @@ public class EpochManager<TStreamId> : IEpochManager {
 		}
 
 		// epochNumber < _minCachedEpochNumber
-		var reader = _readers.Get();
 		try {
-			var res = await reader.TryReadAt(epochPosition, couldBeScavenged: false, token);
+			var res = await _reader.TryReadAt(epochPosition, couldBeScavenged: false, token);
 			if (!res.Success || res.LogRecord.RecordType != LogRecordType.System)
 				return false;
 			var sysRec = (ISystemLogRecord)res.LogRecord;
@@ -300,8 +286,6 @@ public class EpochManager<TStreamId> : IEpochManager {
 		} catch (Exception ex) when (ex is InvalidReadException || ex is UnableToReadPastEndOfStreamException) {
 			Log.Information(ex, "Failed to read epoch {epochNumber} at {epochPosition}.", epochNumber, epochPosition);
 			return false;
-		} finally {
-			_readers.Return(reader);
 		}
 	}
 
@@ -412,17 +396,16 @@ public class EpochManager<TStreamId> : IEpochManager {
 		if (epoch.PrevEpochPosition < 0)
 			return null;
 
-		var reader = _readers.Get();
+		var cursorScope = new AsyncReadCursor.Scope(epoch.PrevEpochPosition);
 		try {
-			reader.Reposition(epoch.PrevEpochPosition);
 
 			// read the epoch
-			if (await reader.TryReadNext(token) is { Success: false })
+			if (await _reader.TryReadNext(cursorScope.Cursor, token) is { Success: false })
 				return null;
 
 			// read the epoch-information (if there is one)
 			while (true) {
-				var result = await reader.TryReadNext(token);
+				var result = await _reader.TryReadNext(cursorScope.Cursor, token);
 				if (!result.Success)
 					return null;
 
@@ -448,7 +431,7 @@ public class EpochManager<TStreamId> : IEpochManager {
 		} catch (Exception) {
 			return null;
 		} finally {
-			_readers.Return(reader);
+			cursorScope.Dispose();
 		}
 	}
 
@@ -490,22 +473,17 @@ public class EpochManager<TStreamId> : IEpochManager {
 				if (epoch.EpochPosition > 0 &&
 					epoch.PrevEpochPosition >= 0 &&
 					epoch.PrevEpochPosition > (_epochs.Last?.Previous?.Value?.EpochPosition ?? -1)) {
-					var reader = _readers.Get();
 					var previous = _epochs.Last;
 					var count = 1; //include last
-					try {
-						do {
-							epoch = await ReadEpochAt(reader, epoch.PrevEpochPosition, token);
-							previous = _epochs.AddBefore(previous, epoch);
-							count++;
-						} while (
-							epoch.EpochPosition > 0 &&
-							epoch.PrevEpochPosition >= 0 &&
-							count <= _cacheSize &&
-							epoch.PrevEpochPosition > (previous?.Previous?.Value?.EpochPosition ?? -1));
-					} finally {
-						_readers.Return(reader);
-					}
+					do {
+						epoch = await ReadEpochAt(epoch.PrevEpochPosition, token);
+						previous = _epochs.AddBefore(previous, epoch);
+						count++;
+					} while (
+						epoch.EpochPosition > 0 &&
+						epoch.PrevEpochPosition >= 0 &&
+						count <= _cacheSize &&
+						epoch.PrevEpochPosition > (previous?.Previous?.Value?.EpochPosition ?? -1));
 				}
 
 				while (_epochs.Count > _cacheSize) { _epochs.RemoveFirst(); }

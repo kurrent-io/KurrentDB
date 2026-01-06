@@ -9,6 +9,7 @@ using EventStore.Plugins;
 using EventStore.Plugins.Diagnostics;
 using EventStore.Plugins.Licensing;
 using FluentAssertions;
+using KurrentDB.Common.Configuration;
 using KurrentDB.Plugins.TestHelpers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -127,7 +128,7 @@ public class LogsEndpointPluginFixture : IAsyncLifetime {
 		_licensed = licensed;
 	}
 
-	public async Task InitializeAsync() {
+	public async ValueTask InitializeAsync() {
 		var ip = "1.2.3.4";
 		var port = "99";
 		var fullPath = Path.Combine(Directory.GetCurrentDirectory(), $"{ip}-{port}-cluster-node");
@@ -137,9 +138,9 @@ public class LogsEndpointPluginFixture : IAsyncLifetime {
 		builder.WebHost.UseUrls("http://127.0.0.1:0");
 
 		builder.Configuration.AddInMemoryCollection(new Dictionary<string, string>() {
-			{$"{KurrentConfigurationConstants.Prefix}:Log", "./"},
-			{$"{KurrentConfigurationConstants.Prefix}:NodeIp", ip},
-			{$"{KurrentConfigurationConstants.Prefix}:NodePort", port}
+			{$"{ConfigConstants.RootPrefix}:Log", "./"},
+			{$"{ConfigConstants.RootPrefix}:NodeIp", ip},
+			{$"{ConfigConstants.RootPrefix}:NodePort", port}
 		}!);
 
 		var sut = new LogsEndpointPlugin();
@@ -168,7 +169,7 @@ public class LogsEndpointPluginFixture : IAsyncLifetime {
 		_unauthenticatedClient.BaseAddress = new Uri(_app!.Urls.First());
 	}
 
-	public async Task DisposeAsync() {
+	public async ValueTask DisposeAsync() {
 		if (_app != null) {
 			await _app.DisposeAsync();
 		}

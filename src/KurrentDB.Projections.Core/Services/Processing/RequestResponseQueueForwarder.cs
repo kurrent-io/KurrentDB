@@ -57,7 +57,8 @@ public class RequestResponseQueueForwarder : IHandle<ClientMessage.ReadEvent>,
 				msg.InternalCorrId, msg.CorrelationId, new PublishToWrapEnvelop(_inputQueue, msg.Envelope, nameof(ClientMessage.ReadStreamEventsBackward)),
 				msg.EventStreamId, msg.FromEventNumber, msg.MaxCount, msg.ResolveLinkTos, msg.RequireLeader,
 				msg.ValidationStreamVersion, msg.User,
-				expires: msg.Expires == DateTime.MaxValue ? msg.Expires : null));
+				replyOnExpired: false,
+				expires: msg.CanExpire ? null : ClientMessage.ReadRequestMessage.NeverExpires));
 	}
 
 	public void Handle(ClientMessage.ReadStreamEventsForward msg) {
@@ -66,7 +67,7 @@ public class RequestResponseQueueForwarder : IHandle<ClientMessage.ReadEvent>,
 				msg.InternalCorrId, msg.CorrelationId, new PublishToWrapEnvelop(_inputQueue, msg.Envelope, nameof(ClientMessage.ReadStreamEventsForward)),
 				msg.EventStreamId, msg.FromEventNumber, msg.MaxCount, msg.ResolveLinkTos, msg.RequireLeader,
 				msg.ValidationStreamVersion, msg.User, replyOnExpired: false,
-				expires: msg.Expires == DateTime.MaxValue ? msg.Expires : null));
+				expires: msg.CanExpire ? null : ClientMessage.ReadRequestMessage.NeverExpires));
 	}
 
 	public void Handle(ClientMessage.ReadAllEventsForward msg) {

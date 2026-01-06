@@ -521,6 +521,172 @@ public class ConnectorsStateProjectionTests(ITestOutputHelper output, Connectors
         store.Snapshot.Connectors.Should().BeEquivalentTo(expectedSnapshot.Connectors);
     });
 
+    [Fact]
+    public Task projection_clears_error_details_on_successful_recovery() => Fixture.TestWithTimeout(async cancellator => {
+        // Arrange
+        var connectorId      = Fixture.NewConnectorId();
+        var streamId         = Fixture.NewIdentifier();
+        var createTimestamp  = Fixture.TimeProvider.GetUtcNow().ToTimestamp();
+        var failTimestamp    = Fixture.TimeProvider.GetUtcNow().AddDays(1).ToTimestamp();
+        var runningTimestamp = Fixture.TimeProvider.GetUtcNow().AddDays(2).ToTimestamp();
+        var projection       = new ConnectorsStateProjection(Fixture.SnapshotProjectionsStore, streamId);
+
+        var createdCommand = new ConnectorCreated {
+            ConnectorId = connectorId,
+            Name        = "Logger Sink",
+            Settings = {
+                { "instanceTypeName", "logger-sink" }
+            },
+            Timestamp = createTimestamp
+        };
+
+        var failCommand = new ConnectorFailed {
+            ConnectorId = connectorId,
+            ErrorDetails = new Contracts.Error {
+                Code    = "TestException",
+                Message = "Test error message"
+            },
+            Timestamp = failTimestamp
+        };
+
+        var runningCommand = new ConnectorRunning {
+            ConnectorId = connectorId,
+            Timestamp   = runningTimestamp
+        };
+
+        var expectedSnapshotAfterFailure = new ConnectorsSnapshot {
+            Connectors = {
+                new Connector {
+                    ConnectorId        = connectorId,
+                    InstanceTypeName   = createdCommand.Settings["instanceTypeName"],
+                    Name               = createdCommand.Name,
+                    State              = ConnectorState.Stopped,
+                    CreateTime         = createTimestamp,
+                    UpdateTime         = failTimestamp,
+                    SettingsUpdateTime = createTimestamp,
+                    StateUpdateTime    = failTimestamp,
+                    DeleteTime         = null,
+                    Position           = null,
+                    ErrorDetails       = failCommand.ErrorDetails,
+                    PositionUpdateTime = null,
+                    Settings = {
+                        { "instanceTypeName", createdCommand.Settings["instanceTypeName"] }
+                    }
+                }
+            }
+        };
+
+        var expectedSnapshotAfterRecovery = new ConnectorsSnapshot {
+            Connectors = {
+                new Connector {
+                    ConnectorId        = connectorId,
+                    InstanceTypeName   = createdCommand.Settings["instanceTypeName"],
+                    Name               = createdCommand.Name,
+                    State              = ConnectorState.Running,
+                    CreateTime         = createTimestamp,
+                    UpdateTime         = runningTimestamp,
+                    SettingsUpdateTime = createTimestamp,
+                    StateUpdateTime    = runningTimestamp,
+                    DeleteTime         = null,
+                    Position           = null,
+                    ErrorDetails       = null,
+                    PositionUpdateTime = null,
+                    Settings = {
+                        { "instanceTypeName", createdCommand.Settings["instanceTypeName"] }
+                    }
+                }
+            }
+        };
+
+        // Act & Assert
+        await projection.ProcessRecord(await RecordContextFor(createdCommand, cancellator.Token));
+        Fixture.TimeProvider.Advance(TimeSpan.FromDays(1));
+        await projection.ProcessRecord(await RecordContextFor(failCommand, cancellator.Token));
+
+        var storeAfterFailure = await Fixture.SnapshotProjectionsStore.LoadSnapshot<ConnectorsSnapshot>(streamId);
+        storeAfterFailure.Snapshot.Connectors.Should().BeEquivalentTo(expectedSnapshotAfterFailure.Connectors);
+        storeAfterFailure.Snapshot.Connectors[0].ErrorDetails.Should().NotBeNull();
+
+        Fixture.TimeProvider.Advance(TimeSpan.FromDays(1));
+        await projection.ProcessRecord(await RecordContextFor(runningCommand, cancellator.Token));
+
+        var storeAfterRecovery = await Fixture.SnapshotProjectionsStore.LoadSnapshot<ConnectorsSnapshot>(streamId);
+        storeAfterRecovery.Snapshot.Connectors.Should().BeEquivalentTo(expectedSnapshotAfterRecovery.Connectors);
+        storeAfterRecovery.Snapshot.Connectors[0].ErrorDetails.Should().BeNull();
+    });
+
+    [Fact]
+    public Task projection_clears_error_details_on_successful_stop() => Fixture.TestWithTimeout(async cancellator => {
+        // Arrange
+        var connectorId      = Fixture.NewConnectorId();
+        var streamId         = Fixture.NewIdentifier();
+        var createTimestamp  = Fixture.TimeProvider.GetUtcNow().ToTimestamp();
+        var failTimestamp    = Fixture.TimeProvider.GetUtcNow().AddDays(1).ToTimestamp();
+        var stopTimestamp    = Fixture.TimeProvider.GetUtcNow().AddDays(2).ToTimestamp();
+        var projection       = new ConnectorsStateProjection(Fixture.SnapshotProjectionsStore, streamId);
+
+        var createdCommand = new ConnectorCreated {
+            ConnectorId = connectorId,
+            Name        = "Logger Sink",
+            Settings = {
+                { "instanceTypeName", "logger-sink" }
+            },
+            Timestamp = createTimestamp
+        };
+
+        var failCommand = new ConnectorFailed {
+            ConnectorId = connectorId,
+            ErrorDetails = new Contracts.Error {
+                Code    = "TestException",
+                Message = "Test error message"
+            },
+            Timestamp = failTimestamp
+        };
+
+        var stopCommand = new ConnectorStopped {
+            ConnectorId = connectorId,
+            Timestamp   = stopTimestamp
+        };
+
+        var expectedSnapshotAfterStop = new ConnectorsSnapshot {
+            Connectors = {
+                new Connector {
+                    ConnectorId        = connectorId,
+                    InstanceTypeName   = createdCommand.Settings["instanceTypeName"],
+                    Name               = createdCommand.Name,
+                    State              = ConnectorState.Stopped,
+                    CreateTime         = createTimestamp,
+                    UpdateTime         = stopTimestamp,
+                    SettingsUpdateTime = createTimestamp,
+                    StateUpdateTime    = stopTimestamp,
+                    DeleteTime         = null,
+                    Position           = null,
+                    ErrorDetails       = null,
+                    PositionUpdateTime = null,
+                    Settings = {
+                        { "instanceTypeName", createdCommand.Settings["instanceTypeName"] }
+                    }
+                }
+            }
+        };
+
+        // Act & Assert
+        await projection.ProcessRecord(await RecordContextFor(createdCommand, cancellator.Token));
+
+        Fixture.TimeProvider.Advance(TimeSpan.FromDays(1));
+        await projection.ProcessRecord(await RecordContextFor(failCommand, cancellator.Token));
+
+        var storeAfterFailure = await Fixture.SnapshotProjectionsStore.LoadSnapshot<ConnectorsSnapshot>(streamId);
+        storeAfterFailure.Snapshot.Connectors[0].ErrorDetails.Should().NotBeNull();
+
+        Fixture.TimeProvider.Advance(TimeSpan.FromDays(1));
+        await projection.ProcessRecord(await RecordContextFor(stopCommand, cancellator.Token));
+
+        var storeAfterStop = await Fixture.SnapshotProjectionsStore.LoadSnapshot<ConnectorsSnapshot>(streamId);
+        storeAfterStop.Snapshot.Connectors.Should().BeEquivalentTo(expectedSnapshotAfterStop.Connectors);
+        storeAfterStop.Snapshot.Connectors[0].ErrorDetails.Should().BeNull();
+    });
+
     async Task<RecordContext> RecordContextFor<T>(T cmd, CancellationToken cancellationToken) where T : IMessage {
         string connectorId = ((dynamic)cmd).ConnectorId;
         var record = await Fixture.CreateRecord(cmd);

@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+      <PackageReference Include="Serilog.Expressions" />
+      <PackageReference Include="Serilog.Sinks.OpenTelemetry" />
+      <PackageReference Include="System.Reactive" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
+    </ItemGroup>
+
+</Project>

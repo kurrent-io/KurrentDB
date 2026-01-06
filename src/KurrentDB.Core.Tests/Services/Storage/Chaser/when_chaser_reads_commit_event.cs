@@ -43,7 +43,7 @@ public class when_chaser_reads_commit_event<TLogFormat, TStreamId> : with_storag
 		Assert.True(written);
 		await Writer.Flush(token);
 
-		IndexCommitter.AddPendingPrepare(new[] { record }, _logPosition);
+		IndexCommitter.AddPendingPrepare(record.TransactionPosition, [record], _logPosition);
 		var record2 = new CommitLogRecord(
 			logPosition: _logPosition,
 			correlationId: _transactionId,

@@ -12,6 +12,7 @@ using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Settings;
+using static DotNext.Threading.Timeout;
 using FilteredReadAllResult = KurrentDB.Core.Data.FilteredReadAllResult;
 using ReadStreamResult = KurrentDB.Core.Data.ReadStreamResult;
 
@@ -30,20 +31,14 @@ public enum OperationResult {
 
 public static partial class ClientMessage {
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class RequestShutdown : Message {
-		public readonly bool ExitProcess;
+	public partial class RequestShutdown(bool exitProcess, bool shutdownHttp) : Message {
+		public readonly bool ExitProcess = exitProcess;
 
-		public readonly bool ShutdownHttp;
-
-		public RequestShutdown(bool exitProcess, bool shutdownHttp) {
-			ExitProcess = exitProcess;
-			ShutdownHttp = shutdownHttp;
-		}
+		public readonly bool ShutdownHttp = shutdownHttp;
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class ReloadConfig : Message {
-	}
+	public partial class ReloadConfig : Message;
 
 	[DerivedMessage]
 	public abstract partial class WriteRequestMessage : Message {
@@ -61,16 +56,10 @@ public static partial class ClientMessage {
 			Guid correlationId, IEnvelope envelope, bool requireLeader,
 			ClaimsPrincipal user, IReadOnlyDictionary<string, string> tokens,
 			CancellationToken token) : base(token) {
-
-			Ensure.NotEmptyGuid(internalCorrId, "internalCorrId");
-			Ensure.NotEmptyGuid(correlationId, "correlationId");
-			Ensure.NotNull(envelope, "envelope");
-
-			InternalCorrId = internalCorrId;
-			CorrelationId = correlationId;
-			Envelope = envelope;
+			InternalCorrId = Ensure.NotEmptyGuid(internalCorrId);
+			CorrelationId = Ensure.NotEmptyGuid(correlationId);
+			Envelope = Ensure.NotNull(envelope);
 			RequireLeader = requireLeader;
-
 			User = user;
 			Tokens = tokens;
 		}
@@ -78,6 +67,8 @@ public static partial class ClientMessage {
 
 	[DerivedMessage]
 	public abstract partial class ReadRequestMessage : Message {
+		public static DateTime NeverExpires => DateTime.MaxValue;
+
 		public readonly Guid InternalCorrId;
 		public readonly Guid CorrelationId;
 		public readonly IEnvelope Envelope;
@@ -87,18 +78,28 @@ public static partial class ClientMessage {
 		public readonly DateTime Created;
 		public readonly DateTime Expires;
 
-		public TimeSpan Lifetime => Expires - Created;
+		public TimeSpan Lifetime {
+			get {
+				return CanExpire
+					? Normalize(Expires - Created)
+					: Timeout.InfiniteTimeSpan;
+
+				static TimeSpan Normalize(TimeSpan value) => value.Ticks switch {
+					< 0L => TimeSpan.Zero,
+					> MaxTimeoutParameterTicks => new(MaxTimeoutParameterTicks),
+					_ => value,
+				};
+			}
+		}
+
+		public bool CanExpire => Expires != NeverExpires;
 
 		protected ReadRequestMessage(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
 			ClaimsPrincipal user, DateTime? expires,
 			CancellationToken cancellationToken = default) : base(cancellationToken) {
-			Ensure.NotEmptyGuid(internalCorrId, "internalCorrId");
-			Ensure.NotEmptyGuid(correlationId, "correlationId");
-			Ensure.NotNull(envelope, "envelope");
-
-			InternalCorrId = internalCorrId;
-			CorrelationId = correlationId;
-			Envelope = envelope;
+			InternalCorrId = Ensure.NotEmptyGuid(internalCorrId);
+			CorrelationId = Ensure.NotEmptyGuid(correlationId);
+			Envelope = Ensure.NotNull(envelope);
 
 			User = user;
 			Created = DateTime.UtcNow;
@@ -115,18 +116,11 @@ public static partial class ClientMessage {
 	}
 
 	[DerivedMessage]
-	public abstract partial class ReadResponseMessage : Message {
-	}
+	public abstract partial class ReadResponseMessage : Message;
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class TcpForwardMessage : Message {
-		public readonly Message Message;
-
-		public TcpForwardMessage(Message message) {
-			Ensure.NotNull(message, "message");
-
-			Message = message;
-		}
+	public partial class TcpForwardMessage(Message message) : Message {
+		public readonly Message Message = Ensure.NotNull(message);
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
@@ -135,6 +129,7 @@ public static partial class ClientMessage {
 		public readonly Types.NotHandledReason Reason;
 		public readonly Types.LeaderInfo LeaderInfo;
 		public readonly string Description;
+
 		public NotHandled(Guid correlationId,
 			Types.NotHandledReason reason,
 			Types.LeaderInfo leaderInfo) {
@@ -143,33 +138,25 @@ public static partial class ClientMessage {
 			LeaderInfo = leaderInfo;
 		}
 
-		public NotHandled(Guid correlationId,
-			Types.NotHandledReason reason,
-			string description) {
+		public NotHandled(Guid correlationId, Types.NotHandledReason reason, string description) {
 			CorrelationId = correlationId;
 			Reason = reason;
 			Description = description;
 		}
 
-
 		public static class Types {
-
 			public enum NotHandledReason {
 				NotReady,
 				TooBusy,
 				NotLeader,
 				IsReadOnly
 			}
-			public class LeaderInfo {
-				public LeaderInfo(EndPoint externalTcp, bool isSecure, EndPoint http) {
-					ExternalTcp = externalTcp;
-					IsSecure = isSecure;
-					Http = http;
-				}
 
-				public bool IsSecure { get; }
-				public EndPoint ExternalTcp { get; }
-				public EndPoint Http { get; }
+			public class LeaderInfo(EndPoint externalTcp, bool isSecure, EndPoint http, Guid leaderId) {
+				public bool IsSecure { get; } = isSecure;
+				public EndPoint ExternalTcp { get; } = externalTcp;
+				public EndPoint Http { get; } = http;
+				public Guid LeaderId { get; } = leaderId;
 			}
 		}
 	}
@@ -201,7 +188,6 @@ public static partial class ClientMessage {
 			IReadOnlyDictionary<string, string> tokens = null,
 			CancellationToken cancellationToken = default)
 			: base(internalCorrId, correlationId, envelope, requireLeader, user, tokens, cancellationToken) {
-
 			// there must be at least one stream
 			ArgumentOutOfRangeException.ThrowIfNegativeOrZero(eventStreamIds.Length, nameof(eventStreamIds));
 
@@ -282,7 +268,8 @@ public static partial class ClientMessage {
 		}
 
 		public static WriteEvents ForSingleEvent(
-			Guid internalCorrId, Guid correlationId, IEnvelope envelope, bool requireLeader, string eventStreamId, long expectedVersion, Event @event, ClaimsPrincipal user, IReadOnlyDictionary<string, string> tokens = null) {
+			Guid internalCorrId, Guid correlationId, IEnvelope envelope, bool requireLeader, string eventStreamId, long expectedVersion, Event @event, ClaimsPrincipal user,
+			IReadOnlyDictionary<string, string> tokens = null) {
 			return new WriteEvents(
 				internalCorrId,
 				correlationId,
@@ -334,11 +321,11 @@ public static partial class ClientMessage {
 
 				if (firstEventNumber < -1)
 					throw new ArgumentOutOfRangeException(nameof(firstEventNumbers),
-					$"FirstEventNumber: {firstEventNumber}");
+						$"FirstEventNumber: {firstEventNumber}");
 
 				if (lastEventNumber - firstEventNumber + 1 < 0)
 					throw new ArgumentOutOfRangeException(nameof(lastEventNumbers),
-					$"LastEventNumber {lastEventNumber}, FirstEventNumber {firstEventNumber}.");
+						$"LastEventNumber {lastEventNumber}, FirstEventNumber {firstEventNumber}.");
 			}
 
 			CorrelationId = correlationId;
@@ -451,51 +438,41 @@ public static partial class ClientMessage {
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class TransactionWrite : WriteRequestMessage {
-		public readonly long TransactionId;
-		public readonly Event[] Events;
-
-		public TransactionWrite(Guid internalCorrId, Guid correlationId, IEnvelope envelope, bool requireLeader,
-			long transactionId, Event[] events, ClaimsPrincipal user, IReadOnlyDictionary<string, string> tokens = null)
-			: base(internalCorrId, correlationId, envelope, requireLeader, user, tokens, CancellationToken.None) {
-			Ensure.Nonnegative(transactionId, "transactionId");
-			Ensure.NotNull(events, "events");
-
-			TransactionId = transactionId;
-			Events = events;
-		}
+	public partial class TransactionWrite(
+		Guid internalCorrId,
+		Guid correlationId,
+		IEnvelope envelope,
+		bool requireLeader,
+		long transactionId,
+		Event[] events,
+		ClaimsPrincipal user,
+		IReadOnlyDictionary<string, string> tokens = null)
+		: WriteRequestMessage(internalCorrId, correlationId, envelope, requireLeader, user, tokens, CancellationToken.None) {
+		public readonly long TransactionId = Ensure.Nonnegative(transactionId);
+		public readonly Event[] Events = Ensure.NotNull(events);
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class TransactionWriteCompleted : Message {
-		public readonly Guid CorrelationId;
-		public readonly long TransactionId;
-		public readonly OperationResult Result;
-		public readonly string Message;
+	public partial class TransactionWriteCompleted(Guid correlationId, long transactionId, OperationResult result, string message) : Message {
+		public readonly Guid CorrelationId = correlationId;
+		public readonly long TransactionId = transactionId;
+		public readonly OperationResult Result = result;
+		public readonly string Message = message;
 
-		public TransactionWriteCompleted(Guid correlationId, long transactionId, OperationResult result,
-			string message) {
-			CorrelationId = correlationId;
-			TransactionId = transactionId;
-			Result = result;
-			Message = message;
-		}
-
-		public TransactionWriteCompleted WithCorrelationId(Guid newCorrId) {
-			return new TransactionWriteCompleted(newCorrId, TransactionId, Result, Message);
-		}
+		public TransactionWriteCompleted WithCorrelationId(Guid newCorrId) => new(newCorrId, TransactionId, Result, Message);
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class TransactionCommit : WriteRequestMessage {
-		public readonly long TransactionId;
-
-		public TransactionCommit(Guid internalCorrId, Guid correlationId, IEnvelope envelope, bool requireLeader,
-			long transactionId, ClaimsPrincipal user, IReadOnlyDictionary<string, string> tokens = null)
-			: base(internalCorrId, correlationId, envelope, requireLeader, user, tokens, CancellationToken.None) {
-			Ensure.Nonnegative(transactionId, "transactionId");
-			TransactionId = transactionId;
-		}
+	public partial class TransactionCommit(
+		Guid internalCorrId,
+		Guid correlationId,
+		IEnvelope envelope,
+		bool requireLeader,
+		long transactionId,
+		ClaimsPrincipal user,
+		IReadOnlyDictionary<string, string> tokens = null)
+		: WriteRequestMessage(internalCorrId, correlationId, envelope, requireLeader, user, tokens, CancellationToken.None) {
+		public readonly long TransactionId = Ensure.Nonnegative(transactionId);
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
@@ -512,15 +489,13 @@ public static partial class ClientMessage {
 		public TransactionCommitCompleted(Guid correlationId, long transactionId, long firstEventNumber,
 			long lastEventNumber, long preparePosition, long commitPosition) {
 			if (firstEventNumber < -1)
-				throw new ArgumentOutOfRangeException("firstEventNumber",
-					String.Format("FirstEventNumber: {0}", firstEventNumber));
+				throw new ArgumentOutOfRangeException(nameof(firstEventNumber), $"FirstEventNumber: {firstEventNumber}");
 			if (lastEventNumber - firstEventNumber + 1 < 0)
-				throw new ArgumentOutOfRangeException("lastEventNumber",
-					String.Format("LastEventNumber {0}, FirstEventNumber {1}.", lastEventNumber, firstEventNumber));
+				throw new ArgumentOutOfRangeException(nameof(lastEventNumber), $"LastEventNumber {lastEventNumber}, FirstEventNumber {firstEventNumber}.");
 			CorrelationId = correlationId;
 			TransactionId = transactionId;
 			Result = OperationResult.Success;
-			Message = String.Empty;
+			Message = string.Empty;
 			FirstEventNumber = firstEventNumber;
 			LastEventNumber = lastEventNumber;
 			PreparePosition = preparePosition;
@@ -530,7 +505,7 @@ public static partial class ClientMessage {
 		public TransactionCommitCompleted(Guid correlationId, long transactionId, OperationResult result,
 			string message) {
 			if (result == OperationResult.Success)
-				throw new ArgumentException("Invalid constructor used for successful write.", "result");
+				throw new ArgumentException("Invalid constructor used for successful write.", nameof(result));
 
 			CorrelationId = correlationId;
 			TransactionId = transactionId;
@@ -551,10 +526,8 @@ public static partial class ClientMessage {
 			LastEventNumber = lastEventNumber;
 		}
 
-		public TransactionCommitCompleted WithCorrelationId(Guid newCorrId) {
-			return new TransactionCommitCompleted(newCorrId, TransactionId, Result, Message, FirstEventNumber,
-				LastEventNumber);
-		}
+		public TransactionCommitCompleted WithCorrelationId(Guid newCorrId)
+			=> new(newCorrId, TransactionId, Result, Message, FirstEventNumber, LastEventNumber);
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
@@ -567,8 +540,7 @@ public static partial class ClientMessage {
 			string eventStreamId, long expectedVersion, bool hardDelete, ClaimsPrincipal user,
 			IReadOnlyDictionary<string, string> tokens = null, CancellationToken cancellationToken = default)
 			: base(internalCorrId, correlationId, envelope, requireLeader, user, tokens, cancellationToken) {
-			Ensure.NotNullOrEmpty(eventStreamId, "eventStreamId");
-			EventStreamId = eventStreamId;
+			EventStreamId = Ensure.NotNullOrEmpty(eventStreamId);
 			ExpectedVersion = expectedVersion switch {
 				KurrentDB.Core.Data.ExpectedVersion.Invalid => throw new ArgumentOutOfRangeException(nameof(expectedVersion)),
 				< KurrentDB.Core.Data.ExpectedVersion.StreamExists => throw new ArgumentOutOfRangeException(nameof(expectedVersion)),
@@ -601,10 +573,8 @@ public static partial class ClientMessage {
 			long currentVersion = -1L) : this(correlationId, result, message, currentVersion, -1, -1) {
 		}
 
-		public DeleteStreamCompleted WithCorrelationId(Guid newCorrId) {
-			return new DeleteStreamCompleted(newCorrId, Result, Message, CurrentVersion, PreparePosition,
-				CommitPosition);
-		}
+		public DeleteStreamCompleted WithCorrelationId(Guid newCorrId)
+			=> new(newCorrId, Result, Message, CurrentVersion, PreparePosition, CommitPosition);
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
@@ -615,15 +585,11 @@ public static partial class ClientMessage {
 		public readonly bool RequireLeader;
 
 		public ReadEvent(Guid internalCorrId, Guid correlationId, IEnvelope envelope, string eventStreamId,
-			long eventNumber,
-			bool resolveLinkTos, bool requireLeader, ClaimsPrincipal user, DateTime? expires = null,
+			long eventNumber, bool resolveLinkTos, bool requireLeader, ClaimsPrincipal user, DateTime? expires = null,
 			CancellationToken cancellationToken = default)
 			: base(internalCorrId, correlationId, envelope, user, expires, cancellationToken) {
-			Ensure.NotNullOrEmpty(eventStreamId, "eventStreamId");
-			if (eventNumber < -1)
-				throw new ArgumentOutOfRangeException(nameof(eventNumber));
-
-			EventStreamId = eventStreamId;
+			ArgumentOutOfRangeException.ThrowIfLessThan(eventNumber, -1);
+			EventStreamId = Ensure.NotNullOrEmpty(eventStreamId);
 			EventNumber = eventNumber;
 			ResolveLinkTos = resolveLinkTos;
 			RequireLeader = requireLeader;
@@ -649,12 +615,8 @@ public static partial class ClientMessage {
 
 		public ReadEventCompleted(Guid correlationId, string eventStreamId, ReadEventResult result,
 			ResolvedEvent record, StreamMetadata streamMetadata, bool isCachePublic, string error) {
-			Ensure.NotNullOrEmpty(eventStreamId, "eventStreamId");
-			//if (result == ReadEventResult.Success)
-			//    Ensure.NotNull(record.Event, "record.Event");
-
 			CorrelationId = correlationId;
-			EventStreamId = eventStreamId;
+			EventStreamId = Ensure.NotNullOrEmpty(eventStreamId);
 			Result = result;
 			Record = record;
 			StreamMetadata = streamMetadata;
@@ -662,7 +624,6 @@ public static partial class ClientMessage {
 			Error = error;
 		}
 	}
-
 
 	[DerivedMessage(CoreMessage.Client)]
 	public partial class ReadStreamEventsForward : ReadRequestMessage {
@@ -683,11 +644,8 @@ public static partial class ClientMessage {
 			TimeSpan? longPollTimeout = null, DateTime? expires = null,
 			CancellationToken cancellationToken = default)
 			: base(internalCorrId, correlationId, envelope, user, expires, cancellationToken) {
-			Ensure.NotNullOrEmpty(eventStreamId, "eventStreamId");
-			if (fromEventNumber < -1)
-				throw new ArgumentOutOfRangeException(nameof(fromEventNumber));
-
-			EventStreamId = eventStreamId;
+			ArgumentOutOfRangeException.ThrowIfLessThan(fromEventNumber, -1);
+			EventStreamId = Ensure.NotNullOrEmpty(eventStreamId);
 			FromEventNumber = fromEventNumber;
 			MaxCount = maxCount;
 			ResolveLinkTos = resolveLinkTos;
@@ -732,11 +690,9 @@ public static partial class ClientMessage {
 			StreamMetadata streamMetadata, bool isCachePublic,
 			string error, long nextEventNumber, long lastEventNumber, bool isEndOfStream,
 			long tfLastCommitPosition) {
-			Ensure.NotNull(events, "events");
-
-			if (result != ReadStreamResult.Success && result != ReadStreamResult.Expired) {
-				Ensure.Equal(nextEventNumber, -1, "nextEventNumber");
-				Ensure.Equal(isEndOfStream, true, "isEndOfStream");
+			if (result != ReadStreamResult.Success) {
+				Ensure.Equal(-1, nextEventNumber);
+				Ensure.Equal(true, isEndOfStream);
 			}
 
 			CorrelationId = correlationId;
@@ -745,7 +701,7 @@ public static partial class ClientMessage {
 			MaxCount = maxCount;
 
 			Result = result;
-			Events = events;
+			Events = Ensure.NotNull(events);
 			StreamMetadata = streamMetadata;
 			IsCachePublic = isCachePublic;
 			Error = error;
@@ -765,22 +721,23 @@ public static partial class ClientMessage {
 		public readonly bool RequireLeader;
 
 		public readonly long? ValidationStreamVersion;
+		public readonly bool ReplyOnExpired;
 
 		public ReadStreamEventsBackward(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
 			string eventStreamId, long fromEventNumber, int maxCount, bool resolveLinkTos,
-			bool requireLeader, long? validationStreamVersion, ClaimsPrincipal user, DateTime? expires = null,
+			bool requireLeader, long? validationStreamVersion, ClaimsPrincipal user,
+			bool replyOnExpired,
+			DateTime? expires = null,
 			CancellationToken cancellationToken = default)
 			: base(internalCorrId, correlationId, envelope, user, expires, cancellationToken) {
-			Ensure.NotNullOrEmpty(eventStreamId, "eventStreamId");
-			if (fromEventNumber < -1)
-				throw new ArgumentOutOfRangeException(nameof(fromEventNumber));
-
-			EventStreamId = eventStreamId;
+			ArgumentOutOfRangeException.ThrowIfLessThan(fromEventNumber, -1);
+			EventStreamId = Ensure.NotNullOrEmpty(eventStreamId);
 			FromEventNumber = fromEventNumber;
 			MaxCount = maxCount;
 			ResolveLinkTos = resolveLinkTos;
 			RequireLeader = requireLeader;
 			ValidationStreamVersion = validationStreamVersion;
+			ReplyOnExpired = replyOnExpired;
 		}
 
 		public override string ToString() =>
@@ -790,7 +747,8 @@ public static partial class ClientMessage {
 			$"MaxCount: {MaxCount}, " +
 			$"ResolveLinkTos: {ResolveLinkTos}, " +
 			$"RequireLeader: {RequireLeader}, " +
-			$"ValidationStreamVersion: {ValidationStreamVersion}";
+			$"ValidationStreamVersion: {ValidationStreamVersion}, " +
+			$"ReplyOnExpired: {ReplyOnExpired}";
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
@@ -823,11 +781,9 @@ public static partial class ClientMessage {
 			long lastEventNumber,
 			bool isEndOfStream,
 			long tfLastCommitPosition) {
-			Ensure.NotNull(events, "events");
-
 			if (result != ReadStreamResult.Success) {
-				Ensure.Equal(nextEventNumber, -1, "nextEventNumber");
-				Ensure.Equal(isEndOfStream, true, "isEndOfStream");
+				Ensure.Equal(-1, nextEventNumber);
+				Ensure.Equal(true, isEndOfStream);
 			}
 
 			CorrelationId = correlationId;
@@ -836,7 +792,7 @@ public static partial class ClientMessage {
 			MaxCount = maxCount;
 
 			Result = result;
-			Events = events;
+			Events = Ensure.NotNull(events);
 			StreamMetadata = streamMetadata;
 			IsCachePublic = isCachePublic;
 			Error = error;
@@ -912,12 +868,10 @@ public static partial class ClientMessage {
 			IReadOnlyList<ResolvedEvent> events,
 			StreamMetadata streamMetadata, bool isCachePublic, int maxCount,
 			TFPos currentPos, TFPos nextPos, TFPos prevPos, long tfLastCommitPosition) {
-			Ensure.NotNull(events, "events");
-
 			CorrelationId = correlationId;
 			Result = result;
 			Error = error;
-			Events = events;
+			Events = Ensure.NotNull(events);
 			StreamMetadata = streamMetadata;
 			IsCachePublic = isCachePublic;
 			MaxCount = maxCount;
@@ -937,10 +891,12 @@ public static partial class ClientMessage {
 		public readonly bool RequireLeader;
 
 		public readonly long? ValidationTfLastCommitPosition;
+		public readonly bool ReplyOnExpired;
 
 		public ReadAllEventsBackward(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
 			long commitPosition, long preparePosition, int maxCount, bool resolveLinkTos,
 			bool requireLeader, long? validationTfLastCommitPosition, ClaimsPrincipal user,
+			bool replyOnExpired,
 			DateTime? expires = null,
 			CancellationToken cancellationToken = default)
 			: base(internalCorrId, correlationId, envelope, user, expires, cancellationToken) {
@@ -950,6 +906,7 @@ public static partial class ClientMessage {
 			ResolveLinkTos = resolveLinkTos;
 			RequireLeader = requireLeader;
 			ValidationTfLastCommitPosition = validationTfLastCommitPosition;
+			ReplyOnExpired = replyOnExpired;
 		}
 
 		public override string ToString() =>
@@ -959,7 +916,8 @@ public static partial class ClientMessage {
 			$"MaxCount: {MaxCount}, " +
 			$"ResolveLinkTos: {ResolveLinkTos}, " +
 			$"RequireLeader: {RequireLeader}, " +
-			$"ValidationTfLastCommitPosition: {ValidationTfLastCommitPosition}";
+			$"ValidationTfLastCommitPosition: {ValidationTfLastCommitPosition}, " +
+			$"ReplyOnExpired: {ReplyOnExpired}";
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
@@ -986,12 +944,10 @@ public static partial class ClientMessage {
 			IReadOnlyList<ResolvedEvent> events,
 			StreamMetadata streamMetadata, bool isCachePublic, int maxCount,
 			TFPos currentPos, TFPos nextPos, TFPos prevPos, long tfLastCommitPosition) {
-			Ensure.NotNull(events, "events");
-
 			CorrelationId = correlationId;
 			Result = result;
 			Error = error;
-			Events = events;
+			Events = Ensure.NotNull(events);
 			StreamMetadata = streamMetadata;
 			IsCachePublic = isCachePublic;
 			MaxCount = maxCount;
@@ -1072,12 +1028,10 @@ public static partial class ClientMessage {
 			StreamMetadata streamMetadata, bool isCachePublic, int maxCount,
 			TFPos currentPos, TFPos nextPos, TFPos prevPos, long tfLastCommitPosition,
 			bool isEndOfStream, long consideredEventsCount) {
-			Ensure.NotNull(events, "events");
-
 			CorrelationId = correlationId;
 			Result = result;
 			Error = error;
-			Events = events;
+			Events = Ensure.NotNull(events);
 			StreamMetadata = streamMetadata;
 			IsCachePublic = isCachePublic;
 			MaxCount = maxCount;
@@ -1102,10 +1056,12 @@ public static partial class ClientMessage {
 
 		public readonly long? ValidationTfLastCommitPosition;
 		public readonly TimeSpan? LongPollTimeout;
+		public readonly bool ReplyOnExpired;
 
 		public FilteredReadAllEventsBackward(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
 			long commitPosition, long preparePosition, int maxCount, bool resolveLinkTos, bool requireLeader,
 			int maxSearchWindow, long? validationTfLastCommitPosition, IEventFilter eventFilter, ClaimsPrincipal user,
+			bool replyOnExpired,
 			TimeSpan? longPollTimeout = null, DateTime? expires = null,
 			CancellationToken cancellationToken = default)
 			: base(internalCorrId, correlationId, envelope, user, expires, cancellationToken) {
@@ -1118,6 +1074,7 @@ public static partial class ClientMessage {
 			LongPollTimeout = longPollTimeout;
 			MaxSearchWindow = maxSearchWindow;
 			EventFilter = eventFilter;
+			ReplyOnExpired = replyOnExpired;
 		}
 
 		public override string ToString() =>
@@ -1130,7 +1087,8 @@ public static partial class ClientMessage {
 			$"MaxSearchWindow: {MaxSearchWindow}, " +
 			$"EventFilter: {{ {EventFilter} }}, " +
 			$"LongPollTimeout: {LongPollTimeout}, " +
-			$"ValidationTfLastCommitPosition: {ValidationTfLastCommitPosition}";
+			$"ValidationTfLastCommitPosition: {ValidationTfLastCommitPosition}, " +
+			$"ReplyOnExpired: {ReplyOnExpired}";
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
@@ -1155,12 +1113,10 @@ public static partial class ClientMessage {
 			StreamMetadata streamMetadata, bool isCachePublic, int maxCount,
 			TFPos currentPos, TFPos nextPos, TFPos prevPos, long tfLastCommitPosition,
 			bool isEndOfStream) {
-			Ensure.NotNull(events, "events");
-
 			CorrelationId = correlationId;
 			Result = result;
 			Error = error;
-			Events = events;
+			Events = Ensure.NotNull(events);
 			StreamMetadata = streamMetadata;
 			IsCachePublic = isCachePublic;
 			MaxCount = maxCount;
@@ -1186,13 +1142,10 @@ public static partial class ClientMessage {
 			Guid connectionId, string connectionName, string groupName, string eventStreamId,
 			int allowedInFlightMessages, string from, ClaimsPrincipal user, DateTime? expires = null)
 			: base(internalCorrId, correlationId, envelope, user, expires) {
-			Ensure.NotEmptyGuid(connectionId, "connectionId");
-			Ensure.NotNullOrEmpty(groupName, "subscriptionId");
-			Ensure.Nonnegative(allowedInFlightMessages, "AllowedInFlightMessages");
-			GroupName = groupName;
-			ConnectionId = connectionId;
+			GroupName = Ensure.NotNullOrEmpty(groupName);
+			ConnectionId = Ensure.NotEmptyGuid(connectionId);
 			ConnectionName = connectionName;
-			AllowedInFlightMessages = allowedInFlightMessages;
+			AllowedInFlightMessages = Ensure.Nonnegative(allowedInFlightMessages);
 			EventStreamId = eventStreamId;
 			From = from;
 		}
@@ -1210,13 +1163,10 @@ public static partial class ClientMessage {
 			Guid connectionId, string connectionName, string groupName,
 			int allowedInFlightMessages, string from, ClaimsPrincipal user, DateTime? expires = null)
 			: base(internalCorrId, correlationId, envelope, user, expires) {
-			Ensure.NotEmptyGuid(connectionId, "connectionId");
-			Ensure.NotNullOrEmpty(groupName, "groupName");
-			Ensure.Nonnegative(allowedInFlightMessages, "AllowedInFlightMessages");
-			GroupName = groupName;
-			ConnectionId = connectionId;
+			GroupName = Ensure.NotNullOrEmpty(groupName);
+			ConnectionId = Ensure.NotEmptyGuid(connectionId);
 			ConnectionName = connectionName;
-			AllowedInFlightMessages = allowedInFlightMessages;
+			AllowedInFlightMessages = Ensure.Nonnegative(allowedInFlightMessages);
 			From = from;
 		}
 	}
@@ -1272,10 +1222,8 @@ public static partial class ClientMessage {
 		public readonly string Reason;
 		public readonly CreatePersistentSubscriptionToStreamResult Result;
 
-		public CreatePersistentSubscriptionToStreamCompleted(Guid correlationId, CreatePersistentSubscriptionToStreamResult result,
-			string reason) {
-			Ensure.NotEmptyGuid(correlationId, "correlationId");
-			CorrelationId = correlationId;
+		public CreatePersistentSubscriptionToStreamCompleted(Guid correlationId, CreatePersistentSubscriptionToStreamResult result, string reason) {
+			CorrelationId = Ensure.NotEmptyGuid(correlationId);
 			Result = result;
 			Reason = reason;
 		}
@@ -1340,10 +1288,8 @@ public static partial class ClientMessage {
 		public readonly string Reason;
 		public readonly CreatePersistentSubscriptionToAllResult Result;
 
-		public CreatePersistentSubscriptionToAllCompleted(Guid correlationId, CreatePersistentSubscriptionToAllResult result,
-			string reason) {
-			Ensure.NotEmptyGuid(correlationId, "correlationId");
-			CorrelationId = correlationId;
+		public CreatePersistentSubscriptionToAllCompleted(Guid correlationId, CreatePersistentSubscriptionToAllResult result, string reason) {
+			CorrelationId = Ensure.NotEmptyGuid(correlationId);
 			Result = result;
 			Reason = reason;
 		}
@@ -1408,10 +1354,8 @@ public static partial class ClientMessage {
 		public readonly string Reason;
 		public readonly UpdatePersistentSubscriptionToStreamResult Result;
 
-		public UpdatePersistentSubscriptionToStreamCompleted(Guid correlationId, UpdatePersistentSubscriptionToStreamResult result,
-			string reason) {
-			Ensure.NotEmptyGuid(correlationId, "correlationId");
-			CorrelationId = correlationId;
+		public UpdatePersistentSubscriptionToStreamCompleted(Guid correlationId, UpdatePersistentSubscriptionToStreamResult result, string reason) {
+			CorrelationId = Ensure.NotEmptyGuid(correlationId);
 			Result = result;
 			Reason = reason;
 		}
@@ -1474,10 +1418,8 @@ public static partial class ClientMessage {
 		public readonly string Reason;
 		public readonly UpdatePersistentSubscriptionToAllResult Result;
 
-		public UpdatePersistentSubscriptionToAllCompleted(Guid correlationId, UpdatePersistentSubscriptionToAllResult result,
-			string reason) {
-			Ensure.NotEmptyGuid(correlationId, "correlationId");
-			CorrelationId = correlationId;
+		public UpdatePersistentSubscriptionToAllCompleted(Guid correlationId, UpdatePersistentSubscriptionToAllResult result, string reason) {
+			CorrelationId = Ensure.NotEmptyGuid(correlationId);
 			Result = result;
 			Reason = reason;
 		}
@@ -1514,8 +1456,7 @@ public static partial class ClientMessage {
 
 		public ReadNextNPersistentMessagesCompleted(Guid correlationId, ReadNextNPersistentMessagesResult result,
 			string reason, (ResolvedEvent ResolvedEvent, int RetryCount)[] events) {
-			Ensure.NotEmptyGuid(correlationId, "correlationId");
-			CorrelationId = correlationId;
+			CorrelationId = Ensure.NotEmptyGuid(correlationId);
 			Result = result;
 			Reason = reason;
 			Events = events;
@@ -1548,10 +1489,8 @@ public static partial class ClientMessage {
 		public readonly string Reason;
 		public readonly DeletePersistentSubscriptionToStreamResult Result;
 
-		public DeletePersistentSubscriptionToStreamCompleted(Guid correlationId, DeletePersistentSubscriptionToStreamResult result,
-			string reason) {
-			Ensure.NotEmptyGuid(correlationId, "correlationId");
-			CorrelationId = correlationId;
+		public DeletePersistentSubscriptionToStreamCompleted(Guid correlationId, DeletePersistentSubscriptionToStreamResult result, string reason) {
+			CorrelationId = Ensure.NotEmptyGuid(correlationId);
 			Result = result;
 			Reason = reason;
 		}
@@ -1581,10 +1520,8 @@ public static partial class ClientMessage {
 		public readonly string Reason;
 		public readonly DeletePersistentSubscriptionToAllResult Result;
 
-		public DeletePersistentSubscriptionToAllCompleted(Guid correlationId, DeletePersistentSubscriptionToAllResult result,
-			string reason) {
-			Ensure.NotEmptyGuid(correlationId, "correlationId");
-			CorrelationId = correlationId;
+		public DeletePersistentSubscriptionToAllCompleted(Guid correlationId, DeletePersistentSubscriptionToAllResult result, string reason) {
+			CorrelationId = Ensure.NotEmptyGuid(correlationId);
 			Result = result;
 			Reason = reason;
 		}
@@ -1605,11 +1542,8 @@ public static partial class ClientMessage {
 		public PersistentSubscriptionAckEvents(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
 			string subscriptionId, Guid[] processedEventIds, ClaimsPrincipal user, DateTime? expires = null)
 			: base(internalCorrId, correlationId, envelope, user, expires) {
-			Ensure.NotNullOrEmpty(subscriptionId, "subscriptionId");
-			Ensure.NotNull(processedEventIds, "processedEventIds");
-
-			SubscriptionId = subscriptionId;
-			ProcessedEventIds = processedEventIds;
+			SubscriptionId = Ensure.NotNullOrEmpty(subscriptionId);
+			ProcessedEventIds = Ensure.NotNull(processedEventIds);
 		}
 	}
 
@@ -1642,22 +1576,6 @@ public static partial class ClientMessage {
 			Retry = 2,
 			Skip = 3,
 			Stop = 4
-		}
-	}
-
-	[DerivedMessage(CoreMessage.Client)]
-	public partial class PersistentSubscriptionNakEvents : ReadRequestMessage {
-		public readonly string SubscriptionId;
-		public readonly Guid[] ProcessedEventIds;
-
-		public PersistentSubscriptionNakEvents(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
-			string subscriptionId, Guid[] processedEventIds, ClaimsPrincipal user, DateTime? expires = null)
-			: base(internalCorrId, correlationId, envelope, user, expires) {
-			Ensure.NotNullOrEmpty(subscriptionId, "subscriptionId");
-			Ensure.NotNull(processedEventIds, "processedEventIds");
-
-			SubscriptionId = subscriptionId;
-			ProcessedEventIds = processedEventIds;
 		}
 	}
 
@@ -1714,8 +1632,7 @@ public static partial class ClientMessage {
 		public readonly ReplayMessagesReceivedResult Result;
 
 		public ReplayMessagesReceived(Guid correlationId, ReplayMessagesReceivedResult result, string reason) {
-			Ensure.NotEmptyGuid(correlationId, "correlationId");
-			CorrelationId = correlationId;
+			CorrelationId = Ensure.NotEmptyGuid(correlationId);
 			Result = result;
 			Reason = reason;
 		}
@@ -1730,7 +1647,6 @@ public static partial class ClientMessage {
 
 	//End of persistence subscriptions
 
-
 	[DerivedMessage(CoreMessage.Client)]
 	public partial class SubscribeToStream : ReadRequestMessage {
 		public readonly Guid ConnectionId;
@@ -1740,8 +1656,7 @@ public static partial class ClientMessage {
 		public SubscribeToStream(Guid internalCorrId, Guid correlationId, IEnvelope envelope, Guid connectionId,
 			string eventStreamId, bool resolveLinkTos, ClaimsPrincipal user, DateTime? expires = null)
 			: base(internalCorrId, correlationId, envelope, user, expires) {
-			Ensure.NotEmptyGuid(connectionId, "connectionId");
-			ConnectionId = connectionId;
+			ConnectionId = Ensure.NotEmptyGuid(connectionId);
 			EventStreamId = eventStreamId;
 			ResolveLinkTos = resolveLinkTos;
 		}
@@ -1760,8 +1675,7 @@ public static partial class ClientMessage {
 			Guid connectionId, string eventStreamId, bool resolveLinkTos, ClaimsPrincipal user,
 			IEventFilter eventFilter, int checkpointInterval, int checkpointIntervalCurrent, DateTime? expires = null)
 			: base(internalCorrId, correlationId, envelope, user, expires) {
-			Ensure.NotEmptyGuid(connectionId, "connectionId");
-			ConnectionId = connectionId;
+			ConnectionId = Ensure.NotEmptyGuid(connectionId);
 			EventStreamId = eventStreamId;
 			ResolveLinkTos = resolveLinkTos;
 			EventFilter = eventFilter;
@@ -1771,99 +1685,73 @@ public static partial class ClientMessage {
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class CheckpointReached : Message {
-		public readonly Guid CorrelationId;
-		public readonly TFPos? Position;
-
-		public CheckpointReached(Guid correlationId, TFPos? position) {
-			CorrelationId = correlationId;
-			Position = position;
-		}
+	public partial class SubscribeToIndex(
+		Guid internalCorrId,
+		Guid correlationId,
+		IEnvelope envelope,
+		Guid connectionId,
+		string indexName,
+		ClaimsPrincipal user,
+		DateTime? expires = null)
+		: ReadRequestMessage(internalCorrId, correlationId, envelope, user, expires) {
+		public readonly Guid ConnectionId = Ensure.NotEmptyGuid(connectionId);
+		public readonly string IndexName = Ensure.NotNullOrEmpty(indexName);
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class UnsubscribeFromStream : ReadRequestMessage {
-		public UnsubscribeFromStream(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
-			ClaimsPrincipal user, DateTime? expires = null)
-			: base(internalCorrId, correlationId, envelope, user, expires) {
-		}
+	public partial class CheckpointReached(Guid correlationId, TFPos? position) : Message {
+		public readonly Guid CorrelationId = correlationId;
+		public readonly TFPos? Position = position;
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class SubscriptionConfirmation : Message {
-		public readonly Guid CorrelationId;
-		public readonly long LastIndexedPosition;
-		public readonly long? LastEventNumber;
+	public partial class UnsubscribeFromStream(
+		Guid internalCorrId,
+		Guid correlationId,
+		IEnvelope envelope,
+		ClaimsPrincipal user,
+		DateTime? expires = null)
+		: ReadRequestMessage(internalCorrId, correlationId, envelope, user, expires);
 
-		public SubscriptionConfirmation(Guid correlationId, long lastIndexedPosition, long? lastEventNumber) {
-			CorrelationId = correlationId;
-			LastIndexedPosition = lastIndexedPosition;
-			LastEventNumber = lastEventNumber;
-		}
+	[DerivedMessage(CoreMessage.Client)]
+	public partial class SubscriptionConfirmation(Guid correlationId, long lastIndexedPosition, long? lastEventNumber) : Message {
+		public readonly Guid CorrelationId = correlationId;
+		public readonly long LastIndexedPosition = lastIndexedPosition;
+		public readonly long? LastEventNumber = lastEventNumber;
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class StreamEventAppeared : Message {
-		public readonly Guid CorrelationId;
-		public readonly ResolvedEvent Event;
-
-		public StreamEventAppeared(Guid correlationId, ResolvedEvent @event) {
-			CorrelationId = correlationId;
-			Event = @event;
-		}
+	public partial class StreamEventAppeared(Guid correlationId, ResolvedEvent @event) : Message {
+		public readonly Guid CorrelationId = correlationId;
+		public readonly ResolvedEvent Event = @event;
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class PersistentSubscriptionStreamEventAppeared : Message {
-		public readonly Guid CorrelationId;
-		public readonly ResolvedEvent Event;
-		public readonly int RetryCount;
-
-		public PersistentSubscriptionStreamEventAppeared(Guid correlationId, ResolvedEvent @event, int retryCount) {
-			CorrelationId = correlationId;
-			Event = @event;
-			RetryCount = retryCount;
-		}
+	public partial class PersistentSubscriptionStreamEventAppeared(Guid correlationId, ResolvedEvent @event, int retryCount) : Message {
+		public readonly Guid CorrelationId = correlationId;
+		public readonly ResolvedEvent Event = @event;
+		public readonly int RetryCount = retryCount;
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class SubscriptionDropped : Message {
-		public readonly Guid CorrelationId;
-		public readonly SubscriptionDropReason Reason;
-
-		public SubscriptionDropped(Guid correlationId, SubscriptionDropReason reason) {
-			CorrelationId = correlationId;
-			Reason = reason;
-		}
+	public partial class SubscriptionDropped(Guid correlationId, SubscriptionDropReason reason) : Message {
+		public readonly Guid CorrelationId = correlationId;
+		public readonly SubscriptionDropReason Reason = reason;
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class MergeIndexes : Message {
-		public readonly IEnvelope Envelope;
-		public readonly Guid CorrelationId;
-		public readonly ClaimsPrincipal User;
-
-		public MergeIndexes(IEnvelope envelope, Guid correlationId, ClaimsPrincipal user) {
-			Ensure.NotNull(envelope, "envelope");
-			Envelope = envelope;
-			CorrelationId = correlationId;
-			User = user;
-		}
+	public partial class MergeIndexes(IEnvelope envelope, Guid correlationId, ClaimsPrincipal user) : Message {
+		public readonly IEnvelope Envelope = Ensure.NotNull(envelope);
+		public readonly Guid CorrelationId = correlationId;
+		public readonly ClaimsPrincipal User = user;
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class MergeIndexesResponse : Message {
-		public readonly Guid CorrelationId;
-		public readonly MergeIndexesResult Result;
+	public partial class MergeIndexesResponse(Guid correlationId, MergeIndexesResponse.MergeIndexesResult result) : Message {
+		public readonly Guid CorrelationId = correlationId;
+		public readonly MergeIndexesResult Result = result;
 
-		public MergeIndexesResponse(Guid correlationId, MergeIndexesResult result) {
-			CorrelationId = correlationId;
-			Result = result;
-		}
-
-		public override string ToString() {
-			return String.Format("Result: {0}", Result);
-		}
+		public override string ToString() => $"Result: {Result}";
 
 		public enum MergeIndexesResult {
 			Started
@@ -1871,17 +1759,12 @@ public static partial class ClientMessage {
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class SetNodePriority : Message {
-		public readonly int NodePriority;
-
-		public SetNodePriority(int nodePriority) {
-			NodePriority = nodePriority;
-		}
+	public partial class SetNodePriority(int nodePriority) : Message {
+		public readonly int NodePriority = nodePriority;
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class ResignNode : Message {
-	}
+	public partial class ResignNode : Message;
 
 	[DerivedMessage(CoreMessage.Client)]
 	public partial class ScavengeDatabase : Message {
@@ -1903,9 +1786,7 @@ public static partial class ClientMessage {
 			int? threshold,
 			int? throttlePercent,
 			bool syncOnly) {
-
-			Ensure.NotNull(envelope, "envelope");
-			Envelope = envelope;
+			Envelope = Ensure.NotNull(envelope);
 			CorrelationId = correlationId;
 			User = user;
 			StartFromChunk = startFromChunk;
@@ -1917,49 +1798,32 @@ public static partial class ClientMessage {
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class StopDatabaseScavenge : Message {
-		public readonly IEnvelope Envelope;
-		public readonly Guid CorrelationId;
-		public readonly ClaimsPrincipal User;
-		public readonly string ScavengeId;
-
-		public StopDatabaseScavenge(IEnvelope envelope, Guid correlationId, ClaimsPrincipal user, string scavengeId) {
-			Ensure.NotNull(envelope, "envelope");
-			Envelope = envelope;
-			CorrelationId = correlationId;
-			User = user;
-			ScavengeId = scavengeId;
-		}
+	public partial class StopDatabaseScavenge(IEnvelope envelope, Guid correlationId, ClaimsPrincipal user, string scavengeId)
+		: Message {
+		public readonly IEnvelope Envelope = Ensure.NotNull(envelope);
+		public readonly Guid CorrelationId = correlationId;
+		public readonly ClaimsPrincipal User = user;
+		public readonly string ScavengeId = scavengeId;
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class GetCurrentDatabaseScavenge : Message {
-		public readonly IEnvelope Envelope;
-		public readonly Guid CorrelationId;
-		public readonly ClaimsPrincipal User;
-
-		public GetCurrentDatabaseScavenge(IEnvelope envelope, Guid correlationId, ClaimsPrincipal user) {
-			Ensure.NotNull(envelope, "envelope");
-			Envelope = envelope;
-			CorrelationId = correlationId;
-			User = user;
-		}
+	public partial class GetCurrentDatabaseScavenge(IEnvelope envelope, Guid correlationId, ClaimsPrincipal user) : Message {
+		public readonly IEnvelope Envelope = Ensure.NotNull(envelope);
+		public readonly Guid CorrelationId = correlationId;
+		public readonly ClaimsPrincipal User = user;
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class ScavengeDatabaseGetCurrentResponse : Message {
-		public readonly Guid CorrelationId;
-		public readonly ScavengeResult Result;
-		public readonly string ScavengeId;
-
-		public ScavengeDatabaseGetCurrentResponse(Guid correlationId,
-			ScavengeResult result, string scavengeId) {
-			CorrelationId = correlationId;
-			Result = result;
-			ScavengeId = scavengeId;
-		}
+	public partial class ScavengeDatabaseGetCurrentResponse(
+		Guid correlationId,
+		ScavengeDatabaseGetCurrentResponse.ScavengeResult result,
+		string scavengeId) : Message {
+		public readonly Guid CorrelationId = correlationId;
+		public readonly ScavengeResult Result = result;
+		public readonly string ScavengeId = scavengeId;
 
 		public override string ToString() => $"Result: {Result}, ScavengeId: {ScavengeId}";
+
 		public enum ScavengeResult {
 			InProgress,
 			Stopped
@@ -1967,33 +1831,20 @@ public static partial class ClientMessage {
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class GetLastDatabaseScavenge : Message {
-		public readonly IEnvelope Envelope;
-		public readonly Guid CorrelationId;
-		public readonly ClaimsPrincipal User;
-
-		public GetLastDatabaseScavenge(IEnvelope envelope, Guid correlationId, ClaimsPrincipal user) {
-			Ensure.NotNull(envelope, nameof(envelope));
-			Envelope = envelope;
-			CorrelationId = correlationId;
-			User = user;
-		}
+	public partial class GetLastDatabaseScavenge(IEnvelope envelope, Guid correlationId, ClaimsPrincipal user) : Message {
+		public readonly IEnvelope Envelope = Ensure.NotNull(envelope);
+		public readonly Guid CorrelationId = correlationId;
+		public readonly ClaimsPrincipal User = user;
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class ScavengeDatabaseGetLastResponse : Message {
-		public readonly Guid CorrelationId;
-		public readonly ScavengeResult Result;
-		public readonly string ScavengeId;
-
-		public ScavengeDatabaseGetLastResponse(
-			Guid correlationId,
-			ScavengeResult result,
-			string scavengeId) {
-			CorrelationId = correlationId;
-			Result = result;
-			ScavengeId = scavengeId;
-		}
+	public partial class ScavengeDatabaseGetLastResponse(
+		Guid correlationId,
+		ScavengeDatabaseGetLastResponse.ScavengeResult result,
+		string scavengeId) : Message {
+		public readonly Guid CorrelationId = correlationId;
+		public readonly ScavengeResult Result = result;
+		public readonly string ScavengeId = scavengeId;
 
 		public override string ToString() => $"Result: {Result}, ScavengeId: {ScavengeId}";
 
@@ -2007,100 +1858,57 @@ public static partial class ClientMessage {
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class ScavengeDatabaseStartedResponse : Message {
-		public readonly Guid CorrelationId;
-		public readonly string ScavengeId;
-
-		public ScavengeDatabaseStartedResponse(Guid correlationId, string scavengeId) {
-			CorrelationId = correlationId;
-			ScavengeId = scavengeId;
-		}
-		public override string ToString() => $"ScavengeId: {ScavengeId}";
-	}
-
-	[DerivedMessage(CoreMessage.Client)]
-	public partial class ScavengeDatabaseInProgressResponse : Message {
-		public readonly Guid CorrelationId;
-		public readonly string ScavengeId;
-		public readonly string Reason;
-
-		public ScavengeDatabaseInProgressResponse(Guid correlationId, string scavengeId, string reason) {
-			CorrelationId = correlationId;
-			ScavengeId = scavengeId;
-			Reason = reason;
-		}
-
-		public override string ToString() => $"ScavengeId: {ScavengeId}, Reason: {Reason}";
-	}
-
-	[DerivedMessage(CoreMessage.Client)]
-	public partial class ScavengeDatabaseStoppedResponse : Message {
-		public readonly Guid CorrelationId;
-		public readonly string ScavengeId;
-
-		public ScavengeDatabaseStoppedResponse(Guid correlationId, string scavengeId) {
-			CorrelationId = correlationId;
-			ScavengeId = scavengeId;
-		}
+	public partial class ScavengeDatabaseStartedResponse(Guid correlationId, string scavengeId) : Message {
+		public readonly Guid CorrelationId = correlationId;
+		public readonly string ScavengeId = scavengeId;
 
 		public override string ToString() => $"ScavengeId: {ScavengeId}";
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class ScavengeDatabaseNotFoundResponse : Message {
-		public readonly Guid CorrelationId;
-		public readonly string ScavengeId;
-		public readonly string Reason;
-
-		public ScavengeDatabaseNotFoundResponse(Guid correlationId, string scavengeId, string reason) {
-			CorrelationId = correlationId;
-			ScavengeId = scavengeId;
-			Reason = reason;
-		}
+	public partial class ScavengeDatabaseInProgressResponse(Guid correlationId, string scavengeId, string reason) : Message {
+		public readonly Guid CorrelationId = correlationId;
+		public readonly string ScavengeId = scavengeId;
+		public readonly string Reason = reason;
 
 		public override string ToString() => $"ScavengeId: {ScavengeId}, Reason: {Reason}";
-
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class ScavengeDatabaseUnauthorizedResponse : Message {
-		public readonly Guid CorrelationId;
-		public readonly string ScavengeId;
-		public readonly string Reason;
+	public partial class ScavengeDatabaseStoppedResponse(Guid correlationId, string scavengeId) : Message {
+		public readonly Guid CorrelationId = correlationId;
+		public readonly string ScavengeId = scavengeId;
 
-		public ScavengeDatabaseUnauthorizedResponse(Guid correlationId, string scavengeId, string reason) {
-			CorrelationId = correlationId;
-			ScavengeId = scavengeId;
-			Reason = reason;
-		}
+		public override string ToString() => $"ScavengeId: {ScavengeId}";
+	}
+
+	[DerivedMessage(CoreMessage.Client)]
+	public partial class ScavengeDatabaseNotFoundResponse(Guid correlationId, string scavengeId, string reason) : Message {
+		public readonly Guid CorrelationId = correlationId;
+		public readonly string ScavengeId = scavengeId;
+		public readonly string Reason = reason;
+
 		public override string ToString() => $"ScavengeId: {ScavengeId}, Reason: {Reason}";
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class IdentifyClient : Message {
-		public readonly Guid CorrelationId;
-		public readonly int Version;
-		public readonly string ConnectionName;
+	public partial class ScavengeDatabaseUnauthorizedResponse(Guid correlationId, string scavengeId, string reason) : Message {
+		public readonly Guid CorrelationId = correlationId;
+		public readonly string ScavengeId = scavengeId;
+		public readonly string Reason = reason;
 
-		public IdentifyClient(Guid correlationId,
-			int version,
-			string connectionName) {
-			CorrelationId = correlationId;
-			Version = version;
-			ConnectionName = connectionName;
-		}
-
-		public override string ToString() {
-			return String.Format("Version: {0}, Connection Name: {1}", Version, ConnectionName);
-		}
+		public override string ToString() => $"ScavengeId: {ScavengeId}, Reason: {Reason}";
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
-	public partial class ClientIdentified : Message {
-		public readonly Guid CorrelationId;
+	public partial class IdentifyClient(
+		Guid correlationId,
+		int version,
+		string connectionName) : Message {
+		public readonly Guid CorrelationId = correlationId;
+		public readonly int Version = version;
+		public readonly string ConnectionName = connectionName;
 
-		public ClientIdentified(Guid correlationId) {
-			CorrelationId = correlationId;
-		}
+		public override string ToString() => $"Version: {Version}, Connection Name: {ConnectionName}";
 	}
 }

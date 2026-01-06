@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using FluentAssertions;
+using KurrentDB.Common.Configuration;
 using KurrentDB.Common.Exceptions;
 using KurrentDB.Common.Options;
 using KurrentDB.Core.Configuration;
@@ -199,10 +200,12 @@ public class ClusterVNodeOptionsTests {
 	[Fact]
 	public void can_set_gossip_seed_values_via_array() {
 		var config = new ConfigurationBuilder()
-			.AddInMemoryCollection([
-				new($"{KurrentPrefix}:GossipSeed:0", "127.0.0.1:1113"),
-				new($"{KurrentPrefix}:GossipSeed:1", "some-host:1114"),
-			])
+			.AddKurrentDefaultValues()
+			.AddSection(KurrentPrefix, b => b
+				.AddInMemoryCollection([
+					new("GossipSeed:0", "127.0.0.1:1113"),
+					new("GossipSeed:1", "some-host:1114"),
+				]))
 			.Build();
 
 		var options = ClusterVNodeOptions.FromConfiguration(config);
@@ -234,7 +237,7 @@ public class ClusterVNodeOptionsTests {
 			ClusterVNodeOptions.FromConfiguration(config));
 
 		Assert.Equal(
-			$"Failed to convert configuration value at '{KurrentPrefix}:GossipSeed' to type 'System.Net.EndPoint[]'. " + expectedError,
+			$"Failed to convert configuration value '{gossipSeed}' at '{KurrentPrefix}:GossipSeed' to type 'System.Net.EndPoint[]'. " + expectedError,
 			ex.Message);
 	}
 
@@ -253,7 +256,7 @@ public class ClusterVNodeOptionsTests {
 			ClusterVNodeOptions.FromConfiguration(config));
 
 		Assert.Equal(
-			$"Failed to convert configuration value at '{KurrentPrefix}:NodeIp' to type 'System.Net.IPAddress'. " + expectedError,
+			$"Failed to convert configuration value '{nodeIp}' at '{KurrentPrefix}:NodeIp' to type 'System.Net.IPAddress'. " + expectedError,
 			ex.Message);
 	}
 

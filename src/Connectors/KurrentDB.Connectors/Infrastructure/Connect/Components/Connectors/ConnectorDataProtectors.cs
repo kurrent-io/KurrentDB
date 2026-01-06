@@ -4,17 +4,30 @@
 using Kurrent.Connectors.Elasticsearch;
 using Kurrent.Connectors.Http;
 using Kurrent.Connectors.Kafka;
-using Kurrent.Connectors.KurrentDB;
 using Kurrent.Connectors.MongoDB;
 using Kurrent.Connectors.RabbitMQ;
 using Kurrent.Connectors.Serilog;
+using Kurrent.Connectors.Pulsar;
+using Kurrent.Connectors.Sql;
 using Kurrent.Surge.DataProtection;
 
 namespace KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
 
+#region sink
+
 [PublicAPI]
 public class SerilogSinkConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<SerilogSinkOptions>(dataProtector) {
     protected override string[] ConfigureSensitiveKeys() => [];
+}
+
+[PublicAPI]
+public class SqlSinkConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<SqlSinkOptions>(dataProtector) {
+    protected override string[] ConfigureSensitiveKeys() => [
+	    "ConnectionString",
+	    "Authentication:Password",
+	    "Authentication:ClientCertificate",
+	    "Authentication:CertificatePassword"
+    ];
 }
 
 [PublicAPI]
@@ -62,8 +75,25 @@ public class HttpSinkConnectorDataProtector(IDataProtector dataProtector) : Conn
 }
 
 [PublicAPI]
-public class KurrentDbSinkConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<KurrentDbSinkOptions>(dataProtector) {
+public class PulsarSinkConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<PulsarSinkOptions>(dataProtector) {
     protected override string[] ConfigureSensitiveKeys() => [
-        "ConnectionString"
+        "Authentication:Token"
     ];
 }
+
+#endregion
+
+#region source
+
+[PublicAPI]
+public class KafkaSourceConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<KafkaSourceOptions>(dataProtector) {
+    protected override string[] ConfigureSensitiveKeys() => [
+	    "Consumer:SaslUsername",
+	    "Consumer:SaslPassword",
+	    "Consumer:SslCaPem",
+	    "Consumer:SslCertificatePem",
+	    "Consumer:SslKeyPem"
+    ];
+}
+
+#endregion

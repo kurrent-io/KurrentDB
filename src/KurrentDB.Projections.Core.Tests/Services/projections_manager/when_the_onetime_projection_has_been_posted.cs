@@ -38,7 +38,7 @@ public class when_the_onetime_projection_has_been_posted<TLogFormat, TStreamId> 
 	[Test, Category("v8")]
 	public void it_cab_be_listed() {
 		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, null, false));
+			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, null));
 
 		Assert.AreEqual(
 			1,
@@ -50,7 +50,7 @@ public class when_the_onetime_projection_has_been_posted<TLogFormat, TStreamId> 
 	public void the_projection_status_can_be_retrieved() {
 		_manager.Handle(
 			new ProjectionManagementMessage.Command.GetStatistics(
-				_bus, null, _projectionName, false));
+				_bus, null, _projectionName));
 
 		Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
 		Assert.AreEqual(

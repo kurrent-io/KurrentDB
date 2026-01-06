@@ -21,7 +21,7 @@ namespace KurrentDB.Projections.Core.Tests.Services.projections_system {
 			protected override IEnumerable<WhenStep> When() {
 				yield return
 					new ProjectionManagementMessage.Command.GetStatistics(Envelope, ProjectionMode.AllNonTransient,
-						null, false)
+						null)
 					;
 			}
 
@@ -68,7 +68,7 @@ namespace KurrentDB.Projections.Core.Tests.Services.projections_system {
 				if (_startSystemProjections) {
 					yield return
 						new ProjectionManagementMessage.Command.GetStatistics(Envelope, ProjectionMode.AllNonTransient,
-							null, false)
+							null)
 						;
 					var statistics = HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Last();
 					foreach (var projection in statistics.Projections) {

@@ -5,10 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Reflection;
-using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Services.Transport.Tcp;
@@ -20,8 +17,8 @@ using ILogger = Serilog.ILogger;
 namespace KurrentDB.Core.Tests.Services.Transport.Tcp;
 
 [TestFixture]
-public class ssl_connections {
-	private static readonly ILogger Log = Serilog.Log.ForContext<ssl_connections>();
+public class ssl_connection {
+	private static readonly ILogger Log = Serilog.Log.ForContext<ssl_connection>();
 	private IPAddress _ip;
 	private int _port;
 
@@ -34,7 +31,7 @@ public class ssl_connections {
 	[Test]
 	public void should_connect_to_each_other_and_send_data() {
 		var serverEndPoint = new IPEndPoint(_ip, _port);
-		X509Certificate2 cert = GetServerCertificate();
+		X509Certificate2 cert = ssl_connections.GetServerCertificate();
 
 		var sent = new byte[1000];
 		new Random().NextBytes(sent);
@@ -98,55 +95,5 @@ public class ssl_connections {
 		clientSsl.Close("Normal close.");
 		Log.Information("Checking received data...");
 		Assert.AreEqual(sent, received.ToArray());
-	}
-
-	private static X509Certificate2 _root, _server, _otherServer, _untrusted;
-	public static X509Certificate2 GetRootCertificate() {
-		_root ??= GetCertificate("ca", loadKey: false);
-		return new X509Certificate2(_root);
-	}
-
-	public static X509Certificate2 GetServerCertificate() {
-		_server ??= GetCertificate("node1");
-		return new X509Certificate2(_server);
-	}
-
-	public static X509Certificate2 GetOtherServerCertificate() {
-		_otherServer ??= GetCertificate("node2");
-		return new X509Certificate2(_otherServer);
-	}
-
-	public static X509Certificate2 GetUntrustedCertificate() {
-		_untrusted ??= GetCertificate("untrusted");
-		return new X509Certificate2(_untrusted);
-	}
-
-	private static X509Certificate2 GetCertificate(string name, bool loadKey = true) {
-		const string resourcePath = "KurrentDB.Core.Tests.Services.Transport.Tcp.test_certificates";
-
-		var certBytes = LoadResource($"{resourcePath}.{name}.{name}.crt");
-		var certificate = X509Certificate2.CreateFromPem(Encoding.UTF8.GetString(certBytes));
-
-		if (!loadKey)
-			return certificate;
-
-		var keyBytes = LoadResource($"{resourcePath}.{name}.{name}.key");
-		using var rsa = RSA.Create();
-		rsa.ImportFromPem(Encoding.UTF8.GetString(keyBytes));
-
-		using X509Certificate2 certWithKey = certificate.CopyWithPrivateKey(rsa);
-
-		// recreate the certificate from a PKCS #12 bundle to work around: https://github.com/dotnet/runtime/issues/23749
-		return new X509Certificate2(certWithKey.ExportToPkcs12(), string.Empty, X509KeyStorageFlags.Exportable);
-	}
-
-	private static byte[] LoadResource(string resource) {
-		using var resourceStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resource);
-		if (resourceStream == null)
-			return null;
-
-		using var memStream = new MemoryStream();
-		resourceStream.CopyTo(memStream);
-		return memStream.ToArray();
 	}
 }

@@ -22,11 +22,7 @@ public readonly struct RecordReadResult {
 	}
 
 	public override string ToString() {
-		return string.Format("Success: {0}, NextPosition: {1}, RecordLength: {2}, LogRecord: {3}",
-			Success,
-			NextPosition,
-			RecordLength,
-			LogRecord);
+		return $"Success: {Success}, NextPosition: {NextPosition}, RecordLength: {RecordLength}, LogRecord: {LogRecord}";
 	}
 }
 
@@ -53,36 +49,22 @@ public readonly struct RawReadResult {
 }
 
 public readonly struct SeqReadResult {
-	public static readonly SeqReadResult Failure = new SeqReadResult(false, true, null, 0, -1, -1);
+	public static SeqReadResult Failure =>
+		default(SeqReadResult) with { RecordPrePosition = -1L, RecordPostPosition = -1L, Eof = true };
 
-	public readonly bool Success;
-	public readonly bool Eof;
-	public readonly ILogRecord LogRecord;
-	public readonly int RecordLength;
-	public readonly long RecordPrePosition;
-	public readonly long RecordPostPosition;
+	public required ILogRecord LogRecord { get; init; }
 
-	public SeqReadResult(bool success,
-		bool eof,
-		ILogRecord logRecord,
-		int recordLength,
-		long recordPrePosition,
-		long recordPostPosition) {
-		Success = success;
-		Eof = eof;
-		LogRecord = logRecord;
-		RecordLength = recordLength;
-		RecordPrePosition = recordPrePosition;
-		RecordPostPosition = recordPostPosition;
-	}
+	public required int RecordLength { get; init; }
+
+	public required bool Eof { get; init; }
+
+	public required long RecordPrePosition { get; init; }
+
+	public required long RecordPostPosition { get; init; }
+
+	public bool Success => LogRecord is not null;
 
 	public override string ToString() {
-		return string.Format(
-			"Success: {0}, RecordLength: {1}, RecordPrePosition: {2}, RecordPostPosition: {3}, LogRecord: {4}",
-			Success,
-			RecordLength,
-			RecordPrePosition,
-			RecordPostPosition,
-			LogRecord);
+		return $"Success: {Success}, RecordLength: {RecordLength}, RecordPrePosition: {RecordPrePosition}, RecordPostPosition: {RecordPostPosition}, LogRecord: {LogRecord}";
 	}
 }

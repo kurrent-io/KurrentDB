@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using KurrentDB.Core.Services.Transport.Http;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,27 +33,28 @@ public class Startup : IStartup {
 
 [TestFixture]
 public class clear_text_http_multiplexing_middleware {
-	private IWebHost _host;
+	private WebApplication _host;
 	private string _endpoint;
 
 	[SetUp]
-	public void SetUp() {
-		_host = new WebHostBuilder()
-			.UseKestrel(server => {
-				server.Listen(IPAddress.Loopback, 0, listenOptions => {
-					listenOptions.Use(next => new ClearTextHttpMultiplexingMiddleware(next).OnConnectAsync);
-				});
-			})
-			.UseStartup(new Startup())
-			.Build();
-
-		_host.Start();
-		_endpoint = _host.ServerFeatures.Get<IServerAddressesFeature>().Addresses.Single();
+	public async Task SetUp() {
+		var startup = new Startup();
+		var builder = WebApplication.CreateBuilder();
+		builder.WebHost.UseKestrel(server => {
+			server.Listen(IPAddress.Loopback, 0, listenOptions => {
+				listenOptions.Use(next => new ClearTextHttpMultiplexingMiddleware(next).OnConnectAsync);
+			});
+		});
+		startup.ConfigureServices(builder.Services);
+		_host = builder.Build();
+		startup.Configure(_host);
+		await _host.StartAsync();
+		_endpoint = _host.Urls.First();
 	}
 
 	[TearDown]
 	public Task Teardown() {
-		_host?.Dispose();
+		_host?.StopAsync();
 		return Task.CompletedTask;
 	}
 

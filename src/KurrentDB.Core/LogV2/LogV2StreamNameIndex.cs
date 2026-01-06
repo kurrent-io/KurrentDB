@@ -35,6 +35,9 @@ public class LogV2StreamNameIndex :
 	public void CancelReservations() {
 	}
 
+	// this receives a transaction's worth of prepares. they are not necessarily all for the same stream.
+	// once the logV3 code is removed it may be straight forward to have the index committer call this
+	// with prepares for one stream and remove the foreach
 	public void Confirm(IList<IPrepareLogRecord<string>> prepares, bool catchingUp, IIndexBackend<string> backend) {
 		if (catchingUp) {
 			// after the main index is caught up we will initialize the stream existence filter
@@ -44,12 +47,13 @@ public class LogV2StreamNameIndex :
 		if (prepares.Count == 0)
 			return;
 
-		var lastPrepare = prepares[prepares.Count - 1];
-
-		if (prepares[0].ExpectedVersion == ExpectedVersion.NoStream) {
-			_existenceFilter.Add(lastPrepare.EventStreamId);
+		foreach (var prepare in prepares) {
+			if (prepare.ExpectedVersion == ExpectedVersion.NoStream) {
+				_existenceFilter.Add(prepare.EventStreamId);
+			}
 		}
 
+		var lastPrepare = prepares[prepares.Count - 1];
 		_existenceFilter.CurrentCheckpoint = lastPrepare.LogPosition;
 	}
 
@@ -66,6 +70,8 @@ public class LogV2StreamNameIndex :
 			return;
 		}
 
+		// assumes all prepares in the explicit transaction are for the same stream, which is true.
+		// multi stream appends are always implicit transactions.
 		if (prepares.Count != 0 && commit.FirstEventNumber == 0) {
 			var lastPrepare = prepares[prepares.Count - 1];
 			_existenceFilter.Add(lastPrepare.EventStreamId);

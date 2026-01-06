@@ -67,8 +67,7 @@ public class
 	[Test]
 	public void projection_status_is_preparing() {
 		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, "projection1",
-				true));
+			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, "projection1"));
 		Assert.AreEqual(
 			ManagedProjectionState.Preparing,
 			_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().SingleOrDefault(
@@ -78,8 +77,7 @@ public class
 	[Test]
 	public void projection_id_is_latest() {
 		_manager.Handle(
-			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, "projection1",
-				true));
+			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, "projection1"));
 		Assert.AreEqual(
 			1,
 			_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().SingleOrDefault(

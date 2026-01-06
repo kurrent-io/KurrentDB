@@ -1,21 +1,59 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<EnableDynamicLoading>true</EnableDynamicLoading>
+		<IncludeHttpRuleProtos>true</IncludeHttpRuleProtos>
+		<NoWarn>$(NoWarn);DuckDBNET001</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-			<_Parameter1>$(AssemblyName).Tests</_Parameter1>
-		</AssemblyAttribute>
+		<InternalsVisibleTo Include="KurrentDB.SecondaryIndexing.Tests" />
+		<InternalsVisibleTo Include="KurrentDB.SecondaryIndexing.LoadTesting" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\KurrentDB.POC.ConnectedSubsystemsPlugin\KurrentDB.POC.ConnectedSubsystemsPlugin.csproj" />
-		<ProjectReference Include="..\KurrentDB.POC.IO.Core\KurrentDB.POC.IO.Core.csproj" />
+		<PackageReference Include="Grpc.Tools" />
+		<PackageReference Include="Kurrent.Quack" />
+		<PackageReference Include="Kurrent.Surge.Core" />
+		<PackageReference Include="Eventuous.Application" />
+		<PackageReference Include="Eventuous.Extensions.DependencyInjection" />
+		<PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" />
+		<PackageReference Include="System.Linq.Async">
+			<ExcludeAssets>compile</ExcludeAssets>
+		</PackageReference>
+		<PackageReference Include="Jint" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Remove="Storage\1_Schema.sql" />
+		<EmbeddedResource Include="Storage\1_Schema.sql" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- later consider separate project like schemareg.protocol' does -->
+		<Protobuf
+			ProtoRoot="../../proto/kurrentdb/protocol/v2"
+			Include="../../proto/kurrentdb/protocol/v2/**/*.proto"
+			Exclude="../../proto/kurrentdb/protocol/v2/indexes/errors.proto;../../proto/kurrentdb/protocol/v2/errors.proto;../../proto/kurrentdb/protocol/v2/rpc.proto;../../proto/kurrentdb/protocol/v2/registry/**/*.proto;../../proto/kurrentdb/protocol/v2/streams/**/*.proto"
+			Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"
+			GrpcServices="Both"
+			Access="Public"
+			AdditionalImportDirs="../../proto" />
+
+		<!-- google -->
+		<Protobuf
+			ProtoRoot="../../../proto/google"
+			Include="../../../proto/google/**/*.proto"
+			Link="proto\google\%(RecursiveDir)/%(FileName)%(Extension)"
+			Access="Internal"
+			ProtoCompile="false" />
+	</ItemGroup>
+
+		<ItemGroup>
+	  <ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
+	  <ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
 	</ItemGroup>
 
 </Project>

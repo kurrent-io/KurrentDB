@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Numerics;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Common.Utils;
@@ -308,6 +308,17 @@ public static partial class StorageMessage {
 	}
 
 	[DerivedMessage(CoreMessage.Storage)]
+	public partial class SecondaryIndexCommitted(string indexName, ResolvedEvent @event) : Message {
+		public readonly ResolvedEvent Event = @event;
+		public readonly string IndexName = indexName;
+	}
+
+	[DerivedMessage(CoreMessage.Storage)]
+	public partial class SecondaryIndexDeleted(Regex streamIdRegex) : Message {
+		public readonly Regex StreamIdRegex = streamIdRegex;
+	}
+
+	[DerivedMessage(CoreMessage.Storage)]
 	public partial class InMemoryEventCommitted : Message {
 		public readonly long CommitPosition;
 		public readonly EventRecord Event;
@@ -318,9 +329,12 @@ public static partial class StorageMessage {
 		}
 	}
 
+	// This message is a notification that primary indexing has reached the end of the transaction log.
+	// Normally this is indicated with an EventCommitted message that has the TfEof flag set to true,
+	// but this message is sent instead when (1) the end of the log is not an Event at all (2) after the initial index catchup.
 	[DerivedMessage(CoreMessage.Storage)]
-	public partial class TfEofAtNonCommitRecord : Message {
-		public TfEofAtNonCommitRecord() {
+	public partial class IndexedToEndOfTransactionFile : Message {
+		public IndexedToEndOfTransactionFile() {
 		}
 	}
 
@@ -439,12 +453,6 @@ public static partial class StorageMessage {
 
 	[DerivedMessage(CoreMessage.Storage)]
 	public partial class BatchLogExpiredMessages : Message {
-		public sealed override IBinaryInteger<int> Affinity { get; }
-
-		public BatchLogExpiredMessages(IBinaryInteger<int> affinity) {
-			ArgumentNullException.ThrowIfNull(affinity);
-			Affinity = affinity;
-		}
 	}
 
 	[DerivedMessage(CoreMessage.Storage)]

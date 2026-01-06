@@ -13,8 +13,8 @@ using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using EventStore.Plugins;
 using EventStore.Plugins.Subsystems;
-using JetBrains.Annotations;
 using KurrentDB.Common.Configuration;
+using KurrentDB.Common.Log;
 using KurrentDB.Common.Options;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Configuration;
@@ -25,7 +25,6 @@ using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.Util;
 using Microsoft.Extensions.Configuration;
 using Quickenshtein;
-using Serilog;
 
 namespace KurrentDB.Core;
 
@@ -134,6 +133,7 @@ public partial record ClusterVNodeOptions {
 		public int StatsPeriodSec { get; init; } = 30;
 
 		[Description("The number of threads to use for pool of worker services. Set to '0' to scale automatically (Default)")]
+		[Deprecated("This setting no longer has an effect. The workers automatically scale as necessary")]
 		public int WorkerThreads { get; init; } = 0;
 
 		[Description("Enables the tracking of various histograms in the backend, " +
@@ -152,12 +152,11 @@ public partial record ClusterVNodeOptions {
 					 "to stop reading duplicates.")]
 		public bool SkipIndexScanOnReads { get; init; } = false;
 
-		[Description("The maximum size of appends, in bytes. This is the total size of all events in the append request. " +
-					 "May not exceed 16MB.")]
-		public int MaxAppendSize { get; init; } = 1_024 * 1_024;
+		[Description("The maximum size of appends, in bytes. This is the total size of all records in the append request. May not exceed 256MB.")]
+		public int MaxAppendSize { get; init; } = TFConsts.ChunkSize;
 
-		[Description("The maximum size of an individual event in an append request received over gRPC or HTTP, in bytes.")]
-		public int MaxAppendEventSize { get; init; } = int.MaxValue;
+		[Description("The maximum size of an individual record in an append request received over gRPC or HTTP, in bytes.")]
+		public int MaxAppendEventSize { get; init; } = TFConsts.MaxLogRecordSize;
 
 		[Description("Disable Authentication, Authorization and TLS on all TCP/HTTP interfaces.")]
 		public bool Insecure { get; init; } = false;
@@ -174,33 +173,6 @@ public partial record ClusterVNodeOptions {
 
 		[Description("Disable telemetry data collection."), EnvironmentOnly("You can only opt-out of telemetry using Environment Variables")]
 		public bool TelemetryOptout { get; init; } = false;
-	}
-
-	[Description("Logging Options")]
-	public record LoggingOptions {
-		[Description("Path where to keep log files.")]
-		public string Log { get; init; } = Locations.DefaultLogDirectory;
-
-		[Description("The name of the log configuration file.")]
-		public string LogConfig { get; init; } = "logconfig.json";
-
-		[Description("Sets the minimum log level. For more granular settings, please edit logconfig.json.")]
-		public LogLevel LogLevel { get; init; } = LogLevel.Default;
-
-		[Description("Which format (plain, json) to use when writing to the console.")]
-		public LogConsoleFormat LogConsoleFormat { get; init; } = LogConsoleFormat.Plain;
-
-		[Description("Maximum size of each log file.")]
-		public int LogFileSize { get; init; } = 1024 * 1024 * 1024;
-
-		[Description("How often to rotate logs.")]
-		public RollingInterval LogFileInterval { get; init; } = RollingInterval.Day;
-
-		[Description("How many log files to hold on to.")]
-		public int LogFileRetentionCount { get; init; } = 31;
-
-		[Description("Disable log to disk.")]
-		public bool DisableLogFile { get; init; } = false;
 	}
 
 	[Description("Authentication/Authorization Options")]
@@ -283,7 +255,7 @@ public partial record ClusterVNodeOptions {
 		[Description("The number of nodes in the cluster.")]
 		public int ClusterSize { get; init; } = 1;
 
-		[Description("The node priority used during leader election.")]
+		[Description("The node priority used during leader election. This is a hint to the election algorithm but does not guarantee the outcome of the election.")]
 		public int NodePriority { get; init; } = 0;
 
 		[Description("Whether to use DNS lookup to discover other cluster nodes.")]
@@ -367,6 +339,7 @@ public partial record ClusterVNodeOptions {
 		public string Transform { get; init; } = "identity";
 
 		[Description("Keep everything in memory, no directories or files are created.")]
+		[Deprecated("MemDb is deprecated and will be removed in a future version. Please contact Kurrent if your use case requires it.")]
 		public bool MemDb { get; init; } = false;
 
 		[Description("Creates a Bloom filter file for each new index file to speed up index reads.")]
@@ -426,7 +399,11 @@ public partial record ClusterVNodeOptions {
 		public int InitializationThreads { get; init; } = 1;
 
 		[Description("The number of reader threads to use for processing reads. Set to '0' to scale automatically (Default)")]
+		[Deprecated($"The ReaderThreadsCount parameter has been deprecated as of version 26.0.0. Set the value in {nameof(ConcurrentReadsLimit)} instead if still desired.")]
 		public int ReaderThreadsCount { get; init; } = 0;
+
+		[Description("The maximum number of read requests that can be processed concurrently. Set to '0' for unlimited (Default)")]
+		public long ConcurrentReadsLimit { get; set; } = 0;
 
 		[Description("During large Index Merge operations, writes may be slowed down. Set this to the maximum " +
 					 "index file level for which automatic merges should happen. Merging indexes above this level " +
@@ -650,5 +627,14 @@ public partial record ClusterVNodeOptions {
 				);
 			}
 		}
+	}
+}
+
+internal static class DatabaseOptionsExtensions {
+	extension(ClusterVNodeOptions.DatabaseOptions self) {
+		public long InternalConcurrentReadsLimit => self switch {
+			{ ReaderThreadsCount: > 0, ConcurrentReadsLimit: 0 } => self.ReaderThreadsCount,
+			_ => self.ConcurrentReadsLimit,
+		};
 	}
 }

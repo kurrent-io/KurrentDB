@@ -4,10 +4,11 @@
 using Kurrent.Connectors.Elasticsearch;
 using Kurrent.Connectors.Http;
 using Kurrent.Connectors.Kafka;
-using Kurrent.Connectors.KurrentDB;
 using Kurrent.Connectors.MongoDB;
+using Kurrent.Connectors.Pulsar;
 using Kurrent.Connectors.RabbitMQ;
 using Kurrent.Connectors.Serilog;
+using Kurrent.Connectors.Sql;
 using KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
 using KurrentDB.Connectors.Planes.Management;
 using KurrentDB.Surge.Testing.Fixtures;
@@ -55,11 +56,12 @@ public class ConnectorsLicenseServiceTests(ITestOutputHelper output, LicensingFi
         var sut     = new ConnectorsLicenseService(Fixture.NewLicenseObservable(license), Fixture.LicensingLogger);
 
         sut.CheckLicense<HttpSink>().Should().BeTrue();
+        sut.CheckLicense<SqlSink>().Should().BeFalse();
         sut.CheckLicense<SerilogSink>().Should().BeTrue();
         sut.CheckLicense<KafkaSink>().Should().BeFalse();
         sut.CheckLicense<RabbitMqSink>().Should().BeFalse();
         sut.CheckLicense<MongoDbSink>().Should().BeFalse();
-        sut.CheckLicense<KurrentDbSink>().Should().BeFalse();
+        sut.CheckLicense<PulsarSink>().Should().BeFalse();
         sut.CheckLicense<ElasticsearchSink>().Should().BeFalse();
     }
 

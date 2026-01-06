@@ -24,7 +24,7 @@ public interface IIndexCommitterService<TStreamId> {
 	ValueTask Init(long checkpointPosition, CancellationToken token);
 	void Stop();
 	ValueTask<long> GetCommitLastEventNumber(CommitLogRecord record, CancellationToken token);
-	void AddPendingPrepare(IPrepareLogRecord<TStreamId>[] prepares, long postPosition);
+	void AddPendingPrepare(long transactionPosition, IPrepareLogRecord<TStreamId>[] prepares, long postPosition);
 	void AddPendingCommit(CommitLogRecord commit, long postPosition);
 }
 
@@ -141,6 +141,8 @@ public class IndexCommitterService<TStreamId> : IndexCommitterService, IIndexCom
 			var isTfEof = IsTfEof(transaction.PostPosition);
 			if (transaction.Prepares.Count > 0) {
 				await _indexCommitter.Commit(transaction.Prepares, message.NumStreams, message.EventStreamIndexes, isTfEof, true, token);
+			} else if (isTfEof) {
+				_publisher.Publish(new StorageMessage.IndexedToEndOfTransactionFile());
 			}
 
 			if (transaction.Commit is not null) {
@@ -162,8 +164,7 @@ public class IndexCommitterService<TStreamId> : IndexCommitterService, IIndexCom
 		=> _indexCommitter.GetCommitLastEventNumber(commit, token);
 
 	// Only called with complete implicit transactions
-	public void AddPendingPrepare(IPrepareLogRecord<TStreamId>[] prepares, long postPosition) {
-		var transactionPosition = prepares[0].TransactionPosition;
+	public void AddPendingPrepare(long transactionPosition, IPrepareLogRecord<TStreamId>[] prepares, long postPosition) {
 		var pendingTransaction = new PendingTransaction(transactionPosition, postPosition, prepares);
 		if (!_pendingTransactions.TryAdd(transactionPosition, pendingTransaction))
 			throw new InvalidOperationException($"A pending transaction already exists at position: {transactionPosition}");
@@ -224,7 +225,7 @@ public class IndexCommitterService<TStreamId> : IndexCommitterService, IIndexCom
 
 	internal class PendingTransaction {
 		public readonly List<IPrepareLogRecord<TStreamId>> Prepares = [];
-		private CommitLogRecord _commit;
+		private readonly CommitLogRecord _commit;
 
 		public CommitLogRecord Commit {
 			get { return _commit; }
@@ -244,14 +245,6 @@ public class IndexCommitterService<TStreamId> : IndexCommitterService, IIndexCom
 		public PendingTransaction(long transactionPosition, long postPosition, CommitLogRecord commit) {
 			TransactionPosition = transactionPosition;
 			PostPosition = postPosition;
-			_commit = commit;
-		}
-
-		public void AddPendingPrepares(IEnumerable<IPrepareLogRecord<TStreamId>> prepares) {
-			Prepares.AddRange(prepares);
-		}
-
-		public void SetPendingCommit(CommitLogRecord commit) {
 			_commit = commit;
 		}
 	}

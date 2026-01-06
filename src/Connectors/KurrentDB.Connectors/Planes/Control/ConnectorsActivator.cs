@@ -19,7 +19,7 @@ public class ConnectorsActivator(CreateConnector createConnector) {
     CreateConnector     CreateConnector { get; } = createConnector;
     ActivatedConnectors Connectors      { get; } = [];
 
-    public async Task<ActivateResult> Activate(
+    public async ValueTask<ActivateResult> Activate(
         ConnectorId connectorId,
         IDictionary<string, string?> settings,
         int revision,
@@ -30,13 +30,7 @@ public class ConnectorsActivator(CreateConnector createConnector) {
             if (connector.Revision == revision && connector.Instance.State is ConnectorState.Activating or ConnectorState.Running)
                 return ActivateResult.RevisionAlreadyRunning();
 
-            try {
-                await connector.Instance.DisposeAsync();
-                await connector.Instance.Stopped;
-            }
-            catch {
-                // ignore
-            }
+            await Teardown();
         }
 
         try {
@@ -51,14 +45,25 @@ public class ConnectorsActivator(CreateConnector createConnector) {
             return ActivateResult.Activated();
         }
         catch (ValidationException ex) {
+            await Teardown();
             return ActivateResult.InvalidConfiguration(ex);
         }
         catch (Exception ex) {
+            await Teardown();
             return ActivateResult.UnknownError(ex);
+        }
+
+        async ValueTask Teardown() {
+	        try {
+		        await connector.Instance.DisposeAsync();
+		        await connector.Instance.Stopped;
+	        } catch {
+		        // ignore
+	        }
         }
     }
 
-    public async Task<DeactivateResult> Deactivate(ConnectorId connectorId) {
+    public async ValueTask<DeactivateResult> Deactivate(ConnectorId connectorId) {
         if (!Connectors.TryRemove(connectorId, out var connector))
             return DeactivateResult.ConnectorNotFound();
 
@@ -72,7 +77,7 @@ public class ConnectorsActivator(CreateConnector createConnector) {
         }
     }
 
-    public async Task<DeactivateResult> WaitForDeactivation(ConnectorId connectorId) {
+    public async ValueTask<DeactivateResult> WaitForDeactivation(ConnectorId connectorId) {
         if (!Connectors.TryRemove(connectorId, out var connector))
             return DeactivateResult.ConnectorNotFound();
 

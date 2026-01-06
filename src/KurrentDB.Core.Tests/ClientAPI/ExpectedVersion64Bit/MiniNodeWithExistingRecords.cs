@@ -70,7 +70,8 @@ public abstract class MiniNodeWithExistingRecords<TLogFormat, TStreamId> : Speci
 		WriterCheckpoint = new MemoryMappedFileCheckpoint(writerCheckFilename, Checkpoint.Writer);
 		ChaserCheckpoint = new MemoryMappedFileCheckpoint(chaserCheckFilename, Checkpoint.Chaser);
 
-		Db = new TFChunkDb(TFChunkHelper.CreateDbConfig(dbPath, WriterCheckpoint, ChaserCheckpoint, TFConsts.ChunkSize));
+		var chunkSize = 1024 * 1024;
+		Db = new TFChunkDb(TFChunkHelper.CreateDbConfig(dbPath, WriterCheckpoint, ChaserCheckpoint, chunkSize: chunkSize));
 		await Db.Open();
 
 		// create DB
@@ -92,7 +93,7 @@ public abstract class MiniNodeWithExistingRecords<TLogFormat, TStreamId> : Speci
 		await Db.DisposeAsync();
 
 		// start node with our created DB
-		Node = new MiniNode<TLogFormat, TStreamId>(PathName, inMemDb: false, dbPath: dbPath);
+		Node = new MiniNode<TLogFormat, TStreamId>(PathName, inMemDb: false, dbPath: dbPath, chunkSize: chunkSize);
 		await Node.Start();
 
 		try {

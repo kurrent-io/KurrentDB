@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
+using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -12,14 +13,15 @@ using EventStore.Core.Services.Transport.Grpc.Cluster;
 using EventStore.Plugins;
 using EventStore.Plugins.Authentication;
 using EventStore.Plugins.Authorization;
+using Grpc.Net.Compression;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.DuckDB;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Grpc;
-using KurrentDB.Core.Services.Transport.Grpc.V2;
 using KurrentDB.Core.Services.Transport.Http;
 using KurrentDB.Core.TransactionLog.Chunks;
 using Microsoft.AspNetCore.Authentication;
@@ -30,6 +32,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using OpenTelemetry.Metrics;
@@ -43,11 +47,14 @@ using Operations = EventStore.Core.Services.Transport.Grpc.Operations;
 using ServerFeatures = KurrentDB.Core.Services.Transport.Grpc.ServerFeatures;
 
 #nullable enable
+
 namespace KurrentDB.Core;
 
-public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMessage.SystemReady>,
-	IHandle<SystemMessage.BecomeShuttingDown> {
-	readonly ClusterVNodeOptions _options;
+public class ClusterVNodeStartup<TStreamId>
+	: IInternalStartup,
+		IHandle<SystemMessage.SystemReady>,
+		IHandle<SystemMessage.BecomeShuttingDown> {
+	private readonly ClusterVNodeOptions _options;
 	private readonly IReadOnlyList<IPlugableComponent> _plugableComponents;
 	private readonly IPublisher _mainQueue;
 	private readonly IPublisher _monitoringQueue;
@@ -64,7 +71,7 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 
 	private bool _ready;
 	private readonly IAuthorizationProvider _authorizationProvider;
-	private readonly MultiQueuedHandler _httpMessageHandler;
+	private readonly IPublisher _httpMessageHandler;
 	private readonly string? _clusterDns;
 
 	public ClusterVNodeStartup(
@@ -73,7 +80,7 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 		IPublisher mainQueue,
 		IPublisher monitoringQueue,
 		ISubscriber mainBus,
-		MultiQueuedHandler httpMessageHandler,
+		IPublisher httpMessageHandler,
 		IAuthenticationProvider authenticationProvider,
 		IAuthorizationProvider authorizationProvider,
 		IExpiryStrategy expiryStrategy,
@@ -104,9 +111,7 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 	public void Configure(WebApplication app) {
 		_configureNode(app);
 
-		var forcePlainTextMetrics =
-			_metricsConfiguration.LegacyCoreNaming &&
-			_metricsConfiguration.LegacyProjectionsNaming;
+		var forcePlainTextMetrics = _metricsConfiguration is { LegacyCoreNaming: true, LegacyProjectionsNaming: true };
 
 		var internalDispatcher = new InternalDispatcherEndpoint(_mainQueue, _httpMessageHandler);
 		_mainBus.Subscribe(internalDispatcher);
@@ -127,40 +132,16 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 		app.UseAuthorization();
 		app.UseAntiforgery();
 
+		// provides a lazy DuckDB connection pool unique to the connection
+		app.UseDuckDb();
+
 		// allow all subsystems to register their legacy controllers before calling MapLegacyHttp
 		foreach (var component in _plugableComponents)
 			component.ConfigureApplication(app, _configuration);
 
 		_authenticationProvider.ConfigureEndpoints(app);
-		app.UseStaticFiles();
 
-		// Select an appropriate controller action and codec.
-		//    Success -> Add InternalContext (HttpEntityManager, urimatch, ...) to HttpContext
-		//    Fail -> Pipeline terminated with response.
-		app.UseMiddleware<KestrelToInternalBridgeMiddleware>();
-
-		// Looks up the InternalContext to perform the check.
-		// Terminal if auth check is not successful.
-		app.UseMiddleware<AuthorizationMiddleware>();
-
-		// Open telemetry currently guarded by our custom authz for consistency with stats
-		app.UseOpenTelemetryPrometheusScrapingEndpoint(x => {
-			if (x.Request.Path != "/metrics")
-				return false;
-
-			// Prometheus scrapes preferring application/openmetrics-text, but the prometheus exporter
-			// these days adds `_total` suffix to counters when outputting openmetrics format (as
-			// required by the spec). DisableTotalNameSuffixForCounters only affects plain text output.
-			// So if we are exporting legacy metrics, where we do not want the _total suffix for
-			// backwards compatibility, then force the exporter to respond with plain text metrics as it
-			// did in 23.10 and 24.10.
-			if (forcePlainTextMetrics)
-				x.Request.Headers.Remove("Accept");
-			return true;
-		});
-
-		// Internal dispatcher looks up the InternalContext to call the appropriate controller
-		app.Use((ctx, next) => internalDispatcher.InvokeAsync(ctx, next));
+		app.MapLegacyPipeline(_httpService, internalDispatcher, forcePlainTextMetrics);
 
 		app.MapGrpcService<PersistentSubscriptions>();
 		app.MapGrpcService<Users>();
@@ -171,7 +152,6 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 		app.MapGrpcService<ClientGossip>();
 		app.MapGrpcService<Monitoring>();
 		app.MapGrpcService<ServerFeatures>();
-		app.MapGrpcService<MultiStreamAppendService>();
 
 		// enable redaction service on unix sockets only
 		app.MapGrpcService<Redaction>().AddEndpointFilter(async (c, next) => {
@@ -210,6 +190,7 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 						};
 						o.RequireHttpsMetadata = false;
 					}
+
 					o.SaveTokens = true;
 					o.GetClaimsFromUserInfoEndpoint = true;
 					o.TokenValidationParameters.NameClaimType = JwtRegisteredClaimNames.Name;
@@ -220,7 +201,10 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 					};
 				});
 		} else {
-			authBuilder.AddCookie(x => x.LoginPath = "/ui/login");
+			authBuilder.AddCookie(options => {
+				options.LoginPath = "/ui/login";
+				options.AccessDeniedPath = "/ui/access-denied";
+			});
 		}
 
 		services.AddAuthorization();
@@ -238,6 +222,11 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 
 		// Other dependencies
 		services
+			.TryAddSingleton(TimeProvider.System);
+
+		services
+			.AddSingleton(_options)
+			.AddSingleton(_metricsConfiguration)
 			.AddSingleton<ISubscriber>(_mainBus)
 			.AddSingleton<IPublisher>(_mainQueue)
 			.AddSingleton<ISystemClient, SystemClient>()
@@ -256,19 +245,16 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 			.AddSingleton(new ClientGossip(_mainQueue, _authorizationProvider, _trackers.GossipTrackers.ProcessingRequestFromGrpcClient))
 			.AddSingleton(new Monitoring(_monitoringQueue))
 			.AddSingleton(new Redaction(_mainQueue, _authorizationProvider))
-			.AddSingleton(new MultiStreamAppendService(
-				publisher: _mainQueue,
-				authorizationProvider: _authorizationProvider,
-				appendTracker: _trackers.GrpcTrackers[MetricsConfiguration.GrpcMethod.StreamAppend],
-				maxAppendSize: Ensure.Positive(_options.Application.MaxAppendSize),
-				maxAppendEventSize: Ensure.Positive(_options.Application.MaxAppendEventSize),
-				chunkSize: _options.Database.ChunkSize))
 			.AddSingleton<ServerFeatures>();
 
 		// OpenTelemetry
 		services.AddOpenTelemetry()
+			// Configure resource ONCE at the top level - applies to ALL signals
+			.ConfigureResource(resource => resource
+				.AddService(_metricsConfiguration.ServiceName)
+				.AddEnvironmentVariableDetector())
 			.WithMetrics(meterOptions => meterOptions
-				.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(_metricsConfiguration.ServiceName))
+				.AddAspNetCoreInstrumentation()
 				.AddMeter(_metricsConfiguration.Meters)
 				.AddView(ViewConfig)
 				.AddInternalExporter()
@@ -285,15 +271,27 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 
 		// gRPC
 		services
-			.AddSingleton<RetryInterceptor>()
+			.AddSingleton<LogRetriesInterceptor>()
 			.AddGrpc(options => {
-				#if DEBUG
-				options.EnableDetailedErrors = true;
-				#endif
+				var hostEnvironment = services
+					.BuildServiceProvider()
+					.GetRequiredService<IHostEnvironment>();
 
-				options.Interceptors.Add<RetryInterceptor>();
+				options.EnableDetailedErrors = hostEnvironment.IsDevelopment()
+											|| hostEnvironment.IsStaging()
+											|| _options.DevMode.Dev;
+
+				options.Interceptors.Add<LogRetriesInterceptor>();
+
+				// Enable gzip compression
+				// The client must still need to opt-in
+				options.ResponseCompressionAlgorithm = "gzip";
+				options.ResponseCompressionLevel = CompressionLevel.Optimal;
+				options.CompressionProviders.Add(new GzipCompressionProvider(CompressionLevel.Optimal));
 			})
 			.AddServiceOptions<Streams<TStreamId>>(options => options.MaxReceiveMessageSize = TFConsts.EffectiveMaxLogRecordSize);
+
+		services.AddDuckDb();
 
 		// Ask the node itself to add DI registrations
 		_configureNodeServices(services);
@@ -301,34 +299,18 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 		// Let pluggable components to register their services
 		foreach (var component in _plugableComponents)
 			component.ConfigureServices(services, _configuration);
+
 		return;
 
 		MetricStreamConfiguration? ViewConfig(Instrument i) {
 			if (i.Name == MetricsBootstrapper.LogicalChunkReadDistributionName(_metricsConfiguration.ServiceName))
 				// 20 buckets, 0, 1, 2, 4, 8, ...
 				return new ExplicitBucketHistogramConfiguration { Boundaries = [0, .. Enumerable.Range(0, count: 19).Select(x => 1 << x)] };
-			if (i.Name.StartsWith(_metricsConfiguration.ServiceName + "-") && (i.Name.EndsWith("-latency-seconds") || i.Name.EndsWith("-latency") && i.Unit == "seconds"))
-				return new ExplicitBucketHistogramConfiguration {
-					Boundaries = [
-						0.001, //    1 ms
-						0.005, //    5 ms
-						0.01, //   10 ms
-						0.05, //   50 ms
-						0.1, //  100 ms
-						0.5, //  500 ms
-						1, // 1000 ms
-						5, // 5000 ms
-					]
-				};
+			if (i.Name.StartsWith(_metricsConfiguration.ServiceName + "-") &&
+				(i.Name.EndsWith("-latency-seconds") || i.Name.EndsWith("-latency") && i.Unit == "seconds"))
+				return MetricsConfiguration.LatencySecondsHistogramBucketConfiguration;
 			if (i.Name.StartsWith(_metricsConfiguration.ServiceName + "-") && (i.Name.EndsWith("-seconds") || i.Unit == "seconds"))
-				return new ExplicitBucketHistogramConfiguration {
-					Boundaries = [
-						0.000_001, // 1 microsecond
-						0.000_01, 0.000_1, 0.001, // 1 millisecond
-						0.01, 0.1, 1, // 1 second
-						10,
-					]
-				};
+				return MetricsConfiguration.SecondsHistogramBucketConfiguration;
 			return default;
 		}
 	}
@@ -337,13 +319,9 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 
 	public void Handle(SystemMessage.BecomeShuttingDown _) => _ready = false;
 
-	private class StatusCheck {
-		private readonly ClusterVNodeStartup<TStreamId> _startup;
-		private readonly int _livecode = 204;
-
-		public StatusCheck(ClusterVNodeStartup<TStreamId> startup) {
-			_startup = startup ?? throw new ArgumentNullException(nameof(startup));
-		}
+	private class StatusCheck(ClusterVNodeStartup<TStreamId> startup) {
+		private readonly ClusterVNodeStartup<TStreamId> _startup = startup ?? throw new ArgumentNullException(nameof(startup));
+		private const int Livecode = 204;
 
 		public void MapLiveness(RouteGroupBuilder builder) {
 			builder.MapMethods("live", [HttpMethod.Get, HttpMethod.Head], Handler);
@@ -353,7 +331,7 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 				context.Response.StatusCode = _startup._ready
 					? context.Request.Query.TryGetValue("liveCode", out var expected) && int.TryParse(expected, out var statusCode)
 						? statusCode
-						: _livecode
+						: Livecode
 					: 503;
 
 				return Task.CompletedTask;

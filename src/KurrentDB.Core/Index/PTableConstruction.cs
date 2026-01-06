@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
+using DotNext;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.DataStructures;
 using KurrentDB.Core.DataStructures.ProbabilisticFilter;
@@ -18,12 +19,12 @@ using MD5 = KurrentDB.Core.Hashing.MD5;
 namespace KurrentDB.Core.Index;
 
 public partial class PTable {
-	public static PTable FromFile(string filename, int initialReaders, int maxReaders,
+	public static PTable FromFile(string filename,
 		int cacheDepth, bool skipIndexVerify,
 		bool useBloomFilter = true,
 		int lruCacheSize = 1_000_000) {
 
-		return new PTable(filename, Guid.NewGuid(), initialReaders, maxReaders,
+		return new PTable(filename, Guid.NewGuid(),
 			cacheDepth, skipIndexVerify, useBloomFilter, lruCacheSize);
 	}
 
@@ -54,7 +55,7 @@ public partial class PTable {
 		}
 	}
 
-	public static PTable FromMemtable(IMemTable table, string filename, int initialReaders, int maxReaders,
+	public static PTable FromMemtable(IMemTable table, string filename,
 		int cacheDepth = 16,
 		bool skipIndexVerify = false,
 		bool useBloomFilter = true,
@@ -105,8 +106,7 @@ public partial class PTable {
 					// WRITE BLOOM FILTER ENTRY
 					if (bloomFilter != null && rec.Stream != previousHash) {
 						// we are creating a PTable of the same version as the Memtable. therefore the hash is the right format
-						var streamHash = rec.Stream;
-						bloomFilter.Add(GetSpan(ref streamHash));
+						bloomFilter.Add(Span.AsReadOnlyBytes(in rec.Stream));
 						previousHash = rec.Stream;
 					}
 
@@ -149,15 +149,13 @@ public partial class PTable {
 		}
 
 		Log.Debug("Dumped MemTable [{id}, {table} entries] in {elapsed}.", table.Id, table.Count, sw.Elapsed);
-		return new PTable(filename, table.Id, initialReaders, maxReaders, cacheDepth, skipIndexVerify, useBloomFilter, lruCacheSize);
+		return new PTable(filename, table.Id, cacheDepth, skipIndexVerify, useBloomFilter, lruCacheSize);
 	}
 
 	public static PTable MergeTo(
 		IList<PTable> tables,
 		string outputFile,
 		byte version,
-		int initialReaders,
-		int maxReaders,
 		int cacheDepth = 16,
 		bool skipIndexVerify = false,
 		bool useBloomFilter = true,
@@ -176,7 +174,7 @@ public partial class PTable {
 		var fileSizeUpToIndexEntries = GetFileSizeUpToIndexEntries(numIndexEntries, version);
 		if (tables.Count == 2)
 			return MergeTo2(tables, numIndexEntries, indexEntrySize, outputFile,
-				version, initialReaders, maxReaders, cacheDepth, skipIndexVerify, useBloomFilter, lruCacheSize); // special case
+				version, cacheDepth, skipIndexVerify, useBloomFilter, lruCacheSize); // special case
 
 		Log.Debug("PTables merge started.");
 		var watch = Stopwatch.StartNew();
@@ -227,8 +225,7 @@ public partial class PTable {
 
 						// WRITE BLOOM FILTER ENTRY
 						if (bloomFilter != null && current.Stream != previousHash) {
-							var streamHash = current.Stream;
-							bloomFilter.Add(GetSpan(ref streamHash));
+							bloomFilter.Add(Span.AsReadOnlyBytes(in current.Stream));
 							previousHash = current.Stream;
 						}
 
@@ -279,7 +276,7 @@ public partial class PTable {
 			Log.Debug(
 				"PTables merge finished in {elapsed} ([{entryCount}] entries merged into {dumpedEntryCount}).",
 				watch.Elapsed, string.Join(", ", tables.Select(x => x.Count)), dumpedEntryCount);
-			return new PTable(outputFile, Guid.NewGuid(), initialReaders, maxReaders, cacheDepth, skipIndexVerify, useBloomFilter, lruCacheSize);
+			return new PTable(outputFile, Guid.NewGuid(), cacheDepth, skipIndexVerify, useBloomFilter, lruCacheSize);
 		} finally {
 			foreach (var enumerableTable in enumerators) {
 				enumerableTable.Dispose();
@@ -287,25 +284,16 @@ public partial class PTable {
 		}
 	}
 
-	public static int GetIndexEntrySize(byte version) {
-		if (version == PTableVersions.IndexV1) {
-			return IndexEntryV1Size;
-		}
-
-		if (version == PTableVersions.IndexV2) {
-			return IndexEntryV2Size;
-		}
-
-		if (version == PTableVersions.IndexV3) {
-			return IndexEntryV3Size;
-		}
-
-		return IndexEntryV4Size;
-	}
+	private static int GetIndexEntrySize(byte version) => version switch {
+		PTableVersions.IndexV1 => IndexEntryV1Size,
+		PTableVersions.IndexV2 => IndexEntryV2Size,
+		PTableVersions.IndexV3 => IndexEntryV3Size,
+		_ => IndexEntryV4Size
+	};
 
 	private static PTable MergeTo2(IList<PTable> tables, long numIndexEntries, int indexEntrySize,
 		string outputFile,
-		byte version, int initialReaders, int maxReaders,
+		byte version,
 		int cacheDepth, bool skipIndexVerify,
 		bool useBloomFilter, int lruCacheSize) {
 
@@ -369,8 +357,7 @@ public partial class PTable {
 						// WRITE BLOOM FILTER ENTRY
 						if (bloomFilter != null && current.Stream != previousHash) {
 							// upgradeHash has already ensured the hash is in the right format for the target
-							var streamHash = current.Stream;
-							bloomFilter.Add(GetSpan(ref streamHash));
+							bloomFilter.Add(Span.AsReadOnlyBytes(in current.Stream));
 							previousHash = current.Stream;
 						}
 
@@ -415,7 +402,7 @@ public partial class PTable {
 			Log.Debug(
 				"PTables merge finished in {elapsed} ([{entryCount}] entries merged into {dumpedEntryCount}).",
 				watch.Elapsed, string.Join(", ", tables.Select(x => x.Count)), dumpedEntryCount);
-			return new PTable(outputFile, Guid.NewGuid(), initialReaders, maxReaders, cacheDepth, skipIndexVerify, useBloomFilter, lruCacheSize);
+			return new PTable(outputFile, Guid.NewGuid(), cacheDepth, skipIndexVerify, useBloomFilter, lruCacheSize);
 		} finally {
 			foreach (var enumerator in enumerators) {
 				enumerator.Dispose();
@@ -428,8 +415,6 @@ public partial class PTable {
 		string outputFile,
 		byte version,
 		Func<IndexEntry, CancellationToken, ValueTask<bool>> shouldKeep,
-		int initialReaders,
-		int maxReaders,
 		int cacheDepth = 16,
 		bool skipIndexVerify = false,
 		bool useBloomFilter = true,
@@ -475,8 +460,7 @@ public partial class PTable {
 								AppendRecordTo(bs, buffer, version, enumerator.Current, indexEntrySize);
 								// WRITE BLOOM FILTER ENTRY
 								if (bloomFilter != null && current.Stream != previousHash) {
-									var streamHash = current.Stream;
-									bloomFilter.Add(GetSpan(ref streamHash));
+									bloomFilter.Add(Span.AsReadOnlyBytes(in current.Stream));
 									previousHash = current.Stream;
 								}
 								keptCount++;
@@ -546,7 +530,7 @@ public partial class PTable {
 				"PTable scavenge finished in {elapsed} ({droppedCount} entries removed, {keptCount} remaining).",
 				watch.Elapsed,
 				droppedCount, keptCount);
-			var scavengedTable = new PTable(outputFile, Guid.NewGuid(), initialReaders, maxReaders, cacheDepth, skipIndexVerify, useBloomFilter, lruCacheSize);
+			var scavengedTable = new PTable(outputFile, Guid.NewGuid(), cacheDepth, skipIndexVerify, useBloomFilter, lruCacheSize);
 			return (scavengedTable, table._size - scavengedTable._size);
 		} catch (Exception) {
 			try {
@@ -620,7 +604,7 @@ public partial class PTable {
 				midpoints.Add(new Midpoint(previousKey, previousIndex));
 			} else {
 				fs.Seek(PTableHeader.Size + index * indexEntrySize, SeekOrigin.Begin);
-				fs.Read(buffer, 0, indexKeySize);
+				fs.ReadExactly(buffer, 0, indexKeySize);
 				IndexEntryKey key = new IndexEntryKey(BitConverter.ToUInt64(buffer, 8),
 					BitConverter.ToInt64(buffer, 0));
 				midpoints.Add(new Midpoint(key, index));

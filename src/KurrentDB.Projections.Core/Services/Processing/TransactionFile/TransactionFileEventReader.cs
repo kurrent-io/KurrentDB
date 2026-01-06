@@ -141,15 +141,15 @@ public class TransactionFileEventReader : EventReader,
 		_publisher.Publish(CreateReadTimeoutMessage(correlationId, streamId));
 	}
 
-	private Message CreateReadTimeoutMessage(Guid correlationId, string streamId) {
+	private TimerMessage.Schedule CreateReadTimeoutMessage(Guid correlationId, string streamId) {
 		return TimerMessage.Schedule.Create(
 			TimeSpan.FromMilliseconds(ESConsts.ReadRequestTimeout),
 			new SendToThisEnvelope(this),
 			new ProjectionManagementMessage.Internal.ReadTimeout(correlationId, streamId));
 	}
 
-	private Message CreateReadEventsMessage(Guid correlationId) {
-		return new ClientMessage.ReadAllEventsForward(
+	private ClientMessage.ReadAllEventsForward CreateReadEventsMessage(Guid correlationId) {
+		return new(
 			correlationId, correlationId, new SendToThisEnvelope(this), _from.CommitPosition,
 			_from.PreparePosition == -1 ? _from.CommitPosition : _from.PreparePosition, _maxReadCount,
 			_resolveLinkTos, false, null, ReadAs, replyOnExpired: false);
@@ -196,7 +196,7 @@ public class TransactionFileEventReader : EventReader,
 		if (isDeletedStreamEvent)
 			_publisher.Publish(
 				new ReaderSubscriptionMessage.EventReaderPartitionDeleted(
-					EventReaderCorrelationId, deletedPartitionStreamId, source: this.GetType(), lastEventNumber: -1,
+					EventReaderCorrelationId, deletedPartitionStreamId, source: this.GetType(),
 					deleteEventOrLinkTargetPosition: resolvedEvent.EventOrLinkTargetPosition,
 					deleteLinkOrEventPosition: resolvedEvent.LinkOrEventPosition,
 					positionStreamId: positionEvent.EventStreamId, positionEventNumber: positionEvent.EventNumber));

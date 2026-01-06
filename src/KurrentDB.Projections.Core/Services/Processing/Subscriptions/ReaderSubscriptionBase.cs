@@ -79,10 +79,6 @@ public class ReaderSubscriptionBase {
 		_logger = Log.ForContext<ReaderSubscriptionBase>();
 	}
 
-	public string Tag {
-		get { return _tag; }
-	}
-
 	public Guid SubscriptionId {
 		get { return _subscriptionId; }
 	}
@@ -228,18 +224,6 @@ public class ReaderSubscriptionBase {
 				_subscriptionMessageSequenceNumber++));
 		// self unsubscribe
 		_publisher.Publish(new ReaderSubscriptionManagement.Unsubscribe(_subscriptionId));
-	}
-
-	public void Handle(ReaderSubscriptionMessage.EventReaderPartitionEof message) {
-		if (_eofReached)
-			return; // self eof-reached, but reader is still running
-
-		var eventCheckpointTag = _positionTagger.MakeCheckpointTag(_positionTracker.LastTag, message);
-
-		_publisher.Publish(
-			new EventReaderSubscriptionMessage.PartitionEofReached(
-				_subscriptionId, eventCheckpointTag, message.Partition,
-				_subscriptionMessageSequenceNumber++));
 	}
 
 	public void Handle(ReaderSubscriptionMessage.EventReaderNotAuthorized message) {

@@ -34,8 +34,6 @@ public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId> : Kur
 		_bus.Subscribe(
 			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.CheckpointSuggested>());
 		_bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.EofReached>());
-		_bus.Subscribe(
-			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.PartitionEofReached>());
 		_bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.PartitionDeleted>());
 		_bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.ProgressChanged>());
 		_bus.Subscribe(
@@ -47,7 +45,7 @@ public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId> : Kur
 
 		AwakeService = new AwakeService();
 		_bus.Subscribe<StorageMessage.EventCommitted>(AwakeService);
-		_bus.Subscribe<StorageMessage.TfEofAtNonCommitRecord>(AwakeService);
+		_bus.Subscribe<StorageMessage.IndexedToEndOfTransactionFile>(AwakeService);
 		_bus.Subscribe<AwakeServiceMessage.SubscribeAwake>(AwakeService);
 		_bus.Subscribe<AwakeServiceMessage.UnsubscribeAwake>(AwakeService);
 		_bus.Subscribe(new UnwrapEnvelopeHandler());

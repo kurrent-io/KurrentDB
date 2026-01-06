@@ -1,5 +1,5 @@
 ---
-order: 1
+order: 3
 ---
 
 # Embedded Web UI
@@ -22,31 +22,55 @@ The dashboard is the embedded UI entry point. There, you find the following info
 - **Cluster status**: Shows the cluster status and the number of nodes in the cluster.
 - **Cluster nodes**: Shows the list of nodes in the cluster and their status.
 - **Node resources**: Shows the node resources utilization, including CPU, memory, and disk usage.
-- **Node metrics**: Shows the node metrics, including the number of events written, read, and the number of open connections.
+- **Node metrics**: <Badge type="info" vertical="middle" text="License Required"/> Shows the node metrics, including the number of events written, read, and the number of open connections.
+
+### Database stats
+
+<Badge type="info" vertical="middle" text="License Required"/>
+
+When [secondary indexes](../features/indexes/secondary.md) are enabled, the _Stats_ page shows additional information about the database, including:
+- **Stream categories**: Shows stream categories in the database with additional information such as:
+    - **Event types**: Event types per stream category with number of events per event type, as well as earliest and latest event timestamps.
+    - **Streams**: Number of streams per stream category
+    - **Events**: Number of events per stream category
+    - **Avg. stream length**: Average stream length per stream category
+- **Explicit transactions**: Shows if the database has event records that are part of explicit transactions, with the number of explicit transactions found. Writing explicit transactions is deprecated and not supported by the current client APIs.
+- **Stream stats**: Shows the longest stream per category.
+
+![Embedded UI Stats page](images/ui/stats.png)
 
 ### Logs
 
 <Badge type="info" vertical="middle" text="License Required"/>
 
-![Embedded UI Logs page](images/ui/logs.png)
-
 The _Logs_ section shows the recent log messages of the cluster node. It's possible to filter log messages by log level and message content. The logs are streamed to the UI in real-time, so you can see the latest log messages as they are generated. The log stream starts at the moment you open the page, and there's no option to find olg logs on that page.
 
 Use the _Logs_ page to observe the cluster node's activity and troubleshoot any issues that may arise.
+
+![Embedded UI Logs page](images/ui/logs.png)
 
 ### Configuration
 
 <Badge type="info" vertical="middle" text="License Required"/>
 
-![Embedded UI configuration page](images/ui/config.png)
-
 On the _Configuration_ page, you can view the current configuration of the cluster node. The configuration is displayed in a tabular format, and you can filter options by name, value, and source. The page shows description for each option, its current value, and the source from which it was set (e.g., default, environment variable, or configuration file).
 
 The configuration is read-only, and you cannot modify it from the UI.
 
+![Embedded UI configuration page](images/ui/config.png)
+
+### Plugins
+
+<Badge type="info" vertical="middle" text="License Required"/>
+
+The _Plugins_ page shows the list of plugins and subsystems loaded in the cluster node. For each plugin, you can see its name, version, and description. It allows you to easily verify which plugins are active in the cluster node.
+
+![Embedded UI Plugins page](images/ui/plugins.png)
+
 ### Other Pages
 
 Other pages of the embedded UI are:
+- **Query**: Has a code editor field where you can create transient and short-lived queries to analyze your event streams quickly. Refer to the [Queries UI](../features/queries/ui.md) documentation for more details.
 - **License**: Shows the license status of the cluster node. You can view the license type, expiration date, and other details.
 - **Navigator**: Has a link to the Kurrent Navigator app download page, where you can also find supported features table in comparison with the legacy admin UI.
 - **Legacy UI**: Has a link to the legacy web UI, which is still available for now. The legacy UI will be deprecated in the future, and you should use the new embedded UI or Kurrent Navigator instead.

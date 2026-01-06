@@ -1,0 +1,70 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using KurrentDB.Core.TransactionLog;
+using KurrentDB.Core.TransactionLog.LogRecords;
+
+namespace KurrentDB.Core.Tests.Services.Storage;
+
+public class FakeInMemoryTfReader : ITransactionFileReader {
+	private Dictionary<long, ILogRecord> _records = new();
+	private int _recordOffset;
+
+	public int NumReads { get; private set; }
+
+	public FakeInMemoryTfReader(int recordOffset) {
+		_recordOffset = recordOffset;
+	}
+
+	public void AddRecord(ILogRecord record, long position) {
+		_records.Add(position, record);
+	}
+
+	public ValueTask<SeqReadResult> TryReadNext<TCursor>(TCursor cursor, CancellationToken token)
+		where TCursor : IReadCursor {
+		NumReads++;
+
+		SeqReadResult result;
+		if (_records.ContainsKey(cursor.Position)) {
+			var pos = cursor.Position;
+			cursor.Position = pos + _recordOffset;
+			result = new() {
+				Eof = false,
+				LogRecord = _records[pos],
+				RecordLength = _recordOffset,
+				RecordPrePosition = pos,
+				RecordPostPosition = pos + _recordOffset,
+			};
+		} else {
+			result = SeqReadResult.Failure;
+		}
+
+		return new(result);
+	}
+
+	public ValueTask<SeqReadResult> TryReadPrev<TCursor>(TCursor cursor, CancellationToken token)
+		where TCursor : IReadCursor
+		=> ValueTask.FromException<SeqReadResult>(new NotImplementedException());
+
+	public ValueTask<RecordReadResult> TryReadAt(long position, bool couldBeScavenged, CancellationToken token) {
+		NumReads++;
+
+		RecordReadResult result;
+		if (_records.ContainsKey(position)) {
+			result = new RecordReadResult(true, 0, _records[position], 0);
+		} else {
+			result = new RecordReadResult(false, 0, _records[position], 0);
+		}
+
+		return new(result);
+	}
+
+	public ValueTask<bool> ExistsAt(long position, CancellationToken token)
+		=> token.IsCancellationRequested
+			? ValueTask.FromCanceled<bool>(token)
+			: ValueTask.FromResult(_records.ContainsKey(position));
+}

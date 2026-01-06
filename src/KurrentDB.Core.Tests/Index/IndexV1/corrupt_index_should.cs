@@ -23,7 +23,7 @@ public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
 		}
 
 		string pTableFilename = GetTempFilePath();
-		var pTable = PTable.FromMemtable(memTable, pTableFilename, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, depth);
+		var pTable = PTable.FromMemtable(memTable, pTableFilename, depth);
 		pTable.Dispose();
 		return pTableFilename;
 	}
@@ -184,7 +184,7 @@ public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
 		bool skipIndexVerify) {
 		string ptableFileName = ConstructPTable(version);
 		CorruptPTableFile(ptableFileName, version, "notMultipleIndexEntrySize");
-		Assert.Throws<CorruptIndexException>(() => PTable.FromFile(ptableFileName, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, depth, skipIndexVerify));
+		Assert.Throws<CorruptIndexException>(() => PTable.FromFile(ptableFileName, depth, skipIndexVerify));
 	}
 
 	[TestCase(PTableVersions.IndexV2, false)]
@@ -197,7 +197,7 @@ public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
 		bool skipIndexVerify) {
 		string ptableFileName = ConstructPTable(version);
 		CorruptPTableFile(ptableFileName, version, "zeroOutMiddleEntries");
-		Assert.Throws<CorruptIndexException>(() => PTable.FromFile(ptableFileName, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, depth, skipIndexVerify));
+		Assert.Throws<CorruptIndexException>(() => PTable.FromFile(ptableFileName, depth, skipIndexVerify));
 	}
 
 
@@ -207,7 +207,7 @@ public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
 		bool skipIndexVerify) {
 		string ptableFileName = ConstructPTable(version);
 		CorruptPTableFile(ptableFileName, version, "midpointItemIndexesNotAscendingOrder");
-		Assert.Throws<CorruptIndexException>(() => PTable.FromFile(ptableFileName, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, depth, skipIndexVerify));
+		Assert.Throws<CorruptIndexException>(() => PTable.FromFile(ptableFileName, depth, skipIndexVerify));
 	}
 
 	[TestCase(PTableVersions.IndexV2, true)]
@@ -218,7 +218,7 @@ public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
 		string ptableFileName = ConstructPTable(version);
 		CorruptPTableFile(ptableFileName, version, "zeroOutMiddleEntries");
 		//loading with a depth of 1 should load only 2 midpoints (first and last index entry)
-		PTable pTable = PTable.FromFile(ptableFileName, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, 1, skipIndexVerify);
+		PTable pTable = PTable.FromFile(ptableFileName, 1, skipIndexVerify);
 		Assert.Throws<MaybeCorruptIndexException>(() =>
 			pTable.GetRange(GetOriginalHash(numIndexEntries / 4, version), 1, 1));
 		pTable.Dispose();
@@ -232,7 +232,7 @@ public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
 		string ptableFileName = ConstructPTable(version);
 		CorruptPTableFile(ptableFileName, version, "maxOutMiddleEntries");
 		//loading with a depth of 1 should load only 2 midpoints (first and last index entry)
-		PTable pTable = PTable.FromFile(ptableFileName, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, 1, skipIndexVerify);
+		PTable pTable = PTable.FromFile(ptableFileName, 1, skipIndexVerify);
 		Assert.Throws<MaybeCorruptIndexException>(() =>
 			pTable.GetRange(GetOriginalHash(numIndexEntries / 4, version), 1, 1));
 		pTable.Dispose();
@@ -246,7 +246,7 @@ public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
 		string ptableFileName = ConstructPTable(version);
 		CorruptPTableFile(ptableFileName, version, "zeroOutMiddleEntries");
 		//loading with a depth of 1 should load only 2 midpoints (first and last index entry)
-		PTable pTable = PTable.FromFile(ptableFileName, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, 1, skipIndexVerify);
+		PTable pTable = PTable.FromFile(ptableFileName, 1, skipIndexVerify);
 		IndexEntry entry;
 		Assert.Throws<MaybeCorruptIndexException>(() =>
 			// changed 2 to 4 here because the corruption actually removes the stream at /2, so it isn't in the bloom filter
@@ -262,7 +262,7 @@ public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
 		string ptableFileName = ConstructPTable(version);
 		CorruptPTableFile(ptableFileName, version, "maxOutMiddleEntries");
 		//loading with a depth of 1 should load only 2 midpoints (first and last index entry)
-		PTable pTable = PTable.FromFile(ptableFileName, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, 1, skipIndexVerify);
+		PTable pTable = PTable.FromFile(ptableFileName, 1, skipIndexVerify);
 		IndexEntry entry;
 		Assert.Throws<MaybeCorruptIndexException>(() =>
 			pTable.TryGetLatestEntry(GetOriginalHash(numIndexEntries / 4, version), out entry));
@@ -277,7 +277,7 @@ public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
 		string ptableFileName = ConstructPTable(version);
 		CorruptPTableFile(ptableFileName, version, "zeroOutMiddleEntries");
 		//loading with a depth of 1 should load only 2 midpoints (first and last index entry)
-		PTable pTable = PTable.FromFile(ptableFileName, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, 1, skipIndexVerify);
+		PTable pTable = PTable.FromFile(ptableFileName, 1, skipIndexVerify);
 		IndexEntry entry;
 		Assert.Throws<MaybeCorruptIndexException>(() =>
 			pTable.TryGetOldestEntry(GetOriginalHash(numIndexEntries / 4, version), out entry));
@@ -292,7 +292,7 @@ public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
 		string ptableFileName = ConstructPTable(version);
 		CorruptPTableFile(ptableFileName, version, "maxOutMiddleEntries");
 		//loading with a depth of 1 should load only 2 midpoints (first and last index entry)
-		PTable pTable = PTable.FromFile(ptableFileName, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, 1, skipIndexVerify);
+		PTable pTable = PTable.FromFile(ptableFileName, 1, skipIndexVerify);
 		IndexEntry entry;
 		Assert.Throws<MaybeCorruptIndexException>(() =>
 			pTable.TryGetOldestEntry(GetOriginalHash(numIndexEntries / 4, version), out entry));
@@ -307,7 +307,7 @@ public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
 		string ptableFileName = ConstructPTable(version);
 		CorruptPTableFile(ptableFileName, version, "zeroOutMiddleEntries");
 		//loading with a depth of 1 should load only 2 midpoints (first and last index entry)
-		PTable pTable = PTable.FromFile(ptableFileName, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, 1, skipIndexVerify);
+		PTable pTable = PTable.FromFile(ptableFileName, 1, skipIndexVerify);
 		long position;
 		Assert.Throws<MaybeCorruptIndexException>(() =>
 			pTable.TryGetOneValue(GetOriginalHash(numIndexEntries / 4, version), 1, out position));
@@ -322,7 +322,7 @@ public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
 		string ptableFileName = ConstructPTable(version);
 		CorruptPTableFile(ptableFileName, version, "maxOutMiddleEntries");
 		//loading with a depth of 1 should load only 2 midpoints (first and last index entry)
-		PTable pTable = PTable.FromFile(ptableFileName, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, 1, skipIndexVerify);
+		PTable pTable = PTable.FromFile(ptableFileName, 1, skipIndexVerify);
 		long position;
 		Assert.Throws<MaybeCorruptIndexException>(() =>
 			pTable.TryGetOneValue(GetOriginalHash(numIndexEntries / 4, version), 1, out position));
@@ -334,7 +334,7 @@ public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
 	public void throw_exception_on_invalid_ptable_filenumber_in_footer(byte version, bool skipIndexVerify) {
 		string ptableFileName = ConstructPTable(version);
 		CorruptPTableFile(ptableFileName, version, "footerFileType");
-		Assert.Throws<CorruptIndexException>(() => PTable.FromFile(ptableFileName, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, depth, skipIndexVerify));
+		Assert.Throws<CorruptIndexException>(() => PTable.FromFile(ptableFileName, depth, skipIndexVerify));
 	}
 
 	[TestCase(PTableVersions.IndexV4, false)]
@@ -342,7 +342,7 @@ public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
 	public void throw_exception_on_header_footer_version_mismatch(byte version, bool skipIndexVerify) {
 		string ptableFileName = ConstructPTable(version);
 		CorruptPTableFile(ptableFileName, version, "footerVersion");
-		Assert.Throws<CorruptIndexException>(() => PTable.FromFile(ptableFileName, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, depth, skipIndexVerify));
+		Assert.Throws<CorruptIndexException>(() => PTable.FromFile(ptableFileName, depth, skipIndexVerify));
 	}
 
 	[TestCase(PTableVersions.IndexV4, false)]
@@ -350,7 +350,7 @@ public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
 	public void throw_exception_if_negative_index_entries_size(byte version, bool skipIndexVerify) {
 		string ptableFileName = ConstructPTable(version);
 		CorruptPTableFile(ptableFileName, version, "negativeIndexEntriesSize");
-		Assert.Throws<CorruptIndexException>(() => PTable.FromFile(ptableFileName, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, depth, skipIndexVerify));
+		Assert.Throws<CorruptIndexException>(() => PTable.FromFile(ptableFileName, depth, skipIndexVerify));
 	}
 
 	[TestCase(PTableVersions.IndexV4, false)]
@@ -358,7 +358,7 @@ public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
 	public void throw_exception_if_less_than_2_midpoints_cached(byte version, bool skipIndexVerify) {
 		string ptableFileName = ConstructPTable(version);
 		CorruptPTableFile(ptableFileName, version, "lessThan2Midpoints");
-		Assert.Throws<CorruptIndexException>(() => PTable.FromFile(ptableFileName, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, depth, skipIndexVerify));
+		Assert.Throws<CorruptIndexException>(() => PTable.FromFile(ptableFileName, depth, skipIndexVerify));
 	}
 
 	[TestCase(PTableVersions.IndexV4, false)]
@@ -366,7 +366,7 @@ public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
 	public void throw_exception_if_more_midpoints_than_index_entries(byte version, bool skipIndexVerify) {
 		string ptableFileName = ConstructPTable(version);
 		CorruptPTableFile(ptableFileName, version, "moreMidpointsThanIndexEntries");
-		Assert.Throws<CorruptIndexException>(() => PTable.FromFile(ptableFileName, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, depth, skipIndexVerify));
+		Assert.Throws<CorruptIndexException>(() => PTable.FromFile(ptableFileName, depth, skipIndexVerify));
 	}
 
 	[TestCase(PTableVersions.IndexV4, false)]
@@ -377,7 +377,7 @@ public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
 		if (corrupt)
 			CorruptBloomFilter(PTable.GenBloomFilterFilename(ptableFileName));
 
-		var table = PTable.FromFile(ptableFileName, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, depth, skipIndexVerify: true);
+		var table = PTable.FromFile(ptableFileName, depth, skipIndexVerify: true);
 		Assert.AreEqual(!corrupt, table.HasBloomFilter);
 	}
 }

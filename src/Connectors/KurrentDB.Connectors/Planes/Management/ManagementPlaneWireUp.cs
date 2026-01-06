@@ -6,6 +6,7 @@
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Google.Protobuf.Reflection;
 using KurrentDB.Connect.Connectors;
 using KurrentDB.Connect.Schema;
 using KurrentDB.Connectors.Infrastructure;
@@ -13,11 +14,11 @@ using KurrentDB.Connectors.Management.Contracts.Events;
 using KurrentDB.Connectors.Management.Contracts.Queries;
 using EventStore.Plugins.Licensing;
 using FluentValidation;
+using Google.Rpc;
 using Kurrent.Surge;
 using Kurrent.Surge.Connectors;
 using Kurrent.Surge.DataProtection;
 using KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
-using KurrentDB.Connectors.Infrastructure.Eventuous;
 using KurrentDB.Connectors.Infrastructure.System.Node;
 using KurrentDB.Connectors.Management;
 using KurrentDB.Connectors.Planes.Management.Data;
@@ -26,6 +27,7 @@ using KurrentDB.Connectors.Planes.Management.Migrations;
 using KurrentDB.Connectors.Planes.Management.Projectors;
 using KurrentDB.Connectors.Planes.Management.Queries;
 using KurrentDB.Core;
+using KurrentDB.Surge.Eventuous;
 using KurrentDB.Surge.Producers;
 using KurrentDB.Surge.Readers;
 using Microsoft.AspNetCore.Builder;
@@ -52,8 +54,18 @@ public static class ManagementPlaneWireUp {
         services.AddConnectorsManagementSchemaRegistration();
 
         services
-            .AddGrpc(x => x.EnableDetailedErrors = true)
-            .AddJsonTranscoding();
+            .AddGrpc()
+            .AddJsonTranscoding(options => {
+                options.TypeRegistry = TypeRegistry.FromMessages(
+                    BadRequest.Descriptor,
+                    ErrorInfo.Descriptor,
+                    DebugInfo.Descriptor,
+                    PreconditionFailure.Descriptor,
+                    QuotaFailure.Descriptor,
+                    ResourceInfo.Descriptor,
+                    RetryInfo.Descriptor
+                );
+            });
 
         services.PostConfigure<GrpcJsonTranscodingOptions>(options => {
             // https://github.com/dotnet/aspnetcore/issues/50401
@@ -124,7 +136,7 @@ public static class ManagementPlaneWireUp {
                     .ProducerId("EventuousProducer")
                     .Create();
 
-                return new SystemEventStore(reader, producer);
+                return new(reader, producer);
             })
             .AddCommandService<ConnectorsCommandApplication, ConnectorEntity>();
 

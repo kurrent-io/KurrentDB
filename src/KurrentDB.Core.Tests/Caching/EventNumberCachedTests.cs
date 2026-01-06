@@ -14,7 +14,7 @@ public class EventNumberCachedTests {
 	public void size_is_measured_correctly() {
 		var mem = MemUsage.Calculate(() =>
 			new EventNumberCached[] { // we need an array to force an allocation
-				new(10, 123)
+				new(10, 123, null)
 			}, out _);
 
 		Assert.AreEqual(mem, EventNumberCached.ApproximateSize + MemSizer.ArraySize);
@@ -25,10 +25,11 @@ public class EventNumberCachedTests {
 		var lruCache = new LRUCache<string, EventNumberCached>(string.Empty, 1, (_, _) => 0);
 
 		// initialize any underlying data structures (the dictionary in this case)
-		lruCache.Put("test", new EventNumberCached(0, 0));
+		lruCache.Put("test", new EventNumberCached(0, 0, null));
+		lruCache.Put("test2", new EventNumberCached(0, 0, null));
 
 		var mem = MemUsage.Calculate(() =>
-			lruCache.Put(new string('x', 10), new EventNumberCached(10, 23)));
+			lruCache.Put(new string('x', 10), new EventNumberCached(10, 23, null)));
 
 		// internally, dictionary items are initialized in batches of ~4
 		// to keep the test simple, we just subtract the dictionary entry size
@@ -44,10 +45,11 @@ public class EventNumberCachedTests {
 		var lruCache = new LRUCache<long, EventNumberCached>(string.Empty, 1, (_, _) => 0);
 
 		// initialize any underlying data structures (the dictionary in this case)
-		lruCache.Put(123, new EventNumberCached(0, 0));
+		lruCache.Put(123, new EventNumberCached(0, 0, null));
+		lruCache.Put(124, new EventNumberCached(0, 0, null));
 
 		var mem = MemUsage.Calculate(() =>
-			lruCache.Put(456, new EventNumberCached(10, 123)));
+			lruCache.Put(456, new EventNumberCached(10, 123, null)));
 
 		// internally, dictionary items are initialized in batches of ~4
 		// to keep the test simple, we just subtract the dictionary entry size

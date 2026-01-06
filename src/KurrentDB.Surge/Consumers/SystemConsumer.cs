@@ -51,12 +51,14 @@ public class SystemConsumer : IConsumer {
 
 		Sequence = new SequenceIdGenerator();
 
+        var interceptors = new LinkedList<InterceptorModule>(options.Interceptors);
+
 		if (options.Logging.Enabled)
-			options.Interceptors.TryAddUniqueFirst(new ConsumerLogger());
+			interceptors.TryAddUniqueFirst(new ConsumerLogger());
 
-        Options.Interceptors.TryAddUniqueFirst(new ConsumerMetrics());
+        interceptors.TryAddUniqueFirst(new ConsumerMetrics());
 
-        Interceptors = new(Options.Interceptors, logger);
+        Interceptors = new(interceptors, logger);
 
 		Intercept = evt => Interceptors.Intercept(evt);
 
@@ -98,15 +100,15 @@ public class SystemConsumer : IConsumer {
 
 	internal SystemConsumerOptions Options { get; }
 
-    ISystemClient                      Client               { get; }
-    ResiliencePipeline                 ResiliencePipeline   { get; }
-    Deserialize                        Deserialize          { get; }
-    CheckpointController               CheckpointController { get; }
-    ICheckpointStore                   CheckpointStore      { get; }
-    Channel<ReadResponse>              InboundChannel       { get; }
-    SequenceIdGenerator                Sequence             { get; }
-	InterceptorController              Interceptors         { get; }
-	Func<ConsumerLifecycleEvent, Task> Intercept            { get; }
+    ISystemClient                           Client               { get; }
+    ResiliencePipeline                      ResiliencePipeline   { get; }
+    Deserialize                             Deserialize          { get; }
+    CheckpointController                    CheckpointController { get; }
+    ICheckpointStore                        CheckpointStore      { get; }
+    Channel<ReadResponse>                   InboundChannel       { get; }
+    SequenceIdGenerator                     Sequence             { get; }
+	InterceptorController                   Interceptors         { get; }
+	Func<ConsumerLifecycleEvent, ValueTask> Intercept            { get; }
 
 	public string                        ConsumerId       => Options.ConsumerId;
     public string                        ClientId         => Options.ClientId;
@@ -127,10 +129,11 @@ public class SystemConsumer : IConsumer {
 
 		await CheckpointStore.Initialize(Cancellator.Token);
 
-        StartPosition = await CheckpointStore
-            .ResolveStartPosition(Options.StartPosition, Options.InitialPosition, cancellatorToken);
+		StartPosition = await CheckpointStore
+			.ResolveStartPosition(Options.StartPosition, Options.InitialPosition, cancellatorToken)
+			;
 
-        if (Options.Filter.IsStreamIdFilter) {
+		if (Options.Filter.IsStreamIdFilter) {
             var startRevision = await Client.Management.GetStreamRevision(StartPosition.ToPosition() ?? Position.Start, stoppingToken);
 
             await Client.Subscriptions.SubscribeToStream(
@@ -216,7 +219,7 @@ public class SystemConsumer : IConsumer {
 		}
     }
 
-    public async Task<IReadOnlyList<RecordPosition>> Track(SurgeRecord record, CancellationToken cancellationToken = default) {
+    public async ValueTask<IReadOnlyList<RecordPosition>> Track(SurgeRecord record, CancellationToken cancellationToken = default) {
 	    if (record.Value is ReadResponse.CheckpointReceived or ReadResponse.SubscriptionCaughtUp)
 		    return CheckpointController.TrackedPositions;
 
@@ -225,7 +228,7 @@ public class SystemConsumer : IConsumer {
         return trackedPositions;
     }
 
-    public async Task<IReadOnlyList<RecordPosition>> Commit(SurgeRecord record, CancellationToken cancellationToken = default) {
+    public async ValueTask<IReadOnlyList<RecordPosition>> Commit(SurgeRecord record, CancellationToken cancellationToken = default) {
 	    if (record.Value is ReadResponse.CheckpointReceived or ReadResponse.SubscriptionCaughtUp)
 		    return CheckpointController.TrackedPositions;
 
@@ -237,10 +240,10 @@ public class SystemConsumer : IConsumer {
     /// <summary>
     /// Commits all tracked positions that are ready to be committed (complete sequences).
     /// </summary>
-    public async Task<IReadOnlyList<RecordPosition>> CommitAll(CancellationToken cancellationToken = default) =>
+    public async ValueTask<IReadOnlyList<RecordPosition>> CommitAll(CancellationToken cancellationToken = default) =>
         await CheckpointController.CommitAll();
 
-    public async Task<IReadOnlyList<RecordPosition>> GetLatestPositions(CancellationToken cancellationToken = default) =>
+    public async ValueTask<IReadOnlyList<RecordPosition>> GetLatestPositions(CancellationToken cancellationToken = default) =>
 		await CheckpointStore.LoadPositions(cancellationToken);
 
     public async ValueTask DisposeAsync() {

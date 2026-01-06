@@ -1,0 +1,127 @@
+syntax = "proto3";
+
+package kurrentdb.protocol.registry.v2;
+
+option csharp_namespace    = "KurrentDB.Protocol.Registry.V2";
+option java_package        = "io.kurrentdb.protocol.registry.v2";
+option java_multiple_files = true;
+
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+import "registry/shared.proto";
+
+message AutoRegistrationSettings {
+  bool enabled = 1;
+}
+
+message ValidationSettings {
+  bool enabled = 1;
+}
+
+message CompatibilitySettings {
+  bool              enforce = 1;
+  CompatibilityMode mode    = 2;
+}
+
+message DataFormatSettings {
+  bool         enforce = 1;
+  SchemaDataFormat format  = 2;
+}
+
+enum StreamFilterType {
+  CONSUME_FILTER_TYPE_UNSPECIFIED = 0;
+  CONSUME_FILTER_TYPE_REGEX       = 1;
+  CONSUME_FILTER_TYPE_CATEGORY    = 2;
+}
+
+message StreamFilter {
+  StreamFilterType filter_type = 1;
+  string           expression  = 2;
+}
+
+message StreamFilterSettings {
+  bool         enforce = 1;
+  StreamFilter filter  = 2;
+}
+
+message SchemaGroupDetails {
+  string              name        = 1;
+  optional string     description = 2;
+  map<string, string> tags        = 3;
+
+  //  bool              disable_auto_registration = 4;   // Controls automatic registration for the schema group
+  //  bool              disable_validation        = 5;   // Controls validation for the schema group
+  //  bool              enforce_data_format       = 6;   // Controls data format enforcement for the schema group
+  //  bool              enforce_compatibility     = 7;   // Controls compatibility enforcement for the schema group
+  //  SchemaFormat      data_format               = 8;   // Format of all schemas in the group
+  //  CompatibilityMode compatibility             = 9;   // Compatibility mode enforced for all schemas in the group
+  //  StreamFilter      stream_filter             = 10;  // Filter that restricts the schemas to a specific set of streams
+
+  AutoRegistrationSettings auto_registration = 11;  // Settings for automatic registration
+  ValidationSettings       validation        = 12;  // Settings for schema validation
+  CompatibilitySettings    compatibility     = 13;  // Settings for compatibility mode
+  DataFormatSettings       data_format       = 14;  // Settings for data format enforcement
+  StreamFilterSettings     stream_filter     = 15;  // Settings for stream filtering
+}
+
+message SchemaGroup {
+  // Unique identifier of the schema group
+  string group_id = 1;
+  // Details of the schema group
+  SchemaGroupDetails        details    = 2;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+// Command to create a new schema group with optional identifier and required configuration
+message CreateSchemaGroupRequest {
+  optional string    group_id = 1;  // Unique identifier of the schema group
+  SchemaGroupDetails details  = 2;  // Details of the schema group to be created
+}
+
+// Response returned after successful schema group creation
+message CreateSchemaGroupResponse {
+  string group_id = 1;  // Unique identifier of the schema group
+}
+
+// Command to update an existing schema group's details with field masking support
+message UpdateSchemaGroupRequest {
+  // Unique identifier of the schema group
+  string group_id = 1;
+  // Details of the schema group to be updated
+  SchemaGroupDetails details = 2;
+  // Specifies which fields to update. See https://protobuf.dev/reference/protobuf/google.protobuf/#field-mask
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+// Response returned after successful schema group details update
+message UpdateSchemaGroupResponse {}
+
+// Command to remove an existing schema group by identifier
+message DeleteSchemaGroupRequest {
+  string group_id = 1;  // Unique identifier of the schema group
+}
+
+// Empty response returned after successful schema group deletion
+message DeleteSchemaGroupResponse {}
+
+// Query to retrieve a specific schema group by identifier
+message GetSchemaGroupRequest {
+  string group_id = 1;
+}
+
+// Response containing the details of the requested schema group
+message GetSchemaGroupResponse {
+  SchemaGroup group = 1;
+}
+
+// Query to list schema groups with optional name prefix filter
+message ListSchemaGroupsRequest {
+  google.protobuf.StringValue group_name_prefix = 1;
+}
+
+// Response containing a list of schema groups matching the query
+message ListSchemaGroupsResponse {
+  repeated SchemaGroup groups = 1;
+}
