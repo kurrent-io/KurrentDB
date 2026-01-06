@@ -2,12 +2,12 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics.Metrics;
-using System.Text.Json;
 using DotNext;
 using DotNext.Threading;
 using DuckDB.NET.Data;
 using DuckDB.NET.Data.DataChunk.Writer;
 using Jint;
+using Jint.Native;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 using Kurrent.Surge.Schema.Serializers.Json;
@@ -45,7 +45,6 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 	private readonly UserIndexSql<TField> _sql;
 	private readonly object _skip;
 	private ulong _sequenceId;
-	private readonly JsonSerializerOptions _serializerOptions;
 
 	private TFPos _lastPosition;
 	private Appender _appender;
@@ -81,11 +80,13 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 		_engine.SetValue("skip", new object());
 		_skip = _engine.Evaluate("skip");
 
-		_evaluator = new JsRecordEvaluator(_engine);
+		var serializerOptions = SystemJsonSchemaSerializerOptions.Default;
+
+		_evaluator = new JsRecordEvaluator(_engine, serializerOptions);
+
 		_filterExpression = jsEventFilter is not "" ? jsEventFilter : null;
 		_fieldSelectorExpression = jsFieldSelector is not "" ? jsFieldSelector : null;
 
-		_serializerOptions = SystemJsonSchemaSerializerOptions.Default;
 		_jsRecord = new JsRecord();
 
 		_connection = db.Open();
@@ -150,24 +151,26 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 		return true;
 	}
 
-	private bool CanHandleEvent(ResolvedEvent resolvedEvent, out TField? field) {
+	bool CanHandleEvent(ResolvedEvent resolvedEvent, out TField? field) {
 		field = default;
 
 		try {
-			_jsRecord.Remap(resolvedEvent, ++_sequenceId, _serializerOptions);
+			_evaluator.MapRecord(resolvedEvent, ++_sequenceId);
 
-			if (_filterExpression is not null && !_evaluator.Match(_jsRecord, _filterExpression))
+			if (!_evaluator.Match(_filterExpression))
 				return false;
 
-			if (_fieldSelectorExpression is not null) {
-				var fieldValue = _evaluator.Select(_jsRecord, _fieldSelectorExpression);
-				if (_skip.Equals(fieldValue))
-					return false;
-				field = (TField)TField.ParseFrom(fieldValue);
-			}
+			var fieldValue = _evaluator.Select(_fieldSelectorExpression);
+			if (fieldValue == JsValue.Null)
+				return true;
+
+			if (_skip.Equals(fieldValue))
+				return false;
+
+			field = (TField)TField.ParseFrom(fieldValue);
 
 			return true;
-		} catch(Exception ex) {
+		} catch (Exception ex) {
 			Log.Error(ex, "User index: {index} failed to process event: {eventNumber}@{streamId} ({position})",
 				IndexName, resolvedEvent.OriginalEventNumber, resolvedEvent.OriginalStreamId, resolvedEvent.OriginalPosition);
 			return false;

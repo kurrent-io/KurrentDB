@@ -32,41 +32,41 @@ public class JsRecordPosition {
 }
 
 public class JsRecord {
-	public string           Id         { get; set; } = "";
-	public ulong            Sequence   { get; set; }
-	public bool             Redacted   { get; set; }
-	public DateTime         Timestamp  { get; set; }
-	public JsSchemaInfo     Schema     { get; set; } = new();
-	public JsRecordPosition Position   { get; set; } = new();
+	public string           Id        { get; set; } = "";
+	public ulong            Sequence  { get; set; }
+	public bool             Redacted  { get; set; }
+	public DateTime         Timestamp { get; set; }
+	public JsSchemaInfo     Schema    { get; set; } = new();
+	public JsRecordPosition Position  { get; set; } = new();
 
-	public JsonNode? Value      { get => field ??= DecodeValue(); set; }
-	public JsonNode? Properties { get => field ??= DecodeProperties(); set; }
+	public JsonNode? Value      { get => field ??= DeserializeValue(); set; }
+	public JsonNode? Properties { get => field ??= DeserializeProps(); set; }
 
 	public bool HasValue => Value is not null;
 
-	Func<JsonNode?> DecodeValue { get; set; }      = null!;
-	Func<JsonNode?> DecodeProperties { get; set; } = null!;
+	Func<JsonNode?> DeserializeValue { get; set; } = null!;
+	Func<JsonNode?> DeserializeProps { get; set; } = null!;
 
-	public void Remap(ResolvedEvent re, ulong sequence, JsonSerializerOptions options) {
-		Id         = $"{re.OriginalEvent.EventId}";
+	internal void Remap(EventRecord evt, ulong sequence, JsonSerializerOptions options) {
+		Id         = $"{evt.EventId}";
 		Sequence   = sequence;
-		Redacted   = re.OriginalEvent.Flags.HasFlag(PrepareFlags.IsRedacted);
-		Timestamp  = re.OriginalEvent.TimeStamp;
+		Redacted   = evt.Flags.HasFlag(PrepareFlags.IsRedacted);
+		Timestamp  = evt.TimeStamp;
 
-		Schema.Name   = re.OriginalEvent.EventType;
-		Schema.Format = Enum.Parse<JsSchemaFormat>(re.OriginalEvent.SchemaFormat);
+		Schema.Name   = evt.EventType;
+		Schema.Format = Enum.Parse<JsSchemaFormat>(evt.SchemaFormat);
 
-		DecodeValue = () => Schema.Format == JsSchemaFormat.Json && !Redacted && !re.OriginalEvent.Data.IsEmpty
-			? JsonSerializer.Deserialize<JsonNode>(re.OriginalEvent.Data.Span, options)
-			: null;
-		DecodeProperties = () => !re.OriginalEvent.Metadata.IsEmpty
-			? JsonSerializer.Deserialize<JsonNode>(re.OriginalEvent.Metadata.Span, options)
-			: null;
+		DeserializeValue = !evt.Data.IsEmpty && !Redacted && Schema.Format == JsSchemaFormat.Json
+			? () => JsonSerializer.Deserialize<JsonNode>(evt.Data.Span, options)
+			: static () => null;
 
-		Position.LogPosition    = re.OriginalEvent.LogPosition;
-		Position.Stream         = re.OriginalEvent.EventStreamId;
-		Position.StreamRevision = re.OriginalEvent.EventNumber;
+		DeserializeProps = !evt.Metadata.IsEmpty
+			? () => JsonSerializer.Deserialize<JsonNode>(evt.Metadata.Span, options)
+			: static () => null;
 
+		Position.LogPosition    = evt.LogPosition;
+		Position.Stream         = evt.EventStreamId;
+		Position.StreamRevision = evt.EventNumber;
 
 		Value      = null;
 		Properties = null;

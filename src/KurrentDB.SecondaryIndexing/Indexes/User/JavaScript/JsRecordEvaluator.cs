@@ -4,58 +4,51 @@
 // ReSharper disable InconsistentNaming
 // ReSharper disable ArrangeTypeMemberModifiers
 
+using System.Runtime.CompilerServices;
+using System.Text.Json;
 using Jint;
 using Jint.Native;
 using Jint.Native.Function;
+using KurrentDB.Core.Data;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.User.JavaScript;
 
-public interface IObjectEvaluator<in TRecord> {
-	/// <summary>
-	/// Evaluates a predicate expression against the record.
-	/// </summary>
-	/// <param name="record">The record to evaluate against</param>
-	/// <param name="predicateExpression">Expression that returns a boolean</param>
-	/// <returns>True if the predicate passes, false otherwise</returns>
-	bool Match(TRecord record, string predicateExpression);
+public class JsRecordEvaluator : IDisposable {
+	readonly Engine _engine;
+	readonly JsonSerializerOptions _serializerOptions;
+	readonly Dictionary<string, Function> _compiledFunctions;
 
-	/// <summary>
-	/// Evaluates a selector expression against the record.
-	/// </summary>
-	/// <param name="record">The record to evaluate against</param>
-	/// <param name="selectorExpression">Expression that selects a value</param>
-	/// <returns>The selected value</returns>
-	JsValue Select(TRecord record, string selectorExpression);
-}
+	readonly JsRecord _record;
+	readonly JsValue _jsValue;
 
-public class JsRecordEvaluator(Engine engine) : IObjectEvaluator<JsRecord>, IDisposable {
-	readonly Dictionary<string, Function> CompiledFunctions = new();
+	public JsRecordEvaluator(Engine engine, JsonSerializerOptions serializerOptions) {
+		_engine            = engine;
+		_serializerOptions = serializerOptions;
+		_compiledFunctions = new();
 
-	public bool Match(JsRecord record, string predicateExpression) {
-		var jsRecordValue = JsValue.FromObject(engine, record);
-		var function = GetOrCompile(predicateExpression);
-
-		return function.Call(jsRecordValue).AsBoolean();
+		_record  = new();
+		_jsValue = JsValue.FromObjectWithType(engine, _record, typeof(JsRecord));
 	}
 
-	public JsValue Select(JsRecord record, string selectorExpression) {
-		var jsRecordValue = JsValue.FromObject(engine, record);
-		var function = GetOrCompile(selectorExpression);
+	public void MapRecord(ResolvedEvent re, ulong sequence) =>
+		_record.Remap(re.OriginalEvent, sequence, _serializerOptions);
 
-		return function.Call(jsRecordValue);
-	}
+	public bool Match(string? predicateExpression) =>
+		!string.IsNullOrEmpty(predicateExpression) && GetOrCompile(predicateExpression).Call(_jsValue).AsBoolean();
 
+	public JsValue Select(string? selectorExpression) =>
+		!string.IsNullOrEmpty(selectorExpression) ? GetOrCompile(selectorExpression).Call(_jsValue) : JsValue.Null;
+
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	Function GetOrCompile(string expression) {
-		if (CompiledFunctions.TryGetValue(expression, out var function)) return function;
-
-		function = engine.Evaluate($"({expression})").AsFunctionInstance();
-		CompiledFunctions[expression] = function;
-
+		if (_compiledFunctions.TryGetValue(expression, out var function)) return function;
+		function = _engine.Evaluate($"({expression})").AsFunctionInstance();
+		_compiledFunctions[expression] = function;
 		return function;
 	}
 
 	public void Dispose() {
-		CompiledFunctions.Clear();
+		_compiledFunctions.Clear();
 		GC.SuppressFinalize(this);
 	}
 }
