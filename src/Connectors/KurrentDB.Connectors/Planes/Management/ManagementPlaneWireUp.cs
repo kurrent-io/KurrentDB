@@ -65,8 +65,6 @@ public static class ManagementPlaneWireUp {
                     ResourceInfo.Descriptor,
                     RetryInfo.Descriptor
                 );
-
-                options.JsonSettings.IgnoreDefaultValues = true;
             });
 
         services.PostConfigure<GrpcJsonTranscodingOptions>(options => {
