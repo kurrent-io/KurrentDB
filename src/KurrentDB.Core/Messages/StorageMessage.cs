@@ -329,9 +329,12 @@ public static partial class StorageMessage {
 		}
 	}
 
+	// This message is a notification that primary indexing has reached the end of the transaction log.
+	// Normally this is indicated with an EventCommitted message that has the TfEof flag set to true,
+	// but this message is sent instead when (1) the end of the log is not an Event at all (2) after the initial index catchup.
 	[DerivedMessage(CoreMessage.Storage)]
-	public partial class TfEofAtNonCommitRecord : Message {
-		public TfEofAtNonCommitRecord() {
+	public partial class IndexedToEndOfTransactionFile : Message {
+		public IndexedToEndOfTransactionFile() {
 		}
 	}
 

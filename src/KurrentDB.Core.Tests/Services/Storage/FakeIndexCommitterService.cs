@@ -26,7 +26,7 @@ public class FakeIndexCommitterService<TStreamId> : IIndexCommitterService<TStre
 		}
 	}
 
-	public void AddPendingPrepare(IPrepareLogRecord<TStreamId>[] prepares, long postPosition) {
+	public void AddPendingPrepare(long transactionPosition, IPrepareLogRecord<TStreamId>[] prepares, long postPosition) {
 		if (prepares == null)
 			throw new InvalidOperationException("Cannot commit a null transaction");
 		if (prepares.Length <= 0)
