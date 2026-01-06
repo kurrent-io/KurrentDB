@@ -4,7 +4,7 @@
 using System.Diagnostics.Metrics;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Data;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.SecondaryIndexing.Diagnostics;
 
@@ -15,22 +15,22 @@ public class SecondaryIndexProgressTracker {
 	private readonly Histogram<double> _histogram;
 	private readonly TimeProvider _clock;
 	private readonly string _indexName;
+	private readonly Func<(long, DateTime)> _getLastAppendedRecord;
+	private readonly ILogger<SecondaryIndexProgressTracker> _log;
 
 	private long _lastIndexedPosition = -1;
 	private DateTime _lastIndexedTimestamp = DateTime.MinValue;
 	private long _lastAppendedPosition = -1;
 	private DateTime _lastAppendedTimestamp = DateTime.MinValue;
-	private readonly Func<(long, DateTime)> _getLastAppendedRecord;
 
 	private const string MeterPrefix = "indexes.secondary";
-
-	private static readonly ILogger Log = Serilog.Log.ForContext<SecondaryIndexProgressTracker>();
 
 	public SecondaryIndexProgressTracker(
 		string indexName,
 		string serviceName,
 		Meter meter,
 		TimeProvider clock,
+		ILogger<SecondaryIndexProgressTracker> log,
 		Func<(long, DateTime)>? getLastAppendedRecord = null) {
 		_clock = clock;
 		_indexName = indexName;
@@ -55,6 +55,7 @@ public class SecondaryIndexProgressTracker {
 			advice: new() { HistogramBucketBoundaries = MetricsConfiguration.SecondsHistogramBucketConfiguration.Boundaries }
 		);
 		_tag = [new("index", indexName)];
+		_log = log;
 	}
 
 	private (long, DateTime) GetLastAppendedRecord() {
@@ -76,7 +77,7 @@ public class SecondaryIndexProgressTracker {
 		_lastIndexedTimestamp = resolvedEvent.OriginalEvent.TimeStamp;
 	}
 
-	public CommitDuration StartCommitDuration() => new(_histogram, _clock, _tag[0], _indexName, Log);
+	public CommitDuration StartCommitDuration() => new(_histogram, _clock, _tag[0], _indexName, _log);
 
 	private IEnumerable<Measurement<long>> ObserveGap() {
 		var (lastAppendedPos, _) = _getLastAppendedRecord();
@@ -108,8 +109,14 @@ public class SecondaryIndexProgressTracker {
 
 		public void Dispose() {
 			var elapsed = clock.GetElapsedTime(_start).Milliseconds;
-			log.Debug("Secondary index {Index} records committed in {Duration} ms", indexName, elapsed);
+			log.LogSecondaryIndexIndexRecordsCommitted(indexName, elapsed);
 			histogram.Record(elapsed, tag);
 		}
+
 	}
+}
+
+static partial class SecondaryIndexProgressTrackerLogMessage {
+	[LoggerMessage(LogLevel.Debug, "Secondary index {index} records committed in {duration} ms")]
+	public static partial void LogSecondaryIndexIndexRecordsCommitted(this ILogger logger, string index, int duration);
 }

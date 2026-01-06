@@ -5,6 +5,7 @@
 		<Nullable>enable</Nullable>
 		<EnableDynamicLoading>true</EnableDynamicLoading>
 		<IncludeHttpRuleProtos>true</IncludeHttpRuleProtos>
+		<NoWarn>$(NoWarn);DuckDBNET001</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>

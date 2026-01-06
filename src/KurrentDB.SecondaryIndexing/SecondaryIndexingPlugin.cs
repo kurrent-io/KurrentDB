@@ -50,7 +50,7 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 
 		services.AddCommandService<UserIndexCommandService, UserIndexState>();
 		services.AddSingleton<UserIndexStreamNameMap>();
-		services.AddSingleton<UserIndexReadsideService>();
+		services.AddSingleton<UserIndexQueryService>();
 		services.AddSingleton<UserIndexEngine>();
 		services.AddDuckDBSetup<IndexingDbSchema>();
 		services.AddDuckDBSetup<InFlightSetup>();

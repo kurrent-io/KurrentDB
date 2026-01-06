@@ -1,7 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using DuckDB.NET.Data.DataChunk.Writer;
 using Jint;
@@ -18,7 +17,7 @@ public interface IField {
 	string GetQueryStatement(string field);
 	void BindTo(PreparedStatement statement, ref int index);
 	void AppendTo(Appender.Row row);
-	[Experimental("DuckDBNET001")] void WriteTo(IDuckDBDataWriter writer, ulong rowIndex);
+	void WriteTo(IDuckDBDataWriter writer, ulong rowIndex);
 }
 
 internal readonly record struct Int16Field(short Key) : IField {
@@ -29,7 +28,7 @@ internal readonly record struct Int16Field(short Key) : IField {
 	public string GetQueryStatement(string field) => $"and \"{field}\" = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
 	public void AppendTo(Appender.Row row) => row.Append(Key);
-	[Experimental("DuckDBNET001")] public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
+	public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
 	public override string ToString() => Key.ToString();
 }
 
@@ -41,7 +40,7 @@ internal readonly record struct Int32Field(int Key) : IField {
 	public string GetQueryStatement(string field) => $"and \"{field}\" = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
 	public void AppendTo(Appender.Row row) => row.Append(Key);
-	[Experimental("DuckDBNET001")] public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
+	public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
 	public override string ToString() => Key.ToString();
 }
 
@@ -53,7 +52,7 @@ internal readonly record struct Int64Field(long Key) : IField {
 	public string GetQueryStatement(string field) => $"and \"{field}\" = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
 	public void AppendTo(Appender.Row row) => row.Append(Key);
-	[Experimental("DuckDBNET001")] public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
+	public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
 	public override string ToString() => Key.ToString();
 }
 
@@ -65,7 +64,7 @@ internal readonly record struct UInt32Field(uint Key) : IField {
 	public string GetQueryStatement(string field) => $"and \"{field}\" = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
 	public void AppendTo(Appender.Row row) => row.Append(Key);
-	[Experimental("DuckDBNET001")] public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
+	public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
 	public override string ToString() => Key.ToString();
 }
 
@@ -77,7 +76,7 @@ internal readonly record struct UInt64Field(ulong Key) : IField {
 	public string GetQueryStatement(string field) => $"and \"{field}\" = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
 	public void AppendTo(Appender.Row row) => row.Append(Key);
-	[Experimental("DuckDBNET001")] public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
+	public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
 	public override string ToString() => Key.ToString();
 }
 
@@ -89,7 +88,7 @@ internal readonly record struct DoubleField(double Key) : IField {
 	public string GetQueryStatement(string field) => $"and \"{field}\" = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
 	public void AppendTo(Appender.Row row) => row.Append(Key);
-	[Experimental("DuckDBNET001")] public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
+	public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
 	public override string ToString() => Key.ToString(CultureInfo.InvariantCulture);
 }
 
@@ -101,17 +100,14 @@ internal readonly record struct StringField(string Key) : IField {
 	public string GetQueryStatement(string field) => $"and \"{field}\" = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
 	public void AppendTo(Appender.Row row) => row.Append(Key);
-	[Experimental("DuckDBNET001")] public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
+	public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
 	public override string ToString() => Key;
 }
 
 internal readonly record struct NullField : IField {
 	public static Type? Type { get => null; }
 	public static IField ParseFrom(JsValue value) {
-		if (!value.IsNull())
-			throw new ArgumentException(nameof(value));
-
-		return new NullField();
+		return !value.IsNull() ? throw new ArgumentException(null, nameof(value)) : new NullField();
 	}
 
 	public static IField ParseFrom(string value) => throw new NotSupportedException();
@@ -119,5 +115,5 @@ internal readonly record struct NullField : IField {
 	public string GetQueryStatement(string field) => string.Empty;
 	public void BindTo(PreparedStatement statement, ref int index) { }
 	public void AppendTo(Appender.Row row) { }
-	[Experimental("DuckDBNET001")] public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) { }
+	public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) { }
 }

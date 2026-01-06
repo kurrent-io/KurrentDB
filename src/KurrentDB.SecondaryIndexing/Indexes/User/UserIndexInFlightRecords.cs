@@ -23,7 +23,7 @@ internal class UserIndexInFlightRecords<TField>(SecondaryIndexingPluginOptions o
 
 	public void Append(long logPosition, long commitPosition, long eventNumber, TField? field, long created) {
 		var count = _count;
-		_records[count] = new UserIndexInFlightRecord<TField> {
+		_records[count] = new() {
 			LogPosition = logPosition,
 			CommitPosition = commitPosition,
 			EventNumber = eventNumber,

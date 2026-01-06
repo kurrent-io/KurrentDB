@@ -6,11 +6,11 @@ using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Tests.Fakes;
-using KurrentDB.SecondaryIndexing.Indexes;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Storage;
 using KurrentDB.SecondaryIndexing.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Tests.Fixtures;
+using Microsoft.Extensions.Logging.Abstractions;
 using static KurrentDB.SecondaryIndexing.Indexes.Category.CategorySql;
 using static KurrentDB.SecondaryIndexing.Indexes.Default.DefaultSql;
 using static KurrentDB.SecondaryIndexing.Indexes.EventType.EventTypeSql;
@@ -169,7 +169,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest<DefaultIndexProc
 
 		var publisher = new FakePublisher();
 
-		_processor = new(DuckDb, inflightRecordsCache, publisher, hasher, new("test"));
+		_processor = new(DuckDb, inflightRecordsCache, publisher, hasher, new("test"), NullLoggerFactory.Instance);
 	}
 
 	public override ValueTask DisposeAsync() {
