@@ -35,7 +35,6 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 	private readonly JsRecordEvaluator _evaluator;
 	private readonly string? _filterExpression;
 	private readonly string? _fieldSelectorExpression;
-	private readonly JsRecord _jsRecord;
 	private readonly UserIndexInFlightRecords<TField> _inFlightRecords;
 	private readonly string _inFlightTableName;
 	private readonly string _queryStreamName;
@@ -43,9 +42,9 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 	private readonly DuckDBAdvancedConnection _connection;
 	private readonly UserIndexSql<TField> _sql;
 	private readonly object _skip;
-	private ulong _sequenceId;
 	private readonly ILogger<UserIndexProcessor> _log;
 
+	private ulong _sequenceId;
 	private TFPos _lastPosition;
 	private Appender _appender;
 	private Atomic.Boolean _committing;
@@ -88,8 +87,6 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 
 		_filterExpression = jsEventFilter is not "" ? jsEventFilter : null;
 		_fieldSelectorExpression = jsFieldSelector is not "" ? jsFieldSelector : null;
-
-		_jsRecord = new JsRecord();
 
 		_connection = db.Open();
 		_sql.CreateUserIndex(_connection);
