@@ -77,19 +77,18 @@ public class UserIndexEventStore : IEventStore {
 				isJson: isJson,
 				data: dataArray);
 			eventStreamIndexes[i] = originalStreamIndex;
+			i++;
 
 			// process the events into the management stream if necessary
 			if (duplicate) {
-				var duplicateIndex = i + events.Count;
-				processedEvents[duplicateIndex] = new Event(
+				processedEvents[i] = new Event(
 					eventId: Guid.NewGuid(),
 					eventType: schema.SchemaName,
 					isJson: isJson,
 					data: dataArray);
-				eventStreamIndexes[duplicateIndex] = allStreamIndex;
+				eventStreamIndexes[i] = allStreamIndex;
+				i++;
 			}
-
-			i++;
 		}
 
 		// write all the events transactionally
