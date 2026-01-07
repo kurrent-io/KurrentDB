@@ -33,7 +33,7 @@ Content-Type: application/json
 Authorization: Basic YWRtaW46Y2hhbmdlaXQ=
 
 {
-  "filter": "rec => rec.schemaInfo.subject == 'OrderCreated'",
+  "filter": "rec => rec.schema.name == 'OrderCreated'",
   "fields": [{
     "name": "country",
       "selector": "rec => rec.value.country",
@@ -70,30 +70,26 @@ The structure of the record passed to the `filter` and `selector` functions is:
 
 ```json
 {
-  "recordId": "12345678-1234-1234-1234-123456789abc", // the event ID
+  "id": "12345678-1234-1234-1234-123456789abc", // the event ID
   "position": {
-    "streamId": "my-stream", // the stream name
+    "stream": "my-stream", // the stream name
     "streamRevision": 2, // the event number
     "logPosition": 2705 // the commit position of the record in the transaction log
   },
-  "schemaInfo": {
-    "subject": "my-event-type", // the event type
+  "schema": {
+    "name": "my-event-type", // the event type
     "type": "Json" // the data format
   },
-  "sequenceId": 3, // a sequence number that auto-increments each time a record is passed to the filter
-  "isRedacted": false, // whether the record is redacted or not
+  "sequence": 3, // a sequence number that auto-increments each time a record is passed to the filter
+  "redacted": false, // whether the record is redacted or not
   "value": { // deserialized data (available only when the data is JSON and not redacted)
     "my": "data"
   },
-  "headers": { // deserialized metadata
+  "properties": { // deserialized metadata
     "my": "metadata"
   }
 }
 ```
-
-::: note
-The above structure matches the one provided to the javascript functions in `connectors`
-:::
 
 Now if you append a record representing a `OrderCreated` event with a payload like
 
