@@ -27,7 +27,7 @@ public class JsRecordEvaluator {
 		_record.Remap(re.OriginalEvent, sequence, _serializerOptions);
 
 	public bool Match(Function? filter) =>
-		filter is null || filter.Call(_jsValue).AsBoolean();
+		filter?.Call(_jsValue).AsBoolean() ?? true;
 
 	public JsValue Select(Function? selector) =>
 		selector?.Call(_jsValue) ?? JsValue.Null;
