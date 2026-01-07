@@ -8,6 +8,7 @@ using DuckDB.NET.Data;
 using DuckDB.NET.Data.DataChunk.Writer;
 using Jint;
 using Jint.Native;
+using Jint.Native.Function;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 using Kurrent.Surge.Schema.Serializers.Json;
@@ -33,8 +34,8 @@ internal abstract class UserIndexProcessor : Disposable, ISecondaryIndexProcesso
 internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IField {
 	private readonly Engine _engine = JintEngineFactory.CreateEngine(executionTimeout: TimeSpan.FromSeconds(30));
 	private readonly JsRecordEvaluator _evaluator;
-	private readonly string? _filterExpression;
-	private readonly string? _fieldSelectorExpression;
+	private readonly Function? _filter;
+	private readonly Function? _fieldSelector;
 	private readonly UserIndexInFlightRecords<TField> _inFlightRecords;
 	private readonly string _inFlightTableName;
 	private readonly string _queryStreamName;
@@ -85,8 +86,8 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 
 		_evaluator = new JsRecordEvaluator(_engine, serializerOptions);
 
-		_filterExpression = jsEventFilter is not "" ? jsEventFilter : null;
-		_fieldSelectorExpression = jsFieldSelector is not "" ? jsFieldSelector : null;
+		_filter = JsRecordEvaluator.Compile(_engine, jsEventFilter);
+		_fieldSelector = JsRecordEvaluator.Compile(_engine, jsFieldSelector);
 
 		_connection = db.Open();
 		_sql.CreateUserIndex(_connection);
@@ -157,10 +158,10 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 		try {
 			_evaluator.MapRecord(resolvedEvent, ++_sequenceId);
 
-			if (!_evaluator.Match(_filterExpression))
+			if (!_evaluator.Match(_filter))
 				return false;
 
-			var fieldValue = _evaluator.Select(_fieldSelectorExpression);
+			var fieldValue = _evaluator.Select(_fieldSelector);
 			if (fieldValue == JsValue.Null)
 				return true;
 

@@ -4,7 +4,6 @@
 // ReSharper disable InconsistentNaming
 // ReSharper disable ArrangeTypeMemberModifiers
 
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Jint;
 using Jint.Native;
@@ -13,19 +12,13 @@ using KurrentDB.Core.Data;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.User.JavaScript;
 
-public class JsRecordEvaluator : IDisposable {
-	readonly Engine _engine;
+public class JsRecordEvaluator {
 	readonly JsonSerializerOptions _serializerOptions;
-	readonly Dictionary<string, Function> _compiledFunctions;
-
 	readonly JsRecord _record;
 	readonly JsValue _jsValue;
 
 	public JsRecordEvaluator(Engine engine, JsonSerializerOptions serializerOptions) {
-		_engine            = engine;
 		_serializerOptions = serializerOptions;
-		_compiledFunctions = new();
-
 		_record  = new();
 		_jsValue = JsValue.FromObjectWithType(engine, _record, typeof(JsRecord));
 	}
@@ -33,23 +26,13 @@ public class JsRecordEvaluator : IDisposable {
 	public void MapRecord(ResolvedEvent re, ulong sequence) =>
 		_record.Remap(re.OriginalEvent, sequence, _serializerOptions);
 
-	public bool Match(string? predicateExpression) =>
-		string.IsNullOrEmpty(predicateExpression) || GetOrCompile(predicateExpression).Call(_jsValue).AsBoolean();
+	public bool Match(Function? filter) =>
+		filter is null || filter.Call(_jsValue).AsBoolean();
 
-	public JsValue Select(string? selectorExpression) =>
-		!string.IsNullOrEmpty(selectorExpression) ? GetOrCompile(selectorExpression).Call(_jsValue) : JsValue.Null;
+	public JsValue Select(Function? selector) =>
+		selector?.Call(_jsValue) ?? JsValue.Null;
 
-	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	Function GetOrCompile(string expression) {
-		if (_compiledFunctions.TryGetValue(expression, out var function)) return function;
-		function = _engine.Evaluate($"({expression})").AsFunctionInstance();
-		_compiledFunctions[expression] = function;
-		return function;
-	}
-
-	public void Dispose() {
-		_compiledFunctions.Clear();
-		GC.SuppressFinalize(this);
-	}
+	public static Function? Compile(Engine engine, string? expression) =>
+		string.IsNullOrEmpty(expression) ? null : engine.Evaluate($"({expression})").AsFunctionInstance();
 }
 
