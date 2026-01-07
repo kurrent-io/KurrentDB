@@ -50,10 +50,10 @@ message ListConnectors {
   repeated google.protobuf.StringValue instance_type_name = 2;
   repeated google.protobuf.StringValue connector_id       = 3;
 
-  bool   include_settings      = 4;
-  bool   show_deleted          = 5;
-  Paging paging                = 6;
-  bool   include_configuration = 7;
+  optional bool   include_settings      = 4;
+  bool            show_deleted          = 5;
+  Paging          paging                = 6;
+  optional bool   include_configuration = 7;
 }
 
 message ListConnectorsResult {

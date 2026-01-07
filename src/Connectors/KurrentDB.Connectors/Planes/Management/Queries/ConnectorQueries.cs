@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+// ReSharper disable InvertIf
+
 using Google.Protobuf.WellKnownTypes;
 using KurrentDB.Connectors.Management.Contracts.Queries;
 using Kurrent.Surge;
@@ -66,41 +68,38 @@ public class ConnectorQueries {
     }
 
     Func<Connector, CancellationToken, ValueTask<Connector>> Map(ListConnectors query, CancellationToken ct) =>
-        async (conn, _) => {
-            var unprotected = await DataProtector.Unprotect(conn.Settings.ToConfiguration(), ct);
+	    async (conn, _) => {
+		    if (query.HasIncludeConfiguration) {
+			    var config = query.IncludeConfiguration
+				    ? (await DataProtector.Unprotect(conn.Settings.ToConfiguration(), ct)).ToProtobufStruct()
+				    : new Struct();
 
-            if (query.IncludeConfiguration) {
-                return conn.With(x => {
-                    x.Settings.Clear();
-                    x.Configuration = unprotected.ToProtobufStruct();
-                    x.ConfigurationUpdateTime = x.SettingsUpdateTime;
-                    x.SettingsUpdateTime = null;
-                    return x;
-                });
-            }
+			    return conn.With(x => {
+				    x.Settings.Clear();
+				    x.Configuration = config;
+				    x.ConfigurationUpdateTime = x.SettingsUpdateTime;
+				    x.SettingsUpdateTime = null;
+				    return x;
+			    });
+		    }
 
-            if (query.IncludeSettings) {
-                return conn.With(x => {
-                    x.Settings.Clear();
+		    if (query is { HasIncludeSettings: true, IncludeSettings: true }) {
+			    var unprotected = await DataProtector.Unprotect(conn.Settings.ToConfiguration(), ct);
 
-                    var settings = unprotected.AsEnumerable()
-                        .Where(setting => setting.Value != null)
-                        .ToDictionary(setting => setting.Key, setting => setting.Value!);
+			    return conn.With(x => {
+				    x.Settings.Clear();
+				    x.Settings.Add(unprotected.AsEnumerable()
+					    .Where(s => s.Value != null)
+					    .ToDictionary(s => s.Key, s => s.Value!));
+				    return x;
+			    });
+		    }
 
-                    x.Settings.Add(settings);
-
-                    return x;
-                });
-            }
-
-            return conn.With(x => {
-                x.Settings.Clear();
-                x.Configuration = new Struct();
-                x.ConfigurationUpdateTime = x.SettingsUpdateTime;
-                x.SettingsUpdateTime = null;
-                return x;
-            });
-        };
+		    return conn.With(x => {
+			    x.Settings.Clear();
+			    return x;
+		    });
+	    };
 
     public async Task<GetConnectorSettingsResult> GetSettings(GetConnectorSettings query, CancellationToken cancellationToken) {
         var snapshot = await LoadSnapshot(cancellationToken);
