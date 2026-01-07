@@ -42,8 +42,6 @@ public class JsRecord {
 	public JsonNode? Value      { get => field ??= DeserializeValue(); set; }
 	public JsonNode? Properties { get => field ??= DeserializeProps(); set; }
 
-	public bool HasValue => Value is not null;
-
 	Func<JsonNode?> DeserializeValue { get; set; } = null!;
 	Func<JsonNode?> DeserializeProps { get; set; } = null!;
 
