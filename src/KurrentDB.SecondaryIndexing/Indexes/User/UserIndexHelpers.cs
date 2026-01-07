@@ -50,11 +50,4 @@ public static class UserIndexHelpers {
 	public static string GetManagementStreamName(string indexName) {
 		return $"{UserIndexConstants.Category}-{indexName}";
 	}
-
-	// Parses the user index name out of the management stream for that user index
-	// $UserIndex-<indexname>
-	public static string ParseManagementStreamName(string streamName) {
-		Debug.Assert(streamName.StartsWith(UserIndexConstants.Category));
-		return streamName[(streamName.IndexOf('-') + 1)..];
-	}
 }

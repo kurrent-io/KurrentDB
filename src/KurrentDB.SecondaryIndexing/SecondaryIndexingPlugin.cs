@@ -49,6 +49,7 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddSingleton(options);
 
 		services.AddCommandService<UserIndexCommandService, UserIndexState>();
+		services.AddSingleton<UserIndexEventStore>();
 		services.AddSingleton<UserIndexStreamNameMap>();
 		services.AddSingleton<UserIndexQueryService>();
 		services.AddSingleton<UserIndexEngine>();
