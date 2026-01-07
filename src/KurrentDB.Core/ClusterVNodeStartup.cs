@@ -13,7 +13,7 @@ using EventStore.Core.Services.Transport.Grpc.Cluster;
 using EventStore.Plugins;
 using EventStore.Plugins.Authentication;
 using EventStore.Plugins.Authorization;
-using Grpc.Net.Compression;
+using KurrentDB.Common.Compression;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
@@ -287,7 +287,7 @@ public class ClusterVNodeStartup<TStreamId>
 				// The client must still need to opt-in
 				options.ResponseCompressionAlgorithm = "gzip";
 				options.ResponseCompressionLevel = CompressionLevel.Optimal;
-				options.CompressionProviders.Add(new GzipCompressionProvider(CompressionLevel.Optimal));
+				options.CompressionProviders.Add(new Rfc1952GzipCompressionProvider(CompressionLevel.Optimal));
 			})
 			.AddServiceOptions<Streams<TStreamId>>(options => options.MaxReceiveMessageSize = TFConsts.EffectiveMaxLogRecordSize);
 
