@@ -29,8 +29,8 @@ public class JsRecordEvaluator {
 	public bool Match(Function? filter) =>
 		filter?.Call(_jsValue).AsBoolean() ?? true;
 
-	public JsValue Select(Function? selector) =>
-		selector?.Call(_jsValue) ?? JsValue.Null;
+	public JsValue? Select(Function? selector) =>
+		selector?.Call(_jsValue) ?? null;
 
 	public static Function? Compile(Engine engine, string? expression) =>
 		string.IsNullOrEmpty(expression) ? null : engine.Evaluate($"({expression})").AsFunctionInstance();

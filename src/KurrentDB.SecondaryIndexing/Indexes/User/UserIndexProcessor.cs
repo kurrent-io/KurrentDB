@@ -162,7 +162,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 				return false;
 
 			var fieldValue = _evaluator.Select(_fieldSelector);
-			if (fieldValue == JsValue.Null)
+			if (fieldValue is null)
 				return true;
 
 			if (_skip.Equals(fieldValue))
