@@ -1,11 +1,13 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Google.Protobuf.WellKnownTypes;
 using KurrentDB.Connectors.Management.Contracts.Queries;
 using Kurrent.Surge;
 using Kurrent.Surge.Protocol.Consumers;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Common.Utils;
+using KurrentDB.Connectors.Infrastructure;
 using KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
 using KurrentDB.Connectors.Planes.Management.Domain;
 using KurrentDB.Surge.Readers;
@@ -65,24 +67,37 @@ public class ConnectorQueries {
 
     Func<Connector, CancellationToken, ValueTask<Connector>> Map(ListConnectors query, CancellationToken ct) =>
         async (conn, _) => {
-            if (!query.IncludeSettings) {
+            var unprotected = await DataProtector.Unprotect(conn.Settings.ToConfiguration(), ct);
+
+            if (query.IncludeConfiguration) {
                 return conn.With(x => {
                     x.Settings.Clear();
+                    x.Configuration = unprotected.ToProtobufStruct();
+                    x.ConfigurationUpdateTime = x.SettingsUpdateTime;
+                    x.SettingsUpdateTime = null;
                     return x;
                 });
             }
 
-            var unprotected = await DataProtector.Unprotect(conn.Settings.ToConfiguration(), ct);
+            if (query.IncludeSettings) {
+                return conn.With(x => {
+                    x.Settings.Clear();
+
+                    var settings = unprotected.AsEnumerable()
+                        .Where(setting => setting.Value != null)
+                        .ToDictionary(setting => setting.Key, setting => setting.Value!);
+
+                    x.Settings.Add(settings);
+
+                    return x;
+                });
+            }
 
             return conn.With(x => {
                 x.Settings.Clear();
-
-                var settings = unprotected.AsEnumerable()
-                    .Where(setting => setting.Value != null)
-                    .ToDictionary(setting => setting.Key, setting => setting.Value!);
-
-                x.Settings.Add(settings);
-
+                x.Configuration = new Struct();
+                x.ConfigurationUpdateTime = x.SettingsUpdateTime;
+                x.SettingsUpdateTime = null;
                 return x;
             });
         };
@@ -104,6 +119,22 @@ public class ConnectorQueries {
         return new GetConnectorSettingsResult {
             Settings           = { settings },
             SettingsUpdateTime = connector.SettingsUpdateTime
+        };
+    }
+
+    public async Task<GetConnectorConfigurationResult> GetConfiguration(GetConnectorSettings query, CancellationToken cancellationToken) {
+        var snapshot = await LoadSnapshot(cancellationToken);
+
+        var connector = snapshot.Connectors.FirstOrDefault(x => x.ConnectorId == query.ConnectorId);
+
+        if (connector is null)
+            throw new DomainExceptions.EntityNotFound("Connector", query.ConnectorId);
+
+        var unprotected = await DataProtector.Unprotect(connector.Settings.ToConfiguration(), cancellationToken);
+
+        return new GetConnectorConfigurationResult {
+	        Configuration           = unprotected.ToProtobufStruct(),
+	        ConfigurationUpdateTime = connector.SettingsUpdateTime,
         };
     }
  }
