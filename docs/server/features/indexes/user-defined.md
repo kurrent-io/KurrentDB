@@ -83,7 +83,7 @@ The structure of the record passed to the `filter` and `selector` functions is:
   },
   "sequence": 3, // a sequence number that auto-increments each time a record is passed to the filter
   "redacted": false, // whether the record is redacted or not
-  "value": { // deserialized data
+  "value": { // deserialized data (only when the data is JSON and not redacted)
     "my": "data"
   },
   "properties": { // deserialized metadata
