@@ -65,17 +65,66 @@ public readonly struct LowAllocReadOnlyMemory<T> {
 	public ReadOnlySpan<T>.Enumerator GetEnumerator() => Span.GetEnumerator();
 
 	public T[] ToArray() => Span.ToArray();
+
+	/// <summary>
+	/// Helper logic for building LowAllocReadOnlyMemorys
+	/// Note that this is an immutable datastructure
+	/// </summary>
+	public readonly struct Builder {
+		private readonly bool _isSingle;
+		private readonly T _singleItem;
+		private readonly List<T> _items;
+
+		public Builder(T singleItem) {
+			_isSingle = true;
+			_singleItem = singleItem;
+		}
+
+		public Builder(List<T> items) {
+			if (items is [var singleItem]) {
+				_isSingle = true;
+				_singleItem = singleItem;
+			} else {
+				_isSingle = false;
+				_items = items;
+			}
+		}
+
+		public static Builder Empty => default;
+
+		public int Count => _isSingle
+			? 1
+			: _items?.Count ?? 0;
+
+		public Builder Add(T item) {
+			if (_isSingle) {
+				return new([_singleItem, item]);
+			} else if (_items is not null) {
+				_items.Add(item);
+				return new(_items);
+			} else {
+				return new(item);
+			}
+		}
+
+		public LowAllocReadOnlyMemory<T> Build() => _isSingle
+			? new(_singleItem)
+			: _items.ToLowAllocReadOnlyMemory();
+	}
 }
 
 public static class LowAllocReadOnlyMemoryBuilder {
 	// For collection expressions. Allocates a backing array if necessary.
-	public static LowAllocReadOnlyMemory<T> Create<T>(ReadOnlySpan<T> items) =>
-		items is [var singleItem]
-			? new(singleItem: singleItem)
-			: new(items: items.ToArray());
+	public static LowAllocReadOnlyMemory<T> Create<T>(ReadOnlySpan<T> items) => items switch {
+		[] => LowAllocReadOnlyMemory<T>.Empty,
+		[var singleItem] => new(singleItem: singleItem),
+		_ => new(items: items.ToArray()),
+	};
 
-	public static LowAllocReadOnlyMemory<T> ToLowAllocReadOnlyMemory<T>(this IList<T> items) =>
-		items is [var singleItem]
-			? new(singleItem: singleItem)
-			: new(items: items.ToArray());
+	public static LowAllocReadOnlyMemory<T> ToLowAllocReadOnlyMemory<T>(this IList<T> items) => items switch {
+		null => [],
+		[] => [],
+		[var singleItem] => new(singleItem: singleItem),
+		_ => new(items: items.ToArray()),
+	};
 }

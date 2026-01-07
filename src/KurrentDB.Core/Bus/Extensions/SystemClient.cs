@@ -4,6 +4,7 @@
 // ReSharper disable CheckNamespace
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
@@ -70,6 +71,8 @@ public interface IReadOperations {
 	IAsyncEnumerable<ResolvedEvent> ReadIndexBackwards(string indexName, Position startPosition, long maxCount, CancellationToken cancellationToken = default);
 }
 
+public record struct Write(string Stream, long ExpectedRevision, LowAllocReadOnlyMemory<Event> Events);
+
 public interface IWriteOperations {
 	Task<WriteEventsResult> WriteEvents(string stream, Event[] events, long expectedRevision = -2, CancellationToken cancellationToken = default);
 	Task<WriteEventsMultiResult> WriteEvents(
@@ -77,6 +80,9 @@ public interface IWriteOperations {
 		LowAllocReadOnlyMemory<long> expectedRevisions,
 		LowAllocReadOnlyMemory<Event> events,
 		LowAllocReadOnlyMemory<int> eventStreamIndexes,
+		CancellationToken cancellationToken = default);
+	Task<WriteEventsMultiResult> WriteEvents(
+		LowAllocReadOnlyMemory<Write> writes,
 		CancellationToken cancellationToken = default);
 }
 
@@ -159,6 +165,42 @@ public class SystemClient : ISystemClient {
 			LowAllocReadOnlyMemory<int> eventStreamIndexes,
 			CancellationToken cancellationToken = default) =>
 			Publisher.WriteEvents(streams, expectedRevisions, events, eventStreamIndexes, cancellationToken);
+
+		public Task<WriteEventsMultiResult> WriteEvents(
+			LowAllocReadOnlyMemory<Write> writes,
+			CancellationToken cancellationToken = default) {
+
+			var streamIndexes = new Dictionary<string, int>();
+			var events = LowAllocReadOnlyMemory<Event>.Builder.Empty;
+			var streams = LowAllocReadOnlyMemory<string>.Builder.Empty;
+			var expectedRevisions = LowAllocReadOnlyMemory<long>.Builder.Empty;
+			var eventStreamIndexes = LowAllocReadOnlyMemory<int>.Builder.Empty;
+
+			foreach (var write in writes) {
+				if (!streamIndexes.TryGetValue(write.Stream, out var streamIndex)) {
+					streamIndexes[write.Stream] = streamIndex = streams.Count;
+					streams = streams.Add(write.Stream);
+					expectedRevisions = expectedRevisions.Add(write.ExpectedRevision);
+				} else {
+					// todo: support other cases by checking that the expected version is
+					// consistent with previous writes to the stream.
+					if (write.ExpectedRevision != ExpectedVersion.Any)
+						throw new NotImplementedException();
+				}
+
+				foreach (var evt in write.Events) {
+					events = events.Add(evt);
+					eventStreamIndexes = eventStreamIndexes.Add(streamIndex);
+				}
+			}
+
+			return WriteEvents(
+				streams: streams.Build(),
+				expectedRevisions: expectedRevisions.Build(),
+				events: events.Build(),
+				eventStreamIndexes: eventStreamIndexes.Build(),
+				cancellationToken);
+		}
 	}
 
 	#endregion . Write .

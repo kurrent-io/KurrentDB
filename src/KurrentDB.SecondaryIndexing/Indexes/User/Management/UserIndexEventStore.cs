@@ -43,22 +43,9 @@ public class UserIndexEventStore : IEventStore {
 		// decide if we are going to duplicate the events to the user index all Stream
 		var duplicate = stream.ToString().StartsWith(UserIndexConstants.Category);
 
-		LowAllocReadOnlyMemory<string> streams = duplicate
-			? [stream, UserIndexConstants.ManagementAllStream]
-			: new(stream);
+		var writes = new LowAllocReadOnlyMemory<Write>.Builder();
 
-		LowAllocReadOnlyMemory<long> expectedVersions = duplicate
-			? [expectedVersion.Value, ExpectedVersion.Any]
-			: new(expectedVersion.Value);
-
-		var totalEventCount = duplicate ? events.Count * 2 : events.Count;
-		var processedEvents = new Event[totalEventCount];
-		var eventStreamIndexes = new int[totalEventCount];
-
-		var originalStreamIndex = 0;
-		var allStreamIndex = 1;
-
-		int i = 0;
+		var first = true;
 		foreach (var evt in events) {
 			var message = Message.Builder
 				.Value(evt.Payload!)
@@ -71,34 +58,34 @@ public class UserIndexEventStore : IEventStore {
 			var isJson = schema.SchemaDataFormat == SchemaDataFormat.Json;
 
 			// process the events into the original stream
-			processedEvents[i] = new Event(
-				eventId: evt.Id,
-				eventType: schema.SchemaName,
-				isJson: isJson,
-				data: dataArray);
-			eventStreamIndexes[i] = originalStreamIndex;
-			i++;
+			writes = writes.Add(new(
+				Stream: stream,
+				ExpectedRevision: first ? expectedVersion.Value : ExpectedVersion.Any,
+				Events: new(new Event(
+					eventId: evt.Id,
+					eventType: schema.SchemaName,
+					isJson: isJson,
+					data: dataArray))));
 
 			// process the events into the management stream if necessary
 			if (duplicate) {
-				processedEvents[i] = new Event(
-					eventId: Guid.NewGuid(),
-					eventType: schema.SchemaName,
-					isJson: isJson,
-					data: dataArray);
-				eventStreamIndexes[i] = allStreamIndex;
-				i++;
+				writes = writes.Add(new(
+					Stream: UserIndexConstants.ManagementAllStream,
+					ExpectedRevision: ExpectedVersion.Any,
+					Events: new(new Event(
+						eventId: Guid.NewGuid(),
+						eventType: schema.SchemaName,
+						isJson: isJson,
+						data: dataArray))));
 			}
+
+			first = false;
 		}
 
 		// write all the events transactionally
-		var (position, streamRevisions) = await _client.Writing.WriteEvents(
-			streams: streams,
-			expectedRevisions: expectedVersions,
-			events: processedEvents,
-			eventStreamIndexes: eventStreamIndexes,
-			cancellationToken);
+		var (position, streamRevisions) = await _client.Writing.WriteEvents(writes.Build(), cancellationToken);
 
+		var originalStreamIndex = 0;
 		return new AppendEventsResult(
 			GlobalPosition: position.CommitPosition,
 			NextExpectedVersion: streamRevisions.Span[originalStreamIndex].ToInt64());
