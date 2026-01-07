@@ -71,6 +71,7 @@ The structure of the record passed to the `filter` and `selector` functions is:
 ```json
 {
   "id": "12345678-1234-1234-1234-123456789abc", // the event ID
+  "timestamp": "2026-01-15T13:37:01.337Z", // the time at which the event was written to the transaction log
   "position": {
     "stream": "my-stream", // the stream name
     "streamRevision": 2, // the event number
