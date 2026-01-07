@@ -24,11 +24,15 @@ service ConnectorsQueryService {
     };
   }
 
-  rpc GetConfiguration(GetConnectorSettings) returns (GetConnectorConfigurationResult) {
+  rpc GetConfiguration(GetConnectorConfiguration) returns (GetConnectorConfigurationResult) {
     option (google.api.http) = {
       get: "/connectors/{connector_id}/configuration"
     };
   }
+}
+
+message GetConnectorConfiguration {
+  string connector_id = 1;
 }
 
 message GetConnectorSettings {

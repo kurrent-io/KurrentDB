@@ -23,7 +23,7 @@ public class ConnectorsQueryService(
     public override Task<GetConnectorSettingsResult> GetSettings(GetConnectorSettings query, ServerCallContext context) =>
          Execute(connectorQueries.GetSettings, query, context);
 
-    public override Task<GetConnectorConfigurationResult> GetConfiguration(GetConnectorSettings query, ServerCallContext context) =>
+    public override Task<GetConnectorConfigurationResult> GetConfiguration(GetConnectorConfiguration query, ServerCallContext context) =>
          Execute(connectorQueries.GetConfiguration, query, context);
 
     async Task<TQueryResult> Execute<TQuery, TQueryResult>(RunQuery<TQuery, TQueryResult> runQuery, TQuery query, ServerCallContext context) {

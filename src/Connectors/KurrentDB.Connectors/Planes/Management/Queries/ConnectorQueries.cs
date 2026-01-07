@@ -121,7 +121,7 @@ public class ConnectorQueries {
         };
     }
 
-    public async Task<GetConnectorConfigurationResult> GetConfiguration(GetConnectorSettings query, CancellationToken cancellationToken) {
+    public async Task<GetConnectorConfigurationResult> GetConfiguration(GetConnectorConfiguration query, CancellationToken cancellationToken) {
         var snapshot = await LoadSnapshot(cancellationToken);
 
         var connector = snapshot.Connectors.FirstOrDefault(x => x.ConnectorId == query.ConnectorId);
