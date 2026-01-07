@@ -57,8 +57,8 @@ public class SerilogSink : ISink {
                 Timestamp    = x.Timestamp
             });
 
-        if (options.HasLegacyConfiguration) {
-            var serilogConfiguration = await options.DecodeLegacyConfiguration();
+        if (options.HasLegacySettings) {
+            var serilogConfiguration = await options.DecodeLegacySettings();
             Logger = new SwitchableLogger(loggerConfiguration
                 .ReadFrom.Configuration(serilogConfiguration)
                 .CreateLogger());
@@ -102,9 +102,9 @@ public record SerilogSinkOptions : SinkOptions {
     public string Configuration     { get; init; } = "";
     public bool   IncludeRecordData { get; init; } = true;
 
-    public bool HasLegacyConfiguration => !string.IsNullOrWhiteSpace(Configuration);
+    public bool HasLegacySettings => !string.IsNullOrWhiteSpace(Configuration);
 
-    public async ValueTask<IConfiguration> DecodeLegacyConfiguration() {
+    public async ValueTask<IConfiguration> DecodeLegacySettings() {
         await using var ms = new MemoryStream(Convert.FromBase64String(Configuration));
         return new ConfigurationBuilder().AddJsonStream(ms).Build();
     }
@@ -126,11 +126,11 @@ public record SerilogSinkOptions : SinkOptions {
 [PublicAPI]
 public class SerilogSinkValidator : SinkConnectorValidator<SerilogSinkOptions> {
     public SerilogSinkValidator() {
-        When(x => x.HasLegacyConfiguration,
+        When(x => x.HasLegacySettings,
             () => RuleFor(x => x)
                 .Custom(async void (options, ctx) => {
                     try {
-                        await options.DecodeLegacyConfiguration();
+                        await options.DecodeLegacySettings();
                     } catch (Exception) {
                         ctx.AddFailure(new Failures.ConfigurationEncodingFailure());
                     }
