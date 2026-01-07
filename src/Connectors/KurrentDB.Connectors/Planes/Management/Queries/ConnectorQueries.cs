@@ -109,7 +109,7 @@ public class ConnectorQueries {
         if (connector is null)
             throw new DomainExceptions.EntityNotFound("Connector", query.ConnectorId);
 
-        var unprotected   = await DataProtector.Unprotect(connector.Settings.ToConfiguration(), cancellationToken);
+        var unprotected = await DataProtector.Unprotect(connector.Settings.ToConfiguration(), cancellationToken);
 
         var settings = unprotected.AsEnumerable()
             .Where(setting => setting.Value != null)
