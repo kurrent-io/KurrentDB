@@ -78,11 +78,12 @@ The structure of the record passed to the `filter` and `selector` functions is:
   },
   "schema": {
     "name": "my-event-type", // the event type
-    "type": "Json" // the data format
+    "format": "Json" // the data format
   },
   "sequence": 3, // a sequence number that auto-increments each time a record is passed to the filter
   "redacted": false, // whether the record is redacted or not
-  "value": { // deserialized data (available only when the data is JSON and not redacted)
+  "hasValue": true, // true only when the data is JSON and is not redacted
+  "value": { // deserialized data (available only when `hasValue` is true)
     "my": "data"
   },
   "properties": { // deserialized metadata
