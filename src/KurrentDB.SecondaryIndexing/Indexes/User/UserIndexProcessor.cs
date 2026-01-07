@@ -7,7 +7,6 @@ using DotNext.Threading;
 using DuckDB.NET.Data;
 using DuckDB.NET.Data.DataChunk.Writer;
 using Jint;
-using Jint.Native;
 using Jint.Native.Function;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;

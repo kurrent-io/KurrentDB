@@ -205,7 +205,6 @@ public class IndexesJavascriptTests {
 
 		await StreamsWriteClient.AppendRecord(Stream, EventType, format, "{ \"color\": \"red\" }"u8, props, ct);
 
-		//const string fieldFilter = "true";
 		var evts = await StreamsReadClient.WaitForIndexEvents($"$idx-user-{IndexName}", 1, ct);
 		await Assert.That(evts.Count).IsEqualTo(1);
 	}
