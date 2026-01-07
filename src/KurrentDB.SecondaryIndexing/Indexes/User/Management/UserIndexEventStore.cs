@@ -52,14 +52,13 @@ public class UserIndexEventStore : IEventStore {
 			: new(expectedVersion.Value);
 
 		var totalEventCount = duplicate ? events.Count * 2 : events.Count;
-		Event[] processedEvents = new Event[totalEventCount];
-		int[] eventStreamIndexes = new int[totalEventCount];
+		var processedEvents = new Event[totalEventCount];
+		var eventStreamIndexes = new int[totalEventCount];
 
 		var originalStreamIndex = 0;
 		var allStreamIndex = 1;
 
 		int i = 0;
-		int j = events.Count;
 		foreach (var evt in events) {
 			var message = Message.Builder
 				.Value(evt.Payload!)
@@ -81,16 +80,16 @@ public class UserIndexEventStore : IEventStore {
 
 			// process the events into the management stream if necessary
 			if (duplicate) {
-				processedEvents[j] = new Event(
+				var duplicateIndex = i + events.Count;
+				processedEvents[duplicateIndex] = new Event(
 					eventId: Guid.NewGuid(),
 					eventType: schema.SchemaName,
 					isJson: isJson,
 					data: dataArray);
-				eventStreamIndexes[j] = allStreamIndex;
+				eventStreamIndexes[duplicateIndex] = allStreamIndex;
 			}
 
 			i++;
-			j++;
 		}
 
 		// write all the events transactionally

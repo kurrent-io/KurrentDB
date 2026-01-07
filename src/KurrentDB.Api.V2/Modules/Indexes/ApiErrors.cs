@@ -31,5 +31,5 @@ public static partial class ApiErrors {
 
 	public static RpcException SecondaryIndexingDisabled() => RpcExceptions.FromError(
 		error: IndexesError.SecondaryIndexingDisabled,
-		message: "Secondary indexing is disabled (configuration key KurrentDB::SecondaryIndexing::Enabled is false");
+		message: "Secondary indexing is disabled (configuration key KurrentDB::SecondaryIndexing::Enabled is false)");
 }
