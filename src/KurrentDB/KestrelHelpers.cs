@@ -7,7 +7,7 @@ using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using KurrentDB.Core;
+using KurrentDB.Core.DuckDB;
 using KurrentDB.Core.Services.Transport.Http;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -18,6 +18,8 @@ namespace KurrentDB;
 
 public static class KestrelHelpers {
 	public static void ConfigureHttpOptions(ListenOptions listenOptions, ClusterVNodeHostedService hostedService, bool useHttps) {
+		listenOptions.UseDuckDb();
+
 		if (useHttps)
 			listenOptions.UseHttps(CreateServerOptionsSelectionCallback(hostedService), null);
 		else

@@ -56,7 +56,6 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 	private long _lastFlush;
 
 	private readonly ImplicitTransaction<TStreamId> _transaction = new();
-	private bool _commitsAfterEof;
 
 	private readonly TaskCompletionSource<object> _tcs = new();
 
@@ -175,7 +174,6 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 				break;
 			}
 			case LogRecordType.Commit: {
-				_commitsAfterEof = !result.Eof;
 				var record = (CommitLogRecord)result.LogRecord;
 				await ProcessCommitRecord(record, result.RecordPostPosition, token);
 				break;
@@ -190,11 +188,6 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 				break;
 			default:
 				throw new ArgumentOutOfRangeException();
-		}
-
-		if (result.Eof && result.LogRecord.RecordType != LogRecordType.Commit && _commitsAfterEof) {
-			_commitsAfterEof = false;
-			_leaderBus.Publish(new StorageMessage.TfEofAtNonCommitRecord());
 		}
 	}
 
@@ -252,8 +245,8 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 	}
 
 	private void CommitPendingTransaction(ImplicitTransaction<TStreamId> transaction, long postPosition) {
-		if (transaction.Prepares.Count > 0) {
-			_indexCommitterService.AddPendingPrepare(transaction.Prepares.ToArray(), postPosition);
+		if (transaction.Position is { } transactionPosition) {
+			_indexCommitterService.AddPendingPrepare(transactionPosition, transaction.Prepares.ToArray(), postPosition);
 		}
 		_transaction.Clear();
 	}

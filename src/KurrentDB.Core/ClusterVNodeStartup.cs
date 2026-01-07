@@ -13,8 +13,7 @@ using EventStore.Core.Services.Transport.Grpc.Cluster;
 using EventStore.Plugins;
 using EventStore.Plugins.Authentication;
 using EventStore.Plugins.Authorization;
-using Grpc.Net.Compression;
-using Kurrent.Quack.ConnectionPool;
+using KurrentDB.Common.Compression;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
@@ -25,7 +24,6 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Core.Services.Transport.Http;
 using KurrentDB.Core.TransactionLog.Chunks;
-using KurrentDB.DuckDB;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -134,8 +132,8 @@ public class ClusterVNodeStartup<TStreamId>
 		app.UseAuthorization();
 		app.UseAntiforgery();
 
-		// associates a lazy DuckDB connection pool with each distinct HTTP connection
-		app.UseMiddleware<DuckDbConnectionPoolMiddleware>();
+		// provides a lazy DuckDB connection pool unique to the connection
+		app.UseDuckDb();
 
 		// allow all subsystems to register their legacy controllers before calling MapLegacyHttp
 		foreach (var component in _plugableComponents)
@@ -215,7 +213,6 @@ public class ClusterVNodeStartup<TStreamId>
 			.AddSingleton<AuthenticationMiddleware>()
 			.AddSingleton<AuthorizationMiddleware>()
 			.AddSingleton(new KestrelToInternalBridgeMiddleware(_httpService.UriRouter, _httpService.LogHttpRequests, _httpService.AdvertiseAsHost, _httpService.AdvertiseAsPort))
-			.AddSingleton<DuckDbConnectionPoolMiddleware>()
 			.AddSingleton(_authenticationProvider)
 			.AddSingleton(_authorizationProvider);
 		services.AddCors(o => o.AddPolicy(
@@ -290,13 +287,11 @@ public class ClusterVNodeStartup<TStreamId>
 				// The client must still need to opt-in
 				options.ResponseCompressionAlgorithm = "gzip";
 				options.ResponseCompressionLevel = CompressionLevel.Optimal;
-				options.CompressionProviders.Add(new GzipCompressionProvider(CompressionLevel.Optimal));
+				options.CompressionProviders.Add(new Rfc1952GzipCompressionProvider(CompressionLevel.Optimal));
 			})
 			.AddServiceOptions<Streams<TStreamId>>(options => options.MaxReceiveMessageSize = TFConsts.EffectiveMaxLogRecordSize);
 
-		services.AddSingleton<DuckDBConnectionPoolLifetime>();
-		services.AddDuckDBSetup<KdbGetEventSetup>();
-		services.AddSingleton<DuckDBConnectionPool>(sp => sp.GetRequiredService<DuckDBConnectionPoolLifetime>().Shared);
+		services.AddDuckDb();
 
 		// Ask the node itself to add DI registrations
 		_configureNodeServices(services);

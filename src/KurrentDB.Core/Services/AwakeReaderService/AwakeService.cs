@@ -12,10 +12,15 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 
 namespace KurrentDB.Core.Services.AwakeReaderService;
 
-public class AwakeService : IHandle<AwakeServiceMessage.SubscribeAwake>,
+// The AwakerService notifies subscribers when new events are committed to particular streams or $all
+// It calls the callbacks when it reaches the end of the log (or a threshold) rather than immediately on new event because
+// the subscriber will usually issue a read, so may as well wait until the events currently being written are available to
+// be returned in that read, saving multiple resubscriptions.
+public class AwakeService :
+	IHandle<AwakeServiceMessage.SubscribeAwake>,
 	IHandle<AwakeServiceMessage.UnsubscribeAwake>,
 	IHandle<StorageMessage.EventCommitted>,
-	IHandle<StorageMessage.TfEofAtNonCommitRecord> {
+	IHandle<StorageMessage.IndexedToEndOfTransactionFile> {
 	private readonly Dictionary<string, HashSet<AwakeServiceMessage.SubscribeAwake>> _subscribers = new();
 	private readonly Dictionary<Guid, AwakeServiceMessage.SubscribeAwake> _map = new();
 
@@ -118,7 +123,7 @@ public class AwakeService : IHandle<AwakeServiceMessage.SubscribeAwake>,
 		list.Remove(subscriber);
 	}
 
-	public void Handle(StorageMessage.TfEofAtNonCommitRecord message) {
+	public void Handle(StorageMessage.IndexedToEndOfTransactionFile message) {
 		EndReplyBatch();
 		BeginReplyBatch();
 	}
