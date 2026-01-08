@@ -84,7 +84,8 @@ public partial class InMemoryBus : ISubscriber, IAsyncHandle<Message> {
 
 		var elapsedMs = ts.ElapsedMilliseconds;
 		if (elapsedMs > _slowMsgThresholdMs) {
-			Log.Debug("SLOW BUS MSG [{bus}]: {message} - {elapsed}ms.",
+			// keep to 3 template args to avoid params[] overload
+			Log.Debug("SLOW BUS MSG [{bus}]: {message} - {elapsed}ms." + $" {message}.",
 				Name, message.GetType().Name, (int)elapsedMs);
 			if (elapsedMs > VerySlowMsgThreshold.TotalMilliseconds &&
 				message is not SystemMessage.SystemInit)

@@ -145,9 +145,9 @@ public class QueuedHandlerThreadPool : IQueuedHandler, IMonitoredQueue, IThreadP
 
 							if (elapsed > _slowMsgThreshold) {
 								Log.Debug(
-									"SLOW QUEUE MSG [{queue}]: {message} - {elapsed}ms. Q: {prevQueueCount}/{curQueueCount}. {messageDetail}.",
+									"SLOW QUEUE MSG [{queue}]: {message} - {elapsed}ms. Q: {prevQueueCount}/{curQueueCount}.",
 									_queueStats.Name, _queueStats.InProgressMessage.Name,
-									(int)elapsed.TotalMilliseconds, queueCnt, _queue.Count, msg);
+									(int)elapsed.TotalMilliseconds, queueCnt, _queue.Count);
 								if (elapsed > VerySlowMsgThreshold &&
 									!(msg is SystemMessage.SystemInit))
 									Log.Error(
