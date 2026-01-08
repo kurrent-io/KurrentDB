@@ -120,7 +120,6 @@
 	},
 
 	"Queues": {
-		"Busy": true,
 		"Length": true,
 		// this is the most expensive metric, creating a histogram for each
 		// queue grouping and message type grouping as defined in the config below
@@ -143,10 +142,6 @@
 			"Label": "Timer"
 		},
 		{
-			"Regex": "StorageReaderQueue #.*",
-			"Label": "Readers"
-		},
-		{
 			"Regex": "StorageWriterQueue",
 			"Label": "Writer"
 		},
@@ -165,10 +160,6 @@
 		{
 			"Regex": "Projection Core #.*",
 			"Label": "Projections Core"
-		},
-		{
-			"Regex": "Worker #.*",
-			"Label": "Workers"
 		},
 		{
 			"Regex": ".*",
