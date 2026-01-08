@@ -33,10 +33,10 @@ Content-Type: application/json
 Authorization: Basic YWRtaW46Y2hhbmdlaXQ=
 
 {
-  "filter": "rec => rec.type == 'OrderCreated'",
+  "filter": "rec => rec.schema.name == 'OrderCreated'",
   "fields": [{
     "name": "country",
-      "selector": "rec => rec.data.country",
+      "selector": "rec => rec.value.country",
       "type": "INDEX_FIELD_TYPE_STRING"
     }]
 }
@@ -66,21 +66,31 @@ INDEX_FIELD_TYPE_INT_64
 
 By default a user defined index will start automatically. This can be prevented by passing `"start": false` in the request.
 
-The structure of the record passed to the `filter` and `selector` functions is currently:
+The structure of the record passed to the `filter` and `selector` functions is:
 
+```json
+{
+  "id": "12345678-1234-1234-1234-123456789abc", // the event ID
+  "timestamp": "2026-01-15T13:37:01.337Z", // the time at which the event was written to the transaction log
+  "position": {
+    "stream": "my-stream", // the stream name
+    "streamRevision": 2, // the event number
+    "logPosition": 2705 // the commit position of the record in the transaction log
+  },
+  "schema": {
+    "name": "my-event-type", // the event type
+    "format": "Json" // the data format
+  },
+  "sequence": 3, // a sequence number that auto-increments each time a record is passed to the filter
+  "redacted": false, // whether the record is redacted or not
+  "value": { // deserialized data (only when the data is JSON and not redacted)
+    "my": "data"
+  },
+  "properties": { // deserialized metadata
+    "my": "metadata"
+  }
+}
 ```
-rec.stream - stream id
-rec.number - event number
-rec.type - event type
-rec.id - event id
-rec.data - event data
-rec.metadata - event metadata
-rec.isJson - whether the data is json or not
-```
-
-::: note
-The above describes the structure in `v26.0.0-rc.1` we are looking at providing the same structure provided to the javascript functions in `connectors` and this will likely be implemented before `v26.0.0` RTM.
-:::
 
 Now if you append a record representing a `OrderCreated` event with a payload like
 
