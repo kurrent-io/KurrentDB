@@ -43,7 +43,7 @@ public class UserIndexEventStore : IEventStore {
 		// decide if we are going to duplicate the events to the user index all Stream
 		var duplicate = stream.ToString().StartsWith(UserIndexConstants.Category);
 
-		var writes = new LowAllocReadOnlyMemory<Write>.Builder();
+		var writes = new LowAllocReadOnlyMemory<StreamWrite>.Builder();
 
 		var first = true;
 		foreach (var evt in events) {

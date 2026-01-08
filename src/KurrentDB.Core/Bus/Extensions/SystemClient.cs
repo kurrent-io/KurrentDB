@@ -71,7 +71,7 @@ public interface IReadOperations {
 	IAsyncEnumerable<ResolvedEvent> ReadIndexBackwards(string indexName, Position startPosition, long maxCount, CancellationToken cancellationToken = default);
 }
 
-public record struct Write(string Stream, long ExpectedRevision, LowAllocReadOnlyMemory<Event> Events);
+public record struct StreamWrite(string Stream, long ExpectedRevision, LowAllocReadOnlyMemory<Event> Events);
 
 public interface IWriteOperations {
 	Task<WriteEventsResult> WriteEvents(string stream, Event[] events, long expectedRevision = -2, CancellationToken cancellationToken = default);
@@ -82,7 +82,7 @@ public interface IWriteOperations {
 		LowAllocReadOnlyMemory<int> eventStreamIndexes,
 		CancellationToken cancellationToken = default);
 	Task<WriteEventsMultiResult> WriteEvents(
-		LowAllocReadOnlyMemory<Write> writes,
+		LowAllocReadOnlyMemory<StreamWrite> writes,
 		CancellationToken cancellationToken = default);
 }
 
@@ -167,7 +167,7 @@ public class SystemClient : ISystemClient {
 			Publisher.WriteEvents(streams, expectedRevisions, events, eventStreamIndexes, cancellationToken);
 
 		public Task<WriteEventsMultiResult> WriteEvents(
-			LowAllocReadOnlyMemory<Write> writes,
+			LowAllocReadOnlyMemory<StreamWrite> writes,
 			CancellationToken cancellationToken = default) {
 
 			var streamIndexes = new Dictionary<string, int>();
