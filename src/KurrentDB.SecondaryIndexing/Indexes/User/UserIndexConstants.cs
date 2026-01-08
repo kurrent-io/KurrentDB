@@ -7,7 +7,7 @@ using KurrentDB.SecondaryIndexing.Indexes.User.Management;
 namespace KurrentDB.SecondaryIndexing.Indexes.User;
 
 public static class UserIndexConstants {
-	public const string Category = $"${nameof(UserIndex)}";
+	public const string Category = $"${nameof(UserIndex)}-";
 	public const string StreamPrefix = $"{SystemStreams.IndexStreamPrefix}user-";
 	public const string ManagementAllStream = $"$all-indexes";
 	public const char FieldDelimiter = ':';
