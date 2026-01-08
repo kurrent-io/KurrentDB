@@ -5,6 +5,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext;
+using KurrentDB.Common.Configuration;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
@@ -53,8 +54,7 @@ public class QueuedHandlerThreadPool : IQueuedHandler, IMonitoredQueue, IThreadP
 		string name,
 		QueueStatsManager queueStatsManager,
 		QueueTrackers trackers,
-		bool watchSlowMsg = true,
-		TimeSpan? slowMsgThreshold = null,
+		Func<string, TimeSpan> getSlowMessageThreshold,
 		TimeSpan? threadStopWaitTimeout = null,
 		string groupName = null) {
 		Ensure.NotNull(consumer);
@@ -66,8 +66,8 @@ public class QueuedHandlerThreadPool : IQueuedHandler, IMonitoredQueue, IThreadP
 		_lifetimeSource = new();
 		_lifetimeToken = _lifetimeSource.Token;
 
-		_watchSlowMsg = watchSlowMsg;
-		_slowMsgThreshold = slowMsgThreshold ?? InMemoryBus.DefaultSlowMessageThreshold;
+		_slowMsgThreshold = getSlowMessageThreshold(name);
+		_watchSlowMsg = _slowMsgThreshold > TimeSpan.Zero;
 		_threadStopWaitTimeout = threadStopWaitTimeout ?? DefaultStopWaitTimeout;
 
 		_queueMonitor = QueueMonitor.Default;

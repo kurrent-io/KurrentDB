@@ -18,13 +18,13 @@ public abstract class queued_handler_should : QueuedHandlerTestWithNoopConsumer 
 	[Test]
 	public void throw_if_handler_is_null() {
 		Assert.Throws<ArgumentNullException>(
-			static () => new QueuedHandlerThreadPool(null, "throwing", new(), new(), watchSlowMsg: false));
+			static () => new QueuedHandlerThreadPool(null, "throwing", new(), new(), _ => TimeSpan.Zero));
 	}
 
 	[Test]
 	public void throw_if_name_is_null() {
 		Assert.Throws<ArgumentNullException>(
-			() => new QueuedHandlerThreadPool(Consumer, null, new(), new(), watchSlowMsg: false));
+			() => new QueuedHandlerThreadPool(Consumer, null, new(), new(), _ => TimeSpan.Zero));
 	}
 }
 
@@ -32,6 +32,6 @@ public abstract class queued_handler_should : QueuedHandlerTestWithNoopConsumer 
 public class queued_handler_threadpool_should : queued_handler_should {
 	public queued_handler_threadpool_should()
 		: base(static (consumer, name, timeout) =>
-			new QueuedHandlerThreadPool(consumer, name, new QueueStatsManager(), new(), false, null, timeout)) {
+			new QueuedHandlerThreadPool(consumer, name, new QueueStatsManager(), new(), _ => TimeSpan.Zero, timeout)) {
 	}
 }

@@ -60,8 +60,8 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 	private readonly bool _startStandardProjections;
 	private readonly TimeSpan _projectionsQueryExpiry;
 
-	private readonly InMemoryBus _leaderInputBus;
-	private readonly InMemoryBus _leaderOutputBus;
+	private InMemoryBus _leaderInputBus;
+	private InMemoryBus _leaderOutputBus;
 
 	private IQueuedHandler _leaderInputQueue;
 	private IQueuedHandler _leaderOutputQueue;
@@ -114,9 +114,6 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 		_projectionsQueryExpiry = projectionSubsystemOptions.ProjectionQueryExpiry;
 		_faultOutOfOrderProjections = projectionSubsystemOptions.FaultOutOfOrderProjections;
 
-		_leaderInputBus = new InMemoryBus("manager input bus");
-		_leaderOutputBus = new InMemoryBus("ProjectionManagerAndCoreCoordinatorOutput");
-
 		_subsystemInitialized = new();
 		_executionTimeout = projectionSubsystemOptions.ExecutionTimeout;
 		_compilationTimeout = projectionSubsystemOptions.CompilationTimeout;
@@ -137,18 +134,23 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 	public void ConfigureApplication(IApplicationBuilder builder, IConfiguration configuration) {
 		var standardComponents = builder.ApplicationServices.GetRequiredService<StandardComponents>();
 
+		var getSlowMessageThreshold = standardComponents.MetricsConfiguration.GetBusSlowMessageThreshold;
+
+		_leaderInputBus = new InMemoryBus("ProjectionManagerInputBus", getSlowMessageThreshold);
+		_leaderOutputBus = new InMemoryBus("ProjectionManagerOutputBus", getSlowMessageThreshold);
+
 		_leaderInputQueue = new QueuedHandlerThreadPool(
 			_leaderInputBus,
 			"Projections Leader",
 			standardComponents.QueueStatsManager,
-			standardComponents.QueueTrackers
-		);
+			standardComponents.QueueTrackers,
+			getSlowMessageThreshold);
 		_leaderOutputQueue = new QueuedHandlerThreadPool(
 			_leaderOutputBus,
 			"Projections Leader",
 			standardComponents.QueueStatsManager,
-			standardComponents.QueueTrackers
-		);
+			standardComponents.QueueTrackers,
+			getSlowMessageThreshold);
 
 		LeaderInputBus.Subscribe<ProjectionSubsystemMessage.RestartSubsystem>(this);
 		LeaderInputBus.Subscribe<ProjectionSubsystemMessage.ComponentStarted>(this);

@@ -14,14 +14,14 @@ namespace KurrentDB.Projections.Core.Tests.Bus;
 public class when_stopping_queued_handler_threadpool : when_stopping_queued_handler {
 	public when_stopping_queued_handler_threadpool()
 		: base(static (consumer, name, timeout) =>
-			new QueuedHandlerThreadPool(consumer, name, new QueueStatsManager(), new(), false, null, timeout)) {
+			new QueuedHandlerThreadPool(consumer, name, new QueueStatsManager(), new(), _ => TimeSpan.Zero, timeout)) {
 	}
 
 	[Test]
 	public void while_queue_is_busy_should_crash_with_timeout() {
 		var consumer = new WaitingConsumer(1);
 		var busyQueue = new QueuedHandlerThreadPool(consumer, "busy_test_queue", new QueueStatsManager(), new(),
-			watchSlowMsg: false,
+			_ => TimeSpan.Zero,
 			threadStopWaitTimeout: TimeSpan.FromMilliseconds(100));
 		var waitHandle = new ManualResetEvent(false);
 		var handledEvent = new ManualResetEvent(false);

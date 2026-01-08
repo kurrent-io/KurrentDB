@@ -42,8 +42,8 @@ public class TestFixtureWithProjectionSubsystem {
 		var mainQueue = new QueuedHandlerThreadPool
 		(new AdHocHandler<Message>(msg => {
 			/* Ignore messages */
-		}), "MainQueue", new QueueStatsManager(), new());
-		var mainBus = new InMemoryBus("mainBus");
+		}), "MainQueue", new QueueStatsManager(), new(), _ => TimeSpan.Zero);
+		var mainBus = new InMemoryBus("mainBus", _ => TimeSpan.Zero);
 		var threadBasedScheduler = new ThreadBasedScheduler(new QueueStatsManager(), new());
 		var timerService = new TimerService(threadBasedScheduler);
 
