@@ -575,7 +575,7 @@ public class ClusterVNode<TStreamId> :
 		_mainBus.Subscribe<ClientMessage.ReloadConfig>(this);
 
 		// MONITORING
-		var monitoringInnerBus = new InMemoryBus("MonitoringInnerBus", watchSlowMsg: false);
+		var monitoringInnerBus = new InMemoryBus("MonitoringInnerBus", watchSlowMsg: true, slowMsgThreshold: TimeSpan.FromMilliseconds(800));
 		var monitoringRequestBus = new InMemoryBus("MonitoringRequestBus", watchSlowMsg: false);
 		var monitoringQueue = new ThreadPoolMessageScheduler("MonitoringQueue", monitoringInnerBus) {
 			SynchronizeMessagesWithUnknownAffinity = true,
