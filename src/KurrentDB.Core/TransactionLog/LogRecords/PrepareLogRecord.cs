@@ -185,7 +185,7 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		EventStreamId = ReadString(ref reader, in context);
 		EventId = reader.Read<Blittable<Guid>>().Value;
 		CorrelationId = reader.Read<Blittable<Guid>>().Value;
-		TimeStamp = new(reader.ReadLittleEndian<long>());
+		TimeStamp = new(reader.ReadLittleEndian<long>(), DateTimeKind.Utc);
 		EventType = ReadString(ref reader, in context);
 
 		_dataOnDisk = reader.ReadLittleEndian<int>() is var dataCount && dataCount > 0
