@@ -34,7 +34,6 @@ public static class KurrentConfiguration {
 			// check for the existence of KurrentDB default locations
 			// if they do not exist, use the EventStore ones if the EventStore location exists.
 			.AddLegacyDefaultLocations(optionsWithLegacyDefaults)
-			.AddKurrentYamlConfigFile(configFile.Path, configFile.Optional)
 
 			.AddSection($"{KurrentConfigurationKeys.Prefix}:Metrics",
 				x => x.AddKurrentConfigFile("metricsconfig.json", true, true))
@@ -47,6 +46,7 @@ public static class KurrentConfiguration {
 			// directory. We use the subdirectory to ensure that we only load configuration files.
 			.AddLegacyEventStoreConfigFiles("*.json")
 			.AddKurrentConfigFiles("*.json")
+			.AddKurrentYamlConfigFile(configFile.Path, configFile.Optional)
 
 #if DEBUG
 			// load all json files in the current directory
