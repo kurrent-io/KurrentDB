@@ -158,6 +158,10 @@
 			"Label": "Timer"
 		},
 		{
+			"Regex": "ThreadPoolQueue",
+			"Label": "ThreadPool"
+		},
+		{
 			"Regex": "StorageReaderQueue",
 			"Label": "Readers"
 		},

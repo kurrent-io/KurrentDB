@@ -132,9 +132,7 @@ public class QueueStatsCollector : IQueueStatsCollector {
 		_inProgressMsgType = msgType;
 	}
 
-	void IQueueStatsCollector.ReportQueueLength(int queueLength) => ReportQueueLength(queueLength);
-
-	private void ReportQueueLength(int queueLength) {
+	public void ReportQueueLength(int queueLength) {
 		_lifetimeQueueLengthPeak = _lifetimeQueueLengthPeak > queueLength ? _lifetimeQueueLengthPeak : queueLength;
 		_currentQueueLengthPeak = _currentQueueLengthPeak > queueLength ? _currentQueueLengthPeak : queueLength;
 	}
@@ -210,7 +208,7 @@ public class QueueStatsCollector : IQueueStatsCollector {
 				_busyWatch.IsRunning ? _busyWatch.Elapsed : (TimeSpan?)null,
 				_idleWatch.IsRunning ? _idleWatch.Elapsed : (TimeSpan?)null,
 				totalItems,
-				_currentQueueLengthPeak,
+				Math.Max(_currentQueueLengthPeak, currentQueueLength),
 				_lifetimeQueueLengthPeak,
 				_lastProcessedMsgType,
 				_inProgressMsgType);

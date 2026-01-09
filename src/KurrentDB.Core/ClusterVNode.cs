@@ -40,6 +40,7 @@ using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Resilience;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Archive;
@@ -607,6 +608,13 @@ public class ClusterVNode<TStreamId> :
 		monitoringInnerBus.Subscribe<MonitoringMessage.GetFreshStats>(monitoring);
 		monitoringInnerBus.Subscribe<MonitoringMessage.GetFreshTcpConnectionStats>(monitoring);
 
+		var threadPoodQueueLengthMonitor = new ThreadPoolQueueLengthMonitor(
+			delay: TimeSpan.FromSeconds(2),
+			trackers: trackers.QueueTrackers,
+			queueStatsManager: _queueStatsManager);
+		threadPoodQueueLengthMonitor.Start();
+
+		// Log Format
 		var indexPath = options.Database.Index ?? Path.Combine(Db.Config.Path, ESConsts.DefaultIndexDirectoryName);
 		var tfReader = new TFChunkReader(Db, Db.Config.WriterCheckpoint.AsReadOnly());
 
@@ -777,7 +785,7 @@ public class ClusterVNode<TStreamId> :
 		// PRE-LEADER -> LEADER TRANSITION MANAGEMENT
 		var inaugurationManager = new InaugurationManager(
 			publisher: _mainQueue,
-			replicationCheckpoint: Db.Config.ReplicationCheckpoint,
+			replicationCheckpoint: Db.Config.ReplicationCheckpoint.AsReadOnly(),
 			indexCheckpoint: Db.Config.IndexCheckpoint,
 			statusTracker: trackers.InaugurationStatusTracker);
 		_mainBus.Subscribe<SystemMessage.StateChangeMessage>(inaugurationManager);
