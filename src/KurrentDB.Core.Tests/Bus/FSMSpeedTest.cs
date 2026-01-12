@@ -52,7 +52,7 @@ public class FSMSpeedTest {
 	}
 
 	private VNodeFSM CreateFSM() {
-		var outputBus = InMemoryBus.CreateTest(false);
+		var outputBus = InMemoryBus.CreateTest();
 		var scheduler = new ThreadPoolMessageScheduler("Test", outputBus) {
 			SynchronizeMessagesWithUnknownAffinity = true,
 		};

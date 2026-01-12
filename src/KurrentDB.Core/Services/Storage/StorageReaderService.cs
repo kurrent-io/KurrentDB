@@ -38,6 +38,7 @@ public class StorageReaderService<TStreamId> : StorageReaderService,
 		IReadOnlyCheckpoint writerCheckpoint,
 		IVirtualStreamReader inMemReader,
 		SecondaryIndexReaders secondaryIndexReaders,
+		Func<string, TimeSpan> getSlowMessageThreshold,
 		long concurrentReadsLimit) {
 		Ensure.NotNull(subscriber);
 		Ensure.NotNull(systemStreams);
@@ -48,7 +49,7 @@ public class StorageReaderService<TStreamId> : StorageReaderService,
 
 		var worker = new StorageReaderWorker<TStreamId>(bus, readIndex, systemStreams, writerCheckpoint, inMemReader, secondaryIndexReaders,
 			concurrentReadsLimit);
-		var storageReaderBus = new InMemoryBus("StorageReaderBus", watchSlowMsg: false);
+		var storageReaderBus = new InMemoryBus("StorageReaderBus", getSlowMessageThreshold);
 
 		storageReaderBus.Subscribe<ClientMessage.ReadEvent>(worker);
 		storageReaderBus.Subscribe<ClientMessage.ReadStreamEventsBackward>(worker);

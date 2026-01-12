@@ -150,6 +150,14 @@ public class MetricsConfiguration {
 		? "eventstore"
 		: "kurrentdb";
 
+	public TimeSpan GetBusSlowMessageThreshold(string bus) {
+		if (!SlowMessageMilliseconds.TryGetValue(bus, out var thresholdMs))
+			return ConfigConstants.DefaultSlowMessageThreshold;
+		if (thresholdMs <= 0)
+			return TimeSpan.Zero; // do not watch for slow messages
+		return TimeSpan.FromMilliseconds(thresholdMs);
+	}
+
 	public string[] Meters { get; set; } = Array.Empty<string>();
 
 	public Dictionary<StatusTracker, bool> Statuses { get; set; } = new();
@@ -188,6 +196,8 @@ public class MetricsConfiguration {
 
 	// must be 0, 1, 5, 10 or a multiple of 15
 	public int ExpectedScrapeIntervalSeconds { get; set; }
+
+	public Dictionary<string, int> SlowMessageMilliseconds { get; set; } = [];
 
 	public Dictionary<QueueTracker, bool> Queues { get; set; } = new();
 

@@ -10,7 +10,7 @@ using KurrentDB.Core.Messaging;
 
 namespace KurrentDB.Core.Bus;
 
-public sealed class SynchronousScheduler(string name = "Test", bool watchSlowMsg = true) : InMemoryBus(name, watchSlowMsg), IPublisher {
+public sealed class SynchronousScheduler(string name = "Test") : InMemoryBus(name, _ => TimeSpan.Zero), IPublisher {
 	public void Publish(Message msg) {
 		ArgumentNullException.ThrowIfNull(msg);
 

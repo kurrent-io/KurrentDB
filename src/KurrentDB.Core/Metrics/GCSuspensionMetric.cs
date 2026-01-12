@@ -5,6 +5,7 @@
 
 using System;
 using System.Diagnostics.Tracing;
+using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Bus;
 using Serilog;
 
@@ -19,7 +20,7 @@ public class GcSuspensionMetric(DurationMaxTracker? tracker) : EventListener {
 	private static readonly ILogger Log = Serilog.Log.ForContext<GcSuspensionMetric>();
 
 	// Match DefaultSlowMessageThreshold so slow messages can be attributed to GC.
-	private static readonly TimeSpan LongSuspensionThreshold = InMemoryBus.DefaultSlowMessageThreshold;
+	private static readonly TimeSpan LongSuspensionThreshold = ConfigConstants.DefaultSlowMessageThreshold;
 	private static readonly TimeSpan VeryLongSuspensionThreshold = TimeSpan.FromMilliseconds(600);
 	private static readonly TimeSpan LongSuspensionLogPeriod = TimeSpan.FromMilliseconds(10_000);
 

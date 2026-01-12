@@ -34,8 +34,8 @@ public class ElectionsServiceUnitTests {
 		var seedSource = new ReallyNotSafeFakeGossipSeedSource(seeds);
 		_nodes = new Dictionary<IPEndPoint, IPublisher>();
 		for (int i = 0; i < 3; i++) {
-			var inputBus = new SynchronousScheduler($"ELECTIONS-INPUT-BUS-NODE-{i}", watchSlowMsg: false);
-			var outputBus = new SynchronousScheduler($"ELECTIONS-OUTPUT-BUS-NODE-{i}", watchSlowMsg: false);
+			var inputBus = new SynchronousScheduler($"ELECTIONS-INPUT-BUS-NODE-{i}");
+			var outputBus = new SynchronousScheduler($"ELECTIONS-OUTPUT-BUS-NODE-{i}");
 			var endPoint = new IPEndPoint(address, 1000 + i);
 			seeds.Add(endPoint);
 			var instanceId = Guid.Parse($"101EFD13-F9CD-49BE-9C6D-E6AF9AF5540{i}");
