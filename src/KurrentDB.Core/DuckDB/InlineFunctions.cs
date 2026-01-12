@@ -44,7 +44,7 @@ public class KdbGetEventSetup(IPublisher publisher) : IDuckDBSetup {
 		var dataString = data.IsValidUtf8Json() ? Helper.UTF8NoBom.GetString(data.Span) : "\"<non-json data>\"";
 		var metaString = meta.Length == 0 ? "{}" : Helper.UTF8NoBom.GetString(meta.Span);
 		return
-			$"{{ \"data\": {dataString}, \"metadata\": {metaString}, \"stream_id\": \"{stream}\", \"created\": \"{created:u}\", \"event_type\": \"{eventType}\" }}";
+			$"{{ \"data\": {dataString}, \"metadata\": {metaString}, \"stream_id\": \"{stream}\", \"created\": \"{created.ToLocalTime():yyyy-MM-dd'T'HH:mm:ssK}\", \"event_type\": \"{eventType}\" }}";
 	}
 
 	private static string AsDuckEvent(ResolvedEvent evt)
