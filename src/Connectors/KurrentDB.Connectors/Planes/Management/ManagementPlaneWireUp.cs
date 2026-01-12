@@ -87,7 +87,7 @@ public static class ManagementPlaneWireUp {
 
         services
             .AddValidatorsFromAssembly(Assembly.GetExecutingAssembly())
-            .AddSingleton<RequestValidationService>();
+            .AddScoped<RequestValidationService>();
 
         // Commands
         services.AddSingleton<ConnectorDomainServices.ValidateConnectorSettings>(ctx => {

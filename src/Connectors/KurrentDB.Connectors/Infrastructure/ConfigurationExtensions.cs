@@ -8,55 +8,56 @@ using Microsoft.Extensions.Configuration;
 namespace KurrentDB.Connectors.Infrastructure;
 
 public static class ConfigurationExtensions {
-    extension(IConfiguration configuration) {
-	    /// <summary>
-	    /// Converts an IConfiguration to a Protobuf Struct, preserving the hierarchical structure.
-	    /// </summary>
-	    public Struct ToProtobufStruct() {
-		    var protoStruct = new Struct();
+	public static Struct ToProtobufStruct(this IReadOnlyDictionary<string, string?> configuration) =>
+		new ConfigurationBuilder().AddInMemoryCollection(configuration).Build().ToProtobufStruct();
 
-		    foreach (var child in configuration.GetChildren()) {
-			    var value = ConvertSectionToValue(child);
+	/// <summary>
+	/// Converts an IConfiguration to a Protobuf Struct, preserving the hierarchical structure.
+	/// </summary>
+	public static Struct ToProtobufStruct(this IConfiguration configuration) {
+		var protoStruct = new Struct();
 
-			    if (value != null)
-				    protoStruct.Fields[child.Key] = value;
-		    }
+		foreach (var child in configuration.GetChildren()) {
+			var value = ConvertSectionToValue(child);
 
-		    return protoStruct;
+			if (value != null)
+				protoStruct.Fields[child.Key] = value;
+		}
 
-		    static Value? ConvertSectionToValue(IConfigurationSection section) {
-			    var children = section.GetChildren().ToList();
+		return protoStruct;
 
-			    if (children.Count == 0)
-				    // parse leaf node, otherwise return null to omit empty keys
-				    return !string.IsNullOrEmpty(section.Value)
-					    ? ParseValue(section.Value)
-					    : null;
+		static Value? ConvertSectionToValue(IConfigurationSection section) {
+			var children = section.GetChildren().ToList();
 
-			    // Determine if the section represents an array
-			    if (children.All(c => long.TryParse(c.Key, NumberStyles.Integer, CultureInfo.InvariantCulture, out _))) {
-				    return Value
-					    .ForList(children.OrderBy(c => long.Parse(c.Key, NumberStyles.Integer, CultureInfo.InvariantCulture))
-					    .Select(ConvertSectionToValue)
-					    .OfType<Value>().ToArray());
-			    }
+			if (children.Count == 0)
+				// parse leaf node, otherwise return null to omit empty keys
+				return !string.IsNullOrEmpty(section.Value)
+					? ParseValue(section.Value)
+					: null;
 
-			    // Create a Struct for nested objects
-			    var structValue = new Struct();
+			// Determine if the section represents an array
+			if (children.All(c => long.TryParse(c.Key, NumberStyles.Integer, CultureInfo.InvariantCulture, out _))) {
+				return Value
+					.ForList(children.OrderBy(c => long.Parse(c.Key, NumberStyles.Integer, CultureInfo.InvariantCulture))
+						.Select(ConvertSectionToValue)
+						.OfType<Value>().ToArray());
+			}
 
-			    foreach (var child in children) {
-				    var childValue = ConvertSectionToValue(child);
+			// Create a Struct for nested objects
+			var structValue = new Struct();
 
-				    if (childValue is not null)
-					    structValue.Fields[child.Key] = childValue;
-			    }
+			foreach (var child in children) {
+				var childValue = ConvertSectionToValue(child);
 
-			    return Value.ForStruct(structValue);
-		    }
-	    }
-    }
+				if (childValue is not null)
+					structValue.Fields[child.Key] = childValue;
+			}
 
-    public static void FlattenStruct(Struct source, string prefix, Dictionary<string, string?> dictionary) {
+			return Value.ForStruct(structValue);
+		}
+	}
+
+	public static void FlattenStruct(Struct source, string prefix, Dictionary<string, string?> dictionary) {
         foreach (var field in source.Fields) {
             var key = string.IsNullOrEmpty(prefix) ? field.Key : $"{prefix}:{field.Key}";
             FlattenValue(field.Value, key, dictionary);
