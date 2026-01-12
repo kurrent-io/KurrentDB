@@ -13,6 +13,10 @@ namespace KurrentDB.Core.Services.Storage;
 
 partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadEvent> {
 	async ValueTask IAsyncHandle<ReadEvent>.HandleAsync(ReadEvent msg, CancellationToken token) {
+#if DEBUG
+			await SleepOrDelay(msg.EventStreamId);
+#endif
+
 		ReadEventCompleted res;
 		var cts = _multiplexer.Combine(msg.Lifetime, [token, msg.CancellationToken]);
 		try {

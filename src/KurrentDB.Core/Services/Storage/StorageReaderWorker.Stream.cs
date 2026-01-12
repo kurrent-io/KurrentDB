@@ -15,12 +15,39 @@ namespace KurrentDB.Core.Services.Storage;
 
 partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadStreamEventsBackward>,
 	IAsyncHandle<ReadStreamEventsForward> {
+
+#if DEBUG
+	const string DelayPrefix = "delay-";
+	const string SleepPrefix = "sleep-";
+	const int YieldIntervalMs = 200;
+
+	async ValueTask SleepOrDelay(string stream) {
+		var span = stream.AsSpan();
+		if (span.StartsWith(DelayPrefix)) {
+			if (int.TryParse(span[DelayPrefix.Length..], out var delayMs)) {
+				await Task.Delay(delayMs);
+			}
+		} else if (span.StartsWith(SleepPrefix)) {
+			if (int.TryParse(span[SleepPrefix.Length..], out var sleepMs)) {
+				while (sleepMs > 0) {
+					Thread.Sleep(Math.Min(sleepMs, YieldIntervalMs));
+					await Task.Yield();
+					sleepMs -= YieldIntervalMs;
+				}
+			}
+		}
+	}
+#endif
+
 	async ValueTask IAsyncHandle<ReadStreamEventsForward>.HandleAsync(ReadStreamEventsForward msg, CancellationToken token) {
+#if DEBUG
+			await SleepOrDelay(msg.EventStreamId);
+#endif
+
 		ReadStreamEventsForwardCompleted res;
 		var lastIndexPosition = _readIndex.LastIndexedPosition;
 		var cts = _multiplexer.Combine(msg.Lifetime, [token, msg.CancellationToken]);
 		try {
-
 			res = await ReadStreamEventsForward(msg, lastIndexPosition, cts.Token);
 		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts.Token) {
 			if (!cts.IsTimedOut)
@@ -69,6 +96,10 @@ partial class StorageReaderWorker<TStreamId> : IAsyncHandle<ReadStreamEventsBack
 
 	async ValueTask IAsyncHandle<ReadStreamEventsBackward>.HandleAsync(
 		ReadStreamEventsBackward msg, CancellationToken token) {
+#if DEBUG
+			await SleepOrDelay(msg.EventStreamId);
+#endif
+
 		ReadStreamEventsBackwardCompleted res;
 		var lastIndexedPosition = _readIndex.LastIndexedPosition;
 		var cts = _multiplexer.Combine(msg.Lifetime, [token, msg.CancellationToken]);
