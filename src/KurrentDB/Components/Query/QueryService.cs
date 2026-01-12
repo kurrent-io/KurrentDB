@@ -94,7 +94,7 @@ public static partial class QueryService {
 
 	private const string AllCteTemplate = """
 	                                   {0} AS (
-	                                       select log_position, stream, event_number, event_type, epoch_ms(created) as created_at, event->>'data' as data, event->>'metadata' as metadata
+	                                       select log_position, stream, event_number, event_type, event->>'created' as created_at, event->>'data' as data, event->>'metadata' as metadata
 	                                       from (
 	                                           select *, kdb_get(log_position)::JSON as event
 	                                           from (
@@ -108,7 +108,7 @@ public static partial class QueryService {
 
 	private const string UserIndexCteTemplate = """
 	                                      {0} AS (
-	                                          select log_position, event->>'stream_id' as stream, event_number, event->>'event_type' as event_type, epoch_ms(created) as created_at, event->>'data' as data, event->>'metadata' as metadata{3}
+	                                          select log_position, event->>'stream_id' as stream, event_number, event->>'event_type' as event_type, event->>'created' as created_at, event->>'data' as data, event->>'metadata' as metadata{3}
 	                                          from (
 	                                              select *, kdb_get(log_position)::JSON as event
 	                                              from (
