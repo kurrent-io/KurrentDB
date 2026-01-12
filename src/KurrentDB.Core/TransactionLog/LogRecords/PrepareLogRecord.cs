@@ -256,6 +256,7 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		CorrelationId.TryWriteBytes(buffer);
 		writer.Advance(16);
 
+		Debug.Assert(TimeStamp.Kind == DateTimeKind.Utc);
 		writer.WriteLittleEndian(TimeStamp.Ticks);
 
 		_eventTypeSize ??= Encoding.UTF8.GetByteCount(EventType);
