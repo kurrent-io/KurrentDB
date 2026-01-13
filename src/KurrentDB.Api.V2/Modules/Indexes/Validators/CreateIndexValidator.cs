@@ -24,5 +24,11 @@ class CreateIndexValidator : RequestValidator<CreateIndexRequest> {
 		RuleFor(x => x.Fields)
 			.Must(x => x.Count <= 1)
 			.WithMessage("Currently at most one index field must be provided");
+
+		RuleFor(x => x)
+			.Must(x =>
+				x.Fields.Count > 0 ||
+				!string.IsNullOrWhiteSpace(x.Filter))
+			.WithMessage("At least a filter or a field must be provided");
 	}
 }
