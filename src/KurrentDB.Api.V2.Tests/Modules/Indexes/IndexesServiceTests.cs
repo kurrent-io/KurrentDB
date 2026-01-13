@@ -256,6 +256,24 @@ public class IndexesServiceTests {
 	}
 
 	[Test]
+	public async ValueTask cannot_create_with_no_filter_and_no_fields(CancellationToken ct) {
+		var ex = await Assert
+			.That(async () => {
+				await IndexesClient.CreateAsync(
+					new() {
+						Name = $"{nameof(cannot_create_with_no_filter_and_no_fields)}-{Guid.NewGuid()}",
+						Filter = "",
+						Fields = { },
+					},
+					cancellationToken: ct);
+			})
+			.Throws<RpcException>();
+
+		await Assert.That(ex!.Status.Detail).IsEqualTo("At least a filter or a field must be provided");
+		await Assert.That(ex!.Status.StatusCode).IsEqualTo(StatusCode.InvalidArgument);
+	}
+
+	[Test]
 	public async ValueTask cannot_create_with_invalid_key_type(CancellationToken ct) {
 		var ex = await Assert
 			.That(async () => {
