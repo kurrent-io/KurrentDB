@@ -22,6 +22,9 @@ internal static partial class UserIndexSql {
 	}
 
 	public static string GetColumnNameFor(string fieldName) {
+		if (fieldName is "")
+			return "";
+
 		var columnName = $"field_{fieldName}";
 
 		return IdentifierRegex.IsMatch(columnName)
