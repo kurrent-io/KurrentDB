@@ -6,6 +6,14 @@ order: 1
 
 This page contains the release notes for EventStoreDB 24.10
 
+## [24.10.10](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.10)
+
+13 January 2026
+
+### Connectors: Fix position tracker not accounting for duplicate track calls
+
+The position tracker in connectors has been updated to correctly handle duplicate track calls. Previously, duplicate calls to track the same position would cause an `IndexOutOfRangeException`. This fix ensures that duplicate track calls are safely ignored, improving connector reliability.
+
 ## [24.10.9](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.9)
 
 11 December 2025
