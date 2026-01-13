@@ -517,8 +517,8 @@ public class ClusterVNode<TStreamId> :
 
 		// MISC WORKERS
 		_workerBus = new("Worker Bus", watchSlowMsg: true, slowMsgThreshold: TimeSpan.FromMilliseconds(200));
-		_workersHandler = new ThreadPoolMessageScheduler("Worker Scheduler", _workerBus) {
-			SynchronizeMessagesWithUnknownAffinity = false,
+		_workersHandler = new("Worker Scheduler", _workerBus) {
+			Strategy = ThreadPoolMessageScheduler.TreatUnknownAffinityAsNoAffinity(),
 		};
 
 		void StartSubsystems() {
@@ -578,7 +578,7 @@ public class ClusterVNode<TStreamId> :
 		var monitoringInnerBus = new InMemoryBus("MonitoringInnerBus", watchSlowMsg: false);
 		var monitoringRequestBus = new InMemoryBus("MonitoringRequestBus", watchSlowMsg: false);
 		var monitoringQueue = new ThreadPoolMessageScheduler("MonitoringQueue", monitoringInnerBus) {
-			SynchronizeMessagesWithUnknownAffinity = true,
+			Strategy = ThreadPoolMessageScheduler.SynchronizeMessagesWithUnknownAffinity(),
 			Trackers = trackers.QueueTrackers,
 			StatsManager = _queueStatsManager,
 		};
@@ -1106,7 +1106,7 @@ public class ClusterVNode<TStreamId> :
 		// SUBSCRIPTIONS
 		var subscrBus = new InMemoryBus("SubscriptionsBus", true, TimeSpan.FromMilliseconds(50));
 		var subscrQueue = new ThreadPoolMessageScheduler("Subscriptions", subscrBus) {
-			SynchronizeMessagesWithUnknownAffinity = true,
+			Strategy = ThreadPoolMessageScheduler.SynchronizeMessagesWithUnknownAffinity(),
 			Trackers = trackers.QueueTrackers,
 			StatsManager = _queueStatsManager,
 		};
@@ -1146,7 +1146,7 @@ public class ClusterVNode<TStreamId> :
 		// IO DISPATCHER
 		var perSubscrBus = new InMemoryBus("PersistentSubscriptionsBus", true, TimeSpan.FromMilliseconds(50));
 		var perSubscrQueue = new ThreadPoolMessageScheduler("PersistentSubscriptions", perSubscrBus) {
-			SynchronizeMessagesWithUnknownAffinity = true,
+			Strategy = ThreadPoolMessageScheduler.SynchronizeMessagesWithUnknownAffinity(),
 			Trackers = trackers.QueueTrackers,
 			StatsManager = _queueStatsManager,
 		};
@@ -1395,7 +1395,7 @@ public class ClusterVNode<TStreamId> :
 		// REDACTION
 		var redactionBus = new InMemoryBus("RedactionBus", true, TimeSpan.FromSeconds(2));
 		var redactionQueue = new ThreadPoolMessageScheduler("Redaction", redactionBus) {
-			SynchronizeMessagesWithUnknownAffinity = true,
+			Strategy = ThreadPoolMessageScheduler.SynchronizeMessagesWithUnknownAffinity(),
 			Trackers = trackers.QueueTrackers,
 			StatsManager = _queueStatsManager,
 		};

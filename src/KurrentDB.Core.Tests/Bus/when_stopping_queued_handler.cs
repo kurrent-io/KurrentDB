@@ -51,6 +51,6 @@ public class when_stopping_ThreadPoolMessageScheduler : when_stopping_queued_han
 	public when_stopping_ThreadPoolMessageScheduler()
 		: base(static (consumer, name, timeout) =>
 			new ThreadPoolMessageScheduler(name, consumer)
-				{ StopTimeout = timeout, SynchronizeMessagesWithUnknownAffinity = true }) {
+				{ StopTimeout = timeout, Strategy = ThreadPoolMessageScheduler.SynchronizeMessagesWithUnknownAffinity() }) {
 	}
 }

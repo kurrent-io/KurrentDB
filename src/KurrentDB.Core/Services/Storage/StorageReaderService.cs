@@ -46,8 +46,7 @@ public class StorageReaderService<TStreamId> : StorageReaderService,
 		_bus = Ensure.NotNull(bus);
 		_readIndex = Ensure.NotNull(readIndex);
 
-		var worker = new StorageReaderWorker<TStreamId>(bus, readIndex, systemStreams, writerCheckpoint, inMemReader, secondaryIndexReaders,
-			concurrentReadsLimit);
+		var worker = new StorageReaderWorker<TStreamId>(bus, readIndex, systemStreams, writerCheckpoint, inMemReader, secondaryIndexReaders);
 		var storageReaderBus = new InMemoryBus("StorageReaderBus", watchSlowMsg: false);
 
 		storageReaderBus.Subscribe<ClientMessage.ReadEvent>(worker);
@@ -65,7 +64,7 @@ public class StorageReaderService<TStreamId> : StorageReaderService,
 		storageReaderBus.Subscribe<ClientMessage.ReadIndexEventsBackward>(worker);
 
 		_workersHandler = new ThreadPoolMessageScheduler("StorageReaderQueue", storageReaderBus) {
-			SynchronizeMessagesWithUnknownAffinity = false,
+			Strategy = ThreadPoolMessageScheduler.UseRateLimitForUnknownAffinity(concurrentReadsLimit),
 		};
 		_workersHandler.Start();
 

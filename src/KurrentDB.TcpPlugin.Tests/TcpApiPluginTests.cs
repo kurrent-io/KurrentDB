@@ -110,13 +110,13 @@ public class TcpApiPluginTests {
 		var queueStatsManager = new QueueStatsManager();
 		var queueTrackers = new QueueTrackers();
 		var workersHandler = new ThreadPoolMessageScheduler("Worker Scheduler", workerBus) {
-			SynchronizeMessagesWithUnknownAffinity = false,
+			Strategy = ThreadPoolMessageScheduler.TreatUnknownAffinityAsNoAffinity(),
 		};
 
 		var dbConfig = TFChunkHelper.CreateDbConfig(Path.GetTempPath(), 0);
 		var mainBus = new InMemoryBus("mainBus");
 		var mainQueue = new ThreadPoolMessageScheduler("MainQueue", mainBus) {
-			SynchronizeMessagesWithUnknownAffinity = true,
+			Strategy = ThreadPoolMessageScheduler.SynchronizeMessagesWithUnknownAffinity(),
 		};
 		mainQueue.Start();
 		var threadBasedScheduler = new ThreadBasedScheduler(queueStatsManager, queueTrackers);

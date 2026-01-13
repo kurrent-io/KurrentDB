@@ -7,7 +7,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using DotNext;
-using DotNext.Threading;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Time;
 
@@ -35,7 +34,7 @@ partial class ThreadPoolMessageScheduler {
 		// state fields
 		private ConfiguredValueTaskAwaitable.ConfiguredValueTaskAwaiter _awaiter;
 		private Message _message;
-		private AsyncExclusiveLock _groupLock;
+		private ISynchronizationGroup _groupLock;
 		private Instant _timestamp; // enqueuedAt or processingStartedAt depending on the state.
 
 		public AsyncStateMachine(ThreadPoolMessageScheduler scheduler) {
@@ -60,7 +59,7 @@ partial class ThreadPoolMessageScheduler {
 		//	}
 		//}
 
-		internal void Schedule(Message message, AsyncExclusiveLock groupLock) {
+		internal void Schedule(Message message, ISynchronizationGroup groupLock) {
 			_message = message;
 			_groupLock = groupLock;
 			ReportEnqueued();

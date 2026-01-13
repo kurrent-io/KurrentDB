@@ -453,6 +453,7 @@ public static partial class StorageMessage {
 
 	[DerivedMessage(CoreMessage.Storage)]
 	public partial class BatchLogExpiredMessages : Message {
+		public override object Affinity => null;
 	}
 
 	[DerivedMessage(CoreMessage.Storage)]

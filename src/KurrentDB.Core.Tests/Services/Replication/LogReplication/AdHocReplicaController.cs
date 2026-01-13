@@ -44,7 +44,7 @@ internal class AdHocReplicaController<TStreamId> : IAsyncHandle<Message> {
 
 	public AdHocReplicaController(IPublisher outputBus, LeaderInfo<TStreamId> leaderInfo) {
 		_inputQueue = new ThreadPoolMessageScheduler("InputQueue", this) {
-			SynchronizeMessagesWithUnknownAffinity = true,
+			Strategy = ThreadPoolMessageScheduler.SynchronizeMessagesWithUnknownAffinity(),
 		};
 		_outputBus = outputBus;
 		_leaderInfo = leaderInfo;
