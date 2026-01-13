@@ -32,7 +32,7 @@ partial class ThreadPoolMessageScheduler {
 	/// <param name="concurrencyLimit">The number of messages that can be processed in parallel.</param>
 	/// <returns>The strategy instance.</returns>
 	public static MessageProcessingStrategy UseRateLimitForUnknownAffinity(long concurrencyLimit) {
-		ArgumentOutOfRangeException.ThrowIfZero(concurrencyLimit);
+		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(concurrencyLimit);
 
 		return new RateLimitedStrategy(concurrencyLimit);
 	}

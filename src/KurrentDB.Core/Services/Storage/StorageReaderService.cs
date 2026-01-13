@@ -65,7 +65,9 @@ public class StorageReaderService<TStreamId> : StorageReaderService,
 		storageReaderBus.Subscribe<ClientMessage.ReadIndexEventsBackward>(worker);
 
 		_workersHandler = new ThreadPoolMessageScheduler("StorageReaderQueue", storageReaderBus) {
-			Strategy = ThreadPoolMessageScheduler.UseRateLimitForUnknownAffinity(concurrentReadsLimit),
+			Strategy = concurrentReadsLimit > 0L
+				? ThreadPoolMessageScheduler.UseRateLimitForUnknownAffinity(concurrentReadsLimit)
+				: ThreadPoolMessageScheduler.TreatUnknownAffinityAsNoAffinity(),
 		};
 		_workersHandler.Start();
 
