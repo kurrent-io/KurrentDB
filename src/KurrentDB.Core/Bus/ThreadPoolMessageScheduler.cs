@@ -128,6 +128,6 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 		}
 
 		// TODO: We need to respect readiness barrier here and delay messages if the scheduler is not yet started
-		stateMachine.Schedule(message, Strategy.GetSynchronizationGroup(message));
+		stateMachine.Schedule(message, Strategy.GetSynchronizationGroup(message.Affinity));
 	}
 }
