@@ -293,7 +293,7 @@ public class IndexesServiceTests {
 			})
 			.Throws<RpcException>();
 
-		await Assert.That(ex!.Status.Detail).IsEqualTo("Field type must not be unspecified");
+		await Assert.That(ex!.Status.Detail).IsEqualTo("Field type must be specified");
 		await Assert.That(ex!.Status.StatusCode).IsEqualTo(StatusCode.InvalidArgument);
 	}
 

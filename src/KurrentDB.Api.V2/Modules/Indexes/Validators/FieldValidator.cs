@@ -19,7 +19,7 @@ class FieldValidator : ValidatorBase<FieldValidator, IndexField> {
 
 		RuleFor(x => x.Type)
 			.Must(x => x is not IndexFieldType.Unspecified)
-			.WithMessage("Field type must not be unspecified")
+			.WithMessage("Field type must be specified")
 			.WithName("Field type");
 	}
 }
