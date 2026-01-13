@@ -54,18 +54,4 @@ public class ClusterVNodeOptionsValidatorTests {
 			ClusterVNodeOptionsValidator.Validate(options);
 		});
 	}
-
-	[Fact]
-	public void cannot_set_conflicting_concurrency_limits() {
-		var options = new ClusterVNodeOptions {
-			Database = new() {
-				ReaderThreadsCount = 3,
-				ConcurrentReadsLimit = 4,
-			}
-		};
-
-		Assert.Throws<InvalidConfigurationException>(() => {
-			ClusterVNodeOptionsValidator.Validate(options);
-		});
-	}
 }

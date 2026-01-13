@@ -335,7 +335,8 @@ public class ClusterVNode<TStreamId> :
 			httpEndPoint, options.Cluster.ReadOnlyReplica);
 
 		var dbConfig = CreateDbConfig(
-			out var statsHelper);
+			out var statsHelper,
+			out var readerThreadsCount);
 
 		var trackers = new Trackers();
 		var metricsConfiguration = MetricsConfiguration.Get(configuration);
@@ -371,7 +372,8 @@ public class ClusterVNode<TStreamId> :
 			});
 
 		TFChunkDbConfig CreateDbConfig(
-			out SystemStatsHelper statsHelper) {
+			out SystemStatsHelper statsHelper,
+			out int readerThreadsCount) {
 
 			ICheckpoint writerChk;
 			ICheckpoint chaserChk;
@@ -460,6 +462,11 @@ public class ClusterVNode<TStreamId> :
 				? (long)options.Application.StatsPeriodSec * 1000
 				: Timeout.Infinite;
 			statsHelper = new SystemStatsHelper(Log, writerChk.AsReadOnly(), dbPath, statsCollectionPeriod);
+
+			readerThreadsCount = ThreadCountCalculator.CalculateReaderThreadCount(
+				configuredCount: options.Database.ReaderThreadsCount,
+				processorCount: Environment.ProcessorCount,
+				isRunningInContainer: isRunningInContainer);
 
 			return new TFChunkDbConfig(dbPath,
 				options.Database.ChunkSize,
@@ -775,7 +782,7 @@ public class ClusterVNode<TStreamId> :
 			virtualStreamReader, secondaryIndexReaders, metricsConfiguration.GetBusSlowMessageThreshold,
 			trackers.QueueTrackers,
 			_queueStatsManager,
-			options.Database.InternalConcurrentReadsLimit);
+			readerThreadsCount);
 
 		_mainBus.Subscribe<SystemMessage.SystemInit>(storageReader);
 		_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(storageReader);
