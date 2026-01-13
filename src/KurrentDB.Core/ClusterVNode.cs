@@ -516,7 +516,7 @@ public class ClusterVNode<TStreamId> :
 		var forwardingProxy = new MessageForwardingProxy();
 
 		// MISC WORKERS
-		_workerBus = new("Worker Bus", watchSlowMsg: true, slowMsgThreshold: TimeSpan.FromMilliseconds(200));
+		_workerBus = new("WorkerBus", metricsConfiguration.GetBusSlowMessageThreshold);
 		_workersHandler = new("Worker Scheduler", _workerBus) {
 			Strategy = ThreadPoolMessageScheduler.TreatUnknownAffinityAsNoAffinity(),
 		};
@@ -537,6 +537,7 @@ public class ClusterVNode<TStreamId> :
 			new ClusterVNodeController<TStreamId>(
 				_queueStatsManager, trackers, NodeInfo, Db,
 				trackers.NodeStatusTracker,
+				metricsConfiguration,
 				options, this, forwardingProxy,
 				startSubsystems: StartSubsystems);
 
@@ -575,8 +576,8 @@ public class ClusterVNode<TStreamId> :
 		_mainBus.Subscribe<ClientMessage.ReloadConfig>(this);
 
 		// MONITORING
-		var monitoringInnerBus = new InMemoryBus("MonitoringInnerBus", watchSlowMsg: false);
-		var monitoringRequestBus = new InMemoryBus("MonitoringRequestBus", watchSlowMsg: false);
+		var monitoringInnerBus = new InMemoryBus("MonitoringInnerBus", metricsConfiguration.GetBusSlowMessageThreshold);
+		var monitoringRequestBus = new InMemoryBus("MonitoringRequestBus", metricsConfiguration.GetBusSlowMessageThreshold);
 		var monitoringQueue = new ThreadPoolMessageScheduler("MonitoringQueue", monitoringInnerBus) {
 			Strategy = ThreadPoolMessageScheduler.SynchronizeMessagesWithUnknownAffinity(),
 			Trackers = trackers.QueueTrackers,
@@ -733,7 +734,9 @@ public class ClusterVNode<TStreamId> :
 			logFormat.EventTypeIndex,
 			logFormat.EmptyEventTypeId,
 			logFormat.SystemStreams,
-			epochManager, _queueStatsManager,
+			epochManager,
+			metricsConfiguration.GetBusSlowMessageThreshold,
+			_queueStatsManager,
 			trackers.QueueTrackers,
 			trackers.WriterFlushSizeTracker,
 			trackers.WriterFlushDurationTracker,
@@ -761,7 +764,7 @@ public class ClusterVNode<TStreamId> :
 		// Storage Reader
 		var storageReader = new StorageReaderService<TStreamId>(_mainQueue, _mainBus, readIndex,
 			logFormat.SystemStreams, Db.Config.WriterCheckpoint.AsReadOnly(),
-			virtualStreamReader, secondaryIndexReaders, options.Database.InternalConcurrentReadsLimit);
+			virtualStreamReader, secondaryIndexReaders, metricsConfiguration.GetBusSlowMessageThreshold, options.Database.InternalConcurrentReadsLimit);
 
 		_mainBus.Subscribe<SystemMessage.SystemInit>(storageReader);
 		_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(storageReader);
@@ -1104,7 +1107,7 @@ public class ClusterVNode<TStreamId> :
 		_mainBus.Subscribe<StorageMessage.RequestManagerTimerTick>(requestManagement);
 
 		// SUBSCRIPTIONS
-		var subscrBus = new InMemoryBus("SubscriptionsBus", true, TimeSpan.FromMilliseconds(50));
+		var subscrBus = new InMemoryBus("SubscriptionsBus", metricsConfiguration.GetBusSlowMessageThreshold);
 		var subscrQueue = new ThreadPoolMessageScheduler("Subscriptions", subscrBus) {
 			Strategy = ThreadPoolMessageScheduler.SynchronizeMessagesWithUnknownAffinity(),
 			Trackers = trackers.QueueTrackers,
@@ -1144,7 +1147,7 @@ public class ClusterVNode<TStreamId> :
 
 		// PERSISTENT SUBSCRIPTIONS
 		// IO DISPATCHER
-		var perSubscrBus = new InMemoryBus("PersistentSubscriptionsBus", true, TimeSpan.FromMilliseconds(50));
+		var perSubscrBus = new InMemoryBus("PersistentSubscriptionsBus", metricsConfiguration.GetBusSlowMessageThreshold);
 		var perSubscrQueue = new ThreadPoolMessageScheduler("PersistentSubscriptions", perSubscrBus) {
 			Strategy = ThreadPoolMessageScheduler.SynchronizeMessagesWithUnknownAffinity(),
 			Trackers = trackers.QueueTrackers,
@@ -1393,7 +1396,7 @@ public class ClusterVNode<TStreamId> :
 		// ReSharper restore RedundantTypeArgumentsOfMethod
 
 		// REDACTION
-		var redactionBus = new InMemoryBus("RedactionBus", true, TimeSpan.FromSeconds(2));
+		var redactionBus = new InMemoryBus("RedactionBus", metricsConfiguration.GetBusSlowMessageThreshold);
 		var redactionQueue = new ThreadPoolMessageScheduler("Redaction", redactionBus) {
 			Strategy = ThreadPoolMessageScheduler.SynchronizeMessagesWithUnknownAffinity(),
 			Trackers = trackers.QueueTrackers,

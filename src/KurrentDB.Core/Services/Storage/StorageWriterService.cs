@@ -127,6 +127,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 		TStreamId emptyEventTypeId,
 		ISystemStreamLookup<TStreamId> systemStreams,
 		IEpochManager epochManager,
+		Func<string, TimeSpan> getSlowMessageThreshold,
 		QueueStatsManager queueStatsManager,
 		QueueTrackers queueTrackers,
 		IMaxTracker<long> flushSizeTracker,
@@ -152,7 +153,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 
 		Writer = Ensure.NotNull(writer);
 
-		_writerBus = new("StorageWriterBus", watchSlowMsg: true, TimeSpan.FromMilliseconds(500));
+		_writerBus = new("StorageWriterBus", getSlowMessageThreshold);
 		_writerQueue = new("StorageWriterQueue", new AdHocHandler<Message>(CommonHandle)) {
 			Strategy = ThreadPoolMessageScheduler.SynchronizeMessagesWithUnknownAffinity(),
 			Trackers = queueTrackers,

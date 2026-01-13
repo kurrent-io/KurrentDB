@@ -39,7 +39,7 @@ public abstract class SubsystemScenario : IHandle<Message>, IAsyncLifetime {
 
 	protected SubsystemScenario(Func<SynchronousScheduler, IQueuedHandler, ICheckpoint, (Func<ValueTask> stopAction, IPublisher subsystemCommands)> createSubsystem, string readyStream, CancellationToken testTimeout) {
 		_mainBus = new SynchronousScheduler("main");
-		_mainQueue = new QueuedHandlerThreadPool(_mainBus, "bossQ", new QueueStatsManager(), new());
+		_mainQueue = new QueuedHandlerThreadPool(_mainBus, "bossQ", new QueueStatsManager(), new(), _ => TimeSpan.Zero);
 		_writerCheckpoint = new InMemoryCheckpoint(0);
 		_miniStore = new MiniStore(_writerCheckpoint, _mainQueue);
 		TestTimeout = testTimeout;

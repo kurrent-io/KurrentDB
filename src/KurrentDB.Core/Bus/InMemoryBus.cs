@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotNext;
 using DotNext.Diagnostics;
+using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using ILogger = Serilog.ILogger;
@@ -22,21 +23,18 @@ namespace KurrentDB.Core.Bus;
 public partial class InMemoryBus : ISubscriber, IAsyncHandle<Message> {
 	public static readonly TimeSpan VerySlowMsgThreshold = TimeSpan.FromSeconds(7);
 
-	public static InMemoryBus CreateTest(bool watchSlowMsg = true) =>
-		new("Test", watchSlowMsg);
+	public static InMemoryBus CreateTest() =>
+		new("Test", _ => TimeSpan.Zero);
 
-	public static readonly TimeSpan DefaultSlowMessageThreshold = TimeSpan.FromMilliseconds(48);
 	private static readonly ILogger Log = Serilog.Log.ForContext<InMemoryBus>();
 
 	private readonly FrozenDictionary<Type, MessageTypeHandler> _handlers;
 	private readonly double _slowMsgThresholdMs;
 
-	public InMemoryBus(string name, bool watchSlowMsg = true, TimeSpan? slowMsgThreshold = null) {
+	public InMemoryBus(string name, Func<string, TimeSpan> getSlowMessageThreshold) {
 		_handlers = CreateMessageTypeHandlers();
 		Name = name;
-
-		if (watchSlowMsg)
-			_slowMsgThresholdMs = slowMsgThreshold.GetValueOrDefault(DefaultSlowMessageThreshold).TotalMilliseconds;
+		_slowMsgThresholdMs = getSlowMessageThreshold(name).TotalMilliseconds;
 	}
 
 	public string Name { get; }
@@ -84,7 +82,8 @@ public partial class InMemoryBus : ISubscriber, IAsyncHandle<Message> {
 
 		var elapsedMs = ts.ElapsedMilliseconds;
 		if (elapsedMs > _slowMsgThresholdMs) {
-			Log.Debug("SLOW BUS MSG [{bus}]: {message} - {elapsed}ms.",
+			// keep to 3 template args to avoid params[] overload
+			Log.Debug("SLOW BUS MSG [{bus}]: {message} - {elapsed}ms." + $" {message}.",
 				Name, message.GetType().Name, (int)elapsedMs);
 			if (elapsedMs > VerySlowMsgThreshold.TotalMilliseconds &&
 				message is not SystemMessage.SystemInit)

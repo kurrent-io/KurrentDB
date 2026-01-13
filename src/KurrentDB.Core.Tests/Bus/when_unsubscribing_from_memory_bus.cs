@@ -16,7 +16,7 @@ public class when_unsubscribing_from_memory_bus {
 
 	[SetUp]
 	public void SetUp() {
-		_bus = InMemoryBus.CreateTest(false);
+		_bus = InMemoryBus.CreateTest();
 	}
 
 	[TearDown]

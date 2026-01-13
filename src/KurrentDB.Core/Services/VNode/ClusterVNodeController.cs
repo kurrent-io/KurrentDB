@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using KurrentDB.Common.Configuration;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Cluster;
@@ -81,6 +82,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		VNodeInfo nodeInfo,
 		TFChunkDb db,
 		INodeStatusTracker statusTracker,
+		MetricsConfiguration metricsConfiguration,
 		ClusterVNodeOptions options, ClusterVNode<TStreamId> node, MessageForwardingProxy forwardingProxy,
 		Action startSubsystems) {
 		Ensure.NotNull(nodeInfo, "nodeInfo");
@@ -102,7 +104,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		_forwardingTimeout = TimeSpan.FromMilliseconds(options.Database.PrepareTimeoutMs +
 													   options.Database.CommitTimeoutMs + 300);
 
-		_outputBus = new InMemoryBus("MainBus");
+		_outputBus = new InMemoryBus("MainBus", metricsConfiguration.GetBusSlowMessageThreshold);
 		_fsm = CreateFSM();
 		_mainQueue = new ThreadPoolMessageScheduler("MainQueue", _fsm) {
 			Strategy = ThreadPoolMessageScheduler.SynchronizeMessagesWithUnknownAffinity(),

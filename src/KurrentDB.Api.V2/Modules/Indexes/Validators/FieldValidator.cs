@@ -13,13 +13,13 @@ class FieldValidator : ValidatorBase<FieldValidator, IndexField> {
 			.SetValidator(IndexNameValidator.Instance);
 
 		RuleFor(x => x.Selector)
-			.Must(x => x is "" || JsFunctionValidator.IsValidFunctionWithOneArgument(x))
-			.WithMessage("Field selector must be empty or a valid JavaScript function with exactly one argument")
+			.Must(x => JsFunctionValidator.IsValidFunctionWithOneArgument(x))
+			.WithMessage("Field selector must be a valid JavaScript function with exactly one argument")
 			.WithName("Field selector");
 
 		RuleFor(x => x.Type)
 			.Must(x => x is not IndexFieldType.Unspecified)
-			.WithMessage("Field type must not be unspecified")
+			.WithMessage("Field type must be specified")
 			.WithName("Field type");
 	}
 }
