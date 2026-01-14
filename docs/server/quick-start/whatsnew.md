@@ -4,7 +4,7 @@ order: 2
 
 # What's New
 
-## New in 26.0.0-rc.1
+## New in 26.0
 
 Features
 * [User defined indexes](#user-defined-indexes)
