@@ -6,8 +6,7 @@ order: 1
 
 This page contains the release notes for KurrentDB v26.0.
 
-
-## [24.10.10](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.10)
+## [26.0.0](https://github.com/kurrent-io/KurrentDB/releases/tag/v26.0.0)
 
 16 January 2026
 
