@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Core.Messaging;
@@ -22,9 +21,7 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 
 	private readonly Func<Message, CancellationToken, ValueTask> _consumer;
 	private readonly CancellationToken _lifetimeToken; // cached to avoid ObjectDisposedException
-	private readonly ConcurrentBag<AsyncStateMachine> _pool;
 	private readonly TaskCompletionSource _stopNotification;
-	private readonly int _maxPoolSize;
 
 	private volatile CancellationTokenSource _lifetimeSource;
 	private volatile uint _processingCount;
@@ -39,10 +36,6 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 
 		// Pef: devirt interface
 		_consumer = consumer.HandleAsync;
-
-		_pool = new();
-		StopTimeout = DefaultStopWaitTimeout;
-		_maxPoolSize = Environment.ProcessorCount * 16;
 		_readinessBarrier = new();
 
 		// Backward Compatibility Notes:
@@ -56,14 +49,14 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 	}
 
 	public int MaxPoolSize {
-		get => _maxPoolSize;
-		init => _maxPoolSize = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
-	}
+		get;
+		init => field = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
+	} = Environment.ProcessorCount * 16;
 
 	public TimeSpan StopTimeout {
 		get;
-		init;
-	}
+		init => field = value >= TimeSpan.Zero ? value : throw new ArgumentOutOfRangeException(nameof(value));
+	} = DefaultStopWaitTimeout;
 
 	/// <summary>
 	/// Gets or sets the message processing strategy.
@@ -120,12 +113,9 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 			return;
 		}
 
-		AsyncStateMachine stateMachine;
-		if (messageCount > _maxPoolSize) {
-			stateMachine = new(this);
-		} else if (!_pool.TryTake(out stateMachine)) {
-			stateMachine = new PoolingAsyncStateMachine(this);
-		}
+		var stateMachine = messageCount > MaxPoolSize
+			? new(this)
+			: RentFromPool();
 
 		// TODO: We need to respect readiness barrier here and delay messages if the scheduler is not yet started
 		stateMachine.Schedule(message, Strategy.GetSynchronizationGroup(message.Affinity));

@@ -26,7 +26,7 @@ partial class ThreadPoolMessageScheduler {
 	// to apply PoolingAsyncValueTaskMethodBuilder for that method.
 	// We register different callbacks rather than storing an explicit state variable.
 	// The meaning of _awaiter depends on the state that we are in.
-	private class AsyncStateMachine : IThreadPoolWorkItem {
+	private partial class AsyncStateMachine : IThreadPoolWorkItem {
 		private readonly ThreadPoolMessageScheduler _scheduler;
 		private readonly Action _onConsumerCompleted;
 		private readonly Action _onLockAcquisitionCompleted;
@@ -42,8 +42,6 @@ partial class ThreadPoolMessageScheduler {
 			_onConsumerCompleted = OnConsumerCompleted;
 			_onLockAcquisitionCompleted = OnLockAcquisitionCompleted;
 		}
-
-		protected void ReturnToPool() => _scheduler._pool.Add(this);
 
 		// The current state machine implements approximately the following implementation:
 		//public async void ScheduleAsync(Message message, AsyncExclusiveLock groupLock){
