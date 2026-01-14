@@ -11,6 +11,8 @@ This page contains the release notes for KurrentDB v26.0.
 
 16 January 2026
 
+### What's new
+
 Find out [what's new](../quick-start/whatsnew.md) in this release.
 
 ### Projections: Fixed wake-up race condition (PR [#5428](https://github.com/kurrent-io/KurrentDB/pull/5428)) 
