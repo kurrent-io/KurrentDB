@@ -14,6 +14,10 @@ This page contains the release notes for EventStoreDB 24.10
 
 When writing empty transactions (write requests with 0 events in) a race condition existed where a projection that had reached the end of its input stream and stopped might not detect the addition of a new event. The new event could remain unprocessed until another event is written to any stream. Subsequent new events written to any stream would allow the projection to continue and process any outstanding events correctly. Writing empty transactions is uncommon but supported by the database.
 
+### Connectors: Fix position tracker not accounting for duplicate track calls
+The position tracker in connectors has been updated to correctly handle duplicate track calls. Previously, duplicate calls to track the same position would cause an IndexOutOfRangeException. This fix ensures that duplicate track calls are safely ignored, improving connector reliability.
+
+
 ## [24.10.9](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.9)
 
 11 December 2025
