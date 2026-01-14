@@ -72,9 +72,12 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 	public void Start() {
 		if (Interlocked.Exchange(ref _readinessBarrier, null) is { } completionSource) {
 			completionSource.SetResult();
+			_queueLengthListener = Strategy.CreateQueueLengthListener(_statsCollector, out _queueLengthObserver);
 
-			if (Strategy is SynchronizeMessagesWithUnknownAffinityStrategy)
+			if (_queueLengthListener is not null) {
+				_queueLengthListener.Start();
 				Monitor.Register(this);
+			}
 		}
 	}
 
@@ -82,6 +85,8 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 		if (Interlocked.Exchange(ref _lifetimeSource, null) is { } cts) {
 			cts.Cancel();
 			Monitor.Unregister(this);
+			_queueLengthListener?.Dispose();
+			_queueLengthObserver = null;
 		}
 	}
 
