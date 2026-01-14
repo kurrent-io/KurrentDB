@@ -61,7 +61,7 @@ partial class ThreadPoolMessageScheduler {
 			return listener;
 		}
 
-		private protected bool IsQueueLengthForThisStrategy(UpDownCounter<int> queueLength, ReadOnlySpan<KeyValuePair<string, object>> tags) {
+		private bool IsQueueLengthForThisStrategy(UpDownCounter<int> queueLength, ReadOnlySpan<KeyValuePair<string, object>> tags) {
 			foreach (ref readonly var tag in tags) {
 				if (tag.Key is StrategyTagName && ReferenceEquals(tag.Value, this))
 					return true;
