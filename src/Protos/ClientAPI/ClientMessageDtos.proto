@@ -65,6 +65,25 @@ message WriteEventsCompleted {
 	int64 current_version  = 7;
 }
 
+message WriteEventsMultiStream {
+  repeated string event_stream_ids = 1;
+  repeated int64 expected_versions = 2;
+  repeated NewEvent events = 3;
+  repeated int32 event_stream_indexes = 4;
+  bool require_leader = 5;
+}
+
+message WriteEventsMultiStreamCompleted {
+  OperationResult result = 1;
+  string message = 2;
+  repeated int64 first_event_numbers = 3;
+  repeated int64 last_event_numbers = 4;
+  int64 prepare_position = 5;
+  int64 commit_position = 6;
+  repeated int32 failure_stream_indexes = 7;
+  repeated int64 failure_current_versions  = 8;
+}
+
 message DeleteStream {
 	string event_stream_id = 1;
 	int64 expected_version = 2;

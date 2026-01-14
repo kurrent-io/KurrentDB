@@ -6,6 +6,7 @@ using System.Security.Claims;
 using System.Threading;
 using EventStore.Client.Messages;
 using Google.Protobuf;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Authentication.DelegatedAuthentication;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
@@ -26,8 +27,10 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 	protected ClientWriteTcpDispatcher(TimeSpan writeTimeout) {
 		_writeTimeout = writeTimeout;
 		AddUnwrapper(TcpCommand.WriteEvents, UnwrapWriteEvents, ClientVersion.V2);
-		AddWrapper<ClientMessage.WriteEvents>(WrapWriteEvents, ClientVersion.V2);
 		AddUnwrapper(TcpCommand.WriteEventsCompleted, UnwrapWriteEventsCompleted, ClientVersion.V2);
+		AddUnwrapper(TcpCommand.WriteEventsMultiStream, UnwrapWriteEventsMultiStream, ClientVersion.V2);
+		AddUnwrapper(TcpCommand.WriteEventsMultiStreamCompleted, UnwrapWriteEventsMultiStreamCompleted, ClientVersion.V2);
+		AddWrapper<ClientMessage.WriteEvents>(WrapWriteEvents, ClientVersion.V2);
 		AddWrapper<ClientMessage.WriteEventsCompleted>(WrapWriteEventsCompleted, ClientVersion.V2);
 
 		AddUnwrapper(TcpCommand.TransactionStart, UnwrapTransactionStart, ClientVersion.V2);
@@ -79,6 +82,43 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 		}
 	}
 
+	private ClientMessage.WriteEvents UnwrapWriteEventsMultiStream(TcpPackage package, IEnvelope envelope, ClaimsPrincipal user) {
+		var dto = package.Data.Deserialize<WriteEventsMultiStream>();
+		if (dto == null)
+			return null;
+
+		var events = new Event[dto.Events.Count];
+		for (int i = 0; i < events.Length; ++i) {
+			// ReSharper disable PossibleNullReferenceException
+			var e = dto.Events[i];
+			// ReSharper restore PossibleNullReferenceException
+			events[i] = new Event(new Guid(e.EventId.ToByteArray()), e.EventType, e.DataContentType == 1,
+				e.Data.ToByteArray(), false, e.Metadata.ToByteArray());
+		}
+
+		var cts = new CancellationTokenSource();
+		var envelopeWrapper = new CallbackEnvelope(OnMessage);
+		cts.CancelAfter(_writeTimeout);
+
+		return new ClientMessage.WriteEvents(
+			Guid.NewGuid(),
+			package.CorrelationId,
+			envelopeWrapper,
+			dto.RequireLeader,
+			eventStreamIds: dto.EventStreamIds.ToLowAllocReadOnlyMemory(),
+			expectedVersions: dto.ExpectedVersions.ToLowAllocReadOnlyMemory(),
+			events: events,
+			eventStreamIndexes: dto.EventStreamIndexes.ToLowAllocReadOnlyMemory(),
+			user,
+			package.Tokens,
+			cts.Token);
+
+		void OnMessage(Message m) {
+			cts.Dispose();
+			envelope.ReplyWith(m);
+		}
+	}
+
 	private static TcpPackage WrapWriteEvents(ClientMessage.WriteEvents msg) {
 		var events = new NewEvent[msg.Events.Length];
 		for (int i = 0; i < events.Length; ++i) {
@@ -90,12 +130,15 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 				e.Metadata);
 		}
 
-		if (msg.EventStreamIds.Length > 1)
-			throw new NotSupportedException("Forwarding of multi-stream writes is not supported");
+		if (msg.EventStreamIds.Length <= 1) {
+			var dtoSingleStream = new WriteEvents(msg.EventStreamIds.Single, msg.ExpectedVersions.Single, events,
+				msg.RequireLeader);
+			return CreateWriteRequestPackage(TcpCommand.WriteEvents, msg, dtoSingleStream);
+		}
 
-		var dto = new WriteEvents(msg.EventStreamIds.Single, msg.ExpectedVersions.Single, events,
-			msg.RequireLeader);
-		return CreateWriteRequestPackage(TcpCommand.WriteEvents, msg, dto);
+		var dtoMultiStream = new WriteEventsMultiStream(msg.EventStreamIds.Span, msg.ExpectedVersions.Span, events, msg.EventStreamIndexes.Span, msg.RequireLeader);
+		return CreateWriteRequestPackage(TcpCommand.WriteEventsMultiStream, msg, dtoMultiStream);
+
 	}
 
 	private static TcpPackage CreateWriteRequestPackage<T>(TcpCommand command, ClientMessage.WriteRequestMessage msg, T dto) where T : IMessage<T> {
@@ -148,7 +191,45 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 			new(dto.CurrentVersion));
 	}
 
+	private static ClientMessage.WriteEventsCompleted UnwrapWriteEventsMultiStreamCompleted(TcpPackage package, IEnvelope envelope) {
+		var dto = package.Data.Deserialize<WriteEventsMultiStreamCompleted>();
+		if (dto == null)
+			return null;
+
+		if (dto.Result == EventStore.Client.Messages.OperationResult.Success)
+			return new ClientMessage.WriteEventsCompleted(
+				package.CorrelationId,
+				dto.FirstEventNumbers.ToLowAllocReadOnlyMemory(),
+				dto.LastEventNumbers.ToLowAllocReadOnlyMemory(),
+				dto.PreparePosition,
+				dto.CommitPosition);
+
+		return new ClientMessage.WriteEventsCompleted(
+			package.CorrelationId,
+			(OperationResult)dto.Result,
+			dto.Message,
+			dto.FailureStreamIndexes.ToLowAllocReadOnlyMemory(),
+			dto.FailureCurrentVersions.ToLowAllocReadOnlyMemory());
+	}
+
 	private static TcpPackage WrapWriteEventsCompleted(ClientMessage.WriteEventsCompleted msg) {
+		if (msg.Result is OperationResult.Success) {
+			return msg.FirstEventNumbers.Length <= 1 ?
+				WrapWriteEventsCompletedForSingleStream(msg) :
+				WrapWriteEventsCompletedForMultiStream(msg);
+		}
+
+		// todo: currently, it's not straightforward to determine if the original write was a multi-stream write when there is a failure
+		// the following cases can also happen during a multi-stream write but it doesn't matter as long as the result is unwrapped properly
+		// on the other side
+
+		if (msg.FailureStreamIndexes.Span.IsEmpty || msg.FailureStreamIndexes.Span is [ 0 ])
+			return WrapWriteEventsCompletedForSingleStream(msg);
+
+		return WrapWriteEventsCompletedForMultiStream(msg);
+	}
+
+	private static TcpPackage WrapWriteEventsCompletedForSingleStream(ClientMessage.WriteEventsCompleted msg) {
 		var dto = new WriteEventsCompleted((EventStore.Client.Messages.OperationResult)msg.Result,
 			msg.Message,
 			msg.FirstEventNumbers.Length is 1
@@ -163,6 +244,19 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 				? msg.FailureCurrentVersions.Single
 				: msg.Result is OperationResult.Success ? 0L : -1L /* for backwards compatibility */);
 		return new(TcpCommand.WriteEventsCompleted, msg.CorrelationId, dto.Serialize());
+	}
+
+	private static TcpPackage WrapWriteEventsCompletedForMultiStream(ClientMessage.WriteEventsCompleted msg) {
+		var dto = new WriteEventsMultiStreamCompleted(
+			(EventStore.Client.Messages.OperationResult)msg.Result,
+			msg.Message,
+			msg.FirstEventNumbers.Span,
+			msg.LastEventNumbers.Span,
+			msg.PreparePosition,
+			msg.CommitPosition,
+			msg.FailureCurrentVersions.Span,
+			msg.FailureStreamIndexes.Span);
+		return new(TcpCommand.WriteEventsMultiStreamCompleted, msg.CorrelationId, dto.Serialize());
 	}
 
 	private static ClientMessage.TransactionStart UnwrapTransactionStart(TcpPackage package, IEnvelope envelope, ClaimsPrincipal user) {

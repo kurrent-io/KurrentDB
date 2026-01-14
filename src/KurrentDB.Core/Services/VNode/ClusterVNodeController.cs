@@ -826,8 +826,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private ValueTask HandleAsNonLeader(ClientMessage.WriteEvents message, CancellationToken token) {
-		if (message.RequireLeader || message.EventStreamIds.Length > 1) {
-			// multi-stream writes implicitly require leader
+		if (message.RequireLeader) {
 			DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
 			return ValueTask.CompletedTask;
 		}
