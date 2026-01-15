@@ -46,6 +46,7 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 		// report any metrics even if tracker/collector is defined.
 		_tracker = new(name, IDurationMaxTracker.NoOp, IQueueProcessingTracker.NoOp);
 		_statsCollector = IQueueStatsCollector.NoOp;
+		Name = name;
 	}
 
 	public int MaxPoolSize {
@@ -67,7 +68,7 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 		init => field = value ?? throw new ArgumentNullException(nameof(value));
 	}
 
-	public string Name => _tracker.Name;
+	public string Name { get; }
 
 	public void Start() {
 		if (Interlocked.Exchange(ref _readinessBarrier, null) is { } completionSource) {
