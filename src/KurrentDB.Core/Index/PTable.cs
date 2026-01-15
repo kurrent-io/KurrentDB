@@ -332,7 +332,7 @@ public partial class PTable : ISearchTable, IDisposable {
 										   _midpointsCacheSize;
 						stream.Seek(startOffset, SeekOrigin.Begin);
 						for (int k = 0; k < (int)_midpointsCached; k++) {
-							stream.Read(buffer, 0, _indexEntrySize);
+							stream.ReadExactly(buffer, 0, _indexEntrySize);
 							IndexEntryKey key;
 							long index;
 							if (_version == PTableVersions.IndexV4) {
@@ -367,7 +367,7 @@ public partial class PTable : ISearchTable, IDisposable {
 
 				if (!skipIndexVerify) {
 					stream.Seek(0, SeekOrigin.Begin);
-					stream.Read(buffer, 0, PTableHeader.Size);
+					stream.ReadExactly(buffer, 0, PTableHeader.Size);
 					md5.TransformBlock(buffer, 0, PTableHeader.Size, null, 0);
 				}
 
@@ -378,11 +378,11 @@ public partial class PTable : ISearchTable, IDisposable {
 					if (previousNextIndex != nextIndex) {
 						if (!skipIndexVerify) {
 							ReadUntilWithMd5(PTableHeader.Size + _indexEntrySize * nextIndex, stream, md5);
-							stream.Read(buffer, 0, _indexKeySize);
+							stream.ReadExactly(buffer, 0, _indexKeySize);
 							md5.TransformBlock(buffer, 0, _indexKeySize, null, 0);
 						} else {
 							stream.Seek(PTableHeader.Size + _indexEntrySize * nextIndex, SeekOrigin.Begin);
-							stream.Read(buffer, 0, _indexKeySize);
+							stream.ReadExactly(buffer, 0, _indexKeySize);
 						}
 
 						IndexEntryKey key;
@@ -423,7 +423,7 @@ public partial class PTable : ISearchTable, IDisposable {
 					//verify hash (should be at stream.length - MD5Size)
 					md5.TransformFinalBlock(Empty.ByteArray, 0, 0);
 					var fileHash = new byte[MD5Size];
-					stream.Read(fileHash, 0, MD5Size);
+					stream.ReadExactly(fileHash, 0, MD5Size);
 					ValidateHash(md5.Hash, fileHash);
 				}
 
