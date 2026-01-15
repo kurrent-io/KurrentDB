@@ -608,11 +608,11 @@ public class ClusterVNode<TStreamId> :
 		monitoringInnerBus.Subscribe<MonitoringMessage.GetFreshStats>(monitoring);
 		monitoringInnerBus.Subscribe<MonitoringMessage.GetFreshTcpConnectionStats>(monitoring);
 
-		var threadPoodQueueLengthMonitor = new ThreadPoolQueueLengthMonitor(
+		var threadPoolQueueLengthMonitor = new ThreadPoolQueueLengthMonitor(
 			delay: TimeSpan.FromSeconds(2),
 			trackers: trackers.QueueTrackers,
 			queueStatsManager: _queueStatsManager);
-		threadPoodQueueLengthMonitor.Start();
+		threadPoolQueueLengthMonitor.Start();
 
 		// Log Format
 		var indexPath = options.Database.Index ?? Path.Combine(Db.Config.Path, ESConsts.DefaultIndexDirectoryName);
