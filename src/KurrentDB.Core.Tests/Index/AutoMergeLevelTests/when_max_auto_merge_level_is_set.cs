@@ -37,11 +37,11 @@ public abstract class when_max_auto_merge_level_is_set : SpecificationWithDirect
 		var first = _map;
 		if (_result != null)
 			first = _result.MergedMap;
-		var pTable = PTable.FromMemtable(memtable, GetTempFilePath(), skipIndexVerify: _skipIndexVerify);
+		var pTable = PTable.FromMemtable(memtable, GetTempFilePath(), Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, skipIndexVerify: _skipIndexVerify);
 		_result = first.AddAndMergePTable(pTable,
 			10, 20, _fileNameProvider, _ptableVersion, 0, skipIndexVerify: _skipIndexVerify);
 		for (int i = 3; i <= count * 2; i += 2) {
-			pTable = PTable.FromMemtable(memtable, GetTempFilePath(), skipIndexVerify: _skipIndexVerify);
+			pTable = PTable.FromMemtable(memtable, GetTempFilePath(), Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, skipIndexVerify: _skipIndexVerify);
 			_result = _result.MergedMap.AddAndMergePTable(
 				pTable,
 				prepareCheckpoint: i * 10,

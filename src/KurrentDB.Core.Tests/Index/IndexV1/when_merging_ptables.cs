@@ -36,17 +36,19 @@ public class when_merging_ptables : SpecificationWithDirectoryPerTestFixture {
 		table.Add(0x0102, 0, 0x0102);
 		table.Add(0x0103, 0, 0x0103);
 		table.Add(0x0104, 0, 0x0104);
-		_tables.Add(PTable.FromMemtable(table, GetTempFilePath()));
+		_tables.Add(PTable.FromMemtable(table, GetTempFilePath(), Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault));
 		table = new HashListMemTable(_ptableVersion, maxSize: 20);
 		table.Add(0x0105, 0, 0x0105);
 		table.Add(0x0106, 0, 0x0106);
 		table.Add(0x0107, 0, 0x0107);
 		table.Add(0x0108, 0, 0x0108);
-		_tables.Add(PTable.FromMemtable(table, GetTempFilePath()));
+		_tables.Add(PTable.FromMemtable(table, GetTempFilePath(), Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault));
 		_newtable = PTable.MergeTo(
 			tables: _tables,
 			outputFile: GetTempFilePath(),
 			version: PTableVersions.IndexV4,
+			initialReaders: Constants.PTableInitialReaderCount,
+			maxReaders: Constants.PTableMaxReaderCountDefault,
 			skipIndexVerify: _skipIndexVerify,
 			useBloomFilter: true);
 	}

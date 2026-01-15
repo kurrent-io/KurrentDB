@@ -28,7 +28,7 @@ public abstract class PTableReadScenario : SpecificationWithFile {
 
 		AddItemsForScenario(table);
 
-		PTable = PTable.FromMemtable(table, Filename, cacheDepth: _midpointCacheDepth,
+		PTable = PTable.FromMemtable(table, Filename, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, cacheDepth: _midpointCacheDepth,
 			skipIndexVerify: _skipIndexVerify);
 	}
 

@@ -2,12 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using DotNext.Threading;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Metrics;
 using Serilog;
@@ -25,14 +21,7 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 
 	private readonly Func<Message, CancellationToken, ValueTask> _consumer;
 	private readonly CancellationToken _lifetimeToken; // cached to avoid ObjectDisposedException
-
-	// ConditionalWeakTable does not keep the keys alive, they are removed from the table when
-	// they are garbage collected. It is thread safe.
-	// We use it to associate AsyncExclusiveLocks with Affinity objects.
-	private readonly ConditionalWeakTable<object, AsyncExclusiveLock> _syncGroups;
-	private readonly ConcurrentBag<AsyncStateMachine> _pool;
 	private readonly TaskCompletionSource _stopNotification;
-	private readonly int _maxPoolSize;
 
 	private volatile CancellationTokenSource _lifetimeSource;
 	private volatile uint _processingCount;
@@ -43,15 +32,10 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 		ArgumentNullException.ThrowIfNull(consumer);
 
 		_lifetimeToken = (_lifetimeSource = new CancellationTokenSource()).Token;
-		_syncGroups = new();
 		_stopNotification = new();
 
 		// Pef: devirt interface
 		_consumer = consumer.HandleAsync;
-
-		_pool = new();
-		StopTimeout = DefaultStopWaitTimeout;
-		_maxPoolSize = Environment.ProcessorCount * 16;
 		_readinessBarrier = new();
 
 		// Backward Compatibility Notes:
@@ -62,38 +46,52 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 		// report any metrics even if tracker/collector is defined.
 		_tracker = new(name, IDurationMaxTracker.NoOp, IQueueProcessingTracker.NoOp);
 		_statsCollector = IQueueStatsCollector.NoOp;
+		Name = name;
 	}
 
 	public int MaxPoolSize {
-		get => _maxPoolSize;
-		init => _maxPoolSize = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
-	}
+		get;
+		init => field = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
+	} = Environment.ProcessorCount * 16;
 
 	public TimeSpan StopTimeout {
 		get;
-		init;
-	}
+		init => field = value >= TimeSpan.Zero ? value : throw new ArgumentOutOfRangeException(nameof(value));
+	} = DefaultStopWaitTimeout;
 
-	public required bool SynchronizeMessagesWithUnknownAffinity {
+	/// <summary>
+	/// Gets or sets the message processing strategy.
+	/// </summary>
+	/// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
+	public required MessageProcessingStrategy Strategy {
 		get;
-		init;
+		init => field = value ?? throw new ArgumentNullException(nameof(value));
 	}
 
-	public string Name => _tracker.Name;
+	public string Name { get; }
 
 	public void Start() {
 		if (Interlocked.Exchange(ref _readinessBarrier, null) is { } completionSource) {
 			completionSource.SetResult();
+			_queueLengthListener = Strategy.CreateQueueLengthListener(_statsCollector, out _queueLengthObserver);
 
-			if (SynchronizeMessagesWithUnknownAffinity)
+			if (_queueLengthListener is not null) {
+				_queueLengthListener.Start();
+				_statsCollector.Start();
 				Monitor.Register(this);
+			}
 		}
 	}
 
 	public void RequestStop() {
 		if (Interlocked.Exchange(ref _lifetimeSource, null) is { } cts) {
 			cts.Cancel();
-			Monitor.Unregister(this);
+			if (_queueLengthListener is not null) {
+				Monitor.Unregister(this);
+				_statsCollector.Stop();
+				_queueLengthListener.Dispose();
+				_queueLengthObserver = null;
+			}
 		}
 	}
 
@@ -115,33 +113,6 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 		}
 	}
 
-	private TagList CreateMeasurementTags(object affinity) => new() {
-		{ "Scheduler", Name },
-		{ "SynchronizationGroup", affinity.ToString() }
-	};
-
-	// If two messages use the same affinity object, they execute sequentially and in order,
-	// Unless the affinity object is Message.UnknownAffinity, which acts as null unless
-	// SynchronizeMessagesWithUnknownAffinity is true.
-	private AsyncExclusiveLock GetSynchronizationGroup(Message message) {
-		var affinity = message.Affinity;
-		AsyncExclusiveLock syncGroup;
-		if (affinity is null ||
-		    (ReferenceEquals(Message.UnknownAffinity, affinity) && !SynchronizeMessagesWithUnknownAffinity)) {
-			syncGroup = null;
-		} else {
-			while (!_syncGroups.TryGetValue(affinity, out syncGroup)) {
-				syncGroup = new() { MeasurementTags = CreateMeasurementTags(affinity) };
-				if (_syncGroups.TryAdd(affinity, syncGroup))
-					break;
-
-				syncGroup.Dispose();
-			}
-		}
-
-		return syncGroup;
-	}
-
 	public void Publish(Message message) {
 		var messageCount = Interlocked.Increment(ref _processingCount);
 
@@ -152,14 +123,11 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 			return;
 		}
 
-		AsyncStateMachine stateMachine;
-		if (messageCount > _maxPoolSize) {
-			stateMachine = new(this);
-		} else if (!_pool.TryTake(out stateMachine)) {
-			stateMachine = new PoolingAsyncStateMachine(this);
-		}
+		var stateMachine = messageCount > MaxPoolSize
+			? new(this)
+			: RentFromPool();
 
 		// TODO: We need to respect readiness barrier here and delay messages if the scheduler is not yet started
-		stateMachine.Schedule(message, GetSynchronizationGroup(message));
+		stateMachine.Schedule(message, Strategy.GetSynchronizationGroup(message.Affinity));
 	}
 }

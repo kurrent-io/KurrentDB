@@ -13,8 +13,9 @@ public static class IndexMapTestFactory {
 		bool useBloomFilter = true,
 		int lruCacheSize = 1_000_000,
 		int threads = 1,
-		int maxAutoMergeLevel = int.MaxValue) {
+		int maxAutoMergeLevel = int.MaxValue,
+		int pTableMaxReaderCount = Constants.PTableMaxReaderCountDefault) {
 		return IndexMap.FromFile(filename, maxTablesPerLevel, loadPTables, cacheDepth, skipIndexVerify, useBloomFilter, lruCacheSize, threads,
-			maxAutoMergeLevel);
+			maxAutoMergeLevel, pTableMaxReaderCount);
 	}
 }

@@ -23,7 +23,7 @@ public class when_opening_ptable_without_right_flag_in_header : SpecificationWit
 
 	[Test]
 	public void the_invalid_file_exception_is_thrown() {
-		var exc = Assert.Throws<CorruptIndexException>(() => PTable.FromFile(Filename, 16, false));
+		var exc = Assert.Throws<CorruptIndexException>(() => PTable.FromFile(Filename, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, 16, false));
 		Assert.IsInstanceOf<InvalidFileException>(exc.InnerException);
 	}
 }

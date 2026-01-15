@@ -39,7 +39,7 @@ public class when_rebuilding_index_for_partially_persisted_transaction<TLogForma
 			() => new HashListMemTable(PTableVersions.IndexV2, maxSize: MaxEntriesInMemTable * 2),
 			reader,
 			PTableVersions.IndexV2,
-			5,
+			5, Constants.PTableMaxReaderCountDefault,
 			MaxEntriesInMemTable);
 		var readIndex = new ReadIndex<TStreamId>(new NoopPublisher(),
 			reader,

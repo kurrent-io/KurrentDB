@@ -24,13 +24,14 @@ public class when_scavenging_an_index_fails : SpecificationWithDirectoryPerTestF
 		table.Add(0x010200000000, 0, 2);
 		table.Add(0x010300000000, 0, 3);
 		table.Add(0x010300000000, 1, 4);
-		_oldTable = PTable.FromMemtable(table, GetTempFilePath());
+		_oldTable = PTable.FromMemtable(table, GetTempFilePath(), Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault);
 
 		Func<IndexEntry, bool> existsAt = x => { throw new Exception("Expected exception"); };
 
 		_expectedOutputFile = GetTempFilePath();
 		var ex = Assert.ThrowsAsync<Exception>(async () => await PTable.Scavenged(_oldTable, _expectedOutputFile,
-			PTableVersions.IndexV4, existsAt.ToAsync(),
+			PTableVersions.IndexV4, existsAt.ToAsync(), initialReaders: Constants.PTableInitialReaderCount,
+			maxReaders: Constants.PTableMaxReaderCountDefault,
 			useBloomFilter: true));
 
 		Assert.AreEqual("Expected exception", ex?.Message);

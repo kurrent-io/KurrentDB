@@ -40,6 +40,7 @@ using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Resilience;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Archive;
@@ -334,7 +335,8 @@ public class ClusterVNode<TStreamId> :
 			httpEndPoint, options.Cluster.ReadOnlyReplica);
 
 		var dbConfig = CreateDbConfig(
-			out var statsHelper);
+			out var statsHelper,
+			out var readerThreadsCount);
 
 		var trackers = new Trackers();
 		var metricsConfiguration = MetricsConfiguration.Get(configuration);
@@ -370,7 +372,8 @@ public class ClusterVNode<TStreamId> :
 			});
 
 		TFChunkDbConfig CreateDbConfig(
-			out SystemStatsHelper statsHelper) {
+			out SystemStatsHelper statsHelper,
+			out int readerThreadsCount) {
 
 			ICheckpoint writerChk;
 			ICheckpoint chaserChk;
@@ -460,6 +463,11 @@ public class ClusterVNode<TStreamId> :
 				: Timeout.Infinite;
 			statsHelper = new SystemStatsHelper(Log, writerChk.AsReadOnly(), dbPath, statsCollectionPeriod);
 
+			readerThreadsCount = ThreadCountCalculator.CalculateReaderThreadCount(
+				configuredCount: options.Database.ReaderThreadsCount,
+				processorCount: Environment.ProcessorCount,
+				isRunningInContainer: isRunningInContainer);
+
 			return new TFChunkDbConfig(dbPath,
 				options.Database.ChunkSize,
 				cache,
@@ -517,8 +525,8 @@ public class ClusterVNode<TStreamId> :
 
 		// MISC WORKERS
 		_workerBus = new("WorkerBus", metricsConfiguration.GetBusSlowMessageThreshold);
-		_workersHandler = new ThreadPoolMessageScheduler("Worker Scheduler", _workerBus) {
-			SynchronizeMessagesWithUnknownAffinity = false,
+		_workersHandler = new("Worker Scheduler", _workerBus) {
+			Strategy = ThreadPoolMessageScheduler.TreatUnknownAffinityAsNoAffinity(),
 		};
 
 		void StartSubsystems() {
@@ -578,11 +586,12 @@ public class ClusterVNode<TStreamId> :
 		// MONITORING
 		var monitoringInnerBus = new InMemoryBus("MonitoringInnerBus", metricsConfiguration.GetBusSlowMessageThreshold);
 		var monitoringRequestBus = new InMemoryBus("MonitoringRequestBus", metricsConfiguration.GetBusSlowMessageThreshold);
-		var monitoringQueue = new ThreadPoolMessageScheduler("MonitoringQueue", monitoringInnerBus) {
-			SynchronizeMessagesWithUnknownAffinity = true,
-			Trackers = trackers.QueueTrackers,
-			StatsManager = _queueStatsManager,
-		};
+		var monitoringQueue = new QueuedHandlerThreadPool(
+			monitoringInnerBus,
+			"MonitoringQueue",
+			_queueStatsManager,
+			trackers.QueueTrackers,
+			_ => TimeSpan.Zero);
 
 		var monitoring = new MonitoringService(monitoringQueue,
 			monitoringRequestBus,
@@ -607,12 +616,23 @@ public class ClusterVNode<TStreamId> :
 		monitoringInnerBus.Subscribe<MonitoringMessage.GetFreshStats>(monitoring);
 		monitoringInnerBus.Subscribe<MonitoringMessage.GetFreshTcpConnectionStats>(monitoring);
 
+		var threadPoolQueueLengthMonitor = new ThreadPoolQueueLengthMonitor(
+			delay: TimeSpan.FromSeconds(2),
+			trackers: trackers.QueueTrackers,
+			queueStatsManager: _queueStatsManager);
+		threadPoolQueueLengthMonitor.Start();
+
+		// Log Format
 		var indexPath = options.Database.Index ?? Path.Combine(Db.Config.Path, ESConsts.DefaultIndexDirectoryName);
+
+		var pTableMaxReaderCount = GetPTableMaxReaderCount(readerThreadsCount);
 		var tfReader = new TFChunkReader(Db, Db.Config.WriterCheckpoint.AsReadOnly());
 
 		var logFormat = logFormatAbstractorFactory.Create(new() {
 			InMemory = options.Database.MemDb,
 			IndexDirectory = indexPath,
+			InitialReaderCount = ESConsts.PTableInitialReaderCount,
+			MaxReaderCount = pTableMaxReaderCount,
 			StreamExistenceFilterSize = options.Database.StreamExistenceFilterSize,
 			StreamExistenceFilterCheckpoint = Db.Config.StreamExistenceFilterCheckpoint,
 			TFReader = tfReader,
@@ -681,6 +701,7 @@ public class ClusterVNode<TStreamId> :
 			initializationThreads: options.Database.InitializationThreads,
 			additionalReclaim: false,
 			maxAutoMergeIndexLevel: options.Database.MaxAutoMergeIndexLevel,
+			pTableMaxReaderCount: pTableMaxReaderCount,
 			statusTracker: trackers.IndexStatusTracker);
 		logFormat.StreamNamesProvider.SetTableIndex(tableIndex);
 
@@ -764,7 +785,10 @@ public class ClusterVNode<TStreamId> :
 		// Storage Reader
 		var storageReader = new StorageReaderService<TStreamId>(_mainQueue, _mainBus, readIndex,
 			logFormat.SystemStreams, Db.Config.WriterCheckpoint.AsReadOnly(),
-			virtualStreamReader, secondaryIndexReaders, metricsConfiguration.GetBusSlowMessageThreshold, options.Database.InternalConcurrentReadsLimit);
+			virtualStreamReader, secondaryIndexReaders, metricsConfiguration.GetBusSlowMessageThreshold,
+			trackers.QueueTrackers,
+			_queueStatsManager,
+			readerThreadsCount);
 
 		_mainBus.Subscribe<SystemMessage.SystemInit>(storageReader);
 		_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(storageReader);
@@ -774,7 +798,7 @@ public class ClusterVNode<TStreamId> :
 		// PRE-LEADER -> LEADER TRANSITION MANAGEMENT
 		var inaugurationManager = new InaugurationManager(
 			publisher: _mainQueue,
-			replicationCheckpoint: Db.Config.ReplicationCheckpoint,
+			replicationCheckpoint: Db.Config.ReplicationCheckpoint.AsReadOnly(),
 			indexCheckpoint: Db.Config.IndexCheckpoint,
 			statusTracker: trackers.InaugurationStatusTracker);
 		_mainBus.Subscribe<SystemMessage.StateChangeMessage>(inaugurationManager);
@@ -1108,11 +1132,12 @@ public class ClusterVNode<TStreamId> :
 
 		// SUBSCRIPTIONS
 		var subscrBus = new InMemoryBus("SubscriptionsBus", metricsConfiguration.GetBusSlowMessageThreshold);
-		var subscrQueue = new ThreadPoolMessageScheduler("Subscriptions", subscrBus) {
-			SynchronizeMessagesWithUnknownAffinity = true,
-			Trackers = trackers.QueueTrackers,
-			StatsManager = _queueStatsManager,
-		};
+		var subscrQueue = new QueuedHandlerThreadPool(
+			subscrBus,
+			"Subscriptions",
+			_queueStatsManager,
+			trackers.QueueTrackers,
+			_ => TimeSpan.Zero);
 
 		_mainBus.Subscribe<SystemMessage.SystemStart>(subscrQueue);
 		_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(subscrQueue);
@@ -1148,11 +1173,13 @@ public class ClusterVNode<TStreamId> :
 		// PERSISTENT SUBSCRIPTIONS
 		// IO DISPATCHER
 		var perSubscrBus = new InMemoryBus("PersistentSubscriptionsBus", metricsConfiguration.GetBusSlowMessageThreshold);
-		var perSubscrQueue = new ThreadPoolMessageScheduler("PersistentSubscriptions", perSubscrBus) {
-			SynchronizeMessagesWithUnknownAffinity = true,
-			Trackers = trackers.QueueTrackers,
-			StatsManager = _queueStatsManager,
-		};
+		var perSubscrQueue = new QueuedHandlerThreadPool(
+			perSubscrBus,
+			"PersistentSubscriptions",
+			_queueStatsManager,
+			trackers.QueueTrackers,
+			_ => TimeSpan.Zero);
+
 		var psubDispatcher = new IODispatcher(_mainQueue, perSubscrQueue);
 		perSubscrBus.Subscribe<ClientMessage.ReadStreamEventsBackwardCompleted>(psubDispatcher.BackwardReader);
 		perSubscrBus.Subscribe<ClientMessage.NotHandled>(psubDispatcher.BackwardReader);
@@ -1397,11 +1424,12 @@ public class ClusterVNode<TStreamId> :
 
 		// REDACTION
 		var redactionBus = new InMemoryBus("RedactionBus", metricsConfiguration.GetBusSlowMessageThreshold);
-		var redactionQueue = new ThreadPoolMessageScheduler("Redaction", redactionBus) {
-			SynchronizeMessagesWithUnknownAffinity = true,
-			Trackers = trackers.QueueTrackers,
-			StatsManager = _queueStatsManager,
-		};
+		var redactionQueue = new QueuedHandlerThreadPool(
+			redactionBus,
+			"Redaction",
+			_queueStatsManager,
+			trackers.QueueTrackers,
+			_ => TimeSpan.Zero);
 
 		_mainBus.Subscribe<RedactionMessage.GetEventPosition>(redactionQueue);
 		_mainBus.Subscribe<RedactionMessage.AcquireChunksLock>(redactionQueue);
@@ -1678,6 +1706,19 @@ public class ClusterVNode<TStreamId> :
 		var periodicLogging = new PeriodicallyLoggingService(_mainQueue, VersionInfo.Version, Log);
 		_mainBus.Subscribe<SystemMessage.SystemStart>(periodicLogging);
 		_mainBus.Subscribe<MonitoringMessage.CheckEsVersion>(periodicLogging);
+	}
+
+	static int GetPTableMaxReaderCount(int readerThreadsCount) {
+		var ptableMaxReaderCount =
+			1 /* StorageWriter */
+			+ 1 /* StorageChaser */
+			+ 1 /* Projections */
+			+ TFChunkScavenger.MaxThreadCount /* Scavenging (1 per thread) */
+			+ 1 /* Redaction */
+			+ 1 /* Subscription LinkTos resolving */
+			+ readerThreadsCount
+			+ 5 /* just in case reserve :) */;
+		return Math.Max(ptableMaxReaderCount, ESConsts.PTableInitialReaderCount);
 	}
 
 	private static void CreateStaticStreamInfoCache(
