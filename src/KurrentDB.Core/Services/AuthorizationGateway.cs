@@ -12,6 +12,7 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
+using Serilog;
 using static KurrentDB.Core.Messages.ClientMessage;
 
 namespace KurrentDB.Core.Services;
@@ -429,9 +430,26 @@ public sealed class AuthorizationGateway(IAuthorizationProvider authorizationPro
 		IPublisher destination,
 		TRequest request,
 		Func<TRequest, Message> createAccessDenied) where TRequest : Message {
-		if (await accessCheck)
-			AuthorizeMany(user, operations, replyTo, destination, request, createAccessDenied);
-		else
-			replyTo.ReplyWith(createAccessDenied(request));
+		try {
+			if (!await accessCheck) {
+				replyTo.ReplyWith(createAccessDenied(request));
+				return;
+			}
+
+			while (!operations.IsEmpty) {
+				var operation = operations.Span[0];
+				operations = operations[1..];
+
+				if (await authorizationProvider.CheckAccessAsync(user, operation, CancellationToken.None))
+					continue;
+
+				replyTo.ReplyWith(createAccessDenied(request));
+				return;
+			}
+
+			destination.Publish(request);
+		} catch (Exception ex) {
+			Log.Error(ex, "Unhandled exception during authorization");
+		}
 	}
 }
