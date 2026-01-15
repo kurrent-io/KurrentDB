@@ -11,6 +11,8 @@ using KurrentDB.Core.Services.Monitoring.Stats;
 namespace KurrentDB.Core.Bus;
 
 public interface IQueueStatsCollector {
+	void Start();
+	void Stop();
 	void ProcessingStarted(Type msgType, int queueLength);
 	void ReportQueueLength(int queueLength);
 	void ProcessingEnded(int itemsProcessed);
@@ -21,6 +23,10 @@ public interface IQueueStatsCollector {
 }
 
 file sealed class NoOpQueueStatsCollector : IQueueStatsCollector {
+	void IQueueStatsCollector.Start() {
+	}
+	void IQueueStatsCollector.Stop() {
+	}
 	void IQueueStatsCollector.ProcessingStarted(Type msgType, int queueLength) {
 	}
 

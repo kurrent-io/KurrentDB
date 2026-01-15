@@ -76,6 +76,7 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 
 			if (_queueLengthListener is not null) {
 				_queueLengthListener.Start();
+				_statsCollector.Start();
 				Monitor.Register(this);
 			}
 		}
@@ -84,9 +85,12 @@ public partial class ThreadPoolMessageScheduler : IQueuedHandler {
 	public void RequestStop() {
 		if (Interlocked.Exchange(ref _lifetimeSource, null) is { } cts) {
 			cts.Cancel();
-			Monitor.Unregister(this);
-			_queueLengthListener?.Dispose();
-			_queueLengthObserver = null;
+			if (_queueLengthListener is not null) {
+				Monitor.Unregister(this);
+				_statsCollector.Stop();
+				_queueLengthListener.Dispose();
+				_queueLengthObserver = null;
+			}
 		}
 	}
 

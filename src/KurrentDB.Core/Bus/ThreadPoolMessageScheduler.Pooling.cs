@@ -16,6 +16,7 @@ partial class ThreadPoolMessageScheduler {
 		}
 	}
 
+	// no ABA problem. if other threads use and return the same _fastItem it is safe because there are no side effects
 	private AsyncStateMachine RentFromPool() {
 		var result = _fastItem;
 		if (result is null || Interlocked.CompareExchange(ref _fastItem, null, result) != result) {

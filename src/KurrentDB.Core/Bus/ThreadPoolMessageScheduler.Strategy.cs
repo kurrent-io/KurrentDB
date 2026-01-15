@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Runtime.CompilerServices;
 using DotNext.Diagnostics.Metrics;
-using DotNext.Patterns;
 using KurrentDB.Core.Messaging;
 
 namespace KurrentDB.Core.Bus;
@@ -53,6 +52,7 @@ partial class ThreadPoolMessageScheduler {
 
 		internal virtual MeterListener CreateQueueLengthListener(IQueueStatsCollector collector,
 			out IQueueLengthObserver queueLengthObserver) {
+
 			var observer = new QueueLengthObserver(IsQueueLengthForThisStrategy, collector);
 			var listener = new MeterListenerBuilder()
 				.Observe(QueueLengthObserver.IsQueueLengthCounter, observer)
@@ -74,7 +74,7 @@ partial class ThreadPoolMessageScheduler {
 	private abstract class SimpleMessageProcessingStrategy : MessageProcessingStrategy {
 		// ConditionalWeakTable does not keep the keys alive, they are removed from the table when
 		// they are garbage collected. It is thread safe.
-		// We use it to associate AsyncExclusiveLocks with Affinity objects.
+		// We use it to map Affinity objects to SimpleSynchronizers (AsyncExclusiveLocks).
 		private readonly ConditionalWeakTable<object, SimpleSynchronizer> _syncGroups = new();
 
 		internal override ISynchronizationGroup GetSynchronizationGroup(object affinity) {

@@ -158,6 +158,10 @@
 			"Label": "Timer"
 		},
 		{
+			"Regex": "StorageReaderQueue",
+			"Label": "Readers"
+		},
+		{
 			"Regex": "StorageWriterQueue",
 			"Label": "Writer"
 		},

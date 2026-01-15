@@ -9,6 +9,7 @@ using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Messages;
+using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.TransactionLog.Checkpoint;
@@ -39,6 +40,8 @@ public class StorageReaderService<TStreamId> : StorageReaderService,
 		IVirtualStreamReader inMemReader,
 		SecondaryIndexReaders secondaryIndexReaders,
 		Func<string, TimeSpan> getSlowMessageThreshold,
+		QueueTrackers trackers,
+		QueueStatsManager queueStatsManager,
 		long concurrentReadsLimit) {
 		Ensure.NotNull(subscriber);
 		Ensure.NotNull(systemStreams);
@@ -68,6 +71,8 @@ public class StorageReaderService<TStreamId> : StorageReaderService,
 			Strategy = concurrentReadsLimit > 0L
 				? ThreadPoolMessageScheduler.UseRateLimitForUnknownAffinity(concurrentReadsLimit)
 				: ThreadPoolMessageScheduler.TreatUnknownAffinityAsNoAffinity(),
+			Trackers = trackers,
+			StatsManager = queueStatsManager,
 		};
 		_workersHandler.Start();
 
