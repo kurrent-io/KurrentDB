@@ -35,7 +35,7 @@ public class QueueBenchmarks {
 		_queuedHandlerThreadPool.Start();
 
 		_threadPoolMessageScheduler = new("ThreadPoolMessageScheduler", handler) {
-			SynchronizeMessagesWithUnknownAffinity = true,
+			Strategy = Core.Bus.ThreadPoolMessageScheduler.SynchronizeMessagesWithUnknownAffinity(),
 			Trackers = queueTrackers,
 			StatsManager = queueStatsManager,
 			MaxPoolSize = BatchSize,
