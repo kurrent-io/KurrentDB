@@ -41,7 +41,7 @@ public class ptable_range_query_tests : SpecificationWithFilePerTestFixture {
 		table.Add(0x010300000000, 0x0001, 0xFFF1);
 		table.Add(0x010300000000, 0x0003, 0xFFF3);
 		table.Add(0x010300000000, 0x0005, 0xFFF5);
-		_ptable = PTable.FromMemtable(table, Filename, cacheDepth: 0,
+		_ptable = PTable.FromMemtable(table, Filename, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, cacheDepth: 0,
 			skipIndexVerify: _skipIndexVerify,
 			useBloomFilter: _useBloomFilter,
 			lruCacheSize: _lruCacheSize);

@@ -39,7 +39,7 @@ class when_scavenging_a_table_index_cancelled_while_scavenging_table : Specifica
 			() => new HashListMemTable(PTableVersions.IndexV4, maxSize: 5),
 			fakeReader,
 			PTableVersions.IndexV4,
-			5,
+			5, Constants.PTableMaxReaderCountDefault,
 			maxSizeForMemory: 2,
 			maxTablesPerLevel: 5);
 		_tableIndex.Initialize(long.MaxValue);
@@ -64,7 +64,7 @@ class when_scavenging_a_table_index_cancelled_while_scavenging_table : Specifica
 			() => new HashListMemTable(PTableVersions.IndexV4, maxSize: 5),
 			fakeReader,
 			PTableVersions.IndexV4,
-			5,
+			5, Constants.PTableMaxReaderCountDefault,
 			maxSizeForMemory: 2,
 			maxTablesPerLevel: 5);
 

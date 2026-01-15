@@ -623,11 +623,15 @@ public class ClusterVNode<TStreamId> :
 
 		// Log Format
 		var indexPath = options.Database.Index ?? Path.Combine(Db.Config.Path, ESConsts.DefaultIndexDirectoryName);
+
+		var pTableMaxReaderCount = GetPTableMaxReaderCount(readerThreadsCount);
 		var tfReader = new TFChunkReader(Db, Db.Config.WriterCheckpoint.AsReadOnly());
 
 		var logFormat = logFormatAbstractorFactory.Create(new() {
 			InMemory = options.Database.MemDb,
 			IndexDirectory = indexPath,
+			InitialReaderCount = ESConsts.PTableInitialReaderCount,
+			MaxReaderCount = pTableMaxReaderCount,
 			StreamExistenceFilterSize = options.Database.StreamExistenceFilterSize,
 			StreamExistenceFilterCheckpoint = Db.Config.StreamExistenceFilterCheckpoint,
 			TFReader = tfReader,
@@ -696,6 +700,7 @@ public class ClusterVNode<TStreamId> :
 			initializationThreads: options.Database.InitializationThreads,
 			additionalReclaim: false,
 			maxAutoMergeIndexLevel: options.Database.MaxAutoMergeIndexLevel,
+			pTableMaxReaderCount: pTableMaxReaderCount,
 			statusTracker: trackers.IndexStatusTracker);
 		logFormat.StreamNamesProvider.SetTableIndex(tableIndex);
 
@@ -1696,6 +1701,19 @@ public class ClusterVNode<TStreamId> :
 		var periodicLogging = new PeriodicallyLoggingService(_mainQueue, VersionInfo.Version, Log);
 		_mainBus.Subscribe<SystemMessage.SystemStart>(periodicLogging);
 		_mainBus.Subscribe<MonitoringMessage.CheckEsVersion>(periodicLogging);
+	}
+
+	static int GetPTableMaxReaderCount(int readerThreadsCount) {
+		var ptableMaxReaderCount =
+			1 /* StorageWriter */
+			+ 1 /* StorageChaser */
+			+ 1 /* Projections */
+			+ TFChunkScavenger.MaxThreadCount /* Scavenging (1 per thread) */
+			+ 1 /* Redaction */
+			+ 1 /* Subscription LinkTos resolving */
+			+ readerThreadsCount
+			+ 5 /* just in case reserve :) */;
+		return Math.Max(ptableMaxReaderCount, ESConsts.PTableInitialReaderCount);
 	}
 
 	private static void CreateStaticStreamInfoCache(

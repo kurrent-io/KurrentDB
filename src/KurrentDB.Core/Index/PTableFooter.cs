@@ -3,67 +3,58 @@
 
 using System;
 using System.IO;
-using System.Runtime.InteropServices;
-using DotNext.Buffers;
-using DotNext.Buffers.Binary;
 using KurrentDB.Core.Exceptions;
-using Microsoft.Win32.SafeHandles;
 
 namespace KurrentDB.Core.Index;
 
-[StructLayout(LayoutKind.Auto)]
-public readonly struct PTableFooter : IBinaryFormattable<PTableFooter> {
-	public const int Size = 128;
-	private const byte FileType = (byte)Index.FileType.PTableFile;
-
+public class PTableFooter {
+	private const int Size = 128;
+	public readonly FileType FileType;
 	public readonly byte Version;
 	public readonly uint NumMidpointsCached;
 
+	public static int GetSize(byte version) {
+		if (version >= PTableVersions.IndexV4)
+			return Size;
+		return 0;
+	}
+
 	public PTableFooter(byte version, uint numMidpointsCached) {
+		FileType = FileType.PTableFile;
 		Version = version;
 		NumMidpointsCached = numMidpointsCached;
 	}
 
-	private PTableFooter(ref SpanReader<byte> reader) {
-		if (reader.Read() is not FileType)
-			throw new CorruptIndexException("Corrupted PTable.", new InvalidFileException("Wrong type of PTable."));
+	public byte[] AsByteArray() {
+		var array = new byte[Size];
+		array[0] = (byte)FileType.PTableFile;
+		array[1] = Version;
+		uint numMidpoints = NumMidpointsCached;
+		for (int i = 0; i < 4; i++) {
+			array[i + 2] = (byte)(numMidpoints & 0xFF);
+			numMidpoints >>= 8;
+		}
 
-		Version = reader.Read();
-		if (Version < PTableVersions.IndexV4)
+		return array;
+	}
+
+	public static PTableFooter FromStream(Stream stream) {
+		var type = stream.ReadByte();
+		if (type != (int)FileType.PTableFile)
+			throw new CorruptIndexException("Corrupted PTable.", new InvalidFileException("Wrong type of PTable."));
+		var version = stream.ReadByte();
+		if (version == -1)
+			throw new CorruptIndexException("Couldn't read version of PTable from footer.",
+				new InvalidFileException("Invalid PTable file."));
+		if (!(version >= PTableVersions.IndexV4))
 			throw new CorruptIndexException(
 				"PTable footer with version < 4 found. PTable footers are supported as from version 4.",
 				new InvalidFileException("Invalid PTable file."));
 
-		NumMidpointsCached = reader.ReadLittleEndian<uint>();
-	}
+		byte[] buffer = new byte[4];
+		stream.Read(buffer, 0, 4);
+		uint numMidpointsCached = BitConverter.ToUInt32(buffer, 0);
 
-	public static int GetSize(byte version)
-		=> version >= PTableVersions.IndexV4 ? Size : 0;
-
-	static int IBinaryFormattable<PTableFooter>.Size => Size;
-
-	public static PTableFooter Parse(ReadOnlySpan<byte> source) {
-		var reader = new SpanReader<byte>(source);
-		return new(ref reader);
-	}
-
-	public static PTableFooter Parse(SafeFileHandle handle, long fileOffset) {
-		Span<byte> buffer = stackalloc byte[Size];
-		return RandomAccess.Read(handle, buffer, fileOffset) == buffer.Length
-			? Parse(buffer)
-			: throw new CorruptIndexException("Corrupted PTable footer.", new InvalidFileException("Wrong file size."));
-	}
-
-	public void Format(Span<byte> buffer) {
-		var writer = new SpanWriter<byte>(buffer);
-		writer.Add(FileType);
-		writer.Add(Version);
-		writer.WriteLittleEndian(NumMidpointsCached);
-	}
-
-	public byte[] AsByteArray() {
-		var result = new byte[Size];
-		Format(result);
-		return result;
+		return new PTableFooter((byte)version, numMidpointsCached);
 	}
 }

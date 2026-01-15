@@ -317,6 +317,7 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 			reader,
 			ptableVersion: PTableVersions.IndexV4,
 			maxAutoMergeIndexLevel: int.MaxValue,
+			pTableMaxReaderCount: ESConsts.PTableInitialReaderCount,
 			maxSizeForMemory: _skipIndexCheck
 				? 1_000_000 // we aren't going to check the index so no need to convert to ptables
 				: 1, // convert everything to ptables immediately so we can check the index

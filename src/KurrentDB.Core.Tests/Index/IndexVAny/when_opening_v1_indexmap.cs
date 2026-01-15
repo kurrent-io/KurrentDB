@@ -54,7 +54,7 @@ public class when_opening_indexmap_with_auto_merge_level_set : SpecificationWith
 		await base.TestFixtureSetUp();
 
 		_filename = GetFilePathFor("indexfile");
-		var empty = IndexMap.CreateEmpty(2, 4);
+		var empty = IndexMap.CreateEmpty(2, 4, Constants.PTableMaxReaderCountDefault);
 		empty.SaveToFile(_filename);
 	}
 

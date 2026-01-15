@@ -30,7 +30,7 @@ public class ptable_should : SpecificationWithFilePerTestFixture {
 
 		var table = new HashListMemTable(_ptableVersion, maxSize: 10);
 		table.Add(0x010100000000, 0x0001, 0x0001);
-		_ptable = PTable.FromMemtable(table, Filename, cacheDepth: 0, skipIndexVerify: _skipIndexVerify);
+		_ptable = PTable.FromMemtable(table, Filename, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, cacheDepth: 0, skipIndexVerify: _skipIndexVerify);
 	}
 
 	public override void TestFixtureTearDown() {
