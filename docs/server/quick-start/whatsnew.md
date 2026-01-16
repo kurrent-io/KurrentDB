@@ -7,23 +7,78 @@ order: 2
 ## New in 26.0
 
 Features
-* [User defined indexes](#user-defined-indexes)
-* [Archiving support for GCP and Azure](#archiving-support-for-gcp-and-azure)
-* [Improved request processing](#improved-request-processing)
+* [User Defined Indexes](#user-defined-indexes)
+* [Archiving Support for GCP and Azure](#archiving-support-for-gcp-and-azure)
 
-### User defined indexes
+Changes / Improvements
 
-[Documentation](../features/indexes/user-defined.md)
+* [Improved Request Processing](#improved-request-processing)
+* [Additional Thread Pool Metric](#additional-thread-pool-metric)
+* [YAML Config file priority](#yaml-config-file-priority)
+* [Configurable SLOW MESSAGE Thresholds](#configurable-slow-message-thresholds)
+
+### User Defined Indexes
+
+KurrentDB 26.0 adds [user-defined secondary indexes](../features/indexes/user-defined.md), which advance the [secondary indexes](../features/indexes/secondary.md) added in 25.1. Users can now define custom secondary indexes from record content for fast, field-based reads, subscriptions, and UI queries (e.g. “orders-by-country”). Indexes follow the log and store their data separately on each node, so you get targeted access without increasing log size.
 
 ### Archiving support for GCP and Azure
 
-[Azure Documentation](../features/archiving.md#microsoft-azure-configuration)
+<Badge type="info" vertical="middle" text="License Required"/>
 
-[GCP Documentation](../features/archiving.md#google-cloud-platform-configuration)
+Previously, only Amazon S3 could be used as the blob storage for archived chunks. Now Azure and GCP can be used.
+- [Azure Documentation](../features/archiving.md#microsoft-azure-configuration)
+- [GCP Documentation](../features/archiving.md#google-cloud-platform-configuration)
 
-### Improved request processing
+### Improved Request Processing
 
-Placeholder: no more worker thread count. concurrent reads are also unlimited by default although a limit can still be set. prevents fast reads from being blocked by slow reads
+#### Readers
+
+Previously, read requests were distributed round-robin across multiple reader queues, with the number of queues controlled by the `ReaderThreadsCount` setting. It was possible for a fast request to be delayed behind a slow one if both landed in the same queue, even while other queues were idle.
+
+Now all read requests go through a single virtual queue, and `ReaderThreadsCount` controls the number of reads that can be executed concurrently. A fast request can no longer be delayed behind a slow one unless the maximum number of reads that can be executed concurrently are already in progress.
+
+#### Workers
+
+The `WorkerThreads` setting is now deprecated and has no effect. Similarly to the readers, it was possible for a slow work item to be delayed behind a fast work item even while a different worker was idle. The work done by the workers is now executed without a concurrency limit. Work items for the same TCP connection are still executed in order.
+
+### Additional Thread Pool Metric
+
+The length of the thread pool queue in seconds is now included as a metric, similarly to the other queues.
+
+The length of the thread pool queue in items is now included in the stats files, similarly to the other queues.
+
+### YAML Config File Priority
+
+The primary yaml config file now takes precedence over the json files (`logconfig.json`, `kestrelsettings.json`, `metricsconfig.json` and any custom json in the configuration directory).
+
+This allows the main config file to override the defaults provided in those `.json` files that ship with the product, without having to edit those files.
+
+### Configurable SLOW MESSAGE Thresholds
+
+KurrentDB logs when message handling takes more than an expected threshold. Historically, these thresholds have been somewhat arbitrary, resulting in unnecessary noise on some deployments.
+
+The thresholds can now be configured per queue or bus in `metricsconfig.json` (which is now populated with the previous defaults), or can be overridden in the main yaml config file as follows:
+
+```yaml
+Metrics:
+	SlowMessageMilliseconds:
+		MainBus: 48
+		PersistentSubscriptionsBus: 50
+		ProjectionManagerInputBus: 48
+		ProjectionManagerOutputBus: 48
+		ProjectionWorkerInputBus: 48
+		ProjectionWorkerOutputBus: 48
+		StorageReaderBus: 200
+		StorageWriterBus: 500
+		SubscriptionsBus: 50
+		WorkerBus: 200
+```
+
+Use -1 to indicate that slow messages should not be logged.
+
+### .NET 10
+
+Under the hood, KurrentDB 26.0 uses the latest dotnet runtime: .NET 10.
 
 ## New in 25.1
 
