@@ -5,6 +5,7 @@
 		<ApplicationIcon>app2.ico</ApplicationIcon>
 		<GenerateSupportedRuntime>false</GenerateSupportedRuntime>
 		<ServerGarbageCollection>true</ServerGarbageCollection>
+		<GarbageCollectionAdaptationMode>false</GarbageCollectionAdaptationMode>
 	</PropertyGroup>
 	<ItemGroup>
 		<RuntimeHostConfigurationOption Include="System.GC.HeapHardLimitPercent" Value="60" />
