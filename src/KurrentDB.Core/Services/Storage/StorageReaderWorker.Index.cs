@@ -16,11 +16,7 @@ partial class StorageReaderWorker<TStreamId> :
 	public async ValueTask HandleAsync(ReadIndexEventsForward msg, CancellationToken token) {
 		ReadIndexEventsForwardCompleted res;
 		var cts = _multiplexer.Combine(msg.Lifetime, [token, msg.CancellationToken]);
-		var leaseTaken = false;
 		try {
-			await AcquireRateLimitLeaseAsync(cts.Token);
-			leaseTaken = true;
-
 			res = await _secondaryIndexReaders.ReadForwards(msg, cts.Token);
 		} catch (OperationCanceledException e) when (e.CancellationToken == cts.Token) {
 			if (!cts.IsTimedOut)
@@ -45,9 +41,6 @@ partial class StorageReaderWorker<TStreamId> :
 			return;
 		} finally {
 			await cts.DisposeAsync();
-
-			if (leaseTaken)
-				ReleaseRateLimitLease();
 		}
 
 		switch (res.Result) {
@@ -66,11 +59,7 @@ partial class StorageReaderWorker<TStreamId> :
 	public async ValueTask HandleAsync(ReadIndexEventsBackward msg, CancellationToken token) {
 		ReadIndexEventsBackwardCompleted res;
 		var cts = _multiplexer.Combine(msg.Lifetime, [token, msg.CancellationToken]);
-		var leaseTaken = false;
 		try {
-			await AcquireRateLimitLeaseAsync(cts.Token);
-			leaseTaken = true;
-
 			res = await _secondaryIndexReaders.ReadBackwards(msg, cts.Token);
 		} catch (OperationCanceledException e) when (e.CancellationToken == cts.Token) {
 			if (!cts.IsTimedOut)
@@ -95,9 +84,6 @@ partial class StorageReaderWorker<TStreamId> :
 			return;
 		} finally {
 			await cts.DisposeAsync();
-
-			if (leaseTaken)
-				ReleaseRateLimitLease();
 		}
 
 		switch (res.Result) {

@@ -35,7 +35,8 @@ public class LogV2StreamExistenceFilterInitializerTests : DirectoryPerTest<LogV2
 			maxSizeForMemory: 100_000,
 			tfReader: _log,
 			ptableVersion: PTableVersions.IndexV4,
-			maxAutoMergeIndexLevel: int.MaxValue);
+			maxAutoMergeIndexLevel: int.MaxValue,
+			pTableMaxReaderCount: 5);
 		_tableIndex.Initialize(0);
 
 		_sut = new LogV2StreamExistenceFilterInitializer(
@@ -187,7 +188,8 @@ public class LogV2StreamExistenceFilterInitializerTests : DirectoryPerTest<LogV2
 				maxSize: 1_000_000 * 2),
 			new FakeTfReader(),
 			ptableVersion: PTableVersions.IndexV1,
-			maxAutoMergeIndexLevel: int.MaxValue);
+			maxAutoMergeIndexLevel: int.MaxValue,
+			pTableMaxReaderCount: 5);
 		tableIndex.Initialize(0);
 
 		var sut = new LogV2StreamExistenceFilterInitializer(

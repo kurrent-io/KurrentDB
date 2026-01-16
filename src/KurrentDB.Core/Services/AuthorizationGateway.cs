@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
+using Serilog;
 using static KurrentDB.Core.Messages.ClientMessage;
 
 namespace KurrentDB.Core.Services;
@@ -263,11 +265,17 @@ public sealed class AuthorizationGateway(IAuthorizationProvider authorizationPro
 	}
 
 	private void Authorize(WriteEvents msg, IPublisher destination) {
-		if (msg.EventStreamIds.Length > 1)
-			throw new NotSupportedException("Authorization of multi-stream writes is not supported");
+		if (msg.EventStreamIds.Length <= 1) {
+			Authorize(msg.User, WriteStream.WithParameter(Operations.Streams.Parameters.StreamId(msg.EventStreamIds.Single)),
+				msg.Envelope, destination, msg, WriteEventsDenied);
+			return;
+		}
 
-		Authorize(msg.User, WriteStream.WithParameter(Operations.Streams.Parameters.StreamId(msg.EventStreamIds.Single)),
-			msg.Envelope, destination, msg, WriteEventsDenied);
+		var ops = new Operation[msg.EventStreamIds.Length];
+		for (var i = 0; i < msg.EventStreamIds.Length; i++)
+			ops[i] = WriteStream.WithParameter(Operations.Streams.Parameters.StreamId(msg.EventStreamIds.Span[i]));
+
+		AuthorizeMany(msg.User, ops, msg.Envelope, destination, msg, WriteEventsDenied);
 	}
 
 	private void Authorize(ReplayParkedMessages msg, IPublisher destination) {
@@ -383,6 +391,65 @@ public sealed class AuthorizationGateway(IAuthorizationProvider authorizationPro
 			destination.Publish(request);
 		} else {
 			replyTo.ReplyWith(createAccessDenied(request));
+		}
+	}
+
+	void AuthorizeMany<TRequest>(
+		ClaimsPrincipal user,
+		ReadOnlyMemory<Operation> operations,
+		IEnvelope replyTo,
+		IPublisher destination,
+		TRequest request,
+		Func<TRequest, Message> createAccessDenied) where TRequest : Message {
+		while (!operations.IsEmpty) {
+			var operation = operations.Span[0];
+			operations = operations[1..];
+
+			var accessCheck = authorizationProvider.CheckAccessAsync(user, operation, CancellationToken.None);
+
+			if (!accessCheck.IsCompleted) {
+				AuthorizeManyAsync(accessCheck, user, operations, replyTo, destination, request, createAccessDenied);
+				return;
+			}
+
+			if (accessCheck.Result)
+				continue;
+
+			replyTo.ReplyWith(createAccessDenied(request));
+			return;
+		}
+
+		destination.Publish(request);
+	}
+
+	async void AuthorizeManyAsync<TRequest>(
+		ValueTask<bool> accessCheck,
+		ClaimsPrincipal user,
+		ReadOnlyMemory<Operation> operations,
+		IEnvelope replyTo,
+		IPublisher destination,
+		TRequest request,
+		Func<TRequest, Message> createAccessDenied) where TRequest : Message {
+		try {
+			if (!await accessCheck) {
+				replyTo.ReplyWith(createAccessDenied(request));
+				return;
+			}
+
+			while (!operations.IsEmpty) {
+				var operation = operations.Span[0];
+				operations = operations[1..];
+
+				if (await authorizationProvider.CheckAccessAsync(user, operation, CancellationToken.None))
+					continue;
+
+				replyTo.ReplyWith(createAccessDenied(request));
+				return;
+			}
+
+			destination.Publish(request);
+		} catch (Exception ex) {
+			Log.Error(ex, "Unhandled exception during authorization");
 		}
 	}
 }

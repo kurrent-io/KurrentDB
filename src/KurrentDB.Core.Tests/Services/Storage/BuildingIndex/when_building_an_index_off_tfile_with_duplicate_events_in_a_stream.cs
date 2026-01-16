@@ -143,6 +143,7 @@ public abstract class DuplicateReadIndexTestScenario<TLogFormat, TStreamId> : Sp
 			reader,
 			IndexBitnessVersion,
 			int.MaxValue,
+			Constants.PTableMaxReaderCountDefault,
 			MaxEntriesInMemTable);
 		_logFormat.StreamNamesProvider.SetTableIndex(_tableIndex);
 
@@ -191,6 +192,7 @@ public abstract class DuplicateReadIndexTestScenario<TLogFormat, TStreamId> : Sp
 			reader,
 			IndexBitnessVersion,
 			int.MaxValue,
+			Constants.PTableMaxReaderCountDefault,
 			MaxEntriesInMemTable);
 
 		readIndex = new ReadIndex<TStreamId>(new NoopPublisher(),

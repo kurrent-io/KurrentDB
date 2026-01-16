@@ -31,7 +31,7 @@ public class when_a_ptable_is_corrupt_on_disk : SpecificationWithDirectory {
 		var mtable = new HashListMemTable(_ptableVersion, maxSize: 10);
 		mtable.Add(0x010100000000, 0x0001, 0x0001);
 		mtable.Add(0x010500000000, 0x0001, 0x0002);
-		_table = PTable.FromMemtable(mtable, _filename);
+		_table = PTable.FromMemtable(mtable, _filename, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault);
 		_table.Dispose();
 		File.Copy(_filename, _copiedfilename);
 		using (var f = new FileStream(_copiedfilename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite)) {
@@ -50,7 +50,7 @@ public class when_a_ptable_is_corrupt_on_disk : SpecificationWithDirectory {
 
 	[Test]
 	public void the_hash_is_invalid() {
-		var exc = Assert.Throws<CorruptIndexException>(() => PTable.FromFile(_copiedfilename, 16, false));
+		var exc = Assert.Throws<CorruptIndexException>(() => PTable.FromFile(_copiedfilename, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, 16, false));
 		Assert.IsInstanceOf<HashValidationException>(exc.InnerException);
 	}
 }

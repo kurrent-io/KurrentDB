@@ -87,6 +87,6 @@ public class when_publishing_to_ThreadPoolMessageScheduler : when_publishing_to_
 	public when_publishing_to_ThreadPoolMessageScheduler()
 		: base(static (consumer, name, timeout) =>
 			new ThreadPoolMessageScheduler(name, consumer)
-				{ StopTimeout = timeout, SynchronizeMessagesWithUnknownAffinity = true }) {
+				{ StopTimeout = timeout, Strategy = ThreadPoolMessageScheduler.SynchronizeMessagesWithUnknownAffinity() }) {
 	}
 }

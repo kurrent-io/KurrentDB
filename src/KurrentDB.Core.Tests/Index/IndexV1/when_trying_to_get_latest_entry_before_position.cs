@@ -58,6 +58,8 @@ public class when_trying_to_get_latest_entry_before_position : SpecificationWith
 		_pTable = PTable.FromMemtable(
 			table: _memTable,
 			filename: Filename,
+			initialReaders: Constants.PTableInitialReaderCount,
+			maxReaders: Constants.PTableMaxReaderCountDefault,
 			skipIndexVerify: _skipIndexVerify);
 	}
 

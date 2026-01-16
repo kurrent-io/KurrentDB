@@ -25,6 +25,10 @@ service ConnectorsCommandService {
     option (google.api.http) = {
       put: "/connectors/{connector_id}/settings",
       body: "settings"
+      additional_bindings {
+        put: "/connectors/{connector_id}/configuration"
+        body: "configuration"
+      }
     };
   }
 

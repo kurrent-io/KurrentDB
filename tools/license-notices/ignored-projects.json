@@ -2,6 +2,7 @@
   "*.Tests.csproj",
   "*.Testing.csproj",
   "*.Testing.*.csproj",
+  "*KurrentDB.Ammeter.csproj",
   "*KurrentDB.SecondaryIndexing.LoadTesting.csproj",
   "*KurrentDB.MicroBenchmarks.csproj"
 ]
