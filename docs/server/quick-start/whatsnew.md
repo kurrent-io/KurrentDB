@@ -17,6 +17,10 @@ Changes / Improvements
 * [YAML Config file priority](#yaml-config-file-priority)
 * [Configurable SLOW MESSAGE Thresholds](#configurable-slow-message-thresholds)
 * [.NET 10](#net-10)
+* [Connectors: Kafka Source](#connectors-kafka-source)
+* [Connectors: SQL Sink](#connectors-sql-sink)
+* [Connectors: Tracker fix](#connectors-fix-position-tracker-not-accounting-for-duplicate-track-calls)
+* [Connectors: Performance](#connectors-performance-improvements)
 
 For breaking changes and deprecation notices, see the [upgrade guide](upgrade-guide.md).
 
