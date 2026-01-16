@@ -254,6 +254,8 @@ public class UserIndexEngineSubscription(
 
 		// guaranteed no readers, we can stop.
 		await index.Stop();
+
+		DropSubscriptions(indexName);
 	}
 
 	private void DeleteUserIndex(string indexName) {

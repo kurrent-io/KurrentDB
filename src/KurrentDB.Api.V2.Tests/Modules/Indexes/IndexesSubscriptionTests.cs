@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Text;
+using DotNext.Collections.Generic;
 using Grpc.Core;
 using KurrentDB.Protocol.V2.Indexes;
 using KurrentDB.Protocol.V2.Streams;
@@ -96,29 +97,38 @@ public class IndexesSubscriptionTests {
 		var nextMauritiusResult = mauritiusEnumerator.ConsumeNext();
 		await Task.Delay(500);
 
-		await Assert.That(nextAllResult.IsCompleted).IsFalse();
-		await Assert.That(nextMauritiusResult.IsCompleted).IsFalse();
+		await Assert.That(nextAllResult.IsCompleted).IsTrue();
+		await Assert.That(nextMauritiusResult.IsCompleted).IsTrue();
 
-		// start and receive the extra events
+		// start
 		await IndexesClient.StartAsync(new() { Name = IndexName }, cancellationToken: ct);
+		await Task.Delay(1000);
 
-		await Assert.That((await nextAllResult).Data.ToStringUtf8()).Contains(""" "orderId": "F", """);
-		await Assert.That((await allFieldsEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "G", """);
+		// resubscribe and skip already processed events
+		await using var allFieldsEnumerator2 = StreamsReadClient.SubscribeToAllFiltered(allFields, ct).GetAsyncEnumerator(ct);
+		await using var mauritiusEnumerator2 = StreamsReadClient.SubscribeToAllFiltered(mauritiusField, ct).GetAsyncEnumerator(ct);
 
-		await Assert.That((await nextMauritiusResult).Data.ToStringUtf8()).Contains(""" "orderId": "F", """);
+		await allFieldsEnumerator2.SkipAsync(5);
+		await mauritiusEnumerator2.SkipAsync(3);
+
+		// receive the extra events
+		await Assert.That((await allFieldsEnumerator2.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "F", """);
+		await Assert.That((await allFieldsEnumerator2.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "G", """);
+
+		await Assert.That((await mauritiusEnumerator2.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "F", """);
 
 		// delete
 		await IndexesClient.DeleteAsync(new() { Name = IndexName }, cancellationToken: ct);
 
 		var ex = await Assert
-			.That(async () => await allFieldsEnumerator.ConsumeNext())
+			.That(async () => await allFieldsEnumerator2.ConsumeNext())
 			.Throws<RpcException>();
 
 		await Assert.That(ex!.Status.Detail).IsEqualTo($"Index '{allFields}' not found.");
 		await Assert.That(ex!.Status.StatusCode).IsEqualTo(StatusCode.NotFound);
 
 		ex = await Assert
-			.That(async () => await mauritiusEnumerator.ConsumeNext())
+			.That(async () => await mauritiusEnumerator2.ConsumeNext())
 			.Throws<RpcException>();
 
 		await Assert.That(ex!.Status.Detail).IsEqualTo($"Index '{mauritiusField}' not found.");

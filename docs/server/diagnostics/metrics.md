@@ -464,7 +464,6 @@ KurrentDB uses various queues for asynchronous processing for which it also coll
 
 | Time series                                                                                                        | Type                       | Description                                                                                                                                                                                      |
 |:-------------------------------------------------------------------------------------------------------------------|:---------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `kurrentdb_queue_busy_seconds_total{queue=<QUEUE_GROUP>}`                                                          | [Counter](#common-types)   | Total time spent processing in seconds, averaged across the queues in the _QUEUE_GROUP_. The rate of this metric is therefore the average busyness of the group during the period (from 0-1 s/s) |
 | `kurrentdb_queue_queueing_duration_max_seconds{`<br/>`name=<QUEUE_GROUP>,range=<RANGE>}`                           | [RecentMax](#recentmax)    | Recent maximum time in seconds for which any item was queued in queues belonging to the _QUEUE_GROUP_. This is essentially the length of the longest queue in the group in seconds               |
 | `kurrentdb_queue_processing_duration_seconds_bucket{`<br/>`message_type=<TYPE>,queue=<QUEUE_GROUP>,le=<DURATION>}` | [Histogram](#common-types) | Number of messages of type _TYPE_ processed by _QUEUE_GROUP_ group that took less than or equal to _DURATION_ in seconds                                                                         |
 
@@ -477,14 +476,13 @@ Enabling `Queues.Processing` can cause a lot more time series to be generated, a
 Example configuration:
 ```json
 "Queues": {
-  "Busy": true,
   "Length": true,
   "Processing": false
 }
 
 "QueueLabels": [
   {
-    "Regex": "StorageReaderQueue #.*",
+    "Regex": "StorageReaderQueue",
     "Label": "Readers"
   },
   {
@@ -496,11 +494,6 @@ Example configuration:
 
 Example output:
 ```
-# TYPE kurrentdb_queue_busy_seconds_total counter
-# UNIT kurrentdb_queue_busy_seconds_total seconds
-kurrentdb_queue_busy_seconds_total{queue="Readers"} 1.04568158125 1688157491029
-kurrentdb_queue_busy_seconds_total{queue="Others"} 0 1688157491029
-
 # TYPE kurrentdb_queue_queueing_duration_max_seconds gauge
 # UNIT kurrentdb_queue_queueing_duration_max_seconds seconds
 kurrentdb_queue_queueing_duration_max_seconds{name="Readers",range="16-20 seconds"} 0.06434454 1688157489545
