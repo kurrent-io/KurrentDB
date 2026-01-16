@@ -16,6 +16,9 @@ Changes / Improvements
 * [Additional Thread Pool Metric](#additional-thread-pool-metric)
 * [YAML Config file priority](#yaml-config-file-priority)
 * [Configurable SLOW MESSAGE Thresholds](#configurable-slow-message-thresholds)
+* [.NET 10](#net-10)
+
+For breaking changes and deprecation notices, see the [upgrade guide](upgrade-guide.md).
 
 ### User Defined Indexes
 
@@ -39,7 +42,7 @@ Now all read requests go through a single virtual queue, and `ReaderThreadsCount
 
 #### Workers
 
-The `WorkerThreads` setting is now deprecated and has no effect. Similarly to the readers, it was possible for a slow work item to be delayed behind a fast work item even while a different worker was idle. The work done by the workers is now executed without a concurrency limit. Work items for the same TCP connection are still executed in order.
+The `WorkerThreads` setting is now deprecated and has no effect. Similarly to the readers, it was possible for a fast work item to be delayed behind a slow one even while another worker was idle. The work done by the workers is now executed without a concurrency limit. Work items for the same TCP connection are still executed in order.
 
 ### Additional Thread Pool Metric
 

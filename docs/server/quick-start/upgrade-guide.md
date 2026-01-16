@@ -5,7 +5,7 @@ order: 5
 
 ## Should you upgrade?
 
-KurrentDB 26.0 is a long term support (LTS) release and will be supported for a minimum of two years, with a two month grace period for organizing upgrades when the LTS goes out of support. The the [release schedule](../release-schedule/README.md) for further information.
+KurrentDB 26.0 is a long term support (LTS) release and will be supported for a minimum of two years, with a two month grace period for organizing upgrades when the LTS goes out of support. See the [release schedule](../release-schedule/README.md) for further information.
 
 Upgrade to this version if you want to try the [new features](./whatsnew.md) and changes in this release. Also please note that with this release 23.10 LTS and 25.1 STS are going out of support. Consider upgrading to a supported version (24.10 or 26.0) if you are on either of these versions.
 
