@@ -4,7 +4,6 @@
 using Eventuous;
 using Kurrent.Surge.Schema;
 using Kurrent.Surge.Schema.Serializers;
-using KurrentDB.Common.Utils;
 using KurrentDB.Core;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Protocol.V2.Indexes;
@@ -23,9 +22,9 @@ public class UserIndexQueryService(
 
 		var state = new UserIndexesState();
 
-		await foreach (var evt in client.Reading.ReadIndexForwards(
-			UserIndexConstants.ManagementStream,
-			Position.Start,
+		await foreach (var evt in client.Reading.ReadStreamForwards(
+			UserIndexConstants.ManagementAllStream,
+			StreamRevision.Start,
 			maxCount: long.MaxValue,
 			ct)) {
 
@@ -33,9 +32,7 @@ public class UserIndexQueryService(
 				data: evt.Event.Data,
 				schemaInfo: new(evt.Event.EventType, SchemaDataFormat.Json));
 
-			var userIndexName = UserIndexHelpers.ParseManagementStreamName(evt.Event.EventStreamId);
-
-			state.When(new UserIndexId(userIndexName), deserializedEvent!);
+			state.When(deserializedEvent!);
 		}
 
 		return state.Convert();
@@ -61,29 +58,29 @@ public class UserIndexQueryService(
 		};
 	}
 
-	public record UserIndexesState : MultiEntityState<UserIndexesState, UserIndexId> {
+	public record UserIndexesState : State<UserIndexesState, UserIndexId> {
 		public Dictionary<string, UserIndexState> UserIndexes { get; } = [];
 
 		public UserIndexesState() {
-			On<IndexCreated>((_, userIndexId, evt) => {
-				UserIndexes[userIndexId.Name] = new UserIndexState().When(evt);
+			On<IndexCreated>((_, evt) => {
+				UserIndexes[evt.Name] = new UserIndexState().When(evt);
 				return this;
 			});
 
-			On<IndexStarted>((_, userIndexId, evt) => {
-				if (UserIndexes.TryGetValue(userIndexId.Name, out var userIndexState))
-					UserIndexes[userIndexId.Name] = userIndexState.When(evt);
+			On<IndexStarted>((_, evt) => {
+				if (UserIndexes.TryGetValue(evt.Name, out var userIndexState))
+					UserIndexes[evt.Name] = userIndexState.When(evt);
 				return this;
 			});
 
-			On<IndexStopped>((_, userIndexId, evt) => {
-				if (UserIndexes.TryGetValue(userIndexId.Name, out var userIndexState))
-					UserIndexes[userIndexId.Name] = userIndexState.When(evt);
+			On<IndexStopped>((_, evt) => {
+				if (UserIndexes.TryGetValue(evt.Name, out var userIndexState))
+					UserIndexes[evt.Name] = userIndexState.When(evt);
 				return this;
 			});
 
-			On<IndexDeleted>((_, userIndexId, _) => {
-				UserIndexes.Remove(userIndexId.Name);
+			On<IndexDeleted>((_, evt) => {
+				UserIndexes.Remove(evt.Name);
 				return this;
 			});
 		}
@@ -112,27 +109,6 @@ public class UserIndexQueryService(
 
 			On<IndexDeleted>((state, _) =>
 				state with { State = IndexState.Deleted });
-		}
-	}
-
-	// Similar to Eventuous State but handles events for different entities. The Identity is passed in with the event.
-	public abstract record MultiEntityState<T, TId> where T : MultiEntityState<T, TId> where TId : Id {
-		readonly Dictionary<Type, Func<T, TId, object, T>> _handlers = [];
-
-		public T When(TId stream, object evt) {
-			var eventType = evt.GetType();
-
-			return _handlers.TryGetValue(eventType, out var handler)
-				? handler((T)this, stream, evt)
-				: (T)this;
-		}
-
-		protected void On<TEvent>(Func<T, TId, TEvent, T> handle) {
-			Ensure.NotNull(handle);
-
-			if (!_handlers.TryAdd(typeof(TEvent), (state, stream, evt) => handle(state, stream, (TEvent)evt))) {
-				throw new Exceptions.DuplicateTypeException<TEvent>();
-			}
 		}
 	}
 }

@@ -28,10 +28,4 @@ public class IndexHelpersTests {
 	public void can_get_management_stream_name(string input, string expectedStreamName) {
 		Assert.Equal(expectedStreamName, UserIndexHelpers.GetManagementStreamName(input));
 	}
-
-	[Theory]
-	[InlineData("$UserIndex-my-index", "my-index")]
-	public void can_parse_management_stream_name(string input, string expectedIndexName) {
-		Assert.Equal(expectedIndexName, UserIndexHelpers.ParseManagementStreamName(input));
-	}
 }

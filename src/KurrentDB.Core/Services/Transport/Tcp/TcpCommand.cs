@@ -40,6 +40,9 @@ public enum TcpCommand : byte {
 	DeleteStream = 0x8A,
 	DeleteStreamCompleted = 0x8B,
 
+	WriteEventsMultiStream = 0x8C,
+	WriteEventsMultiStreamCompleted = 0x8D,
+
 	ReadEvent = 0xB0,
 	ReadEventCompleted = 0xB1,
 	ReadStreamEventsForward = 0xB2,

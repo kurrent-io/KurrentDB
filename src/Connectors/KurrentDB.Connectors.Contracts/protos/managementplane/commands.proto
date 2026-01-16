@@ -9,6 +9,7 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 import "protocol.proto";
 import "managementplane/resources.proto";
+import "google/protobuf/struct.proto";
 
 option csharp_namespace = "KurrentDB.Connectors.Management.Contracts.Commands";
 
@@ -24,6 +25,10 @@ service ConnectorsCommandService {
     option (google.api.http) = {
       put: "/connectors/{connector_id}/settings",
       body: "settings"
+      additional_bindings {
+        put: "/connectors/{connector_id}/configuration"
+        body: "configuration"
+      }
     };
   }
 
@@ -66,14 +71,16 @@ service ConnectorsCommandService {
 }
 
 message CreateConnector {
-  string                                   connector_id = 1;
-  google.protobuf.StringValue              name         = 3;
-  map<string, google.protobuf.StringValue> settings     = 5;
+  string                                   connector_id  = 1;
+  google.protobuf.StringValue              name          = 3;
+  map<string, google.protobuf.StringValue> settings      = 5;
+  google.protobuf.Struct                   configuration = 6;
 }
 
 message ReconfigureConnector {
-  string                                   connector_id = 1;
-  map<string, google.protobuf.StringValue> settings     = 3;
+  string                                   connector_id  = 1;
+  map<string, google.protobuf.StringValue> settings      = 3;
+  google.protobuf.Struct                   configuration = 4;
 }
 
 message DeleteConnector {

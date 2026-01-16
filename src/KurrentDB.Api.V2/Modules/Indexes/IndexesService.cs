@@ -15,9 +15,9 @@ using static KurrentDB.Protocol.V2.Indexes.IndexesService;
 namespace KurrentDB.Api.Modules.Indexes;
 
 public class IndexesService(
-	UserIndexCommandService domainService,
-	UserIndexQueryService readSideService,
-	IAuthorizationProvider authz)
+	IAuthorizationProvider authz,
+	UserIndexCommandService? domainService = null,
+	UserIndexQueryService? readSideService = null)
 	: IndexesServiceBase {
 
 	readonly ResiliencePipeline _resilience = new ResiliencePipelineBuilder()
@@ -51,6 +51,10 @@ public class IndexesService(
 		await authz.AuthorizeOperation(operation, context);
 
 		try {
+			if (domainService is null) {
+				throw ApiErrors.SecondaryIndexingDisabled();
+			}
+
 			var result = await _resilience.ExecuteAsync(
 				static async (args, ct) => {
 					var result = await args.domainService.Handle(args.request, ct);
@@ -123,6 +127,10 @@ public class IndexesService(
 		ListIndexesRequest request,
 		ServerCallContext context) {
 
+		if (readSideService is null) {
+			throw ApiErrors.SecondaryIndexingDisabled();
+		}
+
 		await authz.AuthorizeOperation(new Operation(Operations.UserIndexes.List), context);
 
 		var response = await readSideService.List(context.CancellationToken);
@@ -132,6 +140,10 @@ public class IndexesService(
 	public override async Task<GetIndexResponse> Get(
 		GetIndexRequest request,
 		ServerCallContext context) {
+
+		if (readSideService is null) {
+			throw ApiErrors.SecondaryIndexingDisabled();
+		}
 
 		await authz.AuthorizeOperation(new Operation(Operations.UserIndexes.Read), context);
 

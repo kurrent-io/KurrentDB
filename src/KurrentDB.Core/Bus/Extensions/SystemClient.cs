@@ -4,11 +4,13 @@
 // ReSharper disable CheckNamespace
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.ClientPublisher;
 using KurrentDB.Core.Data;
@@ -25,6 +27,7 @@ using DeleteStreamResult = (Position Position, StreamRevision Revision);
 using StreamInfo = (string Stream, StreamRevision Revision);
 using StreamMetadataResult = (StreamMetadata Metadata, long Revision);
 using WriteEventsResult = (Position Position, StreamRevision StreamRevision);
+using WriteEventsMultiResult = (Position Position, LowAllocReadOnlyMemory<StreamRevision> StreamRevisions);
 
 public interface ISystemClient {
 	IManagementOperations Management { get; }
@@ -68,8 +71,19 @@ public interface IReadOperations {
 	IAsyncEnumerable<ResolvedEvent> ReadIndexBackwards(string indexName, Position startPosition, long maxCount, CancellationToken cancellationToken = default);
 }
 
+public record struct StreamWrite(string Stream, long ExpectedRevision, LowAllocReadOnlyMemory<Event> Events);
+
 public interface IWriteOperations {
 	Task<WriteEventsResult> WriteEvents(string stream, Event[] events, long expectedRevision = -2, CancellationToken cancellationToken = default);
+	Task<WriteEventsMultiResult> WriteEvents(
+		LowAllocReadOnlyMemory<string> streams,
+		LowAllocReadOnlyMemory<long> expectedRevisions,
+		LowAllocReadOnlyMemory<Event> events,
+		LowAllocReadOnlyMemory<int> eventStreamIndexes,
+		CancellationToken cancellationToken = default);
+	Task<WriteEventsMultiResult> WriteEvents(
+		LowAllocReadOnlyMemory<StreamWrite> writes,
+		CancellationToken cancellationToken = default);
 }
 
 public interface ISubscriptionsOperations {
@@ -143,6 +157,50 @@ public class SystemClient : ISystemClient {
 	public record WriteOperations(IPublisher Publisher, ILogger Logger) : IWriteOperations {
 		public Task<WriteEventsResult> WriteEvents(string stream, Event[] events, long expectedRevision = -2, CancellationToken cancellationToken = default) =>
 			Publisher.WriteEvents(stream, events, expectedRevision, cancellationToken);
+
+		public Task<WriteEventsMultiResult> WriteEvents(
+			LowAllocReadOnlyMemory<string> streams,
+			LowAllocReadOnlyMemory<long> expectedRevisions,
+			LowAllocReadOnlyMemory<Event> events,
+			LowAllocReadOnlyMemory<int> eventStreamIndexes,
+			CancellationToken cancellationToken = default) =>
+			Publisher.WriteEvents(streams, expectedRevisions, events, eventStreamIndexes, cancellationToken);
+
+		public Task<WriteEventsMultiResult> WriteEvents(
+			LowAllocReadOnlyMemory<StreamWrite> writes,
+			CancellationToken cancellationToken = default) {
+
+			var streamIndexes = new Dictionary<string, int>();
+			var events = LowAllocReadOnlyMemory<Event>.Builder.Empty;
+			var streams = LowAllocReadOnlyMemory<string>.Builder.Empty;
+			var expectedRevisions = LowAllocReadOnlyMemory<long>.Builder.Empty;
+			var eventStreamIndexes = LowAllocReadOnlyMemory<int>.Builder.Empty;
+
+			foreach (var write in writes) {
+				if (!streamIndexes.TryGetValue(write.Stream, out var streamIndex)) {
+					streamIndexes[write.Stream] = streamIndex = streams.Count;
+					streams = streams.Add(write.Stream);
+					expectedRevisions = expectedRevisions.Add(write.ExpectedRevision);
+				} else {
+					// todo: support other cases by checking that the expected version is
+					// consistent with previous writes to the stream.
+					if (write.ExpectedRevision != ExpectedVersion.Any)
+						throw new NotImplementedException();
+				}
+
+				foreach (var evt in write.Events) {
+					events = events.Add(evt);
+					eventStreamIndexes = eventStreamIndexes.Add(streamIndex);
+				}
+			}
+
+			return WriteEvents(
+				streams: streams.Build(),
+				expectedRevisions: expectedRevisions.Build(),
+				events: events.Build(),
+				eventStreamIndexes: eventStreamIndexes.Build(),
+				cancellationToken);
+		}
 	}
 
 	#endregion . Write .

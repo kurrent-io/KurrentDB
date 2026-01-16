@@ -6,7 +6,7 @@ using KurrentDB.Core.Messaging;
 
 namespace KurrentDB.Connectors.Tests;
 
-public class MessageBus(string? name = null) : InMemoryBus(name ?? "test-bus", false), IPublisher {
+public class MessageBus(string? name = null) : InMemoryBus(name ?? "test-bus", _ => TimeSpan.Zero), IPublisher {
     public void Publish(Message message) => DispatchAsync(message).AsTask().GetAwaiter().GetResult();
 
     public void Subscribe<T>(HandleMessageAsync<T> handler) where T : Message =>

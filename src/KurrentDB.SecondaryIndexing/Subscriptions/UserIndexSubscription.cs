@@ -26,7 +26,6 @@ internal sealed class UserIndexSubscription<TField>(
 	IPublisher publisher,
 	UserIndexProcessor<TField> indexProcessor,
 	SecondaryIndexingPluginOptions options,
-	Func<EventRecord, bool> eventFilter,
 	ILogger log,
 	CancellationToken token) : UserIndexSubscription, IAsyncDisposable where TField : IField {
 	private readonly int _commitBatchSize = options.CommitBatchSize;
@@ -86,7 +85,8 @@ internal sealed class UserIndexSubscription<TField>(
 			try {
 				var resolvedEvent = eventReceived.Event;
 
-				if (!eventFilter(resolvedEvent.Event)) {
+				if (resolvedEvent.Event.EventType.StartsWith('$') || resolvedEvent.Event.EventStreamId.StartsWith('$')) {
+					// ignore system events
 					continue;
 				}
 

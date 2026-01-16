@@ -130,6 +130,30 @@ partial class WriteEventsCompleted {
 	}
 }
 
+partial class WriteEventsMultiStream {
+	public WriteEventsMultiStream(ReadOnlySpan<string> eventStreamIds, ReadOnlySpan<long> expectedVersions, ReadOnlySpan<NewEvent> events, ReadOnlySpan<int> eventStreamIndexes, bool requireLeader) {
+		EventStreamIds.AddRange(eventStreamIds);
+		ExpectedVersions.AddRange(expectedVersions);
+		Events.AddRange(events);
+		EventStreamIndexes.AddRange(eventStreamIndexes);
+		RequireLeader = requireLeader;
+	}
+}
+
+partial class WriteEventsMultiStreamCompleted {
+	public WriteEventsMultiStreamCompleted(OperationResult result, string message, ReadOnlySpan<long> firstEventNumbers, ReadOnlySpan<long> lastEventNumbers, long preparePosition, long commitPosition, ReadOnlySpan<long> failureCurrentVersions, ReadOnlySpan<int> failureStreamIndexes) {
+		Result = result;
+		if (message != null)
+			Message = message;
+		FirstEventNumbers.AddRange(firstEventNumbers);
+		LastEventNumbers.AddRange(lastEventNumbers);
+		PreparePosition = preparePosition;
+		CommitPosition = commitPosition;
+		FailureCurrentVersions.AddRange(failureCurrentVersions);
+		FailureStreamIndexes.AddRange(failureStreamIndexes);
+	}
+}
+
 partial class DeleteStream {
 	public DeleteStream(string eventStreamId, long expectedVersion, bool requireLeader, bool hardDelete) {
 		EventStreamId = eventStreamId;

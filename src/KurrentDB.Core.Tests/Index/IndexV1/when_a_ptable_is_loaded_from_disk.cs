@@ -51,7 +51,7 @@ public class when_a_ptable_is_loaded_from_disk : SpecificationWithDirectory {
 			mtable.Add(streamId, eventNumber, logPosition);
 		}
 
-		_table = PTable.FromMemtable(mtable, _filename, skipIndexVerify: _skipIndexVerify);
+		_table = PTable.FromMemtable(mtable, _filename, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, skipIndexVerify: _skipIndexVerify);
 		_table.Dispose();
 		File.Copy(_filename, _copiedfilename);
 	}
@@ -59,8 +59,8 @@ public class when_a_ptable_is_loaded_from_disk : SpecificationWithDirectory {
 	[Test]
 	public void same_midpoints_are_loaded_when_enabling_or_disabling_index_verification() {
 		for (int depth = 2; depth <= 20; depth++) {
-			var ptableWithMD5Verification = PTable.FromFile(_copiedfilename, depth, false);
-			var ptableWithoutVerification = PTable.FromFile(_copiedfilename, depth, true);
+			var ptableWithMD5Verification = PTable.FromFile(_copiedfilename, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, depth, false);
+			var ptableWithoutVerification = PTable.FromFile(_copiedfilename, Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, depth, true);
 			var midPoints1 = ptableWithMD5Verification.GetMidPoints();
 			var midPoints2 = ptableWithoutVerification.GetMidPoints();
 

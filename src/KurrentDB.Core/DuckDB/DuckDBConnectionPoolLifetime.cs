@@ -68,12 +68,12 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 		var availableRamMib = CalculateRam();
 		var duckDbRamMib = (int)(availableRamMib * 0.25);
 		var settings = new Dictionary<string, string> {
-			["memory_limit"] = $"{duckDbRamMib}MB",
+			["memory_limit"] = $"{duckDbRamMib}MB", // total, not per connection
 			["access_mode"] = isReadOnly ? "READ_ONLY" : "READ_WRITE",
 		};
 		var pool = new ConnectionPoolWithFunctions($"Data Source={_path};{GetParamsString()}", _repeated);
 		if (log)
-			_log?.LogInformation("Created DuckDB connection pool at {path} with {settings}", _path, settings);
+			_log.LogInformation("Created DuckDB connection pool at {path} with {settings}", _path, settings);
 		return pool;
 
 		static long CalculateRam() {
@@ -90,7 +90,7 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 	public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
 	public Task StopAsync(CancellationToken cancellationToken) {
-		_log?.LogDebug("Checkpointing DuckDB connection");
+		_log.LogDebug("Checkpointing DuckDB connection");
 		var connection = Shared.Open();
 		try {
 			connection.Checkpoint();

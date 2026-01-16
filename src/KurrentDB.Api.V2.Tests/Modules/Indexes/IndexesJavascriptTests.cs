@@ -1,9 +1,9 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Text;
 using KurrentDB.Protocol.V2.Indexes;
 using KurrentDB.Protocol.V2.Streams;
-using KurrentDB.Testing.TUnit;
 
 namespace KurrentDB.Api.Tests.Modules.Indexes;
 
@@ -27,13 +27,13 @@ public class IndexesJavascriptTests {
 		await IndexesClient.CreateAsync(
 			new() {
 				Name = IndexName,
-				Filter = $"rec => rec.type == '{EventType}'",
+				Filter = $"rec => rec.schema.name == '{EventType}'",
 				Fields = {
 					new IndexField {
 						Name = "color",
 						Selector = """
 							rec => {
-								let color = rec.data.color;
+								let color = rec.value.color;
 								if (color == 'green')
 									return skip;
 								return color;
@@ -86,11 +86,11 @@ public class IndexesJavascriptTests {
 		await IndexesClient.CreateAsync(
 			new() {
 				Name = IndexName,
-				Filter = $"rec => rec.type == '{EventType}'",
+				Filter = $"rec => rec.schema.name == '{EventType}'",
 				Fields = {
 					new IndexField() {
 						Name = "color",
-						Selector = "rec => rec.data.color",
+						Selector = "rec => rec.value.color",
 						Type = fieldType,
 					},
 				},
@@ -120,7 +120,7 @@ public class IndexesJavascriptTests {
 		await IndexesClient.CreateAsync(
 			new() {
 				Name = IndexName,
-				Filter = $"rec => rec.type == '{EventType}'",
+				Filter = $"rec => rec.schema.name == '{EventType}'",
 			},
 			cancellationToken: ct);
 
@@ -132,22 +132,23 @@ public class IndexesJavascriptTests {
 	}
 
 	[Test]
-	[Arguments("stream", "rec => rec.stream[0]", IndexFieldType.String, "O")]
-	[Arguments("number", "rec => rec.number", IndexFieldType.Int32, "0")]
-	[Arguments("type", "rec => rec.type[0]", IndexFieldType.String, "O")]
-	[Arguments("data", "rec => JSON.stringify(rec.data)[0]", IndexFieldType.String, "{")]
-	[Arguments("metadata", "rec => JSON.stringify(rec.metadata)[0]", IndexFieldType.String, "{")]
-	[Arguments("raw-data", "rec => new Uint8Array(rec.rawData)[0]", IndexFieldType.Int32, "123")]
-	[Arguments("raw-metadata", "rec => new Uint8Array(rec.rawMetadata)[0]", IndexFieldType.Int32, "123")]
+	[Arguments("stream", "rec => rec.position.stream[0]", IndexFieldType.String, "O")]
+	[Arguments("number", "rec => rec.position.streamRevision", IndexFieldType.Int32, "0")]
+	[Arguments("type", "rec => rec.schema.name[0]", IndexFieldType.String, "O")]
+	[Arguments("data", "rec => JSON.stringify(rec.value)[0]", IndexFieldType.String, "{")]
+	[Arguments("metadata", "rec => JSON.stringify(rec.properties)[0]", IndexFieldType.String, "{")]
 	[Arguments("id", "rec => rec.id.length", IndexFieldType.Int32, "36")]
-	[Arguments("json", "rec => rec.isJson ? 1 : 0", IndexFieldType.Int32, "1")]
+	[Arguments("schema-name", "rec => rec.schema.format", IndexFieldType.String, "Json")]
+	[Arguments("log-position", "rec => rec.position.logPosition > 0 ? 1 : 0", IndexFieldType.Int32, "1")]
+	[Arguments("is-redacted", "rec => rec.redacted.toString()", IndexFieldType.String, "false")]
+	[Arguments("sequence-id", "rec => rec.sequence > 0 ? 1 : 0", IndexFieldType.Int32, "1")]
 	public async ValueTask can_select_record_properties(string fieldName, string fieldSelector, IndexFieldType fieldType, string fieldFilter, CancellationToken ct) {
 		await IndexesClient.CreateAsync(
 			new() {
 				Name = IndexName,
-				Filter = $"rec => rec.type == '{EventType}'",
+				Filter = $"rec => rec.schema.name == '{EventType}'",
 				Fields = {
-					new IndexField() {
+					new IndexField {
 						Name = fieldName,
 						Selector = fieldSelector,
 						Type = fieldType,
@@ -159,6 +160,52 @@ public class IndexesJavascriptTests {
 		await StreamsWriteClient.AppendEvent(Stream, EventType, "{}", ct);
 
 		var evts = await StreamsReadClient.WaitForIndexEvents($"$idx-user-{IndexName}:{fieldFilter}", 1, ct);
+		await Assert.That(evts.Count).IsEqualTo(1);
+	}
+
+	[Test]
+	// data tests
+	[Arguments(SchemaFormat.Json, "rec => (rec.value.color == 'red').toString()")]
+	[Arguments(SchemaFormat.Bytes, "rec => (rec.value == undefined).toString()")]
+	[Arguments(SchemaFormat.Avro, "rec => (rec.value == undefined).toString()")]
+	[Arguments(SchemaFormat.Protobuf, "rec => (rec.value == undefined).toString()")]
+	// properties tests
+	[Arguments(SchemaFormat.Json, "rec => (rec.properties.key == 'value').toString()")]
+	[Arguments(SchemaFormat.Bytes, "rec => (rec.properties.key == 'value').toString()")]
+	[Arguments(SchemaFormat.Avro, "rec => (rec.properties.key == 'value').toString()")]
+	[Arguments(SchemaFormat.Protobuf, "rec => (rec.properties.key == 'value').toString()")]
+	// synthesized properties tests
+	[Arguments(SchemaFormat.Json, "rec => (rec.properties['$schema.format'] == 'Json').toString()")]
+	[Arguments(SchemaFormat.Bytes, "rec => (rec.properties['$schema.format'] == 'Bytes').toString()")]
+	[Arguments(SchemaFormat.Avro, "rec => (rec.properties['$schema.format'] == 'Avro').toString()")]
+	[Arguments(SchemaFormat.Protobuf, "rec => (rec.properties['$schema.format'] == 'Protobuf').toString()")]
+	// schema type tests
+	[Arguments(SchemaFormat.Json, "rec => (rec.schema.format == 'Json').toString()")]
+	[Arguments(SchemaFormat.Bytes, "rec => (rec.schema.format == 'Bytes').toString()")]
+	[Arguments(SchemaFormat.Avro, "rec => (rec.schema.format == 'Avro').toString()")]
+	[Arguments(SchemaFormat.Protobuf, "rec => (rec.schema.format == 'Protobuf').toString()")]
+	public async ValueTask can_select_record_with_different_data_formats(SchemaFormat format, string selector, CancellationToken ct) {
+		await IndexesClient.CreateAsync(
+			new() {
+				Name = IndexName,
+				Filter = $"rec => rec.schema.name == '{EventType}'",
+				Fields = {
+					new IndexField() {
+						Name = "field",
+						Selector = selector,
+						Type = IndexFieldType.String,
+					},
+				}
+			},
+			cancellationToken: ct);
+
+		var props = new Dictionary<string, string> {
+			["key"] = "value"
+		};
+
+		await StreamsWriteClient.AppendRecord(Stream, EventType, format, "{ \"color\": \"red\" }"u8, props, ct);
+
+		var evts = await StreamsReadClient.WaitForIndexEvents($"$idx-user-{IndexName}", 1, ct);
 		await Assert.That(evts.Count).IsEqualTo(1);
 	}
 }

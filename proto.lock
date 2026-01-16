@@ -503,6 +503,89 @@
             ]
           },
           {
+            "name": "WriteEventsMultiStream",
+            "fields": [
+              {
+                "id": 1,
+                "name": "event_stream_ids",
+                "type": "string",
+                "is_repeated": true
+              },
+              {
+                "id": 2,
+                "name": "expected_versions",
+                "type": "int64",
+                "is_repeated": true
+              },
+              {
+                "id": 3,
+                "name": "events",
+                "type": "NewEvent",
+                "is_repeated": true
+              },
+              {
+                "id": 4,
+                "name": "event_stream_indexes",
+                "type": "int32",
+                "is_repeated": true
+              },
+              {
+                "id": 5,
+                "name": "require_leader",
+                "type": "bool"
+              }
+            ]
+          },
+          {
+            "name": "WriteEventsMultiStreamCompleted",
+            "fields": [
+              {
+                "id": 1,
+                "name": "result",
+                "type": "OperationResult"
+              },
+              {
+                "id": 2,
+                "name": "message",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "first_event_numbers",
+                "type": "int64",
+                "is_repeated": true
+              },
+              {
+                "id": 4,
+                "name": "last_event_numbers",
+                "type": "int64",
+                "is_repeated": true
+              },
+              {
+                "id": 5,
+                "name": "prepare_position",
+                "type": "int64"
+              },
+              {
+                "id": 6,
+                "name": "commit_position",
+                "type": "int64"
+              },
+              {
+                "id": 7,
+                "name": "failure_stream_indexes",
+                "type": "int32",
+                "is_repeated": true
+              },
+              {
+                "id": 8,
+                "name": "failure_current_versions",
+                "type": "int64",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
             "name": "DeleteStream",
             "fields": [
               {

@@ -120,11 +120,26 @@
 	},
 
 	"Queues": {
-		"Busy": true,
 		"Length": true,
 		// this is the most expensive metric, creating a histogram for each
 		// queue grouping and message type grouping as defined in the config below
 		"Processing": false
+	},
+
+	"SlowMessageMilliseconds": {
+		"MainBus": 48,
+		"MonitoringInnerBus": 800,
+		"MonitoringRequestBus": -1,
+		"PersistentSubscriptionsBus": 50,
+		"ProjectionManagerInputBus": 48,
+		"ProjectionManagerOutputBus": 48,
+		"ProjectionWorkerInputBus": 48,
+		"ProjectionWorkerOutputBus": 48,
+		"RedactionBus": 2000,
+		"StorageReaderBus": 200,
+		"StorageWriterBus": 500,
+		"SubscriptionsBus": 50,
+		"WorkerBus": 200
 	},
 
 	// this specifies what name to track each queue under, according to regular expressions to
@@ -143,7 +158,11 @@
 			"Label": "Timer"
 		},
 		{
-			"Regex": "StorageReaderQueue #.*",
+			"Regex": "ThreadPoolQueue",
+			"Label": "ThreadPool"
+		},
+		{
+			"Regex": "StorageReaderQueue",
 			"Label": "Readers"
 		},
 		{
@@ -165,10 +184,6 @@
 		{
 			"Regex": "Projection Core #.*",
 			"Label": "Projections Core"
-		},
-		{
-			"Regex": "Worker #.*",
-			"Label": "Workers"
 		},
 		{
 			"Regex": ".*",

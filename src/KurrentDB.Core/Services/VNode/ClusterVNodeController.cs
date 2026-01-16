@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using KurrentDB.Common.Configuration;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Cluster;
@@ -54,7 +55,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	private Guid _subscriptionId = Guid.Empty;
 	private readonly int _clusterSize;
 
-	private readonly IQueuedHandler _mainQueue;
+	private readonly QueuedHandlerThreadPool _mainQueue;
 	private readonly IEnvelope _publishEnvelope;
 	private readonly VNodeFSM _fsm;
 
@@ -81,6 +82,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		VNodeInfo nodeInfo,
 		TFChunkDb db,
 		INodeStatusTracker statusTracker,
+		MetricsConfiguration metricsConfiguration,
 		ClusterVNodeOptions options, ClusterVNode<TStreamId> node, MessageForwardingProxy forwardingProxy,
 		Action startSubsystems) {
 		Ensure.NotNull(nodeInfo, "nodeInfo");
@@ -102,13 +104,14 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		_forwardingTimeout = TimeSpan.FromMilliseconds(options.Database.PrepareTimeoutMs +
 													   options.Database.CommitTimeoutMs + 300);
 
-		_outputBus = new InMemoryBus("MainBus");
+		_outputBus = new InMemoryBus("MainBus", metricsConfiguration.GetBusSlowMessageThreshold);
 		_fsm = CreateFSM();
-		_mainQueue = new ThreadPoolMessageScheduler("MainQueue", _fsm) {
-			SynchronizeMessagesWithUnknownAffinity = true,
-			Trackers = trackers.QueueTrackers,
-			StatsManager = statsManager,
-		};
+		_mainQueue = new QueuedHandlerThreadPool(
+			_fsm,
+			"MainQueue",
+			statsManager,
+			trackers.QueueTrackers,
+			_ => TimeSpan.Zero);
 		_publishEnvelope = _mainQueue;
 	}
 
@@ -824,8 +827,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private ValueTask HandleAsNonLeader(ClientMessage.WriteEvents message, CancellationToken token) {
-		if (message.RequireLeader || message.EventStreamIds.Length > 1) {
-			// multi-stream writes implicitly require leader
+		if (message.RequireLeader) {
 			DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
 			return ValueTask.CompletedTask;
 		}
@@ -904,8 +906,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private ValueTask HandleAsReadOnlyReplica(ClientMessage.WriteEvents message, CancellationToken token) {
-		if (message.RequireLeader || message.EventStreamIds.Length > 1) {
-			// multi-stream writes implicitly require leader
+		if (message.RequireLeader) {
 			DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
 			return ValueTask.CompletedTask;
 		}

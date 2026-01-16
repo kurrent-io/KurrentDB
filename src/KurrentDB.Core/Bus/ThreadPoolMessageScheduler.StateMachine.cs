@@ -7,7 +7,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using DotNext;
-using DotNext.Threading;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Time;
 
@@ -27,7 +26,7 @@ partial class ThreadPoolMessageScheduler {
 	// to apply PoolingAsyncValueTaskMethodBuilder for that method.
 	// We register different callbacks rather than storing an explicit state variable.
 	// The meaning of _awaiter depends on the state that we are in.
-	private class AsyncStateMachine : IThreadPoolWorkItem {
+	private partial class AsyncStateMachine : IThreadPoolWorkItem {
 		private readonly ThreadPoolMessageScheduler _scheduler;
 		private readonly Action _onConsumerCompleted;
 		private readonly Action _onLockAcquisitionCompleted;
@@ -35,7 +34,7 @@ partial class ThreadPoolMessageScheduler {
 		// state fields
 		private ConfiguredValueTaskAwaitable.ConfiguredValueTaskAwaiter _awaiter;
 		private Message _message;
-		private AsyncExclusiveLock _groupLock;
+		private ISynchronizationGroup _groupLock;
 		private Instant _timestamp; // enqueuedAt or processingStartedAt depending on the state.
 
 		public AsyncStateMachine(ThreadPoolMessageScheduler scheduler) {
@@ -43,8 +42,6 @@ partial class ThreadPoolMessageScheduler {
 			_onConsumerCompleted = OnConsumerCompleted;
 			_onLockAcquisitionCompleted = OnLockAcquisitionCompleted;
 		}
-
-		protected void ReturnToPool() => _scheduler._pool.Add(this);
 
 		// The current state machine implements approximately the following implementation:
 		//public async void ScheduleAsync(Message message, AsyncExclusiveLock groupLock){
@@ -60,7 +57,7 @@ partial class ThreadPoolMessageScheduler {
 		//	}
 		//}
 
-		internal void Schedule(Message message, AsyncExclusiveLock groupLock) {
+		internal void Schedule(Message message, ISynchronizationGroup groupLock) {
 			_message = message;
 			_groupLock = groupLock;
 			ReportEnqueued();
@@ -180,14 +177,6 @@ partial class ThreadPoolMessageScheduler {
 		private void ReportDequeued() {
 			if (NeedsMetrics) {
 				_timestamp = _scheduler._tracker.RecordMessageDequeued(_timestamp);
-
-				var queueCnt = _scheduler._processingCount;
-				Debug.Assert(queueCnt > 0U);
-
-				queueCnt -= 1U; // exclude the current message
-				_scheduler._statsCollector.ProcessingStarted(
-					_message.GetType(),
-					int.CreateSaturating(queueCnt)); // avoid any overflow exceptions
 			}
 		}
 
@@ -200,7 +189,7 @@ partial class ThreadPoolMessageScheduler {
 		}
 
 		// For now only producing metrics when the ThreadPoolMessageScheduler is configured as a queue
-		// i.e. SynchronizeMessagesWithUnknownAffinity is true. The queue for UnknownAffinity is the queue
+		// i.e. Strategy is not TreatUnknownAffinityAsNoAffinityStrategy. The queue for UnknownAffinity is the queue
 		// we report metrics for. In the future this can be generalised to treat each affinity as a queue.
 		[MemberNotNullWhen(true, nameof(_groupLock))]
 		[MemberNotNullWhen(true, nameof(_message))]

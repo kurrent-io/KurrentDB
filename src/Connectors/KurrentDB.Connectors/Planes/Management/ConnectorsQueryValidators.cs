@@ -25,3 +25,6 @@ public class ListConnectorsValidator : AbstractValidator<ListConnectors> {
 
 [UsedImplicitly]
 public class GetConnectorSettingsValidator() : RequestValidator<GetConnectorSettings>(x => x.ConnectorId);
+
+[UsedImplicitly]
+public class GetConnectorConfigurationValidator() : RequestValidator<GetConnectorConfiguration>(x => x.ConnectorId);

@@ -4,6 +4,7 @@ package eventstore.connectors.v1;
 
 import "google/api/annotations.proto";
 import "google/protobuf/wrappers.proto";
+import "google/protobuf/struct.proto";
 import "managementplane/resources.proto";
 import "google/protobuf/timestamp.proto";
 import "protocol.proto";
@@ -22,6 +23,16 @@ service ConnectorsQueryService {
       get: "/connectors/{connector_id}/settings"
     };
   }
+
+  rpc GetConfiguration(GetConnectorConfiguration) returns (GetConnectorConfigurationResult) {
+    option (google.api.http) = {
+      get: "/connectors/{connector_id}/configuration"
+    };
+  }
+}
+
+message GetConnectorConfiguration {
+  string connector_id = 1;
 }
 
 message GetConnectorSettings {
@@ -33,14 +44,20 @@ message GetConnectorSettingsResult {
   google.protobuf.Timestamp                settings_update_time = 2;
 }
 
+message GetConnectorConfigurationResult {
+  google.protobuf.Struct    configuration             = 1;
+  google.protobuf.Timestamp configuration_update_time = 2;
+}
+
 message ListConnectors {
   repeated ConnectorState state                           = 1;
   repeated google.protobuf.StringValue instance_type_name = 2;
   repeated google.protobuf.StringValue connector_id       = 3;
 
-  bool   include_settings = 4;
-  bool   show_deleted     = 5;
-  Paging paging           = 6;
+  optional bool   include_settings      = 4;
+  bool            show_deleted          = 5;
+  Paging          paging                = 6;
+  optional bool   include_configuration = 7;
 }
 
 message ListConnectorsResult {
@@ -74,6 +91,9 @@ message Connector {
   google.protobuf.Timestamp delete_time = 12;
 
   Error error_details = 13;
+
+  google.protobuf.Struct     configuration             = 14;
+  google.protobuf.Timestamp  configuration_update_time = 15;
 }
 
 message ConnectorsSnapshot {

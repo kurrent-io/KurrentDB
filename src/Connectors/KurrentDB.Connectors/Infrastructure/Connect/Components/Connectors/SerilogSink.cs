@@ -57,10 +57,15 @@ public class SerilogSink : ISink {
                 Timestamp    = x.Timestamp
             });
 
-        if (options.HasConfiguration) {
-            var serilogConfiguration = await options.DecodeConfiguration();
+        if (options.HasLegacySettings) {
+            var serilogConfiguration = await options.DecodeLegacySettings();
             Logger = new SwitchableLogger(loggerConfiguration
                 .ReadFrom.Configuration(serilogConfiguration)
+                .CreateLogger());
+        }
+        else if (context.Configuration.GetSection("Serilog").Exists()) {
+            Logger = new SwitchableLogger(loggerConfiguration
+                .ReadFrom.Configuration(context.Configuration)
                 .CreateLogger());
         }
         else {
@@ -97,9 +102,9 @@ public record SerilogSinkOptions : SinkOptions {
     public string Configuration     { get; init; } = "";
     public bool   IncludeRecordData { get; init; } = true;
 
-    public bool HasConfiguration => !string.IsNullOrWhiteSpace(Configuration);
+    public bool HasLegacySettings => !string.IsNullOrWhiteSpace(Configuration);
 
-    public async ValueTask<IConfiguration> DecodeConfiguration() {
+    public async ValueTask<IConfiguration> DecodeLegacySettings() {
         await using var ms = new MemoryStream(Convert.FromBase64String(Configuration));
         return new ConfigurationBuilder().AddJsonStream(ms).Build();
     }
@@ -121,11 +126,11 @@ public record SerilogSinkOptions : SinkOptions {
 [PublicAPI]
 public class SerilogSinkValidator : SinkConnectorValidator<SerilogSinkOptions> {
     public SerilogSinkValidator() {
-        When(x => x.HasConfiguration,
+        When(x => x.HasLegacySettings,
             () => RuleFor(x => x)
                 .Custom(async void (options, ctx) => {
                     try {
-                        await options.DecodeConfiguration();
+                        await options.DecodeLegacySettings();
                     } catch (Exception) {
                         ctx.AddFailure(new Failures.ConfigurationEncodingFailure());
                     }

@@ -53,8 +53,7 @@ public class TcpApiPluginTests {
 			new($"{KurrentConfigurationKeys.Prefix}:TcpPlugin:NodeTcpPort", _port.ToString()),
 			new($"{KurrentConfigurationKeys.Prefix}:TcpPlugin:EnableExternalTcp", "true")
 		]);
-		var workerBus = new InMemoryBus("Worker Bus", watchSlowMsg: true,
-			slowMsgThreshold: TimeSpan.FromMilliseconds(200));
+		var workerBus = new InMemoryBus("Worker Bus", _ => TimeSpan.Zero);
 
 		_components = CreateStandardComponents(workerBus);
 		var httpPipe = new HttpMessagePipe();
@@ -110,13 +109,13 @@ public class TcpApiPluginTests {
 		var queueStatsManager = new QueueStatsManager();
 		var queueTrackers = new QueueTrackers();
 		var workersHandler = new ThreadPoolMessageScheduler("Worker Scheduler", workerBus) {
-			SynchronizeMessagesWithUnknownAffinity = false,
+			Strategy = ThreadPoolMessageScheduler.TreatUnknownAffinityAsNoAffinity(),
 		};
 
 		var dbConfig = TFChunkHelper.CreateDbConfig(Path.GetTempPath(), 0);
-		var mainBus = new InMemoryBus("mainBus");
+		var mainBus = new InMemoryBus("mainBus", _ => TimeSpan.Zero);
 		var mainQueue = new ThreadPoolMessageScheduler("MainQueue", mainBus) {
-			SynchronizeMessagesWithUnknownAffinity = true,
+			Strategy = ThreadPoolMessageScheduler.SynchronizeMessagesWithUnknownAffinity(),
 		};
 		mainQueue.Start();
 		var threadBasedScheduler = new ThreadBasedScheduler(queueStatsManager, queueTrackers);

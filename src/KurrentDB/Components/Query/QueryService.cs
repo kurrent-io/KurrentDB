@@ -44,7 +44,7 @@ public static partial class QueryService {
 						cteName,
 						$"\"{tableName}\"",
 						$"\"{tableFunctionName}\"",
-						fieldName is not null ? $", \"{fieldName}\"" : string.Empty);
+						fieldName is "" ? "" : $", \"{fieldName}\"");
 					break;
 				default:
 					throw new("Invalid token");

@@ -91,6 +91,7 @@ public abstract class LogReplicationFixture<TLogFormat, TStreamId> : Specificati
 			emptyEventTypeId: logFormat.EmptyEventTypeId,
 			systemStreams: logFormat.SystemStreams,
 			epochManager: new FakeEpochManager(),
+			getSlowMessageThreshold: _ => TimeSpan.Zero,
 			queueStatsManager: new QueueStatsManager(),
 			trackers: trackers.QueueTrackers,
 			flushSizeTracker: trackers.WriterFlushSizeTracker,

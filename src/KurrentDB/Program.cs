@@ -41,7 +41,6 @@ using RuntimeInformation = System.Runtime.RuntimeInformation;
 var optionsWithLegacyDefaults = LocationOptionWithLegacyDefault.SupportedLegacyLocations;
 var configuration = KurrentConfiguration.Build(optionsWithLegacyDefaults, args);
 
-ThreadPool.SetMaxThreads(1000, 1000);
 var exitCodeSource = new TaskCompletionSource<int>();
 
 Log.Logger = KurrentLoggerConfiguration.ConsoleLog;
@@ -52,6 +51,8 @@ try {
 		.CreateLoggerConfiguration(options.Logging, options.GetComponentName())
 		.AddOpenTelemetryLogger(configuration, options.GetComponentName())
 		.CreateLogger();
+
+	ConfigureThreadPool();
 
 	if (options.Application.Help) {
 		await Console.Out.WriteLineAsync(ClusterVNodeOptions.HelpText);
@@ -290,4 +291,20 @@ try {
 	return 1;
 } finally {
 	await Log.CloseAndFlushAsync();
+}
+
+void ConfigureThreadPool() {
+	ThreadPool.GetMinThreads(out var minWorkerThreads1, out var minCompletionPortThreads1);
+	ThreadPool.GetMaxThreads(out var maxWorkerThreads1, out var maxCompletionPortThreads1);
+
+	// todo: consider setting min threads. this would not create them up front, but allows them to be created quickly on demand without hill climbing.
+	ThreadPool.SetMaxThreads(1000, 1000);
+
+	ThreadPool.GetMinThreads(out var minWorkerThreads2, out var minCompletionPortThreads2);
+	ThreadPool.GetMaxThreads(out var maxWorkerThreads2, out var maxCompletionPortThreads2);
+
+	Log.Information("Changed MinWorkerThreads from {Before} to {After}", minWorkerThreads1, minWorkerThreads2);
+	Log.Information("Changed MaxWorkerThreads from {Before} to {After}", maxWorkerThreads1, maxWorkerThreads2);
+	Log.Information("Changed MinCompletionPortThreads from {Before} to {After}", minCompletionPortThreads1, minCompletionPortThreads2);
+	Log.Information("Changed MaxCompletionPortThreads from {Before} to {After}", maxCompletionPortThreads1, maxCompletionPortThreads2);
 }

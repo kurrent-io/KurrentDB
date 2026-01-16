@@ -39,7 +39,7 @@ public class GetAllPersistentSubscriptionStatsTests {
 		_publisher.Messages.Clear();
 		var subscriber = new SynchronousScheduler();
 		var queuedHandler = new ThreadPoolMessageScheduler("test", subscriber) {
-			SynchronizeMessagesWithUnknownAffinity = true
+			Strategy = ThreadPoolMessageScheduler.SynchronizeMessagesWithUnknownAffinity(),
 		};
 		var index = new FakeReadIndex<LogFormat.V2, string>(_ => false, new LogV2SystemStreams());
 		var strategyRegistry = new PersistentSubscriptionConsumerStrategyRegistry(_publisher, subscriber,

@@ -49,7 +49,7 @@ public abstract class ElectionsFixture {
 	protected ElectionsFixture(VNodeInfo node, VNodeInfo nodeTwo, VNodeInfo nodeThree) {
 		_timeProvider = new FakeTimeProvider();
 		_publisher = new FakePublisher();
-		_bus = new InMemoryBus("Test");
+		_bus = new InMemoryBus("Test", _ => TimeSpan.Zero);
 		_epochId = Guid.NewGuid();
 
 		_node = node;

@@ -115,6 +115,7 @@ public abstract class ReadIndexTestScenario<TLogFormat, TStreamId> : Specificati
 			reader,
 			IndexBitnessVersion,
 			int.MaxValue,
+			Constants.PTableMaxReaderCountDefault,
 			MaxEntriesInMemTable));
 		_logFormat.StreamNamesProvider.SetTableIndex(TableIndex);
 

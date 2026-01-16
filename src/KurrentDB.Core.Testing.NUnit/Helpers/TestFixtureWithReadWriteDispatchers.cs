@@ -54,7 +54,7 @@ public abstract class TestFixtureWithReadWriteDispatchers {
 		_timeProvider = new FakeTimeProvider();
 		_bus = new SynchronousScheduler();
 		_publisher = new ThreadPoolMessageScheduler("TestQueue", _bus) {
-			SynchronizeMessagesWithUnknownAffinity = true,
+			Strategy = ThreadPoolMessageScheduler.SynchronizeMessagesWithUnknownAffinity(),
 		};
 		_publisher.Start();
 		_consumer = new TestHandler<Message>();

@@ -44,13 +44,13 @@ public class
 		memtable.Add(0, 1, 0);
 
 		_result = _map.AddAndMergePTable(
-			PTable.FromMemtable(memtable, GetTempFilePath(), skipIndexVerify: _skipIndexVerify),
+			PTable.FromMemtable(memtable, GetTempFilePath(), Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, skipIndexVerify: _skipIndexVerify),
 			123, 321,
 			new GuidFilenameProvider(PathName), _ptableVersion, 0,
 			skipIndexVerify: _skipIndexVerify);
 		_result.ToDelete.ForEach(x => x.MarkForDestruction());
 		_result = _result.MergedMap.AddAndMergePTable(
-			PTable.FromMemtable(memtable, GetTempFilePath(), skipIndexVerify: _skipIndexVerify),
+			PTable.FromMemtable(memtable, GetTempFilePath(), Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, skipIndexVerify: _skipIndexVerify),
 			100, 400,
 			new FakeFilenameProvider(_mergeFile), _ptableVersion, 0,
 			skipIndexVerify: _skipIndexVerify);

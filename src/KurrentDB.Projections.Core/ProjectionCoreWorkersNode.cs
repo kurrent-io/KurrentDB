@@ -26,17 +26,20 @@ public static class ProjectionCoreWorkersNode {
 		ProjectionsStandardComponents projectionsStandardComponents) {
 		var coreWorkers = new Dictionary<Guid, CoreWorker>();
 		while (coreWorkers.Count < projectionsStandardComponents.ProjectionWorkerThreadCount) {
-			var coreInputBus = new InMemoryBus("bus");
-			var coreInputQueue = new QueuedHandlerThreadPool(coreInputBus,
+			var getSlowMessageThreshold = standardComponents.MetricsConfiguration.GetBusSlowMessageThreshold;
+			var coreInputBus = new InMemoryBus("ProjectionWorkerInputBus", getSlowMessageThreshold);
+			var coreInputQueue = new QueuedHandlerThreadPool(coreInputBus, 
 				"Projection Core #" + coreWorkers.Count,
 				standardComponents.QueueStatsManager,
 				standardComponents.QueueTrackers,
+				getSlowMessageThreshold: getSlowMessageThreshold,
 				groupName: "Projection Core");
-			var coreOutputBus = new InMemoryBus("output bus");
+			var coreOutputBus = new InMemoryBus("ProjectionWorkerOutputBus", getSlowMessageThreshold);
 			var coreOutputQueue = new QueuedHandlerThreadPool(coreOutputBus,
 				"Projection Core #" + coreWorkers.Count + " output",
 				standardComponents.QueueStatsManager,
 				standardComponents.QueueTrackers,
+				getSlowMessageThreshold,
 				groupName: "Projection Core");
 			var workerId = Guid.NewGuid();
 			var projectionNode = new ProjectionWorkerNode(

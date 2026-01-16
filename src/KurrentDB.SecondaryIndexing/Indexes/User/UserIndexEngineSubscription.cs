@@ -35,7 +35,7 @@ public class UserIndexEngineSubscription(
 	ILoggerFactory logFactory,
 	CancellationToken token)
 	: ISecondaryIndexReader {
-	private readonly Channel<ReadResponse> _channel = Channel.CreateBounded<ReadResponse>(new BoundedChannelOptions(capacity: 20));
+
 	private readonly ConcurrentDictionary<string, UserIndexData> _userIndexes = new();
 	private readonly CancellationTokenSource _cts = CancellationTokenSource.CreateLinkedTokenSource(token);
 	private readonly ILogger<UserIndexEngineSubscription> _log = logFactory.CreateLogger<UserIndexEngineSubscription>();
@@ -45,11 +45,6 @@ public class UserIndexEngineSubscription(
 		UserIndexSubscription Subscription,
 		SecondaryIndexReaderBase Reader);
 
-	// ignore system events
-	static readonly Func<EventRecord, bool> IgnoreSystemEvents = evt =>
-		!evt.EventType.StartsWith('$') &&
-		!evt.EventStreamId.StartsWith('$');
-
 	public bool CaughtUp { get; private set; }
 	public long Checkpoint { get; private set; }
 
@@ -57,9 +52,9 @@ public class UserIndexEngineSubscription(
 		try {
 			await StartInternal();
 		} catch (OperationCanceledException) {
-			_log.LogSubscriptionToStreamIsShuttingDown(UserIndexConstants.ManagementStream);
+			_log.LogSubscriptionToStreamIsShuttingDown(UserIndexConstants.ManagementAllStream);
 		} catch (Exception ex) {
-			_log.LogSubscriptionToStreamHasEncounteredAFatalError(ex, UserIndexConstants.ManagementStream);
+			_log.LogSubscriptionToStreamHasEncounteredAFatalError(ex, UserIndexConstants.ManagementAllStream);
 		}
 	}
 
@@ -84,32 +79,27 @@ public class UserIndexEngineSubscription(
 
 	private async Task StartInternal() {
 		_cts.Token.ThrowIfCancellationRequested();
+		var channel = Channel.CreateBounded<ReadResponse>(new BoundedChannelOptions(capacity: 20));
 
-		// todo: don't collide with user indices, or use a default index if we add one with system events
-		await StartUserIndex<NullField>(
-			indexName: UserIndexConstants.ManagementIndexName,
-			createdEvent: new() {
-				Filter = "",
-			},
-			eventFilter: evt => evt.EventStreamId.StartsWith($"{UserIndexConstants.Category}-"));
-
-		await client.Subscriptions.SubscribeToIndex(
-			position: Position.Start,
-			indexName: UserIndexConstants.ManagementStream,
-			channel: _channel,
+		// Subscribe to all user index events
+		// later we could subscribe to an index if we create one with system events
+		await client.Subscriptions.SubscribeToStream(
+			revision: StreamRevision.Start,
+			stream: UserIndexConstants.ManagementAllStream,
+			channel: channel,
 			resiliencePipeline: ResiliencePipelines.RetryForever,
 			cancellationToken: _cts.Token);
 
 		Dictionary<string, UserIndexReadState> userIndexes = [];
 		HashSet<string> deletedIndexes = [];
 
-		await foreach (var response in _channel.Reader.ReadAllAsync(_cts.Token)) {
+		await foreach (var response in channel.Reader.ReadAllAsync(_cts.Token)) {
 			switch (response) {
 				case ReadResponse.SubscriptionCaughtUp:
 					if (CaughtUp)
 						continue;
 
-					_log.LogSubscriptionToStreamCaughtUp(UserIndexConstants.ManagementStream);
+					_log.LogSubscriptionToStreamCaughtUp(UserIndexConstants.ManagementAllStream);
 
 					CaughtUp = true;
 
@@ -139,56 +129,54 @@ public class UserIndexEngineSubscription(
 				case ReadResponse.EventReceived eventReceived:
 					var evt = eventReceived.Event;
 
-					_log.LogSubscriptionToStreamReceivedEventType(UserIndexConstants.ManagementStream, evt.OriginalEvent.EventType);
+					_log.LogSubscriptionToStreamReceivedEventType(UserIndexConstants.ManagementAllStream, evt.OriginalEvent.EventType);
 
 					var deserializedEvent = await serializer.Deserialize(
 						data: evt.OriginalEvent.Data,
 						schemaInfo: new(evt.OriginalEvent.EventType, SchemaDataFormat.Json));
 
-					var userIndexName = UserIndexHelpers.ParseManagementStreamName(evt.OriginalEvent.EventStreamId);
-
 					switch (deserializedEvent) {
-						case IndexCreated createdEvent: {
-							deletedIndexes.Remove(userIndexName);
-							userIndexes[userIndexName] = new() {
-								Created = createdEvent,
+						case IndexCreated x: {
+							deletedIndexes.Remove(x.Name);
+							userIndexes[x.Name] = new() {
+								Created = x,
 								Started = false,
 							};
 							break;
 						}
-						case IndexStarted: {
-							if (!userIndexes.TryGetValue(userIndexName, out var state))
+						case IndexStarted x: {
+							if (!userIndexes.TryGetValue(x.Name, out var state))
 								break;
 
 							state.Started = true;
 
 							if (CaughtUp)
-								await StartUserIndex(userIndexName, state.Created);
+								await StartUserIndex(x.Name, state.Created);
 
 							break;
 						}
-						case IndexStopped: {
-							if (!userIndexes.TryGetValue(userIndexName, out var state))
+						case IndexStopped x: {
+							if (!userIndexes.TryGetValue(x.Name, out var state))
 								break;
 
 							state.Started = false;
 
 							if (CaughtUp)
-								await StopUserIndex(userIndexName);
+								await StopUserIndex(x.Name);
 
 							break;
 						}
-						case IndexDeleted: {
-							deletedIndexes.Add(userIndexName);
-							userIndexes.Remove(userIndexName);
+						case IndexDeleted x: {
+							deletedIndexes.Add(x.Name);
+							userIndexes.Remove(x.Name);
 
 							if (CaughtUp)
-								DeleteUserIndex(userIndexName);
+								DeleteUserIndex(x.Name);
 
 							break;
 						}
 						default:
-							_log.LogSubscriptionToStreamReceivedUnknownEventType(UserIndexConstants.ManagementStream, evt.OriginalEvent.EventType, evt.OriginalEventNumber);
+							_log.LogSubscriptionToStreamReceivedUnknownEventType(UserIndexConstants.ManagementAllStream, evt.OriginalEvent.EventType, evt.OriginalEventNumber);
 							break;
 					}
 
@@ -215,8 +203,7 @@ public class UserIndexEngineSubscription(
 
 	private async ValueTask StartUserIndex<TField>(
 		string indexName,
-		IndexCreated createdEvent,
-		Func<EventRecord, bool>? eventFilter = null) where TField : IField {
+		IndexCreated createdEvent) where TField : IField {
 		_log.LogStartingUserIndex(indexName);
 
 		var inFlightRecords = new UserIndexInFlightRecords<TField>(options);
@@ -248,7 +235,6 @@ public class UserIndexEngineSubscription(
 			publisher: publisher,
 			indexProcessor: processor,
 			options: options,
-			eventFilter: eventFilter ?? IgnoreSystemEvents,
 			log: logFactory.CreateLogger<UserIndexSubscription>(),
 			token: _cts.Token);
 

@@ -399,11 +399,7 @@ public partial record ClusterVNodeOptions {
 		public int InitializationThreads { get; init; } = 1;
 
 		[Description("The number of reader threads to use for processing reads. Set to '0' to scale automatically (Default)")]
-		[Deprecated($"The ReaderThreadsCount parameter has been deprecated as of version 26.0.0. Set the value in {nameof(ConcurrentReadsLimit)} instead if still desired.")]
 		public int ReaderThreadsCount { get; init; } = 0;
-
-		[Description("The maximum number of read requests that can be processed concurrently. Set to '0' for unlimited (Default)")]
-		public long ConcurrentReadsLimit { get; set; } = 0;
 
 		[Description("During large Index Merge operations, writes may be slowed down. Set this to the maximum " +
 					 "index file level for which automatic merges should happen. Merging indexes above this level " +
@@ -630,11 +626,3 @@ public partial record ClusterVNodeOptions {
 	}
 }
 
-internal static class DatabaseOptionsExtensions {
-	extension(ClusterVNodeOptions.DatabaseOptions self) {
-		public long InternalConcurrentReadsLimit => self switch {
-			{ ReaderThreadsCount: > 0, ConcurrentReadsLimit: 0 } => self.ReaderThreadsCount,
-			_ => self.ConcurrentReadsLimit,
-		};
-	}
-}

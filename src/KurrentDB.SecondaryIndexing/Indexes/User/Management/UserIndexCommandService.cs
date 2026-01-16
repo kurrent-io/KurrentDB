@@ -10,7 +10,7 @@ public record UserIndexId(string Name) : Id(Name);
 
 [UsedImplicitly]
 public class UserIndexCommandService : CommandService<UserIndex, UserIndexState, UserIndexId> {
-	public UserIndexCommandService(IEventStore store, UserIndexStreamNameMap streamNameMap)
+	public UserIndexCommandService(UserIndexEventStore store, UserIndexStreamNameMap streamNameMap)
 		: base(store: store, streamNameMap: streamNameMap) {
 
 		On<CreateIndexRequest>()
