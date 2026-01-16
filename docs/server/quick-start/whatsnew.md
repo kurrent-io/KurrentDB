@@ -83,6 +83,34 @@ Use -1 to indicate that slow messages should not be logged.
 
 Under the hood, KurrentDB 26.0 uses the latest dotnet runtime: .NET 10.
 
+### Connectors: Kafka Source
+
+<Badge type="info" vertical="middle" text="License Required"/>
+
+The Kafka Source Connector consumes messages from Kafka topics and appends them to KurrentDB streams, enabling seamless integration between the two platforms.
+
+The connector supports consuming from multiple partitions concurrently and offers flexible routing options to control which KurrentDB streams receive the messages. 
+
+Refer to the [documentation](../features/connectors/sources/kafka.md) for instructions on setting up a Kafka source connector.
+
+### Connectors: SQL Sink
+
+<Badge type="info" vertical="middle" text="License Required"/>
+
+The SQL Sink Connector writes events from KurrentDB to SQL databases (Microsoft SQL Server and PostgreSQL) by executing configurable SQL statements.
+
+You can define custom SQL statement templates with parameter placeholders and JavaScript functions to extract values from event data and map them to SQL parameters.
+
+Refer to the [documentation](../features/connectors/sinks/sql.md) for instructions on setting up a SQL sink connector.
+
+### Connectors: Fix position tracker not accounting for duplicate track calls
+
+The position tracker in connectors has been updated to correctly handle duplicate track calls. Previously, duplicate calls to track the same position would cause an IndexOutOfRangeException. This fix ensures that duplicate track calls are safely ignored, improving connector reliability.
+
+### Connectors: Performance improvements
+
+Improved connector performance through a new position tracker and optimized asynchronous operations. Memory allocations and overhead are reduced, particularly when operations complete synchronously.
+
 ## New in 25.1
 
 These are the new features and important changes and in KurrentDB 25.1:
