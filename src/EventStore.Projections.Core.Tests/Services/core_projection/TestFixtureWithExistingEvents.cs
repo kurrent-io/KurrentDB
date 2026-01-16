@@ -46,7 +46,7 @@ public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId> : Eve
 
 		AwakeService = new AwakeService();
 		_bus.Subscribe<StorageMessage.EventCommitted>(AwakeService);
-		_bus.Subscribe<StorageMessage.TfEofAtNonCommitRecord>(AwakeService);
+		_bus.Subscribe<StorageMessage.IndexedToEndOfTransactionFile>(AwakeService);
 		_bus.Subscribe<AwakeServiceMessage.SubscribeAwake>(AwakeService);
 		_bus.Subscribe<AwakeServiceMessage.UnsubscribeAwake>(AwakeService);
 		_bus.Subscribe(new UnwrapEnvelopeHandler());

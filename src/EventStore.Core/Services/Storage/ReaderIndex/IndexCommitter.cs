@@ -220,7 +220,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 			Log.Debug("StreamExistenceFilter initialized. Time elapsed: {elapsed}.",
 				DateTime.UtcNow - startTime);
 
-			_bus.Publish(new StorageMessage.TfEofAtNonCommitRecord());
+			_bus.Publish(new StorageMessage.IndexedToEndOfTransactionFile());
 			_backend.SetSystemSettings(GetSystemSettings());
 		}
 		_indexRebuild = false;

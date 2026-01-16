@@ -51,8 +51,9 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 	private long _flushDelay;
 	private long _lastFlush;
 
+	// _transactionPosition and _transaction accumulate an IMPLICIT transaction
+	private long? _transactionPosition;
 	private readonly List<IPrepareLogRecord<TStreamId>> _transaction = new List<IPrepareLogRecord<TStreamId>>();
-	private bool _commitsAfterEof;
 
 	private readonly TaskCompletionSource<object> _tcs = new TaskCompletionSource<object>();
 
@@ -183,7 +184,6 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 				break;
 			}
 			case LogRecordType.Commit: {
-				_commitsAfterEof = !result.Eof;
 				var record = (CommitLogRecord)result.LogRecord;
 				ProcessCommitRecord(record, result.RecordPostPosition);
 				break;
@@ -199,18 +199,15 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 			default:
 				throw new ArgumentOutOfRangeException();
 		}
-
-		if (result.Eof && result.LogRecord.RecordType != LogRecordType.Commit && _commitsAfterEof) {
-			_commitsAfterEof = false;
-			_leaderBus.Publish(new StorageMessage.TfEofAtNonCommitRecord());
-		}
 	}
 
 	private void ProcessPrepareRecord(IPrepareLogRecord<TStreamId> record, long postPosition) {
-		if (_transaction.Count > 0 && _transaction[0].TransactionPosition != record.TransactionPosition)
+		if (_transactionPosition != record.TransactionPosition)
 			CommitPendingTransaction(_transaction, postPosition);
 
 		if (record.Flags.HasAnyOf(PrepareFlags.IsCommitted)) {
+			_transactionPosition = record.TransactionPosition;
+
 			if (record.Flags.HasAnyOf(PrepareFlags.Data | PrepareFlags.StreamDelete))
 				_transaction.Add(record);
 
@@ -265,10 +262,11 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 	}
 
 	private void CommitPendingTransaction(List<IPrepareLogRecord<TStreamId>> transaction, long postPosition) {
-		if (transaction.Count > 0) {
-			_indexCommitterService.AddPendingPrepare(transaction.ToArray(), postPosition);
-			_transaction.Clear();
+		if (_transactionPosition is { } transactionPosition) {
+			_indexCommitterService.AddPendingPrepare(transactionPosition, transaction.ToArray(), postPosition);
 		}
+		_transactionPosition = null;
+		_transaction.Clear();
 	}
 
 	public void Handle(SystemMessage.BecomeShuttingDown message) {

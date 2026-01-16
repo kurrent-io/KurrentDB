@@ -24,7 +24,7 @@ public interface IIndexCommitterService<TStreamId> {
 	void Init(long checkpointPosition);
 	void Stop();
 	long GetCommitLastEventNumber(CommitLogRecord record);
-	void AddPendingPrepare(IPrepareLogRecord<TStreamId>[] prepares, long postPosition);
+	void AddPendingPrepare(long transactionPosition, IPrepareLogRecord<TStreamId>[] prepares, long postPosition);
 	void AddPendingCommit(CommitLogRecord commit, long postPosition);
 }
 
@@ -150,6 +150,8 @@ public class IndexCommitterService<TStreamId> : IndexCommitterService, IIndexCom
 			var isTfEof = IsTfEof(transaction.PostPosition);
 			if (transaction.Prepares.Count > 0) {
 				_indexCommitter.Commit(transaction.Prepares, isTfEof, true);
+			} else if (isTfEof) {
+				_publisher.Publish(new StorageMessage.IndexedToEndOfTransactionFile());
 			}
 
 			if (transaction.Commit != null) {
@@ -173,8 +175,8 @@ public class IndexCommitterService<TStreamId> : IndexCommitterService, IIndexCom
 		return _indexCommitter.GetCommitLastEventNumber(commit);
 	}
 
-	public void AddPendingPrepare(IPrepareLogRecord<TStreamId>[] prepares, long postPosition) {
-		var transactionPosition = prepares[0].TransactionPosition;
+	// Only called with complete implicit transactions
+	public void AddPendingPrepare(long transactionPosition, IPrepareLogRecord<TStreamId>[] prepares, long postPosition) {
 		PendingTransaction transaction;
 		if (_pendingTransactions.TryGetValue(transactionPosition, out transaction)) {
 			var newTransaction = new PendingTransaction(transactionPosition, postPosition, transaction.Prepares,
@@ -251,7 +253,7 @@ public class IndexCommitterService<TStreamId> : IndexCommitterService, IIndexCom
 
 	internal class PendingTransaction {
 		public readonly List<IPrepareLogRecord<TStreamId>> Prepares = new List<IPrepareLogRecord<TStreamId>>();
-		private CommitLogRecord _commit;
+		private readonly CommitLogRecord _commit;
 
 		public CommitLogRecord Commit {
 			get { return _commit; }
@@ -276,10 +278,6 @@ public class IndexCommitterService<TStreamId> : IndexCommitterService, IIndexCom
 
 		public void AddPendingPrepares(IEnumerable<IPrepareLogRecord<TStreamId>> prepares) {
 			Prepares.AddRange(prepares);
-		}
-
-		public void SetPendingCommit(CommitLogRecord commit) {
-			_commit = commit;
 		}
 	}
 
