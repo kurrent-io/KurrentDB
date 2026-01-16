@@ -8,7 +8,7 @@ This page contains the release notes for EventStoreDB 24.10
 
 ## [24.10.10](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.10)
 
-14 January 2025
+16 January 2025
 
 ### Projections: Fixed wake-up race condition (PR [#5454](https://github.com/kurrent-io/KurrentDB/pull/5454)) 
 
