@@ -198,8 +198,3 @@ Work to improve the following limitations is planned:
 - Once uploaded to the archive, the chunks there are not scavenged any further.
 - Clients cannot yet opt out of their read reading from the archive.
 - Repeated reads of the same part of the archive are not cached locally.
-
-Work on the following items may be added according to interest:
-
-- At the moment only S3 is supported. A local file-system based archive exists for development/testing purposes.
-- Redaction is not compatible with Archiving.
