@@ -14,7 +14,7 @@ KurrentDB production release version numbers are of the form `Major.Minor.Patch`
     * Indicates whether the release is an [LTS](#long-term-support-releases) or an [STS](#short-term-support-releases).
     * Starting with `26.0`, LTS releases have minor number `0`. Previously they had minor number `10` (e.g. `23.10`, `24.10`).
 * `Patch`
-    * Is incremented for bug fixes and small features.
+    * Is incremented for bug fixes and occasionally small features.
 
 Note that the version scheme is not `SemVer`.
 
