@@ -20,13 +20,14 @@ Note that the version scheme is not `SemVer`.
 
 Examples:
 
-| Version  | Type | Description             |
-|----------|------|-------------------------|
-| `26.0.0` | LTS  | 2026 LTS release.       |
-| `26.0.1` | LTS  | A patch to 26.0.0.      |
-| `26.1.0` | STS  | First 2026 STS release  |
-| `26.2.0` | STS  | Second 2026 STS release |
-| `27.0.0` | LTS  | 2027 LTS release.       |
+| Version  | Type | Description              |
+|----------|------|--------------------------|
+| `26.0.0` | LTS  | 2026 LTS release.        |
+| `26.0.1` | LTS  | A patch to `26.0.0`.     |
+| `26.1.0` | STS  | First 2026 STS release.  |
+| `26.2.0` | STS  | Second 2026 STS release. |
+| `26.2.1` | STS  | A patch to `26.2.0`.     |
+| `27.0.0` | LTS  | 2027 LTS release.        |
 
 ## Long term support releases
 
