@@ -599,13 +599,6 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			events: [NewEvent, NewEvent],
 			eventStreamIndexes: [1, 0]));
 
-		// not all streams being written to
-		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await WriteEvents(
-			eventStreamIds: [A, B],
-			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any],
-			events: [NewEvent, NewEvent],
-			eventStreamIndexes: [0, 0]));
-
 		// not all streams being written to (with eventStreamIndexes: [])
 		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await WriteEvents(
 			eventStreamIds: [A, B],

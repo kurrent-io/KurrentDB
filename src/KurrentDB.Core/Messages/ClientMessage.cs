@@ -234,10 +234,14 @@ public static partial class ClientMessage {
 					}
 				}
 
-				// at least one event must be written to each stream
-				if (nextEventStreamIndex < eventStreamIds.Length)
-					throw new ArgumentOutOfRangeException(nameof(eventStreamIds),
-						"Not all streams have events being written to them");
+				if (nextEventStreamIndex < eventStreamIds.Length) {
+					// not all streams have an event written to them
+
+					// we now support conditional appends to one or more streams based on the expected versions of other streams.
+					// the streams for which only the expected versions must be checked are expected to be placed at the end
+					// of `eventStreamIds` & `expectedVersions`.
+
+				}
 			}
 
 			EventStreamIds = eventStreamIds;
