@@ -113,15 +113,16 @@ public class StreamsService : StreamsServiceBase {
                 throw ApiErrors.AppendTransactionNoRequests();
 
             var cid = Guid.NewGuid();
+            var streamIds = Streams.ToImmutable();
             return new WriteEvents(
                 internalCorrId: cid,
                 correlationId: cid,
                 envelope: callback,
                 requireLeader: true,
-                eventStreamIds: Streams.ToImmutable(),
+                eventStreamIds: streamIds,
                 expectedVersions: Revisions.ToImmutable(),
                 events: Events.ToImmutable(),
-                eventStreamIndexes: Indexes.ToImmutable(),
+                eventStreamIndexes: streamIds.Length == 1 ? [] : Indexes.ToImmutable(),
                 user: context.GetHttpContext().User,
                 cancellationToken: context.CancellationToken
             );
