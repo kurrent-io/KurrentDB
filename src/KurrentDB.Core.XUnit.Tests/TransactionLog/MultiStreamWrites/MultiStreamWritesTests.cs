@@ -614,18 +614,25 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			eventStreamIndexes: [])); // equivalent to [0, 0]
 
 		// empty write to multiple streams
-		await Assert.ThrowsAsync<ArgumentException>(async () => await WriteEvents(
+		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await WriteEvents(
 			eventStreamIds: [A, B],
 			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any],
 			events: [],
 			eventStreamIndexes: []));
 
 		// empty write to multiple streams (with eventStreamIndexes: [])
-		await Assert.ThrowsAsync<ArgumentException>(async () => await WriteEvents(
+		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await WriteEvents(
 			eventStreamIds: [A, B],
 			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any],
 			events: [],
 			eventStreamIndexes: [])); // equivalent to []
+
+		// write to a single stream but eventStreamIndexes is not []
+		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await WriteEvents(
+			eventStreamIds: [A],
+			expectedVersions: [ExpectedVersion.Any],
+			events: [NewEvent, NewEvent],
+			eventStreamIndexes: [0, 0]));
 	}
 
 	[Fact]
