@@ -366,6 +366,42 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 	}
 
 	[Fact]
+	public async Task succeeds_with_conditional_append() {
+		const string test = nameof(succeeds_with_conditional_append);
+		var A = $"{test}-a";
+		var B = $"{test}-b";
+		var C = $"{test}-c"; // conditional stream (valid condition: NoStream)
+
+		var completed = await WriteEvents(
+			eventStreamIds: [A, B, C],
+			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any, ExpectedVersion.NoStream],
+			events: [NewEvent, NewEvent, NewEvent],
+			eventStreamIndexes: [0, 1, 0]);
+
+		Assert.Equal(OperationResult.Success, completed.Result);
+		Assert.Equal([0, 0], completed.FirstEventNumbers.ToArray());
+		Assert.Equal([1, 0], completed.LastEventNumbers.ToArray());
+	}
+
+	[Fact]
+	public async Task succeeds_with_conditional_appends() {
+		const string test = nameof(succeeds_with_conditional_appends);
+		var A = $"{test}-a";
+		var B = $"{test}-b"; // conditional stream (valid condition: NoStream)
+		var C = $"{test}-c"; // conditional stream (valid condition: NoStream)
+
+		var completed = await WriteEvents(
+			eventStreamIds: [A, B, C],
+			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.NoStream, ExpectedVersion.NoStream],
+			events: [NewEvent, NewEvent, NewEvent],
+			eventStreamIndexes: [0, 0, 0]);
+
+		Assert.Equal(OperationResult.Success, completed.Result);
+		Assert.Equal([0], completed.FirstEventNumbers.ToArray());
+		Assert.Equal([2], completed.LastEventNumbers.ToArray());
+	}
+
+	[Fact]
 	public async Task fails_when_specifying_wrong_expected_version_number() {
 		const string test = nameof(fails_when_specifying_wrong_expected_version_number);
 		var A = $"{test}-a";
@@ -662,6 +698,100 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			Assert.Equal(numEvents / numStreams, readEventIds.Length);
 			Assert.Equal(readEventIds, writtenEventIds);
 		}
+	}
+
+	[Fact]
+	public async Task fails_with_conditional_append_and_invalid_condition() {
+		const string test = nameof(fails_with_conditional_append_and_invalid_condition);
+		var A = $"{test}-a";
+		var B = $"{test}-b";
+		var C = $"{test}-c"; // conditional stream (invalid condition: StreamExists)
+
+		var completed = await WriteEvents(
+			eventStreamIds: [A, B, C],
+			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any, ExpectedVersion.StreamExists],
+			events: [NewEvent, NewEvent, NewEvent],
+			eventStreamIndexes: [0, 1, 0]);
+
+		Assert.Equal(OperationResult.WrongExpectedVersion, completed.Result);
+		Assert.Equal(0, completed.FirstEventNumbers.Length);
+		Assert.Equal(0, completed.LastEventNumbers.Length);
+		Assert.Equal([2], completed.FailureStreamIndexes.ToArray());
+		Assert.Equal([-1], completed.FailureCurrentVersions.ToArray());
+	}
+
+	[Fact]
+	public async Task fails_with_conditional_append_on_wrongly_placed_stream() {
+		const string test = nameof(fails_with_conditional_append_on_wrongly_placed_stream);
+		var A = $"{test}-a"; // conditional stream (valid condition: NoStream, but should be placed at the end of the list of streams)
+		var B = $"{test}-b";
+		var C = $"{test}-c";
+
+		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await WriteEvents(
+			eventStreamIds: [A, B, C],
+			expectedVersions: [ExpectedVersion.NoStream, ExpectedVersion.Any, ExpectedVersion.Any],
+			events: [NewEvent, NewEvent, NewEvent],
+			eventStreamIndexes: [1, 2, 1]));
+	}
+
+	[Fact]
+	public async Task fails_with_conditional_appends_and_at_least_one_invalid_condition() {
+		const string test = nameof(fails_with_conditional_appends_and_at_least_one_invalid_condition);
+		var A = $"{test}-a";
+		var B = $"{test}-b"; // conditional stream (invalid condition: StreamExists)
+		var C = $"{test}-c"; // conditional stream (valid condition: NoStream)
+		var D = $"{test}-d"; // conditional stream (invalid condition: StreamExists)
+
+		var completed = await WriteEvents(
+			eventStreamIds: [A, B, C, D],
+			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.StreamExists, ExpectedVersion.NoStream, ExpectedVersion.StreamExists],
+			events: [NewEvent, NewEvent, NewEvent],
+			eventStreamIndexes: [0, 0, 0]);
+
+		Assert.Equal(OperationResult.WrongExpectedVersion, completed.Result);
+		Assert.Equal(0, completed.FirstEventNumbers.Length);
+		Assert.Equal(0, completed.LastEventNumbers.Length);
+		Assert.Equal([1, 3], completed.FailureStreamIndexes.ToArray());
+		Assert.Equal([-1, -1], completed.FailureCurrentVersions.ToArray());
+	}
+
+	[Fact]
+	public async Task fails_with_conditional_append_and_mixed_invalid_conditions() {
+		const string test = nameof(fails_with_conditional_append_and_mixed_invalid_conditions);
+		var A = $"{test}-a"; // unconditional stream (invalid condition: StreamExists)
+		var B = $"{test}-b"; // conditional stream (invalid condition: StreamExists)
+
+		var completed = await WriteEvents(
+			eventStreamIds: [A, B],
+			expectedVersions: [ExpectedVersion.StreamExists, ExpectedVersion.StreamExists],
+			events: [NewEvent, NewEvent, NewEvent],
+			eventStreamIndexes: [0, 0, 0]);
+
+		Assert.Equal(OperationResult.WrongExpectedVersion, completed.Result);
+		Assert.Equal(0, completed.FirstEventNumbers.Length);
+		Assert.Equal(0, completed.LastEventNumbers.Length);
+		Assert.Equal([0, 1], completed.FailureStreamIndexes.ToArray());
+		Assert.Equal([-1, -1], completed.FailureCurrentVersions.ToArray());
+	}
+
+	[Fact]
+	public async Task fails_with_conditional_append_on_deleted_stream() {
+		const string test = nameof(fails_with_conditional_append_on_deleted_stream);
+		var A = $"{test}-a";
+		var B = $"{test}-b";
+		var C = $"{test}-c"; // conditional stream (hard deleted)
+
+		await DeleteStream(C, hardDelete: true);
+
+		var completed = await WriteEvents(
+			eventStreamIds: [A, B, C],
+			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any, ExpectedVersion.Any],
+			events: [NewEvent, NewEvent, NewEvent],
+			eventStreamIndexes: [0, 1, 0]);
+
+		Assert.Equal(OperationResult.StreamDeleted, completed.Result);
+		Assert.Equal([2], completed.FailureStreamIndexes.ToArray());
+		Assert.Equal([long.MaxValue], completed.FailureCurrentVersions.ToArray());
 	}
 
 	private Task<ClientMessage.WriteEventsCompleted> WriteEvents(
