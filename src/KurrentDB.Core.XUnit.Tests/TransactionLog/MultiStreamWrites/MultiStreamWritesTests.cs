@@ -402,6 +402,46 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 	}
 
 	[Fact]
+	public async Task succeeds_with_conditional_append_on_deleted_stream_and_exp_ver_any() {
+		const string test = nameof(succeeds_with_conditional_append_on_deleted_stream_and_exp_ver_any);
+		var A = $"{test}-a";
+		var B = $"{test}-b";
+		var C = $"{test}-c"; // conditional stream (hard deleted, valid condition: Any)
+
+		await DeleteStream(C, hardDelete: true);
+
+		var completed = await WriteEvents(
+			eventStreamIds: [A, B, C],
+			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any, ExpectedVersion.Any],
+			events: [NewEvent, NewEvent, NewEvent],
+			eventStreamIndexes: [0, 1, 0]);
+
+		Assert.Equal(OperationResult.Success, completed.Result);
+		Assert.Equal([0, 0], completed.FirstEventNumbers.ToArray());
+		Assert.Equal([1, 0], completed.LastEventNumbers.ToArray());
+	}
+
+	[Fact]
+	public async Task succeeds_with_conditional_append_on_deleted_stream_and_exp_ver_deleted_stream() {
+		const string test = nameof(succeeds_with_conditional_append_on_deleted_stream_and_exp_ver_deleted_stream);
+		var A = $"{test}-a";
+		var B = $"{test}-b";
+		var C = $"{test}-c"; // conditional stream (hard deleted, valid condition: DeletedStream)
+
+		await DeleteStream(C, hardDelete: true);
+
+		var completed = await WriteEvents(
+			eventStreamIds: [A, B, C],
+			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any, EventNumber.DeletedStream],
+			events: [NewEvent, NewEvent, NewEvent],
+			eventStreamIndexes: [0, 1, 0]);
+
+		Assert.Equal(OperationResult.Success, completed.Result);
+		Assert.Equal([0, 0], completed.FirstEventNumbers.ToArray());
+		Assert.Equal([1, 0], completed.LastEventNumbers.ToArray());
+	}
+
+	[Fact]
 	public async Task fails_when_specifying_wrong_expected_version_number() {
 		const string test = nameof(fails_when_specifying_wrong_expected_version_number);
 		var A = $"{test}-a";
@@ -559,7 +599,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 
 		Assert.Equal(OperationResult.StreamDeleted, completed.Result);
 		Assert.Equal([1], completed.FailureStreamIndexes.ToArray());
-		Assert.Equal([long.MaxValue], completed.FailureCurrentVersions.ToArray());
+		Assert.Equal([EventNumber.DeletedStream], completed.FailureCurrentVersions.ToArray());
 	}
 
 	[Fact]
@@ -775,23 +815,23 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 	}
 
 	[Fact]
-	public async Task fails_with_conditional_append_on_deleted_stream() {
-		const string test = nameof(fails_with_conditional_append_on_deleted_stream);
+	public async Task fails_with_conditional_append_on_deleted_stream_and_invalid_condition() {
+		const string test = nameof(fails_with_conditional_append_on_deleted_stream_and_invalid_condition);
 		var A = $"{test}-a";
 		var B = $"{test}-b";
-		var C = $"{test}-c"; // conditional stream (hard deleted)
+		var C = $"{test}-c"; // conditional stream (hard deleted, invalid condition: StreamExists)
 
 		await DeleteStream(C, hardDelete: true);
 
 		var completed = await WriteEvents(
 			eventStreamIds: [A, B, C],
-			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any, ExpectedVersion.Any],
+			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any, ExpectedVersion.StreamExists],
 			events: [NewEvent, NewEvent, NewEvent],
 			eventStreamIndexes: [0, 1, 0]);
 
-		Assert.Equal(OperationResult.StreamDeleted, completed.Result);
+		Assert.Equal(OperationResult.WrongExpectedVersion, completed.Result);
 		Assert.Equal([2], completed.FailureStreamIndexes.ToArray());
-		Assert.Equal([long.MaxValue], completed.FailureCurrentVersions.ToArray());
+		Assert.Equal([EventNumber.DeletedStream], completed.FailureCurrentVersions.ToArray());
 	}
 
 	private Task<ClientMessage.WriteEventsCompleted> WriteEvents(
