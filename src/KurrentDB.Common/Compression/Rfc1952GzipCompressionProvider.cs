@@ -91,15 +91,21 @@ public class Rfc1952GzipCompressionProvider(CompressionLevel level) : ICompressi
 	}
 
 	// See RFC 1952 (https://datatracker.ietf.org/doc/html/rfc1952)
-	static ReadOnlyMemory<byte> EmptyGzip => new byte[] {
+	static readonly ReadOnlyMemory<byte> EmptyGzip = new byte[] {
+		// GZIP Header (RFC 1952)
 		0x1f, 0x8b,             // Magic number
 		0x08,                   // Compression method: deflate
 		0x00,                   // Flags: none
 		0x00, 0x00, 0x00, 0x00, // Modification time: 0 (unknown)
 		0x00,                   // Extra flags: none
 		0xff,                   // Operating system: unknown (255)
-		0x03, 0x00,             // Block header: no compression, 0 bytes
-		0x00, 0x00,             // LEN = 0, NLEN = 0 (complement)
+
+		// DEFLATE Block (RFC 1951)
+		0x01,                   // BFINAL=1, BTYPE=00 (stored/no compression)
+		0x00, 0x00,             // LEN = 0
+		0xff, 0xff,             // NLEN = 0xFFFF (one's complement of 0)
+
+		// GZIP Footer (RFC 1952)
 		0x00, 0x00, 0x00, 0x00, // CRC-32 for empty data
 		0x00, 0x00, 0x00, 0x00  // Size: 0 bytes
 	};
