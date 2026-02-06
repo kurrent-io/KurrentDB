@@ -28,7 +28,7 @@ public class when_opening_existing_tfchunk : SpecificationWithFilePerTestFixture
 			getTransformFactory: DbTransformManager.Default);
 	}
 
-	[TearDown]
+	[OneTimeTearDown]
 	public override void TestFixtureTearDown() {
 		_chunk.Dispose();
 		_testChunk.Dispose();
