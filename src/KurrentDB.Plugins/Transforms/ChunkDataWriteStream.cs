@@ -24,6 +24,7 @@ public class ChunkDataWriteStream(Stream chunkFileStream, IncrementalHash checks
 			ReadAndChecksum(count);
 
 			Debug.Assert(ChunkFileStream.Position == count);
+			ResetPoolingBufferedStreamReadBuffer(count);
 			_positionToHash = null;
 		}
 
@@ -48,6 +49,7 @@ public class ChunkDataWriteStream(Stream chunkFileStream, IncrementalHash checks
 		await ReadAndChecksumAsync(count, token);
 
 		Debug.Assert(ChunkFileStream.Position == count);
+		ResetPoolingBufferedStreamReadBuffer(count);
 		await ChunkFileStream.WriteAsync(buffer, token);
 		checksumAlgorithm.AppendData(buffer.Span);
 		_positionToHash = null;
@@ -94,5 +96,16 @@ public class ChunkDataWriteStream(Stream chunkFileStream, IncrementalHash checks
 
 			checksumAlgorithm.AppendData(buffer.Slice(0, bytesRead));
 		}
+	}
+
+	// Workaround PoolingBufferedStream behavior. If we leave the stream with bytes in its read buffer
+	// then when we flush it will discard those bytes and advance the Position to end of the read buffer.
+	// This would then result in attempts to write records to the wrong place in the chunk
+	// (which would be detected and rejected as a "Data sizes violation").
+	// Instead we flush here and restore the position so that the stream is set up for regular use.
+	// This can be removed if/when the PoolingBufferedStream flush behavior is updated.
+	private void ResetPoolingBufferedStreamReadBuffer(long position) {
+		ChunkFileStream.Flush();
+		ChunkFileStream.Position = position;
 	}
 }
