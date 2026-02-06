@@ -6,6 +6,14 @@ order: 1
 
 This page contains the release notes for KurrentDB v26.0.
 
+## [26.0.1](https://github.com/kurrent-io/KurrentDB/releases/tag/v26.0.1)
+
+6 February 2026
+
+### Fixed GZIP compression compatibility for empty responses (PR [#5480](https://github.com/kurrent-io/KurrentDB/pull/5480))
+
+Empty payloads now use stored blocks instead of static Huffman blocks to fix DEFLATE errors with strict GZIP parsers.
+
 ## [26.0.0](https://github.com/kurrent-io/KurrentDB/releases/tag/v26.0.0)
 
 16 January 2026
