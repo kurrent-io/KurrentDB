@@ -6,6 +6,38 @@ order: 1
 
 This page contains the release notes for KurrentDB v25.1.
 
+## [25.1.3](https://github.com/EventStore/EventStore/releases/tag/v25.1.3)
+
+6 February 2026
+
+### Fixed "Data sizes violation" error (PR [#5492](https://github.com/kurrent-io/KurrentDB/pull/5492))
+
+Under certain conditions a follower or Read Only Replica could fail to join a cluster with a "Data sizes violation" error.
+
+This fix resolves the error condition and allows the node to join the cluster. There is no risk to the integrity of the data.
+
+### Fixed potential memory leak (PR [#5426](https://github.com/kurrent-io/KurrentDB/pull/5426))
+
+A way to trigger the leak in practice has not been identified, but nonetheless it has been fixed in this patch.
+
+### Fixed persistent subscription stall if client sends no Acks or Naks (PR [#5383](https://github.com/kurrent-io/KurrentDB/pull/5383))
+
+Previously, if a client is subscribed with a persistent subscription but neither ACKS nor NAKS any events, the server would continue to retry them per the persistent subscription configuration and then eventually park them. However, eventually the buffer would become empty and the subscription would stall until the leader changes or the subsystem is restarted. With the default settings it would take 4 hours of no ACKS or NAKS for the buffer to empty.
+
+The behavior is now fixed so the server will continue sending and parking messages.
+
+Note that the stall can only occur if the client does not send any ACKS or NAKS, which is an indicator of a problem in the client code.
+
+### Lower the memory restriction on DuckDB (PR [#5404](https://github.com/kurrent-io/KurrentDB/pull/5404))
+
+To 25% of available memory.
+
+### Improved connectors performance (PR [#5389](https://github.com/kurrent-io/KurrentDB/pull/5389))
+
+## 25.1.2
+
+Not published, changes included in 25.1.3.
+
 ## [25.1.1](https://github.com/EventStore/EventStore/releases/tag/v25.1.1)
 
 20 November 2025
