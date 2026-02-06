@@ -10,6 +10,12 @@ This page contains the release notes for KurrentDB v26.0.
 
 6 February 2026
 
+### Fixed "Data sizes violation" error (PR [#5492](https://github.com/kurrent-io/KurrentDB/pull/5492))
+
+Under certain conditions a follower or Read Only Replica could fail to join a cluster with a "Data sizes violation" error.
+
+This fix resolves the error condition and allows the node to join the cluster. There is no risk to the integrity of the data.
+
 ### Fixed GZIP compression compatibility for empty responses (PR [#5480](https://github.com/kurrent-io/KurrentDB/pull/5480))
 
 Empty payloads now use stored blocks instead of static Huffman blocks to fix DEFLATE errors with strict GZIP parsers.
