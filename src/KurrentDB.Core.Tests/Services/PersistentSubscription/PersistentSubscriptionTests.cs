@@ -13,6 +13,7 @@ using EventStore.ClientAPI.Common;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
@@ -2443,6 +2444,103 @@ public class DeadlockTest<TLogFormat, TStreamId> : SpecificationWithMiniNode<TLo
 	private static IEnumerable<EventData> CreateEvent() {
 		while (true) {
 			yield return new EventData(Guid.NewGuid(), "testtype", false, new byte[0], new byte[0]);
+		}
+	}
+}
+
+public class CheckpointingWithSkippedEvents {
+	[Test]
+	public void checkpointing_works_when_events_are_skipped_by_the_consumer_strategy() {
+		var categoryVersion = 0;
+		var stream1Version = 0;
+		var stream2Version = 0;
+
+		IPersistentSubscriptionStreamPosition checkpoint = null;
+		var client1Envelope = new FakeEnvelope();
+		var client2Envelope = new FakeEnvelope();
+		var reader = new FakeCheckpointReader();
+		const string subscriptionStream = "$ce-streamName";
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
+			PersistentSubscriptionToStreamParamsBuilder.CreateFor(subscriptionStream, "groupName")
+				.WithEventLoader(new FakeStreamReader())
+				.WithCheckpointReader(reader)
+				.WithCheckpointWriter(new FakeCheckpointWriter(x => checkpoint = x))
+				.WithMessageParker(new FakeMessageParker())
+				.MinimumToCheckPoint(1)
+				.MaximumToCheckPoint(1)
+				.CustomConsumerStrategy(new PinnedPersistentSubscriptionConsumerStrategy(new XXHashUnsafe()))
+				.StartFromCurrent());
+		reader.Load(null);
+
+		var correlationId = Guid.NewGuid();
+		sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-1", client1Envelope, maxInFlight: 1, "foo", "bar");
+		sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-2", client2Envelope, maxInFlight: 1000, "foo", "bar");
+
+		// write three messages intended for client 1
+		var message_1_1 = WriteEventForStream1(); // pushed immediately
+		var message_1_2 = WriteEventForStream1(); // buffered - it's skipped by the consumer strategy as `maxInFlight` = 1
+		var message_1_3 = WriteEventForStream1(); // buffered - it's skipped by the consumer strategy as `maxInFlight` = 1
+
+		// write three messages intended for client 2
+		var message_2_1 = WriteEventForStream2(); // pushed immediately
+		var message_2_2 = WriteEventForStream2(); // pushed immediately
+		var message_2_3 = WriteEventForStream2(); // pushed immediately
+
+		Assert.That(client1Envelope.Replies.Count, Is.EqualTo(1));
+		Assert.That(client2Envelope.Replies.Count, Is.EqualTo(3));
+		Assert.True(sub.TryGetStreamBuffer(out var streamBuffer));
+		Assert.That(streamBuffer.BufferCount, Is.EqualTo(2));
+		Assert.AreEqual(null, checkpoint);
+
+		// checkpoint should be null - no messages have been acknowledged yet
+		Assert.IsNull(checkpoint);
+
+		// acknowledge message_1_1 for client 1
+		sub.AcknowledgeMessagesProcessed(correlationId, [
+			message_1_1,
+		]);
+
+		// checkpoint should now be at #0
+		Assert.AreEqual(new PersistentSubscriptionSingleStreamPosition(0), checkpoint);
+
+		// acknowledge all the messages for client 2
+		sub.AcknowledgeMessagesProcessed(correlationId, [
+			message_2_1,
+			message_2_2,
+			message_2_3,
+		]);
+
+		// checkpoint should still be at #0, as message_1_2 has not been acknowledged yet
+		Assert.AreEqual(new PersistentSubscriptionSingleStreamPosition(0), checkpoint);
+
+		// acknowledge message_1_2.
+		sub.AcknowledgeMessagesProcessed(correlationId, [
+			message_1_2,
+		]);
+
+		// checkpoint should now be at #1, as message_1_3 has not been acknowledged yet
+		Assert.AreEqual(new PersistentSubscriptionSingleStreamPosition(1), checkpoint);
+
+		// acknowledge message_1_3.
+		sub.AcknowledgeMessagesProcessed(correlationId, [
+			message_1_3,
+		]);
+
+		// checkpoint should now be at #5, as all messages have been acknowledged
+		Assert.AreEqual(new PersistentSubscriptionSingleStreamPosition(5), checkpoint);
+
+		Guid WriteEventForStream1() {
+			var id = Guid.NewGuid();
+			sub.NotifyLiveSubscriptionMessage(Helper.BuildLinkEvent(id, subscriptionStream, categoryVersion++,
+				Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-1", stream1Version++), false));
+			return id;
+		}
+
+		Guid WriteEventForStream2() {
+			var id = Guid.NewGuid();
+			sub.NotifyLiveSubscriptionMessage(Helper.BuildLinkEvent(id, subscriptionStream, categoryVersion++,
+				Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-2", stream2Version++), false));
+			return id;
 		}
 	}
 }
