@@ -144,6 +144,23 @@ enum StreamsError {
   STREAMS_ERROR_APPEND_SESSION_NO_REQUESTS = 9 [(kurrent.rpc.error) = {
     status_code: FAILED_PRECONDITION
   }];
+
+  // One or more consistency checks failed during an AppendRecords operation.
+  // The append was not committed since no records were written.
+  //
+  // Common causes:
+  // - A checked stream's actual revision does not match the expected revision
+  // - Concurrent modification of a stream being checked
+  // - Stream does not exist when a specific revision was expected
+  //
+  // Client action: Inspect the error details to determine which checks failed,
+  // refresh stale state, and retry. All failures are reported together so the
+  // client can update in one round trip.
+  // Recoverable by re-reading affected streams and retrying with correct revisions.
+  STREAMS_ERROR_CONSISTENCY_CHECK_FAILED = 10 [(kurrent.rpc.error) = {
+    status_code: FAILED_PRECONDITION,
+    has_details: true
+  }];
 }
 
 // Details for STREAM_NOT_FOUND errors.
@@ -210,4 +227,30 @@ message AppendTransactionSizeExceededErrorDetails {
 message StreamAlreadyInAppendSessionErrorDetails {
   // The name of the stream that appears multiple times.
   string stream = 1;
+}
+
+// Details for CONSISTENCY_CHECK_FAILED errors.
+message ConsistencyCheckFailedErrorDetails {
+  map<uint32, ConsistencyCheckErrorDetails> failures = 1;
+}
+
+message ConsistencyCheckErrorDetails {
+  oneof detail {
+    RevisionConsistencyCheckErrorDetails revision = 1;
+  }
+}
+
+message RevisionConsistencyCheckErrorDetails {
+  // The name of the stream that failed the revision check.
+  string stream = 1;
+
+  // The expected revision from the check.
+  sint64 expected_revision = 2;
+
+  // The actual revision of the stream.
+  // Sentinel values:
+  //   -1   = stream does not exist (never created)
+  //   -10  = stream was soft-deleted
+  //   -100 = stream was tombstoned
+  sint64 actual_revision = 3;
 }

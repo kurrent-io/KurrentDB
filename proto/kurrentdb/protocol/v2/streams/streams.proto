@@ -31,6 +31,28 @@ service StreamsService {
   //   4. Client completes the stream
   //   5. Server validates, commits, returns AppendSessionResponse with positions
   rpc AppendSession(stream AppendRequest) returns (AppendSessionResponse);
+
+  // Appends records to multiple streams atomically with cross-stream consistency checks.
+  //
+  // This is a unary RPC where the client sends all records and consistency checks
+  // in a single request and receives a single AppendRecordsResponse.
+  //
+  // Records can be interleaved across streams in any order and the global log preserves
+  // the exact sequence from the request.
+  //
+  // Consistency checks are decoupled from writes: a check can reference any stream,
+  // whether or not the request writes to it. This enables Dynamic Consistency Boundary
+  // (DCB) patterns where a decision depends on multiple streams but only produces
+  // events for a subset.
+  //
+  // Guarantees:
+  // - Atomicity: All writes succeed or all fail together
+  // - Ordering: Records maintain the exact send order in the global log
+  // - Cross-stream checks: Consistency checks can reference any stream
+  //
+  // On consistency check failure, no records are written and all failing checks
+  // are reported in the response so the client can refresh stale state in one round trip.
+  rpc AppendRecords(AppendRecordsRequest) returns (AppendRecordsResponse);
 }
 
 // Represents the input for appending records to a specific stream.
@@ -132,6 +154,11 @@ message AppendRecord {
   // The record payload as raw bytes.
   // The format specified in SchemaInfo determines how to interpret these bytes.
   bytes data = 4;
+
+  // Target stream for this record.
+  // Required for AppendRecords (each record specifies its own stream).
+  // Ignored for AppendSession (the stream is specified in AppendRequest).
+  optional string stream = 5;
 }
 
 // Constants for expected revision validation in optimistic concurrency control.
@@ -152,4 +179,44 @@ enum ExpectedRevisionConstants {
   // The stream must exist (have at least one record).
   // Fails if the stream doesn't exist yet.
   EXPECTED_REVISION_CONSTANTS_EXISTS = -4;
+}
+
+message AppendRecordsRequest {
+  // The records to append. Each record specifies its target stream.
+  repeated AppendRecord records = 1;
+
+  // Optional consistency checks evaluated atomically with the append.
+  // Checks can reference any stream, including streams not present in the records.
+  repeated ConsistencyCheck consistency_checks = 2;
+}
+
+message ConsistencyCheck {
+  oneof kind {
+    StreamRevisionCheck revision = 1;
+  }
+}
+
+message StreamRevisionCheck {
+  // The stream to check.
+  string stream = 1;
+
+  // The expected revision for optimistic concurrency control.
+  // Accepts specific revision numbers or ExpectedRevisionConstants values NoStream or Exists
+  sint64 revision = 2;
+}
+
+message AppendRecordsResponse {
+  // The global commit position of the last appended record.
+  sint64 position = 1;
+
+  // The resulting revision for each stream that was written to.
+  repeated StreamRevision revisions = 2;
+}
+
+message StreamRevision {
+  // The stream name.
+  string stream = 1;
+
+  // The revision of the last record written to this stream.
+  sint64 revision = 2;
 }

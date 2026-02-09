@@ -124,4 +124,12 @@ public static partial class ApiErrors {
         const string message = "Append session started, but no append requests were sent before ending the session.";
         return RpcExceptions.FromError(StreamsError.AppendSessionNoRequests, message);
     }
+
+	public static RpcException ConsistencyCheckFailed(ConsistencyCheckFailedErrorDetails details) {
+		var streams = string.Join(", ", details.Failures.Values.Select(e => e.Revision.Stream).Distinct());
+		var message = $"Consistency check failed on stream(s): {streams}.";
+
+		return RpcExceptions.FromError(StreamsError.ConsistencyCheckFailed, message, details);
+	}
+
 }
