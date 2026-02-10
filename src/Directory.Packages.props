@@ -10,7 +10,7 @@
     <PackageVersion Include="DiffEngine" Version="16.7.1" />
     <PackageVersion Include="Dapper" Version="2.1.66" />
     <PackageVersion Include="DotNext" Version="5.26.3" />
-    <PackageVersion Include="DotNext.IO" Version="5.26.2" />
+    <PackageVersion Include="DotNext.IO" Version="5.26.3" />
     <PackageVersion Include="DotNext.Threading" Version="5.26.3" />
     <PackageVersion Include="DotNext.Unsafe" Version="5.26.2" />
     <PackageVersion Include="Ductus.FluentDocker" Version="2.85.0" />
