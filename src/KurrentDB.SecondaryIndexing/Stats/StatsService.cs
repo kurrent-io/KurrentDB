@@ -18,8 +18,9 @@ public class StatsService(DuckDBConnectionPool db) {
 	}
 
 	public (long StreamCount, long EventCount) GetTotalStats() {
-		var result = db.QueryFirstOrDefault<GetTotalStats.Result, GetTotalStats>();
-		return result == null ? (0, 0) : (result.Value.StreamCount, result.Value.EventCount);
+		return db.QueryFirstOrDefault<GetTotalStats.Result, GetTotalStats>()
+			.Convert(static r => (r.StreamCount, r.EventCount))
+			.ValueOrDefault;
 	}
 
 	public List<GetCategoryStats.Result> GetCategoryStats(string category)

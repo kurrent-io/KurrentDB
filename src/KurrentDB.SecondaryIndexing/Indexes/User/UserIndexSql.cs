@@ -72,7 +72,7 @@ internal class UserIndexSql<TField>(string indexName, string fieldName) where TF
 	}
 
 	public GetCheckpointResult? GetCheckpoint(DuckDBAdvancedConnection connection, GetCheckpointQueryArgs args) {
-		return connection.QueryFirstOrDefault<GetCheckpointQueryArgs, GetCheckpointResult, GetCheckpointQuery>(args);
+		return connection.QueryFirstOrDefault<GetCheckpointQueryArgs, GetCheckpointResult, GetCheckpointQuery>(args).ValueOrDefault;
 	}
 
 	public static void SetCheckpoint(DuckDBAdvancedConnection connection, SetCheckpointQueryArgs args) {
@@ -81,7 +81,7 @@ internal class UserIndexSql<TField>(string indexName, string fieldName) where TF
 
 	public GetLastIndexedRecordResult? GetLastIndexedRecord(DuckDBAdvancedConnection connection) {
 		var query = new GetLastIndexedRecordQuery(TableName);
-		return connection.ExecuteQuery<GetLastIndexedRecordResult, GetLastIndexedRecordQuery>(ref query).FirstOrDefault();
+		return connection.ExecuteQuery<GetLastIndexedRecordResult, GetLastIndexedRecordQuery>(ref query).FirstOrDefault().ValueOrDefault;
 	}
 }
 
@@ -133,14 +133,14 @@ file readonly record struct ReadUserIndexForwardsQuery(string TableName, bool Ex
 		args[2] = FieldQuery;
 	}
 
-	public static BindingContext Bind(in ReadUserIndexQueryArgs args, PreparedStatement statement) {
+	public static StatementBindingResult Bind(in ReadUserIndexQueryArgs args, PreparedStatement statement) {
 		var index = 1;
 		statement.Bind(index++, args.StartPosition);
 		statement.Bind(index++, args.EndPosition);
 		args.Field.BindTo(statement, ref index);
 		statement.Bind(index, args.Count);
 
-		return new BindingContext(statement, completed: true);
+		return new(statement, completed: true);
 	}
 
 	public static IndexQueryRecord Parse(ref DataChunk.Row row) =>
@@ -166,13 +166,13 @@ file readonly record struct ReadUserIndexBackwardsQuery(string TableName, bool E
 		args[2] = FieldQuery;
 	}
 
-	public static BindingContext Bind(in ReadUserIndexQueryArgs args, PreparedStatement statement) {
+	public static StatementBindingResult Bind(in ReadUserIndexQueryArgs args, PreparedStatement statement) {
 		var index = 1;
 		statement.Bind(index++, args.StartPosition);
 		args.Field.BindTo(statement, ref index);
 		statement.Bind(index, args.Count);
 
-		return new BindingContext(statement, completed: true);
+		return new(statement, completed: true);
 	}
 
 	public static IndexQueryRecord Parse(ref DataChunk.Row row) =>
@@ -186,7 +186,7 @@ internal record struct GetCheckpointQueryArgs(string IndexName);
 internal record struct GetCheckpointResult(long PreparePosition, long? CommitPosition, long Timestamp);
 
 file struct GetCheckpointQuery : IQuery<GetCheckpointQueryArgs, GetCheckpointResult> {
-	public static BindingContext Bind(in GetCheckpointQueryArgs args, PreparedStatement statement) =>
+	public static StatementBindingResult Bind(in GetCheckpointQueryArgs args, PreparedStatement statement) =>
 		new(statement) {
 			args.IndexName,
 		};
@@ -208,7 +208,7 @@ file struct GetCheckpointQuery : IQuery<GetCheckpointQueryArgs, GetCheckpointRes
 internal record struct SetCheckpointQueryArgs(string IndexName, long PreparePosition, long? CommitPosition, long Created);
 
 file struct SetCheckpointNonQuery : IPreparedStatement<SetCheckpointQueryArgs> {
-	public static BindingContext Bind(in SetCheckpointQueryArgs args, PreparedStatement statement) =>
+	public static StatementBindingResult Bind(in SetCheckpointQueryArgs args, PreparedStatement statement) =>
 		new(statement) {
 			args.IndexName,
 			args.PreparePosition,
@@ -227,7 +227,7 @@ file struct SetCheckpointNonQuery : IPreparedStatement<SetCheckpointQueryArgs> {
 internal record struct DeleteCheckpointNonQueryArgs(string IndexName);
 
 file struct DeleteCheckpointNonQuery : IPreparedStatement<DeleteCheckpointNonQueryArgs> {
-	public static BindingContext Bind(in DeleteCheckpointNonQueryArgs args, PreparedStatement statement) =>
+	public static StatementBindingResult Bind(in DeleteCheckpointNonQueryArgs args, PreparedStatement statement) =>
 		new(statement) {
 			args.IndexName,
 		};

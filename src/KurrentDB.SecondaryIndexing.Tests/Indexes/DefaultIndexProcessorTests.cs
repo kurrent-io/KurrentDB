@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Dapper;
+using DotNext;
 using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Index.Hashes;
@@ -124,7 +125,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest<DefaultIndexProc
 	}
 
 	private void AssertLastLogPositionQueryReturns(long? expectedLogPosition) {
-		var actual = DuckDb.QueryFirstOrDefault<LastPositionResult, GetLastLogPositionQuery>();
+		var actual = DuckDb.QueryFirstOrDefault<LastPositionResult, GetLastLogPositionQuery>().OrNull();
 
 		Assert.Equal(expectedLogPosition, actual?.PreparePosition);
 	}

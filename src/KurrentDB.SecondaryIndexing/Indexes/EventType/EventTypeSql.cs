@@ -13,7 +13,7 @@ internal static class EventTypeSql {
 	/// Get index records for a given event type where the log position is greater than the start position
 	/// </summary>
 	public struct ReadEventTypeIndexQueryExcl : IQuery<ReadEventTypeIndexQueryArgs, IndexQueryRecord> {
-		public static BindingContext Bind(in ReadEventTypeIndexQueryArgs args, PreparedStatement statement)
+		public static StatementBindingResult Bind(in ReadEventTypeIndexQueryArgs args, PreparedStatement statement)
 			=> new(statement) {
 				args.EventType,
 				args.StartPosition,
@@ -31,7 +31,7 @@ internal static class EventTypeSql {
 	/// Get index records for a given event type where the log position is greater or equal the start position
 	/// </summary>
 	public struct ReadEventTypeIndexQueryIncl : IQuery<ReadEventTypeIndexQueryArgs, IndexQueryRecord> {
-		public static BindingContext Bind(in ReadEventTypeIndexQueryArgs args, PreparedStatement statement)
+		public static StatementBindingResult Bind(in ReadEventTypeIndexQueryArgs args, PreparedStatement statement)
 			=> new(statement) {
 				args.EventType,
 				args.StartPosition,
@@ -49,7 +49,7 @@ internal static class EventTypeSql {
 	/// Get index records for a given event type where the log position is less than the start position
 	/// </summary>
 	public struct ReadEventTypeIndexBackQueryExcl : IQuery<ReadEventTypeIndexQueryArgs, IndexQueryRecord> {
-		public static BindingContext Bind(in ReadEventTypeIndexQueryArgs args, PreparedStatement statement)
+		public static StatementBindingResult Bind(in ReadEventTypeIndexQueryArgs args, PreparedStatement statement)
 			=> new(statement) {
 				args.EventType,
 				args.StartPosition,
@@ -66,7 +66,7 @@ internal static class EventTypeSql {
 	/// Get index records for a given event type where the log position is less or equal the start position
 	/// </summary>
 	public struct ReadEventTypeIndexBackQueryIncl : IQuery<ReadEventTypeIndexQueryArgs, IndexQueryRecord> {
-		public static BindingContext Bind(in ReadEventTypeIndexQueryArgs args, PreparedStatement statement)
+		public static StatementBindingResult Bind(in ReadEventTypeIndexQueryArgs args, PreparedStatement statement)
 			=> new(statement) {
 				args.EventType,
 				args.StartPosition,

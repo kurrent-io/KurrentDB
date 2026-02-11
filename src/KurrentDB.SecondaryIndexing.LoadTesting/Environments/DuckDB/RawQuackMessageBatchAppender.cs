@@ -46,15 +46,15 @@ public class RawQuackMessageBatchAppender : IMessageBatchAppender {
 			LastSequence++;
 
 			using (var row = _defaultIndexAppender.CreateRow()) {
-				row.Append(logPosition);
-				row.AppendDefault();
-				row.Append(eventNumber);
-				row.Append(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
-				row.AppendDefault();
-				row.Append(1); //stream.Id
-				row.Append(1); //eventType.Id
-				row.Append(1); //category.Id
-				row.AppendDefault();
+				row.Add(logPosition);
+				row.AddDefault();
+				row.Add(eventNumber);
+				row.Add(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+				row.AddDefault();
+				row.Add(1); //stream.Id
+				row.Add(1); //eventType.Id
+				row.Add(1); //category.Id
+				row.AddDefault();
 			}
 
 			if (LastSequence < LastCommittedSequence + _commitSize)

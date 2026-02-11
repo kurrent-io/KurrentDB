@@ -27,7 +27,7 @@ internal readonly record struct Int16Field(short Key) : IField {
 	public static string GetCreateStatement(string field) => $", \"{field}\" SMALLINT not null";
 	public string GetQueryStatement(string field) => $"and \"{field}\" = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
-	public void AppendTo(Appender.Row row) => row.Append(Key);
+	public void AppendTo(Appender.Row row) => row.Add(Key);
 	public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
 	public override string ToString() => Key.ToString();
 }
@@ -39,7 +39,7 @@ internal readonly record struct Int32Field(int Key) : IField {
 	public static string GetCreateStatement(string field) => $", \"{field}\" INTEGER not null";
 	public string GetQueryStatement(string field) => $"and \"{field}\" = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
-	public void AppendTo(Appender.Row row) => row.Append(Key);
+	public void AppendTo(Appender.Row row) => row.Add(Key);
 	public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
 	public override string ToString() => Key.ToString();
 }
@@ -51,7 +51,7 @@ internal readonly record struct Int64Field(long Key) : IField {
 	public static string GetCreateStatement(string field) => $", \"{field}\" BIGINT not null";
 	public string GetQueryStatement(string field) => $"and \"{field}\" = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
-	public void AppendTo(Appender.Row row) => row.Append(Key);
+	public void AppendTo(Appender.Row row) => row.Add(Key);
 	public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
 	public override string ToString() => Key.ToString();
 }
@@ -63,7 +63,7 @@ internal readonly record struct UInt32Field(uint Key) : IField {
 	public static string GetCreateStatement(string field) => $", \"{field}\" UINTEGER not null";
 	public string GetQueryStatement(string field) => $"and \"{field}\" = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
-	public void AppendTo(Appender.Row row) => row.Append(Key);
+	public void AppendTo(Appender.Row row) => row.Add(Key);
 	public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
 	public override string ToString() => Key.ToString();
 }
@@ -75,7 +75,7 @@ internal readonly record struct UInt64Field(ulong Key) : IField {
 	public static string GetCreateStatement(string field) => $", \"{field}\" UBIGINT not null";
 	public string GetQueryStatement(string field) => $"and \"{field}\" = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
-	public void AppendTo(Appender.Row row) => row.Append(Key);
+	public void AppendTo(Appender.Row row) => row.Add(Key);
 	public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
 	public override string ToString() => Key.ToString();
 }
@@ -87,7 +87,7 @@ internal readonly record struct DoubleField(double Key) : IField {
 	public static string GetCreateStatement(string field) => $", \"{field}\" DOUBLE not null";
 	public string GetQueryStatement(string field) => $"and \"{field}\" = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
-	public void AppendTo(Appender.Row row) => row.Append(Key);
+	public void AppendTo(Appender.Row row) => row.Add(Key);
 	public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
 	public override string ToString() => Key.ToString(CultureInfo.InvariantCulture);
 }
@@ -99,7 +99,7 @@ internal readonly record struct StringField(string Key) : IField {
 	public static string GetCreateStatement(string field) => $", \"{field}\" VARCHAR not null";
 	public string GetQueryStatement(string field) => $"and \"{field}\" = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
-	public void AppendTo(Appender.Row row) => row.Append(Key);
+	public void AppendTo(Appender.Row row) => row.Add(Key);
 	public void WriteTo(IDuckDBDataWriter writer, ulong rowIndex) => writer.WriteValue(Key, rowIndex);
 	public override string ToString() => Key;
 }

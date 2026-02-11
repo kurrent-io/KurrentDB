@@ -127,15 +127,15 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 		_log.LogUserIndexIsAppendingEvent(IndexName, eventNumber, streamId, resolvedEvent.OriginalPosition, fieldStr);
 
 		using (var row = _appender.CreateRow()) {
-			row.Append(preparePosition);
+			row.Add(preparePosition);
 
 			if (commitPosition.HasValue && preparePosition != commitPosition)
-				row.Append(commitPosition.Value);
+				row.Add(commitPosition.Value);
 			else
-				row.Append(DBNull.Value);
+				row.Add(DBNull.Value);
 
-			row.Append(eventNumber);
-			row.Append(created);
+			row.Add(eventNumber);
+			row.Add(created);
 			field?.AppendTo(row);
 		}
 
