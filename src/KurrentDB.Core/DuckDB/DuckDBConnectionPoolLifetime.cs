@@ -118,7 +118,6 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 	}
 
 	private class ConnectionPoolWithFunctions(string connectionString, IReadOnlyList<IDuckDBSetup> setup) : DuckDBConnectionPool(connectionString) {
-		[Experimental("DuckDBNET001")]
 		protected override void Initialize(DuckDBAdvancedConnection connection) {
 			base.Initialize(connection);
 			for (var i = 0; i < setup.Count; i++) {
