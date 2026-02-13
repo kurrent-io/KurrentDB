@@ -26,14 +26,15 @@ using LruCacheNet;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
-using Serilog;
 
 namespace KurrentDB.Auth.OAuth;
 
 [Export(typeof(IAuthenticationPlugin))]
-public class OAuthAuthenticationPlugin : IAuthenticationPlugin {
+public class OAuthAuthenticationPlugin(ILoggerFactory loggerFactory) : IAuthenticationPlugin {
 	public static readonly string[] ValidSigningAlgorithms = {
 		SecurityAlgorithms.RsaSha256Signature,
 		SecurityAlgorithms.RsaSha384Signature,
@@ -49,18 +50,18 @@ public class OAuthAuthenticationPlugin : IAuthenticationPlugin {
 		SecurityAlgorithms.RsaSsaPssSha512,
 	};
 
-	private static readonly ILogger _logger = Log.ForContext<OAuthAuthenticationPlugin>();
 	public string Name { get; } = "OAUTH";
 	public string Version { get; } = typeof(OAuthAuthenticationPlugin).Assembly.GetName().Version!.ToString();
 	public string CommandLineName { get; } = "oauth";
 
 	public IAuthenticationProviderFactory GetAuthenticationProviderFactory(string authenticationConfigPath)
-		=> new OAuthAuthenticationProviderFactory(authenticationConfigPath);
+		=> new OAuthAuthenticationProviderFactory(authenticationConfigPath, loggerFactory.CreateLogger<OAuthAuthenticationPlugin>());
 
 	private class OAuthAuthenticationProviderFactory : IAuthenticationProviderFactory {
 		private readonly string _authenticationConfigPath;
+		private readonly ILogger _logger;
 
-		public OAuthAuthenticationProviderFactory(string authenticationConfigPath) {
+		public OAuthAuthenticationProviderFactory(string authenticationConfigPath, ILogger logger) {
 			if (authenticationConfigPath == null) {
 				throw new ArgumentNullException(nameof(authenticationConfigPath));
 			}
@@ -70,19 +71,21 @@ public class OAuthAuthenticationPlugin : IAuthenticationPlugin {
 			}
 
 			_authenticationConfigPath = authenticationConfigPath;
+			_logger = logger;
 		}
 
-		public IAuthenticationProvider Build(bool logFailedAuthenticationAttempts)
-			=> new OAuthAuthenticationProvider(new Options {
-				LogFailedAuthenticationAttempts = logFailedAuthenticationAttempts,
-				Settings = ConfigParser.ReadConfiguration<Settings>(_authenticationConfigPath, "OAuth")
-					?? throw new Exception("Could not read OAuth configuration")
-			});
+		public IAuthenticationProvider Build(bool logFailedAuthenticationAttempts) => new OAuthAuthenticationProvider(new Options {
+			LogFailedAuthenticationAttempts = logFailedAuthenticationAttempts,
+			Logger = _logger,
+			Settings = ConfigParser.ReadConfiguration<Settings>(_authenticationConfigPath, "OAuth", _logger)
+				?? throw new Exception("Could not read OAuth configuration"),
+		});
 	}
 
 	private class OAuthAuthenticationProvider : AuthenticationProviderBase {
 		private readonly JwtSecurityTokenHandler _securityTokenHandler;
 		private readonly Options _options;
+		private readonly ILogger _logger;
 		private AsymmetricSecurityKey[] _signingKeys;
 		private string _signingKeysUri;
 		private DateTime _signingKeysLastRefresh;
@@ -105,6 +108,7 @@ public class OAuthAuthenticationPlugin : IAuthenticationPlugin {
 				requiredEntitlements: ["OAUTH_AUTHENTICATION"]) {
 
 			_options = options;
+			_logger = options.Logger;
 			_signingKeys = new AsymmetricSecurityKey[0];
 			_signingKeysUri = string.Empty;
 			_securityTokenHandler = new JwtSecurityTokenHandler();
@@ -125,7 +129,7 @@ public class OAuthAuthenticationPlugin : IAuthenticationPlugin {
 
 		public override async Task Initialize() {
 			try {
-				_logger.Information("Obtaining auth token signing key from {idp}",
+				_logger.LogInformation("Obtaining auth token signing key from {idp}",
 					_options.Settings.IdpUri);
 				using var httpClient = new HttpClient(new SocketsHttpHandler {
 					SslOptions = {
@@ -183,11 +187,11 @@ public class OAuthAuthenticationPlugin : IAuthenticationPlugin {
 				_signingKeysLastRefresh = DateTime.UtcNow;
 
 				var signingKeyIds = _signingKeys.Select(x => x.KeyId);
-				_logger.Information("Issuer signing keys have been retrieved. Key IDs: {signingKeyIds}", signingKeyIds);
+				_logger.LogInformation("Issuer signing keys have been retrieved. Key IDs: {signingKeyIds}", signingKeyIds);
 
 				_ready = true;
 			} catch (Exception ex) {
-				_logger.Fatal(ex, "Initialization failed.");
+				_logger.LogCritical(ex, "Initialization failed.");
 				throw;
 			}
 		}
@@ -203,7 +207,7 @@ public class OAuthAuthenticationPlugin : IAuthenticationPlugin {
 
 				if (jwt == null) {
 					if (_options.LogFailedAuthenticationAttempts) {
-						_logger.Warning("Authentication failed for {id}: {reason}",
+						_logger.LogWarning("Authentication failed for {id}: {reason}",
 							authenticationRequest.Id,
 							"No token present.");
 					}
@@ -218,7 +222,7 @@ public class OAuthAuthenticationPlugin : IAuthenticationPlugin {
 						if (DateTime.UtcNow - _signingKeysLastRefresh >= _signingKeysMinRefreshInterval) {
 							try {
 								//signing keys may have been rotated, refresh the keys before validation
-								_logger.Verbose("An authentication request with an unknown key ID has been received. Refreshing issuer signing keys.");
+								_logger.LogTrace("An authentication request with an unknown key ID has been received. Refreshing issuer signing keys.");
 								var oldKeyIds = _signingKeys.Select(x => x.KeyId).OrderBy(x => x);
 
 								_signingKeys = _httpClient
@@ -237,19 +241,19 @@ public class OAuthAuthenticationPlugin : IAuthenticationPlugin {
 
 								var newKeyIds = _signingKeys.Select(x => x.KeyId).OrderBy(x => x);
 								if (!oldKeyIds.SequenceEqual(newKeyIds)) {
-									_logger.Information(
+									_logger.LogInformation(
 										"Issuer signing keys have changed. New Key IDs: {signingKeyIds}", newKeyIds);
 								} else {
-									_logger.Verbose(
+									_logger.LogTrace(
 										"Issuer signing keys have not changed. Key IDs: {signingKeyIds}", newKeyIds);
 								}
 
 								_signingKeysLastRefresh = DateTime.UtcNow;
 							} catch (Exception ex) {
-								_logger.Error(ex, "Failed to refresh issuer signing keys.");
+								_logger.LogError(ex, "Failed to refresh issuer signing keys.");
 							}
 						} else {
-							_logger.Verbose("An authentication request with an unknown key ID has been received. Skipping refresh of issuer signing keys since the minimum refresh interval of {minRefreshInterval} minutes has not yet expired.", _signingKeysMinRefreshInterval.TotalMinutes);
+							_logger.LogTrace("An authentication request with an unknown key ID has been received. Skipping refresh of issuer signing keys since the minimum refresh interval of {minRefreshInterval} minutes has not yet expired.", _signingKeysMinRefreshInterval.TotalMinutes);
 						}
 					}
 				}
@@ -271,7 +275,7 @@ public class OAuthAuthenticationPlugin : IAuthenticationPlugin {
 
 				if (!principal.Identity.IsAuthenticated) {
 					if (_options.LogFailedAuthenticationAttempts) {
-						_logger.Warning("Authentication failed for {id}: {reason}",
+						_logger.LogWarning("Authentication failed for {id}: {reason}",
 							authenticationRequest.Id,
 							"Identity was not authenticated.");
 					}
@@ -283,7 +287,7 @@ public class OAuthAuthenticationPlugin : IAuthenticationPlugin {
 				authenticationRequest.Authenticated(principal);
 			} catch (SecurityTokenValidationException ex) {
 				if (_options.LogFailedAuthenticationAttempts) {
-					_logger.Warning(ex, "Authentication failed for {id}: {reason}",
+					_logger.LogWarning(ex, "Authentication failed for {id}: {reason}",
 						authenticationRequest.Id,
 						ex.Message);
 				}
@@ -291,7 +295,7 @@ public class OAuthAuthenticationPlugin : IAuthenticationPlugin {
 				authenticationRequest.Unauthorized();
 			} catch (Exception ex) {
 				if (_options.LogFailedAuthenticationAttempts) {
-					_logger.Warning(ex, "Authentication failed for {id}: {reason}",
+					_logger.LogWarning(ex, "Authentication failed for {id}: {reason}",
 						authenticationRequest.Id,
 						ex.Message);
 				}
@@ -326,7 +330,7 @@ public class OAuthAuthenticationPlugin : IAuthenticationPlugin {
 
 				if (!context.Request.Query.TryGetValue(OidcConstants.AuthorizeResponse.State, out var state)) {
 					if (_options.LogFailedAuthenticationAttempts) {
-						_logger.Warning($"'{OidcConstants.AuthorizeResponse.State}' parameter was not provided in the OAuth callback URL.");
+						_logger.LogWarning($"'{OidcConstants.AuthorizeResponse.State}' parameter was not provided in the OAuth callback URL.");
 					}
 
 					context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
@@ -343,7 +347,7 @@ public class OAuthAuthenticationPlugin : IAuthenticationPlugin {
 					}
 				} catch (Exception ex) {
 					if (_options.LogFailedAuthenticationAttempts) {
-						_logger.Warning(ex, $"Failed to parse the code challenge correlation ID from the '{OidcConstants.AuthorizeResponse.State}' parameter");
+						_logger.LogWarning(ex, $"Failed to parse the code challenge correlation ID from the '{OidcConstants.AuthorizeResponse.State}' parameter");
 					}
 
 					context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
@@ -352,7 +356,7 @@ public class OAuthAuthenticationPlugin : IAuthenticationPlugin {
 
 				if (!_codeVerifierLruCache.TryGetValue(codeChallengeCorrelationId, out var codeVerifier)) {
 					if (_options.LogFailedAuthenticationAttempts) {
-						_logger.Warning("Supplied code challenge correlation ID does not exist or may have expired.");
+						_logger.LogWarning("Supplied code challenge correlation ID does not exist or may have expired.");
 					}
 
 					context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
@@ -388,7 +392,7 @@ public class OAuthAuthenticationPlugin : IAuthenticationPlugin {
 
 				if (!context.Request.Query.ContainsKey(AuthorizationCodeResponseType)) {
 					if (_options.LogFailedAuthenticationAttempts) {
-						_logger.Warning($"'{AuthorizationCodeResponseType}' parameter was not provided in the OAuth callback URL.");
+						_logger.LogWarning($"'{AuthorizationCodeResponseType}' parameter was not provided in the OAuth callback URL.");
 					}
 
 					context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
@@ -438,7 +442,7 @@ public class OAuthAuthenticationPlugin : IAuthenticationPlugin {
 						context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
 						if (_options.LogFailedAuthenticationAttempts) {
 							var content = await result.Content.ReadAsStringAsync();
-							_logger.Warning("Failed to retrieve access token for client ID: {clientId}. HTTP Status code: {httpStatusCode}, content: {content}", _options.Settings.ClientId, result.StatusCode, content);
+							_logger.LogWarning("Failed to retrieve access token for client ID: {clientId}. HTTP Status code: {httpStatusCode}, content: {content}", _options.Settings.ClientId, result.StatusCode, content);
 						}
 						return;
 					}
@@ -471,7 +475,7 @@ public class OAuthAuthenticationPlugin : IAuthenticationPlugin {
 					context.Response.Redirect("/web");
 				} catch (Exception ex) {
 					context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-					_logger.Error(ex, " Error retrieving access token from {tokenEndpoint}", _tokenEndpoint);
+					_logger.LogError(ex, " Error retrieving access token from {tokenEndpoint}", _tokenEndpoint);
 				}
 			});
 
@@ -519,6 +523,7 @@ public class OAuthAuthenticationPlugin : IAuthenticationPlugin {
 	private class Options {
 		public Settings Settings { get; set; } = new Settings();
 		public bool LogFailedAuthenticationAttempts { get; set; }
+		public ILogger Logger { get; set; } = NullLogger.Instance;
 	}
 
 	private class Settings {
