@@ -9,6 +9,7 @@ using KurrentDB.Plugins.TestHelpers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace KurrentDB.Auth.Ldaps.Tests;
@@ -30,7 +31,7 @@ public class LdapsPluginTests {
 		var fixture = new LdapsFixture(_output);
 		fixture.Start();
 
-		var sut = new LdapsAuthenticationPlugin()
+		var sut = new LdapsAuthenticationPlugin(NullLoggerFactory.Instance)
 			.GetAuthenticationProviderFactory(_configFile)
 			.Build(false);
 
@@ -54,7 +55,7 @@ public class LdapsPluginTests {
 
 	[FactRequiringDocker]
 	public async Task authenticate_admin_user_returns_admin_role() {
-		var sut = new LdapsAuthenticationPlugin()
+		var sut = new LdapsAuthenticationPlugin(NullLoggerFactory.Instance)
 			.GetAuthenticationProviderFactory(_configFile)
 			.Build(false);
 
@@ -77,7 +78,7 @@ public class LdapsPluginTests {
 
 	[FactRequiringDocker]
 	public async Task authenticate_with_incorrect_password_returns_unauthorized() {
-		var sut = new LdapsAuthenticationPlugin()
+		var sut = new LdapsAuthenticationPlugin(NullLoggerFactory.Instance)
 			.GetAuthenticationProviderFactory(_configFile)
 			.Build(false);
 
@@ -97,7 +98,7 @@ public class LdapsPluginTests {
 
 	[FactRequiringDocker]
 	public async Task authenticate_with_non_existent_user_returns_unauthorized() {
-		var sut = new LdapsAuthenticationPlugin()
+		var sut = new LdapsAuthenticationPlugin(NullLoggerFactory.Instance)
 			.GetAuthenticationProviderFactory(_configFile)
 			.Build(false);
 
@@ -117,7 +118,7 @@ public class LdapsPluginTests {
 
 	[FactRequiringDocker]
 	public async Task authenticate_user_with_custom_role_returns_expected_roles() {
-		var sut = new LdapsAuthenticationPlugin()
+		var sut = new LdapsAuthenticationPlugin(NullLoggerFactory.Instance)
 			.GetAuthenticationProviderFactory(_configFile)
 			.Build(false);
 
@@ -140,7 +141,7 @@ public class LdapsPluginTests {
 
 	[Fact(Skip = "This currently results in an error and the request never returns")]
 	public async Task authenticate_user_with_no_roles_returns_no_roles() {
-		var sut = new LdapsAuthenticationPlugin()
+		var sut = new LdapsAuthenticationPlugin(NullLoggerFactory.Instance)
 			.GetAuthenticationProviderFactory(_configFile)
 			.Build(false);
 
@@ -176,7 +177,7 @@ public class LdapsPluginTests {
 	[InlineData(false, "NONE", true)]
 	public void respects_license(bool licensePresent, string entitlement, bool expectedException) {
 		// given
-		var sut = new LdapsAuthenticationPlugin()
+		var sut = new LdapsAuthenticationPlugin(NullLoggerFactory.Instance)
 			.GetAuthenticationProviderFactory(_configFile)
 			.Build(false);
 

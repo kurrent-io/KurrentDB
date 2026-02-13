@@ -3,11 +3,12 @@
 
 using System.ComponentModel.Composition;
 using EventStore.Plugins.Authentication;
+using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.Auth.Ldaps;
 
 [Export(typeof(IAuthenticationPlugin))]
-public class LdapsAuthenticationPlugin : IAuthenticationPlugin {
+public class LdapsAuthenticationPlugin(ILoggerFactory loggerFactory) : IAuthenticationPlugin {
 	public string Name { get { return "LDAPS"; } }
 
 	public string Version {
@@ -22,6 +23,8 @@ public class LdapsAuthenticationPlugin : IAuthenticationPlugin {
 				"No LDAPS configuration file was specified. Use the --{0} option to specify " +
 				"the path to the LDAPS configuration.", "authentication-config-file"));
 
-		return new LdapsAuthenticationProviderFactory(authenticationConfigPath);
+		return new LdapsAuthenticationProviderFactory(
+			authenticationConfigPath,
+			loggerFactory.CreateLogger<LdapsAuthenticationPlugin>());
 	}
 }

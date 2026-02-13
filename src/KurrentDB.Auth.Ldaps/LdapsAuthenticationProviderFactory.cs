@@ -3,22 +3,17 @@
 
 using EventStore.Plugins;
 using EventStore.Plugins.Authentication;
+using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.Auth.Ldaps;
 
-internal class LdapsAuthenticationProviderFactory : IAuthenticationProviderFactory {
+internal class LdapsAuthenticationProviderFactory(string configPath, ILogger logger) : IAuthenticationProviderFactory {
 	public const int CachedPrincipalCount = 1000;
-	private readonly string _configPath;
-	private LdapsAuthenticationProvider _authenticationProvider;
-
-	public LdapsAuthenticationProviderFactory(string configPath) {
-		_configPath = configPath;
-	}
 
 	public IAuthenticationProvider Build(bool logFailedAuthenticationAttempts) {
-		var ldapsSettings = ConfigParser.ReadConfiguration<LdapsSettings>(_configPath, "LdapsAuth");
-		_authenticationProvider = new LdapsAuthenticationProvider(ldapsSettings,
+		var ldapsSettings = ConfigParser.ReadConfiguration<LdapsSettings>(configPath, "LdapsAuth", logger);
+		var authenticationProvider = new LdapsAuthenticationProvider(ldapsSettings,
 			CachedPrincipalCount, logFailedAuthenticationAttempts);
-		return _authenticationProvider;
+		return authenticationProvider;
 	}
 }

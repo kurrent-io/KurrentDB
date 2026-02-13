@@ -8,6 +8,7 @@ using KurrentDB.Plugins.TestHelpers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace KurrentDB.Auth.OAuth.Tests;
@@ -26,7 +27,7 @@ public class OAuthAuthenticationPluginTests {
 	[InlineData(false, "NONE", true)]
 	public void respects_license(bool licensePresent, string entitlement, bool expectedException) {
 		// given
-		var sut = new OAuthAuthenticationPlugin()
+		var sut = new OAuthAuthenticationPlugin(NullLoggerFactory.Instance)
 			.GetAuthenticationProviderFactory(_configFile)
 			.Build(false);
 
