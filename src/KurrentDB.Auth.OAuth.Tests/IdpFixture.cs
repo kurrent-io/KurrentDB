@@ -119,9 +119,12 @@ internal class IdpFixture : IDisposable {
 		return response;
 	}
 
-	public string Issuer =>
-		$"https://{_identityServer.GetConfiguration().NetworkSettings.IPAddress}:{IdpPort}";
-
+	public string Issuer {
+		get {
+			var config = _identityServer.GetConfiguration();
+			return $"https://{config.NetworkSettings.Networks["bridge"].IPAddress}:{IdpPort}";
+		}
+	}
 
 	public void Dispose() {
 		_identityServer?.Dispose();
