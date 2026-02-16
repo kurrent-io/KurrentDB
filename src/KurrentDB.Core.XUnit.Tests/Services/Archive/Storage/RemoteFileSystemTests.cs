@@ -138,7 +138,7 @@ public sealed class RemoteFileSystemTests : ArchiveStorageTestsBase<RemoteFileSy
 				transactionOffset: 0,
 				eventStreamId: "my-stream",
 				expectedVersion: i,
-				timeStamp: DateTime.Now,
+				timeStamp: DateTime.UtcNow,
 				flags: PrepareFlags.SingleWrite,
 				eventType: "my-event-type",
 				data: Encoding.UTF8.GetBytes($"my-data-{i}"),

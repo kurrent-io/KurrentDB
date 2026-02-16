@@ -17,7 +17,7 @@ public class PrepareLogRecordViewTests {
 	private const int TransactionOffset = 321;
 	private const string EventStreamId = "test_stream";
 	private const long ExpectedVersion = 789;
-	private readonly DateTime _timestamp = DateTime.Now;
+	private readonly DateTime _timestamp = DateTime.UtcNow;
 	private const string EventType = "test_event_type";
 	private readonly byte[] _data = { 0xDE, 0XAD, 0xC0, 0XDE };
 	private readonly byte[] _metadata = { 0XC0, 0xDE };
