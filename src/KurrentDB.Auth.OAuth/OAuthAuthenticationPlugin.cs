@@ -93,11 +93,11 @@ public class OAuthAuthenticationPlugin(ILoggerFactory loggerFactory) : IAuthenti
 		private readonly object _signingKeysRefreshLock = new object();
 		private const string AuthorizationCodeResponseType = OidcConstants.ResponseTypes.Code;
 		private const string AuthorizationCodeGrantType = OidcConstants.GrantTypes.AuthorizationCode;
-		private const string SHA256CodeChallengeMethod = OidcConstants.CodeChallengeMethods.Sha256;
 		private const string CallBackUrl = "/oauth/callback";
 		private const string CodeChallengeUrl = "/oauth/codechallenge";
 		private string _authorizationEndpoint;
 		private string _tokenEndpoint;
+		private string _codeChallengeMethod;
 		private readonly HttpClient _httpClient;
 		private readonly RandomNumberGenerator _rngCsp;
 		private readonly LruCache<string, string> _codeVerifierLruCache;
@@ -114,6 +114,7 @@ public class OAuthAuthenticationPlugin(ILoggerFactory loggerFactory) : IAuthenti
 			_securityTokenHandler = new JwtSecurityTokenHandler();
 			_authorizationEndpoint = string.Empty;
 			_tokenEndpoint = string.Empty;
+			_codeChallengeMethod = string.Empty;
 			_httpClient = new HttpClient(new SocketsHttpHandler {
 				ConnectTimeout = TimeSpan.FromSeconds(10),
 				SslOptions = {
@@ -149,37 +150,13 @@ public class OAuthAuthenticationPlugin(ILoggerFactory loggerFactory) : IAuthenti
 
 				var disco = await httpClient.GetDiscoveryDocumentAsync(request);
 
-				if (disco.IsError) {
-					throw new Exception(disco.Error);
-				}
-
-				_authorizationEndpoint = disco.AuthorizeEndpoint ?? throw new Exception("Authorization Endpoint is null in identity provider's discovery document.");
-				_tokenEndpoint = disco.TokenEndpoint ?? throw new Exception("Token Endpoint is null in identity provider's discovery document.");
-
-				// required field according to the specs
-				if (!disco.ResponseTypesSupported.Contains(AuthorizationCodeResponseType)) {
-					throw new Exception($"The specified identity provider does not support the '{AuthorizationCodeResponseType}' response type");
-				}
-
-				// the specs say: If omitted, the default value is ["authorization_code", "implicit"].
-				// https://datatracker.ietf.org/doc/html/rfc8414#section-2 see grant_types_supported
-				if (disco.GrantTypesSupported.Any() && !disco.GrantTypesSupported.Contains(AuthorizationCodeGrantType)) {
-					throw new Exception($"The specified identity provider does not support the '{AuthorizationCodeGrantType}' grant type");
-				}
-
-				//the specs say: If omitted, the authorization server does not support PKCE
-				// https://datatracker.ietf.org/doc/html/rfc8414#section-2 see code_challenge_methods_supported
-				if (_options.Settings.DisableCodeChallengeMethodsSupportedValidation) {
-					_logger.LogInformation("Skipping code_challenge_methods_supported validation. Using {CodeChallengeMethod}", SHA256CodeChallengeMethod);
-				} else {
-					if (!disco.CodeChallengeMethodsSupported.Any()) {
-						throw new Exception($"The specified identity provider does not support PKCE. If using Microsoft Entra, set the KurrentDB DisableCodeChallengeMethodsSupportedValidation OAuth flag.");
-					}
-
-					if (!disco.CodeChallengeMethodsSupported.Contains(SHA256CodeChallengeMethod)) {
-						throw new Exception($"The specified identity provider does not support the '{SHA256CodeChallengeMethod}' code challenge method");
-					}
-				}
+				DiscoveryDocumentValidator.Validate(
+					disco,
+					_options.Settings,
+					out _authorizationEndpoint,
+					out _tokenEndpoint,
+					out _codeChallengeMethod,
+					_logger);
 
 				_signingKeysUri = disco.JwksUri;
 				_signingKeys = disco.KeySet.Keys.Select(jwk =>
@@ -508,7 +485,7 @@ public class OAuthAuthenticationPlugin(ILoggerFactory loggerFactory) : IAuthenti
 
 				var result = new Dictionary<string, string> {
 					{"code_challenge", codeChallenge},
-					{"code_challenge_method", SHA256CodeChallengeMethod},
+					{"code_challenge_method", _codeChallengeMethod},
 					{"code_challenge_correlation_id", codeChallengeCorrelationId}
 				};
 
@@ -532,7 +509,7 @@ public class OAuthAuthenticationPlugin(ILoggerFactory loggerFactory) : IAuthenti
 		public ILogger Logger { get; set; } = NullLogger.Instance;
 	}
 
-	private class Settings {
+	public class Settings {
 		public string Audience { get; set; } = null!;
 		public string Issuer { get; set; } = null!;
 
