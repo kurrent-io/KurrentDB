@@ -210,7 +210,8 @@ public static partial class ClientMessage {
 				// there can be zero or more events: empty writes to a single stream are supported (for legacy reasons)
 
 				// all events implicitly are for the single stream which is at index 0.
-				ArgumentOutOfRangeException.ThrowIfNotEqual(eventStreamIndexes.Length, 0, nameof(eventStreamIndexes));
+				// normalize: we allow callers to pass eventStreamIndexes [0, 0, ...] to avoid surprise, but we discard them.
+				eventStreamIndexes = default;
 			} else { // multi-stream append
 				// there must be at least one event: empty writes to multiple streams are not supported
 				ArgumentOutOfRangeException.ThrowIfZero(events.Length, nameof(events));
