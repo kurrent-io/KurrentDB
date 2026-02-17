@@ -1,6 +1,6 @@
 # Kurrent License v1
 
-Copyright (c) 2011-2025, Kurrent, Inc. All rights reserved.
+Copyright (c) 2011-2026, Kurrent, Inc. All rights reserved.
 
 ### Acceptance
 

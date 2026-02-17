@@ -8,13 +8,13 @@
 		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
 		<PackageProjectUrl>https://kurrent.io</PackageProjectUrl>
 		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-		<Copyright>Copyright 2012-2025 Kurrent, Inc</Copyright>
+		<Copyright>Copyright 2011-2026 Kurrent, Inc</Copyright>
 		<PackageReleaseNotes>https://docs.kurrent.io/server/latest/release-schedule/release-notes</PackageReleaseNotes>
 		<TargetFramework>net10.0</TargetFramework>
 		<LangVersion>14.0</LangVersion>
 		<Platforms>AnyCPU;x64;ARM64</Platforms>
 		<IsPackable>false</IsPackable>
-		<VersionPrefix>26.0.0</VersionPrefix>
+		<VersionPrefix>26.1.0</VersionPrefix>
 		<VersionSuffix>prerelease</VersionSuffix>
 		<!-- Adjust for SYSLIB0057 separately to .NET 10 upgrade -->
 		<!-- Adjust for XUNIT1051 separately. Lots of lines but very simple -->
