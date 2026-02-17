@@ -373,6 +373,7 @@ The configuration options are:
 | ClientId			          | string 	| N 		| "" 		| The id of the client configured in the identity provider. |
 | ClientSecret 		        | string 	| N 	  | "" 		| The client secret configured in the identity provider. |
 | DisableIssuerValidation | bool 	  | N 		| false 	| Disable issuer validation for testing purposes. |
+| DisableCodeChallengeMethodsSupportedValidation | bool | N | false | Disable validation of the `code_challenge_methods_supported` field in the identity provider's discovery document. Enable this when using an identity provider such as Microsoft Entra that supports PKCE but does not advertise it in the discovery document. |
 | Insecure 			          | bool 	  | N 		| false 	| Whether to validate the certificates for the identity provider. This is not related to `Insecure` in the KurrentDB configuration. |
 
 ### Testing with a local identity server
