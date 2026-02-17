@@ -695,13 +695,21 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any],
 			events: [],
 			eventStreamIndexes: [])); // equivalent to []
+	}
 
-		// write to a single stream but eventStreamIndexes is not []
-		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await WriteEvents(
+	[Fact]
+	public async Task can_write_to_single_stream_with_eventStreamIndexes() {
+		// indexes are normalized to []
+		const string test = nameof(can_write_to_single_stream_with_eventStreamIndexes);
+		var A = $"{test}-a";
+
+		var completed = await WriteEvents(
 			eventStreamIds: [A],
 			expectedVersions: [ExpectedVersion.Any],
 			events: [NewEvent, NewEvent],
-			eventStreamIndexes: [0, 0]));
+			eventStreamIndexes: [0, 0]);
+
+		Assert.Equal(OperationResult.Success, completed.Result);
 	}
 
 	[Fact]
