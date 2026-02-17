@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Microsoft.Extensions.Logging;
 using YamlDotNet.RepresentationModel;
 using YamlDotNet.Serialization;
 
@@ -13,9 +14,11 @@ public static class ConfigParser {
 	/// <param name="configPath">The path to the configuration file</param>
 	/// <param name="sectionName">The section to deserialize</param>
 	/// <typeparam name="T">The type of settings object to create from the configuration</typeparam>
-	public static T? ReadConfiguration<T>(string configPath, string sectionName) where T : class {
+	public static T? ReadConfiguration<T>(string configPath, string sectionName, ILogger logger) where T : class {
 		var yamlStream = new YamlStream();
 		var stringReader = new StringReader(File.ReadAllText(configPath));
+
+		logger.LogInformation("Reading {SectionName} configuration from yaml file {ConfigPath}", sectionName, configPath);
 
 		try {
 			yamlStream.Load(stringReader);
@@ -32,6 +35,8 @@ public static class ConfigParser {
 			var nodeExists = yamlNode.Children.Any(predicate);
 			if (nodeExists)
 				yamlNode = (YamlMappingNode)yamlNode.Children.First(predicate).Value;
+			else
+				logger.LogInformation("Could not find section {SectionName}, interpreting whole file as {SectionName} section", sectionName, sectionName);
 		}
 
 		if (yamlNode is null)
