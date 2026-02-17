@@ -162,17 +162,23 @@ public class OAuthAuthenticationPlugin(ILoggerFactory loggerFactory) : IAuthenti
 				}
 
 				// the specs say: If omitted, the default value is ["authorization_code", "implicit"].
+				// https://datatracker.ietf.org/doc/html/rfc8414#section-2 see grant_types_supported
 				if (disco.GrantTypesSupported.Any() && !disco.GrantTypesSupported.Contains(AuthorizationCodeGrantType)) {
 					throw new Exception($"The specified identity provider does not support the '{AuthorizationCodeGrantType}' grant type");
 				}
 
 				//the specs say: If omitted, the authorization server does not support PKCE
-				if (!disco.CodeChallengeMethodsSupported.Any()) {
-					throw new Exception($"The specified identity provider does not support PKCE");
-				}
+				// https://datatracker.ietf.org/doc/html/rfc8414#section-2 see code_challenge_methods_supported
+				if (_options.Settings.DisableCodeChallengeMethodsSupportedValidation) {
+					_logger.LogInformation("Skipping code_challenge_methods_supported validation. Using {CodeChallengeMethod}", SHA256CodeChallengeMethod);
+				} else {
+					if (!disco.CodeChallengeMethodsSupported.Any()) {
+						throw new Exception($"The specified identity provider does not support PKCE. If using Microsoft Entra, set the KurrentDB DisableCodeChallengeMethodsSupportedValidation OAuth flag.");
+					}
 
-				if (!disco.CodeChallengeMethodsSupported.Contains(SHA256CodeChallengeMethod)) {
-					throw new Exception($"The specified identity provider does not support the '{SHA256CodeChallengeMethod}' code challenge method");
+					if (!disco.CodeChallengeMethodsSupported.Contains(SHA256CodeChallengeMethod)) {
+						throw new Exception($"The specified identity provider does not support the '{SHA256CodeChallengeMethod}' code challenge method");
+					}
 				}
 
 				_signingKeysUri = disco.JwksUri;
@@ -530,6 +536,7 @@ public class OAuthAuthenticationPlugin(ILoggerFactory loggerFactory) : IAuthenti
 		public string Audience { get; set; } = null!;
 		public string Issuer { get; set; } = null!;
 
+		public bool DisableCodeChallengeMethodsSupportedValidation { get; set; } = false;
 		public bool DisableIssuerValidation { get; set; } = false;
 		public string Idp { get; set; } = null!;
 		public bool Insecure { get; set; }
