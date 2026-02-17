@@ -28,7 +28,7 @@ public class StreamMetadatas {
 	public static StreamMetadata SoftDelete { get; } =
 		new StreamMetadata(truncateBefore: EventNumber.DeletedStream);
 
-	public static DateTime EffectiveNow { get; } = new DateTime(2022, 1, 5, 00, 00, 00);
+	public static DateTime EffectiveNow { get; } = new DateTime(2022, 1, 5, 00, 00, 00, DateTimeKind.Utc);
 	public static DateTime Expired { get; } = EffectiveNow - TimeSpan.FromDays(3);
 	public static DateTime Cutoff { get; } = EffectiveNow - MaxAgeTimeSpan;
 	public static DateTime Active { get; } = EffectiveNow - TimeSpan.FromDays(1);

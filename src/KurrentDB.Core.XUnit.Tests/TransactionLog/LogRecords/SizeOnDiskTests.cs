@@ -33,7 +33,7 @@ public class SizeOnDiskTests {
 				eventStreamId: theString,
 				eventStreamIdSize: null,
 				expectedVersion: 789,
-				timeStamp: DateTime.Now,
+				timeStamp: DateTime.UtcNow,
 				flags: PrepareFlags.SingleWrite,
 				eventType: theString,
 				eventTypeSize: null,
@@ -52,7 +52,7 @@ public class SizeOnDiskTests {
 				eventStreamId: "my-stream",
 				eventStreamIdSize: null,
 				expectedVersion: 789,
-				timeStamp: DateTime.Now,
+				timeStamp: DateTime.UtcNow,
 				flags: PrepareFlags.SingleWrite,
 				eventType: "my-event-type",
 				eventTypeSize: null,
@@ -65,12 +65,12 @@ public class SizeOnDiskTests {
 			logPosition: 123,
 			correlationId: Guid.NewGuid(),
 			transactionPosition: 456,
-			timeStamp: DateTime.Now,
+			timeStamp: DateTime.UtcNow,
 			firstEventNumber: 789,
 			commitRecordVersion: 1);
 
 		static SystemLogRecord CreateSystemLogRecord() => new(logPosition: 123,
-			timeStamp: DateTime.Now,
+			timeStamp: DateTime.UtcNow,
 			systemRecordType: SystemRecordType.Epoch,
 			systemRecordSerialization: SystemRecordSerialization.Binary,
 			data: [0xDE, 0XAD, 0xC0, 0XDE]);
