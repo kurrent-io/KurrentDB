@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.UserManagement;
 using Xunit;
@@ -24,6 +25,12 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		isJson: false,
 		data: new string('#', dataSize),
 		metadata: "metadata");
+
+	private static Event CreateMetadataEvent(StreamMetadata metadata) => new(
+		eventId: Guid.NewGuid(),
+		eventType: SystemEventTypes.StreamMetadata,
+		isJson: true,
+		data: metadata.ToJsonBytes());
 
 	[Fact]
 	public async Task succeeds() {
@@ -345,6 +352,13 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		Assert.Equal(OperationResult.Success, completed.Result);
 		Assert.Equal([2, 1], completed.FirstEventNumbers.ToArray());
 		Assert.Equal([3, 1], completed.LastEventNumbers.ToArray());
+
+		// not necessarily immediately true because the undeletes are not yet transactional with the writes
+		await AssertEx.IsOrBecomesTrueAsync(async () => {
+			// B is undeleted
+			var read = await ReadEvents(B);
+			return read.Result == ReadStreamResult.Success && read.Events.Count == 1;
+		});
 	}
 
 	[Fact]
@@ -439,6 +453,182 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		Assert.Equal(OperationResult.Success, completed.Result);
 		Assert.Equal([0, 0], completed.FirstEventNumbers.ToArray());
 		Assert.Equal([1, 0], completed.LastEventNumbers.ToArray());
+	}
+
+	[Fact]
+	public async Task undeletes_stream_on_empty_write() {
+		const string test = nameof(undeletes_stream_on_empty_write);
+		var A = $"{test}-a";
+
+		// write an event to A so it can be soft-deleted
+		await WriteEvents(
+			eventStreamIds: [A],
+			expectedVersions: [ExpectedVersion.Any],
+			events: [NewEvent],
+			eventStreamIndexes: []);
+
+		await DeleteStream(A, hardDelete: false);
+
+		// verify A is soft-deleted (reads as NoStream)
+		var read = await ReadEvents(A);
+		Assert.Equal(ReadStreamResult.NoStream, read.Result);
+
+		// empty write to the soft-deleted stream should undelete it
+		var completed = await WriteEvents(
+			eventStreamIds: [A],
+			expectedVersions: [ExpectedVersion.Any],
+			events: [],
+			eventStreamIndexes: []);
+
+		Assert.Equal(OperationResult.Success, completed.Result);
+
+		// not necessarily immediately true because the undeletes are not yet transactional with the writes
+		await AssertEx.IsOrBecomesTrueAsync(async () => {
+			// A is undeleted
+			read = await ReadEvents(A);
+			return read.Result == ReadStreamResult.Success && read.Events is [];
+		});
+	}
+
+	[Fact]
+	public async Task undeletes_stream_on_metadata_write() {
+		const string test = nameof(undeletes_stream_on_metadata_write);
+		var A = $"{test}-a";
+		var metaA = SystemStreams.MetastreamOf(A);
+
+		// write an event to A so it can be soft-deleted
+		await WriteEvents(
+			eventStreamIds: [A],
+			expectedVersions: [ExpectedVersion.Any],
+			events: [NewEvent],
+			eventStreamIndexes: []);
+
+		await DeleteStream(A, hardDelete: false);
+
+		// verify A is soft-deleted (reads as NoStream)
+		var read = await ReadEvents(A);
+		Assert.Equal(ReadStreamResult.NoStream, read.Result);
+
+		// writing a metadata record to $$A should undelete A
+		var completed = await WriteEvents(
+			eventStreamIds: [metaA],
+			expectedVersions: [ExpectedVersion.Any],
+			events: [CreateMetadataEvent(new(maxCount: 2))],
+			eventStreamIndexes: []);
+
+		Assert.Equal(OperationResult.Success, completed.Result);
+
+		// not necessarily immediately true because the undeletes are not yet transactional with the writes
+		await AssertEx.IsOrBecomesTrueAsync(async () => {
+			// A is undeleted
+			read = await ReadEvents(A);
+			return read.Result == ReadStreamResult.Success && read.Events is [];
+		});
+	}
+
+	[Fact]
+	public async Task undeletes_stream_on_write_to_stream_and_metadata_metadata_first() {
+		const string test = nameof(undeletes_stream_on_write_to_stream_and_metadata_metadata_first);
+		var A = $"{test}-a";
+		var metaA = SystemStreams.MetastreamOf(A);
+
+		// write an event to A so it can be soft-deleted
+		await WriteEvents(
+			eventStreamIds: [A],
+			expectedVersions: [ExpectedVersion.Any],
+			events: [NewEvent],
+			eventStreamIndexes: []);
+
+		await DeleteStream(A, hardDelete: false);
+
+		// verify A is soft-deleted (reads as NoStream)
+		var read = await ReadEvents(A);
+		Assert.Equal(ReadStreamResult.NoStream, read.Result);
+
+		// writing to both $$A and A in a single write (metadata first) should undelete A
+		var completed = await WriteEvents(
+			eventStreamIds: [metaA, A],
+			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any],
+			events: [CreateMetadataEvent(new(maxCount: 2)), NewEvent],
+			eventStreamIndexes: [0, 1]);
+
+		Assert.Equal(OperationResult.Success, completed.Result);
+
+		// not necessarily immediately true because the undeletes are not yet transactional with the writes
+		await AssertEx.IsOrBecomesTrueAsync(async () => {
+			// A is undeleted
+			read = await ReadEvents(A);
+			return read.Result == ReadStreamResult.Success;
+		});
+	}
+
+	[Fact]
+	public async Task undeletes_stream_on_write_to_stream_and_metadata_stream_first() {
+		const string test = nameof(undeletes_stream_on_write_to_stream_and_metadata_stream_first);
+		var A = $"{test}-a";
+		var metaA = SystemStreams.MetastreamOf(A);
+
+		// write an event to A so it can be soft-deleted
+		await WriteEvents(
+			eventStreamIds: [A],
+			expectedVersions: [ExpectedVersion.Any],
+			events: [NewEvent],
+			eventStreamIndexes: []);
+
+		await DeleteStream(A, hardDelete: false);
+
+		// verify A is soft-deleted (reads as NoStream)
+		var read = await ReadEvents(A);
+		Assert.Equal(ReadStreamResult.NoStream, read.Result);
+
+		// writing to both A and $$A in a single write (stream first) should undelete A
+		var completed = await WriteEvents(
+			eventStreamIds: [A, metaA],
+			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any],
+			events: [NewEvent, CreateMetadataEvent(new(maxCount: 2))],
+			eventStreamIndexes: [0, 1]);
+
+		Assert.Equal(OperationResult.Success, completed.Result);
+
+		// not necessarily immediately true because the undeletes are not yet transactional with the writes
+		await AssertEx.IsOrBecomesTrueAsync(async () => {
+			// A is undeleted
+			read = await ReadEvents(A);
+			return read.Result == ReadStreamResult.Success;
+		});
+	}
+
+	[Fact]
+	public async Task leaves_deleted_on_check() {
+		const string test = nameof(leaves_deleted_on_check);
+		var A = $"{test}-a";
+		var B = $"{test}-b"; // conditional stream (soft deleted, no events written to it)
+
+		// write an event to B so it can be soft-deleted
+		await WriteEvents(
+			eventStreamIds: [B],
+			expectedVersions: [ExpectedVersion.Any],
+			events: [NewEvent],
+			eventStreamIndexes: []);
+
+		await DeleteStream(B, hardDelete: false);
+
+		// verify B is soft-deleted (reads as NoStream)
+		var read = await ReadEvents(B);
+		Assert.Equal(ReadStreamResult.NoStream, read.Result);
+
+		// conditional append: write events only to A, with B as a conditional check
+		var completed = await WriteEvents(
+			eventStreamIds: [A, B],
+			expectedVersions: [-1, 0],
+			events: [NewEvent, NewEvent],
+			eventStreamIndexes: [0, 0]);
+
+		Assert.Equal(OperationResult.Success, completed.Result);
+
+		// B should still be soft-deleted (not undeleted as a side-effect)
+		read = await ReadEvents(B);
+		Assert.Equal(ReadStreamResult.NoStream, read.Result);
 	}
 
 	[Fact]
