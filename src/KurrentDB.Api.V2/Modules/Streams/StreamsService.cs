@@ -152,12 +152,12 @@ public class StreamsService : StreamsServiceBase {
                 WriteEventsCompleted completed => completed.Result switch {
                     OperationResult.CommitTimeout => ApiErrors.OperationTimeout($"{FriendlyName} timed out while waiting for commit"),
 
-                    OperationResult.StreamDeleted => ApiErrors.StreamTombstoned(Requests.ElementAt(completed.FailureStreamIndexes.Span[0]).Stream),
+                    OperationResult.StreamDeleted => ApiErrors.StreamTombstoned(Requests.ElementAt(completed.ConsistencyCheckFailures.Span[0].StreamIndex).Stream),
 
                     OperationResult.WrongExpectedVersion => ApiErrors.StreamRevisionConflict(
-                        Requests.ElementAt(completed.FailureStreamIndexes.Span[0]).Stream,
-                        Requests.ElementAt(completed.FailureStreamIndexes.Span[0]).ExpectedRevision,
-                        completed.FailureCurrentVersions.Span[0]
+                        Requests.ElementAt(completed.ConsistencyCheckFailures.Span[0].StreamIndex).Stream,
+                        Requests.ElementAt(completed.ConsistencyCheckFailures.Span[0].StreamIndex).ExpectedRevision,
+                        completed.ConsistencyCheckFailures.Span[0].ActualVersion
                     ),
 
                     _ => ApiErrors.InternalServerError($"{FriendlyName} completed in error with unexpected result: {completed.Result}")

@@ -263,8 +263,7 @@ public abstract class SubsystemScenario : IHandle<Message>, IAsyncLifetime {
 				} else {
 					response = new ClientMessage.WriteEventsCompleted(message.CorrelationId,
 						OperationResult.WrongExpectedVersion, "Wrong expected version",
-						new(0),
-						new(_streams.Count - 1));
+						new(new ConsistencyCheckFailure(0, message.ExpectedVersions.Single, _streams.Count - 1, false)));
 				}
 			} else {
 				if (message.ExpectedVersions.Single is ExpectedVersion.Any or ExpectedVersion.NoStream) {
@@ -274,8 +273,7 @@ public abstract class SubsystemScenario : IHandle<Message>, IAsyncLifetime {
 				} else {
 					response = new ClientMessage.WriteEventsCompleted(message.CorrelationId,
 						OperationResult.WrongExpectedVersion, "Wrong expected version",
-						new(0),
-						new(ExpectedVersion.NoStream));
+						new(new ConsistencyCheckFailure(0, message.ExpectedVersions.Single, ExpectedVersion.NoStream, false)));
 				}
 			}
 

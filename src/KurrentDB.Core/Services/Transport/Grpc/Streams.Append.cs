@@ -163,14 +163,14 @@ internal partial class Streams<TStreamId> {
 								break;
 						}
 
-						if (completed.FailureCurrentVersions.Single == -1) {
+						if (completed.ConsistencyCheckFailures.Single.ActualVersion == -1) {
 							response.WrongExpectedVersion.CurrentNoStream = new Empty();
 							response.WrongExpectedVersion.NoStream2060 = new Empty();
 						} else {
 							response.WrongExpectedVersion.CurrentRevision =
-								StreamRevision.FromInt64(completed.FailureCurrentVersions.Single);
+								StreamRevision.FromInt64(completed.ConsistencyCheckFailures.Single.ActualVersion);
 							response.WrongExpectedVersion.CurrentRevision2060 =
-								StreamRevision.FromInt64(completed.FailureCurrentVersions.Single);
+								StreamRevision.FromInt64(completed.ConsistencyCheckFailures.Single.ActualVersion);
 						}
 
 						appendResponseSource.TrySetResult(response);

@@ -46,7 +46,7 @@ public class when_writing_prepares_in_wrong_order_and_committing_in_right_order<
 		var res = await ReadIndex.IndexWriter.CheckCommitStartingAt(_prepare4.LogPosition,
 			WriterCheckpoint.ReadNonFlushed(), CancellationToken.None);
 
-		Assert.AreEqual(CommitDecision.WrongExpectedVersion, res.Decision);
+		Assert.AreEqual(CommitDecision.ConsistencyCheckFailure, res.Decision);
 		Assert.AreEqual("ES", res.EventStreamId);
 		Assert.AreEqual(2, res.CurrentVersion);
 		Assert.AreEqual(-1, res.StartEventNumber);

@@ -386,52 +386,26 @@ public static partial class StorageMessage {
 	}
 
 	[DerivedMessage(CoreMessage.Storage)]
-	public partial class WrongExpectedVersion : Message {
-		public readonly Guid CorrelationId;
-		public readonly LowAllocReadOnlyMemory<int> FailureStreamIndexes;
-		public readonly LowAllocReadOnlyMemory<long> FailureCurrentVersions;
+	public partial class ConsistencyChecksFailed(
+		Guid correlationId,
+		LowAllocReadOnlyMemory<ConsistencyCheckFailure> failures) : Message {
 
-		public WrongExpectedVersion(Guid correlationId, LowAllocReadOnlyMemory<int> failureStreamIndexes, LowAllocReadOnlyMemory<long> failureCurrentVersions) {
-			Ensure.NotEmptyGuid(correlationId, "correlationId");
-			Ensure.Equal(failureStreamIndexes.Length, failureCurrentVersions.Length, nameof(failureStreamIndexes));
-			CorrelationId = correlationId;
-			FailureStreamIndexes = failureStreamIndexes;
-			FailureCurrentVersions = failureCurrentVersions;
-		}
+		public Guid CorrelationId => correlationId;
+		public LowAllocReadOnlyMemory<ConsistencyCheckFailure> Failures => failures;
 
-		public static WrongExpectedVersion ForSingleStream(Guid correlationId, long currentVersion) {
-			return new WrongExpectedVersion(
-				correlationId,
-				failureStreamIndexes: new(0),
-				failureCurrentVersions: new(currentVersion));
-		}
-	}
-
-	[DerivedMessage(CoreMessage.Storage)]
-	public partial class StreamDeleted : Message {
-		public readonly Guid CorrelationId;
-		public readonly int StreamIndex;
-		public readonly long CurrentVersion;
-
-		public StreamDeleted(Guid correlationId, int streamIndex, long currentVersion) {
-			Ensure.NotEmptyGuid(correlationId, nameof(correlationId));
-			CorrelationId = correlationId;
-			StreamIndex = streamIndex;
-			CurrentVersion = currentVersion;
-		}
+		public static ConsistencyChecksFailed ForSingleStream(Guid correlationId, long expectedVersion, long actualVersion, bool? isSoftDeleted) =>
+			new(correlationId, new(new ConsistencyCheckFailure(0, expectedVersion, actualVersion, isSoftDeleted)));
 	}
 
 	[DerivedMessage(CoreMessage.Storage)]
 	public partial class RequestCompleted : Message {
 		public readonly Guid CorrelationId;
 		public readonly bool Success;
-		public readonly LowAllocReadOnlyMemory<long> CurrentVersions;
 
-		public RequestCompleted(Guid correlationId, bool success, LowAllocReadOnlyMemory<long> currentVersions = default) {
+		public RequestCompleted(Guid correlationId, bool success) {
 			Ensure.NotEmptyGuid(correlationId, "correlationId");
 			CorrelationId = correlationId;
 			Success = success;
-			CurrentVersions = currentVersions;
 		}
 	}
 

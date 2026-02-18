@@ -62,7 +62,10 @@ message WriteEventsCompleted {
 	int64 last_event_number = 4;
 	int64 prepare_position = 5;
 	int64 commit_position = 6;
-	int64 current_version  = 7;
+	reserved "current_version"; // old name for field 7
+	int64 failure_current_version = 7;
+	optional bool failure_is_soft_deleted = 8;
+	optional int64 failure_expected_version = 9;
 }
 
 message WriteEventsMultiStream {
@@ -82,6 +85,14 @@ message WriteEventsMultiStreamCompleted {
   int64 commit_position = 6;
   repeated int32 failure_stream_indexes = 7;
   repeated int64 failure_current_versions  = 8;
+  repeated OptionalBool failure_is_soft_deleted = 9;
+  repeated int64 failure_expected_versions = 10;
+}
+
+enum OptionalBool {
+  OPTIONAL_BOOL_UNSPECIFIED = 0;
+  OPTIONAL_BOOL_FALSE = 1;
+  OPTIONAL_BOOL_TRUE = 2;
 }
 
 message DeleteStream {

@@ -114,12 +114,12 @@ class WriteEventsOperation(LowAllocReadOnlyMemory<string> streams, LowAllocReadO
 					OperationResult.PrepareTimeout => new ReadResponseException.Timeout($"{completed.Result}"),
 					OperationResult.CommitTimeout => new ReadResponseException.Timeout($"{completed.Result}"),
 					OperationResult.ForwardTimeout => new ReadResponseException.Timeout($"{completed.Result}"),
-					OperationResult.StreamDeleted => new ReadResponseException.StreamDeleted(streams.Span[completed.FailureStreamIndexes.Span[0]]),
+					OperationResult.StreamDeleted => new ReadResponseException.StreamDeleted(streams.Span[completed.ConsistencyCheckFailures.Span[0].StreamIndex]),
 					OperationResult.AccessDenied => new ReadResponseException.AccessDenied(),
 					OperationResult.WrongExpectedVersion => new ReadResponseException.WrongExpectedRevision(
-						stream: streams.Span[completed.FailureStreamIndexes.Span[0]],
-						expectedRevision: expectedRevisions.Span[completed.FailureStreamIndexes.Span[0]],
-						actualRevision: completed.FailureCurrentVersions.Span[0]),
+						stream: streams.Span[completed.ConsistencyCheckFailures.Span[0].StreamIndex],
+						expectedRevision: expectedRevisions.Span[completed.ConsistencyCheckFailures.Span[0].StreamIndex],
+						actualRevision: completed.ConsistencyCheckFailures.Span[0].ActualVersion),
 					_ => ReadResponseException.UnknownError.Create(completed.Result)
 				},
 				ClientMessage.NotHandled notHandled => notHandled.MapToException(),
