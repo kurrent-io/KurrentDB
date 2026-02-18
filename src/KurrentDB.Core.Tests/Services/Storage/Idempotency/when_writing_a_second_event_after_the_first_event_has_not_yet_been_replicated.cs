@@ -56,6 +56,6 @@ public class when_writing_a_second_event_after_the_first_event_has_not_yet_been_
 	public async Task check_commit_with_incorrect_expectedversion_should_return_wrongexpectedversion_decision() {
 		/*Second, idempotent write*/
 		var commitCheckResult = await _indexWriter.CheckCommit(_streamId, 1, new(_eventId), streamMightExist: true, CancellationToken.None);
-		Assert.AreEqual(CommitDecision.WrongExpectedVersion, commitCheckResult.Decision);
+		Assert.AreEqual(CommitDecision.ConsistencyCheckFailure, commitCheckResult.Decision);
 	}
 }

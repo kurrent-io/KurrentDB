@@ -14,6 +14,8 @@ namespace KurrentDB.Core.Tests.Services.RequestManagement.DeleteMgr;
 
 [TestFixture]
 public class when_delete_stream_gets_stream_deleted : RequestManagerSpecification<DeleteStream> {
+	private readonly long _expectedVersion = ExpectedVersion.StreamExists;
+
 	protected override DeleteStream OnManager(FakePublisher publisher) {
 		return new DeleteStream(
 			publisher,
@@ -22,7 +24,7 @@ public class when_delete_stream_gets_stream_deleted : RequestManagerSpecificatio
 			InternalCorrId,
 			ClientCorrId,
 			"test123",
-			ExpectedVersion.Any,
+			_expectedVersion,
 			false,
 			CommitSource);
 	}
@@ -32,7 +34,7 @@ public class when_delete_stream_gets_stream_deleted : RequestManagerSpecificatio
 	}
 
 	protected override Message When() {
-		return new StorageMessage.StreamDeleted(InternalCorrId, 0, 0);
+		return StorageMessage.ConsistencyChecksFailed.ForSingleStream(InternalCorrId, _expectedVersion, 0, true);
 	}
 
 	[Test]

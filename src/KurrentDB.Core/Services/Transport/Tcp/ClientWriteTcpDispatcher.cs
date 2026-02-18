@@ -187,8 +187,11 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 			package.CorrelationId,
 			(OperationResult)dto.Result,
 			dto.Message,
-			new(0),
-			new(dto.CurrentVersion));
+			new(new ConsistencyCheckFailure(
+				StreamIndex: 0,
+				ExpectedVersion: dto.HasFailureExpectedVersion ? dto.FailureExpectedVersion : ExpectedVersion.Invalid,
+				ActualVersion: dto.FailureCurrentVersion,
+				IsSoftDeleted: dto.HasFailureIsSoftDeleted ? dto.FailureIsSoftDeleted : null)));
 	}
 
 	private static ClientMessage.WriteEventsCompleted UnwrapWriteEventsMultiStreamCompleted(TcpPackage package, IEnvelope envelope) {
@@ -204,12 +207,33 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 				dto.PreparePosition,
 				dto.CommitPosition);
 
+
+		var failures = LowAllocReadOnlyMemory<ConsistencyCheckFailure>.Builder.Empty;
+
+		if (dto.FailureStreamIndexes.Count != dto.FailureCurrentVersions.Count)
+			throw new InvalidOperationException(
+				$"WriteEventsCompleted contains {dto.FailureStreamIndexes.Count} failure stream indexes " +
+				$"and {dto.FailureCurrentVersions.Count} failure current versions. They must be equal.");
+
+		for (var i = 0; i < dto.FailureStreamIndexes.Count; i++) {
+			failures = failures.Add(new(
+				StreamIndex: dto.FailureStreamIndexes[i],
+				ExpectedVersion: i < dto.FailureExpectedVersions.Count ? dto.FailureExpectedVersions[i] : ExpectedVersion.Invalid,
+				ActualVersion: dto.FailureCurrentVersions[i],
+				IsSoftDeleted: Convert(i < dto.FailureIsSoftDeleted.Count ? dto.FailureIsSoftDeleted[i] : OptionalBool.Unspecified)));
+		}
+
 		return new ClientMessage.WriteEventsCompleted(
 			package.CorrelationId,
 			(OperationResult)dto.Result,
 			dto.Message,
-			dto.FailureStreamIndexes.ToLowAllocReadOnlyMemory(),
-			dto.FailureCurrentVersions.ToLowAllocReadOnlyMemory());
+			failures.Build());
+
+		static bool? Convert(OptionalBool x) => x switch {
+			OptionalBool.False => false,
+			OptionalBool.True => true,
+			_ => null
+		};
 	}
 
 	private static TcpPackage WrapWriteEventsCompleted(ClientMessage.WriteEventsCompleted msg) {
@@ -223,7 +247,7 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 		// the following cases can also happen during a multi-stream write but it doesn't matter as long as the result is unwrapped properly
 		// on the other side
 
-		if (msg.FailureStreamIndexes.Span.IsEmpty || msg.FailureStreamIndexes.Span is [ 0 ])
+		if (msg.ConsistencyCheckFailures.Span is [] or [{ StreamIndex: 0 }])
 			return WrapWriteEventsCompletedForSingleStream(msg);
 
 		return WrapWriteEventsCompletedForMultiStream(msg);
@@ -240,9 +264,15 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 				: EventNumber.Invalid, /* for backwards compatibility */
 			msg.PreparePosition,
 			msg.CommitPosition,
-			msg.FailureCurrentVersions.Length is 1
-				? msg.FailureCurrentVersions.Single
-				: msg.Result is OperationResult.Success ? 0L : -1L /* for backwards compatibility */);
+			failureCurrentVersion: msg.ConsistencyCheckFailures.Length is 1
+				? msg.ConsistencyCheckFailures.Single.ActualVersion
+				: msg.Result is OperationResult.Success ? 0L : -1L /* for backwards compatibility */,
+			failureIsSoftDeleted: msg.ConsistencyCheckFailures.Length is 1
+				? msg.ConsistencyCheckFailures.Single.IsSoftDeleted
+				: false,
+			failureExpectedVersion: msg.ConsistencyCheckFailures.Length is 1
+				? msg.ConsistencyCheckFailures.Single.ExpectedVersion
+				: ExpectedVersion.Invalid);
 		return new(TcpCommand.WriteEventsCompleted, msg.CorrelationId, dto.Serialize());
 	}
 
@@ -254,8 +284,7 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 			msg.LastEventNumbers.Span,
 			msg.PreparePosition,
 			msg.CommitPosition,
-			msg.FailureCurrentVersions.Span,
-			msg.FailureStreamIndexes.Span);
+			msg.ConsistencyCheckFailures.Span);
 		return new(TcpCommand.WriteEventsMultiStreamCompleted, msg.CorrelationId, dto.Serialize());
 	}
 

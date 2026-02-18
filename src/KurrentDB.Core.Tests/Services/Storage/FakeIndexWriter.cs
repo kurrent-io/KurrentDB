@@ -29,12 +29,12 @@ public class FakeIndexWriter<TStreamId> : IIndexWriter<TStreamId> {
 	}
 
 	public ValueTask<CommitCheckResult<TStreamId>> CheckCommitStartingAt(long transactionPosition, long commitPosition, CancellationToken token) {
-		return ValueTask.FromResult(new CommitCheckResult<TStreamId>(CommitDecision.Ok, GetFakeStreamId(), -1, -1, -1, false));
+		return ValueTask.FromResult(new CommitCheckResult<TStreamId>(CommitDecision.Ok, GetFakeStreamId(), ExpectedVersion.Invalid, -1, -1, -1, false));
 	}
 
 	public ValueTask<CommitCheckResult<TStreamId>> CheckCommit(TStreamId streamId, long expectedVersion, LowAllocReadOnlyMemory<Guid> eventIds, bool streamMightExist,
 		CancellationToken token) {
-		return ValueTask.FromResult(new CommitCheckResult<TStreamId>(CommitDecision.Ok, streamId, expectedVersion, -1, -1, false));
+		return ValueTask.FromResult(new CommitCheckResult<TStreamId>(CommitDecision.Ok, streamId, expectedVersion, expectedVersion, -1, -1, false));
 	}
 
 	public ValueTask PreCommit(CommitLogRecord commit, CancellationToken token)

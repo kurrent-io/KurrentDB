@@ -119,7 +119,7 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 			streamId = prepare.EventStreamId;
 			expectedVersion = prepare.ExpectedVersion;
 		} catch (InvalidOperationException) {
-			return new(CommitDecision.InvalidTransaction, _emptyStreamId, -1, -1, -1, false);
+			return new(CommitDecision.InvalidTransaction, _emptyStreamId, ExpectedVersion.Invalid, -1, -1, -1, isSoftDeleted: null);
 		}
 
 		// we should skip prepares without data, as they don't mean anything for idempotency
@@ -143,10 +143,10 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 	private static CommitCheckResult<TStreamId> CheckCommitForNewStream(TStreamId streamId, long expectedVersion) {
 		var commitDecision = expectedVersion switch {
 			ExpectedVersion.Any or ExpectedVersion.NoStream => CommitDecision.Ok,
-			_ => CommitDecision.WrongExpectedVersion
+			_ => CommitDecision.ConsistencyCheckFailure
 		};
 
-		return new(commitDecision, streamId, ExpectedVersion.NoStream, -1, -1, false);
+		return new(commitDecision, streamId, expectedVersion, ExpectedVersion.NoStream, -1, -1, isSoftDeleted: false);
 	}
 
 	public async ValueTask<CommitCheckResult<TStreamId>> CheckCommit(TStreamId streamId, long expectedVersion, LowAllocReadOnlyMemory<Guid> eventIds, bool streamMightExist, CancellationToken token) {
@@ -160,28 +160,28 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 			case EventNumber.DeletedStream:
 				if (eventIds.Length > 0)
 					// we're trying to append events to the hard deleted stream - that's not possible regardless of the specified expected version
-					return new(CommitDecision.Deleted, streamId, curVersion, -1, -1, false);
+					return new(CommitDecision.ConsistencyCheckFailure, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: false);
 
 				// we're not appending any events to the hard deleted stream - we're only doing a consistency check on the stream's version
 
 				if (expectedVersion is ExpectedVersion.Any or EventNumber.DeletedStream)
 					// the specified expected version matches the stream's current state
-					return new(CommitDecision.Ok, streamId, curVersion, -1, -1, false);
+					return new(CommitDecision.Ok, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: false);
 
 				// the specified expected version doesn't match the stream's current state
-				return new(CommitDecision.WrongExpectedVersion, streamId, curVersion, -1, -1, false);
+				return new(CommitDecision.ConsistencyCheckFailure, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: false);
 			case EventNumber.Invalid:
-				return new(CommitDecision.WrongExpectedVersion, streamId, curVersion, -1, -1, false);
+				return new(CommitDecision.ConsistencyCheckFailure, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: null);
 		}
 
 		if (expectedVersion is ExpectedVersion.StreamExists) {
 			if (await IsSoftDeleted(streamId, token))
-				return new(CommitDecision.Deleted, streamId, curVersion, -1, -1, true);
+				return new(CommitDecision.ConsistencyCheckFailure, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: true);
 
 			if (curVersion < 0) {
 				var metadataVersion = await GetStreamLastEventNumber(_systemStreams.MetaStreamOf(streamId), token);
 				if (metadataVersion < 0)
-					return new(CommitDecision.WrongExpectedVersion, streamId, curVersion, -1, -1, false);
+					return new(CommitDecision.ConsistencyCheckFailure, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: false);
 			}
 		}
 
@@ -193,8 +193,16 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 			for (var i = 0; i < eventIds.Length; i++) {
 				var eventId = eventIds.Span[i];
 				if (!_committedEvents.TryGetRecord(eventId, out var prepInfo) || !StreamIdComparer.Equals(prepInfo.StreamId, streamId))
-					return new(first ? CommitDecision.Ok : CommitDecision.CorruptedIdempotency,
-						streamId, curVersion, -1, -1, first && await IsSoftDeleted(streamId, token));
+					return new(
+						decision: first ? CommitDecision.Ok : CommitDecision.CorruptedIdempotency,
+						eventStreamId: streamId,
+						expectedVersion: expectedVersion,
+						currentVersion: curVersion,
+						startEventNumber: -1,
+						endEventNumber: -1,
+						isSoftDeleted: first
+							? await IsSoftDeleted(streamId, token)
+							: null);
 				if (first)
 					startEventNumber = prepInfo.EventNumber;
 				endEventNumber = prepInfo.EventNumber;
@@ -202,7 +210,7 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 			}
 
 			if (first) /*no data in transaction*/
-				return new(CommitDecision.Ok, streamId, curVersion, -1, -1, await IsSoftDeleted(streamId, token));
+				return new(CommitDecision.Ok, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: await IsSoftDeleted(streamId, token));
 			var isReplicated = await _indexReader.GetStreamLastEventNumber(streamId, token) >= endEventNumber;
 			//TODO(clc): the new index should hold the log positions removing this read
 			//n.b. the index will never have the event in the case of NotReady as it only committed records are indexed
@@ -212,8 +220,8 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 				? idempotentEvent.Record.LogPosition
 				: -1;
 			return isReplicated
-				? new(CommitDecision.Idempotent, streamId, curVersion, startEventNumber, endEventNumber, false, logPos)
-				: new(CommitDecision.IdempotentNotReady, streamId, curVersion, startEventNumber, endEventNumber, false, logPos);
+				? new(CommitDecision.Idempotent, streamId, expectedVersion, curVersion, startEventNumber, endEventNumber, isSoftDeleted: null, logPos)
+				: new(CommitDecision.IdempotentNotReady, streamId, expectedVersion, curVersion, startEventNumber, endEventNumber, isSoftDeleted: null, logPos);
 		}
 
 		if (expectedVersion < curVersion) {
@@ -232,16 +240,16 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 
 				var first = eventNumber == expectedVersion + 1;
 				if (!first)
-					return new(CommitDecision.CorruptedIdempotency, streamId, curVersion, -1, -1, false);
+					return new(CommitDecision.CorruptedIdempotency, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: null);
 
 				if (expectedVersion is ExpectedVersion.NoStream && await IsSoftDeleted(streamId, token))
-					return new(CommitDecision.Ok, streamId, curVersion, -1, -1, true);
+					return new(CommitDecision.Ok, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: true);
 
-				return new(CommitDecision.WrongExpectedVersion, streamId, curVersion, -1, -1, false);
+				return new(CommitDecision.ConsistencyCheckFailure, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: null);
 			}
 
 			if (eventNumber == expectedVersion) /* no data in transaction */
-				return new(CommitDecision.WrongExpectedVersion, streamId, curVersion, -1, -1, false);
+				return new(CommitDecision.ConsistencyCheckFailure, streamId, expectedVersion, curVersion, -1, -1,  isSoftDeleted: null);
 
 			var isReplicated = await _indexReader.GetStreamLastEventNumber(streamId, token) >= eventNumber;
 			//TODO(clc): the new index should hold the log positions removing this read
@@ -255,15 +263,16 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 
 			return new(
 				isReplicated ? CommitDecision.Idempotent : CommitDecision.IdempotentNotReady, streamId,
+				expectedVersion,
 				curVersion,
-				expectedVersion + 1, eventNumber, false, logPos);
+				expectedVersion + 1, eventNumber,  isSoftDeleted: null, logPos);
 		}
 
 		if (expectedVersion > curVersion)
-			return new(CommitDecision.WrongExpectedVersion, streamId, curVersion, -1, -1, false);
+			return new(CommitDecision.ConsistencyCheckFailure, streamId, expectedVersion, curVersion, -1, -1,  isSoftDeleted: null);
 
 		// expectedVersion == currentVersion
-		return new(CommitDecision.Ok, streamId, curVersion, -1, -1, await IsSoftDeleted(streamId, token));
+		return new(CommitDecision.Ok, streamId, expectedVersion, curVersion, -1, -1,  isSoftDeleted: await IsSoftDeleted(streamId, token));
 	}
 
 	public async ValueTask PreCommit(CommitLogRecord commit, CancellationToken token) {

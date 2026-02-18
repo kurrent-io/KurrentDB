@@ -65,7 +65,7 @@ public class when_writing_a_second_batch_of_events_after_the_first_batch_has_bee
 	[Test]
 	public async Task check_commit_with_incorrect_expectedversion_should_return_wrongexpectedversion_decision() {
 		var commitCheckResult = await _indexWriter.CheckCommit(_streamId, _numEvents, _eventIds.ToArray(), streamMightExist: true, CancellationToken.None);
-		Assert.AreEqual(CommitDecision.WrongExpectedVersion, commitCheckResult.Decision);
+		Assert.AreEqual(CommitDecision.ConsistencyCheckFailure, commitCheckResult.Decision);
 	}
 
 	[Test]
@@ -91,6 +91,6 @@ public class when_writing_a_second_batch_of_events_after_the_first_batch_has_bee
 		ids[0] = Guid.NewGuid();
 
 		var commitCheckResult = await _indexWriter.CheckCommit(_streamId, -1, ids.ToArray(), streamMightExist: true, CancellationToken.None);
-		Assert.AreEqual(CommitDecision.WrongExpectedVersion, commitCheckResult.Decision);
+		Assert.AreEqual(CommitDecision.ConsistencyCheckFailure, commitCheckResult.Decision);
 	}
 }

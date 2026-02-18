@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
+using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.RequestManager.Managers;
@@ -32,7 +33,7 @@ public class when_transaction_commit_gets_stream_deleted : RequestManagerSpecifi
 	}
 
 	protected override Message When() {
-		return new StorageMessage.StreamDeleted(InternalCorrId, 0, 0);
+		return StorageMessage.ConsistencyChecksFailed.ForSingleStream(InternalCorrId, ExpectedVersion.StreamExists, 0, true);
 	}
 
 	[Test]

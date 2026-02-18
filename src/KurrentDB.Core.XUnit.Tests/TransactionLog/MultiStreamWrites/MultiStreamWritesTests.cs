@@ -51,8 +51,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		Assert.Equal([0, 0], completed.FirstEventNumbers.ToArray());
 		Assert.Equal([0, 0], completed.LastEventNumbers.ToArray());
 		Assert.Equal(correlationId, completed.CorrelationId);
-		Assert.Equal(0, completed.FailureCurrentVersions.Length);
-		Assert.Equal(0, completed.FailureStreamIndexes.Length);
+		Assert.Equal(0, completed.ConsistencyCheckFailures.Length);
 		Assert.True(completed.PreparePosition > 0);
 		Assert.Equal(completed.PreparePosition, completed.CommitPosition);
 
@@ -647,8 +646,10 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		Assert.Equal(OperationResult.WrongExpectedVersion, completed.Result);
 		Assert.Equal(0, completed.FirstEventNumbers.Length);
 		Assert.Equal(0, completed.LastEventNumbers.Length);
-		Assert.Equal([0, 2], completed.FailureStreamIndexes.ToArray());
-		Assert.Equal([-1, -1], completed.FailureCurrentVersions.ToArray());
+		Assert.Equal([
+			new(0, 1, -1, null),
+			new(2, 2, -1, null),
+		], completed.ConsistencyCheckFailures.ToArray());
 	}
 
 	[Fact]
@@ -665,8 +666,10 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			eventStreamIndexes: [0, 1, 2]);
 
 		Assert.Equal(OperationResult.WrongExpectedVersion, completed.Result);
-		Assert.Equal([1, 2], completed.FailureStreamIndexes.ToArray());
-		Assert.Equal([-1, -1], completed.FailureCurrentVersions.ToArray());
+		Assert.Equal([
+			new(1, ExpectedVersion.StreamExists, -1, false),
+			new(2, ExpectedVersion.StreamExists, -1, false),
+		], completed.ConsistencyCheckFailures.ToArray());
 	}
 
 	[Fact]
@@ -690,8 +693,10 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			eventStreamIndexes: [0, 0, 1]);
 
 		Assert.Equal(OperationResult.WrongExpectedVersion, completed.Result);
-		Assert.Equal([0, 1], completed.FailureStreamIndexes.ToArray());
-		Assert.Equal([1, 0], completed.FailureCurrentVersions.ToArray());
+		Assert.Equal([
+			new(0, -1, 1, null),
+			new(1, -1, 0, null),
+		], completed.ConsistencyCheckFailures.ToArray());
 	}
 
 	[Fact]
@@ -708,6 +713,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		var eventC0 = NewEvent;
 		var eventC1 = NewEvent;
 
+		// write A0, B0, C0, A1, B1, C1
 		var completed = await WriteEvents(
 			eventStreamIds: [A, B, C],
 			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any, ExpectedVersion.Any],
@@ -726,30 +732,36 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		Assert.Equal(OperationResult.WrongExpectedVersion, completed.Result);
 		Assert.Equal(0, completed.FirstEventNumbers.Length);
 		Assert.Equal(0, completed.LastEventNumbers.Length);
-		Assert.Equal(0, completed.FailureStreamIndexes.Length); // an empty array means corrupted idempotency
-		Assert.Equal(0, completed.FailureCurrentVersions.Length); // an empty array means corrupted idempotency
+		Assert.Equal([
+			new(1, ExpectedVersion.Any, 1, null), // the state of stream B prevented the write.
+		], completed.ConsistencyCheckFailures.ToArray());
 
 		// events written to: A use a wrong expected version, B are idempotent, C are idempotent
 		completed = await WriteEvents(
 			eventStreamIds: [A, B, C],
-			expectedVersions: [ExpectedVersion.NoStream, 1, 1],
+			expectedVersions: [ExpectedVersion.NoStream, 0, 0],
 			events: [eventA0, eventB0, eventC0, eventA1, eventB1, eventC1],
 			eventStreamIndexes: [0, 1, 2, 0, 1, 2]);
 
 		Assert.Equal(OperationResult.WrongExpectedVersion, completed.Result);
-		Assert.Equal(0, completed.FailureStreamIndexes.Length); // an empty array means corrupted idempotency
-		Assert.Equal(0, completed.FailureCurrentVersions.Length); // an empty array means corrupted idempotency
+		Assert.Equal([
+			new(0, -1, 1, null),
+			new(1, 0, 1, null),
+			new(2, 0, 1, null),
+		], completed.ConsistencyCheckFailures.ToArray());
 
 		// events written to: A are new, B use a wrong expected version, C are idempotent
 		completed = await WriteEvents(
 			eventStreamIds: [A, B, C],
-			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.NoStream, 1],
+			expectedVersions: [1, ExpectedVersion.NoStream, 0],
 			events: [NewEvent, eventB0, eventC0, NewEvent, eventB1, eventC1],
 			eventStreamIndexes: [0, 1, 2, 0, 1, 2]);
 
 		Assert.Equal(OperationResult.WrongExpectedVersion, completed.Result);
-		Assert.Equal(0, completed.FailureStreamIndexes.Length); // an empty array means corrupted idempotency
-		Assert.Equal(0, completed.FailureCurrentVersions.Length); // an empty array means corrupted idempotency
+		Assert.Equal([
+			new(1, -1, 1, null),
+			new(2, 0, 1, null),
+		], completed.ConsistencyCheckFailures.ToArray());
 
 		// events written to: A are partly idempotent and partly new
 		completed = await WriteEvents(
@@ -760,8 +772,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 
 		Assert.Equal(OperationResult.WrongExpectedVersion, completed.Result);
 		// for backwards compatibility, the arrays are populated when there is a single stream
-		Assert.Equal([0], completed.FailureStreamIndexes.ToArray());
-		Assert.Equal([1], completed.FailureCurrentVersions.ToArray());
+		Assert.Equal([new(0, -1, 1, null)], completed.ConsistencyCheckFailures.ToArray());
 	}
 
 	[Fact]
@@ -788,8 +799,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			eventStreamIndexes: [0, 0, 1]);
 
 		Assert.Equal(OperationResult.StreamDeleted, completed.Result);
-		Assert.Equal([1], completed.FailureStreamIndexes.ToArray());
-		Assert.Equal([EventNumber.DeletedStream], completed.FailureCurrentVersions.ToArray());
+		Assert.Equal([new(1, ExpectedVersion.Any, EventNumber.DeletedStream, false)], completed.ConsistencyCheckFailures.ToArray());
 	}
 
 	[Fact]
@@ -954,8 +964,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		Assert.Equal(OperationResult.WrongExpectedVersion, completed.Result);
 		Assert.Equal(0, completed.FirstEventNumbers.Length);
 		Assert.Equal(0, completed.LastEventNumbers.Length);
-		Assert.Equal([2], completed.FailureStreamIndexes.ToArray());
-		Assert.Equal([-1], completed.FailureCurrentVersions.ToArray());
+		Assert.Equal([new(2, ExpectedVersion.StreamExists, -1, false)], completed.ConsistencyCheckFailures.ToArray());
 	}
 
 	[Fact]
@@ -989,8 +998,10 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		Assert.Equal(OperationResult.WrongExpectedVersion, completed.Result);
 		Assert.Equal(0, completed.FirstEventNumbers.Length);
 		Assert.Equal(0, completed.LastEventNumbers.Length);
-		Assert.Equal([1, 3], completed.FailureStreamIndexes.ToArray());
-		Assert.Equal([-1, -1], completed.FailureCurrentVersions.ToArray());
+		Assert.Equal([
+			new(1, ExpectedVersion.StreamExists, -1, false),
+			new(3, ExpectedVersion.StreamExists, -1, false),
+		], completed.ConsistencyCheckFailures.ToArray());
 	}
 
 	[Fact]
@@ -1008,8 +1019,10 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		Assert.Equal(OperationResult.WrongExpectedVersion, completed.Result);
 		Assert.Equal(0, completed.FirstEventNumbers.Length);
 		Assert.Equal(0, completed.LastEventNumbers.Length);
-		Assert.Equal([0, 1], completed.FailureStreamIndexes.ToArray());
-		Assert.Equal([-1, -1], completed.FailureCurrentVersions.ToArray());
+		Assert.Equal([
+			new(0, ExpectedVersion.StreamExists, -1, false),
+			new(1, ExpectedVersion.StreamExists, -1, false),
+		], completed.ConsistencyCheckFailures.ToArray());
 	}
 
 	[Fact]
@@ -1027,9 +1040,8 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			events: [NewEvent, NewEvent, NewEvent],
 			eventStreamIndexes: [0, 1, 0]);
 
-		Assert.Equal(OperationResult.WrongExpectedVersion, completed.Result);
-		Assert.Equal([2], completed.FailureStreamIndexes.ToArray());
-		Assert.Equal([EventNumber.DeletedStream], completed.FailureCurrentVersions.ToArray());
+		Assert.Equal(OperationResult.StreamDeleted, completed.Result);
+		Assert.Equal([new(2, ExpectedVersion.StreamExists, EventNumber.DeletedStream, false)], completed.ConsistencyCheckFailures.ToArray());
 	}
 
 	private Task<ClientMessage.WriteEventsCompleted> WriteEvents(

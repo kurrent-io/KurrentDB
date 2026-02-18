@@ -5,6 +5,7 @@ using System;
 using System.Net;
 using Google.Protobuf;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 
 // ReSharper disable once CheckNamespace
@@ -118,7 +119,8 @@ partial class WriteEvents {
 }
 
 partial class WriteEventsCompleted {
-	public WriteEventsCompleted(OperationResult result, string message, long firstEventNumber, long lastEventNumber, long preparePosition, long commitPosition, long currentVersion) {
+	public WriteEventsCompleted(OperationResult result, string message, long firstEventNumber, long lastEventNumber, long preparePosition, long commitPosition, long failureCurrentVersion,
+		bool? failureIsSoftDeleted, long failureExpectedVersion) {
 		Result = result;
 		if (message != null)
 			Message = message;
@@ -126,7 +128,10 @@ partial class WriteEventsCompleted {
 		LastEventNumber = lastEventNumber;
 		PreparePosition = preparePosition;
 		CommitPosition = commitPosition;
-		CurrentVersion = currentVersion;
+		FailureCurrentVersion = failureCurrentVersion;
+		if (failureIsSoftDeleted.HasValue)
+			FailureIsSoftDeleted = failureIsSoftDeleted.Value;
+		FailureExpectedVersion = failureExpectedVersion;
 	}
 }
 
@@ -141,7 +146,15 @@ partial class WriteEventsMultiStream {
 }
 
 partial class WriteEventsMultiStreamCompleted {
-	public WriteEventsMultiStreamCompleted(OperationResult result, string message, ReadOnlySpan<long> firstEventNumbers, ReadOnlySpan<long> lastEventNumbers, long preparePosition, long commitPosition, ReadOnlySpan<long> failureCurrentVersions, ReadOnlySpan<int> failureStreamIndexes) {
+	public WriteEventsMultiStreamCompleted(
+		OperationResult result,
+		string message,
+		ReadOnlySpan<long> firstEventNumbers,
+		ReadOnlySpan<long> lastEventNumbers,
+		long preparePosition,
+		long commitPosition,
+		ReadOnlySpan<ConsistencyCheckFailure> failures) {
+
 		Result = result;
 		if (message != null)
 			Message = message;
@@ -149,9 +162,19 @@ partial class WriteEventsMultiStreamCompleted {
 		LastEventNumbers.AddRange(lastEventNumbers);
 		PreparePosition = preparePosition;
 		CommitPosition = commitPosition;
-		FailureCurrentVersions.AddRange(failureCurrentVersions);
-		FailureStreamIndexes.AddRange(failureStreamIndexes);
+
+		foreach (ref readonly var x in failures) {
+			FailureStreamIndexes.Add(x.StreamIndex);
+			FailureCurrentVersions.Add(x.ActualVersion);
+			FailureIsSoftDeleted.Add(Convert(x.IsSoftDeleted));
+		}
 	}
+
+	static OptionalBool Convert(bool? x) => x switch {
+		false => OptionalBool.False,
+		true => OptionalBool.True,
+		_ => OptionalBool.Unspecified,
+	};
 }
 
 partial class DeleteStream {

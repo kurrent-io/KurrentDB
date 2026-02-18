@@ -14,6 +14,8 @@ namespace KurrentDB.Core.Tests.Services.RequestManagement.WriteStreamMgr;
 
 [TestFixture]
 public class when_write_stream_gets_stream_deleted : RequestManagerSpecification<WriteEvents> {
+	private readonly long _expectedVersion = ExpectedVersion.StreamExists;
+
 	protected override WriteEvents OnManager(FakePublisher publisher) {
 		return WriteEvents.ForSingleStream(
 			publisher,
@@ -22,7 +24,7 @@ public class when_write_stream_gets_stream_deleted : RequestManagerSpecification
 			InternalCorrId,
 			ClientCorrId,
 			"test123",
-			ExpectedVersion.Any,
+			_expectedVersion,
 			new(DummyEvent()),
 			CommitSource);
 	}
@@ -32,7 +34,7 @@ public class when_write_stream_gets_stream_deleted : RequestManagerSpecification
 	}
 
 	protected override Message When() {
-		return new StorageMessage.StreamDeleted(InternalCorrId, 0, 0);
+		return StorageMessage.ConsistencyChecksFailed.ForSingleStream(InternalCorrId, _expectedVersion, 0, true);
 	}
 
 	[Test]

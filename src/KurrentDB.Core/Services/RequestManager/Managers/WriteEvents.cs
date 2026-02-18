@@ -95,6 +95,5 @@ public class WriteEvents : RequestManagerBase {
 			 ClientCorrId,
 			 Result,
 			 FailureMessage,
-			 FailureStreamIndexes,
-			 FailureCurrentVersions);
+			 ConsistencyCheckFailures);
 }

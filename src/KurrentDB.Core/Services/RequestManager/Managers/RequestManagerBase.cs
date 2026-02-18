@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Threading;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.TransactionLog.LogRecords;
@@ -18,8 +19,7 @@ public abstract class RequestManagerBase :
 	IHandle<StorageMessage.UncommittedPrepareChased>,
 	IHandle<StorageMessage.CommitIndexed>,
 	IHandle<StorageMessage.InvalidTransaction>,
-	IHandle<StorageMessage.StreamDeleted>,
-	IHandle<StorageMessage.WrongExpectedVersion>,
+	IHandle<StorageMessage.ConsistencyChecksFailed>,
 	IHandle<StorageMessage.AlreadyCommitted>,
 	IHandle<StorageMessage.RequestManagerTimerTick>,
 	IDisposable {
@@ -38,8 +38,7 @@ public abstract class RequestManagerBase :
 	protected LowAllocReadOnlyMemory<long> FirstEventNumbers;
 	protected LowAllocReadOnlyMemory<long> LastEventNumbers;
 	protected string FailureMessage = string.Empty;
-	protected LowAllocReadOnlyMemory<int> FailureStreamIndexes;
-	protected LowAllocReadOnlyMemory<long> FailureCurrentVersions;
+	protected LowAllocReadOnlyMemory<ConsistencyCheckFailure> ConsistencyCheckFailures;
 	protected long TransactionId;
 
 	protected readonly CommitSource CommitSource;
@@ -161,15 +160,28 @@ public abstract class RequestManagerBase :
 	public void Handle(StorageMessage.InvalidTransaction message) {
 		CompleteFailedRequest(OperationResult.InvalidTransaction, "Invalid transaction.");
 	}
-	public void Handle(StorageMessage.WrongExpectedVersion message) {
-		FailureStreamIndexes = message.FailureStreamIndexes;
-		FailureCurrentVersions = message.FailureCurrentVersions;
-		CompleteFailedRequest(OperationResult.WrongExpectedVersion, "Wrong expected version.", message.FailureCurrentVersions);
-	}
-	public void Handle(StorageMessage.StreamDeleted message) {
-		FailureStreamIndexes = new(message.StreamIndex);
-		FailureCurrentVersions = new(message.CurrentVersion);
-		CompleteFailedRequest(OperationResult.StreamDeleted, "Stream is deleted.");
+	public void Handle(StorageMessage.ConsistencyChecksFailed message) {
+		// ConsistencyChecks have failed, but for backwards compatibility we do not have a ConsistencyChecksFailed
+		// status (we need to consider inter-node request forwarding).
+		// We pick a status here that maintains backwards compatibility with existing consumers.
+		// Consumers do not need to distinguish between WrongExpectedVersion and StreamDeleted, they can treat
+		// both the same and look at the failures themselves for full information.
+		ConsistencyCheckFailures = message.Failures;
+
+		foreach (ref readonly var failure in ConsistencyCheckFailures) {
+			// Before we allowed appends conditional on _other_ streams, StreamDeleted was sent in two cases:
+			// - the checked stream was tombstoned
+			// - the checked stream was soft deleted but expected to be `StreamExists`
+			// So we respect these here.
+			var tombstoned = failure.ActualVersion is EventNumber.DeletedStream;
+			var softDeleted = failure.ExpectedVersion is ExpectedVersion.StreamExists && failure.IsSoftDeleted is true;
+			if (tombstoned || softDeleted) {
+				CompleteFailedRequest(OperationResult.StreamDeleted, "Stream is deleted.");
+				return;
+			}
+		}
+
+		CompleteFailedRequest(OperationResult.WrongExpectedVersion, "Wrong expected version.");
 	}
 	public void Handle(StorageMessage.AlreadyCommitted message) {
 		if (Interlocked.Read(ref _complete) == 1 || _allEventsWritten) { return; }
@@ -189,12 +201,12 @@ public abstract class RequestManagerBase :
 		}
 	}
 
-	private void CompleteFailedRequest(OperationResult result, string error, LowAllocReadOnlyMemory<long> currentVersions = default) {
+	private void CompleteFailedRequest(OperationResult result, string error) {
 		Debug.Assert(result != OperationResult.Success);
 		if (Interlocked.CompareExchange(ref _complete, 1, 0) == 1) { return; }
 		Result = result;
 		FailureMessage = error;
-		Publisher.Publish(new StorageMessage.RequestCompleted(InternalCorrId, false, currentVersions));
+		Publisher.Publish(new StorageMessage.RequestCompleted(InternalCorrId, false));
 		_clientResponseEnvelope.ReplyWith(ClientFailMsg);
 	}
 
