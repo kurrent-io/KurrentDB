@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.UserManagement;
 using Xunit;
@@ -24,6 +25,12 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		isJson: false,
 		data: new string('#', dataSize),
 		metadata: "metadata");
+
+	private static Event CreateMetadataEvent(StreamMetadata metadata) => new(
+		eventId: Guid.NewGuid(),
+		eventType: SystemEventTypes.StreamMetadata,
+		isJson: true,
+		data: metadata.ToJsonBytes());
 
 	[Fact]
 	public async Task succeeds() {
@@ -345,6 +352,13 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		Assert.Equal(OperationResult.Success, completed.Result);
 		Assert.Equal([2, 1], completed.FirstEventNumbers.ToArray());
 		Assert.Equal([3, 1], completed.LastEventNumbers.ToArray());
+
+		// not necessarily immediately true because the undeletes are not yet transactional with the writes
+		await AssertEx.IsOrBecomesTrueAsync(async () => {
+			// B is undeleted
+			var read = await ReadEvents(B);
+			return read.Result == ReadStreamResult.Success && read.Events.Count == 1;
+		});
 	}
 
 	[Fact]
@@ -363,6 +377,258 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			eventStreamIndexes: [0, 1]);
 
 		Assert.Equal(OperationResult.Success, completed.Result);
+	}
+
+	[Fact]
+	public async Task succeeds_with_conditional_append() {
+		const string test = nameof(succeeds_with_conditional_append);
+		var A = $"{test}-a";
+		var B = $"{test}-b";
+		var C = $"{test}-c"; // conditional stream (valid condition: NoStream)
+
+		var completed = await WriteEvents(
+			eventStreamIds: [A, B, C],
+			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any, ExpectedVersion.NoStream],
+			events: [NewEvent, NewEvent, NewEvent],
+			eventStreamIndexes: [0, 1, 0]);
+
+		Assert.Equal(OperationResult.Success, completed.Result);
+		Assert.Equal([0, 0], completed.FirstEventNumbers.ToArray());
+		Assert.Equal([1, 0], completed.LastEventNumbers.ToArray());
+	}
+
+	[Fact]
+	public async Task succeeds_with_conditional_appends() {
+		const string test = nameof(succeeds_with_conditional_appends);
+		var A = $"{test}-a";
+		var B = $"{test}-b"; // conditional stream (valid condition: NoStream)
+		var C = $"{test}-c"; // conditional stream (valid condition: NoStream)
+
+		var completed = await WriteEvents(
+			eventStreamIds: [A, B, C],
+			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.NoStream, ExpectedVersion.NoStream],
+			events: [NewEvent, NewEvent, NewEvent],
+			eventStreamIndexes: [0, 0, 0]);
+
+		Assert.Equal(OperationResult.Success, completed.Result);
+		Assert.Equal([0], completed.FirstEventNumbers.ToArray());
+		Assert.Equal([2], completed.LastEventNumbers.ToArray());
+	}
+
+	[Fact]
+	public async Task succeeds_with_conditional_append_on_deleted_stream_and_exp_ver_any() {
+		const string test = nameof(succeeds_with_conditional_append_on_deleted_stream_and_exp_ver_any);
+		var A = $"{test}-a";
+		var B = $"{test}-b";
+		var C = $"{test}-c"; // conditional stream (hard deleted, valid condition: Any)
+
+		await DeleteStream(C, hardDelete: true);
+
+		var completed = await WriteEvents(
+			eventStreamIds: [A, B, C],
+			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any, ExpectedVersion.Any],
+			events: [NewEvent, NewEvent, NewEvent],
+			eventStreamIndexes: [0, 1, 0]);
+
+		Assert.Equal(OperationResult.Success, completed.Result);
+		Assert.Equal([0, 0], completed.FirstEventNumbers.ToArray());
+		Assert.Equal([1, 0], completed.LastEventNumbers.ToArray());
+	}
+
+	[Fact]
+	public async Task succeeds_with_conditional_append_on_deleted_stream_and_exp_ver_deleted_stream() {
+		const string test = nameof(succeeds_with_conditional_append_on_deleted_stream_and_exp_ver_deleted_stream);
+		var A = $"{test}-a";
+		var B = $"{test}-b";
+		var C = $"{test}-c"; // conditional stream (hard deleted, valid condition: DeletedStream)
+
+		await DeleteStream(C, hardDelete: true);
+
+		var completed = await WriteEvents(
+			eventStreamIds: [A, B, C],
+			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any, EventNumber.DeletedStream],
+			events: [NewEvent, NewEvent, NewEvent],
+			eventStreamIndexes: [0, 1, 0]);
+
+		Assert.Equal(OperationResult.Success, completed.Result);
+		Assert.Equal([0, 0], completed.FirstEventNumbers.ToArray());
+		Assert.Equal([1, 0], completed.LastEventNumbers.ToArray());
+	}
+
+	[Fact]
+	public async Task undeletes_stream_on_empty_write() {
+		const string test = nameof(undeletes_stream_on_empty_write);
+		var A = $"{test}-a";
+
+		// write an event to A so it can be soft-deleted
+		await WriteEvents(
+			eventStreamIds: [A],
+			expectedVersions: [ExpectedVersion.Any],
+			events: [NewEvent],
+			eventStreamIndexes: []);
+
+		await DeleteStream(A, hardDelete: false);
+
+		// verify A is soft-deleted (reads as NoStream)
+		var read = await ReadEvents(A);
+		Assert.Equal(ReadStreamResult.NoStream, read.Result);
+
+		// empty write to the soft-deleted stream should undelete it
+		var completed = await WriteEvents(
+			eventStreamIds: [A],
+			expectedVersions: [ExpectedVersion.Any],
+			events: [],
+			eventStreamIndexes: []);
+
+		Assert.Equal(OperationResult.Success, completed.Result);
+
+		// not necessarily immediately true because the undeletes are not yet transactional with the writes
+		await AssertEx.IsOrBecomesTrueAsync(async () => {
+			// A is undeleted
+			read = await ReadEvents(A);
+			return read.Result == ReadStreamResult.Success && read.Events is [];
+		});
+	}
+
+	[Fact]
+	public async Task undeletes_stream_on_metadata_write() {
+		const string test = nameof(undeletes_stream_on_metadata_write);
+		var A = $"{test}-a";
+		var metaA = SystemStreams.MetastreamOf(A);
+
+		// write an event to A so it can be soft-deleted
+		await WriteEvents(
+			eventStreamIds: [A],
+			expectedVersions: [ExpectedVersion.Any],
+			events: [NewEvent],
+			eventStreamIndexes: []);
+
+		await DeleteStream(A, hardDelete: false);
+
+		// verify A is soft-deleted (reads as NoStream)
+		var read = await ReadEvents(A);
+		Assert.Equal(ReadStreamResult.NoStream, read.Result);
+
+		// writing a metadata record to $$A should undelete A
+		var completed = await WriteEvents(
+			eventStreamIds: [metaA],
+			expectedVersions: [ExpectedVersion.Any],
+			events: [CreateMetadataEvent(new(maxCount: 2))],
+			eventStreamIndexes: []);
+
+		Assert.Equal(OperationResult.Success, completed.Result);
+
+		// not necessarily immediately true because the undeletes are not yet transactional with the writes
+		await AssertEx.IsOrBecomesTrueAsync(async () => {
+			// A is undeleted
+			read = await ReadEvents(A);
+			return read.Result == ReadStreamResult.Success && read.Events is [];
+		});
+	}
+
+	[Fact]
+	public async Task undeletes_stream_on_write_to_metadata_stream_and_stream() {
+		const string test = nameof(undeletes_stream_on_write_to_metadata_stream_and_stream);
+		var A = $"{test}-a";
+		var metaA = SystemStreams.MetastreamOf(A);
+
+		// write an event to A so it can be soft-deleted
+		await WriteEvents(
+			eventStreamIds: [A],
+			expectedVersions: [ExpectedVersion.Any],
+			events: [NewEvent],
+			eventStreamIndexes: []);
+
+		await DeleteStream(A, hardDelete: false);
+
+		// verify A is soft-deleted (reads as NoStream)
+		var read = await ReadEvents(A);
+		Assert.Equal(ReadStreamResult.NoStream, read.Result);
+
+		// writing to both $$A and A in a single write (metadata first) should undelete A
+		var completed = await WriteEvents(
+			eventStreamIds: [metaA, A],
+			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any],
+			events: [CreateMetadataEvent(new(maxCount: 2)), NewEvent],
+			eventStreamIndexes: [0, 1]);
+
+		Assert.Equal(OperationResult.Success, completed.Result);
+
+		// not necessarily immediately true because the undeletes are not yet transactional with the writes
+		await AssertEx.IsOrBecomesTrueAsync(async () => {
+			// A is undeleted
+			read = await ReadEvents(A);
+			return read.Result == ReadStreamResult.Success;
+		});
+	}
+
+	[Fact]
+	public async Task undeletes_stream_on_write_to_stream_and_metadata_stream() {
+		const string test = nameof(undeletes_stream_on_write_to_stream_and_metadata_stream);
+		var A = $"{test}-a";
+		var metaA = SystemStreams.MetastreamOf(A);
+
+		// write an event to A so it can be soft-deleted
+		await WriteEvents(
+			eventStreamIds: [A],
+			expectedVersions: [ExpectedVersion.Any],
+			events: [NewEvent],
+			eventStreamIndexes: []);
+
+		await DeleteStream(A, hardDelete: false);
+
+		// verify A is soft-deleted (reads as NoStream)
+		var read = await ReadEvents(A);
+		Assert.Equal(ReadStreamResult.NoStream, read.Result);
+
+		// writing to both A and $$A in a single write (stream first) should undelete A
+		var completed = await WriteEvents(
+			eventStreamIds: [A, metaA],
+			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any],
+			events: [NewEvent, CreateMetadataEvent(new(maxCount: 2))],
+			eventStreamIndexes: [0, 1]);
+
+		Assert.Equal(OperationResult.Success, completed.Result);
+
+		// not necessarily immediately true because the undeletes are not yet transactional with the writes
+		await AssertEx.IsOrBecomesTrueAsync(async () => {
+			// A is undeleted
+			read = await ReadEvents(A);
+			return read.Result == ReadStreamResult.Success;
+		});
+	}
+
+	[Fact]
+	public async Task does_not_undelete_conditional_streams() {
+		const string test = nameof(does_not_undelete_conditional_streams);
+		var A = $"{test}-a";
+		var B = $"{test}-b"; // conditional stream (soft deleted, no events written to it)
+
+		// write an event to B so it can be soft-deleted
+		await WriteEvents(
+			eventStreamIds: [B],
+			expectedVersions: [ExpectedVersion.Any],
+			events: [NewEvent],
+			eventStreamIndexes: []);
+
+		await DeleteStream(B, hardDelete: false);
+
+		// verify B is soft-deleted (reads as NoStream)
+		var read = await ReadEvents(B);
+		Assert.Equal(ReadStreamResult.NoStream, read.Result);
+
+		// conditional append: write events only to A, with B as a conditional check
+		var completed = await WriteEvents(
+			eventStreamIds: [A, B],
+			expectedVersions: [-1, 0],
+			events: [NewEvent, NewEvent],
+			eventStreamIndexes: [0, 0]);
+
+		Assert.Equal(OperationResult.Success, completed.Result);
+
+		// B should still be soft-deleted (not undeleted as a side-effect)
+		read = await ReadEvents(B);
+		Assert.Equal(ReadStreamResult.NoStream, read.Result);
 	}
 
 	[Fact]
@@ -523,7 +789,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 
 		Assert.Equal(OperationResult.StreamDeleted, completed.Result);
 		Assert.Equal([1], completed.FailureStreamIndexes.ToArray());
-		Assert.Equal([long.MaxValue], completed.FailureCurrentVersions.ToArray());
+		Assert.Equal([EventNumber.DeletedStream], completed.FailureCurrentVersions.ToArray());
 	}
 
 	[Fact]
@@ -599,13 +865,6 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			events: [NewEvent, NewEvent],
 			eventStreamIndexes: [1, 0]));
 
-		// not all streams being written to
-		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await WriteEvents(
-			eventStreamIds: [A, B],
-			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any],
-			events: [NewEvent, NewEvent],
-			eventStreamIndexes: [0, 0]));
-
 		// not all streams being written to (with eventStreamIndexes: [])
 		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await WriteEvents(
 			eventStreamIds: [A, B],
@@ -614,18 +873,33 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			eventStreamIndexes: [])); // equivalent to [0, 0]
 
 		// empty write to multiple streams
-		await Assert.ThrowsAsync<ArgumentException>(async () => await WriteEvents(
+		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await WriteEvents(
 			eventStreamIds: [A, B],
 			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any],
 			events: [],
 			eventStreamIndexes: []));
 
 		// empty write to multiple streams (with eventStreamIndexes: [])
-		await Assert.ThrowsAsync<ArgumentException>(async () => await WriteEvents(
+		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await WriteEvents(
 			eventStreamIds: [A, B],
 			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any],
 			events: [],
 			eventStreamIndexes: [])); // equivalent to []
+	}
+
+	[Fact]
+	public async Task can_write_to_single_stream_with_eventStreamIndexes() {
+		// indexes are normalized to []
+		const string test = nameof(can_write_to_single_stream_with_eventStreamIndexes);
+		var A = $"{test}-a";
+
+		var completed = await WriteEvents(
+			eventStreamIds: [A],
+			expectedVersions: [ExpectedVersion.Any],
+			events: [NewEvent, NewEvent],
+			eventStreamIndexes: [0, 0]);
+
+		Assert.Equal(OperationResult.Success, completed.Result);
 	}
 
 	[Fact]
@@ -662,6 +936,100 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			Assert.Equal(numEvents / numStreams, readEventIds.Length);
 			Assert.Equal(readEventIds, writtenEventIds);
 		}
+	}
+
+	[Fact]
+	public async Task fails_with_conditional_append_and_invalid_condition() {
+		const string test = nameof(fails_with_conditional_append_and_invalid_condition);
+		var A = $"{test}-a";
+		var B = $"{test}-b";
+		var C = $"{test}-c"; // conditional stream (invalid condition: StreamExists)
+
+		var completed = await WriteEvents(
+			eventStreamIds: [A, B, C],
+			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any, ExpectedVersion.StreamExists],
+			events: [NewEvent, NewEvent, NewEvent],
+			eventStreamIndexes: [0, 1, 0]);
+
+		Assert.Equal(OperationResult.WrongExpectedVersion, completed.Result);
+		Assert.Equal(0, completed.FirstEventNumbers.Length);
+		Assert.Equal(0, completed.LastEventNumbers.Length);
+		Assert.Equal([2], completed.FailureStreamIndexes.ToArray());
+		Assert.Equal([-1], completed.FailureCurrentVersions.ToArray());
+	}
+
+	[Fact]
+	public async Task fails_with_conditional_append_on_wrongly_placed_stream() {
+		const string test = nameof(fails_with_conditional_append_on_wrongly_placed_stream);
+		var A = $"{test}-a"; // conditional stream (valid condition: NoStream, but should be placed at the end of the list of streams)
+		var B = $"{test}-b";
+		var C = $"{test}-c";
+
+		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await WriteEvents(
+			eventStreamIds: [A, B, C],
+			expectedVersions: [ExpectedVersion.NoStream, ExpectedVersion.Any, ExpectedVersion.Any],
+			events: [NewEvent, NewEvent, NewEvent],
+			eventStreamIndexes: [1, 2, 1]));
+	}
+
+	[Fact]
+	public async Task fails_with_conditional_appends_and_at_least_one_invalid_condition() {
+		const string test = nameof(fails_with_conditional_appends_and_at_least_one_invalid_condition);
+		var A = $"{test}-a";
+		var B = $"{test}-b"; // conditional stream (invalid condition: StreamExists)
+		var C = $"{test}-c"; // conditional stream (valid condition: NoStream)
+		var D = $"{test}-d"; // conditional stream (invalid condition: StreamExists)
+
+		var completed = await WriteEvents(
+			eventStreamIds: [A, B, C, D],
+			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.StreamExists, ExpectedVersion.NoStream, ExpectedVersion.StreamExists],
+			events: [NewEvent, NewEvent, NewEvent],
+			eventStreamIndexes: [0, 0, 0]);
+
+		Assert.Equal(OperationResult.WrongExpectedVersion, completed.Result);
+		Assert.Equal(0, completed.FirstEventNumbers.Length);
+		Assert.Equal(0, completed.LastEventNumbers.Length);
+		Assert.Equal([1, 3], completed.FailureStreamIndexes.ToArray());
+		Assert.Equal([-1, -1], completed.FailureCurrentVersions.ToArray());
+	}
+
+	[Fact]
+	public async Task fails_with_conditional_append_and_mixed_invalid_conditions() {
+		const string test = nameof(fails_with_conditional_append_and_mixed_invalid_conditions);
+		var A = $"{test}-a"; // unconditional stream (invalid condition: StreamExists)
+		var B = $"{test}-b"; // conditional stream (invalid condition: StreamExists)
+
+		var completed = await WriteEvents(
+			eventStreamIds: [A, B],
+			expectedVersions: [ExpectedVersion.StreamExists, ExpectedVersion.StreamExists],
+			events: [NewEvent, NewEvent, NewEvent],
+			eventStreamIndexes: [0, 0, 0]);
+
+		Assert.Equal(OperationResult.WrongExpectedVersion, completed.Result);
+		Assert.Equal(0, completed.FirstEventNumbers.Length);
+		Assert.Equal(0, completed.LastEventNumbers.Length);
+		Assert.Equal([0, 1], completed.FailureStreamIndexes.ToArray());
+		Assert.Equal([-1, -1], completed.FailureCurrentVersions.ToArray());
+	}
+
+	[Fact]
+	public async Task fails_with_conditional_append_on_deleted_stream_and_invalid_condition() {
+		const string test = nameof(fails_with_conditional_append_on_deleted_stream_and_invalid_condition);
+		var A = $"{test}-a";
+		var B = $"{test}-b";
+		var C = $"{test}-c"; // conditional stream (hard deleted, invalid condition: StreamExists)
+
+		await DeleteStream(C, hardDelete: true);
+
+		var completed = await WriteEvents(
+			eventStreamIds: [A, B, C],
+			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any, ExpectedVersion.StreamExists],
+			events: [NewEvent, NewEvent, NewEvent],
+			eventStreamIndexes: [0, 1, 0]);
+
+		Assert.Equal(OperationResult.WrongExpectedVersion, completed.Result);
+		Assert.Equal([2], completed.FailureStreamIndexes.ToArray());
+		Assert.Equal([EventNumber.DeletedStream], completed.FailureCurrentVersions.ToArray());
 	}
 
 	private Task<ClientMessage.WriteEventsCompleted> WriteEvents(

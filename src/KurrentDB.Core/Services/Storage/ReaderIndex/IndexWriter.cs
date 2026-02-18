@@ -158,7 +158,18 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 		var curVersion = await GetStreamLastEventNumber(streamId, token);
 		switch (curVersion) {
 			case EventNumber.DeletedStream:
-				return new(CommitDecision.Deleted, streamId, curVersion, -1, -1, false);
+				if (eventIds.Length > 0)
+					// we're trying to append events to the hard deleted stream - that's not possible regardless of the specified expected version
+					return new(CommitDecision.Deleted, streamId, curVersion, -1, -1, false);
+
+				// we're not appending any events to the hard deleted stream - we're only doing a consistency check on the stream's version
+
+				if (expectedVersion is ExpectedVersion.Any or EventNumber.DeletedStream)
+					// the specified expected version matches the stream's current state
+					return new(CommitDecision.Ok, streamId, curVersion, -1, -1, false);
+
+				// the specified expected version doesn't match the stream's current state
+				return new(CommitDecision.WrongExpectedVersion, streamId, curVersion, -1, -1, false);
 			case EventNumber.Invalid:
 				return new(CommitDecision.WrongExpectedVersion, streamId, curVersion, -1, -1, false);
 		}

@@ -194,25 +194,34 @@ public static partial class ClientMessage {
 			// each stream must correspond to an expected version at the same index
 			ArgumentOutOfRangeException.ThrowIfNotEqual(expectedVersions.Length, eventStreamIds.Length, nameof(expectedVersions));
 
-			if (eventStreamIndexes.Length is not 0) {
-				// when non-empty: eventStreamIndexes maps each event to the index of its stream
-				ArgumentOutOfRangeException.ThrowIfNotEqual(eventStreamIndexes.Length, events.Length, nameof(eventStreamIndexes));
-			} else {
-				// when empty, all events implicitly are for the single stream which is at index 0.
-			}
-
+			// each stream ID must be valid
 			foreach (var eventStreamId in eventStreamIds.Span) {
 				if (SystemStreams.IsInvalidStream(eventStreamId))
 					throw new ArgumentOutOfRangeException(nameof(eventStreamIds), $"Invalid stream ID: {eventStreamId}");
 			}
 
+			// each expected version must be valid
 			foreach (var expectedVersion in expectedVersions.Span) {
 				if (expectedVersion is < ExpectedVersion.StreamExists or ExpectedVersion.Invalid)
 					throw new ArgumentOutOfRangeException(nameof(expectedVersions), $"Invalid expected version: {expectedVersion}");
 			}
 
-			var nextEventStreamIndex = 0;
-			if (eventStreamIndexes.Length is not 0) {
+			if (eventStreamIds.Length == 1) { // single stream append
+				// there can be zero or more events: empty writes to a single stream are supported (for legacy reasons)
+
+				// all events implicitly are for the single stream which is at index 0.
+				// normalize: we allow callers to pass eventStreamIndexes [0, 0, ...] to avoid surprise, but we discard them.
+				eventStreamIndexes = default;
+			} else { // multi-stream append
+				// there must be at least one event: empty writes to multiple streams are not supported
+				ArgumentOutOfRangeException.ThrowIfZero(events.Length, nameof(events));
+
+				// `eventStreamIndexes` maps each event to the index of its stream
+				ArgumentOutOfRangeException.ThrowIfNotEqual(eventStreamIndexes.Length, events.Length, nameof(eventStreamIndexes));
+
+				// i)  each event stream index points to a valid stream
+				// ii) event stream indexes must be assigned to streams in the order in which they first appear in `events`
+				var nextEventStreamIndex = 0;
 				foreach (var eventStreamIndex in eventStreamIndexes.Span) {
 					if (eventStreamIndex < 0 || eventStreamIndex >= eventStreamIds.Length)
 						throw new ArgumentOutOfRangeException(nameof(eventStreamIndexes),
@@ -225,16 +234,16 @@ public static partial class ClientMessage {
 							"Indexes must be assigned to streams in the order in which they first appear in the list of events being written");
 					}
 				}
-			} else {
-				nextEventStreamIndex = 1;
+
+				if (nextEventStreamIndex < eventStreamIds.Length) {
+					// not all streams have an event written to them
+
+					// we now support conditional appends to one or more streams based on the expected versions of other streams.
+					// the streams for which only the expected versions must be checked are expected to be placed at the end
+					// of `eventStreamIds` & `expectedVersions`.
+
+				}
 			}
-
-			if (events.Length > 0 && nextEventStreamIndex != eventStreamIds.Length)
-				throw new ArgumentOutOfRangeException(nameof(eventStreamIds),
-					"Not all streams have events being written to them");
-
-			if (events.Length == 0 && eventStreamIds.Length > 1)
-				throw new ArgumentException("Empty writes to multiple streams is not supported");
 
 			EventStreamIds = eventStreamIds;
 			ExpectedVersions = expectedVersions;

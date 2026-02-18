@@ -104,6 +104,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 	private struct WritePreparesStreamInfo {
 		public long LatestVersion { get; set; }
 		public bool IsSoftDeletedMeta { get; init; }
+		public bool HasEventsToWrite { get; init; }
 	}
 
 	private readonly ArrayPool<WritePreparesStreamInfo> _streamInfosPool =
@@ -324,7 +325,8 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 				streamInfos[streamIndex] = new WritePreparesStreamInfo {
 					IsSoftDeletedMeta = _systemStreams.IsMetaStream(streamId)
 										&& await _indexWriter.IsSoftDeleted(_systemStreams.OriginalStreamOf(streamId), token),
-					LatestVersion = commitChecks[streamIndex].CurrentVersion
+					LatestVersion = commitChecks[streamIndex].CurrentVersion,
+					HasEventsToWrite = numEventIds > 0,
 				};
 			}
 
@@ -386,14 +388,21 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 			// note: the stream & event type records are indexed separately and must not be pre-committed to the main index
 			_indexWriter.PreCommit(CollectionsMarshal.AsSpan(prepares)[^msg.Events.Length..], msg.EventStreamIndexes);
 
+			// soft undelete the (original streams of the) streams we are writing events to
+			// for backwards compatibility, an empty write (which must be to a single stream) causes undeletion, too.
 			// TODO: soft undelete in a transaction
+			var isEmptyWriteToSingleStream = msg.Events.Length is 0 && msg.EventStreamIds.Length is 1;
 			for (int i = 0; i < msg.EventStreamIds.Length; i++) {
-				if (commitChecks[i].IsSoftDeleted)
-					await SoftUndeleteStream(commitChecks[i].EventStreamId, commitChecks[i].CurrentVersion + 1, token);
-				if (streamInfos[i].IsSoftDeletedMeta)
-					await SoftUndeleteMetastream(commitChecks[i].EventStreamId, token);
-			}
+				if (isEmptyWriteToSingleStream || streamInfos[i].HasEventsToWrite) {
+					if (commitChecks[i].IsSoftDeleted)
+						// we are writing to a soft deleted stream. undelete it
+						await SoftUndeleteStream(commitChecks[i].EventStreamId, commitChecks[i].CurrentVersion + 1, token);
 
+					if (streamInfos[i].IsSoftDeletedMeta)
+						// we are writing to the metastream of a soft deleted stream. undelete the soft deleted stream
+						await SoftUndeleteMetastream(commitChecks[i].EventStreamId, token);
+				}
+			}
 		} catch (Exception exc) {
 			Log.Error(exc, "Exception in writer.");
 			throw;
