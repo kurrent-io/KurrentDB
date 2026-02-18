@@ -527,8 +527,8 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 	}
 
 	[Fact]
-	public async Task undeletes_stream_on_write_to_stream_and_metadata_metadata_first() {
-		const string test = nameof(undeletes_stream_on_write_to_stream_and_metadata_metadata_first);
+	public async Task undeletes_stream_on_write_to_metadata_stream_and_stream() {
+		const string test = nameof(undeletes_stream_on_write_to_metadata_stream_and_stream);
 		var A = $"{test}-a";
 		var metaA = SystemStreams.MetastreamOf(A);
 
@@ -563,8 +563,8 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 	}
 
 	[Fact]
-	public async Task undeletes_stream_on_write_to_stream_and_metadata_stream_first() {
-		const string test = nameof(undeletes_stream_on_write_to_stream_and_metadata_stream_first);
+	public async Task undeletes_stream_on_write_to_stream_and_metadata_stream() {
+		const string test = nameof(undeletes_stream_on_write_to_stream_and_metadata_stream);
 		var A = $"{test}-a";
 		var metaA = SystemStreams.MetastreamOf(A);
 
@@ -599,8 +599,8 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 	}
 
 	[Fact]
-	public async Task leaves_deleted_on_check() {
-		const string test = nameof(leaves_deleted_on_check);
+	public async Task does_not_undelete_conditional_streams() {
+		const string test = nameof(does_not_undelete_conditional_streams);
 		var A = $"{test}-a";
 		var B = $"{test}-b"; // conditional stream (soft deleted, no events written to it)
 
