@@ -267,15 +267,15 @@ You require a [license key](../quick-start/installation.md#license-keys) to use 
 Refer to the [configuration guide](../configuration/README.md) for configuration mechanisms other than YAML.
 
 1. Change the authentication type to `ldaps`.
-2. Add a section named `LdapsAuth` for LDAP-specific settings. 
+2. Add LDAP-specific settings in a section named `LdapsAuth`, either inline or in a separate file.
 
-Example configuration file in YAML format:
-
+:::tabs
+@tab kurrentdb.conf
 ```yaml
 AuthenticationType: ldaps
 LdapsAuth:
   Host: 13.88.9.49
-  Port: 636 #to use plaintext protocol, set Port to 389 and UseSSL to false 
+  Port: 636 #to use plaintext protocol, set Port to 389 and UseSSL to false
   UseSSL: true
   ValidateServerCertificate: false #set this to true to validate the certificate chain
   AnonymousBind: false
@@ -293,6 +293,40 @@ LdapsAuth:
       'cn=Kurrent-Operations,ou=Staff,dc=mycompany,dc=local': it
       'cn=Kurrent-Admins,ou=Staff,dc=mycompany,dc=local': '$admins'
 ```
+:::
+
+Alternatively you can provide a path to a separate config file with the `AuthenticationConfig` option. For example:
+
+:::tabs
+@tab kurrentdb.conf
+```yaml
+AuthenticationType: ldaps
+AuthenticationConfig: ./kurrentdb-ldaps.conf
+```
+
+@tab kurrentdb-ldaps.conf
+```yaml
+LdapsAuth:
+  Host: 13.88.9.49
+  Port: 636 #to use plaintext protocol, set Port to 389 and UseSSL to false
+  UseSSL: true
+  ValidateServerCertificate: false #set this to true to validate the certificate chain
+  AnonymousBind: false
+  BindUser: cn=binduser,dc=mycompany,dc=local
+  BindPassword: p@ssw0rd!
+  BaseDn: ou=Lab,dc=mycompany,dc=local
+  ObjectClass: organizationalPerson
+  Filter: sAMAccountName
+  RequireGroupMembership: false #set this to true to allow authentication only if the user is a member of the group specified by RequiredGroupDn
+  GroupMembershipAttribute: memberOf
+  RequiredGroupDn: cn=Kurrent-Users,dc=mycompany,dc=local
+  PrincipalCacheDurationSec: 60
+  LdapGroupRoles:
+      'cn=Kurrent-Accounting,ou=Staff,dc=mycompany,dc=local': accounting
+      'cn=Kurrent-Operations,ou=Staff,dc=mycompany,dc=local': it
+      'cn=Kurrent-Admins,ou=Staff,dc=mycompany,dc=local': '$admins'
+```
+:::
 
 Upon successful LDAP authentication, users are assigned [roles](./user-authorization.md#roles) based on their domain group memberships, as specified in the `LdapGroupRoles` section.
 

@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.IdentityModel.Tokens.Jwt;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -26,6 +25,7 @@ using LruCacheNet;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.IdentityModel.Tokens;
@@ -34,7 +34,7 @@ using Newtonsoft.Json;
 namespace KurrentDB.Auth.OAuth;
 
 [Export(typeof(IAuthenticationPlugin))]
-public class OAuthAuthenticationPlugin(ILoggerFactory loggerFactory) : IAuthenticationPlugin {
+public class OAuthAuthenticationPlugin(IConfiguration configuration, string configPathKey, ILoggerFactory loggerFactory) : IAuthenticationPlugin {
 	public static readonly string[] ValidSigningAlgorithms = {
 		SecurityAlgorithms.RsaSha256Signature,
 		SecurityAlgorithms.RsaSha384Signature,
@@ -54,31 +54,20 @@ public class OAuthAuthenticationPlugin(ILoggerFactory loggerFactory) : IAuthenti
 	public string Version { get; } = typeof(OAuthAuthenticationPlugin).Assembly.GetName().Version!.ToString();
 	public string CommandLineName { get; } = "oauth";
 
-	public IAuthenticationProviderFactory GetAuthenticationProviderFactory(string authenticationConfigPath)
-		=> new OAuthAuthenticationProviderFactory(authenticationConfigPath, loggerFactory.CreateLogger<OAuthAuthenticationPlugin>());
+	public IAuthenticationProviderFactory GetAuthenticationProviderFactory(string _) {
+		var logger = loggerFactory.CreateLogger<OAuthAuthenticationPlugin>();
 
-	private class OAuthAuthenticationProviderFactory : IAuthenticationProviderFactory {
-		private readonly string _authenticationConfigPath;
-		private readonly ILogger _logger;
+		var settings = new ConfigParser(logger)
+			.ReadConfiguration<Settings>(configuration, configPathKey, "OAuth");
 
-		public OAuthAuthenticationProviderFactory(string authenticationConfigPath, ILogger logger) {
-			if (authenticationConfigPath == null) {
-				throw new ArgumentNullException(nameof(authenticationConfigPath));
-			}
+		return new OAuthAuthenticationProviderFactory(settings, logger);
+	}
 
-			if (!File.Exists(authenticationConfigPath)) {
-				throw new FileNotFoundException(null, authenticationConfigPath);
-			}
-
-			_authenticationConfigPath = authenticationConfigPath;
-			_logger = logger;
-		}
-
+	public class OAuthAuthenticationProviderFactory(Settings settings, ILogger logger) : IAuthenticationProviderFactory {
 		public IAuthenticationProvider Build(bool logFailedAuthenticationAttempts) => new OAuthAuthenticationProvider(new Options {
 			LogFailedAuthenticationAttempts = logFailedAuthenticationAttempts,
-			Logger = _logger,
-			Settings = ConfigParser.ReadConfiguration<Settings>(_authenticationConfigPath, "OAuth", _logger)
-				?? throw new Exception("Could not read OAuth configuration"),
+			Logger = logger,
+			Settings = settings,
 		});
 	}
 
