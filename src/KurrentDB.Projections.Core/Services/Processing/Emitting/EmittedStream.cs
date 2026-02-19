@@ -182,7 +182,7 @@ public partial class EmittedStream : IDisposable,
 			case OperationResult.WrongExpectedVersion:
 				RequestRestart(string.Format(
 					"The '{0}' stream has been written to from the outside. Expected Version: {1}, Current Version: {2}. Checkpoint: {3}.",
-					_streamId, _lastKnownEventNumber, message.FailureCurrentVersions.Single, _fromCheckpointPosition));
+					_streamId, _lastKnownEventNumber, message.ConsistencyCheckFailures.Single.ActualVersion, _fromCheckpointPosition));
 				break;
 			case OperationResult.PrepareTimeout:
 			case OperationResult.ForwardTimeout:

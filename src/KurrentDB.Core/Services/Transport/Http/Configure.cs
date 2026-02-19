@@ -358,8 +358,8 @@ public static class Configure {
 					case OperationResult.WrongExpectedVersion:
 						return new(HttpStatusCode.BadRequest, "Wrong expected EventNumber",
 							ContentType.PlainText,
-							new KeyValuePair<string, string>(SystemHeaders.CurrentVersion, msg.FailureCurrentVersions.Single.ToString()),
-							new KeyValuePair<string, string>(SystemHeaders.LegacyCurrentVersion, msg.FailureCurrentVersions.Single.ToString()));
+							new KeyValuePair<string, string>(SystemHeaders.CurrentVersion, msg.ConsistencyCheckFailures.Single.ActualVersion.ToString()),
+							new KeyValuePair<string, string>(SystemHeaders.LegacyCurrentVersion, msg.ConsistencyCheckFailures.Single.ActualVersion.ToString()));
 					case OperationResult.StreamDeleted:
 						return Gone("Stream deleted");
 					case OperationResult.InvalidTransaction:

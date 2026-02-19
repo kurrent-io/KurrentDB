@@ -3,19 +3,29 @@
 
 namespace KurrentDB.Core.Services.Storage.ReaderIndex;
 
-public struct CommitCheckResult<TStreamId>(
+public readonly struct CommitCheckResult<TStreamId>(
 	CommitDecision decision,
 	TStreamId eventStreamId,
+	long expectedVersion,
 	long currentVersion,
 	long startEventNumber,
 	long endEventNumber,
-	bool isSoftDeleted,
+	bool? isSoftDeleted,
 	long idempotentLogPosition = -1) {
+
 	public readonly CommitDecision Decision = decision;
 	public readonly TStreamId EventStreamId = eventStreamId;
+	public readonly long ExpectedVersion = expectedVersion;
 	public readonly long CurrentVersion = currentVersion;
 	public readonly long StartEventNumber = startEventNumber;
 	public readonly long EndEventNumber = endEventNumber;
-	public readonly bool IsSoftDeleted = isSoftDeleted;
+
+	/// <summary>
+	/// `true` => known to be soft deleted.
+	/// `false` => known not to be soft deleted.
+	/// `null` => soft deleted state was not checked.
+	/// </summary>
+	public readonly bool? IsSoftDeleted = isSoftDeleted;
+
 	public readonly long IdempotentLogPosition = idempotentLogPosition;
 }

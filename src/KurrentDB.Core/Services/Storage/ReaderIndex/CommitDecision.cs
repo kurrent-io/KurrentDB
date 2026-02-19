@@ -5,10 +5,12 @@ namespace KurrentDB.Core.Services.Storage.ReaderIndex;
 
 public enum CommitDecision {
 	Ok,
-	WrongExpectedVersion,
-	Deleted,
+	ConsistencyCheckFailure,
 	Idempotent,
+
+	/// <summary>Some of the events in the stream are idempotent and others are not</summary>
 	CorruptedIdempotency,
 	InvalidTransaction,
-	IdempotentNotReady
+	/// <summary>Idempotent write, but not yet indexed</summary>
+	IdempotentNotReady,
 }

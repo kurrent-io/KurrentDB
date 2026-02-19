@@ -246,7 +246,7 @@ partial class Streams<TStreamId> {
 									},
 									OperationResult.WrongExpectedVersion => new BatchAppendResp {
 										Error = Status.WrongExpectedVersion(
-											StreamRevision.FromInt64(completed.FailureCurrentVersions.Single),
+											StreamRevision.FromInt64(completed.ConsistencyCheckFailures.Single.ActualVersion),
 											clientWriteRequest.ExpectedVersion)
 									},
 									OperationResult.AccessDenied => new BatchAppendResp { Error = Status.AccessDenied },

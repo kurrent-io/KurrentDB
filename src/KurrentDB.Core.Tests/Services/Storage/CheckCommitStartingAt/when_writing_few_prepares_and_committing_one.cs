@@ -40,7 +40,7 @@ public class when_writing_few_prepares_and_committing_one<TLogFormat, TStreamId>
 		var res = await ReadIndex.IndexWriter.CheckCommitStartingAt(_prepare2.LogPosition,
 			WriterCheckpoint.ReadNonFlushed(), CancellationToken.None);
 
-		Assert.AreEqual(CommitDecision.WrongExpectedVersion, res.Decision);
+		Assert.AreEqual(CommitDecision.ConsistencyCheckFailure, res.Decision);
 		Assert.AreEqual("ES", res.EventStreamId);
 		Assert.AreEqual(0, res.CurrentVersion);
 		Assert.AreEqual(-1, res.StartEventNumber);

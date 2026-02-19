@@ -27,9 +27,8 @@ public class RequestManagementService :
 	IHandle<ReplicationTrackingMessage.ReplicatedTo>,
 	IHandle<ReplicationTrackingMessage.IndexedTo>,
 	IHandle<StorageMessage.CommitIndexed>,
-	IHandle<StorageMessage.WrongExpectedVersion>,
 	IHandle<StorageMessage.InvalidTransaction>,
-	IHandle<StorageMessage.StreamDeleted>,
+	IHandle<StorageMessage.ConsistencyChecksFailed>,
 	IHandle<StorageMessage.RequestManagerTimerTick>,
 	IHandle<SystemMessage.StateChangeMessage> {
 	private readonly IPublisher _bus;
@@ -217,9 +216,8 @@ public class RequestManagementService :
 	public void Handle(StorageMessage.AlreadyCommitted message) => DispatchInternal(message.CorrelationId, message, static (manager, m) => manager.Handle(m));
 	public void Handle(StorageMessage.UncommittedPrepareChased message) => DispatchInternal(message.CorrelationId, message, static (manager, m) => manager.Handle(m));
 	public void Handle(StorageMessage.CommitIndexed message) => DispatchInternal(message.CorrelationId, message, static (manager, m) => manager.Handle(m));
-	public void Handle(StorageMessage.WrongExpectedVersion message) => DispatchInternal(message.CorrelationId, message, static (manager, m) => manager.Handle(m));
 	public void Handle(StorageMessage.InvalidTransaction message) => DispatchInternal(message.CorrelationId, message, static (manager, m) => manager.Handle(m));
-	public void Handle(StorageMessage.StreamDeleted message) => DispatchInternal(message.CorrelationId, message, static (manager, m) => manager.Handle(m));
+	public void Handle(StorageMessage.ConsistencyChecksFailed message) => DispatchInternal(message.CorrelationId, message, static (manager, m) => manager.Handle(m));
 
 	private void DispatchInternal<T>(Guid correlationId, T message, Action<RequestManagerBase, T> handle) where T : Message {
 		if (_currentRequests.TryGetValue(correlationId, out var manager)) {

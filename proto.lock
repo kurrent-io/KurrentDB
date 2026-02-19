@@ -41,6 +41,22 @@
             ]
           },
           {
+            "name": "OptionalBool",
+            "enum_fields": [
+              {
+                "name": "OPTIONAL_BOOL_UNSPECIFIED"
+              },
+              {
+                "name": "OPTIONAL_BOOL_FALSE",
+                "integer": 1
+              },
+              {
+                "name": "OPTIONAL_BOOL_TRUE",
+                "integer": 2
+              }
+            ]
+          },
+          {
             "name": "ReadEventCompleted.ReadEventResult",
             "enum_fields": [
               {
@@ -497,9 +513,22 @@
               },
               {
                 "id": 7,
-                "name": "current_version",
+                "name": "failure_current_version",
+                "type": "int64"
+              },
+              {
+                "id": 8,
+                "name": "failure_is_soft_deleted",
+                "type": "bool"
+              },
+              {
+                "id": 9,
+                "name": "failure_expected_version",
                 "type": "int64"
               }
+            ],
+            "reserved_names": [
+              "current_version"
             ]
           },
           {
@@ -580,6 +609,18 @@
               {
                 "id": 8,
                 "name": "failure_current_versions",
+                "type": "int64",
+                "is_repeated": true
+              },
+              {
+                "id": 9,
+                "name": "failure_is_soft_deleted",
+                "type": "OptionalBool",
+                "is_repeated": true
+              },
+              {
+                "id": 10,
+                "name": "failure_expected_versions",
                 "type": "int64",
                 "is_repeated": true
               }

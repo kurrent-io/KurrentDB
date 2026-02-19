@@ -18,6 +18,11 @@ using ReadStreamResult = KurrentDB.Core.Data.ReadStreamResult;
 
 namespace KurrentDB.Core.Messages;
 
+// Corresponds to OperationResult in ClientMessageDtos.proto
+// WrongExpectedVersion and StreamDeleted both mean a consistency check failed.
+// ConsistencyCheckFailures fully describe the failure, the OperationResult only
+// distinguishes WrongExpectedVersion from StreamDeleted for backwards compatibility
+// with old servers that may have forwarded us a write that we are responding to.
 public enum OperationResult {
 	Success = 0,
 	PrepareTimeout = 1,
@@ -26,7 +31,7 @@ public enum OperationResult {
 	WrongExpectedVersion = 4,
 	StreamDeleted = 5,
 	InvalidTransaction = 6,
-	AccessDenied = 7
+	AccessDenied = 7,
 }
 
 public static partial class ClientMessage {
@@ -313,8 +318,7 @@ public static partial class ClientMessage {
 		public readonly LowAllocReadOnlyMemory<long> LastEventNumbers;
 		public readonly long PreparePosition;
 		public readonly long CommitPosition;
-		public readonly LowAllocReadOnlyMemory<int> FailureStreamIndexes;
-		public readonly LowAllocReadOnlyMemory<long> FailureCurrentVersions;
+		public readonly LowAllocReadOnlyMemory<ConsistencyCheckFailure> ConsistencyCheckFailures;
 
 		/// <summary>Success constructor</summary>
 		public WriteEventsCompleted(
@@ -348,8 +352,7 @@ public static partial class ClientMessage {
 
 		/// <summary>Failure constructor</summary>
 		public WriteEventsCompleted(Guid correlationId, OperationResult result, string message,
-			LowAllocReadOnlyMemory<int> failureStreamIndexes = default, LowAllocReadOnlyMemory<long> failureCurrentVersions = default) {
-			ArgumentOutOfRangeException.ThrowIfNotEqual(failureStreamIndexes.Length, failureCurrentVersions.Length, nameof(failureStreamIndexes));
+			LowAllocReadOnlyMemory<ConsistencyCheckFailure> consistencyCheckFailures = default) {
 
 			if (result == OperationResult.Success)
 				throw new ArgumentException("Invalid constructor used for successful write.", nameof(result));
@@ -360,15 +363,13 @@ public static partial class ClientMessage {
 			FirstEventNumbers = [];
 			LastEventNumbers = [];
 			PreparePosition = EventNumber.Invalid;
-			FailureStreamIndexes = failureStreamIndexes;
-			FailureCurrentVersions = failureCurrentVersions;
+			ConsistencyCheckFailures = consistencyCheckFailures;
 		}
 
 		private WriteEventsCompleted(Guid correlationId, OperationResult result, string message,
 			LowAllocReadOnlyMemory<long> firstEventNumbers, LowAllocReadOnlyMemory<long> lastEventNumbers, long preparePosition,
-			long commitPosition, LowAllocReadOnlyMemory<int> failureStreamIndexes, LowAllocReadOnlyMemory<long> failureCurrentVersions) {
+			long commitPosition, LowAllocReadOnlyMemory<ConsistencyCheckFailure> consistencyCheckFailures) {
 			ArgumentOutOfRangeException.ThrowIfNotEqual(firstEventNumbers.Length, lastEventNumbers.Length, nameof(firstEventNumbers));
-			ArgumentOutOfRangeException.ThrowIfNotEqual(failureStreamIndexes.Length, failureCurrentVersions.Length, nameof(failureStreamIndexes));
 
 			CorrelationId = correlationId;
 			Result = result;
@@ -377,8 +378,7 @@ public static partial class ClientMessage {
 			LastEventNumbers = lastEventNumbers;
 			PreparePosition = preparePosition;
 			CommitPosition = commitPosition;
-			FailureStreamIndexes = failureStreamIndexes;
-			FailureCurrentVersions = failureCurrentVersions;
+			ConsistencyCheckFailures = consistencyCheckFailures;
 		}
 
 		public static WriteEventsCompleted ForSingleStream(Guid correlationId, long firstEventNumber, long lastEventNumber, long preparePosition, long commitPosition) {
@@ -392,7 +392,7 @@ public static partial class ClientMessage {
 
 		public WriteEventsCompleted WithCorrelationId(Guid newCorrId) {
 			return new WriteEventsCompleted(newCorrId, Result, Message, FirstEventNumbers, LastEventNumbers,
-				PreparePosition, CommitPosition, FailureStreamIndexes, FailureCurrentVersions);
+				PreparePosition, CommitPosition, ConsistencyCheckFailures);
 		}
 
 		public override string ToString() {
@@ -403,8 +403,7 @@ public static partial class ClientMessage {
 				$"Message: {Message}, " +
 				$"FirstEventNumbers: {string.Join(", ", FirstEventNumbers.ToArray())}," +
 				$"LastEventNumbers: {string.Join(", ", LastEventNumbers.ToArray())}," +
-				$"FailureStreamIndexes: {string.Join(", ", FailureStreamIndexes.ToArray())}" +
-				$"FailureCurrentVersions: {string.Join(", ", FailureCurrentVersions.ToArray())}";
+				$"ConsistencyCheckFailures: {string.Join(", ", ConsistencyCheckFailures.ToArray())}";
 		}
 	}
 

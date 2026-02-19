@@ -53,8 +53,7 @@ public abstract class RequestManagerServiceSpecification :
 		Dispatcher.Subscribe<ClientMessage.WriteEvents>(Service);
 		Dispatcher.Subscribe<StorageMessage.UncommittedPrepareChased>(Service);
 		Dispatcher.Subscribe<StorageMessage.InvalidTransaction>(Service);
-		Dispatcher.Subscribe<StorageMessage.StreamDeleted>(Service);
-		Dispatcher.Subscribe<StorageMessage.WrongExpectedVersion>(Service);
+		Dispatcher.Subscribe<StorageMessage.ConsistencyChecksFailed>(Service);
 		Dispatcher.Subscribe<StorageMessage.AlreadyCommitted>(Service);
 		Dispatcher.Subscribe<StorageMessage.RequestManagerTimerTick>(Service);
 		Dispatcher.Subscribe<StorageMessage.CommitIndexed>(Service);
