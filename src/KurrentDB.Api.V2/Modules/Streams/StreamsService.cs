@@ -123,7 +123,7 @@ public class StreamsService : StreamsServiceBase {
                 eventStreamIds: streamIds,
                 expectedVersions: Revisions.ToImmutable(),
                 events: Events.ToImmutable(),
-                eventStreamIndexes: streamIds.Length == 1 ? [] : Indexes.ToImmutable(),
+                eventStreamIndexes: Indexes.ToImmutable(),
                 user: context.GetHttpContext().User,
                 cancellationToken: context.CancellationToken
             );
@@ -286,7 +286,7 @@ public class StreamsService : StreamsServiceBase {
                 eventStreamIds: Streams.ToImmutable(),
                 expectedVersions: Revisions.ToImmutable(),
                 events: Events.ToImmutable(),
-                eventStreamIndexes: Streams.Count == 1 ? [] : Indexes.ToImmutable(),
+                eventStreamIndexes: Indexes.ToImmutable(),
                 user: context.GetHttpContext().User,
                 cancellationToken: context.CancellationToken
             );
