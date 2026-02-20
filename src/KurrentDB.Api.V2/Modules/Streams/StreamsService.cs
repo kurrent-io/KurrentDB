@@ -330,9 +330,9 @@ public class StreamsService : StreamsServiceBase {
 	        RpcException MapToConsistencyCheckFailed(WriteEventsCompleted completed) {
 		        var details = new ConsistencyCheckFailedErrorDetails();
 
-		        for (var i = 0; i < completed.FailureStreamIndexes.Length; i++) {
-			        var failedStreamIndex = completed.FailureStreamIndexes.Span[i];
-			        var actualVersion = completed.FailureCurrentVersions.Span[i];
+		        for (var i = 0; i < completed.ConsistencyCheckFailures.Length; i++) {
+			        var failure = completed.ConsistencyCheckFailures.Span[i];
+			        var failedStreamIndex = failure.StreamIndex;
 
 			        if (!CheckIndexesByStreamIndex.TryGetValue(failedStreamIndex, out var checkIndex))
 				        continue;
@@ -340,22 +340,22 @@ public class StreamsService : StreamsServiceBase {
 			        details.Failures[checkIndex] = new ConsistencyCheckErrorDetails {
 				        Revision = new RevisionConsistencyCheckErrorDetails {
 					        Stream           = Streams[failedStreamIndex],
-					        ExpectedRevision = Revisions[failedStreamIndex],
-					        ActualRevision   = MapActualRevision(actualVersion)
+					        ExpectedRevision = failure.ExpectedVersion,
+					        ActualRevision   = MapActualRevision(failure)
 				        }
 			        };
 		        }
 
 		        return ApiErrors.ConsistencyCheckFailed(details);
 
-		        long MapActualRevision(long version) {
-			        // TODO: Remove once the core returns sentinel values directly in FailureCurrentVersions
-			        if (version == EventNumber.DeletedStream)
+		        static long MapActualRevision(ConsistencyCheckFailure failure) {
+			        if (failure.ActualVersion == EventNumber.DeletedStream)
 				        return -100;
 
-			        return completed.Result == OperationResult.StreamDeleted
-				        ? -10
-				        : version;
+			        if (failure.IsSoftDeleted is true)
+				        return -10;
+
+			        return failure.ActualVersion;
 		        }
 	        }
         }
