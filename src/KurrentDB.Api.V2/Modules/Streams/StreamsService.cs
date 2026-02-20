@@ -348,7 +348,7 @@ public class StreamsService : StreamsServiceBase {
 		        return ApiErrors.ConsistencyCheckFailed(details);
 
 		        static long MapActualRevision(ConsistencyCheckFailure failure) {
-			        if (failure.ActualVersion == EventNumber.DeletedStream)
+			        if (failure.ActualVersion == long.MaxValue)
 				        return -100;
 
 			        if (failure.IsSoftDeleted is true)
