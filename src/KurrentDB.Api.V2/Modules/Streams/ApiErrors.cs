@@ -126,7 +126,7 @@ public static partial class ApiErrors {
     }
 
 	public static RpcException ConsistencyCheckFailed(ConsistencyCheckFailedErrorDetails details) {
-		var streams = string.Join(", ", details.Failures.Values.Select(e => e.Revision.Stream).Distinct());
+		var streams = string.Join(", ", details.Failures.Values.Select(e => e.Revision.Stream));
 		var message = $"Consistency check failed on stream(s): {streams}.";
 
 		return RpcExceptions.FromError(StreamsError.ConsistencyCheckFailed, message, details);
