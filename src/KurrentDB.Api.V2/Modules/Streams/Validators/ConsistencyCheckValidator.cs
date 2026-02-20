@@ -16,7 +16,7 @@ class ConsistencyCheckValidator : ValidatorBase<ConsistencyCheckValidator, Consi
 	public ConsistencyCheckValidator() {
 		RuleFor(x => x.KindCase)
 			.NotEqual(ConsistencyCheck.KindOneofCase.None)
-			.WithMessage("Each consistency check must have a kind set.");
+			.WithMessage("Each consistency check must specify a kind.");
 
 		When(x => x.KindCase == ConsistencyCheck.KindOneofCase.Revision, () => {
 			RuleFor(x => x.Revision.Stream)
@@ -24,7 +24,7 @@ class ConsistencyCheckValidator : ValidatorBase<ConsistencyCheckValidator, Consi
 
 			RuleFor(x => x.Revision.Revision)
 				.Must(x => x >= 0 || ValidExpectedRevisions.Contains(x))
-				.WithMessage("Expected revision cannot be Any (-2). Allowed: a specific revision (>= 0), NoStream (-1), or Exists (-4).");
+				.WithMessage("Expected revision must be a specific revision (>= 0), NoStream (-1), or Exists (-4); Any (-2) is not allowed.");
 		});
 	}
 }
