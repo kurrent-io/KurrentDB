@@ -6,57 +6,39 @@ dir:
 
 # Release schedule
 
-## KurrentDB versioning and release schedule
-
-There are two categories of release for KurrentDB:
-* Long term support (LTS) releases.
-* Short term support (STS) releases.
-
-The version number reflects whether a release is an LTS or STS release. LTS releases have _even_ major numbers, and STS releases have _odd_ major numbers.
-
-### Versioning scheme
-
-The version scheme for KurrentDB is `Major.Minor.Patch` where:
+KurrentDB production release version numbers are of the form `Major.Minor.Patch`.
 
 * `Major`
-    * Is _even_ for LTS releases.
-    * Is _odd_ for STS releases.
+    * Corresponds to the year in which a release was released.
 * `Minor`
-    * Increments with scope changes or new features.
-    * Is typically `0` for LTS releases, but may be incremented in rare cases.
-* `Patch` for bug fixes.
+    * Indicates whether the release is an [LTS](#long-term-support-releases) or an [STS](#short-term-support-releases).
+    * Starting with `26.0`, LTS releases have minor number `0`. Previously they had minor number `10` (e.g. `23.10`, `24.10`).
+* `Patch`
+    * Is incremented for bug fixes and occasionally small features.
 
-As an example, the future releases of KurrentDB may look like this:
+Note that the version scheme is not `SemVer`.
 
-| Version  | Type    | Description |
-|----------|---------|-------------|
-| `25.0.0` | STS     | The first release of KurrentDB. |
-| `25.1.0` | STS     | New features added. |
-| `26.0.0` | LTS     | The first LTS release of KurrentDB. |
-| `26.0.1` | LTS     | A patch to 26.0.0. |
-| `27.0.0` | STS     | New features added. |
+Examples:
 
-### Long term support releases
+| Version  | Type | Description              |
+|----------|------|--------------------------|
+| `26.0.0` | LTS  | 2026 LTS release.        |
+| `26.0.1` | LTS  | A patch to `26.0.0`.     |
+| `26.1.0` | STS  | First 2026 STS release.  |
+| `26.2.0` | STS  | Second 2026 STS release. |
+| `26.2.1` | STS  | A patch to `26.2.0`.     |
+| `27.0.0` | LTS  | 2027 LTS release.        |
 
-There will be approximately one LTS release of KurrentDB per year.
+## Long term support releases
+
+There will be one LTS release of KurrentDB per year, released in or around January.
 
 These versions will be supported for a minimum of two years, with a two month grace period for organizing upgrades when the LTS goes out of support.
 
-LTS versions of KurrentDB start with an even major number.
-
-### Short term support releases
+## Short term support releases
 
 STS releases will be published as new features are added to KurrentDB.
 
 These versions will be supported until the next STS or LTS release of KurrentDB.
 
-STS versions of KurrentDB start with an odd major number.
-
-## Supported EventStoreDB versions
-
-EventStoreDB had a different versioning scheme to KurrentDB, where the LTS release always had a minor version of `10`.
-
-The LTS versions of EventStoreDB will still be supported for two years from their release date. This means the following versions of EventStoreDB are still within Kurrent's support window:
-
-* [EventStoreDB 24.10](https://docs.kurrent.io/server/v24.10/quick-start/) supported until October 2026.
-* [EventStoreDB 23.10](https://docs.kurrent.io/server/v23.10/quick-start/) supported until October 2025.
+There are typically one or two STS releases per year.
