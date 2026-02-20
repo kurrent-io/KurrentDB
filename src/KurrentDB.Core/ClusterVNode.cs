@@ -294,9 +294,9 @@ public class ClusterVNode<TStreamId> :
 		OptionsFormatter.LogConfig("Archive", archiveOptions);
 		archiveOptions.Validate();
 
-		var disableInternalTcpTls = options.Application.Insecure;
-		var disableExternalTcpTls = options.Application.Insecure;
 		var nodeTcpOptions = GetOptions<NodeTcpOptions>("TcpPlugin");
+		var disableInternalTcpTls = options.Application.Insecure;
+		var disableExternalTcpTls = options.Application.Insecure || nodeTcpOptions.DisableExternalTcpTls;
 		var enableExternalTcp = nodeTcpOptions.EnableExternalTcp;
 
 		var httpEndPoint = new IPEndPoint(options.Interface.NodeIp, options.Interface.NodePort);
