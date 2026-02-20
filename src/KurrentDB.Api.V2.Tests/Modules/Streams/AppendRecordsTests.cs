@@ -371,7 +371,7 @@ public class AppendRecordsTests {
 		await Assert.That(details.Failures[0].Revision.ActualRevision).IsEqualTo(-10);
 	}
 
-	[Test, Skip("Core does not yet report per-stream failure types for soft-deleted streams.")]
+	[Test]
 	public async ValueTask multiple_soft_deleted_cross_stream_checks_report_all_failures(CancellationToken ct) {
 		// Seed and soft-delete two streams
 		var streamB = Fixture.NewStreamName();
@@ -419,7 +419,7 @@ public class AppendRecordsTests {
 		await Assert.That(details.Failures[1].Revision.ActualRevision).IsEqualTo(-10);
 	}
 
-	[Test, Skip("Core does not yet report per-stream failure types for soft-deleted streams.")]
+	[Test]
 	public async ValueTask soft_deleted_and_wrong_revision_checks_report_per_stream_failures(CancellationToken ct) {
 		// Seed stream B and soft-delete it; seed stream C normally
 		var streamB = Fixture.NewStreamName();
