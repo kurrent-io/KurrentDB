@@ -332,14 +332,13 @@ public class StreamsService : StreamsServiceBase {
 
 		        for (var i = 0; i < completed.ConsistencyCheckFailures.Length; i++) {
 			        var failure = completed.ConsistencyCheckFailures.Span[i];
-			        var failedStreamIndex = failure.StreamIndex;
 
-			        if (!CheckIndexesByStreamIndex.TryGetValue(failedStreamIndex, out var checkIndex))
+			        if (!CheckIndexesByStreamIndex.TryGetValue(failure.StreamIndex, out var checkIndex))
 				        continue;
 
 			        details.Failures[checkIndex] = new ConsistencyCheckErrorDetails {
 				        Revision = new RevisionConsistencyCheckErrorDetails {
-					        Stream           = Streams[failedStreamIndex],
+					        Stream           = Streams[failure.StreamIndex],
 					        ExpectedRevision = failure.ExpectedVersion,
 					        ActualRevision   = MapActualRevision(failure)
 				        }
