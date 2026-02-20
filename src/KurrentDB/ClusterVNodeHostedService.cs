@@ -49,6 +49,7 @@ using KurrentDB.TcpPlugin;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using Serilog.Extensions.Logging;
 
 namespace KurrentDB;
 
@@ -249,9 +250,10 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 				}
 			};
 
+			var loggerFactory = new SerilogLoggerFactory();
 			var authPlugins = pluginLoader.Load<IAuthenticationPlugin>().ToList();
-			authPlugins.Add(new LdapsAuthenticationPlugin());
-			authPlugins.Add(new OAuthAuthenticationPlugin());
+			authPlugins.Add(new LdapsAuthenticationPlugin(configuration, nameof(_options.Auth.AuthenticationConfig), loggerFactory));
+			authPlugins.Add(new OAuthAuthenticationPlugin(configuration, nameof(_options.Auth.AuthenticationConfig), loggerFactory));
 
 			foreach (var potentialPlugin in authPlugins) {
 				try {

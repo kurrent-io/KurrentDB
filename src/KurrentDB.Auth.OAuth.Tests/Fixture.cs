@@ -35,7 +35,7 @@ internal class Fixture : IDisposable {
 	public IdpFixture IdentityServer { get; }
 
 	private Fixture(ITestOutputHelper output, params string[] env) {
-		_dbImage = Environment.GetEnvironmentVariable(DbImageVariableName);
+		_dbImage = Environment.GetEnvironmentVariable(DbImageVariableName); // "kurrentplatform/kurrentdb"
 		if (string.IsNullOrEmpty(_dbImage)) {
 			Assert.Fail($"The '{DbImageVariableName}' environment variable must be specified with the tag of the docker container to test." +
 						$"A test container can be built using the Dockerfile at the repository root.");

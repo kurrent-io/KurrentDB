@@ -8,8 +8,7 @@ public class when_reading_valid_configuration {
 	public void should_return_correct_options() {
 		var settings = ConfigParser.ReadConfiguration<LdapsSettings>(
 			Path.Combine("ConfigurationReaderTests", "valid_node_config.yaml"),
-			"LdapsAuth"
-		);
+			"LdapsAuth");
 
 		settings!.Host.Should().Be("13.64.104.29");
 		settings.Port.Should().Be(389);
