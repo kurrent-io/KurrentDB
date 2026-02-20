@@ -18,13 +18,8 @@ class AppendRecordsRequestValidator : RequestValidator<AppendRecordsRequest> {
 				record.RuleFor(r => r.Stream)
 					.NotEmpty()
 					.WithMessage("Each record must specify a target stream.")
-					.Must(s => !s.StartsWith('$'))
-					.WithMessage("Records cannot target system streams (starting with '$').")
-					.When(r => r.HasStream);
-
-				record.RuleFor(r => r.HasStream)
-					.Equal(true)
-					.WithMessage("Each record must specify a target stream.");
+					.Must(s => string.IsNullOrEmpty(s) || !s.StartsWith('$'))
+					.WithMessage("Records cannot target system streams (starting with '$').");
 			});
 
 		RuleForEach(x => x.ConsistencyChecks)

@@ -231,7 +231,7 @@ message StreamAlreadyInAppendSessionErrorDetails {
 
 // Details for CONSISTENCY_CHECK_FAILED errors.
 message ConsistencyCheckFailedErrorDetails {
-  map<uint32, ConsistencyCheckErrorDetails> failures = 1;
+  map<sint64, ConsistencyCheckErrorDetails> failures = 1;
 }
 
 message ConsistencyCheckErrorDetails {

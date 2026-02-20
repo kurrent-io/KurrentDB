@@ -158,7 +158,7 @@ message AppendRecord {
   // Target stream for this record.
   // Required for AppendRecords (each record specifies its own stream).
   // Ignored for AppendSession (the stream is specified in AppendRequest).
-  optional string stream = 5;
+  string stream = 5;
 }
 
 // Constants for expected revision validation in optimistic concurrency control.
