@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using EventStore.Plugins.Licensing;
@@ -15,24 +16,28 @@ using Xunit;
 namespace KurrentDB.Auth.Ldaps.Tests;
 
 public class LdapsPluginTests {
-
+	private const string ConfigFileKey = "AuthenticationConfig";
 	private const string _roleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
 	private readonly ITestOutputHelper _output;
 
-	private readonly string _configFile;
+	private readonly IConfiguration _configuration;
 	private readonly TimeSpan _timeout = TimeSpan.FromSeconds(5);
 
 	public LdapsPluginTests(ITestOutputHelper output) {
 		_output = output;
-		_configFile = Path.Combine(Environment.CurrentDirectory, "conf", "ldaps.conf");
+		_configuration = new ConfigurationBuilder()
+			.AddInMemoryCollection(new Dictionary<string, string> {
+				[$"KurrentDB:{ConfigFileKey}"] = Path.Combine(Environment.CurrentDirectory, "conf", "ldaps.conf"),
+			})
+			.Build();
 	}
 
 	private async Task<LdapsFixture> CreateAndStartFixture() {
 		var fixture = new LdapsFixture(_output);
 		fixture.Start();
 
-		var sut = new LdapsAuthenticationPlugin(NullLoggerFactory.Instance)
-			.GetAuthenticationProviderFactory(_configFile)
+		var sut = new LdapsAuthenticationPlugin(_configuration, ConfigFileKey, NullLoggerFactory.Instance)
+			.GetAuthenticationProviderFactory("")
 			.Build(false);
 
 		// There is no health check in this container
@@ -55,8 +60,8 @@ public class LdapsPluginTests {
 
 	[FactRequiringDocker]
 	public async Task authenticate_admin_user_returns_admin_role() {
-		var sut = new LdapsAuthenticationPlugin(NullLoggerFactory.Instance)
-			.GetAuthenticationProviderFactory(_configFile)
+		var sut = new LdapsAuthenticationPlugin(_configuration, ConfigFileKey, NullLoggerFactory.Instance)
+			.GetAuthenticationProviderFactory("")
 			.Build(false);
 
 		using var fixture = await CreateAndStartFixture();
@@ -78,8 +83,8 @@ public class LdapsPluginTests {
 
 	[FactRequiringDocker]
 	public async Task authenticate_with_incorrect_password_returns_unauthorized() {
-		var sut = new LdapsAuthenticationPlugin(NullLoggerFactory.Instance)
-			.GetAuthenticationProviderFactory(_configFile)
+		var sut = new LdapsAuthenticationPlugin(_configuration, ConfigFileKey, NullLoggerFactory.Instance)
+			.GetAuthenticationProviderFactory("")
 			.Build(false);
 
 		using var fixture = await CreateAndStartFixture();
@@ -98,8 +103,8 @@ public class LdapsPluginTests {
 
 	[FactRequiringDocker]
 	public async Task authenticate_with_non_existent_user_returns_unauthorized() {
-		var sut = new LdapsAuthenticationPlugin(NullLoggerFactory.Instance)
-			.GetAuthenticationProviderFactory(_configFile)
+		var sut = new LdapsAuthenticationPlugin(_configuration, ConfigFileKey, NullLoggerFactory.Instance)
+			.GetAuthenticationProviderFactory("")
 			.Build(false);
 
 		using var fixture = await CreateAndStartFixture();
@@ -118,8 +123,8 @@ public class LdapsPluginTests {
 
 	[FactRequiringDocker]
 	public async Task authenticate_user_with_custom_role_returns_expected_roles() {
-		var sut = new LdapsAuthenticationPlugin(NullLoggerFactory.Instance)
-			.GetAuthenticationProviderFactory(_configFile)
+		var sut = new LdapsAuthenticationPlugin(_configuration, ConfigFileKey, NullLoggerFactory.Instance)
+			.GetAuthenticationProviderFactory("")
 			.Build(false);
 
 		using var fixture = await CreateAndStartFixture();
@@ -141,8 +146,8 @@ public class LdapsPluginTests {
 
 	[Fact(Skip = "This currently results in an error and the request never returns")]
 	public async Task authenticate_user_with_no_roles_returns_no_roles() {
-		var sut = new LdapsAuthenticationPlugin(NullLoggerFactory.Instance)
-			.GetAuthenticationProviderFactory(_configFile)
+		var sut = new LdapsAuthenticationPlugin(_configuration, ConfigFileKey, NullLoggerFactory.Instance)
+			.GetAuthenticationProviderFactory("")
 			.Build(false);
 
 		using var fixture = await CreateAndStartFixture();
@@ -177,8 +182,8 @@ public class LdapsPluginTests {
 	[InlineData(false, "NONE", true)]
 	public void respects_license(bool licensePresent, string entitlement, bool expectedException) {
 		// given
-		var sut = new LdapsAuthenticationPlugin(NullLoggerFactory.Instance)
-			.GetAuthenticationProviderFactory(_configFile)
+		var sut = new LdapsAuthenticationPlugin(_configuration, ConfigFileKey, NullLoggerFactory.Instance)
+			.GetAuthenticationProviderFactory("")
 			.Build(false);
 
 		var config = new ConfigurationBuilder().Build();

@@ -252,8 +252,8 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 
 			var loggerFactory = new SerilogLoggerFactory();
 			var authPlugins = pluginLoader.Load<IAuthenticationPlugin>().ToList();
-			authPlugins.Add(new LdapsAuthenticationPlugin(loggerFactory));
-			authPlugins.Add(new OAuthAuthenticationPlugin(loggerFactory));
+			authPlugins.Add(new LdapsAuthenticationPlugin(configuration, nameof(_options.Auth.AuthenticationConfig), loggerFactory));
+			authPlugins.Add(new OAuthAuthenticationPlugin(configuration, nameof(_options.Auth.AuthenticationConfig), loggerFactory));
 
 			foreach (var potentialPlugin in authPlugins) {
 				try {
