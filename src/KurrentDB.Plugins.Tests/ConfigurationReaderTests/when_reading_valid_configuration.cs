@@ -1,8 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using Microsoft.Extensions.Logging.Abstractions;
-
 namespace EventStore.Plugins.Tests.ConfigurationReaderTests;
 
 public class when_reading_valid_configuration {
@@ -10,9 +8,7 @@ public class when_reading_valid_configuration {
 	public void should_return_correct_options() {
 		var settings = ConfigParser.ReadConfiguration<LdapsSettings>(
 			Path.Combine("ConfigurationReaderTests", "valid_node_config.yaml"),
-			"LdapsAuth",
-			NullLogger.Instance
-		);
+			"LdapsAuth");
 
 		settings!.Host.Should().Be("13.64.104.29");
 		settings.Port.Should().Be(389);
