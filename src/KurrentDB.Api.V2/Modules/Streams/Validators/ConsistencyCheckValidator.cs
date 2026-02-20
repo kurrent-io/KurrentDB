@@ -24,7 +24,7 @@ class ConsistencyCheckValidator : ValidatorBase<ConsistencyCheckValidator, Consi
 
 			RuleFor(x => x.Revision.Revision)
 				.Must(x => x >= 0 || ValidExpectedRevisions.Contains(x))
-				.WithMessage("Expected revision must be a specific revision, NoStream, or Exists. Any is not allowed.");
+				.WithMessage("Expected revision must be positive or one of the allowed constants: NoStream (-1) or Exists (-4). Any (-2) is not allowed.");
 		});
 	}
 }

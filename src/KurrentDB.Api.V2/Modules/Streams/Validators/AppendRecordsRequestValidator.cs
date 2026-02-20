@@ -19,7 +19,7 @@ class AppendRecordsRequestValidator : RequestValidator<AppendRecordsRequest> {
 					.NotEmpty()
 					.WithMessage("Each record must specify a target stream.")
 					.Must(s => string.IsNullOrEmpty(s) || !s.StartsWith('$'))
-					.WithMessage("Records cannot target system streams");
+					.WithMessage("Records cannot target system streams.");
 			});
 
 		RuleForEach(x => x.ConsistencyChecks)
@@ -28,11 +28,11 @@ class AppendRecordsRequestValidator : RequestValidator<AppendRecordsRequest> {
 		RuleFor(x => x.ConsistencyChecks)
 			.Must(checks => {
 				var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
 				return checks
-					.Where(c => c.KindCase == ConsistencyCheck.KindOneofCase.Revision)
-					.All(c => seen.Add(c.Revision.Stream));
+					.Where(check => check.KindCase == ConsistencyCheck.KindOneofCase.Revision)
+					.All(check => seen.Add(check.Revision.Stream));
 			})
-			.WithMessage("Each stream can only appear once in consistency checks. Use a single check per stream.")
-			.When(x => x.ConsistencyChecks.Count > 1);
+			.WithMessage("Each stream can only appear once in consistency checks.");
 	}
 }
