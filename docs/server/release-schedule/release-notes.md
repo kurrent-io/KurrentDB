@@ -6,6 +6,18 @@ order: 1
 
 This page contains the release notes for KurrentDB v25.1.
 
+## [25.1.4](https://github.com/EventStore/EventStore/releases/tag/v25.1.4)
+
+23 February 2026
+
+### Small improvements to OAuth plugin (PR [#5517](https://github.com/kurrent-io/KurrentDB/pull/5517))
+
+The new setting `OAuth::DisableCodeChallengeMethodsSupportedValidation` disables validation of the `code_challenge_methods_supported` field in the identity provider's discovery document.
+
+Enable this when using an identity provider such as Microsoft Entra that supports PKCE but does not advertise it in the discovery document.
+
+The OAuth and Ldaps plugins are now also able to read configuration settings from environment variables and/or command line options. Previously, and in contrast to all the other configuration options, the OAuth and Ldaps plugins could only take their configuration from a file, and not from the environment or command line options.
+
 ## [25.1.3](https://github.com/EventStore/EventStore/releases/tag/v25.1.3)
 
 6 February 2026
