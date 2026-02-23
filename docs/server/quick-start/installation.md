@@ -94,7 +94,7 @@ Add the repository to your system according to the [instructions on Cloudsmith](
 Then, install the package:
 
 ```bash
-apt-get install eventstoredb-ee=24.10.10
+apt-get install eventstoredb-ee=24.10.11
 ```
 
 #### Uninstall with apt-get
@@ -152,7 +152,7 @@ Add the repository to your system according to the [instructions on Cloudsmith](
 Then, install the package:
 
 ```bash
-yum install eventstoredb-ee-24.10.10-1.x86_64
+yum install eventstoredb-ee-24.10.11-1.x86_64
 ```
 
 #### Uninstall with yum
@@ -194,7 +194,7 @@ choco source add -n eventstore-eventstore -s https://nuget.eventstore.com/events
 You can install EventStoreDB through Chocolatey:
 
 ```powershell
-choco install eventstoredb-ee -s eventstore-eventstore --version 24.10.10
+choco install eventstoredb-ee -s eventstore-eventstore --version 24.10.11
 ```
 
 EventStoreDB can then be run with `EventStore.ClusterNode.exe`:
@@ -220,7 +220,7 @@ Create the service:
 ```powershell
 sc.exe create "EventStoreDB" `
   start= delayed-auto        `
-  binpath= "C:\ProgramData\chocolatey\lib\eventstoredb-ee\eventstoredb-24.10.10-ee-windows.x64\EventStore.ClusterNode.exe --config=c:\path\to\eventstore-config.yaml"
+  binpath= "C:\ProgramData\chocolatey\lib\eventstoredb-ee\eventstoredb-24.10.11-ee-windows.x64\EventStore.ClusterNode.exe --config=c:\path\to\eventstore-config.yaml"
 ```
 
 Configure the restart policy:

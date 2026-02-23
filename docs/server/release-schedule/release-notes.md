@@ -6,6 +6,14 @@ order: 1
 
 This page contains the release notes for EventStoreDB 24.10
 
+## [24.10.11](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.11)
+
+23 February 2026
+
+### Projections: Added `created` property to events (PR [#5521](https://github.com/kurrent-io/KurrentDB/pull/5521))
+
+Javascript projections can now access the `created` property on events, which is the ISO 8601 timestamp of when the event was written to the database.
+
 ## [24.10.10](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.10)
 
 16 January 2025
