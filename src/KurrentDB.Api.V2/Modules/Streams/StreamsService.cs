@@ -20,7 +20,7 @@ using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Protocol.V2.Streams;
 using KurrentDB.Protocol.V2.Streams.Errors;
-
+using static System.Runtime.CompilerServices.MethodImplOptions;
 using static EventStore.Plugins.Authorization.Operations.Streams.Parameters;
 using static KurrentDB.Core.Messages.ClientMessage;
 using static KurrentDB.Protocol.V2.Streams.StreamsService;
@@ -353,7 +353,7 @@ public class StreamsService : StreamsServiceBase {
 
 		        return ApiErrors.ConsistencyCheckFailed(details);
 
-		        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+		        [MethodImpl(AggressiveInlining)]
 		        static long MapActualRevision(ConsistencyCheckFailure failure) => failure switch {
 			        { ActualVersion: long.MaxValue } => -100, // Stream is tombstoned
 			        { IsSoftDeleted: true }          => -10, // Stream is soft-deleted
