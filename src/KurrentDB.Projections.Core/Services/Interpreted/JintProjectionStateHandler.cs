@@ -836,6 +836,7 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 	EventEnvelope CreateEnvelope(string partition, ResolvedEvent @event, string category) {
 		var envelope = new EventEnvelope(_engine, _parser, this);
 		envelope.Partition = partition;
+		envelope.Created = @event.Timestamp;
 		envelope.BodyRaw = @event.Data;
 		envelope.MetadataRaw = @event.Metadata;
 		envelope.StreamId = @event.EventStreamId;
@@ -962,6 +963,12 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 
 		public string Category {
 			set => SetOwnProperty("category", new PropertyDescriptor(value, false, true, false));
+		}
+
+		public DateTime Created {
+			// avoid new JsDate(_engine, value) because if the user stores it in their state it will be a date
+			// until the state is serialized and back, after which it will be a string, which would be a gotcha
+			set => SetOwnProperty("created", new PropertyDescriptor(value.ToString("o"), false, true, false));
 		}
 
 		public string EventId {
