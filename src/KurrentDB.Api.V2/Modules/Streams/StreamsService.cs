@@ -323,9 +323,9 @@ public class StreamsService : StreamsServiceBase {
         protected override RpcException? MapToError(Message message) {
 	        return message switch {
 		        WriteEventsCompleted completed => completed.Result switch {
-			        OperationResult.WrongExpectedVersion or OperationResult.StreamDeleted => MapToConsistencyCheckFailed(completed),
-
 			        OperationResult.CommitTimeout => ApiErrors.OperationTimeout($"{FriendlyName} timed out while waiting for commit"),
+
+			        OperationResult.WrongExpectedVersion or OperationResult.StreamDeleted => MapToConsistencyCheckFailed(completed),
 
 			        _ => ApiErrors.InternalServerError($"{FriendlyName} completed in error with unexpected result: {completed.Result}")
 		        },
