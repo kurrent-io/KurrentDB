@@ -196,7 +196,7 @@ public class StreamsService : StreamsServiceBase {
 
         Dictionary<string, int> StreamIndexMap { get; } = new(StringComparer.OrdinalIgnoreCase);
 
-        Dictionary<int, uint> CheckIndexesByStreamIndex { get; } = [];
+        Dictionary<int, long> CheckIndexesByStreamIndex { get; } = [];
 
         int MaxAppendSize    { get; set; }
         int MaxRecordSize    { get; set; }
@@ -260,7 +260,7 @@ public class StreamsService : StreamsServiceBase {
                     var streamIndex = GetOrAddStreamIndex(streamCheck.Stream);
                     Revisions[streamIndex] = streamCheck.Revision;
 
-                    CheckIndexesByStreamIndex[streamIndex] = (uint)i;
+                    CheckIndexesByStreamIndex[streamIndex] = i;
                 }
             }
 
@@ -348,12 +348,14 @@ public class StreamsService : StreamsServiceBase {
 		        return ApiErrors.ConsistencyCheckFailed(details);
 
 		        static long MapActualRevision(ConsistencyCheckFailure failure) {
-			        if (failure.ActualVersion == long.MaxValue)
+			        // Stream is tombstoned
+			        if (failure.ActualVersion is long.MaxValue)
 				        return -100;
 
 			        if (failure.IsSoftDeleted is true)
 				        return -10;
 
+			        // ActualVersion is -1 for non-existent streams.
 			        return failure.ActualVersion;
 		        }
 	        }
