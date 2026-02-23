@@ -194,7 +194,7 @@ public class StreamsService : StreamsServiceBase {
 
         ImmutableArray<Event>.Builder Events            { get; } = ImmutableArray.CreateBuilder<Event>();
         ImmutableArray<int>.Builder   Indexes           { get; } = ImmutableArray.CreateBuilder<int>();
-        List<StreamInfo>              StreamData        { get; } = [];
+        List<StreamInfo>              Streams           { get; } = [];
         Dictionary<string, int>       StreamIndexByName { get; } = new(StringComparer.OrdinalIgnoreCase);
 
         int MaxAppendSize    { get; set; }
@@ -205,14 +205,14 @@ public class StreamsService : StreamsServiceBase {
         public IEnumerable<string> WriteStreams {
             get {
                 for (var i = 0; i < WriteStreamCount; i++)
-                    yield return StreamData[i].Name;
+                    yield return Streams[i].Name;
             }
         }
 
         public IEnumerable<string> ReadOnlyStreams {
             get {
-                for (var i = WriteStreamCount; i < StreamData.Count; i++)
-                    yield return StreamData[i].Name;
+                for (var i = WriteStreamCount; i < Streams.Count; i++)
+                    yield return Streams[i].Name;
             }
         }
 
@@ -228,7 +228,7 @@ public class StreamsService : StreamsServiceBase {
 
         public AppendRecordsCommand WithRequest(AppendRecordsRequest request) {
             ProcessRecords(request.Records);
-            WriteStreamCount = StreamData.Count;
+            WriteStreamCount = Streams.Count;
             ApplyConsistencyChecks(request.ConsistencyChecks);
 
             return this;
@@ -260,8 +260,8 @@ public class StreamsService : StreamsServiceBase {
 
                     var streamRevisionCheck = check.Revision;
                     var streamIndex = GetOrAddStreamIndex(streamRevisionCheck.Stream);
-                    var info = StreamData[streamIndex];
-                    StreamData[streamIndex] = info with {
+                    var info = Streams[streamIndex];
+                    Streams[streamIndex] = info with {
 	                    Revision = streamRevisionCheck.Revision,
 	                    CheckIndex = i
                     };
@@ -272,18 +272,18 @@ public class StreamsService : StreamsServiceBase {
 	            if (StreamIndexByName.TryGetValue(stream, out var index))
 		            return index;
 
-	            index = StreamData.Count;
+	            index = Streams.Count;
 	            StreamIndexByName[stream] = index;
-	            StreamData.Add(new StreamInfo(stream, ExpectedVersion.Any));
+	            Streams.Add(new StreamInfo(stream, ExpectedVersion.Any));
 	            return index;
             }
         }
 
         protected override Message BuildMessage(IEnvelope callback, ServerCallContext context) {
             var cid = Guid.NewGuid();
-            var streamIds = ImmutableArray.CreateBuilder<string>(StreamData.Count);
-            var revisions = ImmutableArray.CreateBuilder<long>(StreamData.Count);
-            foreach (var info in StreamData) {
+            var streamIds = ImmutableArray.CreateBuilder<string>(Streams.Count);
+            var revisions = ImmutableArray.CreateBuilder<long>(Streams.Count);
+            foreach (var info in Streams) {
                 streamIds.Add(info.Name);
                 revisions.Add(info.Revision);
             }
@@ -316,7 +316,7 @@ public class StreamsService : StreamsServiceBase {
                 var lastEventNumber = completed.LastEventNumbers.Span[i];
                 if (lastEventNumber >= 0) {
                     response.Revisions.Add(new StreamRevision {
-                        Stream   = StreamData[i].Name,
+                        Stream   = Streams[i].Name,
                         Revision = lastEventNumber
                     });
                 }
@@ -343,7 +343,7 @@ public class StreamsService : StreamsServiceBase {
 
 		        for (var i = 0; i < completed.ConsistencyCheckFailures.Length; i++) {
 			        var failure = completed.ConsistencyCheckFailures.Span[i];
-			        var info = StreamData[failure.StreamIndex];
+			        var info = Streams[failure.StreamIndex];
 
 			        if (info.CheckIndex < 0)
 				        continue;
