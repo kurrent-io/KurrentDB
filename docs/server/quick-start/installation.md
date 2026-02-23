@@ -124,7 +124,7 @@ Alternatively, you can find instructions to manually configure it yourself on Cl
 Install the package:
 
 ```bash
-apt-get install kurrentdb=25.1.3
+apt-get install kurrentdb=25.1.4
 ```
 
 #### Uninstall with apt-get
@@ -207,7 +207,7 @@ Alternatively, you can find instructions to manually configure it yourself on Cl
 Install the package:
 
 ```bash
-yum install kurrentdb-25.1.3-1.x86_64
+yum install kurrentdb-25.1.4-1.x86_64
 ```
 
 #### Uninstall with yum
@@ -243,7 +243,7 @@ KurrentDB has NuGet packages available on [Chocolatey](https://community.chocola
 You can install KurrentDB through Chocolatey:
 
 ```powershell
-choco install kurrentdb --version=25.1.3
+choco install kurrentdb --version=25.1.4
 ```
 
 KurrentDB can then be run with `KurrentDB.exe`:
@@ -269,7 +269,7 @@ Create the service:
 ```powershell
 sc.exe create "KurrentDB" `
   start= delayed-auto     `
-  binpath= "C:\ProgramData\chocolatey\lib\kurrentdb\kurrentdb-25.1.3-windows.x64\KurrentDB.exe --config=c:\path\to\kurrentdb-config.yaml"
+  binpath= "C:\ProgramData\chocolatey\lib\kurrentdb\kurrentdb-25.1.4-windows.x64\KurrentDB.exe --config=c:\path\to\kurrentdb-config.yaml"
 ```
 
 Configure the restart policy:
