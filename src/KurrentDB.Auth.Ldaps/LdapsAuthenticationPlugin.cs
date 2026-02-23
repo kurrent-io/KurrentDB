@@ -2,12 +2,19 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.ComponentModel.Composition;
+using EventStore.Plugins;
 using EventStore.Plugins.Authentication;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.Auth.Ldaps;
 
 [Export(typeof(IAuthenticationPlugin))]
-public class LdapsAuthenticationPlugin : IAuthenticationPlugin {
+public class LdapsAuthenticationPlugin(
+	IConfiguration configuration,
+	string configFileKey,
+	ILoggerFactory loggerFactory) : IAuthenticationPlugin {
+
 	public string Name { get { return "LDAPS"; } }
 
 	public string Version {
@@ -16,12 +23,12 @@ public class LdapsAuthenticationPlugin : IAuthenticationPlugin {
 
 	public string CommandLineName { get { return "ldaps"; } }
 
-	public IAuthenticationProviderFactory GetAuthenticationProviderFactory(string authenticationConfigPath) {
-		if (string.IsNullOrWhiteSpace(authenticationConfigPath))
-			throw new LdapsConfigurationException(string.Format(
-				"No LDAPS configuration file was specified. Use the --{0} option to specify " +
-				"the path to the LDAPS configuration.", "authentication-config-file"));
+	public IAuthenticationProviderFactory GetAuthenticationProviderFactory(string _) {
+		var logger = loggerFactory.CreateLogger<LdapsAuthenticationPlugin>();
 
-		return new LdapsAuthenticationProviderFactory(authenticationConfigPath);
+		var ldapsSettings = new ConfigParser(logger)
+			.ReadConfiguration<LdapsSettings>(configuration, configFileKey, "LdapsAuth");
+
+		return new LdapsAuthenticationProviderFactory(ldapsSettings);
 	}
 }

@@ -2,22 +2,28 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using EventStore.Plugins.Licensing;
 using KurrentDB.Plugins.TestHelpers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace KurrentDB.Auth.OAuth.Tests;
 
-
 public class OAuthAuthenticationPluginTests {
-	private readonly string _configFile;
+	private const string ConfigFileKey = "AuthenticationConfig";
+	private readonly IConfiguration _configuration;
 
 	public OAuthAuthenticationPluginTests() {
-		_configFile = Path.Combine(Environment.CurrentDirectory, "conf", "oauth.conf");
+		_configuration = new ConfigurationBuilder()
+			.AddInMemoryCollection(new Dictionary<string, string> {
+				[$"KurrentDB:{ConfigFileKey}"] = Path.Combine(Environment.CurrentDirectory, "conf", "oauth.conf"),
+			})
+			.Build();
 	}
 
 	[Theory]
@@ -26,8 +32,8 @@ public class OAuthAuthenticationPluginTests {
 	[InlineData(false, "NONE", true)]
 	public void respects_license(bool licensePresent, string entitlement, bool expectedException) {
 		// given
-		var sut = new OAuthAuthenticationPlugin()
-			.GetAuthenticationProviderFactory(_configFile)
+		var sut = new OAuthAuthenticationPlugin(_configuration, ConfigFileKey, NullLoggerFactory.Instance)
+			.GetAuthenticationProviderFactory("")
 			.Build(false);
 
 		var config = new ConfigurationBuilder().Build();
