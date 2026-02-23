@@ -17,7 +17,7 @@ public class AppendRecordsRequestValidatorTests {
 	static readonly AppendRecordsRequestValidator Validator = new();
 
 	[Test]
-	public async ValueTask valid_request_passes() {
+	public async ValueTask minimal_request_passes() {
 		var request = CreateValidRequest();
 		var result = Validator.Validate(request);
 
@@ -25,7 +25,7 @@ public class AppendRecordsRequestValidatorTests {
 	}
 
 	[Test]
-	public async ValueTask throws_when_records_are_empty() {
+	public async ValueTask empty_records_fails() {
 		var request = new AppendRecordsRequest();
 
 		var vex = await Assert
@@ -36,7 +36,7 @@ public class AppendRecordsRequestValidatorTests {
 	}
 
 	[Test]
-	public async ValueTask throws_when_record_has_no_stream() {
+	public async ValueTask record_missing_stream_fails() {
 		var request = new AppendRecordsRequest {
 			Records = { CreateRecord() }
 		};
@@ -49,7 +49,7 @@ public class AppendRecordsRequestValidatorTests {
 	}
 
 	[Test]
-	public async ValueTask throws_when_check_has_no_kind() {
+	public async ValueTask check_missing_kind_fails() {
 		var request = CreateValidRequest();
 		request.ConsistencyChecks.Add(new ConsistencyCheck());
 
@@ -61,7 +61,7 @@ public class AppendRecordsRequestValidatorTests {
 	}
 
 	[Test]
-	public async ValueTask valid_request_with_consistency_checks_passes() {
+	public async ValueTask revision_checks_pass() {
 		var request = CreateValidRequest();
 		request.ConsistencyChecks.Add(new ConsistencyCheck {
 			Revision = new StreamRevisionCheck {
@@ -82,7 +82,7 @@ public class AppendRecordsRequestValidatorTests {
 	}
 
 	[Test]
-	public async ValueTask throws_when_duplicate_stream_in_consistency_checks() {
+	public async ValueTask duplicate_stream_checks_fail() {
 		var request = CreateValidRequest();
 		request.ConsistencyChecks.Add(new ConsistencyCheck {
 			Revision = new StreamRevisionCheck {
@@ -105,7 +105,7 @@ public class AppendRecordsRequestValidatorTests {
 	}
 
 	[Test]
-	public async ValueTask throws_when_duplicate_stream_case_insensitive_in_consistency_checks() {
+	public async ValueTask duplicate_stream_case_insensitive_fails() {
 		var request = CreateValidRequest();
 		request.ConsistencyChecks.Add(new ConsistencyCheck {
 			Revision = new StreamRevisionCheck {
@@ -128,7 +128,7 @@ public class AppendRecordsRequestValidatorTests {
 	}
 
 	[Test]
-	public async ValueTask throws_when_consistency_check_uses_any() {
+	public async ValueTask any_revision_in_check_fails() {
 		var request = CreateValidRequest();
 		request.ConsistencyChecks.Add(new ConsistencyCheck {
 			Revision = new StreamRevisionCheck {
@@ -150,7 +150,7 @@ public class AppendRecordsRequestValidatorTests {
 	[Arguments(0L)]
 	[Arguments(5L)]
 	[Arguments(100L)]
-	public async ValueTask valid_consistency_check_with_allowed_revision_passes(long expectedRevision) {
+	public async ValueTask allowed_revision_passes(long expectedRevision) {
 		var request = CreateValidRequest();
 		request.ConsistencyChecks.Add(new ConsistencyCheck {
 			Revision = new StreamRevisionCheck {
@@ -165,7 +165,7 @@ public class AppendRecordsRequestValidatorTests {
 	}
 
 	[Test]
-	public async ValueTask valid_request_with_zero_checks_passes() {
+	public async ValueTask no_checks_passes() {
 		var request = CreateValidRequest();
 
 		var result = Validator.Validate(request);
