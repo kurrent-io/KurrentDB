@@ -49,22 +49,6 @@ public class AppendRecordsRequestValidatorTests {
 	}
 
 	[Test]
-	public async ValueTask throws_when_record_targets_system_stream() {
-		var record = CreateRecord();
-		record.Stream = "$system-stream";
-
-		var request = new AppendRecordsRequest {
-			Records = { record }
-		};
-
-		var vex = await Assert
-			.That(() => Validator.ValidateAndThrow(request))
-			.Throws<DetailedValidationException>();
-
-		vex.LogValidationErrors<AppendRecordsRequestValidator>();
-	}
-
-	[Test]
 	public async ValueTask throws_when_check_has_no_kind() {
 		var request = CreateValidRequest();
 		request.ConsistencyChecks.Add(new ConsistencyCheck());
@@ -87,7 +71,7 @@ public class AppendRecordsRequestValidatorTests {
 		});
 		request.ConsistencyChecks.Add(new ConsistencyCheck {
 			Revision = new StreamRevisionCheck {
-				Stream   = "$system-stream", // system streams allowed in checks
+				Stream   = "$system-stream",
 				Revision = 0
 			}
 		});

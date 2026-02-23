@@ -16,10 +16,7 @@ class AppendRecordsRequestValidator : RequestValidator<AppendRecordsRequest> {
 		RuleForEach(x => x.Records)
 			.ChildRules(record => {
 				record.RuleFor(r => r.Stream)
-					.NotEmpty()
-					.WithMessage("Each record must specify a target stream.")
-					.Must(s => string.IsNullOrEmpty(s) || !s.StartsWith('$'))
-					.WithMessage("Records cannot target system streams.");
+					.SetValidator(StreamNameValidator.Instance);
 			});
 
 		RuleForEach(x => x.ConsistencyChecks)
