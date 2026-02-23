@@ -307,19 +307,13 @@ public class StreamsService : StreamsServiceBase {
 
         protected override AppendRecordsResponse MapToResult(Message message) {
             var completed = (WriteEventsCompleted)message;
-            var response  = new AppendRecordsResponse {
-                Position = completed.CommitPosition
-            };
+            var response  = new AppendRecordsResponse { Position = completed.CommitPosition };
 
-            // Only report revisions for streams that had events written to them
             for (var i = 0; i < completed.LastEventNumbers.Length; i++) {
-                var lastEventNumber = completed.LastEventNumbers.Span[i];
-                if (lastEventNumber >= 0) {
-                    response.Revisions.Add(new StreamRevision {
-                        Stream   = Streams[i].Name,
-                        Revision = lastEventNumber
-                    });
-                }
+                response.Revisions.Add(new StreamRevision {
+                    Stream   = Streams[i].Name,
+                    Revision = completed.LastEventNumbers.Span[i]
+                });
             }
 
             return response;
