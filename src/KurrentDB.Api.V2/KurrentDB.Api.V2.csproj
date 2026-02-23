@@ -5,6 +5,7 @@
     <AssemblyName>KurrentDB.Api</AssemblyName>
     <RootNamespace>KurrentDB.Api</RootNamespace>
     <IncludeHttpRuleProtos>true</IncludeHttpRuleProtos>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>

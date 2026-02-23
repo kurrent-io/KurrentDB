@@ -7,6 +7,7 @@
 // ReSharper disable MethodHasAsyncOverload
 
 using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
 using KurrentDB.Api.Errors;
@@ -189,14 +190,12 @@ public class StreamsService : StreamsServiceBase {
     }
 
     class AppendRecordsCommand : ApiCommand<AppendRecordsCommand, AppendRecordsResponse> {
-        ImmutableArray<Event>.Builder  Events    { get; } = ImmutableArray.CreateBuilder<Event>();
-        ImmutableArray<string>.Builder Streams   { get; } = ImmutableArray.CreateBuilder<string>();
-        ImmutableArray<long>.Builder   Revisions { get; } = ImmutableArray.CreateBuilder<long>();
-        ImmutableArray<int>.Builder    Indexes   { get; } = ImmutableArray.CreateBuilder<int>();
+        record struct StreamInfo(string Name, long Revision, long CheckIndex = -1);
 
-        Dictionary<string, int> StreamIndexMap { get; } = new(StringComparer.OrdinalIgnoreCase);
-
-        Dictionary<int, long> CheckIndexesByStreamIndex { get; } = [];
+        ImmutableArray<Event>.Builder Events            { get; } = ImmutableArray.CreateBuilder<Event>();
+        ImmutableArray<int>.Builder   Indexes           { get; } = ImmutableArray.CreateBuilder<int>();
+        List<StreamInfo>              StreamData        { get; } = [];
+        Dictionary<string, int>       StreamIndexByName { get; } = new(StringComparer.OrdinalIgnoreCase);
 
         int MaxAppendSize    { get; set; }
         int MaxRecordSize    { get; set; }
@@ -206,14 +205,14 @@ public class StreamsService : StreamsServiceBase {
         public IEnumerable<string> WriteStreams {
             get {
                 for (var i = 0; i < WriteStreamCount; i++)
-                    yield return Streams[i];
+                    yield return StreamData[i].Name;
             }
         }
 
         public IEnumerable<string> ReadOnlyStreams {
             get {
-                for (var i = WriteStreamCount; i < Streams.Count; i++)
-                    yield return Streams[i];
+                for (var i = WriteStreamCount; i < StreamData.Count; i++)
+                    yield return StreamData[i].Name;
             }
         }
 
@@ -229,12 +228,15 @@ public class StreamsService : StreamsServiceBase {
 
         public AppendRecordsCommand WithRequest(AppendRecordsRequest request) {
             ProcessRecords(request.Records);
-            WriteStreamCount = Streams.Count;
+            WriteStreamCount = StreamData.Count;
             ApplyConsistencyChecks(request.ConsistencyChecks);
 
             return this;
 
             void ProcessRecords(IReadOnlyList<AppendRecord> records) {
+                Events.Capacity = records.Count;
+                Indexes.Capacity = records.Count;
+
                 foreach (var record in records.Select(static rec => rec.PreProcessRecord())) {
                     var streamIndex = GetOrAddStreamIndex(record.Stream);
 
@@ -256,37 +258,45 @@ public class StreamsService : StreamsServiceBase {
                     if (check.KindCase != ConsistencyCheck.KindOneofCase.Revision)
                         continue;
 
-                    var streamCheck = check.Revision;
-                    var streamIndex = GetOrAddStreamIndex(streamCheck.Stream);
-                    Revisions[streamIndex] = streamCheck.Revision;
-
-                    CheckIndexesByStreamIndex[streamIndex] = i;
+                    var streamRevisionCheck = check.Revision;
+                    var streamIndex = GetOrAddStreamIndex(streamRevisionCheck.Stream);
+                    var info = StreamData[streamIndex];
+                    StreamData[streamIndex] = info with {
+	                    Revision = streamRevisionCheck.Revision,
+	                    CheckIndex = i
+                    };
                 }
             }
 
             int GetOrAddStreamIndex(string stream) {
-	            if (StreamIndexMap.TryGetValue(stream, out var index))
+	            if (StreamIndexByName.TryGetValue(stream, out var index))
 		            return index;
 
-	            index = Streams.Count;
-	            StreamIndexMap[stream] = index;
-	            Streams.Add(stream);
-	            Revisions.Add(ExpectedVersion.Any);
+	            index = StreamData.Count;
+	            StreamIndexByName[stream] = index;
+	            StreamData.Add(new StreamInfo(stream, ExpectedVersion.Any));
 	            return index;
             }
         }
 
         protected override Message BuildMessage(IEnvelope callback, ServerCallContext context) {
             var cid = Guid.NewGuid();
+            var streamIds = ImmutableArray.CreateBuilder<string>(StreamData.Count);
+            var revisions = ImmutableArray.CreateBuilder<long>(StreamData.Count);
+            foreach (var info in StreamData) {
+                streamIds.Add(info.Name);
+                revisions.Add(info.Revision);
+            }
+
             return new WriteEvents(
                 internalCorrId: cid,
                 correlationId: cid,
                 envelope: callback,
                 requireLeader: true,
-                eventStreamIds: Streams.ToImmutable(),
-                expectedVersions: Revisions.ToImmutable(),
-                events: Events.ToImmutable(),
-                eventStreamIndexes: Indexes.ToImmutable(),
+                eventStreamIds: streamIds.MoveToImmutable(),
+                expectedVersions: revisions.MoveToImmutable(),
+                events: Events.MoveToImmutable(),
+                eventStreamIndexes: Indexes.MoveToImmutable(),
                 user: context.GetHttpContext().User,
                 cancellationToken: context.CancellationToken
             );
@@ -306,7 +316,7 @@ public class StreamsService : StreamsServiceBase {
                 var lastEventNumber = completed.LastEventNumbers.Span[i];
                 if (lastEventNumber >= 0) {
                     response.Revisions.Add(new StreamRevision {
-                        Stream   = Streams[i],
+                        Stream   = StreamData[i].Name,
                         Revision = lastEventNumber
                     });
                 }
@@ -315,6 +325,7 @@ public class StreamsService : StreamsServiceBase {
             return response;
         }
 
+        [SkipLocalsInit]
         protected override RpcException? MapToError(Message message) {
 	        return message switch {
 		        WriteEventsCompleted completed => completed.Result switch {
@@ -332,13 +343,14 @@ public class StreamsService : StreamsServiceBase {
 
 		        for (var i = 0; i < completed.ConsistencyCheckFailures.Length; i++) {
 			        var failure = completed.ConsistencyCheckFailures.Span[i];
+			        var info = StreamData[failure.StreamIndex];
 
-			        if (!CheckIndexesByStreamIndex.TryGetValue(failure.StreamIndex, out var checkIndex))
+			        if (info.CheckIndex < 0)
 				        continue;
 
-			        details.Failures[checkIndex] = new ConsistencyCheckErrorDetails {
+			        details.Failures[info.CheckIndex] = new ConsistencyCheckErrorDetails {
 				        Revision = new RevisionConsistencyCheckErrorDetails {
-					        Stream           = Streams[failure.StreamIndex],
+					        Stream           = info.Name,
 					        ExpectedRevision = failure.ExpectedVersion,
 					        ActualRevision   = MapActualRevision(failure)
 				        }
@@ -347,17 +359,12 @@ public class StreamsService : StreamsServiceBase {
 
 		        return ApiErrors.ConsistencyCheckFailed(details);
 
-		        static long MapActualRevision(ConsistencyCheckFailure failure) {
-			        // Stream is tombstoned
-			        if (failure.ActualVersion is long.MaxValue)
-				        return -100;
-
-			        if (failure.IsSoftDeleted is true)
-				        return -10;
-
-			        // ActualVersion is -1 for non-existent streams.
-			        return failure.ActualVersion;
-		        }
+		        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+		        static long MapActualRevision(ConsistencyCheckFailure failure) => failure switch {
+			        { ActualVersion: long.MaxValue } => -100, // Stream is tombstoned
+			        { IsSoftDeleted: true }          => -10, // Stream is soft-deleted
+			        _                                => failure.ActualVersion // Stream not found or revision mismatch
+		        };
 	        }
         }
     }
