@@ -1063,7 +1063,8 @@ public class ClusterVNode<TStreamId> :
 			new Dictionary<string, bool> {
 				["projections"] = options.Projection.RunProjections != ProjectionType.None || options.DevMode.Dev,
 				["userManagement"] = options.Auth.AuthenticationType == Opts.AuthenticationTypeDefault && !options.Application.Insecure,
-				["atomPub"] = options.Interface.EnableAtomPubOverHttp || options.DevMode.Dev
+				["atomPub"] = options.Interface.EnableAtomPubOverHttp || options.DevMode.Dev,
+				["connectors"] = options.IsPluginEnabled("Connectors")
 			},
 			_authenticationProvider
 		);
