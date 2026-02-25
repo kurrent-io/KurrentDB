@@ -149,6 +149,7 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 		return new(commitDecision, streamId, expectedVersion, ExpectedVersion.NoStream, -1, -1, isSoftDeleted: false);
 	}
 
+	// when writing no events we always return CommitDecision.Ok or CommitDecision.ConsistencyCheckFailure
 	public async ValueTask<CommitCheckResult<TStreamId>> CheckCommit(TStreamId streamId, long expectedVersion, LowAllocReadOnlyMemory<Guid> eventIds, bool streamMightExist, CancellationToken token) {
 		if (!streamMightExist) {
 			// fast path for completely new streams
@@ -189,9 +190,11 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 			var first = true;
 			long startEventNumber = -1;
 			long endEventNumber = -1;
+			// try to find events that are not already written
 			for (var i = 0; i < eventIds.Length; i++) {
 				var eventId = eventIds.Span[i];
 				if (!_committedEvents.TryGetRecord(eventId, out var prepInfo) || !StreamIdComparer.Equals(prepInfo.StreamId, streamId))
+					// found an event that isn't already written
 					return new(
 						decision: first ? CommitDecision.Ok : CommitDecision.CorruptedIdempotency,
 						eventStreamId: streamId,
@@ -208,8 +211,11 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 				first = false;
 			}
 
-			if (first) /*no data in transaction*/
+			if (first) // eventIds.Length == 0
 				return new(CommitDecision.Ok, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: await IsSoftDeleted(streamId, token));
+
+			// we are writing events and they are all written already
+			// this is Idempotent or IdempotentNotReady depending on whether they are replicated
 			var isReplicated = await _indexReader.GetStreamLastEventNumber(streamId, token) >= endEventNumber;
 			//TODO(clc): the new index should hold the log positions removing this read
 			//n.b. the index will never have the event in the case of NotReady as it only committed records are indexed
@@ -223,8 +229,10 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 				: new(CommitDecision.IdempotentNotReady, streamId, expectedVersion, curVersion, startEventNumber, endEventNumber, isSoftDeleted: null, logPos);
 		}
 
+		// if writing earlier OR expecting no stream (i.e. soft deleted or never existed - tombstone was dealt with earlier)
 		if (expectedVersion < curVersion) {
 			var eventNumber = expectedVersion;
+			// try to find events that are not already written
 			for (var i = 0; i < eventIds.Length; i++) {
 				var eventId = eventIds.Span[i];
 				eventNumber += 1;
@@ -237,19 +245,30 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 				if (await _indexReader.ReadPrepare(streamId, eventNumber, token) is { } res && res.EventId == eventId)
 					continue;
 
-				var first = eventNumber == expectedVersion + 1;
+				// found an event that isn't already written
+				var first = i == 0;
 				if (!first)
 					return new(CommitDecision.CorruptedIdempotency, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: null);
 
+				// the first event in the write is not already written
 				if (expectedVersion is ExpectedVersion.NoStream && await IsSoftDeleted(streamId, token))
 					return new(CommitDecision.Ok, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: true);
 
+				// trying to write new events earlier than the end of the stream
 				return new(CommitDecision.ConsistencyCheckFailure, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: null);
 			}
 
-			if (eventNumber == expectedVersion) /* no data in transaction */
-				return new(CommitDecision.ConsistencyCheckFailure, streamId, expectedVersion, curVersion, -1, -1,  isSoftDeleted: null);
+			if (eventIds.Length == 0) {
+				// not writing any events at all
+				if (expectedVersion is ExpectedVersion.NoStream && await IsSoftDeleted(streamId, token))
+					return new(CommitDecision.Ok, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: true);
 
+				// expected the stream to be at an earlier version than it is
+				return new(CommitDecision.ConsistencyCheckFailure, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: null);
+			}
+
+			// we are writing events and they are all written already
+			// this is Idempotent or IdempotentNotReady depending on whether they are replicated
 			var isReplicated = await _indexReader.GetStreamLastEventNumber(streamId, token) >= eventNumber;
 			//TODO(clc): the new index should hold the log positions removing this read
 			//n.b. the index will never have the event in the case of NotReady as it only committed records are indexed
@@ -267,10 +286,11 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 				expectedVersion + 1, eventNumber,  isSoftDeleted: null, logPos);
 		}
 
+		// writing after the end -> fail
 		if (expectedVersion > curVersion)
 			return new(CommitDecision.ConsistencyCheckFailure, streamId, expectedVersion, curVersion, -1, -1,  isSoftDeleted: null);
 
-		// expectedVersion == currentVersion
+		// writing exactly to the end (expectedVersion == currentVersion) -> ok
 		return new(CommitDecision.Ok, streamId, expectedVersion, curVersion, -1, -1,  isSoftDeleted: await IsSoftDeleted(streamId, token));
 	}
 
