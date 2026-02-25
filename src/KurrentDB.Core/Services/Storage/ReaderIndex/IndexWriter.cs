@@ -163,8 +163,7 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 					return new(CommitDecision.ConsistencyCheckFailure, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: false);
 
 				// we're not appending any events to the hard deleted stream - we're only doing a consistency check on the stream's version
-
-				if (expectedVersion is ExpectedVersion.Any or EventNumber.DeletedStream)
+				if (expectedVersion is ExpectedVersion.Any or ExpectedVersion.NoStream or EventNumber.DeletedStream)
 					// the specified expected version matches the stream's current state
 					return new(CommitDecision.Ok, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: false);
 
