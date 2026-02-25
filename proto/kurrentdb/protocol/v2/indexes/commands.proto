@@ -1,4 +1,4 @@
-syntax = "proto3";
+edition = "2023";
 
 package kurrentdb.protocol.v2.indexes;
 
@@ -11,7 +11,7 @@ message CreateIndexRequest {
   string filter = 2;
   reserved 3; // filter type
   repeated IndexField fields = 4;
-  optional bool start = 5; // if unspecified: treated as true
+  bool start = 5; // if unspecified: treated as true
 }
 
 message CreateIndexResponse {

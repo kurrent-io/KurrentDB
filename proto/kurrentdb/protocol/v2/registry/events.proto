@@ -1,4 +1,4 @@
-syntax = "proto3";
+edition = "2023";
 
 package kurrentdb.protocol.registry.v2;
 
@@ -10,7 +10,7 @@ import "kurrentdb/protocol/v2/registry/shared.proto";
 
 message SchemaCreated {
   string                    schema_name       = 1;
-  optional string           description       = 2;
+  string                    description       = 2;
   SchemaDataFormat          data_format       = 3;
   CompatibilityMode         compatibility     = 4;
   map<string, string>       tags              = 5;

@@ -2,7 +2,7 @@
 // This protocol is UNSTABLE in the sense of being subject to change.
 // ******************************************************************************************
 
-syntax = "proto3";
+edition = "2023";
 
 package kurrentdb.protocol.v2.registry.errors;
 

@@ -1,4 +1,4 @@
-syntax = "proto3";
+edition = "2023";
 
 package kurrentdb.protocol.registry.v2;
 
@@ -47,7 +47,7 @@ message StreamFilterSettings {
 
 message SchemaGroupDetails {
   string              name        = 1;
-  optional string     description = 2;
+  string              description = 2;
   map<string, string> tags        = 3;
 
   //  bool              disable_auto_registration = 4;   // Controls automatic registration for the schema group
@@ -76,7 +76,7 @@ message SchemaGroup {
 
 // Command to create a new schema group with optional identifier and required configuration
 message CreateSchemaGroupRequest {
-  optional string    group_id = 1;  // Unique identifier of the schema group
+  string             group_id = 1;  // Unique identifier of the schema group
   SchemaGroupDetails details  = 2;  // Details of the schema group to be created
 }
 
