@@ -13,9 +13,9 @@ message SchemaCompatibilityError {
   SchemaCompatibilityErrorKind kind    = 1;  // The type of compatibility error.
   string                       details = 2;  // The error message
 
-  optional string property_path = 3;  // The path to the property where the compatibility error occurred.
-  optional string original_type = 4;  // The type of property in the registered schema (e.g. array, bool, number, object)
-  optional string new_type      = 5;  // The type of property in the schema being validated (e.g. array, bool, number, object)
+  string property_path = 3;  // The path to the property where the compatibility error occurred.
+  string original_type = 4;  // The type of property in the registered schema (e.g. array, bool, number, object)
+  string new_type      = 5;  // The type of property in the schema being validated (e.g. array, bool, number, object)
 }
 
 // Represents the result of schema compatibility, containing a list of compatibility errors.

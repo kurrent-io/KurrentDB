@@ -7,13 +7,13 @@ using KurrentDB.Api.Tests.Fixtures;
 using KurrentDB.Protocol.V2.Streams;
 using KurrentDB.Protocol.V2.Streams.Errors;
 using KurrentDB.Testing.Bogus;
+using static KurrentDB.Core.Data.ExpectedVersion;
+using static KurrentDB.Protocol.V2.Streams.ConsistencyCheck.Types;
 
 namespace KurrentDB.Api.Tests.Streams;
 
 public class AppendRecordsTests {
-	private const long NoStream = -1;
 	private const long SoftDeleted = -10;
-	private const long StreamExists = -4;
 	private const long Tombstoned = -100;
 
 	[ClassDataSource<ClusterVNodeTestContext>(Shared = SharedType.PerTestSession)]
@@ -77,17 +77,17 @@ public class AppendRecordsTests {
 		var writeStream = Fixture.NewStreamName();
 		var request = new AppendRecordsRequest {
 			Records = { CreateRecord(writeStream) },
-			ConsistencyChecks = {
+			Checks = {
 				new ConsistencyCheck {
-					Revision = new StreamRevisionCheck {
+					StreamState = new StreamStateCheck {
 						Stream   = streamA,
-						Revision = 999
+						ExpectedState = 999
 					}
 				},
 				new ConsistencyCheck {
-					Revision = new StreamRevisionCheck {
+					StreamState = new StreamStateCheck {
 						Stream   = streamB,
-						Revision = 888
+						ExpectedState = 888
 					}
 				}
 			}
@@ -98,14 +98,14 @@ public class AppendRecordsTests {
 		var rex = await appendTask.ShouldThrowAsync<RpcException>();
 		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
 
-		var details = rex.GetRpcStatus()?.GetDetail<ConsistencyCheckFailedErrorDetails>();
+		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
 		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Failures).HasCount(2);
+		await Assert.That(details!.Violations).HasCount(2);
 
-		await Assert.That(details.Failures[0].Revision.Stream).IsEqualTo(streamA);
-		await Assert.That(details.Failures[0].Revision.ActualRevision).IsEqualTo(0);
-		await Assert.That(details.Failures[1].Revision.Stream).IsEqualTo(streamB);
-		await Assert.That(details.Failures[1].Revision.ActualRevision).IsEqualTo(1);
+		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(streamA);
+		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(0);
+		await Assert.That(details.Violations[1].StreamState.Stream).IsEqualTo(streamB);
+		await Assert.That(details.Violations[1].StreamState.ActualState).IsEqualTo(1);
 	}
 
 	[Test]
@@ -127,6 +127,13 @@ public class AppendRecordsTests {
 
 		var rex = await appendTask.ShouldThrowAsync<RpcException>();
 		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
+
+		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
+		await Assert.That(details).IsNotNull();
+		await Assert.That(details!.Violations).HasCount(1);
+		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(stream);
+		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(Tombstoned);
+		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(Any);
 	}
 
 	[Test]
@@ -168,11 +175,11 @@ public class AppendRecordsTests {
 
 		var request = new AppendRecordsRequest {
 			Records = { CreateRecord(stream) },
-			ConsistencyChecks = {
+			Checks = {
 				new ConsistencyCheck {
-					Revision = new StreamRevisionCheck {
+					StreamState = new StreamStateCheck {
 						Stream   = stream,
-						Revision = 3
+						ExpectedState = 3
 					}
 				}
 			}
@@ -195,11 +202,11 @@ public class AppendRecordsTests {
 
 		var request = new AppendRecordsRequest {
 			Records = { CreateRecord(stream) },
-			ConsistencyChecks = {
+			Checks = {
 				new ConsistencyCheck {
-					Revision = new StreamRevisionCheck {
+					StreamState = new StreamStateCheck {
 						Stream   = stream,
-						Revision = 999
+						ExpectedState = 999
 					}
 				}
 			}
@@ -210,12 +217,12 @@ public class AppendRecordsTests {
 		var rex = await appendTask.ShouldThrowAsync<RpcException>();
 		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
 
-		var details = rex.GetRpcStatus()?.GetDetail<ConsistencyCheckFailedErrorDetails>();
+		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
 		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Failures).HasCount(1);
-		await Assert.That(details.Failures[0].Revision.Stream).IsEqualTo(stream);
-		await Assert.That(details.Failures[0].Revision.ExpectedRevision).IsEqualTo(999);
-		await Assert.That(details.Failures[0].Revision.ActualRevision).IsEqualTo(1);
+		await Assert.That(details!.Violations).HasCount(1);
+		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(stream);
+		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(999);
+		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(1);
 	}
 
 	[Test]
@@ -225,11 +232,11 @@ public class AppendRecordsTests {
 
 		var request = new AppendRecordsRequest {
 			Records = { CreateRecord(writeStream) },
-			ConsistencyChecks = {
+			Checks = {
 				new ConsistencyCheck {
-					Revision = new StreamRevisionCheck {
+					StreamState = new StreamStateCheck {
 						Stream   = checkStream,
-						Revision = 5
+						ExpectedState = 5
 					}
 				}
 			}
@@ -240,12 +247,12 @@ public class AppendRecordsTests {
 		var rex = await appendTask.ShouldThrowAsync<RpcException>();
 		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
 
-		var details = rex.GetRpcStatus()?.GetDetail<ConsistencyCheckFailedErrorDetails>();
+		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
 		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Failures).HasCount(1);
-		await Assert.That(details.Failures[0].Revision.Stream).IsEqualTo(checkStream);
-		await Assert.That(details.Failures[0].Revision.ExpectedRevision).IsEqualTo(5);
-		await Assert.That(details.Failures[0].Revision.ActualRevision).IsEqualTo(NoStream);
+		await Assert.That(details!.Violations).HasCount(1);
+		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
+		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(5);
+		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(NoStream);
 	}
 
 	[Test]
@@ -259,11 +266,11 @@ public class AppendRecordsTests {
 
 		var request = new AppendRecordsRequest {
 			Records = { CreateRecord(stream) },
-			ConsistencyChecks = {
+			Checks = {
 				new ConsistencyCheck {
-					Revision = new StreamRevisionCheck {
+					StreamState = new StreamStateCheck {
 						Stream   = stream,
-						Revision = 0
+						ExpectedState = 0
 					}
 				}
 			}
@@ -286,11 +293,11 @@ public class AppendRecordsTests {
 
 		var request = new AppendRecordsRequest {
 			Records = { CreateRecord(stream) },
-			ConsistencyChecks = {
+			Checks = {
 				new ConsistencyCheck {
-					Revision = new StreamRevisionCheck {
+					StreamState = new StreamStateCheck {
 						Stream   = stream,
-						Revision = 999
+						ExpectedState = 999
 					}
 				}
 			}
@@ -301,12 +308,12 @@ public class AppendRecordsTests {
 		var rex = await appendTask.ShouldThrowAsync<RpcException>();
 		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
 
-		var details = rex.GetRpcStatus()?.GetDetail<ConsistencyCheckFailedErrorDetails>();
+		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
 		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Failures).HasCount(1);
-		await Assert.That(details.Failures[0].Revision.Stream).IsEqualTo(stream);
-		await Assert.That(details.Failures[0].Revision.ExpectedRevision).IsEqualTo(999);
-		await Assert.That(details.Failures[0].Revision.ActualRevision).IsEqualTo(seedResponse.Revisions[0].Revision);
+		await Assert.That(details!.Violations).HasCount(1);
+		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(stream);
+		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(999);
+		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(seedResponse.Revisions[0].Revision);
 	}
 
 	[Test]
@@ -321,11 +328,11 @@ public class AppendRecordsTests {
 		var writeStream = Fixture.NewStreamName();
 		var request = new AppendRecordsRequest {
 			Records = { CreateRecord(writeStream) },
-			ConsistencyChecks = {
+			Checks = {
 				new ConsistencyCheck {
-					Revision = new StreamRevisionCheck {
+					StreamState = new StreamStateCheck {
 						Stream   = checkStream,
-						Revision = 0
+						ExpectedState = 0
 					}
 				}
 			}
@@ -336,12 +343,12 @@ public class AppendRecordsTests {
 		var rex = await appendTask.ShouldThrowAsync<RpcException>();
 		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
 
-		var details = rex.GetRpcStatus()?.GetDetail<ConsistencyCheckFailedErrorDetails>();
+		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
 		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Failures).HasCount(1);
-		await Assert.That(details.Failures[0].Revision.Stream).IsEqualTo(checkStream);
-		await Assert.That(details.Failures[0].Revision.ExpectedRevision).IsEqualTo(0);
-		await Assert.That(details.Failures[0].Revision.ActualRevision).IsEqualTo(Tombstoned);
+		await Assert.That(details!.Violations).HasCount(1);
+		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
+		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(0);
+		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(Tombstoned);
 	}
 
 	[Test]
@@ -355,11 +362,11 @@ public class AppendRecordsTests {
 		var writeStream = Fixture.NewStreamName();
 		var request = new AppendRecordsRequest {
 			Records = { CreateRecord(writeStream) },
-			ConsistencyChecks = {
+			Checks = {
 				new ConsistencyCheck {
-					Revision = new StreamRevisionCheck {
+					StreamState = new StreamStateCheck {
 						Stream   = checkStream,
-						Revision = NoStream
+						ExpectedState = NoStream
 					}
 				}
 			}
@@ -370,12 +377,12 @@ public class AppendRecordsTests {
 		var rex = await appendTask.ShouldThrowAsync<RpcException>();
 		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
 
-		var details = rex.GetRpcStatus()?.GetDetail<ConsistencyCheckFailedErrorDetails>();
+		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
 		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Failures).HasCount(1);
-		await Assert.That(details.Failures[0].Revision.Stream).IsEqualTo(checkStream);
-		await Assert.That(details.Failures[0].Revision.ExpectedRevision).IsEqualTo(NoStream);
-		await Assert.That(details.Failures[0].Revision.ActualRevision).IsEqualTo(2);
+		await Assert.That(details!.Violations).HasCount(1);
+		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
+		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(NoStream);
+		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(2);
 	}
 
 	[Test]
@@ -384,11 +391,11 @@ public class AppendRecordsTests {
 
 		var request = new AppendRecordsRequest {
 			Records = { CreateRecord(stream) },
-			ConsistencyChecks = {
+			Checks = {
 				new ConsistencyCheck {
-					Revision = new StreamRevisionCheck {
+					StreamState = new StreamStateCheck {
 						Stream   = stream,
-						Revision = NoStream
+						ExpectedState = NoStream
 					}
 				}
 			}
@@ -412,11 +419,11 @@ public class AppendRecordsTests {
 
 		var request = new AppendRecordsRequest {
 			Records = { CreateRecord(stream) },
-			ConsistencyChecks = {
+			Checks = {
 				new ConsistencyCheck {
-					Revision = new StreamRevisionCheck {
+					StreamState = new StreamStateCheck {
 						Stream   = stream,
-						Revision = NoStream
+						ExpectedState = NoStream
 					}
 				}
 			}
@@ -440,11 +447,11 @@ public class AppendRecordsTests {
 		var writeStream = Fixture.NewStreamName();
 		var request = new AppendRecordsRequest {
 			Records = { CreateRecord(writeStream) },
-			ConsistencyChecks = {
+			Checks = {
 				new ConsistencyCheck {
-					Revision = new StreamRevisionCheck {
+					StreamState = new StreamStateCheck {
 						Stream   = checkStream,
-						Revision = NoStream
+						ExpectedState = NoStream
 					}
 				}
 			}
@@ -455,12 +462,12 @@ public class AppendRecordsTests {
 		var rex = await appendTask.ShouldThrowAsync<RpcException>();
 		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
 
-		var details = rex.GetRpcStatus()?.GetDetail<ConsistencyCheckFailedErrorDetails>();
+		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
 		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Failures).HasCount(1);
-		await Assert.That(details.Failures[0].Revision.Stream).IsEqualTo(checkStream);
-		await Assert.That(details.Failures[0].Revision.ExpectedRevision).IsEqualTo(NoStream);
-		await Assert.That(details.Failures[0].Revision.ActualRevision).IsEqualTo(Tombstoned);
+		await Assert.That(details!.Violations).HasCount(1);
+		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
+		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(NoStream);
+		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(Tombstoned);
 	}
 
 	[Test]
@@ -533,6 +540,12 @@ public class AppendRecordsTests {
 
 		var rex = await appendTask.ShouldThrowAsync<RpcException>();
 		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
+
+		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
+		await Assert.That(details).IsNotNull();
+		await Assert.That(details!.Violations).HasCount(1);
+		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(stream);
+		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(Tombstoned);
 	}
 
 	[Test]
@@ -545,11 +558,11 @@ public class AppendRecordsTests {
 
 		var request = new AppendRecordsRequest {
 			Records = { CreateRecord(stream) },
-			ConsistencyChecks = {
+			Checks = {
 				new ConsistencyCheck {
-					Revision = new StreamRevisionCheck {
+					StreamState = new StreamStateCheck {
 						Stream   = stream,
-						Revision = StreamExists
+						ExpectedState = StreamExists
 					}
 				}
 			}
@@ -568,11 +581,11 @@ public class AppendRecordsTests {
 
 		var request = new AppendRecordsRequest {
 			Records = { CreateRecord(writeStream) },
-			ConsistencyChecks = {
+			Checks = {
 				new ConsistencyCheck {
-					Revision = new StreamRevisionCheck {
+					StreamState = new StreamStateCheck {
 						Stream   = checkStream,
-						Revision = StreamExists
+						ExpectedState = StreamExists
 					}
 				}
 			}
@@ -583,12 +596,12 @@ public class AppendRecordsTests {
 		var rex = await appendTask.ShouldThrowAsync<RpcException>();
 		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
 
-		var details = rex.GetRpcStatus()?.GetDetail<ConsistencyCheckFailedErrorDetails>();
+		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
 		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Failures).HasCount(1);
-		await Assert.That(details.Failures[0].Revision.Stream).IsEqualTo(checkStream);
-		await Assert.That(details.Failures[0].Revision.ExpectedRevision).IsEqualTo(StreamExists);
-		await Assert.That(details.Failures[0].Revision.ActualRevision).IsEqualTo(NoStream);
+		await Assert.That(details!.Violations).HasCount(1);
+		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
+		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(StreamExists);
+		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(NoStream);
 	}
 
 	[Test]
@@ -603,11 +616,11 @@ public class AppendRecordsTests {
 		var writeStream = Fixture.NewStreamName();
 		var request = new AppendRecordsRequest {
 			Records = { CreateRecord(writeStream) },
-			ConsistencyChecks = {
+			Checks = {
 				new ConsistencyCheck {
-					Revision = new StreamRevisionCheck {
+					StreamState = new StreamStateCheck {
 						Stream   = checkStream,
-						Revision = StreamExists
+						ExpectedState = StreamExists
 					}
 				}
 			}
@@ -618,12 +631,12 @@ public class AppendRecordsTests {
 		var rex = await appendTask.ShouldThrowAsync<RpcException>();
 		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
 
-		var details = rex.GetRpcStatus()?.GetDetail<ConsistencyCheckFailedErrorDetails>();
+		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
 		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Failures).HasCount(1);
-		await Assert.That(details.Failures[0].Revision.Stream).IsEqualTo(checkStream);
-		await Assert.That(details.Failures[0].Revision.ExpectedRevision).IsEqualTo(StreamExists);
-		await Assert.That(details.Failures[0].Revision.ActualRevision).IsEqualTo(SoftDeleted);
+		await Assert.That(details!.Violations).HasCount(1);
+		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
+		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(StreamExists);
+		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(SoftDeleted);
 	}
 
 	[Test]
@@ -638,11 +651,11 @@ public class AppendRecordsTests {
 		var writeStream = Fixture.NewStreamName();
 		var request = new AppendRecordsRequest {
 			Records = { CreateRecord(writeStream) },
-			ConsistencyChecks = {
+			Checks = {
 				new ConsistencyCheck {
-					Revision = new StreamRevisionCheck {
+					StreamState = new StreamStateCheck {
 						Stream   = checkStream,
-						Revision = StreamExists
+						ExpectedState = StreamExists
 					}
 				}
 			}
@@ -653,12 +666,12 @@ public class AppendRecordsTests {
 		var rex = await appendTask.ShouldThrowAsync<RpcException>();
 		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
 
-		var details = rex.GetRpcStatus()?.GetDetail<ConsistencyCheckFailedErrorDetails>();
+		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
 		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Failures).HasCount(1);
-		await Assert.That(details.Failures[0].Revision.Stream).IsEqualTo(checkStream);
-		await Assert.That(details.Failures[0].Revision.ExpectedRevision).IsEqualTo(StreamExists);
-		await Assert.That(details.Failures[0].Revision.ActualRevision).IsEqualTo(Tombstoned);
+		await Assert.That(details!.Violations).HasCount(1);
+		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
+		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(StreamExists);
+		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(Tombstoned);
 	}
 
 	static AppendRecord CreateRecord(string stream) =>

@@ -75,7 +75,7 @@ message GetSchemaResponse {
 
 message ListSchemasRequest {
   // The prefix of the schema name. If specified, only schemas with the specified prefix are returned.
-  optional string schema_name_prefix = 1;
+  string schema_name_prefix = 1;
   // The tags to filter the schemas. If specified, only schemas with the specified tags are returned.
   map<string, string> schema_tags = 2;
 }
@@ -134,7 +134,7 @@ message GetSchemaVersionByIdResponse {
 
 message GetSchemaVersionRequest {
   string         schema_name    = 1;
-  optional int32 version_number = 2;  // without this field, the latest version will be returned
+  int32 version_number = 2;  // without this field, the latest version will be returned
 }
 
 message GetSchemaVersionResponse {
@@ -166,9 +166,9 @@ message RegisteredSchema {
 message ListRegisteredSchemasRequest {
   // The unique identifier of the schema version. If specified, only the schema with the specified version ID is
   // returned.
-  optional string schema_version_id = 1;
+  string schema_version_id = 1;
   // The prefix of the schema name. If specified, only schemas with the specified prefix are returned.
-  optional string schema_name_prefix = 2;
+  string schema_name_prefix = 2;
   // The tags to filter the schemas. If specified, only schemas with the specified tags are returned.
   map<string, string> schema_tags = 3;
   // If true, the schema definition will be included in the response.

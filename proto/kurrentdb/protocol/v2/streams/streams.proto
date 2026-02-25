@@ -134,8 +134,6 @@ message AppendRecord {
 // Constants for expected revision validation in optimistic concurrency control.
 // These can be used in the expected_revision field, or you can specify an actual revision number.
 enum ExpectedRevisionConstants {
-  option deprecated = true;
-
   // The stream must have exactly one event at revision 0.
   // Used for scenarios requiring strict single-event semantics.
   EXPECTED_REVISION_CONSTANTS_SINGLE_EVENT = 0;
@@ -199,8 +197,9 @@ message ConsistencyCheck {
     // Check that a stream is at a specific revision or lifecycle state.
     StreamStateCheck stream_state = 1;
 
-    // Evaluate a server-side query predicate that must return true.
-    QueryPredicateCheck query_predicate = 2;
+    // UNIMPLEMENTED: This is a placeholder for future support of server-side query predicates.
+    // // Evaluate a server-side query predicate that must return true.
+    // QueryPredicateCheck query_predicate = 2;
   }
 
   /**
@@ -219,15 +218,16 @@ message ConsistencyCheck {
     sint64 expected_state = 2;
   }
 
-  /**
-   * A server-side query predicate evaluated before commit.
-   *
-   * If the predicate expression evaluates to false, the entire transaction is
-   * aborted. Can be used to enforce cross-stream conditions or other complex
-   * preconditions.
-   */
-  message QueryPredicateCheck {
-    // The predicate expression to evaluate.
-    string expression = 1;
-  }
+  // UNIMPLEMENTED: Placeholder for future support of server-side query predicates evaluated before commit.
+  // /**
+  //  * A server-side query predicate evaluated before commit.
+  //  *
+  //  * If the predicate expression evaluates to false, the entire transaction is
+  //  * aborted. Can be used to enforce cross-stream conditions or other complex
+  //  * preconditions.
+  //  */
+  // message QueryPredicateCheck {
+  //   // The predicate expression to evaluate.
+  //   string expression = 1;
+  // }
 }

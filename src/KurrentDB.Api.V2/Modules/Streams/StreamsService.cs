@@ -192,7 +192,7 @@ public class StreamsService : StreamsServiceBase {
     }
 
     class AppendRecordsCommand : ApiCommand<AppendRecordsCommand, AppendRecordsResponse> {
-        record struct StreamInfo(string Name, long Revision, long CheckIndex = -1);
+        record struct StreamInfo(string Name, long Revision);
 
         ImmutableArray<Event>.Builder Events            { get; } = ImmutableArray.CreateBuilder<Event>();
         ImmutableArray<int>.Builder   Indexes           { get; } = ImmutableArray.CreateBuilder<int>();
@@ -264,8 +264,7 @@ public class StreamsService : StreamsServiceBase {
                     var streamIndex = GetOrAddStreamIndex(streamStateCheck.Stream);
                     var info = Streams[streamIndex];
                     Streams[streamIndex] = info with {
-	                    Revision   = streamStateCheck.ExpectedState,
-	                    CheckIndex = i
+	                    Revision = streamStateCheck.ExpectedState
                     };
                 }
             }
@@ -335,24 +334,17 @@ public class StreamsService : StreamsServiceBase {
 	        };
 
 	        RpcException MapToConsistencyCheckFailed(WriteEventsCompleted completed) {
-		        var violations = new List<ConsistencyViolation>();
+		        var failures = completed.ConsistencyCheckFailures.Span;
+		        var violations = new List<ConsistencyViolation>(failures.Length);
 
-		        for (var i = 0; i < completed.ConsistencyCheckFailures.Length; i++) {
-			        var failure = completed.ConsistencyCheckFailures.Span[i];
-			        var info = Streams[failure.StreamIndex];
-
-			        if (info.CheckIndex < 0)
-				        continue;
-
-                    violations.Add(new ConsistencyViolation {
+		        foreach (ref readonly var failure in failures)
+			        violations.Add(new ConsistencyViolation {
 				        StreamState = new() {
-					        Stream        = info.Name,
+					        Stream        = Streams[failure.StreamIndex].Name,
 					        ExpectedState = failure.ExpectedVersion,
 					        ActualState   = MapActualRevision(failure)
-				        },
-                        CheckIndex = (int)info.CheckIndex
+				        }
 			        });
-		        }
 
 		        return ApiErrors.AppendConsistencyViolation(violations);
 

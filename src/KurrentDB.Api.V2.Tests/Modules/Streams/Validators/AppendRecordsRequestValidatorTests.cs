@@ -36,22 +36,9 @@ public class AppendRecordsRequestValidatorTests {
 	}
 
 	[Test]
-	public async ValueTask record_missing_stream_fails() {
-		var request = new AppendRecordsRequest {
-			Records = { CreateRecord() }
-		};
-
-		var vex = await Assert
-			.That(() => Validator.ValidateAndThrow(request))
-			.Throws<DetailedValidationException>();
-
-		vex.LogValidationErrors<AppendRecordsRequestValidator>();
-	}
-
-	[Test]
 	public async ValueTask check_missing_kind_fails() {
 		var request = CreateValidRequest();
-		request.ConsistencyChecks.Add(new ConsistencyCheck());
+		request.Checks.Add(new ConsistencyCheck());
 
 		var vex = await Assert
 			.That(() => Validator.ValidateAndThrow(request))
@@ -63,16 +50,16 @@ public class AppendRecordsRequestValidatorTests {
 	[Test]
 	public async ValueTask revision_checks_pass() {
 		var request = CreateValidRequest();
-		request.ConsistencyChecks.Add(new ConsistencyCheck {
-			Revision = new StreamRevisionCheck {
-				Stream   = "some-stream",
-				Revision = 5
+		request.Checks.Add(new ConsistencyCheck {
+			StreamState = new ConsistencyCheck.Types.StreamStateCheck {
+				Stream = "some-stream",
+				ExpectedState = 5
 			}
 		});
-		request.ConsistencyChecks.Add(new ConsistencyCheck {
-			Revision = new StreamRevisionCheck {
-				Stream   = "$system-stream",
-				Revision = 0
+		request.Checks.Add(new ConsistencyCheck {
+			StreamState = new ConsistencyCheck.Types.StreamStateCheck {
+				Stream = "$system-stream",
+				ExpectedState = 0
 			}
 		});
 
@@ -84,16 +71,16 @@ public class AppendRecordsRequestValidatorTests {
 	[Test]
 	public async ValueTask duplicate_stream_checks_fail() {
 		var request = CreateValidRequest();
-		request.ConsistencyChecks.Add(new ConsistencyCheck {
-			Revision = new StreamRevisionCheck {
-				Stream   = "some-stream",
-				Revision = 5
+		request.Checks.Add(new ConsistencyCheck {
+			StreamState = new ConsistencyCheck.Types.StreamStateCheck {
+				Stream = "some-stream",
+				ExpectedState = 5
 			}
 		});
-		request.ConsistencyChecks.Add(new ConsistencyCheck {
-			Revision = new StreamRevisionCheck {
-				Stream   = "some-stream",
-				Revision = 5
+		request.Checks.Add(new ConsistencyCheck {
+			StreamState = new ConsistencyCheck.Types.StreamStateCheck {
+				Stream = "some-stream",
+				ExpectedState = 5
 			}
 		});
 
@@ -107,16 +94,16 @@ public class AppendRecordsRequestValidatorTests {
 	[Test]
 	public async ValueTask duplicate_stream_case_insensitive_fails() {
 		var request = CreateValidRequest();
-		request.ConsistencyChecks.Add(new ConsistencyCheck {
-			Revision = new StreamRevisionCheck {
-				Stream   = "Some-Stream",
-				Revision = 5
+		request.Checks.Add(new ConsistencyCheck {
+			StreamState = new ConsistencyCheck.Types.StreamStateCheck {
+				Stream = "Some-Stream",
+				ExpectedState = 5
 			}
 		});
-		request.ConsistencyChecks.Add(new ConsistencyCheck {
-			Revision = new StreamRevisionCheck {
-				Stream   = "some-stream",
-				Revision = 10
+		request.Checks.Add(new ConsistencyCheck {
+			StreamState = new ConsistencyCheck.Types.StreamStateCheck {
+				Stream = "some-stream",
+				ExpectedState = 10
 			}
 		});
 
@@ -130,10 +117,10 @@ public class AppendRecordsRequestValidatorTests {
 	[Test]
 	public async ValueTask any_revision_in_check_fails() {
 		var request = CreateValidRequest();
-		request.ConsistencyChecks.Add(new ConsistencyCheck {
-			Revision = new StreamRevisionCheck {
-				Stream   = "some-stream",
-				Revision = (long)ExpectedRevisionConstants.Any
+		request.Checks.Add(new ConsistencyCheck {
+			StreamState = new ConsistencyCheck.Types.StreamStateCheck {
+				Stream = "some-stream",
+				ExpectedState = -2
 			}
 		});
 
@@ -145,17 +132,17 @@ public class AppendRecordsRequestValidatorTests {
 	}
 
 	[Test]
-	[Arguments((long)ExpectedRevisionConstants.NoStream)]
-	[Arguments((long)ExpectedRevisionConstants.Exists)]
+	[Arguments(-1L)]
+	[Arguments(-4L)]
 	[Arguments(0L)]
 	[Arguments(5L)]
 	[Arguments(100L)]
 	public async ValueTask allowed_revision_passes(long expectedRevision) {
 		var request = CreateValidRequest();
-		request.ConsistencyChecks.Add(new ConsistencyCheck {
-			Revision = new StreamRevisionCheck {
-				Stream   = "some-stream",
-				Revision = expectedRevision
+		request.Checks.Add(new ConsistencyCheck {
+			StreamState = new ConsistencyCheck.Types.StreamStateCheck {
+				Stream = "some-stream",
+				ExpectedState = expectedRevision
 			}
 		});
 
@@ -171,12 +158,11 @@ public class AppendRecordsRequestValidatorTests {
 		var result = Validator.Validate(request);
 
 		await Assert.That(result.IsValid).IsTrue();
-		await Assert.That(request.ConsistencyChecks).HasCount(0);
+		await Assert.That(request.Checks).HasCount(0);
 	}
 
 	static AppendRecordsRequest CreateValidRequest() {
 		var record = CreateRecord();
-		record.Stream = "test-stream";
 		return new AppendRecordsRequest {
 			Records = { record }
 		};
@@ -185,8 +171,9 @@ public class AppendRecordsRequestValidatorTests {
 	static AppendRecord CreateRecord() =>
 		new() {
 			RecordId = Guid.NewGuid().ToString(),
+			Stream = "test-stream",
 			Schema = new SchemaInfo {
-				Name   = "TestEvent.V1",
+				Name = "TestEvent.V1",
 				Format = SchemaFormat.Json
 			},
 			Data = ByteString.CopyFromUtf8("{}")
