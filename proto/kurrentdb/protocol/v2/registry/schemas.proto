@@ -9,7 +9,7 @@ option java_multiple_files = true;
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
-import "registry/shared.proto";
+import "kurrentdb/protocol/v2/registry/shared.proto";
 
 message SchemaDetails {
   SchemaDataFormat    data_format   = 1;

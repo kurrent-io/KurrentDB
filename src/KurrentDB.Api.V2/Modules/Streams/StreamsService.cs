@@ -25,6 +25,8 @@ using static EventStore.Plugins.Authorization.Operations.Streams.Parameters;
 using static KurrentDB.Core.Messages.ClientMessage;
 using static KurrentDB.Protocol.V2.Streams.StreamsService;
 
+using Contracts = KurrentDB.Protocol.V2.Streams;
+
 namespace KurrentDB.Api.Streams;
 
 public class StreamsService : StreamsServiceBase {
@@ -229,7 +231,7 @@ public class StreamsService : StreamsServiceBase {
         public AppendRecordsCommand WithRequest(AppendRecordsRequest request) {
             ProcessRecords(request.Records);
             WriteStreamCount = Streams.Count;
-            ApplyConsistencyChecks(request.ConsistencyChecks);
+            ApplyConsistencyChecks(request.Checks);
 
             return this;
 
@@ -255,14 +257,14 @@ public class StreamsService : StreamsServiceBase {
             void ApplyConsistencyChecks(IReadOnlyList<ConsistencyCheck> checks) {
                 for (var i = 0; i < checks.Count; i++) {
                     var check = checks[i];
-                    if (check.KindCase != ConsistencyCheck.KindOneofCase.Revision)
+                    if (check.TypeCase != ConsistencyCheck.TypeOneofCase.StreamState)
                         continue;
 
-                    var streamRevisionCheck = check.Revision;
-                    var streamIndex = GetOrAddStreamIndex(streamRevisionCheck.Stream);
+                    var streamStateCheck = check.StreamState;
+                    var streamIndex = GetOrAddStreamIndex(streamStateCheck.Stream);
                     var info = Streams[streamIndex];
                     Streams[streamIndex] = info with {
-	                    Revision = streamRevisionCheck.Revision,
+	                    Revision   = streamStateCheck.ExpectedState,
 	                    CheckIndex = i
                     };
                 }
@@ -310,7 +312,7 @@ public class StreamsService : StreamsServiceBase {
             var response  = new AppendRecordsResponse { Position = completed.CommitPosition };
 
             for (var i = 0; i < completed.LastEventNumbers.Length; i++) {
-                response.Revisions.Add(new StreamRevision {
+                response.Revisions.Add(new Contracts.StreamRevision {
                     Stream   = Streams[i].Name,
                     Revision = completed.LastEventNumbers.Span[i]
                 });
@@ -333,7 +335,7 @@ public class StreamsService : StreamsServiceBase {
 	        };
 
 	        RpcException MapToConsistencyCheckFailed(WriteEventsCompleted completed) {
-		        var details = new ConsistencyCheckFailedErrorDetails();
+		        var violations = new List<ConsistencyViolation>();
 
 		        for (var i = 0; i < completed.ConsistencyCheckFailures.Length; i++) {
 			        var failure = completed.ConsistencyCheckFailures.Span[i];
@@ -342,16 +344,17 @@ public class StreamsService : StreamsServiceBase {
 			        if (info.CheckIndex < 0)
 				        continue;
 
-			        details.Failures[info.CheckIndex] = new ConsistencyCheckErrorDetails {
-				        Revision = new RevisionConsistencyCheckErrorDetails {
-					        Stream           = info.Name,
-					        ExpectedRevision = failure.ExpectedVersion,
-					        ActualRevision   = MapActualRevision(failure)
-				        }
-			        };
+                    violations.Add(new ConsistencyViolation {
+				        StreamState = new() {
+					        Stream        = info.Name,
+					        ExpectedState = failure.ExpectedVersion,
+					        ActualState   = MapActualRevision(failure)
+				        },
+                        CheckIndex = (int)info.CheckIndex
+			        });
 		        }
 
-		        return ApiErrors.ConsistencyCheckFailed(details);
+		        return ApiErrors.AppendConsistencyViolation(violations);
 
 		        [MethodImpl(AggressiveInlining)]
 		        static long MapActualRevision(ConsistencyCheckFailure failure) => failure switch {

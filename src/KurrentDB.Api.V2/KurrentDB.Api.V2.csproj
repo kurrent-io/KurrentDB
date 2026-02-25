@@ -24,25 +24,36 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- protocol -->
-    <Protobuf
-        ProtoRoot="../../proto/kurrentdb/protocol/v2"
-        Include="../../proto/kurrentdb/protocol/v2/**/*.proto"
-        Exclude="../../proto/kurrentdb/protocol/v2/registry/**/*.proto;../../proto/kurrentdb/protocol/v2/indexes/**/*.proto"
-        Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"
-        GrpcServices="Both"
-        Access="Public"
-        AdditionalImportDirs="../../proto"
-    />
+<!--    &lt;!&ndash; protocol &ndash;&gt;-->
+<!--    <Protobuf-->
+<!--        ProtoRoot="../../proto/kurrentdb/protocol/v2"-->
+<!--        Include="../../proto/kurrentdb/protocol/v2/**/*.proto"-->
+<!--        Exclude="../../proto/kurrentdb/protocol/v2/registry/**/*.proto;../../proto/kurrentdb/protocol/v2/indexes/**/*.proto"-->
+<!--        Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"-->
+<!--        GrpcServices="Both"-->
+<!--        Access="Public"-->
+<!--        AdditionalImportDirs="../../proto"-->
+<!--    />-->
 
-    <Protobuf
-        ProtoRoot="../../proto/kurrentdb/protocol/v2"
-        Include="../../proto/kurrentdb/protocol/v2/indexes/errors.proto"
-        Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"
-        GrpcServices="Both"
-        Access="Public"
-        AdditionalImportDirs="../../proto"
-    />
+<!--    <Protobuf-->
+<!--        ProtoRoot="../../proto/kurrentdb/protocol/v2"-->
+<!--        Include="../../proto/kurrentdb/protocol/v2/indexes/errors.proto"-->
+<!--        Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"-->
+<!--        GrpcServices="Both"-->
+<!--        Access="Public"-->
+<!--        AdditionalImportDirs="../../proto"-->
+<!--    />-->
+
+    <!-- protocol -->
+    <Protobuf ProtoRoot="../../proto/kurrentdb/protocol"
+              Include="../../proto/kurrentdb/protocol/**/*.proto"
+              Link="proto\kurrentdb\protocol\%(RecursiveDir)/%(FileName)%(Extension)"
+              AdditionalImportDirs="../../proto"
+              Access="Internal"
+              GrpcServices="Client"
+              Exclude="../../proto/kurrentdb/protocol/v1/code.proto;../../proto/kurrentdb/protocol/v1/status.proto;../../proto/kurrentdb/protocol/v0/**/*.proto" />
+
+
 
     <!-- kurrent -->
     <Protobuf

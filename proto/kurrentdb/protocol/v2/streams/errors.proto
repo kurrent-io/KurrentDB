@@ -146,18 +146,21 @@ enum StreamsError {
   }];
 
   // One or more consistency checks failed during an AppendRecords operation.
-  // The append was not committed since no records were written.
+  // The transaction is aborted — no records are written.
+  //
+  // Each check in the request is evaluated before commit. A check can be:
+  // - A stream state check: the stream must be at a specific revision or lifecycle state
+  // - A query predicate: a server-side expression that must evaluate to true
   //
   // Common causes:
-  // - A checked stream's actual revision does not match the expected revision
-  // - Concurrent modification of a stream being checked
-  // - Stream does not exist when a specific revision was expected
+  // - A stream state check found the stream at a different revision than expected
+  // - A stream referenced in a state check does not exist, was deleted, or was tombstoned
+  // - A query predicate evaluated to false
   //
-  // Client action: Inspect the error details to determine which checks failed,
-  // refresh stale state, and retry. All failures are reported together so the
-  // client can update in one round trip.
-  // Recoverable by re-reading affected streams and retrying with correct revisions.
-  STREAMS_ERROR_CONSISTENCY_CHECK_FAILED = 10 [(kurrent.rpc.error) = {
+  // Client action: Inspect the AppendConsistencyViolationErrorDetails to determine which
+  // checks failed and why, then correct the request or refresh local state and retry.
+  // Recoverable by reading the current state and resubmitting with updated checks.
+  STREAMS_ERROR_APPEND_CONSISTENCY_VIOLATION = 14 [(kurrent.rpc.error) = {
     status_code: FAILED_PRECONDITION,
     has_details: true
   }];
@@ -229,28 +232,60 @@ message StreamAlreadyInAppendSessionErrorDetails {
   string stream = 1;
 }
 
-// Details for CONSISTENCY_CHECK_FAILED errors.
-message ConsistencyCheckFailedErrorDetails {
-  map<sint64, ConsistencyCheckErrorDetails> failures = 1;
+// Details for APPEND_CONSISTENCY_VIOLATION errors.
+//
+// Contains all consistency checks that were violated during the append operation.
+// Only violated checks are included; satisfied checks are omitted.
+message AppendConsistencyViolationErrorDetails {
+  // The consistency checks that were violated.
+  // Each violation carries a check_index that correlates it back to the
+  // original AppendRecordsRequest.consistency_checks list.
+  repeated ConsistencyViolation violations = 1;
 }
 
-message ConsistencyCheckErrorDetails {
-  oneof detail {
-    RevisionConsistencyCheckErrorDetails revision = 1;
+// Details for a single consistency check that was violated.
+message ConsistencyViolation {
+  oneof type {
+    // The stream was not at the expected state.
+    StreamStateViolation stream_state = 1;
+    // A query predicate evaluated to false.
+    QueryPredicateViolation query_predicate = 2;
   }
-}
 
-message RevisionConsistencyCheckErrorDetails {
-  // The name of the stream that failed the revision check.
-  string stream = 1;
+  // Index of the check in the original consistency_checks list.
+  int32 check_index = 3;
 
-  // The expected revision from the check.
-  sint64 expected_revision = 2;
+  // A stream state check was violated because the actual state did not match the expected state.
+  //
+  // The actual_state field reports the stream's observed state:
+  //   >= 0   : The stream exists and is at this revision
+  //   -1     : The stream does not exist (NO_STREAM)
+  //   -10    : The stream has been soft-deleted (DELETED)
+  //   -100   : The stream has been tombstoned (TOMBSTONED)
+  //
+  // Notes:
+  //  - ANY (-2) and EXISTS (-4) are never returned as actual_state values.
+  //  - When a stream exists, the server returns the actual revision number (>= 0).
+  message StreamStateViolation {
+    // The name of the stream whose state was checked.
+    string stream = 1;
 
-  // The actual revision of the stream.
-  // Sentinel values:
-  //   -1   = stream does not exist (never created)
-  //   -10  = stream was soft-deleted
-  //   -100 = stream was tombstoned
-  sint64 actual_revision = 3;
+    // The expected state of the stream as specified in the consistency check.
+    // Non-negative values (>= 0) are real revision numbers.
+    // Negative values are RevisionConstants sentinels: -2 (ANY), -4 (EXISTS), -1 (NO_STREAM), -10 (DELETED), -100 (TOMBSTONED).
+    sint64 expected_state = 2;
+
+    // The actual state of the stream at the time the check was evaluated.
+    // Non-negative values (>= 0) are real revision numbers.
+    // Negative values are RevisionConstants sentinels: -1 (NO_STREAM), -10 (DELETED), -100 (TOMBSTONED).
+    sint64 actual_state = 3;
+  }
+
+  // A query predicate was violated — the expression evaluated to false.
+  message QueryPredicateViolation {
+    // An optional message describing why the predicate was not satisfied.
+    // May include details such as which conditions within the expression failed.
+    // Intended for debugging and logging; clients should not rely on its content or format.
+    string message = 1;
+  }
 }

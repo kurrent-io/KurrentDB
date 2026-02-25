@@ -6,7 +6,7 @@ option csharp_namespace    = "KurrentDB.Protocol.Registry.V2";
 option java_package        = "io.kurrentdb.protocol.registry.v2";
 option java_multiple_files = true;
 
-import "registry/shared.proto";
+import "kurrentdb/protocol/v2/registry/shared.proto";
 
 // Represents a schema compatibility error.
 message SchemaCompatibilityError {

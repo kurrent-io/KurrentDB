@@ -125,11 +125,36 @@ public static partial class ApiErrors {
         return RpcExceptions.FromError(StreamsError.AppendSessionNoRequests, message);
     }
 
-	public static RpcException ConsistencyCheckFailed(ConsistencyCheckFailedErrorDetails details) {
-		var streams = string.Join(", ", details.Failures.Values.Select(e => e.Revision.Stream));
+	public static RpcException AppendConsistencyViolation(List<ConsistencyViolation> violations) {
+
+		// Should return error message with multiple violations in a super nice format, violations as bullets points.
+		// And only one query predicate is possible.
+		//
+		//
+		// Failed to append transaction due to consistency violations.
+		//
+		// Consistency check failed on stream(s):
+		//  - stream-1: Expected State: NoStream. Actual State: Revision 5.
+		//  - stream-2: Expected State: Revision 10. Actual State: Deleted.
+		//  - stream-3: Query predicate 'user_id = 123' was not satisfied.
+		//
+		// Query predicate failed:
+		//  - Failed to evaluate query predicate 'user_id = 123': Invalid user_id format.
+		//
+
+		var streams = string.Join(", ", violations.Select(x => x.TypeCase switch {
+			ConsistencyViolation.TypeOneofCase.StreamState    => $" - {x.StreamState.Stream}: Expected State: {x.StreamState.ExpectedState}. Actual revision: {x.StreamState.ActualState}.",
+			ConsistencyViolation.TypeOneofCase.QueryPredicate => x.QueryPredicate.Message,
+			_ => throw new ArgumentOutOfRangeException($"Unknown consistency violation type: {x.TypeCase}")
+		}).Distinct());
+
 		var message = $"Consistency check failed on stream(s): {streams}.";
 
-		return RpcExceptions.FromError(StreamsError.ConsistencyCheckFailed, message, details);
+		var details = new AppendConsistencyViolationErrorDetails {
+			Violations = { violations }
+		};
+
+		return RpcExceptions.FromError(StreamsError.AppendConsistencyViolation, message, details);
 	}
 
 }
