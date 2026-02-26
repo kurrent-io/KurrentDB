@@ -3,6 +3,7 @@
 
 using FluentValidation;
 using KurrentDB.Api.Infrastructure.Grpc.Validation;
+using KurrentDB.Core.Data;
 using KurrentDB.Protocol.V2.Streams;
 
 namespace KurrentDB.Api.Streams.Validators;
@@ -11,9 +12,9 @@ class AppendRequestValidator : RequestValidator<AppendRequest> {
 	public static readonly AppendRequestValidator Instance = new();
 
     static readonly List<long> ValidExpectedRevisions = [
-        (long)ExpectedRevisionConstants.Any,
-        (long)ExpectedRevisionConstants.NoStream,
-        (long)ExpectedRevisionConstants.Exists
+        ExpectedVersion.Any,
+        ExpectedVersion.NoStream,
+        ExpectedVersion.StreamExists
     ];
 
 	public AppendRequestValidator() {

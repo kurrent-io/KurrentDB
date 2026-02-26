@@ -11,6 +11,10 @@ class AppendRecordValidator : RequestValidator<AppendRecord> {
     public static readonly AppendRecordValidator Instance = new();
 
     public AppendRecordValidator() {
+	    RuleFor(x => x.Stream)
+		    .SetValidator(StreamNameValidator.Instance)
+		    .When(x => x.HasStream);
+
         RuleFor(x => x.RecordId)
             .SetValidator(RecordIdValidator.Instance)
             .When(x => x.HasRecordId);

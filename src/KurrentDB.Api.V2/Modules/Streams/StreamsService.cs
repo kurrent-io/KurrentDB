@@ -7,6 +7,7 @@
 // ReSharper disable MethodHasAsyncOverload
 
 using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
 using KurrentDB.Api.Errors;
@@ -18,10 +19,13 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Protocol.V2.Streams;
-
+using KurrentDB.Protocol.V2.Streams.Errors;
+using static System.Runtime.CompilerServices.MethodImplOptions;
 using static EventStore.Plugins.Authorization.Operations.Streams.Parameters;
 using static KurrentDB.Core.Messages.ClientMessage;
 using static KurrentDB.Protocol.V2.Streams.StreamsService;
+
+using Contracts = KurrentDB.Protocol.V2.Streams;
 
 namespace KurrentDB.Api.Streams;
 
@@ -122,7 +126,7 @@ public class StreamsService : StreamsServiceBase {
                 eventStreamIds: streamIds,
                 expectedVersions: Revisions.ToImmutable(),
                 events: Events.ToImmutable(),
-                eventStreamIndexes: streamIds.Length == 1 ? [] : Indexes.ToImmutable(),
+                eventStreamIndexes: Indexes.ToImmutable(),
                 user: context.GetHttpContext().User,
                 cancellationToken: context.CancellationToken
             );
@@ -169,5 +173,188 @@ public class StreamsService : StreamsServiceBase {
             (x, y) => string.Equals(x?.Stream, y?.Stream, StringComparison.OrdinalIgnoreCase),
             obj => StringComparer.OrdinalIgnoreCase.GetHashCode(obj.Stream)
         );
+    }
+
+    public override async Task<AppendRecordsResponse> AppendRecords(AppendRecordsRequest request, ServerCallContext context) {
+        var command = Publisher
+            .NewCommand<AppendRecordsCommand>()
+            .WithMaxRecordSize(Options.Application.MaxAppendEventSize)
+            .WithMaxAppendSize(Options.Application.MaxAppendSize)
+            .WithRequest(request);
+
+        foreach (var stream in command.WriteStreams)
+            await Authz.AuthorizeOperation(Operations.Streams.Write, StreamId(stream), context);
+
+        foreach (var stream in command.ReadOnlyStreams)
+            await Authz.AuthorizeOperation(Operations.Streams.Read, StreamId(stream), context);
+
+        return await command.Execute(context);
+    }
+
+    class AppendRecordsCommand : ApiCommand<AppendRecordsCommand, AppendRecordsResponse> {
+        record struct StreamInfo(string Name, long Revision);
+
+        ImmutableArray<Event>.Builder Events            { get; } = ImmutableArray.CreateBuilder<Event>();
+        ImmutableArray<int>.Builder   Indexes           { get; } = ImmutableArray.CreateBuilder<int>();
+        List<StreamInfo>              Streams           { get; } = [];
+        Dictionary<string, int>       StreamIndexByName { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        int MaxAppendSize    { get; set; }
+        int MaxRecordSize    { get; set; }
+        int TotalAppendSize  { get; set; }
+        int WriteStreamCount { get; set; }
+
+        public IEnumerable<string> WriteStreams {
+            get {
+                for (var i = 0; i < WriteStreamCount; i++)
+                    yield return Streams[i].Name;
+            }
+        }
+
+        public IEnumerable<string> ReadOnlyStreams {
+            get {
+                for (var i = WriteStreamCount; i < Streams.Count; i++)
+                    yield return Streams[i].Name;
+            }
+        }
+
+        public AppendRecordsCommand WithMaxAppendSize(int maxAppendSize) {
+            MaxAppendSize = maxAppendSize;
+            return this;
+        }
+
+        public AppendRecordsCommand WithMaxRecordSize(int maxRecordSize) {
+            MaxRecordSize = maxRecordSize;
+            return this;
+        }
+
+        public AppendRecordsCommand WithRequest(AppendRecordsRequest request) {
+            ProcessRecords(request.Records);
+            WriteStreamCount = Streams.Count;
+            ApplyConsistencyChecks(request.Checks);
+
+            return this;
+
+            void ProcessRecords(IReadOnlyList<AppendRecord> records) {
+                Events.Capacity = records.Count;
+                Indexes.Capacity = records.Count;
+
+                foreach (var record in records.Select(static rec => rec.PreProcessRecord())) {
+                    var streamIndex = GetOrAddStreamIndex(record.Stream);
+
+                    var recordSize = record.CalculateSizeOnDisk(MaxRecordSize);
+                    if (recordSize.ExceedsMax)
+                        throw ApiErrors.AppendRecordSizeExceeded(record.Stream, record.RecordId, recordSize.TotalSize, MaxRecordSize);
+
+                    if ((TotalAppendSize += recordSize.TotalSize) > MaxAppendSize)
+                        throw ApiErrors.AppendTransactionSizeExceeded(Events.Count + 1, TotalAppendSize, MaxAppendSize);
+
+                    Events.Add(record.MapToEvent());
+                    Indexes.Add(streamIndex);
+                }
+            }
+
+            void ApplyConsistencyChecks(IReadOnlyList<ConsistencyCheck> checks) {
+                for (var i = 0; i < checks.Count; i++) {
+                    var check = checks[i];
+                    if (check.TypeCase != ConsistencyCheck.TypeOneofCase.StreamState)
+                        continue;
+
+                    var streamStateCheck = check.StreamState;
+                    var streamIndex = GetOrAddStreamIndex(streamStateCheck.Stream);
+                    var info = Streams[streamIndex];
+                    Streams[streamIndex] = info with {
+	                    Revision = streamStateCheck.ExpectedState
+                    };
+                }
+            }
+
+            int GetOrAddStreamIndex(string stream) {
+	            if (StreamIndexByName.TryGetValue(stream, out var index))
+		            return index;
+
+	            index = Streams.Count;
+	            StreamIndexByName[stream] = index;
+	            Streams.Add(new StreamInfo(stream, ExpectedVersion.Any));
+	            return index;
+            }
+        }
+
+        protected override Message BuildMessage(IEnvelope callback, ServerCallContext context) {
+            var cid = Guid.NewGuid();
+            var streamIds = ImmutableArray.CreateBuilder<string>(Streams.Count);
+            var revisions = ImmutableArray.CreateBuilder<long>(Streams.Count);
+            foreach (var info in Streams) {
+                streamIds.Add(info.Name);
+                revisions.Add(info.Revision);
+            }
+
+            return new WriteEvents(
+                internalCorrId: cid,
+                correlationId: cid,
+                envelope: callback,
+                requireLeader: true,
+                eventStreamIds: streamIds.MoveToImmutable(),
+                expectedVersions: revisions.MoveToImmutable(),
+                events: Events.MoveToImmutable(),
+                eventStreamIndexes: Indexes.MoveToImmutable(),
+                user: context.GetHttpContext().User,
+                cancellationToken: context.CancellationToken
+            );
+        }
+
+        protected override bool SuccessPredicate(Message message) =>
+            message is WriteEventsCompleted { Result: OperationResult.Success };
+
+        protected override AppendRecordsResponse MapToResult(Message message) {
+            var completed = (WriteEventsCompleted)message;
+            var response  = new AppendRecordsResponse { Position = completed.CommitPosition };
+
+            for (var i = 0; i < completed.LastEventNumbers.Length; i++) {
+                response.Revisions.Add(new Contracts.StreamRevision {
+                    Stream   = Streams[i].Name,
+                    Revision = completed.LastEventNumbers.Span[i]
+                });
+            }
+
+            return response;
+        }
+
+        [SkipLocalsInit]
+        protected override RpcException? MapToError(Message message) {
+	        return message switch {
+		        WriteEventsCompleted completed => completed.Result switch {
+			        OperationResult.CommitTimeout => ApiErrors.OperationTimeout($"{FriendlyName} timed out while waiting for commit"),
+
+			        OperationResult.WrongExpectedVersion or OperationResult.StreamDeleted => MapToConsistencyCheckFailed(completed),
+
+			        _ => ApiErrors.InternalServerError($"{FriendlyName} completed in error with unexpected result: {completed.Result}")
+		        },
+		        _ => null
+	        };
+
+	        RpcException MapToConsistencyCheckFailed(WriteEventsCompleted completed) {
+		        var failures = completed.ConsistencyCheckFailures.Span;
+		        var violations = new List<ConsistencyViolation>(failures.Length);
+
+		        foreach (ref readonly var failure in failures)
+			        violations.Add(new ConsistencyViolation {
+				        StreamState = new() {
+					        Stream        = Streams[failure.StreamIndex].Name,
+					        ExpectedState = failure.ExpectedVersion,
+					        ActualState   = MapActualRevision(failure)
+				        }
+			        });
+
+		        return ApiErrors.AppendConsistencyViolation(violations);
+
+		        [MethodImpl(AggressiveInlining)]
+		        static long MapActualRevision(ConsistencyCheckFailure failure) => failure switch {
+			        { ActualVersion: long.MaxValue } => -100, // Stream is tombstoned
+			        { IsSoftDeleted: true }          => -10, // Stream is soft-deleted
+			        _                                => failure.ActualVersion // Stream not found or revision mismatch
+		        };
+	        }
+        }
     }
 }

@@ -22,12 +22,12 @@ public static class GrpcServerBuilderExtensions {
 
 public static class ServiceCollectionExtensions {
     public static IServiceCollection AddGrpcRequestValidator<TValidator>(this IServiceCollection services) where TValidator : class, IRequestValidator {
-        services.TryAddSingleton(typeof(IRequestValidator), typeof(TValidator));
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IRequestValidator, TValidator>());
         return services;
     }
 
     public static IServiceCollection AddGrpcRequestValidator<TValidator>(this IServiceCollection services, TValidator validator) where TValidator : class, IRequestValidator {
-        services.TryAddSingleton<IRequestValidator>(validator);
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IRequestValidator>(validator));
         return services;
     }
 }

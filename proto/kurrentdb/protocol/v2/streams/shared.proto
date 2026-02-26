@@ -1,0 +1,52 @@
+// ******************************************************************************************
+// This protocol is UNSTABLE in the sense of being subject to change.
+// ******************************************************************************************
+
+edition = "2023";
+
+package kurrentdb.protocol.v2.streams;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "KurrentDB.Protocol.V2.Streams";
+
+/**
+ * Data format of a schema.
+ */
+enum SchemaFormat {
+  SCHEMA_FORMAT_UNSPECIFIED = 0;
+  SCHEMA_FORMAT_JSON        = 1;
+  SCHEMA_FORMAT_PROTOBUF    = 2;
+  SCHEMA_FORMAT_AVRO        = 3;
+  SCHEMA_FORMAT_BYTES       = 4;
+}
+
+/**
+ * Schema information for record payload interpretation and validation.
+ */
+message SchemaInfo {
+  // Format of the record data.
+  // Required for interpreting the bytes in Record.data. Determines how to parse and validate the record payload.
+  SchemaFormat format = 1 [default = SCHEMA_FORMAT_UNSPECIFIED];
+
+  // Schema name identifying the record type (e.g., "order-placed", "customer-registered").
+  string name = 2;
+
+  // Version identifier of the schema that the record conforms to.
+  string id = 3;
+}
+
+/**
+ * A specific revision of a stream.
+ *
+ * Used to represent stream positions for checkpoints, consistency checks,
+ * and head position tracking.
+ */
+message StreamRevision {
+  // Stream name.
+  string stream = 1;
+
+  // Revision within the stream.
+  sint64 revision = 2;
+}

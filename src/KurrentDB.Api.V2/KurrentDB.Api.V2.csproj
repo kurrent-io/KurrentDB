@@ -5,6 +5,7 @@
     <AssemblyName>KurrentDB.Api</AssemblyName>
     <RootNamespace>KurrentDB.Api</RootNamespace>
     <IncludeHttpRuleProtos>true</IncludeHttpRuleProtos>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,16 +28,7 @@
     <Protobuf
         ProtoRoot="../../proto/kurrentdb/protocol/v2"
         Include="../../proto/kurrentdb/protocol/v2/**/*.proto"
-        Exclude="../../proto/kurrentdb/protocol/v2/registry/**/*.proto;../../proto/kurrentdb/protocol/v2/indexes/**/*.proto"
-        Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"
-        GrpcServices="Both"
-        Access="Public"
-        AdditionalImportDirs="../../proto"
-    />
-
-    <Protobuf
-        ProtoRoot="../../proto/kurrentdb/protocol/v2"
-        Include="../../proto/kurrentdb/protocol/v2/indexes/errors.proto"
+        Exclude="../../proto/kurrentdb/protocol/v2/registry/**/*.proto;../../proto/kurrentdb/protocol/v2/indexes/commands.proto;../../proto/kurrentdb/protocol/v2/indexes/events.proto;../../proto/kurrentdb/protocol/v2/indexes/queries.proto;../../proto/kurrentdb/protocol/v2/indexes/service.proto;../../proto/kurrentdb/protocol/v2/indexes/shared.proto"
         Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"
         GrpcServices="Both"
         Access="Public"

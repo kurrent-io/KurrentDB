@@ -40,7 +40,9 @@ public class ApiV2Plugin() : SubsystemsPlugin("APIV2") {
             .WithRequestValidation(x => x.ExceptionFactory = ApiErrors.InvalidRequest)
             .WithGrpcService<IndexesService>()
             .WithGrpcService<StreamsService>(
-                validation => validation.WithValidator<AppendRequestValidator>());
+                validation => validation
+                    .WithValidator<AppendRequestValidator>()
+                    .WithValidator<AppendRecordsRequestValidator>());
 
         // Configure the StreamsService to allow large messages based on the server settings
         services.Configure<GrpcServiceOptions<StreamsService>>((sp, options) => {

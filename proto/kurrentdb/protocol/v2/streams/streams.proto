@@ -2,13 +2,15 @@
 // This protocol is UNSTABLE in the sense of being subject to change.
 // ******************************************************************************************
 
-syntax = "proto3";
+edition = "2023";
 
 package kurrentdb.protocol.v2.streams;
 
 option csharp_namespace = "KurrentDB.Protocol.V2.Streams";
 
 import "google/protobuf/struct.proto";
+
+import "kurrentdb/protocol/v2/streams/shared.proto";
 
 service StreamsService {
   // Appends records to multiple streams atomically within a single transaction.
@@ -31,6 +33,28 @@ service StreamsService {
   //   4. Client completes the stream
   //   5. Server validates, commits, returns AppendSessionResponse with positions
   rpc AppendSession(stream AppendRequest) returns (AppendSessionResponse);
+
+  // Appends records to multiple streams atomically with cross-stream consistency checks.
+  //
+  // This is a unary RPC where the client sends all records and consistency checks
+  // in a single request and receives a single AppendRecordsResponse.
+  //
+  // Records can be interleaved across streams in any order and the global log preserves
+  // the exact sequence from the request.
+  //
+  // Consistency checks are decoupled from writes: a check can reference any stream,
+  // whether or not the request writes to it. This enables Dynamic Consistency Boundary
+  // (DCB) patterns where a decision depends on multiple streams but only produces
+  // events for a subset.
+  //
+  // Guarantees:
+  // - Atomicity: All writes succeed or all fail together
+  // - Ordering: Records maintain the exact send order in the global log
+  // - Cross-stream checks: Consistency checks can reference any stream
+  //
+  // On consistency check failure, no records are written and all failing checks
+  // are reported in the response so the client can refresh stale state in one round trip.
+  rpc AppendRecords(AppendRecordsRequest) returns (AppendRecordsResponse);
 }
 
 // Represents the input for appending records to a specific stream.
@@ -47,7 +71,7 @@ message AppendRequest {
   // - An ExpectedRevisionConstants value (-4, -2, -1) for special semantics
   //
   // If omitted, defaults to EXPECTED_REVISION_CONSTANTS_ANY (-2).
-  optional sint64 expected_revision = 3;
+  sint64 expected_revision = 3;
 }
 
 // Represents the outcome of an append operation.
@@ -60,7 +84,7 @@ message AppendResponse {
   sint64 stream_revision = 2;
 
   // The position of the last appended record in the global log.
-  optional sint64 position = 3;
+  sint64 position = 3;
 }
 
 message AppendSessionResponse {
@@ -71,43 +95,11 @@ message AppendSessionResponse {
   sint64 position = 2;
 }
 
-// Represents the data format of the schema.
-enum SchemaFormat {
-  // Default value, should not be used.
-  SCHEMA_FORMAT_UNSPECIFIED = 0;
-  SCHEMA_FORMAT_JSON        = 1;
-  SCHEMA_FORMAT_PROTOBUF    = 2;
-  SCHEMA_FORMAT_AVRO        = 3;
-  SCHEMA_FORMAT_BYTES       = 4;
-}
-
-// Schema information for record validation and interpretation.
-message SchemaInfo {
-  // The format of the data payload.
-  // Determines how the bytes in AppendRecord.data should be interpreted.
-  SchemaFormat format = 1;
-
-  // The schema name (replaces the legacy "event type" concept).
-  // Identifies what kind of data this record contains.
-  //
-  // Common naming formats:
-  //   - Kebab-case: "order-placed", "customer-registered"
-  //   - URN format: "urn:kurrentdb:events:order-placed:v1"
-  //   - Dotted namespace: "Teams.Player.V1", "Orders.OrderPlaced.V2"
-  //   - Reverse domain: "com.acme.orders.placed"
-  string name = 2;
-
-  // The identifier of the specific version of the schema that the record payload
-  // conforms to. This should match a registered schema version in the system.
-  // Not necessary when not enforcing schema validation.
-  optional string id = 3;
-}
-
 // Record to be appended to a stream.
 message AppendRecord {
   // Unique identifier for this record (must be a valid UUID/GUID).
   // If not provided, the server will generate a new one.
-  optional string record_id = 1;
+  string record_id = 1;
 
   // A collection of properties providing additional information about the
   // record. Can contain user-defined or system propreties.
@@ -132,6 +124,11 @@ message AppendRecord {
   // The record payload as raw bytes.
   // The format specified in SchemaInfo determines how to interpret these bytes.
   bytes data = 4;
+
+  // Target stream for this record.
+  // Required for AppendRecords (each record specifies its own stream).
+  // Ignored for AppendSession (the stream is specified in AppendRequest).
+  string stream = 5;
 }
 
 // Constants for expected revision validation in optimistic concurrency control.
@@ -152,4 +149,85 @@ enum ExpectedRevisionConstants {
   // The stream must exist (have at least one record).
   // Fails if the stream doesn't exist yet.
   EXPECTED_REVISION_CONSTANTS_EXISTS = -4;
+}
+
+/**
+ * Request to append records to one or more streams atomically.
+ *
+ * All records are committed in a single transaction. Each record specifies its
+ * target stream via AppendRecord.stream. Consistency checks are evaluated before
+ * any records are written.
+ */
+message AppendRecordsRequest {
+  // The records to append. Records targeting the same stream maintain their
+  // order from this list.
+  repeated AppendRecord records = 1;
+
+  // Optional consistency checks evaluated before commit. If any check fails,
+  // the entire transaction is aborted.
+  repeated ConsistencyCheck checks = 2;
+}
+
+/**
+ * Response from a successful AppendRecords operation.
+ *
+ * Contains the resulting revision for each stream that was written to and the
+ * global commit position of the transaction.
+ */
+message AppendRecordsResponse {
+  // The resulting revision for each stream that received records. One entry per
+  // distinct stream written to, in no guaranteed order.
+  repeated StreamRevision revisions = 1;
+
+  // The global commit position of the last record written in this transaction.
+  // Can be used for read-your-writes consistency or progress tracking.
+  sint64 position = 2;
+}
+
+/**
+ * A pre-commit condition that must hold true for the transaction to succeed.
+ *
+ * Consistency checks are evaluated atomically before any records are written. If
+ * any check is violated, the entire transaction is aborted. Two types of checks
+ * are supported: stream state checks (validates a stream's revision or lifecycle
+ * state) and query predicates (evaluates a server-side expression).
+ */
+message ConsistencyCheck {
+  oneof type {
+    // Check that a stream is at a specific revision or lifecycle state.
+    StreamStateCheck stream_state = 1;
+
+    // UNIMPLEMENTED: This is a placeholder for future support of server-side query predicates.
+    // // Evaluate a server-side query predicate that must return true.
+    // QueryPredicateCheck query_predicate = 2;
+  }
+
+  /**
+   * Asserts a stream is at a specific revision or lifecycle state before commit.
+   *
+   * The expected_state field accepts a specific revision number (>= 0) or a
+   * special state constant (e.g., -1 for NO_STREAM, -10 for DELETED). Evaluated
+   * using writability semantics: a soft-deleted stream is writable (appending
+   * restores it), but a tombstoned stream is never writable.
+   */
+  message StreamStateCheck {
+    // The stream name.
+    string stream = 1;
+
+    // The expected state of the stream (revision number or state constant).
+    sint64 expected_state = 2;
+  }
+
+  // UNIMPLEMENTED: Placeholder for future support of server-side query predicates evaluated before commit.
+  // /**
+  //  * A server-side query predicate evaluated before commit.
+  //  *
+  //  * If the predicate expression evaluates to false, the entire transaction is
+  //  * aborted. Can be used to enforce cross-stream conditions or other complex
+  //  * preconditions.
+  //  */
+  // message QueryPredicateCheck {
+  //   // The predicate expression to evaluate.
+  //   string expression = 1;
+  // }
 }
