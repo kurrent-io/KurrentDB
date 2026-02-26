@@ -246,8 +246,10 @@ message ConsistencyViolation {
   oneof type {
     // The stream was not at the expected state.
     StreamStateViolation stream_state = 1;
-    // A query predicate evaluated to false.
-    QueryPredicateViolation query_predicate = 2;
+
+    // UNIMPLEMENTED: This is a placeholder for future support of server-side query predicates.
+    // // A query predicate evaluated to false.
+    // QueryPredicateViolation query_predicate = 2;
   }
 
   // A stream state check was violated because the actual state did not match the expected state.
@@ -276,11 +278,12 @@ message ConsistencyViolation {
     sint64 actual_state = 3;
   }
 
-  // A query predicate was violated — the expression evaluated to false.
-  message QueryPredicateViolation {
-    // An optional message describing why the predicate was not satisfied.
-    // May include details such as which conditions within the expression failed.
-    // Intended for debugging and logging; clients should not rely on its content or format.
-    string message = 1;
-  }
+  // UNIMPLEMENTED: Placeholder for future support of server-side query predicates evaluated before commit.
+  // // A query predicate was violated — the expression evaluated to false.
+  // message QueryPredicateViolation {
+  //   // An optional message describing why the predicate was not satisfied.
+  //   // May include details such as which conditions within the expression failed.
+  //   // Intended for debugging and logging; clients should not rely on its content or format.
+  //   string message = 1;
+  // }
 }

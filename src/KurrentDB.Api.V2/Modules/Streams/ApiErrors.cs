@@ -4,9 +4,11 @@
 // ReSharper disable CheckNamespace
 
 using System.Diagnostics;
+using System.Text;
 using Grpc.Core;
 using Humanizer;
 using KurrentDB.Api.Infrastructure.Errors;
+using KurrentDB.Core.Data;
 using KurrentDB.Protocol.V2.Streams.Errors;
 
 namespace KurrentDB.Api.Errors;
@@ -125,36 +127,56 @@ public static partial class ApiErrors {
         return RpcExceptions.FromError(StreamsError.AppendSessionNoRequests, message);
     }
 
+    // ------------------------------------------------------------------------------
+    // Produces a human-readable message listing each violated consistency check.
+    // ------------------------------------------------------------------------------
+    //   Failed to append transaction due to consistency violations.
+    //
+    //   Consistency check failed on stream(s):
+    //    - stream-1: Expected State: NoStream. Actual State: Revision 5.
+    //    - stream-2: Expected State: Revision 10. Actual State: Deleted.
+    //    - stream-3: Query predicate 'user_id = 123' was not satisfied.
 	public static RpcException AppendConsistencyViolation(List<ConsistencyViolation> violations) {
+		Debug.Assert(violations.Count > 0, "The violations list must not be empty!");
 
-		// Should return error message with multiple violations in a super nice format, violations as bullets points.
-		// And only one query predicate is possible.
-		//
-		//
-		// Failed to append transaction due to consistency violations.
-		//
-		// Consistency check failed on stream(s):
-		//  - stream-1: Expected State: NoStream. Actual State: Revision 5.
-		//  - stream-2: Expected State: Revision 10. Actual State: Deleted.
-		//  - stream-3: Query predicate 'user_id = 123' was not satisfied.
-		//
-		// Query predicate failed:
-		//  - Failed to evaluate query predicate 'user_id = 123': Invalid user_id format.
-		//
-
-		var streams = string.Join(", ", violations.Select(x => x.TypeCase switch {
-			ConsistencyViolation.TypeOneofCase.StreamState    => $" - {x.StreamState.Stream}: Expected State: {x.StreamState.ExpectedState}. Actual revision: {x.StreamState.ActualState}.",
-			ConsistencyViolation.TypeOneofCase.QueryPredicate => x.QueryPredicate.Message,
-			_ => throw new ArgumentOutOfRangeException($"Unknown consistency violation type: {x.TypeCase}")
-		}).Distinct());
-
-		var message = $"Consistency check failed on stream(s): {streams}.";
+		var message = FormatMessage(violations);
 
 		var details = new AppendConsistencyViolationErrorDetails {
 			Violations = { violations }
 		};
 
 		return RpcExceptions.FromError(StreamsError.AppendConsistencyViolation, message, details);
+
+		static string FormatMessage(List<ConsistencyViolation> violations) {
+			var builder = new StringBuilder("Failed to append transaction due to consistency violations.");
+
+			var streamStates = violations
+				.Where(v => v.TypeCase is ConsistencyViolation.TypeOneofCase.StreamState)
+				.Select(v => v.StreamState)
+				.ToList();
+
+			if (streamStates.Count > 0) {
+				builder.AppendLine().AppendLine().Append("Consistency check failed on stream(s):");
+
+				foreach (var ssv in streamStates)
+					builder.AppendLine().Append(
+						$" - {ssv.Stream}: Expected State: {FormatStreamState(ssv.ExpectedState)}. " +
+						$"Actual State: {FormatStreamState(ssv.ActualState)}."
+					);
+			}
+
+			return builder.ToString();
+		}
+
+		static string FormatStreamState(long state) => state switch {
+			>= 0                         => $"Revision {state}",
+			ExpectedVersion.NoStream     => "NoStream",
+			ExpectedVersion.Any          => "Any",
+			ExpectedVersion.StreamExists => "StreamExists",
+			-10                          => "Deleted",
+			-100                         => "Tombstoned",
+			_                            => $"Unknown ({state})"
+		};
 	}
 
 }
