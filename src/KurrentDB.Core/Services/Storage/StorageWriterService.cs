@@ -729,7 +729,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 					break;
 				case CommitDecision.CorruptedIdempotency:
 					// in case of corrupted idempotency (part of transaction is ok, other is different)
-					// then we can say that the transaction is not idempotent, so WrongExpectedVersion is ok answer
+					// then we can say that the transaction is not idempotent, so ConsistencyCheckFailure is ok answer
 					// since caller will need to sync with that stream.
 					consistencyCheckFailureCount++;
 					break;
