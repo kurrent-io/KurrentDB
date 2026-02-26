@@ -1099,6 +1099,17 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		{ EventNumber.DeletedStream, StreamState.Tombstoned, Participation.WriteTo, OperationResult.StreamDeleted }, // never write to tombstoned stream
 		{ EventNumber.DeletedStream, StreamState.Tombstoned, Participation.CheckOnly, OperationResult.Success }, // can check tombstoned stream
 
+		// Specific version 1: wrong expected version for ExistsAtV2 & SoftDeletedAtV2
+		// (not currently testing idempotency)
+		{ 1, StreamState.NeverExisted, Participation.WriteTo, OperationResult.WrongExpectedVersion },
+		{ 1, StreamState.NeverExisted, Participation.CheckOnly, OperationResult.WrongExpectedVersion },
+		{ 1, StreamState.ExistsAtV2, Participation.WriteTo, OperationResult.WrongExpectedVersion },
+		{ 1, StreamState.ExistsAtV2, Participation.CheckOnly, OperationResult.WrongExpectedVersion },
+		{ 1, StreamState.SoftDeletedAtV2, Participation.WriteTo, OperationResult.WrongExpectedVersion },
+		{ 1, StreamState.SoftDeletedAtV2, Participation.CheckOnly, OperationResult.WrongExpectedVersion },
+		{ 1, StreamState.Tombstoned, Participation.WriteTo, OperationResult.StreamDeleted },
+		{ 1, StreamState.Tombstoned, Participation.CheckOnly, OperationResult.StreamDeleted },
+
 		// Specific version 2: correct expected version for ExistsAtV2 & SoftDeletedAtV2
 		{ 2, StreamState.NeverExisted, Participation.WriteTo, OperationResult.WrongExpectedVersion },
 		{ 2, StreamState.NeverExisted, Participation.CheckOnly, OperationResult.WrongExpectedVersion },
@@ -1109,15 +1120,15 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		{ 2, StreamState.Tombstoned, Participation.WriteTo, OperationResult.StreamDeleted },
 		{ 2, StreamState.Tombstoned, Participation.CheckOnly, OperationResult.StreamDeleted },
 
-		// Specific version 5: wrong expected version for ExistsAtV2 & SoftDeletedAtV2
-		{ 5, StreamState.NeverExisted, Participation.WriteTo, OperationResult.WrongExpectedVersion },
-		{ 5, StreamState.NeverExisted, Participation.CheckOnly, OperationResult.WrongExpectedVersion },
-		{ 5, StreamState.ExistsAtV2, Participation.WriteTo, OperationResult.WrongExpectedVersion },
-		{ 5, StreamState.ExistsAtV2, Participation.CheckOnly, OperationResult.WrongExpectedVersion },
-		{ 5, StreamState.SoftDeletedAtV2, Participation.WriteTo, OperationResult.WrongExpectedVersion },
-		{ 5, StreamState.SoftDeletedAtV2, Participation.CheckOnly, OperationResult.WrongExpectedVersion },
-		{ 5, StreamState.Tombstoned, Participation.WriteTo, OperationResult.StreamDeleted },
-		{ 5, StreamState.Tombstoned, Participation.CheckOnly, OperationResult.StreamDeleted }
+		// Specific version 3: wrong expected version for ExistsAtV2 & SoftDeletedAtV2
+		{ 3, StreamState.NeverExisted, Participation.WriteTo, OperationResult.WrongExpectedVersion },
+		{ 3, StreamState.NeverExisted, Participation.CheckOnly, OperationResult.WrongExpectedVersion },
+		{ 3, StreamState.ExistsAtV2, Participation.WriteTo, OperationResult.WrongExpectedVersion },
+		{ 3, StreamState.ExistsAtV2, Participation.CheckOnly, OperationResult.WrongExpectedVersion },
+		{ 3, StreamState.SoftDeletedAtV2, Participation.WriteTo, OperationResult.WrongExpectedVersion },
+		{ 3, StreamState.SoftDeletedAtV2, Participation.CheckOnly, OperationResult.WrongExpectedVersion },
+		{ 3, StreamState.Tombstoned, Participation.WriteTo, OperationResult.StreamDeleted },
+		{ 3, StreamState.Tombstoned, Participation.CheckOnly, OperationResult.StreamDeleted }
 	};
 
 	[Theory]
