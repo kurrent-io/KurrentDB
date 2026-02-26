@@ -771,7 +771,6 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			eventStreamIndexes: []);
 
 		Assert.Equal(OperationResult.WrongExpectedVersion, completed.Result);
-		// for backwards compatibility, the arrays are populated when there is a single stream
 		Assert.Equal([new(0, -1, 1, null)], completed.ConsistencyCheckFailures.ToArray());
 	}
 
@@ -1042,6 +1041,179 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 
 		Assert.Equal(OperationResult.StreamDeleted, completed.Result);
 		Assert.Equal([new(2, ExpectedVersion.StreamExists, EventNumber.DeletedStream, false)], completed.ConsistencyCheckFailures.ToArray());
+	}
+
+	public enum StreamState {
+		NeverExisted,
+		ExistsAtV2, // has three events
+		SoftDeletedAtV2, // had 3 events, then soft-deleted
+		Tombstoned,
+	}
+
+	public enum Participation {
+		WriteTo,    // events are written to this stream
+		CheckOnly,  // stream appears in the request only as a consistency check
+	}
+
+	// we distinguish OperationResult.WrongExpectedVersion from OperationResult.StreamDeleted only for backwards compatibility
+	// the Participation.WriteTo cases all return the same OperationResult as these on v26.0.
+	// the only difference between Participation.WriteTo/CheckOnly is that a tombstoned stream cannot be written to.
+	public static TheoryData<long, StreamState, Participation, OperationResult> ConsistencyCheckTestCases() => new() {
+		// ExpectedVersion.Any (-2): always succeeds unless the stream is hard-deleted AND we're writing to it
+		{ ExpectedVersion.Any, StreamState.NeverExisted, Participation.WriteTo, OperationResult.Success },
+		{ ExpectedVersion.Any, StreamState.NeverExisted, Participation.CheckOnly, OperationResult.Success },
+		{ ExpectedVersion.Any, StreamState.ExistsAtV2, Participation.WriteTo, OperationResult.Success },
+		{ ExpectedVersion.Any, StreamState.ExistsAtV2, Participation.CheckOnly, OperationResult.Success },
+		{ ExpectedVersion.Any, StreamState.SoftDeletedAtV2, Participation.WriteTo, OperationResult.Success },
+		{ ExpectedVersion.Any, StreamState.SoftDeletedAtV2, Participation.CheckOnly, OperationResult.Success },
+		{ ExpectedVersion.Any, StreamState.Tombstoned, Participation.WriteTo, OperationResult.StreamDeleted }, // never write to tombstoned stream
+		{ ExpectedVersion.Any, StreamState.Tombstoned, Participation.CheckOnly, OperationResult.Success }, // can check tombstoned stream
+
+		// ExpectedVersion.StreamExists (-4): soft deleted and hard deleted do not 'exist'
+		{ ExpectedVersion.StreamExists, StreamState.NeverExisted, Participation.WriteTo, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.StreamExists, StreamState.NeverExisted, Participation.CheckOnly, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.StreamExists, StreamState.ExistsAtV2, Participation.WriteTo, OperationResult.Success },
+		{ ExpectedVersion.StreamExists, StreamState.ExistsAtV2, Participation.CheckOnly, OperationResult.Success },
+		{ ExpectedVersion.StreamExists, StreamState.SoftDeletedAtV2, Participation.WriteTo, OperationResult.StreamDeleted },
+		{ ExpectedVersion.StreamExists, StreamState.SoftDeletedAtV2, Participation.CheckOnly, OperationResult.StreamDeleted },
+		{ ExpectedVersion.StreamExists, StreamState.Tombstoned, Participation.WriteTo, OperationResult.StreamDeleted },
+		{ ExpectedVersion.StreamExists, StreamState.Tombstoned, Participation.CheckOnly, OperationResult.StreamDeleted },
+
+		// ExpectedVersion.NoStream (-1): Success/Failure is inverse of EV.StreamExists
+		{ ExpectedVersion.NoStream, StreamState.NeverExisted, Participation.WriteTo, OperationResult.Success },
+		{ ExpectedVersion.NoStream, StreamState.NeverExisted, Participation.CheckOnly, OperationResult.Success },
+		{ ExpectedVersion.NoStream, StreamState.ExistsAtV2, Participation.WriteTo, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.NoStream, StreamState.ExistsAtV2, Participation.CheckOnly, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.NoStream, StreamState.SoftDeletedAtV2, Participation.WriteTo, OperationResult.Success },
+		{ ExpectedVersion.NoStream, StreamState.SoftDeletedAtV2, Participation.CheckOnly, OperationResult.Success },
+		{ ExpectedVersion.NoStream, StreamState.Tombstoned, Participation.WriteTo, OperationResult.StreamDeleted }, // never write to tombstoned stream
+		{ ExpectedVersion.NoStream, StreamState.Tombstoned, Participation.CheckOnly, OperationResult.Success }, // can check tombstoned stream
+
+		// EventNumber.DeletedStream (long.MaxValue): can check stream is tombstoned (but cannot write to it)
+		{ EventNumber.DeletedStream, StreamState.NeverExisted, Participation.WriteTo, OperationResult.WrongExpectedVersion },
+		{ EventNumber.DeletedStream, StreamState.NeverExisted, Participation.CheckOnly, OperationResult.WrongExpectedVersion },
+		{ EventNumber.DeletedStream, StreamState.ExistsAtV2, Participation.WriteTo, OperationResult.WrongExpectedVersion },
+		{ EventNumber.DeletedStream, StreamState.ExistsAtV2, Participation.CheckOnly, OperationResult.WrongExpectedVersion },
+		{ EventNumber.DeletedStream, StreamState.SoftDeletedAtV2, Participation.WriteTo, OperationResult.WrongExpectedVersion },
+		{ EventNumber.DeletedStream, StreamState.SoftDeletedAtV2, Participation.CheckOnly, OperationResult.WrongExpectedVersion },
+		{ EventNumber.DeletedStream, StreamState.Tombstoned, Participation.WriteTo, OperationResult.StreamDeleted }, // never write to tombstoned stream
+		{ EventNumber.DeletedStream, StreamState.Tombstoned, Participation.CheckOnly, OperationResult.Success }, // can check tombstoned stream
+
+		// Specific version 1: wrong expected version for ExistsAtV2 & SoftDeletedAtV2
+		// (not currently testing idempotency)
+		{ 1, StreamState.NeverExisted, Participation.WriteTo, OperationResult.WrongExpectedVersion },
+		{ 1, StreamState.NeverExisted, Participation.CheckOnly, OperationResult.WrongExpectedVersion },
+		{ 1, StreamState.ExistsAtV2, Participation.WriteTo, OperationResult.WrongExpectedVersion },
+		{ 1, StreamState.ExistsAtV2, Participation.CheckOnly, OperationResult.WrongExpectedVersion },
+		{ 1, StreamState.SoftDeletedAtV2, Participation.WriteTo, OperationResult.WrongExpectedVersion },
+		{ 1, StreamState.SoftDeletedAtV2, Participation.CheckOnly, OperationResult.WrongExpectedVersion },
+		{ 1, StreamState.Tombstoned, Participation.WriteTo, OperationResult.StreamDeleted },
+		{ 1, StreamState.Tombstoned, Participation.CheckOnly, OperationResult.StreamDeleted },
+
+		// Specific version 2: correct expected version for ExistsAtV2 & SoftDeletedAtV2
+		{ 2, StreamState.NeverExisted, Participation.WriteTo, OperationResult.WrongExpectedVersion },
+		{ 2, StreamState.NeverExisted, Participation.CheckOnly, OperationResult.WrongExpectedVersion },
+		{ 2, StreamState.ExistsAtV2, Participation.WriteTo, OperationResult.Success },
+		{ 2, StreamState.ExistsAtV2, Participation.CheckOnly, OperationResult.Success },
+		{ 2, StreamState.SoftDeletedAtV2, Participation.WriteTo, OperationResult.Success },
+		{ 2, StreamState.SoftDeletedAtV2, Participation.CheckOnly, OperationResult.Success },
+		{ 2, StreamState.Tombstoned, Participation.WriteTo, OperationResult.StreamDeleted },
+		{ 2, StreamState.Tombstoned, Participation.CheckOnly, OperationResult.StreamDeleted },
+
+		// Specific version 3: wrong expected version for ExistsAtV2 & SoftDeletedAtV2
+		{ 3, StreamState.NeverExisted, Participation.WriteTo, OperationResult.WrongExpectedVersion },
+		{ 3, StreamState.NeverExisted, Participation.CheckOnly, OperationResult.WrongExpectedVersion },
+		{ 3, StreamState.ExistsAtV2, Participation.WriteTo, OperationResult.WrongExpectedVersion },
+		{ 3, StreamState.ExistsAtV2, Participation.CheckOnly, OperationResult.WrongExpectedVersion },
+		{ 3, StreamState.SoftDeletedAtV2, Participation.WriteTo, OperationResult.WrongExpectedVersion },
+		{ 3, StreamState.SoftDeletedAtV2, Participation.CheckOnly, OperationResult.WrongExpectedVersion },
+		{ 3, StreamState.Tombstoned, Participation.WriteTo, OperationResult.StreamDeleted },
+		{ 3, StreamState.Tombstoned, Participation.CheckOnly, OperationResult.StreamDeleted }
+	};
+
+	[Theory]
+	[MemberData(nameof(ConsistencyCheckTestCases))]
+	public async Task consistency_check_respects_expected_version_and_stream_state(
+		long expectedVersion,
+		StreamState streamState,
+		Participation participation,
+		OperationResult expectedResult) {
+
+		const string test = nameof(consistency_check_respects_expected_version_and_stream_state);
+		var label = $"{test}-{VersionLabel(expectedVersion)}-{streamState}-{participation}";
+		var A = $"{label}-alternate"; // alternate stream is written to if we are not writing to the target stream (we have to write to _something_)
+		var T = $"{label}-target"; // target stream is the target of the checks, written to or not according to the participation
+
+		static string VersionLabel(long v) => v switch {
+			ExpectedVersion.Any => "any",
+			ExpectedVersion.NoStream => "nostream",
+			ExpectedVersion.StreamExists => "exists",
+			EventNumber.DeletedStream => "tombstoned",
+			_ => v.ToString(),
+		};
+
+		// setup stream the target stream
+		if (streamState is not StreamState.NeverExisted) {
+			var result = await WriteEvents([T], [ExpectedVersion.Any], [NewEvent, NewEvent, NewEvent], []);
+			Assert.Equal(OperationResult.Success, result.Result);
+		}
+
+		if (streamState is StreamState.SoftDeletedAtV2) {
+			await DeleteStream(T, hardDelete: false);
+		}
+
+		if (streamState is StreamState.Tombstoned) {
+			await DeleteStream(T, hardDelete: true);
+		}
+
+		// attempt to write to the anchor and target streams according to the participation
+		var completed = participation == Participation.WriteTo
+			// write to the target stream
+			? await WriteEvents(
+				eventStreamIds: [T],
+				expectedVersions: [expectedVersion],
+				events: [NewEvent],
+				eventStreamIndexes: [0])
+			// write to the alternate stream, target stream participation is CheckOnly
+			: await WriteEvents(
+				eventStreamIds: [A, T], // todo: switch to T, A when we can (and adjust expectedVersions and eventStreamIndexes)
+				expectedVersions: [ExpectedVersion.Any, expectedVersion],
+				events: [NewEvent],
+				eventStreamIndexes: [0]);
+
+		Assert.Equal(expectedResult, completed.Result);
+
+		if (expectedResult == OperationResult.Success) {
+			Assert.Equal(0, completed.ConsistencyCheckFailures.Length);
+		} else {
+			// There must be exactly one failure, and it must be for stream T (index 0)
+			Assert.Equal(1, completed.ConsistencyCheckFailures.Length);
+			var failure = completed.ConsistencyCheckFailures.Span[0];
+			var expectedFailureIndex = participation == Participation.WriteTo ? 0 : 1;
+			Assert.Equal(expectedFailureIndex, failure.StreamIndex);
+			Assert.Equal(expectedVersion, failure.ExpectedVersion);
+			Assert.Equal(streamState switch {
+				StreamState.NeverExisted =>
+					ExpectedVersion.NoStream,
+				StreamState.ExistsAtV2 or StreamState.SoftDeletedAtV2 =>
+					2,
+				StreamState.Tombstoned =>
+					EventNumber.DeletedStream,
+				_ =>
+					throw new ArgumentOutOfRangeException(nameof(streamState)),
+			}, failure.ActualVersion);
+
+			Assert.Equal((streamState, expectedVersion) switch {
+				(StreamState.Tombstoned, _) =>
+					false,
+				(StreamState.SoftDeletedAtV2, ExpectedVersion.StreamExists) =>
+					true,
+				(_, ExpectedVersion.StreamExists) =>
+					false,
+				_ =>
+					null,
+			}, failure.IsSoftDeleted);
+		}
 	}
 
 	private Task<ClientMessage.WriteEventsCompleted> WriteEvents(
