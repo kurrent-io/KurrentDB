@@ -4,12 +4,14 @@
 // ReSharper disable CheckNamespace
 
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Grpc.Core;
 using Humanizer;
 using KurrentDB.Api.Infrastructure.Errors;
 using KurrentDB.Core.Data;
 using KurrentDB.Protocol.V2.Streams.Errors;
+using static System.Runtime.CompilerServices.MethodImplOptions;
 
 namespace KurrentDB.Api.Errors;
 
@@ -127,16 +129,19 @@ public static partial class ApiErrors {
         return RpcExceptions.FromError(StreamsError.AppendSessionNoRequests, message);
     }
 
-    // ------------------------------------------------------------------------------
-    // Produces a human-readable message listing each violated consistency check.
-    // ------------------------------------------------------------------------------
-    //   Failed to append transaction due to consistency violations.
-    //
-    //   Consistency check failed on stream(s):
-    //    - stream-1: Expected State: NoStream. Actual State: Revision 5.
-    //    - stream-2: Expected State: Revision 10. Actual State: Deleted.
-    //    - stream-3: Query predicate 'user_id = 123' was not satisfied.
 	public static RpcException AppendConsistencyViolation(List<ConsistencyViolation> violations) {
+		// ------------------------------------------------------------------------------
+		// Produces a human-readable message listing each violated consistency check.
+		// ------------------------------------------------------------------------------
+		// Example message:
+		//   Failed to append transaction due to consistency violations.
+		//
+		//   Consistency check failed on stream(s):
+		//    - stream-1: Expected State: NoStream. Actual State: Revision 5.
+		//    - stream-2: Expected State: Revision 10. Actual State: Deleted.
+		//    - stream-3: Query predicate 'user_id = 123' was not satisfied.
+		// ------------------------------------------------------------------------------
+
 		Debug.Assert(violations.Count > 0, "The violations list must not be empty!");
 
 		var message = FormatMessage(violations);
@@ -168,13 +173,14 @@ public static partial class ApiErrors {
 			return builder.ToString();
 		}
 
+		[MethodImpl(AggressiveInlining)]
 		static string FormatStreamState(long state) => state switch {
 			>= 0                         => $"Revision {state}",
+			-10                          => "Deleted",
+			-100                         => "Tombstoned",
 			ExpectedVersion.NoStream     => "NoStream",
 			ExpectedVersion.Any          => "Any",
 			ExpectedVersion.StreamExists => "StreamExists",
-			-10                          => "Deleted",
-			-100                         => "Tombstoned",
 			_                            => $"Unknown ({state})"
 		};
 	}
