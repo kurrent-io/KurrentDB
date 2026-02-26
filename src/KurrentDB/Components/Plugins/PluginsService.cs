@@ -11,5 +11,5 @@ namespace KurrentDB.Components.Plugins;
 public class PluginsService(ClusterVNodeOptions options) {
 	public readonly IReadOnlyList<IPlugableComponent> PluggableComponents = options.PlugableComponents.OrderBy(x => x.Name).ToList();
 
-	public bool IsPluginEnabled(string name) => PluggableComponents.Any(x => x.Name == name && x.Enabled);
+	public bool IsPluginEnabled(string name) => options.IsPluginEnabled(name);
 }
