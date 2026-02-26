@@ -273,6 +273,7 @@ Refer to the [configuration guide](../configuration/README.md) for configuration
 @tab kurrentdb.conf
 ```yaml
 AuthenticationType: ldaps
+LogFailedAuthenticationAttempts: true # for testing
 LdapsAuth:
   Host: 13.88.9.49
   Port: 636 #to use plaintext protocol, set Port to 389 and UseSSL to false
@@ -301,6 +302,7 @@ Alternatively you can provide a path to a separate config file with the `Authent
 @tab kurrentdb.conf
 ```yaml
 AuthenticationType: ldaps
+LogFailedAuthenticationAttempts: true # for testing
 AuthenticationConfig: ./kurrentdb-ldaps.conf
 ```
 
@@ -371,6 +373,7 @@ For example:
 @tab kurrentdb.conf
 ```yaml
 AuthenticationType: oauth
+LogFailedAuthenticationAttempts: true # for testing
 OAuth:
   Audience: {audience}
   Issuer: {identity_server_endpoint}
@@ -385,6 +388,7 @@ Alternatively you can provide a path to a separate config file with the `Authent
 @tab kurrentdb.conf
 ```yaml
 AuthenticationType: oauth
+LogFailedAuthenticationAttempts: true # for testing
 AuthenticationConfig: ./kurrentdb-oauth.conf
 ```
 
@@ -587,6 +591,7 @@ ExtIp: 127.0.0.1
 
 # Licensing and certificates configuration omitted
 
+LogFailedAuthenticationAttempts: true # for testing
 AuthenticationType: oauth
 OAuth:
   Audience: kurrentdb-client

@@ -93,7 +93,6 @@ The `state` filter accepts the following values:
 
 | State                          | Description                                              |
 | ------------------------------ | -------------------------------------------------------- |
-| `CONNECTOR_STATE_UNKNOWN`      | The connector state is unknown or not yet determined.    |
 | `CONNECTOR_STATE_ACTIVATING`   | The connector is in the process of starting up.          |
 | `CONNECTOR_STATE_RUNNING`      | The connector is actively running and consuming events.  |
 | `CONNECTOR_STATE_DEACTIVATING` | The connector is in the process of shutting down.        |
