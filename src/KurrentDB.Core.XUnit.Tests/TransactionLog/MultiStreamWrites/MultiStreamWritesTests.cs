@@ -392,8 +392,8 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			eventStreamIndexes: [0, 1, 0]);
 
 		Assert.Equal(OperationResult.Success, completed.Result);
-		Assert.Equal([0, 0], completed.FirstEventNumbers.ToArray());
-		Assert.Equal([1, 0], completed.LastEventNumbers.ToArray());
+		Assert.Equal([0, 0, 0], completed.FirstEventNumbers.ToArray());
+		Assert.Equal([1, 0, -1], completed.LastEventNumbers.ToArray());
 	}
 
 	[Fact]
@@ -410,10 +410,11 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			eventStreamIndexes: [0, 0, 0]);
 
 		Assert.Equal(OperationResult.Success, completed.Result);
-		Assert.Equal([0], completed.FirstEventNumbers.ToArray());
-		Assert.Equal([2], completed.LastEventNumbers.ToArray());
+		Assert.Equal([0, 0, 0], completed.FirstEventNumbers.ToArray());
+		Assert.Equal([2, -1, -1], completed.LastEventNumbers.ToArray());
 	}
 
+	const long DeletedStreamFirstEventNumber = long.MinValue; // EventNumber.DeletedStream + 1;
 	[Fact]
 	public async Task succeeds_with_conditional_append_on_deleted_stream_and_exp_ver_any() {
 		const string test = nameof(succeeds_with_conditional_append_on_deleted_stream_and_exp_ver_any);
@@ -430,8 +431,8 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			eventStreamIndexes: [0, 1, 0]);
 
 		Assert.Equal(OperationResult.Success, completed.Result);
-		Assert.Equal([0, 0], completed.FirstEventNumbers.ToArray());
-		Assert.Equal([1, 0], completed.LastEventNumbers.ToArray());
+		Assert.Equal([0, 0, DeletedStreamFirstEventNumber], completed.FirstEventNumbers.ToArray());
+		Assert.Equal([1, 0, EventNumber.DeletedStream], completed.LastEventNumbers.ToArray());
 	}
 
 	[Fact]
@@ -450,8 +451,8 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			eventStreamIndexes: [0, 1, 0]);
 
 		Assert.Equal(OperationResult.Success, completed.Result);
-		Assert.Equal([0, 0], completed.FirstEventNumbers.ToArray());
-		Assert.Equal([1, 0], completed.LastEventNumbers.ToArray());
+		Assert.Equal([0, 0, DeletedStreamFirstEventNumber], completed.FirstEventNumbers.ToArray());
+		Assert.Equal([1, 0, EventNumber.DeletedStream], completed.LastEventNumbers.ToArray());
 	}
 
 	[Fact]
@@ -867,13 +868,6 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			events: [NewEvent, NewEvent],
 			eventStreamIndexes: [0, 2]));
 
-		// stream indexes not assigned correctly
-		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await WriteEvents(
-			eventStreamIds: [A, B],
-			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any],
-			events: [NewEvent, NewEvent],
-			eventStreamIndexes: [1, 0]));
-
 		// not all streams being written to (with eventStreamIndexes: [])
 		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await WriteEvents(
 			eventStreamIds: [A, B],
@@ -967,17 +961,28 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 	}
 
 	[Fact]
-	public async Task fails_with_conditional_append_on_wrongly_placed_stream() {
-		const string test = nameof(fails_with_conditional_append_on_wrongly_placed_stream);
+	public async Task succeeds_when_not_writing_to_first_stream() {
+		const string test = nameof(succeeds_when_not_writing_to_first_stream);
 		var A = $"{test}-a"; // conditional stream (valid condition: NoStream, but should be placed at the end of the list of streams)
 		var B = $"{test}-b";
 		var C = $"{test}-c";
 
-		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await WriteEvents(
-			eventStreamIds: [A, B, C],
-			expectedVersions: [ExpectedVersion.NoStream, ExpectedVersion.Any, ExpectedVersion.Any],
+		var completed = await WriteEvents(
+			eventStreamIds: [A],
+			expectedVersions: [ExpectedVersion.NoStream],
 			events: [NewEvent, NewEvent, NewEvent],
-			eventStreamIndexes: [1, 2, 1]));
+			eventStreamIndexes: []);
+		Assert.Equal(OperationResult.Success, completed.Result);
+
+		completed = await WriteEvents(
+			eventStreamIds: [A, B, C],
+			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any, ExpectedVersion.Any],
+			events: [NewEvent, NewEvent, NewEvent],
+			eventStreamIndexes: [2, 1, 1]); // C B B
+
+		Assert.Equal(OperationResult.Success, completed.Result);
+		Assert.Equal([3, 0, 0], completed.FirstEventNumbers.ToArray());
+		Assert.Equal([2, 1, 0], completed.LastEventNumbers.ToArray());
 	}
 
 	[Fact]
@@ -1167,7 +1172,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		}
 
 		// attempt to write to the anchor and target streams according to the participation
-		var completed = participation == Participation.WriteTo
+		var completed = participation is Participation.WriteTo
 			// write to the target stream
 			? await WriteEvents(
 				eventStreamIds: [T],
@@ -1176,21 +1181,37 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 				eventStreamIndexes: [0])
 			// write to the alternate stream, target stream participation is CheckOnly
 			: await WriteEvents(
-				eventStreamIds: [A, T], // todo: switch to T, A when we can (and adjust expectedVersions and eventStreamIndexes)
-				expectedVersions: [ExpectedVersion.Any, expectedVersion],
+				eventStreamIds: [T, A],
+				expectedVersions: [expectedVersion, ExpectedVersion.Any],
 				events: [NewEvent],
-				eventStreamIndexes: [0]);
+				eventStreamIndexes: [1]);
 
 		Assert.Equal(expectedResult, completed.Result);
 
-		if (expectedResult == OperationResult.Success) {
+		if (expectedResult is OperationResult.Success) {
 			Assert.Equal(0, completed.ConsistencyCheckFailures.Length);
+			if (participation is Participation.WriteTo) {
+				var expectedEventNumber = streamState is StreamState.NeverExisted ? 0 : 3;
+				Assert.Equal([expectedEventNumber], completed.FirstEventNumbers.ToArray());
+				Assert.Equal([expectedEventNumber], completed.LastEventNumbers.ToArray());
+			} else {
+				// Participation.CheckOnly
+				var expectedLastEventNumber = streamState switch {
+					StreamState.NeverExisted =>
+						-1,
+					StreamState.Tombstoned =>
+						EventNumber.DeletedStream,
+					_ =>
+						2,
+				};
+				Assert.Equal([expectedLastEventNumber + 1, 0], completed.FirstEventNumbers.ToArray());
+				Assert.Equal([expectedLastEventNumber, 0], completed.LastEventNumbers.ToArray());
+			}
 		} else {
 			// There must be exactly one failure, and it must be for stream T (index 0)
 			Assert.Equal(1, completed.ConsistencyCheckFailures.Length);
 			var failure = completed.ConsistencyCheckFailures.Span[0];
-			var expectedFailureIndex = participation == Participation.WriteTo ? 0 : 1;
-			Assert.Equal(expectedFailureIndex, failure.StreamIndex);
+			Assert.Equal(0, failure.StreamIndex);
 			Assert.Equal(expectedVersion, failure.ExpectedVersion);
 			Assert.Equal(streamState switch {
 				StreamState.NeverExisted =>
@@ -1213,6 +1234,34 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 				_ =>
 					null,
 			}, failure.IsSoftDeleted);
+		}
+	}
+
+	// the numbers here are curious, but they go on the wire so keep as is for backwards compatibility
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public async Task hard_and_soft_delete_return_correct_event_numbers(bool hardDelete) {
+		const string test = nameof(hard_and_soft_delete_return_correct_event_numbers);
+		var A = $"{test}-{hardDelete}-a";
+		var metaA = SystemStreams.MetastreamOf(A);
+
+		// prepopulate with 3 events (version 0, 1, 2) and set maxcount
+		var writeCompleted = await WriteEvents(
+			eventStreamIds: [A, metaA],
+			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any],
+			events: [NewEvent, NewEvent, NewEvent, CreateMetadataEvent(new(maxCount: 2))],
+			eventStreamIndexes: [0, 0, 0, 1]);
+		Assert.Equal(OperationResult.Success, writeCompleted.Result);
+
+		var deleteCompleted = await DeleteStream(A, hardDelete: hardDelete);
+
+		if (hardDelete) {
+			// curious that the current version is DeletedStream - 1, and not DeletedStream
+			Assert.Equal(EventNumber.DeletedStream - 1, deleteCompleted.CurrentVersion);
+		} else {
+			// curious that the current version returned is that of the metadata stream
+			Assert.Equal(1, deleteCompleted.CurrentVersion);
 		}
 	}
 
@@ -1269,7 +1318,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		return tcs.Task;
 	}
 
-	private async Task DeleteStream(string eventStreamId, bool hardDelete) {
+	private async Task<ClientMessage.DeleteStreamCompleted> DeleteStream(string eventStreamId, bool hardDelete) {
 		var tcs = new TaskCompletionSource<ClientMessage.DeleteStreamCompleted>();
 		var envelope = new CallbackEnvelope(m => {
 			Assert.IsType<ClientMessage.DeleteStreamCompleted>(m);
@@ -1290,5 +1339,6 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 
 		var completed = await tcs.Task;
 		Assert.Equal(OperationResult.Success, completed.Result);
+		return completed;
 	}
 }

@@ -29,8 +29,7 @@ public class when_index_committer_service_commits_empty_transaction_at_end_of_lo
 			correlationId: Guid.NewGuid(),
 			logPosition: _logPrePosition,
 			transactionPosition: _logPrePosition,
-			firstEventNumbers: new(0),
-			lastEventNumbers: new(0),
+			numStreams: 1,
 			eventStreamIndexes: []));
 
 		// replicate it

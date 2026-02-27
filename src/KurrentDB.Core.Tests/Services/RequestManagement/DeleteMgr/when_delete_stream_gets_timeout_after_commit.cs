@@ -29,7 +29,7 @@ public class when_delete_stream_gets_timeout_after_commit : RequestManagerSpecif
 	}
 
 	protected override IEnumerable<Message> WithInitialMessages() {
-		yield return StorageMessage.CommitIndexed.ForSingleStream(InternalCorrId, _commitPosition, 500, 1, 1);
+		yield return StorageMessage.CommitIndexed.ForSingleStream(InternalCorrId, _commitPosition, 500);
 		yield return new ReplicationTrackingMessage.ReplicatedTo(_commitPosition);
 	}
 
@@ -42,7 +42,7 @@ public class when_delete_stream_gets_timeout_after_commit : RequestManagerSpecif
 		Assert.That(!Produced.Any());
 	}
 	[Test]
-	public void the_envelope_has_single_successful_reply() {
+	public void the_envelope_has_no_additional_replies() {
 		Assert.AreEqual(0, Envelope.Replies.Count);
 	}
 }

@@ -31,13 +31,14 @@ public class when_transaction_commit_completes_successfully : RequestManagerSpec
 	}
 
 	protected override IEnumerable<Message> WithInitialMessages() {
+		yield return StorageMessage.ConsistencyChecksSucceeded.ForSingleStream(InternalCorrId, 0, 0);
 		yield return new StorageMessage.UncommittedPrepareChased(InternalCorrId, _transactionPosition, PrepareFlags.TransactionEnd);
-		yield return StorageMessage.CommitChased.ForSingleStream(InternalCorrId, _commitPosition, _transactionPosition, 1, 3);
+		yield return StorageMessage.CommitChased.ForSingleStream(InternalCorrId, _commitPosition, _transactionPosition);
 		yield return new ReplicationTrackingMessage.ReplicatedTo(_commitPosition);
 	}
 
 	protected override Message When() {
-		return StorageMessage.CommitIndexed.ForSingleStream(InternalCorrId, _commitPosition, _transactionPosition, 0, 0);
+		return StorageMessage.CommitIndexed.ForSingleStream(InternalCorrId, _commitPosition, _transactionPosition);
 	}
 
 	[Test]

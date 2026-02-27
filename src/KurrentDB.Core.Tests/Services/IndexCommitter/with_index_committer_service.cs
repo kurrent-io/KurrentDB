@@ -104,9 +104,9 @@ public class FakeIndexCommitter<TStreamId> : IIndexCommitter<TStreamId> {
 	public void Dispose() {
 	}
 
-	public ValueTask<long> Commit(CommitLogRecord commit, bool isTfEof, bool cacheLastEventNumber, CancellationToken token) {
+	public ValueTask Commit(CommitLogRecord commit, bool isTfEof, bool cacheLastEventNumber, CancellationToken token) {
 		CommittedCommits.Enqueue(commit);
-		return new(0L);
+		return ValueTask.CompletedTask;
 	}
 
 	public ValueTask Commit(IReadOnlyList<IPrepareLogRecord<TStreamId>> committedPrepares, int numStreams, LowAllocReadOnlyMemory<int> eventStreamIndexes, bool isTfEof, bool cacheLastEventNumber, CancellationToken token) {

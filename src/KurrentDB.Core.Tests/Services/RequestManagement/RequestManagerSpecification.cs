@@ -51,6 +51,7 @@ public abstract class RequestManagerSpecification<TManager>
 		Manager = OnManager(Publisher);
 		Dispatcher.Subscribe<StorageMessage.UncommittedPrepareChased>(Manager);
 		Dispatcher.Subscribe<StorageMessage.InvalidTransaction>(Manager);
+		Dispatcher.Subscribe<StorageMessage.ConsistencyChecksSucceeded>(Manager);
 		Dispatcher.Subscribe<StorageMessage.ConsistencyChecksFailed>(Manager);
 		Dispatcher.Subscribe<StorageMessage.AlreadyCommitted>(Manager);
 		Dispatcher.Subscribe<StorageMessage.RequestManagerTimerTick>(Manager);

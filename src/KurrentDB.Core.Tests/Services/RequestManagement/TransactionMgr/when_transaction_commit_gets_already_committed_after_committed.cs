@@ -31,10 +31,11 @@ public class when_transaction_commit_gets_already_committed_after_committed : Re
 	}
 
 	protected override IEnumerable<Message> WithInitialMessages() {
+		yield return StorageMessage.ConsistencyChecksSucceeded.ForSingleStream(InternalCorrId, 0, 0);
 		yield return new StorageMessage.UncommittedPrepareChased(InternalCorrId, transactionId, PrepareFlags.TransactionEnd);
-		yield return StorageMessage.CommitIndexed.ForSingleStream(Guid.NewGuid(), commitPosition, transactionId, 0, 10);
+		yield return StorageMessage.CommitIndexed.ForSingleStream(Guid.NewGuid(), commitPosition, transactionId);
 		yield return new ReplicationTrackingMessage.ReplicatedTo(commitPosition);
-		yield return StorageMessage.CommitIndexed.ForSingleStream(InternalCorrId, commitPosition, transactionId, 0, 0);
+		yield return StorageMessage.CommitIndexed.ForSingleStream(InternalCorrId, commitPosition, transactionId);
 	}
 
 	protected override Message When() {

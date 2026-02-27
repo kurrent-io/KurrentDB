@@ -16,8 +16,8 @@ public class when_index_committer_service_receives_duplicate_commit_acks<TLogFor
 	public override void When() {
 		AddPendingPrepare(_logPosition);
 
-		Service.Handle(StorageMessage.CommitChased.ForSingleStream(_correlationId, _logPosition, _logPosition, 0, 0));
-		Service.Handle(StorageMessage.CommitChased.ForSingleStream(_correlationId, _logPosition, _logPosition, 0, 0));
+		Service.Handle(StorageMessage.CommitChased.ForSingleStream(_correlationId, _logPosition, _logPosition));
+		Service.Handle(StorageMessage.CommitChased.ForSingleStream(_correlationId, _logPosition, _logPosition));
 		Service.Handle(new ReplicationTrackingMessage.ReplicatedTo(_logPosition));
 	}
 

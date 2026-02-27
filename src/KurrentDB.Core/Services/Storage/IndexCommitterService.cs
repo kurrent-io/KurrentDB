@@ -136,7 +136,6 @@ public class IndexCommitterService<TStreamId> : IndexCommitterService, IIndexCom
 	}
 
 	private async ValueTask ProcessCommitReplicated(StorageMessage.CommitChased message, CancellationToken token) {
-		var lastEventNumbers = message.LastEventNumbers;
 		if (_pendingTransactions.TryRemove(message.TransactionPosition, out var transaction)) {
 			var isTfEof = IsTfEof(transaction.PostPosition);
 			if (transaction.Prepares.Count > 0) {
@@ -146,16 +145,14 @@ public class IndexCommitterService<TStreamId> : IndexCommitterService, IIndexCom
 			}
 
 			if (transaction.Commit is not null) {
-				var lastEventNumber = await _indexCommitter.Commit(transaction.Commit, isTfEof, true, token);
-				if (lastEventNumber != EventNumber.Invalid)
-					lastEventNumbers = new(lastEventNumber);
+				await _indexCommitter.Commit(transaction.Commit, isTfEof, true, token);
 			}
 		}
 
 		_publisher.Publish(new ReplicationTrackingMessage.IndexedTo(message.LogPosition));
 
 		_publisher.Publish(new StorageMessage.CommitIndexed(message.CorrelationId, message.LogPosition,
-			message.TransactionPosition, message.FirstEventNumbers, lastEventNumbers));
+			message.TransactionPosition));
 	}
 
 	private bool IsTfEof(long postPosition) => postPosition == _writerCheckpoint.Read();

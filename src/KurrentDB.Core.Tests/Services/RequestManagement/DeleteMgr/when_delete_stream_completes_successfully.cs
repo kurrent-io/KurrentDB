@@ -31,7 +31,8 @@ public class when_delete_stream_completes_successfully : RequestManagerSpecifica
 	}
 
 	protected override IEnumerable<Message> WithInitialMessages() {
-		yield return StorageMessage.CommitIndexed.ForSingleStream(InternalCorrId, commitPosition, 2, 3, 3);
+		yield return StorageMessage.ConsistencyChecksSucceeded.ForSingleStream(InternalCorrId, 3, 3);
+		yield return StorageMessage.CommitIndexed.ForSingleStream(InternalCorrId, commitPosition, 2);
 	}
 
 	protected override Message When() {
