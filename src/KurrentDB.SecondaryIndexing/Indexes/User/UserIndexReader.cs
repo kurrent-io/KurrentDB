@@ -10,10 +10,9 @@ namespace KurrentDB.SecondaryIndexing.Indexes.User;
 
 internal class UserIndexReader<TField>(
 	DuckDBConnectionPool sharedPool,
-	UserIndexSql<TField> sql,
-	UserIndexInFlightRecords<TField> inFlightRecords,
+	UserIndexProcessor processor,
 	IReadIndex<string> index
-) : SecondaryIndexReaderBase(sharedPool, index) where TField : IField {
+) : SecondaryIndexReaderBase(sharedPool, index) where TField : IField<TField> {
 
 	protected override string? GetId(string indexStream) {
 		// the field is used as the ID. null when there is no field
@@ -22,38 +21,32 @@ internal class UserIndexReader<TField>(
 		return field;
 	}
 
-	protected override (List<IndexQueryRecord> Records, bool IsFinal) GetInflightForwards(string? id, long startPosition, int maxCount, bool excludeFirst) {
-		return TryGetField(id, out var field)
-			? inFlightRecords.GetInFlightRecordsForwards(startPosition, maxCount, excludeFirst, Filter)
-			: ([], true);
-
-		bool Filter(UserIndexInFlightRecord<TField> r) => id is null || EqualityComparer<TField>.Default.Equals(r.Field, field!);
-	}
-
-	protected override List<IndexQueryRecord> GetDbRecordsForwards(DuckDBConnectionPool db, string? id, long startPosition, long endPosition, int maxCount, bool excludeFirst) {
+	protected override List<IndexQueryRecord> GetDbRecordsForwards(DuckDBConnectionPool db, string? id, long startPosition, int maxCount, bool excludeFirst) {
 		if (!TryGetField(id, out var field))
 			return [];
 
 		var args = new ReadUserIndexQueryArgs {
 			StartPosition = startPosition,
-			EndPosition = endPosition,
 			ExcludeFirst = excludeFirst,
 			Count = maxCount,
-			Field = id is null ? new NullField() : field!
+			Field = id is null ? NullField.Instance : field!
 		};
 
-		return sql.ReadUserIndexForwardsQuery(db, args);
+		var records = new List<IndexQueryRecord>(maxCount);
+		using (db.Rent(out var connection)) {
+			using (processor.CaptureSnapshot(connection)) {
+				processor.Sql.ReadUserIndexForwardsQuery(connection, args, records);
+			}
+		}
+
+		return records;
 	}
 
-	protected override IEnumerable<IndexQueryRecord> GetInflightBackwards(string? id, long startPosition, int maxCount, bool excludeFirst) {
-		return TryGetField(id, out var field)
-			? inFlightRecords.GetInFlightRecordsBackwards(startPosition, maxCount, excludeFirst, Filter)
-			: [];
-
-		bool Filter(UserIndexInFlightRecord<TField> r) => id is null || EqualityComparer<TField>.Default.Equals(r.Field, field!);
-	}
-
-	protected override List<IndexQueryRecord> GetDbRecordsBackwards(DuckDBConnectionPool db, string? id, long startPosition, int maxCount, bool excludeFirst) {
+	protected override List<IndexQueryRecord> GetDbRecordsBackwards(DuckDBConnectionPool db,
+		string? id,
+		long startPosition,
+		int maxCount,
+		bool excludeFirst) {
 		if (!TryGetField(id, out var field))
 			return [];
 
@@ -61,10 +54,17 @@ internal class UserIndexReader<TField>(
 			StartPosition = startPosition,
 			Count = maxCount,
 			ExcludeFirst = excludeFirst,
-			Field = id is null ? new NullField() : field!
+			Field = id is null ? NullField.Instance : field!
 		};
 
-		return sql.ReadUserIndexBackwardsQuery(db, args);
+		var records = new List<IndexQueryRecord>(maxCount);
+		using (db.Rent(out var connection)) {
+			using (processor.CaptureSnapshot(connection)) {
+				processor.Sql.ReadUserIndexBackwardsQuery(connection, args, records);
+			}
+		}
+
+		return records;
 	}
 
 	public override TFPos GetLastIndexedPosition(string _) => throw new InvalidOperationException(); // never called
@@ -77,7 +77,7 @@ internal class UserIndexReader<TField>(
 			return true;
 
 		try {
-			field = (TField) TField.ParseFrom(id);
+			field = TField.ParseFrom(id);
 			return true;
 		} catch {
 			// invalid field

@@ -1,9 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using Dapper;
 using DotNext;
-using Kurrent.Quack.ConnectionPool;
+using Kurrent.Quack;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Tests.Fakes;
@@ -117,44 +116,88 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest<DefaultIndexProc
 	}
 
 	private void AssertDefaultIndexQueryReturns(List<long> expected) {
-		var records =
-			DuckDb.QueryToList<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexQueryExcl>(new(-1, long.MaxValue,
-				int.MaxValue));
+		List<IndexQueryRecord> records;
+		using (DuckDb.Rent(out var connection)) {
+			using (_processor.CaptureSnapshot(connection)) {
+				records = connection
+					.ExecuteQuery<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexQueryExcl>(new(-1, int.MaxValue))
+					.ToList();
+			}
+		}
 
 		Assert.Equal(expected, records.Select(x => x.LogPosition));
 	}
 
 	private void AssertLastLogPositionQueryReturns(long? expectedLogPosition) {
-		var actual = DuckDb.QueryFirstOrDefault<LastPositionResult, GetLastLogPositionQuery>().OrNull();
+		LastPositionResult? actual;
+		using (DuckDb.Rent(out var connection)) {
+			using (_processor.CaptureSnapshot(connection)) {
+				actual = connection.QueryFirstOrDefault<LastPositionResult, GetLastLogPositionQuery>().OrNull();
+			}
+		}
 
 		Assert.Equal(expectedLogPosition, actual?.PreparePosition);
 	}
 
 	private void AssertGetCategoriesQueryReturns(string[] expected) {
-		using var connection = DuckDb.Open();
-		var records = connection.Query<string>("select distinct category from idx_all order by log_position");
+		var records = new List<string>();
+		using (DuckDb.Rent(out var connection)) {
+			using (_processor.CaptureSnapshot(connection)) {
+				using var result = connection.ExecuteAdHocQuery("select distinct category from idx_all_snapshot order by log_position"u8);
+				while (result.TryFetch(out var chunk)) {
+					using (chunk) {
+						while (chunk.TryRead(out var row)) {
+							records.Add(row.ReadString());
+						}
+					}
+				}
+			}
+		}
 
 		Assert.Equal(expected, records);
 	}
 
 	private void AssertCategoryIndexQueryReturns(string category, List<long> expected) {
-		var records =
-			DuckDb.QueryToList<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryIncl>(new(category, 0, long.MaxValue, 32));
+		List<IndexQueryRecord> records;
+		using (DuckDb.Rent(out var connection)) {
+			using (_processor.CaptureSnapshot(connection)) {
+				records = connection
+					.ExecuteQuery<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryIncl>(new(category, 0, 32))
+					.ToList();
+			}
+		}
 
 		Assert.Equal(expected, records.Select(x => x.LogPosition));
 	}
 
 	private void AssertGetAllEventTypesQueryReturns(string[] expected) {
-		using var connection = DuckDb.Open();
-		var records = connection.Query<string>("select distinct event_type from idx_all order by log_position");
+		var records = new List<string>();
+		using (DuckDb.Rent(out var connection)) {
+			using (_processor.CaptureSnapshot(connection)) {
+				using var result = connection.ExecuteAdHocQuery("select distinct event_type from idx_all order by log_position"u8);
+				while (result.TryFetch(out var chunk)) {
+					using (chunk) {
+						while (chunk.TryRead(out var row)) {
+							records.Add(row.ReadString());
+						}
+					}
+				}
+			}
+		}
 
 		Assert.Equal(expected, records);
 	}
 
 	private void AssertReadEventTypeIndexQueryReturns(string eventType, List<long> expected) {
-		var records = DuckDb.QueryToList<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(
-			new(eventType, 0, long.MaxValue, 32)
-		);
+		List<IndexQueryRecord> records;
+		using (DuckDb.Rent(out var connection)) {
+			using (_processor.CaptureSnapshot(connection)) {
+				records = connection.ExecuteQuery<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(
+						new(eventType, 0, 32)
+					)
+					.ToList();
+			}
+		}
 
 		Assert.Equal(expected, records.Select(x => x.LogPosition));
 	}
@@ -164,13 +207,11 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest<DefaultIndexProc
 	public DefaultIndexProcessorTests() {
 		ReadIndexStub.Build();
 
-		const int commitBatchSize = 9;
 		var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
-		var inflightRecordsCache = new DefaultIndexInFlightRecords(new() { CommitBatchSize = commitBatchSize });
 
 		var publisher = new FakePublisher();
 
-		_processor = new(DuckDb, inflightRecordsCache, publisher, hasher, new("test"), NullLoggerFactory.Instance);
+		_processor = new(DuckDb, publisher, hasher, new("test"), NullLoggerFactory.Instance);
 	}
 
 	public override ValueTask DisposeAsync() {

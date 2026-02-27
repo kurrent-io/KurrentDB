@@ -57,7 +57,6 @@ public partial class IndexingTests(IndexingFixture fixture, ITestOutputHelper ou
 	public enum CommitMode {
 		None,
 		CommitAndClear,
-		CommitAndKeep,
 	}
 
 	private static readonly IEventFilter UserEventsFilter = new EventFilter.DefaultAllFilterStrategy.NonSystemStreamStrategy();
@@ -65,7 +64,6 @@ public partial class IndexingTests(IndexingFixture fixture, ITestOutputHelper ou
 	[Theory]
 	[InlineData(CommitMode.None)]
 	[InlineData(CommitMode.CommitAndClear)]
-	[InlineData(CommitMode.CommitAndKeep)]
 	public async Task ReadFromBothDefault(CommitMode mode) {
 		await ValidateRead(mode, SystemStreams.DefaultSecondaryIndex, UserEventsFilter);
 	}
@@ -73,7 +71,6 @@ public partial class IndexingTests(IndexingFixture fixture, ITestOutputHelper ou
 	[Theory]
 	[InlineData(CommitMode.None)]
 	[InlineData(CommitMode.CommitAndClear)]
-	[InlineData(CommitMode.CommitAndKeep)]
 	public async Task ReadFromBothCategory(CommitMode mode) {
 		var category = Fixture.Categories.First();
 		await ValidateRead(mode, CategoryIndex.Name(category), new CategoryFilter(category));
@@ -82,7 +79,6 @@ public partial class IndexingTests(IndexingFixture fixture, ITestOutputHelper ou
 	[Theory]
 	[InlineData(CommitMode.None)]
 	[InlineData(CommitMode.CommitAndClear)]
-	[InlineData(CommitMode.CommitAndKeep)]
 	public async Task ReadFromBothEventType(CommitMode mode) {
 		var eventType = Fixture.EventTypes.First();
 		await ValidateRead(mode, EventTypeIndex.Name(eventType), new EventTypeFilter(eventType));
@@ -112,10 +108,7 @@ public partial class IndexingTests(IndexingFixture fixture, ITestOutputHelper ou
 		var processor = Fixture.NodeServices.GetRequiredService<DefaultIndexProcessor>();
 		switch (mode) {
 			case CommitMode.CommitAndClear:
-				processor.Commit(true);
-				break;
-			case CommitMode.CommitAndKeep:
-				processor.Commit(false);
+				processor.Commit();
 				break;
 		}
 

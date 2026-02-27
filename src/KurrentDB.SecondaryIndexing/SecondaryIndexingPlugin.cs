@@ -54,12 +54,9 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddSingleton<UserIndexQueryService>();
 		services.AddSingleton<UserIndexEngine>();
 		services.AddDuckDBSetup<IndexingDbSchema>();
-		services.AddDuckDBSetup<InFlightSetup>();
 
 		services.AddHostedService<DefaultIndexBuilder>();
 		services.AddHostedService(sp => sp.GetRequiredService<UserIndexEngine>());
-
-		services.AddSingleton<DefaultIndexInFlightRecords>();
 
 		var meter = new Meter(SecondaryIndexingConstants.MeterName, "1.0.0");
 

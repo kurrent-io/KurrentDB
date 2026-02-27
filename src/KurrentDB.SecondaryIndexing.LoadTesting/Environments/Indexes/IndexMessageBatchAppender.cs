@@ -4,7 +4,6 @@
 using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Tests.Fakes;
-using KurrentDB.SecondaryIndexing.Indexes;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
 using KurrentDB.SecondaryIndexing.Storage;
@@ -23,13 +22,12 @@ public class IndexMessageBatchAppender : IMessageBatchAppender {
 		_commitSize = commitSize;
 		ReadIndexStub.Build();
 		var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
-		var inflightRecordsCache = new DefaultIndexInFlightRecords(new() { CommitBatchSize = commitSize });
 
 		var publisher = new FakePublisher();
 		var schema = new IndexingDbSchema();
 		schema.CreateSchema(db);
 
-		_processor = new(db, inflightRecordsCache, publisher, hasher, new("test"), NullLoggerFactory.Instance);
+		_processor = new(db, publisher, hasher, new("test"), NullLoggerFactory.Instance);
 	}
 
 	public ValueTask Append(TestMessageBatch batch) {

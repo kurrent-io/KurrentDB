@@ -186,7 +186,7 @@ public class UserIndexEngineSubscription(
 	}
 
 	private ValueTask StartUserIndex(string indexName, IndexCreated createdEvent) {
-		if (createdEvent.Fields.Count is 0)
+		if (createdEvent.Fields is [])
 			return StartUserIndex<NullField>(indexName, createdEvent);
 
 		return createdEvent.Fields[0].Type switch {
@@ -203,10 +203,8 @@ public class UserIndexEngineSubscription(
 
 	private async ValueTask StartUserIndex<TField>(
 		string indexName,
-		IndexCreated createdEvent) where TField : IField {
+		IndexCreated createdEvent) where TField : IField<TField> {
 		_log.LogStartingUserIndex(indexName);
-
-		var inFlightRecords = new UserIndexInFlightRecords<TField>(options);
 
 		var sql = new UserIndexSql<TField>(
 			indexName,
@@ -222,14 +220,13 @@ public class UserIndexEngineSubscription(
 				: createdEvent.Fields[0].Selector,
 			db: db,
 			sql: sql,
-			inFlightRecords: inFlightRecords,
 			publisher: publisher,
 			meter: meter,
 			getLastAppendedRecord: getLastAppendedRecord,
 			loggerFactory: logFactory
 		);
 
-		var reader = new UserIndexReader<TField>(sharedPool: db, sql, inFlightRecords, readIndex);
+		var reader = new UserIndexReader<TField>(sharedPool: db, processor, readIndex);
 
 		UserIndexSubscription subscription = new UserIndexSubscription<TField>(
 			publisher: publisher,
