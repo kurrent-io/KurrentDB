@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -106,6 +105,7 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {
+			Shared.Dispose();
 			if (_tempPath != null) {
 				try {
 					File.Delete(_tempPath);
