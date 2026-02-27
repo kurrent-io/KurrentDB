@@ -3,10 +3,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using DotNext.Buffers;
+using DotNext.Buffers.Text;
 using DuckDB.NET.Native;
 using Kurrent.Quack;
 using Kurrent.Quack.Functions;
-using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Transport.Enumerators;
@@ -46,11 +48,16 @@ internal sealed class GetDatabaseEventsFunction(IPublisher publisher) : ScalarFu
 		where TBuilder : struct, DataChunk.IBuilder {
 		// Data column
 		var column = builder[0];
-		column.SetValue(rowIndex, GetDataString(ev));
+		if (ev.IsJson) {
+			// JSON can be copied to DuckDB directly because it's encoded as UTF-8
+			column.SetValue(rowIndex, ev.Data.Span);
+		} else {
+			WriteBase64(column, rowIndex, ev.Data.Span);
+		}
 
 		// Metadata column
 		column = builder[1];
-		column.SetValue(rowIndex, GetMetadataString(ev));
+		column.SetValue(rowIndex, ev.Metadata.Span is { Length: > 0 } metadata ? metadata : "{}"u8);
 
 		// StreamId column
 		column = builder[2];
@@ -60,24 +67,24 @@ internal sealed class GetDatabaseEventsFunction(IPublisher publisher) : ScalarFu
 		column = builder[3];
 		column.Int64Rows[rowIndex] = new DateTimeOffset(ev.TimeStamp).ToUnixTimeMilliseconds();
 
-		// CreatedAt column
-		column = builder[4];
-		column.SetValue(rowIndex, ev.TimeStamp.ToString("u"));
-
 		// EventType column
 		column = builder[5];
 		column.SetValue(rowIndex, ev.EventType);
 
-		static ReadOnlySpan<char> GetDataString(EventRecord ev) {
-			var data = ev.Data;
-			return ev.IsJson
-				? Helper.UTF8NoBom.GetString(data.Span)
-				: System.Convert.ToBase64String(data.Span);
-		}
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		static void WriteBase64(DataChunk.ColumnBuilder column, int rowIndex, ReadOnlySpan<byte> data) {
+			const byte quote = (byte)'"';
 
-		static ReadOnlySpan<char> GetMetadataString(EventRecord ev) {
-			var data = ev.Metadata;
-			return data.IsEmpty ? "{}" : Helper.UTF8NoBom.GetString(data.Span);
+			var writer = new BufferWriterSlim<byte>(4096);
+			writer.Add(quote);
+			var encoder = new Base64Encoder();
+			try {
+				encoder.EncodeToUtf8(data, ref writer, flush: true);
+				writer.Add(quote);
+				column.SetValue(rowIndex, writer.WrittenSpan);
+			} finally {
+				writer.Dispose();
+			}
 		}
 	}
 
@@ -85,11 +92,11 @@ internal sealed class GetDatabaseEventsFunction(IPublisher publisher) : ScalarFu
 		where TBuilder : struct, DataChunk.IBuilder {
 		// Data column
 		var column = builder[0];
-		column.SetValue(rowIndex, string.Empty);
+		column.SetValue(rowIndex, "{}"u8);
 
 		// Metadata column
 		column = builder[1];
-		column.SetValue(rowIndex, string.Empty);
+		column.SetValue(rowIndex, "{}"u8);
 
 		// StreamId column
 		column = builder[2];
@@ -98,10 +105,6 @@ internal sealed class GetDatabaseEventsFunction(IPublisher publisher) : ScalarFu
 		// Created column (Unix timestamp)
 		column = builder[3];
 		column.Int64Rows[rowIndex] = 0L;
-
-		// CreatedAt column
-		column = builder[4];
-		column.SetValue(rowIndex, string.Empty);
 
 		// EventType column
 		column = builder[5];
@@ -114,7 +117,6 @@ internal readonly ref struct EventColumns : ICompositeReturnType {
 	private const DuckDBType Metadata = DuckDBType.Varchar;
 	private const DuckDBType StreamId = DuckDBType.Varchar;
 	private const DuckDBType Created = DuckDBType.Varchar;
-	private const DuckDBType CreatedAt = DuckDBType.BigInt;
 	private const DuckDBType EventType = DuckDBType.Varchar;
 
 	static IReadOnlyList<KeyValuePair<string, LogicalType>> ICompositeReturnType.ReturnType => new ICompositeReturnType.Builder {
@@ -122,7 +124,6 @@ internal readonly ref struct EventColumns : ICompositeReturnType {
 		Metadata,
 		StreamId,
 		Created,
-		CreatedAt,
 		EventType,
 	};
 }

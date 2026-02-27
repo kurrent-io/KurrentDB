@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
@@ -15,29 +16,58 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Category;
 internal class CategoryIndexReader(
 	DuckDBConnectionPool sharedPool,
 	DefaultIndexProcessor processor,
-	IReadIndex<string> index,
-	DefaultIndexInFlightRecords inFlightRecords)
+	IReadIndex<string> index)
 	: SecondaryIndexReaderBase(sharedPool, index) {
 	protected override string GetId(string indexName) =>
 		CategoryIndex.TryParseCategoryName(indexName, out var categoryName)
 			? categoryName
 			: string.Empty;
 
-	protected override (List<IndexQueryRecord>, bool) GetInflightForwards(string? id, long startPosition, int maxCount, bool excludeFirst)
-		=> inFlightRecords.GetInFlightRecordsForwards(startPosition, maxCount, excludeFirst, r => r.Category == id);
+	protected override List<IndexQueryRecord> GetDbRecordsForwards(DuckDBConnectionPool db,
+		string? id,
+		long startPosition,
+		int maxCount,
+		bool excludeFirst) {
+		var records = new List<IndexQueryRecord>(maxCount);
+		using (db.Rent(out var connection)) {
+			using (processor.CaptureSnapshot(connection)) {
+				if (excludeFirst) {
+					connection.ExecuteQuery<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryExcl>(new(id!, startPosition,
+							maxCount))
+						.CopyTo(records);
+				} else {
+					connection.ExecuteQuery<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryIncl>(new(id!, startPosition,
+						maxCount))
+						.CopyTo(records);
+				}
+			}
+		}
 
-	protected override List<IndexQueryRecord> GetDbRecordsForwards(DuckDBConnectionPool db, string? id, long startPosition, long endPosition, int maxCount, bool excludeFirst)
-		=> excludeFirst
-			? db.QueryToList<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryExcl>(new(id!, startPosition, endPosition, maxCount))
-			: db.QueryToList<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryIncl>(new(id!, startPosition, endPosition, maxCount));
+		return records;
+	}
 
-	protected override IEnumerable<IndexQueryRecord> GetInflightBackwards(string? id, long startPosition, int maxCount, bool excludeFirst)
-		=> inFlightRecords.GetInFlightRecordsBackwards(startPosition, maxCount, excludeFirst, r => r.Category == id);
+	protected override List<IndexQueryRecord> GetDbRecordsBackwards(DuckDBConnectionPool db,
+		string? id,
+		long startPosition,
+		int maxCount,
+		bool excludeFirst) {
+		var records = new List<IndexQueryRecord>(maxCount);
+		using (db.Rent(out var connection)) {
+			using (processor.CaptureSnapshot(connection)) {
+				if (excludeFirst) {
+					connection.ExecuteQuery<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexBackQueryExcl>(new(id!,
+							startPosition, maxCount))
+						.CopyTo(records);
+				} else {
+					connection.ExecuteQuery<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexBackQueryIncl>(new(id!,
+							startPosition, maxCount))
+						.CopyTo(records);
+				}
+			}
+		}
 
-	protected override List<IndexQueryRecord> GetDbRecordsBackwards(DuckDBConnectionPool db, string? id, long startPosition, int maxCount, bool excludeFirst)
-		=> excludeFirst
-			? db.QueryToList<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexBackQueryExcl>(new(id!, startPosition, 0, maxCount))
-			: db.QueryToList<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexBackQueryIncl>(new(id!, startPosition, 0, maxCount));
+		return records;
+	}
 
 	public override TFPos GetLastIndexedPosition(string indexName) => processor.LastIndexedPosition;
 

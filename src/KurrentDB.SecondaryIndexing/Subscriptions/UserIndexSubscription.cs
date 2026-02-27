@@ -27,7 +27,7 @@ internal sealed class UserIndexSubscription<TField>(
 	UserIndexProcessor<TField> indexProcessor,
 	SecondaryIndexingPluginOptions options,
 	ILogger log,
-	CancellationToken token) : UserIndexSubscription, IAsyncDisposable where TField : IField {
+	CancellationToken token) : UserIndexSubscription, IAsyncDisposable where TField : IField<TField> {
 	private readonly int _commitBatchSize = options.CommitBatchSize;
 	private CancellationTokenSource? _cts = CancellationTokenSource.CreateLinkedTokenSource(token);
 	private Enumerator.AllSubscription? _subscription;

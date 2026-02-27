@@ -58,8 +58,6 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddHostedService<DefaultIndexBuilder>();
 		services.AddHostedService(sp => sp.GetRequiredService<UserIndexEngine>());
 
-		services.AddSingleton<DefaultIndexInFlightRecords>();
-
 		var meter = new Meter(SecondaryIndexingConstants.MeterName, "1.0.0");
 
 		services.AddKeyedSingleton(SecondaryIndexingConstants.InjectionKey, meter);

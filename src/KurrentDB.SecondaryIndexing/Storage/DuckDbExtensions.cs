@@ -19,4 +19,12 @@ public static class DuckDbExtensions {
 			where TQuery : IQuery<TRow>
 			=> db.QueryAsCollection<TRow, TQuery, List<TRow>>();
 	}
+
+	public static void CopyTo<TArgs, TRow, TQuery>(this QueryResult<TArgs, TRow, TQuery> result, ICollection<TRow> output)
+		where TArgs : struct
+		where TQuery : IQuery, IBinder<TArgs, PreparedStatement, StatementBindingResult>, IDataRowParser<TRow>, allows ref struct {
+		foreach (ref readonly var row in result) {
+			output.Add(row);
+		}
+	}
 }

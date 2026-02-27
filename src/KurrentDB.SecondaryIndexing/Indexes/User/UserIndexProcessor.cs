@@ -4,12 +4,11 @@
 using System.Diagnostics.Metrics;
 using DotNext;
 using DotNext.Threading;
-using DuckDB.NET.Data;
-using DuckDB.NET.Data.DataChunk.Writer;
 using Jint;
 using Jint.Native.Function;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
+using Kurrent.Quack.Threading;
 using Kurrent.Surge.Schema.Serializers.Json;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Bus;
@@ -28,14 +27,16 @@ internal abstract class UserIndexProcessor : Disposable, ISecondaryIndexProcesso
 	public abstract bool TryIndex(ResolvedEvent evt);
 	public abstract TFPos GetLastPosition();
 	public abstract SecondaryIndexProgressTracker Tracker { get; }
+	public abstract UserIndexSql Sql { get; }
+	public abstract BufferedView.Snapshot CaptureSnapshot(DuckDBAdvancedConnection connection);
 }
 
-internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IField {
+internal class UserIndexProcessor<TField> : UserIndexProcessor
+	where TField : IField<TField> {
 	private readonly Engine _engine = JintEngineFactory.CreateEngine(executionTimeout: TimeSpan.FromSeconds(30));
 	private readonly JsRecordEvaluator _evaluator;
 	private readonly Function? _filter;
 	private readonly Function? _fieldSelector;
-	private readonly UserIndexInFlightRecords<TField> _inFlightRecords;
 	private readonly string _inFlightTableName;
 	private readonly string _queryStreamName;
 	private readonly IPublisher _publisher;
@@ -46,7 +47,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 
 	private ulong _sequenceId;
 	private TFPos _lastPosition;
-	private Appender _appender;
+	private readonly BufferedView _appender;
 	private Atomic.Boolean _committing;
 
 	public string IndexName { get; }
@@ -60,7 +61,6 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 		string jsFieldSelector,
 		DuckDBConnectionPool db,
 		UserIndexSql<TField> sql,
-		UserIndexInFlightRecords<TField> inFlightRecords,
 		IPublisher publisher,
 		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)]
 		Meter meter,
@@ -72,7 +72,6 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 		_sql = sql;
 		_log = loggerFactory.CreateLogger<UserIndexProcessor>();
 
-		_inFlightRecords = inFlightRecords;
 		_inFlightTableName = UserIndexSql.GenerateInFlightTableNameFor(IndexName);
 		_queryStreamName = UserIndexHelpers.GetQueryStreamName(IndexName);
 
@@ -90,9 +89,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 
 		_connection = db.Open();
 		_sql.CreateUserIndex(_connection);
-		RegisterTableFunction();
-
-		_appender = new(_connection, _sql.TableNameUtf8.Span);
+		_appender = new(_connection, _sql.TableName, "log_position", _sql.ViewName);
 
 		var serviceName = metricsConfiguration?.ServiceName ?? "kurrentdb";
 		var tracker = new SecondaryIndexProgressTracker(indexName, serviceName, meter, clock ?? TimeProvider.System,
@@ -104,6 +101,10 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 
 		Tracker = tracker;
 	}
+
+	public override UserIndexSql<TField> Sql => _sql;
+
+	public override BufferedView.Snapshot CaptureSnapshot(DuckDBAdvancedConnection connection) => _appender.TakeSnapshot(connection);
 
 	public override bool TryIndex(ResolvedEvent resolvedEvent) {
 		if (IsDisposingOrDisposed)
@@ -139,8 +140,6 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 			field?.AppendTo(row);
 		}
 
-		_inFlightRecords.Append(preparePosition, commitPosition ?? preparePosition, eventNumber, field, created);
-
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(_queryStreamName, resolvedEvent));
 		if (field is not null)
 			_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(UserIndexHelpers.GetQueryStreamName(IndexName, fieldStr),
@@ -167,7 +166,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 			if (_skip.Equals(fieldValue))
 				return false;
 
-			field = (TField)TField.ParseFrom(fieldValue);
+			field = TField.ParseFrom(fieldValue);
 
 			return true;
 		} catch (Exception ex) {
@@ -213,61 +212,25 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 			Created = new DateTimeOffset(timestamp).ToUnixTimeMilliseconds()
 		};
 
-		UserIndexSql<TField>.SetCheckpoint(_connection, checkpointArgs);
+		UserIndexSql.SetCheckpoint(_connection, checkpointArgs);
 	}
-
-	public override void Commit() => Commit(true);
 
 	/// <summary>
 	/// Commits all in-flight records to the index.
 	/// </summary>
-	/// <param name="clearInflight">Tells you whether to clear the in-flight records after committing. It must be true and only set to false in tests.</param>
-	private void Commit(bool clearInflight) {
+	public override void Commit() {
 		if (IsDisposed || !_committing.FalseToTrue())
 			return;
 
 		try {
 			using var duration = Tracker.StartCommitDuration();
 			_appender.Flush();
-			_log.LogUserIndexCommitted(IndexName, _inFlightRecords.Count);
+			_log.LogUserIndexCommitted(IndexName);
 		} catch (Exception ex) {
-			_log.LogUserIndexFailedToCommit(ex, IndexName, _inFlightRecords.Count);
+			_log.LogUserIndexFailedToCommit(ex, IndexName);
 			throw;
 		} finally {
 			_committing.TrueToFalse();
-		}
-
-		if (clearInflight) {
-			_inFlightRecords.Clear();
-		}
-	}
-
-	private void RegisterTableFunction() {
-		_connection.RegisterTableFunction(_inFlightTableName, ResultCallback, MapperCallback);
-
-		TableFunction ResultCallback() {
-			var records = _inFlightRecords.GetInFlightRecords();
-			List<ColumnInfo> columnInfos = [
-				new("log_position", typeof(long)),
-				new("event_number", typeof(long)),
-				new("created", typeof(long)),
-			];
-
-			if (TField.Type is { } type)
-				columnInfos.Add(new(_sql.FieldColumnName, type));
-
-			return new(columnInfos, records);
-		}
-
-		void MapperCallback(object? item, IDuckDBDataWriter[] writers, ulong rowIndex) {
-			var record = (UserIndexInFlightRecord<TField>)item!;
-			writers[0].WriteValue(record.LogPosition, rowIndex);
-			writers[1].WriteValue(record.EventNumber, rowIndex);
-			writers[2].WriteValue(record.Created, rowIndex);
-
-			if (TField.Type is not null) {
-				record.Field!.WriteTo(writers[3], rowIndex);
-			}
 		}
 	}
 
@@ -281,6 +244,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor where TField : IF
 		_log.LogStoppingUserIndexProcessor(IndexName);
 		if (disposing) {
 			Commit();
+			_appender.Unregister(_connection);
 			_appender.Dispose();
 			_connection.Dispose();
 			_engine.Dispose();
@@ -309,11 +273,11 @@ static partial class UserIndexProcessorLogMessages {
 	[LoggerMessage(LogLevel.Trace, "User index: {index} is checkpointing at: {position} ({timestamp})")]
 	internal static partial void LogUserIndexIsCheckpointing(this ILogger logger, string index, TFPos position, DateTime timestamp);
 
-	[LoggerMessage(LogLevel.Trace, "User index: {index} committed {count} records")]
-	internal static partial void LogUserIndexCommitted(this ILogger logger, string index, int count);
+	[LoggerMessage(LogLevel.Trace, "User index: {index} committed")]
+	internal static partial void LogUserIndexCommitted(this ILogger logger, string index);
 
-	[LoggerMessage(LogLevel.Error, "User index: {index} failed to commit {count} records")]
-	internal static partial void LogUserIndexFailedToCommit(this ILogger logger, Exception exception, string index, int count);
+	[LoggerMessage(LogLevel.Error, "User index: {index} failed to commit")]
+	internal static partial void LogUserIndexFailedToCommit(this ILogger logger, Exception exception, string index);
 
 	[LoggerMessage(LogLevel.Trace, "Stopping user index processor for: {index}")]
 	internal static partial void LogStoppingUserIndexProcessor(this ILogger logger, string index);

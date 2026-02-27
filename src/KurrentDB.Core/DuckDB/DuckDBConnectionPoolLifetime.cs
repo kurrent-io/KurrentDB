@@ -49,9 +49,10 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 		_repeated = repeated;
 
 		Shared = CreatePool(isReadOnly: false, log: true);
-		using var connection = Shared.Open();
-		foreach (var s in once)
-			s.Execute(connection);
+		using (Shared.Rent(out var connection)) {
+			foreach (var s in once)
+				s.Execute(connection);
+		}
 
 		return;
 
