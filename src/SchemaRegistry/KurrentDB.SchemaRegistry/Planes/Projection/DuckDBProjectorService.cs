@@ -32,7 +32,7 @@ public class DuckDBProjectorService(
             loggerFactory
         );
 
-        // await projector.RunUntilStopped(stoppingToken);
+        await projector.RunUntilStopped(stoppingToken);
     }
 }
 
