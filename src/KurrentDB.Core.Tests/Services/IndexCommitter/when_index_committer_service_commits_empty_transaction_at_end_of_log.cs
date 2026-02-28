@@ -28,9 +28,7 @@ public class when_index_committer_service_commits_empty_transaction_at_end_of_lo
 		Service.Handle(new StorageMessage.CommitChased(
 			correlationId: Guid.NewGuid(),
 			logPosition: _logPrePosition,
-			transactionPosition: _logPrePosition,
-			numStreams: 1,
-			eventStreamIndexes: []));
+			transactionPosition: _logPrePosition));
 
 		// replicate it
 		ReplicationCheckpoint.Write(_logPostPosition);

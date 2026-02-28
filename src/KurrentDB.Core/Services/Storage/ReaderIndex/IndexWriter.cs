@@ -328,7 +328,7 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 		}
 	}
 
-	// numStreams is the number of streams mentioned in the write, whether or not we are writing to them.
+	// numStreamsInWriteRequest is the number of streams mentioned in the write, whether or not we are writing to them.
 	// we need to know it so that we know the upper bound of the values in eventStreamIndexes
 	public void PreCommit(ReadOnlySpan<IPrepareLogRecord<TStreamId>> committedPrepares, LowAllocReadOnlyMemory<int> eventStreamIndexes,
 		int numStreamsInWriteRequest) {

@@ -125,8 +125,6 @@ public abstract class WriteEventsToIndexScenario<TLogFormat, TStreamId> : Specif
 	public async ValueTask CommitToIndex(IReadOnlyList<IPrepareLogRecord<TStreamId>> prepares, CancellationToken token) {
 		await _indexCommitter.Commit(
 			prepares,
-			numStreams: 1,
-			eventStreamIndexes: null,
 			isTfEof: false,
 			cacheLastEventNumber: false,
 			token);

@@ -192,37 +192,15 @@ public static partial class StorageMessage {
 		public readonly Guid CorrelationId;
 		public readonly long LogPosition;
 		public readonly long TransactionPosition;
-		public readonly int NumStreams;
-		public readonly LowAllocReadOnlyMemory<int> EventStreamIndexes; // [] => single stream, index 0  //qq try to remove this
 
-		public CommitChased(Guid correlationId, long logPosition, long transactionPosition,
-			int numStreams,
-			LowAllocReadOnlyMemory<int> eventStreamIndexes) {
-
+		public CommitChased(Guid correlationId, long logPosition, long transactionPosition) {
 			Ensure.NotEmptyGuid(correlationId, "correlationId");
 			Ensure.Nonnegative(logPosition, "logPosition");
 			Ensure.Nonnegative(transactionPosition, "transactionPosition");
 
-			foreach (var eventStreamIndex in eventStreamIndexes.Span) {
-				if (eventStreamIndex < 0 || eventStreamIndex >= numStreams)
-					throw new ArgumentOutOfRangeException(nameof(eventStreamIndexes));
-			}
-
 			CorrelationId = correlationId;
 			LogPosition = logPosition;
 			TransactionPosition = transactionPosition;
-			NumStreams = numStreams;
-			EventStreamIndexes = eventStreamIndexes;
-		}
-
-		// used in tests only
-		public static CommitChased ForSingleStream(Guid correlationId, long logPosition, long transactionPosition) {
-			return new CommitChased(
-				correlationId,
-				logPosition,
-				transactionPosition,
-				numStreams: 1,
-				eventStreamIndexes: []);
 		}
 	}
 

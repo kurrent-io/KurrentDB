@@ -199,16 +199,12 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 			_transaction.Process(record);
 
 			if (record.Flags.HasAnyOf(PrepareFlags.TransactionEnd)) {
-				var numStreams = _transaction.NumStreams;
-				var eventStreamIndexes = _transaction.GetEventStreamIndexes();
 				CommitPendingTransaction(_transaction, postPosition);
 
 				_leaderBus.Publish(new StorageMessage.CommitChased(
 					correlationId: record.CorrelationId,
 					logPosition: record.LogPosition,
-					transactionPosition: record.TransactionPosition,
-					numStreams: numStreams,
-					eventStreamIndexes: eventStreamIndexes));
+					transactionPosition: record.TransactionPosition));
 			}
 		} else if (record.Flags.HasAnyOf(PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd | PrepareFlags.Data)) {
 			_leaderBus.Publish(new StorageMessage.UncommittedPrepareChased(record.CorrelationId, record.LogPosition, record.Flags));
@@ -222,9 +218,7 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 		_leaderBus.Publish(new StorageMessage.CommitChased(
 			correlationId: record.CorrelationId,
 			logPosition: record.LogPosition,
-			transactionPosition: record.TransactionPosition,
-			numStreams: 1,
-			eventStreamIndexes: []));
+			transactionPosition: record.TransactionPosition));
 	}
 
 	private ValueTask ProcessSystemRecord(ISystemLogRecord record, CancellationToken token) {

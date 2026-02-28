@@ -296,6 +296,7 @@ public static partial class ClientMessage {
 		public readonly Guid CorrelationId;
 		public readonly OperationResult Result;
 		public readonly string Message;
+		// For all streams S: LastEventNumber - FirstEventNumber + 1 == NumEventsWritten to S
 		public readonly LowAllocReadOnlyMemory<long> FirstEventNumbers;
 		public readonly LowAllocReadOnlyMemory<long> LastEventNumbers;
 		public readonly long PreparePosition;

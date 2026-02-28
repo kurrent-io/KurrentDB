@@ -14,6 +14,7 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Index;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Messages;
+using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.TransactionLog.LogRecords;
@@ -34,8 +35,7 @@ public interface IIndexCommitter {
 
 public interface IIndexCommitter<TStreamId> : IIndexCommitter {
 	// Indexes an implicit transaction
-	ValueTask Commit(IReadOnlyList<IPrepareLogRecord<TStreamId>> committedPrepares, int numStreams,
-		LowAllocReadOnlyMemory<int> eventStreamIndexes,
+	ValueTask Commit(IReadOnlyList<IPrepareLogRecord<TStreamId>> committedPrepares,
 		bool isTfEof, bool cacheLastEventNumber, CancellationToken token);
 }
 
@@ -62,6 +62,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 	private readonly ICheckpoint _indexChk;
 	private readonly IIndexStatusTracker _statusTracker;
 	private readonly IIndexTracker _tracker;
+	private readonly ImplicitTransactionCalculator<TStreamId> _implicitTransaction = new();
 	private readonly bool _additionalCommitChecks;
 	private long _persistedPreparePos = -1;
 	private long _persistedCommitPos = -1;
@@ -169,7 +170,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 							break;
 						}
 
-						await Commit([prepare], numStreams: 1, eventStreamIndexes: [], result.Eof, false, token);
+						await Commit([prepare], result.Eof, false, token);
 
 						break;
 					}
@@ -344,20 +345,22 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 	}
 
 	public async ValueTask Commit(IReadOnlyList<IPrepareLogRecord<TStreamId>> committedPrepares,
-		int numStreams, LowAllocReadOnlyMemory<int> eventStreamIndexes, bool isTfEof, bool cacheLastEventNumber,
+		bool isTfEof, bool cacheLastEventNumber,
 		CancellationToken token) {
 
 		if (committedPrepares.Count is 0)
 			return;
 
+		_implicitTransaction.SetPrepares(committedPrepares);
+
 		var actualLastEventNumbers = Array.Empty<long>();
 
 		if (_additionalCommitChecks && cacheLastEventNumber) {
 			// called only in tests
-			actualLastEventNumbers = new long[numStreams];
+			actualLastEventNumbers = new long[_implicitTransaction.NumStreamsInTransaction];
 			var streamIndex = 0;
 			for (var i = 0; i < committedPrepares.Count; i++) {
-				var eventStreamIndex = eventStreamIndexes.Length is not 0 ? eventStreamIndexes.Span[i] : 0;
+				var eventStreamIndex = _implicitTransaction.EventStreamIndexes[i];
 				if (eventStreamIndex == streamIndex) {
 					var streamId = committedPrepares[i].EventStreamId;
 					actualLastEventNumbers[streamIndex] = await _indexReader.GetStreamLastEventNumber(streamId, token);
@@ -366,7 +369,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 			}
 		}
 
-		CommitToIndex(committedPrepares, numStreams, eventStreamIndexes, cacheLastEventNumber, actualLastEventNumbers,
+		CommitToIndex(committedPrepares, cacheLastEventNumber, actualLastEventNumbers,
 			out var indexEntries, out var prepares);
 
 		if (!_indexRebuild) {
@@ -380,13 +383,13 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 		}
 	}
 
-	// numStreams is the number of streams written to in this transaction of committedPrepares
-	// eventStreamIndexes also limited to this transaction.
-	// todo: why are we passing numstreams? is it not just eventStreamIndexs.Length (if > 0) else 1
 	private void CommitToIndex(IReadOnlyList<IPrepareLogRecord<TStreamId>> committedPrepares,
-		int numStreams, LowAllocReadOnlyMemory<int> eventStreamIndexes, bool cacheLastEventNumber,
+		bool cacheLastEventNumber,
 		LowAllocReadOnlyMemory<long> actualLastEventNumbers,
 		out List<IndexKey<TStreamId>> indexEntries, out List<IPrepareLogRecord<TStreamId>> prepares) {
+
+		var numStreams = _implicitTransaction.NumStreamsInTransaction;
+		var eventStreamIndexes = _implicitTransaction.EventStreamIndexes;
 
 		var lastIndexedPosition = _indexChk.Read();
 		var lastLogPosition = committedPrepares[^1].LogPosition;
@@ -409,7 +412,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 		prepares = new List<IPrepareLogRecord<TStreamId>>();
 
 		for (var i = 0; i < committedPrepares.Count; i++) {
-			var streamIndex = eventStreamIndexes.Length is not 0 ? eventStreamIndexes.Span[i] : 0;
+			var streamIndex = eventStreamIndexes[i];
 
 			lastPrepareForStream[streamIndex] = i;
 

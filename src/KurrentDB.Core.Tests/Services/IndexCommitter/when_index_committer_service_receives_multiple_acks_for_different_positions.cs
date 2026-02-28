@@ -24,9 +24,9 @@ public class when_index_committer_service_receives_multiple_acks_for_different_p
 		AddPendingPrepare(_logPositionP2);
 		AddPendingPrepare(_logPositionP3);
 
-		Service.Handle(StorageMessage.CommitChased.ForSingleStream(Guid.NewGuid(), _logPositionCommit1, _logPositionP1));
-		Service.Handle(StorageMessage.CommitChased.ForSingleStream(Guid.NewGuid(), _logPositionCommit2, _logPositionP2));
-		Service.Handle(StorageMessage.CommitChased.ForSingleStream(Guid.NewGuid(), _logPositionCommit3, _logPositionP3));
+		Service.Handle(new StorageMessage.CommitChased(Guid.NewGuid(), _logPositionCommit1, _logPositionP1));
+		Service.Handle(new StorageMessage.CommitChased(Guid.NewGuid(), _logPositionCommit2, _logPositionP2));
+		Service.Handle(new StorageMessage.CommitChased(Guid.NewGuid(), _logPositionCommit3, _logPositionP3));
 	}
 
 	public override void When() {

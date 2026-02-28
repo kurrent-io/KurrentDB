@@ -32,7 +32,7 @@ public class when_transaction_commit_gets_timeout_before_cluster_commit : Reques
 		yield return StorageMessage.ConsistencyChecksSucceeded.ForSingleStream(InternalCorrId, 1, 2);
 		yield return new StorageMessage.UncommittedPrepareChased(InternalCorrId, 100, PrepareFlags.Data);
 		yield return new StorageMessage.UncommittedPrepareChased(InternalCorrId, 200, PrepareFlags.Data);
-		yield return StorageMessage.CommitChased.ForSingleStream(InternalCorrId, 300, 100);
+		yield return new StorageMessage.CommitChased(InternalCorrId, 300, 100);
 	}
 
 	protected override Message When() {

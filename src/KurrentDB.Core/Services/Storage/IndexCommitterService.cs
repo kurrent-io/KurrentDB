@@ -139,7 +139,7 @@ public class IndexCommitterService<TStreamId> : IndexCommitterService, IIndexCom
 		if (_pendingTransactions.TryRemove(message.TransactionPosition, out var transaction)) {
 			var isTfEof = IsTfEof(transaction.PostPosition);
 			if (transaction.Prepares.Count > 0) {
-				await _indexCommitter.Commit(transaction.Prepares, message.NumStreams, message.EventStreamIndexes, isTfEof, true, token);
+				await _indexCommitter.Commit(transaction.Prepares, isTfEof, true, token);
 			} else if (isTfEof) {
 				_publisher.Publish(new StorageMessage.IndexedToEndOfTransactionFile());
 			}

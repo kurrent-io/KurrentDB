@@ -28,8 +28,8 @@ public class
 
 		AddPendingPrepare(_logPosition2);
 		AddPendingPrepare(_logPosition1);
-		Service.Handle(StorageMessage.CommitChased.ForSingleStream(_correlationId2, _logPosition4, _logPosition2));
-		Service.Handle(StorageMessage.CommitChased.ForSingleStream(_correlationId1, _logPosition3, _logPosition1));
+		Service.Handle(new StorageMessage.CommitChased(_correlationId2, _logPosition4, _logPosition2));
+		Service.Handle(new StorageMessage.CommitChased(_correlationId1, _logPosition3, _logPosition1));
 
 
 		ReplicationCheckpoint.Write(_logPosition4 + 1);
