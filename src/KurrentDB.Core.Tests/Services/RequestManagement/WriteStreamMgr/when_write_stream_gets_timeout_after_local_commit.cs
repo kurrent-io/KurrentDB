@@ -28,7 +28,7 @@ public class when_write_stream_gets_timeout_after_local_commit : RequestManagerS
 	}
 
 	protected override IEnumerable<Message> WithInitialMessages() {
-		yield return StorageMessage.CommitIndexed.ForSingleStream(InternalCorrId, 1, 1, 0, 0);
+		yield return StorageMessage.CommitIndexed.ForSingleStream(InternalCorrId, 1, 1);
 	}
 
 	protected override Message When() {
@@ -44,6 +44,5 @@ public class when_write_stream_gets_timeout_after_local_commit : RequestManagerS
 	[Test]
 	public void the_envelope_is_replied_to() {
 		Assert.AreEqual(1, Envelope.Replies.Count);
-
 	}
 }

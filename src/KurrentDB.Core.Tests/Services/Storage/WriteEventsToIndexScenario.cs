@@ -114,7 +114,8 @@ public abstract class WriteEventsToIndexScenario<TLogFormat, TStreamId> : Specif
 		var preparesArray = prepares.ToArray();
 		_indexWriter.PreCommit(
 			committedPrepares: preparesArray,
-			eventStreamIndexes: null);
+			eventStreamIndexes: null,
+			numStreamsInWriteRequest: 1);
 	}
 
 	public ValueTask PreCommitToIndex(CommitLogRecord commitLogRecord, CancellationToken token) {
@@ -124,8 +125,6 @@ public abstract class WriteEventsToIndexScenario<TLogFormat, TStreamId> : Specif
 	public async ValueTask CommitToIndex(IReadOnlyList<IPrepareLogRecord<TStreamId>> prepares, CancellationToken token) {
 		await _indexCommitter.Commit(
 			prepares,
-			numStreams: 1,
-			eventStreamIndexes: null,
 			isTfEof: false,
 			cacheLastEventNumber: false,
 			token);

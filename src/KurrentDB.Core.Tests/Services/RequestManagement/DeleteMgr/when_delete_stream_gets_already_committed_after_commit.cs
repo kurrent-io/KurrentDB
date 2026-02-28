@@ -29,7 +29,7 @@ public class when_delete_stream_gets_already_committed_after_commit : RequestMan
 	}
 
 	protected override IEnumerable<Message> WithInitialMessages() {
-		yield return StorageMessage.CommitIndexed.ForSingleStream(InternalCorrId, commitPosition, 2, 3, 3);
+		yield return StorageMessage.CommitIndexed.ForSingleStream(InternalCorrId, commitPosition, 2);
 		yield return new ReplicationTrackingMessage.ReplicatedTo(commitPosition);
 	}
 

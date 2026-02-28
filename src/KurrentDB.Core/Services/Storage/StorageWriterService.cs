@@ -333,8 +333,24 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 			}
 
 			// verify the checks, replying to the envelope if necessary.
-			if (!VerifyCommitChecks(msg.Envelope, msg.CorrelationId, msg.EventStreamIds.Length, commitChecks.AsMemory(0, msg.EventStreamIds.Length)))
+			var commitCheckResults = commitChecks.AsMemory(0, msg.EventStreamIds.Length);
+			if (!VerifyCommitChecks(msg.Envelope, msg.CorrelationId, msg.EventStreamIds.Length, commitCheckResults))
 				return;
+
+			// send the successful consistency check notification
+			var firstEventNumbers = LowAllocReadOnlyMemory<long>.Builder.Empty;
+			var lastEventNumbers = LowAllocReadOnlyMemory<long>.Builder.Empty;
+
+			foreach (ref readonly var checkResult in commitCheckResults.Span) {
+				Debug.Assert(checkResult.Decision == CommitDecision.Ok);
+				firstEventNumbers = firstEventNumbers.Add(checkResult.StartEventNumber);
+				lastEventNumbers = lastEventNumbers.Add(checkResult.EndEventNumber);
+			}
+
+			msg.Envelope.ReplyWith(new StorageMessage.ConsistencyChecksSucceeded(
+				correlationId: msg.CorrelationId,
+				firstEventNumbers: firstEventNumbers.Build(),
+				lastEventNumbers: lastEventNumbers.Build()));
 
 			// assemble the prepares
 			if (msg.Events.Length > 0) {
@@ -391,7 +407,8 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 			}
 
 			// note: the stream & event type records are indexed separately and must not be pre-committed to the main index
-			_indexWriter.PreCommit(CollectionsMarshal.AsSpan(prepares)[^msg.Events.Length..], msg.EventStreamIndexes);
+			_indexWriter.PreCommit(CollectionsMarshal.AsSpan(prepares)[^msg.Events.Length..], msg.EventStreamIndexes,
+				msg.EventStreamIds.Length);
 
 			// soft undelete the (original streams of the) streams we are writing events to
 			// for backwards compatibility, an empty write (which must be to a single stream) causes undeletion, too.
@@ -408,6 +425,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 						await SoftUndeleteMetastream(commitChecks[i].EventStreamId, token);
 				}
 			}
+
 		} catch (Exception exc) {
 			Log.Error(exc, "Exception in writer.");
 			throw;
@@ -471,7 +489,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 			token
 		);
 
-		_indexWriter.PreCommit(MemoryMarshal.CreateReadOnlySpan(in res.Prepare, 1), null);
+		_indexWriter.PreCommit(MemoryMarshal.CreateReadOnlySpan(in res.Prepare, 1), null, 1);
 	}
 
 	public bool ModifyMetadata(ReadOnlyMemory<byte> rawMeta, long recreateFromEventNumber, out byte[] modifiedMeta) {
@@ -523,12 +541,21 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 			if (message.HardDelete) {
 				// HARD DELETE
 				const long expectedVersion = EventNumber.DeletedStream - 1;
+
+				// curious that lastEventNumber is DeletedStream - 1, and not DeletedStream, but this is a long standing behaviour
+				// possibly the intention per commit c73a1c8d19197bec4f9affbe4ced9346a3e4777d is that we aren't writing any events
+				// and so last - first + 1 ought to be 0
+				message.Envelope.ReplyWith(StorageMessage.ConsistencyChecksSucceeded.ForSingleStream(
+					correlationId: message.CorrelationId,
+					firstEventNumber: expectedVersion + 1,
+					lastEventNumber: expectedVersion));
+
 				(var streamDeletedEventType, logPosition) = await GetOrWriteEventType(SystemEventTypes.StreamDeleted, logPosition, token);
 				var record = LogRecord.DeleteTombstone(_recordFactory, logPosition, message.CorrelationId,
 					eventId, streamId, streamDeletedEventType,
 					expectedVersion, PrepareFlags.IsCommitted);
 				var res = await WritePrepareWithRetry(record, token);
-				_indexWriter.PreCommit(MemoryMarshal.CreateReadOnlySpan(in res.Prepare, 1), null);
+				_indexWriter.PreCommit(MemoryMarshal.CreateReadOnlySpan(in res.Prepare, 1), null, 1);
 			} else {
 				// SOFT DELETE
 				var metastreamId = _systemStreams.MetaStreamOf(streamId);
@@ -545,6 +572,11 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 					return;
 				}
 
+				message.Envelope.ReplyWith(StorageMessage.ConsistencyChecksSucceeded.ForSingleStream(
+					correlationId: message.CorrelationId,
+					firstEventNumber: expectedVersion + 1,
+					lastEventNumber: expectedVersion + 1));
+
 				const PrepareFlags flags = PrepareFlags.SingleWrite | PrepareFlags.IsCommitted | PrepareFlags.IsJson;
 				var data = new StreamMetadata(truncateBefore: EventNumber.DeletedStream).ToJsonBytes();
 
@@ -555,7 +587,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 						metastreamId, expectedVersion, flags, streamMetadataEventTypeId, data, ReadOnlyMemory<byte>.Empty),
 					token
 				);
-				_indexWriter.PreCommit(MemoryMarshal.CreateReadOnlySpan(in res.Prepare, 1), null);
+				_indexWriter.PreCommit(MemoryMarshal.CreateReadOnlySpan(in res.Prepare, 1), null, 1);
 			}
 		} catch (Exception exc) {
 			Log.Error(exc, "Exception in writer.");
@@ -678,11 +710,16 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 			if (!VerifyCommitChecks(message.Envelope, message.CorrelationId, numStreams: 1, new(commitCheck)))
 				return;
 
+			message.Envelope.ReplyWith(StorageMessage.ConsistencyChecksSucceeded.ForSingleStream(
+				correlationId: message.CorrelationId,
+				firstEventNumber: commitCheck.StartEventNumber,
+				lastEventNumber: commitCheck.EndEventNumber));
+
 			var commit = await WriteCommitWithRetry(
 				LogRecord.Commit(commitPos,
 					message.CorrelationId,
 					message.TransactionPosition,
-					commitCheck.CurrentVersion + 1),
+					commitCheck.StartEventNumber),
 				token
 			);
 

@@ -199,18 +199,12 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 			_transaction.Process(record);
 
 			if (record.Flags.HasAnyOf(PrepareFlags.TransactionEnd)) {
-				var firstEventNumbers = _transaction.GetFirstEventNumbers();
-				var lastEventNumbers = _transaction.GetLastEventNumbers();
-				var eventStreamIndexes = _transaction.GetEventStreamIndexes();
 				CommitPendingTransaction(_transaction, postPosition);
 
 				_leaderBus.Publish(new StorageMessage.CommitChased(
-					record.CorrelationId,
-					record.LogPosition,
-					record.TransactionPosition,
-					firstEventNumbers,
-					lastEventNumbers,
-					eventStreamIndexes));
+					correlationId: record.CorrelationId,
+					logPosition: record.LogPosition,
+					transactionPosition: record.TransactionPosition));
 			}
 		} else if (record.Flags.HasAnyOf(PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd | PrepareFlags.Data)) {
 			_leaderBus.Publish(new StorageMessage.UncommittedPrepareChased(record.CorrelationId, record.LogPosition, record.Flags));
@@ -220,13 +214,11 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 	private async ValueTask ProcessCommitRecord(CommitLogRecord record, long postPosition, CancellationToken token) {
 		CommitPendingTransaction(_transaction, postPosition);
 
-		var firstEventNumber = record.FirstEventNumber;
-		var lastEventNumber = await _indexCommitterService.GetCommitLastEventNumber(record, token);
 		_indexCommitterService.AddPendingCommit(record, postPosition);
-		if (lastEventNumber is EventNumber.Invalid)
-			lastEventNumber = record.FirstEventNumber - 1;
-		_leaderBus.Publish(new StorageMessage.CommitChased(record.CorrelationId, record.LogPosition,
-			record.TransactionPosition, new(firstEventNumber), new(lastEventNumber), []));
+		_leaderBus.Publish(new StorageMessage.CommitChased(
+			correlationId: record.CorrelationId,
+			logPosition: record.LogPosition,
+			transactionPosition: record.TransactionPosition));
 	}
 
 	private ValueTask ProcessSystemRecord(ISystemLogRecord record, CancellationToken token) {

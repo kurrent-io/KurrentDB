@@ -225,28 +225,10 @@ public static partial class ClientMessage {
 				ArgumentOutOfRangeException.ThrowIfNotEqual(eventStreamIndexes.Length, events.Length, nameof(eventStreamIndexes));
 
 				// i)  each event stream index points to a valid stream
-				// ii) event stream indexes must be assigned to streams in the order in which they first appear in `events`
-				var nextEventStreamIndex = 0;
 				foreach (var eventStreamIndex in eventStreamIndexes.Span) {
 					if (eventStreamIndex < 0 || eventStreamIndex >= eventStreamIds.Length)
 						throw new ArgumentOutOfRangeException(nameof(eventStreamIndexes),
 							$"Stream index is out of range: {eventStreamIndex}. Number of streams: {eventStreamIds.Length}");
-
-					if (eventStreamIndex == nextEventStreamIndex) {
-						nextEventStreamIndex++;
-					} else if (eventStreamIndex > nextEventStreamIndex) {
-						throw new ArgumentOutOfRangeException(nameof(eventStreamIds),
-							"Indexes must be assigned to streams in the order in which they first appear in the list of events being written");
-					}
-				}
-
-				if (nextEventStreamIndex < eventStreamIds.Length) {
-					// not all streams have an event written to them
-
-					// we now support conditional appends to one or more streams based on the expected versions of other streams.
-					// the streams for which only the expected versions must be checked are expected to be placed at the end
-					// of `eventStreamIds` & `expectedVersions`.
-
 				}
 			}
 
@@ -314,6 +296,7 @@ public static partial class ClientMessage {
 		public readonly Guid CorrelationId;
 		public readonly OperationResult Result;
 		public readonly string Message;
+		// For all streams S: LastEventNumber - FirstEventNumber + 1 == NumEventsWritten to S
 		public readonly LowAllocReadOnlyMemory<long> FirstEventNumbers;
 		public readonly LowAllocReadOnlyMemory<long> LastEventNumbers;
 		public readonly long PreparePosition;
@@ -331,10 +314,6 @@ public static partial class ClientMessage {
 			for (var i = 0; i < firstEventNumbers.Length; i++) {
 				var firstEventNumber = firstEventNumbers.Span[i];
 				var lastEventNumber = lastEventNumbers.Span[i];
-
-				if (firstEventNumber < -1)
-					throw new ArgumentOutOfRangeException(nameof(firstEventNumbers),
-						$"FirstEventNumber: {firstEventNumber}");
 
 				if (lastEventNumber - firstEventNumber + 1 < 0)
 					throw new ArgumentOutOfRangeException(nameof(lastEventNumbers),

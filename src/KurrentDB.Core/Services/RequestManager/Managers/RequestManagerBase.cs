@@ -19,6 +19,7 @@ public abstract class RequestManagerBase :
 	IHandle<StorageMessage.UncommittedPrepareChased>,
 	IHandle<StorageMessage.CommitIndexed>,
 	IHandle<StorageMessage.InvalidTransaction>,
+	IHandle<StorageMessage.ConsistencyChecksSucceeded>,
 	IHandle<StorageMessage.ConsistencyChecksFailed>,
 	IHandle<StorageMessage.AlreadyCommitted>,
 	IHandle<StorageMessage.RequestManagerTimerTick>,
@@ -120,6 +121,12 @@ public abstract class RequestManagerBase :
 		_allEventsWritten = _commitReceived && _allPreparesWritten;
 		if (_allEventsWritten) { AllEventsWritten(); }
 	}
+
+	public void Handle(StorageMessage.ConsistencyChecksSucceeded message) {
+		FirstEventNumbers = message.FirstEventNumbers;
+		LastEventNumbers = message.LastEventNumbers;
+	}
+
 	public virtual void Handle(StorageMessage.CommitIndexed message) {
 		if (Interlocked.Read(ref _complete) == 1 || _commitReceived) { return; }
 		NextTimeoutTime = DateTime.UtcNow + Timeout;
@@ -128,11 +135,10 @@ public abstract class RequestManagerBase :
 		if (message.LogPosition > LastEventPosition) {
 			LastEventPosition = message.LogPosition;
 		}
-		FirstEventNumbers = message.FirstEventNumbers;
-		LastEventNumbers = message.LastEventNumbers;
 		CommitPosition = message.LogPosition;
 		if (_allEventsWritten) { AllEventsWritten(); }
 	}
+
 	protected virtual void AllPreparesWritten() { }
 
 	protected virtual void AllEventsWritten() {

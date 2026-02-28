@@ -192,55 +192,15 @@ public static partial class StorageMessage {
 		public readonly Guid CorrelationId;
 		public readonly long LogPosition;
 		public readonly long TransactionPosition;
-		public readonly LowAllocReadOnlyMemory<long> FirstEventNumbers;
-		public readonly LowAllocReadOnlyMemory<long> LastEventNumbers;
-		public readonly LowAllocReadOnlyMemory<int> EventStreamIndexes; // [] => single stream, index 0
-		public int NumStreams => FirstEventNumbers.Length;
 
-		public CommitChased(Guid correlationId, long logPosition, long transactionPosition,
-			LowAllocReadOnlyMemory<long> firstEventNumbers, LowAllocReadOnlyMemory<long> lastEventNumbers,
-			LowAllocReadOnlyMemory<int> eventStreamIndexes) {
-
+		public CommitChased(Guid correlationId, long logPosition, long transactionPosition) {
 			Ensure.NotEmptyGuid(correlationId, "correlationId");
 			Ensure.Nonnegative(logPosition, "logPosition");
 			Ensure.Nonnegative(transactionPosition, "transactionPosition");
-			Ensure.Equal(firstEventNumbers.Length, lastEventNumbers.Length, nameof(lastEventNumbers));
-
-			var numStreams = firstEventNumbers.Length;
-
-			for (var i = 0; i < numStreams; i++) {
-				var firstEventNumber = firstEventNumbers.Span[i];
-				var lastEventNumber = lastEventNumbers.Span[i];
-				if (firstEventNumber < -1)
-					throw new ArgumentOutOfRangeException(nameof(firstEventNumbers),
-						$"FirstEventNumber: {firstEventNumber}");
-				if (lastEventNumber - firstEventNumber + 1 < 0)
-					throw new ArgumentOutOfRangeException(nameof(lastEventNumbers),
-						$"LastEventNumber {lastEventNumber}, FirstEventNumber {firstEventNumber}.");
-			}
-
-			foreach (var eventStreamIndex in eventStreamIndexes.Span) {
-				if (eventStreamIndex < 0 || eventStreamIndex >= numStreams)
-					throw new ArgumentOutOfRangeException(nameof(eventStreamIndexes));
-			}
 
 			CorrelationId = correlationId;
 			LogPosition = logPosition;
 			TransactionPosition = transactionPosition;
-			FirstEventNumbers = firstEventNumbers;
-			LastEventNumbers = lastEventNumbers;
-			EventStreamIndexes = eventStreamIndexes;
-		}
-
-		// used in tests only
-		public static CommitChased ForSingleStream(Guid correlationId, long logPosition, long transactionPosition, long firstEventNumber, long lastEventNumber) {
-			return new CommitChased(
-				correlationId,
-				logPosition,
-				transactionPosition,
-				firstEventNumbers: new(firstEventNumber),
-				lastEventNumbers: new(lastEventNumber),
-				eventStreamIndexes: []);
 		}
 	}
 
@@ -253,44 +213,23 @@ public static partial class StorageMessage {
 		public readonly Guid CorrelationId;
 		public readonly long LogPosition;
 		public readonly long TransactionPosition;
-		public readonly LowAllocReadOnlyMemory<long> FirstEventNumbers;
-		public readonly LowAllocReadOnlyMemory<long> LastEventNumbers;
 
-		public CommitIndexed(Guid correlationId, long logPosition, long transactionPosition,
-			LowAllocReadOnlyMemory<long> firstEventNumbers, LowAllocReadOnlyMemory<long> lastEventNumbers) {
+		public CommitIndexed(Guid correlationId, long logPosition, long transactionPosition) {
 			Ensure.NotEmptyGuid(correlationId, "correlationId");
 			Ensure.Nonnegative(logPosition, "logPosition");
 			Ensure.Nonnegative(transactionPosition, "transactionPosition");
-			Ensure.Equal(firstEventNumbers.Length, lastEventNumbers.Length, nameof(lastEventNumbers));
-
-			for (var i = 0; i < firstEventNumbers.Length; i++) {
-				var firstEventNumber = firstEventNumbers.Span[i];
-				var lastEventNumber = lastEventNumbers.Span[i];
-
-				if (firstEventNumber < -1)
-					throw new ArgumentOutOfRangeException(nameof(firstEventNumbers),
-						$"FirstEventNumber: {firstEventNumber}");
-
-				if (lastEventNumber - firstEventNumber + 1 < 0)
-					throw new ArgumentOutOfRangeException(nameof(lastEventNumbers),
-						$"LastEventNumber {lastEventNumber}, FirstEventNumber {firstEventNumber}.");
-			}
 
 			CorrelationId = correlationId;
 			LogPosition = logPosition;
 			TransactionPosition = transactionPosition;
-			FirstEventNumbers = firstEventNumbers;
-			LastEventNumbers = lastEventNumbers;
 		}
 
 		// used in tests only
-		public static CommitIndexed ForSingleStream(Guid correlationId, long logPosition, long transactionPosition, long firstEventNumber, long lastEventNumber) {
+		public static CommitIndexed ForSingleStream(Guid correlationId, long logPosition, long transactionPosition) {
 			return new CommitIndexed(
 				correlationId,
 				logPosition,
-				transactionPosition,
-				firstEventNumbers: new(firstEventNumber),
-				lastEventNumbers: new(lastEventNumber));
+				transactionPosition);
 		}
 	}
 
@@ -383,6 +322,24 @@ public static partial class StorageMessage {
 		public InvalidTransaction(Guid correlationId) {
 			CorrelationId = correlationId;
 		}
+	}
+
+	[DerivedMessage(CoreMessage.Storage)]
+	public partial class ConsistencyChecksSucceeded : Message {
+		public readonly Guid CorrelationId;
+		public readonly LowAllocReadOnlyMemory<long> FirstEventNumbers;
+		public readonly LowAllocReadOnlyMemory<long> LastEventNumbers;
+
+		public ConsistencyChecksSucceeded(Guid correlationId,
+			LowAllocReadOnlyMemory<long> firstEventNumbers,
+			LowAllocReadOnlyMemory<long> lastEventNumbers) {
+			CorrelationId = correlationId;
+			FirstEventNumbers = firstEventNumbers;
+			LastEventNumbers = lastEventNumbers;
+		}
+
+		public static ConsistencyChecksSucceeded ForSingleStream(Guid correlationId, long firstEventNumber, long lastEventNumber) =>
+			new(correlationId, new(firstEventNumber), new(lastEventNumber));
 	}
 
 	[DerivedMessage(CoreMessage.Storage)]

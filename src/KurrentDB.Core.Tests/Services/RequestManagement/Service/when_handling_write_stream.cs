@@ -12,8 +12,8 @@ namespace KurrentDB.Core.Tests.Services.RequestManagement.Service;
 [TestFixture]
 public class when_handling_write_stream : RequestManagerServiceSpecification {
 	protected override void Given() {
-		Dispatcher.Publish(ClientMessage.WriteEvents.ForSingleStream(InternalCorrId, ClientCorrId, Envelope, true, StreamId, ExpectedVersion.Any, new(DummyEvent()), null));
-		Dispatcher.Publish(StorageMessage.CommitIndexed.ForSingleStream(InternalCorrId, LogPosition, 2, 3, 3));
+		var events = new Event[] { DummyEvent(), DummyEvent(), DummyEvent() };
+		Dispatcher.Publish(ClientMessage.WriteEvents.ForSingleStream(InternalCorrId, ClientCorrId, Envelope, true, StreamId, ExpectedVersion.Any, new(events), null));
 		Dispatcher.Publish(new ReplicationTrackingMessage.ReplicatedTo(LogPosition));
 	}
 
@@ -29,7 +29,10 @@ public class when_handling_write_stream : RequestManagerServiceSpecification {
 
 	[Test]
 	public void the_envelope_is_replied_to_with_success() {
-		Assert.That(Envelope.Replies.ContainsSingle<ClientMessage.WriteEventsCompleted>(
-			x => x.CorrelationId == ClientCorrId && x.Result == OperationResult.Success));
+		Assert.That(Envelope.Replies.ContainsSingle<ClientMessage.WriteEventsCompleted>(x =>
+			x.CorrelationId == ClientCorrId &&
+			x.Result == OperationResult.Success &&
+			x.FirstEventNumbers.Single == 0 &&
+			x.LastEventNumbers.Single == 2));
 	}
 }

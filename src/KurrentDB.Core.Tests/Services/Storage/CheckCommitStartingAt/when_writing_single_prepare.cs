@@ -28,7 +28,7 @@ public class when_writing_single_prepare<TLogFormat, TStreamId> : ReadIndexTestS
 		Assert.AreEqual(CommitDecision.Ok, res.Decision);
 		Assert.AreEqual(streamId, res.EventStreamId);
 		Assert.AreEqual(-1, res.CurrentVersion);
-		Assert.AreEqual(-1, res.StartEventNumber);
-		Assert.AreEqual(-1, res.EndEventNumber);
+		Assert.AreEqual(0, res.StartEventNumber);
+		Assert.AreEqual(0, res.EndEventNumber);
 	}
 }

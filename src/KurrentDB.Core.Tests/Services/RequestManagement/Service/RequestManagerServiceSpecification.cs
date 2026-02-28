@@ -53,6 +53,7 @@ public abstract class RequestManagerServiceSpecification :
 		Dispatcher.Subscribe<ClientMessage.WriteEvents>(Service);
 		Dispatcher.Subscribe<StorageMessage.UncommittedPrepareChased>(Service);
 		Dispatcher.Subscribe<StorageMessage.InvalidTransaction>(Service);
+		Dispatcher.Subscribe<StorageMessage.ConsistencyChecksSucceeded>(Service);
 		Dispatcher.Subscribe<StorageMessage.ConsistencyChecksFailed>(Service);
 		Dispatcher.Subscribe<StorageMessage.AlreadyCommitted>(Service);
 		Dispatcher.Subscribe<StorageMessage.RequestManagerTimerTick>(Service);
@@ -86,6 +87,8 @@ public abstract class RequestManagerServiceSpecification :
 	public void Handle(StorageMessage.WritePrepares message) {
 
 		var transactionPosition = LogPosition;
+
+		Dispatcher.Publish(StorageMessage.ConsistencyChecksSucceeded.ForSingleStream(InternalCorrId, 0, message.Events.Length - 1));
 		foreach (var _ in message.Events.Span) {
 			Dispatcher.Publish(new StorageMessage.UncommittedPrepareChased(
 									message.CorrelationId,
@@ -95,9 +98,7 @@ public abstract class RequestManagerServiceSpecification :
 		}
 		Dispatcher.Publish(StorageMessage.CommitIndexed.ForSingleStream(message.CorrelationId,
 			LogPosition,
-			transactionPosition,
-			0,
-			message.Events.Length));
+			transactionPosition));
 	}
 
 	protected Event DummyEvent() {
