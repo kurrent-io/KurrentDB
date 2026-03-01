@@ -432,7 +432,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		Assert.Equal([1, -1, 0], completed.LastEventNumbers.ToArray());
 	}
 
-	const long DeletedStreamFirstEventNumber = long.MinValue; // EventNumber.DeletedStream + 1;
+	const long DeletedStreamFirstEventNumber = unchecked(EventNumber.DeletedStream + 1);
 	[Fact]
 	public async Task succeeds_with_conditional_append_on_deleted_stream_and_exp_ver_any() {
 		const string test = nameof(succeeds_with_conditional_append_on_deleted_stream_and_exp_ver_any);
