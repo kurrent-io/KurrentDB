@@ -1125,6 +1125,7 @@ public class ClusterVNode<TStreamId> :
 		_mainBus.Subscribe<StorageMessage.CommitIndexed>(requestManagement);
 
 		_mainBus.Subscribe<StorageMessage.InvalidTransaction>(requestManagement);
+		_mainBus.Subscribe<StorageMessage.ConsistencyChecksSucceeded>(requestManagement);
 		_mainBus.Subscribe<StorageMessage.ConsistencyChecksFailed>(requestManagement);
 
 		_mainBus.Subscribe<StorageMessage.RequestManagerTimerTick>(requestManagement);
