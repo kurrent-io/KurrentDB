@@ -32,23 +32,23 @@ public class when_writing_few_prepares_with_same_expected_version_and_not_commit
 		Assert.AreEqual(CommitDecision.Ok, res.Decision);
 		Assert.AreEqual(streamId, res.EventStreamId);
 		Assert.AreEqual(-1, res.CurrentVersion);
-		Assert.AreEqual(-1, res.StartEventNumber);
-		Assert.AreEqual(-1, res.EndEventNumber);
+		Assert.AreEqual(0, res.StartEventNumber);
+		Assert.AreEqual(0, res.EndEventNumber);
 
 		res = await ReadIndex.IndexWriter.CheckCommitStartingAt(_prepare1.LogPosition, WriterCheckpoint.ReadNonFlushed(), CancellationToken.None);
 
 		Assert.AreEqual(CommitDecision.Ok, res.Decision);
 		Assert.AreEqual(streamId, res.EventStreamId);
 		Assert.AreEqual(-1, res.CurrentVersion);
-		Assert.AreEqual(-1, res.StartEventNumber);
-		Assert.AreEqual(-1, res.EndEventNumber);
+		Assert.AreEqual(0, res.StartEventNumber);
+		Assert.AreEqual(0, res.EndEventNumber);
 
 		res = await ReadIndex.IndexWriter.CheckCommitStartingAt(_prepare2.LogPosition, WriterCheckpoint.ReadNonFlushed(), CancellationToken.None);
 
 		Assert.AreEqual(CommitDecision.Ok, res.Decision);
 		Assert.AreEqual(streamId, res.EventStreamId);
 		Assert.AreEqual(-1, res.CurrentVersion);
-		Assert.AreEqual(-1, res.StartEventNumber);
-		Assert.AreEqual(-1, res.EndEventNumber);
+		Assert.AreEqual(0, res.StartEventNumber);
+		Assert.AreEqual(0, res.EndEventNumber);
 	}
 }

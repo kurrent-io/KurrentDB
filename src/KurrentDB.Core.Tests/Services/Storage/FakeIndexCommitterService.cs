@@ -39,15 +39,6 @@ public class FakeIndexCommitterService<TStreamId> : IIndexCommitterService<TStre
 		transaction.AddPrepares(prepares);
 	}
 
-	public ValueTask<long> GetCommitLastEventNumber(CommitLogRecord record, CancellationToken token) {
-		if (Transactions.TryGetValue(record.CorrelationId, out var transaction)) {
-			return ValueTask.FromResult(record.FirstEventNumber + transaction.Prepares.Count);
-		} else {
-			return ValueTask.FromException<long>(
-				new InvalidOperationException("Cannot get last event number for an unknown transaction"));
-		}
-	}
-
 	public ValueTask Init(long checkpointPosition, CancellationToken token) => ValueTask.CompletedTask;
 
 	public void Stop() { }
