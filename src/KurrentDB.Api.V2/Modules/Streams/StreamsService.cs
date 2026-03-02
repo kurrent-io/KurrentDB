@@ -304,11 +304,16 @@ public class StreamsService : StreamsServiceBase {
         }
 
         protected override bool SuccessPredicate(Message message) =>
-            message is WriteEventsCompleted { Result: OperationResult.Success };
+            message is WriteEventsCompleted { Result: OperationResult.Success or OperationResult.WrongExpectedVersion or OperationResult.StreamDeleted };
 
+        [SkipLocalsInit]
         protected override AppendRecordsResponse MapToResult(Message message) {
             var completed = (WriteEventsCompleted)message;
-            var response  = new AppendRecordsResponse { Position = completed.CommitPosition };
+
+            if (completed.ConsistencyCheckFailures.Length > 0)
+                throw MapToConsistencyCheckFailed();
+
+            var response = new AppendRecordsResponse { Position = completed.CommitPosition };
 
             for (var i = 0; i < completed.LastEventNumbers.Length; i++) {
                 response.Revisions.Add(new Contracts.StreamRevision {
@@ -318,22 +323,8 @@ public class StreamsService : StreamsServiceBase {
             }
 
             return response;
-        }
 
-        [SkipLocalsInit]
-        protected override RpcException? MapToError(Message message) {
-	        return message switch {
-		        WriteEventsCompleted completed => completed.Result switch {
-			        OperationResult.CommitTimeout => ApiErrors.OperationTimeout($"{FriendlyName} timed out while waiting for commit"),
-
-			        OperationResult.WrongExpectedVersion or OperationResult.StreamDeleted => MapToConsistencyCheckFailed(completed),
-
-			        _ => ApiErrors.InternalServerError($"{FriendlyName} completed in error with unexpected result: {completed.Result}")
-		        },
-		        _ => null
-	        };
-
-	        RpcException MapToConsistencyCheckFailed(WriteEventsCompleted completed) {
+	        RpcException MapToConsistencyCheckFailed() {
 		        var failures = completed.ConsistencyCheckFailures.Span;
 		        var violations = new List<ConsistencyViolation>(failures.Length);
 
@@ -356,5 +347,14 @@ public class StreamsService : StreamsServiceBase {
 		        };
 	        }
         }
+
+        protected override RpcException? MapToError(Message message) =>
+            message switch {
+                WriteEventsCompleted completed => completed.Result switch {
+                    OperationResult.CommitTimeout => ApiErrors.OperationTimeout($"{FriendlyName} timed out while waiting for commit"),
+                    _ => ApiErrors.InternalServerError($"{FriendlyName} completed in error with unexpected result: {completed.Result}")
+                },
+                _ => null
+            };
     }
 }

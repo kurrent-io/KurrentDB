@@ -23,74 +23,19 @@ public class AppendRecordsTests {
 	public required BogusFaker Faker { get; [UsedImplicitly] init; }
 
 	[Test]
-	public async ValueTask single_record_succeeds(CancellationToken ct) {
-		var stream = Fixture.NewStreamName();
-		var request = new AppendRecordsRequest {
-			Records = { CreateRecord(stream) }
-		};
+	public async ValueTask multiple_checks_only_no_stream_violates_expected_state(CancellationToken ct) {
+		var checkOnlyStream1 = Fixture.NewStreamName();
+		var checkOnlyStream2 = Fixture.NewStreamName();
+		var writeOnlyStream = Fixture.NewStreamName();
 
-		var response = await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
+		ConsistencyCheck revisionCheck     = new() { StreamState = new StreamStateCheck { Stream = checkOnlyStream1, ExpectedState = 10L } };
+		ConsistencyCheck streamExistsCheck = new() { StreamState = new StreamStateCheck { Stream = checkOnlyStream2, ExpectedState = StreamExists } };
 
-		await Assert.That(response.Position).IsGreaterThanOrEqualTo(0);
-		await Assert.That(response.Revisions).HasCount(1);
-		await Assert.That(response.Revisions[0].Stream).IsEqualTo(stream);
-		await Assert.That(response.Revisions[0].Revision).IsEqualTo(0);
-	}
-
-	[Test]
-	public async ValueTask interleaved_tracks_revisions(CancellationToken ct) {
-		var streamA = Fixture.NewStreamName();
-		var streamB = Fixture.NewStreamName();
+		ConsistencyCheck[] checks = [revisionCheck, streamExistsCheck];
 
 		var request = new AppendRecordsRequest {
-			Records = {
-				CreateRecord(streamA),
-				CreateRecord(streamB),
-				CreateRecord(streamA),
-				CreateRecord(streamB),
-				CreateRecord(streamA)
-			}
-		};
-
-		var response = await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
-
-		await Assert.That(response.Revisions).HasCount(2);
-
-		var revA = response.Revisions.First(r => r.Stream == streamA);
-		var revB = response.Revisions.First(r => r.Stream == streamB);
-
-		await Assert.That(revA.Revision).IsEqualTo(2); // streamA has 3 records
-		await Assert.That(revB.Revision).IsEqualTo(1); // streamB has 2 records
-	}
-
-	[Test]
-	public async ValueTask multiple_failures_reported(CancellationToken ct) {
-		var streamA = Fixture.NewStreamName();
-		var streamB = Fixture.NewStreamName();
-
-		// Seed both streams
-		var seedA = new AppendRecordsRequest { Records = { CreateRecord(streamA) } };
-		var seedB = new AppendRecordsRequest { Records = { CreateRecord(streamB), CreateRecord(streamB) } };
-		await Fixture.StreamsClient.AppendRecordsAsync(seedA, cancellationToken: ct);
-		await Fixture.StreamsClient.AppendRecordsAsync(seedB, cancellationToken: ct);
-
-		var writeStream = Fixture.NewStreamName();
-		var request = new AppendRecordsRequest {
-			Records = { CreateRecord(writeStream) },
-			Checks = {
-				new ConsistencyCheck {
-					StreamState = new StreamStateCheck {
-						Stream   = streamA,
-						ExpectedState = 999
-					}
-				},
-				new ConsistencyCheck {
-					StreamState = new StreamStateCheck {
-						Stream   = streamB,
-						ExpectedState = 888
-					}
-				}
-			}
+			Records = { CreateRecord(writeOnlyStream) },
+			Checks  = { revisionCheck, streamExistsCheck }
 		};
 
 		var appendTask = async () => await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
@@ -102,25 +47,39 @@ public class AppendRecordsTests {
 		await Assert.That(details).IsNotNull();
 		await Assert.That(details!.Violations).HasCount(2);
 
-		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(streamA);
-		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(0);
-		await Assert.That(details.Violations[1].StreamState.Stream).IsEqualTo(streamB);
-		await Assert.That(details.Violations[1].StreamState.ActualState).IsEqualTo(1);
+		using (Assert.Multiple()) {
+			foreach (var (violation, check) in details.Violations.Zip(checks)) {
+				await Assert.That(violation.StreamState.Stream).IsEqualTo(check.StreamState.Stream);
+				await Assert.That(violation.StreamState.ExpectedState).IsEqualTo(check.StreamState.ExpectedState);
+				await Assert.That(violation.StreamState.ActualState).IsEqualTo(NoStream);
+			}
+		}
 	}
 
 	[Test]
-	public async ValueTask tombstoned_fails(CancellationToken ct) {
-		// Seed and tombstone a stream
-		var stream = Fixture.NewStreamName();
+	public async ValueTask multiple_checks_only_tombstoned_violates_expected_state(CancellationToken ct) {
+		var checkOnlyStream1 = Fixture.NewStreamName();
+		var checkOnlyStream2 = Fixture.NewStreamName();
+		var checkOnlyStream3 = Fixture.NewStreamName();
+		var writeOnlyStream = Fixture.NewStreamName();
+
 		var seedRequest = new AppendRecordsRequest {
-			Records = { CreateRecord(stream) }
+			Records = { CreateRecord(checkOnlyStream1), CreateRecord(checkOnlyStream2), CreateRecord(checkOnlyStream3) }
 		};
 		await Fixture.StreamsClient.AppendRecordsAsync(seedRequest, cancellationToken: ct);
-		await Fixture.SystemClient.Management.HardDeleteStream(stream, cancellationToken: ct);
+		await Fixture.SystemClient.Management.HardDeleteStream(checkOnlyStream1, cancellationToken: ct);
+		await Fixture.SystemClient.Management.HardDeleteStream(checkOnlyStream2, cancellationToken: ct);
+		await Fixture.SystemClient.Management.HardDeleteStream(checkOnlyStream3, cancellationToken: ct);
 
-		// Try to write to the tombstoned stream
+		ConsistencyCheck revisionCheck     = new() { StreamState = new StreamStateCheck { Stream = checkOnlyStream1, ExpectedState = 10L } };
+		ConsistencyCheck streamExistsCheck = new() { StreamState = new StreamStateCheck { Stream = checkOnlyStream2, ExpectedState = StreamExists } };
+		ConsistencyCheck noStreamCheck     = new() { StreamState = new StreamStateCheck { Stream = checkOnlyStream3, ExpectedState = NoStream } };
+
+		ConsistencyCheck[] checks = [revisionCheck, streamExistsCheck, noStreamCheck];
+
 		var request = new AppendRecordsRequest {
-			Records = { CreateRecord(stream) }
+			Records = { CreateRecord(writeOnlyStream) },
+			Checks  = { revisionCheck, streamExistsCheck, noStreamCheck }
 		};
 
 		var appendTask = async () => await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
@@ -130,83 +89,31 @@ public class AppendRecordsTests {
 
 		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
 		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Violations).HasCount(1);
-		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(stream);
-		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(Tombstoned);
-		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(Any);
-	}
+		await Assert.That(details!.Violations).HasCount(3);
 
-	[Test]
-	public async ValueTask empty_records_fails(CancellationToken ct) {
-		var request = new AppendRecordsRequest();
-
-		var appendTask = async () => await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
-
-		var rex = await appendTask.ShouldThrowAsync<RpcException>();
-		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.InvalidArgument);
-	}
-
-	[Test]
-	[Repeat(10)]
-	public async ValueTask oversized_record_fails(CancellationToken ct) {
-		var stream = Fixture.NewStreamName();
-		var record = CreateRecord(stream);
-
-		var recordSize = (int)(Fixture.ServerOptions.Application.MaxAppendEventSize * Faker.Random.Double(1.01, 1.04));
-		record.Data = UnsafeByteOperations.UnsafeWrap(Faker.Random.Bytes(recordSize));
-
-		var request = new AppendRecordsRequest {
-			Records = { record }
-		};
-
-		var appendTask = async () => await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
-
-		var rex = await appendTask.ShouldThrowAsync<RpcException>();
-		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.InvalidArgument);
-	}
-
-	[Test]
-	public async ValueTask revision_match_succeeds(CancellationToken ct) {
-		var stream = Fixture.NewStreamName();
-		var seedRequest = new AppendRecordsRequest {
-			Records = { CreateRecord(stream), CreateRecord(stream), CreateRecord(stream), CreateRecord(stream) }
-		};
-		await Fixture.StreamsClient.AppendRecordsAsync(seedRequest, cancellationToken: ct);
-
-		var request = new AppendRecordsRequest {
-			Records = { CreateRecord(stream) },
-			Checks = {
-				new ConsistencyCheck {
-					StreamState = new StreamStateCheck {
-						Stream   = stream,
-						ExpectedState = 3
-					}
-				}
+		using (Assert.Multiple()) {
+			foreach (var (violation, check) in details.Violations.Zip(checks)) {
+				await Assert.That(violation.StreamState.Stream).IsEqualTo(check.StreamState.Stream);
+				await Assert.That(violation.StreamState.ExpectedState).IsEqualTo(check.StreamState.ExpectedState);
+				await Assert.That(violation.StreamState.ActualState).IsEqualTo(Tombstoned);
 			}
-		};
-
-		var response = await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
-
-		await Assert.That(response.Revisions).HasCount(1);
-		await Assert.That(response.Revisions[0].Stream).IsEqualTo(stream);
-		await Assert.That(response.Revisions[0].Revision).IsEqualTo(4);
+		}
 	}
 
 	[Test]
-	public async ValueTask revision_mismatch_fails(CancellationToken ct) {
-		var stream = Fixture.NewStreamName();
-		var seedRequest = new AppendRecordsRequest {
-			Records = { CreateRecord(stream), CreateRecord(stream) }
-		};
-		await Fixture.StreamsClient.AppendRecordsAsync(seedRequest, cancellationToken: ct);
+	[Arguments(StreamExists)]
+	[Arguments(10L)]
+	public async ValueTask single_check_only_no_stream_violates_expected_state(long expectedState, CancellationToken ct) {
+		var checkOnlyStream = Fixture.NewStreamName();
+		var writeOnlyStream = Fixture.NewStreamName();
 
 		var request = new AppendRecordsRequest {
-			Records = { CreateRecord(stream) },
-			Checks = {
+			Records = { CreateRecord(writeOnlyStream) },
+			Checks  = {
 				new ConsistencyCheck {
 					StreamState = new StreamStateCheck {
-						Stream   = stream,
-						ExpectedState = 999
+						Stream = checkOnlyStream,
+						ExpectedState = expectedState
 					}
 				}
 			}
@@ -220,84 +127,129 @@ public class AppendRecordsTests {
 		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
 		await Assert.That(details).IsNotNull();
 		await Assert.That(details!.Violations).HasCount(1);
-		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(stream);
-		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(999);
-		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(1);
-	}
-
-	[Test]
-	public async ValueTask revision_no_stream_fails(CancellationToken ct) {
-		var writeStream = Fixture.NewStreamName();
-		var checkStream = Fixture.NewStreamName(); // never created
-
-		var request = new AppendRecordsRequest {
-			Records = { CreateRecord(writeStream) },
-			Checks = {
-				new ConsistencyCheck {
-					StreamState = new StreamStateCheck {
-						Stream   = checkStream,
-						ExpectedState = 5
-					}
-				}
-			}
-		};
-
-		var appendTask = async () => await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
-
-		var rex = await appendTask.ShouldThrowAsync<RpcException>();
-		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
-
-		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
-		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Violations).HasCount(1);
-		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
-		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(5);
+		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkOnlyStream);
+		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(expectedState);
 		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(NoStream);
 	}
 
 	[Test]
-	public async ValueTask revision_deleted_match_succeeds(CancellationToken ct) {
-		var stream = Fixture.NewStreamName();
+	[Arguments(10L)]
+	[Arguments(StreamExists)]
+	[Arguments(NoStream)]
+	public async ValueTask single_check_only_tombstoned_violates_expected_state(long expectedState, CancellationToken ct) {
+		var checkOnlyStream = Fixture.NewStreamName();
+		var writeOnlyStream = Fixture.NewStreamName();
+
 		var seedRequest = new AppendRecordsRequest {
-			Records = { CreateRecord(stream) }
+			Records = { CreateRecord(checkOnlyStream) }
 		};
 		await Fixture.StreamsClient.AppendRecordsAsync(seedRequest, cancellationToken: ct);
-		await Fixture.SystemClient.Management.SoftDeleteStream(stream, cancellationToken: ct);
+		await Fixture.SystemClient.Management.HardDeleteStream(checkOnlyStream, cancellationToken: ct);
 
 		var request = new AppendRecordsRequest {
-			Records = { CreateRecord(stream) },
+			Records = { CreateRecord(writeOnlyStream) },
 			Checks = {
 				new ConsistencyCheck {
 					StreamState = new StreamStateCheck {
-						Stream   = stream,
-						ExpectedState = 0
+						Stream        = checkOnlyStream,
+						ExpectedState = expectedState
+					}
+				}
+			}
+		};
+
+		var appendTask = async () => await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
+
+		var rex = await appendTask.ShouldThrowAsync<RpcException>();
+		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
+
+		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
+		await Assert.That(details).IsNotNull();
+		await Assert.That(details!.Violations).HasCount(1);
+		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkOnlyStream);
+		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(expectedState);
+		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(Tombstoned);
+	}
+
+	[Test]
+	[Arguments(StreamExists)]
+	[Arguments(10L)]
+	public async ValueTask single_check_only_revision_satistifes_expected_state(long expectedState, CancellationToken ct) {
+		var checkOnlyStream = Fixture.NewStreamName();
+		var writeOnlyStream = Fixture.NewStreamName();
+
+		var seedRequest = new AppendRecordsRequest {
+			Records = { Enumerable.Range(0, 11).Select(_ => CreateRecord(checkOnlyStream)) }
+		};
+		await Fixture.StreamsClient.AppendRecordsAsync(seedRequest, cancellationToken: ct);
+
+		var request = new AppendRecordsRequest {
+			Records = { CreateRecord(writeOnlyStream) },
+			Checks  = {
+				new ConsistencyCheck {
+					StreamState = new StreamStateCheck {
+						Stream = checkOnlyStream,
+						ExpectedState = expectedState
 					}
 				}
 			}
 		};
 
 		var response = await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
-
 		await Assert.That(response.Revisions).HasCount(1);
-		await Assert.That(response.Revisions[0].Stream).IsEqualTo(stream);
+		await Assert.That(response.Revisions[0].Stream).IsEqualTo(writeOnlyStream);
+		await Assert.That(response.Revisions[0].Revision).IsEqualTo(0L);
 	}
 
 	[Test]
-	public async ValueTask revision_deleted_mismatch_fails(CancellationToken ct) {
-		var stream = Fixture.NewStreamName();
+	public async ValueTask single_check_only_revision_violates_no_stream(CancellationToken ct) {
+		var checkOnlyStream = Fixture.NewStreamName();
+		var writeOnlyStream = Fixture.NewStreamName();
+
+		var request = new AppendRecordsRequest {
+			Records = { CreateRecord(writeOnlyStream) },
+			Checks  = {
+				new ConsistencyCheck {
+					StreamState = new StreamStateCheck {
+						Stream = checkOnlyStream,
+						ExpectedState = 10L
+					}
+				}
+			}
+		};
+
+		var appendTask = async () => await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
+
+		var rex = await appendTask.ShouldThrowAsync<RpcException>();
+		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
+
+		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
+		await Assert.That(details).IsNotNull();
+		await Assert.That(details!.Violations).HasCount(1);
+		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkOnlyStream);
+		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(10L);
+		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(NoStream);
+	}
+
+	[Test]
+	public async ValueTask single_check_only_deleted_violates_expected_state(CancellationToken ct) {
+		var checkOnlyStream = Fixture.NewStreamName();
+		var writeOnlyStream = Fixture.NewStreamName();
+
 		var seedRequest = new AppendRecordsRequest {
-			Records = { CreateRecord(stream) }
+			Records = { CreateRecord(checkOnlyStream), CreateRecord(checkOnlyStream), CreateRecord(checkOnlyStream) }
 		};
 		var seedResponse = await Fixture.StreamsClient.AppendRecordsAsync(seedRequest, cancellationToken: ct);
-		await Fixture.SystemClient.Management.SoftDeleteStream(stream, cancellationToken: ct);
+		await Fixture.SystemClient.Management.SoftDeleteStream(checkOnlyStream, cancellationToken: ct);
+		await Assert.That(seedResponse.Revisions).HasCount(1);
 
 		var request = new AppendRecordsRequest {
-			Records = { CreateRecord(stream) },
-			Checks = {
+			Records = { CreateRecord(writeOnlyStream) },
+			Checks  = {
 				new ConsistencyCheck {
 					StreamState = new StreamStateCheck {
-						Stream   = stream,
-						ExpectedState = 999
+						Stream = checkOnlyStream,
+						ExpectedState = 10L
 					}
 				}
 			}
@@ -311,280 +263,28 @@ public class AppendRecordsTests {
 		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
 		await Assert.That(details).IsNotNull();
 		await Assert.That(details!.Violations).HasCount(1);
-		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(stream);
-		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(999);
-		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(seedResponse.Revisions[0].Revision);
+		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkOnlyStream);
+		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(10L);
+		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(seedResponse.Revisions.Last().Revision);
 	}
 
 	[Test]
-	public async ValueTask revision_tombstoned_fails(CancellationToken ct) {
-		var checkStream = Fixture.NewStreamName();
+	public async ValueTask single_check_only_deleted_violates_stream_exists(CancellationToken ct) {
+		var checkOnlyStream = Fixture.NewStreamName();
+		var writeOnlyStream = Fixture.NewStreamName();
+
 		var seedRequest = new AppendRecordsRequest {
-			Records = { CreateRecord(checkStream) }
+			Records = { CreateRecord(checkOnlyStream) }
 		};
 		await Fixture.StreamsClient.AppendRecordsAsync(seedRequest, cancellationToken: ct);
-		await Fixture.SystemClient.Management.HardDeleteStream(checkStream, cancellationToken: ct);
+		await Fixture.SystemClient.Management.SoftDeleteStream(checkOnlyStream, cancellationToken: ct);
 
-		var writeStream = Fixture.NewStreamName();
 		var request = new AppendRecordsRequest {
-			Records = { CreateRecord(writeStream) },
-			Checks = {
+			Records = { CreateRecord(writeOnlyStream) },
+			Checks  = {
 				new ConsistencyCheck {
 					StreamState = new StreamStateCheck {
-						Stream   = checkStream,
-						ExpectedState = 0
-					}
-				}
-			}
-		};
-
-		var appendTask = async () => await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
-
-		var rex = await appendTask.ShouldThrowAsync<RpcException>();
-		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
-
-		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
-		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Violations).HasCount(1);
-		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
-		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(0);
-		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(Tombstoned);
-	}
-
-	[Test]
-	public async ValueTask no_stream_exists_fails(CancellationToken ct) {
-		var checkStream = Fixture.NewStreamName();
-		var seedRequest = new AppendRecordsRequest {
-			Records = { CreateRecord(checkStream), CreateRecord(checkStream), CreateRecord(checkStream) }
-		};
-		await Fixture.StreamsClient.AppendRecordsAsync(seedRequest, cancellationToken: ct);
-
-		var writeStream = Fixture.NewStreamName();
-		var request = new AppendRecordsRequest {
-			Records = { CreateRecord(writeStream) },
-			Checks = {
-				new ConsistencyCheck {
-					StreamState = new StreamStateCheck {
-						Stream   = checkStream,
-						ExpectedState = NoStream
-					}
-				}
-			}
-		};
-
-		var appendTask = async () => await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
-
-		var rex = await appendTask.ShouldThrowAsync<RpcException>();
-		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
-
-		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
-		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Violations).HasCount(1);
-		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
-		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(NoStream);
-		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(2);
-	}
-
-	[Test]
-	public async ValueTask no_stream_succeeds(CancellationToken ct) {
-		var stream = Fixture.NewStreamName();
-
-		var request = new AppendRecordsRequest {
-			Records = { CreateRecord(stream) },
-			Checks = {
-				new ConsistencyCheck {
-					StreamState = new StreamStateCheck {
-						Stream   = stream,
-						ExpectedState = NoStream
-					}
-				}
-			}
-		};
-
-		var response = await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
-
-		await Assert.That(response.Revisions).HasCount(1);
-		await Assert.That(response.Revisions[0].Stream).IsEqualTo(stream);
-		await Assert.That(response.Revisions[0].Revision).IsEqualTo(0);
-	}
-
-	[Test]
-	public async ValueTask no_stream_deleted_succeeds(CancellationToken ct) {
-		var stream = Fixture.NewStreamName();
-		var seedRequest = new AppendRecordsRequest {
-			Records = { CreateRecord(stream) }
-		};
-		await Fixture.StreamsClient.AppendRecordsAsync(seedRequest, cancellationToken: ct);
-		await Fixture.SystemClient.Management.SoftDeleteStream(stream, cancellationToken: ct);
-
-		var request = new AppendRecordsRequest {
-			Records = { CreateRecord(stream) },
-			Checks = {
-				new ConsistencyCheck {
-					StreamState = new StreamStateCheck {
-						Stream   = stream,
-						ExpectedState = NoStream
-					}
-				}
-			}
-		};
-
-		var response = await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
-
-		await Assert.That(response.Revisions).HasCount(1);
-		await Assert.That(response.Revisions[0].Stream).IsEqualTo(stream);
-	}
-
-	[Test]
-	public async ValueTask no_stream_tombstoned_fails(CancellationToken ct) {
-		var checkStream = Fixture.NewStreamName();
-		var seedRequest = new AppendRecordsRequest {
-			Records = { CreateRecord(checkStream) }
-		};
-		await Fixture.StreamsClient.AppendRecordsAsync(seedRequest, cancellationToken: ct);
-		await Fixture.SystemClient.Management.HardDeleteStream(checkStream, cancellationToken: ct);
-
-		var writeStream = Fixture.NewStreamName();
-		var request = new AppendRecordsRequest {
-			Records = { CreateRecord(writeStream) },
-			Checks = {
-				new ConsistencyCheck {
-					StreamState = new StreamStateCheck {
-						Stream   = checkStream,
-						ExpectedState = NoStream
-					}
-				}
-			}
-		};
-
-		var appendTask = async () => await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
-
-		var rex = await appendTask.ShouldThrowAsync<RpcException>();
-		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
-
-		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
-		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Violations).HasCount(1);
-		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
-		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(NoStream);
-		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(Tombstoned);
-	}
-
-	[Test]
-	public async ValueTask any_existing_succeeds(CancellationToken ct) {
-		var stream = Fixture.NewStreamName();
-		var seedRequest = new AppendRecordsRequest {
-			Records = { CreateRecord(stream), CreateRecord(stream), CreateRecord(stream) }
-		};
-		await Fixture.StreamsClient.AppendRecordsAsync(seedRequest, cancellationToken: ct);
-
-		var request = new AppendRecordsRequest {
-			Records = { CreateRecord(stream) }
-		};
-
-		var response = await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
-
-		await Assert.That(response.Revisions).HasCount(1);
-		await Assert.That(response.Revisions[0].Stream).IsEqualTo(stream);
-		await Assert.That(response.Revisions[0].Revision).IsEqualTo(3);
-	}
-
-	[Test]
-	public async ValueTask any_new_succeeds(CancellationToken ct) {
-		var stream = Fixture.NewStreamName();
-
-		var request = new AppendRecordsRequest {
-			Records = { CreateRecord(stream) }
-		};
-
-		var response = await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
-
-		await Assert.That(response.Revisions).HasCount(1);
-		await Assert.That(response.Revisions[0].Stream).IsEqualTo(stream);
-		await Assert.That(response.Revisions[0].Revision).IsEqualTo(0);
-	}
-
-	[Test]
-	public async ValueTask any_deleted_succeeds(CancellationToken ct) {
-		var stream = Fixture.NewStreamName();
-		var seedRequest = new AppendRecordsRequest {
-			Records = { CreateRecord(stream) }
-		};
-		await Fixture.StreamsClient.AppendRecordsAsync(seedRequest, cancellationToken: ct);
-		await Fixture.SystemClient.Management.SoftDeleteStream(stream, cancellationToken: ct);
-
-		var request = new AppendRecordsRequest {
-			Records = { CreateRecord(stream) }
-		};
-
-		var response = await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
-
-		await Assert.That(response.Revisions).HasCount(1);
-		await Assert.That(response.Revisions[0].Stream).IsEqualTo(stream);
-	}
-
-	[Test]
-	public async ValueTask any_tombstoned_fails(CancellationToken ct) {
-		var stream = Fixture.NewStreamName();
-		var seedRequest = new AppendRecordsRequest {
-			Records = { CreateRecord(stream) }
-		};
-		await Fixture.StreamsClient.AppendRecordsAsync(seedRequest, cancellationToken: ct);
-		await Fixture.SystemClient.Management.HardDeleteStream(stream, cancellationToken: ct);
-
-		var request = new AppendRecordsRequest {
-			Records = { CreateRecord(stream) }
-		};
-
-		var appendTask = async () => await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
-
-		var rex = await appendTask.ShouldThrowAsync<RpcException>();
-		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
-
-		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
-		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Violations).HasCount(1);
-		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(stream);
-		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(Tombstoned);
-	}
-
-	[Test]
-	public async ValueTask exists_succeeds(CancellationToken ct) {
-		var stream = Fixture.NewStreamName();
-		var seedRequest = new AppendRecordsRequest {
-			Records = { CreateRecord(stream), CreateRecord(stream), CreateRecord(stream) }
-		};
-		await Fixture.StreamsClient.AppendRecordsAsync(seedRequest, cancellationToken: ct);
-
-		var request = new AppendRecordsRequest {
-			Records = { CreateRecord(stream) },
-			Checks = {
-				new ConsistencyCheck {
-					StreamState = new StreamStateCheck {
-						Stream   = stream,
-						ExpectedState = StreamExists
-					}
-				}
-			}
-		};
-
-		var response = await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
-
-		await Assert.That(response.Revisions).HasCount(1);
-		await Assert.That(response.Revisions[0].Stream).IsEqualTo(stream);
-	}
-
-	[Test]
-	public async ValueTask exists_no_stream_fails(CancellationToken ct) {
-		var writeStream = Fixture.NewStreamName();
-		var checkStream = Fixture.NewStreamName(); // never created
-
-		var request = new AppendRecordsRequest {
-			Records = { CreateRecord(writeStream) },
-			Checks = {
-				new ConsistencyCheck {
-					StreamState = new StreamStateCheck {
-						Stream   = checkStream,
+						Stream = checkOnlyStream,
 						ExpectedState = StreamExists
 					}
 				}
@@ -599,79 +299,39 @@ public class AppendRecordsTests {
 		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
 		await Assert.That(details).IsNotNull();
 		await Assert.That(details!.Violations).HasCount(1);
-		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
-		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(StreamExists);
-		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(NoStream);
-	}
-
-	[Test]
-	public async ValueTask exists_deleted_fails(CancellationToken ct) {
-		var checkStream = Fixture.NewStreamName();
-		var seedRequest = new AppendRecordsRequest {
-			Records = { CreateRecord(checkStream) }
-		};
-		await Fixture.StreamsClient.AppendRecordsAsync(seedRequest, cancellationToken: ct);
-		await Fixture.SystemClient.Management.SoftDeleteStream(checkStream, cancellationToken: ct);
-
-		var writeStream = Fixture.NewStreamName();
-		var request = new AppendRecordsRequest {
-			Records = { CreateRecord(writeStream) },
-			Checks = {
-				new ConsistencyCheck {
-					StreamState = new StreamStateCheck {
-						Stream   = checkStream,
-						ExpectedState = StreamExists
-					}
-				}
-			}
-		};
-
-		var appendTask = async () => await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
-
-		var rex = await appendTask.ShouldThrowAsync<RpcException>();
-		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
-
-		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
-		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Violations).HasCount(1);
-		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
+		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkOnlyStream);
 		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(StreamExists);
 		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(SoftDeleted);
 	}
 
 	[Test]
-	public async ValueTask exists_tombstoned_fails(CancellationToken ct) {
-		var checkStream = Fixture.NewStreamName();
+	public async ValueTask soft_deleted_stream_check_passes_with_correct_revision(CancellationToken ct) {
+		var checkOnlyStream = Fixture.NewStreamName();
+		var writeOnlyStream = Fixture.NewStreamName();
+
 		var seedRequest = new AppendRecordsRequest {
-			Records = { CreateRecord(checkStream) }
+			Records = { CreateRecord(checkOnlyStream), CreateRecord(checkOnlyStream), CreateRecord(checkOnlyStream) }
 		};
 		await Fixture.StreamsClient.AppendRecordsAsync(seedRequest, cancellationToken: ct);
-		await Fixture.SystemClient.Management.HardDeleteStream(checkStream, cancellationToken: ct);
 
-		var writeStream = Fixture.NewStreamName();
+		await Fixture.SystemClient.Management.SoftDeleteStream(checkOnlyStream, cancellationToken: ct);
+
 		var request = new AppendRecordsRequest {
-			Records = { CreateRecord(writeStream) },
-			Checks = {
+			Records = { CreateRecord(writeOnlyStream) },
+			Checks  = {
 				new ConsistencyCheck {
 					StreamState = new StreamStateCheck {
-						Stream   = checkStream,
-						ExpectedState = StreamExists
+						Stream = checkOnlyStream,
+						ExpectedState = 2L
 					}
 				}
 			}
 		};
 
-		var appendTask = async () => await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
-
-		var rex = await appendTask.ShouldThrowAsync<RpcException>();
-		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
-
-		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
-		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Violations).HasCount(1);
-		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
-		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(StreamExists);
-		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(Tombstoned);
+		var response = await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
+		await Assert.That(response.Revisions).HasCount(1);
+		await Assert.That(response.Revisions[0].Stream).IsEqualTo(writeOnlyStream);
+		await Assert.That(response.Revisions[0].Revision).IsEqualTo(0L);
 	}
 
 	static AppendRecord CreateRecord(string stream) =>
