@@ -194,29 +194,30 @@ public class StreamsService : StreamsServiceBase {
     }
 
     class AppendRecordsCommand : ApiCommand<AppendRecordsCommand, AppendRecordsResponse> {
-        record struct StreamInfo(string Name, long Revision);
+        record struct StreamInfo(string Name, long Revision, bool HasEvents);
 
         ImmutableArray<Event>.Builder Events        { get; } = ImmutableArray.CreateBuilder<Event>();
         ImmutableArray<int>.Builder   Indexes       { get; } = ImmutableArray.CreateBuilder<int>();
         List<StreamInfo>              StreamEntries { get; } = [];
         Dictionary<string, int>       StreamLookup  { get; } = new(StringComparer.OrdinalIgnoreCase);
 
-        int MaxAppendSize    { get; set; }
-        int MaxRecordSize    { get; set; }
-        int TotalAppendSize  { get; set; }
-        int WriteStreamCount { get; set; }
+        int MaxAppendSize   { get; set; }
+        int MaxRecordSize   { get; set; }
+        int TotalAppendSize { get; set; }
 
         public IEnumerable<string> WriteStreams {
             get {
-                for (var i = 0; i < WriteStreamCount; i++)
-                    yield return StreamEntries[i].Name;
+                foreach (var entry in StreamEntries)
+                    if (entry.HasEvents)
+                        yield return entry.Name;
             }
         }
 
         public IEnumerable<string> ReadOnlyStreams {
             get {
-                for (var i = WriteStreamCount; i < StreamEntries.Count; i++)
-                    yield return StreamEntries[i].Name;
+                foreach (var entry in StreamEntries)
+                    if (!entry.HasEvents)
+                        yield return entry.Name;
             }
         }
 
@@ -231,13 +232,8 @@ public class StreamsService : StreamsServiceBase {
         }
 
         public AppendRecordsCommand WithRequest(AppendRecordsRequest request) {
-            // Note: The core no longer requires streams to be ordered by first appearance in the
-            // events list (see DB-1938). Checks and records can be processed in any order without
-            // affecting the stream indexes sent to WriteEvents. We process records first so that
-            // write streams occupy indexes [0..WriteStreamCount) and check-only streams follow.
-            ProcessRecords(request.Records);
-            WriteStreamCount = StreamEntries.Count;
             ApplyConsistencyChecks(request.Checks);
+            ProcessRecords(request.Records);
 
             return this;
 
@@ -246,7 +242,7 @@ public class StreamsService : StreamsServiceBase {
                 Indexes.Capacity = records.Count;
 
                 foreach (var record in records.Select(static rec => rec.PreProcessRecord())) {
-                    var streamIndex = GetOrAddStreamIndex(record.Stream);
+                    var streamIndex = GetOrAddStreamIndex(record.Stream, hasEvents: true);
 
                     var recordSize = record.CalculateSizeOnDisk(MaxRecordSize);
                     if (recordSize.ExceedsMax)
@@ -274,13 +270,16 @@ public class StreamsService : StreamsServiceBase {
 	            }
             }
 
-            int GetOrAddStreamIndex(string stream) {
-	            if (StreamLookup.TryGetValue(stream, out var index))
+            int GetOrAddStreamIndex(string stream, bool hasEvents = false) {
+	            if (StreamLookup.TryGetValue(stream, out var index)) {
+		            if (hasEvents && !StreamEntries[index].HasEvents)
+			            StreamEntries[index] = StreamEntries[index] with { HasEvents = true };
 		            return index;
+	            }
 
 	            index = StreamEntries.Count;
 	            StreamLookup[stream] = index;
-	            StreamEntries.Add(new StreamInfo(stream, ExpectedVersion.Any));
+	            StreamEntries.Add(new StreamInfo(stream, ExpectedVersion.Any, hasEvents));
 	            return index;
             }
         }
@@ -317,7 +316,7 @@ public class StreamsService : StreamsServiceBase {
         protected override AppendRecordsResponse MapToResult(Message message) {
             var completed = (WriteEventsCompleted)message;
 
-            if (completed.ConsistencyCheckFailures.Length == 0 && WriteStreamCount == StreamEntries.Count)
+            if (completed.ConsistencyCheckFailures.Length == 0 && StreamEntries.TrueForAll(static e => e.HasEvents))
                 return BuildSuccess();
 
             var consistencyViolations = CollectViolations();
@@ -331,7 +330,10 @@ public class StreamsService : StreamsServiceBase {
                 var response = new AppendRecordsResponse { Position = completed.CommitPosition };
 
                 var lastNumbers = completed.LastEventNumbers.Span;
-                for (var i = 0; i < WriteStreamCount; i++) {
+                for (var i = 0; i < StreamEntries.Count; i++) {
+                    if (!StreamEntries[i].HasEvents)
+                        continue;
+
                     response.Revisions.Add(new Contracts.StreamRevision {
                         Stream   = StreamEntries[i].Name,
                         Revision = lastNumbers[i]
@@ -343,8 +345,7 @@ public class StreamsService : StreamsServiceBase {
 
             List<ConsistencyViolation> CollectViolations() {
                 var failures = completed.ConsistencyCheckFailures.Span;
-                var checkOnlyCount = StreamEntries.Count - WriteStreamCount;
-                var violations = new List<ConsistencyViolation>(failures.Length + checkOnlyCount);
+                var violations = new List<ConsistencyViolation>(failures.Length + StreamEntries.Count);
                 var failedStreamIndexes = new HashSet<int>(failures.Length);
 
                 foreach (ref readonly var failure in failures) {
@@ -363,7 +364,10 @@ public class StreamsService : StreamsServiceBase {
                 // NoStream, or DeletedStream, so we must detect and report them here.
                 var firstNumbers = completed.FirstEventNumbers.Span;
                 var lastNumbers  = completed.LastEventNumbers.Span;
-                for (var i = WriteStreamCount; i < StreamEntries.Count; i++) {
+                for (var i = 0; i < StreamEntries.Count; i++) {
+                    if (StreamEntries[i].HasEvents)
+                        continue;
+
                     if (failedStreamIndexes.Contains(i))
                         continue;
 
