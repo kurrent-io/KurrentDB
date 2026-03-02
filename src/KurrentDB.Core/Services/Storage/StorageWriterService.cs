@@ -573,6 +573,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 					return;
 				}
 
+				// using the metastream's version maintains the same behavior as before
 				message.Envelope.ReplyWith(StorageMessage.ConsistencyChecksSucceeded.ForSingleStream(
 					correlationId: message.CorrelationId,
 					firstEventNumber: expectedVersion + 1,

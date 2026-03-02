@@ -981,7 +981,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 	[Fact]
 	public async Task succeeds_when_not_writing_to_first_stream() {
 		const string test = nameof(succeeds_when_not_writing_to_first_stream);
-		var A = $"{test}-a"; // conditional stream (valid condition: NoStream, but should be placed at the end of the list of streams)
+		var A = $"{test}-a"; // conditional stream (valid condition: NoStream)
 		var B = $"{test}-b";
 		var C = $"{test}-c";
 
