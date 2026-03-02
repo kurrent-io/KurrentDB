@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -14,6 +15,8 @@ namespace KurrentDB.Common.Utils;
 // Unlike ReadOnlyMemory<T>, this not require allocation of a backing array when containing 1 element.
 // Useful when 0 or 1 elements is the common case.
 [CollectionBuilder(typeof(LowAllocReadOnlyMemoryBuilder), nameof(LowAllocReadOnlyMemoryBuilder.Create))]
+[DebuggerDisplay("Length = {Length}")]
+[DebuggerTypeProxy(typeof(LowAllocReadOnlyMemory<>.DebugView))]
 public readonly struct LowAllocReadOnlyMemory<T> {
 	private readonly bool _isSingle;
 	// todo: consider union
@@ -110,6 +113,15 @@ public readonly struct LowAllocReadOnlyMemory<T> {
 		public LowAllocReadOnlyMemory<T> Build() => _isSingle
 			? new(_singleItem)
 			: _items.ToLowAllocReadOnlyMemory();
+	}
+
+	private sealed class DebugView {
+		private readonly LowAllocReadOnlyMemory<T> _memory;
+
+		public DebugView(LowAllocReadOnlyMemory<T> memory) => _memory = memory;
+
+		[DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
+		public T[] Items => _memory.ToArray();
 	}
 }
 

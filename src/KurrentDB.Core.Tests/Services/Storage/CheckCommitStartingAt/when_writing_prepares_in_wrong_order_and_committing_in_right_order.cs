@@ -37,8 +37,8 @@ public class when_writing_prepares_in_wrong_order_and_committing_in_right_order<
 		Assert.AreEqual(CommitDecision.Ok, res.Decision);
 		Assert.AreEqual("ES", res.EventStreamId);
 		Assert.AreEqual(2, res.CurrentVersion);
-		Assert.AreEqual(-1, res.StartEventNumber);
-		Assert.AreEqual(-1, res.EndEventNumber);
+		Assert.AreEqual(3, res.StartEventNumber);
+		Assert.AreEqual(3, res.EndEventNumber);
 	}
 
 	[Test]
