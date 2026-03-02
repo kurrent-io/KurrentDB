@@ -140,10 +140,11 @@ public class StreamsService : StreamsServiceBase {
             var completed = (WriteEventsCompleted)message;
             var output    = new List<AppendResponse>();
 
+            var lastNumbers = completed.LastEventNumbers.Span;
             for (var i = 0; i < completed.LastEventNumbers.Length; i++)
                 output.Add(new() {
                     Stream         = Requests.ElementAt(i).Stream,
-                    StreamRevision = completed.LastEventNumbers.Span[i]
+                    StreamRevision = lastNumbers[i]
                 });
 
             return new AppendSessionResponse {
@@ -230,6 +231,10 @@ public class StreamsService : StreamsServiceBase {
         }
 
         public AppendRecordsCommand WithRequest(AppendRecordsRequest request) {
+            // Note: The core no longer requires streams to be ordered by first appearance in the
+            // events list (see DB-1938). Checks and records can be processed in any order without
+            // affecting the stream indexes sent to WriteEvents. We process records first so that
+            // write streams occupy indexes [0..WriteStreamCount) and check-only streams follow.
             ProcessRecords(request.Records);
             WriteStreamCount = StreamEntries.Count;
             ApplyConsistencyChecks(request.Checks);
@@ -325,10 +330,11 @@ public class StreamsService : StreamsServiceBase {
             AppendRecordsResponse BuildSuccess() {
                 var response = new AppendRecordsResponse { Position = completed.CommitPosition };
 
+                var lastNumbers = completed.LastEventNumbers.Span;
                 for (var i = 0; i < WriteStreamCount; i++) {
                     response.Revisions.Add(new Contracts.StreamRevision {
                         Stream   = StreamEntries[i].Name,
-                        Revision = completed.LastEventNumbers.Span[i]
+                        Revision = lastNumbers[i]
                     });
                 }
 
@@ -353,7 +359,10 @@ public class StreamsService : StreamsServiceBase {
                 }
 
                 // Check-only streams the core considered OK may still be tombstoned.
+                // The core treats tombstoned streams as passing with ExpectedVersion.Any,
+                // NoStream, or DeletedStream, so we must detect and report them here.
                 var firstNumbers = completed.FirstEventNumbers.Span;
+                var lastNumbers  = completed.LastEventNumbers.Span;
                 for (var i = WriteStreamCount; i < StreamEntries.Count; i++) {
                     if (failedStreamIndexes.Contains(i))
                         continue;
@@ -363,7 +372,7 @@ public class StreamsService : StreamsServiceBase {
                             StreamState = new() {
                                 Stream        = StreamEntries[i].Name,
                                 ExpectedState = StreamEntries[i].Revision,
-                                ActualState   = -100
+                                ActualState   = firstNumbers.Length > 0 ? MapLastEventNumber(lastNumbers[i]) : WireRevision.Tombstoned
                             }
                         });
                 }
@@ -371,11 +380,15 @@ public class StreamsService : StreamsServiceBase {
                 return violations;
             }
 
-            [MethodImpl(AggressiveInlining)]
             static long MapActualRevision(ConsistencyCheckFailure failure) => failure switch {
-                { ActualVersion: long.MaxValue } => -100,
-                { IsSoftDeleted: true }          => -10,
+                { ActualVersion: long.MaxValue } => WireRevision.Tombstoned,
+                { IsSoftDeleted: true }          => WireRevision.SoftDeleted,
                 _                                => failure.ActualVersion
+            };
+
+            static long MapLastEventNumber(long lastEventNumber) => lastEventNumber switch {
+                long.MaxValue => WireRevision.Tombstoned,
+                _             => lastEventNumber
             };
 
             static bool IsTombstoned(ReadOnlySpan<long> firstNumbers, int streamIndex, OperationResult result, long expectedRevision) {
@@ -400,5 +413,10 @@ public class StreamsService : StreamsServiceBase {
                 },
                 _ => null
             };
+    }
+
+    static class WireRevision {
+        public const long Tombstoned  = -100;
+        public const long SoftDeleted = -10;
     }
 }
