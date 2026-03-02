@@ -23,6 +23,51 @@ public class AppendRecordsTests {
 	public required BogusFaker Faker { get; [UsedImplicitly] init; }
 
 	[Test]
+	public async ValueTask interleaved_tracks_revisions(CancellationToken ct) {
+		var streamA = Fixture.NewStreamName();
+		var streamB = Fixture.NewStreamName();
+
+		var request = new AppendRecordsRequest {
+			Records = {
+				CreateRecord(streamA),
+				CreateRecord(streamB),
+				CreateRecord(streamA),
+				CreateRecord(streamB),
+				CreateRecord(streamA)
+			}
+		};
+
+		var response = await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
+
+		await Assert.That(response.Revisions).HasCount(2);
+
+		var revA = response.Revisions.First(r => r.Stream == streamA);
+		var revB = response.Revisions.First(r => r.Stream == streamB);
+
+		await Assert.That(revA.Revision).IsEqualTo(2); // streamA has 3 records
+		await Assert.That(revB.Revision).IsEqualTo(1); // streamB has 2 records
+	}
+
+	[Test]
+	[Repeat(10)]
+	public async ValueTask oversized_record_fails(CancellationToken ct) {
+		var stream = Fixture.NewStreamName();
+		var record = CreateRecord(stream);
+
+		var recordSize = (int)(Fixture.ServerOptions.Application.MaxAppendEventSize * Faker.Random.Double(1.01, 1.04));
+		record.Data = UnsafeByteOperations.UnsafeWrap(Faker.Random.Bytes(recordSize));
+
+		var request = new AppendRecordsRequest {
+			Records = { record }
+		};
+
+		var appendTask = async () => await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
+
+		var rex = await appendTask.ShouldThrowAsync<RpcException>();
+		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.InvalidArgument);
+	}
+
+	[Test]
 	public async ValueTask multiple_checks_only_no_stream_violates_expected_state(CancellationToken ct) {
 		var checkOnlyStream1 = Fixture.NewStreamName();
 		var checkOnlyStream2 = Fixture.NewStreamName();

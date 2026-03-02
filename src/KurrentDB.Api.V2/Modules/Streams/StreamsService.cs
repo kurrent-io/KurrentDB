@@ -5,6 +5,7 @@
 #pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
 
 // ReSharper disable MethodHasAsyncOverload
+// ReSharper disable ConvertIfStatementToReturnStatement
 
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
@@ -194,10 +195,10 @@ public class StreamsService : StreamsServiceBase {
     class AppendRecordsCommand : ApiCommand<AppendRecordsCommand, AppendRecordsResponse> {
         record struct StreamInfo(string Name, long Revision);
 
-        ImmutableArray<Event>.Builder Events            { get; } = ImmutableArray.CreateBuilder<Event>();
-        ImmutableArray<int>.Builder   Indexes           { get; } = ImmutableArray.CreateBuilder<int>();
-        List<StreamInfo>              Streams           { get; } = [];
-        Dictionary<string, int>       StreamIndexByName { get; } = new(StringComparer.OrdinalIgnoreCase);
+        ImmutableArray<Event>.Builder Events        { get; } = ImmutableArray.CreateBuilder<Event>();
+        ImmutableArray<int>.Builder   Indexes       { get; } = ImmutableArray.CreateBuilder<int>();
+        List<StreamInfo>              StreamEntries { get; } = [];
+        Dictionary<string, int>       StreamLookup  { get; } = new(StringComparer.OrdinalIgnoreCase);
 
         int MaxAppendSize    { get; set; }
         int MaxRecordSize    { get; set; }
@@ -207,14 +208,14 @@ public class StreamsService : StreamsServiceBase {
         public IEnumerable<string> WriteStreams {
             get {
                 for (var i = 0; i < WriteStreamCount; i++)
-                    yield return Streams[i].Name;
+                    yield return StreamEntries[i].Name;
             }
         }
 
         public IEnumerable<string> ReadOnlyStreams {
             get {
-                for (var i = WriteStreamCount; i < Streams.Count; i++)
-                    yield return Streams[i].Name;
+                for (var i = WriteStreamCount; i < StreamEntries.Count; i++)
+                    yield return StreamEntries[i].Name;
             }
         }
 
@@ -230,7 +231,7 @@ public class StreamsService : StreamsServiceBase {
 
         public AppendRecordsCommand WithRequest(AppendRecordsRequest request) {
             ProcessRecords(request.Records);
-            WriteStreamCount = Streams.Count;
+            WriteStreamCount = StreamEntries.Count;
             ApplyConsistencyChecks(request.Checks);
 
             return this;
@@ -255,43 +256,42 @@ public class StreamsService : StreamsServiceBase {
             }
 
             void ApplyConsistencyChecks(IReadOnlyList<ConsistencyCheck> checks) {
-                for (var i = 0; i < checks.Count; i++) {
-                    var check = checks[i];
-                    if (check.TypeCase != ConsistencyCheck.TypeOneofCase.StreamState)
-                        continue;
+	            foreach (var check in checks) {
+		            if (check.TypeCase != ConsistencyCheck.TypeOneofCase.StreamState)
+			            continue;
 
-                    var streamStateCheck = check.StreamState;
-                    var streamIndex = GetOrAddStreamIndex(streamStateCheck.Stream);
-                    var info = Streams[streamIndex];
-                    Streams[streamIndex] = info with {
-	                    Revision = streamStateCheck.ExpectedState
-                    };
-                }
+		            var streamStateCheck = check.StreamState;
+		            var streamIndex = GetOrAddStreamIndex(streamStateCheck.Stream);
+		            var streamEntry = StreamEntries[streamIndex];
+		            StreamEntries[streamIndex] = streamEntry with {
+			            Revision = streamStateCheck.ExpectedState
+		            };
+	            }
             }
 
             int GetOrAddStreamIndex(string stream) {
-	            if (StreamIndexByName.TryGetValue(stream, out var index))
+	            if (StreamLookup.TryGetValue(stream, out var index))
 		            return index;
 
-	            index = Streams.Count;
-	            StreamIndexByName[stream] = index;
-	            Streams.Add(new StreamInfo(stream, ExpectedVersion.Any));
+	            index = StreamEntries.Count;
+	            StreamLookup[stream] = index;
+	            StreamEntries.Add(new StreamInfo(stream, ExpectedVersion.Any));
 	            return index;
             }
         }
 
         protected override Message BuildMessage(IEnvelope callback, ServerCallContext context) {
-            var cid = Guid.NewGuid();
-            var streamIds = ImmutableArray.CreateBuilder<string>(Streams.Count);
-            var revisions = ImmutableArray.CreateBuilder<long>(Streams.Count);
-            foreach (var info in Streams) {
-                streamIds.Add(info.Name);
-                revisions.Add(info.Revision);
+            var correlationId = Guid.NewGuid();
+            var streamIds = ImmutableArray.CreateBuilder<string>(StreamEntries.Count);
+            var revisions = ImmutableArray.CreateBuilder<long>(StreamEntries.Count);
+            foreach (var streamEntry in StreamEntries) {
+                streamIds.Add(streamEntry.Name);
+                revisions.Add(streamEntry.Revision);
             }
 
             return new WriteEvents(
-                internalCorrId: cid,
-                correlationId: cid,
+                internalCorrId: correlationId,
+                correlationId: correlationId,
                 envelope: callback,
                 requireLeader: true,
                 eventStreamIds: streamIds.MoveToImmutable(),
@@ -303,6 +303,8 @@ public class StreamsService : StreamsServiceBase {
             );
         }
 
+        // Accepts non-success results to allow MapToResult to handle
+        // consistency check failures and produce structured violations.
         protected override bool SuccessPredicate(Message message) =>
             message is WriteEventsCompleted { Result: OperationResult.Success or OperationResult.WrongExpectedVersion or OperationResult.StreamDeleted };
 
@@ -310,42 +312,84 @@ public class StreamsService : StreamsServiceBase {
         protected override AppendRecordsResponse MapToResult(Message message) {
             var completed = (WriteEventsCompleted)message;
 
-            if (completed.ConsistencyCheckFailures.Length > 0)
-                throw MapToConsistencyCheckFailed();
+            if (completed.ConsistencyCheckFailures.Length == 0 && WriteStreamCount == StreamEntries.Count)
+                return BuildSuccess();
 
-            var response = new AppendRecordsResponse { Position = completed.CommitPosition };
+            var consistencyViolations = CollectViolations();
 
-            for (var i = 0; i < completed.LastEventNumbers.Length; i++) {
-                response.Revisions.Add(new Contracts.StreamRevision {
-                    Stream   = Streams[i].Name,
-                    Revision = completed.LastEventNumbers.Span[i]
-                });
+            if (consistencyViolations.Count > 0)
+                throw ApiErrors.AppendConsistencyViolation(consistencyViolations);
+
+            return BuildSuccess();
+
+            AppendRecordsResponse BuildSuccess() {
+                var response = new AppendRecordsResponse { Position = completed.CommitPosition };
+
+                for (var i = 0; i < WriteStreamCount; i++) {
+                    response.Revisions.Add(new Contracts.StreamRevision {
+                        Stream   = StreamEntries[i].Name,
+                        Revision = completed.LastEventNumbers.Span[i]
+                    });
+                }
+
+                return response;
             }
 
-            return response;
+            List<ConsistencyViolation> CollectViolations() {
+                var failures = completed.ConsistencyCheckFailures.Span;
+                var checkOnlyCount = StreamEntries.Count - WriteStreamCount;
+                var violations = new List<ConsistencyViolation>(failures.Length + checkOnlyCount);
+                var failedStreamIndexes = new HashSet<int>(failures.Length);
 
-	        RpcException MapToConsistencyCheckFailed() {
-		        var failures = completed.ConsistencyCheckFailures.Span;
-		        var violations = new List<ConsistencyViolation>(failures.Length);
+                foreach (ref readonly var failure in failures) {
+                    failedStreamIndexes.Add(failure.StreamIndex);
+                    violations.Add(new ConsistencyViolation {
+                        StreamState = new() {
+                            Stream        = StreamEntries[failure.StreamIndex].Name,
+                            ExpectedState = failure.ExpectedVersion,
+                            ActualState   = MapActualRevision(failure)
+                        }
+                    });
+                }
 
-		        foreach (ref readonly var failure in failures)
-			        violations.Add(new ConsistencyViolation {
-				        StreamState = new() {
-					        Stream        = Streams[failure.StreamIndex].Name,
-					        ExpectedState = failure.ExpectedVersion,
-					        ActualState   = MapActualRevision(failure)
-				        }
-			        });
+                // Check-only streams the core considered OK may still be tombstoned.
+                var firstNumbers = completed.FirstEventNumbers.Span;
+                for (var i = WriteStreamCount; i < StreamEntries.Count; i++) {
+                    if (failedStreamIndexes.Contains(i))
+                        continue;
 
-		        return ApiErrors.AppendConsistencyViolation(violations);
+                    if (IsTombstoned(firstNumbers, i, completed.Result, StreamEntries[i].Revision))
+                        violations.Add(new ConsistencyViolation {
+                            StreamState = new() {
+                                Stream        = StreamEntries[i].Name,
+                                ExpectedState = StreamEntries[i].Revision,
+                                ActualState   = -100
+                            }
+                        });
+                }
 
-		        [MethodImpl(AggressiveInlining)]
-		        static long MapActualRevision(ConsistencyCheckFailure failure) => failure switch {
-			        { ActualVersion: long.MaxValue } => -100, // Stream is tombstoned
-			        { IsSoftDeleted: true }          => -10, // Stream is soft-deleted
-			        _                                => failure.ActualVersion // Stream not found or revision mismatch
-		        };
-	        }
+                return violations;
+            }
+
+            [MethodImpl(AggressiveInlining)]
+            static long MapActualRevision(ConsistencyCheckFailure failure) => failure switch {
+                { ActualVersion: long.MaxValue } => -100,
+                { IsSoftDeleted: true }          => -10,
+                _                                => failure.ActualVersion
+            };
+
+            static bool IsTombstoned(ReadOnlySpan<long> firstNumbers, int streamIndex, OperationResult result, long expectedRevision) {
+                // When all consistency checks pass (firstNumbers populated), core may
+                // treat a tombstoned check-only stream as OK (e.g. with ExpectedVersion.Any or ExpectedVersion.NoStream).
+                // We detect it here via the long.MinValue sentinel to report as a violation.
+                if (firstNumbers.Length > 0)
+                    return firstNumbers[streamIndex] is long.MinValue;
+
+                // Fallback when firstNumbers is empty (another stream's check failed).
+                // This stream isn't in the explicit failures, but may still be tombstoned.
+                return result is OperationResult.StreamDeleted
+                    && expectedRevision is ExpectedVersion.Any or ExpectedVersion.NoStream;
+            }
         }
 
         protected override RpcException? MapToError(Message message) =>
