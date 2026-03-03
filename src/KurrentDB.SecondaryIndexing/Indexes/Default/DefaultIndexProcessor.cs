@@ -31,8 +31,12 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	private readonly ILongHasher<string> _hasher;
 	private readonly ILogger<DefaultIndexProcessor> _log;
 	private readonly BufferedView _appender;
+	private Atomic<TFPos> _lastPosition;
 
-	public TFPos LastIndexedPosition { get; private set; }
+	public TFPos LastIndexedPosition {
+		get => _lastPosition.Value;
+		private set => _lastPosition.Value = value;
+	}
 
 	public DefaultIndexProcessor(
 		DuckDBConnectionPool db,

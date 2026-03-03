@@ -46,13 +46,13 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 	private readonly ILogger<UserIndexProcessor> _log;
 
 	private ulong _sequenceId;
-	private TFPos _lastPosition;
+	private Atomic<TFPos> _lastPosition;
 	private readonly BufferedView _appender;
 	private Atomic.Boolean _committing;
 
 	public string IndexName { get; }
 
-	public override TFPos GetLastPosition() => _lastPosition;
+	public override TFPos GetLastPosition() => _lastPosition.Value;
 	public override SecondaryIndexProgressTracker Tracker { get; }
 
 	public UserIndexProcessor(
@@ -95,10 +95,11 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 		var tracker = new SecondaryIndexProgressTracker(indexName, serviceName, meter, clock ?? TimeProvider.System,
 			loggerFactory.CreateLogger<SecondaryIndexProgressTracker>(), getLastAppendedRecord);
 
-		(_lastPosition, var lastTimestamp) = GetLastKnownRecord();
-		_log.LogUserIndexLoadedLastKnownLogPosition(IndexName, _lastPosition, lastTimestamp);
-		tracker.InitLastIndexed(_lastPosition.CommitPosition, lastTimestamp);
+		var (lastPosition, lastTimestamp) = GetLastKnownRecord();
+		_log.LogUserIndexLoadedLastKnownLogPosition(IndexName, lastPosition, lastTimestamp);
+		tracker.InitLastIndexed(lastPosition.CommitPosition, lastTimestamp);
 
+		_lastPosition.Write(in lastPosition);
 		Tracker = tracker;
 	}
 
@@ -111,9 +112,10 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 			return false;
 
 		var canHandle = CanHandleEvent(resolvedEvent, out var field);
-		_lastPosition = resolvedEvent.OriginalPosition!.Value;
+		var eventPosition = resolvedEvent.OriginalPosition!.Value;
 
 		if (!canHandle) {
+			_lastPosition.Write(in eventPosition);
 			Tracker.RecordIndexed(resolvedEvent);
 			return false;
 		}
@@ -139,6 +141,8 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 			row.Add(created);
 			field?.AppendTo(row);
 		}
+
+		_lastPosition.Write(in eventPosition);
 
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(_queryStreamName, resolvedEvent));
 		if (field is not null)
