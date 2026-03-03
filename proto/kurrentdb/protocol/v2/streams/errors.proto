@@ -243,13 +243,16 @@ message AppendConsistencyViolationErrorDetails {
 
 // Details for a single consistency check that was violated.
 message ConsistencyViolation {
+  // Index of the check in the original consistency_checks list.
+  int32 check_index = 1;
+
   oneof type {
     // The stream was not at the expected state.
-    StreamStateViolation stream_state = 1;
+    StreamStateViolation stream_state = 2;
 
     // UNIMPLEMENTED: This is a placeholder for future support of server-side query predicates.
     // // A query predicate evaluated to false.
-    // QueryPredicateViolation query_predicate = 2;
+    // QueryPredicateViolation query_predicate = 3;
   }
 
   // A stream state check was violated because the actual state did not match the expected state.
@@ -277,13 +280,4 @@ message ConsistencyViolation {
     // Negative values are RevisionConstants sentinels: -1 (NO_STREAM), -10 (DELETED), -100 (TOMBSTONED).
     sint64 actual_state = 3;
   }
-
-  // UNIMPLEMENTED: Placeholder for future support of server-side query predicates evaluated before commit.
-  // // A query predicate was violated — the expression evaluated to false.
-  // message QueryPredicateViolation {
-  //   // An optional message describing why the predicate was not satisfied.
-  //   // May include details such as which conditions within the expression failed.
-  //   // Intended for debugging and logging; clients should not rely on its content or format.
-  //   string message = 1;
-  // }
 }

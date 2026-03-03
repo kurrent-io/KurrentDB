@@ -3,6 +3,7 @@
 
 using Google.Protobuf;
 using Grpc.Core;
+using KurrentDB.Api.Streams;
 using KurrentDB.Api.Tests.Fixtures;
 using KurrentDB.Protocol.V2.Streams;
 using KurrentDB.Protocol.V2.Streams.Errors;
@@ -71,7 +72,7 @@ public class AppendRecordsTests {
 	public async ValueTask multiple_checks_only_no_stream_violates_expected_state(CancellationToken ct) {
 		var checkOnlyStream1 = Fixture.NewStreamName();
 		var checkOnlyStream2 = Fixture.NewStreamName();
-		var writeOnlyStream = Fixture.NewStreamName();
+		var writeOnlyStream  = Fixture.NewStreamName();
 
 		ConsistencyCheck revisionCheck     = new() { StreamState = new StreamStateCheck { Stream = checkOnlyStream1, ExpectedState = 10L } };
 		ConsistencyCheck streamExistsCheck = new() { StreamState = new StreamStateCheck { Stream = checkOnlyStream2, ExpectedState = StreamExists } };
@@ -106,11 +107,12 @@ public class AppendRecordsTests {
 		var checkOnlyStream1 = Fixture.NewStreamName();
 		var checkOnlyStream2 = Fixture.NewStreamName();
 		var checkOnlyStream3 = Fixture.NewStreamName();
-		var writeOnlyStream = Fixture.NewStreamName();
+		var writeOnlyStream  = Fixture.NewStreamName();
 
 		var seedRequest = new AppendRecordsRequest {
 			Records = { CreateRecord(checkOnlyStream1), CreateRecord(checkOnlyStream2), CreateRecord(checkOnlyStream3) }
 		};
+
 		await Fixture.StreamsClient.AppendRecordsAsync(seedRequest, cancellationToken: ct);
 		await Fixture.SystemClient.Management.HardDeleteStream(checkOnlyStream1, cancellationToken: ct);
 		await Fixture.SystemClient.Management.HardDeleteStream(checkOnlyStream2, cancellationToken: ct);
@@ -188,6 +190,7 @@ public class AppendRecordsTests {
 		var seedRequest = new AppendRecordsRequest {
 			Records = { CreateRecord(checkOnlyStream) }
 		};
+
 		await Fixture.StreamsClient.AppendRecordsAsync(seedRequest, cancellationToken: ct);
 		await Fixture.SystemClient.Management.HardDeleteStream(checkOnlyStream, cancellationToken: ct);
 
@@ -226,6 +229,7 @@ public class AppendRecordsTests {
 		var seedRequest = new AppendRecordsRequest {
 			Records = { Enumerable.Range(0, 11).Select(_ => CreateRecord(checkOnlyStream)) }
 		};
+
 		await Fixture.StreamsClient.AppendRecordsAsync(seedRequest, cancellationToken: ct);
 
 		var request = new AppendRecordsRequest {
@@ -367,7 +371,7 @@ public class AppendRecordsTests {
 				new ConsistencyCheck {
 					StreamState = new StreamStateCheck {
 						Stream = checkOnlyStream,
-						ExpectedState = 2L
+						ExpectedState = ExpectedStreamCondition.Deleted
 					}
 				}
 			}

@@ -2,16 +2,15 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 // ReSharper disable CheckNamespace
+#pragma warning disable CS8321 // Local function declared but never used
 
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Text;
 using Grpc.Core;
 using Humanizer;
 using KurrentDB.Api.Infrastructure.Errors;
-using KurrentDB.Core.Data;
+using KurrentDB.Api.Streams;
 using KurrentDB.Protocol.V2.Streams.Errors;
-using static System.Runtime.CompilerServices.MethodImplOptions;
 
 namespace KurrentDB.Api.Errors;
 
@@ -130,17 +129,33 @@ public static partial class ApiErrors {
     }
 
 	public static RpcException AppendConsistencyViolation(List<ConsistencyViolation> violations) {
-		// ------------------------------------------------------------------------------
-		// Produces a human-readable message listing each violated consistency check.
-		// ------------------------------------------------------------------------------
+		// ----------------------------------------------------------------------------------
+		// Consistency check result matrix
+		// ----------------------------------------------------------------------------------
+		//
+		// +--------------------+------------+-----------+---------------+--------------+
+		// | Expected \ Actual  | Rev M (≥0) | NO_STREAM | DELETED       | TOMBSTONED   |
+		// +--------------------+------------+-----------+---------------+--------------+
+		// | Revision N  (≥0)   | ✓ (M=N)    | ✗ -1      | ✓ / ✗ -10 [2] | ✗ -100       |
+		// | NO_STREAM   (-1)   | ✗ M        | ✓         | ✓             | ✓/✗ -100 [1] |
+		// | ANY         (-2)   | ✓          | ✓         | ✓             | ✓/✗ -100 [1] |
+		// | EXISTS      (-4)   | ✓          | ✗ -1      | ✗ -10         | ✗ -100       |
+		// | DELETED     (-10)  | ✗ M        | ✗ -1      | ✓             | ✗ -100       |
+		// | TOMBSTONED  (-100) | ✓          | ✗ -1      | ✗ -10         | ✓            |
+		// +--------------------+------------+-----------+---------------+--------------+
+		//
+		// ✓ = success (no violation), ✗ = violation (actual_state value shown)
+
+		// [1] Contextual: ✗ for append target (can't write to tombstoned stream),
+		//     but should be ✓ for consistency checks (tombstoned = does not exist).
+		// [2] Open question: should the actual_state return M or -10?
+		//
 		// Example message:
 		//   Failed to append transaction due to consistency violations.
 		//
-		//   Consistency check failed on stream(s):
-		//    - stream-1: Expected State: NoStream. Actual State: Revision 5.
-		//    - stream-2: Expected State: Revision 10. Actual State: Deleted.
-		//    - stream-3: Query predicate 'user_id = 123' was not satisfied.
-		// ------------------------------------------------------------------------------
+		//    - stream-1: Stream already exists at revision 5.
+		//    - stream-2: Stream is deleted but was expected to be at revision 10.
+		// ----------------------------------------------------------------------------------
 
 		Debug.Assert(violations.Count > 0, "The violations list must not be empty!");
 
@@ -153,7 +168,7 @@ public static partial class ApiErrors {
 		return RpcExceptions.FromError(StreamsError.AppendConsistencyViolation, message, details);
 
 		static string FormatMessage(List<ConsistencyViolation> violations) {
-			var builder = new StringBuilder("Failed to append transaction due to consistency violations.");
+			var builder = new StringBuilder("Append failed due to consistency violations.");
 
 			var streamStates = violations
 				.Where(v => v.TypeCase is ConsistencyViolation.TypeOneofCase.StreamState)
@@ -161,28 +176,45 @@ public static partial class ApiErrors {
 				.ToList();
 
 			if (streamStates.Count > 0) {
-				builder.AppendLine().AppendLine().Append("Consistency check failed on stream(s):");
-
+				builder.AppendLine();
 				foreach (var ssv in streamStates)
-					builder.AppendLine().Append(
-						$" - {ssv.Stream}: Expected State: {FormatStreamState(ssv.ExpectedState)}. " +
-						$"Actual State: {FormatStreamState(ssv.ActualState)}."
-					);
+					builder.AppendLine().Append($" - {FormatViolation(ssv)}");
 			}
 
 			return builder.ToString();
 		}
 
-		[MethodImpl(AggressiveInlining)]
-		static string FormatStreamState(long state) => state switch {
-			>= 0                         => $"Revision {state}",
-			-10                          => "Deleted",
-			-100                         => "Tombstoned",
-			ExpectedVersion.NoStream     => "NoStream",
-			ExpectedVersion.Any          => "Any",
-			ExpectedVersion.StreamExists => "StreamExists",
-			_                            => $"Unknown ({state})"
-		};
-	}
+		static string FormatViolation(ConsistencyViolation.Types.StreamStateViolation v) =>
+			(v.ExpectedState, v.ActualState) switch {
+				// REVISION
+				(>= 0, >= 0) => $"Stream '{v.Stream}' is at revision {v.ActualState}, expected revision {v.ExpectedState}.",
+				(>= 0, ActualStreamCondition.NotFound) => $"Stream '{v.Stream}' does not exist, expected revision {v.ExpectedState}.",
+				(>= 0, ActualStreamCondition.Deleted) => $"Stream '{v.Stream}' is deleted, expected revision {v.ExpectedState}.",
+				(>= 0, ActualStreamCondition.Tombstoned) => $"Stream '{v.Stream}' is tombstoned, expected revision {v.ExpectedState}.",
 
+				// NO_STREAM
+				(ExpectedStreamCondition.NoStream, >= 0) => $"Stream '{v.Stream}' already exists at revision {v.ActualState}.",
+				(ExpectedStreamCondition.NoStream, ActualStreamCondition.Tombstoned) => $"Stream '{v.Stream}' is tombstoned.", // only on target stream
+
+				// ANY
+				(ExpectedStreamCondition.Any, ActualStreamCondition.NotFound) => $"Stream '{v.Stream}' is tombstoned.", // only on target stream when no checks were provided
+
+				// EXISTS
+				(ExpectedStreamCondition.Exists, ActualStreamCondition.NotFound) => $"Stream '{v.Stream}' does not exist.",
+				(ExpectedStreamCondition.Exists, ActualStreamCondition.Deleted) => $"Stream '{v.Stream}' is deleted.",
+				(ExpectedStreamCondition.Exists, ActualStreamCondition.Tombstoned) => $"Stream '{v.Stream}' is tombstoned.",
+
+				// DELETED
+				(ExpectedStreamCondition.Deleted, >= 0) => $"Stream '{v.Stream}' is at revision {v.ActualState}, explicitly expected deleted.",
+				(ExpectedStreamCondition.Deleted, ActualStreamCondition.NotFound) => $"Stream '{v.Stream}' does not exist, explicitly expected deleted.",
+				(ExpectedStreamCondition.Deleted, ActualStreamCondition.Tombstoned) => $"Stream '{v.Stream}' is tombstoned, explicitly expected deleted.",
+
+				// TOMBSTONED
+				(ExpectedStreamCondition.Tombstoned, ActualStreamCondition.NotFound) => $"Stream '{v.Stream}' does not exist, explicitly expected tombstoned.",
+				(ExpectedStreamCondition.Tombstoned, ActualStreamCondition.Deleted) => $"Stream '{v.Stream}' is deleted, explicitly expected tombstoned.",
+
+				// WHATEVER
+				_ => $"Stream '{v.Stream}': expected state {v.ExpectedState}, actual state {v.ActualState}."
+			};
+	}
 }
