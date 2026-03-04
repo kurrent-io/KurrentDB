@@ -207,7 +207,7 @@ public static partial class ClientMessage {
 
 			// each expected version must be valid
 			foreach (var expectedVersion in expectedVersions.Span) {
-				if (expectedVersion is < ExpectedVersion.StreamExists or ExpectedVersion.Invalid)
+				if (expectedVersion is (< ExpectedVersion.StreamExists and not ExpectedVersion.SoftDeleted) or ExpectedVersion.Invalid)
 					throw new ArgumentOutOfRangeException(nameof(expectedVersions), $"Invalid expected version: {expectedVersion}");
 			}
 

@@ -10,4 +10,5 @@ public static class ExpectedVersion {
 
 	public const long Invalid = -3;
 	public const long StreamExists = -4;
+	public const long SoftDeleted = -10;
 }

@@ -195,6 +195,12 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 			}
 		}
 
+		if (expectedVersion is ExpectedVersion.SoftDeleted) {
+			if (await IsSoftDeleted(streamId, token))
+				return CommitOk(streamId, expectedVersion, curVersion, eventIds.Length, isSoftDeleted: true);
+			return new(CommitDecision.ConsistencyCheckFailure, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: false);
+		}
+
 		// idempotency checks
 		if (expectedVersion is ExpectedVersion.Any or ExpectedVersion.StreamExists) {
 			var first = true;
@@ -256,7 +262,7 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 					return CommitOk(streamId, expectedVersion, curVersion, eventIds.Length, isSoftDeleted: true);
 
 				// trying to write new events earlier than the end of the stream
-				return new(CommitDecision.ConsistencyCheckFailure, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: null);
+				return new(CommitDecision.ConsistencyCheckFailure, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: await IsSoftDeletedOrNull(streamId, token));
 			}
 
 			if (eventIds.Length == 0) {
@@ -265,7 +271,7 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 					return CommitOk(streamId, expectedVersion, curVersion, eventIds.Length, isSoftDeleted: true);
 
 				// expected the stream to be at an earlier version than it is
-				return new(CommitDecision.ConsistencyCheckFailure, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: null);
+				return new(CommitDecision.ConsistencyCheckFailure, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: await IsSoftDeletedOrNull(streamId, token));
 			}
 
 			// we are writing events and they are all written already
@@ -289,7 +295,7 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 
 		// writing after the end -> fail
 		if (expectedVersion > curVersion)
-			return new(CommitDecision.ConsistencyCheckFailure, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: null);
+			return new(CommitDecision.ConsistencyCheckFailure, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: await IsSoftDeletedOrNull(streamId, token));
 
 		// writing exactly to the end (expectedVersion == currentVersion) -> ok
 		return CommitOk(streamId, expectedVersion, curVersion, eventIds.Length, await IsSoftDeleted(streamId, token));
@@ -485,6 +491,13 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 
 	public async ValueTask<bool> IsSoftDeleted(TStreamId streamId, CancellationToken token) {
 		return (await GetStreamMetadata(streamId, token)).TruncateBefore is EventNumber.DeletedStream;
+	}
+
+	// Returns true if the stream is soft-deleted, null otherwise.
+	// Used in failure paths to surface soft-deletion state for accurate error reporting
+	// without changing existing behavior for non-soft-deleted streams.
+	async ValueTask<bool?> IsSoftDeletedOrNull(TStreamId streamId, CancellationToken token) {
+		return await IsSoftDeleted(streamId, token) ? true : null;
 	}
 
 	public ValueTask<long> GetStreamLastEventNumber(TStreamId streamId, CancellationToken token) {

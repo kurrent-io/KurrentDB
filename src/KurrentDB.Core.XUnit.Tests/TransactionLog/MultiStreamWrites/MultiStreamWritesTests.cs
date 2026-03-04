@@ -1245,7 +1245,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			Assert.Equal((streamState, expectedVersion) switch {
 				(StreamState.Tombstoned, _) =>
 					false,
-				(StreamState.SoftDeletedAtV2, ExpectedVersion.StreamExists) =>
+				(StreamState.SoftDeletedAtV2, _) =>
 					true,
 				(_, ExpectedVersion.StreamExists) =>
 					false,
