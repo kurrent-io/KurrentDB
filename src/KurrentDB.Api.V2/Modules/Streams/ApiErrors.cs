@@ -197,6 +197,7 @@ public static partial class ApiErrors {
 				(ExpectedStreamCondition.NoStream, ActualStreamCondition.Tombstoned) => $"Stream '{v.Stream}' is tombstoned.", // only on target stream
 
 				// ANY
+				(ExpectedStreamCondition.Any, ActualStreamCondition.Tombstoned) => $"Stream '{v.Stream}' is tombstoned.",
 				(ExpectedStreamCondition.Any, ActualStreamCondition.NotFound) => $"Stream '{v.Stream}' is tombstoned.", // only on target stream when no checks were provided
 
 				// EXISTS

@@ -4,14 +4,29 @@
 using Grpc.Core;
 using KurrentDB.Api.Streams;
 using KurrentDB.Api.Tests.Fixtures;
+using KurrentDB.Protocol.V2.Streams;
 using KurrentDB.Protocol.V2.Streams.Errors;
 using static KurrentDB.Api.Tests.Streams.AppendRecords.AppendRecordsFixture;
 
 namespace KurrentDB.Api.Tests.Streams.AppendRecords.WriteOnly;
 
+[Category("AppendRecords")]
 public class WhenExpectingNoStream {
 	[ClassDataSource<ClusterVNodeTestContext>(Shared = SharedType.PerTestSession)]
 	public required ClusterVNodeTestContext Fixture { get; [UsedImplicitly] init; }
+
+	static AppendRecordsRequest WriteOnlyRequest(string stream, long expectedState) =>
+		new() {
+			Records = { CreateRecord(stream) },
+			Checks = {
+				new ConsistencyCheck {
+					StreamState = new () {
+						Stream        = stream,
+						ExpectedState = expectedState
+					}
+				}
+			}
+		};
 
 	[Test]
 	public async ValueTask fails_when_stream_has_revision(CancellationToken ct) {
@@ -29,6 +44,7 @@ public class WhenExpectingNoStream {
 		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
 		await Assert.That(details).IsNotNull();
 		await Assert.That(details!.Violations).HasCount(1);
+		await Assert.That(details.Violations[0].CheckIndex).IsEqualTo(0);
 		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(stream);
 		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(ExpectedStreamCondition.NoStream);
 	}
@@ -49,8 +65,7 @@ public class WhenExpectingNoStream {
 	[Test]
 	public async ValueTask succeeds_when_stream_is_deleted(CancellationToken ct) {
 		var stream = Fixture.NewStreamName();
-		await Fixture.StreamsClient.AppendRecordsAsync(SeedRequest(stream), cancellationToken: ct);
-		await Fixture.SystemClient.Management.SoftDeleteStream(stream, cancellationToken: ct);
+		await SeedDeletedStream(Fixture, stream, ct: ct);
 
 		var response = await Fixture.StreamsClient.AppendRecordsAsync(
 			WriteOnlyRequest(stream, ExpectedStreamCondition.NoStream),
@@ -64,8 +79,7 @@ public class WhenExpectingNoStream {
 	[Test]
 	public async ValueTask fails_when_stream_is_tombstoned(CancellationToken ct) {
 		var stream = Fixture.NewStreamName();
-		await Fixture.StreamsClient.AppendRecordsAsync(SeedRequest(stream), cancellationToken: ct);
-		await Fixture.SystemClient.Management.HardDeleteStream(stream, cancellationToken: ct);
+		await SeedTombstonedStream(Fixture, stream, ct: ct);
 
 		var act = async () => await Fixture.StreamsClient.AppendRecordsAsync(
 			WriteOnlyRequest(stream, ExpectedStreamCondition.NoStream),
@@ -78,6 +92,7 @@ public class WhenExpectingNoStream {
 		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
 		await Assert.That(details).IsNotNull();
 		await Assert.That(details!.Violations).HasCount(1);
+		await Assert.That(details.Violations[0].CheckIndex).IsEqualTo(0);
 		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(stream);
 		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(ExpectedStreamCondition.NoStream);
 		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(ActualStreamCondition.Tombstoned);

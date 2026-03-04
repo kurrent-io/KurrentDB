@@ -10,7 +10,7 @@ using static KurrentDB.Api.Tests.Streams.AppendRecords.AppendRecordsFixture;
 
 namespace KurrentDB.Api.Tests.Streams.AppendRecords;
 
-public class AppendRecordsGeneralTests {
+public class AppendRecordsMiscTests {
 	[ClassDataSource<ClusterVNodeTestContext>(Shared = SharedType.PerTestSession)]
 	public required ClusterVNodeTestContext Fixture { get; [UsedImplicitly] init; }
 

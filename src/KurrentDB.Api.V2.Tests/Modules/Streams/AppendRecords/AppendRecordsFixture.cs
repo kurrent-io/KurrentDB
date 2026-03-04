@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Google.Protobuf;
+using KurrentDB.Api.Tests.Fixtures;
 using KurrentDB.Protocol.V2.Streams;
 
 namespace KurrentDB.Api.Tests.Streams.AppendRecords;
@@ -23,34 +24,13 @@ static class AppendRecordsFixture {
 			Records = { Enumerable.Range(0, count).Select(_ => CreateRecord(stream)) }
 		};
 
-	public static AppendRecordsRequest WriteRequest(string stream) =>
-		new() {
-			Records = { CreateRecord(stream) }
-		};
+	public static async ValueTask SeedDeletedStream(ClusterVNodeTestContext fixture, string stream, int count = 1, CancellationToken ct = default) {
+		await fixture.StreamsClient.AppendRecordsAsync(SeedRequest(stream, count), cancellationToken: ct);
+		await fixture.SystemClient.Management.SoftDeleteStream(stream, cancellationToken: ct);
+	}
 
-	public static AppendRecordsRequest WriteOnlyRequest(string stream, long expectedState) =>
-		new() {
-			Records = { CreateRecord(stream) },
-			Checks = {
-				new ConsistencyCheck {
-					StreamState = new ConsistencyCheck.Types.StreamStateCheck {
-						Stream        = stream,
-						ExpectedState = expectedState
-					}
-				}
-			}
-		};
-
-	public static AppendRecordsRequest CheckOnlyRequest(string writeStream, string checkStream, long expectedState) =>
-		new() {
-			Records = { CreateRecord(writeStream) },
-			Checks = {
-				new ConsistencyCheck {
-					StreamState = new ConsistencyCheck.Types.StreamStateCheck {
-						Stream        = checkStream,
-						ExpectedState = expectedState
-					}
-				}
-			}
-		};
+	public static async ValueTask SeedTombstonedStream(ClusterVNodeTestContext fixture, string stream, int count = 1, CancellationToken ct = default) {
+		await fixture.StreamsClient.AppendRecordsAsync(SeedRequest(stream, count), cancellationToken: ct);
+		await fixture.SystemClient.Management.HardDeleteStream(stream, cancellationToken: ct);
+	}
 }

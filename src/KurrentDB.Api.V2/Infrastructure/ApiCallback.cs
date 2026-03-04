@@ -82,9 +82,6 @@ abstract class ApiCallbackBase<TState, TResponse>(ServerCallContext context, in 
                 try {
                     Operation.TrySetResult(MapToResponse(message, State, CallContext));
                 }
-                catch (RpcException ex) {
-                    Operation.TrySetException(ex);
-                }
                 catch (Exception ex) when (ex is not OperationCanceledException) {
                     Operation.TrySetException(ApiErrors.InternalServerError(ex, $"{FriendlyName} failed to map response: {ex.Message}"));
                 }

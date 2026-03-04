@@ -3,16 +3,15 @@
 
 using FluentValidation;
 using KurrentDB.Api.Infrastructure.FluentValidation;
-using KurrentDB.Core.Data;
 using KurrentDB.Protocol.V2.Streams;
 using static KurrentDB.Protocol.V2.Streams.ConsistencyCheck;
 
 namespace KurrentDB.Api.Streams.Validators;
 
 class ConsistencyCheckValidator : ValidatorBase<ConsistencyCheckValidator, ConsistencyCheck> {
-	static readonly List<long> ValidExpectedRevisions = [
-		ExpectedVersion.NoStream,
-		ExpectedVersion.StreamExists
+	static readonly List<long> ValidExpectedStates = [
+		ExpectedStreamCondition.NoStream,
+		ExpectedStreamCondition.Exists
 	];
 
 	public ConsistencyCheckValidator() {
@@ -25,8 +24,8 @@ class ConsistencyCheckValidator : ValidatorBase<ConsistencyCheckValidator, Consi
 				.SetValidator(StreamNameValidator.Instance);
 
 			RuleFor(x => x.StreamState.ExpectedState)
-				.Must(x => x >= 0 || ValidExpectedRevisions.Contains(x))
-				.WithMessage("Expected state must be positive or one of the allowed constants: NoStream (-1) or Exists (-4). Any (-2) is not allowed.");
+				.Must(x => x >= 0 || ValidExpectedStates.Contains(x))
+				.WithMessage("Expected state must be positive or one of the allowed constants: NoStream (-1), Exists (-4), Deleted (-10), or Tombstoned (-100). Any (-2) is not allowed.");
 		});
 	}
 }
