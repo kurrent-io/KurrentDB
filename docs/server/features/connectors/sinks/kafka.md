@@ -94,23 +94,26 @@ The Kafka sink connector relies on its own Kafka retry mechanism and doesn't inc
 
 ## Delivery Guarantees
 
-The Kafka sink guarantees at least once delivery through Kafka's built-in
-idempotent producer mechanism and configurable retry settings. Messages are only
-checkpointed after successful delivery confirmation from Kafka.
+The Kafka sink provides at-least-once delivery by using Kafka's idempotent
+producer and retry settings. Messages are only checkpointed after successful
+delivery confirmation from Kafka.
 
-The `waitForBrokerAck` setting controls delivery behavior:
+The `waitForBrokerAck` setting controls *when the connector waits* for the
+broker acknowledgment:
 
-- If enabled, the connector blocks until the broker confirms
-  delivery before advancing its checkpoint, trading throughput for stronger
-  delivery guarantees.
-- If disabled, messages are sent asynchronously and checkpointed after
-  confirmed delivery, yielding higher throughput at the cost of weaker ordering
-  guarantees.
+- If enabled, the connector waits for the broker to confirm
+  delivery before moving its checkpoint. This reduces throughput but increases
+  backpressure visibility.
+- If disabled, the connector does not block while waiting for the broker response. However,
+  checkpointing still only occurs after the broker confirms delivery.
 
-If a failure occurs before acknowledgment, the retry mechanism will attempt
-redelivery. If the connector restarts, it will resume from the last
-successfully checkpointed position and may reprocess messages that were sent but
-not yet checkpointed.
+The Kafka sink uses an idempotent producer by default, so when writing to a
+single partition, Kafka preserves message order regardless of the `waitForBrokerAck` setting.
+
+If a failure occurs before acknowledgment, the message will be redelivered by
+Kafka's built-in retry mechanism. On restart, the connector resumes from the
+last checkpointed position, so any messages that were sent but not yet
+checkpointed may be sent again.
 
 ## Headers
 
