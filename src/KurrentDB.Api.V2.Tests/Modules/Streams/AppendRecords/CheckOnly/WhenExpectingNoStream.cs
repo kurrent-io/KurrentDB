@@ -15,19 +15,6 @@ public class WhenExpectingNoStream {
 	[ClassDataSource<ClusterVNodeTestContext>(Shared = SharedType.PerTestSession)]
 	public required ClusterVNodeTestContext Fixture { get; [UsedImplicitly] init; }
 
-	static AppendRecordsRequest CheckOnlyRequest(string writeStream, string checkStream, long expectedState) =>
-		new() {
-			Records = { CreateRecord(writeStream) },
-			Checks = {
-				new ConsistencyCheck {
-					StreamState = new () {
-						Stream        = checkStream,
-						ExpectedState = expectedState
-					}
-				}
-			}
-		};
-
 	[Test]
 	public async ValueTask fails_when_stream_has_revision(CancellationToken ct) {
 		var checkStream = Fixture.NewStreamName();
@@ -35,7 +22,17 @@ public class WhenExpectingNoStream {
 		await Fixture.StreamsClient.AppendRecordsAsync(SeedRequest(checkStream, count: 3), cancellationToken: ct);
 
 		var act = async () => await Fixture.StreamsClient.AppendRecordsAsync(
-			CheckOnlyRequest(writeStream, checkStream, ExpectedStreamCondition.NoStream),
+			new AppendRecordsRequest {
+				Records = { CreateRecord(writeStream) },
+				Checks = {
+					new ConsistencyCheck {
+						StreamState = new () {
+							Stream        = checkStream,
+							ExpectedState = ExpectedStreamCondition.NoStream
+						}
+					}
+				}
+			},
 			cancellationToken: ct
 		);
 
@@ -56,7 +53,17 @@ public class WhenExpectingNoStream {
 		var writeStream = Fixture.NewStreamName();
 
 		var response = await Fixture.StreamsClient.AppendRecordsAsync(
-			CheckOnlyRequest(writeStream, checkStream, ExpectedStreamCondition.NoStream),
+			new AppendRecordsRequest {
+				Records = { CreateRecord(writeStream) },
+				Checks = {
+					new ConsistencyCheck {
+						StreamState = new () {
+							Stream        = checkStream,
+							ExpectedState = ExpectedStreamCondition.NoStream
+						}
+					}
+				}
+			},
 			cancellationToken: ct
 		);
 
@@ -72,7 +79,17 @@ public class WhenExpectingNoStream {
 		await SeedDeletedStream(Fixture, checkStream, ct: ct);
 
 		var response = await Fixture.StreamsClient.AppendRecordsAsync(
-			CheckOnlyRequest(writeStream, checkStream, ExpectedStreamCondition.NoStream),
+			new AppendRecordsRequest {
+				Records = { CreateRecord(writeStream) },
+				Checks = {
+					new ConsistencyCheck {
+						StreamState = new () {
+							Stream        = checkStream,
+							ExpectedState = ExpectedStreamCondition.NoStream
+						}
+					}
+				}
+			},
 			cancellationToken: ct
 		);
 
@@ -88,7 +105,17 @@ public class WhenExpectingNoStream {
 		await SeedTombstonedStream(Fixture, checkStream, ct: ct);
 
 		var response = await Fixture.StreamsClient.AppendRecordsAsync(
-			CheckOnlyRequest(writeStream, checkStream, ExpectedStreamCondition.NoStream),
+			new AppendRecordsRequest {
+				Records = { CreateRecord(writeStream) },
+				Checks = {
+					new ConsistencyCheck {
+						StreamState = new () {
+							Stream        = checkStream,
+							ExpectedState = ExpectedStreamCondition.NoStream
+						}
+					}
+				}
+			},
 			cancellationToken: ct
 		);
 

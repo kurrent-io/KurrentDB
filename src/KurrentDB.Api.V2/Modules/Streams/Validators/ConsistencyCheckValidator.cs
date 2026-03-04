@@ -11,7 +11,9 @@ namespace KurrentDB.Api.Streams.Validators;
 class ConsistencyCheckValidator : ValidatorBase<ConsistencyCheckValidator, ConsistencyCheck> {
 	static readonly List<long> ValidExpectedStates = [
 		ExpectedStreamCondition.NoStream,
-		ExpectedStreamCondition.Exists
+		ExpectedStreamCondition.Exists,
+		ExpectedStreamCondition.Deleted,
+		ExpectedStreamCondition.Tombstoned
 	];
 
 	public ConsistencyCheckValidator() {

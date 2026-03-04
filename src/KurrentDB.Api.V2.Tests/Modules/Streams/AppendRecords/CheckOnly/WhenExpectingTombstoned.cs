@@ -11,26 +11,24 @@ using static KurrentDB.Api.Tests.Streams.AppendRecords.AppendRecordsFixture;
 namespace KurrentDB.Api.Tests.Streams.AppendRecords.CheckOnly;
 
 [Category("AppendRecords")]
-public class WhenExpectingRevision {
-	const long ExpectedRevision = 10L;
-
+public class WhenExpectingTombstoned {
 	[ClassDataSource<ClusterVNodeTestContext>(Shared = SharedType.PerTestSession)]
 	public required ClusterVNodeTestContext Fixture { get; [UsedImplicitly] init; }
 
 	[Test]
-	public async ValueTask succeeds_when_stream_has_revision(CancellationToken ct) {
+	public async ValueTask succeeds_when_stream_is_tombstoned(CancellationToken ct) {
 		var checkStream = Fixture.NewStreamName();
 		var writeStream = Fixture.NewStreamName();
-		await Fixture.StreamsClient.AppendRecordsAsync(SeedRequest(checkStream, count: 11), cancellationToken: ct);
+		await SeedTombstonedStream(Fixture, checkStream, ct: ct);
 
 		var response = await Fixture.StreamsClient.AppendRecordsAsync(
 			new AppendRecordsRequest {
 				Records = { CreateRecord(writeStream) },
 				Checks = {
 					new ConsistencyCheck {
-						StreamState = new () {
+						StreamState = new() {
 							Stream        = checkStream,
-							ExpectedState = ExpectedRevision
+							ExpectedState = ExpectedStreamCondition.Tombstoned
 						}
 					}
 				}
@@ -53,9 +51,9 @@ public class WhenExpectingRevision {
 				Records = { CreateRecord(writeStream) },
 				Checks = {
 					new ConsistencyCheck {
-						StreamState = new () {
+						StreamState = new() {
 							Stream        = checkStream,
-							ExpectedState = ExpectedRevision
+							ExpectedState = ExpectedStreamCondition.Tombstoned
 						}
 					}
 				}
@@ -71,24 +69,56 @@ public class WhenExpectingRevision {
 		await Assert.That(details!.Violations).HasCount(1);
 		await Assert.That(details.Violations[0].CheckIndex).IsEqualTo(0);
 		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
-		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(ExpectedRevision);
+		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(ExpectedStreamCondition.Tombstoned);
 		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(ActualStreamCondition.NotFound);
+	}
+
+	[Test]
+	public async ValueTask fails_when_stream_has_revision(CancellationToken ct) {
+		var checkStream = Fixture.NewStreamName();
+		var writeStream = Fixture.NewStreamName();
+		await Fixture.StreamsClient.AppendRecordsAsync(SeedRequest(checkStream, count: 3), cancellationToken: ct);
+
+		var act = async () => await Fixture.StreamsClient.AppendRecordsAsync(
+			new AppendRecordsRequest {
+				Records = { CreateRecord(writeStream) },
+				Checks = {
+					new ConsistencyCheck {
+						StreamState = new() {
+							Stream        = checkStream,
+							ExpectedState = ExpectedStreamCondition.Tombstoned
+						}
+					}
+				}
+			},
+			cancellationToken: ct
+		);
+
+		var rex = await act.ShouldThrowAsync<RpcException>();
+		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
+
+		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
+		await Assert.That(details).IsNotNull();
+		await Assert.That(details!.Violations).HasCount(1);
+		await Assert.That(details.Violations[0].CheckIndex).IsEqualTo(0);
+		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
+		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(ExpectedStreamCondition.Tombstoned);
 	}
 
 	[Test]
 	public async ValueTask fails_when_stream_is_deleted(CancellationToken ct) {
 		var checkStream = Fixture.NewStreamName();
 		var writeStream = Fixture.NewStreamName();
-		await SeedDeletedStream(Fixture, checkStream, count: 3, ct: ct);
+		await SeedDeletedStream(Fixture, checkStream, ct: ct);
 
 		var act = async () => await Fixture.StreamsClient.AppendRecordsAsync(
 			new AppendRecordsRequest {
 				Records = { CreateRecord(writeStream) },
 				Checks = {
 					new ConsistencyCheck {
-						StreamState = new () {
+						StreamState = new() {
 							Stream        = checkStream,
-							ExpectedState = ExpectedRevision
+							ExpectedState = ExpectedStreamCondition.Tombstoned
 						}
 					}
 				}
@@ -104,40 +134,6 @@ public class WhenExpectingRevision {
 		await Assert.That(details!.Violations).HasCount(1);
 		await Assert.That(details.Violations[0].CheckIndex).IsEqualTo(0);
 		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
-		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(ExpectedRevision);
-		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(ActualStreamCondition.Deleted);
-	}
-
-	[Test]
-	public async ValueTask fails_when_stream_is_tombstoned(CancellationToken ct) {
-		var checkStream = Fixture.NewStreamName();
-		var writeStream = Fixture.NewStreamName();
-		await SeedTombstonedStream(Fixture, checkStream, ct: ct);
-
-		var act = async () => await Fixture.StreamsClient.AppendRecordsAsync(
-			new AppendRecordsRequest {
-				Records = { CreateRecord(writeStream) },
-				Checks = {
-					new ConsistencyCheck {
-						StreamState = new () {
-							Stream        = checkStream,
-							ExpectedState = ExpectedRevision
-						}
-					}
-				}
-			},
-			cancellationToken: ct
-		);
-
-		var rex = await act.ShouldThrowAsync<RpcException>();
-		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
-
-		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
-		await Assert.That(details).IsNotNull();
-		await Assert.That(details!.Violations).HasCount(1);
-		await Assert.That(details.Violations[0].CheckIndex).IsEqualTo(0);
-		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
-		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(ExpectedRevision);
-		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(ActualStreamCondition.Tombstoned);
+		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(ExpectedStreamCondition.Tombstoned);
 	}
 }

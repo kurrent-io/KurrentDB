@@ -8,29 +8,26 @@ using KurrentDB.Protocol.V2.Streams;
 using KurrentDB.Protocol.V2.Streams.Errors;
 using static KurrentDB.Api.Tests.Streams.AppendRecords.AppendRecordsFixture;
 
-namespace KurrentDB.Api.Tests.Streams.AppendRecords.CheckOnly;
+namespace KurrentDB.Api.Tests.Streams.AppendRecords.WriteOnly;
 
 [Category("AppendRecords")]
-public class WhenExpectingRevision {
-	const long ExpectedRevision = 10L;
-
+public class WhenExpectingDeleted {
 	[ClassDataSource<ClusterVNodeTestContext>(Shared = SharedType.PerTestSession)]
 	public required ClusterVNodeTestContext Fixture { get; [UsedImplicitly] init; }
 
 	[Test]
-	public async ValueTask succeeds_when_stream_has_revision(CancellationToken ct) {
-		var checkStream = Fixture.NewStreamName();
-		var writeStream = Fixture.NewStreamName();
-		await Fixture.StreamsClient.AppendRecordsAsync(SeedRequest(checkStream, count: 11), cancellationToken: ct);
+	public async ValueTask succeeds_when_stream_is_deleted(CancellationToken ct) {
+		var stream = Fixture.NewStreamName();
+		await SeedDeletedStream(Fixture, stream, ct: ct);
 
 		var response = await Fixture.StreamsClient.AppendRecordsAsync(
 			new AppendRecordsRequest {
-				Records = { CreateRecord(writeStream) },
+				Records = { CreateRecord(stream) },
 				Checks = {
 					new ConsistencyCheck {
-						StreamState = new () {
-							Stream        = checkStream,
-							ExpectedState = ExpectedRevision
+						StreamState = new() {
+							Stream        = stream,
+							ExpectedState = ExpectedStreamCondition.Deleted
 						}
 					}
 				}
@@ -39,23 +36,21 @@ public class WhenExpectingRevision {
 		);
 
 		await Assert.That(response.Revisions).HasCount(1);
-		await Assert.That(response.Revisions[0].Stream).IsEqualTo(writeStream);
-		await Assert.That(response.Revisions[0].Revision).IsEqualTo(0L);
+		await Assert.That(response.Revisions[0].Stream).IsEqualTo(stream);
 	}
 
 	[Test]
 	public async ValueTask fails_when_stream_not_found(CancellationToken ct) {
-		var checkStream = Fixture.NewStreamName();
-		var writeStream = Fixture.NewStreamName();
+		var stream = Fixture.NewStreamName();
 
 		var act = async () => await Fixture.StreamsClient.AppendRecordsAsync(
 			new AppendRecordsRequest {
-				Records = { CreateRecord(writeStream) },
+				Records = { CreateRecord(stream) },
 				Checks = {
 					new ConsistencyCheck {
-						StreamState = new () {
-							Stream        = checkStream,
-							ExpectedState = ExpectedRevision
+						StreamState = new() {
+							Stream        = stream,
+							ExpectedState = ExpectedStreamCondition.Deleted
 						}
 					}
 				}
@@ -70,25 +65,24 @@ public class WhenExpectingRevision {
 		await Assert.That(details).IsNotNull();
 		await Assert.That(details!.Violations).HasCount(1);
 		await Assert.That(details.Violations[0].CheckIndex).IsEqualTo(0);
-		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
-		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(ExpectedRevision);
+		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(stream);
+		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(ExpectedStreamCondition.Deleted);
 		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(ActualStreamCondition.NotFound);
 	}
 
 	[Test]
-	public async ValueTask fails_when_stream_is_deleted(CancellationToken ct) {
-		var checkStream = Fixture.NewStreamName();
-		var writeStream = Fixture.NewStreamName();
-		await SeedDeletedStream(Fixture, checkStream, count: 3, ct: ct);
+	public async ValueTask fails_when_stream_has_revision(CancellationToken ct) {
+		var stream = Fixture.NewStreamName();
+		await Fixture.StreamsClient.AppendRecordsAsync(SeedRequest(stream, count: 3), cancellationToken: ct);
 
 		var act = async () => await Fixture.StreamsClient.AppendRecordsAsync(
 			new AppendRecordsRequest {
-				Records = { CreateRecord(writeStream) },
+				Records = { CreateRecord(stream) },
 				Checks = {
 					new ConsistencyCheck {
-						StreamState = new () {
-							Stream        = checkStream,
-							ExpectedState = ExpectedRevision
+						StreamState = new() {
+							Stream        = stream,
+							ExpectedState = ExpectedStreamCondition.Deleted
 						}
 					}
 				}
@@ -103,25 +97,23 @@ public class WhenExpectingRevision {
 		await Assert.That(details).IsNotNull();
 		await Assert.That(details!.Violations).HasCount(1);
 		await Assert.That(details.Violations[0].CheckIndex).IsEqualTo(0);
-		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
-		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(ExpectedRevision);
-		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(ActualStreamCondition.Deleted);
+		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(stream);
+		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(ExpectedStreamCondition.Deleted);
 	}
 
 	[Test]
 	public async ValueTask fails_when_stream_is_tombstoned(CancellationToken ct) {
-		var checkStream = Fixture.NewStreamName();
-		var writeStream = Fixture.NewStreamName();
-		await SeedTombstonedStream(Fixture, checkStream, ct: ct);
+		var stream = Fixture.NewStreamName();
+		await SeedTombstonedStream(Fixture, stream, ct: ct);
 
 		var act = async () => await Fixture.StreamsClient.AppendRecordsAsync(
 			new AppendRecordsRequest {
-				Records = { CreateRecord(writeStream) },
+				Records = { CreateRecord(stream) },
 				Checks = {
 					new ConsistencyCheck {
-						StreamState = new () {
-							Stream        = checkStream,
-							ExpectedState = ExpectedRevision
+						StreamState = new() {
+							Stream        = stream,
+							ExpectedState = ExpectedStreamCondition.Deleted
 						}
 					}
 				}
@@ -136,8 +128,8 @@ public class WhenExpectingRevision {
 		await Assert.That(details).IsNotNull();
 		await Assert.That(details!.Violations).HasCount(1);
 		await Assert.That(details.Violations[0].CheckIndex).IsEqualTo(0);
-		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
-		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(ExpectedRevision);
+		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(stream);
+		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(ExpectedStreamCondition.Deleted);
 		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(ActualStreamCondition.Tombstoned);
 	}
 }

@@ -17,26 +17,23 @@ public class WhenExpectingRevision {
 	[ClassDataSource<ClusterVNodeTestContext>(Shared = SharedType.PerTestSession)]
 	public required ClusterVNodeTestContext Fixture { get; [UsedImplicitly] init; }
 
-	static AppendRecordsRequest WriteOnlyRequest(string stream, long expectedState) =>
-		new() {
-			Records = { CreateRecord(stream) },
-			Checks = {
-				new ConsistencyCheck {
-					StreamState = new () {
-						Stream        = stream,
-						ExpectedState = expectedState
-					}
-				}
-			}
-		};
-
 	[Test]
 	public async ValueTask succeeds_when_stream_has_revision(CancellationToken ct) {
 		var stream = Fixture.NewStreamName();
 		await Fixture.StreamsClient.AppendRecordsAsync(SeedRequest(stream, count: 11), cancellationToken: ct);
 
 		var response = await Fixture.StreamsClient.AppendRecordsAsync(
-			WriteOnlyRequest(stream, ExpectedRevision),
+			new AppendRecordsRequest {
+				Records = { CreateRecord(stream) },
+				Checks = {
+					new ConsistencyCheck {
+						StreamState = new () {
+							Stream        = stream,
+							ExpectedState = ExpectedRevision
+						}
+					}
+				}
+			},
 			cancellationToken: ct
 		);
 
@@ -49,7 +46,17 @@ public class WhenExpectingRevision {
 		var stream = Fixture.NewStreamName();
 
 		var act = async () => await Fixture.StreamsClient.AppendRecordsAsync(
-			WriteOnlyRequest(stream, ExpectedRevision),
+			new AppendRecordsRequest {
+				Records = { CreateRecord(stream) },
+				Checks = {
+					new ConsistencyCheck {
+						StreamState = new () {
+							Stream        = stream,
+							ExpectedState = ExpectedRevision
+						}
+					}
+				}
+			},
 			cancellationToken: ct
 		);
 
@@ -71,7 +78,17 @@ public class WhenExpectingRevision {
 		await SeedDeletedStream(Fixture, stream, count: 3, ct: ct);
 
 		var act = async () => await Fixture.StreamsClient.AppendRecordsAsync(
-			WriteOnlyRequest(stream, ExpectedRevision),
+			new AppendRecordsRequest {
+				Records = { CreateRecord(stream) },
+				Checks = {
+					new ConsistencyCheck {
+						StreamState = new () {
+							Stream        = stream,
+							ExpectedState = ExpectedRevision
+						}
+					}
+				}
+			},
 			cancellationToken: ct
 		);
 
@@ -93,7 +110,17 @@ public class WhenExpectingRevision {
 		await SeedTombstonedStream(Fixture, stream, ct: ct);
 
 		var act = async () => await Fixture.StreamsClient.AppendRecordsAsync(
-			WriteOnlyRequest(stream, ExpectedRevision),
+			new AppendRecordsRequest {
+				Records = { CreateRecord(stream) },
+				Checks = {
+					new ConsistencyCheck {
+						StreamState = new () {
+							Stream        = stream,
+							ExpectedState = ExpectedRevision
+						}
+					}
+				}
+			},
 			cancellationToken: ct
 		);
 

@@ -273,7 +273,7 @@ public class StreamsService : StreamsServiceBase {
 
             foreach (var streamEntry in ExpectedStreamStates) {
                 streamIds.Add(streamEntry.Stream);
-                revisions.Add(streamEntry.ExpectedState);
+                revisions.Add(MapExpectedState(streamEntry.ExpectedState));
             }
 
             return new WriteEvents(
@@ -288,6 +288,11 @@ public class StreamsService : StreamsServiceBase {
                 user: context.GetHttpContext().User,
                 cancellationToken: context.CancellationToken
             );
+
+            static long MapExpectedState(long expectedState) => expectedState switch {
+                ExpectedStreamCondition.Tombstoned => long.MaxValue,
+                _                                  => expectedState
+            };
         }
 
         protected override bool SuccessPredicate(Message message) =>
@@ -297,11 +302,10 @@ public class StreamsService : StreamsServiceBase {
             var completed = (WriteEventsCompleted)message;
             var response  = new AppendRecordsResponse { Position = completed.CommitPosition };
 
-            var lastNumbers = completed.LastEventNumbers.Span;
             foreach (var i in Indexes.Distinct()) {
                 response.Revisions.Add(new Contracts.StreamRevision {
                     Stream   = ExpectedStreamStates[i].Stream,
-                    Revision = lastNumbers[i]
+                    Revision = completed.LastEventNumbers.Span[i]
                 });
             }
 
@@ -309,15 +313,15 @@ public class StreamsService : StreamsServiceBase {
         }
 
         protected override RpcException? MapToError(Message message) {
-            if (message is not WriteEventsCompleted completed)
-                return null;
+            return message switch {
+                WriteEventsCompleted completed => completed.Result switch {
+	                OperationResult.CommitTimeout => ApiErrors.OperationTimeout($"{FriendlyName} timed out while waiting for commit"),
 
-            return completed.Result switch {
-                OperationResult.CommitTimeout => ApiErrors.OperationTimeout($"{FriendlyName} timed out while waiting for commit"),
+	                OperationResult.WrongExpectedVersion or OperationResult.StreamDeleted => MapViolations(completed.ConsistencyCheckFailures.Span),
 
-                OperationResult.WrongExpectedVersion or OperationResult.StreamDeleted => MapViolations(completed.ConsistencyCheckFailures.Span),
-
-                _ => ApiErrors.InternalServerError($"{FriendlyName} completed in error with unexpected result: {completed.Result}")
+	                _ => ApiErrors.InternalServerError($"{FriendlyName} completed in error with unexpected result: {completed.Result}")
+                },
+                _ => null
             };
 
             RpcException MapViolations(ReadOnlySpan<ConsistencyCheckFailure> failures) {
@@ -328,7 +332,7 @@ public class StreamsService : StreamsServiceBase {
                         CheckIndex = failure.StreamIndex,
                         StreamState = new() {
                             Stream        = ExpectedStreamStates[failure.StreamIndex].Stream,
-                            ExpectedState = failure.ExpectedVersion,
+                            ExpectedState = ExpectedStreamStates[failure.StreamIndex].ExpectedState,
                             ActualState   = failure switch {
                                 { ActualVersion: long.MaxValue } => ActualStreamCondition.Tombstoned,
                                 { IsSoftDeleted: true }          => ActualStreamCondition.Deleted,
