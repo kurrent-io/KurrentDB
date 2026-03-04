@@ -80,7 +80,7 @@ The Kafka sink connector relies on its own Kafka retry mechanism and doesn't inc
 
 | Name                               | Details                                                                                                                                                                                                   |
 | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `waitForBrokerAck`                 | **Description:**<br>Whether the producer waits for broker acknowledgment before considering the send operation complete. See [Broker Acknowledgment](#broker-acknowledgment)<br><br>**Default**: `"true"` |
+| `waitForBrokerAck`                 | **Description:**<br>Whether the producer waits for broker acknowledgment before considering the send operation complete. See [Broker Acknowledgment](#broker-acknowledgment)<br><br>**Default**: `"false"` |
 | `resilience:reconnectBackoffMaxMs` | **Description:**<br>The maximum time to wait before reconnecting to a broker after the connection has been closed.<br><br>**Default**: `"20000"`                                                          |
 | `resilience:messageSendMaxRetries` | **Description:**<br>How many times to retry sending a failing Message.<br><br>**Default**: `"2147483647"`                                                                                                 |
 
