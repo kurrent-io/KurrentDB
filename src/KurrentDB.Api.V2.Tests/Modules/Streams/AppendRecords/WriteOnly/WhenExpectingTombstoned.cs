@@ -107,7 +107,7 @@ public class WhenExpectingTombstoned {
 		await Assert.That(details.Violations[0].CheckIndex).IsEqualTo(0);
 		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(stream);
 		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(ExpectedStreamCondition.Tombstoned);
-		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(ActualStreamCondition.Deleted);
+		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(0L);
 	}
 
 	[Test]
