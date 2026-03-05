@@ -865,7 +865,7 @@ public class AtomController : CommunicationController {
 			return true;
 		}
 
-		return long.TryParse(expVer, out expectedVersion) && expectedVersion >= ExpectedVersion.StreamExists;
+		return long.TryParse(expVer, out expectedVersion) && expectedVersion >= ExpectedVersion.MinValue;
 	}
 
 	private bool GetIncludedId(HttpEntityManager manager, out Guid includedId) {

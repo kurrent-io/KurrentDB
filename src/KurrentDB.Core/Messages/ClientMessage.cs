@@ -207,7 +207,7 @@ public static partial class ClientMessage {
 
 			// each expected version must be valid
 			foreach (var expectedVersion in expectedVersions.Span) {
-				if (expectedVersion is < ExpectedVersion.StreamExists or ExpectedVersion.Invalid)
+				if (expectedVersion is < ExpectedVersion.MinValue or ExpectedVersion.Invalid)
 					throw new ArgumentOutOfRangeException(nameof(expectedVersions), $"Invalid expected version: {expectedVersion}");
 			}
 
@@ -530,7 +530,7 @@ public static partial class ClientMessage {
 			EventStreamId = Ensure.NotNullOrEmpty(eventStreamId);
 			ExpectedVersion = expectedVersion switch {
 				KurrentDB.Core.Data.ExpectedVersion.Invalid => throw new ArgumentOutOfRangeException(nameof(expectedVersion)),
-				< KurrentDB.Core.Data.ExpectedVersion.StreamExists => throw new ArgumentOutOfRangeException(nameof(expectedVersion)),
+				< KurrentDB.Core.Data.ExpectedVersion.MinValue => throw new ArgumentOutOfRangeException(nameof(expectedVersion)),
 				_ => expectedVersion
 			};
 			HardDelete = hardDelete;

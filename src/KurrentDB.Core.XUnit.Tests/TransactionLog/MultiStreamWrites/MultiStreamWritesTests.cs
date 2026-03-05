@@ -868,7 +868,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		// expected version out of valid range
 		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await WriteEvents(
 			eventStreamIds: [A, B],
-			expectedVersions: [ExpectedVersion.Any, -5],
+			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.MinValue - 1],
 			events: [NewEvent, NewEvent],
 			eventStreamIndexes: [0, 1]));
 
