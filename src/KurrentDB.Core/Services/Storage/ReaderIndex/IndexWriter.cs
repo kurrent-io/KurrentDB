@@ -195,11 +195,15 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 			}
 		}
 
-		// idempotency checks
+		// weak idempotency checks: if the request doesn't specify what the event numbers must be, so we don't know where
+		// in the stream to look for them. check recently written events only.
 		if (expectedVersion is ExpectedVersion.Any or ExpectedVersion.StreamExists) {
+			// EV.Any
+			// OR EV.Exists and does exist - we checked tombstone/soft deleted/never existed above)
 			var first = true;
 			long startEventNumber = -1;
 			long endEventNumber = -1;
+			// try to find events that are not already written
 			for (var i = 0; i < eventIds.Length; i++) {
 				var eventId = eventIds.Span[i];
 				if (!_committedEvents.TryGetRecord(eventId, out var prepInfo) || !StreamIdComparer.Equals(prepInfo.StreamId, streamId))
@@ -212,7 +216,10 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 				first = false;
 			}
 
-			if (first) // eventIds.Length == 0
+			// could not find any unwritten events
+			if (first) {
+				// eventIds.Length == 0
+				// not writing any events at all
 				return CommitOk(streamId, expectedVersion, curVersion, eventIds.Length, await IsSoftDeleted(streamId, token));
 
 			// we are writing events and they are all written already
@@ -230,8 +237,12 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 				: new(CommitDecision.IdempotentNotReady, streamId, expectedVersion, curVersion, startEventNumber, endEventNumber, isSoftDeleted: null, logPos);
 		}
 
+		// strong idempotency checks. the request specifies specific event numbers
+		// (except for expecting no stream covering soft deleted, in that case we will only detect idempotency if the events were written
+		//  to the start of the stream, perhaps this can be improved)
 		// if writing earlier OR expecting no stream (i.e. soft deleted or never existed - tombstone was dealt with earlier)
 		if (expectedVersion < curVersion) {
+			Debug.Assert(expectedVersion >= -1, "expected version must produce valid event number");
 			var eventNumber = expectedVersion;
 			// try to find events that are not already written
 			for (var i = 0; i < eventIds.Length; i++) {
@@ -259,6 +270,7 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 				return new(CommitDecision.ConsistencyCheckFailure, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: null);
 			}
 
+			// could not find any unwritten events
 			if (eventIds.Length == 0) {
 				// not writing any events at all
 				if (expectedVersion is ExpectedVersion.NoStream && await IsSoftDeleted(streamId, token))
