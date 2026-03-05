@@ -44,7 +44,7 @@ public static class ExpectedStreamCondition {
 	/// <para />
 	/// A soft-deleted stream can be recreated; its revision is preserved and continues to increment for new records.
 	/// </remarks>
-	public const long Deleted = -10;
+	public const long Deleted = -5;
 
 	/// <summary>
 	/// The stream must be in a tombstoned state.
@@ -77,7 +77,7 @@ public static class ActualStreamCondition {
 	/// <para />
 	/// Its revision was not reset and will continue to increment for new records.
 	/// </remarks>
-	public const long Deleted = -10;
+	public const long Deleted = -5;
 
 	/// <summary>
 	/// The stream has been hard-deleted and tombstoned.
