@@ -1,5 +1,5 @@
 ---
-title: 'Manage Connectors'
+title: "Manage Connectors"
 order: 4
 ---
 
@@ -91,12 +91,12 @@ Host: localhost:2113
 
 The `state` filter accepts the following values:
 
-| State                          | Description                                              |
-| ------------------------------ | -------------------------------------------------------- |
-| `CONNECTOR_STATE_ACTIVATING`   | The connector is in the process of starting up.          |
-| `CONNECTOR_STATE_RUNNING`      | The connector is actively running and consuming events.  |
-| `CONNECTOR_STATE_DEACTIVATING` | The connector is in the process of shutting down.        |
-| `CONNECTOR_STATE_STOPPED`      | The connector is stopped and not consuming events.       |
+| State                          | Description                                             |
+| ------------------------------ | ------------------------------------------------------- |
+| `CONNECTOR_STATE_ACTIVATING`   | The connector is in the process of starting up.         |
+| `CONNECTOR_STATE_RUNNING`      | The connector is actively running and consuming events. |
+| `CONNECTOR_STATE_DEACTIVATING` | The connector is in the process of shutting down.       |
+| `CONNECTOR_STATE_STOPPED`      | The connector is stopped and not consuming events.      |
 
 ### Examples
 
@@ -238,9 +238,8 @@ Content-Type: application/json
 For a comprehensive list of available configuration options available for all sinks, please refer to the [Connector Settings](./settings.md) page.
 
 ::: note
-The connector must be stopped before reconfiguring. If the connector is running,
-the reconfigure operation will fail. Make sure to [Stop](#stop) the connector
-before attempting to reconfigure it.
+The connector can be reconfigured while running, but the new settings will only
+take effect after the connector is restarted.
 :::
 
 ## Delete
