@@ -868,7 +868,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		// expected version out of valid range
 		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await WriteEvents(
 			eventStreamIds: [A, B],
-			expectedVersions: [ExpectedVersion.Any, -5],
+			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.MinValue - 1],
 			events: [NewEvent, NewEvent],
 			eventStreamIndexes: [0, 1]));
 
@@ -1112,6 +1112,16 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		{ ExpectedVersion.NoStream, StreamState.Tombstoned, Participation.WriteTo, OperationResult.StreamDeleted }, // never write to tombstoned stream
 		{ ExpectedVersion.NoStream, StreamState.Tombstoned, Participation.CheckOnly, OperationResult.Success }, // can check tombstoned stream
 
+		// ExpectedVersion.SoftDeleted (-5): specifically checks the stream is soft deleted (as opposed to tombstoned or never existed)
+		{ ExpectedVersion.SoftDeleted, StreamState.NeverExisted, Participation.WriteTo, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.SoftDeleted, StreamState.NeverExisted, Participation.CheckOnly, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.SoftDeleted, StreamState.ExistsAtV2, Participation.WriteTo, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.SoftDeleted, StreamState.ExistsAtV2, Participation.CheckOnly, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.SoftDeleted, StreamState.SoftDeletedAtV2, Participation.WriteTo, OperationResult.Success },
+		{ ExpectedVersion.SoftDeleted, StreamState.SoftDeletedAtV2, Participation.CheckOnly, OperationResult.Success },
+		{ ExpectedVersion.SoftDeleted, StreamState.Tombstoned, Participation.WriteTo, OperationResult.StreamDeleted },
+		{ ExpectedVersion.SoftDeleted, StreamState.Tombstoned, Participation.CheckOnly, OperationResult.StreamDeleted },
+
 		// EventNumber.DeletedStream (long.MaxValue): can check stream is tombstoned (but cannot write to it)
 		{ EventNumber.DeletedStream, StreamState.NeverExisted, Participation.WriteTo, OperationResult.WrongExpectedVersion },
 		{ EventNumber.DeletedStream, StreamState.NeverExisted, Participation.CheckOnly, OperationResult.WrongExpectedVersion },
@@ -1248,6 +1258,8 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 				(StreamState.SoftDeletedAtV2, ExpectedVersion.StreamExists) =>
 					true,
 				(_, ExpectedVersion.StreamExists) =>
+					false,
+				(_, ExpectedVersion.SoftDeleted) =>
 					false,
 				_ =>
 					null,
