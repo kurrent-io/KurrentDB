@@ -135,4 +135,36 @@ public class WhenExpectingRevision {
 		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(ExpectedRevision);
 		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(ActualStreamCondition.Tombstoned);
 	}
+
+	[Test]
+	public async ValueTask fails_when_stream_has_wrong_revision(CancellationToken ct) {
+		var stream = Fixture.NewStreamName();
+		await Fixture.StreamsClient.AppendRecordsAsync(SeedRequest(stream, count: 5), cancellationToken: ct);
+
+		var act = async () => await Fixture.StreamsClient.AppendRecordsAsync(
+			new AppendRecordsRequest {
+				Records = { CreateRecord(stream) },
+				Checks = {
+					new ConsistencyCheck {
+						StreamState = new () {
+							Stream        = stream,
+							ExpectedState = ExpectedRevision
+						}
+					}
+				}
+			},
+			cancellationToken: ct
+		);
+
+		var rex = await act.ShouldThrowAsync<RpcException>();
+		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
+
+		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
+		await Assert.That(details).IsNotNull();
+		await Assert.That(details!.Violations).HasCount(1);
+		await Assert.That(details.Violations[0].CheckIndex).IsEqualTo(0);
+		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(stream);
+		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(ExpectedRevision);
+		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(4L);
+	}
 }

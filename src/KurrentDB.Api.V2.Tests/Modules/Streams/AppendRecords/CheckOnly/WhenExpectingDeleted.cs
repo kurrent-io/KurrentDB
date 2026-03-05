@@ -103,6 +103,7 @@ public class WhenExpectingDeleted {
 		await Assert.That(details.Violations[0].CheckIndex).IsEqualTo(0);
 		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
 		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(ExpectedStreamCondition.Deleted);
+		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(2L);
 	}
 
 	[Test]

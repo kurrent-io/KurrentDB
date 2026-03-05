@@ -271,9 +271,12 @@ public class StreamsService : StreamsServiceBase {
             var streamIds = ImmutableArray.CreateBuilder<string>(ExpectedStreamStates.Count);
             var revisions = ImmutableArray.CreateBuilder<long>(ExpectedStreamStates.Count);
 
-            foreach (var streamEntry in ExpectedStreamStates) {
-                streamIds.Add(streamEntry.Stream);
-                revisions.Add(MapExpectedState(streamEntry.ExpectedState));
+            foreach (var streamState in ExpectedStreamStates) {
+                streamIds.Add(streamState.Stream);
+                revisions.Add(streamState.ExpectedState switch {
+	                ExpectedStreamCondition.Tombstoned => long.MaxValue,
+	                _                                  => streamState.ExpectedState
+                });
             }
 
             return new WriteEvents(
@@ -288,11 +291,6 @@ public class StreamsService : StreamsServiceBase {
                 user: context.GetHttpContext().User,
                 cancellationToken: context.CancellationToken
             );
-
-            static long MapExpectedState(long expectedState) => expectedState switch {
-                ExpectedStreamCondition.Tombstoned => long.MaxValue,
-                _                                  => expectedState
-            };
         }
 
         protected override bool SuccessPredicate(Message message) =>

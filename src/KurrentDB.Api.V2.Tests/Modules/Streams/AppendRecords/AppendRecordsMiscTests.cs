@@ -3,6 +3,7 @@
 
 using Google.Protobuf;
 using Grpc.Core;
+using KurrentDB.Api.Streams;
 using KurrentDB.Api.Tests.Fixtures;
 using KurrentDB.Protocol.V2.Streams;
 using KurrentDB.Testing.Bogus;
@@ -59,6 +60,79 @@ public class AppendRecordsMiscTests {
 		var appendTask = async () => await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
 
 		var rex = await appendTask.ShouldThrowAsync<RpcException>();
+		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.InvalidArgument);
+	}
+
+	[Test]
+	public async ValueTask checks_with_zero_records_fails(CancellationToken ct) {
+		var stream = Fixture.NewStreamName();
+
+		var request = new AppendRecordsRequest {
+			Checks = {
+				new ConsistencyCheck {
+					StreamState = new() {
+						Stream        = stream,
+						ExpectedState = ExpectedStreamCondition.NoStream
+					}
+				}
+			}
+		};
+
+		var act = async () => await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
+
+		var rex = await act.ShouldThrowAsync<RpcException>();
+		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.InvalidArgument);
+	}
+
+	[Test]
+	public async ValueTask duplicate_stream_in_checks_fails(CancellationToken ct) {
+		var stream = Fixture.NewStreamName();
+		var writeStream = Fixture.NewStreamName();
+
+		var request = new AppendRecordsRequest {
+			Records = { CreateRecord(writeStream) },
+			Checks = {
+				new ConsistencyCheck {
+					StreamState = new() {
+						Stream        = stream,
+						ExpectedState = ExpectedStreamCondition.NoStream
+					}
+				},
+				new ConsistencyCheck {
+					StreamState = new() {
+						Stream        = stream,
+						ExpectedState = ExpectedStreamCondition.Exists
+					}
+				}
+			}
+		};
+
+		var act = async () => await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
+
+		var rex = await act.ShouldThrowAsync<RpcException>();
+		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.InvalidArgument);
+	}
+
+	[Test]
+	public async ValueTask check_with_expected_state_any_fails(CancellationToken ct) {
+		var stream = Fixture.NewStreamName();
+		var writeStream = Fixture.NewStreamName();
+
+		var request = new AppendRecordsRequest {
+			Records = { CreateRecord(writeStream) },
+			Checks = {
+				new ConsistencyCheck {
+					StreamState = new() {
+						Stream        = stream,
+						ExpectedState = ExpectedStreamCondition.Any
+					}
+				}
+			}
+		};
+
+		var act = async () => await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
+
+		var rex = await act.ShouldThrowAsync<RpcException>();
 		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.InvalidArgument);
 	}
 }

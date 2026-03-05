@@ -238,4 +238,144 @@ public class WhenMultipleChecks {
 		await Assert.That(missingViolation.CheckIndex).IsEqualTo(2);
 		await Assert.That(missingViolation.StreamState.ActualState).IsEqualTo(ActualStreamCondition.NotFound);
 	}
+
+	[Test]
+	public async ValueTask fails_when_first_check_fails_and_second_passes(CancellationToken ct) {
+		var writeStream = Fixture.NewStreamName();
+		var checkStreamA = Fixture.NewStreamName();
+		var checkStreamB = Fixture.NewStreamName();
+
+		// checkStreamA not seeded — will fail the revision check
+		await Fixture.StreamsClient.AppendRecordsAsync(SeedRequest(checkStreamB, count: 6), cancellationToken: ct);
+
+		var act = async () => await Fixture.StreamsClient.AppendRecordsAsync(
+			new AppendRecordsRequest {
+				Records = { CreateRecord(writeStream) },
+				Checks = {
+					new ConsistencyCheck {
+						StreamState = new() {
+							Stream        = checkStreamA,
+							ExpectedState = 3L
+						}
+					},
+					new ConsistencyCheck {
+						StreamState = new() {
+							Stream        = checkStreamB,
+							ExpectedState = 5L
+						}
+					}
+				}
+			},
+			cancellationToken: ct
+		);
+
+		var rex = await act.ShouldThrowAsync<RpcException>();
+		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
+
+		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
+		await Assert.That(details).IsNotNull();
+		await Assert.That(details!.Violations).HasCount(1);
+		await Assert.That(details.Violations[0].CheckIndex).IsEqualTo(0);
+		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStreamA);
+		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(3L);
+		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(ActualStreamCondition.NotFound);
+	}
+
+	[Test]
+	public async ValueTask fails_when_two_of_three_checks_fail(CancellationToken ct) {
+		var writeStream = Fixture.NewStreamName();
+		var checkStreamA = Fixture.NewStreamName();
+		var checkStreamB = Fixture.NewStreamName();
+		var checkStreamC = Fixture.NewStreamName();
+
+		await Fixture.StreamsClient.AppendRecordsAsync(SeedRequest(checkStreamA, count: 3), cancellationToken: ct);
+		// checkStreamB not seeded — will fail
+		await Fixture.StreamsClient.AppendRecordsAsync(SeedRequest(checkStreamC, count: 2), cancellationToken: ct);
+
+		var act = async () => await Fixture.StreamsClient.AppendRecordsAsync(
+			new AppendRecordsRequest {
+				Records = { CreateRecord(writeStream) },
+				Checks = {
+					new ConsistencyCheck {
+						StreamState = new() {
+							Stream        = checkStreamA,
+							ExpectedState = 2L
+						}
+					},
+					new ConsistencyCheck {
+						StreamState = new() {
+							Stream        = checkStreamB,
+							ExpectedState = ExpectedStreamCondition.Exists
+						}
+					},
+					new ConsistencyCheck {
+						StreamState = new() {
+							Stream        = checkStreamC,
+							ExpectedState = 10L
+						}
+					}
+				}
+			},
+			cancellationToken: ct
+		);
+
+		var rex = await act.ShouldThrowAsync<RpcException>();
+		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
+
+		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
+		await Assert.That(details).IsNotNull();
+		await Assert.That(details!.Violations).HasCount(2);
+
+		var violationB = details.Violations.First(v => v.StreamState.Stream == checkStreamB);
+		var violationC = details.Violations.First(v => v.StreamState.Stream == checkStreamC);
+
+		await Assert.That(violationB.CheckIndex).IsEqualTo(1);
+		await Assert.That(violationB.StreamState.ExpectedState).IsEqualTo(ExpectedStreamCondition.Exists);
+		await Assert.That(violationB.StreamState.ActualState).IsEqualTo(ActualStreamCondition.NotFound);
+
+		await Assert.That(violationC.CheckIndex).IsEqualTo(2);
+		await Assert.That(violationC.StreamState.ExpectedState).IsEqualTo(10L);
+		await Assert.That(violationC.StreamState.ActualState).IsEqualTo(1L);
+	}
+
+	[Test]
+	public async ValueTask fails_when_check_on_write_target_and_separate_check_fails(CancellationToken ct) {
+		var checkStream = Fixture.NewStreamName();
+		var writeStream = Fixture.NewStreamName();
+
+		// checkStream not seeded — will fail
+		await Fixture.StreamsClient.AppendRecordsAsync(SeedRequest(writeStream, count: 4), cancellationToken: ct);
+
+		var act = async () => await Fixture.StreamsClient.AppendRecordsAsync(
+			new AppendRecordsRequest {
+				Records = { CreateRecord(writeStream) },
+				Checks = {
+					new ConsistencyCheck {
+						StreamState = new() {
+							Stream        = checkStream,
+							ExpectedState = 5L
+						}
+					},
+					new ConsistencyCheck {
+						StreamState = new() {
+							Stream        = writeStream,
+							ExpectedState = 3L
+						}
+					}
+				}
+			},
+			cancellationToken: ct
+		);
+
+		var rex = await act.ShouldThrowAsync<RpcException>();
+		await Assert.That(rex.StatusCode).IsEqualTo(StatusCode.FailedPrecondition);
+
+		var details = rex.GetRpcStatus()?.GetDetail<AppendConsistencyViolationErrorDetails>();
+		await Assert.That(details).IsNotNull();
+		await Assert.That(details!.Violations).HasCount(1);
+		await Assert.That(details.Violations[0].CheckIndex).IsEqualTo(0);
+		await Assert.That(details.Violations[0].StreamState.Stream).IsEqualTo(checkStream);
+		await Assert.That(details.Violations[0].StreamState.ExpectedState).IsEqualTo(5L);
+		await Assert.That(details.Violations[0].StreamState.ActualState).IsEqualTo(ActualStreamCondition.NotFound);
+	}
 }
