@@ -207,22 +207,25 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 			// try to find events that are not already written
 			for (var i = 0; i < eventIds.Length; i++) {
 				var eventId = eventIds.Span[i];
-				if (!_committedEvents.TryGetRecord(eventId, out var prepInfo) || !StreamIdComparer.Equals(prepInfo.StreamId, streamId)) {
-					// found an event that isn't already written
-					if (!first)
-						return new(CommitDecision.CorruptedIdempotency, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: null);
-
-					// the first event in the write is not already written
-					var isSoftDeleted = await IsSoftDeleted(streamId, token);
-					if (expectedVersion is ExpectedVersion.SoftDeleted && !isSoftDeleted)
-						return new(CommitDecision.ConsistencyCheckFailure, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted);
-
-					return CommitOk(streamId, expectedVersion, curVersion, eventIds.Length, isSoftDeleted);
+				if (_committedEvents.TryGetRecord(eventId, out var prepInfo)
+					&& StreamIdComparer.Equals(prepInfo.StreamId, streamId)) {
+					if (first)
+						startEventNumber = prepInfo.EventNumber;
+					endEventNumber = prepInfo.EventNumber;
+					first = false;
+					continue;
 				}
-				if (first)
-					startEventNumber = prepInfo.EventNumber;
-				endEventNumber = prepInfo.EventNumber;
-				first = false;
+
+				// found an event that isn't already written
+				if (!first)
+					return new(CommitDecision.CorruptedIdempotency, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted: null);
+
+				// the first event in the write is not already written
+				var isSoftDeleted = await IsSoftDeleted(streamId, token);
+				if (expectedVersion is ExpectedVersion.SoftDeleted && !isSoftDeleted)
+					return new(CommitDecision.ConsistencyCheckFailure, streamId, expectedVersion, curVersion, -1, -1, isSoftDeleted);
+
+				return CommitOk(streamId, expectedVersion, curVersion, eventIds.Length, isSoftDeleted);
 			}
 
 			// could not find any unwritten events
