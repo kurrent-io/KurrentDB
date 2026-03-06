@@ -48,7 +48,7 @@ public class key_usages {
 			extendedKeyUsages: GenOids(_clientAuth));
 
 		Assert.True(sut.IsClientCertificate(out _));
-		Assert.False(sut.IsServerCertificate(out _));
+		Assert.False(sut.IsServerCertificate(false, out _));
 	}
 
 	[Test]
@@ -57,18 +57,20 @@ public class key_usages {
 			keyUsages: DefaultKeyUsages,
 			extendedKeyUsages: GenOids(_clientAuth, _serverAuth));
 
-		Assert.True(sut.IsServerCertificate(out _));
+		Assert.True(sut.IsServerCertificate(false, out _));
 		Assert.True(sut.IsClientCertificate(out _));
 	}
 
-	[Test]
-	public void certificate_with_server_auth_eku_only() {
+	[TestCase(false, false)]
+	[TestCase(true, true)]
+	public void certificate_with_server_auth_eku_only(bool disableClientAuthEkuValidation, bool expectedIsServer) {
 		var sut = GenSut(
 			keyUsages: DefaultKeyUsages,
 			extendedKeyUsages: GenOids(_serverAuth));
 
-		// historically, server certificates also have the clientAuth EKU
-		Assert.False(sut.IsServerCertificate(out _));
+		Assert.AreEqual(expectedIsServer, sut.IsServerCertificate(disableClientAuthEkuValidation, out var failReason));
+		if (!expectedIsServer)
+			Assert.That(failReason, Does.Contain(nameof(ClusterVNodeOptions.Certificate.DisableClientAuthEkuValidation)));
 		Assert.False(sut.IsClientCertificate(out _));
 	}
 
@@ -78,7 +80,7 @@ public class key_usages {
 			keyUsages: DefaultKeyUsages,
 			extendedKeyUsages: GenOids());
 
-		Assert.True(sut.IsServerCertificate(out _));
+		Assert.True(sut.IsServerCertificate(false, out _));
 		Assert.False(sut.IsClientCertificate(out _));
 	}
 
@@ -89,7 +91,7 @@ public class key_usages {
 			extendedKeyUsages: GenOids(_clientAuth, _serverAuth));
 
 		Assert.False(sut.IsClientCertificate(out _));
-		Assert.False(sut.IsServerCertificate(out _));
+		Assert.False(sut.IsServerCertificate(false, out _));
 	}
 
 	[Test]
@@ -99,7 +101,7 @@ public class key_usages {
 			extendedKeyUsages: GenOids(_clientAuth, _serverAuth));
 
 		Assert.False(sut.IsClientCertificate(out _));
-		Assert.False(sut.IsServerCertificate(out _));
+		Assert.False(sut.IsServerCertificate(false, out _));
 	}
 
 	[Test]
@@ -109,6 +111,6 @@ public class key_usages {
 			extendedKeyUsages: GenOids(_clientAuth, _serverAuth));
 
 		Assert.True(sut.IsClientCertificate(out _));
-		Assert.True(sut.IsServerCertificate(out _));
+		Assert.True(sut.IsServerCertificate(false, out _));
 	}
 }
