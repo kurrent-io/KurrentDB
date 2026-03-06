@@ -12,9 +12,9 @@ class AppendRequestValidator : RequestValidator<AppendRequest> {
 	public static readonly AppendRequestValidator Instance = new();
 
     static readonly List<long> ValidExpectedRevisions = [
-        ExpectedVersion.Any,
-        ExpectedVersion.NoStream,
-        ExpectedVersion.StreamExists
+        ExpectedStreamCondition.Any,
+        ExpectedStreamCondition.NoStream,
+        ExpectedStreamCondition.Exists
     ];
 
 	public AppendRequestValidator() {

@@ -54,7 +54,7 @@ public static class ExpectedStreamCondition {
 	/// <para />
 	/// A tombstoned stream cannot be recreated or have any new records appended to it.
 	/// </remarks>
-	public const long Tombstoned = -100;
+	public const long Tombstoned = -6;
 }
 
 /// <summary>
@@ -87,5 +87,5 @@ public static class ActualStreamCondition {
 	/// <para />
 	/// It cannot be recreated or have any new records appended to it.
 	/// </remarks>
-	public const long Tombstoned = -100;
+	public const long Tombstoned = -6;
 }

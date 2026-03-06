@@ -27,7 +27,7 @@ class ConsistencyCheckValidator : ValidatorBase<ConsistencyCheckValidator, Consi
 
 			RuleFor(x => x.StreamState.ExpectedState)
 				.Must(x => x >= 0 || ValidExpectedStates.Contains(x))
-				.WithMessage("Expected state must be positive or one of the allowed constants: NoStream (-1), Exists (-4), Deleted (-10), or Tombstoned (-100). Any (-2) is not allowed.");
+				.WithMessage("Expected state must be positive or one of the allowed constants: NoStream (-1), Exists (-4), Deleted (-5), or Tombstoned (-6). Any (-2) is not allowed.");
 		});
 	}
 }
