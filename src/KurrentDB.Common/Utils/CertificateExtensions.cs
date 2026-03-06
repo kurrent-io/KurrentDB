@@ -272,7 +272,7 @@ public static class CertificateExtensions {
 		return true;
 	}
 
-	public static bool IsServerCertificate(this X509Certificate2 certificate, out string failReason) {
+	public static bool IsServerCertificate(this X509Certificate2 certificate, bool disableClientAuthEkuValidation, out string failReason) {
 		if (!certificate.TryGetKeyUsages(out var keyUsages, out var hasExtKeyUsagesExtension, out var extKeyUsages, out failReason))
 			return false;
 
@@ -288,9 +288,12 @@ public static class CertificateExtensions {
 			if (!HasServerAuthExtendedKeyUsage(extKeyUsages, out failReason))
 				return false;
 
-			// historically, server certificates also have the clientAuth EKU
-			if (!HasClientAuthExtendedKeyUsage(extKeyUsages, out failReason))
+			if (!disableClientAuthEkuValidation && !HasClientAuthExtendedKeyUsage(extKeyUsages, out failReason)) {
+				failReason +=
+					". If you are using a certificate from a public CA that does not include the clientAuth EKU, " +
+					"please see the documentation for the DisableClientAuthEkuValidation configuration option.";
 				return false;
+			}
 		}
 
 		failReason = string.Empty;
