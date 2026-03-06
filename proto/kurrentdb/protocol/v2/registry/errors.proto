@@ -2,13 +2,13 @@
 // This protocol is UNSTABLE in the sense of being subject to change.
 // ******************************************************************************************
 
-syntax = "proto3";
+edition = "2023";
 
 package kurrentdb.protocol.v2.registry.errors;
 
 option csharp_namespace = "KurrentDB.Protocol.V2.Registry.Errors";
 
-import "rpc.proto";
+import "kurrent/rpc/rpc.proto";
 
 enum RegistryError {
   // Default value. This value is not used.
