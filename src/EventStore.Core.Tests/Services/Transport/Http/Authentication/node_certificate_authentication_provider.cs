@@ -19,7 +19,9 @@ public class TestFixtureWithNodeCertificateHttpAuthenticationProvider {
 	protected NodeCertificateAuthenticationProvider _provider;
 
 	protected void SetUpProvider() {
-		_provider = new NodeCertificateAuthenticationProvider(() => "eventstoredb-node");
+		_provider = new NodeCertificateAuthenticationProvider(
+			getCertificateReservedNodeCommonName: () => "eventstoredb-node",
+			disableClientAuthEkuValidation: false);
 	}
 }
 
