@@ -103,9 +103,9 @@ public class AccountBalancerSpecTests {
 		// Wait for $by_category to index
 		await Task.Delay(3000, ct);
 
-		// 4. Create state handler
+		// 4. Create state handler factory
 		var trackers = ProjectionTrackers.NoOp;
-		using var stateHandler = new JintProjectionStateHandler(
+		IProjectionStateHandler CreateStateHandler() => new JintProjectionStateHandler(
 			rewrittenSource,
 			enableContentTypeValidation: false,
 			compilationTimeout: TimeSpan.FromSeconds(5),
@@ -113,7 +113,8 @@ public class AccountBalancerSpecTests {
 			new(trackers.GetExecutionTrackerForProjection("spec-test")),
 			new(trackers.GetSerializationTrackerForProjection("spec-test")));
 
-		var sourceDefinition = stateHandler.GetSourceDefinition();
+		using var sourceHandler = CreateStateHandler();
+		var sourceDefinition = sourceHandler.GetSourceDefinition();
 
 		// Verify it's a biState projection
 		await Assert.That(sourceDefinition.IsBiState).IsTrue();
@@ -136,8 +137,7 @@ public class AccountBalancerSpecTests {
 		var config = new ProjectionEngineV2Config {
 			ProjectionName = projectionName,
 			SourceDefinition = sourceDefinition,
-			StateHandler = stateHandler,
-			PartitionCount = 1,
+			StateHandlerFactory = CreateStateHandler,
 			CheckpointAfterMs = 0,
 			CheckpointHandledThreshold = 1,
 			CheckpointUnhandledBytesThreshold = long.MaxValue,

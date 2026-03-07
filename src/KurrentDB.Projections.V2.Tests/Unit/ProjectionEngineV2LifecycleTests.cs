@@ -140,7 +140,7 @@ public class ProjectionEngineV2LifecycleTests {
 		var config = new ProjectionEngineV2Config {
 			ProjectionName = "cancel-test",
 			SourceDefinition = stateHandler.GetSourceDefinition(),
-			StateHandler = stateHandler,
+			StateHandlerFactory = () => new NoOpStateHandler(),
 			PartitionCount = 1,
 			CheckpointAfterMs = 0,
 			CheckpointHandledThreshold = 100,
@@ -168,7 +168,7 @@ public class ProjectionEngineV2LifecycleTests {
 		var config = new ProjectionEngineV2Config {
 			ProjectionName = "empty-test",
 			SourceDefinition = stateHandler.GetSourceDefinition(),
-			StateHandler = stateHandler,
+			StateHandlerFactory = () => new NoOpStateHandler(),
 			PartitionCount = 1,
 			CheckpointAfterMs = 0,
 			CheckpointHandledThreshold = 5,
@@ -210,7 +210,7 @@ public class ProjectionEngineV2LifecycleTests {
 		var config = new ProjectionEngineV2Config {
 			ProjectionName = "multi-partition-test",
 			SourceDefinition = new QuerySourcesDefinition { AllStreams = true, AllEvents = true, ByStreams = true },
-			StateHandler = stateHandler,
+			StateHandlerFactory = () => new NoOpStateHandler(),
 			PartitionCount = 4,
 			CheckpointAfterMs = 0,
 			CheckpointHandledThreshold = 100, // High threshold so only the final checkpoint fires, avoiding a race in CheckpointCoordinator when multiple markers are injected and partitions process at different speeds

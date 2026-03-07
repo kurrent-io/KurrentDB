@@ -174,7 +174,7 @@ public class ProjectionEngineV2PipelineTests {
 		var config = new ProjectionEngineV2Config {
 			ProjectionName = "test-projection",
 			SourceDefinition = stateHandler.GetSourceDefinition(),
-			StateHandler = stateHandler,
+			StateHandlerFactory = () => new CountingStateHandler(),
 			PartitionCount = 1,
 			CheckpointAfterMs = 0,
 			CheckpointHandledThreshold = 5,
@@ -206,7 +206,7 @@ public class ProjectionEngineV2PipelineTests {
 		var config = new ProjectionEngineV2Config {
 			ProjectionName = "state-test",
 			SourceDefinition = new QuerySourcesDefinition { AllStreams = true, AllEvents = true, ByStreams = true },
-			StateHandler = stateHandler,
+			StateHandlerFactory = () => new CountingStateHandler(),
 			PartitionCount = 1,
 			CheckpointAfterMs = 0,
 			CheckpointHandledThreshold = 5,
@@ -243,7 +243,7 @@ public class ProjectionEngineV2PipelineTests {
 		var config = new ProjectionEngineV2Config {
 			ProjectionName = "pos-test",
 			SourceDefinition = stateHandler.GetSourceDefinition(),
-			StateHandler = stateHandler,
+			StateHandlerFactory = () => new CountingStateHandler(),
 			PartitionCount = 1,
 			CheckpointAfterMs = 0,
 			CheckpointHandledThreshold = 5,

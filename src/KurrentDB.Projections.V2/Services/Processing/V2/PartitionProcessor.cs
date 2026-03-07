@@ -22,7 +22,7 @@ public class PartitionProcessor {
 	private readonly IProjectionStateHandler _stateHandler;
 	private readonly string _projectionName;
 	private readonly bool _isBiState;
-	private readonly Func<ResolvedEvent, string?>? _getPartitionKey;
+	private readonly bool _emitEnabled;
 	private readonly Func<ulong, OutputBuffer, Task> _onCheckpointMarker;
 
 	private OutputBuffer _activeBuffer = new();
@@ -37,14 +37,14 @@ public class PartitionProcessor {
 		IProjectionStateHandler stateHandler,
 		string projectionName,
 		bool isBiState,
-		Func<ResolvedEvent, string?>? getPartitionKey,
+		bool emitEnabled,
 		Func<ulong, OutputBuffer, Task> onCheckpointMarker) {
 		_partitionIndex = partitionIndex;
 		_reader = reader;
 		_stateHandler = stateHandler;
 		_projectionName = projectionName;
 		_isBiState = isBiState;
-		_getPartitionKey = getPartitionKey;
+		_emitEnabled = emitEnabled;
 		_onCheckpointMarker = onCheckpointMarker;
 	}
 
@@ -66,20 +66,7 @@ public class PartitionProcessor {
 
 	private void ProcessEvent(PartitionEvent pe) {
 		var projEvent = pe.Event!;
-
-		// Compute partition key — either pre-computed by dispatcher or deferred to here
-		string partitionKey;
-		if (pe.NeedsPartitionKeyComputation) {
-			var computed = ComputePartitionKey(projEvent, pe.LogPosition);
-			if (computed is null) {
-				Log.Debug("Skipping event at {LogPosition} stream={Stream} type={EventType} (partition key null)",
-					pe.LogPosition, projEvent.EventStreamId, projEvent.EventType);
-				return;
-			}
-			partitionKey = computed;
-		} else {
-			partitionKey = pe.PartitionKey!;
-		}
+		var partitionKey = pe.PartitionKey!;
 
 		Log.Debug("Processing event stream={Stream} type={EventType} partition={Partition}",
 			projEvent.EventStreamId, projEvent.EventType, partitionKey);
@@ -104,7 +91,8 @@ public class PartitionProcessor {
 
 		if (isNewPartition) {
 			_stateHandler.ProcessPartitionCreated(partitionKey, checkpointTag, projEvent, out var createdEmittedEvents);
-			_activeBuffer.AddEmittedEvents(createdEmittedEvents);
+			if (_emitEnabled)
+				_activeBuffer.AddEmittedEvents(createdEmittedEvents);
 		}
 
 		var processed = _stateHandler.ProcessEvent(
@@ -130,16 +118,9 @@ public class PartitionProcessor {
 			_activeBuffer.SetPartitionState("", sharedStreamName, newSharedState, -2);
 		}
 
-		_activeBuffer.AddEmittedEvents(emittedEvents);
+		if (_emitEnabled)
+			_activeBuffer.AddEmittedEvents(emittedEvents);
 		_activeBuffer.LastLogPosition = pe.LogPosition;
-	}
-
-	private string? ComputePartitionKey(ResolvedEvent projEvent, TFPos logPosition) {
-		if (_getPartitionKey is null)
-			return "";
-
-		var checkpointTag = CheckpointTag.FromPosition(0, logPosition.CommitPosition, logPosition.PreparePosition);
-		return _stateHandler.GetStatePartition(checkpointTag, null, projEvent);
 	}
 
 	private async Task HandleCheckpointMarker(ulong sequence) {

@@ -129,9 +129,9 @@ fromCategory('order')
 		// Wait for standard $by_category projection to index the events
 		await Task.Delay(3000);
 
-		// 2. Create JS state handler from the projection query
+		// 2. Create JS state handler factory from the projection query
 		var trackers = ProjectionTrackers.NoOp;
-		using var stateHandler = new JintProjectionStateHandler(
+		IProjectionStateHandler CreateStateHandler() => new JintProjectionStateHandler(
 			ProjectionQuery,
 			enableContentTypeValidation: false,
 			compilationTimeout: TimeSpan.FromSeconds(5),
@@ -139,7 +139,8 @@ fromCategory('order')
 			new(trackers.GetExecutionTrackerForProjection("e2e-test")),
 			new(trackers.GetSerializationTrackerForProjection("e2e-test")));
 
-		var sourceDefinition = stateHandler.GetSourceDefinition();
+		using var sourceHandler = CreateStateHandler();
+		var sourceDefinition = sourceHandler.GetSourceDefinition();
 
 		// 3. Create a real read strategy that reads from the node's bus
 		var readStrategy = ReadStrategyFactory.Create(
@@ -157,8 +158,7 @@ fromCategory('order')
 		var config = new ProjectionEngineV2Config {
 			ProjectionName = $"e2e-test-{testId}",
 			SourceDefinition = sourceDefinition,
-			StateHandler = stateHandler,
-			PartitionCount = 1,
+			StateHandlerFactory = CreateStateHandler,
 			CheckpointAfterMs = 0,
 			CheckpointHandledThreshold = 3,
 			CheckpointUnhandledBytesThreshold = long.MaxValue,

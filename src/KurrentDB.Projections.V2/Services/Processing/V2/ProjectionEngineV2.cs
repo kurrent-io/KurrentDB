@@ -49,41 +49,45 @@ public class ProjectionEngineV2 : IAsyncDisposable {
 	private async Task Run(TFPos checkpoint, CancellationToken ct) {
 		Log.Information("ProjectionEngineV2 {Name} starting from {Checkpoint}", _config.ProjectionName, checkpoint);
 
-		// For ByCustomPartitions, the partition key function uses the Jint engine which is NOT
-		// thread-safe. Defer partition key computation to the processor thread instead of
-		// computing it on the read loop thread.
-		var usesDeferredPartitionKey = _config.SourceDefinition.ByCustomPartitions;
+		var partitionCount = _config.PartitionCount;
 
-		PartitionDispatcher dispatcher;
-		if (usesDeferredPartitionKey) {
-			dispatcher = new PartitionDispatcher(
-				_config.PartitionCount,
-				projEvent => projEvent.EventStreamId, // routing key for channel selection only
-				deferPartitionKey: true);
-		} else {
-			dispatcher = new PartitionDispatcher(
-				_config.PartitionCount,
-				GetPartitionKeyFunction());
+		// BiState projections use shared state (s[1]) that every event can modify.
+		// This creates a total ordering dependency — true parallelism isn't possible.
+		if (_config.SourceDefinition.IsBiState && partitionCount > 1) {
+			Log.Warning("BiState projection {Name} forced to PartitionCount=1 (shared state requires sequential processing)",
+				_config.ProjectionName);
+			partitionCount = 1;
 		}
 
+		// Partition key is computed on the read loop thread using a dedicated handler instance.
+		// This is single-threaded, so Jint thread safety is not a concern.
+		using var partitionKeyHandler = _config.SourceDefinition.ByCustomPartitions
+			? _config.StateHandlerFactory()
+			: null;
+
+		var getPartitionKey = BuildPartitionKeyFunction(partitionKeyHandler);
+
+		var dispatcher = new PartitionDispatcher(partitionCount, getPartitionKey);
+
 		var coordinator = new CheckpointCoordinator(
-			_config.PartitionCount,
+			partitionCount,
 			_config.ProjectionName,
 			_bus,
 			_user);
 
-		// Start partition processor tasks
-		// When partition key is deferred, the processor computes it on its own thread.
-		var partitionTasks = new Task[_config.PartitionCount];
-		for (int i = 0; i < _config.PartitionCount; i++) {
+		// Each partition gets its own state handler instance (Jint is not thread-safe).
+		var partitionHandlers = new IProjectionStateHandler[partitionCount];
+		var partitionTasks = new Task[partitionCount];
+		for (int i = 0; i < partitionCount; i++) {
 			var partitionIndex = i;
+			partitionHandlers[i] = _config.StateHandlerFactory();
 			var processor = new PartitionProcessor(
 				partitionIndex,
 				dispatcher.GetPartitionReader(partitionIndex),
-				_config.StateHandler,
+				partitionHandlers[i],
 				_config.ProjectionName,
 				_config.SourceDefinition.IsBiState,
-				usesDeferredPartitionKey ? GetPartitionKeyFunction() : null,
+				_config.EmitEnabled,
 				(sequence, buffer) => coordinator.ReportPartitionCheckpoint(partitionIndex, sequence, buffer));
 			partitionTasks[i] = Task.Run(() => processor.Run(ct), ct);
 		}
@@ -104,6 +108,11 @@ public class ProjectionEngineV2 : IAsyncDisposable {
 				await Task.WhenAll(partitionTasks);
 			} catch (OperationCanceledException) when (ct.IsCancellationRequested) {
 				// Expected on cancellation
+			}
+
+			// Dispose per-partition state handlers
+			foreach (var handler in partitionHandlers) {
+				handler?.Dispose();
 			}
 		}
 	}
@@ -167,16 +176,18 @@ public class ProjectionEngineV2 : IAsyncDisposable {
 
 	/// <summary>
 	/// Builds the partition key function for the dispatcher.
-	/// The dispatcher works with Projections ResolvedEvent (due to V2 namespace shadowing).
+	/// For ByCustomPartitions, uses a dedicated handler instance (called single-threaded
+	/// on the read loop). For ByStreams, uses stream ID. Otherwise returns empty string.
 	/// </summary>
 	#nullable enable
-	private Func<ProjectionResolvedEvent, string?> GetPartitionKeyFunction() {
+	private Func<ProjectionResolvedEvent, string?> BuildPartitionKeyFunction(
+		IProjectionStateHandler? partitionKeyHandler) {
 		if (_config.SourceDefinition.ByCustomPartitions) {
 			return projEvent => {
 				var checkpointTag = CheckpointTag.FromPosition(0,
 					projEvent.Position.CommitPosition,
 					projEvent.Position.PreparePosition);
-				return _config.StateHandler.GetStatePartition(checkpointTag, null, projEvent);
+				return partitionKeyHandler!.GetStatePartition(checkpointTag, null, projEvent);
 			};
 		}
 
