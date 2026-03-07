@@ -71,6 +71,8 @@ public class ManagedProjection : IDisposable {
 
 		public int? ProjectionExecutionTimeout { get; set; }
 
+		public int EngineVersion { get; set; } = 1; // 1 = v1 (default), 2 = v2
+
 		public PersistedState() {
 			CheckpointHandledThreshold = ProjectionConsts.CheckpointHandledThreshold;
 			CheckpointAfterMs = (int)ProjectionConsts.CheckpointAfterMs.TotalMilliseconds;

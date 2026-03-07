@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Services.Processing.V2;
 using Serilog;
 using ILogger = Serilog.ILogger;
 
@@ -24,7 +25,13 @@ public class ProcessingStrategySelector {
 		ProjectionNamesBuilder namesBuilder,
 		IQuerySources sourceDefinition,
 		ProjectionConfig projectionConfig,
-		IProjectionStateHandler stateHandler, string handlerType, string query, bool enableContentTypeValidation) {
+		IProjectionStateHandler stateHandler, string handlerType, string query, bool enableContentTypeValidation,
+		int engineVersion = 1) {
+
+		if (engineVersion == 2) {
+			return new V2ProjectionProcessingStrategy(
+				name, projectionVersion, stateHandler, projectionConfig, sourceDefinition, _logger, _maxProjectionStateSize);
+		}
 
 		return projectionConfig.StopOnEof
 			? (ProjectionProcessingStrategy)
