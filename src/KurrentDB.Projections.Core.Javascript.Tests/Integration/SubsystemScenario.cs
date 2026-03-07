@@ -19,12 +19,19 @@ using KurrentDB.Core.Services;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.Projections.Core.Messages;
+using System.Runtime.CompilerServices;
 using Xunit;
 using AwakeServiceMessage = KurrentDB.Core.Services.AwakeReaderService.AwakeServiceMessage;
 
 namespace KurrentDB.Projections.Core.Javascript.Tests.Integration;
 
 public abstract class SubsystemScenario : IHandle<Message>, IAsyncLifetime {
+	// Force KurrentDB.Projections.Core assembly to load before InMemoryBus static
+	// constructor scans AppDomain assemblies for message types.
+	[ModuleInitializer]
+	internal static void EnsureProjectionsCoreLoaded() {
+		RuntimeHelpers.RunClassConstructor(typeof(EventReaderSubscriptionMessage).TypeHandle);
+	}
 	private readonly Func<ValueTask> _stop;
 	private readonly SynchronousScheduler _mainBus;
 	private readonly IQueuedHandler _mainQueue;
