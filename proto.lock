@@ -4223,6 +4223,11 @@
                     "id": 4,
                     "name": "query",
                     "type": "string"
+                  },
+                  {
+                    "id": 5,
+                    "name": "engine_version",
+                    "type": "int32"
                   }
                 ],
                 "messages": [
