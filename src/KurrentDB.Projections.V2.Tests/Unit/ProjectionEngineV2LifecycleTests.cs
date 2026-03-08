@@ -82,6 +82,15 @@ public class ProjectionEngineV2LifecycleTests {
 				w.Envelope.ReplyWith(new ClientMessage.WriteEventsCompleted(
 					w.CorrelationId, first, last, preparePosition: 0, commitPosition: 0));
 			}
+
+			if (message is ClientMessage.ReadStreamEventsBackward rb) {
+				rb.Envelope.ReplyWith(
+					new ClientMessage.ReadStreamEventsBackwardCompleted(
+						rb.CorrelationId, rb.EventStreamId, rb.FromEventNumber, rb.MaxCount,
+						ReadStreamResult.NoStream, [], streamMetadata: null, isCachePublic: false,
+						error: string.Empty, nextEventNumber: -1, lastEventNumber: -1,
+						isEndOfStream: true, tfLastCommitPosition: 0));
+			}
 		}
 	}
 

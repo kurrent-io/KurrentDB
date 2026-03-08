@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using EventStore.Client.Streams;
 using Grpc.Net.Client;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
@@ -29,6 +30,7 @@ public sealed class ProjectionsNodeFixture : IAsyncInitializer, IAsyncDisposable
 	public IServiceProvider Services => _node.Services;
 	public IPublisher MainQueue => Services.GetRequiredService<IPublisher>();
 	public StreamsService.StreamsServiceClient StreamsClient { get; private set; } = null!;
+	public Streams.StreamsClient V1StreamsClient { get; private set; } = null!;
 	public EventStore.Client.Projections.Projections.ProjectionsClient ProjectionsClient { get; private set; } = null!;
 
 	public async Task InitializeAsync() {
@@ -52,6 +54,7 @@ public sealed class ProjectionsNodeFixture : IAsyncInitializer, IAsyncDisposable
 		var uri = Services.GetServerLocalAddress();
 		_channel = GrpcChannel.ForAddress(uri);
 		StreamsClient = new(_channel);
+		V1StreamsClient = new(_channel);
 		ProjectionsClient = new(_channel);
 	}
 

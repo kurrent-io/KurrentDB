@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Security.Claims;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Services;
 using KurrentDB.Projections.Core.Messages;
 using CoreEventFilter = KurrentDB.Core.Services.Storage.ReaderIndex.EventFilter;
 
@@ -14,7 +15,7 @@ public static class ReadStrategyFactory {
 	public static IReadStrategy Create(IQuerySources sources, IPublisher bus, ClaimsPrincipal user) {
 		if (sources.AllStreams) {
 			var filter = sources.HasEvents()
-				? CoreEventFilter.EventType.Prefixes(isAllStream: true, sources.Events)
+				? CoreEventFilter.EventType.Prefixes(isAllStream: true, GetEventTypePrefixes(sources))
 				: CoreEventFilter.DefaultAllFilter;
 
 			return new FilteredAllReadStrategy(bus, filter, user);
@@ -34,5 +35,18 @@ public static class ReadStrategyFactory {
 		}
 
 		throw new ArgumentException("Unsupported query source combination: must specify AllStreams, Streams, or Categories.");
+	}
+
+	private static string[] GetEventTypePrefixes(IQuerySources sources) {
+		if (!sources.HandlesDeletedNotifications)
+			return sources.Events;
+
+		// When the projection handles $deleted, we need tombstone events to pass through
+		// the read-level filter. Hard delete writes $streamDeleted on the original stream;
+		// soft delete writes $streamMetadata on $$stream with TruncateBefore=DeletedStream.
+		return sources.Events
+			.Append(SystemEventTypes.StreamDeleted)
+			.Append(SystemEventTypes.StreamMetadata) // "$metadata" — written to $$stream on soft delete
+			.ToArray();
 	}
 }

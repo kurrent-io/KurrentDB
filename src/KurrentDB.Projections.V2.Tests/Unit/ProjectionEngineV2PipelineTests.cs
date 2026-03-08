@@ -57,6 +57,24 @@ public class ProjectionEngineV2PipelineTests {
 
 				writeEvents.Envelope.ReplyWith(completed);
 			}
+
+			if (message is ClientMessage.ReadStreamEventsBackward readBackward) {
+				readBackward.Envelope.ReplyWith(
+					new ClientMessage.ReadStreamEventsBackwardCompleted(
+						readBackward.CorrelationId,
+						readBackward.EventStreamId,
+						readBackward.FromEventNumber,
+						readBackward.MaxCount,
+						ReadStreamResult.NoStream,
+						[],
+						streamMetadata: null,
+						isCachePublic: false,
+						error: string.Empty,
+						nextEventNumber: -1,
+						lastEventNumber: -1,
+						isEndOfStream: true,
+						tfLastCommitPosition: 0));
+			}
 		}
 	}
 

@@ -5,12 +5,15 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Security.Claims;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.ClientPublisher;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Standard;
 using Serilog;
 using CoreResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 using ProjectionResolvedEvent = KurrentDB.Projections.Core.Services.Processing.ResolvedEvent;
@@ -86,7 +89,8 @@ public class ProjectionEngineV2(
 				_config.SourceDefinition.IsBiState,
 				_config.EmitEnabled,
 				(sequence, buffer) => coordinator.ReportPartitionCheckpoint(partitionIndex, sequence, buffer),
-				_partitionStates);
+				loadPersistedState: partitionKey => LoadPersistedPartitionState(partitionKey, ct),
+				sharedPartitionStates: _partitionStates);
 			partitionTasks[i] = Task.Run(() => processor.Run(ct), ct);
 		}
 
@@ -126,17 +130,24 @@ public class ProjectionEngineV2(
 				switch (response) {
 					case ReadResponse.EventReceived eventReceived:
 						var coreEvent = eventReceived.Event;
-
-						// Skip system events (event types starting with '$') — they are internal
-						// infrastructure events (e.g. metadata, links) that projections don't process.
-						if (coreEvent.Event.EventType.StartsWith("$"))
-							break;
-
-						var projEvent = ConvertToProjectionEvent(coreEvent);
 						var logPosition = coreEvent.OriginalPosition ??
 						                  new TFPos(coreEvent.Event.LogPosition, coreEvent.Event.TransactionPosition);
 
-						await dispatcher.DispatchEvent(projEvent, logPosition, ct);
+						// System events (event types starting with '$') are normally skipped,
+						// but tombstone markers need to be routed so projections can handle $deleted.
+						if (coreEvent.Event.EventType.StartsWith("$")) {
+							var projEvent = ConvertToProjectionEvent(coreEvent);
+							if (StreamDeletedHelper.IsStreamDeletedEvent(
+								    projEvent.EventStreamId, projEvent.EventType, projEvent.Data,
+								    out var deletedPartitionStreamId)) {
+								await dispatcher.DispatchPartitionDeleted(deletedPartitionStreamId, logPosition, ct);
+							} else {
+								break;
+							}
+						} else {
+							var projEvent = ConvertToProjectionEvent(coreEvent);
+							await dispatcher.DispatchEvent(projEvent, logPosition, ct);
+						}
 
 						eventsProcessed++;
 						Interlocked.Increment(ref _totalEventsProcessed);
@@ -193,6 +204,23 @@ public class ProjectionEngineV2(
 		}
 
 		return _ => "";
+	}
+
+	/// <summary>
+	/// Loads persisted partition state from the result stream after a restart.
+	/// Returns the state JSON if found, null otherwise.
+	/// </summary>
+	private async ValueTask<string?> LoadPersistedPartitionState(string partitionKey, CancellationToken ct) {
+		var resultStreamId = $"$projections-{_config.ProjectionName}-{partitionKey}-result";
+		try {
+			var lastEvent = await _bus.ReadStreamLastEvent(resultStreamId, ct);
+			if (lastEvent is null)
+				return null;
+
+			return Encoding.UTF8.GetString(lastEvent.Value.Event.Data.Span);
+		} catch (ReadResponseException.StreamNotFound) {
+			return null;
+		}
 	}
 #nullable restore
 

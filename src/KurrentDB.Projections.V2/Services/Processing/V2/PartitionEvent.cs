@@ -16,11 +16,15 @@ public readonly record struct PartitionEvent {
 	public string? PartitionKey { get; init; }
 	public TFPos LogPosition { get; init; }
 	public ulong? CheckpointMarkerSequence { get; init; }
+	public bool IsPartitionDeleted { get; init; }
 
 	public bool IsCheckpointMarker => CheckpointMarkerSequence.HasValue;
 
 	public static PartitionEvent ForEvent(ResolvedEvent @event, string partitionKey, TFPos logPosition)
 		=> new() { Event = @event, PartitionKey = partitionKey, LogPosition = logPosition };
+
+	public static PartitionEvent ForPartitionDeleted(string partitionKey, TFPos logPosition)
+		=> new() { PartitionKey = partitionKey, LogPosition = logPosition, IsPartitionDeleted = true };
 
 	public static PartitionEvent ForCheckpointMarker(ulong sequence, TFPos logPosition)
 		=> new() { CheckpointMarkerSequence = sequence, LogPosition = logPosition };

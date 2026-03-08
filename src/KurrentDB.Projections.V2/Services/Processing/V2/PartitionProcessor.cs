@@ -23,6 +23,7 @@ public class PartitionProcessor(
 	bool isBiState,
 	bool emitEnabled,
 	Func<ulong, OutputBuffer, Task> onCheckpointMarker,
+	Func<string, ValueTask<string?>>? loadPersistedState = null,
 	ConcurrentDictionary<string, string>? sharedPartitionStates = null) {
 	private static readonly ILogger Log = Serilog.Log.ForContext<PartitionProcessor>();
 
@@ -44,32 +45,83 @@ public class PartitionProcessor(
 				continue;
 			}
 
-			ProcessEvent(pe);
+			if (pe.IsPartitionDeleted)
+				await ProcessPartitionDeleted(pe);
+			else
+				await ProcessEvent(pe);
 		}
 	}
 
-	private void ProcessEvent(PartitionEvent pe) {
+	/// <summary>
+	/// Loads partition state from cache, persisted result stream, or initializes fresh.
+	/// Returns true if the partition is new (not previously seen in this run or persisted).
+	/// </summary>
+	private async ValueTask<bool> LoadPartitionState(string partitionKey) {
+		if (_stateCache.ContainsKey(partitionKey)) {
+			stateHandler.Load(_stateCache[partitionKey]);
+			return false;
+		}
+
+		// Try loading persisted state from the result stream (recovery after restart).
+		if (loadPersistedState is not null) {
+			var persistedState = await loadPersistedState(partitionKey);
+			if (persistedState is not null) {
+				Log.Debug("Loaded persisted state for partition {Partition} in projection {Name}",
+					partitionKey, projectionName);
+				stateHandler.Load(persistedState);
+				_stateCache[partitionKey] = persistedState;
+				return false;
+			}
+		}
+
+		stateHandler.Initialize();
+		return true;
+	}
+
+	private void LoadSharedState() {
+		if (!isBiState) return;
+
+		if (!_sharedStateInitialized) {
+			stateHandler.InitializeShared();
+			_sharedStateInitialized = true;
+		} else if (_sharedState != null) {
+			stateHandler.LoadShared(_sharedState);
+		}
+	}
+
+	private async Task ProcessPartitionDeleted(PartitionEvent pe) {
+		var partitionKey = pe.PartitionKey!;
+
+		Log.Debug("Processing partition deleted partition={Partition}", partitionKey);
+
+		await LoadPartitionState(partitionKey);
+		LoadSharedState();
+
+		var checkpointTag = CheckpointTag.FromPosition(0, pe.LogPosition.CommitPosition, pe.LogPosition.PreparePosition);
+
+		var processed = stateHandler.ProcessPartitionDeleted(partitionKey, checkpointTag, out var newState);
+
+		if (processed) {
+			_stateCache[partitionKey] = newState;
+			if (newState != null) {
+				var stateStreamName = $"$projections-{projectionName}-{partitionKey}-result";
+				_activeBuffer.SetPartitionState(partitionKey, stateStreamName, newState, -2); // ExpectedVersion.Any
+				sharedPartitionStates?[partitionKey] = newState;
+			}
+		}
+
+		_activeBuffer.LastLogPosition = pe.LogPosition;
+	}
+
+	private async Task ProcessEvent(PartitionEvent pe) {
 		var projEvent = pe.Event!;
 		var partitionKey = pe.PartitionKey!;
 
 		Log.Debug("Processing event stream={Stream} type={EventType} partition={Partition}",
 			projEvent.EventStreamId, projEvent.EventType, partitionKey);
 
-		var isNewPartition = !_stateCache.ContainsKey(partitionKey);
-
-		if (!isNewPartition)
-			stateHandler.Load(_stateCache[partitionKey]);
-		else
-			stateHandler.Initialize();
-
-		if (isBiState) {
-			if (!_sharedStateInitialized) {
-				stateHandler.InitializeShared();
-				_sharedStateInitialized = true;
-			} else if (_sharedState != null) {
-				stateHandler.LoadShared(_sharedState);
-			}
-		}
+		var isNewPartition = await LoadPartitionState(partitionKey);
+		LoadSharedState();
 
 		var checkpointTag = CheckpointTag.FromPosition(0, pe.LogPosition.CommitPosition, pe.LogPosition.PreparePosition);
 

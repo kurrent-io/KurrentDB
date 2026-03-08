@@ -59,6 +59,12 @@ public class PartitionDispatcher {
 		await _partitionChannels[partitionIndex].Writer.WriteAsync(pe, ct);
 	}
 
+	public async ValueTask DispatchPartitionDeleted(string partitionKey, TFPos logPosition, CancellationToken ct) {
+		var partitionIndex = GetPartitionIndex(partitionKey);
+		var pe = PartitionEvent.ForPartitionDeleted(partitionKey, logPosition);
+		await _partitionChannels[partitionIndex].Writer.WriteAsync(pe, ct);
+	}
+
 	public async ValueTask<ulong> InjectCheckpointMarker(TFPos logPosition, CancellationToken ct) {
 		var sequence = ++_nextCheckpointSequence;
 		var marker = PartitionEvent.ForCheckpointMarker(sequence, logPosition);
