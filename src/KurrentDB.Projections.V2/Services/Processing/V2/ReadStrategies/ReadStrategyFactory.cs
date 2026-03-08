@@ -33,7 +33,6 @@ public static class ReadStrategyFactory {
 			return new FilteredAllReadStrategy(bus, filter, user);
 		}
 
-		throw new ArgumentException(
-			"Unsupported query source combination: must specify AllStreams, Streams, or Categories.");
+		throw new ArgumentException("Unsupported query source combination: must specify AllStreams, Streams, or Categories.");
 	}
 }

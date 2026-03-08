@@ -51,8 +51,8 @@ public sealed class ProjectionsNodeFixture : IAsyncInitializer, IAsyncDisposable
 
 		var uri = Services.GetServerLocalAddress();
 		_channel = GrpcChannel.ForAddress(uri);
-		StreamsClient = new StreamsService.StreamsServiceClient(_channel);
-		ProjectionsClient = new EventStore.Client.Projections.Projections.ProjectionsClient(_channel);
+		StreamsClient = new(_channel);
+		ProjectionsClient = new(_channel);
 	}
 
 	public async ValueTask DisposeAsync() {

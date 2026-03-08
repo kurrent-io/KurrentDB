@@ -15,17 +15,16 @@ using Serilog;
 
 namespace KurrentDB.Projections.Core.Services.Processing.V2;
 
-public class PartitionProcessor {
+public class PartitionProcessor(
+	int partitionIndex,
+	ChannelReader<PartitionEvent> reader,
+	IProjectionStateHandler stateHandler,
+	string projectionName,
+	bool isBiState,
+	bool emitEnabled,
+	Func<ulong, OutputBuffer, Task> onCheckpointMarker,
+	ConcurrentDictionary<string, string>? sharedPartitionStates = null) {
 	private static readonly ILogger Log = Serilog.Log.ForContext<PartitionProcessor>();
-
-	private readonly int _partitionIndex;
-	private readonly ChannelReader<PartitionEvent> _reader;
-	private readonly IProjectionStateHandler _stateHandler;
-	private readonly string _projectionName;
-	private readonly bool _isBiState;
-	private readonly bool _emitEnabled;
-	private readonly Func<ulong, OutputBuffer, Task> _onCheckpointMarker;
-	private readonly ConcurrentDictionary<string, string>? _sharedPartitionStates;
 
 	private OutputBuffer _activeBuffer = new();
 	private OutputBuffer _frozenBuffer = new();
@@ -33,32 +32,13 @@ public class PartitionProcessor {
 	private string? _sharedState;
 	private bool _sharedStateInitialized;
 
-	public PartitionProcessor(
-		int partitionIndex,
-		ChannelReader<PartitionEvent> reader,
-		IProjectionStateHandler stateHandler,
-		string projectionName,
-		bool isBiState,
-		bool emitEnabled,
-		Func<ulong, OutputBuffer, Task> onCheckpointMarker,
-		ConcurrentDictionary<string, string>? sharedPartitionStates = null) {
-		_partitionIndex = partitionIndex;
-		_reader = reader;
-		_stateHandler = stateHandler;
-		_projectionName = projectionName;
-		_isBiState = isBiState;
-		_emitEnabled = emitEnabled;
-		_onCheckpointMarker = onCheckpointMarker;
-		_sharedPartitionStates = sharedPartitionStates;
-	}
-
 	public async Task Run(CancellationToken ct) {
-		Log.Debug("Partition {Index} starting for projection {Name}", _partitionIndex, _projectionName);
+		Log.Debug("Partition {Index} starting for projection {Name}", partitionIndex, projectionName);
 
 		// Don't use ct for reading: the processor should drain all pending events
 		// (including the final checkpoint marker) before stopping. The read loop
 		// signals completion by completing the channel via dispatcher.Complete().
-		await foreach (var pe in _reader.ReadAllAsync(CancellationToken.None)) {
+		await foreach (var pe in reader.ReadAllAsync(CancellationToken.None)) {
 			if (pe.IsCheckpointMarker) {
 				await HandleCheckpointMarker(pe.CheckpointMarkerSequence!.Value);
 				continue;
@@ -78,28 +58,28 @@ public class PartitionProcessor {
 		var isNewPartition = !_stateCache.ContainsKey(partitionKey);
 
 		if (!isNewPartition)
-			_stateHandler.Load(_stateCache[partitionKey]);
+			stateHandler.Load(_stateCache[partitionKey]);
 		else
-			_stateHandler.Initialize();
+			stateHandler.Initialize();
 
-		if (_isBiState) {
+		if (isBiState) {
 			if (!_sharedStateInitialized) {
-				_stateHandler.InitializeShared();
+				stateHandler.InitializeShared();
 				_sharedStateInitialized = true;
 			} else if (_sharedState != null) {
-				_stateHandler.LoadShared(_sharedState);
+				stateHandler.LoadShared(_sharedState);
 			}
 		}
 
 		var checkpointTag = CheckpointTag.FromPosition(0, pe.LogPosition.CommitPosition, pe.LogPosition.PreparePosition);
 
 		if (isNewPartition) {
-			_stateHandler.ProcessPartitionCreated(partitionKey, checkpointTag, projEvent, out var createdEmittedEvents);
-			if (_emitEnabled)
+			stateHandler.ProcessPartitionCreated(partitionKey, checkpointTag, projEvent, out var createdEmittedEvents);
+			if (emitEnabled)
 				_activeBuffer.AddEmittedEvents(createdEmittedEvents);
 		}
 
-		var processed = _stateHandler.ProcessEvent(
+		var processed = stateHandler.ProcessEvent(
 			partitionKey,
 			checkpointTag,
 			category: null,
@@ -111,31 +91,31 @@ public class PartitionProcessor {
 		if (processed) {
 			_stateCache[partitionKey] = newState;
 			if (newState != null) {
-				var stateStreamName = $"$projections-{_projectionName}-{partitionKey}-result";
+				var stateStreamName = $"$projections-{projectionName}-{partitionKey}-result";
 				_activeBuffer.SetPartitionState(partitionKey, stateStreamName, newState, -2); // ExpectedVersion.Any
-				_sharedPartitionStates?[partitionKey] = newState;
+				sharedPartitionStates?[partitionKey] = newState;
 			}
 		}
 
-		if (_isBiState && newSharedState != null) {
+		if (isBiState && newSharedState != null) {
 			_sharedState = newSharedState;
-			var sharedStreamName = $"$projections-{_projectionName}--result";
+			var sharedStreamName = $"$projections-{projectionName}--result";
 			_activeBuffer.SetPartitionState("", sharedStreamName, newSharedState, -2);
 		}
 
-		if (_emitEnabled)
+		if (emitEnabled)
 			_activeBuffer.AddEmittedEvents(emittedEvents);
 		_activeBuffer.LastLogPosition = pe.LogPosition;
 	}
 
 	private async Task HandleCheckpointMarker(ulong sequence) {
-		Log.Debug("Partition {Index} received checkpoint marker {Sequence}", _partitionIndex, sequence);
+		Log.Debug("Partition {Index} received checkpoint marker {Sequence}", partitionIndex, sequence);
 
 		var bufferToFlush = _activeBuffer;
 		_activeBuffer = _frozenBuffer;
 		_activeBuffer.Clear();
 		_frozenBuffer = bufferToFlush;
 
-		await _onCheckpointMarker(sequence, bufferToFlush);
+		await onCheckpointMarker(sequence, bufferToFlush);
 	}
 }

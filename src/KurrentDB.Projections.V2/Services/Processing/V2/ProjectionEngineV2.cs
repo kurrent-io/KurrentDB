@@ -17,28 +17,22 @@ using ProjectionResolvedEvent = KurrentDB.Projections.Core.Services.Processing.R
 
 namespace KurrentDB.Projections.Core.Services.Processing.V2;
 
-public class ProjectionEngineV2 : IAsyncDisposable {
+public class ProjectionEngineV2(
+	ProjectionEngineV2Config config,
+	IReadStrategy readStrategy,
+	IPublisher bus,
+	ClaimsPrincipal user)
+	: IAsyncDisposable {
 	private static readonly ILogger Log = Serilog.Log.ForContext<ProjectionEngineV2>();
 
-	private readonly ProjectionEngineV2Config _config;
-	private readonly IReadStrategy _readStrategy;
-	private readonly IPublisher _bus;
-	private readonly ClaimsPrincipal _user;
+	private readonly ProjectionEngineV2Config _config = config ?? throw new ArgumentNullException(nameof(config));
+	private readonly IReadStrategy _readStrategy = readStrategy ?? throw new ArgumentNullException(nameof(readStrategy));
+	private readonly IPublisher _bus = bus ?? throw new ArgumentNullException(nameof(bus));
+	private readonly ClaimsPrincipal _user = user ?? throw new ArgumentNullException(nameof(user));
 	private CancellationTokenSource _cts;
 	private Task _runTask;
 	private long _totalEventsProcessed;
 	private readonly ConcurrentDictionary<string, string> _partitionStates = new();
-
-	public ProjectionEngineV2(
-		ProjectionEngineV2Config config,
-		IReadStrategy readStrategy,
-		IPublisher bus,
-		ClaimsPrincipal user) {
-		_config = config ?? throw new ArgumentNullException(nameof(config));
-		_readStrategy = readStrategy ?? throw new ArgumentNullException(nameof(readStrategy));
-		_bus = bus ?? throw new ArgumentNullException(nameof(bus));
-		_user = user ?? throw new ArgumentNullException(nameof(user));
-	}
 
 	public Task Start(TFPos checkpoint, CancellationToken ct) {
 		_cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -76,11 +70,7 @@ public class ProjectionEngineV2 : IAsyncDisposable {
 
 		var dispatcher = new PartitionDispatcher(partitionCount, getPartitionKey);
 
-		var coordinator = new CheckpointCoordinator(
-			partitionCount,
-			_config.ProjectionName,
-			_bus,
-			_user);
+		var coordinator = new CheckpointCoordinator(partitionCount, _config.ProjectionName, _bus, _user);
 
 		// Each partition gets its own state handler instance (Jint is not thread-safe).
 		var partitionHandlers = new IProjectionStateHandler[partitionCount];
@@ -143,8 +133,8 @@ public class ProjectionEngineV2 : IAsyncDisposable {
 							break;
 
 						var projEvent = ConvertToProjectionEvent(coreEvent);
-						var logPosition = coreEvent.OriginalPosition
-							?? new TFPos(coreEvent.Event.LogPosition, coreEvent.Event.TransactionPosition);
+						var logPosition = coreEvent.OriginalPosition ??
+						                  new TFPos(coreEvent.Event.LogPosition, coreEvent.Event.TransactionPosition);
 
 						await dispatcher.DispatchEvent(projEvent, logPosition, ct);
 
@@ -156,13 +146,14 @@ public class ProjectionEngineV2 : IAsyncDisposable {
 						// Check if checkpoint is due
 						var elapsedMs = GetElapsedMs(lastCheckpointTime);
 						if (elapsedMs >= _config.CheckpointAfterMs &&
-							(eventsProcessed >= _config.CheckpointHandledThreshold ||
-							 bytesProcessed >= _config.CheckpointUnhandledBytesThreshold)) {
+						    (eventsProcessed >= _config.CheckpointHandledThreshold ||
+						     bytesProcessed >= _config.CheckpointUnhandledBytesThreshold)) {
 							await dispatcher.InjectCheckpointMarker(lastLogPosition, ct);
 							eventsProcessed = 0;
 							bytesProcessed = 0;
 							lastCheckpointTime = Stopwatch.GetTimestamp();
 						}
+
 						break;
 
 					// Ignore subscription infrastructure messages
@@ -188,14 +179,11 @@ public class ProjectionEngineV2 : IAsyncDisposable {
 	/// For ByCustomPartitions, uses a dedicated handler instance (called single-threaded
 	/// on the read loop). For ByStreams, uses stream ID. Otherwise returns empty string.
 	/// </summary>
-	#nullable enable
-	private Func<ProjectionResolvedEvent, string?> BuildPartitionKeyFunction(
-		IProjectionStateHandler? partitionKeyHandler) {
+#nullable enable
+	private Func<ProjectionResolvedEvent, string?> BuildPartitionKeyFunction(IProjectionStateHandler? partitionKeyHandler) {
 		if (_config.SourceDefinition.ByCustomPartitions) {
 			return projEvent => {
-				var checkpointTag = CheckpointTag.FromPosition(0,
-					projEvent.Position.CommitPosition,
-					projEvent.Position.PreparePosition);
+				var checkpointTag = CheckpointTag.FromPosition(0, projEvent.Position.CommitPosition, projEvent.Position.PreparePosition);
 				return partitionKeyHandler!.GetStatePartition(checkpointTag, null, projEvent);
 			};
 		}
@@ -206,7 +194,7 @@ public class ProjectionEngineV2 : IAsyncDisposable {
 
 		return _ => "";
 	}
-	#nullable restore
+#nullable restore
 
 	/// <summary>
 	/// Converts a Core ResolvedEvent (struct from storage engine) to a Projections
@@ -217,7 +205,7 @@ public class ProjectionEngineV2 : IAsyncDisposable {
 	internal static ProjectionResolvedEvent ConvertToProjectionEvent(CoreResolvedEvent coreEvent) {
 		var e = coreEvent.Event;
 		var link = coreEvent.Link;
-		return new ProjectionResolvedEvent(
+		return new(
 			positionStreamId: link?.EventStreamId ?? e.EventStreamId,
 			positionSequenceNumber: link?.EventNumber ?? e.EventNumber,
 			eventStreamId: e.EventStreamId,
@@ -231,9 +219,7 @@ public class ProjectionEngineV2 : IAsyncDisposable {
 			metadata: e.Metadata.Length > 0 ? System.Text.Encoding.UTF8.GetString(e.Metadata.Span) : null);
 	}
 
-	private static double GetElapsedMs(long startTimestamp) {
-		return Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds;
-	}
+	private static double GetElapsedMs(long startTimestamp) => Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds;
 
 	public async ValueTask DisposeAsync() {
 		if (_cts is not null) {
@@ -241,8 +227,10 @@ public class ProjectionEngineV2 : IAsyncDisposable {
 			if (_runTask is not null) {
 				try { await _runTask; } catch (OperationCanceledException) { }
 			}
+
 			_cts.Dispose();
 		}
+
 		await _readStrategy.DisposeAsync();
 	}
 }

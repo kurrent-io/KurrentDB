@@ -18,33 +18,16 @@ using Serilog;
 
 namespace KurrentDB.Projections.Core.Services.Processing.V2;
 
-public class CheckpointCoordinator {
+public class CheckpointCoordinator(int partitionCount, string projectionName, IPublisher bus, ClaimsPrincipal user) {
 	private static readonly ILogger Log = Serilog.Log.ForContext<CheckpointCoordinator>();
 
-	private readonly int _partitionCount;
-	private readonly string _projectionName;
-	private readonly string _checkpointStreamId;
-	private readonly IPublisher _bus;
-	private readonly ClaimsPrincipal _user;
+	private readonly string _checkpointStreamId = $"$projections-{projectionName}-checkpoint";
 
-	private readonly OutputBuffer[] _collectedBuffers;
+	private readonly OutputBuffer[] _collectedBuffers = new OutputBuffer[partitionCount];
 	private ulong _currentMarkerSequence;
 	private int _collectedCount;
 	private readonly SemaphoreSlim _checkpointSemaphore = new(1, 1);
-	private readonly object _lock = new();
-
-	public CheckpointCoordinator(
-		int partitionCount,
-		string projectionName,
-		IPublisher bus,
-		ClaimsPrincipal user) {
-		_partitionCount = partitionCount;
-		_projectionName = projectionName;
-		_checkpointStreamId = $"$projections-{projectionName}-checkpoint";
-		_bus = bus;
-		_user = user;
-		_collectedBuffers = new OutputBuffer[partitionCount];
-	}
+	private readonly Lock _lock = new();
 
 	public async Task ReportPartitionCheckpoint(int partitionIndex, ulong markerSequence, OutputBuffer buffer) {
 		bool allCollected;
@@ -54,9 +37,10 @@ public class CheckpointCoordinator {
 				_collectedCount = 0;
 				Array.Clear(_collectedBuffers);
 			}
+
 			_collectedBuffers[partitionIndex] = buffer;
 			_collectedCount++;
-			allCollected = _collectedCount == _partitionCount;
+			allCollected = _collectedCount == partitionCount;
 		}
 
 		if (allCollected) {
@@ -74,14 +58,14 @@ public class CheckpointCoordinator {
 			}
 
 			Log.Information("Writing checkpoint {Sequence} for {Projection} at {Position}",
-				markerSequence, _projectionName, lastPosition);
+				markerSequence, projectionName, lastPosition);
 
 			var (streamIds, expectedVersions, events, streamIndexes) = BuildMultiStreamWrite(lastPosition);
 
 			var tcs = new TaskCompletionSource<ClientMessage.WriteEventsCompleted>();
 			var corrId = Guid.NewGuid();
 
-			_bus.Publish(new ClientMessage.WriteEvents(
+			bus.Publish(new ClientMessage.WriteEvents(
 				internalCorrId: corrId,
 				correlationId: corrId,
 				envelope: new CallbackEnvelope(msg => {
@@ -95,19 +79,20 @@ public class CheckpointCoordinator {
 				expectedVersions: expectedVersions.ToArray(),
 				events: events.ToArray(),
 				eventStreamIndexes: streamIndexes.ToArray(),
-				user: _user));
+				user: user));
 
 			var result = await tcs.Task;
 			if (result.Result != OperationResult.Success) {
-				throw new Exception($"Checkpoint write failed for {_projectionName}: {result.Result} — {result.Message}");
+				throw new Exception($"Checkpoint write failed for {projectionName}: {result.Result} — {result.Message}");
 			}
 
-			Log.Debug("Checkpoint {Sequence} written for {Projection}", markerSequence, _projectionName);
+			Log.Debug("Checkpoint {Sequence} written for {Projection}", markerSequence, projectionName);
 		} finally {
 			lock (_lock) {
 				Array.Clear(_collectedBuffers);
 				_collectedCount = 0;
 			}
+
 			_checkpointSemaphore.Release();
 		}
 	}
@@ -118,16 +103,6 @@ public class CheckpointCoordinator {
 		var events = new List<Event>();
 		var streamIndexes = new List<int>();
 		var streamIndexMap = new Dictionary<string, int>();
-
-		int GetOrAddStream(string streamName, long expectedVersion) {
-			if (!streamIndexMap.TryGetValue(streamName, out var idx)) {
-				idx = streamIds.Count;
-				streamIds.Add(streamName);
-				expectedVersions.Add(expectedVersion);
-				streamIndexMap[streamName] = idx;
-			}
-			return idx;
-		}
 
 		// 1. Checkpoint event
 		var checkpointData = Encoding.UTF8.GetBytes(
@@ -161,6 +136,17 @@ public class CheckpointCoordinator {
 		}
 
 		return (streamIds, expectedVersions, events, streamIndexes);
+
+		int GetOrAddStream(string streamName, long expectedVersion) {
+			if (!streamIndexMap.TryGetValue(streamName, out var idx)) {
+				idx = streamIds.Count;
+				streamIds.Add(streamName);
+				expectedVersions.Add(expectedVersion);
+				streamIndexMap[streamName] = idx;
+			}
+
+			return idx;
+		}
 	}
 
 	private static byte[] SerializeExtraMetadata(EmittedEvent e) {
@@ -181,6 +167,7 @@ public class CheckpointCoordinator {
 			// Key is a JSON property name, Value is already a JSON-encoded value
 			sb.Append('"').Append(pair.Key).Append("\":").Append(pair.Value);
 		}
+
 		sb.Append('}');
 		return Encoding.UTF8.GetBytes(sb.ToString());
 	}

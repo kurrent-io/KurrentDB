@@ -1,7 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Security.Claims;
@@ -16,41 +15,29 @@ using CoreEventFilter = KurrentDB.Core.Services.Storage.ReaderIndex.EventFilter;
 
 namespace KurrentDB.Projections.Core.Services.Processing.V2.ReadStrategies;
 
-public sealed class StreamSetReadStrategy : IReadStrategy {
-	private readonly IPublisher _bus;
-	private readonly IEventFilter _eventFilter;
-	private readonly ClaimsPrincipal _user;
-	private readonly bool _requiresLeader;
+public sealed class StreamSetReadStrategy(
+	IPublisher bus,
+	string[] streamNames,
+	ClaimsPrincipal user,
+	bool requiresLeader = false)
+	: IReadStrategy {
+	private readonly IEventFilter _eventFilter = CoreEventFilter.StreamName.Set(isAllStream: true, streamNames);
 
 	private Enumerator.AllSubscriptionFiltered _enumerator;
 
-	public StreamSetReadStrategy(
-		IPublisher bus,
-		string[] streamNames,
-		ClaimsPrincipal user,
-		bool requiresLeader = false) {
-		_bus = bus;
-		_eventFilter = CoreEventFilter.StreamName.Set(isAllStream: true, streamNames);
-		_user = user;
-		_requiresLeader = requiresLeader;
-	}
-
-	public async IAsyncEnumerable<ReadResponse> ReadFrom(
-		TFPos checkpoint,
-		[EnumeratorCancellation] CancellationToken ct) {
-
+	public async IAsyncEnumerable<ReadResponse> ReadFrom(TFPos checkpoint, [EnumeratorCancellation] CancellationToken ct) {
 		Position? position = checkpoint == TFPos.HeadOfTf
 			? null
 			: Position.FromInt64(checkpoint.CommitPosition, checkpoint.PreparePosition);
 
-		_enumerator = new Enumerator.AllSubscriptionFiltered(
-			bus: _bus,
+		_enumerator = new(
+			bus: bus,
 			expiryStrategy: DefaultExpiryStrategy.Instance,
 			checkpoint: position,
 			resolveLinks: true,
 			eventFilter: _eventFilter,
-			user: _user,
-			requiresLeader: _requiresLeader,
+			user: user,
+			requiresLeader: requiresLeader,
 			maxSearchWindow: null,
 			checkpointIntervalMultiplier: 1,
 			cancellationToken: ct);

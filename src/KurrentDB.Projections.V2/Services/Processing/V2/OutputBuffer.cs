@@ -8,7 +8,7 @@ using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 namespace KurrentDB.Projections.Core.Services.Processing.V2;
 
 public class OutputBuffer {
-	public List<EmittedEventEnvelope> EmittedEvents { get; } = new();
+	public List<EmittedEventEnvelope> EmittedEvents { get; } = [];
 	public Dictionary<string, (string StreamName, string StateJson, long ExpectedVersion)> DirtyStates { get; } = new();
 	public TFPos LastLogPosition { get; set; }
 

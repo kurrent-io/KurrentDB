@@ -23,12 +23,12 @@ using ProjectionResolvedEvent = KurrentDB.Projections.Core.Services.Processing.R
 namespace KurrentDB.Projections.V2.Tests.Unit;
 
 public class ProjectionEngineV2LifecycleTests {
-
 	#region Helpers
 
 	sealed class InfiniteReadStrategy : IReadStrategy {
 		public async IAsyncEnumerable<ReadResponse> ReadFrom(
-			TFPos checkpoint, [EnumeratorCancellation] CancellationToken ct) {
+			TFPos checkpoint,
+			[EnumeratorCancellation] CancellationToken ct) {
 			long pos = 100;
 			while (!ct.IsCancellationRequested) {
 				var record = new EventRecord(
@@ -39,8 +39,8 @@ public class ProjectionEngineV2LifecycleTests {
 					timeStamp: DateTime.UtcNow,
 					flags: PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd | PrepareFlags.IsJson,
 					eventType: "TestEvent",
-					data: Encoding.UTF8.GetBytes("{}"),
-					metadata: Encoding.UTF8.GetBytes("{}"));
+					data: "{}"u8.ToArray(),
+					metadata: "{}"u8.ToArray());
 				yield return new ReadResponse.EventReceived(CoreResolvedEvent.ForUnresolvedEvent(record, pos));
 				pos += 100;
 				await Task.Delay(10, ct);
@@ -50,13 +50,9 @@ public class ProjectionEngineV2LifecycleTests {
 		public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 	}
 
-	sealed class FakeReadStrategy : IReadStrategy {
-		readonly CoreResolvedEvent[] _events;
-		public FakeReadStrategy(CoreResolvedEvent[] events) => _events = events;
-
-		public async IAsyncEnumerable<ReadResponse> ReadFrom(
-			TFPos checkpoint, [EnumeratorCancellation] CancellationToken ct) {
-			foreach (var e in _events) {
+	sealed class FakeReadStrategy(CoreResolvedEvent[] events) : IReadStrategy {
+		public async IAsyncEnumerable<ReadResponse> ReadFrom(TFPos checkpoint, [EnumeratorCancellation] CancellationToken ct) {
+			foreach (var e in events) {
 				ct.ThrowIfCancellationRequested();
 				yield return new ReadResponse.EventReceived(e);
 				await Task.Yield();
@@ -67,8 +63,7 @@ public class ProjectionEngineV2LifecycleTests {
 	}
 
 	sealed class EmptyReadStrategy : IReadStrategy {
-		public async IAsyncEnumerable<ReadResponse> ReadFrom(
-			TFPos checkpoint, [EnumeratorCancellation] CancellationToken ct) {
+		public async IAsyncEnumerable<ReadResponse> ReadFrom(TFPos checkpoint, [EnumeratorCancellation] CancellationToken ct) {
 			await Task.CompletedTask;
 			yield break;
 		}
@@ -77,7 +72,7 @@ public class ProjectionEngineV2LifecycleTests {
 	}
 
 	sealed class CapturingPublisher : IPublisher {
-		public ConcurrentBag<Message> Messages { get; } = new();
+		public ConcurrentBag<Message> Messages { get; } = [];
 
 		public void Publish(Message message) {
 			Messages.Add(message);
@@ -99,8 +94,12 @@ public class ProjectionEngineV2LifecycleTests {
 		public string GetStatePartition(CheckpointTag eventPosition, string category, ProjectionResolvedEvent data) =>
 			data.EventStreamId;
 
-		public bool ProcessEvent(string partition, CheckpointTag eventPosition, string category,
-			ProjectionResolvedEvent @event, out string newState, out string newSharedState,
+		public bool ProcessEvent(string partition,
+			CheckpointTag eventPosition,
+			string category,
+			ProjectionResolvedEvent @event,
+			out string newState,
+			out string newSharedState,
 			out EmittedEventEnvelope[] emittedEvents) {
 			newState = "{}";
 			newSharedState = null!;
@@ -108,8 +107,10 @@ public class ProjectionEngineV2LifecycleTests {
 			return true;
 		}
 
-		public bool ProcessPartitionCreated(string partition, CheckpointTag createPosition,
-			ProjectionResolvedEvent @event, out EmittedEventEnvelope[] emittedEvents) {
+		public bool ProcessPartitionCreated(string partition,
+			CheckpointTag createPosition,
+			ProjectionResolvedEvent @event,
+			out EmittedEventEnvelope[] emittedEvents) {
 			emittedEvents = null!;
 			return false;
 		}
@@ -198,8 +199,8 @@ public class ProjectionEngineV2LifecycleTests {
 				timeStamp: DateTime.UtcNow,
 				flags: PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd | PrepareFlags.IsJson,
 				eventType: "TestEvent",
-				data: Encoding.UTF8.GetBytes("{}"),
-				metadata: Encoding.UTF8.GetBytes("{}"));
+				data: "{}"u8.ToArray(),
+				metadata: "{}"u8.ToArray());
 			events[i] = CoreResolvedEvent.ForUnresolvedEvent(record, pos);
 		}
 
@@ -213,7 +214,8 @@ public class ProjectionEngineV2LifecycleTests {
 			StateHandlerFactory = () => new NoOpStateHandler(),
 			PartitionCount = 4,
 			CheckpointAfterMs = 0,
-			CheckpointHandledThreshold = 100, // High threshold so only the final checkpoint fires, avoiding a race in CheckpointCoordinator when multiple markers are injected and partitions process at different speeds
+			CheckpointHandledThreshold =
+				100, // High threshold so only the final checkpoint fires, avoiding a race in CheckpointCoordinator when multiple markers are injected and partitions process at different speeds
 			CheckpointUnhandledBytesThreshold = long.MaxValue
 		};
 
@@ -228,6 +230,7 @@ public class ProjectionEngineV2LifecycleTests {
 				await Task.Delay(300);
 				break;
 			}
+
 			if (timeout.IsCompleted) break;
 			await Task.Delay(50);
 		}

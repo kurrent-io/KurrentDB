@@ -80,7 +80,6 @@ public class UserLoginProjectionTests {
 			var userId = $"{category}-user{i:D4}";
 			var events = new List<(string EventType, string Json)>();
 			var successfulLogins = 0;
-			var failedLogins = 0;
 			var consecutiveFails = 0;
 			var lockedOut = false;
 
@@ -100,11 +99,7 @@ public class UserLoginProjectionTests {
 
 				case 1: // User with some failed attempts but recovers
 					events.Add(("UserLoginFailed", JsonSerializer.Serialize(new { reason = "wrong_password" })));
-					failedLogins++;
-					consecutiveFails++;
 					events.Add(("UserLoginFailed", JsonSerializer.Serialize(new { reason = "wrong_password" })));
-					failedLogins++;
-					consecutiveFails++;
 					events.Add(("UserLoggedIn", JsonSerializer.Serialize(new { timestamp = DateTime.UtcNow.ToString("O") })));
 					successfulLogins++;
 					consecutiveFails = 0;
@@ -113,7 +108,6 @@ public class UserLoginProjectionTests {
 				case 2: // User gets locked out
 					for (int j = 0; j < LockoutThreshold; j++) {
 						events.Add(("UserLoginFailed", JsonSerializer.Serialize(new { reason = "wrong_password" })));
-						failedLogins++;
 						consecutiveFails++;
 					}
 					lockedOut = true;
@@ -122,7 +116,6 @@ public class UserLoginProjectionTests {
 				case 3: // User gets locked out then more events
 					for (int j = 0; j < LockoutThreshold + 1; j++) {
 						events.Add(("UserLoginFailed", JsonSerializer.Serialize(new { reason = "wrong_password" })));
-						failedLogins++;
 						consecutiveFails++;
 						if (consecutiveFails == LockoutThreshold) lockedOut = true;
 					}
@@ -130,15 +123,12 @@ public class UserLoginProjectionTests {
 
 				case 4: // Mixed: fail, succeed, fail to lockout
 					events.Add(("UserLoginFailed", JsonSerializer.Serialize(new { reason = "wrong_password" })));
-					failedLogins++;
-					consecutiveFails++;
 					events.Add(("UserLoggedIn", JsonSerializer.Serialize(new { timestamp = DateTime.UtcNow.ToString("O") })));
 					successfulLogins++;
 					consecutiveFails = 0;
 					// Now fail enough to lock out
 					for (int j = 0; j < LockoutThreshold; j++) {
 						events.Add(("UserLoginFailed", JsonSerializer.Serialize(new { reason = "wrong_password" })));
-						failedLogins++;
 						consecutiveFails++;
 					}
 					lockedOut = true;

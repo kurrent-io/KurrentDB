@@ -53,6 +53,7 @@ public class PartitionDispatcher {
 			Log.Debug("Skipping event (partition key is null) at {LogPosition}", logPosition);
 			return;
 		}
+
 		var partitionIndex = GetPartitionIndex(partitionKey);
 		var pe = PartitionEvent.ForEvent(@event, partitionKey, logPosition);
 		await _partitionChannels[partitionIndex].Writer.WriteAsync(pe, ct);
@@ -67,6 +68,7 @@ public class PartitionDispatcher {
 		for (int i = 0; i < _partitionCount; i++) {
 			await _partitionChannels[i].Writer.WriteAsync(marker, ct);
 		}
+
 		return sequence;
 	}
 

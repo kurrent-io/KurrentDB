@@ -105,13 +105,6 @@ public class AccountBalancerSpecTests {
 
 		// 4. Create state handler factory
 		var trackers = ProjectionTrackers.NoOp;
-		IProjectionStateHandler CreateStateHandler() => new JintProjectionStateHandler(
-			rewrittenSource,
-			enableContentTypeValidation: false,
-			compilationTimeout: TimeSpan.FromSeconds(5),
-			executionTimeout: TimeSpan.FromSeconds(5),
-			new(trackers.GetExecutionTrackerForProjection("spec-test")),
-			new(trackers.GetSerializationTrackerForProjection("spec-test")));
 
 		using var sourceHandler = CreateStateHandler();
 		var sourceDefinition = sourceHandler.GetSourceDefinition();
@@ -251,6 +244,15 @@ public class AccountBalancerSpecTests {
 			.Where(s => s.Contains("External") || s.Contains("EXTERNAL"))
 			.ToList();
 		await Assert.That(externalStreams.Count).IsEqualTo(0);
+		return;
+
+		IProjectionStateHandler CreateStateHandler() => new JintProjectionStateHandler(
+			rewrittenSource,
+			enableContentTypeValidation: false,
+			compilationTimeout: TimeSpan.FromSeconds(5),
+			executionTimeout: TimeSpan.FromSeconds(5),
+			new(trackers.GetExecutionTrackerForProjection("spec-test")),
+			new(trackers.GetSerializationTrackerForProjection("spec-test")));
 	}
 
 	static void AssertJsonEquivalent(JObject expected, JObject actual) {
@@ -259,16 +261,21 @@ public class AccountBalancerSpecTests {
 			if (actualProp == null)
 				throw new Exception($"Missing property '{prop.Name}' in actual. Expected: {expected}, Actual: {actual}");
 
-			if (prop.Value.Type == JTokenType.Integer || prop.Value.Type == JTokenType.Float) {
-				var expectedVal = prop.Value.Value<double>();
-				var actualVal = actualProp.Value.Value<double>();
-				if (Math.Abs(expectedVal - actualVal) > 0.001)
-					throw new Exception($"Property '{prop.Name}': expected {expectedVal}, got {actualVal}");
-			} else if (prop.Value.Type == JTokenType.String) {
-				var expectedStr = prop.Value.Value<string>();
-				var actualStr = actualProp.Value.Value<string>();
-				if (expectedStr != actualStr)
-					throw new Exception($"Property '{prop.Name}': expected '{expectedStr}', got '{actualStr}'");
+			switch (prop.Value.Type) {
+				case JTokenType.Integer or JTokenType.Float: {
+					var expectedVal = prop.Value.Value<double>();
+					var actualVal = actualProp.Value.Value<double>();
+					if (Math.Abs(expectedVal - actualVal) > 0.001)
+						throw new Exception($"Property '{prop.Name}': expected {expectedVal}, got {actualVal}");
+					break;
+				}
+				case JTokenType.String: {
+					var expectedStr = prop.Value.Value<string>();
+					var actualStr = actualProp.Value.Value<string>();
+					if (expectedStr != actualStr)
+						throw new Exception($"Property '{prop.Name}': expected '{expectedStr}', got '{actualStr}'");
+					break;
+				}
 			}
 		}
 	}

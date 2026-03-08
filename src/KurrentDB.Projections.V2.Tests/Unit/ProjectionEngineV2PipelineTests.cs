@@ -23,17 +23,11 @@ using ProjectionResolvedEvent = KurrentDB.Projections.Core.Services.Processing.R
 namespace KurrentDB.Projections.V2.Tests.Unit;
 
 public class ProjectionEngineV2PipelineTests {
-
 	#region Fakes
 
-	sealed class FakeReadStrategy : IReadStrategy {
-		readonly CoreResolvedEvent[] _events;
-
-		public FakeReadStrategy(CoreResolvedEvent[] events) => _events = events;
-
-		public async IAsyncEnumerable<ReadResponse> ReadFrom(
-			TFPos checkpoint, [EnumeratorCancellation] CancellationToken ct) {
-			foreach (var e in _events) {
+	sealed class FakeReadStrategy(CoreResolvedEvent[] events) : IReadStrategy {
+		public async IAsyncEnumerable<ReadResponse> ReadFrom(TFPos checkpoint, [EnumeratorCancellation] CancellationToken ct) {
+			foreach (var e in events) {
 				ct.ThrowIfCancellationRequested();
 				yield return new ReadResponse.EventReceived(e);
 				await Task.Yield();
@@ -44,7 +38,7 @@ public class ProjectionEngineV2PipelineTests {
 	}
 
 	sealed class CapturingPublisher : IPublisher {
-		public ConcurrentBag<Message> Messages { get; } = new();
+		public ConcurrentBag<Message> Messages { get; } = [];
 
 		public void Publish(Message message) {
 			Messages.Add(message);
@@ -70,7 +64,11 @@ public class ProjectionEngineV2PipelineTests {
 		int _count;
 
 		public void Load(string state) {
-			if (string.IsNullOrEmpty(state) || state == "{}") { _count = 0; return; }
+			if (string.IsNullOrEmpty(state) || state == "{}") {
+				_count = 0;
+				return;
+			}
+
 			try {
 				using var doc = JsonDocument.Parse(state);
 				_count = doc.RootElement.TryGetProperty("count", out var p) ? p.GetInt32() : 0;
@@ -84,8 +82,12 @@ public class ProjectionEngineV2PipelineTests {
 		public string GetStatePartition(CheckpointTag eventPosition, string category, ProjectionResolvedEvent data) =>
 			data.EventStreamId;
 
-		public bool ProcessEvent(string partition, CheckpointTag eventPosition, string category,
-			ProjectionResolvedEvent @event, out string newState, out string newSharedState,
+		public bool ProcessEvent(string partition,
+			CheckpointTag eventPosition,
+			string category,
+			ProjectionResolvedEvent @event,
+			out string newState,
+			out string newSharedState,
 			out EmittedEventEnvelope[] emittedEvents) {
 			_count++;
 			newState = $"{{\"count\":{_count}}}";
@@ -94,8 +96,10 @@ public class ProjectionEngineV2PipelineTests {
 			return true;
 		}
 
-		public bool ProcessPartitionCreated(string partition, CheckpointTag createPosition,
-			ProjectionResolvedEvent @event, out EmittedEventEnvelope[] emittedEvents) {
+		public bool ProcessPartitionCreated(string partition,
+			CheckpointTag createPosition,
+			ProjectionResolvedEvent @event,
+			out EmittedEventEnvelope[] emittedEvents) {
 			emittedEvents = null!;
 			return false;
 		}
@@ -131,16 +135,20 @@ public class ProjectionEngineV2PipelineTests {
 			flags: PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd | PrepareFlags.IsJson,
 			eventType: eventType,
 			data: Encoding.UTF8.GetBytes(data),
-			metadata: Encoding.UTF8.GetBytes("{}"));
+			metadata: "{}"u8.ToArray());
 
-	static CoreResolvedEvent CreateResolvedEvent(string streamId, long eventNumber, long logPosition,
-		string eventType = "TestEvent", string data = "{}") {
+	static CoreResolvedEvent CreateResolvedEvent(string streamId,
+		long eventNumber,
+		long logPosition,
+		string eventType = "TestEvent",
+		string data = "{}") {
 		var record = CreateEventRecord(streamId, eventNumber, logPosition, eventType, data);
 		return CoreResolvedEvent.ForUnresolvedEvent(record, logPosition);
 	}
 
 	async Task<(ProjectionEngineV2 Engine, CapturingPublisher Publisher)> RunEngine(
-		CoreResolvedEvent[] events, ProjectionEngineV2Config config) {
+		CoreResolvedEvent[] events,
+		ProjectionEngineV2Config config) {
 		var publisher = new CapturingPublisher();
 		var user = new ClaimsPrincipal(new ClaimsIdentity());
 		var readStrategy = new FakeReadStrategy(events);
@@ -154,6 +162,7 @@ public class ProjectionEngineV2PipelineTests {
 				await Task.Delay(200);
 				break;
 			}
+
 			if (timeout.IsCompleted) break;
 			await Task.Delay(50);
 		}
