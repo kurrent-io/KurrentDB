@@ -390,6 +390,10 @@ Once enabled, the server will log a message similar to the one below:
 [11212, 1,18:44:34.070,INF] "TcpApi" "24.10.0.0" plugin enabled.
 ```
 
+::: warning
+The TCP API will bind to the IP specified in the `NodeIp` config setting, IP addresses set in `ExtIp` (the old name for this setting) do not affect the TCP API plugin.
+:::
+
 #### Other settings
 
 The following options can be set in the json configuration:
