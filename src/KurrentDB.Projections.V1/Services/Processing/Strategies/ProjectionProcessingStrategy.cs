@@ -27,7 +27,7 @@ public abstract class ProjectionProcessingStrategy {
 		_maxProjectionStateSize = maxProjectionStateSize;
 	}
 
-	public CoreProjection Create(
+	public virtual ICoreProjectionControl Create(
 		Guid projectionCorrelationId,
 		IPublisher inputQueue,
 		Guid workerId,

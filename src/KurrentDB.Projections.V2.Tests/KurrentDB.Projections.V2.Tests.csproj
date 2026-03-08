@@ -27,4 +27,17 @@
 		<ProjectReference Include="..\KurrentDB.Projections.Shared\KurrentDB.Projections.Shared.csproj" />
 		<ProjectReference Include="..\KurrentDB.Projections.JavaScript\KurrentDB.Projections.JavaScript.csproj" />
 	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Google.Protobuf" />
+		<PackageReference Include="Grpc.Net.Client" />
+		<PackageReference Include="Grpc.Tools">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Protobuf Include="..\Protos\Grpc\projections.proto" Link="Protos\projections.proto" GrpcServices="Client" ProtoRoot="../Protos/Grpc" />
+	</ItemGroup>
 </Project>

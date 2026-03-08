@@ -17,9 +17,9 @@ namespace KurrentDB.Projections.V2.Tests.Fixtures;
 /// </summary>
 public sealed class ProjectionsNodeFixture : IAsyncInitializer, IAsyncDisposable {
 	static readonly Dictionary<string, object?> Overrides = new() {
-		{ "KurrentDB:Projections:RunProjections", "All" },
-		{ "KurrentDB:Projections:StartStandardProjections", true },
-		{ "KurrentDB:Projections:ProjectionThreads", 3 },
+		{ "KurrentDB:Projection:RunProjections", "All" },
+		{ "KurrentDB:Projection:StartStandardProjections", true },
+		{ "KurrentDB:Projection:ProjectionThreads", 3 },
 	};
 
 	ClusterVNodeApp _node = null!;
@@ -29,6 +29,7 @@ public sealed class ProjectionsNodeFixture : IAsyncInitializer, IAsyncDisposable
 	public IServiceProvider Services => _node.Services;
 	public IPublisher MainQueue => Services.GetRequiredService<IPublisher>();
 	public StreamsService.StreamsServiceClient StreamsClient { get; private set; } = null!;
+	public EventStore.Client.Projections.Projections.ProjectionsClient ProjectionsClient { get; private set; } = null!;
 
 	public async Task InitializeAsync() {
 		// Force-load all assemblies from the output directory so InMemoryBus discovers
@@ -51,6 +52,7 @@ public sealed class ProjectionsNodeFixture : IAsyncInitializer, IAsyncDisposable
 		var uri = Services.GetServerLocalAddress();
 		_channel = GrpcChannel.ForAddress(uri);
 		StreamsClient = new StreamsService.StreamsServiceClient(_channel);
+		ProjectionsClient = new EventStore.Client.Projections.Projections.ProjectionsClient(_channel);
 	}
 
 	public async ValueTask DisposeAsync() {

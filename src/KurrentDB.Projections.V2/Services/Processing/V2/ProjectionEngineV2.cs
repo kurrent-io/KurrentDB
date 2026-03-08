@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Security.Claims;
 using System.Threading;
@@ -25,6 +26,8 @@ public class ProjectionEngineV2 : IAsyncDisposable {
 	private readonly ClaimsPrincipal _user;
 	private CancellationTokenSource _cts;
 	private Task _runTask;
+	private long _totalEventsProcessed;
+	private readonly ConcurrentDictionary<string, string> _partitionStates = new();
 
 	public ProjectionEngineV2(
 		ProjectionEngineV2Config config,
@@ -45,6 +48,10 @@ public class ProjectionEngineV2 : IAsyncDisposable {
 
 	public bool IsFaulted => _runTask?.IsFaulted ?? false;
 	public Exception FaultException => _runTask?.Exception?.InnerException;
+	public long TotalEventsProcessed => Interlocked.Read(ref _totalEventsProcessed);
+
+	public string GetPartitionState(string partitionKey) =>
+		_partitionStates.TryGetValue(partitionKey, out var state) ? state : null;
 
 	private async Task Run(TFPos checkpoint, CancellationToken ct) {
 		Log.Information("ProjectionEngineV2 {Name} starting from {Checkpoint}", _config.ProjectionName, checkpoint);
@@ -88,7 +95,8 @@ public class ProjectionEngineV2 : IAsyncDisposable {
 				_config.ProjectionName,
 				_config.SourceDefinition.IsBiState,
 				_config.EmitEnabled,
-				(sequence, buffer) => coordinator.ReportPartitionCheckpoint(partitionIndex, sequence, buffer));
+				(sequence, buffer) => coordinator.ReportPartitionCheckpoint(partitionIndex, sequence, buffer),
+				_partitionStates);
 			partitionTasks[i] = Task.Run(() => processor.Run(ct), ct);
 		}
 
@@ -141,6 +149,7 @@ public class ProjectionEngineV2 : IAsyncDisposable {
 						await dispatcher.DispatchEvent(projEvent, logPosition, ct);
 
 						eventsProcessed++;
+						Interlocked.Increment(ref _totalEventsProcessed);
 						bytesProcessed += coreEvent.Event.Data.Length + coreEvent.Event.Metadata.Length;
 						lastLogPosition = logPosition;
 

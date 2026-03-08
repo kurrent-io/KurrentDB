@@ -40,7 +40,8 @@ public class ProjectionWorkerNode {
 		ProjectionType runProjections,
 		bool faultOutOfOrderProjections,
 		IPublisher leaderOutputQueue,
-		ProjectionsStandardComponents configuration) {
+		ProjectionsStandardComponents configuration,
+		IPublisher mainBus = null) {
 		_runProjections = runProjections;
 		Ensure.NotNull(dbConfig, "dbConfig");
 
@@ -67,7 +68,8 @@ public class ProjectionWorkerNode {
 				_subscriptionDispatcher,
 				timeProvider,
 				_ioDispatcher,
-				configuration);
+				configuration,
+				mainBus);
 		}
 	}
 

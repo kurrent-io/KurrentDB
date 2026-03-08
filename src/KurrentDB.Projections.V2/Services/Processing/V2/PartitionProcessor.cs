@@ -4,6 +4,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Channels;
@@ -24,6 +25,7 @@ public class PartitionProcessor {
 	private readonly bool _isBiState;
 	private readonly bool _emitEnabled;
 	private readonly Func<ulong, OutputBuffer, Task> _onCheckpointMarker;
+	private readonly ConcurrentDictionary<string, string>? _sharedPartitionStates;
 
 	private OutputBuffer _activeBuffer = new();
 	private OutputBuffer _frozenBuffer = new();
@@ -38,7 +40,8 @@ public class PartitionProcessor {
 		string projectionName,
 		bool isBiState,
 		bool emitEnabled,
-		Func<ulong, OutputBuffer, Task> onCheckpointMarker) {
+		Func<ulong, OutputBuffer, Task> onCheckpointMarker,
+		ConcurrentDictionary<string, string>? sharedPartitionStates = null) {
 		_partitionIndex = partitionIndex;
 		_reader = reader;
 		_stateHandler = stateHandler;
@@ -46,6 +49,7 @@ public class PartitionProcessor {
 		_isBiState = isBiState;
 		_emitEnabled = emitEnabled;
 		_onCheckpointMarker = onCheckpointMarker;
+		_sharedPartitionStates = sharedPartitionStates;
 	}
 
 	public async Task Run(CancellationToken ct) {
@@ -109,6 +113,7 @@ public class PartitionProcessor {
 			if (newState != null) {
 				var stateStreamName = $"$projections-{_projectionName}-{partitionKey}-result";
 				_activeBuffer.SetPartitionState(partitionKey, stateStreamName, newState, -2); // ExpectedVersion.Any
+				_sharedPartitionStates?[partitionKey] = newState;
 			}
 		}
 

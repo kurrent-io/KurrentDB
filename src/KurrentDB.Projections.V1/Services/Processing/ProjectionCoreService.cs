@@ -41,9 +41,10 @@ public class ProjectionCoreService
 	private readonly Guid _workerId;
 	private readonly IPublisher _publisher;
 	private readonly IPublisher _inputQueue;
+	private readonly IPublisher _mainBus;
 	private readonly ILogger _logger = Log.ForContext<ProjectionCoreService>();
 
-	private readonly Dictionary<Guid, CoreProjection> _projections = new Dictionary<Guid, CoreProjection>();
+	private readonly Dictionary<Guid, ICoreProjectionControl> _projections = new Dictionary<Guid, ICoreProjectionControl>();
 
 	private readonly IODispatcher _ioDispatcher;
 
@@ -53,7 +54,7 @@ public class ProjectionCoreService
 	private readonly ProcessingStrategySelector _processingStrategySelector;
 
 	private bool _stopping;
-	private readonly Dictionary<Guid, CoreProjection> _suspendingProjections = new Dictionary<Guid, CoreProjection>();
+	private readonly Dictionary<Guid, ICoreProjectionControl> _suspendingProjections = new Dictionary<Guid, ICoreProjectionControl>();
 	private Guid _stopQueueId = Guid.Empty;
 	private int _projectionStopTimeoutMs = 5000;
 	private readonly ProjectionStateHandlerFactory _factory;
@@ -65,10 +66,12 @@ public class ProjectionCoreService
 		ReaderSubscriptionDispatcher subscriptionDispatcher,
 		ITimeProvider timeProvider,
 		IODispatcher ioDispatcher,
-		ProjectionsStandardComponents configuration) {
+		ProjectionsStandardComponents configuration,
+		IPublisher mainBus = null) {
 		_workerId = workerId;
 		_inputQueue = inputQueue;
 		_publisher = publisher;
+		_mainBus = mainBus;
 		_ioDispatcher = ioDispatcher;
 		_subscriptionDispatcher = subscriptionDispatcher;
 		_timeProvider = timeProvider;
@@ -99,7 +102,7 @@ public class ProjectionCoreService
 		foreach (var projection in allProjections) {
 			var requiresStopping = projection.Suspend();
 			if (requiresStopping) {
-				_suspendingProjections.Add(projection._projectionCorrelationId, projection);
+				_suspendingProjections.Add(projection.ProjectionCorrelationId, projection);
 			}
 		}
 
@@ -163,6 +166,12 @@ public class ProjectionCoreService
 			var projectionConfig = message.Config;
 			var namesBuilder = new ProjectionNamesBuilder(name, sourceDefinition);
 
+			// For V2, create a factory that can produce fresh state handler instances
+			Func<IProjectionStateHandler> stateHandlerFactory = message.EngineVersion == 2
+				? () => CreateStateHandler(_factory, _logger, message.Name, message.HandlerType,
+					message.Query, message.EnableContentTypeValidation, message.Config.ProjectionExecutionTimeout)
+				: null;
+
 			var projectionProcessingStrategy = _processingStrategySelector.CreateProjectionProcessingStrategy(
 				name,
 				projectionVersion,
@@ -173,7 +182,9 @@ public class ProjectionCoreService
 				message.HandlerType,
 				message.Query,
 				message.EnableContentTypeValidation,
-				message.EngineVersion);
+				message.EngineVersion,
+				stateHandlerFactory,
+				_mainBus);
 
 			CreateCoreProjection(message.ProjectionId, projectionConfig.RunAs, projectionProcessingStrategy);
 			_publisher.Publish(
@@ -203,7 +214,8 @@ public class ProjectionCoreService
 				message.HandlerType,
 				message.Query,
 				message.EnableContentTypeValidation,
-				message.EngineVersion);
+				message.EngineVersion,
+				mainBus: _mainBus);
 
 			CreateCoreProjection(message.ProjectionId, projectionConfig.RunAs, projectionProcessingStrategy);
 			_publisher.Publish(
@@ -230,7 +242,7 @@ public class ProjectionCoreService
 	}
 
 	public void Handle(CoreProjectionManagementMessage.Dispose message) {
-		CoreProjection projection;
+		ICoreProjectionControl projection;
 		if (_projections.TryGetValue(message.ProjectionId, out projection)) {
 			_projections.Remove(message.ProjectionId);
 			projection.Dispose();
@@ -258,43 +270,43 @@ public class ProjectionCoreService
 	}
 
 	public void Handle(CoreProjectionManagementMessage.GetState message) {
-		CoreProjection projection;
+		ICoreProjectionControl projection;
 		if (_projections.TryGetValue(message.ProjectionId, out projection))
 			projection.Handle(message);
 	}
 
 	public void Handle(CoreProjectionManagementMessage.GetResult message) {
-		CoreProjection projection;
+		ICoreProjectionControl projection;
 		if (_projections.TryGetValue(message.ProjectionId, out projection))
 			projection.Handle(message);
 	}
 
 	public void Handle(CoreProjectionProcessingMessage.CheckpointCompleted message) {
-		CoreProjection projection;
+		ICoreProjectionControl projection;
 		if (_projections.TryGetValue(message.ProjectionId, out projection))
 			projection.Handle(message);
 	}
 
 	public void Handle(CoreProjectionProcessingMessage.CheckpointLoaded message) {
-		CoreProjection projection;
+		ICoreProjectionControl projection;
 		if (_projections.TryGetValue(message.ProjectionId, out projection))
 			projection.Handle(message);
 	}
 
 	public void Handle(CoreProjectionProcessingMessage.PrerecordedEventsLoaded message) {
-		CoreProjection projection;
+		ICoreProjectionControl projection;
 		if (_projections.TryGetValue(message.ProjectionId, out projection))
 			projection.Handle(message);
 	}
 
 	public void Handle(CoreProjectionProcessingMessage.RestartRequested message) {
-		CoreProjection projection;
+		ICoreProjectionControl projection;
 		if (_projections.TryGetValue(message.ProjectionId, out projection))
 			projection.Handle(message);
 	}
 
 	public void Handle(CoreProjectionProcessingMessage.Failed message) {
-		CoreProjection projection;
+		ICoreProjectionControl projection;
 		if (_projections.TryGetValue(message.ProjectionId, out projection))
 			projection.Handle(message);
 	}

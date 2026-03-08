@@ -19,11 +19,8 @@ using ILogger = Serilog.ILogger;
 namespace KurrentDB.Projections.Core.Services.Processing;
 
 
-public class CoreProjection : IDisposable,
-	ICoreProjection,
-	ICoreProjectionForProcessingPhase,
-	IHandle<CoreProjectionManagementMessage.GetState>,
-	IHandle<CoreProjectionManagementMessage.GetResult> {
+public class CoreProjection : ICoreProjectionControl,
+	ICoreProjectionForProcessingPhase {
 	[Flags]
 	private enum State : uint {
 		Initial = 0x80000000,
@@ -49,6 +46,7 @@ public class CoreProjection : IDisposable,
 	private readonly ProjectionProcessingStrategy _projectionProcessingStrategy;
 	private readonly Guid _workerId;
 	internal readonly Guid _projectionCorrelationId;
+	public Guid ProjectionCorrelationId => _projectionCorrelationId;
 	private readonly IPublisher _inputQueue;
 	private readonly ClaimsPrincipal _runAs;
 
