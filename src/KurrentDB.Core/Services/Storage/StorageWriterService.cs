@@ -340,11 +340,18 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 			// send the successful consistency check notification
 			var firstEventNumbers = LowAllocReadOnlyMemory<long>.Builder.Empty;
 			var lastEventNumbers = LowAllocReadOnlyMemory<long>.Builder.Empty;
+			var isEmptyWriteToSingleStream = msg.Events.Length is 0 && msg.EventStreamIds.Length is 1;
 
-			foreach (ref readonly var checkResult in commitCheckResults.Span) {
+			for (int i = 0; i < commitCheckResults.Length; i++) {
+				ref readonly var checkResult = ref commitCheckResults.Span[i];
 				Debug.Assert(checkResult.Decision == CommitDecision.Ok);
-				firstEventNumbers = firstEventNumbers.Add(checkResult.StartEventNumber);
-				lastEventNumbers = lastEventNumbers.Add(checkResult.EndEventNumber);
+				if (isEmptyWriteToSingleStream || streamInfos[i].HasEventsToWrite) {
+					firstEventNumbers = firstEventNumbers.Add(checkResult.StartEventNumber);
+					lastEventNumbers = lastEventNumbers.Add(checkResult.EndEventNumber);
+				} else {
+					firstEventNumbers = firstEventNumbers.Add(EventNumber.CheckOnlyFirst);
+					lastEventNumbers = lastEventNumbers.Add(EventNumber.CheckOnlyLast);
+				}
 			}
 
 			// note that ConsistencyChecksSucceeded is sent before the prepares are written, so it must be received
@@ -415,7 +422,6 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 			// soft undelete the (original streams of the) streams we are writing events to
 			// for backwards compatibility, an empty write (which must be to a single stream) causes undeletion, too.
 			// TODO: soft undelete in a transaction
-			var isEmptyWriteToSingleStream = msg.Events.Length is 0 && msg.EventStreamIds.Length is 1;
 			for (int i = 0; i < msg.EventStreamIds.Length; i++) {
 				if (isEmptyWriteToSingleStream || streamInfos[i].HasEventsToWrite) {
 					if (commitChecks[i].IsSoftDeleted is true)
