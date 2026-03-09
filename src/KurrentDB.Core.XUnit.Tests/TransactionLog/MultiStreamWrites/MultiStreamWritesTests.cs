@@ -1269,8 +1269,8 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 	// to be applicable), then retries according to the Idempotency type:
 	//   Full:                same events, same expected version → should succeed (idempotent)
 	//   Partial:             first event same, second is new → corrupted idempotency → should fail
-	//   WithFailedCheck:     same events, but adds a failing check-only stream → fails
-	//   WithSuccessfulCheck: same events, but adds a successful check-only stream → fails
+	//   WithFailedCheck:     same events, but adds a failing check-only stream → should succeed (idempotent)
+	//   WithSuccessfulCheck: same events, but adds a successful check-only stream → should succeed (idempotent)
 	//
 	// Only (ExpectedVersion, StreamState) combos where the initial write succeeds are applicable.
 	// Participation is always WriteTo.
@@ -1278,32 +1278,32 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		// ExpectedVersion.Any
 		{ ExpectedVersion.Any, StreamState.NeverExisted, IdempotencyKind.Full, OperationResult.Success },
 		{ ExpectedVersion.Any, StreamState.NeverExisted, IdempotencyKind.Partial, OperationResult.WrongExpectedVersion },
-		{ ExpectedVersion.Any, StreamState.NeverExisted, IdempotencyKind.WithFailedCheck, OperationResult.WrongExpectedVersion },
-		{ ExpectedVersion.Any, StreamState.NeverExisted, IdempotencyKind.WithSuccessfulCheck, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.Any, StreamState.NeverExisted, IdempotencyKind.WithFailedCheck, OperationResult.Success },
+		{ ExpectedVersion.Any, StreamState.NeverExisted, IdempotencyKind.WithSuccessfulCheck, OperationResult.Success },
 		{ ExpectedVersion.Any, StreamState.ExistsAtV2, IdempotencyKind.Full, OperationResult.Success },
 		{ ExpectedVersion.Any, StreamState.ExistsAtV2, IdempotencyKind.Partial, OperationResult.WrongExpectedVersion },
-		{ ExpectedVersion.Any, StreamState.ExistsAtV2, IdempotencyKind.WithFailedCheck, OperationResult.WrongExpectedVersion },
-		{ ExpectedVersion.Any, StreamState.ExistsAtV2, IdempotencyKind.WithSuccessfulCheck, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.Any, StreamState.ExistsAtV2, IdempotencyKind.WithFailedCheck, OperationResult.Success },
+		{ ExpectedVersion.Any, StreamState.ExistsAtV2, IdempotencyKind.WithSuccessfulCheck, OperationResult.Success },
 		{ ExpectedVersion.Any, StreamState.SoftDeletedAtV2, IdempotencyKind.Full, OperationResult.Success },
 		{ ExpectedVersion.Any, StreamState.SoftDeletedAtV2, IdempotencyKind.Partial, OperationResult.WrongExpectedVersion },
-		{ ExpectedVersion.Any, StreamState.SoftDeletedAtV2, IdempotencyKind.WithFailedCheck, OperationResult.WrongExpectedVersion },
-		{ ExpectedVersion.Any, StreamState.SoftDeletedAtV2, IdempotencyKind.WithSuccessfulCheck, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.Any, StreamState.SoftDeletedAtV2, IdempotencyKind.WithFailedCheck, OperationResult.Success },
+		{ ExpectedVersion.Any, StreamState.SoftDeletedAtV2, IdempotencyKind.WithSuccessfulCheck, OperationResult.Success },
 		// { ExpectedVersion.Any, StreamState.Tombstoned } not applicable
 
 		// ExpectedVersion.StreamExists
 		// { ExpectedVersion.StreamExists, StreamState.NeverExisted } not applicable
 		{ ExpectedVersion.StreamExists, StreamState.ExistsAtV2, IdempotencyKind.Full, OperationResult.Success },
 		{ ExpectedVersion.StreamExists, StreamState.ExistsAtV2, IdempotencyKind.Partial, OperationResult.WrongExpectedVersion },
-		{ ExpectedVersion.StreamExists, StreamState.ExistsAtV2, IdempotencyKind.WithFailedCheck, OperationResult.WrongExpectedVersion },
-		{ ExpectedVersion.StreamExists, StreamState.ExistsAtV2, IdempotencyKind.WithSuccessfulCheck, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.StreamExists, StreamState.ExistsAtV2, IdempotencyKind.WithFailedCheck, OperationResult.Success },
+		{ ExpectedVersion.StreamExists, StreamState.ExistsAtV2, IdempotencyKind.WithSuccessfulCheck, OperationResult.Success },
 		// { ExpectedVersion.StreamExists, StreamState.SoftDeletedAtV2 } not applicable
 		// { ExpectedVersion.StreamExists, StreamState.Tombstoned } not applicable
 
 		// ExpectedVersion.NoStream
 		{ ExpectedVersion.NoStream, StreamState.NeverExisted, IdempotencyKind.Full, OperationResult.Success },
 		{ ExpectedVersion.NoStream, StreamState.NeverExisted, IdempotencyKind.Partial, OperationResult.WrongExpectedVersion },
-		{ ExpectedVersion.NoStream, StreamState.NeverExisted, IdempotencyKind.WithFailedCheck, OperationResult.WrongExpectedVersion },
-		{ ExpectedVersion.NoStream, StreamState.NeverExisted, IdempotencyKind.WithSuccessfulCheck, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.NoStream, StreamState.NeverExisted, IdempotencyKind.WithFailedCheck, OperationResult.Success },
+		{ ExpectedVersion.NoStream, StreamState.NeverExisted, IdempotencyKind.WithSuccessfulCheck, OperationResult.Success },
 		// { ExpectedVersion.NoStream, StreamState.ExistsAtV2 } not applicable
 		// next case is long standing behaviour but a case could be made that this retry should succeed.
 		{ ExpectedVersion.NoStream, StreamState.SoftDeletedAtV2, IdempotencyKind.Full, OperationResult.WrongExpectedVersion },
@@ -1317,8 +1317,8 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		// { ExpectedVersion.SoftDeleted, StreamState.ExistsAtV2 } not applicable
 		{ ExpectedVersion.SoftDeleted, StreamState.SoftDeletedAtV2, IdempotencyKind.Full, OperationResult.Success },
 		{ ExpectedVersion.SoftDeleted, StreamState.SoftDeletedAtV2, IdempotencyKind.Partial, OperationResult.WrongExpectedVersion },
-		{ ExpectedVersion.SoftDeleted, StreamState.SoftDeletedAtV2, IdempotencyKind.WithFailedCheck, OperationResult.WrongExpectedVersion },
-		{ ExpectedVersion.SoftDeleted, StreamState.SoftDeletedAtV2, IdempotencyKind.WithSuccessfulCheck, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.SoftDeleted, StreamState.SoftDeletedAtV2, IdempotencyKind.WithFailedCheck, OperationResult.Success },
+		{ ExpectedVersion.SoftDeleted, StreamState.SoftDeletedAtV2, IdempotencyKind.WithSuccessfulCheck, OperationResult.Success },
 		// { ExpectedVersion.SoftDeleted, StreamState.Tombstoned } not applicable
 
 		// EventNumber.DeletedStream: not applicable
@@ -1329,12 +1329,12 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		// { 2, StreamState.NeverExisted } not applicable
 		{ 2, StreamState.ExistsAtV2, IdempotencyKind.Full, OperationResult.Success },
 		{ 2, StreamState.ExistsAtV2, IdempotencyKind.Partial, OperationResult.WrongExpectedVersion },
-		{ 2, StreamState.ExistsAtV2, IdempotencyKind.WithFailedCheck, OperationResult.WrongExpectedVersion },
-		{ 2, StreamState.ExistsAtV2, IdempotencyKind.WithSuccessfulCheck, OperationResult.WrongExpectedVersion },
+		{ 2, StreamState.ExistsAtV2, IdempotencyKind.WithFailedCheck, OperationResult.Success },
+		{ 2, StreamState.ExistsAtV2, IdempotencyKind.WithSuccessfulCheck, OperationResult.Success },
 		{ 2, StreamState.SoftDeletedAtV2, IdempotencyKind.Full, OperationResult.Success },
 		{ 2, StreamState.SoftDeletedAtV2, IdempotencyKind.Partial, OperationResult.WrongExpectedVersion },
-		{ 2, StreamState.SoftDeletedAtV2, IdempotencyKind.WithFailedCheck, OperationResult.WrongExpectedVersion },
-		{ 2, StreamState.SoftDeletedAtV2, IdempotencyKind.WithSuccessfulCheck, OperationResult.WrongExpectedVersion },
+		{ 2, StreamState.SoftDeletedAtV2, IdempotencyKind.WithFailedCheck, OperationResult.Success },
+		{ 2, StreamState.SoftDeletedAtV2, IdempotencyKind.WithSuccessfulCheck, OperationResult.Success },
 		// { 2, StreamState.Tombstoned } not applicable
 
 		// EV.3: not applicable
