@@ -280,9 +280,9 @@ public static class CertificateExtensions {
 			return false;
 
 		// rfc5280 section-4.2.1.12: extended key usages (EKUs) only have to be enforced
-		// if the extension is present at all. here, we don't enforce them for server
+		// if the extension is present at all. here, we don't require the extension for server
 		// certificates for backwards compatibility. however, this also implies that we
-		// _need_ the EKUs to be present for other types of certificates (e.g user certificates)
+		// _need_ the extension to be present for other types of certificates (e.g user certificates)
 		// as otherwise it would cause ambiguity when trying to determine the certificate type.
 		if (hasExtKeyUsagesExtension) {
 			if (!HasServerAuthExtendedKeyUsage(extKeyUsages, out failReason))
