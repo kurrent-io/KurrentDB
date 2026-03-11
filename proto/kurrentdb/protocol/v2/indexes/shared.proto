@@ -1,4 +1,4 @@
-syntax = "proto3";
+edition = "2023";
 
 package kurrentdb.protocol.v2.indexes;
 

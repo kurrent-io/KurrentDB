@@ -1,4 +1,4 @@
-syntax = "proto3";
+edition = "2023";
 
 package kurrentdb.protocol.registry.v2;
 
@@ -9,19 +9,19 @@ option java_multiple_files = true;
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
-import "registry/shared.proto";
+import "kurrentdb/protocol/v2/registry/shared.proto";
 
 message SchemaDetails {
   SchemaDataFormat    data_format   = 1;
   CompatibilityMode   compatibility = 2;
-  optional string     description   = 3;
+  string              description   = 3;
   map<string, string> tags          = 4;
 }
 
 message CreateSchemaRequest {
   string         schema_name       = 1;
   SchemaDetails  details           = 2;
-  optional bytes schema_definition = 3;
+  bytes          schema_definition = 3;
 }
 
 message CreateSchemaResponse {
@@ -75,7 +75,7 @@ message GetSchemaResponse {
 
 message ListSchemasRequest {
   // The prefix of the schema name. If specified, only schemas with the specified prefix are returned.
-  optional string schema_name_prefix = 1;
+  string schema_name_prefix = 1;
   // The tags to filter the schemas. If specified, only schemas with the specified tags are returned.
   map<string, string> schema_tags = 2;
 }
@@ -134,7 +134,7 @@ message GetSchemaVersionByIdResponse {
 
 message GetSchemaVersionRequest {
   string         schema_name    = 1;
-  optional int32 version_number = 2;  // without this field, the latest version will be returned
+  int32 version_number = 2;  // without this field, the latest version will be returned
 }
 
 message GetSchemaVersionResponse {
@@ -166,9 +166,9 @@ message RegisteredSchema {
 message ListRegisteredSchemasRequest {
   // The unique identifier of the schema version. If specified, only the schema with the specified version ID is
   // returned.
-  optional string schema_version_id = 1;
+  string schema_version_id = 1;
   // The prefix of the schema name. If specified, only schemas with the specified prefix are returned.
-  optional string schema_name_prefix = 2;
+  string schema_name_prefix = 2;
   // The tags to filter the schemas. If specified, only schemas with the specified tags are returned.
   map<string, string> schema_tags = 3;
   // If true, the schema definition will be included in the response.
