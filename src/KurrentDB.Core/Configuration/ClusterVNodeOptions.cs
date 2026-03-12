@@ -218,6 +218,13 @@ public partial record ClusterVNodeOptions {
 
 		[Description("The pattern the CN (Common Name) of a connecting KurrentDB node must match to be authenticated. A wildcard FQDN can be specified if using wildcard certificates or if the CN is not the same on all nodes. Leave empty to automatically use the CN of this node's certificate.")]
 		public string CertificateReservedNodeCommonName { get; init; } = string.Empty;
+
+		[Description(
+			"When set to true, incoming connections will be successfully authenticated as nodes even if their certificate does not " +
+			"have the clientAuth EKU. The chain of trust, expiration, and common name of the certificate will still be validated. " +
+			"Please consider whether this is appropriate for your deployment. " +
+			"This allows KurrentDB to operate using certificates signed by public CAs that no longer issue certificates with the clientAuth EKU.")]
+		public bool DisableClientAuthEkuValidation { get; init; } = false;
 	}
 
 	[Description("Certificate Options (from store)")]
