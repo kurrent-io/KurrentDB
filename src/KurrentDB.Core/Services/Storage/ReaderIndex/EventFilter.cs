@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -28,6 +29,9 @@ public static class EventFilter {
 
 		public static IEventFilter Regex(bool isAllStream, string regex)
 			=> new StreamIdRegexStrategy(isAllStream, regex);
+
+		public static IEventFilter Set(bool isAllStream, params string[] streamNames)
+			=> new StreamIdSetStrategy(isAllStream, streamNames);
 	}
 
 	public static class EventType {
@@ -176,6 +180,24 @@ public static class EventFilter {
 			$"{nameof(StreamIdRegexStrategy)}: ({string.Join(", ", _expectedRegex)})";
 	}
 
+	private sealed class StreamIdSetStrategy : IEventFilter {
+		internal readonly bool _isAllStream;
+		internal readonly HashSet<string> _streamNames;
+
+		public StreamIdSetStrategy(bool isAllStream, string[] streamNames) {
+			_isAllStream = isAllStream;
+			_streamNames = new HashSet<string>(streamNames, StringComparer.Ordinal);
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+		public bool IsEventAllowed(EventRecord eventRecord) =>
+			(!_isAllStream || DefaultAllFilter.IsEventAllowed(eventRecord)) &&
+			_streamNames.Contains(eventRecord.EventStreamId);
+
+		public override string ToString() =>
+			$"{nameof(StreamIdSetStrategy)}: ({string.Join(", ", _streamNames)})";
+	}
+
 	public class EventFilterDto {
 		public string Context;
 		public string Type;
@@ -198,6 +220,13 @@ public static class EventFilter {
 					Type = RegexType,
 					Data = sirs._expectedRegex.ToString(),
 					IsAllStream = sirs._isAllStream
+				};
+			case StreamIdSetStrategy siss:
+				return new() {
+					Context = StreamIdContext,
+					Type = "set",
+					Data = string.Join(",", siss._streamNames),
+					IsAllStream = siss._isAllStream
 				};
 			case EventTypePrefixStrategy etps:
 				return new() {

@@ -8,6 +8,6 @@
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.Projections.Core.Tests\KurrentDB.Projections.Core.Tests.csproj" />
-		<ProjectReference Include="..\KurrentDB.Projections.Core\KurrentDB.Projections.Core.csproj" />
+		<ProjectReference Include="..\KurrentDB.Projections.V1\KurrentDB.Projections.V1.csproj" />
 	</ItemGroup>
 </Project>

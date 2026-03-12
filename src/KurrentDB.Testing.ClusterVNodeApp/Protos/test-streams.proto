@@ -12,6 +12,33 @@ import "google/protobuf/timestamp.proto";
 
 service Streams {
 	rpc Read (ReadReq) returns (stream ReadResp);
+	rpc Tombstone (TombstoneReq) returns (TombstoneResp);
+}
+
+message TombstoneReq {
+	Options options = 1;
+
+	message Options {
+		StreamIdentifier stream_identifier = 1;
+		oneof expected_stream_revision {
+			uint64 revision = 2;
+			Empty no_stream = 3;
+			Empty any = 4;
+			Empty stream_exists = 5;
+		}
+	}
+}
+
+message TombstoneResp {
+	oneof position_option {
+		Position position = 1;
+		Empty no_position = 2;
+	}
+
+	message Position {
+		uint64 commit_position = 1;
+		uint64 prepare_position = 2;
+	}
 }
 
 message ReadReq {

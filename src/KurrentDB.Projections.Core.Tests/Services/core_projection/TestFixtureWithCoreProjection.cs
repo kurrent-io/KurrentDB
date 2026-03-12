@@ -71,7 +71,7 @@ public abstract class TestFixtureWithCoreProjection<TLogFormat, TStreamId> : Tes
 
 	protected virtual CoreProjection
 		GivenCoreProjection(ProjectionProcessingStrategy projectionProcessingStrategy) {
-		return projectionProcessingStrategy.Create(
+		return (CoreProjection)projectionProcessingStrategy.Create(
 			_projectionCorrelationId,
 			_bus,
 			_workerId,
