@@ -6,6 +6,18 @@ order: 1
 
 This page contains the release notes for EventStoreDB 24.10
 
+## [24.10.12](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.12)
+
+12 March 2026
+
+### Added DisableClientAuthEkuValidation option (PR [#5551](https://github.com/kurrent-io/KurrentDB/pull/5551))
+
+Publicly trusted certificate authorities are moving away from issuing certificates with the `clientAuth` EKU, largely driven by changes to the [Chrome Root Program policy](https://www.chromium.org/Home/chromium-security/root-ca-policy/).
+
+This option disables validation of the presence of the `clientAuth` EKU when a node connects to another, allowing KurrentDB to be used with new certificates issued by publicly trusted CAs.
+
+See the [documentation](../security/protocol-security.md#disable-client-authentication-eku-validation) for details.
+
 ## [24.10.11](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.11)
 
 23 February 2026
