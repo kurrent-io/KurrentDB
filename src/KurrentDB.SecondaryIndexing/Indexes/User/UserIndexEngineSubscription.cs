@@ -6,6 +6,7 @@ using System.Diagnostics.Metrics;
 using System.Threading.Channels;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
+using Kurrent.Quack.Threading;
 using Kurrent.Surge.Schema;
 using Kurrent.Surge.Schema.Serializers;
 using KurrentDB.Core;
@@ -23,7 +24,7 @@ using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.User;
 
-public class UserIndexEngineSubscription(
+public partial class UserIndexEngineSubscription(
 	ISystemClient client,
 	IPublisher publisher,
 	ISchemaSerializer serializer,
@@ -37,13 +38,15 @@ public class UserIndexEngineSubscription(
 	: ISecondaryIndexReader {
 
 	private readonly ConcurrentDictionary<string, UserIndexData> _userIndexes = new();
+	private readonly ConcurrentDictionary<ViewName, string> _viewNameToIndexNameMapping = new(new ViewNameEqualityComparer());
 	private readonly CancellationTokenSource _cts = CancellationTokenSource.CreateLinkedTokenSource(token);
 	private readonly ILogger<UserIndexEngineSubscription> _log = logFactory.CreateLogger<UserIndexEngineSubscription>();
 
 	record struct UserIndexData(
 		ReaderWriterLockSlim RWLock,
 		UserIndexSubscription Subscription,
-		SecondaryIndexReaderBase Reader);
+		UserIndexReader Reader,
+		string ViewName);
 
 	public bool CaughtUp { get; private set; }
 	public long Checkpoint { get; private set; }
@@ -235,18 +238,22 @@ public class UserIndexEngineSubscription(
 			log: logFactory.CreateLogger<UserIndexSubscription>(),
 			token: _cts.Token);
 
-		_userIndexes.TryAdd(indexName, new(new(), subscription, reader));
+		_userIndexes.TryAdd(indexName, new(new(), subscription, reader, sql.ViewName));
+		var viewName = new ViewName(sql.ViewName);
+		_viewNameToIndexNameMapping.TryAdd(viewName, indexName);
 		await subscription.Start();
 	}
 
 	private async Task StopUserIndex(string indexName) {
 		_log.LogStoppingUserIndex(LogLevel.Debug, indexName);
 
-		var writeLock = AcquireWriteLockForIndex(indexName, out var index);
+		var writeLock = AcquireWriteLockForIndex(indexName, out var viewName, out var index);
 		using (writeLock) {
 			// we have the write lock, there are no readers. after we release the lock the index is no longer
 			// in the dictionary so there can be no new readers.
 			_userIndexes.TryRemove(indexName, out _);
+			var name = new ViewName(viewName);
+			_viewNameToIndexNameMapping.TryRemove(name, out _);
 		}
 
 		// guaranteed no readers, we can stop.
@@ -319,39 +326,55 @@ public class UserIndexEngineSubscription(
 			return data.Reader.ReadBackwards(msg, token);
 	}
 
-	public bool TryGetUserIndexTableDetails(string indexName, out string tableName, out string inFlightTableName, out string? fieldName) {
+	public bool TryGetUserIndexTableDetails(string indexName, out string tableName, out string? fieldName) {
 		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var data)) {
 			tableName = null!;
-			inFlightTableName = null!;
 			fieldName = null;
 			return false;
 		}
 
 		using (readLock) {
-			data.Subscription.GetUserIndexTableDetails(out tableName, out inFlightTableName, out fieldName);
+			data.Subscription.GetUserIndexTableDetails(out tableName, out fieldName);
 			return true;
 		}
 	}
 
-	private bool TryAcquireReadLockForIndex(string index, out ReadLock? readLock, out UserIndexData data) {
+	public bool TryCaptureSnapshot(ReadOnlySpan<byte> viewNameUtf8,
+		DuckDBAdvancedConnection connection,
+		out ReadLock readLock,
+		out BufferedView.Snapshot snapshot) {
+		var view = _viewNameToIndexNameMapping.GetAlternateLookup<ReadOnlySpan<byte>>();
+		if (view.TryGetValue(viewNameUtf8, out var indexName)
+		    && TryAcquireReadLockForIndex(indexName, out readLock, out var data)) {
+			snapshot = data.Reader.CaptureSnapshot(connection);
+			return true;
+		}
+
+		snapshot = default;
+		readLock = default;
+		return false;
+	}
+
+	private bool TryAcquireReadLockForIndex(ReadOnlySpan<char> index, out ReadLock readLock, out UserIndexData data) {
 		// note: a write lock is acquired only when deleting the index. so, if we cannot acquire a read lock,
 		// it means that the user index is being/has been deleted.
 
-		readLock = null;
+		readLock = default;
 		data = default;
 
-		if (!_userIndexes.TryGetValue(index, out data)) {
+		var view = _userIndexes.GetAlternateLookup<ReadOnlySpan<char>>();
+		if (!view.TryGetValue(index, out data)) {
 			return false;
 		}
 
 		if (!data.RWLock.TryEnterReadLock(TimeSpan.Zero))
 			return false;
 
-		readLock = new ReadLock(data.RWLock);
+		readLock = new(data.RWLock);
 		return true;
 	}
 
-	private WriteLock AcquireWriteLockForIndex(string index, out UserIndexSubscription subscription) {
+	private WriteLock AcquireWriteLockForIndex(string index, out string viewName, out UserIndexSubscription subscription) {
 		if (!_userIndexes.TryGetValue(index, out var data))
 			throw new Exception($"Failed to acquire write lock for index: {index}");
 
@@ -359,11 +382,12 @@ public class UserIndexEngineSubscription(
 			throw new Exception($"Timed out when acquiring write lock for index: {index}");
 
 		subscription = data.Subscription;
+		viewName = data.ViewName;
 		return new(data.RWLock);
 	}
 
-	private readonly record struct ReadLock(ReaderWriterLockSlim Lock) : IDisposable {
-		public void Dispose() => Lock.ExitReadLock();
+	public readonly record struct ReadLock(ReaderWriterLockSlim Lock) : IDisposable {
+		public void Dispose() => Lock?.ExitReadLock();
 	}
 
 	private readonly record struct WriteLock(ReaderWriterLockSlim Lock) : IDisposable {

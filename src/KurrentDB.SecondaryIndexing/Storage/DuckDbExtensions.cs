@@ -1,8 +1,10 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using DuckDB.NET.Data;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
+using Kurrent.Quack.Threading;
 
 namespace KurrentDB.SecondaryIndexing.Storage;
 
@@ -27,4 +29,7 @@ public static class DuckDbExtensions {
 			output.Add(row);
 		}
 	}
+
+	public static BufferedView.Snapshot CaptureSnapshotAndInjectExtraRows(this BufferedView view, DuckDBConnection connection)
+		=> view.TakeSnapshot(connection, "unnest(get_kdb(log_position))"u8);
 }

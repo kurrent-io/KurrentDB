@@ -17,6 +17,7 @@ using KurrentDB.Core.Messages;
 using KurrentDB.SecondaryIndexing.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes.Custom.Surge;
 using KurrentDB.SecondaryIndexing.Indexes.User.JavaScript;
+using KurrentDB.SecondaryIndexing.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -37,7 +38,6 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 	private readonly JsRecordEvaluator _evaluator;
 	private readonly Function? _filter;
 	private readonly Function? _fieldSelector;
-	private readonly string _inFlightTableName;
 	private readonly string _queryStreamName;
 	private readonly IPublisher _publisher;
 	private readonly DuckDBAdvancedConnection _connection;
@@ -72,7 +72,6 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 		_sql = sql;
 		_log = loggerFactory.CreateLogger<UserIndexProcessor>();
 
-		_inFlightTableName = UserIndexSql.GenerateInFlightTableNameFor(IndexName);
 		_queryStreamName = UserIndexHelpers.GetQueryStreamName(IndexName);
 
 		_publisher = publisher;
@@ -105,7 +104,8 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 
 	public override UserIndexSql<TField> Sql => _sql;
 
-	public override BufferedView.Snapshot CaptureSnapshot(DuckDBAdvancedConnection connection) => _appender.TakeSnapshot(connection);
+	public override BufferedView.Snapshot CaptureSnapshot(DuckDBAdvancedConnection connection)
+		=> _appender.CaptureSnapshotAndInjectExtraRows(connection);
 
 	public override bool TryIndex(ResolvedEvent resolvedEvent) {
 		if (IsDisposingOrDisposed)
@@ -238,9 +238,8 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 		}
 	}
 
-	public void GetUserIndexTableDetails(out string tableName, out string inFlightTableName, out string? fieldName) {
+	public void GetUserIndexTableDetails(out string tableName, out string? fieldName) {
 		tableName = _sql.TableName;
-		inFlightTableName = _inFlightTableName;
 		fieldName = _sql.FieldColumnName;
 	}
 

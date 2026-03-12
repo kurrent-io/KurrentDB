@@ -1,18 +1,25 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
+using Kurrent.Quack.Threading;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.User;
 
+internal abstract class UserIndexReader(DuckDBConnectionPool sharedPool, IReadIndex<string> index)
+	: SecondaryIndexReaderBase(sharedPool, index) {
+	internal abstract BufferedView.Snapshot CaptureSnapshot(DuckDBAdvancedConnection connection);
+}
+
 internal class UserIndexReader<TField>(
 	DuckDBConnectionPool sharedPool,
 	UserIndexProcessor processor,
 	IReadIndex<string> index
-) : SecondaryIndexReaderBase(sharedPool, index) where TField : IField<TField> {
+) : UserIndexReader(sharedPool, index) where TField : IField<TField> {
 
 	protected override string? GetId(string indexStream) {
 		// the field is used as the ID. null when there is no field
@@ -69,6 +76,9 @@ internal class UserIndexReader<TField>(
 
 	public override TFPos GetLastIndexedPosition(string _) => throw new InvalidOperationException(); // never called
 	public override bool CanReadIndex(string _) => throw new InvalidOperationException(); // never called
+
+	internal override BufferedView.Snapshot CaptureSnapshot(DuckDBAdvancedConnection connection)
+		=> processor.CaptureSnapshot(connection);
 
 	private static bool TryGetField(string? id, out TField? field) {
 		field = default;

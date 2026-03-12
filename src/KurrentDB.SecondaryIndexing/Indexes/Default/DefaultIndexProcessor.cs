@@ -19,6 +19,7 @@ using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.SecondaryIndexing.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
+using KurrentDB.SecondaryIndexing.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using static KurrentDB.SecondaryIndexing.Indexes.Default.DefaultSql;
@@ -158,7 +159,8 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		}
 	}
 
-	public BufferedView.Snapshot CaptureSnapshot(DuckDBConnection connection) => _appender.TakeSnapshot(connection);
+	public BufferedView.Snapshot CaptureSnapshot(DuckDBConnection connection)
+		=> _appender.CaptureSnapshotAndInjectExtraRows(connection);
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {

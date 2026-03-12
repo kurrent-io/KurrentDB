@@ -2,7 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
+using DotNext.Buffers;
 using Kurrent.Quack;
 using KurrentDB.SecondaryIndexing.Storage;
 
@@ -53,7 +55,8 @@ internal abstract partial class UserIndexSql(string indexName, string fieldName)
 			: throw new($"Invalid table name: {tableName}");
 	}
 
-	private static string GetViewNameFor(string indexName) {
+	internal static string GetViewNameFor(string indexName) {
+		// Keep aligned with TransformViewName
 		var viewName = $"idx_user__{indexName}_view";
 
 		return IdentifierRegex.IsMatch(viewName)
@@ -70,10 +73,6 @@ internal abstract partial class UserIndexSql(string indexName, string fieldName)
 		return IdentifierRegex.IsMatch(columnName)
 			? columnName
 			: throw new($"Invalid column name: {columnName}");
-	}
-
-	public static string GenerateInFlightTableNameFor(string indexName) {
-		return $"inflight_idx_user__{indexName}_{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
 	}
 
 	public static void DeleteUserIndex(DuckDBAdvancedConnection connection, string indexName) {

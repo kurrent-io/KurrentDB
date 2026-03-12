@@ -63,12 +63,8 @@ internal sealed class GetDatabaseEventsFunction(IPublisher publisher) : ScalarFu
 		column = builder[2];
 		column.SetValue(rowIndex, ev.EventStreamId);
 
-		// Created column (Unix timestamp)
-		column = builder[3];
-		column.Int64Rows[rowIndex] = new DateTimeOffset(ev.TimeStamp).ToUnixTimeMilliseconds();
-
 		// EventType column
-		column = builder[5];
+		column = builder[3];
 		column.SetValue(rowIndex, ev.EventType);
 
 		[MethodImpl(MethodImplOptions.NoInlining)]
@@ -102,12 +98,8 @@ internal sealed class GetDatabaseEventsFunction(IPublisher publisher) : ScalarFu
 		column = builder[2];
 		column.SetValue(rowIndex, string.Empty);
 
-		// Created column (Unix timestamp)
-		column = builder[3];
-		column.Int64Rows[rowIndex] = 0L;
-
 		// EventType column
-		column = builder[5];
+		column = builder[3];
 		column.SetValue(rowIndex, string.Empty);
 	}
 }
@@ -116,14 +108,12 @@ internal readonly ref struct EventColumns : ICompositeReturnType {
 	private const DuckDBType Data = DuckDBType.Varchar;
 	private const DuckDBType Metadata = DuckDBType.Varchar;
 	private const DuckDBType StreamId = DuckDBType.Varchar;
-	private const DuckDBType Created = DuckDBType.Varchar;
 	private const DuckDBType EventType = DuckDBType.Varchar;
 
 	static IReadOnlyList<KeyValuePair<string, LogicalType>> ICompositeReturnType.ReturnType => new ICompositeReturnType.Builder {
-		Data,
-		Metadata,
-		StreamId,
-		Created,
-		EventType,
+		{ Data, "data" },
+		{ Metadata, "metadata" },
+		{ StreamId, "stream_id" },
+		{ EventType, "event_type" },
 	};
 }

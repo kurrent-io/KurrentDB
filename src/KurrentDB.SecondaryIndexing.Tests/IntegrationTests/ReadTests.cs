@@ -1,15 +1,18 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Kurrent.Quack;
 using KurrentDB.Core.ClientPublisher;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
+using KurrentDB.SecondaryIndexing.Indexes;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
+using KurrentDB.SecondaryIndexing.Query;
 using KurrentDB.SecondaryIndexing.Tests.Generators;
 using KurrentDB.Surge.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +28,15 @@ public partial class IndexingTests(IndexingFixture fixture, ITestOutputHelper ou
 	public async Task ReadsAllEventsFromDefaultIndex(bool forwards) {
 		Fixture.LogDatasetInfo();
 		await ValidateRead(SystemStreams.DefaultSecondaryIndex, Fixture.AppendedBatches.ToDefaultIndexResolvedEvents(), forwards);
+	}
+
+	[Fact]
+	public async Task ReadFromDefaultIndexUsingQueryEngine() {
+		var engine = Fixture.NodeServices.GetRequiredService<IQueryEngine>();
+		using var preparedSql = engine.PrepareQuery("SELECT metadata FROM kdb.records"u8, digitallySign: true);
+
+		var consumer = new RowCountReader();
+		await engine.ExecuteAsync(preparedSql.Memory, consumer, checkIntegrity: true, TestContext.Current.CancellationToken);
 	}
 
 	[Theory]
@@ -133,5 +145,31 @@ public partial class IndexingTests(IndexingFixture fixture, ITestOutputHelper ou
 
 	private class EventTypeFilter(string eventType) : IEventFilter {
 		public bool IsEventAllowed(EventRecord eventRecord) => eventRecord.EventType == eventType;
+	}
+
+	private sealed class RowCountReader : IQueryResultConsumer {
+		public long RowCount {
+			get;
+			private set;
+		}
+
+		public ValueTask ConsumeAsync(IQueryResultReader resultReader, CancellationToken token) {
+			var task = ValueTask.CompletedTask;
+			try {
+				while (resultReader.TryRead()) {
+					RowCount += resultReader.Chunk.RowCount;
+				}
+			} catch (OperationCanceledException e) when (e.CancellationToken == token) {
+				task = ValueTask.FromCanceled(token);
+			} catch (Exception e) {
+				task = ValueTask.FromException(e);
+			}
+
+			return task;
+		}
+
+		public void Bind<TBinder>(TBinder binder) where TBinder : IPreparedQueryBinder, allows ref struct {
+			// nothing to bind, query has no substitution
+		}
 	}
 }
