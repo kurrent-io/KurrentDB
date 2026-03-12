@@ -73,8 +73,8 @@ partial class QueryEngine {
 
 			static void Sign(ref BufferWriterSlim<byte> writer, ReadOnlySpan<byte> signatureKey) {
 				var payload = writer.WrittenSpan;
-				var hash = writer.GetSpan(HMACSHA3_256.HashSizeInBytes);
-				writer.Advance(HMACSHA3_256.HashData(signatureKey, payload, hash));
+				var hash = writer.GetSpan(HMACSHA256.HashSizeInBytes);
+				writer.Advance(HMACSHA256.HashData(signatureKey, payload, hash));
 			}
 		}
 	}
@@ -106,7 +106,7 @@ partial class QueryEngine {
 
 			// Signature (last 32 bytes). If prepared query is not signed, it could be just last 32 bytes, which is fine
 			// because the caller is knows for sure is the query should be signed or not
-			var offset = preparedQuery.Length - HMACSHA3_256.HashSizeInBytes;
+			var offset = preparedQuery.Length - HMACSHA256.HashSizeInBytes;
 			if (offset >= 0) {
 				_payload = preparedQuery.Slice(0, offset);
 				_signature = preparedQuery.Slice(offset);
@@ -122,8 +122,8 @@ partial class QueryEngine {
 
 		public bool CheckIntegrity(ReadOnlySpan<byte> signatureKey) {
 
-			Span<byte> actual = stackalloc byte[HMACSHA3_256.HashSizeInBytes];
-			HMACSHA3_256.HashData(signatureKey, _payload, actual);
+			Span<byte> actual = stackalloc byte[HMACSHA256.HashSizeInBytes];
+			HMACSHA256.HashData(signatureKey, _payload, actual);
 
 			// compare hashes
 			return actual.SequenceEqual(_signature);
