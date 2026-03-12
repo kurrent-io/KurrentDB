@@ -44,6 +44,28 @@ If the domains are `node1.esdb.mycompany.org`, `node2.esdb.mycompany.org` and `n
 Server certificates **must** have the internal and external IP addresses (`ReplicationIp` and `NodeIp` respectively) or DNS names as subject alternative names.
 :::
 
+### Disable client authentication EKU validation
+
+A EventStoreDB node currently uses a single TLS certificate for
+1. Authenticating as a server when a client application or another node connects to it.
+2. Authenticating as a client when it connects to another node.
+
+When a node is authenticating another node that is connecting to it, it will by default comply with [RFC 5280 section-4.2.1.12](https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.12) and require that the connecting node's certificate has the `clientAuth` Extended Key Usage (EKU), or that the certificate does not use EKUs at all.
+
+You can disable the `clientAuth` EKU requirement by setting `DisableClientAuthEkuValidation` to `true`. The authentication will still verify the chain of trust, expiration, and common name of the certificate. Please consider whether this is appropriate for your deployment.
+
+This setting allows EventStoreDB to operate using certificates signed by publicly trusted certificate authorities, which, largely driven by changes to the [Chrome Root Program policy](https://www.chromium.org/Home/chromium-security/root-ca-policy/), are moving away from issuing certificates with the `clientAuth` EKU. 
+
+This setting does not affect authentication of users via user certificates, which will still require the `clientAuth` EKU.
+
+| Format               | Syntax                                          |
+|:---------------------|:------------------------------------------------|
+| Command line         | `--disable-client-auth-eku-validation`          |
+| YAML                 | `DisableClientAuthEkuValidation`                |
+| Environment variable | `EVENTSTORE_DISABLE_CLIENT_AUTH_EKU_VALIDATION` |
+
+**Default**: `false`
+
 ### Trusted root certificates
 
 When getting an incoming connection, the server needs to ensure if the certificate used for the connection can be trusted. For this to work, the server needs to know where trusted root certificates are located.

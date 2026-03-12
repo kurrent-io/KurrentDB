@@ -996,8 +996,9 @@ public class ClusterVNode<TStreamId> :
 
 		if (!options.Application.Insecure) {
 			//transport-level authentication providers
-			httpAuthenticationProviders.Add(
-				new NodeCertificateAuthenticationProvider(() => _certificateProvider.GetReservedNodeCommonName()));
+			httpAuthenticationProviders.Add(new NodeCertificateAuthenticationProvider(
+				getCertificateReservedNodeCommonName: () => _certificateProvider.GetReservedNodeCommonName(),
+				disableClientAuthEkuValidation: options.Certificate.DisableClientAuthEkuValidation));
 
 			if (options.Interface.EnableTrustedAuth)
 				httpAuthenticationProviders.Add(new TrustedHttpAuthenticationProvider());
