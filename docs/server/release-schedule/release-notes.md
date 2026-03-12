@@ -6,6 +6,18 @@ order: 1
 
 This page contains the release notes for KurrentDB v26.0.
 
+## [26.0.2](https://github.com/kurrent-io/KurrentDB/releases/tag/v26.0.2)
+
+12 March 2026
+
+### Added DisableClientAuthEkuValidation option (PR [#5550](https://github.com/kurrent-io/KurrentDB/pull/5550))
+
+Publicly trusted certificate authorities are moving away from issuing certificates with the `clientAuth` EKU, largely driven by changes to the [Chrome Root Program policy](https://www.chromium.org/Home/chromium-security/root-ca-policy/).
+
+This option disables validation of the presence of the `clientAuth` EKU when a node connects to another, allowing KurrentDB to be used with new certificates issued by publicly trusted CAs.
+
+See the [documentation](../security/protocol-security.md#disable-client-authentication-eku-validation) for details.
+
 ## [26.0.1](https://github.com/kurrent-io/KurrentDB/releases/tag/v26.0.1)
 
 6 February 2026
