@@ -42,10 +42,4 @@ public class IndexingDbSchema : DuckDBOneTimeSetup {
 
 		transaction.Commit();
 	}
-
-	public void CreateSchema(DuckDBConnectionPool pool) {
-		using (pool.Rent(out var connection)) {
-			Execute(connection);
-		}
-	}
 }

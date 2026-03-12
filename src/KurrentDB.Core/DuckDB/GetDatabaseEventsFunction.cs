@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Security.Claims;
 using DotNext.Buffers;
 using DotNext.Buffers.Text;
 using DuckDB.NET.Native;
@@ -16,7 +17,7 @@ using KurrentDB.Core.Services.UserManagement;
 
 namespace KurrentDB.Core.DuckDB;
 
-internal sealed class GetDatabaseEventsFunction(IPublisher publisher) : ScalarFunction<EventColumns>(Name) {
+internal sealed class GetDatabaseEventsFunction(Func<long[], ClaimsPrincipal, IEnumerator<ReadResponse>> eventsProvider) : ScalarFunction<EventColumns>(Name) {
 	private new const string Name = "get_kdb";
 
 	// Accepts log_position
@@ -29,10 +30,7 @@ internal sealed class GetDatabaseEventsFunction(IPublisher publisher) : ScalarFu
 	protected override void Execute<TBuilder>(ExecutionContext context, in DataChunk input, ref TBuilder builder) {
 		var logPositions = input[0].Int64Rows.ToArray(); // TODO: Remove array allocation
 
-		using var enumerator = new Enumerator.ReadLogEventsSync(
-			bus: publisher,
-			logPositions: logPositions,
-			user: SystemAccounts.System);
+		using var enumerator = eventsProvider.Invoke(logPositions, SystemAccounts.System);
 
 		for (var rowIndex = 0; enumerator.MoveNext(); rowIndex++) {
 			if (enumerator.Current is ReadResponse.EventReceived eventReceived) {
