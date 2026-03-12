@@ -47,7 +47,7 @@ internal sealed partial class QueryEngine(DefaultIndexProcessor defaultIndex,
 		var rental = sharedPool.Rent(out var connection);
 		try {
 			CaptureSnapshots(in parsedQuery, connection, snapshots, token);
-			var statement = new PreparedStatement(connection, parsedQuery.Query);
+			using var statement = new PreparedStatement(connection, parsedQuery.Query);
 			consumer.Bind(new QueryBinder(in statement));
 
 			using var reader = new QueryResultReader(in statement, consumer.UseStreaming);
