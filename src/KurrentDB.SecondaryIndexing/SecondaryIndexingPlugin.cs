@@ -20,6 +20,7 @@ using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
 using KurrentDB.SecondaryIndexing.Indexes.User;
 using KurrentDB.SecondaryIndexing.Indexes.User.Management;
+using KurrentDB.SecondaryIndexing.Query;
 using KurrentDB.SecondaryIndexing.Stats;
 using KurrentDB.SecondaryIndexing.Storage;
 using KurrentDB.SecondaryIndexing.Telemetry;
@@ -52,14 +53,13 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddSingleton<UserIndexEventStore>();
 		services.AddSingleton<UserIndexStreamNameMap>();
 		services.AddSingleton<UserIndexQueryService>();
+		services.AddSingleton<QueryEngine>();
+		services.AddSingleton<IQueryEngine>(static sp => sp.GetRequiredService<QueryEngine>());
 		services.AddSingleton<UserIndexEngine>();
 		services.AddDuckDBSetup<IndexingDbSchema>();
-		services.AddDuckDBSetup<InFlightSetup>();
 
 		services.AddHostedService<DefaultIndexBuilder>();
 		services.AddHostedService(sp => sp.GetRequiredService<UserIndexEngine>());
-
-		services.AddSingleton<DefaultIndexInFlightRecords>();
 
 		var meter = new Meter(SecondaryIndexingConstants.MeterName, "1.0.0");
 
