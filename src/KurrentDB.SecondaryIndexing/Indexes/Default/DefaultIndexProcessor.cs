@@ -160,7 +160,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	}
 
 	public BufferedView.Snapshot CaptureSnapshot(DuckDBConnection connection)
-		=> _appender.CaptureSnapshotAndInjectExtraRows(connection);
+		=> _appender.TakeSnapshot(connection, ExpandRecordFunction.UnnestExpression);
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {

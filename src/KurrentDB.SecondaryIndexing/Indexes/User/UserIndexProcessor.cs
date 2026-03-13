@@ -17,7 +17,6 @@ using KurrentDB.Core.Messages;
 using KurrentDB.SecondaryIndexing.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes.Custom.Surge;
 using KurrentDB.SecondaryIndexing.Indexes.User.JavaScript;
-using KurrentDB.SecondaryIndexing.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -105,7 +104,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 	public override UserIndexSql<TField> Sql => _sql;
 
 	public override BufferedView.Snapshot CaptureSnapshot(DuckDBAdvancedConnection connection)
-		=> _appender.CaptureSnapshotAndInjectExtraRows(connection);
+		=> _appender.TakeSnapshot(connection, ExpandRecordFunction.UnnestExpression);
 
 	public override bool TryIndex(ResolvedEvent resolvedEvent) {
 		if (IsDisposingOrDisposed)

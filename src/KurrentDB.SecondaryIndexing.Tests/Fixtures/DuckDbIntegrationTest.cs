@@ -18,10 +18,9 @@ public abstract class DuckDbIntegrationTest<T> : DirectoryPerTest<T> {
 		var dbPath = Fixture.GetFilePathFor($"{GetType().Name}.db");
 
 		DuckDb = new($"Data Source={dbPath};");
-		var schema = new IndexingDbSchema();
+		var schema = new IndexingDbSchema(GetEvents);
 		using (DuckDb.Rent(out var connection)) {
 			schema.Execute(connection);
-			KdbGetEventSetup.Register(connection, GetEvents);
 		}
 	}
 

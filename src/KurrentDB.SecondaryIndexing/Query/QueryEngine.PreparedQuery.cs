@@ -2,15 +2,12 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Buffers;
-using System.Buffers.Binary;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using DotNext.Buffers;
 using DotNext.IO;
 using DotNext.Text;
-using Kurrent.Quack;
 
 namespace KurrentDB.SecondaryIndexing.Query;
 
