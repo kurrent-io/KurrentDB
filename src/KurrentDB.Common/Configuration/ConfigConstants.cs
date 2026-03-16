@@ -9,7 +9,9 @@ public static class ConfigConstants {
 	public const string RootPrefix = KurrentDB;
 	public const string OtlpConfigPrefix = $"{KurrentDB}:{OpenTelemetry}:{Otlp}";
 	public const string OtlpLogsPrefix = $"{KurrentDB}:{OpenTelemetry}:{Logs}";
+	public const string OtlpLogsOtlpPrefix = $"{KurrentDB}:{OpenTelemetry}:{Logs}:{Otlp}";
 	public const string OtlpMetricsPrefix = $"{KurrentDB}:{OpenTelemetry}:{Metrics}";
+	public const string OtlpMetricsOtlpPrefix = $"{KurrentDB}:{OpenTelemetry}:{Metrics}:{Otlp}";
 
 	const string KurrentDB = nameof(KurrentDB);
 	const string OpenTelemetry = nameof(OpenTelemetry);

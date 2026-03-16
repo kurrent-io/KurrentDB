@@ -77,6 +77,27 @@ public class OtlpExporterTests {
 	}
 
 	[Fact]
+	public async Task per_signal_endpoint_overrides_shared_endpoint() {
+		await using var _ = await CreateServer(new(), new() {
+			{ "KurrentDB:OpenTelemetry:Otlp:Endpoint", "http://localhost:9999" },
+			{ "KurrentDB:OpenTelemetry:Metrics:Otlp:Endpoint", Endpoint },
+			{ "KurrentDB:Metrics:ExpectedScrapeIntervalSeconds", "5" },
+		});
+		var log = Assert.Single(_logger.LogMessages);
+		Assert.Equal("OtlpExporter: Exporting metrics to http://localhost:6506/ every 5.0 seconds", log.RenderMessage());
+	}
+
+	[Fact]
+	public async Task shared_endpoint_used_when_no_per_signal_override() {
+		await using var _ = await CreateServer(new(), new() {
+			{ "KurrentDB:OpenTelemetry:Otlp:Endpoint", Endpoint },
+			{ "KurrentDB:Metrics:ExpectedScrapeIntervalSeconds", "5" },
+		});
+		var log = Assert.Single(_logger.LogMessages);
+		Assert.Equal("OtlpExporter: Exporting metrics to http://localhost:6506/ every 5.0 seconds", log.RenderMessage());
+	}
+
+	[Fact]
 	public async Task exports_metrics() {
 		var meter = new Meter("EventStore.TestMeter", version: "1.0.0");
 		meter.CreateObservableCounter("test-counter", () => 7);

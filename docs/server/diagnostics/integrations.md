@@ -100,6 +100,36 @@ The configuration can specify:
 | `OpenTelemetry__Logs__BatchExportProcessorOptions`<br/>`__MaxQueueSize`                | Maximum number of log entries to queue. When the limit is exceeded, logs are discarded. Default: 2048. |
 | `OpenTelemetry__Logs__BatchExportProcessorOptions`<br/>`__ScheduledDelayMilliseconds`  | Maximum delay between batches. Default: 5000.                                                          |
 
+#### Per-Signal OTLP Endpoints
+
+By default, both metrics and logs are exported to the shared `OpenTelemetry:Otlp` endpoint. If you need to send metrics and logs to different destinations, you can override the OTLP connection settings per signal by adding an `Otlp` section under `Metrics` or `Logs`. Any properties specified in the per-signal section override the shared configuration; unspecified properties are inherited from the shared section.
+
+Sample configuration:
+
+```yaml
+OpenTelemetry:
+  Otlp:
+    Endpoint: "http://default-collector:4317"
+    Headers: "api-key=shared-key"
+  Metrics:
+    Otlp:
+      Endpoint: "http://metrics-collector:4317"
+      Headers: "api-key=metrics-key"
+  Logs:
+    Enabled: true
+    Otlp:
+      Endpoint: "http://logs-collector:4317"
+```
+
+In this example, metrics are exported to `metrics-collector` with the `metrics-key` header, while logs are exported to `logs-collector` inheriting the `shared-key` header from the shared configuration.
+
+| Name                                | Description                                                                         |
+|-------------------------------------|-------------------------------------------------------------------------------------|
+| `OpenTelemetry__Metrics__Otlp__Endpoint` | Override the OTLP endpoint for metrics export                                  |
+| `OpenTelemetry__Metrics__Otlp__Headers`  | Override the OTLP headers for metrics export                                   |
+| `OpenTelemetry__Logs__Otlp__Endpoint`    | Override the OTLP endpoint for logs export                                     |
+| `OpenTelemetry__Logs__Otlp__Headers`     | Override the OTLP headers for logs export                                      |
+
 ### OTel environment variables
 
 KurrentDB OpenTelemetry exporter also supports the default OTel environment variables for configuring the OTLP exporter. Read more about them in the [OpenTelemetry documentation](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/).
