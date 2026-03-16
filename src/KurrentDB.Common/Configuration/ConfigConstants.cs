@@ -6,11 +6,16 @@ using System;
 namespace KurrentDB.Common.Configuration;
 
 public static class ConfigConstants {
-	public const string RootPrefix = "KurrentDB";
-	public const string OpenTelemetryPrefix = $"{RootPrefix}:OpenTelemetry";
-	public const string OtlpConfigPrefix = $"{OpenTelemetryPrefix}:Otlp";
-	public const string OtlpLogsPrefix = $"{OpenTelemetryPrefix}:Logs";
-	public const string OtlpMetricsPrefix = $"{OpenTelemetryPrefix}:Metrics";
+	public const string RootPrefix = KurrentDB;
+	public const string OtlpConfigPrefix = $"{KurrentDB}:{OpenTelemetry}:{Otlp}";
+	public const string OtlpLogsPrefix = $"{KurrentDB}:{OpenTelemetry}:{Logs}";
+	public const string OtlpMetricsPrefix = $"{KurrentDB}:{OpenTelemetry}:{Metrics}";
+
+	const string KurrentDB = nameof(KurrentDB);
+	const string OpenTelemetry = nameof(OpenTelemetry);
+	const string Otlp = nameof(Otlp);
+	const string Logs = nameof(Logs);
+	const string Metrics = nameof(Metrics);
 
 	public static readonly TimeSpan DefaultSlowMessageThreshold = TimeSpan.FromMilliseconds(48);
 }
