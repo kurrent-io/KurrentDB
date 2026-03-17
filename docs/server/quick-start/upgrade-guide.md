@@ -397,7 +397,7 @@ KurrentDB 25.0 includes [a plugin](../configuration/networking.md#external-tcp) 
 A number of configuration options have been removed as part of this. KurrentDB will not start by default if any of the following options are present in the database configuration:
 
 - `AdvertiseTcpPortToClientAs`
-- `DisableExternalTcpTls`
+- `DisableExternalTcpTls` — this option is now available again under the [TCP plugin](../configuration/networking.md#external-tcp) configuration section as `TcpPlugin:DisableExternalTcpTls`
 - `EnableExternalTcp`
 - `ExtHostAdvertiseAs`
 - `ExtTcpHeartbeatInterval`

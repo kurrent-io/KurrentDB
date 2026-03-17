@@ -299,6 +299,10 @@ public class ClusterVNode<TStreamId> :
 		var disableExternalTcpTls = options.Application.Insecure || nodeTcpOptions.DisableExternalTcpTls;
 		var enableExternalTcp = nodeTcpOptions.EnableExternalTcp;
 
+		if (nodeTcpOptions.DisableExternalTcpTls && !options.Application.Insecure)
+			Log.Warning("TLS is disabled for external TCP connections via the DisableExternalTcpTls option. " +
+			            "This is not recommended for production environments.");
+
 		var httpEndPoint = new IPEndPoint(options.Interface.NodeIp, options.Interface.NodePort);
 
 		var intTcp = disableInternalTcpTls
