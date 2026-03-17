@@ -4,7 +4,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
 using EventStore.Plugins;
-using EventStore.Plugins.Diagnostics;
 using Kurrent.Surge.Schema;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core;
@@ -22,7 +21,6 @@ using KurrentDB.SecondaryIndexing.Indexes.User;
 using KurrentDB.SecondaryIndexing.Indexes.User.Management;
 using KurrentDB.SecondaryIndexing.Stats;
 using KurrentDB.SecondaryIndexing.Storage;
-using KurrentDB.SecondaryIndexing.Telemetry;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -73,10 +71,6 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddSingleton<ISecondaryIndexReader>(sp => sp.GetRequiredService<UserIndexEngine>());
 
 		services.AddSingleton<StatsService>();
-		services.AddHostedService(sp => new DbStatsTelemetryService(
-			sp.GetRequiredService<StatsService>(),
-			telemetry => PublishDiagnosticsData(telemetry, PluginDiagnosticsDataCollectionMode.Snapshot))
-		);
 		services.AddSingleton<GetLastPosition>(sp => sp.GetRequiredService<TFChunkDbConfig>().WriterCheckpoint.Read);
 
 		// register into the inmemory schema registry
