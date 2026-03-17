@@ -1,8 +1,15 @@
 @using KurrentDB.SecondaryIndexing.Stats
+@using Serilog
 @inject StatsService Stats
 
-@if (_loading) {
+@if (_state is LoadState.ReadyToLoad) {
+	<MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="LoadStats">Load</MudButton>
+} else if (_state is LoadState.Loading) {
 	<MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large"/>
+} else if (_state is LoadState.FailedToLoad) {
+	<MudAlert Severity="Severity.Warning" Class="my-4">
+		Error: @(_exception?.Message)
+	</MudAlert>
 } else {
 	<MudText Typo="Typo.h6" Class="pt-2 ml-4">Longest streams per category</MudText>
 	<MudDataGrid Items="@_details">
@@ -14,18 +21,23 @@
 }
 
 @code {
-	private bool _loading = true;
+	private LoadState _state = LoadState.ReadyToLoad;
 	private List<StatsSql.GetLongestStreams.Result> _details = [];
+	private Exception _exception;
 
-	protected override void OnAfterRender(bool firstRender) {
-		base.OnAfterRender(firstRender);
-		if (!firstRender) return;
-		Task.Run(() => InvokeAsync(LoadDetails));
-	}
+	static readonly ILogger Log = Serilog.Log.ForContext<LongestStreams>();
 
-	void LoadDetails() {
-		_details = Stats.GetLongestStreams();
-		_loading = false;
+	async Task LoadStats() {
+		Log.Information("User requested longest streams stats load via UI");
+		_state = LoadState.Loading;
+		try {
+			_details = await Task.Run(() => Stats.GetLongestStreams());
+			_state = LoadState.Loaded;
+		} catch (Exception ex) {
+			Log.Error(ex, "Error while loading longest streams stats via UI");
+			_exception = ex;
+			_state = LoadState.FailedToLoad;
+		}
 		StateHasChanged();
 	}
 }
