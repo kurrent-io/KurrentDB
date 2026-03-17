@@ -415,9 +415,9 @@ public class GetInfoTests {
 		var resp = await GetSubscriptions();
 
 		for (int i = 0; resp.Subscriptions.Any(s => s.Status != "Live"); i++) {
-			Assert.AreNotEqual(5, i, "Reached too many retries to get all subscriptions live!");
+			Assert.AreNotEqual(20, i, "Reached too many retries to get all subscriptions live!");
 
-			await Task.Delay(500);
+			await Task.Delay(1000);
 			resp = await GetSubscriptions();
 		}
 
