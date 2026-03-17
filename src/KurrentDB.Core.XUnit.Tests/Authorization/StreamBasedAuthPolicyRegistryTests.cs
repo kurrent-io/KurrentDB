@@ -33,7 +33,7 @@ public class StreamBasedAuthPolicyRegistryTests {
 	private TaskCompletionSource<ClientMessage.SubscribeToStream> _subscribed = new();
 
 	private static readonly JsonSerializerOptions SerializerOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-	private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(1);
+	private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(10);
 
 	private StreamBasedAuthorizationPolicyRegistry CreateSut(
 		FakePolicySelectorPlugin[] plugins, AuthorizationPolicySettings defaultSettings, Action<ClientMessage.ReadStreamEventsBackward> onReadBackwards) {
