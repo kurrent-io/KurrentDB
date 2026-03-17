@@ -27,7 +27,7 @@
 		base.OnParametersSet();
 		Task.Run(() => InvokeAsync(() => {
 			(_numStreams, _numEvents) = Stats.GetCategoryStats(CategoryName).FirstOrDefault();
-			_avgLength = _numEvents / _numStreams;
+			_avgLength = _numStreams > 0 ? _numEvents / _numStreams : 0;
 			_loading = false;
 			StateHasChanged();
 		}));
