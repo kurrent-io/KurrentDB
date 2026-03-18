@@ -12,7 +12,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.ClientAPI.ExpectedVersion64Bit;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 [Category("ClientAPI"), Category("LongRunning")]
 public class
 	read_stream_with_link_to_event_with_event_number_greater_than_int_maxvalue<TLogFormat, TStreamId>

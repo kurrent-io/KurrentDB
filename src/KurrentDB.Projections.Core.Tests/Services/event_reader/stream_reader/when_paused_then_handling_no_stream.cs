@@ -17,7 +17,6 @@ using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 namespace KurrentDB.Projections.Core.Tests.Services.event_reader.stream_reader;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_paused_then_handling_no_stream<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private StreamEventReader _edp;
 	private Guid _distibutionPointCorrelationId;

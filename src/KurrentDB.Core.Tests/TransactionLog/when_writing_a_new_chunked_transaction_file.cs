@@ -14,7 +14,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.TransactionLog;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_writing_a_new_chunked_transaction_file<TLogFormat, TStreamId> : SpecificationWithDirectory {
 	private readonly Guid _eventId = Guid.NewGuid();
 	private readonly Guid _correlationId = Guid.NewGuid();

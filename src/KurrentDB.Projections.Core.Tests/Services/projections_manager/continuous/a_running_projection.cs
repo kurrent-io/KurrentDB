@@ -40,7 +40,6 @@ public class a_running_projection {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_stopping<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> When() {
 			foreach (var m in base.When())
@@ -103,7 +102,6 @@ public class a_running_projection {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_handling_event<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> When() {
 			foreach (var m in base.When())
@@ -148,7 +146,6 @@ public class a_running_projection {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_resetting<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 		protected override void Given() {
 			base.Given();
@@ -218,7 +215,6 @@ public class a_running_projection {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_resetting_and_starting<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 		protected override void Given() {
 			base.Given();

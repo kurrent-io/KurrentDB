@@ -12,7 +12,6 @@ namespace KurrentDB.Core.Tests.ClientAPI;
 
 [Category("ClientAPI"), Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint), Ignore = "Explicit transactions are not supported yet by Log V3")]
 public class when_committing_empty_transaction<TLogFormat, TStreamId> : SpecificationWithDirectory {
 	private MiniNode<TLogFormat, TStreamId> _node;
 	private IEventStoreConnection _connection;

@@ -14,7 +14,6 @@ using IODispatcherDelayedMessage = KurrentDB.Core.Helpers.IODispatcherDelayedMes
 namespace KurrentDB.Projections.Core.Tests.Services.emitted_streams_deleter.when_deleting;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_checkpoint_read_times_out<TLogFormat, TStreamId> : with_emitted_stream_deleter<TLogFormat, TStreamId>,
 	IHandle<TimerMessage.Schedule> {
 	protected Action _onDeleteStreamCompleted;

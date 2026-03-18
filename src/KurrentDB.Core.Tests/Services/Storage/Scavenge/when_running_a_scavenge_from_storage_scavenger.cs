@@ -19,7 +19,6 @@ using ILogger = Serilog.ILogger;
 namespace KurrentDB.Core.Tests.Services.Storage.Scavenge;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint), IgnoreReason = "new scavenge in logv3 later")]
 public class when_running_scavenge_from_storage_scavenger<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
 	private static readonly ILogger Log = Serilog.Log.ForContext<when_running_scavenge_from_storage_scavenger<TLogFormat, TStreamId>>();
 	private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(60);

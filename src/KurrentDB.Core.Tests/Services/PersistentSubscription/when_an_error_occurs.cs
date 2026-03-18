@@ -19,7 +19,6 @@ namespace KurrentDB.Core.Tests.Services.PersistentSubscription;
 [TestFixture]
 public class PersistentSubscriptionServiceErrorTests {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public abstract class when_an_error_occurs<TLogFormat, TStreamId, TMessage, TReply, TResult>
 		where TMessage : Message where TReply : Message {
 		private readonly TResult _expectedResult;
@@ -71,7 +70,6 @@ public class PersistentSubscriptionServiceErrorTests {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class create_stream<TLogFormat, TStreamId> : when_an_error_occurs<TLogFormat, TStreamId,
 		ClientMessage.CreatePersistentSubscriptionToStream,
 		ClientMessage.CreatePersistentSubscriptionToStreamCompleted,
@@ -91,7 +89,6 @@ public class PersistentSubscriptionServiceErrorTests {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class create_all<TLogFormat, TStreamId> : when_an_error_occurs<TLogFormat, TStreamId,
 		ClientMessage.CreatePersistentSubscriptionToAll,
 		ClientMessage.CreatePersistentSubscriptionToAllCompleted,
@@ -109,7 +106,6 @@ public class PersistentSubscriptionServiceErrorTests {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class update_stream<TLogFormat, TStreamId> : when_an_error_occurs<TLogFormat, TStreamId,
 		ClientMessage.UpdatePersistentSubscriptionToStream,
 		ClientMessage.UpdatePersistentSubscriptionToStreamCompleted,
@@ -129,7 +125,6 @@ public class PersistentSubscriptionServiceErrorTests {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class update_all<TLogFormat, TStreamId> : when_an_error_occurs<TLogFormat, TStreamId,
 		ClientMessage.UpdatePersistentSubscriptionToAll,
 		ClientMessage.UpdatePersistentSubscriptionToAllCompleted,

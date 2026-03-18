@@ -8,7 +8,6 @@ namespace KurrentDB.Core.Tests;
 
 public class LogFormat {
 	public class V2 { }
-	public class V3 { }
 }
 
 public static class LogFormatHelper<TLogFormat, TStreamId> {

@@ -15,7 +15,6 @@ namespace KurrentDB.Core.Tests.Services.Transport.Grpc.StreamsTests;
 [TestFixture]
 public class ReadIndexForwardsTests {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_reading_index_forwards<TLogFormat, TStreamId>
 	  : GrpcSpecification<TLogFormat, TStreamId> {
 		private const string IndexId = SystemStreams.DefaultSecondaryIndex;

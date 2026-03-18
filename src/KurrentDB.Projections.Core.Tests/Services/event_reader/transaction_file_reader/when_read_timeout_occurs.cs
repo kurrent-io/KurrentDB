@@ -16,7 +16,6 @@ using NUnit.Framework;
 namespace KurrentDB.Projections.Core.Tests.Services.event_reader.transaction_file_reader;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_read_timeout_occurs<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private TransactionFileEventReader _eventReader;
 	private Guid _distributionCorrelationId;

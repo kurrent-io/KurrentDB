@@ -10,7 +10,6 @@ using NUnit.Framework;
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection.checkpoint_manager;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_beginning_to_load_state_the_core_projection_checkpoint_manager<TLogFormat, TStreamId> :
 	TestFixtureWithCoreProjectionCheckpointManager<TLogFormat, TStreamId> {
 	private Exception _exception;

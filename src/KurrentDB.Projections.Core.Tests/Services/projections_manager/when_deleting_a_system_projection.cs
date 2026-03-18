@@ -13,7 +13,6 @@ using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Processing;
 using NUnit.Framework;
-using LogV3StreamId = System.UInt32;
 
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
 
@@ -26,7 +25,6 @@ public class SystemProjectionNames : IEnumerable {
 			.Where(x => x.IsLiteral && !x.IsInitOnly)
 			.Select(x => x.GetRawConstantValue())) {
 			yield return new[] { typeof(LogFormat.V2), typeof(string), projection };
-			yield return new[] { typeof(LogFormat.V3), typeof(LogV3StreamId), projection };
 		}
 	}
 }

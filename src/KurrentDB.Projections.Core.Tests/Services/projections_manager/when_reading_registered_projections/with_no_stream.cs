@@ -14,7 +14,6 @@ using NUnit.Framework;
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager.when_reading_registered_projections;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class with_no_stream<TLogFormat, TStreamId> : TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId> {
 	protected override void Given() {
 		AllWritesSucceed();

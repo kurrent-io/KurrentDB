@@ -267,7 +267,6 @@ namespace KurrentDB.Projections.Core.Tests.Services.feed_reader {
 		}
 
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
-		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		class when_reading_existing_events<TLogFormat, TStreamId> : TestFixtureWithFeedReaderService<TLogFormat, TStreamId> {
 			private QuerySourcesDefinition _querySourcesDefinition;
 			private CheckpointTag _fromPosition;
@@ -305,7 +304,6 @@ namespace KurrentDB.Projections.Core.Tests.Services.feed_reader {
 		}
 
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
-		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		class when_reading_existing_events_by_parts<TLogFormat, TStreamId> : TestFixtureWithFeedReaderService<TLogFormat, TStreamId> {
 			private QuerySourcesDefinition _querySourcesDefinition;
 			private CheckpointTag _fromPosition;

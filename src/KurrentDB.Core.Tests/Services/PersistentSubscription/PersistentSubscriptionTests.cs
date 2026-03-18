@@ -168,7 +168,6 @@ public class when_creating_persistent_subscription {
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_updating_all_stream_subscription_with_filter<TLogFormat, TStreamId> {
 
 	private readonly PersistentSubscriptionService<TStreamId> _sut;
@@ -2403,7 +2402,6 @@ public class ParkTests {
 
 [Ignore("very long test")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class DeadlockTest<TLogFormat, TStreamId> : SpecificationWithMiniNode<TLogFormat, TStreamId> {
 	protected override Task Given() {
 		_conn = BuildConnection(_node);

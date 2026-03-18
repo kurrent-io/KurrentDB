@@ -49,7 +49,6 @@ public class A_Projection {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class Stopping<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 		[Test]
 		public void Has_Correct_Status() {
@@ -76,7 +75,6 @@ public class A_Projection {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class Faulted<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 
 		[Test]
@@ -108,7 +106,6 @@ public class A_Projection {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class Running<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 
 		[Test]

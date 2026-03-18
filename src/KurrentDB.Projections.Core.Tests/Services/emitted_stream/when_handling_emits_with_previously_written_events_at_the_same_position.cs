@@ -16,7 +16,6 @@ using NUnit.Framework;
 namespace KurrentDB.Projections.Core.Tests.Services.emitted_stream;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class
 	when_handling_emits_with_previously_written_events_at_the_same_position<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private EmittedStream _stream;

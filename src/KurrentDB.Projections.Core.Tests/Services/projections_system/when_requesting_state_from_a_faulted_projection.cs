@@ -12,7 +12,6 @@ using NUnit.Framework;
 namespace KurrentDB.Projections.Core.Tests.Services.projections_system;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 class when_requesting_state_from_a_faulted_projection<TLogFormat, TStreamId> : with_projection_config<TLogFormat, TStreamId> {
 	private TFPos _message1Position;
 

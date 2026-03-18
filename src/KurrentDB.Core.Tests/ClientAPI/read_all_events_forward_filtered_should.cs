@@ -16,7 +16,6 @@ namespace KurrentDB.Core.Tests.ClientAPI;
 
 [Category("ClientAPI"), Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class read_all_events_forward_filtered_should<TLogFormat, TStreamId>
 	: SpecificationWithMiniNode<TLogFormat, TStreamId> {
 	private List<EventData> _testEvents;

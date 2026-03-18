@@ -14,7 +14,6 @@ using ResolvedEvent = KurrentDB.Projections.Core.Services.Processing.ResolvedEve
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_starting_an_existing_projection_missing_last_emitted_event_and_state_snapshot<TLogFormat, TStreamId> :
 	TestFixtureWithCoreProjectionStarted<TLogFormat, TStreamId> {
 	private readonly Guid _causedByEventId = Guid.NewGuid();

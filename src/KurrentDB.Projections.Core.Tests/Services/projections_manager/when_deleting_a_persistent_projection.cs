@@ -16,7 +16,6 @@ using ClientMessageWriteEvents = KurrentDB.Core.Tests.TestAdapters.ClientMessage
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_deleting_a_persistent_projection<TLogFormat, TStreamId> : TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId> {
 	private string _projectionName;
 	private const string _projectionCheckpointStream = "$projections-test-projection-checkpoint";

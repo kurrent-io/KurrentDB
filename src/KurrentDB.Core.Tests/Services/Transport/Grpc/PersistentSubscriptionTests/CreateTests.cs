@@ -11,9 +11,7 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Services.Transport.Grpc.PersistentSubscriptionTests;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string), false)]
-[TestFixture(typeof(LogFormat.V3), typeof(uint), false)]
 [TestFixture(typeof(LogFormat.V2), typeof(string), true)]
-[TestFixture(typeof(LogFormat.V3), typeof(uint), true)]
 public class CreateTests<TLogFormat, TStreamId> : GrpcSpecification<TLogFormat, TStreamId> {
 	private readonly bool _legacy;
 

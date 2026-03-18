@@ -11,7 +11,6 @@ using NUnit.Framework;
 namespace KurrentDB.Projections.Core.Tests.Services.emitted_streams_deleter.when_deleting;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_delete_stream_succeeds<TLogFormat, TStreamId> : with_emitted_stream_deleter<TLogFormat, TStreamId> {
 	protected Action _onDeleteStreamCompleted;
 	private readonly ManualResetEventSlim _mre = new ManualResetEventSlim();

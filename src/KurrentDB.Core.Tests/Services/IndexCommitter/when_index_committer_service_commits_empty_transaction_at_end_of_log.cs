@@ -8,7 +8,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Services.IndexCommitter;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_index_committer_service_commits_empty_transaction_at_end_of_log<TLogFormat, TStreamId> : with_index_committer_service<TLogFormat, TStreamId> {
 	private readonly long _logPrePosition = 4000;
 	private readonly long _logPostPosition = 4001;

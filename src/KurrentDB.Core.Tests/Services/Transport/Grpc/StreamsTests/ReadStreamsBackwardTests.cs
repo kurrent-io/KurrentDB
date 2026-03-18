@@ -16,7 +16,6 @@ namespace KurrentDB.Core.Tests.Services.Transport.Grpc.StreamsTests;
 [TestFixture]
 public class ReadStreamsBackwardTests {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_reading_backward_from_past_the_end_of_the_stream<TLogFormat, TStreamId>
 		: GrpcSpecification<TLogFormat, TStreamId> {
 		private readonly string _streamName = Guid.NewGuid().ToString();
@@ -83,7 +82,6 @@ public class ReadStreamsBackwardTests {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_reading_backward_from_the_end_of_the_stream<TLogFormat, TStreamId>
 		: GrpcSpecification<TLogFormat, TStreamId> {
 		private readonly string _streamName = Guid.NewGuid().ToString();
@@ -150,7 +148,6 @@ public class ReadStreamsBackwardTests {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_reading_backward_from_the_middle_of_the_stream<TLogFormat, TStreamId>
 		: GrpcSpecification<TLogFormat, TStreamId> {
 		private readonly string _streamName = Guid.NewGuid().ToString();
@@ -217,7 +214,6 @@ public class ReadStreamsBackwardTests {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_reading_backward_from_the_start_of_the_stream<TLogFormat, TStreamId>
 		: GrpcSpecification<TLogFormat, TStreamId> {
 		private readonly string _streamName = Guid.NewGuid().ToString();

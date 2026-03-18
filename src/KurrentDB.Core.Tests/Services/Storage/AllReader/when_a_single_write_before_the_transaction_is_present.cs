@@ -11,7 +11,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Services.Storage.AllReader;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint), Ignore = "Explicit transactions are not supported yet by Log V3")]
 public class when_a_single_write_before_the_transaction_is_present<TLogFormat, TStreamId> : RepeatableDbTestScenario<TLogFormat, TStreamId> {
 	[Test]
 	public async Task should_be_able_to_read_the_transactional_writes_when_the_commit_is_present() {

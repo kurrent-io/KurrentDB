@@ -25,7 +25,6 @@ namespace KurrentDB.Projections.Core.Tests.Services.core_projection;
 
 public static class when_writing_projection_persisted_state_races_with_stream_deletion {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_projection_persisted_state_write_races_with_projections_substream_deletion<TLogFormat, TStreamId> : TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId> {
 		private const string _projectionName = "my-projection";
 

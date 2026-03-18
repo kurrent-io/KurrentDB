@@ -15,7 +15,6 @@ using NUnit.Framework;
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection.projection_checkpoint;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_starting_the_projection_checkpoint_with_some_events_already_emitted<TLogFormat, TStreamId> :
 	TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private ProjectionCheckpoint _checkpoint;

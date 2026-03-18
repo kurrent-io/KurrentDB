@@ -14,7 +14,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.TransactionLog;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_writing_prepare_record_to_file<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
 	private ITransactionFileWriter _writer;
 	private InMemoryCheckpoint _writerCheckpoint;

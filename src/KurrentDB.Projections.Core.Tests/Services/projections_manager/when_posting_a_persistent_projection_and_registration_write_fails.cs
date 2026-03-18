@@ -17,11 +17,8 @@ using WriteEvents = KurrentDB.Core.Tests.TestAdapters.ClientMessage.WriteEvents;
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string), OperationResult.CommitTimeout)]
-[TestFixture(typeof(LogFormat.V3), typeof(uint), OperationResult.CommitTimeout)]
 [TestFixture(typeof(LogFormat.V2), typeof(string), OperationResult.ForwardTimeout)]
-[TestFixture(typeof(LogFormat.V3), typeof(uint), OperationResult.ForwardTimeout)]
 [TestFixture(typeof(LogFormat.V2), typeof(string), OperationResult.PrepareTimeout)]
-[TestFixture(typeof(LogFormat.V3), typeof(uint), OperationResult.PrepareTimeout)]
 public class
 	when_posting_a_persistent_projection_and_registration_write_fails<TLogFormat, TStreamId> :
 		TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId> {

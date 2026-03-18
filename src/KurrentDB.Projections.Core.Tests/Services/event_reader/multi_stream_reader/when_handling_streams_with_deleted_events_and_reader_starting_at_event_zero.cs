@@ -18,7 +18,6 @@ using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 namespace KurrentDB.Projections.Core.Tests.Services.event_reader.multi_stream_reader;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class
 	when_handling_streams_with_deleted_events_and_reader_starting_at_event_zero<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private MultiStreamEventReader _edp;

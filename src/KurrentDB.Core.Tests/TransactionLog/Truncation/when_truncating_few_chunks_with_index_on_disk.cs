@@ -11,7 +11,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.TransactionLog.Truncation;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_truncating_few_chunks_with_index_on_disk<TLogFormat, TStreamId> : TruncateScenario<TLogFormat, TStreamId> {
 	private EventRecord _event4;
 

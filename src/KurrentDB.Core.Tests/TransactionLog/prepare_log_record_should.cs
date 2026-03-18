@@ -10,7 +10,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.TransactionLog;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class prepare_log_record_should<TLogFormat, TStreamId> {
 	private readonly IRecordFactory<TStreamId> _recordFactory = LogFormatHelper<TLogFormat, TStreamId>.RecordFactory;
 	private readonly TStreamId _streamId = LogFormatHelper<TLogFormat, TStreamId>.StreamId;

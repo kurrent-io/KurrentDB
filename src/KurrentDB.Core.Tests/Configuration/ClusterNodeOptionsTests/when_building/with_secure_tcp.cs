@@ -15,7 +15,6 @@ namespace KurrentDB.Core.XUnit.Tests.Configuration.ClusterNodeOptionsTests.when_
 
 [Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class with_ssl_enabled_and_using_a_security_certificate_from_file<TLogFormat, TStreamId> : SingleNodeScenario<TLogFormat, TStreamId> {
 	private readonly IPEndPoint _internalSecTcp = new(IPAddress.Parse("127.0.1.15"), 1114);
 	private readonly IPEndPoint _externalSecTcp = new(IPAddress.Parse("127.0.1.15"), 1115);
@@ -53,7 +52,6 @@ public class with_ssl_enabled_and_using_a_security_certificate_from_file<TLogFor
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class with_ssl_enabled_and_using_a_security_certificate<TLogFormat, TStreamId> : SingleNodeScenario<TLogFormat, TStreamId> {
 	private readonly IPEndPoint _internalSecTcp = new(IPAddress.Parse("127.0.1.15"), 1114);
 	private readonly IPEndPoint _externalSecTcp = new(IPAddress.Parse("127.0.1.15"), 1115);
@@ -78,7 +76,6 @@ public class with_ssl_enabled_and_using_a_security_certificate<TLogFormat, TStre
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class with_secure_tcp_endpoints_and_no_certificates<TLogFormat, TStreamId> {
 	private ClusterVNodeOptions _options;
 	private Exception _caughtException;

@@ -10,7 +10,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Integration;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_restarting_one_node_at_a_time<TLogFormat, TStreamId> : specification_with_cluster<TLogFormat, TStreamId> {
 	protected override async Task Given() {
 		await base.Given();

@@ -16,7 +16,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.TransactionLog;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_unmerging_a_tfchunk<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
 	private string Filename => Path.Combine(PathName, Guid.NewGuid().ToString());
 
