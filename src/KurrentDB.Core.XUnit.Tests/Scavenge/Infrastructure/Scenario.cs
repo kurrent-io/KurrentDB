@@ -295,13 +295,9 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 
 		var humanHashers = true;
 		if (CollideEverything) {
-			if (LogFormatHelper<TLogFormat, TStreamId>.IsV3)
-				throw new Exception("Cant cause collisions in V3");
 			lowHasher = new ConstantHasher(0) as IHasher<TStreamId>;
 			highHasher = new ConstantHasher(0) as IHasher<TStreamId>;
 		} else if (humanHashers) {
-			if (LogFormatHelper<TLogFormat, TStreamId>.IsV3)
-				throw new Exception("Cant cause collisions in V3");
 			lowHasher = new ConstantHasher(0) as IHasher<TStreamId>;
 			highHasher = new HumanReadableHasher32() as IHasher<TStreamId>;
 		}

@@ -132,16 +132,7 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 				break;
 			}
 			case DbLogFormat.ExperimentalV3: {
-				// Secondary indexes aren't supported for LogV3 as it's not being used
-				var logFormatFactory = new LogV3FormatAbstractorFactory();
-				var node = ClusterVNode.Create(_options, logFormatFactory, GetAuthenticationProviderFactory(),
-					authProviderFactory,
-					virtualStreamReader,
-					secondaryIndexReaders,
-					GetPersistentSubscriptionConsumerStrategyFactories(), certificateProvider,
-					configuration);
-				Node = node;
-				break;
+				throw new ArgumentOutOfRangeException(nameof(_options.Database.DbLogFormat), "Experimental format LogV3 has been removed.");
 			}
 			default:
 				throw new ArgumentOutOfRangeException(nameof(_options.Database.DbLogFormat), "Unexpected log format specified.");

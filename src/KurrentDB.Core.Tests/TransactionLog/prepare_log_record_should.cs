@@ -68,8 +68,7 @@ public class prepare_log_record_should<TLogFormat, TStreamId> {
 		TStreamId nullStreamId = default;
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
 		var expectedExceptionType = LogFormatHelper<TLogFormat, TStreamId>.Choose<Type>(
-			typeof(ArgumentNullException),
-			typeof(ArgumentOutOfRangeException));
+			typeof(ArgumentNullException));
 
 		Assert.Throws(expectedExceptionType, () => {
 			LogRecord.Prepare(_recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, nullStreamId, 0,
@@ -82,8 +81,7 @@ public class prepare_log_record_should<TLogFormat, TStreamId> {
 		var emptyStreamId = LogFormatHelper<TLogFormat, TStreamId>.EmptyStreamId;
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
 		var expectedExceptionType = LogFormatHelper<TLogFormat, TStreamId>.Choose<Type>(
-			typeof(ArgumentNullException),
-			typeof(ArgumentOutOfRangeException));
+			typeof(ArgumentNullException));
 
 		Assert.Throws(expectedExceptionType, () => {
 			LogRecord.Prepare(_recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, emptyStreamId, 0,

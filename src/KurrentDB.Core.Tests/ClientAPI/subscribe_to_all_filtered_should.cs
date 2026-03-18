@@ -215,12 +215,6 @@ public class subscribe_to_all_filtered_should<TLogFormat, TStreamId> : Specifica
 			var eventsSeen = new List<ResolvedEvent>();
 			var checkpointsSeen = 0;
 
-			if (LogFormatHelper<TLogFormat, TStreamId>.IsV3) {
-				// init stream and event type records so they won't affect the test
-				await _conn.AppendToStreamAsync("stream-a", ExpectedVersion.NoStream);
-				await _conn.AppendToStreamAsync("init-event-types", ExpectedVersion.NoStream, _testEvents);
-			}
-
 			using (await store.FilteredSubscribeToAllAsync(false,
 				filter,
 				(s, e) => {

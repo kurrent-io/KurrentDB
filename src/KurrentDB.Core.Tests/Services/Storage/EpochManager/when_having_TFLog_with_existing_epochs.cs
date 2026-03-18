@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.LogAbstraction;
-using KurrentDB.Core.LogV3;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services;
@@ -274,11 +273,9 @@ public class when_having_TFLog_with_existing_epochs<TLogFormat, TStreamId> : Spe
 				}
 			}
 			var expectedStreamId = LogFormatHelper<TLogFormat, TStreamId>.Choose<TStreamId>(
-				SystemStreams.EpochInformationStream,
-				LogV3SystemStreams.EpochInformationStreamNumber);
+				SystemStreams.EpochInformationStream);
 			var expectedEventType = LogFormatHelper<TLogFormat, TStreamId>.Choose<TStreamId>(
-				SystemEventTypes.EpochInformation,
-				LogV3SystemEventTypes.EpochInformationNumber);
+				SystemEventTypes.EpochInformation);
 			Assert.AreEqual(expectedStreamId, epochInfo.EventStreamId);
 			Assert.AreEqual(expectedEventType, epochInfo.EventType);
 			Assert.AreEqual(i - 1, epochInfo.ExpectedVersion);
