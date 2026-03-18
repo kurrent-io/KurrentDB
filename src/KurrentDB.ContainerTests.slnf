@@ -34,8 +34,6 @@
       "KurrentDB.Licensing.Tests\\KurrentDB.Licensing.Tests.csproj",
       "KurrentDB.Licensing\\KurrentDB.Licensing.csproj",
       "KurrentDB.LogCommon\\KurrentDB.LogCommon.csproj",
-      "KurrentDB.LogV3.Tests\\KurrentDB.LogV3.Tests.csproj",
-      "KurrentDB.LogV3\\KurrentDB.LogV3.csproj",
       "KurrentDB.Logging\\KurrentDB.Logging.csproj",
       "KurrentDB.MicroBenchmarks\\KurrentDB.MicroBenchmarks.csproj",
       "KurrentDB.NETCore.Compatibility\\KurrentDB.NETCore.Compatibility.csproj",

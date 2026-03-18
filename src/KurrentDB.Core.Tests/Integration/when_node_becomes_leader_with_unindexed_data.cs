@@ -285,8 +285,6 @@ public class when_node_becomes_leader_with_unindexed_data<TLogFormat, TStreamId>
 			await _nodes[0].Started.WithTimeout(TimeSpan.FromSeconds(10));
 			await _nodes[1].Started.WithTimeout(TimeSpan.FromSeconds(10));
 		} catch (TimeoutException) {
-			// this is expected in logv3 because by creating the duplicate events above we also
-			// created duplicate stream records which it will detect and complain about it
 			throw new Exception($"Couldn't start one or more nodes: {_nodes[0].NodeState} {_nodes[1].NodeState}");
 		}
 		Assert.AreEqual(VNodeState.Follower, _nodes[0].NodeState);

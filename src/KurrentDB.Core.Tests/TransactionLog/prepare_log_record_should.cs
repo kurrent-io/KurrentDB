@@ -123,11 +123,6 @@ public class prepare_log_record_should<TLogFormat, TStreamId> {
 
 	[Test]
 	public void return_empty_data_when_event_is_redacted() {
-		if (typeof(TLogFormat) == typeof(LogFormat.V3)) {
-			Assert.Ignore("Log V3 does not handle redacted events yet");
-			return;
-		}
-
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
 
 		var prepare = LogRecord.Prepare(_recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, _streamId, 0,
@@ -137,11 +132,6 @@ public class prepare_log_record_should<TLogFormat, TStreamId> {
 
 	[Test]
 	public void write_redacted_data_when_event_is_redacted() {
-		if (typeof(TLogFormat) == typeof(LogFormat.V3)) {
-			Assert.Ignore("Log V3 does not handle redacted events yet");
-			return;
-		}
-
 		var binaryWriter = new BufferWriterSlim<byte>();
 
 		const int dataSize = 10000;
