@@ -3,6 +3,7 @@
 
 using KurrentDB.Logging;
 using Microsoft.Extensions.Configuration;
+using OpenTelemetry.Exporter;
 using Serilog;
 
 namespace KurrentDB.Common.Tests.OpenTelemetry;
@@ -23,6 +24,7 @@ public class OpenTelemetryLoggerTests {
 		Assert.NotNull(OpenTelemetryLogger.OtlpOptions);
 		Assert.Equal(new Uri("http://shared:4317"), OpenTelemetryLogger.OtlpOptions.Endpoint);
 		Assert.Equal("key=shared", OpenTelemetryLogger.OtlpOptions.Headers);
+		Assert.Equal(OtlpExportProtocol.Grpc, OpenTelemetryLogger.OtlpOptions.Protocol); // default
 	}
 
 	[Fact]
@@ -41,6 +43,7 @@ public class OpenTelemetryLoggerTests {
 		Assert.NotNull(OpenTelemetryLogger.OtlpOptions);
 		Assert.Equal(new Uri("http://logs:4317"), OpenTelemetryLogger.OtlpOptions.Endpoint);
 		Assert.Equal("key=shared", OpenTelemetryLogger.OtlpOptions.Headers); // inherited from shared
+		Assert.Equal(OtlpExportProtocol.Grpc, OpenTelemetryLogger.OtlpOptions.Protocol); // inherited from shared
 	}
 
 	[Fact]
@@ -69,6 +72,7 @@ public class OpenTelemetryLoggerTests {
 				{ "KurrentDB:OpenTelemetry:Otlp:Headers", "key=shared" },
 				{ "KurrentDB:OpenTelemetry:Logs:Otlp:Endpoint", "http://logs:4317" },
 				{ "KurrentDB:OpenTelemetry:Logs:Otlp:Headers", "key=logs" },
+				{ "KurrentDB:OpenTelemetry:Logs:Otlp:Protocol", "HttpProtobuf" },
 				{ "KurrentDB:OpenTelemetry:Logs:Enabled", "true" },
 			})
 			.Build();
@@ -78,5 +82,6 @@ public class OpenTelemetryLoggerTests {
 		Assert.NotNull(OpenTelemetryLogger.OtlpOptions);
 		Assert.Equal(new Uri("http://logs:4317"), OpenTelemetryLogger.OtlpOptions.Endpoint);
 		Assert.Equal("key=logs", OpenTelemetryLogger.OtlpOptions.Headers);
+		Assert.Equal(OtlpExportProtocol.HttpProtobuf, OpenTelemetryLogger.OtlpOptions.Protocol);
 	}
 }
