@@ -60,7 +60,7 @@ public class TcpConnectionManager : IHandle<TcpMessage.Heartbeat>, IHandle<TcpMe
 	private readonly SendToWeakThisEnvelope _weakThisEnvelope;
 	private readonly TimeSpan _heartbeatInterval;
 	private readonly TimeSpan _heartbeatTimeout;
-	private bool _awaitingHeartbeatTimeoutCheck;
+	private bool _awaitingHeartbeatTimeoutCheck; // ARM64-UNSAFE: written/read across message bus handler threads without volatile/barrier
 	private readonly int _connectionPendingSendBytesThreshold;
 	private readonly int _connectionQueueSizeThreshold;
 

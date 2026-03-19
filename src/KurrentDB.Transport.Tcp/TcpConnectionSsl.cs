@@ -92,7 +92,7 @@ public class TcpConnectionSsl : TcpConnectionBase, ITcpConnection {
 
 	private readonly object _streamLock = new object();
 	private readonly object _closeLock = new object();
-	private bool _isSending;
+	private bool _isSending; // ARM64-UNSAFE: written in TrySend/EndWrite across async callback threads without volatile/barrier
 	private int _receiveHandling;
 	private volatile bool _isClosed;
 	private volatile bool _isClosing;
@@ -100,8 +100,8 @@ public class TcpConnectionSsl : TcpConnectionBase, ITcpConnection {
 	private Action<ITcpConnection, IEnumerable<ArraySegment<byte>>> _receiveCallback;
 
 	private SslStream _sslStream;
-	private bool _isAuthenticated;
-	private int _sendingBytes;
+	private bool _isAuthenticated; // ARM64-UNSAFE: written in auth callbacks, read in TrySend on different threads without volatile/barrier
+	private int _sendingBytes; // ARM64-UNSAFE: written in TrySend, read in OnEndWrite async callback without Interlocked/barrier
 	private CertificateDelegates.ServerCertificateValidator _serverCertValidator;
 	private CertificateDelegates.ClientCertificateValidator _clientCertValidator;
 	private string[] _otherNames;

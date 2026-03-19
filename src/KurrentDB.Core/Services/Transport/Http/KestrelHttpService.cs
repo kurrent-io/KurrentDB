@@ -32,7 +32,7 @@ public class KestrelHttpService :
 	public string AdvertiseAsHost { get; }
 	public int AdvertiseAsPort { get; }
 
-	private bool _isListening;
+	private bool _isListening; // ARM64-UNSAFE: written in message handlers, read from external threads via property without volatile/barrier
 
 	public KestrelHttpService(
 		ServiceAccessibility accessibility,

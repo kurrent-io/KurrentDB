@@ -1,0 +1,9 @@
+{
+  "enabledMcpjsonServers": [
+    "context7",
+    "microsoft-docs",
+    "sequential-thinking",
+    "serena"
+  ],
+  "enableAllProjectMcpServers": true
+}

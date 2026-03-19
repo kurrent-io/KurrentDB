@@ -70,10 +70,10 @@ public class PersistentSubscriptionService<TStreamId> :
 	private readonly IPersistentSubscriptionCheckpointReader _checkpointReader;
 	private readonly IPersistentSubscriptionStreamReader _streamReader;
 	private PersistentSubscriptionConfig _config = new PersistentSubscriptionConfig();
-	private bool _started = false;
+	private bool _started = false; // ARM64-UNSAFE: cross-thread signaling flag without volatile/barrier
 	private VNodeState _state;
 	private Guid _timerTickCorrelationId;
-	private bool _handleTick;
+	private bool _handleTick; // ARM64-UNSAFE: cross-thread signaling flag without volatile/barrier
 	private readonly IPersistentSubscriptionTracker _persistentSubscriptionTracker;
 	private static List<MonitoringMessage.PersistentSubscriptionInfo> SubscriptionStats = [];
 	private readonly TimeSpan _interval = TimeSpan.FromSeconds(1);

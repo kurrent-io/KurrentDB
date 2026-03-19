@@ -25,7 +25,7 @@ public class InfoController : IHttpController, IHandle<SystemMessage.StateChange
 	private readonly ClusterVNodeOptions _options;
 	private readonly IDictionary<string, bool> _features;
 	private readonly IAuthenticationProvider _authenticationProvider;
-	private VNodeState _currentState;
+	private VNodeState _currentState; // ARM64-UNSAFE: written in Handle(StateChangeMessage) on bus thread, read in OnGetInfo() on HTTP thread without volatile/barrier
 
 	public InfoController(ClusterVNodeOptions options, IDictionary<string, bool> features,
 		IAuthenticationProvider authenticationProvider) {

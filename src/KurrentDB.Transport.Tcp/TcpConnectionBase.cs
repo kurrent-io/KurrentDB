@@ -123,7 +123,7 @@ public class TcpConnectionBase : IMonitoredTcpConnection {
 
 	private long _lastSendStarted = -1;
 	private long _lastReceiveStarted = -1;
-	private bool _isClosed;
+	private bool _isClosed; // ARM64-UNSAFE: read via IsClosed property from external threads, written in NotifyClosed without volatile/barrier
 
 	private int _pendingSendBytes;
 	private int _inSendBytes;

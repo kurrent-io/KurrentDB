@@ -49,11 +49,11 @@ public abstract class RequestManagerBase :
 
 	private readonly HashSet<long> _prepareLogPositions = new HashSet<long>();
 
-	private bool _allEventsWritten;
-	private bool _allPreparesWritten;
+	private bool _allEventsWritten; // ARM64-UNSAFE: cross-handler coordination flag without volatile/barrier
+	private bool _allPreparesWritten; // ARM64-UNSAFE: cross-handler coordination flag without volatile/barrier
 	private long _complete;
 
-	private bool _commitReceived;
+	private bool _commitReceived; // ARM64-UNSAFE: cross-handler coordination flag without volatile/barrier
 	private readonly int _prepareCount;
 
 	protected DateTime NextTimeoutTime;

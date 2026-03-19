@@ -86,8 +86,8 @@ public class LeaderReplicationService : IMonitoredQueue,
 	private TimeSpan _lastRolesAssignmentTimestamp;
 	private volatile bool _newSubscriptions;
 	private TimeSpan _noQuorumTimestamp = TimeSpan.Zero;
-	private bool _noQuorumNotified;
-	private bool _preLeaderReplicationEnabled;
+	private bool _noQuorumNotified; // ARM64-UNSAFE: written/read in async MainLoop and message bus handlers without volatile/barrier
+	private bool _preLeaderReplicationEnabled; // ARM64-UNSAFE: written in Handle methods, read from MainLoop background thread without volatile/barrier
 	private readonly AsyncManualResetEvent _flushSignal = new(false);
 	private readonly TaskCompletionSource _tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
 

@@ -33,8 +33,8 @@ public class ReplicationTrackingService :
 	private readonly IReadOnlyCheckpoint _writerCheckpoint;
 	private readonly int _quorumSize;
 	private Thread _thread;
-	private bool _stop;
-	private VNodeState _state;
+	private bool _stop; // ARM64-UNSAFE: read in while loop on background thread, written from main thread without volatile/barrier
+	private VNodeState _state; // ARM64-UNSAFE: written in Handle(StateChangeMessage) on bus thread, read in TrackReplication() on background thread without volatile/barrier
 	private long _publishedPosition;
 	private readonly ConcurrentDictionary<Guid, long> _replicaLogPositions = new();
 	private readonly ManualResetEventSlim _replicationChange = new(false, 1);

@@ -22,7 +22,7 @@ public class PasswordChangeNotificationReader :
 	private readonly ILogger _log = Log.ForContext<UserManagementService>();
 	private readonly IPublisher _publisher;
 	private readonly IODispatcher _ioDispatcher;
-	private bool _stopped;
+	private bool _stopped; // ARM64-UNSAFE: cross-thread stop flag without volatile/barrier
 
 	public PasswordChangeNotificationReader(IPublisher publisher, IODispatcher ioDispatcher) {
 		_publisher = publisher;
