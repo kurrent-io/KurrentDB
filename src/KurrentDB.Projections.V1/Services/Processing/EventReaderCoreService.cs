@@ -38,7 +38,7 @@ public class EventReaderCoreService :
 
 	private readonly IPublisher _publisher;
 	private readonly IODispatcher _ioDispatcher;
-	private readonly ILogger _logger = Log.ForContext<ProjectionCoreService>();
+	private readonly ILogger _logger = Log.ForContext<EventReaderCoreService>();
 	private bool _stopped = true;
 
 	private readonly Dictionary<Guid, IReaderSubscription> _subscriptions =
