@@ -44,10 +44,10 @@ public static class QueryService {
 				Consume(resultReader, token);
 			} catch (OperationCanceledException e) when (e.CancellationToken == token) {
 				task = ValueTask.FromCanceled(token);
-			}
-			catch (Exception e) {
+			} catch (Exception e) {
 				task = ValueTask.FromException(e);
 			}
+
 			return task;
 		}
 
