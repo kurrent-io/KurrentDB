@@ -14,8 +14,6 @@ public delegate SchemaCompatibilityResult CheckSchemaCompatibility(JsonSchema re
 
 [PublicAPI]
 public class NJsonSchemaCompatibilityManager : SchemaCompatibilityManagerBase {
-	static readonly SchemaCompatibilityChecker CompatibilityChecker = new();
-
 	protected override async ValueTask<SchemaCompatibilityResult> CheckCompatibilityCore(
 		string uncheckedSchema,
 		string[] referenceSchemas,
@@ -27,7 +25,7 @@ public class NJsonSchemaCompatibilityManager : SchemaCompatibilityManagerBase {
 			.ConfigureAwait(false);
 
 		var referenceJsonSchemas = await Task
-			.WhenAll(referenceSchemas.AsParallel().Select(s => JsonSchema.FromJsonAsync(s, cancellationToken)))
+			.WhenAll(referenceSchemas.Select(s => JsonSchema.FromJsonAsync(s, cancellationToken)))
 			.ConfigureAwait(false);
 
 		return CheckCompatibility(referenceJsonSchemas, uncheckedJsonSchema, compatibility);
@@ -52,10 +50,10 @@ public class NJsonSchemaCompatibilityManager : SchemaCompatibilityManagerBase {
 	};
 
 	static SchemaCompatibilityResult CheckBackwardCompatibility(JsonSchema referenceSchema, JsonSchema uncheckedSchema) =>
-		CompatibilityChecker.CheckBackwardCompatibility(referenceSchema, uncheckedSchema);
+		SchemaCompatibilityChecker.CheckBackwardCompatibility(referenceSchema, uncheckedSchema);
 
 	static SchemaCompatibilityResult CheckForwardCompatibility(JsonSchema referenceSchema, JsonSchema uncheckedSchema) =>
-		CompatibilityChecker.CheckForwardCompatibility(referenceSchema, uncheckedSchema);
+		SchemaCompatibilityChecker.CheckForwardCompatibility(referenceSchema, uncheckedSchema);
 
 	static SchemaCompatibilityResult CheckFullCompatibility(JsonSchema referenceSchema, JsonSchema uncheckedSchema) {
 		var backwardResult = CheckBackwardCompatibility(referenceSchema, uncheckedSchema);
@@ -88,40 +86,39 @@ public class NJsonSchemaCompatibilityManager : SchemaCompatibilityManagerBase {
 	}
 }
 
-internal class SchemaCompatibilityChecker {
-	readonly HashSet<(JsonSchema, JsonSchema)> VisitedSchemas = [];
-
-	public SchemaCompatibilityResult CheckBackwardCompatibility(JsonSchema referenceSchema, JsonSchema uncheckedSchema) {
-		VisitedSchemas.Clear();
+internal static class SchemaCompatibilityChecker {
+	public static SchemaCompatibilityResult CheckBackwardCompatibility(JsonSchema referenceSchema, JsonSchema uncheckedSchema) {
+		var visitedSchemas = new HashSet<(JsonSchema, JsonSchema)>();
 		var errors = new List<SchemaCompatibilityError>();
-		CheckBackwardCompatibilityProperties(referenceSchema, uncheckedSchema, errors);
+		CheckBackwardCompatibilityProperties(referenceSchema, uncheckedSchema, errors, visitedSchemas);
 
 		return errors.Count > 0
 			? SchemaCompatibilityResult.Incompatible(errors)
 			: SchemaCompatibilityResult.Compatible();
 	}
 
-	public SchemaCompatibilityResult CheckForwardCompatibility(JsonSchema referenceSchema, JsonSchema uncheckedSchema) {
-		VisitedSchemas.Clear();
+	public static SchemaCompatibilityResult CheckForwardCompatibility(JsonSchema referenceSchema, JsonSchema uncheckedSchema) {
+		var visitedSchemas = new HashSet<(JsonSchema, JsonSchema)>();
 		var errors = new List<SchemaCompatibilityError>();
-		CheckForwardCompatibilityProperties(referenceSchema, uncheckedSchema, errors);
+		CheckForwardCompatibilityProperties(referenceSchema, uncheckedSchema, errors, visitedSchemas);
 
 		return errors.Count > 0
 			? SchemaCompatibilityResult.Incompatible(errors)
 			: SchemaCompatibilityResult.Compatible();
 	}
 
-	void CheckBackwardCompatibilityProperties(
+	static void CheckBackwardCompatibilityProperties(
 		JsonSchema referenceSchema,
 		JsonSchema uncheckedSchema,
 		List<SchemaCompatibilityError> errors,
+		HashSet<(JsonSchema, JsonSchema)> visitedSchemas,
 		string path = "#"
 	) {
 		referenceSchema = ResolveReference(referenceSchema);
 		uncheckedSchema = ResolveReference(uncheckedSchema);
 
 		var schemaKey = (referenceSchema, uncheckedSchema);
-		if (!VisitedSchemas.Add(schemaKey))
+		if (!visitedSchemas.Add(schemaKey))
 			return;
 
 		foreach (var (name, value) in referenceSchema.Properties) {
@@ -142,24 +139,25 @@ internal class SchemaCompatibilityChecker {
 			CheckOptionalToRequiredChange(referenceSchema, uncheckedSchema, name, errors, propertyPath);
 
 			// Handle nested structures (objects and arrays)
-			CheckNestedStructures(resolvedValue, resolvedUncheckedValue, errors, propertyPath);
+			CheckNestedStructures(resolvedValue, resolvedUncheckedValue, errors, propertyPath, visitedSchemas);
 		}
 
 		// Check for new required properties that old data won't have
 		CheckNewRequiredProperties(referenceSchema, uncheckedSchema, errors, path);
 	}
 
-	void CheckForwardCompatibilityProperties(
+	static void CheckForwardCompatibilityProperties(
 		JsonSchema referenceSchema,
 		JsonSchema uncheckedSchema,
 		List<SchemaCompatibilityError> errors,
+		HashSet<(JsonSchema, JsonSchema)> visitedSchemas,
 		string path = "#"
 	) {
 		referenceSchema = ResolveReference(referenceSchema);
 		uncheckedSchema = ResolveReference(uncheckedSchema);
 
 		var schemaKey = (referenceSchema, uncheckedSchema);
-		if (!VisitedSchemas.Add(schemaKey))
+		if (!visitedSchemas.Add(schemaKey))
 			return;
 
 		foreach (var (name, value) in uncheckedSchema.Properties) {
@@ -179,7 +177,7 @@ internal class SchemaCompatibilityChecker {
 			CheckPropertyTypeCompatibility(resolvedValue, resolvedReferenceProperty, errors, propertyPath);
 
 			// Handle nested structures (objects and arrays)
-			CheckNestedStructuresForward(resolvedReferenceProperty, resolvedValue, errors, propertyPath);
+			CheckNestedStructuresForward(resolvedReferenceProperty, resolvedValue, errors, propertyPath, visitedSchemas);
 		}
 
 		// Check for required properties in reference schema missing in unchecked schema
@@ -224,25 +222,24 @@ internal class SchemaCompatibilityChecker {
 		}
 	}
 
-	void CheckNestedStructures(JsonSchema referenceValue, JsonSchema uncheckedValue, List<SchemaCompatibilityError> errors, string propertyPath) {
+	static void CheckNestedStructures(JsonSchema referenceValue, JsonSchema uncheckedValue, List<SchemaCompatibilityError> errors, string propertyPath, HashSet<(JsonSchema, JsonSchema)> visitedSchemas) {
 		// Handle nested objects
-		if (referenceValue.Type is JsonObjectType.Object && uncheckedValue.Type is JsonObjectType.Object) {
-			CheckBackwardCompatibilityProperties(referenceValue, uncheckedValue, errors, propertyPath);
-		}
+		if (referenceValue.Type is JsonObjectType.Object && uncheckedValue.Type is JsonObjectType.Object)
+			CheckBackwardCompatibilityProperties(referenceValue, uncheckedValue, errors, visitedSchemas, propertyPath);
 
 		// Handle arrays with items
 		if (referenceValue.Type is JsonObjectType.Array &&
 		    uncheckedValue.Type is JsonObjectType.Array &&
 		    referenceValue.Item is not null &&
 		    uncheckedValue.Item is not null) {
-			CheckArrayItemCompatibility(referenceValue.Item, uncheckedValue.Item, errors, propertyPath);
+			CheckArrayItemCompatibility(referenceValue.Item, uncheckedValue.Item, errors, propertyPath, visitedSchemas);
 		}
 	}
 
-	void CheckNestedStructuresForward(JsonSchema referenceValue, JsonSchema uncheckedValue, List<SchemaCompatibilityError> errors, string propertyPath) {
+	static void CheckNestedStructuresForward(JsonSchema referenceValue, JsonSchema uncheckedValue, List<SchemaCompatibilityError> errors, string propertyPath, HashSet<(JsonSchema, JsonSchema)> visitedSchemas) {
 		// Handle nested objects
 		if (uncheckedValue.Type is JsonObjectType.Object && referenceValue.Type is JsonObjectType.Object) {
-			CheckForwardCompatibilityProperties(referenceValue, uncheckedValue, errors, propertyPath);
+			CheckForwardCompatibilityProperties(referenceValue, uncheckedValue, errors, visitedSchemas, propertyPath);
 		}
 
 		// Handle arrays with items
@@ -250,12 +247,12 @@ internal class SchemaCompatibilityChecker {
 		    referenceValue.Type is JsonObjectType.Array &&
 		    uncheckedValue.Item is not null &&
 		    referenceValue.Item is not null) {
-			CheckArrayItemCompatibilityForward(referenceValue.Item, uncheckedValue.Item, errors, propertyPath);
+			CheckArrayItemCompatibilityForward(referenceValue.Item, uncheckedValue.Item, errors, propertyPath, visitedSchemas);
 		}
 	}
 
-	void CheckArrayItemCompatibility(JsonSchema referenceItem, JsonSchema uncheckedItem, List<SchemaCompatibilityError> errors,
-		string propertyPath) {
+	static void CheckArrayItemCompatibility(JsonSchema referenceItem, JsonSchema uncheckedItem, List<SchemaCompatibilityError> errors,
+		string propertyPath, HashSet<(JsonSchema, JsonSchema)> visitedSchemas) {
 		var resolvedReferenceItem = ResolveReference(referenceItem);
 		var resolvedUncheckedItem = ResolveReference(uncheckedItem);
 
@@ -277,11 +274,12 @@ internal class SchemaCompatibilityChecker {
 				resolvedReferenceItem,
 				resolvedUncheckedItem,
 				errors,
+				visitedSchemas,
 				$"{propertyPath}/items");
 		}
 	}
 
-	void CheckArrayItemCompatibilityForward(JsonSchema referenceItem, JsonSchema uncheckedItem, List<SchemaCompatibilityError> errors, string propertyPath) {
+	static void CheckArrayItemCompatibilityForward(JsonSchema referenceItem, JsonSchema uncheckedItem, List<SchemaCompatibilityError> errors, string propertyPath, HashSet<(JsonSchema, JsonSchema)> visitedSchemas) {
 		var resolvedReferenceItem = ResolveReference(referenceItem);
 		var resolvedUncheckedItem = ResolveReference(uncheckedItem);
 
@@ -303,6 +301,7 @@ internal class SchemaCompatibilityChecker {
 				resolvedReferenceItem,
 				resolvedUncheckedItem,
 				errors,
+				visitedSchemas,
 				$"{propertyPath}/items");
 		}
 	}
