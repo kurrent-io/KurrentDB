@@ -36,6 +36,18 @@ public class SchemaNotFound() : DomainExceptions.EntityException(nameof(SchemaNo
 
 [PublicAPI]
 public class SchemaApplication : EntityApplication<SchemaEntity> {
+    static readonly HashSet<string> KnownPaths = new(StringComparer.OrdinalIgnoreCase) {
+        "Details.Description",
+        "Details.Tags",
+        "Details.Compatibility",
+        "Details.DataFormat"
+    };
+
+    static readonly HashSet<string> ModifiablePaths = new(StringComparer.OrdinalIgnoreCase) {
+        "Details.Description",
+        "Details.Tags"
+    };
+
     protected override Func<dynamic, string> GetEntityId    => cmd => cmd.SchemaName;
     protected override StreamTemplate        StreamTemplate => SchemasStreamTemplate;
 
@@ -104,26 +116,14 @@ public class SchemaApplication : EntityApplication<SchemaEntity> {
             if (cmd.UpdateMask.Paths.Count == 0)
                 throw new DomainExceptions.EntityException("Update mask must contain at least one field");
 
-            var knownPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
-	            "Details.Description",
-	            "Details.Tags",
-	            "Details.Compatibility",
-	            "Details.DataFormat"
-            };
-
-            var modifiablePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
-	            "Details.Description",
-	            "Details.Tags"
-            };
-
             // Check for unknown fields first
-            var unknownField = cmd.UpdateMask.Paths.FirstOrDefault(path => !knownPaths.Contains(path));
+            var unknownField = cmd.UpdateMask.Paths.FirstOrDefault(path => !KnownPaths.Contains(path));
             if (unknownField != null)
 	            throw new DomainExceptions.EntityException($"Unknown field {unknownField} in update mask");
 
             // Check for non-modifiable fields
             var nonModifiableField = cmd.UpdateMask.Paths.FirstOrDefault(path =>
-	            knownPaths.Contains(path) && !modifiablePaths.Contains(path));
+	            KnownPaths.Contains(path) && !ModifiablePaths.Contains(path));
 
             if (nonModifiableField != null) {
 	            var fieldDisplayName = nonModifiableField switch {
