@@ -41,7 +41,7 @@ public class TestEnvironmentWireUp {
 
 	[AfterEvery(Test)]
 	public static void AfterEveryTest(TestContext context) {
-		var elapsed = context.Execution.Result?.Duration ?? context.Execution.TestStart - context.Execution.TestEnd ?? TimeSpan.Zero;
+		var elapsed = context.Execution.Result?.Duration ?? context.Execution.TestEnd - context.Execution.TestStart ?? TimeSpan.Zero;
 
 		Log.ForContext("TestUid", context.Id).Verbose(
 			"{TestClass} {TestName} {Status} in {Elapsed}",

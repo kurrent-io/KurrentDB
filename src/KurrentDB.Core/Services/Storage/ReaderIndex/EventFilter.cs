@@ -18,6 +18,7 @@ public static class EventFilter {
 	public const string EventTypeContext = "eventtype";
 	public const string RegexType = "regex";
 	public const string PrefixType = "prefix";
+	public const string SetType = "set";
 
 	public static IEventFilter DefaultAllFilter { get; } = new DefaultAllFilterStrategy();
 	public static IEventFilter DefaultStreamFilter { get; } = new DefaultStreamFilterStrategy();
@@ -224,7 +225,7 @@ public static class EventFilter {
 			case StreamIdSetStrategy siss:
 				return new() {
 					Context = StreamIdContext,
-					Type = "set",
+					Type = SetType,
 					Data = string.Join(",", siss._streamNames),
 					IsAllStream = siss._isAllStream
 				};
@@ -266,6 +267,22 @@ public static class EventFilter {
 				return (false, $"Invalid context please provide one of the following: {names}.");
 		}
 
+		if (string.IsNullOrEmpty(data)) {
+			filter = null;
+			return (false, "Please provide a comma delimited list of data with at least one item.");
+		}
+
+		// "set" type is only valid for StreamId context — exact stream name matching
+		if (type == SetType) {
+			if (parsedContext != FilterContext.StreamId) {
+				filter = null;
+				return (false, "Set filter type is only supported for stream ID context.");
+			}
+
+			filter = StreamName.Set(isAllStream, data.Split(",", StringSplitOptions.RemoveEmptyEntries));
+			return (true, null);
+		}
+
 		FilterType parsedType;
 		switch (type) {
 			case RegexType:
@@ -278,11 +295,6 @@ public static class EventFilter {
 				filter = null;
 				var names = string.Join(", ", Enum.GetNames(typeof(FilterType)));
 				return (false, $"Invalid type please provide one of the following: {names}.");
-		}
-
-		if (string.IsNullOrEmpty(data)) {
-			filter = null;
-			return (false, "Please provide a comma delimited list of data with at least one item.");
 		}
 
 		if (parsedType == FilterType.Regex) {

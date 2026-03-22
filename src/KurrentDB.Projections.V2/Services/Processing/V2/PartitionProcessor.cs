@@ -57,8 +57,11 @@ public class PartitionProcessor(
 	/// Returns true if the partition is new (not previously seen in this run or persisted).
 	/// </summary>
 	private async ValueTask<bool> LoadPartitionState(string partitionKey) {
-		if (_stateCache.ContainsKey(partitionKey)) {
-			stateHandler.Load(_stateCache[partitionKey]);
+		if (_stateCache.TryGetValue(partitionKey, out var cachedState)) {
+			if (cachedState is not null)
+				stateHandler.Load(cachedState);
+			else
+				stateHandler.Initialize();
 			return false;
 		}
 
