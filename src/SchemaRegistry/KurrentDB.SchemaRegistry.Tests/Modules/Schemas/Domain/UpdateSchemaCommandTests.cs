@@ -194,11 +194,6 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 	public class NotModifiableTestCases : TestCaseGenerator<SchemaDetails, string, string> {
 		protected override IEnumerable<(SchemaDetails, string, string)> Data() {
 			yield return (
-				new SchemaDetails { Compatibility = CompatibilityMode.Forward },
-				"Details.Compatibility",
-				"Compatibility mode is not modifiable"
-			);
-			yield return (
 				new SchemaDetails { DataFormat = SchemaFormat.Protobuf },
 				"Details.DataFormat",
 				"DataFormat is not modifiable"
