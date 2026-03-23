@@ -15,7 +15,7 @@ public interface IField {
 	static abstract string GetCreateStatement(string field);
 	string GetQueryStatement(string field);
 	void BindTo(PreparedStatement statement, ref int index);
-	void AppendTo(BufferedAppender.Row row);
+	void AppendTo(ref BufferedAppender.Row row);
 }
 
 public interface IField<out TSelf> : IField
@@ -40,7 +40,7 @@ internal readonly record struct Int16Field(short Key) : INumericField<Int16Field
 	public static string GetCreateStatement(string field) => $", \"{field}\" SMALLINT not null";
 	public string GetQueryStatement(string field) => $"and \"{field}\" = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
-	public void AppendTo(BufferedAppender.Row row) => row.Add(Key);
+	public void AppendTo(ref BufferedAppender.Row row) => row.Add(Key);
 	public override string ToString() => Key.ToString();
 }
 
@@ -49,7 +49,7 @@ internal readonly record struct Int32Field(int Key) : INumericField<Int32Field, 
 	public static string GetCreateStatement(string field) => $", \"{field}\" INTEGER not null";
 	public string GetQueryStatement(string field) => $"and \"{field}\" = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
-	public void AppendTo(BufferedAppender.Row row) => row.Add(Key);
+	public void AppendTo(ref BufferedAppender.Row row) => row.Add(Key);
 	public override string ToString() => Key.ToString();
 }
 
@@ -58,7 +58,7 @@ internal readonly record struct Int64Field(long Key) : INumericField<Int64Field,
 	public static string GetCreateStatement(string field) => $", \"{field}\" BIGINT not null";
 	public string GetQueryStatement(string field) => $"and \"{field}\" = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
-	public void AppendTo(BufferedAppender.Row row) => row.Add(Key);
+	public void AppendTo(ref BufferedAppender.Row row) => row.Add(Key);
 	public override string ToString() => Key.ToString();
 }
 
@@ -67,7 +67,7 @@ internal readonly record struct UInt32Field(uint Key) : INumericField<UInt32Fiel
 	public static string GetCreateStatement(string field) => $", \"{field}\" UINTEGER not null";
 	public string GetQueryStatement(string field) => $"and \"{field}\" = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
-	public void AppendTo(BufferedAppender.Row row) => row.Add(Key);
+	public void AppendTo(ref BufferedAppender.Row row) => row.Add(Key);
 	public override string ToString() => Key.ToString();
 }
 
@@ -76,7 +76,7 @@ internal readonly record struct UInt64Field(ulong Key) : INumericField<UInt64Fie
 	public static string GetCreateStatement(string field) => $", \"{field}\" UBIGINT not null";
 	public string GetQueryStatement(string field) => $"and \"{field}\" = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
-	public void AppendTo(BufferedAppender.Row row) => row.Add(Key);
+	public void AppendTo(ref BufferedAppender.Row row) => row.Add(Key);
 	public override string ToString() => Key.ToString();
 }
 
@@ -85,7 +85,7 @@ internal readonly record struct DoubleField(double Key) : INumericField<DoubleFi
 	public static string GetCreateStatement(string field) => $", \"{field}\" DOUBLE not null";
 	public string GetQueryStatement(string field) => $"and \"{field}\" = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
-	public void AppendTo(BufferedAppender.Row row) => row.Add(Key);
+	public void AppendTo(ref BufferedAppender.Row row) => row.Add(Key);
 	public override string ToString() => Key.ToString(CultureInfo.InvariantCulture);
 }
 
@@ -95,7 +95,7 @@ internal readonly record struct StringField(string Key) : IField<StringField> {
 	public static string GetCreateStatement(string field) => $", \"{field}\" VARCHAR not null";
 	public string GetQueryStatement(string field) => $"and \"{field}\" = ?";
 	public void BindTo(PreparedStatement statement, ref int index) => statement.Bind(index++, Key);
-	public void AppendTo(BufferedAppender.Row row) => row.Add(Key);
+	public void AppendTo(ref BufferedAppender.Row row) => row.Add(Key);
 	public override string ToString() => Key;
 }
 
@@ -113,5 +113,5 @@ internal sealed class NullField : IField<NullField>, ISingleton<NullField> {
 	public static string GetCreateStatement(string field) => string.Empty;
 	public string GetQueryStatement(string field) => string.Empty;
 	public void BindTo(PreparedStatement statement, ref int index) { }
-	public void AppendTo(BufferedAppender.Row row) { }
+	public void AppendTo(ref BufferedAppender.Row row) { }
 }

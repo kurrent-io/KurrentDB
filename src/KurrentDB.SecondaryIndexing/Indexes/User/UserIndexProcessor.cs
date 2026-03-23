@@ -129,7 +129,8 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 
 		_log.LogUserIndexIsAppendingEvent(IndexName, eventNumber, streamId, resolvedEvent.OriginalPosition, fieldStr);
 
-		using (var row = _appender.CreateRow()) {
+		var row = _appender.CreateRow();
+		try {
 			row.Add(preparePosition);
 
 			if (commitPosition.HasValue && preparePosition != commitPosition)
@@ -139,8 +140,10 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 
 			row.Add(eventNumber);
 			row.Add(created);
-			field?.AppendTo(row);
+			field?.AppendTo(ref row);
 			row.Add(recordId);
+		} finally {
+			row.Dispose();
 		}
 
 		_lastPosition.Write(in eventPosition);
