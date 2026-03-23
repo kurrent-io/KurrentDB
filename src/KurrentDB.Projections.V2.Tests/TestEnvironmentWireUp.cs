@@ -19,7 +19,6 @@ public class TestEnvironmentWireUp {
 		// Force projection assemblies to load before InMemoryBus static constructor
 		// scans AppDomain assemblies. Without this, projection message types won't be
 		// registered in the bus, causing "Unexpected message type" errors.
-		RuntimeHelpers.RunClassConstructor(typeof(EventReaderSubscriptionMessage).TypeHandle);
 		RuntimeHelpers.RunClassConstructor(typeof(ProjectionCoreServiceMessage).TypeHandle);
 		RuntimeHelpers.RunClassConstructor(typeof(CoreProjectionManagementMessage).TypeHandle);
 		return ToolkitTestEnvironment.Initialize();

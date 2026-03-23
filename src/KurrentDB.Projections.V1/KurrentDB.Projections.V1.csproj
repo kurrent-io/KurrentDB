@@ -3,31 +3,6 @@
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 	</PropertyGroup>
 	<ItemGroup>
-		<None Remove="Prelude\1Prelude.js" />
-		<None Remove="Prelude\Modules.js" />
-		<None Remove="Prelude\ModulesExecuted.js" />
-		<None Remove="Prelude\Projections.js" />
-	</ItemGroup>
-	<ItemGroup>
-		<Content Include="Prelude\1Prelude.js">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</Content>
-		<Content Include="Prelude\Modules.js">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</Content>
-		<Content Include="Prelude\ModulesExecuted.js">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</Content>
-		<Content Include="Prelude\Projections.js">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</Content>
-	</ItemGroup>
-	<ItemGroup>
-		<ProjectReference Include="..\KurrentDB.Projections.JavaScript\KurrentDB.Projections.JavaScript.csproj" />
 		<ProjectReference Include="..\KurrentDB.Projections.Shared\KurrentDB.Projections.Shared.csproj" />
-		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
-		<ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
-		<ProjectReference Include="..\KurrentDB.Transport.Http\KurrentDB.Transport.Http.csproj" />
-		<ProjectReference Include="..\KurrentDB.SourceGenerators\KurrentDB.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 	</ItemGroup>
 </Project>

@@ -15,17 +15,14 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Content Include="..\KurrentDB.Projections.Core.Javascript.Tests\Specs\account-balancer.js" Link="Specs\account-balancer.js" CopyToOutputDirectory="PreserveNewest" />
-		<Content Include="..\KurrentDB.Projections.Core.Javascript.Tests\Specs\account-spec.json" Link="Specs\account-spec.json" CopyToOutputDirectory="PreserveNewest" />
+		<Content Include="..\KurrentDB.Projections.JavaScript.Tests\Specs\account-balancer.js" Link="Specs\account-balancer.js" CopyToOutputDirectory="PreserveNewest" />
+		<Content Include="..\KurrentDB.Projections.JavaScript.Tests\Specs\account-spec.json" Link="Specs\account-spec.json" CopyToOutputDirectory="PreserveNewest" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.Testing.ClusterVNodeApp\KurrentDB.Testing.ClusterVNodeApp.csproj" />
 		<ProjectReference Include="..\KurrentDB.Testing\KurrentDB.Testing.csproj" />
 		<ProjectReference Include="..\KurrentDB.Projections.V2\KurrentDB.Projections.V2.csproj" />
-		<ProjectReference Include="..\KurrentDB.Projections.V1\KurrentDB.Projections.V1.csproj" />
-		<ProjectReference Include="..\KurrentDB.Projections.Shared\KurrentDB.Projections.Shared.csproj" />
-		<ProjectReference Include="..\KurrentDB.Projections.JavaScript\KurrentDB.Projections.JavaScript.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

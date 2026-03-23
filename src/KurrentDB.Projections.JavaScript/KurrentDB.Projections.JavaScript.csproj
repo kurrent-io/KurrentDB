@@ -7,7 +7,5 @@
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.Projections.Shared\KurrentDB.Projections.Shared.csproj" />
-		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
-		<ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
 	</ItemGroup>
 </Project>

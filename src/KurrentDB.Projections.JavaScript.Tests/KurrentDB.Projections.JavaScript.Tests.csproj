@@ -11,7 +11,6 @@
 		<EmbeddedResource Include="Specs\*" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\KurrentDB.Projections.V1\KurrentDB.Projections.V1.csproj" />
 		<ProjectReference Include="..\KurrentDB.Projections.Management\KurrentDB.Projections.Management.csproj" />
 	</ItemGroup>
 </Project>

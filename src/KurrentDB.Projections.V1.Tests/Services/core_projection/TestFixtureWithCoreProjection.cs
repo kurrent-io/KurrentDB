@@ -10,7 +10,6 @@ using KurrentDB.Core.Tests.Bus.Helpers;
 using KurrentDB.Core.Util;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
-using KurrentDB.Projections.Core.Services.Management;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Strategies;
 using NUnit.Framework;
@@ -53,8 +52,6 @@ public abstract class TestFixtureWithCoreProjection<TLogFormat, TStreamId> : Tes
 		_stateHandler = GivenProjectionStateHandler();
 		_firstWriteCorrelationId = Guid.NewGuid();
 		_workerId = Guid.NewGuid();
-		var dispatcher = new ProjectionManagerMessageDispatcher(new Dictionary<Guid, IPublisher>
-			{{_workerId, GetInputQueue()}});
 		_projectionCorrelationId = Guid.NewGuid();
 		_projectionConfig = GivenProjectionConfig();
 		var projectionProcessingStrategy = GivenProjectionProcessingStrategy();
