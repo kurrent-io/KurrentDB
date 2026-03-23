@@ -1170,7 +1170,7 @@ public class ProjectionManager
 			bool trackEmittedStreams,
 			ProjectionManagementMessage.RunAs runAs,
 			IEnvelope replyEnvelope,
-			int engineVersion = 1) {
+			int engineVersion = ProjectionConstants.EngineV1) {
 			if (projectionMode >= ProjectionMode.Continuous && !checkpointsEnabled)
 				throw new InvalidOperationException("Continuous mode requires checkpoints");
 
@@ -1281,7 +1281,7 @@ public class ProjectionManager
 		public PendingProjection(
 			long projectionId, ProjectionMode mode, SerializedRunAs runAs, string name, string handlerType, string query,
 			bool enabled, bool checkpointsEnabled, bool emitEnabled, bool enableRunAs,
-			bool trackEmittedStreams, int engineVersion = 1) {
+			bool trackEmittedStreams, int engineVersion = ProjectionConstants.EngineV1) {
 			ProjectionId = projectionId;
 			Mode = mode;
 			RunAs = runAs;

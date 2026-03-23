@@ -100,7 +100,7 @@ public static partial class CoreProjectionManagementMessage {
 			string handlerType,
 			string query,
 			bool enableContentTypeValidation,
-			int engineVersion = 1)
+			int engineVersion = ProjectionConstants.EngineV1)
 			: base(projectionId, workerId) {
 			_name = name;
 			_version = version;
@@ -161,7 +161,7 @@ public static partial class CoreProjectionManagementMessage {
 			string handlerType,
 			string query,
 			bool enableContentTypeValidation,
-			int engineVersion = 1)
+			int engineVersion = ProjectionConstants.EngineV1)
 			: base(projectionId, workerId) {
 			if (name == null)
 				throw new ArgumentNullException("name");

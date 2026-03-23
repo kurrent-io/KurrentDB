@@ -6,6 +6,7 @@ using EventStore.Client.Projections;
 using EventStore.Client.Streams;
 using Google.Protobuf;
 using Grpc.Core;
+using KurrentDB.Projections.Core;
 using KurrentDB.Projections.V2.Tests.Fixtures;
 using KurrentDB.Protocol.V2.Streams;
 using SchemaFormat = KurrentDB.Protocol.V2.Streams.SchemaFormat;
@@ -213,7 +214,7 @@ public class DeletedStreamCategoryProjectionTests {
 		await Task.Delay(2000, ct);
 
 		// 3. Create projection and wait for it to process the events
-		var name = await CreateProjection(SetSource(category), engineVersion: 2, ct);
+		var name = await CreateProjection(SetSource(category), engineVersion: ProjectionConstants.EngineV2, ct);
 		await WaitForProjectionStatus(name, "Running", TimeSpan.FromSeconds(30), ct);
 		await WaitForEventsProcessed(name, 4, TimeSpan.FromSeconds(30), ct);
 
@@ -247,7 +248,7 @@ public class DeletedStreamCategoryProjectionTests {
 		await Task.Delay(2000, ct);
 
 		// 2. Create and start projection
-		var name = await CreateProjection(SetSource(category), engineVersion: 2, ct);
+		var name = await CreateProjection(SetSource(category), engineVersion: ProjectionConstants.EngineV2, ct);
 		await WaitForProjectionStatus(name, "Running", TimeSpan.FromSeconds(30), ct);
 		await WaitForEventsProcessed(name, 4, TimeSpan.FromSeconds(30), ct);
 
@@ -286,7 +287,7 @@ public class DeletedStreamCategoryProjectionTests {
 		await Task.Delay(2000, ct);
 
 		// 2. Create projection
-		var name = await CreateProjection(IncrementSource(category), engineVersion: 2, ct);
+		var name = await CreateProjection(IncrementSource(category), engineVersion: ProjectionConstants.EngineV2, ct);
 		await WaitForProjectionStatus(name, "Running", TimeSpan.FromSeconds(30), ct);
 		await WaitForEventsProcessed(name, 4, TimeSpan.FromSeconds(30), ct);
 
@@ -336,7 +337,7 @@ public class DeletedStreamCategoryProjectionTests {
 		await Task.Delay(2000, ct);
 
 		// 3. Create projection
-		var name = await CreateProjection(IncrementSource(category), engineVersion: 2, ct);
+		var name = await CreateProjection(IncrementSource(category), engineVersion: ProjectionConstants.EngineV2, ct);
 		await WaitForProjectionStatus(name, "Running", TimeSpan.FromSeconds(30), ct);
 		await WaitForEventsProcessed(name, 4, TimeSpan.FromSeconds(30), ct);
 
@@ -371,7 +372,7 @@ public class DeletedStreamCategoryProjectionTests {
 		await Task.Delay(2000, ct);
 
 		// 2. Create projection, wait for events, then tombstone
-		var name = await CreateProjection(IncrementSource(category), engineVersion: 2, ct);
+		var name = await CreateProjection(IncrementSource(category), engineVersion: ProjectionConstants.EngineV2, ct);
 		await WaitForProjectionStatus(name, "Running", TimeSpan.FromSeconds(30), ct);
 		await WaitForEventsProcessed(name, 4, TimeSpan.FromSeconds(30), ct);
 
@@ -419,7 +420,7 @@ public class DeletedStreamCategoryProjectionTests {
 		await Task.Delay(2000, ct);
 
 		// 2. Create projection and wait for processing
-		var name = await CreateProjection(IncrementSource(category), engineVersion: 2, ct);
+		var name = await CreateProjection(IncrementSource(category), engineVersion: ProjectionConstants.EngineV2, ct);
 		await WaitForProjectionStatus(name, "Running", TimeSpan.FromSeconds(30), ct);
 		await WaitForEventsProcessed(name, 4, TimeSpan.FromSeconds(30), ct);
 

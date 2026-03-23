@@ -167,7 +167,7 @@ public class ProjectionCoreService
 			var namesBuilder = new ProjectionNamesBuilder(name, sourceDefinition);
 
 			// For V2, create a factory that can produce fresh state handler instances
-			Func<IProjectionStateHandler> stateHandlerFactory = message.EngineVersion == 2
+			Func<IProjectionStateHandler> stateHandlerFactory = message.EngineVersion == ProjectionConstants.EngineV2
 				? () => CreateStateHandler(_factory, _logger, message.Name, message.HandlerType,
 					message.Query, message.EnableContentTypeValidation, message.Config.ProjectionExecutionTimeout)
 				: null;
