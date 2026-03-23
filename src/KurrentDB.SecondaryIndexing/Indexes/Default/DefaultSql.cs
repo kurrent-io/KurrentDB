@@ -24,7 +24,7 @@ internal static class DefaultSql {
 		// Moreover, DuckDB cannot incrementally return query result by pages (data chunks), because ordering must be applied
 		// first on all rows, which leads to full materialization of the query result in the memory.
 		public static ReadOnlySpan<byte> CommandText =>
-			"select log_position, commit_position, event_number from idx_all_snapshot where log_position>$1 and is_deleted=false order by coalesce(commit_position, log_position) limit $2"u8;
+			"select log_position, commit_position, stream_revision from idx_all_snapshot where log_position>$1 and deleted=false order by coalesce(commit_position, log_position) limit $2"u8;
 
 		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.TryReadInt64(), row.ReadInt64());
 	}
@@ -37,7 +37,7 @@ internal static class DefaultSql {
 			=> new(statement) { args.StartPosition, args.Count };
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select log_position, commit_position, event_number from idx_all_snapshot where log_position>=$1 and is_deleted=false order by coalesce(commit_position, log_position) limit $2"u8;
+			"select log_position, commit_position, stream_revision from idx_all_snapshot where log_position>=$1 and deleted=false order by coalesce(commit_position, log_position) limit $2"u8;
 
 		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.TryReadInt64(), row.ReadInt64());
 	}
@@ -50,7 +50,7 @@ internal static class DefaultSql {
 			=> new(statement) { args.StartPosition, args.Count };
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select log_position, commit_position, event_number from idx_all_snapshot where log_position<$1 and is_deleted=false order by coalesce(commit_position, log_position) desc, log_position desc limit $2"u8;
+			"select log_position, commit_position, stream_revision from idx_all_snapshot where log_position<$1 and deleted=false order by coalesce(commit_position, log_position) desc, log_position desc limit $2"u8;
 
 		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.TryReadInt64(), row.ReadInt64());
 	}
@@ -63,7 +63,7 @@ internal static class DefaultSql {
 			=> new(statement) { args.StartPosition, args.Count };
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select log_position, commit_position, event_number from idx_all_snapshot where log_position<=$1 and is_deleted=false order by coalesce(commit_position, log_position) desc, log_position desc limit $2"u8;
+			"select log_position, commit_position, stream_revision from idx_all_snapshot where log_position<=$1 and deleted=false order by coalesce(commit_position, log_position) desc, log_position desc limit $2"u8;
 
 		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.TryReadInt64(), row.ReadInt64());
 	}
@@ -74,7 +74,7 @@ internal static class DefaultSql {
 	/// Get the last indexed log position
 	/// </summary>
 	public struct GetLastLogPositionQuery : IQuery<LastPositionResult> {
-		public static ReadOnlySpan<byte> CommandText => "select log_position, commit_position, created from idx_all order by rowid desc limit 1"u8;
+		public static ReadOnlySpan<byte> CommandText => "select log_position, commit_position, created_at from idx_all order by rowid desc limit 1"u8;
 
 		public static LastPositionResult Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.TryReadInt64(), row.ReadInt64());
 	}

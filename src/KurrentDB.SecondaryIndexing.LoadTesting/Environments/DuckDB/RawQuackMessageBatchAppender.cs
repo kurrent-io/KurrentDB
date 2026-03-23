@@ -28,7 +28,7 @@ public class RawQuackMessageBatchAppender : IMessageBatchAppender {
 		var schema = new IndexingDbSchema(static (_, _) => Enumerable.Empty<ReadResponse>().GetEnumerator());
 
 		using (db.Rent(out var rentedConn)) {
-			schema.Execute(rentedConn);
+			schema.Execute(rentedConn, initialSetup: true);
 		}
 
 		using var connection = db.Open();

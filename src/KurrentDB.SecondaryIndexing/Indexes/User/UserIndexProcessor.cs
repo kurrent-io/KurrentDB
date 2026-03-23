@@ -125,6 +125,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 		var streamId = resolvedEvent.Event.EventStreamId;
 		var created = new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds();
 		var fieldStr = field?.ToString();
+		var recordId = Span.AsReadOnlyBytes(in resolvedEvent.Event.EventId);
 
 		_log.LogUserIndexIsAppendingEvent(IndexName, eventNumber, streamId, resolvedEvent.OriginalPosition, fieldStr);
 
@@ -139,6 +140,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 			row.Add(eventNumber);
 			row.Add(created);
 			field?.AppendTo(row);
+			row.Add(recordId);
 		}
 
 		_lastPosition.Write(in eventPosition);

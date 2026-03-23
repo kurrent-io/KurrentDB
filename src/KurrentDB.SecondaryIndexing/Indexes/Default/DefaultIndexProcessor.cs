@@ -19,7 +19,6 @@ using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.SecondaryIndexing.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
-using KurrentDB.SecondaryIndexing.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using static KurrentDB.SecondaryIndexing.Indexes.Default.DefaultSql;
@@ -90,6 +89,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		var streamHash = _hasher.Hash(stream);
 		var category = GetStreamCategory(resolvedEvent.Event.EventStreamId);
 		var created = new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds();
+		var recordId = Span.AsReadOnlyBytes(in resolvedEvent.Event.EventId);
 		using (var row = _appender.CreateRow()) {
 			row.Add(logPosition);
 			if (commitPosition.HasValue && logPosition != commitPosition.GetValueOrDefault())
@@ -111,6 +111,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			}
 
 			row.Add(schemaFormat);
+			row.Add(recordId);
 		}
 
 		LastIndexedPosition = resolvedEvent.EventPosition!.Value;
