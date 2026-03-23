@@ -42,7 +42,7 @@
 		</Content>
 	</ItemGroup>
 	<ItemGroup>
-		<EmbeddedResource Include="Services\Jint\Serialization\big_state.json" />
+		<EmbeddedResource Include="Services\Jint\Serialization\big_state.json" LogicalName="KurrentDB.Projections.Core.Tests.Services.Jint.Serialization.big_state.json" />
 	</ItemGroup>
 	<!-- TODO(jen20): Decide what is correct here -->
 	<PropertyGroup>
