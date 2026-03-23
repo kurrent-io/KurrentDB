@@ -72,30 +72,27 @@ public class SchemaApplication : EntityApplication<SchemaEntity> {
             throw new DomainExceptions.EntityAlreadyExists("Schema", cmd.SchemaName);
         });
 
-        OnExisting<RegisterSchemaVersionRequest>((state, cmd) => {
+        OnExisting<RegisterSchemaVersionRequest>(async (state, cmd, ct) => {
             state.EnsureNotDeleted();
 
             var lastVersion = state.LatestVersion;
             if (lastVersion.IsSameDefinition(cmd.SchemaDefinition.Memory))
                 throw new DomainExceptions.EntityException("Schema definition has not changed");
 
-            // check last version because if it is the same we should throw an error
+            var compatibilityMode = (SchemaCompatibilityMode)state.Compatibility;
+            if (compatibilityMode is not SchemaCompatibilityMode.None and not SchemaCompatibilityMode.Unspecified) {
+                var result = await compatibilityManager.CheckCompatibility(
+                    cmd.SchemaDefinition.ToStringUtf8(),
+                    lastVersion.SchemaDefinition,
+                    compatibilityMode,
+                    ct
+                );
 
-            // validate
-            // if (cmd.Details.DataFormat == Protocol.V2.SchemaFormat.Json) {
-            //     var result =  NJsonSchemaCompatibility.CheckCompatibility(
-            //         lastVersion.SchemaDefinition,
-            //         cmd.SchemaDefinition.ToStringUtf8(),
-            //         state.Compatibility
-            //     ).GetAwaiter().GetResult();
-            //
-            //     if (!result.IsCompatible) {
-            //         throw new DomainExceptions.EntityException($"Schema definition is not compatible with the last version. {result}");
-            //     }
-            //
-            //     // we first validate it
-            //     // then register if validation is successful
-            // }
+                if (!result.IsCompatible)
+                    throw new DomainExceptions.EntityException(
+                        $"Schema definition is not compatible with the last version. {result.Errors.FirstOrDefault()?.Details}"
+                    );
+            }
 
             return [
                 new SchemaVersionRegistered {
