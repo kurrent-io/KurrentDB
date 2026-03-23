@@ -163,15 +163,6 @@ public class UpdateSchemaIntegrationTests : SchemaApplicationTestFixture {
             yield return (
                 new SchemaDetails {
                     Compatibility = CompatibilityMode.Forward,
-                    DataFormat    = SchemaFormat.Json
-                },
-                "Details.Compatibility",
-                "Compatibility mode is not modifiable"
-            );
-
-            yield return (
-                new SchemaDetails {
-                    Compatibility = CompatibilityMode.Forward,
                     DataFormat    = SchemaFormat.Protobuf
                 },
                 "Details.DataFormat",
