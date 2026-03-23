@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Newtonsoft.Json" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
+		<ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
+		<ProjectReference Include="..\KurrentDB.SourceGenerators\KurrentDB.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+	</ItemGroup>
+</Project>

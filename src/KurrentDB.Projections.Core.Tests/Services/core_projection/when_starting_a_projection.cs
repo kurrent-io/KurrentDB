@@ -64,7 +64,7 @@ public class when_starting_a_projection {
 		var projectionProcessingStrategy = new ContinuousProjectionProcessingStrategy(
 			"projection", version, projectionStateHandler, _projectionConfig,
 			projectionStateHandler.GetSourceDefinition(), null, _subscriptionDispatcher, true, Opts.MaxProjectionStateSizeDefault);
-		_coreProjection = projectionProcessingStrategy.Create(
+		_coreProjection = (CoreProjection)projectionProcessingStrategy.Create(
 			Guid.NewGuid(),
 			_bus,
 			Guid.NewGuid(),

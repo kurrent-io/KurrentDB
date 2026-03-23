@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<IsKurrentTUnit>true</IsKurrentTUnit>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsPackable>false</IsPackable>
+		<IsTestProject>true</IsTestProject>
+		<EnablePreviewFeatures>true</EnablePreviewFeatures>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Using Include="TUnit" />
+		<Using Include="TUnit.Core" />
+		<Using Include="KurrentDB.Testing" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="..\KurrentDB.Projections.Core.Javascript.Tests\Specs\account-balancer.js" Link="Specs\account-balancer.js" CopyToOutputDirectory="PreserveNewest" />
+		<Content Include="..\KurrentDB.Projections.Core.Javascript.Tests\Specs\account-spec.json" Link="Specs\account-spec.json" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\KurrentDB.Testing.ClusterVNodeApp\KurrentDB.Testing.ClusterVNodeApp.csproj" />
+		<ProjectReference Include="..\KurrentDB.Testing\KurrentDB.Testing.csproj" />
+		<ProjectReference Include="..\KurrentDB.Projections.V2\KurrentDB.Projections.V2.csproj" />
+		<ProjectReference Include="..\KurrentDB.Projections.V1\KurrentDB.Projections.V1.csproj" />
+		<ProjectReference Include="..\KurrentDB.Projections.Shared\KurrentDB.Projections.Shared.csproj" />
+		<ProjectReference Include="..\KurrentDB.Projections.JavaScript\KurrentDB.Projections.JavaScript.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Google.Protobuf" />
+		<PackageReference Include="Grpc.Net.Client" />
+		<PackageReference Include="Grpc.Tools">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Protobuf Include="..\Protos\Grpc\projections.proto" Link="Protos\projections.proto" GrpcServices="Client" ProtoRoot="../Protos/Grpc" />
+	</ItemGroup>
+</Project>
