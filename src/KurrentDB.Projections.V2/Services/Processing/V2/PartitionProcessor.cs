@@ -58,10 +58,9 @@ public class PartitionProcessor(
 	/// </summary>
 	private async ValueTask<bool> LoadPartitionState(string partitionKey) {
 		if (_stateCache.TryGetValue(partitionKey, out var cachedState)) {
-			if (cachedState is not null)
-				stateHandler.Load(cachedState);
-			else
-				stateHandler.Initialize();
+			// A null cached state means the handler explicitly set state to null (e.g. JS null).
+			// Load "null" so the handler gets JS null, not a fresh $init state.
+			stateHandler.Load(cachedState ?? "null");
 			return false;
 		}
 
