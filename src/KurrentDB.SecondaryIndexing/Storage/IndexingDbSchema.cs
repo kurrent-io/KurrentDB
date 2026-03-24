@@ -40,6 +40,9 @@ public partial class IndexingDbSchema(
 
 			connection.ExecuteAdHocNonQuery(script, multipleStatements: true);
 		}
+
+		SetTargetVersion(connection);
+		transaction.CommitOnDispose();
 	}
 }
 

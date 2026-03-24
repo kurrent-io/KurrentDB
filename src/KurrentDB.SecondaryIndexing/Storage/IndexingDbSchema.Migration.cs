@@ -26,7 +26,6 @@ partial class IndexingDbSchema {
 			case (false, false) when desiredVersion is TargetVersion:
 				// fresh setup, create schema from scratch and leave
 				CreateSchema(connection);
-				connection.ExecuteNonQuery<int, UpdateVersionQuery>(TargetVersion);
 				return 0;
 			case (true, true):
 				// perform migration
@@ -109,6 +108,9 @@ partial class IndexingDbSchema {
 		=> connection
 			.ExecuteQuery<KeyValuePair<string, string?>, MetadataQuery>()
 			.ToDictionary();
+
+	private static void SetTargetVersion(DuckDBAdvancedConnection connection)
+		=> connection.ExecuteNonQuery<int, UpdateVersionQuery>(TargetVersion);
 }
 
 file readonly struct MetadataQuery : IQuery<KeyValuePair<string, string?>> {
