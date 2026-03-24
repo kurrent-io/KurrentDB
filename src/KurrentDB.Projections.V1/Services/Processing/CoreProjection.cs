@@ -43,7 +43,7 @@ public class CoreProjection : ICoreProjectionControl,
 	private readonly IPublisher _publisher;
 	private readonly IODispatcher _ioDispatcher;
 
-	private readonly ProjectionProcessingStrategy _projectionProcessingStrategy;
+	private readonly V1ProjectionProcessingStrategy _projectionProcessingStrategy;
 	private readonly Guid _workerId;
 	internal readonly Guid _projectionCorrelationId;
 	public Guid ProjectionCorrelationId => _projectionCorrelationId;
@@ -77,7 +77,7 @@ public class CoreProjection : ICoreProjectionControl,
 	private bool _disposed;
 
 	public CoreProjection(
-		ProjectionProcessingStrategy projectionProcessingStrategy,
+		V1ProjectionProcessingStrategy projectionProcessingStrategy,
 		ProjectionVersion version,
 		Guid projectionCorrelationId,
 		IPublisher inputQueue,

@@ -71,7 +71,6 @@ public class when_starting_a_projection {
 			SystemAccounts.System,
 			_bus,
 			_ioDispatcher,
-			_subscriptionDispatcher,
 			new RealTimeProvider());
 		_coreProjection.Start();
 	}

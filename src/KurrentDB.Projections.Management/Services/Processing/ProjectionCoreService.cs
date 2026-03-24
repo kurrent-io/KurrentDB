@@ -236,7 +236,6 @@ public class ProjectionCoreService
 			runAs,
 			_publisher,
 			_ioDispatcher,
-			_subscriptionDispatcher,
 			_timeProvider);
 		_projections.Add(projectionCorrelationId, projection);
 	}

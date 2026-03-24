@@ -14,27 +14,28 @@ using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Strategies;
 
-public abstract class ProjectionProcessingStrategy {
+public abstract class V1ProjectionProcessingStrategy : ProjectionProcessingStrategy {
 	protected readonly string _name;
 	protected readonly ProjectionVersion _projectionVersion;
 	protected readonly ILogger _logger;
 	protected readonly int _maxProjectionStateSize;
+	protected readonly ReaderSubscriptionDispatcher _subscriptionDispatcher;
 
-	protected ProjectionProcessingStrategy(string name, ProjectionVersion projectionVersion, ILogger logger, int maxProjectionStateSize) {
+	protected V1ProjectionProcessingStrategy(string name, ProjectionVersion projectionVersion, ILogger logger, int maxProjectionStateSize, ReaderSubscriptionDispatcher subscriptionDispatcher) {
 		_name = name;
 		_projectionVersion = projectionVersion;
 		_logger = logger;
 		_maxProjectionStateSize = maxProjectionStateSize;
+		_subscriptionDispatcher = subscriptionDispatcher;
 	}
 
-	public virtual ICoreProjectionControl Create(
+	public override ICoreProjectionControl Create(
 		Guid projectionCorrelationId,
 		IPublisher inputQueue,
 		Guid workerId,
 		ClaimsPrincipal runAs,
 		IPublisher publisher,
 		IODispatcher ioDispatcher,
-		ReaderSubscriptionDispatcher subscriptionDispatcher,
 		ITimeProvider timeProvider) {
 		if (inputQueue == null)
 			throw new ArgumentNullException("inputQueue");
@@ -66,7 +67,7 @@ public abstract class ProjectionProcessingStrategy {
 			runAs,
 			publisher,
 			ioDispatcher,
-			subscriptionDispatcher,
+			_subscriptionDispatcher,
 			_logger,
 			namingBuilder,
 			coreProjectionCheckpointWriter,

@@ -32,14 +32,14 @@ abstract class specification_with_multi_phase_core_projection<TLogFormat, TStrea
 	private IReaderStrategy _phase1readerStrategy;
 	private IReaderStrategy _phase2readerStrategy;
 
-	class FakeProjectionProcessingStrategy : ProjectionProcessingStrategy {
+	class FakeProjectionProcessingStrategy : V1ProjectionProcessingStrategy {
 		private readonly FakeProjectionProcessingPhase _phase1;
 		private readonly FakeProjectionProcessingPhase _phase2;
 
 		public FakeProjectionProcessingStrategy(
 			string name, ProjectionVersion projectionVersion, ILogger logger, FakeProjectionProcessingPhase phase1,
-			FakeProjectionProcessingPhase phase2)
-			: base(name, projectionVersion, logger, Opts.MaxProjectionStateSizeDefault) {
+			FakeProjectionProcessingPhase phase2, ReaderSubscriptionDispatcher subscriptionDispatcher)
+			: base(name, projectionVersion, logger, Opts.MaxProjectionStateSizeDefault, subscriptionDispatcher) {
 			_phase1 = phase1;
 			_phase2 = phase2;
 		}
@@ -395,7 +395,7 @@ abstract class specification_with_multi_phase_core_projection<TLogFormat, TStrea
 		_phase2 = new FakeProjectionProcessingPhase(1, this, Phase2CheckpointManager, _phase2readerStrategy,
 			_emittedStreamsTracker);
 		return new FakeProjectionProcessingStrategy(
-			_projectionName, _version, Log.Logger, Phase1, Phase2);
+			_projectionName, _version, Log.Logger, Phase1, Phase2, _subscriptionDispatcher);
 	}
 
 	protected virtual FakeReaderStrategy GivenPhase2ReaderStrategy() {
