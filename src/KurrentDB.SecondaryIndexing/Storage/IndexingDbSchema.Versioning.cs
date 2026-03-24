@@ -8,7 +8,7 @@ namespace KurrentDB.SecondaryIndexing.Storage;
 // DATABASE MIGRATION GUIDE:
 // 1. Add migration action to MigrationActions with appropriate version
 // 2. Modify DDL (*.sql files or in-place SQL statements)
-// 3. Dump TargetVersion constant below
+// 3. Bump TargetVersion constant below
 partial class IndexingDbSchema {
 	private const int TargetVersion = 1;
 
