@@ -27,7 +27,7 @@ public class IndexMessageBatchAppender : IMessageBatchAppender {
 		var publisher = new FakePublisher();
 		var schema = new IndexingDbSchema(static (_, _) => Enumerable.Empty<ReadResponse>().GetEnumerator());
 		using (db.Rent(out var connection)) {
-			schema.Execute(connection, initialSetup: true);
+			schema.Execute(connection);
 		}
 
 		_processor = new(db, publisher, hasher, new("test"), NullLoggerFactory.Instance);

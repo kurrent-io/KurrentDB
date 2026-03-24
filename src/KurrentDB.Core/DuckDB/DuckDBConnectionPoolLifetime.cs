@@ -24,7 +24,6 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 	private readonly string _path;
 	private readonly IReadOnlyList<IDuckDBSetup> _repeated;
 	private readonly ILogger<DuckDBConnectionPoolLifetime> _log;
-	private readonly bool _initialSetup;
 	[CanBeNull] private string _tempPath;
 
 	public DuckDBConnectionPool Shared { get; }
@@ -36,9 +35,6 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 
 		_path = config.InMemDb ? GetTempPath() : $"{config.Path}/kurrent.ddb";
 		_log = log ?? NullLogger<DuckDBConnectionPoolLifetime>.Instance;
-
-		// On first start, the database file doesn't exist
-		_initialSetup = !File.Exists(_path);
 
 		var once = new List<IDuckDBSetup>();
 		var repeated = new List<IDuckDBSetup>();
@@ -54,7 +50,7 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 		Shared = CreatePool(isReadOnly: false, log: true);
 		using (Shared.Rent(out var connection)) {
 			foreach (var s in once)
-				s.Execute(connection, _initialSetup);
+				s.Execute(connection);
 		}
 
 		return;
@@ -75,10 +71,8 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 			["memory_limit"] = $"{duckDbRamMib}MB", // total, not per connection
 			["access_mode"] = isReadOnly ? "READ_ONLY" : "READ_WRITE",
 		};
-		var pool = new ConnectionPoolWithFunctions($"Data Source={_path};{GetParamsString()}", _repeated) {
-			IsInitialSetup = _initialSetup
-		};
-		
+		var pool = new ConnectionPoolWithFunctions($"Data Source={_path};{GetParamsString()}", _repeated);
+
 		if (log)
 			_log.LogInformation("Created DuckDB connection pool at {path} with {settings}", _path, settings);
 		return pool;
@@ -126,13 +120,11 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 	}
 
 	private class ConnectionPoolWithFunctions(string connectionString, IReadOnlyList<IDuckDBSetup> setup) : DuckDBConnectionPool(connectionString) {
-		public required bool IsInitialSetup { get; init; }
-
 		protected override void Initialize(DuckDBAdvancedConnection connection) {
 			base.Initialize(connection);
 			for (var i = 0; i < setup.Count; i++) {
 				try {
-					setup[i].Execute(connection, IsInitialSetup);
+					setup[i].Execute(connection);
 				} catch (Exception) {
 					// it happens for some reason, investigating
 				}

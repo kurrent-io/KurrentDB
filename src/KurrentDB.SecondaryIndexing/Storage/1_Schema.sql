@@ -1,4 +1,4 @@
-create table if not exists idx_all (
+create table idx_all (
 	log_position bigint not null,
 	commit_position bigint null,
 	stream_revision bigint not null,
@@ -14,14 +14,17 @@ create table if not exists idx_all (
 	record_id blob not null
 );
 
-create table if not exists idx_user_checkpoints (
+create table idx_user_checkpoints (
 	index_name varchar primary key,
 	log_position bigint not null,
 	commit_position bigint null,
 	created bigint not null
 );
 
-create table if not exists idx_metadata(
+create table idx_metadata(
 	key varchar primary key not null,
 	value varchar
 );
+
+
+insert into idx_metadata (key, value) VALUES ('version', '1')

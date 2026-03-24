@@ -14,13 +14,12 @@ public abstract class DuckDbIntegrationTest<T> : DirectoryPerTest<T> {
 
 	protected DuckDbIntegrationTest() {
 		var dbPath = Fixture.GetFilePathFor($"{GetType().Name}.db");
-		var initialSetup = !File.Exists(dbPath);
 
 		DuckDb = new($"Data Source={dbPath};");
 
 		var schema = new IndexingDbSchema(GetEvents);
 		using (DuckDb.Rent(out var connection)) {
-			schema.Execute(connection, initialSetup);
+			schema.Execute(connection);
 		}
 	}
 

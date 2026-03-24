@@ -3,7 +3,6 @@
 
 using System.Reflection;
 using System.Security.Claims;
-using DuckDB.NET.Data;
 using Kurrent.Quack;
 using Kurrent.Quack.Threading;
 using KurrentDB.Core.Bus;
@@ -22,38 +21,25 @@ public partial class IndexingDbSchema(
 		: this(publisher.GetEnumerator) {
 	}
 
-	protected override void ExecuteCore(DuckDBAdvancedConnection connection, bool initialSetup) {
+	protected override void ExecuteCore(DuckDBAdvancedConnection connection) {
 		BufferedView.EnableSupport(connection);
 		new Indexes.User.ExpandRecordFunction(eventsProvider).Register(connection);
 		new Indexes.Default.ExpandRecordFunction(eventsProvider).Register(connection);
-		CreateSchema(connection);
 
-		PerformMigration(connection, initialSetup, logger: loggerFactory);
+		PerformMigration(connection, logger: loggerFactory);
 	}
 
-	private void CreateSchema(DuckDBConnection connection) {
+	private static void CreateSchema(DuckDBAdvancedConnection connection) {
 		var names = Assembly.GetManifestResourceNames().Where(x => x.EndsWith(".sql")).OrderBy(x => x);
 		using var transaction = connection.BeginTransaction();
-		var cmd = connection.CreateCommand();
-		cmd.Transaction = transaction;
 
-		try {
-			foreach (var name in names) {
-				using var stream = Assembly.GetManifestResourceStream(name);
-				using var reader = new StreamReader(stream!);
-				var script = reader.ReadToEnd();
+		foreach (var name in names) {
+			using var stream = Assembly.GetManifestResourceStream(name);
+			using var reader = new StreamReader(stream!);
+			var script = reader.ReadToEnd();
 
-				cmd.CommandText = script;
-				cmd.ExecuteNonQuery();
-			}
-		} catch {
-			transaction.Rollback();
-			throw;
-		} finally {
-			cmd.Dispose();
+			connection.ExecuteAdHocNonQuery(script, multipleStatements: true);
 		}
-
-		transaction.Commit();
 	}
 }
 

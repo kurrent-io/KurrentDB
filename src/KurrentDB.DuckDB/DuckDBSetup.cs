@@ -8,21 +8,21 @@ using Kurrent.Quack;
 namespace KurrentDB.DuckDB;
 
 public interface IDuckDBSetup {
-	void Execute(DuckDBAdvancedConnection connection, bool initialSetup);
+	void Execute(DuckDBAdvancedConnection connection);
 	bool OneTimeOnly { get; }
 }
 
 public abstract class DuckDBOneTimeSetup : IDuckDBSetup {
 	private Atomic.Boolean _created;
 
-	public void Execute(DuckDBAdvancedConnection connection, bool initialSetup) {
+	public void Execute(DuckDBAdvancedConnection connection) {
 		if (!_created.FalseToTrue()) {
 			return;
 		}
-		ExecuteCore(connection, initialSetup);
+		ExecuteCore(connection);
 	}
 
 	public bool OneTimeOnly => true;
 
-	protected abstract void ExecuteCore(DuckDBAdvancedConnection connection, bool initialSetup);
+	protected abstract void ExecuteCore(DuckDBAdvancedConnection connection);
 }

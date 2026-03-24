@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Data;
 using Kurrent.Quack;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -11,22 +12,50 @@ partial class IndexingDbSchema {
 	private const string VersionMetadataKey = "version";
 	private const string MinimumVersion = "0";
 
-	public static void PerformMigration(DuckDBAdvancedConnection connection,
-		bool initialSetup,
+	public static int PerformMigration(DuckDBAdvancedConnection connection,
 		int desiredVersion = TargetVersion,
 		ILoggerFactory? logger = null) {
 		logger ??= NullLoggerFactory.Instance;
 
-		// On first start, no need to perform any migration except version upgrade
-		if (initialSetup) {
-			connection.ExecuteNonQuery<int, UpdateVersionQuery>(desiredVersion);
-		} else {
-			PerformMigration(
-				GetVersion(connection),
-				desiredVersion,
-				connection,
-				MigrationActions,
-				logger.CreateLogger<IndexingDbSchema>());
+		int baseVersion;
+		switch (CheckTables(connection)) {
+			case (false, true):
+				// infrastructure exists, but not idx_metadata, this is v0
+				baseVersion = 0;
+				break;
+			case (false, false) when desiredVersion is TargetVersion:
+				// fresh setup, create schema from scratch and leave
+				CreateSchema(connection);
+				connection.ExecuteNonQuery<int, UpdateVersionQuery>(TargetVersion);
+				return 0;
+			case (true, true):
+				// perform migration
+				baseVersion = GetVersion(connection);
+				break;
+			default:
+				// idx_metadata exists, but not infrastructure
+				throw new DataException("Index database is broken");
+		}
+
+		PerformMigration(
+			baseVersion,
+			desiredVersion,
+			connection,
+			MigrationActions,
+			logger.CreateLogger<IndexingDbSchema>());
+
+		return baseVersion;
+
+		static (bool HasMetadataTable, bool HasIndexTables) CheckTables(DuckDBAdvancedConnection connection) {
+			var hasMetadataTable = false;
+			var hasDefaultIndexTable = false;
+
+			foreach (var tableName in connection.GetTables()) {
+				hasMetadataTable |= tableName.SequenceEqual("idx_metadata"u8);
+				hasDefaultIndexTable |= tableName.SequenceEqual("idx_all"u8);
+			}
+
+			return (hasMetadataTable, hasDefaultIndexTable);
 		}
 	}
 
@@ -65,7 +94,7 @@ partial class IndexingDbSchema {
 		}
 	}
 
-	public static int GetVersion(DuckDBAdvancedConnection connection) {
+	private static int GetVersion(DuckDBAdvancedConnection connection) {
 		return GetVersion(LoadMetadata(connection));
 	}
 

@@ -12,13 +12,14 @@ partial class IndexingDbSchema {
 	private static void UpgradeToV1(DuckDBAdvancedConnection connection) {
 		// Add record_id column and rename columns
 		connection.ExecuteAdHocNonQuery("""
+		                                CREATE TABLE idx_metadata(key varchar primary key not null, value varchar);
 		                                ALTER TABLE idx_all ADD COLUMN record_id BLOB DEFAULT ''::BLOB;
 		                                ALTER TABLE idx_all RENAME COLUMN event_number TO stream_revision;
 		                                ALTER TABLE idx_all RENAME COLUMN created TO created_at;
 		                                ALTER TABLE idx_all RENAME COLUMN event_type TO schema_name;
 		                                ALTER TABLE idx_all RENAME COLUMN is_deleted TO deleted;
 		                                ALTER TABLE idx_all RENAME COLUMN expires TO expires_at;
-		                                """, multipleStatements: true);
+		                                """u8, multipleStatements: true);
 
 		// Find and rename all secondary index tables
 		foreach (var tableNameUtf8 in connection.GetTables()) {
