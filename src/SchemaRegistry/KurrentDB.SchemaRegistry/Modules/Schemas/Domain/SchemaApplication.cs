@@ -81,7 +81,9 @@ public class SchemaApplication : EntityApplication<SchemaEntity> {
                 throw new DomainExceptions.EntityException("Schema definition has not changed");
 
             var compatibilityMode = (SchemaCompatibilityMode)state.Compatibility;
-            if (compatibilityMode is not SchemaCompatibilityMode.None and not SchemaCompatibilityMode.Unspecified) {
+            if (compatibilityMode is not SchemaCompatibilityMode.None) {
+                state.EnsureCompatibilityCheckSupported();
+
                 var result = await compatibilityManager.CheckCompatibility(
                     cmd.SchemaDefinition.ToStringUtf8(),
                     lastVersion.SchemaDefinition,
@@ -159,6 +161,8 @@ public class SchemaApplication : EntityApplication<SchemaEntity> {
                         throw new DomainExceptions.EntityNotModified("Schema", state.SchemaName, "Compatibility has not changed");
 
                     var newMode = (CompatibilityMode)cmd.Details.Compatibility;
+                    if (newMode is not CompatibilityMode.None)
+                        state.EnsureCompatibilityCheckSupported();
                     await ValidateCompatibilityModeChange(state, newMode, ct);
 
                     events.Add(new SchemaCompatibilityModeChanged {
@@ -232,6 +236,8 @@ public class SchemaApplication : EntityApplication<SchemaEntity> {
             var versions = state.Versions.Values.ToList();
 
             switch (newMode) {
+                // Ensures the latest version can read data written by any older version.
+                // e.g. with versions 1, 2, 3: checks 3->1 and 3->2
                 case CompatibilityMode.Backward: {
                     var latestVersion = state.LatestVersion;
 
@@ -249,6 +255,8 @@ public class SchemaApplication : EntityApplication<SchemaEntity> {
                     }
                     break;
                 }
+                // Ensures every older version can read data written by every newer version (pairwise).
+                // e.g. with versions 1, 2, 3: checks 1->2, 1->3, 2->3
                 case CompatibilityMode.Forward: {
                     foreach (var olderVersion in versions) {
                         foreach (var newerVersion in versions.Where(v => v.VersionNumber > olderVersion.VersionNumber)) {
@@ -266,6 +274,8 @@ public class SchemaApplication : EntityApplication<SchemaEntity> {
                     }
                     break;
                 }
+                // Ensures every pair of versions is compatible in both directions (pairwise, bidirectional).
+                // e.g. with versions 1, 2, 3: checks 1<->2, 1<->3, 2<->3
                 case CompatibilityMode.Full: {
                     foreach (var olderVersion in versions) {
                         foreach (var newerVersion in versions.Where(v => v.VersionNumber > olderVersion.VersionNumber)) {
@@ -283,6 +293,8 @@ public class SchemaApplication : EntityApplication<SchemaEntity> {
                     }
                     break;
                 }
+                // Ensures each version can read data from ALL previous versions (batch check).
+                // e.g. with versions 1, 2, 3: checks 3->[1,2] and 2->[1]
                 case CompatibilityMode.BackwardAll: {
                     foreach (var schema in versions) {
                         var olderVersions = versions
@@ -305,6 +317,8 @@ public class SchemaApplication : EntityApplication<SchemaEntity> {
                     }
                     break;
                 }
+                // Ensures each version can be read by ALL newer versions (batch check).
+                // e.g. with versions 1, 2, 3: checks 1->[2,3] and 2->[3]
                 case CompatibilityMode.ForwardAll: {
                     foreach (var schema in versions) {
                         var newerVersions = versions .Where(v => v.VersionNumber > schema.VersionNumber)
@@ -326,6 +340,8 @@ public class SchemaApplication : EntityApplication<SchemaEntity> {
                     }
                     break;
                 }
+                // Strictest mode: ensures every version is fully compatible with ALL other versions (batch, bidirectional).
+                // e.g. with versions 1, 2, 3: checks 1<->[2,3], 2<->[1,3], 3<->[1,2]
                 case CompatibilityMode.FullAll: {
                     foreach (var schema in versions) {
                         var otherVersions = versions
@@ -350,5 +366,6 @@ public class SchemaApplication : EntityApplication<SchemaEntity> {
                 }
             }
         }
+
     }
 }
