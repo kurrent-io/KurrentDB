@@ -14,7 +14,6 @@ partial class IndexingDbSchema {
 
 	private static SortedDictionary<int, Action<DuckDBAdvancedConnection>> MigrationActions
 		=> new() {
-			{ 0, static _ => { } },
 			{ 1, UpgradeToV1 }
 		};
 }
