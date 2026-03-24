@@ -25,6 +25,3 @@ create table idx_metadata(
 	key varchar primary key not null,
 	value varchar
 );
-
-
-insert into idx_metadata (key, value) VALUES ('version', '1')
