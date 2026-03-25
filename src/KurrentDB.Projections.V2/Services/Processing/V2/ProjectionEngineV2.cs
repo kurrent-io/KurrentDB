@@ -91,7 +91,10 @@ public class ProjectionEngineV2(
 				(sequence, buffer) => coordinator.ReportPartitionCheckpoint(partitionIndex, sequence, buffer),
 				loadPersistedState: partitionKey => LoadPersistedPartitionState(partitionKey, ct),
 				sharedPartitionStates: _partitionStates);
-			partitionTasks[i] = Task.Run(() => processor.Run(ct), ct);
+			// Let the partitions drain & checkpoint rather than cancelling them.
+			// We stop them by completing their channels via dispatcher.Complete().
+			var partitionCt = CancellationToken.None;
+			partitionTasks[i] = Task.Run(() => processor.Run(partitionCt), partitionCt);
 		}
 
 		try {

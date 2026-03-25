@@ -36,10 +36,7 @@ public class PartitionProcessor(
 	public async Task Run(CancellationToken ct) {
 		Log.Debug("Partition {Index} starting for projection {Name}", partitionIndex, projectionName);
 
-		// Don't use ct for reading: the processor should drain all pending events
-		// (including the final checkpoint marker) before stopping. The read loop
-		// signals completion by completing the channel via dispatcher.Complete().
-		await foreach (var pe in reader.ReadAllAsync(CancellationToken.None)) {
+		await foreach (var pe in reader.ReadAllAsync(ct)) {
 			if (pe.IsCheckpointMarker) {
 				await HandleCheckpointMarker(pe.CheckpointMarkerSequence!.Value);
 				continue;
