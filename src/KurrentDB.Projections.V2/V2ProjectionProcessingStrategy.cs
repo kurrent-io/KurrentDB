@@ -22,7 +22,6 @@ public class V2ProjectionProcessingStrategy : ProjectionProcessingStrategy {
 	public V2ProjectionProcessingStrategy(
 		string name,
 		ProjectionVersion projectionVersion,
-		IProjectionStateHandler stateHandler,
 		ProjectionConfig projectionConfig,
 		IQuerySources sourceDefinition,
 		ILogger logger,

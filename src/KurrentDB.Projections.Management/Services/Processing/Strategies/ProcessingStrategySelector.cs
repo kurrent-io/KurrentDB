@@ -27,14 +27,14 @@ public class ProcessingStrategySelector {
 		ProjectionNamesBuilder namesBuilder,
 		IQuerySources sourceDefinition,
 		ProjectionConfig projectionConfig,
-		IProjectionStateHandler stateHandler, string handlerType, string query, bool enableContentTypeValidation,
+		string handlerType, string query, bool enableContentTypeValidation,
 		int engineVersion,
 		Func<IProjectionStateHandler> stateHandlerFactory,
 		IPublisher mainQueue) {
 
 		if (engineVersion == ProjectionConstants.EngineV2) {
 			return new V2ProjectionProcessingStrategy(
-				name, projectionVersion, stateHandler, projectionConfig, sourceDefinition, _logger, _maxProjectionStateSize,
+				name, projectionVersion, projectionConfig, sourceDefinition, _logger, _maxProjectionStateSize,
 				stateHandlerFactory, mainQueue);
 		}
 
@@ -43,7 +43,7 @@ public class ProcessingStrategySelector {
 			new QueryProcessingStrategy(
 				name,
 				projectionVersion,
-				stateHandler,
+				stateHandlerFactory.Invoke(),
 				projectionConfig,
 				sourceDefinition,
 				_logger,
@@ -53,7 +53,7 @@ public class ProcessingStrategySelector {
 			: new ContinuousProjectionProcessingStrategy(
 				name,
 				projectionVersion,
-				stateHandler,
+				stateHandlerFactory.Invoke(),
 				projectionConfig,
 				sourceDefinition,
 				_logger,

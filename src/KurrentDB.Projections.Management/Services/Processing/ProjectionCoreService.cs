@@ -152,14 +152,14 @@ public class ProjectionCoreService
 	public void Handle(CoreProjectionManagementMessage.CreateAndPrepare message) {
 		try {
 			//TODO: factory method can throw
-			var stateHandler = CreateStateHandler(_factory,
+			var stateHandlerFactory = () => CreateStateHandler(_factory,
 				_logger,
 				message.Name,
 				message.HandlerType,
 				message.Query,
 				message.EnableContentTypeValidation,
 				message.Config.ProjectionExecutionTimeout);
-
+			var stateHandler = stateHandlerFactory.Invoke();
 			string name = message.Name;
 			var sourceDefinition = ProjectionSourceDefinition.From(stateHandler.GetSourceDefinition());
 
@@ -167,24 +167,18 @@ public class ProjectionCoreService
 			var projectionConfig = message.Config;
 			var namesBuilder = new ProjectionNamesBuilder(name, sourceDefinition);
 
-			// For V2, create a factory that can produce fresh state handler instances
-			Func<IProjectionStateHandler> stateHandlerFactory = message.EngineVersion == ProjectionConstants.EngineV2
-				? () => CreateStateHandler(_factory, _logger, message.Name, message.HandlerType,
-					message.Query, message.EnableContentTypeValidation, message.Config.ProjectionExecutionTimeout)
-				: null;
-
 			var projectionProcessingStrategy = _processingStrategySelector.CreateProjectionProcessingStrategy(
 				name,
 				projectionVersion,
 				namesBuilder,
 				sourceDefinition,
 				projectionConfig,
-				stateHandler,
 				message.HandlerType,
 				message.Query,
 				message.EnableContentTypeValidation,
 				message.EngineVersion,
-				stateHandlerFactory,
+				// For V1 only one stateHandler is used. V2 uses a stateHandler per partition
+				message.EngineVersion == ProjectionConstants.EngineV2 ? stateHandlerFactory : () => stateHandler,
 				_mainQueue);
 
 			CreateCoreProjection(message.ProjectionId, projectionConfig.RunAs, projectionProcessingStrategy);
@@ -211,12 +205,11 @@ public class ProjectionCoreService
 				namesBuilder,
 				sourceDefinition,
 				projectionConfig,
-				stateHandler: null,
 				message.HandlerType,
 				message.Query,
 				message.EnableContentTypeValidation,
 				message.EngineVersion,
-				stateHandlerFactory: () => null, // this is ok (same as stateHandler: null above) because the projection is stopped
+				stateHandlerFactory: () => null, // this is ok because the projection is stopped
 				mainQueue: _mainQueue);
 
 			CreateCoreProjection(message.ProjectionId, projectionConfig.RunAs, projectionProcessingStrategy);
