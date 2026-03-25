@@ -28,9 +28,9 @@ public class ProcessingStrategySelector {
 		IQuerySources sourceDefinition,
 		ProjectionConfig projectionConfig,
 		IProjectionStateHandler stateHandler, string handlerType, string query, bool enableContentTypeValidation,
-		int engineVersion = ProjectionConstants.EngineV1,
-		Func<IProjectionStateHandler> stateHandlerFactory = null,
-		IPublisher mainBus = null) {
+		int engineVersion,
+		Func<IProjectionStateHandler> stateHandlerFactory,
+		IPublisher mainBus) {
 
 		if (engineVersion == ProjectionConstants.EngineV2) {
 			return new V2ProjectionProcessingStrategy(

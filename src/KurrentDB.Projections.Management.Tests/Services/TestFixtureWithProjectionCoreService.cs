@@ -100,7 +100,7 @@ public class TestFixtureWithProjectionCoreService {
 		var configuration = new ProjectionsStandardComponents(1, ProjectionType.All, guardBus, guardBus, guardBus, guardBus, true,
 			 500, 250, Opts.MaxProjectionStateSizeDefault, ProjectionTrackers.NoOp);
 		_service = new ProjectionCoreService(
-			_workerId, _bus, _bus, _subscriptionDispatcher, new RealTimeProvider(), ioDispatcher, configuration);
+			_workerId, _bus, _bus, _subscriptionDispatcher, new RealTimeProvider(), ioDispatcher, configuration, _bus);
 		_bus.Subscribe(
 			_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.CheckpointSuggested>());
 		_bus.Subscribe(_subscriptionDispatcher

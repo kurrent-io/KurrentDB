@@ -53,12 +53,13 @@ public sealed class V2CoreProjection : ICoreProjectionControl {
 		IQuerySources sourceDefinition,
 		Func<IProjectionStateHandler> stateHandlerFactory,
 		ProjectionConfig projectionConfig,
-		IPublisher mainBus = null) {
+		IPublisher mainBus) {
+
 		_projectionCorrelationId = projectionCorrelationId;
 		_projectionName = projectionName;
 		_publisher = publisher;
 		_inputQueue = inputQueue;
-		_mainBus = mainBus ?? publisher;
+		_mainBus = mainBus;
 		_ioDispatcher = ioDispatcher;
 		_runAs = runAs;
 		_sourceDefinition = sourceDefinition;

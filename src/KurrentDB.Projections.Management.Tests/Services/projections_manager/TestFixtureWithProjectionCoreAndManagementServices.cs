@@ -193,7 +193,8 @@ public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFor
 			_subscriptionDispatcher,
 			_timeProvider,
 			ioDispatcher,
-			configuration);
+			configuration,
+			output);
 
 		bus.Subscribe<CoreProjectionManagementMessage.CreateAndPrepare>(coreService);
 		bus.Subscribe<CoreProjectionManagementMessage.CreatePrepared>(coreService);

@@ -67,7 +67,8 @@ public class ProjectionCoreService
 		ITimeProvider timeProvider,
 		IODispatcher ioDispatcher,
 		ProjectionsStandardComponents configuration,
-		IPublisher mainBus = null) {
+		IPublisher mainBus) {
+
 		_workerId = workerId;
 		_inputQueue = inputQueue;
 		_publisher = publisher;
@@ -210,11 +211,12 @@ public class ProjectionCoreService
 				namesBuilder,
 				sourceDefinition,
 				projectionConfig,
-				null,
+				stateHandler: null,
 				message.HandlerType,
 				message.Query,
 				message.EnableContentTypeValidation,
 				message.EngineVersion,
+				stateHandlerFactory: () => null, // this is ok (same as stateHandler: null above) because the projection is stopped
 				mainBus: _mainBus);
 
 			CreateCoreProjection(message.ProjectionId, projectionConfig.RunAs, projectionProcessingStrategy);

@@ -27,12 +27,13 @@ public class V2ProjectionProcessingStrategy : ProjectionProcessingStrategy {
 		IQuerySources sourceDefinition,
 		ILogger logger,
 		int maxProjectionStateSize,
-		Func<IProjectionStateHandler> stateHandlerFactory = null,
-		IPublisher mainBus = null) {
+		Func<IProjectionStateHandler> stateHandlerFactory,
+		IPublisher mainBus) {
+
 		_name = name;
 		_projectionConfig = projectionConfig;
 		_sourceDefinition = sourceDefinition;
-		_stateHandlerFactory = stateHandlerFactory ?? (() => stateHandler);
+		_stateHandlerFactory = stateHandlerFactory;
 		_mainBus = mainBus;
 	}
 
