@@ -43,14 +43,14 @@ public class ReadStrategyFactoryTests {
 	}
 
 	[Test]
-	public async Task specific_streams_creates_stream_set_strategy() {
+	public async Task specific_streams_creates_filtered_all_strategy() {
 		var sources = new QuerySourcesDefinition {
 			Streams = ["stream-a", "stream-b"]
 		};
 
 		var strategy = ReadStrategyFactory.Create(sources, Bus, User);
 
-		await Assert.That(strategy).IsTypeOf<StreamSetReadStrategy>();
+		await Assert.That(strategy).IsTypeOf<FilteredAllReadStrategy>();
 	}
 
 	[Test]
