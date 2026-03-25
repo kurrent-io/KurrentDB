@@ -17,7 +17,7 @@ public class V2ProjectionProcessingStrategy : ProjectionProcessingStrategy {
 	private readonly ProjectionConfig _projectionConfig;
 	private readonly IQuerySources _sourceDefinition;
 	private readonly Func<IProjectionStateHandler> _stateHandlerFactory;
-	private readonly IPublisher _mainBus;
+	private readonly IPublisher _mainQueue;
 
 	public V2ProjectionProcessingStrategy(
 		string name,
@@ -28,13 +28,13 @@ public class V2ProjectionProcessingStrategy : ProjectionProcessingStrategy {
 		ILogger logger,
 		int maxProjectionStateSize,
 		Func<IProjectionStateHandler> stateHandlerFactory,
-		IPublisher mainBus) {
+		IPublisher mainQueue) {
 
 		_name = name;
 		_projectionConfig = projectionConfig;
 		_sourceDefinition = sourceDefinition;
 		_stateHandlerFactory = stateHandlerFactory;
-		_mainBus = mainBus;
+		_mainQueue = mainQueue;
 	}
 
 	public override ICoreProjectionControl Create(
@@ -55,6 +55,6 @@ public class V2ProjectionProcessingStrategy : ProjectionProcessingStrategy {
 			_sourceDefinition,
 			_stateHandlerFactory,
 			_projectionConfig,
-			_mainBus);
+			_mainQueue);
 	}
 }

@@ -30,12 +30,12 @@ public class ProcessingStrategySelector {
 		IProjectionStateHandler stateHandler, string handlerType, string query, bool enableContentTypeValidation,
 		int engineVersion,
 		Func<IProjectionStateHandler> stateHandlerFactory,
-		IPublisher mainBus) {
+		IPublisher mainQueue) {
 
 		if (engineVersion == ProjectionConstants.EngineV2) {
 			return new V2ProjectionProcessingStrategy(
 				name, projectionVersion, stateHandler, projectionConfig, sourceDefinition, _logger, _maxProjectionStateSize,
-				stateHandlerFactory, mainBus);
+				stateHandlerFactory, mainQueue);
 		}
 
 		return projectionConfig.StopOnEof

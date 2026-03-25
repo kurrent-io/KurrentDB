@@ -30,7 +30,7 @@ public sealed class V2CoreProjection : ICoreProjectionControl {
 	readonly string _projectionName;
 	readonly IPublisher _publisher;
 	readonly IPublisher _inputQueue;
-	readonly IPublisher _mainBus;
+	readonly IPublisher _mainQueue;
 	readonly IODispatcher _ioDispatcher;
 	readonly ClaimsPrincipal _runAs;
 	readonly IQuerySources _sourceDefinition;
@@ -53,13 +53,13 @@ public sealed class V2CoreProjection : ICoreProjectionControl {
 		IQuerySources sourceDefinition,
 		Func<IProjectionStateHandler> stateHandlerFactory,
 		ProjectionConfig projectionConfig,
-		IPublisher mainBus) {
+		IPublisher mainQueue) {
 
 		_projectionCorrelationId = projectionCorrelationId;
 		_projectionName = projectionName;
 		_publisher = publisher;
 		_inputQueue = inputQueue;
-		_mainBus = mainBus;
+		_mainQueue = mainQueue;
 		_ioDispatcher = ioDispatcher;
 		_runAs = runAs;
 		_sourceDefinition = sourceDefinition;
@@ -209,7 +209,7 @@ public sealed class V2CoreProjection : ICoreProjectionControl {
 
 	void StartEngine(TFPos checkpoint) {
 		try {
-			var readStrategy = ReadStrategyFactory.Create(_sourceDefinition, _mainBus, _runAs);
+			var readStrategy = ReadStrategyFactory.Create(_sourceDefinition, _mainQueue, _runAs);
 
 			var config = new ProjectionEngineV2Config {
 				ProjectionName = _projectionName,

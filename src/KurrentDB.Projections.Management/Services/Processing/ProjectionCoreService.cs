@@ -41,7 +41,7 @@ public class ProjectionCoreService
 	private readonly Guid _workerId;
 	private readonly IPublisher _publisher;
 	private readonly IPublisher _inputQueue;
-	private readonly IPublisher _mainBus;
+	private readonly IPublisher _mainQueue;
 	private readonly ILogger _logger = Log.ForContext<ProjectionCoreService>();
 
 	private readonly Dictionary<Guid, ICoreProjectionControl> _projections = new Dictionary<Guid, ICoreProjectionControl>();
@@ -67,12 +67,12 @@ public class ProjectionCoreService
 		ITimeProvider timeProvider,
 		IODispatcher ioDispatcher,
 		ProjectionsStandardComponents configuration,
-		IPublisher mainBus) {
+		IPublisher mainQueue) {
 
 		_workerId = workerId;
 		_inputQueue = inputQueue;
 		_publisher = publisher;
-		_mainBus = mainBus;
+		_mainQueue = mainQueue;
 		_ioDispatcher = ioDispatcher;
 		_subscriptionDispatcher = subscriptionDispatcher;
 		_timeProvider = timeProvider;
@@ -185,7 +185,7 @@ public class ProjectionCoreService
 				message.EnableContentTypeValidation,
 				message.EngineVersion,
 				stateHandlerFactory,
-				_mainBus);
+				_mainQueue);
 
 			CreateCoreProjection(message.ProjectionId, projectionConfig.RunAs, projectionProcessingStrategy);
 			_publisher.Publish(
@@ -217,7 +217,7 @@ public class ProjectionCoreService
 				message.EnableContentTypeValidation,
 				message.EngineVersion,
 				stateHandlerFactory: () => null, // this is ok (same as stateHandler: null above) because the projection is stopped
-				mainBus: _mainBus);
+				mainQueue: _mainQueue);
 
 			CreateCoreProjection(message.ProjectionId, projectionConfig.RunAs, projectionProcessingStrategy);
 			_publisher.Publish(
