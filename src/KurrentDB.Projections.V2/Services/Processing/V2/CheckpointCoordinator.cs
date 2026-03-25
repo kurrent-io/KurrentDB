@@ -62,18 +62,13 @@ public class CheckpointCoordinator(int partitionCount, string projectionName, IP
 
 			var (streamIds, expectedVersions, events, streamIndexes) = BuildMultiStreamWrite(lastPosition);
 
-			var tcs = new TaskCompletionSource<ClientMessage.WriteEventsCompleted>();
+			var envelope = new TcsEnvelope<ClientMessage.WriteEventsCompleted>();
 			var corrId = Guid.NewGuid();
 
 			bus.Publish(new ClientMessage.WriteEvents(
 				internalCorrId: corrId,
 				correlationId: corrId,
-				envelope: new CallbackEnvelope(msg => {
-					if (msg is ClientMessage.WriteEventsCompleted completed)
-						tcs.TrySetResult(completed);
-					else
-						tcs.TrySetException(new Exception($"Unexpected response: {msg.GetType().Name}"));
-				}),
+				envelope: envelope,
 				requireLeader: true,
 				eventStreamIds: streamIds.ToArray(),
 				expectedVersions: expectedVersions.ToArray(),
@@ -81,7 +76,7 @@ public class CheckpointCoordinator(int partitionCount, string projectionName, IP
 				eventStreamIndexes: streamIndexes.ToArray(),
 				user: user));
 
-			var result = await tcs.Task;
+			var result = await envelope.Task;
 			if (result.Result != OperationResult.Success) {
 				throw new Exception($"Checkpoint write failed for {projectionName}: {result.Result} — {result.Message}");
 			}
