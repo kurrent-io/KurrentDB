@@ -392,8 +392,8 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			eventStreamIndexes: [0, 1, 0]);
 
 		Assert.Equal(OperationResult.Success, completed.Result);
-		Assert.Equal([0, 0, 0], completed.FirstEventNumbers.ToArray());
-		Assert.Equal([1, 0, -1], completed.LastEventNumbers.ToArray());
+		Assert.Equal([0, 0, EventNumber.CheckOnlyFirst], completed.FirstEventNumbers.ToArray());
+		Assert.Equal([1, 0, EventNumber.CheckOnlyLast], completed.LastEventNumbers.ToArray());
 	}
 
 	[Fact]
@@ -410,8 +410,8 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			eventStreamIndexes: [0, 0, 0]);
 
 		Assert.Equal(OperationResult.Success, completed.Result);
-		Assert.Equal([0, 0, 0], completed.FirstEventNumbers.ToArray());
-		Assert.Equal([2, -1, -1], completed.LastEventNumbers.ToArray());
+		Assert.Equal([0, EventNumber.CheckOnlyFirst, EventNumber.CheckOnlyFirst], completed.FirstEventNumbers.ToArray());
+		Assert.Equal([2, EventNumber.CheckOnlyLast, EventNumber.CheckOnlyLast], completed.LastEventNumbers.ToArray());
 	}
 
 	[Fact]
@@ -428,11 +428,10 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			eventStreamIndexes: [0, 2, 0]); // A, C, A
 
 		Assert.Equal(OperationResult.Success, completed.Result);
-		Assert.Equal([0, 0, 0], completed.FirstEventNumbers.ToArray());
-		Assert.Equal([1, -1, 0], completed.LastEventNumbers.ToArray());
+		Assert.Equal([0, EventNumber.CheckOnlyFirst, 0], completed.FirstEventNumbers.ToArray());
+		Assert.Equal([1, EventNumber.CheckOnlyLast, 0], completed.LastEventNumbers.ToArray());
 	}
 
-	const long DeletedStreamFirstEventNumber = unchecked(EventNumber.DeletedStream + 1);
 	[Fact]
 	public async Task succeeds_with_conditional_append_on_deleted_stream_and_exp_ver_any() {
 		const string test = nameof(succeeds_with_conditional_append_on_deleted_stream_and_exp_ver_any);
@@ -449,8 +448,8 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			eventStreamIndexes: [0, 1, 0]);
 
 		Assert.Equal(OperationResult.Success, completed.Result);
-		Assert.Equal([0, 0, DeletedStreamFirstEventNumber], completed.FirstEventNumbers.ToArray());
-		Assert.Equal([1, 0, EventNumber.DeletedStream], completed.LastEventNumbers.ToArray());
+		Assert.Equal([0, 0, EventNumber.CheckOnlyFirst], completed.FirstEventNumbers.ToArray());
+		Assert.Equal([1, 0, EventNumber.CheckOnlyLast], completed.LastEventNumbers.ToArray());
 	}
 
 	[Fact]
@@ -469,8 +468,8 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			eventStreamIndexes: [0, 1, 0]);
 
 		Assert.Equal(OperationResult.Success, completed.Result);
-		Assert.Equal([0, 0, DeletedStreamFirstEventNumber], completed.FirstEventNumbers.ToArray());
-		Assert.Equal([1, 0, EventNumber.DeletedStream], completed.LastEventNumbers.ToArray());
+		Assert.Equal([0, 0, EventNumber.CheckOnlyFirst], completed.FirstEventNumbers.ToArray());
+		Assert.Equal([1, 0, EventNumber.CheckOnlyLast], completed.LastEventNumbers.ToArray());
 	}
 
 	[Fact]
@@ -999,8 +998,8 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			eventStreamIndexes: [2, 1, 1]); // C B B
 
 		Assert.Equal(OperationResult.Success, completed.Result);
-		Assert.Equal([3, 0, 0], completed.FirstEventNumbers.ToArray());
-		Assert.Equal([2, 1, 0], completed.LastEventNumbers.ToArray());
+		Assert.Equal([EventNumber.CheckOnlyFirst, 0, 0], completed.FirstEventNumbers.ToArray());
+		Assert.Equal([EventNumber.CheckOnlyLast, 1, 0], completed.LastEventNumbers.ToArray());
 	}
 
 	[Fact]
@@ -1224,16 +1223,8 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 				Assert.Equal([expectedEventNumber], completed.LastEventNumbers.ToArray());
 			} else {
 				// Participation.CheckOnly
-				var expectedLastEventNumber = streamState switch {
-					StreamState.NeverExisted =>
-						-1,
-					StreamState.Tombstoned =>
-						EventNumber.DeletedStream,
-					_ =>
-						2,
-				};
-				Assert.Equal([expectedLastEventNumber + 1, 0], completed.FirstEventNumbers.ToArray());
-				Assert.Equal([expectedLastEventNumber, 0], completed.LastEventNumbers.ToArray());
+				Assert.Equal([EventNumber.CheckOnlyFirst, 0], completed.FirstEventNumbers.ToArray());
+				Assert.Equal([EventNumber.CheckOnlyLast, 0], completed.LastEventNumbers.ToArray());
 			}
 		} else {
 			// There must be exactly one failure, and it must be for stream T (index 0)
