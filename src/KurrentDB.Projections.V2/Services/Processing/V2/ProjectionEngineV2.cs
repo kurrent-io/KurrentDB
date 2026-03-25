@@ -258,7 +258,5 @@ public class ProjectionEngineV2(
 
 			_cts.Dispose();
 		}
-
-		await _readStrategy.DisposeAsync();
 	}
 }

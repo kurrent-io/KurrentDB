@@ -33,8 +33,6 @@ public class ProjectionEngineV2PipelineTests {
 				await Task.Yield();
 			}
 		}
-
-		public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 	}
 
 	sealed class CapturingPublisher : IPublisher {

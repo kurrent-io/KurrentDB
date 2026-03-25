@@ -47,7 +47,6 @@ public class ProjectionEngineV2LifecycleTests {
 			}
 		}
 
-		public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 	}
 
 	sealed class FakeReadStrategy(CoreResolvedEvent[] events) : IReadStrategy {
@@ -59,7 +58,6 @@ public class ProjectionEngineV2LifecycleTests {
 			}
 		}
 
-		public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 	}
 
 	sealed class EmptyReadStrategy : IReadStrategy {
@@ -68,7 +66,6 @@ public class ProjectionEngineV2LifecycleTests {
 			yield break;
 		}
 
-		public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 	}
 
 	sealed class CapturingPublisher : IPublisher {

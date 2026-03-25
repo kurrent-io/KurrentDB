@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Threading;
-using System.Threading.Tasks;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
@@ -20,14 +19,13 @@ public sealed class FilteredAllReadStrategy(
 	ClaimsPrincipal user,
 	bool requiresLeader = false)
 	: IReadStrategy {
-	private Enumerator.AllSubscriptionFiltered _enumerator;
 
 	public async IAsyncEnumerable<ReadResponse> ReadFrom(TFPos checkpoint, [EnumeratorCancellation] CancellationToken ct) {
 		Position? position = checkpoint == TFPos.HeadOfTf
 			? null
 			: Position.FromInt64(checkpoint.CommitPosition, checkpoint.PreparePosition);
 
-		_enumerator = new(
+		await using var enumerator = new Enumerator.AllSubscriptionFiltered(
 			bus: bus,
 			expiryStrategy: DefaultExpiryStrategy.Instance,
 			checkpoint: position,
@@ -39,14 +37,8 @@ public sealed class FilteredAllReadStrategy(
 			checkpointIntervalMultiplier: 1,
 			cancellationToken: ct);
 
-		while (await _enumerator.MoveNextAsync()) {
-			yield return _enumerator.Current;
-		}
-	}
-
-	public async ValueTask DisposeAsync() {
-		if (_enumerator is not null) {
-			await _enumerator.DisposeAsync();
+		while (await enumerator.MoveNextAsync()) {
+			yield return enumerator.Current;
 		}
 	}
 }
