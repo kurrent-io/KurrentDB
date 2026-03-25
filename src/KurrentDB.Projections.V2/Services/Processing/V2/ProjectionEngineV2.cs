@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Security.Claims;
 using System.Text;
 using System.Threading;
@@ -12,6 +11,7 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.ClientPublisher;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Transport.Enumerators;
+using KurrentDB.Core.Time;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Standard;
 using Serilog;
@@ -20,7 +20,7 @@ using ProjectionResolvedEvent = KurrentDB.Projections.Core.Services.Processing.R
 
 namespace KurrentDB.Projections.Core.Services.Processing.V2;
 
-public class ProjectionEngineV2(
+public sealed class ProjectionEngineV2(
 	ProjectionEngineV2Config config,
 	IReadStrategy readStrategy,
 	IPublisher bus,
@@ -125,7 +125,7 @@ public class ProjectionEngineV2(
 	private async Task RunReadLoop(TFPos checkpoint, PartitionDispatcher dispatcher, CancellationToken ct) {
 		long eventsProcessed = 0;
 		long bytesProcessed = 0;
-		var lastCheckpointTime = Stopwatch.GetTimestamp();
+		var lastCheckpointTime = Instant.Now;
 		var lastLogPosition = checkpoint;
 
 		try {
@@ -158,14 +158,14 @@ public class ProjectionEngineV2(
 						lastLogPosition = logPosition;
 
 						// Check if checkpoint is due
-						var elapsedMs = GetElapsedMs(lastCheckpointTime);
+						var elapsedMs = Instant.Now.ElapsedTimeSince(lastCheckpointTime).TotalMilliseconds;
 						if (elapsedMs >= _config.CheckpointAfterMs &&
 						    (eventsProcessed >= _config.CheckpointHandledThreshold ||
 						     bytesProcessed >= _config.CheckpointUnhandledBytesThreshold)) {
 							await dispatcher.InjectCheckpointMarker(lastLogPosition, ct);
 							eventsProcessed = 0;
 							bytesProcessed = 0;
-							lastCheckpointTime = Stopwatch.GetTimestamp();
+							lastCheckpointTime = Instant.Now;
 						}
 
 						break;
@@ -250,7 +250,6 @@ public class ProjectionEngineV2(
 			metadata: e.Metadata.Length > 0 ? System.Text.Encoding.UTF8.GetString(e.Metadata.Span) : null);
 	}
 
-	private static double GetElapsedMs(long startTimestamp) => Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds;
 
 	public async ValueTask DisposeAsync() {
 		if (_cts is not null) {

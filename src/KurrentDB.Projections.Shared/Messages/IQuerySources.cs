@@ -4,20 +4,25 @@
 namespace KurrentDB.Projections.Core.Messages;
 
 public interface IQuerySources {
+	// Stream source — mutually exclusive: fromAll(), fromCategory(), or fromStream()/fromStreams()
+	// Note: fromCategories() and multi-arg fromCategory() map to Streams (as $ce- prefixed), not Categories
 	bool AllStreams { get; }
 
 	string[] Categories { get; }
 
 	string[] Streams { get; }
 
+	// Event type filter — mutually exclusive: all events or specific event types
 	bool AllEvents { get; }
 
 	string[] Events { get; }
 
+	// Partitioning — mutually exclusive: foreachStream(), partitionBy(), or unpartitioned
 	bool ByStreams { get; }
 
 	bool ByCustomPartitions { get; }
 
+	// Processing capabilities — independent flags
 	bool DefinesStateTransform { get; }
 
 	bool DefinesFold { get; }
@@ -26,14 +31,16 @@ public interface IQuerySources {
 
 	bool ProducesResults { get; }
 
-	bool IsBiState { get; }
+	bool IsBiState { get; } // requires partitioning
 
+	// Output options
 	bool IncludeLinksOption { get; }
 
 	string ResultStreamNameOption { get; }
 
 	string PartitionResultStreamNamePatternOption { get; }
 
+	// Ordering options
 	bool ReorderEventsOption { get; }
 
 	int? ProcessingLagOption { get; }

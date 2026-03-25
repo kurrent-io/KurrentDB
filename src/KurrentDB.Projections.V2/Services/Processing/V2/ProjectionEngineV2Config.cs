@@ -3,7 +3,6 @@
 
 using System;
 using KurrentDB.Projections.Core.Messages;
-using KurrentDB.Projections.Core.Services;
 
 namespace KurrentDB.Projections.Core.Services.Processing.V2;
 

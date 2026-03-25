@@ -18,6 +18,7 @@ using Serilog;
 
 namespace KurrentDB.Projections.Core.Services.Processing.V2;
 
+// Chandy-Lamport style, collects a consistent snapshot across all partitions.
 public class CheckpointCoordinator(int partitionCount, string projectionName, IPublisher bus, ClaimsPrincipal user) {
 	private static readonly ILogger Log = Serilog.Log.ForContext<CheckpointCoordinator>();
 

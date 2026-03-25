@@ -5,7 +5,6 @@ using System.Security.Claims;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Projections.Core.Messages;
-using KurrentDB.Projections.Core.Services.Processing.V2;
 using KurrentDB.Projections.Core.Services.Processing.V2.ReadStrategies;
 
 namespace KurrentDB.Projections.V2.Tests.Unit;

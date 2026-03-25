@@ -4,8 +4,6 @@
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Security.Claims;
-using System.Text;
-using System.Text.Json;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;

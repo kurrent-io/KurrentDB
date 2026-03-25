@@ -8,15 +8,15 @@ using KurrentDB.Core.Data;
 namespace KurrentDB.Projections.Core.Services.Processing.V2;
 
 /// <summary>
-/// An event routed to a specific partition, or a checkpoint marker.
+/// An event routed to a specific partition, or a checkpoint marker, or a partition deleted notification.
 /// The partition key is always computed by the dispatcher on the read loop thread.
 /// </summary>
 public readonly record struct PartitionEvent {
-	public ResolvedEvent? Event { get; init; }
-	public string? PartitionKey { get; init; }
-	public TFPos LogPosition { get; init; }
-	public ulong? CheckpointMarkerSequence { get; init; }
-	public bool IsPartitionDeleted { get; init; }
+	public ResolvedEvent? Event { get; private init; }
+	public string? PartitionKey { get; private init; }
+	public TFPos LogPosition { get; private init; }
+	public ulong? CheckpointMarkerSequence { get; private init; }
+	public bool IsPartitionDeleted { get; private init; }
 
 	public bool IsCheckpointMarker => CheckpointMarkerSequence.HasValue;
 

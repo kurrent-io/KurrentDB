@@ -9,7 +9,7 @@ namespace KurrentDB.Projections.Core.Services.Processing.V2;
 
 public class OutputBuffer {
 	public List<EmittedEventEnvelope> EmittedEvents { get; } = [];
-	public Dictionary<string, (string StreamName, string StateJson, long ExpectedVersion)> DirtyStates { get; } = new();
+	public Dictionary<string, (string StreamName, string StateJson, long ExpectedVersion)> DirtyStates { get; } = [];
 	public TFPos LastLogPosition { get; set; }
 
 	public void AddEmittedEvents(EmittedEventEnvelope[] events) {

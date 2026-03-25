@@ -39,7 +39,7 @@ public class PartitionDispatcher {
 				new BoundedChannelOptions(channelCapacity) {
 					FullMode = BoundedChannelFullMode.Wait,
 					SingleReader = true,
-					SingleWriter = true
+					SingleWriter = true,
 				});
 		}
 	}

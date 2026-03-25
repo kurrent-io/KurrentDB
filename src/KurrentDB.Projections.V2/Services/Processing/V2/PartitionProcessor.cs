@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using KurrentDB.Core.Data;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using Serilog;
 
@@ -25,11 +24,13 @@ public class PartitionProcessor(
 	Func<ulong, OutputBuffer, Task> onCheckpointMarker,
 	Func<string, ValueTask<string?>>? loadPersistedState = null,
 	ConcurrentDictionary<string, string>? sharedPartitionStates = null) {
+
 	private static readonly ILogger Log = Serilog.Log.ForContext<PartitionProcessor>();
 
+	// the two buffers alternate being active/frozen
 	private OutputBuffer _activeBuffer = new();
 	private OutputBuffer _frozenBuffer = new();
-	private readonly Dictionary<string, string?> _stateCache = new();
+	private readonly Dictionary<string, string?> _stateCache = [];
 	private string? _sharedState;
 	private bool _sharedStateInitialized;
 
@@ -37,12 +38,9 @@ public class PartitionProcessor(
 		Log.Debug("Partition {Index} starting for projection {Name}", partitionIndex, projectionName);
 
 		await foreach (var pe in reader.ReadAllAsync(ct)) {
-			if (pe.IsCheckpointMarker) {
+			if (pe.IsCheckpointMarker)
 				await HandleCheckpointMarker(pe.CheckpointMarkerSequence!.Value);
-				continue;
-			}
-
-			if (pe.IsPartitionDeleted)
+			else if (pe.IsPartitionDeleted)
 				await ProcessPartitionDeleted(pe);
 			else
 				await ProcessEvent(pe);
