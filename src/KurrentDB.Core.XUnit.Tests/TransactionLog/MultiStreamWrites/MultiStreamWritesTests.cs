@@ -1265,7 +1265,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		WithSuccessfulCheck, // write to primary stream is idempotent, and check on another stream succeeds
 	}
 
-	// Each test case first writes 2 events to the target stream (which must succeed for idempotenycy
+	// Each test case first writes 2 events to the target stream (which must succeed for idempotency
 	// to be applicable), then retries according to the Idempotency type:
 	//   Full:                same events, same expected version → should succeed (idempotent)
 	//   Partial:             first event same, second is new → corrupted idempotency → should fail
@@ -1342,13 +1342,13 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 
 	[Theory]
 	[MemberData(nameof(IdempotentBehaviorByKindCases))]
-	public async Task idempotent_behaviour_by_kind(
+	public async Task idempotent_behavior_by_kind(
 		long expectedVersion,
 		StreamState streamState,
 		IdempotencyKind idempotency,
 		OperationResult expectedResult) {
 
-		const string test = nameof(idempotent_behaviour_by_kind);
+		const string test = nameof(idempotent_behavior_by_kind);
 		var label = $"{test}-{VersionLabel(expectedVersion)}-{streamState}-{idempotency}";
 		var T = $"{label}-target";
 
@@ -1454,7 +1454,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 	}
 
 	// Write 2 events to T, modify T, retry the same 2 events with the same expected version.
-	// The stream setup depends on the expected version (same as IdempotencyTestCases).
+	// The stream setup depends on the expected version (same as IdempotentBehaviorByKindCases).
 	// When more events are written we are consistent about accepting idempotent retries
 	// When tombstoned we are consistent about rejecting idempotent retries
 	// When soft deleted, we usually allow it but not for EV.StreamExists. This is longstanding but a case could be made to change it.
