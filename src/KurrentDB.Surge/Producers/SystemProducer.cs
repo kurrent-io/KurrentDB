@@ -148,7 +148,7 @@ public class SystemProducer : IProducer {
 
             static async ValueTask<ProduceResult> WriteEvents(ISystemClient client, ProduceRequest request, Event[] events, long expectedRevision, CancellationToken cancellationToken) {
                 try {
-                    var (position, streamRevision) = await client.Writing.WriteEvents(request.Stream, events, SystemAccounts.System, expectedRevision, cancellationToken);
+                    var (position, streamRevision) = await client.Writing.WriteEvents(request.Stream, events, requireLeader: false, SystemAccounts.System, expectedRevision, cancellationToken);
 
                     var recordPosition = RecordPosition.ForStream(
                         StreamId.From(request.Stream),

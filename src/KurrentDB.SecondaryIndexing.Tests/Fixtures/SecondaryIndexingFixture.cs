@@ -120,7 +120,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 	}
 
 	public Task<WriteEventsResult> AppendToStream(string stream, params Event[] events) =>
-		Publisher.WriteEvents(stream, events, SystemAccounts.System);
+		Publisher.WriteEvents(stream, events, requireLeader: false, SystemAccounts.System);
 
 
 	public Task<WriteEventsResult> DeleteStream(string stream) =>
