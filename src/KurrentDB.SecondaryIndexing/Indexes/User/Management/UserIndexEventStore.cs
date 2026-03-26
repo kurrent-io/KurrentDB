@@ -84,7 +84,7 @@ public class UserIndexEventStore : IEventStore {
 		}
 
 		// write all the events transactionally
-		var (position, streamRevisions) = await _client.Writing.WriteEvents(writes.Build(), SystemAccounts.System, cancellationToken);
+		var (position, streamRevisions) = await _client.Writing.WriteEvents(writes.Build(), requireLeader: false, SystemAccounts.System, cancellationToken);
 
 		var originalStreamIndex = 0;
 		return new AppendEventsResult(
