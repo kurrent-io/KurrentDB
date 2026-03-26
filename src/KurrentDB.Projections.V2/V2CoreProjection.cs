@@ -6,14 +6,12 @@ using System.Security.Claims;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Helpers;
-using KurrentDB.Core.Messages;
 using KurrentDB.Projections.Core.Messages;
-using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.V2.ReadStrategies;
-using Serilog;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Projections.Core.Services.Processing.V2;
@@ -222,7 +220,7 @@ public sealed class V2CoreProjection : ICoreProjectionControl {
 			};
 
 			_engineCts = new CancellationTokenSource();
-			_engine = new ProjectionEngineV2(config, readStrategy, _publisher, _runAs);
+			_engine = new ProjectionEngineV2(config, readStrategy, new SystemClient(_publisher), _runAs);
 			_engine.Start(checkpoint, _engineCts.Token);
 
 			// Publish Started and begin stats reporting

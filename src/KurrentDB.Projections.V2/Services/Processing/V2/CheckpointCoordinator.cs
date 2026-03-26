@@ -2,24 +2,21 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Common.Utils;
-using KurrentDB.Core.Bus;
+using KurrentDB.Core;
 using KurrentDB.Core.Data;
-using KurrentDB.Core.Messages;
-using KurrentDB.Core.Messaging;
 using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using Serilog;
 
 namespace KurrentDB.Projections.Core.Services.Processing.V2;
 
 // Chandy-Lamport style, collects a consistent snapshot across all partitions.
-public class CheckpointCoordinator(int partitionCount, string projectionName, IPublisher bus, ClaimsPrincipal user) {
+public class CheckpointCoordinator(int partitionCount, string projectionName, ISystemClient client, ClaimsPrincipal user) {
 	private static readonly ILogger Log = Serilog.Log.ForContext<CheckpointCoordinator>();
 
 	private readonly string _checkpointStreamId = $"$projections-{projectionName}-checkpoint";
@@ -61,28 +58,12 @@ public class CheckpointCoordinator(int partitionCount, string projectionName, IP
 			Log.Information("Writing checkpoint {Sequence} for {Projection} at {Position}",
 				markerSequence, projectionName, lastPosition);
 
-			var (streamIds, expectedVersions, events, streamIndexes) = BuildMultiStreamWrite(lastPosition);
-
-			var envelope = new TcsEnvelope<ClientMessage.WriteEventsCompleted>();
-			var corrId = Guid.NewGuid();
-
-			bus.Publish(new ClientMessage.WriteEvents(
-				internalCorrId: corrId,
-				correlationId: corrId,
-				envelope: envelope,
-				requireLeader: true,
-				eventStreamIds: streamIds.ToArray(),
-				expectedVersions: expectedVersions.ToArray(),
-				events: events.ToArray(),
-				eventStreamIndexes: streamIndexes.ToArray(),
-				user: user));
-
-			var result = await envelope.Task;
-			if (result.Result != OperationResult.Success) {
-				throw new Exception($"Checkpoint write failed for {projectionName}: {result.Result} — {result.Message}");
-			}
+			var writes = BuildStreamWrites(lastPosition);
+			await client.Writing.WriteEvents(writes, requireLeader: true, user);
 
 			Log.Debug("Checkpoint {Sequence} written for {Projection}", markerSequence, projectionName);
+		} catch (Exception ex) {
+			throw new Exception($"Checkpoint write failed for {projectionName}", ex);
 		} finally {
 			lock (_lock) {
 				Array.Clear(_collectedBuffers);
@@ -93,30 +74,28 @@ public class CheckpointCoordinator(int partitionCount, string projectionName, IP
 		}
 	}
 
-	private (List<string>, List<long>, List<Event>, List<int>) BuildMultiStreamWrite(TFPos checkpointPosition) {
-		var streamIds = new List<string>();
-		var expectedVersions = new List<long>();
-		var events = new List<Event>();
-		var streamIndexes = new List<int>();
-		var streamIndexMap = new Dictionary<string, int>();
+	private LowAllocReadOnlyMemory<StreamWrite> BuildStreamWrites(TFPos checkpointPosition) {
+		var writes = LowAllocReadOnlyMemory<StreamWrite>.Builder.Empty;
 
 		// 1. Checkpoint event
 		var checkpointData = Encoding.UTF8.GetBytes(
-			$"{{\"commitPosition\":{checkpointPosition.CommitPosition},\"preparePosition\":{checkpointPosition.PreparePosition}}}");
-		var cpIdx = GetOrAddStream(_checkpointStreamId, ExpectedVersion.Any);
-		events.Add(new Event(Guid.NewGuid(), "$ProjectionCheckpoint", true, checkpointData, isPropertyMetadata: false, null));
-		streamIndexes.Add(cpIdx);
+			$$"""{"commitPosition":{{checkpointPosition.CommitPosition}},"preparePosition":{{checkpointPosition.PreparePosition}}}""");
+		writes = writes.Add(new StreamWrite(
+			_checkpointStreamId,
+			ExpectedVersion.Any,
+			[new Event(Guid.NewGuid(), "$ProjectionCheckpoint", isJson: true, checkpointData, isPropertyMetadata: false, metadata: null)]));
 
 		// 2. Emitted events
 		foreach (var buffer in _collectedBuffers) {
 			if (buffer == null) continue;
 			foreach (var emitted in buffer.EmittedEvents) {
 				var e = emitted.Event;
-				var idx = GetOrAddStream(e.StreamId, ExpectedVersion.Any);
 				var data = e.Data != null ? Helper.UTF8NoBom.GetBytes(e.Data) : null;
 				var metadata = SerializeExtraMetadata(e);
-				events.Add(new Event(e.EventId, e.EventType, e.IsJson, data, isPropertyMetadata: false, metadata));
-				streamIndexes.Add(idx);
+				writes = writes.Add(new StreamWrite(
+					e.StreamId,
+					ExpectedVersion.Any,
+					[new Event(e.EventId, e.EventType, e.IsJson, data, isPropertyMetadata: false, metadata)]));
 			}
 		}
 
@@ -124,25 +103,15 @@ public class CheckpointCoordinator(int partitionCount, string projectionName, IP
 		foreach (var buffer in _collectedBuffers) {
 			if (buffer == null) continue;
 			foreach (var (_, (streamName, stateJson, expVer)) in buffer.DirtyStates) {
-				var idx = GetOrAddStream(streamName, expVer);
 				var stateData = Encoding.UTF8.GetBytes(stateJson);
-				events.Add(new Event(Guid.NewGuid(), "Result", true, stateData, isPropertyMetadata: false, null));
-				streamIndexes.Add(idx);
+				writes = writes.Add(new StreamWrite(
+					streamName,
+					expVer,
+					[new Event(Guid.NewGuid(), "Result", isJson: true, stateData, isPropertyMetadata: false, metadata: null)]));
 			}
 		}
 
-		return (streamIds, expectedVersions, events, streamIndexes);
-
-		int GetOrAddStream(string streamName, long expectedVersion) {
-			if (!streamIndexMap.TryGetValue(streamName, out var idx)) {
-				idx = streamIds.Count;
-				streamIds.Add(streamName);
-				expectedVersions.Add(expectedVersion);
-				streamIndexMap[streamName] = idx;
-			}
-
-			return idx;
-		}
+		return writes.Build();
 	}
 
 	private static byte[] SerializeExtraMetadata(EmittedEvent e) {

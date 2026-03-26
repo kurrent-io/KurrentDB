@@ -6,6 +6,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using Google.Protobuf;
+using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
@@ -167,7 +168,7 @@ fromCategory('order')
 		var engine = new ProjectionEngineV2(
 			config,
 			readStrategy,
-			capturingPublisher,
+			new SystemClient(capturingPublisher),
 			new ClaimsPrincipal(new ClaimsIdentity(new[] {
 				new Claim(ClaimTypes.Name, "admin"),
 				new Claim(ClaimTypes.Role, "$admins")

@@ -7,8 +7,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using KurrentDB.Core.Bus;
-using KurrentDB.Core.ClientPublisher;
+using KurrentDB.Core;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Time;
@@ -23,14 +22,14 @@ namespace KurrentDB.Projections.Core.Services.Processing.V2;
 public sealed class ProjectionEngineV2(
 	ProjectionEngineV2Config config,
 	IReadStrategy readStrategy,
-	IPublisher bus,
+	ISystemClient client,
 	ClaimsPrincipal user)
 	: IAsyncDisposable {
 	private static readonly ILogger Log = Serilog.Log.ForContext<ProjectionEngineV2>();
 
 	private readonly ProjectionEngineV2Config _config = config ?? throw new ArgumentNullException(nameof(config));
 	private readonly IReadStrategy _readStrategy = readStrategy ?? throw new ArgumentNullException(nameof(readStrategy));
-	private readonly IPublisher _bus = bus ?? throw new ArgumentNullException(nameof(bus));
+	private readonly ISystemClient _client = client ?? throw new ArgumentNullException(nameof(client));
 	private readonly ClaimsPrincipal _user = user ?? throw new ArgumentNullException(nameof(user));
 	private CancellationTokenSource _cts;
 	private Task _runTask;
@@ -73,7 +72,7 @@ public sealed class ProjectionEngineV2(
 
 		var dispatcher = new PartitionDispatcher(partitionCount, getPartitionKey);
 
-		var coordinator = new CheckpointCoordinator(partitionCount, _config.ProjectionName, _bus, _user);
+		var coordinator = new CheckpointCoordinator(partitionCount, _config.ProjectionName, _client, _user);
 
 		// Each partition gets its own state handler instance (Jint is not thread-safe).
 		var partitionHandlers = new IProjectionStateHandler[partitionCount];
@@ -216,7 +215,7 @@ public sealed class ProjectionEngineV2(
 	private async ValueTask<string?> LoadPersistedPartitionState(string partitionKey, CancellationToken ct) {
 		var resultStreamId = $"$projections-{_config.ProjectionName}-{partitionKey}-result";
 		try {
-			var lastEvent = await _bus.ReadStreamLastEvent(resultStreamId, ct);
+			var lastEvent = await _client.Reading.ReadStreamLastEvent(resultStreamId, ct);
 			if (lastEvent is null)
 				return null;
 

@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Security.Claims;
+using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
@@ -152,7 +153,7 @@ public class ProjectionEngineV2LifecycleTests {
 			CheckpointUnhandledBytesThreshold = long.MaxValue
 		};
 
-		var engine = new ProjectionEngineV2(config, new InfiniteReadStrategy(), publisher, user);
+		var engine = new ProjectionEngineV2(config, new InfiniteReadStrategy(), new SystemClient(publisher), user);
 
 		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
 		await engine.Start(new TFPos(0, 0), cts.Token);
@@ -180,7 +181,7 @@ public class ProjectionEngineV2LifecycleTests {
 			CheckpointUnhandledBytesThreshold = long.MaxValue
 		};
 
-		var engine = new ProjectionEngineV2(config, new EmptyReadStrategy(), publisher, user);
+		var engine = new ProjectionEngineV2(config, new EmptyReadStrategy(), new SystemClient(publisher), user);
 
 		await engine.Start(new TFPos(0, 0), CancellationToken.None);
 		await Task.Delay(500);
@@ -224,7 +225,7 @@ public class ProjectionEngineV2LifecycleTests {
 		};
 
 		var readStrategy = new FakeReadStrategy(events);
-		var engine = new ProjectionEngineV2(config, readStrategy, publisher, user);
+		var engine = new ProjectionEngineV2(config, readStrategy, new SystemClient(publisher), user);
 
 		await engine.Start(new TFPos(0, 0), CancellationToken.None);
 
