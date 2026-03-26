@@ -223,7 +223,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		var writer = fixture.MiniNode.Node.Db.Config.WriterCheckpoint.Read();
 		var spaceLeftInChunk = chunkSize - (int)writer % chunkSize;
 		if (spaceLeftInChunk > 10_000) {
-			await client.Writing.WriteEvents(streamA, [CreateEvent(spaceLeftInChunk * 2 / 3)]);
+			await client.Writing.WriteEvents(streamA, [CreateEvent(spaceLeftInChunk * 2 / 3)], SystemAccounts.System);
 		}
 
 		// A write that does not fit in chunk and so creates a new one

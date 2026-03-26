@@ -8,6 +8,7 @@ using KurrentDB.Core.ClientPublisher;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Transport.Enumerators;
+using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.Core.Tests;
 using KurrentDB.Surge.Testing;
 using Position = KurrentDB.Core.Services.Transport.Common.Position;
@@ -119,7 +120,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 	}
 
 	public Task<WriteEventsResult> AppendToStream(string stream, params Event[] events) =>
-		Publisher.WriteEvents(stream, events);
+		Publisher.WriteEvents(stream, events, SystemAccounts.System);
 
 
 	public Task<WriteEventsResult> DeleteStream(string stream) =>
