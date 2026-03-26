@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using EventStore.Plugins.Authentication;
+using KurrentDB.Core.Services.Storage.EpochManager;
 
 namespace KurrentDB.Core.Services.Transport.Http.Controllers;
 
@@ -10,6 +11,7 @@ public class InfoControllerBuilder {
 	private ClusterVNodeOptions _options;
 	private IDictionary<string, bool> _features;
 	private IAuthenticationProvider _authenticationProvider;
+	private IEpochManager _epochManager;
 
 	public InfoControllerBuilder WithOptions(ClusterVNodeOptions options) {
 		_options = options;
@@ -27,7 +29,12 @@ public class InfoControllerBuilder {
 		return this;
 	}
 
+	public InfoControllerBuilder WithEpochManager(IEpochManager epochManager) {
+		_epochManager = epochManager;
+		return this;
+	}
+
 	public InfoController Build() {
-		return new InfoController(_options, _features, _authenticationProvider);
+		return new InfoController(_options, _features, _authenticationProvider, _epochManager);
 	}
 }

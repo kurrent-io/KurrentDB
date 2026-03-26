@@ -49,7 +49,9 @@ public class EpochManager<TStreamId> : IEpochManager {
 
 	private LinkedListNode<EpochRecord> _firstCachedEpoch;
 	private LinkedListNode<EpochRecord> _lastCachedEpoch;
+	private volatile EpochRecord _firstEpoch;
 
+	public EpochRecord GetFirstEpoch() => _firstEpoch;
 	public EpochRecord GetLastEpoch() => _lastCachedEpoch?.Value;
 
 	public int LastEpochNumber => _lastCachedEpoch?.Value.EpochNumber ?? -1;
@@ -151,10 +153,19 @@ public class EpochManager<TStreamId> : IEpochManager {
 			while (epochPos >= 0 && cnt < maxEpochCount) {
 				var epoch = await ReadEpochAt(epochPos, token);
 				_epochs.AddFirst(epoch);
-				if (epoch.EpochPosition == 0) { break; }
+				if (epoch.EpochNumber == 0) {
+					_firstEpoch = epoch;
+					break;
+				}
 
 				epochPos = epoch.PrevEpochPosition;
 				cnt += 1;
+			}
+
+			// if the cache filled before reaching epoch 0, read it directly.
+			// epoch 0 is always at log position 0 (first record written to the log).
+			if (_firstEpoch is null && _epochs.Count > 0) {
+				_firstEpoch = await ReadEpochAt(0, token);
 			}
 
 			_lastCachedEpoch = _epochs.Last;
@@ -309,6 +320,9 @@ public class EpochManager<TStreamId> : IEpochManager {
 		var epoch = await WriteEpochRecordWithRetry(epochNumber, Guid.NewGuid(),
 			_lastCachedEpoch?.Value.EpochPosition ?? -1, _instanceId, token);
 
+		if (epochNumber == 0)
+			_firstEpoch = epoch;
+
 		await AddEpochToCache(epoch, token);
 	}
 
@@ -436,6 +450,9 @@ public class EpochManager<TStreamId> : IEpochManager {
 	}
 
 	public async ValueTask CacheEpoch(EpochRecord epoch, CancellationToken token) {
+		if (epoch.EpochNumber == 0)
+			_firstEpoch = epoch;
+
 		var added = await AddEpochToCache(epoch, token);
 
 		// Check each epoch as it is added to the cache for the first time from the chaser.

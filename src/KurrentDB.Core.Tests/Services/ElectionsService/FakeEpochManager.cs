@@ -25,6 +25,7 @@ internal class FakeEpochManager : IEpochManager {
 
 	public ValueTask Init(CancellationToken token) => ValueTask.CompletedTask;
 
+	public EpochRecord GetFirstEpoch() => _epochs.FirstOrDefault();
 	public EpochRecord GetLastEpoch() => _epochs.LastOrDefault();
 
 	public ValueTask<IReadOnlyList<EpochRecord>> GetLastEpochs(int maxCount, CancellationToken token) {

@@ -13,6 +13,7 @@ public interface IEpochManager {
 	int LastEpochNumber { get; }
 
 	ValueTask Init(CancellationToken token);
+	EpochRecord GetFirstEpoch();
 	EpochRecord GetLastEpoch();
 	ValueTask<IReadOnlyList<EpochRecord>> GetLastEpochs(int maxCount, CancellationToken token);
 	ValueTask<EpochRecord> GetEpochAfter(int epochNumber, bool throwIfNotFound, CancellationToken token);
