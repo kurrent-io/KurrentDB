@@ -220,7 +220,7 @@ public sealed class V2CoreProjection : ICoreProjectionControl {
 			};
 
 			_engineCts = new CancellationTokenSource();
-			_engine = new ProjectionEngineV2(config, readStrategy, new SystemClient(_publisher), _runAs);
+			_engine = new ProjectionEngineV2(config, readStrategy, new SystemClient(_mainQueue), _runAs);
 			_engine.Start(checkpoint, _engineCts.Token);
 
 			// Publish Started and begin stats reporting
