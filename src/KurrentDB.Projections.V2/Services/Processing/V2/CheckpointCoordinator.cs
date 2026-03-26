@@ -24,13 +24,13 @@ public class CheckpointCoordinator(int partitionCount, string projectionName, IP
 
 	private readonly string _checkpointStreamId = $"$projections-{projectionName}-checkpoint";
 
-	private readonly OutputBuffer[] _collectedBuffers = new OutputBuffer[partitionCount];
+	private readonly IReadOnlyOutputBuffer[] _collectedBuffers = new IReadOnlyOutputBuffer[partitionCount];
 	private ulong _currentMarkerSequence;
 	private int _collectedCount;
 	private readonly SemaphoreSlim _checkpointSemaphore = new(1, 1);
 	private readonly Lock _lock = new();
 
-	public async Task ReportPartitionCheckpoint(int partitionIndex, ulong markerSequence, OutputBuffer buffer) {
+	public async Task ReportPartitionCheckpoint(int partitionIndex, ulong markerSequence, IReadOnlyOutputBuffer buffer) {
 		bool allCollected;
 		lock (_lock) {
 			if (_currentMarkerSequence != markerSequence) {
