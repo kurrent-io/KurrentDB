@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -74,15 +75,20 @@ public interface IReadOperations {
 public record struct StreamWrite(string Stream, long ExpectedRevision, LowAllocReadOnlyMemory<Event> Events);
 
 public interface IWriteOperations {
-	Task<WriteEventsResult> WriteEvents(string stream, Event[] events, long expectedRevision = -2, CancellationToken cancellationToken = default);
+	Task<WriteEventsResult> WriteEvents(string stream, Event[] events,
+		ClaimsPrincipal principal,
+		long expectedRevision = -2,
+		CancellationToken cancellationToken = default);
 	Task<WriteEventsMultiResult> WriteEvents(
 		LowAllocReadOnlyMemory<string> streams,
 		LowAllocReadOnlyMemory<long> expectedRevisions,
 		LowAllocReadOnlyMemory<Event> events,
 		LowAllocReadOnlyMemory<int> eventStreamIndexes,
+		ClaimsPrincipal principal,
 		CancellationToken cancellationToken = default);
 	Task<WriteEventsMultiResult> WriteEvents(
 		LowAllocReadOnlyMemory<StreamWrite> writes,
+		ClaimsPrincipal principal,
 		CancellationToken cancellationToken = default);
 }
 
@@ -155,19 +161,24 @@ public class SystemClient : ISystemClient {
 	#region . Write .
 
 	public record WriteOperations(IPublisher Publisher, ILogger Logger) : IWriteOperations {
-		public Task<WriteEventsResult> WriteEvents(string stream, Event[] events, long expectedRevision = -2, CancellationToken cancellationToken = default) =>
-			Publisher.WriteEvents(stream, events, expectedRevision, cancellationToken);
+		public Task<WriteEventsResult> WriteEvents(string stream, Event[] events,
+			ClaimsPrincipal principal,
+			long expectedRevision = -2,
+			CancellationToken cancellationToken = default) =>
+			Publisher.WriteEvents(stream, events, principal, expectedRevision, cancellationToken);
 
 		public Task<WriteEventsMultiResult> WriteEvents(
 			LowAllocReadOnlyMemory<string> streams,
 			LowAllocReadOnlyMemory<long> expectedRevisions,
 			LowAllocReadOnlyMemory<Event> events,
 			LowAllocReadOnlyMemory<int> eventStreamIndexes,
+			ClaimsPrincipal principal,
 			CancellationToken cancellationToken = default) =>
-			Publisher.WriteEvents(streams, expectedRevisions, events, eventStreamIndexes, cancellationToken);
+			Publisher.WriteEvents(streams, expectedRevisions, events, eventStreamIndexes, principal, cancellationToken);
 
 		public Task<WriteEventsMultiResult> WriteEvents(
 			LowAllocReadOnlyMemory<StreamWrite> writes,
+			ClaimsPrincipal principal,
 			CancellationToken cancellationToken = default) {
 
 			var streamIndexes = new Dictionary<string, int>();
@@ -199,6 +210,7 @@ public class SystemClient : ISystemClient {
 				expectedRevisions: expectedRevisions.Build(),
 				events: events.Build(),
 				eventStreamIndexes: eventStreamIndexes.Build(),
+				principal,
 				cancellationToken);
 		}
 	}
