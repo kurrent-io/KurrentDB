@@ -77,6 +77,9 @@ public sealed class ProjectionEngineV2(
 		// Each partition gets its own state handler instance (Jint is not thread-safe).
 		var partitionHandlers = new IProjectionStateHandler[partitionCount];
 		var partitionTasks = new Task[partitionCount];
+		// Let the partitions drain & checkpoint rather than cancelling them.
+		// We stop them by completing their channels via dispatcher.Complete().
+		var partitionCt = CancellationToken.None;
 		for (int i = 0; i < partitionCount; i++) {
 			var partitionIndex = i;
 			partitionHandlers[i] = _config.StateHandlerFactory();
@@ -87,12 +90,9 @@ public sealed class ProjectionEngineV2(
 				_config.ProjectionName,
 				_config.SourceDefinition.IsBiState,
 				_config.EmitEnabled,
-				(sequence, buffer) => coordinator.ReportPartitionCheckpoint(partitionIndex, sequence, buffer),
+				(sequence, buffer) => coordinator.ReportPartitionCheckpoint(partitionIndex, sequence, buffer, partitionCt),
 				loadPersistedState: partitionKey => LoadPersistedPartitionState(partitionKey, ct),
 				sharedPartitionStates: _partitionStates);
-			// Let the partitions drain & checkpoint rather than cancelling them.
-			// We stop them by completing their channels via dispatcher.Complete().
-			var partitionCt = CancellationToken.None;
 			partitionTasks[i] = Task.Run(() => processor.Run(partitionCt), partitionCt);
 		}
 

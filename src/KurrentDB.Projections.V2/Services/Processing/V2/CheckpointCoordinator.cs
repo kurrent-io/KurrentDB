@@ -27,7 +27,7 @@ public class CheckpointCoordinator(int partitionCount, string projectionName, IS
 	private readonly SemaphoreSlim _checkpointSemaphore = new(1, 1);
 	private readonly Lock _lock = new();
 
-	public async Task ReportPartitionCheckpoint(int partitionIndex, ulong markerSequence, IReadOnlyOutputBuffer buffer) {
+	public async Task ReportPartitionCheckpoint(int partitionIndex, ulong markerSequence, IReadOnlyOutputBuffer buffer, CancellationToken ct) {
 		bool allCollected;
 		lock (_lock) {
 			if (_currentMarkerSequence != markerSequence) {
@@ -42,12 +42,12 @@ public class CheckpointCoordinator(int partitionCount, string projectionName, IS
 		}
 
 		if (allCollected) {
-			await WriteCheckpoint(markerSequence);
+			await WriteCheckpoint(markerSequence, ct);
 		}
 	}
 
-	private async Task WriteCheckpoint(ulong markerSequence) {
-		await _checkpointSemaphore.WaitAsync();
+	private async Task WriteCheckpoint(ulong markerSequence, CancellationToken ct) {
+		await _checkpointSemaphore.WaitAsync(ct);
 		try {
 			var lastPosition = TFPos.Invalid;
 			foreach (var buf in _collectedBuffers) {
@@ -59,7 +59,7 @@ public class CheckpointCoordinator(int partitionCount, string projectionName, IS
 				markerSequence, projectionName, lastPosition);
 
 			var writes = BuildStreamWrites(lastPosition);
-			await client.Writing.WriteEvents(writes, requireLeader: true, user);
+			await client.Writing.WriteEvents(writes, requireLeader: true, user, ct);
 
 			Log.Debug("Checkpoint {Sequence} written for {Projection}", markerSequence, projectionName);
 		} catch (Exception ex) {
