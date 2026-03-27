@@ -66,7 +66,7 @@ public class CheckpointCoordinator(int partitionCount, string projectionName, Pa
 					lastPosition = buf.LastLogPosition;
 			}
 
-			Log.Information("Writing checkpoint for {Projection} at {Position}",
+			Log.Debug("Writing checkpoint for {Projection} at {Position}",
 				projectionName, lastPosition);
 
 			var writes = BuildStreamWrites(lastPosition);

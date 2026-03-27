@@ -117,6 +117,7 @@ public sealed class ProjectionEngineV2(
 			foreach (var handler in partitionHandlers) {
 				handler?.Dispose();
 			}
+			Log.Information("ProjectionEngineV2 {Name} stopped", _config.ProjectionName);
 		}
 	}
 

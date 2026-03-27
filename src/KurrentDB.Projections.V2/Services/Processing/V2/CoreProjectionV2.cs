@@ -12,7 +12,7 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Helpers;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.V2.ReadStrategies;
-using ILogger = Serilog.ILogger;
+using Serilog;
 
 namespace KurrentDB.Projections.Core.Services.Processing.V2;
 

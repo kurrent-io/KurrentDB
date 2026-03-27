@@ -114,7 +114,7 @@ public class PartitionProcessor(
 		var projEvent = pe.Event!;
 		var partitionKey = pe.PartitionKey!;
 
-		Log.Debug("Processing event stream={Stream} type={EventType} partition={Partition}",
+		Log.Verbose("Processing event stream={Stream} type={EventType} partition={Partition}",
 			projEvent.EventStreamId, projEvent.EventType, partitionKey);
 
 		var isNewPartition = await LoadPartitionState(partitionKey);
