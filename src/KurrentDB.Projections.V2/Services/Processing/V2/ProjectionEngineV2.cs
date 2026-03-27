@@ -63,9 +63,9 @@ public sealed class ProjectionEngineV2(
 		}
 
 		// Partition key is computed on the read loop thread using a dedicated handler instance.
-		// This is single-threaded, so Jint thread safety is not a concern.
+		// Dispatcher is single-threaded, so Jint thread safety is not a concern.
 		using var partitionKeyHandler = _config.SourceDefinition.ByCustomPartitions
-			? _config.StateHandlerFactory()
+			? _config.StateHandlerFactory.Invoke()
 			: null;
 
 		var getPartitionKey = BuildPartitionKeyFunction(partitionKeyHandler);
@@ -81,7 +81,7 @@ public sealed class ProjectionEngineV2(
 		// We stop them by completing their channels via dispatcher.Complete().
 		var partitionCt = CancellationToken.None;
 		for (int i = 0; i < partitionCount; i++) {
-			partitionHandlers[i] = _config.StateHandlerFactory();
+			partitionHandlers[i] = _config.StateHandlerFactory.Invoke();
 			var processor = new PartitionProcessor(
 				i,
 				dispatcher.GetPartitionReader(i),
@@ -186,12 +186,12 @@ public sealed class ProjectionEngineV2(
 		}
 	}
 
+#nullable enable
 	/// <summary>
 	/// Builds the partition key function for the dispatcher.
 	/// For ByCustomPartitions, uses a dedicated handler instance (called single-threaded
 	/// on the read loop). For ByStreams, uses stream ID. Otherwise returns empty string.
 	/// </summary>
-#nullable enable
 	private Func<ProjectionResolvedEvent, string?> BuildPartitionKeyFunction(IProjectionStateHandler? partitionKeyHandler) {
 		if (_config.SourceDefinition.ByCustomPartitions) {
 			return projEvent => {
@@ -244,19 +244,19 @@ public sealed class ProjectionEngineV2(
 			eventId: e.EventId,
 			eventType: e.EventType,
 			isJson: e.IsJson,
-			data: e.Data.Length > 0 ? System.Text.Encoding.UTF8.GetString(e.Data.Span) : null,
-			metadata: e.Metadata.Length > 0 ? System.Text.Encoding.UTF8.GetString(e.Metadata.Span) : null);
+			data: e.Data.Length > 0 ? Encoding.UTF8.GetString(e.Data.Span) : null,
+			metadata: e.Metadata.Length > 0 ? Encoding.UTF8.GetString(e.Metadata.Span) : null);
 	}
 
 
 	public async ValueTask DisposeAsync() {
-		if (_cts is not null) {
-			await _cts.CancelAsync();
+		if (_cts is { } cts) {
+			await cts.CancelAsync();
 			if (_runTask is not null) {
 				try { await _runTask; } catch (OperationCanceledException) { }
 			}
 
-			_cts.Dispose();
+			cts.Dispose();
 		}
 	}
 }

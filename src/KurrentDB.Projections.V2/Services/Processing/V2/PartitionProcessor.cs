@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using KurrentDB.Core.Data;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using Serilog;
 
@@ -48,7 +49,7 @@ public class PartitionProcessor(
 	}
 
 	/// <summary>
-	/// Loads partition state from cache, persisted result stream, or initializes fresh.
+	/// Loads partition state into the state handler from cache, persisted result stream, or initializes fresh.
 	/// Returns true if the partition is new (not previously seen in this run or persisted).
 	/// </summary>
 	private async ValueTask<bool> LoadPartitionState(string partitionKey) {
@@ -75,6 +76,7 @@ public class PartitionProcessor(
 		return true;
 	}
 
+	// Loads the shared state into the state handler
 	private void LoadSharedState() {
 		if (!isBiState) return;
 
@@ -102,7 +104,7 @@ public class PartitionProcessor(
 			_stateCache[partitionKey] = newState;
 			if (newState != null) {
 				var stateStreamName = $"$projections-{projectionName}-{partitionKey}-result";
-				_activeBuffer.SetPartitionState(partitionKey, stateStreamName, newState, -2); // ExpectedVersion.Any
+				_activeBuffer.SetPartitionState(partitionKey, stateStreamName, newState, ExpectedVersion.Any);
 				sharedPartitionStates?[partitionKey] = newState;
 			}
 		}
@@ -139,21 +141,22 @@ public class PartitionProcessor(
 
 		if (processed) {
 			_stateCache[partitionKey] = newState;
-			if (newState != null) {
+			if (newState is not null) {
 				var stateStreamName = $"$projections-{projectionName}-{partitionKey}-result";
-				_activeBuffer.SetPartitionState(partitionKey, stateStreamName, newState, -2); // ExpectedVersion.Any
+				_activeBuffer.SetPartitionState(partitionKey, stateStreamName, newState, ExpectedVersion.Any);
 				sharedPartitionStates?[partitionKey] = newState;
 			}
+
+			if (isBiState && newSharedState is not null) {
+				_sharedState = newSharedState;
+				var sharedStreamName = $"$projections-{projectionName}--result";
+				_activeBuffer.SetPartitionState("", sharedStreamName, newSharedState, ExpectedVersion.Any);
+			}
+
+			if (emitEnabled && emittedEvents is not null)
+				_activeBuffer.AddEmittedEvents(emittedEvents);
 		}
 
-		if (isBiState && newSharedState != null) {
-			_sharedState = newSharedState;
-			var sharedStreamName = $"$projections-{projectionName}--result";
-			_activeBuffer.SetPartitionState("", sharedStreamName, newSharedState, -2);
-		}
-
-		if (emitEnabled)
-			_activeBuffer.AddEmittedEvents(emittedEvents);
 		_activeBuffer.LastLogPosition = pe.LogPosition;
 	}
 
