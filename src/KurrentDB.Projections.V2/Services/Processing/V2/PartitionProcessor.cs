@@ -23,8 +23,8 @@ public class PartitionProcessor(
 	bool isBiState,
 	bool emitEnabled,
 	Action<int, IReadOnlyOutputBuffer> onCheckpointMarker,
-	Func<string, ValueTask<string?>>? loadPersistedState = null,
-	ConcurrentDictionary<string, string>? sharedPartitionStates = null) {
+	Func<string, ValueTask<string?>> loadPersistedState,
+	ConcurrentDictionary<string, string> sharedPartitionStates) {
 
 	private static readonly ILogger Log = Serilog.Log.ForContext<PartitionProcessor>();
 
@@ -61,15 +61,13 @@ public class PartitionProcessor(
 		}
 
 		// Try loading persisted state from the result stream (recovery after restart).
-		if (loadPersistedState is not null) {
-			var persistedState = await loadPersistedState(partitionKey);
-			if (persistedState is not null) {
-				Log.Debug("Loaded persisted state for partition {Partition} in projection {Name}",
-					partitionKey, projectionName);
-				stateHandler.Load(persistedState);
-				_stateCache[partitionKey] = persistedState;
-				return false;
-			}
+		var persistedState = await loadPersistedState(partitionKey);
+		if (persistedState is not null) {
+			Log.Debug("Loaded persisted state for partition {Partition} in projection {Name}",
+				partitionKey, projectionName);
+			stateHandler.Load(persistedState);
+			_stateCache[partitionKey] = persistedState;
+			return false;
 		}
 
 		stateHandler.Initialize();
@@ -105,7 +103,7 @@ public class PartitionProcessor(
 			if (newState != null) {
 				var stateStreamName = $"$projections-{projectionName}-{partitionKey}-result";
 				_activeBuffer.SetPartitionState(partitionKey, stateStreamName, newState, ExpectedVersion.Any);
-				sharedPartitionStates?[partitionKey] = newState;
+				sharedPartitionStates[partitionKey] = newState;
 			}
 		}
 
@@ -144,7 +142,7 @@ public class PartitionProcessor(
 			if (newState is not null) {
 				var stateStreamName = $"$projections-{projectionName}-{partitionKey}-result";
 				_activeBuffer.SetPartitionState(partitionKey, stateStreamName, newState, ExpectedVersion.Any);
-				sharedPartitionStates?[partitionKey] = newState;
+				sharedPartitionStates[partitionKey] = newState;
 			}
 
 			if (isBiState && newSharedState is not null) {
