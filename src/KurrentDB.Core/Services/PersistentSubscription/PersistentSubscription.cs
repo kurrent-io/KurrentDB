@@ -236,25 +236,24 @@ public class PersistentSubscription {
 				return;
 
 			foreach (StreamBuffer.OutstandingMessagePointer messagePointer in streamBuffer.Scan()) {
-				//optimistically assume that the message will be pushed
-				//if it is, then we will increment the next sequence number if a new one was assigned
-				//if it is not, then we will not increment the next sequence number
 				(OutstandingMessage message, bool newSequenceNumberAssigned) =
 					OutstandingMessage.ForPushedEvent(messagePointer.Message, _nextSequenceNumber, _lastKnownMessage);
+
+				if (newSequenceNumberAssigned) {
+					_lastKnownSequenceNumber = _nextSequenceNumber++;
+					_lastKnownMessage = message.EventPosition;
+				}
+
 				ConsumerPushResult result =
 					_pushClients.PushMessageToClient(message);
 				if (result == ConsumerPushResult.Sent) {
 					messagePointer.MarkSent();
-
-					if (newSequenceNumberAssigned) {
-						//the message was pushed and a new sequence number was assigned
-						//so we increment the next sequence number
-						_nextSequenceNumber++;
-					}
-
 					MarkBeginProcessing(message);
 				} else if (result == ConsumerPushResult.Skipped) {
-					// The consumer strategy skipped the message so leave it in the buffer and continue.
+					// The consumer strategy skipped the message - add it back to the stream buffer as a retry.
+					// we don't increment the retry count as it's an internal retry.
+					messagePointer.MarkSent();
+					streamBuffer.AddRetry(message);
 				} else if (result == ConsumerPushResult.NoMoreCapacity) {
 					return;
 				}
@@ -303,10 +302,13 @@ public class PersistentSubscription {
 				messagePointer.MarkSent();
 				(OutstandingMessage message, bool newSequenceNumberAssigned) =
 					OutstandingMessage.ForPushedEvent(messagePointer.Message, _nextSequenceNumber, _lastKnownMessage);
+
 				if (newSequenceNumberAssigned) {
-					_nextSequenceNumber++;
+					_lastKnownSequenceNumber = _nextSequenceNumber++;
+					_lastKnownMessage = message.EventPosition;
 				}
-				MarkBeginProcessing(message); //sequence number will be incremented in this call if a new one has been assigned
+
+				MarkBeginProcessing(message);
 				yield return (messagePointer.Message.ResolvedEvent, messagePointer.Message.RetryCount);
 			}
 		}
@@ -314,10 +316,6 @@ public class PersistentSubscription {
 
 	private void MarkBeginProcessing(OutstandingMessage message) {
 		_statistics.IncrementProcessed();
-		if (message.EventSequenceNumber > _lastKnownSequenceNumber) {
-			_lastKnownSequenceNumber = message.EventSequenceNumber.Value;
-			_lastKnownMessage = _settings.EventSource.GetStreamPositionFor(message.ResolvedEvent);
-		}
 
 		StartMessage(message,
 			_settings.MessageTimeout == TimeSpan.MaxValue
