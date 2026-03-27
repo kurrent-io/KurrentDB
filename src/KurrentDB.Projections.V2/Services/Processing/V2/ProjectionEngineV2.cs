@@ -131,8 +131,8 @@ public sealed class ProjectionEngineV2(
 				switch (response) {
 					case ReadResponse.EventReceived eventReceived:
 						var coreEvent = eventReceived.Event;
-						var logPosition = coreEvent.OriginalPosition ??
-						                  new TFPos(coreEvent.Event.LogPosition, coreEvent.Event.TransactionPosition);
+						var logPosition = coreEvent.OriginalPosition
+							?? throw new InvalidOperationException("OriginalPosition was not present. Likely a stream read with explicit transaction");
 
 						// System events (event types starting with '$') are normally skipped,
 						// but tombstone markers need to be routed so projections can handle $deleted.
@@ -240,7 +240,8 @@ public sealed class ProjectionEngineV2(
 			eventStreamId: e.EventStreamId,
 			eventSequenceNumber: e.EventNumber,
 			resolvedLinkTo: link is not null,
-			position: coreEvent.OriginalPosition ?? new TFPos(e.LogPosition, e.TransactionPosition),
+			position: coreEvent.OriginalPosition
+				?? throw new InvalidOperationException("OriginalPosition was not present. Likely a stream read with explicit transaction"),
 			eventId: e.EventId,
 			eventType: e.EventType,
 			isJson: e.IsJson,
