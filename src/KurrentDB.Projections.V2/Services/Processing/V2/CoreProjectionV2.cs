@@ -281,9 +281,6 @@ public sealed class CoreProjectionV2 : ICoreProjectionControl {
 			cts.Cancel();
 
 			// Dispose asynchronously to avoid blocking the projection worker thread.
-			// Synchronous disposal would deadlock: the engine's final checkpoint write
-			// needs the coreInputQueue to process the write response, but the Stop
-			// handler is running on that same queue thread.
 			_ = Task.Run(async () => {
 				if (engine is not null) {
 					try { await engine.DisposeAsync(); }
