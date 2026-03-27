@@ -21,7 +21,7 @@ public class PartitionProcessor(
 	string projectionName,
 	bool isBiState,
 	bool emitEnabled,
-	Func<ulong, OutputBuffer, Task> onCheckpointMarker,
+	Action<int, IReadOnlyOutputBuffer> onCheckpointMarker,
 	Func<string, ValueTask<string?>>? loadPersistedState = null,
 	ConcurrentDictionary<string, string>? sharedPartitionStates = null) {
 
@@ -39,7 +39,7 @@ public class PartitionProcessor(
 
 		await foreach (var pe in reader.ReadAllAsync(ct)) {
 			if (pe.IsCheckpointMarker)
-				await HandleCheckpointMarker(pe.CheckpointMarkerSequence!.Value);
+				HandleCheckpointMarker();
 			else if (pe.IsPartitionDeleted)
 				await ProcessPartitionDeleted(pe);
 			else
@@ -157,14 +157,14 @@ public class PartitionProcessor(
 		_activeBuffer.LastLogPosition = pe.LogPosition;
 	}
 
-	private async Task HandleCheckpointMarker(ulong sequence) {
-		Log.Debug("Partition {Index} received checkpoint marker {Sequence}", partitionIndex, sequence);
+	private void HandleCheckpointMarker() {
+		Log.Debug("Partition {Index} received checkpoint marker", partitionIndex);
 
 		var bufferToFlush = _activeBuffer;
 		_activeBuffer = _frozenBuffer;
 		_activeBuffer.Clear();
 		_frozenBuffer = bufferToFlush;
 
-		await onCheckpointMarker(sequence, bufferToFlush);
+		onCheckpointMarker(partitionIndex, bufferToFlush);
 	}
 }

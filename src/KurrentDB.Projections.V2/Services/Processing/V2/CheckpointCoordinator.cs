@@ -7,6 +7,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using DotNext.Threading;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core;
 using KurrentDB.Core.Data;
@@ -16,61 +17,66 @@ using Serilog;
 namespace KurrentDB.Projections.Core.Services.Processing.V2;
 
 // Chandy-Lamport style, collects a consistent snapshot across all partitions.
-public class CheckpointCoordinator(int partitionCount, string projectionName, ISystemClient client, ClaimsPrincipal user) {
+// At most one checkpoint can be in flight at a time because the partitions alternate between a pair of buffers.
+public class CheckpointCoordinator(int partitionCount, string projectionName, PartitionDispatcher dispatcher, ISystemClient client, ClaimsPrincipal user) {
 	private static readonly ILogger Log = Serilog.Log.ForContext<CheckpointCoordinator>();
 
 	private readonly string _checkpointStreamId = $"$projections-{projectionName}-checkpoint";
 
+	// When the _checkpointLock is taken there is a checkpoint in progress.
+	private readonly AsyncExclusiveLock _checkpointLock = new();
 	private readonly IReadOnlyOutputBuffer[] _collectedBuffers = new IReadOnlyOutputBuffer[partitionCount];
-	private ulong _currentMarkerSequence;
 	private int _collectedCount;
-	private readonly SemaphoreSlim _checkpointSemaphore = new(1, 1);
-	private readonly Lock _lock = new();
+	private Exception _checkpointError;
 
-	public async Task ReportPartitionCheckpoint(int partitionIndex, ulong markerSequence, IReadOnlyOutputBuffer buffer, CancellationToken ct) {
-		bool allCollected;
-		lock (_lock) {
-			if (_currentMarkerSequence != markerSequence) {
-				_currentMarkerSequence = markerSequence;
-				_collectedCount = 0;
-				Array.Clear(_collectedBuffers);
-			}
+	// Starts a checkpoint. If one is in progress, waits for it to complete first.
+	// Throws if a previous checkpoint failed.
+	public async ValueTask InjectCheckpointMarker(TFPos logPosition, CancellationToken ct) {
+		await _checkpointLock.AcquireAsync(ct);
 
-			_collectedBuffers[partitionIndex] = buffer;
-			_collectedCount++;
-			allCollected = _collectedCount == partitionCount;
-		}
+		try {
+			if (_checkpointError is { } error)
+				throw error;
 
-		if (allCollected) {
-			await WriteCheckpoint(markerSequence, ct);
+			Log.Debug("Injecting checkpoint marker at {LogPosition}", logPosition);
+			_collectedCount = 0;
+			Array.Clear(_collectedBuffers);
+			await dispatcher.InjectCheckpointMarker(logPosition, ct);
+		} catch {
+			_checkpointLock.Release();
+			throw;
 		}
 	}
 
-	private async Task WriteCheckpoint(ulong markerSequence, CancellationToken ct) {
-		await _checkpointSemaphore.WaitAsync(ct);
+	// Called concurrently by partition processors in response to checkpoint markers.
+	// The last partition processor to reply triggers the writing of the checkpoint but is still not blocked by it.
+	public void ReportPartitionCheckpoint(int partitionIndex, IReadOnlyOutputBuffer buffer) {
+		_collectedBuffers[partitionIndex] = buffer;
+
+		if (Interlocked.Increment(ref _collectedCount) == partitionCount) {
+			_ = WriteCheckpoint();
+		}
+	}
+
+	private async Task WriteCheckpoint() {
 		try {
 			var lastPosition = TFPos.Invalid;
 			foreach (var buf in _collectedBuffers) {
-				if (buf != null && buf.LastLogPosition > lastPosition)
+				if (buf.LastLogPosition > lastPosition)
 					lastPosition = buf.LastLogPosition;
 			}
 
-			Log.Information("Writing checkpoint {Sequence} for {Projection} at {Position}",
-				markerSequence, projectionName, lastPosition);
+			Log.Information("Writing checkpoint for {Projection} at {Position}",
+				projectionName, lastPosition);
 
 			var writes = BuildStreamWrites(lastPosition);
-			await client.Writing.WriteEvents(writes, requireLeader: true, user, ct);
+			await client.Writing.WriteEvents(writes, requireLeader: true, user);
 
-			Log.Debug("Checkpoint {Sequence} written for {Projection}", markerSequence, projectionName);
+			Log.Debug("Checkpoint written for {Projection}", projectionName);
 		} catch (Exception ex) {
-			throw new Exception($"Checkpoint write failed for {projectionName}", ex);
+			_checkpointError = new Exception($"Checkpoint write failed for {projectionName}", ex);
 		} finally {
-			lock (_lock) {
-				Array.Clear(_collectedBuffers);
-				_collectedCount = 0;
-			}
-
-			_checkpointSemaphore.Release();
+			_checkpointLock.Release();
 		}
 	}
 
@@ -87,7 +93,6 @@ public class CheckpointCoordinator(int partitionCount, string projectionName, IS
 
 		// 2. Emitted events
 		foreach (var buffer in _collectedBuffers) {
-			if (buffer == null) continue;
 			foreach (var emitted in buffer.EmittedEvents) {
 				var e = emitted.Event;
 				var data = e.Data != null ? Helper.UTF8NoBom.GetBytes(e.Data) : null;
@@ -101,7 +106,6 @@ public class CheckpointCoordinator(int partitionCount, string projectionName, IS
 
 		// 3. State updates
 		foreach (var buffer in _collectedBuffers) {
-			if (buffer == null) continue;
 			foreach (var (_, (streamName, stateJson, expVer)) in buffer.DirtyStates) {
 				var stateData = Encoding.UTF8.GetBytes(stateJson);
 				writes = writes.Add(new StreamWrite(

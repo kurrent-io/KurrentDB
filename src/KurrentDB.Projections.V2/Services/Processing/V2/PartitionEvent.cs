@@ -15,10 +15,8 @@ public readonly record struct PartitionEvent {
 	public ResolvedEvent? Event { get; private init; }
 	public string? PartitionKey { get; private init; }
 	public TFPos LogPosition { get; private init; }
-	public ulong? CheckpointMarkerSequence { get; private init; }
 	public bool IsPartitionDeleted { get; private init; }
-
-	public bool IsCheckpointMarker => CheckpointMarkerSequence.HasValue;
+	public bool IsCheckpointMarker { get; private init; }
 
 	public static PartitionEvent ForEvent(ResolvedEvent @event, string partitionKey, TFPos logPosition)
 		=> new() { Event = @event, PartitionKey = partitionKey, LogPosition = logPosition };
@@ -26,6 +24,6 @@ public readonly record struct PartitionEvent {
 	public static PartitionEvent ForPartitionDeleted(string partitionKey, TFPos logPosition)
 		=> new() { PartitionKey = partitionKey, LogPosition = logPosition, IsPartitionDeleted = true };
 
-	public static PartitionEvent ForCheckpointMarker(ulong sequence, TFPos logPosition)
-		=> new() { CheckpointMarkerSequence = sequence, LogPosition = logPosition };
+	public static PartitionEvent ForCheckpointMarker(TFPos logPosition)
+		=> new() { IsCheckpointMarker = true, LogPosition = logPosition };
 }

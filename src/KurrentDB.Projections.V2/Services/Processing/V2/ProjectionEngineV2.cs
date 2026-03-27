@@ -72,7 +72,7 @@ public sealed class ProjectionEngineV2(
 
 		var dispatcher = new PartitionDispatcher(partitionCount, getPartitionKey);
 
-		var coordinator = new CheckpointCoordinator(partitionCount, _config.ProjectionName, _client, _user);
+		var coordinator = new CheckpointCoordinator(partitionCount, _config.ProjectionName, dispatcher, _client, _user);
 
 		// Each partition gets its own state handler instance (Jint is not thread-safe).
 		var partitionHandlers = new IProjectionStateHandler[partitionCount];
@@ -81,23 +81,22 @@ public sealed class ProjectionEngineV2(
 		// We stop them by completing their channels via dispatcher.Complete().
 		var partitionCt = CancellationToken.None;
 		for (int i = 0; i < partitionCount; i++) {
-			var partitionIndex = i;
 			partitionHandlers[i] = _config.StateHandlerFactory();
 			var processor = new PartitionProcessor(
-				partitionIndex,
-				dispatcher.GetPartitionReader(partitionIndex),
+				i,
+				dispatcher.GetPartitionReader(i),
 				partitionHandlers[i],
 				_config.ProjectionName,
 				_config.SourceDefinition.IsBiState,
 				_config.EmitEnabled,
-				(sequence, buffer) => coordinator.ReportPartitionCheckpoint(partitionIndex, sequence, buffer, partitionCt),
+				coordinator.ReportPartitionCheckpoint,
 				loadPersistedState: partitionKey => LoadPersistedPartitionState(partitionKey, ct),
 				sharedPartitionStates: _partitionStates);
 			partitionTasks[i] = Task.Run(() => processor.Run(partitionCt), partitionCt);
 		}
 
 		try {
-			await RunReadLoop(checkpoint, dispatcher, ct);
+			await RunReadLoop(checkpoint, dispatcher, coordinator, ct);
 			dispatcher.Complete();
 		} catch (OperationCanceledException) when (ct.IsCancellationRequested) {
 			dispatcher.Complete();
@@ -121,7 +120,7 @@ public sealed class ProjectionEngineV2(
 		}
 	}
 
-	private async Task RunReadLoop(TFPos checkpoint, PartitionDispatcher dispatcher, CancellationToken ct) {
+	private async Task RunReadLoop(TFPos checkpoint, PartitionDispatcher dispatcher, CheckpointCoordinator coordinator, CancellationToken ct) {
 		long eventsProcessed = 0;
 		long bytesProcessed = 0;
 		var lastCheckpointTime = Instant.Now;
@@ -161,7 +160,7 @@ public sealed class ProjectionEngineV2(
 						if (elapsedMs >= _config.CheckpointAfterMs &&
 						    (eventsProcessed >= _config.CheckpointHandledThreshold ||
 						     bytesProcessed >= _config.CheckpointUnhandledBytesThreshold)) {
-							await dispatcher.InjectCheckpointMarker(lastLogPosition, ct);
+							await coordinator.InjectCheckpointMarker(lastLogPosition, ct);
 							eventsProcessed = 0;
 							bytesProcessed = 0;
 							lastCheckpointTime = Instant.Now;
@@ -183,7 +182,7 @@ public sealed class ProjectionEngineV2(
 
 		// Inject a final checkpoint marker if there are unprocessed events
 		if (eventsProcessed > 0) {
-			await dispatcher.InjectCheckpointMarker(lastLogPosition, CancellationToken.None);
+			await coordinator.InjectCheckpointMarker(lastLogPosition, CancellationToken.None);
 		}
 	}
 

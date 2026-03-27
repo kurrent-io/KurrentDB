@@ -20,7 +20,6 @@ public class PartitionDispatcher {
 	private readonly Channel<PartitionEvent>[] _partitionChannels;
 	private readonly int _partitionCount;
 	private readonly Func<ResolvedEvent, string?> _getPartitionKey;
-	private ulong _nextCheckpointSequence;
 
 	/// <summary>
 	/// Creates a dispatcher that computes the partition key on the read loop thread
@@ -65,17 +64,12 @@ public class PartitionDispatcher {
 		await _partitionChannels[partitionIndex].Writer.WriteAsync(pe, ct);
 	}
 
-	public async ValueTask<ulong> InjectCheckpointMarker(TFPos logPosition, CancellationToken ct) {
-		var sequence = ++_nextCheckpointSequence;
-		var marker = PartitionEvent.ForCheckpointMarker(sequence, logPosition);
-
-		Log.Debug("Injecting checkpoint marker {Sequence} at {LogPosition}", sequence, logPosition);
+	public async ValueTask InjectCheckpointMarker(TFPos logPosition, CancellationToken ct) {
+		var marker = PartitionEvent.ForCheckpointMarker(logPosition);
 
 		for (int i = 0; i < _partitionCount; i++) {
 			await _partitionChannels[i].Writer.WriteAsync(marker, ct);
 		}
-
-		return sequence;
 	}
 
 	public void Complete(Exception? ex = null) {
