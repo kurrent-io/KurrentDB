@@ -4,8 +4,6 @@
 #nullable enable
 
 using System;
-using System.IO.Hashing;
-using System.Text;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -80,7 +78,7 @@ public class PartitionDispatcher {
 
 	private int GetPartitionIndex(string key) {
 		if (_partitionCount == 1) return 0;
-		var hash = XxHash32.HashToUInt32(Encoding.UTF8.GetBytes(key));
+		var hash = (uint)key.GetHashCode();
 		return (int)(hash % (uint)_partitionCount);
 	}
 }
