@@ -1,0 +1,3 @@
+[submodule "libs/Kurrent.Kontext"]
+	path = libs/Kurrent.Kontext
+	url = https://github.com/kurrent-io/Kurrent.Kontext
