@@ -131,7 +131,7 @@ public class PartitionProcessor(
 		var processed = stateHandler.ProcessEvent(
 			partitionKey,
 			checkpointTag,
-			category: null,
+			category: null, // todo: is this an important gap?
 			projEvent,
 			out var newState,
 			out var newSharedState,

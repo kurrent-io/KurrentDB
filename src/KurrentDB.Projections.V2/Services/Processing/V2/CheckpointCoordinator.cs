@@ -118,6 +118,7 @@ public class CheckpointCoordinator(int partitionCount, string projectionName, Pa
 		return writes.Build();
 	}
 
+	// todo: is this less rich than CheckpointTag? should it be?
 	private static byte[] SerializeExtraMetadata(EmittedEvent e) {
 		var extra = e.ExtraMetaData();
 		if (extra == null)

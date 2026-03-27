@@ -54,6 +54,7 @@ public sealed class ProjectionEngineV2(
 
 		var partitionCount = _config.PartitionCount;
 
+		// todo: consider limiting partitionCount to 1 if the projection itself does not partition.
 		// BiState projections use shared state (s[1]) that every event can modify.
 		// This creates a total ordering dependency — true parallelism isn't possible.
 		if (_config.SourceDefinition.IsBiState && partitionCount > 1) {
@@ -175,6 +176,7 @@ public sealed class ProjectionEngineV2(
 						lastLogPosition = new TFPos(
 							commitPosition: (long)checkpointReceived.CommitPosition,
 							preparePosition: (long)checkpointReceived.PreparePosition);
+						// todo: consider checkpointing here
 						break;
 					case ReadResponse.SubscriptionConfirmed:
 					case ReadResponse.SubscriptionCaughtUp:

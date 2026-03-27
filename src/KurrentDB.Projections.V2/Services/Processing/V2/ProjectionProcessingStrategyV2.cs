@@ -21,11 +21,11 @@ public class ProjectionProcessingStrategyV2 : ProjectionProcessingStrategy {
 
 	public ProjectionProcessingStrategyV2(
 		string name,
-		ProjectionVersion projectionVersion,
+		ProjectionVersion projectionVersion, // todo: unused, might represent an important gap
 		ProjectionConfig projectionConfig,
 		IQuerySources sourceDefinition,
 		ILogger logger,
-		int maxProjectionStateSize,
+		int maxProjectionStateSize, // todo: unused, might represent an important gap
 		Func<IProjectionStateHandler> stateHandlerFactory,
 		IPublisher mainQueue) {
 
