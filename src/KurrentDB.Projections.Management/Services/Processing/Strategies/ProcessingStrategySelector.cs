@@ -33,7 +33,7 @@ public class ProcessingStrategySelector {
 		IPublisher mainQueue) {
 
 		if (engineVersion == ProjectionConstants.EngineV2) {
-			return new V2ProjectionProcessingStrategy(
+			return new ProjectionProcessingStrategyV2(
 				name, projectionVersion, projectionConfig, sourceDefinition, _logger, _maxProjectionStateSize,
 				stateHandlerFactory, mainQueue);
 		}

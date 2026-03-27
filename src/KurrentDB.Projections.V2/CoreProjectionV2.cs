@@ -21,8 +21,8 @@ namespace KurrentDB.Projections.Core.Services.Processing.V2;
 /// Implements ICoreProjectionControl so ProjectionCoreService can manage V2 projections
 /// identically to V1 CoreProjection instances.
 /// </summary>
-public sealed class V2CoreProjection : ICoreProjectionControl {
-	static readonly ILogger Log = Serilog.Log.ForContext<V2CoreProjection>();
+public sealed class CoreProjectionV2 : ICoreProjectionControl {
+	static readonly ILogger Log = Serilog.Log.ForContext<CoreProjectionV2>();
 
 	readonly Guid _projectionCorrelationId;
 	readonly string _projectionName;
@@ -41,7 +41,7 @@ public sealed class V2CoreProjection : ICoreProjectionControl {
 	int _statisticsSequentialNumber;
 	bool _disposed;
 
-	public V2CoreProjection(
+	public CoreProjectionV2(
 		Guid projectionCorrelationId,
 		string projectionName,
 		IPublisher publisher,

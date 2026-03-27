@@ -12,14 +12,14 @@ using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Projections.Core.Services.Processing.V2;
 
-public class V2ProjectionProcessingStrategy : ProjectionProcessingStrategy {
+public class ProjectionProcessingStrategyV2 : ProjectionProcessingStrategy {
 	private readonly string _name;
 	private readonly ProjectionConfig _projectionConfig;
 	private readonly IQuerySources _sourceDefinition;
 	private readonly Func<IProjectionStateHandler> _stateHandlerFactory;
 	private readonly IPublisher _mainQueue;
 
-	public V2ProjectionProcessingStrategy(
+	public ProjectionProcessingStrategyV2(
 		string name,
 		ProjectionVersion projectionVersion,
 		ProjectionConfig projectionConfig,
@@ -44,7 +44,7 @@ public class V2ProjectionProcessingStrategy : ProjectionProcessingStrategy {
 		IPublisher publisher,
 		IODispatcher ioDispatcher,
 		ITimeProvider timeProvider) {
-		return new V2CoreProjection(
+		return new CoreProjectionV2(
 			projectionCorrelationId,
 			_name,
 			publisher,
