@@ -25,7 +25,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 		var v2 = v1.AddOptional("email", JsonObjectType.String);
 		var v3 = v2.AddOptional("age", JsonObjectType.Integer);
 
-		await Apply(
+		await Fixture.Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = v1.ToByteString(),
@@ -37,7 +37,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 			cancellationToken
 		);
 
-		await Apply(
+		await Fixture.Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = v2.ToByteString()
@@ -45,7 +45,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 			cancellationToken
 		);
 
-		var version3Result = await Apply(
+		var version3Result = await Fixture.Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = v3.ToByteString()
@@ -59,11 +59,11 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 			SchemaName = schemaName,
 			LatestSchemaVersionId = version3Result.Changes.GetSingleEvent<SchemaVersionRegistered>().SchemaVersionId,
 			LatestSchemaVersionNumber = 3,
-			DeletedAt = Timestamp.FromDateTimeOffset(TimeProvider.GetUtcNow())
+			DeletedAt = Timestamp.FromDateTimeOffset(Fixture.Time.GetUtcNow())
 		};
 
 		// Act
-		var result = await Apply(
+		var result = await Fixture.Apply(
 			new DeleteSchemaVersionsRequest {
 				SchemaName = schemaName,
 				Versions = { versionsToDelete }
@@ -86,7 +86,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 		var v1 = NewJsonSchema();
 		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
-		await Apply(
+		await Fixture.Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = v1.ToByteString(),
@@ -98,7 +98,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 			cancellationToken
 		);
 
-		await Apply(
+		await Fixture.Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = v2.ToByteString()
@@ -106,7 +106,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 			cancellationToken
 		);
 
-		await Apply(
+		await Fixture.Apply(
 			new DeleteSchemaRequest {
 				SchemaName = schemaName
 			},
@@ -115,7 +115,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 
 		// Act & Assert
 		var action = async () =>
-			await Apply(
+			await Fixture.Apply(
 				new DeleteSchemaVersionsRequest {
 					SchemaName = schemaName,
 					Versions = { 1 }
@@ -132,7 +132,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 		var schemaName = NewSchemaName();
 		var v1 = NewJsonSchema();
 
-		await Apply(
+		await Fixture.Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = v1.ToByteString(),
@@ -146,7 +146,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 
 		// Act & Assert
 		var action = async () =>
-			await Apply(
+			await Fixture.Apply(
 				new DeleteSchemaVersionsRequest {
 					SchemaName = schemaName,
 					Versions = { 1 }
@@ -169,7 +169,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 		var v1 = NewJsonSchema();
 		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
-		await Apply(
+		await Fixture.Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = v1.ToByteString(),
@@ -181,7 +181,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 			cancellationToken
 		);
 
-		await Apply(
+		await Fixture.Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = v2.ToByteString()
@@ -191,7 +191,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 
 		// Act & Assert
 		var action = async () =>
-			await Apply(
+			await Fixture.Apply(
 				new DeleteSchemaVersionsRequest {
 					SchemaName = schemaName,
 					Versions = { 1 }
@@ -210,7 +210,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 		var v1 = NewJsonSchema();
 		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
-		await Apply(
+		await Fixture.Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = v1.ToByteString(),
@@ -222,7 +222,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 			cancellationToken
 		);
 
-		await Apply(
+		await Fixture.Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = v2.ToByteString()
@@ -232,7 +232,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 
 		// Act & Assert
 		var action = async () =>
-			await Apply(
+			await Fixture.Apply(
 				new DeleteSchemaVersionsRequest {
 					SchemaName = schemaName,
 					Versions = { 2 }
@@ -251,7 +251,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 		var v1 = NewJsonSchema();
 		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
-		await Apply(
+		await Fixture.Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = v1.ToByteString(),
@@ -263,7 +263,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 			cancellationToken
 		);
 
-		await Apply(
+		await Fixture.Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = v2.ToByteString()
@@ -275,7 +275,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 
 		// Act & Assert
 		var action = async () =>
-			await Apply(
+			await Fixture.Apply(
 				new DeleteSchemaVersionsRequest {
 					SchemaName = schemaName,
 					Versions = { nonExistentVersions }

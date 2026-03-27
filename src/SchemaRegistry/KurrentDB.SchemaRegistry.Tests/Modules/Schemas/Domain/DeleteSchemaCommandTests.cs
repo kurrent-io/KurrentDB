@@ -22,7 +22,7 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 		// Arrange
 		var schemaName = NewSchemaName();
 
-		await Apply(
+		await Fixture.Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
@@ -38,11 +38,11 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 
 		var expectedEvent = new SchemaDeleted {
 			SchemaName = schemaName,
-			DeletedAt = Timestamp.FromDateTimeOffset(TimeProvider.GetUtcNow())
+			DeletedAt = Timestamp.FromDateTimeOffset(Fixture.Time.GetUtcNow())
 		};
 
 		// Act
-		var result = await Apply(
+		var result = await Fixture.Apply(
 			new DeleteSchemaRequest { SchemaName = schemaName },
 			cancellationToken
 		);
@@ -57,7 +57,7 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 		// Arrange
 		var schemaName = NewSchemaName();
 
-		await Apply(
+		await Fixture.Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
@@ -71,7 +71,7 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 			cancellationToken
 		);
 
-		await Apply(
+		await Fixture.Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text())
@@ -79,7 +79,7 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 			cancellationToken
 		);
 
-		await Apply(
+		await Fixture.Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text())
@@ -89,11 +89,11 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 
 		var expectedEvent = new SchemaDeleted {
 			SchemaName = schemaName,
-			DeletedAt = Timestamp.FromDateTimeOffset(TimeProvider.GetUtcNow())
+			DeletedAt = Timestamp.FromDateTimeOffset(Fixture.Time.GetUtcNow())
 		};
 
 		// Act
-		var result = await Apply(
+		var result = await Fixture.Apply(
 			new DeleteSchemaRequest { SchemaName = schemaName },
 			cancellationToken
 		);
@@ -109,7 +109,7 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 		var nonExistentSchemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
 
 		// Act
-		var deleteSchema = async () => await Apply(
+		var deleteSchema = async () => await Fixture.Apply(
 			new DeleteSchemaRequest { SchemaName = nonExistentSchemaName },
 			cancellationToken
 		);
@@ -123,7 +123,7 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 		// Arrange
 		var schemaName = NewSchemaName();
 
-		await Apply(
+		await Fixture.Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
@@ -137,13 +137,13 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 			cancellationToken
 		);
 
-		await Apply(
+		await Fixture.Apply(
 			new DeleteSchemaRequest { SchemaName = schemaName },
 			cancellationToken
 		);
 
 		// Act
-		var deleteSchema = async () => await Apply(
+		var deleteSchema = async () => await Fixture.Apply(
 			new DeleteSchemaRequest { SchemaName = schemaName },
 			cancellationToken
 		);
