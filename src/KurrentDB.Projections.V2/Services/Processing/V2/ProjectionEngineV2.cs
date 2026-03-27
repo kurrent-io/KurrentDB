@@ -171,8 +171,12 @@ public sealed class ProjectionEngineV2(
 						break;
 
 					// Ignore subscription infrastructure messages
+					case ReadResponse.CheckpointReceived checkpointReceived:
+						lastLogPosition = new TFPos(
+							commitPosition: (long)checkpointReceived.CommitPosition,
+							preparePosition: (long)checkpointReceived.PreparePosition);
+						break;
 					case ReadResponse.SubscriptionConfirmed:
-					case ReadResponse.CheckpointReceived:
 					case ReadResponse.SubscriptionCaughtUp:
 					case ReadResponse.SubscriptionFellBehind:
 						break;
