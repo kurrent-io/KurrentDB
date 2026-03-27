@@ -136,9 +136,10 @@ public sealed class ProjectionEngineV2(
 
 						// System events (event types starting with '$') are normally skipped,
 						// but tombstone markers need to be routed so projections can handle $deleted.
-						if (coreEvent.Event.EventType.StartsWith("$")) {
+						if (coreEvent.Event.EventType.StartsWith('$')) {
 							var projEvent = ConvertToProjectionEvent(coreEvent);
-							if (StreamDeletedHelper.IsStreamDeletedEvent(
+							// note: HandlesDeletedNotifications is only true when partitioning by stream
+							if (_config.SourceDefinition.HandlesDeletedNotifications && StreamDeletedHelper.IsStreamDeletedEvent(
 								    projEvent.EventStreamId, projEvent.EventType, projEvent.Data,
 								    out var deletedPartitionStreamId)) {
 								await dispatcher.DispatchPartitionDeleted(deletedPartitionStreamId, logPosition, ct);
