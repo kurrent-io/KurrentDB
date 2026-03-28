@@ -45,6 +45,7 @@
         <ProjectReference Include="..\Connectors\KurrentDB.Plugins.Connectors\KurrentDB.Plugins.Connectors.csproj" />
         <ProjectReference Include="..\SchemaRegistry\KurrentDB.Plugins.SchemaRegistry\KurrentDB.Plugins.SchemaRegistry.csproj" />
         <ProjectReference Include="..\KurrentDB.Plugins.Api.V2\KurrentDB.Plugins.Api.V2.csproj" />
+        <ProjectReference Include="..\KurrentDB.Plugins.Kontext\KurrentDB.Plugins.Kontext.csproj" />
 	</ItemGroup>
 	<ItemGroup>
 		<None Include="..\..\LICENSE.md" Pack="true" PackagePath="\">
