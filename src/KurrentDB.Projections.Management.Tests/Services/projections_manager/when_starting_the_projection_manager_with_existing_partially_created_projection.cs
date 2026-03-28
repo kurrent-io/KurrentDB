@@ -22,7 +22,6 @@ using NUnit.Framework;
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_starting_the_projection_manager_with_existing_partially_created_projection<TLogFormat, TStreamId> :
 	TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private ProjectionManager _manager;

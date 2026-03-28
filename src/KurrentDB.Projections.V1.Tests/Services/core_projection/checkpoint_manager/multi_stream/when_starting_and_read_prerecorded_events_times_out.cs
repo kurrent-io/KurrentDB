@@ -16,7 +16,6 @@ using IODispatcherDelayedMessage = KurrentDB.Core.Helpers.IODispatcherDelayedMes
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection.checkpoint_manager.multi_stream;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_starting_and_read_prerecorded_events_times_out<TLogFormat, TStreamId> : with_multi_stream_checkpoint_manager<TLogFormat, TStreamId>,
 	IHandle<TimerMessage.Schedule>,
 	IHandle<CoreProjectionProcessingMessage.PrerecordedEventsLoaded> {

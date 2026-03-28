@@ -51,7 +51,6 @@ public abstract class specification_with_query_without_when<TLogFormat, TStreamI
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_receiving_committed_events_the_projection_without_when<TLogFormat, TStreamId> : specification_with_query_without_when<TLogFormat, TStreamId> {
 	protected override void When() {
 		//projection subscribes here
@@ -83,7 +82,6 @@ public class when_receiving_committed_events_the_projection_without_when<TLogFor
 
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class
 	when_handling_event_does_not_change_state_the_projection_without_when<TLogFormat, TStreamId> : specification_with_query_without_when<TLogFormat, TStreamId> {
 	protected override void When() {

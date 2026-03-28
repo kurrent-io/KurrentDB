@@ -13,7 +13,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Services.Storage.DeletingStream;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_hard_deleting_stream<TLogFormat, TStreamId> : ReadIndexTestScenario<TLogFormat, TStreamId> {
 	protected override async ValueTask WriteTestScenario(CancellationToken token) {
 		await WriteSingleEvent("ES1", 0, new string('.', 3000), token: token);

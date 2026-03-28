@@ -15,7 +15,6 @@ using NUnit.Framework;
 namespace KurrentDB.Projections.Core.Tests.ClientAPI.projectionsManager;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 [Category("ProjectionsManager")]
 public class when_creating_one_time_projection<TLogFormat, TStreamId> : SpecificationWithNodeAndProjectionsManager<TLogFormat, TStreamId> {
 	private string _streamName;
@@ -42,7 +41,6 @@ public class when_creating_one_time_projection<TLogFormat, TStreamId> : Specific
 
 [Category("ProjectionsManager")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_creating_transient_projection<TLogFormat, TStreamId> : SpecificationWithNodeAndProjectionsManager<TLogFormat, TStreamId> {
 	private string _streamName;
 	private string _projectionName;
@@ -70,7 +68,6 @@ public class when_creating_transient_projection<TLogFormat, TStreamId> : Specifi
 
 [Category("ProjectionsManager")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_creating_continuous_projection<TLogFormat, TStreamId> : SpecificationWithNodeAndProjectionsManager<TLogFormat, TStreamId> {
 	private string _streamName;
 	private string _emittedStreamName;
@@ -112,7 +109,6 @@ public class when_creating_continuous_projection<TLogFormat, TStreamId> : Specif
 
 [Category("ProjectionsManager")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class
 	when_creating_continuous_projection_with_track_emitted_streams<TLogFormat, TStreamId> : SpecificationWithNodeAndProjectionsManager<TLogFormat, TStreamId> {
 	private string _streamName;
@@ -154,7 +150,6 @@ public class
 
 [Category("ProjectionsManager")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_disabling_projections<TLogFormat, TStreamId> : SpecificationWithNodeAndProjectionsManager<TLogFormat, TStreamId> {
 	private string _streamName;
 	private string _projectionName;
@@ -185,7 +180,6 @@ public class when_disabling_projections<TLogFormat, TStreamId> : SpecificationWi
 
 [Category("ProjectionsManager")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_enabling_projections<TLogFormat, TStreamId> : SpecificationWithNodeAndProjectionsManager<TLogFormat, TStreamId> {
 	private string _streamName;
 	private string _projectionName;
@@ -217,7 +211,6 @@ public class when_enabling_projections<TLogFormat, TStreamId> : SpecificationWit
 
 [Category("ProjectionsManager")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_listing_the_projections<TLogFormat, TStreamId> : SpecificationWithNodeAndProjectionsManager<TLogFormat, TStreamId> {
 	private List<ProjectionDetails> _result;
 
@@ -237,7 +230,6 @@ public class when_listing_the_projections<TLogFormat, TStreamId> : Specification
 
 [Category("ProjectionsManager")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_listing_one_time_projections<TLogFormat, TStreamId> : SpecificationWithNodeAndProjectionsManager<TLogFormat, TStreamId> {
 	private List<ProjectionDetails> _result;
 
@@ -257,7 +249,6 @@ public class when_listing_one_time_projections<TLogFormat, TStreamId> : Specific
 
 [Category("ProjectionsManager")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_listing_continuous_projections<TLogFormat, TStreamId> : SpecificationWithNodeAndProjectionsManager<TLogFormat, TStreamId> {
 	private List<ProjectionDetails> _result;
 	private string _projectionName;
@@ -279,7 +270,6 @@ public class when_listing_continuous_projections<TLogFormat, TStreamId> : Specif
 
 [Category("ProjectionsManager")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_a_projection_is_running<TLogFormat, TStreamId> : SpecificationWithNodeAndProjectionsManager<TLogFormat, TStreamId> {
 	private string _projectionName;
 	private string _streamName;
@@ -325,7 +315,6 @@ public class when_a_projection_is_running<TLogFormat, TStreamId> : Specification
 
 [Category("ProjectionsManager")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_updating_a_projection_query<TLogFormat, TStreamId> : SpecificationWithNodeAndProjectionsManager<TLogFormat, TStreamId> {
 	private string _projectionName;
 	private string _streamName;

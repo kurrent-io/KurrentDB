@@ -10,6 +10,7 @@ using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
+using KurrentDB.SecondaryIndexing.Query;
 using KurrentDB.SecondaryIndexing.Tests.Generators;
 using KurrentDB.Surge.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +26,15 @@ public partial class IndexingTests(IndexingFixture fixture, ITestOutputHelper ou
 	public async Task ReadsAllEventsFromDefaultIndex(bool forwards) {
 		Fixture.LogDatasetInfo();
 		await ValidateRead(SystemStreams.DefaultSecondaryIndex, Fixture.AppendedBatches.ToDefaultIndexResolvedEvents(), forwards);
+	}
+
+	[Fact]
+	public async Task ReadFromDefaultIndexUsingQueryEngine() {
+		var engine = Fixture.NodeServices.GetRequiredService<IQueryEngine>();
+		using var preparedSql = engine.PrepareQuery("SELECT metadata FROM kdb.records"u8, digitallySign: true);
+
+		var consumer = new RowCountReader();
+		await engine.ExecuteAsync(preparedSql.Memory, consumer, checkIntegrity: true, TestContext.Current.CancellationToken);
 	}
 
 	[Theory]
@@ -57,7 +67,6 @@ public partial class IndexingTests(IndexingFixture fixture, ITestOutputHelper ou
 	public enum CommitMode {
 		None,
 		CommitAndClear,
-		CommitAndKeep,
 	}
 
 	private static readonly IEventFilter UserEventsFilter = new EventFilter.DefaultAllFilterStrategy.NonSystemStreamStrategy();
@@ -65,7 +74,6 @@ public partial class IndexingTests(IndexingFixture fixture, ITestOutputHelper ou
 	[Theory]
 	[InlineData(CommitMode.None)]
 	[InlineData(CommitMode.CommitAndClear)]
-	[InlineData(CommitMode.CommitAndKeep)]
 	public async Task ReadFromBothDefault(CommitMode mode) {
 		await ValidateRead(mode, SystemStreams.DefaultSecondaryIndex, UserEventsFilter);
 	}
@@ -73,7 +81,6 @@ public partial class IndexingTests(IndexingFixture fixture, ITestOutputHelper ou
 	[Theory]
 	[InlineData(CommitMode.None)]
 	[InlineData(CommitMode.CommitAndClear)]
-	[InlineData(CommitMode.CommitAndKeep)]
 	public async Task ReadFromBothCategory(CommitMode mode) {
 		var category = Fixture.Categories.First();
 		await ValidateRead(mode, CategoryIndex.Name(category), new CategoryFilter(category));
@@ -82,7 +89,6 @@ public partial class IndexingTests(IndexingFixture fixture, ITestOutputHelper ou
 	[Theory]
 	[InlineData(CommitMode.None)]
 	[InlineData(CommitMode.CommitAndClear)]
-	[InlineData(CommitMode.CommitAndKeep)]
 	public async Task ReadFromBothEventType(CommitMode mode) {
 		var eventType = Fixture.EventTypes.First();
 		await ValidateRead(mode, EventTypeIndex.Name(eventType), new EventTypeFilter(eventType));
@@ -112,10 +118,7 @@ public partial class IndexingTests(IndexingFixture fixture, ITestOutputHelper ou
 		var processor = Fixture.NodeServices.GetRequiredService<DefaultIndexProcessor>();
 		switch (mode) {
 			case CommitMode.CommitAndClear:
-				processor.Commit(true);
-				break;
-			case CommitMode.CommitAndKeep:
-				processor.Commit(false);
+				processor.Commit();
 				break;
 		}
 
@@ -140,5 +143,31 @@ public partial class IndexingTests(IndexingFixture fixture, ITestOutputHelper ou
 
 	private class EventTypeFilter(string eventType) : IEventFilter {
 		public bool IsEventAllowed(EventRecord eventRecord) => eventRecord.EventType == eventType;
+	}
+
+	private sealed class RowCountReader : IQueryResultConsumer {
+		public long RowCount {
+			get;
+			private set;
+		}
+
+		public ValueTask ConsumeAsync(IQueryResultReader resultReader, CancellationToken token) {
+			var task = ValueTask.CompletedTask;
+			try {
+				while (resultReader.TryRead()) {
+					RowCount += resultReader.Chunk.RowCount;
+				}
+			} catch (OperationCanceledException e) when (e.CancellationToken == token) {
+				task = ValueTask.FromCanceled(token);
+			} catch (Exception e) {
+				task = ValueTask.FromException(e);
+			}
+
+			return task;
+		}
+
+		public void Bind<TBinder>(TBinder binder) where TBinder : IPreparedQueryBinder, allows ref struct {
+			// nothing to bind, query has no substitution
+		}
 	}
 }

@@ -70,7 +70,6 @@ namespace KurrentDB.Projections.Core.Tests.ClientAPI {
 		}
 
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
-		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		public class when_hard_deleting_stream<TLogFormat, TStreamId> : when_deleting_stream_base<TLogFormat, TStreamId> {
 			protected override bool GivenDeleteHardDeleteStreamMode() {
 				return true;
@@ -78,7 +77,6 @@ namespace KurrentDB.Projections.Core.Tests.ClientAPI {
 		}
 
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
-		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		public class when_soft_deleting_stream<TLogFormat, TStreamId> : when_deleting_stream_base<TLogFormat, TStreamId> {
 			protected override bool GivenDeleteHardDeleteStreamMode() {
 				return false;
@@ -86,7 +84,6 @@ namespace KurrentDB.Projections.Core.Tests.ClientAPI {
 		}
 
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
-		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		public class when_hard_deleting_stream_and_starting_standard_projections<TLogFormat, TStreamId> : when_deleting_stream_base<TLogFormat, TStreamId> {
 			protected override bool GivenDeleteHardDeleteStreamMode() {
 				return true;
@@ -98,7 +95,6 @@ namespace KurrentDB.Projections.Core.Tests.ClientAPI {
 		}
 
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
-		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		public class when_soft_deleting_stream_and_starting_standard_projections<TLogFormat, TStreamId> : when_deleting_stream_base<TLogFormat, TStreamId> {
 			protected override bool GivenDeleteHardDeleteStreamMode() {
 				return false;

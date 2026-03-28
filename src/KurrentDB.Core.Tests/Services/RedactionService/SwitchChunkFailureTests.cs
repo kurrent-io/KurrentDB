@@ -16,7 +16,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Services.RedactionService;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class SwitchChunkFailureTests<TLogFormat, TStreamId> : SwitchChunkTests<TLogFormat, TStreamId> {
 	[Test]
 	public async Task cannot_switch_invalid_chunk_filename() {

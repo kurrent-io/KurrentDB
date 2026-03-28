@@ -18,7 +18,6 @@ using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 namespace KurrentDB.Projections.Core.Tests.Services.event_reader.multi_stream_reader;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_read_for_one_stream_completes_but_times_out_for_another<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private MultiStreamEventReader _eventReader;
 	private Guid _distibutionPointCorrelationId;

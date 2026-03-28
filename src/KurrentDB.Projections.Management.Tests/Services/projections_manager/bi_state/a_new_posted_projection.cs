@@ -53,7 +53,6 @@ public static class a_new_posted_projection {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_get_state<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> When() {
 			foreach (var m in base.When())
@@ -75,7 +74,6 @@ public static class a_new_posted_projection {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_stopping<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 		private Guid _reader;
 

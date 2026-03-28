@@ -7,7 +7,7 @@ using KurrentDB.SecondaryIndexing.Storage;
 namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
 
 internal static class EventTypeSql {
-	public record struct ReadEventTypeIndexQueryArgs(string EventType, long StartPosition, long EndPosition, int Count);
+	public record struct ReadEventTypeIndexQueryArgs(string EventType, long StartPosition, int Count);
 
 	/// <summary>
 	/// Get index records for a given event type where the log position is greater than the start position
@@ -17,12 +17,11 @@ internal static class EventTypeSql {
 			=> new(statement) {
 				args.EventType,
 				args.StartPosition,
-				args.EndPosition,
 				args.Count
 			};
 
 		public static ReadOnlySpan<byte> CommandText
-			=> "select log_position, commit_position, event_number from idx_all where event_type=$1 and log_position>$2 and log_position<$3 order by rowid limit $4"u8;
+			=> "select log_position, commit_position, event_number from idx_all_snapshot where event_type=$1 and log_position>$2 order by coalesce(commit_position, log_position) limit $3"u8;
 
 		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.TryReadInt64(), row.ReadInt64());
 	}
@@ -35,12 +34,11 @@ internal static class EventTypeSql {
 			=> new(statement) {
 				args.EventType,
 				args.StartPosition,
-				args.EndPosition,
 				args.Count
 			};
 
 		public static ReadOnlySpan<byte> CommandText
-			=> "select log_position, commit_position, event_number from idx_all where event_type=$1 and log_position>=$2 and log_position<$3 order by rowid limit $4"u8;
+			=> "select log_position, commit_position, event_number from idx_all_snapshot where event_type=$1 and log_position>=$2 order by coalesce(commit_position, log_position) limit $3"u8;
 
 		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.TryReadInt64(), row.ReadInt64());
 	}
@@ -57,7 +55,7 @@ internal static class EventTypeSql {
 			};
 
 		public static ReadOnlySpan<byte> CommandText
-			=> "select log_position, commit_position, event_number from idx_all where event_type=$1 and log_position<$2 order by rowid desc limit $3"u8;
+			=> "select log_position, commit_position, event_number from idx_all_snapshot where event_type=$1 and log_position<$2 order by coalesce(commit_position, log_position) desc, log_position desc limit $3"u8;
 
 		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.TryReadInt64(), row.ReadInt64());
 	}
@@ -74,7 +72,7 @@ internal static class EventTypeSql {
 			};
 
 		public static ReadOnlySpan<byte> CommandText
-			=> "select log_position, commit_position, event_number from idx_all where event_type=$1 and log_position<=$2 order by rowid limit $3"u8;
+			=> "select log_position, commit_position, event_number from idx_all_snapshot where event_type=$1 and log_position<=$2 order by coalesce(commit_position, log_position) desc, log_position desc limit $3"u8;
 
 		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.TryReadInt64(), row.ReadInt64());
 	}

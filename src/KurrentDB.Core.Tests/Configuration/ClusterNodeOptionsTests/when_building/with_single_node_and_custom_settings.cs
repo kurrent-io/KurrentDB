@@ -13,7 +13,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.XUnit.Tests.Configuration.ClusterNodeOptionsTests.when_building;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class with_run_on_disk<TLogFormat, TStreamId> : SingleNodeScenario<TLogFormat, TStreamId> {
 	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) => options.RunOnDisk(PathName);
 
@@ -29,7 +28,6 @@ public class with_run_on_disk<TLogFormat, TStreamId> : SingleNodeScenario<TLogFo
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class with_run_in_memory<TLogFormat, TStreamId> : SingleNodeScenario<TLogFormat, TStreamId> {
 	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) =>
 		options.RunInMemory();
@@ -41,7 +39,6 @@ public class with_run_in_memory<TLogFormat, TStreamId> : SingleNodeScenario<TLog
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class with_custom_ip_endpoints<TLogFormat, TStreamId> : SingleNodeScenario<TLogFormat, TStreamId> {
 	private readonly IPEndPoint _httpEndPoint = new(IPAddress.Parse("127.0.1.15"), 1113);
 	private readonly IPEndPoint _internalTcp = new(IPAddress.Parse("127.0.1.15"), 1114);
@@ -66,7 +63,6 @@ public class with_custom_ip_endpoints<TLogFormat, TStreamId> : SingleNodeScenari
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class with_custom_chunk_size<TLogFormat, TStreamId> : SingleNodeScenario<TLogFormat, TStreamId> {
 	private readonly int _chunkSize = 268435;
 
@@ -83,7 +79,6 @@ public class with_custom_chunk_size<TLogFormat, TStreamId> : SingleNodeScenario<
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class with_custom_chunk_cache_size<TLogFormat, TStreamId> : SingleNodeScenario<TLogFormat, TStreamId> {
 	private readonly long _chunkCacheSize = 268435712;
 
@@ -100,7 +95,6 @@ public class with_custom_chunk_cache_size<TLogFormat, TStreamId> : SingleNodeSce
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class
 	with_custom_number_of_cached_chunks<TLogFormat, TStreamId> : SingleNodeScenario<TLogFormat, TStreamId> {
 	private readonly int _cachedChunks = 10;
@@ -119,7 +113,6 @@ public class
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class with_custom_advertise_as<TLogFormat, TStreamId> : SingleNodeScenario<TLogFormat, TStreamId> {
 	private readonly IPEndPoint _intTcpEndpoint = new(IPAddress.Parse(InternalIp), 1111);
 	private readonly IPEndPoint _extTcpEndpoint = new(IPAddress.Parse(ExternalIp), 1113);
@@ -153,7 +146,6 @@ public class with_custom_advertise_as<TLogFormat, TStreamId> : SingleNodeScenari
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class
 	with_custom_password_for_admin_and_ops_user<TLogFormat, TStreamId> : SingleNodeScenario<TLogFormat, TStreamId> {
 	private const string _adminPassword = "Admin";
@@ -172,7 +164,6 @@ public class
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class
 	with_custom_settings_check_for_environment_only_options<TLogFormat, TStreamId> : SingleNodeScenario<TLogFormat,
 	TStreamId> {

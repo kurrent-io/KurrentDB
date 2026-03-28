@@ -16,7 +16,6 @@ using NUnit.Framework;
 
 namespace KurrentDB.Projections.Core.Tests.Services.event_reader.event_reader_core_service;
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_handling_subscribe_requests<TLogFormat, TStreamId> : TestFixtureWithEventReaderService<TLogFormat, TStreamId> {
 	private readonly ReaderSubscriptionOptions _defaultOptions = new(1000, 10, 1000, false, null, false);
 	[Test]

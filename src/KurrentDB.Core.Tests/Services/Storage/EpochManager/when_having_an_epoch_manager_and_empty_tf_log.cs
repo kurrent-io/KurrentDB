@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.LogAbstraction;
-using KurrentDB.Core.LogV3;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services;
@@ -24,7 +23,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Services.Storage.EpochManager;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_having_an_epoch_manager_and_empty_tf_log<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
 	private TFChunkDb _db;
 	private EpochManager<TStreamId> _epochManager;
@@ -163,11 +161,9 @@ public class when_having_an_epoch_manager_and_empty_tf_log<TLogFormat, TStreamId
 				}
 			}
 			var expectedStreamId = LogFormatHelper<TLogFormat, TStreamId>.Choose<TStreamId>(
-				SystemStreams.EpochInformationStream,
-				LogV3SystemStreams.EpochInformationStreamNumber);
+				SystemStreams.EpochInformationStream);
 			var expectedEventType = LogFormatHelper<TLogFormat, TStreamId>.Choose<TStreamId>(
-				SystemEventTypes.EpochInformation,
-				LogV3SystemEventTypes.EpochInformationNumber);
+				SystemEventTypes.EpochInformation);
 			Assert.AreEqual(expectedStreamId, epochInfo.EventStreamId);
 			Assert.AreEqual(expectedEventType, epochInfo.EventType);
 			Assert.AreEqual(i - 1, epochInfo.ExpectedVersion);

@@ -11,7 +11,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.TransactionLog;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_appending_past_end_of_a_tfchunk<TLogFormat, TStreamId> : SpecificationWithFile {
 	private TFChunk _chunk;
 	private readonly Guid _corrId = Guid.NewGuid();

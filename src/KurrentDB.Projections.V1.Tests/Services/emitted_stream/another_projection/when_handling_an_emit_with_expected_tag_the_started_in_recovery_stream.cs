@@ -16,7 +16,6 @@ using NUnit.Framework;
 namespace KurrentDB.Projections.Core.Tests.Services.emitted_stream.another_projection;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class
 	when_handling_an_emit_with_expected_tag_the_started_in_recovery_stream<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private EmittedStream _stream;

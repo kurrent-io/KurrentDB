@@ -11,7 +11,6 @@ namespace KurrentDB.Core.Tests.Services.Storage.ChunkBoundary;
 // It only verifies if TFChunkWriter works properly.
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_writing_events_at_chunk_boundary<TLogFormat, TStreamId> : ReadIndexTestScenario<TLogFormat, TStreamId> {
 	private long _writerChk;
 

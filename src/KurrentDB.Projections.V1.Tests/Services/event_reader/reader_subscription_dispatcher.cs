@@ -20,7 +20,6 @@ using ResolvedEvent = KurrentDB.Projections.Core.Services.Processing.ResolvedEve
 namespace KurrentDB.Projections.Core.Tests.Services.event_reader;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class reader_subscription_dispatcher<TLogFormat, TStreamId> : TestFixtureWithEventReaderService<TLogFormat, TStreamId> {
 	private ReaderSubscriptionOptions _defaultOptions = new(1000, null, 1000, false, null, false);
 	private FakeReaderStrategy _readerStrategy;

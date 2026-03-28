@@ -11,7 +11,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Services.Storage.Idempotency;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_writing_a_second_event_after_the_first_event_has_been_replicated<TLogFormat, TStreamId> : WriteEventsToIndexScenario<TLogFormat, TStreamId> {
 	private Guid _eventId = Guid.NewGuid();
 	private TStreamId _streamId = LogFormatHelper<TLogFormat, TStreamId>.StreamId;

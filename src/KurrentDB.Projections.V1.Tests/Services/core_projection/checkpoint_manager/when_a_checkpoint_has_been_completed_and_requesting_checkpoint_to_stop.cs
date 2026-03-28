@@ -12,7 +12,6 @@ using NUnit.Framework;
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection.checkpoint_manager;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_a_checkpoint_has_been_completed_and_requesting_checkpoint_to_stop<TLogFormat, TStreamId> :
 	TestFixtureWithCoreProjectionCheckpointManager<TLogFormat, TStreamId> {
 	private Exception _exception;

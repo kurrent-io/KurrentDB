@@ -15,7 +15,6 @@ namespace KurrentDB.Core.Tests.Integration;
 
 [Category("LongRunning"), Ignore("Flaky test - e.g. if multiple elections take place")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_a_leader_is_shutdown<TLogFormat, TStreamId> : specification_with_cluster<TLogFormat, TStreamId> {
 	private List<Guid> _epochIds = new List<Guid>();
 	private List<string> _roleAssignments = new List<string>();

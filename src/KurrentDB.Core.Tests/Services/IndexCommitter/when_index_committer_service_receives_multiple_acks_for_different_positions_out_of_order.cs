@@ -8,7 +8,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Services.IndexCommitter;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class
 	when_index_committer_service_receives_multiple_acks_for_different_positions_out_of_order<TLogFormat, TStreamId>
 	: with_index_committer_service<TLogFormat, TStreamId> {

@@ -16,7 +16,6 @@ using NUnit.Framework;
 namespace KurrentDB.Projections.Core.Tests.Services.grpc_service;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class ServerFeaturesTests<TLogFormat, TStreamId> : SpecificationWithNodeAndProjectionsManager<TLogFormat, TStreamId> {
 	private List<SupportedMethod> _supportedEndPoints = new();
 	private List<SupportedMethod> _expectedEndPoints = new();

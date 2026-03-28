@@ -19,7 +19,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Services.Storage.EpochManager;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public sealed class when_starting_having_TFLog_with_existing_epochs<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture, IDisposable {
 	private TFChunkDb _db;
 	private EpochManager<TStreamId> _epochManager;

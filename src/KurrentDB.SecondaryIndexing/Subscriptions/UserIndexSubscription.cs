@@ -19,7 +19,7 @@ internal abstract class UserIndexSubscription {
 	public abstract ValueTask Start();
 	public abstract ValueTask Stop();
 	public abstract TFPos GetLastIndexedPosition();
-	public abstract void GetUserIndexTableDetails(out string tableName, out string inFlightTableName, out string? fieldName);
+	public abstract void GetUserIndexTableDetails(out string tableName, out string? fieldName);
 }
 
 internal sealed class UserIndexSubscription<TField>(
@@ -27,7 +27,7 @@ internal sealed class UserIndexSubscription<TField>(
 	UserIndexProcessor<TField> indexProcessor,
 	SecondaryIndexingPluginOptions options,
 	ILogger log,
-	CancellationToken token) : UserIndexSubscription, IAsyncDisposable where TField : IField {
+	CancellationToken token) : UserIndexSubscription, IAsyncDisposable where TField : IField<TField> {
 	private readonly int _commitBatchSize = options.CommitBatchSize;
 	private CancellationTokenSource? _cts = CancellationTokenSource.CreateLinkedTokenSource(token);
 	private Enumerator.AllSubscription? _subscription;
@@ -158,8 +158,8 @@ internal sealed class UserIndexSubscription<TField>(
 
 	public override TFPos GetLastIndexedPosition() => indexProcessor.GetLastPosition();
 
-	public override void GetUserIndexTableDetails(out string tableName, out string inFlightTableName, out string? fieldName) =>
-		indexProcessor.GetUserIndexTableDetails(out tableName, out inFlightTableName, out fieldName);
+	public override void GetUserIndexTableDetails(out string tableName, out string? fieldName) =>
+		indexProcessor.GetUserIndexTableDetails(out tableName, out fieldName);
 }
 
 static partial class UserIndexSubscriptionLogMessages {

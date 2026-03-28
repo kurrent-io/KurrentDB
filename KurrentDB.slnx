@@ -76,7 +76,6 @@
     <Project Path="src\KurrentDB.Core.TUnit.Tests\KurrentDB.Core.TUnit.Tests.csproj" />
     <Project Path="src\KurrentDB.Core.XUnit.Tests\KurrentDB.Core.XUnit.Tests.csproj" />
     <Project Path="src\KurrentDB.Licensing.Tests\KurrentDB.Licensing.Tests.csproj" />
-    <Project Path="src\KurrentDB.LogV3.Tests\KurrentDB.LogV3.Tests.csproj" />
     <Project Path="src\KurrentDB.OtlpExporterPlugin.Tests\KurrentDB.OtlpExporterPlugin.Tests.csproj" />
     <Project Path="src\KurrentDB.Plugins.TestHelpers\KurrentDB.Plugins.TestHelpers.csproj" />
     <Project Path="src\KurrentDB.Projections.JavaScript.Tests\KurrentDB.Projections.JavaScript.Tests.csproj" />
@@ -97,7 +96,6 @@
   <Project Path="src\KurrentDB.Licensing\KurrentDB.Licensing.csproj" />
   <Project Path="src\KurrentDB.LogCommon\KurrentDB.LogCommon.csproj" />
   <Project Path="src\KurrentDB.Logging\KurrentDB.Logging.csproj" />
-  <Project Path="src\KurrentDB.LogV3\KurrentDB.LogV3.csproj" />
   <Project Path="src\KurrentDB.MicroBenchmarks\KurrentDB.MicroBenchmarks.csproj" />
   <Project Path="src\KurrentDB.Native\KurrentDB.Native.csproj" />
   <Project Path="src\KurrentDB.NETCore.Compatibility\KurrentDB.NETCore.Compatibility.csproj" />

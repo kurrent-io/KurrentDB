@@ -9,7 +9,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Helpers.IODispatcherTests.QueueWriteEventsTests;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_a_write_completes<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private bool _completed = false;
 

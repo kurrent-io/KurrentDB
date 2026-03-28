@@ -11,7 +11,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.TransactionLog.Truncation;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_truncating_into_the_middle_of_scavenged_chunk_with_index_in_memory<TLogFormat, TStreamId> : TruncateScenario<TLogFormat, TStreamId> {
 	private string chunk0;
 	private string chunk1;

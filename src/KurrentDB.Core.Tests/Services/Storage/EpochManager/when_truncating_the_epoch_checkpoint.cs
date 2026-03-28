@@ -94,7 +94,6 @@ public abstract class
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class with_no_epochs : when_truncating_the_epoch_checkpoint<TLogFormat, TStreamId> {
 		public with_no_epochs() : base(0) { }
 
@@ -110,7 +109,6 @@ public abstract class
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class with_two_epochs : when_truncating_the_epoch_checkpoint<TLogFormat, TStreamId> {
 		public with_two_epochs() : base(2) { }
 
@@ -195,7 +193,6 @@ public abstract class
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class with_cache_size_minus_three_epochs : when_truncating_the_epoch_checkpoint<TLogFormat, TStreamId> {
 		public with_cache_size_minus_three_epochs() : base(CachedEpochCount - 3) { }
 
@@ -213,7 +210,6 @@ public abstract class
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class with_cache_size_epochs : when_truncating_the_epoch_checkpoint<TLogFormat, TStreamId> {
 		public with_cache_size_epochs() : base(CachedEpochCount) { }
 		[Test]
@@ -230,7 +226,6 @@ public abstract class
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class with_cache_size_plus_two_epochs : when_truncating_the_epoch_checkpoint<TLogFormat, TStreamId> {
 		public with_cache_size_plus_two_epochs() : base(CachedEpochCount + 2) { }
 

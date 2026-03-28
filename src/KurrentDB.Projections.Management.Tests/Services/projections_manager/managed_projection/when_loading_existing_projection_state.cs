@@ -18,7 +18,6 @@ using NUnit.Framework;
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager.managed_projection;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_loading_existing_projection_state_with_no_projection_subsystem_version<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private new ITimeProvider _timeProvider;
 	private string _projectionName = Guid.NewGuid().ToString();
@@ -75,7 +74,6 @@ public class when_loading_existing_projection_state_with_no_projection_subsystem
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_loading_existing_projection_state_with_projection_subsystem_version<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private new ITimeProvider _timeProvider;
 	private string _projectionName = Guid.NewGuid().ToString();

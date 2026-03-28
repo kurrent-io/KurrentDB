@@ -17,7 +17,6 @@ using AwakeServiceMessage = KurrentDB.Core.Services.AwakeReaderService.AwakeServ
 namespace KurrentDB.Projections.Core.Tests.Services.event_reader.transaction_file_reader;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_handling_eof_and_idle_eof<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private TransactionFileEventReader _edp;
 	private Guid _distibutionPointCorrelationId;

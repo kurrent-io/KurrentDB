@@ -88,7 +88,6 @@ public class when_initializing_projection_with_default_options<TLogFormat, TStre
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_initializing_projection_with_persisted_state<TLogFormat, TStreamId> : projection_config_test_base<TLogFormat, TStreamId> {
 	private ManagedProjection _mp;
 	private Guid _projectionId = Guid.NewGuid();
@@ -248,7 +247,6 @@ public class when_updating_projection_config_to_remove_execution_timeout<TLogFor
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_updating_projection_config_of_faulted_projection<TLogFormat, TStreamId> : projection_config_test_base<TLogFormat, TStreamId> {
 	private ManagedProjection _mp;
 	private Guid _projectionId = Guid.NewGuid();
@@ -323,7 +321,6 @@ public class when_updating_projection_config_of_faulted_projection<TLogFormat, T
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_updating_projection_config_of_running_projection<TLogFormat, TStreamId> : projection_config_test_base<TLogFormat, TStreamId> {
 	private ManagedProjection _mp;
 	private Guid _projectionId = Guid.NewGuid();

@@ -12,7 +12,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Integration.Idempotency;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_soft_deleted_stream_is_written_to_idempotently<TLogFormat, TStreamId> : specification_with_a_single_node<TLogFormat, TStreamId> {
 	private readonly string _streamId;
 	private readonly Event[] _events;

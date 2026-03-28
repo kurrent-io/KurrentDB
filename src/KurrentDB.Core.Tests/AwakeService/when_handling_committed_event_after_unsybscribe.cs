@@ -15,7 +15,6 @@ using AwakeServiceMessage = KurrentDB.Core.Services.AwakeReaderService.AwakeServ
 namespace KurrentDB.Core.Tests.AwakeService;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_handling_committed_event_after_unsybscribe<TLogFormat, TStreamId> {
 	private KurrentDB.Core.Services.AwakeReaderService.AwakeService _it;
 	private EventRecord _eventRecord;

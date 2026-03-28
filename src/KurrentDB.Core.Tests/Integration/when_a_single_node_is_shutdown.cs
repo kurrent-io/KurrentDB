@@ -9,7 +9,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Integration;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_a_single_node_is_shutdown<TLogFormat, TStreamId> : SpecificationWithDirectory {
 	[Test]
 	public async Task throws_on_timeout() {

@@ -19,7 +19,6 @@ namespace KurrentDB.Core.Tests.Http.Cluster;
 
 [Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_requesting_from_follower<TLogFormat, TStreamId> : specification_with_cluster<TLogFormat, TStreamId> {
 	private const string TestStream = "test-stream";
 	private const string TestDeleteStream = "test-stream-to-be-deleted";

@@ -15,7 +15,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.TransactionLog;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class tfchunk_get_actual_raw_position_should<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
 	private readonly TStreamId _streamId = LogFormatHelper<TLogFormat, TStreamId>.StreamId;
 	private readonly TStreamId _eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;

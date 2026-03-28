@@ -8,7 +8,6 @@ using NUnit.Framework;
 namespace KurrentDB.Projections.Core.Tests.Services.Jint.Scenarios;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(long))]
 public class when_recategorizing_chat_events_by_users<TLogFormat, TStream> : specification_with_js_query_posted<TLogFormat, TStream> {
 	protected override void GivenEvents() {
 	}

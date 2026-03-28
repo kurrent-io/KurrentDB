@@ -13,7 +13,6 @@ namespace KurrentDB.Core.Tests.ClientAPI;
 
 [Category("LongRunning"), Category("ClientAPI")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class read_from_persistent_subscription_with_link_resolution_when_stream_name_contains_at_symbol<TLogFormat, TStreamId> : SpecificationWithMiniNode<TLogFormat, TStreamId> {
 	private string _result;
 

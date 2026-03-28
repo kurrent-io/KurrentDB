@@ -29,7 +29,6 @@ public abstract class authenticated_requests_made_from_a_follower<TLogFormat, TS
 		$"Basic {Convert.ToBase64String(Encoding.ASCII.GetBytes("admin:changeit"))}";
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class via_http_should : authenticated_requests_made_from_a_follower<TLogFormat, TStreamId> {
 		private HttpStatusCode _statusCode;
 		private string _responseReason;
@@ -75,7 +74,6 @@ public abstract class authenticated_requests_made_from_a_follower<TLogFormat, TS
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class via_grpc_should : authenticated_requests_made_from_a_follower<TLogFormat, TStreamId> {
 		private Status _status;
 
@@ -137,7 +135,6 @@ public abstract class authenticated_requests_made_from_a_follower<TLogFormat, TS
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class via_tcp_should : authenticated_requests_made_from_a_follower<TLogFormat, TStreamId> {
 		private Exception _caughtException;
 

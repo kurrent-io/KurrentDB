@@ -17,7 +17,6 @@ using IODispatcherDelayedMessage = KurrentDB.Core.Helpers.IODispatcherDelayedMes
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection.projection_checkpoint_reader;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_projection_reader_times_out_on_read<TLogFormat, TStreamId> : with_projection_checkpoint_reader<TLogFormat, TStreamId>,
 	IHandle<CoreProjectionProcessingMessage.CheckpointLoaded>,
 	IHandle<TimerMessage.Schedule> {

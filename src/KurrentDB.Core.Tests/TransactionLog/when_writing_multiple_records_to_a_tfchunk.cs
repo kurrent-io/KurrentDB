@@ -11,7 +11,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.TransactionLog;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_writing_multiple_records_to_a_tfchunk<TLogFormat, TStreamId> : SpecificationWithFilePerTestFixture {
 	private TFChunk _chunk;
 	private readonly Guid _corrId = Guid.NewGuid();

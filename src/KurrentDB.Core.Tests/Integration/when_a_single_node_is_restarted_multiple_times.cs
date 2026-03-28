@@ -14,7 +14,6 @@ namespace KurrentDB.Core.Tests.Integration;
 
 [Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_a_single_node_is_restarted_multiple_times<TLogFormat, TStreamId> : specification_with_a_single_node<TLogFormat, TStreamId> {
 	private List<Guid> _epochIds = new List<Guid>();
 	private const int _numberOfNodeStarts = 5;

@@ -3,6 +3,7 @@
 
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
+using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
 using KurrentDB.SecondaryIndexing.Storage;
 using KurrentDB.SecondaryIndexing.Tests.Generators;
@@ -24,8 +25,11 @@ public class RawQuackMessageBatchAppender : IMessageBatchAppender {
 
 	public RawQuackMessageBatchAppender(DuckDBConnectionPool db, DuckDbTestEnvironmentOptions options) {
 		_commitSize = options.CommitSize;
-		var schema = new IndexingDbSchema();
-		schema.CreateSchema(db);
+		var schema = new IndexingDbSchema(static (_, _) => Enumerable.Empty<ReadResponse>().GetEnumerator());
+
+		using (db.Rent(out var rentedConn)) {
+			schema.Execute(rentedConn);
+		}
 
 		using var connection = db.Open();
 		_defaultIndexAppender = new(connection, "idx_all"u8);

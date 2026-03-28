@@ -10,7 +10,6 @@ using NUnit.Framework;
 namespace KurrentDB.Projections.Core.Tests.Integration.system_projections;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class
 	when_changing_categorization_projection_configurations_to_first<TLogFormat, TStreamId> : specification_with_a_v8_query_posted<TLogFormat, TStreamId> {
 	protected override void GivenEvents() {

@@ -126,7 +126,7 @@ KurrentDB is an event-native database with a distributed, plugin-based architect
 
 ### Project Structure
 
-- **Core Projects**: KurrentDB.Core, KurrentDB.Common, KurrentDB.LogV3
+- **Core Projects**: KurrentDB.Core, KurrentDB.Common
 - **Transport**: KurrentDB.Transport.Http, KurrentDB.Transport.Tcp
 - **API Projects**: KurrentDB.Api.V2, KurrentDB.Plugins.Api.V2 (Protocol v2 support)
 - **Plugins**: Individual plugin projects with naming `KurrentDB.*.PluginName`

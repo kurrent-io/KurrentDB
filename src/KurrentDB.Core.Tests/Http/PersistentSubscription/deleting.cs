@@ -14,7 +14,6 @@ namespace KurrentDB.Core.Tests.Http.PersistentSubscription;
 
 [Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 class when_deleting_non_existing_subscription<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
 	private HttpResponseMessage _response;
 
@@ -33,7 +32,6 @@ class when_deleting_non_existing_subscription<TLogFormat, TStreamId> : with_admi
 
 [Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 class when_deleting_an_existing_subscription<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
 	private HttpResponseMessage _response;
 
@@ -58,7 +56,6 @@ class when_deleting_an_existing_subscription<TLogFormat, TStreamId> : with_admin
 
 [Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 class when_deleting_an_existing_subscription_without_permissions<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
 	private HttpResponseMessage _response;
 
@@ -84,7 +81,6 @@ class when_deleting_an_existing_subscription_without_permissions<TLogFormat, TSt
 
 [Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 class when_deleting_an_existing_subscription_with_subscribers<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
 	private HttpResponseMessage _response;
 	private const string _stream = "astreamname";
