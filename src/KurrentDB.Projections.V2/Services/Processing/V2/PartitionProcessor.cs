@@ -24,14 +24,14 @@ public class PartitionProcessor(
 	bool emitEnabled,
 	Action<int, IReadOnlyOutputBuffer> onCheckpointMarker,
 	Func<string, ValueTask<string?>> loadPersistedState,
-	ConcurrentDictionary<string, string> sharedPartitionStates) {
+	ConcurrentDictionary<string, string> sharedPartitionStates) { // todo: this is unbounded, consider eviction strategy
 
 	private static readonly ILogger Log = Serilog.Log.ForContext<PartitionProcessor>();
 
 	// the two buffers alternate being active/frozen
 	private OutputBuffer _activeBuffer = new();
 	private OutputBuffer _frozenBuffer = new();
-	private readonly Dictionary<string, string?> _stateCache = [];
+	private readonly Dictionary<string, string?> _stateCache = []; // todo: this is unbounded, consider eviction strategy
 	private string? _sharedState;
 	private bool _sharedStateInitialized;
 
