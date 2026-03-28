@@ -3,10 +3,12 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using DotNext.Runtime.CompilerServices;
 using KurrentDB.Core;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Transport.Enumerators;
@@ -23,33 +25,32 @@ public sealed class ProjectionEngineV2(
 	ProjectionEngineV2Config config,
 	IReadStrategy readStrategy,
 	ISystemClient client,
-	ClaimsPrincipal user)
-	: IAsyncDisposable {
+	ClaimsPrincipal user) {
 	private static readonly ILogger Log = Serilog.Log.ForContext<ProjectionEngineV2>();
 
 	private readonly ProjectionEngineV2Config _config = config ?? throw new ArgumentNullException(nameof(config));
 	private readonly IReadStrategy _readStrategy = readStrategy ?? throw new ArgumentNullException(nameof(readStrategy));
 	private readonly ISystemClient _client = client ?? throw new ArgumentNullException(nameof(client));
 	private readonly ClaimsPrincipal _user = user ?? throw new ArgumentNullException(nameof(user));
-	private CancellationTokenSource _cts;
 	private Task _runTask;
 	private long _totalEventsProcessed;
 	private readonly ConcurrentDictionary<string, string> _partitionStates = new();
 
-	public Task Start(TFPos checkpoint, CancellationToken ct) {
-		_cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-		_runTask = Task.Run(() => Run(checkpoint, _cts.Token), _cts.Token);
-		return Task.CompletedTask;
+	public Task Run(TFPos checkpoint, CancellationToken ct) {
+		_runTask = RunImpl(checkpoint, ct);
+		return _runTask;
 	}
 
 	public bool IsFaulted => _runTask?.IsFaulted ?? false;
+	public bool IsStopped => _runTask?.IsCompleted ?? false;
 	public Exception FaultException => _runTask?.Exception?.InnerException;
 	public long TotalEventsProcessed => Interlocked.Read(ref _totalEventsProcessed);
 
 	public string GetPartitionState(string partitionKey) =>
 		_partitionStates.TryGetValue(partitionKey, out var state) ? state : null;
 
-	private async Task Run(TFPos checkpoint, CancellationToken ct) {
+	[AsyncMethodBuilder(typeof(SpawningAsyncTaskMethodBuilder))]
+	private async Task RunImpl(TFPos checkpoint, CancellationToken ct) {
 		Log.Information("ProjectionEngineV2 {Name} starting from {Checkpoint}", _config.ProjectionName, checkpoint);
 
 		var partitionCount = _config.PartitionCount;
@@ -255,17 +256,5 @@ public sealed class ProjectionEngineV2(
 			isJson: e.IsJson,
 			data: e.Data.Length > 0 ? Encoding.UTF8.GetString(e.Data.Span) : null,
 			metadata: e.Metadata.Length > 0 ? Encoding.UTF8.GetString(e.Metadata.Span) : null);
-	}
-
-
-	public async ValueTask DisposeAsync() {
-		if (_cts is { } cts) {
-			await cts.CancelAsync();
-			if (_runTask is not null) {
-				try { await _runTask; } catch (OperationCanceledException) { }
-			}
-
-			cts.Dispose();
-		}
 	}
 }

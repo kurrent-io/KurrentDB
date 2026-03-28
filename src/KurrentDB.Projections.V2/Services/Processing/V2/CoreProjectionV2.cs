@@ -2,10 +2,12 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using DotNext.Runtime.CompilerServices;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
@@ -21,6 +23,9 @@ namespace KurrentDB.Projections.Core.Services.Processing.V2;
 /// Implements ICoreProjectionControl so ProjectionCoreService can manage V2 projections
 /// identically to V1 CoreProjection instances.
 /// </summary>
+/// <remarks>
+/// This class is not thread safe, it runs on the projection worker's input queue
+/// </remarks>
 public sealed class CoreProjectionV2 : ICoreProjectionControl {
 	static readonly ILogger Log = Serilog.Log.ForContext<CoreProjectionV2>();
 
@@ -36,8 +41,10 @@ public sealed class CoreProjectionV2 : ICoreProjectionControl {
 	readonly ProjectionConfig _projectionConfig;
 	readonly string _checkpointStreamId;
 
+	// Start() instantiates these two, Stop() returns them to null, another Start() constructs new instances.
 	ProjectionEngineV2 _engine;
 	CancellationTokenSource _engineCts;
+
 	int _statisticsSequentialNumber;
 	bool _disposed;
 
@@ -97,8 +104,8 @@ public sealed class CoreProjectionV2 : ICoreProjectionControl {
 
 		// Try in-memory state first (available immediately, no need to wait for checkpoint writes)
 		string state = null;
-		if (_engine is not null) {
-			state = _engine.GetPartitionState(partition ?? "");
+		if (_engine is { } engine) {
+			state = engine.GetPartitionState(partition ?? "");
 		}
 
 		if (state is not null) {
@@ -134,8 +141,8 @@ public sealed class CoreProjectionV2 : ICoreProjectionControl {
 
 		// Try in-memory state first
 		string result = null;
-		if (_engine is not null) {
-			result = _engine.GetPartitionState(partition ?? "");
+		if (_engine is { } engine) {
+			result = engine.GetPartitionState(partition ?? "");
 		}
 
 		if (result is not null) {
@@ -221,50 +228,47 @@ public sealed class CoreProjectionV2 : ICoreProjectionControl {
 
 			_engineCts = new CancellationTokenSource();
 			_engine = new ProjectionEngineV2(config, readStrategy, new SystemClient(_mainQueue), _runAs);
-			_engine.Start(checkpoint, _engineCts.Token);
+			_engine.Run(checkpoint, _engineCts.Token);
 
 			// Publish Started and begin stats reporting
 			_publisher.Publish(new CoreProjectionStatusMessage.Started(_projectionCorrelationId, _projectionName));
-			StartStatisticsReporting();
+			_ = StartStatisticsReporting(_engine);
 		} catch (Exception ex) {
 			Log.Error(ex, "V2CoreProjection {Name} failed to start engine", _projectionName);
 			SetFaulted(ex.Message);
 		}
 	}
 
-	void StartStatisticsReporting() {
-		var cts = _engineCts;
-		Task.Run(async () => {
-			try {
-				while (cts is { IsCancellationRequested: false }) {
-					await Task.Delay(1000, cts.Token);
-					PublishStatistics();
+	[AsyncMethodBuilder(typeof(SpawningAsyncTaskMethodBuilder))]
+	async Task StartStatisticsReporting(ProjectionEngineV2 engine) {
+		while (!engine.IsStopped) {
+			await Task.Delay(1000);
+			PublishStatistics(engine);
+		}
 
-					// Check if engine faulted
-					if (_engine is { IsFaulted: true }) {
-						SetFaulted(_engine.FaultException?.Message ?? "V2 engine faulted");
-						break;
-					}
-				}
-			} catch (OperationCanceledException) {
-				// Expected on shutdown
-			}
-		});
+		// Check if engine faulted
+		if (engine.IsFaulted) {
+			_publisher.Publish(new CoreProjectionProcessingMessage.Failed(
+				_projectionCorrelationId,
+				engine.FaultException?.Message ?? "V2 engine faulted"));
+		}
+
+		PublishStatistics(engine);
 	}
 
-	void PublishStatistics() {
-		if (_disposed) return;
-
-		// Read events processed count from the engine's internal tracking
-		// For now we approximate by reading the checkpoint stream
+	void PublishStatistics(ProjectionEngineV2 engine) {
 		var stats = new ProjectionStatistics {
 			Name = _projectionName,
 			EffectiveName = _projectionName,
 			ProjectionId = 0,
-			Status = _engine is { IsFaulted: true } ? "Faulted" : "Running",
+			Status = engine.IsFaulted
+				? "Faulted"
+				: engine.IsStopped
+					? "Stopped"
+					: "Running",
 			StateReason = "",
 			BufferedEvents = 0,
-			EventsProcessedAfterRestart = (int)(_engine?.TotalEventsProcessed ?? 0)
+			EventsProcessedAfterRestart = (int)engine.TotalEventsProcessed
 		};
 
 		_publisher.Publish(new CoreProjectionStatusMessage.StatisticsReport(
@@ -272,23 +276,12 @@ public sealed class CoreProjectionV2 : ICoreProjectionControl {
 	}
 
 	void StopEngine() {
-		if (_engineCts is not null) {
-			var cts = _engineCts;
-			var engine = _engine;
+		if (_engineCts is { } cts) {
 			_engineCts = null;
 			_engine = null;
 
 			cts.Cancel();
-
-			// Dispose asynchronously to avoid blocking the projection worker thread.
-			_ = Task.Run(async () => {
-				if (engine is not null) {
-					try { await engine.DisposeAsync(); }
-					catch (OperationCanceledException) { }
-					catch (Exception ex) { Log.Warning(ex, "Error disposing V2 engine {Name}", _projectionName); }
-				}
-				cts.Dispose();
-			});
+			cts.Dispose();
 		}
 	}
 
