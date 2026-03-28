@@ -58,7 +58,7 @@ internal partial class ProjectionManagement {
 			_ => throw new InvalidOperationException()
 		};
 
-		var engineVersion = options.EngineVersion <= ProjectionConstants.EngineUnspecified ? ProjectionConstants.EngineV1 : options.EngineVersion;
+		var engineVersion = options.EngineVersion <= ProjectionConstants.EngineUnspecified ? ProjectionConstants.EngineDefault : options.EngineVersion;
 
 		if (engineVersion == ProjectionConstants.EngineV2 && trackEmittedStreams)
 			throw new InvalidOperationException("Tracking emitted streams is not supported with engine version 2.");

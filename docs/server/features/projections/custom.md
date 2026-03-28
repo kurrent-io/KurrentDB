@@ -161,6 +161,19 @@ curl -i -d@stats-counter.json \
   -u admin:changeit
 ```
 
+#### Engine version
+
+You can optionally specify the projection engine version using the `engineversion` query parameter:
+
+```bash
+curl -i -d@stats-counter.json \
+  "http://localhost:2113/projections/continuous?name=stats-counter&type=js&enabled=true&emit=true&engineversion=2" \
+  -u admin:changeit
+```
+
+- `engineversion=1` (default) — uses the original projection engine
+- `engineversion=2` — uses the new V2 projection engine
+
 ### Debugging your first projection
 
 Once the projection is running, open your browser and enable the developer tools. Once you have the developer
