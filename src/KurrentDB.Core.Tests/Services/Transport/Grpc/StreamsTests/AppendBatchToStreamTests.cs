@@ -16,7 +16,6 @@ namespace KurrentDB.Core.Tests.Services.Transport.Grpc.StreamsTests;
 [TestFixture]
 public class AppendBatchToStreamTests {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class single_batch<TLogFormat, TStreamId> : GrpcSpecification<TLogFormat, TStreamId> {
 		private BatchAppendResp _response;
 		private readonly Uuid _correlationId;
@@ -98,7 +97,6 @@ public class AppendBatchToStreamTests {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class single_batch_non_structured_uuid<TLogFormat, TStreamId> : GrpcSpecification<TLogFormat, TStreamId> {
 		private BatchAppendResp _response;
 		private readonly Uuid _correlationId;
@@ -179,7 +177,6 @@ public class AppendBatchToStreamTests {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class multiple_batches<TLogFormat, TStreamId> : GrpcSpecification<TLogFormat, TStreamId> {
 		private BatchAppendResp _response;
 		protected override Task Given() => Task.CompletedTask;
@@ -208,7 +205,6 @@ public class AppendBatchToStreamTests {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class exceeded_deadline<TLogFormat, TStreamId> : GrpcSpecification<TLogFormat, TStreamId> {
 		private BatchAppendResp _response;
 		private readonly Uuid _correlationId;
@@ -245,7 +241,6 @@ public class AppendBatchToStreamTests {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class exceeded_deadline_timestamp<TLogFormat, TStreamId> : GrpcSpecification<TLogFormat, TStreamId> {
 		private BatchAppendResp _response;
 		private readonly Uuid _correlationId;

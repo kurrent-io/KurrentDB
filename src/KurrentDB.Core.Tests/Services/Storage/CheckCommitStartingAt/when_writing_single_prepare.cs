@@ -10,7 +10,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Services.Storage.CheckCommitStartingAt;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_writing_single_prepare<TLogFormat, TStreamId> : ReadIndexTestScenario<TLogFormat, TStreamId> {
 	private IPrepareLogRecord _prepare;
 

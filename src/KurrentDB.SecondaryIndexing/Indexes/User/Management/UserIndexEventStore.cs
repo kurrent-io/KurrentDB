@@ -9,6 +9,7 @@ using Kurrent.Surge.Schema.Serializers;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.UserManagement;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.User.Management;
 
@@ -83,7 +84,7 @@ public class UserIndexEventStore : IEventStore {
 		}
 
 		// write all the events transactionally
-		var (position, streamRevisions) = await _client.Writing.WriteEvents(writes.Build(), cancellationToken);
+		var (position, streamRevisions) = await _client.Writing.WriteEvents(writes.Build(), requireLeader: false, SystemAccounts.System, cancellationToken);
 
 		var originalStreamIndex = 0;
 		return new AppendEventsResult(

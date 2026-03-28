@@ -4,8 +4,7 @@
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Security.Claims;
-using System.Text;
-using System.Text.Json;
+using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
@@ -22,6 +21,7 @@ using ProjectionResolvedEvent = KurrentDB.Projections.Core.Services.Processing.R
 
 namespace KurrentDB.Projections.V2.Tests.Unit;
 
+// todo: whats with all the delays in this test project
 public class ProjectionEngineV2LifecycleTests {
 	#region Helpers
 
@@ -47,7 +47,6 @@ public class ProjectionEngineV2LifecycleTests {
 			}
 		}
 
-		public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 	}
 
 	sealed class FakeReadStrategy(CoreResolvedEvent[] events) : IReadStrategy {
@@ -59,7 +58,6 @@ public class ProjectionEngineV2LifecycleTests {
 			}
 		}
 
-		public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 	}
 
 	sealed class EmptyReadStrategy : IReadStrategy {
@@ -68,7 +66,6 @@ public class ProjectionEngineV2LifecycleTests {
 			yield break;
 		}
 
-		public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 	}
 
 	sealed class CapturingPublisher : IPublisher {
@@ -157,14 +154,12 @@ public class ProjectionEngineV2LifecycleTests {
 			CheckpointUnhandledBytesThreshold = long.MaxValue
 		};
 
-		var engine = new ProjectionEngineV2(config, new InfiniteReadStrategy(), publisher, user);
+		var engine = new ProjectionEngineV2(config, new InfiniteReadStrategy(), new SystemClient(publisher), user);
 
-		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
-		await engine.Start(new TFPos(0, 0), cts.Token);
-
-		// Wait for cancellation to propagate
-		await Task.Delay(1500);
-		await engine.DisposeAsync();
+		using var cts = new CancellationTokenSource();
+		var engineRun = engine.Run(new TFPos(0, 0), cts.Token);
+		cts.Cancel();
+		await engineRun;
 
 		await Assert.That(engine.IsFaulted).IsFalse();
 	}
@@ -185,11 +180,12 @@ public class ProjectionEngineV2LifecycleTests {
 			CheckpointUnhandledBytesThreshold = long.MaxValue
 		};
 
-		var engine = new ProjectionEngineV2(config, new EmptyReadStrategy(), publisher, user);
+		var engine = new ProjectionEngineV2(config, new EmptyReadStrategy(), new SystemClient(publisher), user);
 
-		await engine.Start(new TFPos(0, 0), CancellationToken.None);
-		await Task.Delay(500);
-		await engine.DisposeAsync();
+		using var cts = new CancellationTokenSource();
+		var engineRun = engine.Run(new TFPos(0, 0), cts.Token);
+		cts.Cancel();
+		await engineRun;
 
 		await Assert.That(engine.IsFaulted).IsFalse();
 	}
@@ -229,9 +225,11 @@ public class ProjectionEngineV2LifecycleTests {
 		};
 
 		var readStrategy = new FakeReadStrategy(events);
-		var engine = new ProjectionEngineV2(config, readStrategy, publisher, user);
+		var engine = new ProjectionEngineV2(config, readStrategy, new SystemClient(publisher), user);
 
-		await engine.Start(new TFPos(0, 0), CancellationToken.None);
+
+		using var cts = new CancellationTokenSource();
+		var engineRun = engine.Run(new TFPos(0, 0), cts.Token);
 
 		var timeout = Task.Delay(TimeSpan.FromSeconds(10));
 		while (!engine.IsFaulted) {
@@ -244,7 +242,8 @@ public class ProjectionEngineV2LifecycleTests {
 			await Task.Delay(50);
 		}
 
-		await engine.DisposeAsync();
+		cts.Cancel();
+		await engineRun;
 
 		await Assert.That(engine.IsFaulted).IsFalse();
 

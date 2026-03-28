@@ -11,7 +11,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Services.Storage.MaxAgeMaxCount.ReadRangeAndNextEventNumber;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class
 	when_reading_very_long_stream_with_max_age_and_mostly_expired_events<TLogFormat, TStreamId> : ReadIndexTestScenario<TLogFormat, TStreamId> {
 	public when_reading_very_long_stream_with_max_age_and_mostly_expired_events() : base(maxEntriesInMemTable: 500_000, chunkSize: TFConsts.ChunkSize) {

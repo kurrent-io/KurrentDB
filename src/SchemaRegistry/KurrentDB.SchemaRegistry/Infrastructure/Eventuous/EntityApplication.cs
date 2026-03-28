@@ -57,6 +57,20 @@ public abstract class EntityApplication<TEntity>(IEventStore store)
             );
         });
 
+    protected void OnExisting<T>(Func<TEntity, T, CancellationToken, ValueTask<IEnumerable<object>>> executeCommand) where T : class => On<T>()
+        .InState(ExpectedState.Any)
+        .GetStream(cmd => new(StreamTemplate.GetStream(GetEntityId(cmd))))
+        .ActAsync(async (entity, _, cmd, ct) => {
+            var entityId = GetEntityId(cmd);
+            var stream   = new StreamName(StreamTemplate.GetStream(entityId));
+            var exists   = await Store.StreamExists(stream, ct);
+
+            if (!exists)
+                throw new DomainExceptions.EntityNotFound(EntityName, entityId);
+
+            return await executeCommand(entity, cmd, ct);
+        });
+
     protected void OnAny<T>(Func<TEntity, T, IEnumerable<object>> executeCommand) where T : class => On<T>()
         .InState(ExpectedState.Any)
         .GetStream(cmd => new(StreamTemplate.GetStream(GetEntityId(cmd))))

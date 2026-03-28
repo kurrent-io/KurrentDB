@@ -2,7 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics.Metrics;
+using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
+using Kurrent.Quack.Threading;
 using Kurrent.Surge.Schema.Serializers;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
@@ -57,6 +59,12 @@ public sealed class UserIndexEngine :
 		subscriber.Subscribe<SystemMessage.BecomeShuttingDown>(this);
 		subscriber.Subscribe<StorageMessage.EventCommitted>(this);
 	}
+
+	public bool TryCaptureSnapshot(ReadOnlySpan<byte> viewNameUtf8,
+		DuckDBAdvancedConnection connection,
+		out UserIndexEngineSubscription.ReadLock readLock,
+		out BufferedView.Snapshot snapshot)
+		=> _subscription.TryCaptureSnapshot(viewNameUtf8, connection, out readLock, out snapshot);
 
 	public void EnsureLive() {
 		if (!_subscription.CaughtUp) {
@@ -136,8 +144,8 @@ public sealed class UserIndexEngine :
 		CancellationToken token) =>
 		_subscription.ReadBackwards(msg, token);
 
-	public bool TryGetUserIndexTableDetails(string indexName, out string tableName, out string inFlightTableName, out string? fieldName) =>
-		_subscription.TryGetUserIndexTableDetails(indexName, out tableName, out inFlightTableName, out fieldName);
+	public bool TryGetUserIndexTableDetails(string indexName, out string tableName, out string? fieldName) =>
+		_subscription.TryGetUserIndexTableDetails(indexName, out tableName, out fieldName);
 }
 
 static partial class UserIndexEngineLogMessages {

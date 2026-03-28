@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -49,9 +48,10 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 		_repeated = repeated;
 
 		Shared = CreatePool(isReadOnly: false, log: true);
-		using var connection = Shared.Open();
-		foreach (var s in once)
-			s.Execute(connection);
+		using (Shared.Rent(out var connection)) {
+			foreach (var s in once)
+				s.Execute(connection);
+		}
 
 		return;
 
@@ -105,6 +105,7 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {
+			Shared.Dispose();
 			if (_tempPath != null) {
 				try {
 					File.Delete(_tempPath);
@@ -118,7 +119,6 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 	}
 
 	private class ConnectionPoolWithFunctions(string connectionString, IReadOnlyList<IDuckDBSetup> setup) : DuckDBConnectionPool(connectionString) {
-		[Experimental("DuckDBNET001")]
 		protected override void Initialize(DuckDBAdvancedConnection connection) {
 			base.Initialize(connection);
 			for (var i = 0; i < setup.Count; i++) {

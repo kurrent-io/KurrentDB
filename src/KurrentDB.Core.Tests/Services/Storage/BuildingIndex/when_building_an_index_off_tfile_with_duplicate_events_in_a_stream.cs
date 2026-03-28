@@ -24,7 +24,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Services.Storage.BuildingIndex;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_building_an_index_off_tfile_with_duplicate_events_in_a_stream<TLogFormat, TStreamId>
 	: DuplicateReadIndexTestScenario<TLogFormat, TStreamId> {
 	private Guid _id1;

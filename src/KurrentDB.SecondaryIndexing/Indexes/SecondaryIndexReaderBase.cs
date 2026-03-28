@@ -13,11 +13,7 @@ namespace KurrentDB.SecondaryIndexing.Indexes;
 public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool sharedPool, IReadIndex<string> index) : ISecondaryIndexReader {
 	protected abstract string? GetId(string indexName);
 
-	protected abstract (List<IndexQueryRecord> Records, bool IsFinal) GetInflightForwards(string? id, long startPosition, int maxCount, bool excludeFirst);
-
-	protected abstract List<IndexQueryRecord> GetDbRecordsForwards(DuckDBConnectionPool pool, string? id, long startPosition, long endPosition, int maxCount, bool excludeFirst);
-
-	protected abstract IEnumerable<IndexQueryRecord> GetInflightBackwards(string? id, long startPosition, int maxCount, bool excludeFirst);
+	protected abstract List<IndexQueryRecord> GetDbRecordsForwards(DuckDBConnectionPool pool, string? id, long startPosition, int maxCount, bool excludeFirst);
 
 	protected abstract List<IndexQueryRecord> GetDbRecordsBackwards(DuckDBConnectionPool pool, string? id, long startPosition, int maxCount, bool excludeFirst);
 
@@ -60,28 +56,14 @@ public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool sharedPool, 
 		ReadIndexEventsForwardCompleted NoData(ReadIndexResult result, bool endOfStream, string? error = null)
 			=> new(result, ResolvedEvent.EmptyArray, pos, lastIndexedPosition, endOfStream, error);
 
-		IReadOnlyList<IndexQueryRecord> GetIndexRecordsForwards(long startPosition) {
-			var maxCount = msg.MaxCount;
-			var (inFlight, isComplete) = GetInflightForwards(id, startPosition, maxCount, msg.ExcludeStart);
-			if (isComplete) {
-				return inFlight;
-			}
-
-			var end = inFlight.Count > 0 ? inFlight[0].LogPosition : lastIndexedPosition + 1;
-			var range = GetDbRecordsForwards(GetPool(msg.Pool), id, startPosition, end, maxCount, msg.ExcludeStart);
-			if (range.Count == 0) {
-				return inFlight;
-			}
-
-			if (inFlight.Count > 0) {
-				range.AddRange(inFlight);
-			}
-
-			return range;
-		}
-
 		async ValueTask<(long, IReadOnlyList<ResolvedEvent>)> GetEventsForwards(long startPosition) {
-			var indexPrepares = GetIndexRecordsForwards(startPosition);
+			var indexPrepares = GetDbRecordsForwards(
+				GetPool(msg.Pool),
+				id,
+				startPosition,
+				msg.MaxCount,
+				msg.ExcludeStart);
+
 			var events = await reader.ReadRecords(indexPrepares, true, token);
 			return (indexPrepares.Count, events);
 		}
@@ -118,45 +100,19 @@ public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool sharedPool, 
 		ReadIndexEventsBackwardCompleted NoData(ReadIndexResult result, string? error = null)
 			=> new(result, ResolvedEvent.EmptyArray, pos, lastIndexedPosition, false, error);
 
-		IReadOnlyList<IndexQueryRecord> GetIndexRecordsBackwards(TFPos startPosition) {
-			var maxCount = msg.MaxCount;
-			var inFlight = GetInflightBackwards(id, startPosition.PreparePosition, maxCount, msg.ExcludeStart).ToArray();
-			if (inFlight.Length == maxCount) {
-				return inFlight;
-			}
-
-			int count;
-			long start;
-			bool excl;
-			if (inFlight.Length > 0) {
-				count = maxCount - inFlight.Length;
-				start = inFlight[^1].LogPosition;
-				excl = true;
-			} else {
-				count = maxCount;
-				start = startPosition.PreparePosition;
-				excl = msg.ExcludeStart;
-			}
-			var range = GetDbRecordsBackwards(GetPool(msg.Pool), id, start, count, excl);
-			if (range.Count == 0) {
-				return inFlight;
-			}
-
-			if (inFlight.Length > 0) {
-				range.AddRange(inFlight);
-			}
-
-			return range;
-		}
-
 		async ValueTask<(long, IReadOnlyList<ResolvedEvent>)> GetEventsBackwards(TFPos startPosition) {
-			var indexPrepares = GetIndexRecordsBackwards(startPosition);
+			var indexPrepares = GetDbRecordsBackwards(GetPool(msg.Pool),
+				id,
+				startPosition.PreparePosition,
+				msg.MaxCount,
+				msg.ExcludeStart);
+
 			var events = await reader.ReadRecords(indexPrepares, false, token);
 			return (indexPrepares.Count, events);
 		}
 	}
 
 	private DuckDBConnectionPool GetPool(DuckDBConnectionPool? pool) {
-		return pool is not null ? pool : sharedPool;
+		return pool ?? sharedPool;
 	}
 }

@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
@@ -33,8 +34,6 @@ public class ProjectionEngineV2PipelineTests {
 				await Task.Yield();
 			}
 		}
-
-		public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 	}
 
 	sealed class CapturingPublisher : IPublisher {
@@ -170,9 +169,10 @@ public class ProjectionEngineV2PipelineTests {
 		var publisher = new CapturingPublisher();
 		var user = new ClaimsPrincipal(new ClaimsIdentity());
 		var readStrategy = new FakeReadStrategy(events);
-		var engine = new ProjectionEngineV2(config, readStrategy, publisher, user);
+		var engine = new ProjectionEngineV2(config, readStrategy, new SystemClient(publisher), user);
 
-		await engine.Start(new TFPos(0, 0), CancellationToken.None);
+		using var cts = new CancellationTokenSource();
+		var engineRun = engine.Run(new TFPos(0, 0), cts.Token);
 
 		var timeout = Task.Delay(TimeSpan.FromSeconds(10));
 		while (!engine.IsFaulted) {
@@ -185,7 +185,9 @@ public class ProjectionEngineV2PipelineTests {
 			await Task.Delay(50);
 		}
 
-		await engine.DisposeAsync();
+		cts.Cancel();
+		await engineRun;
+
 		return (engine, publisher);
 	}
 

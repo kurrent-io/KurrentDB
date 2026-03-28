@@ -13,7 +13,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.TransactionLog.Truncation;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_truncating_database<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
 	[Test, Category("LongRunning")]
 	public async Task everything_should_go_fine() {

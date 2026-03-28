@@ -8,6 +8,7 @@ using EventStore.Plugins.Authorization;
 using Grpc.Core;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Transport.Grpc;
+using KurrentDB.Projections.Core;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
 using static EventStore.Client.Projections.CreateReq.Types.Options;
@@ -57,9 +58,9 @@ internal partial class ProjectionManagement {
 			_ => throw new InvalidOperationException()
 		};
 
-		var engineVersion = options.EngineVersion <= 0 ? 1 : options.EngineVersion;
+		var engineVersion = options.EngineVersion <= ProjectionConstants.EngineUnspecified ? ProjectionConstants.EngineDefault : options.EngineVersion;
 
-		if (engineVersion == 2 && trackEmittedStreams)
+		if (engineVersion == ProjectionConstants.EngineV2 && trackEmittedStreams)
 			throw new InvalidOperationException("Tracking emitted streams is not supported with engine version 2.");
 
 		var runAs = new ProjectionManagementMessage.RunAs(user);

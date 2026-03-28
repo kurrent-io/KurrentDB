@@ -10,7 +10,6 @@ namespace KurrentDB.Core.Tests.ClientAPI.Security;
 
 [Category("ClientAPI"), Category("LongRunning"), Category("Network")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class authorized_default_credentials_security<TLogFormat, TStreamId> : AuthenticationTestBase<TLogFormat, TStreamId> {
 	public authorized_default_credentials_security() : base(new UserCredentials("user1", "pa$$1")) {
 	}

@@ -12,7 +12,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.TransactionLog.Scavenging;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_metastream_is_scavenged_and_read_index_is_set_to_keep_just_last_metaevent<TLogFormat, TStreamId> : ScavengeTestScenario<TLogFormat, TStreamId> {
 	protected override ValueTask<DbResult> CreateDb(TFChunkDbCreationHelper<TLogFormat, TStreamId> dbCreator, CancellationToken token) {
 		return dbCreator

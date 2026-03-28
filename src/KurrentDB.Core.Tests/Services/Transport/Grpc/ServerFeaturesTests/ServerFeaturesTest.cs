@@ -24,7 +24,6 @@ namespace KurrentDB.Core.Tests.Services.Transport.Grpc.ServerFeaturesTests;
 
 public class ServerFeaturesTest {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_getting_supported_methods<TLogFormat, TStreamId> : specification_with_cluster<TLogFormat, TStreamId> {
 
 		private List<SupportedMethod> _supportedEndPoints = new();

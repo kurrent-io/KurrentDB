@@ -9,7 +9,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Helpers.IODispatcherTests.ReadEventsTests;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class async_read_stream_events_backward_with_timeout_on_read<TLogFormat, TStreamId> : with_read_io_dispatcher<TLogFormat, TStreamId> {
 	private bool _didTimeout;
 	private bool _didReceiveRead;
@@ -50,7 +49,6 @@ public class async_read_stream_events_backward_with_timeout_on_read<TLogFormat, 
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class read_stream_events_backward_with_timeout_on_read<TLogFormat, TStreamId> : with_read_io_dispatcher<TLogFormat, TStreamId> {
 	private bool _didTimeout;
 	private bool _didReceiveRead;

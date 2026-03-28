@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -73,16 +74,27 @@ public interface IReadOperations {
 
 public record struct StreamWrite(string Stream, long ExpectedRevision, LowAllocReadOnlyMemory<Event> Events);
 
+// note: if requireLeader is false we might forward the write to the leader,
+// but the credentials will only be preserved if the principal is SystemAccounts.System or contains a
+// DelegatedClaimsIdentity (such as when received via an API). see ClientWriteTcpDispatcher.CreateWriteRequestPackage.
 public interface IWriteOperations {
-	Task<WriteEventsResult> WriteEvents(string stream, Event[] events, long expectedRevision = -2, CancellationToken cancellationToken = default);
+	Task<WriteEventsResult> WriteEvents(string stream, Event[] events,
+		bool requireLeader,
+		ClaimsPrincipal principal,
+		long expectedRevision = -2,
+		CancellationToken cancellationToken = default);
 	Task<WriteEventsMultiResult> WriteEvents(
 		LowAllocReadOnlyMemory<string> streams,
 		LowAllocReadOnlyMemory<long> expectedRevisions,
 		LowAllocReadOnlyMemory<Event> events,
 		LowAllocReadOnlyMemory<int> eventStreamIndexes,
+		bool requireLeader,
+		ClaimsPrincipal principal,
 		CancellationToken cancellationToken = default);
 	Task<WriteEventsMultiResult> WriteEvents(
 		LowAllocReadOnlyMemory<StreamWrite> writes,
+		bool requireLeader,
+		ClaimsPrincipal principal,
 		CancellationToken cancellationToken = default);
 }
 
@@ -155,19 +167,27 @@ public class SystemClient : ISystemClient {
 	#region . Write .
 
 	public record WriteOperations(IPublisher Publisher, ILogger Logger) : IWriteOperations {
-		public Task<WriteEventsResult> WriteEvents(string stream, Event[] events, long expectedRevision = -2, CancellationToken cancellationToken = default) =>
-			Publisher.WriteEvents(stream, events, expectedRevision, cancellationToken);
+		public Task<WriteEventsResult> WriteEvents(string stream, Event[] events,
+			bool requireLeader,
+			ClaimsPrincipal principal,
+			long expectedRevision = -2,
+			CancellationToken cancellationToken = default) =>
+			Publisher.WriteEvents(stream, events, requireLeader, principal, expectedRevision, cancellationToken);
 
 		public Task<WriteEventsMultiResult> WriteEvents(
 			LowAllocReadOnlyMemory<string> streams,
 			LowAllocReadOnlyMemory<long> expectedRevisions,
 			LowAllocReadOnlyMemory<Event> events,
 			LowAllocReadOnlyMemory<int> eventStreamIndexes,
+			bool requireLeader,
+			ClaimsPrincipal principal,
 			CancellationToken cancellationToken = default) =>
-			Publisher.WriteEvents(streams, expectedRevisions, events, eventStreamIndexes, cancellationToken);
+			Publisher.WriteEvents(streams, expectedRevisions, events, eventStreamIndexes, requireLeader, principal, cancellationToken);
 
 		public Task<WriteEventsMultiResult> WriteEvents(
 			LowAllocReadOnlyMemory<StreamWrite> writes,
+			bool requireLeader,
+			ClaimsPrincipal principal,
 			CancellationToken cancellationToken = default) {
 
 			var streamIndexes = new Dictionary<string, int>();
@@ -199,6 +219,8 @@ public class SystemClient : ISystemClient {
 				expectedRevisions: expectedRevisions.Build(),
 				events: events.Build(),
 				eventStreamIndexes: eventStreamIndexes.Build(),
+				requireLeader,
+				principal,
 				cancellationToken);
 		}
 	}

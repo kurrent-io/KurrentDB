@@ -98,7 +98,7 @@ public static class PublisherManagementExtensions {
 				data: metadata.ToJsonBytes())
 		};
 
-		var (position, streamRevision) = await publisher.WriteEvents(SystemStreams.MetastreamOf(stream), events, expectedRevision, cancellationToken);
+		var (position, streamRevision) = await publisher.WriteEvents(SystemStreams.MetastreamOf(stream), events, requireLeader: false, SystemAccounts.System, expectedRevision, cancellationToken);
 
 		return (metadata, streamRevision.ToInt64());
 	}

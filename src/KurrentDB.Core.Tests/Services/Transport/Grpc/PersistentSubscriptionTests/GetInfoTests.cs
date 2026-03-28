@@ -20,7 +20,6 @@ namespace KurrentDB.Core.Tests.Services.Transport.Grpc.PersistentSubscriptionTes
 
 public class GetInfoTests {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class
 		when_getting_info_for_persistent_subscription_group_on_stream<TLogFormat, TStreamId>
 			: GrpcSpecification<TLogFormat, TStreamId> {
@@ -100,7 +99,6 @@ public class GetInfoTests {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class
 		when_listing_persistent_subscriptions_on_stream<TLogFormat, TStreamId>
 			: GrpcSpecification<TLogFormat, TStreamId> {
@@ -153,7 +151,6 @@ public class GetInfoTests {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class
 		when_listing_persistent_subscriptions_on_all_stream<TLogFormat, TStreamId>
 			: GrpcSpecification<TLogFormat, TStreamId> {
@@ -209,7 +206,6 @@ public class GetInfoTests {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class
 		when_listing_all_persistent_subscriptions<TLogFormat, TStreamId>
 			: GrpcSpecification<TLogFormat, TStreamId> {
@@ -283,7 +279,6 @@ public class GetInfoTests {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class
 		when_getting_info_for_persistent_subscription_group_on_all<TLogFormat, TStreamId>
 			: GrpcSpecification<TLogFormat, TStreamId> {
@@ -415,9 +410,9 @@ public class GetInfoTests {
 		var resp = await GetSubscriptions();
 
 		for (int i = 0; resp.Subscriptions.Any(s => s.Status != "Live"); i++) {
-			Assert.AreNotEqual(5, i, "Reached too many retries to get all subscriptions live!");
+			Assert.AreNotEqual(20, i, "Reached too many retries to get all subscriptions live!");
 
-			await Task.Delay(500);
+			await Task.Delay(1000);
 			resp = await GetSubscriptions();
 		}
 

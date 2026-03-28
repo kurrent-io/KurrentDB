@@ -53,7 +53,7 @@ public static class ProjectionCoreWorkersNode {
 				projectionsStandardComponents.FaultOutOfOrderProjections,
 				projectionsStandardComponents.LeaderOutputQueue,
 				projectionsStandardComponents,
-				mainBus: standardComponents.MainQueue);
+				mainQueue: standardComponents.MainQueue);
 			projectionNode.SetupMessaging(coreInputBus);
 
 			var forwarder = new RequestResponseQueueForwarder(

@@ -4,8 +4,6 @@
 #nullable enable
 
 using System;
-using System.IO.Hashing;
-using System.Text;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -20,7 +18,6 @@ public class PartitionDispatcher {
 	private readonly Channel<PartitionEvent>[] _partitionChannels;
 	private readonly int _partitionCount;
 	private readonly Func<ResolvedEvent, string?> _getPartitionKey;
-	private ulong _nextCheckpointSequence;
 
 	/// <summary>
 	/// Creates a dispatcher that computes the partition key on the read loop thread
@@ -39,7 +36,7 @@ public class PartitionDispatcher {
 				new BoundedChannelOptions(channelCapacity) {
 					FullMode = BoundedChannelFullMode.Wait,
 					SingleReader = true,
-					SingleWriter = true
+					SingleWriter = true,
 				});
 		}
 	}
@@ -65,17 +62,12 @@ public class PartitionDispatcher {
 		await _partitionChannels[partitionIndex].Writer.WriteAsync(pe, ct);
 	}
 
-	public async ValueTask<ulong> InjectCheckpointMarker(TFPos logPosition, CancellationToken ct) {
-		var sequence = ++_nextCheckpointSequence;
-		var marker = PartitionEvent.ForCheckpointMarker(sequence, logPosition);
-
-		Log.Debug("Injecting checkpoint marker {Sequence} at {LogPosition}", sequence, logPosition);
+	public async ValueTask InjectCheckpointMarker(TFPos logPosition, CancellationToken ct) {
+		var marker = PartitionEvent.ForCheckpointMarker(logPosition);
 
 		for (int i = 0; i < _partitionCount; i++) {
 			await _partitionChannels[i].Writer.WriteAsync(marker, ct);
 		}
-
-		return sequence;
 	}
 
 	public void Complete(Exception? ex = null) {
@@ -86,7 +78,7 @@ public class PartitionDispatcher {
 
 	private int GetPartitionIndex(string key) {
 		if (_partitionCount == 1) return 0;
-		var hash = XxHash32.HashToUInt32(Encoding.UTF8.GetBytes(key));
+		var hash = (uint)key.GetHashCode();
 		return (int)(hash % (uint)_partitionCount);
 	}
 }

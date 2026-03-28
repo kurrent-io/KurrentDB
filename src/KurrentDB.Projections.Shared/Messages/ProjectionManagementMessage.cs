@@ -87,7 +87,7 @@ public static partial class ProjectionManagementMessage {
 			public Post(
 				IEnvelope envelope, ProjectionMode mode, string name, RunAs runAs, string handlerType, string query,
 				bool enabled, bool checkpointsEnabled, bool emitEnabled, bool trackEmittedStreams,
-				bool enableRunAs = false, int engineVersion = 1)
+				bool enableRunAs = false, int engineVersion = ProjectionConstants.EngineV1)
 				: base(envelope, runAs) {
 				_name = name;
 				_handlerType = handlerType;
@@ -115,7 +115,7 @@ public static partial class ProjectionManagementMessage {
 				_emitEnabled = emitEnabled;
 				_trackEmittedStreams = trackEmittedStreams;
 				_enableRunAs = enableRunAs;
-				_engineVersion = 1;
+				_engineVersion = ProjectionConstants.EngineV1;
 			}
 
 			// shortcut for posting ad-hoc JS queries
@@ -129,7 +129,7 @@ public static partial class ProjectionManagementMessage {
 				_checkpointsEnabled = false;
 				_emitEnabled = false;
 				_trackEmittedStreams = false;
-				_engineVersion = 1;
+				_engineVersion = ProjectionConstants.EngineV1;
 			}
 
 			public ProjectionMode Mode {

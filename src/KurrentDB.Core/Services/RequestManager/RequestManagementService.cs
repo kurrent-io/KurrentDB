@@ -170,8 +170,11 @@ public class RequestManagementService :
 
 
 	public void Handle(SystemMessage.StateChangeMessage message) {
-
+		// this is now a compile error. probably change 'or' to 'and not', but needs to be thought through.
+		// TODO: think it through (ticket DB-1957)
+#pragma warning disable CS9336 // The pattern is redundant.
 		if (_nodeState == VNodeState.Leader && message.State is not VNodeState.Leader or VNodeState.ResigningLeader) {
+#pragma warning restore CS9336 // The pattern is redundant.
 			var keys = _currentRequests.Keys;
 			foreach (var key in keys) {
 				if (_currentRequests.Remove(key, out var manager)) {

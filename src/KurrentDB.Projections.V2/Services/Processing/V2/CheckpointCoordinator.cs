@@ -2,153 +2,123 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using DotNext.Threading;
 using KurrentDB.Common.Utils;
-using KurrentDB.Core.Bus;
+using KurrentDB.Core;
 using KurrentDB.Core.Data;
-using KurrentDB.Core.Messages;
-using KurrentDB.Core.Messaging;
 using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using Serilog;
 
 namespace KurrentDB.Projections.Core.Services.Processing.V2;
 
-public class CheckpointCoordinator(int partitionCount, string projectionName, IPublisher bus, ClaimsPrincipal user) {
+// Chandy-Lamport style, collects a consistent snapshot across all partitions.
+// At most one checkpoint can be in flight at a time because the partitions alternate between a pair of buffers.
+public class CheckpointCoordinator(int partitionCount, string projectionName, PartitionDispatcher dispatcher, ISystemClient client, ClaimsPrincipal user) {
 	private static readonly ILogger Log = Serilog.Log.ForContext<CheckpointCoordinator>();
 
 	private readonly string _checkpointStreamId = $"$projections-{projectionName}-checkpoint";
 
-	private readonly OutputBuffer[] _collectedBuffers = new OutputBuffer[partitionCount];
-	private ulong _currentMarkerSequence;
+	// When the _checkpointLock is taken there is a checkpoint in progress.
+	private readonly AsyncExclusiveLock _checkpointLock = new();
+	private readonly IReadOnlyOutputBuffer[] _collectedBuffers = new IReadOnlyOutputBuffer[partitionCount];
 	private int _collectedCount;
-	private readonly SemaphoreSlim _checkpointSemaphore = new(1, 1);
-	private readonly Lock _lock = new();
+	private Exception _checkpointError;
 
-	public async Task ReportPartitionCheckpoint(int partitionIndex, ulong markerSequence, OutputBuffer buffer) {
-		bool allCollected;
-		lock (_lock) {
-			if (_currentMarkerSequence != markerSequence) {
-				_currentMarkerSequence = markerSequence;
-				_collectedCount = 0;
-				Array.Clear(_collectedBuffers);
-			}
+	// Starts a checkpoint. If one is in progress, waits for it to complete first.
+	// Throws if a previous checkpoint failed.
+	public async ValueTask InjectCheckpointMarker(TFPos logPosition, CancellationToken ct) {
+		await _checkpointLock.AcquireAsync(ct);
 
-			_collectedBuffers[partitionIndex] = buffer;
-			_collectedCount++;
-			allCollected = _collectedCount == partitionCount;
-		}
+		try {
+			if (_checkpointError is { } error)
+				throw error;
 
-		if (allCollected) {
-			await WriteCheckpoint(markerSequence);
+			Log.Debug("Injecting checkpoint marker at {LogPosition}", logPosition);
+			_collectedCount = 0;
+			Array.Clear(_collectedBuffers);
+			await dispatcher.InjectCheckpointMarker(logPosition, ct);
+		} catch {
+			_checkpointLock.Release();
+			throw;
 		}
 	}
 
-	private async Task WriteCheckpoint(ulong markerSequence) {
-		await _checkpointSemaphore.WaitAsync();
+	// Called concurrently by partition processors in response to checkpoint markers.
+	// The last partition processor to reply triggers the writing of the checkpoint but is still not blocked by it.
+	public void ReportPartitionCheckpoint(int partitionIndex, IReadOnlyOutputBuffer buffer) {
+		_collectedBuffers[partitionIndex] = buffer;
+
+		if (Interlocked.Increment(ref _collectedCount) == partitionCount) {
+			_ = WriteCheckpoint();
+		}
+	}
+
+	private async Task WriteCheckpoint() {
 		try {
 			var lastPosition = TFPos.Invalid;
 			foreach (var buf in _collectedBuffers) {
-				if (buf != null && buf.LastLogPosition > lastPosition)
+				if (buf.LastLogPosition > lastPosition)
 					lastPosition = buf.LastLogPosition;
 			}
 
-			Log.Information("Writing checkpoint {Sequence} for {Projection} at {Position}",
-				markerSequence, projectionName, lastPosition);
+			Log.Debug("Writing checkpoint for {Projection} at {Position}",
+				projectionName, lastPosition);
 
-			var (streamIds, expectedVersions, events, streamIndexes) = BuildMultiStreamWrite(lastPosition);
+			var writes = BuildStreamWrites(lastPosition);
+			await client.Writing.WriteEvents(writes, requireLeader: true, user);
 
-			var tcs = new TaskCompletionSource<ClientMessage.WriteEventsCompleted>();
-			var corrId = Guid.NewGuid();
-
-			bus.Publish(new ClientMessage.WriteEvents(
-				internalCorrId: corrId,
-				correlationId: corrId,
-				envelope: new CallbackEnvelope(msg => {
-					if (msg is ClientMessage.WriteEventsCompleted completed)
-						tcs.TrySetResult(completed);
-					else
-						tcs.TrySetException(new Exception($"Unexpected response: {msg.GetType().Name}"));
-				}),
-				requireLeader: true,
-				eventStreamIds: streamIds.ToArray(),
-				expectedVersions: expectedVersions.ToArray(),
-				events: events.ToArray(),
-				eventStreamIndexes: streamIndexes.ToArray(),
-				user: user));
-
-			var result = await tcs.Task;
-			if (result.Result != OperationResult.Success) {
-				throw new Exception($"Checkpoint write failed for {projectionName}: {result.Result} — {result.Message}");
-			}
-
-			Log.Debug("Checkpoint {Sequence} written for {Projection}", markerSequence, projectionName);
+			Log.Debug("Checkpoint written for {Projection}", projectionName);
+		} catch (Exception ex) {
+			_checkpointError = new Exception($"Checkpoint write failed for {projectionName}", ex);
 		} finally {
-			lock (_lock) {
-				Array.Clear(_collectedBuffers);
-				_collectedCount = 0;
-			}
-
-			_checkpointSemaphore.Release();
+			_checkpointLock.Release();
 		}
 	}
 
-	private (List<string>, List<long>, List<Event>, List<int>) BuildMultiStreamWrite(TFPos checkpointPosition) {
-		var streamIds = new List<string>();
-		var expectedVersions = new List<long>();
-		var events = new List<Event>();
-		var streamIndexes = new List<int>();
-		var streamIndexMap = new Dictionary<string, int>();
+	private LowAllocReadOnlyMemory<StreamWrite> BuildStreamWrites(TFPos checkpointPosition) {
+		var writes = LowAllocReadOnlyMemory<StreamWrite>.Builder.Empty;
 
 		// 1. Checkpoint event
 		var checkpointData = Encoding.UTF8.GetBytes(
-			$"{{\"commitPosition\":{checkpointPosition.CommitPosition},\"preparePosition\":{checkpointPosition.PreparePosition}}}");
-		var cpIdx = GetOrAddStream(_checkpointStreamId, ExpectedVersion.Any);
-		events.Add(new Event(Guid.NewGuid(), "$ProjectionCheckpoint", true, checkpointData, isPropertyMetadata: false, null));
-		streamIndexes.Add(cpIdx);
+			$$"""{"commitPosition":{{checkpointPosition.CommitPosition}},"preparePosition":{{checkpointPosition.PreparePosition}}}""");
+		writes = writes.Add(new StreamWrite(
+			_checkpointStreamId,
+			ExpectedVersion.Any,
+			[new Event(Guid.NewGuid(), "$ProjectionCheckpoint", isJson: true, checkpointData, isPropertyMetadata: false, metadata: null)]));
 
 		// 2. Emitted events
 		foreach (var buffer in _collectedBuffers) {
-			if (buffer == null) continue;
 			foreach (var emitted in buffer.EmittedEvents) {
 				var e = emitted.Event;
-				var idx = GetOrAddStream(e.StreamId, ExpectedVersion.Any);
 				var data = e.Data != null ? Helper.UTF8NoBom.GetBytes(e.Data) : null;
 				var metadata = SerializeExtraMetadata(e);
-				events.Add(new Event(e.EventId, e.EventType, e.IsJson, data, isPropertyMetadata: false, metadata));
-				streamIndexes.Add(idx);
+				writes = writes.Add(new StreamWrite(
+					e.StreamId,
+					ExpectedVersion.Any,
+					[new Event(e.EventId, e.EventType, e.IsJson, data, isPropertyMetadata: false, metadata)]));
 			}
 		}
 
 		// 3. State updates
 		foreach (var buffer in _collectedBuffers) {
-			if (buffer == null) continue;
 			foreach (var (_, (streamName, stateJson, expVer)) in buffer.DirtyStates) {
-				var idx = GetOrAddStream(streamName, expVer);
 				var stateData = Encoding.UTF8.GetBytes(stateJson);
-				events.Add(new Event(Guid.NewGuid(), "Result", true, stateData, isPropertyMetadata: false, null));
-				streamIndexes.Add(idx);
+				writes = writes.Add(new StreamWrite(
+					streamName,
+					expVer,
+					[new Event(Guid.NewGuid(), "Result", isJson: true, stateData, isPropertyMetadata: false, metadata: null)]));
 			}
 		}
 
-		return (streamIds, expectedVersions, events, streamIndexes);
-
-		int GetOrAddStream(string streamName, long expectedVersion) {
-			if (!streamIndexMap.TryGetValue(streamName, out var idx)) {
-				idx = streamIds.Count;
-				streamIds.Add(streamName);
-				expectedVersions.Add(expectedVersion);
-				streamIndexMap[streamName] = idx;
-			}
-
-			return idx;
-		}
+		return writes.Build();
 	}
 
+	// todo: is this less rich than CheckpointTag? should it be?
 	private static byte[] SerializeExtraMetadata(EmittedEvent e) {
 		var extra = e.ExtraMetaData();
 		if (extra == null)

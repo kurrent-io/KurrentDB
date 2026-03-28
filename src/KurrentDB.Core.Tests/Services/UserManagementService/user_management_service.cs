@@ -92,7 +92,6 @@ public static class user_management_service {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_creating_a_user<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> When() {
 			yield return
@@ -142,7 +141,6 @@ public static class user_management_service {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_ordinary_user_attempts_to_create_a_user<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> When() {
 			yield return
@@ -170,7 +168,6 @@ public static class user_management_service {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_creating_an_already_existing_user_account<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
@@ -221,7 +218,6 @@ public static class user_management_service {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_updating_user_details<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
@@ -287,7 +283,6 @@ public static class user_management_service {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_ordinary_user_attempts_to_update_its_own_details<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
@@ -345,7 +340,6 @@ public static class user_management_service {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_updating_non_existing_user_details<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield break;
@@ -385,7 +379,6 @@ public static class user_management_service {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_updating_a_disabled_user_account_details<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			var replyTo = Envelope;
@@ -419,7 +412,6 @@ public static class user_management_service {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_disabling_an_enabled_user_account<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
@@ -456,7 +448,6 @@ public static class user_management_service {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_an_ordinary_user_attempts_to_disable_a_user_account<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
@@ -487,7 +478,6 @@ public static class user_management_service {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_disabling_a_disabled_user_account<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			var replyTo = Envelope;
@@ -520,7 +510,6 @@ public static class user_management_service {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_enabling_a_disabled_user_account<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			var replyTo = Envelope;
@@ -553,7 +542,6 @@ public static class user_management_service {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_an_ordinary_user_attempts_to_enable_a_user_account<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			var replyTo = Envelope;
@@ -586,7 +574,6 @@ public static class user_management_service {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_enabling_an_enabled_user_account<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
@@ -617,7 +604,6 @@ public static class user_management_service {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_resetting_the_password<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
@@ -675,7 +661,6 @@ public static class user_management_service {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_resetting_the_password_twice<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
@@ -709,7 +694,6 @@ public static class user_management_service {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_ordinary_user_attempts_to_reset_its_own_password<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
@@ -744,7 +728,6 @@ public static class user_management_service {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_changing_a_password_with_correct_current_password<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
@@ -811,7 +794,6 @@ public static class user_management_service {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_changing_a_password_with_incorrect_current_password<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
@@ -865,7 +847,6 @@ public static class user_management_service {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_deleting_an_existing_user_account<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
@@ -910,7 +891,6 @@ public static class user_management_service {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_getting_all_users<TLogFormat, TStreamId> : TestFixtureWithUserManagementService<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			var replyTo = Envelope;

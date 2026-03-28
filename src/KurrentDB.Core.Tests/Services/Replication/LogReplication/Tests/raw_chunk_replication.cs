@@ -10,7 +10,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Services.Replication.LogReplication.Tests;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class raw_chunk_replication<TLogFormat, TStreamId> : LogReplicationWithExistingDbFixture<TLogFormat, TStreamId> {
 	private const int NumCheckpoints = 1 + /* chunk 0-0 (raw): 1 chunk completion */
 									   1 + /* chunk 1-2 (raw): 1 chunk completion */

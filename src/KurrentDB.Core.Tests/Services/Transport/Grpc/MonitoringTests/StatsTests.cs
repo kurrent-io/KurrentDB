@@ -15,7 +15,6 @@ namespace KurrentDB.Core.Tests.Services.Transport.Grpc.MonitoringTests;
 
 public class StatsTests {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_reading_stats<TLogFormat, TStreamId> : specification_with_cluster<TLogFormat, TStreamId> {
 
 		private const int _expected = 3;

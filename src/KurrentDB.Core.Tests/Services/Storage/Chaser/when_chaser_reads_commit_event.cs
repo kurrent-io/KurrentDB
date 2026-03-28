@@ -10,7 +10,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Services.Storage.Chaser;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_chaser_reads_commit_event<TLogFormat, TStreamId> : with_storage_chaser_service<TLogFormat, TStreamId> {
 	private long _logPosition;
 	private Guid _eventId;

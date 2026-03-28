@@ -23,7 +23,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		var schemaName = NewSchemaName();
 		var newDefinition = Faker.Lorem.Text();
 
-		await Apply(
+		await Fixture.Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = NewJsonSchema().ToByteString(),
@@ -40,11 +40,11 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 			SchemaDefinition = ByteString.CopyFromUtf8(newDefinition),
 			DataFormat = SchemaFormat.Json,
 			VersionNumber = 2,
-			RegisteredAt = Timestamp.FromDateTimeOffset(TimeProvider.GetUtcNow())
+			RegisteredAt = Timestamp.FromDateTimeOffset(Fixture.Time.GetUtcNow())
 		};
 
 		// Act
-		var result = await Apply(
+		var result = await Fixture.Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(newDefinition)
@@ -66,7 +66,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		var secondDefinition = Faker.Lorem.Text();
 		var thirdDefinition = Faker.Lorem.Text();
 
-		await Apply(
+		await Fixture.Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = NewJsonSchema().ToByteString(),
@@ -79,7 +79,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		);
 
 		// Act
-		var secondResult = await Apply(
+		var secondResult = await Fixture.Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(secondDefinition)
@@ -87,7 +87,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 			cancellationToken
 		);
 
-		var thirdResult = await Apply(
+		var thirdResult = await Fixture.Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(thirdDefinition)
@@ -112,7 +112,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		var schemaDefinition = Faker.Lorem.Text();
 
 		// Act
-		var registerVersion = async () => await Apply(
+		var registerVersion = async () => await Fixture.Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = nonExistentSchemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(schemaDefinition)
@@ -130,7 +130,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		var schemaName = NewSchemaName();
 		var newDefinition = Faker.Lorem.Text();
 
-		await Apply(
+		await Fixture.Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = NewJsonSchema().ToByteString(),
@@ -142,10 +142,10 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 			cancellationToken
 		);
 
-		await Apply(new DeleteSchemaRequest { SchemaName = schemaName }, cancellationToken);
+		await Fixture.Apply(new DeleteSchemaRequest { SchemaName = schemaName }, cancellationToken);
 
 		// Act
-		var registerVersion = async () => await Apply(
+		var registerVersion = async () => await Fixture.Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(newDefinition)
@@ -163,7 +163,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		var schemaName = NewSchemaName();
 		var schemaDefinition = NewJsonSchema();
 
-		await Apply(
+		await Fixture.Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = schemaDefinition.ToByteString(),
@@ -176,7 +176,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		);
 
 		// Act
-		var registerVersion = async () => await Apply(
+		var registerVersion = async () => await Fixture.Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = schemaDefinition.ToByteString()
@@ -195,7 +195,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		var schemaName = NewSchemaName();
 		var newDefinition = Faker.Lorem.Text();
 
-		await Apply(
+		await Fixture.Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = NewJsonSchema().ToByteString(),
@@ -208,7 +208,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		);
 
 		// Act
-		var result = await Apply(
+		var result = await Fixture.Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(newDefinition)
@@ -228,7 +228,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		var secondDefinition = Faker.Lorem.Text();
 		var thirdDefinition = Faker.Lorem.Text();
 
-		await Apply(
+		await Fixture.Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = NewJsonSchema().ToByteString(),
@@ -241,7 +241,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		);
 
 		// Act
-		var secondResult = await Apply(
+		var secondResult = await Fixture.Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(secondDefinition)
@@ -249,7 +249,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 			cancellationToken
 		);
 
-		var thirdResult = await Apply(
+		var thirdResult = await Fixture.Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(thirdDefinition)
@@ -271,7 +271,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		// Arrange
 		var schemaName = NewSchemaName();
 
-		await Apply(
+		await Fixture.Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = NewJsonSchema().ToByteString(),
@@ -284,7 +284,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		);
 
 		// Act
-		var result = await Apply(
+		var result = await Fixture.Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.Empty
@@ -310,7 +310,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		var schemaName = NewSchemaName();
 		var newDefinition = Faker.Lorem.Text();
 
-		await Apply(
+		await Fixture.Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = NewJsonSchema().ToByteString(),
@@ -323,7 +323,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		);
 
 		// Act
-		var result = await Apply(
+		var result = await Fixture.Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(newDefinition)
@@ -349,7 +349,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		var schemaName = NewSchemaName();
 		var newDefinition = Faker.Lorem.Text();
 
-		await Apply(
+		await Fixture.Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = NewJsonSchema().ToByteString(),
@@ -362,7 +362,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		);
 
 		// Act
-		var result = await Apply(
+		var result = await Fixture.Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(newDefinition)
@@ -381,9 +381,9 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		// Arrange
 		var schemaName = NewSchemaName();
 		var newDefinition = Faker.Lorem.Text();
-		var beforeRegistration = TimeProvider.GetUtcNow();
+		var beforeRegistration = Fixture.Time.GetUtcNow();
 
-		await Apply(
+		await Fixture.Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = NewJsonSchema().ToByteString(),
@@ -396,7 +396,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		);
 
 		// Act
-		var result = await Apply(
+		var result = await Fixture.Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(newDefinition)
@@ -404,7 +404,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 			cancellationToken
 		);
 
-		var afterRegistration = TimeProvider.GetUtcNow();
+		var afterRegistration = Fixture.Time.GetUtcNow();
 
 		// Assert
 		var versionRegistered = result.Changes.Should().HaveCount(1).And.Subject.GetSingleEvent<SchemaVersionRegistered>();

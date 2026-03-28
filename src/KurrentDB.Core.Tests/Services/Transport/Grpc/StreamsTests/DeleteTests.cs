@@ -100,28 +100,24 @@ public class DeleteTests {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class DeleteExistingStreamExpectedRevision<TLogFormat, TStreamId>
 		: DeleteExistingStreamSpecification<TLogFormat, TStreamId> {
 		public DeleteExistingStreamExpectedRevision() : base(StreamRevision.Start) { }
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class DeleteExistingStreamAny<TLogFormat, TStreamId>
 		: DeleteExistingStreamSpecification<TLogFormat, TStreamId> {
 		public DeleteExistingStreamAny() : base(ExpectedVersion.Any) { }
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class DeleteExistingStreamExists<TLogFormat, TStreamId>
 		: DeleteExistingStreamSpecification<TLogFormat, TStreamId> {
 		public DeleteExistingStreamExists() : base(ExpectedVersion.StreamExists) { }
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class DeleteNoStream<TLogFormat, TStreamId> : GrpcSpecification<TLogFormat, TStreamId> {
 		private Exception _caughtException;
 		protected override Task Given() => Task.CompletedTask;
@@ -152,7 +148,6 @@ public class DeleteTests {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class DeleteWithExistingMetadata<TLogFormat, TStreamId> : GrpcSpecification<TLogFormat, TStreamId> {
 		private Exception _caughtException;
 		private readonly string _streamName;

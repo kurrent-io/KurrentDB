@@ -1,127 +1,83 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Collections.Generic;
-using System.Linq;
+using System;
+using System.Buffers;
+using System.IO;
+using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
-using Dapper;
-using Kurrent.Quack.ConnectionPool;
+using System.Threading;
+using System.Threading.Tasks;
+using DotNext;
+using DotNext.Buffers;
+using Kurrent.Quack;
+using KurrentDB.SecondaryIndexing.Query;
 
 namespace KurrentDB.Components.Query;
 
-public static partial class QueryService {
-	internal delegate bool TryGetUserIndexTableDetails(string indexName, out string tableName, out string inFlightTableName, out string fieldName);
+public static class QueryService {
+	internal static async ValueTask<JsonDocument> ExecuteAdHocUserQuery(this IQueryEngine engine, string sql, CancellationToken token) {
+		// Convert query result to JSON
+		sql = $"SELECT to_json(sub_query) FROM ({sql}) sub_query LIMIT 100";
 
-	private static string AmendQuery(DuckDBConnectionPool pool, TryGetUserIndexTableDetails tryGetUserIndexTableDetails, string query) {
-		var matches = ExtractionRegex().Matches(query);
-		List<string> ctes = [AllCte];
-		foreach (Match match in matches) {
-			if (!match.Success)
-				continue;
-			var tokens = match.Value.Split(':');
-			var cteName = ReplaceSpecialCharsWithUnderscore($"{tokens[0]}_{tokens[1]}");
 
-			string cte;
-			switch (tokens[0]) {
-				case "stream":
-					cte = string.Format(AllCteTemplate, cteName, $"where stream = '{tokens[1]}'");
-					break;
-				case "category":
-					cte = string.Format(AllCteTemplate, cteName, $"where category = '{tokens[1]}'");
-					break;
-				case "index":
-					var indexName = tokens[1];
-					var exists = tryGetUserIndexTableDetails(indexName, out var tableName, out var tableFunctionName, out var fieldName);
-					if (!exists)
-						throw new("Index does not exist or is not started");
+		var preparedQuery = default(MemoryOwner<byte>);
+		var reader = new JsonReader();
+		try {
+			preparedQuery = engine.PrepareQuery(Encoding.UTF8.GetBytes(sql), digitallySign: false);
 
-					cte = string.Format(
-						UserIndexCteTemplate,
-						cteName,
-						$"\"{tableName}\"",
-						$"\"{tableFunctionName}\"",
-						fieldName is "" ? "" : $", \"{fieldName}\"");
-					break;
-				default:
-					throw new("Invalid token");
+			await engine.ExecuteAsync(preparedQuery.Memory, reader, checkIntegrity: false, token);
+
+			return reader.ToJson();
+		} finally {
+			preparedQuery.Dispose();
+			reader.Dispose();
+		}
+	}
+
+	private sealed class JsonReader : Disposable, IQueryResultConsumer {
+		private readonly PoolingBufferWriter<byte> _writer = new() { Capacity = 4096 };
+
+		public ValueTask ConsumeAsync(IQueryResultReader resultReader, CancellationToken token) {
+			var task = ValueTask.CompletedTask;
+			try {
+				Consume(resultReader, token);
+			} catch (OperationCanceledException e) when (e.CancellationToken == token) {
+				task = ValueTask.FromCanceled(token);
+			} catch (Exception e) {
+				task = ValueTask.FromException(e);
 			}
 
-			ctes.Add(cte);
-			query = query.Replace(match.Value, cteName);
+			return task;
 		}
 
-		ValidateQuery(pool, query);
-		return $"with\r\n{string.Join(",\r\n", ctes)}\r\n{query}";
-	}
+		private void Consume(IQueryResultReader resultReader, CancellationToken token) {
+			_writer.Add((byte)'[');
+			while (resultReader.TryRead()) {
+				foreach (ref readonly var row in resultReader.Chunk[0].BlobRows) {
+					_writer.Write(row.AsSpan());
+					_writer.Add((byte)',');
+					token.ThrowIfCancellationRequested();
+				}
+			}
 
-	private static void ValidateQuery(DuckDBConnectionPool pool, string query) {
-		// var result = pool.QueryFirstOrDefault<Sql2Json.Args, Sql2Json.Result, Sql2Json>(new(query));
-		using var _ = pool.Rent(out var connection);
-		var result = connection.QueryFirstOrDefault<string>("select json_serialize_sql($query::varchar)", new { query });
-		if (result == null) {
-			throw new("Error parsing query");
+			// Remove trailing comma
+			_writer.WrittenCount--;
+			_writer.Add((byte)']');
 		}
-		var conversionResponse = JsonSerializer.Deserialize<SqlJsonResponse>(result);
-		if (conversionResponse.Error) {
-			var error = conversionResponse.ErrorMessage.StartsWith("Only SELECT")
-				? "Only SELECT statements are allowed"
-				: $"Error parsing query: {conversionResponse.ErrorMessage}";
-			throw new(error);
+
+		public void Bind<TBinder>(scoped TBinder binder) where TBinder : IPreparedQueryBinder, allows ref struct {
+			// nothing to bind
 		}
-	}
 
-	internal static List<Dictionary<string, object>> ExecuteAdHocUserQuery(this DuckDBConnectionPool pool, TryGetUserIndexTableDetails tryGetUserIndexTableDetails, string sql) {
-		var query = AmendQuery(pool, tryGetUserIndexTableDetails, sql);
-		using var scope = pool.Rent(out var connection);
-		var items = (IEnumerable<IDictionary<string, object>>)connection.Query(query);
-		return items.Select(x => x.ToDictionary(y => y.Key, y => y.Value)).ToList();
-	}
+		public JsonDocument ToJson() => JsonDocument.Parse(_writer.WrittenMemory);
 
-	private static string ReplaceSpecialCharsWithUnderscore(string input)
-		=> string.IsNullOrEmpty(input) ? string.Empty : SpecialCharsRegex().Replace(input, "_");
+		protected override void Dispose(bool disposing) {
+			if (disposing) {
+				_writer.Dispose();
+			}
 
-	[GeneratedRegex(@"\b(?:stream|category|index):([A-Za-z0-9_-]+)\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
-	private static partial Regex ExtractionRegex();
-
-	[GeneratedRegex("[^A-Za-z0-9_]", RegexOptions.CultureInvariant)]
-	private static partial Regex SpecialCharsRegex();
-
-	private static readonly string AllCte = string.Format(AllCteTemplate, "all_events", "");
-
-	private const string AllCteTemplate = """
-	                                   {0} AS (
-	                                       select log_position, stream, event_number, event_type, epoch_ms(created) as created_at, event->>'data' as data, event->>'metadata' as metadata
-	                                       from (
-	                                           select *, kdb_get(log_position)::JSON as event
-	                                           from (
-	                                               select stream, event_number, event_type, log_position, created from idx_all {1}
-	                                               union all
-	                                               select stream, event_number, event_type, log_position, created from inflight() {1}
-	                                           )
-	                                       )
-	                                   )
-	                                   """;
-
-	private const string UserIndexCteTemplate = """
-	                                      {0} AS (
-	                                          select log_position, event->>'stream_id' as stream, event_number, event->>'event_type' as event_type, epoch_ms(created) as created_at, event->>'data' as data, event->>'metadata' as metadata{3}
-	                                          from (
-	                                              select *, kdb_get(log_position)::JSON as event
-	                                              from (
-	                                                  select log_position, event_number, created{3} from {1}
-	                                                  union all
-	                                                  select log_position, event_number, created{3} from {2}()
-	                                              )
-	                                          )
-	                                      )
-	                                      """;
-
-	private record SqlJsonResponse {
-		[JsonPropertyName("error")] public bool Error { get; init; }
-		[JsonPropertyName("error_message")] public string ErrorMessage { get; init; } = "";
-		[JsonPropertyName("error_subtype")] public string ErrorSubtype { get; init; } = "";
-		[JsonPropertyName("position")] public string Position { get; init; }
+			base.Dispose(disposing);
+		}
 	}
 }

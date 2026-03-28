@@ -3,15 +3,34 @@
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 	</PropertyGroup>
 	<ItemGroup>
+		<None Remove="Prelude\1Prelude.js" />
+		<None Remove="Prelude\Modules.js" />
+		<None Remove="Prelude\ModulesExecuted.js" />
+		<None Remove="Prelude\Projections.js" />
+	</ItemGroup>
+	<ItemGroup>
+		<Content Include="Prelude\1Prelude.js">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Include="Prelude\Modules.js">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Include="Prelude\ModulesExecuted.js">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Include="Prelude\Projections.js">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+	<ItemGroup>
 		<PackageReference Include="Grpc.Tools">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Jint" />
 		<PackageReference Include="Newtonsoft.Json" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\KurrentDB.Projections.Shared\KurrentDB.Projections.Shared.csproj" />
+		<PackageReference Include="Jint" />
 		<ProjectReference Include="..\KurrentDB.Projections.JavaScript\KurrentDB.Projections.JavaScript.csproj" />
 		<ProjectReference Include="..\KurrentDB.Projections.V1\KurrentDB.Projections.V1.csproj" />
 		<ProjectReference Include="..\KurrentDB.Projections.V2\KurrentDB.Projections.V2.csproj" />
@@ -19,9 +38,6 @@
 		<ProjectReference Include="..\KurrentDB.SourceGenerators\KurrentDB.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 	</ItemGroup>
 	<ItemGroup>
-		<Protobuf Include="../Protos/Grpc/shared.proto" GrpcServices="None" CompileOutputs="false" ProtoRoot="../Protos/Grpc">
-			<Link>Services\Grpc\Protos\shared.proto</Link>
-		</Protobuf>
 		<Protobuf Include="../Protos/Grpc/projections.proto" GrpcServices="Server" LinkBase="Services/Grpc" Access="Internal" ProtoRoot="../Protos/Grpc">
 			<Link>Services\Grpc\Protos\projections.proto</Link>
 		</Protobuf>

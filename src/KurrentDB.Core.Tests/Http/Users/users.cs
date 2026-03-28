@@ -22,7 +22,6 @@ namespace KurrentDB.Core.Tests.Http.Users {
 
 		[Category("LongRunning")]
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
-		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		class when_creating_a_user<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
 			private HttpResponseMessage _response;
 
@@ -48,7 +47,6 @@ namespace KurrentDB.Core.Tests.Http.Users {
 
 		[Category("LongRunning")]
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
-		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		class when_retrieving_a_user_details<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
 			private JObject _response;
 
@@ -116,7 +114,6 @@ namespace KurrentDB.Core.Tests.Http.Users {
 
 		[Category("LongRunning")]
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
-		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		class when_retrieving_a_disabled_user_details<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
 			private JObject _response;
 
@@ -181,7 +178,6 @@ namespace KurrentDB.Core.Tests.Http.Users {
 
 		[Category("LongRunning")]
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
-		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		class when_creating_an_already_existing_user_account<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
 			private HttpResponseMessage _response;
 
@@ -204,7 +200,6 @@ namespace KurrentDB.Core.Tests.Http.Users {
 
 		[Category("LongRunning")]
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
-		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		class when_creating_an_already_existing_user_account_with_a_different_password<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
 			private HttpResponseMessage _response;
 
@@ -228,7 +223,6 @@ namespace KurrentDB.Core.Tests.Http.Users {
 
 		[Category("LongRunning")]
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
-		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		class when_disabling_an_enabled_user_account<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
 			protected override Task Given() {
 				return MakeJsonPost(
@@ -255,7 +249,6 @@ namespace KurrentDB.Core.Tests.Http.Users {
 
 		[Category("LongRunning")]
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
-		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		class when_enabling_a_disabled_user_account<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
 			private HttpResponseMessage _response;
 
@@ -285,7 +278,6 @@ namespace KurrentDB.Core.Tests.Http.Users {
 
 		[Category("LongRunning")]
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
-		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		class when_updating_user_details<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
 			private HttpResponseMessage _response;
 
@@ -314,7 +306,6 @@ namespace KurrentDB.Core.Tests.Http.Users {
 
 		[Category("LongRunning")]
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
-		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		class when_resetting_a_password<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
 			private HttpResponseMessage _response;
 
@@ -346,7 +337,6 @@ namespace KurrentDB.Core.Tests.Http.Users {
 
 		[Category("LongRunning")]
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
-		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		class when_deleting_a_user_account<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
 			private HttpResponseMessage _response;
 

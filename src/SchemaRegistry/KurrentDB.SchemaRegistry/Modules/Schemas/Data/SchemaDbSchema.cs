@@ -3,13 +3,14 @@
 
 using Dapper;
 using DuckDB.NET.Data;
+using Kurrent.Quack;
 using KurrentDB.DuckDB;
 
 namespace KurrentDB.SchemaRegistry.Data;
 
 [UsedImplicitly]
 public class SchemaDbSchema : DuckDBOneTimeSetup {
-	protected override void ExecuteCore(DuckDBConnection connection) {
+	protected override void ExecuteCore(DuckDBAdvancedConnection connection) {
 		const string createTablesAndIndexesSql =
 			"""
 			CREATE TABLE IF NOT EXISTS schema_versions (

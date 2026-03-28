@@ -35,11 +35,11 @@ public class CreateSchemaCommandTests : SchemaApplicationTestFixture {
 			},
 			SchemaVersionId = Guid.NewGuid().ToString(),
 			VersionNumber = 1,
-			CreatedAt = Timestamp.FromDateTimeOffset(TimeProvider.GetUtcNow())
+			CreatedAt = Timestamp.FromDateTimeOffset(Fixture.Time.GetUtcNow())
 		};
 
 		// Act
-		var result = await Apply(
+		var result = await Fixture.Apply(
 			new CreateSchemaRequest {
 				SchemaName = expectedEvent.SchemaName,
 				SchemaDefinition = expectedEvent.SchemaDefinition,
@@ -67,7 +67,7 @@ public class CreateSchemaCommandTests : SchemaApplicationTestFixture {
 		var schemaName = NewSchemaName();
 
 		// given the schema is created
-		await Apply(
+		await Fixture.Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Sentences()),
@@ -88,10 +88,10 @@ public class CreateSchemaCommandTests : SchemaApplicationTestFixture {
 		);
 
 		// given the schema is deleted
-		await Apply(new DeleteSchemaRequest { SchemaName = schemaName }, cancellationToken);
+		await Fixture.Apply(new DeleteSchemaRequest { SchemaName = schemaName }, cancellationToken);
 
 		// Act
-		var deleteSchema = async () => await Apply(new DeleteSchemaRequest { SchemaName = schemaName }, cancellationToken);
+		var deleteSchema = async () => await Fixture.Apply(new DeleteSchemaRequest { SchemaName = schemaName }, cancellationToken);
 
 		// Assert
 		await deleteSchema.ShouldThrowAsync<DomainExceptions.EntityNotFound>();

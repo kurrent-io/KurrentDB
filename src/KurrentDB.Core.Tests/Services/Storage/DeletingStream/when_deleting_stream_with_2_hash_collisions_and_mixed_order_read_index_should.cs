@@ -8,7 +8,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Services.Storage.DeletingStream;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_deleting_stream_with_2_hash_collisions_and_mixed_order_read_index_should<TLogFormat, TStreamId> : ReadIndexTestScenario<TLogFormat, TStreamId> {
 	protected override async ValueTask WriteTestScenario(CancellationToken token) {
 		await WriteSingleEvent("S1", 0, "bla1", token: token);

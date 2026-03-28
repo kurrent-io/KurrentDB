@@ -10,6 +10,7 @@ using Kurrent.Surge.Producers.LifecycleEvents;
 using Kurrent.Surge.Schema.Serializers;
 using KurrentDB.Core;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.UserManagement;
 using Polly;
 
 namespace KurrentDB.Surge.Producers;
@@ -147,7 +148,7 @@ public class SystemProducer : IProducer {
 
             static async ValueTask<ProduceResult> WriteEvents(ISystemClient client, ProduceRequest request, Event[] events, long expectedRevision, CancellationToken cancellationToken) {
                 try {
-                    var (position, streamRevision) = await client.Writing.WriteEvents(request.Stream, events, expectedRevision, cancellationToken);
+                    var (position, streamRevision) = await client.Writing.WriteEvents(request.Stream, events, requireLeader: false, SystemAccounts.System, expectedRevision, cancellationToken);
 
                     var recordPosition = RecordPosition.ForStream(
                         StreamId.From(request.Stream),

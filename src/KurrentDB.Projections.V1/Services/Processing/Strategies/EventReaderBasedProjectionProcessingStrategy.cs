@@ -15,10 +15,9 @@ using Serilog;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Strategies;
 
-public abstract class EventReaderBasedProjectionProcessingStrategy : ProjectionProcessingStrategy {
+public abstract class EventReaderBasedProjectionProcessingStrategy : V1ProjectionProcessingStrategy {
 	protected readonly ProjectionConfig _projectionConfig;
 	protected readonly IQuerySources _sourceDefinition;
-	private readonly ReaderSubscriptionDispatcher _subscriptionDispatcher;
 	private readonly bool _isBiState;
 	protected readonly bool _enableContentTypeValidation;
 
@@ -26,10 +25,9 @@ public abstract class EventReaderBasedProjectionProcessingStrategy : ProjectionP
 		string name, ProjectionVersion projectionVersion, ProjectionConfig projectionConfig,
 		IQuerySources sourceDefinition, ILogger logger, ReaderSubscriptionDispatcher subscriptionDispatcher,
 		bool enableContentTypeValidation, int maxProjectionStateSize)
-		: base(name, projectionVersion, logger, maxProjectionStateSize) {
+		: base(name, projectionVersion, logger, maxProjectionStateSize, subscriptionDispatcher) {
 		_projectionConfig = projectionConfig;
 		_sourceDefinition = sourceDefinition;
-		_subscriptionDispatcher = subscriptionDispatcher;
 		_isBiState = sourceDefinition.IsBiState;
 		_enableContentTypeValidation = enableContentTypeValidation;
 	}

@@ -3,18 +3,19 @@
 
 using DotNext.Threading;
 using DuckDB.NET.Data;
+using Kurrent.Quack;
 
 namespace KurrentDB.DuckDB;
 
 public interface IDuckDBSetup {
-	void Execute(DuckDBConnection connection);
+	void Execute(DuckDBAdvancedConnection connection);
 	bool OneTimeOnly { get; }
 }
 
 public abstract class DuckDBOneTimeSetup : IDuckDBSetup {
 	private Atomic.Boolean _created;
 
-	public void Execute(DuckDBConnection connection) {
+	public void Execute(DuckDBAdvancedConnection connection) {
 		if (!_created.FalseToTrue()) {
 			return;
 		}
@@ -23,5 +24,5 @@ public abstract class DuckDBOneTimeSetup : IDuckDBSetup {
 
 	public bool OneTimeOnly => true;
 
-	protected abstract void ExecuteCore(DuckDBConnection connection);
+	protected abstract void ExecuteCore(DuckDBAdvancedConnection connection);
 }
