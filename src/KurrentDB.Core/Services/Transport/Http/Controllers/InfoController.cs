@@ -10,6 +10,7 @@ using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
+using KurrentDB.Core.Services.Storage.EpochManager;
 using KurrentDB.Transport.Http;
 using KurrentDB.Transport.Http.Codecs;
 using KurrentDB.Transport.Http.EntityManagement;
@@ -25,13 +26,15 @@ public class InfoController : IHttpController, IHandle<SystemMessage.StateChange
 	private readonly ClusterVNodeOptions _options;
 	private readonly IDictionary<string, bool> _features;
 	private readonly IAuthenticationProvider _authenticationProvider;
+	private readonly IEpochManager _epochManager;
 	private VNodeState _currentState;
 
 	public InfoController(ClusterVNodeOptions options, IDictionary<string, bool> features,
-		IAuthenticationProvider authenticationProvider) {
+		IAuthenticationProvider authenticationProvider, IEpochManager epochManager) {
 		_options = options;
 		_features = features;
 		_authenticationProvider = authenticationProvider;
+		_epochManager = epochManager;
 	}
 
 	public void Subscribe(IHttpService service) {
@@ -57,6 +60,7 @@ public class InfoController : IHttpController, IHandle<SystemMessage.StateChange
 					DBVersion = VersionInfo.Version,
 					ESVersion = VersionInfo.Version,
 					State = _currentState.ToString().ToLower(),
+					ClusterId = _epochManager.GetFirstEpoch()?.EpochId,
 					Features = _features,
 					Authentication = GetAuthenticationInfo()
 				}

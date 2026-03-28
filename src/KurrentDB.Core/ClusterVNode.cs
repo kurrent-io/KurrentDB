@@ -1066,7 +1066,8 @@ public class ClusterVNode<TStreamId> :
 				["userManagement"] = options.Auth.AuthenticationType == Opts.AuthenticationTypeDefault && !options.Application.Insecure,
 				["atomPub"] = options.Interface.EnableAtomPubOverHttp || options.DevMode.Dev
 			},
-			_authenticationProvider
+			_authenticationProvider,
+			epochManager
 		);
 
 		_mainBus.Subscribe<SystemMessage.StateChangeMessage>(infoController);
