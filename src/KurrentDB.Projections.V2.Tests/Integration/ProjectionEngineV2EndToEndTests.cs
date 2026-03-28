@@ -175,7 +175,7 @@ fromCategory('order')
 			}, "test")));
 
 		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-		await engine.Start(new TFPos(0, 0), cts.Token);
+		var engineRun = engine.Run(new TFPos(0, 0), cts.Token);
 
 		// 6. Wait for checkpoint writes to appear
 		var deadline = Task.Delay(TimeSpan.FromSeconds(10));
@@ -192,7 +192,8 @@ fromCategory('order')
 			await Task.Delay(100);
 		}
 
-		await engine.DisposeAsync();
+		cts.Cancel();
+		await engineRun;
 
 		// 7. Verify the engine didn't fault
 		await Assert.That(engine.IsFaulted).IsFalse();

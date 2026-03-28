@@ -142,7 +142,7 @@ public class AccountBalancerSpecTests {
 			config, readStrategy, new SystemClient(capturingPublisher), adminUser);
 
 		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-		await engine.Start(new TFPos(0, 0), cts.Token);
+		var engineRun = engine.Run(new TFPos(0, 0), cts.Token);
 
 		// 8. Wait for checkpoint writes
 		var deadline = Task.Delay(TimeSpan.FromSeconds(10));
@@ -158,7 +158,8 @@ public class AccountBalancerSpecTests {
 			await Task.Delay(100);
 		}
 
-		await engine.DisposeAsync();
+		cts.Cancel();
+		await engineRun;
 
 		// 9. Verify the engine didn't fault
 		if (engine.IsFaulted)
