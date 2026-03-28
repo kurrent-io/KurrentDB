@@ -104,7 +104,6 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 	private struct WritePreparesStreamInfo {
 		public long LatestVersion { get; set; }
 		public bool IsSoftDeletedMeta { get; init; }
-		public bool HasEventsToWrite { get; init; }
 	}
 
 	private readonly ArrayPool<WritePreparesStreamInfo> _streamInfosPool =
@@ -328,7 +327,6 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 					IsSoftDeletedMeta = _systemStreams.IsMetaStream(streamId)
 										&& await _indexWriter.IsSoftDeleted(_systemStreams.OriginalStreamOf(streamId), token),
 					LatestVersion = commitChecks[streamIndex].CurrentVersion,
-					HasEventsToWrite = numEventIds > 0,
 				};
 			}
 
@@ -345,10 +343,11 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 			for (int i = 0; i < commitCheckResults.Length; i++) {
 				ref readonly var checkResult = ref commitCheckResults.Span[i];
 				Debug.Assert(checkResult.Decision == CommitDecision.Ok);
-				if (isEmptyWriteToSingleStream || streamInfos[i].HasEventsToWrite) {
+				if (isEmptyWriteToSingleStream || checkResult.HasEventsToWrite) {
 					firstEventNumbers = firstEventNumbers.Add(checkResult.StartEventNumber);
 					lastEventNumbers = lastEventNumbers.Add(checkResult.EndEventNumber);
 				} else {
+					// check-only stream
 					firstEventNumbers = firstEventNumbers.Add(EventNumber.CheckOnlyFirst);
 					lastEventNumbers = lastEventNumbers.Add(EventNumber.CheckOnlyLast);
 				}
@@ -423,7 +422,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 			// for backwards compatibility, an empty write (which must be to a single stream) causes undeletion, too.
 			// TODO: soft undelete in a transaction
 			for (int i = 0; i < msg.EventStreamIds.Length; i++) {
-				if (isEmptyWriteToSingleStream || streamInfos[i].HasEventsToWrite) {
+				if (isEmptyWriteToSingleStream || commitChecks[i].HasEventsToWrite) {
 					if (commitChecks[i].IsSoftDeleted is true)
 						// we are writing to a soft deleted stream. undelete it
 						await SoftUndeleteStream(commitChecks[i].EventStreamId, commitChecks[i].CurrentVersion + 1, token);
@@ -570,7 +569,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 
 				if (await _indexWriter.GetStreamLastEventNumber(streamId, token) < 0 && expectedVersion < 0) {
 					// stream has never existed 
-					commitCheck = new CommitCheckResult<TStreamId>(CommitDecision.ConsistencyCheckFailure, streamId, message.ExpectedVersion, -1, -1, -1, isSoftDeleted: false);
+					commitCheck = new CommitCheckResult<TStreamId>(CommitDecision.ConsistencyCheckFailure, 0, streamId, message.ExpectedVersion, -1, -1, -1, isSoftDeleted: false);
 
 					// send reply
 					if (VerifyCommitChecks(message.Envelope, message.CorrelationId, numStreams: 1, new(commitCheck)))
@@ -760,8 +759,18 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 		var idempotentCount = 0;
 		var consistencyCheckFailureCount = 0;
 
-		for (var streamIndex = 0; streamIndex < results.Length; streamIndex++) {
-			var checkResult = results.Span[streamIndex];
+		// number of streams the request attempts to write to
+		var hasEventsToWriteCount = 0;
+
+		foreach (ref readonly var checkResult in results.Span) {
+			if (checkResult.HasEventsToWrite)
+				hasEventsToWriteCount++;
+			else if (checkResult.Decision
+				is CommitDecision.Idempotent
+				or CommitDecision.CorruptedIdempotency
+				or CommitDecision.IdempotentNotReady)
+				throw new InvalidOperationException("Unexpected error: check-only streams cannot be idempotent");
+
 			switch (checkResult.Decision) {
 				case CommitDecision.Ok:
 					okCount++;
@@ -795,21 +804,35 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 			}
 		}
 
+		// invariant: okCount + idempotentCount + consistencyCheckFailureCount == numStreams
+		// we haven't returned early, so each stream is ok or idempotent or failed.
+
 		// if everything is OK, continue with the write.
 		if (okCount == numStreams) {
 			return true;
 		}
 
-		// if everything is idempotent, reply with AlreadyCommitted.
-		if (idempotentCount == numStreams) {
+		// not everything was ok, something was idempotent or failed.
+		// if all streams with events to write are idempotent, reply AlreadyCommitted.
+		// it doesn't matter if check-only streams failed, this write is a retry of a previously
+		// successful write, and so it is successful.
+		if (hasEventsToWriteCount > 0 && idempotentCount == hasEventsToWriteCount) {
 			var firstEventNumbers = new long[numStreams];
 			var lastEventNumbers = new long[numStreams];
 			var idempotentLogPosition = long.MinValue;
 
 			for (var streamIndex = 0; streamIndex < results.Length; streamIndex++) {
-				firstEventNumbers[streamIndex] = results.Span[streamIndex].StartEventNumber;
-				lastEventNumbers[streamIndex] = results.Span[streamIndex].EndEventNumber;
-				idempotentLogPosition = Math.Max(results.Span[streamIndex].IdempotentLogPosition, idempotentLogPosition);
+				if (results.Span[streamIndex].HasEventsToWrite) {
+					firstEventNumbers[streamIndex] = results.Span[streamIndex].StartEventNumber;
+					lastEventNumbers[streamIndex] = results.Span[streamIndex].EndEventNumber;
+					idempotentLogPosition = Math.Max(results.Span[streamIndex].IdempotentLogPosition, idempotentLogPosition);
+				} else {
+					// check-only stream. we can't send the state of the stream because the
+					// idempotent reply must be the same as the original reply, and the state
+					// of the stream may have changed in the mean time.
+					firstEventNumbers[streamIndex] = EventNumber.CheckOnlyFirst;
+					lastEventNumbers[streamIndex] = EventNumber.CheckOnlyLast;
+				}
 			}
 
 			envelope.ReplyWith(new StorageMessage.AlreadyCommitted(
@@ -820,12 +843,8 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 			return false;
 		}
 
-		// There is at least one consistency check failure, or there is a mixture of OK and Idempotent.
+		// For streams we are writing to there is at least one consistency check failure, or there is a mixture of OK and Idempotent.
 		// Reply with the consistency check failures and also the idempotent cases.
-		// If there were no errors, only OK and Idempotent, then potentially we could skip the idempotent parts of the write
-		// and continue with the OK parts, but this situation is unlikely to happen in practice (it could not be a simple
-		// multi stream write retry). Instead we tell the caller all the streams that they that they need to sync with
-		// to make the request successful.
 		var failures = new ConsistencyCheckFailure[consistencyCheckFailureCount + idempotentCount];
 		var idx = 0;
 		for (var streamIndex = 0; streamIndex < results.Length; streamIndex++) {

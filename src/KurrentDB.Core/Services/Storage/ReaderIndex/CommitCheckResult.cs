@@ -4,9 +4,10 @@
 namespace KurrentDB.Core.Services.Storage.ReaderIndex;
 
 public readonly struct CommitCheckResult<TStreamId>(
-	CommitDecision decision,
-	TStreamId eventStreamId,
-	long expectedVersion,
+	CommitDecision decision, // it is ok/not ok/idempotent etc
+	int eventCount,          // to write this many events
+	TStreamId eventStreamId, // to this stream
+	long expectedVersion,    // at this expected version.
 	long currentVersion,
 	long startEventNumber,
 	long endEventNumber,
@@ -14,6 +15,7 @@ public readonly struct CommitCheckResult<TStreamId>(
 	long idempotentLogPosition = -1) {
 
 	public readonly CommitDecision Decision = decision;
+	public readonly int EventCount = eventCount;
 	public readonly TStreamId EventStreamId = eventStreamId;
 	public readonly long ExpectedVersion = expectedVersion;
 	public readonly long CurrentVersion = currentVersion;
@@ -28,4 +30,9 @@ public readonly struct CommitCheckResult<TStreamId>(
 	public readonly bool? IsSoftDeleted = isSoftDeleted;
 
 	public readonly long IdempotentLogPosition = idempotentLogPosition;
+
+	/// <summary>
+	/// Whether this stream has events to write (as opposed to a check-only stream).
+	/// </summary>
+	public bool HasEventsToWrite => EventCount > 0;
 }
