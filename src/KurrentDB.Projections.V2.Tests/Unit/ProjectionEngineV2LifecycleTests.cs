@@ -156,10 +156,8 @@ public class ProjectionEngineV2LifecycleTests {
 
 		var engine = new ProjectionEngineV2(config, new InfiniteReadStrategy(), new SystemClient(publisher), user);
 
-		using var cts = new CancellationTokenSource();
-		var engineRun = engine.Run(new TFPos(0, 0), cts.Token);
-		cts.Cancel();
-		await engineRun;
+		engine.Start(new TFPos(0, 0));
+		await engine.DisposeAsync();
 
 		await Assert.That(engine.IsFaulted).IsFalse();
 	}
@@ -182,10 +180,8 @@ public class ProjectionEngineV2LifecycleTests {
 
 		var engine = new ProjectionEngineV2(config, new EmptyReadStrategy(), new SystemClient(publisher), user);
 
-		using var cts = new CancellationTokenSource();
-		var engineRun = engine.Run(new TFPos(0, 0), cts.Token);
-		cts.Cancel();
-		await engineRun;
+		engine.Start(new TFPos(0, 0));
+		await engine.DisposeAsync();
 
 		await Assert.That(engine.IsFaulted).IsFalse();
 	}
@@ -226,10 +222,7 @@ public class ProjectionEngineV2LifecycleTests {
 
 		var readStrategy = new FakeReadStrategy(events);
 		var engine = new ProjectionEngineV2(config, readStrategy, new SystemClient(publisher), user);
-
-
-		using var cts = new CancellationTokenSource();
-		var engineRun = engine.Run(new TFPos(0, 0), cts.Token);
+		engine.Start(new TFPos(0, 0));
 
 		var timeout = Task.Delay(TimeSpan.FromSeconds(10));
 		while (!engine.IsFaulted) {
@@ -242,8 +235,7 @@ public class ProjectionEngineV2LifecycleTests {
 			await Task.Delay(50);
 		}
 
-		cts.Cancel();
-		await engineRun;
+		await engine.DisposeAsync();
 
 		await Assert.That(engine.IsFaulted).IsFalse();
 

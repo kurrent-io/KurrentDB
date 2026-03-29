@@ -141,8 +141,7 @@ public class AccountBalancerSpecTests {
 		var engine = new ProjectionEngineV2(
 			config, readStrategy, new SystemClient(capturingPublisher), adminUser);
 
-		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-		var engineRun = engine.Run(new TFPos(0, 0), cts.Token);
+		engine.Start(new TFPos(0, 0));
 
 		// 8. Wait for checkpoint writes
 		var deadline = Task.Delay(TimeSpan.FromSeconds(10));
@@ -158,8 +157,7 @@ public class AccountBalancerSpecTests {
 			await Task.Delay(100);
 		}
 
-		cts.Cancel();
-		await engineRun;
+		await engine.DisposeAsync();
 
 		// 9. Verify the engine didn't fault
 		if (engine.IsFaulted)

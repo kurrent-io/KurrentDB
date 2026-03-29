@@ -25,24 +25,35 @@ public sealed class ProjectionEngineV2(
 	ProjectionEngineV2Config config,
 	IReadStrategy readStrategy,
 	ISystemClient client,
-	ClaimsPrincipal user) {
+	ClaimsPrincipal user) : IAsyncDisposable {
 	private static readonly ILogger Log = Serilog.Log.ForContext<ProjectionEngineV2>();
 
 	private readonly ProjectionEngineV2Config _config = config ?? throw new ArgumentNullException(nameof(config));
 	private readonly IReadStrategy _readStrategy = readStrategy ?? throw new ArgumentNullException(nameof(readStrategy));
 	private readonly ISystemClient _client = client ?? throw new ArgumentNullException(nameof(client));
 	private readonly ClaimsPrincipal _user = user ?? throw new ArgumentNullException(nameof(user));
+	private readonly CancellationTokenSource _cts = new();
 	private Task _runTask;
 	private long _totalEventsProcessed;
 	private readonly ConcurrentDictionary<string, string> _partitionStates = new();
 
-	public Task Run(TFPos checkpoint, CancellationToken ct) {
-		_runTask = RunImpl(checkpoint, ct);
-		return _runTask;
+	public void Start(TFPos checkpoint) {
+		_runTask = Run(checkpoint, _cts.Token);
+	}
+
+	public async ValueTask DisposeAsync() {
+		if (_cts.IsCancellationRequested)
+			return;
+
+		await _cts.CancelAsync();
+		if (_runTask is { } runTask)
+			await runTask.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+		_cts.Dispose();
 	}
 
 	public bool IsFaulted => _runTask?.IsFaulted ?? false;
 	public bool IsStopped => _runTask?.IsCompleted ?? false;
+	public bool IsStopping => _runTask is { IsCompleted: false } && _cts.IsCancellationRequested;
 	public Exception FaultException => _runTask?.Exception?.InnerException;
 	public long TotalEventsProcessed => Interlocked.Read(ref _totalEventsProcessed);
 
@@ -50,7 +61,7 @@ public sealed class ProjectionEngineV2(
 		_partitionStates.TryGetValue(partitionKey, out var state) ? state : null;
 
 	[AsyncMethodBuilder(typeof(SpawningAsyncTaskMethodBuilder))]
-	private async Task RunImpl(TFPos checkpoint, CancellationToken ct) {
+	private async Task Run(TFPos checkpoint, CancellationToken ct) {
 		Log.Information("ProjectionEngineV2 {Name} starting from {Checkpoint}", _config.ProjectionName, checkpoint);
 
 		var partitionCount = _config.PartitionCount;

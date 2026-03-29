@@ -174,8 +174,7 @@ fromCategory('order')
 				new Claim(ClaimTypes.Role, "$admins")
 			}, "test")));
 
-		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-		var engineRun = engine.Run(new TFPos(0, 0), cts.Token);
+		engine.Start(new TFPos(0, 0));
 
 		// 6. Wait for checkpoint writes to appear
 		var deadline = Task.Delay(TimeSpan.FromSeconds(10));
@@ -192,8 +191,7 @@ fromCategory('order')
 			await Task.Delay(100);
 		}
 
-		cts.Cancel();
-		await engineRun;
+		await engine.DisposeAsync();
 
 		// 7. Verify the engine didn't fault
 		await Assert.That(engine.IsFaulted).IsFalse();

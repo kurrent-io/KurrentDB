@@ -5,13 +5,13 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Text.Json;
-using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Runtime.CompilerServices;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.V2.ReadStrategies;
 using Serilog;
@@ -41,9 +41,7 @@ public sealed class CoreProjectionV2 : ICoreProjectionControl {
 	readonly ProjectionConfig _projectionConfig;
 	readonly string _checkpointStreamId;
 
-	// Start() instantiates these two, Stop() returns them to null, another Start() constructs new instances.
 	ProjectionEngineV2 _engine;
-	CancellationTokenSource _engineCts;
 
 	int _statisticsSequentialNumber;
 	bool _disposed;
@@ -84,18 +82,18 @@ public sealed class CoreProjectionV2 : ICoreProjectionControl {
 	}
 
 	public void Stop() {
-		StopEngine();
-		_publisher.Publish(new CoreProjectionStatusMessage.Stopped(_projectionCorrelationId, _projectionName, completed: false));
+		_ = StopEngine(
+			new CoreProjectionStatusMessage.Stopped(_projectionCorrelationId, _projectionName, completed: false));
 	}
 
 	public void Kill() {
-		StopEngine();
-		_publisher.Publish(new CoreProjectionStatusMessage.Stopped(_projectionCorrelationId, _projectionName, completed: false));
+		_ = StopEngine(
+			new CoreProjectionStatusMessage.Stopped(_projectionCorrelationId, _projectionName, completed: false));
 	}
 
 	public bool Suspend() {
-		StopEngine();
-		_publisher.Publish(new CoreProjectionStatusMessage.Suspended(_projectionCorrelationId));
+		_ = StopEngine(
+			new CoreProjectionStatusMessage.Suspended(_projectionCorrelationId));
 		return true;
 	}
 
@@ -184,7 +182,7 @@ public sealed class CoreProjectionV2 : ICoreProjectionControl {
 	public void Dispose() {
 		if (_disposed) return;
 		_disposed = true;
-		StopEngine();
+		_ = StopEngine();
 	}
 
 	void ReadCheckpointAndStart() {
@@ -226,9 +224,8 @@ public sealed class CoreProjectionV2 : ICoreProjectionControl {
 				EmitEnabled = _projectionConfig.EmitEventEnabled
 			};
 
-			_engineCts = new CancellationTokenSource();
 			_engine = new ProjectionEngineV2(config, readStrategy, new SystemClient(_mainQueue), _runAs);
-			_engine.Run(checkpoint, _engineCts.Token);
+			_engine.Start(checkpoint);
 
 			// Publish Started and begin stats reporting
 			_publisher.Publish(new CoreProjectionStatusMessage.Started(_projectionCorrelationId, _projectionName));
@@ -265,7 +262,9 @@ public sealed class CoreProjectionV2 : ICoreProjectionControl {
 				? "Faulted"
 				: engine.IsStopped
 					? "Stopped"
-					: "Running",
+					: engine.IsStopping
+						? "Stopping"
+						: "Running",
 			StateReason = "",
 			BufferedEvents = 0,
 			EventsProcessedAfterRestart = (int)engine.TotalEventsProcessed
@@ -275,18 +274,18 @@ public sealed class CoreProjectionV2 : ICoreProjectionControl {
 			_projectionCorrelationId, stats, _statisticsSequentialNumber++));
 	}
 
-	void StopEngine() {
-		if (_engineCts is { } cts) {
-			_engineCts = null;
+	async Task StopEngine(Message onSuccess = null) {
+		if (_engine is { } engine) {
 			_engine = null;
-
-			cts.Cancel();
-			cts.Dispose();
+			await engine.DisposeAsync();
+			// only notify management once on stop, and the stats loop will notify management of failures.
+			if (onSuccess is not null && !engine.IsFaulted)
+				_publisher.Publish(onSuccess);
 		}
 	}
 
 	void SetFaulted(string reason) {
-		StopEngine();
+		_ = StopEngine();
 		_publisher.Publish(new CoreProjectionStatusMessage.Faulted(_projectionCorrelationId, reason));
 	}
 }
