@@ -72,7 +72,7 @@ public class ProjectionsController : CommunicationController {
 			"/projections/onetime?name={name}&type={type}&enabled={enabled}&checkpoints={checkpoints}&emit={emit}&trackemittedstreams={trackemittedstreams}",
 			HttpMethod.Post, OnProjectionsPostOneTime, new ICodec[] { Codec.ManualEncoding }, SupportedCodecs, new Operation(Operations.Projections.Create).WithParameter(Operations.Projections.Parameters.OneTime));
 		Register(service,
-			"/projections/continuous?name={name}&type={type}&enabled={enabled}&emit={emit}&trackemittedstreams={trackemittedstreams}",
+			"/projections/continuous?name={name}&type={type}&enabled={enabled}&emit={emit}&trackemittedstreams={trackemittedstreams}&engineversion={engineversion}",
 			HttpMethod.Post, OnProjectionsPostContinuous, new ICodec[] { Codec.ManualEncoding }, SupportedCodecs, new Operation(Operations.Projections.Create).WithParameter(Operations.Projections.Parameters.Continuous));
 		Register(service, "/projection/{name}/query?config={config}",
 			HttpMethod.Get, OnProjectionQueryGet, Codec.NoCodecs, new ICodec[] { Codec.ManualEncoding }, new Operation(Operations.Projections.Read));
@@ -408,17 +408,18 @@ public class ProjectionsController : CommunicationController {
 					trackEmittedStreams = false;
 				}
 
+				int engineVersion = int.TryParse(match.BoundVariables["engineversion"], out var ev) ? ev : ProjectionConstants.EngineDefault;
 				var runAs = GetRunAs(http, match);
 				if (mode <= ProjectionMode.OneTime && string.IsNullOrEmpty(name))
 					postMessage = new ProjectionManagementMessage.Command.Post(
 						envelope, mode, Guid.NewGuid().ToString("D"), runAs, handlerType, s, enabled: enabled,
 						checkpointsEnabled: checkpointsEnabled, emitEnabled: emitEnabled,
-						trackEmittedStreams: trackEmittedStreams, enableRunAs: true);
+						trackEmittedStreams: trackEmittedStreams, enableRunAs: true, engineVersion: engineVersion);
 				else
 					postMessage = new ProjectionManagementMessage.Command.Post(
 						envelope, mode, name, runAs, handlerType, s, enabled: enabled,
 						checkpointsEnabled: checkpointsEnabled, emitEnabled: emitEnabled,
-						trackEmittedStreams: trackEmittedStreams, enableRunAs: true);
+						trackEmittedStreams: trackEmittedStreams, enableRunAs: true, engineVersion: engineVersion);
 				Publish(postMessage);
 			}, x => Log.Debug(x, "Reply Text Body Failed."));
 	}

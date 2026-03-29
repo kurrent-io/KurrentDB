@@ -14,7 +14,6 @@ namespace KurrentDB.Core.Tests.ClientAPI;
 
 [Category("ClientAPI"), Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint), Ignore = "Explicit transactions are not supported yet by Log V3")]
 public class appending_to_implicitly_created_stream_using_transaction<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
 	private MiniNode<TLogFormat, TStreamId> _node;
 

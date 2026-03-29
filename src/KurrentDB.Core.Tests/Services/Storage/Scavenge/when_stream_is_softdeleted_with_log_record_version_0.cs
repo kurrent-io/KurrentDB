@@ -14,7 +14,6 @@ using ReadStreamResult = KurrentDB.Core.Services.Storage.ReaderIndex.ReadStreamR
 namespace KurrentDB.Core.Tests.Services.Storage.Scavenge;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint), Ignore = "No such thing as a V0 prepare in LogV3")]
 public class when_stream_is_softdeleted_with_log_record_version_0<TLogFormat, TStreamId> : ScavengeTestScenario<TLogFormat, TStreamId> {
 	protected override ValueTask<DbResult> CreateDb(TFChunkDbCreationHelper<TLogFormat, TStreamId> dbCreator, CancellationToken token) {
 		return dbCreator.Chunk(

@@ -9,7 +9,6 @@ namespace KurrentDB.Core.Tests.ClientAPI.Security;
 
 [Category("ClientAPI"), Category("LongRunning"), Category("Network")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class write_stream_security<TLogFormat, TStreamId> : AuthenticationTestBase<TLogFormat, TStreamId> {
 	[Test]
 	public async Task writing_to_all_is_never_allowed() {

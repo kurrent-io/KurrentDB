@@ -34,7 +34,6 @@ namespace KurrentDB.Core.Tests.Services.UserManagementService {
 		}
 
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
-		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		public class when_notification_has_been_written<TLogFormat, TStreamId> : with_password_change_notification_reader<TLogFormat, TStreamId> {
 			protected override void Given() {
 				base.Given();

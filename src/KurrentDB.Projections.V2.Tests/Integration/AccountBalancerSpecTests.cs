@@ -7,6 +7,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using Google.Protobuf;
+using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
@@ -138,10 +139,9 @@ public class AccountBalancerSpecTests {
 		};
 
 		var engine = new ProjectionEngineV2(
-			config, readStrategy, capturingPublisher, adminUser);
+			config, readStrategy, new SystemClient(capturingPublisher), adminUser);
 
-		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-		await engine.Start(new TFPos(0, 0), cts.Token);
+		engine.Start(new TFPos(0, 0));
 
 		// 8. Wait for checkpoint writes
 		var deadline = Task.Delay(TimeSpan.FromSeconds(10));

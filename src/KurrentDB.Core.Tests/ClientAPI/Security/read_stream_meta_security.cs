@@ -9,7 +9,6 @@ namespace KurrentDB.Core.Tests.ClientAPI.Security;
 
 [Category("ClientAPI"), Category("LongRunning"), Category("Network")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class read_stream_meta_security<TLogFormat, TStreamId> : AuthenticationTestBase<TLogFormat, TStreamId> {
 	[Test]
 	public async Task reading_stream_meta_with_not_existing_credentials_is_not_authenticated() {

@@ -13,7 +13,6 @@ using ReadStreamResult = KurrentDB.Core.Services.Storage.ReaderIndex.ReadStreamR
 namespace KurrentDB.Core.Tests.Services.Storage.Scavenge;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_stream_is_softdeleted_and_temp_but_some_metaevents_are_in_multiple_chunks<TLogFormat, TStreamId> : ScavengeTestScenario<TLogFormat, TStreamId> {
 	protected override ValueTask<DbResult> CreateDb(TFChunkDbCreationHelper<TLogFormat, TStreamId> dbCreator, CancellationToken token) {
 		return dbCreator

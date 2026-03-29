@@ -1653,6 +1653,17 @@ paths:
             streams it emits to that stream.
           required: false
           type: boolean
+        - name: engineversion
+          in: query
+          description: >-
+            The projection engine version to use. 1 (default) uses the original
+            engine, 2 uses the new V2 engine.
+          required: false
+          type: integer
+          default: 1
+          enum:
+            - 1
+            - 2
       responses:
         "201":
           description: New projection created

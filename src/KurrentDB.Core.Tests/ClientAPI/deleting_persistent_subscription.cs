@@ -12,7 +12,6 @@ namespace KurrentDB.Core.Tests.ClientAPI;
 
 [Category("ClientAPI"), Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class deleting_existing_persistent_subscription_group_with_permissions<TLogFormat, TStreamId>
 	: SpecificationWithMiniNode<TLogFormat, TStreamId> {
 	private readonly PersistentSubscriptionSettings _settings = PersistentSubscriptionSettings.Create()
@@ -33,7 +32,6 @@ public class deleting_existing_persistent_subscription_group_with_permissions<TL
 
 [Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class deleting_existing_persistent_subscription_with_subscriber<TLogFormat, TStreamId> : SpecificationWithMiniNode<TLogFormat, TStreamId> {
 	private readonly PersistentSubscriptionSettings _settings = PersistentSubscriptionSettings.Create()
 		.DoNotResolveLinkTos()
@@ -64,7 +62,6 @@ public class deleting_existing_persistent_subscription_with_subscriber<TLogForma
 
 [Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class deleting_persistent_subscription_group_that_doesnt_exist<TLogFormat, TStreamId> : SpecificationWithMiniNode<TLogFormat, TStreamId> {
 	private readonly string _stream = Guid.NewGuid().ToString();
 
@@ -82,7 +79,6 @@ public class deleting_persistent_subscription_group_that_doesnt_exist<TLogFormat
 
 [Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class deleting_persistent_subscription_group_without_permissions<TLogFormat, TStreamId> : SpecificationWithMiniNode<TLogFormat, TStreamId> {
 	private readonly string _stream = Guid.NewGuid().ToString();
 

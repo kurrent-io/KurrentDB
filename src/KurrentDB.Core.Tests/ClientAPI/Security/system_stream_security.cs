@@ -11,7 +11,6 @@ namespace KurrentDB.Core.Tests.ClientAPI.Security;
 
 [Category("ClientAPI"), Category("LongRunning"), Category("Network")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class system_stream_security<TLogFormat, TStreamId> : AuthenticationTestBase<TLogFormat, TStreamId> {
 	[Test]
 	public async Task operations_on_system_stream_with_no_acl_set_fail_for_non_admin() {

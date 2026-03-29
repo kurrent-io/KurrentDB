@@ -7,23 +7,32 @@ using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 
 namespace KurrentDB.Projections.Core.Services.Processing.V2;
 
-public class OutputBuffer {
-	public List<EmittedEventEnvelope> EmittedEvents { get; } = [];
-	public Dictionary<string, (string StreamName, string StateJson, long ExpectedVersion)> DirtyStates { get; } = new();
+public interface IReadOnlyOutputBuffer {
+	IReadOnlyList<EmittedEventEnvelope> EmittedEvents { get; }
+	IReadOnlyDictionary<string, (string StreamName, string StateJson, long ExpectedVersion)> DirtyStates { get; }
+	TFPos LastLogPosition { get; }
+}
+
+public class OutputBuffer : IReadOnlyOutputBuffer {
+	private readonly List<EmittedEventEnvelope> _emittedEvents = [];
+	private readonly Dictionary<string, (string StreamName, string StateJson, long ExpectedVersion)> _dirtyStates = [];
+
+	public IReadOnlyList<EmittedEventEnvelope> EmittedEvents => _emittedEvents;
+	public IReadOnlyDictionary<string, (string StreamName, string StateJson, long ExpectedVersion)> DirtyStates => _dirtyStates;
 	public TFPos LastLogPosition { get; set; }
 
 	public void AddEmittedEvents(EmittedEventEnvelope[] events) {
 		if (events is { Length: > 0 })
-			EmittedEvents.AddRange(events);
+			_emittedEvents.AddRange(events);
 	}
 
 	public void SetPartitionState(string partitionKey, string streamName, string stateJson, long expectedVersion) {
-		DirtyStates[partitionKey] = (streamName, stateJson, expectedVersion);
+		_dirtyStates[partitionKey] = (streamName, stateJson, expectedVersion);
 	}
 
 	public void Clear() {
-		EmittedEvents.Clear();
-		DirtyStates.Clear();
+		_emittedEvents.Clear();
+		_dirtyStates.Clear();
 		LastLogPosition = default;
 	}
 }

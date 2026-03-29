@@ -5,6 +5,7 @@ using System.Text.Json;
 using EventStore.Client.Projections;
 using Google.Protobuf;
 using Grpc.Core;
+using KurrentDB.Projections.Core;
 using KurrentDB.Projections.V2.Tests.Fixtures;
 using KurrentDB.Protocol.V2.Streams;
 using SchemaFormat = KurrentDB.Protocol.V2.Streams.SchemaFormat;
@@ -299,7 +300,7 @@ public class UserLoginProjectionTests {
 		var scenarios = GenerateUserScenarios(category, 100);
 
 		// 1. Create projection first
-		await CreateProjection(projectionName, GetProjectionSource(category), engineVersion: 1, ct);
+		await CreateProjection(projectionName, GetProjectionSource(category), engineVersion: ProjectionConstants.EngineV1, ct);
 		await WaitForProjectionStatus(projectionName, "Running", TimeSpan.FromSeconds(30), ct);
 
 		// 2. Append events
@@ -328,7 +329,7 @@ public class UserLoginProjectionTests {
 		await Task.Delay(5000, ct);
 
 		// 3. Create projection
-		await CreateProjection(projectionName, GetProjectionSource(category), engineVersion: 1, ct);
+		await CreateProjection(projectionName, GetProjectionSource(category), engineVersion: ProjectionConstants.EngineV1, ct);
 
 		// 4. Wait for projection to catch up
 		await WaitForProjectionToProcessAllEvents(projectionName, TotalEventCount(scenarios), TimeSpan.FromSeconds(60), ct);
@@ -351,7 +352,7 @@ public class UserLoginProjectionTests {
 		var allScenarios = firstBatch.Concat(secondBatch).ToList();
 
 		// 1. Create projection
-		await CreateProjection(projectionName, GetProjectionSource(category), engineVersion: 1, ct);
+		await CreateProjection(projectionName, GetProjectionSource(category), engineVersion: ProjectionConstants.EngineV1, ct);
 		await WaitForProjectionStatus(projectionName, "Running", TimeSpan.FromSeconds(30), ct);
 
 		// 2. Append first batch
@@ -389,7 +390,7 @@ public class UserLoginProjectionTests {
 		var scenarios = GenerateUserScenarios(category, 100);
 
 		// 1. Create projection first (engine version 2)
-		await CreateProjection(projectionName, GetProjectionSource(category), engineVersion: 2, ct);
+		await CreateProjection(projectionName, GetProjectionSource(category), engineVersion: ProjectionConstants.EngineV2, ct);
 		await WaitForProjectionStatus(projectionName, "Running", TimeSpan.FromSeconds(30), ct);
 
 		// 2. Append events
@@ -418,7 +419,7 @@ public class UserLoginProjectionTests {
 		await Task.Delay(5000, ct);
 
 		// 3. Create projection (engine version 2)
-		await CreateProjection(projectionName, GetProjectionSource(category), engineVersion: 2, ct);
+		await CreateProjection(projectionName, GetProjectionSource(category), engineVersion: ProjectionConstants.EngineV2, ct);
 
 		// 4. Wait for projection to catch up
 		await WaitForProjectionToProcessAllEvents(projectionName, TotalEventCount(scenarios), TimeSpan.FromSeconds(60), ct);
@@ -440,7 +441,7 @@ public class UserLoginProjectionTests {
 		var allScenarios = firstBatch.Concat(secondBatch).ToList();
 
 		// 1. Create projection (engine version 2)
-		await CreateProjection(projectionName, GetProjectionSource(category), engineVersion: 2, ct);
+		await CreateProjection(projectionName, GetProjectionSource(category), engineVersion: ProjectionConstants.EngineV2, ct);
 		await WaitForProjectionStatus(projectionName, "Running", TimeSpan.FromSeconds(30), ct);
 
 		// 2. Append first batch
@@ -487,7 +488,7 @@ public class UserLoginProjectionTests {
 		var allScenarios = firstBatch.Concat(secondBatch).ToList();
 
 		// 1. Create V1 projection
-		await CreateProjection(projectionName, GetProjectionSource(category), engineVersion: 1, ct);
+		await CreateProjection(projectionName, GetProjectionSource(category), engineVersion: ProjectionConstants.EngineV1, ct);
 		await WaitForProjectionStatus(projectionName, "Running", TimeSpan.FromSeconds(30), ct);
 
 		// 2. Append first batch and wait for processing
@@ -510,7 +511,7 @@ public class UserLoginProjectionTests {
 		await Task.Delay(2000, ct);
 
 		// 6. Re-create projection with V2 engine — reads V1 checkpoint, resumes from there
-		await CreateProjection(projectionName, GetProjectionSource(category), engineVersion: 2, ct);
+		await CreateProjection(projectionName, GetProjectionSource(category), engineVersion: ProjectionConstants.EngineV2, ct);
 		await WaitForProjectionStatus(projectionName, "Running", TimeSpan.FromSeconds(30), ct);
 		await WaitForProjectionToProcessAllEvents(projectionName, TotalEventCount(secondBatch), TimeSpan.FromSeconds(60), ct);
 

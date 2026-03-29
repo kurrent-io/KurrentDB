@@ -98,31 +98,6 @@ public class PartitionDispatcherTests {
 	}
 
 	[Test]
-	public async Task checkpoint_markers_have_incrementing_sequence() {
-		var dispatcher = new PartitionDispatcher(
-			partitionCount: 1,
-			getPartitionKey: e => e.EventStreamId);
-
-		var seq1 = await dispatcher.InjectCheckpointMarker(new TFPos(100, 100), CancellationToken.None);
-		var seq2 = await dispatcher.InjectCheckpointMarker(new TFPos(200, 200), CancellationToken.None);
-		var seq3 = await dispatcher.InjectCheckpointMarker(new TFPos(300, 300), CancellationToken.None);
-		dispatcher.Complete();
-
-		await Assert.That(seq1).IsEqualTo(1UL);
-		await Assert.That(seq2).IsEqualTo(2UL);
-		await Assert.That(seq3).IsEqualTo(3UL);
-
-		var reader = dispatcher.GetPartitionReader(0);
-		reader.TryRead(out var pe1);
-		reader.TryRead(out var pe2);
-		reader.TryRead(out var pe3);
-
-		await Assert.That(pe1.CheckpointMarkerSequence).IsEqualTo(1UL);
-		await Assert.That(pe2.CheckpointMarkerSequence).IsEqualTo(2UL);
-		await Assert.That(pe3.CheckpointMarkerSequence).IsEqualTo(3UL);
-	}
-
-	[Test]
 	public async Task complete_finishes_all_channels() {
 		const int partitionCount = 4;
 		var dispatcher = new PartitionDispatcher(

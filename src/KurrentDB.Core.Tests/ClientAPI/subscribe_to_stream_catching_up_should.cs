@@ -16,7 +16,6 @@ namespace KurrentDB.Core.Tests.ClientAPI;
 
 [Category("ClientAPI"), Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class subscribe_to_stream_catching_up_should<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
 	private static readonly ILogger Log =
 		Serilog.Log.ForContext<subscribe_to_stream_catching_up_should<TLogFormat, TStreamId>>();

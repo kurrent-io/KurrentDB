@@ -15,7 +15,6 @@ using StreamMetadata = EventStore.ClientAPI.StreamMetadata;
 namespace KurrentDB.Core.Tests.ClientAPI.ExpectedVersion64Bit;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 [Category("ClientAPI"), Category("LongRunning")]
 public class catchup_subscription_to_all_with_event_numbers_greater_than_2_billion<TLogFormat, TStreamId>
 	: MiniNodeWithExistingRecords<TLogFormat, TStreamId> {

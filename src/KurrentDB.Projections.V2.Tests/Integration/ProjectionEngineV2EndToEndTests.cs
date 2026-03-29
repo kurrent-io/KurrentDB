@@ -6,11 +6,11 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using Google.Protobuf;
+using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
-using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Metrics;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Interpreted;
@@ -168,14 +168,13 @@ fromCategory('order')
 		var engine = new ProjectionEngineV2(
 			config,
 			readStrategy,
-			capturingPublisher,
+			new SystemClient(capturingPublisher),
 			new ClaimsPrincipal(new ClaimsIdentity(new[] {
 				new Claim(ClaimTypes.Name, "admin"),
 				new Claim(ClaimTypes.Role, "$admins")
 			}, "test")));
 
-		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-		await engine.Start(new TFPos(0, 0), cts.Token);
+		engine.Start(new TFPos(0, 0));
 
 		// 6. Wait for checkpoint writes to appear
 		var deadline = Task.Delay(TimeSpan.FromSeconds(10));

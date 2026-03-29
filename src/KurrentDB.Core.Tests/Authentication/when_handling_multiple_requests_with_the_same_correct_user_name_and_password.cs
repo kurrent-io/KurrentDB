@@ -9,7 +9,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Authentication;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_handling_multiple_requests_with_the_same_correct_user_name_and_password<TLogFormat, TStreamId> :
 	with_internal_authentication_provider<TLogFormat, TStreamId> {
 	private bool _unauthorized;

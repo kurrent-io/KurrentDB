@@ -12,7 +12,6 @@ using ReadStreamResult = KurrentDB.Core.Services.Storage.ReaderIndex.ReadStreamR
 namespace KurrentDB.Core.Tests.Services.Storage.MaxAgeMaxCount.ReadRangeAndNextEventNumber;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_reading_stream_with_max_age_and_max_count_and_max_age_is_more_strict<TLogFormat, TStreamId> : ReadIndexTestScenario<TLogFormat, TStreamId> {
 	private EventRecord _event3;
 	private EventRecord _event4;
@@ -206,7 +205,6 @@ public class when_reading_stream_with_max_age_and_max_count_and_max_age_is_more_
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class
 	when_reading_stream_with_max_age_and_a_mostly_expired<TLogFormat, TStreamId> : ReadIndexTestScenario<TLogFormat,
 		TStreamId> {

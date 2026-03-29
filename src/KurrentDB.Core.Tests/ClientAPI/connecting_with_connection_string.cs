@@ -12,7 +12,6 @@ namespace KurrentDB.Core.Tests.ClientAPI;
 
 [Category("ClientAPI"), Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_connecting_with_connection_string<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
 	private MiniNode<TLogFormat, TStreamId> _node;
 

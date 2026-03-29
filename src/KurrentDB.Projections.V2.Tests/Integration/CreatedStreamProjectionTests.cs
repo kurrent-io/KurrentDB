@@ -6,6 +6,7 @@ using EventStore.Client.Projections;
 using EventStore.Client.Streams;
 using Google.Protobuf;
 using Grpc.Core;
+using KurrentDB.Projections.Core;
 using KurrentDB.Projections.V2.Tests.Fixtures;
 using KurrentDB.Protocol.V2.Streams;
 using SchemaFormat = KurrentDB.Protocol.V2.Streams.SchemaFormat;
@@ -184,7 +185,7 @@ public class CreatedStreamProjectionTests {
 				$created: function(s, e) { s.a++; return s; },
 			}).outputState();
 			""";
-		var name = await CreateProjection(source, engineVersion: 2, ct);
+		var name = await CreateProjection(source, engineVersion: ProjectionConstants.EngineV2, ct);
 		await WaitForProjectionStatus(name, "Running", TimeSpan.FromSeconds(30), ct);
 		await WaitForEventsProcessed(name, 4, TimeSpan.FromSeconds(30), ct);
 
@@ -226,7 +227,7 @@ public class CreatedStreamProjectionTests {
 				$created: function(s, e) { s.a++; return s; },
 			}).outputState();
 			""";
-		var name = await CreateProjection(source, engineVersion: 2, ct);
+		var name = await CreateProjection(source, engineVersion: ProjectionConstants.EngineV2, ct);
 		await WaitForProjectionStatus(name, "Running", TimeSpan.FromSeconds(30), ct);
 		await WaitForEventsProcessed(name, 4, TimeSpan.FromSeconds(30), ct);
 
@@ -273,7 +274,7 @@ public class CreatedStreamProjectionTests {
 				$created: function(s, e) { s.a++; return s; },
 			}).outputState();
 			""";
-		var name = await CreateProjection(source, engineVersion: 2, ct);
+		var name = await CreateProjection(source, engineVersion: ProjectionConstants.EngineV2, ct);
 		await WaitForProjectionStatus(name, "Running", TimeSpan.FromSeconds(30), ct);
 		await WaitForEventsProcessed(name, 4, TimeSpan.FromSeconds(30), ct);
 

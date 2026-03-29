@@ -7,7 +7,7 @@
 		<PackageReference Include="BenchmarkDotNet" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\KurrentDB.Projections.Core.Tests\KurrentDB.Projections.Core.Tests.csproj" />
-		<ProjectReference Include="..\KurrentDB.Projections.V1\KurrentDB.Projections.V1.csproj" />
+		<ProjectReference Include="..\KurrentDB.Projections.Management.Tests\KurrentDB.Projections.Management.Tests.csproj" />
+		<ProjectReference Include="..\KurrentDB.Projections.JavaScript\KurrentDB.Projections.JavaScript.csproj" />
 	</ItemGroup>
 </Project>

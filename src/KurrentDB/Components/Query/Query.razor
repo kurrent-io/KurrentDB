@@ -6,21 +6,19 @@
 @attribute [ExcludeFromInteractiveRouting]
 @rendermode InteractiveServer
 @using System.Diagnostics
+@using System.Linq
 @using System.Text.Json
-@using BlazorMonaco
+@using System.Threading
 @using BlazorMonaco.Editor
-@using Dapper
-@using Kurrent.Quack.ConnectionPool
 @using KurrentDB.Common.Configuration
 @using KurrentDB.Components.Plugins
 @using KurrentDB.Components.Tools
-@using KurrentDB.SecondaryIndexing.Indexes.User
+@using KurrentDB.SecondaryIndexing.Query
 @using KurrentDB.Services
 @using KurrentDB.UI.Services
 @using Microsoft.AspNetCore.Authorization
-@using Serilog
-@inject DuckDBConnectionPool Db
-@inject UserIndexEngine UserIndexEngine
+@implements IDisposable
+@inject IQueryEngine QueryEngine
 @inject Preferences Preferences
 @inject IDialogService DialogService
 @inject PluginsService Plugins
@@ -62,29 +60,34 @@
 	<MudProgressCircular Color="Color.Secondary" Indeterminate="true"/>
 </MudOverlay>
 
-@if (_items != null) {
-	<MudDataGrid Items="_items" T="IDictionary<string, object>">
+@if (_items is { RootElement: { ValueKind: JsonValueKind.Array } array })
+{
+	var columns = array.GetArrayLength() > 0
+		? array[0].EnumerateObject().Select(static p => p.Name)
+		: [];
+
+	<MudDataGrid Items="array.EnumerateArray()" T="JsonElement">
 		<Columns>
-			<HierarchyColumn T="IDictionary<string, object>" ButtonDisabledFunc="HasNoJson"/>
-			@if (!_items.Any()) {
-			} else {
-				foreach (var item in _items.First().Keys) {
-					<PropertyColumn Property="x => Shorten(x[item])" Title="@item"></PropertyColumn>
-				}
+			<HierarchyColumn T="JsonElement" ButtonDisabledFunc="@(e => e.EnumerateObject().All(p => p.Value.ValueKind is not (JsonValueKind.Object or JsonValueKind.Array)))"/>
+			@foreach (var col in columns) {
+				var colName = col;
+				<PropertyColumn T="JsonElement" TProperty="string"
+				                Property="x => GetPropertyValue(x, colName)"
+				                Title="@colName"/>
 			}
 		</Columns>
 		<ChildRowContent>
 			<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
-				@foreach (var item in context.Item.Keys) {
-					if (!IsJsonString(context.Item[item])) continue;
-
-					<MudTabPanel Text=@item>
-						@{ var json = context.Item[item]?.ToString(); }
-						<Json JsonString="@json"></Json>
-						<MudButton Variant="Variant.Filled" Size="Size.Small" OnClick="() => CopyJson(json, false)">
+				@foreach (var prop in context.Item.EnumerateObject()) {
+					if (prop.Value.ValueKind is not (JsonValueKind.Object or JsonValueKind.Array)) continue;
+					var propName = prop.Name;
+					var propJson = prop.Value.GetRawText();
+					<MudTabPanel Text="@propName">
+						<Json JsonString="@propJson"/>
+						<MudButton Variant="Variant.Filled" Size="Size.Small" OnClick="() => CopyJson(propJson, false)">
 							Copy JSON
 						</MudButton>
-						<MudButton Variant="Variant.Filled" Size="Size.Small" OnClick="() => CopyJson(json, true)">
+						<MudButton Variant="Variant.Filled" Size="Size.Small" OnClick="() => CopyJson(propJson, true)">
 							Copy indented JSON
 						</MudButton>
 					</MudTabPanel>
@@ -92,14 +95,14 @@
 			</MudTabs>
 		</ChildRowContent>
 		<PagerContent>
-			<MudDataGridPager T="IDictionary<string, object>"/>
+			<MudDataGridPager T="JsonElement"/>
 		</PagerContent>
 	</MudDataGrid>
 }
 
 @code {
-	static readonly ILogger Log = Serilog.Log.ForContext<Query>();
-	IEnumerable<IDictionary<string, object>> _items;
+	readonly CancellationTokenSource _cts = new();
+	JsonDocument _items;
 	StandaloneCodeEditor _editor = null!;
 	string _message = "";
 	string _error = "";
@@ -119,15 +122,17 @@
 	}
 
 	async Task OnEditorInit() {
-		await _editor.AddCommand((int)KeyMod.CtrlCmd | (int)KeyCode.Enter, _ => InvokeAsync(Execute));
-		await _editor.Focus();
+		// await _editor.AddCommand((int)KeyMod.CtrlCmd | (int)KeyCode.Enter, _ => InvokeAsync(Execute));
+		// await _editor.Focus();
 	}
 
-	async Task Execute() {
+	async Task Execute()
+	{
 		var sql = await _editor.GetValue();
 
 		if (string.IsNullOrWhiteSpace(sql)) return;
 
+		_items?.Dispose();
 		_items = null;
 		_showProgress = true;
 		_message = "";
@@ -137,8 +142,9 @@
 		var watch = new Stopwatch();
 		watch.Start();
 
-		try {
-			_items = Db.ExecuteAdHocUserQuery(UserIndexEngine.TryGetUserIndexTableDetails, sql);
+		try
+		{
+			_items = await QueryEngine.ExecuteAdHocUserQuery(sql, _cts.Token);
 			watch.Stop();
 			_message = $"Query executed in {watch}";
 		}
@@ -160,11 +166,18 @@
 		void PreferencesOnThemeChanged(object sender, EventArgs e) => _editor.UpdateOptions(new() { Theme = EditorTheme() });
 	}
 
-	static object Shorten(object value) => value is not string s ? value : s[..Math.Min(s.Length, 50)];
+	public void Dispose()
+	{
+		_items?.Dispose();
+		_cts.Cancel();
+	}
 
-	static bool HasNoJson(IDictionary<string, object> arg) => arg.Keys.Select(key => arg[key]).All(item => !IsJsonString(item));
-
-	static bool IsJsonString(object value) => value is string s && (s.StartsWith('{') && s.EndsWith('}') || s.StartsWith('[') && s.EndsWith(']'));
+	static string GetPropertyValue(JsonElement element, string name)
+	{
+		return element.TryGetProperty(name, out var property)
+			? property.ToString()
+			: string.Empty;
+	}
 
 	string EditorTheme() => Preferences.DarkMode ? "vs-dark" : "vs-light";
 

@@ -19,7 +19,6 @@ namespace KurrentDB.Core.Tests.ClientAPI;
 
 [Category("LongRunning"), Category("ClientAPI")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class catchup_filtered_subscription<TLogFormat, TStreamId> : SpecificationWithDirectory {
 	private MiniNode<TLogFormat, TStreamId> _node;
 	private IEventStoreConnection _conn;

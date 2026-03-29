@@ -12,7 +12,6 @@ namespace KurrentDB.Core.Tests.Http.BasicAuthentication {
 	namespace basic_authentication {
 		[Category("LongRunning")]
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
-		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		class when_requesting_an_unprotected_resource<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
 			protected override Task Given() => Task.CompletedTask;
 			protected override async Task When() {
@@ -33,7 +32,6 @@ namespace KurrentDB.Core.Tests.Http.BasicAuthentication {
 
 		[Category("LongRunning")]
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
-		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		class when_requesting_a_protected_resource<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
 			protected override Task Given() => Task.CompletedTask;
 
@@ -55,7 +53,6 @@ namespace KurrentDB.Core.Tests.Http.BasicAuthentication {
 
 		[Category("LongRunning")]
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
-		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		class when_requesting_a_protected_resource_with_credentials_provided<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
 			protected override async Task Given() {
 				var response = await MakeJsonPost(
@@ -75,7 +72,6 @@ namespace KurrentDB.Core.Tests.Http.BasicAuthentication {
 
 		[Category("LongRunning")]
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
-		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		class when_requesting_a_protected_resource_with_invalid_credentials_provided<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
 			protected override async Task Given() {
 				var response = await MakeJsonPost(
@@ -95,7 +91,6 @@ namespace KurrentDB.Core.Tests.Http.BasicAuthentication {
 
 		[Category("LongRunning")]
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
-		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		class when_requesting_a_protected_resource_with_credentials_of_disabled_user_account<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
 			protected override async Task Given() {
 				var response = await MakeJsonPost(
@@ -117,7 +112,6 @@ namespace KurrentDB.Core.Tests.Http.BasicAuthentication {
 
 		[Category("LongRunning")]
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
-		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		class when_requesting_a_protected_resource_with_credentials_of_deleted_user_account<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
 			protected override async Task Given() {
 				var response = await MakeRawJsonPost(

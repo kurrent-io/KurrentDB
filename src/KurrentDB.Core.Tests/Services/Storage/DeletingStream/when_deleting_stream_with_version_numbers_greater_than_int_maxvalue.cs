@@ -8,7 +8,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Services.Storage.DeletingStream;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_deleting_stream_with_version_numbers_greater_than_int_maxvalue<TLogFormat, TStreamId> : ReadIndexTestScenario<TLogFormat, TStreamId> {
 	long firstEventNumber = (long)int.MaxValue + 1;
 	long secondEventNumber = (long)int.MaxValue + 2;

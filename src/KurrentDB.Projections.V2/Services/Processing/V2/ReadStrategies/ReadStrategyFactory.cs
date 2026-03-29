@@ -22,7 +22,8 @@ public static class ReadStrategyFactory {
 		}
 
 		if (sources.HasStreams()) {
-			return new StreamSetReadStrategy(bus, sources.Streams, user);
+			var filter = CoreEventFilter.StreamName.Set(isAllStream: true, sources.Streams);
+			return new FilteredAllReadStrategy(bus, filter, user);
 		}
 
 		if (sources.HasCategories()) {

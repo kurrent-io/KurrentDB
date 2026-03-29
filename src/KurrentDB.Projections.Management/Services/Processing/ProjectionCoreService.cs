@@ -41,7 +41,7 @@ public class ProjectionCoreService
 	private readonly Guid _workerId;
 	private readonly IPublisher _publisher;
 	private readonly IPublisher _inputQueue;
-	private readonly IPublisher _mainBus;
+	private readonly IPublisher _mainQueue;
 	private readonly ILogger _logger = Log.ForContext<ProjectionCoreService>();
 
 	private readonly Dictionary<Guid, ICoreProjectionControl> _projections = new Dictionary<Guid, ICoreProjectionControl>();
@@ -67,11 +67,12 @@ public class ProjectionCoreService
 		ITimeProvider timeProvider,
 		IODispatcher ioDispatcher,
 		ProjectionsStandardComponents configuration,
-		IPublisher mainBus = null) {
+		IPublisher mainQueue) {
+
 		_workerId = workerId;
 		_inputQueue = inputQueue;
 		_publisher = publisher;
-		_mainBus = mainBus;
+		_mainQueue = mainQueue;
 		_ioDispatcher = ioDispatcher;
 		_subscriptionDispatcher = subscriptionDispatcher;
 		_timeProvider = timeProvider;
@@ -151,14 +152,14 @@ public class ProjectionCoreService
 	public void Handle(CoreProjectionManagementMessage.CreateAndPrepare message) {
 		try {
 			//TODO: factory method can throw
-			var stateHandler = CreateStateHandler(_factory,
+			var stateHandlerFactory = () => CreateStateHandler(_factory,
 				_logger,
 				message.Name,
 				message.HandlerType,
 				message.Query,
 				message.EnableContentTypeValidation,
 				message.Config.ProjectionExecutionTimeout);
-
+			var stateHandler = stateHandlerFactory.Invoke();
 			string name = message.Name;
 			var sourceDefinition = ProjectionSourceDefinition.From(stateHandler.GetSourceDefinition());
 
@@ -166,25 +167,19 @@ public class ProjectionCoreService
 			var projectionConfig = message.Config;
 			var namesBuilder = new ProjectionNamesBuilder(name, sourceDefinition);
 
-			// For V2, create a factory that can produce fresh state handler instances
-			Func<IProjectionStateHandler> stateHandlerFactory = message.EngineVersion == 2
-				? () => CreateStateHandler(_factory, _logger, message.Name, message.HandlerType,
-					message.Query, message.EnableContentTypeValidation, message.Config.ProjectionExecutionTimeout)
-				: null;
-
 			var projectionProcessingStrategy = _processingStrategySelector.CreateProjectionProcessingStrategy(
 				name,
 				projectionVersion,
 				namesBuilder,
 				sourceDefinition,
 				projectionConfig,
-				stateHandler,
 				message.HandlerType,
 				message.Query,
 				message.EnableContentTypeValidation,
 				message.EngineVersion,
-				stateHandlerFactory,
-				_mainBus);
+				// For V1 only one stateHandler is used. V2 uses a stateHandler per partition
+				message.EngineVersion == ProjectionConstants.EngineV2 ? stateHandlerFactory : () => stateHandler,
+				_mainQueue);
 
 			CreateCoreProjection(message.ProjectionId, projectionConfig.RunAs, projectionProcessingStrategy);
 			_publisher.Publish(
@@ -210,12 +205,12 @@ public class ProjectionCoreService
 				namesBuilder,
 				sourceDefinition,
 				projectionConfig,
-				null,
 				message.HandlerType,
 				message.Query,
 				message.EnableContentTypeValidation,
 				message.EngineVersion,
-				mainBus: _mainBus);
+				stateHandlerFactory: () => null, // this is ok because the projection is stopped
+				mainQueue: _mainQueue);
 
 			CreateCoreProjection(message.ProjectionId, projectionConfig.RunAs, projectionProcessingStrategy);
 			_publisher.Publish(
@@ -236,7 +231,6 @@ public class ProjectionCoreService
 			runAs,
 			_publisher,
 			_ioDispatcher,
-			_subscriptionDispatcher,
 			_timeProvider);
 		_projections.Add(projectionCorrelationId, projection);
 	}
