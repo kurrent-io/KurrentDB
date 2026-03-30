@@ -6,6 +6,18 @@ order: 1
 
 This page contains the release notes for EventStoreDB 24.10
 
+## [24.10.13](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.13)
+
+30 March 2026
+
+### Connectors: Fix Kafka sink throughput bottleneck
+
+Resolved an internal threading limitation in the Kafka client library that capped throughput when producing many messages concurrently.
+
+### Connectors: Add Kafka sink write latency metric
+
+A new metric `kurrent_sink_write_latency_milliseconds` is now available for Kafka sink connectors, tracking the time taken to produce messages to the broker.
+
 ## [24.10.12](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.12)
 
 12 March 2026
