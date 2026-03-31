@@ -8,7 +8,7 @@ This page contains the release notes for EventStoreDB 24.10
 
 ## [24.10.13](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.13)
 
-30 March 2026
+31 March 2026
 
 ### Connectors: Fix Kafka sink throughput bottleneck
 
