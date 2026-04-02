@@ -1,5 +1,6 @@
 TcpPlugin:
   EnableExternalTcp: true
+  DisableExternalTcpTls: false
   NodeTcpPort: 1113
   NodeTcpPortAdvertiseAs: 1113
   NodeHeartbeatInterval: 2000
