@@ -5,6 +5,7 @@
 			"Default": "Debug",
 			"KurrentDB.Core.Services.Transport.Enumerators": "Information",
 			"Grpc": "Critical",
+			"ModelContextProtocol": "Warning",
 			"Microsoft": "Warning",
 			"System": "Warning"
 		}

@@ -58,10 +58,14 @@
     <PackageVersion Include="Kurrent.Surge.Core" Version="1.1.1-alpha.1.60" />
     <PackageVersion Include="Kurrent.Surge.DataProtection" Version="1.1.1-alpha.1.57" />
     <PackageVersion Include="Kurrent.Surge.DuckDB" Version="1.1.1-alpha.1.57" />
+    <PackageVersion Include="Kurrent.Kontext" Version="0.0.0-alpha.0.47" />
+    <PackageVersion Include="Kurrent.Kontext.AspNetCore" Version="0.0.0-alpha.0.47" />
+    <PackageVersion Include="Kurrent.Kontext.Models" Version="0.0.0-alpha.0.47" />
     <PackageVersion Include="Kurrent.Quack" Version="0.0.0-alpha.150" />
     <PackageVersion Include="KurrentDB.Client" Version="1.0.0" />
     <PackageVersion Include="librdkafka.redist" Version="2.5.0" />
     <PackageVersion Include="LruCacheNet" Version="1.2.0" />
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="1.1.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="10.0.0" />
@@ -76,15 +80,15 @@
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Diagnostics.NETCore.Client" Version="0.2.621003" />
     <PackageVersion Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="3.1.24" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.3" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.CommandLine" Version="9.0.9" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.AutoActivation" Version="9.8.0" />
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.Testing" Version="9.10.0" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.5" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="9.4.2" />
     <PackageVersion Include="Serilog.Enrichers.Demystifier" Version="1.0.3" />
     <PackageVersion Include="Serilog.Extensions.Hosting" Version="9.0.0" />
@@ -107,6 +111,7 @@
     <PackageVersion Include="Novell.Directory.Ldap.NETStandard" Version="3.6.0" />
     <PackageVersion Include="NSubstitute" Version="5.3.0" />
     <!-- upgrade because of transitive dependency vulnerability -->
+    <PackageVersion Include="NuGet.CommandLine" Version="6.13.1" />
     <PackageVersion Include="NuGet.Protocol" Version="6.7.1" />
     <PackageVersion Include="NUnit" Version="3.14.0" />
     <PackageVersion Include="NUnit3TestAdapter" Version="5.2.0" />
