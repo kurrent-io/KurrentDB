@@ -10,12 +10,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
-    <PackageReference Include="Grpc.AspNetCore" />
+		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+		<PackageReference Include="Grpc.AspNetCore" />
 		<PackageReference Include="Kurrent.Quack" />
-    <PackageReference Include="Kurrent.Surge.DuckDB" />
-    <PackageReference Include="Kurrent.Surge.Core" />
-    <PackageReference Include="NJsonSchema" />
+		<PackageReference Include="Kurrent.Surge.DuckDB" />
+		<PackageReference Include="Kurrent.Surge.Core" />
+		<PackageReference Include="NJsonSchema" />
   </ItemGroup>
 
   <ItemGroup>
