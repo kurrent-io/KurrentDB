@@ -2,15 +2,15 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Text;
-using System.Text.Json;
 using System.Text.RegularExpressions;
-using DotNext.Buffers;
 using Kurrent.Quack;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.User;
 
 internal abstract partial class UserIndexSql(string indexName, string fieldName) {
+	private const string TableNamePrefix = "idx_user__";
+
 	// we validate the table/column names for safety reasons, although DuckDB allows a large set of characters when using quoted identifiers
 	private static readonly Regex IdentifierRegex = ValidationRegex();
 
@@ -47,8 +47,10 @@ internal abstract partial class UserIndexSql(string indexName, string fieldName)
 			.CopyTo(records);
 	}
 
+	public static bool IsUserIndexTable(ReadOnlySpan<char> tableName) => tableName.StartsWith(TableNamePrefix);
+
 	private static string GetTableNameFor(string indexName) {
-		var tableName = $"idx_user__{indexName}";
+		var tableName = string.Concat(TableNamePrefix, indexName);
 
 		return IdentifierRegex.IsMatch(tableName)
 			? tableName
@@ -56,7 +58,6 @@ internal abstract partial class UserIndexSql(string indexName, string fieldName)
 	}
 
 	internal static string GetViewNameFor(string indexName) {
-		// Keep aligned with TransformViewName
 		var viewName = $"idx_user__{indexName}_view";
 
 		return IdentifierRegex.IsMatch(viewName)
@@ -103,9 +104,10 @@ file readonly record struct CreateUserIndexNonQuery(string TableName, string Cre
 		(
 			log_position bigint not null,
 			commit_position bigint null,
-			event_number bigint not null,
-			created bigint not null
-			{1}
+			stream_revision bigint not null,
+			created_at bigint not null
+			{1},
+			record_id blob not null
 		)
 		"""
 	);
@@ -132,7 +134,7 @@ file readonly record struct ReadUserIndexForwardsQuery(string TableName, bool Ex
 	: IDynamicQuery<ReadUserIndexQueryArgs, IndexQueryRecord> {
 	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse(
 		"""
-		select log_position, commit_position, event_number
+		select log_position, commit_position, stream_revision
 		from "{0}"
 		where log_position >{1} ? {2}
 		order by coalesce(commit_position, log_position) limit ?
@@ -163,7 +165,7 @@ file readonly record struct ReadUserIndexBackwardsQuery(string TableName, bool E
 	: IDynamicQuery<ReadUserIndexQueryArgs, IndexQueryRecord> {
 	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse(
 		"""
-		select log_position, commit_position, event_number
+		select log_position, commit_position, stream_revision
 		from "{0}"
 		where log_position <{1} ? {2}
 		order by coalesce(commit_position, log_position) desc, log_position desc
@@ -255,7 +257,7 @@ internal record struct GetLastIndexedRecordResult(long PreparePosition, long? Co
 file readonly record struct GetLastIndexedRecordQuery(string TableName) : IDynamicQuery<GetLastIndexedRecordResult> {
 	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse(
 		"""
-		select log_position, commit_position, created
+		select log_position, commit_position, created_at
 		from "{0}"
 		order by rowid desc
 		limit 1

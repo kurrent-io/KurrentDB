@@ -35,7 +35,6 @@ public abstract class WriteEventsToIndexScenario<TLogFormat, TStreamId> : Specif
 	protected IIndexReader<TStreamId> _indexReader;
 	protected IIndexWriter<TStreamId> _indexWriter;
 	protected IIndexCommitter<TStreamId> _indexCommitter;
-	protected ObjectPool<ITransactionFileReader> _readerPool;
 	protected LogFormatAbstractor<TStreamId> _logFormat;
 	protected const int RecordOffset = 1000;
 	public IReadOnlyList<IPrepareLogRecord<TStreamId>> CreatePrepareLogRecord(TStreamId streamId, int expectedVersion, TStreamId eventType, Guid eventId, long transactionPosition) {
@@ -169,7 +168,6 @@ public abstract class WriteEventsToIndexScenario<TLogFormat, TStreamId> : Specif
 
 	public override Task TestFixtureTearDown() {
 		_logFormat?.Dispose();
-		_readerPool.Dispose();
 		return base.TestFixtureTearDown();
 	}
 }
