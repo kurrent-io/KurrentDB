@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Data;
+using System.Diagnostics;
 using Kurrent.Quack;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -36,12 +37,14 @@ partial class IndexingDbSchema {
 				throw new DataException("Index database is broken");
 		}
 
-		PerformMigration(
-			baseVersion,
-			desiredVersion,
-			connection,
-			MigrationActions,
-			logger.CreateLogger<IndexingDbSchema>());
+		if (baseVersion < desiredVersion) {
+			PerformMigration(
+				baseVersion,
+				desiredVersion,
+				connection,
+				MigrationActions,
+				logger.CreateLogger<IndexingDbSchema>());
+		}
 
 		return baseVersion;
 
@@ -65,6 +68,7 @@ partial class IndexingDbSchema {
 		IReadOnlyDictionary<int, Action<DuckDBAdvancedConnection>> actions,
 		ILogger<IndexingDbSchema> log) {
 
+		Debug.Assert(baseVersion < targetVersion);
 		log.LogInformation("Start secondary index migration from {CurrentVersion} to {TargetVersion}", baseVersion, targetVersion);
 		try {
 			// Use transaction for each transition to avoid growth of DuckDB WAL
