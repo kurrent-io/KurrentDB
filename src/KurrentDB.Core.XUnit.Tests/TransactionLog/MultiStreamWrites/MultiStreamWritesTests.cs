@@ -1258,6 +1258,311 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		}
 	}
 
+	public enum IdempotencyKind {
+		Full,                // all events already written → retry succeeds
+		Partial,             // first event already written, second is new → corrupted idempotency
+		WithFailedCheck,     // write to primary stream is idempotent, but check on another stream fails
+		WithSuccessfulCheck, // write to primary stream is idempotent, and check on another stream succeeds
+	}
+
+	// Each test case first writes 2 events to the target stream (which must succeed for idempotency
+	// to be applicable), then retries according to the Idempotency type:
+	//   Full:                same events, same expected version → should succeed (idempotent)
+	//   Partial:             first event same, second is new → corrupted idempotency → should fail
+	//   WithFailedCheck:     same events, but adds a failing check-only stream → fails
+	//   WithSuccessfulCheck: same events, but adds a successful check-only stream → fails
+	//
+	// Only (ExpectedVersion, StreamState) combos where the initial write succeeds are applicable.
+	// Participation is always WriteTo.
+	public static TheoryData<long, StreamState, IdempotencyKind, OperationResult> IdempotentBehaviorByKindCases() => new() {
+		// ExpectedVersion.Any
+		{ ExpectedVersion.Any, StreamState.NeverExisted, IdempotencyKind.Full, OperationResult.Success },
+		{ ExpectedVersion.Any, StreamState.NeverExisted, IdempotencyKind.Partial, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.Any, StreamState.NeverExisted, IdempotencyKind.WithFailedCheck, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.Any, StreamState.NeverExisted, IdempotencyKind.WithSuccessfulCheck, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.Any, StreamState.ExistsAtV2, IdempotencyKind.Full, OperationResult.Success },
+		{ ExpectedVersion.Any, StreamState.ExistsAtV2, IdempotencyKind.Partial, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.Any, StreamState.ExistsAtV2, IdempotencyKind.WithFailedCheck, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.Any, StreamState.ExistsAtV2, IdempotencyKind.WithSuccessfulCheck, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.Any, StreamState.SoftDeletedAtV2, IdempotencyKind.Full, OperationResult.Success },
+		{ ExpectedVersion.Any, StreamState.SoftDeletedAtV2, IdempotencyKind.Partial, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.Any, StreamState.SoftDeletedAtV2, IdempotencyKind.WithFailedCheck, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.Any, StreamState.SoftDeletedAtV2, IdempotencyKind.WithSuccessfulCheck, OperationResult.WrongExpectedVersion },
+		// { ExpectedVersion.Any, StreamState.Tombstoned } not applicable
+
+		// ExpectedVersion.StreamExists
+		// { ExpectedVersion.StreamExists, StreamState.NeverExisted } not applicable
+		{ ExpectedVersion.StreamExists, StreamState.ExistsAtV2, IdempotencyKind.Full, OperationResult.Success },
+		{ ExpectedVersion.StreamExists, StreamState.ExistsAtV2, IdempotencyKind.Partial, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.StreamExists, StreamState.ExistsAtV2, IdempotencyKind.WithFailedCheck, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.StreamExists, StreamState.ExistsAtV2, IdempotencyKind.WithSuccessfulCheck, OperationResult.WrongExpectedVersion },
+		// { ExpectedVersion.StreamExists, StreamState.SoftDeletedAtV2 } not applicable
+		// { ExpectedVersion.StreamExists, StreamState.Tombstoned } not applicable
+
+		// ExpectedVersion.NoStream
+		{ ExpectedVersion.NoStream, StreamState.NeverExisted, IdempotencyKind.Full, OperationResult.Success },
+		{ ExpectedVersion.NoStream, StreamState.NeverExisted, IdempotencyKind.Partial, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.NoStream, StreamState.NeverExisted, IdempotencyKind.WithFailedCheck, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.NoStream, StreamState.NeverExisted, IdempotencyKind.WithSuccessfulCheck, OperationResult.WrongExpectedVersion },
+		// { ExpectedVersion.NoStream, StreamState.ExistsAtV2 } not applicable
+		// next case is long standing behaviour but a case could be made that this retry should succeed.
+		{ ExpectedVersion.NoStream, StreamState.SoftDeletedAtV2, IdempotencyKind.Full, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.NoStream, StreamState.SoftDeletedAtV2, IdempotencyKind.Partial, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.NoStream, StreamState.SoftDeletedAtV2, IdempotencyKind.WithFailedCheck, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.NoStream, StreamState.SoftDeletedAtV2, IdempotencyKind.WithSuccessfulCheck, OperationResult.WrongExpectedVersion },
+		// { ExpectedVersion.NoStream, StreamState.Tombstoned } not applicable
+
+		// ExpectedVersion.SoftDeleted
+		// { ExpectedVersion.SoftDeleted, StreamState.NeverExisted } not applicable
+		// { ExpectedVersion.SoftDeleted, StreamState.ExistsAtV2 } not applicable
+		{ ExpectedVersion.SoftDeleted, StreamState.SoftDeletedAtV2, IdempotencyKind.Full, OperationResult.Success },
+		{ ExpectedVersion.SoftDeleted, StreamState.SoftDeletedAtV2, IdempotencyKind.Partial, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.SoftDeleted, StreamState.SoftDeletedAtV2, IdempotencyKind.WithFailedCheck, OperationResult.WrongExpectedVersion },
+		{ ExpectedVersion.SoftDeleted, StreamState.SoftDeletedAtV2, IdempotencyKind.WithSuccessfulCheck, OperationResult.WrongExpectedVersion },
+		// { ExpectedVersion.SoftDeleted, StreamState.Tombstoned } not applicable
+
+		// EventNumber.DeletedStream: not applicable
+
+		// EV.1: not applicable
+
+		// Specific version 2: strong idempotency (checks events at positions 3, 4)
+		// { 2, StreamState.NeverExisted } not applicable
+		{ 2, StreamState.ExistsAtV2, IdempotencyKind.Full, OperationResult.Success },
+		{ 2, StreamState.ExistsAtV2, IdempotencyKind.Partial, OperationResult.WrongExpectedVersion },
+		{ 2, StreamState.ExistsAtV2, IdempotencyKind.WithFailedCheck, OperationResult.WrongExpectedVersion },
+		{ 2, StreamState.ExistsAtV2, IdempotencyKind.WithSuccessfulCheck, OperationResult.WrongExpectedVersion },
+		{ 2, StreamState.SoftDeletedAtV2, IdempotencyKind.Full, OperationResult.Success },
+		{ 2, StreamState.SoftDeletedAtV2, IdempotencyKind.Partial, OperationResult.WrongExpectedVersion },
+		{ 2, StreamState.SoftDeletedAtV2, IdempotencyKind.WithFailedCheck, OperationResult.WrongExpectedVersion },
+		{ 2, StreamState.SoftDeletedAtV2, IdempotencyKind.WithSuccessfulCheck, OperationResult.WrongExpectedVersion },
+		// { 2, StreamState.Tombstoned } not applicable
+
+		// EV.3: not applicable
+	};
+
+	[Theory]
+	[MemberData(nameof(IdempotentBehaviorByKindCases))]
+	public async Task idempotent_behavior_by_kind(
+		long expectedVersion,
+		StreamState streamState,
+		IdempotencyKind idempotency,
+		OperationResult expectedResult) {
+
+		const string test = nameof(idempotent_behavior_by_kind);
+		var label = $"{test}-{VersionLabel(expectedVersion)}-{streamState}-{idempotency}";
+		var T = $"{label}-target";
+
+		static string VersionLabel(long v) => v switch {
+			ExpectedVersion.Any => "any",
+			ExpectedVersion.NoStream => "nostream",
+			ExpectedVersion.StreamExists => "exists",
+			ExpectedVersion.SoftDeleted => "softdeleted",
+			_ => v.ToString(),
+		};
+
+		// setup target stream
+		if (streamState is not StreamState.NeverExisted) {
+			var result = await WriteEvents([T], [ExpectedVersion.Any], [NewEvent, NewEvent, NewEvent], []);
+			Assert.Equal(OperationResult.Success, result.Result);
+		}
+
+		if (streamState is StreamState.SoftDeletedAtV2)
+			await DeleteStream(T, hardDelete: false);
+
+		// first write: write 2 events with known IDs
+		var e1 = NewEvent;
+		var e2 = NewEvent;
+
+		var firstWrite = await WriteEvents(
+			eventStreamIds: [T],
+			expectedVersions: [expectedVersion],
+			events: [e1, e2],
+			eventStreamIndexes: []);
+		Assert.Equal(OperationResult.Success, firstWrite.Result);
+
+		var originalFirstEventNumbers = firstWrite.FirstEventNumbers.ToArray();
+		var originalLastEventNumbers = firstWrite.LastEventNumbers.ToArray();
+
+		// retry write according to idempotency type
+		ClientMessage.WriteEventsCompleted retry;
+		switch (idempotency) {
+			case IdempotencyKind.Full:
+				// same events, same expected version
+				retry = await WriteEvents(
+					eventStreamIds: [T],
+					expectedVersions: [expectedVersion],
+					events: [e1, e2],
+					eventStreamIndexes: []);
+				break;
+
+			case IdempotencyKind.Partial:
+				// first event is same, second is new → corrupted idempotency
+				retry = await WriteEvents(
+					eventStreamIds: [T],
+					expectedVersions: [expectedVersion],
+					events: [e1, NewEvent],
+					eventStreamIndexes: []);
+				break;
+
+			case IdempotencyKind.WithFailedCheck: {
+				// idempotent write to T + failing check on C (non-existent stream with specific version)
+				var C = $"{label}-check";
+				retry = await WriteEvents(
+					eventStreamIds: [T, C],
+					expectedVersions: [expectedVersion, 99],
+					events: [e1, e2],
+					eventStreamIndexes: [0, 0]);
+				break;
+			}
+
+			case IdempotencyKind.WithSuccessfulCheck: {
+				// idempotent write to T + successful check on C (non-existent stream with ExpectedVersion.Any)
+				var C = $"{label}-check";
+				retry = await WriteEvents(
+					eventStreamIds: [T, C],
+					expectedVersions: [expectedVersion, ExpectedVersion.Any],
+					events: [e1, e2],
+					eventStreamIndexes: [0, 0]);
+				break;
+			}
+
+			default:
+				throw new ArgumentOutOfRangeException(nameof(idempotency));
+		}
+
+		Assert.Equal(expectedResult, retry.Result);
+
+		if (expectedResult is OperationResult.Success) {
+			Assert.Equal(0, retry.ConsistencyCheckFailures.Length);
+			if (idempotency
+				is IdempotencyKind.WithFailedCheck
+				or IdempotencyKind.WithSuccessfulCheck) {
+				Assert.Equal([originalFirstEventNumbers[0], EventNumber.CheckOnlyFirst], retry.FirstEventNumbers.ToArray());
+				Assert.Equal([originalLastEventNumbers[0], EventNumber.CheckOnlyLast], retry.LastEventNumbers.ToArray());
+			} else {
+				// idempotent write returns the original event numbers
+				Assert.Equal(originalFirstEventNumbers, retry.FirstEventNumbers.ToArray());
+				Assert.Equal(originalLastEventNumbers, retry.LastEventNumbers.ToArray());
+			}
+		}
+	}
+
+	public enum StreamModification {
+		MoreEventsWritten, // more events written to the stream, so the expected version no longer matches
+		SoftDeleted,       // stream was soft deleted
+		Tombstoned,        // stream was tombstoned
+	}
+
+	// Write 2 events to T, modify T, retry the same 2 events with the same expected version.
+	// The stream setup depends on the expected version (same as IdempotentBehaviorByKindCases).
+	// When more events are written we are consistent about accepting idempotent retries
+	// When tombstoned we are consistent about rejecting idempotent retries
+	// When soft deleted, we usually allow it but not for EV.StreamExists. This is longstanding but a case could be made to change it.
+	public static TheoryData<long, StreamModification, OperationResult> IdempotentBehaviorByStreamChangedCases() => new() {
+		// ExpectedVersion.Any
+		{ ExpectedVersion.Any, StreamModification.MoreEventsWritten, OperationResult.Success },
+		{ ExpectedVersion.Any, StreamModification.SoftDeleted, OperationResult.Success },
+		{ ExpectedVersion.Any, StreamModification.Tombstoned, OperationResult.StreamDeleted },
+
+		// ExpectedVersion.StreamExists
+		{ ExpectedVersion.StreamExists, StreamModification.MoreEventsWritten, OperationResult.Success },
+		{ ExpectedVersion.StreamExists, StreamModification.SoftDeleted, OperationResult.StreamDeleted }, // curious
+		{ ExpectedVersion.StreamExists, StreamModification.Tombstoned, OperationResult.StreamDeleted },
+
+		// ExpectedVersion.NoStream
+		{ ExpectedVersion.NoStream, StreamModification.MoreEventsWritten, OperationResult.Success },
+		{ ExpectedVersion.NoStream, StreamModification.SoftDeleted, OperationResult.Success },
+		{ ExpectedVersion.NoStream, StreamModification.Tombstoned, OperationResult.StreamDeleted },
+
+		// ExpectedVersion.SoftDeleted
+		{ ExpectedVersion.SoftDeleted, StreamModification.MoreEventsWritten, OperationResult.Success },
+		{ ExpectedVersion.SoftDeleted, StreamModification.SoftDeleted, OperationResult.Success },
+		{ ExpectedVersion.SoftDeleted, StreamModification.Tombstoned, OperationResult.StreamDeleted },
+
+		// { EventNumber.DeletedStream, _ } not applicable
+		// { 1, _ } not applicable
+
+		// Specific version 2
+		{ 2, StreamModification.MoreEventsWritten, OperationResult.Success },
+		{ 2, StreamModification.SoftDeleted, OperationResult.Success },
+		{ 2, StreamModification.Tombstoned, OperationResult.StreamDeleted },
+
+		// { 3, _ } not applicable
+	};
+
+	[Theory]
+	[MemberData(nameof(IdempotentBehaviorByStreamChangedCases))]
+	public async Task idempotent_behavior_by_stream_change(
+		long expectedVersion,
+		StreamModification modification,
+		OperationResult expectedResult) {
+
+		const string test = nameof(idempotent_behavior_by_stream_change);
+		var label = $"{test}-{VersionLabel(expectedVersion)}-{modification}";
+		var T = $"{label}-target";
+
+		static string VersionLabel(long v) => v switch {
+			ExpectedVersion.Any => "any",
+			ExpectedVersion.NoStream => "nostream",
+			ExpectedVersion.StreamExists => "exists",
+			ExpectedVersion.SoftDeleted => "softdeleted",
+			_ => v.ToString(),
+		};
+
+		// setup stream based on expected version
+		switch (expectedVersion) {
+			case ExpectedVersion.Any:
+			case ExpectedVersion.StreamExists:
+			case 2:
+				// ExistsAtV2: 3 events
+				var setup = await WriteEvents([T], [ExpectedVersion.Any], [NewEvent, NewEvent, NewEvent], []);
+				Assert.Equal(OperationResult.Success, setup.Result);
+				break;
+			case ExpectedVersion.NoStream:
+				// NeverExisted: no setup needed
+				break;
+			case ExpectedVersion.SoftDeleted:
+				// SoftDeletedAtV2: 3 events then soft delete
+				setup = await WriteEvents([T], [ExpectedVersion.Any], [NewEvent, NewEvent, NewEvent], []);
+				Assert.Equal(OperationResult.Success, setup.Result);
+				await DeleteStream(T, hardDelete: false);
+				break;
+		}
+
+		// first write: 2 events to T
+		var e1 = NewEvent;
+		var e2 = NewEvent;
+		var firstWrite = await WriteEvents(
+			eventStreamIds: [T],
+			expectedVersions: [expectedVersion],
+			events: [e1, e2],
+			eventStreamIndexes: []);
+		Assert.Equal(OperationResult.Success, firstWrite.Result);
+
+		// modify T
+		switch (modification) {
+			case StreamModification.MoreEventsWritten:
+				var write = await WriteEvents([T], [ExpectedVersion.Any], [NewEvent], []);
+				Assert.Equal(OperationResult.Success, write.Result);
+				break;
+			case StreamModification.SoftDeleted:
+				await DeleteStream(T, hardDelete: false);
+				break;
+			case StreamModification.Tombstoned:
+				await DeleteStream(T, hardDelete: true);
+				break;
+		}
+
+		// retry: same events to T with same expected version
+		var retry = await WriteEvents(
+			eventStreamIds: [T],
+			expectedVersions: [expectedVersion],
+			events: [e1, e2],
+			eventStreamIndexes: []);
+
+		Assert.Equal(expectedResult, retry.Result);
+	}
+
 	// the numbers here are curious, but they go on the wire so keep as is for backwards compatibility
 	[Theory]
 	[InlineData(false)]
