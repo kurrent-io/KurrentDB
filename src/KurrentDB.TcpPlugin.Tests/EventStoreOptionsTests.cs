@@ -50,6 +50,19 @@ public class EventStoreOptionsTests {
 	}
 
 	[Fact]
+	public void disable_external_tcp_tls_defaults_to_false() {
+		var sut = CreateSut();
+		Assert.False(sut.TcpPlugin.DisableExternalTcpTls);
+	}
+
+	[Fact]
+	public void can_disable_external_tcp_tls() {
+		var sut = CreateSut(
+			($"{KurrentConfigurationKeys.Prefix}:TcpPlugin:DisableExternalTcpTls", "true"));
+		Assert.True(sut.TcpPlugin.DisableExternalTcpTls);
+	}
+
+	[Fact]
 	public void can_set_ip() {
 		var sut = CreateSut(
 			($"{KurrentConfigurationKeys.Prefix}:NodeIp", "1.2.3.4"));
