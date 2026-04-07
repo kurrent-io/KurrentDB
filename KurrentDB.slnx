@@ -78,9 +78,12 @@
     <Project Path="src\KurrentDB.Licensing.Tests\KurrentDB.Licensing.Tests.csproj" />
     <Project Path="src\KurrentDB.OtlpExporterPlugin.Tests\KurrentDB.OtlpExporterPlugin.Tests.csproj" />
     <Project Path="src\KurrentDB.Plugins.TestHelpers\KurrentDB.Plugins.TestHelpers.csproj" />
-    <Project Path="src\KurrentDB.Projections.Core.Javascript.Tests\KurrentDB.Projections.Core.Javascript.Tests.csproj" />
-    <Project Path="src\KurrentDB.Projections.Core.Tests\KurrentDB.Projections.Core.Tests.csproj" />
-    <Project Path="src\KurrentDB.Projections.Core.XUnit.Tests\KurrentDB.Projections.Core.XUnit.Tests.csproj" />
+    <Project Path="src\KurrentDB.Projections.JavaScript.Tests\KurrentDB.Projections.JavaScript.Tests.csproj" />
+    <Project Path="src\KurrentDB.Projections.Management.Tests\KurrentDB.Projections.Management.Tests.csproj" />
+    <Project Path="src\KurrentDB.Projections.V1.Tests\KurrentDB.Projections.V1.Tests.csproj" />
+    <Project Path="src\KurrentDB.Projections.V1.XUnit.Tests\KurrentDB.Projections.V1.XUnit.Tests.csproj" />
+    <Project Path="src\KurrentDB.Projections.Shared.Tests\KurrentDB.Projections.Shared.Tests.csproj" />
+    <Project Path="src\KurrentDB.Projections.V2.Tests\KurrentDB.Projections.V2.Tests.csproj" />
     <Project Path="src\KurrentDB.SourceGenerators.Tests\KurrentDB.SourceGenerators.Tests.csproj" />
     <Project Path="src\KurrentDB.SystemRuntime.Tests\KurrentDB.SystemRuntime.Tests.csproj" />
   </Folder>
@@ -98,7 +101,11 @@
   <Project Path="src\KurrentDB.NETCore.Compatibility\KurrentDB.NETCore.Compatibility.csproj" />
   <Project Path="src\KurrentDB.PluginHosting\KurrentDB.PluginHosting.csproj" />
   <Project Path="src\KurrentDB.POC.IO.Core\KurrentDB.POC.IO.Core.csproj" />
-  <Project Path="src\KurrentDB.Projections.Core\KurrentDB.Projections.Core.csproj" />
+  <Project Path="src\KurrentDB.Projections.JavaScript\KurrentDB.Projections.JavaScript.csproj" />
+  <Project Path="src\KurrentDB.Projections.Management\KurrentDB.Projections.Management.csproj" />
+  <Project Path="src\KurrentDB.Projections.Shared\KurrentDB.Projections.Shared.csproj" />
+  <Project Path="src\KurrentDB.Projections.V1\KurrentDB.Projections.V1.csproj" />
+  <Project Path="src\KurrentDB.Projections.V2\KurrentDB.Projections.V2.csproj" />
   <Project Path="src\KurrentDB.SourceGenerators\KurrentDB.SourceGenerators.csproj" />
   <Project Path="src\KurrentDB.Surge.Testing.Messages\KurrentDB.Surge.Testing.Messages.csproj" />
   <Project Path="src\KurrentDB.Surge.Testing\KurrentDB.Surge.Testing.csproj" />
