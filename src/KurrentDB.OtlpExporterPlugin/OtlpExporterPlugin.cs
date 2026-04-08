@@ -51,7 +51,9 @@ public class OtlpExporterPlugin(ILogger logger) : SubsystemsPlugin(requiredEntit
 		var scrapeIntervalSeconds = configuration.GetValue<int>($"{KurrentConfigurationPrefix}:Metrics:ExpectedScrapeIntervalSeconds");
 
 		services
-			.Configure<OtlpExporterOptions>(configuration.GetSection(OtlpConfigPrefix))
+			// Configure OTLP options from the shared section first, then overlay any per-signal overrides. 
+			.Configure<OtlpExporterOptions>(configuration.GetSection(OtlpConfigPrefix)) // shared
+			.Configure<OtlpExporterOptions>(configuration.GetSection(OtlpMetricsOtlpPrefix)) // overlay
 			.Configure<MetricReaderOptions>(configuration.GetSection(OtlpMetricsPrefix))
 			.AddOpenTelemetry()
 			.WithMetrics(configure => configure
