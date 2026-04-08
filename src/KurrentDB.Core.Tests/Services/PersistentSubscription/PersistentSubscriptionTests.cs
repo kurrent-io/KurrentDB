@@ -2543,6 +2543,61 @@ public class CheckpointingWithSkippedEvents {
 	}
 }
 
+public class CheckpointingWithNoMoreCapacity {
+	[Test]
+	public void checkpoint_is_correct_when_message_hits_no_more_capacity_then_succeeds() {
+		var version = 0;
+
+		IPersistentSubscriptionStreamPosition checkpoint = null;
+		var clientEnvelope = new FakeEnvelope();
+		var reader = new FakeCheckpointReader();
+		const string subscriptionStream = "streamName";
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
+			PersistentSubscriptionToStreamParamsBuilder.CreateFor(subscriptionStream, "groupName")
+				.WithEventLoader(new FakeStreamReader())
+				.WithCheckpointReader(reader)
+				.WithCheckpointWriter(new FakeCheckpointWriter(x => checkpoint = x))
+				.WithMessageParker(new FakeMessageParker())
+				.MinimumToCheckPoint(1)
+				.MaximumToCheckPoint(1)
+				.PreferRoundRobin()
+				.StartFromCurrent());
+		reader.Load(null);
+
+		var correlationId = Guid.NewGuid();
+		sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-1", clientEnvelope, maxInFlight: 1, "foo", "bar");
+
+		// push two messages. the first is sent, the second hits NoMoreCapacity (maxInFlight=1).
+		var message_1 = WriteEvent();
+		var message_2 = WriteEvent();
+
+		Assert.That(clientEnvelope.Replies.Count, Is.EqualTo(1));
+		Assert.IsNull(checkpoint);
+
+		// acknowledge message_1. this frees a slot, so message_2 is pushed to the client.
+		sub.AcknowledgeMessagesProcessed(correlationId, [message_1]);
+
+		// checkpoint should be at #0 (message_1's position), not at #1 (message_2's position).
+		// message_2 is now outstanding so the checkpoint must not advance past it.
+		Assert.AreEqual(new PersistentSubscriptionSingleStreamPosition(0), checkpoint);
+
+		Assert.That(clientEnvelope.Replies.Count, Is.EqualTo(2));
+
+		// acknowledge message_2.
+		sub.AcknowledgeMessagesProcessed(correlationId, [message_2]);
+
+		// checkpoint should now be at #1, as all messages have been acknowledged.
+		Assert.AreEqual(new PersistentSubscriptionSingleStreamPosition(1), checkpoint);
+
+		Guid WriteEvent() {
+			var id = Guid.NewGuid();
+			sub.NotifyLiveSubscriptionMessage(
+				Helper.BuildFakeEvent(id, "type", subscriptionStream, version++));
+			return id;
+		}
+	}
+}
+
 public static class Helper {
 	public static PersistentSubscriptionParamsBuilder CreatePersistentSubscriptionBuilderFor(EventSource eventSource) {
 		switch (eventSource) {
