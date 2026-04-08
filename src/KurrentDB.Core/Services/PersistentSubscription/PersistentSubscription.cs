@@ -236,16 +236,19 @@ public class PersistentSubscription {
 				return;
 
 			foreach (StreamBuffer.OutstandingMessagePointer messagePointer in streamBuffer.Scan()) {
+				//optimistically assume that the message will leave the buffer
+				//if it is, then we will increment the next sequence number if a new one was assigned
+				//if it is not, then we will not increment the next sequence number
 				(OutstandingMessage message, bool newSequenceNumberAssigned) =
 					OutstandingMessage.ForPushedEvent(messagePointer.Message, _nextSequenceNumber, _lastKnownMessage);
+				ConsumerPushResult result =
+					_pushClients.PushMessageToClient(message);
 
-				if (newSequenceNumberAssigned) {
+				if (newSequenceNumberAssigned && result is ConsumerPushResult.Sent or ConsumerPushResult.Skipped) {
 					_lastKnownSequenceNumber = _nextSequenceNumber++;
 					_lastKnownMessage = message.EventPosition;
 				}
 
-				ConsumerPushResult result =
-					_pushClients.PushMessageToClient(message);
 				if (result == ConsumerPushResult.Sent) {
 					messagePointer.MarkSent();
 					MarkBeginProcessing(message);
