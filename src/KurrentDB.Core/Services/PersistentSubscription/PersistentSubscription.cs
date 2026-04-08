@@ -253,10 +253,15 @@ public class PersistentSubscription {
 					messagePointer.MarkSent();
 					MarkBeginProcessing(message);
 				} else if (result == ConsumerPushResult.Skipped) {
-					// The consumer strategy skipped the message - add it back to the stream buffer as a retry.
-					// we don't increment the retry count as it's an internal retry.
-					messagePointer.MarkSent();
-					streamBuffer.AddRetry(message);
+					if (newSequenceNumberAssigned) {
+						// New message from buffer - move it to the back of retry.
+						Debug.Assert(!messagePointer.IsRetry);
+						messagePointer.MarkSent();
+						streamBuffer.AddRetryToEnd(message);
+					} else {
+						// Otherwise it's already in retry - leave it in place.
+						Debug.Assert(messagePointer.IsRetry);
+					}
 				} else if (result == ConsumerPushResult.NoMoreCapacity) {
 					return;
 				}
