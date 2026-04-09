@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using EventStore.Plugins.Authentication;
+using KurrentDB.Common.Utils;
 using Microsoft.AspNetCore.Connections.Features;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -109,7 +110,7 @@ public class UserCertificateAuthenticationProvider(
 		if (!clientCertificate.IsClientCertificate(out _))
 			return false;
 
-		if (clientCertificate.IsServerCertificate(out _))
+		if (clientCertificate.IsServerCertificate(disableClientAuthEkuValidation: false, out _))
 			return false;
 
 		userId = clientCertificate.GetCommonName();
