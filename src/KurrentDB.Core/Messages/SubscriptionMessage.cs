@@ -52,6 +52,15 @@ public static partial class SubscriptionMessage {
 	}
 
 	[DerivedMessage(CoreMessage.Subscription)]
+	public partial class PersistentSubscriptionPushToClients : Message {
+		public string SubscriptionId { get; }
+
+		public PersistentSubscriptionPushToClients(string subscriptionId) {
+			SubscriptionId = subscriptionId;
+		}
+	}
+
+	[DerivedMessage(CoreMessage.Subscription)]
 	public partial class PersistentSubscriptionsRestart : Message {
 		public IEnvelope ReplyEnvelope { get; }
 
