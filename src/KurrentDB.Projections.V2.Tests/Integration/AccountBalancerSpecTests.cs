@@ -219,7 +219,7 @@ public class AccountBalancerSpecTests {
 		AssertJsonEquivalent(expectedEsdbbS01, esdbbS01State);
 
 		// Verify shared state (partition ""): numberOfAccounts=2, totalBalance=850, description="bill payment"
-		var sharedStreamId = $"$projections-{projectionName}--result";
+		var sharedStreamId = $"$projections-{projectionName}-result";
 		await Assert.That(statesByStream.ContainsKey(sharedStreamId)).IsTrue();
 		var sharedState = JObject.Parse(statesByStream[sharedStreamId]);
 		var expectedShared = JObject.Parse(expectedFinalStates[""]!);

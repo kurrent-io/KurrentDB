@@ -232,7 +232,7 @@ public sealed class ProjectionEngineV2(
 	/// Returns the state JSON if found, null otherwise.
 	/// </summary>
 	private async ValueTask<string?> LoadPersistedPartitionState(string partitionKey, CancellationToken ct) {
-		var resultStreamId = $"$projections-{_config.ProjectionName}-{partitionKey}-result";
+		var resultStreamId = ProjectionNamesBuilder.MakeResultStreamName(_config.ProjectionName, partitionKey);
 		try {
 			var lastEvent = await _client.Reading.ReadStreamLastEvent(resultStreamId, ct);
 			if (lastEvent is null)

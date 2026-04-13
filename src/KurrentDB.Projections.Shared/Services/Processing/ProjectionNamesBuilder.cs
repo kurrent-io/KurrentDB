@@ -49,6 +49,11 @@ public class ProjectionNamesBuilder {
 										ProjectionEmittedStreamSuffix + ProjectionCheckpointStreamSuffix;
 	}
 
+	public static string MakeResultStreamName(string projectionName, string partitionKey) =>
+		string.IsNullOrEmpty(partitionKey)
+			? ProjectionsStreamPrefix + projectionName + ProjectionsStateStreamSuffix
+			: ProjectionsStreamPrefix + projectionName + "-" + partitionKey + ProjectionsStateStreamSuffix;
+
 	public string EffectiveProjectionName {
 		get { return _name; }
 	}
