@@ -600,7 +600,8 @@ public class PersistentSubscriptionIndexService :
 				try {
 					fullConfig = PersistentSubscriptionConfig.FromSerializedForm(completed.Events[0].Event.Data);
 				} catch (Exception ex) {
-					Log.Error(ex, "Error reading config for merge during save.");
+					Log.Error(ex, "Error reading config for merge during save. Configuration not persisted.");
+					continueWith();
 					return;
 				}
 				break;
@@ -608,7 +609,8 @@ public class PersistentSubscriptionIndexService :
 				fullConfig = new PersistentSubscriptionConfig { Version = "2" };
 				break;
 			default:
-				Log.Error("Unexpected result {result} reading config for merge during save.", completed.Result);
+				Log.Error("Unexpected result {result} reading config for merge during save. Configuration not persisted.", completed.Result);
+				continueWith();
 				return;
 		}
 
