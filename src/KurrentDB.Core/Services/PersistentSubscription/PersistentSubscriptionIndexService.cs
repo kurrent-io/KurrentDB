@@ -44,6 +44,7 @@ public class PersistentSubscriptionIndexService :
 	private readonly IPersistentSubscriptionStreamReader _streamReader;
 	private readonly IPersistentSubscriptionCheckpointReader _checkpointReader;
 	private PersistentSubscriptionConfig _config = new() { Version = "2" };
+	private bool _started;
 
 	public PersistentSubscriptionIndexService(
 		IQueuedHandler queuedHandler,
@@ -117,6 +118,8 @@ public class PersistentSubscriptionIndexService :
 					key);
 			}
 		}
+
+		_started = true;
 	}
 
 	public void Handle(SubscriptionMessage.PersistentSubscriptionTimerTick message) {
@@ -139,12 +142,23 @@ public class PersistentSubscriptionIndexService :
 	}
 
 	private void ShutdownSubscriptions() {
+		_started = false;
 		foreach (var subscription in _subscriptionsById.Values) {
 			subscription.Shutdown();
 		}
+		_subscriptionsById.Clear();
+		_subscriptionTopics.Clear();
 	}
 
 	public void Handle(ClientMessage.CreatePersistentSubscriptionToIndex message) {
+		if (!_started) {
+			message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionToIndexCompleted(
+				message.CorrelationId,
+				ClientMessage.CreatePersistentSubscriptionToIndexCompleted.CreatePersistentSubscriptionToIndexResult.Fail,
+				"Persistent subscription index service is not started."));
+			return;
+		}
+
 		var indexName = message.IndexName;
 
 		if (!_secondaryIndexReaders.CanReadIndex(indexName)) {
@@ -333,6 +347,12 @@ public class PersistentSubscriptionIndexService :
 
 	ValueTask IAsyncHandle<ClientMessage.ConnectToPersistentSubscriptionToIndex>.HandleAsync(
 		ClientMessage.ConnectToPersistentSubscriptionToIndex message, CancellationToken token) {
+		if (!_started) {
+			message.Envelope.ReplyWith(new ClientMessage.SubscriptionDropped(
+				message.CorrelationId, SubscriptionDropReason.NotFound));
+			return ValueTask.CompletedTask;
+		}
+
 		var indexName = message.IndexName;
 		var eventSource = new PersistentSubscriptionIndexEventSource(indexName);
 		var stream = eventSource.ToString();
