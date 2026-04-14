@@ -625,7 +625,7 @@ public partial class TFChunk : IChunkBlob {
 		Debug.Assert(_cachedData is not 0);
 		Debug.Assert(_cachedLength > 0);
 
-		ReadOnlyMemory<byte> memoryView = UnmanagedMemory.AsMemory((byte*)_cachedData, _cachedLength);
+		ReadOnlyMemory<byte> memoryView = MemoryMarshal.AsMemory((byte*)_cachedData, _cachedLength);
 		return Stream.CreateShared(new(memoryView), compatWithAsync: true);
 	}
 
