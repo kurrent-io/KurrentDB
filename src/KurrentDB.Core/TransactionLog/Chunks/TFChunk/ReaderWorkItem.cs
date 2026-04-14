@@ -8,7 +8,6 @@ using DotNext;
 using DotNext.Buffers;
 using DotNext.IO;
 using EventStore.Plugins.Transforms;
-using static DotNext.Runtime.Intrinsics;
 
 namespace KurrentDB.Core.TransactionLog.Chunks.TFChunk;
 
@@ -19,7 +18,7 @@ internal sealed class ReaderWorkItem : Disposable {
 	private readonly int _positionInPool = -1;
 	public readonly ChunkDataReadStream BaseStream;
 	private readonly bool _leaveOpen;
-	private readonly IBufferedReader _cachedReader;
+	private readonly PoolingBufferedStream _cachedReader;
 
 	private ReaderWorkItem(ChunkDataReadStream stream, bool leaveOpen) {
 		Debug.Assert(stream is not null);
@@ -30,8 +29,8 @@ internal sealed class ReaderWorkItem : Disposable {
 		// Access to the internal buffer of 'PoolingBufferedStream' is only allowed
 		// when the top-level stream doesn't perform any transformations. Otherwise,
 		// the buffer contains untransformed bytes that cannot be accessed directly.
-		_cachedReader = IsExactTypeOf<ChunkDataReadStream>(stream)
-						&& stream.ChunkFileStream is PoolingBufferedStream bufferedStream
+		_cachedReader = ChunkDataReadStream.IsExactTypeOf(stream)
+		                && stream.ChunkFileStream is PoolingBufferedStream bufferedStream
 			? bufferedStream
 			: null;
 	}
@@ -73,15 +72,14 @@ internal sealed class ReaderWorkItem : Disposable {
 		}
 	}
 
-	internal IBufferedReader TryGetBufferedReader(int length, out ReadOnlyMemory<byte> buffer) {
-		if (_cachedReader is { } reader) {
-			buffer = reader.Buffer.TrimLength(length);
-		} else {
-			buffer = ReadOnlyMemory<byte>.Empty;
-			reader = null;
+	internal PoolingBufferedStream TryGetBufferedReader(int length, out ReadOnlyMemory<byte> buffer) {
+		if (_cachedReader is { } reader && reader.TryGetReadBuffer(length, out buffer)) {
+			buffer = buffer.Slice(0, length);
+			return reader;
 		}
 
-		return buffer.Length >= length ? reader : null;
+		buffer = default;
+		return null;
 	}
 
 	protected override void Dispose(bool disposing) {
