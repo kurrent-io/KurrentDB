@@ -16,5 +16,4 @@ jobs:
       - uses: actions/checkout@v4
       - uses: Thezenmonster/mcp-verdict-action@v1
         with:
-          packages: "@upstash/context7-mcp,@modelcontextprotocol/server-sequential-thinking"
           fail-on: block
