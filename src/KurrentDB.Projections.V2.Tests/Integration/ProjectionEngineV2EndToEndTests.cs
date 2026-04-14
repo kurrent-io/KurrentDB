@@ -227,7 +227,7 @@ fromCategory('order')
 		// Note: OrderNoteAdded is not handled by any explicit handler, so it's ignored
 		var order1StreamId = $"$projections-e2e-test-{testId}-order-{testId}-1-result";
 		var order1Results = allEvents
-			.Where((e, idx) => e.EventType == "Result" &&
+			.Where((e, idx) => e.EventType == ProjectionEventTypes.ProjectionState &&
 				writes.Any(w => {
 					var evts = w.Events.ToArray();
 					var evtIdx = Array.IndexOf(evts, e);
@@ -252,7 +252,7 @@ fromCategory('order')
 		// 12. Verify partition state for order-{testId}-2
 		var order2StreamId = $"$projections-e2e-test-{testId}-order-{testId}-2-result";
 		var order2Results = allEvents
-			.Where((e, idx) => e.EventType == "Result" &&
+			.Where((e, idx) => e.EventType == ProjectionEventTypes.ProjectionState &&
 				writes.Any(w => {
 					var evts = w.Events.ToArray();
 					var evtIdx = Array.IndexOf(evts, e);

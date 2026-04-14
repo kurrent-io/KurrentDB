@@ -89,7 +89,7 @@ public class CheckpointCoordinator(int partitionCount, string projectionName, Pa
 		writes = writes.Add(new StreamWrite(
 			_checkpointStreamId,
 			ExpectedVersion.Any,
-			[new Event(Guid.NewGuid(), "$ProjectionCheckpoint", isJson: true, checkpointData, isPropertyMetadata: false, metadata: null)]));
+			[new Event(Guid.NewGuid(), ProjectionEventTypes.ProjectionCheckpoint, isJson: true, checkpointData, isPropertyMetadata: false, metadata: null)]));
 
 		// 2. Emitted events
 		foreach (var buffer in _collectedBuffers) {
@@ -111,7 +111,7 @@ public class CheckpointCoordinator(int partitionCount, string projectionName, Pa
 				writes = writes.Add(new StreamWrite(
 					streamName,
 					expVer,
-					[new Event(Guid.NewGuid(), "Result", isJson: true, stateData, isPropertyMetadata: false, metadata: null)]));
+					[new Event(Guid.NewGuid(), ProjectionEventTypes.ProjectionState, isJson: true, stateData, isPropertyMetadata: false, metadata: null)]));
 			}
 		}
 
