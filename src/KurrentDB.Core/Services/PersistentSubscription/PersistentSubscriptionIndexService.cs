@@ -401,6 +401,7 @@ public class PersistentSubscriptionIndexService :
 			Log.Warning(
 				"Dropping persistent subscription to index '{stream}::{group}' because the index was deleted.",
 				stream, group);
+			sub.Delete();
 			sub.Shutdown();
 			UpdateSubscription(stream, group, null);
 			UpdateSubscriptionConfig(updatedBy: null, stream, group, replaceBy: null);
