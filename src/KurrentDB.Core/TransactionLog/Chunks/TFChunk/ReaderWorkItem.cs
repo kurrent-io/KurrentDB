@@ -5,7 +5,6 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using DotNext;
-using DotNext.Buffers;
 using DotNext.IO;
 using EventStore.Plugins.Transforms;
 
@@ -14,8 +13,6 @@ namespace KurrentDB.Core.TransactionLog.Chunks.TFChunk;
 internal sealed class ReaderWorkItem : Disposable {
 	private const int BufferSize = 8192;
 
-	// if item was taken from the pool, the field contains position within the array (>= 0)
-	private readonly int _positionInPool = -1;
 	public readonly ChunkDataReadStream BaseStream;
 	private readonly bool _leaveOpen;
 	private readonly PoolingBufferedStream _cachedReader;
@@ -62,15 +59,6 @@ internal sealed class ReaderWorkItem : Disposable {
 	public bool IsMemory { get; }
 
 	public ITransactionFileTracker.Source Source { get; }
-
-	public int PositionInPool {
-		get => _positionInPool;
-		init {
-			Debug.Assert(value >= 0);
-
-			_positionInPool = value;
-		}
-	}
 
 	internal PoolingBufferedStream TryGetBufferedReader(int length, out ReadOnlyMemory<byte> buffer) {
 		if (_cachedReader is { } reader && reader.TryGetReadBuffer(length, out buffer)) {
