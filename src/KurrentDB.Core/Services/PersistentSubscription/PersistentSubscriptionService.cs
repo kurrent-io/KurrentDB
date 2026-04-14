@@ -662,6 +662,11 @@ public class PersistentSubscriptionService<TStreamId> :
 								};
 								message.Envelope.ReplyWith(new ClientMessage.UpdatePersistentSubscriptionToAllCompleted(
 									c.CorrelationId, result, c.Reason));
+							} else {
+								message.Envelope.ReplyWith(new ClientMessage.UpdatePersistentSubscriptionToAllCompleted(
+									message.CorrelationId,
+									ClientMessage.UpdatePersistentSubscriptionToAllCompleted.UpdatePersistentSubscriptionToAllResult.Fail,
+									$"Unexpected response when forwarding to index service: {msg.GetType().Name}"));
 							}
 						});
 						_queuedHandler.Publish(new ClientMessage.UpdatePersistentSubscriptionToIndex(
@@ -860,6 +865,11 @@ public class PersistentSubscriptionService<TStreamId> :
 							};
 							message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToAllCompleted(
 								c.CorrelationId, result, c.Reason));
+						} else {
+							message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToAllCompleted(
+								message.CorrelationId,
+								ClientMessage.DeletePersistentSubscriptionToAllCompleted.DeletePersistentSubscriptionToAllResult.Fail,
+								$"Unexpected response when forwarding to index service: {msg.GetType().Name}"));
 						}
 					});
 					_queuedHandler.Publish(new ClientMessage.DeletePersistentSubscriptionToIndex(
