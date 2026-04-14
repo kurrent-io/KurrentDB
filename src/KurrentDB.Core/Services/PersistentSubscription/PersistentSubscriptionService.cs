@@ -646,8 +646,16 @@ public class PersistentSubscriptionService<TStreamId> :
 				},
 				(error) => {
 					// Before reporting DoesNotExist, check if the group belongs to an index subscription.
-					var indexEntry = _config.Entries.FirstOrDefault(e => e.IndexName != null && e.Group == message.GroupName);
-					if (indexEntry != null) {
+					var indexEntries = _config.Entries.Where(e => e.IndexName != null && e.Group == message.GroupName).ToList();
+					if (indexEntries.Count > 1) {
+						message.Envelope.ReplyWith(new ClientMessage.UpdatePersistentSubscriptionToAllCompleted(
+							message.CorrelationId,
+							ClientMessage.UpdatePersistentSubscriptionToAllCompleted.UpdatePersistentSubscriptionToAllResult.Fail,
+							$"Ambiguous group '{message.GroupName}': exists on multiple indexes ({string.Join(", ", indexEntries.Select(e => e.IndexName))}). Use the index-specific API."));
+						return;
+					}
+					if (indexEntries.Count == 1) {
+						var indexEntry = indexEntries[0];
 						// Wrap the envelope to translate the index-specific completion back to AllCompleted.
 						var translatingEnvelope = new CallbackEnvelope(msg => {
 							if (msg is ClientMessage.UpdatePersistentSubscriptionToIndexCompleted c) {
@@ -849,8 +857,16 @@ public class PersistentSubscriptionService<TStreamId> :
 			},
 			(error) => {
 				// Before reporting DoesNotExist, check if the group belongs to an index subscription.
-				var indexEntry = _config.Entries.FirstOrDefault(e => e.IndexName != null && e.Group == message.GroupName);
-				if (indexEntry != null) {
+				var indexEntries = _config.Entries.Where(e => e.IndexName != null && e.Group == message.GroupName).ToList();
+				if (indexEntries.Count > 1) {
+					message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToAllCompleted(
+						message.CorrelationId,
+						ClientMessage.DeletePersistentSubscriptionToAllCompleted.DeletePersistentSubscriptionToAllResult.Fail,
+						$"Ambiguous group '{message.GroupName}': exists on multiple indexes ({string.Join(", ", indexEntries.Select(e => e.IndexName))}). Use the index-specific API."));
+					return;
+				}
+				if (indexEntries.Count == 1) {
+					var indexEntry = indexEntries[0];
 					// Wrap the envelope to translate the index-specific completion back to AllCompleted.
 					var translatingEnvelope = new CallbackEnvelope(msg => {
 						if (msg is ClientMessage.DeletePersistentSubscriptionToIndexCompleted c) {
@@ -1051,12 +1067,17 @@ public class PersistentSubscriptionService<TStreamId> :
 		var allStream = new PersistentSubscriptionAllStreamEventSource().ToString();
 		var key = BuildSubscriptionGroupKey(allStream, message.GroupName);
 		if (!_subscriptionsById.ContainsKey(key)) {
-			var indexEntry = _config.Entries.FirstOrDefault(e => e.IndexName != null && e.Group == message.GroupName);
-			if (indexEntry != null) {
+			var indexEntries = _config.Entries.Where(e => e.IndexName != null && e.Group == message.GroupName).ToList();
+			if (indexEntries.Count > 1) {
+				message.Envelope.ReplyWith(new ClientMessage.SubscriptionDropped(
+					message.CorrelationId, SubscriptionDropReason.NotFound));
+				return ValueTask.CompletedTask;
+			}
+			if (indexEntries.Count == 1) {
 				_queuedHandler.Publish(new ClientMessage.ConnectToPersistentSubscriptionToIndex(
 					message.InternalCorrId, message.CorrelationId, message.Envelope,
 					message.ConnectionId, message.ConnectionName, message.GroupName,
-					indexEntry.IndexName, message.AllowedInFlightMessages, message.From,
+					indexEntries[0].IndexName, message.AllowedInFlightMessages, message.From,
 					message.User, message.Expires));
 				return ValueTask.CompletedTask;
 			}
