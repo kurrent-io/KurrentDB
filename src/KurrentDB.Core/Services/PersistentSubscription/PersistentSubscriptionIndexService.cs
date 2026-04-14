@@ -620,7 +620,7 @@ public sealed class PersistentSubscriptionIndexService :
 				break;
 			case OperationResult.CommitTimeout:
 			case OperationResult.PrepareTimeout:
-				Log.Information("Timeout while trying to save persistent subscription index configuration. Retrying.");
+				Log.Warning("Timeout while trying to save persistent subscription index configuration. Retrying.");
 				SaveConfiguration(continueWith);
 				break;
 			default:
