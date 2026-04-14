@@ -17,6 +17,10 @@ public class SchemaNameValidatorTests {
     [Arguments("OrderDetails.V2")]
     [Arguments("event-type")]
     [Arguments("$connectors-kakfa-001")]
+    [Arguments("schéma-événement")]
+    [Arguments("Ärztlicher-Bericht")]
+    [Arguments("患者記録")]
+    [Arguments("заказ.v2")]
     public async ValueTask validates_correctly(string? value) {
         var result = SchemaNameValidator.Instance.Validate(value);
         await Assert.That(result.IsValid).IsTrue();
