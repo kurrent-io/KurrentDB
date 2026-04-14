@@ -4,6 +4,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using KurrentDB.Core.Services;
+using KurrentDB.Core.Services.Transport.Grpc;
 
 // ReSharper disable once CheckNamespace
 namespace EventStore.Core.Services.Transport.Grpc;
@@ -28,12 +29,16 @@ internal static class FilterRouting {
 		if (!isStreamIdentifier || !string.IsNullOrEmpty(regex))
 			return false;
 
-		if (prefixes is not { Count: 1 })
+		if (prefixes is not { Count: > 0 })
 			return false;
 
 		var candidate = prefixes[0];
 		if (!SystemStreams.IsIndexStream(candidate))
 			return false;
+
+		if (prefixes.Count > 1)
+			throw RpcExceptions.InvalidArgument(
+				"Index reads only work with one index name and cannot be combined with stream prefixes or other indexes");
 
 		indexName = candidate;
 		return true;
