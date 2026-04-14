@@ -1,0 +1,19 @@
+name: AgentScore Policy Gate
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  mcp-policy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Thezenmonster/mcp-verdict-action@v1
+        with:
+          fail-on: block
