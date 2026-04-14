@@ -21,7 +21,7 @@ public class PersistentSubscriptionToIndexParamsBuilder : PersistentSubscription
 			.FromIndex(indexName)
 			.StartFrom(0L, 0L)
 			.SetGroup(groupName)
-			.SetSubscriptionId($"$index-{indexName}::{groupName}")
+			.SetSubscriptionId($"{indexName}::{groupName}")
 			.DoNotResolveLinkTos()
 			.WithMessageTimeoutOf(TimeSpan.FromSeconds(30))
 			.WithHistoryBufferSizeOf(500)

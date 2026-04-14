@@ -20,7 +20,7 @@ public class PersistentSubscriptionIndexEventSource : IPersistentSubscriptionEve
 		IndexName = indexName ?? throw new ArgumentNullException(nameof(indexName));
 	}
 
-	public override string ToString() => $"$index-{IndexName}";
+	public override string ToString() => IndexName;
 
 	public IPersistentSubscriptionStreamPosition StreamStartPosition =>
 		new PersistentSubscriptionAllStreamPosition(0L, 0L);

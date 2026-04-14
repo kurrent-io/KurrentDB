@@ -392,8 +392,7 @@ public class PersistentSubscriptionIndexService :
 
 	ValueTask IAsyncHandle<StorageMessage.SecondaryIndexCommitted>.HandleAsync(
 		StorageMessage.SecondaryIndexCommitted message, CancellationToken token) {
-		var stream = IndexNameToStream(message.IndexName);
-		if (!_subscriptionTopics.TryGetValue(stream, out var subscriptions))
+		if (!_subscriptionTopics.TryGetValue(message.IndexName, out var subscriptions))
 			return ValueTask.CompletedTask;
 
 		for (int i = 0, n = subscriptions.Count; i < n; i++) {
@@ -408,7 +407,6 @@ public class PersistentSubscriptionIndexService :
 		var subscriptionsToRemove = new List<(string stream, string group, PersistentSubscription sub)>();
 
 		foreach (var (stream, subscriptions) in _subscriptionTopics) {
-			// The stream key is in the format "$index-{indexName}"; the regex matches against the raw index name.
 			if (!message.StreamIdRegex.IsMatch(stream))
 				continue;
 
@@ -621,9 +619,6 @@ public class PersistentSubscriptionIndexService :
 		}
 	}
 
-	private static string IndexNameToStream(string indexName) {
-		return $"$index-{indexName}";
-	}
 
 	private static string BuildSubscriptionGroupKey(string stream, string groupName) {
 		return stream + "::" + groupName;
