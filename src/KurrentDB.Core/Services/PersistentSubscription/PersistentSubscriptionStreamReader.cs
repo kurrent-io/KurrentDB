@@ -105,7 +105,12 @@ public class PersistentSubscriptionStreamReader : IPersistentSubscriptionStreamR
 			_mainQueue.Publish(new ClientMessage.ReadIndexEventsForward(
 				internalCorrId: correlationId,
 				correlationId: correlationId,
-				envelope: new CallbackEnvelope(msg => handler.FetchIndexCompleted((ClientMessage.ReadIndexEventsForwardCompleted)msg)),
+				envelope: new CallbackEnvelope(msg => {
+					if (msg is ClientMessage.ReadIndexEventsForwardCompleted completed)
+						handler.FetchIndexCompleted(completed);
+					else
+						onError($"Unexpected message type {msg.GetType().Name} when reading index {eventSource.IndexName}");
+				}),
 				indexName: eventSource.IndexName,
 				commitPosition: startPosition.TFPosition.Commit,
 				preparePosition: startPosition.TFPosition.Prepare,
