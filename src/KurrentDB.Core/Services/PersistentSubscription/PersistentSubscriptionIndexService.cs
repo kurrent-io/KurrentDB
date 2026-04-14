@@ -19,7 +19,7 @@ using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Core.Services.PersistentSubscription;
 
-public class PersistentSubscriptionIndexService :
+public sealed class PersistentSubscriptionIndexService :
 	IHandle<SubscriptionMessage.PersistentSubscriptionIndexEntriesLoaded>,
 	IHandle<SubscriptionMessage.PersistentSubscriptionTimerTick>,
 	IHandle<SystemMessage.BecomeShuttingDown>,

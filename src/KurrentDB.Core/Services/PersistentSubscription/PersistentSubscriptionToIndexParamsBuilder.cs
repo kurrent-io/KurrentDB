@@ -9,7 +9,7 @@ namespace KurrentDB.Core.Services.PersistentSubscription;
 /// <summary>
 /// Builds a <see cref="PersistentSubscriptionParams"/> object for index subscriptions.
 /// </summary>
-public class PersistentSubscriptionToIndexParamsBuilder : PersistentSubscriptionParamsBuilder {
+public sealed class PersistentSubscriptionToIndexParamsBuilder : PersistentSubscriptionParamsBuilder {
 	/// <summary>
 	/// Creates a new <see cref="PersistentSubscriptionParamsBuilder"></see> object
 	/// </summary>
