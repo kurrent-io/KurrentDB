@@ -1031,7 +1031,7 @@ public class PersistentSubscriptionService<TStreamId> :
 
 		Log.Debug("New connection to persistent subscription {subscriptionKey} by {connectionId}", key, connectionId);
 		long? lastEventNumber = null;
-		if (eventSource.FromStream) {
+		if (eventSource.Kind == EventSourceKind.Stream) {
 			var streamId = _readIndex.GetStreamId(eventSource.EventStreamId);
 			lastEventNumber = await _readIndex.GetStreamLastEventNumber(streamId, token);
 		}

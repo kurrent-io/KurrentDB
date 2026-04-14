@@ -59,70 +59,74 @@ public class PersistentSubscriptionStreamReader : IPersistentSubscriptionStreamR
 		Action<string> onError, int retryCount) {
 		var actualBatchSize = GetBatchSize(batchSize);
 
-		if (eventSource.FromStream) {
-			_ioDispatcher.ReadForward(
-				eventSource.EventStreamId, startPosition.StreamEventNumber, Math.Min(countToLoad, actualBatchSize),
-				resolveLinkTos, SystemAccounts.System, new ResponseHandler(onEventsFound, onEventsSkipped, onError, skipFirstEvent).FetchCompleted,
-				async () => await HandleTimeout(eventSource.EventStreamId),
-				Guid.NewGuid());
-		} else if (eventSource.FromAll) {
-			if (eventSource.EventFilter is null) {
-				_ioDispatcher.ReadAllForward(
-					startPosition.TFPosition.Commit,
-					startPosition.TFPosition.Prepare,
-					Math.Min(countToLoad, actualBatchSize),
-					resolveLinkTos,
-					true,
-					null,
-					SystemAccounts.System,
-					null,
-					new ResponseHandler(onEventsFound, onEventsSkipped, onError, skipFirstEvent).FetchAllCompleted,
-					async () => await HandleTimeout(SystemStreams.AllStream),
+		switch (eventSource.Kind) {
+			case EventSourceKind.Stream:
+				_ioDispatcher.ReadForward(
+					eventSource.EventStreamId, startPosition.StreamEventNumber, Math.Min(countToLoad, actualBatchSize),
+					resolveLinkTos, SystemAccounts.System, new ResponseHandler(onEventsFound, onEventsSkipped, onError, skipFirstEvent).FetchCompleted,
+					async () => await HandleTimeout(eventSource.EventStreamId),
 					Guid.NewGuid());
-			} else {
-				var maxSearchWindow = Math.Max(actualBatchSize, maxWindowSize);
-				_ioDispatcher.ReadAllForwardFiltered(
-					startPosition.TFPosition.Commit,
-					startPosition.TFPosition.Prepare,
-					Math.Min(countToLoad, actualBatchSize),
-					resolveLinkTos,
-					true,
-					maxSearchWindow,
-					null,
-					eventSource.EventFilter,
-					SystemAccounts.System,
-					null,
-					new ResponseHandler(onEventsFound, onEventsSkipped, onError, skipFirstEvent).FetchAllFilteredCompleted,
-					async () => await HandleTimeout($"{SystemStreams.AllStream} with filter {eventSource.EventFilter}"),
-					Guid.NewGuid());
-			}
-		} else if (eventSource.FromIndex) {
-			if (_mainQueue is null)
-				throw new InvalidOperationException("MainQueue publisher is required for index reads.");
+				break;
+			case EventSourceKind.All:
+				if (eventSource.EventFilter is null) {
+					_ioDispatcher.ReadAllForward(
+						startPosition.TFPosition.Commit,
+						startPosition.TFPosition.Prepare,
+						Math.Min(countToLoad, actualBatchSize),
+						resolveLinkTos,
+						true,
+						null,
+						SystemAccounts.System,
+						null,
+						new ResponseHandler(onEventsFound, onEventsSkipped, onError, skipFirstEvent).FetchAllCompleted,
+						async () => await HandleTimeout(SystemStreams.AllStream),
+						Guid.NewGuid());
+				} else {
+					var maxSearchWindow = Math.Max(actualBatchSize, maxWindowSize);
+					_ioDispatcher.ReadAllForwardFiltered(
+						startPosition.TFPosition.Commit,
+						startPosition.TFPosition.Prepare,
+						Math.Min(countToLoad, actualBatchSize),
+						resolveLinkTos,
+						true,
+						maxSearchWindow,
+						null,
+						eventSource.EventFilter,
+						SystemAccounts.System,
+						null,
+						new ResponseHandler(onEventsFound, onEventsSkipped, onError, skipFirstEvent).FetchAllFilteredCompleted,
+						async () => await HandleTimeout($"{SystemStreams.AllStream} with filter {eventSource.EventFilter}"),
+						Guid.NewGuid());
+				}
+				break;
+			case EventSourceKind.Index:
+				if (_mainQueue is null)
+					throw new InvalidOperationException("MainQueue publisher is required for index reads.");
 
-			var correlationId = Guid.NewGuid();
-			var handler = new ResponseHandler(onEventsFound, onEventsSkipped, onError, skipFirstEvent);
-			_mainQueue.Publish(new ClientMessage.ReadIndexEventsForward(
-				internalCorrId: correlationId,
-				correlationId: correlationId,
-				envelope: new CallbackEnvelope(msg => {
-					if (msg is ClientMessage.ReadIndexEventsForwardCompleted completed)
-						handler.FetchIndexCompleted(completed);
-					else
-						onError($"Unexpected message type {msg.GetType().Name} when reading index {eventSource.IndexName}");
-				}),
-				indexName: eventSource.IndexName,
-				commitPosition: startPosition.TFPosition.Commit,
-				preparePosition: startPosition.TFPosition.Prepare,
-				excludeStart: false,
-				maxCount: Math.Min(countToLoad, actualBatchSize),
-				requireLeader: false,
-				validationTfLastCommitPosition: null,
-				user: SystemAccounts.System,
-				replyOnExpired: false,
-				pool: null));
-		} else {
-			throw new InvalidOperationException();
+				var correlationId = Guid.NewGuid();
+				var handler = new ResponseHandler(onEventsFound, onEventsSkipped, onError, skipFirstEvent);
+				_mainQueue.Publish(new ClientMessage.ReadIndexEventsForward(
+					internalCorrId: correlationId,
+					correlationId: correlationId,
+					envelope: new CallbackEnvelope(msg => {
+						if (msg is ClientMessage.ReadIndexEventsForwardCompleted completed)
+							handler.FetchIndexCompleted(completed);
+						else
+							onError($"Unexpected message type {msg.GetType().Name} when reading index {eventSource.IndexName}");
+					}),
+					indexName: eventSource.IndexName,
+					commitPosition: startPosition.TFPosition.Commit,
+					preparePosition: startPosition.TFPosition.Prepare,
+					excludeStart: false,
+					maxCount: Math.Min(countToLoad, actualBatchSize),
+					requireLeader: false,
+					validationTfLastCommitPosition: null,
+					user: SystemAccounts.System,
+					replyOnExpired: false,
+					pool: null));
+				break;
+			default:
+				throw new InvalidOperationException($"Unexpected event source kind: {eventSource.Kind}");
 		}
 
 		async Task HandleTimeout(string streamName) {

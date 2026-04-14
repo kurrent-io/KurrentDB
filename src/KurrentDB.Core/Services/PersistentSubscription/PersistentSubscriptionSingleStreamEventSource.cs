@@ -7,11 +7,9 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 
 namespace KurrentDB.Core.Services.PersistentSubscription;
 
-public class PersistentSubscriptionSingleStreamEventSource : IPersistentSubscriptionEventSource {
-	public bool FromStream => true;
+public sealed class PersistentSubscriptionSingleStreamEventSource : IPersistentSubscriptionEventSource {
+	public EventSourceKind Kind => EventSourceKind.Stream;
 	public string EventStreamId { get; }
-	public bool FromAll => false;
-	public bool FromIndex => false;
 	public string IndexName => throw new InvalidOperationException();
 	public IEventFilter EventFilter => null;
 
