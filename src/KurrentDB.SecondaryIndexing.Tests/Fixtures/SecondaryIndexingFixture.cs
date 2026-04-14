@@ -7,6 +7,9 @@ using KurrentDB.Core;
 using KurrentDB.Core.ClientPublisher;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.Core.Tests;
@@ -135,6 +138,51 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		AppendToStream(stream, eventData.Select(ToEventData).ToArray());
 
 	public static Event ToEventData(string data) => new(Guid.NewGuid(), "test", false, Encoding.UTF8.GetBytes(data), false, []);
+
+	public async Task<ClientMessage.CreatePersistentSubscriptionToIndexCompleted> CreatePersistentSubscriptionToIndex(
+		string indexName, string group, CancellationToken ct = default) {
+		var corrId = Guid.NewGuid();
+		var envelope = new TcsEnvelope<ClientMessage.CreatePersistentSubscriptionToIndexCompleted>();
+
+		Publisher.Publish(new ClientMessage.CreatePersistentSubscriptionToIndex(
+			internalCorrId: corrId,
+			correlationId: corrId,
+			envelope: envelope,
+			groupName: group,
+			indexName: indexName,
+			resolveLinkTos: false,
+			startFrom: new TFPos(0, 0),
+			messageTimeoutMilliseconds: 30000,
+			recordStatistics: false,
+			maxRetryCount: 10,
+			bufferSize: 500,
+			liveBufferSize: 500,
+			readBatchSize: 20,
+			checkPointAfterMilliseconds: 1000,
+			minCheckPointCount: 5,
+			maxCheckPointCount: 1000,
+			maxSubscriberCount: 0,
+			namedConsumerStrategy: SystemConsumerStrategies.RoundRobin,
+			user: SystemAccounts.System));
+
+		return await envelope.Task.WaitAsync(ct);
+	}
+
+	public async Task<ClientMessage.DeletePersistentSubscriptionToIndexCompleted> DeletePersistentSubscriptionToIndex(
+		string indexName, string group, CancellationToken ct = default) {
+		var corrId = Guid.NewGuid();
+		var envelope = new TcsEnvelope<ClientMessage.DeletePersistentSubscriptionToIndexCompleted>();
+
+		Publisher.Publish(new ClientMessage.DeletePersistentSubscriptionToIndex(
+			internalCorrId: corrId,
+			correlationId: corrId,
+			envelope: envelope,
+			indexName: indexName,
+			groupName: group,
+			user: SystemAccounts.System));
+
+		return await envelope.Task.WaitAsync(ct);
+	}
 
 	private void SetUpDatabaseDirectory() {
 		var typeName = GetType().Name.Length > 30 ? GetType().Name[..30] : GetType().Name;
