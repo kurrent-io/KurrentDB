@@ -10,6 +10,8 @@ public interface IPersistentSubscriptionEventSource {
 	bool FromStream { get; }
 	string EventStreamId { get; }
 	bool FromAll { get; }
+	bool FromIndex { get; }
+	string IndexName { get; }
 	string ToString();
 	IPersistentSubscriptionStreamPosition StreamStartPosition { get; }
 	IPersistentSubscriptionStreamPosition GetStreamPositionFor(ResolvedEvent @event);

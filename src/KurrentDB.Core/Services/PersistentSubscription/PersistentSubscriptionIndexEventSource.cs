@@ -8,30 +8,32 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 
 namespace KurrentDB.Core.Services.PersistentSubscription;
 
-public class PersistentSubscriptionAllStreamEventSource : IPersistentSubscriptionEventSource {
+public class PersistentSubscriptionIndexEventSource : IPersistentSubscriptionEventSource {
 	public bool FromStream => false;
 	public string EventStreamId => throw new InvalidOperationException();
-	public bool FromAll => true;
-	public bool FromIndex => false;
-	public string IndexName => throw new InvalidOperationException();
-	public override string ToString() => SystemStreams.AllStream;
-	public IEventFilter EventFilter { get; }
+	public bool FromAll => false;
+	public bool FromIndex => true;
+	public string IndexName { get; }
+	public IEventFilter EventFilter => null;
 
-	public PersistentSubscriptionAllStreamEventSource(IEventFilter eventFilter) {
-		EventFilter = eventFilter;
+	public PersistentSubscriptionIndexEventSource(string indexName) {
+		IndexName = indexName ?? throw new ArgumentNullException(nameof(indexName));
 	}
 
-	public PersistentSubscriptionAllStreamEventSource() {
-		EventFilter = null;
-	}
+	public override string ToString() => $"$index-{IndexName}";
 
-	public IPersistentSubscriptionStreamPosition StreamStartPosition => new PersistentSubscriptionAllStreamPosition(0L, 0L);
+	public IPersistentSubscriptionStreamPosition StreamStartPosition =>
+		new PersistentSubscriptionAllStreamPosition(0L, 0L);
+
 	public IPersistentSubscriptionStreamPosition GetStreamPositionFor(ResolvedEvent @event) {
 		if (@event.OriginalPosition.HasValue) {
-			return new PersistentSubscriptionAllStreamPosition(@event.OriginalPosition.Value.CommitPosition, @event.OriginalPosition.Value.PreparePosition);
+			return new PersistentSubscriptionAllStreamPosition(
+				@event.OriginalPosition.Value.CommitPosition,
+				@event.OriginalPosition.Value.PreparePosition);
 		}
 		throw new InvalidOperationException();
 	}
+
 	public IPersistentSubscriptionStreamPosition GetStreamPositionFor(string checkpoint) {
 		const string C = "C:";
 		const string P = "P:";

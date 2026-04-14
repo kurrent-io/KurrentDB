@@ -5,9 +5,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Helpers;
 using KurrentDB.Core.Messages;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.UserManagement;
 using Serilog;
 
@@ -21,11 +23,17 @@ public class PersistentSubscriptionStreamReader : IPersistentSubscriptionStreamR
 	private const int MaxExponentialBackoffPower = 10; /*to prevent integer overflow*/
 
 	private readonly IODispatcher _ioDispatcher;
+	private readonly IPublisher _mainQueue;
 	private readonly int _maxPullBatchSize;
 	private readonly Random _random = new Random();
 
-	public PersistentSubscriptionStreamReader(IODispatcher ioDispatcher, int maxPullBatchSize) {
+	public PersistentSubscriptionStreamReader(IODispatcher ioDispatcher, int maxPullBatchSize)
+		: this(ioDispatcher, mainQueue: null, maxPullBatchSize) {
+	}
+
+	public PersistentSubscriptionStreamReader(IODispatcher ioDispatcher, IPublisher mainQueue, int maxPullBatchSize) {
 		_ioDispatcher = ioDispatcher;
+		_mainQueue = mainQueue;
 		_maxPullBatchSize = maxPullBatchSize;
 	}
 
@@ -88,6 +96,26 @@ public class PersistentSubscriptionStreamReader : IPersistentSubscriptionStreamR
 					async () => await HandleTimeout($"{SystemStreams.AllStream} with filter {eventSource.EventFilter}"),
 					Guid.NewGuid());
 			}
+		} else if (eventSource.FromIndex) {
+			if (_mainQueue is null)
+				throw new InvalidOperationException("MainQueue publisher is required for index reads.");
+
+			var correlationId = Guid.NewGuid();
+			var handler = new ResponseHandler(onEventsFound, onEventsSkipped, onError, skipFirstEvent);
+			_mainQueue.Publish(new ClientMessage.ReadIndexEventsForward(
+				internalCorrId: correlationId,
+				correlationId: correlationId,
+				envelope: new CallbackEnvelope(msg => handler.FetchIndexCompleted((ClientMessage.ReadIndexEventsForwardCompleted)msg)),
+				indexName: eventSource.IndexName,
+				commitPosition: startPosition.TFPosition.Commit,
+				preparePosition: startPosition.TFPosition.Prepare,
+				excludeStart: false,
+				maxCount: Math.Min(countToLoad, actualBatchSize),
+				requireLeader: false,
+				validationTfLastCommitPosition: null,
+				user: SystemAccounts.System,
+				replyOnExpired: false,
+				pool: null));
 		} else {
 			throw new InvalidOperationException();
 		}
@@ -175,6 +203,26 @@ public class PersistentSubscriptionStreamReader : IPersistentSubscriptionStreamR
 					break;
 				default:
 					_onError(msg.Error ?? $"Error reading stream: {SystemStreams.AllStream} at position: {msg.CurrentPos}");
+					break;
+			}
+		}
+
+		public void FetchIndexCompleted(ClientMessage.ReadIndexEventsForwardCompleted msg) {
+			switch (msg.Result) {
+				case ReadIndexResult.Success:
+					_onFetchCompleted(
+						_skipFirstEvent ? msg.Events.Skip(1).ToArray() : (IReadOnlyList<ResolvedEvent>)msg.Events,
+						new PersistentSubscriptionAllStreamPosition(msg.CurrentPos.CommitPosition, msg.CurrentPos.PreparePosition),
+						msg.IsEndOfStream);
+					break;
+				case ReadIndexResult.AccessDenied:
+					_onError("Read access denied for index");
+					break;
+				case ReadIndexResult.IndexNotFound:
+					_onError("Index not found");
+					break;
+				default:
+					_onError(msg.Error ?? "Error reading index");
 					break;
 			}
 		}

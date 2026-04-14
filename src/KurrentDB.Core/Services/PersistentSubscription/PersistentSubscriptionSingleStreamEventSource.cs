@@ -11,6 +11,8 @@ public class PersistentSubscriptionSingleStreamEventSource : IPersistentSubscrip
 	public bool FromStream => true;
 	public string EventStreamId { get; }
 	public bool FromAll => false;
+	public bool FromIndex => false;
+	public string IndexName => throw new InvalidOperationException();
 	public IEventFilter EventFilter => null;
 
 	public PersistentSubscriptionSingleStreamEventSource(string eventStreamId) {

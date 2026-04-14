@@ -1169,7 +1169,13 @@ public class PersistentSubscriptionService<TStreamId> :
 					_config =
 						PersistentSubscriptionConfig.FromSerializedForm(
 							readStreamEventsBackwardCompleted.Events[0].Event.Data);
+					var indexEntries = new List<PersistentSubscriptionEntry>();
 					foreach (var entry in _config.Entries) {
+						if (entry.IndexName != null) {
+							indexEntries.Add(entry);
+							continue;
+						}
+
 						if (!_consumerStrategyRegistry.ValidateStrategy(entry.NamedConsumerStrategy)) {
 							Log.Error(
 								"A persistent subscription exists with an invalid consumer strategy '{strategy}'. Ignoring it.",
@@ -1218,6 +1224,11 @@ public class PersistentSubscriptionService<TStreamId> :
 							Log.Warning("A duplicate persistent subscription: {subscriptionKey} was found in the configuration. Ignoring it.", key);
 						}
 
+					}
+
+					if (indexEntries.Count > 0) {
+						_queuedHandler.Publish(
+							new SubscriptionMessage.PersistentSubscriptionIndexEntriesLoaded(indexEntries));
 					}
 
 					continueWith();
