@@ -1333,10 +1333,9 @@ public class PersistentSubscriptionService<TStreamId> :
 
 					}
 
-					if (indexEntries.Count > 0) {
-						_queuedHandler.Publish(
-							new SubscriptionMessage.PersistentSubscriptionIndexEntriesLoaded(indexEntries));
-					}
+					// Always publish — the index service needs this to set _started even with an empty list.
+					_queuedHandler.Publish(
+						new SubscriptionMessage.PersistentSubscriptionIndexEntriesLoaded(indexEntries));
 
 					continueWith();
 				} catch (Exception ex) {
