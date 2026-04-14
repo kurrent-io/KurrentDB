@@ -553,36 +553,6 @@ public class PersistentSubscriptionIndexService :
 		}
 	}
 
-	private void LoadConfiguration(Action continueWith) {
-		_ioDispatcher.ReadBackward(SystemStreams.PersistentSubscriptionConfig, -1, 1, false,
-			SystemAccounts.System,
-			x => HandleLoadCompleted(continueWith, x),
-			expires: ClientMessage.ReadRequestMessage.NeverExpires);
-	}
-
-	private void HandleLoadCompleted(Action continueWith,
-		ClientMessage.ReadStreamEventsBackwardCompleted completed) {
-		switch (completed.Result) {
-			case ReadStreamResult.Success:
-				try {
-					_config = PersistentSubscriptionConfig.FromSerializedForm(completed.Events[0].Event.Data);
-					// Only keep index entries in our config; stream/all entries belong to the main service.
-					_config.Entries = _config.Entries.Where(e => e.IndexName != null).ToList();
-				} catch (Exception ex) {
-					Log.Error(ex, "There was an error loading index subscription configuration from storage.");
-				}
-				continueWith();
-				break;
-			case ReadStreamResult.NoStream:
-				_config = new PersistentSubscriptionConfig { Version = "2" };
-				continueWith();
-				break;
-			default:
-				throw new Exception(completed.Result +
-									" is an unexpected result reading subscription configuration.");
-		}
-	}
-
 	private void SaveConfiguration(Action continueWith) {
 		// Re-read the full config, merge our index entries, then write it back.
 		// This avoids clobbering entries that belong to the main service.
