@@ -1257,6 +1257,7 @@ public class ClusterVNode<TStreamId> :
 		var persistentSubscriptionIndex = new PersistentSubscriptionIndexService(
 			perSubscrQueue, psubDispatcher, _mainQueue, consumerStrategyRegistry, secondaryIndexReaders);
 		perSubscrBus.Subscribe<SubscriptionMessage.PersistentSubscriptionIndexEntriesLoaded>(persistentSubscriptionIndex);
+		perSubscrBus.Subscribe<SubscriptionMessage.PersistentSubscriptionIndexEntryChanged>(persistentSubscription);
 		perSubscrBus.Subscribe<ClientMessage.CreatePersistentSubscriptionToIndex>(persistentSubscriptionIndex);
 		perSubscrBus.Subscribe<ClientMessage.UpdatePersistentSubscriptionToIndex>(persistentSubscriptionIndex);
 		perSubscrBus.Subscribe<ClientMessage.DeletePersistentSubscriptionToIndex>(persistentSubscriptionIndex);

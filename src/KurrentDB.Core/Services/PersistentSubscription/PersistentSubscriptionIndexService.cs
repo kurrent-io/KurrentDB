@@ -233,11 +233,15 @@ public class PersistentSubscriptionIndexService :
 		};
 
 		UpdateSubscriptionConfig(message.User?.Identity?.Name, stream, message.GroupName, createEntry);
-		SaveConfiguration(() => message.Envelope.ReplyWith(
-			new ClientMessage.CreatePersistentSubscriptionToIndexCompleted(
-				message.CorrelationId,
-				ClientMessage.CreatePersistentSubscriptionToIndexCompleted.CreatePersistentSubscriptionToIndexResult.Success,
-				"")));
+		SaveConfiguration(() => {
+			// Notify the main service so its forwarding lookup stays current.
+			_queuedHandler.Publish(new SubscriptionMessage.PersistentSubscriptionIndexEntryChanged(createEntry, isDelete: false));
+			message.Envelope.ReplyWith(
+				new ClientMessage.CreatePersistentSubscriptionToIndexCompleted(
+					message.CorrelationId,
+					ClientMessage.CreatePersistentSubscriptionToIndexCompleted.CreatePersistentSubscriptionToIndexResult.Success,
+					""));
+		});
 	}
 
 	public void Handle(ClientMessage.UpdatePersistentSubscriptionToIndex message) {
@@ -338,11 +342,17 @@ public class PersistentSubscriptionIndexService :
 		UpdateSubscription(stream, message.GroupName, null);
 		UpdateSubscriptionConfig(message.User?.Identity?.Name, stream, message.GroupName, null);
 		subscription.Delete();
-		SaveConfiguration(() => message.Envelope.ReplyWith(
-			new ClientMessage.DeletePersistentSubscriptionToIndexCompleted(
-				message.CorrelationId,
-				ClientMessage.DeletePersistentSubscriptionToIndexCompleted.DeletePersistentSubscriptionToIndexResult.Success,
-				"")));
+		SaveConfiguration(() => {
+			// Notify the main service to remove the entry from its forwarding lookup.
+			_queuedHandler.Publish(new SubscriptionMessage.PersistentSubscriptionIndexEntryChanged(
+				new PersistentSubscriptionEntry { IndexName = message.IndexName, Group = message.GroupName, Stream = stream },
+				isDelete: true));
+			message.Envelope.ReplyWith(
+				new ClientMessage.DeletePersistentSubscriptionToIndexCompleted(
+					message.CorrelationId,
+					ClientMessage.DeletePersistentSubscriptionToIndexCompleted.DeletePersistentSubscriptionToIndexResult.Success,
+					""));
+		});
 	}
 
 	ValueTask IAsyncHandle<ClientMessage.ConnectToPersistentSubscriptionToIndex>.HandleAsync(

@@ -54,7 +54,8 @@ public class PersistentSubscriptionService<TStreamId> :
 	IHandle<TelemetryMessage.Request>,
 	IHandle<MonitoringMessage.GetAllPersistentSubscriptionStats>,
 	IHandle<MonitoringMessage.GetPersistentSubscriptionStats>,
-	IHandle<MonitoringMessage.GetStreamPersistentSubscriptionStats> {
+	IHandle<MonitoringMessage.GetStreamPersistentSubscriptionStats>,
+	IHandle<SubscriptionMessage.PersistentSubscriptionIndexEntryChanged> {
 
 	// for constant time lookups in ProcessEventCommitted
 	private Dictionary<string, List<PersistentSubscription>> _subscriptionTopics;
@@ -1332,9 +1333,29 @@ public class PersistentSubscriptionService<TStreamId> :
 		}
 	}
 
+	public void Handle(SubscriptionMessage.PersistentSubscriptionIndexEntryChanged message) {
+		if (message.IsDelete) {
+			_config.Entries.RemoveAll(e =>
+				e.IndexName != null && e.IndexName == message.Entry.IndexName && e.Group == message.Entry.Group);
+		} else {
+			// Remove any existing entry first, then add the new one.
+			_config.Entries.RemoveAll(e =>
+				e.IndexName != null && e.IndexName == message.Entry.IndexName && e.Group == message.Entry.Group);
+			_config.Entries.Add(message.Entry);
+		}
+	}
+
 	private void SaveConfiguration(Action continueWith) {
 		Log.Debug("Saving persistent subscription configuration");
-		var data = _config.GetSerializedForm();
+		// Write only non-index entries — the index service owns index entries.
+		// We keep index entries in _config for forwarding lookups but exclude them from saves.
+		var configToSave = new PersistentSubscriptionConfig {
+			Version = _config.Version,
+			Updated = _config.Updated,
+			UpdatedBy = _config.UpdatedBy,
+			Entries = _config.Entries.Where(e => e.IndexName == null).ToList()
+		};
+		var data = configToSave.GetSerializedForm();
 		var ev = new Event(Guid.NewGuid(), SystemEventTypes.PersistentSubscriptionConfig, true, data);
 		var metadata = new StreamMetadata(maxCount: 2);
 		Lazy<StreamMetadata> streamMetadata = new Lazy<StreamMetadata>(() => metadata);

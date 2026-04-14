@@ -91,4 +91,19 @@ public static partial class SubscriptionMessage {
 			IndexEntries = indexEntries;
 		}
 	}
+
+	/// <summary>
+	/// Notifies the main PersistentSubscriptionService that an index subscription entry
+	/// was created or deleted, so it can update its config for forwarding lookups.
+	/// </summary>
+	[DerivedMessage(CoreMessage.Subscription)]
+	public partial class PersistentSubscriptionIndexEntryChanged : Message {
+		public readonly PersistentSubscriptionEntry Entry;
+		public readonly bool IsDelete;
+
+		public PersistentSubscriptionIndexEntryChanged(PersistentSubscriptionEntry entry, bool isDelete) {
+			Entry = entry;
+			IsDelete = isDelete;
+		}
+	}
 }
