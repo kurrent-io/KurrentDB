@@ -558,7 +558,7 @@ public partial class TFChunk {
 				throw new InvalidReadException(
 					$"Error while reading log record forwards at actual position {actualPosition}. {exc.Message}");
 			} finally {
-				bufferedReader?.Write(lengthWithSuffix);
+				bufferedReader?.Read(lengthWithSuffix);
 				buffer.Dispose();
 			}
 
