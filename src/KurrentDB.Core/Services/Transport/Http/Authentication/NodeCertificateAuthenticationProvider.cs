@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using EventStore.Plugins.Authentication;
@@ -80,37 +79,41 @@ public class NodeCertificateAuthenticationProvider(
 
 	private bool AuthenticateUncached(HttpContext context, X509Certificate2 clientCertificate) {
 		var ip = context.Connection.RemoteIpAddress?.ToString() ?? "<unknown>";
-		var isServerCertificate = clientCertificate.IsServerCertificate(disableClientAuthEkuValidation, out var serverCertReason);
+		switch (clientCertificate.ClassifyInboundCertificate(disableClientAuthEkuValidation, out var serverCertReason)) {
+			case CertificateClassification.Node: {
+				var reservedNodeCN = getCertificateReservedNodeCommonName();
+				bool hasReservedNodeCN;
+				try {
+					hasReservedNodeCN = clientCertificate.ClientCertificateMatchesName(reservedNodeCN);
+				} catch (CryptographicException) {
+					return false;
+				} catch (NullReferenceException) {
+					return false;
+				}
 
-		var reservedNodeCN = getCertificateReservedNodeCommonName();
-		bool hasReservedNodeCN;
-		try {
-			hasReservedNodeCN = clientCertificate.ClientCertificateMatchesName(reservedNodeCN);
-		} catch (CryptographicException) {
-			return false;
-		} catch (NullReferenceException) {
-			return false;
-		}
+				if (!hasReservedNodeCN) {
+					var clientCertificateCN = clientCertificate.GetCommonName();
+					Log.Error(
+						"Connection from node: {ip} was denied because its CN: {clientCertificateCN} does not match with the reserved node CN: {reservedNodeCN}",
+						ip, clientCertificateCN, reservedNodeCN);
+				}
 
-		bool hasIpOrDnsSan = clientCertificate.HasIpOrDnsSan();
+				bool hasIpOrDnsSan = clientCertificate.HasIpOrDnsSan();
+				if (!hasIpOrDnsSan) {
+					Log.Error("Connection from node: {ip} was denied because its certificate does not have any IP or DNS Subject Alternative Names (SAN).", ip);
+				}
 
-		if (!isServerCertificate && !hasReservedNodeCN && !hasIpOrDnsSan) {
-			// We are sure that this is not a misconfigured node certificate with incorrect EKUs, missing SANs, etc. It could be a user certificate.
-			return false;
-		}
-		if (!hasReservedNodeCN) {
-			var clientCertificateCN = clientCertificate.GetCommonName();
-			Log.Error(
-				"Connection from node: {ip} was denied because its CN: {clientCertificateCN} does not match with the reserved node CN: {reservedNodeCN}",
-				ip, clientCertificateCN, reservedNodeCN);
-		}
-		if (!hasIpOrDnsSan) {
-			Log.Error("Connection from node: {ip} was denied because its certificate does not have any IP or DNS Subject Alternative Names (SAN).", ip);
-		}
-		if (!isServerCertificate) {
-			Log.Error("Connection from node: {ip} was denied because it is not configured as a server certificate: {failReason}", ip, serverCertReason);
-		}
+				return hasReservedNodeCN && hasIpOrDnsSan;
+			}
 
-		return hasReservedNodeCN && hasIpOrDnsSan && isServerCertificate;
+			case CertificateClassification.User: {
+				return false;
+			}
+
+			default: {
+				Log.Error("Connection from {ip} was denied because its certificate was not recognized as a node or user certificate: {failReason}", ip, serverCertReason);
+				return false;
+			}
+		}
 	}
 }
