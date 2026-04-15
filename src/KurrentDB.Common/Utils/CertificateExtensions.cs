@@ -57,6 +57,14 @@ public static class CertificateExtensions {
 		return sans;
 	}
 
+	public static bool HasIpOrDnsSan(this X509Certificate2 certificate) =>
+		certificate
+			.GetSubjectAlternativeNames()
+			.Where(x => x.type
+				is CertificateNameType.DnsName
+				or CertificateNameType.IpAddress)
+			.IsNotEmpty();
+
 	public static bool MatchesName(this X509Certificate2 certificate, string name) {
 		// Implemented based on RFC 6125 (https://datatracker.ietf.org/doc/html/rfc6125) with the following changes:
 		// - Does not support SRV-ID and URI-ID identifier types yet

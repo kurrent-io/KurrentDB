@@ -92,9 +92,7 @@ public class NodeCertificateAuthenticationProvider(
 			return false;
 		}
 
-		bool hasIpOrDnsSan = clientCertificate.GetSubjectAlternativeNames()
-			.Where(x => x.type is CertificateNameType.DnsName or CertificateNameType.IpAddress)
-			.IsNotEmpty();
+		bool hasIpOrDnsSan = clientCertificate.HasIpOrDnsSan();
 
 		if (!isServerCertificate && !hasReservedNodeCN && !hasIpOrDnsSan) {
 			// We are sure that this is not a misconfigured node certificate with incorrect EKUs, missing SANs, etc. It could be a user certificate.
