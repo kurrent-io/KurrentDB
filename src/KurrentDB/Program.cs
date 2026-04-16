@@ -155,7 +155,9 @@ try {
 				var certs = userCerts.Concat(machineCerts).ToList();
 
 				if (!certs.Any()) {
-					Log.Fatal("Could not create dev certificate.");
+					Log.Fatal("Could not create dev certificate. " +
+							  "If the home directory is not writable (e.g., in a container), " +
+							  "use --dev-cert-path to specify an alternative file location.");
 					return 1;
 				}
 
