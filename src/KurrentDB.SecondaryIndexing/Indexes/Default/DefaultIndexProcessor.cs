@@ -2,7 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics.Metrics;
+using System.Runtime.InteropServices;
 using DotNext;
+using DotNext.Runtime.InteropServices;
 using DotNext.Threading;
 using DuckDB.NET.Data;
 using Google.Protobuf.WellKnownTypes;
@@ -89,7 +91,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		var streamHash = _hasher.Hash(stream);
 		var category = GetStreamCategory(resolvedEvent.Event.EventStreamId);
 		var created = new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds();
-		var recordId = Span.AsReadOnlyBytes(in resolvedEvent.Event.EventId);
+		var recordId = MemoryMarshal.AsReadOnlyBytes(in resolvedEvent.Event.EventId);
 		using (var row = _appender.CreateRow()) {
 			row.Add(logPosition);
 			if (commitPosition.HasValue && logPosition != commitPosition.GetValueOrDefault())
@@ -140,13 +142,13 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 	public SecondaryIndexProgressTracker Tracker { get; }
 
-	private Atomic.Boolean _committing;
+	private bool _committing;
 
 	/// <summary>
 	/// Commits all in-flight records to the index.
 	/// </summary>
 	public void Commit() {
-		if (IsDisposingOrDisposed || !_committing.FalseToTrue())
+		if (IsDisposingOrDisposed || !Interlocked.FalseToTrue(ref _committing))
 			return;
 
 		try {
@@ -156,7 +158,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			_log.LogError(e, "Failed to commit records to index at log position {LogPosition}", LastIndexedPosition);
 			throw;
 		} finally {
-			_committing.TrueToFalse();
+			Volatile.Write(ref _committing, false);
 		}
 	}
 
