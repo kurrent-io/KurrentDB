@@ -46,6 +46,7 @@ public class PinnedByCorrelationConsumerStrategyTests {
 		var client1Envelope = new FakeEnvelope();
 		var client2Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 
 		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToStreamParamsBuilder.CreateFor("$ce-streamName", "groupName")
@@ -53,6 +54,7 @@ public class PinnedByCorrelationConsumerStrategyTests {
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.CustomConsumerStrategy(new PinnedByCorrelationPersistentSubscriptionConsumerStrategy(new XXHashUnsafe()))
 				.StartFromCurrent());
 
@@ -64,6 +66,7 @@ public class PinnedByCorrelationConsumerStrategyTests {
 			Helper.BuildFakeEventWithMetadata(Guid.NewGuid(), "type", "streamName-1", 0, metaData));
 		sub.NotifyLiveSubscriptionMessage(
 			Helper.BuildFakeEventWithMetadata(Guid.NewGuid(), "type", "streamName-1", 1, metaData));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(2, client1Envelope.Replies.Count);
 		Assert.AreEqual(0, client2Envelope.Replies.Count);
@@ -72,18 +75,21 @@ public class PinnedByCorrelationConsumerStrategyTests {
 			Helper.BuildFakeEventWithMetadata(Guid.NewGuid(), "type", "streamName-2", 2, metaData));
 		sub.NotifyLiveSubscriptionMessage(
 			Helper.BuildFakeEventWithMetadata(Guid.NewGuid(), "type", "streamName-2", 3, metaData));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(2, client1Envelope.Replies.Count);
 		Assert.AreEqual(2, client2Envelope.Replies.Count);
 
 		sub.NotifyLiveSubscriptionMessage(
 			Helper.BuildFakeEventWithMetadata(Guid.NewGuid(), "type", "streamName-1", 4, metaData));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(3, client1Envelope.Replies.Count);
 		Assert.AreEqual(2, client2Envelope.Replies.Count);
 
 		sub.NotifyLiveSubscriptionMessage(
 			Helper.BuildFakeEventWithMetadata(Guid.NewGuid(), "type", "streamName-3", 5, metaData));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(4, client1Envelope.Replies.Count);
 		Assert.AreEqual(2, client2Envelope.Replies.Count);
@@ -95,6 +101,7 @@ public class PinnedByCorrelationConsumerStrategyTests {
 		var client1Envelope = new FakeEnvelope();
 		var client2Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 
 		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToStreamParamsBuilder.CreateFor("$ce-streamName", "groupName")
@@ -102,6 +109,7 @@ public class PinnedByCorrelationConsumerStrategyTests {
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.CustomConsumerStrategy(new PinnedByCorrelationPersistentSubscriptionConsumerStrategy(new XXHashUnsafe()))
 				.StartFromCurrent());
 
@@ -114,23 +122,27 @@ public class PinnedByCorrelationConsumerStrategyTests {
 		var metaData1 = Encoding.UTF8.GetBytes(@"{ ""x"": ""x"", ""$correlationId2"": ""1234567890"", ""y"": ""y"" }");
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEventWithMetadata(Guid.NewGuid(), "type", "streamName-1", 0, metaData1));
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEventWithMetadata(Guid.NewGuid(), "type", "streamName-1", 1, metaData1));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(2, client1Envelope.Replies.Count);
 		Assert.AreEqual(0, client2Envelope.Replies.Count);
 
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEventWithMetadata(Guid.NewGuid(), "type", "streamName-2", 2, metaData1));
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEventWithMetadata(Guid.NewGuid(), "type", "streamName-2", 3, metaData1));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(4, client1Envelope.Replies.Count);
 		Assert.AreEqual(0, client2Envelope.Replies.Count);
 
 		var metaData2 = Encoding.UTF8.GetBytes(@"{ ""$correlationId2"": ""1234567891"", ""y"": ""y"" }");
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEventWithMetadata(Guid.NewGuid(), "type", "streamName-1", 4, metaData2));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(4, client1Envelope.Replies.Count);
 		Assert.AreEqual(1, client2Envelope.Replies.Count);
 
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEventWithMetadata(Guid.NewGuid(), "type", "streamName-3", 5, metaData2));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(4, client1Envelope.Replies.Count);
 		Assert.AreEqual(2, client2Envelope.Replies.Count);
