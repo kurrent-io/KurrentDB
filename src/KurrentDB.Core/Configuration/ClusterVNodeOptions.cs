@@ -109,6 +109,13 @@ public partial record ClusterVNodeOptions {
 
 		[Description("Removes any dev certificates installed on this computer without starting KurrentDB.")]
 		public bool RemoveDevCerts { get; init; } = false;
+
+		[Description("Path to a PFX file where the dev certificate is stored. " +
+					 "If the file exists, the certificate is loaded from it. " +
+					 "If not, a new certificate is generated and saved there. " +
+					 "A .crt file with the public certificate is also written alongside for client trust. " +
+					 "Useful in containers where the home directory may not be writable.")]
+		public string? DevCertPath { get; init; }
 	}
 
 	[Description("Application Options")]

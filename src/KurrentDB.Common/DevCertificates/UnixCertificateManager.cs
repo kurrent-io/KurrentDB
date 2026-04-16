@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using KurrentDB.Common.Utils;
 
@@ -23,18 +24,24 @@ internal sealed class UnixCertificateManager : CertificateManager {
 		StoreLocation storeLocation) {
 		var export = certificate.ExportToPkcs12(string.Empty);
 		certificate.Dispose();
-		certificate = new X509Certificate2(export, "",
-			X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable);
-		Array.Clear(export, 0, export.Length);
 
-		using (var store = new X509Store(storeName, storeLocation)) {
+		try {
+			certificate = new X509Certificate2(export, "",
+				X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable);
+
+			using var store = new X509Store(storeName, storeLocation);
 			store.Open(OpenFlags.ReadWrite);
 			store.Add(certificate);
 			store.Close();
+		} catch (Exception ex) when (ex is UnauthorizedAccessException or DirectoryNotFoundException) {
+			// Home directory may not exist or may not be writable (e.g., /home/kurrent in containers).
+			// Fall back to an ephemeral key so dev mode can still start.
+			certificate.Dispose();
+			certificate = new X509Certificate2(export, "",
+				X509KeyStorageFlags.EphemeralKeySet | X509KeyStorageFlags.Exportable);
 		}
 
-		;
-
+		Array.Clear(export, 0, export.Length);
 		return certificate;
 	}
 
