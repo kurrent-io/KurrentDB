@@ -38,7 +38,7 @@ public class ProjectionNamesBuilder {
 		_name = name;
 		_sources = sources;
 		_resultStreamName = _sources.ResultStreamNameOption
-							?? ProjectionsStreamPrefix + EffectiveProjectionName + ProjectionsStateStreamSuffix;
+							?? ProjectionsStreamPrefix + EffectiveProjectionName + ProjectionResultStreamSuffix;
 		_partitionCatalogStreamName = ProjectionsStreamPrefix + EffectiveProjectionName
 															  + ProjectionPartitionCatalogStreamSuffix;
 		_checkpointStreamName =
@@ -54,11 +54,9 @@ public class ProjectionNamesBuilder {
 			? ProjectionsStreamPrefix + projectionName + ProjectionStateStreamSuffix
 			: ProjectionsStreamPrefix + projectionName + "-" + partitionKey + ProjectionStateStreamSuffix;
 
-
 	public string EffectiveProjectionName {
 		get { return _name; }
 	}
-
 
 	private string GetPartitionResultStreamName(string partitionName) {
 		return String.Format(GetPartitionResultStreamNamePattern(), partitionName);
@@ -70,11 +68,11 @@ public class ProjectionNamesBuilder {
 
 	public string GetPartitionResultStreamNamePattern() {
 		return _sources.PartitionResultStreamNamePatternOption
-			   ?? ProjectionsStreamPrefix + EffectiveProjectionName + "-{0}" + ProjectionsStateStreamSuffix;
+			   ?? ProjectionsStreamPrefix + EffectiveProjectionName + "-{0}" + ProjectionResultStreamSuffix;
 	}
 
 	public const string ProjectionsStreamPrefix = "$projections-";
-	private const string ProjectionsStateStreamSuffix = "-result"; // todo: rename this
+	private const string ProjectionResultStreamSuffix = "-result";
 	private const string ProjectionStateStreamSuffix = "-state";
 	private const string ProjectionCheckpointStreamSuffix = "-checkpoint";
 	private const string ProjectionEmittedStreamSuffix = "-emittedstreams";
