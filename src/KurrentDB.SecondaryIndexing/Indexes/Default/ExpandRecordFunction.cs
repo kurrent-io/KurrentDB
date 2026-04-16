@@ -32,25 +32,17 @@ internal sealed class ExpandRecordFunction(Func<long[], ClaimsPrincipal, IEnumer
 
 		// Metadata column
 		column = builder[1];
-		column.SetValue(rowIndex, ev.Metadata.Span is { Length: > 0 } metadata ? metadata : "{}"u8);
-
-		// StreamId column
-		column = builder[2];
-		column.SetValue(rowIndex, ev.EventStreamId);
+		column.SetValue(rowIndex, ev.Metadata.Span is { Length: > 0 } metadata ? metadata : EmptyJsonUtf8);
 	}
 
 	protected override void FillRowWithEmptyData<TBuilder>(ref TBuilder builder, int rowIndex) {
 		// Data column
 		var column = builder[0];
-		column.SetValue(rowIndex, "{}"u8);
+		column.SetValue(rowIndex, EmptyJsonUtf8);
 
 		// Metadata column
 		column = builder[1];
-		column.SetValue(rowIndex, "{}"u8);
-
-		// StreamId column
-		column = builder[2];
-		column.SetValue(rowIndex, string.Empty);
+		column.SetValue(rowIndex, EmptyJsonUtf8);
 	}
 }
 
@@ -58,11 +50,9 @@ internal sealed class ExpandRecordFunction(Func<long[], ClaimsPrincipal, IEnumer
 internal readonly ref struct EventColumns : ICompositeReturnType {
 	private const DuckDBType Data = DuckDBType.Varchar;
 	private const DuckDBType Metadata = DuckDBType.Varchar;
-	private const DuckDBType StreamId = DuckDBType.Varchar;
 
 	static IReadOnlyList<KeyValuePair<string, LogicalType>> ICompositeReturnType.ReturnType => new ICompositeReturnType.Builder {
 		{ Data, "data" },
 		{ Metadata, "metadata" },
-		{ StreamId, "stream_id" },
 	};
 }

@@ -32,13 +32,13 @@ internal sealed class ExpandRecordFunction(Func<long[], ClaimsPrincipal, IEnumer
 
 		// Metadata column
 		column = builder[1];
-		column.SetValue(rowIndex, ev.Metadata.Span is { Length: > 0 } metadata ? metadata : "{}"u8);
+		column.SetValue(rowIndex, ev.Metadata.Span is { Length: > 0 } metadata ? metadata : EmptyJsonUtf8);
 
-		// StreamId column
+		// Stream column
 		column = builder[2];
 		column.SetValue(rowIndex, ev.EventStreamId);
 
-		// EventType column
+		// SchemaName column
 		column = builder[3];
 		column.SetValue(rowIndex, ev.EventType);
 	}
@@ -46,32 +46,32 @@ internal sealed class ExpandRecordFunction(Func<long[], ClaimsPrincipal, IEnumer
 	protected override void FillRowWithEmptyData<TBuilder>(ref TBuilder builder, int rowIndex) {
 		// Data column
 		var column = builder[0];
-		column.SetValue(rowIndex, "{}"u8);
+		column.SetValue(rowIndex, EmptyJsonUtf8);
 
 		// Metadata column
 		column = builder[1];
-		column.SetValue(rowIndex, "{}"u8);
+		column.SetValue(rowIndex, EmptyJsonUtf8);
 
-		// StreamId column
+		// Stream column
 		column = builder[2];
-		column.SetValue(rowIndex, string.Empty);
+		column.SetValue(rowIndex, ReadOnlySpan<byte>.Empty);
 
-		// EventType column
+		// SchemaName column
 		column = builder[3];
-		column.SetValue(rowIndex, string.Empty);
+		column.SetValue(rowIndex, ReadOnlySpan<byte>.Empty);
 	}
 }
 
 internal readonly ref struct EventColumns : ICompositeReturnType {
 	private const DuckDBType Data = DuckDBType.Varchar;
 	private const DuckDBType Metadata = DuckDBType.Varchar;
-	private const DuckDBType StreamId = DuckDBType.Varchar;
-	private const DuckDBType EventType = DuckDBType.Varchar;
+	private const DuckDBType Stream = DuckDBType.Varchar;
+	private const DuckDBType SchemaName = DuckDBType.Varchar;
 
 	static IReadOnlyList<KeyValuePair<string, LogicalType>> ICompositeReturnType.ReturnType => new ICompositeReturnType.Builder {
 		{ Data, "data" },
 		{ Metadata, "metadata" },
-		{ StreamId, "stream_id" },
-		{ EventType, "event_type" },
+		{ Stream, "stream" },
+		{ SchemaName, "schema_name" },
 	};
 }

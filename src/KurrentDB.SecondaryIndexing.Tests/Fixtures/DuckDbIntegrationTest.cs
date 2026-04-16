@@ -3,8 +3,6 @@
 
 using System.Security.Claims;
 using Kurrent.Quack.ConnectionPool;
-using Kurrent.Quack.Threading;
-using KurrentDB.Core.DuckDB;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.XUnit.Tests;
 using KurrentDB.SecondaryIndexing.Storage;
@@ -18,6 +16,7 @@ public abstract class DuckDbIntegrationTest<T> : DirectoryPerTest<T> {
 		var dbPath = Fixture.GetFilePathFor($"{GetType().Name}.db");
 
 		DuckDb = new($"Data Source={dbPath};");
+
 		var schema = new IndexingDbSchema(GetEvents);
 		using (DuckDb.Rent(out var connection)) {
 			schema.Execute(connection);

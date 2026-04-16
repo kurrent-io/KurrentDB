@@ -3,16 +3,18 @@
 
 using System.Reflection;
 using System.Security.Claims;
-using DuckDB.NET.Data;
 using Kurrent.Quack;
 using Kurrent.Quack.Threading;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.DuckDB;
+using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.SecondaryIndexing.Storage;
 
-public class IndexingDbSchema(Func<long[], ClaimsPrincipal, IEnumerator<ReadResponse>> eventsProvider) : DuckDBOneTimeSetup {
+public partial class IndexingDbSchema(
+	Func<long[], ClaimsPrincipal, IEnumerator<ReadResponse>> eventsProvider,
+	ILoggerFactory? loggerFactory = null) : DuckDBOneTimeSetup {
 	private static readonly Assembly Assembly = typeof(IndexingDbSchema).Assembly;
 
 	public IndexingDbSchema(IPublisher publisher)
@@ -23,32 +25,24 @@ public class IndexingDbSchema(Func<long[], ClaimsPrincipal, IEnumerator<ReadResp
 		BufferedView.EnableSupport(connection);
 		new Indexes.User.ExpandRecordFunction(eventsProvider).Register(connection);
 		new Indexes.Default.ExpandRecordFunction(eventsProvider).Register(connection);
-		CreateSchema(connection);
+
+		PerformMigration(connection, logger: loggerFactory);
 	}
 
-	private void CreateSchema(DuckDBConnection connection) {
+	private static void CreateSchema(DuckDBAdvancedConnection connection) {
 		var names = Assembly.GetManifestResourceNames().Where(x => x.EndsWith(".sql")).OrderBy(x => x);
 		using var transaction = connection.BeginTransaction();
-		var cmd = connection.CreateCommand();
-		cmd.Transaction = transaction;
 
-		try {
-			foreach (var name in names) {
-				using var stream = Assembly.GetManifestResourceStream(name);
-				using var reader = new StreamReader(stream!);
-				var script = reader.ReadToEnd();
+		foreach (var name in names) {
+			using var stream = Assembly.GetManifestResourceStream(name);
+			using var reader = new StreamReader(stream!);
+			var script = reader.ReadToEnd();
 
-				cmd.CommandText = script;
-				cmd.ExecuteNonQuery();
-			}
-		} catch {
-			transaction.Rollback();
-			throw;
-		} finally {
-			cmd.Dispose();
+			connection.ExecuteAdHocNonQuery(script, multipleStatements: true);
 		}
 
-		transaction.Commit();
+		SetTargetVersion(connection);
+		transaction.CommitOnDispose();
 	}
 }
 

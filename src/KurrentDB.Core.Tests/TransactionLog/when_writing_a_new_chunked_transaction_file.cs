@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using DotNext.Buffers;
 using DotNext.IO;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.TransactionLog.Chunks;
@@ -58,7 +59,7 @@ public class when_writing_a_new_chunked_transaction_file<TLogFormat, TStreamId> 
 		var buffer = new byte[recordLength];
 		await filestream.ReadExactlyAsync(buffer);
 
-		var reader = new SequenceReader(new(buffer));
+		var reader = new SequenceReader(buffer);
 		var read = LogRecord.ReadFrom(ref reader);
 		Assert.AreEqual(record, read);
 	}
