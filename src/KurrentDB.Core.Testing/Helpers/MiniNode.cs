@@ -72,6 +72,7 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 	private readonly TaskCompletionSource<bool> _started;
 	private readonly TaskCompletionSource<bool> _adminUserCreated;
 	private readonly int _httpClientTimeoutSec;
+	private readonly bool _disableTls;
 	private bool _testServerStarted;
 	public Task Started => _started.Task;
 	public Task AdminUserCreated => _adminUserCreated.Task;
@@ -98,9 +99,12 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 		IConfiguration configuration = null,
 		IReadOnlyList<IDbTransform> newTransforms = null,
 		int maxAppendEventSize = TFConsts.EffectiveMaxLogRecordSize,
-		SecondaryIndexReaders secondaryIndexReaders = null) {
+		SecondaryIndexReaders secondaryIndexReaders = null,
+		bool disableTls = false,
+		bool insecure = false) {
 
 		_httpClientTimeoutSec = httpClientTimeoutSec;
+		_disableTls = disableTls || insecure;
 		RunningTime.Start();
 		RunCount += 1;
 
@@ -129,6 +133,8 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 			Application = new() {
 				AllowAnonymousEndpointAccess = true,
 				AllowAnonymousStreamAccess = true,
+				Insecure = insecure,
+				DisableTls = disableTls,
 				StatsPeriodSec = 60 * 60,
 				MaxAppendEventSize = maxAppendEventSize
 			},
@@ -164,8 +170,14 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 			LoadedOptions = ClusterVNodeOptions.GetLoadedOptions(new ConfigurationBuilder()
 					.AddKurrentDefaultValues()
 					.Build()),
-		}.Secure(new X509Certificate2Collection(ssl_connections.GetRootCertificate()),
-				ssl_connections.GetServerCertificate())
+		};
+
+		if (!disableTls && !insecure) {
+			options = options.Secure(new X509Certificate2Collection(ssl_connections.GetRootCertificate()),
+				ssl_connections.GetServerCertificate());
+		}
+
+		options = options
 			.WithReplicationEndpointOn(IntTcpEndPoint)
 			.WithExternalTcpOn(TcpEndPoint)
 			.WithNodeEndpointOn(HttpEndPoint);
@@ -236,11 +248,11 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 		var builder = WebApplication.CreateBuilder();
 		builder.WebHost
 			.ConfigureKestrel(o => {
-				o.Listen(HttpEndPoint, options => {
-					if (RuntimeInformation.IsOSX) {
-						options.Protocols = HttpProtocols.Http2;
+				o.Listen(HttpEndPoint, listenOptions => {
+					if (disableTls || insecure || RuntimeInformation.IsOSX) {
+						listenOptions.Protocols = HttpProtocols.Http2;
 					} else {
-						options.UseHttps(new HttpsConnectionAdapterOptions {
+						listenOptions.UseHttps(new HttpsConnectionAdapterOptions {
 							ServerCertificate = ssl_connections.GetServerCertificate(),
 							ClientCertificateMode = ClientCertificateMode.AllowCertificate,
 							ClientCertificateValidation = (certificate, chain, sslPolicyErrors) => {
@@ -277,7 +289,7 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 		HttpClient = new HttpClient(HttpMessageHandler) {
 			Timeout = TimeSpan.FromSeconds(_httpClientTimeoutSec),
 			BaseAddress = new UriBuilder {
-				Scheme = Uri.UriSchemeHttps
+				Scheme = _disableTls ? Uri.UriSchemeHttp : Uri.UriSchemeHttps
 			}.Uri
 		};
 		_testServerStarted = true;
