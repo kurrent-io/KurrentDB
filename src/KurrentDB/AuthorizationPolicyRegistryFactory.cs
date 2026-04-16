@@ -27,7 +27,7 @@ public class AuthorizationPolicyRegistryFactory : SubsystemsPlugin {
 	private IAuthorizationPolicyRegistry? _authorizationPolicyRegistry;
 
 	public AuthorizationPolicyRegistryFactory(ClusterVNodeOptions options, IConfiguration configuration, PluginLoader pluginLoader) {
-		if (options.Application.Insecure) {
+		if (options.Application.AuthDisabled) {
 			_createRegistry = _ => new StaticAuthorizationPolicyRegistry([]);
 			return;
 		}
