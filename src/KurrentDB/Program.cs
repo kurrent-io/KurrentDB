@@ -179,6 +179,12 @@ try {
 			"INSECURE MODE IS ON. THIS MODE IS *NOT* RECOMMENDED FOR PRODUCTION USE.\n" +
 			"INSECURE MODE WILL DISABLE ALL AUTHENTICATION, AUTHORIZATION AND TRANSPORT SECURITY FOR ALL CLIENTS AND NODES.\n" +
 			"==============================================================================================================\n");
+	} else if (options.Application.DisableTls) {
+		Log.Warning(
+			"\n==============================================================================================================\n" +
+			"TLS IS DISABLED. AUTHENTICATION CREDENTIALS WILL BE TRANSMITTED IN CLEARTEXT.\n" +
+			"THIS MODE IS *NOT* RECOMMENDED FOR PRODUCTION USE.\n" +
+			"==============================================================================================================\n");
 	}
 
 	if (options.Application.WhatIf) {

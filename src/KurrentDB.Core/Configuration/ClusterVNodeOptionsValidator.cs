@@ -128,7 +128,7 @@ public static class ClusterVNodeOptionsValidator {
 			return false;
 		}
 
-		if (options.Application.Insecure || options.Auth.AuthenticationType != Opts.AuthenticationTypeDefault) {
+		if (options.Application.AuthDisabled() || options.Auth.AuthenticationType != Opts.AuthenticationTypeDefault) {
 			if (options.DefaultUser.DefaultAdminPassword != SystemUsers.DefaultAdminPassword) {
 				Log.Error("Cannot set default admin password when not using the internal authentication.");
 				return false;
