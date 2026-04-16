@@ -14,7 +14,7 @@ public class OptionsCertificateProvider : CertificateProvider {
 	private string _cachedReservedNodeCN;
 
 	public override LoadCertificateResult LoadCertificates(ClusterVNodeOptions options) {
-		if (options.Application.Insecure) {
+		if (options.Application.TlsDisabled) {
 			Log.Information("Skipping reload of certificates since TLS is disabled.");
 			return LoadCertificateResult.Skipped;
 		}

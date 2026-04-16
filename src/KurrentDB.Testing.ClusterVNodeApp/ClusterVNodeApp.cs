@@ -165,7 +165,7 @@ public class ClusterVNodeApp : IAsyncDisposable {
 				KestrelHelpers.ConfigureHttpOptions(
 					listenOptions: listen,
 					hostedService: svc,
-					useHttps: !ServerOptions.Application.Insecure);
+					useHttps: !ServerOptions.Application.TlsDisabled);
 			});
 			kestrel.Limits.Http2.KeepAlivePingDelay   = TimeSpan.FromMilliseconds(ServerOptions.Grpc.KeepAliveInterval);
 			kestrel.Limits.Http2.KeepAlivePingTimeout = TimeSpan.FromMilliseconds(ServerOptions.Grpc.KeepAliveTimeout);
