@@ -11,7 +11,7 @@ public static class ProjectionEventTypes {
 
 	// V2 only
 	public const string ProjectionCheckpointV2 = "$ProjectionCheckpoint.V2";
-	public const string ProjectionState = "$ProjectionState.V2";
+	public const string ProjectionStateV2 = "$ProjectionState.V2";
 
 	// Management
 	public const string ProjectionCreated = "$ProjectionCreated";

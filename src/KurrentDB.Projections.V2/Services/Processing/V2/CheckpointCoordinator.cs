@@ -111,7 +111,7 @@ public class CheckpointCoordinator(int partitionCount, string projectionName, Pa
 				writes = writes.Add(new StreamWrite(
 					streamName,
 					expVer,
-					[new Event(Guid.NewGuid(), ProjectionEventTypes.ProjectionState, isJson: true, stateData, isPropertyMetadata: false, metadata: null)]));
+					[new Event(Guid.NewGuid(), ProjectionEventTypes.ProjectionStateV2, isJson: true, stateData, isPropertyMetadata: false, metadata: null)]));
 			}
 		}
 

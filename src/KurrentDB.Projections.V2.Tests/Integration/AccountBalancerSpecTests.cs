@@ -175,7 +175,7 @@ public class AccountBalancerSpecTests {
 		foreach (var w in writes) {
 			var evts = w.Events.ToArray();
 			for (int i = 0; i < evts.Length; i++) {
-				if (evts[i].EventType == ProjectionEventTypes.ProjectionState) {
+				if (evts[i].EventType == ProjectionEventTypes.ProjectionStateV2) {
 					var streamIdx = w.EventStreamIndexes.Span[i];
 					var streamId = w.EventStreamIds.Span[streamIdx];
 					statesByStream[streamId] = Encoding.UTF8.GetString(evts[i].Data);

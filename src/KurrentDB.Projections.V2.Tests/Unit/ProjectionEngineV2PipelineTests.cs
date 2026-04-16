@@ -252,10 +252,10 @@ public class ProjectionEngineV2PipelineTests {
 		await Assert.That(streamIds).Contains("$projections-state-test-stream-X-state");
 
 		var eventsArray = lastWrite.Events.ToArray();
-		var hasResult = eventsArray.Any(e => e.EventType == ProjectionEventTypes.ProjectionState);
+		var hasResult = eventsArray.Any(e => e.EventType == ProjectionEventTypes.ProjectionStateV2);
 		await Assert.That(hasResult).IsTrue();
 
-		var resultEvent = eventsArray.First(e => e.EventType == ProjectionEventTypes.ProjectionState);
+		var resultEvent = eventsArray.First(e => e.EventType == ProjectionEventTypes.ProjectionStateV2);
 		var stateJson = Encoding.UTF8.GetString(resultEvent.Data);
 		await Assert.That(stateJson).Contains("\"count\":");
 	}
