@@ -12,7 +12,7 @@ public static class ProjectionEventTypes {
 	public const string StreamTracked = "$StreamTracked";
 
 	// V2 only
-	public const string ProjectionState = "$ProjectionState";
+	public const string ProjectionState = "$ProjectionState.V2";
 
 	// Management
 	public const string ProjectionCreated = "$ProjectionCreated";
