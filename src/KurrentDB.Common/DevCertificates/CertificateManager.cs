@@ -64,6 +64,15 @@ public abstract class CertificateManager {
 		StoreLocation location,
 		bool isValid,
 		bool requireExportable = true) {
+		// On Linux/FreeBSD, LocalMachine X509Store only supports Root and CertificateAuthority stores.
+		// Attempting to open other store names (e.g., My) throws PlatformNotSupportedException.
+		if (location == StoreLocation.LocalMachine &&
+			storeName != StoreName.Root &&
+			storeName != StoreName.CertificateAuthority &&
+			!RuntimeInformation.IsWindows && !RuntimeInformation.IsOSX) {
+			return [];
+		}
+
 		Log.ListCertificatesStart(location, storeName);
 		var certificates = new List<X509Certificate2>();
 		try {
