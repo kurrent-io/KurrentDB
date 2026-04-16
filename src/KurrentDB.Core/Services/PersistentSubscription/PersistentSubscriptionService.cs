@@ -55,7 +55,8 @@ public class PersistentSubscriptionService<TStreamId> :
 	IHandle<TelemetryMessage.Request>,
 	IHandle<MonitoringMessage.GetAllPersistentSubscriptionStats>,
 	IHandle<MonitoringMessage.GetPersistentSubscriptionStats>,
-	IHandle<MonitoringMessage.GetStreamPersistentSubscriptionStats> {
+	IHandle<MonitoringMessage.GetStreamPersistentSubscriptionStats>,
+	IHandle<SubscriptionMessage.PersistentSubscriptionIndexEntryChanged> {
 
 	// for constant time lookups in ProcessEventCommitted
 	private Dictionary<string, List<PersistentSubscription>> _subscriptionTopics;
@@ -646,6 +647,50 @@ public class PersistentSubscriptionService<TStreamId> :
 						error));
 				},
 				(error) => {
+					// Before reporting DoesNotExist, check if the group belongs to an index subscription.
+					var indexEntries = _config.Entries.Where(e => e.IndexName != null && e.Group == message.GroupName).ToList();
+					if (indexEntries.Count > 1) {
+						message.Envelope.ReplyWith(new ClientMessage.UpdatePersistentSubscriptionToAllCompleted(
+							message.CorrelationId,
+							ClientMessage.UpdatePersistentSubscriptionToAllCompleted.UpdatePersistentSubscriptionToAllResult.Fail,
+							$"Ambiguous group '{message.GroupName}': exists on multiple indexes ({string.Join(", ", indexEntries.Select(e => e.IndexName))}). Use the index-specific API."));
+						return;
+					}
+					if (indexEntries.Count == 1) {
+						var indexEntry = indexEntries[0];
+						// Wrap the envelope to translate the index-specific completion back to AllCompleted.
+						var translatingEnvelope = new CallbackEnvelope(msg => {
+							if (msg is ClientMessage.UpdatePersistentSubscriptionToIndexCompleted c) {
+								var result = c.Result switch {
+									ClientMessage.UpdatePersistentSubscriptionToIndexCompleted.UpdatePersistentSubscriptionToIndexResult.Success =>
+										ClientMessage.UpdatePersistentSubscriptionToAllCompleted.UpdatePersistentSubscriptionToAllResult.Success,
+									ClientMessage.UpdatePersistentSubscriptionToIndexCompleted.UpdatePersistentSubscriptionToIndexResult.DoesNotExist =>
+										ClientMessage.UpdatePersistentSubscriptionToAllCompleted.UpdatePersistentSubscriptionToAllResult.DoesNotExist,
+									ClientMessage.UpdatePersistentSubscriptionToIndexCompleted.UpdatePersistentSubscriptionToIndexResult.AccessDenied =>
+										ClientMessage.UpdatePersistentSubscriptionToAllCompleted.UpdatePersistentSubscriptionToAllResult.AccessDenied,
+									_ =>
+										ClientMessage.UpdatePersistentSubscriptionToAllCompleted.UpdatePersistentSubscriptionToAllResult.Fail,
+								};
+								message.Envelope.ReplyWith(new ClientMessage.UpdatePersistentSubscriptionToAllCompleted(
+									c.CorrelationId, result, c.Reason));
+							} else {
+								message.Envelope.ReplyWith(new ClientMessage.UpdatePersistentSubscriptionToAllCompleted(
+									message.CorrelationId,
+									ClientMessage.UpdatePersistentSubscriptionToAllCompleted.UpdatePersistentSubscriptionToAllResult.Fail,
+									$"Unexpected response when forwarding to index service: {msg.GetType().Name}"));
+							}
+						});
+						_queuedHandler.Publish(new ClientMessage.UpdatePersistentSubscriptionToIndex(
+							message.InternalCorrId, message.CorrelationId, translatingEnvelope,
+							message.GroupName, indexEntry.IndexName, message.ResolveLinkTos, message.StartFrom,
+							message.MessageTimeoutMilliseconds, message.RecordStatistics, message.MaxRetryCount,
+							message.BufferSize, message.LiveBufferSize, message.ReadBatchSize,
+							message.CheckPointAfterMilliseconds, message.MinCheckPointCount,
+							message.MaxCheckPointCount, message.MaxSubscriberCount, message.NamedConsumerStrategy,
+							message.User, message.Expires));
+						return;
+					}
+
 					message.Envelope.ReplyWith(new ClientMessage.UpdatePersistentSubscriptionToAllCompleted(
 						message.CorrelationId,
 						ClientMessage.UpdatePersistentSubscriptionToAllCompleted.UpdatePersistentSubscriptionToAllResult.DoesNotExist,
@@ -814,6 +859,45 @@ public class PersistentSubscriptionService<TStreamId> :
 					error));
 			},
 			(error) => {
+				// Before reporting DoesNotExist, check if the group belongs to an index subscription.
+				var indexEntries = _config.Entries.Where(e => e.IndexName != null && e.Group == message.GroupName).ToList();
+				if (indexEntries.Count > 1) {
+					message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToAllCompleted(
+						message.CorrelationId,
+						ClientMessage.DeletePersistentSubscriptionToAllCompleted.DeletePersistentSubscriptionToAllResult.Fail,
+						$"Ambiguous group '{message.GroupName}': exists on multiple indexes ({string.Join(", ", indexEntries.Select(e => e.IndexName))}). Use the index-specific API."));
+					return;
+				}
+				if (indexEntries.Count == 1) {
+					var indexEntry = indexEntries[0];
+					// Wrap the envelope to translate the index-specific completion back to AllCompleted.
+					var translatingEnvelope = new CallbackEnvelope(msg => {
+						if (msg is ClientMessage.DeletePersistentSubscriptionToIndexCompleted c) {
+							var result = c.Result switch {
+								ClientMessage.DeletePersistentSubscriptionToIndexCompleted.DeletePersistentSubscriptionToIndexResult.Success =>
+									ClientMessage.DeletePersistentSubscriptionToAllCompleted.DeletePersistentSubscriptionToAllResult.Success,
+								ClientMessage.DeletePersistentSubscriptionToIndexCompleted.DeletePersistentSubscriptionToIndexResult.DoesNotExist =>
+									ClientMessage.DeletePersistentSubscriptionToAllCompleted.DeletePersistentSubscriptionToAllResult.DoesNotExist,
+								ClientMessage.DeletePersistentSubscriptionToIndexCompleted.DeletePersistentSubscriptionToIndexResult.AccessDenied =>
+									ClientMessage.DeletePersistentSubscriptionToAllCompleted.DeletePersistentSubscriptionToAllResult.AccessDenied,
+								_ =>
+									ClientMessage.DeletePersistentSubscriptionToAllCompleted.DeletePersistentSubscriptionToAllResult.Fail,
+							};
+							message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToAllCompleted(
+								c.CorrelationId, result, c.Reason));
+						} else {
+							message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToAllCompleted(
+								message.CorrelationId,
+								ClientMessage.DeletePersistentSubscriptionToAllCompleted.DeletePersistentSubscriptionToAllResult.Fail,
+								$"Unexpected response when forwarding to index service: {msg.GetType().Name}"));
+						}
+					});
+					_queuedHandler.Publish(new ClientMessage.DeletePersistentSubscriptionToIndex(
+						message.InternalCorrId, message.CorrelationId, translatingEnvelope,
+						indexEntry.IndexName, message.GroupName, message.User, message.Expires));
+					return;
+				}
+
 				message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToAllCompleted(
 					message.CorrelationId,
 					ClientMessage.DeletePersistentSubscriptionToAllCompleted.DeletePersistentSubscriptionToAllResult.DoesNotExist,
@@ -950,7 +1034,7 @@ public class PersistentSubscriptionService<TStreamId> :
 
 		Log.Debug("New connection to persistent subscription {subscriptionKey} by {connectionId}", key, connectionId);
 		long? lastEventNumber = null;
-		if (eventSource.FromStream) {
+		if (eventSource.Kind == EventSourceKind.Stream) {
 			var streamId = _readIndex.GetStreamId(eventSource.EventStreamId);
 			lastEventNumber = await _readIndex.GetStreamLastEventNumber(streamId, token);
 		}
@@ -979,6 +1063,29 @@ public class PersistentSubscriptionService<TStreamId> :
 	}
 
 	ValueTask IAsyncHandle<ClientMessage.ConnectToPersistentSubscriptionToAll>.HandleAsync(ClientMessage.ConnectToPersistentSubscriptionToAll message, CancellationToken token) {
+		if (!_started)
+			return ValueTask.CompletedTask;
+
+		// Check if the group belongs to an index subscription before trying the $all stream.
+		var allStream = new PersistentSubscriptionAllStreamEventSource().ToString();
+		var key = BuildSubscriptionGroupKey(allStream, message.GroupName);
+		if (!_subscriptionsById.ContainsKey(key)) {
+			var indexEntries = _config.Entries.Where(e => e.IndexName != null && e.Group == message.GroupName).ToList();
+			if (indexEntries.Count > 1) {
+				message.Envelope.ReplyWith(new ClientMessage.SubscriptionDropped(
+					message.CorrelationId, SubscriptionDropReason.NotFound));
+				return ValueTask.CompletedTask;
+			}
+			if (indexEntries.Count == 1) {
+				_queuedHandler.Publish(new ClientMessage.ConnectToPersistentSubscriptionToIndex(
+					message.InternalCorrId, message.CorrelationId, message.Envelope,
+					message.ConnectionId, message.ConnectionName, message.GroupName,
+					indexEntries[0].IndexName, message.AllowedInFlightMessages, message.From,
+					message.User, message.Expires));
+				return ValueTask.CompletedTask;
+			}
+		}
+
 		return ConnectToPersistentSubscription(
 			new PersistentSubscriptionAllStreamEventSource(),
 			message.GroupName,
@@ -1172,7 +1279,13 @@ public class PersistentSubscriptionService<TStreamId> :
 					_config =
 						PersistentSubscriptionConfig.FromSerializedForm(
 							readStreamEventsBackwardCompleted.Events[0].Event.Data);
+					var indexEntries = new List<PersistentSubscriptionEntry>();
 					foreach (var entry in _config.Entries) {
+						if (entry.IndexName != null) {
+							indexEntries.Add(entry);
+							continue;
+						}
+
 						if (!_consumerStrategyRegistry.ValidateStrategy(entry.NamedConsumerStrategy)) {
 							Log.Error(
 								"A persistent subscription exists with an invalid consumer strategy '{strategy}'. Ignoring it.",
@@ -1223,6 +1336,10 @@ public class PersistentSubscriptionService<TStreamId> :
 
 					}
 
+					// Always publish — the index service needs this to set _started even with an empty list.
+					_queuedHandler.Publish(
+						new SubscriptionMessage.PersistentSubscriptionIndexEntriesLoaded(indexEntries));
+
 					continueWith();
 				} catch (Exception ex) {
 					Log.Error(ex, "There was an error loading configuration from storage.");
@@ -1239,9 +1356,29 @@ public class PersistentSubscriptionService<TStreamId> :
 		}
 	}
 
+	public void Handle(SubscriptionMessage.PersistentSubscriptionIndexEntryChanged message) {
+		if (message.IsDelete) {
+			_config.Entries.RemoveAll(e =>
+				e.IndexName != null && e.IndexName == message.Entry.IndexName && e.Group == message.Entry.Group);
+		} else {
+			// Remove any existing entry first, then add the new one.
+			_config.Entries.RemoveAll(e =>
+				e.IndexName != null && e.IndexName == message.Entry.IndexName && e.Group == message.Entry.Group);
+			_config.Entries.Add(message.Entry);
+		}
+	}
+
 	private void SaveConfiguration(Action continueWith) {
 		Log.Debug("Saving persistent subscription configuration");
-		var data = _config.GetSerializedForm();
+		// Write only non-index entries — the index service owns index entries.
+		// We keep index entries in _config for forwarding lookups but exclude them from saves.
+		var configToSave = new PersistentSubscriptionConfig {
+			Version = _config.Version,
+			Updated = _config.Updated,
+			UpdatedBy = _config.UpdatedBy,
+			Entries = _config.Entries.Where(e => e.IndexName == null).ToList()
+		};
+		var data = configToSave.GetSerializedForm();
 		var ev = new Event(Guid.NewGuid(), SystemEventTypes.PersistentSubscriptionConfig, true, data);
 		var metadata = new StreamMetadata(maxCount: 2);
 		Lazy<StreamMetadata> streamMetadata = new Lazy<StreamMetadata>(() => metadata);
