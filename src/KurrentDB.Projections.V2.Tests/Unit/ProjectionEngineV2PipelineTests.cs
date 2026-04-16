@@ -249,7 +249,7 @@ public class ProjectionEngineV2PipelineTests {
 
 		var streamIds = Enumerable.Range(0, lastWrite!.EventStreamIds.Length)
 			.Select(i => lastWrite.EventStreamIds.Span[i]).ToList();
-		await Assert.That(streamIds).Contains("$projections-state-test-stream-X-result");
+		await Assert.That(streamIds).Contains("$projections-state-test-stream-X-state");
 
 		var eventsArray = lastWrite.Events.ToArray();
 		var hasResult = eventsArray.Any(e => e.EventType == ProjectionEventTypes.ProjectionState);

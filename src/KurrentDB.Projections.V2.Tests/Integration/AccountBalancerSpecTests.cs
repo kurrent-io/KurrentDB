@@ -205,21 +205,21 @@ public class AccountBalancerSpecTests {
 		}
 
 		// Verify ESDBB-01 final state: balance=550, debit=150, description="bill payment"
-		var esdbb01StreamId = $"$projections-{projectionName}-ESDBB-01-result";
+		var esdbb01StreamId = $"$projections-{projectionName}-ESDBB-01-state";
 		await Assert.That(statesByStream.ContainsKey(esdbb01StreamId)).IsTrue();
 		var esdbb01State = JObject.Parse(statesByStream[esdbb01StreamId]);
 		var expectedEsdbb01 = JObject.Parse(expectedFinalStates["ESDBB-01"]!);
 		AssertJsonEquivalent(expectedEsdbb01, esdbb01State);
 
 		// Verify ESDBB-S01 final state: balance=300, credit=300, description="transfer to savings"
-		var esdbbS01StreamId = $"$projections-{projectionName}-ESDBB-S01-result";
+		var esdbbS01StreamId = $"$projections-{projectionName}-ESDBB-S01-state";
 		await Assert.That(statesByStream.ContainsKey(esdbbS01StreamId)).IsTrue();
 		var esdbbS01State = JObject.Parse(statesByStream[esdbbS01StreamId]);
 		var expectedEsdbbS01 = JObject.Parse(expectedFinalStates["ESDBB-S01"]!);
 		AssertJsonEquivalent(expectedEsdbbS01, esdbbS01State);
 
 		// Verify shared state (partition ""): numberOfAccounts=2, totalBalance=850, description="bill payment"
-		var sharedStreamId = $"$projections-{projectionName}-result";
+		var sharedStreamId = $"$projections-{projectionName}-state";
 		await Assert.That(statesByStream.ContainsKey(sharedStreamId)).IsTrue();
 		var sharedState = JObject.Parse(statesByStream[sharedStreamId]);
 		var expectedShared = JObject.Parse(expectedFinalStates[""]!);
@@ -228,7 +228,7 @@ public class AccountBalancerSpecTests {
 		// 12. Verify "description" partition state is null (filtered by the projection)
 		// The "description" partition gets s[0] = null in $created.
 		// The V2 engine still writes this state. Let's verify it's null.
-		var descStreamId = $"$projections-{projectionName}-description-result";
+		var descStreamId = $"$projections-{projectionName}-description-state";
 		if (statesByStream.TryGetValue(descStreamId, out var descState)) {
 			// The state should be "null" (JS null serialized)
 			await Assert.That(descState).IsEqualTo("null");

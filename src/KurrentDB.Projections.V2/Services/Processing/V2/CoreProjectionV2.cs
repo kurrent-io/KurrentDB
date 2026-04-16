@@ -112,12 +112,12 @@ public sealed class CoreProjectionV2 : ICoreProjectionControl {
 			return;
 		}
 
-		// Fall back to reading from the result stream (needed after restart for partitions
+		// Fall back to reading from the state stream (needed after restart for partitions
 		// whose state was checkpointed before the restart but not yet re-processed)
-		var resultStreamId = ProjectionNamesBuilder.MakeResultStreamName(_projectionName, partition);
+		var stateStreamId = ProjectionNamesBuilder.MakeStateStreamName(_projectionName, partition);
 
 		_ioDispatcher.ReadBackward(
-			resultStreamId,
+			stateStreamId,
 			-1, // last event
 			1,
 			resolveLinks: false,
@@ -147,11 +147,11 @@ public sealed class CoreProjectionV2 : ICoreProjectionControl {
 			return;
 		}
 
-		// Fall back to reading from the result stream
-		var resultStreamId = ProjectionNamesBuilder.MakeResultStreamName(_projectionName, partition);
+		// Fall back to reading from the state stream
+		var stateStreamId = ProjectionNamesBuilder.MakeStateStreamName(_projectionName, partition);
 
 		_ioDispatcher.ReadBackward(
-			resultStreamId,
+			stateStreamId,
 			-1, // last event
 			1,
 			resolveLinks: false,

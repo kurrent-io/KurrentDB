@@ -225,7 +225,7 @@ fromCategory('order')
 		// 11. Verify partition state for order-{testId}-1
 		// Expected: count=3 (OrderPlaced + OrderShipped + OrderPlaced), totalAmount=300.50
 		// Note: OrderNoteAdded is not handled by any explicit handler, so it's ignored
-		var order1StreamId = $"$projections-e2e-test-{testId}-order-{testId}-1-result";
+		var order1StreamId = $"$projections-e2e-test-{testId}-order-{testId}-1-state";
 		var order1Results = allEvents
 			.Where((e, idx) => e.EventType == ProjectionEventTypes.ProjectionState &&
 				writes.Any(w => {
@@ -250,7 +250,7 @@ fromCategory('order')
 		await Assert.That(totalAmount).IsEqualTo(300.50);
 
 		// 12. Verify partition state for order-{testId}-2
-		var order2StreamId = $"$projections-e2e-test-{testId}-order-{testId}-2-result";
+		var order2StreamId = $"$projections-e2e-test-{testId}-order-{testId}-2-state";
 		var order2Results = allEvents
 			.Where((e, idx) => e.EventType == ProjectionEventTypes.ProjectionState &&
 				writes.Any(w => {

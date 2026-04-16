@@ -239,8 +239,8 @@ public class DeletedStreamProjectionTests {
 		await Task.Delay(2000, ct);
 
 		// 5. Verify: stream-1 should have a=1,deleted=1; stream-2 should have a=1
-		var stream1Result = $"$projections-{name}-{stream1}-result";
-		var stream2Result = $"$projections-{name}-{stream2}-result";
+		var stream1Result = $"$projections-{name}-{stream1}-state";
+		var stream2Result = $"$projections-{name}-{stream2}-state";
 		await AssertResultStreamTail(stream1Result, """{"a":1,"deleted":1}""", ct);
 		await AssertResultStreamTail(stream2Result, """{"a":1}""", ct);
 	}
@@ -276,8 +276,8 @@ public class DeletedStreamProjectionTests {
 		await Task.Delay(2000, ct);
 
 		// 5. Verify
-		var stream1Result = $"$projections-{name}-{stream1}-result";
-		var stream2Result = $"$projections-{name}-{stream2}-result";
+		var stream1Result = $"$projections-{name}-{stream1}-state";
+		var stream2Result = $"$projections-{name}-{stream2}-state";
 		await AssertResultStreamTail(stream1Result, """{"a":1,"deleted":1}""", ct);
 		await AssertResultStreamTail(stream2Result, """{"a":1}""", ct);
 	}
@@ -320,9 +320,9 @@ public class DeletedStreamProjectionTests {
 		await Task.Delay(2000, ct);
 
 		// 6. Verify
-		var stream1Result = $"$projections-{name}-{stream1}-result";
-		var stream2Result = $"$projections-{name}-{stream2}-result";
-		var stream3Result = $"$projections-{name}-{stream3}-result";
+		var stream1Result = $"$projections-{name}-{stream1}-state";
+		var stream2Result = $"$projections-{name}-{stream2}-state";
+		var stream3Result = $"$projections-{name}-{stream3}-state";
 		await AssertResultStreamTail(stream1Result, """{"a":2,"deleted":1}""", ct);
 		await AssertResultStreamTail(stream2Result, """{"a":4}""", ct);
 		await AssertResultStreamTail(stream3Result, """{"a":1}""", ct);
@@ -358,7 +358,7 @@ public class DeletedStreamProjectionTests {
 		await FlushProjectionResults(name, ct);
 		await Task.Delay(2000, ct);
 
-		var stream1Result = $"$projections-{name}-{stream1}-result";
+		var stream1Result = $"$projections-{name}-{stream1}-state";
 		await AssertResultStreamTail(stream1Result, """{"a":2,"deleted":1}""", ct);
 	}
 
@@ -402,7 +402,7 @@ public class DeletedStreamProjectionTests {
 		await FlushProjectionResults(name, ct);
 		await Task.Delay(2000, ct);
 
-		var stream1Result = $"$projections-{name}-{stream1}-result";
+		var stream1Result = $"$projections-{name}-{stream1}-state";
 		await AssertResultStreamTail(stream1Result, """{"a":1,"deleted":1}""", ct);
 	}
 
@@ -451,8 +451,8 @@ public class DeletedStreamProjectionTests {
 		await Task.Delay(2000, ct);
 
 		// 7. Verify state is preserved after recovery
-		var stream1Result = $"$projections-{name}-{stream1}-result";
-		var stream2Result = $"$projections-{name}-{stream2}-result";
+		var stream1Result = $"$projections-{name}-{stream1}-state";
+		var stream2Result = $"$projections-{name}-{stream2}-state";
 		await AssertResultStreamTail(stream1Result, """{"a":2,"deleted":1}""", ct);
 		await AssertResultStreamTail(stream2Result, """{"a":2}""", ct);
 	}
@@ -498,8 +498,8 @@ public class DeletedStreamProjectionTests {
 		await Task.Delay(2000, ct);
 
 		// 7. Verify
-		var stream1Result = $"$projections-{name}-{stream1}-result";
-		var stream2Result = $"$projections-{name}-{stream2}-result";
+		var stream1Result = $"$projections-{name}-{stream1}-state";
+		var stream2Result = $"$projections-{name}-{stream2}-state";
 		await AssertResultStreamTail(stream1Result, """{"a":2,"deleted":1}""", ct);
 		await AssertResultStreamTail(stream2Result, """{"a":2}""", ct);
 	}

@@ -49,10 +49,11 @@ public class ProjectionNamesBuilder {
 										ProjectionEmittedStreamSuffix + ProjectionCheckpointStreamSuffix;
 	}
 
-	public static string MakeResultStreamName(string projectionName, string partitionKey) =>
+	public static string MakeStateStreamName(string projectionName, string partitionKey) =>
 		string.IsNullOrEmpty(partitionKey)
-			? ProjectionsStreamPrefix + projectionName + ProjectionsStateStreamSuffix
-			: ProjectionsStreamPrefix + projectionName + "-" + partitionKey + ProjectionsStateStreamSuffix;
+			? ProjectionsStreamPrefix + projectionName + ProjectionStateStreamSuffix
+			: ProjectionsStreamPrefix + projectionName + "-" + partitionKey + ProjectionStateStreamSuffix;
+
 
 	public string EffectiveProjectionName {
 		get { return _name; }
@@ -73,7 +74,8 @@ public class ProjectionNamesBuilder {
 	}
 
 	public const string ProjectionsStreamPrefix = "$projections-";
-	private const string ProjectionsStateStreamSuffix = "-result";
+	private const string ProjectionsStateStreamSuffix = "-result"; // todo: rename this
+	private const string ProjectionStateStreamSuffix = "-state";
 	private const string ProjectionCheckpointStreamSuffix = "-checkpoint";
 	private const string ProjectionEmittedStreamSuffix = "-emittedstreams";
 	private const string ProjectionOrderStreamSuffix = "-order";

@@ -194,8 +194,8 @@ public class CreatedStreamProjectionTests {
 		await Task.Delay(2000, ct);
 
 		// 4. Verify: each stream should have a=3 ($created + 2 events via $any)
-		var stream1Result = $"$projections-{name}-{stream1}-result";
-		var stream2Result = $"$projections-{name}-{stream2}-result";
+		var stream1Result = $"$projections-{name}-{stream1}-state";
+		var stream2Result = $"$projections-{name}-{stream2}-state";
 		await AssertResultStreamTail(stream1Result, """{"a":3}""", ct);
 		await AssertResultStreamTail(stream2Result, """{"a":3}""", ct);
 	}
@@ -236,8 +236,8 @@ public class CreatedStreamProjectionTests {
 		await Task.Delay(2000, ct);
 
 		// 4. Verify: each stream should have a=3 ($created + type1 + type2)
-		var stream1Result = $"$projections-{name}-{stream1}-result";
-		var stream2Result = $"$projections-{name}-{stream2}-result";
+		var stream1Result = $"$projections-{name}-{stream1}-state";
+		var stream2Result = $"$projections-{name}-{stream2}-state";
 		await AssertResultStreamTail(stream1Result, """{"a":3}""", ct);
 		await AssertResultStreamTail(stream2Result, """{"a":3}""", ct);
 	}
@@ -283,8 +283,8 @@ public class CreatedStreamProjectionTests {
 		await Task.Delay(2000, ct);
 
 		// 4. Verify: each stream should have a=3 ($created + type1 + type2)
-		var stream1Result = $"$projections-{name}-{stream1}-result";
-		var stream2Result = $"$projections-{name}-{stream2}-result";
+		var stream1Result = $"$projections-{name}-{stream1}-state";
+		var stream2Result = $"$projections-{name}-{stream2}-state";
 		await AssertResultStreamTail(stream1Result, """{"a":3}""", ct);
 		await AssertResultStreamTail(stream2Result, """{"a":3}""", ct);
 	}

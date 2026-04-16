@@ -101,7 +101,7 @@ public class PartitionProcessor(
 		if (processed) {
 			_stateCache[partitionKey] = newState;
 			if (newState != null) {
-				var stateStreamName = ProjectionNamesBuilder.MakeResultStreamName(projectionName, partitionKey);
+				var stateStreamName = ProjectionNamesBuilder.MakeStateStreamName(projectionName, partitionKey);
 				_activeBuffer.SetPartitionState(partitionKey, stateStreamName, newState, ExpectedVersion.Any);
 				sharedPartitionStates[partitionKey] = newState;
 			}
@@ -140,14 +140,14 @@ public class PartitionProcessor(
 		if (processed) {
 			_stateCache[partitionKey] = newState;
 			if (newState is not null) {
-				var stateStreamName = ProjectionNamesBuilder.MakeResultStreamName(projectionName, partitionKey);
+				var stateStreamName = ProjectionNamesBuilder.MakeStateStreamName(projectionName, partitionKey);
 				_activeBuffer.SetPartitionState(partitionKey, stateStreamName, newState, ExpectedVersion.Any);
 				sharedPartitionStates[partitionKey] = newState;
 			}
 
 			if (isBiState && newSharedState is not null) {
 				_sharedState = newSharedState;
-				var sharedStreamName = ProjectionNamesBuilder.MakeResultStreamName(projectionName, "");
+				var sharedStreamName = ProjectionNamesBuilder.MakeStateStreamName(projectionName, "");
 				_activeBuffer.SetPartitionState("", sharedStreamName, newSharedState, ExpectedVersion.Any);
 			}
 

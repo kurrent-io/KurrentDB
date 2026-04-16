@@ -228,13 +228,13 @@ public sealed class ProjectionEngineV2(
 	}
 
 	/// <summary>
-	/// Loads persisted partition state from the result stream after a restart.
+	/// Loads persisted partition state from the state stream after a restart.
 	/// Returns the state JSON if found, null otherwise.
 	/// </summary>
 	private async ValueTask<string?> LoadPersistedPartitionState(string partitionKey, CancellationToken ct) {
-		var resultStreamId = ProjectionNamesBuilder.MakeResultStreamName(_config.ProjectionName, partitionKey);
+		var stateStreamId = ProjectionNamesBuilder.MakeStateStreamName(_config.ProjectionName, partitionKey);
 		try {
-			var lastEvent = await _client.Reading.ReadStreamLastEvent(resultStreamId, ct);
+			var lastEvent = await _client.Reading.ReadStreamLastEvent(stateStreamId, ct);
 			if (lastEvent is null)
 				return null;
 
