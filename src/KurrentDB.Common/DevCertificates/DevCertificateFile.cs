@@ -28,7 +28,9 @@ public static class DevCertificateFile {
 			return null;
 		}
 
-		if (CertificateManager.IsHttpsDevelopmentCertificate(cert) && cert.NotAfter > DateTimeOffset.UtcNow) {
+		if (CertificateManager.IsHttpsDevelopmentCertificate(cert) &&
+			cert.NotAfter > DateTimeOffset.UtcNow &&
+			cert.HasPrivateKey) {
 			return cert;
 		}
 
@@ -42,6 +44,8 @@ public static class DevCertificateFile {
 	/// </summary>
 	public static void WritePublicCertificate(X509Certificate2 certificate, string pfxPath) {
 		var crtPath = Path.ChangeExtension(pfxPath, ".crt");
+		if (string.Equals(crtPath, pfxPath, StringComparison.OrdinalIgnoreCase))
+			crtPath = pfxPath + ".crt";
 		var pem = new string(PemEncoding.Write("CERTIFICATE", certificate.Export(X509ContentType.Cert)));
 		File.WriteAllText(crtPath, pem, Encoding.ASCII);
 	}

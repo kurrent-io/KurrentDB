@@ -123,4 +123,42 @@ public class dev_cert_file_tests : DirectoryPerTest<dev_cert_file_tests> {
 
 		Assert.Null(loaded);
 	}
+
+	[Fact]
+	public void returns_null_for_cert_without_private_key() {
+		// Create a dev cert, export only the public part to PFX
+		using var key = RSA.Create(2048);
+		var request = new CertificateRequest("CN=localhost", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+		request.CertificateExtensions.Add(new X509Extension(
+			new AsnEncodedData(new Oid(DevCertOid), new byte[] { 2 }),
+			critical: false));
+		using var cert = request.CreateSelfSigned(
+			DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddMonths(1));
+
+		// Export public cert only (no private key) as DER, then wrap in PFX without key
+		var pfxPath = Fixture.GetFilePathFor("no-key.pfx");
+		var publicOnly = new X509Certificate2(cert.Export(X509ContentType.Cert));
+		File.WriteAllBytes(pfxPath, publicOnly.Export(X509ContentType.Pfx));
+		publicOnly.Dispose();
+
+		var loaded = DevCertificateFile.TryLoad(pfxPath);
+
+		Assert.Null(loaded);
+	}
+
+	[Fact]
+	public void write_public_cert_does_not_overwrite_pfx_when_path_ends_with_crt() {
+		var (pfxPath, _) = CreateDevCertPfx("dev.crt",
+			DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddMonths(1));
+		var originalBytes = File.ReadAllBytes(pfxPath);
+
+		using var cert = new X509Certificate2(pfxPath, string.Empty,
+			X509KeyStorageFlags.Exportable);
+		DevCertificateFile.WritePublicCertificate(cert, pfxPath);
+
+		// PFX file should not have been overwritten
+		Assert.Equal(originalBytes, File.ReadAllBytes(pfxPath));
+		// .crt should be written to a safe alternative path
+		Assert.True(File.Exists(pfxPath + ".crt"));
+	}
 }
