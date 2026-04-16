@@ -3,7 +3,6 @@
 
 using System;
 using System.Buffers;
-using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -24,9 +23,9 @@ public static class QueryService {
 		var preparedQuery = default(MemoryOwner<byte>);
 		var reader = new JsonReader();
 		try {
-			preparedQuery = engine.PrepareQuery(Encoding.UTF8.GetBytes(sql), digitallySign: false);
+			preparedQuery = engine.PrepareQuery(Encoding.UTF8.GetBytes(sql), new() { UseDigitalSignature = false });
 
-			await engine.ExecuteAsync(preparedQuery.Memory, reader, checkIntegrity: false, token);
+			await engine.ExecuteAsync(preparedQuery.Memory, reader, new() { CheckIntegrity = false }, token);
 
 			return reader.ToJson();
 		} finally {
@@ -64,10 +63,6 @@ public static class QueryService {
 			// Remove trailing comma
 			_writer.WrittenCount--;
 			_writer.Add((byte)']');
-		}
-
-		public void Bind<TBinder>(scoped TBinder binder) where TBinder : IPreparedQueryBinder, allows ref struct {
-			// nothing to bind
 		}
 
 		public JsonDocument ToJson() => JsonDocument.Parse(_writer.WrittenMemory);

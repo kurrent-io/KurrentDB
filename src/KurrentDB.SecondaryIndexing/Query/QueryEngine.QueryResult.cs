@@ -1,9 +1,10 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Apache.Arrow;
 using DotNext;
-using DuckDB.NET.Data;
 using Kurrent.Quack;
+using Kurrent.Quack.Arrow;
 using QuackQueryResult = Kurrent.Quack.QueryResult;
 
 namespace KurrentDB.SecondaryIndexing.Query;
@@ -16,6 +17,10 @@ partial class QueryEngine {
 		public QueryResultReader(in PreparedStatement statement, bool useStreaming) {
 			_result = statement.ExecuteQuery(useStreaming);
 		}
+
+		public ArrowOptions GetArrowOptions() => _result.GetArrowOptions();
+
+		public Schema GetArrowSchema(ArrowOptions options) => _result.GetArrowSchema();
 
 		public bool TryRead() {
 			_chunk.Dispose();

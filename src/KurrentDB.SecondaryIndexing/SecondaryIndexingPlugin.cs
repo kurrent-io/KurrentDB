@@ -3,6 +3,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
+using Apache.Arrow.Flight.Server;
 using EventStore.Plugins;
 using Kurrent.Surge.Schema;
 using KurrentDB.Common.Configuration;
@@ -13,6 +14,7 @@ using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.DuckDB;
 using KurrentDB.Protocol.V2.Indexes;
 using KurrentDB.SecondaryIndexing.Diagnostics;
+using KurrentDB.SecondaryIndexing.FlightSql;
 using KurrentDB.SecondaryIndexing.Indexes;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
@@ -55,6 +57,7 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddSingleton<IQueryEngine>(static sp => sp.GetRequiredService<QueryEngine>());
 		services.AddSingleton<UserIndexEngine>();
 		services.AddDuckDBSetup<IndexingDbSchema>();
+		services.AddSingleton<FlightServer, FlightServerImpl>();
 
 		services.AddHostedService<DefaultIndexBuilder>();
 		services.AddHostedService(sp => sp.GetRequiredService<UserIndexEngine>());
@@ -74,7 +77,7 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddSingleton<GetLastPosition>(sp => sp.GetRequiredService<TFChunkDbConfig>().WriterCheckpoint.Read);
 
 		// register into the inmemory schema registry
-		services.AddStartupTask(services => new RegisterUserIndexEvents(services));
+		services.AddStartupTask(static services => new RegisterUserIndexEvents(services));
 	}
 
 	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
@@ -83,6 +86,9 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		var indexReaders = app.ApplicationServices.GetServices<ISecondaryIndexReader>();
 
 		secondaryIndexReaders.AddReaders(indexReaders.ToArray());
+		app.UseEndpoints(static endpoints => {
+			endpoints.MapFlightEndpoint();
+		});
 	}
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {

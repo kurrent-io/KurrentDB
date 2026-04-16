@@ -3,10 +3,11 @@
 
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using Apache.Arrow;
 using DotNext;
 using DotNext.Buffers;
-using DuckDB.NET.Data;
 using Kurrent.Quack;
+using Kurrent.Quack.Arrow;
 using Kurrent.Quack.ConnectionPool;
 using Kurrent.Quack.Threading;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
@@ -26,35 +27,39 @@ internal sealed partial class QueryEngine(DefaultIndexProcessor defaultIndex,
 	// 32 bytes key is aligned with HMAC SHA-3 256 hash length
 	private readonly ReadOnlyMemory<byte> _signatureKey = RandomNumberGenerator.GetBytes(32);
 
-	public MemoryOwner<byte> PrepareQuery(ReadOnlySpan<byte> queryUtf8, bool digitallySign) {
+	public MemoryOwner<byte> PrepareQuery(ReadOnlySpan<byte> queryUtf8, QueryPreparationOptions options) {
 		var builder = new PreparedQueryBuilder();
 		using var rewrittenQuery = RewriteQuery(queryUtf8, ref builder);
 
-		return builder.Build(rewrittenQuery.Span, digitallySign ? _signatureKey.Span : ReadOnlySpan<byte>.Empty);
+		return builder.Build(rewrittenQuery.Span, options.UseDigitalSignature ? _signatureKey.Span : ReadOnlySpan<byte>.Empty);
 	}
 
 	public async ValueTask ExecuteAsync<TConsumer>(ReadOnlyMemory<byte> preparedQuery,
 		TConsumer consumer,
-		bool checkIntegrity,
+		QueryExecutionOptions options,
 		CancellationToken token)
 		where TConsumer : IQueryResultConsumer {
 		var parsedQuery = new PreparedQuery(preparedQuery.Span);
-		if (checkIntegrity) {
+		if (options.CheckIntegrity) {
 			CheckIntegrity(in parsedQuery);
 		}
 
 		var snapshots = new PoolingBufferWriter<SnapshotInfo> { Capacity = parsedQuery.ViewCount + 1 }; // + default index
 		var rental = sharedPool.Rent(out var connection);
+		var statement = default(PreparedStatement);
+		var reader = default(QueryResultReader);
 		try {
 			CaptureSnapshots(in parsedQuery, connection, snapshots, token);
-			using var statement = new PreparedStatement(connection, parsedQuery.Query);
+			statement = new(connection, parsedQuery.Query);
 			consumer.Bind(new QueryBinder(in statement));
 
-			using var reader = new QueryResultReader(in statement, consumer.UseStreaming);
+			reader = new(in statement, consumer.UseStreaming);
 			await consumer.ConsumeAsync(reader, token);
 		} finally {
+			reader?.Dispose();
+			statement.Dispose();
 			Disposable.Dispose(snapshots.WrittenMemory.Span); // release all captured snapshot
-			((IDisposable)rental).Dispose();
+			Disposable.Dispose(MemoryMarshal.CreateReadOnlySpan(in rental, 1));
 			snapshots.Dispose();
 		}
 	}
@@ -78,6 +83,25 @@ internal sealed partial class QueryEngine(DefaultIndexProcessor defaultIndex,
 				// user-defined index detected
 				snapshots.Add(new() { Snapshot = snapshot, ReadLock = readLock });
 			}
+		}
+	}
+
+	public Schema GetArrowSchema(ReadOnlySpan<byte> preparedQuery) {
+		var parsedQuery = new PreparedQuery(preparedQuery);
+		var snapshots = new PoolingBufferWriter<SnapshotInfo> { Capacity = parsedQuery.ViewCount + 1 }; // + default index
+		var rental = sharedPool.Rent(out var connection);
+		var options = connection.GetArrowOptions();
+		var statement = default(PreparedStatement);
+		try {
+			CaptureSnapshots(in parsedQuery, connection, snapshots, CancellationToken.None);
+			statement = new(connection, parsedQuery.Query);
+			return statement.GetArrowSchema(options);
+		} finally {
+			statement.Dispose();
+			options.Dispose();
+			Disposable.Dispose(snapshots.WrittenMemory.Span); // release all captured snapshot
+			Disposable.Dispose(MemoryMarshal.CreateReadOnlySpan(in rental, 1));
+			snapshots.Dispose();
 		}
 	}
 

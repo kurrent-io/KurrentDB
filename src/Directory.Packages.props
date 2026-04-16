@@ -58,7 +58,8 @@
     <PackageVersion Include="Kurrent.Surge.Core" Version="1.1.1-alpha.1.65" />
     <PackageVersion Include="Kurrent.Surge.DataProtection" Version="1.1.1-alpha.1.57" />
     <PackageVersion Include="Kurrent.Surge.DuckDB" Version="1.1.1-alpha.1.57" />
-    <PackageVersion Include="Kurrent.Quack" Version="0.0.0-alpha.164" />
+		<PackageVersion Include="Kurrent.Quack" Version="0.0.0-alpha.168" />
+    <PackageVersion Include="Kurrent.Quack.Arrow" Version="0.0.0-alpha.168" />
     <PackageVersion Include="KurrentDB.Client" Version="1.0.0" />
     <PackageVersion Include="librdkafka.redist" Version="2.5.0" />
     <PackageVersion Include="LruCacheNet" Version="1.2.0" />
@@ -167,5 +168,9 @@
     <PackageVersion Include="xunit.v3" Version="3.1.0" />
     <PackageVersion Include="xunit.v3.extensibility.core" Version="3.1.0" />
     <PackageVersion Include="YamlDotnet" Version="16.3.0" />
+		<PackageVersion Include="Apache.Arrow.Flight.AspNetCore" Version="22.1.0" />
+		<PackageVersion Include="Apache.Arrow.Flight.Sql" Version="22.1.0" />
+		<PackageVersion Include="Apache.Arrow.Adbc.Drivers.FlightSql" Version="0.21.0" />
+		<PackageVersion Include="Apache.Arrow.Adbc.Client" Version="0.23.0" />
   </ItemGroup>
 </Project>
