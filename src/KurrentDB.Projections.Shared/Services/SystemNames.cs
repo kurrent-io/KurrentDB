@@ -4,14 +4,13 @@
 namespace KurrentDB.Projections.Core.Services;
 
 public static class ProjectionEventTypes {
-	// V1 & V2
-	public const string ProjectionCheckpoint = "$ProjectionCheckpoint";
-
 	// V1 only
+	public const string ProjectionCheckpoint = "$ProjectionCheckpoint";
 	public const string PartitionCheckpoint = "$Checkpoint";
 	public const string StreamTracked = "$StreamTracked";
 
 	// V2 only
+	public const string ProjectionCheckpointV2 = "$ProjectionCheckpoint.V2";
 	public const string ProjectionState = "$ProjectionState.V2";
 
 	// Management

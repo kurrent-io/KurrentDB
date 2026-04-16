@@ -219,7 +219,7 @@ public class ProjectionEngineV2PipelineTests {
 			.Select(i => writes[0].EventStreamIds.Span[i]).ToList();
 		await Assert.That(streamIds).Contains("$projections-test-projection-checkpoint");
 
-		var hasCheckpoint = writes[0].Events.ToArray().Any(e => e.EventType == "$ProjectionCheckpoint");
+		var hasCheckpoint = writes[0].Events.ToArray().Any(e => e.EventType == ProjectionEventTypes.ProjectionCheckpointV2);
 		await Assert.That(hasCheckpoint).IsTrue();
 	}
 
@@ -285,10 +285,10 @@ public class ProjectionEngineV2PipelineTests {
 		await Assert.That(firstWrite).IsNotNull();
 
 		var eventsArray = firstWrite!.Events.ToArray();
-		var hasCheckpoint = eventsArray.Any(e => e.EventType == "$ProjectionCheckpoint");
+		var hasCheckpoint = eventsArray.Any(e => e.EventType == ProjectionEventTypes.ProjectionCheckpointV2);
 		await Assert.That(hasCheckpoint).IsTrue();
 
-		var checkpointEvent = eventsArray.First(e => e.EventType == "$ProjectionCheckpoint");
+		var checkpointEvent = eventsArray.First(e => e.EventType == ProjectionEventTypes.ProjectionCheckpointV2);
 		var json = Encoding.UTF8.GetString(checkpointEvent.Data);
 		using var doc = JsonDocument.Parse(json);
 

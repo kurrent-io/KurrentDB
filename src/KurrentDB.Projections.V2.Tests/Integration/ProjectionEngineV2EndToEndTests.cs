@@ -214,7 +214,7 @@ fromCategory('order')
 			.ToList();
 
 		// 10. Verify checkpoint event exists
-		var checkpointEvents = allEvents.Where(e => e.EventType == "$ProjectionCheckpoint").ToList();
+		var checkpointEvents = allEvents.Where(e => e.EventType == ProjectionEventTypes.ProjectionCheckpointV2).ToList();
 		await Assert.That(checkpointEvents.Count).IsGreaterThanOrEqualTo(1);
 
 		// Verify checkpoint contains valid position
