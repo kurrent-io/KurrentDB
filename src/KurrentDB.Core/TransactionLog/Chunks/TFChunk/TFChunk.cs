@@ -582,10 +582,11 @@ public partial class TFChunk : IChunkBlob {
 	// We therefore only read from memory while the chunk is still being written to, and only create
 	// the file streams when the chunk is being completed.
 	private void CreateReaderStreams() {
-		Interlocked.Add(ref _fileStreamCount, 1);
 		_fileStreams.TryReturn(new(_handle, _transform.Read, IsRemote));
+		Interlocked.Add(ref _fileStreamCount, 1);
 	}
 
+	// we add an item to the pool because the pool being entirely empty means we may be uncaching (see GetReaderWorkItem)
 	// returns the number of readers created
 	private int CreateInMemReaderStreams() {
 		const int CountCreated = 1;
