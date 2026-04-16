@@ -2,7 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics.Metrics;
+using System.Runtime.InteropServices;
 using DotNext;
+using DotNext.Runtime.InteropServices;
 using DotNext.Threading;
 using Jint;
 using Jint.Native.Function;
@@ -47,7 +49,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 	private ulong _sequenceId;
 	private Atomic<TFPos> _lastPosition;
 	private readonly BufferedView _appender;
-	private Atomic.Boolean _committing;
+	private bool _committing;
 
 	public string IndexName { get; }
 
@@ -125,7 +127,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 		var streamId = resolvedEvent.Event.EventStreamId;
 		var created = new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds();
 		var fieldStr = field?.ToString();
-		var recordId = Span.AsReadOnlyBytes(in resolvedEvent.Event.EventId);
+		var recordId = MemoryMarshal.AsReadOnlyBytes(in resolvedEvent.Event.EventId);
 
 		_log.LogUserIndexIsAppendingEvent(IndexName, eventNumber, streamId, resolvedEvent.OriginalPosition, fieldStr);
 
@@ -227,7 +229,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 	/// Commits all in-flight records to the index.
 	/// </summary>
 	public override void Commit() {
-		if (IsDisposed || !_committing.FalseToTrue())
+		if (IsDisposed || !Interlocked.FalseToTrue(ref _committing))
 			return;
 
 		try {
@@ -238,7 +240,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 			_log.LogUserIndexFailedToCommit(ex, IndexName);
 			throw;
 		} finally {
-			_committing.TrueToFalse();
+			Volatile.Write(ref _committing, false);
 		}
 	}
 

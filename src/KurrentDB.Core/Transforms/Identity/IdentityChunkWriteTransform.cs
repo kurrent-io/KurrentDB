@@ -26,7 +26,7 @@ public sealed class IdentityChunkWriteTransform : IChunkWriteTransform {
 			: ValueTask.CompletedTask;
 
 		static async ValueTask WritePaddingAsync(ChunkDataWriteStream stream, int paddingSize, CancellationToken token) {
-			using var buffer = Memory.AllocateExactly<byte>(paddingSize);
+			using var buffer = MemoryAllocator<byte>.Default.AllocateExactly(paddingSize);
 			buffer.Span.Clear(); // ensure that the padding is zeroed
 			await stream.WriteAsync(buffer.Memory, token);
 		}

@@ -28,7 +28,7 @@ public class ArchiveStorageTests : ArchiveStorageTestsBase<ArchiveStorageTests> 
 		var localContent = await chunk.ReadAllBytes();
 
 		// read the uploaded chunk
-		using var buffer = Memory.AllocateExactly<byte>(1048);
+		using var buffer = MemoryAllocator<byte>.Default.AllocateExactly(1048);
 		var read = await sut.ReadAsync(0, buffer.Memory, offset: 0, CancellationToken.None);
 
 		// then
@@ -52,7 +52,7 @@ public class ArchiveStorageTests : ArchiveStorageTestsBase<ArchiveStorageTests> 
 		// read the uploaded chunk partially
 		var start = localContent.Length / 2;
 		var end = localContent.Length;
-		using var buffer = Memory.AllocateExactly<byte>(1048);
+		using var buffer = MemoryAllocator<byte>.Default.AllocateExactly(1048);
 		var read = await sut.ReadAsync(0, buffer.Memory, offset: start, CancellationToken.None);
 
 		// then
@@ -71,7 +71,7 @@ public class ArchiveStorageTests : ArchiveStorageTestsBase<ArchiveStorageTests> 
 		await sut.StoreChunk(chunk, CancellationToken.None);
 
 		// read the uploaded chunk partially
-		using var buffer = Memory.AllocateExactly<byte>(1048);
+		using var buffer = MemoryAllocator<byte>.Default.AllocateExactly(1048);
 		Assert.Equal(0, await sut.ReadAsync(0, buffer.Memory, offset: 1_000, CancellationToken.None));
 		Assert.Equal(0, await sut.ReadAsync(0, buffer.Memory, offset: 1_000_000, CancellationToken.None));
 	}
@@ -89,8 +89,7 @@ public class ArchiveStorageTests : ArchiveStorageTestsBase<ArchiveStorageTests> 
 		await sut.StoreChunk(chunk, CancellationToken.None);
 
 		// read the uploaded chunk partially
-		using var buffer = Memory.AllocateExactly<byte>(0);
-		Assert.Equal(0, await sut.ReadAsync(0, buffer.Memory, offset: 0, CancellationToken.None));
+		Assert.Equal(0, await sut.ReadAsync(0, Memory<byte>.Empty, offset: 0, CancellationToken.None));
 	}
 
 	[Theory]
@@ -105,9 +104,8 @@ public class ArchiveStorageTests : ArchiveStorageTestsBase<ArchiveStorageTests> 
 		await sut.StoreChunk(chunk, CancellationToken.None);
 
 		// read the uploaded chunk partially
-		using var buffer = Memory.AllocateExactly<byte>(0);
 		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => {
-			await sut.ReadAsync(0, buffer.Memory, offset: -1, CancellationToken.None);
+			await sut.ReadAsync(0, Memory<byte>.Empty, offset: -1, CancellationToken.None);
 		});
 	}
 
@@ -134,7 +132,7 @@ public class ArchiveStorageTests : ArchiveStorageTestsBase<ArchiveStorageTests> 
 
 		var localChunkContent = await localChunk.ReadAllBytes();
 
-		using var buffer = Memory.AllocateExactly<byte>(1048);
+		using var buffer = MemoryAllocator<byte>.Default.AllocateExactly(1048);
 		var read = await sut.ReadAsync(0, buffer.Memory, offset: 0, CancellationToken.None);
 		Assert.Equal(localChunkContent, buffer.Memory[..read].ToArray());
 	}
