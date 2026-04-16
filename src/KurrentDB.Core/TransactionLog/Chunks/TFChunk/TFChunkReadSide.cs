@@ -373,7 +373,7 @@ public partial class TFChunk {
 				? PosMap.FullSize
 				: PosMap.DeprecatedSize;
 
-			using var buffer = Memory.AllocateExactly<byte>(count * posmapSize);
+			using var buffer = MemoryAllocator<byte>.Default.AllocateExactly(count * posmapSize);
 			workItem.BaseStream.Position =
 				ChunkHeader.Size + Chunk.ChunkFooter.PhysicalDataSize + startIndex * posmapSize;
 
@@ -520,7 +520,7 @@ public partial class TFChunk {
 				return (null, -1);
 
 			int length;
-			var buffer = Memory.AllocateAtLeast<byte>(sizeof(int));
+			var buffer = MemoryAllocator<byte>.Default.AllocateAtLeast(sizeof(int));
 
 			// Perf: use 'try-catch' instead of 'using' to avoid defensive copy of 'buffer' caused by the compiler
 			try {
@@ -533,19 +533,19 @@ public partial class TFChunk {
 			// log record payload + length suffix
 			var lengthWithSuffix = length + sizeof(int);
 			ILogRecord record;
-			IBufferedReader bufferedReader = null;
+			PoolingBufferedStream bufferedReader = null;
 			try {
 				// Perf: if buffered stream contains necessary amount of buffered bytes, we can omit expensive buffer
 				// rental and copy
 				if ((bufferedReader = workItem.TryGetBufferedReader(lengthWithSuffix, out var input)) is null) {
-					buffer = Memory.AllocateExactly<byte>(lengthWithSuffix);
+					buffer = MemoryAllocator<byte>.Default.AllocateExactly(lengthWithSuffix);
 					await workItem.BaseStream.ReadExactlyAsync(buffer.Memory, token);
 					input = buffer.Memory;
 				} else {
 					Debug.Assert(buffer.IsEmpty);
 				}
 
-				var reader = new SequenceReader(new(input[..length]));
+				var reader = new SequenceReader(input[..length]);
 				record = LogRecord.ReadFrom(ref reader);
 
 				_tracker.OnRead(start, record, workItem.Source);
@@ -558,7 +558,7 @@ public partial class TFChunk {
 				throw new InvalidReadException(
 					$"Error while reading log record forwards at actual position {actualPosition}. {exc.Message}");
 			} finally {
-				bufferedReader?.Consume(lengthWithSuffix);
+				bufferedReader?.Read(lengthWithSuffix);
 				buffer.Dispose();
 			}
 
@@ -571,7 +571,7 @@ public partial class TFChunk {
 			if (!ValidateRecordPosition(actualPosition))
 				return default;
 
-			using var buffer = Memory.AllocateAtLeast<byte>(sizeof(int));
+			using var buffer = MemoryAllocator<byte>.Default.AllocateAtLeast(sizeof(int));
 			var length = await workItem.BaseStream.ReadLittleEndianAsync<int>(buffer.Memory, token);
 			ValidateRecordLength(length, actualPosition);
 
@@ -598,7 +598,7 @@ public partial class TFChunk {
 			int length;
 			MemoryOwner<byte> buffer;
 
-			using (buffer = Memory.AllocateAtLeast<byte>(sizeof(int))) {
+			using (buffer = MemoryAllocator<byte>.Default.AllocateAtLeast(sizeof(int))) {
 				length = await workItem.BaseStream.ReadLittleEndianAsync<int>(buffer.Memory, token);
 				if (length <= 0) {
 					throw new InvalidReadException(
@@ -630,10 +630,10 @@ public partial class TFChunk {
 			}
 
 			ILogRecord record;
-			buffer = Memory.AllocateExactly<byte>(length);
+			buffer = MemoryAllocator<byte>.Default.AllocateExactly(length);
 			try {
 				await workItem.BaseStream.ReadExactlyAsync(buffer.Memory, token);
-				var reader = new SequenceReader(new(buffer.Memory));
+				var reader = new SequenceReader(buffer.Memory);
 				record = LogRecord.ReadFrom(ref reader);
 			} catch (Exception exc) {
 				throw new InvalidReadException(

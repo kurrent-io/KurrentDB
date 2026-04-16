@@ -18,6 +18,7 @@ public class PinnedConsumerStrategyTests {
 		var client1Envelope = new FakeEnvelope();
 		var client2Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 
 		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToStreamParamsBuilder.CreateFor("$ce-streamName", "groupName")
@@ -25,6 +26,7 @@ public class PinnedConsumerStrategyTests {
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.CustomConsumerStrategy(new PinnedPersistentSubscriptionConsumerStrategy(new XXHashUnsafe()))
 				.StartFromCurrent());
 		reader.Load(null);
@@ -33,22 +35,26 @@ public class PinnedConsumerStrategyTests {
 
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-1", 0));
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-1", 1));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(2, client1Envelope.Replies.Count);
 		Assert.AreEqual(0, client2Envelope.Replies.Count);
 
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-2", 2));
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-2", 3));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(2, client1Envelope.Replies.Count);
 		Assert.AreEqual(2, client2Envelope.Replies.Count);
 
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-1", 4));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(3, client1Envelope.Replies.Count);
 		Assert.AreEqual(2, client2Envelope.Replies.Count);
 
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-3", 5));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(4, client1Envelope.Replies.Count);
 		Assert.AreEqual(2, client2Envelope.Replies.Count);
@@ -59,12 +65,14 @@ public class PinnedConsumerStrategyTests {
 		var client1Envelope = new FakeEnvelope();
 		var client2Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToStreamParamsBuilder.CreateFor("$ce-streamName", "groupName")
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.CustomConsumerStrategy(new PinnedPersistentSubscriptionConsumerStrategy(new XXHashUnsafe()))
 				.StartFromCurrent());
 		reader.Load(null);
@@ -72,21 +80,25 @@ public class PinnedConsumerStrategyTests {
 		sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-2", client2Envelope, 10, "foo", "bar");
 
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-1", 0));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(1, client1Envelope.Replies.Count);
 		Assert.AreEqual(0, client2Envelope.Replies.Count);
 
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-2", 1));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(1, client1Envelope.Replies.Count);
 		Assert.AreEqual(1, client2Envelope.Replies.Count);
 
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-3", 2));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(2, client1Envelope.Replies.Count);
 		Assert.AreEqual(1, client2Envelope.Replies.Count);
 
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-4", 4));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(2, client1Envelope.Replies.Count);
 		Assert.AreEqual(2, client2Envelope.Replies.Count);
@@ -97,6 +109,7 @@ public class PinnedConsumerStrategyTests {
 		var client1Envelope = new FakeEnvelope();
 		var client2Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		const string subsctiptionStream = "$ce-streamName";
 		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToStreamParamsBuilder.CreateFor(subsctiptionStream, "groupName")
@@ -104,6 +117,7 @@ public class PinnedConsumerStrategyTests {
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.CustomConsumerStrategy(new PinnedPersistentSubscriptionConsumerStrategy(new XXHashUnsafe()))
 				.StartFromCurrent());
 		reader.Load(null);
@@ -112,24 +126,28 @@ public class PinnedConsumerStrategyTests {
 
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildLinkEvent(Guid.NewGuid(), subsctiptionStream, 0,
 			Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-1", 0)));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(1, client1Envelope.Replies.Count);
 		Assert.AreEqual(0, client2Envelope.Replies.Count);
 
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildLinkEvent(Guid.NewGuid(), subsctiptionStream, 1,
 			Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-2", 0)));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(1, client1Envelope.Replies.Count);
 		Assert.AreEqual(1, client2Envelope.Replies.Count);
 
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildLinkEvent(Guid.NewGuid(), subsctiptionStream, 2,
 			Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-3", 0)));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(2, client1Envelope.Replies.Count);
 		Assert.AreEqual(1, client2Envelope.Replies.Count);
 
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildLinkEvent(Guid.NewGuid(), subsctiptionStream, 3,
 			Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-4", 0)));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(2, client1Envelope.Replies.Count);
 		Assert.AreEqual(2, client2Envelope.Replies.Count);
@@ -140,6 +158,7 @@ public class PinnedConsumerStrategyTests {
 		var client1Envelope = new FakeEnvelope();
 		var client2Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		const string subsctiptionStream = "$ce-streamName";
 		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToStreamParamsBuilder.CreateFor(subsctiptionStream, "groupName")
@@ -147,6 +166,7 @@ public class PinnedConsumerStrategyTests {
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.CustomConsumerStrategy(new PinnedPersistentSubscriptionConsumerStrategy(new XXHashUnsafe()))
 				.StartFromCurrent());
 		reader.Load(null);
@@ -155,24 +175,28 @@ public class PinnedConsumerStrategyTests {
 
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildLinkEvent(Guid.NewGuid(), subsctiptionStream, 0,
 			Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-1", 0), false));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(1, client1Envelope.Replies.Count);
 		Assert.AreEqual(0, client2Envelope.Replies.Count);
 
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildLinkEvent(Guid.NewGuid(), subsctiptionStream, 1,
 			Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-2", 0), false));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(1, client1Envelope.Replies.Count);
 		Assert.AreEqual(1, client2Envelope.Replies.Count);
 
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildLinkEvent(Guid.NewGuid(), subsctiptionStream, 2,
 			Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-3", 0), false));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(2, client1Envelope.Replies.Count);
 		Assert.AreEqual(1, client2Envelope.Replies.Count);
 
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildLinkEvent(Guid.NewGuid(), subsctiptionStream, 3,
 			Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-4", 0), false));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(2, client1Envelope.Replies.Count);
 		Assert.AreEqual(2, client2Envelope.Replies.Count);
@@ -183,6 +207,7 @@ public class PinnedConsumerStrategyTests {
 		var client1Envelope = new FakeEnvelope();
 		var client2Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		const string subsctiptionStream = "$ce-streamName";
 		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToStreamParamsBuilder.CreateFor(subsctiptionStream, "groupName")
@@ -190,6 +215,7 @@ public class PinnedConsumerStrategyTests {
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.CustomConsumerStrategy(new PinnedPersistentSubscriptionConsumerStrategy(new XXHashUnsafe()))
 				.StartFromCurrent());
 		reader.Load(null);
@@ -201,11 +227,13 @@ public class PinnedConsumerStrategyTests {
 			Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-1", 0), false));
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildLinkEvent(Guid.NewGuid(), subsctiptionStream, 1,
 			Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-2", 0), false));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(1, client1Envelope.Replies.Count);
 		Assert.AreEqual(1, client2Envelope.Replies.Count);
 
 		sub.RemoveClientByCorrelationId(client2Id, false);
+		pushScheduler.Push(sub);
 
 		// Message 2 should be retried on client 1 as it wasn't acked.
 		Assert.AreEqual(2, client1Envelope.Replies.Count);
@@ -218,6 +246,7 @@ public class PinnedConsumerStrategyTests {
 		var client2Envelope = new FakeEnvelope();
 		var client3Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		const string subsctiptionStream = "$ce-streamName";
 		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToStreamParamsBuilder.CreateFor(subsctiptionStream, "groupName")
@@ -225,6 +254,7 @@ public class PinnedConsumerStrategyTests {
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.CustomConsumerStrategy(new PinnedPersistentSubscriptionConsumerStrategy(new ByLengthHasher()))
 				.StartFromCurrent());
 		reader.Load(null);
@@ -237,6 +267,7 @@ public class PinnedConsumerStrategyTests {
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEvent(Guid.NewGuid(), "type", "1111", 3));
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEvent(Guid.NewGuid(), "type", "11111", 4));
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEvent(Guid.NewGuid(), "type", "111111", 5));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(3, client1Envelope.Replies.Count);
 		Assert.AreEqual(3, client2Envelope.Replies.Count);
@@ -249,6 +280,7 @@ public class PinnedConsumerStrategyTests {
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEvent(Guid.NewGuid(), "type", "1111", 9));
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEvent(Guid.NewGuid(), "type", "11111", 10));
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEvent(Guid.NewGuid(), "type", "111111", 11));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(5, client1Envelope.Replies.Count);
 		Assert.AreEqual(5, client2Envelope.Replies.Count);
@@ -260,6 +292,7 @@ public class PinnedConsumerStrategyTests {
 		var client1Envelope = new FakeEnvelope();
 		var client2Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		const string subsctiptionStream = "$ce-streamName";
 		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToStreamParamsBuilder.CreateFor(subsctiptionStream, "groupName")
@@ -267,6 +300,7 @@ public class PinnedConsumerStrategyTests {
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.CustomConsumerStrategy(new PinnedPersistentSubscriptionConsumerStrategy(new ByLengthHasher()))
 				.StartFromCurrent());
 		reader.Load(null);
@@ -276,11 +310,13 @@ public class PinnedConsumerStrategyTests {
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEvent(Guid.NewGuid(), "type", "1", 0));
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEvent(Guid.NewGuid(), "type", "11", 1));
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEvent(Guid.NewGuid(), "type", "111", 2));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(3, client1Envelope.Replies.Count);
 
 		var conn2Id = Guid.NewGuid();
 		sub.AddClient(Guid.NewGuid(), conn2Id, "connection-2", client2Envelope, 10, "foo", "bar");
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(3, client1Envelope.Replies.Count);
 		Assert.AreEqual(0, client2Envelope.Replies.Count);
@@ -296,6 +332,7 @@ public class PinnedConsumerStrategyTests {
 		var client1Envelope = new FakeEnvelope();
 		var client2Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		const string subsctiptionStream = "$ce-streamName";
 		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToStreamParamsBuilder.CreateFor(subsctiptionStream, "groupName")
@@ -303,6 +340,7 @@ public class PinnedConsumerStrategyTests {
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.CustomConsumerStrategy(new PinnedPersistentSubscriptionConsumerStrategy(new XXHashUnsafe()))
 				.StartFromCurrent());
 		reader.Load(null);
@@ -314,11 +352,13 @@ public class PinnedConsumerStrategyTests {
 			Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-1", 0), false));
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildLinkEvent(Guid.NewGuid(), subsctiptionStream, 1,
 			Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-2", 0), false));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(1, client1Envelope.Replies.Count);
 		Assert.AreEqual(1, client2Envelope.Replies.Count);
 
 		Assert.IsTrue(sub.RemoveClientByConnectionId(client2Id));
+		pushScheduler.Push(sub);
 
 		// Message 2 should be retried on client 1 as it wasn't acked.
 		Assert.AreEqual(2, client1Envelope.Replies.Count);
@@ -330,6 +370,7 @@ public class PinnedConsumerStrategyTests {
 		var client1Envelope = new FakeEnvelope();
 		var client2Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		const string subsctiptionStream = "$ce-streamName";
 		PersistentSubscriptionParams settings = PersistentSubscriptionToStreamParamsBuilder
 			.CreateFor(subsctiptionStream, "groupName")
@@ -337,6 +378,7 @@ public class PinnedConsumerStrategyTests {
 			.WithCheckpointReader(reader)
 			.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 			.WithMessageParker(new FakeMessageParker())
+			.WithPushScheduler(pushScheduler)
 			.CustomConsumerStrategy(new PinnedPersistentSubscriptionConsumerStrategy(new XXHashUnsafe()))
 			.StartFromCurrent();
 		var consumerStrategy = (PinnedPersistentSubscriptionConsumerStrategy)settings.ConsumerStrategy;
@@ -353,10 +395,12 @@ public class PinnedConsumerStrategyTests {
 		Assert.That(consumerStrategy.AvailableCapacity, Is.EqualTo(24));
 
 		Assert.IsTrue(sub.RemoveClientByConnectionId(client2Id));
+		pushScheduler.Push(sub);
 
 		Assert.That(consumerStrategy.AvailableCapacity, Is.EqualTo(14));
 
 		Assert.IsTrue(sub.RemoveClientByConnectionId(client1Id));
+		pushScheduler.Push(sub);
 
 		Assert.That(consumerStrategy.AvailableCapacity, Is.EqualTo(0));
 	}
@@ -366,6 +410,7 @@ public class PinnedConsumerStrategyTests {
 		var client1Envelope = new FakeEnvelope();
 		var client2Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		const string subsctiptionStream = "$ce-streamName";
 		PersistentSubscriptionParams settings = PersistentSubscriptionToStreamParamsBuilder
 			.CreateFor(subsctiptionStream, "groupName")
@@ -373,6 +418,7 @@ public class PinnedConsumerStrategyTests {
 			.WithCheckpointReader(reader)
 			.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 			.WithMessageParker(new FakeMessageParker())
+			.WithPushScheduler(pushScheduler)
 			.CustomConsumerStrategy(new PinnedPersistentSubscriptionConsumerStrategy(new XXHashUnsafe()))
 			.StartFromCurrent();
 		var consumerStrategy = (PinnedPersistentSubscriptionConsumerStrategy)settings.ConsumerStrategy;
@@ -389,19 +435,23 @@ public class PinnedConsumerStrategyTests {
 
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildLinkEvent(Guid.NewGuid(), subsctiptionStream, 0,
 			Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-1", 0), false));
+		pushScheduler.Push(sub);
 
 		Assert.That(consumerStrategy.AvailableCapacity, Is.EqualTo(23));
 
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildLinkEvent(Guid.NewGuid(), subsctiptionStream, 1,
 			Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-2", 0), false));
+		pushScheduler.Push(sub);
 
 		Assert.That(consumerStrategy.AvailableCapacity, Is.EqualTo(22));
 
 		Assert.IsTrue(sub.RemoveClientByConnectionId(client2Id));
+		pushScheduler.Push(sub);
 
 		Assert.That(consumerStrategy.AvailableCapacity, Is.EqualTo(12));
 
 		Assert.IsTrue(sub.RemoveClientByConnectionId(client1Id));
+		pushScheduler.Push(sub);
 
 		Assert.That(consumerStrategy.AvailableCapacity, Is.EqualTo(0));
 	}
@@ -411,6 +461,7 @@ public class PinnedConsumerStrategyTests {
 		var client1Envelope = new FakeEnvelope();
 		var client2Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		const string subsctiptionStream = "$ce-streamName";
 		PersistentSubscriptionParams settings = PersistentSubscriptionToStreamParamsBuilder
 			.CreateFor(subsctiptionStream, "groupName")
@@ -418,6 +469,7 @@ public class PinnedConsumerStrategyTests {
 			.WithCheckpointReader(reader)
 			.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 			.WithMessageParker(new FakeMessageParker())
+			.WithPushScheduler(pushScheduler)
 			.CustomConsumerStrategy(new PinnedPersistentSubscriptionConsumerStrategy(new XXHashUnsafe()))
 			.StartFromCurrent();
 		var consumerStrategy = (PinnedPersistentSubscriptionConsumerStrategy)settings.ConsumerStrategy;
@@ -435,20 +487,24 @@ public class PinnedConsumerStrategyTests {
 		var message1 = Guid.NewGuid();
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildLinkEvent(message1, subsctiptionStream, 0,
 			Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-1", 0), false));
+		pushScheduler.Push(sub);
 
 		Assert.That(consumerStrategy.AvailableCapacity, Is.EqualTo(23));
 
 		var message2 = Guid.NewGuid();
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildLinkEvent(message2, subsctiptionStream, 1,
 			Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-2", 0), false));
+		pushScheduler.Push(sub);
 
 		Assert.That(consumerStrategy.AvailableCapacity, Is.EqualTo(22));
 
 		sub.AcknowledgeMessagesProcessed(correlationId1, new[] { message1 });
+		pushScheduler.Push(sub);
 
 		Assert.That(consumerStrategy.AvailableCapacity, Is.EqualTo(23));
 
 		sub.AcknowledgeMessagesProcessed(correlationId2, new[] { message2 });
+		pushScheduler.Push(sub);
 
 		Assert.That(consumerStrategy.AvailableCapacity, Is.EqualTo(24));
 	}
@@ -458,6 +514,7 @@ public class PinnedConsumerStrategyTests {
 		var client1Envelope = new FakeEnvelope();
 		var client2Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		const string subsctiptionStream = "$ce-streamName";
 		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToStreamParamsBuilder.CreateFor(subsctiptionStream, "groupName")
@@ -465,6 +522,7 @@ public class PinnedConsumerStrategyTests {
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.CustomConsumerStrategy(new PinnedPersistentSubscriptionConsumerStrategy(new XXHashUnsafe()))
 				.StartFromCurrent());
 		reader.Load(null);
@@ -478,12 +536,14 @@ public class PinnedConsumerStrategyTests {
 		var message1 = Guid.NewGuid();
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildLinkEvent(message1, subsctiptionStream, 0,
 			Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-1", 0), false));
+		pushScheduler.Push(sub);
 
 		Assert.That(client1Envelope.Replies.Count, Is.EqualTo(1));
 		Assert.That(client2Envelope.Replies.Count, Is.EqualTo(0));
 
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildLinkEvent(Guid.NewGuid(), subsctiptionStream, 1,
 			Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-1", 0), false));
+		pushScheduler.Push(sub);
 
 		Assert.That(client1Envelope.Replies.Count, Is.EqualTo(1));
 		Assert.That(client2Envelope.Replies.Count, Is.EqualTo(0));
@@ -492,6 +552,7 @@ public class PinnedConsumerStrategyTests {
 
 		sub.NotifyLiveSubscriptionMessage(Helper.BuildLinkEvent(Guid.NewGuid(), subsctiptionStream, 2,
 			Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamName-2", 0), false));
+		pushScheduler.Push(sub);
 
 		Assert.That(client1Envelope.Replies.Count, Is.EqualTo(1));
 		Assert.That(client2Envelope.Replies.Count, Is.EqualTo(1));
@@ -499,6 +560,7 @@ public class PinnedConsumerStrategyTests {
 		Assert.That(streamBuffer.BufferCount, Is.EqualTo(1));
 
 		sub.AcknowledgeMessagesProcessed(correlationId, new[] { message1 });
+		pushScheduler.Push(sub);
 
 		Assert.That(client1Envelope.Replies.Count, Is.EqualTo(2));
 		Assert.That(client2Envelope.Replies.Count, Is.EqualTo(1));

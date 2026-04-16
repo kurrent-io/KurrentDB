@@ -19,7 +19,7 @@ internal static class CategorySql {
 			};
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select log_position, commit_position, event_number from idx_all_snapshot where category=$1 and log_position>$2 order by coalesce(commit_position, log_position) limit $3"u8;
+			"select log_position, commit_position, stream_revision from idx_all_snapshot where category=$1 and log_position>$2 order by coalesce(commit_position, log_position) limit $3"u8;
 
 		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.TryReadInt64(), row.ReadInt64());
 	}
@@ -36,7 +36,7 @@ internal static class CategorySql {
 			};
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select log_position, commit_position, event_number from idx_all_snapshot where category=$1 and log_position>=$2 order by coalesce(commit_position, log_position) limit $3"u8;
+			"select log_position, commit_position, stream_revision from idx_all_snapshot where category=$1 and log_position>=$2 order by coalesce(commit_position, log_position) limit $3"u8;
 
 		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.TryReadInt64(), row.ReadInt64());
 	}
@@ -53,7 +53,7 @@ internal static class CategorySql {
 			};
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select log_position, commit_position, event_number from idx_all_snapshot where category=$1 and log_position<$2 order by coalesce(commit_position, log_position) desc, log_position desc limit $3"u8;
+			"select log_position, commit_position, stream_revision from idx_all_snapshot where category=$1 and log_position<$2 order by coalesce(commit_position, log_position) desc, log_position desc limit $3"u8;
 
 		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.TryReadInt64(), row.ReadInt64());
 	}
@@ -70,7 +70,7 @@ internal static class CategorySql {
 			};
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select log_position, commit_position, event_number from idx_all_snapshot where category=$1 and log_position<=$2 order by coalesce(commit_position, log_position) desc, log_position desc limit $3"u8;
+			"select log_position, commit_position, stream_revision from idx_all_snapshot where category=$1 and log_position<=$2 order by coalesce(commit_position, log_position) desc, log_position desc limit $3"u8;
 
 		public static IndexQueryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.TryReadInt64(), row.ReadInt64());
 	}

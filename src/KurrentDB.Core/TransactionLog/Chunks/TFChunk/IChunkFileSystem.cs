@@ -55,7 +55,7 @@ public static class ChunkFileSystem {
 				$"Chunk file '{fileName}' is bad. It does not have enough size for header and footer. File size is {length} bytes."));
 		}
 
-		using var buffer = Memory.AllocateExactly<byte>(ChunkHeader.Size);
+		using var buffer = MemoryAllocator<byte>.Default.AllocateExactly(ChunkHeader.Size);
 		await handle.ReadAsync(buffer.Memory, offset: 0, token);
 		return new(buffer.Span);
 	}
@@ -72,7 +72,7 @@ public static class ChunkFileSystem {
 				$"Chunk file '{fileName}' is bad. It does not have enough size for header and footer. File size is {length} bytes."));
 		}
 
-		using var buffer = Memory.AllocateExactly<byte>(ChunkFooter.Size);
+		using var buffer = MemoryAllocator<byte>.Default.AllocateExactly(ChunkFooter.Size);
 		await handle.ReadAsync(buffer.Memory, length - ChunkFooter.Size, token);
 		return new(buffer.Span);
 	}

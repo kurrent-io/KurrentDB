@@ -1213,6 +1213,7 @@ public class ClusterVNode<TStreamId> :
 		_mainBus.Subscribe<MonitoringMessage.GetStreamPersistentSubscriptionStats>(perSubscrQueue);
 		_mainBus.Subscribe<MonitoringMessage.GetPersistentSubscriptionStats>(perSubscrQueue);
 		_mainBus.Subscribe<SubscriptionMessage.PersistentSubscriptionTimerTick>(perSubscrQueue);
+		_mainBus.Subscribe<SubscriptionMessage.PersistentSubscriptionPushToClients>(perSubscrQueue);
 		_mainBus.Subscribe<SubscriptionMessage.PersistentSubscriptionsRestart>(perSubscrQueue);
 
 		//TODO CC can have multiple threads working on subscription if partition
@@ -1244,6 +1245,7 @@ public class ClusterVNode<TStreamId> :
 		perSubscrBus.Subscribe<MonitoringMessage.GetPersistentSubscriptionStats>(persistentSubscription);
 		perSubscrBus.Subscribe<TelemetryMessage.Request>(persistentSubscription);
 		perSubscrBus.Subscribe<SubscriptionMessage.PersistentSubscriptionTimerTick>(persistentSubscription);
+		perSubscrBus.Subscribe<SubscriptionMessage.PersistentSubscriptionPushToClients>(persistentSubscription);
 		perSubscrBus.Subscribe<SubscriptionMessage.PersistentSubscriptionsRestart>(persistentSubscription);
 
 		// STORAGE SCAVENGER

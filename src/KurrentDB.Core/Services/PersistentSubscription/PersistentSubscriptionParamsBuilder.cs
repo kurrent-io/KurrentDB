@@ -25,6 +25,7 @@ public abstract class PersistentSubscriptionParamsBuilder {
 	private IPersistentSubscriptionStreamReader _streamReader;
 	private IPersistentSubscriptionCheckpointReader _checkpointReader;
 	private IPersistentSubscriptionCheckpointWriter _checkpointWriter;
+	private IPersistentSubscriptionPushScheduler _pushScheduler = IPersistentSubscriptionPushScheduler.NoOp;
 	private IPersistentSubscriptionMessageParker _messageParker;
 	private TimeSpan _checkPointAfter;
 	private int _minCheckPointCount;
@@ -70,6 +71,11 @@ public abstract class PersistentSubscriptionParamsBuilder {
 	/// <returns></returns>
 	public PersistentSubscriptionParamsBuilder WithEventSource(IPersistentSubscriptionEventSource eventSource) {
 		_eventSource = eventSource;
+		return this;
+	}
+
+	public PersistentSubscriptionParamsBuilder WithPushScheduler(IPersistentSubscriptionPushScheduler pushScheduler) {
+		_pushScheduler = pushScheduler;
 		return this;
 	}
 
@@ -314,6 +320,7 @@ public abstract class PersistentSubscriptionParamsBuilder {
 			builder._streamReader,
 			builder._checkpointReader,
 			builder._checkpointWriter,
+			builder._pushScheduler,
 			builder._messageParker);
 	}
 }

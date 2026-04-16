@@ -108,8 +108,8 @@ public class IndexesSubscriptionTests {
 		await using var allFieldsEnumerator2 = StreamsReadClient.SubscribeToAllFiltered(allFields, ct).GetAsyncEnumerator(ct);
 		await using var mauritiusEnumerator2 = StreamsReadClient.SubscribeToAllFiltered(mauritiusField, ct).GetAsyncEnumerator(ct);
 
-		await allFieldsEnumerator2.SkipAsync(5);
-		await mauritiusEnumerator2.SkipAsync(3);
+		await Assert.That(await (allFieldsEnumerator2 << 5)).IsTrue();
+		await Assert.That(await (mauritiusEnumerator2 << 3)).IsTrue();
 
 		// receive the extra events
 		await Assert.That((await allFieldsEnumerator2.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "F", """);

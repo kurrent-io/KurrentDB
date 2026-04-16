@@ -179,8 +179,8 @@ public partial class TFChunk : IChunkBlob {
 	private ChunkHeader _chunkHeader;
 	private ChunkFooter _chunkFooter;
 
-	private ReaderWorkItemPool _fileStreams;
-	private ReaderWorkItemPool _memStreams;
+	private readonly BoundedObjectPool<ReaderWorkItem> _fileStreams;
+	private readonly BoundedObjectPool<ReaderWorkItem> _memStreams;
 
 	// This field established happens-before relationship with _memStreams as follows:
 	// if _memStreams has at least one available item in the pool then _sharedMemStream != null
@@ -261,8 +261,8 @@ public partial class TFChunk : IChunkBlob {
 		_unbuffered = unbuffered;
 		_writeThrough = writethrough;
 		_reduceFileCachePressure = reduceFileCachePressure;
-		_memStreams = new();
-		_fileStreams = new();
+		_memStreams = new(ReaderWorkItemPool.Capacity);
+		_fileStreams = new(ReaderWorkItemPool.Capacity);
 		_fileSystem = fileSystem;
 		_getTransformFactory = getTransformFactory;
 
@@ -582,8 +582,17 @@ public partial class TFChunk : IChunkBlob {
 	// We therefore only read from memory while the chunk is still being written to, and only create
 	// the file streams when the chunk is being completed.
 	private void CreateReaderStreams() {
-		_fileStreams.Reuse();
-		Interlocked.Add(ref _fileStreamCount, IndexPool.Capacity);
+		_fileStreams.TryReturn(new(_handle, _transform.Read, IsRemote));
+		Interlocked.Add(ref _fileStreamCount, 1);
+	}
+
+	// we add an item to the pool because the pool being entirely empty means we may be uncaching (see GetReaderWorkItem)
+	// returns the number of readers created
+	private int CreateInMemReaderStreams() {
+		const int CountCreated = 1;
+		Interlocked.Add(ref _memStreamCount, CountCreated);
+		_memStreams.TryReturn(new(_sharedMemStream, _cachedDataTransformed ? _transform.Read : IdentityChunkReadTransform.Instance));
+		return CountCreated;
 	}
 
 	private async ValueTask CreateInMemChunk(ChunkHeader chunkHeader, int fileSize, ReadOnlyMemory<byte> transformHeader, CancellationToken token) {
@@ -608,8 +617,7 @@ public partial class TFChunk : IChunkBlob {
 
 		// READER STREAMS
 		_sharedMemStream = CreateSharedMemoryStream();
-		Interlocked.Add(ref _memStreamCount, IndexPool.Capacity);
-		_memStreams.Reuse();
+		CreateInMemReaderStreams();
 
 		// should never happen in practice because this function is called from the static TFChunk constructors
 		Debug.Assert(!_selfdestructin54321);
@@ -621,8 +629,8 @@ public partial class TFChunk : IChunkBlob {
 		Debug.Assert(_cachedData is not 0);
 		Debug.Assert(_cachedLength > 0);
 
-		ReadOnlyMemory<byte> memoryView = UnmanagedMemory.AsMemory((byte*)_cachedData, _cachedLength);
-		return StreamSource.AsSharedStream(new(memoryView), compatWithAsync: true);
+		ReadOnlyMemory<byte> memoryView = MemoryMarshal.AsMemory((byte*)_cachedData, _cachedLength);
+		return Stream.CreateShared(new(memoryView), compatWithAsync: true);
 	}
 
 	private FileOptions WritableHandleOptions {
@@ -704,7 +712,7 @@ public partial class TFChunk : IChunkBlob {
 				stream.Seek(0, SeekOrigin.Begin);
 				chunkHeader = newHeader;
 
-				using (var buffer = Memory.AllocateExactly<byte>(ChunkHeader.Size)) {
+				using (var buffer = MemoryAllocator<byte>.Default.AllocateExactly(ChunkHeader.Size)) {
 					await stream.WriteAsync(newHeader, buffer.Memory, token);
 				}
 
@@ -889,11 +897,10 @@ public partial class TFChunk : IChunkBlob {
 			}
 
 			_sharedMemStream = CreateSharedMemoryStream();
-			Interlocked.Add(ref _memStreamCount, IndexPool.Capacity);
-			_memStreams.Reuse();
+			var countCreated = CreateInMemReaderStreams();
 
 			if (_selfdestructin54321) {
-				if (Interlocked.Add(ref _memStreamCount, -IndexPool.Capacity) is 0)
+				if (Interlocked.Add(ref _memStreamCount, -countCreated) is 0)
 					FreeCachedDataUnsafe();
 				Log.Debug("CACHING ABORTED for TFChunk {chunk} as TFChunk was probably marked for deletion.", this);
 				return;
@@ -1026,7 +1033,7 @@ public partial class TFChunk : IChunkBlob {
 		if (workItem.TryGetDirectBuffer(length) is { IsEmpty: false } directBuf) {
 			var bytesWritten = SerializeLogRecordDirectly(record, directBuf.Span);
 			Debug.Assert(bytesWritten == length);
-			workItem.AppendData(bytesWritten);
+			workItem.AppendData(directBuf.Span);
 		} else {
 			using var dataOnDisk = SerializeLogRecord(record, length);
 			await workItem.AppendData(dataOnDisk.Memory, token);
@@ -1086,7 +1093,7 @@ public partial class TFChunk : IChunkBlob {
 
 		if (workItem.TryGetDirectBuffer(buffer.Length) is { IsEmpty: false } directBuf) {
 			buffer.CopyTo(directBuf);
-			workItem.AppendData(buffer.Length);
+			workItem.AppendData(directBuf.Span);
 		} else {
 			await workItem.AppendData(buffer, token);
 		}
@@ -1380,20 +1387,14 @@ public partial class TFChunk : IChunkBlob {
 			throw new FileBeingDeletedException();
 
 		// try get memory stream reader first
-		if (_memStreams.TryTake(out var slot)) {
+		if (_memStreams.TryGet() is { } memoryWorkItem) {
 			// When caching, _cachedDataTransformed and _sharedMemStream are both set before
-			// _memStreams.Reuse() (which repopulates the pool that was definitely empty)
+			// we push at least one work item to the pool.
 			// The Interlocked.Add(_memStreamCount) barrier guarantees the order.
 			// So since we have got a slot from the pool, we are guaranteed that _sharedMemStream and
 			// _cachedDataTransformed are populated with the correct values and further more their
 			// values will not change because we have the slot, preventing any uncaching.
 			Debug.Assert(_sharedMemStream is not null);
-
-			if (slot.ValueRef is not { } memoryWorkItem) {
-				memoryWorkItem = slot.ValueRef = new(
-					_sharedMemStream,
-					_cachedDataTransformed ? _transform.Read : IdentityChunkReadTransform.Instance) { PositionInPool = slot.Index };
-			}
 
 			return memoryWorkItem;
 		} else if (_selfdestructin54321) {
@@ -1421,10 +1422,7 @@ public partial class TFChunk : IChunkBlob {
 		}
 
 		// get a filestream from the pool, or create one if the pool is empty.
-		if (_fileStreams.TryTake(out slot)) {
-			if (slot.ValueRef is not { } fileStreamWorkItem)
-				slot.ValueRef = fileStreamWorkItem = new(_handle, _transform.Read, IsRemote) { PositionInPool = slot.Index };
-
+		if (_fileStreams.TryGet() is { } fileStreamWorkItem) {
 			return fileStreamWorkItem;
 		}
 
@@ -1471,8 +1469,8 @@ public partial class TFChunk : IChunkBlob {
 			// low (or possibly none), because Caching is the only slow operation while holding
 			// the lock and it only occurs when there are no outstanding memory readers, but we know
 			// there is one currently because we are in the process of returning it.
-			if (!_memStreams.Return(item)) {
-				// item was not taken from the pool, destroy immediately
+			if (!_memStreams.TryReturn(item)) {
+				// item cannot be returned, destroy immediately
 				item.Dispose();
 				Interlocked.Decrement(ref _memStreamCount);
 			}
@@ -1481,8 +1479,8 @@ public partial class TFChunk : IChunkBlob {
 			if (_cacheStatus is CacheStatus.Uncaching || _selfdestructin54321)
 				TryDestructMemStreams();
 		} else {
-			if (!_fileStreams.Return(item)) {
-				// item was not taken from the pool, destroy immediately
+			if (!_fileStreams.TryReturn(item)) {
+				// item cannot be returned, destroy immediately
 				item.Dispose();
 				Interlocked.Decrement(ref _fileStreamCount);
 			}
@@ -1720,79 +1718,6 @@ public partial class TFChunk : IChunkBlob {
 
 		public override string ToString() => $"ItemIndex: {ItemIndex}, LogPos: {LogPos}";
 	}
-
-	// all public members are thread-safe
-	[StructLayout(LayoutKind.Auto)]
-	private struct ReaderWorkItemPool() {
-		private volatile ReaderWorkItem[] _array;
-
-		// IndexPool supports up to 64 elements with O(1) take/return time complexity.
-		// It's a thread-safe data structure with no allocations that provide predictability about
-		// the indices: smallest available index is always preferred.
-		private IndexPool _indices = new() { IsEmpty = true };
-
-		public void Reuse() {
-			if (_array is null) {
-				Interlocked.CompareExchange(ref _array, new ReaderWorkItem[IndexPool.Capacity], null);
-			}
-
-			_indices.Reset();
-		}
-
-		// Skip index and type variance checks which is inserted by runtime typically because
-		// the array element is of reference type.
-		private static ref ReaderWorkItem UnsafeGetElement(ReaderWorkItem[] array, int index) {
-			Debug.Assert((uint)index < (uint)array.Length);
-
-			return ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(array), index);
-		}
-
-		// releases all available slots in the pool
-		public int Drain(ref int referenceCount) {
-			int localReferenceCount = Interlocked.CompareExchange(ref referenceCount, 0, 0);
-
-			if (_array is { } array && localReferenceCount > 0) {
-				Span<int> indices = stackalloc int[IndexPool.Capacity];
-				int count = _indices.Take(indices);
-
-				foreach (var index in indices.Slice(0, count)) {
-					ref ReaderWorkItem slot = ref UnsafeGetElement(array, index);
-					slot?.Dispose();
-					slot = null;
-
-					localReferenceCount = Interlocked.Decrement(ref referenceCount);
-				}
-			}
-
-			return localReferenceCount;
-		}
-
-		public bool TryTake(out Slot slot) {
-			if (_array is { } array && _indices.TryTake(out int index)) {
-				slot = new(array, index);
-				return true;
-			}
-
-			slot = default;
-			return false;
-		}
-
-		public bool Return(ReaderWorkItem item) {
-			int index = item.PositionInPool;
-			if (index < 0)
-				return false;
-
-			_indices.Return(index);
-			return true;
-		}
-
-		[StructLayout(LayoutKind.Auto)]
-		internal readonly ref struct Slot(ReaderWorkItem[] array, int index) {
-			public int Index => index;
-
-			public ref ReaderWorkItem ValueRef => ref UnsafeGetElement(array, index);
-		}
-	}
 }
 
 /// <summary>
@@ -1801,3 +1726,20 @@ public partial class TFChunk : IChunkBlob {
 [AttributeUsage(AttributeTargets.Method)]
 [Conditional("DEBUG")]
 file sealed class InitializationNotRequiredAttribute : Attribute;
+
+file static class ReaderWorkItemPool {
+	public const int Capacity = 64;
+
+	public static int Drain(this BoundedObjectPool<ReaderWorkItem> pool, ref int referenceCount) {
+		int localReferenceCount = Interlocked.CompareExchange(ref referenceCount, 0, 0);
+
+		if (localReferenceCount > 0) {
+			while (pool.TryGet() is { } workItem) {
+				workItem.Dispose();
+				localReferenceCount = Interlocked.Decrement(ref referenceCount);
+			}
+		}
+
+		return localReferenceCount;
+	}
+}

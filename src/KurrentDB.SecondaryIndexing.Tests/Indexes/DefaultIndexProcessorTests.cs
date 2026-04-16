@@ -174,7 +174,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest<DefaultIndexProc
 		var records = new List<string>();
 		using (DuckDb.Rent(out var connection)) {
 			using (_processor.CaptureSnapshot(connection)) {
-				using var result = connection.ExecuteAdHocQuery("select distinct event_type from idx_all order by log_position"u8);
+				using var result = connection.ExecuteAdHocQuery("select distinct schema_name from idx_all order by log_position"u8);
 				while (result.TryFetch(out var chunk)) {
 					using (chunk) {
 						while (chunk.TryRead(out var row)) {

@@ -6,7 +6,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using DotNext.IO;
+using DotNext.Buffers;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.Transport.Tcp.Framing;

@@ -15,8 +15,9 @@ using KurrentDB.Core.Services.UserManagement;
 namespace KurrentDB.SecondaryIndexing.Indexes;
 
 internal abstract class GetDatabaseEventsFunction<TReturnType>(string functionName, Func<long[], ClaimsPrincipal, IEnumerator<ReadResponse>> eventsProvider) : ScalarFunction<TReturnType>(functionName)
-	where TReturnType : ICompositeReturnType, allows ref struct
-{
+	where TReturnType : ICompositeReturnType, allows ref struct {
+	protected static ReadOnlySpan<byte> EmptyJsonUtf8 => "{}"u8;
+
 	// Accepts log_position
 	protected sealed override IReadOnlyList<ParameterDefinition> Parameters => [new(DuckDBType.BigInt)];
 

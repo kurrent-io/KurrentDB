@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using DotNext.Threading;
-using DuckDB.NET.Data;
 using Kurrent.Quack;
 
 namespace KurrentDB.DuckDB;
@@ -13,10 +12,10 @@ public interface IDuckDBSetup {
 }
 
 public abstract class DuckDBOneTimeSetup : IDuckDBSetup {
-	private Atomic.Boolean _created;
+	private bool _created;
 
 	public void Execute(DuckDBAdvancedConnection connection) {
-		if (!_created.FalseToTrue()) {
+		if (!Interlocked.FalseToTrue(ref _created)) {
 			return;
 		}
 		ExecuteCore(connection);
