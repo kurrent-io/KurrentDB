@@ -2,12 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.IO;
 using System.Linq;
 using System.Runtime;
-using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB;
@@ -126,19 +123,12 @@ try {
 		X509Certificate2 devCert = null;
 
 		// If a cert path is specified, try to load an existing cert from it
-		if (!string.IsNullOrEmpty(devCertPath) && File.Exists(devCertPath)) {
-			try {
-				var loaded = new X509Certificate2(devCertPath, (string)null,
-					X509KeyStorageFlags.EphemeralKeySet | X509KeyStorageFlags.Exportable);
-				if (CertificateManager.IsHttpsDevelopmentCertificate(loaded) && loaded.NotAfter > DateTimeOffset.UtcNow) {
-					devCert = loaded;
-					Log.Information("Dev certificate loaded from {path}", devCertPath);
-				} else {
-					loaded.Dispose();
-					Log.Warning("Dev certificate at {path} is invalid or expired, generating a new one.", devCertPath);
-				}
-			} catch (Exception ex) {
-				Log.Warning("Failed to load dev certificate from {path}: {error}. Generating a new one.", devCertPath, ex.Message);
+		if (!string.IsNullOrEmpty(devCertPath)) {
+			devCert = DevCertificateFile.TryLoad(devCertPath);
+			if (devCert is not null) {
+				Log.Information("Dev certificate loaded from {path}", devCertPath);
+			} else if (System.IO.File.Exists(devCertPath)) {
+				Log.Warning("Dev certificate at {path} is invalid or expired, generating a new one.", devCertPath);
 			}
 		}
 
@@ -153,12 +143,12 @@ try {
 				return 1;
 			}
 
-			if (!string.IsNullOrEmpty(devCertPath) && File.Exists(devCertPath)) {
+			if (!string.IsNullOrEmpty(devCertPath)) {
 				// Load the cert we just exported to the file
-				devCert = new X509Certificate2(devCertPath, (string)null,
-					X509KeyStorageFlags.EphemeralKeySet | X509KeyStorageFlags.Exportable);
-				Log.Information("Dev certificate saved to {path}", devCertPath);
-			} else {
+				devCert = DevCertificateFile.TryLoad(devCertPath);
+			}
+
+			if (devCert is null) {
 				// Load from the X509 store
 				var userCerts = manager.ListCertificates(StoreName.My, StoreLocation.CurrentUser, true);
 				var machineCerts = manager.ListCertificates(StoreName.My, StoreLocation.LocalMachine, true);
@@ -170,18 +160,19 @@ try {
 				}
 
 				devCert = certs[0];
+			} else {
+				Log.Information("Dev certificate saved to {path}", devCertPath);
 			}
 		}
 
 		// Write public cert as .crt for clients to trust
 		if (!string.IsNullOrEmpty(devCertPath)) {
-			var crtPath = Path.ChangeExtension(devCertPath, ".crt");
 			try {
-				var pem = new string(PemEncoding.Write("CERTIFICATE", devCert.Export(X509ContentType.Cert)));
-				File.WriteAllText(crtPath, pem, Encoding.ASCII);
-				Log.Information("Dev certificate public key saved to {path} (use this to configure client trust)", crtPath);
+				DevCertificateFile.WritePublicCertificate(devCert, devCertPath);
+				Log.Information("Dev certificate public key saved to {path} (use this to configure client trust)",
+					System.IO.Path.ChangeExtension(devCertPath, ".crt"));
 			} catch (Exception ex) {
-				Log.Warning("Could not write public certificate to {path}: {error}", crtPath, ex.Message);
+				Log.Warning("Could not write public certificate: {error}", ex.Message);
 			}
 		}
 
