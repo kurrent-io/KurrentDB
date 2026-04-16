@@ -189,7 +189,7 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:NodeTcpPort", extTcpPort.ToString()),
 				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:NodeHeartbeatInterval", "10000"),
 				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:NodeHeartbeatTimeout", "10000"),
-				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:DisableTls", options.Application.TlsDisabled.ToString()),
+				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:DisableTls", options.Application.TlsDisabled().ToString()),
 			]);
 
 		if (configuration is not null)

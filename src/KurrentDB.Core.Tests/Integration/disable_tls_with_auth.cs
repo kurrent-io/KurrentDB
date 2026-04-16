@@ -44,8 +44,7 @@ public class when_running_with_disable_tls<TLogFormat, TStreamId>
 
 	[Test]
 	public async Task authenticated_request_succeeds() {
-		// Create a new request with admin credentials
-		using var request = new HttpRequestMessage(HttpMethod.Get, "/info");
+		using var request = new HttpRequestMessage(HttpMethod.Get, "/streams/$all");
 		request.Headers.Authorization = new AuthenticationHeaderValue(
 			"Basic",
 			Convert.ToBase64String(Encoding.ASCII.GetBytes("admin:changeit")));

@@ -32,7 +32,7 @@ public class when_running_insecure_with_disable_tls<TLogFormat, TStreamId>
 
 	[Test]
 	public async Task unauthenticated_request_succeeds() {
-		// In insecure mode, auth is disabled, so unauthenticated access should work
+		// In insecure mode, auth is disabled — verify node responds to requests
 		var response = await _node.HttpClient.GetAsync("/info");
 		Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 	}
