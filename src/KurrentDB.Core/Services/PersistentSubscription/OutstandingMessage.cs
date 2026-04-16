@@ -7,7 +7,7 @@ using KurrentDB.Core.Data;
 
 namespace KurrentDB.Core.Services.PersistentSubscription;
 
-public struct OutstandingMessage {
+public readonly struct OutstandingMessage {
 	public readonly ResolvedEvent ResolvedEvent;
 	public readonly int RetryCount;
 	public readonly Guid EventId;
