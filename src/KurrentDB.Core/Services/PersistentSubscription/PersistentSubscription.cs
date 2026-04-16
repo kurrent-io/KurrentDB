@@ -165,7 +165,10 @@ public class PersistentSubscription {
 			_settings.StreamReader.BeginReadEvents(_settings.EventSource, _nextEventToPullFrom,
 				Math.Max(_settings.ReadBatchSize, 10), _settings.ReadBatchSize, _settings.MaxCheckPointCount,
 				_settings.ResolveLinkTos, _skipFirstEvent, HandleReadCompleted, HandleSkippedEvents, HandleReadError);
-			_skipFirstEvent = false;
+			// For index reads, the next position is the last event's position (no NextPos available).
+			// Skip the first event on subsequent reads to avoid re-delivering it.
+			// For stream/all reads, the server provides NextPos so no skipping is needed.
+			_skipFirstEvent = _settings.EventSource.Kind == EventSourceKind.Index;
 		}
 	}
 

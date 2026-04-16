@@ -219,10 +219,16 @@ public class PersistentSubscriptionStreamReader : IPersistentSubscriptionStreamR
 		public void FetchIndexCompleted(ClientMessage.ReadIndexEventsForwardCompleted msg) {
 			switch (msg.Result) {
 				case ReadIndexResult.Success:
-					_onFetchCompleted(
-						_skipFirstEvent ? msg.Events.Skip(1).ToArray() : (IReadOnlyList<ResolvedEvent>)msg.Events,
-						new PersistentSubscriptionAllStreamPosition(msg.CurrentPos.CommitPosition, msg.CurrentPos.PreparePosition),
-						msg.IsEndOfStream);
+					var events = _skipFirstEvent ? msg.Events.Skip(1).ToArray() : (IReadOnlyList<ResolvedEvent>)msg.Events;
+					IPersistentSubscriptionStreamPosition nextPos;
+					if (msg.Events.Count > 0) {
+						var last = msg.Events[^1].OriginalPosition
+							?? throw new InvalidOperationException("OriginalPosition was not present on index event");
+						nextPos = new PersistentSubscriptionAllStreamPosition(last.CommitPosition, last.PreparePosition);
+					} else {
+						nextPos = new PersistentSubscriptionAllStreamPosition(msg.CurrentPos.CommitPosition, msg.CurrentPos.PreparePosition);
+					}
+					_onFetchCompleted(events, nextPos, msg.IsEndOfStream);
 					break;
 				case ReadIndexResult.AccessDenied:
 					_onError("Read access denied for index");

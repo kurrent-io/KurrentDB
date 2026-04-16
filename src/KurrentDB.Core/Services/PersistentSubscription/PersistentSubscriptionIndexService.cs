@@ -28,6 +28,9 @@ public sealed class PersistentSubscriptionIndexService :
 	IHandle<ClientMessage.UpdatePersistentSubscriptionToIndex>,
 	IHandle<ClientMessage.DeletePersistentSubscriptionToIndex>,
 	IAsyncHandle<ClientMessage.ConnectToPersistentSubscriptionToIndex>,
+	IHandle<ClientMessage.UnsubscribeFromStream>,
+	IHandle<ClientMessage.PersistentSubscriptionAckEvents>,
+	IHandle<ClientMessage.PersistentSubscriptionNackEvents>,
 	IAsyncHandle<StorageMessage.SecondaryIndexCommitted>,
 	IAsyncHandle<StorageMessage.SecondaryIndexDeleted> {
 
@@ -387,6 +390,28 @@ public sealed class PersistentSubscriptionIndexService :
 			message.Envelope, message.AllowedInFlightMessages, name, message.From);
 
 		return ValueTask.CompletedTask;
+	}
+
+	public void Handle(ClientMessage.UnsubscribeFromStream message) {
+		if (!_started)
+			return;
+
+		foreach (var subscription in _subscriptionsById.Values) {
+			subscription.RemoveClientByCorrelationId(message.CorrelationId, sendDropNotification: true);
+		}
+	}
+
+	public void Handle(ClientMessage.PersistentSubscriptionAckEvents message) {
+		if (_subscriptionsById.TryGetValue(message.SubscriptionId, out var subscription)) {
+			subscription.AcknowledgeMessagesProcessed(message.CorrelationId, message.ProcessedEventIds);
+		}
+	}
+
+	public void Handle(ClientMessage.PersistentSubscriptionNackEvents message) {
+		if (_subscriptionsById.TryGetValue(message.SubscriptionId, out var subscription)) {
+			subscription.NotAcknowledgeMessagesProcessed(message.CorrelationId, message.ProcessedEventIds,
+				(NakAction)message.Action, message.Message);
+		}
 	}
 
 	ValueTask IAsyncHandle<StorageMessage.SecondaryIndexCommitted>.HandleAsync(

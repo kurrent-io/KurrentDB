@@ -140,7 +140,11 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 	public static Event ToEventData(string data) => new(Guid.NewGuid(), "test", false, Encoding.UTF8.GetBytes(data), false, []);
 
 	public async Task<ClientMessage.CreatePersistentSubscriptionToIndexCompleted> CreatePersistentSubscriptionToIndex(
-		string indexName, string group, TFPos? startFrom = null, CancellationToken ct = default) {
+		string indexName, string group, TFPos? startFrom = null,
+		int readBatchSize = 20, int bufferSize = 500, int liveBufferSize = 500,
+		int minCheckPointCount = 5, int maxCheckPointCount = 1000,
+		int checkPointAfterMilliseconds = 1000, int messageTimeoutMilliseconds = 30000,
+		CancellationToken ct = default) {
 		var corrId = Guid.NewGuid();
 		var envelope = new TcsEnvelope<ClientMessage.CreatePersistentSubscriptionToIndexCompleted>();
 
@@ -152,15 +156,15 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 			indexName: indexName,
 			resolveLinkTos: false,
 			startFrom: startFrom ?? new TFPos(0, 0),
-			messageTimeoutMilliseconds: 30000,
+			messageTimeoutMilliseconds: messageTimeoutMilliseconds,
 			recordStatistics: false,
 			maxRetryCount: 10,
-			bufferSize: 500,
-			liveBufferSize: 500,
-			readBatchSize: 20,
-			checkPointAfterMilliseconds: 1000,
-			minCheckPointCount: 5,
-			maxCheckPointCount: 1000,
+			bufferSize: bufferSize,
+			liveBufferSize: liveBufferSize,
+			readBatchSize: readBatchSize,
+			checkPointAfterMilliseconds: checkPointAfterMilliseconds,
+			minCheckPointCount: minCheckPointCount,
+			maxCheckPointCount: maxCheckPointCount,
 			maxSubscriberCount: 0,
 			namedConsumerStrategy: SystemConsumerStrategies.RoundRobin,
 			user: SystemAccounts.System));
@@ -176,6 +180,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		string indexName, string group, int maxCount, CancellationToken ct = default) {
 		var corrId = Guid.NewGuid();
 		var events = new List<ResolvedEvent>();
+		string? subscriptionId = null;
 		var confirmed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 		var done = new TaskCompletionSource<List<ResolvedEvent>>(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -197,27 +202,85 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		await confirmed.Task.WaitAsync(ct);
 		return await done.Task.WaitAsync(ct);
 
-		async Task OnMessage(Message msg, CancellationToken token) {
+		Task OnMessage(Message msg, CancellationToken token) {
 			switch (msg) {
-				case ClientMessage.PersistentSubscriptionConfirmation:
+				case ClientMessage.PersistentSubscriptionConfirmation confirmation:
+					subscriptionId = confirmation.SubscriptionId;
 					confirmed.TrySetResult();
-					return;
+					break;
 				case ClientMessage.PersistentSubscriptionStreamEventAppeared appeared:
 					events.Add(appeared.Event);
-					// Ack the event
 					Publisher.Publish(new ClientMessage.PersistentSubscriptionAckEvents(
 						corrId, corrId, new NoopEnvelope(),
-						appeared.CorrelationId.ToString(),
+						subscriptionId,
 						[appeared.Event.OriginalEvent.EventId],
 						SystemAccounts.System));
 					if (events.Count >= maxCount)
 						done.TrySetResult(events.ToList());
-					return;
+					break;
 				case ClientMessage.SubscriptionDropped dropped:
 					done.TrySetException(new Exception($"Subscription dropped: {dropped.Reason}"));
 					confirmed.TrySetException(new Exception($"Subscription dropped: {dropped.Reason}"));
-					return;
+					break;
 			}
+			return Task.CompletedTask;
+		}
+	}
+
+	/// <summary>
+	/// Connects, collects up to <paramref name="maxCount"/> events, then stops acking
+	/// further events. Returns collected events and the correlation ID for unsubscribing.
+	/// </summary>
+	public async Task<(List<ResolvedEvent> Events, Guid CorrelationId)> ConnectAndCollectFromIndex(
+		string indexName, string group, int maxCount, CancellationToken ct = default) {
+		var corrId = Guid.NewGuid();
+		var events = new List<ResolvedEvent>();
+		string? subscriptionId = null;
+		var confirmed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+		var done = new TaskCompletionSource<List<ResolvedEvent>>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+		var semaphore = new SemaphoreSlim(1, 1);
+		var envelope = new ContinuationEnvelope(OnMessage, semaphore, ct);
+
+		Publisher.Publish(new ClientMessage.ConnectToPersistentSubscriptionToIndex(
+			internalCorrId: corrId,
+			correlationId: corrId,
+			envelope: envelope,
+			connectionId: corrId,
+			connectionName: "test-connection",
+			groupName: group,
+			indexName: indexName,
+			allowedInFlightMessages: 10,
+			from: "",
+			user: SystemAccounts.System));
+
+		await confirmed.Task.WaitAsync(ct);
+		var result = await done.Task.WaitAsync(ct);
+		return (result, corrId);
+
+		Task OnMessage(Message msg, CancellationToken token) {
+			switch (msg) {
+				case ClientMessage.PersistentSubscriptionConfirmation confirmation:
+					subscriptionId = confirmation.SubscriptionId;
+					confirmed.TrySetResult();
+					break;
+				case ClientMessage.PersistentSubscriptionStreamEventAppeared appeared
+					when events.Count < maxCount:
+					events.Add(appeared.Event);
+					Publisher.Publish(new ClientMessage.PersistentSubscriptionAckEvents(
+						corrId, corrId, new NoopEnvelope(),
+						subscriptionId,
+						[appeared.Event.OriginalEvent.EventId],
+						SystemAccounts.System));
+					if (events.Count >= maxCount)
+						done.TrySetResult(events.ToList());
+					break;
+				case ClientMessage.SubscriptionDropped dropped:
+					done.TrySetException(new Exception($"Subscription dropped: {dropped.Reason}"));
+					confirmed.TrySetException(new Exception($"Subscription dropped: {dropped.Reason}"));
+					break;
+			}
+			return Task.CompletedTask;
 		}
 	}
 

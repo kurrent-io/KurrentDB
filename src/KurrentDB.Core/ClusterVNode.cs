@@ -1262,6 +1262,9 @@ public class ClusterVNode<TStreamId> :
 		perSubscrBus.Subscribe<ClientMessage.UpdatePersistentSubscriptionToIndex>(persistentSubscriptionIndex);
 		perSubscrBus.Subscribe<ClientMessage.DeletePersistentSubscriptionToIndex>(persistentSubscriptionIndex);
 		perSubscrBus.Subscribe<ClientMessage.ConnectToPersistentSubscriptionToIndex>(persistentSubscriptionIndex);
+		perSubscrBus.Subscribe<ClientMessage.UnsubscribeFromStream>(persistentSubscriptionIndex);
+		perSubscrBus.Subscribe<ClientMessage.PersistentSubscriptionAckEvents>(persistentSubscriptionIndex);
+		perSubscrBus.Subscribe<ClientMessage.PersistentSubscriptionNackEvents>(persistentSubscriptionIndex);
 		perSubscrBus.Subscribe<StorageMessage.SecondaryIndexCommitted>(persistentSubscriptionIndex);
 		perSubscrBus.Subscribe<StorageMessage.SecondaryIndexDeleted>(persistentSubscriptionIndex);
 		perSubscrBus.Subscribe<SubscriptionMessage.PersistentSubscriptionTimerTick>(persistentSubscriptionIndex);
