@@ -586,6 +586,14 @@ public partial class TFChunk : IChunkBlob {
 		_fileStreams.TryReturn(new(_handle, _transform.Read, IsRemote));
 	}
 
+	// returns the number of readers created
+	private int CreateInMemReaderStreams() {
+		const int CountCreated = 1;
+		Interlocked.Add(ref _memStreamCount, CountCreated);
+		_memStreams.TryReturn(new(_sharedMemStream, _cachedDataTransformed ? _transform.Read : IdentityChunkReadTransform.Instance));
+		return CountCreated;
+	}
+
 	private async ValueTask CreateInMemChunk(ChunkHeader chunkHeader, int fileSize, ReadOnlyMemory<byte> transformHeader, CancellationToken token) {
 		var md5 = IncrementalHash.CreateHash(HashAlgorithmName.MD5);
 
@@ -614,11 +622,6 @@ public partial class TFChunk : IChunkBlob {
 		Debug.Assert(!_selfdestructin54321);
 
 		_writerWorkItem = writerWorkItem;
-	}
-
-	private void CreateInMemReaderStreams() {
-		Interlocked.Add(ref _memStreamCount, 1);
-		_memStreams.TryReturn(new(_sharedMemStream, _cachedDataTransformed ? _transform.Read : IdentityChunkReadTransform.Instance));
 	}
 
 	private unsafe Stream CreateSharedMemoryStream() {
@@ -893,10 +896,10 @@ public partial class TFChunk : IChunkBlob {
 			}
 
 			_sharedMemStream = CreateSharedMemoryStream();
-			CreateInMemReaderStreams();
+			var countCreated = CreateInMemReaderStreams();
 
 			if (_selfdestructin54321) {
-				if (Interlocked.Add(ref _memStreamCount, -_memStreams.Capacity) is 0)
+				if (Interlocked.Add(ref _memStreamCount, -countCreated) is 0)
 					FreeCachedDataUnsafe();
 				Log.Debug("CACHING ABORTED for TFChunk {chunk} as TFChunk was probably marked for deletion.", this);
 				return;
@@ -1385,7 +1388,7 @@ public partial class TFChunk : IChunkBlob {
 		// try get memory stream reader first
 		if (_memStreams.TryGet() is { } memoryWorkItem) {
 			// When caching, _cachedDataTransformed and _sharedMemStream are both set before
-			// we push at least once work item to the pool.
+			// we push at least one work item to the pool.
 			// The Interlocked.Add(_memStreamCount) barrier guarantees the order.
 			// So since we have got a slot from the pool, we are guaranteed that _sharedMemStream and
 			// _cachedDataTransformed are populated with the correct values and further more their
