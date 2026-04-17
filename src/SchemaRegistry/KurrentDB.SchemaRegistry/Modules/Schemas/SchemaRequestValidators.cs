@@ -184,9 +184,9 @@ public partial class SchemaNameValidator : AbstractValidator<string> {
         RuleFor(x => x)
             .NotEmpty()
             .Matches(RegEx())
-            .WithMessage("Schema name must not be empty and can only contain alphanumeric characters, underscores, dashes, and periods");
+            .WithMessage("Schema name must not be empty and can only contain unicode letters, digits, underscores, dashes, periods, colons, and dollar signs");
 
-    [System.Text.RegularExpressions.GeneratedRegex("^[a-zA-Z0-9_.-]+$")]
+    [System.Text.RegularExpressions.GeneratedRegex(@"^[\p{L}\p{N}_.$:-]+$")]
     private static partial System.Text.RegularExpressions.Regex RegEx();
 }
 
