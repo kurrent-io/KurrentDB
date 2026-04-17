@@ -4,6 +4,7 @@
 // ReSharper disable CheckNamespace
 
 using System;
+using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using EventStore.Plugins;
@@ -26,6 +27,12 @@ public static class ClusterVNodeOptionsExtensions {
 
 	public static ClusterVNodeOptions WithPlugableComponent(this ClusterVNodeOptions options, IPlugableComponent plugableComponent) =>
 		options with { PlugableComponents = [.. options.PlugableComponents, plugableComponent] };
+
+	/// <summary>
+	/// Returns whether a pluggable component with the given name is present and enabled.
+	/// </summary>
+	public static bool IsPluginEnabled(this ClusterVNodeOptions options, string name) =>
+		options.PlugableComponents.Any(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase) && x.Enabled);
 
 	public static ClusterVNodeOptions InCluster(this ClusterVNodeOptions options, int clusterSize) => options with {
 		Cluster = options.Cluster with {
