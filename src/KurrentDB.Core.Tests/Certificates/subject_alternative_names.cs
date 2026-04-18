@@ -104,4 +104,30 @@ public class subject_alternative_names {
 				.OrderBy(x => x).ToArray());
 	}
 
+	[Test]
+	public void has_ip_or_dns_san_returns_true_with_ip() {
+		var sut = GenSut([("127.0.0.1", CertificateNameType.IpAddress)]);
+		Assert.True(sut.HasIpOrDnsSan());
+	}
+
+	[Test]
+	public void has_ip_or_dns_san_returns_true_with_dns() {
+		var sut = GenSut([("hello.world", CertificateNameType.DnsName)]);
+		Assert.True(sut.HasIpOrDnsSan());
+	}
+
+	[Test]
+	public void has_ip_or_dns_san_returns_false_with_only_email() {
+		var sut = GenSut([("test@test.com", "email")]);
+		Assert.False(sut.HasIpOrDnsSan());
+	}
+
+	[Test]
+	public void has_ip_or_dns_san_returns_true_with_mixed_san_types() {
+		var sut = GenSut([
+			("test@test.com", "email"),
+			("127.0.0.1", CertificateNameType.IpAddress),
+		]);
+		Assert.True(sut.HasIpOrDnsSan());
+	}
 }

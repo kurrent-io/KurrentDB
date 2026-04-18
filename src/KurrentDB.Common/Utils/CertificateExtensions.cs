@@ -24,7 +24,7 @@ public static class CertificateExtensions {
 		try {
 			extensions = certificate.Extensions;
 		} catch (CryptographicException) {
-			return null;
+			return [];
 		}
 
 		var sans = new List<(string, string)>();
@@ -56,6 +56,14 @@ public static class CertificateExtensions {
 
 		return sans;
 	}
+
+	public static bool HasIpOrDnsSan(this X509Certificate2 certificate) =>
+		certificate
+			.GetSubjectAlternativeNames()
+			.Where(x => x.type
+				is CertificateNameType.DnsName
+				or CertificateNameType.IpAddress)
+			.IsNotEmpty();
 
 	public static bool MatchesName(this X509Certificate2 certificate, string name) {
 		// Implemented based on RFC 6125 (https://datatracker.ietf.org/doc/html/rfc6125) with the following changes:
@@ -272,45 +280,51 @@ public static class CertificateExtensions {
 		return true;
 	}
 
-	public static bool IsServerCertificate(this X509Certificate2 certificate, bool disableClientAuthEkuValidation, out string failReason) {
-		if (!certificate.TryGetKeyUsages(out var keyUsages, out var hasExtKeyUsagesExtension, out var extKeyUsages, out failReason))
-			return false;
+	/// <summary>
+	/// Classifies an inbound certificate as a node certificate, user certificate, or unclassified,
+	/// based on its EKU profile.
+	/// </summary>
+	/// <remarks>
+	/// Does not check the CN.
+	/// Does not validate the certificate.
+	/// </remarks>
+	public static CertificateClassification ClassifyInboundCertificate(
+		this X509Certificate2 certificate,
+		bool disableClientAuthEkuValidation,
+		out string error) {
 
-		if (!HasCorrectKeyUsages(keyUsages, out failReason))
-			return false;
+		if (!certificate.TryGetKeyUsages(out var keyUsages, out var hasEkuExtension, out var ekus, out error))
+			return CertificateClassification.Unclassified;
 
-		// rfc5280 section-4.2.1.12: extended key usages (EKUs) only have to be enforced
-		// if the extension is present at all. we are allowed to require the extension, but do not for server
-		// certificates for backwards compatibility. however, this also implies that we
-		// _need_ the extension to be present for other types of certificates (e.g user certificates)
-		// as otherwise it would cause ambiguity when trying to determine the certificate type.
-		if (hasExtKeyUsagesExtension) {
-			if (!HasServerAuthExtendedKeyUsage(extKeyUsages, out failReason))
-				return false;
+		if (!HasCorrectKeyUsages(keyUsages, out error))
+			return CertificateClassification.Unclassified;
 
-			if (!disableClientAuthEkuValidation && !HasClientAuthExtendedKeyUsage(extKeyUsages, out failReason)) {
-				failReason +=
-					". If you are using a certificate from a public CA that does not include the clientAuth EKU, " +
-					"please see the documentation for the DisableClientAuthEkuValidation configuration option.";
-				return false;
-			}
+		var hasServerAuthEku = HasServerAuthExtendedKeyUsage(ekus, out _);
+		var hasClientAuthEku = HasClientAuthExtendedKeyUsage(ekus, out _);
+
+		// User Cert: clientAuthEku; no serverAuthEku;
+		if (hasClientAuthEku && !hasServerAuthEku) {
+			error = "";
+			return CertificateClassification.User;
 		}
 
-		failReason = string.Empty;
-		return true;
-	}
+		// Node Cert:
+		// rfc5280 section-4.2.1.12: EKUs only have to be enforced if the extension is present.
+		// We don't require the extension for server certificates for backwards compatibility,
+		// but we do require it for user certificates to avoid ambiguity.
+		if (!hasEkuExtension || hasServerAuthEku && (hasClientAuthEku || disableClientAuthEkuValidation)) {
+			error = "";
+			return CertificateClassification.Node;
+		}
 
-	public static bool IsClientCertificate(this X509Certificate2 certificate, out string failReason) {
-		if (!certificate.TryGetKeyUsages(out var keyUsages, out _, out var extKeyUsages, out failReason))
-			return false;
+		// Unclassified Cert:
+		error = "Certificate is not a user certificate. ";
+		error += hasServerAuthEku
+			? "Certificate has the serverAuth EKU but not the clientAuth EKU. " +
+				"If you are using a certificate from a public CA that does not include the clientAuth EKU, " +
+				"please see the documentation for the DisableClientAuthEkuValidation configuration option."
+			: "Certificate has the EKU extension but does not have the serverAuth EKU.";
 
-		if (!HasCorrectKeyUsages(keyUsages, out failReason))
-			return false;
-
-		if (!HasClientAuthExtendedKeyUsage(extKeyUsages, out failReason))
-			return false;
-
-		failReason = string.Empty;
-		return true;
+		return CertificateClassification.Unclassified;
 	}
 }

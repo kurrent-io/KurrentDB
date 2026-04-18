@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Connections.Features;
 using Microsoft.AspNetCore.Http;
 using NUnit.Framework;
 
-namespace KurrentDB.Core.Tests.Services.Transport.Http.Authentication;
+namespace KurrentDB.Core.Tests.Services.Transport.Http.Authentication.UnixSocketAuthenticationProviderTests;
 
 public class TestFixtureWithUnixSocketAuthenticationProvider {
 	protected UnixSocketAuthenticationProvider _provider;
