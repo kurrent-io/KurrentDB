@@ -98,12 +98,7 @@ public class NodeCertificateAuthenticationProvider(
 						ip, clientCertificateCN, reservedNodeCN);
 				}
 
-				bool hasIpOrDnsSan = clientCertificate.HasIpOrDnsSan();
-				if (!hasIpOrDnsSan) {
-					Log.Error("Connection from node: {ip} was denied because its certificate does not have any IP or DNS Subject Alternative Names (SAN).", ip);
-				}
-
-				return hasReservedNodeCN && hasIpOrDnsSan;
+				return hasReservedNodeCN;
 			}
 
 			case CertificateClassification.User: {
