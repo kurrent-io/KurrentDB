@@ -339,4 +339,43 @@ public class ProjectionEngineV2PipelineTests {
 		using var doc = JsonDocument.Parse(stateJson);
 		await Assert.That(doc.RootElement.GetProperty("count").GetInt32()).IsEqualTo(3);
 	}
+
+	[Test]
+	public async Task checkpoint_advances_past_trailing_filtered_events() {
+		// Filtered events in the tail must still move the checkpoint forward so that
+		// restart doesn't re-read them every time.
+		var events = new[] {
+			CreateResolvedEvent("stream-G", 0, 100L, eventType: "Wanted"),
+			CreateResolvedEvent("stream-G", 1, 500L, eventType: "Unwanted"),
+			CreateResolvedEvent("stream-G", 2, 900L, eventType: "Unwanted"),
+		};
+
+		var config = new ProjectionEngineV2Config {
+			ProjectionName = "trailing-filter-test",
+			SourceDefinition = new QuerySourcesDefinition {
+				AllStreams = true,
+				AllEvents = false,
+				Events = ["Wanted"],
+				ByStreams = true
+			},
+			StateHandlerFactory = () => new CountingStateHandler(),
+			PartitionCount = 1,
+			CheckpointAfterMs = 0,
+			CheckpointHandledThreshold = 100,
+			CheckpointUnhandledBytesThreshold = long.MaxValue
+		};
+
+		var (engine, publisher) = await RunEngine(events, config);
+
+		await Assert.That(engine.IsFaulted).IsFalse();
+		await Assert.That(engine.TotalEventsProcessed).IsEqualTo(1);
+
+		var lastWrite = publisher.Messages.OfType<ClientMessage.WriteEvents>().LastOrDefault();
+		await Assert.That(lastWrite).IsNotNull();
+
+		var checkpointEvent = lastWrite!.Events.ToArray()
+			.First(e => e.EventType == ProjectionEventTypes.ProjectionCheckpointV2);
+		using var doc = JsonDocument.Parse(Encoding.UTF8.GetString(checkpointEvent.Data));
+		await Assert.That(doc.RootElement.GetProperty("commitPosition").GetInt64()).IsEqualTo(900);
+	}
 }

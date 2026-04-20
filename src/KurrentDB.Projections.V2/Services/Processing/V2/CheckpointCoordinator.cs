@@ -27,6 +27,7 @@ public class CheckpointCoordinator(int partitionCount, string projectionName, Pa
 	private readonly AsyncExclusiveLock _checkpointLock = new();
 	private readonly IReadOnlyOutputBuffer[] _collectedBuffers = new IReadOnlyOutputBuffer[partitionCount];
 	private int _collectedCount;
+	private TFPos _pendingCheckpointPosition;
 	private Exception _checkpointError;
 
 	// Starts a checkpoint. If one is in progress, waits for it to complete first.
@@ -40,6 +41,7 @@ public class CheckpointCoordinator(int partitionCount, string projectionName, Pa
 
 			Log.Debug("Injecting checkpoint marker at {LogPosition}", logPosition);
 			_collectedCount = 0;
+			_pendingCheckpointPosition = logPosition;
 			Array.Clear(_collectedBuffers);
 			await dispatcher.InjectCheckpointMarker(logPosition, ct);
 		} catch {
@@ -60,11 +62,10 @@ public class CheckpointCoordinator(int partitionCount, string projectionName, Pa
 
 	private async Task WriteCheckpoint() {
 		try {
-			var lastPosition = TFPos.Invalid;
-			foreach (var buf in _collectedBuffers) {
-				if (buf.LastLogPosition > lastPosition)
-					lastPosition = buf.LastLogPosition;
-			}
+			// Use the injected marker position — it reflects the read loop's true progress
+			// through the log, including tails of filtered events that never reach a partition.
+			// Buffer LastLogPosition only advances for dispatched events and would understate progress.
+			var lastPosition = _pendingCheckpointPosition;
 
 			Log.Debug("Writing checkpoint for {Projection} at {Position}",
 				projectionName, lastPosition);
