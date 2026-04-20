@@ -147,7 +147,11 @@ public sealed class ProjectionEngineV2(
 		// EventFilter.Passes behaviour).
 		var handledEventTypes = _config.SourceDefinition.AllEvents
 			? null
-			: new HashSet<string>(_config.SourceDefinition.Events ?? [], StringComparer.Ordinal);
+			: new HashSet<string>(
+				_config.SourceDefinition.Events
+					?? throw new InvalidOperationException(
+						$"Projection '{_config.ProjectionName}' declares specific event types (AllEvents=false) but Events is null."),
+				StringComparer.Ordinal);
 
 		try {
 			await foreach (var response in _readStrategy.ReadFrom(checkpoint, ct)) {
