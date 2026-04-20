@@ -203,33 +203,71 @@ public static class ClusterVNodeOptionsExtensions {
 			return (options.ServerCertificate!, null);
 		}
 
+		if (!TryLoadCertificate(
+			logLabel: "node",
+			store: new StoreCertInfo(
+				StoreLocation: options.CertificateStore.CertificateStoreLocation,
+				StoreName: options.CertificateStore.CertificateStoreName,
+				SubjectName: options.CertificateStore.CertificateSubjectName,
+				Thumbprint: options.CertificateStore.CertificateThumbprint),
+			file: new FileCertInfo(
+				File: options.CertificateFile.CertificateFile,
+				PrivateKeyFile: options.CertificateFile.CertificatePrivateKeyFile,
+				Password: options.CertificateFile.CertificatePassword,
+				PrivateKeyPassword: options.CertificateFile.CertificatePrivateKeyPassword),
+			certificate: out var certificate,
+			intermediates: out var intermediates)) {
 
-		if (!string.IsNullOrWhiteSpace(options.CertificateStore.CertificateStoreLocation)) {
-			var location =
-				CertificateUtils.GetCertificateStoreLocation(options.CertificateStore.CertificateStoreLocation);
-			var name = CertificateUtils.GetCertificateStoreName(options.CertificateStore.CertificateStoreName);
-			return (CertificateUtils.LoadFromStore(location, name, options.CertificateStore.CertificateSubjectName,
-				options.CertificateStore.CertificateThumbprint), null);
+			throw new InvalidConfigurationException(
+				"A certificate is required unless insecure mode (--insecure) is set.");
 		}
 
-		if (!string.IsNullOrWhiteSpace(options.CertificateStore.CertificateStoreName)) {
-			var name = CertificateUtils.GetCertificateStoreName(options.CertificateStore.CertificateStoreName);
-			return (
-				CertificateUtils.LoadFromStore(name, options.CertificateStore.CertificateSubjectName,
-					options.CertificateStore.CertificateThumbprint), null);
-		}
-
-		if (options.CertificateFile.CertificateFile.IsNotEmptyString()) {
-			Log.Information("Loading the node's certificate(s) from file: {path}",
-				options.CertificateFile.CertificateFile);
-			return CertificateUtils.LoadFromFile(options.CertificateFile.CertificateFile,
-				options.CertificateFile.CertificatePrivateKeyFile, options.CertificateFile.CertificatePassword,
-				options.CertificateFile.CertificatePrivateKeyPassword);
-		}
-
-		throw new InvalidConfigurationException(
-			"A certificate is required unless insecure mode (--insecure) is set.");
+		return (certificate, intermediates);
 	}
+
+	private static bool TryLoadCertificate(
+		string logLabel,
+		StoreCertInfo store,
+		FileCertInfo file,
+		out X509Certificate2 certificate,
+		out X509Certificate2Collection intermediates) {
+
+		if (!string.IsNullOrWhiteSpace(store.StoreLocation)) {
+			var location = CertificateUtils.GetCertificateStoreLocation(store.StoreLocation);
+			var name = CertificateUtils.GetCertificateStoreName(store.StoreName);
+			certificate = CertificateUtils.LoadFromStore(
+				location,
+				name,
+				store.SubjectName,
+				store.Thumbprint);
+			intermediates = null;
+			return true;
+		}
+
+		if (!string.IsNullOrWhiteSpace(store.StoreName)) {
+			var name = CertificateUtils.GetCertificateStoreName(store.StoreName);
+			certificate = CertificateUtils.LoadFromStore(name, store.SubjectName, store.Thumbprint);
+			intermediates = null;
+			return true;
+		}
+
+		if (file.File.IsNotEmptyString()) {
+			Log.Information("Loading the {label} certificate(s) from file: {path}", logLabel, file.File);
+			(certificate, intermediates) = CertificateUtils.LoadFromFile(
+				file.File,
+				file.PrivateKeyFile,
+				file.Password,
+				file.PrivateKeyPassword);
+			return true;
+		}
+
+		certificate = null;
+		intermediates = null;
+		return false;
+	}
+
+	private record StoreCertInfo(string StoreLocation, string StoreName, string SubjectName, string Thumbprint);
+	private record FileCertInfo(string File, string PrivateKeyFile, string Password, string PrivateKeyPassword);
 
 	/// <summary>
 	/// Loads an <see cref="X509Certificate2Collection"/> from the options set.
