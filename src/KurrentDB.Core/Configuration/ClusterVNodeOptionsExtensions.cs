@@ -280,45 +280,48 @@ public static class ClusterVNodeOptionsExtensions {
 	/// <exception cref="InvalidConfigurationException"></exception>
 	public static X509Certificate2Collection LoadTrustedRootCertificates(this ClusterVNodeOptions options) {
 		if (options.TrustedRootCertificates != null)
+			//used by test code paths only
 			return options.TrustedRootCertificates;
+
+		return LoadTrustedRootsFromStoreOrPath(
+			store: new StoreCertInfo(
+				StoreLocation: options.CertificateStore.TrustedRootCertificateStoreLocation,
+				StoreName: options.CertificateStore.TrustedRootCertificateStoreName,
+				SubjectName: options.CertificateStore.TrustedRootCertificateSubjectName,
+				Thumbprint: options.CertificateStore.TrustedRootCertificateThumbprint),
+			path: options.Certificate.TrustedRootCertificatesPath);
+	}
+
+	private static X509Certificate2Collection LoadTrustedRootsFromStoreOrPath(StoreCertInfo store, string path) {
 		var trustedRootCerts = new X509Certificate2Collection();
 
-		if (!string.IsNullOrWhiteSpace(options.CertificateStore.TrustedRootCertificateStoreLocation)) {
-			var location =
-				CertificateUtils.GetCertificateStoreLocation(options.CertificateStore
-					.TrustedRootCertificateStoreLocation);
-			var name = CertificateUtils.GetCertificateStoreName(options.CertificateStore
-				.TrustedRootCertificateStoreName);
-			trustedRootCerts.Add(CertificateUtils.LoadFromStore(location, name,
-				options.CertificateStore.TrustedRootCertificateSubjectName,
-				options.CertificateStore.TrustedRootCertificateThumbprint));
+		if (!string.IsNullOrWhiteSpace(store.StoreLocation)) {
+			var location = CertificateUtils.GetCertificateStoreLocation(store.StoreLocation);
+			var name = CertificateUtils.GetCertificateStoreName(store.StoreName);
+			trustedRootCerts.Add(CertificateUtils.LoadFromStore(location, name, store.SubjectName, store.Thumbprint));
 			return trustedRootCerts;
 		}
 
-		if (!string.IsNullOrWhiteSpace(options.CertificateStore.TrustedRootCertificateStoreName)) {
-			var name = CertificateUtils.GetCertificateStoreName(options.CertificateStore
-				.TrustedRootCertificateStoreName);
-			trustedRootCerts.Add(CertificateUtils.LoadFromStore(name,
-				options.CertificateStore.TrustedRootCertificateSubjectName,
-				options.CertificateStore.TrustedRootCertificateThumbprint));
+		if (!string.IsNullOrWhiteSpace(store.StoreName)) {
+			var name = CertificateUtils.GetCertificateStoreName(store.StoreName);
+			trustedRootCerts.Add(CertificateUtils.LoadFromStore(name, store.SubjectName, store.Thumbprint));
 			return trustedRootCerts;
 		}
 
-		if (string.IsNullOrEmpty(options.Certificate.TrustedRootCertificatesPath)) {
+		if (string.IsNullOrEmpty(path)) {
 			throw new InvalidConfigurationException(
-				$"{nameof(options.Certificate.TrustedRootCertificatesPath)} must be specified unless insecure mode (--insecure) is set.");
+				$"{nameof(ClusterVNodeOptions.CertificateOptions.TrustedRootCertificatesPath)} must be specified unless insecure mode (--insecure) is set.");
 		}
 
-		Log.Information("Loading trusted root certificates.");
-		foreach (var (fileName, cert) in CertificateUtils
-					 .LoadAllCertificates(options.Certificate.TrustedRootCertificatesPath)) {
+		Log.Information("Loading trusted root certificates from path: {path}", path);
+		foreach (var (fileName, cert) in CertificateUtils.LoadAllCertificates(path)) {
 			trustedRootCerts.Add(cert);
 			Log.Information("Loading trusted root certificate file: {file}", fileName);
 		}
 
 		if (trustedRootCerts.Count == 0)
 			throw new InvalidConfigurationException(
-				$"No trusted root certificate files were loaded from the specified path: {options.Certificate.TrustedRootCertificatesPath}");
+				$"No trusted root certificate files were loaded from the specified path: {path}");
 		return trustedRootCerts;
 	}
 }
