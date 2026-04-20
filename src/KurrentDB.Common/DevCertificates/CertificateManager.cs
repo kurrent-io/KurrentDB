@@ -159,12 +159,14 @@ public abstract class CertificateManager {
 	public EnsureCertificateResult EnsureDevelopmentCertificate(
 		DateTimeOffset notBefore,
 		DateTimeOffset notAfter,
+		out X509Certificate2 certificate,
 		string path = null,
 		bool trust = false,
 		bool includePrivateKey = false,
 		string password = null,
 		CertificateKeyExportFormat keyExportFormat = CertificateKeyExportFormat.Pfx,
 		bool isInteractive = true) {
+		certificate = null;
 		var result = EnsureCertificateResult.Succeeded;
 
 		var currentUserCertificates = ListCertificates(StoreName.My, StoreLocation.CurrentUser, isValid: true,
@@ -183,8 +185,6 @@ public abstract class CertificateManager {
 
 		certificates = filteredCertificates;
 
-		X509Certificate2 certificate = null;
-		var isNewCertificate = false;
 		if (certificates.Any()) {
 			certificate = certificates.First();
 			var failedToFixCertificateState = false;
@@ -232,7 +232,6 @@ public abstract class CertificateManager {
 			Log.NoValidCertificatesFound();
 			try {
 				Log.CreateDevelopmentCertificateStart();
-				isNewCertificate = true;
 				certificate = CreateDevelopmentCertificate(notBefore, notAfter);
 			} catch (Exception e) {
 				if (Log.IsEnabled()) {
@@ -304,7 +303,9 @@ public abstract class CertificateManager {
 			}
 		}
 
-		DisposeCertificates(!isNewCertificate ? certificates : certificates.Append(certificate));
+		// Dispose all listed certs EXCEPT the one being returned via the out parameter.
+		var returned = certificate;
+		DisposeCertificates(certificates.Where(c => !ReferenceEquals(c, returned)));
 
 		return result;
 	}

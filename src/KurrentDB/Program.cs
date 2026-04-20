@@ -136,6 +136,7 @@ try {
 			// Generate a new certificate and optionally export to file
 			var result = manager.EnsureDevelopmentCertificate(
 				DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddMonths(1),
+				out devCert,
 				path: devCertPath,
 				includePrivateKey: !string.IsNullOrEmpty(devCertPath));
 			if (result is not (EnsureCertificateResult.Succeeded or EnsureCertificateResult.ValidCertificatePresent)) {
@@ -143,26 +144,14 @@ try {
 				return 1;
 			}
 
-			if (!string.IsNullOrEmpty(devCertPath)) {
-				// Load the cert we just exported to the file
-				devCert = DevCertificateFile.TryLoad(devCertPath);
+			if (devCert is null) {
+				Log.Fatal("Could not create dev certificate. " +
+						  "If the home directory is not writable (e.g., in a container), " +
+						  "use --dev-cert-path to specify an alternative file location.");
+				return 1;
 			}
 
-			if (devCert is null) {
-				// Load from the X509 store
-				var userCerts = manager.ListCertificates(StoreName.My, StoreLocation.CurrentUser, true);
-				var machineCerts = manager.ListCertificates(StoreName.My, StoreLocation.LocalMachine, true);
-				var certs = userCerts.Concat(machineCerts).ToList();
-
-				if (!certs.Any()) {
-					Log.Fatal("Could not create dev certificate. " +
-							  "If the home directory is not writable (e.g., in a container), " +
-							  "use --dev-cert-path to specify an alternative file location.");
-					return 1;
-				}
-
-				devCert = certs[0];
-			} else {
+			if (!string.IsNullOrEmpty(devCertPath)) {
 				Log.Information("Dev certificate saved to {path}", devCertPath);
 			}
 		}
