@@ -297,4 +297,46 @@ public class ProjectionEngineV2PipelineTests {
 		await Assert.That(commitProp.GetInt64()).IsGreaterThan(0);
 		await Assert.That(prepareProp.GetInt64()).IsGreaterThan(0);
 	}
+
+	[Test]
+	public async Task skips_events_whose_type_is_not_declared_in_source_definition() {
+		// Source declares only "Wanted" events. "Unwanted" must not reach the state handler —
+		// otherwise Jint's Handle overwrites partition state with the event body when no handler matches.
+		var events = new[] {
+			CreateResolvedEvent("stream-F", 0, 100L, eventType: "Wanted"),
+			CreateResolvedEvent("stream-F", 1, 200L, eventType: "Unwanted"),
+			CreateResolvedEvent("stream-F", 2, 300L, eventType: "Wanted"),
+			CreateResolvedEvent("stream-F", 3, 400L, eventType: "Unwanted"),
+			CreateResolvedEvent("stream-F", 4, 500L, eventType: "Wanted"),
+		};
+
+		var config = new ProjectionEngineV2Config {
+			ProjectionName = "filter-test",
+			SourceDefinition = new QuerySourcesDefinition {
+				AllStreams = true,
+				AllEvents = false,
+				Events = ["Wanted"],
+				ByStreams = true
+			},
+			StateHandlerFactory = () => new CountingStateHandler(),
+			PartitionCount = 1,
+			CheckpointAfterMs = 0,
+			CheckpointHandledThreshold = 100,
+			CheckpointUnhandledBytesThreshold = long.MaxValue
+		};
+
+		var (engine, publisher) = await RunEngine(events, config);
+
+		await Assert.That(engine.IsFaulted).IsFalse();
+		await Assert.That(engine.TotalEventsProcessed).IsEqualTo(3);
+
+		var lastWrite = publisher.Messages.OfType<ClientMessage.WriteEvents>().LastOrDefault();
+		await Assert.That(lastWrite).IsNotNull();
+
+		var stateEvent = lastWrite!.Events.ToArray()
+			.First(e => e.EventType == ProjectionEventTypes.ProjectionStateV2);
+		var stateJson = Encoding.UTF8.GetString(stateEvent.Data);
+		using var doc = JsonDocument.Parse(stateJson);
+		await Assert.That(doc.RootElement.GetProperty("count").GetInt32()).IsEqualTo(3);
+	}
 }

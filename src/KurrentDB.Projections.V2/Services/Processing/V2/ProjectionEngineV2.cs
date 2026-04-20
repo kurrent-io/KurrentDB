@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Text;
@@ -140,6 +141,14 @@ public sealed class ProjectionEngineV2(
 		var lastCheckpointTime = Instant.Now;
 		var lastLogPosition = checkpoint;
 
+		// When the projection declares a specific set of event types, drop anything else here.
+		// Read-level filters cover the stream/category dimension only; without this, Jint's Handle
+		// overwrites partition state with the event body when no handler matches (matches V1's
+		// EventFilter.Passes behaviour).
+		var handledEventTypes = _config.SourceDefinition.AllEvents
+			? null
+			: new HashSet<string>(_config.SourceDefinition.Events ?? [], StringComparer.Ordinal);
+
 		try {
 			await foreach (var response in _readStrategy.ReadFrom(checkpoint, ct)) {
 				switch (response) {
@@ -162,6 +171,8 @@ public sealed class ProjectionEngineV2(
 							}
 						} else {
 							var projEvent = ConvertToProjectionEvent(coreEvent);
+							if (handledEventTypes is not null && !handledEventTypes.Contains(projEvent.EventType))
+								break;
 							await dispatcher.DispatchEvent(projEvent, logPosition, ct);
 						}
 
