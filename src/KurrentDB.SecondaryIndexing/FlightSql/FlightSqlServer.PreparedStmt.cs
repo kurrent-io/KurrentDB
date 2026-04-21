@@ -10,7 +10,6 @@ using Apache.Arrow.Flight.Server;
 using Arrow.Flight.Protocol.Sql;
 using DotNext.Runtime.InteropServices;
 using Google.Protobuf;
-using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Kurrent.Quack.Arrow;
 using KurrentDB.SecondaryIndexing.Query;
@@ -18,7 +17,7 @@ using KurrentDB.SecondaryIndexing.Query;
 namespace KurrentDB.SecondaryIndexing.FlightSql;
 
 partial class FlightSqlServer {
-	private static Task CreatePreparedStatementAsync(ActionCreatePreparedStatementRequest request,
+	private Task CreatePreparedStatementAsync(ActionCreatePreparedStatementRequest request,
 		ConnectionState state,
 		IAsyncStreamWriter<FlightResult> responseStream,
 		CancellationToken token) {
@@ -27,9 +26,9 @@ partial class FlightSqlServer {
 			task = Task.FromCanceled<FlightResult>(token);
 		} else {
 			try {
-				var result = Any.Pack(CreatePreparedStatement(request, state)).ToByteString();
+				var result = PackToAny(CreatePreparedStatement(request, state));
 
-				// WORKAROUND: CancellationToken is not supported by .NET implementation (weird)
+				// WORKAROUND: CancellationToken is not supported by .NET implementation
 				task = responseStream.WriteAsync(new FlightResult(result));
 			} catch (Exception e) {
 				task = Task.FromException(e);
@@ -39,7 +38,7 @@ partial class FlightSqlServer {
 		return task;
 	}
 
-	private static ActionCreatePreparedStatementResult CreatePreparedStatement(ActionCreatePreparedStatementRequest request,
+	private ActionCreatePreparedStatementResult CreatePreparedStatement(ActionCreatePreparedStatementRequest request,
 		ConnectionState state) {
 		if (!state.CreatePreparedStatement(request.Query, out var handle, out var statement, out var parameters))
 			throw CreateException(StatusCode.ResourceExhausted, "Too many prepared statements");
@@ -63,7 +62,7 @@ partial class FlightSqlServer {
 			try {
 				ClosePreparedStatement(handle.Span, state);
 
-				// WORKAROUND: CancellationToken is not supported by .NET implementation (weird)
+				// WORKAROUND: CancellationToken is not supported by .NET implementation
 				task = response.WriteAsync(new(ByteString.Empty));
 			} catch (Exception e) {
 				task = Task.FromException(e);
@@ -99,14 +98,14 @@ partial class FlightSqlServer {
 			PreparedStatementHandle = statement.PreparedStatementHandle,
 		};
 
-		// WORKAROUND: CancellationToken is not supported by .NET implementation (weird)
-		await response.WriteAsync(new(result.ToByteString()));
+		// WORKAROUND: CancellationToken is not supported by .NET implementation
+		await response.WriteAsync(new(PackRaw(result)));
 	}
 
 	private static RpcException PreparedStatementNotFound()
 		=> CreateException(StatusCode.NotFound, "Prepared statement handle doesn't exist");
 
-	private static Task<FlightInfo> GetPreparedStatementSchemaAsync(ByteString handle,
+	private Task<FlightInfo> GetPreparedStatementSchemaAsync(ByteString handle,
 		ConnectionState state,
 		FlightDescriptor descriptor,
 		CancellationToken token) {
@@ -115,7 +114,7 @@ partial class FlightSqlServer {
 			task = Task.FromCanceled<FlightInfo>(token);
 		} else {
 			try {
-				var ticket = Any.Pack(new CommandPreparedStatementQuery { PreparedStatementHandle = handle }).ToByteString();
+				var ticket = PackToAny(new CommandPreparedStatementQuery { PreparedStatementHandle = handle });
 				var ep = new FlightEndpoint(new FlightTicket(ticket), []);
 				var schema = GetPreparedStatementSchema(handle.Span, state);
 				task = Task.FromResult(new FlightInfo(schema, descriptor, [ep]));

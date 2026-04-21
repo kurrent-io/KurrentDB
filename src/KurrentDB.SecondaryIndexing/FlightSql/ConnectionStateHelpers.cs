@@ -12,7 +12,7 @@ namespace KurrentDB.SecondaryIndexing.FlightSql;
 internal static class ConnectionStateHelpers {
 	public static IServiceCollection AddFlightSqlServer(this IServiceCollection services)
 		=> services
-			.AddSingleton<FlightServer, FlightSqlServer>()
+			.AddScoped<FlightServer, FlightSqlServer>()
 			.AddSingleton<ConnectionInterceptor>(SetupConnectionState);
 
 	private static async Task SetupConnectionState(this IQueryEngine engine, ConnectionDelegate next, ConnectionContext context) {

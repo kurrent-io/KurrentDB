@@ -35,17 +35,15 @@ partial class FlightSqlServer {
 		return task;
 	}
 
-	private static ByteString SerializeSchema(Schema schema) {
-		var buffer = new PoolingBufferWriter<byte> { Capacity = 2048 };
-		var stream = Stream.CreateWritable(buffer, flush: null, flushAsync: null);
+	private ByteString SerializeSchema(Schema schema) {
+		var stream = Stream.CreateWritable(bufferWriter, flush: null, flushAsync: null);
 		var writer = new ArrowStreamWriter(stream, schema, leaveOpen: true);
 		try {
 			writer.WriteStart();
-			return ByteString.CopyFrom(buffer.WrittenMemory.Span);
+			return WrapAndRegisterOnDispose(bufferWriter.DetachBuffer());
 		} finally {
 			writer.Dispose();
 			stream.Dispose();
-			buffer.Dispose();
 		}
 	}
 }

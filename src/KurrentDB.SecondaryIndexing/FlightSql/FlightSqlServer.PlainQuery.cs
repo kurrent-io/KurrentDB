@@ -36,14 +36,11 @@ partial class FlightSqlServer {
 		if (token.IsCancellationRequested) {
 			task = Task.FromCanceled<FlightInfo>(token);
 		} else {
-			var preparedQueryBuffer = default(MemoryOwner<byte>);
 			try {
-				preparedQueryBuffer = engine.PrepareQuery(query, new() { UseDigitalSignature = true });
-				task = Task.FromResult(GetQueryInfo(preparedQueryBuffer.Span, descriptor, discoverSchema: true));
+				var preparedQueryBuffer = engine.PrepareQuery(query, new() { UseDigitalSignature = true });
+				task = Task.FromResult(GetQueryInfo(preparedQueryBuffer, descriptor, discoverSchema: true));
 			} catch (Exception e) {
 				task = Task.FromException<FlightInfo>(e);
-			} finally {
-				preparedQueryBuffer.Dispose();
 			}
 		}
 
@@ -51,25 +48,20 @@ partial class FlightSqlServer {
 	}
 
 	private FlightInfo PrepareQuery(CommandStatementQuery query, FlightDescriptor descriptor) {
-		var buffer = default(MemoryOwner<byte>);
-		try {
-			buffer = Encoding.UTF8.GetBytes(query.Query, allocator: null);
-			var tmp = engine.PrepareQuery(buffer.Span, new() { UseDigitalSignature = true });
-			buffer.Dispose();
-			buffer = tmp;
-
-			return GetQueryInfo(buffer.Span, descriptor, discoverSchema: false);
-		} finally {
-			buffer.Dispose();
+		MemoryOwner<byte> preparedQuery;
+		using (var buffer = Encoding.UTF8.GetBytes(query.Query, allocator: null)) {
+			preparedQuery = engine.PrepareQuery(buffer.Span, new() { UseDigitalSignature = true });
 		}
+
+		return GetQueryInfo(preparedQuery, descriptor, discoverSchema: false);
 	}
 
-	private FlightInfo GetQueryInfo(ReadOnlySpan<byte> preparedQuery, FlightDescriptor descriptor, bool discoverSchema)
-		=> GetQueryInfo(ByteString.CopyFrom(preparedQuery), descriptor, discoverSchema);
+	private FlightInfo GetQueryInfo(in MemoryOwner<byte> preparedQuery, FlightDescriptor descriptor, bool discoverSchema)
+		=> GetQueryInfo(WrapAndRegisterOnDispose(preparedQuery), descriptor, discoverSchema);
 
 	private FlightInfo GetQueryInfo(ByteString preparedQuery, FlightDescriptor descriptor, bool discoverSchema) {
 		var encodedQuery = new BytesValue { Value = preparedQuery };
-		var ep = new FlightEndpoint(new FlightTicket(Any.Pack(encodedQuery).ToByteString()), []);
+		var ep = new FlightEndpoint(new FlightTicket(PackToAny(encodedQuery)), []);
 		return new(
 			discoverSchema ? engine.GetArrowSchema(preparedQuery.Span) : new([], []),
 			descriptor,
