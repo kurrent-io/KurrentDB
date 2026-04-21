@@ -1712,7 +1712,7 @@ public class ClusterVNode<TStreamId> :
 		_mainBus.Subscribe<SystemMessage.SystemReady>(_startup);
 		_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(_startup);
 
-		var certificateExpiryMonitor = new CertificateExpiryMonitor(_mainQueue, _certificateSelector, Log);
+		var certificateExpiryMonitor = new CertificateExpiryMonitor(_mainQueue, Log, _certificateSelector, _clusterClientCertificateSelector);
 		_mainBus.Subscribe<SystemMessage.SystemStart>(certificateExpiryMonitor);
 		_mainBus.Subscribe<MonitoringMessage.CheckCertificateExpiry>(certificateExpiryMonitor);
 
