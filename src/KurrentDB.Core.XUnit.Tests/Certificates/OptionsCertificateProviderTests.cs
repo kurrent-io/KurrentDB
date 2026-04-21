@@ -11,8 +11,7 @@ using Xunit;
 
 namespace KurrentDB.Core.XUnit.Tests.Certificates;
 
-public class OptionsCertificateProviderTests(DirectoryFixture<OptionsCertificateProviderTests> fixture) :
-	IClassFixture<DirectoryFixture<OptionsCertificateProviderTests>> {
+public class OptionsCertificateProviderTests : DirectoryPerTest<OptionsCertificateProviderTests> {
 
 	private static X509Certificate2 CreateCert(
 		string subject,
@@ -58,7 +57,7 @@ public class OptionsCertificateProviderTests(DirectoryFixture<OptionsCertificate
 	}
 
 	private string WriteCertToFile(X509Certificate2 cert, string fileName) {
-		var path = fixture.GetFilePathFor(fileName);
+		var path = Fixture.GetFilePathFor(fileName);
 		File.WriteAllBytes(path, cert.Export(X509ContentType.Pfx));
 		return path;
 	}
@@ -77,7 +76,7 @@ public class OptionsCertificateProviderTests(DirectoryFixture<OptionsCertificate
 			TrustedRootCertificates = new X509Certificate2Collection(StripPrivateKey(rootCert)),
 			Certificate = new ClusterVNodeOptions.CertificateOptions {
 				CertificateReservedNodeCommonName = reservedNodeCN ?? string.Empty,
-				TrustedRootCertificatesPath = fixture.Directory,
+				TrustedRootCertificatesPath = Fixture.Directory,
 			},
 		};
 
@@ -89,7 +88,7 @@ public class OptionsCertificateProviderTests(DirectoryFixture<OptionsCertificate
 				},
 			};
 			// also write the root to the temp dir so the node client trusted-root fallback can pick it up
-			File.WriteAllBytes(fixture.GetFilePathFor($"root-{Guid.NewGuid()}.crt"), rootCert.Export(X509ContentType.Cert));
+			File.WriteAllBytes(Fixture.GetFilePathFor($"root-{Guid.NewGuid()}.crt"), rootCert.Export(X509ContentType.Cert));
 		}
 
 		return options;
