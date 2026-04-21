@@ -226,26 +226,26 @@ public static class ClusterVNodeOptionsExtensions {
 	}
 
 	/// <summary>
-	/// Tries to load the cluster client certificate from the options set.
-	/// Returns false if no cluster client certificate is configured.
+	/// Tries to load the node client certificate from the options set.
+	/// Returns false if no node client certificate is configured.
 	/// </summary>
-	public static bool TryLoadClientClusterCertificate(
+	public static bool TryLoadNodeClientCertificate(
 		this ClusterVNodeOptions options,
 		out X509Certificate2 certificate,
 		out X509Certificate2Collection intermediates) =>
 
 		TryLoadCertificate(
-			logLabel: "cluster client",
+			logLabel: "node client",
 			store: new StoreCertInfo(
-				StoreLocation: options.ClientClusterCertificateStore.ClientClusterCertificateStoreLocation,
-				StoreName: options.ClientClusterCertificateStore.ClientClusterCertificateStoreName,
-				SubjectName: options.ClientClusterCertificateStore.ClientClusterCertificateSubjectName,
-				Thumbprint: options.ClientClusterCertificateStore.ClientClusterCertificateThumbprint),
+				StoreLocation: options.NodeClientCertificateStore.NodeClientCertificateStoreLocation,
+				StoreName: options.NodeClientCertificateStore.NodeClientCertificateStoreName,
+				SubjectName: options.NodeClientCertificateStore.NodeClientCertificateSubjectName,
+				Thumbprint: options.NodeClientCertificateStore.NodeClientCertificateThumbprint),
 			file: new FileCertInfo(
-				File: options.ClientClusterCertificateFile.ClientClusterCertificateFile,
-				PrivateKeyFile: options.ClientClusterCertificateFile.ClientClusterCertificatePrivateKeyFile,
-				Password: options.ClientClusterCertificateFile.ClientClusterCertificatePassword,
-				PrivateKeyPassword: options.ClientClusterCertificateFile.ClientClusterCertificatePrivateKeyPassword),
+				File: options.NodeClientCertificateFile.NodeClientCertificateFile,
+				PrivateKeyFile: options.NodeClientCertificateFile.NodeClientCertificatePrivateKeyFile,
+				Password: options.NodeClientCertificateFile.NodeClientCertificatePassword,
+				PrivateKeyPassword: options.NodeClientCertificateFile.NodeClientCertificatePrivateKeyPassword),
 			certificate: out certificate,
 			intermediates: out intermediates);
 
@@ -317,17 +317,17 @@ public static class ClusterVNodeOptionsExtensions {
 	}
 
 	/// <summary>
-	/// Loads trusted root certificates for the cluster client certificate.
-	/// If cluster-client-specific trusted root store options are not set, falls back to the main
+	/// Loads trusted root certificates for the node client certificate.
+	/// If node-client-specific trusted root store options are not set, falls back to the main
 	/// <see cref="ClusterVNodeOptions.CertificateOptions.TrustedRootCertificatesPath"/>.
 	/// </summary>
-	public static X509Certificate2Collection LoadClientClusterTrustedRootCertificates(this ClusterVNodeOptions options) {
+	public static X509Certificate2Collection LoadNodeClientTrustedRootCertificates(this ClusterVNodeOptions options) {
 		return LoadTrustedRootsFromStoreOrPath(
 			new StoreCertInfo(
-				StoreLocation: options.ClientClusterCertificateStore.ClientClusterTrustedRootCertificateStoreLocation,
-				StoreName: options.ClientClusterCertificateStore.ClientClusterTrustedRootCertificateStoreName,
-				SubjectName: options.ClientClusterCertificateStore.ClientClusterTrustedRootCertificateSubjectName,
-				Thumbprint: options.ClientClusterCertificateStore.ClientClusterTrustedRootCertificateThumbprint),
+				StoreLocation: options.NodeClientCertificateStore.NodeClientTrustedRootCertificateStoreLocation,
+				StoreName: options.NodeClientCertificateStore.NodeClientTrustedRootCertificateStoreName,
+				SubjectName: options.NodeClientCertificateStore.NodeClientTrustedRootCertificateSubjectName,
+				Thumbprint: options.NodeClientCertificateStore.NodeClientTrustedRootCertificateThumbprint),
 			options.Certificate.TrustedRootCertificatesPath);
 	}
 

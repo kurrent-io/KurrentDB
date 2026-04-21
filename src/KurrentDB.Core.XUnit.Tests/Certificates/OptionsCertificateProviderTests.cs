@@ -69,7 +69,7 @@ public class OptionsCertificateProviderTests(DirectoryFixture<OptionsCertificate
 	private ClusterVNodeOptions BuildOptions(
 		X509Certificate2 nodeCert,
 		X509Certificate2 rootCert,
-		X509Certificate2 clusterClientCert = null,
+		X509Certificate2 nodeClientCert = null,
 		string reservedNodeCN = null) {
 
 		var options = new ClusterVNodeOptions {
@@ -81,14 +81,14 @@ public class OptionsCertificateProviderTests(DirectoryFixture<OptionsCertificate
 			},
 		};
 
-		if (clusterClientCert != null) {
-			var certPath = WriteCertToFile(clusterClientCert, $"cluster-client-{Guid.NewGuid()}.pfx");
+		if (nodeClientCert != null) {
+			var certPath = WriteCertToFile(nodeClientCert, $"node-client-{Guid.NewGuid()}.pfx");
 			options = options with {
-				ClientClusterCertificateFile = new ClusterVNodeOptions.ClientClusterCertificateFileOptions {
-					ClientClusterCertificateFile = certPath,
+				NodeClientCertificateFile = new ClusterVNodeOptions.NodeClientCertificateFileOptions {
+					NodeClientCertificateFile = certPath,
 				},
 			};
-			// also write the root to the temp dir so the cluster client trusted-root fallback can pick it up
+			// also write the root to the temp dir so the node client trusted-root fallback can pick it up
 			File.WriteAllBytes(fixture.GetFilePathFor($"root-{Guid.NewGuid()}.crt"), rootCert.Export(X509ContentType.Cert));
 		}
 
@@ -119,8 +119,8 @@ public class OptionsCertificateProviderTests(DirectoryFixture<OptionsCertificate
 
 		Assert.Equal(LoadCertificateResult.Success, result);
 		Assert.Equal(node.Thumbprint, sut.Certificate.Thumbprint);
-		// in single cert mode, cluster client cert is the same as the main cert
-		Assert.Equal(node.Thumbprint, sut.ClientClusterCertificate.Thumbprint);
+		// in single cert mode, node client cert is the same as the main cert
+		Assert.Equal(node.Thumbprint, sut.NodeClientCertificate.Thumbprint);
 		Assert.Equal("eventstoredb-node", sut.GetReservedNodeCommonName());
 	}
 
@@ -128,26 +128,26 @@ public class OptionsCertificateProviderTests(DirectoryFixture<OptionsCertificate
 	public void dual_cert_mode_loads_successfully() {
 		var root = CreateCert("CN=test-ca", ca: true);
 		var node = CreateCert("CN=kurrentdb.example.com", parent: root, serverAuthEKU: true);
-		var clusterClient = CreateCert("CN=eventstoredb-node", parent: root, serverAuthEKU: true, clientAuthEKU: true);
-		var options = BuildOptions(node, root, clusterClient);
+		var nodeClient = CreateCert("CN=eventstoredb-node", parent: root, serverAuthEKU: true, clientAuthEKU: true);
+		var options = BuildOptions(node, root, nodeClient);
 		var sut = new OptionsCertificateProvider();
 
 		var result = sut.LoadCertificates(options);
 
 		Assert.Equal(LoadCertificateResult.Success, result);
 		Assert.Equal(node.Thumbprint, sut.Certificate.Thumbprint);
-		Assert.Equal(clusterClient.Thumbprint, sut.ClientClusterCertificate.Thumbprint);
-		// reserved CN auto-derived from the cluster client cert (not the main cert)
+		Assert.Equal(nodeClient.Thumbprint, sut.NodeClientCertificate.Thumbprint);
+		// reserved CN auto-derived from the node client cert (not the main cert)
 		Assert.Equal("eventstoredb-node", sut.GetReservedNodeCommonName());
 	}
 
 	[Fact]
-	public void dual_cert_mode_cluster_client_cert_with_clientauth_only_fails_classification() {
+	public void dual_cert_mode_node_client_cert_with_clientauth_only_fails_classification() {
 		var root = CreateCert("CN=test-ca", ca: true);
 		var node = CreateCert("CN=eventstoredb-node", parent: root, serverAuthEKU: true, clientAuthEKU: true);
 		// clientAuth-only classifies as User, not Node
-		var clusterClient = CreateCert("CN=eventstoredb-node", parent: root, clientAuthEKU: true);
-		var options = BuildOptions(node, root, clusterClient);
+		var nodeClient = CreateCert("CN=eventstoredb-node", parent: root, clientAuthEKU: true);
+		var options = BuildOptions(node, root, nodeClient);
 		var sut = new OptionsCertificateProvider();
 
 		var result = sut.LoadCertificates(options);
@@ -168,17 +168,17 @@ public class OptionsCertificateProviderTests(DirectoryFixture<OptionsCertificate
 	}
 
 	[Fact]
-	public void reserved_node_cn_matches_cluster_client_cert_in_dual_cert_mode() {
+	public void reserved_node_cn_matches_node_client_cert_in_dual_cert_mode() {
 		var root = CreateCert("CN=test-ca", ca: true);
 		// main cert has a different CN — expected in dual mode (public CA hostname)
 		var node = CreateCert("CN=kurrentdb.example.com", parent: root, serverAuthEKU: true);
-		var clusterClient = CreateCert("CN=eventstoredb-node", parent: root, serverAuthEKU: true, clientAuthEKU: true);
-		var options = BuildOptions(node, root, clusterClient, reservedNodeCN: "eventstoredb-node");
+		var nodeClient = CreateCert("CN=eventstoredb-node", parent: root, serverAuthEKU: true, clientAuthEKU: true);
+		var options = BuildOptions(node, root, nodeClient, reservedNodeCN: "eventstoredb-node");
 		var sut = new OptionsCertificateProvider();
 
 		var result = sut.LoadCertificates(options);
 
-		// reserved CN matches the cluster client cert, not the main cert — should succeed
+		// reserved CN matches the node client cert, not the main cert — should succeed
 		Assert.Equal(LoadCertificateResult.Success, result);
 	}
 

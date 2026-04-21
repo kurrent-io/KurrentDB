@@ -41,8 +41,8 @@ public partial record ClusterVNodeOptions {
 	[OptionGroup] public CertificateOptions Certificate { get; init; } = new();
 	[OptionGroup] public CertificateFileOptions CertificateFile { get; init; } = new();
 	[OptionGroup] public CertificateStoreOptions CertificateStore { get; init; } = new();
-	[OptionGroup] public ClientClusterCertificateFileOptions ClientClusterCertificateFile { get; init; } = new();
-	[OptionGroup] public ClientClusterCertificateStoreOptions ClientClusterCertificateStore { get; init; } = new();
+	[OptionGroup] public NodeClientCertificateFileOptions NodeClientCertificateFile { get; init; } = new();
+	[OptionGroup] public NodeClientCertificateStoreOptions NodeClientCertificateStore { get; init; } = new();
 	[OptionGroup] public ClusterOptions Cluster { get; init; } = new();
 	[OptionGroup] public DatabaseOptions Database { get; init; } = new();
 	[OptionGroup] public GrpcOptions Grpc { get; init; } = new();
@@ -81,8 +81,8 @@ public partial record ClusterVNodeOptions {
 			Certificate = configuration.BindOptions<CertificateOptions>(),
 			CertificateFile = configuration.BindOptions<CertificateFileOptions>(),
 			CertificateStore = configuration.BindOptions<CertificateStoreOptions>(),
-			ClientClusterCertificateFile = configuration.BindOptions<ClientClusterCertificateFileOptions>(),
-			ClientClusterCertificateStore = configuration.BindOptions<ClientClusterCertificateStoreOptions>(),
+			NodeClientCertificateFile = configuration.BindOptions<NodeClientCertificateFileOptions>(),
+			NodeClientCertificateStore = configuration.BindOptions<NodeClientCertificateStoreOptions>(),
 			Cluster = configuration.BindOptions<ClusterOptions>(),
 			Database = configuration.BindOptions<DatabaseOptions>(),
 			Grpc = configuration.BindOptions<GrpcOptions>(),
@@ -258,51 +258,51 @@ public partial record ClusterVNodeOptions {
 		public string TrustedRootCertificateThumbprint { get; init; } = string.Empty;
 	}
 
-	[Description("Cluster Client Certificate Options (from file)")]
-	public record ClientClusterCertificateFileOptions {
-		[Description("The path to a PKCS #12 (.p12/.pfx) or an X.509 (.pem, .crt, .cer, .der) cluster client certificate file " +
-					 "for outbound intra-cluster connections. If specified, this certificate is used when connecting to other nodes " +
+	[Description("Node Client Certificate Options (from file)")]
+	public record NodeClientCertificateFileOptions {
+		[Description("The path to a PKCS #12 (.p12/.pfx) or an X.509 (.pem, .crt, .cer, .der) certificate file " +
+					 "for the node's client certificate used for outbound intra-cluster connections. If specified, this certificate is used when connecting to other nodes " +
 					 "instead of the main node certificate.")]
-		public string? ClientClusterCertificateFile { get; init; }
+		public string? NodeClientCertificateFile { get; init; }
 
-		[Description("The path to the cluster client certificate private key file (.key) if an X.509 (.pem, .crt, .cer, .der) " +
-					 "cluster client certificate file is provided.")]
-		public string? ClientClusterCertificatePrivateKeyFile { get; init; }
+		[Description("The path to the node's client certificate private key file (.key) if an X.509 (.pem, .crt, .cer, .der) " +
+					 "node client certificate file is provided.")]
+		public string? NodeClientCertificatePrivateKeyFile { get; init; }
 
-		[Description("The password to the cluster client certificate if a PKCS #12 (.p12/.pfx) certificate file is provided."),
+		[Description("The password to the node's client certificate if a PKCS #12 (.p12/.pfx) certificate file is provided."),
 		 Sensitive]
-		public string? ClientClusterCertificatePassword { get; init; }
+		public string? NodeClientCertificatePassword { get; init; }
 
-		[Description("The password to the cluster client certificate private key file if an encrypted PKCS #8 private key file is provided."),
+		[Description("The password to the node's client certificate private key file if an encrypted PKCS #8 private key file is provided."),
 		 Sensitive]
-		public string? ClientClusterCertificatePrivateKeyPassword { get; init; }
+		public string? NodeClientCertificatePrivateKeyPassword { get; init; }
 	}
 
-	[Description("Cluster Client Certificate Options (from store)")]
-	public record ClientClusterCertificateStoreOptions {
-		[Description("The certificate store location name for the cluster client certificate.")]
-		public string ClientClusterCertificateStoreLocation { get; init; } = string.Empty;
+	[Description("Node Client Certificate Options (from store)")]
+	public record NodeClientCertificateStoreOptions {
+		[Description("The certificate store location name for the node's client certificate.")]
+		public string NodeClientCertificateStoreLocation { get; init; } = string.Empty;
 
-		[Description("The certificate store name for the cluster client certificate.")]
-		public string ClientClusterCertificateStoreName { get; init; } = string.Empty;
+		[Description("The certificate store name for the node's client certificate.")]
+		public string NodeClientCertificateStoreName { get; init; } = string.Empty;
 
-		[Description("The subject name of the cluster client certificate.")]
-		public string ClientClusterCertificateSubjectName { get; init; } = string.Empty;
+		[Description("The subject name of the node's client certificate.")]
+		public string NodeClientCertificateSubjectName { get; init; } = string.Empty;
 
-		[Description("The fingerprint/thumbprint of the cluster client certificate.")]
-		public string ClientClusterCertificateThumbprint { get; init; } = string.Empty;
+		[Description("The fingerprint/thumbprint of the node's client certificate.")]
+		public string NodeClientCertificateThumbprint { get; init; } = string.Empty;
 
-		[Description("The name of the certificate store that contains the trusted root certificate for the cluster client certificate.")]
-		public string ClientClusterTrustedRootCertificateStoreName { get; init; } = string.Empty;
+		[Description("The name of the certificate store that contains the trusted root certificate for the node's client certificate.")]
+		public string NodeClientTrustedRootCertificateStoreName { get; init; } = string.Empty;
 
-		[Description("The certificate store location that contains the trusted root certificate for the cluster client certificate.")]
-		public string ClientClusterTrustedRootCertificateStoreLocation { get; init; } = string.Empty;
+		[Description("The certificate store location that contains the trusted root certificate for the node's client certificate.")]
+		public string NodeClientTrustedRootCertificateStoreLocation { get; init; } = string.Empty;
 
-		[Description("The trusted root certificate subject name for the cluster client certificate.")]
-		public string ClientClusterTrustedRootCertificateSubjectName { get; init; } = string.Empty;
+		[Description("The trusted root certificate subject name for the node's client certificate.")]
+		public string NodeClientTrustedRootCertificateSubjectName { get; init; } = string.Empty;
 
-		[Description("The trusted root certificate fingerprint/thumbprint for the cluster client certificate.")]
-		public string ClientClusterTrustedRootCertificateThumbprint { get; init; } = string.Empty;
+		[Description("The trusted root certificate fingerprint/thumbprint for the node's client certificate.")]
+		public string NodeClientTrustedRootCertificateThumbprint { get; init; } = string.Empty;
 	}
 
 	[Description("Cluster Options")]

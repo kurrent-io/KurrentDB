@@ -20,15 +20,15 @@ public class OptionsCertificateProvider : CertificateProvider {
 			return LoadCertificateResult.Skipped;
 		}
 
-		// Load both Node and ClusterClient certificates up-front.
+		// Load both Node and NodeClient certificates up-front.
 		// Node cert is the server cert sent to incoming connections
-		// ClusterClient cert is the client cert sent on outgoing connections to other nodes.
-		// ClusterClient cert defaults to the same certificate as Node cert if not provided.
+		// NodeClient cert is the client cert sent on outgoing connections to other nodes.
+		// NodeClient cert defaults to the same certificate as Node cert if not provided.
 		var (certificate, intermediates) = options.LoadNodeCertificate();
-		var hasClientClusterCert = options.TryLoadClientClusterCertificate(out var clientClusterCertificate, out var clientClusterIntermediates);
-		if (!hasClientClusterCert) {
-			clientClusterCertificate = certificate;
-			clientClusterIntermediates = intermediates;
+		var hasNodeClientCert = options.TryLoadNodeClientCertificate(out var nodeClientCertificate, out var nodeClientIntermediates);
+		if (!hasNodeClientCert) {
+			nodeClientCertificate = certificate;
+			nodeClientIntermediates = intermediates;
 		}
 
 		string reservedNodeCN;
@@ -36,26 +36,26 @@ public class OptionsCertificateProvider : CertificateProvider {
 
 		// Determine the CN pattern expected from incomming node certificates.
 		if (options.Certificate.CertificateReservedNodeCommonName.IsNotEmptyString()) {
-			// Reserved CN is configured. Check that the cluster client cert matches it.
+			// Reserved CN is configured. Check that the node client cert matches it.
 			reservedNodeCN = options.Certificate.CertificateReservedNodeCommonName;
-			if (!clientClusterCertificate.ClientCertificateMatchesName(reservedNodeCN)) {
-				var clientClusterCertCN = clientClusterCertificate.GetCommonName();
+			if (!nodeClientCertificate.ClientCertificateMatchesName(reservedNodeCN)) {
+				var nodeClientCertCN = nodeClientCertificate.GetCommonName();
 				Log.Error(
 					"Certificate CN: {certificateCN} does not match with the {reservedNodeCNOption} configuration setting: {reservedNodeCN}",
-					clientClusterCertCN, reservedNodeCNOption, reservedNodeCN);
+					nodeClientCertCN, reservedNodeCNOption, reservedNodeCN);
 				return LoadCertificateResult.VerificationFailed;
 			}
 			Log.Information("{reservedNodeCNOption} configured to: {reservedNodeCN}",
 				reservedNodeCNOption, reservedNodeCN);
 		} else {
-			reservedNodeCN = clientClusterCertificate.GetCommonName();
+			reservedNodeCN = nodeClientCertificate.GetCommonName();
 			Log.Information("{reservedNodeCNOption} auto-configured to: {reservedNodeCN} based on certificate",
 				reservedNodeCNOption, reservedNodeCN);
 		}
 
 		// Log information about the certificates and their intermediates
 		LogThumbprints("node", Certificate, certificate, intermediates);
-		LogThumbprints("cluster client", ClientClusterCertificate, clientClusterCertificate, clientClusterIntermediates);
+		LogThumbprints("node client", NodeClientCertificate, nodeClientCertificate, nodeClientIntermediates);
 
 		static void LogThumbprints(string label, X509Certificate2 previousCertificate, X509Certificate2 certificate, X509Certificate2Collection intermediates) {
 			var previousThumbprint = previousCertificate?.Thumbprint;
@@ -82,28 +82,28 @@ public class OptionsCertificateProvider : CertificateProvider {
 			return LoadCertificateResult.VerificationFailed;
 		}
 
-		// Validate the cluster client certificate
-		if (hasClientClusterCert) {
-			var clientClusterTrustedRoots = options.LoadClientClusterTrustedRootCertificates();
+		// Validate the node client certificate
+		if (hasNodeClientCert) {
+			var nodeClientTrustedRootCerts = options.LoadNodeClientTrustedRootCertificates();
 
-			foreach (var trustedRootCert in clientClusterTrustedRoots) {
-				Log.Information("Loading trusted root for cluster client certificate. Subject: {subject}, Thumbprint: {thumbprint}", trustedRootCert.SubjectName.Name, trustedRootCert.Thumbprint);
+			foreach (var trustedRootCert in nodeClientTrustedRootCerts) {
+				Log.Information("Loading trusted root for node client certificate. Subject: {subject}, Thumbprint: {thumbprint}", trustedRootCert.SubjectName.Name, trustedRootCert.Thumbprint);
 			}
 
-			if (!VerifyCertificates("cluster client", clientClusterCertificate, clientClusterIntermediates, clientClusterTrustedRoots)) {
+			if (!VerifyCertificates("node client", nodeClientCertificate, nodeClientIntermediates, nodeClientTrustedRootCerts)) {
 				return LoadCertificateResult.VerificationFailed;
 			}
 		}
 
 		// Check the EKUs
-		if (clientClusterCertificate.ClassifyInboundCertificate(
+		if (nodeClientCertificate.ClassifyInboundCertificate(
 				disableClientAuthEkuValidation: options.Certificate.DisableClientAuthEkuValidation,
-				out var clientClusterCertDescription) is not CertificateClassification.Node) {
+				out var nodeClientCertDescription) is not CertificateClassification.Node) {
 			
-			Log.Error(hasClientClusterCert
-				? "The cluster client certificate was not recognized as a node certificate: {description}"
+			Log.Error(hasNodeClientCert
+				? "The node client certificate was not recognized as a node certificate: {description}"
 				: "The node certificate was not recognized as a node certificate: {description}",
-				clientClusterCertDescription);
+				nodeClientCertDescription);
 			return LoadCertificateResult.VerificationFailed;
 		}
 	
@@ -113,8 +113,8 @@ public class OptionsCertificateProvider : CertificateProvider {
 		// to fail when establishing/receiving a connection and the next connection retries will succeed.
 		Certificate = certificate;
 		IntermediateCerts = intermediates;
-		ClientClusterCertificate = clientClusterCertificate;
-		ClientClusterIntermediateCerts = clientClusterIntermediates;
+		NodeClientCertificate = nodeClientCertificate;
+		NodeClientIntermediateCerts = nodeClientIntermediates;
 		TrustedRootCerts = trustedRootCerts;
 		_cachedReservedNodeCN = reservedNodeCN;
 
