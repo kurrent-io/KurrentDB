@@ -204,8 +204,10 @@ public class ClusterVNode<TStreamId> :
 	private readonly bool _disableHttps;
 	private readonly bool _enableUnixSocket;
 	private readonly Func<X509Certificate2> _certificateSelector;
+	private readonly Func<X509Certificate2> _clusterClientCertificateSelector;
 	private readonly Func<X509Certificate2Collection> _trustedRootCertsSelector;
 	private readonly Func<X509Certificate2Collection> _intermediateCertsSelector;
+	private readonly Func<X509Certificate2Collection> _clusterClientIntermediateCertsSelector;
 	private readonly CertificateDelegates.ServerCertificateValidator _internalServerCertificateValidator;
 	private readonly CertificateDelegates.ClientCertificateValidator _internalClientCertificateValidator;
 	private readonly CertificateDelegates.ServerCertificateValidator _externalServerCertificateValidator;
@@ -511,14 +513,19 @@ public class ClusterVNode<TStreamId> :
 		_queueStatsManager = new QueueStatsManager();
 
 		_certificateSelector = () => _certificateProvider?.Certificate;
+		_clusterClientCertificateSelector = () => _certificateProvider?.ClientClusterCertificate;
 		_trustedRootCertsSelector = () => _certificateProvider?.TrustedRootCerts;
 		_intermediateCertsSelector = () =>
-			_certificateProvider?.IntermediateCerts == null
+			_certificateProvider?.IntermediateCerts is not { } intermediates
 				? null
-				: new X509Certificate2Collection(_certificateProvider?.IntermediateCerts);
+				: new X509Certificate2Collection(intermediates);
+		_clusterClientIntermediateCertsSelector = () =>
+			_certificateProvider?.ClientClusterIntermediateCerts is not { } intermediates
+				? null
+				: new X509Certificate2Collection(intermediates);
 
 		_internalServerCertificateValidator = (cert, chain, errors, otherNames) => ValidateServerCertificate(cert, chain, errors, _intermediateCertsSelector, _trustedRootCertsSelector, otherNames);
-		_internalClientCertificateValidator = (cert, chain, errors) => ValidateClientCertificate(cert, chain, errors, _intermediateCertsSelector, _trustedRootCertsSelector);
+		_internalClientCertificateValidator = (cert, chain, errors) => ValidateClientCertificate(cert, chain, errors, _clusterClientIntermediateCertsSelector, _trustedRootCertsSelector);
 		_externalServerCertificateValidator = (cert, chain, errors, otherNames) => ValidateServerCertificate(cert, chain, errors, _intermediateCertsSelector, _trustedRootCertsSelector, otherNames);
 
 		var forwardingProxy = new MessageForwardingProxy();
@@ -564,7 +571,7 @@ public class ClusterVNode<TStreamId> :
 		_nodeHttpClientFactory = new NodeHttpClientFactory(
 			uriScheme,
 			_internalServerCertificateValidator,
-			_certificateSelector);
+			_clusterClientCertificateSelector);
 
 		_eventStoreClusterClientCache = new EventStoreClusterClientCache(_mainQueue,
 			(endpoint, publisher) =>
@@ -1508,7 +1515,7 @@ public class ClusterVNode<TStreamId> :
 				GossipAdvertiseInfo.InternalTcp ?? GossipAdvertiseInfo.InternalSecureTcp,
 				options.Cluster.ReadOnlyReplica,
 				!disableInternalTcpTls, _internalServerCertificateValidator,
-				_certificateSelector,
+				_clusterClientCertificateSelector,
 				TimeSpan.FromMilliseconds(options.Interface.ReplicationHeartbeatTimeout),
 				TimeSpan.FromMilliseconds(options.Interface.ReplicationHeartbeatInterval),
 				TimeSpan.FromMilliseconds(options.Database.WriteTimeoutMs));
@@ -1612,7 +1619,10 @@ public class ClusterVNode<TStreamId> :
 				.AddSingleton<IReadOnlyList<IHttpAuthenticationProvider>>(httpAuthenticationProviders)
 				.AddSingleton<Func<(X509Certificate2 Node, X509Certificate2Collection Intermediates,
 						X509Certificate2Collection Roots)>>
-					(() => (_certificateSelector(), _intermediateCertsSelector(), _trustedRootCertsSelector()))
+					(() => (
+						_clusterClientCertificateSelector(),
+						_clusterClientIntermediateCertsSelector(),
+						_trustedRootCertsSelector()))
 				.AddSingleton(_nodeHttpClientFactory)
 				.AddSingleton<IChunkRegistry<IChunkBlob>>(Db.Manager)
 				.AddSingleton<IVersionedFileNamingStrategy>(Db.Manager.FileSystem.LocalNamingStrategy)
