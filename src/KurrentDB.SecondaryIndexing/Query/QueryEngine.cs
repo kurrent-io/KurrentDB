@@ -6,6 +6,8 @@ using System.Security.Cryptography;
 using Apache.Arrow;
 using DotNext;
 using DotNext.Buffers;
+using DuckDB.NET.Data;
+using DuckDB.NET.Native;
 using Kurrent.Quack;
 using Kurrent.Quack.Arrow;
 using Kurrent.Quack.ConnectionPool;
@@ -48,6 +50,7 @@ internal sealed partial class QueryEngine(DefaultIndexProcessor defaultIndex,
 		var rental = sharedPool.Rent(out var connection);
 		var statement = default(PreparedStatement);
 		var reader = default(QueryResultReader);
+		var cancellation = connection.InterruptQueryOnCancellation(token);
 		try {
 			CaptureSnapshots(in parsedQuery, connection, snapshots, token);
 			statement = new(connection, parsedQuery.Query);
@@ -55,11 +58,16 @@ internal sealed partial class QueryEngine(DefaultIndexProcessor defaultIndex,
 
 			reader = new(in statement, consumer.UseStreaming);
 			await consumer.ConsumeAsync(reader, token);
-		} finally {
+			reader.ThrowOnError(); // to handle query interruption from Quack (see catch block)
+		} catch (DuckDBException e) when (e.ErrorType is DuckDBErrorType.Interrupt) {
+			throw new OperationCanceledException(token);
+		}
+		finally {
+			await cancellation.DisposeAsync();
 			reader?.Dispose();
 			statement.Dispose();
 			Disposable.Dispose(snapshots.WrittenMemory.Span); // release all captured snapshot
-			Disposable.Dispose(MemoryMarshal.CreateReadOnlySpan(in rental, 1));
+			Disposable.Dispose(new ReadOnlySpan<DuckDBConnectionPool.Scope>(in rental));
 			snapshots.Dispose();
 		}
 	}
@@ -86,7 +94,16 @@ internal sealed partial class QueryEngine(DefaultIndexProcessor defaultIndex,
 		}
 	}
 
-	public Schema GetArrowSchema(ReadOnlySpan<byte> preparedQuery) {
+	public Schema GetArrowSchema(ReadOnlySpan<byte> preparedQuery)
+		=> GetArrowSchema<Schema, StatementSchemaReflector>(preparedQuery);
+
+	public Schema GetArrowSchema(ReadOnlySpan<byte> preparedQuery, out Schema parametersSchema) {
+		(var datasetSchema, parametersSchema) = GetArrowSchema<(Schema, Schema), StatementSchemaReflector>(preparedQuery);
+		return datasetSchema;
+	}
+
+	private TResult GetArrowSchema<TResult, TReflector>(ReadOnlySpan<byte> preparedQuery)
+		where TReflector : ISchemaReflector<TResult>, allows ref struct {
 		var parsedQuery = new PreparedQuery(preparedQuery);
 		var snapshots = new PoolingBufferWriter<SnapshotInfo> { Capacity = parsedQuery.ViewCount + 1 }; // + default index
 		var rental = sharedPool.Rent(out var connection);
@@ -95,7 +112,7 @@ internal sealed partial class QueryEngine(DefaultIndexProcessor defaultIndex,
 		try {
 			CaptureSnapshots(in parsedQuery, connection, snapshots, CancellationToken.None);
 			statement = new(connection, parsedQuery.Query);
-			return statement.GetArrowSchema(options);
+			return TReflector.Reflect(statement, options);
 		} finally {
 			statement.Dispose();
 			options.Dispose();
@@ -114,5 +131,17 @@ internal sealed partial class QueryEngine(DefaultIndexProcessor defaultIndex,
 			Snapshot.Dispose();
 			ReadLock.Dispose();
 		}
+	}
+
+	private interface ISchemaReflector<out TResult> {
+		static abstract TResult Reflect(PreparedStatement statement, ArrowOptions options);
+	}
+
+	private readonly ref struct StatementSchemaReflector : ISchemaReflector<Schema>, ISchemaReflector<(Schema, Schema)> {
+		static Schema ISchemaReflector<Schema>.Reflect(PreparedStatement statement, ArrowOptions options)
+			=> statement.GetArrowSchema(options);
+
+		static (Schema, Schema) ISchemaReflector<(Schema, Schema)>.Reflect(PreparedStatement statement, ArrowOptions options)
+			=> (statement.GetArrowSchema(options), statement.GetParameterArrowSchema(options));
 	}
 }

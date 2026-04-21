@@ -35,4 +35,12 @@ public interface IQueryEngine {
 	/// <param name="preparedQuery">The prepared query.</param>
 	/// <returns>The schema of the query result dataset.</returns>
 	Schema GetArrowSchema(ReadOnlySpan<byte> preparedQuery);
+
+	/// <summary>
+	/// Gets Arrow schema for the query.
+	/// </summary>
+	/// <param name="preparedQuery">The prepared query.</param>
+	/// <param name="parametersSchema">The schema of the parameters.</param>
+	/// <returns>The schema of the query result dataset.</returns>
+	Schema GetArrowSchema(ReadOnlySpan<byte> preparedQuery, out Schema parametersSchema);
 }

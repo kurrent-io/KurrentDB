@@ -15,7 +15,7 @@ using KurrentDB.SecondaryIndexing.Query;
 
 namespace KurrentDB.SecondaryIndexing.FlightSql;
 
-partial class FlightServerImpl {
+partial class FlightSqlServer {
 	private Task<FlightInfo> PrepareQueryAsync(CommandStatementQuery query, FlightDescriptor descriptor, CancellationToken token) {
 		Task<FlightInfo> task;
 		if (token.IsCancellationRequested) {
@@ -71,7 +71,7 @@ partial class FlightServerImpl {
 		var encodedQuery = new BytesValue { Value = preparedQuery };
 		var ep = new FlightEndpoint(new FlightTicket(Any.Pack(encodedQuery).ToByteString()), []);
 		return new(
-			discoverSchema ? engine.GetArrowSchema(preparedQuery.Span) : EmptySchema,
+			discoverSchema ? engine.GetArrowSchema(preparedQuery.Span) : new([], []),
 			descriptor,
 			[ep]);
 	}
@@ -81,21 +81,24 @@ partial class FlightServerImpl {
 			.AsTask();
 
 	[StructLayout(LayoutKind.Auto)]
-	private readonly struct QueryResultConsumer(FlightServerRecordBatchStreamWriter writer) : IQueryResultConsumer {
+	private readonly struct QueryResultConsumer(FlightRecordBatchStreamWriter writer) : IQueryResultConsumer {
 
 		public ValueTask ConsumeAsync(IQueryResultReader reader, CancellationToken token)
 			=> ConsumeAsync(reader, writer, token);
 
-		private static async ValueTask ConsumeAsync(IQueryResultReader reader,
-			FlightServerRecordBatchStreamWriter writer,
+		private static async ValueTask ConsumeAsync(
+			IQueryResultReader reader,
+			FlightRecordBatchStreamWriter writer,
 			CancellationToken token) {
 			using var options = reader.GetArrowOptions();
 			var schema = reader.GetArrowSchema(options);
 			await writer.SetupStream(schema);
 
 			while (reader.TryRead()) {
-				using var scope = reader.Chunk.ToRecordBatch(options, schema, out var batch);
-				await writer.WriteAsync(batch);
+				using (var batch = reader.Chunk.ToRecordBatch(options, schema)) {
+					await writer.WriteAsync(batch);
+				}
+
 				token.ThrowIfCancellationRequested();
 			}
 		}

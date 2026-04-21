@@ -18,6 +18,8 @@ partial class QueryEngine {
 			_result = statement.ExecuteQuery(useStreaming);
 		}
 
+		internal void ThrowOnError() => _result.ThrowOnError();
+
 		public ArrowOptions GetArrowOptions() => _result.GetArrowOptions();
 
 		public Schema GetArrowSchema(ArrowOptions options) => _result.GetArrowSchema();

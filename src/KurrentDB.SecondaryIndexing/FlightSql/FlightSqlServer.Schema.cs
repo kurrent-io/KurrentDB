@@ -3,13 +3,16 @@
 
 using System.Text;
 using Apache.Arrow;
+using Apache.Arrow.Ipc;
 using DotNext.Buffers;
+using DotNext.IO;
 using DotNext.Text;
+using Google.Protobuf;
 
 namespace KurrentDB.SecondaryIndexing.FlightSql;
 
-partial class FlightServerImpl {
-	private Task<Schema> GetSchemaAsync(ReadOnlyMemory<char> query, CancellationToken token) {
+partial class FlightSqlServer {
+	private Task<Schema> GetQuerySchemaAsync(ReadOnlyMemory<char> query, CancellationToken token) {
 		Task<Schema> task;
 		if (token.IsCancellationRequested) {
 			task = Task.FromCanceled<Schema>(token);
@@ -30,5 +33,19 @@ partial class FlightServerImpl {
 		}
 
 		return task;
+	}
+
+	private static ByteString SerializeSchema(Schema schema) {
+		var buffer = new PoolingBufferWriter<byte> { Capacity = 2048 };
+		var stream = Stream.CreateWritable(buffer, flush: null, flushAsync: null);
+		var writer = new ArrowStreamWriter(stream, schema, leaveOpen: true);
+		try {
+			writer.WriteStart();
+			return ByteString.CopyFrom(buffer.WrittenMemory.Span);
+		} finally {
+			writer.Dispose();
+			stream.Dispose();
+			buffer.Dispose();
+		}
 	}
 }

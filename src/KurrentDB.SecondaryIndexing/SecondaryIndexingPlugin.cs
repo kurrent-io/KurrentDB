@@ -57,7 +57,7 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddSingleton<IQueryEngine>(static sp => sp.GetRequiredService<QueryEngine>());
 		services.AddSingleton<UserIndexEngine>();
 		services.AddDuckDBSetup<IndexingDbSchema>();
-		services.AddSingleton<FlightServer, FlightServerImpl>();
+		services.AddFlightSqlServer();
 
 		services.AddHostedService<DefaultIndexBuilder>();
 		services.AddHostedService(sp => sp.GetRequiredService<UserIndexEngine>());
