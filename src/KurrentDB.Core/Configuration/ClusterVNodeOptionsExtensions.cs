@@ -225,6 +225,30 @@ public static class ClusterVNodeOptionsExtensions {
 		return (certificate, intermediates);
 	}
 
+	/// <summary>
+	/// Tries to load the cluster client certificate from the options set.
+	/// Returns false if no cluster client certificate is configured.
+	/// </summary>
+	public static bool TryLoadClientClusterCertificate(
+		this ClusterVNodeOptions options,
+		out X509Certificate2 certificate,
+		out X509Certificate2Collection intermediates) =>
+
+		TryLoadCertificate(
+			logLabel: "cluster client",
+			store: new StoreCertInfo(
+				StoreLocation: options.ClientClusterCertificateStore.ClientClusterCertificateStoreLocation,
+				StoreName: options.ClientClusterCertificateStore.ClientClusterCertificateStoreName,
+				SubjectName: options.ClientClusterCertificateStore.ClientClusterCertificateSubjectName,
+				Thumbprint: options.ClientClusterCertificateStore.ClientClusterCertificateThumbprint),
+			file: new FileCertInfo(
+				File: options.ClientClusterCertificateFile.ClientClusterCertificateFile,
+				PrivateKeyFile: options.ClientClusterCertificateFile.ClientClusterCertificatePrivateKeyFile,
+				Password: options.ClientClusterCertificateFile.ClientClusterCertificatePassword,
+				PrivateKeyPassword: options.ClientClusterCertificateFile.ClientClusterCertificatePrivateKeyPassword),
+			certificate: out certificate,
+			intermediates: out intermediates);
+
 	private static bool TryLoadCertificate(
 		string logLabel,
 		StoreCertInfo store,
@@ -290,6 +314,21 @@ public static class ClusterVNodeOptionsExtensions {
 				SubjectName: options.CertificateStore.TrustedRootCertificateSubjectName,
 				Thumbprint: options.CertificateStore.TrustedRootCertificateThumbprint),
 			path: options.Certificate.TrustedRootCertificatesPath);
+	}
+
+	/// <summary>
+	/// Loads trusted root certificates for the cluster client certificate.
+	/// If cluster-client-specific trusted root store options are not set, falls back to the main
+	/// <see cref="ClusterVNodeOptions.CertificateOptions.TrustedRootCertificatesPath"/>.
+	/// </summary>
+	public static X509Certificate2Collection LoadClientClusterTrustedRootCertificates(this ClusterVNodeOptions options) {
+		return LoadTrustedRootsFromStoreOrPath(
+			new StoreCertInfo(
+				StoreLocation: options.ClientClusterCertificateStore.ClientClusterTrustedRootCertificateStoreLocation,
+				StoreName: options.ClientClusterCertificateStore.ClientClusterTrustedRootCertificateStoreName,
+				SubjectName: options.ClientClusterCertificateStore.ClientClusterTrustedRootCertificateSubjectName,
+				Thumbprint: options.ClientClusterCertificateStore.ClientClusterTrustedRootCertificateThumbprint),
+			options.Certificate.TrustedRootCertificatesPath);
 	}
 
 	private static X509Certificate2Collection LoadTrustedRootsFromStoreOrPath(StoreCertInfo store, string path) {

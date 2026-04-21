@@ -9,6 +9,7 @@ using Serilog;
 
 namespace KurrentDB.Core.Certificates;
 
+// (Re)Loads the certificates specified in the ClusterVNodeOptions
 public class OptionsCertificateProvider : CertificateProvider {
 	private static readonly ILogger Log = Serilog.Log.ForContext<ClusterVNode>();
 	private string _cachedReservedNodeCN;
@@ -19,55 +20,101 @@ public class OptionsCertificateProvider : CertificateProvider {
 			return LoadCertificateResult.Skipped;
 		}
 
+		// Load both Node and ClusterClient certificates up-front.
+		// Node cert is the server cert sent to incoming connections
+		// ClusterClient cert is the client cert sent on outgoing connections to other nodes.
+		// ClusterClient cert defaults to the same certificate as Node cert if not provided.
 		var (certificate, intermediates) = options.LoadNodeCertificate();
+		var hasClientClusterCert = options.TryLoadClientClusterCertificate(out var clientClusterCertificate, out var clientClusterIntermediates);
+		if (!hasClientClusterCert) {
+			clientClusterCertificate = certificate;
+			clientClusterIntermediates = intermediates;
+		}
 
 		string reservedNodeCN;
 		var reservedNodeCNOption = nameof(options.Certificate.CertificateReservedNodeCommonName);
 
+		// Determine the CN pattern expected from incomming node certificates.
 		if (options.Certificate.CertificateReservedNodeCommonName.IsNotEmptyString()) {
+			// Reserved CN is configured. Check that the cluster client cert matches it.
 			reservedNodeCN = options.Certificate.CertificateReservedNodeCommonName;
-			if (!certificate.ClientCertificateMatchesName(reservedNodeCN)) {
-				var certificateCN = certificate.GetCommonName();
+			if (!clientClusterCertificate.ClientCertificateMatchesName(reservedNodeCN)) {
+				var clientClusterCertCN = clientClusterCertificate.GetCommonName();
 				Log.Error(
 					"Certificate CN: {certificateCN} does not match with the {reservedNodeCNOption} configuration setting: {reservedNodeCN}",
-					certificateCN, reservedNodeCNOption, reservedNodeCN);
+					clientClusterCertCN, reservedNodeCNOption, reservedNodeCN);
 				return LoadCertificateResult.VerificationFailed;
 			}
 			Log.Information("{reservedNodeCNOption} configured to: {reservedNodeCN}",
 				reservedNodeCNOption, reservedNodeCN);
 		} else {
-			reservedNodeCN = certificate.GetCommonName();
+			reservedNodeCN = clientClusterCertificate.GetCommonName();
 			Log.Information("{reservedNodeCNOption} auto-configured to: {reservedNodeCN} based on certificate",
 				reservedNodeCNOption, reservedNodeCN);
 		}
 
-		var previousThumbprint = Certificate?.Thumbprint;
-		var newThumbprint = certificate.Thumbprint;
-		Log.Information("Loading the node's certificate. Subject: {subject}, Previous thumbprint: {previousThumbprint}, New thumbprint: {newThumbprint}",
-			certificate.SubjectName.Name, previousThumbprint, newThumbprint);
+		// Log information about the certificates and their intermediates
+		LogThumbprints("node", Certificate, certificate, intermediates);
+		LogThumbprints("cluster client", ClientClusterCertificate, clientClusterCertificate, clientClusterIntermediates);
 
-		if (intermediates != null) {
-			foreach (var intermediateCert in intermediates) {
-				Log.Information("Loading intermediate certificate. Subject: {subject}, Thumbprint: {thumbprint}", intermediateCert.SubjectName.Name, intermediateCert.Thumbprint);
+		static void LogThumbprints(string label, X509Certificate2 previousCertificate, X509Certificate2 certificate, X509Certificate2Collection intermediates) {
+			var previousThumbprint = previousCertificate?.Thumbprint;
+			var newThumbprint = certificate.Thumbprint;
+			Log.Information("Loading the {label} certificate. Subject: {subject}, Previous thumbprint: {previousThumbprint}, New thumbprint: {newThumbprint}",
+				label, certificate.SubjectName.Name, previousThumbprint, newThumbprint);
+
+			if (intermediates != null) {
+				foreach (var intermediateCert in intermediates) {
+					Log.Information("Loading {label} intermediate certificate. Subject: {subject}, Thumbprint: {thumbprint}",
+						label, intermediateCert.SubjectName.Name, intermediateCert.Thumbprint);
+				}
 			}
 		}
 
+		// Validate the node certificate
 		var trustedRootCerts = options.LoadTrustedRootCertificates();
 
 		foreach (var trustedRootCert in trustedRootCerts) {
-			Log.Information("Loading trusted root certificate. Subject: {subject}, Thumbprint: {thumbprint}", trustedRootCert.SubjectName.Name, trustedRootCert.Thumbprint);
+			Log.Information("Loading trusted root for node certificate. Subject: {subject}, Thumbprint: {thumbprint}", trustedRootCert.SubjectName.Name, trustedRootCert.Thumbprint);
 		}
 
-		if (!VerifyCertificates(certificate, intermediates, trustedRootCerts)) {
+		if (!VerifyCertificates("node", certificate, intermediates, trustedRootCerts)) {
 			return LoadCertificateResult.VerificationFailed;
 		}
 
+		// Validate the cluster client certificate
+		if (hasClientClusterCert) {
+			var clientClusterTrustedRoots = options.LoadClientClusterTrustedRootCertificates();
+
+			foreach (var trustedRootCert in clientClusterTrustedRoots) {
+				Log.Information("Loading trusted root for cluster client certificate. Subject: {subject}, Thumbprint: {thumbprint}", trustedRootCert.SubjectName.Name, trustedRootCert.Thumbprint);
+			}
+
+			if (!VerifyCertificates("cluster client", clientClusterCertificate, clientClusterIntermediates, clientClusterTrustedRoots)) {
+				return LoadCertificateResult.VerificationFailed;
+			}
+		}
+
+		// Check the EKUs
+		if (clientClusterCertificate.ClassifyInboundCertificate(
+				disableClientAuthEkuValidation: options.Certificate.DisableClientAuthEkuValidation,
+				out var clientClusterCertDescription) is not CertificateClassification.Node) {
+			
+			Log.Error(hasClientClusterCert
+				? "The cluster client certificate was not recognized as a node certificate: {description}"
+				: "The node certificate was not recognized as a node certificate: {description}",
+				clientClusterCertDescription);
+			return LoadCertificateResult.VerificationFailed;
+		}
+	
 		// no need for a lock here since reference assignment is atomic. however, other threads may not immediately
 		// see the changes and the order in which they see the changes is also not guaranteed as we don't have any
 		// memory barriers here. this is not a problem as in the worst case, it will cause the certificate verifications
 		// to fail when establishing/receiving a connection and the next connection retries will succeed.
 		Certificate = certificate;
 		IntermediateCerts = intermediates;
+		ClientClusterCertificate = clientClusterCertificate;
+		ClientClusterIntermediateCerts = clientClusterIntermediates;
 		TrustedRootCerts = trustedRootCerts;
 		_cachedReservedNodeCN = reservedNodeCN;
 
@@ -79,18 +126,23 @@ public class OptionsCertificateProvider : CertificateProvider {
 		return _cachedReservedNodeCN ?? throw new InvalidOperationException("Certificates are not loaded.");
 	}
 
-	private static bool VerifyCertificates(X509Certificate2 nodeCertificate, X509Certificate2Collection intermediates, X509Certificate2Collection trustedRoots) {
+	private static bool VerifyCertificates(
+		string label,
+		X509Certificate2 certificate,
+		X509Certificate2Collection intermediates,
+		X509Certificate2Collection trustedRoots) {
+
 		bool error = false;
 
-		if (!CertificateUtils.IsValidNodeCertificate(nodeCertificate, out var errorMsg)) {
-			Log.Error(errorMsg);
+		if (!CertificateUtils.IsValidNodeCertificate(certificate, out var errorMsg)) {
+			Log.Error("The {label} certificate: {error}", label, errorMsg);
 			error = true;
 		}
 
 		if (intermediates != null) {
 			foreach (var cert in intermediates) {
 				if (!CertificateUtils.IsValidIntermediateCertificate(cert, out errorMsg)) {
-					Log.Error($"{errorMsg} Please bundle only intermediate certificates (if any) and not root certificates with the node's certificate.");
+					Log.Error("{error} Please bundle only intermediate certificates (if any) and not root certificates with the {label} certificate.", errorMsg, label);
 					error = true;
 				}
 			}
@@ -99,24 +151,25 @@ public class OptionsCertificateProvider : CertificateProvider {
 		if (trustedRoots != null && trustedRoots.Count > 0) {
 			foreach (var cert in trustedRoots) {
 				if (!CertificateUtils.IsValidRootCertificate(cert, out errorMsg)) {
-					Log.Error($"{errorMsg} If you have intermediate certificates, please bundle them with the node's certificate (in PEM or PKCS #12 format).");
+					Log.Error("{error} If you have intermediate certificates, please bundle them with the {label} certificate (in PEM or PKCS #12 format).", errorMsg, label);
 					error = true;
 				}
 			}
 		} else {
-			Log.Error("No trusted root certificates loaded");
+			Log.Error("No trusted root certificates loaded for the {label} certificate", label);
 			error = true;
 		}
 
 		if (error)
 			return false;
 
-		var chainStatus = CertificateUtils.BuildChain(nodeCertificate, intermediates, trustedRoots, out var chainStatusInformation);
+		var chainStatus = CertificateUtils.BuildChain(certificate, intermediates, trustedRoots, out var chainStatusInformation);
 
 		if (chainStatus != X509ChainStatusFlags.NoError) {
 			Log.Error(
-				"Failed to build the certificate chain with the node's own certificate up to the root. " +
-				"If you have intermediate certificates, please bundle them with the node's certificate (in PEM or PKCS #12 format). Errors:-");
+				"Failed to build the certificate chain with the {label} certificate up to the root. " +
+				"If you have intermediate certificates, please bundle them with the {label} certificate (in PEM or PKCS #12 format). Errors:-",
+				label, label);
 			foreach (var status in chainStatusInformation) {
 				Log.Error(status);
 			}
@@ -125,7 +178,7 @@ public class OptionsCertificateProvider : CertificateProvider {
 		}
 
 		if (!error && intermediates != null) {
-			chainStatus = CertificateUtils.BuildChain(nodeCertificate, null, trustedRoots, out chainStatusInformation);
+			chainStatus = CertificateUtils.BuildChain(certificate, null, trustedRoots, out chainStatusInformation);
 
 			// Adding the intermediate certificates to the store is required so that
 			// i)  the full certificate chain (excluding the root) is sent from client to server (on both Windows/Linux)
@@ -146,7 +199,7 @@ public class OptionsCertificateProvider : CertificateProvider {
 		}
 
 		if (!error) {
-			Log.Information("Certificate chain verification successful.");
+			Log.Information("The {label} certificate chain verification successful.", label);
 		}
 
 		return !error;

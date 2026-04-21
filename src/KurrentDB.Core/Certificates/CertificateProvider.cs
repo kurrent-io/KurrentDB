@@ -8,6 +8,8 @@ namespace KurrentDB.Core.Certificates;
 public abstract class CertificateProvider {
 	public X509Certificate2 Certificate;
 	public X509Certificate2Collection IntermediateCerts;
+	public X509Certificate2 ClientClusterCertificate;
+	public X509Certificate2Collection ClientClusterIntermediateCerts;
 	public X509Certificate2Collection TrustedRootCerts;
 	public abstract LoadCertificateResult LoadCertificates(ClusterVNodeOptions options);
 	public abstract string GetReservedNodeCommonName();
