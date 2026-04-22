@@ -207,6 +207,20 @@ public partial record ClusterVNodeOptions {
 		[Description("The password to the certificate private key file if an encrypted PKCS #8 private key file is provided."),
 		 Sensitive]
 		public string? CertificatePrivateKeyPassword { get; init; }
+
+		[Description("The path to a PKCS #12 (.p12/.pfx) or an X.509 (.pem, .crt, .cer, .der) publicly-trusted certificate file served on TLS connections whose SNI hostname matches one of its Subject Alternative Names. Typically a certificate issued by a publicly-trusted CA (e.g. Let's Encrypt) for external gRPC clients & web browsers, while the node still uses its internal-CA certificate for cluster mTLS.")]
+		public string? PubliclyTrustedCertificateFile { get; init; }
+
+		[Description("The path to the publicly-trusted certificate's private key file (.key) if an X.509 certificate file is provided.")]
+		public string? PubliclyTrustedCertificatePrivateKeyFile { get; init; }
+
+		[Description("The password to the publicly-trusted certificate if a PKCS #12 (.p12/.pfx) certificate file is provided."),
+		 Sensitive]
+		public string? PubliclyTrustedCertificatePassword { get; init; }
+
+		[Description("The password to the publicly-trusted certificate's private key file if an encrypted PKCS #8 private key file is provided."),
+		 Sensitive]
+		public string? PubliclyTrustedCertificatePrivateKeyPassword { get; init; }
 	}
 
 	[Description("Certificate Options")]
@@ -252,6 +266,18 @@ public partial record ClusterVNodeOptions {
 
 		[Description("The trusted root certificate fingerprint/thumbprint.")]
 		public string TrustedRootCertificateThumbprint { get; init; } = string.Empty;
+
+		[Description("The publicly-trusted certificate store location name. See PubliclyTrustedCertificateFile for the intended use.")]
+		public string PubliclyTrustedCertificateStoreLocation { get; init; } = string.Empty;
+
+		[Description("The publicly-trusted certificate store name.")]
+		public string PubliclyTrustedCertificateStoreName { get; init; } = string.Empty;
+
+		[Description("The publicly-trusted certificate store subject name.")]
+		public string PubliclyTrustedCertificateSubjectName { get; init; } = string.Empty;
+
+		[Description("The publicly-trusted certificate fingerprint/thumbprint.")]
+		public string PubliclyTrustedCertificateThumbprint { get; init; } = string.Empty;
 	}
 
 	[Description("Cluster Options")]

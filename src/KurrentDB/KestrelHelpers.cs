@@ -7,6 +7,7 @@ using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using KurrentDB.Core.Certificates;
 using KurrentDB.Core.DuckDB;
 using KurrentDB.Core.Services.Transport.Http;
 using Microsoft.AspNetCore.Hosting;
@@ -70,11 +71,14 @@ public static class KestrelHelpers {
 	}
 
 	public static ServerOptionsSelectionCallback CreateServerOptionsSelectionCallback(ClusterVNodeHostedService hostedService) {
-		return (_, _, _, _) => {
+		return (_, clientHelloInfo, _, _) => {
+			var publiclyTrustedCert = hostedService.Node.PubliclyTrustedCertificateSelector();
+			var usePubliclyTrustedCert = PubliclyTrustedCertificateSelector.ShouldServe(publiclyTrustedCert, clientHelloInfo.ServerName);
+
 			var serverOptions = new SslServerAuthenticationOptions {
 				ServerCertificateContext = SslStreamCertificateContext.Create(
-					hostedService.Node.CertificateSelector(),
-					hostedService.Node.IntermediateCertificatesSelector(),
+					usePubliclyTrustedCert ? publiclyTrustedCert : hostedService.Node.CertificateSelector(),
+					usePubliclyTrustedCert ? hostedService.Node.PubliclyTrustedIntermediateCertificatesSelector() : hostedService.Node.IntermediateCertificatesSelector(),
 					offline: true),
 				ClientCertificateRequired = true, // request a client certificate but it's not necessary for the client to supply one
 				RemoteCertificateValidationCallback = (_, certificate, chain, sslPolicyErrors) => {

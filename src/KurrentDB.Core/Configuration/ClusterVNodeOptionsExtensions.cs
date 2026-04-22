@@ -232,6 +232,36 @@ public static class ClusterVNodeOptionsExtensions {
 	}
 
 	/// <summary>
+	/// Loads the optional publicly-trusted certificate served when the TLS ClientHello SNI matches one of its SANs.
+	/// Returns null if no publicly-trusted certificate is configured.
+	/// </summary>
+	public static (X509Certificate2 certificate, X509Certificate2Collection intermediates)? LoadPubliclyTrustedCertificate(
+		this ClusterVNodeOptions options) {
+		if (!string.IsNullOrWhiteSpace(options.CertificateStore.PubliclyTrustedCertificateStoreLocation)) {
+			var location = CertificateUtils.GetCertificateStoreLocation(options.CertificateStore.PubliclyTrustedCertificateStoreLocation);
+			var name = CertificateUtils.GetCertificateStoreName(options.CertificateStore.PubliclyTrustedCertificateStoreName);
+			return (CertificateUtils.LoadFromStore(location, name, options.CertificateStore.PubliclyTrustedCertificateSubjectName,
+				options.CertificateStore.PubliclyTrustedCertificateThumbprint), null);
+		}
+
+		if (!string.IsNullOrWhiteSpace(options.CertificateStore.PubliclyTrustedCertificateStoreName)) {
+			var name = CertificateUtils.GetCertificateStoreName(options.CertificateStore.PubliclyTrustedCertificateStoreName);
+			return (CertificateUtils.LoadFromStore(name, options.CertificateStore.PubliclyTrustedCertificateSubjectName,
+				options.CertificateStore.PubliclyTrustedCertificateThumbprint), null);
+		}
+
+		if (options.CertificateFile.PubliclyTrustedCertificateFile.IsNotEmptyString()) {
+			Log.Information("Loading the publicly-trusted certificate(s) from file: {path}",
+				options.CertificateFile.PubliclyTrustedCertificateFile);
+			return CertificateUtils.LoadFromFile(options.CertificateFile.PubliclyTrustedCertificateFile,
+				options.CertificateFile.PubliclyTrustedCertificatePrivateKeyFile, options.CertificateFile.PubliclyTrustedCertificatePassword,
+				options.CertificateFile.PubliclyTrustedCertificatePrivateKeyPassword);
+		}
+
+		return null;
+	}
+
+	/// <summary>
 	/// Loads an <see cref="X509Certificate2Collection"/> from the options set.
 	/// If either TrustedRootCertificateStoreLocation or TrustedRootCertificateStoreName is set,
 	/// then the certificates will only be loaded from the certificate store.
