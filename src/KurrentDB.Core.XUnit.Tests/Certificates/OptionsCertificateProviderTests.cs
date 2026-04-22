@@ -78,6 +78,8 @@ public class OptionsCertificateProviderTests : DirectoryPerTest<OptionsCertifica
 				CertificateReservedNodeCommonName = reservedNodeCN ?? string.Empty,
 				TrustedRootCertificatesPath = Fixture.Directory,
 			},
+			// multi-node so the node-client-cert classifier check fires
+			Cluster = new ClusterVNodeOptions.ClusterOptions { ClusterSize = 3 },
 		};
 
 		if (nodeClientCert != null) {

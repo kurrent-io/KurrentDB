@@ -95,11 +95,11 @@ public class OptionsCertificateProvider : CertificateProvider {
 			}
 		}
 
-		// Check the EKUs
-		if (nodeClientCertificate.ClassifyInboundCertificate(
+		// Check our client certificate will be classified correctly by other nodes
+		if (options.Cluster.ClusterSize > 1 && nodeClientCertificate.ClassifyInboundCertificate(
 				disableClientAuthEkuValidation: options.Certificate.DisableClientAuthEkuValidation,
 				out var nodeClientCertDescription) is not CertificateClassification.Node) {
-			
+
 			Log.Error(hasNodeClientCert
 				? "The node client certificate was not recognized as a node certificate: {description}"
 				: "The node certificate was not recognized as a node certificate: {description}",
