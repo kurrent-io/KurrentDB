@@ -2,6 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Runtime;
 using System.Security.Cryptography.X509Certificates;
 using KurrentDB.Common.Utils;
@@ -18,6 +21,8 @@ public class OptionsCertificateProvider : CertificateProvider {
 			Log.Information("Skipping reload of certificates since TLS is disabled.");
 			return LoadCertificateResult.Skipped;
 		}
+
+		WarnOnSystemTrustStoreUsage(options);
 
 		var (certificate, intermediates) = options.LoadNodeCertificate();
 
@@ -62,6 +67,26 @@ public class OptionsCertificateProvider : CertificateProvider {
 			return LoadCertificateResult.VerificationFailed;
 		}
 
+		var publiclyTrustedCert = options.LoadPubliclyTrustedCertificate();
+		if (publiclyTrustedCert.HasValue) {
+			var dnsNames = GetDnsNames(publiclyTrustedCert.Value.certificate);
+			Log.Information(
+				"Loading the publicly-trusted certificate. Subject: {subject}, Thumbprint: {thumbprint}. " +
+				"It will be served on TLS connections whose SNI hostname matches: {dnsNames}",
+				publiclyTrustedCert.Value.certificate.SubjectName.Name,
+				publiclyTrustedCert.Value.certificate.Thumbprint,
+				dnsNames);
+
+			if (publiclyTrustedCert.Value.intermediates != null) {
+				foreach (var intermediateCert in publiclyTrustedCert.Value.intermediates) {
+					Log.Information("Loading publicly-trusted intermediate certificate. Subject: {subject}, Thumbprint: {thumbprint}",
+						intermediateCert.SubjectName.Name, intermediateCert.Thumbprint);
+				}
+			}
+
+			WarnOnNodeCertificateSanOverlap(publiclyTrustedCert.Value.certificate, certificate);
+		}
+
 		// no need for a lock here since reference assignment is atomic. however, other threads may not immediately
 		// see the changes and the order in which they see the changes is also not guaranteed as we don't have any
 		// memory barriers here. this is not a problem as in the worst case, it will cause the certificate verifications
@@ -69,10 +94,86 @@ public class OptionsCertificateProvider : CertificateProvider {
 		Certificate = certificate;
 		IntermediateCerts = intermediates;
 		TrustedRootCerts = trustedRootCerts;
+		PubliclyTrustedCertificate = publiclyTrustedCert?.certificate;
+		PubliclyTrustedIntermediateCerts = publiclyTrustedCert?.intermediates;
 		_cachedReservedNodeCN = reservedNodeCN;
 
 		Log.Information("All certificates successfully loaded.");
 		return LoadCertificateResult.Success;
+	}
+
+	private static string[] GetDnsNames(X509Certificate2 certificate) {
+		// Per RFC 6125, CN is only consulted when the SAN extension is absent entirely.
+		// Matches the behavior of X509Certificate2.MatchesName.
+		var sans = (certificate.GetSubjectAlternativeNames() ?? []).ToArray();
+		if (sans.Length > 0)
+			return sans.Where(san => san.type == CertificateNameType.DnsName).Select(san => san.name).ToArray();
+		var cn = certificate.GetCommonName();
+		return string.IsNullOrEmpty(cn) ? [] : [cn];
+	}
+
+	// Well-known filesystem paths where the OS (or OS-like distributions) keep the
+	// system trust-anchor store. If TrustedRootCertificatesPath points here, the
+	// cluster's mTLS trust anchor has been widened to every publicly-trusted CA.
+	internal static readonly string[] SystemTrustStorePaths = [
+		"/etc/ssl/certs",                    // Debian / Ubuntu / Alpine
+		"/etc/pki/ca-trust/extracted/pem",   // RHEL / Fedora / CentOS
+		"/etc/pki/tls/certs",                // older RHEL
+		"/usr/local/share/ca-certificates",  // admin-installed, Debian/Ubuntu
+	];
+
+	internal static bool IsSystemTrustStorePath(string path) {
+		if (string.IsNullOrWhiteSpace(path))
+			return false;
+		string full;
+		try {
+			full = Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+		} catch {
+			return false;
+		}
+		return SystemTrustStorePaths.Any(p => full.Equals(p, StringComparison.OrdinalIgnoreCase));
+	}
+
+	internal static bool IsSystemTrustStoreName(string storeName) =>
+		!string.IsNullOrWhiteSpace(storeName)
+		&& (storeName.Equals(nameof(StoreName.Root), StringComparison.OrdinalIgnoreCase)
+			|| storeName.Equals(nameof(StoreName.AuthRoot), StringComparison.OrdinalIgnoreCase));
+
+	private static void WarnOnSystemTrustStoreUsage(ClusterVNodeOptions options) {
+		if (IsSystemTrustStorePath(options.Certificate.TrustedRootCertificatesPath)) {
+			Log.Warning(
+				"{option} '{path}' points to the OS system trust store. This widens the cluster's mTLS trust anchor to every publicly-trusted CA — any certificate issued by any public CA that also has the reserved node CN would be accepted as a cluster node. " +
+				"If the goal is to serve a certificate that external gRPC clients and web browsers already trust (so they don't need the internal CA installed), use the PubliclyTrustedCertificate* options instead and point {option} at your internal CA only.",
+				nameof(options.Certificate.TrustedRootCertificatesPath),
+				options.Certificate.TrustedRootCertificatesPath,
+				nameof(options.Certificate.TrustedRootCertificatesPath));
+		}
+
+		if (IsSystemTrustStoreName(options.CertificateStore.TrustedRootCertificateStoreName)) {
+			Log.Warning(
+				"{option} '{name}' refers to the OS system trust store. This widens the cluster's mTLS trust anchor to every publicly-trusted CA. " +
+				"If the goal is to serve a certificate that external gRPC clients and web browsers already trust (so they don't need the internal CA installed), use the PubliclyTrustedCertificate* options instead and point the trusted root store at your internal CA only.",
+				nameof(options.CertificateStore.TrustedRootCertificateStoreName),
+				options.CertificateStore.TrustedRootCertificateStoreName,
+				nameof(options.CertificateStore.TrustedRootCertificateStoreName));
+		}
+	}
+
+	private static void WarnOnNodeCertificateSanOverlap(X509Certificate2 publiclyTrustedCertificate, X509Certificate2 nodeCertificate) {
+		foreach (var name in FindNodeCertificateSanOverlaps(publiclyTrustedCertificate, nodeCertificate)) {
+			Log.Warning(
+				"The publicly-trusted certificate's SANs match the node certificate's DNS name '{name}'. " +
+				"Internal node-to-node HTTPS traffic that uses this name for SNI will receive the publicly-trusted certificate and fail to validate against the internal CA.",
+				name);
+		}
+	}
+
+	internal static IEnumerable<string> FindNodeCertificateSanOverlaps(
+		X509Certificate2 publiclyTrustedCertificate, X509Certificate2 nodeCertificate) {
+		foreach (var name in GetDnsNames(nodeCertificate)) {
+			if (publiclyTrustedCertificate.MatchesName(name))
+				yield return name;
+		}
 	}
 
 	public override string GetReservedNodeCommonName() {

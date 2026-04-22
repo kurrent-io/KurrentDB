@@ -138,6 +138,8 @@ public abstract class ClusterVNode {
 	abstract public CertificateDelegates.ClientCertificateValidator InternalClientCertificateValidator { get; }
 	abstract public Func<X509Certificate2> CertificateSelector { get; }
 	abstract public Func<X509Certificate2Collection> IntermediateCertificatesSelector { get; }
+	abstract public Func<X509Certificate2> PubliclyTrustedCertificateSelector { get; }
+	abstract public Func<X509Certificate2Collection> PubliclyTrustedIntermediateCertificatesSelector { get; }
 	abstract public bool DisableHttps { get; }
 	abstract public bool EnableUnixSocket { get; }
 	abstract public bool IsShutdown { get; }
@@ -206,6 +208,8 @@ public class ClusterVNode<TStreamId> :
 	private readonly Func<X509Certificate2> _certificateSelector;
 	private readonly Func<X509Certificate2Collection> _trustedRootCertsSelector;
 	private readonly Func<X509Certificate2Collection> _intermediateCertsSelector;
+	private readonly Func<X509Certificate2> _publiclyTrustedCertificateSelector;
+	private readonly Func<X509Certificate2Collection> _publiclyTrustedIntermediateCertsSelector;
 	private readonly CertificateDelegates.ServerCertificateValidator _internalServerCertificateValidator;
 	private readonly CertificateDelegates.ClientCertificateValidator _internalClientCertificateValidator;
 	private readonly CertificateDelegates.ServerCertificateValidator _externalServerCertificateValidator;
@@ -227,6 +231,8 @@ public class ClusterVNode<TStreamId> :
 	public override CertificateDelegates.ClientCertificateValidator InternalClientCertificateValidator => _internalClientCertificateValidator;
 	public override Func<X509Certificate2> CertificateSelector => _certificateSelector;
 	public override Func<X509Certificate2Collection> IntermediateCertificatesSelector => _intermediateCertsSelector;
+	public override Func<X509Certificate2> PubliclyTrustedCertificateSelector => _publiclyTrustedCertificateSelector;
+	public override Func<X509Certificate2Collection> PubliclyTrustedIntermediateCertificatesSelector => _publiclyTrustedIntermediateCertsSelector;
 	public override bool DisableHttps => _disableHttps;
 	public sealed override bool EnableUnixSocket => _enableUnixSocket;
 	public override bool IsShutdown => _shutdownSource.Task.IsCompleted;
@@ -516,6 +522,11 @@ public class ClusterVNode<TStreamId> :
 			_certificateProvider?.IntermediateCerts == null
 				? null
 				: new X509Certificate2Collection(_certificateProvider?.IntermediateCerts);
+		_publiclyTrustedCertificateSelector = () => _certificateProvider?.PubliclyTrustedCertificate;
+		_publiclyTrustedIntermediateCertsSelector = () =>
+			_certificateProvider?.PubliclyTrustedIntermediateCerts == null
+				? null
+				: new X509Certificate2Collection(_certificateProvider?.PubliclyTrustedIntermediateCerts);
 
 		_internalServerCertificateValidator = (cert, chain, errors, otherNames) => ValidateServerCertificate(cert, chain, errors, _intermediateCertsSelector, _trustedRootCertsSelector, otherNames);
 		_internalClientCertificateValidator = (cert, chain, errors) => ValidateClientCertificate(cert, chain, errors, _intermediateCertsSelector, _trustedRootCertsSelector);
