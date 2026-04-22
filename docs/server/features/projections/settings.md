@@ -35,6 +35,61 @@ Finally, you can set `RunProjections` to `All` and it will enable both system an
 
 Accepted values are `None`, `System` and `All`.
 
+## Start standard projections
+
+The `StartStandardProjections` option controls whether the five built-in
+[system projections](system.md) are started automatically when the projections subsystem is brought up:
+
+- `$by_category`
+- `$stream_by_category`
+- `$streams`
+- `$by_event_type`
+- `$by_correlation_id`
+
+When this option is `true`, any standard projection that is currently in the `Stopped` state is transitioned
+to `Running` shortly after the subsystem starts. Projections that have been explicitly disabled in a previous
+run will be re-enabled — the setting drives state on each startup, it does not persist across restarts on the
+projection itself.
+
+When this option is `false` (the default) the five standard projections exist but stay `Stopped`. Enable them
+on demand, either from the admin UI or via the HTTP API:
+
+```bash:no-line-numbers
+curl -i -X POST "http://{host}:{http-port}/projection/$by_category/command/enable" \
+  -H "Content-Length:0" -u admin:changeit
+```
+
+| Format               | Syntax                                     |
+|:---------------------|:-------------------------------------------|
+| Command line         | `--start-standard-projections`             |
+| YAML                 | `StartStandardProjections`                 |
+| Environment variable | `KURRENTDB_START_STANDARD_PROJECTIONS`     |
+
+**Default**: `false`
+
+::: tip
+The setting only takes effect when the projections subsystem is loaded — i.e. `RunProjections` is `System`
+or `All`. With `RunProjections=None` the subsystem is off entirely and `StartStandardProjections` is
+ignored.
+:::
+
+::: tip
+Running the server with `--dev` implicitly enables `StartStandardProjections` (and forces
+`RunProjections` to at least `System`) so the standard projections are available for local exploration.
+:::
+
+::: warning
+Running the standard projections adds write amplification — every appended event produces link events
+into the category, event type, and (if enabled) correlation-id index streams. See
+[Performance impact](README.md#performance-impact). Turn them on deliberately, not "just in case".
+:::
+
+::: tip
+For the category and event type cases, prefer the built-in
+[secondary indexes](../indexes/secondary.md) (v25.1+) over `$by_category` / `$by_event_type` — they provide
+the same query capability without link-event write amplification or unresolvable-link storage bloat.
+:::
+
 ## Projection threads
 
 Projection threads are used to make calls in to the V8 JavaScript engine, and coordinate dispatching

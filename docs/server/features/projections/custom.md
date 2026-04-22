@@ -174,6 +174,10 @@ curl -i -d@stats-counter.json \
 - `engineversion=1` (default) — uses the original projection engine
 - `engineversion=2` — uses the new V2 projection engine
 
+V2 is a parallel-partitioned engine with an incompatible checkpoint format and a different feature surface.
+Before selecting it, read [Projections Engine V2](./engine-v2.md) — in particular, V2 does not emit
+`outputState()` result streams and does not support `trackemittedstreams`.
+
 ### Debugging your first projection
 
 Once the projection is running, open your browser and enable the developer tools. Once you have the developer

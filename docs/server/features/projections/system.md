@@ -22,7 +22,17 @@ of the projection from `Stopped` to `Running`.
 curl -i -X POST "http://{event-store-ip}:{ext-http-port}/projection/{projection-name}/command/enable" -H "accept:application/json" -H "Content-Length:0" -u admin:changeit
 ```
 
+To enable all five standard projections automatically on server start, set the
+[`StartStandardProjections`](settings.md#start-standard-projections) option.
+
 ## By category
+
+::: tip
+KurrentDB v25.1+ ships a built-in **category secondary index** that supersedes this projection. It delivers
+the same "read all events in a category" capability without link-event write amplification or the storage
+overhead of unresolvable link events. Prefer it for new workloads. See
+[Secondary indexes](../indexes/secondary.md).
+:::
 
 The `$by_category` (_http://127.0.0.1:2113/projection/$by_category_) projection links existing events from
 streams to a new stream with a `$ce-` prefix (a category) by splitting a stream `id` by a configurable
@@ -54,6 +64,13 @@ Changing the setting might break all of them.
 The use case of this project is subscribing to all events within a category.
 
 ## By event type
+
+::: tip
+KurrentDB v25.1+ ships a built-in **event type secondary index** that supersedes this projection. It
+delivers the same "read all events of a type" capability without link-event write amplification or the
+storage overhead of unresolvable link events. Prefer it for new workloads. See
+[Secondary indexes](../indexes/secondary.md).
+:::
 
 The `$by_event_type` (_http://127.0.0.1:2113/projection/$by_event_type_) projection links existing events from
 streams to a new stream with a stream id in the format `$et-{event-type}`.

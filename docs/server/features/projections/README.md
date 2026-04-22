@@ -53,6 +53,13 @@ There are two types of projections in KurrentDB:
 - [User-defined JavaScript projections](custom.md) which you create via the API or the admin
   UI
 
+## Engine versions
+
+KurrentDB ships two projection execution engines. V1 is the default. V2 is opt-in per projection via the
+`engineversion` option at creation time and targets parallel-partitioned workloads. V2 uses an incompatible
+checkpoint format and omits some V1 features (notably `outputState()` result streams and
+`trackemittedstreams`). See [Projections Engine V2](./engine-v2.md).
+
 ## Performance impact
 
 Keep in mind that all projections emit events as a reaction to events that they process. We call this effect _write amplification_
@@ -62,6 +69,13 @@ Some system projections emit link events to their streams for each event appende
 projections are By Category, By Event Type and By Correlation Id. If all those three projections are enabled
 and started, adding one event to the database will, in fact, produce three additional events and, therefore,
 quadruples the number of write operations.
+
+::: tip
+For the "all events in a category" and "all events of a type" use cases, KurrentDB v25.1+ exposes built-in
+**secondary indexes** that avoid this write amplification entirely. Prefer them over the
+`$by_category` / `$by_event_type` projections for new workloads. See
+[Secondary indexes](../indexes/secondary.md).
+:::
 
 System projections `$streams` and `$stream-by-category` produce new events too, either per each new stream or
 per new stream category. If your system has a lot of small streams, the `$streams` system projection would
