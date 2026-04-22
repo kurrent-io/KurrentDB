@@ -255,8 +255,6 @@ public class PersistentSubscriptionService<TStreamId> :
 			Action<string> onAccessDenied,
 			string user
 	) {
-		if (!_started)
-			return;
 		var stream = eventSource.ToString();
 		var key = BuildSubscriptionGroupKey(stream, groupName);
 		Log.Debug("Creating persistent subscription {subscriptionKey}", key);
@@ -320,6 +318,11 @@ public class PersistentSubscriptionService<TStreamId> :
 	}
 
 	public void Handle(ClientMessage.CreatePersistentSubscriptionToStream message) {
+		if (!_started) {
+			ReplyWithNotReady(message.Envelope, message.CorrelationId);
+			return;
+		}
+
 		if (string.IsNullOrEmpty(message.EventStreamId)) {
 			message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionToStreamCompleted(
 				message.CorrelationId,
@@ -389,6 +392,11 @@ public class PersistentSubscriptionService<TStreamId> :
 	}
 
 	public void Handle(ClientMessage.CreatePersistentSubscriptionToAll message) {
+		if (!_started) {
+			ReplyWithNotReady(message.Envelope, message.CorrelationId);
+			return;
+		}
+
 		try {
 			CreatePersistentSubscription(
 				new PersistentSubscriptionAllStreamEventSource(message.EventFilter),
@@ -466,9 +474,6 @@ public class PersistentSubscriptionService<TStreamId> :
 			Action<string> onAccessDenied,
 			string user
 	) {
-		if (!_started)
-			return;
-
 		var key = BuildSubscriptionGroupKey(stream, groupName);
 		Log.Debug("Updating persistent subscription {subscriptionKey}", key);
 
@@ -541,6 +546,11 @@ public class PersistentSubscriptionService<TStreamId> :
 	}
 
 	public void Handle(ClientMessage.UpdatePersistentSubscriptionToStream message) {
+		if (!_started) {
+			ReplyWithNotReady(message.Envelope, message.CorrelationId);
+			return;
+		}
+
 		if (string.IsNullOrEmpty(message.EventStreamId)) {
 			message.Envelope.ReplyWith(new ClientMessage.UpdatePersistentSubscriptionToStreamCompleted(
 				message.CorrelationId,
@@ -611,6 +621,11 @@ public class PersistentSubscriptionService<TStreamId> :
 	}
 
 	public void Handle(ClientMessage.UpdatePersistentSubscriptionToAll message) {
+		if (!_started) {
+			ReplyWithNotReady(message.Envelope, message.CorrelationId);
+			return;
+		}
+
 		try {
 			UpdatePersistentSubscription(
 				SystemStreams.AllStream,
@@ -724,8 +739,6 @@ public class PersistentSubscriptionService<TStreamId> :
 			Action<string> onAccessDenied,
 			string user
 	) {
-		if (!_started)
-			return;
 		var stream = eventSource.ToString();
 		var key = BuildSubscriptionGroupKey(stream, groupName);
 		Log.Debug("Deleting persistent subscription {subscriptionKey}", key);
@@ -749,6 +762,11 @@ public class PersistentSubscriptionService<TStreamId> :
 
 
 	public void Handle(ClientMessage.DeletePersistentSubscriptionToStream message) {
+		if (!_started) {
+			ReplyWithNotReady(message.Envelope, message.CorrelationId);
+			return;
+		}
+
 		if (string.IsNullOrEmpty(message.EventStreamId)) {
 			message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToStreamCompleted(
 				message.CorrelationId,
@@ -796,6 +814,11 @@ public class PersistentSubscriptionService<TStreamId> :
 	}
 
 	public void Handle(ClientMessage.DeletePersistentSubscriptionToAll message) {
+		if (!_started) {
+			ReplyWithNotReady(message.Envelope, message.CorrelationId);
+			return;
+		}
+
 		DeletePersistentSubscription(
 			new PersistentSubscriptionAllStreamEventSource(),
 			message.GroupName,
@@ -922,8 +945,11 @@ public class PersistentSubscriptionService<TStreamId> :
 		IEnvelope envelope,
 		string user,
 		CancellationToken token) {
-		if (!_started)
+
+		if (!_started) {
+			ReplyWithNotReady(envelope, correlationId);
 			return;
+		}
 
 		var stream = eventSource.ToString();
 		if (!_subscriptionTopics.TryGetValue(stream, out _)) {
@@ -1063,8 +1089,10 @@ public class PersistentSubscriptionService<TStreamId> :
 	}
 
 	public void Handle(ClientMessage.ReadNextNPersistentMessages message) {
-		if (!_started)
+		if (!_started) {
+			ReplyWithNotReady(message.Envelope, message.CorrelationId);
 			return;
+		}
 
 		if (string.IsNullOrEmpty(message.EventStreamId)) {
 			message.Envelope.ReplyWith(new ClientMessage.ReadNextNPersistentMessagesCompleted(
@@ -1379,5 +1407,12 @@ public class PersistentSubscriptionService<TStreamId> :
 
 	private TimeSpan ToMessageTimeout(int milliseconds) {
 		return milliseconds == 0 ? TimeSpan.Zero : TimeSpan.FromMilliseconds(milliseconds);
+	}
+
+	private static void ReplyWithNotReady(IEnvelope envelope, Guid correlationId) {
+		envelope.ReplyWith(new ClientMessage.NotHandled(
+			correlationId,
+			ClientMessage.NotHandled.Types.NotHandledReason.NotReady,
+			(string)null));
 	}
 }
