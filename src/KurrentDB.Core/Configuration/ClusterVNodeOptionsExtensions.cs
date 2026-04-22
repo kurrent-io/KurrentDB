@@ -71,7 +71,8 @@ public static class ClusterVNodeOptionsExtensions {
 			Insecure = true
 		},
 		ServerCertificate = null,
-		TrustedRootCertificates = null
+		TrustedRootCertificates = null,
+		NodeClientTrustedRootCertificates = null,
 	};
 
 	/// <summary>
@@ -87,7 +88,8 @@ public static class ClusterVNodeOptionsExtensions {
 				Insecure = false,
 			},
 			ServerCertificate = serverCertificate,
-			TrustedRootCertificates = trustedRootCertificates
+			TrustedRootCertificates = trustedRootCertificates,
+			NodeClientTrustedRootCertificates = trustedRootCertificates,
 		};
 
 	/// <summary>
@@ -322,6 +324,10 @@ public static class ClusterVNodeOptionsExtensions {
 	/// <see cref="ClusterVNodeOptions.CertificateOptions.TrustedRootCertificatesPath"/>.
 	/// </summary>
 	public static X509Certificate2Collection LoadNodeClientTrustedRootCertificates(this ClusterVNodeOptions options) {
+		if (options.NodeClientTrustedRootCertificates != null)
+			//used by test code paths only
+			return options.NodeClientTrustedRootCertificates;
+
 		return LoadTrustedRootsFromStoreOrPath(
 			new StoreCertInfo(
 				StoreLocation: options.NodeClientCertificateStore.NodeClientTrustedRootCertificateStoreLocation,

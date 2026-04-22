@@ -54,6 +54,7 @@ public partial record ClusterVNodeOptions {
 
 	public X509Certificate2? ServerCertificate { get; init; }
 	public X509Certificate2Collection? TrustedRootCertificates { get; init; }
+	public X509Certificate2Collection? NodeClientTrustedRootCertificates { get; init; }
 	public IReadOnlyList<IPlugableComponent> PlugableComponents { get; init; } = [];
 
 	public IReadOnlyList<ISubsystem> Subsystems => PlugableComponents.OfType<ISubsystem>().ToArray();

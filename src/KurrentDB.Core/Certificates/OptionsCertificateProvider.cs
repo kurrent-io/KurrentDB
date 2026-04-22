@@ -34,7 +34,7 @@ public class OptionsCertificateProvider : CertificateProvider {
 		string reservedNodeCN;
 		var reservedNodeCNOption = nameof(options.Certificate.CertificateReservedNodeCommonName);
 
-		// Determine the CN pattern expected from incomming node certificates.
+		// Determine the CN pattern expected from incoming node certificates.
 		if (options.Certificate.CertificateReservedNodeCommonName.IsNotEmptyString()) {
 			// Reserved CN is configured. Check that the node client cert matches it.
 			reservedNodeCN = options.Certificate.CertificateReservedNodeCommonName;
@@ -83,9 +83,11 @@ public class OptionsCertificateProvider : CertificateProvider {
 		}
 
 		// Validate the node client certificate
-		if (hasNodeClientCert) {
-			var nodeClientTrustedRootCerts = options.LoadNodeClientTrustedRootCertificates();
+		var nodeClientTrustedRootCerts = hasNodeClientCert
+			? options.LoadNodeClientTrustedRootCertificates()
+			: trustedRootCerts;
 
+		if (hasNodeClientCert) {
 			foreach (var trustedRootCert in nodeClientTrustedRootCerts) {
 				Log.Information("Loading trusted root for node client certificate. Subject: {subject}, Thumbprint: {thumbprint}", trustedRootCert.SubjectName.Name, trustedRootCert.Thumbprint);
 			}
@@ -116,6 +118,7 @@ public class OptionsCertificateProvider : CertificateProvider {
 		NodeClientCertificate = nodeClientCertificate;
 		NodeClientIntermediateCerts = nodeClientIntermediates;
 		TrustedRootCerts = trustedRootCerts;
+		NodeClientTrustedRootCerts = nodeClientTrustedRootCerts;
 		_cachedReservedNodeCN = reservedNodeCN;
 
 		Log.Information("All certificates successfully loaded.");

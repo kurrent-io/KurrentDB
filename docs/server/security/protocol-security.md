@@ -202,7 +202,7 @@ By default, a KurrentDB node uses the same certificate for both inbound connecti
 
 This is useful when you want to use a certificate from a public CA for inbound client connections (which may only have the `serverAuth` EKU), while using a certificate from a private CA with both the `serverAuth` and `clientAuth` EKUs for inter-node communication. Using dual certificates this way is an alternative to enabling [`DisableClientAuthEkuValidation`](#disable-client-authentication-eku-validation) and keeps the node in compliance with RFC 5280.
 
-If no node client certificate is configured, the node will use its main certificate as it's client certificate.
+If no node client certificate is configured, the node will use its main certificate as its client certificate.
 
 The node client certificate must have both the `serverAuth` and `clientAuth` Extended Key Usages (EKUs), or no EKU extension at all, so that receiving nodes can identify it as a node certificate.
 

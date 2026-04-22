@@ -206,6 +206,7 @@ public class ClusterVNode<TStreamId> :
 	private readonly Func<X509Certificate2> _certificateSelector;
 	private readonly Func<X509Certificate2> _nodeClientCertificateSelector;
 	private readonly Func<X509Certificate2Collection> _trustedRootCertsSelector;
+	private readonly Func<X509Certificate2Collection> _nodeClientTrustedRootCertsSelector;
 	private readonly Func<X509Certificate2Collection> _intermediateCertsSelector;
 	private readonly Func<X509Certificate2Collection> _nodeClientIntermediateCertsSelector;
 	private readonly CertificateDelegates.ServerCertificateValidator _internalServerCertificateValidator;
@@ -515,6 +516,7 @@ public class ClusterVNode<TStreamId> :
 		_certificateSelector = () => _certificateProvider?.Certificate;
 		_nodeClientCertificateSelector = () => _certificateProvider?.NodeClientCertificate;
 		_trustedRootCertsSelector = () => _certificateProvider?.TrustedRootCerts;
+		_nodeClientTrustedRootCertsSelector = () => _certificateProvider?.NodeClientTrustedRootCerts;
 		_intermediateCertsSelector = () =>
 			_certificateProvider?.IntermediateCerts is not { } intermediates
 				? null
@@ -525,7 +527,7 @@ public class ClusterVNode<TStreamId> :
 				: new X509Certificate2Collection(intermediates);
 
 		_internalServerCertificateValidator = (cert, chain, errors, otherNames) => ValidateServerCertificate(cert, chain, errors, _intermediateCertsSelector, _trustedRootCertsSelector, otherNames);
-		_internalClientCertificateValidator = (cert, chain, errors) => ValidateClientCertificate(cert, chain, errors, _nodeClientIntermediateCertsSelector, _trustedRootCertsSelector);
+		_internalClientCertificateValidator = (cert, chain, errors) => ValidateClientCertificate(cert, chain, errors, _nodeClientIntermediateCertsSelector, _nodeClientTrustedRootCertsSelector);
 		_externalServerCertificateValidator = (cert, chain, errors, otherNames) => ValidateServerCertificate(cert, chain, errors, _intermediateCertsSelector, _trustedRootCertsSelector, otherNames);
 
 		var forwardingProxy = new MessageForwardingProxy();
@@ -1622,7 +1624,7 @@ public class ClusterVNode<TStreamId> :
 					(() => (
 						_nodeClientCertificateSelector(),
 						_nodeClientIntermediateCertsSelector(),
-						_trustedRootCertsSelector()))
+						_nodeClientTrustedRootCertsSelector()))
 				.AddSingleton(_nodeHttpClientFactory)
 				.AddSingleton<IChunkRegistry<IChunkBlob>>(Db.Manager)
 				.AddSingleton<IVersionedFileNamingStrategy>(Db.Manager.FileSystem.LocalNamingStrategy)

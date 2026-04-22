@@ -3,6 +3,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -188,5 +189,29 @@ public class OptionsCertificateProviderTests : DirectoryPerTest<OptionsCertifica
 		var sut = new OptionsCertificateProvider();
 
 		Assert.Throws<InvalidOperationException>(() => sut.GetReservedNodeCommonName());
+	}
+
+	[Fact]
+	public void node_client_trust_pool_is_separate_from_main_trust_pool() {
+		// In dual-cert deployments the main cert and the node client cert can be issued by
+		// different CAs. The provider must expose each trust pool separately so that runtime
+		// validators (user cert auth, internal client cert validator) can consult the correct
+		// pool without widening trust.
+		var mainCa = CreateCert("CN=main-ca", ca: true);
+		var nodeClientCa = CreateCert("CN=node-client-ca", ca: true);
+		var node = CreateCert("CN=kurrentdb.example.com", parent: mainCa, serverAuthEKU: true);
+		var nodeClient = CreateCert("CN=eventstoredb-node", parent: nodeClientCa, serverAuthEKU: true, clientAuthEKU: true);
+		var options = BuildOptions(node, mainCa, nodeClient) with {
+			NodeClientTrustedRootCertificates = new X509Certificate2Collection(StripPrivateKey(nodeClientCa)),
+		};
+		var sut = new OptionsCertificateProvider();
+
+		var result = sut.LoadCertificates(options);
+
+		Assert.Equal(LoadCertificateResult.Success, result);
+		Assert.Contains(sut.TrustedRootCerts.Cast<X509Certificate2>(), r => r.Thumbprint == mainCa.Thumbprint);
+		Assert.DoesNotContain(sut.TrustedRootCerts.Cast<X509Certificate2>(), r => r.Thumbprint == nodeClientCa.Thumbprint);
+		Assert.Contains(sut.NodeClientTrustedRootCerts.Cast<X509Certificate2>(), r => r.Thumbprint == nodeClientCa.Thumbprint);
+		Assert.DoesNotContain(sut.NodeClientTrustedRootCerts.Cast<X509Certificate2>(), r => r.Thumbprint == mainCa.Thumbprint);
 	}
 }
