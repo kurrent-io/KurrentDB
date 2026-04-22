@@ -114,7 +114,7 @@ For using X.509 user certificate with KurrentDB client from an application, refe
 
 The user certificate must adhere to the following requirements:
 
-- The certificate has a root CA in common with the node certificate.
+- The certificate has a root CA in common with the node's client certificate.
 - The root CA that they have in common is trusted by the node.
 - The certificate has the ClientAuth EKU, and not the ServerAuth EKU.
 - The certificate must be in date.
@@ -252,7 +252,7 @@ Signature Hash: 6d922badaba2372070f13c69b620286262eab1d8d2d2156a271a1d73aaaf64e4
 | Error                                     | Solution                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 |:------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Feature not enabled                        | The feature has to be enabled in order to authenticate user requests.<br/><br/> The following log indicates that the feature was not enabled: `UserCertificatesPlugin is not enabled`.                                                                                                                                                                                                                                                                                                                             |
-| Feature enabled and user not authenticated | If the feature has been enabled but there are still access denied errors, check the following: <ul><li>The user exists and is enabled in the KurrentDB database. Can you log in with the username and password?</li><li>The user certificate is valid, and has a valid chain up to a trusted root CA.</li><li>The user certificate and node certificate share a common root CA.</li><li>Use 'requires leader' (which is the default) in your client configuration to rule out issues with forwarding requests.</li></ul> |
+| Feature enabled and user not authenticated | If the feature has been enabled but there are still access denied errors, check the following: <ul><li>The user exists and is enabled in the KurrentDB database. Can you log in with the username and password?</li><li>The user certificate is valid, and has a valid chain up to a trusted root CA.</li><li>The user certificate and the node's client certificate share a common root CA.</li><li>Use 'requires leader' (which is the default) in your client configuration to rule out issues with forwarding requests.</li></ul> |
 
 ## LDAP authentication 
 
