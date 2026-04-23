@@ -8,6 +8,16 @@
 
 **Tech Stack:** .NET 10, C# 14, DotNext 6.1.0 (`DotNext.Runtime.Caching.RandomAccessCache<TKey,TValue>`), TUnit tests, Serilog.
 
+## Build & Test Commands (local macOS ARM64)
+
+CLAUDE.md documents `/p:Platform=x64 --framework=net10.0`, but on an ARM64 Mac the x64-platform source-generator DLL can't load into the native-ARM64 `dotnet` host (CS8034). Parallel MSBuild also hits transient `StaticWebAssets` cache-file contention on this host. For the commands in this plan, use:
+
+- **Platform:** `/p:Platform=ARM64` (not `x64`).
+- **Parallelism:** `--maxcpucount:1` on `dotnet build` (tests are fine without).
+- **Restore:** run `dotnet restore src/KurrentDB.sln` once before the first build in the worktree (reuses the existing baseline for subsequent tasks).
+
+CI and x64 hosts keep the CLAUDE.md-documented flags; this is a local-only override.
+
 ---
 
 ## File Structure
@@ -136,7 +146,7 @@ public class PartitionStateCacheTests {
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `dotnet test src/KurrentDB.Projections.V2.Tests/ --filter "FullyQualifiedName~PartitionStateCacheTests" -c Release /p:Platform=x64`
+Run: `dotnet test src/KurrentDB.Projections.V2.Tests/ --filter "FullyQualifiedName~PartitionStateCacheTests" -c Release /p:Platform=ARM64`
 
 Expected: compile failure — `PartitionStateCache` not found.
 
@@ -214,7 +224,7 @@ internal sealed class PartitionStateCache : IAsyncDisposable {
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `dotnet test src/KurrentDB.Projections.V2.Tests/ --filter "FullyQualifiedName~PartitionStateCacheTests" -c Release /p:Platform=x64`
+Run: `dotnet test src/KurrentDB.Projections.V2.Tests/ --filter "FullyQualifiedName~PartitionStateCacheTests" -c Release /p:Platform=ARM64`
 
 Expected: all 6 tests pass.
 
@@ -266,7 +276,7 @@ Making it `required` ensures every construction site is forced to set a value (p
 
 - [ ] **Step 2: Build — expect failures**
 
-Run: `dotnet build -c Release /p:Platform=x64 --framework=net10.0 src/KurrentDB.sln 2>&1 | grep -E 'error|Error' | head -20`
+Run: `dotnet build -c Release /p:Platform=ARM64 --framework=net10.0 --maxcpucount:1 src/KurrentDB.sln 2>&1 | grep -E 'error|Error' | head -20`
 
 Expected: a compile error at `CoreProjectionV2.StartEngine` (the only current construction site) because `MaxPartitionStateCacheSize` is now required. This is intentional — subsequent tasks provide the value.
 
@@ -291,7 +301,7 @@ Leave the `// TEMP:` comment in place; the wiring task removes it.
 
 - [ ] **Step 4: Build to confirm green**
 
-Run: `dotnet build -c Release /p:Platform=x64 --framework=net10.0 src/KurrentDB.sln 2>&1 | tail -5`
+Run: `dotnet build -c Release /p:Platform=ARM64 --framework=net10.0 --maxcpucount:1 src/KurrentDB.sln 2>&1 | tail -5`
 
 Expected: `Build succeeded`.
 
@@ -415,7 +425,7 @@ public async Task Run(CancellationToken ct) {
 
 - [ ] **Step 5: Build**
 
-Run: `dotnet build -c Release /p:Platform=x64 --framework=net10.0 src/KurrentDB.sln 2>&1 | tail -10`
+Run: `dotnet build -c Release /p:Platform=ARM64 --framework=net10.0 --maxcpucount:1 src/KurrentDB.sln 2>&1 | tail -10`
 
 Expected: compile errors in `ProjectionEngineV2.cs` (shared-cache type mismatch) and any test using the old `PartitionProcessor` constructor — fixed in the next task.
 
@@ -552,7 +562,7 @@ Note: per-slot cache metrics are not aggregated here. The shared cache sees ever
 
 - [ ] **Step 6: Build**
 
-Run: `dotnet build -c Release /p:Platform=x64 --framework=net10.0 src/KurrentDB.sln 2>&1 | tail -10`
+Run: `dotnet build -c Release /p:Platform=ARM64 --framework=net10.0 --maxcpucount:1 src/KurrentDB.sln 2>&1 | tail -10`
 
 Expected: `Build succeeded`. Existing V2 tests that construct `ProjectionEngineV2Config` without `MaxPartitionStateCacheSize` will fail to compile — fix them inline by adding `MaxPartitionStateCacheSize = 100,` (or similar) to their config literals.
 
@@ -564,7 +574,7 @@ For each match, add `MaxPartitionStateCacheSize = 1000,` to the initializer. Run
 
 - [ ] **Step 8: Run the V2 test suite**
 
-Run: `dotnet test src/KurrentDB.Projections.V2.Tests/ -c Release /p:Platform=x64 --framework net10.0`
+Run: `dotnet test src/KurrentDB.Projections.V2.Tests/ -c Release /p:Platform=ARM64 --framework net10.0`
 
 Expected: all existing tests pass (cache swap is behaviour-preserving at `1000` cap for tests that don't exercise >1000 distinct partitions).
 
@@ -914,7 +924,7 @@ Open `src/KurrentDB/ClusterVNodeHostedService.cs`. Update the `ProjectionSubsyst
 
 - [ ] **Step 9: Build**
 
-Run: `dotnet build -c Release /p:Platform=x64 --framework=net10.0 src/KurrentDB.sln 2>&1 | tail -10`
+Run: `dotnet build -c Release /p:Platform=ARM64 --framework=net10.0 --maxcpucount:1 src/KurrentDB.sln 2>&1 | tail -10`
 
 Expected: `Build succeeded`. Any remaining test construction sites of `ProjectionCoreService`, `ProcessingStrategySelector`, `ProjectionProcessingStrategyV2`, `ProjectionsStandardComponents`, `ProjectionSubsystemOptions`, or `CoreProjectionV2` will fail to compile — grep and update each one.
 
@@ -926,8 +936,8 @@ For each hit, add the matching argument (a literal like `100_000` is fine in tes
 
 Run:
 ```
-dotnet test src/KurrentDB.Projections.V2.Tests/ -c Release /p:Platform=x64 --framework net10.0
-dotnet test src/KurrentDB.Projections.Core.Tests/ -c Release /p:Platform=x64 --framework net10.0
+dotnet test src/KurrentDB.Projections.V2.Tests/ -c Release /p:Platform=ARM64 --framework net10.0
+dotnet test src/KurrentDB.Projections.Core.Tests/ -c Release /p:Platform=ARM64 --framework net10.0
 ```
 
 Expected: all tests pass.
@@ -1001,9 +1011,9 @@ void PublishStatistics(ProjectionEngineV2 engine) {
 
 - [ ] **Step 3: Build and test**
 
-Run: `dotnet build -c Release /p:Platform=x64 --framework=net10.0 src/KurrentDB.sln 2>&1 | tail -5`
+Run: `dotnet build -c Release /p:Platform=ARM64 --framework=net10.0 --maxcpucount:1 src/KurrentDB.sln 2>&1 | tail -5`
 
-Run: `dotnet test src/KurrentDB.Projections.V2.Tests/ -c Release /p:Platform=x64 --framework net10.0`
+Run: `dotnet test src/KurrentDB.Projections.V2.Tests/ -c Release /p:Platform=ARM64 --framework net10.0`
 
 Expected: build succeeded, all tests pass.
 
@@ -1099,7 +1109,7 @@ public class PartitionStateCacheEvictionTests {
 
 - [ ] **Step 3: Run the tests to verify they fail**
 
-Run: `dotnet test src/KurrentDB.Projections.V2.Tests/ --filter "FullyQualifiedName~PartitionStateCacheEvictionTests" -c Release /p:Platform=x64 --framework net10.0`
+Run: `dotnet test src/KurrentDB.Projections.V2.Tests/ --filter "FullyQualifiedName~PartitionStateCacheEvictionTests" -c Release /p:Platform=ARM64 --framework net10.0`
 
 Expected: failure — either because the test body isn't fleshed out or the helper doesn't yet accept a cache-capacity parameter.
 
@@ -1117,7 +1127,7 @@ Do not introduce new fakes if existing helpers cover the behaviour.
 
 - [ ] **Step 5: Run the tests to verify they pass**
 
-Run: `dotnet test src/KurrentDB.Projections.V2.Tests/ --filter "FullyQualifiedName~PartitionStateCacheEvictionTests" -c Release /p:Platform=x64 --framework net10.0`
+Run: `dotnet test src/KurrentDB.Projections.V2.Tests/ --filter "FullyQualifiedName~PartitionStateCacheEvictionTests" -c Release /p:Platform=ARM64 --framework net10.0`
 
 Expected: both tests pass. Specifically:
 
@@ -1126,7 +1136,7 @@ Expected: both tests pass. Specifically:
 
 - [ ] **Step 6: Run the full V2 test suite to check for regressions**
 
-Run: `dotnet test src/KurrentDB.Projections.V2.Tests/ -c Release /p:Platform=x64 --framework net10.0`
+Run: `dotnet test src/KurrentDB.Projections.V2.Tests/ -c Release /p:Platform=ARM64 --framework net10.0`
 
 Expected: all tests pass.
 
