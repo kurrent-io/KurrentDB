@@ -19,12 +19,13 @@ public class OpenTelemetryLoggerTests {
 			})
 			.Build();
 
-		new LoggerConfiguration().AddOpenTelemetryLogger(config, "test-node");
+		OtlpExporterOptions? captured = null;
+		new LoggerConfiguration().AddOpenTelemetryLogger(config, "test-node", opts => captured = opts);
 
-		Assert.NotNull(OpenTelemetryLogger.OtlpOptions);
-		Assert.Equal(new Uri("http://shared:4317"), OpenTelemetryLogger.OtlpOptions.Endpoint);
-		Assert.Equal("key=shared", OpenTelemetryLogger.OtlpOptions.Headers);
-		Assert.Equal(OtlpExportProtocol.Grpc, OpenTelemetryLogger.OtlpOptions.Protocol); // default
+		Assert.NotNull(captured);
+		Assert.Equal(new Uri("http://shared:4317"), captured.Endpoint);
+		Assert.Equal("key=shared", captured.Headers);
+		Assert.Equal(OtlpExportProtocol.Grpc, captured.Protocol); // default
 	}
 
 	[Fact]
@@ -38,12 +39,13 @@ public class OpenTelemetryLoggerTests {
 			})
 			.Build();
 
-		new LoggerConfiguration().AddOpenTelemetryLogger(config, "test-node");
+		OtlpExporterOptions? captured = null;
+		new LoggerConfiguration().AddOpenTelemetryLogger(config, "test-node", opts => captured = opts);
 
-		Assert.NotNull(OpenTelemetryLogger.OtlpOptions);
-		Assert.Equal(new Uri("http://logs:4317"), OpenTelemetryLogger.OtlpOptions.Endpoint);
-		Assert.Equal("key=shared", OpenTelemetryLogger.OtlpOptions.Headers); // inherited from shared
-		Assert.Equal(OtlpExportProtocol.Grpc, OpenTelemetryLogger.OtlpOptions.Protocol); // inherited from shared
+		Assert.NotNull(captured);
+		Assert.Equal(new Uri("http://logs:4317"), captured.Endpoint);
+		Assert.Equal("key=shared", captured.Headers); // inherited from shared
+		Assert.Equal(OtlpExportProtocol.Grpc, captured.Protocol); // inherited from shared
 	}
 
 	[Fact]
@@ -57,11 +59,12 @@ public class OpenTelemetryLoggerTests {
 			})
 			.Build();
 
-		new LoggerConfiguration().AddOpenTelemetryLogger(config, "test-node");
+		OtlpExporterOptions? captured = null;
+		new LoggerConfiguration().AddOpenTelemetryLogger(config, "test-node", opts => captured = opts);
 
-		Assert.NotNull(OpenTelemetryLogger.OtlpOptions);
-		Assert.Equal(new Uri("http://shared:4317"), OpenTelemetryLogger.OtlpOptions.Endpoint); // inherited from shared
-		Assert.Equal("key=logs-only", OpenTelemetryLogger.OtlpOptions.Headers);
+		Assert.NotNull(captured);
+		Assert.Equal(new Uri("http://shared:4317"), captured.Endpoint); // inherited from shared
+		Assert.Equal("key=logs-only", captured.Headers);
 	}
 
 	[Fact]
@@ -77,11 +80,12 @@ public class OpenTelemetryLoggerTests {
 			})
 			.Build();
 
-		new LoggerConfiguration().AddOpenTelemetryLogger(config, "test-node");
+		OtlpExporterOptions? captured = null;
+		new LoggerConfiguration().AddOpenTelemetryLogger(config, "test-node", opts => captured = opts);
 
-		Assert.NotNull(OpenTelemetryLogger.OtlpOptions);
-		Assert.Equal(new Uri("http://logs:4317"), OpenTelemetryLogger.OtlpOptions.Endpoint);
-		Assert.Equal("key=logs", OpenTelemetryLogger.OtlpOptions.Headers);
-		Assert.Equal(OtlpExportProtocol.HttpProtobuf, OpenTelemetryLogger.OtlpOptions.Protocol);
+		Assert.NotNull(captured);
+		Assert.Equal(new Uri("http://logs:4317"), captured.Endpoint);
+		Assert.Equal("key=logs", captured.Headers);
+		Assert.Equal(OtlpExportProtocol.HttpProtobuf, captured.Protocol);
 	}
 }
