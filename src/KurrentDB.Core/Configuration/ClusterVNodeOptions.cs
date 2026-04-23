@@ -572,7 +572,8 @@ public partial record ClusterVNodeOptions {
 
 		[Description("Maximum number of partition-state entries cached in memory per V2 projection cache " +
 		             "(one per partition slot plus a shared engine-wide cache). When the cap is reached, " +
-		             "entries are evicted LRU-style; state is re-hydrated from the state stream on next access.")]
+		             "entries are evicted (SIEVE — a scan-resistant LRU variant); state is re-hydrated " +
+		             "from the state stream on next access.")]
 		public int MaxPartitionStateCacheSize { get; init; } = 100_000;
 	}
 
