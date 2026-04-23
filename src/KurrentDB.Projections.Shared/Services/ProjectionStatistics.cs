@@ -61,6 +61,10 @@ public class ProjectionStatistics {
 
 	public int StateSizeLimit { get; set; }
 
+	public long PartitionStateCacheSize { get; set; }
+
+	public long PartitionStateCacheEvictions { get; set; }
+
 	public ProjectionStatistics Clone() {
 		return (ProjectionStatistics)MemberwiseClone();
 	}

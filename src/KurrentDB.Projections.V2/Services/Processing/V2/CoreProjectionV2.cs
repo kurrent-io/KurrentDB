@@ -254,6 +254,7 @@ public sealed class CoreProjectionV2 : ICoreProjectionControl {
 	}
 
 	void PublishStatistics(ProjectionEngineV2 engine) {
+		var metrics = engine.GetCacheMetrics();
 		var stats = new ProjectionStatistics {
 			Name = _projectionName,
 			EffectiveName = _projectionName,
@@ -267,7 +268,9 @@ public sealed class CoreProjectionV2 : ICoreProjectionControl {
 						: "Running",
 			StateReason = "",
 			BufferedEvents = 0,
-			EventsProcessedAfterRestart = (int)engine.TotalEventsProcessed
+			EventsProcessedAfterRestart = (int)engine.TotalEventsProcessed,
+			PartitionStateCacheSize = metrics.Size,
+			PartitionStateCacheEvictions = metrics.Evictions
 		};
 
 		_publisher.Publish(new CoreProjectionStatusMessage.StatisticsReport(
