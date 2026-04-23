@@ -58,6 +58,8 @@ public class PartitionProcessor(
 	/// </summary>
 	private async ValueTask<bool> LoadPartitionState(string partitionKey) {
 		if (_stateCache.TryGet(partitionKey, out var cachedState)) {
+			// A null cached state means the handler explicitly set state to null (e.g. JS null).
+			// Load "null" so the handler gets JS null, not a fresh $init state.
 			stateHandler.Load(cachedState ?? "null");
 			return false;
 		}
@@ -100,6 +102,9 @@ public class PartitionProcessor(
 		var processed = stateHandler.ProcessPartitionDeleted(partitionKey, checkpointTag, out var newState);
 
 		if (processed) {
+			// CancellationToken.None: the processor drains on CancellationToken.None
+			// (see ProjectionEngineV2.Run's partitionCt); aborting cache writes mid-drain
+			// would desync the in-memory and on-disk views.
 			await _stateCache.Set(partitionKey, newState, CancellationToken.None);
 			if (newState != null) {
 				var stateStreamName = ProjectionNamesBuilder.MakeStateStreamName(projectionName, partitionKey);
