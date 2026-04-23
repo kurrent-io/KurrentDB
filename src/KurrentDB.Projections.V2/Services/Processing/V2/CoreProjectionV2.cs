@@ -214,6 +214,7 @@ public sealed class CoreProjectionV2 : ICoreProjectionControl {
 				ProjectionName = _projectionName,
 				SourceDefinition = _sourceDefinition,
 				StateHandlerFactory = _stateHandlerFactory,
+				MaxPartitionStateCacheSize = 100_000, // TEMP: replaced with wired value in a later task
 				CheckpointAfterMs = _projectionConfig.CheckpointAfterMs,
 				CheckpointHandledThreshold = _projectionConfig.CheckpointHandledThreshold,
 				CheckpointUnhandledBytesThreshold = _projectionConfig.CheckpointUnhandledBytesThreshold,
