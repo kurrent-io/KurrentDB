@@ -126,7 +126,10 @@ public sealed class ProjectionEngineV2 : IAsyncDisposable {
 				_config.SourceDefinition.IsBiState,
 				_config.EmitEnabled,
 				coordinator.ReportPartitionCheckpoint,
-				loadPersistedState: partitionKey => LoadPersistedPartitionState(partitionKey, ct),
+				// loadPersistedState uses CancellationToken.None so drain-time cache misses
+				// (more likely with bounded caches) can still complete checkpointing after
+				// the engine's cancellation token has fired.
+				loadPersistedState: partitionKey => LoadPersistedPartitionState(partitionKey, CancellationToken.None),
 				sharedPartitionStates: _partitionStates,
 				partitionStateCacheCapacity: _config.MaxPartitionStateCacheSize);
 			partitionTasks[i] = Task.Run(() => processor.Run(partitionCt), partitionCt);

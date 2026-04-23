@@ -303,27 +303,34 @@ public class PartitionStateCacheEvictionTests {
 		await Fixture.StreamsClient.AppendAsync(SingleEvent(p1Stream), ct);
 		await Task.Delay(2000, ct);
 
-		// 5. Parse the last checkpoint position so engine2 can start from where engine1 left off...
-		//    but we start from (0,0) deliberately: the second engine will re-process all events
-		//    including the second p1 event, which means for p1 it will:
-		//      - encounter p1 again in an empty in-memory cache
-		//      - call loadPersistedState which reads the -state stream → loads count=1
-		//      - process the new Counted event → count=2
-		//    This is the stream-fallback path exercised under test.
-		//
-		//    To avoid processing 10+ extra partitions, we start from (0,0) but accept that
-		//    all 11 events will be processed. We then verify p1 specifically reaches count=2.
+		// 5. Parse the last checkpoint position engine1 wrote — engine2 must start from that
+		//    checkpoint (matching the production CoreProjectionV2 restart flow). Starting from
+		//    TFPos(0,0) while also loading the -state snapshot would replay pre-snapshot events
+		//    on top of a later state and yield incorrect counts.
+		var lastCheckpointWrite = checkpointWrites1.Last();
+		var lastCheckpointEvent = lastCheckpointWrite.Events.ToArray()
+			.First(e => e.EventType == ProjectionEventTypes.ProjectionCheckpointV2);
+		using var checkpointDoc = JsonDocument.Parse(lastCheckpointEvent.Data.ToArray());
+		var checkpointPos = new TFPos(
+			commitPosition: checkpointDoc.RootElement.GetProperty("commitPosition").GetInt64(),
+			preparePosition: checkpointDoc.RootElement.GetProperty("preparePosition").GetInt64());
 
+		// 6. Engine2 starts from engine1's checkpoint. It only sees events after that point —
+		//    specifically, the second p1 event written in step 4. For p1:
+		//      - cache miss (new engine, empty _stateCache)
+		//      - loadPersistedState reads the -state stream → loads count=1
+		//      - processes the new Counted event → count=2
+		//    That exercises the stream-fallback recovery path exactly as a real restart would.
 		var realPublisher2 = new ForwardingCapturingPublisher(Fixture.MainQueue);
 		var engine2 = await StartEngine(
 			projectionName,
 			realPublisher2,
 			maxCacheSize: cacheSize,
-			startFrom: new TFPos(0, 0),
-			checkpointHandledThreshold: firstBatchCount + 1);
+			startFrom: checkpointPos,
+			checkpointHandledThreshold: 1);
 
-		// Wait for all 11 events (10 original + 1 new p1).
-		await WaitForEventsProcessed(engine2, firstBatchCount + 1, TimeSpan.FromSeconds(25));
+		// Wait for the single post-checkpoint event (the second p1 event) to be processed.
+		await WaitForEventsProcessed(engine2, 1, TimeSpan.FromSeconds(25));
 
 		// Wait for a checkpoint write.
 		var checkpointDeadline2 = Task.Delay(TimeSpan.FromSeconds(15));
