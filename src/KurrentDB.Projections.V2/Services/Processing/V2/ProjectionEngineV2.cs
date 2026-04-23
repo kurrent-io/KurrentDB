@@ -74,13 +74,22 @@ public sealed class ProjectionEngineV2 : IAsyncDisposable {
 		_partitionStates.TryGet(partitionKey, out var state) ? state : null;
 
 	/// <summary>
-	/// Returns size and eviction count for the shared partition-state cache.
+	/// Returns approximate size and eviction count for the shared partition-state cache.
 	/// Per-slot caches are intentionally excluded: they double-count partition keys that
 	/// appear across multiple processor pools, so only the shared cache is the faithful summary.
+	/// <para>
+	/// <see cref="CacheMetrics.Size"/> is derived from <see cref="PartitionStateCache.Count"/>, which
+	/// the wrapper decrements inside SIEVE's asynchronous eviction callback. As a result the reported
+	/// size can temporarily exceed <see cref="ProjectionEngineV2Config.MaxPartitionStateCacheSize"/>
+	/// between a sweep and the callback firing. Treat the value as an upper-bounded observation,
+	/// not a hard invariant.
+	/// </para>
 	/// </summary>
 	public CacheMetrics GetCacheMetrics() =>
 		new(Size: _partitionStates.Count, Evictions: _partitionStates.Evictions);
 
+	/// <param name="Size">Approximate current item count in the shared cache (see remarks on <see cref="GetCacheMetrics"/>).</param>
+	/// <param name="Evictions">Monotonic count of entries evicted since the engine started.</param>
 	public readonly record struct CacheMetrics(long Size, long Evictions);
 
 	[AsyncMethodBuilder(typeof(SpawningAsyncTaskMethodBuilder))]

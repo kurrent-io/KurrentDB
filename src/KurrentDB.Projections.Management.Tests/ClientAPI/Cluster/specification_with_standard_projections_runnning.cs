@@ -119,7 +119,16 @@ public abstract class specification_with_standard_projections_runnning<TLogForma
 	}
 
 	private MiniClusterNode<TLogFormat, TStreamId> CreateNode(int index, Endpoints endpoints, EndPoint[] gossipSeeds) {
-		_projections[index] = new ProjectionsSubsystem(new ProjectionSubsystemOptions(1, ProjectionType.All, false, TimeSpan.FromMinutes(Opts.ProjectionsQueryExpiryDefault), Opts.FaultOutOfOrderProjectionsDefault, 500, 250, Opts.MaxProjectionStateSizeDefault, 100_000));
+		_projections[index] = new ProjectionsSubsystem(new ProjectionSubsystemOptions(
+			1,
+			ProjectionType.All,
+			StartStandardProjections: false,
+			TimeSpan.FromMinutes(Opts.ProjectionsQueryExpiryDefault),
+			Opts.FaultOutOfOrderProjectionsDefault,
+			500,
+			250,
+			Opts.MaxProjectionStateSizeDefault,
+			Opts.MaxPartitionStateCacheSizeDefault));
 		var node = new MiniClusterNode<TLogFormat, TStreamId>(
 			PathName, index, endpoints.InternalTcp,
 			endpoints.ExternalTcp, endpoints.HttpEndPoint,

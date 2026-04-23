@@ -48,7 +48,7 @@ public class PartitionStateCacheEvictionTests {
 	static AppendRequest SingleEvent(string stream, string eventType = "Counted") {
 		var request = new AppendRequest {
 			Stream = stream,
-			ExpectedRevision = -2 // Any
+			ExpectedRevision = (long)ExpectedRevisionConstants.Any
 		};
 		request.Records.Add(new AppendRecord {
 			RecordId = Guid.NewGuid().ToString(),

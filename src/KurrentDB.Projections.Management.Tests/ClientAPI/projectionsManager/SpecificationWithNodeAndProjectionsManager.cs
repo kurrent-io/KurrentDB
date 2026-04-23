@@ -75,7 +75,16 @@ public abstract class SpecificationWithNodeAndProjectionsManager<TLogFormat, TSt
 	public abstract Task When();
 
 	protected MiniNode<TLogFormat, TStreamId> CreateNode() {
-		_projectionsSubsystem = new ProjectionsSubsystem(new ProjectionSubsystemOptions(1, ProjectionType.All, false, TimeSpan.FromMinutes(Opts.ProjectionsQueryExpiryDefault), Opts.FaultOutOfOrderProjectionsDefault, 500, 250, Opts.MaxProjectionStateSizeDefault, 100_000));
+		_projectionsSubsystem = new ProjectionsSubsystem(new ProjectionSubsystemOptions(
+			1,
+			ProjectionType.All,
+			StartStandardProjections: false,
+			TimeSpan.FromMinutes(Opts.ProjectionsQueryExpiryDefault),
+			Opts.FaultOutOfOrderProjectionsDefault,
+			500,
+			250,
+			Opts.MaxProjectionStateSizeDefault,
+			Opts.MaxPartitionStateCacheSizeDefault));
 		var node = new MiniNode<TLogFormat, TStreamId>(
 			PathName, inMemDb: true,
 			subsystems: [_projectionsSubsystem]);

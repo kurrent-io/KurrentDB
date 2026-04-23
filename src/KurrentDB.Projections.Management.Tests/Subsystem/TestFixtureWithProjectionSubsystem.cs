@@ -62,7 +62,16 @@ public class TestFixtureWithProjectionSubsystem {
 		builder.Services.AddSingleton(_standardComponents);
 
 		Subsystem = new ProjectionsSubsystem(
-			new ProjectionSubsystemOptions(1, ProjectionType.All, true, TimeSpan.FromSeconds(3), true, 500, 250, Opts.MaxProjectionStateSizeDefault, 100_000));
+			new ProjectionSubsystemOptions(
+				1,
+				ProjectionType.All,
+				StartStandardProjections: true,
+				TimeSpan.FromSeconds(3),
+				FaultOutOfOrderProjections: true,
+				500,
+				250,
+				Opts.MaxProjectionStateSizeDefault,
+				Opts.MaxPartitionStateCacheSizeDefault));
 
 		Subsystem.ConfigureServices(builder.Services, new ConfigurationBuilder().Build());
 		Subsystem.ConfigureApplication(builder.Build().UseRouting(), EmptyConfiguration);

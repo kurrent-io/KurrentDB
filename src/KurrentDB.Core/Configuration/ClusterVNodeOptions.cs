@@ -574,7 +574,7 @@ public partial record ClusterVNodeOptions {
 		             "(one per partition slot plus a shared engine-wide cache). When the cap is reached, " +
 		             "entries are evicted (SIEVE — a scan-resistant LRU variant); state is re-hydrated " +
 		             "from the state stream on next access.")]
-		public int MaxPartitionStateCacheSize { get; init; } = 100_000;
+		public int MaxPartitionStateCacheSize { get; init; } = Opts.MaxPartitionStateCacheSizeDefault;
 	}
 
 	public record UnknownOptions(IReadOnlyList<(string, string)> Options) {
