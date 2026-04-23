@@ -10,11 +10,12 @@
 
 ## Build & Test Commands (local macOS ARM64)
 
-CLAUDE.md documents `/p:Platform=x64 --framework=net10.0`, but on an ARM64 Mac the x64-platform source-generator DLL can't load into the native-ARM64 `dotnet` host (CS8034). Parallel MSBuild also hits transient `StaticWebAssets` cache-file contention on this host. For the commands in this plan, use:
+CLAUDE.md documents `/p:Platform=x64 --framework=net10.0`, but on this host both flags cause failures:
 
-- **Platform:** `/p:Platform=ARM64` (not `x64`).
-- **Parallelism:** `--maxcpucount:1` on `dotnet build` (tests are fine without).
-- **Restore:** run `dotnet restore src/KurrentDB.sln` once before the first build in the worktree (reuses the existing baseline for subsequent tasks).
+- **`/p:Platform=x64`** produces an x64 `KurrentDB.SourceGenerators.dll` that can't load into the native-ARM64 `dotnet` analyzer host (CS8034). Use `/p:Platform=ARM64` instead.
+- **`--framework=net10.0`** at the sln level is evaluated against the netstandard2.0-only `KurrentDB.SourceGenerators` project and errors with NETSDK1005. Drop the flag on sln builds; tests pass the flag at the test-project level where it's valid.
+- **Parallel MSBuild** hits transient `StaticWebAssets` cache-file contention; pass `--maxcpucount:1` on `dotnet build`.
+- **Restore:** run `dotnet restore src/KurrentDB.sln` once before the first build in the worktree.
 
 CI and x64 hosts keep the CLAUDE.md-documented flags; this is a local-only override.
 
@@ -276,7 +277,7 @@ Making it `required` ensures every construction site is forced to set a value (p
 
 - [ ] **Step 2: Build — expect failures**
 
-Run: `dotnet build -c Release /p:Platform=ARM64 --framework=net10.0 --maxcpucount:1 src/KurrentDB.sln 2>&1 | grep -E 'error|Error' | head -20`
+Run: `dotnet build -c Release /p:Platform=ARM64 --maxcpucount:1 src/KurrentDB.sln 2>&1 | grep -E 'error|Error' | head -20`
 
 Expected: a compile error at `CoreProjectionV2.StartEngine` (the only current construction site) because `MaxPartitionStateCacheSize` is now required. This is intentional — subsequent tasks provide the value.
 
@@ -301,7 +302,7 @@ Leave the `// TEMP:` comment in place; the wiring task removes it.
 
 - [ ] **Step 4: Build to confirm green**
 
-Run: `dotnet build -c Release /p:Platform=ARM64 --framework=net10.0 --maxcpucount:1 src/KurrentDB.sln 2>&1 | tail -5`
+Run: `dotnet build -c Release /p:Platform=ARM64 --maxcpucount:1 src/KurrentDB.sln 2>&1 | tail -5`
 
 Expected: `Build succeeded`.
 
@@ -425,7 +426,7 @@ public async Task Run(CancellationToken ct) {
 
 - [ ] **Step 5: Build**
 
-Run: `dotnet build -c Release /p:Platform=ARM64 --framework=net10.0 --maxcpucount:1 src/KurrentDB.sln 2>&1 | tail -10`
+Run: `dotnet build -c Release /p:Platform=ARM64 --maxcpucount:1 src/KurrentDB.sln 2>&1 | tail -10`
 
 Expected: compile errors in `ProjectionEngineV2.cs` (shared-cache type mismatch) and any test using the old `PartitionProcessor` constructor — fixed in the next task.
 
@@ -562,7 +563,7 @@ Note: per-slot cache metrics are not aggregated here. The shared cache sees ever
 
 - [ ] **Step 6: Build**
 
-Run: `dotnet build -c Release /p:Platform=ARM64 --framework=net10.0 --maxcpucount:1 src/KurrentDB.sln 2>&1 | tail -10`
+Run: `dotnet build -c Release /p:Platform=ARM64 --maxcpucount:1 src/KurrentDB.sln 2>&1 | tail -10`
 
 Expected: `Build succeeded`. Existing V2 tests that construct `ProjectionEngineV2Config` without `MaxPartitionStateCacheSize` will fail to compile — fix them inline by adding `MaxPartitionStateCacheSize = 100,` (or similar) to their config literals.
 
@@ -924,7 +925,7 @@ Open `src/KurrentDB/ClusterVNodeHostedService.cs`. Update the `ProjectionSubsyst
 
 - [ ] **Step 9: Build**
 
-Run: `dotnet build -c Release /p:Platform=ARM64 --framework=net10.0 --maxcpucount:1 src/KurrentDB.sln 2>&1 | tail -10`
+Run: `dotnet build -c Release /p:Platform=ARM64 --maxcpucount:1 src/KurrentDB.sln 2>&1 | tail -10`
 
 Expected: `Build succeeded`. Any remaining test construction sites of `ProjectionCoreService`, `ProcessingStrategySelector`, `ProjectionProcessingStrategyV2`, `ProjectionsStandardComponents`, `ProjectionSubsystemOptions`, or `CoreProjectionV2` will fail to compile — grep and update each one.
 
@@ -1011,7 +1012,7 @@ void PublishStatistics(ProjectionEngineV2 engine) {
 
 - [ ] **Step 3: Build and test**
 
-Run: `dotnet build -c Release /p:Platform=ARM64 --framework=net10.0 --maxcpucount:1 src/KurrentDB.sln 2>&1 | tail -5`
+Run: `dotnet build -c Release /p:Platform=ARM64 --maxcpucount:1 src/KurrentDB.sln 2>&1 | tail -5`
 
 Run: `dotnet test src/KurrentDB.Projections.V2.Tests/ -c Release /p:Platform=ARM64 --framework net10.0`
 
