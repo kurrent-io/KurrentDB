@@ -4,8 +4,6 @@
 #nullable enable
 
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -24,27 +22,33 @@ public class PartitionProcessor(
 	bool emitEnabled,
 	Action<int, IReadOnlyOutputBuffer> onCheckpointMarker,
 	Func<string, ValueTask<string?>> loadPersistedState,
-	ConcurrentDictionary<string, string> sharedPartitionStates) { // todo: this is unbounded, consider eviction strategy
+	PartitionStateCache sharedPartitionStates,
+	int partitionStateCacheCapacity) {
 
 	private static readonly ILogger Log = Serilog.Log.ForContext<PartitionProcessor>();
 
 	// the two buffers alternate being active/frozen
 	private OutputBuffer _activeBuffer = new();
 	private OutputBuffer _frozenBuffer = new();
-	private readonly Dictionary<string, string?> _stateCache = []; // todo: this is unbounded, consider eviction strategy
+	private readonly PartitionStateCache _stateCache =
+		new(partitionStateCacheCapacity, name: $"partition-{partitionIndex}", projectionName);
 	private string? _sharedState;
 	private bool _sharedStateInitialized;
 
 	public async Task Run(CancellationToken ct) {
 		Log.Debug("Partition {Index} starting for projection {Name}", partitionIndex, projectionName);
 
-		await foreach (var pe in reader.ReadAllAsync(ct)) {
-			if (pe.IsCheckpointMarker)
-				HandleCheckpointMarker();
-			else if (pe.IsPartitionDeleted)
-				await ProcessPartitionDeleted(pe);
-			else
-				await ProcessEvent(pe);
+		try {
+			await foreach (var pe in reader.ReadAllAsync(ct)) {
+				if (pe.IsCheckpointMarker)
+					HandleCheckpointMarker();
+				else if (pe.IsPartitionDeleted)
+					await ProcessPartitionDeleted(pe);
+				else
+					await ProcessEvent(pe);
+			}
+		} finally {
+			await _stateCache.DisposeAsync();
 		}
 	}
 
@@ -53,20 +57,17 @@ public class PartitionProcessor(
 	/// Returns true if the partition is new (not previously seen in this run or persisted).
 	/// </summary>
 	private async ValueTask<bool> LoadPartitionState(string partitionKey) {
-		if (_stateCache.TryGetValue(partitionKey, out var cachedState)) {
-			// A null cached state means the handler explicitly set state to null (e.g. JS null).
-			// Load "null" so the handler gets JS null, not a fresh $init state.
+		if (_stateCache.TryGet(partitionKey, out var cachedState)) {
 			stateHandler.Load(cachedState ?? "null");
 			return false;
 		}
 
-		// Try loading persisted state from the result stream (recovery after restart).
 		var persistedState = await loadPersistedState(partitionKey);
 		if (persistedState is not null) {
 			Log.Debug("Loaded persisted state for partition {Partition} in projection {Name}",
 				partitionKey, projectionName);
 			stateHandler.Load(persistedState);
-			_stateCache[partitionKey] = persistedState;
+			await _stateCache.Set(partitionKey, persistedState, CancellationToken.None);
 			return false;
 		}
 
@@ -99,11 +100,11 @@ public class PartitionProcessor(
 		var processed = stateHandler.ProcessPartitionDeleted(partitionKey, checkpointTag, out var newState);
 
 		if (processed) {
-			_stateCache[partitionKey] = newState;
+			await _stateCache.Set(partitionKey, newState, CancellationToken.None);
 			if (newState != null) {
 				var stateStreamName = ProjectionNamesBuilder.MakeStateStreamName(projectionName, partitionKey);
 				_activeBuffer.SetPartitionState(partitionKey, stateStreamName, newState, ExpectedVersion.Any);
-				sharedPartitionStates[partitionKey] = newState;
+				await sharedPartitionStates.Set(partitionKey, newState, CancellationToken.None);
 			}
 		}
 
@@ -138,11 +139,11 @@ public class PartitionProcessor(
 			out var emittedEvents);
 
 		if (processed) {
-			_stateCache[partitionKey] = newState;
+			await _stateCache.Set(partitionKey, newState, CancellationToken.None);
 			if (newState is not null) {
 				var stateStreamName = ProjectionNamesBuilder.MakeStateStreamName(projectionName, partitionKey);
 				_activeBuffer.SetPartitionState(partitionKey, stateStreamName, newState, ExpectedVersion.Any);
-				sharedPartitionStates[partitionKey] = newState;
+				await sharedPartitionStates.Set(partitionKey, newState, CancellationToken.None);
 			}
 
 			if (isBiState && newSharedState is not null) {
