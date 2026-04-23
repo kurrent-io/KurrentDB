@@ -50,6 +50,8 @@ public sealed class PartitionStateCache : IAsyncDisposable {
 	}
 
 	public async ValueTask Set(string key, string? value, CancellationToken ct) {
+		// Sync Dispose, not DisposeAsync: DotNext recommends sync disposal on non-rate-limited
+		// caches because DisposeAsync serializes writers behind a single promotion thread.
 		using var session = await _cache.ChangeAsync(key, ct).ConfigureAwait(false);
 		var isNew = !session.TryGetValue(out _);
 		session.SetValue(new CachedValue(value));
