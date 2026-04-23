@@ -191,10 +191,11 @@ public class PartitionStateCacheEvictionTests {
 		await WaitForEventsProcessed(engine, partitionCount * 2, TimeSpan.FromSeconds(20));
 		await WaitForCheckpoint(capturingPublisher, engine, TimeSpan.FromSeconds(10));
 
-		// 4. Poll up to 5 seconds for SIEVE to fire at least one eviction.
+		// 4. Poll for SIEVE to fire (at least) partitionCount - cacheSize evictions.
 		//    SIEVE runs on a background thread and may lag behind writes.
-		var evictionDeadline = Task.Delay(TimeSpan.FromSeconds(5), ct);
-		while (engine.GetCacheMetrics().Evictions == 0 && !evictionDeadline.IsCompleted)
+		const long expectedMinEvictions = partitionCount - cacheSize; // 36
+		var evictionDeadline = Task.Delay(TimeSpan.FromSeconds(10), ct);
+		while (engine.GetCacheMetrics().Evictions < expectedMinEvictions && !evictionDeadline.IsCompleted)
 			await Task.Delay(20, CancellationToken.None);
 
 		await engine.DisposeAsync();
@@ -203,13 +204,14 @@ public class PartitionStateCacheEvictionTests {
 
 		var metrics = engine.GetCacheMetrics();
 
-		// 5. Eviction counter must have incremented — proves the cache bounded its growth.
-		//    We can't assert Size <= cacheSize because PartitionStateCache.Count is an
-		//    application-level counter that decrements only in the async Eviction callback;
-		//    SIEVE's internal currentSize is correctly bounded but is not directly observable.
+		// 5. Eviction counter must match the expected lower bound — proves the cache bounded
+		//    its growth to (approximately) cacheSize. We can't assert Size <= cacheSize because
+		//    PartitionStateCache.Count is an application-level counter that decrements only in
+		//    the async Eviction callback; SIEVE's internal currentSize is correctly bounded but
+		//    is not directly observable.
 		await Assert.That(metrics.Evictions)
-			.IsGreaterThanOrEqualTo(1L)
-			.Because($"Expected at least 1 eviction with {partitionCount} partitions and cache size {cacheSize}, got {metrics.Evictions}");
+			.IsGreaterThanOrEqualTo(expectedMinEvictions)
+			.Because($"Expected at least {expectedMinEvictions} evictions with {partitionCount} partitions and cache size {cacheSize}, got {metrics.Evictions}");
 	}
 
 	/// <summary>
