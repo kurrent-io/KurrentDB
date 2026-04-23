@@ -40,6 +40,7 @@ public sealed class CoreProjectionV2 : ICoreProjectionControl {
 	readonly Func<IProjectionStateHandler> _stateHandlerFactory;
 	readonly ProjectionConfig _projectionConfig;
 	readonly string _checkpointStreamId;
+	readonly int _maxPartitionStateCacheSize;
 
 	ProjectionEngineV2 _engine;
 
@@ -56,7 +57,8 @@ public sealed class CoreProjectionV2 : ICoreProjectionControl {
 		IQuerySources sourceDefinition,
 		Func<IProjectionStateHandler> stateHandlerFactory,
 		ProjectionConfig projectionConfig,
-		IPublisher mainQueue) {
+		IPublisher mainQueue,
+		int maxPartitionStateCacheSize) {
 
 		_projectionCorrelationId = projectionCorrelationId;
 		_projectionName = projectionName;
@@ -69,6 +71,7 @@ public sealed class CoreProjectionV2 : ICoreProjectionControl {
 		_stateHandlerFactory = stateHandlerFactory;
 		_projectionConfig = projectionConfig;
 		_checkpointStreamId = $"$projections-{projectionName}-checkpoint";
+		_maxPartitionStateCacheSize = maxPartitionStateCacheSize;
 	}
 
 	public Guid ProjectionCorrelationId => _projectionCorrelationId;
@@ -214,7 +217,7 @@ public sealed class CoreProjectionV2 : ICoreProjectionControl {
 				ProjectionName = _projectionName,
 				SourceDefinition = _sourceDefinition,
 				StateHandlerFactory = _stateHandlerFactory,
-				MaxPartitionStateCacheSize = 100_000, // TEMP: replaced with wired value in a later task
+				MaxPartitionStateCacheSize = _maxPartitionStateCacheSize,
 				CheckpointAfterMs = _projectionConfig.CheckpointAfterMs,
 				CheckpointHandledThreshold = _projectionConfig.CheckpointHandledThreshold,
 				CheckpointUnhandledBytesThreshold = _projectionConfig.CheckpointUnhandledBytesThreshold,

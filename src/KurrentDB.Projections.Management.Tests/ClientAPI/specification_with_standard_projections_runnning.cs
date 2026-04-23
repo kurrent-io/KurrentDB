@@ -43,7 +43,7 @@ public abstract class specification_with_standard_projections_runnning<TLogForma
 			TimeSpan.FromMinutes(Opts.ProjectionsQueryExpiryDefault),
 			Opts.FaultOutOfOrderProjectionsDefault,
 			500,
-			250, Opts.MaxProjectionStateSizeDefault);
+			250, Opts.MaxProjectionStateSizeDefault, 100_000);
 		_projections = new ProjectionsSubsystem(configuration);
 		_node = new MiniNode<TLogFormat, TStreamId>(
 			PathName, inMemDb: true,

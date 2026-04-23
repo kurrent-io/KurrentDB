@@ -569,6 +569,11 @@ public partial record ClusterVNodeOptions {
 
 		[Description("The maximum size, in bytes, of a projection's state and result. A projection will fault if its state size exceeds this value. May not exceed 16mb.")]
 		public int MaxProjectionStateSize { get; set; } = Opts.MaxProjectionStateSizeDefault;
+
+		[Description("Maximum number of partition-state entries cached in memory per V2 projection cache " +
+		             "(one per partition slot plus a shared engine-wide cache). When the cap is reached, " +
+		             "entries are evicted LRU-style; state is re-hydrated from the state stream on next access.")]
+		public int MaxPartitionStateCacheSize { get; init; } = 100_000;
 	}
 
 	public record UnknownOptions(IReadOnlyList<(string, string)> Options) {
