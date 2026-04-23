@@ -486,3 +486,6 @@ certs/
 
 # MCP Configuration with local paths
 .mcp.json
+
+# Superpowers worktrees
+.worktrees/
