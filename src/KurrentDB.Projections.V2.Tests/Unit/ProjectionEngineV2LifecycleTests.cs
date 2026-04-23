@@ -148,6 +148,7 @@ public class ProjectionEngineV2LifecycleTests {
 			ProjectionName = "cancel-test",
 			SourceDefinition = stateHandler.GetSourceDefinition(),
 			StateHandlerFactory = () => new NoOpStateHandler(),
+			MaxPartitionStateCacheSize = 1000,
 			PartitionCount = 1,
 			CheckpointAfterMs = 0,
 			CheckpointHandledThreshold = 100,
@@ -172,6 +173,7 @@ public class ProjectionEngineV2LifecycleTests {
 			ProjectionName = "empty-test",
 			SourceDefinition = stateHandler.GetSourceDefinition(),
 			StateHandlerFactory = () => new NoOpStateHandler(),
+			MaxPartitionStateCacheSize = 1000,
 			PartitionCount = 1,
 			CheckpointAfterMs = 0,
 			CheckpointHandledThreshold = 5,
@@ -213,6 +215,7 @@ public class ProjectionEngineV2LifecycleTests {
 			ProjectionName = "multi-partition-test",
 			SourceDefinition = new QuerySourcesDefinition { AllStreams = true, AllEvents = true, ByStreams = true },
 			StateHandlerFactory = () => new NoOpStateHandler(),
+			MaxPartitionStateCacheSize = 1000,
 			PartitionCount = 4,
 			CheckpointAfterMs = 0,
 			CheckpointHandledThreshold =
