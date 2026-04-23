@@ -67,10 +67,10 @@ at checkpoint time. Consumers must either:
 - Poll state via the management API (`GET /projection/{name}/state[?partition={key}]` / gRPC
   `Projections.Result`), or
 - Read / subscribe to the `…-state` stream directly, accepting that updates are visible only at checkpoint
-  cadence and use `ExpectedVersion.Any`.
+  cadence.
 
-This is tracked for a future release (see DB-2039). Projections that rely on live result streams should
-stay on V1 until parity is shipped.
+Live result streaming parity is planned for a future release. Projections that rely on live result
+streams should stay on V1 until then.
 
 ### `trackEmittedStreams` is rejected
 
@@ -106,17 +106,14 @@ existing projection from V1 to V2 today:
 There is no in-place checkpoint conversion and no partition-state carry-over. Consumers reading V1 result
 streams also need to switch to the V2 state-polling model (see [outputState](#outputstate-result-streams-are-not-emitted)).
 
-An assisted migration tool is tracked for a later release (DB-2041); it will not ship with the initial V2
-release.
+An assisted migration tool is planned for a later release and will not ship with the initial V2 engine.
 
 ### Partition state cache is in memory
 
-V2 keeps per-partition state in memory and persists it to the state stream at checkpoint time. The engine
-also maintains a shared partition-state dictionary for management-API lookups. Before general availability,
-both caches are **bounded** via configuration (tracked in DB-2040). If you are evaluating the initial V2
-engine on a preview build with unbounded caches, avoid high-cardinality partition keys (large
-`foreachStream` / custom-partition spaces) — memory grows with the number of distinct partition keys
-observed in a run.
+V2 keeps per-partition state in memory and persists it to the state stream at checkpoint time. In the
+initial release, avoid high-cardinality partition keys (large `foreachStream` / custom-partition spaces)
+— memory grows with the number of distinct partition keys observed in a run. Configurable cache bounds
+are planned for a future release.
 
 ## Checkpoint and state streams
 

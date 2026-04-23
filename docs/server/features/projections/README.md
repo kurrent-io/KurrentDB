@@ -77,7 +77,7 @@ For the "all events in a category" and "all events of a type" use cases, Kurrent
 [Secondary indexes](../indexes/secondary.md).
 :::
 
-System projections `$streams` and `$stream-by-category` produce new events too, either per each new stream or
+System projections `$streams` and `$stream_by_category` produce new events too, either per each new stream or
 per new stream category. If your system has a lot of small streams, the `$streams` system projection would
 also amplify writes significantly.
 
