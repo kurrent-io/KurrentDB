@@ -4,24 +4,68 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using Kurrent.Quack;
-using Kurrent.Quack.ConnectionPool;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.User;
 
-internal static partial class UserIndexSql {
+internal abstract partial class UserIndexSql(string indexName, string fieldName) {
+	private const string TableNamePrefix = "idx_user__";
+
 	// we validate the table/column names for safety reasons, although DuckDB allows a large set of characters when using quoted identifiers
 	private static readonly Regex IdentifierRegex = ValidationRegex();
 
-	public static string GetTableNameFor(string indexName) {
-		var tableName = $"idx_user__{indexName}";
+	public string TableName { get; } = GetTableNameFor(indexName);
+	public string FieldColumnName { get; } = GetColumnNameFor(fieldName);
+	public string ViewName { get; } = GetViewNameFor(indexName);
+
+	public GetCheckpointResult? GetCheckpoint(DuckDBAdvancedConnection connection, in GetCheckpointQueryArgs args)
+		=> connection.QueryFirstOrDefault<GetCheckpointQueryArgs, GetCheckpointResult, GetCheckpointQuery>(in args).ValueOrDefault;
+
+	public static void SetCheckpoint(DuckDBAdvancedConnection connection, in SetCheckpointQueryArgs args)
+		=> connection.ExecuteNonQuery<SetCheckpointQueryArgs, SetCheckpointNonQuery>(in args);
+
+	public GetLastIndexedRecordResult? GetLastIndexedRecord(DuckDBAdvancedConnection connection) {
+		var query = new GetLastIndexedRecordQuery(TableName);
+		return connection.ExecuteQuery<GetLastIndexedRecordResult, GetLastIndexedRecordQuery>(ref query).FirstOrDefault().ValueOrDefault;
+	}
+
+	public void ReadUserIndexForwardsQuery(DuckDBAdvancedConnection connection,
+		in ReadUserIndexQueryArgs args,
+		ICollection<IndexQueryRecord> records) {
+		var query = new ReadUserIndexForwardsQuery(ViewName, args.ExcludeFirst, args.Field.GetQueryStatement(FieldColumnName));
+		connection
+			.ExecuteQuery<ReadUserIndexQueryArgs, IndexQueryRecord, ReadUserIndexForwardsQuery>(ref query, in args)
+			.CopyTo(records);
+	}
+
+	public void ReadUserIndexBackwardsQuery(DuckDBAdvancedConnection connection,
+		in ReadUserIndexQueryArgs args,
+		ICollection<IndexQueryRecord> records) {
+		var query = new ReadUserIndexBackwardsQuery(ViewName, args.ExcludeFirst, args.Field.GetQueryStatement(FieldColumnName));
+		connection
+			.ExecuteQuery<ReadUserIndexQueryArgs, IndexQueryRecord, ReadUserIndexBackwardsQuery>(ref query, in args)
+			.CopyTo(records);
+	}
+
+	public static bool IsUserIndexTable(ReadOnlySpan<char> tableName) => tableName.StartsWith(TableNamePrefix);
+
+	private static string GetTableNameFor(string indexName) {
+		var tableName = string.Concat(TableNamePrefix, indexName);
 
 		return IdentifierRegex.IsMatch(tableName)
 			? tableName
 			: throw new($"Invalid table name: {tableName}");
 	}
 
-	public static string GetColumnNameFor(string fieldName) {
+	internal static string GetViewNameFor(string indexName) {
+		var viewName = $"idx_user__{indexName}_view";
+
+		return IdentifierRegex.IsMatch(viewName)
+			? viewName
+			: throw new($"Invalid view name: {viewName}");
+	}
+
+	private static string GetColumnNameFor(string fieldName) {
 		if (fieldName is "")
 			return "";
 
@@ -30,10 +74,6 @@ internal static partial class UserIndexSql {
 		return IdentifierRegex.IsMatch(columnName)
 			? columnName
 			: throw new($"Invalid column name: {columnName}");
-	}
-
-	public static string GenerateInFlightTableNameFor(string indexName) {
-		return $"inflight_idx_user__{indexName}_{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
 	}
 
 	public static void DeleteUserIndex(DuckDBAdvancedConnection connection, string indexName) {
@@ -48,40 +88,12 @@ internal static partial class UserIndexSql {
 	private static partial Regex ValidationRegex();
 }
 
-internal class UserIndexSql<TField>(string indexName, string fieldName) where TField : IField {
-	public string TableName { get; } = UserIndexSql.GetTableNameFor(indexName);
-	public string FieldColumnName { get; } = UserIndexSql.GetColumnNameFor(fieldName);
-
-	public ReadOnlyMemory<byte> TableNameUtf8 { get; } = Encoding.UTF8.GetBytes(UserIndexSql.GetTableNameFor(indexName));
+internal sealed class UserIndexSql<TField>(string indexName, string fieldName) : UserIndexSql(indexName, fieldName)
+	where TField : IField {
 
 	public void CreateUserIndex(DuckDBAdvancedConnection connection) {
 		var query = new CreateUserIndexNonQuery(TableName, TField.GetCreateStatement(FieldColumnName));
 		connection.ExecuteNonQuery(ref query);
-	}
-
-	public List<IndexQueryRecord> ReadUserIndexForwardsQuery(DuckDBConnectionPool db, ReadUserIndexQueryArgs args) {
-		var query = new ReadUserIndexForwardsQuery(TableName, args.ExcludeFirst, args.Field.GetQueryStatement(FieldColumnName));
-		using (db.Rent(out var connection))
-			return connection.ExecuteQuery<ReadUserIndexQueryArgs, IndexQueryRecord, ReadUserIndexForwardsQuery>(ref query, args).ToList();
-	}
-
-	public List<IndexQueryRecord> ReadUserIndexBackwardsQuery(DuckDBConnectionPool db, ReadUserIndexQueryArgs args) {
-		var query = new ReadUserIndexBackwardsQuery(TableName, args.ExcludeFirst, args.Field.GetQueryStatement(FieldColumnName));
-		using (db.Rent(out var connection))
-			return connection.ExecuteQuery<ReadUserIndexQueryArgs, IndexQueryRecord, ReadUserIndexBackwardsQuery>(ref query, args).ToList();
-	}
-
-	public GetCheckpointResult? GetCheckpoint(DuckDBAdvancedConnection connection, GetCheckpointQueryArgs args) {
-		return connection.QueryFirstOrDefault<GetCheckpointQueryArgs, GetCheckpointResult, GetCheckpointQuery>(args).ValueOrDefault;
-	}
-
-	public static void SetCheckpoint(DuckDBAdvancedConnection connection, SetCheckpointQueryArgs args) {
-		connection.ExecuteNonQuery<SetCheckpointQueryArgs, SetCheckpointNonQuery>(args);
-	}
-
-	public GetLastIndexedRecordResult? GetLastIndexedRecord(DuckDBAdvancedConnection connection) {
-		var query = new GetLastIndexedRecordQuery(TableName);
-		return connection.ExecuteQuery<GetLastIndexedRecordResult, GetLastIndexedRecordQuery>(ref query).FirstOrDefault().ValueOrDefault;
 	}
 }
 
@@ -92,9 +104,10 @@ file readonly record struct CreateUserIndexNonQuery(string TableName, string Cre
 		(
 			log_position bigint not null,
 			commit_position bigint null,
-			event_number bigint not null,
-			created bigint not null
-			{1}
+			stream_revision bigint not null,
+			created_at bigint not null
+			{1},
+			record_id blob not null
 		)
 		"""
 	);
@@ -115,16 +128,16 @@ file readonly record struct DeleteUserIndexNonQuery(string TableName) : IDynamic
 		args[0] = TableName;
 }
 
-internal record struct ReadUserIndexQueryArgs(long StartPosition, long EndPosition, bool ExcludeFirst, int Count, IField Field);
+internal record struct ReadUserIndexQueryArgs(long StartPosition, bool ExcludeFirst, int Count, IField Field);
 
 file readonly record struct ReadUserIndexForwardsQuery(string TableName, bool ExcludeFirst, string FieldQuery)
 	: IDynamicQuery<ReadUserIndexQueryArgs, IndexQueryRecord> {
 	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse(
 		"""
-		select log_position, commit_position, event_number
+		select log_position, commit_position, stream_revision
 		from "{0}"
-		where log_position >{1} ? and log_position < ? {2}
-		order by rowid limit ?
+		where log_position >{1} ? {2}
+		order by coalesce(commit_position, log_position) limit ?
 		""");
 
 	public void FormatCommandTemplate(Span<object?> args) {
@@ -136,7 +149,6 @@ file readonly record struct ReadUserIndexForwardsQuery(string TableName, bool Ex
 	public static StatementBindingResult Bind(in ReadUserIndexQueryArgs args, PreparedStatement statement) {
 		var index = 1;
 		statement.Bind(index++, args.StartPosition);
-		statement.Bind(index++, args.EndPosition);
 		args.Field.BindTo(statement, ref index);
 		statement.Bind(index, args.Count);
 
@@ -153,10 +165,10 @@ file readonly record struct ReadUserIndexBackwardsQuery(string TableName, bool E
 	: IDynamicQuery<ReadUserIndexQueryArgs, IndexQueryRecord> {
 	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse(
 		"""
-		select log_position, commit_position, event_number
+		select log_position, commit_position, stream_revision
 		from "{0}"
 		where log_position <{1} ? {2}
-		order by rowid desc
+		order by coalesce(commit_position, log_position) desc, log_position desc
 		limit ?
 		""");
 
@@ -245,7 +257,7 @@ internal record struct GetLastIndexedRecordResult(long PreparePosition, long? Co
 file readonly record struct GetLastIndexedRecordQuery(string TableName) : IDynamicQuery<GetLastIndexedRecordResult> {
 	public static CompositeFormat CommandTemplate { get; } = CompositeFormat.Parse(
 		"""
-		select log_position, commit_position, created
+		select log_position, commit_position, created_at
 		from "{0}"
 		order by rowid desc
 		limit 1

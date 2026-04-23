@@ -28,6 +28,6 @@ public static class TestResolvedEventFactory {
 			eventType
 		);
 
-		return ResolvedEvent.ForUnresolvedEvent(record, 0);
+		return ResolvedEvent.ForUnresolvedEvent(record, 0L);
 	}
 }

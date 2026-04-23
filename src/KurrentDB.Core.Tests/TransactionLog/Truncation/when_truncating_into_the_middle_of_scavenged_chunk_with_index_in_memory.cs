@@ -2,16 +2,15 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using DotNext.Collections.Generic;
 using KurrentDB.Core.Data;
 using NUnit.Framework;
 
 namespace KurrentDB.Core.Tests.TransactionLog.Truncation;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_truncating_into_the_middle_of_scavenged_chunk_with_index_in_memory<TLogFormat, TStreamId> : TruncateScenario<TLogFormat, TStreamId> {
 	private string chunk0;
 	private string chunk1;

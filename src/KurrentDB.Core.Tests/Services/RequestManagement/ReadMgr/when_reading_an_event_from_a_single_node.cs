@@ -17,7 +17,6 @@ namespace KurrentDB.Core.Tests.Services.RequestManagement.ReadMgr;
 
 [Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_reading_an_event_from_a_single_node<TLogFormat, TStreamId> : specification_with_cluster<TLogFormat, TStreamId> {
 	private CountdownEvent _expectedNumberOfRoleAssignments;
 	private string _streamId = "test-stream";

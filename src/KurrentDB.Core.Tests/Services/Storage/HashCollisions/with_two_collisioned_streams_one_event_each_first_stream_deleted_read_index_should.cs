@@ -11,7 +11,6 @@ using ReadStreamResult = KurrentDB.Core.Services.Storage.ReaderIndex.ReadStreamR
 namespace KurrentDB.Core.Tests.Services.Storage.HashCollisions;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class
 	with_two_collisioned_streams_one_event_each_first_stream_deleted_read_index_should<TLogFormat, TStreamId> : ReadIndexTestScenario<TLogFormat, TStreamId> {
 	private EventRecord _prepare1;

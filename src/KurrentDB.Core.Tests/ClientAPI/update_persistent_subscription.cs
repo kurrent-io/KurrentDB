@@ -13,7 +13,6 @@ namespace KurrentDB.Core.Tests.ClientAPI;
 
 [Category("ClientAPI"), Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class update_existing_persistent_subscription<TLogFormat, TStreamId> : SpecificationWithMiniNode<TLogFormat, TStreamId> {
 	private readonly string _stream = Guid.NewGuid().ToString();
 
@@ -37,7 +36,6 @@ public class update_existing_persistent_subscription<TLogFormat, TStreamId> : Sp
 
 [Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class update_existing_persistent_subscription_with_subscribers<TLogFormat, TStreamId> : SpecificationWithMiniNode<TLogFormat, TStreamId> {
 	private readonly string _stream = Guid.NewGuid().ToString();
 
@@ -87,7 +85,6 @@ public class update_existing_persistent_subscription_with_subscribers<TLogFormat
 
 [Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class update_non_existing_persistent_subscription<TLogFormat, TStreamId> : SpecificationWithMiniNode<TLogFormat, TStreamId> {
 	private readonly string _stream = Guid.NewGuid().ToString();
 
@@ -107,7 +104,6 @@ public class update_non_existing_persistent_subscription<TLogFormat, TStreamId> 
 
 [Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class update_existing_persistent_subscription_without_permissions<TLogFormat, TStreamId> : SpecificationWithMiniNode<TLogFormat, TStreamId> {
 	private readonly string _stream = Guid.NewGuid().ToString();
 

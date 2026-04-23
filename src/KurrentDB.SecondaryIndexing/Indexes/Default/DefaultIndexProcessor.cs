@@ -2,11 +2,15 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics.Metrics;
+using System.Runtime.InteropServices;
 using DotNext;
+using DotNext.Runtime.InteropServices;
 using DotNext.Threading;
+using DuckDB.NET.Data;
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
+using Kurrent.Quack.Threading;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
@@ -24,19 +28,20 @@ using static KurrentDB.SecondaryIndexing.Indexes.Default.DefaultSql;
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
-	private readonly DefaultIndexInFlightRecords _inFlightRecords;
 	private readonly DuckDBAdvancedConnection _connection;
 	private readonly IPublisher _publisher;
 	private readonly ILongHasher<string> _hasher;
 	private readonly ILogger<DefaultIndexProcessor> _log;
+	private readonly BufferedView _appender;
+	private Atomic<TFPos> _lastPosition;
 
-	private Appender _appender;
-
-	public TFPos LastIndexedPosition { get; private set; }
+	public TFPos LastIndexedPosition {
+		get => _lastPosition.Value;
+		private set => _lastPosition.Value = value;
+	}
 
 	public DefaultIndexProcessor(
 		DuckDBConnectionPool db,
-		DefaultIndexInFlightRecords inFlightRecords,
 		IPublisher publisher,
 		ILongHasher<string> hasher,
 		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)]
@@ -47,8 +52,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	) {
 		_connection = db.Open();
 		_log = loggerFactory.CreateLogger<DefaultIndexProcessor>();
-		_appender = new(_connection, "idx_all"u8);
-		_inFlightRecords = inFlightRecords;
+		_appender = new(_connection, "idx_all", "log_position", DefaultIndexViewName);
 		var serviceName = metricsConfiguration?.ServiceName ?? "kurrentdb";
 		Tracker = new("default", serviceName, meter, clock ?? TimeProvider.System,
 			loggerFactory.CreateLogger<SecondaryIndexProgressTracker>());
@@ -87,9 +91,10 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		var streamHash = _hasher.Hash(stream);
 		var category = GetStreamCategory(resolvedEvent.Event.EventStreamId);
 		var created = new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds();
+		var recordId = MemoryMarshal.AsReadOnlyBytes(in resolvedEvent.Event.EventId);
 		using (var row = _appender.CreateRow()) {
 			row.Add(logPosition);
-			if (commitPosition.HasValue && logPosition != commitPosition)
+			if (commitPosition.HasValue && logPosition != commitPosition.GetValueOrDefault())
 				row.Add(commitPosition.Value);
 			else
 				row.Add(DBNull.Value);
@@ -108,10 +113,9 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			}
 
 			row.Add(schemaFormat);
+			row.Add(recordId);
 		}
 
-		_inFlightRecords.Append(logPosition, commitPosition ?? logPosition, category, schemaName, resolvedEvent.Event.EventStreamId,
-			eventNumber, created);
 		LastIndexedPosition = resolvedEvent.EventPosition!.Value;
 
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(SystemStreams.DefaultSecondaryIndex, resolvedEvent));
@@ -138,37 +142,33 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 	public SecondaryIndexProgressTracker Tracker { get; }
 
-	private Atomic.Boolean _committing;
-
-	public void Commit() => Commit(true);
+	private bool _committing;
 
 	/// <summary>
 	/// Commits all in-flight records to the index.
 	/// </summary>
-	/// <param name="clearInflight">Tells you whether to clear the in-flight records after committing. It must be true and only set to false in tests.</param>
-	internal void Commit(bool clearInflight) {
-		if (IsDisposingOrDisposed || !_committing.FalseToTrue())
+	public void Commit() {
+		if (IsDisposingOrDisposed || !Interlocked.FalseToTrue(ref _committing))
 			return;
 
 		try {
 			using var duration = Tracker.StartCommitDuration();
 			_appender.Flush();
 		} catch (Exception e) {
-			_log.LogError(e, "Failed to commit {Count} records to index at log position {LogPosition}",
-				_inFlightRecords.Count, LastIndexedPosition);
+			_log.LogError(e, "Failed to commit records to index at log position {LogPosition}", LastIndexedPosition);
 			throw;
 		} finally {
-			_committing.TrueToFalse();
-		}
-
-		if (clearInflight) {
-			_inFlightRecords.Clear();
+			Volatile.Write(ref _committing, false);
 		}
 	}
+
+	public BufferedView.Snapshot CaptureSnapshot(DuckDBConnection connection)
+		=> _appender.TakeSnapshot(connection, ExpandRecordFunction.UnnestExpression);
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {
 			Commit();
+			_appender.Unregister(_connection);
 			_appender.Dispose();
 			_connection.Dispose();
 		}

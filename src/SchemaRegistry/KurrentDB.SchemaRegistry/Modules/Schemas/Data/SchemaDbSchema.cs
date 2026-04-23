@@ -1,16 +1,15 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using Dapper;
-using DuckDB.NET.Data;
+using Kurrent.Quack;
 using KurrentDB.DuckDB;
 
 namespace KurrentDB.SchemaRegistry.Data;
 
 [UsedImplicitly]
 public class SchemaDbSchema : DuckDBOneTimeSetup {
-	protected override void ExecuteCore(DuckDBConnection connection) {
-		const string createTablesAndIndexesSql =
+	protected override void ExecuteCore(DuckDBAdvancedConnection connection) {
+		ReadOnlySpan<byte> createTablesAndIndexesSql =
 			"""
 			CREATE TABLE IF NOT EXISTS schema_versions (
 			      version_id        TEXT        PRIMARY KEY
@@ -33,7 +32,7 @@ public class SchemaDbSchema : DuckDBOneTimeSetup {
 			    , updated_at            TIMESTAMPTZ
 			    , checkpoint            UBIGINT     NOT NULL DEFAULT 0
 			);
-			""";
-		connection.Execute(createTablesAndIndexesSql);
+			"""u8;
+		connection.ExecuteAdHocNonQuery(createTablesAndIndexesSql, multipleStatements: true);
 	}
 }

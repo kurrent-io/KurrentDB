@@ -100,28 +100,24 @@ public class TombstoneTests {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class TombstoneExistingStreamExpectedRevision<TLogFormat, TStreamId>
 		: TombstoneExistingStreamSpecification<TLogFormat, TStreamId> {
 		public TombstoneExistingStreamExpectedRevision() : base(StreamRevision.Start) { }
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class TombstoneExistingStreamAny<TLogFormat, TStreamId>
 		: TombstoneExistingStreamSpecification<TLogFormat, TStreamId> {
 		public TombstoneExistingStreamAny() : base(ExpectedVersion.Any) { }
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class TombstoneExistingStreamNoStream<TLogFormat, TStreamId>
 		: TombstoneExistingStreamSpecification<TLogFormat, TStreamId> {
 		public TombstoneExistingStreamNoStream() : base(ExpectedVersion.NoStream) { }
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class TombstoneExistingStreamExists<TLogFormat, TStreamId>
 		: TombstoneExistingStreamSpecification<TLogFormat, TStreamId> {
 		public TombstoneExistingStreamExists() : base(ExpectedVersion.StreamExists) { }

@@ -5,7 +5,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using DotNext.IO;
+using DotNext.Buffers;
 using EventStore.Plugins.Transforms;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.TransactionLog.Chunks;
@@ -16,7 +16,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.TransactionLog;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class
 	when_writing_an_existing_chunked_transaction_file_with_not_enough_space_in_chunk<TLogFormat, TStreamId> : SpecificationWithDirectory {
 	private readonly Guid _correlationId = Guid.NewGuid();
@@ -108,7 +107,7 @@ public class
 		var buffer = new byte[recordLength];
 		await filestream.ReadExactlyAsync(buffer);
 
-		var reader = new SequenceReader(new(buffer));
+		var reader = new SequenceReader(buffer);
 		var read = LogRecord.ReadFrom(ref reader);
 		Assert.AreEqual(record3, read);
 	}

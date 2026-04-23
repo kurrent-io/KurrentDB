@@ -28,6 +28,7 @@ message CreateReq {
 			Continuous continuous = 3;
 		}
 		string query = 4;
+		int32 engine_version = 5; // 0 or 1 = v1 (default), 2 = v2
 
 		message Transient {
 			string name = 1;

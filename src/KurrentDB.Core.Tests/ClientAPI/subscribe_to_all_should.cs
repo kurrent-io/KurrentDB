@@ -14,7 +14,6 @@ namespace KurrentDB.Core.Tests.ClientAPI;
 
 [Category("ClientAPI"), Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class subscribe_to_all_should<TLogFormat, TStreamId> : SpecificationWithDirectory {
 	private const int Timeout = 10000;
 

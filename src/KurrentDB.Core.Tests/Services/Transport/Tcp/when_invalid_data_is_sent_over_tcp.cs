@@ -15,7 +15,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Services.Transport.Tcp;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_invalid_data_is_sent_over_tcp<TLogFormat, TStreamId> : specification_with_cluster<TLogFormat, TStreamId> {
 
 	[Timeout(15000)]

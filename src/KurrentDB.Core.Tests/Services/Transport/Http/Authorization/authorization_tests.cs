@@ -17,7 +17,6 @@ using ContentType = KurrentDB.Transport.Http.ContentType;
 namespace KurrentDB.Core.Tests.Services.Transport.Http.Authorization;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class Authorization<TLogFormat, TStreamId> : specification_with_cluster<TLogFormat, TStreamId> {
 	private readonly Dictionary<string, HttpClient> _httpClients = new Dictionary<string, HttpClient>();
 	private TimeSpan _timeout = TimeSpan.FromSeconds(5);

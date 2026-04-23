@@ -12,7 +12,6 @@ namespace KurrentDB.Core.Tests.Services.RedactionService;
 
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class LockTests<TLogFormat, TStreamId> : RedactionServiceTestFixture<TLogFormat, TStreamId> {
 	private async Task<RedactionMessage.AcquireChunksLockCompleted> TryLock() {
 		var e = new TcsEnvelope<RedactionMessage.AcquireChunksLockCompleted>();

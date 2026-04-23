@@ -11,7 +11,6 @@ namespace KurrentDB.Core.Tests.ClientAPI.UserManagement;
 
 [Category("ClientAPI"), Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class enable_disable_user<TLogFormat, TStreamId> : TestWithUser<TLogFormat, TStreamId> {
 	[Test]
 	public async Task disable_empty_username_throws() {

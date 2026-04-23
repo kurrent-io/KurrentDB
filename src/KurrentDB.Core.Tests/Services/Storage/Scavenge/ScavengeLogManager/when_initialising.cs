@@ -18,7 +18,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Services.Storage.Scavenge.ScavengeLogManager;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_scavenges_stream_does_not_exist<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private TFChunkScavengerLogManager _logManager;
 	private TaskCompletionSource<ClientMessage.WriteEvents> eventWritten = new();
@@ -45,7 +44,6 @@ public class when_scavenges_stream_does_not_exist<TLogFormat, TStreamId> : TestF
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_scavenges_stream_has_different_metadata<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private TFChunkScavengerLogManager _logManager;
 	private TaskCompletionSource<ClientMessage.WriteEvents> eventWritten = new();
@@ -75,7 +73,6 @@ public class when_scavenges_stream_has_different_metadata<TLogFormat, TStreamId>
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_scavenges_stream_has_correct_metadata<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private TFChunkScavengerLogManager _logManager;
 	private TaskCompletionSource<ClientMessage.ReadStreamEventsBackward> _eventRead = new();
@@ -107,7 +104,6 @@ public class when_scavenges_stream_has_correct_metadata<TLogFormat, TStreamId> :
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_previous_scavenge_was_interrupted_but_scavenge_stream_not_written<TLogFormat, TStreamId>
 	: TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private const string _nodeEndpoint = "localhost:2113";
@@ -149,7 +145,6 @@ public class when_previous_scavenge_was_interrupted_but_scavenge_stream_not_writ
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_previous_scavenge_was_interrupted_and_some_data_was_scavenged<TLogFormat, TStreamId>
 	: TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private const string _nodeEndpoint = "localhost:2113";
@@ -201,7 +196,6 @@ public class when_previous_scavenge_was_interrupted_and_some_data_was_scavenged<
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_previous_scavenge_was_completed<TLogFormat, TStreamId>
 	: TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private const string _nodeEndpoint = "localhost:2113";

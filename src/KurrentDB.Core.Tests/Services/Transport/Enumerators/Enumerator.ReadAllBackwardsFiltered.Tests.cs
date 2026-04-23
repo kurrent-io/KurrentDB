@@ -32,7 +32,6 @@ public partial class EnumeratorTests {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class read_all_backwards_filtered<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 		private readonly List<Guid> _eventIds = new();
 

@@ -11,7 +11,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.ClientAPI.UserManagement;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class reset_password<TLogFormat, TStreamId> : TestWithUser<TLogFormat, TStreamId> {
 	[Test]
 	public async Task null_user_name_throws() {
@@ -50,7 +49,6 @@ public class reset_password<TLogFormat, TStreamId> : TestWithUser<TLogFormat, TS
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class change_password<TLogFormat, TStreamId> : TestWithUser<TLogFormat, TStreamId> {
 	[Test]
 	public async Task null_username_throws() {
@@ -107,11 +105,8 @@ public class change_password<TLogFormat, TStreamId> : TestWithUser<TLogFormat, T
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string), "newpassword")]
-[TestFixture(typeof(LogFormat.V3), typeof(uint), "newpassword")]
 [TestFixture(typeof(LogFormat.V2), typeof(string), "n£wpasswordUnicode码")]
-[TestFixture(typeof(LogFormat.V3), typeof(uint), "n£wpasswordUnicode码")]
 [TestFixture(typeof(LogFormat.V2), typeof(string), "password")] // same as old password
-[TestFixture(typeof(LogFormat.V3), typeof(uint), "password")] // same as old password
 public class change_password_and_use_the_new_one<TLogFormat, TStreamId> : TestWithUser<TLogFormat, TStreamId> {
 	private readonly string _newPassword;
 	private const string OldPassword = "password";

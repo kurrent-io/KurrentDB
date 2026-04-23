@@ -27,7 +27,8 @@ public class PersistentSubscriptionParams {
 	private readonly IPersistentSubscriptionStreamReader _streamReader;
 	private readonly IPersistentSubscriptionCheckpointReader _checkpointReader;
 	private readonly IPersistentSubscriptionCheckpointWriter _checkpointWriter;
-	private IPersistentSubscriptionMessageParker _messageParker;
+	private readonly IPersistentSubscriptionPushScheduler _pushScheduler;
+	private readonly IPersistentSubscriptionMessageParker _messageParker;
 
 	public PersistentSubscriptionParams(bool resolveLinkTos, string subscriptionId,
 		IPersistentSubscriptionEventSource eventSource,
@@ -41,6 +42,7 @@ public class PersistentSubscriptionParams {
 		IPersistentSubscriptionStreamReader streamReader,
 		IPersistentSubscriptionCheckpointReader checkpointReader,
 		IPersistentSubscriptionCheckpointWriter checkpointWriter,
+		IPersistentSubscriptionPushScheduler pushScheduler,
 		IPersistentSubscriptionMessageParker messageParker) {
 		_resolveLinkTos = resolveLinkTos;
 		_subscriptionId = subscriptionId;
@@ -61,6 +63,7 @@ public class PersistentSubscriptionParams {
 		_streamReader = streamReader;
 		_checkpointReader = checkpointReader;
 		_checkpointWriter = checkpointWriter;
+		_pushScheduler = pushScheduler ?? throw new ArgumentNullException(nameof(pushScheduler));
 		_messageParker = messageParker;
 	}
 
@@ -103,6 +106,8 @@ public class PersistentSubscriptionParams {
 	public IPersistentSubscriptionCheckpointWriter CheckpointWriter {
 		get { return _checkpointWriter; }
 	}
+
+	public IPersistentSubscriptionPushScheduler PushScheduler => _pushScheduler;
 
 	public IPersistentSubscriptionMessageParker MessageParker {
 		get { return _messageParker; }

@@ -17,25 +17,30 @@ public class StatsService(DuckDBConnectionPool db) {
 		}
 	}
 
+	// note: very expensive. count(distinct stream) over idx_all
 	public (long StreamCount, long EventCount) GetTotalStats() {
 		return db.QueryFirstOrDefault<GetTotalStats.Result, GetTotalStats>()
 			.Convert(static r => (r.StreamCount, r.EventCount))
 			.ValueOrDefault;
 	}
 
+	// note: very expensive. count(distinct stream) over idx_all filtered by category
 	public List<GetCategoryStats.Result> GetCategoryStats(string category)
 		=> string.IsNullOrWhiteSpace(category)
 			? []
 			: db.QueryToList<GetCategoryStats.Args, GetCategoryStats.Result, GetCategoryStats>(new(category))!;
 
+	// note: expensive. group by event_type over idx_all filtered by category
 	public List<GetCategoryEventTypes.Result> GetCategoryEventTypes(string category)
 		=> string.IsNullOrWhiteSpace(category)
 			? []
 			: db.QueryToList<GetCategoryEventTypes.Args, GetCategoryEventTypes.Result, GetCategoryEventTypes>(new(category));
 
+	// note: very expensive. count(distinct commit_position) grouped by category over idx_all
 	public List<GetExplicitTransactions.Result> GetExplicitTransactions()
 		=> db.QueryToList<GetExplicitTransactions.Result, GetExplicitTransactions>();
 
+	// note: expensive. DISTINCT ON(category) with ORDER BY event_number DESC over idx_all
 	public List<GetLongestStreams.Result> GetLongestStreams()
 		=> db.QueryToList<GetLongestStreams.Result, GetLongestStreams>();
 }

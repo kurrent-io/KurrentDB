@@ -14,8 +14,6 @@ namespace KurrentDB.Core.Tests.Services.Storage.AllReader;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string), "$persistentsubscription-$all::group-checkpoint")]
 [TestFixture(typeof(LogFormat.V2), typeof(string), "$persistentsubscription-$all::group-parked")]
-[TestFixture(typeof(LogFormat.V3), typeof(uint), "$persistentsubscription-$all::group-checkpoint")]
-[TestFixture(typeof(LogFormat.V3), typeof(uint), "$persistentsubscription-$all::group-parked")]
 public class when_reading_all_with_disallowed_streams<TLogFormat, TStreamId> : ReadIndexTestScenario<TLogFormat, TStreamId> {
 	TFPos _forwardReadPos;
 	TFPos _backwardReadPos;

@@ -13,7 +13,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.XUnit.Tests.Configuration.ClusterNodeOptionsTests.when_building;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class with_default_node_as_single_node<TLogFormat, TStreamId> : SingleNodeScenario<TLogFormat, TStreamId> {
 	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) {
 		return options;
@@ -73,7 +72,6 @@ public class with_default_node_as_single_node<TLogFormat, TStreamId> : SingleNod
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class with_default_node_as_node_in_a_cluster<TLogFormat, TStreamId> : ClusterMemberScenario<TLogFormat, TStreamId> {
 	[Test]
 	public void should_create_single_cluster_node() {
@@ -102,7 +100,6 @@ public class with_default_node_as_node_in_a_cluster<TLogFormat, TStreamId> : Clu
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class with_default_node_as_node_in_an_insecure_cluster<TLogFormat, TStreamId> : ClusterMemberScenario<TLogFormat, TStreamId> {
 	[Test]
 	public void should_create_single_cluster_node() {

@@ -11,7 +11,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.TransactionLog.Scavenging;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_scavenge_throws_exception_on_completed<TLogFormat, TStreamId> : ScavengeLifeCycleScenario<TLogFormat, TStreamId> {
 	protected override Task When() {
 		var cancellationTokenSource = new CancellationTokenSource();

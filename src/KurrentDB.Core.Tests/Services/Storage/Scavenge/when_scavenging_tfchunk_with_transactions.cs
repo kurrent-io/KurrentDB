@@ -14,7 +14,6 @@ using ReadStreamResult = KurrentDB.Core.Services.Storage.ReaderIndex.ReadStreamR
 namespace KurrentDB.Core.Tests.Services.Storage.Scavenge;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint), Ignore = "Explicit transactions are not supported yet by Log V3")]
 public class when_scavenging_tfchunk_with_transactions<TLogFormat, TStreamId> : ReadIndexTestScenario<TLogFormat, TStreamId> {
 	private const string _streamIdOne = "ES-1";
 	private const string _streamIdTwo = "ES-2";

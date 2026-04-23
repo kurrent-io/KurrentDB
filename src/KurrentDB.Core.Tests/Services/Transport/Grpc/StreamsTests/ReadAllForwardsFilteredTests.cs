@@ -16,7 +16,6 @@ namespace KurrentDB.Core.Tests.Services.Transport.Grpc.StreamsTests;
 [TestFixture]
 public class ReadAllForwardsFilteredTests {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_reading_all_forwards_filtered<TLogFormat, TStreamId>
 	  : GrpcSpecification<TLogFormat, TStreamId> {
 		private const string StreamId = nameof(when_reading_all_forwards_filtered<TLogFormat, TStreamId>);

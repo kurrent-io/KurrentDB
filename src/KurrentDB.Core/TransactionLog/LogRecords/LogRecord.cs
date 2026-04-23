@@ -45,34 +45,10 @@ public abstract class LogRecord : ILogRecord {
 				Ensure.Nonnegative(logPosition, nameof(logPosition));
 				return new CommitLogRecord(ref reader, header.Version, logPosition);
 
-			case LogRecordType.System when header.Version > SystemLogRecord.SystemRecordVersion:
-				reader.Reset();
-				return new LogV3EpochLogRecord(reader.ReadToEnd().ToArray());
-
 			case LogRecordType.System:
 				logPosition = reader.ReadLittleEndian<long>();
 				Ensure.Nonnegative(logPosition, nameof(logPosition));
 				return new SystemLogRecord(ref reader, header.Version, logPosition);
-
-			case LogRecordType.StreamWrite:
-				reader.Reset();
-				return new LogV3StreamWriteRecord(reader.ReadToEnd().ToArray());
-
-			case LogRecordType.Stream:
-				reader.Reset();
-				return new LogV3StreamRecord(reader.ReadToEnd().ToArray());
-
-			case LogRecordType.EventType:
-				reader.Reset();
-				return new LogV3EventTypeRecord(reader.ReadToEnd().ToArray());
-
-			case LogRecordType.PartitionType:
-				reader.Reset();
-				return new PartitionTypeLogRecord(reader.ReadToEnd().ToArray());
-
-			case LogRecordType.Partition:
-				reader.Reset();
-				return new PartitionLogRecord(reader.ReadToEnd().ToArray());
 
 			default:
 				throw new ArgumentOutOfRangeException("recordType");

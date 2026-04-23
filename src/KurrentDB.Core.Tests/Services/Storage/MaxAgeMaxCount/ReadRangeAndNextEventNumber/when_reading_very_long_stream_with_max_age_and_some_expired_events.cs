@@ -12,7 +12,6 @@ namespace KurrentDB.Core.Tests.Services.Storage.MaxAgeMaxCount.ReadRangeAndNextE
 
 // test the binary chop where it has to repeatedly lower the high bound
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class
 	when_reading_very_long_stream_with_max_age_and_some_expired_events<TLogFormat, TStreamId> : ReadIndexTestScenario<TLogFormat, TStreamId> {
 	public when_reading_very_long_stream_with_max_age_and_some_expired_events() : base(

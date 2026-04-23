@@ -16,7 +16,6 @@ namespace KurrentDB.Core.Tests.Services.Replication.Subscriptions;
 
 [Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_subscribed_to_stream_on_leader_and_event_is_replicated_to_followers<TLogFormat, TStreamId> : specification_with_cluster<TLogFormat, TStreamId> {
 	private const string _streamId = "test-stream";
 	private CountdownEvent _expectedNumberOfRoleAssignments;

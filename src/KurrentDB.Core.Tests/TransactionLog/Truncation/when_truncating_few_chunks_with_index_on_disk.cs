@@ -2,16 +2,15 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using DotNext.Collections.Generic;
 using KurrentDB.Core.Data;
 using NUnit.Framework;
 
 namespace KurrentDB.Core.Tests.TransactionLog.Truncation;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_truncating_few_chunks_with_index_on_disk<TLogFormat, TStreamId> : TruncateScenario<TLogFormat, TStreamId> {
 	private EventRecord _event4;
 

@@ -393,8 +393,6 @@ public class TFChunkDbCreationHelper<TLogFormat, TStreamId> {
 	private LogRecord CreateLogRecordV0(Rec rec, TransactionInfo transInfo, int transOffset, long logPos,
 		long expectedVersion, ReadOnlyMemory<byte> data, PrepareFlags flags) {
 
-		LogFormatHelper<TLogFormat, TStreamId>.EnsureV0PrepareSupported();
-
 		return new PrepareLogRecord(logPos,
 			Guid.NewGuid(),
 			rec.Id,

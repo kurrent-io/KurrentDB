@@ -7,6 +7,7 @@
 @using KurrentDB.Components.Tools
 @using KurrentDB.SecondaryIndexing.Stats
 @using Microsoft.AspNetCore.Authorization
+@using Serilog
 @inject StatsService StatsService
 @inject PluginsService Plugins
 
@@ -15,44 +16,63 @@
 	return;
 }
 
-@if (IsLoading) {
-	<div class="d-flex justify-center align-center pa-6">
-		<MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large"/>
-		<MudText Class="ml-4 mt-2">Loading stats...</MudText>
-	</div>
-} else {
-	<MudDivider/>
-	<MudText Typo="Typo.h5" Class="pb-4 pt-2">Stream Categories</MudText>
-	<MudPaper Outlined="true">
+<MudAlert Severity="Severity.Warning" Class="my-4">
+	These queries may impact performance on large databases.
+</MudAlert>
+
+<MudDivider/>
+<MudText Typo="Typo.h5" Class="pb-4 pt-2">Stream Categories</MudText>
+<MudPaper Outlined="true">
+	@if (_categoriesState is LoadState.ReadyToLoad) {
+		<MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="LoadCategories">Load</MudButton>
+	} else if (_categoriesState is LoadState.Loading) {
+		<div class="d-flex justify-center align-center pa-6">
+			<MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large"/>
+			<MudText Class="ml-4 mt-2">Loading categories...</MudText>
+		</div>
+	} else if (_categoriesState is LoadState.FailedToLoad) {
+		<MudAlert Severity="Severity.Warning" Class="my-4">
+			Error: @(_exception?.Message)
+		</MudAlert>
+	} else {
 		<MudExpansionPanels MultiExpansion="true">
 			@foreach (var category in Elements) {
 				<CategoryStats CategoryName="@category.Category"/>
 			}
 		</MudExpansionPanels>
-	</MudPaper>
-	<MudDivider Class="mt-6"/>
-	<MudText Typo="Typo.h5" Class="pt-2">Explicit Transactions (Obsolete)</MudText>
-	<MudPaper Outlined="true" Class="mt-4">
-		<ExplicitTransactions/>
-	</MudPaper>
-	<MudDivider Class="mt-6"/>
-	<MudText Typo="Typo.h5" Class="pt-2">Stream Stats</MudText>
-	<MudPaper Outlined="true" Class="mt-4">
-		<LongestStreams/>
-	</MudPaper>
-}
+	}
+</MudPaper>
+<MudDivider Class="mt-6"/>
+<MudText Typo="Typo.h5" Class="pt-2">Explicit Transactions (Obsolete)</MudText>
+<MudPaper Outlined="true" Class="mt-4">
+	<ExplicitTransactions/>
+</MudPaper>
+<MudDivider Class="mt-6"/>
+<MudText Typo="Typo.h5" Class="pt-2">Stream Stats</MudText>
+<MudPaper Outlined="true" Class="mt-4">
+	<LongestStreams/>
+</MudPaper>
 
-@code {
+	@code {
+	static readonly ILogger Log = Serilog.Log.ForContext<StatsPage>();
+
 	CategoryName[] Elements { get; set; } = [];
-	bool IsLoading { get; set; } = true;
+	LoadState _categoriesState = LoadState.ReadyToLoad;
+	Exception _exception;
 
 	protected override string PageName => "Database Stats";
 
-	protected override void OnAfterRender(bool firstRender) {
-		base.OnAfterRender(firstRender);
-		if (!firstRender) return;
-		Elements = StatsService.GetCategories().ToArray();
-		IsLoading = false;
+	async Task LoadCategories() {
+		Log.Information("User requested database category stats load via UI");
+		_categoriesState = LoadState.Loading;
+		try {
+			Elements = await Task.Run(() => StatsService.GetCategories().ToArray());
+			_categoriesState = LoadState.Loaded;
+		} catch (Exception ex) {
+			Log.Error(ex, "Error while loading database category stats via UI");
+			_exception = ex;
+			_categoriesState = LoadState.FailedToLoad;
+		}
 		StateHasChanged();
 	}
 }

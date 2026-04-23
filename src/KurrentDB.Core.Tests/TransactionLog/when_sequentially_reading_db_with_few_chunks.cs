@@ -13,7 +13,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.TransactionLog;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_sequentially_reading_db_with_few_chunks<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
 	private const int RecordsCount = 8;
 

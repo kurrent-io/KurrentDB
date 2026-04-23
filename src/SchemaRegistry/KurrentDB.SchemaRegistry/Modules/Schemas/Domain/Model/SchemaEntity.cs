@@ -90,6 +90,13 @@ public record SchemaEntity : State<SchemaEntity> {
         return this;
     }
 
+    public SchemaEntity EnsureCompatibilityCheckSupported() {
+        if (DataFormat is not SchemaDataFormat.Json)
+            throw new DomainExceptions.EntityException($"Compatibility checking is not supported for data format '{DataFormat}'. Only JSON schemas support compatibility checks.");
+
+        return this;
+    }
+
     public record SchemaVersion {
         public static readonly SchemaVersion None = new SchemaVersion {
             SchemaVersionId       = Guid.Empty.ToString(),

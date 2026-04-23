@@ -18,7 +18,6 @@ namespace KurrentDB.Core.Tests.ClientAPI;
 
 [Category("ClientAPI"), Category("LongRunning"), NonParallelizable]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class subscribe_to_all_filtered_should<TLogFormat, TStreamId> : SpecificationWithDirectory {
 	private const int Timeout = 10000;
 
@@ -214,12 +213,6 @@ public class subscribe_to_all_filtered_should<TLogFormat, TStreamId> : Specifica
 			var appeared = new TaskCompletionSource<bool>();
 			var eventsSeen = new List<ResolvedEvent>();
 			var checkpointsSeen = 0;
-
-			if (LogFormatHelper<TLogFormat, TStreamId>.IsV3) {
-				// init stream and event type records so they won't affect the test
-				await _conn.AppendToStreamAsync("stream-a", ExpectedVersion.NoStream);
-				await _conn.AppendToStreamAsync("init-event-types", ExpectedVersion.NoStream, _testEvents);
-			}
 
 			using (await store.FilteredSubscribeToAllAsync(false,
 				filter,

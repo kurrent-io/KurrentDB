@@ -22,7 +22,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Transforms;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class TransformTests<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
 	private const int NumEvents = 1000;
 	private const int BatchSize = 50;

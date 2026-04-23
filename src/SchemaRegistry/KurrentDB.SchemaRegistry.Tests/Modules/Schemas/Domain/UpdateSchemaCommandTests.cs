@@ -22,7 +22,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		var originalDescription = Faker.Lorem.Sentence();
 		var newDescription = Faker.Lorem.Sentence();
 
-		await Apply(
+		await Fixture.Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = NewJsonSchema().ToByteString(),
@@ -38,11 +38,11 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		var expectedEvent = new SchemaDescriptionUpdated {
 			SchemaName = schemaName,
 			Description = newDescription,
-			UpdatedAt = Timestamp.FromDateTimeOffset(TimeProvider.GetUtcNow())
+			UpdatedAt = Timestamp.FromDateTimeOffset(Fixture.Time.GetUtcNow())
 		};
 
 		// Act
-		var result = await Apply(
+		var result = await Fixture.Apply(
 			new UpdateSchemaRequest {
 				SchemaName = schemaName,
 				Details = new SchemaDetails { Description = newDescription },
@@ -61,7 +61,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		// Arrange
 		var schemaName = NewSchemaName();
 
-		await Apply(
+		await Fixture.Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = NewJsonSchema().ToByteString(),
@@ -73,10 +73,10 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 			cancellationToken
 		);
 
-		await Apply(new DeleteSchemaRequest { SchemaName = schemaName }, cancellationToken);
+		await Fixture.Apply(new DeleteSchemaRequest { SchemaName = schemaName }, cancellationToken);
 
 		// Act
-		var updateSchema = async () => await Apply(
+		var updateSchema = async () => await Fixture.Apply(
 			new UpdateSchemaRequest {
 				SchemaName = schemaName,
 				Details = new SchemaDetails { Description = Faker.Lorem.Sentence() },
@@ -94,7 +94,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		// Arrange
 		var schemaName = NewSchemaName();
 
-		await Apply(
+		await Fixture.Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = NewJsonSchema().ToByteString(),
@@ -107,7 +107,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		);
 
 		// Act
-		var updateSchema = async () => await Apply(
+		var updateSchema = async () => await Fixture.Apply(
 			new UpdateSchemaRequest {
 				SchemaName = schemaName,
 				Details = new SchemaDetails { Description = Faker.Lorem.Sentence() },
@@ -128,7 +128,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		// Arrange
 		var schemaName = NewSchemaName();
 
-		await Apply(
+		await Fixture.Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = NewJsonSchema().ToByteString(),
@@ -141,7 +141,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		);
 
 		// Act
-		var updateSchema = async () => await Apply(
+		var updateSchema = async () => await Fixture.Apply(
 			new UpdateSchemaRequest {
 				SchemaName = schemaName,
 				Details = schemaDetails,
@@ -162,7 +162,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		// Arrange
 		var schemaName = NewSchemaName();
 
-		await Apply(
+		await Fixture.Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = NewJsonSchema().ToByteString(),
@@ -177,7 +177,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		);
 
 		// Act
-		var updateSchema = async () => await Apply(
+		var updateSchema = async () => await Fixture.Apply(
 			new UpdateSchemaRequest {
 				SchemaName = schemaName,
 				Details = schemaDetails,
@@ -193,11 +193,6 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 
 	public class NotModifiableTestCases : TestCaseGenerator<SchemaDetails, string, string> {
 		protected override IEnumerable<(SchemaDetails, string, string)> Data() {
-			yield return (
-				new SchemaDetails { Compatibility = CompatibilityMode.Forward },
-				"Details.Compatibility",
-				"Compatibility mode is not modifiable"
-			);
 			yield return (
 				new SchemaDetails { DataFormat = SchemaFormat.Protobuf },
 				"Details.DataFormat",

@@ -15,7 +15,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Services.Storage.DeletingStream;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint), Ignore = "No such thing as a V0 prepare in LogV3")]
 public class when_hard_deleting_stream_with_log_version_0<TLogFormat, TStreamId> : ReadIndexTestScenario<TLogFormat, TStreamId> {
 
 	protected override async ValueTask WriteTestScenario(CancellationToken token) {

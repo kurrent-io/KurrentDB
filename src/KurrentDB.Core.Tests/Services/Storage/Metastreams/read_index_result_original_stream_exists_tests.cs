@@ -11,7 +11,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Services.Storage.Metastreams;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class
 	read_index_result_original_stream_exists_tests<TLogFormat, TStreamId>
 	: SimpleDbTestScenario<TLogFormat, TStreamId> {

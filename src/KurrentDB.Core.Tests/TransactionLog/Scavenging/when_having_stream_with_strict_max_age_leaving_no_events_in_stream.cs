@@ -13,7 +13,6 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.TransactionLog.Scavenging;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_having_stream_with_strict_max_age_leaving_no_events_in_stream<TLogFormat, TStreamId> : ScavengeTestScenario<TLogFormat, TStreamId> {
 	protected override ValueTask<DbResult> CreateDb(TFChunkDbCreationHelper<TLogFormat, TStreamId> dbCreator, CancellationToken token) {
 		return dbCreator

@@ -17,7 +17,6 @@ namespace KurrentDB.Core.Tests.ClientAPI;
 [Ignore("Very long running")]
 [Category("LongRunning"), Category("ClientAPI")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class catchup_subscription_handles_small_batch_sizes<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
 	private MiniNode<TLogFormat, TStreamId> _node;
 	private string _streamName = "TestStream";

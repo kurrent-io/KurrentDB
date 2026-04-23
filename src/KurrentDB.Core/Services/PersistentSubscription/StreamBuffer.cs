@@ -59,6 +59,10 @@ public class StreamBuffer {
 		}
 	}
 
+	public void AddRetryToEnd(OutstandingMessage ev) {
+		_retry.AddLast(ev);
+	}
+
 	public void AddRetry(OutstandingMessage ev) {
 		//add parked messages at the end of the list
 		if (ev.IsReplayedEvent) {
@@ -125,6 +129,7 @@ public class StreamBuffer {
 
 		foreach (var list in new[] { _retry, _buffer }) // save on code duplication
 		{
+			var isRetry = ReferenceEquals(list, _retry);
 			var current = list.First;
 			if (current != null) {
 				do {
@@ -132,7 +137,7 @@ public class StreamBuffer {
 					// that current is removed from the list setting next to null.
 					var next = current.Next;
 
-					yield return new OutstandingMessagePointer(current);
+					yield return new OutstandingMessagePointer(current, isRetry);
 
 					current = next;
 				} while (current != null);
@@ -161,12 +166,14 @@ public class StreamBuffer {
 		return result;
 	}
 
-	public struct OutstandingMessagePointer {
+	public readonly struct OutstandingMessagePointer {
 		private readonly LinkedListNode<OutstandingMessage> _entry;
+		private readonly bool _isRetry;
 
-		internal OutstandingMessagePointer(LinkedListNode<OutstandingMessage> entry)
+		internal OutstandingMessagePointer(LinkedListNode<OutstandingMessage> entry, bool isRetry)
 			: this() {
 			_entry = entry;
+			_isRetry = isRetry;
 		}
 
 		public OutstandingMessage Message {
@@ -180,6 +187,9 @@ public class StreamBuffer {
 
 			_entry.List.Remove(_entry);
 		}
+
+		// intended for debug assertions only
+		public bool IsRetry => _isRetry;
 	}
 }
 

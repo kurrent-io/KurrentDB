@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<IsPackable>false</IsPackable>
+		<Nullable>enable</Nullable>
+		<IsKurrentXUnit>true</IsKurrentXUnit>
+	</PropertyGroup>
+	<ItemGroup>
+		<None Remove="Specs\*" />
+	</ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="Specs\*" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\KurrentDB.Projections.Management\KurrentDB.Projections.Management.csproj" />
+	</ItemGroup>
+</Project>

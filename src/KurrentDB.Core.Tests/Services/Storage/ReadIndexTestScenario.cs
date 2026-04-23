@@ -292,7 +292,6 @@ public abstract class ReadIndexTestScenario<TLogFormat, TStreamId> : Specificati
 
 	protected async ValueTask<EventRecord> WriteTransactionBegin(string eventStreamName, long expectedVersion, long eventNumber,
 		string eventData, CancellationToken token) {
-		LogFormatHelper<TLogFormat, TStreamId>.CheckIfExplicitTransactionsSupported();
 		var (eventStreamId, _) = await GetOrReserve(eventStreamName, token);
 		var (eventTypeId, pos) = await GetOrReserveEventType("some-type", token);
 		var prepare = LogRecord.Prepare(_recordFactory, pos,
@@ -313,7 +312,6 @@ public abstract class ReadIndexTestScenario<TLogFormat, TStreamId> : Specificati
 	}
 
 	protected async ValueTask<IPrepareLogRecord<TStreamId>> WriteTransactionBegin(string eventStreamName, long expectedVersion, CancellationToken token) {
-		LogFormatHelper<TLogFormat, TStreamId>.CheckIfExplicitTransactionsSupported();
 		var (eventStreamId, pos) = await GetOrReserve(eventStreamName, token);
 		var prepare = LogRecord.TransactionBegin(_recordFactory, pos, Guid.NewGuid(), eventStreamId,
 			expectedVersion);
@@ -331,7 +329,6 @@ public abstract class ReadIndexTestScenario<TLogFormat, TStreamId> : Specificati
 		bool retryOnFail = false,
 		string eventType = "some-type",
 		CancellationToken token = default) {
-		LogFormatHelper<TLogFormat, TStreamId>.CheckIfExplicitTransactionsSupported();
 
 		var (eventStreamId, _) = await GetOrReserve(eventStreamName, token);
 		var (eventTypeId, pos) = await GetOrReserveEventType(eventType, token);
@@ -374,13 +371,11 @@ public abstract class ReadIndexTestScenario<TLogFormat, TStreamId> : Specificati
 	}
 
 	protected async ValueTask<IPrepareLogRecord<TStreamId>> WriteTransactionEnd(Guid correlationId, long transactionId, string eventStreamName, CancellationToken token) {
-		LogFormatHelper<TLogFormat, TStreamId>.CheckIfExplicitTransactionsSupported();
 		var (eventStreamId, _) = await GetOrReserve(eventStreamName, token);
 		return await WriteTransactionEnd(correlationId, transactionId, eventStreamId, token);
 	}
 
 	protected async ValueTask<IPrepareLogRecord<TStreamId>> WriteTransactionEnd(Guid correlationId, long transactionId, TStreamId eventStreamId, CancellationToken token) {
-		LogFormatHelper<TLogFormat, TStreamId>.CheckIfExplicitTransactionsSupported();
 		var prepare = LogRecord.TransactionEnd(_recordFactory, Writer.Position,
 			correlationId,
 			Guid.NewGuid(),
@@ -415,7 +410,6 @@ public abstract class ReadIndexTestScenario<TLogFormat, TStreamId> : Specificati
 	}
 
 	protected async ValueTask<CommitLogRecord> WriteCommit(long preparePos, string eventStreamName, long eventNumber, CancellationToken token) {
-		LogFormatHelper<TLogFormat, TStreamId>.CheckIfExplicitTransactionsSupported();
 		var commit = LogRecord.Commit(Writer.Position, Guid.NewGuid(), preparePos, eventNumber);
 		Assert.IsTrue(await Writer.Write(commit, token) is (true, _));
 		return commit;
@@ -423,13 +417,11 @@ public abstract class ReadIndexTestScenario<TLogFormat, TStreamId> : Specificati
 
 	protected async ValueTask<long> WriteCommit(Guid correlationId, long transactionId, string eventStreamName,
 		long eventNumber, CancellationToken token) {
-		LogFormatHelper<TLogFormat, TStreamId>.CheckIfExplicitTransactionsSupported();
 		var (eventStreamId, _) = await GetOrReserve(eventStreamName, token);
 		return await WriteCommit(correlationId, transactionId, eventStreamId, eventNumber, token);
 	}
 
 	protected async ValueTask<long> WriteCommit(Guid correlationId, long transactionId, TStreamId eventStreamId, long eventNumber, CancellationToken token) {
-		LogFormatHelper<TLogFormat, TStreamId>.CheckIfExplicitTransactionsSupported();
 		var commit = LogRecord.Commit(Writer.Position, correlationId, transactionId, eventNumber);
 		Assert.IsTrue(await Writer.Write(commit, token) is (true, _));
 		return commit.LogPosition;
@@ -462,7 +454,6 @@ public abstract class ReadIndexTestScenario<TLogFormat, TStreamId> : Specificati
 	}
 
 	protected async ValueTask<CommitLogRecord> WriteDeleteCommit(IPrepareLogRecord prepare, CancellationToken token) {
-		LogFormatHelper<TLogFormat, TStreamId>.CheckIfExplicitTransactionsSupported();
 		var commit = LogRecord.Commit(Writer.Position,
 			prepare.CorrelationId,
 			prepare.LogPosition,

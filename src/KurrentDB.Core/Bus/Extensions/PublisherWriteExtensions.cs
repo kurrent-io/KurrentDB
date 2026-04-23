@@ -7,6 +7,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Common.Utils;
@@ -16,7 +17,6 @@ using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
-using KurrentDB.Core.Services.UserManagement;
 
 namespace KurrentDB.Core.ClientPublisher;
 
@@ -29,6 +29,8 @@ public static class PublisherWriteExtensions {
 		this IPublisher publisher,
 		string stream,
 		Event[] events,
+		bool requireLeader,
+		ClaimsPrincipal principal,
 		long expectedRevision = ExpectedVersion.Any,
 		CancellationToken cancellationToken = default
 	) {
@@ -37,6 +39,8 @@ public static class PublisherWriteExtensions {
 			expectedRevisions: new(expectedRevision),
 			events: new(events),
 			eventStreamIndexes: default,
+			requireLeader: requireLeader,
+			principal: principal,
 			cancellationToken: cancellationToken);
 
 		return new(result.Position, result.StreamRevisions.Single);
@@ -48,6 +52,8 @@ public static class PublisherWriteExtensions {
 		LowAllocReadOnlyMemory<long> expectedRevisions,
 		LowAllocReadOnlyMemory<Event> events,
 		LowAllocReadOnlyMemory<int> eventStreamIndexes,
+		bool requireLeader,
+		ClaimsPrincipal principal,
 		CancellationToken cancellationToken = default
 	) {
 		var cid = Guid.NewGuid();
@@ -59,12 +65,12 @@ public static class PublisherWriteExtensions {
 				internalCorrId: cid,
 				correlationId: cid,
 				envelope: operation,
-				requireLeader: false,
+				requireLeader: requireLeader,
 				eventStreamIds: streams,
 				expectedVersions: expectedRevisions,
 				events: events,
 				eventStreamIndexes: eventStreamIndexes,
-				user: SystemAccounts.System,
+				user: principal,
 				cancellationToken: cancellationToken
 			);
 

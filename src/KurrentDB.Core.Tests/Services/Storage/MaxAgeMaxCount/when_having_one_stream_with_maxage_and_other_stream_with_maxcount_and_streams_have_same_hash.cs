@@ -11,7 +11,6 @@ using ReadStreamResult = KurrentDB.Core.Services.Storage.ReaderIndex.ReadStreamR
 namespace KurrentDB.Core.Tests.Services.Storage.MaxAgeMaxCount;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class
 	when_having_one_stream_with_maxage_and_other_stream_with_maxcount_and_streams_have_same_hash<TLogFormat, TStreamId> :
 		ReadIndexTestScenario<TLogFormat, TStreamId> {

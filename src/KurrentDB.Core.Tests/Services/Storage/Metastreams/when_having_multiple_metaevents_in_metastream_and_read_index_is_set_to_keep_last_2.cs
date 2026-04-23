@@ -11,7 +11,6 @@ using ReadStreamResult = KurrentDB.Core.Services.Storage.ReaderIndex.ReadStreamR
 namespace KurrentDB.Core.Tests.Services.Storage.Metastreams;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class
 	when_having_multiple_metaevents_in_metastream_and_read_index_is_set_to_keep_last_2<TLogFormat, TStreamId> : SimpleDbTestScenario<TLogFormat, TStreamId> {
 	public when_having_multiple_metaevents_in_metastream_and_read_index_is_set_to_keep_last_2()
