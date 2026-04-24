@@ -41,7 +41,7 @@ internal sealed partial class FlightSqlServer(IQueryEngine engine, IAuthorizatio
 		if (!await authProvider.CheckAccessAsync(context.User, ReadOperation, context.CancellationToken))
 			throw RpcExceptions.AccessDenied();
 
-		//A google.protobuf.Any message has a specific binary signature. It consists of two fields:
+		// A google.protobuf.Any message has a specific binary signature. It consists of two fields:
 		// Field 1 (type_url): Tag 0x0A (field number 1, wire type 2).
 		// Field 2 (value): Tag 0x12 (field number 2, wire type 2).
 		// We can use 0x0A as a discriminator to distinguish between Arrow Flight and Arrow Flight SQL
