@@ -65,7 +65,7 @@ partial class FlightSqlServer : IDisposable {
 	private ByteString PackRaw(IMessage message) {
 		message.WriteTo(PrepareWriter());
 		var buffer = bufferWriter.DetachBuffer();
-		return UnsafeByteOperations.UnsafeWrap(buffer.Memory);
+		return WrapAndRegisterOnDispose(buffer);
 	}
 
 	public void Dispose() {
