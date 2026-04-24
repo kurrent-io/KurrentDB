@@ -11,7 +11,7 @@ namespace KurrentDB.SecondaryIndexing.Query;
 [StructLayout(LayoutKind.Auto)]
 public readonly struct QueryPreparationOptions {
 	/// <summary>
-	/// Indicates that the prepared query must be signed to protect it from the modification.
+	/// Indicates that the prepared query must be signed to protect it from modifications.
 	/// </summary>
 	public bool UseDigitalSignature { get; init; }
 }
