@@ -140,7 +140,7 @@ public sealed class ProjectionEngineV2 : IAsyncDisposable {
 				// the engine's cancellation token has fired.
 				loadPersistedState: partitionKey => LoadPersistedPartitionState(partitionKey, CancellationToken.None),
 				sharedPartitionStates: _partitionStates,
-				partitionStateCacheCapacity: _config.MaxPartitionStateCacheSize);
+				maxPartitionStateCacheSize: _config.MaxPartitionStateCacheSize);
 			partitionTasks[i] = Task.Run(() => processor.Run(partitionCt), partitionCt);
 		}
 

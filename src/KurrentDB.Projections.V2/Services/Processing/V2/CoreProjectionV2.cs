@@ -270,7 +270,7 @@ public sealed class CoreProjectionV2 : ICoreProjectionControl {
 			BufferedEvents = 0,
 			EventsProcessedAfterRestart = (int)engine.TotalEventsProcessed,
 			PartitionStateCacheSize = metrics.Size,
-			PartitionStateCacheEvictions = metrics.Evictions
+			PartitionStateCacheEvictions = metrics.Evictions,
 		};
 
 		_publisher.Publish(new CoreProjectionStatusMessage.StatisticsReport(

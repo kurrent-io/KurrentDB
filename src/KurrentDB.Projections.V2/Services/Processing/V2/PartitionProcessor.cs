@@ -23,7 +23,7 @@ public class PartitionProcessor(
 	Action<int, IReadOnlyOutputBuffer> onCheckpointMarker,
 	Func<string, ValueTask<string?>> loadPersistedState,
 	PartitionStateCache sharedPartitionStates,
-	int partitionStateCacheCapacity) {
+	int maxPartitionStateCacheSize) {
 
 	private static readonly ILogger Log = Serilog.Log.ForContext<PartitionProcessor>();
 
@@ -31,7 +31,7 @@ public class PartitionProcessor(
 	private OutputBuffer _activeBuffer = new();
 	private OutputBuffer _frozenBuffer = new();
 	private readonly PartitionStateCache _stateCache =
-		new(partitionStateCacheCapacity, name: $"partition-{partitionIndex}", projectionName);
+		new(maxPartitionStateCacheSize, name: $"partition-{partitionIndex}", projectionName);
 	private string? _sharedState;
 	private bool _sharedStateInitialized;
 
