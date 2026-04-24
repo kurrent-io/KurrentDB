@@ -73,17 +73,19 @@ partial class ConnectionState {
 		if (!_statements.TryGetValue(handle, out var statement) || !statement.TryIncrementRef())
 			return false;
 
+		bool result;
+
 		// nothing to bind, the batch is empty
 		if (arguments.Length is 0) {
 			arguments.Dispose();
-			return true;
+			result = true;
+		} else {
+			// save the binding context
+			result = statement.TryBind(arguments, out var oldBatch);
+			oldBatch?.Dispose();
 		}
 
-		// save the binding context
-		var result = statement.TryBind(arguments, out var oldBatch);
-		oldBatch?.Dispose();
 		statement.DecrementRef();
-
 		return result;
 	}
 
