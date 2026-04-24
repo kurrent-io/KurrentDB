@@ -43,9 +43,9 @@ public class PartitionProcessor(
 				if (pe.IsCheckpointMarker)
 					HandleCheckpointMarker();
 				else if (pe.IsPartitionDeleted)
-					await ProcessPartitionDeleted(pe);
+					await ProcessPartitionDeleted(pe, ct);
 				else
-					await ProcessEvent(pe);
+					await ProcessEvent(pe, ct);
 			}
 		} finally {
 			await _stateCache.DisposeAsync();
@@ -56,7 +56,7 @@ public class PartitionProcessor(
 	/// Loads partition state into the state handler from cache, persisted result stream, or initializes fresh.
 	/// Returns true if the partition is new (not previously seen in this run or persisted).
 	/// </summary>
-	private async ValueTask<bool> LoadPartitionState(string partitionKey) {
+	private async ValueTask<bool> LoadPartitionState(string partitionKey, CancellationToken ct) {
 		if (_stateCache.TryGet(partitionKey, out var cachedState)) {
 			// A null cached state means the handler explicitly set state to null (e.g. JS null).
 			// Load "null" so the handler gets JS null, not a fresh $init state.
@@ -69,7 +69,7 @@ public class PartitionProcessor(
 			Log.Debug("Loaded persisted state for partition {Partition} in projection {Name}",
 				partitionKey, projectionName);
 			stateHandler.Load(persistedState);
-			await _stateCache.Set(partitionKey, persistedState, CancellationToken.None);
+			await _stateCache.Set(partitionKey, persistedState, ct);
 			return false;
 		}
 
@@ -89,12 +89,12 @@ public class PartitionProcessor(
 		}
 	}
 
-	private async Task ProcessPartitionDeleted(PartitionEvent pe) {
+	private async Task ProcessPartitionDeleted(PartitionEvent pe, CancellationToken ct) {
 		var partitionKey = pe.PartitionKey!;
 
 		Log.Debug("Processing partition deleted partition={Partition}", partitionKey);
 
-		await LoadPartitionState(partitionKey);
+		await LoadPartitionState(partitionKey, ct);
 		LoadSharedState();
 
 		var checkpointTag = CheckpointTag.FromPosition(0, pe.LogPosition.CommitPosition, pe.LogPosition.PreparePosition);
@@ -102,28 +102,25 @@ public class PartitionProcessor(
 		var processed = stateHandler.ProcessPartitionDeleted(partitionKey, checkpointTag, out var newState);
 
 		if (processed) {
-			// CancellationToken.None: the processor drains on CancellationToken.None
-			// (see ProjectionEngineV2.Run's partitionCt); aborting cache writes mid-drain
-			// would desync the in-memory and on-disk views.
-			await _stateCache.Set(partitionKey, newState, CancellationToken.None);
+			await _stateCache.Set(partitionKey, newState, ct);
 			if (newState != null) {
 				var stateStreamName = ProjectionNamesBuilder.MakeStateStreamName(projectionName, partitionKey);
 				_activeBuffer.SetPartitionState(partitionKey, stateStreamName, newState, ExpectedVersion.Any);
-				await sharedPartitionStates.Set(partitionKey, newState, CancellationToken.None);
+				await sharedPartitionStates.Set(partitionKey, newState, ct);
 			}
 		}
 
 		_activeBuffer.LastLogPosition = pe.LogPosition;
 	}
 
-	private async Task ProcessEvent(PartitionEvent pe) {
+	private async Task ProcessEvent(PartitionEvent pe, CancellationToken ct) {
 		var projEvent = pe.Event!;
 		var partitionKey = pe.PartitionKey!;
 
 		Log.Verbose("Processing event stream={Stream} type={EventType} partition={Partition}",
 			projEvent.EventStreamId, projEvent.EventType, partitionKey);
 
-		var isNewPartition = await LoadPartitionState(partitionKey);
+		var isNewPartition = await LoadPartitionState(partitionKey, ct);
 		LoadSharedState();
 
 		var checkpointTag = CheckpointTag.FromPosition(0, pe.LogPosition.CommitPosition, pe.LogPosition.PreparePosition);
@@ -144,11 +141,11 @@ public class PartitionProcessor(
 			out var emittedEvents);
 
 		if (processed) {
-			await _stateCache.Set(partitionKey, newState, CancellationToken.None);
+			await _stateCache.Set(partitionKey, newState, ct);
 			if (newState is not null) {
 				var stateStreamName = ProjectionNamesBuilder.MakeStateStreamName(projectionName, partitionKey);
 				_activeBuffer.SetPartitionState(partitionKey, stateStreamName, newState, ExpectedVersion.Any);
-				await sharedPartitionStates.Set(partitionKey, newState, CancellationToken.None);
+				await sharedPartitionStates.Set(partitionKey, newState, ct);
 			}
 
 			if (isBiState && newSharedState is not null) {
