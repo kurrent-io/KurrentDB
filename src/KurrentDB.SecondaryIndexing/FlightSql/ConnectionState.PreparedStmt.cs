@@ -37,7 +37,7 @@ partial class ConnectionState {
 	public bool CreatePreparedStatement(ReadOnlySpan<char> query,
 		out Guid handle,
 		[NotNullWhen(true)] out PreparedStatement? statement,
-		[NotNullWhen(true)]out Schema? parameters) {
+		[NotNullWhen(true)] out Schema? parameters) {
 		handle = Guid.NewGuid();
 		if (!TryIncrementStatementCount()) {
 			statement = null;
