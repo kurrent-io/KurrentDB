@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -17,6 +18,7 @@ public static class EventFilter {
 	public const string EventTypeContext = "eventtype";
 	public const string RegexType = "regex";
 	public const string PrefixType = "prefix";
+	public const string SetType = "set";
 
 	public static IEventFilter DefaultAllFilter { get; } = new DefaultAllFilterStrategy();
 	public static IEventFilter DefaultStreamFilter { get; } = new DefaultStreamFilterStrategy();
@@ -28,6 +30,9 @@ public static class EventFilter {
 
 		public static IEventFilter Regex(bool isAllStream, string regex)
 			=> new StreamIdRegexStrategy(isAllStream, regex);
+
+		public static IEventFilter Set(bool isAllStream, params string[] streamNames)
+			=> new StreamIdSetStrategy(isAllStream, streamNames);
 	}
 
 	public static class EventType {
@@ -176,6 +181,24 @@ public static class EventFilter {
 			$"{nameof(StreamIdRegexStrategy)}: ({string.Join(", ", _expectedRegex)})";
 	}
 
+	private sealed class StreamIdSetStrategy : IEventFilter {
+		internal readonly bool _isAllStream;
+		internal readonly HashSet<string> _streamNames;
+
+		public StreamIdSetStrategy(bool isAllStream, string[] streamNames) {
+			_isAllStream = isAllStream;
+			_streamNames = new HashSet<string>(streamNames, StringComparer.Ordinal);
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+		public bool IsEventAllowed(EventRecord eventRecord) =>
+			(!_isAllStream || DefaultAllFilter.IsEventAllowed(eventRecord)) &&
+			_streamNames.Contains(eventRecord.EventStreamId);
+
+		public override string ToString() =>
+			$"{nameof(StreamIdSetStrategy)}: ({string.Join(", ", _streamNames)})";
+	}
+
 	public class EventFilterDto {
 		public string Context;
 		public string Type;
@@ -198,6 +221,13 @@ public static class EventFilter {
 					Type = RegexType,
 					Data = sirs._expectedRegex.ToString(),
 					IsAllStream = sirs._isAllStream
+				};
+			case StreamIdSetStrategy siss:
+				return new() {
+					Context = StreamIdContext,
+					Type = SetType,
+					Data = string.Join(",", siss._streamNames),
+					IsAllStream = siss._isAllStream
 				};
 			case EventTypePrefixStrategy etps:
 				return new() {
@@ -237,6 +267,22 @@ public static class EventFilter {
 				return (false, $"Invalid context please provide one of the following: {names}.");
 		}
 
+		if (string.IsNullOrEmpty(data)) {
+			filter = null;
+			return (false, "Please provide a comma delimited list of data with at least one item.");
+		}
+
+		// "set" type is only valid for StreamId context — exact stream name matching
+		if (type == SetType) {
+			if (parsedContext != FilterContext.StreamId) {
+				filter = null;
+				return (false, "Set filter type is only supported for stream ID context.");
+			}
+
+			filter = StreamName.Set(isAllStream, data.Split(",", StringSplitOptions.RemoveEmptyEntries));
+			return (true, null);
+		}
+
 		FilterType parsedType;
 		switch (type) {
 			case RegexType:
@@ -249,11 +295,6 @@ public static class EventFilter {
 				filter = null;
 				var names = string.Join(", ", Enum.GetNames(typeof(FilterType)));
 				return (false, $"Invalid type please provide one of the following: {names}.");
-		}
-
-		if (string.IsNullOrEmpty(data)) {
-			filter = null;
-			return (false, "Please provide a comma delimited list of data with at least one item.");
 		}
 
 		if (parsedType == FilterType.Regex) {
