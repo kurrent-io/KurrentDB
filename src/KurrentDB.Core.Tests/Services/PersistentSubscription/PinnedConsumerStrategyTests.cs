@@ -505,4 +505,49 @@ public class PinnedConsumerStrategyTests {
 
 		Assert.That(streamBuffer.BufferCount, Is.EqualTo(0));
 	}
+
+	// correlation id reuse is possible through the TCP client and the JVM TCP client does
+	// do this (dotnet does not). this used to cause two Nodes with the same NodeId to
+	// be listed in the PinnedConsumerState, resulting in messages being routed to
+	// a disconnected client.
+	[Test]
+	public void events_route_to_live_client_after_correlation_id_reuse() {
+		var correlationId = Guid.NewGuid();
+		var client1Envelope = new FakeEnvelope();
+		var client2Envelope = new FakeEnvelope();
+		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
+		const string subscriptionStream = "$ce-streamName";
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
+			PersistentSubscriptionToStreamParamsBuilder.CreateFor(subscriptionStream, "groupName")
+				.WithEventLoader(new FakeStreamReader())
+				.WithCheckpointReader(reader)
+				.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
+				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
+				.CustomConsumerStrategy(new PinnedPersistentSubscriptionConsumerStrategy(new XXHashUnsafe()))
+				.StartFromCurrent());
+		reader.Load(null);
+
+		// Client 1 connects and receives an event (which assigns a bucket to its Node)
+		var conn1 = Guid.NewGuid();
+		sub.AddClient(correlationId, conn1, "conn-1", client1Envelope, 10, "foo", "bar");
+		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEvent(Guid.NewGuid(), "type", "stream-A", 0));
+		pushScheduler.Push(sub);
+		Assert.That(client1Envelope.Replies.Count, Is.EqualTo(1));
+
+		// TCP drops, then client reconnects replaying the same CorrelationId
+		sub.RemoveClientByConnectionId(conn1);
+		sub.AddClient(correlationId, Guid.NewGuid(), "conn-2", client2Envelope, 10, "foo", "bar");
+
+		// Push a new event for the same stream (same bucket). Pre-fix it was
+		// routed to client1's dead envelope; post-fix it reaches client2.
+		sub.NotifyLiveSubscriptionMessage(Helper.BuildFakeEvent(Guid.NewGuid(), "type", "stream-A", 1));
+		pushScheduler.Push(sub);
+
+		Assert.That(client1Envelope.Replies.Count, Is.EqualTo(1),
+			"old envelope received zombie deliveries");
+		Assert.That(client2Envelope.Replies.Count, Is.GreaterThanOrEqualTo(1),
+			"new envelope did not receive the event");
+	}
 }

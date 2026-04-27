@@ -47,6 +47,8 @@ public class PersistentSubscriptionClient {
 		}
 	}
 
+	public Guid InstanceId { get; } = Guid.NewGuid();
+
 	/// <summary>
 	/// Raised whenever an in-flight event has been confirmed. This could be because of ack, nak, timeout or disconnection.
 	/// </summary>
