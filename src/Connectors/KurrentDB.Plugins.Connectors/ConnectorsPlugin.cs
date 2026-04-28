@@ -23,8 +23,7 @@ public class ConnectorsPlugin : SubsystemsPlugin {
 		    .AddSurgeDataProtection(configuration)
 		    .AddConnectorsControlPlane()
 		    .AddConnectorsManagementPlane()
-		    .AddWebhookPlane()
-
+		    .AddWebhookPlane();
     }
 
     public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
