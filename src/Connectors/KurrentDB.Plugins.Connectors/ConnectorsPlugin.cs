@@ -6,6 +6,7 @@ using EventStore.Plugins;
 using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
 using KurrentDB.Connectors.Planes.Control;
 using KurrentDB.Connectors.Planes.Management;
+using KurrentDB.Connectors.Planes.Webhook;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,17 +16,20 @@ namespace KurrentDB.Plugins.Connectors;
 [UsedImplicitly]
 public class ConnectorsPlugin : SubsystemsPlugin {
     public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
-        services
-            .AddNodeSystemInfoProvider()
-            .AddSurgeSchemaRegistry()
-            .AddSurgeSystemComponents()
-            .AddSurgeDataProtection(configuration)
-            .AddConnectorsControlPlane()
-            .AddConnectorsManagementPlane();
+	    services
+		    .AddNodeSystemInfoProvider()
+		    .AddSurgeSchemaRegistry()
+		    .AddSurgeSystemComponents()
+		    .AddSurgeDataProtection(configuration)
+		    .AddConnectorsControlPlane()
+		    .AddConnectorsManagementPlane()
+		    .AddWebhookPlane()
+
     }
 
     public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
         app.UseConnectorsManagementPlane();
+        app.UseWebhookPlane();
     }
 
     public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {
