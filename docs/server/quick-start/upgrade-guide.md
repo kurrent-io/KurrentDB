@@ -13,7 +13,7 @@ General changes, features and fixes are described in the [what's new](./whatsnew
 
 ## Upgrade procedure
 
-You can perform an online rolling upgrade directly to KurrentDB 25.1 from these earlier versions:
+You can perform an online rolling upgrade from these earlier versions:
 - 25.1
 - 25.0
 - 24.10
