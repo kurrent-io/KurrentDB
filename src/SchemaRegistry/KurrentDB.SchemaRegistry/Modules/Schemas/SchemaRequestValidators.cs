@@ -183,12 +183,11 @@ public partial class SchemaNameValidator : AbstractValidator<string> {
     public SchemaNameValidator() =>
         RuleFor(x => x)
             .NotEmpty()
-            .WithMessage("{PropertyName} must not be empty")
+            .WithMessage("Schema name must not be empty")
             .Must(s => string.IsNullOrEmpty(s) || s.IsNormalized(NormalizationForm.FormC))
-            .WithMessage("{PropertyName} must be in Unicode NFC (Normalization Form C)")
+            .WithMessage("Schema name must be in Unicode NFC (Normalization Form C)")
             .Matches(RegEx())
-            .WithMessage("{PropertyName} can only contain unicode letters, digits, underscores, dashes, periods, colons, and dollar signs. Attempted Value: {PropertyValue}")
-            .WithName("Schema name");
+            .WithMessage("Schema name can only contain unicode letters, digits, underscores, dashes, periods, colons, and dollar signs. Attempted Value: {PropertyValue}");
 
     [System.Text.RegularExpressions.GeneratedRegex(@"^[\p{L}\p{N}_.$:-]+$")]
     private static partial System.Text.RegularExpressions.Regex RegEx();
