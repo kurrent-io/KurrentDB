@@ -3,8 +3,8 @@
 
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
-using Apache.Arrow.Flight.Server;
 using EventStore.Plugins;
+using EventStore.Plugins.Licensing;
 using Kurrent.Surge.Schema;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core;
@@ -27,6 +27,7 @@ using KurrentDB.SecondaryIndexing.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.SecondaryIndexing;
 
@@ -57,6 +58,7 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddSingleton<IQueryEngine>(static sp => sp.GetRequiredService<QueryEngine>());
 		services.AddSingleton<UserIndexEngine>();
 		services.AddDuckDBSetup<IndexingDbSchema>();
+		services.AddSingleton<FlightSqlLicense>();
 		services.AddFlightSqlServer();
 
 		services.AddHostedService<DefaultIndexBuilder>();
@@ -89,6 +91,19 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		app.UseEndpoints(static endpoints => {
 			endpoints.MapFlightEndpoint();
 		});
+
+		var licenseService = app.ApplicationServices.GetRequiredService<ILicenseService>();
+		var flightSqlLicense = app.ApplicationServices.GetRequiredService<FlightSqlLicense>();
+		var logger = app.ApplicationServices
+			.GetRequiredService<ILoggerFactory>()
+			.CreateLogger<SecondaryIndexingPlugin>();
+
+		_ = LicenseMonitor.MonitorAsync(
+			featureName: "ArrowFlightSql",
+			requiredEntitlements: [FlightSqlLicense.Entitlement],
+			licenseService: licenseService,
+			onLicenseException: _ => flightSqlLicense.Disable(),
+			logger: logger);
 	}
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {

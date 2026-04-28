@@ -33,11 +33,13 @@ namespace KurrentDB.SecondaryIndexing.FlightSql;
 /// </remarks>
 /// <param name="engine">The query engine.</param>
 /// <param name="authProvider">Authorization provider.</param>
-internal sealed partial class FlightSqlServer(IQueryEngine engine, IAuthorizationProvider authProvider) : FlightServer {
+/// <param name="license">Tracks whether the Arrow Flight SQL entitlement is currently licensed.</param>
+internal sealed partial class FlightSqlServer(IQueryEngine engine, IAuthorizationProvider authProvider, FlightSqlLicense license) : FlightServer {
 	private static readonly Operation ReadOperation = new Operation(Operations.Streams.Read)
 		.WithParameter(Operations.Streams.Parameters.StreamId(SystemStreams.AllStream));
 
 	public override async Task<FlightInfo> GetFlightInfo(FlightDescriptor request, ServerCallContext context) {
+		EnsureLicensed();
 		if (!await authProvider.CheckAccessAsync(context.User, ReadOperation, context.CancellationToken))
 			throw RpcExceptions.AccessDenied();
 
@@ -66,6 +68,7 @@ internal sealed partial class FlightSqlServer(IQueryEngine engine, IAuthorizatio
 	}
 
 	public override async Task DoGet(FlightTicket ticket, FlightServerRecordBatchStreamWriter responseStream, ServerCallContext context) {
+		EnsureLicensed();
 		if (!await authProvider.CheckAccessAsync(context.User, ReadOperation, context.CancellationToken))
 			throw RpcExceptions.AccessDenied();
 
@@ -88,6 +91,7 @@ internal sealed partial class FlightSqlServer(IQueryEngine engine, IAuthorizatio
 	}
 
 	public override async Task DoAction(FlightAction action, IAsyncStreamWriter<FlightResult> response, ServerCallContext context) {
+		EnsureLicensed();
 		if (!await authProvider.CheckAccessAsync(context.User, ReadOperation, context.CancellationToken))
 			throw RpcExceptions.AccessDenied();
 
@@ -123,6 +127,7 @@ internal sealed partial class FlightSqlServer(IQueryEngine engine, IAuthorizatio
 	public override async Task DoPut(FlightServerRecordBatchStreamReader requestStream,
 		IAsyncStreamWriter<FlightPutResult> responseStream,
 		ServerCallContext context) {
+		EnsureLicensed();
 		if (!await authProvider.CheckAccessAsync(context.User, ReadOperation, context.CancellationToken))
 			throw RpcExceptions.AccessDenied();
 
@@ -150,6 +155,7 @@ internal sealed partial class FlightSqlServer(IQueryEngine engine, IAuthorizatio
 	}
 
 	public override async Task<Schema> GetSchema(FlightDescriptor request, ServerCallContext context) {
+		EnsureLicensed();
 		if (!await authProvider.CheckAccessAsync(context.User, ReadOperation, context.CancellationToken))
 			throw RpcExceptions.AccessDenied();
 
@@ -173,6 +179,12 @@ internal sealed partial class FlightSqlServer(IQueryEngine engine, IAuthorizatio
 
 	private static RpcException FeatureNotSupported()
 		=> CreateException(StatusCode.Unimplemented, "The feature is not supported");
+
+	private void EnsureLicensed() {
+		if (!license.IsLicensed)
+			throw CreateException(StatusCode.FailedPrecondition,
+				$"Arrow Flight SQL is not licensed. Required entitlement: {FlightSqlLicense.Entitlement}");
+	}
 }
 
 file static class ServerCallContextExtensions {
