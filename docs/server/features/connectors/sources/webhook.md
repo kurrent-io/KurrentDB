@@ -99,7 +99,7 @@ documented on the [Source Options](../settings.md#source-options) page.
 | `signature:scheme`              | **Description:**<br>Pre-configured provider scheme for HMAC signature validation. Required when the `signature` block is present; you must pick a provider explicitly. Each scheme fully defines the header name, encoding, payload shape, and replay-protection behavior expected by that provider. See [Signature Validation](#signature-validation).<br><br>**Accepted Values:** `"GitHub"`, `"Shopify"`, `"Slack"`, `"Stripe"`<br><br>**Default**: not set (must be specified) |
 | `signature:secret`              | **Description:**<br>Shared HMAC secret, interpreted as UTF-8. When the `signature` block is present, this must be a non-empty string. When the `signature` block is omitted entirely, signature validation is disabled.<br><br>**Default**: not set (validation disabled)                                              |
 | `signature:timestampTolerance`  | **Description:**<br>Maximum allowed clock skew when the chosen scheme requires timestamp validation (Slack, Stripe). Ignored for schemes that do not include a timestamp.<br><br>**Default**: `"00:05:00"` (5 minutes)                                                                                                 |
-| `capturedHeaders`               | **Description:**<br>Allowlist of inbound HTTP header names (case-insensitive) persisted on the written event. Each captured header becomes its own metadata entry on the record, keyed by its lowercased name (e.g. `content-type`). Anything not on this list is never stored. See [Captured Headers](#captured-headers).<br><br>**Default**: `["Content-Type", "User-Agent", "X-Request-Id"]` |
+| `allowedHeaders`                | **Description:**<br>Allowlist of inbound HTTP header names (case-insensitive) persisted on the written event. Each allowed header becomes its own metadata entry on the record, keyed by its lowercased name (e.g. `content-type`). Anything not on this list is never stored. Webhook providers routinely send headers that carry credentials (`Authorization`, `Cookie`, API keys), so only add headers you have verified do not contain secrets.<br><br>**Default**: `["Content-Type", "User-Agent", "X-Request-Id"]` |
 
 ## Ingest Endpoint
 
@@ -286,51 +286,3 @@ Content-Type: application/json
 }
 ```
 
-## Produced Events
-
-Each accepted webhook request produces one event with the following shape:
-
-| Part       | Value                                                                                                                                                 |
-|------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Stream     | The `stream` value returned by the routing script                                                                                                     |
-| Event type | The `schema` value returned by the routing script, or `WebhookReceived` when `schema` is omitted                                                      |
-| Data       | The JSON payload                                                                                                                                      |
-| Headers    | One metadata entry per captured inbound HTTP header (keyed by lowercased name), plus the [default headers](../features.md#headers) added by KurrentDB |
-
-## Captured Headers
-
-The connector persists inbound HTTP headers on the event record only when
-they match the `capturedHeaders` allowlist. Each captured header becomes its
-own metadata entry on the record, keyed by its lowercased name (for example,
-the inbound `Content-Type` header is stored as `content-type`).
-
-This is deliberate: webhook providers routinely send HTTP headers that carry
-credentials (`Authorization`, `Cookie`, API keys, custom bearer tokens), and
-persisting them verbatim would leak secrets into the event store and downstream
-logs.
-
-The default allowlist keeps a small set of non-sensitive diagnostic headers:
-`Content-Type`, `User-Agent`, `X-Request-Id`.
-
-To capture additional provider-specific headers (for example, GitHub's
-`X-GitHub-Event` and `X-GitHub-Delivery`), extend the list explicitly:
-
-```json
-{
-  "settings": {
-    "instanceTypeName": "webhook-source",
-    "routingScript": "<base64-encoded route() function>",
-    "capturedHeaders": [
-      "Content-Type",
-      "User-Agent",
-      "X-Request-Id",
-      "X-GitHub-Event",
-      "X-GitHub-Delivery"
-    ]
-  }
-}
-```
-
-Only add headers you have verified do not contain credentials. Never add
-`Authorization`, `Proxy-Authorization`, `Cookie`, `Set-Cookie`, or any
-provider-specific header carrying a bearer token, signing secret, or API key.
