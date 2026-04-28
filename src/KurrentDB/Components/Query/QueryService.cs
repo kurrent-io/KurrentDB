@@ -65,7 +65,14 @@ public static class QueryService {
 			_writer.Add((byte)']');
 		}
 
-		public JsonDocument ToJson() => JsonDocument.Parse(_writer.WrittenMemory);
+		public JsonDocument ToJson() {
+			// JsonDocument.Parse is not applicable here because the lifetime of the returned JsonDocument
+			// is larger than the lifetime of the _writer which keeps the written memory.
+			// JsonDocument.Parse keeps the reference to the original memory block that becomes released
+			// when the reader is closed.
+			var reader = new Utf8JsonReader(_writer.WrittenMemory.Span);
+			return JsonDocument.ParseValue(ref reader);
+		}
 
 		protected override void Dispose(bool disposing) {
 			if (disposing) {
