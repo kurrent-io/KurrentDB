@@ -45,9 +45,6 @@ internal sealed partial class FlightSqlServer(IQueryEngine engine, IAuthorizatio
 
 		EnsureLicensed();
 
-		while (await requestStream.MoveNext(context.CancellationToken)) {
-		}
-
 		// for JDBC tooling: return the basic credentials as the bearer token so that JDBC will
 		// submit it as the bearer token in subsequent requests.
 		if (context.RequestHeaders.GetValue("authorization") is
