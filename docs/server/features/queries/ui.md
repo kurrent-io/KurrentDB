@@ -47,30 +47,30 @@ The query engine exposes one table for the default index `kdb.records` and one t
 It's possible to query derived data from those tables using standard SQL syntax. For example, to list all streams in the database, you can use the following query:
 
 ```sql
-SELECT DISTINCT stream FROM kdb.records;
+SELECT DISTINCT stream FROM kdb.records
 ```
 To get all events of type `OrderPlaced` from the `order` category, you can use:
 
-```sqlsql
-SELECT * FROM kdb.records WHERE schema_name = 'OrderPlaced' AND category='order';
+```sql
+SELECT * FROM kdb.records WHERE schema_name = 'OrderPlaced' AND category='order'
 ```
 
 There's no virtual table for event types, but you can query distinct event types using:
 
 ```sql
-SELECT DISTINCT schema_name FROM kdb.records;
+SELECT DISTINCT schema_name FROM kdb.records
 ```
 
 Note that using `SELECT *` will forcibly read event data and metadata for all events, which may lead to high read load. It's recommended to select only the necessary fields. If the query only retrieves indexed fields, the query _would not_ read event data and metadata.
 
 ::: info Example
-For example, the query that count streams in the database (`SELECT count(DISTINCT stream) FROM kdb.records;`) over 130 million events in 1 million streams will execute in less than two seconds on a decent machine. However, a query that retrieves all fields for all events (`SELECT * FROM kdb.records;`) would take much longer and generate a large number of read requests, as it would need to read event data and metadata for all events. In addition, it will enumerate the whole query result and eventually run out of memory either in the browser or on the server side.
+For example, the query that count streams in the database (`SELECT count(DISTINCT stream) FROM kdb.records`) over 130 million events in 1 million streams will execute in less than two seconds on a decent machine. However, a query that retrieves all fields for all events (`SELECT * FROM kdb.records`) would take much longer and generate a large number of read requests, as it would need to read event data and metadata for all events. In addition, it will enumerate the whole query result and eventually run out of memory either in the browser or on the server side.
 :::
 
 For querying data and metadata fields, you can use JSON lambda-based predicates that are compatible with PostgreSQL JSON query syntax. For example, to find events where the `amount` field in the event data is greater than 100, you can use:
 
 ```sql
-SELECT * FROM kdb.records WHERE stream='orders-123' data->>'amount' > 100;
+SELECT * FROM kdb.records WHERE stream='orders-123' data->>'amount' > 100
 ```
 
 ## Using the Queries UI
