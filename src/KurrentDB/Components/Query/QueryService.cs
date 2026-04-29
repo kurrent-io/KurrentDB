@@ -52,16 +52,19 @@ public static class QueryService {
 
 		private void Consume(IQueryResultReader resultReader, CancellationToken token) {
 			_writer.Add((byte)'[');
+			var wroteRow = false;
 			while (resultReader.TryRead()) {
 				foreach (ref readonly var row in resultReader.Chunk[0].BlobRows) {
 					_writer.Write(row.AsSpan());
 					_writer.Add((byte)',');
+					wroteRow = true;
 					token.ThrowIfCancellationRequested();
 				}
 			}
 
 			// Remove trailing comma
-			_writer.WrittenCount--;
+			if (wroteRow)
+				_writer.WrittenCount--;
 			_writer.Add((byte)']');
 		}
 
