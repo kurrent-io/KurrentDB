@@ -1,6 +1,6 @@
-# Database Connectivity
+# SQL
 
-KurrentDB v26.1 introduces support of SQL and [Arrow Flight SQL](https://arrow.apache.org/docs/format/FlightSql.html) protocol that can be used to execute queries on indexes. Arrow Flight SQL is available for the broad set of programming languages and runtimes:
+KurrentDB v26.1 introduces support for SQL and the [Arrow Flight SQL](https://arrow.apache.org/docs/format/FlightSql.html) protocol that can be used to execute queries on indexes. Arrow Flight SQL clients are available for the broad set of programming languages and runtimes:
 * JDBC driver for Java
 * Python
 * ADO.NET for C#/F#
@@ -9,15 +9,15 @@ KurrentDB v26.1 introduces support of SQL and [Arrow Flight SQL](https://arrow.a
 * Go
 * JavaScript/NodeJS
 
-A full set of existing implementations you can find [here](https://arrow.apache.org/docs/implementations.html).
+A full set of existing implementations can be found [here](https://arrow.apache.org/docs/implementations.html).
 
-If high-level database driver is not available for necessary language, you can generate client from gRPC Interface Definition Language for FlightSql protocol.
+If a high-level database driver is not available for your language, you can generate a client from the gRPC Interface Definition Language for the FlightSql protocol.
 
 ## Introduction
 
-You need to install necessary packages or modules for required language/runtime. Then, the connection string must be configured. FlightSQL protocol is exposed as gRPC endpoint on the same port as the main KurrentDB gRPC API and described in [Networking](../../configuration/networking.md) article. For Python library, the example is `grpc://localhost:2113`.
+To access the Arrow Flight SQL API programmatically, you need to install the necessary packages or modules for your language/runtime. Then, the connection string must be configured. The FlightSQL protocol is exposed as a gRPC endpoint on the same port as the main KurrentDB gRPC API and described in [Networking](../../configuration/networking.md) article. For Python library, the example is `grpc://localhost:2113`.
 
-Also, the authentication is required to access FlightSQL protocol. Currently, the administrative privileges in KurrentDB are required to run the queries. By default, it's `admin` user. Depending on the client library, valid credentials needs to be passed to the server.
+Authentication as a user authorized to read the $all stream is required query using the FlightSQL protocol.
 
 Note that only **SELECT** statements are allowed. **INSERT**, **UPDATE**, stored procedures or others DDL statements are not supported.
 
@@ -26,39 +26,43 @@ Note that only **SELECT** statements are allowed. **INSERT**, **UPDATE**, stored
 KurrentDB supports PostgreSQL-compatible SQL dialect. System tables are accessible via **kdb** schema. All user-defined indices are available through **usr** table schema. The default index is available through **kdb.records** schema.
 
 The following example demonstrates how to select all records in the specified category:
+
 ```sql
 SELECT data FROM kdb.records WHERE category='my_category'
 ```
 
-Every user-defined index has its equivalent table in `usr` schema to be queried. Examine [this article](./user-defined.md) first to configure a user-defined index.
+Every user-defined index has its equivalent table in `usr` schema to be queried. See the [user defined indexes documentation](../indexes/user-defined.md) first to configure a user-defined index.
 
 ### Default Index Table
 
 List of available columns:
 * `log_position` of type `INT64` - the position of the record within the log
 * `created_at` of type `INT64` - Unix UTC timestamp of when the record was saved to the log
-* `expires_at` of type `INT64`
 * `stream` of type `VARCHAR` - stream identifier
-* `stream_revision` - stream revision
-* `schema_name` of type `VARCHAR` - record schema
+* `stream_revision` of type `INT64` - stream revision
+* `schema_name` of type `VARCHAR` - record schema (traditionally: event type)
 * `schema_id` of type `VARCHAR` - record schema identifier
 * `schema_format` of type `VARCHAR` - record schema format. Typically, it's `json`
 * `category` of type `VARCHAR` - record category
 * `record_id` of type BLOB (16 bytes) - unique identifier of the record
-* `data` of type `VARCHAR` - the payload of the record. In case of JSON, you can cast this column to `JSON` data type and use arrow navigation operators to access the inner fields
+* `data` of type `VARCHAR` - the payload of the record. In case of JSON, you can cast this column to `JSON` data type and use arrow navigation operators to access the inner fields. If the payload is binary it is converted to a base64 encoded string.
 * `metadata` of type `VARCHAR` - the metadata of the record in the form of the JSON
 
 ### User-defined Index Table
 
 List of available columns:
 * `log_position` of type `INT64` - the position of the record within the log
-* `stream_revision` - stream revision
+* `stream` of type `VARCHAR` - stream identifier
+* `stream_revision` of type `INT64` - stream revision
+* `schema_name` of type `VARCHAR` - record schema (traditionally: event type)
 * `created_at` of type `INT64` - Unix UTC timestamp of when the record was saved to the log
 * `record_id` of type BLOB (16 bytes) - unique identifier of the record
-* A custom field configured as an index
+* `data` of type `VARCHAR`
+* `metadata` of type `VARCHAR`
+* The custom field configured in the index
 
 ## Supported FlightSQL Features
-Arrow FlightSQL is a rich protocol with many features. Its implementation in KurrentDB supports the following functionality:
+Arrow Flight SQL is a rich protocol with many features. Its implementation in KurrentDB supports the following functionality:
 * Ad-hoc query execution (`CommandStatementQuery` command)
 * Prepared statements and parameters binding
 * Schema discovery for queries and prepared statements
