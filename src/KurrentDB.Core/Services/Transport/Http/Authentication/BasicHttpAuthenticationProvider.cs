@@ -33,15 +33,19 @@ public class BasicHttpAuthenticationProvider(IAuthenticationProvider internalAut
 	private static bool TryDecodeCredential(string value, out string username, out string password) {
 		username = password = default;
 
-		var stringValue = Encoding.UTF8.GetString(System.Convert.FromBase64String(value));
-		var index = stringValue.IndexOf(':');
-		if (index < 0) {
+		try {
+			var stringValue = Encoding.UTF8.GetString(System.Convert.FromBase64String(value));
+			var index = stringValue.IndexOf(':');
+			if (index < 0) {
+				return false;
+			}
+
+			username = stringValue[..index];
+			password = stringValue[(index + 1)..];
+
+			return true;
+		} catch {
 			return false;
 		}
-
-		username = stringValue[..index];
-		password = stringValue[(index + 1)..];
-
-		return true;
 	}
 }
