@@ -204,8 +204,11 @@ public class ClusterVNode<TStreamId> :
 	private readonly bool _disableHttps;
 	private readonly bool _enableUnixSocket;
 	private readonly Func<X509Certificate2> _certificateSelector;
+	private readonly Func<X509Certificate2> _nodeClientCertificateSelector;
 	private readonly Func<X509Certificate2Collection> _trustedRootCertsSelector;
+	private readonly Func<X509Certificate2Collection> _nodeClientTrustedRootCertsSelector;
 	private readonly Func<X509Certificate2Collection> _intermediateCertsSelector;
+	private readonly Func<X509Certificate2Collection> _nodeClientIntermediateCertsSelector;
 	private readonly CertificateDelegates.ServerCertificateValidator _internalServerCertificateValidator;
 	private readonly CertificateDelegates.ClientCertificateValidator _internalClientCertificateValidator;
 	private readonly CertificateDelegates.ServerCertificateValidator _externalServerCertificateValidator;
@@ -511,14 +514,20 @@ public class ClusterVNode<TStreamId> :
 		_queueStatsManager = new QueueStatsManager();
 
 		_certificateSelector = () => _certificateProvider?.Certificate;
+		_nodeClientCertificateSelector = () => _certificateProvider?.NodeClientCertificate;
 		_trustedRootCertsSelector = () => _certificateProvider?.TrustedRootCerts;
+		_nodeClientTrustedRootCertsSelector = () => _certificateProvider?.NodeClientTrustedRootCerts;
 		_intermediateCertsSelector = () =>
-			_certificateProvider?.IntermediateCerts == null
+			_certificateProvider?.IntermediateCerts is not { } intermediates
 				? null
-				: new X509Certificate2Collection(_certificateProvider?.IntermediateCerts);
+				: new X509Certificate2Collection(intermediates);
+		_nodeClientIntermediateCertsSelector = () =>
+			_certificateProvider?.NodeClientIntermediateCerts is not { } intermediates
+				? null
+				: new X509Certificate2Collection(intermediates);
 
 		_internalServerCertificateValidator = (cert, chain, errors, otherNames) => ValidateServerCertificate(cert, chain, errors, _intermediateCertsSelector, _trustedRootCertsSelector, otherNames);
-		_internalClientCertificateValidator = (cert, chain, errors) => ValidateClientCertificate(cert, chain, errors, _intermediateCertsSelector, _trustedRootCertsSelector);
+		_internalClientCertificateValidator = (cert, chain, errors) => ValidateClientCertificate(cert, chain, errors, _nodeClientIntermediateCertsSelector, _nodeClientTrustedRootCertsSelector);
 		_externalServerCertificateValidator = (cert, chain, errors, otherNames) => ValidateServerCertificate(cert, chain, errors, _intermediateCertsSelector, _trustedRootCertsSelector, otherNames);
 
 		var forwardingProxy = new MessageForwardingProxy();
@@ -564,7 +573,7 @@ public class ClusterVNode<TStreamId> :
 		_nodeHttpClientFactory = new NodeHttpClientFactory(
 			uriScheme,
 			_internalServerCertificateValidator,
-			_certificateSelector);
+			_nodeClientCertificateSelector);
 
 		_eventStoreClusterClientCache = new EventStoreClusterClientCache(_mainQueue,
 			(endpoint, publisher) =>
@@ -1508,7 +1517,7 @@ public class ClusterVNode<TStreamId> :
 				GossipAdvertiseInfo.InternalTcp ?? GossipAdvertiseInfo.InternalSecureTcp,
 				options.Cluster.ReadOnlyReplica,
 				!disableInternalTcpTls, _internalServerCertificateValidator,
-				_certificateSelector,
+				_nodeClientCertificateSelector,
 				TimeSpan.FromMilliseconds(options.Interface.ReplicationHeartbeatTimeout),
 				TimeSpan.FromMilliseconds(options.Interface.ReplicationHeartbeatInterval),
 				TimeSpan.FromMilliseconds(options.Database.WriteTimeoutMs));
@@ -1612,7 +1621,10 @@ public class ClusterVNode<TStreamId> :
 				.AddSingleton<IReadOnlyList<IHttpAuthenticationProvider>>(httpAuthenticationProviders)
 				.AddSingleton<Func<(X509Certificate2 Node, X509Certificate2Collection Intermediates,
 						X509Certificate2Collection Roots)>>
-					(() => (_certificateSelector(), _intermediateCertsSelector(), _trustedRootCertsSelector()))
+					(() => (
+						_nodeClientCertificateSelector(),
+						_nodeClientIntermediateCertsSelector(),
+						_nodeClientTrustedRootCertsSelector()))
 				.AddSingleton(_nodeHttpClientFactory)
 				.AddSingleton<IChunkRegistry<IChunkBlob>>(Db.Manager)
 				.AddSingleton<IVersionedFileNamingStrategy>(Db.Manager.FileSystem.LocalNamingStrategy)
@@ -1702,7 +1714,7 @@ public class ClusterVNode<TStreamId> :
 		_mainBus.Subscribe<SystemMessage.SystemReady>(_startup);
 		_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(_startup);
 
-		var certificateExpiryMonitor = new CertificateExpiryMonitor(_mainQueue, _certificateSelector, Log);
+		var certificateExpiryMonitor = new CertificateExpiryMonitor(_mainQueue, Log, _certificateSelector, _nodeClientCertificateSelector);
 		_mainBus.Subscribe<SystemMessage.SystemStart>(certificateExpiryMonitor);
 		_mainBus.Subscribe<MonitoringMessage.CheckCertificateExpiry>(certificateExpiryMonitor);
 

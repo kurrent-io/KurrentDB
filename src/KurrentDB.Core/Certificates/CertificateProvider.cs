@@ -9,6 +9,9 @@ public abstract class CertificateProvider {
 	public X509Certificate2 Certificate;
 	public X509Certificate2Collection IntermediateCerts;
 	public X509Certificate2Collection TrustedRootCerts;
+	public X509Certificate2 NodeClientCertificate;
+	public X509Certificate2Collection NodeClientIntermediateCerts;
+	public X509Certificate2Collection NodeClientTrustedRootCerts;
 	public abstract LoadCertificateResult LoadCertificates(ClusterVNodeOptions options);
 	public abstract string GetReservedNodeCommonName();
 }

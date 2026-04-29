@@ -194,6 +194,98 @@ If multiple matching root certificates are found, then the root certificate with
 | YAML                 | `TrustedRootCertificateSubjectName`                |
 | Environment variable | `KURRENTDB_TRUSTED_ROOT_CERTIFICATE_SUBJECT_NAME`  |
 
+### Node client certificate file
+
+<Badge text="Experimental: Subject to change" type="warning" vertical="middle"/>
+
+By default, a KurrentDB node uses the same certificate for both inbound connections (server authentication) and outbound connections to other nodes (client authentication). The node client certificate settings allow you to configure a separate certificate for outbound connections to other nodes.
+
+This is useful when you want to use a certificate from a public CA for inbound client connections (which may only have the `serverAuth` EKU), while using a certificate from a private CA with both the `serverAuth` and `clientAuth` EKUs for inter-node communication. Using dual certificates this way is an alternative to enabling [`DisableClientAuthEkuValidation`](#disable-client-authentication-eku-validation) and keeps the node in compliance with RFC 5280.
+
+If no node client certificate is configured, the node will use its main certificate as its client certificate.
+
+The node client certificate must have both the `serverAuth` and `clientAuth` Extended Key Usages (EKUs), or no EKU extension at all, so that receiving nodes can identify it as a node certificate.
+
+User certificates (for X.509 client certificate authentication) must share a root CA with the node's client certificate.
+
+| Format               | Syntax                                      |
+|:---------------------|:--------------------------------------------|
+| Command line         | `--node-client-certificate-file`            |
+| YAML                 | `NodeClientCertificateFile`                 |
+| Environment variable | `KURRENTDB_NODE_CLIENT_CERTIFICATE_FILE`    |
+
+| Format               | Syntax                                          |
+|:---------------------|:------------------------------------------------|
+| Command line         | `--node-client-certificate-password`            |
+| YAML                 | `NodeClientCertificatePassword`                 |
+| Environment variable | `KURRENTDB_NODE_CLIENT_CERTIFICATE_PASSWORD`    |
+
+| Format               | Syntax                                                 |
+|:---------------------|:-------------------------------------------------------|
+| Command line         | `--node-client-certificate-private-key-file`           |
+| YAML                 | `NodeClientCertificatePrivateKeyFile`                  |
+| Environment variable | `KURRENTDB_NODE_CLIENT_CERTIFICATE_PRIVATE_KEY_FILE`   |
+
+| Format               | Syntax                                                     |
+|:---------------------|:-----------------------------------------------------------|
+| Command line         | `--node-client-certificate-private-key-password`           |
+| YAML                 | `NodeClientCertificatePrivateKeyPassword`                  |
+| Environment variable | `KURRENTDB_NODE_CLIENT_CERTIFICATE_PRIVATE_KEY_PASSWORD`   |
+
+### Node client certificate store (Windows)
+
+<Badge text="Experimental: Subject to change" type="warning" vertical="middle"/>
+
+You can also load the node client certificate from the Windows certificate store.
+
+| Format               | Syntax                                                |
+|:---------------------|:------------------------------------------------------|
+| Command line         | `--node-client-certificate-store-location`            |
+| YAML                 | `NodeClientCertificateStoreLocation`                  |
+| Environment variable | `KURRENTDB_NODE_CLIENT_CERTIFICATE_STORE_LOCATION`    |
+
+| Format               | Syntax                                            |
+|:---------------------|:--------------------------------------------------|
+| Command line         | `--node-client-certificate-store-name`            |
+| YAML                 | `NodeClientCertificateStoreName`                  |
+| Environment variable | `KURRENTDB_NODE_CLIENT_CERTIFICATE_STORE_NAME`    |
+
+| Format               | Syntax                                            |
+|:---------------------|:--------------------------------------------------|
+| Command line         | `--node-client-certificate-thumbprint`            |
+| YAML                 | `NodeClientCertificateThumbprint`                 |
+| Environment variable | `KURRENTDB_NODE_CLIENT_CERTIFICATE_THUMBPRINT`    |
+
+| Format               | Syntax                                              |
+|:---------------------|:----------------------------------------------------|
+| Command line         | `--node-client-certificate-subject-name`            |
+| YAML                 | `NodeClientCertificateSubjectName`                  |
+| Environment variable | `KURRENTDB_NODE_CLIENT_CERTIFICATE_SUBJECT_NAME`    |
+
+| Format               | Syntax                                                           |
+|:---------------------|:-----------------------------------------------------------------|
+| Command line         | `--node-client-trusted-root-certificate-store-location`          |
+| YAML                 | `NodeClientTrustedRootCertificateStoreLocation`                  |
+| Environment variable | `KURRENTDB_NODE_CLIENT_TRUSTED_ROOT_CERTIFICATE_STORE_LOCATION`  |
+
+| Format               | Syntax                                                       |
+|:---------------------|:-------------------------------------------------------------|
+| Command line         | `--node-client-trusted-root-certificate-store-name`          |
+| YAML                 | `NodeClientTrustedRootCertificateStoreName`                  |
+| Environment variable | `KURRENTDB_NODE_CLIENT_TRUSTED_ROOT_CERTIFICATE_STORE_NAME`  |
+
+| Format               | Syntax                                                       |
+|:---------------------|:-------------------------------------------------------------|
+| Command line         | `--node-client-trusted-root-certificate-thumbprint`          |
+| YAML                 | `NodeClientTrustedRootCertificateThumbprint`                 |
+| Environment variable | `KURRENTDB_NODE_CLIENT_TRUSTED_ROOT_CERTIFICATE_THUMBPRINT`  |
+
+| Format               | Syntax                                                         |
+|:---------------------|:---------------------------------------------------------------|
+| Command line         | `--node-client-trusted-root-certificate-subject-name`          |
+| YAML                 | `NodeClientTrustedRootCertificateSubjectName`                  |
+| Environment variable | `KURRENTDB_NODE_CLIENT_TRUSTED_ROOT_CERTIFICATE_SUBJECT_NAME`  |
+
 ## Certificate generation tool
 
 Kurrent provides the interactive Certificate Generation CLI, which creates certificates signed by a private, auto-generated CA for KurrentDB. You can use the [configuration wizard](https://configurator.eventstore.com), that will provide you exact CLI commands that you need to run to generate certificates matching your configuration.

@@ -4,6 +4,20 @@ order: 2
 
 # What's New
 
+## New in 26.1
+
+### Dual certificate support for cluster communication
+
+<Badge text="Experimental: Subject to change" type="warning" vertical="middle"/>
+
+KurrentDB now supports configuring a separate certificate for outbound connections to other cluster nodes. This allows using a publicly trusted certificate to authenticate the node as a server (so that client applications need not install a private CA root) while using a privately issued certificate to authenticate the node as a client to other nodes.
+
+This addresses the industry-wide removal of the `clientAuth` Extended Key Usage from public CA certificates, driven by changes to the Chrome Root Program policy. With dual certificates, clusters can use public CA server certificates without the `DisableClientAuthEkuValidation` workaround, while remaining compliant with RFC 5280.
+
+See [Protocol security](../security/protocol-security.md#node-client-certificate-file) for configuration details.
+
+This feature is experimental in the sense that the configuration options and behavior are subject to change according to feedback from the community.
+
 ## New in 26.0
 
 Features

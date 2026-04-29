@@ -71,7 +71,8 @@ public static class ClusterVNodeOptionsExtensions {
 			Insecure = true
 		},
 		ServerCertificate = null,
-		TrustedRootCertificates = null
+		TrustedRootCertificates = null,
+		NodeClientTrustedRootCertificates = null,
 	};
 
 	/// <summary>
@@ -87,7 +88,8 @@ public static class ClusterVNodeOptionsExtensions {
 				Insecure = false,
 			},
 			ServerCertificate = serverCertificate,
-			TrustedRootCertificates = trustedRootCertificates
+			TrustedRootCertificates = trustedRootCertificates,
+			NodeClientTrustedRootCertificates = trustedRootCertificates,
 		};
 
 	/// <summary>
@@ -203,33 +205,95 @@ public static class ClusterVNodeOptionsExtensions {
 			return (options.ServerCertificate!, null);
 		}
 
+		if (!TryLoadCertificate(
+			logLabel: "node",
+			store: new StoreCertInfo(
+				StoreLocation: options.CertificateStore.CertificateStoreLocation,
+				StoreName: options.CertificateStore.CertificateStoreName,
+				SubjectName: options.CertificateStore.CertificateSubjectName,
+				Thumbprint: options.CertificateStore.CertificateThumbprint),
+			file: new FileCertInfo(
+				File: options.CertificateFile.CertificateFile,
+				PrivateKeyFile: options.CertificateFile.CertificatePrivateKeyFile,
+				Password: options.CertificateFile.CertificatePassword,
+				PrivateKeyPassword: options.CertificateFile.CertificatePrivateKeyPassword),
+			certificate: out var certificate,
+			intermediates: out var intermediates)) {
 
-		if (!string.IsNullOrWhiteSpace(options.CertificateStore.CertificateStoreLocation)) {
-			var location =
-				CertificateUtils.GetCertificateStoreLocation(options.CertificateStore.CertificateStoreLocation);
-			var name = CertificateUtils.GetCertificateStoreName(options.CertificateStore.CertificateStoreName);
-			return (CertificateUtils.LoadFromStore(location, name, options.CertificateStore.CertificateSubjectName,
-				options.CertificateStore.CertificateThumbprint), null);
+			throw new InvalidConfigurationException(
+				"A certificate is required unless insecure mode (--insecure) is set.");
 		}
 
-		if (!string.IsNullOrWhiteSpace(options.CertificateStore.CertificateStoreName)) {
-			var name = CertificateUtils.GetCertificateStoreName(options.CertificateStore.CertificateStoreName);
-			return (
-				CertificateUtils.LoadFromStore(name, options.CertificateStore.CertificateSubjectName,
-					options.CertificateStore.CertificateThumbprint), null);
-		}
-
-		if (options.CertificateFile.CertificateFile.IsNotEmptyString()) {
-			Log.Information("Loading the node's certificate(s) from file: {path}",
-				options.CertificateFile.CertificateFile);
-			return CertificateUtils.LoadFromFile(options.CertificateFile.CertificateFile,
-				options.CertificateFile.CertificatePrivateKeyFile, options.CertificateFile.CertificatePassword,
-				options.CertificateFile.CertificatePrivateKeyPassword);
-		}
-
-		throw new InvalidConfigurationException(
-			"A certificate is required unless insecure mode (--insecure) is set.");
+		return (certificate, intermediates);
 	}
+
+	/// <summary>
+	/// Tries to load the node client certificate from the options set.
+	/// Returns false if no node client certificate is configured.
+	/// </summary>
+	public static bool TryLoadNodeClientCertificate(
+		this ClusterVNodeOptions options,
+		out X509Certificate2 certificate,
+		out X509Certificate2Collection intermediates) =>
+
+		TryLoadCertificate(
+			logLabel: "node client",
+			store: new StoreCertInfo(
+				StoreLocation: options.NodeClientCertificateStore.NodeClientCertificateStoreLocation,
+				StoreName: options.NodeClientCertificateStore.NodeClientCertificateStoreName,
+				SubjectName: options.NodeClientCertificateStore.NodeClientCertificateSubjectName,
+				Thumbprint: options.NodeClientCertificateStore.NodeClientCertificateThumbprint),
+			file: new FileCertInfo(
+				File: options.NodeClientCertificateFile.NodeClientCertificateFile,
+				PrivateKeyFile: options.NodeClientCertificateFile.NodeClientCertificatePrivateKeyFile,
+				Password: options.NodeClientCertificateFile.NodeClientCertificatePassword,
+				PrivateKeyPassword: options.NodeClientCertificateFile.NodeClientCertificatePrivateKeyPassword),
+			certificate: out certificate,
+			intermediates: out intermediates);
+
+	private static bool TryLoadCertificate(
+		string logLabel,
+		StoreCertInfo store,
+		FileCertInfo file,
+		out X509Certificate2 certificate,
+		out X509Certificate2Collection intermediates) {
+
+		if (!string.IsNullOrWhiteSpace(store.StoreLocation)) {
+			var location = CertificateUtils.GetCertificateStoreLocation(store.StoreLocation);
+			var name = CertificateUtils.GetCertificateStoreName(store.StoreName);
+			certificate = CertificateUtils.LoadFromStore(
+				location,
+				name,
+				store.SubjectName,
+				store.Thumbprint);
+			intermediates = null;
+			return true;
+		}
+
+		if (!string.IsNullOrWhiteSpace(store.StoreName)) {
+			var name = CertificateUtils.GetCertificateStoreName(store.StoreName);
+			certificate = CertificateUtils.LoadFromStore(name, store.SubjectName, store.Thumbprint);
+			intermediates = null;
+			return true;
+		}
+
+		if (file.File.IsNotEmptyString()) {
+			Log.Information("Loading the {label} certificate(s) from file: {path}", logLabel, file.File);
+			(certificate, intermediates) = CertificateUtils.LoadFromFile(
+				file.File,
+				file.PrivateKeyFile,
+				file.Password,
+				file.PrivateKeyPassword);
+			return true;
+		}
+
+		certificate = null;
+		intermediates = null;
+		return false;
+	}
+
+	private record StoreCertInfo(string StoreLocation, string StoreName, string SubjectName, string Thumbprint);
+	private record FileCertInfo(string File, string PrivateKeyFile, string Password, string PrivateKeyPassword);
 
 	/// <summary>
 	/// Loads an <see cref="X509Certificate2Collection"/> from the options set.
@@ -242,45 +306,67 @@ public static class ClusterVNodeOptionsExtensions {
 	/// <exception cref="InvalidConfigurationException"></exception>
 	public static X509Certificate2Collection LoadTrustedRootCertificates(this ClusterVNodeOptions options) {
 		if (options.TrustedRootCertificates != null)
+			//used by test code paths only
 			return options.TrustedRootCertificates;
+
+		return LoadTrustedRootsFromStoreOrPath(
+			store: new StoreCertInfo(
+				StoreLocation: options.CertificateStore.TrustedRootCertificateStoreLocation,
+				StoreName: options.CertificateStore.TrustedRootCertificateStoreName,
+				SubjectName: options.CertificateStore.TrustedRootCertificateSubjectName,
+				Thumbprint: options.CertificateStore.TrustedRootCertificateThumbprint),
+			path: options.Certificate.TrustedRootCertificatesPath);
+	}
+
+	/// <summary>
+	/// Loads trusted root certificates for the node client certificate.
+	/// If node-client-specific trusted root store options are not set, falls back to the main
+	/// <see cref="ClusterVNodeOptions.CertificateOptions.TrustedRootCertificatesPath"/>.
+	/// </summary>
+	public static X509Certificate2Collection LoadNodeClientTrustedRootCertificates(this ClusterVNodeOptions options) {
+		if (options.NodeClientTrustedRootCertificates != null)
+			//used by test code paths only
+			return options.NodeClientTrustedRootCertificates;
+
+		return LoadTrustedRootsFromStoreOrPath(
+			new StoreCertInfo(
+				StoreLocation: options.NodeClientCertificateStore.NodeClientTrustedRootCertificateStoreLocation,
+				StoreName: options.NodeClientCertificateStore.NodeClientTrustedRootCertificateStoreName,
+				SubjectName: options.NodeClientCertificateStore.NodeClientTrustedRootCertificateSubjectName,
+				Thumbprint: options.NodeClientCertificateStore.NodeClientTrustedRootCertificateThumbprint),
+			options.Certificate.TrustedRootCertificatesPath);
+	}
+
+	private static X509Certificate2Collection LoadTrustedRootsFromStoreOrPath(StoreCertInfo store, string path) {
 		var trustedRootCerts = new X509Certificate2Collection();
 
-		if (!string.IsNullOrWhiteSpace(options.CertificateStore.TrustedRootCertificateStoreLocation)) {
-			var location =
-				CertificateUtils.GetCertificateStoreLocation(options.CertificateStore
-					.TrustedRootCertificateStoreLocation);
-			var name = CertificateUtils.GetCertificateStoreName(options.CertificateStore
-				.TrustedRootCertificateStoreName);
-			trustedRootCerts.Add(CertificateUtils.LoadFromStore(location, name,
-				options.CertificateStore.TrustedRootCertificateSubjectName,
-				options.CertificateStore.TrustedRootCertificateThumbprint));
+		if (!string.IsNullOrWhiteSpace(store.StoreLocation)) {
+			var location = CertificateUtils.GetCertificateStoreLocation(store.StoreLocation);
+			var name = CertificateUtils.GetCertificateStoreName(store.StoreName);
+			trustedRootCerts.Add(CertificateUtils.LoadFromStore(location, name, store.SubjectName, store.Thumbprint));
 			return trustedRootCerts;
 		}
 
-		if (!string.IsNullOrWhiteSpace(options.CertificateStore.TrustedRootCertificateStoreName)) {
-			var name = CertificateUtils.GetCertificateStoreName(options.CertificateStore
-				.TrustedRootCertificateStoreName);
-			trustedRootCerts.Add(CertificateUtils.LoadFromStore(name,
-				options.CertificateStore.TrustedRootCertificateSubjectName,
-				options.CertificateStore.TrustedRootCertificateThumbprint));
+		if (!string.IsNullOrWhiteSpace(store.StoreName)) {
+			var name = CertificateUtils.GetCertificateStoreName(store.StoreName);
+			trustedRootCerts.Add(CertificateUtils.LoadFromStore(name, store.SubjectName, store.Thumbprint));
 			return trustedRootCerts;
 		}
 
-		if (string.IsNullOrEmpty(options.Certificate.TrustedRootCertificatesPath)) {
+		if (string.IsNullOrEmpty(path)) {
 			throw new InvalidConfigurationException(
-				$"{nameof(options.Certificate.TrustedRootCertificatesPath)} must be specified unless insecure mode (--insecure) is set.");
+				$"{nameof(ClusterVNodeOptions.CertificateOptions.TrustedRootCertificatesPath)} must be specified unless insecure mode (--insecure) is set.");
 		}
 
-		Log.Information("Loading trusted root certificates.");
-		foreach (var (fileName, cert) in CertificateUtils
-					 .LoadAllCertificates(options.Certificate.TrustedRootCertificatesPath)) {
+		Log.Information("Loading trusted root certificates from path: {path}", path);
+		foreach (var (fileName, cert) in CertificateUtils.LoadAllCertificates(path)) {
 			trustedRootCerts.Add(cert);
 			Log.Information("Loading trusted root certificate file: {file}", fileName);
 		}
 
 		if (trustedRootCerts.Count == 0)
 			throw new InvalidConfigurationException(
-				$"No trusted root certificate files were loaded from the specified path: {options.Certificate.TrustedRootCertificatesPath}");
+				$"No trusted root certificate files were loaded from the specified path: {path}");
 		return trustedRootCerts;
 	}
 }

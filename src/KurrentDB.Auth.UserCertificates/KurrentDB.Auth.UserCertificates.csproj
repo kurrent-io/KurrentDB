@@ -9,6 +9,9 @@
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 	</PropertyGroup>
 	<ItemGroup>
+		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
+	</ItemGroup>
+	<ItemGroup>
 		<PackageReference Include="Scrutor" />
 		<PackageReference Include="Serilog" />
 	</ItemGroup>

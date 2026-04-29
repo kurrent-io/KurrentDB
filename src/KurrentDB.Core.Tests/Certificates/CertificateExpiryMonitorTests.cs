@@ -37,7 +37,7 @@ public class CertificateExpiryMonitorTests : with_certificates {
 	public void on_start() {
 		// given
 		var certificate = GenCertificate(TimeSpan.FromDays(60));
-		var sut = new CertificateExpiryMonitor(_publisher, () => certificate, _logger);
+		var sut = new CertificateExpiryMonitor(_publisher, _logger, () => certificate);
 
 		// when
 		sut.Handle(new SystemMessage.SystemStart());
@@ -51,7 +51,7 @@ public class CertificateExpiryMonitorTests : with_certificates {
 	public void certificate_is_going_to_expire_within_30_days() {
 		// given
 		var certificate = GenCertificate(TimeSpan.FromDays(29));
-		var sut = new CertificateExpiryMonitor(_publisher, () => certificate, _logger);
+		var sut = new CertificateExpiryMonitor(_publisher, _logger, () => certificate);
 
 		// when
 		sut.Handle(new MonitoringMessage.CheckCertificateExpiry());
@@ -62,8 +62,8 @@ public class CertificateExpiryMonitorTests : with_certificates {
 		Assert.IsInstanceOf<MonitoringMessage.CheckCertificateExpiry>(schedule.ReplyMessage);
 
 		var logMessage = _logger.LogMessages.Single();
-		Assert.AreEqual(
-			"Certificates are going to expire in 29.0 days",
+		StringAssert.Contains(
+			"is going to expire in 29.0 days",
 			logMessage.RenderMessage());
 	}
 
@@ -71,7 +71,7 @@ public class CertificateExpiryMonitorTests : with_certificates {
 	public void certificate_is_not_going_to_expire_within_30_days() {
 		// given
 		var certificate = GenCertificate(TimeSpan.FromDays(31));
-		var sut = new CertificateExpiryMonitor(_publisher, () => certificate, _logger);
+		var sut = new CertificateExpiryMonitor(_publisher, _logger, () => certificate);
 
 		// when
 		sut.Handle(new MonitoringMessage.CheckCertificateExpiry());
