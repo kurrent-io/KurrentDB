@@ -48,6 +48,15 @@ internal sealed partial class FlightSqlServer(IQueryEngine engine, IAuthorizatio
 		while (await requestStream.MoveNext(context.CancellationToken)) {
 		}
 
+		// for JDBC tooling: return the basic credentials as the bearer token so that JDBC will
+		// submit it as the bearer token in subsequent requests.
+		if (context.RequestHeaders.GetValue("authorization") is
+			['B' or 'b', 'a', 's', 'i', 'c', ' ', .. var credentials]) {
+			await context.WriteResponseHeadersAsync(new Metadata {
+				{ "authorization", $"Bearer {credentials}" }
+			});
+		}
+
 		await responseStream.WriteAsync(new FlightHandshakeResponse());
 	}
 

@@ -13,7 +13,13 @@ public class BasicHttpAuthenticationProvider(IAuthenticationProvider internalAut
 
 	public bool Authenticate(HttpContext context, out HttpAuthenticationRequest request) {
 		if (context.Request.Headers.TryGetValue("authorization", out var values) && values.Count == 1 &&
-			AuthenticationHeaderValue.TryParse(values[0], out var authenticationHeader) && authenticationHeader.Scheme == "Basic" &&
+			AuthenticationHeaderValue.TryParse(values[0], out var authenticationHeader) &&
+			(authenticationHeader.Scheme
+				is "Basic"
+				// we accept basic credentials as a bearer token for compatibility
+				// with the Handshake implementation in FlightSqlServer
+				or "Bearer"
+			) &&
 			TryDecodeCredential(authenticationHeader.Parameter, out var username, out var password)) {
 			request = new HttpAuthenticationRequest(context, username, password);
 			internalAuthenticationProvider.Authenticate(request);
