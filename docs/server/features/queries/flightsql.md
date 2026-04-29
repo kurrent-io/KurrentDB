@@ -1,5 +1,7 @@
 # SQL
 
+<wbr><Badge type="info" vertical="middle" text="License Required"/>
+
 KurrentDB v26.1 introduces support for SQL and the [Arrow Flight SQL](https://arrow.apache.org/docs/format/FlightSql.html) protocol that can be used to execute queries on indexes. Arrow Flight SQL clients are available for the broad set of programming languages and runtimes:
 * JDBC driver for Java
 * Python

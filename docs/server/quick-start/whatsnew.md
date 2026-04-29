@@ -65,7 +65,7 @@ See the [documentation](../diagnostics/integrations.md#per-signal-otlp-endpoints
 
 <Badge type="info" vertical="middle" text="License Required"/>
 
-The new setting `OAuth::DisableCodeChallengeMethodsSupportedValidation` disables validation of the `code_challenge_methods_supported` field in the identity provider's discovery document.
+The new setting `OAuth:DisableCodeChallengeMethodsSupportedValidation` disables validation of the `code_challenge_methods_supported` field in the identity provider's discovery document.
 
 Enable this when using an identity provider such as Microsoft Entra that supports PKCE but does not advertise it in the discovery document.
 
@@ -75,7 +75,7 @@ See the [documentation](../security/user-authentication.md#oauth-authentication)
 
 <Badge type="info" vertical="middle" text="License Required"/>
 
-The OAuth and Ldaps plugins are now also able to read configuration settings from environment variables and/or command line options. Previously, and in contrast to all the other configuration options, the OAuth and Ldaps plugins could only take their configuration from a file, and not from the environment or command line options.
+The OAuth and Ldap plugins are now also able to read configuration settings from environment variables and/or command line options. Previously, and in contrast to all the other configuration options, the OAuth and Ldap plugins could only take their configuration from a file.
 
 ### DisableClientAuthEkuValidation Option
 
@@ -87,7 +87,7 @@ See the [documentation](../security/protocol-security.md#disable-client-authenti
 
 ### Projections Access Created Property
 
-Javascript projections can now access the `created` property on events, which is the ISO 8601 timestamp of when the event was written to the database. This applies to the traditional engine and also the experimental V2 engine.
+JavaScript projections can now access the `created` property on events, which is the ISO 8601 timestamp of when the event was written to the database. This applies to the traditional engine and also the experimental V2 engine.
 
 
 ## New in 26.0
