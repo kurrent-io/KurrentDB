@@ -1,7 +1,5 @@
 # Queries UI
 
-<wbr><Badge type="info" vertical="middle" text="License Required"/>
-
 The KurrentDB Web Admin UI provides a basic interface to write and run ad-hoc queries against your event streams. This is useful for quick analysis and exploration of your data without needing to set up a full projection.
 
 ::: important
@@ -16,7 +14,7 @@ When querying event data and metadata, keep in mind that the query engine proces
 
 Before v25.1, KurrentDB users had to rely on projections or external tools to query event data. We now want to offer a simpler way to run ad-hoc queries directly from the Web Admin UI, and using other protocols in the future.
 
-There was already a way to run ad-hoc queries using [JavaScript projections](../projections/custom.md) using the Projections - Query screen, but that requires leaning the projections API and JavaScript. The new Queries UI provides a more straightforward way to run simple queries using SQL. It is powered by the [Secondary Indexes](../indexes/secondary.md) feature.
+There was already a way to run ad-hoc queries using [JavaScript projections](../projections/custom.md) using the Projections - Query screen, but that requires learning the projections API and JavaScript. The new Queries UI provides a more straightforward way to run simple queries using SQL. It is powered by the [Secondary Indexes](../indexes/secondary.md) feature.
 
 The primary goal of this feature in KurrentDB v25.1 is to provide a way to run ad-hoc queries for quick data exploration and analysis. It doesn't yet aim to replace the need for read models that would be used in production and address complex querying needs.
 
@@ -49,6 +47,7 @@ It's possible to query derived data from those tables using standard SQL syntax.
 ```sql
 SELECT DISTINCT stream FROM kdb.records
 ```
+
 To get all events of type `OrderPlaced` from the `order` category, you can use:
 
 ```sql
