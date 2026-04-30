@@ -92,7 +92,7 @@ the same query capability without link-event write amplification or unresolvable
 
 ## Projection threads
 
-Projection threads are used to make calls in to the V8 JavaScript engine, and coordinate dispatching
+In the V1 Projection Engine, projection threads are used to make calls in to the JavaScript engine, and coordinate dispatching
 operations back into the main worker threads of the database. While they carry out none of the operations
 listed directly, they are indirectly involved in all of them.
 

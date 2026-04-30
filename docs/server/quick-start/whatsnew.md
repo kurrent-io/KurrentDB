@@ -34,7 +34,9 @@ See the [documentation](../features/queries/flightsql.md) for details.
 
 <Badge text="Experimental" type="warning" vertical="middle"/>
 
-PLACEHOLDER
+A new projection engine has been added, facilitating partition-based parallel processing.
+
+See the [documentation](../features/projections/engine-v2.md) for details.
 
 ### Multi-stream Appends Improvements
 

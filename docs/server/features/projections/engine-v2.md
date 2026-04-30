@@ -4,6 +4,8 @@ order: 5
 
 # Projections engine V2
 
+<Badge text="Experimental" type="warning" vertical="middle"/>
+
 KurrentDB ships a next-generation projection engine ("V2") alongside the original engine ("V1"). V2 is selected
 per-projection at creation time via the `engineversion` option. V1 remains the default; V2 is opt-in.
 
@@ -17,7 +19,7 @@ section before choosing V2 for an existing workload.
 
 The V2 engine is designed for projections whose bottleneck is handler throughput on the hot path:
 
-- Partition processing runs in parallel across multiple worker slots. V1 processes all events on a single
+- Partition processing runs in parallel. V1 processes all events on a single
   pipeline; V2 hashes events by partition key and dispatches them to independent processors.
 - Checkpoints are written atomically in a single multi-stream write (Chandy–Lamport style snapshot), so
   per-partition state, emitted events, and the checkpoint position are consistent with each other.
@@ -53,7 +55,7 @@ V2 supports the same read selectors as V1 via a single filtered `$all` subscript
 
 Event type filtering, custom partitioning (`partitionBy`), per-stream partitioning (`foreachStream`),
 and `$deleted` notifications all work on V2. Bi-state projections (`$initShared` / `fromStreams`-style
-shared state) are **not** supported — see [limitations](#bi-state-projections-are-not-supported).
+shared state) are **not** yet supported — see [limitations](#bi-state-projections-are-not-supported).
 
 ## Limitations
 
@@ -73,7 +75,7 @@ at checkpoint time. Consumers must either:
 Live result streaming parity is planned for a future release. Projections that rely on live result
 streams should stay on V1 until then.
 
-### Bi-state projections are not supported
+### Bi-state projections are not yet supported
 
 Projections that declare `$initShared` (bi-state projections — handlers operating on a `[partitionState, sharedState]`
 pair, e.g. `function (s, e) { ... }` where `s` is `[s[0], s[1]]`) are not supported by V2.
@@ -139,7 +141,7 @@ is observable as an atomic unit.
 
 - V2 respects the same checkpoint tuning knobs as V1: `CheckpointAfterMs`, `CheckpointHandledThreshold`,
   `CheckpointUnhandledBytesThreshold`.
-- V2 defaults to 4 parallel partition slots.
+- V2 defaults to 4 parallel partition slots. These do not occupy V1 projection worker threads.
 - Per-partition state is held in a bounded in-memory cache sized by `MaxPartitionStateCacheSize`
   (default `100000`). When the cache is full, partitions are evicted; on the next event for an evicted
   partition V2 reloads its state from `$projections-{name}-{partition}-state` before invoking the handler.
