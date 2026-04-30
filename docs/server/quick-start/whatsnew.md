@@ -18,6 +18,7 @@ Changes / Improvements
 * [OAuth and Ldap Plugin Configuration](#oauth-and-ldap-plugin-configuration)
 * [DisableClientAuthEkuValidation Option](#disableclientauthekuvalidation-option)
 * [Projections Access Created Property](#projections-access-created-property)
+* [Connectors: Webhook Source](#connectors-webhook-source)
 
 For breaking changes and deprecation notices, see the [upgrade guide](upgrade-guide.md).
 
@@ -88,6 +89,16 @@ See the [documentation](../security/protocol-security.md#disable-client-authenti
 ### Projections Access Created Property
 
 JavaScript projections can now access the `created` property on events, which is the ISO 8601 timestamp of when the event was written to the database. This applies to the traditional engine and also the experimental V2 engine.
+
+### Connectors: Webhook Source
+
+<Badge type="info" vertical="middle" text="License Required"/>
+
+The Webhook Source Connector receives HTTP requests from external systems and appends them as events to KurrentDB streams, enabling seamless integration with services that publish events via webhooks.
+
+The connector exposes a configurable HTTP endpoint and offers flexible routing options to control which KurrentDB streams receive the incoming requests.
+
+Refer to the [documentation](../features/connectors/sources/webhook.md) for instructions on setting up a Webhook source connector.
 
 
 ## New in 26.0
