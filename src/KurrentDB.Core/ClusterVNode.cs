@@ -1248,6 +1248,31 @@ public class ClusterVNode<TStreamId> :
 		perSubscrBus.Subscribe<SubscriptionMessage.PersistentSubscriptionPushToClients>(persistentSubscription);
 		perSubscrBus.Subscribe<SubscriptionMessage.PersistentSubscriptionsRestart>(persistentSubscription);
 
+		// PERSISTENT SUBSCRIPTIONS TO INDEX
+		_mainBus.Subscribe<StorageMessage.SecondaryIndexCommitted>(perSubscrQueue);
+		_mainBus.Subscribe<StorageMessage.SecondaryIndexDeleted>(perSubscrQueue);
+		_mainBus.Subscribe<ClientMessage.CreatePersistentSubscriptionToIndex>(perSubscrQueue);
+		_mainBus.Subscribe<ClientMessage.UpdatePersistentSubscriptionToIndex>(perSubscrQueue);
+		_mainBus.Subscribe<ClientMessage.DeletePersistentSubscriptionToIndex>(perSubscrQueue);
+		_mainBus.Subscribe<ClientMessage.ConnectToPersistentSubscriptionToIndex>(perSubscrQueue);
+
+		var persistentSubscriptionIndex = new PersistentSubscriptionIndexService(
+			perSubscrQueue, psubDispatcher, _mainQueue, consumerStrategyRegistry, secondaryIndexReaders);
+		perSubscrBus.Subscribe<SubscriptionMessage.PersistentSubscriptionIndexEntriesLoaded>(persistentSubscriptionIndex);
+		perSubscrBus.Subscribe<SubscriptionMessage.PersistentSubscriptionIndexEntryChanged>(persistentSubscription);
+		perSubscrBus.Subscribe<ClientMessage.CreatePersistentSubscriptionToIndex>(persistentSubscriptionIndex);
+		perSubscrBus.Subscribe<ClientMessage.UpdatePersistentSubscriptionToIndex>(persistentSubscriptionIndex);
+		perSubscrBus.Subscribe<ClientMessage.DeletePersistentSubscriptionToIndex>(persistentSubscriptionIndex);
+		perSubscrBus.Subscribe<ClientMessage.ConnectToPersistentSubscriptionToIndex>(persistentSubscriptionIndex);
+		perSubscrBus.Subscribe<ClientMessage.UnsubscribeFromStream>(persistentSubscriptionIndex);
+		perSubscrBus.Subscribe<ClientMessage.PersistentSubscriptionAckEvents>(persistentSubscriptionIndex);
+		perSubscrBus.Subscribe<ClientMessage.PersistentSubscriptionNackEvents>(persistentSubscriptionIndex);
+		perSubscrBus.Subscribe<StorageMessage.SecondaryIndexCommitted>(persistentSubscriptionIndex);
+		perSubscrBus.Subscribe<StorageMessage.SecondaryIndexDeleted>(persistentSubscriptionIndex);
+		perSubscrBus.Subscribe<SubscriptionMessage.PersistentSubscriptionTimerTick>(persistentSubscriptionIndex);
+		perSubscrBus.Subscribe<SystemMessage.BecomeShuttingDown>(persistentSubscriptionIndex);
+		perSubscrBus.Subscribe<SystemMessage.StateChangeMessage>(persistentSubscriptionIndex);
+
 		// STORAGE SCAVENGER
 		var scavengerDispatcher = new IODispatcher(_mainQueue, _mainQueue);
 		_mainBus.Subscribe<ClientMessage.ReadStreamEventsBackwardCompleted>(scavengerDispatcher.BackwardReader);

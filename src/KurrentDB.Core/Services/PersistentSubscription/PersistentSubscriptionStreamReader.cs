@@ -5,9 +5,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Helpers;
 using KurrentDB.Core.Messages;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.UserManagement;
 using Serilog;
 
@@ -21,11 +23,17 @@ public class PersistentSubscriptionStreamReader : IPersistentSubscriptionStreamR
 	private const int MaxExponentialBackoffPower = 10; /*to prevent integer overflow*/
 
 	private readonly IODispatcher _ioDispatcher;
+	private readonly IPublisher _mainQueue;
 	private readonly int _maxPullBatchSize;
 	private readonly Random _random = new Random();
 
-	public PersistentSubscriptionStreamReader(IODispatcher ioDispatcher, int maxPullBatchSize) {
+	public PersistentSubscriptionStreamReader(IODispatcher ioDispatcher, int maxPullBatchSize)
+		: this(ioDispatcher, mainQueue: null, maxPullBatchSize) {
+	}
+
+	public PersistentSubscriptionStreamReader(IODispatcher ioDispatcher, IPublisher mainQueue, int maxPullBatchSize) {
 		_ioDispatcher = ioDispatcher;
+		_mainQueue = mainQueue;
 		_maxPullBatchSize = maxPullBatchSize;
 	}
 
@@ -51,45 +59,74 @@ public class PersistentSubscriptionStreamReader : IPersistentSubscriptionStreamR
 		Action<string> onError, int retryCount) {
 		var actualBatchSize = GetBatchSize(batchSize);
 
-		if (eventSource.FromStream) {
-			_ioDispatcher.ReadForward(
-				eventSource.EventStreamId, startPosition.StreamEventNumber, Math.Min(countToLoad, actualBatchSize),
-				resolveLinkTos, SystemAccounts.System, new ResponseHandler(onEventsFound, onEventsSkipped, onError, skipFirstEvent).FetchCompleted,
-				async () => await HandleTimeout(eventSource.EventStreamId),
-				Guid.NewGuid());
-		} else if (eventSource.FromAll) {
-			if (eventSource.EventFilter is null) {
-				_ioDispatcher.ReadAllForward(
-					startPosition.TFPosition.Commit,
-					startPosition.TFPosition.Prepare,
-					Math.Min(countToLoad, actualBatchSize),
-					resolveLinkTos,
-					true,
-					null,
-					SystemAccounts.System,
-					null,
-					new ResponseHandler(onEventsFound, onEventsSkipped, onError, skipFirstEvent).FetchAllCompleted,
-					async () => await HandleTimeout(SystemStreams.AllStream),
+		switch (eventSource.Kind) {
+			case EventSourceKind.Stream:
+				_ioDispatcher.ReadForward(
+					eventSource.EventStreamId, startPosition.StreamEventNumber, Math.Min(countToLoad, actualBatchSize),
+					resolveLinkTos, SystemAccounts.System, new ResponseHandler(onEventsFound, onEventsSkipped, onError, skipFirstEvent).FetchCompleted,
+					async () => await HandleTimeout(eventSource.EventStreamId),
 					Guid.NewGuid());
-			} else {
-				var maxSearchWindow = Math.Max(actualBatchSize, maxWindowSize);
-				_ioDispatcher.ReadAllForwardFiltered(
-					startPosition.TFPosition.Commit,
-					startPosition.TFPosition.Prepare,
-					Math.Min(countToLoad, actualBatchSize),
-					resolveLinkTos,
-					true,
-					maxSearchWindow,
-					null,
-					eventSource.EventFilter,
-					SystemAccounts.System,
-					null,
-					new ResponseHandler(onEventsFound, onEventsSkipped, onError, skipFirstEvent).FetchAllFilteredCompleted,
-					async () => await HandleTimeout($"{SystemStreams.AllStream} with filter {eventSource.EventFilter}"),
-					Guid.NewGuid());
-			}
-		} else {
-			throw new InvalidOperationException();
+				break;
+			case EventSourceKind.All:
+				if (eventSource.EventFilter is null) {
+					_ioDispatcher.ReadAllForward(
+						startPosition.TFPosition.Commit,
+						startPosition.TFPosition.Prepare,
+						Math.Min(countToLoad, actualBatchSize),
+						resolveLinkTos,
+						true,
+						null,
+						SystemAccounts.System,
+						null,
+						new ResponseHandler(onEventsFound, onEventsSkipped, onError, skipFirstEvent).FetchAllCompleted,
+						async () => await HandleTimeout(SystemStreams.AllStream),
+						Guid.NewGuid());
+				} else {
+					var maxSearchWindow = Math.Max(actualBatchSize, maxWindowSize);
+					_ioDispatcher.ReadAllForwardFiltered(
+						startPosition.TFPosition.Commit,
+						startPosition.TFPosition.Prepare,
+						Math.Min(countToLoad, actualBatchSize),
+						resolveLinkTos,
+						true,
+						maxSearchWindow,
+						null,
+						eventSource.EventFilter,
+						SystemAccounts.System,
+						null,
+						new ResponseHandler(onEventsFound, onEventsSkipped, onError, skipFirstEvent).FetchAllFilteredCompleted,
+						async () => await HandleTimeout($"{SystemStreams.AllStream} with filter {eventSource.EventFilter}"),
+						Guid.NewGuid());
+				}
+				break;
+			case EventSourceKind.Index:
+				if (_mainQueue is null)
+					throw new InvalidOperationException("MainQueue publisher is required for index reads.");
+
+				var correlationId = Guid.NewGuid();
+				var handler = new ResponseHandler(onEventsFound, onEventsSkipped, onError, skipFirstEvent);
+				_mainQueue.Publish(new ClientMessage.ReadIndexEventsForward(
+					internalCorrId: correlationId,
+					correlationId: correlationId,
+					envelope: new CallbackEnvelope(msg => {
+						if (msg is ClientMessage.ReadIndexEventsForwardCompleted completed)
+							handler.FetchIndexCompleted(completed);
+						else
+							onError($"Unexpected message type {msg.GetType().Name} when reading index {eventSource.IndexName}");
+					}),
+					indexName: eventSource.IndexName,
+					commitPosition: startPosition.TFPosition.Commit,
+					preparePosition: startPosition.TFPosition.Prepare,
+					excludeStart: false,
+					maxCount: Math.Min(countToLoad, actualBatchSize),
+					requireLeader: false,
+					validationTfLastCommitPosition: null,
+					user: SystemAccounts.System,
+					replyOnExpired: false,
+					pool: null));
+				break;
+			default:
+				throw new InvalidOperationException($"Unexpected event source kind: {eventSource.Kind}");
 		}
 
 		async Task HandleTimeout(string streamName) {
@@ -175,6 +212,32 @@ public class PersistentSubscriptionStreamReader : IPersistentSubscriptionStreamR
 					break;
 				default:
 					_onError(msg.Error ?? $"Error reading stream: {SystemStreams.AllStream} at position: {msg.CurrentPos}");
+					break;
+			}
+		}
+
+		public void FetchIndexCompleted(ClientMessage.ReadIndexEventsForwardCompleted msg) {
+			switch (msg.Result) {
+				case ReadIndexResult.Success:
+					var events = _skipFirstEvent ? msg.Events.Skip(1).ToArray() : (IReadOnlyList<ResolvedEvent>)msg.Events;
+					IPersistentSubscriptionStreamPosition nextPos;
+					if (msg.Events.Count > 0) {
+						var last = msg.Events[^1].OriginalPosition
+							?? throw new InvalidOperationException("OriginalPosition was not present on index event");
+						nextPos = new PersistentSubscriptionAllStreamPosition(last.CommitPosition, last.PreparePosition);
+					} else {
+						nextPos = new PersistentSubscriptionAllStreamPosition(msg.CurrentPos.CommitPosition, msg.CurrentPos.PreparePosition);
+					}
+					_onFetchCompleted(events, nextPos, msg.IsEndOfStream);
+					break;
+				case ReadIndexResult.AccessDenied:
+					_onError("Read access denied for index");
+					break;
+				case ReadIndexResult.IndexNotFound:
+					_onError("Index not found");
+					break;
+				default:
+					_onError(msg.Error ?? "Error reading index");
 					break;
 			}
 		}
