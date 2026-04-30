@@ -32,18 +32,18 @@ Note that only **SELECT** statements are allowed. **INSERT**, **UPDATE**, stored
 ### Examples
 
 ```sql
-# select records in a specific category
+-- select records in a specific category
 SELECT * FROM kdb.records WHERE category='my_category'
 
-# select records of a specific schema (traditionally: event type)
+-- select records of a specific schema (traditionally: event type)
 SELECT * FROM kdb.records WHERE schema_name = 'OrderCreated'
 
-# select records written in a date range
+-- select records written in a date range
 SELECT stream, stream_revision, epoch_ms(created_at) append_time
 FROM kdb.records
 WHERE append_time BETWEEN '2026-04-20' AND '2026-04-30'
 
-# a more complex query
+-- a more complex query
 SELECT
   SUM(cast(data::json->>'Amount' as integer)) MonthlyRequestedAmount,
   data::json->>'Address'->>'Country' Country
