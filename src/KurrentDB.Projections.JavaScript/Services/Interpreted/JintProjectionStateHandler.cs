@@ -210,8 +210,8 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		if (_definitionBuilder.IsBiState && _state.IsArray()) {
 			var arr = _state.AsArray();
 			if (arr.TryGetValue(0, out var state)) {
-				if (_state.IsString()) {
-					newState = _state.AsString();
+				if (state.IsString()) {
+					newState = state.AsString();
 				} else {
 					newState = ConvertToStringHandlingNulls(state);
 				}
@@ -875,17 +875,17 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 			}
 		}
 
-		private bool EnsureBody(out JsValue objectInstance) {
+		private bool EnsureBody(out JsValue value) {
 			if (IsJson && TryGetValue("bodyRaw", out var raw) && raw is not JsUndefined) {
 				var body = raw.IsNull() ? raw : _parser.Parse(raw.AsString());
 				var pd = new PropertyDescriptor(body, false, true, false);
 				SetOwnProperty("body", pd);
 				SetOwnProperty("data", pd);
-				objectInstance = (ObjectInstance)body;
+				value = body;
 				return true;
 			}
 
-			objectInstance = Undefined;
+			value = Undefined;
 			return false;
 		}
 
@@ -1223,7 +1223,11 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 						writer.WriteBooleanValue(true);
 					break;
 				case Types.Number:
-					writer.WriteNumberValue(value.AsNumber());
+					var n = value.AsNumber();
+					if (double.IsFinite(n))
+						writer.WriteNumberValue(n);
+					else
+						writer.WriteNullValue();
 					break;
 				case Types.BigInt:
 					writer.WriteStringValue(value.ToString());
