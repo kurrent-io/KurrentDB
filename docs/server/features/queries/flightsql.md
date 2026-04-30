@@ -17,7 +17,7 @@ If a high-level database driver is not available for your language, you can gene
 
 To access the Arrow Flight SQL API programmatically, you need to install the necessary packages or modules for your language/runtime. Then, the connection string must be configured. The FlightSQL protocol is exposed as a gRPC endpoint on the same port as the main KurrentDB gRPC API and described in [Networking](../../configuration/networking.md) article. For Python library, the example is `grpc://localhost:2113`.
 
-Authentication as a user authorized to read the `$all` stream is required query using the FlightSQL protocol.
+Authentication as a user authorized to read the `$all` stream is required to query using the FlightSQL protocol.
 
 
 ## SQL dialect
