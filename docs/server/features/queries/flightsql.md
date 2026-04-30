@@ -58,9 +58,9 @@ Every user-defined index has a table in the `usr` schema which can be queried. S
 ```sql
 SELECT * FROM usr."orders-by-country" WHERE field_country='Mauritius'
 
-SELECT data->>'total' FROM usr."orders-by-country"
+SELECT data::json->>'total' FROM usr."orders-by-country"
   WHERE field_country='Mauritius'
-    AND (data->>'orderId'='ORD-1234')
+    AND (data::json->>'orderId'='ORD-1234')
 ```
 
 ### `kdb.records` Table
