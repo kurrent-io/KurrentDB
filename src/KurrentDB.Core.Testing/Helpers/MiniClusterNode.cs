@@ -159,7 +159,7 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:NodeTcpPort", externalTcp.Port.ToString()),
 				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:NodeHeartbeatInterval", "10000"),
 				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:NodeHeartbeatTimeout", "10000"),
-				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:Insecure", options.Application.Insecure.ToString()),
+				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:DisableTls", options.Application.TlsDisabled().ToString()),
 			}).Build();
 		var serverCertificate = useHttps ? ssl_connections.GetServerCertificate() : null;
 		var trustedRootCertificates =

@@ -147,7 +147,7 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 		return;
 
 		(ClusterVNodeOptions, AuthorizationProviderFactory) GetAuthorizationProviderFactory() {
-			if (_options.Application.Insecure) {
+			if (_options.Application.AuthDisabled()) {
 				return (_options, new(_ => new PassthroughAuthorizationProviderFactory()));
 			}
 
@@ -231,7 +231,7 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 		}
 
 		AuthenticationProviderFactory GetAuthenticationProviderFactory() {
-			if (_options.Application.Insecure) {
+			if (_options.Application.AuthDisabled()) {
 				return new AuthenticationProviderFactory(_ => new PassthroughAuthenticationProviderFactory());
 			}
 

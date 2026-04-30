@@ -161,6 +161,13 @@ public partial record ClusterVNodeOptions {
 		[Description("Disable Authentication, Authorization and TLS on all TCP/HTTP interfaces.")]
 		public bool Insecure { get; init; } = false;
 
+		[Description("Disable TLS on all TCP/HTTP interfaces. Authentication and authorization remain active. " +
+		             "Credentials will be transmitted in cleartext.")]
+		public bool DisableTls { get; init; } = false;
+
+		public bool TlsDisabled() => Insecure || DisableTls;
+		public bool AuthDisabled() => Insecure;
+
 		[Description("Allow anonymous access to HTTP API endpoints.")]
 		public bool AllowAnonymousEndpointAccess { get; init; } = false;
 
