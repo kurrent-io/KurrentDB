@@ -119,31 +119,64 @@ try {
 			"DEV MODE WILL GENERATE AND TRUST DEV CERTIFICATES FOR RUNNING A SINGLE SECURE NODE ON LOCALHOST.\n" +
 			"==============================================================================================================\n");
 		var manager = CertificateManager.Instance;
-		var result = manager.EnsureDevelopmentCertificate(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddMonths(1));
-		if (result is not (EnsureCertificateResult.Succeeded or EnsureCertificateResult.ValidCertificatePresent)) {
-			Log.Fatal("Could not ensure dev certificate is available. Reason: {result}", result);
-			return 1;
+		var devCertPath = options.DevMode.DevCertPath;
+		X509Certificate2 devCert = null;
+
+		// If a cert path is specified, try to load an existing cert from it
+		if (!string.IsNullOrEmpty(devCertPath)) {
+			devCert = DevCertificateFile.TryLoad(devCertPath);
+			if (devCert is not null) {
+				Log.Information("Dev certificate loaded from {path}", devCertPath);
+			} else if (System.IO.File.Exists(devCertPath)) {
+				Log.Warning("Dev certificate at {path} is invalid or expired, generating a new one.", devCertPath);
+			}
 		}
 
-		var userCerts = manager.ListCertificates(StoreName.My, StoreLocation.CurrentUser, true);
-		var machineCerts = manager.ListCertificates(StoreName.My, StoreLocation.LocalMachine, true);
-		var certs = userCerts.Concat(machineCerts).ToList();
+		if (devCert is null) {
+			// Generate a new certificate and optionally export to file
+			var result = manager.EnsureDevelopmentCertificate(
+				DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddMonths(1),
+				out devCert,
+				path: devCertPath,
+				includePrivateKey: !string.IsNullOrEmpty(devCertPath));
+			if (result is not (EnsureCertificateResult.Succeeded or EnsureCertificateResult.ValidCertificatePresent)) {
+				Log.Fatal("Could not ensure dev certificate is available. Reason: {result}", result);
+				return 1;
+			}
 
-		if (!certs.Any()) {
-			Log.Fatal("Could not create dev certificate.");
-			return 1;
+			if (devCert is null) {
+				Log.Fatal("Could not create dev certificate. " +
+						  "If the home directory is not writable (e.g., in a container), " +
+						  "use --dev-cert-path to specify an alternative file location.");
+				return 1;
+			}
+
+			if (!string.IsNullOrEmpty(devCertPath)) {
+				Log.Information("Dev certificate saved to {path}", devCertPath);
+			}
 		}
 
-		if (!manager.IsTrusted(certs[0]) && RuntimeInformation.IsWindows) {
-			Log.Information("Dev certificate {cert} is not trusted. Adding it to the trusted store.", certs[0]);
-			manager.TrustCertificate(certs[0]);
-		} else {
+		// Write public cert as .crt for clients to trust
+		if (!string.IsNullOrEmpty(devCertPath)) {
+			try {
+				DevCertificateFile.WritePublicCertificate(devCert, devCertPath);
+				Log.Information("Dev certificate public key saved to {path} (use this to configure client trust)",
+					System.IO.Path.ChangeExtension(devCertPath, ".crt"));
+			} catch (Exception ex) {
+				Log.Warning("Could not write public certificate: {error}", ex.Message);
+			}
+		}
+
+		if (!manager.IsTrusted(devCert) && RuntimeInformation.IsWindows) {
+			Log.Information("Dev certificate {cert} is not trusted. Adding it to the trusted store.", devCert);
+			manager.TrustCertificate(devCert);
+		} else if (!RuntimeInformation.IsWindows) {
 			Log.Warning("Automatically trusting dev certs is only supported on Windows.\n" +
-						"Please trust certificate {cert} if it's not trusted already.", certs[0]);
+						"Please trust certificate {cert} if it's not trusted already.", devCert);
 		}
 
-		Log.Information("Running in dev mode using certificate '{cert}'", certs[0]);
-		certificateProvider = new DevCertificateProvider(certs[0]);
+		Log.Information("Running in dev mode using certificate '{cert}'", devCert);
+		certificateProvider = new DevCertificateProvider(devCert);
 	} else {
 		certificateProvider = new OptionsCertificateProvider();
 	}

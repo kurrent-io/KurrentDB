@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using KurrentDB.Common.Utils;
 
@@ -23,18 +24,25 @@ internal sealed class UnixCertificateManager : CertificateManager {
 		StoreLocation storeLocation) {
 		var export = certificate.ExportToPkcs12(string.Empty);
 		certificate.Dispose();
-		certificate = new X509Certificate2(export, "",
-			X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable);
-		Array.Clear(export, 0, export.Length);
 
-		using (var store = new X509Store(storeName, storeLocation)) {
+		try {
+			certificate = new X509Certificate2(export, "",
+				X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable);
+
+			using var store = new X509Store(storeName, storeLocation);
 			store.Open(OpenFlags.ReadWrite);
 			store.Add(certificate);
 			store.Close();
+		} catch (Exception ex) when (IsHomeDirectoryAccessError(ex)) {
+			// Home directory may not exist or may not be writable (e.g., /home/kurrent in containers).
+			// The OpenSSL store provider wraps the underlying IO failure in a CryptographicException,
+			// so we inspect inner exceptions too. Fall back to an ephemeral key so dev mode can still start.
+			certificate.Dispose();
+			certificate = new X509Certificate2(export, "",
+				X509KeyStorageFlags.EphemeralKeySet | X509KeyStorageFlags.Exportable);
 		}
 
-		;
-
+		Array.Clear(export, 0, export.Length);
 		return certificate;
 	}
 
@@ -60,5 +68,13 @@ internal sealed class UnixCertificateManager : CertificateManager {
 	protected override IList<X509Certificate2> GetCertificatesToRemove(StoreName storeName,
 		StoreLocation storeLocation) {
 		return ListCertificates(StoreName.My, StoreLocation.CurrentUser, isValid: false, requireExportable: false);
+	}
+
+	static bool IsHomeDirectoryAccessError(Exception ex) {
+		for (var current = ex; current != null; current = current.InnerException) {
+			if (current is UnauthorizedAccessException or DirectoryNotFoundException)
+				return true;
+		}
+		return false;
 	}
 }
