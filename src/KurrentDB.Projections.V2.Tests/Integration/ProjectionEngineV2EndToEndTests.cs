@@ -159,6 +159,7 @@ fromCategory('order')
 			ProjectionName = $"e2e-test-{testId}",
 			SourceDefinition = sourceDefinition,
 			StateHandlerFactory = CreateStateHandler,
+			MaxPartitionStateCacheSize = 1000,
 			CheckpointAfterMs = 0,
 			CheckpointHandledThreshold = 3,
 			CheckpointUnhandledBytesThreshold = long.MaxValue,

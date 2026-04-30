@@ -10,6 +10,7 @@ public class ProjectionEngineV2Config {
 	public required string ProjectionName { get; init; }
 	public required IQuerySources SourceDefinition { get; init; }
 	public required Func<IProjectionStateHandler> StateHandlerFactory { get; init; }
+	public required int MaxPartitionStateCacheSize { get; init; }
 	public int PartitionCount { get; init; } = 4;
 	public int CheckpointAfterMs { get; init; } = 2000;
 	public int CheckpointHandledThreshold { get; init; } = 4000;

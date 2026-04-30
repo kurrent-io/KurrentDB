@@ -10,51 +10,51 @@ using KurrentDB.Core.Messaging;
 
 namespace KurrentDB.Core.Services.Transport.Grpc;
 
-static class RpcExceptions {
-	public static Exception Timeout(string message) => new RpcException(new Status(StatusCode.Aborted, $"Operation timed out: {message}"));
+public static class RpcExceptions {
+	internal static Exception Timeout(string message) => new RpcException(new Status(StatusCode.Aborted, $"Operation timed out: {message}"));
 
-	public static RpcException ServerNotReady() =>
+	internal static RpcException ServerNotReady() =>
 		new(new Status(StatusCode.Unavailable, "Server Is Not Ready"));
 
-	public static RpcException ServerBusy() =>
+	internal static RpcException ServerBusy() =>
 		new(new Status(StatusCode.Unavailable, "Server Is Too Busy"));
 
-	public static Exception NoLeaderInfo() =>
+	internal static Exception NoLeaderInfo() =>
 		new RpcException(new Status(StatusCode.Unknown, "No leader info available in response"));
 
-	public static RpcException LeaderInfo(string host, int port) =>
+	internal static RpcException LeaderInfo(string host, int port) =>
 		new(new Status(StatusCode.NotFound, $"Leader info available"), new Metadata {
 			{ Constants.Exceptions.ExceptionKey, Constants.Exceptions.NotLeader },
 			{ Constants.Exceptions.LeaderEndpointHost, host },
 			{ Constants.Exceptions.LeaderEndpointPort, port.ToString() },
 		});
 
-	public static RpcException StreamNotFound(string streamName) =>
+	internal static RpcException StreamNotFound(string streamName) =>
 		new(new Status(StatusCode.NotFound, $"Event stream '{streamName}' is not found."), new Metadata {
 			{ Constants.Exceptions.ExceptionKey, Constants.Exceptions.StreamNotFound },
 			{ Constants.Exceptions.StreamName, streamName }
 		});
 
-	public static RpcException NoStream(string streamName) =>
+	internal static RpcException NoStream(string streamName) =>
 		new(new Status(StatusCode.NotFound, $"Event stream '{streamName}' was not created."));
 
-	public static RpcException UnknownMessage<T>(Message message) where T : Message =>
+	internal static RpcException UnknownMessage<T>(Message message) where T : Message =>
 		UnknownMessage(message.GetType(), typeof(T));
 
-	public static RpcException UnknownMessage(Type unknownMessageType, Type expectedMsgType) =>
+	internal static RpcException UnknownMessage(Type unknownMessageType, Type expectedMsgType) =>
 		new(new Status(StatusCode.Unknown,
 			$"Envelope callback expected either {expectedMsgType.Name} or {nameof(ClientMessage.NotHandled)}, received {unknownMessageType.Name} instead"));
 
-	public static RpcException UnknownError<T>(T result) where T : unmanaged =>
+	internal static RpcException UnknownError<T>(T result) where T : unmanaged =>
 		UnknownError(typeof(T), result);
 
-	public static RpcException UnknownError(Type resultType, object result, string errorMessage = null) =>
+	internal static RpcException UnknownError(Type resultType, object result, string errorMessage = null) =>
 		new(new Status(StatusCode.Unknown,
 			string.IsNullOrEmpty(errorMessage)
 				? $"Unexpected {resultType.Name}: {result}"
 				: $"Unexpected {resultType.Name}: {result} >> {errorMessage}"));
 
-	public static RpcException UnknownError(string message) =>
+	internal static RpcException UnknownError(string message) =>
 		new(new Status(StatusCode.Unknown, message));
 
 	public static RpcException AccessDenied() =>
@@ -62,46 +62,46 @@ static class RpcExceptions {
 			{ Constants.Exceptions.ExceptionKey, Constants.Exceptions.AccessDenied }
 		});
 
-	public static RpcException InvalidTransaction() =>
+	internal static RpcException InvalidTransaction() =>
 		new(new Status(StatusCode.InvalidArgument, "Invalid Transaction"), new Metadata {
 			{ Constants.Exceptions.ExceptionKey, Constants.Exceptions.InvalidTransaction }
 		});
 
-	public static RpcException StreamDeleted(string streamName) =>
+	internal static RpcException StreamDeleted(string streamName) =>
 		new(new Status(StatusCode.FailedPrecondition, $"Event stream '{streamName}' is deleted."),
 			new Metadata {
 				{ Constants.Exceptions.ExceptionKey, Constants.Exceptions.StreamDeleted },
 				{ Constants.Exceptions.StreamName, streamName }
 			});
 
-	public static RpcException ScavengeNotFound(string scavengeId) =>
+	internal static RpcException ScavengeNotFound(string scavengeId) =>
 		new(new Status(StatusCode.NotFound, "Scavenge id was invalid."),
 			new Metadata {
 				{ Constants.Exceptions.ExceptionKey, Constants.Exceptions.ScavengeNotFound },
 				{ Constants.Exceptions.ScavengeId, scavengeId ?? string.Empty }
 			});
 
-	public static RpcException RedactionLockFailed() =>
+	internal static RpcException RedactionLockFailed() =>
 		new(new Status(StatusCode.FailedPrecondition, "Failed to acquire lock for redaction."),
 			new Metadata {
 				{ Constants.Exceptions.ExceptionKey, Constants.Exceptions.RedactionLockFailed }
 			});
 
-	public static RpcException RedactionGetEventPositionFailed(string reason) =>
+	internal static RpcException RedactionGetEventPositionFailed(string reason) =>
 		new(new Status(StatusCode.Unknown, $"Failed to get event position: '{reason}'"),
 			new Metadata {
 				{ Constants.Exceptions.ExceptionKey, Constants.Exceptions.RedactionGetEventPositionFailed },
 				{ Constants.Exceptions.Reason, reason }
 			});
 
-	public static RpcException RedactionSwitchChunkFailed(string reason) =>
+	internal static RpcException RedactionSwitchChunkFailed(string reason) =>
 		new(new Status(StatusCode.FailedPrecondition, $"Failed to switch chunk during redaction: '{reason}'"),
 			new Metadata {
 				{ Constants.Exceptions.ExceptionKey, Constants.Exceptions.RedactionSwitchChunkFailed },
 				{ Constants.Exceptions.Reason, reason }
 			});
 
-	public static RpcException WrongExpectedVersion(
+	internal static RpcException WrongExpectedVersion(
 		string operation,
 		string streamName,
 		long expectedVersion,
@@ -117,7 +117,7 @@ static class RpcExceptions {
 				{ Constants.Exceptions.ActualVersion, actualVersion?.ToString() ?? string.Empty }
 			});
 
-	public static RpcException MaxAppendEventSizeExceeded(string eventId, int proposedEventSize, int maxAppendEventSize) =>
+	internal static RpcException MaxAppendEventSizeExceeded(string eventId, int proposedEventSize, int maxAppendEventSize) =>
 		new(
 			new Status(StatusCode.InvalidArgument, $"Event with Id: {eventId}, Size: {proposedEventSize}, exceeds Maximum Append Event Size of {maxAppendEventSize}."),
 			new Metadata {
@@ -127,7 +127,7 @@ static class RpcExceptions {
 				{ Constants.Exceptions.ProposedAppendEventSize, proposedEventSize.ToString() }
 			});
 
-	public static RpcException MaxAppendSizeExceeded(int maxAppendSize) =>
+	internal static RpcException MaxAppendSizeExceeded(int maxAppendSize) =>
 		new(
 			new Status(StatusCode.InvalidArgument, $"Maximum Append Size of {maxAppendSize} Exceeded."),
 			new Metadata {
@@ -135,7 +135,7 @@ static class RpcExceptions {
 				{ Constants.Exceptions.MaximumAppendSize, maxAppendSize.ToString() }
 			});
 
-	public static RpcException RequiredMetadataPropertyMissing(string missingMetadataProperty) =>
+	internal static RpcException RequiredMetadataPropertyMissing(string missingMetadataProperty) =>
 		new(
 			new Status(StatusCode.InvalidArgument, $"Required Metadata Property '{missingMetadataProperty}' is missing"),
 			new Metadata {
@@ -143,7 +143,7 @@ static class RpcExceptions {
 				{ Constants.Exceptions.RequiredMetadataProperties, string.Join(",", Constants.Metadata.RequiredMetadata) }
 			});
 
-	public static bool TryHandleNotHandled(ClientMessage.NotHandled notHandled, out Exception exception) {
+	internal static bool TryHandleNotHandled(ClientMessage.NotHandled notHandled, out Exception exception) {
 		exception = null;
 		switch (notHandled.Reason) {
 			case ClientMessage.NotHandled.Types.NotHandledReason.NotReady:
@@ -168,7 +168,7 @@ static class RpcExceptions {
 		}
 	}
 
-	public static Exception PersistentSubscriptionFailed(string streamName, string groupName, string reason)
+	internal static Exception PersistentSubscriptionFailed(string streamName, string groupName, string reason)
 		=> new RpcException(
 			new Status(
 				StatusCode.Internal,
@@ -179,7 +179,7 @@ static class RpcExceptions {
 				{ Constants.Exceptions.Reason, reason }
 			});
 
-	public static Exception PersistentSubscriptionDoesNotExist(string streamName, string groupName)
+	internal static Exception PersistentSubscriptionDoesNotExist(string streamName, string groupName)
 		=> new RpcException(
 			new Status(
 				StatusCode.NotFound,
@@ -189,7 +189,7 @@ static class RpcExceptions {
 				{ Constants.Exceptions.GroupName, groupName }
 			});
 
-	public static Exception PersistentSubscriptionExists(string streamName, string groupName)
+	internal static Exception PersistentSubscriptionExists(string streamName, string groupName)
 		=> new RpcException(
 			new Status(
 				StatusCode.AlreadyExists,
@@ -199,7 +199,7 @@ static class RpcExceptions {
 				{ Constants.Exceptions.GroupName, groupName }
 			});
 
-	public static Exception PersistentSubscriptionMaximumSubscribersReached(string streamName, string groupName)
+	internal static Exception PersistentSubscriptionMaximumSubscribersReached(string streamName, string groupName)
 		=> new RpcException(
 			new Status(
 				StatusCode.FailedPrecondition,
@@ -210,7 +210,7 @@ static class RpcExceptions {
 				{ Constants.Exceptions.GroupName, groupName }
 			});
 
-	public static Exception PersistentSubscriptionDropped(string streamName, string groupName)
+	internal static Exception PersistentSubscriptionDropped(string streamName, string groupName)
 		=> new RpcException(
 			new Status(
 				StatusCode.Cancelled,
@@ -220,42 +220,42 @@ static class RpcExceptions {
 				{ Constants.Exceptions.GroupName, groupName }
 			});
 
-	public static Exception LoginNotFound(string loginName) =>
+	internal static Exception LoginNotFound(string loginName) =>
 		new RpcException(new Status(StatusCode.NotFound, $"User '{loginName}' is not found."), new Metadata {
 			{ Constants.Exceptions.ExceptionKey, Constants.Exceptions.UserNotFound },
 			{ Constants.Exceptions.LoginName, loginName }
 		});
 
-	public static Exception LoginConflict(string loginName) =>
+	internal static Exception LoginConflict(string loginName) =>
 		new RpcException(new Status(StatusCode.FailedPrecondition, "Conflict."), new Metadata {
 			{ Constants.Exceptions.ExceptionKey, Constants.Exceptions.UserConflict },
 			{ Constants.Exceptions.LoginName, loginName }
 		});
 
-	public static Exception LoginTryAgain(string loginName) =>
+	internal static Exception LoginTryAgain(string loginName) =>
 		new RpcException(new Status(StatusCode.DeadlineExceeded, "Try again."), new Metadata {
 			{ Constants.Exceptions.ExceptionKey, Constants.Exceptions.UserConflict },
 			{ Constants.Exceptions.LoginName, loginName }
 		});
 
-	public static RpcException IndexNotFound(string indexName) =>
+	internal static RpcException IndexNotFound(string indexName) =>
 		new(new Status(StatusCode.NotFound, $"Index '{indexName}' not found."), new Metadata {
 			{ Constants.Exceptions.ExceptionKey, Constants.Exceptions.IndexNotFound },
 			{ Constants.Exceptions.IndexName, indexName }
 		});
 
-	public static RpcException InvalidArgument(string errorMessage) =>
+	internal static RpcException InvalidArgument(string errorMessage) =>
 		new(new Status(StatusCode.InvalidArgument, errorMessage));
 
-	public static RpcException InvalidArgument<T>(T argument) =>
+	internal static RpcException InvalidArgument<T>(T argument) =>
 		new(new Status(StatusCode.InvalidArgument, $"'{argument}' is not a valid {typeof(T)}"));
 
-	public static RpcException RequiredArgument<T>(string name) =>
+	internal static RpcException RequiredArgument<T>(string name) =>
 		new(new Status(StatusCode.InvalidArgument, $"'{name}' is a required argument of type {typeof(T)}"));
 
-	public static RpcException InvalidCombination<T>(T combination) where T : ITuple
+	internal static RpcException InvalidCombination<T>(T combination) where T : ITuple
 		=> new(new Status(StatusCode.InvalidArgument, $"The combination of {combination} is invalid."));
 
-	public static RpcException InvalidPositionException() =>
+	internal static RpcException InvalidPositionException() =>
 		new(new Status(StatusCode.InvalidArgument, "Trying to read from an invalid position."));
 }

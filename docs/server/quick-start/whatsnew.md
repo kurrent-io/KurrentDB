@@ -4,6 +4,103 @@ order: 2
 
 # What's New
 
+## New in 26.1
+
+Features
+* [SQL API](#sql-api)
+* [Projections V2](#projections-v2)
+
+Changes / Improvements
+* [Multi-stream Appends Improvements](#multi-stream-appends-improvements)
+* [Persistent Subscriptions Stability and Performance](#persistent-subscriptions-stability-and-performance)
+* [Per-signal OTLP Endpoint Configuration](#per-signal-otlp-endpoint-configuration)
+* [OAuth Support for Microsoft Entra](#oauth-support-for-microsoft-entra)
+* [OAuth and Ldap Plugin Configuration](#oauth-and-ldap-plugin-configuration)
+* [DisableClientAuthEkuValidation Option](#disableclientauthekuvalidation-option)
+* [Projections Access Created Property](#projections-access-created-property)
+* [Connectors: Webhook Source](#connectors-webhook-source)
+
+For breaking changes and deprecation notices, see the [upgrade guide](upgrade-guide.md).
+
+### SQL API
+
+<Badge type="info" vertical="middle" text="License Required"/>
+
+KurrentDB 26.1 introduces support for the [Arrow Flight SQL](https://arrow.apache.org/docs/format/FlightSql.html) protocol, giving general purpose Arrow Flight SQL clients an API to query the indexed event log.
+
+See the [documentation](../features/queries/flightsql.md) for details.
+
+### Projections V2
+
+<Badge text="Experimental" type="warning" vertical="middle"/>
+
+PLACEHOLDER
+
+### Multi-stream Appends Improvements
+
+Multi-stream appends already allow writing to multiple streams in one atomic operation, with an expected version for each stream being written to which must be satisfied for the operation to be accepted. In 26.1 expected versions can be specified for streams even if they are not being written to in the operation. e.g. you can write to `streamA` conditionally upon the version of `streamB`.
+
+Within a multi-stream append operation, it used to be required that events for a particular stream must be grouped together: it was not possible to write to `streamA`, then `streamB`, then `streamA` in one operation. This limitation has been removed. A client upgrade is necessary as well as a server upgrade.
+
+A new expected version `SoftDeleted` has been added, which allows the operation to proceed only if the target stream is in a soft deleted state.
+
+### Persistent Subscriptions Stability and Performance
+
+Persistent subscriptions using the `pinned` strategies have improved performance under burst load.
+
+Other conditions have been identified and fixed where a persistent subscription may not always resume after a leader election, or after a TCP client (excluding the dotnet TCP client) disconnects and reconnects.
+
+These improvements and fixes are being backported to 24.10 and 26.0.
+
+### Per-signal OTLP Endpoint Configuration
+
+<Badge type="info" vertical="middle" text="License Required"/>
+
+Allow metrics and logs to be exported to different OTLP endpoints by adding optional per-signal OTLP overrides under the Metrics and Logs config sections. Unspecified properties inherit from the shared OpenTelemetry:Otlp section, preserving backwards compatibility.
+
+Also applies to Headers and other properties of OtlpExporterOptions
+
+See the [documentation](../diagnostics/integrations.md#per-signal-otlp-endpoints) for details.
+
+### OAuth Support for Microsoft Entra
+
+<Badge type="info" vertical="middle" text="License Required"/>
+
+The new setting `OAuth:DisableCodeChallengeMethodsSupportedValidation` disables validation of the `code_challenge_methods_supported` field in the identity provider's discovery document.
+
+Enable this when using an identity provider such as Microsoft Entra that supports PKCE but does not advertise it in the discovery document.
+
+See the [documentation](../security/user-authentication.md#oauth-authentication) for details.
+
+### OAuth and Ldap Plugin Configuration
+
+<Badge type="info" vertical="middle" text="License Required"/>
+
+The OAuth and Ldap plugins are now also able to read configuration settings from environment variables and/or command line options. Previously, and in contrast to all the other configuration options, the OAuth and Ldap plugins could only take their configuration from a file.
+
+### DisableClientAuthEkuValidation Option
+
+Publicly trusted certificate authorities are moving away from issuing certificates with the `clientAuth` EKU, largely driven by changes to the [Chrome Root Program policy](https://www.chromium.org/Home/chromium-security/root-ca-policy/).
+
+This option disables validation of the presence of the `clientAuth` EKU when a node connects to another, allowing KurrentDB to be used with new certificates issued by publicly trusted CAs.
+
+See the [documentation](../security/protocol-security.md#disable-client-authentication-eku-validation) for details.
+
+### Projections Access Created Property
+
+JavaScript projections can now access the `created` property on events, which is the ISO 8601 timestamp of when the event was written to the database. This applies to the traditional engine and also the experimental V2 engine.
+
+### Connectors: Webhook Source
+
+<Badge type="info" vertical="middle" text="License Required"/>
+
+The Webhook Source Connector receives HTTP requests from external systems and appends them as events to KurrentDB streams, enabling seamless integration with services that publish events via webhooks.
+
+The connector exposes a configurable HTTP endpoint and offers flexible routing options to control which KurrentDB streams receive the incoming requests.
+
+Refer to the [documentation](../features/connectors/sources/webhook.md) for instructions on setting up a Webhook source connector.
+
+
 ## New in 26.0
 
 Features

@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Security.Claims;
@@ -22,21 +21,32 @@ using ProjectionResolvedEvent = KurrentDB.Projections.Core.Services.Processing.R
 
 namespace KurrentDB.Projections.Core.Services.Processing.V2;
 
-public sealed class ProjectionEngineV2(
-	ProjectionEngineV2Config config,
-	IReadStrategy readStrategy,
-	ISystemClient client,
-	ClaimsPrincipal user) : IAsyncDisposable {
+public sealed class ProjectionEngineV2 : IAsyncDisposable {
 	private static readonly ILogger Log = Serilog.Log.ForContext<ProjectionEngineV2>();
 
-	private readonly ProjectionEngineV2Config _config = config ?? throw new ArgumentNullException(nameof(config));
-	private readonly IReadStrategy _readStrategy = readStrategy ?? throw new ArgumentNullException(nameof(readStrategy));
-	private readonly ISystemClient _client = client ?? throw new ArgumentNullException(nameof(client));
-	private readonly ClaimsPrincipal _user = user ?? throw new ArgumentNullException(nameof(user));
+	private readonly ProjectionEngineV2Config _config;
+	private readonly IReadStrategy _readStrategy;
+	private readonly ISystemClient _client;
+	private readonly ClaimsPrincipal _user;
 	private readonly CancellationTokenSource _cts = new();
+	private readonly PartitionStateCache _partitionStates;
 	private Task _runTask;
 	private long _totalEventsProcessed;
-	private readonly ConcurrentDictionary<string, string> _partitionStates = new();
+
+	public ProjectionEngineV2(
+		ProjectionEngineV2Config config,
+		IReadStrategy readStrategy,
+		ISystemClient client,
+		ClaimsPrincipal user) {
+		_config = config ?? throw new ArgumentNullException(nameof(config));
+		_readStrategy = readStrategy ?? throw new ArgumentNullException(nameof(readStrategy));
+		_client = client ?? throw new ArgumentNullException(nameof(client));
+		_user = user ?? throw new ArgumentNullException(nameof(user));
+		_partitionStates = new PartitionStateCache(
+			_config.MaxPartitionStateCacheSize,
+			name: "shared",
+			projectionName: _config.ProjectionName);
+	}
 
 	public void Start(TFPos checkpoint) {
 		_runTask = Run(checkpoint, _cts.Token);
@@ -49,6 +59,8 @@ public sealed class ProjectionEngineV2(
 		await _cts.CancelAsync();
 		if (_runTask is { } runTask)
 			await runTask.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+
+		await _partitionStates.DisposeAsync();
 		_cts.Dispose();
 	}
 
@@ -59,7 +71,26 @@ public sealed class ProjectionEngineV2(
 	public long TotalEventsProcessed => Interlocked.Read(ref _totalEventsProcessed);
 
 	public string GetPartitionState(string partitionKey) =>
-		_partitionStates.TryGetValue(partitionKey, out var state) ? state : null;
+		_partitionStates.TryGet(partitionKey, out var state) ? state : null;
+
+	/// <summary>
+	/// Returns approximate size and eviction count for the shared partition-state cache.
+	/// Per-slot caches are intentionally excluded: they double-count partition keys that
+	/// appear across multiple processor pools, so only the shared cache is the faithful summary.
+	/// <para>
+	/// <see cref="CacheMetrics.Size"/> is derived from <see cref="PartitionStateCache.Count"/>, which
+	/// the wrapper decrements inside SIEVE's asynchronous eviction callback. As a result the reported
+	/// size can temporarily exceed <see cref="ProjectionEngineV2Config.MaxPartitionStateCacheSize"/>
+	/// between a sweep and the callback firing. Treat the value as an upper-bounded observation,
+	/// not a hard invariant.
+	/// </para>
+	/// </summary>
+	public CacheMetrics GetCacheMetrics() =>
+		new(Size: _partitionStates.Count, Evictions: _partitionStates.Evictions);
+
+	/// <param name="Size">Approximate current item count in the shared cache (see remarks on <see cref="GetCacheMetrics"/>).</param>
+	/// <param name="Evictions">Monotonic count of entries evicted since the engine started.</param>
+	public readonly record struct CacheMetrics(long Size, long Evictions);
 
 	[AsyncMethodBuilder(typeof(SpawningAsyncTaskMethodBuilder))]
 	private async Task Run(TFPos checkpoint, CancellationToken ct) {
@@ -104,8 +135,12 @@ public sealed class ProjectionEngineV2(
 				_config.SourceDefinition.IsBiState,
 				_config.EmitEnabled,
 				coordinator.ReportPartitionCheckpoint,
-				loadPersistedState: partitionKey => LoadPersistedPartitionState(partitionKey, ct),
-				sharedPartitionStates: _partitionStates);
+				// loadPersistedState uses CancellationToken.None so drain-time cache misses
+				// (more likely with bounded caches) can still complete checkpointing after
+				// the engine's cancellation token has fired.
+				loadPersistedState: partitionKey => LoadPersistedPartitionState(partitionKey, CancellationToken.None),
+				sharedPartitionStates: _partitionStates,
+				maxPartitionStateCacheSize: _config.MaxPartitionStateCacheSize);
 			partitionTasks[i] = Task.Run(() => processor.Run(partitionCt), partitionCt);
 		}
 

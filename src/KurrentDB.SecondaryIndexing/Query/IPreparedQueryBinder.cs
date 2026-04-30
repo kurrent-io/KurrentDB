@@ -4,5 +4,5 @@
 namespace KurrentDB.SecondaryIndexing.Query;
 
 public interface IPreparedQueryBinder {
-	void Bind(int index, ReadOnlySpan<byte> value, ParameterType type);
+	void Bind(int index, scoped ReadOnlySpan<byte> value, ParameterType type);
 }

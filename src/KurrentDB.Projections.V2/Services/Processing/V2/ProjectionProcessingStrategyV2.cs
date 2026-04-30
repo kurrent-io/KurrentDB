@@ -16,6 +16,7 @@ public class ProjectionProcessingStrategyV2 : ProjectionProcessingStrategy {
 	private readonly string _name;
 	private readonly ProjectionConfig _projectionConfig;
 	private readonly IQuerySources _sourceDefinition;
+	private readonly int _maxPartitionStateCacheSize;
 	private readonly Func<IProjectionStateHandler> _stateHandlerFactory;
 	private readonly IPublisher _mainQueue;
 
@@ -26,12 +27,14 @@ public class ProjectionProcessingStrategyV2 : ProjectionProcessingStrategy {
 		IQuerySources sourceDefinition,
 		ILogger logger,
 		int maxProjectionStateSize, // todo: unused, might represent an important gap
+		int maxPartitionStateCacheSize,
 		Func<IProjectionStateHandler> stateHandlerFactory,
 		IPublisher mainQueue) {
 
 		_name = name;
 		_projectionConfig = projectionConfig;
 		_sourceDefinition = sourceDefinition;
+		_maxPartitionStateCacheSize = maxPartitionStateCacheSize;
 		_stateHandlerFactory = stateHandlerFactory;
 		_mainQueue = mainQueue;
 	}
@@ -54,6 +57,7 @@ public class ProjectionProcessingStrategyV2 : ProjectionProcessingStrategy {
 			_sourceDefinition,
 			_stateHandlerFactory,
 			_projectionConfig,
-			_mainQueue);
+			_mainQueue,
+			_maxPartitionStateCacheSize);
 	}
 }

@@ -61,6 +61,20 @@ public class ProjectionStatistics {
 
 	public int StateSizeLimit { get; set; }
 
+	/// <summary>
+	/// Approximate current item count in the V2 projection's shared partition-state cache.
+	/// The underlying counter is maintained via an asynchronous SIEVE eviction callback, so the
+	/// reported value can temporarily exceed MaxPartitionStateCacheSize between a sweep and the
+	/// callback firing. Treat it as an upper-bounded observation, not a hard invariant.
+	/// </summary>
+	public long PartitionStateCacheSize { get; set; }
+
+	/// <summary>
+	/// Monotonic count of partition-state entries evicted from the V2 shared cache since the
+	/// engine started. Useful as a pressure signal (rising eviction rate = under-sized cache).
+	/// </summary>
+	public long PartitionStateCacheEvictions { get; set; }
+
 	public ProjectionStatistics Clone() {
 		return (ProjectionStatistics)MemberwiseClone();
 	}

@@ -5,15 +5,15 @@ order: 5
 
 ## Should you upgrade?
 
-KurrentDB 26.0 is a long term support (LTS) release and will be supported for a minimum of two years, with a two month grace period for organizing upgrades when the LTS goes out of support. See the [release schedule](../release-schedule/README.md) for further information.
+KurrentDB 26.1 is a short term support (STS) release and will be supported until the next release. See the [release schedule](../release-schedule/README.md) for further information.
 
-Upgrade to this version if you want to try the [new features](./whatsnew.md) and changes in this release. Also please note that with this release 23.10 LTS and 25.1 STS are going out of support. Consider upgrading to a supported version (24.10 or 26.0) if you are on either of these versions.
+Upgrade to this version if you want to try the new features and changes in this release, and do not need the long support window of an LTS release.
 
 General changes, features and fixes are described in the [what's new](./whatsnew.md) and [release notes](../release-schedule/release-notes.md).
 
 ## Upgrade procedure
 
-You can perform an online rolling upgrade directly to KurrentDB 25.1 from these earlier versions:
+You can perform an online rolling upgrade from these earlier versions:
 - 25.1
 - 25.0
 - 24.10
@@ -38,7 +38,17 @@ Upgrading the cluster this way keeps the cluster online and able to service requ
 If you modified the Linux service file to increase the open files limit, those changes will be overridden during the upgrade. You will need to reapply them after the upgrade.
 :::
 
-## To 26.0.0
+## To 26.1
+
+### Breaking Changes
+
+- None
+
+### Deprecation Notices
+
+- None
+
+## To 26.0
 
 ### Breaking Changes
 

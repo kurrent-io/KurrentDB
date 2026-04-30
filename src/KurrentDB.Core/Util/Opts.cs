@@ -33,5 +33,6 @@ public static class Opts {
 
 	public const int ScavengeHashUsersCacheCapacityDefault = 100_000;
 
+	public const int MaxPartitionStateCacheSizeDefault = 100_000;
 
 }

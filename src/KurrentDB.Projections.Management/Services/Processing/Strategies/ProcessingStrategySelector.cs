@@ -14,11 +14,13 @@ public class ProcessingStrategySelector {
 	private readonly ILogger _logger = Log.ForContext<ProcessingStrategySelector>();
 	private readonly ReaderSubscriptionDispatcher _subscriptionDispatcher;
 	private readonly int _maxProjectionStateSize;
+	private readonly int _maxPartitionStateCacheSize;
 
 	public ProcessingStrategySelector(
-		ReaderSubscriptionDispatcher subscriptionDispatcher, int maxProjectionStateSize) {
+		ReaderSubscriptionDispatcher subscriptionDispatcher, int maxProjectionStateSize, int maxPartitionStateCacheSize) {
 		_subscriptionDispatcher = subscriptionDispatcher;
 		_maxProjectionStateSize = maxProjectionStateSize;
+		_maxPartitionStateCacheSize = maxPartitionStateCacheSize;
 	}
 
 	public ProjectionProcessingStrategy CreateProjectionProcessingStrategy(
@@ -35,7 +37,7 @@ public class ProcessingStrategySelector {
 		if (engineVersion == ProjectionConstants.EngineV2) {
 			return new ProjectionProcessingStrategyV2(
 				name, projectionVersion, projectionConfig, sourceDefinition, _logger, _maxProjectionStateSize,
-				stateHandlerFactory, mainQueue);
+				_maxPartitionStateCacheSize, stateHandlerFactory, mainQueue);
 		}
 
 		return projectionConfig.StopOnEof

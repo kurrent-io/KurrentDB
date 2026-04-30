@@ -26,6 +26,8 @@ public class ProjectionStatisticsHttpFormatted {
 		this.WritesInProgress = source.WritesInProgress;
 		this.CoreProcessingTime = source.CoreProcessingTime;
 		this.PartitionsCached = source.PartitionsCached;
+		this.PartitionStateCacheSize = source.PartitionStateCacheSize;
+		this.PartitionStateCacheEvictions = source.PartitionStateCacheEvictions;
 		var statusLocalUrl = "/projection/" + source.Name;
 		this.StatusUrl = makeAbsoluteUrl(statusLocalUrl);
 		this.StateUrl = makeAbsoluteUrl(statusLocalUrl + "/state");
@@ -50,6 +52,10 @@ public class ProjectionStatisticsHttpFormatted {
 	public int ReadsInProgress { get; set; }
 
 	public int PartitionsCached { get; set; }
+
+	public long PartitionStateCacheSize { get; set; }
+
+	public long PartitionStateCacheEvictions { get; set; }
 
 	public string Status { get; set; }
 

@@ -132,6 +132,7 @@ public class AccountBalancerSpecTests {
 			ProjectionName = projectionName,
 			SourceDefinition = sourceDefinition,
 			StateHandlerFactory = CreateStateHandler,
+			MaxPartitionStateCacheSize = 1000,
 			CheckpointAfterMs = 0,
 			CheckpointHandledThreshold = 1,
 			CheckpointUnhandledBytesThreshold = long.MaxValue,

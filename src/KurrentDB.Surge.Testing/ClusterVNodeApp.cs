@@ -58,8 +58,12 @@ public class ClusterVNodeApp : IAsyncDisposable {
             .With(x => x.Services.AddSingleton<IHostedService>(esdb))
             .With(x => configureServices?.Invoke(x.Services));
 
-        builder.WebHost.ConfigureKestrel(serverOptions => serverOptions
-	        .ListenAnyIP(0, listenOptions => listenOptions.Protocols = HttpProtocols.Http2));
+        builder.WebHost.ConfigureKestrel(serverOptions => {
+	        serverOptions.ListenAnyIP(0, listenOptions => {
+		        listenOptions.UseConnectionInterceptors();
+		        listenOptions.Protocols = HttpProtocols.Http2;
+	        });
+        });
 
         App = builder.Build().With(x => esdb.Node.Startup.Configure(x));
 

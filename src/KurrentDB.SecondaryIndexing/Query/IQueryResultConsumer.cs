@@ -9,7 +9,9 @@ namespace KurrentDB.SecondaryIndexing.Query;
 public interface IQueryResultConsumer {
 	ValueTask ConsumeAsync(IQueryResultReader resultReader, CancellationToken token);
 
-	void Bind<TBinder>(scoped TBinder binder) where TBinder : IPreparedQueryBinder, allows ref struct;
+	void Bind<TBinder>(scoped TBinder binder) where TBinder : IPreparedQueryBinder, allows ref struct {
+		// nothing to bind
+	}
 
 	bool UseStreaming => true;
 }

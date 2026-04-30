@@ -13,6 +13,8 @@
 		<PackageReference Include="Bogus" />
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
 		<PackageReference Include="NSubstitute" />
+		<PackageReference Include="Apache.Arrow.Adbc.Drivers.FlightSql" />
+		<PackageReference Include="Apache.Arrow.Adbc.Client" />
 		<PackageReference Include="System.Linq.Async">
 			<ExcludeAssets>compile</ExcludeAssets>
 		</PackageReference>
