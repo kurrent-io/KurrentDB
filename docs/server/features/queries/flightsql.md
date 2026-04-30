@@ -17,23 +17,53 @@ If a high-level database driver is not available for your language, you can gene
 
 To access the Arrow Flight SQL API programmatically, you need to install the necessary packages or modules for your language/runtime. Then, the connection string must be configured. The FlightSQL protocol is exposed as a gRPC endpoint on the same port as the main KurrentDB gRPC API and described in [Networking](../../configuration/networking.md) article. For Python library, the example is `grpc://localhost:2113`.
 
-Authentication as a user authorized to read the $all stream is required query using the FlightSQL protocol.
+Authentication as a user authorized to read the `$all` stream is required query using the FlightSQL protocol.
 
-Note that only **SELECT** statements are allowed. **INSERT**, **UPDATE**, stored procedures or others DDL statements are not supported.
 
 ## SQL dialect
 
-KurrentDB supports PostgreSQL-compatible SQL dialect. System tables are accessible via **kdb** schema. All user-defined indices are available through **usr** table schema. The default index is available through **kdb.records** schema.
+KurrentDB SQL queries are powered by [DuckDB](https://duckdb.org/) which supports a [SQL dialect](https://duckdb.org/docs/lts/sql/dialect/postgresql_compatibility) similar to PostgreSQL.
 
-The following example demonstrates how to select all records in the specified category:
+Note that only **SELECT** statements are allowed. **INSERT**, **UPDATE**, stored procedures or others DDL statements are not supported.
+
+- The default index is available through the **`kdb.records`** table.
+- User-defined indexes are available through **`usr.<user-defined-index>`** tables.
+
+### Examples
 
 ```sql
-SELECT data FROM kdb.records WHERE category='my_category'
+# select records in a specific category
+SELECT * FROM kdb.records WHERE category='my_category'
+
+# select records of a specific schema (traditionally: event type)
+SELECT * FROM kdb.records WHERE schema_name = 'OrderCreated'
+
+# select records written in a date range
+SELECT stream, stream_revision, epoch_ms(created_at) append_time
+FROM kdb.records
+WHERE append_time BETWEEN '2026-04-20' AND '2026-04-30'
+
+# a more complex query
+SELECT
+  SUM(cast(data::json->>'Amount' as integer)) MonthlyRequestedAmount,
+  data::json->>'Address'->>'Country' Country
+FROM kdb.records
+WHERE schema_name = 'LoanRequested'
+  AND to_timestamp(created_at/1000) BETWEEN '2026-04-01' AND '2026-04-30'
+GROUP BY Country;
 ```
 
-Every user-defined index has its equivalent table in `usr` schema to be queried. See the [user defined indexes documentation](../indexes/user-defined.md) first to configure a user-defined index.
+Every user-defined index has a table in the `usr` schema which can be queried. See the [user defined indexes documentation](../indexes/user-defined.md) to create an example user-defined index called `orders-by-country`. The following queries can then be run against it:
 
-### Default Index Table
+```sql
+SELECT * FROM usr."orders-by-country" WHERE field_country='Mauritius'
+
+SELECT data->>'total' FROM usr."orders-by-country"
+  WHERE field_country='Mauritius'
+    AND (data->>'orderId'='ORD-1234')
+```
+
+### `kdb.records` Table
 
 List of available columns:
 * `log_position` of type `INT64` - the position of the record within the log
@@ -48,7 +78,7 @@ List of available columns:
 * `data` of type `VARCHAR` - the payload of the record. In case of JSON, you can cast this column to `JSON` data type and use arrow navigation operators to access the inner fields. If the payload is binary it is converted to a base64 encoded string.
 * `metadata` of type `VARCHAR` - the metadata of the record in the form of the JSON
 
-### User-defined Index Table
+### `usr.<user-defined-index>` Tables
 
 List of available columns:
 * `log_position` of type `INT64` - the position of the record within the log
@@ -67,7 +97,7 @@ Arrow Flight SQL is a rich protocol with many features. Its implementation in Ku
 * Prepared statements and parameters binding
 * Schema discovery for queries and prepared statements
 
-## Examples
+## Flight Client Examples
 For simplicity, examples below assume `insecure` mode for KurrentDB node.
 
 ### Java
