@@ -209,25 +209,12 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		_emitted.Clear();
 		if (_definitionBuilder.IsBiState && _state.IsArray()) {
 			var arr = _state.AsArray();
-			if (arr.TryGetValue(0, out var state)) {
-				if (state.IsString()) {
-					newState = state.AsString();
-				} else {
-					newState = ConvertToStringHandlingNulls(state);
-				}
-			} else {
-				newState = "";
-			}
-
-			if (arr.TryGetValue(1, out var sharedState)) {
-				newSharedState = ConvertToStringHandlingNulls(sharedState);
-			} else {
-				newSharedState = null;
-			}
-
-		} else if (_state.IsString()) {
-			newState = _state.AsString();
-			newSharedState = null;
+			newState = arr.TryGetValue(0, out var state)
+				? ConvertToStringHandlingNulls(state)
+				: "";
+			newSharedState = arr.TryGetValue(1, out var sharedState)
+				? ConvertToStringHandlingNulls(sharedState)
+				: null;
 		} else {
 			newState = ConvertToStringHandlingNulls(_state);
 			newSharedState = null;
@@ -731,7 +718,7 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 			} else if (_any != null) {
 				newState = _jsFunctionCaller.Call("$any", _any, state, FromObject(Engine, eventEnvelope));
 			} else {
-				newState = eventEnvelope.BodyRaw;
+				newState = eventEnvelope.IsJson ? eventEnvelope.Body : eventEnvelope.BodyRaw;
 			}
 			return newState == Undefined ? state : newState;
 		}
