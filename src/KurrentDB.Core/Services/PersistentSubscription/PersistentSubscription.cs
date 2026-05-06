@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
@@ -45,12 +46,16 @@ public class PersistentSubscription {
 	private bool _skipFirstEvent;
 	private DateTime _lastCheckPointTime = DateTime.MinValue;
 	private readonly PersistentSubscriptionParams _settings;
+	// the next sequence number that we will assign when an event leaves the _buffer
 	private long _nextSequenceNumber;
 	private long _lastCheckpointedSequenceNumber;
+	// _nextSequenceNumber - 1
 	private long _lastKnownSequenceNumber;
+	// the position of the message that has the _lastKnownSequenceNumber
 	private IPersistentSubscriptionStreamPosition _lastKnownMessage;
 	private readonly object _lock = new object();
 	private bool _faulted;
+	private bool _pushScheduled;
 
 	public bool HasClients {
 		get { return _pushClients.Count > 0; }
@@ -226,11 +231,27 @@ public class PersistentSubscription {
 
 			_nextEventToPullFrom = newPosition;
 			TryReadingNewBatch();
-			TryPushingMessagesToClients();
+			SchedulePushToClients();
 		}
 	}
 
-	private void TryPushingMessagesToClients() {
+	private void SchedulePushToClients() {
+		Debug.Assert(Monitor.IsEntered(_lock));
+		if (_pushScheduled)
+			return;
+
+		_pushScheduled = true;
+		_settings.PushScheduler.SchedulePush();
+	}
+
+	public void PushToClientsFromSchedule() {
+		lock (_lock) {
+			_pushScheduled = false;
+			PushToClients();
+		}
+	}
+
+	private void PushToClients() {
 		lock (_lock) {
 			if (!TryGetStreamBuffer(out var streamBuffer))
 				return;
@@ -297,7 +318,7 @@ public class PersistentSubscription {
 					_nextEventToPullFrom = _settings.EventSource.GetStreamPositionFor(resolvedEvent);
 			}
 
-			TryPushingMessagesToClients();
+			SchedulePushToClients();
 		}
 	}
 
@@ -322,6 +343,7 @@ public class PersistentSubscription {
 		}
 	}
 
+	// called when a message is Pushed
 	private void MarkBeginProcessing(OutstandingMessage message) {
 		_statistics.IncrementProcessed();
 
@@ -345,7 +367,7 @@ public class PersistentSubscription {
 				return;
 			}
 
-			TryPushingMessagesToClients();
+			SchedulePushToClients();
 		}
 	}
 
@@ -355,6 +377,9 @@ public class PersistentSubscription {
 		}
 	}
 
+	// For when we filtered out a new event at source.
+	// Not related to when a client skips an event (NakAction.Skip)
+	// Not related to when a consumer is too busy (ConsumerPushResult.Skipped)
 	public void HandleSkippedEvents(IPersistentSubscriptionStreamPosition position, long skippedCount) {
 		_lastKnownMessage = position;
 		_nextSequenceNumber += skippedCount;
@@ -375,7 +400,7 @@ public class PersistentSubscription {
 				RetryMessage(m);
 			}
 
-			TryPushingMessagesToClients();
+			SchedulePushToClients();
 			return true;
 		}
 	}
@@ -388,7 +413,7 @@ public class PersistentSubscription {
 				RetryMessage(m);
 			}
 
-			TryPushingMessagesToClients();
+			SchedulePushToClients();
 		}
 	}
 
@@ -457,7 +482,7 @@ public class PersistentSubscription {
 			RemoveProcessingMessages(processedEventIds);
 			TryMarkCheckpoint(false);
 			TryReadingNewBatch();
-			TryPushingMessagesToClients();
+			SchedulePushToClients();
 		}
 	}
 
@@ -473,7 +498,7 @@ public class PersistentSubscription {
 			RemoveProcessingMessages(processedEventIds);
 			TryMarkCheckpoint(false);
 			TryReadingNewBatch();
-			TryPushingMessagesToClients();
+			SchedulePushToClients();
 		}
 	}
 
@@ -527,7 +552,7 @@ public class PersistentSubscription {
 			lock (_lock) {
 				_outstandingMessages.Remove(e.OriginalEvent.EventId);
 				_pushClients.RemoveProcessingMessages(e.OriginalEvent.EventId);
-				TryPushingMessagesToClients();
+				SchedulePushToClients();
 			}
 		});
 	}
@@ -595,7 +620,7 @@ public class PersistentSubscription {
 				streamBuffer.AddRetry(OutstandingMessage.ForParkedEvent(ev));
 			}
 
-			TryPushingMessagesToClients();
+			SchedulePushToClients();
 
 			var newStreamPosition = newPosition as PersistentSubscriptionSingleStreamPosition;
 			Ensure.NotNull(newStreamPosition, "newStreamPosition");
@@ -665,7 +690,7 @@ public class PersistentSubscription {
 				}
 			}
 
-			TryPushingMessagesToClients();
+			SchedulePushToClients();
 			TryMarkCheckpoint(true);
 			if ((_state & (PersistentSubscriptionState.Behind |
 				 PersistentSubscriptionState.OutstandingPageRequest)) ==

@@ -35,6 +35,7 @@ public class PersistentSubscriptionService<TStreamId> :
 	IHandle<SystemMessage.BecomeLeader>,
 	IHandle<SubscriptionMessage.PersistentSubscriptionsRestart>,
 	IHandle<SubscriptionMessage.PersistentSubscriptionTimerTick>,
+	IHandle<SubscriptionMessage.PersistentSubscriptionPushToClients>,
 	IHandle<ClientMessage.ReplayParkedMessages>,
 	IHandle<ClientMessage.ReplayParkedMessage>,
 	IHandle<SystemMessage.StateChangeMessage>,
@@ -509,6 +510,7 @@ public class PersistentSubscriptionService<TStreamId> :
 				_streamReader,
 				_checkpointReader,
 				new PersistentSubscriptionCheckpointWriter(key, _ioDispatcher),
+				new PersistentSubscriptionPushScheduler(key, _bus),
 				new PersistentSubscriptionMessageParker(key, _ioDispatcher)));
 
 		var updateEntry = new PersistentSubscriptionEntry {
@@ -708,6 +710,7 @@ public class PersistentSubscriptionService<TStreamId> :
 				_streamReader,
 				_checkpointReader,
 				new PersistentSubscriptionCheckpointWriter(key, _ioDispatcher),
+				new PersistentSubscriptionPushScheduler(key, _bus),
 				new PersistentSubscriptionMessageParker(key, _ioDispatcher)));
 
 		UpdateSubscription(stream, groupName, subscription);
@@ -1361,6 +1364,12 @@ public class PersistentSubscriptionService<TStreamId> :
 			_bus.Publish(TimerMessage.Schedule.Create(TimeSpan.FromMilliseconds(1000),
 				_bus,
 				new SubscriptionMessage.PersistentSubscriptionTimerTick(_timerTickCorrelationId)));
+		}
+	}
+
+	public void Handle(SubscriptionMessage.PersistentSubscriptionPushToClients message) {
+		if (_subscriptionsById.TryGetValue(message.SubscriptionId, out var subscription)) {
+			subscription.PushToClientsFromSchedule();
 		}
 	}
 

@@ -129,7 +129,7 @@ public class ScavengeState<TStreamId> : IScavengeState<TStreamId> {
 		_checkpointStorage.TryGetValue(Unit.Instance, out checkpoint);
 
 	public IEnumerable<TStreamId> AllCollisions() {
-		return _collisionDetector.AllCollisions();
+		return _collisionDetector?.AllCollisions() ?? [];
 	}
 
 	public bool TryGetOriginalStreamData(
