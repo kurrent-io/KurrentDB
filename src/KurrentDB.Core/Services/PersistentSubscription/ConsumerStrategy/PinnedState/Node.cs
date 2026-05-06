@@ -29,7 +29,7 @@ internal class Node {
 	public Node(PersistentSubscriptionClient client) {
 		Client = client;
 		ConnectionId = client.ConnectionId;
-		NodeId = client.CorrelationId;
+		NodeId = client.InstanceId;
 
 		var portSplit = client.From.IndexOf(':');
 		if (portSplit == -1) {
