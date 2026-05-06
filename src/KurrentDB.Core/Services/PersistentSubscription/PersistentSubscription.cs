@@ -236,25 +236,32 @@ public class PersistentSubscription {
 				return;
 
 			foreach (StreamBuffer.OutstandingMessagePointer messagePointer in streamBuffer.Scan()) {
-				//optimistically assume that the message will be pushed
+				//optimistically assume that the message will leave the buffer
 				//if it is, then we will increment the next sequence number if a new one was assigned
 				//if it is not, then we will not increment the next sequence number
 				(OutstandingMessage message, bool newSequenceNumberAssigned) =
 					OutstandingMessage.ForPushedEvent(messagePointer.Message, _nextSequenceNumber, _lastKnownMessage);
 				ConsumerPushResult result =
 					_pushClients.PushMessageToClient(message);
+
+				if (newSequenceNumberAssigned && result is ConsumerPushResult.Sent or ConsumerPushResult.Skipped) {
+					_lastKnownSequenceNumber = _nextSequenceNumber++;
+					_lastKnownMessage = message.EventPosition;
+				}
+
 				if (result == ConsumerPushResult.Sent) {
 					messagePointer.MarkSent();
-
-					if (newSequenceNumberAssigned) {
-						//the message was pushed and a new sequence number was assigned
-						//so we increment the next sequence number
-						_nextSequenceNumber++;
-					}
-
 					MarkBeginProcessing(message);
 				} else if (result == ConsumerPushResult.Skipped) {
-					// The consumer strategy skipped the message so leave it in the buffer and continue.
+					if (newSequenceNumberAssigned) {
+						// New message from buffer - move it to the back of retry.
+						Debug.Assert(!messagePointer.IsRetry);
+						messagePointer.MarkSent();
+						streamBuffer.AddRetryToEnd(message);
+					} else {
+						// Otherwise it's already in retry - leave it in place.
+						Debug.Assert(messagePointer.IsRetry);
+					}
 				} else if (result == ConsumerPushResult.NoMoreCapacity) {
 					return;
 				}
@@ -303,10 +310,13 @@ public class PersistentSubscription {
 				messagePointer.MarkSent();
 				(OutstandingMessage message, bool newSequenceNumberAssigned) =
 					OutstandingMessage.ForPushedEvent(messagePointer.Message, _nextSequenceNumber, _lastKnownMessage);
+
 				if (newSequenceNumberAssigned) {
-					_nextSequenceNumber++;
+					_lastKnownSequenceNumber = _nextSequenceNumber++;
+					_lastKnownMessage = message.EventPosition;
 				}
-				MarkBeginProcessing(message); //sequence number will be incremented in this call if a new one has been assigned
+
+				MarkBeginProcessing(message);
 				yield return (messagePointer.Message.ResolvedEvent, messagePointer.Message.RetryCount);
 			}
 		}
@@ -314,10 +324,6 @@ public class PersistentSubscription {
 
 	private void MarkBeginProcessing(OutstandingMessage message) {
 		_statistics.IncrementProcessed();
-		if (message.EventSequenceNumber > _lastKnownSequenceNumber) {
-			_lastKnownSequenceNumber = message.EventSequenceNumber.Value;
-			_lastKnownMessage = _settings.EventSource.GetStreamPositionFor(message.ResolvedEvent);
-		}
 
 		StartMessage(message,
 			_settings.MessageTimeout == TimeSpan.MaxValue
