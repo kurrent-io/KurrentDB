@@ -1204,6 +1204,7 @@ public class ClusterVNode<TStreamId> :
 		_mainBus.Subscribe<ClientMessage.UnsubscribeFromStream>(perSubscrQueue);
 		_mainBus.Subscribe<ClientMessage.PersistentSubscriptionAckEvents>(perSubscrQueue);
 		_mainBus.Subscribe<ClientMessage.PersistentSubscriptionNackEvents>(perSubscrQueue);
+		_mainBus.Subscribe<ClientMessage.PersistentSubscriptionStopFromConsumer>(perSubscrQueue);
 		_mainBus.Subscribe<ClientMessage.ReplayParkedMessages>(perSubscrQueue);
 		_mainBus.Subscribe<ClientMessage.ReplayParkedMessage>(perSubscrQueue);
 		_mainBus.Subscribe<ClientMessage.ReadNextNPersistentMessages>(perSubscrQueue);
@@ -1230,6 +1231,7 @@ public class ClusterVNode<TStreamId> :
 		perSubscrBus.Subscribe<ClientMessage.UnsubscribeFromStream>(persistentSubscription);
 		perSubscrBus.Subscribe<ClientMessage.PersistentSubscriptionAckEvents>(persistentSubscription);
 		perSubscrBus.Subscribe<ClientMessage.PersistentSubscriptionNackEvents>(persistentSubscription);
+		perSubscrBus.Subscribe<ClientMessage.PersistentSubscriptionStopFromConsumer>(persistentSubscription);
 		perSubscrBus.Subscribe<StorageMessage.EventCommitted>(persistentSubscription);
 		perSubscrBus.Subscribe<ClientMessage.CreatePersistentSubscriptionToStream>(persistentSubscription);
 		perSubscrBus.Subscribe<ClientMessage.UpdatePersistentSubscriptionToStream>(persistentSubscription);
