@@ -439,7 +439,7 @@ public static class Configure {
 		return InternalServerError();
 	}
 
-	private static ResponseConfiguration HandleNotHandled(Uri requestedUri, ClientMessage.NotHandled notHandled) {
+	public static ResponseConfiguration HandleNotHandled(Uri requestedUri, ClientMessage.NotHandled notHandled) {
 		switch (notHandled.Reason) {
 			case ClientMessage.NotHandled.Types.NotHandledReason.NotReady:
 				return ServiceUnavailable("Server Is Not Ready");

@@ -407,6 +407,8 @@ public class PersistentSubscriptionController : CommunicationController {
 			(args, message) => http.ResponseCodec.To(message),
 			(args, message) => {
 				int code;
+				if (message is ClientMessage.NotHandled notHandled)
+					return Configure.HandleNotHandled(args.RequestedUrl, notHandled);
 				var m = message as ClientMessage.ReplayMessagesReceived;
 				if (m == null)
 					throw new Exception("unexpected message " + message);
@@ -463,6 +465,8 @@ public class PersistentSubscriptionController : CommunicationController {
 			(args, message) => http.ResponseCodec.To(message),
 			(args, message) => {
 				int code;
+				if (message is ClientMessage.NotHandled notHandled)
+					return Configure.HandleNotHandled(args.RequestedUrl, notHandled);
 				var m = message as ClientMessage.CreatePersistentSubscriptionToStreamCompleted;
 				if (m == null)
 					throw new Exception("unexpected message " + message);
@@ -537,6 +541,8 @@ public class PersistentSubscriptionController : CommunicationController {
 			(args, message) => http.ResponseCodec.To(message),
 			(args, message) => {
 				int code;
+				if (message is ClientMessage.NotHandled notHandled)
+					return Configure.HandleNotHandled(args.RequestedUrl, notHandled);
 				var m = message as ClientMessage.UpdatePersistentSubscriptionToStreamCompleted;
 				if (m == null)
 					throw new Exception("unexpected message " + message);
@@ -683,6 +689,8 @@ public class PersistentSubscriptionController : CommunicationController {
 			(args, message) => http.ResponseCodec.To(message),
 			(args, message) => {
 				int code;
+				if (message is ClientMessage.NotHandled notHandled)
+					return Configure.HandleNotHandled(args.RequestedUrl, notHandled);
 				var m = message as ClientMessage.DeletePersistentSubscriptionToStreamCompleted;
 				if (m == null)
 					throw new Exception("unexpected message " + message);
@@ -841,6 +849,8 @@ public class PersistentSubscriptionController : CommunicationController {
 
 	private static ResponseConfiguration StatsConfiguration(HttpEntityManager http, Message message) {
 		int code;
+		if (message is ClientMessage.NotHandled notHandled)
+			return Configure.HandleNotHandled(http.RequestedUrl, notHandled);
 		var m = message as MonitoringMessage.GetPersistentSubscriptionStatsCompleted;
 		if (m == null)
 			throw new Exception("unexpected message " + message);
@@ -883,6 +893,8 @@ public class PersistentSubscriptionController : CommunicationController {
 				message as ClientMessage.ReadNextNPersistentMessagesCompleted, stream, groupname, count, embed),
 			(args, message) => {
 				int code;
+				if (message is ClientMessage.NotHandled notHandled)
+					return Configure.HandleNotHandled(args.RequestedUrl, notHandled);
 				var m = message as ClientMessage.ReadNextNPersistentMessagesCompleted;
 				if (m == null)
 					throw new Exception("unexpected message " + message);
