@@ -146,6 +146,8 @@
     <PackageVersion Include="Serilog.Sinks.TextWriter" Version="3.0.0" />
     <PackageVersion Include="SharpDotYaml.Extensions.Configuration" Version="0.3.1" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
+    <!-- https://github.com/advisories/GHSA-pggp-6c3x-2xmx -->
+    <PackageVersion Include="Snappier" Version="1.3.1" />
     <PackageVersion Include="System.CommandLine.DragonFruit" Version="0.3.0-alpha.21216.1" />
     <PackageVersion Include="System.ComponentModel.Composition" Version="10.0.0" />
     <PackageVersion Include="System.Diagnostics.PerformanceCounter" Version="10.0.0" />
