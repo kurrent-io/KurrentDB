@@ -389,16 +389,19 @@ public class LiveTests {
 	public void live_subscription_pushes_events_to_client() {
 		var envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.StartFromCurrent());
 		reader.Load(null);
 		sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-1", envelope, 10, "foo", "bar");
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(0, _eventSource));
+		pushScheduler.Push(sub);
 		Assert.AreEqual(1, envelope.Replies.Count);
 	}
 
@@ -407,12 +410,14 @@ public class LiveTests {
 		var envelope1 = new FakeEnvelope();
 		var envelope2 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.PreferRoundRobin()
 				.StartFromCurrent());
 		reader.Load(null);
@@ -420,21 +425,24 @@ public class LiveTests {
 		sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-2", envelope2, 10, "foo", "bar");
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(0, _eventSource));
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(1, _eventSource));
+		pushScheduler.Push(sub);
 		Assert.AreEqual(1, envelope1.Replies.Count);
 		Assert.AreEqual(1, envelope2.Replies.Count);
 	}
 
 	[Test]
-	public void live_subscription_with_prefer_one_and_two_pushes_events_to_both() {
+	public void live_subscription_with_dispatch_to_single_pushes_events_to_one() {
 		var envelope1 = new FakeEnvelope();
 		var envelope2 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.PreferDispatchToSingle()
 				.StartFromCurrent());
 		reader.Load(null);
@@ -442,6 +450,7 @@ public class LiveTests {
 		sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-2", envelope2, 10, "foo", "bar");
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(0, _eventSource));
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(1, _eventSource));
+		pushScheduler.Push(sub);
 		Assert.AreEqual(2, envelope1.Replies.Count);
 	}
 
@@ -450,16 +459,19 @@ public class LiveTests {
 	public void subscription_with_pull_sends_data_to_client() {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.StartFromBeginning());
 		reader.Load(null);
 		sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-1", envelope1, 10, "foo", "bar");
 		sub.HandleReadCompleted(new[] { Helper.GetFakeEventFor(0, _eventSource) }, Helper.GetStreamPositionFor(1, _eventSource), false);
+		pushScheduler.Push(sub);
 		Assert.AreEqual(1, envelope1.Replies.Count);
 	}
 
@@ -467,17 +479,20 @@ public class LiveTests {
 	public void subscription_with_pull_does_not_crash_if_not_ready_yet() {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.StartFromBeginning());
 		Assert.DoesNotThrow(() => {
 			sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-1", envelope1, 10, "foo", "bar");
 			sub.HandleReadCompleted(new[] { Helper.GetFakeEventFor(0, _eventSource) }, Helper.GetStreamPositionFor(1, _eventSource),
 				false);
+			pushScheduler.Push(sub);
 		});
 	}
 
@@ -485,16 +500,19 @@ public class LiveTests {
 	public void subscription_with_live_data_does_not_crash_if_not_ready_yet() {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.StartFromBeginning());
 		Assert.DoesNotThrow(() => {
 			sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-1", envelope1, 10, "foo", "bar");
 			sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(0, _eventSource));
+			pushScheduler.Push(sub);
 		});
 	}
 
@@ -504,12 +522,14 @@ public class LiveTests {
 		var envelope1 = new FakeEnvelope();
 		var envelope2 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.PreferRoundRobin()
 				.StartFromBeginning());
 		reader.Load(null);
@@ -519,6 +539,7 @@ public class LiveTests {
 			Helper.GetFakeEventFor(0, _eventSource),
 			Helper.GetFakeEventFor(1, _eventSource)
 		}, Helper.GetStreamPositionFor(2, _eventSource), false);
+		pushScheduler.Push(sub);
 		Assert.AreEqual(1, envelope1.Replies.Count);
 		Assert.AreEqual(1, envelope2.Replies.Count);
 	}
@@ -529,12 +550,14 @@ public class LiveTests {
 		var envelope1 = new FakeEnvelope();
 		var envelope2 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.PreferDispatchToSingle()
 				.StartFromBeginning());
 		reader.Load(null);
@@ -544,6 +567,7 @@ public class LiveTests {
 			Helper.GetFakeEventFor(0, _eventSource),
 			Helper.GetFakeEventFor(1, _eventSource)
 		}, Helper.GetStreamPositionFor(2, _eventSource), false);
+		pushScheduler.Push(sub);
 		Assert.AreEqual(2, envelope1.Replies.Count);
 	}
 
@@ -553,6 +577,7 @@ public class LiveTests {
 		var eventsFoundSource = new TaskCompletionSource<bool>();
 		var envelope = new FakeEnvelope();
 		var checkpointReader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader(
@@ -589,6 +614,7 @@ public class LiveTests {
 				.WithCheckpointReader(checkpointReader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.StartFromBeginning());
 
 		//load the existing checkpoint at event #0
@@ -598,6 +624,7 @@ public class LiveTests {
 
 		//Meanwhile, during this 100ms time window, a new live event #3 comes in and subscription is notified
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(3, _eventSource));
+		pushScheduler.Push(sub);
 
 		await eventsFoundSource.Task;
 
@@ -605,6 +632,7 @@ public class LiveTests {
 
 		//a subscriber coming in a while later, should receive all 3 events
 		sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-1", envelope, 10, "foo", "bar");
+		pushScheduler.Push(sub);
 
 		//all 3 events should be received by the subscriber (except event 0 - the checkpoint which is skipped)
 		Assert.AreEqual(3, envelope.Replies.Count);
@@ -617,6 +645,7 @@ public class FilteredAllTests {
 	public void live_subscription_with_stream_prefix_filter_pushes_matching_events_to_client() {
 		var envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var streamFilter = EventFilter.StreamName.Prefixes(true, "test");
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToAllParamsBuilder.CreateFor("groupName", streamFilter)
@@ -624,6 +653,7 @@ public class FilteredAllTests {
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.StartFromCurrent());
 		reader.Load(null);
 		sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-1", envelope, 10, "foo", "bar");
@@ -632,6 +662,7 @@ public class FilteredAllTests {
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(2, _eventSource, streamPrefix: "test"));
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(3, _eventSource, streamPrefix: "foo"));
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(4, _eventSource, streamPrefix: "bar"));
+		pushScheduler.Push(sub);
 		Assert.AreEqual(2, envelope.Replies.Count);
 	}
 
@@ -639,6 +670,7 @@ public class FilteredAllTests {
 	public void live_subscription_with_stream_regex_filter_pushes_matching_events_to_client() {
 		var envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var streamFilter = EventFilter.StreamName.Regex(true, "^te");
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToAllParamsBuilder.CreateFor("groupName", streamFilter)
@@ -646,6 +678,7 @@ public class FilteredAllTests {
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.StartFromCurrent());
 		reader.Load(null);
 		sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-1", envelope, 10, "foo", "bar");
@@ -654,6 +687,7 @@ public class FilteredAllTests {
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(2, _eventSource, streamPrefix: "team"));
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(3, _eventSource, streamPrefix: "tteam"));
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(4, _eventSource, streamPrefix: "bar"));
+		pushScheduler.Push(sub);
 		Assert.AreEqual(2, envelope.Replies.Count);
 	}
 
@@ -661,6 +695,7 @@ public class FilteredAllTests {
 	public void live_subscription_with_event_type_prefix_filter_pushes_matching_events_to_client() {
 		var envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var eventFilter = EventFilter.EventType.Prefixes(true, "test");
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToAllParamsBuilder.CreateFor("groupName", eventFilter)
@@ -668,6 +703,7 @@ public class FilteredAllTests {
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.StartFromCurrent());
 		reader.Load(null);
 		sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-1", envelope, 10, "foo", "bar");
@@ -676,6 +712,7 @@ public class FilteredAllTests {
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(2, _eventSource, eventType: "test"));
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(3, _eventSource, eventType: "foo"));
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(4, _eventSource, eventType: "bar"));
+		pushScheduler.Push(sub);
 		Assert.AreEqual(2, envelope.Replies.Count);
 	}
 
@@ -683,6 +720,7 @@ public class FilteredAllTests {
 	public void live_subscription_with_event_type_regex_filter_pushes_matching_events_to_client() {
 		var envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var eventFilter = EventFilter.EventType.Regex(true, "^te");
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToAllParamsBuilder.CreateFor("groupName", eventFilter)
@@ -690,6 +728,7 @@ public class FilteredAllTests {
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => { }))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.StartFromCurrent());
 		reader.Load(null);
 		sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-1", envelope, 10, "foo", "bar");
@@ -698,6 +737,7 @@ public class FilteredAllTests {
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(2, _eventSource, eventType: "team"));
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(3, _eventSource, eventType: "tteam"));
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(4, _eventSource, eventType: "bar"));
+		pushScheduler.Push(sub);
 		Assert.AreEqual(2, envelope.Replies.Count);
 	}
 
@@ -706,6 +746,7 @@ public class FilteredAllTests {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var eventFilter = EventFilter.StreamName.Prefixes(true, "stream");
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToAllParamsBuilder.CreateFor("groupName", eventFilter)
@@ -714,6 +755,7 @@ public class FilteredAllTests {
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
 				.PreferDispatchToSingle()
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.StartFromBeginning()
 				.MinimumToCheckPoint(1)
 				.MaximumToCheckPoint(5));
@@ -724,6 +766,7 @@ public class FilteredAllTests {
 
 		sub.HandleSkippedEvents(Helper.GetStreamPositionFor(1, _eventSource), 2);
 		sub.NotifyClockTick(DateTime.UtcNow);
+		pushScheduler.Push(sub);
 		Assert.AreEqual(Helper.GetStreamPositionFor(1, _eventSource), cp);
 	}
 
@@ -732,6 +775,7 @@ public class FilteredAllTests {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var eventFilter = EventFilter.StreamName.Prefixes(true, "stream");
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToAllParamsBuilder.CreateFor("groupName", eventFilter)
@@ -740,6 +784,7 @@ public class FilteredAllTests {
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
 				.PreferDispatchToSingle()
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.StartFromBeginning()
 				.MinimumToCheckPoint(1)
 				.MaximumToCheckPoint(5));
@@ -750,6 +795,7 @@ public class FilteredAllTests {
 
 		sub.HandleSkippedEvents(Helper.GetStreamPositionFor(1, _eventSource), 6);
 
+		pushScheduler.Push(sub);
 		Assert.AreEqual(Helper.GetStreamPositionFor(1, _eventSource), cp);
 	}
 
@@ -758,6 +804,7 @@ public class FilteredAllTests {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var eventFilter = EventFilter.StreamName.Prefixes(true, "stream");
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToAllParamsBuilder.CreateFor("groupName", eventFilter)
@@ -766,6 +813,7 @@ public class FilteredAllTests {
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
 				.PreferDispatchToSingle()
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.StartFromBeginning()
 				.MinimumToCheckPoint(1)
 				.MaximumToCheckPoint(5));
@@ -778,12 +826,15 @@ public class FilteredAllTests {
 			Helper.GetFakeEventFor(0, _eventSource),
 			Helper.GetFakeEventFor(1, _eventSource)
 		}, Helper.GetStreamPositionFor(2, _eventSource), false);
+		pushScheduler.Push(sub);
+
 		sub.AcknowledgeMessagesProcessed(corrid, new[] {
 			Helper.GetEventIdFor(0),
 			Helper.GetEventIdFor(1),
 		});
 
 		sub.HandleSkippedEvents(Helper.GetStreamPositionFor(2, _eventSource), 3);
+		pushScheduler.Push(sub);
 		Assert.AreEqual(Helper.GetStreamPositionFor(2, _eventSource), cp);
 	}
 
@@ -792,6 +843,7 @@ public class FilteredAllTests {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var eventFilter = EventFilter.StreamName.Prefixes(true, "stream");
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToAllParamsBuilder.CreateFor("groupName", eventFilter)
@@ -800,6 +852,7 @@ public class FilteredAllTests {
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
 				.PreferDispatchToSingle()
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.StartFromBeginning()
 				.MinimumToCheckPoint(1)
 				.MaximumToCheckPoint(5));
@@ -807,11 +860,13 @@ public class FilteredAllTests {
 		var corrid = Guid.NewGuid();
 		sub.AddClient(corrid, Guid.NewGuid(), "connection-1", envelope1, 10, "foo", "bar");
 		sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-2", envelope1, 10, "foo", "bar");
+		pushScheduler.Push(sub);
 
 		sub.HandleReadCompleted(new[] {
 			Helper.GetFakeEventFor(0, _eventSource),
 			Helper.GetFakeEventFor(1, _eventSource)
 		}, Helper.GetStreamPositionFor(2, _eventSource), false);
+		pushScheduler.Push(sub);
 
 		sub.HandleSkippedEvents(Helper.GetStreamPositionFor(2, _eventSource), 5);
 		Assert.IsNull(cp);
@@ -822,6 +877,7 @@ public class FilteredAllTests {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var eventFilter = EventFilter.StreamName.Prefixes(true, "foo");
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToAllParamsBuilder.CreateFor("groupName", eventFilter)
@@ -830,6 +886,7 @@ public class FilteredAllTests {
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
 				.PreferDispatchToSingle()
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.StartFromBeginning()
 				.MinimumToCheckPoint(1)
 				.MaximumToCheckPoint(5));
@@ -845,6 +902,7 @@ public class FilteredAllTests {
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(2, _eventSource, streamPrefix: "test"));
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(3, _eventSource, streamPrefix: "test"));
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(4, _eventSource, streamPrefix: "test"));
+		pushScheduler.Push(sub);
 		Assert.AreEqual(Helper.GetStreamPositionFor(4, _eventSource), cp);
 	}
 
@@ -853,6 +911,7 @@ public class FilteredAllTests {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var eventFilter = EventFilter.StreamName.Prefixes(true, "foo");
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToAllParamsBuilder.CreateFor("groupName", eventFilter)
@@ -861,6 +920,7 @@ public class FilteredAllTests {
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
 				.PreferDispatchToSingle()
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.StartFromBeginning()
 				.MinimumToCheckPoint(1)
 				.MaximumToCheckPoint(5));
@@ -874,6 +934,7 @@ public class FilteredAllTests {
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(0, _eventSource, streamPrefix: "test"));
 
 		sub.NotifyClockTick(DateTime.UtcNow);
+		pushScheduler.Push(sub);
 		Assert.AreEqual(Helper.GetStreamPositionFor(0, _eventSource), cp);
 	}
 
@@ -882,6 +943,7 @@ public class FilteredAllTests {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var eventFilter = EventFilter.StreamName.Prefixes(true, "foo");
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToAllParamsBuilder.CreateFor("groupName", eventFilter)
@@ -890,6 +952,7 @@ public class FilteredAllTests {
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
 				.PreferDispatchToSingle()
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.StartFromBeginning()
 				.MinimumToCheckPoint(1)
 				.MaximumToCheckPoint(5));
@@ -902,6 +965,7 @@ public class FilteredAllTests {
 
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(0, _eventSource, streamPrefix: "foo"));
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(1, _eventSource, streamPrefix: "foo"));
+		pushScheduler.Push(sub);
 		sub.AcknowledgeMessagesProcessed(corrid, new[] {
 			Helper.GetEventIdFor(0),
 			Helper.GetEventIdFor(1),
@@ -910,6 +974,7 @@ public class FilteredAllTests {
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(2, _eventSource, streamPrefix: "test"));
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(3, _eventSource, streamPrefix: "test"));
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(4, _eventSource, streamPrefix: "test"));
+		pushScheduler.Push(sub);
 		Assert.AreEqual(Helper.GetStreamPositionFor(4, _eventSource), cp);
 	}
 
@@ -918,6 +983,7 @@ public class FilteredAllTests {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var eventFilter = EventFilter.StreamName.Prefixes(true, "foo");
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToAllParamsBuilder.CreateFor("groupName", eventFilter)
@@ -926,6 +992,7 @@ public class FilteredAllTests {
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
 				.PreferDispatchToSingle()
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.StartFromBeginning()
 				.MinimumToCheckPoint(1)
 				.MaximumToCheckPoint(5));
@@ -935,6 +1002,7 @@ public class FilteredAllTests {
 		sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-2", envelope1, 10, "foo", "bar");
 
 		sub.HandleReadCompleted(Array.Empty<ResolvedEvent>(), new PersistentSubscriptionAllStreamPosition(0, 0), true);
+		pushScheduler.Push(sub);
 
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(0, _eventSource, streamPrefix: "foo"));
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(1, _eventSource, streamPrefix: "foo"));
@@ -942,6 +1010,7 @@ public class FilteredAllTests {
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(2, _eventSource, streamPrefix: "test"));
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(3, _eventSource, streamPrefix: "test"));
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(4, _eventSource, streamPrefix: "test"));
+		pushScheduler.Push(sub);
 		Assert.IsNull(cp);
 	}
 }
@@ -1093,12 +1162,14 @@ public class Checkpointing {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.PreferDispatchToSingle()
 				.StartFromBeginning()
 				.MinimumToCheckPoint(5)
@@ -1111,7 +1182,9 @@ public class Checkpointing {
 			Helper.GetFakeEventFor(0, _eventSource),
 			Helper.GetFakeEventFor(1, _eventSource)
 		}, Helper.GetStreamPositionFor(2, _eventSource), false);
+		pushScheduler.Push(sub);
 		sub.AcknowledgeMessagesProcessed(corrid, new[] { Helper.GetEventIdFor(0) });
+		pushScheduler.Push(sub);
 		Assert.IsNull(cp);
 	}
 
@@ -1120,12 +1193,14 @@ public class Checkpointing {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.PreferDispatchToSingle()
 				.StartFromBeginning()
 				.MinimumToCheckPoint(1)
@@ -1138,7 +1213,9 @@ public class Checkpointing {
 			Helper.GetFakeEventFor(0, _eventSource),
 			Helper.GetFakeEventFor(1, _eventSource)
 		}, Helper.GetStreamPositionFor(2, _eventSource), false);
+		pushScheduler.Push(sub);
 		sub.AcknowledgeMessagesProcessed(corrid, new[] { Helper.GetEventIdFor(0) });
+		pushScheduler.Push(sub);
 		Assert.IsNull(cp);
 	}
 
@@ -1147,12 +1224,14 @@ public class Checkpointing {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.PreferDispatchToSingle()
 				.StartFromBeginning()
 				.MaximumToCheckPoint(1));
@@ -1165,10 +1244,12 @@ public class Checkpointing {
 			Helper.GetFakeEventFor(1, _eventSource),
 			Helper.GetFakeEventFor(2, _eventSource),
 		}, Helper.GetStreamPositionFor(3, _eventSource), false);
+		pushScheduler.Push(sub);
 		sub.AcknowledgeMessagesProcessed(corrid, new[] {
 			Helper.GetEventIdFor(0),
 			Helper.GetEventIdFor(1),
 		});
+		pushScheduler.Push(sub);
 		Assert.AreEqual(Helper.GetStreamPositionFor(1, _eventSource), cp);
 	}
 
@@ -1177,12 +1258,14 @@ public class Checkpointing {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.PreferDispatchToSingle()
 				.StartFromBeginning()
 				.MaximumToCheckPoint(1));
@@ -1196,10 +1279,12 @@ public class Checkpointing {
 			Helper.GetFakeEventFor(2, _eventSource),
 			Helper.GetFakeEventFor(3, _eventSource),
 		}, Helper.GetStreamPositionFor(4, _eventSource), false);
+		pushScheduler.Push(sub);
 		sub.AcknowledgeMessagesProcessed(corrid, new[] {
 			Helper.GetEventIdFor(0),
 			Helper.GetEventIdFor(1),
 		});
+		pushScheduler.Push(sub);
 		Assert.AreEqual(Helper.GetStreamPositionFor(1, _eventSource), cp);
 	}
 
@@ -1208,12 +1293,14 @@ public class Checkpointing {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.PreferDispatchToSingle()
 				.StartFromBeginning()
 				.MaximumToCheckPoint(1));
@@ -1227,9 +1314,11 @@ public class Checkpointing {
 			Helper.GetFakeEventFor(2, _eventSource),
 			Helper.GetFakeEventFor(3, _eventSource),
 		}, Helper.GetStreamPositionFor(4, _eventSource), false);
+		pushScheduler.Push(sub);
 		sub.AcknowledgeMessagesProcessed(corrid, new[] {
 			Helper.GetEventIdFor(0),
 		});
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(Helper.GetStreamPositionFor(0, _eventSource), cp);
 	}
@@ -1239,12 +1328,14 @@ public class Checkpointing {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.PreferDispatchToSingle()
 				.StartFromBeginning()
 				.MaximumToCheckPoint(1));
@@ -1258,8 +1349,10 @@ public class Checkpointing {
 			Helper.GetFakeEventFor(2, _eventSource),
 			Helper.GetFakeEventFor(3, _eventSource),
 		}, Helper.GetStreamPositionFor(4, _eventSource), false);
+		pushScheduler.Push(sub);
 		sub.AcknowledgeMessagesProcessed(corrid, new[] { Helper.GetEventIdFor(0), Helper.GetEventIdFor(2) });
 		sub.NotAcknowledgeMessagesProcessed(corrid, new[] { Helper.GetEventIdFor(1) }, NakAction.Park, "test park");
+		pushScheduler.Push(sub);
 		Assert.AreEqual(Helper.GetStreamPositionFor(2, _eventSource), cp);
 	}
 
@@ -1268,12 +1361,14 @@ public class Checkpointing {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.PreferDispatchToSingle()
 				.StartFromBeginning()
 				.MaximumToCheckPoint(1));
@@ -1287,6 +1382,7 @@ public class Checkpointing {
 			Helper.GetFakeEventFor(2, _eventSource),
 			Helper.GetFakeEventFor(3, _eventSource),
 		}, Helper.GetStreamPositionFor(4, _eventSource), false);
+		pushScheduler.Push(sub);
 		sub.NotAcknowledgeMessagesProcessed(corrid, new[] {
 			Helper.GetEventIdFor(2)
 		}, NakAction.Retry, "test retry");
@@ -1295,6 +1391,7 @@ public class Checkpointing {
 			Helper.GetEventIdFor(1),
 			Helper.GetEventIdFor(3),
 		});
+		pushScheduler.Push(sub);
 		Assert.AreEqual(Helper.GetStreamPositionFor(1, _eventSource), cp);
 	}
 
@@ -1303,12 +1400,14 @@ public class Checkpointing {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.PreferDispatchToSingle()
 				.StartFromBeginning()
 				.MaximumToCheckPoint(1));
@@ -1321,11 +1420,13 @@ public class Checkpointing {
 			Helper.GetFakeEventFor(1, _eventSource),
 			Helper.GetFakeEventFor(2, _eventSource)
 		}, Helper.GetStreamPositionFor(3, _eventSource), false);
+		pushScheduler.Push(sub);
 		sub.AcknowledgeMessagesProcessed(corrid, new[] {
 			Helper.GetEventIdFor(0),
 			Helper.GetEventIdFor(1),
 			Helper.GetEventIdFor(2)
 		});
+		pushScheduler.Push(sub);
 		Assert.AreEqual(Helper.GetStreamPositionFor(2, _eventSource), cp);
 	}
 
@@ -1334,6 +1435,7 @@ public class Checkpointing {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
@@ -1341,6 +1443,7 @@ public class Checkpointing {
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
 				.PreferDispatchToSingle()
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.StartFromBeginning()
 				.MinimumToCheckPoint(1)
 				.MaximumToCheckPoint(5));
@@ -1353,11 +1456,13 @@ public class Checkpointing {
 			Helper.GetFakeEventFor(1, _eventSource),
 			Helper.GetFakeEventFor(2, _eventSource)
 		}, Helper.GetStreamPositionFor(3, _eventSource), false);
+		pushScheduler.Push(sub);
 		sub.AcknowledgeMessagesProcessed(corrid, new[] {
 			Helper.GetEventIdFor(0),
 			Helper.GetEventIdFor(1),
 		});
 		sub.NotifyClockTick(DateTime.UtcNow);
+		pushScheduler.Push(sub);
 		Assert.AreEqual(Helper.GetStreamPositionFor(1, _eventSource), cp);
 	}
 
@@ -1366,12 +1471,14 @@ public class Checkpointing {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.PreferDispatchToSingle()
 				.StartFromBeginning()
 				.MinimumToCheckPoint(2)
@@ -1385,11 +1492,13 @@ public class Checkpointing {
 			Helper.GetFakeEventFor(1, _eventSource),
 			Helper.GetFakeEventFor(2, _eventSource)
 		}, Helper.GetStreamPositionFor(3, _eventSource), false);
+		pushScheduler.Push(sub);
 		sub.AcknowledgeMessagesProcessed(corrid, new[] {
 			Helper.GetEventIdFor(0),
 			Helper.GetEventIdFor(1),
 		});
 		sub.NotifyClockTick(DateTime.UtcNow);
+		pushScheduler.Push(sub);
 		Assert.AreEqual(Helper.GetStreamPositionFor(1, _eventSource), cp);
 	}
 
@@ -1397,12 +1506,14 @@ public class Checkpointing {
 	public void subscription_does_write_checkpoint_for_disconnected_clients_on_time_when_min_is_hit() {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.StartFromBeginning()
 				.MinimumToCheckPoint(1)
 				.MaximumToCheckPoint(5));
@@ -1412,12 +1523,14 @@ public class Checkpointing {
 			Helper.GetFakeEventFor(0, _eventSource),
 			Helper.GetFakeEventFor(1, _eventSource),
 		}, Helper.GetStreamPositionFor(2, _eventSource), false);
+		pushScheduler.Push(sub);
 		sub.GetNextNOrLessMessages(2).ToArray();
 		sub.AcknowledgeMessagesProcessed(corrid, new[] {
 			Helper.GetEventIdFor(0),
 			Helper.GetEventIdFor(1),
 		});
 		sub.NotifyClockTick(DateTime.UtcNow);
+		pushScheduler.Push(sub);
 		Assert.AreEqual(Helper.GetStreamPositionFor(1, _eventSource), cp);
 	}
 
@@ -1426,12 +1539,14 @@ public class Checkpointing {
 		subscription_writes_correct_checkpoint_when_outstanding_messages_is_empty_and_retry_buffer_is_non_empty() {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.StartFromBeginning()
 				.MinimumToCheckPoint(1)
 				.MaximumToCheckPoint(1));
@@ -1447,6 +1562,7 @@ public class Checkpointing {
 			Helper.GetFakeEventFor(2, _eventSource),
 			Helper.GetFakeEventFor(3, _eventSource),
 		}, Helper.GetStreamPositionFor(4, _eventSource), false);
+		pushScheduler.Push(sub);
 		sub.GetNextNOrLessMessages(3).ToArray();
 		sub.AcknowledgeMessagesProcessed(clientCorrelationId, new[] {
 			Helper.GetEventIdFor(1)
@@ -1464,6 +1580,7 @@ public class Checkpointing {
 
 		//Disconnect the client
 		Assert.IsTrue(sub.RemoveClientByConnectionId(clientConnectionId));
+		pushScheduler.Push(sub);
 
 		//this should empty the _outstandingMessages buffer and move events 2 & 3 to the retry queue
 		Assert.AreEqual(sub.OutstandingMessageCount, 0);
@@ -1480,6 +1597,7 @@ public class Checkpointing {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var reader = new FakeCheckpointReader();
 		var messageParker = new FakeMessageParker();
+		var pushScheduler = new FakePushScheduler();
 
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
@@ -1487,6 +1605,7 @@ public class Checkpointing {
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => cp = i))
 				.WithMessageParker(messageParker)
+				.WithPushScheduler(pushScheduler)
 				.StartFromBeginning()
 				.MinimumToCheckPoint(1)
 				.MaximumToCheckPoint(1));
@@ -1500,6 +1619,7 @@ public class Checkpointing {
 		sub.HandleReadCompleted(new[] {
 			Helper.GetFakeEventFor(4, _eventSource)
 		}, Helper.GetStreamPositionFor(5, _eventSource), true);
+		pushScheduler.Push(sub);
 
 		//get the message and acknowledge receipt
 		sub.GetNextNOrLessMessages(1).ToArray();
@@ -1522,6 +1642,7 @@ public class Checkpointing {
 		sub.HandleParkedReadCompleted(new[] {
 			parkedEvent,
 		}, new PersistentSubscriptionSingleStreamPosition(16), true, 17);
+		pushScheduler.Push(sub);
 
 		//checkpoint should still be at 4.
 		sub.TryMarkCheckpoint(false);
@@ -1536,6 +1657,7 @@ public class Checkpointing {
 
 		//acknowledge receipt of message. the parked event is no longer in retry or outstanding message buffers
 		sub.AcknowledgeMessagesProcessed(clientCorrelationId, new[] { parkedEventId });
+		pushScheduler.Push(sub);
 
 		//checkpoint should still be at 4.
 		sub.TryMarkCheckpoint(false);
@@ -1685,12 +1807,14 @@ public class TimeoutTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
 				.WithMessageParker(parker)
+				.WithPushScheduler(pushScheduler)
 				.PreferDispatchToSingle()
 				.StartFromBeginning()
 				.WithMessageTimeoutOf(TimeSpan.FromSeconds(3)));
@@ -1700,8 +1824,10 @@ public class TimeoutTests {
 			Helper.GetFakeEventFor(0, _eventSource),
 			Helper.GetFakeEventFor(1, _eventSource),
 		}, Helper.GetStreamPositionFor(2, _eventSource), false);
+		pushScheduler.Push(sub);
 		envelope1.Replies.Clear();
 		sub.NotifyClockTick(DateTime.UtcNow.AddSeconds(1));
+		pushScheduler.Push(sub);
 		Assert.AreEqual(0, envelope1.Replies.Count);
 		Assert.AreEqual(0, parker.ParkedEvents.Count);
 	}
@@ -1711,12 +1837,14 @@ public class TimeoutTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
 				.WithMessageParker(parker)
+				.WithPushScheduler(pushScheduler)
 				.PreferDispatchToSingle()
 				.StartFromBeginning()
 				.WithMessageTimeoutOf(TimeSpan.FromSeconds(1)));
@@ -1730,8 +1858,10 @@ public class TimeoutTests {
 			Helper.BuildLinkEvent(id2, "streamName", 1,
 				Helper.BuildFakeEvent(Guid.NewGuid(), "type", "streamSource", 0, 0, 0), false, 2, 2)
 		}, Helper.GetStreamPositionFor(1, _eventSource), false);
+		pushScheduler.Push(sub);
 		envelope1.Replies.Clear();
 		sub.NotifyClockTick(DateTime.UtcNow.AddSeconds(3));
+		pushScheduler.Push(sub);
 		Assert.AreEqual(2, envelope1.Replies.Count);
 		var msg1 = (Messages.ClientMessage.PersistentSubscriptionStreamEventAppeared)envelope1.Replies[0];
 		var msg2 = (Messages.ClientMessage.PersistentSubscriptionStreamEventAppeared)envelope1.Replies[1];
@@ -1770,12 +1900,14 @@ public class TimeoutTests {
 	public void messages_dont_get_retried_when_acked_on_synchronous_reads() {
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
 				.WithMessageParker(parker)
+				.WithPushScheduler(pushScheduler)
 				.PreferDispatchToSingle()
 				.StartFromBeginning()
 				.WithMessageTimeoutOf(TimeSpan.FromSeconds(1)));
@@ -1784,12 +1916,14 @@ public class TimeoutTests {
 			Helper.GetFakeEventFor(0, _eventSource),
 			Helper.GetFakeEventFor(1, _eventSource),
 		}, Helper.GetStreamPositionFor(2, _eventSource), false);
+		pushScheduler.Push(sub);
 		sub.GetNextNOrLessMessages(2).ToArray();
 		sub.AcknowledgeMessagesProcessed(Guid.Empty, new[] {
 			Helper.GetEventIdFor(0),
 			Helper.GetEventIdFor(1),
 		});
 		sub.NotifyClockTick(DateTime.Now.AddSeconds(3));
+		pushScheduler.Push(sub);
 		var retries = sub.GetNextNOrLessMessages(2).ToArray();
 		Assert.AreEqual(0, retries.Length);
 		Assert.AreEqual(0, parker.ParkedEvents.Count);
@@ -1800,12 +1934,14 @@ public class TimeoutTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
 				.WithMessageParker(parker)
+				.WithPushScheduler(pushScheduler)
 				.PreferDispatchToSingle()
 				.StartFromBeginning()
 				.WithMaxRetriesOf(0)
@@ -1815,8 +1951,10 @@ public class TimeoutTests {
 		sub.HandleReadCompleted(new[] {
 			Helper.GetFakeEventFor(0, _eventSource)
 		}, Helper.GetStreamPositionFor(1, _eventSource), false);
+		pushScheduler.Push(sub);
 		envelope1.Replies.Clear();
 		sub.NotifyClockTick(DateTime.UtcNow.AddSeconds(3));
+		pushScheduler.Push(sub);
 		Assert.AreEqual(0, envelope1.Replies.Count);
 		Assert.AreEqual(1, parker.ParkedEvents.Count);
 		Assert.AreEqual(Helper.GetEventIdFor(0), parker.ParkedEvents[0].OriginalEvent.EventId);
@@ -1827,12 +1965,14 @@ public class TimeoutTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
 				.WithMessageParker(parker)
+				.WithPushScheduler(pushScheduler)
 				.PreferDispatchToSingle()
 				.StartFromBeginning()
 				.WithMaxRetriesOf(0)
@@ -1844,8 +1984,10 @@ public class TimeoutTests {
 			Helper.GetFakeEventFor(0, _eventSource),
 			Helper.GetFakeEventFor(1, _eventSource)
 		}, Helper.GetStreamPositionFor(2, _eventSource), false);
+		pushScheduler.Push(sub);
 		envelope1.Replies.Clear();
 		sub.NotifyClockTick(DateTime.UtcNow.AddSeconds(3));
+		pushScheduler.Push(sub);
 		Assert.AreEqual(0, envelope1.Replies.Count);
 		Assert.AreEqual(2, parker.ParkedEvents.Count);
 
@@ -1862,12 +2004,14 @@ public class TimeoutTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
 				.WithMessageParker(parker)
+				.WithPushScheduler(pushScheduler)
 				.WithMaxRetriesOf(0)
 				.WithMessageTimeoutOf(TimeSpan.Zero)
 				.StartFromBeginning());
@@ -1878,6 +2022,7 @@ public class TimeoutTests {
 			Helper.GetFakeEventFor(0, _eventSource),
 			Helper.GetFakeEventFor(1, _eventSource)
 		}, Helper.GetStreamPositionFor(2, _eventSource), false);
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(2, envelope1.Replies.Count);
 
@@ -1892,6 +2037,7 @@ public class TimeoutTests {
 			Helper.GetFakeEventFor(0, _eventSource),
 			Helper.GetFakeEventFor(1, _eventSource)
 		}, Helper.GetStreamPositionFor(2, _eventSource), false);
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(4, envelope1.Replies.Count);
 	}
@@ -1901,12 +2047,14 @@ public class TimeoutTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
 				.WithMessageParker(parker)
+				.WithPushScheduler(pushScheduler)
 				.WithMaxRetriesOf(0)
 				.PreferDispatchToSingle()
 				.StartFromBeginning()
@@ -1917,9 +2065,11 @@ public class TimeoutTests {
 			Helper.GetFakeEventFor(0, _eventSource),
 			Helper.GetFakeEventFor(1, _eventSource)
 		}, Helper.GetStreamPositionFor(2, _eventSource), false);
+		pushScheduler.Push(sub);
 		envelope1.Replies.Clear();
 		// Default timeout is 30s
 		sub.NotifyClockTick(DateTime.UtcNow.AddMinutes(1));
+		pushScheduler.Push(sub);
 		Assert.AreEqual(0, envelope1.Replies.Count);
 		Assert.AreEqual(0, parker.ParkedEvents.Count);
 	}
@@ -1939,12 +2089,14 @@ public class NAKTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
 				.WithMessageParker(parker)
+				.WithPushScheduler(pushScheduler)
 				.StartFromBeginning());
 		reader.Load(null);
 		var corrid = Guid.NewGuid();
@@ -1953,10 +2105,12 @@ public class NAKTests {
 		sub.HandleReadCompleted(new[] {
 			Helper.GetFakeEventFor(0, _eventSource)
 		}, Helper.GetStreamPositionFor(1, _eventSource), false);
+		pushScheduler.Push(sub);
 		envelope1.Replies.Clear();
 		sub.NotAcknowledgeMessagesProcessed(corrid, new[] {
 			Helper.GetEventIdFor(0)
 		}, NakAction.Park, "a reason from client.");
+		pushScheduler.Push(sub);
 		Assert.AreEqual(0, envelope1.Replies.Count);
 		Assert.AreEqual(1, parker.ParkedEvents.Count);
 		Assert.AreEqual(Helper.GetEventIdFor(0), parker.ParkedEvents[0].OriginalEvent.EventId);
@@ -1967,12 +2121,14 @@ public class NAKTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
 				.WithMessageParker(parker)
+				.WithPushScheduler(pushScheduler)
 				.StartFromBeginning());
 		reader.Load(null);
 		var corrid = Guid.NewGuid();
@@ -1980,6 +2136,7 @@ public class NAKTests {
 		sub.HandleReadCompleted(new[] {
 			Helper.GetFakeEventFor(0, _eventSource)
 		}, Helper.GetStreamPositionFor(1, _eventSource), false);
+		pushScheduler.Push(sub);
 		envelope1.Replies.Clear();
 		sub.NotAcknowledgeMessagesProcessed(corrid, new[] { Helper.GetEventIdFor(0) }, NakAction.Skip, "a reason from client.");
 		Assert.AreEqual(0, envelope1.Replies.Count);
@@ -1991,12 +2148,14 @@ public class NAKTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
 				.WithMessageParker(parker)
+				.WithPushScheduler(pushScheduler)
 				.StartFromBeginning());
 		reader.Load(null);
 		var corrid = Guid.NewGuid();
@@ -2004,8 +2163,10 @@ public class NAKTests {
 		sub.HandleReadCompleted(new[] {
 			Helper.GetFakeEventFor(0, _eventSource)
 		}, Helper.GetStreamPositionFor(1, _eventSource), false);
+		pushScheduler.Push(sub);
 		envelope1.Replies.Clear();
 		sub.NotAcknowledgeMessagesProcessed(corrid, new[] { Helper.GetEventIdFor(0) }, NakAction.Unknown, "a reason from client.");
+		pushScheduler.Push(sub);
 		Assert.AreEqual(1, envelope1.Replies.Count);
 		Assert.AreEqual(0, parker.ParkedEvents.Count);
 	}
@@ -2015,12 +2176,14 @@ public class NAKTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
 				.WithMessageParker(parker)
+				.WithPushScheduler(pushScheduler)
 				.StartFromBeginning());
 		reader.Load(null);
 		var corrid = Guid.NewGuid();
@@ -2028,8 +2191,10 @@ public class NAKTests {
 		sub.HandleReadCompleted(new[] {
 			Helper.GetFakeEventFor(0, _eventSource)
 		}, Helper.GetStreamPositionFor(1, _eventSource), false);
+		pushScheduler.Push(sub);
 		envelope1.Replies.Clear();
 		sub.NotAcknowledgeMessagesProcessed(corrid, new[] { Helper.GetEventIdFor(0) }, NakAction.Retry, "a reason from client.");
+		pushScheduler.Push(sub);
 		Assert.AreEqual(1, envelope1.Replies.Count);
 		Assert.AreEqual(Helper.GetEventIdFor(0),
 			((ClientMessage.PersistentSubscriptionStreamEventAppeared)envelope1.Replies[0]).Event.Event.EventId);
@@ -2041,6 +2206,7 @@ public class NAKTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
@@ -2048,6 +2214,7 @@ public class NAKTests {
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
 				.WithMaxRetriesOf(10)
 				.WithMessageParker(parker)
+				.WithPushScheduler(pushScheduler)
 				.StartFromBeginning());
 		reader.Load(null);
 		var corrid = Guid.NewGuid();
@@ -2056,9 +2223,11 @@ public class NAKTests {
 		sub.HandleReadCompleted(new[] {
 			ev,
 		}, Helper.GetStreamPositionFor(1, _eventSource), false);
+		pushScheduler.Push(sub);
 
 		for (int i = 1; i < 11; i++) {
 			sub.NotAcknowledgeMessagesProcessed(corrid, new[] { Helper.GetEventIdFor(0) }, NakAction.Retry, "a reason from client.");
+			pushScheduler.Push(sub);
 			Assert.AreEqual(i + 1, envelope1.Replies.Count);
 		}
 
@@ -2066,6 +2235,7 @@ public class NAKTests {
 
 		//This time should be parked
 		sub.NotAcknowledgeMessagesProcessed(corrid, new[] { Helper.GetEventIdFor(0) }, NakAction.Retry, "a reason from client.");
+		pushScheduler.Push(sub);
 		Assert.AreEqual(11, envelope1.Replies.Count);
 		Assert.That(parker.ParkedEvents, Has.Member(ev));
 	}
@@ -2075,12 +2245,14 @@ public class NAKTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
 				.WithMessageParker(parker)
+				.WithPushScheduler(pushScheduler)
 				.WithMaxRetriesOf(0)
 				.WithMessageTimeoutOf(TimeSpan.Zero)
 				.StartFromBeginning());
@@ -2093,14 +2265,17 @@ public class NAKTests {
 			Helper.GetFakeEventFor(1, _eventSource),
 			Helper.GetFakeEventFor(2, _eventSource)
 		}, Helper.GetStreamPositionFor(3, _eventSource), false);
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(1, envelope1.Replies.Count);
 
 		sub.NotAcknowledgeMessagesProcessed(corrid, new[] { Helper.GetEventIdFor(0) }, NakAction.Park, "a reason from client.");
+		pushScheduler.Push(sub);
 		Assert.AreEqual(2, envelope1.Replies.Count);
 		Assert.That(parker.ParkedEvents, Has.Exactly(1).Matches<ResolvedEvent>(_ => _.Event.EventId == Helper.GetEventIdFor(0)));
 
 		sub.NotAcknowledgeMessagesProcessed(corrid, new[] { Helper.GetEventIdFor(1) }, NakAction.Park, "a reason from client.");
+		pushScheduler.Push(sub);
 		Assert.That(parker.ParkedEvents, Has.Exactly(1).Matches<ResolvedEvent>(_ => _.Event.EventId == Helper.GetEventIdFor(1)));
 		Assert.AreEqual(3, envelope1.Replies.Count);
 	}
@@ -2145,11 +2320,13 @@ public class RemoveClientTests {
 		var client2Envelope = new FakeEnvelope();
 
 		var fakeCheckpointReader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(fakeCheckpointReader)
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.PreferRoundRobin()
 				.StartFromCurrent()
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => { })));
@@ -2166,11 +2343,13 @@ public class RemoveClientTests {
 
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(0, _eventSource));
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(1, _eventSource));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(1, client1Envelope.Replies.Count);
 		Assert.AreEqual(1, client2Envelope.Replies.Count);
 
 		sub.RemoveClientByCorrelationId(client2Id, false);
+		pushScheduler.Push(sub);
 		Assert.AreEqual(1, sub.ClientCount);
 
 		// Message 2 should be retried on client 1 as it wasn't acked.
@@ -2188,11 +2367,13 @@ public class RemoveClientTests {
 		var client2Envelope = new FakeEnvelope();
 
 		var fakeCheckpointReader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(fakeCheckpointReader)
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.PreferRoundRobin()
 				.StartFromCurrent()
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => { })));
@@ -2208,11 +2389,13 @@ public class RemoveClientTests {
 
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(0, _eventSource));
 		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(1, _eventSource));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(1, client1Envelope.Replies.Count);
 		Assert.AreEqual(1, client2Envelope.Replies.Count);
 
 		Assert.IsTrue(sub.RemoveClientByConnectionId(connectionId));
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(1, sub.ClientCount);
 
@@ -2311,6 +2494,7 @@ public class ParkTests {
 	public void retrying_parked_messages_without_stop_at_replays_all_parkedEvents() {
 		var messageParker = new FakeMessageParker();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 
 		List<int> loadCount = new List<int>();
 
@@ -2321,6 +2505,7 @@ public class ParkTests {
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
 				.WithMessageParker(messageParker)
+				.WithPushScheduler(pushScheduler)
 				.StartFromBeginning()
 				.MinimumToCheckPoint(1)
 				.MaximumToCheckPoint(1));
@@ -2348,6 +2533,7 @@ public class ParkTests {
 			new PersistentSubscriptionSingleStreamPosition(19),
 			true,
 			20);
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(19, messageParker.MarkedAsProcessed);
 		Assert.AreEqual(19, sub.OutstandingMessageCount);
@@ -2358,6 +2544,7 @@ public class ParkTests {
 	public void retrying_parked_messages_with_stop_at_replays_parkedEvents_until_that_version() {
 		var messageParker = new FakeMessageParker();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 
 		List<int> loadCount = new List<int>();
 
@@ -2367,6 +2554,7 @@ public class ParkTests {
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(i => { }))
 				.WithMessageParker(messageParker)
+				.WithPushScheduler(pushScheduler)
 				.StartFromBeginning()
 				.MinimumToCheckPoint(1)
 				.MaximumToCheckPoint(1));
@@ -2396,6 +2584,7 @@ public class ParkTests {
 			new PersistentSubscriptionSingleStreamPosition(7),
 			false,
 			stopAt);
+		pushScheduler.Push(sub);
 
 		Assert.AreEqual(7, messageParker.MarkedAsProcessed);
 
@@ -2461,6 +2650,7 @@ public class CheckpointingWithSkippedEvents {
 		var client1Envelope = new FakeEnvelope();
 		var client2Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		const string subscriptionStream = "$ce-streamName";
 		var sub = new EventStore.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToStreamParamsBuilder.CreateFor(subscriptionStream, "groupName")
@@ -2468,6 +2658,7 @@ public class CheckpointingWithSkippedEvents {
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => checkpoint = x))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.MinimumToCheckPoint(1)
 				.MaximumToCheckPoint(1)
 				.CustomConsumerStrategy(new PinnedPersistentSubscriptionConsumerStrategy(new XXHashUnsafe()))
@@ -2482,11 +2673,13 @@ public class CheckpointingWithSkippedEvents {
 		var message_1_1 = WriteEventForStream1(); // pushed immediately
 		var message_1_2 = WriteEventForStream1(); // buffered - it's skipped by the consumer strategy as `maxInFlight` = 1
 		var message_1_3 = WriteEventForStream1(); // buffered - it's skipped by the consumer strategy as `maxInFlight` = 1
+		pushScheduler.Push(sub);
 
 		// write three messages intended for client 2
 		var message_2_1 = WriteEventForStream2(); // pushed immediately
 		var message_2_2 = WriteEventForStream2(); // pushed immediately
 		var message_2_3 = WriteEventForStream2(); // pushed immediately
+		pushScheduler.Push(sub);
 
 		Assert.That(client1Envelope.Replies.Count, Is.EqualTo(1));
 		Assert.That(client2Envelope.Replies.Count, Is.EqualTo(3));
@@ -2501,6 +2694,7 @@ public class CheckpointingWithSkippedEvents {
 		sub.AcknowledgeMessagesProcessed(correlationId, [
 			message_1_1,
 		]);
+		pushScheduler.Push(sub);
 
 		// checkpoint should now be at #0
 		Assert.AreEqual(new PersistentSubscriptionSingleStreamPosition(0), checkpoint);
@@ -2511,6 +2705,7 @@ public class CheckpointingWithSkippedEvents {
 			message_2_2,
 			message_2_3,
 		]);
+		pushScheduler.Push(sub);
 
 		// checkpoint should still be at #0, as message_1_2 has not been acknowledged yet
 		Assert.AreEqual(new PersistentSubscriptionSingleStreamPosition(0), checkpoint);
@@ -2519,6 +2714,7 @@ public class CheckpointingWithSkippedEvents {
 		sub.AcknowledgeMessagesProcessed(correlationId, [
 			message_1_2,
 		]);
+		pushScheduler.Push(sub);
 
 		// checkpoint should now be at #1, as message_1_3 has not been acknowledged yet
 		Assert.AreEqual(new PersistentSubscriptionSingleStreamPosition(1), checkpoint);
@@ -2527,6 +2723,7 @@ public class CheckpointingWithSkippedEvents {
 		sub.AcknowledgeMessagesProcessed(correlationId, [
 			message_1_3,
 		]);
+		pushScheduler.Push(sub);
 
 		// checkpoint should now be at #5, as all messages have been acknowledged
 		Assert.AreEqual(new PersistentSubscriptionSingleStreamPosition(5), checkpoint);
@@ -2555,6 +2752,7 @@ public class CheckpointingWithNoMoreCapacity {
 		IPersistentSubscriptionStreamPosition checkpoint = null;
 		var clientEnvelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
+		var pushScheduler = new FakePushScheduler();
 		const string subscriptionStream = "streamName";
 		var sub = new EventStore.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToStreamParamsBuilder.CreateFor(subscriptionStream, "groupName")
@@ -2562,6 +2760,7 @@ public class CheckpointingWithNoMoreCapacity {
 				.WithCheckpointReader(reader)
 				.WithCheckpointWriter(new FakeCheckpointWriter(x => checkpoint = x))
 				.WithMessageParker(new FakeMessageParker())
+				.WithPushScheduler(pushScheduler)
 				.MinimumToCheckPoint(1)
 				.MaximumToCheckPoint(1)
 				.PreferRoundRobin()
@@ -2574,12 +2773,14 @@ public class CheckpointingWithNoMoreCapacity {
 		// push two messages. the first is sent, the second hits NoMoreCapacity (maxInFlight=1).
 		var message_1 = WriteEvent();
 		var message_2 = WriteEvent();
+		pushScheduler.Push(sub);
 
 		Assert.That(clientEnvelope.Replies.Count, Is.EqualTo(1));
 		Assert.IsNull(checkpoint);
 
 		// acknowledge message_1. this frees a slot, so message_2 is pushed to the client.
 		sub.AcknowledgeMessagesProcessed(correlationId, [message_1]);
+		pushScheduler.Push(sub);
 
 		// checkpoint should be at #0 (message_1's position), not at #1 (message_2's position).
 		// message_2 is now outstanding so the checkpoint must not advance past it.
@@ -2589,6 +2790,7 @@ public class CheckpointingWithNoMoreCapacity {
 
 		// acknowledge message_2.
 		sub.AcknowledgeMessagesProcessed(correlationId, [message_2]);
+		pushScheduler.Push(sub);
 
 		// checkpoint should now be at #1, as all messages have been acknowledged.
 		Assert.AreEqual(new PersistentSubscriptionSingleStreamPosition(1), checkpoint);
@@ -2803,5 +3005,19 @@ class FakeCheckpointWriter : IPersistentSubscriptionCheckpointWriter {
 
 	public void BeginDelete(Action<IPersistentSubscriptionCheckpointWriter> completed) {
 		_deleteAction?.Invoke();
+	}
+}
+
+class FakePushScheduler : IPersistentSubscriptionPushScheduler {
+	bool _pushScheduled;
+
+	public void SchedulePush() {
+		_pushScheduled = true;
+	}
+
+	public void Push(EventStore.Core.Services.PersistentSubscription.PersistentSubscription sub) {
+		Assert.True(_pushScheduled, "Push was not scheduled");
+		_pushScheduled = false;
+		sub.PushToClientsFromSchedule();
 	}
 }
