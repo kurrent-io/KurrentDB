@@ -123,6 +123,34 @@ public class when_serializing_state {
 	}
 
 	[Test]
+	public void nan_serializes_as_null() {
+		var serialized = _sut.Serialize(new JsNumber(double.NaN));
+		Assert.AreEqual("null", serialized);
+	}
+
+	[Test]
+	public void positive_infinity_serializes_as_null() {
+		var serialized = _sut.Serialize(new JsNumber(double.PositiveInfinity));
+		Assert.AreEqual("null", serialized);
+	}
+
+	[Test]
+	public void negative_infinity_serializes_as_null() {
+		var serialized = _sut.Serialize(new JsNumber(double.NegativeInfinity));
+		Assert.AreEqual("null", serialized);
+	}
+
+	[Test]
+	public void object_with_non_finite_number_property_serializes_property_as_null() {
+		var instance = new JsObject(_engine);
+		instance.Set("nan", new JsNumber(double.NaN));
+		instance.Set("inf", new JsNumber(double.PositiveInfinity));
+		instance.Set("ok", new JsNumber(1));
+		var serialized = _sut.Serialize(instance);
+		Assert.AreEqual(@"{""nan"":null,""inf"":null,""ok"":1}", serialized);
+	}
+
+	[Test]
 	public void undefined() {
 		var serialized = _sut.Serialize(JsValue.Undefined);
 		Assert.AreEqual(@"null", serialized);
