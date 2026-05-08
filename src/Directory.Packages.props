@@ -54,7 +54,7 @@
     <PackageVersion Include="Kurrent.Connectors.RabbitMQ" Version="1.1.1-alpha.1.70" />
     <PackageVersion Include="Kurrent.Connectors.Pulsar" Version="1.1.1-alpha.1.70" />
     <PackageVersion Include="Kurrent.Connectors.Sql" Version="1.1.1-alpha.1.70" />
-		<PackageVersion Include="Kurrent.Connectors.Webhook" Version="1.1.1-alpha.1.70" />
+    <PackageVersion Include="Kurrent.Connectors.Webhook" Version="1.1.1-alpha.1.70" />
     <PackageVersion Include="Kurrent.Surge" Version="1.1.1-alpha.1.70" />
     <PackageVersion Include="Kurrent.Surge.Core" Version="1.1.1-alpha.1.70" />
     <PackageVersion Include="Kurrent.Surge.DataProtection" Version="1.1.1-alpha.1.70" />
