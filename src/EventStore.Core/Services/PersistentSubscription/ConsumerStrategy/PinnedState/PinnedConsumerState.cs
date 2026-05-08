@@ -20,6 +20,7 @@ class PinnedConsumerState {
 
 	public BucketAssignment[] Assignments { get; set; }
 
+	// NodeId must be unique within the list
 	public IList<Node> Nodes { get; set; }
 
 	public int AssignmentCount { get; set; }
