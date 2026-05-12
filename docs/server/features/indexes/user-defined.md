@@ -172,7 +172,7 @@ User defined indexes can be queried in the Query UI (e.g. `https://localhost:211
 
 e.g.
 ```sql
-select * from index:orders-by-country where field_country='Mauritius' limit 10
+select * from 'usr.orders-by-country' where field_country='Mauritius' limit 10
 ```
 
 ## Monitoring
