@@ -56,6 +56,8 @@
 		<PackageReference Include="Serilog.Sinks.Debug" />
 		<PackageReference Include="Serilog.Sinks.Seq" />
 		<PackageReference Include="Serilog.Enrichers.Environment" />
+		<!-- https://github.com/advisories/GHSA-6c8g-7p36-r338 -->
+		<PackageReference Include="SharpCompress" />
 		<!-- https://github.com/advisories/GHSA-pggp-6c3x-2xmx -->
 		<PackageReference Include="Snappier" />
 		<PackageReference Include="System.Linq.Async">
