@@ -16,6 +16,8 @@
       <PackageReference Include="Ductus.FluentDocker.XUnit" />
       <PackageReference Include="EventStore.Client.Grpc.Streams" />
 			<PackageReference Include="Microsoft.AspNetCore.TestHost" />
+			<!-- https://github.com/advisories/GHSA-6c8g-7p36-r338 -->
+			<PackageReference Include="SharpCompress" />
     </ItemGroup>
 
     <ItemGroup>
