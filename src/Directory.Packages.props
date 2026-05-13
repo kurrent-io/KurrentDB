@@ -145,6 +145,8 @@
     <PackageVersion Include="Serilog.Sinks.Seq" Version="9.0.0" />
     <PackageVersion Include="Serilog.Sinks.TestCorrelator" Version="4.0.0" />
     <PackageVersion Include="Serilog.Sinks.TextWriter" Version="3.0.0" />
+    <!-- https://github.com/advisories/GHSA-6c8g-7p36-r338 -->
+    <PackageVersion Include="SharpCompress" Version="0.48.0" />
     <PackageVersion Include="SharpDotYaml.Extensions.Configuration" Version="0.3.1" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="System.CommandLine.DragonFruit" Version="0.3.0-alpha.21216.1" />
