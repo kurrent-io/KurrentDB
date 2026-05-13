@@ -13,6 +13,8 @@
 		<PackageReference Include="EventStore.Client.Grpc.Streams" />
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" />
 		<PackageReference Include="Polly" />
+		<!-- https://github.com/advisories/GHSA-6c8g-7p36-r338 -->
+		<PackageReference Include="SharpCompress" />
 		<PackageReference Include="System.Linq.Async">
 			<ExcludeAssets>compile</ExcludeAssets>
 		</PackageReference>
