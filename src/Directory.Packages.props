@@ -47,18 +47,18 @@
     <PackageVersion Include="IgnoresAccessChecksToGenerator" Version="0.8.0" />
     <PackageVersion Include="JetBrains.Annotations" Version="2025.2.2" />
     <PackageVersion Include="Jint" Version="4.0.3" />
-    <PackageVersion Include="Kurrent.Connectors.Elasticsearch" Version="1.1.1-alpha.1.70" />
-    <PackageVersion Include="Kurrent.Connectors.Http" Version="1.1.1-alpha.1.70" />
-    <PackageVersion Include="Kurrent.Connectors.Kafka" Version="1.1.1-alpha.1.70" />
-    <PackageVersion Include="Kurrent.Connectors.MongoDB" Version="1.1.1-alpha.1.70" />
-    <PackageVersion Include="Kurrent.Connectors.RabbitMQ" Version="1.1.1-alpha.1.70" />
-    <PackageVersion Include="Kurrent.Connectors.Pulsar" Version="1.1.1-alpha.1.70" />
-    <PackageVersion Include="Kurrent.Connectors.Sql" Version="1.1.1-alpha.1.70" />
-    <PackageVersion Include="Kurrent.Connectors.Webhook" Version="1.1.1-alpha.1.70" />
-    <PackageVersion Include="Kurrent.Surge" Version="1.1.1-alpha.1.70" />
-    <PackageVersion Include="Kurrent.Surge.Core" Version="1.1.1-alpha.1.70" />
-    <PackageVersion Include="Kurrent.Surge.DataProtection" Version="1.1.1-alpha.1.70" />
-    <PackageVersion Include="Kurrent.Surge.DuckDB" Version="1.1.1-alpha.1.70" />
+    <PackageVersion Include="Kurrent.Connectors.Elasticsearch" Version="1.1.1-alpha.1.71" />
+    <PackageVersion Include="Kurrent.Connectors.Http" Version="1.1.1-alpha.1.71" />
+    <PackageVersion Include="Kurrent.Connectors.Kafka" Version="1.1.1-alpha.1.71" />
+    <PackageVersion Include="Kurrent.Connectors.MongoDB" Version="1.1.1-alpha.1.71" />
+    <PackageVersion Include="Kurrent.Connectors.RabbitMQ" Version="1.1.1-alpha.1.71" />
+    <PackageVersion Include="Kurrent.Connectors.Pulsar" Version="1.1.1-alpha.1.71" />
+    <PackageVersion Include="Kurrent.Connectors.Sql" Version="1.1.1-alpha.1.71" />
+    <PackageVersion Include="Kurrent.Connectors.Webhook" Version="1.1.1-alpha.1.71" />
+    <PackageVersion Include="Kurrent.Surge" Version="1.1.1-alpha.1.71" />
+    <PackageVersion Include="Kurrent.Surge.Core" Version="1.1.1-alpha.1.71" />
+    <PackageVersion Include="Kurrent.Surge.DataProtection" Version="1.1.1-alpha.1.71" />
+    <PackageVersion Include="Kurrent.Surge.DuckDB" Version="1.1.1-alpha.1.71" />
     <PackageVersion Include="Kurrent.Quack" Version="0.0.0-alpha.176" />
     <PackageVersion Include="Kurrent.Quack.Arrow" Version="0.0.0-alpha.176" />
     <PackageVersion Include="KurrentDB.Client" Version="1.0.0" />
@@ -145,6 +145,8 @@
     <PackageVersion Include="Serilog.Sinks.Seq" Version="9.0.0" />
     <PackageVersion Include="Serilog.Sinks.TestCorrelator" Version="4.0.0" />
     <PackageVersion Include="Serilog.Sinks.TextWriter" Version="3.0.0" />
+    <!-- https://github.com/advisories/GHSA-6c8g-7p36-r338 -->
+    <PackageVersion Include="SharpCompress" Version="0.48.0" />
     <PackageVersion Include="SharpDotYaml.Extensions.Configuration" Version="0.3.1" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="System.CommandLine.DragonFruit" Version="0.3.0-alpha.21216.1" />
