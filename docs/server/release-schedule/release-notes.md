@@ -6,6 +6,16 @@ order: 1
 
 This page contains the release notes for EventStoreDB 24.10
 
+## [24.10.14](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.14)
+
+15 May 2026
+
+### Persistent Subscriptions Stability and Performance Improvements
+
+Persistent subscriptions using the pinned strategies have improved performance under burst load.
+
+Other conditions have been identified and fixed where a persistent subscription may not always resume after a leader election, or after a TCP client (excluding the dotnet TCP client) disconnects and reconnects.
+
 ## [24.10.13](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.13)
 
 31 March 2026
