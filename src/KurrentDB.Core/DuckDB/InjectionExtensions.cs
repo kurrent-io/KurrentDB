@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Kurrent.Quack.ConnectionPool;
 using KurrentDB.DuckDB;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -19,30 +20,27 @@ public static class InjectionExtensions {
 		services.AddHostedService(sp => sp.GetRequiredService<DuckDBConnectionPoolLifetime>());
 		services.AddSingleton<DuckDBConnectionPool>(sp => sp.GetRequiredService<DuckDBConnectionPoolLifetime>().Shared);
 		services.AddSingleton<DuckDbConnectionPoolMiddleware>();
+		services.AddSingleton<ConnectionInterceptor>(CreatePoolPerConnectionInterceptor);
 		return services;
+	}
+
+	private static ConnectionInterceptor CreatePoolPerConnectionInterceptor(IServiceProvider provider)
+		=> provider.InjectPoolPerConnectionAsync;
+
+	private static async Task InjectPoolPerConnectionAsync(this IServiceProvider services,
+		ConnectionDelegate next,
+		ConnectionContext context) {
+		// pool is disposed when the connection closes
+		var poolFactory = services.GetRequiredService<DuckDBConnectionPoolLifetime>();
+		using var pool = new ConnectionScopedDuckDBConnectionPool(poolFactory);
+		context.Features.Set<ConnectionScopedDuckDBConnectionPool>(pool);
+		await next(context);
+		// guaranteed no request handlers are running when the pool wrapper is disposed
 	}
 
 	public static IApplicationBuilder UseDuckDb(this IApplicationBuilder app) {
 		app.UseMiddleware<DuckDbConnectionPoolMiddleware>();
 		return app;
-	}
-
-	/// <summary>
-	/// Configures a dedicated DuckDB connection pool for each Kestrel connection.
-	/// </summary>
-	/// <remarks>
-	/// Attaching a pool to individual connections allows query plans to be cached on pooled DuckDB connections
-	/// without accumulating too many cached plans over time.
-	/// </remarks>
-	public static void UseDuckDb(this ListenOptions listenOptions) {
-		listenOptions.Use(next => async connectionContext => {
-			// pool is disposed when the connection closes
-			var poolFactory = listenOptions.ApplicationServices.GetRequiredService<DuckDBConnectionPoolLifetime>();
-			using var pool = new ConnectionScopedDuckDBConnectionPool(poolFactory);
-			connectionContext.Features.Set<ConnectionScopedDuckDBConnectionPool>(pool);
-			await next(connectionContext);
-			// guaranteed no request handlers are running when the pool wrapper is disposed
-		});
 	}
 }
 

@@ -13,12 +13,21 @@ using Serilog.Sinks.OpenTelemetry;
 namespace KurrentDB.Logging;
 
 public static class OpenTelemetryLogger {
-	public static LoggerConfiguration AddOpenTelemetryLogger(this LoggerConfiguration config, IConfiguration configuration, string componentName) {
+	public static LoggerConfiguration AddOpenTelemetryLogger(
+		this LoggerConfiguration config,
+		IConfiguration configuration,
+		string componentName,
+		Action<OtlpExporterOptions>? configureOtlp = null) {
+
 		if (!configuration.OtlpLogsEnabled())
 			return config;
 
 		var logExporterConfig = configuration.GetSection(ConfigConstants.OtlpLogsPrefix).Get<LogRecordExportProcessorOptions>() ?? new();
+		// Resolve OTLP options from the shared section, then overlay any per-signal overrides.
 		var otlpExporterConfig = configuration.GetSection(ConfigConstants.OtlpConfigPrefix).Get<OtlpExporterOptions>() ?? new();
+		configuration.GetSection(ConfigConstants.OtlpLogsOtlpPrefix).Bind(otlpExporterConfig);
+		configureOtlp?.Invoke(otlpExporterConfig);
+
 		var metricsConfig = MetricsConfiguration.Get(configuration);
 
 		return config

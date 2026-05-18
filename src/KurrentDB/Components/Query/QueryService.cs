@@ -3,7 +3,6 @@
 
 using System;
 using System.Buffers;
-using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -24,9 +23,9 @@ public static class QueryService {
 		var preparedQuery = default(MemoryOwner<byte>);
 		var reader = new JsonReader();
 		try {
-			preparedQuery = engine.PrepareQuery(Encoding.UTF8.GetBytes(sql), digitallySign: false);
+			preparedQuery = engine.PrepareQuery(Encoding.UTF8.GetBytes(sql), new() { UseDigitalSignature = false });
 
-			await engine.ExecuteAsync(preparedQuery.Memory, reader, checkIntegrity: false, token);
+			await engine.ExecuteAsync(preparedQuery.Memory, reader, new() { CheckIntegrity = false }, token);
 
 			return reader.ToJson();
 		} finally {
@@ -53,24 +52,30 @@ public static class QueryService {
 
 		private void Consume(IQueryResultReader resultReader, CancellationToken token) {
 			_writer.Add((byte)'[');
+			var wroteRow = false;
 			while (resultReader.TryRead()) {
 				foreach (ref readonly var row in resultReader.Chunk[0].BlobRows) {
 					_writer.Write(row.AsSpan());
 					_writer.Add((byte)',');
+					wroteRow = true;
 					token.ThrowIfCancellationRequested();
 				}
 			}
 
 			// Remove trailing comma
-			_writer.WrittenCount--;
+			if (wroteRow)
+				_writer.WrittenCount--;
 			_writer.Add((byte)']');
 		}
 
-		public void Bind<TBinder>(scoped TBinder binder) where TBinder : IPreparedQueryBinder, allows ref struct {
-			// nothing to bind
+		public JsonDocument ToJson() {
+			// JsonDocument.Parse is not applicable here because the lifetime of the returned JsonDocument
+			// is larger than the lifetime of the _writer which keeps the written memory.
+			// JsonDocument.Parse keeps the reference to the original memory block that becomes released
+			// when the reader is closed.
+			var reader = new Utf8JsonReader(_writer.WrittenMemory.Span);
+			return JsonDocument.ParseValue(ref reader);
 		}
-
-		public JsonDocument ToJson() => JsonDocument.Parse(_writer.WrittenMemory);
 
 		protected override void Dispose(bool disposing) {
 			if (disposing) {

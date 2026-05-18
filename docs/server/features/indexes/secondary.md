@@ -8,7 +8,7 @@ The initial version supports two default secondary indexes:
 
 ## Introduction
 
-The primary aim for these default secondary indexes is to enhance read performance for common query patterns as well as to remove the need for running system projections that create linked streams for categories (`$by-category`) and event types (`$by-event-type`).
+The primary aim for these default secondary indexes is to enhance read performance for common query patterns as well as to remove the need for running system projections that create linked streams for categories (`$by_category`) and event types (`$by_event_type`).
 
 ::: important How system projections work
 Category and event type system projections create streams of link events that index events by category or event type. When reading streams of links, KurrentDB must resolve each link event to the original event, which adds overhead to read operations. Also, when streams are being truncated or deleted, link events remain in the database because KurrentDB cannot remove events from streams other than the one being truncated or deleted. This can lead to increased storage usage over time. Statistics we collected from production systems indicate that in systems that keep the database size contained by deleting unused data, up to 50% of the database size can be due to link events created by these system projections, where old chunk files primarily consist of link events that are pointing to deleted events and thus cannot be resolved, taking up to 90% of disk space in those chunk files. As you can imagine, replaying events from the beginning of time in such systems can be very inefficient because first the link events need to be read and then resolved to the original events, many of which may no longer exist.
@@ -23,7 +23,7 @@ Differences between secondary indexes and system projections:
 ::: note Example
 On a database with 130 million events (~400 bytes each) distributed across 1 million streams, using category and event type system projections resulted in 280 million link events. The database files without the link events were around 48 GB, while the database files with link events were around 102 GB. The default index size without link events was around 3.2 GB, while with link events it was around 8.7 GB. The total impact of storing link events on storage size for that particular dataset was around 60 GB, which is roughly a 100% increase. In contrast, the secondary indexes for category and event type were only around 2.2 GB in total.
 
-Note that this example also counts links produced by `$streams` and `$stream-by-category` system projections, but those projections produce only one link per stream, so their impact on the database size is marginal compared to category and event type projections.
+Note that this example also counts links produced by `$streams` and `$stream_by_category` system projections, but those projections produce only one link per stream, so their impact on the database size is marginal compared to category and event type projections.
 :::
 
 ## Enabling secondary indexes

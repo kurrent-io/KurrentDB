@@ -23,6 +23,9 @@ public sealed partial class NodeShim {
 				{ "KurrentDB:CertificateFile:CertificateFile", options.Embedded.CertificateFile },
 				{ "KurrentDB:CertificateFile:CertificatePrivateKeyFile", options.Embedded.CertificatePrivateKeyFile },
 				{ "KurrentDB:Connectors:DataProtection:Token", "the-token" },
+				{ "KurrentDB:Projection:RunProjections", options.Embedded.RunProjections },
+				{ "KurrentDB:Projection:StartStandardProjections", options.Embedded.StartStandardProjections },
+				{ "KurrentDB:Projection:ProjectionThreads", options.Embedded.ProjectionThreads },
 			});
 
 		public ClusterVNodeOptions ClusterVNodeOptions => _node.ServerOptions;

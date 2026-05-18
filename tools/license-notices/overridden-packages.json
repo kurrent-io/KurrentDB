@@ -5,6 +5,26 @@
     "License": "Apache-2.0"
   },
   {
+    "Id": "Apache.Arrow",
+    "Version": "22.1.0",
+    "License": "Apache-2.0"
+  },
+  {
+    "Id": "Apache.Arrow.Flight",
+    "Version": "22.1.0",
+    "License": "Apache-2.0"
+  },
+  {
+    "Id": "Apache.Arrow.Flight.AspNetCore",
+    "Version": "22.1.0",
+    "License": "Apache-2.0"
+  },
+  {
+    "Id": "Apache.Arrow.Flight.Sql",
+    "Version": "22.1.0",
+    "License": "Apache-2.0"
+  },
+  {
     "Id": "JeremyEspresso.MurmurHash",
     "Version": "0.0.1",
     "License": "MIT"
@@ -33,11 +53,6 @@
     "Id": "Serilog.Settings.Reloader",
     "Version": "2.10.0",
     "License": "Apache-2.0"
-  },
-  {
-    "Id": "SharpCompress",
-    "Version": "0.30.1",
-    "License": "MIT"
   },
   {
     "Id": "SharpDotYaml.Extensions.Configuration",

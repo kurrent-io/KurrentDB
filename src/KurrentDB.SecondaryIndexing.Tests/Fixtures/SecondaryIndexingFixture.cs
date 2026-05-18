@@ -3,6 +3,7 @@
 
 using System.Runtime.CompilerServices;
 using System.Text;
+using EventStore.Plugins.Licensing;
 using KurrentDB.Core;
 using KurrentDB.Core.ClientPublisher;
 using KurrentDB.Core.Configuration.Sources;
@@ -11,6 +12,8 @@ using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.Core.Tests;
 using KurrentDB.Surge.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Position = KurrentDB.Core.Services.Transport.Common.Position;
 using StreamRevision = KurrentDB.Core.Services.Transport.Common.StreamRevision;
 
@@ -46,6 +49,11 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 			{ $"{OptionsConfigPrefix}:{nameof(SecondaryIndexingPluginOptions.CommitBatchSize)}", CommitSize.ToString() },
 			{ DatabasePathConfig, _path },
 			{ $"{ProjectionsConfigPrefix}:RunProjections", "None" }
+		};
+
+		ConfigureServices = services => {
+			services.RemoveAll<ILicenseService>();
+			services.AddSingleton<ILicenseService>(_ => new FakeLicenseService());
 		};
 
 		OnTearDown = CleanUpDatabaseDirectory;

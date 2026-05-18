@@ -54,10 +54,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<InternalsVisibleTo Include="KurrentDB.Projections.Core" />
+		<InternalsVisibleTo Include="KurrentDB.Projections.Management" />
 		<InternalsVisibleTo Include="KurrentDB.Core.Tests" />
 		<InternalsVisibleTo Include="KurrentDB.Core.XUnit.Tests" />
-		<InternalsVisibleTo Include="KurrentDB.Projections.Core.Tests" />
+		<InternalsVisibleTo Include="KurrentDB.Projections.Management.Tests" />
 		<InternalsVisibleTo Include="KurrentDB.TestClient" />
 	</ItemGroup>
 

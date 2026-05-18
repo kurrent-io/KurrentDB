@@ -9,6 +9,7 @@ using Kurrent.Connectors.RabbitMQ;
 using Kurrent.Connectors.Serilog;
 using Kurrent.Connectors.Pulsar;
 using Kurrent.Connectors.Sql;
+using Kurrent.Connectors.Webhook;
 using Kurrent.Surge.DataProtection;
 
 namespace KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
@@ -94,6 +95,13 @@ public class KafkaSourceConnectorDataProtector(IDataProtector dataProtector) : C
 	    "Consumer:SslCertificatePem",
 	    "Consumer:SslKeyPem"
     ];
+}
+
+[PublicAPI]
+public class WebhookSourceConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<WebhookSourceOptions>(dataProtector) {
+	protected override string[] ConfigureSensitiveKeys() => [
+		"Signature:Secret"
+	];
 }
 
 #endregion

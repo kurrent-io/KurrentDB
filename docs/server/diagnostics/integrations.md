@@ -49,10 +49,11 @@ OpenTelemetry:
 
 The configuration can specify:
 
-| Name                            | Description                                            |
-|---------------------------------|--------------------------------------------------------|
-| `OpenTelemetry__Otlp__Endpoint` | Destination where the OTLP exporter will send the data |
-| `OpenTelemetry__Otlp__Headers`  | Optional headers for the connection                    |
+| Name                             | Description                                                                  |
+|----------------------------------|------------------------------------------------------------------------------|
+| `OpenTelemetry__Otlp__Endpoint`  | Destination where the OTLP exporter will send the data                       |
+| `OpenTelemetry__Otlp__Headers`   | Optional headers for the connection                                          |
+| `OpenTelemetry__Otlp__Protocol`  | Protocol to use for OTLP export. `Grpc` or `HttpProtobuf`. Default: `Grpc`. |
 
 Headers are key-value pairs separated by commas. For example:
 
@@ -99,6 +100,40 @@ The configuration can specify:
 | `OpenTelemetry__Logs__BatchExportProcessorOptions`<br/>`__MaxExportBatchSize`          | Maximum number of log entries included in each batch. Default: 512.                                    |
 | `OpenTelemetry__Logs__BatchExportProcessorOptions`<br/>`__MaxQueueSize`                | Maximum number of log entries to queue. When the limit is exceeded, logs are discarded. Default: 2048. |
 | `OpenTelemetry__Logs__BatchExportProcessorOptions`<br/>`__ScheduledDelayMilliseconds`  | Maximum delay between batches. Default: 5000.                                                          |
+
+#### Per-Signal OTLP Endpoints
+
+By default, both metrics and logs are exported to the shared `OpenTelemetry:Otlp` endpoint. If you need to send metrics and logs to different destinations, you can override the OTLP connection settings per signal by adding an `Otlp` section under `Metrics` or `Logs`. Any properties specified in the per-signal section override the shared configuration; unspecified properties are inherited from the shared section.
+
+Sample configuration:
+
+```yaml
+OpenTelemetry:
+  Otlp:
+    Endpoint: "http://default-collector:4317"
+    Headers: "api-key=shared-key"
+    Protocol: "Grpc"
+  Metrics:
+    Otlp:
+      Endpoint: "http://metrics-collector:4317"
+      Headers: "api-key=metrics-key"
+  Logs:
+    Enabled: true
+    Otlp:
+      Endpoint: "http://logs-collector:4318"
+      Protocol: "HttpProtobuf"
+```
+
+In this example, metrics are exported to `metrics-collector` with the `metrics-key` header using the shared `Grpc` protocol, while logs are exported to `logs-collector` over `HttpProtobuf`, inheriting the `shared-key` header from the shared configuration.
+
+| Name                                      | Description                                                                    |
+|-------------------------------------------|--------------------------------------------------------------------------------|
+| `OpenTelemetry__Metrics__Otlp__Endpoint`  | Override the OTLP endpoint for metrics export                                  |
+| `OpenTelemetry__Metrics__Otlp__Headers`   | Override the OTLP headers for metrics export                                   |
+| `OpenTelemetry__Metrics__Otlp__Protocol`  | Override the OTLP protocol for metrics export                                  |
+| `OpenTelemetry__Logs__Otlp__Endpoint`     | Override the OTLP endpoint for logs export                                     |
+| `OpenTelemetry__Logs__Otlp__Headers`      | Override the OTLP headers for logs export                                      |
+| `OpenTelemetry__Logs__Otlp__Protocol`     | Override the OTLP protocol for logs export                                     |
 
 ### OTel environment variables
 

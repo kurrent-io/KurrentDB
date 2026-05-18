@@ -40,7 +40,7 @@ public abstract class PinnablePersistentSubscriptionConsumerStrategy : IPersiste
 	}
 
 	public void ClientRemoved(PersistentSubscriptionClient client) {
-		var nodeId = client.CorrelationId;
+		var nodeId = client.InstanceId;
 
 		client.EventConfirmed -= OnEventRemoved;
 
@@ -73,7 +73,7 @@ public abstract class PinnablePersistentSubscriptionConsumerStrategy : IPersiste
 
 	private void OnEventRemoved(PersistentSubscriptionClient client, ResolvedEvent ev) {
 		var assignmentId = GetAssignmentId(ev);
-		_state.EventRemoved(client.CorrelationId, assignmentId);
+		_state.EventRemoved(client.InstanceId, assignmentId);
 	}
 
 	private uint GetAssignmentId(ResolvedEvent ev) {

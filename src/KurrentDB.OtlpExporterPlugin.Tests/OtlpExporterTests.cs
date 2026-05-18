@@ -42,8 +42,8 @@ public class OtlpExporterTests {
 	[Fact]
 	public async Task respects_expected_scrape_interval() {
 		await using var _ = await CreateServer(new(), new() {
-			{ $"{ConfigConstants.OtlpConfigPrefix}:Endpoint", Endpoint },
-			{ $"{ConfigConstants.RootPrefix}:Metrics:ExpectedScrapeIntervalSeconds", "5" },
+			{ "KurrentDB:OpenTelemetry:Otlp:Endpoint", Endpoint },
+			{ "KurrentDB:Metrics:ExpectedScrapeIntervalSeconds", "5" },
 		});
 		var log = Assert.Single(_logger.LogMessages);
 		Assert.Equal("OtlpExporter: Exporting metrics to http://localhost:6506/ every 5.0 seconds", log.RenderMessage());
@@ -52,14 +52,14 @@ public class OtlpExporterTests {
 	[Fact]
 	public async Task export_interval_superceeds_expected_scrape_interval() {
 		await using var _ = await CreateServer(new(), new() {
-			{ $"{ConfigConstants.OtlpConfigPrefix}:Endpoint", Endpoint },
-			{ $"{ConfigConstants.OtlpMetricsPrefix}:PeriodicExportingMetricReaderOptions:ExportIntervalMilliseconds", "5000" },
-			{ $"{ConfigConstants.RootPrefix}:Metrics:ExpectedScrapeIntervalSeconds", "4" },
+			{ "KurrentDB:OpenTelemetry:Otlp:Endpoint", Endpoint },
+			{ "KurrentDB:OpenTelemetry:Metrics:PeriodicExportingMetricReaderOptions:ExportIntervalMilliseconds", "5000" },
+			{ "KurrentDB:Metrics:ExpectedScrapeIntervalSeconds", "4" },
 		});
 		Assert.Collection(_logger.LogMessages,
 			log => Assert.Equal(
-				$"OtlpExporter: {ConfigConstants.OtlpMetricsPrefix}:PeriodicExportingMetricReaderOptions:ExportIntervalMilliseconds " +
-				$"(5000 ms) does not match {ConfigConstants.RootPrefix}:Metrics:ExpectedScrapeIntervalSeconds " +
+				"OtlpExporter: KurrentDB:OpenTelemetry:Metrics:PeriodicExportingMetricReaderOptions:ExportIntervalMilliseconds " +
+				"(5000 ms) does not match KurrentDB:Metrics:ExpectedScrapeIntervalSeconds " +
 				"(4 s). Periodic maximum metrics may not be reported correctly.",
 				log.RenderMessage()),
 			log => Assert.Equal("OtlpExporter: Exporting metrics to http://localhost:6506/ every 5.0 seconds", log.RenderMessage()));
@@ -68,9 +68,30 @@ public class OtlpExporterTests {
 	[Fact]
 	public async Task does_not_warn_when_settings_agree() {
 		await using var _ = await CreateServer(new(), new Dictionary<string, string?> {
-			{ $"{ConfigConstants.OtlpConfigPrefix}:Endpoint", Endpoint },
-			{ $"{ConfigConstants.OtlpMetricsPrefix}:PeriodicExportingMetricReaderOptions:ExportIntervalMilliseconds", "5000" },
-			{ $"{ConfigConstants.RootPrefix}:Metrics:ExpectedScrapeIntervalSeconds", "5" },
+			{ "KurrentDB:OpenTelemetry:Otlp:Endpoint", Endpoint },
+			{ "KurrentDB:OpenTelemetry:Metrics:PeriodicExportingMetricReaderOptions:ExportIntervalMilliseconds", "5000" },
+			{ "KurrentDB:Metrics:ExpectedScrapeIntervalSeconds", "5" },
+		});
+		var log = Assert.Single(_logger.LogMessages);
+		Assert.Equal("OtlpExporter: Exporting metrics to http://localhost:6506/ every 5.0 seconds", log.RenderMessage());
+	}
+
+	[Fact]
+	public async Task per_signal_endpoint_overrides_shared_endpoint() {
+		await using var _ = await CreateServer(new(), new() {
+			{ "KurrentDB:OpenTelemetry:Otlp:Endpoint", "http://localhost:9999" },
+			{ "KurrentDB:OpenTelemetry:Metrics:Otlp:Endpoint", Endpoint },
+			{ "KurrentDB:Metrics:ExpectedScrapeIntervalSeconds", "5" },
+		});
+		var log = Assert.Single(_logger.LogMessages);
+		Assert.Equal("OtlpExporter: Exporting metrics to http://localhost:6506/ every 5.0 seconds", log.RenderMessage());
+	}
+
+	[Fact]
+	public async Task shared_endpoint_used_when_no_per_signal_override() {
+		await using var _ = await CreateServer(new(), new() {
+			{ "KurrentDB:OpenTelemetry:Otlp:Endpoint", Endpoint },
+			{ "KurrentDB:Metrics:ExpectedScrapeIntervalSeconds", "5" },
 		});
 		var log = Assert.Single(_logger.LogMessages);
 		Assert.Equal("OtlpExporter: Exporting metrics to http://localhost:6506/ every 5.0 seconds", log.RenderMessage());
@@ -84,8 +105,8 @@ public class OtlpExporterTests {
 		var tcs = new TaskCompletionSource<ExportMetricsServiceRequest>();
 
 		await using var _ = await CreateServer(tcs, new() {
-			{ $"{ConfigConstants.OtlpConfigPrefix}:Endpoint", Endpoint },
-			{ $"{ConfigConstants.RootPrefix}:Metrics:ExpectedScrapeIntervalSeconds", "1" }
+			{ "KurrentDB:OpenTelemetry:Otlp:Endpoint", Endpoint },
+			{ "KurrentDB:Metrics:ExpectedScrapeIntervalSeconds", "1" }
 		});
 
 		var log = Assert.Single(_logger.LogMessages);

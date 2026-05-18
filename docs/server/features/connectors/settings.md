@@ -88,7 +88,7 @@ Individual connectors also include their own specific settings. To view them, go
 
 | Name               | Details                                                                                                                                                                                                                                                                                                                                                                       |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `instanceTypeName` | _required_<br><br>**Description:**<br>Specifies the type of connector instance.<br><br>**Accepted Values:**<br><ul><li>`kafka-source`</li></ul>For details about each type, see the individual connector [page](/server/features/connectors/). |
+| `instanceTypeName` | _required_<br><br>**Description:**<br>Specifies the type of connector instance.<br><br>**Accepted Values:**<br><ul><li>`kafka-source`</li><li>`webhook-source`</li></ul>For details about each type, see the individual connector [page](/server/features/connectors/). |
 
 ### Logging configuration
 
