@@ -264,11 +264,10 @@ public class ProjectionManager
 			return;
 
 		if (message.Mode == ProjectionMode.Transient) {
-			var transientProjection = new PendingProjection(ProjectionQueryId, message);
-			if (!ValidateProjections(new[] { transientProjection }, message))
-				return;
-
-			PostNewTransientProjection(transientProjection, message.Envelope);
+			message.Envelope.ReplyWith(
+				new ProjectionManagementMessage.OperationFailed(
+					"Transient projections are deprecated. Use the secondary indexing query API."));
+			return;
 		} else {
 			if (_isWritePending) {
 				DelayMessage(message);
