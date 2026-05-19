@@ -54,4 +54,39 @@ public class ClusterVNodeOptionsValidatorTests {
 			ClusterVNodeOptionsValidator.Validate(options);
 		});
 	}
+
+	[Theory]
+	// TLS on — no secret needed regardless of cluster size
+	[InlineData(false, false, 3, "",       true)]
+	// Insecure mode — auth fully disabled, secret is moot
+	[InlineData(false, true,  3, "",       true)]
+	[InlineData(true,  true,  3, "",       true)]
+	// Single-node disable-tls — no inter-node calls, secret not required
+	[InlineData(true,  false, 1, "",       true)]
+	// Multi-node disable-tls with an empty / whitespace secret — invalid
+	[InlineData(true,  false, 3, "",       false)]
+	[InlineData(true,  false, 3, "   ",    false)]
+	// Multi-node disable-tls with a real secret — valid
+	[InlineData(true,  false, 3, "secret", true)]
+	public void disable_tls_with_cluster_requires_node_secret(
+		bool disableTls, bool insecure, int clusterSize, string nodeSecret, bool expectedValid) {
+		var options = new ClusterVNodeOptions {
+			Application = new() {
+				DisableTls = disableTls,
+				Insecure = insecure,
+			},
+			Cluster = new() {
+				ClusterSize = clusterSize,
+				NodeSecret = nodeSecret,
+			},
+		};
+
+		void When() => ClusterVNodeOptionsValidator.Validate(options);
+
+		if (expectedValid) {
+			When();
+		} else {
+			Assert.Throws<InvalidConfigurationException>(When);
+		}
+	}
 }

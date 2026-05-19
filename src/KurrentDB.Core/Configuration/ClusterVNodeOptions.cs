@@ -284,6 +284,13 @@ public partial record ClusterVNodeOptions {
 		[Description("Endpoints for other cluster nodes from which to seed gossip.")]
 		public EndPoint[] GossipSeed { get; init; } = [];
 
+		[Description("Shared secret used by cluster nodes to authenticate with each other when TLS is disabled. " +
+		             "Required when --disable-tls is set and --cluster-size is greater than 1. " +
+		             "Note that since TLS is disabled the secret will be sent in clear text. " +
+		             "Has no effect when TLS is enabled (nodes will authenticate by mTLS).")]
+		[Sensitive]
+		public string NodeSecret { get; init; } = "";
+
 		[Description("The interval, in ms, nodes should try to gossip with each other."),
 		 Unit("ms")]
 		public int GossipIntervalMs { get; init; } = 2_000;

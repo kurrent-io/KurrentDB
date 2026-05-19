@@ -112,6 +112,16 @@ public static class ClusterVNodeOptionsValidator {
 			throw new InvalidConfigurationException(
 				"The Archiving feature is not compatible with UnsafeIgnoreHardDelete.");
 		}
+
+		if (options.Application.DisableTls &&
+			!options.Application.Insecure &&
+			options.Cluster.ClusterSize > 1 &&
+			string.IsNullOrWhiteSpace(options.Cluster.NodeSecret)) {
+			throw new InvalidConfigurationException(
+				$"A cluster NodeSecret is required for nodes to authenticate with each other when --disable-tls " +
+				$"is used in a multi-node cluster. Set {nameof(options.Cluster.NodeSecret)} to a shared secret value on every node. " +
+				$"Note that since TLS is disabled the secret will be sent in clear text.");
+		}
 	}
 
 	public static bool ValidateForStartup(ClusterVNodeOptions options) {
