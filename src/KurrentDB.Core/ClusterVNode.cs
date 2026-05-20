@@ -1033,21 +1033,23 @@ public class ClusterVNode<TStreamId> :
 			throw new InvalidConfigurationException($"The server does not support any authentication scheme supported by the '{_authenticationProvider.Name}' authentication provider.");
 		}
 
-		if (!options.Application.TlsDisabled()) {
-			//transport-level authentication providers
+		//transport-level authentication providers
+		if (options.Application.TlsDisabled()) {
+			if (!options.Application.AuthDisabled() && options.Cluster.ClusterSize > 1) {
+				httpAuthenticationProviders.Add(new NodeSecretAuthenticationProvider(options.Cluster.NodeSecret));
+			}
+		} else {
 			httpAuthenticationProviders.Add(new NodeCertificateAuthenticationProvider(
 				getCertificateReservedNodeCommonName: () => _certificateProvider.GetReservedNodeCommonName(),
 				disableClientAuthEkuValidation: options.Certificate.DisableClientAuthEkuValidation));
+		}
 
+		if (!options.Application.AuthDisabled()) {
 			if (options.Interface.EnableTrustedAuth)
 				httpAuthenticationProviders.Add(new TrustedHttpAuthenticationProvider());
 
 			if (EnableUnixSocket)
 				httpAuthenticationProviders.Add(new UnixSocketAuthenticationProvider());
-		} else {
-			if (!options.Application.AuthDisabled() && !string.IsNullOrWhiteSpace(options.Cluster.NodeSecret)) {
-				httpAuthenticationProviders.Add(new NodeSecretAuthenticationProvider(options.Cluster.NodeSecret));
-			}
 		}
 
 		//default authentication provider
