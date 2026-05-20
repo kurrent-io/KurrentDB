@@ -12,6 +12,8 @@ public class EventStoreOptions {
 	public int ConnectionQueueSizeThreshold { get; init; } = 50_000;
 	public int WriteTimeoutMs { get; init; } = 2_000;
 	public bool Insecure { get; init; }
+	public bool DisableTls { get; init; }
+	public bool TlsDisabled() => Insecure || DisableTls;
 	public IPAddress NodeIp { get; init; } = IPAddress.Loopback;
 	public TcpPluginOptions TcpPlugin { get; init; } = new();
 

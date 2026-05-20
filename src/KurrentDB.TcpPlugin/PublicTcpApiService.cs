@@ -24,7 +24,7 @@ public class PublicTcpApiService : IHostedService {
 		OptionsFormatter.LogConfig("TcpPlugin", options.TcpPlugin);
 
 		var endpoint = new IPEndPoint(options.NodeIp, options.TcpPlugin.NodeTcpPort);
-		if (options.Insecure) {
+		if (options.TlsDisabled()) {
 			var extTcpService = new TcpService(
 				components.MainQueue, endpoint, components.NetworkSendService,
 				TcpServiceType.External, TcpSecurityType.Normal,
