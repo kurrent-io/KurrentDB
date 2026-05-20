@@ -564,7 +564,8 @@ public class ClusterVNode<TStreamId> :
 		_nodeHttpClientFactory = new NodeHttpClientFactory(
 			uriScheme,
 			_internalServerCertificateValidator,
-			_certificateSelector);
+			_certificateSelector,
+			options.Cluster.NodeSecret);
 
 		_eventStoreClusterClientCache = new EventStoreClusterClientCache(_mainQueue,
 			(endpoint, publisher) =>
@@ -1043,6 +1044,10 @@ public class ClusterVNode<TStreamId> :
 
 			if (EnableUnixSocket)
 				httpAuthenticationProviders.Add(new UnixSocketAuthenticationProvider());
+		} else {
+			if (!options.Application.AuthDisabled() && !string.IsNullOrWhiteSpace(options.Cluster.NodeSecret)) {
+				httpAuthenticationProviders.Add(new NodeSecretAuthenticationProvider(options.Cluster.NodeSecret));
+			}
 		}
 
 		//default authentication provider

@@ -3,6 +3,7 @@
 
 using System;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Security.Cryptography.X509Certificates;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Settings;
@@ -13,7 +14,8 @@ namespace KurrentDB.Core.Services.Transport.Http.NodeHttpClientFactory;
 public class NodeHttpClientFactory(
 	string uriScheme,
 	CertificateDelegates.ServerCertificateValidator nodeCertificateValidator,
-	Func<X509Certificate> clientCertificateSelector) : INodeHttpClientFactory {
+	Func<X509Certificate> clientCertificateSelector,
+	string nodeSecret) : INodeHttpClientFactory {
 
 	public HttpClient CreateHttpClient(string[] additionalCertificateNames) {
 		HttpMessageHandler httpMessageHandler;
@@ -41,6 +43,12 @@ public class NodeHttpClientFactory(
 			httpMessageHandler = new SocketsHttpHandler();
 		}
 
-		return new HttpClient(httpMessageHandler);
+		var client = new HttpClient(httpMessageHandler);
+		if (uriScheme != Uri.UriSchemeHttps && !string.IsNullOrWhiteSpace(nodeSecret)) {
+			// In cleartext (--disable-tls) the node cannot present a client certificate.
+			// Carry the shared cluster secret instead so peers can authenticate us as system.
+			client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Cluster", nodeSecret);
+		}
+		return client;
 	}
 }
