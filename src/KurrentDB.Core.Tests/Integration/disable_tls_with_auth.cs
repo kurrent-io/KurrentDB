@@ -56,5 +56,6 @@ public class when_running_with_disable_tls<TLogFormat, TStreamId>
 	[Test]
 	public void node_reports_tls_disabled() {
 		Assert.IsTrue(_node.Node.DisableHttps);
+		Assert.AreEqual("http", _node.HttpClient.BaseAddress!.Scheme);
 	}
 }
