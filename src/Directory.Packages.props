@@ -9,10 +9,10 @@
     <PackageVersion Include="Bogus" Version="35.6.4" />
     <PackageVersion Include="DiffEngine" Version="16.7.1" />
     <PackageVersion Include="Dapper" Version="2.1.66" />
-    <PackageVersion Include="DotNext" Version="6.1.0" />
-    <PackageVersion Include="DotNext.IO" Version="6.1.0" />
-    <PackageVersion Include="DotNext.Threading" Version="6.1.0" />
-    <PackageVersion Include="DotNext.Unsafe" Version="6.1.0" />
+    <PackageVersion Include="DotNext" Version="6.2.1" />
+    <PackageVersion Include="DotNext.IO" Version="6.2.1" />
+    <PackageVersion Include="DotNext.Threading" Version="6.2.1" />
+    <PackageVersion Include="DotNext.Unsafe" Version="6.2.1" />
     <PackageVersion Include="Ductus.FluentDocker" Version="2.85.0" />
     <PackageVersion Include="Ductus.FluentDocker.XUnit" Version="2.85.0" />
     <PackageVersion Include="DuckDB.NET.Data.Full" Version="1.5.0" />
