@@ -5,6 +5,8 @@ namespace KurrentDB.AutoScavenge;
 
 public class EventStoreOptions {
 	public bool Insecure { get; init; }
+	public bool DisableTls { get; init; }
+	public bool TlsDisabled() => Insecure || DisableTls;
 	public bool DiscoverViaDns { get; init; }
 	public string? ClusterDns { get; init; }
 	public int ClusterSize { get; init; }
