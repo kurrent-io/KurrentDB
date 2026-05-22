@@ -9,6 +9,8 @@ order: 2
 Features
 * [User Defined Indexes](#user-defined-indexes)
 * [Archiving Support for GCP and Azure](#archiving-support-for-gcp-and-azure)
+* [Connectors: Kafka Source](#connectors-kafka-source)
+* [Connectors: SQL Sink](#connectors-sql-sink)
 
 Changes / Improvements
 
@@ -17,8 +19,6 @@ Changes / Improvements
 * [YAML Config file priority](#yaml-config-file-priority)
 * [Configurable SLOW MESSAGE Thresholds](#configurable-slow-message-thresholds)
 * [.NET 10](#net-10)
-* [Connectors: Kafka Source](#connectors-kafka-source)
-* [Connectors: SQL Sink](#connectors-sql-sink)
 * [Connectors: Tracker fix](#connectors-fix-position-tracker-not-accounting-for-duplicate-track-calls)
 * [Connectors: Performance](#connectors-performance-improvements)
 
