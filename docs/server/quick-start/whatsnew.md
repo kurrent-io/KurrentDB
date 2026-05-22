@@ -9,6 +9,7 @@ order: 2
 Features
 * [SQL API](#sql-api)
 * [Projections V2](#projections-v2)
+* [Connectors: Webhook Source](#connectors-webhook-source)
 
 Changes / Improvements
 * [Multi-stream Appends Improvements](#multi-stream-appends-improvements)
@@ -18,7 +19,6 @@ Changes / Improvements
 * [OAuth and Ldap Plugin Configuration](#oauth-and-ldap-plugin-configuration)
 * [DisableClientAuthEkuValidation Option](#disableclientauthekuvalidation-option)
 * [Projections Access Created Property](#projections-access-created-property)
-* [Connectors: Webhook Source](#connectors-webhook-source)
 
 For breaking changes and deprecation notices, see the [upgrade guide](upgrade-guide.md).
 
@@ -108,6 +108,8 @@ Refer to the [documentation](../features/connectors/sources/webhook.md) for inst
 Features
 * [User Defined Indexes](#user-defined-indexes)
 * [Archiving Support for GCP and Azure](#archiving-support-for-gcp-and-azure)
+* [Connectors: Kafka Source](#connectors-kafka-source)
+* [Connectors: SQL Sink](#connectors-sql-sink)
 
 Changes / Improvements
 
@@ -116,8 +118,6 @@ Changes / Improvements
 * [YAML Config file priority](#yaml-config-file-priority)
 * [Configurable SLOW MESSAGE Thresholds](#configurable-slow-message-thresholds)
 * [.NET 10](#net-10)
-* [Connectors: Kafka Source](#connectors-kafka-source)
-* [Connectors: SQL Sink](#connectors-sql-sink)
 * [Connectors: Tracker fix](#connectors-fix-position-tracker-not-accounting-for-duplicate-track-calls)
 * [Connectors: Performance](#connectors-performance-improvements)
 
