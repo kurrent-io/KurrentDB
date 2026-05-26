@@ -152,6 +152,19 @@ public static class Operations {
 		public static readonly OperationDefinition Read = new(Resource, "read");
 	}
 
+	public static class Kontext {
+		public static class Workspaces {
+			const string Resource = "kontext/workspaces";
+
+			public static readonly OperationDefinition Create = new(Resource, "create");
+			public static readonly OperationDefinition Start = new(Resource, "start");
+			public static readonly OperationDefinition Stop = new(Resource, "stop");
+			public static readonly OperationDefinition Delete = new(Resource, "delete");
+			public static readonly OperationDefinition Read = new(Resource, "read");
+			public static readonly OperationDefinition Connect = new(Resource, "connect");
+		}
+	}
+
 	public static class Projections {
 		const string Resource = "projections";
 

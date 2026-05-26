@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Description>Agent memory and RAG library for KurrentDB</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="KurrentDB.Kontext.Tests" />
+    <InternalsVisibleTo Include="KurrentDB.Plugins.Kontext.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Catalyst" />
+    <PackageReference Include="Catalyst.Models.English" />
+    <!-- Override vulnerable transitive (pulled by Catalyst). -->
+    <PackageReference Include="NuGet.CommandLine" />
+    <PackageReference Include="Cloud.Unum.USearch" />
+    <PackageReference Include="Eventuous.Application" />
+    <PackageReference Include="Eventuous.Extensions.DependencyInjection" />
+    <PackageReference Include="Kurrent.Surge.Core" />
+    <PackageReference Include="Lucene.Net" />
+    <PackageReference Include="Lucene.Net.Analysis.Common" />
+    <PackageReference Include="System.Numerics.Tensors" />
+    <PackageReference Include="Microsoft.Extensions.AI.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
+    <PackageReference Include="OpenAI" />
+    <PackageReference Include="OllamaSharp" />
+    <PackageReference Include="Google.Cloud.VertexAI.Extensions" />
+    <PackageReference Include="AWSSDK.Extensions.Bedrock.MEAI" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="DotNext.Threading" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" />
+    <PackageReference Include="ModelContextProtocol" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../KurrentDB.Kontext.Models/KurrentDB.Kontext.Models.csproj" />
+    <ProjectReference Include="../KurrentDB.Common/KurrentDB.Common.csproj" />
+    <ProjectReference Include="../KurrentDB.Core/KurrentDB.Core.csproj" />
+    <ProjectReference Include="../KurrentDB.Scripting/KurrentDB.Scripting.csproj" />
+  </ItemGroup>
+
+</Project>

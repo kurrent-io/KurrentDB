@@ -117,6 +117,13 @@ public class LegacyAuthorizationWithStreamAuthorizationDisabledProviderFactory :
 		policy.RequireAuthenticated(Operations.UserIndexes.List);
 		policy.RequireAuthenticated(Operations.UserIndexes.Read);
 
+		policy.AddMatchAnyAssertion(Operations.Kontext.Workspaces.Create, Grant.Allow, OperationsOrAdmins);
+		policy.AddMatchAnyAssertion(Operations.Kontext.Workspaces.Start, Grant.Allow, OperationsOrAdmins);
+		policy.AddMatchAnyAssertion(Operations.Kontext.Workspaces.Stop, Grant.Allow, OperationsOrAdmins);
+		policy.AddMatchAnyAssertion(Operations.Kontext.Workspaces.Delete, Grant.Allow, OperationsOrAdmins);
+		policy.AddMatchAnyAssertion(Operations.Kontext.Workspaces.Read, Grant.Allow, OperationsOrAdmins);
+		policy.RequireAuthenticated(Operations.Kontext.Workspaces.Connect);
+
 		return new LegacyAuthorizationWithStreamAuthorizationDisabledProvider(new PolicyEvaluator(policy.AsReadOnly()),
 			Log.ForContext<PolicyEvaluator>(), true, false);
 	}

@@ -6,6 +6,8 @@
 			"KurrentDB.Core.Services.Transport.Enumerators": "Information",
 			"KurrentDB.Projections.Core.Services.Processing.V2": "Information",
 			"Grpc": "Critical",
+			"ModelContextProtocol": "Warning",
+			"ModelContextProtocol.Server.McpServer": "Critical",
 			"Microsoft": "Warning",
 			"System": "Warning"
 		}

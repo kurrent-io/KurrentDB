@@ -10,6 +10,8 @@
 		<PackageReference Include="Kurrent.Quack" />
 		<PackageReference Include="FluentStorage" />
 		<PackageReference Include="FluentStorage.AWS" />
+		<!-- Override vulnerable transitive (pulled by FluentStorage.AWS). -->
+		<PackageReference Include="AWSSDK.Core" />
 		<PackageReference Include="Azure.Storage.Blobs" />
 		<PackageReference Include="Azure.Identity" />
 		<PackageReference Include="Google.Cloud.Storage.V1"/>

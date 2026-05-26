@@ -7,6 +7,9 @@
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.2" />
     <PackageVersion Include="BlazorMonaco" Version="3.4.0" />
     <PackageVersion Include="Bogus" Version="35.6.4" />
+    <PackageVersion Include="Catalyst" Version="1.0.65141" />
+    <PackageVersion Include="Catalyst.Models.English" Version="1.0.30952" />
+    <PackageVersion Include="Cloud.Unum.USearch" Version="2.23.0" />
     <PackageVersion Include="DiffEngine" Version="16.7.1" />
     <PackageVersion Include="Dapper" Version="2.1.66" />
     <PackageVersion Include="DotNext" Version="6.2.1" />
@@ -32,7 +35,11 @@
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
     <PackageVersion Include="GitInfo" Version="3.3.3" />
     <PackageVersion Include="Google.Api.CommonProtos" Version="2.17.0" />
+    <PackageVersion Include="AWSSDK.Extensions.Bedrock.MEAI" Version="4.0.8.1" />
+    <!-- Override vulnerable transitive (pulled by FluentStorage.AWS). -->
+    <PackageVersion Include="AWSSDK.Core" Version="4.0.7.3" />
     <PackageVersion Include="Google.Cloud.Storage.V1" Version="4.13.0" />
+    <PackageVersion Include="Google.Cloud.VertexAI.Extensions" Version="1.0.0-beta08" />
     <PackageVersion Include="Google.Protobuf" Version="3.32.1" />
     <PackageVersion Include="Grpc.AspNetCore" Version="2.71.0" />
     <PackageVersion Include="Grpc.AspNetCore.Web" Version="2.71.0" />
@@ -64,6 +71,10 @@
     <PackageVersion Include="KurrentDB.Client" Version="1.0.0" />
     <PackageVersion Include="librdkafka.redist" Version="2.5.0" />
     <PackageVersion Include="LruCacheNet" Version="1.2.0" />
+    <PackageVersion Include="Lucene.Net" Version="4.8.0-beta00017" />
+    <PackageVersion Include="Lucene.Net.Analysis.Common" Version="4.8.0-beta00017" />
+    <PackageVersion Include="ModelContextProtocol" Version="1.2.0" />
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="1.1.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="10.0.0" />
@@ -78,15 +89,20 @@
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Diagnostics.NETCore.Client" Version="0.2.621003" />
     <PackageVersion Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="3.1.24" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.AI.Abstractions" Version="10.5.1" />
+    <PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="10.5.0" />
+    <PackageVersion Include="OllamaSharp" Version="5.4.25" />
+    <PackageVersion Include="OpenAI" Version="2.10.0" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.3" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.CommandLine" Version="9.0.9" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.AutoActivation" Version="9.8.0" />
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.Testing" Version="9.10.0" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.5" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="9.4.2" />
     <PackageVersion Include="Serilog.Enrichers.Demystifier" Version="1.0.3" />
     <PackageVersion Include="Serilog.Extensions.Hosting" Version="9.0.0" />
@@ -97,6 +113,7 @@
     <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.14.0" />
     <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.14.0" />
     <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="8.14.0" />
+    <PackageVersion Include="Microsoft.ML.OnnxRuntime" Version="1.24.3" />
     <PackageVersion Include="Microsoft.OpenApi.Readers" Version="1.6.28" />
     <PackageVersion Include="Mono.Posix.NETStandard" Version="1.0.0" />
     <PackageVersion Include="MudBlazor" Version="8.15.0" />
@@ -109,6 +126,7 @@
     <PackageVersion Include="Novell.Directory.Ldap.NETStandard" Version="3.6.0" />
     <PackageVersion Include="NSubstitute" Version="5.3.0" />
     <!-- upgrade because of transitive dependency vulnerability -->
+    <PackageVersion Include="NuGet.CommandLine" Version="6.13.1" />
     <PackageVersion Include="NuGet.Protocol" Version="6.7.1" />
     <PackageVersion Include="NUnit" Version="3.14.0" />
     <PackageVersion Include="NUnit3TestAdapter" Version="5.2.0" />
@@ -154,6 +172,7 @@
     <PackageVersion Include="System.Diagnostics.PerformanceCounter" Version="10.0.0" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
     <PackageVersion Include="System.Linq.Async" Version="6.0.3" />
+    <PackageVersion Include="System.Numerics.Tensors" Version="10.0.0" />
     <PackageVersion Include="System.Reactive" Version="6.1.0" />
     <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.6" />
     <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.6" />
