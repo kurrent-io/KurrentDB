@@ -54,6 +54,7 @@
       "KurrentDB.Projections.Shared.Tests\\KurrentDB.Projections.Shared.Tests.csproj",
       "KurrentDB.Projections.V2\\KurrentDB.Projections.V2.csproj",
       "KurrentDB.Projections.V2.Tests\\KurrentDB.Projections.V2.Tests.csproj",
+      "KurrentDB.Scripting\\KurrentDB.Scripting.csproj",
       "KurrentDB.SecondaryIndexing.LoadTesting\\KurrentDB.SecondaryIndexing.LoadTesting.csproj",
       "KurrentDB.SecondaryIndexing\\KurrentDB.SecondaryIndexing.csproj",
       "KurrentDB.Security.EncryptionAtRest.Tests\\KurrentDB.Security.EncryptionAtRest.Tests.csproj",

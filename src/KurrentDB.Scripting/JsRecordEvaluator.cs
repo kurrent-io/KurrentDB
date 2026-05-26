@@ -9,8 +9,9 @@ using Jint;
 using Jint.Native;
 using Jint.Native.Function;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.TransactionLog.LogRecords;
 
-namespace KurrentDB.SecondaryIndexing.Indexes.User.JavaScript;
+namespace KurrentDB.Scripting;
 
 public class JsRecordEvaluator {
 	readonly JsonSerializerOptions _serializerOptions;
@@ -24,7 +25,10 @@ public class JsRecordEvaluator {
 	}
 
 	public void MapRecord(ResolvedEvent re, ulong sequence) =>
-		_record.Remap(re.OriginalEvent, sequence, _serializerOptions);
+		MapRecord(re.OriginalEvent, sequence);
+
+	public void MapRecord(EventRecord record, ulong sequence) =>
+		_record.Remap(record, sequence, _serializerOptions);
 
 	public bool Match(Function? filter) =>
 		filter?.Call(_jsValue).AsBoolean() ?? true;

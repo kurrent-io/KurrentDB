@@ -6,9 +6,9 @@ using Jint;
 using Jint.Native;
 using Jint.Runtime.Interop;
 
-namespace KurrentDB.SecondaryIndexing.Indexes.Custom.Surge;
+namespace KurrentDB.Scripting;
 
-static class JintEngineFactory {
+public static class JintEngineFactory {
 	static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(5);
 
 	public static Engine CreateEngine(TimeSpan? executionTimeout = null) {

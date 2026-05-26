@@ -9,7 +9,7 @@ using System.Text.Json.Nodes;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.TransactionLog.LogRecords;
 
-namespace KurrentDB.SecondaryIndexing.Indexes.User.JavaScript;
+namespace KurrentDB.Scripting;
 
 public enum JsSchemaFormat {
 	Undefined = 0,

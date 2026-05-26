@@ -16,9 +16,8 @@ using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
+using KurrentDB.Scripting;
 using KurrentDB.SecondaryIndexing.Diagnostics;
-using KurrentDB.SecondaryIndexing.Indexes.Custom.Surge;
-using KurrentDB.SecondaryIndexing.Indexes.User.JavaScript;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 

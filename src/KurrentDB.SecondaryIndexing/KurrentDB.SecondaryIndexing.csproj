@@ -30,6 +30,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\KurrentDB.Scripting\KurrentDB.Scripting.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<None Remove="Storage\1_Schema.sql" />
 		<EmbeddedResource Include="Storage\1_Schema.sql" />
 	</ItemGroup>
