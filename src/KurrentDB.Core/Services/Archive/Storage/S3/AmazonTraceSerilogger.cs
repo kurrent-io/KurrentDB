@@ -3,7 +3,7 @@
 
 using System;
 using System.Diagnostics;
-using Amazon.Runtime.Internal.Util;
+using Amazon.Runtime;
 using Serilog.Core;
 using Serilog.Events;
 using ILogger = Serilog.ILogger;
@@ -57,7 +57,7 @@ public class AmazonTraceSerilogger(Func<LogEventLevel, Exception, LogEventLevel>
 
 		var exception = data.Length > 1 ? data[1] as Exception : null;
 
-		if (data[0] is not LogMessage logMessage)
+		if (data[0] is not ILogMessage logMessage)
 			return;
 
 		var logLevel = adjustLevel(GetLogLevel(eventType), exception);

@@ -25,8 +25,8 @@
     <PackageVersion Include="Extensions.MudBlazor.StaticInput" Version="3.2.1" />
     <PackageVersion Include="FluentAssertions" Version="6.12.2" />
     <PackageVersion Include="FluentAssertions.Analyzers" Version="0.33.0" />
-    <PackageVersion Include="FluentStorage" Version="5.6.0" />
-    <PackageVersion Include="FluentStorage.AWS" Version="5.5.0" />
+    <PackageVersion Include="FluentStorage" Version="6.0.4" />
+    <PackageVersion Include="FluentStorage.AWS" Version="6.0.3" />
     <PackageVersion Include="Azure.Storage.Blobs" Version="12.25.1" />
     <PackageVersion Include="Azure.Identity" Version="1.16.0" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
@@ -158,8 +158,9 @@
     <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.6" />
     <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.6" />
     <PackageVersion Include="System.ServiceModel.Http" Version="8.1.2" />
-    <PackageVersion Include="TestableIO.System.IO.Abstractions" Version="21.3.1" />
-    <PackageVersion Include="TestableIO.System.IO.Abstractions.TestingHelpers" Version="21.3.1" />
+    <!-- Match the 22.x Wrappers pulled transitively by FluentStorage. -->
+    <PackageVersion Include="TestableIO.System.IO.Abstractions" Version="22.1.1" />
+    <PackageVersion Include="TestableIO.System.IO.Abstractions.TestingHelpers" Version="22.1.1" />
     <PackageVersion Include="Testcontainers" Version="4.7.0" />
     <PackageVersion Include="TUnit" Version="1.0.39" />
     <PackageVersion Include="TUnit.Core" Version="1.0.39" />
