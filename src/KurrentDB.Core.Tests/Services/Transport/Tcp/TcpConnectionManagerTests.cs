@@ -47,7 +47,7 @@ public class TcpConnectionManagerTests {
 				new StubPasswordHashAlgorithm(), 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { },
-			expectedNodeSecret: "",
+			expectedClusterSecret: "",
 			_connectionPendingSendBytesThreshold, _connectionQueueSizeThreshold);
 
 		tcpConnectionManager.ProcessPackage(package);
@@ -89,7 +89,7 @@ public class TcpConnectionManagerTests {
 				new StubPasswordHashAlgorithm(), 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { },
-			expectedNodeSecret: "",
+			expectedClusterSecret: "",
 			_connectionPendingSendBytesThreshold, _connectionQueueSizeThreshold);
 
 		tcpConnectionManager.ProcessPackage(package);
@@ -126,7 +126,7 @@ public class TcpConnectionManagerTests {
 					new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { mre.Set(); },
-			expectedNodeSecret: "",
+			expectedClusterSecret: "",
 			_connectionPendingSendBytesThreshold, _connectionQueueSizeThreshold);
 
 		tcpConnectionManager.SendMessage(message);
@@ -156,7 +156,7 @@ public class TcpConnectionManagerTests {
 				new IODispatcher(new SynchronousScheduler(), new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { },
-			expectedNodeSecret: "",
+			expectedClusterSecret: "",
 			_connectionPendingSendBytesThreshold, _connectionQueueSizeThreshold);
 
 		tcpConnectionManager.SendMessage(message);
@@ -190,7 +190,7 @@ public class TcpConnectionManagerTests {
 				new IODispatcher(new SynchronousScheduler(), new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { mre.Set(); },
-			expectedNodeSecret: "",
+			expectedClusterSecret: "",
 			ESConsts.UnrestrictedPendingSendBytes, ESConsts.MaxConnectionQueueSize);
 
 		tcpConnectionManager.SendMessage(message);
@@ -224,7 +224,7 @@ public class TcpConnectionManagerTests {
 				new IODispatcher(new SynchronousScheduler(), new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { mre.Set(); },
-			expectedNodeSecret: "",
+			expectedClusterSecret: "",
 			ESConsts.UnrestrictedPendingSendBytes, ESConsts.MaxConnectionQueueSize);
 
 		tcpConnectionManager.SendMessage(message);
@@ -258,7 +258,7 @@ public class TcpConnectionManagerTests {
 				new IODispatcher(new SynchronousScheduler(), new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { mre.Set(); },
-			expectedNodeSecret: "",
+			expectedClusterSecret: "",
 			ESConsts.UnrestrictedPendingSendBytes, ESConsts.MaxConnectionQueueSize);
 
 		tcpConnectionManager.SendMessage(message);
@@ -269,7 +269,7 @@ public class TcpConnectionManagerTests {
 	}
 
 	// --- Internal TCP node-auth gate -----------------------------------------
-	// When a connection is created with expectedNodeSecret != "", the manager
+	// When a connection is created with expectedClusterSecret != "", the manager
 	// rejects every non-heartbeat command until the peer sends a valid
 	// Authenticate package carrying the secret as a token.
 
@@ -283,7 +283,7 @@ public class TcpConnectionManagerTests {
 				new StubPasswordHashAlgorithm(), 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (m, e) => { },
-			expectedNodeSecret: requiredSecret,
+			expectedClusterSecret: requiredSecret,
 			_connectionPendingSendBytesThreshold, _connectionQueueSizeThreshold);
 	}
 
@@ -358,7 +358,7 @@ public class TcpConnectionManagerTests {
 
 	[Test]
 	public void node_auth_gate_inactive_when_no_secret_configured() {
-		// Empty expectedNodeSecret = same as TLS-on or --insecure: no gate.
+		// Empty expectedClusterSecret = same as TLS-on or --insecure: no gate.
 		// Verify a non-heartbeat command flows through immediately.
 		var publisher = new SynchronousScheduler();
 		var conn = new DummyTcpConnection();

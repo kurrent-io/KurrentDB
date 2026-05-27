@@ -14,7 +14,7 @@ public enum TcpFlags : byte {
 	Authenticated = 0x01,
 	// TcpPackage contains no authentication header but wants to run as SystemAccounts.System
 	// by virtue of its context: either Insecure mode, or a connection authenticated as a
-	// cluster node (via mTLS or NodeSecret). Only accepted on Internal TCP connections.
+	// cluster node (via mTLS or ClusterSecret). Only accepted on Internal TCP connections.
 	TrustedWrite = 0x02,
 }
 
@@ -78,7 +78,7 @@ public readonly struct TcpPackage {
 		// latent BUG (pre-existing): these two token-form reads use AuthOffset / AuthOffset + 2 directly
 		// instead of data.Offset + AuthOffset, unlike the login/password path below which honours
 		// data.Offset. Works only because the framer currently hands us segments with Offset == 0.
-		// The token form is used by JWT bearer-token user auth and by cluster NodeSecret auth, so
+		// The token form is used by JWT bearer-token user auth and by cluster ClusterSecret auth, so
 		// if the framer ever produces non-zero offsets, both would read garbage here.
 		var tokenLength = BitConverter.ToInt16(data.Array, AuthOffset);
 		if (Math.Sign(tokenLength) == -1) {

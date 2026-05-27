@@ -15,7 +15,7 @@ public class NodeHttpClientFactory(
 	string uriScheme,
 	CertificateDelegates.ServerCertificateValidator nodeCertificateValidator,
 	Func<X509Certificate> clientCertificateSelector,
-	string nodeSecret) : INodeHttpClientFactory {
+	string clusterSecret) : INodeHttpClientFactory {
 
 	public HttpClient CreateHttpClient(string[] additionalCertificateNames) {
 		HttpMessageHandler httpMessageHandler;
@@ -44,10 +44,10 @@ public class NodeHttpClientFactory(
 		}
 
 		var client = new HttpClient(httpMessageHandler);
-		if (uriScheme != Uri.UriSchemeHttps && !string.IsNullOrWhiteSpace(nodeSecret)) {
+		if (uriScheme != Uri.UriSchemeHttps && !string.IsNullOrWhiteSpace(clusterSecret)) {
 			// In cleartext (--disable-tls) the node cannot present a client certificate.
 			// Carry the shared cluster secret instead so peers can authenticate us as system.
-			client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Cluster", nodeSecret);
+			client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Cluster", clusterSecret);
 		}
 		return client;
 	}

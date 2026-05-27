@@ -47,7 +47,7 @@ public class TcpService : IHandle<SystemMessage.SystemInit>,
 	private readonly Func<X509Certificate2> _certificateSelector;
 	private readonly Func<X509Certificate2Collection> _intermediatesSelector;
 	private readonly CertificateDelegates.ClientCertificateValidator _sslClientCertValidator;
-	private readonly string _expectedNodeSecret;
+	private readonly string _expectedClusterSecret;
 	private readonly int _connectionPendingSendBytesThreshold;
 	private readonly int _connectionQueueSizeThreshold;
 
@@ -64,12 +64,12 @@ public class TcpService : IHandle<SystemMessage.SystemInit>,
 		Func<X509Certificate2> certificateSelector,
 		Func<X509Certificate2Collection> intermediatesSelector,
 		CertificateDelegates.ClientCertificateValidator sslClientCertValidator,
-		string expectedNodeSecret,
+		string expectedClusterSecret,
 		int connectionPendingSendBytesThreshold,
 		int connectionQueueSizeThreshold)
 		: this(publisher, serverEndPoint, networkSendQueue, serviceType, securityType, (_, _) => dispatcher,
 			heartbeatInterval, heartbeatTimeout, authProvider, authorizationGateway, certificateSelector, intermediatesSelector, sslClientCertValidator,
-			expectedNodeSecret,
+			expectedClusterSecret,
 			connectionPendingSendBytesThreshold, connectionQueueSizeThreshold) {
 	}
 
@@ -87,7 +87,7 @@ public class TcpService : IHandle<SystemMessage.SystemInit>,
 		Func<X509Certificate2> certificateSelector,
 		Func<X509Certificate2Collection> intermediatesSelector,
 		CertificateDelegates.ClientCertificateValidator sslClientCertValidator,
-		string expectedNodeSecret,
+		string expectedClusterSecret,
 		int connectionPendingSendBytesThreshold,
 		int connectionQueueSizeThreshold) {
 
@@ -107,7 +107,7 @@ public class TcpService : IHandle<SystemMessage.SystemInit>,
 		_certificateSelector = certificateSelector;
 		_intermediatesSelector = intermediatesSelector;
 		_sslClientCertValidator = sslClientCertValidator;
-		_expectedNodeSecret = Ensure.NotNull(expectedNodeSecret);
+		_expectedClusterSecret = Ensure.NotNull(expectedClusterSecret);
 	}
 
 	public void Handle(SystemMessage.SystemInit message) {
@@ -146,7 +146,7 @@ public class TcpService : IHandle<SystemMessage.SystemInit>,
 			_heartbeatInterval,
 			_heartbeatTimeout,
 			(m, e) => _publisher.Publish(new TcpMessage.ConnectionClosed(m, e)),
-			expectedNodeSecret: _expectedNodeSecret,
+			expectedClusterSecret: _expectedClusterSecret,
 			_connectionPendingSendBytesThreshold,
 			_connectionQueueSizeThreshold); // TODO AN: race condition
 		_publisher.Publish(new TcpMessage.ConnectionEstablished(manager));

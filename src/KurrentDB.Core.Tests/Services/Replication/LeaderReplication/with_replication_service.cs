@@ -104,7 +104,7 @@ public abstract class with_replication_service : SpecificationWithDirectoryPerTe
 				new StubPasswordHashAlgorithm(), 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { },
-			expectedNodeSecret: "",
+			expectedClusterSecret: "",
 			_connectionPendingSendBytesThreshold, _connectionQueueSizeThreshold);
 		var subRequest = new ReplicationMessage.ReplicaSubscriptionRequest(
 			Guid.NewGuid(),

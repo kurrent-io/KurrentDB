@@ -11,7 +11,7 @@ using Xunit;
 
 namespace KurrentDB.Core.XUnit.Tests.Services.Transport.Http.Authentication;
 
-public class NodeSecretAuthenticationProviderTests {
+public class ClusterSecretAuthenticationProviderTests {
 	private const string Secret = "shared-cluster-secret";
 
 	private static HttpContext ContextWithAuth(string headerValue) {
@@ -23,7 +23,7 @@ public class NodeSecretAuthenticationProviderTests {
 
 	[Fact]
 	public async Task matching_secret_authenticates_as_system() {
-		var sut = new NodeSecretAuthenticationProvider(Secret);
+		var sut = new ClusterSecretAuthenticationProvider(Secret);
 
 		var authenticated = sut.Authenticate(ContextWithAuth($"Cluster {Secret}"), out var request);
 
@@ -36,7 +36,7 @@ public class NodeSecretAuthenticationProviderTests {
 
 	[Fact]
 	public void missing_authorization_header_returns_false() {
-		var sut = new NodeSecretAuthenticationProvider(Secret);
+		var sut = new ClusterSecretAuthenticationProvider(Secret);
 
 		var authenticated = sut.Authenticate(ContextWithAuth(null), out var request);
 
@@ -49,7 +49,7 @@ public class NodeSecretAuthenticationProviderTests {
 	[InlineData("Bearer some.jwt.token")]
 	[InlineData("Token abc")]
 	public void wrong_scheme_returns_false(string header) {
-		var sut = new NodeSecretAuthenticationProvider(Secret);
+		var sut = new ClusterSecretAuthenticationProvider(Secret);
 
 		var authenticated = sut.Authenticate(ContextWithAuth(header), out var request);
 
@@ -59,7 +59,7 @@ public class NodeSecretAuthenticationProviderTests {
 
 	[Fact]
 	public void wrong_secret_returns_false() {
-		var sut = new NodeSecretAuthenticationProvider(Secret);
+		var sut = new ClusterSecretAuthenticationProvider(Secret);
 
 		var authenticated = sut.Authenticate(ContextWithAuth("Cluster wrong-secret"), out var request);
 
@@ -69,7 +69,7 @@ public class NodeSecretAuthenticationProviderTests {
 
 	[Fact]
 	public void cluster_scheme_with_no_parameter_returns_false() {
-		var sut = new NodeSecretAuthenticationProvider(Secret);
+		var sut = new ClusterSecretAuthenticationProvider(Secret);
 
 		var authenticated = sut.Authenticate(ContextWithAuth("Cluster"), out var request);
 
@@ -79,7 +79,7 @@ public class NodeSecretAuthenticationProviderTests {
 
 	[Fact]
 	public void multiple_authorization_values_returns_false() {
-		var sut = new NodeSecretAuthenticationProvider(Secret);
+		var sut = new ClusterSecretAuthenticationProvider(Secret);
 
 		var ctx = new DefaultHttpContext();
 		ctx.Request.Headers["Authorization"] = new[] { $"Cluster {Secret}", "Basic dXNlcjpwYXNz" };
@@ -95,7 +95,7 @@ public class NodeSecretAuthenticationProviderTests {
 	[InlineData("")]
 	[InlineData("   ")]
 	public void empty_secret_in_constructor_throws(string secret) {
-		Assert.Throws<ArgumentException>(() => new NodeSecretAuthenticationProvider(secret));
+		Assert.Throws<ArgumentException>(() => new ClusterSecretAuthenticationProvider(secret));
 	}
 
 }

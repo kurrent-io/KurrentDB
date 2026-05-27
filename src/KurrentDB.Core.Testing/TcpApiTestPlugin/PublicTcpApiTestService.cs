@@ -55,7 +55,7 @@ public class PublicTcpApiTestService : IHostedService {
 			certificateSelector: null,
 			intermediatesSelector: null,
 			sslClientCertValidator: null,
-			expectedNodeSecret: "",
+			expectedClusterSecret: "",
 			connectionPendingSendBytesThreshold: options.ConnectionPendingSendBytesThreshold,
 			connectionQueueSizeThreshold: options.ConnectionQueueSizeThreshold
 		);
@@ -88,7 +88,7 @@ public class PublicTcpApiTestService : IHostedService {
 				return intermediates == null ? null : new X509Certificate2Collection(intermediates);
 			},
 			sslClientCertValidator: delegate { return (true, null); },
-			expectedNodeSecret: "",
+			expectedClusterSecret: "",
 			connectionPendingSendBytesThreshold: options.ConnectionPendingSendBytesThreshold,
 			connectionQueueSizeThreshold: options.ConnectionQueueSizeThreshold
 		);

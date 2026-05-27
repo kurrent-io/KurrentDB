@@ -94,13 +94,13 @@ DEFAULT OPTIONS:
 		var opsPassword = loadedOptions[$"{KurrentConfigurationKeys.Prefix}:DefaultOpsPassword"];
 		var adminPassword = loadedOptions[$"{KurrentConfigurationKeys.Prefix}:DefaultAdminPassword"];
 		var certPassword = loadedOptions[$"{KurrentConfigurationKeys.Prefix}:CertificatePassword"];
-		var nodeSecret = loadedOptions[$"{KurrentConfigurationKeys.Prefix}:NodeSecret"];
+		var clusterSecret = loadedOptions[$"{KurrentConfigurationKeys.Prefix}:ClusterSecret"];
 
 		opsPassword.DisplayValue.Should().BeEquivalentTo("********");
 		adminPassword.DisplayValue.Should().BeEquivalentTo("********");
 		certPassword.DisplayValue.Should().BeEquivalentTo("********");
-		nodeSecret.DisplayValue.Should().BeEquivalentTo("********");
-		nodeSecret.GetRawValue().Should().Be(secretText);
+		clusterSecret.DisplayValue.Should().BeEquivalentTo("********");
+		clusterSecret.GetRawValue().Should().Be(secretText);
 	}
 
 	[Fact]

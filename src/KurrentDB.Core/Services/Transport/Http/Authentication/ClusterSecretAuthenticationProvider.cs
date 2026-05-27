@@ -11,15 +11,15 @@ namespace KurrentDB.Core.Services.Transport.Http.Authentication;
 
 // Authenticates inter-node HTTP requests when TLS is disabled.
 // Note that since TLS is disabled the secret will be sent in clear text
-public class NodeSecretAuthenticationProvider : IHttpAuthenticationProvider {
+public class ClusterSecretAuthenticationProvider : IHttpAuthenticationProvider {
 	public string Name => "node-secret";
 
-	private readonly string _expectedNodeSecret;
+	private readonly string _expectedClusterSecret;
 
-	public NodeSecretAuthenticationProvider(string expectedNodeSecret) {
-		if (string.IsNullOrWhiteSpace(expectedNodeSecret))
-			throw new ArgumentException("Node secret must be non-empty.", nameof(expectedNodeSecret));
-		_expectedNodeSecret = expectedNodeSecret;
+	public ClusterSecretAuthenticationProvider(string expectedClusterSecret) {
+		if (string.IsNullOrWhiteSpace(expectedClusterSecret))
+			throw new ArgumentException("Node secret must be non-empty.", nameof(expectedClusterSecret));
+		_expectedClusterSecret = expectedClusterSecret;
 	}
 
 	public bool Authenticate(HttpContext context, out HttpAuthenticationRequest request) {
@@ -33,7 +33,7 @@ public class NodeSecretAuthenticationProvider : IHttpAuthenticationProvider {
 		    header.Parameter is null)
 			return false;
 
-		if (!string.Equals(header.Parameter, _expectedNodeSecret, StringComparison.Ordinal))
+		if (!string.Equals(header.Parameter, _expectedClusterSecret, StringComparison.Ordinal))
 			return false;
 
 		request = new(context, "system", "");

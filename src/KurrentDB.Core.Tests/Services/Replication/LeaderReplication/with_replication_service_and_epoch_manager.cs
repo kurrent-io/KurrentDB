@@ -125,7 +125,7 @@ public abstract class with_replication_service_and_epoch_manager<TLogFormat, TSt
 				new StubPasswordHashAlgorithm(), 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { },
-			expectedNodeSecret: "",
+			expectedClusterSecret: "",
 			_connectionPendingSendBytesThreshold, _connectionQueueSizeThreshold);
 		var subRequest = new ReplicationMessage.ReplicaSubscriptionRequest(
 			Guid.NewGuid(),

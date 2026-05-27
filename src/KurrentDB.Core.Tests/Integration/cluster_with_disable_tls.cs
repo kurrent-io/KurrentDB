@@ -37,7 +37,7 @@ public class when_running_cluster_with_disable_tls<TLogFormat, TStreamId>
 		var allPorts = endpoints.SelectMany(e => new[] { e.intTcp.Port, e.extTcp.Port, e.http.Port }).ToList();
 		Assert.AreEqual(allPorts.Count, allPorts.Distinct().Count(), "Allocated duplicate ports");
 
-		var nodeSecret = Guid.NewGuid().ToString("N");
+		var clusterSecret = Guid.NewGuid().ToString("N");
 
 		for (int i = 0; i < 3; i++) {
 			var peers = new EndPoint[] {
@@ -50,7 +50,7 @@ public class when_running_cluster_with_disable_tls<TLogFormat, TStreamId>
 				gossipSeeds: peers,
 				inMemDb: false,
 				disableTls: true,
-				nodeSecret: nodeSecret);
+				clusterSecret: clusterSecret);
 		}
 
 		await Task.WhenAll(_nodes.Select(n => n.Start()));

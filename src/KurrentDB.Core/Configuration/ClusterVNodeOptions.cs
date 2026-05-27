@@ -289,7 +289,7 @@ public partial record ClusterVNodeOptions {
 		             "Note that since TLS is disabled the secret will be sent in clear text. " +
 		             "Has no effect when TLS is enabled (nodes will authenticate by mTLS).")]
 		[Sensitive]
-		public string NodeSecret { get; init; } = "";
+		public string ClusterSecret { get; init; } = "";
 
 		[Description("The interval, in ms, nodes should try to gossip with each other."),
 		 Unit("ms")]

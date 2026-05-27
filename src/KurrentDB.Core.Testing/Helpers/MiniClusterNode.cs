@@ -68,7 +68,7 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 		IPEndPoint httpEndPoint, EndPoint[] gossipSeeds, ISubsystem[] subsystems = null,
 		bool enableTrustedAuth = false, int memTableSize = 1000, bool inMemDb = true,
 		bool disableFlushToDisk = false, bool readOnlyReplica = false, int nodePriority = 0,
-		bool disableTls = false, string nodeSecret = "",
+		bool disableTls = false, string clusterSecret = "",
 		string intHostAdvertiseAs = null, IExpiryStrategy expiryStrategy = null) {
 		if (RuntimeInformation.IsOSX) {
 			AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport",
@@ -112,7 +112,7 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 				GossipSeed = gossipSeeds,
 				ClusterSize = 3,
 				NodePriority = nodePriority,
-				NodeSecret = nodeSecret,
+				ClusterSecret = clusterSecret,
 				GossipIntervalMs = 2_000,
 				GossipAllowedDifferenceMs = 1_000,
 				GossipTimeoutMs = 2_000,

@@ -72,7 +72,7 @@ public class TcpConnectionManager : IHandle<TcpMessage.Heartbeat>, IHandle<TcpMe
 	// This class manages a single TCP connection, there are two cases:
 	// 1. inbound/outbound internal connection to another node
 	//     a. with TLS the authentication is mutual via mTLS within the connection itself
-	//     b. without TLS but with Authentication the client authenticates by sending NodeSecret
+	//     b. without TLS but with Authentication the client authenticates by sending ClusterSecret
 	//     c. without TLS and without Authentication (i.e. Insecure) there is no authentication.
 	//     - TrustedWrite is supported.
 	// 2. inbound external connection from a client
@@ -81,11 +81,11 @@ public class TcpConnectionManager : IHandle<TcpMessage.Heartbeat>, IHandle<TcpMe
 	//     - TrustedWrite is not supported.
 	//
 	// We distinguish between 1 and 2 via TcpServiceType
-	// We distinguish between a/b/c via presence of a non-empty NodeSecret -
+	// We distinguish between a/b/c via presence of a non-empty ClusterSecret -
 	// TLS is encapsulated in the connection and not known to us here.
-	// _requireNodeSecretAuth is true iff we require our counterparty to send the NodeSecret.
-	private readonly bool _requireNodeSecretAuth;
-	private readonly string _nodeSecret = "";
+	// _requireClusterSecretAuth is true iff we require our counterparty to send the ClusterSecret.
+	private readonly bool _requireClusterSecretAuth;
+	private readonly string _clusterSecret = "";
 	private bool _nodeAuthenticated;
 
 	/// <summary>
@@ -102,7 +102,7 @@ public class TcpConnectionManager : IHandle<TcpMessage.Heartbeat>, IHandle<TcpMe
 		TimeSpan heartbeatInterval,
 		TimeSpan heartbeatTimeout,
 		Action<TcpConnectionManager, SocketError> onConnectionClosed,
-		string expectedNodeSecret,
+		string expectedClusterSecret,
 		int connectionPendingSendBytesThreshold,
 		int connectionQueueSizeThreshold) {
 		_connection = Ensure.NotNull(openedConnection);
@@ -124,8 +124,8 @@ public class TcpConnectionManager : IHandle<TcpMessage.Heartbeat>, IHandle<TcpMe
 		_connectionPendingSendBytesThreshold = connectionPendingSendBytesThreshold;
 		_connectionQueueSizeThreshold = connectionQueueSizeThreshold;
 		_connectionClosed = onConnectionClosed;
-		_nodeSecret = Ensure.NotNull(expectedNodeSecret);
-		_requireNodeSecretAuth = _serviceType == TcpServiceType.Internal && _nodeSecret.Length > 0;
+		_clusterSecret = Ensure.NotNull(expectedClusterSecret);
+		_requireClusterSecretAuth = _serviceType == TcpServiceType.Internal && _clusterSecret.Length > 0;
 
 		RemoteEndPoint = openedConnection.RemoteEndPoint;
 		_connection.ConnectionClosed += OnConnectionClosed;
@@ -156,7 +156,7 @@ public class TcpConnectionManager : IHandle<TcpMessage.Heartbeat>, IHandle<TcpMe
 		AuthorizationGateway authorization,
 		TimeSpan heartbeatInterval,
 		TimeSpan heartbeatTimeout,
-		string nodeSecret,
+		string clusterSecret,
 		Action<TcpConnectionManager> onConnectionEstablished,
 		Action<TcpConnectionManager, SocketError> onConnectionClosed) {
 		Ensure.NotNull(connector);
@@ -179,8 +179,8 @@ public class TcpConnectionManager : IHandle<TcpMessage.Heartbeat>, IHandle<TcpMe
 		_connectionPendingSendBytesThreshold = ESConsts.UnrestrictedPendingSendBytes;
 		_connectionQueueSizeThreshold = ESConsts.MaxConnectionQueueSize;
 
-		_nodeSecret = Ensure.NotNull(nodeSecret);
-		_requireNodeSecretAuth = false; // we are outbound
+		_clusterSecret = Ensure.NotNull(clusterSecret);
+		_requireClusterSecretAuth = false; // we are outbound
 		_connectionEstablished = onConnectionEstablished;
 		_connectionClosed = onConnectionClosed;
 
@@ -200,12 +200,12 @@ public class TcpConnectionManager : IHandle<TcpMessage.Heartbeat>, IHandle<TcpMe
 
 		ScheduleHeartbeat(0L, 0L);
 
-		if (_nodeSecret.Length > 0) {
+		if (_clusterSecret.Length > 0) {
 			SendPackage(new TcpPackage(
 				command: TcpCommand.Authenticate,
 				flags: TcpFlags.Authenticated,
 				correlationId: Guid.NewGuid(),
-				authToken: _nodeSecret,
+				authToken: _clusterSecret,
 				data: ArraySegment<byte>.Empty));
 		}
 
@@ -278,7 +278,7 @@ public class TcpConnectionManager : IHandle<TcpMessage.Heartbeat>, IHandle<TcpMe
 			return;
 		}
 
-		if (_requireNodeSecretAuth && !_nodeAuthenticated) {
+		if (_requireClusterSecretAuth && !_nodeAuthenticated) {
 			ProcessPackageWhenAuthenticationPending(package);
 			return;
 		}
@@ -411,7 +411,7 @@ public class TcpConnectionManager : IHandle<TcpMessage.Heartbeat>, IHandle<TcpMe
 			SendPackage(package.Value);
 	}
 
-	// We require NodeSecret authentication but have not yet received it.
+	// We require ClusterSecret authentication but have not yet received it.
 	// Respond to heartbeats, accept authentication, anything else close the connection.
 	private void ProcessPackageWhenAuthenticationPending(TcpPackage package) {
 		switch (package.Command) {
@@ -422,14 +422,14 @@ public class TcpConnectionManager : IHandle<TcpMessage.Heartbeat>, IHandle<TcpMe
 				break;
 			case TcpCommand.Authenticate:
 				if (package.TryGetAuthToken(out var token) &&
-					string.Equals(token, _nodeSecret, StringComparison.Ordinal)) {
+					string.Equals(token, _clusterSecret, StringComparison.Ordinal)) {
 					_nodeAuthenticated = true;
 					Log.Information(
 						"Internal TCP connection from [{remoteEndPoint}] authenticated as cluster node.",
 						RemoteEndPoint);
 				} else {
 					Log.Warning(
-						"Rejecting internal TCP connection from [{remoteEndPoint}]: NodeSecret missing or does not match.",
+						"Rejecting internal TCP connection from [{remoteEndPoint}]: ClusterSecret missing or does not match.",
 						RemoteEndPoint);
 					SendBadRequestAndClose(package.CorrelationId, "Internal TCP node authentication failed.");
 				}

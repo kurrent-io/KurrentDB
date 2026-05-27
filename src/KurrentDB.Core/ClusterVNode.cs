@@ -560,13 +560,13 @@ public class ClusterVNode<TStreamId> :
 
 		var uriScheme = options.Application.TlsDisabled() ? Uri.UriSchemeHttp : Uri.UriSchemeHttps;
 		var clusterDns = options.Cluster.DiscoverViaDns ? options.Cluster.ClusterDns : null;
-		var nodeSecret = options.EffectiveNodeSecret();
+		var clusterSecret = options.EffectiveClusterSecret();
 
 		_nodeHttpClientFactory = new NodeHttpClientFactory(
 			uriScheme,
 			_internalServerCertificateValidator,
 			_certificateSelector,
-			nodeSecret);
+			clusterSecret);
 
 		_eventStoreClusterClientCache = new EventStoreClusterClientCache(_mainQueue,
 			(endpoint, publisher) =>
@@ -989,7 +989,7 @@ public class ClusterVNode<TStreamId> :
 						TimeSpan.FromMilliseconds(options.Interface.ReplicationHeartbeatInterval),
 						TimeSpan.FromMilliseconds(options.Interface.ReplicationHeartbeatTimeout),
 						_authenticationProvider, authorizationGateway, null, null, null,
-						expectedNodeSecret: nodeSecret,
+						expectedClusterSecret: clusterSecret,
 						ESConsts.UnrestrictedPendingSendBytes,
 						ESConsts.MaxConnectionQueueSize);
 					_mainBus.Subscribe<SystemMessage.SystemInit>(intTcpService);
@@ -1005,7 +1005,7 @@ public class ClusterVNode<TStreamId> :
 						TimeSpan.FromMilliseconds(options.Interface.ReplicationHeartbeatTimeout),
 						_authenticationProvider, authorizationGateway,
 						_certificateSelector, _intermediateCertsSelector, _internalClientCertificateValidator,
-						expectedNodeSecret: "",
+						expectedClusterSecret: "",
 						ESConsts.UnrestrictedPendingSendBytes,
 						ESConsts.MaxConnectionQueueSize);
 					_mainBus.Subscribe<SystemMessage.SystemInit>(intSecTcpService);
@@ -1039,8 +1039,8 @@ public class ClusterVNode<TStreamId> :
 
 		//transport-level authentication providers
 		if (options.Application.TlsDisabled()) {
-			if (nodeSecret.Length > 0) {
-				httpAuthenticationProviders.Add(new NodeSecretAuthenticationProvider(nodeSecret));
+			if (clusterSecret.Length > 0) {
+				httpAuthenticationProviders.Add(new ClusterSecretAuthenticationProvider(clusterSecret));
 			}
 		} else {
 			httpAuthenticationProviders.Add(new NodeCertificateAuthenticationProvider(
@@ -1520,7 +1520,7 @@ public class ClusterVNode<TStreamId> :
 				options.Cluster.ReadOnlyReplica,
 				!disableInternalTcpTls, _internalServerCertificateValidator,
 				_certificateSelector,
-				nodeSecret: nodeSecret,
+				clusterSecret: clusterSecret,
 				TimeSpan.FromMilliseconds(options.Interface.ReplicationHeartbeatTimeout),
 				TimeSpan.FromMilliseconds(options.Interface.ReplicationHeartbeatInterval),
 				TimeSpan.FromMilliseconds(options.Database.WriteTimeoutMs));
