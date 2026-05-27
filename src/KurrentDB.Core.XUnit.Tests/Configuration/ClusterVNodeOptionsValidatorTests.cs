@@ -72,7 +72,7 @@ public class ClusterVNodeOptionsValidatorTests {
 	[InlineData(false, false, 3, "secret", true)]  // TLS on
 	[InlineData(true,  true,  3, "secret", true)]  // insecure
 	[InlineData(true,  false, 1, "secret", true)]  // single-node disable-tls
-	public void disable_tls_with_cluster_requires_node_secret(
+	public void disable_tls_with_cluster_requires_cluster_secret(
 		bool disableTls, bool insecure, int clusterSize, string clusterSecret, bool expectedValid) {
 		var options = new ClusterVNodeOptions {
 			Application = new() {

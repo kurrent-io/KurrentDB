@@ -12,7 +12,7 @@ namespace KurrentDB.Core.Services.Transport.Http.Authentication;
 // Authenticates inter-node HTTP requests when TLS is disabled.
 // Note that since TLS is disabled the secret will be sent in clear text
 public class ClusterSecretAuthenticationProvider : IHttpAuthenticationProvider {
-	public string Name => "node-secret";
+	public string Name => "cluster-secret";
 
 	private readonly string _expectedClusterSecret;
 

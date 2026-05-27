@@ -86,7 +86,7 @@ DEFAULT OPTIONS:
 				$"--{KurrentConfigurationKeys.LegacyEventStorePrefix}:CertificatePassword", secretText)
 			.AddKurrentCommandLine(
 				$"--default-ops-password={secretText}",
-				$"--node-secret={secretText}")
+				$"--cluster-secret={secretText}")
 			.Build();
 
 		var loadedOptions = ClusterVNodeOptions.GetLoadedOptions(config);
