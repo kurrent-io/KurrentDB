@@ -14,12 +14,12 @@ namespace KurrentDB.Core.Services.Transport.Http.Authentication;
 public class NodeSecretAuthenticationProvider : IHttpAuthenticationProvider {
 	public string Name => "node-secret";
 
-	private readonly string _expected;
+	private readonly string _expectedNodeSecret;
 
-	public NodeSecretAuthenticationProvider(string nodeSecret) {
-		if (string.IsNullOrWhiteSpace(nodeSecret))
-			throw new ArgumentException("Node secret must be non-empty.", nameof(nodeSecret));
-		_expected = nodeSecret;
+	public NodeSecretAuthenticationProvider(string expectedNodeSecret) {
+		if (string.IsNullOrWhiteSpace(expectedNodeSecret))
+			throw new ArgumentException("Node secret must be non-empty.", nameof(expectedNodeSecret));
+		_expectedNodeSecret = expectedNodeSecret;
 	}
 
 	public bool Authenticate(HttpContext context, out HttpAuthenticationRequest request) {
@@ -33,7 +33,7 @@ public class NodeSecretAuthenticationProvider : IHttpAuthenticationProvider {
 		    header.Parameter is null)
 			return false;
 
-		if (!string.Equals(header.Parameter, _expected, StringComparison.Ordinal))
+		if (!string.Equals(header.Parameter, _expectedNodeSecret, StringComparison.Ordinal))
 			return false;
 
 		request = new(context, "system", "");

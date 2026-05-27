@@ -68,6 +68,10 @@ public class ClusterVNodeOptionsValidatorTests {
 	[InlineData(true,  false, 3, "   ",    false)]
 	// Multi-node disable-tls with a real secret — valid
 	[InlineData(true,  false, 3, "secret", true)]
+	// A secret set where it has no effect is allowed (validator only warns, doesn't throw)
+	[InlineData(false, false, 3, "secret", true)]  // TLS on
+	[InlineData(true,  true,  3, "secret", true)]  // insecure
+	[InlineData(true,  false, 1, "secret", true)]  // single-node disable-tls
 	public void disable_tls_with_cluster_requires_node_secret(
 		bool disableTls, bool insecure, int clusterSize, string nodeSecret, bool expectedValid) {
 		var options = new ClusterVNodeOptions {

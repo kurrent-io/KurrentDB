@@ -27,6 +27,23 @@ public static class ClusterVNodeOptionsExtensions {
 	public static ClusterVNodeOptions WithPlugableComponent(this ClusterVNodeOptions options, IPlugableComponent plugableComponent) =>
 		options with { PlugableComponents = [.. options.PlugableComponents, plugableComponent] };
 
+	/// <summary>
+	/// True iff the cluster NodeSecret is used to authenticate nodes to each other:
+	/// only when TLS is disabled, authentication is still on, and the cluster has more
+	/// than one node. With TLS, peers authenticate by mTLS; in --insecure there is no
+	/// auth; and a single node has no peers.
+	/// </summary>
+	public static bool UsesNodeSecret(this ClusterVNodeOptions options) =>
+		options.Application.DisableTls && !options.Application.Insecure && options.Cluster.ClusterSize > 1;
+
+	/// <summary>
+	/// The NodeSecret that will actually be used, or "" when it does not apply. Ensures
+	/// a stray configured secret is never sent or required outside the supported mode
+	/// (e.g. it must not make a replica send a spurious Authenticate over a TLS connection).
+	/// </summary>
+	public static string EffectiveNodeSecret(this ClusterVNodeOptions options) =>
+		options.UsesNodeSecret() ? options.Cluster.NodeSecret : "";
+
 	public static ClusterVNodeOptions InCluster(this ClusterVNodeOptions options, int clusterSize) => options with {
 		Cluster = options.Cluster with {
 			ClusterSize = clusterSize <= 1

@@ -36,6 +36,7 @@ public class PublicTcpApiService : IHostedService {
 				null,
 				null,
 				null,
+				expectedNodeSecret: "",
 				options.ConnectionPendingSendBytesThreshold,
 				options.ConnectionQueueSizeThreshold);
 
@@ -59,6 +60,7 @@ public class PublicTcpApiService : IHostedService {
 						: new X509Certificate2Collection(intermediates);
 				},
 				delegate { return (true, null); },
+				expectedNodeSecret: "",
 				options.ConnectionPendingSendBytesThreshold,
 				options.ConnectionQueueSizeThreshold);
 
