@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.IO;
 using System.Linq;
 using System.Runtime;
 using System.Security.Cryptography.X509Certificates;
@@ -127,7 +128,7 @@ try {
 			devCert = DevCertificateFile.TryLoad(devCertPath);
 			if (devCert is not null) {
 				Log.Information("Dev certificate loaded from {path}", devCertPath);
-			} else if (System.IO.File.Exists(devCertPath)) {
+			} else if (File.Exists(devCertPath)) {
 				Log.Warning("Dev certificate at {path} is invalid or expired, generating a new one.", devCertPath);
 			}
 		}
@@ -159,9 +160,9 @@ try {
 		// Write public cert as .crt for clients to trust
 		if (!string.IsNullOrEmpty(devCertPath)) {
 			try {
-				DevCertificateFile.WritePublicCertificate(devCert, devCertPath);
+				var crtPath = DevCertificateFile.WritePublicCertificate(devCert, devCertPath);
 				Log.Information("Dev certificate public key saved to {path} (use this to configure client trust)",
-					System.IO.Path.ChangeExtension(devCertPath, ".crt"));
+					crtPath);
 			} catch (Exception ex) {
 				Log.Warning("Could not write public certificate: {error}", ex.Message);
 			}

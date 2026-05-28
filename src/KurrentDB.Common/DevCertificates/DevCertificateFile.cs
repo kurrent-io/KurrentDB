@@ -41,12 +41,15 @@ public static class DevCertificateFile {
 	/// <summary>
 	/// Writes the public certificate as a PEM-encoded .crt file alongside the PFX.
 	/// The .crt file can be shared with clients for trust configuration.
+	/// Returns the path that was written, which may differ from the computed
+	/// <c>.crt</c> path if it would have collided with <paramref name="pfxPath"/>.
 	/// </summary>
-	public static void WritePublicCertificate(X509Certificate2 certificate, string pfxPath) {
+	public static string WritePublicCertificate(X509Certificate2 certificate, string pfxPath) {
 		var crtPath = Path.ChangeExtension(pfxPath, ".crt");
 		if (string.Equals(crtPath, pfxPath, StringComparison.OrdinalIgnoreCase))
 			crtPath = pfxPath + ".crt";
 		var pem = new string(PemEncoding.Write("CERTIFICATE", certificate.Export(X509ContentType.Cert)));
 		File.WriteAllText(crtPath, pem, Encoding.ASCII);
+		return crtPath;
 	}
 }

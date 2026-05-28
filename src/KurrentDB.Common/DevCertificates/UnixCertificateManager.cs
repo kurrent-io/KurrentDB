@@ -40,9 +40,9 @@ internal sealed class UnixCertificateManager : CertificateManager {
 			certificate.Dispose();
 			certificate = new X509Certificate2(export, "",
 				X509KeyStorageFlags.EphemeralKeySet | X509KeyStorageFlags.Exportable);
+		} finally {
+			Array.Clear(export, 0, export.Length);
 		}
-
-		Array.Clear(export, 0, export.Length);
 		return certificate;
 	}
 

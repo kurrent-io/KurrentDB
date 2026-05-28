@@ -48,9 +48,10 @@ public class dev_cert_file_tests : DirectoryPerTest<dev_cert_file_tests> {
 		using var cert = new X509Certificate2(pfxPath, string.Empty,
 			X509KeyStorageFlags.Exportable);
 
-		DevCertificateFile.WritePublicCertificate(cert, pfxPath);
+		var returnedPath = DevCertificateFile.WritePublicCertificate(cert, pfxPath);
 
 		var crtPath = Path.ChangeExtension(pfxPath, ".crt");
+		Assert.Equal(crtPath, returnedPath);
 		Assert.True(File.Exists(pfxPath), "PFX file should exist");
 		Assert.True(File.Exists(crtPath), ".crt file should exist");
 
@@ -154,11 +155,12 @@ public class dev_cert_file_tests : DirectoryPerTest<dev_cert_file_tests> {
 
 		using var cert = new X509Certificate2(pfxPath, string.Empty,
 			X509KeyStorageFlags.Exportable);
-		DevCertificateFile.WritePublicCertificate(cert, pfxPath);
+		var returnedPath = DevCertificateFile.WritePublicCertificate(cert, pfxPath);
 
 		// PFX file should not have been overwritten
 		Assert.Equal(originalBytes, File.ReadAllBytes(pfxPath));
-		// .crt should be written to a safe alternative path
+		// .crt should be written to a safe alternative path, and the method should report it
+		Assert.Equal(pfxPath + ".crt", returnedPath);
 		Assert.True(File.Exists(pfxPath + ".crt"));
 	}
 }
