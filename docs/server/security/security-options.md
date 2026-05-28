@@ -40,6 +40,40 @@ For this to work, you can use the `Insecure` option:
 When running with protocol security disabled, everything is sent unencrypted over the wire. To make things explicit, KurrentDB **does not use any authentication and authorisation** (including ACLs) when running insecure.
 :::
 
+### Running without TLS
+
+If you want to disable transport security but keep authentication and authorization active, for example to run a dev/test cluster without generating certificates, or to deploy on an internal trusted network, use the `DisableTls` option.
+
+Unlike `Insecure`, `DisableTls` does not disable authentication or authorization. Users and nodes still need valid credentials, and authorization policies still apply.
+
+| Format               | Syntax                     |
+|:---------------------|:---------------------------|
+| Command line         | `--disable-tls`            |
+| YAML                 | `DisableTls`               |
+| Environment variable | `KURRENTDB_DISABLE_TLS`    |
+
+**Default**: `false`
+
+::: warning
+When TLS is disabled, all traffic, including authentication credentials, is transmitted in cleartext. Do not enable `DisableTls` on networks where untrusted parties can observe traffic.
+:::
+
+#### Inter-node authentication: `ClusterSecret`
+
+Nodes normally authenticate inter-node traffic (gossip, elections, replication, and internal administrative calls) using their TLS certificates. When TLS is disabled there are no client certificates to inspect, so you must configure a shared cluster secret that nodes can use instead.
+
+| Format               | Syntax                             |
+|:---------------------|:-----------------------------------|
+| Command line         | `--cluster-secret <value>`         |
+| YAML                 | `ClusterSecret: <value>`           |
+| Environment variable | `KURRENTDB_CLUSTER_SECRET=<value>` |
+
+**Default**: `""` (empty)
+
+In a cluster, the same value must be set on every node. KurrentDB will refuse to start with `DisableTls` enabled if `ClusterSecret` is empty.
+
+`ClusterSecret` has no effect when TLS is enabled: nodes authenticate by mutual TLS in that case.
+
 ### Set initial passwords
 
 You can set the admin and ops passwords on the first run of the database. This will not impact the existing credentials, the user can log into their accounts with exising passwords. Additionally, this will only take effect if you are using [basic authentication](./user-authentication.md#basic-authentication).

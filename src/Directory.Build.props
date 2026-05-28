@@ -14,7 +14,7 @@
 		<LangVersion>14.0</LangVersion>
 		<Platforms>AnyCPU;x64;ARM64</Platforms>
 		<IsPackable>false</IsPackable>
-		<VersionPrefix>26.1.0</VersionPrefix>
+		<VersionPrefix>26.2.0</VersionPrefix>
 		<VersionSuffix>prerelease</VersionSuffix>
 		<!-- Adjust for SYSLIB0057 separately to .NET 10 upgrade -->
 		<!-- Adjust for XUNIT1051 separately. Lots of lines but very simple -->
