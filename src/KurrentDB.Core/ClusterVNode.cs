@@ -560,7 +560,7 @@ public class ClusterVNode<TStreamId> :
 
 		var uriScheme = options.Application.TlsDisabled() ? Uri.UriSchemeHttp : Uri.UriSchemeHttps;
 		var clusterDns = options.Cluster.DiscoverViaDns ? options.Cluster.ClusterDns : null;
-		var clusterSecret = options.EffectiveClusterSecret();
+		var clusterSecret = options.Application.UsesClusterSecret() ? options.Cluster.ClusterSecret : "";
 
 		_nodeHttpClientFactory = new NodeHttpClientFactory(
 			uriScheme,

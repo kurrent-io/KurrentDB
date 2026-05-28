@@ -168,6 +168,16 @@ public partial record ClusterVNodeOptions {
 		public bool TlsDisabled() => Insecure || DisableTls;
 		public bool AuthDisabled() => Insecure;
 
+		/// <summary>
+		/// True iff the ClusterSecret is used to authenticate inter-node traffic:
+		/// whenever TLS is disabled and authentication is still on. With TLS, peers
+		/// authenticate by mTLS; in --insecure there is no auth. Cluster size is not
+		/// part of the predicate: even a single-node deployment has in-process internal
+		/// HTTP callers (e.g. AutoScavenge calling its own admin endpoints) and may in
+		/// future host a read-only replica.
+		/// </summary>
+		public bool UsesClusterSecret() => TlsDisabled() && !AuthDisabled();
+
 		[Description("Allow anonymous access to HTTP API endpoints.")]
 		public bool AllowAnonymousEndpointAccess { get; init; } = false;
 

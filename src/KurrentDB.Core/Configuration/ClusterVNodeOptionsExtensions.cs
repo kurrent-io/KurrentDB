@@ -27,25 +27,6 @@ public static class ClusterVNodeOptionsExtensions {
 	public static ClusterVNodeOptions WithPlugableComponent(this ClusterVNodeOptions options, IPlugableComponent plugableComponent) =>
 		options with { PlugableComponents = [.. options.PlugableComponents, plugableComponent] };
 
-	/// <summary>
-	/// True iff the ClusterSecret is used to authenticate inter-node traffic:
-	/// whenever TLS is disabled and authentication is still on. With TLS, peers
-	/// authenticate by mTLS; in --insecure there is no auth. Cluster size is not
-	/// part of the predicate: even a single-node deployment has in-process internal
-	/// HTTP callers (e.g. AutoScavenge calling its own admin endpoints) and may in
-	/// future host a read-only replica.
-	/// </summary>
-	public static bool UsesClusterSecret(this ClusterVNodeOptions options) =>
-		options.Application.DisableTls && !options.Application.Insecure;
-
-	/// <summary>
-	/// The ClusterSecret that will actually be used, or "" when it does not apply. Ensures
-	/// a stray configured secret is never sent or required outside the supported mode
-	/// (e.g. it must not make a replica send a spurious Authenticate over a TLS connection).
-	/// </summary>
-	public static string EffectiveClusterSecret(this ClusterVNodeOptions options) =>
-		options.UsesClusterSecret() ? options.Cluster.ClusterSecret : "";
-
 	public static ClusterVNodeOptions InCluster(this ClusterVNodeOptions options, int clusterSize) => options with {
 		Cluster = options.Cluster with {
 			ClusterSize = clusterSize <= 1
