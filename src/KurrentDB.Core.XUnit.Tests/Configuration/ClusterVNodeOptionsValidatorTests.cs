@@ -61,18 +61,18 @@ public class ClusterVNodeOptionsValidatorTests {
 	// Insecure mode — auth fully disabled, secret is moot
 	[InlineData(false, true,  3, "",       true)]
 	[InlineData(true,  true,  3, "",       true)]
-	// Single-node disable-tls — no inter-node calls, secret not required
-	[InlineData(true,  false, 1, "",       true)]
-	// Multi-node disable-tls with an empty / whitespace secret — invalid
+	// disable-tls (any cluster size) with empty / whitespace secret — invalid
+	[InlineData(true,  false, 1, "",       false)]
+	[InlineData(true,  false, 1, "   ",    false)]
 	[InlineData(true,  false, 3, "",       false)]
 	[InlineData(true,  false, 3, "   ",    false)]
-	// Multi-node disable-tls with a real secret — valid
+	// disable-tls (any cluster size) with a real secret — valid
+	[InlineData(true,  false, 1, "secret", true)]
 	[InlineData(true,  false, 3, "secret", true)]
 	// A secret set where it has no effect is allowed (validator only warns, doesn't throw)
 	[InlineData(false, false, 3, "secret", true)]  // TLS on
 	[InlineData(true,  true,  3, "secret", true)]  // insecure
-	[InlineData(true,  false, 1, "secret", true)]  // single-node disable-tls
-	public void disable_tls_with_cluster_requires_cluster_secret(
+	public void disable_tls_requires_cluster_secret(
 		bool disableTls, bool insecure, int clusterSize, string clusterSecret, bool expectedValid) {
 		var options = new ClusterVNodeOptions {
 			Application = new() {

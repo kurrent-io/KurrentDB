@@ -28,13 +28,15 @@ public static class ClusterVNodeOptionsExtensions {
 		options with { PlugableComponents = [.. options.PlugableComponents, plugableComponent] };
 
 	/// <summary>
-	/// True iff the ClusterSecret is used to authenticate nodes to each other:
-	/// only when TLS is disabled, authentication is still on, and the cluster has more
-	/// than one node. With TLS, peers authenticate by mTLS; in --insecure there is no
-	/// auth; and a single node has no peers.
+	/// True iff the ClusterSecret is used to authenticate inter-node traffic:
+	/// whenever TLS is disabled and authentication is still on. With TLS, peers
+	/// authenticate by mTLS; in --insecure there is no auth. Cluster size is not
+	/// part of the predicate: even a single-node deployment has in-process internal
+	/// HTTP callers (e.g. AutoScavenge calling its own admin endpoints) and may in
+	/// future host a read-only replica.
 	/// </summary>
 	public static bool UsesClusterSecret(this ClusterVNodeOptions options) =>
-		options.Application.DisableTls && !options.Application.Insecure && options.Cluster.ClusterSize > 1;
+		options.Application.DisableTls && !options.Application.Insecure;
 
 	/// <summary>
 	/// The ClusterSecret that will actually be used, or "" when it does not apply. Ensures

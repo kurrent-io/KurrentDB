@@ -115,15 +115,15 @@ public static class ClusterVNodeOptionsValidator {
 
 		if (options.UsesClusterSecret() && string.IsNullOrWhiteSpace(options.Cluster.ClusterSecret)) {
 			throw new InvalidConfigurationException(
-				$"A ClusterSecret is required for nodes to authenticate with each other when --disable-tls " +
-				$"is used in a multi-node cluster. Set {nameof(options.Cluster.ClusterSecret)} to a shared secret value on every node. " +
+				$"A ClusterSecret is required for nodes to authenticate inter-node traffic when --disable-tls " +
+				$"is used. Set {nameof(options.Cluster.ClusterSecret)} to a shared secret value on every node. " +
 				$"Note that since TLS is disabled the secret will be sent in clear text.");
 		}
 
 		if (!options.UsesClusterSecret() && !string.IsNullOrEmpty(options.Cluster.ClusterSecret)) {
 			Log.Warning(
 				"A {clusterSecret} has been configured but will have no effect. It is only used for inter-node " +
-				"authentication on a multi-node cluster running with --disable-tls and authentication enabled.",
+				"authentication when running with --disable-tls and authentication enabled.",
 				nameof(options.Cluster.ClusterSecret));
 		}
 	}
