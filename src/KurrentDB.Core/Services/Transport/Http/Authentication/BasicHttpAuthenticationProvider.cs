@@ -13,7 +13,13 @@ public class BasicHttpAuthenticationProvider(IAuthenticationProvider internalAut
 
 	public bool Authenticate(HttpContext context, out HttpAuthenticationRequest request) {
 		if (context.Request.Headers.TryGetValue("authorization", out var values) && values.Count == 1 &&
-			AuthenticationHeaderValue.TryParse(values[0], out var authenticationHeader) && authenticationHeader.Scheme == "Basic" &&
+			AuthenticationHeaderValue.TryParse(values[0], out var authenticationHeader) &&
+			(authenticationHeader.Scheme
+				is "Basic"
+				// we accept basic credentials as a bearer token for compatibility
+				// with the Handshake implementation in FlightSqlServer
+				or "Bearer"
+			) &&
 			TryDecodeCredential(authenticationHeader.Parameter, out var username, out var password)) {
 			request = new HttpAuthenticationRequest(context, username, password);
 			internalAuthenticationProvider.Authenticate(request);
@@ -27,15 +33,19 @@ public class BasicHttpAuthenticationProvider(IAuthenticationProvider internalAut
 	private static bool TryDecodeCredential(string value, out string username, out string password) {
 		username = password = default;
 
-		var stringValue = Encoding.UTF8.GetString(System.Convert.FromBase64String(value));
-		var index = stringValue.IndexOf(':');
-		if (index < 0) {
+		try {
+			var stringValue = Encoding.UTF8.GetString(System.Convert.FromBase64String(value));
+			var index = stringValue.IndexOf(':');
+			if (index < 0) {
+				return false;
+			}
+
+			username = stringValue[..index];
+			password = stringValue[(index + 1)..];
+
+			return true;
+		} catch {
 			return false;
 		}
-
-		username = stringValue[..index];
-		password = stringValue[(index + 1)..];
-
-		return true;
 	}
 }

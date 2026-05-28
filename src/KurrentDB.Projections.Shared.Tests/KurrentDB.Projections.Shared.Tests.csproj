@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsKurrentXUnit>true</IsKurrentXUnit>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\KurrentDB.Projections.Shared\KurrentDB.Projections.Shared.csproj" />
+    </ItemGroup>
+
+</Project>

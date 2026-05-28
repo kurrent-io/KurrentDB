@@ -9,10 +9,10 @@
     <PackageVersion Include="Bogus" Version="35.6.4" />
     <PackageVersion Include="DiffEngine" Version="16.7.1" />
     <PackageVersion Include="Dapper" Version="2.1.66" />
-    <PackageVersion Include="DotNext" Version="6.1.0" />
-    <PackageVersion Include="DotNext.IO" Version="6.1.0" />
-    <PackageVersion Include="DotNext.Threading" Version="6.1.0" />
-    <PackageVersion Include="DotNext.Unsafe" Version="6.1.0" />
+    <PackageVersion Include="DotNext" Version="6.2.1" />
+    <PackageVersion Include="DotNext.IO" Version="6.2.1" />
+    <PackageVersion Include="DotNext.Threading" Version="6.2.1" />
+    <PackageVersion Include="DotNext.Unsafe" Version="6.2.1" />
     <PackageVersion Include="Ductus.FluentDocker" Version="2.85.0" />
     <PackageVersion Include="Ductus.FluentDocker.XUnit" Version="2.85.0" />
     <PackageVersion Include="DuckDB.NET.Data.Full" Version="1.5.0" />
@@ -47,18 +47,20 @@
     <PackageVersion Include="IgnoresAccessChecksToGenerator" Version="0.8.0" />
     <PackageVersion Include="JetBrains.Annotations" Version="2025.2.2" />
     <PackageVersion Include="Jint" Version="4.0.3" />
-    <PackageVersion Include="Kurrent.Connectors.Elasticsearch" Version="1.1.1-alpha.1.57" />
-    <PackageVersion Include="Kurrent.Connectors.Http" Version="1.1.1-alpha.1.57" />
-    <PackageVersion Include="Kurrent.Connectors.Kafka" Version="1.1.1-alpha.1.57" />
-    <PackageVersion Include="Kurrent.Connectors.MongoDB" Version="1.1.1-alpha.1.57" />
-    <PackageVersion Include="Kurrent.Connectors.RabbitMQ" Version="1.1.1-alpha.1.57" />
-    <PackageVersion Include="Kurrent.Connectors.Pulsar" Version="1.1.1-alpha.1.57" />
-    <PackageVersion Include="Kurrent.Connectors.Sql" Version="1.1.1-alpha.1.57" />
-    <PackageVersion Include="Kurrent.Surge" Version="1.1.1-alpha.1.57" />
-    <PackageVersion Include="Kurrent.Surge.Core" Version="1.1.1-alpha.1.65" />
-    <PackageVersion Include="Kurrent.Surge.DataProtection" Version="1.1.1-alpha.1.57" />
-    <PackageVersion Include="Kurrent.Surge.DuckDB" Version="1.1.1-alpha.1.57" />
-    <PackageVersion Include="Kurrent.Quack" Version="0.0.0-alpha.164" />
+    <PackageVersion Include="Kurrent.Connectors.Elasticsearch" Version="1.1.1-alpha.1.71" />
+    <PackageVersion Include="Kurrent.Connectors.Http" Version="1.1.1-alpha.1.71" />
+    <PackageVersion Include="Kurrent.Connectors.Kafka" Version="1.1.1-alpha.1.71" />
+    <PackageVersion Include="Kurrent.Connectors.MongoDB" Version="1.1.1-alpha.1.71" />
+    <PackageVersion Include="Kurrent.Connectors.RabbitMQ" Version="1.1.1-alpha.1.71" />
+    <PackageVersion Include="Kurrent.Connectors.Pulsar" Version="1.1.1-alpha.1.71" />
+    <PackageVersion Include="Kurrent.Connectors.Sql" Version="1.1.1-alpha.1.71" />
+    <PackageVersion Include="Kurrent.Connectors.Webhook" Version="1.1.1-alpha.1.71" />
+    <PackageVersion Include="Kurrent.Surge" Version="1.1.1-alpha.1.71" />
+    <PackageVersion Include="Kurrent.Surge.Core" Version="1.1.1-alpha.1.71" />
+    <PackageVersion Include="Kurrent.Surge.DataProtection" Version="1.1.1-alpha.1.71" />
+    <PackageVersion Include="Kurrent.Surge.DuckDB" Version="1.1.1-alpha.1.71" />
+    <PackageVersion Include="Kurrent.Quack" Version="0.0.0-alpha.176" />
+    <PackageVersion Include="Kurrent.Quack.Arrow" Version="0.0.0-alpha.176" />
     <PackageVersion Include="KurrentDB.Client" Version="1.0.0" />
     <PackageVersion Include="librdkafka.redist" Version="2.5.0" />
     <PackageVersion Include="LruCacheNet" Version="1.2.0" />
@@ -111,14 +113,11 @@
     <PackageVersion Include="NUnit" Version="3.14.0" />
     <PackageVersion Include="NUnit3TestAdapter" Version="5.2.0" />
     <PackageVersion Include="ObjectLayoutInspector" Version="0.1.4" />
-    <PackageVersion Include="OpenTelemetry" Version="1.13.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.12.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.EventCounters" Version="1.5.1-alpha.1" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Process" Version="1.12.0-beta.1" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.12.0" />
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.13.0" />
-    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.12.0-beta.1" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.13.0" />
+    <PackageVersion Include="OpenTelemetry" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.15.0-beta.1" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
     <PackageVersion Include="Polly" Version="8.6.3" />
     <PackageVersion Include="Polly.Core" Version="8.6.3" />
     <PackageVersion Include="Quickenshtein" Version="1.5.1" />
@@ -146,6 +145,8 @@
     <PackageVersion Include="Serilog.Sinks.Seq" Version="9.0.0" />
     <PackageVersion Include="Serilog.Sinks.TestCorrelator" Version="4.0.0" />
     <PackageVersion Include="Serilog.Sinks.TextWriter" Version="3.0.0" />
+    <!-- https://github.com/advisories/GHSA-6c8g-7p36-r338 -->
+    <PackageVersion Include="SharpCompress" Version="0.48.0" />
     <PackageVersion Include="SharpDotYaml.Extensions.Configuration" Version="0.3.1" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="System.CommandLine.DragonFruit" Version="0.3.0-alpha.21216.1" />
@@ -167,5 +168,9 @@
     <PackageVersion Include="xunit.v3" Version="3.1.0" />
     <PackageVersion Include="xunit.v3.extensibility.core" Version="3.1.0" />
     <PackageVersion Include="YamlDotnet" Version="16.3.0" />
+    <PackageVersion Include="Apache.Arrow.Flight.AspNetCore" Version="22.1.0" />
+    <PackageVersion Include="Apache.Arrow.Flight.Sql" Version="22.1.0" />
+    <PackageVersion Include="Apache.Arrow.Adbc.Drivers.FlightSql" Version="0.21.0" />
+    <PackageVersion Include="Apache.Arrow.Adbc.Client" Version="0.23.0" />
   </ItemGroup>
 </Project>

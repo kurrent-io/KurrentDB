@@ -27,6 +27,7 @@ public sealed class KurrentContext : IAsyncInitializer {
 	public PersistentSubscriptions.PersistentSubscriptionsClient PersistentSubscriptionsClient { get; private set; } = null!;
 	public EventStore.Client.Streams.Streams.StreamsClient StreamsClient { get; private set; } = null!;
 	public StreamsService.StreamsServiceClient StreamsV2Client { get; private set; } = null!;
+	public EventStore.Client.Projections.Projections.ProjectionsClient ProjectionsClient { get; private set; } = null!;
 
 	public Task InitializeAsync() {
 		ConnectorsCommandServiceClient = new(GrpcChannelShim.GrpcChannel);
@@ -35,6 +36,7 @@ public sealed class KurrentContext : IAsyncInitializer {
 		PersistentSubscriptionsClient = new(GrpcChannelShim.GrpcChannel);
 		StreamsClient = new(GrpcChannelShim.GrpcChannel);
 		StreamsV2Client = new(GrpcChannelShim.GrpcChannel);
+		ProjectionsClient = new(GrpcChannelShim.GrpcChannel);
 		return Task.CompletedTask;
 	}
 }

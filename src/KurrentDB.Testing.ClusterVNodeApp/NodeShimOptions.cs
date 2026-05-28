@@ -24,6 +24,9 @@ public record NodeShimOptions {
 		public string TrustedRootCertificatesPath { get; set; } = "";
 		public string CertificateFile { get; set; } = "";
 		public string CertificatePrivateKeyFile { get; set; } = "";
+		public string RunProjections { get; set; } = "All";
+		public bool StartStandardProjections { get; set; } = true;
+		public int ProjectionThreads { get; set; } = 3;
 	}
 
 	public record ExternalOptions {

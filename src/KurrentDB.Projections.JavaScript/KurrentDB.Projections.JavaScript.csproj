@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Jint" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\KurrentDB.Projections.Shared\KurrentDB.Projections.Shared.csproj" />
+	</ItemGroup>
+</Project>

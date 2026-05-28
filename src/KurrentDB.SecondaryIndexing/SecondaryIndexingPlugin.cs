@@ -4,6 +4,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
 using EventStore.Plugins;
+using EventStore.Plugins.Licensing;
 using Kurrent.Surge.Schema;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core;
@@ -13,6 +14,7 @@ using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.DuckDB;
 using KurrentDB.Protocol.V2.Indexes;
 using KurrentDB.SecondaryIndexing.Diagnostics;
+using KurrentDB.SecondaryIndexing.FlightSql;
 using KurrentDB.SecondaryIndexing.Indexes;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
@@ -25,6 +27,7 @@ using KurrentDB.SecondaryIndexing.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.SecondaryIndexing;
 
@@ -55,6 +58,8 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddSingleton<IQueryEngine>(static sp => sp.GetRequiredService<QueryEngine>());
 		services.AddSingleton<UserIndexEngine>();
 		services.AddDuckDBSetup<IndexingDbSchema>();
+		services.AddSingleton<FlightSqlLicense>();
+		services.AddFlightSqlServer();
 
 		services.AddHostedService<DefaultIndexBuilder>();
 		services.AddHostedService(sp => sp.GetRequiredService<UserIndexEngine>());
@@ -74,7 +79,7 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddSingleton<GetLastPosition>(sp => sp.GetRequiredService<TFChunkDbConfig>().WriterCheckpoint.Read);
 
 		// register into the inmemory schema registry
-		services.AddStartupTask(services => new RegisterUserIndexEvents(services));
+		services.AddStartupTask(static services => new RegisterUserIndexEvents(services));
 	}
 
 	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
@@ -83,6 +88,22 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		var indexReaders = app.ApplicationServices.GetServices<ISecondaryIndexReader>();
 
 		secondaryIndexReaders.AddReaders(indexReaders.ToArray());
+		app.UseEndpoints(static endpoints => {
+			endpoints.MapFlightEndpoint();
+		});
+
+		var licenseService = app.ApplicationServices.GetRequiredService<ILicenseService>();
+		var flightSqlLicense = app.ApplicationServices.GetRequiredService<FlightSqlLicense>();
+		var logger = app.ApplicationServices
+			.GetRequiredService<ILoggerFactory>()
+			.CreateLogger<SecondaryIndexingPlugin>();
+
+		_ = LicenseMonitor.MonitorAsync(
+			featureName: "ArrowFlightSql",
+			requiredEntitlements: [FlightSqlLicense.Entitlement],
+			licenseService: licenseService,
+			onLicenseException: _ => flightSqlLicense.Disable(),
+			logger: logger);
 	}
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {

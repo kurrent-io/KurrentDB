@@ -31,10 +31,17 @@ public partial class IndexingTests(IndexingFixture fixture, ITestOutputHelper ou
 	[Fact]
 	public async Task ReadFromDefaultIndexUsingQueryEngine() {
 		var engine = Fixture.NodeServices.GetRequiredService<IQueryEngine>();
-		using var preparedSql = engine.PrepareQuery("SELECT metadata FROM kdb.records"u8, digitallySign: true);
+		using var preparedSql = engine.PrepareQuery(
+			"SELECT metadata FROM kdb.records"u8,
+			new() { UseDigitalSignature = true });
 
 		var consumer = new RowCountReader();
-		await engine.ExecuteAsync(preparedSql.Memory, consumer, checkIntegrity: true, TestContext.Current.CancellationToken);
+		await engine.ExecuteAsync(
+			preparedSql.Memory,
+			consumer,
+			new() { CheckIntegrity = true },
+			TestContext.Current.CancellationToken);
+		Assert.True(consumer.RowCount > 0);
 	}
 
 	[Theory]
@@ -164,10 +171,6 @@ public partial class IndexingTests(IndexingFixture fixture, ITestOutputHelper ou
 			}
 
 			return task;
-		}
-
-		public void Bind<TBinder>(TBinder binder) where TBinder : IPreparedQueryBinder, allows ref struct {
-			// nothing to bind, query has no substitution
 		}
 	}
 }

@@ -11,6 +11,7 @@ using Kurrent.Connectors.RabbitMQ;
 using Kurrent.Connectors.Serilog;
 using Kurrent.Connectors.Pulsar;
 using Kurrent.Connectors.Sql;
+using Kurrent.Connectors.Webhook;
 using Kurrent.Surge.Connectors.Sinks;
 using Kurrent.Surge.Connectors.Sources;
 using static KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors.ConnectorCatalogueItem;
@@ -36,6 +37,7 @@ public class ConnectorCatalogue {
             [typeof(RabbitMqSink)]      = For<RabbitMqSink, RabbitMqSinkValidator, RabbitMqSinkConnectorDataProtector>([$"{EntitlementPrefix}_RABBITMQ_SINK"], true),
             [typeof(ElasticsearchSink)] = For<ElasticsearchSink, ElasticsearchSinkValidator, ElasticsearchSinkConnectorDataProtector>([$"{EntitlementPrefix}_ELASTICSEARCH_SINK", $"{EntitlementPrefix}_ELASTICSEARCH_SOURCE"], true),
             [typeof(MongoDbSink)]       = For<MongoDbSink, MongoDbSinkValidator, MongoDbSinkConnectorDataProtector>([$"{EntitlementPrefix}_MONGODB_SINK"], true),
+            [typeof(WebhookSource)]     = For<WebhookSource, WebhookSourceValidator, WebhookSourceConnectorDataProtector>([$"{EntitlementPrefix}_WEBHOOK_SOURCE"], false),
         }.ToFrozenDictionary();
 
         ItemsByAlias = Items
