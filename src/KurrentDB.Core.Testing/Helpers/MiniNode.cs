@@ -145,6 +145,7 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 				EnableAtomPubOverHttp = true
 			},
 			Cluster = new() {
+				ClusterSecret = disableTls && !insecure ? "we enjoy network partitions for the peace and quiet" : "",
 				DiscoverViaDns = false,
 				ReadOnlyReplica = isReadOnlyReplica,
 				Archiver = false,
