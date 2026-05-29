@@ -13,11 +13,11 @@ For breaking changes and deprecation notices, see the [upgrade guide](upgrade-gu
 
 ### Disable TLS
 
-A new `DisableTls` option lets you run KurrentDB without TLS while keeping authentication and authorization active. This is intended for development and test environments where setting up certificates is inconvenient, and for clusters deployed on internal trusted networks.
+A new `DisableTls` option lets you run KurrentDB without TLS while keeping authentication and authorization active. This is intended for development and test environments where setting up certificates is inconvenient, and for deployments on internal trusted networks.
 
 Unlike `Insecure`, which turns off TLS *and* all authentication/authorization, `DisableTls` only turns off transport security. Users still need valid credentials, and authorization policies still apply.
 
-You must also set a `ClusterSecret` so that the node can authenticate inter-node traffic in place of mutual TLS. In a cluster, the same value must be set on every node.
+You must also set a `ClusterSecret` so that the node can authenticate inter-node traffic in place of mutual TLS. In a multi-node cluster, the same value must be set on every node.
 
 ::: warning
 When TLS is disabled, all traffic, including authentication credentials and the `ClusterSecret`, is transmitted in cleartext. Do not enable `DisableTls` on networks where untrusted parties can observe traffic.

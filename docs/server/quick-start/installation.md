@@ -304,7 +304,7 @@ Important: it is not recommended to run KurrentDB directly using Task Scheduler.
 ## Docker
 
 You can run KurrentDB in a Docker container as a single node, using insecure mode. It is useful in most
-cases to try out the product and for local development purposes.
+cases to try out the product and for local development purposes. If you want a local TLS-enabled node instead, see [development mode](../security/security-options.md#development-mode).
 
 It's also possible to run a three-node cluster with or without SSL using Docker Compose. Such a setup is
 closer to what you'd run in production.

@@ -24,9 +24,7 @@ Below you can find more details about each of the available security options.
 
 KurrentDB is secure by default. It means that you have to supply valid certificates and configuration for the database node to work.
 
-We realise that many users want to try out the latest version with their existing applications without any security in their internal networks.
-
-For this to work, you can use the `Insecure` option:
+TLS, authentication, and authorization can all be disabled by setting the `Insecure` option:
 
 | Format               | Syntax                |
 |:---------------------|:----------------------|
@@ -37,7 +35,7 @@ For this to work, you can use the `Insecure` option:
 **Default**: `false`
 
 ::: warning
-When running with protocol security disabled, everything is sent unencrypted over the wire. To make things explicit, KurrentDB **does not use any authentication and authorisation** (including ACLs) when running insecure.
+When running with protocol security disabled, everything is sent unencrypted over the wire. KurrentDB **does not use any authentication or authorization** when running insecure.
 :::
 
 ### Running without TLS
@@ -66,7 +64,7 @@ Nodes normally authenticate inter-node traffic (gossip, elections, replication, 
 |:---------------------|:-----------------------------------|
 | Command line         | `--cluster-secret <value>`         |
 | YAML                 | `ClusterSecret: <value>`           |
-| Environment variable | `KURRENTDB_CLUSTER_SECRET=<value>` |
+| Environment variable | `KURRENTDB_CLUSTER_SECRET`         |
 
 **Default**: `""` (empty)
 
@@ -74,9 +72,84 @@ In a cluster, the same value must be set on every node. KurrentDB will refuse to
 
 `ClusterSecret` has no effect when TLS is enabled: nodes authenticate by mutual TLS in that case.
 
+### Development mode
+
+For development purposes, the `Dev` option starts a single node with TLS, authentication and authorization, but without needing to be provided with certificates. KurrentDB generates a self-signed certificate valid for one month and (on Windows) adds the certificate to the trusted root store automatically.
+
+Dev mode also enables AtomPub over HTTP, and enables system projections.
+
+| Format               | Syntax           |
+|:---------------------|:-----------------|
+| Command line         | `--dev`          |
+| YAML                 | `Dev`            |
+| Environment variable | `KURRENTDB_DEV`  |
+
+**Default**: `false`
+
+```bash
+kurrentdb --dev
+```
+
+::: warning
+Dev mode is not for production use.
+:::
+
+#### Persisting the dev certificate
+
+By default the dev certificate is stored in the user certificate store. In containers or hardened environments where the home directory is not writable, KurrentDB falls back to an ephemeral in-memory key — a fresh certificate is generated on every startup, which breaks any client that has pinned the previous certificate.
+
+Use the `DevCertPath` option to persist the certificate to a file:
+
+| Format               | Syntax                     |
+|:---------------------|:---------------------------|
+| Command line         | `--dev-cert-path`          |
+| YAML                 | `DevCertPath`              |
+| Environment variable | `KURRENTDB_DEV_CERT_PATH`  |
+
+```bash
+kurrentdb --dev --dev-cert-path /var/lib/kurrentdb/certs/dev.pfx
+```
+
+On first start, KurrentDB generates the certificate, writes it as a PFX at the given path, and writes a PEM-encoded public certificate alongside it with a `.crt` extension (in the example above, `/var/lib/kurrentdb/certs/dev.crt`). Distribute the `.crt` file to clients for trust configuration. On subsequent starts, the existing certificate is loaded from the PFX; if it is expired or invalid, a new one is generated and saved over it.
+
+When running in a container, mount a volume at the certificate directory so the certificate survives container restarts:
+
+::: tabs
+@tab kurrent-latest
+```bash
+docker run --name kurrentdb-dev -it -p 2113:2113 \
+    -v $(pwd)/dev-certs:/var/lib/kurrentdb/certs \
+    docker.kurrent.io/kurrent-latest/kurrentdb:latest \
+    --dev --dev-cert-path /var/lib/kurrentdb/certs/dev.pfx
+```
+@tab kurrent-lts
+```bash
+docker run --name kurrentdb-dev -it -p 2113:2113 \
+    -v $(pwd)/dev-certs:/var/lib/kurrentdb/certs \
+    docker.kurrent.io/kurrent-lts/kurrentdb:latest \
+    --dev --dev-cert-path /var/lib/kurrentdb/certs/dev.pfx
+```
+:::
+
+#### Removing dev certificates
+
+To remove dev certificates KurrentDB has installed in the user certificate store without starting the server:
+
+| Format               | Syntax                       |
+|:---------------------|:-----------------------------|
+| Command line         | `--remove-dev-certs`         |
+| YAML                 | `RemoveDevCerts`             |
+| Environment variable | `KURRENTDB_REMOVE_DEV_CERTS` |
+
+```bash
+kurrentdb --remove-dev-certs
+```
+
+This does not delete certificates written to a `--dev-cert-path` file - remove those manually.
+
 ### Set initial passwords
 
-You can set the admin and ops passwords on the first run of the database. This will not impact the existing credentials, the user can log into their accounts with exising passwords. Additionally, this will only take effect if you are using [basic authentication](./user-authentication.md#basic-authentication).
+You can set the admin and ops passwords on the first run of the database. This will not impact the existing credentials, the user can log into their accounts with existing passwords. Additionally, this will only take effect if you are using [basic authentication](./user-authentication.md#basic-authentication).
 
 Set the password for the `admin` user with the `DefaultAdminPassword` option:
 
