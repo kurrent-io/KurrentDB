@@ -7,5 +7,6 @@ namespace KurrentDB.Core;
 public class NodeTcpOptions {
 	public int NodeTcpPort { get; init; } = 1113;
 	public bool EnableExternalTcp { get; init; }
+	public bool DisableExternalTcpTls { get; init; }
 	public int? NodeTcpPortAdvertiseAs { get; init; }
 }
