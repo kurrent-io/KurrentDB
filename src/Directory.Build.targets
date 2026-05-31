@@ -5,4 +5,27 @@
 	<PropertyGroup Condition="'$(IsKurrentTUnit)' == 'True' Or '$(IsKurrentXUnit)' == 'True' Or '$(IsKurrentNUnit)' == 'True'">
 		<OutputType>Exe</OutputType>
 	</PropertyGroup>
+
+	<!--
+	  librdkafka.redist (a KurrentDB.Core dependency) bundles a stale Visual C++ runtime
+	  (msvcp140.dll / vcruntime140.dll) in its runtimes/<rid>/native assets. A native library resolves its
+	  VC++ runtime from its own directory first, so when this stale copy is co-located with other native
+	  libraries built against a newer MSVC toolset it shadows the machine's Visual C++ Redistributable and
+	  can make them fail to load or initialize on Windows (e.g. ERROR_DLL_INIT_FAILED, access violations).
+	  The VC++ runtime is backward- but not forward-compatible, and Microsoft recommends relying on the
+	  installed redistributable rather than shipping app-local copies. Drop librdkafka's bundled VC++
+	  runtime from every project's output so all native libraries use the current system redistributable.
+	  (e.g. the ONNX Runtime and USearch native libraries used by KurrentDB.Kontext.)
+	-->
+	<Target Name="RemoveLibrdkafkaBundledVcRuntime"
+			AfterTargets="ResolvePackageAssets"
+			BeforeTargets="GenerateBuildDependencyFile;CopyFilesToOutputDirectory;ComputeFilesToPublish">
+		<ItemGroup>
+			<RuntimeTargetsCopyLocalItems Remove="@(RuntimeTargetsCopyLocalItems)"
+				Condition="'%(RuntimeTargetsCopyLocalItems.NuGetPackageId)' == 'librdkafka.redist'
+					And ('%(RuntimeTargetsCopyLocalItems.FileName)' == 'msvcp140'
+						Or '%(RuntimeTargetsCopyLocalItems.FileName)' == 'vcruntime140'
+						Or '%(RuntimeTargetsCopyLocalItems.FileName)' == 'vcruntime140_1')" />
+		</ItemGroup>
+	</Target>
 </Project>
