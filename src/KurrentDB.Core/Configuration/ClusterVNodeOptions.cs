@@ -162,7 +162,7 @@ public partial record ClusterVNodeOptions {
 		public bool Insecure { get; init; } = false;
 
 		[Description("Disable TLS on all TCP/HTTP interfaces. Authentication and authorization remain active. " +
-		             "Credentials will be transmitted in cleartext.")]
+		             "Credentials will be transmitted in cleartext. A --cluster-secret is required when --disable-tls is true.")]
 		public bool DisableTls { get; init; } = false;
 
 		public bool TlsDisabled() => Insecure || DisableTls;
@@ -295,9 +295,8 @@ public partial record ClusterVNodeOptions {
 		public EndPoint[] GossipSeed { get; init; } = [];
 
 		[Description("Shared secret used by cluster nodes to authenticate with each other when TLS is disabled. " +
-		             "Required when --disable-tls is set and --cluster-size is greater than 1. " +
-		             "Note that since TLS is disabled the secret will be sent in clear text. " +
-		             "Has no effect when TLS is enabled (nodes will authenticate by mTLS).")]
+		             "Required when --disable-tls is set. Has no effect when TLS is enabled (nodes will authenticate by mTLS). " +
+		             "Note that since TLS is disabled the secret will be sent in clear text.")]
 		[Sensitive]
 		public string ClusterSecret { get; init; } = "";
 
