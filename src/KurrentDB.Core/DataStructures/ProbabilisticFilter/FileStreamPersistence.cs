@@ -163,7 +163,7 @@ public unsafe class FileStreamPersistence : IPersistenceStrategy {
 		}
 	}
 
-	public void Flush() {
+	public void Flush(bool throttle) {
 		using var fileStream = new FileStream(
 			_path,
 			FileMode.OpenOrCreate,
@@ -202,7 +202,7 @@ public unsafe class FileStreamPersistence : IPersistenceStrategy {
 						flushedPages++;
 
 						// could be an unnecessary delay at the end
-						if (flushedPages % FlushBatchSize == 0) {
+						if (throttle && flushedPages % FlushBatchSize == 0) {
 							fileStream.FlushToDisk();
 							activelyFlushing.Stop();
 							pauses++;

@@ -133,11 +133,11 @@ public class PersistentBloomFilter : IProbabilisticFilter, IDisposable {
 	}
 
 	// not re-entrant
-	public void Flush() {
+	public void Flush(bool throttle) {
 		// need to be sure the read operations were not done in advance of this point
 		// not 100% sure, however, that the barrier is required.
 		Thread.MemoryBarrier();
-		_persistenceStrategy.Flush();
+		_persistenceStrategy.Flush(throttle);
 	}
 
 	public void Dispose() {

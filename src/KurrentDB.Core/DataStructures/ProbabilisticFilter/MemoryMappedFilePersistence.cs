@@ -82,7 +82,8 @@ public unsafe class MemoryMappedFilePersistence : IPersistenceStrategy {
 		}
 	}
 
-	public void Flush() {
+	// this strategy doesn't pace its flushes, so the throttle is ignored
+	public void Flush(bool throttle) {
 		_mmfWriteAccessor.Flush();
 		_fileStream.FlushToDisk();
 	}

@@ -107,7 +107,7 @@ public class persistent_stream_bloom_filter : SpecificationWithDirectoryPerTestF
 		[Test]
 		public void can_close_and_reopen() {
 			_filter.Add("hello");
-			_filter.Flush();
+			_filter.Flush(throttle: false);
 			_filter.Dispose();
 			using var newFilter = GenSut(_path, create: false, BloomFilterAccessor.MinSizeKB * 1000, hasher: null);
 			Assert.IsTrue(newFilter.MightContain("hello"));
@@ -116,7 +116,7 @@ public class persistent_stream_bloom_filter : SpecificationWithDirectoryPerTestF
 		[Test]
 		public void can_detect_incorrect_size() {
 			_filter.Add("hello");
-			_filter.Flush();
+			_filter.Flush(throttle: false);
 			_filter.Dispose();
 
 			Assert.Throws<SizeMismatchException>(() => {

@@ -136,7 +136,7 @@ public partial class PTable {
 						numIndexEntries, requiredMidpointCount, midpoints);
 				}
 
-				bloomFilter?.Flush();
+				bloomFilter?.Flush(throttle: true);
 				bs.Flush();
 				cs.FlushFinalBlock();
 
@@ -262,7 +262,7 @@ public partial class PTable {
 							requiredMidpointCount, midpoints);
 					}
 
-					bloomFilter?.Flush();
+					bloomFilter?.Flush(throttle: true);
 					bs.Flush();
 					cs.FlushFinalBlock();
 
@@ -399,7 +399,7 @@ public partial class PTable {
 							requiredMidpointCount, midpoints);
 					}
 
-					bloomFilter?.Flush();
+					bloomFilter?.Flush(throttle: true);
 					bs.Flush();
 					cs.FlushFinalBlock();
 
@@ -528,7 +528,7 @@ public partial class PTable {
 							requiredMidpointCount, midpoints);
 					}
 
-					bloomFilter?.Flush();
+					bloomFilter?.Flush(throttle: true);
 					bs.Flush();
 					cs.FlushFinalBlock();
 
