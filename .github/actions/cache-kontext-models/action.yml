@@ -1,0 +1,19 @@
+name: Restore Cached Kontext Models
+description: >
+  Restores the Kontext ONNX models into src/KurrentDB.Kontext.Models so that builds don't
+  download them repeatedly from HuggingFace. On a cache miss, the models downloaded by the
+  build are saved to the cache at the end of the job (the "Post" step).
+
+runs:
+  using: composite
+  steps:
+    - name: Restore Cached Kontext Models
+      uses: actions/cache@v4
+      with:
+        path: |
+          src/KurrentDB.Kontext.Models/embedding
+          src/KurrentDB.Kontext.Models/cross-encoder
+        # the model URLs live in the csproj; the models themselves are immutable
+        key: kontext-onnx-models-${{ hashFiles('src/KurrentDB.Kontext.Models/KurrentDB.Kontext.Models.csproj') }}
+        # the models are platform-independent; share one cache across Linux and Windows jobs
+        enableCrossOsArchive: true

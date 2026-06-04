@@ -57,6 +57,9 @@ jobs:
       name: Checkout
       uses: actions/checkout@v4
     -  
+      name: Restore Cached Kontext Models
+      uses: ./.github/actions/cache-kontext-models
+    -  
       name: Github Registry Docker Login
       uses: azure/docker-login@v1
       with:
