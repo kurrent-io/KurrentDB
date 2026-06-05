@@ -208,6 +208,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Projections.Share
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Projections.Management.Tests", "KurrentDB.Projections.Management.Tests\KurrentDB.Projections.Management.Tests.csproj", "{7EC3CEA5-F843-EEF2-AD47-B41941AA3978}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.KontrolPlane", "KurrentDB.KontrolPlane\KurrentDB.KontrolPlane.csproj", "{C4FA3E05-81FA-4151-8BF8-D1B54D486627}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1636,6 +1638,22 @@ Global
 		{7EC3CEA5-F843-EEF2-AD47-B41941AA3978}.Release|x64.Build.0 = Release|x64
 		{7EC3CEA5-F843-EEF2-AD47-B41941AA3978}.Release|x86.ActiveCfg = Release|Any CPU
 		{7EC3CEA5-F843-EEF2-AD47-B41941AA3978}.Release|x86.Build.0 = Release|Any CPU
+		{C4FA3E05-81FA-4151-8BF8-D1B54D486627}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C4FA3E05-81FA-4151-8BF8-D1B54D486627}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C4FA3E05-81FA-4151-8BF8-D1B54D486627}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{C4FA3E05-81FA-4151-8BF8-D1B54D486627}.Debug|ARM64.Build.0 = Debug|ARM64
+		{C4FA3E05-81FA-4151-8BF8-D1B54D486627}.Debug|x64.ActiveCfg = Debug|x64
+		{C4FA3E05-81FA-4151-8BF8-D1B54D486627}.Debug|x64.Build.0 = Debug|x64
+		{C4FA3E05-81FA-4151-8BF8-D1B54D486627}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C4FA3E05-81FA-4151-8BF8-D1B54D486627}.Debug|x86.Build.0 = Debug|Any CPU
+		{C4FA3E05-81FA-4151-8BF8-D1B54D486627}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C4FA3E05-81FA-4151-8BF8-D1B54D486627}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C4FA3E05-81FA-4151-8BF8-D1B54D486627}.Release|ARM64.ActiveCfg = Release|ARM64
+		{C4FA3E05-81FA-4151-8BF8-D1B54D486627}.Release|ARM64.Build.0 = Release|ARM64
+		{C4FA3E05-81FA-4151-8BF8-D1B54D486627}.Release|x64.ActiveCfg = Release|x64
+		{C4FA3E05-81FA-4151-8BF8-D1B54D486627}.Release|x64.Build.0 = Release|x64
+		{C4FA3E05-81FA-4151-8BF8-D1B54D486627}.Release|x86.ActiveCfg = Release|Any CPU
+		{C4FA3E05-81FA-4151-8BF8-D1B54D486627}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

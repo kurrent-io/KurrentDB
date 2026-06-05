@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<InvariantGlobalization>true</InvariantGlobalization>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+		<GitVersion>false</GitVersion>
+		<RootNamespace>KurrentDB.KontrolPlane</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="DotNext.Net.Cluster" />
+		<PackageReference Include="Google.Protobuf" />
+		<PackageReference Include="Grpc.Tools" PrivateAssets="All" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Protobuf Include="StateMachine\LogEntries\wal.proto" GrpcServices="None" Access="Internal"/>
+		<Protobuf Include="StateMachine\state.proto" GrpcServices="None" Access="Internal" />
+	</ItemGroup>
+</Project>
