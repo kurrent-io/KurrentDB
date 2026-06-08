@@ -39,7 +39,7 @@ internal partial class ProjectionManagement {
 		var envelope = new CallbackEnvelope(OnMessage);
 		_publisher.Publish(
 			new ProjectionManagementMessage.Command.UpdateQuery(envelope, name, runAs, query,
-				emitEnabled));
+				emitEnabled, options.Metadata.IsEmpty ? null : options.Metadata.ToByteArray()));
 
 		await updatedSource.Task;
 

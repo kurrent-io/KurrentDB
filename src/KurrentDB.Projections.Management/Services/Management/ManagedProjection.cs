@@ -126,6 +126,7 @@ public class ManagedProjection : IDisposable {
 	internal bool Prepared;
 	internal bool Created;
 	private bool _pendingWritePersistedState;
+	private byte[] _pendingMetadata;
 	private readonly TimeSpan _projectionsQueryExpiry;
 
 	private ManagedProjectionStateBase _stateHandler;
@@ -493,6 +494,7 @@ public class ManagedProjection : IDisposable {
 
 		UpdateProjectionVersion();
 		_pendingWritePersistedState = true;
+		_pendingMetadata = null;
 		WritePersistedState(CreatePersistedStateEvent(Guid.NewGuid(), PersistedProjectionState,
 			ProjectionNamesBuilder.ProjectionsStreamPrefix + _name));
 
@@ -604,8 +606,9 @@ public class ManagedProjection : IDisposable {
 			   _lastAccessed.Add(_projectionsQueryExpiry) < _timeProvider.UtcNow && _persistedStateLoaded;
 	}
 
-	public void InitializeNew(PersistedState persistedState, IEnvelope replyEnvelope) {
+	public void InitializeNew(PersistedState persistedState, IEnvelope replyEnvelope, byte[] metadata = null) {
 		LoadPersistedState(persistedState);
+		_pendingMetadata = metadata;
 		UpdateProjectionVersion();
 		_pendingWritePersistedState = true;
 		SetLastReplyEnvelope(replyEnvelope);
@@ -718,8 +721,11 @@ public class ManagedProjection : IDisposable {
 
 	private ClientMessage.WriteEvents CreatePersistedStateEvent(Guid correlationId, PersistedState persistedState,
 		string eventStreamId) {
+		var metadata = _pendingMetadata ?? [];
+		_pendingMetadata = null;
 		return ClientMessage.WriteEvents.ForSingleEvent(correlationId, correlationId, _writeDispatcher.Envelope, true, eventStreamId, ExpectedVersion.Any,
-			new Event(Guid.NewGuid(), ProjectionEventTypes.ProjectionUpdated, true, persistedState.ToJsonBytes()),
+			new Event(Guid.NewGuid(), ProjectionEventTypes.ProjectionUpdated, true, persistedState.ToJsonBytes(),
+				isPropertyMetadata: false, metadata),
 			SystemAccounts.System);
 	}
 
@@ -949,6 +955,7 @@ public class ManagedProjection : IDisposable {
 		_logger.Error("The '{projection}' projection faulted due to '{e}'", _name, reason);
 		SetState(ManagedProjectionState.Faulted);
 		_faultedReason = reason;
+		_pendingMetadata = null;
 	}
 
 	private ProjectionConfig CreateDefaultProjectionConfiguration() {
@@ -1003,6 +1010,7 @@ public class ManagedProjection : IDisposable {
 	private void UpdateQuery(ProjectionManagementMessage.Command.UpdateQuery message) {
 		PersistedProjectionState.Query = message.Query;
 		PersistedProjectionState.EmitEnabled = message.EmitEnabled ?? PersistedProjectionState.EmitEnabled;
+		_pendingMetadata = message.Metadata;
 		_pendingWritePersistedState = true;
 		if (_state == ManagedProjectionState.Completed) {
 			Reset();

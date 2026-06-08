@@ -83,11 +83,12 @@ public static partial class ProjectionManagementMessage {
 			private readonly bool _enableRunAs;
 			private readonly bool _trackEmittedStreams;
 			private readonly int _engineVersion;
+			private readonly byte[] _metadata;
 
 			public Post(
 				IEnvelope envelope, ProjectionMode mode, string name, RunAs runAs, string handlerType, string query,
 				bool enabled, bool checkpointsEnabled, bool emitEnabled, bool trackEmittedStreams,
-				bool enableRunAs = false, int engineVersion = ProjectionConstants.EngineV1)
+				bool enableRunAs = false, int engineVersion = ProjectionConstants.EngineV1, byte[] metadata = null)
 				: base(envelope, runAs) {
 				_name = name;
 				_handlerType = handlerType;
@@ -99,6 +100,7 @@ public static partial class ProjectionManagementMessage {
 				_trackEmittedStreams = trackEmittedStreams;
 				_enableRunAs = enableRunAs;
 				_engineVersion = engineVersion;
+				_metadata = metadata;
 			}
 
 			public Post(
@@ -171,6 +173,10 @@ public static partial class ProjectionManagementMessage {
 			public int EngineVersion {
 				get { return _engineVersion; }
 			}
+
+			public byte[] Metadata {
+				get { return _metadata; }
+			}
 		}
 
 		[DerivedMessage(ProjectionMessage.Management)]
@@ -220,13 +226,15 @@ public static partial class ProjectionManagementMessage {
 			private readonly string _name;
 			private readonly string _query;
 			private readonly bool? _emitEnabled;
+			private readonly byte[] _metadata;
 
 			public UpdateQuery(
-				IEnvelope envelope, string name, RunAs runAs, string query, bool? emitEnabled)
+				IEnvelope envelope, string name, RunAs runAs, string query, bool? emitEnabled, byte[] metadata = null)
 				: base(envelope, runAs) {
 				_name = name;
 				_query = query;
 				_emitEnabled = emitEnabled;
+				_metadata = metadata;
 			}
 
 			public string Query {
@@ -239,6 +247,10 @@ public static partial class ProjectionManagementMessage {
 
 			public bool? EmitEnabled {
 				get { return _emitEnabled; }
+			}
+
+			public byte[] Metadata {
+				get { return _metadata; }
 			}
 		}
 

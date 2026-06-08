@@ -4228,6 +4228,11 @@
                     "id": 5,
                     "name": "engine_version",
                     "type": "int32"
+                  },
+                  {
+                    "id": 6,
+                    "name": "metadata",
+                    "type": "bytes"
                   }
                 ],
                 "messages": [
@@ -4300,6 +4305,11 @@
                     "id": 4,
                     "name": "no_emit_options",
                     "type": "event_store.client.Empty"
+                  },
+                  {
+                    "id": 5,
+                    "name": "metadata",
+                    "type": "bytes"
                   }
                 ]
               }
