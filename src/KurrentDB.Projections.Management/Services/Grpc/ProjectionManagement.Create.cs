@@ -80,8 +80,11 @@ internal partial class ProjectionManagement {
 				case ProjectionManagementMessage.Updated:
 					createdSource.TrySetResult(true);
 					break;
+				case ProjectionManagementMessage.RecordTooLarge tooLarge:
+					createdSource.TrySetException(RecordTooLarge(tooLarge.Reason));
+					break;
 				case ProjectionManagementMessage.OperationFailed failed:
-					createdSource.TrySetException(OperationFailed(failed));
+					createdSource.TrySetException(OperationFailed(failed.Reason));
 					break;
 				default:
 					createdSource.TrySetException(UnknownMessage<ProjectionManagementMessage.Updated>(message));

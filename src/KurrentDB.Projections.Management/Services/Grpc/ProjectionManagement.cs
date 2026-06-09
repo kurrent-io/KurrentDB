@@ -53,6 +53,12 @@ namespace EventStore.Projections.Core.Services.Grpc {
 		private static Exception OperationFailed(ProjectionManagementMessage.OperationFailed message) =>
 			new RpcException(new Status(StatusCode.FailedPrecondition, message.Reason));
 
+		private static Exception OperationFailed(string reason) =>
+			new RpcException(new Status(StatusCode.FailedPrecondition, reason));
+
+		private static Exception RecordTooLarge(string reason) =>
+			new RpcException(new Status(StatusCode.InvalidArgument, reason));
+
 		private static byte[] ToMetadata(IDictionary<string, Value> properties) =>
 			properties.Count == 0 ? [] : new Struct { Fields = { properties } }.ToByteArray();
 
