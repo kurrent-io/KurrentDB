@@ -744,8 +744,8 @@ public class ManagedProjection : IDisposable {
 
 		_pendingMetadata = null;
 		var correlationId = Guid.NewGuid();
-		return ClientMessage.WriteEvents.ForSingleEvent(correlationId, correlationId, _writeDispatcher.Envelope, true,
-			ProjectionNamesBuilder.ProjectionsStreamPrefix + _name, ExpectedVersion.Any,
+		return ClientMessage.WriteEvents.ForSingleEvent(correlationId, correlationId, _writeDispatcher.Envelope,
+			requireLeader: true, ProjectionNamesBuilder.ProjectionsStreamPrefix + _name, ExpectedVersion.Any,
 			new Event(Guid.NewGuid(), ProjectionEventTypes.ProjectionUpdated, true, data,
 				isPropertyMetadata: hasMetadata, metadata),
 			SystemAccounts.System);
