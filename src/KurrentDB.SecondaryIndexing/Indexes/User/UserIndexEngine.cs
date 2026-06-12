@@ -9,6 +9,7 @@ using Kurrent.Surge.Schema.Serializers;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.DuckDB;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
@@ -49,11 +50,12 @@ public sealed class UserIndexEngine :
 		TFChunkDbConfig chunkDbConfig,
 		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)]
 		Meter meter,
+		DuckDBCpuMetrics cpuMetrics,
 		ILoggerFactory loggerFactory) {
 		_client = client;
 		_log = loggerFactory.CreateLogger<UserIndexEngine>();
 		_writerCheckpoint = chunkDbConfig.WriterCheckpoint;
-		_subscription = new(client, publisher, serializer, options, db, index, meter, GetLastAppendedRecord, loggerFactory, _cts!.Token);
+		_subscription = new(client, publisher, serializer, options, db, index, meter, cpuMetrics, GetLastAppendedRecord, loggerFactory, _cts!.Token);
 
 		subscriber.Subscribe<SystemMessage.SystemReady>(this);
 		subscriber.Subscribe<SystemMessage.BecomeShuttingDown>(this);

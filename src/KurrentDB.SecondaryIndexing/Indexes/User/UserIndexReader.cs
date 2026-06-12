@@ -5,21 +5,23 @@ using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 using Kurrent.Quack.Threading;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.DuckDB;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.User;
 
-internal abstract class UserIndexReader(DuckDBConnectionPool sharedPool, IReadIndex<string> index)
-	: SecondaryIndexReaderBase(sharedPool, index) {
+internal abstract class UserIndexReader(DuckDBConnectionPool sharedPool, IReadIndex<string> index, DuckDBCpuMetrics cpuMetrics)
+	: SecondaryIndexReaderBase(sharedPool, index, cpuMetrics) {
 	internal abstract BufferedView.Snapshot CaptureSnapshot(DuckDBAdvancedConnection connection);
 }
 
 internal class UserIndexReader<TField>(
 	DuckDBConnectionPool sharedPool,
 	UserIndexProcessor processor,
-	IReadIndex<string> index
-) : UserIndexReader(sharedPool, index) where TField : IField<TField> {
+	IReadIndex<string> index,
+	DuckDBCpuMetrics cpuMetrics
+) : UserIndexReader(sharedPool, index, cpuMetrics) where TField : IField<TField> {
 
 	protected override string? GetId(string indexStream) {
 		// the field is used as the ID. null when there is no field

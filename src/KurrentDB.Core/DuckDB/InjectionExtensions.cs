@@ -2,8 +2,10 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Diagnostics.Metrics;
 using System.Threading.Tasks;
 using Kurrent.Quack.ConnectionPool;
+using KurrentDB.Common.Configuration;
 using KurrentDB.DuckDB;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Connections;
@@ -21,6 +23,10 @@ public static class InjectionExtensions {
 		services.AddSingleton<DuckDBConnectionPool>(sp => sp.GetRequiredService<DuckDBConnectionPoolLifetime>().Shared);
 		services.AddSingleton<DuckDbConnectionPoolMiddleware>();
 		services.AddSingleton<ConnectionInterceptor>(CreatePoolPerConnectionInterceptor);
+		services.AddSingleton(static sp => {
+			var serviceName = sp.GetService<MetricsConfiguration>()?.ServiceName ?? "kurrentdb";
+			return new DuckDBCpuMetrics(new Meter(DuckDBCpuMetrics.MeterName, "1.0.0"), serviceName);
+		});
 		return services;
 	}
 

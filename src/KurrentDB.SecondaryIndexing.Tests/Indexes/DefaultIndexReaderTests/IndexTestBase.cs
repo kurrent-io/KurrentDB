@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Core.Data;
+using KurrentDB.Core.DuckDB;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
@@ -22,9 +23,10 @@ public abstract class IndexTestBase : DuckDbIntegrationTest<IndexTestBase> {
 		var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
 		var publisher = new FakePublisher();
 
-		_processor = new(DuckDb, publisher, hasher, new("test"), NullLoggerFactory.Instance);
+		var cpuMetrics = new DuckDBCpuMetrics(new("test"), "kurrentdb");
+		_processor = new(DuckDb, publisher, hasher, new("test"), NullLoggerFactory.Instance, cpuMetrics);
 
-		Sut = new(DuckDb, _processor, _readIndexStub.ReadIndex);
+		Sut = new(DuckDb, _processor, _readIndexStub.ReadIndex, cpuMetrics);
 	}
 
 	protected void IndexEvents(ResolvedEvent[] events, bool shouldCommit) {

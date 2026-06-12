@@ -12,6 +12,7 @@ using Kurrent.Quack;
 using Kurrent.Quack.Arrow;
 using Kurrent.Quack.ConnectionPool;
 using Kurrent.Quack.Threading;
+using KurrentDB.Core.DuckDB;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Indexes.User;
 
@@ -23,9 +24,11 @@ namespace KurrentDB.SecondaryIndexing.Query;
 /// <param name="defaultIndex"></param>
 /// <param name="userIndex"></param>
 /// <param name="sharedPool"></param>
+/// <param name="cpuMetrics"></param>
 internal sealed partial class QueryEngine(DefaultIndexProcessor defaultIndex,
 	UserIndexEngine userIndex,
-	DuckDBConnectionPool sharedPool) : IQueryEngine {
+	DuckDBConnectionPool sharedPool,
+	DuckDBCpuMetrics cpuMetrics) : IQueryEngine {
 	// 32 bytes key is aligned with HMAC SHA-3 256 hash length
 	private readonly ReadOnlyMemory<byte> _signatureKey = RandomNumberGenerator.GetBytes(32);
 
@@ -52,11 +55,16 @@ internal sealed partial class QueryEngine(DefaultIndexProcessor defaultIndex,
 		var reader = default(QueryResultReader);
 		var cancellation = connection.InterruptQueryOnCancellation(token);
 		try {
-			CaptureSnapshots(in parsedQuery, connection, snapshots, token);
-			statement = new(connection, parsedQuery.Query);
-			consumer.Bind(new QueryBinder(in statement));
+			// caller-side CPU attribution covers the synchronous part only: snapshot capture,
+			// parse/plan and, for materialized results, execution. CPU burned inside DuckDB
+			// during streaming chunk fetches is not visible from here.
+			using (cpuMetrics.Measure(DuckDBCpuMetrics.Activities.Query)) {
+				CaptureSnapshots(in parsedQuery, connection, snapshots, token);
+				statement = new(connection, parsedQuery.Query);
+				consumer.Bind(new QueryBinder(in statement));
+				reader = new(in statement, consumer.UseStreaming);
+			}
 
-			reader = new(in statement, consumer.UseStreaming);
 			await consumer.ConsumeAsync(reader, token);
 			reader.ThrowOnError(); // to handle query interruption from Quack (see catch block)
 		} catch (DuckDBException e) when (e.ErrorType is DuckDBErrorType.Interrupt) {
@@ -110,9 +118,11 @@ internal sealed partial class QueryEngine(DefaultIndexProcessor defaultIndex,
 		var options = connection.GetArrowOptions();
 		var statement = default(PreparedStatement);
 		try {
-			CaptureSnapshots(in parsedQuery, connection, snapshots, CancellationToken.None);
-			statement = new(connection, parsedQuery.Query);
-			return TReflector.Reflect(statement, options);
+			using (cpuMetrics.Measure(DuckDBCpuMetrics.Activities.Query)) {
+				CaptureSnapshots(in parsedQuery, connection, snapshots, CancellationToken.None);
+				statement = new(connection, parsedQuery.Query);
+				return TReflector.Reflect(statement, options);
+			}
 		} finally {
 			statement.Dispose();
 			options.Dispose();

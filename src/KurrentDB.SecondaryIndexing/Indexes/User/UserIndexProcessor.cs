@@ -15,6 +15,7 @@ using Kurrent.Surge.Schema.Serializers.Json;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.DuckDB;
 using KurrentDB.Core.Messages;
 using KurrentDB.Scripting;
 using KurrentDB.SecondaryIndexing.Diagnostics;
@@ -44,6 +45,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 	private readonly UserIndexSql<TField> _sql;
 	private readonly object _skip;
 	private readonly ILogger<UserIndexProcessor> _log;
+	private readonly DuckDBCpuMetrics _cpuMetrics;
 
 	private ulong _sequenceId;
 	private Atomic<TFPos> _lastPosition;
@@ -66,10 +68,12 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 		Meter meter,
 		Func<(long, DateTime)> getLastAppendedRecord,
 		ILoggerFactory loggerFactory,
+		DuckDBCpuMetrics cpuMetrics,
 		MetricsConfiguration? metricsConfiguration = null,
 		TimeProvider? clock = null) {
 		IndexName = indexName;
 		_sql = sql;
+		_cpuMetrics = cpuMetrics;
 		_log = loggerFactory.CreateLogger<UserIndexProcessor>();
 
 		_queryStreamName = UserIndexHelpers.GetQueryStreamName(IndexName);
@@ -221,6 +225,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 			Created = new DateTimeOffset(timestamp).ToUnixTimeMilliseconds()
 		};
 
+		using var cpu = _cpuMetrics.Measure(DuckDBCpuMetrics.Activities.Checkpoint);
 		UserIndexSql.SetCheckpoint(_connection, checkpointArgs);
 	}
 
@@ -233,6 +238,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 
 		try {
 			using var duration = Tracker.StartCommitDuration();
+			using var cpu = _cpuMetrics.Measure(DuckDBCpuMetrics.Activities.Commit);
 			_appender.Flush();
 			_log.LogUserIndexCommitted(IndexName);
 		} catch (Exception ex) {

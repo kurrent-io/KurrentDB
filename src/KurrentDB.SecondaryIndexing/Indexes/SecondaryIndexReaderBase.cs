@@ -3,6 +3,7 @@
 
 using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.DuckDB;
 using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Storage;
@@ -10,7 +11,7 @@ using static KurrentDB.Core.Messages.ClientMessage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes;
 
-public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool sharedPool, IReadIndex<string> index) : ISecondaryIndexReader {
+public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool sharedPool, IReadIndex<string> index, DuckDBCpuMetrics cpuMetrics) : ISecondaryIndexReader {
 	protected abstract string? GetId(string indexName);
 
 	protected abstract List<IndexQueryRecord> GetDbRecordsForwards(DuckDBConnectionPool pool, string? id, long startPosition, int maxCount, bool excludeFirst);
@@ -57,12 +58,15 @@ public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool sharedPool, 
 			=> new(result, ResolvedEvent.EmptyArray, pos, lastIndexedPosition, endOfStream, error);
 
 		async ValueTask<(long, IReadOnlyList<ResolvedEvent>)> GetEventsForwards(long startPosition) {
-			var indexPrepares = GetDbRecordsForwards(
-				GetPool(msg.Pool),
-				id,
-				startPosition,
-				msg.MaxCount,
-				msg.ExcludeStart);
+			List<IndexQueryRecord> indexPrepares;
+			using (cpuMetrics.Measure(DuckDBCpuMetrics.Activities.Read)) {
+				indexPrepares = GetDbRecordsForwards(
+					GetPool(msg.Pool),
+					id,
+					startPosition,
+					msg.MaxCount,
+					msg.ExcludeStart);
+			}
 
 			var events = await reader.ReadRecords(indexPrepares, true, token);
 			return (indexPrepares.Count, events);
@@ -101,11 +105,14 @@ public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool sharedPool, 
 			=> new(result, ResolvedEvent.EmptyArray, pos, lastIndexedPosition, false, error);
 
 		async ValueTask<(long, IReadOnlyList<ResolvedEvent>)> GetEventsBackwards(TFPos startPosition) {
-			var indexPrepares = GetDbRecordsBackwards(GetPool(msg.Pool),
-				id,
-				startPosition.PreparePosition,
-				msg.MaxCount,
-				msg.ExcludeStart);
+			List<IndexQueryRecord> indexPrepares;
+			using (cpuMetrics.Measure(DuckDBCpuMetrics.Activities.Read)) {
+				indexPrepares = GetDbRecordsBackwards(GetPool(msg.Pool),
+					id,
+					startPosition.PreparePosition,
+					msg.MaxCount,
+					msg.ExcludeStart);
+			}
 
 			var events = await reader.ReadRecords(indexPrepares, false, token);
 			return (indexPrepares.Count, events);

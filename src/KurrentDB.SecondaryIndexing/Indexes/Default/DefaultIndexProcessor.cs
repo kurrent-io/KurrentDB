@@ -14,6 +14,7 @@ using Kurrent.Quack.Threading;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.DuckDB;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services;
@@ -33,6 +34,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	private readonly ILongHasher<string> _hasher;
 	private readonly ILogger<DefaultIndexProcessor> _log;
 	private readonly BufferedView _appender;
+	private readonly DuckDBCpuMetrics _cpuMetrics;
 	private Atomic<TFPos> _lastPosition;
 
 	public TFPos LastIndexedPosition {
@@ -47,10 +49,12 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)]
 		Meter meter,
 		ILoggerFactory loggerFactory,
+		DuckDBCpuMetrics cpuMetrics,
 		MetricsConfiguration? metricsConfiguration = null,
 		TimeProvider? clock = null
 	) {
 		_connection = db.Open();
+		_cpuMetrics = cpuMetrics;
 		_log = loggerFactory.CreateLogger<DefaultIndexProcessor>();
 		_appender = new(_connection, "idx_all", "log_position", DefaultIndexViewName);
 		var serviceName = metricsConfiguration?.ServiceName ?? "kurrentdb";
@@ -153,6 +157,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 		try {
 			using var duration = Tracker.StartCommitDuration();
+			using var cpu = _cpuMetrics.Measure(DuckDBCpuMetrics.Activities.Commit);
 			_appender.Flush();
 		} catch (Exception e) {
 			_log.LogError(e, "Failed to commit records to index at log position {LogPosition}", LastIndexedPosition);

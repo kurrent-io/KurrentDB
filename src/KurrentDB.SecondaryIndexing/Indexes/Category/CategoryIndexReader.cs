@@ -4,6 +4,7 @@
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.DuckDB;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Storage;
@@ -16,8 +17,9 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Category;
 internal class CategoryIndexReader(
 	DuckDBConnectionPool sharedPool,
 	DefaultIndexProcessor processor,
-	IReadIndex<string> index)
-	: SecondaryIndexReaderBase(sharedPool, index) {
+	IReadIndex<string> index,
+	DuckDBCpuMetrics cpuMetrics)
+	: SecondaryIndexReaderBase(sharedPool, index, cpuMetrics) {
 	protected override string GetId(string indexName) =>
 		CategoryIndex.TryParseCategoryName(indexName, out var categoryName)
 			? categoryName

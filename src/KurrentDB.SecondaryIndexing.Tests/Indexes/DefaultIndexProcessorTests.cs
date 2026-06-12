@@ -4,6 +4,7 @@
 using DotNext;
 using Kurrent.Quack;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.DuckDB;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
@@ -211,7 +212,8 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest<DefaultIndexProc
 
 		var publisher = new FakePublisher();
 
-		_processor = new(DuckDb, publisher, hasher, new("test"), NullLoggerFactory.Instance);
+		_processor = new(DuckDb, publisher, hasher, new("test"), NullLoggerFactory.Instance,
+			new DuckDBCpuMetrics(new("test"), "kurrentdb"));
 	}
 
 	public override ValueTask DisposeAsync() {

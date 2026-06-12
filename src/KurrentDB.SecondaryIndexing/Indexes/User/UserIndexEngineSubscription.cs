@@ -12,6 +12,7 @@ using Kurrent.Surge.Schema.Serializers;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.DuckDB;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Resilience;
 using KurrentDB.Core.Services.Storage;
@@ -32,6 +33,7 @@ public partial class UserIndexEngineSubscription(
 	DuckDBConnectionPool db,
 	IReadIndex<string> readIndex,
 	Meter meter,
+	DuckDBCpuMetrics cpuMetrics,
 	Func<(long, DateTime)> getLastAppendedRecord,
 	ILoggerFactory logFactory,
 	CancellationToken token)
@@ -226,10 +228,11 @@ public partial class UserIndexEngineSubscription(
 			publisher: publisher,
 			meter: meter,
 			getLastAppendedRecord: getLastAppendedRecord,
-			loggerFactory: logFactory
+			loggerFactory: logFactory,
+			cpuMetrics: cpuMetrics
 		);
 
-		var reader = new UserIndexReader<TField>(sharedPool: db, processor, readIndex);
+		var reader = new UserIndexReader<TField>(sharedPool: db, processor, readIndex, cpuMetrics);
 
 		UserIndexSubscription subscription = new UserIndexSubscription<TField>(
 			publisher: publisher,
