@@ -17,6 +17,7 @@
     <PackageReference Include="Catalyst.Models.English" />
     <!-- Override vulnerable transitive (pulled by Catalyst). -->
     <PackageReference Include="NuGet.CommandLine" />
+    <PackageReference Include="MessagePack" />
     <PackageReference Include="Cloud.Unum.USearch" />
     <PackageReference Include="Eventuous.Application" />
     <PackageReference Include="Eventuous.Extensions.DependencyInjection" />
