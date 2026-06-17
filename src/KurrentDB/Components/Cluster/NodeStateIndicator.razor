@@ -1,0 +1,79 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@implements IDisposable
+@using Microsoft.AspNetCore.Components.Routing
+@inject GossipMonitor Monitor
+@inject NavigationManager Navigation
+@inject KurrentDB.UI.Services.Preferences Preferences
+
+@* One chip per cluster node, in a stable order (by endpoint). The node serving this UI is highlighted
+   (inverted); the others link to the same page on that node. Offline nodes are shown but not linkable. *@
+@if (Monitor.Members.Count > 0) {
+	<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mr-2">
+		@foreach (var node in Monitor.Members) {
+			var label = NodeStateDisplay.Label(node.State);
+			<MudTooltip Text="@Tooltip(node, label)">
+				@if (node.IsLocal) {
+					<MudChip T="string" Variant="Variant.Filled" Size="Size.Small"
+					         Style="background-color: var(--mud-palette-appbar-text); color: var(--mud-palette-appbar-background);">
+						@label
+					</MudChip>
+				} else if (node.IsAlive) {
+					@* A plain anchor so a click does a full, cross-origin navigation to the other node. *@
+					<a href="@NodeUrl(node)" style="text-decoration: none;">
+						<MudChip T="string" Variant="Variant.Outlined" Size="Size.Small"
+						         Style="color: var(--mud-palette-appbar-text); border-color: var(--mud-palette-appbar-text); cursor: pointer;">
+							@label
+						</MudChip>
+					</a>
+				} else {
+					@* Unreachable: same styling as the others, but labelled and not linked. *@
+					<MudChip T="string" Variant="Variant.Outlined" Size="Size.Small"
+					         Style="color: var(--mud-palette-appbar-text); border-color: var(--mud-palette-appbar-text);">
+						Unreachable
+					</MudChip>
+				}
+			</MudTooltip>
+		}
+	</MudStack>
+}
+
+@code {
+	protected override void OnInitialized() {
+		Monitor.Changed += OnChanged;
+		// The node links target the current page, so re-render when the page changes too.
+		Navigation.LocationChanged += OnLocationChanged;
+	}
+
+	void OnChanged() => RenderLater();
+	void OnLocationChanged(object sender, LocationChangedEventArgs e) => RenderLater();
+
+	// Both events can fire on a background thread or after teardown; marshal and guard the disposal race.
+	async void RenderLater() {
+		try {
+			await InvokeAsync(StateHasChanged);
+		} catch (ObjectDisposedException) {
+			// Renderer torn down between the event and this callback — ignore.
+		}
+	}
+
+	// The same page (path + query) on the given node, using the current request's scheme, with the current
+	// theme appended so the target node opens in the same light/dark mode (it strips the param on arrival).
+	string NodeUrl(ClusterNode node) {
+		var current = new Uri(Navigation.Uri);
+		var sep = string.IsNullOrEmpty(current.Query) ? "?" : "&";
+		var theme = Preferences.DarkMode ? "dark" : "light";
+		return $"{current.Scheme}://{node.Host}:{node.Port}{current.PathAndQuery}{sep}theme={theme}";
+	}
+
+	string Tooltip(ClusterNode node, string label) =>
+		!node.IsAlive
+			? $"{node.Host}:{node.Port} — unreachable"
+			: $"{node.Host}:{node.Port} — {label}" + (node.IsLocal ? " (this node)" : "");
+
+	public void Dispose() {
+		Monitor.Changed -= OnChanged;
+		Navigation.LocationChanged -= OnLocationChanged;
+	}
+}

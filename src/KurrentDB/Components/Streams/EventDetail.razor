@@ -1,0 +1,167 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@page "/ui/streams/{StreamId}/{EventNumber:long}"
+@attribute [Authorize]
+@using KurrentDB.Core.Data
+@using KurrentDB.UI.Theme
+@using Microsoft.AspNetCore.Authorization
+
+<PageTitle>KurrentDB: @StreamId #@EventNumber</PageTitle>
+
+<MudStack Spacing="4">
+	<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Style="width: 100%;">
+		<MudButton Variant="Variant.Text" StartIcon="@KurrentIcons.Back"
+		           Href="@($"/ui/streams/{Uri.EscapeDataString(StreamId)}")">Back</MudButton>
+		<div style="width: 570px; flex: 0 0 auto;">
+			<MudTextField @bind-Value="_streamInput" Label="Stream" Variant="Variant.Outlined"
+			              OnKeyUp="OnKeyUp" Immediate="true" Margin="Margin.Dense"/>
+		</div>
+		<div style="width: 160px; flex: 0 0 auto;">
+			<MudTextField @bind-Value="_eventNumberInput" Label="Record #" Variant="Variant.Outlined"
+			              Adornment="Adornment.End" AdornmentIcon="@KurrentIcons.Arrow"
+			              OnAdornmentClick="Go" OnKeyUp="OnKeyUp" Immediate="true" Margin="Margin.Dense"/>
+		</div>
+		<MudSpacer/>
+		@if (_event is not null) {
+			<MudButton Variant="Variant.Outlined" Size="Size.Small"
+			           StartIcon="@KurrentIcons.Plus"
+			           OnClick="AddSimilar" Class="mr-2">Add similar</MudButton>
+		}
+		<MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="@(!HasPrevious)"
+		           Href="@($"/ui/streams/{Uri.EscapeDataString(StreamId)}/{EventNumber - 1}")">Previous</MudButton>
+		<MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="@(!HasNext)"
+		           Href="@($"/ui/streams/{Uri.EscapeDataString(StreamId)}/{EventNumber + 1}")">Next</MudButton>
+	</MudStack>
+
+	@if (_loading) {
+		<MudProgressLinear Indeterminate="true"/>
+	} else if (IsAllStream) {
+		<MudAlert Severity="Severity.Info">
+			<code>$all</code> records are addressed by log position, not by record number.
+			<MudLink Href="@($"/ui/streams/{Uri.EscapeDataString("$all")}")">Browse $all</MudLink> to view them.
+		</MudAlert>
+	} else if (HasError) {
+		<MudAlert Severity="Severity.Error">
+			@switch (_readError) {
+				case ReadEventResult.NotFound:
+					<span>Record #@EventNumber not found in stream </span>
+					<MudLink Href="@StreamUrl">@StreamId</MudLink>
+					<span>.</span>
+					break;
+				case ReadEventResult.NoStream:
+					<span>Stream </span>
+					<MudLink Href="@StreamUrl">@StreamId</MudLink>
+					<span> does not exist.</span>
+					break;
+				case ReadEventResult.StreamDeleted:
+					<span>Stream </span>
+					<MudLink Href="@StreamUrl">@StreamId</MudLink>
+					<span> has been deleted.</span>
+					break;
+				case ReadEventResult.AccessDenied:
+					<span>Access denied.</span>
+					break;
+				default:
+					<span>@(_error ?? $"Error: {_readError}")</span>
+					break;
+			}
+		</MudAlert>
+	} else {
+		<MudSimpleTable Dense="true">
+			<tbody>
+			<tr>
+				<td>Record ID</td>
+				<td style="font-family: monospace;">@_event?.EventId</td>
+			</tr>
+			<tr>
+				<td>Record Type</td>
+				<td style="font-family: monospace;">@_event?.EventType</td>
+			</tr>
+			<tr>
+				<td>Stream</td>
+				<td style="font-family: monospace;">@_event?.EventStreamId</td>
+			</tr>
+			<tr>
+				<td>Record Number</td>
+				<td style="font-family: monospace;">@_event?.EventNumber</td>
+			</tr>
+			<tr>
+				<td>Created</td>
+				<td style="font-family: monospace;">@_event?.TimeStamp.ToString("G")</td>
+			</tr>
+			</tbody>
+		</MudSimpleTable>
+
+		<MudText Typo="Typo.h6">Data</MudText>
+		@if (_event?.IsRedacted == true) {
+			<MudAlert Severity="Severity.Warning">This record's data has been redacted.</MudAlert>
+		} else {
+			<MudPaper Class="pa-4" Outlined="true">
+				<pre style="white-space: pre-wrap; word-break: break-all; margin: 0;">@_data</pre>
+			</MudPaper>
+		}
+
+		@if (!string.IsNullOrEmpty(_metadata)) {
+			<MudText Typo="Typo.h6">Metadata</MudText>
+			<MudPaper Class="pa-4" Outlined="true">
+				<pre style="white-space: pre-wrap; word-break: break-all; margin: 0;">@_metadata</pre>
+			</MudPaper>
+		}
+
+		@if (_isLink) {
+			<MudDivider Class="my-2"/>
+			<MudText Typo="Typo.h5">Linked record</MudText>
+			@if (_linkedEvent is not null) {
+				<MudText Typo="Typo.subtitle1">
+					<MudLink Href="@($"/ui/streams/{Uri.EscapeDataString(_linkedEvent.EventStreamId)}/{_linkedEvent.EventNumber}")">#@_linkedEvent.EventNumber: @_linkedEvent.EventType</MudLink>
+					in
+					<MudLink Href="@($"/ui/streams/{Uri.EscapeDataString(_linkedEvent.EventStreamId)}")">@_linkedEvent.EventStreamId</MudLink>
+				</MudText>
+
+				<MudSimpleTable Dense="true">
+					<tbody>
+					<tr>
+						<td>Record ID</td>
+						<td style="font-family: monospace;">@_linkedEvent.EventId</td>
+					</tr>
+					<tr>
+						<td>Record Type</td>
+						<td style="font-family: monospace;">@_linkedEvent.EventType</td>
+					</tr>
+					<tr>
+						<td>Stream</td>
+						<td style="font-family: monospace;">@_linkedEvent.EventStreamId</td>
+					</tr>
+					<tr>
+						<td>Record Number</td>
+						<td style="font-family: monospace;">@_linkedEvent.EventNumber</td>
+					</tr>
+					<tr>
+						<td>Created</td>
+						<td style="font-family: monospace;">@_linkedEvent.TimeStamp.ToString("G")</td>
+					</tr>
+					</tbody>
+				</MudSimpleTable>
+
+				<MudText Typo="Typo.h6">Data</MudText>
+				@if (_linkedEvent.IsRedacted) {
+					<MudAlert Severity="Severity.Warning">This record's data has been redacted.</MudAlert>
+				} else {
+					<MudPaper Class="pa-4" Outlined="true">
+						<pre style="white-space: pre-wrap; word-break: break-all; margin: 0;">@_linkedData</pre>
+					</MudPaper>
+				}
+
+				@if (!string.IsNullOrEmpty(_linkedMetadata)) {
+					<MudText Typo="Typo.h6">Metadata</MudText>
+					<MudPaper Class="pa-4" Outlined="true">
+						<pre style="white-space: pre-wrap; word-break: break-all; margin: 0;">@_linkedMetadata</pre>
+					</MudPaper>
+				}
+			} else {
+				<MudAlert Severity="Severity.Warning">The linked record no longer exists (deleted or scavenged).</MudAlert>
+			}
+		}
+	}
+</MudStack>

@@ -1,0 +1,70 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@using KurrentDB.Projections.Core.Services
+
+<MudDialog>
+	<TitleContent>
+		<MudText Typo="Typo.h6">New Projection</MudText>
+	</TitleContent>
+	<DialogContent>
+		<MudForm @ref="_form" @bind-IsValid="_formValid" @bind-Errors="_errors">
+			<MudTextField @bind-Value="_model.Name" Label="Name"
+			              Required="true" RequiredError="Name is required."/>
+			<MudText Typo="Typo.subtitle1" Class="mt-4">Engine</MudText>
+			<MudRadioGroup T="bool" Value="_model.UseV2" ValueChanged="OnUseV2Changed">
+				<MudRadio Value="false" Color="Color.Primary">v1</MudRadio>
+				<MudRadio Value="true" Color="Color.Primary">v2</MudRadio>
+			</MudRadioGroup>
+			<MudText Typo="Typo.subtitle1" Class="mt-4">Mode</MudText>
+			<MudRadioGroup @bind-Value="_model.Mode">
+				<MudRadio Value="ProjectionMode.Continuous" Color="Color.Primary">Continuous</MudRadio>
+				<MudRadio Value="ProjectionMode.OneTime" Color="Color.Primary">One-Time</MudRadio>
+			</MudRadioGroup>
+			<MudCheckBox @bind-Value="_model.EmitEnabled" Label="Emit Enabled" Class="mt-2"/>
+			<MudCheckBox @bind-Value="_model.TrackEmittedStreams" Disabled="@_model.UseV2"
+			             Label="Track Emitted Streams"/>
+			<MudTextField @bind-Value="_model.Query" Label="Source (JavaScript)"
+			              Lines="12" Variant="Variant.Outlined" Class="mt-4"
+			              Required="true" RequiredError="Source is required."
+			              Style="font-family: monospace;"/>
+		</MudForm>
+	</DialogContent>
+	<DialogActions>
+		<MudButton OnClick="Cancel">Cancel</MudButton>
+		<MudButton OnClick="Submit" Variant="Variant.Outlined">Create</MudButton>
+	</DialogActions>
+</MudDialog>
+
+@code {
+	[CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
+
+	MudForm _form;
+	bool _formValid;
+	string[] _errors = [];
+	readonly CreateProjectionModel _model = new();
+
+	void Cancel() => MudDialog.Cancel();
+
+	void OnUseV2Changed(bool value) {
+		_model.UseV2 = value;
+		// v2 doesn't support tracking emitted streams.
+		if (value)
+			_model.TrackEmittedStreams = false;
+	}
+
+	async Task Submit() {
+		await _form.Validate();
+		if (_formValid)
+			MudDialog.Close(DialogResult.Ok(_model));
+	}
+
+	public class CreateProjectionModel {
+		public string Name { get; set; } = "";
+		public ProjectionMode Mode { get; set; } = ProjectionMode.Continuous;
+		public bool EmitEnabled { get; set; }
+		public bool TrackEmittedStreams { get; set; }
+		public bool UseV2 { get; set; }
+		public string Query { get; set; } = "fromStream('my-stream')\n  .when({\n    $init: function() { return { count: 0 }; },\n    $any: function(s, e) { s.count += 1; }\n  })";
+	}
+}

@@ -1,0 +1,68 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@using System.Security.Claims
+@using System.Threading
+@inject ProjectionsService ProjectionsService
+
+<MudDialog>
+	<TitleContent>
+		<MudText Typo="Typo.h6">Edit Source — @Name</MudText>
+	</TitleContent>
+	<DialogContent>
+		<MudAlert Severity="Severity.Warning" Dense="true" Class="mb-3">
+			Updating the query changes a running projection's behaviour immediately. Make sure the change is correct.
+		</MudAlert>
+		<MudForm @ref="_form" @bind-IsValid="_formValid" @bind-Errors="_errors">
+			<MudTextField @bind-Value="_query" Label="Source (JavaScript)"
+			              Lines="20" Variant="Variant.Outlined"
+			              Required="true" RequiredError="Source is required."
+			              Style="font-family: monospace;"/>
+		</MudForm>
+		@if (_error != null) {
+			<MudAlert Severity="Severity.Error" Class="mt-3">@_error</MudAlert>
+		}
+	</DialogContent>
+	<DialogActions>
+		<MudButton OnClick="Cancel" Disabled="@_saving">Cancel</MudButton>
+		<MudButton OnClick="Save" Variant="Variant.Outlined" Disabled="@_saving">Save</MudButton>
+	</DialogActions>
+</MudDialog>
+
+@code {
+	[CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
+	[Parameter] public string Name { get; set; }
+	[Parameter] public string Query { get; set; }
+	[Parameter] public ClaimsPrincipal Principal { get; set; }
+
+	MudForm _form;
+	bool _formValid;
+	string[] _errors = [];
+	string _query = "";
+	bool _saving;
+	string _error;
+
+	protected override void OnInitialized() => _query = Query ?? "";
+
+	void Cancel() => MudDialog.Cancel();
+
+	async Task Save() {
+		await _form.Validate();
+		if (!_formValid)
+			return;
+
+		_saving = true;
+		_error = null;
+		try {
+			using var cts = new CancellationTokenSource(10000);
+			// emitEnabled: null leaves the existing emit setting unchanged.
+			await ProjectionsService.UpdateQueryAsync(Principal, Name, _query, null, cts.Token);
+			MudDialog.Close(DialogResult.Ok(true));
+		} catch (ProjectionsException ex) {
+			// Stay open so the user can fix the query (e.g. a compile error) without losing edits.
+			_error = ex.Message;
+		} finally {
+			_saving = false;
+		}
+	}
+}

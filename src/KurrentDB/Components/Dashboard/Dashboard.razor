@@ -1,0 +1,50 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@page "/ui/dashboard"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+
+<PageTitle>KurrentDB: Dashboard</PageTitle>
+
+<MudStack Spacing="4">
+	<MudStack Row="true" AlignItems="AlignItems.Center">
+		<MudText Typo="Typo.h5">Queue Statistics</MudText>
+		<MudSpacer/>
+		<MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.PhotoCamera"
+		           OnClick="ShowSnapshot">Snapshot</MudButton>
+	</MudStack>
+
+	<MudDataGrid Items="@_queues" Dense="true" Hover="true" Loading="@_loading" Filterable="true"
+	             Style="font-family:monospace;">
+		<Columns>
+			<PropertyColumn Property="x => x.Name" Title="Queue"/>
+			<PropertyColumn Property="x => x.GroupName" Title="Group"/>
+			<TemplateColumn Title="Length" HeaderStyle="text-align:right" CellStyle="text-align:right">
+				<CellTemplate>
+					@context.Item.Length.ToString("N0")
+				</CellTemplate>
+			</TemplateColumn>
+			<TemplateColumn Title="Rate (items/s)" HeaderStyle="text-align:right" CellStyle="text-align:right">
+				<CellTemplate>
+					@context.Item.AvgItemsPerSecond.ToString("N0")
+				</CellTemplate>
+			</TemplateColumn>
+			<TemplateColumn Title="Avg Time (ms)" HeaderStyle="text-align:right" CellStyle="text-align:right">
+				<CellTemplate>
+					@context.Item.AvgProcessingTime.ToString("F3")
+				</CellTemplate>
+			</TemplateColumn>
+			<TemplateColumn Title="Items Processed" HeaderStyle="text-align:right" CellStyle="text-align:right">
+				<CellTemplate>
+					@context.Item.TotalItemsProcessed.ToString("N0")
+				</CellTemplate>
+			</TemplateColumn>
+			<PropertyColumn Property="x => x.CurrentMessage" Title="Current Message" Sortable="false" Filterable="false"/>
+			<PropertyColumn Property="x => x.LastMessage" Title="Last Message" Sortable="false" Filterable="false"/>
+		</Columns>
+		<NoRecordsContent>
+			<MudText>No queue statistics available.</MudText>
+		</NoRecordsContent>
+	</MudDataGrid>
+</MudStack>

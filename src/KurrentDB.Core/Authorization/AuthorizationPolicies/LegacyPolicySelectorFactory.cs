@@ -47,10 +47,10 @@ public class LegacyPolicySelectorFactory : IPolicySelectorFactory {
 		// The Node.Ping is set to allow anonymous as it does not disclose any secure information.
 		policy.AllowAnonymous(Operations.Node.Ping);
 
-		// The following endpoints require anonymous access to load the index.html page.
-		// If the endpoints are secured, then the user will not be able to logged into EventStoreDB
+		// Anonymous access for things needed before a user has authenticated:
+		//   Node.Redirect         - the bare-URL "/" redirect to the UI (/ui/cluster)
+		//   Node.Information.Read  - /info, which clients read before logging in
 		policy.AllowAnonymous(Operations.Node.Information.Read);
-		policy.AllowAnonymous(Operations.Node.StaticContent);
 		policy.AllowAnonymous(Operations.Node.Redirect);
 
 		Action<OperationDefinition> addToPolicy = _allowAnonymousEndpointAccess
@@ -72,6 +72,7 @@ public class LegacyPolicySelectorFactory : IPolicySelectorFactory {
 		policy.AddMatchAnyAssertion(Operations.Node.Information.Subsystems, Grant.Allow, OperationsOrAdmins);
 		policy.AddMatchAnyAssertion(Operations.Node.Information.Histogram, Grant.Allow, OperationsOrAdmins);
 		policy.AddMatchAnyAssertion(Operations.Node.Information.Options, Grant.Allow, OperationsOrAdmins);
+		policy.AddMatchAnyAssertion(Operations.Node.Information.ReadLogs, Grant.Allow, OperationsOrAdmins);
 
 		var isSystem = new MultipleClaimMatchAssertion(Grant.Allow, MultipleMatchMode.All,
 			SystemAccounts.System.Claims.ToArray());

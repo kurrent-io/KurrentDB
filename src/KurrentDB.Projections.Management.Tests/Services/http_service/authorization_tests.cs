@@ -144,10 +144,6 @@ public class Authorization<TLogFormat, TStreamId> : specification_with_standard_
 			"Admin"
 		)] string userAuthorizationLevel,
 		[Values(
-			"/web/es/js/projections/{*remaining_path};GET;None",
-			"/web/es/js/projections/v8/Prelude/{*remaining_path};GET;None",
-			"/web/projections;GET;None",
-			"/projections;GET;User",
 			"/projections/any;GET;User",
 			"/projections/all-non-transient;GET;User",
 			"/projections/transient;GET;User",

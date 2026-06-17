@@ -133,6 +133,7 @@ public abstract class with_replication_service : SpecificationWithDirectoryPerTe
 	}
 
 	private TFChunkDbConfig CreateDbConfig() {
+		ICheckpoint databaseId = new InMemoryCheckpoint(Checkpoint.DatabaseId);
 		ICheckpoint writerChk = new InMemoryCheckpoint(Checkpoint.Writer);
 		ICheckpoint chaserChk = new InMemoryCheckpoint(Checkpoint.Chaser);
 		ICheckpoint epochChk = new InMemoryCheckpoint(Checkpoint.Epoch, initValue: -1);
@@ -145,6 +146,7 @@ public abstract class with_replication_service : SpecificationWithDirectoryPerTe
 			PathName,
 			1000,
 			10000,
+			databaseId,
 			writerChk,
 			chaserChk,
 			epochChk,

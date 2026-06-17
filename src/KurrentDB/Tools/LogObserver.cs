@@ -37,5 +37,3 @@ class LogObserver : IObserver<LogEvent>, IDisposable {
 		_sub?.Dispose();
 	}
 }
-
-public delegate void LogEntryAdded(LogEvent entry);

@@ -1,0 +1,65 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+<MudDialog>
+	<TitleContent>
+		<MudText Typo="Typo.h6">Create User</MudText>
+	</TitleContent>
+	<DialogContent>
+		<MudForm @ref="_form" @bind-IsValid="_formValid" @bind-Errors="_errors">
+			<MudTextField @bind-Value="_model.LoginName" Label="Login Name"
+			              Required="true" RequiredError="Login name is required."/>
+			<MudTextField @bind-Value="_model.FullName" Label="Full Name"
+			              Required="true" RequiredError="Full name is required."/>
+			<MudTextField @bind-Value="_model.Password" Label="Password"
+			              InputType="InputType.Password"
+			              Required="true" RequiredError="Password is required."/>
+			<MudTextField @bind-Value="_model.ConfirmPassword" Label="Confirm Password"
+			              InputType="InputType.Password"
+			              Required="true"
+			              Validation="@(new Func<string, string>(ValidatePasswordMatch))"/>
+			<MudText Typo="Typo.subtitle1" Class="mt-4">Group</MudText>
+			<MudRadioGroup @bind-Value="_model.Group">
+				<MudRadio Value="@("$admins")" Color="Color.Primary">$admins</MudRadio>
+				<MudRadio Value="@("$ops")" Color="Color.Primary">$ops</MudRadio>
+				<MudRadio Value="@("")" Color="Color.Primary">None</MudRadio>
+			</MudRadioGroup>
+		</MudForm>
+	</DialogContent>
+	<DialogActions>
+		<MudButton OnClick="Cancel">Cancel</MudButton>
+		<MudButton OnClick="Submit"
+		           Variant="Variant.Outlined" Color="Color.Primary">Create</MudButton>
+	</DialogActions>
+</MudDialog>
+
+@code {
+	[CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
+
+	MudForm _form;
+	bool _formValid;
+	string[] _errors = [];
+	readonly CreateUserModel _model = new();
+
+	void Cancel() => MudDialog.Cancel();
+
+	async Task Submit() {
+		await _form.Validate();
+		if (_formValid)
+			MudDialog.Close(DialogResult.Ok(_model));
+	}
+
+	string ValidatePasswordMatch(string confirmPassword) =>
+		_model.Password != confirmPassword ? "Passwords do not match." : null;
+
+	public class CreateUserModel {
+		public string LoginName { get; set; } = "";
+		public string FullName { get; set; } = "";
+		public string Password { get; set; } = "";
+		public string ConfirmPassword { get; set; } = "";
+		public string Group { get; set; } = "";
+
+		public string[] GetGroups() =>
+			string.IsNullOrEmpty(Group) ? [] : [Group];
+	}
+}

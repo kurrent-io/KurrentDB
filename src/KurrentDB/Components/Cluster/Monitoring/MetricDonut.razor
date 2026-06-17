@@ -1,31 +1,54 @@
 @* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
 @* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
 
-<MudPaper Class="pa-2 ma-2" Outlined="true">
+<MudPaper Class="px-2 py-4 ma-2 d-flex justify-center align-center" Outlined="true">
 	<MudChart
 		ChartType="ChartType.Donut"
+		Width="90%"
+		Height="90%"
+		ChartOptions="@_chartOptions"
 		InputData="@_values" InputLabels="@(new[] { $"Used {Name}", $"Total {Name}" })">
 		<CustomGraphics>
 			<text class="donut-inner-text" x="50%" y="35%" dominant-baseline="middle" text-anchor="middle"
-			      fill="var(--mud-palette-text-primary)" font-family="Helvetica" font-size="20">@Name usage
+				  fill="var(--mud-palette-text-primary)" font-family="Helvetica" font-size="20">@Name usage
 			</text>
 			<text class="donut-inner-text" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
-			      fill="var(--mud-palette-text-primary)" font-family="Helvetica"
-			      font-size="50">@((Value / 100).ToString("P1"))</text>
+				  fill="var(--mud-palette-text-primary)" font-family="Helvetica"
+				  font-size="50">@((Value / 100).ToString("P1"))</text>
 		</CustomGraphics>
 	</MudChart>
 </MudPaper>
+
+@using KurrentDB.UI.Theme
+@implements IDisposable
+@inject KurrentDB.UI.Services.Preferences Preferences
 
 @code {
 	[Parameter] public double Value { get; set; }
 	[Parameter] public string Name { get; set; }
 
+	readonly ChartOptions _chartOptions = new() {
+		ShowLegend = false,
+	};
 	double[] _values = [0, 100];
 	double _max = 100;
+
+	protected override void OnInitialized() {
+		Preferences.ThemeChanged += OnThemeChanged;
+		_chartOptions.ChartPalette = KurrentTheme.DonutPalette(Preferences.DarkMode);
+	}
 
 	protected override void OnParametersSet() {
 		base.OnParametersSet();
 		_max = double.Max(Value, _max);
 		_values = [Value, _max-Value];
 	}
+
+	// Donut "remaining" colour is theme-specific; re-apply and re-render when the theme is toggled.
+	void OnThemeChanged(object sender, EventArgs e) => InvokeAsync(() => {
+		_chartOptions.ChartPalette = KurrentTheme.DonutPalette(Preferences.DarkMode);
+		StateHasChanged();
+	});
+
+	public void Dispose() => Preferences.ThemeChanged -= OnThemeChanged;
 }

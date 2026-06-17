@@ -1,0 +1,56 @@
+/* Login screen (static auth page on EmptyLayout): a centered branded card on a dark background,
+   overriding the global dark body. Approximates login-example.png.
+
+   NB: .login-page is the only plain HTML element this component renders; everything else
+   (.login-card, .login-button, the mud-input-* slots) lives inside MudBlazor child components,
+   which do NOT receive the CSS-isolation scope attribute. Those must be reached via ::deep,
+   anchored on .login-page. */
+.login-page {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #333;
+}
+
+.login-logo {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 28px;
+}
+
+.login-field {
+    margin-bottom: 16px;
+}
+
+/* MudPaper-rendered card: reached via ::deep (no scope attribute on the child component). */
+.login-page ::deep .login-card {
+    width: 22rem;
+    max-width: 92vw;
+    margin: 0 auto;
+    padding: 2.25rem;
+    border-radius: .25rem;
+    /* Plum facet panel from the Angular UI: two crossing 50/50 hard-stop gradients over a dark plum base. */
+    background-color: #631B3A !important;
+    background-image:
+        linear-gradient(45deg, rgba(99, 27, 58, .5) 0, rgba(99, 27, 58, .5) 50%, rgba(183, 87, 129, .5) 50%, rgba(183, 87, 129, .5) 100%),
+        linear-gradient(135deg, rgba(99, 27, 58, .5) 0, rgba(99, 27, 58, .5) 50%, rgba(183, 87, 129, .5) 50%, rgba(183, 87, 129, .5) 100%) !important;
+    box-shadow: 0 0.5rem 2rem #111 !important;
+    color: #fff;
+}
+
+/* Solid white inputs on the plum card (override the light-theme transparent outline). */
+.login-page ::deep .mud-input-control,
+.login-page ::deep .mud-input-outlined,
+.login-page ::deep .mud-input-slot {
+    background-color: #fff;
+    border-radius: 4px;
+}
+
+/* MudStaticButton-rendered button: reached via ::deep. */
+.login-page ::deep .login-button {
+    margin-top: 8px;
+    font-weight: 700;
+}

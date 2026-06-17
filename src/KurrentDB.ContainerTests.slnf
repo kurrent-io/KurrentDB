@@ -78,7 +78,6 @@
       "KurrentDB.Testing\\KurrentDB.Testing.csproj",
       "KurrentDB.Transport.Http\\KurrentDB.Transport.Http.csproj",
       "KurrentDB.Transport.Tcp\\KurrentDB.Transport.Tcp.csproj",
-      "KurrentDB.UI\\KurrentDB.UI.csproj",
       "KurrentDB\\KurrentDB.csproj",
       "SchemaRegistry\\KurrentDB.Plugins.SchemaRegistry\\KurrentDB.Plugins.SchemaRegistry.csproj",
       "SchemaRegistry\\KurrentDB.SchemaRegistry.Protocol\\KurrentDB.SchemaRegistry.Protocol.csproj",

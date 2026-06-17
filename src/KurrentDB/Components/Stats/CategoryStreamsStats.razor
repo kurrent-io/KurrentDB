@@ -1,11 +1,11 @@
 @using KurrentDB.SecondaryIndexing.Stats
-@inject StatsService Stats
+@inject UiStatsService Stats
 
 <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Class="d-flex ml-auto"
          Size="Size.Medium">Streams: @NumStreams
 </MudChip>
 <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Class="d-flex"
-         Size="Size.Medium">Events: @NumEvents
+         Size="Size.Medium">Records: @NumEvents
 </MudChip>
 <MudChip T="string" Variant="Variant.Outlined"
          Color="@StreamLengthColor(_avgLength)"
@@ -13,6 +13,7 @@
 </MudChip>
 
 @code {
+	[CascadingParameter] Task<AuthenticationState> AuthenticationState { get; set; }
 	[Parameter] public string CategoryName { get; set; }
 
 	private long _numStreams;
@@ -25,12 +26,24 @@
 
 	protected override void OnParametersSet() {
 		base.OnParametersSet();
-		Task.Run(() => InvokeAsync(() => {
-			(_numStreams, _numEvents) = Stats.GetCategoryStats(CategoryName).FirstOrDefault();
+		_ = LoadAsync();
+	}
+
+	async Task LoadAsync() {
+		try {
+			var principal = (await AuthenticationState).User;
+			(_numStreams, _numEvents) = (await Stats.GetCategoryStatsAsync(principal, CategoryName)).FirstOrDefault();
 			_avgLength = _numStreams > 0 ? _numEvents / _numStreams : 0;
+		} catch (Exception) {
+			// query failed (incl. access-denied) — stop showing "loading..."
+		} finally {
 			_loading = false;
-			StateHasChanged();
-		}));
+		}
+		try {
+			await InvokeAsync(StateHasChanged);
+		} catch (ObjectDisposedException) {
+			// panel torn down between query and render
+		}
 	}
 
 	Color StreamLengthColor(long avgLength) => avgLength < 300 ? Color.Primary : Color.Warning;
