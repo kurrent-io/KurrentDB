@@ -35,9 +35,10 @@ Here is the projection code:
 
 @[code](@samples/http-api/xbox-one-s-counter.js)
 
-You create a projection by calling the projection API and providing it with the definition of the projection. Here you decide how to run the projection, declaring that you want the projection to start from the beginning and keep running. You can create a projection using the Admin UI by opening the _Projections_ tab, clicking the _New Projection_ button and filling in the details of your projection.
+You create a projection by calling the projection API and providing it with the definition of the projection. Here you decide how to run the projection, declaring that you want the projection to start from the beginning and keep running. You can create a projection from the embedded UI by opening the _Projections_ page, clicking the _New Projection_ button and filling in the details of your projection.
 
-![Creating a projection with the KurrentDB Admin UI](images/getting-started-create-projection.png)
+![Creating a projection in the embedded UI](images/getting-started-create-projection.png#light)
+![Creating a projection in the embedded UI](images/getting-started-create-projection-dark.png#dark)
 
 You can also create projections programmatically. Pass the projection JSON file as a parameter of your request, along with any other settings:
 

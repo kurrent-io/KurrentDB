@@ -430,12 +430,11 @@ You can also build [KurrentDB from source](https://github.com/EventStore/EventSt
 
 ## Compatibility notes
 
-Depending on how your KurrentDB instance is configured, some features might not work. Below are some features that are unavailable due to the specified options.
+Depending on how your KurrentDB instance is configured, some features might not be available.
 
 | Feature                       | Options impact                                                                                                                                                                          |
 |:------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Connection without SSL or TLS | KurrentDB is secure by default. Your clients need to establish a secure connection, unless you use the `Insecure` option.                                                      |
-| Authentication and ACLs       | When using the `Insecure` option for the server, all security is disabled. The `Users` menu item is also disabled in the Admin UI.                                                      |
-| Projections                   | Running projections is disabled by default and the `Projections` menu item is disabled in the Admin UI. You need to enable projections explicitly by using the `RunProjections` option. |
-| AtomPub protocol              | The AtomPub protocol is disabled by default. If you use this protocol, you have to explicitly enable it by using the `EnableAtomPubOverHttp` option.                          |
-| Stream browser                | The stream browser feature in Admin UI depends on the AtomPub protocol and is greyed out by default. You need to enable AtomPub (previous line) to make the stream browser work.        |
+| Connection without SSL or TLS | KurrentDB is secure by default. Your clients need to establish a secure connection, unless you use the `Insecure` option.                                                               |
+| Authentication and ACLs       | When using the `Insecure` option for the server, all security is disabled. The `Users` menu item is also disabled in the embedded UI.                                                   |
+| Projections                   | Running projections is disabled by default and the `Projections` menu item is disabled in the embedded UI. You need to enable projections explicitly by using the `RunProjections` option. |
+| AtomPub protocol              | The AtomPub protocol is disabled by default. If you use this protocol, you have to explicitly enable it by using the `EnableAtomPubOverHttp` option.                                    |

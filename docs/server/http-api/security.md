@@ -40,7 +40,7 @@ As you pass the username and password in the request we recommend you to enable 
 
 Alongside authentication, KurrentDB supports per stream configuration of Access Control Lists (ACL). To configure the ACL of a stream go to its head and look for the `metadata` relationship link to fetch the metadata for the stream.
 
-To set access control lists over HTTP you can post to the metadata stream as [with setting any other metadata](introduction.md#stream-metadata). You can also set Access Control Lists for a stream in the admin UI.
+To set access control lists over HTTP you can post to the metadata stream as [with setting any other metadata](introduction.md#stream-metadata).
 
 ### ACL example
 

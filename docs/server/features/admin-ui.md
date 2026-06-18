@@ -4,179 +4,135 @@ order: 3
 
 # Embedded Web UI
 
-The KurrentDB embedded UI is available at _SERVER_IP:2113_ and helps you interact with and visually manage a cluster. This guide explains the interface's tabs and their functions.
+The KurrentDB embedded UI is available by default at `<SERVER_IP>:2113` and helps you interact with and visually manage a cluster, as well as browse the data. This guide explains the interface's pages and their functions.
 
 ::: tip
-The legacy KurrentDB web interface (`/web`) is reaching its end of life. In the future, the legacy UI functionality will be split between the new embedded UI (available since V25.0) and Kurrent Navigator. You can try using the Preview version of [Kurrent Navigator](https://navigator.kurrent.io/) app today. It doesn't have full feature parity with the legacy web UI, but it already has usability improvements compared to it.
+The legacy web interface (`/web`) has been removed. Its functionality now lives in this embedded UI and in [Kurrent Navigator](https://navigator.kurrent.io/), a separate desktop app you can use alongside the server.
 :::
 
-## Embedded UI
+The embedded UI shows the cluster status and resource utilization, useful metrics about the throughput of data being written to and read from the database, and information about each cluster node such as its configuration, license status, and loaded plugins. It also lets you browse streams, manage projections and persistent subscriptions, run ad-hoc queries, manage users, and run scavenges.
 
-The new embedded UI shows the cluster status and resources utilization, as well as some useful metrics about throughput of data being put to and read from the database. In addition, it shows some useful information about the cluster node like its configuration, license status, and more.
+Use the brightness toggle in the top bar to switch between **light and dark themes**; your choice is remembered. Pages marked <Badge type="info" vertical="middle" text="License Required"/> require a license.
 
-### Dashboard
+## Cluster Status
 
-![Embedded UI dashboard](images/ui/dashboard.png)
+![Embedded UI Cluster Status page](images/ui/cluster.png#light)
+![Embedded UI Cluster Status page](images/ui/cluster-dark.png#dark)
 
-The dashboard is the embedded UI entry point. There, you find the following information:
-- **Cluster status**: Shows the cluster status and the number of nodes in the cluster.
-- **Cluster nodes**: Shows the list of nodes in the cluster and their status.
-- **Node resources**: Shows the node resources utilization, including CPU, memory, and disk usage.
-- **Node metrics**: <Badge type="info" vertical="middle" text="License Required"/> Shows the node metrics, including the number of events written, read, and the number of open connections.
+The _Cluster Status_ page shows the serving node's status and the cluster as a whole:
+- **Node status**: The address, version, and operating system of the node you are connected to. From here you can **Shutdown** the node, and — when the local node is the leader of a multi-node cluster — **Resign** it (trigger a leader election). Both actions require the appropriate permission and are disabled otherwise.
+- **Cluster status**: A card per cluster member showing its state, address, checkpoints, and epoch. The card for the node you're connected to is tagged **This node**; every other live node has an **Open this node's UI** button that opens that node's UI in a new tab.
+- **Resources**: CPU, memory, and disk gauges plus the active connection count, with throughput charts <Badge type="info" vertical="middle" text="License Required"/>.
 
-### Database stats
+## Dashboard
 
-<Badge type="info" vertical="middle" text="License Required"/>
+![Embedded UI dashboard](images/ui/dashboard.png#light)
+![Embedded UI dashboard](images/ui/dashboard-dark.png#dark)
 
-When [secondary indexes](../features/indexes/secondary.md) are enabled, the _Stats_ page shows additional information about the database, including:
-- **Stream categories**: Shows stream categories in the database with additional information such as:
-    - **Event types**: Event types per stream category with number of events per event type, as well as earliest and latest event timestamps.
-    - **Streams**: Number of streams per stream category
-    - **Events**: Number of events per stream category
-    - **Avg. stream length**: Average stream length per stream category
-- **Explicit transactions**: Shows if the database has event records that are part of explicit transactions, with the number of explicit transactions found. Writing explicit transactions is deprecated and not supported by the current client APIs.
-- **Stream stats**: Shows the longest stream per category.
+The _Dashboard_ shows **queue statistics** for the node you're connected to — a live, filterable table of the server's internal processing queues. For each queue it lists its group, current length, processing rate (items per second), average processing time, total items processed, and the current and last message it handled. It's useful for spotting a backed-up queue or a processing bottleneck.
 
-![Embedded UI Stats page](images/ui/stats.png)
+Use **Snapshot** to capture the current statistics as text you can copy to the clipboard.
 
-### Logs
+## Database stats
 
 <Badge type="info" vertical="middle" text="License Required"/>
 
-The _Logs_ section shows the recent log messages of the cluster node. It's possible to filter log messages by log level and message content. The logs are streamed to the UI in real-time, so you can see the latest log messages as they are generated. The log stream starts at the moment you open the page, and there's no option to find olg logs on that page.
+When [secondary indexes](indexes/secondary.md) are enabled, the _Stats_ page shows additional information about the database, including:
+- **Stream categories**: Stream categories in the database, with:
+    - **Event types**: Event types per stream category, with number of records per type and the earliest and latest record timestamps.
+    - **Streams**: Number of streams per stream category.
+    - **Events**: Number of records per stream category.
+    - **Avg. stream length**: Average stream length per stream category.
+- **Explicit transactions**: Whether the database has records that are part of explicit transactions, and how many were found. Writing explicit transactions is deprecated and not supported by the current client APIs.
+- **Stream stats**: The longest stream per category.
 
-Use the _Logs_ page to observe the cluster node's activity and troubleshoot any issues that may arise.
+![Embedded UI Stats page](images/ui/stats.png#light)
+![Embedded UI Stats page](images/ui/stats-dark.png#dark)
 
-![Embedded UI Logs page](images/ui/logs.png)
-
-### Configuration
-
-<Badge type="info" vertical="middle" text="License Required"/>
-
-On the _Configuration_ page, you can view the current configuration of the cluster node. The configuration is displayed in a tabular format, and you can filter options by name, value, and source. The page shows description for each option, its current value, and the source from which it was set (e.g., default, environment variable, or configuration file).
-
-The configuration is read-only, and you cannot modify it from the UI.
-
-![Embedded UI configuration page](images/ui/config.png)
-
-### Plugins
+## Logs
 
 <Badge type="info" vertical="middle" text="License Required"/>
 
-The _Plugins_ page shows the list of plugins and subsystems loaded in the cluster node. For each plugin, you can see its name, version, and description. It allows you to easily verify which plugins are active in the cluster node.
+The _Logs_ page shows the cluster node's recent log messages. You can filter by log level and message content. Logs are streamed to the UI in real time, starting from the moment you open the page; there's no option to load older logs here.
 
-![Embedded UI Plugins page](images/ui/plugins.png)
+![Embedded UI Logs page](images/ui/logs.png#light)
+![Embedded UI Logs page](images/ui/logs-dark.png#dark)
 
-### Other Pages
+## Stream Browser
 
-Other pages of the embedded UI are:
-- **Query**: Has a code editor field where you can create transient and short-lived queries to analyze your event streams quickly. Refer to the [Queries UI](../features/queries/ui.md) documentation for more details.
-- **License**: Shows the license status of the cluster node. You can view the license type, expiration date, and other details.
-- **Navigator**: Has a link to the Kurrent Navigator app download page, where you can also find supported features table in comparison with the legacy admin UI.
-- **Legacy UI**: Has a link to the legacy web UI, which is still available for now. The legacy UI will be deprecated in the future, and you should use the new embedded UI or Kurrent Navigator instead.
+![Embedded UI Stream Browser page](images/ui/streams.png#light)
+![Embedded UI Stream Browser page](images/ui/streams-dark.png#dark)
 
-## Legacy UI
+The _Stream Browser_ lets you browse individual streams and the `$all` stream to inspect their records. Selecting a stream opens its detail view:
 
-The legacy web UI is available at _SERVER_IP:2113/web_ and helps you interact with and visually manage a cluster, as well as browse the data. This guide explains the interface's tabs and their functions.
+![Embedded UI stream detail](images/ui/stream-detail.png#light)
+![Embedded UI stream detail](images/ui/stream-detail-dark.png#dark)
 
-You can also open the legacy UI by clicking the _Legacy UI_ link of the new embedded UI sidebar.
+The stream detail view pages through the stream's records and, depending on your permissions, lets you add records or (soft) delete the stream.
 
-### Dashboard
+Selecting a record opens its full data and metadata.
 
-![Web admin interface dashboard](images/wai-dashboard.png)
+## Projections
 
-In the legacy webUI, the _Dashboard_ tab shows an overview of active queues with associated statistics in the top half. The _+_ icon indicates a queue group; click it to reveal the queues in that group.
+![Embedded UI Projections page](images/ui/projections.png#light)
+![Embedded UI Projections page](images/ui/projections-dark.png#dark)
 
-The second half of the tab shows active connections to KurrentDB and information about them.
+The _Projections_ page lists the system and user-created [projections](projections/README.md). From the list you can **Enable All** / **Disable All**, create a **New Projection**, and — on the leader — **Restart Subsystem**. When projections are disabled on the node, or when you are connected to a follower, the page shows an explanatory notice instead (with a link to the leader for follower nodes).
 
-Click the _Snapshot_ button in the top right to output a snapshot of all queue statistics at the time you clicked the button.
+Selecting a projection opens its detail view:
 
-### Stream browser
+![Embedded UI projection detail](images/ui/projection-detail.png#light)
+![Embedded UI projection detail](images/ui/projection-detail-dark.png#dark)
 
-![Web admin interface stream browser tab](images/wai-stream-browser.png)
+The detail view shows the projection's query, statistics, state, and result, and lets you **Enable**, **Disable**, **Reset**, **Delete**, edit the query, and [set configuration options](projections/custom.md#configuring-projections).
 
-The _Stream Browser_ tab gives an overview of recently created and changed streams, clicking on an individual stream shows details about the individual stream.
+## Persistent subscriptions
 
-#### Event stream
+![Embedded UI Persistent Subscriptions page](images/ui/persistent-subscriptions.png#light)
+![Embedded UI Persistent Subscriptions page](images/ui/persistent-subscriptions-dark.png#dark)
 
-![Web admin interface stream details](images/wai-stream-details.png)
+The _Persistent Subscriptions_ page lists [persistent subscriptions](persistent-subscriptions.md) grouped by stream, with their status and statistics. From here you can create a **New Subscription** and, on the leader, **Restart Subsystem**. Persistent subscriptions run on the leader, so on a follower the page shows a notice with a link to the leader.
 
-Each stream shows pages of the events in a stream with an overview of the event. Click the _Name_ to see the EventId, and _JSON_ to see the event data. The buttons above change depending on what you are viewing in the interface. The _Back_ button takes you to the parent screen.
+Selecting a subscription shows its configuration and connections, and lets you edit it, delete it, **Replay Parked Messages**, and browse the parked-message stream.
 
-The buttons on the top right when you are viewing an event stream are:
+## Query
 
-- _Pause_: Stop showing events arriving into this stream.
-- _Resume_: Resume showing events arriving into this stream.
-- _Edit ACL_: Edit [the access control lists](../security/user-authorization.md#access-control-lists) for a stream.
-- _Add Event_: [Add a new event](@clients/grpc/appending-events.md) to the stream.
-- _Delete_: [Delete a stream](@clients/grpc/delete-stream.md#soft-delete) to the stream.
-- _Query_:
+The _Query_ page provides a SQL editor for running ad-hoc queries against your event data. See the [Queries UI](queries/ui.md) documentation for details.
 
-The buttons on the left above the events when you are viewing an event stream are:
+## Configuration
 
-- _self_: Takes you to the overview of the stream.
-- _first_: Takes you to the first page of events in a stream.
-- _previous_: Takes you to the previous page of events in a stream.
-- _metadata_: Shows the metadata of a stream.
-  - On the metadata screen, click _Add New Like This_ to add a new event to the stream.
+<Badge type="info" vertical="middle" text="License Required"/>
 
-### Projections
+The _Config_ page shows the current configuration of the cluster node in a table, which you can filter by name, value, and source. For each option it shows a description, the current value, and the source it was set from (e.g. default, environment variable, or configuration file). The configuration is read-only and cannot be modified from the UI.
 
-![Web admin interface projections tab](images/wai-projections.png)
+![Embedded UI configuration page](images/ui/config.png#light)
+![Embedded UI configuration page](images/ui/config-dark.png#dark)
 
-The _Projections_ tab shows system and user-created projections defined in KurrentDB. The buttons above the list do the following:
+## Plugins
 
-- _Disable All_: Disable all running projections.
-- _Enable All_: Enable all stopped projections.
-- _Include Queries_: Toggle displaying queries in the Projections table.
-- _New Projection_: [Create a user-defined projection](projections/custom.md) with the Admin UI.
+<Badge type="info" vertical="middle" text="License Required"/>
 
-Clicking an individual projection shows further details.
+The _Plugins_ page lists the plugins and subsystems loaded in the cluster node, showing each one's name, version, and description, so you can verify which plugins are active.
 
-![Web admin interface projection details](./images/wai-projection-details.jpg)
+![Embedded UI Plugins page](images/ui/plugins.png#light)
+![Embedded UI Plugins page](images/ui/plugins-dark.png#dark)
 
-On the left is the projection definition. On the right are the stats, results, and projection state. The buttons above the details do the following:
+## Users
 
-- _Start_: Start a stopped projection.
-- _Stop_: Stop a running projection.
-- _Edit_: Edit the projection definition.
-- _Config_: [Set configuration options](projections/custom.md#configuring-projections) for a projection.
-- _Debug_: Opens [the debugging interface](projections/custom.md#debugging) to debug what effect a projection has on events.
-- _Delete_: Delete a projection.
-- _Reset_: Reset a projection.
-- _Back_: Returns you to the parent screen.
+![Embedded UI Users page](images/ui/users.png#light)
+![Embedded UI Users page](images/ui/users-dark.png#dark)
 
-### Query
+The _Users_ page lists [the users defined in KurrentDB](../security/user-authentication.md) and lets you create a user. Selecting a user opens its detail view, where you can update, enable/disable, reset the password, or delete the user. The page is unavailable in insecure mode or when an external authentication provider is configured.
 
-The _Query_ tab has a code editor field where you can create transient and short-lived projections to analyze your event streams quickly.
+## Scavenges
 
-![Web admin interface query details](images/wai-query-details.png)
+![Embedded UI Scavenges page](images/ui/scavenges.png#light)
+![Embedded UI Scavenges page](images/ui/scavenges-dark.png#dark)
 
-### Persistent subscriptions
+The _Scavenges_ page lists [scavenge](../operations/scavenge.md) operations and their history. You can start a new scavenge and stop a running one (subject to permissions). Selecting a scavenge shows its detail and progress.
 
-The _Persistent Subscriptions_ tab shows an overview of [persistent subscriptions](persistent-subscriptions.md) configured on streams. The button above the list does the following:
+## Other pages
 
-- _New Subscription_: Create a new subscription.
-
-Clicking the _+_ icon next to a stream name reveals the subscription name and more buttons. The _Back_ button takes you to the parent screen.
-
-- _Edit_: Edit the subscription.
-- _Delete_: Delete the subscription.
-- _Detail_: Shows the subscription configuration options.
-- _Replay Parked Messages_: Replay events in subscription to return state.
-
-### Admin
-
-![Web admin interface admin](images/wai-admin.png)
-
-The _Admin_ tab shows subsystems enabled (currently only [projections](projections/README.md)) on KurrentDB and [scavenges](../operations/scavenge.md) run. You can start a new scavenge operation by clicking the _Scavenge_ button, and shut KurrentDB down by clicking the _Shutdown Server_ button.
-
-### Users
-
-![Web admin interface projections tab](images/wai-users.png)
-
-The _Users_ tab shows [the users defined in KurrentDB](../security/user-authentication.md). Clicking an individual user displays a JSON representation of that user's details.
-
-### Log out
-
-Logs you out of the Admin UI interface.
+- **License**: Shows the license status of the cluster node.
+- **Database Info**: Lets you set a friendly database name and a production flag, both shown in the top bar (the production flag adds a PRODUCTION warning).
+- **Navigator**: Links to the [Kurrent Navigator](https://navigator.kurrent.io/) app, including its feature-comparison table.
