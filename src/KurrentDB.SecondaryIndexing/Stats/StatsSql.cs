@@ -21,7 +21,7 @@ public static class StatsSql {
 
 		public static StatementBindingResult Bind(in Args args, PreparedStatement statement) => new(statement) { args.Category };
 
-		public static ReadOnlySpan<byte> CommandText => "select count(distinct stream)::bigint, count(rowid)::bigint from idx_all"u8;
+		public static ReadOnlySpan<byte> CommandText => "select count(distinct stream)::bigint, count(*)::bigint from idx_all"u8;
 
 		public static Result Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
 	}
@@ -33,7 +33,7 @@ public static class StatsSql {
 
 		public static StatementBindingResult Bind(in Args args, PreparedStatement statement) => new(statement) { args.Category };
 
-		public static ReadOnlySpan<byte> CommandText => "select count(distinct stream)::bigint, count(rowid)::bigint from idx_all where category = $1"u8;
+		public static ReadOnlySpan<byte> CommandText => "select count(distinct stream)::bigint, count(*)::bigint from idx_all where category = $1"u8;
 
 		public static Result Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
 	}
@@ -48,13 +48,13 @@ public static class StatsSql {
 		public static ReadOnlySpan<byte> CommandText =>
 			"""
 			select
-				event_type,
-				count(rowid)::bigint,
+				schema_name,
+				count(*)::bigint,
 				epoch_ms(min(created)),
 				epoch_ms(max(created))
 			from idx_all
 			where category = $category
-			group by event_type
+			group by schema_name
 			"""u8;
 
 		public static Result Parse(ref DataChunk.Row row) => new(row.ReadString(), row.ReadInt64(), row.ReadDateTime(), row.ReadDateTime());
@@ -73,7 +73,7 @@ public static class StatsSql {
 		public record struct Result(string Stream, long EventNumber);
 
 		public static ReadOnlySpan<byte> CommandText
-			=> "SELECT DISTINCT ON(category) stream, event_number FROM idx_all ORDER BY event_number DESC;"u8;
+			=> "SELECT DISTINCT ON(category) stream, stream_revision FROM idx_all ORDER BY stream_revision DESC;"u8;
 
 		public static Result Parse(ref DataChunk.Row row) {
 			return new(row.ReadString(), row.ReadInt64());
