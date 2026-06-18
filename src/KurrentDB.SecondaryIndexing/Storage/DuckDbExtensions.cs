@@ -2,27 +2,20 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Kurrent.Quack;
-using Kurrent.Quack.ConnectionPool;
 
 namespace KurrentDB.SecondaryIndexing.Storage;
 
 public static class DuckDbExtensions {
-	extension(DuckDBConnectionPool db) {
-		public List<TRow> QueryToList<TArgs, TRow, TQuery>(TArgs args)
-			where TArgs : struct
-			where TRow : struct
-			where TQuery : IQuery<TArgs, TRow>
-			=> db.QueryAsCollection<TArgs, TRow, TQuery, List<TRow>>(args);
-
-		public List<TRow> QueryToList<TRow, TQuery>()
-			where TRow : struct
-			where TQuery : IQuery<TRow>
-			=> db.QueryAsCollection<TRow, TQuery, List<TRow>>();
-	}
-
 	public static void CopyTo<TArgs, TRow, TQuery>(this QueryResult<TArgs, TRow, TQuery> result, ICollection<TRow> output)
 		where TArgs : struct
 		where TQuery : IQuery, IBinder<TArgs, PreparedStatement, StatementBindingResult>, IDataRowParser<TRow>, allows ref struct {
+		foreach (ref readonly var row in result) {
+			output.Add(row);
+		}
+	}
+
+	public static void CopyTo<TRow, TQuery>(this QueryResult<TRow, TQuery> result, ICollection<TRow> output)
+		where TQuery : IQuery, IBinder<ValueTuple, PreparedStatement, StatementBindingResult>, IDataRowParser<TRow>, allows ref struct {
 		foreach (ref readonly var row in result) {
 			output.Add(row);
 		}
