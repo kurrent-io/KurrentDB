@@ -55,14 +55,14 @@ internal sealed partial class QueryEngine(DefaultIndexProcessor defaultIndex,
 		var reader = default(QueryResultReader);
 		var cancellation = connection.InterruptQueryOnCancellation(token);
 		try {
-			// caller-side CPU attribution covers the synchronous part only: snapshot capture,
-			// parse/plan and, for materialized results, execution. CPU burned inside DuckDB
-			// during streaming chunk fetches is not visible from here.
+			// caller-side CPU attribution for the synchronous setup: snapshot capture,
+			// parse/plan and, for materialized results, execution. Streaming chunk fetches
+			// happen later inside ConsumeAsync and are attributed by QueryResultReader itself.
 			using (cpuMetrics.Measure(DuckDBCpuMetrics.Activities.Query)) {
 				CaptureSnapshots(in parsedQuery, connection, snapshots, token);
 				statement = new(connection, parsedQuery.Query);
 				consumer.Bind(new QueryBinder(in statement));
-				reader = new(in statement, consumer.UseStreaming);
+				reader = new(in statement, consumer.UseStreaming, cpuMetrics);
 			}
 
 			await consumer.ConsumeAsync(reader, token);
