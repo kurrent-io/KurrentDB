@@ -153,7 +153,13 @@ public sealed partial class ProjectionDetail : ComponentBase, IDisposable {
 		if (confirmed == true) {
 			try {
 				using var cts = new CancellationTokenSource(5000);
-				await ProjectionsService.DeleteAsync(_principal, Name, true, true, true, cts.Token);
+				await ProjectionsService.DeleteAsync(
+					principal: _principal,
+					name: Name,
+					deleteCheckpointStream: true,
+					deleteStateStream: true,
+					deleteEmittedStreams: true,
+					ct: cts.Token);
 				Snackbar.Add($"Projection '{Name}' deleted.", Severity.Success);
 				Navigation.NavigateTo("/ui/projections");
 			} catch (ProjectionsException ex) {
