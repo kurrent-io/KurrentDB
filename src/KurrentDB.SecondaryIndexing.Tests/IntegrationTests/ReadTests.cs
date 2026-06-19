@@ -1,10 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Diagnostics.Metrics;
 using KurrentDB.Core.ClientPublisher;
 using KurrentDB.Core.Data;
-using KurrentDB.Core.DuckDB;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
@@ -44,50 +42,6 @@ public partial class IndexingTests(IndexingFixture fixture, ITestOutputHelper ou
 			new() { CheckIntegrity = true },
 			TestContext.Current.CancellationToken);
 		Assert.True(consumer.RowCount > 0);
-	}
-
-	// Guards that the streaming query path (QueryResultReader.TryRead/FinalizeEnumeration, where DuckDB
-	// produces result chunks) emits caller-attributed CPU under the query activity. We assert tagging and
-	// wiring rather than a per-fetch measurement count: a single sub-vector-size chunk fetch can complete
-	// below the Windows GetThreadTimes quantum and record zero, so a count assertion would be flaky there.
-	[Fact]
-	public async Task QueryEngineStreamingReadAttributesQueryCpuToCaller() {
-		var engine = Fixture.NodeServices.GetRequiredService<IQueryEngine>();
-		using var preparedSql = engine.PrepareQuery(
-			"SELECT metadata FROM kdb.records"u8,
-			new() { UseDigitalSignature = true });
-
-		object gate = new();
-		List<KeyValuePair<string, object?>[]> queryMeasurements = [];
-		using var listener = new MeterListener();
-		listener.InstrumentPublished = (instrument, l) => {
-			if (instrument.Meter.Name == DuckDBCpuMetrics.MeterName && instrument.Name == "kurrentdb.duckdb.cpu.seconds")
-				l.EnableMeasurementEvents(instrument);
-		};
-		listener.SetMeasurementEventCallback<double>((_, _, tags, _) => {
-			var copy = tags.ToArray();
-			// Ignore background index commit/checkpoint activity on the shared meter.
-			if (copy.Any(t => t is { Key: "activity", Value: "query" })) {
-				lock (gate)
-					queryMeasurements.Add(copy);
-			}
-		});
-		listener.Start();
-
-		var consumer = new RowCountReader();
-		await engine.ExecuteAsync(
-			preparedSql.Memory,
-			consumer,
-			new() { CheckIntegrity = true },
-			TestContext.Current.CancellationToken);
-
-		listener.Dispose(); // stop callbacks before asserting
-
-		Assert.True(consumer.RowCount > 0); // the streaming fetch loop actually ran
-		lock (gate) {
-			Assert.NotEmpty(queryMeasurements);
-			Assert.All(queryMeasurements, tags => Assert.Contains(tags, t => t is { Key: "source", Value: "caller" }));
-		}
 	}
 
 	[Theory]

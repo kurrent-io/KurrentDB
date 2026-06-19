@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 
@@ -23,10 +24,17 @@ public class DuckDBCpuMetrics {
 
 	private readonly Counter<double> _cpuSeconds;
 
-	public DuckDBCpuMetrics(Meter meter, string serviceName) {
+	// Reads the calling thread's cumulative CPU time in nanoseconds. Null when per-thread CPU
+	// time is unavailable on this platform, in which case measurement is a no-op. Injectable so
+	// tests can supply a deterministic source instead of relying on real per-thread CPU accounting.
+	private readonly Func<long> _currentCpuNanoseconds;
+
+	public DuckDBCpuMetrics(Meter meter, string serviceName, Func<long> currentCpuNanoseconds = null) {
 		_cpuSeconds = meter.CreateCounter<double>(
 			$"{serviceName}.duckdb.cpu.seconds",
 			description: "CPU time consumed by DuckDB operations on KurrentDB threads, in seconds");
+		_currentCpuNanoseconds = currentCpuNanoseconds
+			?? (ThreadCpuTime.IsSupported ? () => ThreadCpuTime.CurrentNanoseconds : (Func<long>)null);
 	}
 
 	public CpuScope Measure(string activity) => new(this, activity);
@@ -39,19 +47,19 @@ public class DuckDBCpuMetrics {
 		private readonly long _startNanoseconds;
 
 		internal CpuScope(DuckDBCpuMetrics metrics, string activity) {
-			if (!ThreadCpuTime.IsSupported)
-				return;
+			if (metrics._currentCpuNanoseconds is null)
+				return; // per-thread CPU time unavailable on this platform: no-op
 
 			_metrics = metrics;
 			_activity = activity;
-			_startNanoseconds = ThreadCpuTime.CurrentNanoseconds;
+			_startNanoseconds = metrics._currentCpuNanoseconds();
 		}
 
 		public void Dispose() {
 			if (_metrics is null)
 				return;
 
-			var elapsedNanoseconds = ThreadCpuTime.CurrentNanoseconds - _startNanoseconds;
+			var elapsedNanoseconds = _metrics._currentCpuNanoseconds!() - _startNanoseconds;
 			if (elapsedNanoseconds > 0)
 				_metrics._cpuSeconds.Add(
 					elapsedNanoseconds / 1e9,

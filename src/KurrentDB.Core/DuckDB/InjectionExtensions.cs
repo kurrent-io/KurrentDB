@@ -5,7 +5,6 @@ using System;
 using System.Diagnostics.Metrics;
 using System.Threading.Tasks;
 using Kurrent.Quack.ConnectionPool;
-using KurrentDB.Common.Configuration;
 using KurrentDB.DuckDB;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Connections;
@@ -17,16 +16,16 @@ using Microsoft.Extensions.DependencyInjection;
 namespace KurrentDB.Core.DuckDB;
 
 public static class InjectionExtensions {
-	public static IServiceCollection AddDuckDb(this IServiceCollection services) {
+	public static IServiceCollection AddDuckDb(this IServiceCollection services, string serviceName) {
 		services.AddSingleton<DuckDBConnectionPoolLifetime>();
 		services.AddHostedService(sp => sp.GetRequiredService<DuckDBConnectionPoolLifetime>());
 		services.AddSingleton<DuckDBConnectionPool>(sp => sp.GetRequiredService<DuckDBConnectionPoolLifetime>().Shared);
 		services.AddSingleton<DuckDbConnectionPoolMiddleware>();
 		services.AddSingleton<ConnectionInterceptor>(CreatePoolPerConnectionInterceptor);
-		services.AddSingleton(static sp => {
-			var serviceName = sp.GetService<MetricsConfiguration>()?.ServiceName ?? "kurrentdb";
-			return new DuckDBCpuMetrics(new Meter(DuckDBCpuMetrics.MeterName, "1.0.0"), serviceName);
-		});
+		// serviceName is passed in (not resolved from DI) because MetricsConfiguration is not
+		// available in every collection AddDuckDb is used from; this keeps the meter named
+		// consistently with the rest of the metrics pipeline, including legacy "eventstore" naming.
+		services.AddSingleton(new DuckDBCpuMetrics(new Meter(DuckDBCpuMetrics.MeterName, "1.0.0"), serviceName));
 		return services;
 	}
 

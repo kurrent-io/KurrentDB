@@ -291,7 +291,7 @@ public class ClusterVNodeStartup<TStreamId>
 			})
 			.AddServiceOptions<Streams<TStreamId>>(options => options.MaxReceiveMessageSize = TFConsts.EffectiveMaxLogRecordSize);
 
-		services.AddDuckDb();
+		services.AddDuckDb(_metricsConfiguration.ServiceName);
 
 		// Ask the node itself to add DI registrations
 		_configureNodeServices(services);
