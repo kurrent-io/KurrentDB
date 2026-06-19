@@ -76,7 +76,7 @@ public class ProjectionStatistics {
 	public long PartitionStateCacheEvictions { get; set; }
 
 	/// <summary>Projection engine version (1 = v1, 2 = v2).</summary>
-	public int EngineVersion { get; set; } = 1;
+	public int EngineVersion { get; set; } = ProjectionConstants.EngineV1;
 
 	public ProjectionStatistics Clone() {
 		return (ProjectionStatistics)MemberwiseClone();
