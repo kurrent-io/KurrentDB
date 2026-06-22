@@ -23,7 +23,6 @@ public class LegacyAuthorizationWithStreamAuthorizationDisabledProviderFactory :
 		var streamAssertion = new LegacyStreamPermissionAssertion();
 
 		policy.AllowAnonymous(Operations.Node.Redirect);
-		policy.AllowAnonymous(Operations.Node.StaticContent);
 		policy.AllowAnonymous(Operations.Node.Ping);
 		policy.AllowAnonymous(Operations.Node.Options);
 
@@ -31,6 +30,7 @@ public class LegacyAuthorizationWithStreamAuthorizationDisabledProviderFactory :
 		policy.AddMatchAnyAssertion(Operations.Node.Information.Subsystems, Grant.Allow, OperationsOrAdmins);
 		policy.AddMatchAnyAssertion(Operations.Node.Information.Histogram, Grant.Allow, OperationsOrAdmins);
 		policy.AddMatchAnyAssertion(Operations.Node.Information.Options, Grant.Allow, OperationsOrAdmins);
+		policy.AddMatchAnyAssertion(Operations.Node.Information.ReadLogs, Grant.Allow, OperationsOrAdmins);
 
 		policy.AllowAnonymous(Operations.Node.Statistics.Read);
 		policy.AllowAnonymous(Operations.Node.Statistics.Replication);

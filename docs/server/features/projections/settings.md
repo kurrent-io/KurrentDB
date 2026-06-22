@@ -15,7 +15,7 @@ projections.
 The option accepts three values: `None`, `System` and `All`.
 
 When the option value is set to `None`, the projections subsystem of KurrentDB will be completely disabled
-and the Projections menu in the Admin UI will be disabled.
+and the Projections page in the embedded UI will show that projections aren't enabled.
 
 By using the `System` value for this option, you can instruct the server to enable system projections when the
 server starts. However, system projections will only start if the `StartStandardProjections` option is set

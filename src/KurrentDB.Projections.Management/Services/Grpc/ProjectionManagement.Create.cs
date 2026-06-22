@@ -76,12 +76,17 @@ internal partial class ProjectionManagement {
 		return new CreateResp();
 
 		void OnMessage(Message message) {
-			if (message is not ProjectionManagementMessage.Updated) {
-				createdSource.TrySetException(UnknownMessage<ProjectionManagementMessage.Updated>(message));
-				return;
+			switch (message) {
+				case ProjectionManagementMessage.Updated:
+					createdSource.TrySetResult(true);
+					break;
+				case ProjectionManagementMessage.OperationFailed failed:
+					createdSource.TrySetException(OperationFailed(failed));
+					break;
+				default:
+					createdSource.TrySetException(UnknownMessage<ProjectionManagementMessage.Updated>(message));
+					break;
 			}
-
-			createdSource.TrySetResult(true);
 		}
 	}
 }

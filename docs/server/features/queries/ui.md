@@ -80,6 +80,7 @@ To run ad-hoc queries using the Queries UI, follow these steps:
 3. Click the `Run` button or press `Ctrl+Enter` or `⌘+Enter` to execute the query.
 4. The results will be displayed in a tabular format below the query editor.
 
-![Embedded UI Query example](images/query-ui.png)
+![Embedded UI Query example](images/query-ui.png#light)
+![Embedded UI Query example](images/query-ui-dark.png#dark)
 
 Click on the `?` icon next to the query editor to see a quick reference guide for the SQL syntax and available tables and fields.

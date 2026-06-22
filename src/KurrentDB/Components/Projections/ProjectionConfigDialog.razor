@@ -1,0 +1,106 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@using System.Security.Claims
+@using System.Threading
+@inject ProjectionsService ProjectionsService
+
+<MudDialog>
+	<TitleContent>
+		<MudText Typo="Typo.h6">Configuration — @Name</MudText>
+	</TitleContent>
+	<DialogContent>
+		@if (_loading) {
+			<MudProgressLinear Indeterminate="true"/>
+		} else if (_loadError != null) {
+			<MudAlert Severity="Severity.Error">@_loadError</MudAlert>
+		} else {
+			<MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">
+				The projection must be stopped to save changes.
+			</MudAlert>
+			<MudStack Spacing="6">
+				<MudCheckBox @bind-Value="_emitEnabled" Label="Emit Enabled"/>
+				<MudCheckBox @bind-Value="_trackEmittedStreams" Label="Track Emitted Streams" Disabled="@(EngineVersion >= 2)"/>
+				<MudNumericField T="int?" @bind-Value="_checkpointAfterMs" Label="Checkpoint After (ms)" Min="0" Placeholder="default"/>
+				<MudNumericField T="int?" @bind-Value="_checkpointHandledThreshold" Label="Checkpoint Handled Threshold" Min="0" Placeholder="default"/>
+				<MudNumericField T="int?" @bind-Value="_checkpointUnhandledBytesThreshold" Label="Checkpoint Unhandled Bytes Threshold" Min="0" Placeholder="default"/>
+				<MudNumericField T="int?" @bind-Value="_pendingEventsThreshold" Label="Pending Records Threshold"Min="0" Placeholder="default"/>
+				<MudNumericField T="int?" @bind-Value="_maxWriteBatchLength" Label="Max Write Batch Length" Min="0" Placeholder="default"/>
+				<MudNumericField T="int?" @bind-Value="_maxAllowedWritesInFlight" Label="Max Allowed Writes In Flight" Min="0" Placeholder="default"/>
+				<MudNumericField T="int?" @bind-Value="_projectionExecutionTimeout" Label="Projection Execution Timeout (ms)" Min="0" Placeholder="default"/>
+			</MudStack>
+			@if (_error != null) {
+				<MudAlert Severity="Severity.Error" Class="mt-3">@_error</MudAlert>
+			}
+		}
+	</DialogContent>
+	<DialogActions>
+		<MudButton OnClick="Cancel" Disabled="@_saving">Cancel</MudButton>
+		<MudButton OnClick="Save" Variant="Variant.Outlined" Disabled="@(_saving || _loading || _loadError != null)">Save</MudButton>
+	</DialogActions>
+</MudDialog>
+
+@code {
+	[CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
+	[Parameter] public string Name { get; set; }
+	[Parameter] public ClaimsPrincipal Principal { get; set; }
+	[Parameter] public int EngineVersion { get; set; } = 1;
+
+	bool _loading = true;
+	string _loadError;
+	bool _saving;
+	string _error;
+
+	bool _emitEnabled;
+	bool _trackEmittedStreams;
+	int? _checkpointAfterMs;
+	int? _checkpointHandledThreshold;
+	int? _checkpointUnhandledBytesThreshold;
+	int? _pendingEventsThreshold;
+	int? _maxWriteBatchLength;
+	int? _maxAllowedWritesInFlight;
+	int? _projectionExecutionTimeout;
+
+	// Show blank for default (0) values, matching the Angular UI (which drops default-valued
+	// fields during JSON serialization). Blank is sent back as 0 on save.
+	static int? Blank(int value) => value == 0 ? null : value;
+
+	protected override async Task OnInitializedAsync() {
+		try {
+			using var cts = new CancellationTokenSource(10000);
+			var config = await ProjectionsService.GetConfigAsync(Principal, Name, cts.Token);
+			_emitEnabled = config.EmitEnabled;
+			_trackEmittedStreams = config.TrackEmittedStreams;
+			_checkpointAfterMs = Blank(config.CheckpointAfterMs);
+			_checkpointHandledThreshold = Blank(config.CheckpointHandledThreshold);
+			_checkpointUnhandledBytesThreshold = Blank(config.CheckpointUnhandledBytesThreshold);
+			_pendingEventsThreshold = Blank(config.PendingEventsThreshold);
+			_maxWriteBatchLength = Blank(config.MaxWriteBatchLength);
+			_maxAllowedWritesInFlight = Blank(config.MaxAllowedWritesInFlight);
+			_projectionExecutionTimeout = config.ProjectionExecutionTimeout;
+		} catch (ProjectionsException ex) {
+			_loadError = ex.Message;
+		} finally {
+			_loading = false;
+		}
+	}
+
+	void Cancel() => MudDialog.Cancel();
+
+	async Task Save() {
+		_saving = true;
+		_error = null;
+		try {
+			using var cts = new CancellationTokenSource(10000);
+			await ProjectionsService.UpdateConfigAsync(Principal, Name, _emitEnabled, _trackEmittedStreams,
+				_checkpointAfterMs ?? 0, _checkpointHandledThreshold ?? 0, _checkpointUnhandledBytesThreshold ?? 0,
+				_pendingEventsThreshold ?? 0, _maxWriteBatchLength ?? 0, _maxAllowedWritesInFlight ?? 0,
+				_projectionExecutionTimeout, cts.Token);
+			MudDialog.Close(DialogResult.Ok(true));
+		} catch (ProjectionsException ex) {
+			_error = ex.Message;
+		} finally {
+			_saving = false;
+		}
+	}
+}

@@ -5,18 +5,12 @@
 @using KurrentDB.Common.Utils
 @using KurrentDB.Components.Cluster.Monitoring
 @using KurrentDB.Components.Licensed
-@using KurrentDB.Core.Bus
-@using KurrentDB.Core.Metrics
-@using KurrentDB.Services
+@using KurrentDB.Core.Data
 @using KurrentDB.Tools
+@using KurrentDB.UI.Theme
 @using Microsoft.AspNetCore.Authorization
 @inherits KurrentDB.Components.Licensed.WithLicense
 @attribute [Authorize]
-@attribute [ExcludeFromInteractiveRouting]
-@rendermode InteractiveServer
-@inject IPublisher Publisher
-@inject MonitoringService MonitoringService
-@inject InternalExporter InternalExporter
 @inject MetricsObserver MetricsObserver
 
 <PageTitle>KurrentDB: Cluster</PageTitle>
@@ -24,7 +18,22 @@
 <MudGrid>
 	<MudItem xs="12">
 		<MudDivider/>
-		<MudText Typo="Typo.h5" Class="pl-2 pt-2">Node status</MudText>
+		<MudStack Row="true" AlignItems="AlignItems.Center" Class="pl-2 pt-2">
+			<MudText Typo="Typo.h5">Node status</MudText>
+			<MudSpacer/>
+			@if (IsCluster && LocalNode?.State == VNodeState.Leader) {
+				<MudTooltip Text="You do not have the required permission" Disabled="@_canResign">
+					<MudButton Variant="Variant.Outlined" Size="Size.Small"
+					           StartIcon="@KurrentIcons.SignOut"
+					           OnClick="ResignNode" Class="mr-2" Disabled="@(!_canResign)">Resign</MudButton>
+				</MudTooltip>
+			}
+			<MudTooltip Text="You do not have the required permission" Disabled="@_canShutdown">
+				<MudButton Variant="Variant.Outlined" Size="Size.Small"
+				           StartIcon="@KurrentIcons.PowerOff"
+				           OnClick="ShutdownServer" Disabled="@(!_canShutdown)">Shutdown</MudButton>
+			</MudTooltip>
+		</MudStack>
 	</MudItem>
 	<MudItem xs="12">
 		<MudCard Class="ma-2">
@@ -40,7 +49,6 @@
 					</MudText>
 				</CardHeaderContent>
 				<CardHeaderActions>
-					@* <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default"/> *@
 				</CardHeaderActions>
 			</MudCardHeader>
 			<MudCardContent>
@@ -54,16 +62,16 @@
 		<MudText Typo="Typo.h5" Class="pt-2 pl-2">Cluster status</MudText>
 	</MudItem>
 	@foreach (var member in _clusterInfo?.Members ?? []) {
-		<MudItem xs="@CardWidth">
-			<ClusterMember Member="member"></ClusterMember>
+		<MudItem @key="(member.HttpEndPointIp, member.HttpEndPointPort)" Style="flex: 0 0 500px;">
+			<ClusterMember Member="member" IsLocal="IsLocalNode(member)"/>
 		</MudItem>
 	}
 	<MudItem xs="12">
 		<MudDivider/>
 		<MudText Typo="Typo.h5" Class="pt-2 pl-2">Resources</MudText>
 	</MudItem>
-	<MudItem xs="3">
-		<MudPaper Class="pa-16 ma-2" Outlined="true">
+	<MudItem Style="flex: 0 0 300px;" Class="d-flex flex-column">
+		<MudPaper Class="pa-4 ma-2 d-flex flex-column justify-center align-center flex-grow-1" Outlined="true">
 			<div class="mud-chart mud-chart-legend-bottom">
 				<MudText Typo="Typo.h3" Align="Align.Center" Color="Color.Primary">
 					@MetricsObserver.ActiveConnections
@@ -76,13 +84,13 @@
 			</div>
 		</MudPaper>
 	</MudItem>
-	<MudItem xs="3">
+	<MudItem Style="flex: 0 0 300px;">
 		<MetricDonut Value="@_cpu" Name="CPU"></MetricDonut>
 	</MudItem>
-	<MudItem xs="3">
+	<MudItem Style="flex: 0 0 300px;">
 		<MetricDonut Value="@_ram" Name="Memory"></MetricDonut>
 	</MudItem>
-	<MudItem xs="3">
+	<MudItem Style="flex: 0 0 300px;">
 		<MetricDonut Value="@_disk" Name="Disk"></MetricDonut>
 	</MudItem>
 	<LicensedContent>

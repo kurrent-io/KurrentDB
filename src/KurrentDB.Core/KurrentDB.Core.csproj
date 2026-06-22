@@ -17,6 +17,7 @@
 		<PackageReference Include="Google.Cloud.Storage.V1"/>
 		<PackageReference Include="Google.Protobuf" />
 		<PackageReference Include="Grpc.AspNetCore" />
+		<PackageReference Include="Grpc.AspNetCore.Server.Reflection" Condition="'$(Configuration)' == 'Debug'" />
 		<PackageReference Include="Grpc.Tools">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>

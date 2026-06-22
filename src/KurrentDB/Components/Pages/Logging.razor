@@ -2,75 +2,15 @@
 @* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
 
 @page "/ui/logs"
-@rendermode InteractiveServer
-@attribute [Authorize]
-@inject LogObserver LogObserver
+@attribute [Authorize(Policy = UiPolicies.ViewLogs)]
 @inherits KurrentDB.Components.Licensed.LicensedPage
-@using System.ComponentModel
-@using KurrentDB.Tools
+@using KurrentDB.Components.Shared
 @using Microsoft.AspNetCore.Authorization
-@using Serilog.Events
-@implements IDisposable
 
-<MudDataGrid @ref="_dataGrid" Items="@LogObserver.Items" Dense="@true" Filterable="true">
-	<Columns>
-		<PropertyColumn Property="x => x.Timestamp" Title="Timestamp" Format="HH:mm:ss" Filterable="@false"/>
-		<PropertyColumn Property="x => x.Level" Title="Level" CellStyleFunc="CellStyleFunc"/>
-		<PropertyColumn Property="x => x.MessageTemplate.Render(x.Properties, null)" Title="Message"
-		                CellStyleFunc="CellStyleFunc"/>
-	</Columns>
-</MudDataGrid>
-@if (LogObserver.Items.Count == 0) {
-	<MudText>Waiting for log events...</MudText>
-}
+@* Gated on Node.Information.Log via the policy; a denied user never reaches the page, so LogsView
+   (and its log-sink subscription) is never instantiated. *@
+<LogsView/>
 
 @code {
-	MudDataGrid<LogEvent> _dataGrid;
-	bool _defaultSortingApplied;
-
-	protected override async Task OnInitializedAsync() {
-		await base.OnInitializedAsync();
-		if (HasLicense) {
-			LogObserver.PropertyChanged += HandleUpdate;
-		}
-	}
-
-	protected override async Task OnAfterRenderAsync(bool firstRender) {
-		await base.OnAfterRenderAsync(firstRender);
-		if (!_defaultSortingApplied && _dataGrid != null) {
-			await _dataGrid.SetSortAsync(nameof(LogEvent.Timestamp), SortDirection.Descending, x => x.Timestamp);
-			_defaultSortingApplied = true;
-			StateHasChanged();
-		}
-	}
-
-	void HandleUpdate(object sender, PropertyChangedEventArgs e) {
-		Task.Run(() => InvokeAsync(Update));
-	}
-
-	Func<LogEvent, string> CellStyleFunc => x => {
-		var color = x.Level switch {
-			LogEventLevel.Verbose => "--mud-palette-text-disabled",
-			LogEventLevel.Debug => "--mud-palette-text-secondary",
-			LogEventLevel.Information => "--mud-palette-text-primary",
-			LogEventLevel.Warning => "--mud-palette-warning",
-			LogEventLevel.Error => "--mud-palette-error",
-			LogEventLevel.Fatal => "--mud-palette-error",
-			_ => throw new ArgumentOutOfRangeException()
-		};
-		var style = color != "" ? $"color: var({color});" : "";
-		return style;
-	};
-
-	public void Dispose() {
-		if (HasLicense) {
-			LogObserver.PropertyChanged -= HandleUpdate;
-		}
-	}
-
-	void Update() {
-		StateHasChanged();
-	}
-
-	protected override string PageName => "Read-time logs";
+	protected override string PageName => "Real-time logs";
 }

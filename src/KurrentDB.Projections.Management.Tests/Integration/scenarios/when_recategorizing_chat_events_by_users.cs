@@ -8,6 +8,7 @@ using NUnit.Framework;
 namespace KurrentDB.Projections.Core.Tests.Integration.scenarios;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
+[Ignore("Transient projections are deprecated — see ProjectionManager.Handle(Post).")]
 public class when_recategorizing_chat_events_by_users<TLogFormat, TStreamId> : specification_with_a_v8_query_posted<TLogFormat, TStreamId> {
 	protected override void GivenEvents() {
 	}

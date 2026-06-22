@@ -1,0 +1,94 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@using System.Threading
+@inject PersistentSubscriptionsService PersistentSubscriptionsService
+
+<MudDialog>
+	<TitleContent>
+		<MudText Typo="Typo.h6">New Persistent Subscription</MudText>
+	</TitleContent>
+	<DialogContent>
+		<MudForm @ref="_form" @bind-IsValid="_formValid" @bind-Errors="_errors">
+			<MudCheckBox @bind-Value="_model.SubscribeToAll" Label="Subscribe to $all"/>
+			<MudTextField @bind-Value="_model.StreamId" Label="Stream"
+			              Disabled="@_model.SubscribeToAll"
+			              Required="@(!_model.SubscribeToAll)" RequiredError="Stream is required."/>
+			<MudTextField @bind-Value="_model.GroupName" Label="Group Name"
+			              Required="true" RequiredError="Group name is required." Class="mb-4"/>
+
+			<MudSelect T="string" @bind-Value="_model.Config.NamedConsumerStrategy" Label="Consumer Strategy"
+			           Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-2">
+				<MudSelectItem Value="@("RoundRobin")">Round Robin</MudSelectItem>
+				<MudSelectItem Value="@("DispatchToSingle")">Dispatch to Single</MudSelectItem>
+				<MudSelectItem Value="@("Pinned")">Pinned</MudSelectItem>
+				<MudSelectItem Value="@("PinnedByCorrelation")">Pinned by Correlation</MudSelectItem>
+			</MudSelect>
+
+			<MudNumericField @bind-Value="_model.Config.StartFrom" Label="Start From" Class="mt-2"/>
+			<MudCheckBox @bind-Value="_model.Config.ResolveLinkTos" Label="Resolve Link Tos"/>
+			<MudCheckBox @bind-Value="_model.Config.ExtraStatistics" Label="Extra Statistics"/>
+			<MudNumericField @bind-Value="_model.Config.MessageTimeoutMilliseconds" Label="Message Timeout (ms)"/>
+			<MudNumericField @bind-Value="_model.Config.MaxRetryCount" Label="Max Retry Count"/>
+			<MudNumericField @bind-Value="_model.Config.LiveBufferSize" Label="Live Buffer Size"/>
+			<MudNumericField @bind-Value="_model.Config.BufferSize" Label="Buffer Size"/>
+			<MudNumericField @bind-Value="_model.Config.ReadBatchSize" Label="Read Batch Size"/>
+			<MudNumericField @bind-Value="_model.Config.CheckPointAfterMilliseconds" Label="Checkpoint After (ms)"/>
+			<MudNumericField @bind-Value="_model.Config.MinCheckPointCount" Label="Min Checkpoint Count"/>
+			<MudNumericField @bind-Value="_model.Config.MaxCheckPointCount" Label="Max Checkpoint Count"/>
+			<MudNumericField @bind-Value="_model.Config.MaxSubscriberCount" Label="Max Subscriber Count"/>
+		</MudForm>
+		@if (!string.IsNullOrEmpty(_serverError)) {
+			<MudAlert Severity="Severity.Error" Class="mt-3">@_serverError</MudAlert>
+		}
+	</DialogContent>
+	<DialogActions>
+		<MudButton OnClick="Cancel" Disabled="@_saving">Cancel</MudButton>
+		<MudButton OnClick="Submit" Variant="Variant.Outlined" Disabled="@_saving">Create</MudButton>
+	</DialogActions>
+</MudDialog>
+
+@code {
+	[CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
+	[CascadingParameter] Task<AuthenticationState> AuthenticationState { get; set; }
+
+	MudForm _form;
+	bool _formValid;
+	string[] _errors = [];
+	bool _saving;
+	string _serverError = "";
+	readonly CreateSubscriptionModel _model = new();
+
+	void Cancel() => MudDialog.Cancel();
+
+	async Task Submit() {
+		await _form.Validate();
+		if (!_formValid)
+			return;
+
+		_serverError = "";
+		_saving = true;
+		try {
+			var principal = (await AuthenticationState).User;
+			using var cts = new CancellationTokenSource(10000);
+			if (_model.SubscribeToAll)
+				await PersistentSubscriptionsService.CreateToAllAsync(principal, _model.GroupName, _model.Config, cts.Token);
+			else
+				await PersistentSubscriptionsService.CreateAsync(principal, _model.StreamId, _model.GroupName, _model.Config, cts.Token);
+			MudDialog.Close(DialogResult.Ok(_model));
+		} catch (PersistentSubscriptionsException ex) {
+			_serverError = ex.Message;
+		} catch (Exception ex) {
+			_serverError = ex.Message;
+		} finally {
+			_saving = false;
+		}
+	}
+
+	public class CreateSubscriptionModel {
+		public bool SubscribeToAll { get; set; }
+		public string StreamId { get; set; } = "";
+		public string GroupName { get; set; } = "";
+		public SubscriptionConfig Config { get; set; } = new();
+	}
+}

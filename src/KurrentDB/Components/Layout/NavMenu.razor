@@ -1,0 +1,41 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@using KurrentDB.UI.Theme
+
+<MudNavMenu>
+	<MudText Typo="Typo.overline" Class="pl-4" Style="opacity: 0.6;">Monitoring</MudText>
+	<MudNavLink Href="/ui/cluster" Match="NavLinkMatch.All" Icon="@KurrentIcons.Cluster">Cluster Status</MudNavLink>
+	<MudNavLink Href="/ui/dashboard" Match="NavLinkMatch.All" Icon="@KurrentIcons.Dashboard">Dashboard</MudNavLink>
+	<MudNavLink Href="/ui/stats" Match="NavLinkMatch.All" Icon="@KurrentIcons.Telemetry">Stats</MudNavLink>
+	<MudNavLink Href="/ui/logs" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.ManageSearch">Logs</MudNavLink>
+
+	<MudDivider Class="my-2"/>
+	<MudText Typo="Typo.overline" Class="pl-4" Style="opacity: 0.6;">Data</MudText>
+	<MudNavLink Href="/ui/streams" Match="NavLinkMatch.All" Icon="@KurrentIcons.Stream">Stream Browser</MudNavLink>
+	<MudNavLink Href="/ui/projections" Match="NavLinkMatch.All" Icon="@KurrentIcons.Projections">Projections</MudNavLink>
+	<MudNavLink Href="/ui/persistent-subscriptions" Match="NavLinkMatch.All" Icon="@KurrentIcons.PersistentSubscriptions">Persistent Subscriptions</MudNavLink>
+	<MudNavLink Href="/ui/query" Match="NavLinkMatch.All" Icon="@KurrentIcons.Search" data-enhance-nav="false">
+		Query
+	</MudNavLink>
+
+	<MudDivider Class="my-2"/>
+	<MudText Typo="Typo.overline" Class="pl-4" Style="opacity: 0.6;">System</MudText>
+	<MudNavLink Href="/ui/config" Match="NavLinkMatch.All" Icon="@KurrentIcons.Cog">Config</MudNavLink>
+	<MudNavLink Href="/ui/plugins" Match="NavLinkMatch.All" Icon="@KurrentIcons.Plugins">Plugins</MudNavLink>
+	<MudNavLink Href="/ui/license" Match="NavLinkMatch.All" Icon="@KurrentIcons.Key">License</MudNavLink>
+
+	@* Links are shown to all authenticated users; access is enforced by each page's [Authorize(Policy = …)]
+	   on navigation (so a user without permission lands on the access-denied page). We intentionally don't
+	   re-declare the permission here — the page is the single source of truth. *@
+	<MudDivider Class="my-2"/>
+	<MudText Typo="Typo.overline" Class="pl-4" Style="opacity: 0.6;">Admin</MudText>
+	<MudNavLink Href="/ui/users" Match="NavLinkMatch.All" Icon="@KurrentIcons.Users">Users</MudNavLink>
+	<MudNavLink Href="/ui/scavenges" Match="NavLinkMatch.All" Icon="@KurrentIcons.Scavenges">Scavenges</MudNavLink>
+	<MudNavLink Href="/ui/preferences" Match="NavLinkMatch.All" Icon="@KurrentIcons.Preferences">Database Info</MudNavLink>
+
+	<MudDivider Class="my-2"/>
+	<MudText Typo="Typo.overline" Class="pl-4" Style="opacity: 0.6;">Tools</MudText>
+	<MudNavLink Href="/ui/navigator" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Stream">Navigator</MudNavLink>
+
+</MudNavMenu>

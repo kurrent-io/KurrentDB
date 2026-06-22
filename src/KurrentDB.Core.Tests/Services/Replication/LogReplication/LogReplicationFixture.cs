@@ -52,6 +52,7 @@ public abstract class LogReplicationFixture<TLogFormat, TStreamId> : Specificati
 			path: dbPath,
 			chunkSize: ChunkSize,
 			maxChunksCacheSize: 2 * ChunkSize,
+			databaseTag: new InMemoryCheckpoint(),
 			writerCheckpoint: new InterceptorCheckpoint(new InMemoryCheckpoint()),
 			chaserCheckpoint: new InMemoryCheckpoint(),
 			epochCheckpoint: new InMemoryCheckpoint(),

@@ -2,29 +2,28 @@
 @* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
 
 @page "/ui/plugins"
-@rendermode InteractiveServer
-@attribute [Authorize]
+@attribute [Authorize(Policy = UiPolicies.ViewSubsystems)]
 @using EventStore.Plugins
+@using KurrentDB.Components.Shared
 @using Microsoft.AspNetCore.Authorization
 @inherits KurrentDB.Components.Licensed.LicensedPage
 @inject PluginsService PluginsService
 
-<MudDataGrid Items="@_items" Dense="true" Filterable="false">
-	<Columns>
-		<PropertyColumn Property="x => x.Name" Title="Subsystem"/>
-		<PropertyColumn Property="x => x.Enabled" Title="Enabled"/>
-		<PropertyColumn Property="x => x.Version" Title="Version"/>
-	</Columns>
-</MudDataGrid>
+<MudStack Spacing="4">
+	<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Style="width: 100%;">
+		<MudText Typo="Typo.h5">Plugins</MudText>
+		<MudSpacer/>
+	</MudStack>
+
+	<MudDataGrid Items="@PluginsService.PluggableComponents" Dense="true" Filterable="false">
+		<Columns>
+			<PropertyColumn Property="x => x.Name" Title="Subsystem"/>
+			<PropertyColumn Property="x => x.Enabled" Title="Enabled"/>
+			<PropertyColumn Property="x => x.Version" Title="Version"/>
+		</Columns>
+	</MudDataGrid>
+</MudStack>
 
 @code {
-	IReadOnlyCollection<IPlugableComponent> _items;
-
 	protected override string PageName => "Subsystems";
-
-	protected override void OnInitialized() {
-		base.OnInitialized();
-		_items = PluginsService.PluggableComponents;
-	}
-
 }

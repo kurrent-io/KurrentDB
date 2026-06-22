@@ -477,7 +477,7 @@ You need to configure the following:
 
 - A role claim (`http://schemas.microsoft.com/ws/2008/06/identity/claims/role`) must be added to the token.
 - The grant types of `password` and `authorization_code` must be allowed.
-- A redirect uri of `{kurrentdb_server_ip}/oauth/callback` must be allowed for the legacy UI to function.
+- A redirect uri of `/signin-oidc` must be allowed for the embedded web UI to function.
 
 ::: details idsrv4.conf.json
 ```json

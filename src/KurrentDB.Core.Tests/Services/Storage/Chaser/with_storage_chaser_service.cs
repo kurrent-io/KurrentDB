@@ -17,6 +17,7 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Services.Storage.Chaser;
 
 public abstract class with_storage_chaser_service<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
+	readonly ICheckpoint _databaseTag = new InMemoryCheckpoint(Checkpoint.DatabaseTag);
 	readonly ICheckpoint _writerChk = new InMemoryCheckpoint(Checkpoint.Writer);
 	readonly ICheckpoint _chaserChk = new InMemoryCheckpoint(Checkpoint.Chaser);
 	readonly ICheckpoint _epochChk = new InMemoryCheckpoint(Checkpoint.Epoch, initValue: -1);
@@ -82,6 +83,7 @@ public abstract class with_storage_chaser_service<TLogFormat, TStreamId> : Speci
 			PathName,
 			1000,
 			10000,
+			_databaseTag,
 			_writerChk,
 			_chaserChk,
 			_epochChk,

@@ -36,8 +36,20 @@ jobs:
       run: |
         cd src
         dotnet restore
-        dotnet list package --vulnerable --include-transitive | tee vulnerabilities.txt
-        ! cat vulnerabilities.txt | grep -q "has the following vulnerable packages"
+        dotnet list package --vulnerable --include-transitive 2>&1 | tee vulnerabilities.txt
+        # Advisories consciously accepted while awaiting an upstream fix.
+        # Keep in sync with the NuGetAuditSuppress entries in src/Directory.Build.props.
+        # GHSA-2m69-gcr7-jv3q: CVE-2025-6965, SQLitePCLRaw e_sqlite3 2.1.11 (transitive via
+        # Microsoft.Data.Sqlite); no patched bundle yet, awaiting SQLite >= 3.50.2.
+        ALLOWED_ADVISORIES='GHSA-2m69-gcr7-jv3q'
+        # Each vulnerable finding prints an advisory URL line. Fail only if a finding remains
+        # after dropping the allowlisted advisories.
+        if grep -E 'https://github\.com/advisories/' vulnerabilities.txt | grep -vF "$ALLOWED_ADVISORIES" | grep -q .; then
+          echo "::error::Unsuppressed vulnerable packages found:"
+          grep -E 'https://github\.com/advisories/' vulnerabilities.txt | grep -vF "$ALLOWED_ADVISORIES"
+          exit 1
+        fi
+        echo "No unsuppressed vulnerable packages."
   protolock:
     runs-on: ubuntu-latest
     name: ci/github/protolock

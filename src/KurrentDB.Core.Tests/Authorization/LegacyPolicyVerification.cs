@@ -398,6 +398,7 @@ public class LegacyPolicyVerification {
 
 			yield return CreateOperation(Operations.Node.Information.Histogram);
 			yield return CreateOperation(Operations.Node.Information.Options);
+			yield return CreateOperation(Operations.Node.Information.ReadLogs);
 			yield return (new Operation(Operations.Subscriptions.ReplayParked).WithParameter(Operations.Subscriptions.Parameters.StreamId(_streamWithCustomPermissions)), _streamWithCustomPermissions, null);
 			yield return (new Operation(Operations.Subscriptions.ReplayParked).WithParameter(Operations.Subscriptions.Parameters.StreamId(_streamWithDefaultPermissions)), _streamWithDefaultPermissions, null);
 
@@ -433,7 +434,6 @@ public class LegacyPolicyVerification {
 
 		IEnumerable<(Operation, string, StorageMessage.EffectiveAcl)> AnonymousOperations() {
 			yield return CreateOperation(Operations.Node.Redirect);
-			yield return CreateOperation(Operations.Node.StaticContent);
 			yield return CreateOperation(Operations.Node.Ping);
 			yield return CreateOperation(Operations.Node.Information.Read);
 		}

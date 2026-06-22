@@ -16,6 +16,7 @@ namespace KurrentDB.Core.Data;
 public class EventRecord : IEquatable<EventRecord> {
 	public bool IsJson => (Flags & PrepareFlags.IsJson) == PrepareFlags.IsJson;
 	public bool IsSelfCommitted => Flags.HasAnyOf(PrepareFlags.IsCommitted);
+	public bool IsRedacted => Flags.HasAnyOf(PrepareFlags.IsRedacted);
 
 	public readonly long EventNumber;
 	public readonly long LogPosition;

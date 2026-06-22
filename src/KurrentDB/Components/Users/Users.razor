@@ -1,0 +1,60 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@page "/ui/users"
+@attribute [Authorize(Policy = UiPolicies.ViewUsers)]
+@using KurrentDB.Components.Shared
+@using KurrentDB.UI.Theme
+@using Microsoft.AspNetCore.Authorization
+
+<PageTitle>KurrentDB: Users</PageTitle>
+
+<MudStack Spacing="4">
+	<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Style="width: 100%;">
+		<MudText Typo="Typo.h5">Users</MudText>
+		<MudSpacer/>
+		@if (CanManageUsers) {
+			<MudButton Variant="Variant.Outlined"
+			           StartIcon="@KurrentIcons.EnabledUser"
+			           OnClick="CreateUser">
+				New User
+			</MudButton>
+		}
+	</MudStack>
+
+	@if (!CanManageUsers) {
+		<MudAlert Severity="Severity.Info">@UnavailableMessage</MudAlert>
+	} else {
+	<MudDataGrid Items="@_users" Dense="true" Hover="true" Loading="@_loading">
+	<Columns>
+		<TemplateColumn Title="Login Name">
+			<CellTemplate>
+				<MudLink Href="@($"/ui/users/{Uri.EscapeDataString(context.Item.LoginName)}")">@context.Item.LoginName</MudLink>
+			</CellTemplate>
+		</TemplateColumn>
+		<PropertyColumn Property="x => x.FullName" Title="Full Name"/>
+		<TemplateColumn Title="Groups">
+			<CellTemplate>
+				@string.Join(", ", context.Item.Groups ?? [])
+			</CellTemplate>
+		</TemplateColumn>
+		<TemplateColumn Title="Status">
+			<CellTemplate>
+				@if (context.Item.Disabled) {
+					<MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">Disabled</MudChip>
+				} else {
+					<MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined">Enabled</MudChip>
+				}
+			</CellTemplate>
+		</TemplateColumn>
+	</Columns>
+	<NoRecordsContent>
+		@if (_loadError != null) {
+			<MudText Color="Color.Error">@_loadError</MudText>
+		} else {
+			<MudText>No users found.</MudText>
+		}
+	</NoRecordsContent>
+	</MudDataGrid>
+	}
+</MudStack>

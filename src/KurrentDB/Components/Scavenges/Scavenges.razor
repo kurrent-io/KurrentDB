@@ -1,0 +1,58 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@page "/ui/scavenges"
+@attribute [Authorize(Policy = UiPolicies.ViewScavenges)]
+@using KurrentDB.Components.Shared
+@using KurrentDB.UI.Theme
+@using Microsoft.AspNetCore.Authorization
+
+<PageTitle>KurrentDB: Scavenges</PageTitle>
+
+<MudStack Spacing="4">
+	<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Style="width: 100%;">
+		<MudText Typo="Typo.h5">Scavenges</MudText>
+		<MudSpacer/>
+		<MudButton Variant="Variant.Outlined"
+		           StartIcon="@KurrentIcons.Scavenges"
+		           OnClick="StartScavenge">
+			Start Scavenge
+		</MudButton>
+	</MudStack>
+
+	<MudDataGrid Items="@_history" Dense="true" Hover="true" Loading="@_loading">
+	<Columns>
+		<TemplateColumn Title="Scavenge ID">
+			<CellTemplate>
+				<MudLink Href="@($"/ui/scavenges/{context.Item.ScavengeId}")">@context.Item.ScavengeId</MudLink>
+			</CellTemplate>
+		</TemplateColumn>
+		<PropertyColumn Property="x => x.NodeEndpoint" Title="Node"/>
+		<TemplateColumn Title="Started">
+			<CellTemplate>
+				@(context.Item.StartTime?.ToString("g") ?? "")
+			</CellTemplate>
+		</TemplateColumn>
+		<TemplateColumn Title="Completed">
+			<CellTemplate>
+				@(context.Item.EndTime?.ToString("g") ?? "Not Finished")
+			</CellTemplate>
+		</TemplateColumn>
+		<TemplateColumn Title="Result">
+			<CellTemplate>
+				@if (context.Item.IsRunning) {
+					<MudButton Variant="Variant.Outlined" Size="Size.Small"
+					           OnClick="() => StopScavenge(context.Item.ScavengeId)">
+						Cancel
+					</MudButton>
+				} else {
+					@(context.Item.Result ?? "")
+				}
+			</CellTemplate>
+		</TemplateColumn>
+	</Columns>
+	<NoRecordsContent>
+		<MudText>No scavenges found.</MudText>
+	</NoRecordsContent>
+	</MudDataGrid>
+</MudStack>

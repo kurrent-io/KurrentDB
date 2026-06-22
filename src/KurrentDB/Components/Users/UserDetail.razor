@@ -1,0 +1,80 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@page "/ui/users/{LoginName}"
+@attribute [Authorize(Policy = UiPolicies.ViewUsers)]
+@using KurrentDB.Components.Shared
+@using KurrentDB.UI.Theme
+@using Microsoft.AspNetCore.Authorization
+
+<PageTitle>KurrentDB: User @LoginName</PageTitle>
+
+@if (_loading) {
+	<MudProgressLinear Indeterminate="true"/>
+} else if (_user == null) {
+	<MudAlert Severity="Severity.Error">@(_loadError ?? $"User '{LoginName}' not found.")</MudAlert>
+	<MudButton Variant="Variant.Text" StartIcon="@KurrentIcons.Back"
+	           Href="/ui/users" Class="mt-2">Back to Users</MudButton>
+} else {
+	<MudStack Spacing="4">
+		<MudStack Row="true" AlignItems="AlignItems.Center">
+			<MudButton Variant="Variant.Text" StartIcon="@KurrentIcons.Back"
+			           Href="/ui/users">Back</MudButton>
+			<MudText Typo="Typo.h5">User Details: @_user.LoginName</MudText>
+		</MudStack>
+
+		<MudStack Row="true" Spacing="2">
+			<MudButton Variant="Variant.Outlined"
+			           StartIcon="@KurrentIcons.Edit"
+			           OnClick="EditUser">Edit</MudButton>
+			@if (_user.Disabled) {
+				<MudButton Variant="Variant.Outlined"
+				           StartIcon="@KurrentIcons.EnabledUser"
+				           OnClick="EnableUser">Enable</MudButton>
+			} else {
+				<MudButton Variant="Variant.Outlined"
+				           StartIcon="@KurrentIcons.DisabledUser"
+				           OnClick="DisableUser">Disable</MudButton>
+			}
+			<MudButton Variant="Variant.Outlined"
+			           StartIcon="@KurrentIcons.Lock"
+			           OnClick="ResetPassword">Reset Password</MudButton>
+			<MudButton Variant="Variant.Outlined"
+			           StartIcon="@KurrentIcons.Delete"
+			           OnClick="DeleteUser">Delete</MudButton>
+		</MudStack>
+
+		<MudSimpleTable Dense="true">
+			<tbody>
+			<tr>
+				<td><strong>Login Name</strong></td>
+				<td>@_user.LoginName</td>
+			</tr>
+			<tr>
+				<td><strong>Full Name</strong></td>
+				<td>@_user.FullName</td>
+			</tr>
+			<tr>
+				<td><strong>Groups</strong></td>
+				<td>@string.Join(", ", _user.Groups ?? [])</td>
+			</tr>
+			<tr>
+				<td><strong>Status</strong></td>
+				<td>
+					@if (_user.Disabled) {
+						<MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">Disabled</MudChip>
+					} else {
+						<MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined">Enabled</MudChip>
+					}
+				</td>
+			</tr>
+			@if (_user.DateLastUpdated.HasValue) {
+				<tr>
+					<td><strong>Last Updated</strong></td>
+					<td>@_user.DateLastUpdated.Value.ToString("g")</td>
+				</tr>
+			}
+			</tbody>
+		</MudSimpleTable>
+	</MudStack>
+}

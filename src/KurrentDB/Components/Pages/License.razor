@@ -2,21 +2,21 @@
 @* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
 
 @page "/ui/license"
+@attribute [Authorize]
 @using EventStore.Plugins.Licensing
 @using JetBrains.Annotations
 @using KurrentDB.Licensing
 @using Microsoft.AspNetCore.Authorization
-@inherits KurrentDB.Components.ServerSide.ServerSideBase
-@attribute [Authorize]
 
 <PageTitle>KurrentDB: License</PageTitle>
 
-<MudCard>
-	<MudCardHeader>
-		<CardHeaderContent>
-			<MudText Typo="Typo.h6">License information</MudText>
-		</CardHeaderContent>
-	</MudCardHeader>
+<MudStack Spacing="4">
+	<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Style="width: 100%;">
+		<MudText Typo="Typo.h5">License Information</MudText>
+		<MudSpacer/>
+	</MudStack>
+
+	<MudCard>
 	@if (_licenseSummary == null) {
 		<MudCardContent>
 			<MudAlert Severity="Severity.Warning">License not found</MudAlert>
@@ -47,28 +47,29 @@
 					<td>@Expiration</td>
 				</tr>
 				<tr>
-					<td>License type</td>
-					<td>@LicenseType</td>
+					<td>Trial</td>
+					<td>@(IsTrial ? "Yes" : "No")</td>
 				</tr>
 				</tbody>
 			</MudSimpleTable>
 			@if (!IsTrial && IsValid) {
-				<MudAlert Severity="Severity.Success">Your deployment is fully licensed</MudAlert>
+				<MudAlert Severity="Severity.Success" Class="mt-4">Your deployment is fully licensed</MudAlert>
 			}
 			@if (!IsValid) {
-				<MudAlert Severity="Severity.Error">The license is applied but it is not valid</MudAlert>
+				<MudAlert Severity="Severity.Error" Class="mt-4">The license is applied but it is not valid</MudAlert>
 			}
 			@if (PendingRenewal) {
-				<MudAlert Severity="Severity.Warning">
+				<MudAlert Severity="Severity.Warning" Class="mt-4">
 					The license is expiring soon, contact Kurrent for renewal
 				</MudAlert>
 			}
 			@if (HasExpired) {
-				<MudAlert Severity="Severity.Warning">The license has expired</MudAlert>
+				<MudAlert Severity="Severity.Warning" Class="mt-4">The license has expired</MudAlert>
 			}
 		</MudCardContent>
 	}
-</MudCard>
+	</MudCard>
+</MudStack>
 
 @code {
 	[Inject] ILicenseService LicenseService { get; set; }
@@ -90,9 +91,8 @@
 	bool IsValid => GetValue("isValid") == "true";
 	string Validity => IsValid ? "Valid" : "Invalid";
 	bool HasExpired => GetValue("isExpired") == "true";
-	string Expiration => HasExpired ? "Expired" : $"Expires in {DaysRemaining} days";
+	string Expiration => HasExpired ? "Expired" : $"Expires in {DaysRemaining:N2} days";
 	bool IsTrial => GetValue("isTrial") == "true";
-	string LicenseType => IsTrial ? "Trial" : "Full";
-	int DaysRemaining => (int)Convert.ToDecimal(GetValue("daysRemaining"));
+	decimal DaysRemaining => Convert.ToDecimal(GetValue("daysRemaining"));
 	bool PendingRenewal => !IsTrial && DaysRemaining <= 30 && !HasExpired;
 }
