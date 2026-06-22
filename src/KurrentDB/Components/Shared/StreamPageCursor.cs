@@ -53,5 +53,5 @@ public sealed class StreamPageCursor {
 		From = FromHead;   // reset to the newest page so paging stays consistent with the new size
 	}
 
-	static int Normalize(int pageSize) => pageSize < 1 ? 1 : pageSize;
+	static int Normalize(int pageSize) => int.Max(1, pageSize);
 }
