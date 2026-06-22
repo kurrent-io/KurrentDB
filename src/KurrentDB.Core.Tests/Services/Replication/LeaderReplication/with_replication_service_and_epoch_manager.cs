@@ -157,7 +157,7 @@ public abstract class with_replication_service_and_epoch_manager<TLogFormat, TSt
 	}
 
 	private TFChunkDbConfig CreateDbConfig() {
-		ICheckpoint databaseId = new InMemoryCheckpoint(Checkpoint.DatabaseId);
+		ICheckpoint databaseTag = new InMemoryCheckpoint(Checkpoint.DatabaseTag);
 		ICheckpoint writerChk = new InMemoryCheckpoint(Checkpoint.Writer);
 		ICheckpoint chaserChk = new InMemoryCheckpoint(Checkpoint.Chaser);
 		ICheckpoint epochChk = new InMemoryCheckpoint(Checkpoint.Epoch, initValue: -1);
@@ -170,7 +170,7 @@ public abstract class with_replication_service_and_epoch_manager<TLogFormat, TSt
 			PathName,
 			chunkSize: 1000,
 			maxChunksCacheSize: 10000,
-			databaseId,
+			databaseTag,
 			writerChk,
 			chaserChk,
 			epochChk,

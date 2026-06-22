@@ -75,7 +75,7 @@ public class ClusterVNodeStartup<TStreamId>
 	private readonly IAuthorizationProvider _authorizationProvider;
 	private readonly IPublisher _httpMessageHandler;
 	private readonly string? _clusterDns;
-	private readonly IReadOnlyCheckpoint _databaseId;
+	private readonly IReadOnlyCheckpoint _databaseTag;
 
 	public ClusterVNodeStartup(
 		ClusterVNodeOptions options,
@@ -89,7 +89,7 @@ public class ClusterVNodeStartup<TStreamId>
 		IExpiryStrategy expiryStrategy,
 		KestrelHttpService httpService,
 		IConfiguration configuration,
-		IReadOnlyCheckpoint databaseId,
+		IReadOnlyCheckpoint databaseTag,
 		Trackers trackers,
 		Func<IServiceCollection, IServiceCollection> configureNodeServices,
 		Action<IApplicationBuilder> configureNode) {
@@ -104,7 +104,7 @@ public class ClusterVNodeStartup<TStreamId>
 		_expiryStrategy = expiryStrategy;
 		_httpService = Ensure.NotNull(httpService);
 		_configuration = Ensure.NotNull(configuration);
-		_databaseId = databaseId;
+		_databaseTag = databaseTag;
 		_metricsConfiguration = MetricsConfiguration.Get(_configuration);
 		_trackers = trackers;
 		_clusterDns = options.Cluster.DiscoverViaDns ? options.Cluster.ClusterDns : null;
@@ -177,10 +177,10 @@ public class ClusterVNodeStartup<TStreamId>
 		// Scope Data Protection (which protects the UI auth cookie) to this database's id, so a cookie minted
 		// against one database isn't accepted after the server is restarted on a different database at the same
 		// endpoint. The keys themselves stay in the default per-user store — only the non-secret discriminator
-		// is derived from the database id, so id.chk leaking can't be used to forge cookies.
+		// is derived from the database id, so tag.chk leaking can't be used to forge cookies.
 		services
 			.AddDataProtection()
-			.SetApplicationName($"KurrentDB-UI:{_databaseId.Read():X}");
+			.SetApplicationName($"KurrentDB-UI:{_databaseTag.Read():X}");
 
 		var authBuilder = services.AddAuthentication(o => {
 			o.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;

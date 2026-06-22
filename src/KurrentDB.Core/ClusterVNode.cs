@@ -375,7 +375,7 @@ public class ClusterVNode<TStreamId> :
 			out SystemStatsHelper statsHelper,
 			out int readerThreadsCount) {
 
-			ICheckpoint databaseIdChk;
+			ICheckpoint databaseTagChk;
 			ICheckpoint writerChk;
 			ICheckpoint chaserChk;
 			ICheckpoint epochChk;
@@ -388,7 +388,7 @@ public class ClusterVNode<TStreamId> :
 			var dbPath = options.Database.Db;
 
 			if (options.Database.MemDb) {
-				databaseIdChk = new InMemoryCheckpoint(Checkpoint.DatabaseId, initValue: GenerateDatabaseId());
+				databaseTagChk = new InMemoryCheckpoint(Checkpoint.DatabaseTag, initValue: GenerateDatabaseTag());
 				writerChk = new InMemoryCheckpoint(Checkpoint.Writer);
 				chaserChk = new InMemoryCheckpoint(Checkpoint.Chaser);
 				epochChk = new InMemoryCheckpoint(Checkpoint.Epoch, initValue: -1);
@@ -421,7 +421,7 @@ public class ClusterVNode<TStreamId> :
 				var streamExistencePath = Path.Combine(indexPath, ESConsts.StreamExistenceFilterDirectoryName);
 				Directory.CreateDirectory(streamExistencePath);
 
-				var databaseIdCheckFilename = Path.Combine(dbPath, Checkpoint.DatabaseId + ".chk");
+				var databaseTagCheckFilename = Path.Combine(dbPath, Checkpoint.DatabaseTag + ".chk");
 				var writerCheckFilename = Path.Combine(dbPath, Checkpoint.Writer + ".chk");
 				var chaserCheckFilename = Path.Combine(dbPath, Checkpoint.Chaser + ".chk");
 				var epochCheckFilename = Path.Combine(dbPath, Checkpoint.Epoch + ".chk");
@@ -431,8 +431,8 @@ public class ClusterVNode<TStreamId> :
 
 				if (RuntimeInformation.IsUnix) {
 					Log.Debug("Using File Checkpoints");
-					databaseIdChk = new FileCheckpoint(databaseIdCheckFilename, Checkpoint.DatabaseId,
-						initValue: GenerateDatabaseId());
+					databaseTagChk = new FileCheckpoint(databaseTagCheckFilename, Checkpoint.DatabaseTag,
+						initValue: GenerateDatabaseTag());
 					writerChk = new FileCheckpoint(writerCheckFilename, Checkpoint.Writer);
 					chaserChk = new FileCheckpoint(chaserCheckFilename, Checkpoint.Chaser);
 					epochChk = new FileCheckpoint(epochCheckFilename, Checkpoint.Epoch,
@@ -445,8 +445,8 @@ public class ClusterVNode<TStreamId> :
 						initValue: -1);
 				} else {
 					Log.Debug("Using Memory Mapped File Checkpoints");
-					databaseIdChk = new MemoryMappedFileCheckpoint(databaseIdCheckFilename, Checkpoint.DatabaseId,
-						initValue: GenerateDatabaseId());
+					databaseTagChk = new MemoryMappedFileCheckpoint(databaseTagCheckFilename, Checkpoint.DatabaseTag,
+						initValue: GenerateDatabaseTag());
 					writerChk = new MemoryMappedFileCheckpoint(writerCheckFilename, Checkpoint.Writer);
 					chaserChk = new MemoryMappedFileCheckpoint(chaserCheckFilename, Checkpoint.Chaser);
 					epochChk = new MemoryMappedFileCheckpoint(epochCheckFilename, Checkpoint.Epoch,
@@ -478,7 +478,7 @@ public class ClusterVNode<TStreamId> :
 			return new TFChunkDbConfig(dbPath,
 				chunkSize: options.Database.ChunkSize,
 				maxChunksCacheSize: cache,
-				databaseId: databaseIdChk,
+				databaseTag: databaseTagChk,
 				writerCheckpoint: writerChk,
 				chaserCheckpoint: chaserChk,
 				epochCheckpoint: epochChk,
@@ -494,7 +494,7 @@ public class ClusterVNode<TStreamId> :
 				maxTruncation: options.Database.MaxTruncation);
 		}
 
-		var databaseId = Db.Config.DatabaseId.Read();
+		var databaseTag = Db.Config.DatabaseTag.Read();
 		var writerCheckpoint = Db.Config.WriterCheckpoint.Read();
 		var chaserCheckpoint = Db.Config.ChaserCheckpoint.Read();
 		var epochCheckpoint = Db.Config.EpochCheckpoint.Read();
@@ -503,8 +503,8 @@ public class ClusterVNode<TStreamId> :
 
 		Log.Information("{description,-25} {instanceId}", "INSTANCE ID:", NodeInfo.InstanceId);
 		Log.Information("{description,-25} {path}", "DATABASE:", Db.Config.Path);
-		Log.Information("{description,-25} {databaseId} (0x{databaseId:X})", "DATABASE ID:",
-			databaseId, databaseId);
+		Log.Information("{description,-25} {databaseTag} (0x{databaseTag:X})", "DATABASE TAG:",
+			databaseTag, databaseTag);
 		Log.Information("{description,-25} {writerCheckpoint} (0x{writerCheckpoint:X})", "WRITER CHECKPOINT:",
 			writerCheckpoint, writerCheckpoint);
 		Log.Information("{description,-25} {chaserCheckpoint} (0x{chaserCheckpoint:X})", "CHASER CHECKPOINT:",
@@ -1718,7 +1718,7 @@ public class ClusterVNode<TStreamId> :
 			expiryStrategy ?? DefaultExpiryStrategy.Instance,
 			_httpService,
 			configuration,
-			Db.Config.DatabaseId.AsReadOnly(),
+			Db.Config.DatabaseTag.AsReadOnly(),
 			trackers,
 			ConfigureNodeServices,
 			ConfigureNode);
@@ -1735,7 +1735,7 @@ public class ClusterVNode<TStreamId> :
 		_mainBus.Subscribe<MonitoringMessage.CheckEsVersion>(periodicLogging);
 	}
 
-	static long GenerateDatabaseId() => Random.Shared.NextInt64(1, long.MaxValue);
+	static long GenerateDatabaseTag() => Random.Shared.NextInt64(1, long.MaxValue);
 
 	static int GetPTableMaxReaderCount(int readerThreadsCount) {
 		var ptableMaxReaderCount =
