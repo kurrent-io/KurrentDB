@@ -52,11 +52,8 @@
 				</tr>
 				</tbody>
 			</MudSimpleTable>
-			@if (!IsTrial && IsValid) {
-				<MudAlert Severity="Severity.Success" Class="mt-4">Your deployment is fully licensed</MudAlert>
-			}
 			@if (!IsValid) {
-				<MudAlert Severity="Severity.Error" Class="mt-4">The license is applied but it is not valid</MudAlert>
+				<MudAlert Severity="Severity.Error" Class="mt-4">The license is not valid</MudAlert>
 			}
 			@if (PendingRenewal) {
 				<MudAlert Severity="Severity.Warning" Class="mt-4">
