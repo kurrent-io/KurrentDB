@@ -15,7 +15,14 @@ using KurrentDB.Common.Log;
 using KurrentDB.Common.Utils;
 using KurrentDB.Components;
 using KurrentDB.Components.Cluster;
+using KurrentDB.Components.Dashboard;
+using KurrentDB.Components.PersistentSubscriptions;
 using KurrentDB.Components.Plugins;
+using KurrentDB.Components.Projections;
+using KurrentDB.Components.Scavenges;
+using KurrentDB.Components.ServerInfo;
+using KurrentDB.Components.Streams;
+using KurrentDB.Components.Users;
 using KurrentDB.Core;
 using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Configuration;
@@ -23,7 +30,6 @@ using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Logging;
 using KurrentDB.Services;
 using KurrentDB.Tools;
-using KurrentDB.UI.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -36,7 +42,6 @@ using MudBlazor;
 using MudBlazor.Services;
 using Serilog;
 using Serilog.Events;
-using _Imports = KurrentDB.UI._Imports;
 using RuntimeInformation = System.Runtime.RuntimeInformation;
 
 var optionsWithLegacyDefaults = LocationOptionWithLegacyDefault.SupportedLegacyLocations;
@@ -283,36 +288,65 @@ try {
 			// Allows the subsystems to resolve dependencies out of the DI in Configure() before being started.
 			// Later it may be possible to use constructor injection instead if it fits with the bootstrapping strategy.
 			builder.Services.AddSingleton<IHostedService>(hostedService);
-			builder.Services.AddSingleton<Preferences>();
+			// Scoped, not singleton: theme is a per-user (per-circuit) preference, not server-global.
+			// HttpContextAccessor lets Preferences read the theme cookie server-side to seed flicker-free.
+			builder.Services.AddHttpContextAccessor();
+			// Page authorization: map [Authorize(Policy = UiPolicies.X)] to a KurrentDB Operation check.
+			builder.Services.AddAuthorization(KurrentDB.Components.Shared.UiPolicies.Configure);
+			builder.Services.AddSingleton<
+				Microsoft.AspNetCore.Authorization.IAuthorizationHandler,
+				KurrentDB.Components.Shared.OperationAuthorizationHandler>();
+			builder.Services.AddScoped<KurrentDB.UI.Services.Preferences>();
 			builder.Services
 				.AddRazorComponents()
-				.AddInteractiveServerComponents()
-				.AddInteractiveWebAssemblyComponents();
+				.AddInteractiveServerComponents();
 			builder.Services.AddCascadingAuthenticationState();
-			builder.Services.AddMudServices();
+			builder.Services.AddMudServices(config => {
+				config.SnackbarConfiguration.PositionClass = MudBlazor.Defaults.Classes.Position.BottomRight;
+			});
 			builder.Services.AddMudMarkdownServices();
 			builder.Services.AddScoped<LogObserver>();
-			builder.Services.AddScoped<IdentityRedirectManager>();
 			builder.Services.AddScoped<ClipboardService>();
 			builder.Services.AddSingleton(monitoringService);
 			builder.Services.AddSingleton(metricsObserver);
 			builder.Services.AddSingleton<PluginsService>();
+			builder.Services.AddScoped<UserManagementService>();
+			builder.Services.AddScoped<ClusterOperationsService>();
+			// Process-wide node-role tracker (subscribes to $mem-node-state); shared by all UI circuits.
+			builder.Services.AddSingleton<KurrentDB.Components.Cluster.GossipMonitor>();
+			builder.Services.AddSingleton<IHostedService>(sp =>
+				sp.GetRequiredService<KurrentDB.Components.Cluster.GossipMonitor>());
+			builder.Services.AddScoped<ScavengeService>();
+			builder.Services.AddScoped<DashboardService>();
+			builder.Services.AddScoped<StreamsService>();
+			builder.Services.AddScoped(sp => {
+				// ProjectionsService publishes to the projections subsystem's leader input queue. When projections
+				// are disabled on this node (e.g. --run-projections=None) the subsystem is absent; resolve a service
+				// in the "unavailable" state (null queue) rather than throwing, so injecting it into the Projections
+				// page doesn't crash the circuit — the page shows a calm "not enabled" message instead.
+				var opts = sp.GetRequiredService<ClusterVNodeOptions>();
+				var projectionsPublisher = opts.Subsystems.OfType<KurrentDB.Projections.Core.ProjectionsSubsystem>().FirstOrDefault()?.LeaderInputQueue;
+				return new ProjectionsService(projectionsPublisher, sp.GetRequiredService<EventStore.Plugins.Authorization.IAuthorizationProvider>());
+			});
+			builder.Services.AddScoped<PersistentSubscriptionsService>();
+			builder.Services.AddScoped<ServerInfoService>();
+			// UI-layer authorizing wrapper over the SecondaryIndexing StatsService (which does no auth of its
+			// own). Resolved lazily by StatsPage and only when the plugin is enabled, so registering it here
+			// unconditionally is safe even though the inner StatsService is only registered by the plugin.
+			builder.Services.AddScoped<KurrentDB.Components.Stats.UiStatsService>();
 			builder.Services.AddSingleton(TimeProvider.System);
 			Log.Information("Environment Name: {0}", builder.Environment.EnvironmentName);
 			Log.Information("ContentRoot Path: {0}", builder.Environment.ContentRootPath);
 
 			var app = builder.Build();
-			if (app.Environment.IsDevelopment()) {
-				app.UseWebAssemblyDebugging();
-			}
 
 			hostedService.Node.Startup.Configure(app);
-			app.MapStaticAssets();
-			app.MapRazorComponents<App>()
-				.DisableAntiforgery()
-				.AddInteractiveServerRenderMode()
-				.AddInteractiveWebAssemblyRenderMode()
-				.AddAdditionalAssemblies(typeof(_Imports).Assembly);
+			if (!options.Interface.DisableAdminUi) {
+				app.MapStaticAssets();
+				app.MapRazorComponents<App>()
+					.DisableAntiforgery()
+					.AddInteractiveServerRenderMode();
+			}
 			await app.RunAsync(token);
 
 			exitCodeSource.TrySetResult(0);

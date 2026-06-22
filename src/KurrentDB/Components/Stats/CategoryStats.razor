@@ -1,5 +1,5 @@
 @using KurrentDB.SecondaryIndexing.Stats
-@inject StatsService Stats
+@inject UiStatsService Stats
 
 <MudExpansionPanel ExpandedChanged="ExpandedChanged">
 	<TitleContent>
@@ -14,8 +14,8 @@
 		} else {
 			<MudDataGrid Items="@_details" Dense="@true">
 				<Columns>
-					<PropertyColumn Property="x => x.EventType" Title="Event type"/>
-					<PropertyColumn Property="x => x.NumEvents" Title="Events"/>
+					<PropertyColumn Property="x => x.EventType" Title="Record type"/>
+					<PropertyColumn Property="x => x.NumEvents" Title="Records"/>
 					<PropertyColumn Property="x => x.FirstAdded" Title="First seen"/>
 					<PropertyColumn Property="x => x.LastAdded" Title="Last seen"/>
 				</Columns>
@@ -25,6 +25,7 @@
 </MudExpansionPanel>
 
 @code {
+	[CascadingParameter] Task<AuthenticationState> AuthenticationState { get; set; }
 	[Parameter] public string CategoryName { get; set; }
 
 	private bool _loading = true;
@@ -33,13 +34,23 @@
 
 	void ExpandedChanged(bool newValue) {
 		if (_wasExpanded || !newValue) return;
-		Task.Run(() => InvokeAsync(LoadDetails));
 		_wasExpanded = true;
+		_ = LoadDetailsAsync();
 	}
 
-	void LoadDetails() {
-		_details = Stats.GetCategoryEventTypes(CategoryName).ToArray();
-		_loading = false;
-		StateHasChanged();
+	async Task LoadDetailsAsync() {
+		try {
+			var principal = (await AuthenticationState).User;
+			_details = (await Stats.GetCategoryEventTypesAsync(principal, CategoryName)).ToArray();
+		} catch (Exception) {
+			// query failed (incl. access-denied) — show empty rather than spin forever
+		} finally {
+			_loading = false;
+		}
+		try {
+			await InvokeAsync(StateHasChanged);
+		} catch (ObjectDisposedException) {
+			// panel collapsed / navigated away between query and render
+		}
 	}
 }

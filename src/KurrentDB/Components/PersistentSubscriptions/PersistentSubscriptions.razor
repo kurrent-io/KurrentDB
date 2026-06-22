@@ -1,0 +1,114 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@page "/ui/persistent-subscriptions"
+@attribute [Authorize]
+@using KurrentDB.Core.Data
+@using KurrentDB.UI.Theme
+@using Microsoft.AspNetCore.Authorization
+
+<PageTitle>KurrentDB: Persistent Subscriptions</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-2">
+	<MudText Typo="Typo.h5">Persistent Subscriptions</MudText>
+	<MudSpacer/>
+	@if (IsLeader) {
+		<MudButton Variant="Variant.Outlined"
+		           StartIcon="@Icons.Material.Outlined.RestartAlt"
+		           OnClick="RestartSubsystem">
+			Restart Subsystem
+		</MudButton>
+		<MudButton Variant="Variant.Outlined"
+		           StartIcon="@KurrentIcons.Plus"
+		           OnClick="CreateSubscription">
+			New Subscription
+		</MudButton>
+	}
+</MudStack>
+
+@if (ShowLeaderNotice) {
+	<MudAlert Severity="Severity.Info">
+		Persistent subscriptions run on the leader node — this node is a @RoleLabel.
+		<MudLink Href="@_leaderUrl">Open persistent subscriptions on the leader</MudLink>
+	</MudAlert>
+} else {
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-2">
+	<MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="@(_page == 0)"
+	           StartIcon="@KurrentIcons.Back"
+	           OnClick="FirstPage">First</MudButton>
+	<MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="@(_page == 0)"
+	           OnClick="PreviousPage">Previous</MudButton>
+	<MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="@((_page + 1) * _pageSize >= _total)"
+	           OnClick="NextPage">Next</MudButton>
+	<MudText Typo="Typo.body2">
+		Showing @(_total == 0 ? 0 : _page * _pageSize + 1) – @Math.Min((_page + 1) * _pageSize, _total) of @_total
+	</MudText>
+	<MudSpacer/>
+	<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+		<MudText Typo="Typo.body2">Show</MudText>
+		<MudSelect T="int" Value="_pageSize" ValueChanged="OnPageSizeChanged" Dense="true"
+		           Variant="Variant.Outlined" Margin="Margin.Dense" Style="width: 90px;">
+			<MudSelectItem T="int" Value="10">10</MudSelectItem>
+			<MudSelectItem T="int" Value="20">20</MudSelectItem>
+			<MudSelectItem T="int" Value="100">100</MudSelectItem>
+			<MudSelectItem T="int" Value="200">200</MudSelectItem>
+		</MudSelect>
+	</MudStack>
+</MudStack>
+
+<MudDataGrid Items="@_subscriptions" Dense="true" Hover="true" Loading="@_loading" Filterable="true" Groupable="true">
+	<Columns>
+		<PropertyColumn Property="x => x.EventSource" Title="Stream" Grouping GroupExpanded="true" GroupBy="x => x.EventSource"/>
+		<PropertyColumn Property="x => x.GroupName" Title="Group">
+			<CellTemplate>
+				<MudLink Href="@($"/ui/persistent-subscriptions/{Uri.EscapeDataString(context.Item.EventSource)}/{Uri.EscapeDataString(context.Item.GroupName)}")">
+					@context.Item.GroupName
+				</MudLink>
+			</CellTemplate>
+		</PropertyColumn>
+		<PropertyColumn Property="x => x.Status" Title="Status"/>
+		<PropertyColumn Property="x => x.AveragePerSecond" Title="Rate (msg/s)" AggregateDefinition="_avgPerSecondAggregate" Sortable="false" Filterable="false"/>
+		<TemplateColumn Title="Last Known" AggregateDefinition="_lastKnownAggregate">
+			<CellTemplate>
+				@context.Item.LastKnownEventPosition
+			</CellTemplate>
+		</TemplateColumn>
+		<TemplateColumn Title="Checkpoint" AggregateDefinition="_checkpointAggregate">
+			<CellTemplate>
+				@context.Item.LastCheckpointedEventPosition
+			</CellTemplate>
+		</TemplateColumn>
+		<TemplateColumn Title="In Flight" AggregateDefinition="_inFlightAggregate">
+			<CellTemplate>
+				@context.Item.TotalInFlightMessages.ToString("N0")
+			</CellTemplate>
+		</TemplateColumn>
+		<TemplateColumn Title="Connections" AggregateDefinition="_connectionsAggregate">
+			<CellTemplate>
+				@(context.Item.Connections?.Count ?? 0)
+			</CellTemplate>
+		</TemplateColumn>
+		<TemplateColumn Title="Behind (msgs / catch-up s)" AggregateDefinition="_behindAggregate">
+			<CellTemplate>
+				@BehindStatus(context.Item)
+			</CellTemplate>
+		</TemplateColumn>
+		<TemplateColumn Title="Total Items" AggregateDefinition="_totalItemsAggregate">
+			<CellTemplate>
+				@context.Item.TotalItems.ToString("N0")
+			</CellTemplate>
+		</TemplateColumn>
+		<TemplateColumn Title="Parked" AggregateDefinition="_parkedAggregate">
+			<CellTemplate>
+				<MudLink Href="@($"/ui/persistent-subscriptions/{Uri.EscapeDataString(context.Item.EventSource)}/{Uri.EscapeDataString(context.Item.GroupName)}/parked")">
+					@context.Item.ParkedMessageCount.ToString("N0")
+				</MudLink>
+			</CellTemplate>
+		</TemplateColumn>
+	</Columns>
+	<NoRecordsContent>
+		<MudText>No persistent subscriptions found.</MudText>
+	</NoRecordsContent>
+</MudDataGrid>
+}

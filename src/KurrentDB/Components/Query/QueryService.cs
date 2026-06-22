@@ -3,22 +3,28 @@
 
 using System;
 using System.Buffers;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext;
 using DotNext.Buffers;
+using EventStore.Plugins.Authorization;
 using Kurrent.Quack;
+using KurrentDB.Components.Shared;
 using KurrentDB.SecondaryIndexing.Query;
 
 namespace KurrentDB.Components.Query;
 
 public static class QueryService {
-	internal static async ValueTask<JsonDocument> ExecuteAdHocUserQuery(this IQueryEngine engine, string sql, CancellationToken token) {
+	static readonly Operation ReadAllOperation = UiOperations.ReadAll;
+
+	public static async ValueTask<JsonDocument> ExecuteAdHocUserQuery(this IQueryEngine engine, IAuthorizationProvider authorizer, ClaimsPrincipal principal, string sql, CancellationToken token) {
+		await authorizer.EnsureAccessAsync(principal, ReadAllOperation, token);
+
 		// Convert query result to JSON
 		sql = $"SELECT to_json(sub_query) FROM ({sql}) sub_query LIMIT 100";
-
 
 		var preparedQuery = default(MemoryOwner<byte>);
 		var reader = new JsonReader();

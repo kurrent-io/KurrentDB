@@ -1,3 +1,77 @@
+/* Pre-paint background matched to the persisted theme, via the theme-dark/theme-light class set on <html>
+   server-side in App.razor (from the theme cookie). Avoids a white flash on load in dark mode and a dark
+   patch behind the light theme, before MudThemeProvider applies. Values match the KurrentTheme palettes. */
+html, body {
+    background-color: #101010;
+    color: #d4d4d4;
+}
+
+html.theme-light, html.theme-light body {
+    background-color: #f7f7f8;
+    color: #1f1f23;
+}
+
+/* JSON tree syntax colours (Components/Tools/JsonTree + JsonNode). Per-theme custom properties so the
+   recursive Blazor viewer follows light/dark; dark values mirror the look of the old json-viewer widget. */
+html {
+    --json-key: #6fb3d2;
+    --json-string: #a3eea0;
+    --json-number: #d19a66;
+    --json-bool: #4ba7ef;
+    --json-null: #df9cf3;
+}
+
+html.theme-light {
+    --json-key: #0b6fb3;
+    --json-string: #0a7d33;
+    --json-number: #b25000;
+    --json-bool: #0b6cbf;
+    --json-null: #8e24aa;
+}
+
+.json-tree {
+    font-family: "Roboto Mono", monospace;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.json-tree ul.json-children {
+    list-style: none;
+    margin: 0;
+    padding-left: 1.25rem;
+}
+
+.json-tree .json-toggle,
+.json-tree .json-preview {
+    cursor: pointer;
+    user-select: none;
+}
+
+.json-tree .json-toggle {
+    display: inline-block;
+    width: 1.1em;
+    color: var(--mud-palette-text-secondary);
+}
+
+.json-tree .json-key {
+    color: var(--json-key);
+}
+
+.json-tree .json-punct,
+.json-tree .json-preview {
+    color: var(--mud-palette-text-secondary);
+}
+
+.json-tree .json-string { color: var(--json-string); }
+.json-tree .json-number { color: var(--json-number); }
+.json-tree .json-bool { color: var(--json-bool); }
+.json-tree .json-null { color: var(--json-null); }
+
+.json-raw {
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
 .monaco-editor-container {
     height: 200px;
 }

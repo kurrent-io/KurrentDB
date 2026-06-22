@@ -33,6 +33,14 @@ using Newtonsoft.Json;
 
 namespace KurrentDB.Auth.OAuth;
 
+// OPEN QUESTION (de-Angular cleanup): this plugin maps a self-contained OAuth code flow
+// (/oauth/codechallenge + /oauth/callback) that the legacy AngularJS UI used to log in, and whose
+// callback ends by redirecting to "/web" (the AngularJS UI, which is being removed). The Blazor UI does
+// NOT use these endpoints — it logs in via ASP.NET's OpenIdConnect handler (callback /signin-oidc,
+// wired in ClusterVNodeStartup). A repo-wide search finds no references to these endpoints outside this
+// file. So they may be dead and removable (along with the "/web" redirect), but an external client could
+// still drive the flow — confirm that before removing them. Until then, the "/web" redirect is left as-is
+// rather than repointed, since it's subsumed by this keep-vs-remove decision.
 [Export(typeof(IAuthenticationPlugin))]
 public class OAuthAuthenticationPlugin(IConfiguration configuration, string configPathKey, ILoggerFactory loggerFactory) : IAuthenticationPlugin {
 	public static readonly string[] ValidSigningAlgorithms = {

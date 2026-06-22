@@ -4,6 +4,7 @@
 namespace KurrentDB.Core.TransactionLog.Checkpoint;
 
 public static class Checkpoint {
+	public const string DatabaseTag = "tag";
 	public const string Writer = "writer";
 	public const string Chaser = "chaser";
 	public const string Epoch = "epoch";

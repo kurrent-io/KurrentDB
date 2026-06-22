@@ -46,16 +46,16 @@ Top-level predicates are available on:
 * `stream`: stream name (varchar)
 * `category`: stream category (varchar)
 * `schema_name`: schema name (varchar)
-* `stream_revision`: event number in a stream (int)
+* `stream_revision`: record number in a stream (int)
 * `created_at`: record append time (Unix timestamp, in millis)
 
 JSON predicates are available on:
-* `data`: event payload
-* `metadata`: custom event metadata
+* `data`: record payload
+* `metadata`: custom record metadata
 
 ##### Example query
 
-The query will find all events from a category `Telemetry` where the `Version` property is set, and then count the number of
+The query will find all records from a category `Telemetry` where the `Version` property is set, and then count the number of
 streams per found version value.
 ```
 select version, count(*) as count from (

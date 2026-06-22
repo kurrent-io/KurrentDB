@@ -1,0 +1,70 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@page "/ui/scavenges/{ScavengeId}"
+@attribute [Authorize(Policy = UiPolicies.ViewScavenges)]
+@using KurrentDB.Components.Shared
+@using KurrentDB.UI.Theme
+@using Microsoft.AspNetCore.Authorization
+
+<PageTitle>KurrentDB: Scavenge @ScavengeId</PageTitle>
+
+<MudStack Spacing="4">
+	<MudStack Row="true" AlignItems="AlignItems.Center">
+		<MudButton Variant="Variant.Text" StartIcon="@KurrentIcons.Back"
+		           Href="/ui/scavenges">Back</MudButton>
+		<MudText Typo="Typo.h5">Scavenge: @ScavengeId</MudText>
+	</MudStack>
+
+	<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Style="width: 100%;">
+		<MudButton Variant="Variant.Outlined" Size="Size.Small"
+		           Disabled="@(!_cursor.HasOlderPage)"
+		           StartIcon="@Icons.Material.Filled.FirstPage"
+		           OnClick="OldestPage">Oldest</MudButton>
+		<MudButton Variant="Variant.Outlined" Size="Size.Small"
+		           Disabled="@(!_cursor.HasOlderPage)"
+		           StartIcon="@Icons.Material.Filled.ChevronLeft"
+		           OnClick="OlderPage">Older</MudButton>
+		<MudButton Variant="Variant.Outlined" Size="Size.Small"
+		           Disabled="@(!_cursor.HasNewerPage)"
+		           EndIcon="@Icons.Material.Filled.ChevronRight"
+		           OnClick="NewerPage">Newer</MudButton>
+		<MudButton Variant="Variant.Outlined" Size="Size.Small"
+		           Disabled="@(!_cursor.HasNewerPage)"
+		           EndIcon="@Icons.Material.Filled.LastPage"
+		           OnClick="NewestPage">Newest</MudButton>
+		<MudSpacer/>
+		<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+			<MudText Typo="Typo.body2">Show</MudText>
+			<MudSelect T="int" Value="_cursor.PageSize" ValueChanged="OnPageSizeChanged" Dense="true"
+			           Variant="Variant.Outlined" Margin="Margin.Dense" Style="width: 90px;">
+				<MudSelectItem T="int" Value="10">10</MudSelectItem>
+				<MudSelectItem T="int" Value="20">20</MudSelectItem>
+				<MudSelectItem T="int" Value="100">100</MudSelectItem>
+				<MudSelectItem T="int" Value="200">200</MudSelectItem>
+			</MudSelect>
+		</MudStack>
+	</MudStack>
+
+	@if (_loading) {
+		<MudProgressLinear Indeterminate="true"/>
+	} else if (_loadError != null) {
+		<MudAlert Severity="Severity.Error">@_loadError</MudAlert>
+	} else {
+		<MudDataGrid Items="@_events" Dense="true">
+			<Columns>
+				<PropertyColumn Property="x => x.Status" Title="Status"/>
+				<TemplateColumn Title="Space Saved (bytes)">
+					<CellTemplate>
+						@context.Item.SpaceSaved.ToString("N0")
+					</CellTemplate>
+				</TemplateColumn>
+				<PropertyColumn Property="x => x.TimeTaken" Title="Time Taken"/>
+				<PropertyColumn Property="x => x.Result" Title="Result"/>
+			</Columns>
+			<NoRecordsContent>
+				<MudText>No records found for this scavenge.</MudText>
+			</NoRecordsContent>
+		</MudDataGrid>
+	}
+</MudStack>

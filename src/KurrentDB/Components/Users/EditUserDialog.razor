@@ -1,0 +1,62 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+<MudDialog>
+	<TitleContent>
+		<MudText Typo="Typo.h6">Edit User: @_model.LoginName</MudText>
+	</TitleContent>
+	<DialogContent>
+		<MudForm @ref="_form" @bind-IsValid="_formValid" @bind-Errors="_errors">
+			<MudTextField Value="_model.LoginName" Label="Login Name" Disabled="true" Class="mb-4"/>
+			<MudTextField @bind-Value="_model.FullName" Label="Full Name"
+			              Required="true" RequiredError="Full name is required."/>
+			<MudText Typo="Typo.subtitle1" Class="mt-4">Group</MudText>
+			<MudRadioGroup @bind-Value="_model.Group">
+				<MudRadio Value="@("$admins")" Color="Color.Primary">$admins</MudRadio>
+				<MudRadio Value="@("$ops")" Color="Color.Primary">$ops</MudRadio>
+				<MudRadio Value="@("")" Color="Color.Primary">None</MudRadio>
+			</MudRadioGroup>
+		</MudForm>
+	</DialogContent>
+	<DialogActions>
+		<MudButton OnClick="Cancel">Cancel</MudButton>
+		<MudButton OnClick="Submit"
+		           Variant="Variant.Outlined" Color="Color.Primary">Save</MudButton>
+	</DialogActions>
+</MudDialog>
+
+@code {
+	[CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
+
+	[Parameter] public string LoginName { get; set; }
+	[Parameter] public string FullName { get; set; }
+	[Parameter] public string Group { get; set; }
+
+	MudForm _form;
+	bool _formValid;
+	string[] _errors = [];
+	readonly EditUserModel _model = new();
+
+	protected override void OnInitialized() {
+		_model.LoginName = LoginName;
+		_model.FullName = FullName;
+		_model.Group = Group ?? "";
+	}
+
+	void Cancel() => MudDialog.Cancel();
+
+	async Task Submit() {
+		await _form.Validate();
+		if (_formValid)
+			MudDialog.Close(DialogResult.Ok(_model));
+	}
+
+	public class EditUserModel {
+		public string LoginName { get; set; } = "";
+		public string FullName { get; set; } = "";
+		public string Group { get; set; } = "";
+
+		public string[] GetGroups() =>
+			string.IsNullOrEmpty(Group) ? [] : [Group];
+	}
+}

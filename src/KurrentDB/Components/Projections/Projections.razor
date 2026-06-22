@@ -1,0 +1,104 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@page "/ui/projections"
+@attribute [Authorize]
+@using KurrentDB.Core.Data
+@using KurrentDB.UI.Theme
+@using Microsoft.AspNetCore.Authorization
+
+<PageTitle>KurrentDB: Projections</PageTitle>
+
+<MudStack Spacing="4">
+	<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Style="width: 100%;">
+		<MudText Typo="Typo.h5">Projections</MudText>
+		<MudSpacer/>
+		@if (IsLeader) {
+			<MudButton Variant="Variant.Outlined"
+			           StartIcon="@Icons.Material.Outlined.RestartAlt"
+			           OnClick="RestartSubsystem">
+				Restart Subsystem
+			</MudButton>
+			<MudButton Variant="Variant.Outlined"
+			           StartIcon="@KurrentIcons.Stop"
+			           OnClick="DisableAll">
+				Disable All
+			</MudButton>
+			<MudButton Variant="Variant.Outlined"
+			           StartIcon="@KurrentIcons.Play"
+			           OnClick="EnableAll">
+				Enable All
+			</MudButton>
+			<MudButton Variant="Variant.Outlined"
+			           StartIcon="@KurrentIcons.Plus"
+			           OnClick="CreateProjection">
+				New Projection
+			</MudButton>
+		}
+	</MudStack>
+
+	@if (!ProjectionsAvailable) {
+		<MudAlert Severity="Severity.Info">Projections are not enabled on this server.</MudAlert>
+	} else if (ShowLeaderNotice) {
+		<MudAlert Severity="Severity.Info">
+			Projections run on the leader node — this node is a @RoleLabel.
+			<MudLink Href="@_leaderUrl">Open projections on the leader</MudLink>
+		</MudAlert>
+	} else {
+
+	@if (_error != null) {
+		<MudAlert Severity="Severity.Error">@_error</MudAlert>
+	}
+
+	<MudDataGrid Items="@_projections" Dense="true" Hover="true" Loading="@_loading" Filterable="true">
+	<Columns>
+		<PropertyColumn Property="x => x.Name" Title="Name">
+			<CellTemplate>
+				<MudLink Href="@($"/ui/projections/{Uri.EscapeDataString(context.Item.Name)}")">@context.Item.Name</MudLink>
+			</CellTemplate>
+		</PropertyColumn>
+		<PropertyColumn Property="x => x.Status" Title="Status"/>
+		<TemplateColumn Title="Checkpoint Status">
+			<CellTemplate>
+				@(string.IsNullOrEmpty(context.Item.CheckpointStatus) ? "-" : context.Item.CheckpointStatus)
+			</CellTemplate>
+		</TemplateColumn>
+		<PropertyColumn Property="x => x.Mode" Title="Mode" Sortable="false" Filterable="false"/>
+		<TemplateColumn Title="Done">
+			<CellTemplate>
+				@($"{context.Item.Progress:F6}%")
+			</CellTemplate>
+		</TemplateColumn>
+		<TemplateColumn Title="Read / Write in Progress">
+			<CellTemplate>
+				@($"{context.Item.ReadsInProgress} / {context.Item.WritesInProgress}")
+			</CellTemplate>
+		</TemplateColumn>
+		<TemplateColumn Title="Write Queues">
+			<CellTemplate>
+				@($"{context.Item.WritePendingEventsAfterCheckpoint} / {context.Item.WritePendingEventsBeforeCheckpoint}")
+			</CellTemplate>
+		</TemplateColumn>
+		<PropertyColumn Property="x => x.PartitionsCached" Title="Partitions Cached" Sortable="false" Filterable="false"/>
+		<TemplateColumn Title="Rate (records/s)">
+			<CellTemplate>
+				@RateFor(context.Item.Name).ToString("N1")
+			</CellTemplate>
+		</TemplateColumn>
+		<TemplateColumn Title="Records Processed">
+			<CellTemplate>
+				@context.Item.EventsProcessedAfterRestart.ToString("N0")
+			</CellTemplate>
+		</TemplateColumn>
+		<TemplateColumn Title="Records Buffered">
+			<CellTemplate>
+				@context.Item.BufferedEvents.ToString("N0")
+			</CellTemplate>
+		</TemplateColumn>
+	</Columns>
+	<NoRecordsContent>
+		<MudText>No projections found.</MudText>
+	</NoRecordsContent>
+	</MudDataGrid>
+	}
+</MudStack>

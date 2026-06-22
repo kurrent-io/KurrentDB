@@ -2,47 +2,43 @@
 @* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
 
 @page "/ui/login"
+@layout KurrentDB.Components.Layout.EmptyLayout
 @using System.ComponentModel.DataAnnotations
 @using System.Security.Claims
 @using EventStore.Plugins.Authentication
-@using KurrentDB.Services
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Http.HttpResults
 @using MudBlazor.StaticInput
 @attribute [ExcludeFromInteractiveRouting]
 
 <PageTitle>Log in</PageTitle>
 <MudSnackbarProvider/>
 
-<MudGrid>
-	<MudItem md="6">
+<div class="login-page">
+	<MudPaper Class="login-card" Elevation="6">
+		<div class="login-logo">
+			<img src="logo_white.svg" alt="Kurrent" height="40"/>
+		</div>
 		<EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
 			<DataAnnotationsValidator/>
-
-			<MudText GutterBottom="true" Typo="Typo.body1">Use a local account to log in.</MudText>
-
-			<MudGrid>
-				<MudItem md="12">
-					<MudStaticTextField For="@(() => Input.Username)" @bind-Value="Input.Username"
-					                    Label="Username" Placeholder="admin"
-					                    UserAttributes="@(new() { { "autocomplete", "username" }, { "aria-required", "true" } })"/>
-				</MudItem>
-				<MudItem md="12">
-					<MudStaticTextField For="@(() => Input.Password)" @bind-Value="Input.Password"
-					                    Label="Password" InputType="InputType.Password" Placeholder="password"
-					                    UserAttributes="@(new() { { "autocomplete", "current-password" }, { "aria-required", "true" } })"/>
-				</MudItem>
-				<MudItem md="12">
-					<MudStaticButton Variant="Variant.Filled" Color="Color.Secondary" FullWidth="true"
-					                 FormAction="FormAction.Submit">
-						Log in
-					</MudStaticButton>
-				</MudItem>
-			</MudGrid>
+			<div class="login-field">
+				<MudStaticTextField For="@(() => Input.Username)" @bind-Value="Input.Username"
+				                    Placeholder="Username" Variant="Variant.Outlined" Margin="Margin.Dense"
+				                    UserAttributes="@(new() { { "autocomplete", "username" }, { "aria-required", "true" } })"/>
+			</div>
+			<div class="login-field">
+				<MudStaticTextField For="@(() => Input.Password)" @bind-Value="Input.Password"
+				                    InputType="InputType.Password" Placeholder="Password" Variant="Variant.Outlined" Margin="Margin.Dense"
+				                    UserAttributes="@(new() { { "autocomplete", "current-password" }, { "aria-required", "true" } })"/>
+			</div>
+			<MudStaticButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true"
+			                 FormAction="FormAction.Submit" Class="login-button">
+				Sign In
+			</MudStaticButton>
 		</EditForm>
-
-	</MudItem>
-</MudGrid>
+	</MudPaper>
+</div>
 
 @code {
 	[Inject] NavigationManager NavigationManager { get; set; }
@@ -54,20 +50,6 @@
 
 	protected override void OnInitialized() {
 		Input ??= new();
-	}
-
-	protected override async Task OnAfterRenderAsync(bool firstRender) {
-		var authenticated = HttpContext.User.Identity?.IsAuthenticated == true;
-		Console.WriteLine(authenticated);
-		if (firstRender && !authenticated) {
-			// Try to log in with a dummy user that will always work in insecure mode
-			var dummy = RandomService.GenerateRandomString(10);
-			var (status, principal) = await LoginUser(dummy, dummy);
-			if (status == HttpAuthenticationRequestStatus.Authenticated) {
-				await HttpContext.SignInAsync(principal);
-				Redirect();
-			}
-		}
 	}
 
 	public async Task LoginUser() {
@@ -89,8 +71,9 @@
 	}
 
 	void Redirect() {
-		var redirectUrl = string.IsNullOrWhiteSpace(ReturnUrl) ? "/ui/cluster" : ReturnUrl;
-		NavigationManager.NavigateTo(redirectUrl);
+		// Only follow a local (same-site) ReturnUrl to avoid an open redirect via ?returnUrl=https://evil.example.
+		// RedirectHttpResult.IsLocalUrl is the framework's canonical check (rejects absolute and "//"/"/\" URLs).
+		NavigationManager.NavigateTo(RedirectHttpResult.IsLocalUrl(ReturnUrl) ? ReturnUrl : "/ui/cluster");
 	}
 
 	private sealed class LoginInputModel {
