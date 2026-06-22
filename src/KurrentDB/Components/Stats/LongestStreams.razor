@@ -1,6 +1,6 @@
 @using KurrentDB.SecondaryIndexing.Stats
 @using Serilog
-@inject StatsService Stats
+@inject UiStatsService Stats
 
 @if (_state is LoadState.ReadyToLoad) {
 	<MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="LoadStats">Load</MudButton>
@@ -15,7 +15,7 @@
 	<MudDataGrid Items="@_details">
 		<Columns>
 			<PropertyColumn Property="x => x.Stream" Title="Stream"/>
-			<PropertyColumn Property="x => x.EventNumber" Title="Event number"/>
+			<PropertyColumn Property="x => x.EventNumber" Title="Record number"/>
 		</Columns>
 	</MudDataGrid>
 }
@@ -27,11 +27,14 @@
 
 	static readonly ILogger Log = Serilog.Log.ForContext<LongestStreams>();
 
+	[CascadingParameter] Task<AuthenticationState> AuthenticationState { get; set; }
+
 	async Task LoadStats() {
 		Log.Information("User requested longest streams stats load via UI");
 		_state = LoadState.Loading;
 		try {
-			_details = await Task.Run(() => Stats.GetLongestStreams());
+			var principal = (await AuthenticationState).User;
+			_details = await Stats.GetLongestStreamsAsync(principal);
 			_state = LoadState.Loaded;
 		} catch (Exception ex) {
 			Log.Error(ex, "Error while loading longest streams stats via UI");

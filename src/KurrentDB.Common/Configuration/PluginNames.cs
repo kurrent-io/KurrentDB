@@ -5,5 +5,6 @@ namespace KurrentDB.Common.Configuration;
 
 public static class PluginNames {
 	public const string AutoScavenge = "AutoScavenge";
+	public const string Kontext = "Kontext";
 	public const string SecondaryIndexes = "SecondaryIndexes";
 }

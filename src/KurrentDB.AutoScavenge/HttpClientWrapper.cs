@@ -14,7 +14,7 @@ public class HttpClientWrapper {
 		var nodeHttpClient =
 			nodeHttpClientFactory.CreateHttpClient(options.DiscoverViaDns ? [options.ClusterDns] : null);
 
-		Protocol = options.Insecure ? "http" : "https";
+		Protocol = options.TlsDisabled() ? "http" : "https";
 
 		HttpClient = nodeHttpClient;
 		HttpClient.DefaultRequestHeaders.Accept.Add(new("application/json"));

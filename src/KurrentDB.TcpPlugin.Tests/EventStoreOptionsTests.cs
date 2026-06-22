@@ -32,6 +32,8 @@ public class EventStoreOptionsTests {
 	public void when_empty_configuration() {
 		var sut = CreateSut();
 		Assert.False(sut.Insecure);
+		Assert.False(sut.DisableTls);
+		Assert.False(sut.TlsDisabled());
 		Assert.False(sut.TcpPlugin.EnableExternalTcp);
 	}
 
@@ -47,6 +49,15 @@ public class EventStoreOptionsTests {
 		var sut = CreateSut(
 			($"{KurrentConfigurationKeys.Prefix}:Insecure", "true"));
 		Assert.True(sut.Insecure);
+		Assert.True(sut.TlsDisabled());
+	}
+
+	[Fact]
+	public void can_disable_tls() {
+		var sut = CreateSut(
+			($"{KurrentConfigurationKeys.Prefix}:DisableTls", "true"));
+		Assert.True(sut.DisableTls);
+		Assert.True(sut.TlsDisabled());
 	}
 
 	[Fact]

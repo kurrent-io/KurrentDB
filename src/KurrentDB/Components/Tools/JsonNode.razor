@@ -1,0 +1,84 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@using System.Collections.Generic
+@using System.Text.Json
+
+@if (_container) {
+	<div class="json-node">
+		<span class="json-toggle" @onclick="Toggle">@(_expanded ? "▾" : "▸")</span>
+		@if (Name is not null) {
+			<span class="json-key">@Name</span><span class="json-punct">: </span>
+		}
+		@if (_expanded) {
+			<ul class="json-children">
+				@foreach (var child in Children()) {
+					<li><JsonNode Element="child.Element" Name="@child.Name"/></li>
+				}
+			</ul>
+		} else {
+			<span class="json-preview" @onclick="Toggle">@_summary</span>
+		}
+	</div>
+} else {
+	<span class="json-node">
+		@if (Name is not null) {
+			<span class="json-key">@Name</span><span class="json-punct">: </span>
+		}
+		<span class="@_primitiveClass">@_primitiveText</span>
+	</span>
+}
+
+@code {
+	[Parameter] public JsonElement Element { get; set; }
+	[Parameter] public string Name { get; set; }
+	// Initial expansion (the tree root passes true so the top level is open).
+	[Parameter] public bool Expanded { get; set; }
+
+	bool _container;
+	bool _expanded;
+	bool _initialised;
+	string _summary = "";
+	string _primitiveText = "";
+	string _primitiveClass = "";
+
+	protected override void OnParametersSet() {
+		_container = Element.ValueKind is JsonValueKind.Object or JsonValueKind.Array;
+
+		// Honour the initial Expanded once; after that the user's toggling owns the state.
+		if (!_initialised) {
+			_expanded = Expanded;
+			_initialised = true;
+		}
+
+		if (_container) {
+			_summary = Element.ValueKind == JsonValueKind.Object ? "{ … }" : $"[ {Element.GetArrayLength()} ]";
+		} else {
+			(_primitiveText, _primitiveClass) = Element.ValueKind switch {
+				JsonValueKind.String => ($"\"{Element.GetString()}\"", "json-string"),
+				JsonValueKind.Number => (Element.GetRawText(), "json-number"),
+				JsonValueKind.True or JsonValueKind.False => (Element.GetRawText(), "json-bool"),
+				JsonValueKind.Null => ("null", "json-null"),
+				_ => (Element.GetRawText(), "json-string"),
+			};
+		}
+	}
+
+	// Object members keyed by name; array items keyed by index. Kept in code so the markup stays a single
+	// simple loop (and avoids fiddly inline index tracking in Razor).
+	IEnumerable<(JsonElement Element, string Name)> Children() {
+		if (Element.ValueKind == JsonValueKind.Object) {
+			foreach (var property in Element.EnumerateObject())
+				yield return (property.Value, property.Name);
+		} else if (Element.ValueKind == JsonValueKind.Array) {
+			var index = 0;
+			foreach (var item in Element.EnumerateArray())
+				yield return (item, (index++).ToString());
+		}
+	}
+
+	void Toggle() {
+		if (_container)
+			_expanded = !_expanded;
+	}
+}

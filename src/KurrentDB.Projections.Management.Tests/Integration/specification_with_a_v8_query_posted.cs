@@ -10,6 +10,7 @@ using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Tests.Services.projections_manager;
+using NUnit.Framework;
 
 namespace KurrentDB.Projections.Core.Tests.Integration;
 
@@ -35,6 +36,8 @@ public abstract class specification_with_a_v8_query_posted<TLogFormat, TStreamId
 		_trackEmittedStreams = false;
 		_emitEnabled = false;
 		_startSystemProjections = GivenStartSystemProjections();
+		if (_projectionMode == ProjectionMode.Transient && !string.IsNullOrEmpty(_projectionSource))
+			Assert.Ignore("Transient projections are deprecated — see ProjectionManager.Handle(Post).");
 	}
 
 	protected override Tuple<SynchronousScheduler, IPublisher, SynchronousScheduler, Guid>[] GivenProcessingQueues() {

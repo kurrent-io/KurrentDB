@@ -14,18 +14,6 @@ public static class StatsSql {
 		public static CategoryName Parse(ref DataChunk.Row row) => new(row.ReadString());
 	}
 
-	public struct GetTotalStats : IQuery<GetTotalStats.Result> {
-		public record struct Args(string Category);
-
-		public record struct Result(long StreamCount, long EventCount);
-
-		public static StatementBindingResult Bind(in Args args, PreparedStatement statement) => new(statement) { args.Category };
-
-		public static ReadOnlySpan<byte> CommandText => "select count(distinct stream)::bigint, count(rowid)::bigint from idx_all"u8;
-
-		public static Result Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
-	}
-
 	public struct GetCategoryStats : IQuery<GetCategoryStats.Args, GetCategoryStats.Result> {
 		public record struct Args(string Category);
 

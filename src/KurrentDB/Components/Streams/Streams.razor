@@ -1,0 +1,69 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@page "/ui/streams"
+@attribute [Authorize]
+@using KurrentDB.UI.Theme
+@using Microsoft.AspNetCore.Authorization
+
+<PageTitle>KurrentDB: Streams</PageTitle>
+
+<MudStack Spacing="4">
+	<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Style="width: 100%;">
+		<MudText Typo="Typo.h5">Stream Browser</MudText>
+		<MudSpacer/>
+		<MudButton Variant="Variant.Outlined"
+		           StartIcon="@KurrentIcons.Plus"
+		           OnClick="AddEvent">Add Record</MudButton>
+		<MudTooltip Text="You do not have the required permission" Disabled="@_canBrowseAll">
+			<MudButton Variant="Variant.Outlined"
+			           StartIcon="@KurrentIcons.Stream"
+			           Disabled="@(!_canBrowseAll)"
+			           OnClick="BrowseAll">Browse $all</MudButton>
+		</MudTooltip>
+	</MudStack>
+	<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Style="width: 100%;">
+		<MudSwitch T="bool" Value="_showSystemStreams" ValueChanged="OnShowSystemStreamsChanged"
+		           Color="Color.Primary" Label="Show system streams"/>
+		<MudSpacer/>
+		<div style="width: 300px; flex: 0 0 auto;">
+			<MudTextField @bind-Value="_searchStream" Label="Go to stream" Variant="Variant.Outlined"
+			              Adornment="Adornment.End" AdornmentIcon="@KurrentIcons.Arrow"
+			              OnAdornmentClick="GoToStream" OnKeyUp="OnSearchKeyUp"
+			              Immediate="true" Margin="Margin.Dense"/>
+		</div>
+	</MudStack>
+
+	<MudGrid>
+		<MudItem xs="6">
+			<MudText Typo="Typo.h6" Class="mb-2">Recently Created Streams</MudText>
+			<MudSimpleTable Dense="true" Hover="true">
+				<tbody>
+				@foreach (var stream in _recentlyCreated) {
+					<tr>
+						<td><MudLink Href="@($"/ui/streams/{Uri.EscapeDataString(stream)}")">@stream</MudLink></td>
+					</tr>
+				}
+				@if (_recentlyCreated.Length == 0) {
+					<tr><td><MudText Typo="Typo.body2">No streams found.</MudText></td></tr>
+				}
+				</tbody>
+			</MudSimpleTable>
+		</MudItem>
+		<MudItem xs="6">
+			<MudText Typo="Typo.h6" Class="mb-2">Recently Changed Streams</MudText>
+			<MudSimpleTable Dense="true" Hover="true">
+				<tbody>
+				@foreach (var stream in _recentlyChanged) {
+					<tr>
+						<td><MudLink Href="@($"/ui/streams/{Uri.EscapeDataString(stream)}")">@stream</MudLink></td>
+					</tr>
+				}
+				@if (_recentlyChanged.Length == 0) {
+					<tr><td><MudText Typo="Typo.body2">No streams found.</MudText></td></tr>
+				}
+				</tbody>
+			</MudSimpleTable>
+		</MudItem>
+	</MudGrid>
+</MudStack>

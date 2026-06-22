@@ -72,6 +72,7 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 	private readonly TaskCompletionSource<bool> _started;
 	private readonly TaskCompletionSource<bool> _adminUserCreated;
 	private readonly int _httpClientTimeoutSec;
+	private readonly bool _useHttps;
 	private bool _testServerStarted;
 	public Task Started => _started.Task;
 	public Task AdminUserCreated => _adminUserCreated.Task;
@@ -98,9 +99,12 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 		IConfiguration configuration = null,
 		IReadOnlyList<IDbTransform> newTransforms = null,
 		int maxAppendEventSize = TFConsts.EffectiveMaxLogRecordSize,
+		bool disableTls = false,
+		bool insecure = false,
 		SecondaryIndexReaders secondaryIndexReaders = null) {
 
 		_httpClientTimeoutSec = httpClientTimeoutSec;
+		_useHttps = !disableTls && !insecure && !RuntimeInformation.IsOSX;
 		RunningTime.Start();
 		RunCount += 1;
 
@@ -129,6 +133,8 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 			Application = new() {
 				AllowAnonymousEndpointAccess = true,
 				AllowAnonymousStreamAccess = true,
+				Insecure = insecure,
+				DisableTls = disableTls,
 				StatsPeriodSec = 60 * 60,
 				MaxAppendEventSize = maxAppendEventSize
 			},
@@ -139,6 +145,7 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 				EnableAtomPubOverHttp = true
 			},
 			Cluster = new() {
+				ClusterSecret = disableTls && !insecure ? "we enjoy network partitions for the peace and quiet" : "",
 				DiscoverViaDns = false,
 				ReadOnlyReplica = isReadOnlyReplica,
 				Archiver = false,
@@ -164,11 +171,15 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 			LoadedOptions = ClusterVNodeOptions.GetLoadedOptions(new ConfigurationBuilder()
 					.AddKurrentDefaultValues()
 					.Build()),
-		}.Secure(new X509Certificate2Collection(ssl_connections.GetRootCertificate()),
-				ssl_connections.GetServerCertificate())
+		}
 			.WithReplicationEndpointOn(IntTcpEndPoint)
 			.WithExternalTcpOn(TcpEndPoint)
 			.WithNodeEndpointOn(HttpEndPoint);
+
+		if (!options.Application.TlsDisabled()) {
+			options = options.Secure(new X509Certificate2Collection(ssl_connections.GetRootCertificate()),
+				ssl_connections.GetServerCertificate());
+		}
 
 		var configurationBuilder = new ConfigurationBuilder()
 			.AddInMemoryCollection([
@@ -177,7 +188,7 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:NodeTcpPort", extTcpPort.ToString()),
 				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:NodeHeartbeatInterval", "10000"),
 				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:NodeHeartbeatTimeout", "10000"),
-				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:Insecure", options.Application.Insecure.ToString()),
+				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:DisableTls", options.Application.TlsDisabled().ToString()),
 			]);
 
 		if (configuration is not null)
@@ -237,7 +248,7 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 		builder.WebHost
 			.ConfigureKestrel(o => {
 				o.Listen(HttpEndPoint, options => {
-					if (RuntimeInformation.IsOSX) {
+					if (!_useHttps) {
 						options.Protocols = HttpProtocols.Http2;
 					} else {
 						options.UseHttps(new HttpsConnectionAdapterOptions {
@@ -277,7 +288,9 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 		HttpClient = new HttpClient(HttpMessageHandler) {
 			Timeout = TimeSpan.FromSeconds(_httpClientTimeoutSec),
 			BaseAddress = new UriBuilder {
-				Scheme = Uri.UriSchemeHttps
+				Scheme = _useHttps
+					? Uri.UriSchemeHttps
+					: Uri.UriSchemeHttp
 			}.Uri
 		};
 		_testServerStarted = true;

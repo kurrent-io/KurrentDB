@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.IO;
 using System.Linq;
 using System.Runtime;
 using System.Security.Cryptography.X509Certificates;
@@ -14,7 +15,14 @@ using KurrentDB.Common.Log;
 using KurrentDB.Common.Utils;
 using KurrentDB.Components;
 using KurrentDB.Components.Cluster;
+using KurrentDB.Components.Dashboard;
+using KurrentDB.Components.PersistentSubscriptions;
 using KurrentDB.Components.Plugins;
+using KurrentDB.Components.Projections;
+using KurrentDB.Components.Scavenges;
+using KurrentDB.Components.ServerInfo;
+using KurrentDB.Components.Streams;
+using KurrentDB.Components.Users;
 using KurrentDB.Core;
 using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Configuration;
@@ -22,7 +30,6 @@ using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Logging;
 using KurrentDB.Services;
 using KurrentDB.Tools;
-using KurrentDB.UI.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -35,7 +42,6 @@ using MudBlazor;
 using MudBlazor.Services;
 using Serilog;
 using Serilog.Events;
-using _Imports = KurrentDB.UI._Imports;
 using RuntimeInformation = System.Runtime.RuntimeInformation;
 
 var optionsWithLegacyDefaults = LocationOptionWithLegacyDefault.SupportedLegacyLocations;
@@ -119,31 +125,64 @@ try {
 			"DEV MODE WILL GENERATE AND TRUST DEV CERTIFICATES FOR RUNNING A SINGLE SECURE NODE ON LOCALHOST.\n" +
 			"==============================================================================================================\n");
 		var manager = CertificateManager.Instance;
-		var result = manager.EnsureDevelopmentCertificate(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddMonths(1));
-		if (result is not (EnsureCertificateResult.Succeeded or EnsureCertificateResult.ValidCertificatePresent)) {
-			Log.Fatal("Could not ensure dev certificate is available. Reason: {result}", result);
-			return 1;
+		var devCertPath = options.DevMode.DevCertPath;
+		X509Certificate2 devCert = null;
+
+		// If a cert path is specified, try to load an existing cert from it
+		if (!string.IsNullOrEmpty(devCertPath)) {
+			devCert = DevCertificateFile.TryLoad(devCertPath);
+			if (devCert is not null) {
+				Log.Information("Dev certificate loaded from {path}", devCertPath);
+			} else if (File.Exists(devCertPath)) {
+				Log.Warning("Dev certificate at {path} is invalid or expired, generating a new one.", devCertPath);
+			}
 		}
 
-		var userCerts = manager.ListCertificates(StoreName.My, StoreLocation.CurrentUser, true);
-		var machineCerts = manager.ListCertificates(StoreName.My, StoreLocation.LocalMachine, true);
-		var certs = userCerts.Concat(machineCerts).ToList();
+		if (devCert is null) {
+			// Generate a new certificate and optionally export to file
+			var result = manager.EnsureDevelopmentCertificate(
+				DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddMonths(1),
+				out devCert,
+				path: devCertPath,
+				includePrivateKey: !string.IsNullOrEmpty(devCertPath));
+			if (result is not (EnsureCertificateResult.Succeeded or EnsureCertificateResult.ValidCertificatePresent)) {
+				Log.Fatal("Could not ensure dev certificate is available. Reason: {result}", result);
+				return 1;
+			}
 
-		if (!certs.Any()) {
-			Log.Fatal("Could not create dev certificate.");
-			return 1;
+			if (devCert is null) {
+				Log.Fatal("Could not create dev certificate. " +
+						  "If the home directory is not writable (e.g., in a container), " +
+						  "use --dev-cert-path to specify an alternative file location.");
+				return 1;
+			}
+
+			if (!string.IsNullOrEmpty(devCertPath)) {
+				Log.Information("Dev certificate saved to {path}", devCertPath);
+			}
 		}
 
-		if (!manager.IsTrusted(certs[0]) && RuntimeInformation.IsWindows) {
-			Log.Information("Dev certificate {cert} is not trusted. Adding it to the trusted store.", certs[0]);
-			manager.TrustCertificate(certs[0]);
-		} else {
+		// Write public cert as .crt for clients to trust
+		if (!string.IsNullOrEmpty(devCertPath)) {
+			try {
+				var crtPath = DevCertificateFile.WritePublicCertificate(devCert, devCertPath);
+				Log.Information("Dev certificate public key saved to {path} (use this to configure client trust)",
+					crtPath);
+			} catch (Exception ex) {
+				Log.Warning("Could not write public certificate: {error}", ex.Message);
+			}
+		}
+
+		if (!manager.IsTrusted(devCert) && RuntimeInformation.IsWindows) {
+			Log.Information("Dev certificate {cert} is not trusted. Adding it to the trusted store.", devCert);
+			manager.TrustCertificate(devCert);
+		} else if (!RuntimeInformation.IsWindows) {
 			Log.Warning("Automatically trusting dev certs is only supported on Windows.\n" +
-						"Please trust certificate {cert} if it's not trusted already.", certs[0]);
+						"Please trust certificate {cert} if it's not trusted already.", devCert);
 		}
 
-		Log.Information("Running in dev mode using certificate '{cert}'", certs[0]);
-		certificateProvider = new DevCertificateProvider(certs[0]);
+		Log.Information("Running in dev mode using certificate '{cert}'", devCert);
+		certificateProvider = new DevCertificateProvider(devCert);
 	} else {
 		certificateProvider = new OptionsCertificateProvider();
 	}
@@ -178,6 +217,12 @@ try {
 			"\n==============================================================================================================\n" +
 			"INSECURE MODE IS ON. THIS MODE IS *NOT* RECOMMENDED FOR PRODUCTION USE.\n" +
 			"INSECURE MODE WILL DISABLE ALL AUTHENTICATION, AUTHORIZATION AND TRANSPORT SECURITY FOR ALL CLIENTS AND NODES.\n" +
+			"==============================================================================================================\n");
+	} else if (options.Application.DisableTls) {
+		Log.Warning(
+			"\n==============================================================================================================\n" +
+			"TLS IS DISABLED. AUTHENTICATION CREDENTIALS WILL BE TRANSMITTED IN CLEARTEXT.\n" +
+			"THIS MODE IS *NOT* RECOMMENDED FOR PRODUCTION USE.\n" +
 			"==============================================================================================================\n");
 	}
 
@@ -243,36 +288,65 @@ try {
 			// Allows the subsystems to resolve dependencies out of the DI in Configure() before being started.
 			// Later it may be possible to use constructor injection instead if it fits with the bootstrapping strategy.
 			builder.Services.AddSingleton<IHostedService>(hostedService);
-			builder.Services.AddSingleton<Preferences>();
+			// Scoped, not singleton: theme is a per-user (per-circuit) preference, not server-global.
+			// HttpContextAccessor lets Preferences read the theme cookie server-side to seed flicker-free.
+			builder.Services.AddHttpContextAccessor();
+			// Page authorization: map [Authorize(Policy = UiPolicies.X)] to a KurrentDB Operation check.
+			builder.Services.AddAuthorization(KurrentDB.Components.Shared.UiPolicies.Configure);
+			builder.Services.AddSingleton<
+				Microsoft.AspNetCore.Authorization.IAuthorizationHandler,
+				KurrentDB.Components.Shared.OperationAuthorizationHandler>();
+			builder.Services.AddScoped<KurrentDB.UI.Services.Preferences>();
 			builder.Services
 				.AddRazorComponents()
-				.AddInteractiveServerComponents()
-				.AddInteractiveWebAssemblyComponents();
+				.AddInteractiveServerComponents();
 			builder.Services.AddCascadingAuthenticationState();
-			builder.Services.AddMudServices();
+			builder.Services.AddMudServices(config => {
+				config.SnackbarConfiguration.PositionClass = MudBlazor.Defaults.Classes.Position.BottomRight;
+			});
 			builder.Services.AddMudMarkdownServices();
 			builder.Services.AddScoped<LogObserver>();
-			builder.Services.AddScoped<IdentityRedirectManager>();
 			builder.Services.AddScoped<ClipboardService>();
 			builder.Services.AddSingleton(monitoringService);
 			builder.Services.AddSingleton(metricsObserver);
 			builder.Services.AddSingleton<PluginsService>();
+			builder.Services.AddScoped<UserManagementService>();
+			builder.Services.AddScoped<ClusterOperationsService>();
+			// Process-wide node-role tracker (subscribes to $mem-node-state); shared by all UI circuits.
+			builder.Services.AddSingleton<KurrentDB.Components.Cluster.GossipMonitor>();
+			builder.Services.AddSingleton<IHostedService>(sp =>
+				sp.GetRequiredService<KurrentDB.Components.Cluster.GossipMonitor>());
+			builder.Services.AddScoped<ScavengeService>();
+			builder.Services.AddScoped<DashboardService>();
+			builder.Services.AddScoped<StreamsService>();
+			builder.Services.AddScoped(sp => {
+				// ProjectionsService publishes to the projections subsystem's leader input queue. When projections
+				// are disabled on this node (e.g. --run-projections=None) the subsystem is absent; resolve a service
+				// in the "unavailable" state (null queue) rather than throwing, so injecting it into the Projections
+				// page doesn't crash the circuit — the page shows a calm "not enabled" message instead.
+				var opts = sp.GetRequiredService<ClusterVNodeOptions>();
+				var projectionsPublisher = opts.Subsystems.OfType<KurrentDB.Projections.Core.ProjectionsSubsystem>().FirstOrDefault()?.LeaderInputQueue;
+				return new ProjectionsService(projectionsPublisher, sp.GetRequiredService<EventStore.Plugins.Authorization.IAuthorizationProvider>());
+			});
+			builder.Services.AddScoped<PersistentSubscriptionsService>();
+			builder.Services.AddScoped<ServerInfoService>();
+			// UI-layer authorizing wrapper over the SecondaryIndexing StatsService (which does no auth of its
+			// own). Resolved lazily by StatsPage and only when the plugin is enabled, so registering it here
+			// unconditionally is safe even though the inner StatsService is only registered by the plugin.
+			builder.Services.AddScoped<KurrentDB.Components.Stats.UiStatsService>();
 			builder.Services.AddSingleton(TimeProvider.System);
 			Log.Information("Environment Name: {0}", builder.Environment.EnvironmentName);
 			Log.Information("ContentRoot Path: {0}", builder.Environment.ContentRootPath);
 
 			var app = builder.Build();
-			if (app.Environment.IsDevelopment()) {
-				app.UseWebAssemblyDebugging();
-			}
 
 			hostedService.Node.Startup.Configure(app);
-			app.MapStaticAssets();
-			app.MapRazorComponents<App>()
-				.DisableAntiforgery()
-				.AddInteractiveServerRenderMode()
-				.AddInteractiveWebAssemblyRenderMode()
-				.AddAdditionalAssemblies(typeof(_Imports).Assembly);
+			if (!options.Interface.DisableAdminUi) {
+				app.MapStaticAssets();
+				app.MapRazorComponents<App>()
+					.DisableAntiforgery()
+					.AddInteractiveServerRenderMode();
+			}
 			await app.RunAsync(token);
 
 			exitCodeSource.TrySetResult(0);

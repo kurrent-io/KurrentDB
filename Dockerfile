@@ -32,6 +32,13 @@ COPY ./.git/ .
 
 # "test" image
 FROM mcr.microsoft.com/dotnet/sdk:10.0-${CONTAINER_RUNTIME} AS test
+ARG CONTAINER_RUNTIME=noble
+# libgomp (the OpenMP runtime) is required by Kontext's USearch native library
+RUN if [ "${CONTAINER_RUNTIME}" = "alpine" ]; then \
+        apk add --no-cache libgomp; \
+    else \
+        apt-get update && apt-get install -y libgomp1 && rm -rf /var/lib/apt/lists/*; \
+    fi
 WORKDIR /build
 COPY --from=build ./build/src ./src
 COPY --from=build ./build/ci ./ci
@@ -58,16 +65,19 @@ ARG RUNTIME=linux-x64
 ARG UID=1001
 ARG GID=1001
 
+# libgomp (the OpenMP runtime) is required by Kontext's USearch native library
 RUN if [[ "${RUNTIME}" = "linux-musl-x64" ]];\
     then \
         apk update && \
         apk add --no-cache \
-        curl; \
+        curl \
+        libgomp; \
     else \
         apt update && \
         apt install -y \
         adduser \
-        curl && \
+        curl \
+        libgomp1 && \
         rm -rf /var/lib/apt/lists/*; \
     fi
 

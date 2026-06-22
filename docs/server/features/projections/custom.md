@@ -178,29 +178,10 @@ V2 is a parallel-partitioned engine with an incompatible checkpoint format and a
 Before selecting it, read [Projections Engine V2](./engine-v2.md) — in particular, V2 does not emit
 `outputState()` result streams and does not support `trackemittedstreams`.
 
-### Debugging your first projection
+### Debugging projections
 
-Once the projection is running, open your browser and enable the developer tools. Once you have the developer
-tools open, visit your projection URL and you should see a button labelled _Debug_.
-
-![Projections Debugging Part 1](images/projections_debugging_part_1.png)
-
-After clicking the projection "Debug" button, you see the debugging interface with the definition of the
-projection and information about the events the projection is processing on the right-hand side.
-
-At the top there are a couple of buttons to take note of, specifically the _Run Step_ and _Update_ buttons.
-You use _Run Step_ to step through the event waiting in the queue, placing you in projection debugging mode.
-The _Update_ button provides you with a way to update the projection definition without having to go back to
-the projection itself and leave the context of the debugger.
-
-![Projections Debugging Part 2](images/projections_debugging_part_2.png)
-
-If the _Run Step_ button is not greyed out, and you click it, the browser has hit a breakpoint.
-
-![Projections Debugging Part 3](images/projections_debugging_part_3.png)
-
-You are now able to step through the projection, the important method to step into is
-the `handler(state, eventEnvelope)` method.
+To develop and debug projections, use [Gaffer](https://github.com/kurrent-io/gaffer) — a standalone tool
+for authoring, running, and stepping through KurrentDB projections.
 
 ## Configuring projections
 
@@ -212,10 +193,11 @@ improvements.
 You can only change the configuration of a stopped projection.
 :::
 
-You change the configuration of a projection by setting the relevant key and value in a request, or when you
-create a projection with the web admin interface.
+You change the configuration of a projection by setting the relevant key and value in a request, or from the
+projection's detail view in the [embedded UI](../admin-ui.md#projections).
 
-![Web admin interface projections configuration screen](../images/wai-projection-config.jpg)
+![Projection configuration in the embedded UI](../images/ui/projection-config.png#light)
+![Projection configuration in the embedded UI](../images/ui/projection-config-dark.png#dark)
 
 <!-- TODO: Further explanation here -->
 

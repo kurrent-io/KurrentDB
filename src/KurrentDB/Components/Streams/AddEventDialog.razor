@@ -1,0 +1,134 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@using System.Security.Claims
+@using System.Threading
+@inject StreamsService StreamsService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+	<TitleContent>
+		<MudText Typo="Typo.h6">Add Record@(ShowStreamField ? "" : $" to {StreamId}")</MudText>
+	</TitleContent>
+	<DialogContent>
+		<MudForm @ref="_form" @bind-IsValid="_formValid" @bind-Errors="_errors">
+			@if (ShowStreamField) {
+				<MudTextField @bind-Value="_model.StreamId" Label="Stream"
+				              Required="true" RequiredError="Stream is required."/>
+			}
+			<MudTextField @bind-Value="_model.EventType" Label="Record Type"
+			              Required="true" RequiredError="Record type is required."/>
+			<MudTextField @bind-Value="_model.Data" Label="Data (JSON)"
+			              Lines="10" Variant="Variant.Outlined" Class="mt-4"
+			              Required="true" RequiredError="Data is required."
+			              Validation="@(new Func<string, string>(ValidateJson))"/>
+			<MudTextField @bind-Value="_model.Metadata" Label="Metadata (JSON)"
+			              Lines="4" Variant="Variant.Outlined" Class="mt-4"
+			              Validation="@(new Func<string, string>(ValidateJsonOptional))"/>
+		</MudForm>
+		@if (_error != null) {
+			<MudAlert Severity="Severity.Error" Class="mt-3">@_error</MudAlert>
+		}
+	</DialogContent>
+	<DialogActions>
+		<MudButton OnClick="Close">Close</MudButton>
+		<MudButton OnClick="Submit" Variant="Variant.Outlined" Disabled="@_saving">Add</MudButton>
+	</DialogActions>
+</MudDialog>
+
+@code {
+	[CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
+	[Parameter] public string StreamId { get; set; }
+	[Parameter] public ClaimsPrincipal Principal { get; set; }
+
+	// Optional initial values (e.g. when using an existing event as a template).
+	[Parameter] public string EventType { get; set; }
+	[Parameter] public string Data { get; set; }
+	[Parameter] public string Metadata { get; set; }
+
+	// When true, show the (prepopulated) stream field as editable even though StreamId is set.
+	[Parameter] public bool AllowStreamEdit { get; set; }
+
+	// Invoked after each successful add so the parent can refresh; the dialog stays open.
+	[Parameter] public EventCallback OnEventAdded { get; set; }
+
+	// Show the stream field when there's no fixed stream, or when editing a prepopulated one.
+	bool ShowStreamField => string.IsNullOrEmpty(StreamId) || AllowStreamEdit;
+
+	MudForm _form;
+	bool _formValid;
+	string[] _errors = [];
+	readonly AddEventModel _model = new() { Data = "{}", Metadata = "{}" };
+	bool _saving;
+	bool _addedAny;
+	string _error;
+
+	protected override void OnInitialized() {
+		if (!string.IsNullOrEmpty(StreamId))
+			_model.StreamId = StreamId;
+		if (!string.IsNullOrEmpty(EventType))
+			_model.EventType = EventType;
+		if (!string.IsNullOrEmpty(Data))
+			_model.Data = Data;
+		if (!string.IsNullOrEmpty(Metadata))
+			_model.Metadata = Metadata;
+	}
+
+	void Close() => MudDialog.Close(DialogResult.Ok(_addedAny));
+
+	async Task Submit() {
+		await _form.Validate();
+		if (!_formValid)
+			return;
+
+		var streamId = ShowStreamField ? _model.StreamId?.Trim() : StreamId;
+		if (string.IsNullOrWhiteSpace(streamId)) {
+			_error = "Stream is required.";
+			return;
+		}
+
+		_saving = true;
+		_error = null;
+		try {
+			using var cts = new CancellationTokenSource(5000);
+			// WriteEventAsync mints a fresh event id (Guid.NewGuid()) on every call, so submitting
+			// again appends a new, distinct event rather than reusing the previous id.
+			var eventNumber = await StreamsService.WriteEventAsync(Principal, streamId, _model.EventType, _model.Data, _model.Metadata, cts.Token);
+			_addedAny = true;
+			// Distinct, informative toast that links straight to the event just written.
+			Snackbar.Add(AddedMessage(streamId, eventNumber), Severity.Success);
+			await OnEventAdded.InvokeAsync();
+			// Dialog stays open so the user can add more.
+		} catch (StreamsException ex) {
+			_error = ex.Message;
+		} finally {
+			_saving = false;
+		}
+	}
+
+	// Snackbar content with a link to the event just written. Color.Inherit keeps the link
+	// legible on the coloured snackbar background; it's underlined so it still reads as a link.
+	RenderFragment AddedMessage(string stream, long number) => @<span>
+		Added
+		<MudLink Href="@($"/ui/streams/{Uri.EscapeDataString(stream)}/{number}")" Color="Color.Inherit"><b>#@number</b></MudLink>
+		to @stream
+	</span>;
+
+	static string ValidateJson(string json) {
+		if (string.IsNullOrWhiteSpace(json)) return null;
+		try { using var _ = System.Text.Json.JsonDocument.Parse(json); return null; }
+		catch { return "Invalid JSON."; }
+	}
+
+	static string ValidateJsonOptional(string json) {
+		if (string.IsNullOrWhiteSpace(json)) return null;
+		return ValidateJson(json);
+	}
+
+	public class AddEventModel {
+		public string StreamId { get; set; } = "";
+		public string EventType { get; set; } = "";
+		public string Data { get; set; } = "{}";
+		public string Metadata { get; set; } = "{}";
+	}
+}

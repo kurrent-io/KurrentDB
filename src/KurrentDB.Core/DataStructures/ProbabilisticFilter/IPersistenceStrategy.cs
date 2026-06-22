@@ -9,7 +9,7 @@ public interface IPersistenceStrategy : IDisposable {
 	BloomFilterAccessor DataAccessor { get; }
 	bool Create { get; }
 	void Init();
-	void Flush();
+	void Flush(bool throttle);
 	Header ReadHeader();
 	void WriteHeader(Header header);
 }

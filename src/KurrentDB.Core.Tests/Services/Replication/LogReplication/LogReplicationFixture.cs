@@ -52,6 +52,7 @@ public abstract class LogReplicationFixture<TLogFormat, TStreamId> : Specificati
 			path: dbPath,
 			chunkSize: ChunkSize,
 			maxChunksCacheSize: 2 * ChunkSize,
+			databaseTag: new InMemoryCheckpoint(),
 			writerCheckpoint: new InterceptorCheckpoint(new InMemoryCheckpoint()),
 			chaserCheckpoint: new InMemoryCheckpoint(),
 			epochCheckpoint: new InMemoryCheckpoint(),
@@ -133,6 +134,7 @@ public abstract class LogReplicationFixture<TLogFormat, TStreamId> : Specificati
 			certificateSelector: null,
 			intermediatesSelector: null,
 			sslClientCertValidator: null,
+			expectedClusterSecret: "",
 			connectionPendingSendBytesThreshold: 1_000_000,
 			connectionQueueSizeThreshold: 1_000);
 
@@ -223,6 +225,7 @@ public abstract class LogReplicationFixture<TLogFormat, TStreamId> : Specificati
 			useSsl: false,
 			sslServerCertValidator: null,
 			sslClientCertificateSelector: null,
+			clusterSecret: "",
 			heartbeatTimeout: TimeSpan.FromSeconds(5),
 			heartbeatInterval: TimeSpan.FromSeconds(1),
 			writeTimeout: TimeSpan.FromSeconds(5)

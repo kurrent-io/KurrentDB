@@ -1,0 +1,37 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@using System.Text.Json
+@implements IDisposable
+
+@if (_doc is not null) {
+	<div class="json-tree">
+		<JsonNode Element="_doc.RootElement" Expanded="true"/>
+	</div>
+} else {
+	@* Not valid JSON — show it verbatim rather than nothing. *@
+	<pre class="json-raw">@Json</pre>
+}
+
+@code {
+	[Parameter] public string Json { get; set; } = "";
+
+	JsonDocument _doc;
+	string _parsed;
+
+	// Parse only when the input changes: JsonNode children hold JsonElement views into _doc, so the
+	// document must stay alive (and not be re-created) across re-renders for the same JSON.
+	protected override void OnParametersSet() {
+		if (Json == _parsed)
+			return;
+		_parsed = Json;
+		_doc?.Dispose();
+		try {
+			_doc = JsonDocument.Parse(Json);
+		} catch (JsonException) {
+			_doc = null;
+		}
+	}
+
+	public void Dispose() => _doc?.Dispose();
+}

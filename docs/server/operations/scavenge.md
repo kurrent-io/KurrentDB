@@ -24,9 +24,10 @@ or `ops` user:
 
 @[code{curl}](@samples/server/scavenge.sh)
 
-You can also start scavenges from the _Admin_ page of the Admin UI.
+You can also start scavenges from the _Scavenges_ page of the embedded UI.
 
-![Start a scavenge in the Admin UI](./images/admin-scavenge.png)
+![Start a scavenge in the embedded UI](../features/images/ui/scavenges.png#light)
+![Start a scavenge in the embedded UI](../features/images/ui/scavenges-dark.png#dark)
 
 Each node in a cluster has its own independent copy of the database. As such, when you run a scavenge, you need to issue a
 scavenge request to each node. The scavenges can be run concurrently, but can also be run in series to spread the load.
@@ -56,7 +57,7 @@ curl -i -X DELETE http://localhost:2113/admin/scavenge/current -u "admin:changei
 
 A 200 response is returned after the scavenge has stopped.
 
-You can also stop scavenges from the _Admin_ page of the Admin UI.
+You can also stop scavenges from the _Scavenges_ page of the embedded UI.
 
 ::: tip
 A scavenge can be stopped at any time. The next time a scavenge is started, it will resume from the place the previous scavenge stopped.

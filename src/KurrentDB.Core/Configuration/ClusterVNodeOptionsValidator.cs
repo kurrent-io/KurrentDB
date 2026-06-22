@@ -112,6 +112,20 @@ public static class ClusterVNodeOptionsValidator {
 			throw new InvalidConfigurationException(
 				"The Archiving feature is not compatible with UnsafeIgnoreHardDelete.");
 		}
+
+		if (options.Application.UsesClusterSecret() && string.IsNullOrWhiteSpace(options.Cluster.ClusterSecret)) {
+			throw new InvalidConfigurationException(
+				$"A ClusterSecret is required for nodes to authenticate inter-node traffic when --disable-tls " +
+				$"is used. Set {nameof(options.Cluster.ClusterSecret)} to a shared secret value on every node. " +
+				$"Note that since TLS is disabled the secret will be sent in clear text.");
+		}
+
+		if (!options.Application.UsesClusterSecret() && !string.IsNullOrEmpty(options.Cluster.ClusterSecret)) {
+			Log.Warning(
+				"A {clusterSecret} has been configured but will have no effect. It is only used for inter-node " +
+				"authentication when running with --disable-tls and authentication enabled.",
+				nameof(options.Cluster.ClusterSecret));
+		}
 	}
 
 	public static bool ValidateForStartup(ClusterVNodeOptions options) {
@@ -128,7 +142,7 @@ public static class ClusterVNodeOptionsValidator {
 			return false;
 		}
 
-		if (options.Application.Insecure || options.Auth.AuthenticationType != Opts.AuthenticationTypeDefault) {
+		if (options.Application.AuthDisabled() || options.Auth.AuthenticationType != Opts.AuthenticationTypeDefault) {
 			if (options.DefaultUser.DefaultAdminPassword != SystemUsers.DefaultAdminPassword) {
 				Log.Error("Cannot set default admin password when not using the internal authentication.");
 				return false;

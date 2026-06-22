@@ -16,6 +16,10 @@ The protocol security configuration depends a lot on the deployment topology and
 interactive [configuration tool](https://configurator.eventstore.com), which also has instructions on how to generate and install
 the certificates and configure KurrentDB nodes to use them.
 
+::: note
+For non-production use, two run modes skip most of the configuration described on this page: [`--insecure`](./security-options.md#running-without-security) disables TLS entirely, and [`--dev`](./security-options.md#development-mode) generates a self-signed certificate for local use.
+:::
+
 ## Certificates configuration
 
 In this section, you can find settings related to configuring the certificates for protocol security (HTTPS and TLS).

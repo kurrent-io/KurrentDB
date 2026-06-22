@@ -1,0 +1,68 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@implements IDisposable
+@inject LogObserver LogObserver
+@using System.ComponentModel
+@using KurrentDB.Tools
+@using Serilog.Events
+
+@* Subscribes to the live log sink. The Logs page is gated by [Authorize(Policy = UiPolicies.ViewLogs)],
+   so this component is only instantiated for an allowed user — the subscription never runs otherwise. *@
+<MudDataGrid @ref="_dataGrid" Items="@LogObserver.Items" Dense="@true" Filterable="true">
+	<Columns>
+		<PropertyColumn Property="x => x.Timestamp" Title="Timestamp" Format="HH:mm:ss" Filterable="@false"/>
+		<PropertyColumn Property="x => x.Level" Title="Level" CellStyleFunc="CellStyleFunc"/>
+		<PropertyColumn Property="x => x.MessageTemplate.Render(x.Properties, null)" Title="Message"
+		                CellStyleFunc="CellStyleFunc"/>
+	</Columns>
+</MudDataGrid>
+@if (LogObserver.Items.Count == 0) {
+	<MudText>Waiting for log events...</MudText>
+}
+
+@code {
+	MudDataGrid<LogEvent> _dataGrid;
+	bool _defaultSortingApplied;
+
+	protected override void OnInitialized() {
+		LogObserver.PropertyChanged += HandleUpdate;
+	}
+
+	protected override async Task OnAfterRenderAsync(bool firstRender) {
+		await base.OnAfterRenderAsync(firstRender);
+		if (!_defaultSortingApplied && _dataGrid != null) {
+			await _dataGrid.SetSortAsync(nameof(LogEvent.Timestamp), SortDirection.Descending, x => x.Timestamp);
+			_defaultSortingApplied = true;
+			StateHasChanged();
+		}
+	}
+
+	// Fired off the Serilog sink thread; guard the renderer-torn-down race on teardown.
+	void HandleUpdate(object sender, PropertyChangedEventArgs e) => _ = RenderAsync();
+
+	async Task RenderAsync() {
+		try {
+			await InvokeAsync(StateHasChanged);
+		} catch (ObjectDisposedException) {
+			// Component/renderer torn down between log events — ignore (teardown race).
+		}
+	}
+
+	Func<LogEvent, string> CellStyleFunc => x => {
+		var color = x.Level switch {
+			LogEventLevel.Verbose => "--mud-palette-text-disabled",
+			LogEventLevel.Debug => "--mud-palette-text-secondary",
+			LogEventLevel.Information => "--mud-palette-text-primary",
+			LogEventLevel.Warning => "--mud-palette-warning",
+			LogEventLevel.Error => "--mud-palette-error",
+			LogEventLevel.Fatal => "--mud-palette-error",
+			_ => "--mud-palette-text-primary"
+		};
+		return $"color: var({color});";
+	};
+
+	public void Dispose() {
+		LogObserver.PropertyChanged -= HandleUpdate;
+	}
+}

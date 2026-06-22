@@ -24,7 +24,7 @@ public class PublicTcpApiService : IHostedService {
 		OptionsFormatter.LogConfig("TcpPlugin", options.TcpPlugin);
 
 		var endpoint = new IPEndPoint(options.NodeIp, options.TcpPlugin.NodeTcpPort);
-		if (options.Insecure) {
+		if (options.TlsDisabled()) {
 			var extTcpService = new TcpService(
 				components.MainQueue, endpoint, components.NetworkSendService,
 				TcpServiceType.External, TcpSecurityType.Normal,
@@ -36,6 +36,7 @@ public class PublicTcpApiService : IHostedService {
 				null,
 				null,
 				null,
+				expectedClusterSecret: "",
 				options.ConnectionPendingSendBytesThreshold,
 				options.ConnectionQueueSizeThreshold);
 
@@ -59,6 +60,7 @@ public class PublicTcpApiService : IHostedService {
 						: new X509Certificate2Collection(intermediates);
 				},
 				delegate { return (true, null); },
+				expectedClusterSecret: "",
 				options.ConnectionPendingSendBytesThreshold,
 				options.ConnectionQueueSizeThreshold);
 

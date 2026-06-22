@@ -2,9 +2,7 @@
 @* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
 
 @page "/ui/query"
-@attribute [Authorize(Roles = "$admins")]
-@attribute [ExcludeFromInteractiveRouting]
-@rendermode InteractiveServer
+@attribute [Authorize(Policy = UiPolicies.RunQueries)]
 @using System.Diagnostics
 @using System.Linq
 @using System.Text.Json
@@ -13,19 +11,19 @@
 @using KurrentDB.Common.Configuration
 @using KurrentDB.Components.Plugins
 @using KurrentDB.Components.Tools
+@using KurrentDB.Components.Shared
 @using KurrentDB.SecondaryIndexing.Query
 @using KurrentDB.Services
 @using KurrentDB.UI.Services
 @using Microsoft.AspNetCore.Authorization
 @implements IDisposable
 @inject IQueryEngine QueryEngine
+@inject EventStore.Plugins.Authorization.IAuthorizationProvider Authorizer
 @inject Preferences Preferences
 @inject IDialogService DialogService
 @inject PluginsService Plugins
 @inject ClipboardService Clipboard
 
-<MudPopoverProvider/>
-<MudDialogProvider/>
 
 <PageTitle>KurrentDB: Query</PageTitle>
 
@@ -34,11 +32,15 @@
 	return;
 }
 
+<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Style="width: 100%;" Class="mb-4">
+	<MudText Typo="Typo.h5">Query</MudText>
+	<MudSpacer/>
+</MudStack>
+
 <MudCard Outlined="true">
 	<MudCardContent>
 		<MudAlert Severity="Severity.Warning">
-			<h3 class="mb-2">Experimental feature</h3>
-			<p>Querying large datasets may cause a performance impact. Consider adding <code>LIMIT</code> to your query.</p>
+						<p>Querying large datasets may cause a performance impact. Consider adding <code>LIMIT</code> to your query.</p>
 		</MudAlert>
 		<MudText class="my-4">Type SQL statement in the editor below</MudText>
 		<StandaloneCodeEditor @ref="_editor" Id="query-editor"
@@ -68,7 +70,7 @@
 
 	<MudDataGrid Items="array.EnumerateArray()" T="JsonElement">
 		<Columns>
-			<HierarchyColumn T="JsonElement" ButtonDisabledFunc="@(e => e.EnumerateObject().All(p => p.Value.ValueKind is not (JsonValueKind.Object or JsonValueKind.Array)))"/>
+			<HierarchyColumn T="JsonElement" ButtonDisabledFunc="@(e => e.EnumerateObject().All(p => GetExpandableJson(p.Value) is null))"/>
 			@foreach (var col in columns) {
 				var colName = col;
 				<PropertyColumn T="JsonElement" TProperty="string"
@@ -79,11 +81,11 @@
 		<ChildRowContent>
 			<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
 				@foreach (var prop in context.Item.EnumerateObject()) {
-					if (prop.Value.ValueKind is not (JsonValueKind.Object or JsonValueKind.Array)) continue;
+					var propJson = GetExpandableJson(prop.Value);
+					if (propJson is null) continue;
 					var propName = prop.Name;
-					var propJson = prop.Value.GetRawText();
 					<MudTabPanel Text="@propName">
-						<Json JsonString="@propJson"/>
+						<JsonTree Json="@propJson"/>
 						<MudButton Variant="Variant.Filled" Size="Size.Small" OnClick="() => CopyJson(propJson, false)">
 							Copy JSON
 						</MudButton>
@@ -101,6 +103,8 @@
 }
 
 @code {
+	[CascadingParameter] Task<AuthenticationState> AuthenticationState { get; set; }
+
 	readonly CancellationTokenSource _cts = new();
 	JsonDocument _items;
 	StandaloneCodeEditor _editor = null!;
@@ -144,7 +148,8 @@
 
 		try
 		{
-			_items = await QueryEngine.ExecuteAdHocUserQuery(sql, _cts.Token);
+			var principal = (await AuthenticationState).User;
+			_items = await QueryEngine.ExecuteAdHocUserQuery(Authorizer, principal, sql, _cts.Token);
 			watch.Stop();
 			_message = $"Query executed in {watch}";
 		}
@@ -160,16 +165,21 @@
 	protected override void OnInitialized() {
 		base.OnInitialized();
 		Preferences.ThemeChanged += PreferencesOnThemeChanged;
-
-		return;
-
-		void PreferencesOnThemeChanged(object sender, EventArgs e) => _editor.UpdateOptions(new() { Theme = EditorTheme() });
 	}
+
+	// Preferences is a singleton, so this handler must be unsubscribed on dispose or it keeps the
+	// component (and its editor) alive for the lifetime of the app.
+	// Marshal to the renderer's sync context (the event can be raised from anywhere) and null-guard the
+	// editor, which may not be initialised yet (or already torn down) when the theme changes.
+	void PreferencesOnThemeChanged(object sender, EventArgs e) =>
+		InvokeAsync(() => _editor?.UpdateOptions(new() { Theme = EditorTheme() }));
 
 	public void Dispose()
 	{
+		Preferences.ThemeChanged -= PreferencesOnThemeChanged;
 		_items?.Dispose();
 		_cts.Cancel();
+		_cts.Dispose();
 	}
 
 	static string GetPropertyValue(JsonElement element, string name)
@@ -177,6 +187,31 @@
 		return element.TryGetProperty(name, out var property)
 			? property.ToString()
 			: string.Empty;
+	}
+
+	// A result cell is "expandable JSON" if it's a JSON object/array, or a string whose content parses to
+	// one. The query engine exposes event data/metadata as VARCHAR, so they arrive as JSON *strings* rather
+	// than nested objects — without this they'd never be expandable. Returns the JSON text for the viewer,
+	// or null if the value isn't expandable JSON (plain strings, numbers, etc.).
+	static string GetExpandableJson(JsonElement value)
+	{
+		if (value.ValueKind is JsonValueKind.Object or JsonValueKind.Array)
+			return value.GetRawText();
+		if (value.ValueKind is JsonValueKind.String)
+		{
+			var text = value.GetString();
+			if (string.IsNullOrWhiteSpace(text)) return null;
+			try
+			{
+				using var doc = JsonDocument.Parse(text);
+				return doc.RootElement.ValueKind is JsonValueKind.Object or JsonValueKind.Array ? text : null;
+			}
+			catch (JsonException)
+			{
+				return null;
+			}
+		}
+		return null;
 	}
 
 	string EditorTheme() => Preferences.DarkMode ? "vs-dark" : "vs-light";

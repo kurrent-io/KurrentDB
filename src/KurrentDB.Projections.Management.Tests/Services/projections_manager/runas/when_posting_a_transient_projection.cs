@@ -13,6 +13,7 @@ using NUnit.Framework;
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager.runas {
 	namespace when_posting_a_transient_projection {
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
+		[Ignore("Transient projections are deprecated — see ProjectionManager.Handle(Post).")]
 		public class Authenticated<TLogFormat, TStreamId> : TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId> {
 			private string _projectionName;
 			private ClaimsPrincipal _testUserPrincipal;

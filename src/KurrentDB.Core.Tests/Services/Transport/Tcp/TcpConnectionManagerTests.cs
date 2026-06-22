@@ -47,6 +47,7 @@ public class TcpConnectionManagerTests {
 				new StubPasswordHashAlgorithm(), 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { },
+			expectedClusterSecret: "",
 			_connectionPendingSendBytesThreshold, _connectionQueueSizeThreshold);
 
 		tcpConnectionManager.ProcessPackage(package);
@@ -88,6 +89,7 @@ public class TcpConnectionManagerTests {
 				new StubPasswordHashAlgorithm(), 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { },
+			expectedClusterSecret: "",
 			_connectionPendingSendBytesThreshold, _connectionQueueSizeThreshold);
 
 		tcpConnectionManager.ProcessPackage(package);
@@ -124,6 +126,7 @@ public class TcpConnectionManagerTests {
 					new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { mre.Set(); },
+			expectedClusterSecret: "",
 			_connectionPendingSendBytesThreshold, _connectionQueueSizeThreshold);
 
 		tcpConnectionManager.SendMessage(message);
@@ -153,6 +156,7 @@ public class TcpConnectionManagerTests {
 				new IODispatcher(new SynchronousScheduler(), new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { },
+			expectedClusterSecret: "",
 			_connectionPendingSendBytesThreshold, _connectionQueueSizeThreshold);
 
 		tcpConnectionManager.SendMessage(message);
@@ -186,6 +190,7 @@ public class TcpConnectionManagerTests {
 				new IODispatcher(new SynchronousScheduler(), new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { mre.Set(); },
+			expectedClusterSecret: "",
 			ESConsts.UnrestrictedPendingSendBytes, ESConsts.MaxConnectionQueueSize);
 
 		tcpConnectionManager.SendMessage(message);
@@ -219,6 +224,7 @@ public class TcpConnectionManagerTests {
 				new IODispatcher(new SynchronousScheduler(), new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { mre.Set(); },
+			expectedClusterSecret: "",
 			ESConsts.UnrestrictedPendingSendBytes, ESConsts.MaxConnectionQueueSize);
 
 		tcpConnectionManager.SendMessage(message);
@@ -252,6 +258,7 @@ public class TcpConnectionManagerTests {
 				new IODispatcher(new SynchronousScheduler(), new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { mre.Set(); },
+			expectedClusterSecret: "",
 			ESConsts.UnrestrictedPendingSendBytes, ESConsts.MaxConnectionQueueSize);
 
 		tcpConnectionManager.SendMessage(message);
@@ -259,6 +266,115 @@ public class TcpConnectionManagerTests {
 		if (!mre.Wait(2000)) {
 			Assert.Fail("Timed out waiting for connection to close");
 		}
+	}
+
+	// --- Internal TCP node-auth gate -----------------------------------------
+	// When a connection is created with expectedClusterSecret != "", the manager
+	// rejects every non-heartbeat command until the peer sends a valid
+	// Authenticate package carrying the secret as a token.
+
+	private TcpConnectionManager CreateGatedManager(DummyTcpConnection conn, SynchronousScheduler publisher, string requiredSecret) {
+		return new TcpConnectionManager(
+			Guid.NewGuid().ToString(), TcpServiceType.Internal,
+			new ClientTcpDispatcher(ESConsts.ReadRequestTimeout, 2000),
+			publisher, conn, publisher,
+			new InternalAuthenticationProvider(publisher,
+				new IODispatcher(publisher, new NoopEnvelope()),
+				new StubPasswordHashAlgorithm(), 1, false, DefaultData.DefaultUserOptions),
+			new AuthorizationGateway(new TestAuthorizationProvider()),
+			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (m, e) => { },
+			expectedClusterSecret: requiredSecret,
+			_connectionPendingSendBytesThreshold, _connectionQueueSizeThreshold);
+	}
+
+	[Test]
+	public void node_auth_gate_rejects_non_auth_command_before_handshake() {
+		var conn = new DummyTcpConnection();
+		var mgr = CreateGatedManager(conn, new SynchronousScheduler(), "the-secret");
+
+		var write = new WriteEvents(
+			Guid.NewGuid().ToString(), ExpectedVersion.Any,
+			new[] { new NewEvent(Guid.NewGuid().ToByteArray(), "T", 1, 0, [], []) },
+			false);
+		mgr.ProcessPackage(new TcpPackage(TcpCommand.WriteEvents, Guid.NewGuid(), write.Serialize()));
+
+		var received = TcpPackage.FromArraySegment(conn.ReceivedData.Last());
+		Assert.AreEqual(TcpCommand.BadRequest, received.Command);
+	}
+
+	[Test]
+	public void node_auth_gate_allows_heartbeat_before_handshake() {
+		var conn = new DummyTcpConnection();
+		var mgr = CreateGatedManager(conn, new SynchronousScheduler(), "the-secret");
+
+		mgr.ProcessPackage(new TcpPackage(TcpCommand.HeartbeatRequestCommand, Guid.NewGuid(), null));
+
+		var received = TcpPackage.FromArraySegment(conn.ReceivedData.Last());
+		Assert.AreEqual(TcpCommand.HeartbeatResponseCommand, received.Command);
+	}
+
+	[Test]
+	public void node_auth_gate_rejects_wrong_secret_and_closes() {
+		var closed = new ManualResetEventSlim();
+		var conn = new DummyTcpConnection();
+		conn.ConnectionClosed += (_, _) => closed.Set();
+		var mgr = CreateGatedManager(conn, new SynchronousScheduler(), "the-secret");
+
+		var auth = new TcpPackage(TcpCommand.Authenticate, TcpFlags.Authenticated,
+			Guid.NewGuid(), authToken: "wrong-secret", data: ArraySegment<byte>.Empty);
+		mgr.ProcessPackage(auth);
+
+		var received = TcpPackage.FromArraySegment(conn.ReceivedData.Last());
+		Assert.AreEqual(TcpCommand.BadRequest, received.Command);
+		Assert.IsTrue(closed.Wait(TimeSpan.FromSeconds(2)), "Connection should be closed after rejection.");
+	}
+
+	[Test]
+	public void node_auth_gate_accepts_matching_secret_and_then_allows_commands() {
+		var publisher = new SynchronousScheduler();
+		var conn = new DummyTcpConnection();
+		var mgr = CreateGatedManager(conn, publisher, "the-secret");
+
+		var writeReceived = new ManualResetEventSlim();
+		publisher.Subscribe(new AdHocHandler<ClientMessage.WriteEvents>(_ => writeReceived.Set()));
+
+		// Step 1: authenticate. Node auth is fire-and-forget — no ack is sent back;
+		// success is observable only by the gate subsequently allowing commands through.
+		var auth = new TcpPackage(TcpCommand.Authenticate, TcpFlags.Authenticated,
+			Guid.NewGuid(), authToken: "the-secret", data: ArraySegment<byte>.Empty);
+		mgr.ProcessPackage(auth);
+
+		// Step 2: a previously-gated command now flows through and gets published.
+		var write = new WriteEvents(
+			Guid.NewGuid().ToString(), ExpectedVersion.Any,
+			new[] { new NewEvent(Guid.NewGuid().ToByteArray(), "T", 1, 0, [], []) },
+			false);
+		mgr.ProcessPackage(new TcpPackage(TcpCommand.WriteEvents, TcpFlags.TrustedWrite,
+			Guid.NewGuid(), null, null, write.Serialize()));
+
+		Assert.IsTrue(writeReceived.Wait(TimeSpan.FromSeconds(2)),
+			"WriteEvents should be processed after node authentication.");
+	}
+
+	[Test]
+	public void node_auth_gate_inactive_when_no_secret_configured() {
+		// Empty expectedClusterSecret = same as TLS-on or --insecure: no gate.
+		// Verify a non-heartbeat command flows through immediately.
+		var publisher = new SynchronousScheduler();
+		var conn = new DummyTcpConnection();
+		var mgr = CreateGatedManager(conn, publisher, requiredSecret: "");
+
+		var writeReceived = new ManualResetEventSlim();
+		publisher.Subscribe(new AdHocHandler<ClientMessage.WriteEvents>(_ => writeReceived.Set()));
+
+		var write = new WriteEvents(
+			Guid.NewGuid().ToString(), ExpectedVersion.Any,
+			new[] { new NewEvent(Guid.NewGuid().ToByteArray(), "T", 1, 0, [], []) },
+			false);
+		mgr.ProcessPackage(new TcpPackage(TcpCommand.WriteEvents, TcpFlags.TrustedWrite,
+			Guid.NewGuid(), null, null, write.Serialize()));
+
+		Assert.IsTrue(writeReceived.Wait(TimeSpan.FromSeconds(2)));
 	}
 }
 

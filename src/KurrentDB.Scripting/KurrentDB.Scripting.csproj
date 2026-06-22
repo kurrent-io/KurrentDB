@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Description>Shared JavaScript scripting primitives (Jint engine factory + record evaluator) used by both user-defined indexes and Kontext workspace filters.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Jint" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../KurrentDB.Core/KurrentDB.Core.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -10,8 +10,12 @@ namespace KurrentDB.Core.Services.Transport.Tcp;
 [Flags]
 public enum TcpFlags : byte {
 	None = 0x00,
+	// TcpPackage contains an authentication header
 	Authenticated = 0x01,
-	TrustedWrite = 0x02
+	// TcpPackage contains no authentication header but wants to run as SystemAccounts.System
+	// by virtue of its context: either Insecure mode, or a connection authenticated as a
+	// cluster node (via mTLS or ClusterSecret). Only accepted on Internal TCP connections.
+	TrustedWrite = 0x02,
 }
 
 public readonly struct TcpPackage {
@@ -35,6 +39,11 @@ public readonly struct TcpPackage {
 	private readonly string _login;
 	private readonly string _password;
 	private readonly string _authToken;
+
+	public bool TryGetAuthToken(out string authToken) {
+		authToken = _authToken;
+		return authToken != null;
+	}
 
 	public IReadOnlyDictionary<string, string> Tokens => (_login, _authToken) switch {
 		(null, null) => NotAuthenticated,
@@ -66,6 +75,11 @@ public readonly struct TcpPackage {
 		}
 
 		var firstByte = data.Array[data.Offset + AuthOffset];
+		// latent BUG (pre-existing): these two token-form reads use AuthOffset / AuthOffset + 2 directly
+		// instead of data.Offset + AuthOffset, unlike the login/password path below which honours
+		// data.Offset. Works only because the framer currently hands us segments with Offset == 0.
+		// The token form is used by JWT bearer-token user auth and by cluster ClusterSecret auth, so
+		// if the framer ever produces non-zero offsets, both would read garbage here.
 		var tokenLength = BitConverter.ToInt16(data.Array, AuthOffset);
 		if (Math.Sign(tokenLength) == -1) {
 			var token = Helper.UTF8NoBom.GetString(data.Array, AuthOffset + 2, -tokenLength);

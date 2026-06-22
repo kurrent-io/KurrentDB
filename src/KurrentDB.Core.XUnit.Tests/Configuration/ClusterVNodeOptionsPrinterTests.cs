@@ -84,7 +84,9 @@ DEFAULT OPTIONS:
 				($"{KurrentConfigurationKeys.LegacyEventStorePrefix.ToUpper()}_DEFAULT_ADMIN_PASSWORD", secretText))
 			.AddLegacyEventStoreCommandLine(
 				$"--{KurrentConfigurationKeys.LegacyEventStorePrefix}:CertificatePassword", secretText)
-			.AddKurrentCommandLine($"--default-ops-password={secretText}")
+			.AddKurrentCommandLine(
+				$"--default-ops-password={secretText}",
+				$"--cluster-secret={secretText}")
 			.Build();
 
 		var loadedOptions = ClusterVNodeOptions.GetLoadedOptions(config);
@@ -92,10 +94,13 @@ DEFAULT OPTIONS:
 		var opsPassword = loadedOptions[$"{KurrentConfigurationKeys.Prefix}:DefaultOpsPassword"];
 		var adminPassword = loadedOptions[$"{KurrentConfigurationKeys.Prefix}:DefaultAdminPassword"];
 		var certPassword = loadedOptions[$"{KurrentConfigurationKeys.Prefix}:CertificatePassword"];
+		var clusterSecret = loadedOptions[$"{KurrentConfigurationKeys.Prefix}:ClusterSecret"];
 
 		opsPassword.DisplayValue.Should().BeEquivalentTo("********");
 		adminPassword.DisplayValue.Should().BeEquivalentTo("********");
 		certPassword.DisplayValue.Should().BeEquivalentTo("********");
+		clusterSecret.DisplayValue.Should().BeEquivalentTo("********");
+		clusterSecret.GetRawValue().Should().Be(secretText);
 	}
 
 	[Fact]

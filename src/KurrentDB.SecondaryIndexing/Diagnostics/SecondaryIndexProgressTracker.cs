@@ -108,15 +108,15 @@ public class SecondaryIndexProgressTracker {
 		private readonly long _start = clock.GetTimestamp();
 
 		public void Dispose() {
-			var elapsed = clock.GetElapsedTime(_start).Milliseconds;
-			log.LogSecondaryIndexIndexRecordsCommitted(indexName, elapsed);
-			histogram.Record(elapsed, tag);
+			var elapsed = clock.GetElapsedTime(_start);
+			log.LogSecondaryIndexIndexRecordsCommitted(indexName, elapsed.TotalMilliseconds);
+			histogram.Record(elapsed.TotalSeconds, tag);
 		}
 
 	}
 }
 
 static partial class SecondaryIndexProgressTrackerLogMessage {
-	[LoggerMessage(LogLevel.Debug, "Secondary index {index} records committed in {duration} ms")]
-	public static partial void LogSecondaryIndexIndexRecordsCommitted(this ILogger logger, string index, int duration);
+	[LoggerMessage(LogLevel.Debug, "Secondary index {index} records committed in {duration:N1} ms")]
+	public static partial void LogSecondaryIndexIndexRecordsCommitted(this ILogger logger, string index, double duration);
 }

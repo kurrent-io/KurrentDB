@@ -1,0 +1,64 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Description>Pre-bundled ONNX models for KurrentDB.Kontext (all-MiniLM-L6-v2, ms-marco-TinyBERT-L2-v2). Models are embedded as assembly resources.</Description>
+    <KontextModelsDir>$(MSBuildThisFileDirectory)</KontextModelsDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)../../THIRD-PARTY-NOTICES" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="embedding/model_quint8_avx2.onnx" LogicalName="KurrentDB.Kontext.Models.embedding.model_quint8_avx2.onnx" />
+    <EmbeddedResource Include="embedding/model_qint8_avx512.onnx" LogicalName="KurrentDB.Kontext.Models.embedding.model_qint8_avx512.onnx" />
+    <EmbeddedResource Include="embedding/vocab.txt" LogicalName="KurrentDB.Kontext.Models.embedding.vocab.txt" />
+    <EmbeddedResource Include="cross-encoder/model_quint8_avx2.onnx" LogicalName="KurrentDB.Kontext.Models.cross-encoder.model_quint8_avx2.onnx" />
+    <EmbeddedResource Include="cross-encoder/model_qint8_avx512.onnx" LogicalName="KurrentDB.Kontext.Models.cross-encoder.model_qint8_avx512.onnx" />
+    <EmbeddedResource Include="cross-encoder/vocab.txt" LogicalName="KurrentDB.Kontext.Models.cross-encoder.vocab.txt" />
+  </ItemGroup>
+
+  <!-- Download models before build if missing -->
+  <Target Name="DownloadModelsIfMissing" BeforeTargets="PrepareForBuild"
+          Condition="!Exists('$(KontextModelsDir)embedding/model_quint8_avx2.onnx') Or !Exists('$(KontextModelsDir)cross-encoder/model_quint8_avx2.onnx')">
+
+    <Message Importance="high" Text="Downloading ONNX models (first build only)..." />
+
+    <MakeDir Directories="$(KontextModelsDir)embedding" />
+    <MakeDir Directories="$(KontextModelsDir)cross-encoder" />
+
+    <DownloadFile
+      SourceUrl="https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/onnx/model_quint8_avx2.onnx"
+      DestinationFolder="$(KontextModelsDir)embedding"
+      Condition="!Exists('$(KontextModelsDir)embedding/model_quint8_avx2.onnx')" />
+
+    <DownloadFile
+      SourceUrl="https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/onnx/model_qint8_avx512.onnx"
+      DestinationFolder="$(KontextModelsDir)embedding"
+      Condition="!Exists('$(KontextModelsDir)embedding/model_qint8_avx512.onnx')" />
+
+    <DownloadFile
+      SourceUrl="https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/vocab.txt"
+      DestinationFolder="$(KontextModelsDir)embedding"
+      Condition="!Exists('$(KontextModelsDir)embedding/vocab.txt')" />
+
+    <DownloadFile
+      SourceUrl="https://huggingface.co/cross-encoder/ms-marco-TinyBERT-L2-v2/resolve/main/onnx/model_quint8_avx2.onnx"
+      DestinationFolder="$(KontextModelsDir)cross-encoder"
+      Condition="!Exists('$(KontextModelsDir)cross-encoder/model_quint8_avx2.onnx')" />
+
+    <DownloadFile
+      SourceUrl="https://huggingface.co/cross-encoder/ms-marco-TinyBERT-L2-v2/resolve/main/onnx/model_qint8_avx512.onnx"
+      DestinationFolder="$(KontextModelsDir)cross-encoder"
+      Condition="!Exists('$(KontextModelsDir)cross-encoder/model_qint8_avx512.onnx')" />
+
+    <DownloadFile
+      SourceUrl="https://huggingface.co/cross-encoder/ms-marco-TinyBERT-L2-v2/resolve/main/vocab.txt"
+      DestinationFolder="$(KontextModelsDir)cross-encoder"
+      Condition="!Exists('$(KontextModelsDir)cross-encoder/vocab.txt')" />
+
+    <Message Importance="high" Text="ONNX models downloaded successfully." />
+  </Target>
+
+</Project>

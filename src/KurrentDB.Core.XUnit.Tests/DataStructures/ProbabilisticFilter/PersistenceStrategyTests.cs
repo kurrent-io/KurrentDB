@@ -32,13 +32,31 @@ public abstract class PersistenceStrategyTests : DirectoryPerTest<PersistenceStr
 				Assert.False(sut.DataAccessor.IsBitSet(bitPosition));
 			}
 
-			sut.Flush();
+			sut.Flush(throttle: false);
 		}
 
 		// and after reopening
 		using (var sut = OpenSut(10_000)) {
 			for (var bitPosition = 0; bitPosition < 10_000 * 8; bitPosition++) {
 				Assert.False(sut.DataAccessor.IsBitSet(bitPosition));
+			}
+		}
+	}
+
+	[Fact]
+	public void ThrottledFlushesEntireLogicalFilter() {
+		using (var sut = CreateSut(10_000)) {
+			for (var bitPosition = 0; bitPosition < 10_000 * 8; bitPosition++) {
+				sut.DataAccessor.SetBit(bitPosition);
+			}
+
+			sut.Flush(throttle: true);
+		}
+
+		// and after reopening
+		using (var sut = OpenSut(10_000)) {
+			for (var bitPosition = 0; bitPosition < 10_000 * 8; bitPosition++) {
+				Assert.True(sut.DataAccessor.IsBitSet(bitPosition));
 			}
 		}
 	}
@@ -51,7 +69,7 @@ public abstract class PersistenceStrategyTests : DirectoryPerTest<PersistenceStr
 				sut.DataAccessor.SetBit(bitPosition);
 			}
 
-			sut.Flush();
+			sut.Flush(throttle: false);
 		}
 
 		// and after reopening

@@ -8,7 +8,8 @@
 		"Kurrent",
 		"Kurrent.Connectors",
 		"Kurrent.Connectors.Sinks",
-		"KurrentDB.SecondaryIndexes"
+		"KurrentDB.SecondaryIndexes",
+		"KurrentDB.Kontext"
 	],
 
 	"Statuses": {

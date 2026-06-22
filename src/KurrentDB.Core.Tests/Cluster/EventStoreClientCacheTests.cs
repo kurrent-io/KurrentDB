@@ -21,7 +21,8 @@ public class EventStoreClientCacheTests {
 	private static readonly INodeHttpClientFactory NodeHttpClientFactory = new NodeHttpClientFactory(
 		uriScheme: Uri.UriSchemeHttps,
 		nodeCertificateValidator: delegate { return (true, null); },
-		clientCertificateSelector: null);
+		clientCertificateSelector: null,
+		clusterSecret: "");
 
 	private static readonly Func<EndPoint, IPublisher, EventStoreClusterClient> EventStoreClusterClientFactory =
 		(endpoint, bus) =>

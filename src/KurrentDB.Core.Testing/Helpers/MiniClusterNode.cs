@@ -64,12 +64,11 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 	public VNodeState NodeState = VNodeState.Unknown;
 	private readonly WebApplication _host;
 
-	private static bool EnableHttps() => !RuntimeInformation.IsOSX;
-
 	public MiniClusterNode(string pathname, int debugIndex, IPEndPoint internalTcp, IPEndPoint externalTcp,
 		IPEndPoint httpEndPoint, EndPoint[] gossipSeeds, ISubsystem[] subsystems = null,
 		bool enableTrustedAuth = false, int memTableSize = 1000, bool inMemDb = true,
 		bool disableFlushToDisk = false, bool readOnlyReplica = false, int nodePriority = 0,
+		bool disableTls = false, string clusterSecret = "",
 		string intHostAdvertiseAs = null, IExpiryStrategy expiryStrategy = null) {
 		if (RuntimeInformation.IsOSX) {
 			AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport",
@@ -91,7 +90,8 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 		Directory.CreateDirectory(_dbPath);
 		FileStreamExtensions.ConfigureFlush(disableFlushToDisk);
 
-		var useHttps = EnableHttps();
+		var insecure = !disableTls && RuntimeInformation.IsOSX;
+		var useHttps = !disableTls && !RuntimeInformation.IsOSX;
 
 		subsystems ??= [];
 		subsystems = [.. subsystems, new TcpApiTestPlugin.TcpApiTestPlugin()];
@@ -100,7 +100,8 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 			Application = new() {
 				AllowAnonymousEndpointAccess = true,
 				AllowAnonymousStreamAccess = true,
-				Insecure = !useHttps,
+				Insecure = insecure,
+				DisableTls = disableTls,
 				LogFailedAuthenticationAttempts = true,
 				LogHttpRequests = true,
 				StatsPeriodSec = (int)TimeSpan.FromHours(1).TotalSeconds
@@ -111,6 +112,7 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 				GossipSeed = gossipSeeds,
 				ClusterSize = 3,
 				NodePriority = nodePriority,
+				ClusterSecret = clusterSecret,
 				GossipIntervalMs = 2_000,
 				GossipAllowedDifferenceMs = 1_000,
 				GossipTimeoutMs = 2_000,
@@ -159,7 +161,7 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:NodeTcpPort", externalTcp.Port.ToString()),
 				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:NodeHeartbeatInterval", "10000"),
 				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:NodeHeartbeatTimeout", "10000"),
-				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:Insecure", options.Application.Insecure.ToString()),
+				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:DisableTls", options.Application.TlsDisabled().ToString()),
 			}).Build();
 		var serverCertificate = useHttps ? ssl_connections.GetServerCertificate() : null;
 		var trustedRootCertificates =
@@ -206,7 +208,7 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 			.ConfigureKestrel(o => {
 				o.Listen(HttpEndPoint, options => {
 					options.UseConnectionInterceptors();
-					if (RuntimeInformation.IsOSX) {
+					if (!useHttps) {
 						options.Protocols = HttpProtocols.Http2;
 					} else {
 						options.UseHttps(new HttpsConnectionAdapterOptions {

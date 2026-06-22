@@ -217,9 +217,7 @@ public class Authorization<TLogFormat, TStreamId> : specification_with_cluster<T
 			"/users/{login}/command/disable;POST;Admin",
 			"/users/{login}/command/reset-password;POST;Admin",
 			//"/users/{login}/command/change-password;POST;User", Users can only change their own password, so this url won't be correct in these tests
-			"/web/{*remaining_path};GET;None",
-			";GET;None",
-			"/web;GET;None"
+			";GET;None"
 		)] string httpEndpointDetails
 	) {
 		/*use the leader node endpoint to avoid any redirects*/

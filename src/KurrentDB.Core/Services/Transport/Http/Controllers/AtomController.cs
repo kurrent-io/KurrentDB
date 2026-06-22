@@ -1153,7 +1153,7 @@ internal class HtmlFeedCodec : ICodec, IRichAtomCodec {
             <body>
             <script>
                 var data = " + JsonConvert.SerializeObject(value, Formatting.Indented, JsonCodec.ToSettings) + @";
-                var newLocation = '/web/index.html#/streams/' + data.streamId" + @"
+                var newLocation = '/ui/streams/' + encodeURIComponent(data.streamId)" + @"
                 if('positionEventNumber' in data){
                     newLocation = newLocation + '/' + data.positionEventNumber;
                 }

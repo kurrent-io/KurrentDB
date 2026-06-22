@@ -48,9 +48,7 @@ The redactor will blank out the data section of the specified events with one bi
 
 ![Redactor run](./images/redaction-run.png)
 
-If you read the data of a redacted event from an external client, you should see data composed of only 0xFF bytes. The UI will also label redacted events.
-
-![Redacted event in UI](./images/redaction-ui.png)
+If you read the data of a redacted event from an external client, or view the record in the embedded UI, you should see data composed of only 0xFF bytes.
 
 ::: tip
 The redactor is not an offline tool. The KurrentDB server must be running, as the redactor needs to communicate with it to obtain information about the events to be redacted and replace the chunk files with the redacted ones.

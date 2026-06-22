@@ -28,6 +28,9 @@ jobs:
       name: Checkout
       uses: actions/checkout@v4
     -  
+      name: Restore Cached Kontext Models
+      uses: ./.github/actions/cache-kontext-models
+    -  
       name: Install net10.0
       uses: actions/setup-dotnet@v3
       with:

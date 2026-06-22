@@ -48,6 +48,7 @@ public class ReplicaService :
 	private readonly bool _useSsl;
 	private readonly CertificateDelegates.ServerCertificateValidator _sslServerCertValidator;
 	private readonly Func<X509Certificate> _sslClientCertificateSelector;
+	private readonly string _clusterSecret;
 	private readonly TimeSpan _heartbeatTimeout;
 	private readonly TimeSpan _heartbeatInterval;
 	private VNodeState _state = VNodeState.Initializing;
@@ -65,6 +66,7 @@ public class ReplicaService :
 		bool useSsl,
 		CertificateDelegates.ServerCertificateValidator sslServerCertValidator,
 		Func<X509Certificate> sslClientCertificateSelector,
+		string clusterSecret,
 		TimeSpan heartbeatTimeout,
 		TimeSpan heartbeatInterval,
 		TimeSpan writeTimeout) {
@@ -72,6 +74,7 @@ public class ReplicaService :
 		_useSsl = useSsl;
 		_sslServerCertValidator = sslServerCertValidator;
 		_sslClientCertificateSelector = sslClientCertificateSelector;
+		_clusterSecret = Ensure.NotNull(clusterSecret);
 		_heartbeatTimeout = heartbeatTimeout;
 		_heartbeatInterval = heartbeatInterval;
 		_publisher = Ensure.NotNull(publisher);
@@ -172,6 +175,7 @@ public class ReplicaService :
 				_authorizationGateway,
 				_heartbeatInterval,
 				_heartbeatTimeout,
+				clusterSecret: _clusterSecret,
 				OnConnectionEstablished,
 				OnConnectionClosed);
 			_connection.StartReceiving();

@@ -79,7 +79,7 @@ Learn more about configuring the HTTP protocol on the [HTTP configuration](../co
 
 ::: warning Deprecation Note
 The current AtomPub-based HTTP application API is disabled by default. You can enable it by adding an [option](../configuration/networking.md#atompub) to the server configuration. Although we plan to remove AtomPub support from future server versions, the server management HTTP API will remain available.
-You need to enable the AtomPub protocol to have a fully functioning database user interface.
+You no longer need to enable AtomPub for a fully functioning database user interface.
 :::
 
 Learn more about the KurrentDB HTTP interface in the [HTTP documentation](../http-api/README.md). 

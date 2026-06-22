@@ -24,7 +24,7 @@ public class TcpApiTestPlugin() : SubsystemsPlugin(name: "TcpTestApi") {
 			var authGateway = serviceProvider.GetRequiredService<AuthorizationGateway>();
 			var authProvider = serviceProvider.GetRequiredService<IAuthenticationProvider>();
 
-			return options.Insecure
+			return options.DisableTls
 				? PublicTcpApiTestService.Insecure(options, authProvider, authGateway, components)
 				: PublicTcpApiTestService.Secure(options, authProvider, authGateway, components, serviceProvider.GetService<CertificateProvider>());
 		});

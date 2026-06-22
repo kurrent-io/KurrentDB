@@ -1,6 +1,6 @@
 @using KurrentDB.SecondaryIndexing.Stats
 @using Serilog
-@inject StatsService Stats
+@inject UiStatsService Stats
 
 @if (_state is LoadState.ReadyToLoad) {
 	<MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="LoadStats">Load</MudButton>
@@ -36,11 +36,14 @@
 
 	static readonly ILogger Log = Serilog.Log.ForContext<ExplicitTransactions>();
 
+	[CascadingParameter] Task<AuthenticationState> AuthenticationState { get; set; }
+
 	async Task LoadStats() {
 		Log.Information("User requested explicit transactions stats load via UI");
 		_state = LoadState.Loading;
 		try {
-			_details = await Task.Run(() => Stats.GetExplicitTransactions());
+			var principal = (await AuthenticationState).User;
+			_details = await Stats.GetExplicitTransactionsAsync(principal);
 			var latestTransactionDate = _details.Count > 0 ? _details.Max(x => x.LastTransactionDate) : DateTime.MinValue;
 			_isRecent = latestTransactionDate > DateTime.Today - TimeSpan.FromDays(30);
 			_state = LoadState.Loaded;

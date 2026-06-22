@@ -13,5 +13,5 @@ public class TcpApiTestOptions {
 	public int ConnectionQueueSizeThreshold { get; set; } = 50_000;
 	public int TcpReadTimeoutMs { get; set; } = ESConsts.ReadRequestTimeout;
 	public int WriteTimeoutMs { get; set; } = 2_000;
-	public bool Insecure { get; init; } = false;
+	public bool DisableTls { get; init; } = false;
 }

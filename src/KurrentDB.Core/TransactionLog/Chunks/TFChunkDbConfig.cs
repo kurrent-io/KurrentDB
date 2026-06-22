@@ -10,6 +10,11 @@ public class TFChunkDbConfig {
 	public readonly string Path;
 	public readonly int ChunkSize;
 	public readonly long MaxChunksCacheSize;
+	// A semi-stable identifier (tag.chk), seeded with a random value when the database is first created.
+	// Currently only used to scope successful login cookie to a particular database.
+	// Later it may be sensible to update this to equal the leader's when joining a cluster so that they
+	// converge across a cluster.
+	public readonly ICheckpoint DatabaseTag;
 	public readonly ICheckpoint WriterCheckpoint;
 	public readonly ICheckpoint ChaserCheckpoint;
 	public readonly ICheckpoint EpochCheckpoint;
@@ -27,6 +32,7 @@ public class TFChunkDbConfig {
 	public TFChunkDbConfig(string path,
 		int chunkSize,
 		long maxChunksCacheSize,
+		ICheckpoint databaseTag,
 		ICheckpoint writerCheckpoint,
 		ICheckpoint chaserCheckpoint,
 		ICheckpoint epochCheckpoint,
@@ -43,6 +49,7 @@ public class TFChunkDbConfig {
 		Ensure.NotNullOrEmpty(path, "path");
 		Ensure.Positive(chunkSize, "chunkSize");
 		Ensure.Nonnegative(maxChunksCacheSize, "maxChunksCacheSize");
+		Ensure.NotNull(databaseTag, nameof(databaseTag));
 		Ensure.NotNull(writerCheckpoint, "writerCheckpoint");
 		Ensure.NotNull(chaserCheckpoint, "chaserCheckpoint");
 		Ensure.NotNull(epochCheckpoint, "epochCheckpoint");
@@ -55,6 +62,7 @@ public class TFChunkDbConfig {
 		Path = path;
 		ChunkSize = chunkSize;
 		MaxChunksCacheSize = maxChunksCacheSize;
+		DatabaseTag = databaseTag;
 		WriterCheckpoint = writerCheckpoint;
 		ChaserCheckpoint = chaserCheckpoint;
 		EpochCheckpoint = epochCheckpoint;

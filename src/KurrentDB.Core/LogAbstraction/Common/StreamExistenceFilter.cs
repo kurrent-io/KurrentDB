@@ -137,7 +137,7 @@ public class StreamExistenceFilter :
 
 			var startTime = DateTime.UtcNow;
 			Log.Verbose("{filterName} is flushing at {checkpoint:N0}. Diff {diff:N0} ...", _filterName, checkpoint, diff);
-			_persistentBloomFilter.Flush();
+			_persistentBloomFilter.Flush(throttle: true);
 			var endTime = DateTime.UtcNow;
 			Log.Verbose("{filterName} has flushed at {checkpoint:N0}. Diff {diff:N0}. Took {flushLength}",
 					   _filterName, checkpoint, diff, endTime - startTime);

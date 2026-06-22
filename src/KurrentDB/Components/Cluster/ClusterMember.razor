@@ -3,31 +3,78 @@
 
 @using KurrentDB.Core.Cluster
 @using KurrentDB.Core.Data
+@inject NavigationManager Navigation
 
 <MudCard Class="ma-2">
 	<MudCardHeader>
 		<CardHeaderAvatar>
 			<MudAvatar Color="@MemberIconColor">
-				<MudIcon Icon="@MemberIcon" Title="@(Member.IsAlive ? "Alive" : "Dead")"/>
+				<MudIcon Icon="@MemberIcon" aria-label="@(Member.IsAlive ? "Alive" : "Dead")"/>
 			</MudAvatar>
 		</CardHeaderAvatar>
 		<CardHeaderContent>
 			<MudText Typo="Typo.h6">@Member.State.ToString()</MudText>
 		</CardHeaderContent>
 		<CardHeaderActions>
-			@* <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default"/> *@
+			@if (IsLocal) {
+				<MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary">This node</MudChip>
+			} else if (Member.IsAlive) {
+				<MudTooltip Text="Open this node's UI">
+					<MudIconButton Icon="@Icons.Material.Filled.OpenInNew"
+					               Href="@NodeUiUrl" Target="_blank"
+					               aria-label="Open this node's UI"/>
+				</MudTooltip>
+			}
 		</CardHeaderActions>
 	</MudCardHeader>
 	<MudCardContent>
-		<MudText Typo="Typo.body1">@Member.HttpEndPointIp:@Member.HttpEndPointPort</MudText>
-		<MudText>Version: @Member.ESVersion</MudText>
+		<MudSimpleTable Dense="true" Elevation="0" Style="background: transparent;">
+			<tbody>
+				<tr>
+					<td class="pl-0">Address</td>
+					<td style="text-align:right; font-family: monospace;">@Member.HttpEndPointIp:@Member.HttpEndPointPort</td>
+				</tr>
+				<tr>
+					<td class="pl-0">Version</td>
+					<td style="text-align:right; font-family: monospace;">@Member.ESVersion</td>
+				</tr>
+				<tr>
+					<td class="pl-0">Timestamp</td>
+					<td style="text-align:right; font-family: monospace;">@Member.TimeStamp.ToString("yyyy-MM-dd HH:mm:ss.fff")</td>
+				</tr>
+				<tr>
+					<td class="pl-0">Last commit</td>
+					<td style="text-align:right; font-family: monospace;">@Member.LastCommitPosition.ToString("N0")</td>
+				</tr>
+				<tr>
+					<td class="pl-0">Writer checkpoint</td>
+					<td style="text-align:right; font-family: monospace;">@Member.WriterCheckpoint.ToString("N0")</td>
+				</tr>
+				<tr>
+					<td class="pl-0">Chaser checkpoint</td>
+					<td style="text-align:right; font-family: monospace;">@Member.ChaserCheckpoint.ToString("N0")</td>
+				</tr>
+				<tr>
+					<td class="pl-0">Epoch number</td>
+					<td style="text-align:right; font-family: monospace;">@Member.EpochNumber.ToString("N0")</td>
+				</tr>
+				<tr>
+					<td class="pl-0">Epoch position</td>
+					<td style="text-align:right; font-family: monospace;">@Member.EpochPosition.ToString("N0")</td>
+				</tr>
+			</tbody>
+		</MudSimpleTable>
 	</MudCardContent>
 </MudCard>
 
 @code {
 	[Parameter] public ClientClusterInfo.ClientMemberInfo Member { get; set; }
 
-	Color MemberIconColor => Member.IsAlive ? Color.Info : Color.Error;
+	[Parameter] public bool IsLocal { get; set; }
+
+	string NodeUiUrl => $"{new Uri(Navigation.BaseUri).Scheme}://{Member.HttpEndPointIp}:{Member.HttpEndPointPort}/";
+
+	Color MemberIconColor => Member.IsAlive ? Color.Primary : Color.Error;
 
 	string MemberIcon => Member.State switch {
 		VNodeState.Initializing => Icons.Material.Filled.Info,
