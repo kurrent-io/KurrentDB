@@ -27,6 +27,13 @@ public record LicenseSummary(
 			props.Add(ToCamelCase(property.Name), property.GetValue(this)!);
 	}
 
+	// Mints a self-signed license carrying the given entitlements together with this summary.
+	public License CreateLicense(params string[] entitlements) {
+		var claims = entitlements.ToDictionary(x => x, object (_) => "true");
+		ExportClaims(claims);
+		return License.Create(claims);
+	}
+
 	public static HashSet<string> Properties { get; } =
 		typeof(LicenseSummary).GetProperties(BindingFlags.Public | BindingFlags.Instance)
 			.Select(p => ToCamelCase(p.Name))

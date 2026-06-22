@@ -25,6 +25,7 @@ public sealed class LicensingPluginTests : IAsyncLifetime {
 
 	private static LicensingPlugin CreateUnLicensedSutAsync() {
 		return new LicensingPlugin(
+			isSingleNode: false,
 			ex => { },
 			new AdHocLicenseProvider(new Exception("license is expired, say")));
 	}
@@ -32,6 +33,7 @@ public sealed class LicensingPluginTests : IAsyncLifetime {
 	private static async Task<LicensingPlugin> CreateLicensedSutAsync(Dictionary<string, object> claims) {
 		var license = await License.CreateAsync(claims);
 		return new LicensingPlugin(
+			isSingleNode: false,
 			ex => { },
 			new AdHocLicenseProvider(license));
 	}
