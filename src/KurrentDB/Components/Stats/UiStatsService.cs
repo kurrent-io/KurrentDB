@@ -22,22 +22,22 @@ namespace KurrentDB.Components.Stats;
 public sealed class UiStatsService(StatsService inner, IAuthorizationProvider authorizer) {
 	static readonly Operation ReadAllOperation = UiOperations.ReadAll;
 
-	public async Task<List<CategoryName>> GetCategoriesAsync(ClaimsPrincipal principal, CancellationToken ct = default) {
+	public async Task<IReadOnlyList<CategoryName>> GetCategoriesAsync(ClaimsPrincipal principal, CancellationToken ct = default) {
 		await authorizer.EnsureAccessAsync(principal, ReadAllOperation, ct);
 		return await Task.Run(() => inner.GetCategories().ToList(), ct);
 	}
 
-	public async Task<List<GetCategoryStats.Result>> GetCategoryStatsAsync(ClaimsPrincipal principal, string category, CancellationToken ct = default) {
+	public async Task<IReadOnlyList<GetCategoryStats.Result>> GetCategoryStatsAsync(ClaimsPrincipal principal, string category, CancellationToken ct = default) {
 		await authorizer.EnsureAccessAsync(principal, ReadAllOperation, ct);
 		return await Task.Run(() => inner.GetCategoryStats(category), ct);
 	}
 
-	public async Task<List<GetCategoryEventTypes.Result>> GetCategoryEventTypesAsync(ClaimsPrincipal principal, string category, CancellationToken ct = default) {
+	public async Task<IReadOnlyList<GetCategoryEventTypes.Result>> GetCategoryEventTypesAsync(ClaimsPrincipal principal, string category, CancellationToken ct = default) {
 		await authorizer.EnsureAccessAsync(principal, ReadAllOperation, ct);
 		return await Task.Run(() => inner.GetCategoryEventTypes(category), ct);
 	}
 
-	public async Task<List<GetExplicitTransactions.Result>> GetExplicitTransactionsAsync(ClaimsPrincipal principal, CancellationToken ct = default) {
+	public async Task<IReadOnlyList<GetExplicitTransactions.Result>> GetExplicitTransactionsAsync(ClaimsPrincipal principal, CancellationToken ct = default) {
 		await authorizer.EnsureAccessAsync(principal, ReadAllOperation, ct);
 		return await Task.Run(() => inner.GetExplicitTransactions(), ct);
 	}
