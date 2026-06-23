@@ -1,0 +1,85 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@page "/ui/persistent-subscriptions/{StreamId}/{GroupName}"
+@attribute [Authorize]
+@using KurrentDB.UI.Theme
+@using Microsoft.AspNetCore.Authorization
+
+<PageTitle>KurrentDB: @GroupName on @StreamId</PageTitle>
+
+@if (_loading) {
+	<MudProgressLinear Indeterminate="true"/>
+} else if (_info == null) {
+	<MudStack Spacing="2">
+		<MudButton Variant="Variant.Text" StartIcon="@KurrentIcons.Back"
+		           Href="/ui/persistent-subscriptions">Back</MudButton>
+		<MudAlert Severity="Severity.Error">Subscription not found.</MudAlert>
+	</MudStack>
+} else {
+	<MudStack Spacing="4">
+		<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Style="width: 100%;">
+			<MudButton Variant="Variant.Text" StartIcon="@KurrentIcons.Back"
+			           Href="/ui/persistent-subscriptions">Back</MudButton>
+			<MudText Typo="Typo.h5">@_info.GroupName on @_info.EventSource</MudText>
+			<MudSpacer/>
+			<MudButton Variant="Variant.Outlined" Size="Size.Small"
+			           StartIcon="@KurrentIcons.Eye"
+			           Href="@($"/ui/persistent-subscriptions/{Uri.EscapeDataString(StreamId)}/{Uri.EscapeDataString(GroupName)}/parked")">
+				View Parked Messages</MudButton>
+			@if (IsLeader) {
+				<MudButton Variant="Variant.Outlined" Size="Size.Small"
+				           StartIcon="@KurrentIcons.Edit"
+				           OnClick="Edit">Edit</MudButton>
+				<MudButton Variant="Variant.Outlined" Size="Size.Small"
+				           StartIcon="@Icons.Material.Filled.Replay"
+				           OnClick="ReplayParked">Replay Parked</MudButton>
+				<MudButton Variant="Variant.Outlined" Size="Size.Small"
+				           StartIcon="@KurrentIcons.Delete"
+				           OnClick="Delete">Delete</MudButton>
+			} else if (LeaderUrl is not null) {
+				<MudButton Variant="Variant.Text" Size="Size.Small"
+				           StartIcon="@Icons.Material.Filled.OpenInNew"
+				           Href="@LeaderUrl">Manage on the leader</MudButton>
+			}
+		</MudStack>
+
+		<MudSimpleTable Dense="true">
+			<tbody>
+			<tr><td><strong>Status</strong></td><td>@_info.Status</td></tr>
+			<tr><td><strong>Consumer Strategy</strong></td><td>@_info.NamedConsumerStrategy</td></tr>
+			<tr><td><strong>Avg/s</strong></td><td>@_info.AveragePerSecond</td></tr>
+			<tr><td><strong>Total Items</strong></td><td>@_info.TotalItems.ToString("N0")</td></tr>
+			<tr><td><strong>Parked Messages</strong></td><td>@_info.ParkedMessageCount.ToString("N0")</td></tr>
+			<tr><td><strong>Last Checkpointed</strong></td><td>@_info.LastCheckpointedEventPosition</td></tr>
+			<tr><td><strong>Last Known Record</strong></td><td>@_info.LastKnownEventPosition</td></tr>
+			<tr><td><strong>Resolve Link Tos</strong></td><td>@_info.ResolveLinktos</td></tr>
+			<tr><td><strong>Start From</strong></td><td>@_info.StartFrom</td></tr>
+			<tr><td><strong>Message Timeout</strong></td><td>@_info.MessageTimeoutMilliseconds ms</td></tr>
+			<tr><td><strong>Max Retry Count</strong></td><td>@_info.MaxRetryCount</td></tr>
+			<tr><td><strong>Buffer Size</strong></td><td>@_info.BufferSize</td></tr>
+			<tr><td><strong>Live Buffer Size</strong></td><td>@_info.LiveBufferSize</td></tr>
+			<tr><td><strong>Max Subscriber Count</strong></td><td>@_info.MaxSubscriberCount</td></tr>
+			</tbody>
+		</MudSimpleTable>
+
+		@if (_info.Connections is { Count: > 0 }) {
+			<MudText Typo="Typo.h6">Connections</MudText>
+			<MudDataGrid Items="@_info.Connections" Dense="true">
+				<Columns>
+					<PropertyColumn Property="x => x.ConnectionName" Title="Connection"/>
+					<PropertyColumn Property="x => x.From" Title="From"/>
+					<PropertyColumn Property="x => x.Username" Title="User"/>
+					<PropertyColumn Property="x => x.AverageItemsPerSecond" Title="Avg/s"/>
+					<TemplateColumn Title="Total">
+						<CellTemplate>
+							@context.Item.TotalItems.ToString("N0")
+						</CellTemplate>
+					</TemplateColumn>
+					<PropertyColumn Property="x => x.AvailableSlots" Title="Available Slots"/>
+					<PropertyColumn Property="x => x.InFlightMessages" Title="In Flight"/>
+				</Columns>
+			</MudDataGrid>
+		}
+	</MudStack>
+}

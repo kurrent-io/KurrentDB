@@ -2,8 +2,8 @@
 @* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
 
 @page "/ui/navigator"
-@rendermode InteractiveServer
-@attribute [ExcludeFromInteractiveRouting]
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 
 <PageTitle>KurrentDB: Navigator</PageTitle>
 

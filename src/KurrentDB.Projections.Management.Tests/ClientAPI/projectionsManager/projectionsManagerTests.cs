@@ -41,6 +41,7 @@ public class when_creating_one_time_projection<TLogFormat, TStreamId> : Specific
 
 [Category("ProjectionsManager")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
+[Ignore("Transient projections are deprecated — see ProjectionManager.Handle(Post).")]
 public class when_creating_transient_projection<TLogFormat, TStreamId> : SpecificationWithNodeAndProjectionsManager<TLogFormat, TStreamId> {
 	private string _streamName;
 	private string _projectionName;

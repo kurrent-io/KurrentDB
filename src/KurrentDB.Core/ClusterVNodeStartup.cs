@@ -23,11 +23,13 @@ using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Core.Services.Transport.Http;
+using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.TransactionLog.Chunks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
@@ -73,6 +75,7 @@ public class ClusterVNodeStartup<TStreamId>
 	private readonly IAuthorizationProvider _authorizationProvider;
 	private readonly IPublisher _httpMessageHandler;
 	private readonly string? _clusterDns;
+	private readonly IReadOnlyCheckpoint _databaseTag;
 
 	public ClusterVNodeStartup(
 		ClusterVNodeOptions options,
@@ -86,6 +89,7 @@ public class ClusterVNodeStartup<TStreamId>
 		IExpiryStrategy expiryStrategy,
 		KestrelHttpService httpService,
 		IConfiguration configuration,
+		IReadOnlyCheckpoint databaseTag,
 		Trackers trackers,
 		Func<IServiceCollection, IServiceCollection> configureNodeServices,
 		Action<IApplicationBuilder> configureNode) {
@@ -100,6 +104,7 @@ public class ClusterVNodeStartup<TStreamId>
 		_expiryStrategy = expiryStrategy;
 		_httpService = Ensure.NotNull(httpService);
 		_configuration = Ensure.NotNull(configuration);
+		_databaseTag = databaseTag;
 		_metricsConfiguration = MetricsConfiguration.Get(_configuration);
 		_trackers = trackers;
 		_clusterDns = options.Cluster.DiscoverViaDns ? options.Cluster.ClusterDns : null;
@@ -153,6 +158,10 @@ public class ClusterVNodeStartup<TStreamId>
 		app.MapGrpcService<Monitoring>();
 		app.MapGrpcService<ServerFeatures>();
 
+#if DEBUG
+		app.MapGrpcReflectionService();
+#endif
+
 		// enable redaction service on unix sockets only
 		app.MapGrpcService<Redaction>().AddEndpointFilter(async (c, next) => {
 			if (!c.HttpContext.IsUnixSocketConnection())
@@ -164,6 +173,15 @@ public class ClusterVNodeStartup<TStreamId>
 	public void ConfigureServices(IServiceCollection services) {
 		// Web-related registrations
 		services.AddRouting();
+
+		// Scope Data Protection (which protects the UI auth cookie) to this database's id, so a cookie minted
+		// against one database isn't accepted after the server is restarted on a different database at the same
+		// endpoint. The keys themselves stay in the default per-user store — only the non-secret discriminator
+		// is derived from the database id, so tag.chk leaking can't be used to forge cookies.
+		services
+			.AddDataProtection()
+			.SetApplicationName($"KurrentDB-UI:{_databaseTag.Read():X}");
+
 		var authBuilder = services.AddAuthentication(o => {
 			o.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 			if (OAuthEnabled) {
@@ -244,6 +262,7 @@ public class ClusterVNodeStartup<TStreamId>
 			.AddSingleton(new Elections(_mainQueue, _authorizationProvider, _clusterDns))
 			.AddSingleton(new ClientGossip(_mainQueue, _authorizationProvider, _trackers.GossipTrackers.ProcessingRequestFromGrpcClient))
 			.AddSingleton(new Monitoring(_monitoringQueue))
+			.AddKeyedSingleton<IPublisher>(KeyedServices.MonitoringQueuePublisher, _monitoringQueue)
 			.AddSingleton(new Redaction(_mainQueue, _authorizationProvider))
 			.AddSingleton<ServerFeatures>();
 
@@ -290,6 +309,10 @@ public class ClusterVNodeStartup<TStreamId>
 				options.CompressionProviders.Add(new Rfc1952GzipCompressionProvider(CompressionLevel.Optimal));
 			})
 			.AddServiceOptions<Streams<TStreamId>>(options => options.MaxReceiveMessageSize = TFConsts.EffectiveMaxLogRecordSize);
+
+#if DEBUG
+		services.AddGrpcReflection();
+#endif
 
 		services.AddDuckDb();
 

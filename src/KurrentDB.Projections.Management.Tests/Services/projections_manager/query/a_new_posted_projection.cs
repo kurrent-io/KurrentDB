@@ -34,6 +34,7 @@ public static class a_new_posted_projection {
 			_trackEmittedStreams = false;
 			_emitEnabled = false;
 			NoOtherStreams();
+			Assert.Ignore("Transient projections are deprecated — see ProjectionManager.Handle(Post).");
 		}
 
 		protected override IEnumerable<WhenStep> When() {

@@ -1,0 +1,91 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@page "/ui/projections/{Name}"
+@attribute [Authorize]
+@using KurrentDB.UI.Theme
+@using Microsoft.AspNetCore.Authorization
+
+<PageTitle>KurrentDB: @Name</PageTitle>
+
+@if (_loading) {
+	<MudProgressLinear Indeterminate="true"/>
+} else if (_stats == null) {
+	<MudStack Spacing="2">
+		<MudButton Variant="Variant.Text" StartIcon="@KurrentIcons.Back"
+		           Href="/ui/projections">Back</MudButton>
+		<MudAlert Severity="Severity.Error">Projection '@Name' not found.</MudAlert>
+	</MudStack>
+} else {
+	<MudStack Spacing="4">
+		<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Style="width: 100%;">
+			<MudButton Variant="Variant.Text" StartIcon="@KurrentIcons.Back"
+			           Href="/ui/projections">Back</MudButton>
+			<MudText Typo="Typo.h5">@Name</MudText>
+			<MudSpacer/>
+			@if (IsLeader) {
+				@if (_stats.Status?.Contains("Stopped") == true || _stats.Status?.Contains("Faulted") == true) {
+					<MudButton Variant="Variant.Outlined" Size="Size.Small"
+					           StartIcon="@KurrentIcons.Play"
+					           OnClick="Enable">Start</MudButton>
+				} else {
+					<MudButton Variant="Variant.Outlined" Size="Size.Small"
+					           StartIcon="@KurrentIcons.Stop"
+					           OnClick="Disable">Stop</MudButton>
+				}
+				<MudButton Variant="Variant.Outlined" Size="Size.Small"
+				           StartIcon="@KurrentIcons.Edit"
+				           OnClick="EditQuery">Edit Source</MudButton>
+				<MudButton Variant="Variant.Outlined" Size="Size.Small"
+				           StartIcon="@KurrentIcons.Cog"
+				           OnClick="EditConfig">Config</MudButton>
+				<MudButton Variant="Variant.Outlined" Size="Size.Small"
+				           StartIcon="@Icons.Material.Filled.Replay"
+				           OnClick="Reset">Reset</MudButton>
+				<MudButton Variant="Variant.Outlined" Size="Size.Small"
+				           StartIcon="@KurrentIcons.Delete"
+				           OnClick="Delete">Delete</MudButton>
+			} else if (LeaderUrl is not null) {
+				<MudButton Variant="Variant.Text" Size="Size.Small"
+				           StartIcon="@Icons.Material.Filled.OpenInNew"
+				           Href="@LeaderUrl">Manage on the leader</MudButton>
+			}
+		</MudStack>
+
+		<MudSimpleTable Dense="true">
+			<tbody>
+			<tr><td>Status</td><td style="font-family: monospace;">@_stats.Status</td></tr>
+			<tr><td>Mode</td><td style="font-family: monospace;">@_stats.Mode</td></tr>
+			<tr><td>Engine</td><td style="font-family: monospace;">@($"v{_stats.EngineVersion}")</td></tr>
+			<tr><td>Progress</td><td style="font-family: monospace;">@($"{_stats.Progress:F6}%")</td></tr>
+			<tr><td>Records Processed</td><td style="font-family: monospace;">@_stats.EventsProcessedAfterRestart.ToString("N0")</td></tr>
+			<tr><td>Buffered Records</td><td style="font-family: monospace;">@_stats.BufferedEvents.ToString("N0")</td></tr>
+			<tr><td>Checkpoint Status</td><td style="font-family: monospace;">@_stats.CheckpointStatus</td></tr>
+			@if (!string.IsNullOrEmpty(_stats.StateReason)) {
+				<tr><td>State Reason</td><td style="font-family: monospace;">@_stats.StateReason</td></tr>
+			}
+			</tbody>
+		</MudSimpleTable>
+
+		@if (!string.IsNullOrEmpty(_query)) {
+			<MudText Typo="Typo.h6">Source</MudText>
+			<MudPaper Class="pa-4" Outlined="true">
+				<pre style="white-space: pre-wrap; word-break: break-all; margin: 0; font-family: monospace;">@_query</pre>
+			</MudPaper>
+		}
+
+		<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+			<MudText Typo="Typo.h6">State</MudText>
+			<div style="width: 320px;">
+				<MudTextField @bind-Value="_partition" Label="Partition" Variant="Variant.Outlined"
+				              Adornment="Adornment.End" AdornmentIcon="@KurrentIcons.Arrow"
+				              OnAdornmentClick="LoadState" OnKeyUp="OnPartitionKeyUp"
+				              Immediate="true" Margin="Margin.Dense"
+				              HelperText="Leave blank for the projection's root state"/>
+			</div>
+		</MudStack>
+		<MudPaper Class="pa-4" Outlined="true">
+			<pre style="white-space: pre-wrap; word-break: break-all; margin: 0; font-family: monospace;">@(string.IsNullOrEmpty(_state) ? "(no state)" : _state)</pre>
+		</MudPaper>
+	</MudStack>
+}

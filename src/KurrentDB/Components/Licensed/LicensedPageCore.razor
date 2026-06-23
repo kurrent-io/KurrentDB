@@ -2,10 +2,8 @@
 @* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
 
 @inherits WithLicense
-@attribute [ExcludeFromInteractiveRouting]
 
 <PageTitle>KurrentDB: @PageName</PageTitle>
-<MudPopoverProvider/>
 
 @if (HasLicense) {
 	@Body
@@ -16,6 +14,6 @@
 }
 
 @code {
-	protected virtual string PageName => string.Empty;
+	protected abstract string PageName { get; }
 	private protected virtual RenderFragment Body => null;
 }

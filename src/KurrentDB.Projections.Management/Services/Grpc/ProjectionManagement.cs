@@ -10,6 +10,7 @@ using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Projections.Core.Messages;
 
 
 // ReSharper disable CheckNamespace
@@ -46,6 +47,9 @@ namespace EventStore.Projections.Core.Services.Grpc {
 
 		private static Exception ProjectionNotFound(string name) =>
 			new RpcException(new Status(StatusCode.NotFound, $"Projection '{name}' not found"));
+
+		private static Exception OperationFailed(ProjectionManagementMessage.OperationFailed message) =>
+			new RpcException(new Status(StatusCode.FailedPrecondition, message.Reason));
 
 		private static Value GetProtoValue(JsonElement element) =>
 			element.ValueKind switch {

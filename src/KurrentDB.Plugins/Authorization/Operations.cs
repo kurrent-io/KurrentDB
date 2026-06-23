@@ -42,6 +42,8 @@ public static class Operations {
 			public static readonly OperationDefinition Read = new(Resource, "read");
 
 			public static readonly OperationDefinition Options = new($"{Resource}/options", "read");
+
+			public static readonly OperationDefinition ReadLogs = new($"{Resource}/logs", "read");
 		}
 
 		public static class Statistics {

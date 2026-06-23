@@ -1,14 +1,15 @@
 @page "/ui/stats"
-@rendermode InteractiveServer
-@attribute [Authorize]
+@attribute [Authorize(Policy = UiPolicies.ViewDatabaseStats)]
 @inherits KurrentDB.Components.Licensed.LicensedPage
 @using KurrentDB.Common.Configuration
 @using KurrentDB.Components.Plugins
+@using KurrentDB.Components.Shared
 @using KurrentDB.Components.Tools
 @using KurrentDB.SecondaryIndexing.Stats
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.DependencyInjection
 @using Serilog
-@inject StatsService StatsService
+@inject IServiceProvider Services
 @inject PluginsService Plugins
 
 @if (!Plugins.IsPluginEnabled(PluginNames.SecondaryIndexes)) {
@@ -53,8 +54,10 @@
 	<LongestStreams/>
 </MudPaper>
 
-	@code {
+@code {
 	static readonly ILogger Log = Serilog.Log.ForContext<StatsPage>();
+
+	[CascadingParameter] Task<AuthenticationState> AuthenticationState { get; set; }
 
 	CategoryName[] Elements { get; set; } = [];
 	LoadState _categoriesState = LoadState.ReadyToLoad;
@@ -66,7 +69,9 @@
 		Log.Information("User requested database category stats load via UI");
 		_categoriesState = LoadState.Loading;
 		try {
-			Elements = await Task.Run(() => StatsService.GetCategories().ToArray());
+			var stats = Services.GetRequiredService<UiStatsService>();
+			var principal = (await AuthenticationState).User;
+			Elements = (await stats.GetCategoriesAsync(principal)).ToArray();
 			_categoriesState = LoadState.Loaded;
 		} catch (Exception ex) {
 			Log.Error(ex, "Error while loading database category stats via UI");

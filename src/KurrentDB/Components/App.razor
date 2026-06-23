@@ -1,20 +1,35 @@
 ﻿@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
 @* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
 
-@using KurrentDB.UI
 @using Microsoft.AspNetCore.Http
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="@ThemeClass">
 
 <head>
 	<meta charset="utf-8"/>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 	<base href="/"/>
 	<link href="css/app.css" rel="stylesheet"/>
+	<link href=@Assets["KurrentDB.styles.css"] rel="stylesheet"/>
 	<link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet"/>
 	<link href=@Assets["_content/MudBlazor/MudBlazor.min.css"] rel="stylesheet" />
 	<link href=@Assets["_content/MudBlazor.Markdown/MudBlazor.Markdown.min.css"] rel="stylesheet"/>
 	<link rel="icon" type="image/png" href="favicon.png"/>
+	<script>
+		// Arrived from another node carrying its theme (?theme=light|dark)? The server already used it for
+		// this first paint (see ThemeClass / Preferences); now persist it to this node's cookie so it sticks,
+		// and drop the param so the URL stays clean. Runs in <head>, before Blazor boots, so the circuit
+		// never sees the param.
+		(function () {
+			var m = new URLSearchParams(location.search).get("theme");
+			if (m === "light" || m === "dark") {
+				document.cookie = "kurrentdb.theme=" + m + ";path=/;max-age=31536000;samesite=lax";
+				var u = new URL(location.href);
+				u.searchParams.delete("theme");
+				history.replaceState(null, "", u);
+			}
+		})();
+	</script>
 	<HeadOutlet @rendermode="PageRenderMode" />
 </head>
 
@@ -27,6 +42,19 @@
 <script src=@Assets["_content/MudBlazor/MudBlazor.min.js"]></script>
 <script src=@Assets["_content/MudBlazor.Markdown/MudBlazor.Markdown.min.js"]></script>
 <script src=@Assets["_content/Extensions.MudBlazor.StaticInput/NavigationObserver.js"]></script>
+<script>
+	// On toggle: (1) persist the theme in a non-HttpOnly cookie so the server reads it on the next render
+	// (seeded by KurrentDB.UI.Services.Preferences; a live Blazor circuit can't set response cookies), and
+	// (2) flip the <html> theme class so the root background (app.css) tracks the theme immediately, not
+	// just on the next load.
+	window.kurrentTheme = {
+		save: m => {
+			document.cookie = "kurrentdb.theme=" + m + ";path=/;max-age=31536000;samesite=lax";
+			document.documentElement.classList.toggle("theme-light", m === "light");
+			document.documentElement.classList.toggle("theme-dark", m !== "light");
+		}
+	};
+</script>
 </body>
 
 </html>
@@ -35,5 +63,17 @@
 	[CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
 
 	private IComponentRenderMode PageRenderMode =>
-		HttpContext.AcceptsInteractiveRouting() ? InteractiveAuto : null;
+		HttpContext.AcceptsInteractiveRouting() ? InteractiveServer : null;
+
+	// Pre-paint theme class on <html> so the initial background matches the theme (no white flash in dark
+	// mode, no dark patch behind light mode) before MudThemeProvider applies. A ?theme= param (set on links
+	// from other nodes, whose cookie we can't see) wins over the cookie so moving between nodes keeps the theme.
+	private string ThemeClass {
+		get {
+			string theme = HttpContext.Request.Query["theme"];
+			if (theme is not "light" and not "dark")
+				theme = HttpContext.Request.Cookies.TryGetValue(KurrentDB.UI.Services.Preferences.CookieName, out var c) ? c : null;
+			return theme == "light" ? "theme-light" : "theme-dark";
+		}
+	}
 }

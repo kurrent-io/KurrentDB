@@ -320,6 +320,7 @@ public class ManagedProjection : IDisposable {
 		if (_state == ManagedProjectionState.Faulted)
 			status.StateReason = _faultedReason;
 		status.Enabled = Enabled;
+		status.EngineVersion = PersistedProjectionState?.EngineVersion ?? 1;
 		return status;
 	}
 

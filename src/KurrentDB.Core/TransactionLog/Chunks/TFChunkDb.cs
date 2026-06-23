@@ -366,6 +366,7 @@ public sealed class TFChunkDb : IAsyncDisposable {
 		if (!chunksClosed)
 			_log.Debug("One or more chunks are still open; skipping checkpoint flush.");
 
+		Config.DatabaseTag.Close(flush: chunksClosed);
 		Config.WriterCheckpoint.Close(flush: chunksClosed);
 		Config.ChaserCheckpoint.Close(flush: chunksClosed);
 		Config.EpochCheckpoint.Close(flush: chunksClosed);

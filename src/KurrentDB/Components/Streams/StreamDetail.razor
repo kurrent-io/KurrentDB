@@ -1,0 +1,183 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@page "/ui/streams/{StreamId}"
+@attribute [Authorize]
+@using KurrentDB.Core.Data
+@using KurrentDB.UI.Theme
+@using Microsoft.AspNetCore.Authorization
+
+<PageTitle>KurrentDB: @StreamId</PageTitle>
+
+<MudStack Spacing="4">
+	<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Style="width: 100%;">
+		<MudButton Variant="Variant.Text" StartIcon="@KurrentIcons.Back"
+		           Href="/ui/streams">Back</MudButton>
+		<div style="width: 570px; flex: 0 0 auto;">
+			<MudTextField @bind-Value="_searchStream" Label="Stream" Variant="Variant.Outlined"
+			              Adornment="Adornment.End" AdornmentIcon="@KurrentIcons.Arrow"
+			              OnAdornmentClick="GoToStream" OnKeyUp="OnSearchKeyUp"
+			              Immediate="true" Margin="Margin.Dense"/>
+		</div>
+		<MudSpacer/>
+		@if (!StreamId.StartsWith("$")) {
+			<MudButton Variant="Variant.Outlined" Size="Size.Small"
+			           StartIcon="@KurrentIcons.Plus"
+			           OnClick="AddEvent">Add Record</MudButton>
+			<MudButton Variant="Variant.Outlined" Size="Size.Small"
+			           StartIcon="@KurrentIcons.Delete"
+			           OnClick="DeleteStream">Delete Stream</MudButton>
+		}
+	</MudStack>
+
+	<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+		<MudButton Variant="Variant.Outlined" Size="Size.Small"
+		           Disabled="@(!_hasNext)"
+		           StartIcon="@Icons.Material.Filled.FirstPage"
+		           OnClick="OldestPage">Oldest</MudButton>
+		<MudButton Variant="Variant.Outlined" Size="Size.Small"
+		           Disabled="@(!_hasNext)"
+		           StartIcon="@Icons.Material.Filled.ChevronLeft"
+		           OnClick="NextPage">Older</MudButton>
+		<MudButton Variant="Variant.Outlined" Size="Size.Small"
+		           Disabled="@(!_hasPrevious)"
+		           EndIcon="@Icons.Material.Filled.ChevronRight"
+		           OnClick="PreviousPage">Newer</MudButton>
+		<MudButton Variant="Variant.Outlined" Size="Size.Small"
+		           Disabled="@(!_hasPrevious)"
+		           EndIcon="@Icons.Material.Filled.LastPage"
+		           OnClick="NewestPage">Newest</MudButton>
+		@if (_newEventsCount > 0) {
+			<MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Class="ml-3"
+			           StartIcon="@Icons.Material.Filled.KeyboardArrowDown"
+			           OnClick="NewestPage">
+				@_newEventsCount new record@(_newEventsCount == 1 ? "" : "s")
+			</MudButton>
+		}
+		<MudSwitch T="bool" Value="_resolveLinks" ValueChanged="OnResolveLinksChanged"
+		           Color="Color.Primary" Class="ml-3" Label="Resolve links"/>
+		@if (!_hasPrevious) {
+			<MudSwitch T="bool" Value="_live" ValueChanged="OnLiveChanged" Color="Color.Primary" Class="ml-3" Label="Live"/>
+		}
+		<MudSpacer/>
+		<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+			<MudText Typo="Typo.body2">Show</MudText>
+			<MudSelect T="int" Value="_pageSize" ValueChanged="OnPageSizeChanged" Dense="true"
+			           Variant="Variant.Outlined" Margin="Margin.Dense" Style="width: 90px;">
+				<MudSelectItem T="int" Value="10">10</MudSelectItem>
+				<MudSelectItem T="int" Value="20">20</MudSelectItem>
+				<MudSelectItem T="int" Value="100">100</MudSelectItem>
+				<MudSelectItem T="int" Value="200">200</MudSelectItem>
+			</MudSelect>
+		</MudStack>
+	</MudStack>
+
+	@if (_loading) {
+		<MudProgressLinear Indeterminate="true"/>
+	} else if (_error != null) {
+		<MudAlert Severity="Severity.Error">@_error</MudAlert>
+	} else {
+		<MudDataGrid Items="@_events" Dense="true" Hover="true">
+			<Columns>
+				<HierarchyColumn T="ResolvedEvent"/>
+				@if (IsAllStream) {
+					<TemplateColumn Title="Stream">
+						<CellTemplate>
+							@{ var e = context.Item.OriginalEvent; }
+							@if (e is not null) {
+								<MudLink Href="@($"/ui/streams/{Uri.EscapeDataString(e.EventStreamId)}")">@e.EventStreamId</MudLink>
+							}
+						</CellTemplate>
+					</TemplateColumn>
+				}
+				<TemplateColumn Title="#" SortBy="x => x.OriginalEvent?.EventNumber ?? 0">
+					<CellTemplate>
+						@{ var e = context.Item.OriginalEvent; }
+						@if (e is not null) {
+							<MudLink Href="@($"/ui/streams/{Uri.EscapeDataString(e.EventStreamId)}/{e.EventNumber}")">@e.EventNumber</MudLink>
+						}
+					</CellTemplate>
+				</TemplateColumn>
+				<TemplateColumn Title="Type">
+					<CellTemplate>
+						@(context.Item.OriginalEvent?.EventType)
+					</CellTemplate>
+				</TemplateColumn>
+				<TemplateColumn Title="Created">
+					<CellTemplate>
+						@(context.Item.OriginalEvent?.TimeStamp.ToString("g"))
+					</CellTemplate>
+				</TemplateColumn>
+				@if (_resolveLinks) {
+					<TemplateColumn Title="Links to">
+						<CellTemplate>
+							@{ var t = GetLinkTarget(context.Item); }
+							@if (t is { } lt) {
+								@if (lt.Deleted) {
+									<span style="font-style: italic; opacity: 0.7;">@(lt.Number >= 0 ? $"#{lt.Number}: " : "")&lt;deleted&gt;</span>
+								} else {
+									<MudLink Href="@($"/ui/streams/{Uri.EscapeDataString(lt.Stream)}/{lt.Number}")">#@lt.Number: @lt.Type</MudLink>
+								}
+								@if (!string.IsNullOrEmpty(lt.Stream)) {
+									<span> in </span>
+									<MudLink Href="@($"/ui/streams/{Uri.EscapeDataString(lt.Stream)}")">@lt.Stream</MudLink>
+								}
+							}
+						</CellTemplate>
+					</TemplateColumn>
+				}
+			</Columns>
+			<ChildRowContent>
+				@{
+					var re = context.Item;
+					var record = re.OriginalEvent;
+				}
+				<MudPaper Class="pa-3 ma-2" Outlined="true">
+					@if (record is not null) {
+						@if (re.Link is not null) {
+							<MudText Typo="Typo.subtitle2" Class="mb-1">Link record</MudText>
+							@Payload(record)
+							<MudDivider Class="my-2"/>
+							@if (re.Event is { } target) {
+								<MudText Typo="Typo.subtitle2" Class="mb-1">
+									Linked record:
+									<MudLink Href="@($"/ui/streams/{Uri.EscapeDataString(target.EventStreamId)}/{target.EventNumber}")">#@target.EventNumber: @target.EventType</MudLink>
+									in
+									<MudLink Href="@($"/ui/streams/{Uri.EscapeDataString(target.EventStreamId)}")">@target.EventStreamId</MudLink>
+								</MudText>
+								@Payload(target)
+							} else {
+								<MudText Typo="Typo.subtitle2" Class="mb-1">Linked record</MudText>
+								<MudText Typo="Typo.body2" Style="font-style: italic; opacity: 0.7;">
+									The linked record no longer exists (deleted or scavenged).
+								</MudText>
+							}
+						} else {
+							@Payload(record)
+						}
+					}
+				</MudPaper>
+			</ChildRowContent>
+			<NoRecordsContent>
+				<MudText>No records in this stream.</MudText>
+			</NoRecordsContent>
+		</MudDataGrid>
+	}
+</MudStack>
+
+@code {
+	// Renders an event's Data (and Metadata, if any) as formatted JSON. Payloads are already
+	// loaded with the row, so expanding costs no extra reads.
+	RenderFragment Payload(EventRecord e) =>@<div>
+		<MudText Typo="Typo.caption">Data</MudText>
+		@if (e.IsRedacted) {
+			<MudAlert Severity="Severity.Warning" Dense="true" Class="my-1">This record's data has been redacted.</MudAlert>
+		} else {
+			<pre style="white-space: pre-wrap; word-break: break-all; margin: 0 0 8px 0;">@EventFormatting.FormatJson(e.Data)</pre>
+		}
+		@if (e.Metadata.Length > 0) {
+			<MudText Typo="Typo.caption">Metadata</MudText>
+			<pre style="white-space: pre-wrap; word-break: break-all; margin: 0;">@EventFormatting.FormatJson(e.Metadata)</pre>
+		}
+	</div>;
+}

@@ -23,16 +23,6 @@ public class StatsService(IServiceProvider services) {
 		}
 	}
 
-	// note: very expensive. count(distinct stream) over idx_all
-	public (long StreamCount, long EventCount) GetTotalStats() {
-		using var connection = _pool.Open();
-		using var snapshot = _defaultIndex.CaptureSnapshot(connection);
-
-		return connection.QueryFirstOrDefault<GetTotalStats.Result, GetTotalStats>()
-			.Convert(static r => (r.StreamCount, r.EventCount))
-			.ValueOrDefault;
-	}
-
 	// note: very expensive. count(distinct stream) over idx_all filtered by category
 	public IReadOnlyList<GetCategoryStats.Result> GetCategoryStats(string category) {
 		if (string.IsNullOrWhiteSpace(category))

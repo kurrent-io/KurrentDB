@@ -11,6 +11,7 @@ using NUnit.Framework;
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
+[Ignore("Transient projections are deprecated — see ProjectionManager.Handle(Post). (Misleading file name — this fixture actually posts as Transient via the 4-arg Post shortcut.)")]
 public class when_posting_an_onetime_projection<TLogFormat, TStreamId> : TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId> {
 	protected override void Given() {
 		NoOtherStreams();

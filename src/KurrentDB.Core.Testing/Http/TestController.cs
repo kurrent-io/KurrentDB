@@ -43,7 +43,7 @@ public class TestController : CommunicationController {
 	private void Register(
 		IHttpService service, string uriTemplate, Action<HttpEntityManager, UriTemplateMatch> handler,
 		string httpMethod = HttpMethod.Get) {
-		Register(service, uriTemplate, httpMethod, handler, Codec.NoCodecs, new ICodec[] { Codec.ManualEncoding }, new Operation(Operations.Node.StaticContent));
+		Register(service, uriTemplate, httpMethod, handler, Codec.NoCodecs, new ICodec[] { Codec.ManualEncoding }, new Operation(Operations.Node.Ping));
 	}
 
 	private void Test1Handler(HttpEntityManager http, UriTemplateMatch match) {

@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using EventStore.Plugins.Authorization;
 using KurrentDB.Core.Bus;
-using KurrentDB.Core.Util;
 using KurrentDB.Transport.Http;
 using KurrentDB.Transport.Http.Codecs;
 using KurrentDB.Transport.Http.EntityManagement;
@@ -18,19 +17,14 @@ public class ClusterWebUiController : CommunicationController {
 
 	private readonly NodeSubsystems[] _enabledNodeSubsystems;
 
-	//private readonly MiniWeb _commonWeb;
-	private readonly MiniWeb _clusterNodeWeb;
-
 	public ClusterWebUiController(IPublisher publisher, NodeSubsystems[] enabledNodeSubsystems)
 		: base(publisher) {
 		_enabledNodeSubsystems = enabledNodeSubsystems;
-		_clusterNodeWeb = new MiniWeb("/web");
 	}
 
 	protected override void SubscribeCore(IHttpService service) {
-		_clusterNodeWeb.RegisterControllerActions(service);
+		// Redirect the bare root URL to the Blazor UI
 		RegisterRedirectAction(service, "", "/ui/cluster");
-		RegisterRedirectAction(service, "/web", "/web/index.html");
 
 		service.RegisterAction(
 			new ControllerAction("/sys/subsystems", HttpMethod.Get, Codec.NoCodecs, new ICodec[] { Codec.Json }, new Operation(Operations.Node.Information.Subsystems)),

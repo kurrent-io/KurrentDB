@@ -1,0 +1,67 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@implements IDisposable
+@using System.Threading
+@inject ServerInfoService ServerInfoService
+
+@if (!string.IsNullOrEmpty(_name) || _production) {
+	<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="ml-4">
+		@if (!string.IsNullOrEmpty(_name)) {
+			<MudText Typo="Typo.body2">@_name</MudText>
+		}
+		@if (_production) {
+			<MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Filled"
+			         Icon="@Icons.Material.Filled.Warning" Class="ps-3">
+				PRODUCTION
+			</MudChip>
+		}
+	</MudStack>
+}
+
+@code {
+	[CascadingParameter] Task<AuthenticationState> AuthenticationState { get; set; }
+
+	bool _production;
+	string _name = "";
+	Timer _timer;
+
+	protected override void OnInitialized() {
+		ServerInfoService.Changed += OnChanged;
+		_timer = new(_ => RefreshAndRender(), null, 0, 30_000);
+	}
+
+	void OnChanged() => RefreshAndRender();
+
+	// Refresh runs Refresh() (which swallows its own errors) then re-renders, guarding the
+	// renderer-torn-down race on teardown between ticks.
+	void RefreshAndRender() => _ = RefreshAndRenderAsync();
+
+	async Task RefreshAndRenderAsync() {
+		try {
+			await InvokeAsync(async () => {
+				await Refresh();
+				StateHasChanged();
+			});
+		} catch (ObjectDisposedException) {
+			// Component/renderer torn down between ticks — ignore.
+		}
+	}
+
+	async Task Refresh() {
+		try {
+			var authState = await AuthenticationState;
+			using var cts = new CancellationTokenSource(5000);
+			var info = await ServerInfoService.GetAsync(authState.User, cts.Token);
+			_production = info.Production;
+			_name = info.Name ?? "";
+		} catch {
+			// Quietly fail
+		}
+	}
+
+	public void Dispose() {
+		ServerInfoService.Changed -= OnChanged;
+		_timer?.Dispose();
+	}
+}

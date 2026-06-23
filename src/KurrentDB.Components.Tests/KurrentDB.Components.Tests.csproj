@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+	<PropertyGroup>
+		<!-- Inherits xunit.v3 + Microsoft Testing Platform wiring from src/Directory.Build.props -->
+		<IsKurrentXUnit>true</IsKurrentXUnit>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="bunit" />
+		<PackageReference Include="MudBlazor" />
+	</ItemGroup>
+	<ItemGroup>
+		<!-- The Blazor components under test live in the KurrentDB (server/host) project. -->
+		<ProjectReference Include="..\KurrentDB\KurrentDB.csproj" />
+		<ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
+	</ItemGroup>
+</Project>
