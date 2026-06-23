@@ -4228,11 +4228,16 @@
                     "id": 5,
                     "name": "engine_version",
                     "type": "int32"
-                  },
+                  }
+                ],
+                "maps": [
                   {
-                    "id": 6,
-                    "name": "metadata",
-                    "type": "bytes"
+                    "key_type": "string",
+                    "field": {
+                      "id": 6,
+                      "name": "properties",
+                      "type": "google.protobuf.Value"
+                    }
                   }
                 ],
                 "messages": [
@@ -4305,11 +4310,16 @@
                     "id": 4,
                     "name": "no_emit_options",
                     "type": "event_store.client.Empty"
-                  },
+                  }
+                ],
+                "maps": [
                   {
-                    "id": 5,
-                    "name": "metadata",
-                    "type": "bytes"
+                    "key_type": "string",
+                    "field": {
+                      "id": 5,
+                      "name": "properties",
+                      "type": "google.protobuf.Value"
+                    }
                   }
                 ]
               }

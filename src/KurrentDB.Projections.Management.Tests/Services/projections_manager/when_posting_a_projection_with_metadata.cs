@@ -55,6 +55,11 @@ public class when_posting_a_projection_with_metadata<TLogFormat, TStreamId> : Te
 	}
 
 	[Test, Category("v8")]
+	public void the_definition_event_metadata_is_property_metadata() {
+		Assert.IsTrue(DefinitionWrites().First().Events[0].IsPropertyMetadata);
+	}
+
+	[Test, Category("v8")]
 	public void no_later_write_re_stamps_the_metadata() {
 		Assert.IsTrue(DefinitionWrites().Skip(1).All(w => w.Events[0].Metadata.Length == 0));
 	}

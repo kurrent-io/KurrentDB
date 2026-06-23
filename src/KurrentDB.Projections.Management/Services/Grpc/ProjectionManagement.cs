@@ -2,10 +2,12 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using EventStore.Core.Services.Transport.Grpc;
 using EventStore.Plugins.Authorization;
+using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using KurrentDB.Core.Bus;
@@ -50,6 +52,9 @@ namespace EventStore.Projections.Core.Services.Grpc {
 
 		private static Exception OperationFailed(ProjectionManagementMessage.OperationFailed message) =>
 			new RpcException(new Status(StatusCode.FailedPrecondition, message.Reason));
+
+		private static byte[] ToMetadata(IDictionary<string, Value> properties) =>
+			properties.Count == 0 ? null : new Struct { Fields = { properties } }.ToByteArray();
 
 		private static Value GetProtoValue(JsonElement element) =>
 			element.ValueKind switch {

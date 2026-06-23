@@ -69,7 +69,7 @@ internal partial class ProjectionManagement {
 
 		_publisher.Publish(new ProjectionManagementMessage.Command.Post(envelope, projectionMode, name, runAs,
 			handlerType, options.Query, true, checkpointsEnabled, emitEnabled, trackEmittedStreams, true,
-			engineVersion, options.Metadata.IsEmpty ? null : options.Metadata.ToByteArray()));
+			engineVersion, ToMetadata(options.Properties)));
 
 		await createdSource.Task;
 
