@@ -19,13 +19,24 @@ public sealed class KeygenLifecycleService : IHostedService, IDisposable {
 
 	readonly KeygenClient _client;
 	readonly string _fingerprint;
+	// revalidate after this many heartbeats even if they are still working fine, so that changes to
+	// the license (e.g. a renewed expiry) are picked up. keeps the extra load proportional to, and
+	// controllable via, the heartbeat mechanism.
+	readonly int _heartbeatsPerRevalidation;
+	// if revalidating, wait this long first
 	readonly TimeSpan _revalidationDelay;
 	readonly CancellationTokenSource _heartbeatCancellation = new();
 	readonly ReplaySubject<LicenseInfo> _licenses = new(bufferSize: 1);
 
-	public KeygenLifecycleService(KeygenClient client, Fingerprint fingerprint, TimeSpan revalidationDelay) {
+	public KeygenLifecycleService(
+		KeygenClient client,
+		Fingerprint fingerprint,
+		int heartbeatsPerRevalidation,
+		TimeSpan revalidationDelay) {
+
 		_client = client;
 		_fingerprint = fingerprint.Get();
+		_heartbeatsPerRevalidation = heartbeatsPerRevalidation;
 		_revalidationDelay = revalidationDelay;
 	}
 
@@ -74,7 +85,7 @@ public sealed class KeygenLifecycleService : IHostedService, IDisposable {
 
 					await HeartbeatAsNecessary(cancellationToken);
 
-					// heartbeat process has failed, start over.
+					// the heartbeat process has failed or it is time to revalidate; start over.
 					await Task.Delay(_revalidationDelay, cancellationToken);
 					break;
 			}
@@ -161,7 +172,7 @@ public sealed class KeygenLifecycleService : IHostedService, IDisposable {
 		}
 	}
 
-	// completes when the heartbeat fails
+	// completes when the heartbeat fails or it is time to revalidate
 	async Task HeartbeatAsNecessary(CancellationToken cancellationToken) {
 		var restResponse = await _client.GetMachine(_fingerprint, cancellationToken);
 		if (!TryGetParsedResponse(restResponse, "License GetMachine", out var response, out var _)) {
@@ -170,6 +181,8 @@ public sealed class KeygenLifecycleService : IHostedService, IDisposable {
 		}
 
 		if (!response.RequiresHeartbeat) {
+			// Without a heartbeat there is no keep-alive cadence to revalidate on, so we hold the
+			// current license until the node restarts.
 			Log.Debug("No heartbeat required");
 			await Task.Delay(Timeout.Infinite, cancellationToken);
 		}
@@ -177,7 +190,7 @@ public sealed class KeygenLifecycleService : IHostedService, IDisposable {
 		await MaintainHeartbeat(response.HeartbeatInterval, cancellationToken);
 	}
 
-	// completes when the heartbeat fails
+	// completes when the heartbeat fails or it is time to revalidate
 	async Task MaintainHeartbeat(int interval, CancellationToken cancellationToken) {
 		Log.Debug("Starting heartbeat with interval {Interval} seconds", interval);
 
@@ -185,7 +198,8 @@ public sealed class KeygenLifecycleService : IHostedService, IDisposable {
 			? interval - 10
 			: interval / 5.0);
 
-		while (true) {
+		// revalidate once we've sent this many heartbeats, even if they're all healthy
+		for (var beat = 0; beat < _heartbeatsPerRevalidation; beat++) {
 			await Task.Delay(delay, cancellationToken);
 
 			var restResponse = await _client.SendHeartbeat(_fingerprint, cancellationToken);
