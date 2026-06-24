@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using FluentValidation;
+using Google.Protobuf.WellKnownTypes;
 using KurrentDB.Api.Infrastructure.Grpc.Validation;
 using KurrentDB.Protocol.V2.Streams;
 
@@ -34,6 +35,9 @@ class AppendRecordValidator : RequestValidator<AppendRecord> {
                 v.RuleFor(x => x.Key)
                     .NotEmpty()
                     .WithMessage("Property keys must not be empty.");
+                v.RuleFor(x => x.Value)
+                    .Must(HasKindSet)
+                    .WithMessage("Property values must have a type set.");
             });
 
         // ------------------------------------------------------------------------------
@@ -54,4 +58,12 @@ class AppendRecordValidator : RequestValidator<AppendRecord> {
         //     });
 
     }
+
+    static bool HasKindSet(Value value) =>
+        value.KindCase switch {
+            Value.KindOneofCase.StructValue => value.StructValue.Fields.Values.All(HasKindSet),
+            Value.KindOneofCase.ListValue   => value.ListValue.Values.All(HasKindSet),
+            Value.KindOneofCase.None        => false,
+            _                               => true,
+        };
 }
