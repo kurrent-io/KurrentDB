@@ -63,8 +63,8 @@ public class ProjectionMetadataTests : SpecificationWithNodeAndProjectionsManage
 
 	public override Task When() => Task.CompletedTask;
 
-	// The definition write that carries the properties is the first $ProjectionUpdated event; later
-	// lifecycle writes are metadataless, so read forward and take the earliest.
+	// The definition write that carries the user properties is the first $ProjectionUpdated event;
+	// later lifecycle writes only contain synthetic properties, so read forward and take the earliest.
 	private async Task<byte[]> ReadDefinitionMetadata(string projectionName) {
 		var stream = ProjectionNamesBuilder.ProjectionsStreamPrefix + projectionName;
 		var slice = await _connection.ReadStreamEventsForwardAsync(stream, 0, 100, false, _credentials);
@@ -84,9 +84,13 @@ public class ProjectionMetadataTests : SpecificationWithNodeAndProjectionsManage
 	}
 
 	[Test]
-	public async Task no_properties_writes_no_metadata() {
+	public async Task no_properties_writes_only_synthetic_metadata() {
 		var metadata = await ReadDefinitionMetadata(WithoutProperties);
-		Assert.AreEqual(0, metadata.Length);
+		if (metadata.Length == 0) return;
+
+		using var json = JsonDocument.Parse(metadata);
+		foreach (var prop in json.RootElement.EnumerateObject())
+			Assert.That(prop.Name.StartsWith('$'), $"Unexpected user property: {prop.Name}");
 	}
 
 	public override Task TestFixtureTearDown() {

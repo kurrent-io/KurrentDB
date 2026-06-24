@@ -54,7 +54,7 @@ namespace EventStore.Projections.Core.Services.Grpc {
 			new RpcException(new Status(StatusCode.FailedPrecondition, message.Reason));
 
 		private static byte[] ToMetadata(IDictionary<string, Value> properties) =>
-			properties.Count == 0 ? null : new Struct { Fields = { properties } }.ToByteArray();
+			properties.Count == 0 ? [] : new Struct { Fields = { properties } }.ToByteArray();
 
 		private static Value GetProtoValue(JsonElement element) =>
 			element.ValueKind switch {
