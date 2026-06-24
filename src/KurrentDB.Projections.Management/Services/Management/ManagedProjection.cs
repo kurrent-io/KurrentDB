@@ -721,12 +721,11 @@ public class ManagedProjection : IDisposable {
 
 	private ClientMessage.WriteEvents CreatePersistedStateEvent(Guid correlationId, PersistedState persistedState,
 		string eventStreamId) {
-		var hasMetadata = _pendingMetadata is not null;
 		var metadata = _pendingMetadata ?? [];
 		_pendingMetadata = null;
 		return ClientMessage.WriteEvents.ForSingleEvent(correlationId, correlationId, _writeDispatcher.Envelope, true, eventStreamId, ExpectedVersion.Any,
 			new Event(Guid.NewGuid(), ProjectionEventTypes.ProjectionUpdated, true, persistedState.ToJsonBytes(),
-				isPropertyMetadata: hasMetadata, metadata),
+				isPropertyMetadata: true, metadata),
 			SystemAccounts.System);
 	}
 
