@@ -15,7 +15,7 @@
     <PackageVersion Include="Dapper" Version="2.1.66" />
     <PackageVersion Include="DotNext" Version="6.3.0" />
     <PackageVersion Include="DotNext.IO" Version="6.3.0" />
-    <PackageVersion Include="DotNext.Threading" Version="6.3.0" />
+    <PackageVersion Include="DotNext.Threading" Version="6.4.0" />
     <PackageVersion Include="DotNext.Unsafe" Version="6.3.0" />
 		<PackageVersion Include="DotNext.Net.Cluster" Version="6.3.0" />
     <PackageVersion Include="Ductus.FluentDocker" Version="2.85.0" />

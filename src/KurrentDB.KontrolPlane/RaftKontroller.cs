@@ -23,7 +23,7 @@ public partial class RaftKontroller : IAsyncDisposable {
 	public RaftKontroller(in Options options) {
 		var stateLocation = new DirectoryInfo(Path.Combine(options.WalOptions.Location, "db"));
 		var configStorageLocation = Path.Combine(options.WalOptions.Location, "members.list");
-		_state = new(stateLocation);
+		_state = new(stateLocation, options.ConnectionPoolCapacity);
 		_wal = new WriteAheadLog(options.WalOptions, _state);
 
 		var config = new RaftCluster.TcpConfiguration(options.ListenAddress) {
@@ -59,6 +59,6 @@ public partial class RaftKontroller : IAsyncDisposable {
 	public async ValueTask DisposeAsync() {
 		await _raft.DisposeAsync();
 		await _wal.DisposeAsync();
-		await _state.DisposeAsync();
+		_state.Dispose();
 	}
 }

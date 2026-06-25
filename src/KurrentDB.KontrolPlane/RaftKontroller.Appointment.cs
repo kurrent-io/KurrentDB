@@ -9,6 +9,8 @@ using DotNext.Diagnostics;
 namespace KurrentDB.KontrolPlane;
 
 using StateMachine;
+using StateMachine.LogEntries;
+using StateMachine.Queries;
 
 partial class RaftKontroller {
 	// key is database ID, value is the time when the leadership was updated for the particular database
@@ -17,17 +19,19 @@ partial class RaftKontroller {
 	// Spin in the loop and process appointments for every database
 	private async ValueTask ProcessAppointmentsAsync(CancellationToken token) {
 		var tasks = new List<Task>(17);
+		var databases = new HashSet<string>(17);
 		var deletedDatabases = new HashSet<string>();
 		var timer = new PeriodicTimer(_appointmentExpiration);
 		try {
 			do {
-				var databases = _state.CurrentState.Databases;
-				StartAppointments(databases, tasks, token);
+				var snapshot = await _state.CaptureCurrentStateAsync(token);
+				StartAppointments(snapshot, tasks, databases, token);
 				RemoveDeletedDatabases(databases, deletedDatabases);
 
 				await Task.WhenAll(tasks);
 				tasks.Clear();
 				deletedDatabases.Clear();
+				databases.Clear();
 			} while (await timer.WaitForNextTickAsync(token));
 		} finally {
 			timer.Dispose();
@@ -36,11 +40,11 @@ partial class RaftKontroller {
 	}
 
 	private void RemoveDeletedDatabases(
-		IReadOnlyDictionary<string, Database> existingDatabases,
+		IReadOnlySet<string> existingDatabases,
 		HashSet<string> deletedDatabases) {
 		// Remove deleted databases from the appointment state
 		foreach (var databaseId in _appointmentState.Keys) {
-			if (!existingDatabases.ContainsKey(databaseId))
+			if (!existingDatabases.Contains(databaseId))
 				deletedDatabases.Add(databaseId);
 		}
 
@@ -50,22 +54,31 @@ partial class RaftKontroller {
 	}
 
 	private void StartAppointments(
-		IReadOnlyDictionary<string, Database> databases,
+		Snapshot snapshot,
 		List<Task> tasks,
+		HashSet<string> databases,
 		CancellationToken token) {
 		// Process appointment for every database in parallel
-		foreach (var (databaseId, database) in databases) {
-			if (IsAppointmentRequired(databaseId, database))
-				tasks.Add(AppointLeaderAsync(databaseId, database.Nodes, database.Version, token));
+		using (snapshot.RentConnection(out var connection)) {
+			foreach (var database in connection.GetDatabases()) {
+				databases.Add(database.Id);
+
+				IReadOnlyList<(EndPoint Address, bool IsReadOnlyReplica, bool IsLeader)> nodes = connection
+					.GetDatabaseNodes(database.Id)
+					.ToList();
+
+				if (IsAppointmentRequired(database.Id, nodes))
+					tasks.Add(AppointLeaderAsync(database.Id, nodes, token));
+			}
 		}
 	}
 
-	private bool IsAppointmentRequired(string databaseId, Database database)
-		=> database.Nodes is not []
+	private bool IsAppointmentRequired(string databaseId, IReadOnlyList<(EndPoint Address, bool IsReadOnlyReplica, bool IsLeader)> nodes)
+		=> nodes is not []
 		   && (!_appointmentState.TryGetValue(databaseId, out var appointment)
 		       || appointment.IsExpired(_appointmentExpiration));
 
-	private async Task AppointLeaderAsync(string databaseId, IReadOnlyList<IDatabaseNode> nodes, ulong expectedVersion, CancellationToken token) {
+	private async Task AppointLeaderAsync(string databaseId, IReadOnlyList<(EndPoint Address, bool IsReadOnlyReplica, bool IsLeader)> nodes, CancellationToken token) {
 		var responses = new Dictionary<EndPoint, ReplicaState>(nodes.Count);
 
 		await foreach (var task in Task.WhenEach(GetReplicaState(ReplicaSet, nodes, token))) {
@@ -94,13 +107,12 @@ partial class RaftKontroller {
 			.Key;
 
 		// Appoint the leader
-		if (await AppointLeaderAsync(databaseId, candidate, expectedVersion, token)) {
-			_appointmentState[databaseId] = new LeaderAppointment(candidate);
-		}
+		await _raft.AppointLeaderAsync(databaseId, candidate, token);
+		_appointmentState[databaseId] = new LeaderAppointment(candidate);
 
 		static IEnumerable<Task<KeyValuePair<EndPoint, ReplicaState>>> GetReplicaState(
 			IDatabaseReplicaSet replicas,
-			IEnumerable<IDatabaseNode> nodes,
+			IEnumerable<(EndPoint Address, bool IsReadOnlyReplica, bool IsLeader)> nodes,
 			CancellationToken token)
 			=> nodes
 				.Where(static node => !node.IsReadOnlyReplica) // r/o replicas cannot contribute to the qorum

@@ -26,6 +26,11 @@ partial class RaftKontroller {
 			init;
 		}
 
+		public int ConnectionPoolCapacity {
+			get => field > 0 ? field : 10;
+			init => field = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
+		}
+
 		public required TimeSpan AppointmentExpiration {
 			get;
 			init => field = value > TimeSpan.Zero ? value : throw new ArgumentOutOfRangeException(nameof(value));

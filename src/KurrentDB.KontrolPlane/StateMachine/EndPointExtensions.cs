@@ -5,12 +5,13 @@ using System.Net;
 using DotNext.Buffers;
 using DotNext.Net;
 using Google.Protobuf;
+using Kurrent.Quack;
 
 namespace KurrentDB.KontrolPlane.StateMachine;
 
 internal static class EndPointExtensions {
-	public static EndPoint ToEndPoint(this ByteString bytes) {
-		var reader = new SequenceReader(bytes.Memory);
+	public static EndPoint ToEndPoint(this Blob bytes) {
+		var reader = new SequenceReader(bytes.Reference.AsMemory());
 		return reader.ReadEndPoint();
 	}
 

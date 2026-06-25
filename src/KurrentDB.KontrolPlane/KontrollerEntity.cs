@@ -3,12 +3,7 @@
 
 namespace KurrentDB.KontrolPlane;
 
-public interface IDatabase {
-	public const string MainDatabaseId = "main";
-
-	string Description { get; }
-
-	ulong Epoch { get; }
-
-	IReadOnlyList<IDatabaseNode> Nodes { get; }
+public abstract class KontrollerEntity {
+	private protected KontrollerEntity() {
+	}
 }

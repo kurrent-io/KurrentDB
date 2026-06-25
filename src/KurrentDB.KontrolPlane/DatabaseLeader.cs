@@ -1,12 +1,13 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Net;
-
 namespace KurrentDB.KontrolPlane;
 
-public interface IDatabaseNode {
-	EndPoint Address { get; }
+/// <summary>
+/// Represents database leader.
+/// </summary>
+public sealed class DatabaseLeader : KontrollerEntity {
+	public required DatabaseNode Node { get; init; }
 
-	bool IsReadOnlyReplica { get; }
+	public required ulong Epoch { get; init; }
 }

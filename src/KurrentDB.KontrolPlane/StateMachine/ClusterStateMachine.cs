@@ -1,36 +1,86 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Diagnostics;
+using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using DotNext;
-using DotNext.IO;
 using DotNext.Net.Cluster.Consensus.Raft.StateMachine;
 using DotNext.Threading;
 
 namespace KurrentDB.KontrolPlane.StateMachine;
 
+using Queries;
+
 /// <summary>
 /// Represents internal Kontrol Plane database.
 /// </summary>
-/// <param name="location"></param>
-internal sealed partial class ClusterStateMachine(DirectoryInfo location) : SimpleStateMachine(location) {
-	private readonly AsyncTrigger _stateChanged = new();
-	private ClusterState _state = new();
+internal sealed partial class ClusterStateMachine : Disposable, IStateMachine {
+	private readonly DirectoryInfo _location;
+	private readonly int _poolCapacity;
+	private readonly ConcurrentDictionary<string, AsyncStateTracker> _databases;
+	private volatile Snapshot _snapshot;
+	private Task? _snapshotTask;
 
-	public ClusterState CurrentState {
-		get => Volatile.Read(in _state);
-		private set => TrySetCurrentState(value);
+	public ClusterStateMachine(DirectoryInfo location, int connectionPoolCapacity) {
+		if (!location.Exists)
+			location.Create();
+
+		_location = location;
+		_snapshot = new(connectionPoolCapacity);
+		_databases = new();
+		_poolCapacity = connectionPoolCapacity;
 	}
 
-	private bool TrySetCurrentState(ClusterState newState) {
-		if (ReferenceEquals(Volatile.Read(in _state), newState))
-			return false;
+	/// <summary>
+	/// Recovers the internal state from the last known persisted snapshot.
+	/// </summary>
+	public void Recover() {
+		// Attempt to open the latest persisted snapshot
+		var snapshots = new SortedDictionary<long, FileInfo>();
+		foreach (var snapshotFile in _location.EnumerateFiles()) {
+			if (long.TryParse(snapshotFile.Name, out var snapshotIndex)) {
+				snapshots[snapshotIndex] = snapshotFile;
+			}
+		}
 
-		_state = newState;
-		_stateChanged.Signal(resumeAll: true); // acts as a barrier
-		return true;
+		if (snapshots.Count > 0) {
+			var latestSnapshotFile = snapshots.MaxBy(static pair => pair.Key).Value;
+
+			var newSnapshot = InstallSnapshot(latestSnapshotFile.FullName);
+			_persistentSnapshot = new(latestSnapshotFile.FullName, newSnapshot.LastAppliedCommand);
+		}
+
+		snapshots.Clear(); // help GC
+	}
+
+	private void RefreshDatabaseTrackers(Snapshot snapshot) {
+		var loadedTrackers = new HashSet<string>();
+		using (snapshot.RentConnection(out var connection)) {
+			foreach (var database in connection.GetDatabases()) {
+				loadedTrackers.Add(database.Id);
+			}
+		}
+
+		// add missing trackers
+		foreach (var databaseId in loadedTrackers) {
+			if (!_databases.ContainsKey(databaseId)) {
+				var tracker = new AsyncStateTracker();
+				if (!_databases.TryAdd(databaseId, tracker)) {
+					tracker.TryComplete();
+				}
+			}
+		}
+
+		// remove deleted trackers
+		foreach (var databaseId in _databases.Keys
+			         .Where(databaseId => !loadedTrackers.Contains(databaseId))
+			         .ToHashSet()) {
+			if (_databases.TryRemove(databaseId, out var tracker)) {
+				tracker.TryComplete();
+			}
+		}
+
+		loadedTrackers.Clear(); // help GC
 	}
 
 	/// <summary>
@@ -43,105 +93,82 @@ internal sealed partial class ClusterStateMachine(DirectoryInfo location) : Simp
 	} = 100;
 
 	/// <summary>
-	/// Tracks cluster state changes as a stream of state snapshots.
+	/// Tracks database changes as a stream of state snapshots.
 	/// </summary>
+	/// <remarks>
+	/// The caller must release the snapshot with <see cref="Snapshot.Release()"/> method.
+	/// </remarks>
+	/// <param name="databaseId">The identifier of the database.</param>
 	/// <param name="token">The token that can be used to cancel the operation.</param>
 	/// <returns>A stream over cluster state snapshots.</returns>
-	public async IAsyncEnumerable<IReadOnlyDictionary<string, IDatabase>> TrackChangesAsync(
+	public async IAsyncEnumerable<Snapshot> TrackChangesAsync(string databaseId,
 		[EnumeratorCancellation] CancellationToken token) {
-		do {
-			var actual = CurrentState;
-			yield return actual;
-			await _stateChanged.SpinWaitAsync(new DatabaseChangeTracker(this) { ExpectedVersion = actual.Version }, token);
-		} while (!token.IsCancellationRequested);
-	}
-
-	// Restore state from the snapshot
-	protected override ValueTask RestoreAsync(FileInfo snapshotFile, CancellationToken token) {
-		var task = ValueTask.CompletedTask;
-		var fs = default(FileStream);
-		try {
-			fs = snapshotFile.Open(new FileStreamOptions {
-				Mode = FileMode.Open,
-				Access = FileAccess.Read,
-				Share = FileShare.Read,
-				BufferSize = 4096,
-				Options = FileOptions.SequentialScan
-			});
-
-			_state = ClusterState.Parser.ParseFrom(fs);
-			_stateChanged.Signal(resumeAll: true);
-		} catch (Exception e) {
-			task = ValueTask.FromException(e);
-		} finally {
-			fs?.Dispose();
-		}
-
-		return task;
-	}
-
-	// Persist current state
-	protected override ValueTask PersistAsync(IAsyncBinaryWriter writer, CancellationToken token)
-		=> _state.WriteToAsync(writer, token);
-
-	// Apply log entry from the WAL to the current state
-	protected override async ValueTask<bool> ApplyAsync(LogEntry entry, CancellationToken token) {
-		switch (entry.CommandId) {
-			case LogEntries.AddOrUpdateDatabase.TypeId:
-				var result = AddDatabase(await DeserializeAsync<LogEntries.AddOrUpdateDatabase>(entry, token));
-				(entry.Context as TaskCompletionSource<bool>)?.TrySetResult(result);
+		for (AsyncStateTracker.Token currentState;; token.ThrowIfCancellationRequested()) {
+			if (!_databases.TryGetValue(databaseId, out var tracker) || IsDisposingOrDisposed)
 				break;
-			case LogEntries.RemoveDatabase.TypeId:
-				result = RemoveDatabase(await DeserializeAsync<LogEntries.RemoveDatabase>(entry, token));
-				(entry.Context as TaskCompletionSource<bool>)?.TrySetResult(result);
-				break;
-			case LogEntries.AddOrUpdateDatabaseNode.TypeId:
-				result = AddDatabaseNode(await DeserializeAsync<LogEntries.AddOrUpdateDatabaseNode>(entry, token));
-				(entry.Context as TaskCompletionSource<bool>)?.TrySetResult(result);
-				break;
-			case LogEntries.RemoveDatabaseNode.TypeId:
-				result = RemoveDatabaseNode(await DeserializeAsync<LogEntries.RemoveDatabaseNode>(entry, token));
-				(entry.Context as TaskCompletionSource<bool>)?.TrySetResult(result);
-				break;
-			case LogEntries.AppointLeader.TypeId:
-				result = AppointLeader(await DeserializeAsync<LogEntries.AppointLeader>(entry, token));
-				break;
-			default:
-				Debug.Fail($"Unexpected entry type {entry.CommandId}");
-				break;
-		}
 
-		return entry.Index % SnapshotDepth is 0;
-	}
+			currentState = tracker.CurrentState;
+			var snapshotCopy = _snapshot;
 
-	private static ValueTask<T> DeserializeAsync<T>(in LogEntry entry, CancellationToken token)
-		where T : class, IProtobufSerializable<T> {
-		ValueTask<T> task;
-		if (entry.TryGetPayload(out var sequence)) {
-			// fast path, deserialize from memory
-			try {
-				task = new(T.Parser.ParseFrom(sequence));
-			} catch (Exception e) {
-				task = ValueTask.FromException<T>(e);
+			// The current snapshot cannot be acquired, which means that it's no longer available. Retry the operation
+			// and do Yield() to increase a chance to get latest snapshot copy from '_snapshot' field
+			if (!snapshotCopy.TryAcquire()) {
+				await Task.Yield();
+				continue;
 			}
-		} else {
-			task = DeserializeSlowAsync(entry, token);
-		}
 
-		return task;
-
-		static async ValueTask<T> DeserializeSlowAsync(LogEntry entry, CancellationToken token) {
-			using var owner = await entry.ToMemoryAsync(token: token);
-			return T.Parser.ParseFrom(owner.Memory.Span);
+			yield return snapshotCopy;
+			if (!await tracker.WaitNextAsync(currentState, token))
+				break;
 		}
 	}
 
-	[StructLayout(LayoutKind.Auto)]
-	private readonly struct DatabaseChangeTracker(ClusterStateMachine stateMachine) : ISupplier<bool> {
-		private ulong ActualVersion => stateMachine.CurrentState.Version;
+	/// <summary>
+	/// Captures the current database state asynchronously.
+	/// </summary>
+	/// <remarks>
+	/// The caller must release the snapshot with <see cref="Snapshot.Release()"/> method.
+	/// </remarks>
+	/// <param name="token">The token that can be used to cancel the operation.</param>
+	/// <returns>The acquired snapshot.</returns>
+	public async ValueTask<Snapshot> CaptureCurrentStateAsync(CancellationToken token) {
+		Snapshot snapshotCopy;
+		for (;; token.ThrowIfCancellationRequested()) {
+			snapshotCopy = _snapshot;
+			if (snapshotCopy.TryAcquire())
+				break;
 
-		public required ulong ExpectedVersion { get; init; }
+			// The current snapshot cannot be acquired, which means that it's no longer available. Retry the operation
+			// and do Yield() to increase a chance to get latest snapshot copy from '_snapshot' field
+			await Task.Yield();
+		}
 
-		bool ISupplier<bool>.Invoke() => ActualVersion == ExpectedVersion;
+		return snapshotCopy;
+	}
+
+	ValueTask<long> IStateMachine.ApplyAsync(LogEntry entry, CancellationToken token) {
+		var lastAppliedIndex = _snapshot.LastAppliedCommand.Index;
+		if (entry.Index <= lastAppliedIndex)
+			return ValueTask.FromResult(lastAppliedIndex);
+
+		return entry.IsSnapshot
+			? InstallSnapshotAsync(entry, token)
+			: ApplyAsync(entry, token);
+	}
+
+	private void CompleteTrackers() {
+		foreach (var tracker in _databases.Values) {
+			tracker.TryComplete();
+		}
+	}
+
+	protected override void Dispose(bool disposing) {
+		if (disposing) {
+			_snapshot.Release();
+			CompleteTrackers();
+			_databases.Clear();
+		}
+
+		base.Dispose(disposing);
 	}
 }

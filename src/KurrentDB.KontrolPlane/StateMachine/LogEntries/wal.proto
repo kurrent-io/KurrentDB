@@ -6,19 +6,6 @@ package kurrent.kontrol_plane.log_entries;
 
 option csharp_namespace = "KurrentDB.KontrolPlane.StateMachine.LogEntries";
 
-message AddOrUpdateDatabaseNode
-{
-  string databaseId = 1;
-  bytes address = 2;
-  bool isReadOnlyReplica = 3;
-}
-
-message RemoveDatabaseNode
-{
-  string databaseId = 1;
-  bytes address = 2;
-}
-
 message AddOrUpdateDatabase
 {
   string databaseId = 1;
@@ -30,9 +17,22 @@ message RemoveDatabase
   string databaseId = 1;
 }
 
+message AddOrUpdateDatabaseNode
+{
+  string databaseId = 1;
+  bytes address = 2;
+  bool isReadOnlyReplica = 3;
+  uint64 version = 4;
+}
+
+message RemoveDatabaseNode
+{
+  string databaseId = 1;
+  bytes address = 2;
+}
+
 message AppointLeader
 {
   string databaseId = 1;
-  uint64 expectedVersion = 2;
   bytes address = 3;
 }

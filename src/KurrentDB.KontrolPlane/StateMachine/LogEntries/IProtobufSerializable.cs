@@ -5,7 +5,7 @@ using DotNext.Buffers;
 using DotNext.IO;
 using Google.Protobuf;
 
-namespace KurrentDB.KontrolPlane.StateMachine;
+namespace KurrentDB.KontrolPlane.StateMachine.LogEntries;
 
 internal interface IProtobufSerializable<TSelf> : IMessage<TSelf>
 	where TSelf : class, IProtobufSerializable<TSelf> {
