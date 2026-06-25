@@ -16,7 +16,7 @@ internal readonly struct ProtobufLogEntry<T>(T entry) : IInputLogEntry
 
 	bool IDataTransferObject.IsReusable => true;
 
-	long? IDataTransferObject.Length => null;
+	long? IDataTransferObject.Length => entry.CalculateSize();
 
 	int? IRaftLogEntry.CommandId => T.TypeId;
 

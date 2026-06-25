@@ -34,9 +34,9 @@ internal static class ProtobufSerializer {
 		return task;
 
 		static async ValueTask SerializeSlowAsync(T state, IAsyncBinaryWriter writer, CancellationToken token) {
-			using var buffer = new PoolingBufferWriter<byte> { Capacity = 4096 };
-			state.WriteTo(buffer);
-			await writer.WriteAsync(buffer.WrittenMemory, token: token).ConfigureAwait(false);
+			using var buffer = MemoryAllocator<byte>.Default.AllocateExactly(state.CalculateSize());
+			state.WriteTo(buffer.Span);
+			await writer.WriteAsync(buffer.Memory, token: token).ConfigureAwait(false);
 		}
 	}
 }
