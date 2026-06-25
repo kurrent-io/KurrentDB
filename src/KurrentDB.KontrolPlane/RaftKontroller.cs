@@ -3,7 +3,6 @@
 
 using DotNext.Net.Cluster.Consensus.Raft;
 using DotNext.Net.Cluster.Consensus.Raft.StateMachine;
-using DotNext.Threading;
 
 namespace KurrentDB.KontrolPlane;
 
@@ -16,7 +15,6 @@ public partial class RaftKontroller : IAsyncDisposable {
 	private readonly WriteAheadLog _wal;
 	private readonly ClusterStateMachine _state;
 	private readonly RaftCluster _raft;
-	private readonly CancellationTokenMultiplexer _multiplexer;
 	private readonly TimeSpan _appointmentExpiration;
 	private Task _leadershipTask;
 
@@ -36,7 +34,6 @@ public partial class RaftKontroller : IAsyncDisposable {
 		};
 
 		_leadershipTask = Task.CompletedTask;
-		_multiplexer = new() { MaximumRetained = 128 };
 		_appointmentExpiration = options.AppointmentExpiration;
 		_appointmentState = new();
 	}
