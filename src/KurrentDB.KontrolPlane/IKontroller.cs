@@ -10,9 +10,7 @@ public interface IKontroller {
 
 	ValueTask<IReadOnlyList<Database>> GetDatabasesAsync(CancellationToken token = default);
 
-	ValueTask<IReadOnlyList<DatabaseNode>> GetDatabaseNodesAsync(string databaseId, CancellationToken token = default);
-
-	ValueTask<DatabaseLeader?> GetDatabaseLeaderAsync(string databaseId, CancellationToken token = default);
+	ValueTask<DatabaseCluster?> GetDatabaseAsync(string databaseId, CancellationToken token = default);
 
 	ValueTask<bool> RenewLeaderAppointmentAsync(string databaseId, EndPoint leaderAddress, CancellationToken token = default);
 

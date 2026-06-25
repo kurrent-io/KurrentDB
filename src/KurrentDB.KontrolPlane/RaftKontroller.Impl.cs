@@ -29,21 +29,9 @@ partial class RaftKontroller : IKontroller {
 		return result;
 	}
 
-	public async ValueTask<IReadOnlyList<DatabaseNode>> GetDatabaseNodesAsync(string databaseId, CancellationToken token = default) {
+	public async ValueTask<DatabaseCluster?> GetDatabaseAsync(string databaseId, CancellationToken token = default) {
 		var snapshot = await _state.CaptureCurrentStateAsync(token);
-		var result = new List<DatabaseNode>();
-		try {
-			using (snapshot.RentConnection(out var connection)) {
-				foreach (var database in connection.GetDatabaseNodes(databaseId)) {
-					result.Add(new DatabaseNode
-						{ DatabaseId = databaseId, Address = database.Address, IsReadOnlyReplica = database.IsReadOnlyReplica });
-				}
-			}
-		} finally {
-			snapshot.Release();
-		}
-
-		return result;
+		return GetDatabaseCluster(snapshot, databaseId);
 	}
 
 	public async ValueTask<DatabaseLeader?> GetDatabaseLeaderAsync(string databaseId, CancellationToken token = default) {
@@ -103,10 +91,14 @@ partial class RaftKontroller : IKontroller {
 
 	public ValueTask<bool> RenewLeaderAppointmentAsync(string databaseId, EndPoint leaderAddress, CancellationToken token = default) {
 		ValueTask<bool> task;
-		try {
-			task = new(RenewLeaderAppointment(databaseId, leaderAddress));
-		} catch (Exception e) {
-			task = ValueTask.FromException<bool>(e);
+		if (token.IsCancellationRequested) {
+			task = ValueTask.FromCanceled<bool>(token);
+		} else {
+			try {
+				task = new(RenewLeaderAppointment(databaseId, leaderAddress));
+			} catch (Exception e) {
+				task = ValueTask.FromException<bool>(e);
+			}
 		}
 
 		return task;
@@ -124,20 +116,20 @@ partial class RaftKontroller : IKontroller {
 				snapshot.Release();
 			}
 		}
+	}
 
-		static DatabaseCluster? GetDatabaseCluster(Snapshot snapshot,
-			string databaseId) {
-			using (snapshot.RentConnection(out var connection)) {
-				return connection.GetDatabase(databaseId).FirstOrDefault().TryGet(out var database)
-					? new() {
-						Nodes = GetDatabaseNodes(connection, databaseId, out var leaderAddress),
-						LeaderAddress = leaderAddress,
-						Id = databaseId,
-						Epoch = database.Epoch,
-						Description = database.Description
-					}
-					: null;
-			}
+	private static DatabaseCluster? GetDatabaseCluster(Snapshot snapshot,
+		string databaseId) {
+		using (snapshot.RentConnection(out var connection)) {
+			return connection.GetDatabase(databaseId).FirstOrDefault().TryGet(out var database)
+				? new() {
+					Nodes = GetDatabaseNodes(connection, databaseId, out var leaderAddress),
+					LeaderAddress = leaderAddress,
+					Id = databaseId,
+					Epoch = database.Epoch,
+					Description = database.Description
+				}
+				: null;
 		}
 
 		static IReadOnlyList<DatabaseNode> GetDatabaseNodes(DuckDBAdvancedConnection connection,

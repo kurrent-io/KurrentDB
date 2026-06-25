@@ -3,7 +3,7 @@
 
 namespace KurrentDB.KontrolPlane;
 
-public abstract class KontrollerEntity {
-	private protected KontrollerEntity() {
+public abstract class Entity {
+	private protected Entity() {
 	}
 }

@@ -6,7 +6,7 @@ namespace KurrentDB.KontrolPlane;
 /// <summary>
 /// Describes Kurrent database.
 /// </summary>
-public class Database : KontrollerEntity {
+public class Database : Entity {
 	public const string MainDatabaseId = "main";
 
 	public required string Id { get; init; }

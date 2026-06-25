@@ -8,7 +8,7 @@ namespace KurrentDB.KontrolPlane;
 /// <summary>
 /// Describes database node.
 /// </summary>
-public sealed class DatabaseNode : KontrollerEntity {
+public sealed class DatabaseNode : Entity {
 	public required string DatabaseId { get; init; }
 
 	public required EndPoint Address { get; init; }
