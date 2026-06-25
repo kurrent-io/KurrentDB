@@ -92,6 +92,7 @@ public class EventRecord : IEquatable<EventRecord> {
 				JsonFormatter.Default.Format(new Struct {
 					Fields = {
 						[Constants.RecordProperties.SchemaNameKey] = Value.ForString(EventType),
+						[Constants.RecordProperties.SchemaFormatKey] = Value.ForString(_schemaFormat),
 						[PropertiesErrorKey] = Value.ForString($"Could not render record properties: {ex.Message}")
 					}
 				}));
