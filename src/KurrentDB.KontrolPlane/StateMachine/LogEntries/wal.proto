@@ -22,7 +22,6 @@ message AddOrUpdateDatabaseNode
   string databaseId = 1;
   bytes address = 2;
   bool isReadOnlyReplica = 3;
-  uint64 version = 4;
 }
 
 message RemoveDatabaseNode
@@ -34,5 +33,5 @@ message RemoveDatabaseNode
 message AppointLeader
 {
   string databaseId = 1;
-  bytes address = 3;
+  bytes address = 2;
 }
