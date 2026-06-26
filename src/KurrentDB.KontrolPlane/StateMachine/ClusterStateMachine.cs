@@ -27,6 +27,7 @@ internal sealed partial class ClusterStateMachine : Disposable, IStateMachine {
 
 		_location = location;
 		_snapshot = new(connectionPoolCapacity);
+		_snapshot.Initialize();
 		_databases = new();
 		_poolCapacity = connectionPoolCapacity;
 	}
