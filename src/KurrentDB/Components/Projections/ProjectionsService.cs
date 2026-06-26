@@ -98,7 +98,8 @@ public class ProjectionsService(IPublisher publisher, IAuthorizationProvider aut
 			envelope, mode, name,
 			new ProjectionManagementMessage.RunAs(principal),
 			"JS", query, true, checkpointsEnabled, emitEnabled, trackEmittedStreams,
-			enableRunAs: true, engineVersion: engineVersion, metadata: ProjectionToolMetadata.ForCreate()));
+			enableRunAs: true, engineVersion: engineVersion,
+			metadata: ProjectionToolMetadata.ForCreate(principal.Identity?.Name)));
 
 		switch (await envelope.Task.WaitAsync(ct)) {
 			case ProjectionManagementMessage.Updated:
@@ -164,7 +165,7 @@ public class ProjectionsService(IPublisher publisher, IAuthorizationProvider aut
 		var envelope = new TcsEnvelope<Message>();
 		publisher.Publish(new ProjectionManagementMessage.Command.UpdateQuery(
 			envelope, name, new ProjectionManagementMessage.RunAs(principal), query, emitEnabled,
-			metadata: ProjectionToolMetadata.ForUpdate()));
+			metadata: ProjectionToolMetadata.ForUpdate(principal.Identity?.Name)));
 		CheckCommandResult(name, await envelope.Task.WaitAsync(ct));
 	}
 

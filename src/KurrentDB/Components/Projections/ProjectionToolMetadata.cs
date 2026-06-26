@@ -15,16 +15,22 @@ namespace KurrentDB.Components.Projections;
 public static class ProjectionToolMetadata {
 	public const string ToolName = "KurrentDB Admin UI";
 
-	public static byte[] ForCreate() => Build("create");
+	public static byte[] ForCreate(string actor) => Build("create", actor);
 
-	public static byte[] ForUpdate() => Build("update");
+	public static byte[] ForUpdate(string actor) => Build("update", actor);
 
-	static byte[] Build(string operation) =>
-		new Struct {
+	static byte[] Build(string operation, string actor) {
+		var metadata = new Struct {
 			Fields = {
 				["tool"] = Value.ForString(ToolName),
 				["tool_version"] = Value.ForString(VersionInfo.Version),
 				["operation"] = Value.ForString(operation),
 			}
-		}.ToByteArray();
+		};
+		// Client-asserted, opt-in per the convention's trust model: stamp the acting identity when we have
+		// one, omit the key entirely otherwise (anonymous/insecure) rather than asserting an empty actor.
+		if (!string.IsNullOrEmpty(actor))
+			metadata.Fields["actor"] = Value.ForString(actor);
+		return metadata.ToByteArray();
+	}
 }

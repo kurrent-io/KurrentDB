@@ -20,7 +20,8 @@ namespace KurrentDB.Components.Tests;
 // The UI stamps the shared projection tool-metadata convention onto its Create/UpdateQuery writes so other
 // tools can see a projection was authored here. Metadata rides as a protobuf Struct on the command's byte[]
 // (the engine stamps it onto the $ProjectionUpdated event). These assert the keys/values, that update vs
-// create are distinguished, and that no actor identity is recorded.
+// create are distinguished, that the acting identity is recorded as actor, and that actor is omitted when
+// the principal is anonymous.
 public class ProjectionToolMetadataTests {
 	static readonly ClaimsPrincipal SomeUser = new(new ClaimsIdentity([new Claim(ClaimTypes.Name, "tester")], "test"));
 
@@ -56,8 +57,9 @@ public class ProjectionToolMetadataTests {
 		Assert.Equal("KurrentDB Admin UI", props["tool"]);
 		Assert.Equal("create", props["operation"]);
 		Assert.Equal(VersionInfo.Version, props["tool_version"]);
-		// Pin the closed key set: no actor (no OAuth identity recorded) and no revision (no source control for a UI edit).
-		Assert.Equal(["operation", "tool", "tool_version"], props.Keys.OrderBy(k => k));
+		Assert.Equal("tester", props["actor"]);
+		// Pin the closed key set: actor is the acting identity; no revision (no source control for a UI edit).
+		Assert.Equal(["actor", "operation", "tool", "tool_version"], props.Keys.OrderBy(k => k));
 	}
 
 	[Fact]
@@ -71,12 +73,26 @@ public class ProjectionToolMetadataTests {
 		Assert.Equal("KurrentDB Admin UI", props["tool"]);
 		Assert.Equal("update", props["operation"]);
 		Assert.Equal(VersionInfo.Version, props["tool_version"]);
+		Assert.Equal("tester", props["actor"]);
+		Assert.Equal(["actor", "operation", "tool", "tool_version"], props.Keys.OrderBy(k => k));
+	}
+
+	[Fact]
+	public async Task Create_omits_actor_when_principal_is_anonymous() {
+		var (service, published) = NewService();
+		var anonymous = new ClaimsPrincipal(new ClaimsIdentity());
+
+		await service.CreateAsync(anonymous, "p", "fromAll()", ProjectionMode.Continuous, false, false, false, CancellationToken.None);
+
+		var post = Assert.IsType<ProjectionManagementMessage.Command.Post>(Assert.Single(published));
+		var props = Decode(post.Metadata);
+		Assert.False(props.ContainsKey("actor"));
 		Assert.Equal(["operation", "tool", "tool_version"], props.Keys.OrderBy(k => k));
 	}
 
 	[Fact]
 	public void Builder_keys_are_flat_and_not_dollar_prefixed() {
-		foreach (var key in Decode(ProjectionToolMetadata.ForCreate()).Keys)
+		foreach (var key in Decode(ProjectionToolMetadata.ForCreate("tester")).Keys)
 			Assert.False(key.StartsWith('$'), $"tool metadata key '{key}' must not be $-prefixed (server-reserved namespace)");
 	}
 }
