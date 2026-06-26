@@ -13,13 +13,13 @@ using StateMachine.Queries;
 using static StateMachine.LogEntries.ReplicationHelpers;
 
 partial class RaftKontroller : IKontroller {
-	public async ValueTask<IReadOnlyList<Database>> GetDatabasesAsync(CancellationToken token = default) {
+	public async ValueTask<IReadOnlySet<string>> GetDatabasesAsync(CancellationToken token = default) {
 		var snapshot = await _state.CaptureCurrentStateAsync(token);
-		var result = new List<Database>();
+		var result = new HashSet<string>();
 		try {
 			using (snapshot.RentConnection(out var connection)) {
-				foreach (var database in connection.GetDatabases()) {
-					result.Add(new Database { Id = database.Id, Description = database.Description, Epoch = database.Epoch });
+				foreach (var databaseId in connection.GetDatabases()) {
+					result.Add(databaseId);
 				}
 			}
 		} finally {

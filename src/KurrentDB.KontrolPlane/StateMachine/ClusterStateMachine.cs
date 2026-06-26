@@ -57,8 +57,8 @@ internal sealed partial class ClusterStateMachine : Disposable, IStateMachine {
 	private void RefreshDatabaseTrackers(Snapshot snapshot) {
 		var loadedTrackers = new HashSet<string>();
 		using (snapshot.RentConnection(out var connection)) {
-			foreach (var database in connection.GetDatabases()) {
-				loadedTrackers.Add(database.Id);
+			foreach (var databaseId in connection.GetDatabases()) {
+				loadedTrackers.Add(databaseId);
 			}
 		}
 

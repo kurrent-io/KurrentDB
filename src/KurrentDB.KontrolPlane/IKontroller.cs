@@ -8,7 +8,7 @@ namespace KurrentDB.KontrolPlane;
 public interface IKontroller {
 	IDatabaseReplicaSet ReplicaSet { get; init; }
 
-	ValueTask<IReadOnlyList<Database>> GetDatabasesAsync(CancellationToken token = default);
+	ValueTask<IReadOnlySet<string>> GetDatabasesAsync(CancellationToken token = default);
 
 	ValueTask<DatabaseCluster?> GetDatabaseAsync(string databaseId, CancellationToken token = default);
 

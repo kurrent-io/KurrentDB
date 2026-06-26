@@ -60,15 +60,15 @@ partial class RaftKontroller {
 		CancellationToken token) {
 		// Process appointment for every database in parallel
 		using (snapshot.RentConnection(out var connection)) {
-			foreach (var database in connection.GetDatabases()) {
-				databases.Add(database.Id);
+			foreach (var databaseId in connection.GetDatabases()) {
+				databases.Add(databaseId);
 
 				IReadOnlyList<(EndPoint Address, bool IsReadOnlyReplica, bool IsLeader)> nodes = connection
-					.GetDatabaseNodes(database.Id)
+					.GetDatabaseNodes(databaseId)
 					.ToList();
 
-				if (IsAppointmentRequired(database.Id, nodes))
-					tasks.Add(AppointLeaderAsync(database.Id, nodes, token));
+				if (IsAppointmentRequired(databaseId, nodes))
+					tasks.Add(AppointLeaderAsync(databaseId, nodes, token));
 			}
 		}
 	}

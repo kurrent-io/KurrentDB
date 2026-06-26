@@ -7,12 +7,8 @@ using Kurrent.Quack;
 namespace KurrentDB.KontrolPlane.StateMachine.Queries;
 
 [StructLayout(LayoutKind.Auto)]
-internal readonly struct AllDatabasesQuery : IQuery<(string Id, string Description, ulong Epoch)> {
-	public static ReadOnlySpan<byte> CommandText => "SELECT * FROM database;"u8;
+internal readonly struct AllDatabasesQuery : IQuery<string> {
+	public static ReadOnlySpan<byte> CommandText => "SELECT id FROM database;"u8;
 
-	public static (string Id, string Description, ulong Epoch) Parse(ref DataChunk.Row row) => new() {
-		Id = row.ReadString(),
-		Description = row.ReadString(),
-		Epoch = row.ReadUInt64(),
-	};
+	public static string Parse(ref DataChunk.Row row) => row.ReadString();
 }

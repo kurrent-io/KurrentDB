@@ -7,9 +7,9 @@ using Kurrent.Quack;
 namespace KurrentDB.KontrolPlane.StateMachine.Queries;
 
 internal static class QueryHelpers {
-	public static QueryResult<(string Id, string Description, ulong Epoch), AllDatabasesQuery> GetDatabases(
+	public static QueryResult<string, AllDatabasesQuery> GetDatabases(
 		this DuckDBAdvancedConnection connection)
-		=> connection.ExecuteQuery<(string, string, ulong), AllDatabasesQuery>();
+		=> connection.ExecuteQuery<string, AllDatabasesQuery>();
 
 	public static QueryResult<ValueTuple<string>, (EndPoint Address, bool IsReadOnlyReplica, bool IsLeader), AllNodesQuery> GetDatabaseNodes(
 		this DuckDBAdvancedConnection connection,
