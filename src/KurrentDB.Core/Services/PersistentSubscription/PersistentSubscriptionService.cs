@@ -38,6 +38,7 @@ public class PersistentSubscriptionService<TStreamId> :
 	IHandle<SubscriptionMessage.PersistentSubscriptionPushToClients>,
 	IHandle<ClientMessage.ReplayParkedMessages>,
 	IHandle<ClientMessage.ReplayParkedMessage>,
+	IHandle<ClientMessage.TruncateParkedMessages>,
 	IHandle<SystemMessage.StateChangeMessage>,
 	IAsyncHandle<ClientMessage.ConnectToPersistentSubscriptionToStream>,
 	IAsyncHandle<ClientMessage.ConnectToPersistentSubscriptionToAll>,
@@ -1185,6 +1186,32 @@ public class PersistentSubscriptionService<TStreamId> :
 		subscription.RetrySingleParkedMessage(message.Event);
 		message.Envelope.ReplyWith(new ClientMessage.ReplayMessagesReceived(message.CorrelationId,
 			ClientMessage.ReplayMessagesReceived.ReplayMessagesReceivedResult.Success, ""));
+	}
+
+	public void Handle(ClientMessage.TruncateParkedMessages message) {
+		var key = BuildSubscriptionGroupKey(message.EventStreamId, message.GroupName);
+		Log.Debug("Truncating parked messages for persistent subscription {subscriptionKey} {to}. Requested by {user}",
+			key,
+			message.StopAt.HasValue ? $" (To: '{message.StopAt.ToString()}')" : " (All)",
+			message.User?.Identity?.Name);
+
+		if (message.StopAt.HasValue && message.StopAt.Value < 0) {
+			message.Envelope.ReplyWith(new ClientMessage.TruncateParkedMessagesCompleted(message.CorrelationId,
+				ClientMessage.TruncateParkedMessagesCompleted.TruncateParkedMessagesCompletedResult.Fail,
+				"Cannot truncate parked messages at a negative version."));
+			return;
+		}
+
+		if (!_subscriptionsById.TryGetValue(key, out var subscription)) {
+			message.Envelope.ReplyWith(new ClientMessage.TruncateParkedMessagesCompleted(message.CorrelationId,
+				ClientMessage.TruncateParkedMessagesCompleted.TruncateParkedMessagesCompletedResult.DoesNotExist,
+				"Unable to locate '" + key + "'"));
+			return;
+		}
+
+		subscription.TruncateParkedMessages(message.StopAt);
+		message.Envelope.ReplyWith(new ClientMessage.TruncateParkedMessagesCompleted(message.CorrelationId,
+			ClientMessage.TruncateParkedMessagesCompleted.TruncateParkedMessagesCompletedResult.Success, ""));
 	}
 
 	private void LoadConfiguration(Action continueWith) {
