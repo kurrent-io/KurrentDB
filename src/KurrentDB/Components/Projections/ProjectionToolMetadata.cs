@@ -13,7 +13,7 @@ namespace KurrentDB.Components.Projections;
 // Struct exactly like the gRPC front-end's ToMetadata; the engine stamps the blob onto the
 // $ProjectionUpdated definition event (isPropertyMetadata) and synthesizes it back to JSON on read.
 public static class ProjectionToolMetadata {
-	public const string ToolName = "KurrentDB Admin UI";
+	public const string ToolName = "KurrentDB Embedded UI";
 
 	public static byte[] ForCreate(string actor) => Build("create", actor);
 

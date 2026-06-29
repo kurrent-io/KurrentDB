@@ -54,7 +54,7 @@ public class ProjectionToolMetadataTests {
 
 		var post = Assert.IsType<ProjectionManagementMessage.Command.Post>(Assert.Single(published));
 		var props = Decode(post.Metadata);
-		Assert.Equal("KurrentDB Admin UI", props["tool"]);
+		Assert.Equal("KurrentDB Embedded UI", props["tool"]);
 		Assert.Equal("create", props["operation"]);
 		Assert.Equal(VersionInfo.Version, props["tool_version"]);
 		Assert.Equal("tester", props["actor"]);
@@ -70,7 +70,7 @@ public class ProjectionToolMetadataTests {
 
 		var update = Assert.IsType<ProjectionManagementMessage.Command.UpdateQuery>(Assert.Single(published));
 		var props = Decode(update.Metadata);
-		Assert.Equal("KurrentDB Admin UI", props["tool"]);
+		Assert.Equal("KurrentDB Embedded UI", props["tool"]);
 		Assert.Equal("update", props["operation"]);
 		Assert.Equal(VersionInfo.Version, props["tool_version"]);
 		Assert.Equal("tester", props["actor"]);
