@@ -333,7 +333,7 @@ For the gRPC heartbeats, KurrentDB and its gRPC clients use the protocol feature
 
 ## Exposing endpoints
 
-If you need to disable some HTTP endpoints, you can change the settings below. It is possible to disable the embedded UI, stats and gossip endpoints on the HTTP interface.
+If you need to disable some HTTP endpoints, you can change the settings below. It is possible to disable the embedded UI, stats and metrics, and gossip endpoints on the HTTP interface.
 
 You can disable the embedded UI and the admin HTTP API by setting `DisableAdminUi` to `true`.
 
