@@ -353,7 +353,7 @@ The `stats` and `metrics` endpoints can be disabled by setting `DisableStatsOnHt
 | YAML                 | `DisableStatsOnHttp`                |
 | Environment variable | `KURRENTDB_DISABLE_STATS_ON_HTTP`   |
 
-**Default**: `false`, the stats endpoint is enabled on the HTTP interface.
+**Default**: `false`, the stats and metrics endpoints are enabled on the HTTP interface.
 
 You can also disable the gossip protocol on the HTTP interface by setting `DisableGossipOnHttp` to `true`.
 
