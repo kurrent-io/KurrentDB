@@ -343,7 +343,7 @@ You can disable the embedded UI and the admin HTTP API by setting `DisableAdminU
 | YAML                 | `DisableAdminUi`               |
 | Environment variable | `KURRENTDB_DISABLE_ADMIN_UI`   |
 
-**Default**: `false`, the embedded UI is enabled on the HTTP interface.
+**Default**: `false`, the embedded UI and the admin HTTP API are enabled on the HTTP interface.
 
 The `stats` and `metrics` endpoints can be disabled by setting `DisableStatsOnHttp` to `true`.
 
