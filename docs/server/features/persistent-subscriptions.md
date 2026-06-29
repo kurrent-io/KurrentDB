@@ -35,7 +35,7 @@ Clients must acknowledge (or not acknowledge) messages as they are handled. If m
 
 ## Parked messages
 
-Messages that have been retried too many times will often be parked in the persistent subscription's parked message stream. This stream is named `$persistentsubscription-{streamname}::{groupname}-parked`. You can easily see the number of parked events in the persistent subscription statistics or browse the parked messages in the admin UI.
+Messages that have been retried too many times will often be parked in the persistent subscription's parked message stream. This stream is named `$persistentsubscription-{streamname}::{groupname}-parked`. You can easily see the number of parked events in the persistent subscription statistics or browse the parked messages in the embedded UI.
 
 If you want to retry the parked messages, you can `Replay` the parked messages for that subscription. This will push the parked messages to subscribers before any new events on the subscription.
 
