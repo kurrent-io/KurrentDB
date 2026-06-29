@@ -577,6 +577,21 @@ public class PersistentSubscription {
 		}
 	}
 
+	public void TruncateParkedMessages(long? stopAt) {
+		lock (_lock) {
+			if (_state == PersistentSubscriptionState.NotReady)
+				return;
+
+			_settings.MessageParker.BeginReadEndSequence(end => {
+				if (!end.HasValue)
+					return;
+
+				var truncateBefore = stopAt.HasValue ? Math.Min(stopAt.Value, end.Value + 1) : end.Value + 1;
+				_settings.MessageParker.BeginMarkParkedMessagesReprocessed(truncateBefore, null, true);
+			});
+		}
+	}
+
 	private void TryReadingParkedMessagesFrom(long position, long stopAt) {
 		if ((_state & PersistentSubscriptionState.ReplayingParkedMessages) == 0)
 			return; //not replaying
