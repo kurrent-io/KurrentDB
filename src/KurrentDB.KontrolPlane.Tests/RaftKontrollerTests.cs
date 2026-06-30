@@ -3,6 +3,7 @@ using KurrentDB.Core.XUnit.Tests;
 
 namespace KurrentDB.KontrolPlane;
 
+[Collection("KontrolPlane")]
 public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 	private static readonly IPEndPoint Address = new(IPAddress.Loopback, 3269);
 	private readonly RaftKontroller _kontroller;
