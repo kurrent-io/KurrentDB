@@ -88,7 +88,7 @@ partial class RaftKontroller {
 	private async Task AppointLeaderAsync(string databaseId, ulong epoch, IReadOnlyList<(EndPoint Address, bool IsReadOnlyReplica, bool IsLeader)> nodes, CancellationToken token) {
 		var responses = new Dictionary<EndPoint, ReplicaState>(nodes.Count);
 
-		await foreach (var task in Task.WhenEach(GetReplicaState(ReplicaSet, nodes, token))) {
+		await foreach (var task in Task.WhenEach(GetReplicaState(DataPlane, nodes, token))) {
 			try {
 				var pair = await task;
 				responses.Add(pair.Key, pair.Value);

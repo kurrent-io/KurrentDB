@@ -20,14 +20,14 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 		// initialize Kontroller
 		await using var kontroller = new RaftKontroller(new RaftKontroller.Options {
 			ListenAddress = new(IPAddress.Loopback, 3269),
-			AppointmentExpiration = TimeSpan.FromSeconds(1),
+			AppointmentDuration = TimeSpan.FromSeconds(1),
 			ConnectionPoolCapacity = 10,
 			WalOptions = new() {
 				Location = Directory,
 			},
 			SingleNodeDeployment = true,
 		}) {
-			ReplicaSet = replicaSet,
+			DataPlane = replicaSet,
 		};
 
 		await kontroller.StartAsync(TestToken);
@@ -53,14 +53,14 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 		// initialize Kontroller
 		await using var kontroller = new RaftKontroller(new RaftKontroller.Options {
 			ListenAddress = new(IPAddress.Loopback, 3269),
-			AppointmentExpiration = appointmentTimeout,
+			AppointmentDuration = appointmentTimeout,
 			ConnectionPoolCapacity = 10,
 			WalOptions = new() {
 				Location = Directory,
 			},
 			SingleNodeDeployment = true,
 		}) {
-			ReplicaSet = replicaSet,
+			DataPlane = replicaSet,
 		};
 
 		await kontroller.StartAsync(TestToken);

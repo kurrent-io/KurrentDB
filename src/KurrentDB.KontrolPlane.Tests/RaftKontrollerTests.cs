@@ -11,14 +11,14 @@ public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 	public RaftKontrollerTests() {
 		_kontroller = new(new RaftKontroller.Options {
 			ListenAddress = Address,
-			AppointmentExpiration = TimeSpan.FromDays(1), // elect leader just once
+			AppointmentDuration = TimeSpan.FromDays(1), // elect leader just once
 			ConnectionPoolCapacity = 10,
 			WalOptions = new() {
 				Location = Directory,
 			},
 			SingleNodeDeployment = true,
 		}) {
-			ReplicaSet = new TestDataPlane(),
+			DataPlane = new TestDataPlane(),
 		};
 	}
 

@@ -14,7 +14,7 @@ public sealed class WalPersistenceTests : DirectoryFixture<WalPersistenceTests> 
 	public async Task SnapshotPersistence() {
 		await using (var kontroller = new RaftKontroller(new RaftKontroller.Options {
 			             ListenAddress = new(IPAddress.Loopback, 3269),
-			             AppointmentExpiration = TimeSpan.FromDays(1), // elect leader just once
+			             AppointmentDuration = TimeSpan.FromDays(1), // elect leader just once
 			             ConnectionPoolCapacity = 10,
 			             WalOptions = new() {
 				             Location = Directory,
@@ -22,7 +22,7 @@ public sealed class WalPersistenceTests : DirectoryFixture<WalPersistenceTests> 
 			             SingleNodeDeployment = true,
 			             SnapshotDepth = SnapshotDepth,
 		             }) {
-			             ReplicaSet = new TestDataPlane(),
+			             DataPlane = new TestDataPlane(),
 		             }) {
 
 			await kontroller.StartAsync(TestToken);
@@ -38,7 +38,7 @@ public sealed class WalPersistenceTests : DirectoryFixture<WalPersistenceTests> 
 		// Recover persistent state
 		await using (var kontroller = new RaftKontroller(new RaftKontroller.Options {
 			             ListenAddress = new(IPAddress.Loopback, 3269),
-			             AppointmentExpiration = TimeSpan.FromDays(1), // elect leader just once
+			             AppointmentDuration = TimeSpan.FromDays(1), // elect leader just once
 			             ConnectionPoolCapacity = 10,
 			             WalOptions = new() {
 				             Location = Directory,
@@ -46,7 +46,7 @@ public sealed class WalPersistenceTests : DirectoryFixture<WalPersistenceTests> 
 			             SingleNodeDeployment = true,
 			             SnapshotDepth = SnapshotDepth,
 		             }) {
-			             ReplicaSet = new TestDataPlane(),
+			             DataPlane = new TestDataPlane(),
 		             }) {
 
 			await kontroller.StartAsync(TestToken);

@@ -40,13 +40,13 @@ public partial class RaftKontroller : IAsyncDisposable {
 		};
 
 		_leadershipTask = Task.CompletedTask;
-		_appointmentExpiration = options.AppointmentExpiration;
+		_appointmentExpiration = options.AppointmentDuration;
 		_appointmentState = new();
 		_lifecycleTokenSource = new();
 		_lifecycleToken = _lifecycleTokenSource.Token;
 	}
 
-	public required IDataPlane ReplicaSet {
+	public required IDataPlane DataPlane {
 		get;
 		init => field = value ?? throw new ArgumentNullException(nameof(value));
 	}
