@@ -43,7 +43,6 @@ partial class ClusterState {
 		using (_pool.Rent(out var connection)) {
 			using var transaction = connection.BeginTransaction();
 			connection.ExecuteAdHocNonQuery(LatestSchema, multipleStatements: true);
-			connection.ExecuteNonQuery<int, UpdateVersionQuery>(LatestVersion);
 			transaction.CommitOnDispose();
 		}
 	}
