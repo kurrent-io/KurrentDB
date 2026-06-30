@@ -19,7 +19,7 @@ public partial class RaftKontroller : IAsyncDisposable {
 	private Task _leadershipTask;
 
 	public RaftKontroller(in Options options) {
-		var stateLocation = new DirectoryInfo(Path.Combine(options.WalOptions.Location, "db"));
+		var stateLocation = new DirectoryInfo(Path.Combine(options.WalOptions.Location, "ktrl"));
 		var configStorageLocation = Path.Combine(options.WalOptions.Location, "members.list");
 		_state = new(stateLocation, options.ConnectionPoolCapacity);
 		_wal = new WriteAheadLog(options.WalOptions, _state);
@@ -27,6 +27,7 @@ public partial class RaftKontroller : IAsyncDisposable {
 		var config = new RaftCluster.TcpConfiguration(options.ListenAddress) {
 			PublicEndPoint = options.PublicAddress,
 			ConfigurationStorage = new PersistentConfigurationStorage(configStorageLocation),
+			ColdStart = options.SingleNodeDeployment,
 		};
 
 		_raft = new RaftCluster(config) {
@@ -36,6 +37,8 @@ public partial class RaftKontroller : IAsyncDisposable {
 		_leadershipTask = Task.CompletedTask;
 		_appointmentExpiration = options.AppointmentExpiration;
 		_appointmentState = new();
+		_lifecycleTokenSource = new();
+		_lifecycleToken = _lifecycleTokenSource.Token;
 	}
 
 	public required IDatabaseReplicaSet ReplicaSet {
@@ -43,19 +46,37 @@ public partial class RaftKontroller : IAsyncDisposable {
 		init => field = value ?? throw new ArgumentNullException(nameof(value));
 	}
 
+	public Task<CancellationToken> EnsureLeadershipAsync(CancellationToken token)
+		=> _raft.WaitForLeadershipAsync(token);
+
 	public async Task StartAsync(CancellationToken token) {
+		_state.Recover();
 		await _raft.StartAsync(token);
 		_leadershipTask = HandleLeadershipAsync();
 	}
 
 	public async Task StopAsync(CancellationToken token) {
 		await _raft.StopAsync(token);
+		await CancelAsync();
 		await _leadershipTask.ConfigureAwait(false);
 	}
 
 	public async ValueTask DisposeAsync() {
+		await CancelAsync();
 		await _raft.DisposeAsync();
 		await _wal.DisposeAsync();
 		_state.Dispose();
+	}
+
+	private ValueTask CancelAsync() {
+		return Interlocked.Exchange(ref _lifecycleTokenSource, null) is { } cts
+			? CancelAndDiposeAsync(cts)
+			: ValueTask.CompletedTask;
+
+		static async ValueTask CancelAndDiposeAsync(CancellationTokenSource cts) {
+			using (cts) {
+				await cts.CancelAsync();
+			}
+		}
 	}
 }

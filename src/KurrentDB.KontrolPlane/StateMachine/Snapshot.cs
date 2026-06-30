@@ -19,16 +19,16 @@ namespace KurrentDB.KontrolPlane.StateMachine;
 /// This concurrency model is preserved by DuckDB 1.5 and later.
 /// </remarks>
 internal sealed partial class Snapshot : Disposable {
-	private static ulong InstanceIndex;
 	private readonly DuckDBConnectionPool _pool;
 	private readonly DuckDBAdvancedConnection _writeConnection;
-	private readonly string _databaseName;
 	private CommandInfo _lastCommandInfo;
 
 	public Snapshot(int connectionPoolCapacity) {
 		// For every instance of this class, we have a separated instance of the in-memory database
-		_pool = new(MakeConnectionString(out _databaseName)) { Capacity = connectionPoolCapacity };
-		_writeConnection = _pool.Open();
+		_writeConnection = new DuckDBAdvancedConnection { ConnectionString = "DataSource=:memory:" };
+		_writeConnection.Open();
+		_pool = new(_writeConnection) { Capacity = connectionPoolCapacity };
+		_referenceCounter = 1U;
 	}
 
 	public ref readonly CommandInfo LastAppliedCommand => ref _lastCommandInfo;
@@ -50,7 +50,7 @@ internal sealed partial class Snapshot : Disposable {
 	public void SaveToFile(string fileName) {
 		var command = $"""
 		               ATTACH '{fileName}' AS snapshot;
-		               COPY FROM DATABASE {_databaseName} TO snapshot;
+		               COPY FROM DATABASE memory TO snapshot;
 		               DETACH snapshot;
 		               """;
 		using (_pool.Rent(out var connection)) {
@@ -61,7 +61,7 @@ internal sealed partial class Snapshot : Disposable {
 	public void LoadFromFile(string fileName, int targetVersion = LatestVersion) {
 		var command = $"""
 		               ATTACH '{fileName}' AS snapshot;
-		               COPY FROM DATABASE snapshot TO {_databaseName};
+		               COPY FROM DATABASE snapshot TO memory;
 		               DETACH snapshot;
 		               """;
 		using (_pool.Rent(out var connection)) {
@@ -71,14 +71,6 @@ internal sealed partial class Snapshot : Disposable {
 			_lastCommandInfo = metadata;
 			PerformMigration(connection, metadata.Version, targetVersion, MigrationActions);
 		}
-	}
-
-	private static string MakeConnectionString(out string databaseName)
-		=> MakeConnectionString(Interlocked.Increment(ref InstanceIndex) - 1UL, out databaseName);
-
-	private static string MakeConnectionString(ulong index, out string databaseName) {
-		databaseName = $"kontroller_state_{index}";
-		return $"DataSource=:memory:{databaseName}";
 	}
 
 	protected override void Dispose(bool disposing) {

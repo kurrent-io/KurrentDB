@@ -3,6 +3,7 @@
 
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using DotNext.Collections.Generic;
 using DotNext.IO;
 using DotNext.Net.Cluster.Consensus.Raft.StateMachine;
 using DotNext.Threading;
@@ -40,7 +41,8 @@ partial class ClusterStateMachine {
 			case LogEntries.AppointLeader.TypeId:
 				Apply(currentState,
 					await DeserializeAsync<LogEntries.AppointLeader>(entry, token),
-					in commandInfo);
+					in commandInfo,
+					entry.Context as StrongBox<bool>);
 				break;
 			default:
 				Debug.Fail($"Unexpected entry type {entry.CommandId}");
@@ -68,9 +70,7 @@ partial class ClusterStateMachine {
 		StrongBox<bool>? resultContainer) {
 		var result = currentState.Update(command, in commandInfo);
 
-		if (_databases.TryRemove(command.DatabaseId, out var tracker)) {
-			tracker.TryComplete();
-		}
+		_databases.TryRemove(command.DatabaseId).ValueOrDefault?.TryComplete();
 
 		resultContainer?.Value = result;
 	}
@@ -78,9 +78,7 @@ partial class ClusterStateMachine {
 	private void Apply(Snapshot currentState, LogEntries.AddOrUpdateDatabaseNode command, in CommandInfo commandInfo) {
 		currentState.Update(command, in commandInfo);
 
-		if (_databases.TryGetValue(command.DatabaseId, out var tracker)) {
-			tracker.TryAdvance();
-		}
+		_databases.TryGetValue(command.DatabaseId).ValueOrDefault?.TryAdvance();
 	}
 
 	private void Apply(Snapshot currentState,
@@ -89,19 +87,16 @@ partial class ClusterStateMachine {
 		StrongBox<bool>? resultContainer) {
 		var result = currentState.Update(command, in commandInfo);
 
-		if (_databases.TryGetValue(command.DatabaseId, out var tracker)) {
-			tracker.TryAdvance();
-		}
+		_databases.TryGetValue(command.DatabaseId).ValueOrDefault?.TryAdvance();
 
 		resultContainer?.Value = result;
 	}
 
-	private void Apply(Snapshot currentState, LogEntries.AppointLeader command, in CommandInfo commandInfo) {
-		currentState.Update(command, in commandInfo);
+	private void Apply(Snapshot currentState, LogEntries.AppointLeader command, in CommandInfo commandInfo, StrongBox<bool>? resultContainer) {
+		var result = currentState.Update(command, in commandInfo);
 
-		if (_databases.TryGetValue(command.DatabaseId, out var tracker)) {
-			tracker.TryAdvance();
-		}
+		_databases.TryGetValue(command.DatabaseId).ValueOrDefault?.TryAdvance();
+		resultContainer?.Value = result;
 	}
 
 	private static ValueTask<T> DeserializeAsync<T>(in LogEntry entry, CancellationToken token)

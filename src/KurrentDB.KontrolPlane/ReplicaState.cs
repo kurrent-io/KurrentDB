@@ -11,4 +11,4 @@ namespace KurrentDB.KontrolPlane;
 /// <param name="UncommittedOffset">The latest known offset of the uncommitted log record.</param>
 /// <param name="Epoch">The epoch of the database node.</param>
 [StructLayout(LayoutKind.Auto)]
-public readonly record struct ReplicaState(long UncommittedOffset, ulong Epoch);
+public readonly record struct ReplicaState(long UncommittedOffset, ulong Epoch) : IEntity;

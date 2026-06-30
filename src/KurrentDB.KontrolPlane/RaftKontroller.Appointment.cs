@@ -25,13 +25,17 @@ partial class RaftKontroller {
 		try {
 			do {
 				var snapshot = await _state.CaptureCurrentStateAsync(token);
-				StartAppointments(snapshot, tasks, databases, token);
-				RemoveDeletedDatabases(databases, deletedDatabases);
+				try {
+					StartAppointments(snapshot, tasks, databases, token);
+					RemoveDeletedDatabases(databases, deletedDatabases);
 
-				await Task.WhenAll(tasks);
-				tasks.Clear();
-				deletedDatabases.Clear();
-				databases.Clear();
+					await Task.WhenAll(tasks);
+				} finally {
+					snapshot.Release();
+					tasks.Clear();
+					deletedDatabases.Clear();
+					databases.Clear();
+				}
 			} while (await timer.WaitForNextTickAsync(token));
 		} finally {
 			timer.Dispose();
@@ -60,15 +64,18 @@ partial class RaftKontroller {
 		CancellationToken token) {
 		// Process appointment for every database in parallel
 		using (snapshot.RentConnection(out var connection)) {
-			foreach (var databaseId in connection.GetDatabases()) {
-				databases.Add(databaseId);
+			// Workaround: it's not possible to enumerate to query results within the same connection.
+			// Thus, we need to materialize (ToList) the first query
+			var currentDBs = connection.GetDatabasesWithEpoch().ToList();
+			foreach (var database in currentDBs) {
+				databases.Add(database.Id);
 
 				IReadOnlyList<(EndPoint Address, bool IsReadOnlyReplica, bool IsLeader)> nodes = connection
-					.GetDatabaseNodes(databaseId)
+					.GetDatabaseNodes(database.Id)
 					.ToList();
 
-				if (IsAppointmentRequired(databaseId, nodes))
-					tasks.Add(AppointLeaderAsync(databaseId, nodes, token));
+				if (IsAppointmentRequired(database.Id, nodes))
+					tasks.Add(AppointLeaderAsync(database.Id, database.Epoch, nodes, token));
 			}
 		}
 	}
@@ -78,7 +85,7 @@ partial class RaftKontroller {
 		   && (!_appointmentState.TryGetValue(databaseId, out var appointment)
 		       || appointment.IsExpired(_appointmentExpiration));
 
-	private async Task AppointLeaderAsync(string databaseId, IReadOnlyList<(EndPoint Address, bool IsReadOnlyReplica, bool IsLeader)> nodes, CancellationToken token) {
+	private async Task AppointLeaderAsync(string databaseId, ulong epoch, IReadOnlyList<(EndPoint Address, bool IsReadOnlyReplica, bool IsLeader)> nodes, CancellationToken token) {
 		var responses = new Dictionary<EndPoint, ReplicaState>(nodes.Count);
 
 		await foreach (var task in Task.WhenEach(GetReplicaState(ReplicaSet, nodes, token))) {
@@ -107,8 +114,8 @@ partial class RaftKontroller {
 			.Key;
 
 		// Appoint the leader
-		await _raft.AppointLeaderAsync(databaseId, candidate, token);
-		_appointmentState[databaseId] = new LeaderAppointment(candidate);
+		if (await _raft.AppointLeaderAsync(databaseId, epoch, candidate, token))
+			_appointmentState[databaseId] = new LeaderAppointment(candidate, epoch);
 
 		static IEnumerable<Task<KeyValuePair<EndPoint, ReplicaState>>> GetReplicaState(
 			IDatabaseReplicaSet replicas,
@@ -125,18 +132,18 @@ partial class RaftKontroller {
 			=> new(address, await replicas.GetReplicaStateAsync(address, token));
 	}
 
-	private bool RenewLeaderAppointment(string databaseId, EndPoint leaderAddress) {
-		if (!_appointmentState.TryGetValue(databaseId, out var expectedAppointment))
+	private bool RenewLeaderAppointment(string databaseId, EndPoint leaderAddress, ulong epoch) {
+		if (!_appointmentState.TryGetValue(databaseId, out var expectedAppointment) || expectedAppointment.Epoch != epoch)
 			return false;
 
-		var newAppointment = new LeaderAppointment(leaderAddress);
+		var newAppointment = new LeaderAppointment(leaderAddress, epoch);
 		return _appointmentState.TryUpdate(databaseId, newAppointment, expectedAppointment);
 	}
 
 	[StructLayout(LayoutKind.Auto)]
-	private readonly record struct LeaderAppointment(EndPoint Address, Timestamp UpdatedAt) {
-		public LeaderAppointment(EndPoint address)
-			: this(address, new()) {
+	private readonly record struct LeaderAppointment(EndPoint Address, ulong Epoch, Timestamp UpdatedAt) {
+		public LeaderAppointment(EndPoint address, ulong epoch)
+			: this(address, epoch, new()) {
 		}
 
 		public bool IsExpired(TimeSpan expiration) => UpdatedAt.Elapsed >= expiration;

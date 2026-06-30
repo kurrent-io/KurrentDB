@@ -14,7 +14,7 @@ partial class Snapshot {
 		=> Update<AddOrUpdateDatabaseStmt>(new(command), info);
 
 	public bool Update(RemoveDatabase command, in CommandInfo info)
-		=> Update<RemoveDatabaseStmt, bool>(new(command), info);
+		=> command.DatabaseId is not Database.MainDatabaseId && Update<RemoveDatabaseStmt, bool>(new(command), info);
 }
 
 [StructLayout(LayoutKind.Auto)]
@@ -24,7 +24,7 @@ file readonly struct AddOrUpdateDatabaseStmt(AddOrUpdateDatabase command) : IPre
 	                                                VALUES ($1, $2)
 	                                                ON CONFLICT (id) DO UPDATE
 	                                                SET description = $2
-	                                                WHERE database.id = $3;
+	                                                WHERE database.id = $1;
 	                                                """u8;
 
 	public static StatementBindingResult Bind(in (string DatabaseId, string Description) args, PreparedStatement source)

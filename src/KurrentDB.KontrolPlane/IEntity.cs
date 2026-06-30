@@ -3,7 +3,4 @@
 
 namespace KurrentDB.KontrolPlane;
 
-public abstract class Entity {
-	private protected Entity() {
-	}
-}
+public interface IEntity;

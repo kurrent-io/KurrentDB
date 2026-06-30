@@ -6,13 +6,11 @@ using System.Net;
 namespace KurrentDB.KontrolPlane;
 
 public interface IKontroller {
-	IDatabaseReplicaSet ReplicaSet { get; init; }
-
 	ValueTask<IReadOnlySet<string>> GetDatabasesAsync(CancellationToken token = default);
 
 	ValueTask<DatabaseCluster?> GetDatabaseAsync(string databaseId, CancellationToken token = default);
 
-	ValueTask<bool> RenewLeaderAppointmentAsync(string databaseId, EndPoint leaderAddress, CancellationToken token = default);
+	ValueTask<bool> RenewLeaderAppointmentAsync(string databaseId, EndPoint leaderAddress, ulong epoch, CancellationToken token = default);
 
 	ValueTask AddOrUpdateDatabaseAsync(Database database, CancellationToken token = default);
 
@@ -29,4 +27,16 @@ public interface IKontroller {
 	/// <param name="token">The token that can be used to cancel the operation.</param>
 	/// <returns>A stream of full database snapshot. The stream finishes if <paramref name="databaseId"/> becomes deleted.</returns>
 	IAsyncEnumerable<DatabaseCluster> ListenDatabaseAsync(string databaseId, CancellationToken token = default);
+
+	/// <summary>
+	/// Gets a token associated with leader state of the current instance of the Kontroller.
+	/// </summary>
+	CancellationToken LeadershipToken { get; }
+
+	/// <summary>
+	/// Ensures that the current Kontroller instance is a part of the KPlane cluster and the cluster leader is observable.
+	/// </summary>
+	/// <param name="token">The token that can be used to cancel the operation.</param>
+	/// <returns>The address of the KPlane leader.</returns>
+	ValueTask<EndPoint> WaitForLeaderAsync(CancellationToken token = default);
 }

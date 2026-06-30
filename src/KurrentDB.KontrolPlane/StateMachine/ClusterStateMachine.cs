@@ -27,7 +27,6 @@ internal sealed partial class ClusterStateMachine : Disposable, IStateMachine {
 
 		_location = location;
 		_snapshot = new(connectionPoolCapacity);
-		_snapshot.Initialize();
 		_databases = new();
 		_poolCapacity = connectionPoolCapacity;
 	}
@@ -49,6 +48,9 @@ internal sealed partial class ClusterStateMachine : Disposable, IStateMachine {
 
 			var newSnapshot = InstallSnapshot(latestSnapshotFile.FullName);
 			_persistentSnapshot = new(latestSnapshotFile.FullName, newSnapshot.LastAppliedCommand);
+		} else {
+			_snapshot.Initialize();
+			_databases[Database.MainDatabaseId] = new();
 		}
 
 		snapshots.Clear(); // help GC

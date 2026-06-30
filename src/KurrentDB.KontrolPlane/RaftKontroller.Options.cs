@@ -35,5 +35,10 @@ partial class RaftKontroller {
 			get;
 			init => field = value > TimeSpan.Zero ? value : throw new ArgumentOutOfRangeException(nameof(value));
 		}
+
+		public bool SingleNodeDeployment {
+			get;
+			init;
+		}
 	}
 }

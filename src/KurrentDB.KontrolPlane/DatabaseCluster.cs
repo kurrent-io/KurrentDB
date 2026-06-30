@@ -8,7 +8,7 @@ namespace KurrentDB.KontrolPlane;
 /// <summary>
 /// Represents instant state of the database.
 /// </summary>
-public sealed class DatabaseCluster : Database {
+public sealed record DatabaseCluster : Database {
 	public IReadOnlyList<DatabaseNode> Nodes {
 		get => field ?? [];
 		init;

@@ -11,6 +11,10 @@ internal static class QueryHelpers {
 		this DuckDBAdvancedConnection connection)
 		=> connection.ExecuteQuery<string, AllDatabasesQuery>();
 
+	public static QueryResult<(string Id, ulong Epoch), AllDatabasesWithEpochQuery> GetDatabasesWithEpoch(
+		this DuckDBAdvancedConnection connection)
+		=> connection.ExecuteQuery<(string, ulong), AllDatabasesWithEpochQuery>();
+
 	public static QueryResult<ValueTuple<string>, (EndPoint Address, bool IsReadOnlyReplica, bool IsLeader), AllNodesQuery> GetDatabaseNodes(
 		this DuckDBAdvancedConnection connection,
 		string databaseId)

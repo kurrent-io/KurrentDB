@@ -32,7 +32,7 @@ partial class Snapshot {
 	                                               CREATE UNIQUE INDEX node_id ON node (database_id, address);
 	                                               CREATE INDEX node_database ON node (database_id);
 
-	                                               INSERT INTO database (id) VALUES ({Database.MainDatabaseId});
+	                                               INSERT INTO database (id) VALUES ('{Database.MainDatabaseId}');
 	                                               INSERT INTO metadata VALUES ({LatestVersion}, 0, 0);
 	                                               """;
 

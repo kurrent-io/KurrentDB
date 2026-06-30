@@ -16,8 +16,16 @@ partial class Snapshot {
 	public bool Update(RemoveDatabaseNode command, in CommandInfo info)
 		=> Update<RemoveDatabaseNodeStmt, bool>(new(command), info);
 
-	public void Update(AppointLeader command, in CommandInfo info)
-		=> Update<AppointLeaderNodeStmt>(new(command), info);
+	public bool Update(AppointLeader command, in CommandInfo info) {
+		var result = true;
+		try {
+			Update<AppointLeaderNodeStmt>(new(command), info);
+		} catch (StaleEpochException) {
+			result = false;
+		}
+
+		return result;
+	}
 }
 
 [StructLayout(LayoutKind.Auto)]
@@ -41,15 +49,15 @@ file readonly struct AddOrUpdateDatabaseNodeStmt(AddOrUpdateDatabaseNode command
 	};
 
 	public void Invoke(DuckDBAdvancedConnection connection)
-		=> connection.ExecuteNonQuery<(string, ReadOnlyMemory<byte>), RemoveDatabaseNodeStmt>(
-			new(command.DatabaseId, command.Address.Memory));
+		=> connection.ExecuteNonQuery<(string, ReadOnlyMemory<byte>, bool), AddOrUpdateDatabaseNodeStmt>(
+			new(command.DatabaseId, command.Address.Memory, command.IsReadOnlyReplica));
 }
 
 [StructLayout(LayoutKind.Auto)]
 file readonly struct RemoveDatabaseNodeStmt(RemoveDatabaseNode command) :
 	IPreparedStatement<(string DatabaseId, ReadOnlyMemory<byte> Address)>,
 	ISupplier<DuckDBAdvancedConnection, bool> {
-	public static ReadOnlySpan<byte> CommandText => "DELETE FROM node WHERE databaseId=$1 AND address=$2;"u8;
+	public static ReadOnlySpan<byte> CommandText => "DELETE FROM node WHERE database_id=$1 AND address=$2;"u8;
 
 	public static StatementBindingResult Bind(in (string DatabaseId, ReadOnlyMemory<byte> Address) args, PreparedStatement source)
 		=> new(source) {
@@ -72,11 +80,12 @@ file readonly struct UnsetLeaderNodeStmt : IPreparedStatement<ValueTuple<string>
 }
 
 [StructLayout(LayoutKind.Auto)]
-file readonly struct IncrementEpochStmt : IPreparedStatement<ValueTuple<string>> {
-	public static ReadOnlySpan<byte> CommandText => "UPDATE database SET epoch = epoch + 1 WHERE id = ?;"u8;
+file readonly struct IncrementEpochStmt : IPreparedStatement<(string Id, ulong Epoch)> {
+	public static ReadOnlySpan<byte> CommandText => "UPDATE database SET epoch = epoch + 1 WHERE id = $1 AND epoch = $2;"u8;
 
-	public static StatementBindingResult Bind(in ValueTuple<string> args, PreparedStatement source) => new(source) {
-		args.Item1
+	public static StatementBindingResult Bind(in (string Id, ulong Epoch) args, PreparedStatement source) => new(source) {
+		args.Id,
+		args.Epoch
 	};
 }
 
@@ -95,8 +104,13 @@ file readonly struct AppointLeaderNodeStmt(AppointLeader command)
 
 	public void Invoke(DuckDBAdvancedConnection connection) {
 		connection.ExecuteNonQuery<ValueTuple<string>, UnsetLeaderNodeStmt>(new(command.DatabaseId));
-		connection.ExecuteNonQuery<ValueTuple<string>, IncrementEpochStmt>(new(command.DatabaseId));
+		if (connection.ExecuteNonQuery<(string, ulong), IncrementEpochStmt>(
+			    new(command.DatabaseId, command.Epoch)) is 0L)
+			throw new StaleEpochException();
+
 		connection.ExecuteNonQuery<(string, ReadOnlyMemory<byte>), AppointLeaderNodeStmt>(
 			new(command.DatabaseId, command.Address.Memory));
 	}
 }
+
+file sealed class StaleEpochException() : InvalidOperationException("Epoch is old.");

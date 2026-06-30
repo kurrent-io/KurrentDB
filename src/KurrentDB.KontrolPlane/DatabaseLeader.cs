@@ -6,7 +6,7 @@ namespace KurrentDB.KontrolPlane;
 /// <summary>
 /// Represents database leader.
 /// </summary>
-public sealed class DatabaseLeader : Entity {
+public sealed record DatabaseLeader : IEntity {
 	public required DatabaseNode Node { get; init; }
 
 	public required ulong Epoch { get; init; }

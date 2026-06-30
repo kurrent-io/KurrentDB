@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using DotNext.Net.Cluster.Consensus.Raft;
 using Kurrent.Quack;
 using KurrentDB.KontrolPlane.StateMachine;
+using static System.Threading.Timeout;
 
 namespace KurrentDB.KontrolPlane;
 
@@ -14,8 +15,8 @@ using static StateMachine.LogEntries.ReplicationHelpers;
 
 partial class RaftKontroller : IKontroller {
 	public async ValueTask<IReadOnlySet<string>> GetDatabasesAsync(CancellationToken token = default) {
-		var snapshot = await _state.CaptureCurrentStateAsync(token);
 		var result = new HashSet<string>();
+		var snapshot = await _state.CaptureCurrentStateAsync(token);
 		try {
 			using (snapshot.RentConnection(out var connection)) {
 				foreach (var databaseId in connection.GetDatabases()) {
@@ -31,27 +32,8 @@ partial class RaftKontroller : IKontroller {
 
 	public async ValueTask<DatabaseCluster?> GetDatabaseAsync(string databaseId, CancellationToken token = default) {
 		var snapshot = await _state.CaptureCurrentStateAsync(token);
-		return GetDatabaseCluster(snapshot, databaseId);
-	}
-
-	public async ValueTask<DatabaseLeader?> GetDatabaseLeaderAsync(string databaseId, CancellationToken token = default) {
-		var snapshot = await _state.CaptureCurrentStateAsync(token);
 		try {
-			using (snapshot.RentConnection(out var connection)) {
-				return connection
-					.GetDatabaseLeader(databaseId)
-					.FirstOrDefault()
-					.TryGet(out var leader)
-					? new DatabaseLeader {
-						Epoch = leader.Epoch,
-						Node = new() {
-							Address = leader.Address,
-							DatabaseId = databaseId,
-							IsReadOnlyReplica = leader.IsReadOnlyReplica
-						}
-					}
-					: null;
-			}
+			return GetDatabaseCluster(snapshot, databaseId);
 		} finally {
 			snapshot.Release();
 		}
@@ -89,13 +71,13 @@ partial class RaftKontroller : IKontroller {
 		}
 	}
 
-	public ValueTask<bool> RenewLeaderAppointmentAsync(string databaseId, EndPoint leaderAddress, CancellationToken token = default) {
+	public ValueTask<bool> RenewLeaderAppointmentAsync(string databaseId, EndPoint leaderAddress, ulong epoch, CancellationToken token = default) {
 		ValueTask<bool> task;
 		if (token.IsCancellationRequested) {
 			task = ValueTask.FromCanceled<bool>(token);
 		} else {
 			try {
-				task = new(RenewLeaderAppointment(databaseId, leaderAddress));
+				task = new(RenewLeaderAppointment(databaseId, leaderAddress, epoch));
 			} catch (Exception e) {
 				task = ValueTask.FromException<bool>(e);
 			}
@@ -152,4 +134,9 @@ partial class RaftKontroller : IKontroller {
 			return nodes;
 		}
 	}
+
+	public CancellationToken LeadershipToken => _raft.LeadershipToken;
+
+	public async ValueTask<EndPoint> WaitForLeaderAsync(CancellationToken token = default)
+		=> (await _raft.WaitForLeaderAsync(InfiniteTimeSpan, token)).EndPoint;
 }
