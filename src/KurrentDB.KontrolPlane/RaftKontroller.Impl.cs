@@ -48,6 +48,9 @@ partial class RaftKontroller : IKontroller {
 	}
 
 	public async ValueTask<bool> RemoveDatabaseAsync(string databaseId, CancellationToken token = default) {
+		if (databaseId is Database.MainDatabaseId)
+			throw new ArgumentException($"Built-in '{Database.MainDatabaseId}' database cannot be removed.", nameof(databaseId));
+
 		try {
 			return await _raft.RemoveDatabaseAsync(databaseId, token);
 		} catch (NotLeaderException e) {
