@@ -18,10 +18,6 @@ internal static class QueryHelpers {
 			string databaseId)
 			=> connection.ExecuteQuery<ValueTuple<string>, (EndPoint, bool, bool), AllNodesQuery>(new(databaseId));
 
-		public QueryResult<ValueTuple<string>, (EndPoint Address, ulong Epoch, bool IsReadOnlyReplica), LeaderQuery> GetDatabaseLeader(
-			string databaseId)
-			=> connection.ExecuteQuery<ValueTuple<string>, (EndPoint, ulong, bool), LeaderQuery>(new(databaseId));
-
 		public QueryResult<ValueTuple<string>, (string Description, ulong Epoch), DatabaseQuery> GetDatabase(string databaseId)
 			=> connection.ExecuteQuery<ValueTuple<string>, (string, ulong), DatabaseQuery>(new(databaseId));
 	}
