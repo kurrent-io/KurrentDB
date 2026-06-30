@@ -46,9 +46,6 @@ public partial class RaftKontroller : IAsyncDisposable {
 		init => field = value ?? throw new ArgumentNullException(nameof(value));
 	}
 
-	public Task<CancellationToken> EnsureLeadershipAsync(CancellationToken token)
-		=> _raft.WaitForLeadershipAsync(token);
-
 	public async Task StartAsync(CancellationToken token) {
 		_state.Recover();
 		await _raft.StartAsync(token);

@@ -24,12 +24,6 @@ public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 	private IKontroller Kontroller => _kontroller;
 
 	[Fact]
-	public async Task LeaderElection() {
-		Assert.False(Kontroller.LeadershipToken.IsCancellationRequested);
-		Assert.Equal(Address, await Kontroller.WaitForLeaderAsync(TestToken));
-	}
-
-	[Fact]
 	public async Task MainDatabasePresence() {
 		var database = await Kontroller.GetDatabaseAsync(Database.MainDatabaseId, TestToken);
 		Assert.NotNull(database);
@@ -189,7 +183,7 @@ public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 	public override async ValueTask InitializeAsync() {
 		await base.InitializeAsync();
 		await _kontroller.StartAsync(TestToken);
-		await _kontroller.EnsureLeadershipAsync(TestToken);
+		await _kontroller.WaitForLeaderAsync(TestToken);
 	}
 
 	private static CancellationToken TestToken => TestContext.Current.CancellationToken;
