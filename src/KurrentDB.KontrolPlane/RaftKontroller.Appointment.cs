@@ -58,12 +58,12 @@ partial class RaftKontroller {
 	}
 
 	private void StartAppointments(
-		Snapshot snapshot,
+		ClusterState clusterState,
 		List<Task> tasks,
 		HashSet<string> databases,
 		CancellationToken token) {
 		// Process appointment for every database in parallel
-		using (snapshot.RentConnection(out var connection)) {
+		using (clusterState.RentConnection(out var connection)) {
 			// Workaround: it's not possible to enumerate to query results within the same connection.
 			// Thus, we need to materialize (ToList) the first query
 			var currentDBs = connection.GetDatabasesWithEpoch().ToList();

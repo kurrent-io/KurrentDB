@@ -9,7 +9,7 @@ namespace KurrentDB.KontrolPlane.StateMachine;
 
 using LogEntries;
 
-partial class Snapshot {
+partial class ClusterState {
 	public void Update(AddOrUpdateDatabase command, in CommandInfo info)
 		=> Update<AddOrUpdateDatabaseStmt>(new(command), info);
 

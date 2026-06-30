@@ -60,27 +60,26 @@ partial class ClusterStateMachine {
 		return entry.Index;
 	}
 
-	private Snapshot InstallSnapshot(string fileName) {
-		var newSnapshot = new Snapshot(_poolCapacity);
+	private ClusterState InstallSnapshot(string fileName) {
+		var newSnapshot = new ClusterState(_poolCapacity);
 		newSnapshot.LoadFromFile(fileName);
 
 		// swap current state
-		Interlocked.Exchange(ref _snapshot, newSnapshot).Release();
+		Interlocked.Exchange(ref _state, newSnapshot).Release();
 		RefreshDatabaseTrackers(newSnapshot);
 		return newSnapshot;
 	}
 
-	private Task SaveSnapshotAsync(Snapshot snapshot, CommandInfo info, CancellationToken token)
-		=> Task.Run(() => SaveSnapshot(snapshot, info), token);
+	private Task SaveSnapshotAsync(ClusterState clusterState, CommandInfo info, CancellationToken token)
+		=> Task.Run(() => SaveSnapshot(clusterState, info), token);
 
-	private void SaveSnapshot(Snapshot snapshot, in CommandInfo info) {
+	private void SaveSnapshot(ClusterState clusterState, in CommandInfo info) {
 		var snapshotFileName = Path.Combine(_location.FullName, info.Index.ToString(InvariantCulture));
-		try {
-			snapshot.SaveToFile(snapshotFileName);
-		} catch when (File.Exists(snapshotFileName)) {
-			File.Delete(snapshotFileName);
-			throw;
-		}
+		var tempFileName = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+		clusterState.SaveToFile(tempFileName);
+
+		// This operation is atomic on modern file systems
+		File.Move(tempFileName, snapshotFileName, overwrite: true);
 
 		_persistentSnapshot = new(snapshotFileName, info);
 	}

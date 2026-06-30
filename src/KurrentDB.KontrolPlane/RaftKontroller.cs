@@ -21,7 +21,12 @@ public partial class RaftKontroller : IAsyncDisposable {
 	public RaftKontroller(in Options options) {
 		var stateLocation = new DirectoryInfo(Path.Combine(options.WalOptions.Location, "ktrl"));
 		var configStorageLocation = Path.Combine(options.WalOptions.Location, "members.list");
-		_state = new(stateLocation, options.ConnectionPoolCapacity);
+		_state = new(stateLocation, options.ConnectionPoolCapacity) {
+			SnapshotDepth = options.SnapshotDepth
+		};
+
+		// Must be recovered before initialization of the WAL, which can apply log entries at construction time
+		_state.Recover();
 		_wal = new WriteAheadLog(options.WalOptions, _state);
 
 		var config = new RaftCluster.TcpConfiguration(options.ListenAddress) {
@@ -47,7 +52,6 @@ public partial class RaftKontroller : IAsyncDisposable {
 	}
 
 	public async Task StartAsync(CancellationToken token) {
-		_state.Recover();
 		await _raft.StartAsync(token);
 		_leadershipTask = HandleLeadershipAsync();
 	}
@@ -62,7 +66,7 @@ public partial class RaftKontroller : IAsyncDisposable {
 		await CancelAsync();
 		await _raft.DisposeAsync();
 		await _wal.DisposeAsync();
-		_state.Dispose();
+		await _state.DisposeAsync();
 	}
 
 	private ValueTask CancelAsync() {

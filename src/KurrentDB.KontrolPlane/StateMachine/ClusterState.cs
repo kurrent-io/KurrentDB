@@ -18,12 +18,12 @@ namespace KurrentDB.KontrolPlane.StateMachine;
 /// the heavyweight dump process. So we can start COPY statement in the background while appending new log entries.
 /// This concurrency model is preserved by DuckDB 1.5 and later.
 /// </remarks>
-internal sealed partial class Snapshot : Disposable {
+internal sealed partial class ClusterState : Disposable {
 	private readonly DuckDBConnectionPool _pool;
 	private readonly DuckDBAdvancedConnection _writeConnection;
 	private CommandInfo _lastCommandInfo;
 
-	public Snapshot(int connectionPoolCapacity) {
+	public ClusterState(int connectionPoolCapacity) {
 		// For every instance of this class, we have a separated instance of the in-memory database
 		_writeConnection = new DuckDBAdvancedConnection { ConnectionString = "DataSource=:memory:" };
 		_writeConnection.Open();

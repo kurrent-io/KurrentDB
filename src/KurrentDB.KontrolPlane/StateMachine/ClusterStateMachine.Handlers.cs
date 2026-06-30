@@ -13,7 +13,7 @@ namespace KurrentDB.KontrolPlane.StateMachine;
 partial class ClusterStateMachine {
 	// Apply log entry from the WAL to the current state
 	private async ValueTask<long> ApplyAsync(LogEntry entry, CancellationToken token) {
-		var currentState = _snapshot;
+		var currentState = _state;
 		var commandInfo = new CommandInfo(entry);
 		switch (entry.CommandId) {
 			case LogEntries.AddOrUpdateDatabase.TypeId:
@@ -58,13 +58,13 @@ partial class ClusterStateMachine {
 		return entry.Index;
 	}
 
-	private void Apply(Snapshot currentState, LogEntries.AddOrUpdateDatabase command, in CommandInfo commandInfo) {
+	private void Apply(ClusterState currentState, LogEntries.AddOrUpdateDatabase command, in CommandInfo commandInfo) {
 		currentState.Update(command, in commandInfo);
 
 		_databases.GetOrAdd(command.DatabaseId, static _ => new AsyncStateTracker()).TryAdvance();
 	}
 
-	private void Apply(Snapshot currentState,
+	private void Apply(ClusterState currentState,
 		LogEntries.RemoveDatabase command,
 		in CommandInfo commandInfo,
 		StrongBox<bool>? resultContainer) {
@@ -75,13 +75,13 @@ partial class ClusterStateMachine {
 		resultContainer?.Value = result;
 	}
 
-	private void Apply(Snapshot currentState, LogEntries.AddOrUpdateDatabaseNode command, in CommandInfo commandInfo) {
+	private void Apply(ClusterState currentState, LogEntries.AddOrUpdateDatabaseNode command, in CommandInfo commandInfo) {
 		currentState.Update(command, in commandInfo);
 
 		_databases.TryGetValue(command.DatabaseId).ValueOrDefault?.TryAdvance();
 	}
 
-	private void Apply(Snapshot currentState,
+	private void Apply(ClusterState currentState,
 		LogEntries.RemoveDatabaseNode command,
 		in CommandInfo commandInfo,
 		StrongBox<bool>? resultContainer) {
@@ -92,7 +92,7 @@ partial class ClusterStateMachine {
 		resultContainer?.Value = result;
 	}
 
-	private void Apply(Snapshot currentState, LogEntries.AppointLeader command, in CommandInfo commandInfo, StrongBox<bool>? resultContainer) {
+	private void Apply(ClusterState currentState, LogEntries.AppointLeader command, in CommandInfo commandInfo, StrongBox<bool>? resultContainer) {
 		var result = currentState.Update(command, in commandInfo);
 
 		_databases.TryGetValue(command.DatabaseId).ValueOrDefault?.TryAdvance();

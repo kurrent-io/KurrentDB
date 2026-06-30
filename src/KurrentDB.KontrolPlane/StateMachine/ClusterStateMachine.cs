@@ -14,19 +14,19 @@ using Queries;
 /// <summary>
 /// Represents internal Kontrol Plane database.
 /// </summary>
-internal sealed partial class ClusterStateMachine : Disposable, IStateMachine {
+internal sealed partial class ClusterStateMachine : Disposable, IStateMachine, IAsyncDisposable {
 	private readonly DirectoryInfo _location;
 	private readonly int _poolCapacity;
 	private readonly ConcurrentDictionary<string, AsyncStateTracker> _databases;
-	private volatile Snapshot _snapshot;
-	private Task? _snapshotTask;
+	private volatile ClusterState _state;
+	private volatile Task? _snapshotTask;
 
 	public ClusterStateMachine(DirectoryInfo location, int connectionPoolCapacity) {
 		if (!location.Exists)
 			location.Create();
 
 		_location = location;
-		_snapshot = new(connectionPoolCapacity);
+		_state = new(connectionPoolCapacity);
 		_databases = new();
 		_poolCapacity = connectionPoolCapacity;
 	}
@@ -49,16 +49,16 @@ internal sealed partial class ClusterStateMachine : Disposable, IStateMachine {
 			var newSnapshot = InstallSnapshot(latestSnapshotFile.FullName);
 			_persistentSnapshot = new(latestSnapshotFile.FullName, newSnapshot.LastAppliedCommand);
 		} else {
-			_snapshot.Initialize();
+			_state.Initialize();
 			_databases[Database.MainDatabaseId] = new();
 		}
 
 		snapshots.Clear(); // help GC
 	}
 
-	private void RefreshDatabaseTrackers(Snapshot snapshot) {
+	private void RefreshDatabaseTrackers(ClusterState clusterState) {
 		var loadedTrackers = new HashSet<string>();
-		using (snapshot.RentConnection(out var connection)) {
+		using (clusterState.RentConnection(out var connection)) {
 			foreach (var databaseId in connection.GetDatabases()) {
 				loadedTrackers.Add(databaseId);
 			}
@@ -99,19 +99,19 @@ internal sealed partial class ClusterStateMachine : Disposable, IStateMachine {
 	/// Tracks database changes as a stream of state snapshots.
 	/// </summary>
 	/// <remarks>
-	/// The caller must release the snapshot with <see cref="Snapshot.Release()"/> method.
+	/// The caller must release the snapshot with <see cref="ClusterState.Release()"/> method.
 	/// </remarks>
 	/// <param name="databaseId">The identifier of the database.</param>
 	/// <param name="token">The token that can be used to cancel the operation.</param>
 	/// <returns>A stream over cluster state snapshots.</returns>
-	public async IAsyncEnumerable<Snapshot> TrackChangesAsync(string databaseId,
+	public async IAsyncEnumerable<ClusterState> TrackChangesAsync(string databaseId,
 		[EnumeratorCancellation] CancellationToken token) {
 		for (AsyncStateTracker.Token currentState;; token.ThrowIfCancellationRequested()) {
 			if (!_databases.TryGetValue(databaseId, out var tracker) || IsDisposingOrDisposed)
 				break;
 
 			currentState = tracker.CurrentState;
-			var snapshotCopy = _snapshot;
+			var snapshotCopy = _state;
 
 			// The current snapshot cannot be acquired, which means that it's no longer available. Retry the operation
 			// and do Yield() to increase a chance to get latest snapshot copy from '_snapshot' field
@@ -130,15 +130,15 @@ internal sealed partial class ClusterStateMachine : Disposable, IStateMachine {
 	/// Captures the current database state asynchronously.
 	/// </summary>
 	/// <remarks>
-	/// The caller must release the snapshot with <see cref="Snapshot.Release()"/> method.
+	/// The caller must release the snapshot with <see cref="ClusterState.Release()"/> method.
 	/// </remarks>
 	/// <param name="token">The token that can be used to cancel the operation.</param>
 	/// <returns>The acquired snapshot.</returns>
-	public async ValueTask<Snapshot> CaptureCurrentStateAsync(CancellationToken token) {
-		Snapshot snapshotCopy;
+	public async ValueTask<ClusterState> CaptureCurrentStateAsync(CancellationToken token) {
+		ClusterState clusterStateCopy;
 		for (;; token.ThrowIfCancellationRequested()) {
-			snapshotCopy = _snapshot;
-			if (snapshotCopy.TryAcquire())
+			clusterStateCopy = _state;
+			if (clusterStateCopy.TryAcquire())
 				break;
 
 			// The current snapshot cannot be acquired, which means that it's no longer available. Retry the operation
@@ -146,11 +146,11 @@ internal sealed partial class ClusterStateMachine : Disposable, IStateMachine {
 			await Task.Yield();
 		}
 
-		return snapshotCopy;
+		return clusterStateCopy;
 	}
 
 	ValueTask<long> IStateMachine.ApplyAsync(LogEntry entry, CancellationToken token) {
-		var lastAppliedIndex = _snapshot.LastAppliedCommand.Index;
+		var lastAppliedIndex = _state.LastAppliedCommand.Index;
 		if (entry.Index <= lastAppliedIndex)
 			return ValueTask.FromResult(lastAppliedIndex);
 
@@ -167,11 +167,22 @@ internal sealed partial class ClusterStateMachine : Disposable, IStateMachine {
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {
-			_snapshot.Release();
+			_state.Release();
 			CompleteTrackers();
 			_databases.Clear();
 		}
 
 		base.Dispose(disposing);
 	}
+
+	protected override async ValueTask DisposeAsyncCore() {
+		try {
+			await (_snapshotTask ?? Task.CompletedTask)
+				.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+		} finally {
+			Dispose(disposing: true);
+		}
+	}
+
+	public new ValueTask DisposeAsync() => base.DisposeAsync();
 }

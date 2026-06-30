@@ -40,5 +40,10 @@ partial class RaftKontroller {
 			get;
 			init;
 		}
+
+		public int SnapshotDepth {
+			get => field is 0 ? 100 : field;
+			init => field = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
+		}
 	}
 }

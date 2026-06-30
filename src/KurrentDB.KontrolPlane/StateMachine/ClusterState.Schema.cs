@@ -7,33 +7,33 @@ using Kurrent.Quack;
 
 namespace KurrentDB.KontrolPlane.StateMachine;
 
-partial class Snapshot {
+partial class ClusterState {
 	private static readonly string LatestSchema = $"""
-	                                               CREATE TABLE metadata (
-	                                               	version INTEGER NOT NULL,
-	                                               	index BIGINT NOT NULL,
-	                                               	term BIGINT NOT NULL,
-	                                               );
+	                                                      CREATE TABLE metadata (
+	                                                       version INTEGER NOT NULL,
+	                                                       index BIGINT NOT NULL,
+	                                                       term BIGINT NOT NULL,
+	                                                      );
 
-	                                               CREATE TABLE database (
-	                                                 id VARCHAR PRIMARY KEY,
-	                                                 description VARCHAR NOT NULL DEFAULT '',
-	                                                 epoch UBIGINT NOT NULL DEFAULT 0,
-	                                               );
+	                                                      CREATE TABLE database (
+	                                                        id VARCHAR PRIMARY KEY,
+	                                                        description VARCHAR NOT NULL DEFAULT '',
+	                                                        epoch UBIGINT NOT NULL DEFAULT 0,
+	                                                      );
 
-	                                               CREATE TABLE node (
-	                                                 address BLOB NOT NULL,
-	                                                 database_id VARCHAR NOT NULL,
-	                                                 is_read_only_replica BOOL NOT NULL,
-	                                                 is_leader BOOL NOT NULL DEFAULT FALSE,
-	                                                 FOREIGN KEY (database_id) REFERENCES database (id)
-	                                               );
+	                                                      CREATE TABLE node (
+	                                                        address BLOB NOT NULL,
+	                                                        database_id VARCHAR NOT NULL,
+	                                                        is_read_only_replica BOOL NOT NULL,
+	                                                        is_leader BOOL NOT NULL DEFAULT FALSE,
+	                                                        FOREIGN KEY (database_id) REFERENCES database (id)
+	                                                      );
 
-	                                               CREATE UNIQUE INDEX node_id ON node (database_id, address);
-	                                               CREATE INDEX node_database ON node (database_id);
+	                                                      CREATE UNIQUE INDEX node_id ON node (database_id, address);
+	                                                      CREATE INDEX node_database ON node (database_id);
 
-	                                               INSERT INTO database (id) VALUES ('{Database.MainDatabaseId}');
-	                                               INSERT INTO metadata VALUES ({LatestVersion}, 0, 0);
+	                                                      INSERT INTO database (id) VALUES ('{Database.MainDatabaseId}');
+	                                                      INSERT INTO metadata VALUES ({LatestVersion}, 0, 0);
 	                                               """;
 
 	/// <summary>

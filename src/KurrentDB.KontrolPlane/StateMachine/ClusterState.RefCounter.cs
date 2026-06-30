@@ -3,7 +3,7 @@
 
 namespace KurrentDB.KontrolPlane.StateMachine;
 
-partial class Snapshot {
+partial class ClusterState {
 	private ulong _referenceCounter;
 
 	public bool TryAcquire() {

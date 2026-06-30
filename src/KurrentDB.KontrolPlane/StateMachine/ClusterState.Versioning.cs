@@ -5,7 +5,7 @@ using Kurrent.Quack;
 
 namespace KurrentDB.KontrolPlane.StateMachine;
 
-partial class Snapshot {
+partial class ClusterState {
 	private const int LatestVersion = 0;
 
 	private static SortedDictionary<int, Action<DuckDBAdvancedConnection>> MigrationActions

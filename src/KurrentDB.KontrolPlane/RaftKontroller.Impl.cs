@@ -100,9 +100,9 @@ partial class RaftKontroller : IKontroller {
 		}
 	}
 
-	private static DatabaseCluster? GetDatabaseCluster(Snapshot snapshot,
+	private static DatabaseCluster? GetDatabaseCluster(ClusterState clusterState,
 		string databaseId) {
-		using (snapshot.RentConnection(out var connection)) {
+		using (clusterState.RentConnection(out var connection)) {
 			return connection.GetDatabase(databaseId).FirstOrDefault().TryGet(out var database)
 				? new() {
 					Nodes = GetDatabaseNodes(connection, databaseId, out var leaderAddress),
