@@ -7,7 +7,7 @@ using KurrentDB.Core.XUnit.Tests;
 
 namespace KurrentDB.KontrolPlane;
 
-[Collection("KontrolPlane")]
+[Collection("RaftKontroller")]
 public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentTests> {
 	[Fact]
 	public async Task AppointLeader() {
