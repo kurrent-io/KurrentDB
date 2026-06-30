@@ -41,6 +41,8 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 
 	[Fact]
 	public async Task RenewLeaderAppointment() {
+		var appointmentTimeout = TimeSpan.FromSeconds(1);
+
 		// initialize members
 		var replicaSet = new TestReplicaSet();
 		replicaSet.UpdateMember(TestReplicaSet.Host1, new(UncommittedOffset: 100, Epoch: 1L));
@@ -50,7 +52,7 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 		// initialize Kontroller
 		await using var kontroller = new RaftKontroller(new RaftKontroller.Options {
 			ListenAddress = new(IPAddress.Loopback, 3269),
-			AppointmentExpiration = TimeSpan.FromSeconds(1),
+			AppointmentExpiration = appointmentTimeout,
 			ConnectionPoolCapacity = 10,
 			WalOptions = new() {
 				Location = Directory,
@@ -67,11 +69,15 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 		Assert.Equal(TestReplicaSet.Host3, leader.Address);
 
 		// Start renewal process in the background
-		var process = new RenewalProcess(kontroller, TestReplicaSet.Host3, leader.Epoch);
+		var process = new RenewalProcess(kontroller, TestReplicaSet.Host3, leader.Epoch, appointmentTimeout);
 		var renewalTask = process.RunAsync();
 
 		// Change state of another member so it should be chosen as a leader, but due to renewal it cannot be appointed
 		replicaSet.UpdateMember(TestReplicaSet.Host1, new(UncommittedOffset: 300, Epoch: 3L));
+
+		await Task.Delay(appointmentTimeout * 3, TestToken);
+		leader = await WaitForLeaderAsync(kontroller);
+		Assert.Equal(TestReplicaSet.Host3, leader.Address);
 
 		// Now stop renewal process and wait for new leader appointment
 		process.RequestStop();
@@ -84,7 +90,7 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 		await kontroller.StopAsync(TestToken);
 	}
 
-	private sealed class RenewalProcess(IKontroller kontroller, EndPoint address, ulong epoch) {
+	private sealed class RenewalProcess(IKontroller kontroller, EndPoint address, ulong epoch, TimeSpan appointmentTimeout) {
 		private volatile bool _stopped;
 
 		public void RequestStop() => _stopped = true;
@@ -92,7 +98,7 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 		public async Task RunAsync() {
 			while (!_stopped) {
 				// Renew every 300 ms
-				await Task.Delay(300);
+				await Task.Delay(appointmentTimeout / 3);
 
 				await kontroller.RenewLeaderAppointmentAsync(Database.MainDatabaseId, address, epoch, TestToken);
 			}
