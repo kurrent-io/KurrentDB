@@ -72,14 +72,14 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 		var process = new RenewalProcess(kontroller, TestReplicaSet.Host3, leader.Epoch, appointmentTimeout);
 		var renewalTask = process.RunAsync();
 
-		// Change state of another member so it should be chosen as a leader, but due to renewal it cannot be appointed
-		replicaSet.UpdateMember(TestReplicaSet.Host1, new(UncommittedOffset: 300, Epoch: 3L));
+		// Make the current member as unavailable, but due to renewal process a new leader cannot be appointed
+		replicaSet.RemoveMember(TestReplicaSet.Host3);
 
 		await Task.Delay(appointmentTimeout * 3, TestToken);
 		leader = await WaitForLeaderAsync(kontroller);
 		Assert.Equal(TestReplicaSet.Host3, leader.Address);
 
-		// Now stop renewal process and wait for new leader appointment
+		// Now stop renewal process and wait for a new leader appointment
 		process.RequestStop();
 		await renewalTask.WaitAsync(TestToken);
 
@@ -141,6 +141,16 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 		public void UpdateMember(IPEndPoint endPoint, ReplicaState state) {
 			for (ImmutableDictionary<EndPoint, ReplicaState> current = _members, tmp;; current = tmp) {
 				var newDictionary = current.SetItem(endPoint, state);
+				tmp = Interlocked.CompareExchange(ref _members, newDictionary, current);
+
+				if (ReferenceEquals(current, tmp))
+					break;
+			}
+		}
+
+		public void RemoveMember(IPEndPoint endPoint) {
+			for (ImmutableDictionary<EndPoint, ReplicaState> current = _members, tmp;; current = tmp) {
+				var newDictionary = current.Remove(endPoint);
 				tmp = Interlocked.CompareExchange(ref _members, newDictionary, current);
 
 				if (ReferenceEquals(current, tmp))
