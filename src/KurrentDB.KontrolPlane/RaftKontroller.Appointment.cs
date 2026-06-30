@@ -115,14 +115,14 @@ partial class RaftKontroller {
 
 		// Appoint the leader
 		if (await _raft.AppointLeaderAsync(databaseId, epoch, candidate, token))
-			_appointmentState[databaseId] = new LeaderAppointment(candidate, epoch);
+			_appointmentState[databaseId] = new LeaderAppointment(candidate, epoch + 1UL); // appointment increments the Epoch
 
 		static IEnumerable<Task<KeyValuePair<EndPoint, ReplicaState>>> GetReplicaState(
 			IDatabaseReplicaSet replicas,
 			IEnumerable<(EndPoint Address, bool IsReadOnlyReplica, bool IsLeader)> nodes,
 			CancellationToken token)
 			=> nodes
-				.Where(static node => !node.IsReadOnlyReplica) // r/o replicas cannot contribute to the qorum
+				.Where(static node => !node.IsReadOnlyReplica) // r/o replicas cannot contribute to the quorum
 				.Select(node => GetReplicaStateAsync(replicas, node.Address, token));
 
 		static async Task<KeyValuePair<EndPoint, ReplicaState>> GetReplicaStateAsync(

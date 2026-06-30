@@ -53,7 +53,7 @@ internal static class ReplicationHelpers {
 			await raft.ReplicateAsync(
 				new ProtobufLogEntry<AppointLeader>(new()
 						{ Address = address.ToByteString(), DatabaseId = databaseId, Epoch = epoch })
-					{ Term = raft.Term }, token);
+					{ Term = raft.Term, Context = box }, token);
 			return box.Value;
 		}
 	}
