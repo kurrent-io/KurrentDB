@@ -22,7 +22,7 @@ public sealed class WalPersistenceTests : DirectoryFixture<WalPersistenceTests> 
 			             SingleNodeDeployment = true,
 			             SnapshotDepth = SnapshotDepth,
 		             }) {
-			             ReplicaSet = new TestReplicaSet(),
+			             ReplicaSet = new TestDataPlane(),
 		             }) {
 
 			await kontroller.StartAsync(TestToken);
@@ -46,7 +46,7 @@ public sealed class WalPersistenceTests : DirectoryFixture<WalPersistenceTests> 
 			             SingleNodeDeployment = true,
 			             SnapshotDepth = SnapshotDepth,
 		             }) {
-			             ReplicaSet = new TestReplicaSet(),
+			             ReplicaSet = new TestDataPlane(),
 		             }) {
 
 			await kontroller.StartAsync(TestToken);
@@ -59,8 +59,8 @@ public sealed class WalPersistenceTests : DirectoryFixture<WalPersistenceTests> 
 
 	private static CancellationToken TestToken => TestContext.Current.CancellationToken;
 
-	private sealed class TestReplicaSet : IDatabaseReplicaSet {
-		ValueTask<ReplicaState> IDatabaseReplicaSet.GetReplicaStateAsync(EndPoint address, CancellationToken token)
+	private sealed class TestDataPlane : IDataPlane {
+		ValueTask<ReplicaState> IDataPlane.GetReplicaStateAsync(EndPoint address, CancellationToken token)
 			=> ValueTask.FromException<ReplicaState>(new NotSupportedException());
 	}
 }

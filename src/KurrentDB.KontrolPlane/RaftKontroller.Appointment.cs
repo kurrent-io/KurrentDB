@@ -118,7 +118,7 @@ partial class RaftKontroller {
 			_appointmentState[databaseId] = new LeaderAppointment(candidate, epoch + 1UL); // appointment increments the Epoch
 
 		static IEnumerable<Task<KeyValuePair<EndPoint, ReplicaState>>> GetReplicaState(
-			IDatabaseReplicaSet replicas,
+			IDataPlane replicas,
 			IEnumerable<(EndPoint Address, bool IsReadOnlyReplica, bool IsLeader)> nodes,
 			CancellationToken token)
 			=> nodes
@@ -126,7 +126,7 @@ partial class RaftKontroller {
 				.Select(node => GetReplicaStateAsync(replicas, node.Address, token));
 
 		static async Task<KeyValuePair<EndPoint, ReplicaState>> GetReplicaStateAsync(
-			IDatabaseReplicaSet replicas,
+			IDataPlane replicas,
 			EndPoint address,
 			CancellationToken token)
 			=> new(address, await replicas.GetReplicaStateAsync(address, token));

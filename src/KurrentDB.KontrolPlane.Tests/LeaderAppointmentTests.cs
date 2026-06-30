@@ -12,10 +12,10 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 	[Fact]
 	public async Task AppointLeader() {
 		// initialize members
-		var replicaSet = new TestReplicaSet();
-		replicaSet.UpdateMember(TestReplicaSet.Host1, new(UncommittedOffset: 100, Epoch: 1L));
-		replicaSet.UpdateMember(TestReplicaSet.Host2, new(UncommittedOffset: 200, Epoch: 0L));
-		replicaSet.UpdateMember(TestReplicaSet.Host3, new(UncommittedOffset: 150, Epoch: 1L)); // leader
+		var replicaSet = new TestDataPlane();
+		replicaSet.UpdateMember(TestDataPlane.Host1, new(UncommittedOffset: 100, Epoch: 1L));
+		replicaSet.UpdateMember(TestDataPlane.Host2, new(UncommittedOffset: 200, Epoch: 0L));
+		replicaSet.UpdateMember(TestDataPlane.Host3, new(UncommittedOffset: 150, Epoch: 1L)); // leader
 
 		// initialize Kontroller
 		await using var kontroller = new RaftKontroller(new RaftKontroller.Options {
@@ -34,7 +34,7 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 		await AddNodesAsync(kontroller);
 
 		var leader = await WaitForLeaderAsync(kontroller);
-		Assert.Equal(TestReplicaSet.Host3, leader.Address);
+		Assert.Equal(TestDataPlane.Host3, leader.Address);
 		Assert.Equal(1UL, leader.Epoch);
 
 		await kontroller.StopAsync(TestToken);
@@ -45,10 +45,10 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 		var appointmentTimeout = TimeSpan.FromSeconds(1);
 
 		// initialize members
-		var replicaSet = new TestReplicaSet();
-		replicaSet.UpdateMember(TestReplicaSet.Host1, new(UncommittedOffset: 100, Epoch: 1L));
-		replicaSet.UpdateMember(TestReplicaSet.Host2, new(UncommittedOffset: 200, Epoch: 0L));
-		replicaSet.UpdateMember(TestReplicaSet.Host3, new(UncommittedOffset: 150, Epoch: 1L)); // leader
+		var replicaSet = new TestDataPlane();
+		replicaSet.UpdateMember(TestDataPlane.Host1, new(UncommittedOffset: 100, Epoch: 1L));
+		replicaSet.UpdateMember(TestDataPlane.Host2, new(UncommittedOffset: 200, Epoch: 0L));
+		replicaSet.UpdateMember(TestDataPlane.Host3, new(UncommittedOffset: 150, Epoch: 1L)); // leader
 
 		// initialize Kontroller
 		await using var kontroller = new RaftKontroller(new RaftKontroller.Options {
@@ -67,18 +67,18 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 		await AddNodesAsync(kontroller);
 
 		var leader = await WaitForLeaderAsync(kontroller);
-		Assert.Equal(TestReplicaSet.Host3, leader.Address);
+		Assert.Equal(TestDataPlane.Host3, leader.Address);
 
 		// Start renewal process in the background
-		var process = new RenewalProcess(kontroller, TestReplicaSet.Host3, leader.Epoch, appointmentTimeout);
+		var process = new RenewalProcess(kontroller, TestDataPlane.Host3, leader.Epoch, appointmentTimeout);
 		var renewalTask = process.RunAsync();
 
 		// Make the current member as unavailable, but due to renewal process a new leader cannot be appointed
-		replicaSet.RemoveMember(TestReplicaSet.Host3);
+		replicaSet.RemoveMember(TestDataPlane.Host3);
 
 		await Task.Delay(appointmentTimeout * 3, TestToken);
 		leader = await WaitForLeaderAsync(kontroller);
-		Assert.Equal(TestReplicaSet.Host3, leader.Address);
+		Assert.Equal(TestDataPlane.Host3, leader.Address);
 
 		// Now stop renewal process and wait for a new leader appointment
 		process.RequestStop();
@@ -86,7 +86,7 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 
 		do {
 			leader = await WaitForLeaderAsync(kontroller);
-		} while (!TestReplicaSet.Host1.Equals(leader.Address));
+		} while (!TestDataPlane.Host1.Equals(leader.Address));
 
 		await kontroller.StopAsync(TestToken);
 	}
@@ -107,16 +107,16 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 	}
 
 	private static async Task AddNodesAsync(IKontroller kontroller) {
-		var node = new DatabaseNode { DatabaseId = Database.MainDatabaseId, Address = TestReplicaSet.Host1 };
+		var node = new DatabaseNode { DatabaseId = Database.MainDatabaseId, Address = TestDataPlane.Host1 };
 		await kontroller.AddOrUpdateDatabaseNodeAsync(node, TestToken);
 
-		node = new DatabaseNode { DatabaseId = Database.MainDatabaseId, Address = TestReplicaSet.Host2 };
+		node = new DatabaseNode { DatabaseId = Database.MainDatabaseId, Address = TestDataPlane.Host2 };
 		await kontroller.AddOrUpdateDatabaseNodeAsync(node, TestToken);
 
-		node = new DatabaseNode { DatabaseId = Database.MainDatabaseId, Address = TestReplicaSet.Host3 };
+		node = new DatabaseNode { DatabaseId = Database.MainDatabaseId, Address = TestDataPlane.Host3 };
 		await kontroller.AddOrUpdateDatabaseNodeAsync(node, TestToken);
 
-		node = new DatabaseNode { DatabaseId = Database.MainDatabaseId, Address = TestReplicaSet.Host4 };
+		node = new DatabaseNode { DatabaseId = Database.MainDatabaseId, Address = TestDataPlane.Host4 };
 		await kontroller.AddOrUpdateDatabaseNodeAsync(node, TestToken);
 	}
 
@@ -131,7 +131,7 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 
 	private static CancellationToken TestToken => TestContext.Current.CancellationToken;
 
-	private sealed class TestReplicaSet : IDatabaseReplicaSet {
+	private sealed class TestDataPlane : IDataPlane {
 		public static readonly IPEndPoint Host1 = new(IPAddress.Loopback, 3269);
 		public static readonly IPEndPoint Host2 = new(IPAddress.Loopback, 3270);
 		public static readonly IPEndPoint Host3 = new(IPAddress.Loopback, 3271);
@@ -159,7 +159,7 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 			}
 		}
 
-		ValueTask<ReplicaState> IDatabaseReplicaSet.GetReplicaStateAsync(EndPoint address, CancellationToken token)
+		ValueTask<ReplicaState> IDataPlane.GetReplicaStateAsync(EndPoint address, CancellationToken token)
 			=> Volatile.Read(in _members).TryGetValue(address, out var state)
 				? new(state)
 				: ValueTask.FromException<ReplicaState>(new IOException());

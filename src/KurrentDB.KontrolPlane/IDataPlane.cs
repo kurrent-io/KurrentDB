@@ -6,9 +6,9 @@ using System.Net;
 namespace KurrentDB.KontrolPlane;
 
 /// <summary>
-/// Manages communication with the member in the replica set.
+/// Manages communication with the member in the Data Plane.
 /// </summary>
-public interface IDatabaseReplicaSet {
+public interface IDataPlane {
 	/// <summary>
 	/// Gets the replication state for the specified member.
 	/// </summary>

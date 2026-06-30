@@ -46,7 +46,7 @@ public partial class RaftKontroller : IAsyncDisposable {
 		_lifecycleToken = _lifecycleTokenSource.Token;
 	}
 
-	public required IDatabaseReplicaSet ReplicaSet {
+	public required IDataPlane ReplicaSet {
 		get;
 		init => field = value ?? throw new ArgumentNullException(nameof(value));
 	}

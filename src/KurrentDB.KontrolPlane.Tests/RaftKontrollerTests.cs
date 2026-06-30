@@ -18,7 +18,7 @@ public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 			},
 			SingleNodeDeployment = true,
 		}) {
-			ReplicaSet = new TestReplicaSet(),
+			ReplicaSet = new TestDataPlane(),
 		};
 	}
 
@@ -189,8 +189,8 @@ public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 
 	private static CancellationToken TestToken => TestContext.Current.CancellationToken;
 
-	private sealed class TestReplicaSet : IDatabaseReplicaSet {
-		ValueTask<ReplicaState> IDatabaseReplicaSet.GetReplicaStateAsync(EndPoint address, CancellationToken token)
+	private sealed class TestDataPlane : IDataPlane {
+		ValueTask<ReplicaState> IDataPlane.GetReplicaStateAsync(EndPoint address, CancellationToken token)
 			=> ValueTask.FromException<ReplicaState>(new NotSupportedException());
 	}
 }
