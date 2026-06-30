@@ -984,7 +984,7 @@ public class ClusterVNode<TStreamId> :
 			.WithPlugableComponent(_authenticationProvider)
 			.WithPlugableComponent(new ArchivePlugableComponent(options.Cluster.Archiver));
 
-		modifiedOptions = modifiedOptions.WithPlugableComponent(new LicensingPlugin(ex => {
+		modifiedOptions = modifiedOptions.WithPlugableComponent(new LicensingPlugin(isSingleNode, ex => {
 			Log.Warning("Shutting down due to licensing error: {Message}", ex.Message);
 			MainQueue.Publish(new ClientMessage.RequestShutdown(exitProcess: true, shutdownHttp: true));
 		}));

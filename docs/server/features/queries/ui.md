@@ -1,6 +1,6 @@
 # Queries UI
 
-The KurrentDB Web Admin UI provides a basic interface to write and run ad-hoc queries against your event streams. This is useful for quick analysis and exploration of your data without needing to set up a full projection.
+The KurrentDB embedded UI provides a basic interface to write and run ad-hoc queries against your event streams. This is useful for quick analysis and exploration of your data without needing to set up a full projection.
 
 ::: important
 The query feature is intended for temporary and exploratory use. For long-running or production workloads, consider using persistent projections or external tools.
@@ -12,7 +12,7 @@ When querying event data and metadata, keep in mind that the query engine proces
 
 ## Motivation
 
-Before v25.1, KurrentDB users had to rely on projections or external tools to query event data. We now want to offer a simpler way to run ad-hoc queries directly from the Web Admin UI, and using other protocols in the future.
+Before v25.1, KurrentDB users had to rely on projections or external tools to query event data. We now want to offer a simpler way to run ad-hoc queries directly from the embedded UI, and using other protocols in the future.
 
 There was already a way to run ad-hoc queries using [JavaScript projections](../projections/custom.md) using the Projections - Query screen, but that requires learning the projections API and JavaScript. The new Queries UI provides a more straightforward way to run simple queries using SQL. It is powered by the [Secondary Indexes](../indexes/secondary.md) feature.
 

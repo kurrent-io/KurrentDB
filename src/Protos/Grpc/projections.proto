@@ -29,6 +29,7 @@ message CreateReq {
 		}
 		string query = 4;
 		int32 engine_version = 5; // 0 or 1 = v1 (default), 2 = v2
+		map<string, google.protobuf.Value> properties = 6;
 
 		message Transient {
 			string name = 1;
@@ -54,6 +55,7 @@ message UpdateReq {
 			bool emit_enabled = 3;
 			event_store.client.Empty no_emit_options = 4;
 		}
+		map<string, google.protobuf.Value> properties = 5;
 	}
 }
 

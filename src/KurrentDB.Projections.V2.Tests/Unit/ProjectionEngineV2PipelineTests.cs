@@ -163,6 +163,16 @@ public class ProjectionEngineV2PipelineTests {
 		return CoreResolvedEvent.ForUnresolvedEvent(record, logPosition);
 	}
 
+	// A link ($>) read from $all with resolveLinks:true whose target event has been scavenged
+	// (or whose target stream was deleted) resolves to a ResolvedEvent with a null Event.
+	static CoreResolvedEvent CreateFailedResolvedLink(string linkStreamId,
+		long eventNumber,
+		long logPosition,
+		ReadEventResult resolveResult = ReadEventResult.StreamDeleted) {
+		var link = CreateEventRecord(linkStreamId, eventNumber, logPosition, "$>", $"{eventNumber}@scavenged-stream");
+		return CoreResolvedEvent.ForFailedResolvedLink(link, resolveResult, logPosition);
+	}
+
 	async Task<(ProjectionEngineV2 Engine, CapturingPublisher Publisher)> RunEngine(
 		CoreResolvedEvent[] events,
 		ProjectionEngineV2Config config) {
@@ -378,6 +388,51 @@ public class ProjectionEngineV2PipelineTests {
 		var lastWrite = publisher.Messages.OfType<ClientMessage.WriteEvents>().LastOrDefault();
 		await Assert.That(lastWrite).IsNotNull();
 
+		var checkpointEvent = lastWrite!.Events.ToArray()
+			.First(e => e.EventType == ProjectionEventTypes.ProjectionCheckpointV2);
+		using var doc = JsonDocument.Parse(Encoding.UTF8.GetString(checkpointEvent.Data));
+		await Assert.That(doc.RootElement.GetProperty("commitPosition").GetInt64()).IsEqualTo(900);
+	}
+
+	[Test]
+	public async Task advances_checkpoint_past_scavenged_links_without_faulting() {
+		// Reading filtered $all with resolveLinks:true can surface a link ($>) whose target event
+		// has been scavenged (or whose target stream was deleted). The storage reader returns a
+		// ResolvedEvent with a null Event in that case. The engine must:
+		//   (a) not dereference the missing Event — previously that threw an NRE and faulted the
+		//       whole read loop, stalling the projection at the dangling link; and
+		//   (b) still advance the checkpoint past it — otherwise a long run of scavenged events
+		//       never moves the checkpoint forward and gets re-read on every restart.
+		// A scavenged link sits both between real events and as the trailing record so the final
+		// checkpoint position must reflect the scavenged link, not the last real event.
+		var events = new[] {
+			CreateResolvedEvent("stream-H", 0, 100L),
+			CreateFailedResolvedLink("$et-TestEvent", 0, 500L),
+			CreateResolvedEvent("stream-H", 1, 700L),
+			CreateFailedResolvedLink("$et-TestEvent", 1, 900L),
+		};
+
+		var config = new ProjectionEngineV2Config {
+			ProjectionName = "scavenged-link-test",
+			SourceDefinition = new QuerySourcesDefinition { AllStreams = true, AllEvents = true, ByStreams = true },
+			StateHandlerFactory = () => new CountingStateHandler(),
+			MaxPartitionStateCacheSize = 1000,
+			PartitionCount = 1,
+			CheckpointAfterMs = 0,
+			CheckpointHandledThreshold = 100,
+			CheckpointUnhandledBytesThreshold = long.MaxValue
+		};
+
+		var (engine, publisher) = await RunEngine(events, config);
+
+		await Assert.That(engine.IsFaulted).IsFalse();
+		// Only the two real events are dispatched; the scavenged links are skipped, not counted.
+		await Assert.That(engine.TotalEventsProcessed).IsEqualTo(2);
+
+		// The checkpoint must have advanced past the trailing scavenged link (900), not stopped
+		// at the last dispatched event (700).
+		var lastWrite = publisher.Messages.OfType<ClientMessage.WriteEvents>().LastOrDefault();
+		await Assert.That(lastWrite).IsNotNull();
 		var checkpointEvent = lastWrite!.Events.ToArray()
 			.First(e => e.EventType == ProjectionEventTypes.ProjectionCheckpointV2);
 		using var doc = JsonDocument.Parse(Encoding.UTF8.GetString(checkpointEvent.Data));

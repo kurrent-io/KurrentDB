@@ -4230,6 +4230,16 @@
                     "type": "int32"
                   }
                 ],
+                "maps": [
+                  {
+                    "key_type": "string",
+                    "field": {
+                      "id": 6,
+                      "name": "properties",
+                      "type": "google.protobuf.Value"
+                    }
+                  }
+                ],
                 "messages": [
                   {
                     "name": "Transient",
@@ -4300,6 +4310,16 @@
                     "id": 4,
                     "name": "no_emit_options",
                     "type": "event_store.client.Empty"
+                  }
+                ],
+                "maps": [
+                  {
+                    "key_type": "string",
+                    "field": {
+                      "id": 5,
+                      "name": "properties",
+                      "type": "google.protobuf.Value"
+                    }
                   }
                 ]
               }

@@ -21,10 +21,12 @@ namespace KurrentDB.Licensing;
 public class LicensingPlugin : Plugin {
 	private static readonly ILogger Log = Serilog.Log.ForContext<LicensingPlugin>();
 
+	private readonly bool _isSingleNode;
 	private readonly ILicenseProvider? _licenseProvider;
 	private readonly Action<Exception> _requestShutdown;
 
-	public LicensingPlugin(Action<Exception> requestShutdown, ILicenseProvider? licenseProvider = null) {
+	public LicensingPlugin(bool isSingleNode, Action<Exception> requestShutdown, ILicenseProvider? licenseProvider = null) {
+		_isSingleNode = isSingleNode;
 		_licenseProvider = licenseProvider;
 		_requestShutdown = requestShutdown;
 	}
@@ -87,16 +89,17 @@ public class LicensingPlugin : Plugin {
 			services.AddHostedService(_ => lifecycleService);
 		}
 
+		var licenseProvider = _licenseProvider ??
+			new SingleNodeFallbackLicenseProvider(new KeygenLicenseProvider(licenses), _isSingleNode);
+
 		services
 			// other components such as plugins can use this to subscribe to the licenses, inspect them, and reject them
 			.AddSingleton<ILicenseService>(sp => new LicenseService(
 				sp.GetRequiredService<IHostApplicationLifetime>(),
 				_requestShutdown,
-				_licenseProvider ?? new KeygenLicenseProvider(licenses)))
+				licenseProvider))
 			.AddHostedService(sp => new LicenseTelemetryService(
 				sp.GetRequiredService<ILicenseService>(),
 				telemetry => PublishDiagnosticsData(telemetry, PluginDiagnosticsDataCollectionMode.Snapshot)));
 	}
-
-	class NoLicenseKeyException : Exception;
 }

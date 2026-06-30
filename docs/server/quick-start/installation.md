@@ -16,7 +16,7 @@ The installation procedure consists of the following steps:
 - Obtain SSL certificates, either signed by a publicly trusted or private certificate authority.
 - Copy the configuration files and SSL certificates to each node.
 - Start the KurrentDB service on each node.
-- Check the cluster status using the Admin UI on any node.
+- Check the cluster status using the embedded UI on any node.
 
 ### Default access
 
@@ -330,7 +330,7 @@ docker pull docker.kurrent.io/kurrent-lts/kurrentdb:latest
 ```
 :::
 
-The following command will start the KurrentDB node using the default HTTP port, without security. You can then connect to it using one of the clients and the `kurrentdb://localhost:2113?tls=false` connection string. You can also access the Admin UI by opening http://localhost:2113 in your browser.
+The following command will start the KurrentDB node using the default HTTP port, without security. You can then connect to it using one of the clients and the `kurrentdb://localhost:2113?tls=false` connection string. You can also access the embedded UI by opening http://localhost:2113 in your browser.
 
 ::: tabs
 @tab kurrent-latest
@@ -348,7 +348,7 @@ docker run --name kurrentdb-node -it -p 2113:2113 \
 :::
 
 Then, you'd be able to connect to KurrentDB with gRPC clients. Also, the Stream Browser will work
-in the Admin UI.
+in the embedded UI.
 
 In order to sustainably keep the data, we also recommend mapping the database and index volumes.
 
@@ -370,7 +370,7 @@ Run the instance:
 docker compose up
 ```
 
-The command above would run KurrentDB as a single node without SSL. You also get AtomPub protocol enabled, so you can get the stream browser to work in the Admin UI.
+The command above would run KurrentDB as a single node without SSL. You also get AtomPub protocol enabled, so you can get the stream browser to work in the embedded UI.
 
 #### Secure cluster
 
@@ -401,7 +401,7 @@ docker compose up
 ```
 
 Watching the log messages, you will see that after some time, the elections process completes. Then you're able to connect to each
-node using the Admin UI. Nodes should be accessible on the loopback address (`127.0.0.1` or `localhost`) over
+node using the embedded UI. Nodes should be accessible on the loopback address (`127.0.0.1` or `localhost`) over
 HTTP, using ports specified below:
 
 | Node  | HTTP port |

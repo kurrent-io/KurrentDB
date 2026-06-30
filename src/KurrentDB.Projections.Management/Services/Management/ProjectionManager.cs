@@ -1155,6 +1155,7 @@ public class ProjectionManager
 		private readonly IEnvelope _replyEnvelope;
 		private readonly string _name;
 		private readonly int _engineVersion;
+		private readonly byte[] _metadata;
 
 		public NewProjectionInitializer(
 			long projectionId,
@@ -1169,7 +1170,8 @@ public class ProjectionManager
 			bool trackEmittedStreams,
 			ProjectionManagementMessage.RunAs runAs,
 			IEnvelope replyEnvelope,
-			int engineVersion = ProjectionConstants.EngineV1) {
+			int engineVersion = ProjectionConstants.EngineV1,
+			byte[] metadata = null) {
 			if (projectionMode >= ProjectionMode.Continuous && !checkpointsEnabled)
 				throw new InvalidOperationException("Continuous mode requires checkpoints");
 
@@ -1189,6 +1191,7 @@ public class ProjectionManager
 			_replyEnvelope = replyEnvelope;
 			_name = name;
 			_engineVersion = engineVersion;
+			_metadata = metadata;
 		}
 
 		public void CreateAndInitializeNewProjection(
@@ -1220,7 +1223,8 @@ public class ProjectionManager
 					ProjectionExecutionTimeout = null,
 					EngineVersion = _engineVersion
 				},
-				_replyEnvelope);
+				_replyEnvelope,
+				_metadata);
 		}
 	}
 
@@ -1276,11 +1280,12 @@ public class ProjectionManager
 		public bool TrackEmittedStreams { get; }
 		public long ProjectionId { get; }
 		public int EngineVersion { get; }
+		public byte[] Metadata { get; }
 
 		public PendingProjection(
 			long projectionId, ProjectionMode mode, SerializedRunAs runAs, string name, string handlerType, string query,
 			bool enabled, bool checkpointsEnabled, bool emitEnabled, bool enableRunAs,
-			bool trackEmittedStreams, int engineVersion = ProjectionConstants.EngineV1) {
+			bool trackEmittedStreams, int engineVersion = ProjectionConstants.EngineV1, byte[] metadata = null) {
 			ProjectionId = projectionId;
 			Mode = mode;
 			RunAs = runAs;
@@ -1293,6 +1298,7 @@ public class ProjectionManager
 			EnableRunAs = enableRunAs;
 			TrackEmittedStreams = trackEmittedStreams;
 			EngineVersion = engineVersion;
+			Metadata = metadata;
 		}
 
 		public PendingProjection(long projectionId, ProjectionManagementMessage.Command.PostBatch.ProjectionPost projection)
@@ -1304,7 +1310,7 @@ public class ProjectionManager
 			: this(projectionId, projection.Mode, projection.RunAs, projection.Name, projection.HandlerType,
 				projection.Query, projection.Enabled, projection.CheckpointsEnabled,
 				projection.EmitEnabled, projection.EnableRunAs, projection.TrackEmittedStreams,
-				projection.EngineVersion) { }
+				projection.EngineVersion, projection.Metadata) { }
 
 		public NewProjectionInitializer CreateInitializer(IEnvelope replyEnvelope) {
 			return new NewProjectionInitializer(
@@ -1320,7 +1326,8 @@ public class ProjectionManager
 				TrackEmittedStreams,
 				RunAs,
 				replyEnvelope,
-				EngineVersion);
+				EngineVersion,
+				Metadata);
 		}
 	}
 

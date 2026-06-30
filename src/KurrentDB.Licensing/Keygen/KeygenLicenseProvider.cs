@@ -40,7 +40,7 @@ public class KeygenLicenseProvider : ILicenseProvider {
 	// we play it safe and grant a license that allows access to all features to avoid
 	// technical problems taking down production deployments.
 	// The primary means of protection against license tampering is the license agreement
-	static License CreateLicense(LicenseInfo.Inconclusive licenseInfo) {
+	static License CreateLicense(LicenseInfo.Inconclusive _) {
 		Log.Warning("License could not be validated. Please contact Kurrent support.");
 
 		var summary = new LicenseSummary(
@@ -51,7 +51,7 @@ public class KeygenLicenseProvider : ILicenseProvider {
 			IsValid: false,
 			Notes: "License could not be validated. Please contact Kurrent support.");
 
-		return CreateLicense(summary, ["ALL"]);
+		return summary.CreateLicense(["ALL"]);
 	}
 
 	static License CreateLicense(LicenseInfo.Conclusive licenseInfo) {
@@ -82,14 +82,6 @@ public class KeygenLicenseProvider : ILicenseProvider {
 			IsValid: licenseInfo.Valid,
 			Notes: licenseInfo.Detail);
 
-		return CreateLicense(summary, licenseInfo.Entitlements);
-	}
-
-	static License CreateLicense(LicenseSummary summary, string[] entitlements) {
-		var claims = entitlements.ToDictionary(x => x, object (_) => "true");
-
-		summary?.ExportClaims(claims);
-
-		return License.Create(claims: claims);
+		return summary.CreateLicense(licenseInfo.Entitlements);
 	}
 }

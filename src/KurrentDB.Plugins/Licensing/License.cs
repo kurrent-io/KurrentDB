@@ -60,7 +60,7 @@ public record License(JsonWebToken Token) {
 		var token = tokenHandler.CreateToken(new SecurityTokenDescriptor {
 			Audience = "esdb",
 			Issuer = "esdb",
-			Expires = DateTime.UtcNow + TimeSpan.FromHours(1),
+			Expires = DateTime.UtcNow.AddYears(100),
 			Claims = claims,
 			SigningCredentials = new(new RsaSecurityKey(rsa), SecurityAlgorithms.RsaSha256)
 		});

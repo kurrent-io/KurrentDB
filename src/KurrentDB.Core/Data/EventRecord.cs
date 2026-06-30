@@ -68,21 +68,36 @@ public class EventRecord : IEquatable<EventRecord> {
 
 	private const string BytesFormat = "Bytes";
 	private const string JsonFormat = "Json";
+	private const string PropertiesErrorKey = "$propertiesError";
 	static readonly Value JsonDataFormatValue = Value.ForString(JsonFormat);
 
 	void SynthesizeMetadataFromProperties() {
-		var props = Struct.Parser.ParseFrom(Properties.Span);
+		try {
+			var props = Struct.Parser.ParseFrom(Properties.Span);
 
-		props.Fields[Constants.RecordProperties.SchemaNameKey] = Value.ForString(EventType);
+			props.Fields[Constants.RecordProperties.SchemaNameKey] = Value.ForString(EventType);
 
-		if (IsJson) {
-			props.Fields[Constants.RecordProperties.SchemaFormatKey] = JsonDataFormatValue;
-			_schemaFormat = JsonFormat;
-		} else {
-			_schemaFormat = props.Fields[Constants.RecordProperties.SchemaFormatKey].StringValue;
+			if (IsJson) {
+				props.Fields[Constants.RecordProperties.SchemaFormatKey] = JsonDataFormatValue;
+				_schemaFormat = JsonFormat;
+			} else {
+				_schemaFormat = props.Fields[Constants.RecordProperties.SchemaFormatKey].StringValue;
+			}
+
+			_metadata = Encoding.UTF8.GetBytes(JsonFormatter.Default.Format(props));
+		} catch (Exception ex) {
+			// Record properties can technically hold values the JSON formatter can't represent — most notably a protobuf
+			// Value with no kind set ("Value message must contain a value for the oneof").
+			_schemaFormat ??= IsJson ? JsonFormat : BytesFormat;
+			_metadata = Encoding.UTF8.GetBytes(
+				JsonFormatter.Default.Format(new Struct {
+					Fields = {
+						[Constants.RecordProperties.SchemaNameKey] = Value.ForString(EventType),
+						[Constants.RecordProperties.SchemaFormatKey] = Value.ForString(_schemaFormat),
+						[PropertiesErrorKey] = Value.ForString($"Could not render record properties: {ex.Message}")
+					}
+				}));
 		}
-
-		_metadata = Encoding.UTF8.GetBytes(JsonFormatter.Default.Format(props));
 	}
 
 	public EventRecord(long eventNumber, IPrepareLogRecord prepare, string eventStreamId, string? eventType) {

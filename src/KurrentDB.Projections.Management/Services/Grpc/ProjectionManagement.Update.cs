@@ -39,7 +39,7 @@ internal partial class ProjectionManagement {
 		var envelope = new CallbackEnvelope(OnMessage);
 		_publisher.Publish(
 			new ProjectionManagementMessage.Command.UpdateQuery(envelope, name, runAs, query,
-				emitEnabled));
+				emitEnabled, ToMetadata(options.Properties)));
 
 		await updatedSource.Task;
 
@@ -52,6 +52,9 @@ internal partial class ProjectionManagement {
 					break;
 				case ProjectionManagementMessage.NotFound:
 					updatedSource.TrySetException(ProjectionNotFound(name));
+					break;
+				case ProjectionManagementMessage.OperationFailed failed:
+					updatedSource.TrySetException(MapFailure(failed));
 					break;
 				default:
 					updatedSource.TrySetException(UnknownMessage<ProjectionManagementMessage.Updated>(message));

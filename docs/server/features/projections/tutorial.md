@@ -66,7 +66,7 @@ Below is the updated projection:
 
 @[code](@samples/http-api/xbox-one-s-counter-outputState.js)
 
-To update the projection, edit the projection definition in the Admin UI, or issue the following request:
+To update the projection, edit the projection definition in the embedded UI, or issue the following request:
 
 @[code](@samples/http-api/xbox-one-s-counter-outputState.sh)
 

@@ -551,10 +551,10 @@ public partial record ClusterVNodeOptions {
 		[Description("The maximum number of pending connection operations allowed before a connection is closed.")]
 		public int ConnectionQueueSizeThreshold { get; init; } = 50_000;
 
-		[Description("Disables the admin ui on the HTTP endpoint.")]
+		[Description("Disables the admin HTTP API and the embedded UI.")]
 		public bool DisableAdminUi { get; init; } = false;
 
-		[Description("Disables statistics requests on the HTTP endpoint.")]
+		[Description("Disables statistics and metrics requests on the HTTP endpoint.")]
 		public bool DisableStatsOnHttp { get; init; } = false;
 
 		[Description("Disables gossip requests on the HTTP endpoint.")]
