@@ -35,7 +35,7 @@ public class ResponseConverterTests {
 		Assert.True(ResponseConverter.TryConvertReadResponse(
 			new ReadResponse.SubscriptionCaughtUp(
 				timestamp: TimeStamp,
-				allCheckpoint: new Data.TFPos(100, 50)),
+				allCheckpoint: new Core.Data.TFPos(100, 50)),
 			uuidOption: null,
 			out var actual));
 
@@ -49,7 +49,7 @@ public class ResponseConverterTests {
 		Assert.True(ResponseConverter.TryConvertReadResponse(
 			new ReadResponse.SubscriptionCaughtUp(
 				timestamp: TimeStamp,
-				allCheckpoint: new Data.TFPos(100, 50)),
+				allCheckpoint: new Core.Data.TFPos(100, 50)),
 			uuidOption: null,
 			out var actual));
 
