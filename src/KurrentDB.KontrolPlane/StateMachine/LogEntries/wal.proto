@@ -1,0 +1,38 @@
+// WAL log entries
+
+syntax = "proto3";
+
+package kurrent.kontrol_plane.log_entries;
+
+option csharp_namespace = "KurrentDB.KontrolPlane.StateMachine.LogEntries";
+
+message AddOrUpdateDatabase
+{
+  string databaseId = 1;
+  string description = 2;
+}
+
+message RemoveDatabase
+{
+  string databaseId = 1;
+}
+
+message AddOrUpdateDatabaseNode
+{
+  string databaseId = 1;
+  bytes address = 2;
+  bool isReadOnlyReplica = 3;
+}
+
+message RemoveDatabaseNode
+{
+  string databaseId = 1;
+  bytes address = 2;
+}
+
+message AppointLeader
+{
+  string databaseId = 1;
+  bytes address = 2;
+  uint64 epoch = 3;
+}
