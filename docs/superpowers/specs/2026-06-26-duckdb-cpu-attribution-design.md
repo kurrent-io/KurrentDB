@@ -9,7 +9,7 @@
 
 We want operators to be able to answer: **"What fraction of this node's CPU is DuckDB vs the rest of KurrentDB?"** Process- and system-level CPU are already exported (`kurrentdb_proc_cpu`, `kurrentdb_sys_cpu`); the missing piece is the DuckDB share so the two can be compared.
 
-PR #5642 shipped a first attempt: `DuckDBCpuMetrics.Measure(activity)` returns a `ref struct` scope that reads the calling thread's CPU (`clock_gettime(CLOCK_THREAD_CPUTIME_ID)` on Linux/macOS, `GetThreadTimes` on Windows) at construction and again at `Dispose`, recording the delta into a counter. It is wrapped around the synchronous DuckDB sections of commit, checkpoint, index reads, and query setup.
+PR #5642 (open, not merged) proposed a first attempt: `DuckDBCpuMetrics.Measure(activity)` returns a `ref struct` scope that reads the calling thread's CPU (`clock_gettime(CLOCK_THREAD_CPUTIME_ID)` on Linux/macOS, `GetThreadTimes` on Windows) at construction and again at `Dispose`, recording the delta into a counter. It is wrapped around the synchronous DuckDB sections of commit, checkpoint, index reads, and query setup.
 
 Code review identified three **fundamental** flaws, all rooted in one assumption — *"measure the calling thread across a synchronous span"*:
 
@@ -94,7 +94,7 @@ Most of the blast radius is converting a few `void`/synchronous DuckDB methods t
 
 ## 7. The metric
 
-- **Instrument:** an OpenTelemetry **observable counter** `kurrentdb.duckdb.cpu.seconds` (monotonic CPU-seconds), with an optional `role=worker|dispatcher` tag for diagnostics. The DuckDB CPU fraction on a dashboard is `rate(kurrentdb_duckdb_cpu_seconds_total[1m]) / rate(kurrentdb_proc_cpu[1m])` (the existing process-CPU metric named in §1).
+- **Instrument:** an OpenTelemetry **observable counter** `kurrentdb.duckdb.cpu.seconds` (monotonic CPU-seconds), with an optional `role=worker|dispatcher` tag for diagnostics. On a dashboard, `rate(kurrentdb_duckdb_cpu_seconds_total[1m])` yields DuckDB CPU in cores; compare it against the process-CPU signal in the same unit. Note `kurrentdb_proc_cpu` (§1) is a gauge (an `ObservableUpDownCounter` of instantaneous CPU usage), so it must **not** be wrapped in `rate()` — divide by the gauge directly once both are expressed as cores (e.g. `rate(kurrentdb_duckdb_cpu_seconds_total[1m]) / kurrentdb_proc_cpu`, adjusting for the gauge's scaling).
 - **Sampling:** on each scrape, sum every owned thread's *cumulative* CPU, read **by thread handle** (cross-thread, not "current thread"):
   - **Linux:** `pthread_getcpuclockid(thread, &clockid)` then `clock_gettime(clockid)`.
   - **Windows:** `GetThreadTimes(handle, …)` (kernel + user time) for any owned thread handle.
@@ -133,7 +133,7 @@ Most of the blast radius is converting a few `void`/synchronous DuckDB methods t
 ## 11. Risks & open questions
 
 - **Dispatcher pool sizing.** Too few dispatchers throttle concurrent reads; too many add scheduling overhead against a fixed worker pool. Needs a sensible default and load testing. (Does not affect correctness of the metric, only read latency.)
-- **Worker / external-threads interaction under concurrent queries.** Multiple in-flight queries share the single worker pool via DuckDB's global task scheduler. Behavior is expected-standard but must be load- and soak-tested before this becomes the default execution path — it changes DuckDB's execution model from internal to external threads.
+- **Worker / external-threads interaction under concurrent queries.** Multiple in-flight queries share the single worker pool via DuckDB's global task scheduler. Behavior is expected to be standard, but must be load- and soak-tested before this becomes the default execution path — it changes DuckDB's execution model from internal to external threads.
 - **macOS per-thread CPU.** `pthread_getcpuclockid` is unsupported on macOS; the `thread_info`/mach path must be implemented or the metric degrades to no-op on macOS (acceptable: macOS is a development platform only).
 - **Magnitude of the old blind spot.** The headline test (total CPU > wall-clock) will, for the first time, quantify how much CPU the previous caller-side metric was missing — useful validation that the rework was warranted.
 - **Scope of the async migration.** Converting the streaming reader to run its consume loop on a dispatcher is the largest single change; it must preserve current read semantics (ordering, cancellation, snapshot capture).
