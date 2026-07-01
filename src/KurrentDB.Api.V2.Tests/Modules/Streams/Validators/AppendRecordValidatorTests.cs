@@ -34,6 +34,48 @@ public class AppendRecordValidatorTests {
     }
 
     [Test]
+    public async ValueTask throws_when_property_value_has_no_kind_set() {
+        var value = new AppendRecord {
+            Schema = new SchemaInfo {
+                Name   = "Valid.Name",
+                Format = SchemaFormat.Json,
+                Id     = "98EACFBF-E6B6-401F-8FE0-EDC0F161B087"
+            },
+            Data = ByteString.Empty,
+            Properties = {
+                { "key", new Value() }
+            }
+        };
+
+        var vex = await Assert
+            .That(() => AppendRecordValidator.Instance.ValidateAndThrow(value))
+            .Throws<DetailedValidationException>();
+
+        vex.LogValidationErrors<AppendRecordValidator>();
+    }
+
+    [Test]
+    public async ValueTask throws_when_nested_property_value_has_no_kind_set() {
+        var value = new AppendRecord {
+            Schema = new SchemaInfo {
+                Name   = "Valid.Name",
+                Format = SchemaFormat.Json,
+                Id     = "98EACFBF-E6B6-401F-8FE0-EDC0F161B087"
+            },
+            Data = ByteString.Empty,
+            Properties = {
+                { "key", Value.ForStruct(new Struct { Fields = { ["nested"] = new Value() } }) }
+            }
+        };
+
+        var vex = await Assert
+            .That(() => AppendRecordValidator.Instance.ValidateAndThrow(value))
+            .Throws<DetailedValidationException>();
+
+        vex.LogValidationErrors<AppendRecordValidator>();
+    }
+
+    [Test]
     [Arguments("")]
     [Arguments(" ")]
     public async ValueTask throws_when_any_property_key_is_empty(string invalidKey) {
