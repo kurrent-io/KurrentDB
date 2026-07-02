@@ -587,7 +587,7 @@ public class PersistentSubscription {
 					return;
 
 				var truncateBefore = stopAt.HasValue ? Math.Min(stopAt.Value, end.Value + 1) : end.Value + 1;
-				_settings.MessageParker.BeginMarkParkedMessagesReprocessed(truncateBefore, null, true);
+				_settings.MessageParker.BeginMarkParkedMessagesReprocessed(truncateBefore, null, updateOldestParkedMessage: true);
 			});
 		}
 	}
@@ -644,7 +644,7 @@ public class PersistentSubscription {
 				var replayedEnd = newStreamPosition.StreamEventNumber == -1 ? stopAt : Math.Min(stopAt, newStreamPosition.StreamEventNumber);
 
 				if (isEndofStream) {
-					_settings.MessageParker.BeginMarkParkedMessagesReprocessed(replayedEnd, null, true);
+					_settings.MessageParker.BeginMarkParkedMessagesReprocessed(replayedEnd, null, updateOldestParkedMessage: true);
 				} else {
 					var (replayedEndTimeStamp, updateOldestParkedMessageTimeStamp) = GetOldestParkedMessageTimeStamp(events, replayedEnd);
 					_settings.MessageParker.BeginMarkParkedMessagesReprocessed(replayedEnd, replayedEndTimeStamp, updateOldestParkedMessageTimeStamp);
