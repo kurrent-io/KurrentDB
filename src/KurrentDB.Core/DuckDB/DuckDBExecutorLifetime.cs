@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Metrics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,11 +25,16 @@ public sealed class DuckDBExecutorLifetime : Disposable, IHostedService {
 
 	public DuckDBExecutor Executor { get; }
 
+	// The CPU metric is created here (eagerly, at node startup) rather than via an activated DI singleton so the
+	// instrument exists even without a metrics consumer, and so it samples the very executor this lifetime owns.
+	public DuckDBCpuMetrics CpuMetrics { get; }
+
 	public DuckDBExecutorLifetime(
 		TFChunkDbConfig config,
 		IEnumerable<IDuckDBSetup> setups,
 		int workerCount,
 		int dispatcherCount,
+		string serviceName,
 		[CanBeNull] ILogger<DuckDBExecutorLifetime> log) {
 		_log = log ?? NullLogger<DuckDBExecutorLifetime>.Instance;
 
@@ -37,6 +43,7 @@ public sealed class DuckDBExecutorLifetime : Disposable, IHostedService {
 		var connectionString = $"Data Source={path};memory_limit={memoryMib}MB";
 
 		Executor = new DuckDBExecutor(connectionString, workerCount, dispatcherCount);
+		CpuMetrics = new DuckDBCpuMetrics(new Meter(DuckDBCpuMetrics.MeterName, "1.0.0"), serviceName, Executor.SampleCpu);
 		_log.LogInformation("DuckDB executor started at {path}: {workers} workers, {dispatchers} dispatchers, memory_limit {memory}MB",
 			path, workerCount, dispatcherCount, memoryMib);
 

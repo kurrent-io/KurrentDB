@@ -9,6 +9,7 @@
 		"Kurrent.Connectors",
 		"Kurrent.Connectors.Sinks",
 		"KurrentDB.SecondaryIndexes",
+		"KurrentDB.DuckDB",
 		"KurrentDB.Kontext"
 	],
 

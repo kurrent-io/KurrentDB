@@ -19,10 +19,14 @@ public static class InjectionExtensions {
 			sp.GetServices<IDuckDBSetup>(),
 			workerCount,
 			dispatcherCount,
+			serviceName,
 			sp.GetService<ILogger<DuckDBExecutorLifetime>>()));
 		services.AddHostedService(sp => sp.GetRequiredService<DuckDBExecutorLifetime>());
 		services.AddSingleton<DuckDBExecutor>(sp => sp.GetRequiredService<DuckDBExecutorLifetime>().Executor);
-		services.AddSingleton(new DuckDBCpuMetrics(new Meter(DuckDBCpuMetrics.MeterName, "1.0.0"), serviceName)); // Task 5b wires the instrument
+		// The lifetime is a hosted service, so it's instantiated at node startup; it creates the CPU-metric
+		// instrument in its constructor (over the executor it owns), so the instrument exists even without a
+		// metrics consumer attached.
+		services.AddSingleton(sp => sp.GetRequiredService<DuckDBExecutorLifetime>().CpuMetrics);
 		return services;
 	}
 }
