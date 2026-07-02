@@ -183,6 +183,8 @@ public class PersistentSubscriptionsService(IPublisher publisher, IAuthorization
 				throw new PersistentSubscriptionsException("Subscription does not exist.");
 			case ClientMessage.ReplayMessagesReceived { Result: ClientMessage.ReplayMessagesReceived.ReplayMessagesReceivedResult.AccessDenied }:
 				throw new PersistentSubscriptionsException("Access denied.");
+			case ClientMessage.ReplayMessagesReceived { Reason: var reason }:
+				throw new PersistentSubscriptionsException($"Failed to replay parked messages: {reason}");
 			default:
 				throw new PersistentSubscriptionsException("Failed to replay parked messages.");
 		}
@@ -203,6 +205,8 @@ public class PersistentSubscriptionsService(IPublisher publisher, IAuthorization
 				throw new PersistentSubscriptionsException("Subscription does not exist.");
 			case ClientMessage.TruncateParkedMessagesCompleted { Result: ClientMessage.TruncateParkedMessagesCompleted.TruncateParkedMessagesCompletedResult.AccessDenied }:
 				throw new PersistentSubscriptionsException("Access denied.");
+			case ClientMessage.TruncateParkedMessagesCompleted { Reason: var reason }:
+				throw new PersistentSubscriptionsException($"Failed to truncate parked messages: {reason}");
 			default:
 				throw new PersistentSubscriptionsException("Failed to truncate parked messages.");
 		}
