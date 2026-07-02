@@ -3015,6 +3015,12 @@ class FakeMessageParker : IPersistentSubscriptionMessageParker {
 			completed(_lastParkedEventNumber);
 	}
 
+	public void NotifyReplay() {
+	}
+
+	public void NotifyTruncate() {
+	}
+
 	public void BeginMarkParkedMessagesReprocessed(long sequence, DateTime? dateTime, bool updateOldestParkedMessage) {
 		MarkedAsProcessed = sequence;
 	}
@@ -3039,6 +3045,7 @@ class FakeMessageParker : IPersistentSubscriptionMessageParker {
 	public long ParkedDueToClientNak { get; }
 	public long ParkedDueToMaxRetries { get; }
 	public long ParkedMessageReplays { get; }
+	public long ParkedMessageTruncations { get; }
 }
 
 

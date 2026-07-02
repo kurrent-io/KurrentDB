@@ -565,6 +565,7 @@ public class PersistentSubscription {
 			if ((_state & PersistentSubscriptionState.ReplayingParkedMessages) > 0)
 				return; //already replaying
 			_state |= PersistentSubscriptionState.ReplayingParkedMessages;
+			_settings.MessageParker.NotifyReplay();
 			_settings.MessageParker.BeginReadEndSequence(end => {
 				if (!end.HasValue) {
 					_state ^= PersistentSubscriptionState.ReplayingParkedMessages;
@@ -582,6 +583,7 @@ public class PersistentSubscription {
 			if (_state == PersistentSubscriptionState.NotReady)
 				return;
 
+			_settings.MessageParker.NotifyTruncate();
 			_settings.MessageParker.BeginReadEndSequence(end => {
 				if (!end.HasValue)
 					return;

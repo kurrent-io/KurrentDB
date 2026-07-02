@@ -12,12 +12,15 @@ public interface IPersistentSubscriptionMessageParker {
 	void BeginReadEndSequence(Action<long?> completed);
 	void BeginMarkParkedMessagesReprocessed(long sequence, DateTime? oldestParkedMessageTimestamp, bool updateOldestParkedMessage);
 	void BeginDelete(Action<IPersistentSubscriptionMessageParker> completed);
+	void NotifyReplay();
+	void NotifyTruncate();
 	long ParkedMessageCount { get; }
 	public void BeginLoadStats(Action completed);
 	DateTime? GetOldestParkedMessage { get; }
 	long ParkedDueToClientNak { get; }
 	long ParkedDueToMaxRetries { get; }
 	long ParkedMessageReplays { get; }
+	long ParkedMessageTruncations { get; }
 }
 
 public enum ParkReason {

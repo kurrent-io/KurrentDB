@@ -23,6 +23,7 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 	private long _parkedDueToClientNak;
 	private long _parkedDueToMaxRetries;
 	private long _parkedMessageReplays;
+	private long _parkedMessageTruncations;
 
 	public long ParkedMessageCount {
 		get {
@@ -35,6 +36,7 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 	public long ParkedDueToClientNak => Interlocked.Read(ref _parkedDueToClientNak);
 	public long ParkedDueToMaxRetries => Interlocked.Read(ref _parkedDueToMaxRetries);
 	public long ParkedMessageReplays => Interlocked.Read(ref _parkedMessageReplays);
+	public long ParkedMessageTruncations => Interlocked.Read(ref _parkedMessageTruncations);
 
 	private static readonly ILogger Log = Serilog.Log.ForContext<PersistentSubscriptionMessageParker>();
 
@@ -127,8 +129,6 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 	}
 
 	public void BeginReadEndSequence(Action<long?> completed) {
-		Interlocked.Increment(ref _parkedMessageReplays);
-
 		_ioDispatcher.ReadBackward(ParkedStreamId,
 			long.MaxValue,
 			1,
@@ -145,7 +145,6 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 						Log.Error(
 							"An error occured reading the last event in the parked message stream {stream} due to {e}.",
 							ParkedStreamId, comp.Result);
-						Log.Error("Messages were not removed on retry");
 						break;
 				}
 			});
@@ -243,6 +242,14 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 						break;
 				}
 			});
+	}
+
+	public void NotifyReplay() {
+		Interlocked.Increment(ref _parkedMessageReplays);
+	}
+
+	public void NotifyTruncate() {
+		Interlocked.Increment(ref _parkedMessageTruncations);
 	}
 
 	class ParkedMessageMetadata {
