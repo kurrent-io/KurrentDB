@@ -24,26 +24,28 @@ public sealed class UiStatsService(StatsService inner, IAuthorizationProvider au
 
 	public async Task<IReadOnlyList<CategoryName>> GetCategoriesAsync(ClaimsPrincipal principal, CancellationToken ct = default) {
 		await authorizer.EnsureAccessAsync(principal, ReadAllOperation, ct);
-		return await Task.Run(() => inner.GetCategories().ToList(), ct);
+		// The expensive DuckDB work runs on an executor dispatcher thread (StatsService.GetCategories), so the render
+		// thread isn't blocked — no Task.Run offload needed.
+		return await inner.GetCategories(ct);
 	}
 
 	public async Task<IReadOnlyList<GetCategoryStats.Result>> GetCategoryStatsAsync(ClaimsPrincipal principal, string category, CancellationToken ct = default) {
 		await authorizer.EnsureAccessAsync(principal, ReadAllOperation, ct);
-		return await Task.Run(() => inner.GetCategoryStats(category), ct);
+		return await inner.GetCategoryStats(category, ct);
 	}
 
 	public async Task<IReadOnlyList<GetCategoryEventTypes.Result>> GetCategoryEventTypesAsync(ClaimsPrincipal principal, string category, CancellationToken ct = default) {
 		await authorizer.EnsureAccessAsync(principal, ReadAllOperation, ct);
-		return await Task.Run(() => inner.GetCategoryEventTypes(category), ct);
+		return await inner.GetCategoryEventTypes(category, ct);
 	}
 
 	public async Task<IReadOnlyList<GetExplicitTransactions.Result>> GetExplicitTransactionsAsync(ClaimsPrincipal principal, CancellationToken ct = default) {
 		await authorizer.EnsureAccessAsync(principal, ReadAllOperation, ct);
-		return await Task.Run(() => inner.GetExplicitTransactions(), ct);
+		return await inner.GetExplicitTransactions(ct);
 	}
 
 	public async Task<List<GetLongestStreams.Result>> GetLongestStreamsAsync(ClaimsPrincipal principal, CancellationToken ct = default) {
 		await authorizer.EnsureAccessAsync(principal, ReadAllOperation, ct);
-		return await Task.Run(() => inner.GetLongestStreams(), ct);
+		return await inner.GetLongestStreams(ct);
 	}
 }
