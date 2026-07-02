@@ -17,9 +17,7 @@ internal partial class PersistentSubscriptions {
 	private static readonly Operation ReplayParkedOperation = new(Plugins.Authorization.Operations.Subscriptions.ReplayParked);
 
 	public override async Task<ReplayParkedResp> ReplayParked(ReplayParkedReq request, ServerCallContext context) {
-		var replayParkedMessagesSource = new TaskCompletionSource<ReplayParkedResp>();
 		var correlationId = Guid.NewGuid();
-
 		var user = context.GetHttpContext().User;
 
 		if (!await _authorizationProvider.CheckAccessAsync(user, ReplayParkedOperation, context.CancellationToken)) {
@@ -38,46 +36,28 @@ internal partial class PersistentSubscriptions {
 			_ => throw new InvalidOperationException()
 		};
 
+		var envelope = new TcsEnvelope<Message>();
 		_publisher.Publish(new ClientMessage.ReplayParkedMessages(
 			correlationId,
 			correlationId,
-			new CallbackEnvelope(HandleReplayParkedMessagesCompleted),
+			envelope,
 			streamId,
 			request.Options.GroupName,
 			stopAt,
 			user));
-		return await replayParkedMessagesSource.Task;
 
-		void HandleReplayParkedMessagesCompleted(Message message) {
-			switch (message) {
-				case ClientMessage.NotHandled notHandled when TryHandleNotHandled(notHandled, out var ex):
-					replayParkedMessagesSource.TrySetException(ex);
-					return;
-				case ClientMessage.ReplayMessagesReceived completed:
-					switch (completed.Result) {
-						case ClientMessage.ReplayMessagesReceived.ReplayMessagesReceivedResult.Success:
-							replayParkedMessagesSource.TrySetResult(new ReplayParkedResp());
-							return;
-						case ClientMessage.ReplayMessagesReceived.ReplayMessagesReceivedResult.DoesNotExist:
-							replayParkedMessagesSource.TrySetException(
-								PersistentSubscriptionDoesNotExist(streamId, request.Options.GroupName));
-							return;
-						case ClientMessage.ReplayMessagesReceived.ReplayMessagesReceivedResult.AccessDenied:
-							replayParkedMessagesSource.TrySetException(AccessDenied());
-							return;
-						case ClientMessage.ReplayMessagesReceived.ReplayMessagesReceivedResult.Fail:
-							replayParkedMessagesSource.TrySetException(
-								PersistentSubscriptionFailed(streamId, request.Options.GroupName, completed.Reason));
-							return;
-
-						default:
-							replayParkedMessagesSource.TrySetException(UnknownError(completed.Result));
-							return;
-					}
-				default:
-					replayParkedMessagesSource.TrySetException(UnknownMessage<ClientMessage.ReplayMessagesReceived>(message));
-					break;
-			}
-		}
+		return await envelope.Task switch {
+			ClientMessage.NotHandled notHandled when TryHandleNotHandled(notHandled, out var ex) => throw ex,
+			ClientMessage.ReplayMessagesReceived { Result: ClientMessage.ReplayMessagesReceived.ReplayMessagesReceivedResult.Success } =>
+				new ReplayParkedResp(),
+			ClientMessage.ReplayMessagesReceived { Result: ClientMessage.ReplayMessagesReceived.ReplayMessagesReceivedResult.DoesNotExist } =>
+				throw PersistentSubscriptionDoesNotExist(streamId, request.Options.GroupName),
+			ClientMessage.ReplayMessagesReceived { Result: ClientMessage.ReplayMessagesReceived.ReplayMessagesReceivedResult.AccessDenied } =>
+				throw AccessDenied(),
+			ClientMessage.ReplayMessagesReceived completed =>
+				throw PersistentSubscriptionFailed(streamId, request.Options.GroupName, completed.Reason),
+			var message =>
+				throw UnknownMessage<ClientMessage.ReplayMessagesReceived>(message)
+		};
 	}
 }

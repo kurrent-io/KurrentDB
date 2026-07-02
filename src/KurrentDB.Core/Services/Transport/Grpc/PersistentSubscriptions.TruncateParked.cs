@@ -17,9 +17,7 @@ internal partial class PersistentSubscriptions {
 	private static readonly Operation TruncateParkedOperation = new(Plugins.Authorization.Operations.Subscriptions.ReplayParked);
 
 	public override async Task<TruncateParkedResp> TruncateParked(TruncateParkedReq request, ServerCallContext context) {
-		var truncateParkedSource = new TaskCompletionSource<TruncateParkedResp>(TaskCreationOptions.RunContinuationsAsynchronously);
 		var correlationId = Guid.NewGuid();
-
 		var user = context.GetHttpContext().User;
 
 		if (!await _authorizationProvider.CheckAccessAsync(user, TruncateParkedOperation, context.CancellationToken)) {
@@ -38,46 +36,28 @@ internal partial class PersistentSubscriptions {
 			_ => throw new InvalidOperationException()
 		};
 
+		var envelope = new TcsEnvelope<Message>();
 		_publisher.Publish(new ClientMessage.TruncateParkedMessages(
 			correlationId,
 			correlationId,
-			new CallbackEnvelope(HandleTruncateParkedCompleted),
+			envelope,
 			streamId,
 			request.Options.GroupName,
 			stopAt,
 			user));
-		return await truncateParkedSource.Task;
 
-		void HandleTruncateParkedCompleted(Message message) {
-			switch (message) {
-				case ClientMessage.NotHandled notHandled when TryHandleNotHandled(notHandled, out var ex):
-					truncateParkedSource.TrySetException(ex);
-					return;
-				case ClientMessage.TruncateParkedMessagesCompleted completed:
-					switch (completed.Result) {
-						case ClientMessage.TruncateParkedMessagesCompleted.TruncateParkedMessagesCompletedResult.Success:
-							truncateParkedSource.TrySetResult(new TruncateParkedResp());
-							return;
-						case ClientMessage.TruncateParkedMessagesCompleted.TruncateParkedMessagesCompletedResult.DoesNotExist:
-							truncateParkedSource.TrySetException(
-								PersistentSubscriptionDoesNotExist(streamId, request.Options.GroupName));
-							return;
-						case ClientMessage.TruncateParkedMessagesCompleted.TruncateParkedMessagesCompletedResult.AccessDenied:
-							truncateParkedSource.TrySetException(AccessDenied());
-							return;
-						case ClientMessage.TruncateParkedMessagesCompleted.TruncateParkedMessagesCompletedResult.Fail:
-							truncateParkedSource.TrySetException(
-								PersistentSubscriptionFailed(streamId, request.Options.GroupName, completed.Reason));
-							return;
-
-						default:
-							truncateParkedSource.TrySetException(UnknownError(completed.Result));
-							return;
-					}
-				default:
-					truncateParkedSource.TrySetException(UnknownMessage<ClientMessage.TruncateParkedMessagesCompleted>(message));
-					break;
-			}
-		}
+		return await envelope.Task switch {
+			ClientMessage.NotHandled notHandled when TryHandleNotHandled(notHandled, out var ex) => throw ex,
+			ClientMessage.TruncateParkedMessagesCompleted { Result: ClientMessage.TruncateParkedMessagesCompleted.TruncateParkedMessagesCompletedResult.Success } =>
+				new TruncateParkedResp(),
+			ClientMessage.TruncateParkedMessagesCompleted { Result: ClientMessage.TruncateParkedMessagesCompleted.TruncateParkedMessagesCompletedResult.DoesNotExist } =>
+				throw PersistentSubscriptionDoesNotExist(streamId, request.Options.GroupName),
+			ClientMessage.TruncateParkedMessagesCompleted { Result: ClientMessage.TruncateParkedMessagesCompleted.TruncateParkedMessagesCompletedResult.AccessDenied } =>
+				throw AccessDenied(),
+			ClientMessage.TruncateParkedMessagesCompleted completed =>
+				throw PersistentSubscriptionFailed(streamId, request.Options.GroupName, completed.Reason),
+			var message =>
+				throw UnknownMessage<ClientMessage.TruncateParkedMessagesCompleted>(message)
+		};
 	}
 }
