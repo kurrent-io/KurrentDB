@@ -12,6 +12,7 @@
 
 - **Two repos:** Task 1 edits `/Users/tony/Documents/Kurrent.Quack` (branch `feat/duckdb-executor` — Tony owns push/PR; commits are fine, do NOT push). All other tasks edit `/Users/tony/Documents/KurrentDB` (branch `feat/duckdb-executor-integration`, off `origin/master` @ `b3c6d1c06`).
 - **dotnet:** the PATH `dotnet` is SDK 8 and cannot build net10.0. Every dotnet command in BOTH repos: `DOTNET_ROOT=$HOME/.dotnet $HOME/.dotnet/dotnet ...`
+- **⚠️ Build command on THIS machine (arm64 Mac):** do NOT pass `/p:Platform=x64` (CLAUDE.md's canonical CI command) — it makes the Roslyn source-generator load fail with `CS8034 ... assembly architecture is not compatible`. Build locally with `-c Release --framework=net10.0` ONLY (native arm64). x64 is a CI concern, not a local one.
 - **Tests:** Quack: xunit.v3, `dotnet test test/Kurrent.Quack.Tests/Kurrent.Quack.Tests.csproj -- --filter-class "*Name*"`. KurrentDB: `dotnet test src/KurrentDB.SecondaryIndexing.Tests/KurrentDB.SecondaryIndexing.Tests.csproj` (xunit.v3/MTP, same `--filter-class` syntax after `--`).
 - **Platform:** local machine is macOS — `ThreadCpuClock` reads 0 there by design; CPU *values* are CI-verified on Linux. All behavioral tests run fully on macOS.
 - **KurrentDB conventions (CLAUDE.md):** no `= null` defaults on required params; no silent `?? fallback`; named booleans at call sites; tabs; file-scoped namespaces per project norms; per-event logs at Verbose, commits at Debug.
