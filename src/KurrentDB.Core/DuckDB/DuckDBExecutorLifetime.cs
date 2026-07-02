@@ -43,17 +43,24 @@ public sealed class DuckDBExecutorLifetime : Disposable, IHostedService {
 		var connectionString = $"Data Source={path};memory_limit={memoryMib}MB";
 
 		Executor = new DuckDBExecutor(connectionString, workerCount, dispatcherCount);
-		CpuMetrics = new DuckDBCpuMetrics(new Meter(DuckDBCpuMetrics.MeterName, "1.0.0"), serviceName, Executor.SampleCpu);
-		_log.LogInformation("DuckDB executor started at {path}: {workers} workers, {dispatchers} dispatchers, memory_limit {memory}MB",
-			path, workerCount, dispatcherCount, memoryMib);
+		try {
+			CpuMetrics = new DuckDBCpuMetrics(new Meter(DuckDBCpuMetrics.MeterName, "1.0.0"), serviceName, Executor.SampleCpu);
+			_log.LogInformation("DuckDB executor started at {path}: {workers} workers, {dispatchers} dispatchers, memory_limit {memory}MB",
+				path, workerCount, dispatcherCount, memoryMib);
 
-		// One-time setups (IndexingDbSchema, SchemaDbSchema) — effects are database-wide, so running
-		// them once on any executor-owned connection preserves today's semantics exactly.
-		Executor.Execute(connection => {
-			foreach (var setup in setups)
-				setup.Execute(connection);
-			return 0;
-		}, CancellationToken.None).AsTask().GetAwaiter().GetResult();
+			// One-time setups (IndexingDbSchema, SchemaDbSchema) — effects are database-wide, so running
+			// them once on any executor-owned connection preserves today's semantics exactly.
+			Executor.Execute(connection => {
+				foreach (var setup in setups)
+					setup.Execute(connection);
+				return 0;
+			}, CancellationToken.None).AsTask().GetAwaiter().GetResult();
+		} catch {
+			// A setup failure (e.g. a schema-migration error) throws before this object exists for anyone to
+			// Dispose(), so the executor's worker/dispatcher threads and open DB handle would leak. Dispose it.
+			Executor.DisposeAsync().AsTask().GetAwaiter().GetResult();
+			throw;
+		}
 
 		return;
 

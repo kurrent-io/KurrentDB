@@ -18,7 +18,9 @@ public class DuckDBCpuMetrics {
 
 	public DuckDBCpuMetrics(Meter meter, string serviceName, Func<IReadOnlyList<DuckDBExecutor.CpuSample>> sampleCpu) {
 		meter.CreateObservableCounter($"{serviceName}.duckdb.cpu.seconds", Observe,
-			description: "CPU time consumed by DuckDB's executor threads, in seconds");
+			description: "CPU time consumed by DuckDB's executor worker and dispatcher threads, in seconds " +
+				"(excludes DuckDB work SchemaRegistry runs on its own threads via a shared connection pool; " +
+				"that work's parallel portions still run on the executor's worker threads).");
 
 		IEnumerable<Measurement<double>> Observe() {
 			double workers = 0, dispatchers = 0;

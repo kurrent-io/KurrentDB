@@ -151,7 +151,10 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	/// Commits all in-flight records to the index.
 	/// </summary>
 	public async ValueTask CommitAsync(CancellationToken ct) {
-		if (IsDisposingOrDisposed || !Interlocked.FalseToTrue(ref _committing))
+		// IsDisposed (not IsDisposingOrDisposed): DotNext sets Disposing before Dispose(bool) runs, so guarding on
+		// IsDisposingOrDisposed would skip the dispose-time flush and drop the last partial batch. Dispose() drains
+		// the subscription before Dispose(bool), so no concurrent CommitAsync is in flight; _committing covers the rest.
+		if (IsDisposed || !Interlocked.FalseToTrue(ref _committing))
 			return;
 
 		try {
