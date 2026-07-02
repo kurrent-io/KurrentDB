@@ -21,7 +21,7 @@ public class ReadBackwardsTests : IndexTestBase {
 			From("test-stream", 1, 200, "TestEvent", []),
 			From("test-stream", 2, 300, "TestEvent", [])
 		};
-		IndexEvents(events, shouldCommit);
+		await IndexEvents(events, shouldCommit);
 
 		// When
 		var result = await ReadBackwards(startFrom: new TFPos(-1, -1), maxCount: 5);
@@ -44,7 +44,7 @@ public class ReadBackwardsTests : IndexTestBase {
 	public async Task WhenEmptyResultSet_ReturnsSuccessWithNoEvents(bool shouldCommit) {
 		// Given
 		var events = new[] { From("test-stream", 0, 100, "TestEvent", []) };
-		IndexEvents(events, shouldCommit);
+		await IndexEvents(events, shouldCommit);
 
 		// When - request events beyond what exists
 		var result = await ReadBackwards(startFrom: new TFPos(50, 50), maxCount: 5);
@@ -67,7 +67,7 @@ public class ReadBackwardsTests : IndexTestBase {
 	public async Task WhenEmptyNegativeStart_UsesValidationVersion(bool shouldCommit) {
 		// Given
 		var events = new[] { From("test-stream", 0, 100, "TestEvent", []) };
-		IndexEvents(events, shouldCommit);
+		await IndexEvents(events, shouldCommit);
 
 		// When
 		var result = await ReadBackwards(new TFPos(-1, -1), maxCount: 5, validationStreamVersion: 3);
@@ -94,7 +94,7 @@ public class ReadBackwardsTests : IndexTestBase {
 			From("test-stream", 1, 200, "TestEvent", []),
 			From("test-stream", 2, 300, "TestEvent", [])
 		};
-		IndexEvents(events, shouldCommit);
+		await IndexEvents(events, shouldCommit);
 
 		// When
 		var result = await ReadBackwards(startFrom: new TFPos(300, 300), maxCount: 5);
@@ -117,7 +117,7 @@ public class ReadBackwardsTests : IndexTestBase {
 	public async Task WhenValidationVersionMatches_ReturnsNotModified(bool shouldCommit) {
 		// Given
 		var events = new[] { From("test-stream", 0, 100, "TestEvent", []) };
-		IndexEvents(events, shouldCommit);
+		await IndexEvents(events, shouldCommit);
 
 		// When
 		var result = await ReadBackwards(validationStreamVersion: 100);
@@ -144,7 +144,7 @@ public class ReadBackwardsTests : IndexTestBase {
 			From("test-stream", 1, 200, "TestEvent", []),
 			From("test-stream", 2, 300, "TestEvent", [])
 		};
-		IndexEvents(events, shouldCommit);
+		await IndexEvents(events, shouldCommit);
 
 		// When - request events that don't exist
 		var result = await ReadBackwards(startFrom: new TFPos(long.MaxValue, long.MaxValue), maxCount: 1000);
@@ -173,7 +173,7 @@ public class ReadBackwardsTests : IndexTestBase {
 			From("test-stream", 3, 400, "TestEvent", []),
 			From("test-stream", 4, 500, "TestEvent", [])
 		};
-		IndexEvents(events, shouldCommit);
+		await IndexEvents(events, shouldCommit);
 
 		// When
 		var result = await ReadBackwards(startFrom: new TFPos(500, 500), maxCount: 2);
@@ -220,7 +220,6 @@ public class ReadBackwardsTests : IndexTestBase {
 			validationStreamVersion,
 			user,
 			replyOnExpired,
-			pool: null,
 			longPollTimeout,
 			expires,
 			CancellationToken.None

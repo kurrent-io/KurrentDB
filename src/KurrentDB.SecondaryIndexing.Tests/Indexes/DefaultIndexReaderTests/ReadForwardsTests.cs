@@ -17,7 +17,7 @@ public class ReadForwardsTests : IndexTestBase {
 	public async Task WhenValidationVersionMatches_ReturnsNotModified(bool shouldCommit) {
 		// Given
 		var events = new[] { From("test-stream", 0, 100, "TestEvent", []) };
-		IndexEvents(events, shouldCommit);
+		await IndexEvents(events, shouldCommit);
 
 		// When
 		var result = await ReadForwards(validationTfLastCommitPosition: 100);
@@ -40,7 +40,7 @@ public class ReadForwardsTests : IndexTestBase {
 	public async Task WhenMaxCountOverflow_HandlesCorrectly(bool shouldCommit) {
 		// Given
 		var events = new[] { From("test-stream", 0, 100, "TestEvent", []) };
-		IndexEvents(events, shouldCommit);
+		await IndexEvents(events, shouldCommit);
 
 		// When
 		var pos = long.MaxValue - 5;
@@ -64,7 +64,7 @@ public class ReadForwardsTests : IndexTestBase {
 	public async Task WhenRequestBeyondExistingSet_ReturnsSuccessWithNoEvents(bool shouldCommit) {
 		// Given
 		var events = new[] { From("test-stream", 0, 100, "TestEvent", []) };
-		IndexEvents(events, shouldCommit);
+		await IndexEvents(events, shouldCommit);
 
 		// When
 		var result = await ReadForwards(startFrom: new TFPos(200, 200), maxCount: 10);
@@ -87,7 +87,7 @@ public class ReadForwardsTests : IndexTestBase {
 	public async Task WhenRequestBeyondExistingSetWithValidationVersion_UsesValidationVersion(bool shouldCommit) {
 		// Given
 		var events = new[] { From("test-stream", 0, 100, "TestEvent", []) };
-		IndexEvents(events, shouldCommit);
+		await IndexEvents(events, shouldCommit);
 
 		// When
 		var result = await ReadForwards(startFrom: new TFPos(100, 100), maxCount: 10, validationTfLastCommitPosition: 7);
@@ -114,7 +114,7 @@ public class ReadForwardsTests : IndexTestBase {
 			From("test-stream", 1, 200, "TestEvent", []),
 			From("test-stream", 2, 300, "TestEvent", [])
 		};
-		IndexEvents(events, shouldCommit);
+		await IndexEvents(events, shouldCommit);
 
 		// When
 		var result = await ReadForwards(maxCount: 2);
@@ -140,7 +140,7 @@ public class ReadForwardsTests : IndexTestBase {
 			From("test-stream", 0, 100, "TestEvent", []),
 			From("test-stream", 1, 200, "TestEvent", [])
 		};
-		IndexEvents(events, shouldCommit);
+		await IndexEvents(events, shouldCommit);
 
 		// When
 		var result = await ReadForwards(startFrom: new TFPos(200, 200), maxCount: 10);
@@ -167,7 +167,7 @@ public class ReadForwardsTests : IndexTestBase {
 			From("test-stream", 1, 200, "TestEvent", []),
 			From("test-stream", 2, 300, "TestEvent", [])
 		};
-		IndexEvents(events, shouldCommit);
+		await IndexEvents(events, shouldCommit);
 
 		// When
 		var result = await ReadForwards(maxCount: 3);
@@ -194,7 +194,7 @@ public class ReadForwardsTests : IndexTestBase {
 			From("test-stream", 1, 200, "TestEvent", []),
 			From("test-stream", 2, 300, "TestEvent", [])
 		};
-		IndexEvents(events, shouldCommit);
+		await IndexEvents(events, shouldCommit);
 
 		// When
 		var result = await ReadForwards(startFrom: new TFPos(long.MaxValue, long.MaxValue), maxCount: 1000);
@@ -241,7 +241,6 @@ public class ReadForwardsTests : IndexTestBase {
 			validationTfLastCommitPosition,
 			user,
 			replyOnExpired,
-			pool: null,
 			longPollTimeout,
 			expires,
 			CancellationToken.None
