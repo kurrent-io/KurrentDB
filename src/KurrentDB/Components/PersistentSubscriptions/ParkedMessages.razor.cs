@@ -127,7 +127,7 @@ public sealed partial class ParkedMessages : ComponentBase, IDisposable {
 				using var cts = new CancellationTokenSource(10000);
 				await PersistentSubscriptionsService.TruncateParkedAsync(_principal, StreamId, GroupName, cts.Token, stopAt: eventNumber + 1);
 				_events = _events.Where(e => e.OriginalEventNumber > eventNumber).ToList();
-				Snackbar.Add("Parked messages truncated.", Severity.Success);
+				Snackbar.Add("Parked messages truncation started.", Severity.Success);
 			} catch (PersistentSubscriptionsException ex) {
 				Snackbar.Add(ex.Message, Severity.Error);
 			}
@@ -144,7 +144,7 @@ public sealed partial class ParkedMessages : ComponentBase, IDisposable {
 				using var cts = new CancellationTokenSource(10000);
 				await PersistentSubscriptionsService.TruncateParkedAsync(_principal, StreamId, GroupName, cts.Token);
 				_events = [];
-				Snackbar.Add("Parked messages truncated.", Severity.Success);
+				Snackbar.Add("Parked messages truncation started.", Severity.Success);
 			} catch (PersistentSubscriptionsException ex) {
 				Snackbar.Add(ex.Message, Severity.Error);
 			}
