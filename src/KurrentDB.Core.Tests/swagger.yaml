@@ -1241,6 +1241,43 @@ paths:
           description: Not found
       security:
         - basicAuth: []
+  "/subscriptions/{stream}/{subscription}/truncateParked":
+    post:
+      tags:
+        - Subscriptions
+      summary: Truncate parked messages in a stream
+      description: >-
+        Truncate previously parked messages in a stream by setting the
+        truncate-before metadata on the parked message stream.
+      operationId: Truncate parked messages
+      produces:
+        - application/vnd.eventstore.competingatom+json
+        - application/vnd.eventstore.competingatom+xml
+      parameters:
+        - name: stream
+          in: path
+          description: The stream the persistent subscription is on.
+          required: true
+          type: string
+        - name: subscription
+          in: path
+          description: The name of the subscription group.
+          required: true
+          type: string
+        - name: stopAt
+          in: query
+          description: The stream event number to stop at.
+          required: false
+          type: long
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not found
+      security:
+        - basicAuth: []
   /subscriptions/restart:
     post:
       description: Restart the subscription subsystem on a node.

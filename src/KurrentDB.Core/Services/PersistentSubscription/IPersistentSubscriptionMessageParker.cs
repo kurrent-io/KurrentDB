@@ -10,14 +10,17 @@ namespace KurrentDB.Core.Services.PersistentSubscription;
 public interface IPersistentSubscriptionMessageParker {
 	void BeginParkMessage(ResolvedEvent ev, string reason, ParkReason parkReason, Action<ResolvedEvent, OperationResult> completed);
 	void BeginReadEndSequence(Action<long?> completed);
-	void BeginMarkParkedMessagesReprocessed(long sequence, DateTime? oldestParkedMessageTimestamp, bool updateOldestParkedMessage);
+	void BeginMarkParkedMessagesReprocessed(long sequence, Action completed = null);
 	void BeginDelete(Action<IPersistentSubscriptionMessageParker> completed);
+	void NotifyReplay();
+	void NotifyTruncate();
 	long ParkedMessageCount { get; }
 	public void BeginLoadStats(Action completed);
 	DateTime? GetOldestParkedMessage { get; }
 	long ParkedDueToClientNak { get; }
 	long ParkedDueToMaxRetries { get; }
 	long ParkedMessageReplays { get; }
+	long ParkedMessageTruncations { get; }
 }
 
 public enum ParkReason {
