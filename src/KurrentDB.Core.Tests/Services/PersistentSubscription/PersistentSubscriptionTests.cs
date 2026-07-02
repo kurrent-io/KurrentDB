@@ -3021,8 +3021,9 @@ class FakeMessageParker : IPersistentSubscriptionMessageParker {
 	public void NotifyTruncate() {
 	}
 
-	public void BeginMarkParkedMessagesReprocessed(long sequence, DateTime? dateTime, bool updateOldestParkedMessage) {
+	public void BeginMarkParkedMessagesReprocessed(long sequence, Action completed) {
 		MarkedAsProcessed = sequence;
+		completed?.Invoke();
 	}
 
 	public void BeginDelete(Action<IPersistentSubscriptionMessageParker> completed) {

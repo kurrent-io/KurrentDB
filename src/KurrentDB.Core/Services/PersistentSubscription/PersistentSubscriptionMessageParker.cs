@@ -253,29 +253,24 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 			}, Guid.NewGuid());
 	}
 
-	public void BeginMarkParkedMessagesReprocessed(long sequence, DateTime? timestamp, bool updateOldestParkedMessage) {
-		BeginMarkParkedMessagesReprocessed(sequence, timestamp, updateOldestParkedMessage, null);
-	}
-
-	public void BeginMarkParkedMessagesReprocessed(long sequence, DateTime? timestamp, bool updateOldestParkedMessage, Action completed) {
+	// updates the truncateBefore for the parked stream
+	public void BeginMarkParkedMessagesReprocessed(long sequence, Action completed = null) {
 		var metaStreamId = SystemStreams.MetastreamOf(ParkedStreamId);
 		_ioDispatcher.WriteEvent(
 			metaStreamId, ExpectedVersion.Any, CreateStreamMetadataEvent(sequence), SystemAccounts.System,
 			msg => {
 				switch (msg.Result) {
 					case OperationResult.Success:
-						_lastTruncateBefore = sequence;
-						if (updateOldestParkedMessage)
-							_oldestParkedMessage = timestamp;
-						completed?.Invoke();
 						break;
 					default:
 						Log.Error("An error occured truncating the parked message stream {stream} due to {e}.",
 							ParkedStreamId, msg.Result);
 						Log.Error("Messages were not removed on retry");
-						completed?.Invoke();
 						break;
 				}
+
+				// we've updated the tb, update the first/last parked message numbers/timestamps
+				BeginLoadStats(completed ?? Empty.Action);
 			});
 	}
 

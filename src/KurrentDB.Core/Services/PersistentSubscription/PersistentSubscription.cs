@@ -589,7 +589,7 @@ public class PersistentSubscription {
 					return;
 
 				var truncateBefore = stopAt.HasValue ? Math.Min(stopAt.Value, end.Value + 1) : end.Value + 1;
-				_settings.MessageParker.BeginMarkParkedMessagesReprocessed(truncateBefore, null, updateOldestParkedMessage: true);
+				_settings.MessageParker.BeginMarkParkedMessagesReprocessed(truncateBefore);
 			});
 		}
 	}
@@ -645,28 +645,13 @@ public class PersistentSubscription {
 			if (isEndofStream || stopAt <= newStreamPosition.StreamEventNumber) {
 				var replayedEnd = newStreamPosition.StreamEventNumber == -1 ? stopAt : Math.Min(stopAt, newStreamPosition.StreamEventNumber);
 
-				if (isEndofStream) {
-					_settings.MessageParker.BeginMarkParkedMessagesReprocessed(replayedEnd, null, updateOldestParkedMessage: true);
-				} else {
-					var (replayedEndTimeStamp, updateOldestParkedMessageTimeStamp) = GetOldestParkedMessageTimeStamp(events, replayedEnd);
-					_settings.MessageParker.BeginMarkParkedMessagesReprocessed(replayedEnd, replayedEndTimeStamp, updateOldestParkedMessageTimeStamp);
-				}
+				_settings.MessageParker.BeginMarkParkedMessagesReprocessed(replayedEnd);
 
 				_state ^= PersistentSubscriptionState.ReplayingParkedMessages;
 			} else {
 				TryReadingParkedMessagesFrom(newStreamPosition.StreamEventNumber, stopAt);
 			}
 		}
-	}
-
-	private static (DateTime?, bool) GetOldestParkedMessageTimeStamp(IReadOnlyList<ResolvedEvent> events, long replayedEnd) {
-		foreach (var resolvedEvent in events) {
-			if (resolvedEvent.OriginalEvent.EventNumber != replayedEnd)
-				continue;
-			return (resolvedEvent.OriginalEvent.TimeStamp, true);
-		}
-
-		return (null, false);
 	}
 
 	private void StartMessage(OutstandingMessage message, DateTime expires) {
