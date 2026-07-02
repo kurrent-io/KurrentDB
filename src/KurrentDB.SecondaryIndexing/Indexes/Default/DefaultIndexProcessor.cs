@@ -9,7 +9,6 @@ using DotNext.Threading;
 using DuckDB.NET.Data;
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Quack;
-using Kurrent.Quack.ConnectionPool;
 using Kurrent.Quack.Threading;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Bus;
@@ -28,6 +27,7 @@ using static KurrentDB.SecondaryIndexing.Indexes.Default.DefaultSql;
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
+	private readonly DuckDBExecutor _executor;
 	private readonly DuckDBAdvancedConnection _connection;
 	private readonly IPublisher _publisher;
 	private readonly ILongHasher<string> _hasher;
@@ -41,7 +41,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	}
 
 	public DefaultIndexProcessor(
-		DuckDBConnectionPool db,
+		DuckDBExecutor executor,
 		IPublisher publisher,
 		ILongHasher<string> hasher,
 		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)]
@@ -50,7 +50,8 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		MetricsConfiguration? metricsConfiguration = null,
 		TimeProvider? clock = null
 	) {
-		_connection = db.Open();
+		_executor = executor;
+		_connection = executor.OpenConnection();
 		_log = loggerFactory.CreateLogger<DefaultIndexProcessor>();
 		_appender = new(_connection, "idx_all", "log_position", DefaultIndexViewName);
 		var serviceName = metricsConfiguration?.ServiceName ?? "kurrentdb";
@@ -59,7 +60,9 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_publisher = publisher;
 		_hasher = hasher;
 
-		var (lastPosition, lastTimestamp) = ReadLastIndexedRecord();
+		var (lastPosition, lastTimestamp) = executor
+			.ExecuteOn(_connection, ReadLastIndexedRecord, CancellationToken.None)
+			.AsTask().GetAwaiter().GetResult(); // ctor is synchronous; runs once at startup
 		_log.LogInformation("Last known log position: {Position}", lastPosition);
 		LastIndexedPosition = lastPosition;
 		Tracker.InitLastIndexed(lastPosition.CommitPosition, lastTimestamp);
@@ -133,8 +136,8 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 	public TFPos GetLastPosition() => LastIndexedPosition;
 
-	private (TFPos, DateTimeOffset) ReadLastIndexedRecord() {
-		return _connection.QueryFirstOrDefault<LastPositionResult, GetLastLogPositionQuery>().TryGet(out var result)
+	private static (TFPos, DateTimeOffset) ReadLastIndexedRecord(DuckDBAdvancedConnection connection) {
+		return connection.QueryFirstOrDefault<LastPositionResult, GetLastLogPositionQuery>().TryGet(out var result)
 			? (new TFPos(result.CommitPosition ?? result.PreparePosition, result.PreparePosition),
 				DateTimeOffset.FromUnixTimeMilliseconds(result.Timestamp))
 			: (TFPos.Invalid, DateTimeOffset.MinValue);
@@ -147,13 +150,16 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	/// <summary>
 	/// Commits all in-flight records to the index.
 	/// </summary>
-	public void Commit() {
+	public async ValueTask CommitAsync(CancellationToken ct) {
 		if (IsDisposingOrDisposed || !Interlocked.FalseToTrue(ref _committing))
 			return;
 
 		try {
 			using var duration = Tracker.StartCommitDuration();
-			_appender.Flush();
+			await _executor.ExecuteOn(_connection, c => {
+				_appender.Flush(); // appender is bound to _connection; runs on a measured dispatcher thread
+				return 0;
+			}, ct);
 		} catch (Exception e) {
 			_log.LogError(e, "Failed to commit records to index at log position {LogPosition}", LastIndexedPosition);
 			throw;
@@ -167,7 +173,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {
-			Commit();
+			CommitAsync(CancellationToken.None).AsTask().GetAwaiter().GetResult();
 			_appender.Unregister(_connection);
 			_appender.Dispose();
 			_connection.Dispose();

@@ -5,7 +5,6 @@ using System.Collections.Concurrent;
 using System.Diagnostics.Metrics;
 using System.Threading.Channels;
 using Kurrent.Quack;
-using Kurrent.Quack.ConnectionPool;
 using Kurrent.Quack.Threading;
 using Kurrent.Surge.Schema;
 using Kurrent.Surge.Schema.Serializers;
@@ -29,7 +28,7 @@ public partial class UserIndexEngineSubscription(
 	IPublisher publisher,
 	ISchemaSerializer serializer,
 	SecondaryIndexingPluginOptions options,
-	DuckDBConnectionPool db,
+	DuckDBExecutor executor,
 	IReadIndex<string> readIndex,
 	Meter meter,
 	Func<(long, DateTime)> getLastAppendedRecord,
@@ -106,7 +105,7 @@ public partial class UserIndexEngineSubscription(
 
 					CaughtUp = true;
 
-					using (db.Rent(out var connection)) {
+					await executor.Execute(connection => {
 						// in some situations, a user index may have already been marked as deleted in the management stream but not yet in DuckDB:
 						// 1) if a node was off or disconnected from the quorum for an extended period of time
 						// 2) if a crash occurred mid-deletion
@@ -114,7 +113,9 @@ public partial class UserIndexEngineSubscription(
 						foreach (var deletedIndex in deletedIndexes) {
 							DeleteUserIndexTable(connection, deletedIndex);
 						}
-					}
+
+						return 0;
+					}, _cts.Token);
 
 					foreach (var (name, state) in userIndexes) {
 						if (state.Started) {
@@ -174,7 +175,7 @@ public partial class UserIndexEngineSubscription(
 							userIndexes.Remove(x.Name);
 
 							if (CaughtUp)
-								DeleteUserIndex(x.Name);
+								await DeleteUserIndex(x.Name);
 
 							break;
 						}
@@ -221,7 +222,7 @@ public partial class UserIndexEngineSubscription(
 			jsFieldSelector: createdEvent.Fields.Count is 0
 				? ""
 				: createdEvent.Fields[0].Selector,
-			db: db,
+			executor: executor,
 			sql: sql,
 			publisher: publisher,
 			meter: meter,
@@ -229,7 +230,7 @@ public partial class UserIndexEngineSubscription(
 			loggerFactory: logFactory
 		);
 
-		var reader = new UserIndexReader<TField>(sharedPool: db, processor, readIndex);
+		var reader = new UserIndexReader<TField>(executor, processor, readIndex);
 
 		UserIndexSubscription subscription = new UserIndexSubscription<TField>(
 			publisher: publisher,
@@ -262,12 +263,13 @@ public partial class UserIndexEngineSubscription(
 		DropSubscriptions(indexName);
 	}
 
-	private void DeleteUserIndex(string indexName) {
+	private async ValueTask DeleteUserIndex(string indexName) {
 		_log.LogDeletingUserIndex(indexName);
 
-		using (db.Rent(out var connection)) {
+		await executor.Execute(connection => {
 			DeleteUserIndexTable(connection, indexName);
-		}
+			return 0;
+		}, _cts.Token);
 
 		DropSubscriptions(indexName);
 	}
