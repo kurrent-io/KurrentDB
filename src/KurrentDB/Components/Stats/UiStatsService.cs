@@ -17,8 +17,8 @@ namespace KurrentDB.Components.Stats;
 // directly and authorizes nothing. This wrapper gives Stats the same defense-in-depth every other
 // UI service has (via the IAuthorizationProvider.EnsureAccessAsync extension): it enforces the
 // configured policy (read $all — the same Operation the ViewStats page policy and the FlightSql query
-// path use) before each query, so the page-level [Authorize] is no longer the only gate. The expensive,
-// synchronous DuckDB work is offloaded to the thread pool so the render thread isn't blocked.
+// path use) before each query, so the page-level [Authorize] is no longer the only gate. The expensive
+// DuckDB work runs on an executor dispatcher thread (inside StatsService), so the render thread isn't blocked.
 public sealed class UiStatsService(StatsService inner, IAuthorizationProvider authorizer) {
 	static readonly Operation ReadAllOperation = UiOperations.ReadAll;
 
