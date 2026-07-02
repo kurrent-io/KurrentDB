@@ -284,6 +284,16 @@ public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId> : Tes
 		ProcessRead(message);
 	}
 
+	private long GetTruncateBefore(string streamId) {
+		var metaStreamId = SystemStreams.MetastreamOf(streamId);
+		if (_streams.TryGetValue(metaStreamId, out var metaEvents) && metaEvents is { Count: > 0 }) {
+			var lastMeta = metaEvents[^1];
+			var metadata = Helper.EatException(() => StreamMetadata.FromJsonBytes(lastMeta.Data), StreamMetadata.Empty);
+			return metadata.TruncateBefore ?? 0;
+		}
+		return 0;
+	}
+
 	private void ProcessRead(ClientMessage.ReadStreamEventsBackward message) {
 		List<EventRecord> list;
 		if (_deletedStreams.Contains(message.EventStreamId)) {
@@ -295,10 +305,12 @@ public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId> : Tes
 		} else if (_streams.TryGetValue(message.EventStreamId, out list) || _noOtherStreams) {
 			if (list != null && list.Count > 0 && (list.Last().EventNumber >= message.FromEventNumber)
 				|| (message.FromEventNumber == -1)) {
+				var tb = GetTruncateBefore(message.EventStreamId);
 				ResolvedEvent[] records =
 					list.Safe()
 						.Reverse()
 						.SkipWhile(v => message.FromEventNumber != -1 && v.EventNumber > message.FromEventNumber)
+						.Where(v => v.EventNumber >= tb)
 						.Take(message.MaxCount)
 						.Select(v => BuildEvent(v, message.ResolveLinkTos))
 						.ToArray();
@@ -328,6 +340,14 @@ public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId> : Tes
 
 				throw new NotImplementedException();
 			}
+		} else {
+			message.Envelope.ReplyWith(
+				new ClientMessage.ReadStreamEventsBackwardCompleted(
+					message.CorrelationId, message.EventStreamId, message.FromEventNumber, message.MaxCount,
+					ReadStreamResult.NoStream, new ResolvedEvent[0], null, false, "", nextEventNumber: -1,
+					lastEventNumber: -1,
+					isEndOfStream: true,
+					tfLastCommitPosition: _fakePosition));
 		}
 	}
 
@@ -349,9 +369,11 @@ public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId> : Tes
 					EventNumber.DeletedStream, true, _fakePosition));
 		} else if (_streams.TryGetValue(message.EventStreamId, out list) || _noOtherStreams) {
 			if (list != null && list.Count > 0 && message.FromEventNumber >= 0) {
+				var tb = GetTruncateBefore(message.EventStreamId);
+				var effectiveFrom = Math.Max(message.FromEventNumber, tb);
 				ResolvedEvent[] records =
 					list.Safe()
-						.SkipWhile(v => v.EventNumber < message.FromEventNumber)
+						.SkipWhile(v => v.EventNumber < effectiveFrom)
 						.Take(message.MaxCount)
 						.Select(v => BuildEvent(v, message.ResolveLinkTos))
 						.ToArray();
@@ -394,6 +416,14 @@ public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId> : Tes
 													lastCommitPosition: _lastPosition));
 				*/
 			}
+		} else {
+			message.Envelope.ReplyWith(
+				new ClientMessage.ReadStreamEventsForwardCompleted(
+					message.CorrelationId, message.EventStreamId, message.FromEventNumber, message.MaxCount,
+					ReadStreamResult.NoStream, new ResolvedEvent[0], null, false, "", nextEventNumber: -1,
+					lastEventNumber: -1,
+					isEndOfStream: true,
+					tfLastCommitPosition: _fakePosition));
 		}
 	}
 

@@ -25,13 +25,12 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 	private long _parkedMessageReplays;
 	private long _parkedMessageTruncations;
 
-	public long ParkedMessageCount {
-		get {
-			return _lastParkedEventNumber == -1 ? 0 :
-				_lastTruncateBefore == -1 ? _lastParkedEventNumber + 1 :
-				_lastParkedEventNumber - _lastTruncateBefore + 1;
-		}
-	}
+	public long ParkedMessageCount =>
+		_lastParkedEventNumber == -1
+			? 0
+			: _lastTruncateBefore == -1
+				? _lastParkedEventNumber + 1
+				: _lastParkedEventNumber - _lastTruncateBefore + 1;
 
 	public long ParkedDueToClientNak => Interlocked.Read(ref _parkedDueToClientNak);
 	public long ParkedDueToMaxRetries => Interlocked.Read(ref _parkedDueToMaxRetries);
@@ -116,16 +115,50 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 	}
 
 	private void BeginReadParkedMessageStats(Action completed) {
-		BeginReadLastEvent(lastEventNumber => {
-			if (lastEventNumber is null)
-				completed();
-			BeginReadFirstEvent(0, (firstEventNumber, oldestParkedMessageTimeStamp) => {
-				_lastTruncateBefore = firstEventNumber ?? -1;
-				_lastParkedEventNumber = lastEventNumber ?? -1;
-				_oldestParkedMessage = oldestParkedMessageTimeStamp;
-				completed?.Invoke();
+		BeginReadTruncateBefore(truncateBefore => {
+			BeginReadLastEvent(lastEventNumber => {
+				if (lastEventNumber is null) {
+					// parked stream is empty
+					_lastTruncateBefore = truncateBefore ?? -1;
+					_lastParkedEventNumber = -1;
+					_oldestParkedMessage = null;
+					completed?.Invoke();
+					return;
+				}
+
+				BeginReadFirstEvent(0, (firstEventNumber, oldestParkedMessageTimeStamp) => {
+					_lastTruncateBefore = firstEventNumber ?? truncateBefore ?? -1;
+					_lastParkedEventNumber = lastEventNumber ?? -1;
+					_oldestParkedMessage = oldestParkedMessageTimeStamp;
+					completed?.Invoke();
+				});
 			});
 		});
+	}
+
+	private void BeginReadTruncateBefore(Action<long?> completed) {
+		_ioDispatcher.ReadBackward(
+			streamId: SystemStreams.MetastreamOf(ParkedStreamId),
+			fromEventNumber: -1,
+			maxCount: 1,
+			resolveLinks: false,
+			principal: SystemAccounts.System,
+			action: comp => {
+				switch (comp.Result) {
+					case ReadStreamResult.Success when comp.Events.Any():
+						var metadata = StreamMetadata.FromJsonBytes(comp.Events[0].Event.Data);
+						completed?.Invoke(metadata.TruncateBefore);
+						break;
+					default:
+						completed?.Invoke(null);
+						break;
+				}
+			},
+			timeoutAction: () => {
+				Log.Error($"Timed out reading truncate-before for the parked message stream {ParkedStreamId}. Parked message stats may be incorrect.");
+				completed?.Invoke(null);
+			},
+			corrId: Guid.NewGuid());
 	}
 
 	public void BeginReadEndSequence(Action<long?> completed) {
@@ -150,6 +183,7 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 			});
 	}
 
+	// for parked message stats
 	private void BeginReadFirstEvent(long fromEventNumber, Action<long?, DateTime?> completed) {
 		_ioDispatcher.ReadForward(
 			ParkedStreamId,
@@ -184,6 +218,7 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 			}, Guid.NewGuid());
 	}
 
+	// for parked message stats
 	private void BeginReadLastEvent(Action<long?> completed) {
 		_ioDispatcher.ReadBackward(
 			ParkedStreamId,

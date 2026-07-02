@@ -161,6 +161,83 @@ public class PersistentSubscriptionMessageParkerTests {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
+	public class given_parked_messages_with_tb_partway<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
+		private PersistentSubscriptionMessageParker _messageParker;
+		private string _streamId = Guid.NewGuid().ToString();
+		private TaskCompletionSource<bool> _done = new TaskCompletionSource<bool>();
+
+		protected override void Given() {
+			base.Given();
+			_messageParker = new PersistentSubscriptionMessageParker(_streamId, _ioDispatcher);
+			ExistingEvent(_messageParker.ParkedStreamId, "$>", LinkMetadata, "0@foo");
+			ExistingEvent(_messageParker.ParkedStreamId, "$>", LinkMetadata, "1@foo");
+			ExistingEvent(_messageParker.ParkedStreamId, "$>", LinkMetadata, "2@foo");
+			ExistingStreamMetadata(_messageParker.ParkedStreamId,
+				new StreamMetadata(truncateBefore: 2).ToJsonString());
+		}
+
+		[Test]
+		public async Task should_have_one_parked_message() {
+			_messageParker.BeginLoadStats(() => {
+				Assert.AreEqual(1, _messageParker.ParkedMessageCount);
+				_done.TrySetResult(true);
+			});
+			await _done.Task.WithTimeout();
+		}
+	}
+
+	[TestFixture(typeof(LogFormat.V2), typeof(string))]
+	public class given_parked_messages_with_tb_past_all_events<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
+		private PersistentSubscriptionMessageParker _messageParker;
+		private string _streamId = Guid.NewGuid().ToString();
+		private TaskCompletionSource<bool> _done = new TaskCompletionSource<bool>();
+
+		protected override void Given() {
+			base.Given();
+			_messageParker = new PersistentSubscriptionMessageParker(_streamId, _ioDispatcher);
+			ExistingEvent(_messageParker.ParkedStreamId, "$>", LinkMetadata, "0@foo");
+			ExistingEvent(_messageParker.ParkedStreamId, "$>", LinkMetadata, "1@foo");
+			ExistingStreamMetadata(_messageParker.ParkedStreamId,
+				new StreamMetadata(truncateBefore: 2).ToJsonString());
+		}
+
+		[Test]
+		public async Task should_have_no_parked_messages() {
+			_messageParker.BeginLoadStats(() => {
+				Assert.Zero(_messageParker.ParkedMessageCount);
+				Assert.Null(_messageParker.GetOldestParkedMessage);
+				_done.TrySetResult(true);
+			});
+			await _done.Task.WithTimeout();
+		}
+	}
+
+	[TestFixture(typeof(LogFormat.V2), typeof(string))]
+	public class given_no_parked_messages_with_tb<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
+		private PersistentSubscriptionMessageParker _messageParker;
+		private string _streamId = Guid.NewGuid().ToString();
+		private TaskCompletionSource<bool> _done = new TaskCompletionSource<bool>();
+
+		protected override void Given() {
+			base.Given();
+			_messageParker = new PersistentSubscriptionMessageParker(_streamId, _ioDispatcher);
+			ExistingStreamMetadata(_messageParker.ParkedStreamId,
+				new StreamMetadata(truncateBefore: 5).ToJsonString());
+			NoOtherStreams();
+		}
+
+		[Test]
+		public async Task should_have_no_parked_messages() {
+			_messageParker.BeginLoadStats(() => {
+				Assert.Zero(_messageParker.ParkedMessageCount);
+				Assert.Null(_messageParker.GetOldestParkedMessage);
+				_done.TrySetResult(true);
+			});
+			await _done.Task.WithTimeout();
+		}
+	}
+
+	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	public class given_parked_messages_and_all_are_truncated<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 		private PersistentSubscriptionMessageParker _messageParker;
 		private string _streamId = Guid.NewGuid().ToString();
@@ -243,7 +320,7 @@ public class PersistentSubscriptionMessageParkerTests {
 		[Test]
 		public async Task should_have_no_parked_messages() {
 			await _parked.Task;
-			_messageParker.BeginMarkParkedMessagesReprocessed(2, null, true, () => {
+			_messageParker.BeginMarkParkedMessagesReprocessed(2, () => {
 				Assert.Zero(_messageParker.ParkedMessageCount);
 				Assert.AreEqual(0, _messageParker.ParkedDueToClientNak);
 				Assert.AreEqual(2, _messageParker.ParkedDueToMaxRetries);
@@ -270,7 +347,7 @@ public class PersistentSubscriptionMessageParkerTests {
 			_messageParker = new PersistentSubscriptionMessageParker(_streamId, _ioDispatcher);
 			_messageParker.BeginParkMessage(CreateResolvedEvent(0, 0), "testing", ParkReason.ClientNak, (_, __) => {
 				_messageParker.BeginParkMessage(CreateResolvedEvent(1, 100), "testing", ParkReason.ClientNak, (_, __) => {
-					_messageParker.BeginMarkParkedMessagesReprocessed(2, null, true, () => {
+					_messageParker.BeginMarkParkedMessagesReprocessed(2, () => {
 						_replayParked.SetResult(true);
 					});
 				});
@@ -299,8 +376,8 @@ public class PersistentSubscriptionMessageParkerTests {
 		private string _streamId = Guid.NewGuid().ToString();
 		private TaskCompletionSource<bool> _done = new TaskCompletionSource<bool>();
 
-		private TaskCompletionSource<bool> _timerMessageReceived = new TaskCompletionSource<bool>();
-		private IODispatcherDelayedMessage _timerMessage;
+		private List<TaskCompletionSource<bool>> _timerMessageReceivedSignals = new();
+		private List<IODispatcherDelayedMessage> _timerMessages = new();
 
 		protected override void Given() {
 			base.Given();
@@ -309,10 +386,12 @@ public class PersistentSubscriptionMessageParkerTests {
 
 			_messageParker = new PersistentSubscriptionMessageParker(_streamId, _ioDispatcher);
 
+			_timerMessageReceivedSignals.Add(new TaskCompletionSource<bool>());
 			_bus.Subscribe(new AdHocHandler<TimerMessage.Schedule>(
 				msg => {
-					_timerMessage = msg.ReplyMessage as IODispatcherDelayedMessage;
-					_timerMessageReceived.TrySetResult(true);
+					_timerMessages.Add(msg.ReplyMessage as IODispatcherDelayedMessage);
+					_timerMessageReceivedSignals[^1].TrySetResult(true);
+					_timerMessageReceivedSignals.Add(new TaskCompletionSource<bool>());
 				}));
 		}
 
@@ -323,8 +402,10 @@ public class PersistentSubscriptionMessageParkerTests {
 				_done.TrySetResult(true);
 			});
 
-			await _timerMessageReceived.Task.WithTimeout();
-			_ioDispatcher.Handle(_timerMessage);
+			for (var i = 0; !_done.Task.IsCompleted; i++) {
+				await _timerMessageReceivedSignals[i].Task.WithTimeout();
+				_ioDispatcher.Handle(_timerMessages[i]);
+			}
 
 			await _done.Task.WithTimeout();
 		}
