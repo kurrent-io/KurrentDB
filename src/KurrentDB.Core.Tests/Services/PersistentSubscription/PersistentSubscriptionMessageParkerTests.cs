@@ -119,6 +119,7 @@ public class PersistentSubscriptionMessageParkerTests {
 			ExistingEvent(_messageParker.ParkedStreamId, "$>", LinkMetadata, "7@foo");
 			ExistingEvent(_messageParker.ParkedStreamId, "$>", LinkMetadata, "8@foo");
 			ExistingEvent(_messageParker.ParkedStreamId, "$>", LinkMetadata, "9@foo");
+			NoOtherStreams();
 		}
 
 		[Test]
@@ -147,6 +148,7 @@ public class PersistentSubscriptionMessageParkerTests {
 			_eventRecords.Add(ExistingEventTimeStamp(_messageParker.ParkedStreamId, "$>", LinkMetadata, "7@foo"));
 			_eventRecords.Add(ExistingEventTimeStamp(_messageParker.ParkedStreamId, "$>", LinkMetadata, "8@foo"));
 			_eventRecords.Add(ExistingEventTimeStamp(_messageParker.ParkedStreamId, "$>", LinkMetadata, "9@foo"));
+			NoOtherStreams();
 		}
 
 		[Test]
@@ -257,6 +259,7 @@ public class PersistentSubscriptionMessageParkerTests {
 			ExistingEvent(_messageParker.ParkedStreamId, "$>", LinkMetadata, "8@foo");
 			ExistingEvent(_messageParker.ParkedStreamId, "$>", LinkMetadata, "9@foo");
 			DeletedStream(_messageParker.ParkedStreamId);
+			NoOtherStreams();
 		}
 
 		[Test]
@@ -427,6 +430,7 @@ public class PersistentSubscriptionMessageParkerTests {
 
 			_messageParker = new PersistentSubscriptionMessageParker(_streamId, _ioDispatcher);
 			ExistingEvent(_messageParker.ParkedStreamId, "$>", LinkMetadata, "0@foo");
+			NoOtherStreams();
 
 			// Disable the forward reader so it times out
 			_bus.Unsubscribe(_ioDispatcher.ForwardReader);

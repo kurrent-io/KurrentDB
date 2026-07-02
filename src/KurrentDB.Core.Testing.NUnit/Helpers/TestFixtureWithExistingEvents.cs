@@ -340,14 +340,6 @@ public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId> : Tes
 
 				throw new NotImplementedException();
 			}
-		} else {
-			message.Envelope.ReplyWith(
-				new ClientMessage.ReadStreamEventsBackwardCompleted(
-					message.CorrelationId, message.EventStreamId, message.FromEventNumber, message.MaxCount,
-					ReadStreamResult.NoStream, new ResolvedEvent[0], null, false, "", nextEventNumber: -1,
-					lastEventNumber: -1,
-					isEndOfStream: true,
-					tfLastCommitPosition: _fakePosition));
 		}
 	}
 
@@ -416,14 +408,6 @@ public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId> : Tes
 													lastCommitPosition: _lastPosition));
 				*/
 			}
-		} else {
-			message.Envelope.ReplyWith(
-				new ClientMessage.ReadStreamEventsForwardCompleted(
-					message.CorrelationId, message.EventStreamId, message.FromEventNumber, message.MaxCount,
-					ReadStreamResult.NoStream, new ResolvedEvent[0], null, false, "", nextEventNumber: -1,
-					lastEventNumber: -1,
-					isEndOfStream: true,
-					tfLastCommitPosition: _fakePosition));
 		}
 	}
 
