@@ -1632,6 +1632,41 @@ public static partial class ClientMessage {
 		}
 	}
 
+	[DerivedMessage(CoreMessage.Client)]
+	public partial class TruncateParkedMessages : ReadRequestMessage {
+		public readonly string EventStreamId;
+		public readonly string GroupName;
+		public readonly long? StopAt;
+
+		public TruncateParkedMessages(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
+			string eventStreamId, string groupName, long? stopAt, ClaimsPrincipal user, DateTime? expires = null)
+			: base(internalCorrId, correlationId, envelope, user, expires) {
+			EventStreamId = eventStreamId;
+			GroupName = groupName;
+			StopAt = stopAt;
+		}
+	}
+
+	[DerivedMessage(CoreMessage.Client)]
+	public partial class TruncateParkedMessagesCompleted : ReadResponseMessage {
+		public readonly Guid CorrelationId;
+		public readonly string Reason;
+		public readonly TruncateParkedMessagesCompletedResult Result;
+
+		public TruncateParkedMessagesCompleted(Guid correlationId, TruncateParkedMessagesCompletedResult result, string reason) {
+			CorrelationId = Ensure.NotEmptyGuid(correlationId);
+			Result = result;
+			Reason = reason;
+		}
+
+		public enum TruncateParkedMessagesCompletedResult {
+			Success = 0,
+			DoesNotExist = 1,
+			Fail = 2,
+			AccessDenied = 3
+		}
+	}
+
 	//End of persistence subscriptions
 
 	[DerivedMessage(CoreMessage.Client)]

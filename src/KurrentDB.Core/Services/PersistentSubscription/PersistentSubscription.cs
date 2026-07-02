@@ -565,6 +565,7 @@ public class PersistentSubscription {
 			if ((_state & PersistentSubscriptionState.ReplayingParkedMessages) > 0)
 				return; //already replaying
 			_state |= PersistentSubscriptionState.ReplayingParkedMessages;
+			_settings.MessageParker.NotifyReplay();
 			_settings.MessageParker.BeginReadEndSequence(end => {
 				if (!end.HasValue) {
 					_state ^= PersistentSubscriptionState.ReplayingParkedMessages;
@@ -573,6 +574,22 @@ public class PersistentSubscription {
 
 				var stopRead = stopAt.HasValue ? Math.Min(stopAt.Value, end.Value + 1) : end.Value + 1;
 				TryReadingParkedMessagesFrom(0, stopRead);
+			});
+		}
+	}
+
+	public void TruncateParkedMessages(long? stopAt) {
+		lock (_lock) {
+			if (_state == PersistentSubscriptionState.NotReady)
+				return;
+
+			_settings.MessageParker.NotifyTruncate();
+			_settings.MessageParker.BeginReadEndSequence(end => {
+				if (!end.HasValue)
+					return;
+
+				var truncateBefore = stopAt.HasValue ? Math.Min(stopAt.Value, end.Value + 1) : end.Value + 1;
+				_settings.MessageParker.BeginMarkParkedMessagesReprocessed(truncateBefore);
 			});
 		}
 	}
@@ -628,28 +645,13 @@ public class PersistentSubscription {
 			if (isEndofStream || stopAt <= newStreamPosition.StreamEventNumber) {
 				var replayedEnd = newStreamPosition.StreamEventNumber == -1 ? stopAt : Math.Min(stopAt, newStreamPosition.StreamEventNumber);
 
-				if (isEndofStream) {
-					_settings.MessageParker.BeginMarkParkedMessagesReprocessed(replayedEnd, null, true);
-				} else {
-					var (replayedEndTimeStamp, updateOldestParkedMessageTimeStamp) = GetOldestParkedMessageTimeStamp(events, replayedEnd);
-					_settings.MessageParker.BeginMarkParkedMessagesReprocessed(replayedEnd, replayedEndTimeStamp, updateOldestParkedMessageTimeStamp);
-				}
+				_settings.MessageParker.BeginMarkParkedMessagesReprocessed(replayedEnd);
 
 				_state ^= PersistentSubscriptionState.ReplayingParkedMessages;
 			} else {
 				TryReadingParkedMessagesFrom(newStreamPosition.StreamEventNumber, stopAt);
 			}
 		}
-	}
-
-	private static (DateTime?, bool) GetOldestParkedMessageTimeStamp(IReadOnlyList<ResolvedEvent> events, long replayedEnd) {
-		foreach (var resolvedEvent in events) {
-			if (resolvedEvent.OriginalEvent.EventNumber != replayedEnd)
-				continue;
-			return (resolvedEvent.OriginalEvent.TimeStamp, true);
-		}
-
-		return (null, false);
 	}
 
 	private void StartMessage(OutstandingMessage message, DateTime expires) {
