@@ -73,12 +73,26 @@ public sealed class DuckDBExecutorLifetime : Disposable, IHostedService {
 
 	public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
+	// Bound on the shutdown checkpoint: it runs on a dispatcher, and if streaming queries have saturated the
+	// dispatcher pool the checkpoint could otherwise block shutdown indefinitely. A missed checkpoint is not data
+	// loss — DuckDB replays its WAL on next open — so time out and continue rather than hang teardown. (The broader
+	// dispatcher-starvation question is tracked for the load/soak: size DispatcherThreads above the expected
+	// concurrent-streaming-query count, or split streaming onto its own dispatcher pool.)
+	private static readonly TimeSpan CheckpointTimeout = TimeSpan.FromSeconds(30);
+
 	public async Task StopAsync(CancellationToken cancellationToken) {
 		_log.LogDebug("Checkpointing DuckDB");
-		await Executor.Execute(connection => {
+		var checkpoint = Executor.Execute(connection => {
 			connection.Checkpoint();
 			return 0;
-		}, cancellationToken);
+		}, cancellationToken).AsTask();
+		try {
+			await checkpoint.WaitAsync(CheckpointTimeout, cancellationToken);
+		} catch (TimeoutException) {
+			_log.LogWarning("DuckDB shutdown checkpoint did not complete within {Timeout}; skipping it (the WAL is " +
+				"replayed on next open). This can happen if streaming queries have saturated the DuckDB dispatcher pool.",
+				CheckpointTimeout);
+		}
 	}
 
 	protected override void Dispose(bool disposing) {

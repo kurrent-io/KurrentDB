@@ -151,10 +151,12 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	/// Commits all in-flight records to the index.
 	/// </summary>
 	public async ValueTask CommitAsync(CancellationToken ct) {
-		// IsDisposed (not IsDisposingOrDisposed): DotNext sets Disposing before Dispose(bool) runs, so guarding on
-		// IsDisposingOrDisposed would skip the dispose-time flush and drop the last partial batch. Dispose() drains
-		// the subscription before Dispose(bool), so no concurrent CommitAsync is in flight; _committing covers the rest.
-		if (IsDisposed || !Interlocked.FalseToTrue(ref _committing))
+		// IsDisposingOrDisposed (NOT IsDisposed): the dispose-time flush is deliberately SKIPPED. The shutdown path
+		// DefaultIndexBuilder.Handle(BecomeShuttingDown) disposes this processor WITHOUT first draining the
+		// subscription, so a dispose-time Flush() could run concurrently with an in-flight TryIndex/CreateRow on the
+		// subscription thread — which the appender forbids. Skipping is safe: the default index is derived state that
+		// resumes from its last committed position on restart, re-indexing any unflushed tail.
+		if (IsDisposingOrDisposed || !Interlocked.FalseToTrue(ref _committing))
 			return;
 
 		try {

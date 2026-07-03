@@ -16,7 +16,13 @@ namespace KurrentDB.Core.DuckDB;
 public class DuckDBCpuMetrics {
 	public const string MeterName = "KurrentDB.DuckDB";
 
+	// Held so the meter — and therefore its ObservableCounter — stays rooted for the lifetime of this object
+	// (owned by DuckDBExecutorLifetime, i.e. process lifetime). Without this reference the meter could be
+	// garbage-collected and the instrument would silently stop reporting.
+	private readonly Meter _meter;
+
 	public DuckDBCpuMetrics(Meter meter, string serviceName, Func<IReadOnlyList<DuckDBExecutor.CpuSample>> sampleCpu) {
+		_meter = meter;
 		meter.CreateObservableCounter($"{serviceName}.duckdb.cpu.seconds", Observe,
 			description: "CPU time consumed by DuckDB's executor worker and dispatcher threads, in seconds " +
 				"(excludes DuckDB work SchemaRegistry runs on its own threads via a shared connection pool; " +
