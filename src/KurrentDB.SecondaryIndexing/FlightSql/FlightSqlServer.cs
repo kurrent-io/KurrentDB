@@ -70,7 +70,7 @@ internal sealed partial class FlightSqlServer(IQueryEngine engine, IAuthorizatio
 
 		// process Arrow Flight command
 		if (request.Command.Span is [not discriminator, ..])
-			return await PrepareQueryAsync(request.Command.Span, request, context.CancellationToken);
+			return await PrepareQueryAsync(request.Command.Memory, request, context.CancellationToken);
 
 		var state = context.GetHttpContext().Features.Get<ConnectionState>() ?? throw WrongServerState();
 

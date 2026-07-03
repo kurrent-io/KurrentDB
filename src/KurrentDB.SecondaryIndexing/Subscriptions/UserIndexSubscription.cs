@@ -97,12 +97,12 @@ internal sealed class UserIndexSubscription<TField>(
 				if (processedCount >= _commitBatchSize) {
 					if (indexedCount > 0) {
 						log.LogUserIndexIsCommitting(indexProcessor.IndexName, indexedCount);
-						indexProcessor.Commit();
+						await indexProcessor.CommitAsync(token);
 					}
 
 					var lastProcessedPosition = resolvedEvent.OriginalPosition!.Value;
 					var lastProcessedTimestamp = resolvedEvent.OriginalEvent.TimeStamp;
-					indexProcessor.Checkpoint(lastProcessedPosition, lastProcessedTimestamp);
+					await indexProcessor.CheckpointAsync(lastProcessedPosition, lastProcessedTimestamp, token);
 
 					indexedCount = 0;
 					processedCount = 0;

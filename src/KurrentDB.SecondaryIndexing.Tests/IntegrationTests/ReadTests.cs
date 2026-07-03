@@ -31,9 +31,10 @@ public partial class IndexingTests(IndexingFixture fixture, ITestOutputHelper ou
 	[Fact]
 	public async Task ReadFromDefaultIndexUsingQueryEngine() {
 		var engine = Fixture.NodeServices.GetRequiredService<IQueryEngine>();
-		using var preparedSql = engine.PrepareQuery(
-			"SELECT metadata FROM kdb.records"u8,
-			new() { UseDigitalSignature = true });
+		using var preparedSql = await engine.PrepareQueryAsync(
+			"SELECT metadata FROM kdb.records"u8.ToArray(),
+			new() { UseDigitalSignature = true },
+			TestContext.Current.CancellationToken);
 
 		var consumer = new RowCountReader();
 		await engine.ExecuteAsync(
@@ -125,7 +126,7 @@ public partial class IndexingTests(IndexingFixture fixture, ITestOutputHelper ou
 		var processor = Fixture.NodeServices.GetRequiredService<DefaultIndexProcessor>();
 		switch (mode) {
 			case CommitMode.CommitAndClear:
-				processor.Commit();
+				await processor.CommitAsync(TestContext.Current.CancellationToken);
 				break;
 		}
 

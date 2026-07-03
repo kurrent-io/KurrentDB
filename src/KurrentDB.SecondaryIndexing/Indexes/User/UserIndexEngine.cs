@@ -3,7 +3,6 @@
 
 using System.Diagnostics.Metrics;
 using Kurrent.Quack;
-using Kurrent.Quack.ConnectionPool;
 using Kurrent.Quack.Threading;
 using Kurrent.Surge.Schema.Serializers;
 using KurrentDB.Core;
@@ -44,7 +43,7 @@ public sealed class UserIndexEngine :
 		ISubscriber subscriber,
 		ISchemaSerializer serializer,
 		SecondaryIndexingPluginOptions options,
-		DuckDBConnectionPool db,
+		DuckDBExecutor executor,
 		IReadIndex<string> index,
 		TFChunkDbConfig chunkDbConfig,
 		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)]
@@ -53,7 +52,7 @@ public sealed class UserIndexEngine :
 		_client = client;
 		_log = loggerFactory.CreateLogger<UserIndexEngine>();
 		_writerCheckpoint = chunkDbConfig.WriterCheckpoint;
-		_subscription = new(client, publisher, serializer, options, db, index, meter, GetLastAppendedRecord, loggerFactory, _cts!.Token);
+		_subscription = new(client, publisher, serializer, options, executor, index, meter, GetLastAppendedRecord, loggerFactory, _cts!.Token);
 
 		subscriber.Subscribe<SystemMessage.SystemReady>(this);
 		subscriber.Subscribe<SystemMessage.BecomeShuttingDown>(this);

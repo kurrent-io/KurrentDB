@@ -1,7 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using Kurrent.Quack.ConnectionPool;
+using Kurrent.Quack;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
@@ -10,12 +10,12 @@ using static KurrentDB.Core.Messages.ClientMessage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes;
 
-public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool sharedPool, IReadIndex<string> index) : ISecondaryIndexReader {
+public abstract class SecondaryIndexReaderBase(DuckDBExecutor executor, IReadIndex<string> index) : ISecondaryIndexReader {
 	protected abstract string? GetId(string indexName);
 
-	protected abstract List<IndexQueryRecord> GetDbRecordsForwards(DuckDBConnectionPool pool, string? id, long startPosition, int maxCount, bool excludeFirst);
+	protected abstract List<IndexQueryRecord> GetDbRecordsForwards(DuckDBAdvancedConnection connection, string? id, long startPosition, int maxCount, bool excludeFirst);
 
-	protected abstract List<IndexQueryRecord> GetDbRecordsBackwards(DuckDBConnectionPool pool, string? id, long startPosition, int maxCount, bool excludeFirst);
+	protected abstract List<IndexQueryRecord> GetDbRecordsBackwards(DuckDBAdvancedConnection connection, string? id, long startPosition, int maxCount, bool excludeFirst);
 
 	public ValueTask<ReadIndexEventsForwardCompleted> ReadForwards(ReadIndexEventsForward msg, CancellationToken token)
 		=> ReadForwards(msg, index.IndexReader, index.LastIndexedPosition, token);
@@ -57,12 +57,9 @@ public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool sharedPool, 
 			=> new(result, ResolvedEvent.EmptyArray, pos, lastIndexedPosition, endOfStream, error);
 
 		async ValueTask<(long, IReadOnlyList<ResolvedEvent>)> GetEventsForwards(long startPosition) {
-			var indexPrepares = GetDbRecordsForwards(
-				GetPool(msg.Pool),
-				id,
-				startPosition,
-				msg.MaxCount,
-				msg.ExcludeStart);
+			var indexPrepares = await executor.Execute(
+				connection => GetDbRecordsForwards(connection, id, startPosition, msg.MaxCount, msg.ExcludeStart),
+				token);
 
 			var events = await reader.ReadRecords(indexPrepares, true, token);
 			return (indexPrepares.Count, events);
@@ -101,18 +98,12 @@ public abstract class SecondaryIndexReaderBase(DuckDBConnectionPool sharedPool, 
 			=> new(result, ResolvedEvent.EmptyArray, pos, lastIndexedPosition, false, error);
 
 		async ValueTask<(long, IReadOnlyList<ResolvedEvent>)> GetEventsBackwards(TFPos startPosition) {
-			var indexPrepares = GetDbRecordsBackwards(GetPool(msg.Pool),
-				id,
-				startPosition.PreparePosition,
-				msg.MaxCount,
-				msg.ExcludeStart);
+			var indexPrepares = await executor.Execute(
+				connection => GetDbRecordsBackwards(connection, id, startPosition.PreparePosition, msg.MaxCount, msg.ExcludeStart),
+				token);
 
 			var events = await reader.ReadRecords(indexPrepares, false, token);
 			return (indexPrepares.Count, events);
 		}
-	}
-
-	private DuckDBConnectionPool GetPool(DuckDBConnectionPool? pool) {
-		return pool ?? sharedPool;
 	}
 }

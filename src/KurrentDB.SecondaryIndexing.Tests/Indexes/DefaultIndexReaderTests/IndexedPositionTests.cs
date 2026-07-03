@@ -9,14 +9,14 @@ public class IndexedPositionTests : IndexTestBase {
 	[Theory]
 	[InlineData(true)]
 	[InlineData(false)]
-	public void WhenIndexedRecords_ReturnsProcessorLastIndexedPosition(bool shouldCommit) {
+	public async Task WhenIndexedRecords_ReturnsProcessorLastIndexedPosition(bool shouldCommit) {
 		// Given
 		var events = new[] {
 			From("test-stream", 0, 100, "TestEvent", []),
 			From("test-stream", 1, 200, "TestEvent", []),
 			From("test-stream", 2, 300, "TestEvent", [])
 		};
-		IndexEvents(events, shouldCommit);
+		await IndexEvents(events, shouldCommit);
 		var streamId = Guid.NewGuid().ToString(); // this can be anything for a Default Index, as it's ignored
 
 		// When

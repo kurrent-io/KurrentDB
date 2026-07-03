@@ -29,7 +29,7 @@ public static class QueryService {
 		var preparedQuery = default(MemoryOwner<byte>);
 		var reader = new JsonReader();
 		try {
-			preparedQuery = engine.PrepareQuery(Encoding.UTF8.GetBytes(sql), new() { UseDigitalSignature = false });
+			preparedQuery = await engine.PrepareQueryAsync(Encoding.UTF8.GetBytes(sql), new() { UseDigitalSignature = false }, token);
 
 			await engine.ExecuteAsync(preparedQuery.Memory, reader, new() { CheckIntegrity = false }, token);
 

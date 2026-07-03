@@ -17,33 +17,35 @@ namespace KurrentDB.Components.Stats;
 // directly and authorizes nothing. This wrapper gives Stats the same defense-in-depth every other
 // UI service has (via the IAuthorizationProvider.EnsureAccessAsync extension): it enforces the
 // configured policy (read $all — the same Operation the ViewStats page policy and the FlightSql query
-// path use) before each query, so the page-level [Authorize] is no longer the only gate. The expensive,
-// synchronous DuckDB work is offloaded to the thread pool so the render thread isn't blocked.
+// path use) before each query, so the page-level [Authorize] is no longer the only gate. The expensive
+// DuckDB work runs on an executor dispatcher thread (inside StatsService), so the render thread isn't blocked.
 public sealed class UiStatsService(StatsService inner, IAuthorizationProvider authorizer) {
 	static readonly Operation ReadAllOperation = UiOperations.ReadAll;
 
 	public async Task<IReadOnlyList<CategoryName>> GetCategoriesAsync(ClaimsPrincipal principal, CancellationToken ct = default) {
 		await authorizer.EnsureAccessAsync(principal, ReadAllOperation, ct);
-		return await Task.Run(() => inner.GetCategories().ToList(), ct);
+		// The expensive DuckDB work runs on an executor dispatcher thread (StatsService.GetCategories), so the render
+		// thread isn't blocked — no Task.Run offload needed.
+		return await inner.GetCategories(ct);
 	}
 
 	public async Task<IReadOnlyList<GetCategoryStats.Result>> GetCategoryStatsAsync(ClaimsPrincipal principal, string category, CancellationToken ct = default) {
 		await authorizer.EnsureAccessAsync(principal, ReadAllOperation, ct);
-		return await Task.Run(() => inner.GetCategoryStats(category), ct);
+		return await inner.GetCategoryStats(category, ct);
 	}
 
 	public async Task<IReadOnlyList<GetCategoryEventTypes.Result>> GetCategoryEventTypesAsync(ClaimsPrincipal principal, string category, CancellationToken ct = default) {
 		await authorizer.EnsureAccessAsync(principal, ReadAllOperation, ct);
-		return await Task.Run(() => inner.GetCategoryEventTypes(category), ct);
+		return await inner.GetCategoryEventTypes(category, ct);
 	}
 
 	public async Task<IReadOnlyList<GetExplicitTransactions.Result>> GetExplicitTransactionsAsync(ClaimsPrincipal principal, CancellationToken ct = default) {
 		await authorizer.EnsureAccessAsync(principal, ReadAllOperation, ct);
-		return await Task.Run(() => inner.GetExplicitTransactions(), ct);
+		return await inner.GetExplicitTransactions(ct);
 	}
 
 	public async Task<List<GetLongestStreams.Result>> GetLongestStreamsAsync(ClaimsPrincipal principal, CancellationToken ct = default) {
 		await authorizer.EnsureAccessAsync(principal, ReadAllOperation, ct);
-		return await Task.Run(() => inner.GetLongestStreams(), ct);
+		return await inner.GetLongestStreams(ct);
 	}
 }

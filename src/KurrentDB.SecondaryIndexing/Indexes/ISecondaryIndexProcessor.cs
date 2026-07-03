@@ -7,7 +7,7 @@ using KurrentDB.SecondaryIndexing.Diagnostics;
 namespace KurrentDB.SecondaryIndexing.Indexes;
 
 public interface ISecondaryIndexProcessor : IDisposable {
-	void Commit();
+	ValueTask CommitAsync(CancellationToken ct);
 
 	bool TryIndex(ResolvedEvent evt);
 

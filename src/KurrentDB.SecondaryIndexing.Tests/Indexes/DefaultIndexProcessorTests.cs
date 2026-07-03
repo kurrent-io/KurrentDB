@@ -25,7 +25,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest<DefaultIndexProc
 	}
 
 	[Fact]
-	public void CommittedMultipleEventsInMultipleStreams_AreIndexed() {
+	public async Task CommittedMultipleEventsInMultipleStreams_AreIndexed() {
 		// Given
 		const string cat1 = "first";
 		const string cat2 = "second";
@@ -59,26 +59,26 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest<DefaultIndexProc
 			_processor.TryIndex(resolvedEvent);
 		}
 
-		_processor.Commit();
+		await _processor.CommitAsync(CancellationToken.None);
 
 		// Then
 		// Default Index
-		AssertLastLogPositionQueryReturns(987);
+		await AssertLastLogPositionQueryReturns(987);
 
-		AssertDefaultIndexQueryReturns([100, 110, 117, 200, 213, 394, 500, 601, 987]);
+		await AssertDefaultIndexQueryReturns([100, 110, 117, 200, 213, 394, 500, 601, 987]);
 
-		AssertCategoryIndexQueryReturns(cat1, [100, 117, 200, 213, 500, 601, 987]);
-		AssertCategoryIndexQueryReturns(cat2, [110, 394]);
+		await AssertCategoryIndexQueryReturns(cat1, [100, 117, 200, 213, 500, 601, 987]);
+		await AssertCategoryIndexQueryReturns(cat2, [110, 394]);
 
-		AssertReadEventTypeIndexQueryReturns(cat1Et1, [100, 213, 987]);
-		AssertReadEventTypeIndexQueryReturns(cat2Et1, [110]);
-		AssertReadEventTypeIndexQueryReturns(cat1Et2, [117, 500]);
-		AssertReadEventTypeIndexQueryReturns(cat1Et3, [200, 601]);
-		AssertReadEventTypeIndexQueryReturns(cat2Et2, [394]);
+		await AssertReadEventTypeIndexQueryReturns(cat1Et1, [100, 213, 987]);
+		await AssertReadEventTypeIndexQueryReturns(cat2Et1, [110]);
+		await AssertReadEventTypeIndexQueryReturns(cat1Et2, [117, 500]);
+		await AssertReadEventTypeIndexQueryReturns(cat1Et3, [200, 601]);
+		await AssertReadEventTypeIndexQueryReturns(cat2Et2, [394]);
 	}
 
 	[Fact]
-	public void CommittedMultipleEventsToAStringWithoutCategory_AreIndexed() {
+	public async Task CommittedMultipleEventsToAStringWithoutCategory_AreIndexed() {
 		// Given
 		const string streamName = "hello";
 		string eventType1 = $"{Guid.NewGuid()}";
@@ -96,108 +96,108 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest<DefaultIndexProc
 			_processor.TryIndex(resolvedEvent);
 		}
 
-		_processor.Commit();
+		await _processor.CommitAsync(CancellationToken.None);
 
 		// Then
 		// Default Index
-		AssertLastLogPositionQueryReturns(200);
+		await AssertLastLogPositionQueryReturns(200);
 
-		AssertDefaultIndexQueryReturns([100, 117, 200]);
+		await AssertDefaultIndexQueryReturns([100, 117, 200]);
 
 		// Categories
-		AssertGetCategoriesQueryReturns(["hello"]);
-		AssertCategoryIndexQueryReturns(streamName, [100, 117, 200]);
+		await AssertGetCategoriesQueryReturns(["hello"]);
+		await AssertCategoryIndexQueryReturns(streamName, [100, 117, 200]);
 
 		// EventTypes
-		AssertGetAllEventTypesQueryReturns([eventType1, eventType2, eventType3]);
-		AssertReadEventTypeIndexQueryReturns(eventType1, [100]);
-		AssertReadEventTypeIndexQueryReturns(eventType2, [117]);
-		AssertReadEventTypeIndexQueryReturns(eventType3, [200]);
+		await AssertGetAllEventTypesQueryReturns([eventType1, eventType2, eventType3]);
+		await AssertReadEventTypeIndexQueryReturns(eventType1, [100]);
+		await AssertReadEventTypeIndexQueryReturns(eventType2, [117]);
+		await AssertReadEventTypeIndexQueryReturns(eventType3, [200]);
 	}
 
-	private void AssertDefaultIndexQueryReturns(List<long> expected) {
-		List<IndexQueryRecord> records;
-		using (DuckDb.Rent(out var connection)) {
+	private async Task AssertDefaultIndexQueryReturns(List<long> expected) {
+		var records = await Executor.Execute(connection => {
 			using (_processor.CaptureSnapshot(connection)) {
-				records = connection
+				return connection
 					.ExecuteQuery<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexQueryExcl>(new(-1, int.MaxValue))
 					.ToList();
 			}
-		}
+		}, CancellationToken.None);
 
 		Assert.Equal(expected, records.Select(x => x.LogPosition));
 	}
 
-	private void AssertLastLogPositionQueryReturns(long? expectedLogPosition) {
-		LastPositionResult? actual;
-		using (DuckDb.Rent(out var connection)) {
+	private async Task AssertLastLogPositionQueryReturns(long? expectedLogPosition) {
+		var actual = await Executor.Execute(connection => {
 			using (_processor.CaptureSnapshot(connection)) {
-				actual = connection.QueryFirstOrDefault<LastPositionResult, GetLastLogPositionQuery>().OrNull();
+				return connection.QueryFirstOrDefault<LastPositionResult, GetLastLogPositionQuery>().OrNull();
 			}
-		}
+		}, CancellationToken.None);
 
 		Assert.Equal(expectedLogPosition, actual?.PreparePosition);
 	}
 
-	private void AssertGetCategoriesQueryReturns(string[] expected) {
-		var records = new List<string>();
-		using (DuckDb.Rent(out var connection)) {
+	private async Task AssertGetCategoriesQueryReturns(string[] expected) {
+		var records = await Executor.Execute(connection => {
+			var result = new List<string>();
 			using (_processor.CaptureSnapshot(connection)) {
-				using var result = connection.ExecuteAdHocQuery("select distinct category from idx_all_snapshot order by log_position"u8);
-				while (result.TryFetch(out var chunk)) {
+				using var query = connection.ExecuteAdHocQuery("select distinct category from idx_all_snapshot order by log_position"u8);
+				while (query.TryFetch(out var chunk)) {
 					using (chunk) {
 						while (chunk.TryRead(out var row)) {
-							records.Add(row.ReadString());
+							result.Add(row.ReadString());
 						}
 					}
 				}
 			}
-		}
+
+			return result;
+		}, CancellationToken.None);
 
 		Assert.Equal(expected, records);
 	}
 
-	private void AssertCategoryIndexQueryReturns(string category, List<long> expected) {
-		List<IndexQueryRecord> records;
-		using (DuckDb.Rent(out var connection)) {
+	private async Task AssertCategoryIndexQueryReturns(string category, List<long> expected) {
+		var records = await Executor.Execute(connection => {
 			using (_processor.CaptureSnapshot(connection)) {
-				records = connection
+				return connection
 					.ExecuteQuery<CategoryIndexQueryArgs, IndexQueryRecord, CategoryIndexQueryIncl>(new(category, 0, 32))
 					.ToList();
 			}
-		}
+		}, CancellationToken.None);
 
 		Assert.Equal(expected, records.Select(x => x.LogPosition));
 	}
 
-	private void AssertGetAllEventTypesQueryReturns(string[] expected) {
-		var records = new List<string>();
-		using (DuckDb.Rent(out var connection)) {
+	private async Task AssertGetAllEventTypesQueryReturns(string[] expected) {
+		var records = await Executor.Execute(connection => {
+			var result = new List<string>();
 			using (_processor.CaptureSnapshot(connection)) {
-				using var result = connection.ExecuteAdHocQuery("select distinct schema_name from idx_all order by log_position"u8);
-				while (result.TryFetch(out var chunk)) {
+				using var query = connection.ExecuteAdHocQuery("select distinct schema_name from idx_all order by log_position"u8);
+				while (query.TryFetch(out var chunk)) {
 					using (chunk) {
 						while (chunk.TryRead(out var row)) {
-							records.Add(row.ReadString());
+							result.Add(row.ReadString());
 						}
 					}
 				}
 			}
-		}
+
+			return result;
+		}, CancellationToken.None);
 
 		Assert.Equal(expected, records);
 	}
 
-	private void AssertReadEventTypeIndexQueryReturns(string eventType, List<long> expected) {
-		List<IndexQueryRecord> records;
-		using (DuckDb.Rent(out var connection)) {
+	private async Task AssertReadEventTypeIndexQueryReturns(string eventType, List<long> expected) {
+		var records = await Executor.Execute(connection => {
 			using (_processor.CaptureSnapshot(connection)) {
-				records = connection.ExecuteQuery<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(
+				return connection.ExecuteQuery<ReadEventTypeIndexQueryArgs, IndexQueryRecord, ReadEventTypeIndexQueryIncl>(
 						new(eventType, 0, 32)
 					)
 					.ToList();
 			}
-		}
+		}, CancellationToken.None);
 
 		Assert.Equal(expected, records.Select(x => x.LogPosition));
 	}
@@ -211,7 +211,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest<DefaultIndexProc
 
 		var publisher = new FakePublisher();
 
-		_processor = new(DuckDb, publisher, hasher, new("test"), NullLoggerFactory.Instance);
+		_processor = new(Executor, publisher, hasher, new("test"), NullLoggerFactory.Instance);
 	}
 
 	public override ValueTask DisposeAsync() {

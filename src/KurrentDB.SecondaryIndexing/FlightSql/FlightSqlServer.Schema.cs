@@ -12,27 +12,18 @@ using Google.Protobuf;
 namespace KurrentDB.SecondaryIndexing.FlightSql;
 
 partial class FlightSqlServer {
-	private Task<Schema> GetQuerySchemaAsync(ReadOnlyMemory<char> query, CancellationToken token) {
-		Task<Schema> task;
-		if (token.IsCancellationRequested) {
-			task = Task.FromCanceled<Schema>(token);
-		} else {
-			var buffer = default(MemoryOwner<byte>);
-			try {
-				buffer = Encoding.UTF8.GetBytes(query.Span, allocator: null);
-				var tmp = engine.PrepareQuery(buffer.Span, new() { UseDigitalSignature = false });
-				buffer.Dispose();
-				buffer = tmp;
+	private async Task<Schema> GetQuerySchemaAsync(ReadOnlyMemory<char> query, CancellationToken token) {
+		var buffer = default(MemoryOwner<byte>);
+		try {
+			buffer = Encoding.UTF8.GetBytes(query.Span, allocator: null);
+			var prepared = await engine.PrepareQueryAsync(buffer.Memory, new() { UseDigitalSignature = false }, token);
+			buffer.Dispose();
+			buffer = prepared;
 
-				task = Task.FromResult(engine.GetArrowSchema(buffer.Span));
-			} catch (Exception e) {
-				task = Task.FromException<Schema>(e);
-			} finally {
-				buffer.Dispose();
-			}
+			return engine.GetArrowSchema(buffer.Span);
+		} finally {
+			buffer.Dispose();
 		}
-
-		return task;
 	}
 
 	private ByteString SerializeSchema(Schema schema) {
