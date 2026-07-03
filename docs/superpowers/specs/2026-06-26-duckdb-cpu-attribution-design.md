@@ -9,7 +9,7 @@
 
 We want operators to be able to answer: **"What fraction of this node's CPU is DuckDB vs the rest of KurrentDB?"** Process- and system-level CPU are already exported (`kurrentdb_proc_cpu`, `kurrentdb_sys_cpu`); the missing piece is the DuckDB share so the two can be compared.
 
-PR #5642 (open, not merged) proposed a first attempt: `DuckDBCpuMetrics.Measure(activity)` returns a `ref struct` scope that reads the calling thread's CPU (`clock_gettime(CLOCK_THREAD_CPUTIME_ID)` on Linux/macOS, `GetThreadTimes` on Windows) at construction and again at `Dispose`, recording the delta into a counter. It is wrapped around the synchronous DuckDB sections of commit, checkpoint, index reads, and query setup.
+PR #5642 (now closed, superseded by this design) proposed a first attempt: `DuckDBCpuMetrics.Measure(activity)` returns a `ref struct` scope that reads the calling thread's CPU (`clock_gettime(CLOCK_THREAD_CPUTIME_ID)` on Linux/macOS, `GetThreadTimes` on Windows) at construction and again at `Dispose`, recording the delta into a counter. It is wrapped around the synchronous DuckDB sections of commit, checkpoint, index reads, and query setup.
 
 Code review identified three **fundamental** flaws, all rooted in one assumption — *"measure the calling thread across a synchronous span"*:
 
@@ -128,7 +128,7 @@ Most of the blast radius is converting a few `void`/synchronous DuckDB methods t
 
 - **Kurrent.Quack (first):** add the `DuckDBExecutor` (worker + dispatcher pools), the native task-scheduler interop (`duckdb_create_task_state` / `execute_tasks_state` / `finish_execution` / `destroy_task_state`), the cross-thread per-OS CPU read, and the per-thread CPU enumeration. Ship as a new Quack version.
 - **KurrentDB (second):** consume the new Quack version; migrate the DuckDB call sites (§6) to the executor; register the `kurrentdb.duckdb.cpu.seconds` observable counter and add the `KurrentDB.DuckDB` meter to `metricsconfig.json`; document the metric in `docs/server/diagnostics/metrics.md`.
-- **PR #5642:** **remove** the caller-side CPU measurement (`DuckDBCpuMetrics`, `ThreadCpuTime`, the scope instrumentation and its tests). Per the review, we will not merge a metric whose headline value is wrong for parallel work. The `KurrentDB.DuckDB` meter name and the docs scaffolding may be retained as the landing point for this design. (If #5642 has other unrelated value it can keep it; otherwise it closes in favor of this work.)
+- **PR #5642:** **remove** the caller-side CPU measurement (`DuckDBCpuMetrics`, `ThreadCpuTime`, the scope instrumentation and its tests). Per the review, we will not merge a metric whose headline value is wrong for parallel work. The `KurrentDB.DuckDB` meter name and the docs scaffolding are retained as the landing point for this design (re-created fresh on this PR). #5642 has been closed in favor of this work.
 
 ## 11. Risks & open questions
 
