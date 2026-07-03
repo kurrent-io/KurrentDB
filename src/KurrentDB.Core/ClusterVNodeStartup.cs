@@ -137,9 +137,6 @@ public class ClusterVNodeStartup<TStreamId>
 		app.UseAuthorization();
 		app.UseAntiforgery();
 
-		// provides a lazy DuckDB connection pool unique to the connection
-		app.UseDuckDb();
-
 		// allow all subsystems to register their legacy controllers before calling MapLegacyHttp
 		foreach (var component in _plugableComponents)
 			component.ConfigureApplication(app, _configuration);
@@ -314,7 +311,10 @@ public class ClusterVNodeStartup<TStreamId>
 		services.AddGrpcReflection();
 #endif
 
-		services.AddDuckDb();
+		services.AddDuckDb(
+			_metricsConfiguration.ServiceName,
+			workerCount: _configuration.GetValue("KurrentDB:DuckDB:WorkerThreads", Math.Clamp(Environment.ProcessorCount / 2, 2, 16)),
+			dispatcherCount: _configuration.GetValue("KurrentDB:DuckDB:DispatcherThreads", Math.Clamp(Environment.ProcessorCount / 2, 2, 8)));
 
 		// Ask the node itself to add DI registrations
 		_configureNodeServices(services);

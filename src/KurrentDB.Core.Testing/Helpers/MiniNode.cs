@@ -22,7 +22,6 @@ using KurrentDB.Core.Authorization.AuthorizationPolicies;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Configuration.Sources;
-using KurrentDB.Core.DuckDB;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Monitoring;
 using KurrentDB.Core.Services.Storage;
@@ -270,11 +269,6 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 		builder.Services.AddSerilog();
 		Node.Startup.ConfigureServices(builder.Services);
 		_webHost = builder.Build();
-		_webHost.Use(async (ctx, next) => {
-			var factory = ctx.RequestServices.GetRequiredService<DuckDBConnectionPoolLifetime>();
-			ctx.Features.Set<ConnectionScopedDuckDBConnectionPool>(new(factory));
-			await next();
-		});
 		Node.Startup.Configure(_webHost);
 		_started = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 		_adminUserCreated = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);

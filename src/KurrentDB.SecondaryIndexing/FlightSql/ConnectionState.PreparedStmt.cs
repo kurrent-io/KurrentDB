@@ -134,8 +134,12 @@ partial class ConnectionState {
 		out Schema parameters) {
 		var buffer = Encoding.UTF8.GetBytes(query, allocator: null);
 		try {
+			// This registry path has a ReadOnlySpan<char> input and an out parameter, so it can't be async; block on
+			// the engine's dispatcher op (the dispatcher is a dedicated thread — no deadlock). The prepared-statement
+			// registry mechanism itself is unchanged; only this engine call is updated for the async PrepareQueryAsync.
 			var preparedQuery = engine
-				.PrepareQuery(buffer.Span, new() { UseDigitalSignature = false });
+				.PrepareQueryAsync(buffer.Memory, new() { UseDigitalSignature = false })
+				.AsTask().GetAwaiter().GetResult();
 			return new(preparedQuery, engine.GetArrowSchema(preparedQuery.Span, out parameters));
 		} finally {
 			buffer.Dispose();

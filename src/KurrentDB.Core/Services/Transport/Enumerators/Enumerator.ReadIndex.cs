@@ -7,7 +7,6 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
@@ -29,7 +28,6 @@ partial class Enumerator {
 		ClaimsPrincipal user,
 		bool requiresLeader,
 		IExpiryStrategy expiryStrategy,
-		[CanBeNull] DuckDBConnectionPool pool,
 		CancellationToken cancellationToken)
 		: ReadIndex<ReadIndexEventsForward, ReadIndexEventsForwardCompleted>(bus, indexName, position, maxCount, user, requiresLeader, expiryStrategy, cancellationToken) {
 		protected override ReadIndexEventsForward CreateRequest(
@@ -43,7 +41,6 @@ partial class Enumerator {
 			IndexName, commitPosition, preparePosition, excludeStart, (int)Math.Min(DefaultIndexReadSize, MaxCount),
 			RequiresLeader, null, User,
 			replyOnExpired: true,
-			pool: pool,
 			expires: ExpiryStrategy.GetExpiry() ?? ReadRequestMessage.NeverExpires,
 			cancellationToken: CancellationToken);
 	}
@@ -56,7 +53,6 @@ partial class Enumerator {
 		ClaimsPrincipal user,
 		bool requiresLeader,
 		IExpiryStrategy expiryStrategy,
-		[CanBeNull] DuckDBConnectionPool pool,
 		CancellationToken cancellationToken)
 		: ReadIndex<ReadIndexEventsBackward, ReadIndexEventsBackwardCompleted>(bus, indexName, position, maxCount, user, requiresLeader, expiryStrategy, cancellationToken) {
 		protected override ReadIndexEventsBackward CreateRequest(
@@ -70,7 +66,6 @@ partial class Enumerator {
 			IndexName, commitPosition, preparePosition, excludeStart, (int)Math.Min(DefaultIndexReadSize, MaxCount),
 			RequiresLeader, null, User,
 			replyOnExpired: true,
-			pool: pool,
 			expires: ExpiryStrategy.GetExpiry() ?? ReadRequestMessage.NeverExpires,
 			cancellationToken: CancellationToken);
 	}

@@ -21,7 +21,7 @@ By using the `System` value for this option, you can instruct the server to enab
 server starts. However, system projections will only start if the `StartStandardProjections` option is set
 to `true`. When the `RunProjections` option value is `System` (or `All`) but the `StartStandardProjections`
 option value is `false`, system projections will be enabled but not start. You can start them later manually
-via the Admin UI or via an API call.
+via the embedded UI or via an API call.
 
 Finally, you can set `RunProjections` to `All` and it will enable both system and custom projections.
 
@@ -52,7 +52,7 @@ run will be re-enabled — the setting drives state on each startup, it does not
 projection itself.
 
 When this option is `false` (the default) the five standard projections exist but stay `Stopped`. Enable them
-on demand, either from the admin UI or via the HTTP API:
+on demand, either from the embedded UI or via the HTTP API:
 
 ```bash:no-line-numbers
 curl -i -X POST "http://{host}:{http-port}/projection/$by_category/command/enable" \

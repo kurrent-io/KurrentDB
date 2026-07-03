@@ -16,44 +16,15 @@ using KurrentDB.SecondaryIndexing.Query;
 namespace KurrentDB.SecondaryIndexing.FlightSql;
 
 partial class FlightSqlServer {
-	private Task<FlightInfo> PrepareQueryAsync(CommandStatementQuery query, FlightDescriptor descriptor, CancellationToken token) {
-		Task<FlightInfo> task;
-		if (token.IsCancellationRequested) {
-			task = Task.FromCanceled<FlightInfo>(token);
-		} else {
-			try {
-				task = Task.FromResult(PrepareQuery(query, descriptor));
-			} catch (Exception e) {
-				task = Task.FromException<FlightInfo>(e);
-			}
-		}
-
-		return task;
-	}
-
-	private Task<FlightInfo> PrepareQueryAsync(ReadOnlySpan<byte> query, FlightDescriptor descriptor, CancellationToken token) {
-		Task<FlightInfo> task;
-		if (token.IsCancellationRequested) {
-			task = Task.FromCanceled<FlightInfo>(token);
-		} else {
-			try {
-				var preparedQueryBuffer = engine.PrepareQuery(query, new() { UseDigitalSignature = true });
-				task = Task.FromResult(GetQueryInfo(preparedQueryBuffer, descriptor, discoverSchema: true));
-			} catch (Exception e) {
-				task = Task.FromException<FlightInfo>(e);
-			}
-		}
-
-		return task;
-	}
-
-	private FlightInfo PrepareQuery(CommandStatementQuery query, FlightDescriptor descriptor) {
-		MemoryOwner<byte> preparedQuery;
-		using (var buffer = Encoding.UTF8.GetBytes(query.Query, allocator: null)) {
-			preparedQuery = engine.PrepareQuery(buffer.Span, new() { UseDigitalSignature = true });
-		}
-
+	private async Task<FlightInfo> PrepareQueryAsync(CommandStatementQuery query, FlightDescriptor descriptor, CancellationToken token) {
+		using var buffer = Encoding.UTF8.GetBytes(query.Query, allocator: null);
+		var preparedQuery = await engine.PrepareQueryAsync(buffer.Memory, new() { UseDigitalSignature = true }, token);
 		return GetQueryInfo(preparedQuery, descriptor, discoverSchema: false);
+	}
+
+	private async Task<FlightInfo> PrepareQueryAsync(ReadOnlyMemory<byte> query, FlightDescriptor descriptor, CancellationToken token) {
+		var preparedQueryBuffer = await engine.PrepareQueryAsync(query, new() { UseDigitalSignature = true }, token);
+		return GetQueryInfo(preparedQueryBuffer, descriptor, discoverSchema: true);
 	}
 
 	private FlightInfo GetQueryInfo(in MemoryOwner<byte> preparedQuery, FlightDescriptor descriptor, bool discoverSchema)

@@ -12,13 +12,11 @@ using KurrentDB.SecondaryIndexing.Indexes.User;
 namespace KurrentDB.SecondaryIndexing.Query;
 
 partial class QueryEngine {
-	private MemoryOwner<byte> RewriteQuery(ReadOnlySpan<byte> queryUtf8, ref PreparedQueryBuilder builder) {
-		JsonNode? tree;
-
+	// Runs against the connection provided by the enclosing executor.Execute op (see PrepareQueryAsync): both the
+	// parse and the serialize used to rent separate connections; now they share this one rented connection.
+	private MemoryOwner<byte> RewriteQuery(DuckDBAdvancedConnection connection, ReadOnlySpan<byte> queryUtf8, ref PreparedQueryBuilder builder) {
 		// Obtain AST
-		using (sharedPool.Rent(out var connection)) {
-			tree = connection.ParseSyntaxTree(queryUtf8);
-		}
+		var tree = connection.ParseSyntaxTree(queryUtf8);
 
 		// Transform AST
 		switch (tree?["error"]?.GetValueKind()) {
@@ -36,9 +34,7 @@ partial class QueryEngine {
 		}
 
 		// Convert AST back to the query
-		using (sharedPool.Rent(out var connection)) {
-			return connection.FromSyntaxTree(tree);
-		}
+		return connection.FromSyntaxTree(tree);
 	}
 
 	private void RewriteNode(JsonNode ast, ref PreparedQueryBuilder builder) {

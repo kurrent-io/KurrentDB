@@ -199,7 +199,10 @@ public sealed class ProjectionEngineV2 : IAsyncDisposable {
 						// System events (event types starting with '$') are normally skipped,
 						// but tombstone markers need to be routed so projections can handle $deleted.
 						var dispatched = false;
-						if (coreEvent.Event.EventType.StartsWith('$')) {
+						if (coreEvent.Event is null) {
+							// A resolved event with no underlying record: a link whose target event
+							// has been scavenged or deleted.
+						} else if (coreEvent.Event.EventType.StartsWith('$')) {
 							var projEvent = ConvertToProjectionEvent(coreEvent);
 							// note: HandlesDeletedNotifications is only true when partitioning by stream
 							if (_config.SourceDefinition.HandlesDeletedNotifications && StreamDeletedHelper.IsStreamDeletedEvent(
@@ -223,7 +226,9 @@ public sealed class ProjectionEngineV2 : IAsyncDisposable {
 							eventsProcessed++;
 							Interlocked.Increment(ref _totalEventsProcessed);
 						}
-						bytesProcessed += coreEvent.Event.Data.Length + coreEvent.Event.Metadata.Length;
+
+						var recordForCheckpoint = coreEvent.Event ?? coreEvent.Link;
+						bytesProcessed += recordForCheckpoint.Data.Length + recordForCheckpoint.Metadata.Length;
 						lastLogPosition = logPosition;
 
 						// Check if checkpoint is due

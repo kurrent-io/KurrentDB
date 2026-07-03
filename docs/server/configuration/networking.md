@@ -333,37 +333,37 @@ For the gRPC heartbeats, KurrentDB and its gRPC clients use the protocol feature
 
 ## Exposing endpoints
 
-If you need to disable some HTTP endpoints on the external HTTP interface, you can change some settings below. It is possible to disable the Admin UI, stats and gossip port to be exposed externally.
+If you need to disable some HTTP endpoints, you can change the settings below. It is possible to disable the embedded UI, stats and metrics, and gossip endpoints on the HTTP interface.
 
-You can disable the Admin UI on external HTTP by setting `AdminOnExt` setting to `false`.
+You can disable the embedded UI and the admin HTTP API by setting `DisableAdminUi` to `true`.
 
-| Format               | Syntax                    |
-|:---------------------|:--------------------------|
-| Command line         | `--admin-on-ext`          |
-| YAML                 | `AdminOnExt`              |
-| Environment variable | `KURRENTDB_ADMIN_ON_EXT`  |
+| Format               | Syntax                         |
+|:---------------------|:-------------------------------|
+| Command line         | `--disable-admin-ui`           |
+| YAML                 | `DisableAdminUi`               |
+| Environment variable | `KURRENTDB_DISABLE_ADMIN_UI`   |
 
-**Default**: `true`, Admin UI is enabled on the external HTTP.
+**Default**: `false`, the embedded UI and the admin HTTP API are enabled on the HTTP interface.
 
-Exposing the `stats` endpoint externally is required for the Admin UI and can also be useful if you collect stats for an external monitoring tool.
+The `stats` and `metrics` endpoints can be disabled by setting `DisableStatsOnHttp` to `true`.
 
-| Format               | Syntax                    |
-|:---------------------|:--------------------------|
-| Command line         | `--stats-on-ext`          |
-| YAML                 | `StatsOnExt`              |
-| Environment variable | `KURRENTDB_STATS_ON_EXT`  |
+| Format               | Syntax                              |
+|:---------------------|:------------------------------------|
+| Command line         | `--disable-stats-on-http`           |
+| YAML                 | `DisableStatsOnHttp`                |
+| Environment variable | `KURRENTDB_DISABLE_STATS_ON_HTTP`   |
 
-**Default**: `true`, stats endpoint is enabled on the external HTTP.
+**Default**: `false`, the stats and metrics endpoints are enabled on the HTTP interface.
 
-You can also disable the gossip protocol in the external HTTP interface. If you do that, ensure that the internal interface is properly configured. Also, if you use [gossip with DNS](cluster.md#cluster-with-dns), ensure that the [gossip port](cluster.md#gossip-port) is set to the internal HTTP port.
+You can also disable the gossip protocol on the HTTP interface by setting `DisableGossipOnHttp` to `true`.
 
-| Format               | Syntax                     |
-|:---------------------|:---------------------------|
-| Command line         | `--gossip-on-ext`          |
-| YAML                 | `GossipOnExt`              |
-| Environment variable | `KURRENTDB_GOSSIP_ON_EXT`  |
+| Format               | Syntax                               |
+|:---------------------|:-------------------------------------|
+| Command line         | `--disable-gossip-on-http`           |
+| YAML                 | `DisableGossipOnHttp`                |
+| Environment variable | `KURRENTDB_DISABLE_GOSSIP_ON_HTTP`   |
 
-**Default**: `true`, gossip is enabled on the external HTTP.
+**Default**: `false`, gossip is enabled on the HTTP interface.
 
 ## External TCP
 

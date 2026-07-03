@@ -5,7 +5,6 @@ using System.Collections.Concurrent;
 using System.Diagnostics.Metrics;
 using System.Threading.Channels;
 using Kurrent.Quack;
-using Kurrent.Quack.ConnectionPool;
 using Kurrent.Quack.Threading;
 using Kurrent.Surge.Schema;
 using Kurrent.Surge.Schema.Serializers;
@@ -29,7 +28,7 @@ public partial class UserIndexEngineSubscription(
 	IPublisher publisher,
 	ISchemaSerializer serializer,
 	SecondaryIndexingPluginOptions options,
-	DuckDBConnectionPool db,
+	DuckDBExecutor executor,
 	IReadIndex<string> readIndex,
 	Meter meter,
 	Func<(long, DateTime)> getLastAppendedRecord,
@@ -106,7 +105,7 @@ public partial class UserIndexEngineSubscription(
 
 					CaughtUp = true;
 
-					using (db.Rent(out var connection)) {
+					await executor.Execute(connection => {
 						// in some situations, a user index may have already been marked as deleted in the management stream but not yet in DuckDB:
 						// 1) if a node was off or disconnected from the quorum for an extended period of time
 						// 2) if a crash occurred mid-deletion
@@ -114,7 +113,9 @@ public partial class UserIndexEngineSubscription(
 						foreach (var deletedIndex in deletedIndexes) {
 							DeleteUserIndexTable(connection, deletedIndex);
 						}
-					}
+
+						return 0;
+					}, _cts.Token);
 
 					foreach (var (name, state) in userIndexes) {
 						if (state.Started) {
@@ -174,7 +175,7 @@ public partial class UserIndexEngineSubscription(
 							userIndexes.Remove(x.Name);
 
 							if (CaughtUp)
-								DeleteUserIndex(x.Name);
+								await DeleteUserIndex(x.Name);
 
 							break;
 						}
@@ -221,7 +222,7 @@ public partial class UserIndexEngineSubscription(
 			jsFieldSelector: createdEvent.Fields.Count is 0
 				? ""
 				: createdEvent.Fields[0].Selector,
-			db: db,
+			executor: executor,
 			sql: sql,
 			publisher: publisher,
 			meter: meter,
@@ -229,7 +230,7 @@ public partial class UserIndexEngineSubscription(
 			loggerFactory: logFactory
 		);
 
-		var reader = new UserIndexReader<TField>(sharedPool: db, processor, readIndex);
+		var reader = new UserIndexReader<TField>(executor, processor, readIndex);
 
 		UserIndexSubscription subscription = new UserIndexSubscription<TField>(
 			publisher: publisher,
@@ -262,12 +263,13 @@ public partial class UserIndexEngineSubscription(
 		DropSubscriptions(indexName);
 	}
 
-	private void DeleteUserIndex(string indexName) {
+	private async ValueTask DeleteUserIndex(string indexName) {
 		_log.LogDeletingUserIndex(indexName);
 
-		using (db.Rent(out var connection)) {
+		await executor.Execute(connection => {
 			DeleteUserIndexTable(connection, indexName);
-		}
+			return 0;
+		}, _cts.Token);
 
 		DropSubscriptions(indexName);
 	}
@@ -294,36 +296,40 @@ public partial class UserIndexEngineSubscription(
 			return data.Subscription.GetLastIndexedPosition();
 	}
 
-	public ValueTask<ClientMessage.ReadIndexEventsForwardCompleted> ReadForwards(ClientMessage.ReadIndexEventsForward msg,
+	public async ValueTask<ClientMessage.ReadIndexEventsForwardCompleted> ReadForwards(ClientMessage.ReadIndexEventsForward msg,
 		CancellationToken token) {
 		UserIndexHelpers.ParseQueryStreamName(msg.IndexName, out var indexName, out _);
 		_log.LogUserIndexReceivedReadForwardsRequest(indexName);
 		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var data)) {
-			var result = new ClientMessage.ReadIndexEventsForwardCompleted(
+			return new ClientMessage.ReadIndexEventsForwardCompleted(
 				ReadIndexResult.IndexNotFound, [], new(msg.CommitPosition, msg.PreparePosition), -1, true,
 				$"Index {msg.IndexName} does not exist"
 			);
-			return ValueTask.FromResult(result);
 		}
 
+		// await UNDER the read lock: the reader now queues an async executor.Execute, so returning the ValueTask
+		// while releasing the lock (as the non-async form did) would let a concurrent stop/delete take the write lock
+		// and dispose the processor before the queued read captures its snapshot. Holding the lock across the await
+		// keeps the processor alive for the read.
 		using (readLock)
-			return data.Reader.ReadForwards(msg, token);
+			return await data.Reader.ReadForwards(msg, token);
 	}
 
-	public ValueTask<ClientMessage.ReadIndexEventsBackwardCompleted> ReadBackwards(ClientMessage.ReadIndexEventsBackward msg,
+	public async ValueTask<ClientMessage.ReadIndexEventsBackwardCompleted> ReadBackwards(ClientMessage.ReadIndexEventsBackward msg,
 		CancellationToken token) {
 		UserIndexHelpers.ParseQueryStreamName(msg.IndexName, out var indexName, out _);
 		_log.LogUserIndexReceivedReadBackwardsRequest(indexName);
 		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var data)) {
-			var result = new ClientMessage.ReadIndexEventsBackwardCompleted(
+			return new ClientMessage.ReadIndexEventsBackwardCompleted(
 				ReadIndexResult.IndexNotFound, [], new(msg.CommitPosition, msg.PreparePosition), -1, true,
 				$"Index {msg.IndexName} does not exist"
 			);
-			return ValueTask.FromResult(result);
 		}
 
+		// await UNDER the read lock (see ReadForwards): the async executor read must not outlive the lock, or a
+		// concurrent stop/delete could dispose the processor before the queued read captures its snapshot.
 		using (readLock)
-			return data.Reader.ReadBackwards(msg, token);
+			return await data.Reader.ReadBackwards(msg, token);
 	}
 
 	public bool TryGetUserIndexTableDetails(string indexName, out string tableName, out string? fieldName) {

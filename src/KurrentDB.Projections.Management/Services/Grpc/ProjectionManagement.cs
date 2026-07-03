@@ -50,8 +50,16 @@ namespace EventStore.Projections.Core.Services.Grpc {
 		private static Exception ProjectionNotFound(string name) =>
 			new RpcException(new Status(StatusCode.NotFound, $"Projection '{name}' not found"));
 
-		private static Exception OperationFailed(ProjectionManagementMessage.OperationFailed message) =>
-			new RpcException(new Status(StatusCode.FailedPrecondition, message.Reason));
+		// Maps a projection-management failure reply to a gRPC status. RecordTooLarge mirrors the streams append
+		// API (InvalidArgument); Conflict/NotAuthorized keep their distinct semantics; anything else is a generic
+		// FailedPrecondition.
+		private static Exception MapFailure(ProjectionManagementMessage.OperationFailed failed) =>
+			failed switch {
+				ProjectionManagementMessage.RecordTooLarge => new RpcException(new Status(StatusCode.InvalidArgument, failed.Reason)),
+				ProjectionManagementMessage.Conflict => new RpcException(new Status(StatusCode.AlreadyExists, failed.Reason)),
+				ProjectionManagementMessage.NotAuthorized => new RpcException(new Status(StatusCode.PermissionDenied, failed.Reason)),
+				_ => new RpcException(new Status(StatusCode.FailedPrecondition, failed.Reason)),
+			};
 
 		private static byte[] ToMetadata(IDictionary<string, Value> properties) =>
 			properties.Count == 0 ? [] : new Struct { Fields = { properties } }.ToByteArray();

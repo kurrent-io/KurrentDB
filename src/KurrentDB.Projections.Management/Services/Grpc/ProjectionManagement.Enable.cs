@@ -43,6 +43,9 @@ internal partial class ProjectionManagement {
 				case ProjectionManagementMessage.NotFound:
 					enableSource.TrySetException(ProjectionNotFound(name));
 					break;
+				case ProjectionManagementMessage.OperationFailed failed:
+					enableSource.TrySetException(MapFailure(failed));
+					break;
 				default:
 					enableSource.TrySetException(UnknownMessage<ProjectionManagementMessage.Updated>(message));
 					break;

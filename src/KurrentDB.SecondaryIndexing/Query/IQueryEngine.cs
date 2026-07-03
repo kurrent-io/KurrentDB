@@ -12,14 +12,15 @@ public interface IQueryEngine {
 	/// </summary>
 	/// <param name="sqlQuery">The query to prepare.</param>
 	/// <param name="options">Query preparation options.</param>
+	/// <param name="token">The token that can be used to cancel the operation.</param>
 	/// <returns>The prepared query.</returns>
 	/// <exception cref="QueryPreparationException">The input query has incorrect syntax.</exception>
-	MemoryOwner<byte> PrepareQuery(ReadOnlySpan<byte> sqlQuery, QueryPreparationOptions options);
+	ValueTask<MemoryOwner<byte>> PrepareQueryAsync(ReadOnlyMemory<byte> sqlQuery, QueryPreparationOptions options, CancellationToken token = default);
 
 	/// <summary>
 	/// Executes the prepared query.
 	/// </summary>
-	/// <param name="preparedQuery">The prepared query returned by <see cref="PrepareQuery"/> method.</param>
+	/// <param name="preparedQuery">The prepared query returned by <see cref="PrepareQueryAsync"/> method.</param>
 	/// <param name="consumer">The query result consumer.</param>
 	/// <param name="options">The options to adjust the query execution behavior.</param>
 	/// <param name="token">The token that can be used to cancel the operation.</param>

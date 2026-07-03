@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Kurrent.Quack;
-using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
@@ -12,54 +11,50 @@ using static KurrentDB.SecondaryIndexing.Indexes.Default.DefaultSql;
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 internal class DefaultIndexReader(
-	DuckDBConnectionPool sharedPool,
+	DuckDBExecutor executor,
 	DefaultIndexProcessor processor,
 	IReadIndex<string> index
-) : SecondaryIndexReaderBase(sharedPool, index) {
+) : SecondaryIndexReaderBase(executor, index) {
 	protected override string GetId(string indexName) => string.Empty;
 
-	protected override List<IndexQueryRecord> GetDbRecordsForwards(DuckDBConnectionPool db,
+	protected override List<IndexQueryRecord> GetDbRecordsForwards(DuckDBAdvancedConnection connection,
 		string? id,
 		long startPosition,
 		int maxCount,
 		bool excludeFirst) {
 		var records = new List<IndexQueryRecord>(maxCount);
-		using (db.Rent(out var connection)) {
-			using (processor.CaptureSnapshot(connection)) {
-				if (excludeFirst) {
-					connection.ExecuteQuery<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexQueryExcl>(new(
-							startPosition,
-							maxCount))
-						.CopyTo(records);
-				} else {
-					connection.ExecuteQuery<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexQueryIncl>(new(
-							startPosition,
-							maxCount))
-						.CopyTo(records);
-				}
+		using (processor.CaptureSnapshot(connection)) {
+			if (excludeFirst) {
+				connection.ExecuteQuery<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexQueryExcl>(new(
+						startPosition,
+						maxCount))
+					.CopyTo(records);
+			} else {
+				connection.ExecuteQuery<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexQueryIncl>(new(
+						startPosition,
+						maxCount))
+					.CopyTo(records);
 			}
 		}
 
 		return records;
 	}
 
-	protected override List<IndexQueryRecord> GetDbRecordsBackwards(DuckDBConnectionPool db,
+	protected override List<IndexQueryRecord> GetDbRecordsBackwards(DuckDBAdvancedConnection connection,
 		string? id,
 		long startPosition,
 		int maxCount,
 		bool excludeFirst) {
 		var records = new List<IndexQueryRecord>(maxCount);
-		using (db.Rent(out var connection)) {
-			using (processor.CaptureSnapshot(connection)) {
-				if (excludeFirst) {
-					connection.ExecuteQuery<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexBackQueryExcl>(
-						new(startPosition, maxCount))
-						.CopyTo(records);
-				} else {
-					connection.ExecuteQuery<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexBackQueryIncl>(
-						new(startPosition, maxCount))
-						.CopyTo(records);
-				}
+		using (processor.CaptureSnapshot(connection)) {
+			if (excludeFirst) {
+				connection.ExecuteQuery<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexBackQueryExcl>(
+					new(startPosition, maxCount))
+					.CopyTo(records);
+			} else {
+				connection.ExecuteQuery<ReadDefaultIndexQueryArgs, IndexQueryRecord, ReadDefaultIndexBackQueryIncl>(
+					new(startPosition, maxCount))
+					.CopyTo(records);
 			}
 		}
 

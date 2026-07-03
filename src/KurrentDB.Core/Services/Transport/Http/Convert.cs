@@ -272,22 +272,24 @@ public static class Convert {
 		var evnt = eventLinkPair.Event;
 		var link = eventLinkPair.Link;
 		EntryElement entry;
-		if (embedContent > EmbedLevel.Content && evnt != null) {
+		if (embedContent > EmbedLevel.Content && (evnt != null || link != null)) {
 			var richEntry = new RichEntryElement();
 			entry = richEntry;
 
-			richEntry.EventId = evnt.EventId;
-			richEntry.EventType = evnt.EventType;
-			richEntry.EventNumber = evnt.EventNumber;
-			richEntry.StreamId = evnt.EventStreamId;
 			richEntry.PositionEventNumber = eventLinkPair.OriginalEvent.EventNumber;
 			richEntry.PositionStreamId = eventLinkPair.OriginalEvent.EventStreamId;
-			richEntry.IsJson = (evnt.Flags & PrepareFlags.IsJson) != 0;
-			richEntry.IsRedacted = (evnt.Flags & PrepareFlags.IsRedacted) != 0;
 
-			var data = evnt.Data.Span;
+			if (evnt != null) {
+				richEntry.EventId = evnt.EventId;
+				richEntry.EventType = evnt.EventType;
+				richEntry.EventNumber = evnt.EventNumber;
+				richEntry.StreamId = evnt.EventStreamId;
+				richEntry.IsJson = (evnt.Flags & PrepareFlags.IsJson) != 0;
+				richEntry.IsRedacted = (evnt.Flags & PrepareFlags.IsRedacted) != 0;
+			}
 
-			if (embedContent >= EmbedLevel.Body && eventLinkPair.Event != null) {
+			if (embedContent >= EmbedLevel.Body && evnt != null) {
+				var data = evnt.Data.Span;
 				if (richEntry.IsJson) {
 					if (embedContent >= EmbedLevel.PrettyBody) {
 						try {
@@ -327,20 +329,18 @@ public static class Convert {
 					} catch {
 						// ignore - we tried
 					}
+				}
+			}
 
-					var lnk = eventLinkPair.Link;
-					if (lnk != null) {
-						try {
-							richEntry.LinkMetaData = Helper.UTF8NoBom.GetString(lnk.Metadata.Span);
-							richEntry.IsLinkMetaData = richEntry.LinkMetaData.IsNotEmptyString();
-							// next step may fail, so we have already assigned body
-							if (embedContent >= EmbedLevel.PrettyBody) {
-								richEntry.LinkMetaData = FormatJson(richEntry.LinkMetaData);
-							}
-						} catch {
-							// ignore - we tried
-						}
+			if (embedContent >= EmbedLevel.Body && link != null) {
+				try {
+					richEntry.LinkMetaData = Helper.UTF8NoBom.GetString(link.Metadata.Span);
+					richEntry.IsLinkMetaData = richEntry.LinkMetaData.IsNotEmptyString();
+					if (embedContent >= EmbedLevel.PrettyBody) {
+						richEntry.LinkMetaData = FormatJson(richEntry.LinkMetaData);
 					}
+				} catch {
+					// ignore - we tried
 				}
 			}
 		} else {

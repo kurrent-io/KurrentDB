@@ -9,7 +9,6 @@ using DotNext.Threading;
 using Jint;
 using Jint.Native.Function;
 using Kurrent.Quack;
-using Kurrent.Quack.ConnectionPool;
 using Kurrent.Quack.Threading;
 using Kurrent.Surge.Schema.Serializers.Json;
 using KurrentDB.Common.Configuration;
@@ -24,7 +23,7 @@ using Microsoft.Extensions.Logging;
 namespace KurrentDB.SecondaryIndexing.Indexes.User;
 
 internal abstract class UserIndexProcessor : Disposable, ISecondaryIndexProcessor {
-	public abstract void Commit();
+	public abstract ValueTask CommitAsync(CancellationToken ct);
 	public abstract bool TryIndex(ResolvedEvent evt);
 	public abstract TFPos GetLastPosition();
 	public abstract SecondaryIndexProgressTracker Tracker { get; }
@@ -40,6 +39,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 	private readonly Function? _fieldSelector;
 	private readonly string _queryStreamName;
 	private readonly IPublisher _publisher;
+	private readonly DuckDBExecutor _executor;
 	private readonly DuckDBAdvancedConnection _connection;
 	private readonly UserIndexSql<TField> _sql;
 	private readonly object _skip;
@@ -59,7 +59,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 		string indexName,
 		string jsEventFilter,
 		string jsFieldSelector,
-		DuckDBConnectionPool db,
+		DuckDBExecutor executor,
 		UserIndexSql<TField> sql,
 		IPublisher publisher,
 		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)]
@@ -86,15 +86,22 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 		_filter = JsRecordEvaluator.Compile(_engine, jsEventFilter);
 		_fieldSelector = JsRecordEvaluator.Compile(_engine, jsFieldSelector);
 
-		_connection = db.Open();
-		_sql.CreateUserIndex(_connection);
+		_executor = executor;
+		_connection = executor.OpenConnection();
+		// CreateUserIndex is DuckDB DDL — run it on a dispatcher against the pinned connection.
+		executor.ExecuteOn(_connection, c => {
+			_sql.CreateUserIndex(c);
+			return 0;
+		}, CancellationToken.None).AsTask().GetAwaiter().GetResult();
 		_appender = new(_connection, _sql.TableName, "log_position", _sql.ViewName);
 
 		var serviceName = metricsConfiguration?.ServiceName ?? "kurrentdb";
 		var tracker = new SecondaryIndexProgressTracker(indexName, serviceName, meter, clock ?? TimeProvider.System,
 			loggerFactory.CreateLogger<SecondaryIndexProgressTracker>(), getLastAppendedRecord);
 
-		var (lastPosition, lastTimestamp) = GetLastKnownRecord();
+		var (lastPosition, lastTimestamp) = executor
+			.ExecuteOn(_connection, GetLastKnownRecord, CancellationToken.None)
+			.AsTask().GetAwaiter().GetResult(); // ctor is synchronous; runs once at startup
 		_log.LogUserIndexLoadedLastKnownLogPosition(IndexName, lastPosition, lastTimestamp);
 		tracker.InitLastIndexed(lastPosition.CommitPosition, lastTimestamp);
 
@@ -185,11 +192,11 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 		}
 	}
 
-	private (TFPos, DateTimeOffset) GetLastKnownRecord() {
+	private (TFPos, DateTimeOffset) GetLastKnownRecord(DuckDBAdvancedConnection connection) {
 		(TFPos pos, DateTimeOffset timestamp) result = (TFPos.Invalid, DateTimeOffset.MinValue);
 
 		var checkpointArgs = new GetCheckpointQueryArgs(IndexName);
-		var checkpoint = _sql.GetCheckpoint(_connection, checkpointArgs);
+		var checkpoint = _sql.GetCheckpoint(connection, checkpointArgs);
 		if (checkpoint != null) {
 			var pos = new TFPos(checkpoint.Value.CommitPosition ?? checkpoint.Value.PreparePosition, checkpoint.Value.PreparePosition);
 			var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(checkpoint.Value.Timestamp);
@@ -198,7 +205,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 			result = (pos, timestamp);
 		}
 
-		var lastIndexed = _sql.GetLastIndexedRecord(_connection);
+		var lastIndexed = _sql.GetLastIndexedRecord(connection);
 		if (lastIndexed != null) {
 			var pos = new TFPos(lastIndexed.Value.CommitPosition ?? lastIndexed.Value.PreparePosition, lastIndexed.Value.PreparePosition);
 			var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(lastIndexed.Value.Timestamp);
@@ -211,7 +218,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 		return result;
 	}
 
-	public void Checkpoint(TFPos position, DateTime timestamp) {
+	public async ValueTask CheckpointAsync(TFPos position, DateTime timestamp, CancellationToken ct) {
 		_log.LogUserIndexIsCheckpointing(IndexName, position, timestamp);
 
 		var checkpointArgs = new SetCheckpointQueryArgs {
@@ -221,19 +228,25 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 			Created = new DateTimeOffset(timestamp).ToUnixTimeMilliseconds()
 		};
 
-		UserIndexSql.SetCheckpoint(_connection, checkpointArgs);
+		await _executor.ExecuteOn(_connection, c => {
+			UserIndexSql.SetCheckpoint(c, checkpointArgs);
+			return 0;
+		}, ct);
 	}
 
 	/// <summary>
 	/// Commits all in-flight records to the index.
 	/// </summary>
-	public override void Commit() {
+	public override async ValueTask CommitAsync(CancellationToken ct) {
 		if (IsDisposed || !Interlocked.FalseToTrue(ref _committing))
 			return;
 
 		try {
 			using var duration = Tracker.StartCommitDuration();
-			_appender.Flush();
+			await _executor.ExecuteOn(_connection, c => {
+				_appender.Flush(); // appender is bound to _connection; runs on a measured dispatcher thread
+				return 0;
+			}, ct);
 			_log.LogUserIndexCommitted(IndexName);
 		} catch (Exception ex) {
 			_log.LogUserIndexFailedToCommit(ex, IndexName);
@@ -251,7 +264,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 	protected override void Dispose(bool disposing) {
 		_log.LogStoppingUserIndexProcessor(IndexName);
 		if (disposing) {
-			Commit();
+			CommitAsync(CancellationToken.None).AsTask().GetAwaiter().GetResult();
 			_appender.Unregister(_connection);
 			_appender.Dispose();
 			_connection.Dispose();

@@ -81,7 +81,7 @@ internal partial class ProjectionManagement {
 					createdSource.TrySetResult(true);
 					break;
 				case ProjectionManagementMessage.OperationFailed failed:
-					createdSource.TrySetException(OperationFailed(failed));
+					createdSource.TrySetException(MapFailure(failed));
 					break;
 				default:
 					createdSource.TrySetException(UnknownMessage<ProjectionManagementMessage.Updated>(message));

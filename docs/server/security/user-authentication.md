@@ -35,7 +35,7 @@ An `$ops` user can do everything that an `$admin` can do except manage users and
 New users can be created through the following means:
 
 - The [HTTP API](../http-api/security.md#creating-users)
-- The [Admin UI](../features/admin-ui.md#users)
+- The [embedded UI](../features/admin-ui.md#users)
 <!-- TODO A [gRPC client]() -->
 
 Users are created with a username, password, and optional set of groups or roles. These roles are used for [authorization](./user-authorization.md#roles).
