@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Net;
 using System.Runtime.InteropServices;
 using DotNext.Diagnostics;
+using DotNext.Net.Cluster.Consensus.Raft;
 
 namespace KurrentDB.KontrolPlane;
 
@@ -29,7 +30,19 @@ partial class RaftKontroller {
 					StartAppointments(snapshot, tasks, databases, token);
 					RemoveDeletedDatabases(databases, deletedDatabases);
 
-					await Task.WhenAll(tasks);
+					var task = Task.WhenAll(tasks);
+					await task.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing
+					                          | ConfigureAwaitOptions.ContinueOnCapturedContext);
+
+					// If one or many appointment processes throws NotLeaderException, it means
+					// that the current node lost its leadership in the cluster
+					if (task.Exception?.InnerExceptions is { } exceptions) {
+						var e = exceptions.FirstOrDefault(static e => e is NotLeaderException)
+						        ?? exceptions.FirstOrDefault(e => e is OperationCanceledException oce && oce.CancellationToken == token);
+
+						if (e is not null)
+							throw new OperationCanceledException(e.Message, e, token);
+					}
 				} finally {
 					snapshot.Release();
 					tasks.Clear();
@@ -37,7 +50,7 @@ partial class RaftKontroller {
 					databases.Clear();
 				}
 			} while (await timer.WaitForNextTickAsync(token));
-		} finally {
+		}  finally {
 			timer.Dispose();
 			_appointmentState.Clear();
 		}
@@ -113,8 +126,9 @@ partial class RaftKontroller {
 			.MaxBy(static pair => pair.Value.UncommittedOffset)
 			.Key;
 
-		// Appoint the leader
-		if (await _raft.AppointLeaderAsync(databaseId, epoch, candidate, token))
+		// Appoint the leader. Use empty cancellation token because AppointLeaderAsync throws NotLeaderException
+		// if the current node is not a leader anymore
+		if (await _raft.AppointLeaderAsync(databaseId, epoch, candidate, CancellationToken.None))
 			_appointmentState[databaseId] = new LeaderAppointment(candidate, epoch + 1UL); // appointment increments the Epoch
 
 		static IEnumerable<Task<KeyValuePair<EndPoint, ReplicaState>>> GetReplicaState(
