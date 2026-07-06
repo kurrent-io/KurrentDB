@@ -91,7 +91,7 @@ public class ProjectionEngineV2LifecycleTests {
 		}
 	}
 
-	sealed class NoOpStateHandler : IProjectionStateHandler {
+	class NoOpStateHandler : IProjectionStateHandler {
 		public void Load(string state) { }
 		public void LoadShared(string state) { }
 		public void Initialize() { }
@@ -100,7 +100,7 @@ public class ProjectionEngineV2LifecycleTests {
 		public string GetStatePartition(CheckpointTag eventPosition, string category, ProjectionResolvedEvent data) =>
 			data.EventStreamId;
 
-		public bool ProcessEvent(string partition,
+		public virtual bool ProcessEvent(string partition,
 			CheckpointTag eventPosition,
 			string category,
 			ProjectionResolvedEvent @event,
@@ -134,6 +134,36 @@ public class ProjectionEngineV2LifecycleTests {
 		};
 
 		public void Dispose() { }
+	}
+
+	sealed class ThrowingStateHandler : NoOpStateHandler {
+		public override bool ProcessEvent(string partition,
+			CheckpointTag eventPosition,
+			string category,
+			ProjectionResolvedEvent @event,
+			out string newState,
+			out string newSharedState,
+			out EmittedEventEnvelope[] emittedEvents) {
+			throw new Exception("handler boom");
+		}
+	}
+
+	// Processes the first event normally, throws on the second. Used to fault a
+	// partition while a checkpoint marker can be in flight.
+	sealed class ThrowOnSecondEventStateHandler : NoOpStateHandler {
+		private int _seen;
+
+		public override bool ProcessEvent(string partition,
+			CheckpointTag eventPosition,
+			string category,
+			ProjectionResolvedEvent @event,
+			out string newState,
+			out string newSharedState,
+			out EmittedEventEnvelope[] emittedEvents) {
+			if (++_seen >= 2)
+				throw new Exception("handler boom");
+			return base.ProcessEvent(partition, eventPosition, category, @event, out newState, out newSharedState, out emittedEvents);
+		}
 	}
 
 	#endregion
@@ -186,6 +216,86 @@ public class ProjectionEngineV2LifecycleTests {
 		await engine.DisposeAsync();
 
 		await Assert.That(engine.IsFaulted).IsFalse();
+	}
+
+	[Test]
+	public async Task engine_faults_when_partition_processor_throws() {
+		// DB-2159: a state-handler exception faults the partition processor's task, but
+		// nothing observed partition tasks while the read loop ran, so a continuous
+		// projection never faulted - it reported Running forever with no checkpoint, no
+		// persistence, and nothing logged. The infinite read strategy reproduces the
+		// continuous case; a finite stream would surface the fault via the end-of-read
+		// drain and mask the bug.
+		var publisher = new CapturingPublisher();
+		var user = new ClaimsPrincipal(new ClaimsIdentity());
+		var stateHandler = new ThrowingStateHandler();
+
+		var config = new ProjectionEngineV2Config {
+			ProjectionName = "faulting-test",
+			SourceDefinition = stateHandler.GetSourceDefinition(),
+			StateHandlerFactory = () => new ThrowingStateHandler(),
+			MaxPartitionStateCacheSize = 1000,
+			PartitionCount = 1,
+			CheckpointAfterMs = 0,
+			CheckpointHandledThreshold = 100,
+			CheckpointUnhandledBytesThreshold = long.MaxValue
+		};
+
+		var engine = new ProjectionEngineV2(config, new InfiniteReadStrategy(), new SystemClient(publisher), user);
+		engine.Start(new TFPos(0, 0));
+
+		var timeout = Task.Delay(TimeSpan.FromSeconds(5));
+		while (!engine.IsFaulted && !timeout.IsCompleted)
+			await Task.Delay(50);
+
+		// Assert before disposing: on a wedged engine DisposeAsync never returns (the
+		// read loop's final checkpoint marker blocks forever on the dead partition's
+		// full channel), so disposing first turns a failure into a hang.
+		await Assert.That(engine.IsFaulted).IsTrue();
+		// The fault reason names the projection, the handler, and the event position,
+		// and carries the handler's error message.
+		await Assert.That(engine.FaultException!.Message).Contains("failed to process an event");
+		await Assert.That(engine.FaultException!.Message).Contains("handler boom");
+
+		await engine.DisposeAsync();
+	}
+
+	[Test]
+	public async Task engine_faults_when_processor_throws_with_checkpoint_in_flight() {
+		// A checkpoint marker the dead partition never acks holds the coordinator's
+		// checkpoint lock forever, so the fault path must cancel the read loop's
+		// final marker injection rather than wait on the lock. Threshold 1 keeps
+		// markers in flight around the fault; the handler processes one event and
+		// throws on the second. The exact interleaving of marker injection and the
+		// fault race is timing-dependent, but every interleaving must fault - a
+		// wedge here reproduces DB-2159's narrowed variant.
+		var publisher = new CapturingPublisher();
+		var user = new ClaimsPrincipal(new ClaimsIdentity());
+		var stateHandler = new ThrowOnSecondEventStateHandler();
+
+		var config = new ProjectionEngineV2Config {
+			ProjectionName = "faulting-checkpoint-test",
+			SourceDefinition = stateHandler.GetSourceDefinition(),
+			StateHandlerFactory = () => new ThrowOnSecondEventStateHandler(),
+			MaxPartitionStateCacheSize = 1000,
+			PartitionCount = 1,
+			CheckpointAfterMs = 0,
+			CheckpointHandledThreshold = 1,
+			CheckpointUnhandledBytesThreshold = long.MaxValue
+		};
+
+		var engine = new ProjectionEngineV2(config, new InfiniteReadStrategy(), new SystemClient(publisher), user);
+		engine.Start(new TFPos(0, 0));
+
+		var timeout = Task.Delay(TimeSpan.FromSeconds(5));
+		while (!engine.IsFaulted && !timeout.IsCompleted)
+			await Task.Delay(50);
+
+		// Assert before disposing (see engine_faults_when_partition_processor_throws).
+		await Assert.That(engine.IsFaulted).IsTrue();
+		await Assert.That(engine.FaultException!.Message).Contains("handler boom");
+
+		await engine.DisposeAsync();
 	}
 
 	[Test]
