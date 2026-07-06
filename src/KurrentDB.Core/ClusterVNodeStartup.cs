@@ -302,11 +302,16 @@ public class ClusterVNodeStartup<TStreamId>
 
 				options.Interceptors.Add<LogRetriesInterceptor>();
 
-				// Enable gzip compression
-				// The client must still need to opt-in
-				options.ResponseCompressionAlgorithm = "gzip";
-				options.ResponseCompressionLevel = CompressionLevel.Optimal;
-				options.CompressionProviders.Add(new Rfc1952GzipCompressionProvider(CompressionLevel.Optimal));
+				// gRPC response compression (gzip). The client must still opt in by advertising gzip in
+				// grpc-accept-encoding, and cannot override the level — it's a server-side setting.
+				// The provider is always registered so gzip-compressed client requests can be decompressed,
+				// but responses are only compressed when the level is not NoCompression.
+				var compressionLevel = _options.Grpc.CompressionLevel;
+				options.CompressionProviders.Add(new Rfc1952GzipCompressionProvider(compressionLevel));
+				if (compressionLevel != CompressionLevel.NoCompression) {
+					options.ResponseCompressionAlgorithm = "gzip";
+					options.ResponseCompressionLevel = compressionLevel;
+				}
 			})
 			.AddServiceOptions<Streams<TStreamId>>(options => options.MaxReceiveMessageSize = TFConsts.EffectiveMaxLogRecordSize);
 
