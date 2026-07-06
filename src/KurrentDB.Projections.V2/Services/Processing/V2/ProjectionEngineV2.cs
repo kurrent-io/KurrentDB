@@ -163,12 +163,14 @@ public sealed class ProjectionEngineV2 : IAsyncDisposable {
 				if (exited.IsFaulted) {
 					partitionFault = exited.Exception!.InnerException ?? exited.Exception;
 					Log.Error(partitionFault, "ProjectionEngineV2 {Name} partition processor failed", _config.ProjectionName);
-					// Unblock the read loop before awaiting it: cancel its final
-					// checkpoint marker via the drain token (a marker the dead
-					// partition never acked holds the coordinator's checkpoint lock
-					// forever), and complete the channels so pending and subsequent
-					// writes throw ChannelClosedException instead of blocking on a
-					// full channel.
+					// Cancelling both tokens is what stops the read loop: every await
+					// in it is token-governed, including the final checkpoint marker
+					// (drain token), which must not wait on a checkpoint the dead
+					// partition will never ack. Completing the channels is what lets
+					// the sibling processors exit; doing it before awaiting the read
+					// loop is deliberate redundancy - if a future await in the read
+					// loop misses a token, channel closure still unblocks the writer
+					// instead of wedging the fault path again.
 					await readCts.CancelAsync();
 					await drainCts.CancelAsync();
 					dispatcher.Complete(partitionFault);
