@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
 using System.Net;
 using System.Runtime.InteropServices;
 using DotNext.Diagnostics;
@@ -37,11 +38,7 @@ partial class RaftKontroller {
 					// If one or many appointment processes throws NotLeaderException, it means
 					// that the current node lost its leadership in the cluster
 					if (task.Exception?.InnerExceptions is { } exceptions) {
-						var e = exceptions.FirstOrDefault(static e => e is NotLeaderException)
-						        ?? exceptions.FirstOrDefault(e => e is OperationCanceledException oce && oce.CancellationToken == token);
-
-						if (e is not null)
-							throw new OperationCanceledException(e.Message, e, token);
+						LeadershipLost(exceptions, token);
 					}
 				} finally {
 					snapshot.Release();
@@ -53,6 +50,17 @@ partial class RaftKontroller {
 		}  finally {
 			timer.Dispose();
 			_appointmentState.Clear();
+		}
+
+		static void LeadershipLost(IEnumerable<Exception> exceptions, CancellationToken token) {
+			foreach (var e in exceptions) {
+				switch (e) {
+					case NotLeaderException nle:
+						throw new OperationCanceledException(nle.Message, e, token);
+					case OperationCanceledException oce when oce.CancellationToken == token:
+						throw new OperationCanceledException(oce.Message, oce, token);
+				}
+			}
 		}
 	}
 
