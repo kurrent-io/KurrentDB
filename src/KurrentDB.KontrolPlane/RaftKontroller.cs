@@ -19,7 +19,7 @@ public partial class RaftKontroller : IAsyncDisposable {
 	private Task _leadershipTask;
 
 	public RaftKontroller(in Options options) {
-		var stateLocation = new DirectoryInfo(Path.Combine(options.WalOptions.Location, "ktrl"));
+		var stateLocation = new DirectoryInfo(Path.Combine(options.WalOptions.Location, "state"));
 		var configStorageLocation = Path.Combine(options.WalOptions.Location, "members.list");
 		_state = new(stateLocation, options.ConnectionPoolCapacity) {
 			SnapshotDepth = options.SnapshotDepth
