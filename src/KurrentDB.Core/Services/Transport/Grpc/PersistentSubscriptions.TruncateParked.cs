@@ -14,7 +14,7 @@ using static KurrentDB.Core.Services.Transport.Grpc.RpcExceptions;
 namespace EventStore.Core.Services.Transport.Grpc;
 
 internal partial class PersistentSubscriptions {
-	private static readonly Operation TruncateParkedOperation = new(Plugins.Authorization.Operations.Subscriptions.ReplayParked);
+	private static readonly Operation TruncateParkedOperation = new(Plugins.Authorization.Operations.Subscriptions.TruncateParked);
 
 	public override async Task<TruncateParkedResp> TruncateParked(TruncateParkedReq request, ServerCallContext context) {
 		var correlationId = Guid.NewGuid();

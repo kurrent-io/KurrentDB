@@ -64,7 +64,7 @@ public class PersistentSubscriptionController : CommunicationController {
 		RegisterUrlBased(service, "/subscriptions/{stream}/{subscription}/replayParked?stopAt={stopAt}", HttpMethod.Post,
 			WithParameters(Operations.Subscriptions.ReplayParked), ReplayParkedMessages);
 		RegisterUrlBased(service, "/subscriptions/{stream}/{subscription}/truncateParked?stopAt={stopAt}", HttpMethod.Post,
-			WithParameters(Operations.Subscriptions.ReplayParked), TruncateParkedMessages);
+			WithParameters(Operations.Subscriptions.TruncateParked), TruncateParkedMessages);
 		RegisterUrlBased(service, "/subscriptions/{stream}/{subscription}/ack/{messageid}", HttpMethod.Post,
 			WithParameters(Operations.Subscriptions.ProcessMessages), AckMessage);
 		RegisterUrlBased(service, "/subscriptions/{stream}/{subscription}/nack/{messageid}?action={action}",
