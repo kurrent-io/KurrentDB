@@ -134,6 +134,7 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 		});
 	}
 
+	// for parked message stats
 	private void BeginReadTruncateBefore(Action<long?> completed) {
 		_ioDispatcher.ReadBackward(
 			streamId: SystemStreams.MetastreamOf(ParkedStreamId),
@@ -209,11 +210,13 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 						completed?.Invoke(null, null);
 						break;
 				}
-			}, () => {
+			},
+			timeoutAction: () => {
 				Log.Error(
 					$"Timed out reading the first event in the parked message stream {ParkedStreamId}. Parked message stats may be incorrect.");
 				completed?.Invoke(null, null);
-			}, Guid.NewGuid());
+			},
+			corrId: Guid.NewGuid());
 	}
 
 	// for parked message stats
@@ -244,11 +247,13 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 						completed?.Invoke(null);
 						break;
 				}
-			}, () => {
+			},
+			timeoutAction: () => {
 				Log.Error(
 					$"Timed out reading the last event in the parked message stream {ParkedStreamId}. Parked message stats may be incorrect.");
 				completed?.Invoke(null);
-			}, Guid.NewGuid());
+			},
+			corrId: Guid.NewGuid());
 	}
 
 	// updates the truncateBefore for the parked stream
