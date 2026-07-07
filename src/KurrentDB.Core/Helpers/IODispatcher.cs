@@ -301,7 +301,8 @@ public sealed class IODispatcher : IHandle<IODispatcherDelayedMessage>, IHandle<
 		ClaimsPrincipal principal,
 		Action<ClientMessage.ReadStreamEventsBackwardCompleted> action,
 		Action timeoutAction,
-		Guid corrId) {
+		Guid corrId,
+		TimeSpan? timeout = null) {
 
 		var handler = new ReadStreamEventsBackwardHandlers.Tracking(
 			corrId,
@@ -323,10 +324,11 @@ public sealed class IODispatcher : IHandle<IODispatcherDelayedMessage>, IHandle<
 				false,
 				null,
 				principal,
-				replyOnExpired: false),
+				replyOnExpired: false,
+				expires: timeout is { } t ? DateTime.UtcNow.Add(t) : null),
 			handler);
 
-		Delay(TimeSpan.FromMilliseconds(ReadTimeoutMs), BackwardReader, corrId);
+		Delay(timeout ?? TimeSpan.FromMilliseconds(ReadTimeoutMs), BackwardReader, corrId);
 		return corrId;
 	}
 
@@ -396,7 +398,8 @@ public sealed class IODispatcher : IHandle<IODispatcherDelayedMessage>, IHandle<
 		ClaimsPrincipal principal,
 		Action<ClientMessage.ReadStreamEventsForwardCompleted> action,
 		Action timeoutAction,
-		Guid corrId) {
+		Guid corrId,
+		TimeSpan? timeout = null) {
 		_requestTracker.AddPendingRead(corrId);
 
 		ForwardReader.Publish(
@@ -411,7 +414,8 @@ public sealed class IODispatcher : IHandle<IODispatcherDelayedMessage>, IHandle<
 				false,
 				null,
 				principal,
-				replyOnExpired: false),
+				replyOnExpired: false,
+				expires: timeout is { } t ? DateTime.UtcNow.Add(t) : null),
 			res => {
 				if (_requestTracker.RemovePendingRead(res.CorrelationId)) {
 					action(res);
@@ -422,7 +426,7 @@ public sealed class IODispatcher : IHandle<IODispatcherDelayedMessage>, IHandle<
 					timeoutAction();
 				}
 			});
-		Delay(TimeSpan.FromMilliseconds(ReadTimeoutMs), ForwardReader, corrId);
+		Delay(timeout ?? TimeSpan.FromMilliseconds(ReadTimeoutMs), ForwardReader, corrId);
 		return corrId;
 	}
 
