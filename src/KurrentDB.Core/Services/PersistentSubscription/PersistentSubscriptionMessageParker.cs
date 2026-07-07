@@ -17,7 +17,7 @@ namespace KurrentDB.Core.Services.PersistentSubscription;
 public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessageParker {
 	private readonly IODispatcher _ioDispatcher;
 	public readonly string ParkedStreamId;
-	private long _lastTruncateBefore = -1;
+	private long _lastTruncateBefore = 0;
 	private long _lastParkedEventNumber = -1;
 	private DateTime? _oldestParkedMessage;
 	private long _parkedDueToClientNak;
@@ -28,9 +28,7 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 	public long ParkedMessageCount =>
 		_lastParkedEventNumber == -1
 			? 0
-			: _lastTruncateBefore == -1
-				? _lastParkedEventNumber + 1
-				: _lastParkedEventNumber - _lastTruncateBefore + 1;
+			: _lastParkedEventNumber - _lastTruncateBefore + 1;
 
 	public long ParkedDueToClientNak => Interlocked.Read(ref _parkedDueToClientNak);
 	public long ParkedDueToMaxRetries => Interlocked.Read(ref _parkedDueToMaxRetries);
@@ -119,7 +117,7 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 			BeginReadLastEvent(lastEventNumber => {
 				if (lastEventNumber is null) {
 					// parked stream is empty
-					_lastTruncateBefore = truncateBefore ?? -1;
+					_lastTruncateBefore = truncateBefore ?? 0;
 					_lastParkedEventNumber = -1;
 					_oldestParkedMessage = null;
 					completed?.Invoke();
@@ -127,7 +125,7 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 				}
 
 				BeginReadFirstEvent(0, (firstEventNumber, oldestParkedMessageTimeStamp) => {
-					_lastTruncateBefore = firstEventNumber ?? truncateBefore ?? -1;
+					_lastTruncateBefore = firstEventNumber ?? truncateBefore ?? 0;
 					_lastParkedEventNumber = lastEventNumber ?? -1;
 					_oldestParkedMessage = oldestParkedMessageTimeStamp;
 					completed?.Invoke();
