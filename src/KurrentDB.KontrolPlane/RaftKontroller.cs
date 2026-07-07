@@ -27,7 +27,7 @@ public partial class RaftKontroller : IAsyncDisposable {
 
 		// Must be recovered before initialization of the WAL, which can apply log entries at construction time
 		_state.Recover();
-		_wal = new WriteAheadLog(options.WalOptions, _state);
+		_wal = new(options.WalOptions, _state);
 
 		var config = new RaftCluster.TcpConfiguration(options.ListenAddress) {
 			PublicEndPoint = options.PublicAddress,
@@ -35,7 +35,7 @@ public partial class RaftKontroller : IAsyncDisposable {
 			ColdStart = options.SingleNodeDeployment,
 		};
 
-		_raft = new RaftCluster(config) {
+		_raft = new(config) {
 			AuditTrail = _wal
 		};
 
