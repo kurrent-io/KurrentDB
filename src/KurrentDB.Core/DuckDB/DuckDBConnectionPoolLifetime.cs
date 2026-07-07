@@ -100,7 +100,19 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 		}
 	}
 
-	public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+	public Task StartAsync(CancellationToken cancellationToken) {
+		var task = Task.CompletedTask;
+		try {
+			// cleanup tmp files on startup
+			if (Directory.Exists(_swapTempDirectory)) {
+				Directory.Delete(_swapTempDirectory, recursive: true);
+			}
+		} catch (Exception e) {
+			task = Task.FromException(e);
+		}
+
+		return task;
+	}
 
 	public Task StopAsync(CancellationToken cancellationToken) {
 		_log.LogDebug("Checkpointing DuckDB connection");
