@@ -20,6 +20,9 @@ message IndexField {
   string selector = 2;
   reserved 3; // selector type (js, json path, surge style js)
   IndexFieldType type = 4;
+  // When true, a DuckDB ART index is built on this field's column for fast equality lookups,
+  // at extra storage and write cost. When false (the default), the field is still queryable via a scan.
+  bool optimize_lookups = 5;
 }
 
 enum IndexState {

@@ -180,6 +180,7 @@ partial class Enumerator {
 					ReadIndexResult.AccessDenied => new ReadResponseException.AccessDenied(),
 					ReadIndexResult.IndexNotFound => new ReadResponseException.IndexNotFound(IndexName),
 					ReadIndexResult.InvalidPosition => new ReadResponseException.InvalidPosition(),
+					ReadIndexResult.InvalidArgument => new ReadResponseException.InvalidIndexQuery(completed.Error),
 					_ => ReadResponseException.UnknownError.Create(completed.Result, completed.Error)
 				};
 				_channel.Writer.TryComplete(exception);

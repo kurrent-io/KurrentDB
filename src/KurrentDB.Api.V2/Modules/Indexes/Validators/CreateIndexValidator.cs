@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Linq;
 using FluentValidation;
 using KurrentDB.Api.Infrastructure.Grpc.Validation;
 using KurrentDB.Protocol.V2.Indexes;
@@ -20,10 +21,9 @@ class CreateIndexValidator : RequestValidator<CreateIndexRequest> {
 		RuleForEach(x => x.Fields)
 			.SetValidator(FieldValidator.Instance);
 
-		// todo: when we allow multiple fields, their names will need to be unique within the request
 		RuleFor(x => x.Fields)
-			.Must(x => x.Count <= 1)
-			.WithMessage("Currently at most one index field must be provided");
+			.Must(fields => fields.Select(f => f.Name).Distinct().Count() == fields.Count)
+			.WithMessage("Index field names must be unique within a request");
 
 		RuleFor(x => x)
 			.Must(x =>

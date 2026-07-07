@@ -46,6 +46,7 @@ public partial class UserIndexEngineSubscription(
 		ReaderWriterLockSlim RWLock,
 		UserIndexSubscription Subscription,
 		UserIndexReader Reader,
+		IReadOnlyList<IField> Fields,
 		string ViewName);
 
 	public bool CaughtUp { get; private set; }
@@ -188,39 +189,17 @@ public partial class UserIndexEngineSubscription(
 		}
 	}
 
-	private ValueTask StartUserIndex(string indexName, IndexCreated createdEvent) {
-		if (createdEvent.Fields is [])
-			return StartUserIndex<NullField>(indexName, createdEvent);
-
-		return createdEvent.Fields[0].Type switch {
-			IndexFieldType.Double => StartUserIndex<DoubleField>(indexName, createdEvent),
-			IndexFieldType.String => StartUserIndex<StringField>(indexName, createdEvent),
-//			IndexFieldType.Int16 => StartUserIndex<Int16Field>(indexName, createdEvent),
-			IndexFieldType.Int32 => StartUserIndex<Int32Field>(indexName, createdEvent),
-			IndexFieldType.Int64 => StartUserIndex<Int64Field>(indexName, createdEvent),
-//			IndexFieldType.Uint32 => StartUserIndex<UInt32Field>(indexName, createdEvent),
-//			IndexFieldType.Uint64 => StartUserIndex<UInt64Field>(indexName, createdEvent),
-			_ => throw new ArgumentOutOfRangeException("Field type")
-		};
-	}
-
-	private async ValueTask StartUserIndex<TField>(
-		string indexName,
-		IndexCreated createdEvent) where TField : IField<TField> {
+	private async ValueTask StartUserIndex(string indexName, IndexCreated createdEvent) {
 		_log.LogStartingUserIndex(indexName);
 
-		var sql = new UserIndexSql<TField>(
-			indexName,
-			createdEvent.Fields.Count is 0
-				? ""
-				: createdEvent.Fields[0].Name);
+		var fields = createdEvent.Fields.Select(IField.Create).ToArray();
 
-		var processor = new UserIndexProcessor<TField>(
+		var sql = new UserIndexSql(indexName, fields);
+
+		var processor = new UserIndexProcessor(
 			indexName: indexName,
 			jsEventFilter: createdEvent.Filter,
-			jsFieldSelector: createdEvent.Fields.Count is 0
-				? ""
-				: createdEvent.Fields[0].Selector,
+			fields: fields,
 			db: db,
 			sql: sql,
 			publisher: publisher,
@@ -229,16 +208,16 @@ public partial class UserIndexEngineSubscription(
 			loggerFactory: logFactory
 		);
 
-		var reader = new UserIndexReader<TField>(sharedPool: db, processor, readIndex);
+		var reader = new UserIndexReader(sharedPool: db, processor, fields, readIndex);
 
-		UserIndexSubscription subscription = new UserIndexSubscription<TField>(
+		var subscription = new UserIndexSubscription(
 			publisher: publisher,
 			indexProcessor: processor,
 			options: options,
 			log: logFactory.CreateLogger<UserIndexSubscription>(),
 			token: _cts.Token);
 
-		_userIndexes.TryAdd(indexName, new(new(), subscription, reader, sql.ViewName));
+		_userIndexes.TryAdd(indexName, new(new(), subscription, reader, fields, sql.ViewName));
 		var viewName = new ViewName(sql.ViewName);
 		_viewNameToIndexNameMapping.TryAdd(viewName, indexName);
 		await subscription.Start();
@@ -274,7 +253,7 @@ public partial class UserIndexEngineSubscription(
 
 	private void DropSubscriptions(string indexName) {
 		_log.LogDroppingSubscriptionsToUserIndex(indexName);
-		publisher.Publish(new StorageMessage.SecondaryIndexDeleted(UserIndexHelpers.GetStreamNameRegex(indexName)));
+		publisher.Publish(new StorageMessage.SecondaryIndexDeleted(UserIndexHelpers.GetQueryStreamName(indexName)));
 	}
 
 	private static void DeleteUserIndexTable(DuckDBAdvancedConnection connection, string indexName) {
@@ -296,7 +275,7 @@ public partial class UserIndexEngineSubscription(
 
 	public ValueTask<ClientMessage.ReadIndexEventsForwardCompleted> ReadForwards(ClientMessage.ReadIndexEventsForward msg,
 		CancellationToken token) {
-		UserIndexHelpers.ParseQueryStreamName(msg.IndexName, out var indexName, out _);
+		UserIndexHelpers.ParseQueryStreamName(msg.IndexName, out var indexName, out var suffix);
 		_log.LogUserIndexReceivedReadForwardsRequest(indexName);
 		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var data)) {
 			var result = new ClientMessage.ReadIndexEventsForwardCompleted(
@@ -306,13 +285,19 @@ public partial class UserIndexEngineSubscription(
 			return ValueTask.FromResult(result);
 		}
 
-		using (readLock)
+		using (readLock) {
+			if (!UserIndexHelpers.TryParseConstraints(data.Fields, suffix, out _))
+				return ValueTask.FromResult(new ClientMessage.ReadIndexEventsForwardCompleted(
+					ReadIndexResult.InvalidArgument, [], new(msg.CommitPosition, msg.PreparePosition), -1, true,
+					$"Invalid field constraints for index '{msg.IndexName}'"));
+
 			return data.Reader.ReadForwards(msg, token);
+		}
 	}
 
 	public ValueTask<ClientMessage.ReadIndexEventsBackwardCompleted> ReadBackwards(ClientMessage.ReadIndexEventsBackward msg,
 		CancellationToken token) {
-		UserIndexHelpers.ParseQueryStreamName(msg.IndexName, out var indexName, out _);
+		UserIndexHelpers.ParseQueryStreamName(msg.IndexName, out var indexName, out var suffix);
 		_log.LogUserIndexReceivedReadBackwardsRequest(indexName);
 		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var data)) {
 			var result = new ClientMessage.ReadIndexEventsBackwardCompleted(
@@ -322,20 +307,34 @@ public partial class UserIndexEngineSubscription(
 			return ValueTask.FromResult(result);
 		}
 
-		using (readLock)
+		using (readLock) {
+			if (!UserIndexHelpers.TryParseConstraints(data.Fields, suffix, out _))
+				return ValueTask.FromResult(new ClientMessage.ReadIndexEventsBackwardCompleted(
+					ReadIndexResult.InvalidArgument, [], new(msg.CommitPosition, msg.PreparePosition), -1, true,
+					$"Invalid field constraints for index '{msg.IndexName}'"));
+
 			return data.Reader.ReadBackwards(msg, token);
+		}
 	}
 
-	public bool TryGetUserIndexTableDetails(string indexName, out string tableName, out string? fieldName) {
-		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var data)) {
-			tableName = null!;
-			fieldName = null;
-			return false;
-		}
+	public IndexSubscriptionResult TryParseIndexSubscription(string indexStream, out string indexKey, out IReadOnlyList<KeyValuePair<string, string>> constraints) {
+		indexKey = indexStream;
+		constraints = [];
+
+		// we only reach here for a stream this reader owns (its CanReadIndex already parsed it), so the name always parses
+		UserIndexHelpers.ParseQueryStreamName(indexStream, out var indexName, out var suffix);
+
+		// the index was deleted between being resolved as the reader and acquiring the read lock
+		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var data))
+			return IndexSubscriptionResult.NotFound;
 
 		using (readLock) {
-			data.Subscription.GetUserIndexTableDetails(out tableName, out fieldName);
-			return true;
+			indexKey = UserIndexHelpers.GetQueryStreamName(indexName);
+			if (!UserIndexHelpers.TryParseConstraints(data.Fields, suffix, out var parsed))
+				return IndexSubscriptionResult.InvalidConstraints;
+
+			constraints = parsed.Select(c => new KeyValuePair<string, string>(c.Field.Name, c.Value)).ToArray();
+			return IndexSubscriptionResult.Ok;
 		}
 	}
 

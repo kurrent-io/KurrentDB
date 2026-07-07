@@ -32,6 +32,10 @@ public abstract class ReadResponseException : Exception {
 
 	public class InvalidPosition : ReadResponseException;
 
+	public class InvalidIndexQuery(string message) : ReadResponseException {
+		public readonly string ErrorMessage = message;
+	}
+
 	public class Timeout(string errorMessage) : ReadResponseException {
 		public readonly string ErrorMessage = errorMessage;
 	}
