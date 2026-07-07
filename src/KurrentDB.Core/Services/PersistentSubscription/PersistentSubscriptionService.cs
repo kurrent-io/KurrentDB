@@ -1146,6 +1146,11 @@ public class PersistentSubscriptionService<TStreamId> :
 	}
 
 	public void Handle(ClientMessage.ReplayParkedMessages message) {
+		if (!_started) {
+			ReplyWithNotReady(message.Envelope, message.CorrelationId);
+			return;
+		}
+
 		PersistentSubscription subscription;
 		var key = BuildSubscriptionGroupKey(message.EventStreamId, message.GroupName);
 		Log.Debug("Replaying parked messages for persistent subscription {subscriptionKey} {to}. Requested by {user}",
@@ -1183,6 +1188,11 @@ public class PersistentSubscriptionService<TStreamId> :
 	}
 
 	public void Handle(ClientMessage.ReplayParkedMessage message) {
+		if (!_started) {
+			ReplyWithNotReady(message.Envelope, message.CorrelationId);
+			return;
+		}
+
 		var key = BuildSubscriptionGroupKey(message.EventStreamId, message.GroupName);
 		PersistentSubscription subscription;
 
@@ -1199,6 +1209,11 @@ public class PersistentSubscriptionService<TStreamId> :
 	}
 
 	public void Handle(ClientMessage.TruncateParkedMessages message) {
+		if (!_started) {
+			ReplyWithNotReady(message.Envelope, message.CorrelationId);
+			return;
+		}
+
 		var key = BuildSubscriptionGroupKey(message.EventStreamId, message.GroupName);
 		Log.Debug("Truncating parked messages for persistent subscription {subscriptionKey} {to}. Requested by {user}",
 			key,
