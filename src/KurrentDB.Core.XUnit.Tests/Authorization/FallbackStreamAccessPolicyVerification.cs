@@ -52,6 +52,7 @@ public class FallbackStreamAccessPolicyVerification {
 		Operations.Subscriptions.Restart,
 		Operations.Subscriptions.Delete,
 		Operations.Subscriptions.ReplayParked,
+		Operations.Subscriptions.TruncateParked,
 		Operations.Users.CurrentUser,
 		Operations.Users.Enable,
 		Operations.Users.Read,
