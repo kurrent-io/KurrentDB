@@ -505,7 +505,7 @@ public class PersistentSubscriptionController : CommunicationController {
 		long? stopAt;
 		if (stopAtStr != null) {
 			if (!long.TryParse(stopAtStr, out var stopAtLong) || stopAtLong < 0) {
-				http.ReplyStatus(HttpStatusCode.BadRequest, "stopAt should be a properly formed positive long",
+				http.ReplyStatus(HttpStatusCode.BadRequest, "stopAt should be a properly formed positive integer",
 					exception => { });
 				return;
 			}
