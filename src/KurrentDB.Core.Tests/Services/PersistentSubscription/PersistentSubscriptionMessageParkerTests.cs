@@ -300,6 +300,36 @@ public class PersistentSubscriptionMessageParkerTests {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
+	public class given_parked_messages_truncated_then_truncated_to_an_earlier_point<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
+		private PersistentSubscriptionMessageParker _messageParker;
+		private string _streamId = Guid.NewGuid().ToString();
+		private TaskCompletionSource<bool> _done = new TaskCompletionSource<bool>();
+
+		protected override void Given() {
+			base.Given();
+			AllWritesSucceed();
+			_messageParker = new PersistentSubscriptionMessageParker(_streamId, _ioDispatcher);
+			for (var i = 0; i < 10; i++)
+				ExistingEvent(_messageParker.ParkedStreamId, "$>", LinkMetadata, $"{i}@foo");
+			NoOtherStreams();
+		}
+
+		[Test]
+		public async Task truncating_to_an_earlier_point_does_not_resurrect_messages() {
+			// truncate all 10 parked messages
+			_messageParker.BeginMarkParkedMessagesReprocessed(10, () => {
+				Assert.Zero(_messageParker.ParkedMessageCount);
+				// truncating again to an earlier point must not bring messages back: the truncate-before is monotonic
+				_messageParker.BeginMarkParkedMessagesReprocessed(5, () => {
+					Assert.Zero(_messageParker.ParkedMessageCount);
+					_done.TrySetResult(true);
+				});
+			});
+			await _done.Task.WithTimeout();
+		}
+	}
+
+	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	public class given_messages_are_parked_and_then_replayed<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 		private PersistentSubscriptionMessageParker _messageParker;
 		private string _streamId = Guid.NewGuid().ToString();

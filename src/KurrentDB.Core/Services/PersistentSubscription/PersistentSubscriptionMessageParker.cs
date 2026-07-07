@@ -273,8 +273,17 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 	// updates the truncateBefore for the parked stream
 	public void BeginMarkParkedMessagesReprocessed(long sequence, Action completed = null) {
 		var metaStreamId = SystemStreams.MetastreamOf(ParkedStreamId);
+		// The truncate-before only ever advances, so replaying/truncating to an already-passed point
+		// never resurrects previously removed parked messages.
+		var truncateBefore = Math.Max(_lastTruncateBefore, sequence);
+		if (truncateBefore == _lastTruncateBefore) {
+			// nothing would change: skip the redundant metastream write (and the stats reload it triggers).
+			completed?.Invoke();
+			return;
+		}
+
 		_ioDispatcher.WriteEvent(
-			metaStreamId, ExpectedVersion.Any, CreateStreamMetadataEvent(sequence), SystemAccounts.System,
+			metaStreamId, ExpectedVersion.Any, CreateStreamMetadataEvent(truncateBefore), SystemAccounts.System,
 			// this callback is guaranteed to be called (writes get replies on timeout)
 			msg => {
 				switch (msg.Result) {
