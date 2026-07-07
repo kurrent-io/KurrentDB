@@ -192,7 +192,7 @@ public class PersistentSubscriptionsService(IPublisher publisher, IAuthorization
 
 	public async ValueTask TruncateParkedAsync(ClaimsPrincipal principal, string streamId, string groupName,
 		CancellationToken ct, long? stopAt = null) {
-		await Authorize(principal, Scoped(Operations.Subscriptions.ReplayParked, streamId, groupName), ct);
+		await Authorize(principal, Scoped(Operations.Subscriptions.TruncateParked, streamId, groupName), ct);
 		var corrId = Guid.NewGuid();
 		var envelope = new TcsEnvelope<Message>();
 		publisher.Publish(new ClientMessage.TruncateParkedMessages(

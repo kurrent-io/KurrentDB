@@ -78,6 +78,6 @@ public class PersistentSubscriptionsServiceAuthorizationTests {
 		AssertRequiresAccessTo(Operations.Subscriptions.ReplayParked, s => s.ReplayParkedAsync(SomeUser, "stream", "group", CancellationToken.None));
 
 	[Fact]
-	public Task TruncateParked_requires_replay() =>
-		AssertRequiresAccessTo(Operations.Subscriptions.ReplayParked, s => s.TruncateParkedAsync(SomeUser, "stream", "group", CancellationToken.None));
+	public Task TruncateParked_requires_truncate() =>
+		AssertRequiresAccessTo(Operations.Subscriptions.TruncateParked, s => s.TruncateParkedAsync(SomeUser, "stream", "group", CancellationToken.None));
 }
