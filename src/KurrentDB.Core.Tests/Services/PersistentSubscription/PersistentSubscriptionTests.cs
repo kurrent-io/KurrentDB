@@ -2590,7 +2590,7 @@ public class ParkTests {
 	}
 
 	[Test]
-	public void truncating_parked_messages_truncates_all_and_updates_count() {
+	public void truncating_parked_messages_truncates_all() {
 		var messageParker = new FakeMessageParker();
 		var reader = new FakeCheckpointReader();
 
