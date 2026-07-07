@@ -185,6 +185,8 @@ public class PersistentSubscriptionsService(IPublisher publisher, IAuthorization
 				throw new PersistentSubscriptionsException("Access denied.");
 			case ClientMessage.ReplayMessagesReceived { Reason: var reason }:
 				throw new PersistentSubscriptionsException($"Failed to replay parked messages: {reason}");
+			case ClientMessage.NotHandled:
+				throw new PersistentSubscriptionsException("The subscription is not ready. Please try again.");
 			default:
 				throw new PersistentSubscriptionsException("Failed to replay parked messages.");
 		}
@@ -207,6 +209,8 @@ public class PersistentSubscriptionsService(IPublisher publisher, IAuthorization
 				throw new PersistentSubscriptionsException("Access denied.");
 			case ClientMessage.TruncateParkedMessagesCompleted { Reason: var reason }:
 				throw new PersistentSubscriptionsException($"Failed to truncate parked messages: {reason}");
+			case ClientMessage.NotHandled:
+				throw new PersistentSubscriptionsException("The subscription is not ready. Please try again.");
 			default:
 				throw new PersistentSubscriptionsException("Failed to truncate parked messages.");
 		}
