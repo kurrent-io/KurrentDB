@@ -35,6 +35,11 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 	public long ParkedMessageReplays => Interlocked.Read(ref _parkedMessageReplays);
 	public long ParkedMessageTruncations => Interlocked.Read(ref _parkedMessageTruncations);
 
+	// The stats reads are best-effort and only feed ParkedMessageCount/oldest-timestamp. A timeout that
+	// fires would produce degraded stats, so we use a long one it should never hit in practice, while
+	// still guaranteeing the read completes (rather than stalling) if a response is ever truly lost.
+	private static readonly TimeSpan StatsReadTimeout = TimeSpan.FromMinutes(5);
+
 	private static readonly ILogger Log = Serilog.Log.ForContext<PersistentSubscriptionMessageParker>();
 
 	public PersistentSubscriptionMessageParker(string subscriptionId, IODispatcher ioDispatcher) {
@@ -157,7 +162,8 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 				Log.Error($"Timed out reading truncate-before for the parked message stream {ParkedStreamId}. Parked message stats may be incorrect.");
 				completed?.Invoke(null);
 			},
-			corrId: Guid.NewGuid());
+			corrId: Guid.NewGuid(),
+			timeout: StatsReadTimeout);
 	}
 
 	public void BeginReadEndSequence(Action<long?> completed) {
@@ -171,6 +177,7 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 						completed?.Invoke(comp.LastEventNumber);
 						break;
 					case ReadStreamResult.NoStream:
+					case ReadStreamResult.StreamDeleted:
 						completed?.Invoke(null);
 						break;
 					default:
@@ -179,7 +186,8 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 							ParkedStreamId, comp.Result);
 						break;
 				}
-			});
+			},
+			expires: ClientMessage.ReadRequestMessage.NeverExpires);
 	}
 
 	// for parked message stats
@@ -216,7 +224,8 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 					$"Timed out reading the first event in the parked message stream {ParkedStreamId}. Parked message stats may be incorrect.");
 				completed?.Invoke(null, null);
 			},
-			corrId: Guid.NewGuid());
+			corrId: Guid.NewGuid(),
+			timeout: StatsReadTimeout);
 	}
 
 	// for parked message stats
@@ -253,7 +262,8 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 					$"Timed out reading the last event in the parked message stream {ParkedStreamId}. Parked message stats may be incorrect.");
 				completed?.Invoke(null);
 			},
-			corrId: Guid.NewGuid());
+			corrId: Guid.NewGuid(),
+			timeout: StatsReadTimeout);
 	}
 
 	// updates the truncateBefore for the parked stream
@@ -261,6 +271,7 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 		var metaStreamId = SystemStreams.MetastreamOf(ParkedStreamId);
 		_ioDispatcher.WriteEvent(
 			metaStreamId, ExpectedVersion.Any, CreateStreamMetadataEvent(sequence), SystemAccounts.System,
+			// this callback is guaranteed to be called (writes get replies on timeout)
 			msg => {
 				switch (msg.Result) {
 					case OperationResult.Success:
