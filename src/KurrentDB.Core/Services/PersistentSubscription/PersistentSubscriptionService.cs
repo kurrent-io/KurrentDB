@@ -1167,7 +1167,17 @@ public class PersistentSubscriptionService<TStreamId> :
 			return;
 		}
 
-		subscription.RetryParkedMessages(message.StopAt);
+		switch (subscription.RetryParkedMessages(message.StopAt)) {
+			case ParkedMessageOperationResult.NotReady:
+				ReplyWithNotReady(message.Envelope, message.CorrelationId);
+				return;
+			case ParkedMessageOperationResult.AlreadyInProgress:
+				message.Envelope.ReplyWith(new ClientMessage.ReplayMessagesReceived(message.CorrelationId,
+					ClientMessage.ReplayMessagesReceived.ReplayMessagesReceivedResult.Fail,
+					"A replay or truncate is already in progress."));
+				return;
+		}
+
 		message.Envelope.ReplyWith(new ClientMessage.ReplayMessagesReceived(message.CorrelationId,
 			ClientMessage.ReplayMessagesReceived.ReplayMessagesReceivedResult.Success, ""));
 	}
@@ -1209,7 +1219,17 @@ public class PersistentSubscriptionService<TStreamId> :
 			return;
 		}
 
-		subscription.TruncateParkedMessages(message.StopAt);
+		switch (subscription.TruncateParkedMessages(message.StopAt)) {
+			case ParkedMessageOperationResult.NotReady:
+				ReplyWithNotReady(message.Envelope, message.CorrelationId);
+				return;
+			case ParkedMessageOperationResult.AlreadyInProgress:
+				message.Envelope.ReplyWith(new ClientMessage.TruncateParkedMessagesCompleted(message.CorrelationId,
+					ClientMessage.TruncateParkedMessagesCompleted.TruncateParkedMessagesCompletedResult.Fail,
+					"A replay or truncate is already in progress."));
+				return;
+		}
+
 		message.Envelope.ReplyWith(new ClientMessage.TruncateParkedMessagesCompleted(message.CorrelationId,
 			ClientMessage.TruncateParkedMessagesCompleted.TruncateParkedMessagesCompletedResult.Success, ""));
 	}
