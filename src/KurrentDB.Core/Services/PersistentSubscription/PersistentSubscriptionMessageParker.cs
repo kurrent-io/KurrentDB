@@ -184,6 +184,10 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 						Log.Error(
 							"An error occured reading the last event in the parked message stream {stream} due to {e}.",
 							ParkedStreamId, comp.Result);
+						// Treat an unexpected read error as "nothing to do" rather than leaving the caller
+						// hanging: the operation is abandoned (logged above) and its mutual-exclusion flag
+						// released, instead of wedging all future replays/truncates on this subscription.
+						completed?.Invoke(null);
 						break;
 				}
 			},
