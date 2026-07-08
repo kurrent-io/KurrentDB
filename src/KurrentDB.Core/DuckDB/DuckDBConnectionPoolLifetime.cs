@@ -103,15 +103,26 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 	public Task StartAsync(CancellationToken cancellationToken) {
 		var task = Task.CompletedTask;
 		try {
+			var swapDir = new DirectoryInfo(_swapTempDirectory);
 			// cleanup tmp files on startup
-			if (Directory.Exists(_swapTempDirectory)) {
-				Directory.Delete(_swapTempDirectory, recursive: true);
+			if (swapDir.Exists) {
+				DeleteTempObjects(swapDir);
 			}
 		} catch (Exception e) {
 			task = Task.FromException(e);
 		}
 
 		return task;
+
+		static void DeleteTempObjects(DirectoryInfo swapDir) {
+			foreach (var tempObj in swapDir.EnumerateFileSystemInfos("*.tmp", SearchOption.TopDirectoryOnly)) {
+				if (tempObj is DirectoryInfo subDir) {
+					subDir.Delete(recursive: true);
+				} else {
+					tempObj.Delete();
+				}
+			}
+		}
 	}
 
 	public Task StopAsync(CancellationToken cancellationToken) {
