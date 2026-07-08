@@ -1,0 +1,95 @@
+edition = "2023";
+
+package kurrentdb.protocol.v2.logs;
+
+option csharp_namespace = "KurrentDB.Protocol.V2.Logs";
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+// Read-only SQL queries over this node's own log files.
+//
+// Logs are node-local by design: each node serves only the log files it has
+// written itself. In a cluster, query each node explicitly to see its logs.
+// The service is available on followers and read-only replicas.
+service LogsQueryService {
+  // Executes a read-only SQL query against the node's log views.
+  //
+  // Only SELECT-family statements (SELECT, DESCRIBE, SHOW, SUMMARIZE, EXPLAIN)
+  // are accepted; anything else is rejected with INVALID_ARGUMENT.
+  //
+  // The response stream starts with a Header describing the result columns,
+  // followed by one or more RowBatch messages. An error after the Header
+  // terminates the stream with a status; rows already delivered are valid
+  // but the result is partial.
+  rpc Execute(ExecuteRequest) returns (stream ExecuteResponse);
+
+  // Describes what can be queried: the available views with their columns,
+  // and the time range of logs currently on disk.
+  rpc GetLogsInfo(GetLogsInfoRequest) returns (GetLogsInfoResponse);
+}
+
+message ExecuteRequest {
+  // The SQL text. Read-only statements only.
+  string sql = 1;
+
+  // Named query parameters, bound server-side as prepared-statement
+  // parameters. Prefer these over interpolating values into the SQL text.
+  map<string, google.protobuf.Value> params = 2;
+}
+
+message ExecuteResponse {
+  oneof content {
+    Header header = 1;
+    RowBatch batch = 2;
+  }
+}
+
+message Header {
+  // Result columns in SELECT order.
+  repeated Column columns = 1;
+
+  // Identity of the node that served the query. Logs are node-local.
+  string node = 2;
+}
+
+message Column {
+  string name = 1;
+
+  // DuckDB type name (e.g. "TIMESTAMP WITH TIME ZONE", "BIGINT", "VARCHAR").
+  //
+  // Encoding note: 64-bit integer columns are always serialized as strings
+  // in row values, because protobuf Value numbers are IEEE doubles and lose
+  // precision above 2^53. Convert at the edge using this type field.
+  string type = 2;
+}
+
+message RowBatch {
+  repeated Row rows = 1;
+}
+
+message Row {
+  // Column name to value. Absent keys mean NULL.
+  map<string, google.protobuf.Value> fields = 1;
+}
+
+message GetLogsInfoRequest {
+}
+
+message GetLogsInfoResponse {
+  // Identity of the node that served the request.
+  string node = 1;
+
+  repeated LogsView views = 2;
+
+  // Earliest and latest log timestamps currently on disk, across all views.
+  google.protobuf.Timestamp earliest = 3;
+  google.protobuf.Timestamp latest = 4;
+}
+
+message LogsView {
+  // View name usable in Execute SQL (e.g. "logs", "errors", "stats").
+  string name = 1;
+
+  repeated Column columns = 2;
+}

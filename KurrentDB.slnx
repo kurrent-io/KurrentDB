@@ -17,6 +17,7 @@
     <Project Path="src\KurrentDB.Diagnostics.LogsEndpointPlugin.Tests\KurrentDB.Diagnostics.LogsEndpointPlugin.Tests.csproj" />
     <Project Path="src\KurrentDB.Diagnostics.LogsEndpointPlugin\KurrentDB.Diagnostics.LogsEndpointPlugin.csproj" />
     <Project Path="src\KurrentDB.OtlpExporterPlugin\KurrentDB.OtlpExporterPlugin.csproj" />
+    <Project Path="src\KurrentDB.Plugins.LogsQuery\KurrentDB.Plugins.LogsQuery.csproj" />
     <Project Path="src\KurrentDB.Plugins.Tests\KurrentDB.Plugins.Tests.csproj" />
     <Project Path="src\KurrentDB.Plugins\KurrentDB.Plugins.csproj" />
     <Project Path="src\KurrentDB.POC.ConnectedSubsystemsPlugin\KurrentDB.POC.ConnectedSubsystemsPlugin.csproj" />

@@ -284,6 +284,7 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 			plugins.Add(new SchemaRegistryPlugin());
 			plugins.Add(new ApiV2Plugin());
 			plugins.Add(new Plugins.Kontext.KontextPlugin());
+			plugins.Add(new Plugins.LogsQuery.LogsQueryPlugin());
 
 			foreach (var plugin in plugins) {
 				Log.Information("Loaded SubsystemsPlugin plugin: {plugin} {version}.",

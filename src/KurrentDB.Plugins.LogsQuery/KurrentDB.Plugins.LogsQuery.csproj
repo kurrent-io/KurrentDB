@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsPlugin>true</IsPlugin>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Google.Protobuf" />
+		<PackageReference Include="Grpc.AspNetCore" />
+		<PackageReference Include="Grpc.StatusProto" />
+		<PackageReference Include="Grpc.Tools" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- logs -->
+		<Protobuf
+			ProtoRoot="../../proto/kurrentdb/protocol/v2"
+			Include="../../proto/kurrentdb/protocol/v2/logs/**/*.proto"
+			Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"
+			GrpcServices="Both"
+			Access="Public"
+			AdditionalImportDirs="../../proto" />
+
+		<!-- kurrent (rpc error annotations referenced by logs/errors.proto) -->
+		<Protobuf
+			ProtoRoot="../../proto/kurrent"
+			Include="../../proto/kurrent/**/*.proto"
+			Link="proto\kurrent\%(RecursiveDir)/%(FileName)%(Extension)"
+			Access="Internal"
+			AdditionalImportDirs="../../proto" />
+
+		<!-- google -->
+		<Protobuf
+			ProtoRoot="../../proto/google"
+			Include="../../proto/google/**/*.proto"
+			Link="proto\google\%(RecursiveDir)/%(FileName)%(Extension)"
+			Access="Internal"
+			ProtoCompile="false" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
+		<ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
+	</ItemGroup>
+
+</Project>

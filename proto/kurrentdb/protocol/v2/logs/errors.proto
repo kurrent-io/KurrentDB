@@ -1,0 +1,43 @@
+edition = "2023";
+
+package kurrentdb.protocol.v2.logs.errors;
+
+option csharp_namespace = "KurrentDB.Protocol.V2.Logs.Errors";
+
+import "kurrent/rpc/rpc.proto";
+
+enum LogsQueryError {
+  // Default value. This value is not used.
+  // An error code MUST always be set to a non-zero value.
+  // If an error code is not explicitly set, it MUST be treated as
+  // an internal server error (INTERNAL).
+  LOGS_QUERY_ERROR_UNSPECIFIED = 0;
+
+  // The SQL failed to parse or bind.
+  LOGS_QUERY_ERROR_INVALID_QUERY = 1 [(kurrent.rpc.error) = {
+    status_code: INVALID_ARGUMENT,
+    has_details: true,
+  }];
+
+  // The statement is not read-only. Only SELECT-family statements
+  // (SELECT, DESCRIBE, SHOW, SUMMARIZE, EXPLAIN) are accepted.
+  LOGS_QUERY_ERROR_NOT_READ_ONLY = 2 [(kurrent.rpc.error) = {
+    status_code: INVALID_ARGUMENT,
+  }];
+
+  // The logs query feature is not licensed.
+  LOGS_QUERY_ERROR_NOT_LICENSED = 3 [(kurrent.rpc.error) = {
+    status_code: FAILED_PRECONDITION,
+  }];
+
+  // The node's log directory does not exist or contains no log files.
+  LOGS_QUERY_ERROR_LOGS_UNAVAILABLE = 4 [(kurrent.rpc.error) = {
+    status_code: FAILED_PRECONDITION,
+  }];
+}
+
+// Details for LOGS_QUERY_ERROR_INVALID_QUERY errors.
+message InvalidQueryErrorDetails {
+  // The engine's error message, including position markers.
+  string message = 1;
+}
