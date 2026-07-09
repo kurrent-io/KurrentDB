@@ -14,6 +14,7 @@ using Kurrent.Quack.ConnectionPool;
 using Kurrent.Quack.Threading;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Indexes.User;
+using KurrentDB.SecondaryIndexing.LogsQuery;
 
 namespace KurrentDB.SecondaryIndexing.Query;
 
@@ -25,7 +26,8 @@ namespace KurrentDB.SecondaryIndexing.Query;
 /// <param name="sharedPool"></param>
 internal sealed partial class QueryEngine(DefaultIndexProcessor defaultIndex,
 	UserIndexEngine userIndex,
-	DuckDBConnectionPool sharedPool) : IQueryEngine {
+	DuckDBConnectionPool sharedPool,
+	LogViews logViews) : IQueryEngine {
 	// 32 bytes key is aligned with HMAC SHA-3 256 hash length
 	private readonly ReadOnlyMemory<byte> _signatureKey = RandomNumberGenerator.GetBytes(32);
 
@@ -53,6 +55,7 @@ internal sealed partial class QueryEngine(DefaultIndexProcessor defaultIndex,
 		var cancellation = connection.InterruptQueryOnCancellation(token);
 		try {
 			CaptureSnapshots(in parsedQuery, connection, snapshots, token);
+			logViews.Create(connection, parsedQuery.HasLogs, parsedQuery.HasStats);
 			statement = new(connection, parsedQuery.Query);
 			consumer.Bind(new QueryBinder(in statement));
 
@@ -111,6 +114,7 @@ internal sealed partial class QueryEngine(DefaultIndexProcessor defaultIndex,
 		var statement = default(PreparedStatement);
 		try {
 			CaptureSnapshots(in parsedQuery, connection, snapshots, CancellationToken.None);
+			logViews.Create(connection, parsedQuery.HasLogs, parsedQuery.HasStats);
 			statement = new(connection, parsedQuery.Query);
 			return TReflector.Reflect(statement, options);
 		} finally {
