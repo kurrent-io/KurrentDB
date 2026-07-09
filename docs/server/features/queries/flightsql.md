@@ -30,6 +30,7 @@ Note that only **SELECT** statements are allowed. **INSERT**, **UPDATE**, stored
 
 - The default index is available through the **`kdb.records`** table.
 - User-defined indexes are available through **`usr.<user-defined-index>`** tables.
+- This node's own log files are available through the **`kdb.logs`** and **`kdb.stats`** tables.
 
 ### Examples
 
@@ -92,6 +93,66 @@ List of available columns:
 * `data` of type `VARCHAR`
 * `metadata` of type `VARCHAR`
 * The custom field configured in the index
+
+## Querying node logs
+
+KurrentDB exposes this node's own structured log files as SQL tables:
+
+- **`kdb.logs`** covers the main log (every level).
+- **`kdb.stats`** covers the periodic statistics snapshots (written every 30 seconds by default).
+
+Both are read-only and **node-local**: a query only sees the log files present on the node it connects to. Query each node individually to inspect its own logs.
+
+The tables reflect the log files currently on disk. Their location, rotation, and retained history are controlled by the `Log`, `LogFileInterval`, and `LogFileRetentionCount` options (see [Database logs](../../diagnostics/logs.md)). With `DisableLogFile` set, the tables are empty.
+
+### Example queries
+
+```sql
+-- the most recent errors on this node
+SELECT timestamp, source_context, message, exception
+FROM kdb.logs
+WHERE level IN ('Error', 'Fatal')
+ORDER BY timestamp DESC
+LIMIT 100;
+
+-- log volume by level over the last hour
+SELECT level, count(*)
+FROM kdb.logs
+WHERE timestamp >= now() - INTERVAL '1 hour'
+GROUP BY level;
+
+-- full-text search over the rendered message
+SELECT timestamp, message FROM kdb.logs WHERE message ILIKE '%projection%';
+
+-- CPU and process memory from the latest stats snapshot
+SELECT
+  timestamp,
+  (raw->'stats'->'sys'->>'cpu')::DOUBLE cpu,
+  (raw->'stats'->'proc'->>'mem')::DOUBLE mem_bytes
+FROM kdb.stats
+ORDER BY timestamp DESC
+LIMIT 1;
+```
+
+### `kdb.logs` Table
+
+Each row is one log entry, projected from the [CLEF](https://clef-json.org/) record. List of available columns:
+
+* `timestamp` of type `TIMESTAMP` (with time zone) - when the entry was written (CLEF `@t`)
+* `level` of type `VARCHAR` - log level, e.g. `Information`, `Warning`, `Error` (CLEF `@l`; defaults to `Information` when absent)
+* `message` of type `VARCHAR` - the rendered message, with template placeholders filled in from the entry's properties
+* `message_template` of type `VARCHAR` - the raw message template before rendering (CLEF `@mt`)
+* `event_id` of type `UINT64` - the log entry identifier (CLEF `@i`)
+* `exception` of type `VARCHAR` - the exception text, if any (CLEF `@x`)
+* `source_context` of type `VARCHAR` - the component that emitted the entry (the `SourceContext` property)
+* `process_id` of type `INT64` - the emitting process id (the `ProcessId` property)
+* `thread_id` of type `INT64` - the emitting thread id (the `ThreadId` property)
+* `file` of type `VARCHAR` - name of the log file the row was read from
+* `raw` of type `JSON` - the complete CLEF record. Use the JSON navigation operators to read any property not projected into its own column
+
+### `kdb.stats` Table
+
+`kdb.stats` has the same columns as `kdb.logs`. The statistics themselves are not projected into columns - they live in the `raw` column under the `stats` object. Read the individual metrics from there with the JSON navigation operators, as in the stats example above.
 
 ## Supported FlightSQL Features
 Arrow Flight SQL is a rich protocol with many features. Its implementation in KurrentDB supports the following functionality:
