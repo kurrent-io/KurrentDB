@@ -34,6 +34,9 @@ public sealed class KeygenLifecycleService : IHostedService, IDisposable {
 		int heartbeatsPerRevalidation,
 		TimeSpan revalidationDelay) {
 
+ 		if (heartbeatsPerRevalidation < 1)
+ 			throw new ArgumentOutOfRangeException(nameof(heartbeatsPerRevalidation), "Must be >= 1.");
+
 		_client = client;
 		_fingerprint = fingerprint.Get();
 		_heartbeatsPerRevalidation = heartbeatsPerRevalidation;
