@@ -14,30 +14,30 @@ using static KurrentDB.Core.Services.Transport.Grpc.RpcExceptions;
 namespace EventStore.Core.Services.Transport.Grpc;
 
 internal partial class PersistentSubscriptions {
-	private static readonly Operation ReplayParkedOperation = new(Plugins.Authorization.Operations.Subscriptions.ReplayParked);
+	private static readonly Operation TruncateParkedOperation = new(Plugins.Authorization.Operations.Subscriptions.TruncateParked);
 
-	public override async Task<ReplayParkedResp> ReplayParked(ReplayParkedReq request, ServerCallContext context) {
+	public override async Task<TruncateParkedResp> TruncateParked(TruncateParkedReq request, ServerCallContext context) {
 		var correlationId = Guid.NewGuid();
 		var user = context.GetHttpContext().User;
 
-		if (!await _authorizationProvider.CheckAccessAsync(user, ReplayParkedOperation, context.CancellationToken)) {
+		if (!await _authorizationProvider.CheckAccessAsync(user, TruncateParkedOperation, context.CancellationToken)) {
 			throw AccessDenied();
 		}
 
 		string streamId = request.Options.StreamOptionCase switch {
-			ReplayParkedReq.Types.Options.StreamOptionOneofCase.All => "$all",
-			ReplayParkedReq.Types.Options.StreamOptionOneofCase.StreamIdentifier => request.Options.StreamIdentifier,
+			TruncateParkedReq.Types.Options.StreamOptionOneofCase.All => "$all",
+			TruncateParkedReq.Types.Options.StreamOptionOneofCase.StreamIdentifier => request.Options.StreamIdentifier,
 			_ => throw new InvalidOperationException()
 		};
 
 		long? stopAt = request.Options.StopAtOptionCase switch {
-			ReplayParkedReq.Types.Options.StopAtOptionOneofCase.StopAt => request.Options.StopAt,
-			ReplayParkedReq.Types.Options.StopAtOptionOneofCase.NoLimit => null,
+			TruncateParkedReq.Types.Options.StopAtOptionOneofCase.StopAt => request.Options.StopAt,
+			TruncateParkedReq.Types.Options.StopAtOptionOneofCase.NoLimit => null,
 			_ => throw new InvalidOperationException()
 		};
 
 		var envelope = new TcsEnvelope<Message>();
-		_publisher.Publish(new ClientMessage.ReplayParkedMessages(
+		_publisher.Publish(new ClientMessage.TruncateParkedMessages(
 			correlationId,
 			correlationId,
 			envelope,
@@ -48,16 +48,16 @@ internal partial class PersistentSubscriptions {
 
 		return await envelope.Task switch {
 			ClientMessage.NotHandled notHandled when TryHandleNotHandled(notHandled, out var ex) => throw ex,
-			ClientMessage.ReplayMessagesReceived { Result: ClientMessage.ReplayMessagesReceived.ReplayMessagesReceivedResult.Success } =>
-				new ReplayParkedResp(),
-			ClientMessage.ReplayMessagesReceived { Result: ClientMessage.ReplayMessagesReceived.ReplayMessagesReceivedResult.DoesNotExist } =>
+			ClientMessage.TruncateParkedMessagesCompleted { Result: ClientMessage.TruncateParkedMessagesCompleted.TruncateParkedMessagesCompletedResult.Success } =>
+				new TruncateParkedResp(),
+			ClientMessage.TruncateParkedMessagesCompleted { Result: ClientMessage.TruncateParkedMessagesCompleted.TruncateParkedMessagesCompletedResult.DoesNotExist } =>
 				throw PersistentSubscriptionDoesNotExist(streamId, request.Options.GroupName),
-			ClientMessage.ReplayMessagesReceived { Result: ClientMessage.ReplayMessagesReceived.ReplayMessagesReceivedResult.AccessDenied } =>
+			ClientMessage.TruncateParkedMessagesCompleted { Result: ClientMessage.TruncateParkedMessagesCompleted.TruncateParkedMessagesCompletedResult.AccessDenied } =>
 				throw AccessDenied(),
-			ClientMessage.ReplayMessagesReceived completed =>
+			ClientMessage.TruncateParkedMessagesCompleted completed =>
 				throw PersistentSubscriptionFailed(streamId, request.Options.GroupName, completed.Reason),
 			var message =>
-				throw UnknownMessage<ClientMessage.ReplayMessagesReceived>(message)
+				throw UnknownMessage<ClientMessage.TruncateParkedMessagesCompleted>(message)
 		};
 	}
 }

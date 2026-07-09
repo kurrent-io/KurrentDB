@@ -70,6 +70,7 @@ public class LegacyAuthorizationWithStreamAuthorizationDisabledProviderFactory :
 		policy.AddMatchAnyAssertion(Operations.Subscriptions.Delete, Grant.Allow, OperationsOrAdmins);
 		policy.Add(Operations.Subscriptions.ProcessMessages, subscriptionAccess);
 		policy.AddMatchAnyAssertion(Operations.Subscriptions.ReplayParked, Grant.Allow, OperationsOrAdmins);
+		policy.AddMatchAnyAssertion(Operations.Subscriptions.TruncateParked, Grant.Allow, OperationsOrAdmins);
 
 		policy.Add(Operations.Streams.Read, streamAssertion);
 		policy.Add(Operations.Streams.Write, streamAssertion);
