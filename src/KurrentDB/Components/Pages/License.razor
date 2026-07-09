@@ -87,8 +87,7 @@
 			return;
 		}
 
-		// Replay(1) re-delivers the current license immediately, then any later change
-		// (e.g. a renewed expiry picked up by the licensing service) refreshes the page live.
+		// Delivers the current license immediately and then subsequent changes.
 		_subscription = LicenseService.Licenses.Subscribe(
 			license => Update(license is null ? null : LicenseSummary.SelectForEndpoint(license)),
 			_ => Update(null));
