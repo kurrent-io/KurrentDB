@@ -4,6 +4,7 @@
 using Apache.Arrow.Adbc.Client;
 using Apache.Arrow.Adbc.Drivers.FlightSql;
 using KurrentDB.Core.Configuration.Sources;
+using KurrentDB.Core.Tests;
 using KurrentDB.SecondaryIndexing.Tests.Fixtures;
 using KurrentDB.Surge.Testing;
 using Microsoft.AspNetCore.Hosting.Server;
@@ -21,6 +22,12 @@ public sealed class LogsQueryFixture : SecondaryIndexingEnabledFixture {
 		Directory.CreateDirectory(logsRoot);
 		Configuration = new Dictionary<string, string?>(Configuration!) {
 			[$"{KurrentConfigurationKeys.Prefix}:Logging:Log"] = logsRoot,
+		};
+
+		var baseTearDown = OnTearDown;
+		OnTearDown = async () => {
+			await baseTearDown();
+			await DirectoryDeleter.TryForceDeleteDirectoryAsync(logsRoot, retries: 10);
 		};
 	}
 }

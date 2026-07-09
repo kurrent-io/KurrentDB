@@ -35,12 +35,18 @@ internal sealed class LogViews(string logsDir) {
 		if (!Directory.Exists(logsDir))
 			return [];
 
-		var files = new List<string>();
-		foreach (var path in Directory.EnumerateFiles(logsDir, "log*.json"))
-			if (match(Path.GetFileName(path)))
-				files.Add(path);
+		try {
+			var files = new List<string>();
+			foreach (var path in Directory.EnumerateFiles(logsDir, "log*.json"))
+				if (match(Path.GetFileName(path)))
+					files.Add(path);
 
-		return files;
+			return files;
+		} catch (Exception e) when (e is IOException or UnauthorizedAccessException) {
+			// An unreadable log dir degrades to empty views, like a missing dir or read errors
+			// (ignore_errors) - reading logs must never fail an otherwise valid query.
+			return [];
+		}
 	}
 
 	private static string ViewSql(string viewName, IReadOnlyList<string> files) {

@@ -55,7 +55,7 @@ internal sealed partial class QueryEngine(DefaultIndexProcessor defaultIndex,
 		var cancellation = connection.InterruptQueryOnCancellation(token);
 		try {
 			CaptureSnapshots(in parsedQuery, connection, snapshots, token);
-			logViews.Create(connection, parsedQuery.HasLogs, parsedQuery.HasStats);
+			logViews.Create(connection, logs: parsedQuery.HasLogs, stats: parsedQuery.HasStats);
 			statement = new(connection, parsedQuery.Query);
 			consumer.Bind(new QueryBinder(in statement));
 
@@ -114,7 +114,7 @@ internal sealed partial class QueryEngine(DefaultIndexProcessor defaultIndex,
 		var statement = default(PreparedStatement);
 		try {
 			CaptureSnapshots(in parsedQuery, connection, snapshots, CancellationToken.None);
-			logViews.Create(connection, parsedQuery.HasLogs, parsedQuery.HasStats);
+			logViews.Create(connection, logs: parsedQuery.HasLogs, stats: parsedQuery.HasStats);
 			statement = new(connection, parsedQuery.Query);
 			return TReflector.Reflect(statement, options);
 		} finally {
