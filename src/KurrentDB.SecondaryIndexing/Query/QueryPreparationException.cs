@@ -59,6 +59,13 @@ public sealed class UnsupportedSchemaException : QueryPreparationException {
 	public string? SchemaName { get; }
 }
 
+public sealed class UnsupportedCatalogException : QueryPreparationException {
+	internal UnsupportedCatalogException(string catalogName)
+		: base($"Catalog '{catalogName}' is not supported") => CatalogName = catalogName;
+
+	public string CatalogName { get; }
+}
+
 public sealed class UnsupportedSystemTableException : QueryPreparationException {
 	internal UnsupportedSystemTableException(string tableName)
 		: base($"System table '{tableName}' is not supported") => TableName = tableName;

@@ -70,6 +70,10 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 		var settings = new Dictionary<string, string> {
 			["memory_limit"] = $"{duckDbRamMib}MB", // total, not per connection
 			["access_mode"] = isReadOnly ? "READ_ONLY" : "READ_WRITE",
+			// security settings
+			["allow_community_extensions"] = "false",
+			["enable_external_access"] = "false",
+			["lock_configuration"] = "true",
 		};
 		var pool = new ConnectionPoolWithFunctions($"Data Source={_path};{GetParamsString()}", _repeated);
 
