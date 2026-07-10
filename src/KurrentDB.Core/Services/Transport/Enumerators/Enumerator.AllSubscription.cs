@@ -154,6 +154,9 @@ static partial class Enumerator {
 			} catch (ReadResponseException.NotHandled.ServerNotReady ex) {
 				Log.Warning("Subscription {subscriptionId} to $all terminated because server is not ready.", _subscriptionId);
 				_channel.Writer.TryComplete(ex);
+			} catch (ReadResponseException.SubscriptionDropped ex) {
+				Log.Warning("Subscription {subscriptionId} to $all was dropped by the server.", _subscriptionId);
+				_channel.Writer.TryComplete(ex);
 			} catch (Exception ex) {
 				if (ex is not (OperationCanceledException or ReadResponseException.InvalidPosition))
 					Log.Error(ex, "Subscription {subscriptionId} to $all experienced an error.", _subscriptionId);
@@ -319,7 +322,15 @@ static partial class Enumerator {
 								case SubscriptionDropReason.AccessDenied:
 									throw new ReadResponseException.AccessDenied();
 								case SubscriptionDropReason.Unsubscribed:
-									return;
+									if (_disposed) {
+										// this enumerator initiated the unsubscribe and is being torn down.
+										return;
+									}
+
+									// the server dropped the subscription (e.g. BecomeShuttingDown drops all
+									// subscriptions with reason Unsubscribed). Terminate the enumeration,
+									// otherwise the gRPC stream dangles open and never produces anything.
+									throw new ReadResponseException.SubscriptionDropped();
 								case SubscriptionDropReason.StreamDeleted: // applies only to regular streams
 								case SubscriptionDropReason.NotFound: // applies only to persistent subscriptions
 								default:

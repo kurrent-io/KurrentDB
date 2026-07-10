@@ -69,6 +69,9 @@ public sealed partial class DefaultIndexSubscription(
 			} catch (ReadResponseException.NotHandled.ServerNotReady) {
 				LogStoppingBecauseServerIsNotReady(log);
 				break;
+			} catch (ReadResponseException.SubscriptionDropped) {
+				LogStoppingBecauseSubscriptionDropped(log);
+				break;
 			}
 
 			if (_subscription.Current is ReadResponse.SubscriptionCaughtUp caughtUp) {
@@ -149,6 +152,9 @@ public sealed partial class DefaultIndexSubscription(
 
 	[LoggerMessage(LogLevel.Information, "Default indexing subscription is stopping because server is not ready")]
 	static partial void LogStoppingBecauseServerIsNotReady(ILogger logger);
+
+	[LoggerMessage(LogLevel.Information, "Default indexing subscription is stopping because it was dropped by the server")]
+	static partial void LogStoppingBecauseSubscriptionDropped(ILogger logger);
 
 	[LoggerMessage(LogLevel.Error, "Error while processing event {eventType}")]
 	static partial void LogErrorWhileProcessing(ILogger logger, Exception exception, string eventType);

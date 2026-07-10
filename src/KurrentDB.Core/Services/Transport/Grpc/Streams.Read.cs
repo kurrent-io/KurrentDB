@@ -368,6 +368,8 @@ static class ResponseConverter {
 				throw RpcExceptions.StreamDeleted(streamDeleted.StreamName);
 			case ReadResponseException.AccessDenied:
 				throw RpcExceptions.AccessDenied();
+			case ReadResponseException.SubscriptionDropped:
+				throw RpcExceptions.SubscriptionDropped();
 			case ReadResponseException.Timeout timeout:
 				throw RpcExceptions.Timeout(timeout.ErrorMessage);
 			case ReadResponseException.InvalidPosition:

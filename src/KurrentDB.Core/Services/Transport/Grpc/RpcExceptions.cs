@@ -19,6 +19,9 @@ public static class RpcExceptions {
 	internal static RpcException ServerBusy() =>
 		new(new Status(StatusCode.Unavailable, "Server Is Too Busy"));
 
+	internal static RpcException SubscriptionDropped() =>
+		new(new Status(StatusCode.Unavailable, "Subscription was dropped by the server, e.g. because the node is shutting down. Resubscribe to continue."));
+
 	internal static Exception NoLeaderInfo() =>
 		new RpcException(new Status(StatusCode.Unknown, "No leader info available in response"));
 

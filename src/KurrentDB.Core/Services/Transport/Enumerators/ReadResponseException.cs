@@ -30,6 +30,10 @@ public abstract class ReadResponseException : Exception {
 
 	public class AccessDenied : ReadResponseException;
 
+	// The server dropped the subscription while the client still wanted it, e.g. because the node
+	// is shutting down. The enumeration must terminate so that the client can resubscribe elsewhere.
+	public class SubscriptionDropped : ReadResponseException;
+
 	public class InvalidPosition : ReadResponseException;
 
 	public class Timeout(string errorMessage) : ReadResponseException {

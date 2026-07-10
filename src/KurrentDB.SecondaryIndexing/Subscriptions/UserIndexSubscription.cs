@@ -72,6 +72,9 @@ internal sealed class UserIndexSubscription<TField>(
 			} catch (ReadResponseException.NotHandled.ServerNotReady) {
 				log.LogUserIndexIsStoppingBecauseServerIsNotReady(indexProcessor.IndexName);
 				break;
+			} catch (ReadResponseException.SubscriptionDropped) {
+				log.LogUserIndexIsStoppingBecauseSubscriptionDropped(indexProcessor.IndexName);
+				break;
 			}
 
 			if (_subscription.Current is ReadResponse.SubscriptionCaughtUp caughtUp) {
@@ -171,6 +174,9 @@ static partial class UserIndexSubscriptionLogMessages {
 
 	[LoggerMessage(LogLevel.Information, "User index: {index} is stopping because server is not ready")]
 	internal static partial void LogUserIndexIsStoppingBecauseServerIsNotReady(this ILogger logger, string index);
+
+	[LoggerMessage(LogLevel.Information, "User index: {index} is stopping because the subscription was dropped by the server")]
+	internal static partial void LogUserIndexIsStoppingBecauseSubscriptionDropped(this ILogger logger, string index);
 
 	[LoggerMessage(LogLevel.Trace, "User index: {index} caught up at {time}")]
 	internal static partial void LogUserIndexCaughtUp(this ILogger logger, string index, DateTime time);

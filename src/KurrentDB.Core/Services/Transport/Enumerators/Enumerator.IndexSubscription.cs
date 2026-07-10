@@ -91,7 +91,9 @@ partial class Enumerator {
 					(checkpoint, sequenceNumber) = await GoLive(checkpoint, sequenceNumber, ct);
 				}
 			} catch (Exception ex) {
-				if (ex is not (
+				if (ex is ReadResponseException.SubscriptionDropped) {
+					Log.Warning("Subscription {SubscriptionId} to {IndexName} was dropped by the server.", _subscriptionId, _indexName);
+				} else if (ex is not (
 				    OperationCanceledException or
 				    ReadResponseException.InvalidPosition or
 				    ReadResponseException.IndexNotFound)) {
@@ -275,7 +277,15 @@ partial class Enumerator {
 								case SubscriptionDropReason.AccessDenied:
 									throw new ReadResponseException.AccessDenied();
 								case SubscriptionDropReason.Unsubscribed:
-									return;
+									if (_disposed) {
+										// this enumerator initiated the unsubscribe and is being torn down.
+										return;
+									}
+
+									// the server dropped the subscription (e.g. BecomeShuttingDown drops all
+									// subscriptions with reason Unsubscribed). Terminate the enumeration,
+									// otherwise the gRPC stream dangles open and never produces anything.
+									throw new ReadResponseException.SubscriptionDropped();
 								case SubscriptionDropReason.NotFound:
 									throw new ReadResponseException.IndexNotFound(_indexName);
 								case SubscriptionDropReason.StreamDeleted: // applies only to regular streams

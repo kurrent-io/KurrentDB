@@ -163,7 +163,9 @@ ReadLoop:
 					(checkpoint, sequenceNumber) = await GoLive(checkpoint, sequenceNumber, ct);
 				}
 			} catch (Exception ex) {
-				if (ex is not (OperationCanceledException or ReadResponseException.StreamDeleted)) {
+				if (ex is ReadResponseException.SubscriptionDropped) {
+					Log.Warning("Subscription {subscriptionId} to {streamName} was dropped by the server.", _subscriptionId, _streamName);
+				} else if (ex is not (OperationCanceledException or ReadResponseException.StreamDeleted)) {
 					Log.Error(ex, "Subscription {subscriptionId} to {streamName} experienced an error.", _subscriptionId, _streamName);
 				}
 
@@ -331,7 +333,15 @@ ReadLoop:
 								case SubscriptionDropReason.StreamDeleted:
 									throw new ReadResponseException.StreamDeleted(_streamName);
 								case SubscriptionDropReason.Unsubscribed:
-									return;
+									if (_disposed) {
+										// this enumerator initiated the unsubscribe and is being torn down.
+										return;
+									}
+
+									// the server dropped the subscription (e.g. BecomeShuttingDown drops all
+									// subscriptions with reason Unsubscribed). Terminate the enumeration,
+									// otherwise the gRPC stream dangles open and never produces anything.
+									throw new ReadResponseException.SubscriptionDropped();
 								case SubscriptionDropReason.NotFound: // applies only to persistent subscriptions
 								default:
 									throw ReadResponseException.UnknownError.Create(dropped.Reason);

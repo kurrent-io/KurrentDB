@@ -7,6 +7,9 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messages;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
@@ -57,6 +60,35 @@ public partial class EnumeratorTests {
 			Assert.True(DateTime.UtcNow - caughtUp.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
 			Assert.Null(caughtUp.Wrapped.AllCheckpoint);
 			Assert.AreEqual(0, caughtUp.Wrapped.StreamCheckpoint);
+		}
+	}
+
+	[TestFixture(typeof(LogFormat.V2), typeof(string))]
+	public class stream_subscription_dropped_by_server<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
+		private IEnvelope _subscriptionEnvelope;
+
+		protected override void Given() {
+			EnableReadAll();
+			WriteEvent("test-stream", "type1", "{}", "{Data: 1}");
+			_bus.Subscribe(new AdHocHandler<ClientMessage.SubscribeToStream>(msg => _subscriptionEnvelope = msg.Envelope));
+		}
+
+		[Test]
+		public async Task server_initiated_unsubscribe_terminates_the_enumeration() {
+			await using var sub = CreateStreamSubscription<TStreamId>(
+				_publisher, streamName: "test-stream");
+
+			Assert.True(await sub.GetNext() is SubscriptionConfirmation);
+			Assert.True(await sub.GetNext() is Event);
+			Assert.True(await sub.GetNext() is CaughtUp);
+
+			// simulate e.g. SubscriptionsService handling SystemMessage.BecomeShuttingDown, which
+			// drops all subscriptions with reason Unsubscribed while the client still wants them.
+			Assert.NotNull(_subscriptionEnvelope);
+			_subscriptionEnvelope.ReplyWith(new ClientMessage.SubscriptionDropped(Guid.NewGuid(), SubscriptionDropReason.Unsubscribed));
+
+			// the enumeration must terminate so the gRPC stream ends instead of dangling open.
+			Assert.ThrowsAsync<ReadResponseException.SubscriptionDropped>(async () => await sub.GetNext());
 		}
 	}
 
