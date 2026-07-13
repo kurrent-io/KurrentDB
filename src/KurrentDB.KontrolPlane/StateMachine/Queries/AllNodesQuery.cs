@@ -8,16 +8,16 @@ using Kurrent.Quack;
 namespace KurrentDB.KontrolPlane.StateMachine.Queries;
 
 [StructLayout(LayoutKind.Auto)]
-internal readonly struct AllNodesQuery : IQuery<ValueTuple<string>, (EndPoint Address, bool IsReadOnlyReplica, bool IsLeader)> {
-	public static ReadOnlySpan<byte> CommandText => "SELECT address, is_read_only_replica, is_leader FROM node WHERE database_id=$1;"u8;
+internal readonly struct AllNodesQuery : IQuery<ValueTuple<string>, (EndPoint Address, DatabaseNodeRole Role, bool IsLeader)> {
+	public static ReadOnlySpan<byte> CommandText => "SELECT address, role, is_leader FROM node WHERE database_id=$1;"u8;
 
 	public static StatementBindingResult Bind(in ValueTuple<string> args, PreparedStatement source) => new(source) {
 		args.Item1,
 	};
 
-	public static (EndPoint Address, bool IsReadOnlyReplica, bool IsLeader) Parse(ref DataChunk.Row row) => new() {
+	public static (EndPoint Address, DatabaseNodeRole Role, bool IsLeader) Parse(ref DataChunk.Row row) => new() {
 		Address = row.ReadBlob().ToEndPoint(),
-		IsReadOnlyReplica = row.ReadBoolean(),
+		Role = (DatabaseNodeRole)row.ReadInt32(),
 		IsLeader = row.ReadBoolean(),
 	};
 }

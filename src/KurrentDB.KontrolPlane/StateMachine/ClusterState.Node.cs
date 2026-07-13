@@ -30,27 +30,27 @@ partial class ClusterState {
 
 [StructLayout(LayoutKind.Auto)]
 file readonly struct AddOrUpdateDatabaseNodeStmt(AddOrUpdateDatabaseNode command) :
-	IPreparedStatement<(string DatabaseId, ReadOnlyMemory<byte> Address, bool IsReadOnlyReplica)>,
+	IPreparedStatement<(string DatabaseId, ReadOnlyMemory<byte> Address, int Role)>,
 	IConsumer<DuckDBAdvancedConnection> {
 	public static ReadOnlySpan<byte> CommandText => """
-	                                                INSERT INTO node (database_id, address, is_read_only_replica)
+	                                                INSERT INTO node (database_id, address, role)
 	                                                VALUES ($1, $2, $3)
 	                                                ON CONFLICT (database_id, address) DO UPDATE
-	                                                SET is_read_only_replica=$3
+	                                                SET role=$3
 	                                                WHERE node.database_id=$1 AND node.address=$2;
 	                                                """u8;
 
 	public static StatementBindingResult Bind(
-		in (string DatabaseId, ReadOnlyMemory<byte> Address, bool IsReadOnlyReplica) args,
+		in (string DatabaseId, ReadOnlyMemory<byte> Address, int Role) args,
 		PreparedStatement source) => new(source) {
 		args.DatabaseId,
 		args.Address.Span,
-		args.IsReadOnlyReplica,
+		args.Role,
 	};
 
 	public void Invoke(DuckDBAdvancedConnection connection)
-		=> connection.ExecuteNonQuery<(string, ReadOnlyMemory<byte>, bool), AddOrUpdateDatabaseNodeStmt>(
-			new(command.DatabaseId, command.Address.Memory, command.IsReadOnlyReplica));
+		=> connection.ExecuteNonQuery<(string, ReadOnlyMemory<byte>, int), AddOrUpdateDatabaseNodeStmt>(
+			new(command.DatabaseId, command.Address.Memory, command.Role));
 }
 
 [StructLayout(LayoutKind.Auto)]

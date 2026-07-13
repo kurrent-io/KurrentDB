@@ -69,7 +69,7 @@ public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 		var expectedNode = new DatabaseNode {
 			Address = new IPEndPoint(IPAddress.Parse("192.168.0.1"), 3262),
 			DatabaseId = Database.MainDatabaseId,
-			IsReadOnlyReplica = true,
+			Role = DatabaseNodeRole.ReadOnlyReplica,
 		};
 
 		await Kontroller.AddOrUpdateDatabaseNodeAsync(expectedNode, TestToken);
@@ -93,7 +93,7 @@ public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 		var expectedNode = new DatabaseNode {
 			Address = new IPEndPoint(IPAddress.Parse("192.168.0.1"), 3262),
 			DatabaseId = Database.MainDatabaseId,
-			IsReadOnlyReplica = true,
+			Role = DatabaseNodeRole.ReadOnlyReplica,
 		};
 
 		await Kontroller.AddOrUpdateDatabaseNodeAsync(expectedNode, TestToken);
@@ -103,9 +103,9 @@ public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 		Assert.Null(database.LeaderAddress);
 
 		var actualNode = Assert.Single(database.Nodes);
-		Assert.Equal(expectedNode.IsReadOnlyReplica, actualNode.IsReadOnlyReplica);
+		Assert.Equal(expectedNode.Role, actualNode.Role);
 
-		expectedNode = expectedNode with { IsReadOnlyReplica = false };
+		expectedNode = expectedNode with { Role = DatabaseNodeRole.Regular };
 		await Kontroller.AddOrUpdateDatabaseNodeAsync(expectedNode, TestToken);
 
 		database = await Kontroller.GetDatabaseAsync(Database.MainDatabaseId, TestToken);
@@ -113,7 +113,7 @@ public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 		Assert.Null(database.LeaderAddress);
 
 		actualNode = Assert.Single(database.Nodes);
-		Assert.Equal(expectedNode.IsReadOnlyReplica, actualNode.IsReadOnlyReplica);
+		Assert.Equal(expectedNode.Role, actualNode.Role);
 	}
 
 	[Fact]
@@ -147,7 +147,7 @@ public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 		var expectedNode = new DatabaseNode {
 			Address = new IPEndPoint(IPAddress.Parse("192.168.0.1"), 3262),
 			DatabaseId = Database.MainDatabaseId,
-			IsReadOnlyReplica = true,
+			Role = DatabaseNodeRole.ReadOnlyReplica,
 		};
 
 		await Kontroller.AddOrUpdateDatabaseNodeAsync(expectedNode, TestToken);

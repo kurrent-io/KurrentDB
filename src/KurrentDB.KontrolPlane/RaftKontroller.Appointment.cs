@@ -90,7 +90,7 @@ partial class RaftKontroller {
 			foreach (var database in currentDBs) {
 				databases.Add(database.Id);
 
-				IReadOnlyList<(EndPoint Address, bool IsReadOnlyReplica, bool IsLeader)> nodes = connection
+				IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role, bool IsLeader)> nodes = connection
 					.GetDatabaseNodes(database.Id)
 					.ToList();
 
@@ -100,12 +100,12 @@ partial class RaftKontroller {
 		}
 	}
 
-	private bool IsAppointmentRequired(string databaseId, IReadOnlyList<(EndPoint Address, bool IsReadOnlyReplica, bool IsLeader)> nodes)
+	private bool IsAppointmentRequired(string databaseId, IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role, bool IsLeader)> nodes)
 		=> nodes is not []
 		   && (!_appointmentState.TryGetValue(databaseId, out var appointment)
 		       || appointment.IsExpired(_appointmentExpiration));
 
-	private async Task AppointLeaderAsync(string databaseId, ulong epoch, IReadOnlyList<(EndPoint Address, bool IsReadOnlyReplica, bool IsLeader)> nodes, CancellationToken token) {
+	private async Task AppointLeaderAsync(string databaseId, ulong epoch, IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role, bool IsLeader)> nodes, CancellationToken token) {
 		var responses = new Dictionary<EndPoint, ReplicaState>(nodes.Count);
 
 		await foreach (var task in Task.WhenEach(GetReplicaState(DataPlane, nodes, token))) {
@@ -143,10 +143,10 @@ partial class RaftKontroller {
 
 		static IEnumerable<Task<KeyValuePair<EndPoint, ReplicaState>>> GetReplicaState(
 			IDataPlane replicas,
-			IEnumerable<(EndPoint Address, bool IsReadOnlyReplica, bool IsLeader)> nodes,
+			IEnumerable<(EndPoint Address, DatabaseNodeRole Role, bool IsLeader)> nodes,
 			CancellationToken token)
 			=> nodes
-				.Where(static node => !node.IsReadOnlyReplica) // r/o replicas cannot contribute to the quorum
+				.Where(static node => node.Role is DatabaseNodeRole.Regular) // r/o replicas cannot contribute to the quorum
 				.Select(node => GetReplicaStateAsync(replicas, node.Address, token));
 
 		static async Task<KeyValuePair<EndPoint, ReplicaState>> GetReplicaStateAsync(

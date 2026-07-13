@@ -21,7 +21,7 @@ message AddOrUpdateDatabaseNode
 {
   string databaseId = 1;
   bytes address = 2;
-  bool isReadOnlyReplica = 3;
+  int32 role = 3;
 }
 
 message RemoveDatabaseNode

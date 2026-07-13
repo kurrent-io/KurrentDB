@@ -24,7 +24,7 @@ partial class ClusterState {
 	                                                      CREATE TABLE node (
 	                                                        address BLOB NOT NULL,
 	                                                        database_id VARCHAR NOT NULL,
-	                                                        is_read_only_replica BOOL NOT NULL,
+	                                                        role INTEGER NOT NULL,
 	                                                        is_leader BOOL NOT NULL DEFAULT FALSE,
 	                                                        FOREIGN KEY (database_id) REFERENCES database (id)
 	                                                      );

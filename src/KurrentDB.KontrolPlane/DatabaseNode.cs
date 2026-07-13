@@ -13,5 +13,5 @@ public sealed record DatabaseNode : IEntity {
 
 	public required EndPoint Address { get; init; }
 
-	public bool IsReadOnlyReplica { get; init; }
+	public DatabaseNodeRole Role { get; init; }
 }

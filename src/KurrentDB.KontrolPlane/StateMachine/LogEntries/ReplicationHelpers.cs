@@ -27,11 +27,11 @@ internal static class ReplicationHelpers {
 
 		public ValueTask AddOrUpdateDatabaseNodeAsync(string databaseId,
 			EndPoint address,
-			bool isReadOnlyReplica,
+			DatabaseNodeRole role,
 			CancellationToken token)
 			=> raft.ReplicateAsync(
 				new ProtobufLogEntry<AddOrUpdateDatabaseNode>(new()
-						{ Address = address.ToByteString(), DatabaseId = databaseId, IsReadOnlyReplica = isReadOnlyReplica })
+						{ Address = address.ToByteString(), DatabaseId = databaseId, Role = (int)role })
 					{ Term = raft.Term }, token);
 
 		public async ValueTask<bool> RemoveDatabaseNodeAsync(string databaseId,
