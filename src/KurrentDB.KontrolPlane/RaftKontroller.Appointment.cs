@@ -130,7 +130,10 @@ partial class RaftKontroller {
 		// Find the node with the max offset
 		var candidate = responses
 			.Where(pair => pair.Value.Epoch == maxEpoch)
-			.MaxBy(static pair => pair.Value.UncommittedOffset)
+			.OrderByDescending(static pair => pair.Value.WriterCheckpoint)
+			.ThenByDescending(static pair => pair.Value.ChaserCheckpoint)
+			.ThenByDescending(static pair => pair.Value.Priority)
+			.First()
 			.Key;
 
 		// Appoint the leader. Use empty cancellation token because AppointLeaderAsync throws NotLeaderException

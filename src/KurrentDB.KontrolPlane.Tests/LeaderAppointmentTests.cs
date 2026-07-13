@@ -13,9 +13,9 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 	public async Task AppointLeader() {
 		// initialize members
 		var replicaSet = new TestDataPlane();
-		replicaSet.UpdateMember(TestDataPlane.Host1, new(UncommittedOffset: 100, Epoch: 1L));
-		replicaSet.UpdateMember(TestDataPlane.Host2, new(UncommittedOffset: 200, Epoch: 0L));
-		replicaSet.UpdateMember(TestDataPlane.Host3, new(UncommittedOffset: 150, Epoch: 1L)); // leader
+		replicaSet.UpdateMember(TestDataPlane.Host1, new(Epoch: 1L, WriterCheckpoint: 100, ChaserCheckpoint: 0L, Priority: 0));
+		replicaSet.UpdateMember(TestDataPlane.Host2, new(Epoch: 0L, WriterCheckpoint: 200, ChaserCheckpoint: 0L, Priority: 0));
+		replicaSet.UpdateMember(TestDataPlane.Host3, new(Epoch: 1L, WriterCheckpoint: 150, ChaserCheckpoint: 0L, Priority: 0)); // leader
 
 		// initialize Kontroller
 		await using var kontroller = new RaftKontroller(new RaftKontroller.Options {
@@ -46,9 +46,9 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 
 		// initialize members
 		var replicaSet = new TestDataPlane();
-		replicaSet.UpdateMember(TestDataPlane.Host1, new(UncommittedOffset: 100, Epoch: 1L));
-		replicaSet.UpdateMember(TestDataPlane.Host2, new(UncommittedOffset: 200, Epoch: 0L));
-		replicaSet.UpdateMember(TestDataPlane.Host3, new(UncommittedOffset: 150, Epoch: 1L)); // leader
+		replicaSet.UpdateMember(TestDataPlane.Host1, new(WriterCheckpoint: 100, Epoch: 1L, ChaserCheckpoint: 0L, Priority: 0));
+		replicaSet.UpdateMember(TestDataPlane.Host2, new(WriterCheckpoint: 200, Epoch: 0L, ChaserCheckpoint: 0L, Priority: 0));
+		replicaSet.UpdateMember(TestDataPlane.Host3, new(WriterCheckpoint: 150, Epoch: 1L, ChaserCheckpoint: 0L, Priority: 0)); // leader
 
 		// initialize Kontroller
 		await using var kontroller = new RaftKontroller(new RaftKontroller.Options {
