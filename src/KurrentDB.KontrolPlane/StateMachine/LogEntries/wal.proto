@@ -23,6 +23,8 @@ message AddOrUpdateDatabaseNode
   bytes address = 2;
   int32 role = 3;
   string version = 4;
+  bytes replicationProtocolAddress = 5;
+  bytes clientApiAddress = 6;
 }
 
 message RemoveDatabaseNode

@@ -8,17 +8,20 @@ using Kurrent.Quack;
 namespace KurrentDB.KontrolPlane.StateMachine.Queries;
 
 [StructLayout(LayoutKind.Auto)]
-internal readonly struct AllNodesQuery : IQuery<ValueTuple<string>, (EndPoint Address, DatabaseNodeRole Role, bool IsLeader, string Version)> {
-	public static ReadOnlySpan<byte> CommandText => "SELECT address, role, is_leader, version FROM node WHERE database_id=$1;"u8;
+internal readonly struct AllNodesQuery : IQuery<ValueTuple<string>, (EndPoint Address, DatabaseNodeRole Role, bool IsLeader, string Version, EndPoint? ClientApi, EndPoint Replication)> {
+	public static ReadOnlySpan<byte> CommandText => "SELECT address, role, is_leader, version, clientApiAddress, replicationAddress FROM node WHERE database_id=$1;"u8;
 
 	public static StatementBindingResult Bind(in ValueTuple<string> args, PreparedStatement source) => new(source) {
 		args.Item1,
 	};
 
-	public static (EndPoint Address, DatabaseNodeRole Role, bool IsLeader, string Version) Parse(ref DataChunk.Row row) => new() {
+	public static (EndPoint Address, DatabaseNodeRole Role, bool IsLeader, string Version, EndPoint? ClientApi, EndPoint Replication)
+		Parse(ref DataChunk.Row row) => new() {
 		Address = row.ReadBlob().ToEndPoint(),
 		Role = (DatabaseNodeRole)row.ReadInt32(),
 		IsLeader = row.ReadBoolean(),
 		Version = row.ReadString(),
+		ClientApi = row.ReadBlob().ToEndPointOrNull(),
+		Replication = row.ReadBlob().ToEndPoint(),
 	};
 }

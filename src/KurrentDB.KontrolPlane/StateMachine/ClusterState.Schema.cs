@@ -27,6 +27,8 @@ partial class ClusterState {
 	                                                        role INTEGER NOT NULL,
 	                                                        is_leader BOOL NOT NULL DEFAULT FALSE,
 	                                                        version VARCHAR NOT NULL DEFAULT '',
+	                                                        clientApiAddress BLOB NOT NULL DEFAULT ''::BLOB,
+	                                                        replicationAddress BLOB NOT NULL,
 	                                                        FOREIGN KEY (database_id) REFERENCES database (id)
 	                                                      );
 

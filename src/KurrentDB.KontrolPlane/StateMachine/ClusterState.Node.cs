@@ -30,28 +30,34 @@ partial class ClusterState {
 
 [StructLayout(LayoutKind.Auto)]
 file readonly struct AddOrUpdateDatabaseNodeStmt(AddOrUpdateDatabaseNode command) :
-	IPreparedStatement<(string DatabaseId, ReadOnlyMemory<byte> Address, int Role, string Version)>,
+	IPreparedStatement<(string DatabaseId, ReadOnlyMemory<byte> Address, int Role, string Version, ReadOnlyMemory<byte> ClientApiAddr, ReadOnlyMemory<byte> ReplicationAddr)>,
 	IConsumer<DuckDBAdvancedConnection> {
 	public static ReadOnlySpan<byte> CommandText => """
-	                                                INSERT INTO node (database_id, address, role)
-	                                                VALUES ($1, $2, $3, $4)
+	                                                INSERT INTO node (database_id, address, role, version, clientApiAddress, replicationAddress)
+	                                                VALUES ($1, $2, $3, $4, $5, $6)
 	                                                ON CONFLICT (database_id, address) DO UPDATE
-	                                                SET role=$3, version=$4
+	                                                SET role=$3, version=$4, clientApiAddress=$5, replicationAddress=$6
 	                                                WHERE node.database_id=$1 AND node.address=$2;
 	                                                """u8;
 
 	public static StatementBindingResult Bind(
-		in (string DatabaseId, ReadOnlyMemory<byte> Address, int Role, string Version) args,
+		in (string DatabaseId, ReadOnlyMemory<byte> Address, int Role, string Version, ReadOnlyMemory<byte> ClientApiAddr, ReadOnlyMemory<byte> ReplicationAddr) args,
 		PreparedStatement source) => new(source) {
 		args.DatabaseId,
 		args.Address.Span,
 		args.Role,
 		args.Version,
+		args.ClientApiAddr.Span,
+		args.ReplicationAddr.Span,
 	};
 
 	public void Invoke(DuckDBAdvancedConnection connection)
-		=> connection.ExecuteNonQuery<(string, ReadOnlyMemory<byte>, int, string), AddOrUpdateDatabaseNodeStmt>(
-			new(command.DatabaseId, command.Address.Memory, command.Role, command.Version));
+		=> connection
+			.ExecuteNonQuery<(string, ReadOnlyMemory<byte>, int, string, ReadOnlyMemory<byte>, ReadOnlyMemory<byte>),
+				AddOrUpdateDatabaseNodeStmt>(
+				new(command.DatabaseId, command.Address.Memory, command.Role, command.Version,
+					command.ClientApiAddress.Memory,
+					command.ReplicationProtocolAddress.Memory));
 }
 
 [StructLayout(LayoutKind.Auto)]

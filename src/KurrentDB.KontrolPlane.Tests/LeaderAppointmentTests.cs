@@ -107,16 +107,33 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 	}
 
 	private static async Task AddNodesAsync(IKontroller kontroller) {
-		var node = new DatabaseNode { DatabaseId = Database.MainDatabaseId, Address = TestDataPlane.Host1 };
+		var node = new DatabaseNode {
+			DatabaseId = Database.MainDatabaseId,
+			Address = TestDataPlane.Host1,
+			ReplicationProtocolAddress = new IPEndPoint(IPAddress.Loopback, 3262)
+		};
 		await kontroller.AddOrUpdateDatabaseNodeAsync(node, TestToken);
 
-		node = new DatabaseNode { DatabaseId = Database.MainDatabaseId, Address = TestDataPlane.Host2 };
+		node = new DatabaseNode {
+			DatabaseId = Database.MainDatabaseId,
+			Address = TestDataPlane.Host2,
+			ReplicationProtocolAddress = new IPEndPoint(IPAddress.Loopback, 3263)
+		};
 		await kontroller.AddOrUpdateDatabaseNodeAsync(node, TestToken);
 
-		node = new DatabaseNode { DatabaseId = Database.MainDatabaseId, Address = TestDataPlane.Host3 };
+		node = new DatabaseNode {
+			DatabaseId = Database.MainDatabaseId,
+			Address = TestDataPlane.Host3,
+			ReplicationProtocolAddress = new IPEndPoint(IPAddress.Loopback, 3263)
+		};
 		await kontroller.AddOrUpdateDatabaseNodeAsync(node, TestToken);
 
-		node = new DatabaseNode { DatabaseId = Database.MainDatabaseId, Address = TestDataPlane.Host4 };
+		node = new DatabaseNode {
+			DatabaseId = Database.MainDatabaseId,
+			Address = TestDataPlane.Host4,
+			ReplicationProtocolAddress = new IPEndPoint(IPAddress.Loopback, 3263)
+		};
+
 		await kontroller.AddOrUpdateDatabaseNodeAsync(node, TestToken);
 	}
 

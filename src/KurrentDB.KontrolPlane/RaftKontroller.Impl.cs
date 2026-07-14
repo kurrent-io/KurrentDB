@@ -60,7 +60,12 @@ partial class RaftKontroller : IKontroller {
 
 	public async ValueTask AddOrUpdateDatabaseNodeAsync(DatabaseNode node, CancellationToken token = default) {
 		try {
-			await _raft.AddOrUpdateDatabaseNodeAsync(node.DatabaseId, node.Address, node.Role, token);
+			await _raft.AddOrUpdateDatabaseNodeAsync(node.DatabaseId,
+				node.Address,
+				node.Role,
+				node.ClientApiAddressInternal,
+				node.ReplicationProtocolAddress,
+				token);
 		} catch (NotLeaderException e) {
 			throw new LeadershipRequiredException(e);
 		}
@@ -127,7 +132,9 @@ partial class RaftKontroller : IKontroller {
 				nodes.Add(new() {
 					Address = node.Address,
 					DatabaseId = databaseId,
-					Role = node.Role
+					Role = node.Role,
+					ClientApiAddress = node.ClientApi,
+					ReplicationProtocolAddress = node.Replication,
 				});
 
 				if (node.IsLeader)

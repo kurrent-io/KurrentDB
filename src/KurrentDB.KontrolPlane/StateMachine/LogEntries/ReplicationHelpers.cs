@@ -4,6 +4,7 @@
 using System.Net;
 using System.Runtime.CompilerServices;
 using DotNext.Net.Cluster.Consensus.Raft;
+using Google.Protobuf;
 
 namespace KurrentDB.KontrolPlane.StateMachine.LogEntries;
 
@@ -28,10 +29,18 @@ internal static class ReplicationHelpers {
 		public ValueTask AddOrUpdateDatabaseNodeAsync(string databaseId,
 			EndPoint address,
 			DatabaseNodeRole role,
+			EndPoint? clientApiAddress,
+			EndPoint replicationAddress,
 			CancellationToken token)
 			=> raft.ReplicateAsync(
 				new ProtobufLogEntry<AddOrUpdateDatabaseNode>(new()
-						{ Address = address.ToByteString(), DatabaseId = databaseId, Role = (int)role })
+						{
+							Address = address.ToByteString(),
+							DatabaseId = databaseId,
+							Role = (int)role,
+							ReplicationProtocolAddress = replicationAddress.ToByteString(),
+							ClientApiAddress = clientApiAddress?.ToByteString() ?? ByteString.Empty,
+						})
 					{ Term = raft.Term }, token);
 
 		public async ValueTask<bool> RemoveDatabaseNodeAsync(string databaseId,

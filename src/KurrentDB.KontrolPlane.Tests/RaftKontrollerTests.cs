@@ -68,6 +68,7 @@ public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 	public async Task AddRemoveNode() {
 		var expectedNode = new DatabaseNode {
 			Address = new IPEndPoint(IPAddress.Parse("192.168.0.1"), 3262),
+			ReplicationProtocolAddress = new IPEndPoint(IPAddress.Parse("192.168.0.1"), 3263),
 			DatabaseId = Database.MainDatabaseId,
 			Role = DatabaseNodeRole.ReadOnlyReplica,
 		};
@@ -92,6 +93,7 @@ public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 	public async Task UpdateNode() {
 		var expectedNode = new DatabaseNode {
 			Address = new IPEndPoint(IPAddress.Parse("192.168.0.1"), 3262),
+			ReplicationProtocolAddress = new IPEndPoint(IPAddress.Parse("192.168.0.1"), 3263),
 			DatabaseId = Database.MainDatabaseId,
 			Role = DatabaseNodeRole.ReadOnlyReplica,
 		};
@@ -146,6 +148,7 @@ public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 
 		var expectedNode = new DatabaseNode {
 			Address = new IPEndPoint(IPAddress.Parse("192.168.0.1"), 3262),
+			ReplicationProtocolAddress = new IPEndPoint(IPAddress.Parse("192.168.0.1"), 3263),
 			DatabaseId = Database.MainDatabaseId,
 			Role = DatabaseNodeRole.ReadOnlyReplica,
 		};

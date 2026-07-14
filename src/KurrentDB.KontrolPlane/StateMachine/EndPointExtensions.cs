@@ -15,6 +15,9 @@ internal static class EndPointExtensions {
 		return reader.ReadEndPoint();
 	}
 
+	public static EndPoint? ToEndPointOrNull(this Blob bytes)
+		=> bytes.Reference.Length is 0 ? null : ToEndPoint(bytes);
+
 	public static ByteString ToByteString(this EndPoint ep) {
 		var writer = new BufferWriterSlim<byte>(stackalloc byte[256]);
 		try {
