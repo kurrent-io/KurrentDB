@@ -10,9 +10,9 @@ namespace KurrentDB.KontrolPlane;
 /// </summary>
 public sealed record DatabaseCluster : Database {
 	public IReadOnlyList<DatabaseNode> Nodes {
-		get => field ?? [];
+		get;
 		init;
-	}
+	} = [];
 
 	public EndPoint? LeaderAddress { get; init; }
 }

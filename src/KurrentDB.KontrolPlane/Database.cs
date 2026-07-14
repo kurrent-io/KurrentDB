@@ -14,7 +14,7 @@ public record Database : IEntity {
 	public ulong Epoch { get; init; }
 
 	public string Description {
-		get => field ?? string.Empty;
+		get;
 		init;
-	}
+	} = string.Empty;
 }
