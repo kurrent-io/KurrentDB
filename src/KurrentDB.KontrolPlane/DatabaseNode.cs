@@ -33,8 +33,6 @@ public sealed record DatabaseNode : IEntity {
 		init => ClientApiAddressInternal = value;
 	}
 
-	internal bool IsClientApiAddressSet => !ClientApiAddress.Equals(Address);
-
 	/// <summary>
 	/// The address of the replication endpoint.
 	/// </summary>
@@ -43,9 +41,16 @@ public sealed record DatabaseNode : IEntity {
 		init;
 	}
 
-	[AllowNull]
+	/// <summary>
+	/// Gets or sets running KDB version on the node.
+	/// </summary>
 	public string Version {
-		get => field ?? string.Empty;
+		get;
+		init;
+	} = string.Empty;
+
+	public Guid InstanceId {
+		get;
 		init;
 	}
 }

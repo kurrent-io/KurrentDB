@@ -71,6 +71,8 @@ public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 			ReplicationProtocolAddress = new IPEndPoint(IPAddress.Parse("192.168.0.1"), 3263),
 			DatabaseId = Database.MainDatabaseId,
 			Role = DatabaseNodeRole.ReadOnlyReplica,
+			InstanceId = Guid.NewGuid(),
+			Version = "1.0",
 		};
 
 		await Kontroller.AddOrUpdateDatabaseNodeAsync(expectedNode, TestToken);

@@ -29,6 +29,7 @@ partial class ClusterState {
 	                                                        version VARCHAR NOT NULL DEFAULT '',
 	                                                        client_api_addr BLOB NOT NULL DEFAULT ''::BLOB,
 	                                                        replication_addr BLOB NOT NULL,
+	                                                        instance_id UHUGEINT NOT NULL DEFAULT 0,
 	                                                        FOREIGN KEY (database_id) REFERENCES database (id)
 	                                                      );
 

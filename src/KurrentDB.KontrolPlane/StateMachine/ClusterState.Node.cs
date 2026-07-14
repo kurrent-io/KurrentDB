@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using DotNext;
 using Kurrent.Quack;
@@ -30,18 +31,19 @@ partial class ClusterState {
 
 [StructLayout(LayoutKind.Auto)]
 file readonly struct AddOrUpdateDatabaseNodeStmt(AddOrUpdateDatabaseNode command) :
-	IPreparedStatement<(string DatabaseId, ReadOnlyMemory<byte> Address, int Role, string Version, ReadOnlyMemory<byte> ClientApiAddr, ReadOnlyMemory<byte> ReplicationAddr)>,
+	IPreparedStatement<(string DatabaseId, ReadOnlyMemory<byte> Address, int Role, string Version, ReadOnlyMemory<byte> ClientApiAddr, ReadOnlyMemory<byte> ReplicationAddr, Guid InstanceId)>,
 	IConsumer<DuckDBAdvancedConnection> {
 	public static ReadOnlySpan<byte> CommandText => """
-	                                                INSERT INTO node (database_id, address, role, version, client_api_addr, replication_addr)
-	                                                VALUES ($1, $2, $3, $4, $5, $6)
+	                                                INSERT INTO node (database_id, address, role, version, client_api_addr, replication_addr, instance_id)
+	                                                VALUES ($1, $2, $3, $4, $5, $6, $7)
 	                                                ON CONFLICT (database_id, address) DO UPDATE
-	                                                SET role=$3, version=$4, client_api_addr=$5, replication_addr=$6
+	                                                SET role=$3, version=$4, client_api_addr=$5, replication_addr=$6, instance_id=$7
 	                                                WHERE node.database_id=$1 AND node.address=$2;
 	                                                """u8;
 
 	public static StatementBindingResult Bind(
-		in (string DatabaseId, ReadOnlyMemory<byte> Address, int Role, string Version, ReadOnlyMemory<byte> ClientApiAddr, ReadOnlyMemory<byte> ReplicationAddr) args,
+		in (string DatabaseId, ReadOnlyMemory<byte> Address, int Role, string Version, ReadOnlyMemory<byte> ClientApiAddr,
+			ReadOnlyMemory<byte> ReplicationAddr, Guid InstanceId) args,
 		PreparedStatement source) => new(source) {
 		args.DatabaseId,
 		args.Address.Span,
@@ -49,15 +51,17 @@ file readonly struct AddOrUpdateDatabaseNodeStmt(AddOrUpdateDatabaseNode command
 		args.Version,
 		args.ClientApiAddr.Span,
 		args.ReplicationAddr.Span,
+		Unsafe.BitCast<Guid, UInt128>(args.InstanceId),
 	};
 
 	public void Invoke(DuckDBAdvancedConnection connection)
 		=> connection
-			.ExecuteNonQuery<(string, ReadOnlyMemory<byte>, int, string, ReadOnlyMemory<byte>, ReadOnlyMemory<byte>),
+			.ExecuteNonQuery<(string, ReadOnlyMemory<byte>, int, string, ReadOnlyMemory<byte>, ReadOnlyMemory<byte>, Guid),
 				AddOrUpdateDatabaseNodeStmt>(
 				new(command.DatabaseId, command.Address.Memory, command.Role, command.Version,
 					command.ClientApiAddress.Memory,
-					command.ReplicationProtocolAddress.Memory));
+					command.ReplicationProtocolAddress.Memory,
+					new Guid(command.InstanceId.Span)));
 }
 
 [StructLayout(LayoutKind.Auto)]

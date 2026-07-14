@@ -65,6 +65,8 @@ partial class RaftKontroller : IKontroller {
 				node.Role,
 				node.ClientApiAddressInternal,
 				node.ReplicationProtocolAddress,
+				node.Version,
+				node.InstanceId,
 				token);
 		} catch (NotLeaderException e) {
 			throw new LeadershipRequiredException(e);
@@ -135,6 +137,8 @@ partial class RaftKontroller : IKontroller {
 					Role = node.Role,
 					ClientApiAddress = node.ClientApi,
 					ReplicationProtocolAddress = node.Replication,
+					Version = node.Version,
+					InstanceId = node.InstanceId,
 				});
 
 				if (node.IsLeader)

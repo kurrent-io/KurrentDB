@@ -31,6 +31,8 @@ internal static class ReplicationHelpers {
 			DatabaseNodeRole role,
 			EndPoint? clientApiAddress,
 			EndPoint replicationAddress,
+			string version,
+			Guid instanceId,
 			CancellationToken token)
 			=> raft.ReplicateAsync(
 				new ProtobufLogEntry<AddOrUpdateDatabaseNode>(new()
@@ -40,6 +42,8 @@ internal static class ReplicationHelpers {
 							Role = (int)role,
 							ReplicationProtocolAddress = replicationAddress.ToByteString(),
 							ClientApiAddress = clientApiAddress?.ToByteString() ?? ByteString.Empty,
+							Version = version,
+							InstanceId = ByteString.CopyFrom(instanceId.ToByteArray()),
 						})
 					{ Term = raft.Term }, token);
 

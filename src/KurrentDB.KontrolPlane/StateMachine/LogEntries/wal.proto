@@ -25,6 +25,7 @@ message AddOrUpdateDatabaseNode
   string version = 4;
   bytes replicationProtocolAddress = 5;
   bytes clientApiAddress = 6;
+  bytes instanceId = 7;
 }
 
 message RemoveDatabaseNode

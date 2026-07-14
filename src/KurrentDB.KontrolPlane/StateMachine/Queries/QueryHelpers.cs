@@ -14,9 +14,9 @@ internal static class QueryHelpers {
 		public QueryResult<(string Id, ulong Epoch), AllDatabasesWithEpochQuery> GetDatabasesWithEpoch()
 			=> connection.ExecuteQuery<(string, ulong), AllDatabasesWithEpochQuery>();
 
-		public QueryResult<ValueTuple<string>, (EndPoint Address, DatabaseNodeRole Role, bool IsLeader, string Version, EndPoint? ClientApi, EndPoint Replication), AllNodesQuery> GetDatabaseNodes(
+		public QueryResult<ValueTuple<string>, (EndPoint Address, DatabaseNodeRole Role, bool IsLeader, string Version, EndPoint? ClientApi, EndPoint Replication, Guid InstanceId), AllNodesQuery> GetDatabaseNodes(
 			string databaseId)
-			=> connection.ExecuteQuery<ValueTuple<string>, (EndPoint, DatabaseNodeRole, bool, string, EndPoint?, EndPoint), AllNodesQuery>(new(databaseId));
+			=> connection.ExecuteQuery<ValueTuple<string>, (EndPoint, DatabaseNodeRole, bool, string, EndPoint?, EndPoint, Guid InstanceId), AllNodesQuery>(new(databaseId));
 
 		public QueryResult<ValueTuple<string>, (string Description, ulong Epoch), DatabaseQuery> GetDatabase(string databaseId)
 			=> connection.ExecuteQuery<ValueTuple<string>, (string, ulong), DatabaseQuery>(new(databaseId));
