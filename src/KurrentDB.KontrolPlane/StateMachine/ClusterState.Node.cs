@@ -33,10 +33,10 @@ file readonly struct AddOrUpdateDatabaseNodeStmt(AddOrUpdateDatabaseNode command
 	IPreparedStatement<(string DatabaseId, ReadOnlyMemory<byte> Address, int Role, string Version, ReadOnlyMemory<byte> ClientApiAddr, ReadOnlyMemory<byte> ReplicationAddr)>,
 	IConsumer<DuckDBAdvancedConnection> {
 	public static ReadOnlySpan<byte> CommandText => """
-	                                                INSERT INTO node (database_id, address, role, version, clientApiAddress, replicationAddress)
+	                                                INSERT INTO node (database_id, address, role, version, client_api_addr, replication_addr)
 	                                                VALUES ($1, $2, $3, $4, $5, $6)
 	                                                ON CONFLICT (database_id, address) DO UPDATE
-	                                                SET role=$3, version=$4, clientApiAddress=$5, replicationAddress=$6
+	                                                SET role=$3, version=$4, client_api_addr=$5, replication_addr=$6
 	                                                WHERE node.database_id=$1 AND node.address=$2;
 	                                                """u8;
 

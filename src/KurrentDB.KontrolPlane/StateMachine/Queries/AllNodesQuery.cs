@@ -9,7 +9,7 @@ namespace KurrentDB.KontrolPlane.StateMachine.Queries;
 
 [StructLayout(LayoutKind.Auto)]
 internal readonly struct AllNodesQuery : IQuery<ValueTuple<string>, (EndPoint Address, DatabaseNodeRole Role, bool IsLeader, string Version, EndPoint? ClientApi, EndPoint Replication)> {
-	public static ReadOnlySpan<byte> CommandText => "SELECT address, role, is_leader, version, clientApiAddress, replicationAddress FROM node WHERE database_id=$1;"u8;
+	public static ReadOnlySpan<byte> CommandText => "SELECT address, role, is_leader, version, client_api_addr, replication_addr FROM node WHERE database_id=$1;"u8;
 
 	public static StatementBindingResult Bind(in ValueTuple<string> args, PreparedStatement source) => new(source) {
 		args.Item1,
