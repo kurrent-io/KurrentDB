@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 
 namespace KurrentDB.KontrolPlane;
@@ -14,4 +15,10 @@ public sealed record DatabaseNode : IEntity {
 	public required EndPoint Address { get; init; }
 
 	public DatabaseNodeRole Role { get; init; }
+
+	[AllowNull]
+	public string Version {
+		get => field ?? string.Empty;
+		init;
+	}
 }

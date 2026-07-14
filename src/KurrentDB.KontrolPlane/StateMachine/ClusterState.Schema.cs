@@ -26,6 +26,7 @@ partial class ClusterState {
 	                                                        database_id VARCHAR NOT NULL,
 	                                                        role INTEGER NOT NULL,
 	                                                        is_leader BOOL NOT NULL DEFAULT FALSE,
+	                                                        version VARCHAR NOT NULL DEFAULT '',
 	                                                        FOREIGN KEY (database_id) REFERENCES database (id)
 	                                                      );
 

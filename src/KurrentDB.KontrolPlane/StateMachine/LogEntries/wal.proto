@@ -22,6 +22,7 @@ message AddOrUpdateDatabaseNode
   string databaseId = 1;
   bytes address = 2;
   int32 role = 3;
+  string version = 4;
 }
 
 message RemoveDatabaseNode
