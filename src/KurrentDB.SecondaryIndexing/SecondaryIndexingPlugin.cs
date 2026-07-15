@@ -60,10 +60,8 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddSingleton<UserIndexEngine>();
 		services.AddDuckDBSetup<IndexingDbSchema>();
 		services.AddDuckDBSetup<RenderMessageSetup>();
-		services.AddSingleton(static sp => {
-			var nodeOptions = sp.GetRequiredService<ClusterVNodeOptions>();
-			return new LogViews(Path.GetFullPath(Path.Combine(nodeOptions.Logging.Log, nodeOptions.GetComponentName())));
-		});
+		services.AddSingleton(static sp =>
+			new LogViews(sp.GetRequiredService<ClusterVNodeOptions>().GetLogsDirectory()));
 		services.AddSingleton<FlightSqlLicense>();
 		services.AddFlightSqlServer();
 

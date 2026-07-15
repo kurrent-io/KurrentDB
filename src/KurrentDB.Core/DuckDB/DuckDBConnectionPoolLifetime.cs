@@ -22,6 +22,7 @@ namespace KurrentDB.Core.DuckDB;
 // Also produces additional pools on demand that the caller should dispose.
 public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 	private readonly string _path;
+	private readonly string _logsDir;
 	private readonly string _tempDirectory;
 	private readonly long _maxTempDirectorySizeBytes;
 	private readonly IReadOnlyList<IDuckDBSetup> _repeated;
@@ -32,10 +33,12 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 
 	public DuckDBConnectionPoolLifetime(
 		TFChunkDbConfig config,
+		ClusterVNodeOptions nodeOptions,
 		IEnumerable<IDuckDBSetup> setups,
 		[CanBeNull] ILogger<DuckDBConnectionPoolLifetime> log) {
 
 		_path = config.InMemDb ? GetTempPath() : $"{config.Path}/kurrent.ddb";
+		_logsDir = nodeOptions.GetLogsDirectory();
 		_tempDirectory = Path.GetFullPath(config.SqlEngineTempDirectory is { Length: > 0 } tempPath
 			? tempPath
 			: $"{_path}.tmp"); // the same directory DuckDB would pick by default. explicit so we can clean it up
@@ -54,11 +57,7 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 		}
 		_repeated = repeated;
 
-		Shared = CreatePool(isReadOnly: false, log: true);
-		using (Shared.Rent(out var connection)) {
-			foreach (var s in once)
-				s.Execute(connection);
-		}
+		Shared = CreatePool(isReadOnly: false, log: true, oneTime: once, allowedDirectories: [_logsDir]);
 
 		return;
 
@@ -69,25 +68,45 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 		}
 	}
 
-	public DuckDBConnectionPool CreatePool() => CreatePool(isReadOnly: true, log: false); // no writes go through here so set read only
+	public DuckDBConnectionPool CreatePool() =>
+		CreatePool(isReadOnly: true, log: false, oneTime: [], allowedDirectories: []); // no writes go through here so set read only
 
-	private ConnectionPoolWithFunctions CreatePool(bool isReadOnly, bool log) {
+	// The only way to obtain a pool - never returns one unlocked. Opens the first connection, runs
+	// the one-time setups on it, then locks the instance configuration.
+	private ConnectionPoolWithFunctions CreatePool(bool isReadOnly, bool log,
+		IReadOnlyList<IDuckDBSetup> oneTime, IReadOnlyList<string> allowedDirectories) {
 		var availableRamMib = CalculateRam();
 		var duckDbRamMib = (int)(availableRamMib * 0.25);
 		var settings = new Dictionary<string, string> {
 			["memory_limit"] = $"{duckDbRamMib}MB", // total, not per connection
 			["access_mode"] = isReadOnly ? "READ_ONLY" : "READ_WRITE",
 			["temp_directory"] = _tempDirectory,
-			// security settings
+			// security settings; the rest (allowed_directories, external access, config lock) are
+			// order-dependent, so every pool applies them post-open on the first connection below
 			["allow_community_extensions"] = "false",
-			["enable_external_access"] = "false",
-			["lock_configuration"] = "true",
 		};
 
 		if (_maxTempDirectorySizeBytes > 0L)
 			settings["max_temp_directory_size"] = $"{_maxTempDirectorySizeBytes}B";
 
 		var pool = new ConnectionPoolWithFunctions($"Data Source={_path};{GetParamsString()}", _repeated);
+
+		using (pool.Rent(out var connection)) {
+			foreach (var s in oneTime)
+				s.Execute(connection);
+
+			// Restrict the instance's file access to the allowed directories (the node's own log
+			// directory for the Shared pool, nothing for read-only pools), then lock it down. Order
+			// matters and can't be expressed in the connection string: allowed_directories must be
+			// set while external access is still on, then external access is disabled, then the
+			// config is locked. These are global settings, so applying them once on the first
+			// connection covers the whole pool. The lock comes after the one-time setups because
+			// function registration needs the unlocked state.
+			var dirs = string.Join(", ", allowedDirectories.Select(d => $"'{d.Replace('\\', '/').Replace("'", "''")}'"));
+			connection.ExecuteAdHocNonQuery(
+				$"SET allowed_directories=[{dirs}]; SET enable_external_access=false; SET lock_configuration=true;",
+				multipleStatements: true);
+		}
 
 		if (log)
 			_log.LogInformation("Created DuckDB connection pool at {path} with {settings}", _path, settings);
