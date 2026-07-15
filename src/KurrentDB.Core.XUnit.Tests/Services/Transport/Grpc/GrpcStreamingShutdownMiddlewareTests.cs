@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.AspNetCore.Server;
@@ -19,7 +20,7 @@ public class GrpcStreamingShutdownMiddlewareTests {
 	[InlineData(MethodType.ServerStreaming)]
 	[InlineData(MethodType.DuplexStreaming)]
 	public async Task cancels_streaming_call_when_application_is_stopping(MethodType methodType) {
-		var lifetime = new FakeLifetime();
+		using var lifetime = new FakeLifetime();
 		var context = ContextForMethod(methodType);
 		var tokenObservedCancelled = false;
 
@@ -38,7 +39,7 @@ public class GrpcStreamingShutdownMiddlewareTests {
 	// so beginning shutdown while it runs does not cancel the call.
 	[Fact]
 	public async Task does_not_cancel_unary_call_when_application_is_stopping() {
-		var lifetime = new FakeLifetime();
+		using var lifetime = new FakeLifetime();
 		var context = ContextForMethod(MethodType.Unary);
 		var tokenObservedCancelled = true;
 
@@ -56,7 +57,7 @@ public class GrpcStreamingShutdownMiddlewareTests {
 	// The linked token must still fire on the original trigger (client disconnect), not only on shutdown.
 	[Fact]
 	public async Task streaming_call_still_observes_client_disconnect() {
-		var lifetime = new FakeLifetime();
+		using var lifetime = new FakeLifetime();
 		using var clientDisconnect = new CancellationTokenSource();
 		var context = ContextForMethod(MethodType.ServerStreaming);
 		context.RequestAborted = clientDisconnect.Token;
@@ -76,7 +77,7 @@ public class GrpcStreamingShutdownMiddlewareTests {
 	// Non-gRPC requests (no GrpcMethodMetadata) pass straight through and are unaffected by shutdown.
 	[Fact]
 	public async Task ignores_non_grpc_request() {
-		var lifetime = new FakeLifetime();
+		using var lifetime = new FakeLifetime();
 		var context = new DefaultHttpContext(); // no endpoint / no gRPC metadata
 		var nextCalled = false;
 		var tokenObservedCancelled = true;
@@ -110,11 +111,12 @@ public class GrpcStreamingShutdownMiddlewareTests {
 		public string FullName => "/svc/method";
 	}
 
-	sealed class FakeLifetime : IHostApplicationLifetime {
+	sealed class FakeLifetime : IHostApplicationLifetime, IDisposable {
 		readonly CancellationTokenSource _stopping = new();
 		public CancellationToken ApplicationStarted => CancellationToken.None;
 		public CancellationToken ApplicationStopping => _stopping.Token;
 		public CancellationToken ApplicationStopped => CancellationToken.None;
 		public void StopApplication() => _stopping.Cancel();
+		public void Dispose() => _stopping.Dispose();
 	}
 }
