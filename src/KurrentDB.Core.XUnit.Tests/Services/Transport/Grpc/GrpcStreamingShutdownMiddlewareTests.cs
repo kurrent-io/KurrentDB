@@ -17,6 +17,7 @@ public class GrpcStreamingShutdownMiddlewareTests {
 	// A streaming call is open-ended, so it must observe shutdown: while the call is in flight the middleware
 	// should have linked ApplicationStopping into the token the handler reads (HttpContext.RequestAborted).
 	[Theory]
+	[InlineData(MethodType.ClientStreaming)]
 	[InlineData(MethodType.ServerStreaming)]
 	[InlineData(MethodType.DuplexStreaming)]
 	public async Task cancels_streaming_call_when_application_is_stopping(MethodType methodType) {

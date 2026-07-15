@@ -20,14 +20,16 @@ namespace KurrentDB.Core.Services.Transport.Grpc;
 // ServerCallContext.CancellationToken is backed by RequestAborted, so the handler's existing read loop ends
 // immediately and Kestrel drains in milliseconds. No per-handler or per-service changes are needed.
 //
-// Applies only to server-streaming / duplex methods — unary calls are finite and keep draining gracefully.
+// Applies to every streaming method (client-, server-, and duplex-streaming) — any of them can stay open under
+// client control and stall the drain; only unary calls are inherently finite and keep draining gracefully.
 // It swaps RequestAborted BEFORE the gRPC ServerCallContext is constructed, so the swap is guaranteed to
 // propagate even when the call carries a deadline (this would not be the case if implemented as an interceptor).
 public sealed class GrpcStreamingShutdownMiddleware(RequestDelegate next, IHostApplicationLifetime lifetime) {
 	public Task Invoke(HttpContext context) {
 		var methodType = context.GetEndpoint()?.Metadata.GetMetadata<GrpcMethodMetadata>()?.Method.Type;
 		return methodType
-			is MethodType.ServerStreaming
+			is MethodType.ClientStreaming
+			or MethodType.ServerStreaming
 			or MethodType.DuplexStreaming
 			? InvokeStreaming(context)
 			: next(context);
