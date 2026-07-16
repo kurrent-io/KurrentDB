@@ -51,6 +51,11 @@ var exitCodeSource = new TaskCompletionSource<int>();
 
 Log.Logger = KurrentLoggerConfiguration.ConsoleLog;
 try {
+	if (!Environment.Is64BitProcess) {
+		Log.Fatal("KurrentDB requires a 64-bit process to run.");
+		return 1;
+	}
+
 	var options = ClusterVNodeOptions.FromConfiguration(configuration);
 
 	Log.Logger = KurrentLoggerConfiguration
