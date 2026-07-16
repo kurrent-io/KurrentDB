@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.TransactionLog.LogRecords;
+using Kurrent.Kontext.Embeddings;
 using KurrentDB.Kontext.Embeddings;
 using KurrentDB.Kontext.Workspaces;
 using KurrentDB.Kontext.Workspaces.Registry;

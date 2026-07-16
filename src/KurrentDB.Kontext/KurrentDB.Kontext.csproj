@@ -26,11 +26,6 @@
     <PackageReference Include="Lucene.Net.Analysis.Common" />
     <PackageReference Include="System.Numerics.Tensors" />
     <PackageReference Include="Microsoft.Extensions.AI.Abstractions" />
-    <PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
-    <PackageReference Include="OpenAI" />
-    <PackageReference Include="OllamaSharp" />
-    <PackageReference Include="Google.Cloud.VertexAI.Extensions" />
-    <PackageReference Include="AWSSDK.Extensions.Bedrock.MEAI" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     <PackageReference Include="DotNext.Threading" />
@@ -39,10 +34,27 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../KurrentDB.Kontext.Embeddings/KurrentDB.Kontext.Embeddings.csproj" />
     <ProjectReference Include="../KurrentDB.Kontext.Models/KurrentDB.Kontext.Models.csproj" />
     <ProjectReference Include="../KurrentDB.Common/KurrentDB.Common.csproj" />
     <ProjectReference Include="../KurrentDB.Core/KurrentDB.Core.csproj" />
     <ProjectReference Include="../KurrentDB.Scripting/KurrentDB.Scripting.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Core\KontextWorkspaces.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Core\" />
+    <Folder Include="docs\fixtures\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="docs\bulk-import-auth-spec.md" />
+    <None Remove="docs\dynamic-index-scope-spec.md" />
+    <None Remove="docs\kontext-decoupling-spec.md" />
+    <None Remove="docs\memory-tags-spec.md" />
   </ItemGroup>
 
 </Project>

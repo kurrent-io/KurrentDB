@@ -3,7 +3,7 @@
 
 using Microsoft.Extensions.AI;
 
-namespace KurrentDB.Kontext.Embeddings;
+namespace Kurrent.Kontext.Embeddings;
 
 /// <summary>
 /// Some embedding models are asymmetric: documents and search queries must be embedded

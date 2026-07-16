@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 
-namespace KurrentDB.Kontext.Embeddings;
+namespace Kurrent.Kontext.Embeddings.Prototype;
 
 /// <summary>
 /// Generates 384-dimensional sentence embeddings using all-MiniLM-L6-v2 via ONNX Runtime.

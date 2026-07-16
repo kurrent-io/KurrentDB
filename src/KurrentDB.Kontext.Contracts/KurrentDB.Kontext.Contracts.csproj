@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>true</ImplicitUsings>
+        <IsPackable>false</IsPackable>
+        <Deterministic>true</Deterministic>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Google.Protobuf" PrivateAssets="All"/>
+        <PackageReference Include="Grpc.AspNetCore" PrivateAssets="All"/>
+        <PackageReference Include="ModelContextProtocol"/>
+        <PackageReference Include="ModelContextProtocol.AspNetCore"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Protobuf ProtoRoot="protos"
+                  Include="protos/**/*.proto"
+                  Link="protos\%(RecursiveDir)/%(FileName)%(Extension)"
+                  GrpcServices="Both"/>
+    </ItemGroup>
+</Project>

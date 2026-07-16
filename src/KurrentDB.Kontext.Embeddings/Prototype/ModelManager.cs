@@ -4,7 +4,7 @@
 using System.Reflection;
 using Microsoft.Extensions.Logging;
 
-namespace KurrentDB.Kontext.Embeddings;
+namespace Kurrent.Kontext.Embeddings.Prototype;
 
 /// <summary>
 /// Loads ONNX models embedded in the KurrentDB.Kontext.Models assembly into memory.

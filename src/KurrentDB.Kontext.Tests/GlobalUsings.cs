@@ -2,6 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 global using KurrentDB.Kontext.Embeddings;
+global using Kurrent.Kontext.Embeddings;
+global using Kurrent.Kontext.Embeddings.Aws;
+global using Kurrent.Kontext.Embeddings.Prototype;
 global using KurrentDB.Kontext.Indexing;
 global using KurrentDB.Kontext.Indexing.USearch;
 global using KurrentDB.Kontext.Mcp;

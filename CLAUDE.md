@@ -5,21 +5,24 @@ Detailed reference docs live in `.claude/docs/` — fetch them when working in a
 
 ## Quick Reference: Where to Look
 
-| Working on... | Read |
-|---|---|
-| Core infrastructure, project layout | `.claude/docs/architecture.md` |
-| API v2 services | `.claude/docs/api-v2-patterns.md` |
-| Writing tests | `.claude/docs/testing.md` |
-| Protocol buffers, gRPC | `.claude/docs/protocol-v2.md` |
+| Working on...                                    | Read                                       |
+|--------------------------------------------------|--------------------------------------------|
+| Core infrastructure, project layout              | `.claude/docs/architecture.md`             |
+| API v2 services                                  | `.claude/docs/api-v2-patterns.md`          |
+| Writing tests                                    | `.claude/docs/testing.md`                  |
+| Protocol buffers, gRPC                           | `.claude/docs/protocol-v2.md`              |
 | Message bus, enumerators, authorization, indexes | `.claude/docs/patterns-and-conventions.md` |
+| gRPC reads/subscriptions, filters, index reads   | `.claude/docs/streams-read-grpc.md`        |
 
 ## Development Commands
 
 ### Build
-- `dotnet build -c Release /p:Platform=x64 --framework=net10.0 src/KurrentDB.sln`
+- `dotnet build -c Release KurrentDB.slnx`
+- On x64 Linux/Windows you can pin with `/p:Platform=x64 --framework=net10.0`. Do NOT pass these on Apple Silicon: `/p:Platform=x64` leaks into `KurrentDB.SourceGenerators` (netstandard2.0, AnyCPU) and Roslyn refuses the x64-path'd analyzer (CS8034); `--framework=net10.0` breaks restore for the same project (NETSDK1005).
+- Requires a repo-root `nuget.config` with `packageSourceMapping` (central package management + multiple sources triggers NU1507 otherwise). `Kurrent.*` → GitHub feed, `*` → nuget.org.
 
 ### Test
-- `dotnet test src/KurrentDB.sln` - Run all tests
+- `dotnet test KurrentDB.slnx` - Run all tests
 - `dotnet test src/ProjectName.Tests/` - Run specific project
 - `dotnet test --filter "FullyQualifiedName~TestMethodName"` - Run single test
 
@@ -126,13 +129,13 @@ public Foo(IPublisher publisher, IPublisher mainBus) {
 
 ## Log Level Policy
 
-| Level | When |
-|---|---|
-| **Verbose** | Per-event, per-message — anything that fires per-record |
-| **Debug** | Checkpoint writes, per-batch operations |
-| **Information** | Engine start/stop, lifecycle transitions only |
-| **Warning** | Recoverable errors, degraded states |
-| **Error** | Unrecoverable failures |
+| Level           | When                                                    |
+|-----------------|---------------------------------------------------------|
+| **Verbose**     | Per-event, per-message — anything that fires per-record |
+| **Debug**       | Checkpoint writes, per-batch operations                 |
+| **Information** | Engine start/stop, lifecycle transitions only           |
+| **Warning**     | Recoverable errors, degraded states                     |
+| **Error**       | Unrecoverable failures                                  |
 
 Per-event or per-checkpoint log messages must NOT be `Information`.
 

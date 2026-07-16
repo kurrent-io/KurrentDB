@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<IsKurrentTUnit>true</IsKurrentTUnit>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsPackable>false</IsPackable>
+		<IsTestProject>true</IsTestProject>
+		<EnablePreviewFeatures>true</EnablePreviewFeatures>
+		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+		<NoWarn>$(NoWarn);NU1904</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Using Include="TUnit" />
+		<Using Include="TUnit.Core" />
+		<Using Include="KurrentDB.Testing" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\KurrentDB.Kontext.Embeddings\KurrentDB.Kontext.Embeddings.csproj" />
+		<ProjectReference Include="..\KurrentDB.Testing\KurrentDB.Testing.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- In-memory IConfiguration for the OnnxModelRegistry config-binding tests. -->
+		<PackageReference Include="Microsoft.Extensions.Configuration" />
+	</ItemGroup>
+
+</Project>

@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Kontext.Embeddings;
+using Kurrent.Kontext.Embeddings.Prototype;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using DotNext.Collections.Concurrent;

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Description>Pre-bundled ONNX models for KurrentDB.Kontext (all-MiniLM-L6-v2, ms-marco-TinyBERT-L2-v2). Models are embedded as assembly resources.</Description>
+    <Description>Pre-bundled ONNX models for KurrentDB.Kontext (all-MiniLM-L6-v2, ms-marco-TinyBERT-L2-v2, paraphrase-multilingual-MiniLM-L12-v2). Models are embedded as assembly resources.</Description>
     <KontextModelsDir>$(MSBuildThisFileDirectory)</KontextModelsDir>
   </PropertyGroup>
 
@@ -17,16 +17,22 @@
     <EmbeddedResource Include="cross-encoder/model_quint8_avx2.onnx" LogicalName="KurrentDB.Kontext.Models.cross-encoder.model_quint8_avx2.onnx" />
     <EmbeddedResource Include="cross-encoder/model_qint8_avx512.onnx" LogicalName="KurrentDB.Kontext.Models.cross-encoder.model_qint8_avx512.onnx" />
     <EmbeddedResource Include="cross-encoder/vocab.txt" LogicalName="KurrentDB.Kontext.Models.cross-encoder.vocab.txt" />
+    <!-- Interim multilingual model (paraphrase-multilingual-MiniLM-L12-v2). Physical file keeps its HF name
+         (model_quantized.onnx); the LogicalName is the stable string FromEmbeddedResources looks up. The
+         tokenizer is the shared XLM-R sentencepiece.bpe.model, same file the Playground fetches from e5. -->
+    <EmbeddedResource Include="pmm12/model_quantized.onnx" LogicalName="KurrentDB.Kontext.Models.pmm12.model.onnx" />
+    <EmbeddedResource Include="pmm12/sentencepiece.bpe.model" LogicalName="KurrentDB.Kontext.Models.pmm12.sentencepiece.bpe.model" />
   </ItemGroup>
 
   <!-- Download models before build if missing -->
   <Target Name="DownloadModelsIfMissing" BeforeTargets="PrepareForBuild"
-          Condition="!Exists('$(KontextModelsDir)embedding/model_quint8_avx2.onnx') Or !Exists('$(KontextModelsDir)cross-encoder/model_quint8_avx2.onnx')">
+          Condition="!Exists('$(KontextModelsDir)embedding/model_quint8_avx2.onnx') Or !Exists('$(KontextModelsDir)cross-encoder/model_quint8_avx2.onnx') Or !Exists('$(KontextModelsDir)pmm12/model_quantized.onnx') Or !Exists('$(KontextModelsDir)pmm12/sentencepiece.bpe.model')">
 
     <Message Importance="high" Text="Downloading ONNX models (first build only)..." />
 
     <MakeDir Directories="$(KontextModelsDir)embedding" />
     <MakeDir Directories="$(KontextModelsDir)cross-encoder" />
+    <MakeDir Directories="$(KontextModelsDir)pmm12" />
 
     <DownloadFile
       SourceUrl="https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/onnx/model_quint8_avx2.onnx"
@@ -57,6 +63,19 @@
       SourceUrl="https://huggingface.co/cross-encoder/ms-marco-TinyBERT-L2-v2/resolve/main/vocab.txt"
       DestinationFolder="$(KontextModelsDir)cross-encoder"
       Condition="!Exists('$(KontextModelsDir)cross-encoder/vocab.txt')" />
+
+    <!-- paraphrase-multilingual-MiniLM-L12-v2: quantized ONNX + the shared XLM-R SentencePiece tokenizer
+         (the same sentencepiece.bpe.model published under intfloat/multilingual-e5-small). Interim only,
+         until the HuggingFace.ModelDownloader lands. -->
+    <DownloadFile
+      SourceUrl="https://huggingface.co/Xenova/paraphrase-multilingual-MiniLM-L12-v2/resolve/main/onnx/model_quantized.onnx"
+      DestinationFolder="$(KontextModelsDir)pmm12"
+      Condition="!Exists('$(KontextModelsDir)pmm12/model_quantized.onnx')" />
+
+    <DownloadFile
+      SourceUrl="https://huggingface.co/intfloat/multilingual-e5-small/resolve/main/sentencepiece.bpe.model"
+      DestinationFolder="$(KontextModelsDir)pmm12"
+      Condition="!Exists('$(KontextModelsDir)pmm12/sentencepiece.bpe.model')" />
 
     <Message Importance="high" Text="ONNX models downloaded successfully." />
   </Target>

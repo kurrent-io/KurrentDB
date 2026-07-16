@@ -2,3 +2,5 @@ embedding/*.onnx
 embedding/vocab.txt
 cross-encoder/*.onnx
 cross-encoder/vocab.txt
+pmm12/*.onnx
+pmm12/sentencepiece.bpe.model

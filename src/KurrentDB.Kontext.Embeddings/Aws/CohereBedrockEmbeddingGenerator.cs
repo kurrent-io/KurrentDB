@@ -6,7 +6,7 @@ using Amazon.BedrockRuntime;
 using Amazon.BedrockRuntime.Model;
 using Microsoft.Extensions.AI;
 
-namespace KurrentDB.Kontext.Embeddings;
+namespace Kurrent.Kontext.Embeddings.Aws;
 
 /// <summary>
 /// Embedding generator for Cohere embed models on Amazon Bedrock. The AWS MEAI extension
@@ -15,7 +15,7 @@ namespace KurrentDB.Kontext.Embeddings;
 /// input_type 'search_document' (the default) and search queries with 'search_query'
 /// (<see cref="EmbeddingPurpose.QueryOptions"/>).
 /// </summary>
-internal sealed class CohereBedrockEmbeddingGenerator : IEmbeddingGenerator<string, Embedding<float>> {
+public sealed class CohereBedrockEmbeddingGenerator : IEmbeddingGenerator<string, Embedding<float>> {
 	// Cohere's embed API accepts at most 96 texts per request.
 	const int MaxTextsPerRequest = 96;
 

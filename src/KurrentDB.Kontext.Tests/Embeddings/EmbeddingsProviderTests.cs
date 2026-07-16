@@ -1,6 +1,9 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Kurrent.Kontext.Embeddings.GoogleVertexAI;
+using Kurrent.Kontext.Embeddings.Ollama;
+using Kurrent.Kontext.Embeddings.OpenAI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -8,43 +11,43 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace KurrentDB.Kontext.Tests.Embeddings;
 
 public class EmbeddingsProviderTests {
+	// The provider extensions validate and build the client lazily inside the DI factory, so a missing
+	// required field surfaces when the generator is resolved, not when it is registered.
+	static IEmbeddingGenerator<string, Embedding<float>> Resolve(Action<IServiceCollection> register) {
+		var services = new ServiceCollection();
+		register(services);
+		return services.BuildServiceProvider().GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
+	}
+
 	// -------- Required fields --------
 
 	[Test]
 	public async Task OpenAi_Requires_ApiKey() {
 		var ex = Assert.Throws<ArgumentException>(() =>
-			KontextServiceCollectionExtensions.CreateOpenAiEmbeddingGenerator(
-				new KontextEmbeddingsConfig { Provider = EmbeddingsProvider.OpenAI }));
+			Resolve(services => services.AddOpenAIEmbeddings(new OpenAIEmbeddingsOptions())));
 		await Assert.That(ex.Message).Contains("ApiKey");
 	}
 
 	[Test]
 	public async Task GoogleVertexAI_Requires_ProjectId() {
 		var ex = Assert.Throws<ArgumentException>(() =>
-			KontextServiceCollectionExtensions.CreateGoogleVertexAIEmbeddingGenerator(
-				new KontextEmbeddingsConfig {
-					Provider = EmbeddingsProvider.GoogleVertexAI,
-					GoogleVertexAI = { Region = "us-central1" },
-				}));
+			Resolve(services => services.AddGoogleVertexAIEmbeddings(
+				new GoogleVertexAIEmbeddingsOptions { Region = "us-central1" })));
 		await Assert.That(ex.Message).Contains("ProjectId");
 	}
 
 	[Test]
 	public async Task GoogleVertexAI_Requires_Region() {
 		var ex = Assert.Throws<ArgumentException>(() =>
-			KontextServiceCollectionExtensions.CreateGoogleVertexAIEmbeddingGenerator(
-				new KontextEmbeddingsConfig {
-					Provider = EmbeddingsProvider.GoogleVertexAI,
-					GoogleVertexAI = { ProjectId = "my-project" },
-				}));
+			Resolve(services => services.AddGoogleVertexAIEmbeddings(
+				new GoogleVertexAIEmbeddingsOptions { ProjectId = "my-project" })));
 		await Assert.That(ex.Message).Contains("Region");
 	}
 
 	[Test]
 	public async Task AmazonBedrock_Requires_Region() {
 		var ex = Assert.Throws<ArgumentException>(() =>
-			KontextServiceCollectionExtensions.CreateAmazonBedrockEmbeddingGenerator(
-				new KontextEmbeddingsConfig { Provider = EmbeddingsProvider.AmazonBedrock }));
+			Resolve(services => services.AddAmazonBedrockEmbeddings(new AmazonBedrockEmbeddingsOptions())));
 		await Assert.That(ex.Message).Contains("Region");
 	}
 
@@ -52,23 +55,19 @@ public class EmbeddingsProviderTests {
 
 	[Test]
 	public async Task OpenAi_Defaults_Model_To_Text_Embedding_3_Small() {
-		var generator = KontextServiceCollectionExtensions.CreateOpenAiEmbeddingGenerator(
-			new KontextEmbeddingsConfig {
-				Provider = EmbeddingsProvider.OpenAI,
-				OpenAI = { ApiKey = "sk-fake" },
-			});
+		var generator = Resolve(services =>
+			services.AddOpenAIEmbeddings(new OpenAIEmbeddingsOptions { ApiKey = "sk-fake" }));
 		await Assert.That(GetMetadata(generator).DefaultModelId).IsEqualTo("text-embedding-3-small");
 	}
 
 	[Test]
 	public async Task Ollama_Defaults_Endpoint_And_Model() {
-		var config = new OllamaEmbeddingsConfig();
-		await Assert.That(config.Endpoint).IsEqualTo("http://localhost:11434");
-		await Assert.That(config.Model).IsEqualTo("nomic-embed-text");
+		var options = new OllamaEmbeddingsOptions();
+		await Assert.That(options.Endpoint).IsEqualTo("http://localhost:11434");
+		await Assert.That(options.Model).IsEqualTo("nomic-embed-text");
 
 		// The factory threads the model through to the resulting generator.
-		var generator = KontextServiceCollectionExtensions.CreateOllamaEmbeddingGenerator(
-			new KontextEmbeddingsConfig { Provider = EmbeddingsProvider.Ollama });
+		var generator = Resolve(services => services.AddOllamaEmbeddings(new OllamaEmbeddingsOptions()));
 		await Assert.That(GetMetadata(generator).DefaultModelId).IsEqualTo("nomic-embed-text");
 	}
 
@@ -145,21 +144,15 @@ public class EmbeddingsProviderTests {
 
 	[Test]
 	public async Task AmazonBedrock_Routes_Cohere_Models_To_The_Cohere_Generator() {
-		var generator = KontextServiceCollectionExtensions.CreateAmazonBedrockEmbeddingGenerator(
-			new KontextEmbeddingsConfig {
-				Provider = EmbeddingsProvider.AmazonBedrock,
-				AmazonBedrock = { Region = "us-east-1", Model = "cohere.embed-english-v3" },
-			});
+		var generator = Resolve(services => services.AddAmazonBedrockEmbeddings(
+			new AmazonBedrockEmbeddingsOptions { Region = "us-east-1", Model = "cohere.embed-english-v3" }));
 		await Assert.That(generator).IsTypeOf<CohereBedrockEmbeddingGenerator>();
 	}
 
 	[Test]
 	public async Task AmazonBedrock_Routes_Titan_Models_To_The_Aws_Generator() {
-		var generator = KontextServiceCollectionExtensions.CreateAmazonBedrockEmbeddingGenerator(
-			new KontextEmbeddingsConfig {
-				Provider = EmbeddingsProvider.AmazonBedrock,
-				AmazonBedrock = { Region = "us-east-1" }, // default amazon.titan-embed-text-v2:0
-			});
+		var generator = Resolve(services => services.AddAmazonBedrockEmbeddings(
+			new AmazonBedrockEmbeddingsOptions { Region = "us-east-1" })); // default amazon.titan-embed-text-v2:0
 		await Assert.That(generator).IsNotTypeOf<CohereBedrockEmbeddingGenerator>();
 		await Assert.That(GetMetadata(generator).DefaultModelId).IsEqualTo("amazon.titan-embed-text-v2:0");
 	}

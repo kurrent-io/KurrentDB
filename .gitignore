@@ -21,11 +21,9 @@ ipch/
 *.sdf
 *.opensdf
 *.VisualState.xml
-*.DotSettings
 *.DotSettings.user
 *.DotSettings.personal/Logs
 !CHANGELOG.md
-/Data
 /src/Public/v8/
 /src/Public/ipch/
 /research/ci/CompatibilityInfo
@@ -486,6 +484,8 @@ certs/
 
 # MCP Configuration with local paths
 .mcp.json
+
+.project/
 
 # Superpowers worktrees
 .worktrees/

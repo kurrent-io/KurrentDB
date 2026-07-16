@@ -3,7 +3,7 @@
 
 using System.Text;
 
-namespace KurrentDB.Kontext.Embeddings;
+namespace Kurrent.Kontext.Embeddings.Prototype;
 
 /// <summary>
 /// Minimal BERT WordPiece tokenizer. Produces input_ids, attention_mask, and token_type_ids

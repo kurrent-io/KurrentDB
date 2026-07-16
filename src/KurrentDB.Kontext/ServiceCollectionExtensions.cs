@@ -1,14 +1,15 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.ClientModel;
 using System.Diagnostics.Metrics;
-using Amazon;
-using Amazon.BedrockRuntime;
-using Google.Cloud.VertexAI.Extensions;
 using KurrentDB.Core;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Kontext.Embeddings;
+using Kurrent.Kontext.Embeddings.Aws;
+using Kurrent.Kontext.Embeddings.GoogleVertexAI;
+using Kurrent.Kontext.Embeddings.Ollama;
+using Kurrent.Kontext.Embeddings.OpenAI;
+using Kurrent.Kontext.Embeddings.Prototype;
 using KurrentDB.Kontext.Diagnostics;
 using KurrentDB.Kontext.Indexing;
 using KurrentDB.Kontext.Mcp;
@@ -28,8 +29,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol;
 using ModelContextProtocol.Protocol;
-using OllamaSharp;
-using OpenAI;
 
 namespace KurrentDB.Kontext;
 
@@ -112,83 +111,29 @@ public static class KontextServiceCollectionExtensions {
 	internal static void RegisterEmbeddingsProvider(IServiceCollection services, KontextEmbeddingsConfig config) {
 		switch (config.Provider) {
 			case EmbeddingsProvider.Local:
-				services.TryAddSingleton(sp => new EmbeddingService(
-					sp.GetRequiredService<ModelManager>(),
-					sp.GetRequiredService<ILogger<EmbeddingService>>()));
-				services.TryAddSingleton<IEmbeddingGenerator<string, Embedding<float>>>(
-					sp => sp.GetRequiredService<EmbeddingService>());
+				services.AddLocalEmbeddings();
 				break;
 
 			case EmbeddingsProvider.OpenAI:
-				services.TryAddSingleton<IEmbeddingGenerator<string, Embedding<float>>>(
-					_ => CreateOpenAiEmbeddingGenerator(config));
+				services.AddOpenAIEmbeddings(config.OpenAI);
 				break;
 
 			case EmbeddingsProvider.Ollama:
-				services.TryAddSingleton<IEmbeddingGenerator<string, Embedding<float>>>(
-					_ => CreateOllamaEmbeddingGenerator(config));
+				services.AddOllamaEmbeddings(config.Ollama);
 				break;
 
 			case EmbeddingsProvider.GoogleVertexAI:
-				services.TryAddSingleton<IEmbeddingGenerator<string, Embedding<float>>>(
-					_ => CreateGoogleVertexAIEmbeddingGenerator(config));
+				services.AddGoogleVertexAIEmbeddings(config.GoogleVertexAI);
 				break;
 
 			case EmbeddingsProvider.AmazonBedrock:
-				services.TryAddSingleton<IEmbeddingGenerator<string, Embedding<float>>>(
-					_ => CreateAmazonBedrockEmbeddingGenerator(config));
+				services.AddAmazonBedrockEmbeddings(config.AmazonBedrock);
 				break;
 
 			default:
 				throw new NotSupportedException(
 					$"Embeddings provider '{config.Provider}' is not supported.");
 		}
-	}
-
-	internal static IEmbeddingGenerator<string, Embedding<float>> CreateOpenAiEmbeddingGenerator(KontextEmbeddingsConfig config) {
-		var openAi = config.OpenAI;
-		if (string.IsNullOrEmpty(openAi.ApiKey))
-			throw new ArgumentException("Embeddings:OpenAI:ApiKey is required for the OpenAI provider.");
-
-		var options = new OpenAIClientOptions();
-		if (!string.IsNullOrEmpty(openAi.Endpoint))
-			options.Endpoint = new Uri(openAi.Endpoint);
-
-		var client = new OpenAIClient(new ApiKeyCredential(openAi.ApiKey), options);
-		return client.GetEmbeddingClient(openAi.Model).AsIEmbeddingGenerator();
-	}
-
-	internal static IEmbeddingGenerator<string, Embedding<float>> CreateOllamaEmbeddingGenerator(KontextEmbeddingsConfig config) =>
-		new OllamaApiClient(new Uri(config.Ollama.Endpoint), config.Ollama.Model);
-
-	internal static IEmbeddingGenerator<string, Embedding<float>> CreateGoogleVertexAIEmbeddingGenerator(KontextEmbeddingsConfig config) {
-		var vertex = config.GoogleVertexAI;
-		if (string.IsNullOrEmpty(vertex.ProjectId))
-			throw new ArgumentException("Embeddings:GoogleVertexAI:ProjectId is required for the GoogleVertexAI provider.");
-		if (string.IsNullOrEmpty(vertex.Region))
-			throw new ArgumentException("Embeddings:GoogleVertexAI:Region is required for the GoogleVertexAI provider.");
-
-		var modelResource = Google.Cloud.AIPlatform.V1.EndpointName
-			.FromProjectLocationPublisherModel(vertex.ProjectId, vertex.Region, "google", vertex.Model)
-			.ToString();
-
-		return new Google.Cloud.AIPlatform.V1.PredictionServiceClientBuilder {
-			Endpoint = $"{vertex.Region}-aiplatform.googleapis.com",
-		}.BuildIEmbeddingGenerator(defaultModelId: modelResource);
-	}
-
-	internal static IEmbeddingGenerator<string, Embedding<float>> CreateAmazonBedrockEmbeddingGenerator(KontextEmbeddingsConfig config) {
-		var bedrock = config.AmazonBedrock;
-		if (string.IsNullOrEmpty(bedrock.Region))
-			throw new ArgumentException("Embeddings:AmazonBedrock:Region is required for the AmazonBedrock provider.");
-
-		var runtime = new AmazonBedrockRuntimeClient(RegionEndpoint.GetBySystemName(bedrock.Region));
-
-		// The AWS MEAI extension marshals Titan-format request bodies only; Cohere embed
-		// models use a different request format and get a dedicated generator.
-		return bedrock.Model.Contains("cohere.", StringComparison.OrdinalIgnoreCase)
-			? new CohereBedrockEmbeddingGenerator(runtime, bedrock.Model)
-			: runtime.AsIEmbeddingGenerator(defaultModelId: bedrock.Model);
 	}
 
 	static IMcpServerBuilder RegisterMcp(IServiceCollection services) {

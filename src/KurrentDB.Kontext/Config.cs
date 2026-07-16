@@ -3,6 +3,11 @@
 
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Kurrent.Kontext.Embeddings.Aws;
+using Kurrent.Kontext.Embeddings.GoogleVertexAI;
+using Kurrent.Kontext.Embeddings.Ollama;
+using Kurrent.Kontext.Embeddings.OpenAI;
+using Kurrent.Kontext.Embeddings.Prototype;
 
 namespace KurrentDB.Kontext;
 
@@ -47,11 +52,11 @@ public enum EmbeddingsProvider {
 public class KontextEmbeddingsConfig {
 	public EmbeddingsProvider Provider { get; set; } = EmbeddingsProvider.Local;
 
-	public LocalEmbeddingsConfig Local { get; set; } = new();
-	public OpenAIEmbeddingsConfig OpenAI { get; set; } = new();
-	public OllamaEmbeddingsConfig Ollama { get; set; } = new();
-	public GoogleVertexAIEmbeddingsConfig GoogleVertexAI { get; set; } = new();
-	public AmazonBedrockEmbeddingsConfig AmazonBedrock { get; set; } = new();
+	public LocalEmbeddingsOptions Local { get; set; } = new();
+	public OpenAIEmbeddingsOptions OpenAI { get; set; } = new();
+	public OllamaEmbeddingsOptions Ollama { get; set; } = new();
+	public GoogleVertexAIEmbeddingsOptions GoogleVertexAI { get; set; } = new();
+	public AmazonBedrockEmbeddingsOptions AmazonBedrock { get; set; } = new();
 
 	public int BatchSize => Provider switch {
 		EmbeddingsProvider.Local => Local.BatchSize,
@@ -61,46 +66,4 @@ public class KontextEmbeddingsConfig {
 		EmbeddingsProvider.AmazonBedrock => AmazonBedrock.BatchSize,
 		_ => 100,
 	};
-}
-
-public class LocalEmbeddingsConfig {
-	// ONNX supports batching but it spikes CPU for little gain.
-	public int BatchSize { get; set; } = 1;
-}
-
-public class OpenAIEmbeddingsConfig {
-	public string? ApiKey { get; set; }
-
-	public string Model { get; set; } = "text-embedding-3-small";
-
-	// Optional — set for OpenAI-compatible proxies.
-	public string? Endpoint { get; set; }
-
-	public int BatchSize { get; set; } = 256;
-}
-
-public class OllamaEmbeddingsConfig {
-	public string Endpoint { get; set; } = "http://localhost:11434";
-
-	public string Model { get; set; } = "nomic-embed-text";
-
-	public int BatchSize { get; set; } = 16;
-}
-
-public class GoogleVertexAIEmbeddingsConfig {
-	public string? ProjectId { get; set; }
-
-	public string? Region { get; set; }
-
-	public string Model { get; set; } = "text-embedding-004";
-
-	public int BatchSize { get; set; } = 100;
-}
-
-public class AmazonBedrockEmbeddingsConfig {
-	public string? Region { get; set; }
-
-	public string Model { get; set; } = "amazon.titan-embed-text-v2:0";
-
-	public int BatchSize { get; set; } = 96;
 }

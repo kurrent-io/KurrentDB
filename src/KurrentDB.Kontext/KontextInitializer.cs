@@ -3,6 +3,7 @@
 
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Kontext.Embeddings;
+using Kurrent.Kontext.Embeddings.Prototype;
 using KurrentDB.Kontext.Indexing;
 using KurrentDB.Kontext.Search;
 using Microsoft.Extensions.AI;

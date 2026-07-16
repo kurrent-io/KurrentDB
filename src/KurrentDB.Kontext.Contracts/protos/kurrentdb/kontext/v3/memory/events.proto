@@ -1,0 +1,125 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
+edition = "2023";
+
+package kurrent.kontext;
+
+option csharp_namespace = "Kurrent.Kontext.Contracts";
+
+import "google/protobuf/timestamp.proto";
+import "kurrentdb/kontext/v3/memory/resources.proto";
+
+// Emitted by Retain: the memory body stamped with when it was stored.
+message MemoryRetained {
+  // the stored memory body, exactly as supplied to Retain
+  Memory memory = 1;
+
+  // when it was retained into our system — domain time, portable
+  google.protobuf.Timestamp retained_at = 2;
+}
+
+// Emitted by Retract: the memory (and any derived memories cascaded with it) removed from the
+// active set.
+message MemoryRetracted {
+  // the memory that was explicitly retracted
+  string memory_id = 1;
+
+  // why the memory was retracted (carried from RetractRequest.reason)
+  string reason = 2;
+
+  // memory_id plus every derived memory removed by the cascade
+  repeated string retracted_memory_ids = 3;
+
+  // when the retraction was recorded
+  google.protobuf.Timestamp retracted_at = 4;
+}
+
+// MemoriesRecalled is written on every recall. It is NOT an audit convenience — it is the
+// load-bearing mechanism behind retrieval, and it exists for two reasons, both rooted in the
+// generative-agents retrieval model (Park et al., 2023, "Generative Agents: Interactive Simulacra
+// of Human Behavior").
+//
+// 1) IT DRIVES TEMPORAL DECAY. In that model, recency is an exponential decay measured from the
+//    moment a memory was LAST ACCESSED — and a retrieval *is* an access. So each MemoriesRecalled
+//    refreshes every returned memory's `last_accessed_at` to `recalled_at`. This is
+//    reconsolidation: memories that keep getting recalled stay salient; memories never recalled
+//    decay toward the floor. Without this event resetting the clock, recency could only ever fall
+//    and the store would forget precisely the things it uses most. `recalled_at` is both that reset
+//    instant and the "now" every recency term decays to.
+//
+// 2) IT MAKES THE RETRIEVAL SCORING ALGORITHM REPRODUCIBLE AND TUNABLE. Ranking follows three
+//    normalized dimensions — recency + importance + relevance, min-max normalized across the
+//    candidate pool, then weighted and summed — gated by our certainty extension (a trust
+//    multiplier derived from MemoryType; see resources.proto):
+//
+//      final_score = certainty × (alpha_recency·recency + alpha_importance·importance +
+//      alpha_relevance·relevance)
+//
+//    where recency = e^(-(recalled_at - last_accessed_at)/tau), importance = the memory's stored
+//    salience, and relevance = query-embedding similarity. Because every per-memory input
+//    (ScoredMemory) and the full ScoringConfig (weights, tau, certainty map, normalization bounds)
+//    are logged here, any past ranking can be recomputed offline and the weights tuned against real
+//    recall history. The paper hand-tuned its weights; this log is what lets us replace that
+//    guesswork with evidence.
+//
+// The score breakdown is deliberately NOT returned to the calling agent (it gets the ranked list
+// plus each memory's trust). It lives here, on the stream, purely to run the decay clock and to
+// tune ranking.
+message MemoriesRecalled {
+  // Unique identifier of the query — correlates this recall to its scored memories
+  string query_id = 1;
+
+  // Natural-language query
+  string query = 2;
+
+  // Max memories to return after ranking
+  int32 limit = 3;
+
+  // Optional: filter out memories below this score
+  double min_score = 4;
+
+  // Pre-filter: only memories carrying these tags enter the candidate pool
+  repeated Tag tags = 5;
+
+  // one per returned memory, best-first
+  repeated ScoredMemory memories = 6;
+
+  // config in effect: weights, tau, certainty map, normalization bounds
+  ScoringConfig config = 7;
+
+  // the "now" used for recency decay that will affect the last accessed timestamp of
+  // each memory recalled
+  google.protobuf.Timestamp recalled_at = 8;
+}
+
+// Emitted when memories are accessed, so temporal decay can be recomputed from the access history.
+message MemoriesAccessed {
+  // the memories that were accessed
+  repeated string memory_ids = 1;
+}
+
+// Emitted by Reclaim: the memories that were read back by id.
+message MemoriesReclaimed {
+  // the memories that were reclaimed
+  repeated string memory_ids = 1;
+}
+
+// Emitted when an async Reflect pass completes: the memories it synthesized, superseded, and
+// retracted.
+message ReflectionCompleted {
+  // correlates to the ReflectRequest
+  string query_id = 1; 
+  
+  // ids of memories synthesized
+  repeated string synthesized_memory_ids = 2;
+
+  // ids of memories superseded
+  repeated string superseded_memory_ids = 3;
+
+  // ids of memories retracted
+  repeated string retracted_memory_ids = 4;
+
+  // when the reflection pass finished
+  google.protobuf.Timestamp completed_at = 5;
+}

@@ -1,0 +1,362 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
+edition = "2023";
+
+package kurrent.kontext;
+
+option csharp_namespace = "Kurrent.Kontext.Contracts";
+
+import "google/protobuf/timestamp.proto";
+
+// A memory — its intrinsic content, independent of storage lifecycle or how it's being viewed. It
+// is the write/command shape: provided on Retain and stamped onto MemoryRetained. The read paths
+// return the folded StoredMemory read model (or, for recall, a lean projection of it).
+message Memory {
+  // Unique identifier of the memory, optional, if absent server generates a new one
+  string memory_id = 1;
+
+  // The record's cognitive type — Kontext's trust axis (replaces an explicit confidence field)
+  MemoryType memory_type = 2;
+
+  // The memory's textual content
+  string content = 3;
+
+  // The agent's salience rating — how much this memory matters. Higher importance keeps it
+  // retrievable longer as recency fades; it does not change the decay rate (see MemoryImportance).
+  // A coarse bucket by design — an enum set consistently beats a float never calibrated the same
+  // way twice. Server maps each level to the ranker's salience (ScoringConfig.importance_weights).
+  // Default: NORMAL.
+  MemoryImportance importance = 4;
+
+  // What this memory rests on: the sources it cites and the reasoning tying them to this memory
+  // (see Evidence). Absent for a raw observation.
+  Evidence evidence = 5;
+
+  // Scoped or bare labels
+  repeated Tag tags = 6;
+
+  // The sentiment of the memory
+  MemorySentiment sentiment = 7;
+
+  // The urgency of the memory
+  MemoryUrgency urgency = 8;
+
+  // world-time span the memory refers to (perceived from the text);
+  // a point event sets start == end
+  TemporalContext validity = 9;
+
+  // memory_ids this memory supersedes (replaces). The superseded ones stay readable, marked
+  // superseded_by this memory. Set at Retain — there is no separate supersede operation.
+  repeated string supersedes = 10;
+}
+
+// The complete, folded READ MODEL of a single memory — every event for this memory_id applied —
+// for UIs and inspection, not retrieval. It is deliberately self-contained: it flattens the
+// memory's content and appends the lifecycle folded from the event stream, and does NOT embed the
+// `Memory` command message, so the read shape and the write/command shape evolve independently.
+// The content block mirrors `Memory`'s field numbers for readability only; the two are separate
+// messages and are free to diverge.
+message StoredMemory {
+  // Unique identifier of the memory
+  string memory_id = 1;
+
+  // The record's cognitive type — Kontext's trust axis
+  MemoryType memory_type = 2;
+
+  // The memory's textual content
+  string content = 3;
+
+  // The salience level set at retain (higher keeps it retrievable longer as recency fades)
+  MemoryImportance importance = 4;
+
+  // What this memory rests on: cited sources and the reasoning tying them to it
+  Evidence evidence = 5;
+
+  // Scoped or bare labels
+  repeated Tag tags = 6;
+
+  // The sentiment of the memory
+  MemorySentiment sentiment = 7;
+
+  // The urgency of the memory
+  MemoryUrgency urgency = 8;
+
+  // world-time span the memory refers to (perceived from the text)
+  TemporalContext validity = 9;
+
+  // memory_ids this memory supersedes (replaces)
+  repeated string supersedes = 10;
+
+  // When the memory was retained
+  google.protobuf.Timestamp retained_at = 11;
+
+  // When the memory was last accessed (the recency clock, advanced by each Recall)
+  google.protobuf.Timestamp last_accessed_at = 12;
+
+  // When the memory was retracted
+  google.protobuf.Timestamp retracted_at = 13;
+
+  // When the memory was superseded by a newer memory (a Retain that supersedes it)
+  google.protobuf.Timestamp superseded_at = 14;
+
+  // The memory that superseded this one; set only when `superseded_at` is set
+  string superseded_by = 15;
+}
+
+// What a memory rests on: the reasoning that produced it, together with the sources it cites.
+// DERIVED memories carry it — anything the agent synthesized by reflecting (a FACT, PROCEDURE,
+// SUMMARY, ...); a raw OBSERVATION rests on nothing and leaves it absent. Reasoning and citations
+// travel together because neither stands alone — the reasoning is the argument over exactly these
+// citations — so a memory carries both or neither.
+message Evidence {
+  // The "because" that ties the cited sources to this memory: the derivation from the citations to
+  // the conclusion. Present on derived memories (whatever `reflect` synthesized). Kept OUT of the
+  // memory's `content` on purpose, so the recall embedding indexes the memory itself, not the
+  // citation trail — reasoning is a separate space.
+  string reasoning = 1;
+
+  // The sources this memory cites as support, in citation order: other memories and/or KurrentDB
+  // log records. Empty for a raw observation.
+  repeated Citation citations = 2;
+
+  // One cited source. Exactly one arm is set: a cited memory, or a cited KurrentDB log record.
+  message Citation {
+    oneof cited {
+      MemoryRef memory = 1;  // cites another memory
+      RecordRef record = 2;  // cites a KurrentDB log record
+    }
+  }
+
+  // A pointer to another memory that supports this one.
+  message MemoryRef {
+    string id       = 1;  // the cited memory_id
+    sint64 position = 2;  // its position in the log (exact, replayable)
+  }
+
+  // A pointer to a KurrentDB log record that supports this memory.
+  message RecordRef {
+    string id       = 1;  // the record's id
+    sint64 position = 2;  // its position in the log (exact, replayable)
+  }
+}
+
+// What a memory IS — one flat concept that folds together "what kind of knowledge" and "how it
+// behaves". There is deliberately NO "reflection" type: reflection is a PROCESS (the `reflect`
+// tool), and its product is one of these types with `evidence` populated. So "how a memory arose"
+// is not a type — it is visible in `evidence` (empty = firsthand/asserted; populated = derived,
+// inheriting the certainty of the memories it cites). Which types reflection can produce:
+//   - NEVER (firsthand only, evidence always empty): OBSERVATION, HEARSAY — the raw inputs; a memory
+//     that cites sources is by definition derived, so it cannot be one of these.
+//   - EITHER asserted or reflected: FACT, PROCEDURE, PROFILE, PLAN — stated directly (no evidence),
+//     or synthesized from other memories (evidence present).
+//   - ONLY by reflection (always derived, evidence required): SUMMARY — a consolidation of other
+//     memories cannot exist without the memories it consolidates.
+// Trust and lifecycle are DERIVED from (type + evidence), not separate stored axes:
+//   episodic  — decays, recalled by relevance: OBSERVATION, HEARSAY
+//   durable   — persists, superseded by evidence: FACT, PROCEDURE, PROFILE
+//   time-bound — valid until acted on or it expires: PLAN
+//   derived   — refreshed from its sources: SUMMARY
+// Grounded in Park et al. 2023 ("Generative Agents"): OBSERVATION and PLAN are the paper's, and
+// reflection is kept as the operation that produces the rest — extended here for durable knowledge.
+//
+// Boundary cases (route these consistently):
+//   - Aggregate / period stats ("sales up 10% this week") → SUMMARY, not OBSERVATION (which is a
+//     single raw perceived event).
+//   - "Preference" is the tricky one, and it turns on SCOPE + who it binds. A personal preference,
+//     binding only its principal ("I prefer tabs"), is a PROFILE fact at principal scope. A shared
+//     standard that binds a team/project ("this project indents with tabs") is a PROCEDURE (a
+//     how-we-do-it) or a FACT at project/team scope — a preference everyone must follow is not a
+//     preference, it is a standard.
+//   - Owner / role identity → PROFILE (it is about a principal); FACT stays for world/business truths.
+enum MemoryType {
+  // Default unspecified memory type.
+  MEMORY_TYPE_UNSPECIFIED = 0;
+
+  // A perceived event — "what happened". Firsthand, so the highest trust. Episodic (decays).
+  MEMORY_TYPE_OBSERVATION = 1;
+
+  // A claim heard in dialogue — a naturally LOW-TRUST observation, kept unverified so a fabricated
+  // "fact" injected via conversation can't launder itself into truth (the "memory-hacking" guard).
+  // Episodic.
+  MEMORY_TYPE_HEARSAY = 2;
+
+  // A durable truth about the world, a system, or a project (e.g. a coding standard). Persists;
+  // superseded by newer evidence, never decayed.
+  MEMORY_TYPE_FACT = 3;
+
+  // Durable how-to: a convention, workflow, or skill. Persists, superseded, not decayed.
+  MEMORY_TYPE_PROCEDURE = 4;
+
+  // Durable facts about a principal — identity, role, and PERSONAL preferences (those binding only
+  // that principal). Persists; loaded for that principal rather than earned by relevance. If a
+  // "preference" actually binds a team/project, it's a PROCEDURE/FACT at that scope, not a PROFILE.
+  MEMORY_TYPE_PROFILE = 5;
+
+  // A future course of action. Time-bound — valid until it's acted on or it expires.
+  MEMORY_TYPE_PLAN = 6;
+
+  // A consolidation of other memories — a recap, digest, or index. 
+  // Derived (cites its sources as evidence), so its certainty is inherited from them. Persists,
+  // refreshed as those sources change.
+  MEMORY_TYPE_SUMMARY = 7;
+}
+
+// The agent's salience rating for a memory, set at retain. It is an ADDITIVE term in the ranking,
+// not a decay control: higher importance keeps a memory's score up as its recency fades, so it
+// stays retrievable longer — it does NOT change the decay rate itself (that is the global tau). A
+// coarse set on purpose (an enum set consistently beats a float never calibrated the same way
+// twice). Default numeric salience per level in parentheses; the mapping is tunable via
+// ScoringConfig.importance_weights and the value used is logged as ScoredMemory.importance_raw.
+enum MemoryImportance {
+  MEMORY_IMPORTANCE_UNSPECIFIED = 0;  // treated as NORMAL
+  MEMORY_IMPORTANCE_LOW         = 1;  // (0.25) incidental — fine to let it fade
+  MEMORY_IMPORTANCE_NORMAL      = 2;  // (0.50) the default
+  MEMORY_IMPORTANCE_HIGH        = 3;  // (0.75) decisions, fixes, preferences worth keeping
+  MEMORY_IMPORTANCE_CRITICAL    = 4;  // (1.00) top salience — architectural calls, hard-won lessons
+}
+
+// Emotional tone of a memory's content, tagged by the enrichment pipeline (not agent-set).
+enum MemorySentiment {
+  SENTIMENT_UNSPECIFIED = 0;  // not yet classified
+  SENTIMENT_POSITIVE    = 1;  // approving / good-news tone (a fix worked, a success)
+  SENTIMENT_NEUTRAL     = 2;  // matter-of-fact, no clear valence
+  SENTIMENT_NEGATIVE    = 3;  // adverse tone (a failure, a complaint, a broken thing)
+}
+
+// How time-pressing the memory's content is, tagged by the enrichment pipeline (not agent-set).
+enum MemoryUrgency {
+  URGENCY_UNSPECIFIED = 0;  // not yet classified
+  URGENCY_LOW         = 1;  // no time pressure — background knowledge
+  URGENCY_MEDIUM      = 2;  // worth acting on before long
+  URGENCY_HIGH        = 3;  // needs attention now (blocker, incident, deadline)
+}
+
+// The world-time span the memory's content refers to, as the agent perceived it from the
+// statement/reflection text (may be fuzzy). This is CONTENT time, distinct from the two storage
+// clocks: `retained_at` (when Kontext stored it) and `last_accessed_at` (the recency clock
+// decay runs on; see events.proto MemoriesRecalled).
+// A point-in-time event sets perceived_start == perceived_end; a blank perceived_end = ongoing.
+//
+// Not currently an input to the recall score — decay runs on last-access, not content time.
+// Kept as an addressable signal for future retrieval work (e.g. down-rank memories whose
+// perceived_end is long past, keep those with a future perceived_start salient).
+message TemporalContext {
+  // start of the state, or the moment of a point event
+  google.protobuf.Timestamp perceived_start = 1;
+  
+  // optional; blank = ongoing / open-ended
+  google.protobuf.Timestamp perceived_end = 2;
+}
+
+// A tag is an agent-agnostic filter label with an optional scope (namespace). Scoped tags let you
+// filter on a typed dimension without parsing "scope::value" strings, and the same scope can repeat
+// (e.g. country::portugal + country::norway on one memory). `scope` is a free string, so new
+// dimensions need no contract change — which is why identity/context lives here, not in dedicated
+// fields: the set (user, session, project, workspace, …) keeps growing.
+//
+// Well-known scopes (a convention, not a closed set — use these names so everyone agrees):
+//   user      — the principal a memory belongs to. This is the ISOLATION dimension: under auth the
+//               server stamps and ENFORCES it from the connection (a caller-supplied `user:` tag is
+//               advisory and not trusted); on a local single-user process it's the git/OS user.
+//   session   — the conversation/session the memory came from (Kontext does not own sessions).
+//   project   — the project/repo the memory is about.
+//   workspace — a workspace grouping above project.
+// Examples:
+// - { scope: "user",        value: "sergio"     }
+// - { scope: "session",     value: "<capacitor session id>" }
+// - { scope: "project",     value: "kurrentdb"  }
+// - { scope: "environment", value: "production" }
+// - {                       value: "research"   }   // bare tag: no scope
+message Tag {
+  string scope = 1;  // optional namespace; empty = bare tag
+  string value = 2;  // the label
+}
+
+// Per-retrieved-memory score breakdown — logged on MemoriesRecalled, NOT returned to the agent
+// (which gets order + trust, not ranking internals). Ranking value:
+//   final_score = certainty × (alpha_recency·recency_norm + alpha_importance·importance_norm +
+//   alpha_relevance·relevance_norm)
+// each *_norm is the min-max normalization of *_raw across the candidate pool (bounds in
+// ScoringConfig).
+message ScoredMemory {
+  // the memory this row scored
+  string memory_id = 1;
+
+  // Recency (temporal decay). last_accessed_at is the clock the recency term decays from; retrieval
+  // refreshes it to `recalled_at` every time a memory is retrieved (reconsolidation — the only
+  // write in the recency mechanism). recency_raw = e^(-(recalled_at - last_accessed_at) / tau),
+  // oriented so fresher = higher; tau lives in ScoringConfig. Logging last_accessed_at +
+  // recalled_at + tau makes the recency term fully reproducible from the log.
+  google.protobuf.Timestamp last_accessed_at = 2;
+
+  // decayed recency (formula above); fresher = higher
+  double recency_raw = 3;
+ 
+  // salience [0,1] mapped from the memory's MemoryImportance
+  double importance_raw = 4;
+ 
+  // query-embedding cosine similarity
+  double relevance_raw = 5;
+
+  // min-max normalized across the candidate pool — the values that actually fed the weighted sum
+  double recency_norm    = 6;  // normalized recency
+  double importance_norm = 7;  // normalized importance
+  double relevance_norm  = 8;  // normalized relevance
+
+  // Certainty multiplier applied to base_score — the trust gate. For a RAW memory (no evidence) it
+  // is the flat per-type weight from ScoringConfig.certainty_weights (a firsthand OBSERVATION high,
+  // a HEARSAY low). For a DERIVED memory (evidence present) it is the INHERITED certainty: the mean
+  // of the certainties of the memories it cites (its provenance) — so a synthesis built mostly on
+  // hearsay stays penalised (20 hearsay + 1 observation → ~0.14), preventing a single observation
+  // from laundering gossip into truth. Multiplicative, so a contradicted lie loses decisively (1.0
+  // vs 0.1) while strong gossip can still outrank a stale observation on the base score.
+  double certainty   = 9;
+  double base_score  = 10;  // alpha-weighted sum of the *_norm dimensions (before certainty)
+  double final_score = 11;  // base_score × certainty — the value actually ranked on
+}
+
+// Scoring config in effect for a recall — logged on MemoriesRecalled so the ranking is reproducible
+// and the weights are tunable from the log alone, even after the config is later changed.
+message ScoringConfig {
+  // Weights of the three ranked dimensions in the base score (before certainty). Higher = that
+  // dimension matters more; typically kept normalized so they sum to 1.
+  double alpha_recency    = 1;  // weight of the recency (temporal-decay) term
+  double alpha_importance = 2;  // weight of the importance (salience) term
+  double alpha_relevance  = 3;  // weight of the relevance (query-similarity) term
+
+  double recency_tau_seconds = 4;  // decay constant: recency_raw = e^(-(dt seconds) / tau)
+
+  // Per-type certainty multipliers — the flat trust weight for a RAW memory of each type (e.g.
+  // OBSERVATION high, HEARSAY low). Derived memories don't use this directly; they inherit certainty
+  // from the memories they cite (see ScoredMemory.certainty).
+  repeated CertaintyWeight certainty_weights = 5;
+
+  Bounds recency_bounds    = 6;  // bounds for the recency dimension
+  Bounds importance_bounds = 7;  // bounds for the importance dimension
+  Bounds relevance_bounds  = 8;  // bounds for the relevance dimension
+
+  // Maps each MemoryImportance level to the salience [0,1] used as importance_raw before
+  // normalization. Distinct from `alpha_importance` (the weight of the importance dimension in the
+  // sum) and `importance_bounds` (its normalization range): this is the level→number mapping the
+  // agent's coarse importance enum resolves to. Tunable; logged here for reproducibility.
+  repeated ImportanceWeight importance_weights = 9;
+
+  // One entry of the type→certainty map (see the `certainty` field on ScoredMemory).
+  message CertaintyWeight {
+    MemoryType type       = 1;  // the memory type this weight applies to
+    double     multiplier = 2;  // its trust multiplier (~0..1)
+  }
+
+  // One entry of the importance-level→salience map.
+  message ImportanceWeight {
+    MemoryImportance level      = 1;  // the importance bucket
+    double           multiplier = 2;  // the salience [0,1] it resolves to
+  }
+
+  // A min/max pair for min-max normalizing one dimension across the candidate pool.
+  message Bounds {
+    double min = 1;  // lowest raw value in the pool
+    double max = 2;  // highest raw value in the pool
+  }
+}
