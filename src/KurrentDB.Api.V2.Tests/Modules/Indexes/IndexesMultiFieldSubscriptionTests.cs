@@ -16,17 +16,17 @@ public class IndexesMultiFieldSubscriptionTests {
 	EventStore.Client.Streams.Streams.StreamsClient StreamsReadClient => KurrentContext.StreamsClient;
 
 	static readonly Guid CorrelationId = Guid.NewGuid();
-	static readonly string IndexName = $"sub-orders-by-country-and-amount-{CorrelationId}";
-	static readonly string Category = $"SubMultiOrders_{CorrelationId:N}";
-	static readonly string EventType = $"OrderPlaced-{CorrelationId}";
-	static readonly string Stream = $"{Category}-{CorrelationId}";
 
 	[Test]
 	public async ValueTask constrained_subscription_only_receives_events_matching_all_fields(CancellationToken ct) {
+		var indexName = $"sub-constrained-{CorrelationId}";
+		var eventType = $"OrderPlaced-constrained-{CorrelationId}";
+		var stream = $"stream-constrained-{CorrelationId}";
+
 		await IndexesClient.CreateAsync(
 			new() {
-				Name = IndexName,
-				Filter = $"rec => rec.schema.name == '{EventType}'",
+				Name = indexName,
+				Filter = $"rec => rec.schema.name == '{eventType}'",
 				Fields = {
 					new IndexField { Name = "country", Selector = "rec => rec.value.country", Type = IndexFieldType.String },
 					new IndexField { Name = "amount", Selector = "rec => rec.value.amount", Type = IndexFieldType.Int32 },
@@ -34,11 +34,11 @@ public class IndexesMultiFieldSubscriptionTests {
 			},
 			cancellationToken: ct);
 
-		var wholeIndex = $"$idx-user-{IndexName}";
+		var wholeIndex = $"$idx-user-{indexName}";
 		var constrained = $"{wholeIndex}:country=\"Mauritius\";amount=100";
 
 		// seed one matching event and wait for the index (and the constrained query) to become available
-		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "seed", "country": "Mauritius", "amount": 100 }""", ct);
+		await StreamsWriteClient.AppendEvent(stream, eventType, """{ "orderId": "seed", "country": "Mauritius", "amount": 100 }""", ct);
 		await StreamsReadClient.WaitForIndexEvents(wholeIndex, 1, ct);
 		await StreamsReadClient.WaitForIndexEvents(constrained, 1, ct);
 
@@ -50,9 +50,9 @@ public class IndexesMultiFieldSubscriptionTests {
 		await Assert.That((await constrainedEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "seed", """);
 
 		// live events: one matches both constraints, the others differ on exactly one field
-		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "match", "country": "Mauritius", "amount": 100 }""", ct);
-		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "wrong-country", "country": "France", "amount": 100 }""", ct);
-		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "wrong-amount", "country": "Mauritius", "amount": 200 }""", ct);
+		await StreamsWriteClient.AppendEvent(stream, eventType, """{ "orderId": "match", "country": "Mauritius", "amount": 100 }""", ct);
+		await StreamsWriteClient.AppendEvent(stream, eventType, """{ "orderId": "wrong-country", "country": "France", "amount": 100 }""", ct);
+		await StreamsWriteClient.AppendEvent(stream, eventType, """{ "orderId": "wrong-amount", "country": "Mauritius", "amount": 200 }""", ct);
 
 		// the whole-index subscription receives every indexed event
 		await Assert.That((await wholeEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "match", """);
@@ -63,7 +63,7 @@ public class IndexesMultiFieldSubscriptionTests {
 		await Assert.That((await constrainedEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "match", """);
 
 		// deleting the index drops its live subscriptions (both the whole-index and the constrained one, keyed by the base stream)
-		await IndexesClient.DeleteAsync(new() { Name = IndexName }, cancellationToken: ct);
+		await IndexesClient.DeleteAsync(new() { Name = indexName }, cancellationToken: ct);
 
 		var wholeEx = await Assert.That(async () => await wholeEnumerator.ConsumeNext()).Throws<RpcException>();
 		await Assert.That(wholeEx!.Status.StatusCode).IsEqualTo(StatusCode.NotFound);
@@ -75,10 +75,13 @@ public class IndexesMultiFieldSubscriptionTests {
 	[Test]
 	public async ValueTask single_field_subscriptions_respect_subsets_and_null_fields(CancellationToken ct) {
 		var indexName = $"sub-subset-{CorrelationId}";
+		var eventType = $"OrderPlaced-subset-{CorrelationId}";
+		var stream = $"stream-subset-{CorrelationId}";
+
 		await IndexesClient.CreateAsync(
 			new() {
 				Name = indexName,
-				Filter = $"rec => rec.schema.name == '{EventType}'",
+				Filter = $"rec => rec.schema.name == '{eventType}'",
 				Fields = {
 					new IndexField { Name = "country", Selector = "rec => rec.value.country", Type = IndexFieldType.String },
 					new IndexField { Name = "amount", Selector = "rec => rec.value.amount", Type = IndexFieldType.Int32 },
@@ -91,7 +94,7 @@ public class IndexesMultiFieldSubscriptionTests {
 		var byAmount = $"{wholeIndex}:amount=100";
 
 		// seed an event matching both fields and wait for each constrained query to become available
-		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "seed", "country": "Mauritius", "amount": 100 }""", ct);
+		await StreamsWriteClient.AppendEvent(stream, eventType, """{ "orderId": "seed", "country": "Mauritius", "amount": 100 }""", ct);
 		await StreamsReadClient.WaitForIndexEvents(byCountry, 1, ct);
 		await StreamsReadClient.WaitForIndexEvents(byAmount, 1, ct);
 
@@ -103,9 +106,9 @@ public class IndexesMultiFieldSubscriptionTests {
 		await Assert.That((await byAmountEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "seed", """);
 
 		// "no-amount": country present, amount NULL  -> matches country=Mauritius, but amount=100 (NULL omitted -> unsatisfied)
-		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "no-amount", "country": "Mauritius" }""", ct);
+		await StreamsWriteClient.AppendEvent(stream, eventType, """{ "orderId": "no-amount", "country": "Mauritius" }""", ct);
 		// "fr-100": amount matches, country differs -> matches amount=100, but not country=Mauritius
-		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "fr-100", "country": "France", "amount": 100 }""", ct);
+		await StreamsWriteClient.AppendEvent(stream, eventType, """{ "orderId": "fr-100", "country": "France", "amount": 100 }""", ct);
 
 		// country subscription receives "no-amount" (amount is unconstrained) and skips "fr-100"
 		await Assert.That((await byCountryEnumerator.ConsumeNext()).Data.ToStringUtf8()).Contains(""" "orderId": "no-amount", """);
@@ -118,10 +121,13 @@ public class IndexesMultiFieldSubscriptionTests {
 	[Test]
 	public async ValueTask subscribing_with_invalid_constraints_is_rejected(CancellationToken ct) {
 		var indexName = $"sub-invalid-{CorrelationId}";
+		var eventType = $"OrderPlaced-invalid-{CorrelationId}";
+		var stream = $"stream-invalid-{CorrelationId}";
+
 		await IndexesClient.CreateAsync(
 			new() {
 				Name = indexName,
-				Filter = $"rec => rec.schema.name == '{EventType}'",
+				Filter = $"rec => rec.schema.name == '{eventType}'",
 				Fields = {
 					new IndexField { Name = "amount", Selector = "rec => rec.value.amount", Type = IndexFieldType.Int32 },
 				},
@@ -131,7 +137,7 @@ public class IndexesMultiFieldSubscriptionTests {
 		var wholeIndex = $"$idx-user-{indexName}";
 
 		// seed an event and wait for it so the index is created and queryable before we subscribe
-		await StreamsWriteClient.AppendEvent(Stream, EventType, """{ "orderId": "seed", "amount": 5 }""", ct);
+		await StreamsWriteClient.AppendEvent(stream, eventType, """{ "orderId": "seed", "amount": 5 }""", ct);
 		await StreamsReadClient.WaitForIndexEvents(wholeIndex, 1, ct);
 
 		var ex = await Assert
