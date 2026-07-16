@@ -41,7 +41,7 @@ public class ForgetToolTests {
 
 		var result = await SearchTool.Search(search, new FakeWorkspaceContext(), new FakeAuthorizationProvider(), new StaticHttpContextAccessor(), inquiries, sid, queries: ["order"]);
 
-		await Assert.That(result.NewEvents).HasCount().EqualTo(0);
+		await Assert.That(result.NewEvents).Count().IsEqualTo(0);
 	}
 
 	[Test]

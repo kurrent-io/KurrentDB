@@ -57,7 +57,7 @@ public class StreamsServiceTests {
         Fixture.Logger.LogInformation("Append session completed at position {Position}", response.Position);
 
         // Assert
-        await Assert.That(response.Output).HasCount(numberOfStreams);
+        await Assert.That(response.Output).Count().IsEqualTo(numberOfStreams);
         await Assert.That(response.Position).IsGreaterThanOrEqualTo(numberOfStreams);
     }
 
