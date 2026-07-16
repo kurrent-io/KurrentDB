@@ -31,21 +31,11 @@
 	<!-- TUnit -->
 	<ItemGroup Condition="'$(IsKurrentTUnit)' == 'True'">
 		<PackageReference Include="TUnit" />
-		<!-- MTP 2 -->
-		<PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.1.0" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="2.0.1" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="2.0.1" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.0.1" />
 	</ItemGroup>
 
 	<!-- XUnit -->
 	<ItemGroup Condition="'$(IsKurrentXUnit)' == 'True'">
-		<PackageReference Include="xunit.v3" />
-		<!-- MTP 1 -->
-		<PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.0.4" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="1.9.0" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="1.9.0" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.9.0" />
+		<PackageReference Include="xunit.v3.mtp-v2" />
 	</ItemGroup>
 
 	<!-- NUnit -->
@@ -53,17 +43,19 @@
 		<TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --settings $(MSBuildThisFileDirectory)../ci/ci.runsettings</TestingPlatformCommandLineArguments>
 	</PropertyGroup>
 	<ItemGroup Condition="'$(IsKurrentNUnit)' == 'True'">
+		<!--
+			Microsoft.NET.Test.Sdk is not required with MTP, but Rider can't locate tests without it.
+			See https://youtrack.jetbrains.com/projects/RIDER/issues/RIDER-131530
+		-->
+		<PackageReference Include="Microsoft.NET.Test.Sdk" />
 		<PackageReference Include="NUnit" />
 		<PackageReference Include="NUnit3TestAdapter" />
-		<!-- MTP 1 -->
-		<PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.0.4" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="1.9.0" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="1.9.0" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.9.0" />
 	</ItemGroup>
 
 	<!-- All test projects -->
 	<ItemGroup Condition="'$(IsKurrentTUnit)' == 'True' Or '$(IsKurrentXUnit)' == 'True' Or '$(IsKurrentNUnit)' == 'True'">
+		<PackageReference Include="Microsoft.Testing.Platform" />
+		<PackageReference Include="Microsoft.Testing.Platform.MSBuild" />
 		<PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
 		<PackageReference Include="Microsoft.Testing.Extensions.CrashDump" />
 		<PackageReference Include="Microsoft.Testing.Extensions.HangDump" />
