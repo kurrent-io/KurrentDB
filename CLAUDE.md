@@ -16,7 +16,7 @@ Detailed reference docs live in `.claude/docs/` — fetch them when working in a
 ## Development Commands
 
 ### Build
-- `dotnet build -c Release /p:Platform=x64 --framework=net10.0 KurrentDB.slnx`
+- `dotnet build -c Release --framework=net10.0 KurrentDB.slnx`
 
 ### Test
 - `dotnet test --solution KurrentDB.slnx` - Run all tests

@@ -12,7 +12,6 @@
 		<PackageReleaseNotes>https://docs.kurrent.io/server/latest/release-schedule/release-notes</PackageReleaseNotes>
 		<TargetFramework>net10.0</TargetFramework>
 		<LangVersion>14.0</LangVersion>
-		<Platforms>AnyCPU;x64;ARM64</Platforms>
 		<IsPackable>false</IsPackable>
 		<VersionPrefix>26.2.0</VersionPrefix>
 		<VersionSuffix>prerelease</VersionSuffix>

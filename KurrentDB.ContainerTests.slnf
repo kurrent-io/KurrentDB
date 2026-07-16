@@ -19,7 +19,6 @@
       "src\\KurrentDB.AutoScavenge\\KurrentDB.AutoScavenge.csproj",
       "src\\KurrentDB.BufferManagement.Tests\\KurrentDB.BufferManagement.Tests.csproj",
       "src\\KurrentDB.BufferManagement\\KurrentDB.BufferManagement.csproj",
-      "src\\KurrentDB.ClusterNode.Web\\KurrentDB.ClusterNode.Web.csproj",
       "src\\KurrentDB.Common.Tests\\KurrentDB.Common.Tests.csproj",
       "src\\KurrentDB.Common\\KurrentDB.Common.csproj",
       "src\\KurrentDB.Core.Testing.NUnit\\KurrentDB.Core.Testing.NUnit.csproj",
