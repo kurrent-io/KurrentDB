@@ -34,10 +34,27 @@ public class IndexHelpersTests {
 		fields.Select(f => IField.Create(new IndexField { Name = f.Name, Selector = "e => e", Type = f.Type })).ToArray();
 
 	[Fact]
-	public void no_suffix_yields_no_constraints() {
+	public void null_suffix_yields_no_constraints() {
+		// "$idx-user-<name>" (no ':') -> whole index
 		var ok = UserIndexHelpers.TryParseConstraints(Fields(("country", IndexFieldType.String)), null, out var constraints);
 		Assert.True(ok);
 		Assert.Empty(constraints);
+	}
+
+	[Fact]
+	public void empty_suffix_filters_a_single_field_by_empty_value() {
+		// "$idx-user-<name>:" (trailing ':') -> legacy filter for the empty value, not the whole index
+		var ok = UserIndexHelpers.TryParseConstraints(Fields(("country", IndexFieldType.String)), "", out var constraints);
+		Assert.True(ok);
+		var constraint = Assert.Single(constraints);
+		Assert.Equal("country", constraint.Field.Name);
+		Assert.Equal("", constraint.Value);
+	}
+
+	[Fact]
+	public void empty_suffix_rejected_for_multi_field_index() {
+		var ok = UserIndexHelpers.TryParseConstraints(Fields(("a", IndexFieldType.String), ("b", IndexFieldType.String)), "", out _);
+		Assert.False(ok);
 	}
 
 	[Fact]

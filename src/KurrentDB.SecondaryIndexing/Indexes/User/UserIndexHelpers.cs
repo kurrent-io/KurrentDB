@@ -39,7 +39,7 @@ public static class UserIndexHelpers {
 		$"{UserIndexConstants.Category}{indexName}";
 
 	internal static bool TryParseConstraints(IReadOnlyList<IField> fields, string? suffix, out IReadOnlyList<FieldConstraint> constraints) {
-		if (string.IsNullOrEmpty(suffix)) {
+		if (suffix is null) {
 			constraints = [];
 			return true;
 		}
@@ -47,7 +47,7 @@ public static class UserIndexHelpers {
 		var parsed = new List<FieldConstraint>();
 		constraints = parsed;
 
-		// legacy form: no '=' anywhere
+		// legacy form: no '=' anywhere - the whole suffix is the single field's value (which may be empty)
 		if (!suffix.Contains('='))
 			return fields.Count == 1 && TryAdd(fields[0], suffix, [], parsed);
 
