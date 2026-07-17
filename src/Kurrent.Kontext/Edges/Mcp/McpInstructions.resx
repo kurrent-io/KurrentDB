@@ -1,0 +1,490 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="server.instructions" xml:space="preserve">
+    <value>Kontext is your long-term memory, spoken in six verbs:
+- Retain (store something worth remembering)
+- Retract (take back what should never have existed)
+- Recall (search by meaning)
+- Reclaim (fetch by id)
+- Recollect (browse by type/tag)
+- Reflect (synthesize higher-level memories from what's there)
+
+Recall before you guess — re-deriving something you already learned is the expensive path.
+Retain the moment you learn something durable, written to stand on its own.
+To correct a memory, retain the correction with supersedes; retract only what should never have existed.
+Reflect periodically, when observations pile up — not on every turn.</value>
+  </data>
+  <data name="tool.recall" xml:space="preserve">
+    <value>Search your memory by MEANING — not reclaim (that's by id), not recollect (that's by type/tag, no ranking). Reach for
+this before you act on something you might already know: at the start of a task, when a name, decision, error, file,
+or preference comes up that you may have seen before, or any time you'd otherwise guess. Recalling is cheap;
+re-deriving something you already learned — or silently contradicting a past decision — is not. Results come back
+ranked best-first: treat the order as the system's confidence and each memory's type as how far to trust it (a
+firsthand OBSERVATION outranks HEARSAY picked up in conversation). Only what is currently true surfaces — retracted
+and superseded memories never do. Side effect worth knowing: recalling a memory keeps it salient (refreshes its
+recency clock), so the things you actually use stay near the top over time. Recall freely.</value>
+  </data>
+  <data name="tool.recall.param.options" xml:space="preserve">
+    <value>Optional knobs — limit, minimum score, tag pre-filter, include-full. Null ⇒ server defaults.</value>
+  </data>
+  <data name="tool.recall.param.query" xml:space="preserve">
+    <value>What you are trying to remember, in natural language — phrase it like a question to a colleague
+("what did we decide about the checkpoint format?"), not keywords.</value>
+  </data>
+  <data name="tool.reclaim" xml:space="preserve">
+    <value>Fetch exact memories by id — not recall (that's by meaning), not recollect (that's by type/tag). Use it for
+progressive disclosure: when an earlier result (a recall hit, a reflection) handed you only ids and you now want the
+complete folded records, provenance (evidence, reasoning) included. Not a search and no ranking — you get exactly the
+ids you asked for, including retracted or superseded records (you asked by id, so they are not hidden here). Ids that
+don't exist are simply absent from the result, never an error — diff the returned ids against what you asked for to
+see which missed. Like recall, reclaiming refreshes the recency clock of the memories it returns.</value>
+  </data>
+  <data name="tool.recollect" xml:space="preserve">
+    <value>Browse your memories by structure, not relevance — not recall (that ranks by meaning), not reclaim (that's by id).
+Use it to enumerate or gather a filtered set — "all my PLANs tagged project::engram", "everything I retracted this
+week" — where you want a list, not a ranked answer to a question. The types filter is any-of (empty = any type); all
+supplied tags must be present. Retracted memories are never returned (they were mistakes; only reclaim by exact id
+still surfaces them). Ordered by sort
+(default: newest-retained first); reverse with direction. Read-only.</value>
+  </data>
+  <data name="tool.reflect" xml:space="preserve">
+    <value>Step back and synthesize. This recalls broadly over the store and writes higher-level, DERIVED memories from what it
+finds — a FACT, PROCEDURE, PROFILE, SUMMARY, or PLAN that cites the memories it rests on — and may supersede or
+retract the ones the new insight subsumes. Reflection is the operation that produces derived memories; there is no
+"reflection" memory type. Reach for it periodically, when a pile of observations wants to become a durable
+conclusion — not on every turn. Writes new memories and is destructive (may retract/supersede); long-running —
+expect it to complete asynchronously rather than return instantly. Not idempotent. Returns the ids it synthesized,
+superseded, and retracted.</value>
+  </data>
+  <data name="tool.reflect.param.options" xml:space="preserve">
+    <value>Optional correlation id and tag scoping. Null ⇒ the server assigns an id and reflects over everything.</value>
+  </data>
+  <data name="tool.retain" xml:space="preserve">
+    <value>Store something worth remembering — a decision and its reasoning, an error and its fix, a user preference, a durable
+fact. Reach for it the moment you learn something you'd want back later, and write each memory so it stands on its
+own: a reader months from now, with no other context, should understand it. Set the memory type honestly — it is the
+trust axis, so don't dress HEARSAY up as OBSERVATION — set importance by how much it matters, cite what the memory
+rests on in evidence, and list any memories it replaces in supersedes (the old ones stay readable, marked superseded;
+there is no separate supersede call). Additive: never overwrites or deletes. Not idempotent — each memory without a
+pre-set id creates a new record; a supplied id must be NEW (an id that already exists is rejected — to replace,
+retain the successor with supersedes). Returns one result per memory, in order, with its server-assigned id.</value>
+  </data>
+  <data name="tool.retain.param.reconcile" xml:space="preserve">
+    <value>Take a beat before moving on: also hand back, per stored memory, existing memories the new one looks to duplicate
+or contradict (nearest first) so you can supersede or retract them now. Never blocks the write — the memory is
+stored either way; skip it and the scheduled "dream" pass reconciles later. Default false.</value>
+  </data>
+  <data name="tool.retract" xml:space="preserve">
+    <value>Take back a memory that should not exist at all — it was never true, or it must be forgotten. FIRST ASK: is there a
+corrected memory to replace it? If yes, do NOT retract — retain the correction with supersedes instead; that is the
+common case ("I know better now"), keeps the old one as readable history, and the successor wins on recency. Retract
+is the narrow escape hatch for what supersede cannot express: wrong with no replacement (avoids inventing an
+anti-fact), a forget-me removal (privacy/PII), or when memories derived from this one must go with it. It CASCADES —
+a summary that cited this memory is retracted too, its evidence having vanished — and it is the only hide primitive:
+retracted memories stop surfacing in recall and recollect; only reclaim by exact id still returns them. Idempotent;
+nothing is physically deleted. Returns this memory's id plus everything the cascade removed.</value>
+  </data>
+  <data name="tool.retract.param.reason" xml:space="preserve">
+    <value>Why you're taking this back (e.g. "user corrected me", "verified false in commit abc"). Encouraged: it is the
+only record of why the memory is gone, it stops you relitigating it later, and it explains the cascade.</value>
+  </data>
+  <data name="tool.retain.param.memories" xml:space="preserve">
+    <value>One or more memories to store — each written to stand on its own.</value>
+  </data>
+  <data name="tool.retract.param.memoryId" xml:space="preserve">
+    <value>The memory to take back.</value>
+  </data>
+  <data name="tool.reclaim.param.ids" xml:space="preserve">
+    <value>The exact memory ids to fetch back.</value>
+  </data>
+  <data name="tool.recollect.param.options" xml:space="preserve">
+    <value>The filters and ordering — types (any-of), tags (all-of), limit, sort, direction.</value>
+  </data>
+  <data name="tool.reflect.param.query" xml:space="preserve">
+    <value>What to reflect on, in natural language — the theme to synthesize over.</value>
+  </data>
+  <data name="type.Citation" xml:space="preserve">
+    <value>One cited source. Exactly one arm is set: a cited memory, or a cited KurrentDB log record.</value>
+  </data>
+  <data name="type.Citation+ToMemory" xml:space="preserve">
+    <value>A citation of another memory.</value>
+  </data>
+  <data name="type.Citation+ToMemory.memory" xml:space="preserve">
+    <value>The cited memory.</value>
+  </data>
+  <data name="type.Citation+ToRecord" xml:space="preserve">
+    <value>A citation of a KurrentDB log record.</value>
+  </data>
+  <data name="type.Citation+ToRecord.record" xml:space="preserve">
+    <value>The cited KurrentDB log record.</value>
+  </data>
+  <data name="type.Evidence" xml:space="preserve">
+    <value>What a memory rests on: the reasoning that produced it together with the sources it cites. Derived memories carry it; a
+raw observation rests on nothing and leaves it empty. Reasoning and citations travel together — a memory carries both or
+neither.</value>
+  </data>
+  <data name="type.Evidence.citations" xml:space="preserve">
+    <value>The sources this memory cites as support, in citation order: other memories and/or KurrentDB log records. Empty for a
+raw observation.</value>
+  </data>
+  <data name="type.Evidence.reasoning" xml:space="preserve">
+    <value>The "because" that ties the cited sources to this memory: the derivation from the citations to the conclusion. Kept out
+of the memory's content so recall indexes the memory itself, not the citation trail. Empty for a raw observation.</value>
+  </data>
+  <data name="type.LeanMemory" xml:space="preserve">
+    <value>The lean recall projection: enough to use a memory and judge it, without the provenance trail (evidence, reasoning). For
+those, request the full body or reclaim by id.</value>
+  </data>
+  <data name="type.LeanMemory.content" xml:space="preserve">
+    <value>The memory text.</value>
+  </data>
+  <data name="type.LeanMemory.importance" xml:space="preserve">
+    <value>Its salience level.</value>
+  </data>
+  <data name="type.LeanMemory.memoryId" xml:space="preserve">
+    <value>Reclaim by this id for the full record.</value>
+  </data>
+  <data name="type.LeanMemory.memoryType" xml:space="preserve">
+    <value>The trust axis — the record's cognitive type.</value>
+  </data>
+  <data name="type.LeanMemory.retainedAt" xml:space="preserve">
+    <value>When the memory was retained — age, for context.</value>
+  </data>
+  <data name="type.LeanMemory.tags" xml:space="preserve">
+    <value>Labels carried on the memory.</value>
+  </data>
+  <data name="type.Memory" xml:space="preserve">
+    <value>A memory's intrinsic content — the write/command shape passed to retain. The read path returns the folded stored memory;
+the two shapes are deliberately separate so the write and read models evolve independently.</value>
+  </data>
+  <data name="type.Memory.content" xml:space="preserve">
+    <value>The memory's textual content.</value>
+  </data>
+  <data name="type.Memory.evidence" xml:space="preserve">
+    <value>What this memory rests on: the sources it cites and the reasoning tying them to this memory. Empty for a raw
+observation.</value>
+  </data>
+  <data name="type.Memory.id" xml:space="preserve">
+    <value>Unique identifier of the memory; optional — if absent the server generates a new one. When supplied it must be a
+NEW UUID (useful for idempotent retries or referencing this memory within the same batch) — an id that already
+exists is rejected; to replace an existing memory, retain the successor with supersedes.</value>
+  </data>
+  <data name="type.Memory.importance" xml:space="preserve">
+    <value>The agent's salience rating — how much this memory matters. Higher importance keeps it retrievable longer as recency
+fades; it does not change the decay rate. Default: Normal.</value>
+  </data>
+  <data name="type.Memory.sentiment" xml:space="preserve">
+    <value>The sentiment of the memory — set by the enrichment pipeline, not the agent.</value>
+  </data>
+  <data name="type.Memory.supersedes" xml:space="preserve">
+    <value>Memory ids this memory supersedes (replaces). The superseded ones stay readable, marked superseded. Set at retain —
+there is no separate supersede operation.</value>
+  </data>
+  <data name="type.Memory.tags" xml:space="preserve">
+    <value>Scoped or bare labels.</value>
+  </data>
+  <data name="type.Memory.type" xml:space="preserve">
+    <value>The record's cognitive type — Kontext's trust axis (replaces an explicit confidence field).</value>
+  </data>
+  <data name="type.Memory.urgency" xml:space="preserve">
+    <value>The urgency of the memory — set by the enrichment pipeline, not the agent.</value>
+  </data>
+  <data name="type.Memory.validity" xml:space="preserve">
+    <value>The world-time span the content refers to (perceived from the text); a point event sets start == end. Null when the text
+implies none.</value>
+  </data>
+  <data name="type.MemoryImportance" xml:space="preserve">
+    <value>The agent's salience rating, set at retain. An additive term in ranking, not a decay control: higher importance keeps a
+memory's score up as recency fades, so it stays retrievable longer — it does not change the decay rate. A coarse bucket
+by design.
+
+Values:
+- Unspecified: Not set — treated as Normal.
+- Low: Incidental — fine to let it fade.
+- Normal: The default.
+- High: Decisions, fixes, preferences worth keeping.
+- Critical: Top salience — architectural calls, hard-won lessons.</value>
+  </data>
+  <data name="type.MemoryRef" xml:space="preserve">
+    <value>A pointer to another memory that supports this one.</value>
+  </data>
+  <data name="type.MemoryRef.id" xml:space="preserve">
+    <value>The cited memory id.</value>
+  </data>
+  <data name="type.MemoryRef.position" xml:space="preserve">
+    <value>Its position in the log (exact, replayable).</value>
+  </data>
+  <data name="type.MemorySentiment" xml:space="preserve">
+    <value>Emotional tone of a memory's content, tagged by the enrichment pipeline — not agent-set.
+
+Values:
+- Unspecified: Not yet classified.
+- Positive: Approving / good-news tone (a fix worked, a success).
+- Neutral: Matter-of-fact, no clear valence.
+- Negative: Adverse tone (a failure, a complaint, a broken thing).</value>
+  </data>
+  <data name="type.MemoryType" xml:space="preserve">
+    <value>What a memory is — Kontext's trust axis. Whether a memory is firsthand or derived is not a type: it is visible in its
+evidence (empty ⇒ firsthand/asserted; populated ⇒ derived, inheriting the certainty of the memories it cites). There is
+deliberately no "reflection" type — reflection is the process that produces the derived types.
+
+Values:
+- Unspecified: Default / not set.
+- Observation: A perceived event — "what happened". Firsthand, so the highest trust. Episodic (decays).
+- Hearsay: A claim heard in dialogue — a naturally low-trust observation, kept unverified so a fabricated "fact" injected via
+conversation can't launder itself into truth (the "memory-hacking" guard). Episodic.
+- Fact: A durable truth about the world, a system, or a project. Persists; superseded by newer evidence, never decayed.
+- Procedure: Durable how-to: a convention, workflow, or skill. Persists, superseded, not decayed.
+- Profile: Durable facts about a principal — identity, role, and personal preferences (those binding only that principal). A
+preference binding a team/project is a Procedure/Fact at that scope, not a Profile.
+- Plan: A future course of action. Time-bound — valid until it's acted on or it expires.
+- Summary: A consolidation of other memories — a recap, digest, or index. Always derived (cites its sources as evidence), so its
+certainty is inherited from them. Persists, refreshed as those sources change.</value>
+  </data>
+  <data name="type.MemoryUrgency" xml:space="preserve">
+    <value>How time-pressing a memory's content is, tagged by the enrichment pipeline — not agent-set.
+
+Values:
+- Unspecified: Not yet classified.
+- Low: No time pressure — background knowledge.
+- Medium: Worth acting on before long.
+- High: Needs attention now (blocker, incident, deadline).</value>
+  </data>
+  <data name="type.RecallOptions" xml:space="preserve">
+    <value>The optional knobs for a recall — the query itself is a direct parameter.</value>
+  </data>
+  <data name="type.RecallOptions.includeFull" xml:space="preserve">
+    <value>When true, each hit carries the complete folded record instead of the lean projection. Default false: lean hits, easier
+on your context.</value>
+  </data>
+  <data name="type.RecallOptions.limit" xml:space="preserve">
+    <value>How many memories to return after ranking. Ask for a handful (5–10); asking for many more mostly dilutes the top
+results.</value>
+  </data>
+  <data name="type.RecallOptions.minScore" xml:space="preserve">
+    <value>Drop anything the server scores below this cutoff — raise it when you only want strong matches, leave it at 0 to see
+everything that ranked.</value>
+  </data>
+  <data name="type.RecallOptions.queryId" xml:space="preserve">
+    <value>Optional correlation id for this recall; null ⇒ the server assigns one. Keep it to tie later feedback or inspection back
+to this exact query.</value>
+  </data>
+  <data name="type.RecallOptions.tags" xml:space="preserve">
+    <value>Optional pre-filter: only memories carrying these tags are considered. Use it only when you already know the dimension
+to narrow to; empty ⇒ search everything.</value>
+  </data>
+  <data name="type.RecallResult" xml:space="preserve">
+    <value>Result of a recall — hits ranked best-first.</value>
+  </data>
+  <data name="type.RecallResult.memories" xml:space="preserve">
+    <value>The recall hits, ranked best-first.</value>
+  </data>
+  <data name="type.RecallResult.queryId" xml:space="preserve">
+    <value>Echoes the recall's query id (assigned by the server if it was left empty).</value>
+  </data>
+  <data name="type.RecalledMemory" xml:space="preserve">
+    <value>One recall hit — a ranking score plus the memory, lean by default or the full folded record when include-full was set.
+Exactly one body arm is set.</value>
+  </data>
+  <data name="type.RecalledMemory+Full" xml:space="preserve">
+    <value>The complete folded record (as reclaim returns) — present when include-full was set.</value>
+  </data>
+  <data name="type.RecalledMemory+Full.memory" xml:space="preserve">
+    <value>The complete folded record of the hit.</value>
+  </data>
+  <data name="type.RecalledMemory+Lean" xml:space="preserve">
+    <value>The default lean projection — enough to use and trust a hit.</value>
+  </data>
+  <data name="type.RecalledMemory+Lean.memory" xml:space="preserve">
+    <value>The lean projection of the hit.</value>
+  </data>
+  <data name="type.RecalledMemory.score" xml:space="preserve">
+    <value>Final ranking score (base × certainty); higher = stronger match. A low top score means nothing matched well.</value>
+  </data>
+  <data name="type.RecollectOptions" xml:space="preserve">
+    <value>The filters and ordering for a recollect — browse by structure (type/tags), not relevance. Recollect has no payload, so
+every input lives here.</value>
+  </data>
+  <data name="type.RecollectOptions.direction" xml:space="preserve">
+    <value>Sort direction. Default: descending.</value>
+  </data>
+  <data name="type.RecollectOptions.limit" xml:space="preserve">
+    <value>Max memories to return. With a limit, the sort decides which slice you get.</value>
+  </data>
+  <data name="type.RecollectOptions.sort" xml:space="preserve">
+    <value>How to order results. Default: newest-retained first. Reach for Importance when you want the top-N significant memories
+rather than the most recent.</value>
+  </data>
+  <data name="type.RecollectOptions.tags" xml:space="preserve">
+    <value>Optional filter: only memories carrying ALL of these tags (empty ⇒ no tag filter).</value>
+  </data>
+  <data name="type.RecollectOptions.types" xml:space="preserve">
+    <value>Optional filter: any-of these types (empty ⇒ any type).</value>
+  </data>
+  <data name="type.RecollectSort" xml:space="preserve">
+    <value>The dimension a recollect orders its results by (there is no relevance here — that's recall).
+
+Values:
+- Unspecified: Not set — defaults to RetainedAt.
+- RetainedAt: When the memory was recorded — chronological. The default.
+- LastAccessedAt: The recency clock — surfaces what has been salient (recalled) lately.
+- Importance: The agent's salience rating — surfaces the significant ones. Pairs well with a limit: the top-N important memories
+rather than arbitrary ones.</value>
+  </data>
+  <data name="type.RecordRef" xml:space="preserve">
+    <value>A pointer to a KurrentDB log record that supports this memory.</value>
+  </data>
+  <data name="type.RecordRef.id" xml:space="preserve">
+    <value>The record's id.</value>
+  </data>
+  <data name="type.RecordRef.position" xml:space="preserve">
+    <value>Its position in the log (exact, replayable).</value>
+  </data>
+  <data name="type.ReflectOptions" xml:space="preserve">
+    <value>The optional knobs for a reflect pass — the theme (query) is a direct parameter.</value>
+  </data>
+  <data name="type.ReflectOptions.queryId" xml:space="preserve">
+    <value>Optional correlation id for this reflection; null ⇒ the server assigns one.</value>
+  </data>
+  <data name="type.ReflectOptions.tags" xml:space="preserve">
+    <value>Scope the reflection to memories carrying these tags; empty ⇒ range over all.</value>
+  </data>
+  <data name="type.ReflectResult" xml:space="preserve">
+    <value>Result of a reflect pass: the ids it synthesized, superseded, and retracted.</value>
+  </data>
+  <data name="type.ReflectResult.queryId" xml:space="preserve">
+    <value>Correlates to the reflect call — supplied on the request, or server-assigned.</value>
+  </data>
+  <data name="type.ReflectResult.retractedMemoryIds" xml:space="preserve">
+    <value>Ids of memories retracted.</value>
+  </data>
+  <data name="type.ReflectResult.supersededMemoryIds" xml:space="preserve">
+    <value>Ids of memories superseded.</value>
+  </data>
+  <data name="type.ReflectResult.synthesizedMemoryIds" xml:space="preserve">
+    <value>Ids of memories synthesized.</value>
+  </data>
+  <data name="type.RelatedMemory" xml:space="preserve">
+    <value>A pre-existing memory that looks related to a just-stored one.</value>
+  </data>
+  <data name="type.RelatedMemory.memoryId" xml:space="preserve">
+    <value>The related, pre-existing memory.</value>
+  </data>
+  <data name="type.RelatedMemory.similarity" xml:space="preserve">
+    <value>Embedding cosine, ~0..1 (higher = more alike).</value>
+  </data>
+  <data name="type.RetainResult" xml:space="preserve">
+    <value>Result of a retain — one outcome per input memory, in the same order.</value>
+  </data>
+  <data name="type.RetainResult.results" xml:space="preserve">
+    <value>One result per input memory, in order.</value>
+  </data>
+  <data name="type.RetainedMemory" xml:space="preserve">
+    <value>The outcome for a single stored memory.</value>
+  </data>
+  <data name="type.RetainedMemory.memoryId" xml:space="preserve">
+    <value>The stored memory's id. Retain always stores; the related list never blocks it.</value>
+  </data>
+  <data name="type.RetainedMemory.related" xml:space="preserve">
+    <value>Advisory, populated only when retain was asked to reconcile: existing memories this one looks to duplicate or
+contradict, nearest first.</value>
+  </data>
+  <data name="type.RetractResult" xml:space="preserve">
+    <value>Result of a retract — the memory plus every derived memory removed by the cascade.</value>
+  </data>
+  <data name="type.RetractResult.retractedMemoryIds" xml:space="preserve">
+    <value>The retracted memory plus every derived memory removed by the cascade.</value>
+  </data>
+  <data name="type.SortDirection" xml:space="preserve">
+    <value>Sort direction for a recollect listing.
+
+Values:
+- Unspecified: Not set — defaults to Descending.
+- Descending: High → low: newest / most-important / most-recently-accessed first.
+- Ascending: Low → high: oldest / least first.</value>
+  </data>
+  <data name="type.StoredMemory" xml:space="preserve">
+    <value>The complete, folded read model of a single memory — every lifecycle event applied. Self-contained, for inspection and
+direct fetch (reclaim/recollect), not for ranked retrieval. Deliberately separate from the memory command shape so read
+and write models evolve independently.</value>
+  </data>
+  <data name="type.StoredMemory.content" xml:space="preserve">
+    <value>The memory's textual content.</value>
+  </data>
+  <data name="type.StoredMemory.evidence" xml:space="preserve">
+    <value>What this memory rests on: cited sources and the reasoning tying them to it. Empty for a raw observation.</value>
+  </data>
+  <data name="type.StoredMemory.importance" xml:space="preserve">
+    <value>The salience level set at retain (higher keeps it retrievable longer as recency fades).</value>
+  </data>
+  <data name="type.StoredMemory.lastAccessedAt" xml:space="preserve">
+    <value>When the memory was last accessed — the recency clock, advanced by each recall. Null if never accessed.</value>
+  </data>
+  <data name="type.StoredMemory.memoryId" xml:space="preserve">
+    <value>Unique identifier of the memory.</value>
+  </data>
+  <data name="type.StoredMemory.memoryType" xml:space="preserve">
+    <value>The record's cognitive type — Kontext's trust axis.</value>
+  </data>
+  <data name="type.StoredMemory.retainedAt" xml:space="preserve">
+    <value>When the memory was retained.</value>
+  </data>
+  <data name="type.StoredMemory.retractedAt" xml:space="preserve">
+    <value>When the memory was retracted, if it was.</value>
+  </data>
+  <data name="type.StoredMemory.sentiment" xml:space="preserve">
+    <value>The sentiment of the memory, set by the enrichment pipeline.</value>
+  </data>
+  <data name="type.StoredMemory.supersededAt" xml:space="preserve">
+    <value>When a newer memory superseded this one, if any.</value>
+  </data>
+  <data name="type.StoredMemory.supersededBy" xml:space="preserve">
+    <value>The memory that superseded this one; set only when superseded-at is set.</value>
+  </data>
+  <data name="type.StoredMemory.supersedes" xml:space="preserve">
+    <value>Memory ids this memory supersedes (replaces).</value>
+  </data>
+  <data name="type.StoredMemory.tags" xml:space="preserve">
+    <value>Scoped or bare labels.</value>
+  </data>
+  <data name="type.StoredMemory.urgency" xml:space="preserve">
+    <value>The urgency of the memory, set by the enrichment pipeline.</value>
+  </data>
+  <data name="type.StoredMemory.validity" xml:space="preserve">
+    <value>The world-time span the content refers to (perceived from the text).</value>
+  </data>
+  <data name="type.Tag" xml:space="preserve">
+    <value>An agent-agnostic filter label with an optional scope (namespace). Scoped tags let you filter on a typed dimension (e.g.
+project:kurrentdb) without a contract change per dimension, and the same scope can repeat on one memory. Both value and
+scope are sanitized to lower kebab-case, so tags are canonical.</value>
+  </data>
+  <data name="type.Tag.scope" xml:space="preserve">
+    <value>Optional namespace — lower kebab-case; empty ⇒ bare tag.</value>
+  </data>
+  <data name="type.Tag.value" xml:space="preserve">
+    <value>The label — lower kebab-case.</value>
+  </data>
+  <data name="type.TemporalContext" xml:space="preserve">
+    <value>The world-time span a memory's content refers to, as perceived from its text (may be fuzzy). This is content time —
+distinct from the storage clocks (retained-at, last-accessed-at). A point-in-time event sets the end equal to the start;
+a null end means ongoing / open-ended.</value>
+  </data>
+  <data name="type.TemporalContext.from" xml:space="preserve">
+    <value>Start of the state, or the moment of a point event.</value>
+  </data>
+  <data name="type.TemporalContext.to" xml:space="preserve">
+    <value>End of the interval; null ⇒ ongoing / open-ended.</value>
+  </data>
+</root>

@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Manual developer playground that compares KurrentDB Kontext text-embedding implementations
+    over one shared multilingual example set, using the REAL generators from the
+    KurrentDB.Kontext.Embeddings SDK (no inline ONNX code here):
+
+      A - Prototype EmbeddingService (Kurrent.Kontext.Embeddings.Prototype): the incumbent
+          hand-rolled path — all-MiniLM-L6-v2 + hand-rolled WordPiece, mean-pool + L2. Baseline.
+      B - BertOnnxEmbeddingGenerator: SAME all-MiniLM ONNX + vocab as A (from ModelManager),
+          tokenized with the SDK's BERT/WordPiece tokenizer (lowercase + accent-fold + CJK split).
+      C - SentencePieceOnnxEmbeddingGenerator on multilingual-e5-small fp32 ("query: " prefix).
+      D - Same generator on multilingual-e5-small int8 (model_quantized.onnx).
+      + 5 additional multilingual XLM-R / SentencePiece models, all via
+        SentencePieceOnnxEmbeddingGenerator reusing the shared sentencepiece.bpe.model.
+
+    This is a throwaway/manual dev tool: NOT packable, NOT a test project, must not ship.
+    All large ONNX + SentencePiece assets are downloaded on first run into a gitignored
+    ./models cache (see Program.cs) so they are never committed.
+
+    InvariantGlobalization=false so ICU is present: BERT accent-folding (String.Normalize
+    FormD, used by Path B) is a silent no-op under invariant globalization.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" />
+    <PackageReference Include="Microsoft.Extensions.AI.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+  </ItemGroup>
+
+  <!--
+    The real Kontext embedding generators (A/B/C/D + the multilingual models) all come from the
+    KurrentDB.Kontext.Embeddings SDK. It transitively references KurrentDB.Kontext.Models, whose
+    embedded all-MiniLM ONNX + vocab feed Path A (ModelManager) and Path B (BertOnnx). We also
+    reference Models directly so its assembly is guaranteed present for ModelManager's Assembly.Load.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\Kurrent.Kontext.Embeddings\Kurrent.Kontext.Embeddings.csproj" />
+    <ProjectReference Include="../KurrentDB.Kontext.Models/KurrentDB.Kontext.Models.csproj" />
+  </ItemGroup>
+
+  <!-- transformers.js ground-truth vectors for the optional Path C bit-verify (small fixture). -->
+  <ItemGroup>
+    <None Update="ref-vectors.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

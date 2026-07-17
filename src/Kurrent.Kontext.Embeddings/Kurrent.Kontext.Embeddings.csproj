@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Description>Kontext embeddings SDK — local ONNX text embedding generators behind Microsoft.Extensions.AI.</Description>
+    <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="KurrentDB.Kontext.Tests" />
+    <InternalsVisibleTo Include="KurrentDB.Plugins.Kontext.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.Extensions.Bedrock.MEAI" />
+    <PackageReference Include="Google.Cloud.VertexAI.Extensions" />
+    <PackageReference Include="OllamaSharp" />
+    <PackageReference Include="OpenAI" />
+    <PackageReference Include="Microsoft.ML.Tokenizers" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" />
+    <PackageReference Include="Microsoft.Extensions.AI" />
+    <PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
+    <PackageReference Include="DotNext.Threading" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\KurrentDB.Kontext.Models\KurrentDB.Kontext.Models.csproj" />
+  </ItemGroup>
+
+</Project>

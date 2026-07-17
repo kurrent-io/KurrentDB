@@ -47,15 +47,17 @@
     <Project Path="src\Connectors\KurrentDB.Connectors.Tests\KurrentDB.Connectors.Tests.csproj" />
   </Folder>
   <Folder Name="/Plugins/Kontext/">
+    <Project Path="src\Kurrent.Kontext.Contracts\Kurrent.Kontext.Contracts.csproj" />
+    <Project Path="src\Kurrent.Kontext.Embeddings.Playground\Kurrent.Kontext.Embeddings.Playground.csproj" />
+    <Project Path="src\Kurrent.Kontext.Embeddings.Tests\Kurrent.Kontext.Embeddings.Tests.csproj" />
+    <Project Path="src\Kurrent.Kontext.Embeddings\Kurrent.Kontext.Embeddings.csproj" />
+    <Project Path="src\Kurrent.Kontext.Tests\Kurrent.Kontext.Tests.csproj" />
+    <Project Path="src\Kurrent.Kontext\Kurrent.Kontext.csproj" />
+  </Folder>
+  <Folder Name="/Plugins/Kontext/Prototype/">
     <Project Path="src/KurrentDB.Kontext.Models/KurrentDB.Kontext.Models.csproj" />
     <Project Path="src/KurrentDB.Kontext.Tests/KurrentDB.Kontext.Tests.csproj" />
     <Project Path="src/KurrentDB.Kontext/KurrentDB.Kontext.csproj" />
-    <Project Path="src\KurrentDB.Kontext.Contracts\KurrentDB.Kontext.Contracts.csproj" />
-    <Project Path="src\KurrentDB.Kontext.Embeddings.Playground\KurrentDB.Kontext.Embeddings.Playground.csproj" />
-    <Project Path="src\KurrentDB.Kontext.Embeddings.Tests\KurrentDB.Kontext.Embeddings.Tests.csproj" />
-    <Project Path="src\KurrentDB.Kontext.Embeddings\KurrentDB.Kontext.Embeddings.csproj" />
-    <Project Path="src\KurrentDB.Kontext.Mcp\KurrentDB.Kontext.Mcp.csproj" />
-    <Project Path="src\KurrentDB.Kontext.Reloaded\KurrentDB.Kontext.Reloaded.csproj" />
   </Folder>
   <Folder Name="/Schema Registry/">
     <Project Path="src\SchemaRegistry\KurrentDB.Plugins.SchemaRegistry\KurrentDB.Plugins.SchemaRegistry.csproj" />

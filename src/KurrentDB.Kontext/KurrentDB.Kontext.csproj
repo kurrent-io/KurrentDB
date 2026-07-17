@@ -34,7 +34,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../KurrentDB.Kontext.Embeddings/KurrentDB.Kontext.Embeddings.csproj" />
+    <ProjectReference Include="..\Kurrent.Kontext.Embeddings\Kurrent.Kontext.Embeddings.csproj" />
     <ProjectReference Include="../KurrentDB.Kontext.Models/KurrentDB.Kontext.Models.csproj" />
     <ProjectReference Include="../KurrentDB.Common/KurrentDB.Common.csproj" />
     <ProjectReference Include="../KurrentDB.Core/KurrentDB.Core.csproj" />
