@@ -3,7 +3,6 @@
 
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Reflection;
 using KurrentDB.Testing.OpenTelemetry;
 using Microsoft.Extensions.Configuration;
 using Serilog;
@@ -93,7 +92,8 @@ public static class ToolkitTestEnvironment {
             .WriteTo.OpenTelemetry()
             .WriteTo.Observers(o => o.Subscribe(LogEvents.OnNext))
             .WriteTo.Console(
-                theme: AnsiConsoleTheme.Code,
+                // TUnit breaks escape sequences, showing them in the console literally
+                theme: AnsiConsoleTheme.None,
                 outputTemplate: ConsoleOutputTemplate,
                 applyThemeToRedirectedOutput: true
             )
@@ -115,7 +115,8 @@ public static class ToolkitTestEnvironment {
             .ReadFrom.Configuration(Configuration)
             .Enrich.WithProperty("TestUid", testUid)
             .WriteTo.Console(
-                theme: AnsiConsoleTheme.Code,
+	            // TUnit breaks escape sequences, showing them in the console literally
+                theme: AnsiConsoleTheme.None,
                 outputTemplate: ConsoleOutputTemplate,
                 applyThemeToRedirectedOutput: true
             )
