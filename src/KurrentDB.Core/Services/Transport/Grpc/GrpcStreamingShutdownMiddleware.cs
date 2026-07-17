@@ -38,8 +38,9 @@ public sealed class GrpcStreamingShutdownMiddleware(RequestDelegate next, IHostA
 	}
 
 	async Task InvokeStreaming(HttpContext context) {
-		using var linked = CancellationToken.Combine(
-			context.RequestAborted,
+		var requestAborted = context.RequestAborted;
+		var linked = CancellationToken.Combine(
+			requestAborted,
 			lifetime.ApplicationStopping);
 		context.RequestAborted = linked.Token;
 
@@ -47,6 +48,9 @@ public sealed class GrpcStreamingShutdownMiddleware(RequestDelegate next, IHostA
 			await next(context);
 		} catch (OperationCanceledException ex) when (ex.CancellationToken == linked.Token) {
 			throw new OperationCanceledException(ex.Message, ex, linked.CancellationOrigin);
+		} finally {
+			context.RequestAborted = requestAborted;
+			linked.Dispose();
 		}
 	}
 }
