@@ -22,12 +22,12 @@ public abstract class IndexTestBase : DuckDbIntegrationTest<IndexTestBase> {
 		var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
 		var publisher = new FakePublisher();
 
-		_processor = new(DuckDb, publisher, hasher, new("test"), NullLoggerFactory.Instance);
+		_processor = new(Executor, publisher, hasher, new("test"), NullLoggerFactory.Instance);
 
-		Sut = new(DuckDb, _processor, _readIndexStub.ReadIndex);
+		Sut = new(Executor, _processor, _readIndexStub.ReadIndex);
 	}
 
-	protected void IndexEvents(ResolvedEvent[] events, bool shouldCommit) {
+	protected async ValueTask IndexEvents(ResolvedEvent[] events, bool shouldCommit) {
 		_readIndexStub.IndexEvents(events);
 
 		foreach (var resolvedEvent in events) {
@@ -35,6 +35,6 @@ public abstract class IndexTestBase : DuckDbIntegrationTest<IndexTestBase> {
 		}
 
 		if (shouldCommit)
-			_processor.Commit();
+			await _processor.CommitAsync(CancellationToken.None);
 	}
 }

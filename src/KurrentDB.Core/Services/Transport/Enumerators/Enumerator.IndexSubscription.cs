@@ -7,7 +7,6 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
@@ -29,7 +28,6 @@ partial class Enumerator {
 		private readonly IPublisher _bus;
 		private readonly ClaimsPrincipal _user;
 		private readonly bool _requiresLeader;
-		private readonly DuckDBConnectionPool _pool;
 		private readonly CancellationTokenSource _cts;
 		private readonly Channel<ReadResponse> _channel;
 		private readonly Channel<(ulong SequenceNumber, ResolvedEvent? ResolvedEvent, TFPos? Checkpoint)> _liveEvents;
@@ -47,7 +45,6 @@ partial class Enumerator {
 			string indexName,
 			ClaimsPrincipal user,
 			bool requiresLeader,
-			[CanBeNull] DuckDBConnectionPool pool,
 			CancellationToken cancellationToken) {
 			_expiryStrategy = expiryStrategy;
 			_subscriptionId = Guid.NewGuid();
@@ -55,7 +52,6 @@ partial class Enumerator {
 			_indexName = Ensure.NotNullOrEmpty(indexName);
 			_user = user;
 			_requiresLeader = requiresLeader;
-			_pool = pool;
 			_cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 			_channel = Channel.CreateBounded<ReadResponse>(DefaultCatchUpChannelOptions);
 			_liveEvents = Channel.CreateBounded<(ulong, ResolvedEvent?, TFPos?)>(DefaultLiveChannelOptions);
@@ -330,7 +326,6 @@ partial class Enumerator {
 				validationTfLastCommitPosition: null,
 				user: _user,
 				replyOnExpired: true,
-				pool: _pool,
 				expires: _expiryStrategy.GetExpiry() ?? ReadRequestMessage.NeverExpires,
 				cancellationToken: ct));
 		}

@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Security.Claims;
-using Kurrent.Quack.ConnectionPool;
+using Kurrent.Quack;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.XUnit.Tests;
 using KurrentDB.SecondaryIndexing.Storage;
@@ -10,17 +10,18 @@ using KurrentDB.SecondaryIndexing.Storage;
 namespace KurrentDB.SecondaryIndexing.Tests.Fixtures;
 
 public abstract class DuckDbIntegrationTest<T> : DirectoryPerTest<T> {
-	protected readonly DuckDBConnectionPool DuckDb;
+	protected readonly DuckDBExecutor Executor;
 
 	protected DuckDbIntegrationTest() {
 		var dbPath = Fixture.GetFilePathFor($"{GetType().Name}.db");
 
-		DuckDb = new($"Data Source={dbPath};");
+		Executor = new($"Data Source={dbPath};", workerCount: 2, dispatcherCount: 2);
 
 		var schema = new IndexingDbSchema(GetEvents);
-		using (DuckDb.Rent(out var connection)) {
+		Executor.Execute(connection => {
 			schema.Execute(connection);
-		}
+			return 0;
+		}, CancellationToken.None).AsTask().GetAwaiter().GetResult();
 	}
 
 	private static IEnumerator<ReadResponse> GetEvents(long[] logPositions, ClaimsPrincipal user) {
@@ -33,7 +34,7 @@ public abstract class DuckDbIntegrationTest<T> : DirectoryPerTest<T> {
 	}
 
 	public override async ValueTask DisposeAsync() {
-		DuckDb.Dispose();
+		await Executor.DisposeAsync();
 		await base.DisposeAsync();
 	}
 }

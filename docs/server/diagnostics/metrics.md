@@ -394,6 +394,14 @@ kurrentdb_proc_contention_count_total 297 1688147136862
 kurrentdb_gc_pause_duration_max_seconds{range="16-20 seconds"} 0.0485873 1688147136862
 ```
 
+### DuckDB
+
+CPU time consumed by the dedicated DuckDB executor that owns every thread DuckDB runs on (used by secondary indexing and the query engine). Because the executor owns those threads, this is the DuckDB share of the process CPU reported by `kurrentdb_proc_cpu`: compare `rate(kurrentdb_duckdb_cpu_seconds_total)` against `kurrentdb_proc_cpu` to see the fraction of KurrentDB's CPU spent inside DuckDB.
+
+| Time Series | Type | Description |
+|:------------|:-----|:------------|
+| `kurrentdb_duckdb_cpu_seconds_total{role=<worker\|dispatcher>}` | [Counter](#common-types) | Cumulative CPU seconds consumed by DuckDB's executor threads, split by `role`: `worker` (DuckDB's parallel task-scheduler threads) and `dispatcher` (threads that run queries, reads, and index commits). Requires per-thread CPU support (Linux/Windows); reads 0 on macOS. Excludes DuckDB work the schema registry runs on its own threads (low volume; its parallel portions still run on worker threads). |
+
 ### Projections
 
 Projection metrics track the statistics for projections.

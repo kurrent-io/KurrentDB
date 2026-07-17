@@ -6,11 +6,8 @@ using System.Security.Cryptography;
 using Apache.Arrow;
 using DotNext;
 using DotNext.Buffers;
-using DuckDB.NET.Data;
-using DuckDB.NET.Native;
 using Kurrent.Quack;
 using Kurrent.Quack.Arrow;
-using Kurrent.Quack.ConnectionPool;
 using Kurrent.Quack.Threading;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Indexes.User;
@@ -22,54 +19,59 @@ namespace KurrentDB.SecondaryIndexing.Query;
 /// </summary>
 /// <param name="defaultIndex"></param>
 /// <param name="userIndex"></param>
-/// <param name="sharedPool"></param>
+/// <param name="executor"></param>
 internal sealed partial class QueryEngine(DefaultIndexProcessor defaultIndex,
 	UserIndexEngine userIndex,
-	DuckDBConnectionPool sharedPool) : IQueryEngine {
+	DuckDBExecutor executor) : IQueryEngine {
 	// 32 bytes key is aligned with HMAC SHA-3 256 hash length
 	private readonly ReadOnlyMemory<byte> _signatureKey = RandomNumberGenerator.GetBytes(32);
 
-	public MemoryOwner<byte> PrepareQuery(ReadOnlySpan<byte> queryUtf8, QueryPreparationOptions options) {
-		var builder = new PreparedQueryBuilder();
-		using var rewrittenQuery = RewriteQuery(queryUtf8, ref builder);
-
-		return builder.Build(rewrittenQuery.Span, options.UseDigitalSignature ? _signatureKey.Span : ReadOnlySpan<byte>.Empty);
+	public ValueTask<MemoryOwner<byte>> PrepareQueryAsync(ReadOnlyMemory<byte> queryUtf8, QueryPreparationOptions options,
+		CancellationToken token = default) {
+		var useSignature = options.UseDigitalSignature;
+		// The whole rewrite (parse + AST transform + serialize) runs inside one rented connection on a dispatcher.
+		// The PreparedQueryBuilder is a ref struct, so it lives entirely within this synchronous lambda — no await crosses it.
+		return executor.Execute(connection => {
+			var builder = new PreparedQueryBuilder();
+			using var rewrittenQuery = RewriteQuery(connection, queryUtf8.Span, ref builder);
+			return builder.Build(rewrittenQuery.Span, useSignature ? _signatureKey.Span : ReadOnlySpan<byte>.Empty);
+		}, token);
 	}
 
-	public async ValueTask ExecuteAsync<TConsumer>(ReadOnlyMemory<byte> preparedQuery,
+	public ValueTask ExecuteAsync<TConsumer>(ReadOnlyMemory<byte> preparedQuery,
 		TConsumer consumer,
 		QueryExecutionOptions options,
 		CancellationToken token)
 		where TConsumer : IQueryResultConsumer {
-		var parsedQuery = new PreparedQuery(preparedQuery.Span);
-		if (options.CheckIntegrity) {
-			CheckIntegrity(in parsedQuery);
-		}
+		var checkIntegrity = options.CheckIntegrity;
+		// Spec §6: the whole rent/snapshot/prepare/consume/cleanup pipeline runs inside ONE Execute op. The dispatcher
+		// blocks on the consumer by design (dispatcherCount bounds concurrent streams). Quack owns cancellation:
+		// it registers InterruptQueryOnCancellation per op and maps an interrupt to OperationCanceledException, so
+		// the engine no longer registers its own interrupt nor maps DuckDBException(Interrupt).
+		return new ValueTask(executor.Execute(connection => {
+			var parsedQuery = new PreparedQuery(preparedQuery.Span);
+			if (checkIntegrity)
+				CheckIntegrity(in parsedQuery);
 
-		var snapshots = new PoolingBufferWriter<SnapshotInfo> { Capacity = parsedQuery.ViewCount + 1 }; // + default index
-		var rental = sharedPool.Rent(out var connection);
-		var statement = default(PreparedStatement);
-		var reader = default(QueryResultReader);
-		var cancellation = connection.InterruptQueryOnCancellation(token);
-		try {
-			CaptureSnapshots(in parsedQuery, connection, snapshots, token);
-			statement = new(connection, parsedQuery.Query);
-			consumer.Bind(new QueryBinder(in statement));
+			var snapshots = new PoolingBufferWriter<SnapshotInfo> { Capacity = parsedQuery.ViewCount + 1 }; // + default index
+			var statement = default(PreparedStatement);
+			var reader = default(QueryResultReader);
+			try {
+				CaptureSnapshots(in parsedQuery, connection, snapshots, token);
+				statement = new(connection, parsedQuery.Query);
+				consumer.Bind(new QueryBinder(in statement));
 
-			reader = new(in statement, consumer.UseStreaming);
-			await consumer.ConsumeAsync(reader, token);
-			reader.ThrowOnError(); // to handle query interruption from Quack (see catch block)
-		} catch (DuckDBException e) when (e.ErrorType is DuckDBErrorType.Interrupt) {
-			throw new OperationCanceledException(token);
-		}
-		finally {
-			await cancellation.DisposeAsync();
-			reader?.Dispose();
-			statement.Dispose();
-			Disposable.Dispose(snapshots.WrittenMemory.Span); // release all captured snapshot
-			Disposable.Dispose(new ReadOnlySpan<DuckDBConnectionPool.Scope>(in rental));
-			snapshots.Dispose();
-		}
+				reader = new(in statement, consumer.UseStreaming);
+				consumer.ConsumeAsync(reader, token).AsTask().GetAwaiter().GetResult(); // dispatcher blocks: by design
+				reader.ThrowOnError();
+				return 0;
+			} finally {
+				reader?.Dispose();
+				statement.Dispose();
+				Disposable.Dispose(snapshots.WrittenMemory.Span); // release all captured snapshot
+				snapshots.Dispose();
+			}
+		}, token).AsTask());
 	}
 
 	private void CheckIntegrity(ref readonly PreparedQuery parsedQuery) {
@@ -104,22 +106,26 @@ internal sealed partial class QueryEngine(DefaultIndexProcessor defaultIndex,
 
 	private TResult GetArrowSchema<TResult, TReflector>(ReadOnlySpan<byte> preparedQuery)
 		where TReflector : ISchemaReflector<TResult>, allows ref struct {
-		var parsedQuery = new PreparedQuery(preparedQuery);
-		var snapshots = new PoolingBufferWriter<SnapshotInfo> { Capacity = parsedQuery.ViewCount + 1 }; // + default index
-		var rental = sharedPool.Rent(out var connection);
-		var options = connection.GetArrowOptions();
-		var statement = default(PreparedStatement);
-		try {
-			CaptureSnapshots(in parsedQuery, connection, snapshots, CancellationToken.None);
-			statement = new(connection, parsedQuery.Query);
-			return TReflector.Reflect(statement, options);
-		} finally {
-			statement.Dispose();
-			options.Dispose();
-			Disposable.Dispose(snapshots.WrittenMemory.Span); // release all captured snapshot
-			Disposable.Dispose(MemoryMarshal.CreateReadOnlySpan(in rental, 1));
-			snapshots.Dispose();
-		}
+		// No consume loop here — this is metadata reflection. Copy the span so it can be captured by the lambda, then
+		// run the whole capture-snapshots/prepare/reflect body on a dispatcher against a rented connection. This is a
+		// synchronous API, so we block on the dispatcher op (the dispatcher is a dedicated thread — no deadlock).
+		var queryBytes = preparedQuery.ToArray();
+		return executor.Execute(connection => {
+			var parsedQuery = new PreparedQuery(queryBytes);
+			var snapshots = new PoolingBufferWriter<SnapshotInfo> { Capacity = parsedQuery.ViewCount + 1 }; // + default index
+			var options = connection.GetArrowOptions();
+			var statement = default(PreparedStatement);
+			try {
+				CaptureSnapshots(in parsedQuery, connection, snapshots, CancellationToken.None);
+				statement = new(connection, parsedQuery.Query);
+				return TReflector.Reflect(statement, options);
+			} finally {
+				statement.Dispose();
+				options.Dispose();
+				Disposable.Dispose(snapshots.WrittenMemory.Span); // release all captured snapshot
+				snapshots.Dispose();
+			}
+		}, CancellationToken.None).AsTask().GetAwaiter().GetResult();
 	}
 
 	[StructLayout(LayoutKind.Auto)]

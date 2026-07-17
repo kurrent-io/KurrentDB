@@ -96,7 +96,7 @@ public sealed partial class DefaultIndexSubscription(
 				indexProcessor.TryIndex(resolvedEvent);
 
 				if (++indexedCount >= _commitBatchSize) {
-					indexProcessor.Commit();
+					await indexProcessor.CommitAsync(token);
 					indexedCount = 0;
 				}
 			} catch (OperationCanceledException) {
