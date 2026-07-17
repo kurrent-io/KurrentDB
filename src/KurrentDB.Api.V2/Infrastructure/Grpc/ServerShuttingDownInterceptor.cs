@@ -28,8 +28,11 @@ public sealed class ServerShuttingDownInterceptor(
 		? TimeSpan.FromSeconds(5)
 		: TimeSpan.FromSeconds(1);
 
-	bool IsShuttingDown(ServerCallContext context) =>
-		context.CancellationToken.IsCancellationRequested &&
+	// Best effort. Here we do not know if the context was cancelled because of the original http context RequestAborted
+	// or because of the lifetime ApplicationStopping which we linked, or the deadline cancellation which can also be linked.
+	// It's not that bad to attribute any of these to shutting down if we are, in fact, shutting down.
+	bool IsCausedByShutdown(ServerCallContext context, OperationCanceledException ex) =>
+		ex.CancellationToken == context.CancellationToken &&
 		lifetime.ApplicationStopping.IsCancellationRequested;
 
 	public override async Task<TResponse> ClientStreamingServerHandler<TRequest, TResponse>(
@@ -39,7 +42,7 @@ public sealed class ServerShuttingDownInterceptor(
 
 		try {
 			return await continuation(requestStream, context);
-		} catch (OperationCanceledException) when (IsShuttingDown(context)) {
+		} catch (OperationCanceledException ex) when (IsCausedByShutdown(context, ex)) {
 			throw ApiErrors.ServerShuttingDown(_retryAfter);
 		}
 	}
@@ -52,7 +55,7 @@ public sealed class ServerShuttingDownInterceptor(
 
 		try {
 			await continuation(request, responseStream, context);
-		} catch (OperationCanceledException) when (IsShuttingDown(context)) {
+		} catch (OperationCanceledException ex) when (IsCausedByShutdown(context, ex)) {
 			throw ApiErrors.ServerShuttingDown(_retryAfter);
 		}
 	}
@@ -65,7 +68,7 @@ public sealed class ServerShuttingDownInterceptor(
 
 		try {
 			await continuation(requestStream, responseStream, context);
-		} catch (OperationCanceledException) when (IsShuttingDown(context)) {
+		} catch (OperationCanceledException ex) when (IsCausedByShutdown(context, ex)) {
 			throw ApiErrors.ServerShuttingDown(_retryAfter);
 		}
 	}

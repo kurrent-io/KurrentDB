@@ -46,15 +46,14 @@ public class ServerShuttingDownInterceptorTests {
 	// logic; ServerStreaming is exercised here as the representative case.)
 	[Test]
 	public async Task translates_shutdown_cancellation_to_server_shutting_down() {
-		using var callCts = new CancellationTokenSource();
 		using var stoppingCts = new CancellationTokenSource();
-		await callCts.CancelAsync();
+		using var callCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingCts.Token);
 		await stoppingCts.CancelAsync();
 
 		var rex = await Assert.That(async () => await CreateSut(stoppingCts.Token)
 				.ServerStreamingServerHandler<string, string>(
 					"request", new FakeServerStreamWriter<string>(), new FakeServerCallContext(callCts.Token),
-					(_, _, _) => Task.FromException(new OperationCanceledException())))
+					(_, _, context) => Task.FromCanceled(context.CancellationToken)))
 			.Throws<RpcException>();
 
 		await Assert.That(rex!.StatusCode).IsEqualTo(StatusCode.Unavailable);
@@ -67,15 +66,14 @@ public class ServerShuttingDownInterceptorTests {
 	[Arguments(1, 5)]
 	[Arguments(3, 1)]
 	public async Task retry_after_reflects_cluster_size(int clusterSize, int expectedSeconds) {
-		using var callCts = new CancellationTokenSource();
 		using var stoppingCts = new CancellationTokenSource();
-		await callCts.CancelAsync();
+		using var callCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingCts.Token);
 		await stoppingCts.CancelAsync();
 
 		var rex = await Assert.That(async () => await CreateSut(stoppingCts.Token, clusterSize)
 				.ServerStreamingServerHandler<string, string>(
 					"request", new FakeServerStreamWriter<string>(), new FakeServerCallContext(callCts.Token),
-					(_, _, _) => Task.FromException(new OperationCanceledException())))
+					(_, _, context) => Task.FromCanceled(context.CancellationToken)))
 			.Throws<RpcException>();
 
 		var retryInfo = rex!.GetRpcStatus()?.GetDetail<RetryInfo>();
@@ -86,13 +84,14 @@ public class ServerShuttingDownInterceptorTests {
 	// A client-initiated cancel (server NOT shutting down) is left to propagate unchanged.
 	[Test]
 	public async Task propagates_client_cancellation_when_not_shutting_down() {
-		using var callCts = new CancellationTokenSource();
+		using var stoppingCts = new CancellationTokenSource();
+		using var callCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingCts.Token);
 		await callCts.CancelAsync();
 
-		await Assert.That(async () => await CreateSut(CancellationToken.None)
+		await Assert.That(async () => await CreateSut(stoppingCts.Token)
 				.ServerStreamingServerHandler<string, string>(
 					"request", new FakeServerStreamWriter<string>(), new FakeServerCallContext(callCts.Token),
-					(_, _, _) => Task.FromException(new OperationCanceledException())))
+					(_, _, context) => Task.FromCanceled(context.CancellationToken)))
 			.Throws<OperationCanceledException>();
 	}
 

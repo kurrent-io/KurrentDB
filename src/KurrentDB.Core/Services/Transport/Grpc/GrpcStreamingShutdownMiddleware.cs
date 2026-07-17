@@ -1,8 +1,10 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
+using DotNext.Threading;
 using Grpc.AspNetCore.Server;
 using Grpc.Core;
 using Microsoft.AspNetCore.Http;
@@ -36,10 +38,15 @@ public sealed class GrpcStreamingShutdownMiddleware(RequestDelegate next, IHostA
 	}
 
 	async Task InvokeStreaming(HttpContext context) {
-		using var linked = CancellationTokenSource.CreateLinkedTokenSource(
+		using var linked = CancellationToken.Combine(
 			context.RequestAborted,
 			lifetime.ApplicationStopping);
 		context.RequestAborted = linked.Token;
-		await next(context);
+
+		try {
+			await next(context);
+		} catch (OperationCanceledException ex) when (ex.CancellationToken == linked.Token) {
+			throw new OperationCanceledException(ex.Message, ex, linked.CancellationOrigin);
+		}
 	}
 }
