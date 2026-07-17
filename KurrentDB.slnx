@@ -4,6 +4,7 @@
     <Project Path="src/KurrentDB.Api.V2/KurrentDB.Api.V2.csproj" />
     <Project Path="src/KurrentDB.Plugins.Api.V2/KurrentDB.Plugins.Api.V2.csproj" />
     <Project Path="src/KurrentDB.Testing.ClusterVNodeApp/KurrentDB.Testing.ClusterVNodeApp.csproj" />
+    <Project Path="src/KurrentDB.Testing.Tests/KurrentDB.Testing.Tests.csproj" />
     <Project Path="src/KurrentDB.Testing/KurrentDB.Testing.csproj" />
   </Folder>
   <Folder Name="/Plugins/">

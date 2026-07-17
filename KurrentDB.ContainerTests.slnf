@@ -75,6 +75,7 @@
       "src\\KurrentDB.TestClient\\KurrentDB.TestClient.csproj",
       "src\\KurrentDB.Testing.ClusterVNodeApp\\KurrentDB.Testing.ClusterVNodeApp.csproj",
       "src\\KurrentDB.Testing\\KurrentDB.Testing.csproj",
+      "src\\KurrentDB.Testing.Tests\\KurrentDB.Testing.Tests.csproj",
       "src\\KurrentDB.Transport.Http\\KurrentDB.Transport.Http.csproj",
       "src\\KurrentDB.Transport.Tcp\\KurrentDB.Transport.Tcp.csproj",
       "src\\KurrentDB\\KurrentDB.csproj",

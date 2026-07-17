@@ -192,6 +192,7 @@
     <PackageVersion Include="TestableIO.System.IO.Abstractions.TestingHelpers" Version="22.1.1" />
     <PackageVersion Include="Testcontainers" Version="4.7.0" />
     <PackageVersion Include="TUnit" Version="1.60.0" />
+    <PackageVersion Include="TUnit.Assertions" Version="1.60.0" />
     <PackageVersion Include="TUnit.Core" Version="1.60.0" />
     <PackageVersion Include="WaffleGenerator.Bogus" Version="4.2.2" />
     <!-- When updating to 4.x, switch back to xunit.v3 that uses MTP v2 by default -->
