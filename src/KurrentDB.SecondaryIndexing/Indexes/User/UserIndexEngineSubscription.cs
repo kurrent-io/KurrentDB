@@ -262,11 +262,11 @@ public partial class UserIndexEngineSubscription(
 
 	public bool CanReadIndex(string indexStream) =>
 		UserIndexHelpers.TryParseQueryStreamName(indexStream, out var indexName, out _) &&
-		_userIndexes.ContainsKey(indexName);
+		_userIndexes.GetAlternateLookup<ReadOnlySpan<char>>().ContainsKey(indexName.Span);
 
 	public TFPos GetLastIndexedPosition(string indexStream) {
 		UserIndexHelpers.ParseQueryStreamName(indexStream, out var indexName, out _);
-		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var data))
+		if (!TryAcquireReadLockForIndex(indexName.Span, out var readLock, out var data))
 			return TFPos.Invalid;
 
 		using (readLock)
@@ -277,7 +277,7 @@ public partial class UserIndexEngineSubscription(
 		CancellationToken token) {
 		UserIndexHelpers.ParseQueryStreamName(msg.IndexName, out var indexName, out var suffix);
 		_log.LogUserIndexReceivedReadForwardsRequest(indexName);
-		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var data)) {
+		if (!TryAcquireReadLockForIndex(indexName.Span, out var readLock, out var data)) {
 			var result = new ClientMessage.ReadIndexEventsForwardCompleted(
 				ReadIndexResult.IndexNotFound, [], new(msg.CommitPosition, msg.PreparePosition), -1, true,
 				$"Index {msg.IndexName} does not exist"
@@ -299,7 +299,7 @@ public partial class UserIndexEngineSubscription(
 		CancellationToken token) {
 		UserIndexHelpers.ParseQueryStreamName(msg.IndexName, out var indexName, out var suffix);
 		_log.LogUserIndexReceivedReadBackwardsRequest(indexName);
-		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var data)) {
+		if (!TryAcquireReadLockForIndex(indexName.Span, out var readLock, out var data)) {
 			var result = new ClientMessage.ReadIndexEventsBackwardCompleted(
 				ReadIndexResult.IndexNotFound, [], new(msg.CommitPosition, msg.PreparePosition), -1, true,
 				$"Index {msg.IndexName} does not exist"
@@ -325,11 +325,11 @@ public partial class UserIndexEngineSubscription(
 		UserIndexHelpers.ParseQueryStreamName(indexStream, out var indexName, out var suffix);
 
 		// the index was deleted between being resolved as the reader and acquiring the read lock
-		if (!TryAcquireReadLockForIndex(indexName, out var readLock, out var data))
+		if (!TryAcquireReadLockForIndex(indexName.Span, out var readLock, out var data))
 			return IndexSubscriptionResult.NotFound;
 
 		using (readLock) {
-			indexKey = UserIndexHelpers.GetQueryStreamName(indexName);
+			indexKey = UserIndexHelpers.GetQueryStreamName(indexName.Span);
 			if (!UserIndexHelpers.TryParseConstraints(data.Fields, suffix, out var parsed))
 				return IndexSubscriptionResult.InvalidConstraints;
 
@@ -429,8 +429,8 @@ static partial class UserIndexEngineSubscriptionLogMessages {
 	internal static partial void LogDroppingSubscriptionsToUserIndex(this ILogger logger, string index);
 
 	[LoggerMessage(LogLevel.Trace, "User index: {index} received read forwards request")]
-	internal static partial void LogUserIndexReceivedReadForwardsRequest(this ILogger logger, string index);
+	internal static partial void LogUserIndexReceivedReadForwardsRequest(this ILogger logger, ReadOnlyMemory<char> index);
 
 	[LoggerMessage(LogLevel.Trace, "User index: {index} received read backwards request")]
-	internal static partial void LogUserIndexReceivedReadBackwardsRequest(this ILogger logger, string index);
+	internal static partial void LogUserIndexReceivedReadBackwardsRequest(this ILogger logger, ReadOnlyMemory<char> index);
 }

@@ -20,11 +20,12 @@ internal sealed class UserIndexReader(
 	// the raw field-constraint suffix is used as the id; it is parsed against the index's fields in the overrides below
 	protected override string? GetId(string indexStream) {
 		UserIndexHelpers.ParseQueryStreamName(indexStream, out _, out var suffix);
-		return suffix;
+		return suffix?.ToString() ?? null;
 	}
 
 	protected override List<IndexQueryRecord> GetDbRecordsForwards(DuckDBConnectionPool db, string? id, long startPosition, int maxCount, bool excludeFirst) {
-		if (!UserIndexHelpers.TryParseConstraints(fields, id, out var constraints))
+		var suffix = id is null ? (ReadOnlyMemory<char>?)null : id.AsMemory();
+		if (!UserIndexHelpers.TryParseConstraints(fields, suffix, out var constraints))
 			return [];
 
 		var args = new ReadUserIndexQueryArgs {
@@ -44,7 +45,8 @@ internal sealed class UserIndexReader(
 	}
 
 	protected override List<IndexQueryRecord> GetDbRecordsBackwards(DuckDBConnectionPool db, string? id, long startPosition, int maxCount, bool excludeFirst) {
-		if (!UserIndexHelpers.TryParseConstraints(fields, id, out var constraints))
+		var suffix = id is null ? (ReadOnlyMemory<char>?)null : id.AsMemory();
+		if (!UserIndexHelpers.TryParseConstraints(fields, suffix, out var constraints))
 			return [];
 
 		var args = new ReadUserIndexQueryArgs {

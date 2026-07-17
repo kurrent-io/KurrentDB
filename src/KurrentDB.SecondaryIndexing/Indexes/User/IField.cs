@@ -50,7 +50,7 @@ public interface IField {
 	void BindEquality(PreparedStatement statement, ref int index, string text);
 
 	/// The canonical string form of a query text value, used to match live subscriptions. Throws if invalid.
-	string NormalizeValue(string text);
+	string NormalizeValue(ReadOnlySpan<char> text);
 
 	/// Creates the field instance for a configured index field. The single type-dispatch site.
 	static IField Create(IndexField field) =>
@@ -81,7 +81,7 @@ internal abstract class FieldBase(string name, string selector, bool optimizeLoo
 	public abstract string FormatValue(JsValue value);
 	public abstract void AppendValue(string canonicalText, ref BufferedAppender.Row row);
 	public abstract void BindEquality(PreparedStatement statement, ref int index, string text);
-	public abstract string NormalizeValue(string text);
+	public abstract string NormalizeValue(ReadOnlySpan<char> text);
 }
 
 internal sealed class StringField(string name, string selector, bool optimizeLookups)
@@ -91,7 +91,7 @@ internal sealed class StringField(string name, string selector, bool optimizeLoo
 	public override string FormatValue(JsValue value) => value.AsString();
 	public override void AppendValue(string canonicalText, ref BufferedAppender.Row row) => row.Add(canonicalText);
 	public override void BindEquality(PreparedStatement statement, ref int index, string text) => statement.Bind(index++, text);
-	public override string NormalizeValue(string text) => text;
+	public override string NormalizeValue(ReadOnlySpan<char> text) => text.ToString();
 }
 
 internal abstract class NumericField<TNumber>(string name, string selector, bool optimizeLookups)
@@ -100,13 +100,13 @@ internal abstract class NumericField<TNumber>(string name, string selector, bool
 	public override string FormatValue(JsValue value) => Format(TNumber.CreateChecked(value.AsNumber()));
 	public override void AppendValue(string canonicalText, ref BufferedAppender.Row row) => AppendNumber(Parse(canonicalText), ref row);
 	public override void BindEquality(PreparedStatement statement, ref int index, string text) => Bind(statement, ref index, Parse(text));
-	public override string NormalizeValue(string text) => Format(Parse(text));
+	public override string NormalizeValue(ReadOnlySpan<char> text) => Format(Parse(text));
 
 	// Row.Add and PreparedStatement.Bind expose typed overloads (no generic numeric overload), so each concrete type binds itself.
 	protected abstract void AppendNumber(TNumber value, ref BufferedAppender.Row row);
 	protected abstract void Bind(PreparedStatement statement, ref int index, TNumber value);
 
-	private static TNumber Parse(string text) => TNumber.Parse(text, CultureInfo.InvariantCulture);
+	private static TNumber Parse(ReadOnlySpan<char> text) => TNumber.Parse(text, CultureInfo.InvariantCulture);
 	private static string Format(TNumber value) => value.ToString(null, CultureInfo.InvariantCulture);
 }
 

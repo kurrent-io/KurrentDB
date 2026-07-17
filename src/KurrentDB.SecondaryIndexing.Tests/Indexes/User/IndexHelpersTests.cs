@@ -20,8 +20,8 @@ public class IndexHelpersTests {
 	[InlineData("$idx-user-my-index:a=1;b=\"x\"", "my-index", "a=1;b=\"x\"")]
 	public void can_parse_query_stream_name(string input, string expectedIndexName, string? expectedSuffix) {
 		UserIndexHelpers.ParseQueryStreamName(input, out var actualIndexName, out var actualSuffix);
-		Assert.Equal(expectedIndexName, actualIndexName);
-		Assert.Equal(expectedSuffix, actualSuffix);
+		Assert.Equal(expectedIndexName, actualIndexName.ToString());
+		Assert.Equal(expectedSuffix, actualSuffix?.ToString());
 	}
 
 	[Theory]
@@ -33,10 +33,13 @@ public class IndexHelpersTests {
 	private static IReadOnlyList<IField> Fields(params (string Name, IndexFieldType Type)[] fields) =>
 		fields.Select(f => IField.Create(new IndexField { Name = f.Name, Selector = "e => e", Type = f.Type })).ToArray();
 
+	private static bool TryParseConstraints(IReadOnlyList<IField> fields, string? suffix, out IReadOnlyList<FieldConstraint> constraints) =>
+		UserIndexHelpers.TryParseConstraints(fields, suffix is null ? (ReadOnlyMemory<char>?)null : suffix.AsMemory(), out constraints);
+
 	[Fact]
 	public void null_suffix_yields_no_constraints() {
 		// "$idx-user-<name>" (no ':') -> whole index
-		var ok = UserIndexHelpers.TryParseConstraints(Fields(("country", IndexFieldType.String)), null, out var constraints);
+		var ok = TryParseConstraints(Fields(("country", IndexFieldType.String)), null, out var constraints);
 		Assert.True(ok);
 		Assert.Empty(constraints);
 	}
@@ -44,7 +47,7 @@ public class IndexHelpersTests {
 	[Fact]
 	public void empty_suffix_filters_a_single_field_by_empty_value() {
 		// "$idx-user-<name>:" (trailing ':') -> legacy filter for the empty value, not the whole index
-		var ok = UserIndexHelpers.TryParseConstraints(Fields(("country", IndexFieldType.String)), "", out var constraints);
+		var ok = TryParseConstraints(Fields(("country", IndexFieldType.String)), "", out var constraints);
 		Assert.True(ok);
 		var constraint = Assert.Single(constraints);
 		Assert.Equal("country", constraint.Field.Name);
@@ -53,13 +56,13 @@ public class IndexHelpersTests {
 
 	[Fact]
 	public void empty_suffix_rejected_for_multi_field_index() {
-		var ok = UserIndexHelpers.TryParseConstraints(Fields(("a", IndexFieldType.String), ("b", IndexFieldType.String)), "", out _);
+		var ok = TryParseConstraints(Fields(("a", IndexFieldType.String), ("b", IndexFieldType.String)), "", out _);
 		Assert.False(ok);
 	}
 
 	[Fact]
 	public void legacy_bare_value_is_the_single_field_value() {
-		var ok = UserIndexHelpers.TryParseConstraints(Fields(("country", IndexFieldType.String)), "USA", out var constraints);
+		var ok = TryParseConstraints(Fields(("country", IndexFieldType.String)), "USA", out var constraints);
 		Assert.True(ok);
 		var constraint = Assert.Single(constraints);
 		Assert.Equal("country", constraint.Field.Name);
@@ -68,14 +71,14 @@ public class IndexHelpersTests {
 
 	[Fact]
 	public void legacy_bare_value_rejected_for_multi_field_index() {
-		var ok = UserIndexHelpers.TryParseConstraints(Fields(("a", IndexFieldType.String), ("b", IndexFieldType.String)), "USA", out _);
+		var ok = TryParseConstraints(Fields(("a", IndexFieldType.String), ("b", IndexFieldType.String)), "USA", out _);
 		Assert.False(ok);
 	}
 
 	[Fact]
 	public void parses_multiple_field_constraints_in_any_order() {
 		var fields = Fields(("country", IndexFieldType.String), ("age", IndexFieldType.Int32));
-		var ok = UserIndexHelpers.TryParseConstraints(fields, "age=42;country=\"USA\"", out var constraints);
+		var ok = TryParseConstraints(fields, "age=42;country=\"USA\"", out var constraints);
 		Assert.True(ok);
 		Assert.Equal(2, constraints.Count);
 		Assert.Equal("age", constraints[0].Field.Name);
@@ -86,39 +89,39 @@ public class IndexHelpersTests {
 
 	[Fact]
 	public void numeric_values_are_normalized() {
-		var ok = UserIndexHelpers.TryParseConstraints(Fields(("price", IndexFieldType.Double)), "price=1.0", out var constraints);
+		var ok = TryParseConstraints(Fields(("price", IndexFieldType.Double)), "price=1.0", out var constraints);
 		Assert.True(ok);
 		Assert.Equal("1", Assert.Single(constraints).Value);
 	}
 
 	[Fact]
 	public void quoted_string_escapes_are_resolved() {
-		var ok = UserIndexHelpers.TryParseConstraints(Fields(("note", IndexFieldType.String)), "note=\"a;b=\\\"c\\\"\"", out var constraints);
+		var ok = TryParseConstraints(Fields(("note", IndexFieldType.String)), "note=\"a;b=\\\"c\\\"\"", out var constraints);
 		Assert.True(ok);
 		Assert.Equal("a;b=\"c\"", Assert.Single(constraints).Value);
 	}
 
 	[Fact]
 	public void unknown_field_is_rejected() {
-		var ok = UserIndexHelpers.TryParseConstraints(Fields(("country", IndexFieldType.String)), "missing=1", out _);
+		var ok = TryParseConstraints(Fields(("country", IndexFieldType.String)), "missing=1", out _);
 		Assert.False(ok);
 	}
 
 	[Fact]
 	public void duplicate_field_is_rejected() {
-		var ok = UserIndexHelpers.TryParseConstraints(Fields(("age", IndexFieldType.Int32)), "age=1;age=2", out _);
+		var ok = TryParseConstraints(Fields(("age", IndexFieldType.Int32)), "age=1;age=2", out _);
 		Assert.False(ok);
 	}
 
 	[Fact]
 	public void unparseable_numeric_value_is_rejected() {
-		var ok = UserIndexHelpers.TryParseConstraints(Fields(("age", IndexFieldType.Int32)), "age=notanumber", out _);
+		var ok = TryParseConstraints(Fields(("age", IndexFieldType.Int32)), "age=notanumber", out _);
 		Assert.False(ok);
 	}
 
 	[Fact]
 	public void missing_equals_in_a_pair_is_rejected() {
-		var ok = UserIndexHelpers.TryParseConstraints(Fields(("a", IndexFieldType.Int32), ("b", IndexFieldType.Int32)), "a=1;b", out _);
+		var ok = TryParseConstraints(Fields(("a", IndexFieldType.Int32), ("b", IndexFieldType.Int32)), "a=1;b", out _);
 		Assert.False(ok);
 	}
 
@@ -129,13 +132,13 @@ public class IndexHelpersTests {
 	[InlineData("note=\"a\\bc\"")] // invalid escape sequence (\b)
 	[InlineData("note=\"abc\\")] // dangling backslash
 	public void malformed_quoting_is_rejected(string suffix) {
-		var ok = UserIndexHelpers.TryParseConstraints(Fields(("note", IndexFieldType.String)), suffix, out _);
+		var ok = TryParseConstraints(Fields(("note", IndexFieldType.String)), suffix, out _);
 		Assert.False(ok);
 	}
 
 	[Fact]
 	public void empty_quoted_string_is_accepted() {
-		var ok = UserIndexHelpers.TryParseConstraints(Fields(("note", IndexFieldType.String)), "note=\"\"", out var constraints);
+		var ok = TryParseConstraints(Fields(("note", IndexFieldType.String)), "note=\"\"", out var constraints);
 		Assert.True(ok);
 		Assert.Equal("", Assert.Single(constraints).Value);
 	}
@@ -143,7 +146,7 @@ public class IndexHelpersTests {
 	[Fact]
 	public void parses_a_subset_of_the_fields_on_a_multi_field_index() {
 		var fields = Fields(("country", IndexFieldType.String), ("age", IndexFieldType.Int32));
-		var ok = UserIndexHelpers.TryParseConstraints(fields, "age=42", out var constraints);
+		var ok = TryParseConstraints(fields, "age=42", out var constraints);
 		Assert.True(ok);
 		var constraint = Assert.Single(constraints);
 		Assert.Equal("age", constraint.Field.Name);
@@ -152,27 +155,27 @@ public class IndexHelpersTests {
 
 	[Fact]
 	public void unquoted_string_value_is_accepted() {
-		var ok = UserIndexHelpers.TryParseConstraints(Fields(("country", IndexFieldType.String)), "country=USA", out var constraints);
+		var ok = TryParseConstraints(Fields(("country", IndexFieldType.String)), "country=USA", out var constraints);
 		Assert.True(ok);
 		Assert.Equal("USA", Assert.Single(constraints).Value);
 	}
 
 	[Fact]
 	public void negative_numeric_value_is_accepted() {
-		var ok = UserIndexHelpers.TryParseConstraints(Fields(("age", IndexFieldType.Int32)), "age=-5", out var constraints);
+		var ok = TryParseConstraints(Fields(("age", IndexFieldType.Int32)), "age=-5", out var constraints);
 		Assert.True(ok);
 		Assert.Equal("-5", Assert.Single(constraints).Value);
 	}
 
 	[Fact]
 	public void out_of_range_numeric_value_is_rejected() {
-		var ok = UserIndexHelpers.TryParseConstraints(Fields(("age", IndexFieldType.Int32)), "age=9999999999", out _);
+		var ok = TryParseConstraints(Fields(("age", IndexFieldType.Int32)), "age=9999999999", out _);
 		Assert.False(ok);
 	}
 
 	[Fact]
 	public void empty_unquoted_value_is_rejected() {
-		var ok = UserIndexHelpers.TryParseConstraints(Fields(("note", IndexFieldType.String)), "note=", out _);
+		var ok = TryParseConstraints(Fields(("note", IndexFieldType.String)), "note=", out _);
 		Assert.False(ok);
 	}
 }

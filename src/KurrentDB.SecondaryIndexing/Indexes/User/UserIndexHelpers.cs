@@ -7,29 +7,30 @@ using System.Text;
 namespace KurrentDB.SecondaryIndexing.Indexes.User;
 
 public static class UserIndexHelpers {
-	public static string GetQueryStreamName(string indexName) =>
+	public static string GetQueryStreamName(ReadOnlySpan<char> indexName) =>
 		$"{UserIndexConstants.StreamPrefix}{indexName}";
 
-	public static void ParseQueryStreamName(string streamName, out string indexName, out string? suffix) {
+	public static void ParseQueryStreamName(string streamName, out ReadOnlyMemory<char> indexName, out ReadOnlyMemory<char>? suffix) {
 		if (!TryParseQueryStreamName(streamName, out indexName, out suffix))
 			throw new Exception($"Unexpected error: could not parse user index stream name {streamName}");
 	}
 
-	public static bool TryParseQueryStreamName(string streamName, out string indexName, out string? suffix) {
+	public static bool TryParseQueryStreamName(string streamName, out ReadOnlyMemory<char> indexName, out ReadOnlyMemory<char>? suffix) {
 		if (!streamName.StartsWith(UserIndexConstants.StreamPrefix)) {
-			indexName = "";
+			indexName = ReadOnlyMemory<char>.Empty;
 			suffix = null;
 			return false;
 		}
 
 		// index names never contain the delimiter, so the first ':' after the prefix separates name from constraints
 		var delimiterIdx = streamName.IndexOf(UserIndexConstants.FieldDelimiter, UserIndexConstants.StreamPrefix.Length);
+		var streamNameMem = streamName.AsMemory();
 		if (delimiterIdx < 0) {
-			indexName = streamName[UserIndexConstants.StreamPrefix.Length..];
+			indexName = streamNameMem[UserIndexConstants.StreamPrefix.Length..];
 			suffix = null;
 		} else {
-			indexName = streamName[UserIndexConstants.StreamPrefix.Length..delimiterIdx];
-			suffix = streamName[(delimiterIdx + 1)..];
+			indexName = streamNameMem[UserIndexConstants.StreamPrefix.Length..delimiterIdx];
+			suffix = streamNameMem[(delimiterIdx + 1)..];
 		}
 
 		return true;
@@ -38,7 +39,7 @@ public static class UserIndexHelpers {
 	public static string GetManagementStreamName(string indexName) =>
 		$"{UserIndexConstants.Category}{indexName}";
 
-	internal static bool TryParseConstraints(IReadOnlyList<IField> fields, string? suffix, out IReadOnlyList<FieldConstraint> constraints) {
+	internal static bool TryParseConstraints(IReadOnlyList<IField> fields, ReadOnlyMemory<char>? suffix, out IReadOnlyList<FieldConstraint> constraints) {
 		if (suffix is null) {
 			constraints = [];
 			return true;
@@ -48,13 +49,13 @@ public static class UserIndexHelpers {
 		constraints = parsed;
 
 		// legacy form: no '=' anywhere - the whole suffix is the single field's value (which may be empty)
-		if (!suffix.Contains('='))
-			return fields.Count == 1 && TryAdd(fields[0], suffix, [], parsed);
+		if (!suffix.Value.Span.Contains('='))
+			return fields.Count == 1 && TryAdd(fields[0], suffix.Value.Span, [], parsed);
 
-		return TryParseKeyValuePairs(suffix, fields, parsed);
+		return TryParseKeyValuePairs(suffix.Value.Span, fields, parsed);
 	}
 
-	private static bool TryParseKeyValuePairs(string suffix, IReadOnlyList<IField> fields, List<FieldConstraint> parsed) {
+	private static bool TryParseKeyValuePairs(ReadOnlySpan<char> suffix, IReadOnlyList<IField> fields, List<FieldConstraint> parsed) {
 		var seen = new HashSet<string>(StringComparer.Ordinal);
 		var sb = new StringBuilder();
 
@@ -68,7 +69,7 @@ public static class UserIndexHelpers {
 			if (!TryParseValue(ref slice, sb, out var value))
 				return false;
 
-			if (!TryAdd(key!, value, seen, parsed))
+			if (!TryAdd(key!, value.AsMemory().Span, seen, parsed))
 				return false;
 		}
 
@@ -153,7 +154,7 @@ public static class UserIndexHelpers {
 		return false;
 	}
 
-	private static bool TryAdd(IField field, string value, HashSet<string> seen, List<FieldConstraint> parsed) {
+	private static bool TryAdd(IField field, ReadOnlySpan<char> value, HashSet<string> seen, List<FieldConstraint> parsed) {
 		if (!seen.Add(field.Name))
 			return false;
 
