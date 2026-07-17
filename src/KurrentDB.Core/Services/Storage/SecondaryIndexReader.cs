@@ -69,9 +69,9 @@ public class SecondaryIndexReaders {
 	}
 
 	private bool TryGetReader(string indexName, out ISecondaryIndexReader reader) {
-		for (var i = 0; i < _readers.Length; i++) {
-			if (_readers[i].CanReadIndex(indexName)) {
-				reader = _readers[i];
+		foreach (var r in _readers) {
+			if (r.CanReadIndex(indexName)) {
+				reader = r;
 				return true;
 			}
 		}
