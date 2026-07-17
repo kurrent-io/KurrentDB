@@ -46,7 +46,13 @@ sealed class TestVectorStore(IEmbeddingGenerator<string, Embedding<float>> gener
 }
 
 sealed class TestMemoryCollection(string name, IEmbeddingGenerator<string, Embedding<float>> generator) : VectorStoreCollection<string, MemoryRecord> {
+	// The touch buffer flushes from thread-pool threads, so row access is locked.
+	readonly Lock _lock = new();
 	readonly Dictionary<string, (MemoryRecord Record, float[] Vector)> _rows = [];
+
+	// Batching observability for the tests: how many upsert calls landed, covering how many records.
+	public int UpsertBatchCalls { get; private set; }
+	public int UpsertedRecords  { get; private set; }
 
 	public override string Name => name;
 
@@ -59,16 +65,22 @@ sealed class TestMemoryCollection(string name, IEmbeddingGenerator<string, Embed
 		return Task.CompletedTask;
 	}
 
-	public override Task<MemoryRecord?> GetAsync(string key, RecordRetrievalOptions? options = null, CancellationToken cancellationToken = default) =>
-		Task.FromResult(_rows.TryGetValue(key, out var row) ? row.Record : null);
+	public override Task<MemoryRecord?> GetAsync(string key, RecordRetrievalOptions? options = null, CancellationToken cancellationToken = default) {
+		lock (_lock)
+			return Task.FromResult(_rows.TryGetValue(key, out var row) ? row.Record : null);
+	}
 
 	public override async IAsyncEnumerable<MemoryRecord> GetAsync(
 		Expression<Func<MemoryRecord, bool>> filter, int top, FilteredRecordRetrievalOptions<MemoryRecord>? options = null,
 		[EnumeratorCancellation] CancellationToken cancellationToken = default) {
 		await Task.Yield();
 
+		List<MemoryRecord> snapshot;
+		lock (_lock)
+			snapshot = _rows.Values.Select(r => r.Record).ToList();
+
 		var predicate = filter.Compile();
-		var matches   = _rows.Values.Select(r => r.Record).Where(predicate);
+		var matches   = snapshot.Where(predicate);
 
 		if (options?.OrderBy is { } orderBy) {
 			IOrderedEnumerable<MemoryRecord>? ordered = null;
@@ -89,16 +101,34 @@ sealed class TestMemoryCollection(string name, IEmbeddingGenerator<string, Embed
 
 	public override async Task UpsertAsync(MemoryRecord record, CancellationToken cancellationToken = default) {
 		var vector = (await generator.GenerateAsync([record.Embedding], cancellationToken: cancellationToken))[0].Vector.ToArray();
-		_rows[record.MemoryId] = (record, vector);
+
+		lock (_lock) {
+			_rows[record.MemoryId] = (record, vector);
+			UpsertBatchCalls++;
+			UpsertedRecords++;
+		}
 	}
 
 	public override async Task UpsertAsync(IEnumerable<MemoryRecord> records, CancellationToken cancellationToken = default) {
-		foreach (var record in records)
-			await UpsertAsync(record, cancellationToken);
+		var batch = records.ToList();
+		if (batch.Count == 0)
+			return;
+
+		// One generator call for the whole batch — the same amortization a real connector gets.
+		var embeddings = await generator.GenerateAsync(batch.Select(r => r.Embedding), cancellationToken: cancellationToken);
+
+		lock (_lock) {
+			for (var i = 0; i < batch.Count; i++)
+				_rows[batch[i].MemoryId] = (batch[i], embeddings[i].Vector.ToArray());
+
+			UpsertBatchCalls++;
+			UpsertedRecords += batch.Count;
+		}
 	}
 
 	public override Task DeleteAsync(string key, CancellationToken cancellationToken = default) {
-		_rows.Remove(key);
+		lock (_lock)
+			_rows.Remove(key);
 		return Task.CompletedTask;
 	}
 
@@ -108,7 +138,11 @@ sealed class TestMemoryCollection(string name, IEmbeddingGenerator<string, Embed
 		var query     = (await generator.GenerateAsync([(string)(object)searchValue], cancellationToken: cancellationToken))[0].Vector.ToArray();
 		var predicate = options?.Filter?.Compile() ?? (_ => true);
 
-		var hits = _rows.Values
+		List<(MemoryRecord Record, float[] Vector)> snapshot;
+		lock (_lock)
+			snapshot = _rows.Values.ToList();
+
+		var hits = snapshot
 			.Where(r => predicate(r.Record))
 			.Select(r => new VectorSearchResult<MemoryRecord>(r.Record, Cosine(query, r.Vector)))
 			.OrderByDescending(h => h.Score)

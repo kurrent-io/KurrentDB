@@ -17,8 +17,17 @@ public static class KontextServiceCollectionExtensions {
         /// Registers the transport-neutral memory service: the explicit request validators, the validation
         /// decorator, and <see cref="IKontextMemory"/> itself. Both edges build on this and it is idempotent,
         /// so registering both edges is safe. The host must supply the <c>VectorStore</c> the core persists to.
+        /// <paramref name="configure"/> tunes <see cref="KontextMemoryOptions"/> (e.g. the opt-in touch
+        /// buffer); when omitted, defaults apply — DI injects the registered options into the service's
+        /// optional constructor parameter only when they were configured here.
         /// </summary>
-        public IServiceCollection AddKontext() {
+        public IServiceCollection AddKontext(Action<KontextMemoryOptions>? configure = null) {
+            if (configure is not null) {
+                var options = new KontextMemoryOptions();
+                configure(options);
+                services.TryAddSingleton(options);
+            }
+
             services.AddCore();
             services.AddGrpcEdge();
             services.AddMcpEdge();

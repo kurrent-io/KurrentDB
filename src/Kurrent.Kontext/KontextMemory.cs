@@ -22,11 +22,13 @@ namespace Kurrent.Kontext;
 /// - There is no event log: retract reasons have no home, and nothing is emitted for
 ///   events.proto consumers.
 /// - Reconsolidation touches re-upsert whole records, which regenerates their embeddings (the cost
-///   of the string-typed vector property).
+///   of the string-typed vector property). The opt-in touch buffer
+///   (<see cref="KontextMemoryOptions.TouchBuffer"/>) coalesces and defers them off the request
+///   path, but the flush still re-embeds.
 /// - Reflect is not implemented — it synthesizes derived memories with a language model, which is
 ///   outside the vector-store surface.
 /// </summary>
-public sealed class KontextMemory(VectorStore store) : IKontextMemory {
+public sealed class KontextMemory : IKontextMemory, IDisposable, IAsyncDisposable {
 	const string CollectionName = "memories";
 
 	const int DefaultRecallLimit    = 10;
@@ -39,8 +41,18 @@ public sealed class KontextMemory(VectorStore store) : IKontextMemory {
 	// direct derivations than this loses the tail.
 	const int CascadeFetchLimit = 1_000;
 
-	VectorStoreCollection<string, MemoryRecord> Collection { get; } =
-		store.GetCollection<string, MemoryRecord>(CollectionName);
+	public KontextMemory(VectorStore store, KontextMemoryOptions? options = null) {
+		Collection = store.GetCollection<string, MemoryRecord>(CollectionName);
+
+		// The touch buffer is opt-in; without it, reconsolidation writes stay on the request path.
+		// Null options mean defaults, and the default is disabled.
+		if (options?.TouchBuffer is { Enabled: true } buffering)
+			_touchBuffer = new TouchBuffer(Collection, buffering);
+	}
+
+	VectorStoreCollection<string, MemoryRecord> Collection { get; }
+
+	readonly TouchBuffer? _touchBuffer;
 
 	volatile bool _collectionReady;
 
@@ -61,22 +73,29 @@ public sealed class KontextMemory(VectorStore store) : IKontextMemory {
 		var now      = DateTimeOffset.UtcNow;
 		var response = new Contracts.RetainResponse();
 
-		// Sequential on purpose: memories in one batch may supersede ids retained earlier in the same batch.
+		// Everything this request writes — the new memories plus any superseded records marked along
+		// the way — accumulates here, keyed by id, and lands in ONE batch upsert at the end, so the
+		// connector commits once and generates embeddings once. The dictionary doubles as the
+		// in-request lookup: supersede targets and id-collision checks must see memories retained
+		// earlier in this same batch, which are not in the store yet.
+		var flush = new Dictionary<string, MemoryRecord>();
+
 		foreach (var memory in request.Memories) {
 			var suppliedId = memory.MemoryId.Length > 0;
 			var memoryId   = suppliedId ? memory.MemoryId : Guid.CreateVersion7().ToString();
 
-			// A supplied id must be NEW — an existing one is rejected, never silently merged;
-			// replacement goes through `supersedes` (memory.proto Retain).
-			if (suppliedId && await Collection.GetAsync(memoryId, cancellationToken: ct).ConfigureAwait(false) is not null)
+			// A supplied id must be NEW — one that exists in the store or earlier in this batch is
+			// rejected, never silently merged; replacement goes through `supersedes` (memory.proto).
+			if (suppliedId && (flush.ContainsKey(memoryId) || await Collection.GetAsync(memoryId, cancellationToken: ct).ConfigureAwait(false) is not null))
 				throw new RpcException(new Status(
 					StatusCode.AlreadyExists,
 					$"Memory '{memoryId}' already exists. To replace it, retain a successor with supersedes."));
 
 			var result = new Contracts.RetainResponse.Types.RetainResult { MemoryId = memoryId };
 
-			// Reconcile searches before the upsert so the new memory can never match itself. It is
-			// advisory and never blocks the write.
+			// Reconcile is advisory and never blocks the write. It searches stored memories only:
+			// siblings pending in this batch can't surface as look-alikes — the caller just wrote
+			// them in the same request and needs no reminder.
 			if (request.Reconcile) {
 				var lookAlikes = Collection.SearchAsync(
 					memory.Content, ReconcileRelatedLimit,
@@ -89,23 +108,34 @@ public sealed class KontextMemory(VectorStore store) : IKontextMemory {
 					});
 			}
 
-			await Collection.UpsertAsync(MemoryRecordMapper.ToRecord(memory, memoryId, now), ct).ConfigureAwait(false);
+			flush[memoryId] = MemoryRecordMapper.ToRecord(memory, memoryId, now);
 
 			// Supersede is part of retain: the replaced memories stay readable, marked with their
-			// successor. First marking wins; ids that don't exist are silently skipped.
+			// successor. Targets may be stored already or pending earlier in this same batch (the
+			// proto's "referencing the memory within the same batch"). First marking wins; absent
+			// ids and self-references are silently skipped.
 			foreach (var supersededId in memory.Supersedes) {
-				var superseded = await Collection.GetAsync(supersededId, cancellationToken: ct).ConfigureAwait(false);
+				if (supersededId == memoryId)
+					continue;
+
+				var superseded = flush.TryGetValue(supersededId, out var pending)
+					? pending
+					: await Collection.GetAsync(supersededId, cancellationToken: ct).ConfigureAwait(false);
+
 				if (superseded is null || superseded.IsSuperseded)
 					continue;
 
 				superseded.IsSuperseded = true;
 				superseded.SupersededAt = now;
 				superseded.SupersededBy = memoryId;
-				await Collection.UpsertAsync(superseded, ct).ConfigureAwait(false);
+				flush[superseded.MemoryId] = superseded;
 			}
 
 			response.Results.Add(result);
 		}
+
+		if (flush.Count > 0)
+			await Collection.UpsertAsync(flush.Values, ct).ConfigureAwait(false);
 
 		return response;
 	}
@@ -123,26 +153,36 @@ public sealed class KontextMemory(VectorStore store) : IKontextMemory {
 
 		var now = DateTimeOffset.UtcNow;
 
-		// Breadth-first over the derivation graph: a derived memory citing a retracted one loses its
-		// evidence and is retracted in the same cascade. `seen` guards against two parents citing
-		// the same derived memory, and against citation cycles.
-		var seen    = new HashSet<string> { root.MemoryId };
-		var pending = new Queue<MemoryRecord>([root]);
+		// Breadth-first over the derivation graph, one generation at a time: a derived memory citing
+		// a retracted one loses its evidence and is retracted in the same cascade. Each generation is
+		// marked and flushed as one batch upsert before its own derivations are looked up. `seen`
+		// guards against two parents citing the same derived memory, and against citation cycles.
+		var seen       = new HashSet<string> { root.MemoryId };
+		var generation = new List<MemoryRecord> { root };
 
-		while (pending.TryDequeue(out var record)) {
-			record.IsRetracted = true;
-			record.RetractedAt = now;
-			await Collection.UpsertAsync(record, ct).ConfigureAwait(false);
-			response.RetractedMemoryIds.Add(record.MemoryId);
+		while (generation.Count > 0) {
+			foreach (var record in generation) {
+				record.IsRetracted = true;
+				record.RetractedAt = now;
+				response.RetractedMemoryIds.Add(record.MemoryId);
+			}
 
-			var retractedId = record.MemoryId;
-			var derived = Collection.GetAsync(
-				r => r.IsRetracted == false && r.CitedMemoryIds.Contains(retractedId),
-				CascadeFetchLimit, cancellationToken: ct);
+			await Collection.UpsertAsync(generation, ct).ConfigureAwait(false);
 
-			await foreach (var next in derived.ConfigureAwait(false))
-				if (seen.Add(next.MemoryId))
-					pending.Enqueue(next);
+			var next = new List<MemoryRecord>();
+
+			foreach (var record in generation) {
+				var retractedId = record.MemoryId;
+				var derived = Collection.GetAsync(
+					r => r.IsRetracted == false && r.CitedMemoryIds.Contains(retractedId),
+					CascadeFetchLimit, cancellationToken: ct);
+
+				await foreach (var d in derived.ConfigureAwait(false))
+					if (seen.Add(d.MemoryId))
+						next.Add(d);
+			}
+
+			generation = next;
 		}
 
 		return response;
@@ -236,17 +276,34 @@ public sealed class KontextMemory(VectorStore store) : IKontextMemory {
 		throw new NotImplementedException("Reflect synthesizes derived memories with a language model — not part of the vector-store skeleton.");
 
 	// Reconsolidation write-back: advance the recency clock on every returned memory — the only
-	// write in the recency mechanism (resources.proto ScoredMemory.last_accessed_at).
+	// write in the recency mechanism (resources.proto ScoredMemory.last_accessed_at). With the
+	// opt-in buffer the touches coalesce off the request path; unbuffered, they land before the
+	// operation returns.
 	async ValueTask TouchAsync(IReadOnlyList<MemoryRecord> records, CancellationToken ct) {
 		if (records.Count == 0)
 			return;
 
 		var now = DateTimeOffset.UtcNow;
+
+		if (_touchBuffer is not null) {
+			_touchBuffer.Add(records, now);
+			return;
+		}
+
 		foreach (var record in records)
 			record.LastAccessedAt = now;
 
 		await Collection.UpsertAsync(records, ct).ConfigureAwait(false);
 	}
+
+	/// <summary>
+	/// Flushes any buffered touches. Disposal is an implementation concern of the buffering, so it
+	/// lives on the class, not on <see cref="IKontextMemory"/>. The sync path is best-effort (the
+	/// remaining flush is fired without being awaited); prefer async disposal.
+	/// </summary>
+	public ValueTask DisposeAsync() => _touchBuffer?.DisposeAsync() ?? ValueTask.CompletedTask;
+
+	public void Dispose() => _touchBuffer?.Dispose();
 
 	// Server-side ordering key, in the abstraction's boxed OrderBy shape.
 	static Expression<Func<MemoryRecord, object?>> SortKey(Contracts.RecollectSort sort) => sort switch {
