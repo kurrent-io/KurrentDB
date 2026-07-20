@@ -4,6 +4,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
+using Kurrent.Kontext.Data;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.VectorData;
 

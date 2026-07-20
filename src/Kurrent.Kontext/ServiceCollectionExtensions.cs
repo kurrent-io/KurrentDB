@@ -2,12 +2,14 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using FluentValidation;
+using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Edges.Grpc;
 using Kurrent.Kontext.Infrastructure.FluentValidation;
 using Kurrent.Kontext.Infrastructure.Validation;
 using Kurrent.Kontext.Mcp;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.VectorData;
 
 namespace Kurrent.Kontext;
 
@@ -35,14 +37,22 @@ public static class KontextServiceCollectionExtensions {
         }
 
         IServiceCollection AddCore() {
+            // The data store owns ALL persistence (and the opt-in touch buffer); the host supplies
+            // the VectorStore it wraps. Registered as its own singleton so future components
+            // (retrieval pipelines, projectors) can share it — DI disposes it on shutdown, which
+            // flushes any buffered access stamps.
+            services.TryAddSingleton(sp => new KontextDataStore(
+                sp.GetRequiredService<VectorStore>(),
+                sp.GetService<KontextMemoryOptions>()?.TouchBuffer));
+
             services.TryAddSingleton<KontextMemory>();
 
             services.TryAddSingleton<IKontextMemory>(sp => new KontextMemoryValidationDecorator(
                 sp.GetRequiredService<KontextMemory>(),
                 sp.GetRequiredService<RequestValidationService>()));
-        
+
             services.AddRequestValidation();
-            
+
             return services;
         }
 

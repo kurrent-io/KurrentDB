@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Kurrent.Kontext.Contracts\Kurrent.Kontext.Contracts.csproj" />
+    <ProjectReference Include="..\Kurrent.Kontext.DuckLance\DuckLance.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -14,9 +15,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="DuckDB.NET.Data.Full" />
     <PackageReference Include="Grpc.Core.Api" />
     <PackageReference Include="Google.Protobuf" />
     <PackageReference Include="Google.Api.CommonProtos" />
+    <PackageReference Include="Kurrent.Quack" />
     <PackageReference Include="Microsoft.Extensions.AI.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
     <PackageReference Include="Microsoft.Extensions.VectorData.Abstractions" />

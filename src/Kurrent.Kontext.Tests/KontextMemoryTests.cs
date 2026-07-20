@@ -2,19 +2,21 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Grpc.Core;
+using Kurrent.Kontext.Data;
 
 namespace Kurrent.Kontext.Tests;
 
 /// <summary>
-/// Behavioral tests for the <see cref="KontextMemory"/> vector-store skeleton, run against
-/// <see cref="TestVectorStore"/> (see its remarks for why a test double stands in for a real
-/// connector). Each test gets an isolated store, so the suite parallelizes freely.
+/// Behavioral tests for the <see cref="KontextMemory"/> skeleton composed over
+/// <see cref="KontextDataStore"/>, run against <see cref="TestVectorStore"/> (see its remarks for
+/// why a test double stands in for a real connector). Each test gets an isolated store, so the
+/// suite parallelizes freely.
 /// </summary>
 public class KontextMemoryTests {
-	static KontextMemory NewMemory() => new(new TestVectorStore(new TrigramHashEmbeddingGenerator()));
+	static KontextMemory NewMemory() => new(new KontextDataStore(new TestVectorStore(new TrigramHashEmbeddingGenerator())));
 
-	static KontextMemory NewBufferedMemory(TestVectorStore store, int batchSize, TimeSpan batchWait) =>
-		new(store, new() { TouchBuffer = { Enabled = true, BatchSize = batchSize, BatchWait = batchWait } });
+	static KontextDataStore NewBufferedStore(TestVectorStore store, int batchSize, TimeSpan batchWait) =>
+		new(store, new() { Enabled = true, BatchSize = batchSize, BatchWait = batchWait });
 
 	static TestMemoryCollection MemoriesOf(TestVectorStore store) =>
 		(TestMemoryCollection)store.GetCollection<string, MemoryRecord>("memories");
@@ -330,7 +332,7 @@ public class KontextMemoryTests {
 	public async ValueTask retain_writes_the_whole_request_as_one_batch_upsert() {
 		// Arrange
 		var store  = new TestVectorStore(new TrigramHashEmbeddingGenerator());
-		var memory = new KontextMemory(store);
+		var memory = new KontextMemory(new KontextDataStore(store));
 
 		// Act
 		await memory.RetainAsync(new() {
@@ -397,8 +399,9 @@ public class KontextMemoryTests {
 	[Test]
 	public async ValueTask buffered_touches_coalesce_per_memory_and_flush_on_dispose() {
 		// Arrange
-		var store  = new TestVectorStore(new TrigramHashEmbeddingGenerator());
-		var memory = NewBufferedMemory(store, batchSize: 100, batchWait: TimeSpan.FromMinutes(10));
+		var store     = new TestVectorStore(new TrigramHashEmbeddingGenerator());
+		var dataStore = NewBufferedStore(store, batchSize: 100, batchWait: TimeSpan.FromMinutes(10));
+		var memory    = new KontextMemory(dataStore);
 		await memory.RetainAsync(new() { Memories = { Observation("A memory recalled repeatedly.") } });
 
 		// Recollect never touches, so it reads the clocks without advancing them.
@@ -415,7 +418,7 @@ public class KontextMemoryTests {
 			await memory.RecallAsync(new() { Query = "memory recalled repeatedly", Limit = 1 });
 
 		var flushesBeforeDispose = memories.UpsertBatchCalls - batchesBefore;
-		await memory.DisposeAsync();
+		await dataStore.DisposeAsync();
 
 		// Assert — one flush of one coalesced record, and the recency clock advanced.
 		await Assert.That(flushesBeforeDispose).IsEqualTo(0);
@@ -430,7 +433,7 @@ public class KontextMemoryTests {
 	public async ValueTask buffered_touches_flush_when_the_batch_size_is_reached() {
 		// Arrange
 		var store  = new TestVectorStore(new TrigramHashEmbeddingGenerator());
-		var memory = NewBufferedMemory(store, batchSize: 2, batchWait: TimeSpan.FromMinutes(10));
+		var memory = new KontextMemory(NewBufferedStore(store, batchSize: 2, batchWait: TimeSpan.FromMinutes(10)));
 		await memory.RetainAsync(new() {
 			Memories = {
 				Observation("The projector checkpoint format switched to protobuf JSON in v25.1."),
@@ -458,7 +461,7 @@ public class KontextMemoryTests {
 	public async ValueTask buffered_touches_flush_after_the_batch_wait() {
 		// Arrange
 		var store  = new TestVectorStore(new TrigramHashEmbeddingGenerator());
-		var memory = NewBufferedMemory(store, batchSize: 100, batchWait: TimeSpan.FromMilliseconds(100));
+		var memory = new KontextMemory(NewBufferedStore(store, batchSize: 100, batchWait: TimeSpan.FromMilliseconds(100)));
 		await memory.RetainAsync(new() { Memories = { Observation("A memory touched once and left to linger.") } });
 
 		var memories      = MemoriesOf(store);

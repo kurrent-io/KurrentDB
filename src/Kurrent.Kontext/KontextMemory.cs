@@ -1,36 +1,30 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
+using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using Microsoft.Extensions.VectorData;
+using Kurrent.Kontext.Data;
 
 namespace Kurrent.Kontext;
 
 /// <summary>
-/// Bare-bones <see cref="IKontextMemory"/> over the <see cref="VectorStore"/> abstraction: one
-/// "memories" collection holds the folded state of every memory, and all persistence goes through
-/// the portable collection surface (keyed CRUD, filtered listing, vector search), so the backing
-/// store can be swapped without touching this class. Embeddings are generated from the memory
-/// content by whatever <c>IEmbeddingGenerator</c> the host configured on the store
-/// (<see cref="MemoryRecord.Embedding"/>).
+/// The transport-neutral memory service: owns the domain workflows — retain with supersede
+/// semantics, the retract cascade, recall and its reconsolidation touches — and composes
+/// <see cref="KontextDataStore"/> for ALL persistence. How memories are physically stored and found
+/// is the data store's business alone; this class speaks contract types end to end, which keeps it
+/// free for the concerns that are NOT storage: appending to the KurrentDB log and richer retrieval
+/// pipelines (cross-encoders, reranking) as they arrive.
 ///
 /// Known simplifications of this skeleton:
 /// - Recall scores are raw vector similarity — the recency/importance/certainty ranking
 ///   (resources.proto ScoringConfig) is not built yet, so <c>min_score</c> cuts on similarity alone.
 /// - There is no event log: retract reasons have no home, and nothing is emitted for
 ///   events.proto consumers.
-/// - Reconsolidation touches re-upsert whole records, which regenerates their embeddings (the cost
-///   of the string-typed vector property). The opt-in touch buffer
-///   (<see cref="KontextMemoryOptions.TouchBuffer"/>) coalesces and defers them off the request
-///   path, but the flush still re-embeds.
 /// - Reflect is not implemented — it synthesizes derived memories with a language model, which is
-///   outside the vector-store surface.
+///   outside the data-store surface.
 /// </summary>
-public sealed class KontextMemory : IKontextMemory, IDisposable, IAsyncDisposable {
-	const string CollectionName = "memories";
-
+public sealed class KontextMemory(KontextDataStore store) : IKontextMemory {
 	const int DefaultRecallLimit    = 10;
 	const int DefaultRecollectLimit = 100;
 
@@ -41,44 +35,15 @@ public sealed class KontextMemory : IKontextMemory, IDisposable, IAsyncDisposabl
 	// direct derivations than this loses the tail.
 	const int CascadeFetchLimit = 1_000;
 
-	public KontextMemory(VectorStore store, KontextMemoryOptions? options = null) {
-		Collection = store.GetCollection<string, MemoryRecord>(CollectionName);
-
-		// The touch buffer is opt-in; without it, reconsolidation writes stay on the request path.
-		// Null options mean defaults, and the default is disabled.
-		if (options?.TouchBuffer is { Enabled: true } buffering)
-			_touchBuffer = new TouchBuffer(Collection, buffering);
-	}
-
-	VectorStoreCollection<string, MemoryRecord> Collection { get; }
-
-	readonly TouchBuffer? _touchBuffer;
-
-	volatile bool _collectionReady;
-
-	// EnsureCollectionExistsAsync is idempotent, so the benign race between concurrent first calls
-	// is fine — the flag only spares the round-trip on every subsequent operation, and a failure is
-	// never cached.
-	async ValueTask EnsureCollection(CancellationToken ct) {
-		if (_collectionReady)
-			return;
-
-		await Collection.EnsureCollectionExistsAsync(ct).ConfigureAwait(false);
-		_collectionReady = true;
-	}
-
 	public async ValueTask<Contracts.RetainResponse> RetainAsync(Contracts.RetainRequest request, CancellationToken ct = default) {
-		await EnsureCollection(ct).ConfigureAwait(false);
-
 		var now      = DateTimeOffset.UtcNow;
 		var response = new Contracts.RetainResponse();
 
-		// Everything this request writes — the new memories plus any superseded records marked along
-		// the way — accumulates here, keyed by id, and lands in ONE batch upsert at the end, so the
-		// connector commits once and generates embeddings once. The dictionary doubles as the
-		// in-request lookup: supersede targets and id-collision checks must see memories retained
-		// earlier in this same batch, which are not in the store yet.
-		var flush = new Dictionary<string, MemoryRecord>();
+		// Everything this request writes — the new memories plus any superseded ones marked along the
+		// way — accumulates here, keyed by id, and lands in ONE batch save at the end. The dictionary
+		// doubles as the in-request lookup: supersede targets and id-collision checks must see
+		// memories retained earlier in this same batch, which are not in the store yet.
+		var flush = new Dictionary<string, Contracts.StoredMemory>();
 
 		foreach (var memory in request.Memories) {
 			var suppliedId = memory.MemoryId.Length > 0;
@@ -86,7 +51,7 @@ public sealed class KontextMemory : IKontextMemory, IDisposable, IAsyncDisposabl
 
 			// A supplied id must be NEW — one that exists in the store or earlier in this batch is
 			// rejected, never silently merged; replacement goes through `supersedes` (memory.proto).
-			if (suppliedId && (flush.ContainsKey(memoryId) || await Collection.GetAsync(memoryId, cancellationToken: ct).ConfigureAwait(false) is not null))
+			if (suppliedId && (flush.ContainsKey(memoryId) || await store.GetAsync(memoryId, ct).ConfigureAwait(false) is not null))
 				throw new RpcException(new Status(
 					StatusCode.AlreadyExists,
 					$"Memory '{memoryId}' already exists. To replace it, retain a successor with supersedes."));
@@ -97,18 +62,14 @@ public sealed class KontextMemory : IKontextMemory, IDisposable, IAsyncDisposabl
 			// siblings pending in this batch can't surface as look-alikes — the caller just wrote
 			// them in the same request and needs no reminder.
 			if (request.Reconcile) {
-				var lookAlikes = Collection.SearchAsync(
-					memory.Content, ReconcileRelatedLimit,
-					new() { Filter = MemoryRecordFilters.Recall([]) }, ct);
-
-				await foreach (var hit in lookAlikes.ConfigureAwait(false))
+				await foreach (var hit in store.SearchAsync(memory.Content, ReconcileRelatedLimit, [], ct).ConfigureAwait(false))
 					result.Related.Add(new Contracts.RetainResponse.Types.RelatedMemory {
-						MemoryId   = hit.Record.MemoryId,
-						Similarity = hit.Score ?? 0,
+						MemoryId   = hit.Memory.MemoryId,
+						Similarity = hit.Score,
 					});
 			}
 
-			flush[memoryId] = MemoryRecordMapper.ToRecord(memory, memoryId, now);
+			flush[memoryId] = ToStored(memory, memoryId, now);
 
 			// Supersede is part of retain: the replaced memories stay readable, marked with their
 			// successor. Targets may be stored already or pending earlier in this same batch (the
@@ -120,13 +81,12 @@ public sealed class KontextMemory : IKontextMemory, IDisposable, IAsyncDisposabl
 
 				var superseded = flush.TryGetValue(supersededId, out var pending)
 					? pending
-					: await Collection.GetAsync(supersededId, cancellationToken: ct).ConfigureAwait(false);
+					: await store.GetAsync(supersededId, ct).ConfigureAwait(false);
 
-				if (superseded is null || superseded.IsSuperseded)
+				if (superseded is null || superseded.SupersededAt is not null)
 					continue;
 
-				superseded.IsSuperseded = true;
-				superseded.SupersededAt = now;
+				superseded.SupersededAt = Timestamp.FromDateTimeOffset(now);
 				superseded.SupersededBy = memoryId;
 				flush[superseded.MemoryId] = superseded;
 			}
@@ -134,52 +94,43 @@ public sealed class KontextMemory : IKontextMemory, IDisposable, IAsyncDisposabl
 			response.Results.Add(result);
 		}
 
-		if (flush.Count > 0)
-			await Collection.UpsertAsync(flush.Values, ct).ConfigureAwait(false);
+		await store.SaveAsync(flush.Values, ct).ConfigureAwait(false);
 
 		return response;
 	}
 
 	public async ValueTask<Contracts.RetractResponse> RetractAsync(Contracts.RetractRequest request, CancellationToken ct = default) {
-		await EnsureCollection(ct).ConfigureAwait(false);
-
 		var response = new Contracts.RetractResponse();
 
 		// Idempotent: retracting the absent or already-retracted changes nothing. request.Reason has
 		// no home in the folded read model — it belongs to the event log the skeleton doesn't have.
-		var root = await Collection.GetAsync(request.MemoryId, cancellationToken: ct).ConfigureAwait(false);
-		if (root is null || root.IsRetracted)
+		var root = await store.GetAsync(request.MemoryId, ct).ConfigureAwait(false);
+		if (root is null || root.RetractedAt is not null)
 			return response;
 
-		var now = DateTimeOffset.UtcNow;
+		var now = Timestamp.FromDateTimeOffset(DateTimeOffset.UtcNow);
 
 		// Breadth-first over the derivation graph, one generation at a time: a derived memory citing
 		// a retracted one loses its evidence and is retracted in the same cascade. Each generation is
-		// marked and flushed as one batch upsert before its own derivations are looked up. `seen`
+		// marked and flushed as one batch save before its own derivations are looked up. `seen`
 		// guards against two parents citing the same derived memory, and against citation cycles.
 		var seen       = new HashSet<string> { root.MemoryId };
-		var generation = new List<MemoryRecord> { root };
+		var generation = new List<Contracts.StoredMemory> { root };
 
 		while (generation.Count > 0) {
-			foreach (var record in generation) {
-				record.IsRetracted = true;
-				record.RetractedAt = now;
-				response.RetractedMemoryIds.Add(record.MemoryId);
+			foreach (var memory in generation) {
+				memory.RetractedAt = now;
+				response.RetractedMemoryIds.Add(memory.MemoryId);
 			}
 
-			await Collection.UpsertAsync(generation, ct).ConfigureAwait(false);
+			await store.SaveAsync(generation, ct).ConfigureAwait(false);
 
-			var next = new List<MemoryRecord>();
+			var next = new List<Contracts.StoredMemory>();
 
-			foreach (var record in generation) {
-				var retractedId = record.MemoryId;
-				var derived = Collection.GetAsync(
-					r => r.IsRetracted == false && r.CitedMemoryIds.Contains(retractedId),
-					CascadeFetchLimit, cancellationToken: ct);
-
-				await foreach (var d in derived.ConfigureAwait(false))
-					if (seen.Add(d.MemoryId))
-						next.Add(d);
+			foreach (var memory in generation) {
+				await foreach (var derived in store.FindDerivedAsync(memory.MemoryId, CascadeFetchLimit, ct).ConfigureAwait(false))
+					if (seen.Add(derived.MemoryId))
+						next.Add(derived);
 			}
 
 			generation = next;
@@ -189,133 +140,97 @@ public sealed class KontextMemory : IKontextMemory, IDisposable, IAsyncDisposabl
 	}
 
 	public async ValueTask<Contracts.RecallResponse> RecallAsync(Contracts.RecallRequest request, CancellationToken ct = default) {
-		await EnsureCollection(ct).ConfigureAwait(false);
-
 		var response = new Contracts.RecallResponse {
 			QueryId = request.QueryId.Length > 0 ? request.QueryId : Guid.CreateVersion7().ToString(),
 		};
 
-		var top     = request.Limit > 0 ? request.Limit : DefaultRecallLimit;
-		var options = new VectorSearchOptions<MemoryRecord> {
-			Filter = MemoryRecordFilters.Recall(request.Tags.Select(MemoryRecordMapper.EncodeTag)),
-		};
+		var top      = request.Limit > 0 ? request.Limit : DefaultRecallLimit;
+		var recalled = new List<Contracts.StoredMemory>();
 
-		var recalled = new List<MemoryRecord>();
-
-		await foreach (var hit in Collection.SearchAsync(request.Query, top, options, ct).ConfigureAwait(false)) {
-			var score = hit.Score ?? 0;
-			if (score < request.MinScore)
+		await foreach (var hit in store.SearchAsync(request.Query, top, request.Tags, ct).ConfigureAwait(false)) {
+			if (hit.Score < request.MinScore)
 				continue;
 
-			var memory = new Contracts.RecallResponse.Types.RecalledMemory { Score = score };
+			var memory = new Contracts.RecallResponse.Types.RecalledMemory { Score = hit.Score };
 
 			if (request.IncludeFull)
-				memory.Full = MemoryRecordMapper.ToStoredMemory(hit.Record);
+				memory.Full = hit.Memory;
 			else
-				memory.Lean = MemoryRecordMapper.ToLeanMemory(hit.Record);
+				memory.Lean = ToLean(hit.Memory);
 
 			response.Memories.Add(memory);
-			recalled.Add(hit.Record);
+			recalled.Add(hit.Memory);
 		}
 
-		// Reconsolidation: a recall refreshes the recency clock of everything it returned.
-		await TouchAsync(recalled, ct).ConfigureAwait(false);
+		// Reconsolidation: a recall refreshes the recency clock of everything it returned — the only
+		// write in the recency mechanism (resources.proto ScoredMemory.last_accessed_at).
+		await store.MarkAccessedAsync(recalled, ct).ConfigureAwait(false);
 
 		return response;
 	}
 
 	public async IAsyncEnumerable<Contracts.StoredMemory> ReclaimAsync(Contracts.ReclaimRequest request, [EnumeratorCancellation] CancellationToken ct = default) {
-		await EnsureCollection(ct).ConfigureAwait(false);
-
-		// Reclaim is by exact id and never hides: retracted and superseded records come back too;
-		// ids that don't exist are simply absent from the stream. Returned records show the recency
+		// Reclaim is by exact id and never hides: retracted and superseded memories come back too;
+		// ids that don't exist are simply absent from the stream. Returned memories show the recency
 		// clock as it was — the refresh below applies from the next access on.
-		var reclaimed = new List<MemoryRecord>();
+		var reclaimed = new List<Contracts.StoredMemory>();
 
-		await foreach (var record in Collection.GetAsync(request.Ids, cancellationToken: ct).ConfigureAwait(false)) {
-			reclaimed.Add(record);
-			yield return MemoryRecordMapper.ToStoredMemory(record);
+		await foreach (var memory in store.GetAsync(request.Ids, ct).ConfigureAwait(false)) {
+			reclaimed.Add(memory);
+			yield return memory;
 		}
 
-		await TouchAsync(reclaimed, ct).ConfigureAwait(false);
+		await store.MarkAccessedAsync(reclaimed, ct).ConfigureAwait(false);
 	}
 
 	public async IAsyncEnumerable<Contracts.StoredMemory> RecollectAsync(Contracts.RecollectRequest request, [EnumeratorCancellation] CancellationToken ct = default) {
-		await EnsureCollection(ct).ConfigureAwait(false);
+		var top = request.Limit > 0 ? request.Limit : DefaultRecollectLimit;
 
-		var top        = request.Limit > 0 ? request.Limit : DefaultRecollectLimit;
-		var tags       = request.Tags.Select(MemoryRecordMapper.EncodeTag).ToList();
-		var descending = request.Direction != Contracts.SortDirection.Ascending;
-
-		var options = new FilteredRecordRetrievalOptions<MemoryRecord> {
-			OrderBy = order => descending ? order.Descending(SortKey(request.Sort)) : order.Ascending(SortKey(request.Sort)),
-		};
-
-		// The portable filter surface has no OR, so the any-of type set becomes one query per type.
-		// Each query is already sorted and limited server-side; the merge re-sorts and re-limits.
-		List<int?> typeFilters = request.Types_.Count == 0
-			? [null]
-			: [.. request.Types_.Distinct().Select(type => (int?)(int)type)];
-
-		var merged = new List<MemoryRecord>();
-
-		foreach (var typeFilter in typeFilters) {
-			var records = Collection.GetAsync(MemoryRecordFilters.Recollect(tags, typeFilter), top, options, ct);
-			await foreach (var record in records.ConfigureAwait(false))
-				merged.Add(record);
-		}
-
-		var compareKey = CompareKey(request.Sort);
-		var ordered    = descending ? merged.OrderByDescending(compareKey) : merged.OrderBy(compareKey);
-
-		foreach (var record in ordered.Take(top))
-			yield return MemoryRecordMapper.ToStoredMemory(record);
+		await foreach (var memory in store.ListAsync(request.Tags, request.Types_, request.Sort, request.Direction, top, ct).ConfigureAwait(false))
+			yield return memory;
 	}
 
 	public ValueTask<Contracts.ReflectResponse> ReflectAsync(Contracts.ReflectRequest request, CancellationToken ct = default) =>
-		throw new NotImplementedException("Reflect synthesizes derived memories with a language model — not part of the vector-store skeleton.");
+		throw new NotImplementedException("Reflect synthesizes derived memories with a language model — not part of the data-store skeleton.");
 
-	// Reconsolidation write-back: advance the recency clock on every returned memory — the only
-	// write in the recency mechanism (resources.proto ScoredMemory.last_accessed_at). With the
-	// opt-in buffer the touches coalesce off the request path; unbuffered, they land before the
-	// operation returns.
-	async ValueTask TouchAsync(IReadOnlyList<MemoryRecord> records, CancellationToken ct) {
-		if (records.Count == 0)
-			return;
+	// The retain stamping: a command Memory becomes the stored shape with its server-assigned id and
+	// both clocks set to the retain instant.
+	static Contracts.StoredMemory ToStored(Contracts.Memory memory, string memoryId, DateTimeOffset now) {
+		var stored = new Contracts.StoredMemory {
+			MemoryId       = memoryId,
+			MemoryType     = memory.MemoryType,
+			Content        = memory.Content,
+			Importance     = memory.Importance,
+			Sentiment      = memory.Sentiment,
+			Urgency        = memory.Urgency,
+			RetainedAt     = Timestamp.FromDateTimeOffset(now),
+			LastAccessedAt = Timestamp.FromDateTimeOffset(now),
+		};
 
-		var now = DateTimeOffset.UtcNow;
+		stored.Tags.AddRange(memory.Tags);
+		stored.Supersedes.AddRange(memory.Supersedes);
 
-		if (_touchBuffer is not null) {
-			_touchBuffer.Add(records, now);
-			return;
-		}
+		if (memory.Evidence is not null)
+			stored.Evidence = memory.Evidence;
 
-		foreach (var record in records)
-			record.LastAccessedAt = now;
+		if (memory.Validity is not null)
+			stored.Validity = memory.Validity;
 
-		await Collection.UpsertAsync(records, ct).ConfigureAwait(false);
+		return stored;
 	}
 
-	/// <summary>
-	/// Flushes any buffered touches. Disposal is an implementation concern of the buffering, so it
-	/// lives on the class, not on <see cref="IKontextMemory"/>. The sync path is best-effort (the
-	/// remaining flush is fired without being awaited); prefer async disposal.
-	/// </summary>
-	public ValueTask DisposeAsync() => _touchBuffer?.DisposeAsync() ?? ValueTask.CompletedTask;
+	// Lean recall drops the heavy fields (evidence, validity, lifecycle stamps) — a projection over
+	// contract types only; the data store is not involved.
+	static Contracts.RecallResponse.Types.RecalledMemory.Types.LeanMemory ToLean(Contracts.StoredMemory stored) {
+		var lean = new Contracts.RecallResponse.Types.RecalledMemory.Types.LeanMemory {
+			MemoryId   = stored.MemoryId,
+			MemoryType = stored.MemoryType,
+			Content    = stored.Content,
+			Importance = stored.Importance,
+			RetainedAt = stored.RetainedAt,
+		};
 
-	public void Dispose() => _touchBuffer?.Dispose();
-
-	// Server-side ordering key, in the abstraction's boxed OrderBy shape.
-	static Expression<Func<MemoryRecord, object?>> SortKey(Contracts.RecollectSort sort) => sort switch {
-		Contracts.RecollectSort.LastAccessedAt => r => r.LastAccessedAt,
-		Contracts.RecollectSort.Importance     => r => r.Importance,
-		_                                      => r => r.RetainedAt, // default: when the memory was recorded
-	};
-
-	// Client-side key for merging the per-type queries — must order exactly like SortKey.
-	static Func<MemoryRecord, IComparable> CompareKey(Contracts.RecollectSort sort) => sort switch {
-		Contracts.RecollectSort.LastAccessedAt => r => r.LastAccessedAt,
-		Contracts.RecollectSort.Importance     => r => r.Importance,
-		_                                      => r => r.RetainedAt,
-	};
+		lean.Tags.AddRange(stored.Tags);
+		return lean;
+	}
 }

@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- THIS PROPERTY GROUP MUST COME FIRST -->
+    <AssemblyName>Kurrent.SemanticKernel.Connectors.DuckLance</AssemblyName>
+    <RootNamespace>$(AssemblyName)</RootNamespace>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnablePreviewFeatures>true</EnablePreviewFeatures>
+    <NoWarn>$(NoWarn);MEVD9001</NoWarn>
+
+    <!--    <VersionPrefix>0.1.0</VersionPrefix>-->
+    <!--    <VersionSuffix>alpha</VersionSuffix>-->
+    <!--    <IsPackable>true</IsPackable>-->
+    <!--    <PackageId>$(AssemblyName)</PackageId>-->
+    <!--    <Title>DuckDB + Lance provider for Microsoft.Extensions.VectorData</Title>-->
+    <!--    <Description>DuckLance: DuckDB + Lance extension provider for Microsoft.Extensions.VectorData (private Kurrent package, consumed via local feed only)</Description>-->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.AI.Abstractions" VersionOverride="10.7.0" />
+    <PackageReference Include="Microsoft.Extensions.VectorData.Abstractions" VersionOverride="10.7.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="DuckDB.NET.Data.Full" />
+    <PackageReference Include="Kurrent.Quack" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="DuckLance.Tests" />
+  </ItemGroup>
+
+</Project>

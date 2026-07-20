@@ -4,11 +4,14 @@
 namespace Kurrent.Kontext;
 
 /// <summary>
-/// Host-facing configuration for <see cref="KontextMemory"/>. A mutable settings class by design —
+/// Host-facing configuration for the Kontext core. A mutable settings class by design —
 /// config binding does not cope with records.
 /// </summary>
 public sealed class KontextMemoryOptions {
-	/// <summary>Opt-in write-behind buffering for reconsolidation touches. Disabled by default.</summary>
+	/// <summary>
+	/// Opt-in write-behind buffering for reconsolidation touches (applied by the data store, which
+	/// owns all persistence). Disabled by default.
+	/// </summary>
 	public TouchBufferOptions TouchBuffer { get; set; } = new();
 }
 

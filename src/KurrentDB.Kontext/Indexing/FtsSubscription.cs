@@ -110,7 +110,7 @@ public sealed class FtsSubscription : SubscriptionBase {
 			return;
 		_streamNameBuilder.Clear();
 		EventTextHelpers.AppendSplitName(streamName, _streamNameBuilder);
-		store.Add(hash, position, keys: string.Empty, values: _streamNameBuilder.ToString(), forceUpdate: true);
+		store.Add(hash, position, keys: "", values: _streamNameBuilder.ToString(), forceUpdate: true);
 	}
 
 	protected override Task IndexBatchAsync(CancellationToken ct) {

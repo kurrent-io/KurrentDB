@@ -1,96 +1,97 @@
 <Project>
-	<PropertyGroup>
-		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-		<DebugType Condition=" '$(Configuration)' == 'Debug' ">full</DebugType>
-		<DebugType Condition=" '$(Configuration)' == 'Release' ">pdbonly</DebugType>
-		<Authors>Kurrent, Inc</Authors>
-		<PackageIconUrl>ouro.png</PackageIconUrl>
-		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
-		<PackageProjectUrl>https://kurrent.io</PackageProjectUrl>
-		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-		<Copyright>Copyright 2011-2026 Kurrent, Inc</Copyright>
-		<PackageReleaseNotes>https://docs.kurrent.io/server/latest/release-schedule/release-notes</PackageReleaseNotes>
-		<TargetFramework>net10.0</TargetFramework>
-		<LangVersion>14.0</LangVersion>
-		<Platforms>AnyCPU;x64;ARM64</Platforms>
-		<IsPackable>false</IsPackable>
-		<VersionPrefix>26.2.0</VersionPrefix>
-		<VersionSuffix>prerelease</VersionSuffix>
-		<!-- Adjust for SYSLIB0057 separately to .NET 10 upgrade -->
-		<!-- Adjust for XUNIT1051 separately. Lots of lines but very simple -->
-		<NoWarn>SYSLIB0057;xUnit1051</NoWarn>
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <DebugType Condition=" '$(Configuration)' == 'Debug' ">full</DebugType>
+    <DebugType Condition=" '$(Configuration)' == 'Release' ">pdbonly</DebugType>
+    <Authors>Kurrent, Inc</Authors>
+    <PackageIconUrl>ouro.png</PackageIconUrl>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+    <PackageProjectUrl>https://kurrent.io</PackageProjectUrl>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Copyright>Copyright 2011-2026 Kurrent, Inc</Copyright>
+    <PackageReleaseNotes>https://docs.kurrent.io/server/latest/release-schedule/release-notes</PackageReleaseNotes>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>14.0</LangVersion>
+    <Platforms>AnyCPU;x64;ARM64</Platforms>
+    <IsPackable>false</IsPackable>
+    <VersionPrefix>26.2.0</VersionPrefix>
+    <VersionSuffix>prerelease</VersionSuffix>
+    <!-- Adjust for SYSLIB0057 separately to .NET 10 upgrade -->
+    <!-- Adjust for XUNIT1051 separately. Lots of lines but very simple -->
+    <NoWarn>SYSLIB0057;xUnit1051</NoWarn>
 
-		<TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) @"$(MSBuildThisFileDirectory)../ci/ci.rsp"</TestingPlatformCommandLineArguments>
-		<!-- we put these two here and not only for explicitly labelled test projects to make sure that -->
-		<!-- we don't accidentally mix MTP with VSTest, which is not supported -->
-		<!-- tell xunit projects to use MTP -->
-		<UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
-		<!-- tell nunit projects to use MTP -->
-		<EnableNUnitRunner>true</EnableNUnitRunner>
-	</PropertyGroup>
+    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) @"$(MSBuildThisFileDirectory)../ci/ci.rsp"</TestingPlatformCommandLineArguments>
+    <!-- we put these two here and not only for explicitly labelled test projects to make sure that -->
+    <!-- we don't accidentally mix MTP with VSTest, which is not supported -->
+    <!-- tell xunit projects to use MTP -->
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+    <!-- tell nunit projects to use MTP -->
+    <EnableNUnitRunner>true</EnableNUnitRunner>
+  </PropertyGroup>
 
-	<!-- TUnit -->
-	<ItemGroup Condition="'$(IsKurrentTUnit)' == 'True'">
-		<PackageReference Include="TUnit" />
-		<!-- MTP 2 -->
-		<PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.1.0" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="2.0.1" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="2.0.1" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.0.1" />
-	</ItemGroup>
+  <!-- TUnit -->
+  <ItemGroup Condition="'$(IsKurrentTUnit)' == 'True'">
+    <PackageReference Include="TUnit" />
+    <!-- MTP 2 -->
+    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.1.0" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="2.0.1" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="2.0.1" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.0.1" />
+  </ItemGroup>
 
-	<!-- XUnit -->
-	<ItemGroup Condition="'$(IsKurrentXUnit)' == 'True'">
-		<PackageReference Include="xunit.v3" />
-		<!-- MTP 1 -->
-		<PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.0.4" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="1.9.0" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="1.9.0" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.9.0" />
-	</ItemGroup>
+  <!-- XUnit -->
+  <ItemGroup Condition="'$(IsKurrentXUnit)' == 'True'">
+    <PackageReference Include="xunit.v3" />
+    <!-- MTP 1 -->
+    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.0.4" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="1.9.0" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="1.9.0" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.9.0" />
+  </ItemGroup>
 
-	<!-- NUnit -->
-	<PropertyGroup Condition="'$(IsKurrentNUnit)' == 'True'">
-		<TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --settings $(MSBuildThisFileDirectory)../ci/ci.runsettings</TestingPlatformCommandLineArguments>
-	</PropertyGroup>
-	<ItemGroup Condition="'$(IsKurrentNUnit)' == 'True'">
-		<PackageReference Include="NUnit" />
-		<PackageReference Include="NUnit3TestAdapter" />
-		<!-- MTP 1 -->
-		<PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.0.4" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="1.9.0" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="1.9.0" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.9.0" />
-	</ItemGroup>
+  <!-- NUnit -->
+  <PropertyGroup Condition="'$(IsKurrentNUnit)' == 'True'">
+    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --settings $(MSBuildThisFileDirectory)../ci/ci.runsettings</TestingPlatformCommandLineArguments>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(IsKurrentNUnit)' == 'True'">
+    <PackageReference Include="NUnit" />
+    <PackageReference Include="NUnit3TestAdapter" />
+    <!-- MTP 1 -->
+    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.0.4" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="1.9.0" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="1.9.0" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.9.0" />
+  </ItemGroup>
 
-	<!-- All test projects -->
-	<ItemGroup Condition="'$(IsKurrentTUnit)' == 'True' Or '$(IsKurrentXUnit)' == 'True' Or '$(IsKurrentNUnit)' == 'True'">
-		<PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
-		<PackageReference Include="Microsoft.Testing.Extensions.CrashDump" />
-		<PackageReference Include="Microsoft.Testing.Extensions.HangDump" />
-		<PackageReference Include="Microsoft.Testing.Extensions.TrxReport" />
-	</ItemGroup>
+  <!-- All test projects -->
+  <ItemGroup Condition="'$(IsKurrentTUnit)' == 'True' Or '$(IsKurrentXUnit)' == 'True' Or '$(IsKurrentNUnit)' == 'True'">
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CrashDump" />
+    <PackageReference Include="Microsoft.Testing.Extensions.HangDump" />
+    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" />
+  </ItemGroup>
 
-	<ItemGroup Condition="'$(IsPlugin)' == 'true'">
-		<ProjectReference Include="$(MSBuildThisFileDirectory)\KurrentDB.Plugins\KurrentDB.Plugins.csproj" />
-	</ItemGroup>
+  <ItemGroup Condition="'$(IsPlugin)' == 'true'">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)\KurrentDB.Plugins\KurrentDB.Plugins.csproj" />
+  </ItemGroup>
 
-	<ItemGroup Condition="'$(IsPluginsTestProject)' == 'true'">
-		<ProjectReference Include="..\KurrentDB.Plugins.TestHelpers\KurrentDB.Plugins.TestHelpers.csproj" />
-	</ItemGroup>
+  <ItemGroup Condition="'$(IsPluginsTestProject)' == 'true'">
+    <ProjectReference Include="..\KurrentDB.Plugins.TestHelpers\KurrentDB.Plugins.TestHelpers.csproj" />
+  </ItemGroup>
 
-	<ItemGroup Label="Default Packages">
-		<PackageReference Include="JetBrains.Annotations" PrivateAssets="All" />
-		<Using Include="JetBrains.Annotations" />
-	</ItemGroup>
+  <ItemGroup Label="Default Packages">
+    <PackageReference Include="JetBrains.Annotations" PrivateAssets="All" />
+    <Using Include="JetBrains.Annotations" />
+  </ItemGroup>
 
-	<ItemGroup Label="NuGet Audit Suppressions">
-		<!--
-		  CVE-2025-6965 (GHSA-2m69-gcr7-jv3q): SQLitePCLRaw.lib.e_sqlite3 2.1.11 bundles SQLite < 3.50.2,
-		  pulled in transitively via Microsoft.Data.Sqlite (referenced by KurrentDB.Core for the scavenge backend).
-		  No patched SQLitePCLRaw release exists yet. Remove this suppression once Microsoft.Data.Sqlite ships
-		  a bundle with SQLite >= 3.50.2.
-		-->
-		<NuGetAuditSuppress Include="https://github.com/advisories/GHSA-2m69-gcr7-jv3q" />
-	</ItemGroup>
+  <ItemGroup Label="NuGet Audit Suppressions">
+    <!--
+      CVE-2025-6965 (GHSA-2m69-gcr7-jv3q): SQLitePCLRaw.lib.e_sqlite3 2.1.11 bundles SQLite < 3.50.2,
+      pulled in transitively via Microsoft.Data.Sqlite (referenced by KurrentDB.Core for the scavenge backend).
+      UPDATE 2026-07-19: patched SQLitePCLRaw releases now exist on nuget.org (2.1.12, 3.50.3, 3.53.3) —
+      the remaining work is pinning/bumping the bundle under Microsoft.Data.Sqlite, verifying the scavenge
+      backend, and then removing this suppression plus the KDBAUDIT001 review target in Directory.Build.targets.
+    -->
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-2m69-gcr7-jv3q" />
+  </ItemGroup>
 </Project>

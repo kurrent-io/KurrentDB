@@ -20,7 +20,7 @@
     <PackageVersion Include="DotNext.Unsafe" Version="6.3.0" />
     <PackageVersion Include="Ductus.FluentDocker" Version="2.85.0" />
     <PackageVersion Include="Ductus.FluentDocker.XUnit" Version="2.85.0" />
-    <PackageVersion Include="DuckDB.NET.Data.Full" Version="1.5.0" />
+    <PackageVersion Include="DuckDB.NET.Data.Full" Version="1.5.3" />
     <PackageVersion Include="EventStore.Client" Version="22.0.0" />
     <PackageVersion Include="EventStore.Client.Grpc.Streams" Version="23.3.3" />
     <PackageVersion Include="Eventuous.Application" Version="0.15.0" />
@@ -81,7 +81,9 @@
     <PackageVersion Include="Lucene.Net" Version="4.8.0-beta00017" />
     <PackageVersion Include="Lucene.Net.Analysis.Common" Version="4.8.0-beta00017" />
     <PackageVersion Include="MessagePack" Version="3.1.7" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
     <PackageVersion Include="Microsoft.SemanticKernel" Version="1.78.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Onnx" Version="1.78.0-alpha" />
     <PackageVersion Include="ModelContextProtocol" Version="1.4.1" />
     <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="1.4.1" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.0" />
