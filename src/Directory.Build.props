@@ -18,6 +18,7 @@
 		<!-- Adjust for SYSLIB0057 separately to .NET 10 upgrade -->
 		<!-- Adjust for XUNIT1051 separately. Lots of lines but very simple -->
 		<NoWarn>SYSLIB0057;xUnit1051</NoWarn>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
 		<TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) @"$(MSBuildThisFileDirectory)../ci/ci.rsp"</TestingPlatformCommandLineArguments>
 		<!-- we put these two here and not only for explicitly labelled test projects to make sure that -->
@@ -73,15 +74,5 @@
 	<ItemGroup Label="Default Packages">
 		<PackageReference Include="JetBrains.Annotations" PrivateAssets="All" />
 		<Using Include="JetBrains.Annotations" />
-	</ItemGroup>
-
-	<ItemGroup Label="NuGet Audit Suppressions">
-		<!--
-		  CVE-2025-6965 (GHSA-2m69-gcr7-jv3q): SQLitePCLRaw.lib.e_sqlite3 2.1.11 bundles SQLite < 3.50.2,
-		  pulled in transitively via Microsoft.Data.Sqlite (referenced by KurrentDB.Core for the scavenge backend).
-		  No patched SQLitePCLRaw release exists yet. Remove this suppression once Microsoft.Data.Sqlite ships
-		  a bundle with SQLite >= 3.50.2.
-		-->
-		<NuGetAuditSuppress Include="https://github.com/advisories/GHSA-2m69-gcr7-jv3q" />
 	</ItemGroup>
 </Project>
