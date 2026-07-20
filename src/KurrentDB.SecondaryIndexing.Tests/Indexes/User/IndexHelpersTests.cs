@@ -75,6 +75,36 @@ public class IndexHelpersTests {
 		Assert.False(ok);
 	}
 
+	[Theory]
+	[InlineData("dGVzdA==")] // base64 with '=' padding
+	[InlineData("a==b")]
+	[InlineData("key=value")] // "key" is not the field name, so it is not a valid new-form pair
+	public void legacy_single_field_value_containing_equals_is_accepted(string suffix) {
+		// back-compat: for a single-field index the whole suffix is the field's value, even when it contains '='.
+		// it must not be mistaken for the new field=value form (which would reject it as an unknown/invalid pair).
+		var ok = TryParseConstraints(Fields(("token", IndexFieldType.String)), suffix, out var constraints);
+		Assert.True(ok);
+		var constraint = Assert.Single(constraints);
+		Assert.Equal("token", constraint.Field.Name);
+		Assert.Equal(suffix, constraint.Value);
+	}
+
+	[Fact]
+	public void single_field_new_form_takes_precedence_over_legacy_when_it_parses() {
+		// when the suffix is a valid new-form pair for the field it is read as new-form, not as a legacy literal
+		var ok = TryParseConstraints(Fields(("token", IndexFieldType.String)), "token=abc", out var constraints);
+		Assert.True(ok);
+		Assert.Equal("abc", Assert.Single(constraints).Value);
+	}
+
+	[Fact]
+	public void single_field_suffix_with_field_prefix_is_validated_as_new_form() {
+		// "token=..." begins with the field name, so it is the new form and is validated strictly: a malformed
+		// value is rejected, not silently accepted as the legacy literal `token="unterminated`
+		var ok = TryParseConstraints(Fields(("token", IndexFieldType.String)), "token=\"unterminated", out _);
+		Assert.False(ok);
+	}
+
 	[Fact]
 	public void parses_multiple_field_constraints_in_any_order() {
 		var fields = Fields(("country", IndexFieldType.String), ("age", IndexFieldType.Int32));
@@ -103,7 +133,9 @@ public class IndexHelpersTests {
 
 	[Fact]
 	public void unknown_field_is_rejected() {
-		var ok = TryParseConstraints(Fields(("country", IndexFieldType.String)), "missing=1", out _);
+		// on a multi-field index only the new form is valid, so an unknown field name is rejected (on a single-field
+		// index "missing=1" would instead be a legacy literal value - see legacy_single_field_value_containing_equals)
+		var ok = TryParseConstraints(Fields(("country", IndexFieldType.String), ("age", IndexFieldType.Int32)), "missing=1", out _);
 		Assert.False(ok);
 	}
 

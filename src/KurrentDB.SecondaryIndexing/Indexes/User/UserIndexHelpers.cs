@@ -48,11 +48,30 @@ public static class UserIndexHelpers {
 		var parsed = new List<FieldConstraint>();
 		constraints = parsed;
 
-		// legacy form: no '=' anywhere - the whole suffix is the single field's value (which may be empty)
-		if (!suffix.Value.Span.Contains('='))
-			return fields.Count == 1 && TryAdd(fields[0], suffix.Value.Span, [], parsed);
+		var span = suffix.Value.Span;
 
-		return TryParseKeyValuePairs(suffix.Value.Span, fields, parsed);
+		// single-field index: the whole suffix is the field's legacy literal value (which may contain '='),
+		// UNLESS it explicitly begins with "<field>="
+		if (fields.Count == 1) {
+			var field = fields[0];
+			return IsNewForm(field, span)
+				? TryParseKeyValuePairs(span, fields, parsed)
+				: TryAddSingle(field, span, parsed);
+		}
+
+		// multi-field index: only the new form is valid.
+
+		// an empty suffix ("$idx-user-<name>:") is rejected.
+		if (span.IsEmpty)
+			return false;
+
+		return TryParseKeyValuePairs(span, fields, parsed);
+	}
+
+	// True when the suffix explicitly begins with "<field name>=", i.e. it is the new field=value form for this field.
+	private static bool IsNewForm(IField field, ReadOnlySpan<char> suffix) {
+		var name = field.Name;
+		return suffix.Length > name.Length && suffix[name.Length] == '=' && suffix[..name.Length].SequenceEqual(name);
 	}
 
 	private static bool TryParseKeyValuePairs(ReadOnlySpan<char> suffix, IReadOnlyList<IField> fields, List<FieldConstraint> parsed) {
@@ -153,6 +172,9 @@ public static class UserIndexHelpers {
 		// ran off the end without a terminating quote (")
 		return false;
 	}
+
+	private static bool TryAddSingle(IField field, ReadOnlySpan<char> value, List<FieldConstraint> parsed) =>
+		TryAdd(field, value, [], parsed);
 
 	private static bool TryAdd(IField field, ReadOnlySpan<char> value, HashSet<string> seen, List<FieldConstraint> parsed) {
 		if (!seen.Add(field.Name))
