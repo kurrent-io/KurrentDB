@@ -26,7 +26,7 @@ internal sealed class UserIndexReader(
 	protected override List<IndexQueryRecord> GetDbRecordsForwards(DuckDBConnectionPool db, string? id, long startPosition, int maxCount, bool excludeFirst) {
 		var suffix = id is null ? (ReadOnlyMemory<char>?)null : id.AsMemory();
 		if (!UserIndexHelpers.TryParseConstraints(fields, suffix, out var constraints))
-			return [];
+			throw new InvalidOperationException($"Failed to parse already-validated field constraints for index read (id: '{id}').");
 
 		var args = new ReadUserIndexQueryArgs {
 			StartPosition = startPosition,
@@ -47,7 +47,7 @@ internal sealed class UserIndexReader(
 	protected override List<IndexQueryRecord> GetDbRecordsBackwards(DuckDBConnectionPool db, string? id, long startPosition, int maxCount, bool excludeFirst) {
 		var suffix = id is null ? (ReadOnlyMemory<char>?)null : id.AsMemory();
 		if (!UserIndexHelpers.TryParseConstraints(fields, suffix, out var constraints))
-			return [];
+			throw new InvalidOperationException($"Failed to parse already-validated field constraints for index read (id: '{id}').");
 
 		var args = new ReadUserIndexQueryArgs {
 			StartPosition = startPosition,
