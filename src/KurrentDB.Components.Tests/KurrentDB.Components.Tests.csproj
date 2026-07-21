@@ -6,6 +6,8 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 	</PropertyGroup>
 	<ItemGroup>
+		<!-- Override vulnerable transitive from `bunit` -->
+		<PackageReference Include="AngleSharp" />
 		<PackageReference Include="bunit" />
 		<PackageReference Include="MudBlazor" />
 	</ItemGroup>

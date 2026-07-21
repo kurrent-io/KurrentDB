@@ -47,7 +47,7 @@ public class OutputBufferTests {
 		buffer.SetPartitionState("partition-1", "state-stream-1", "{\"count\":1}", 0);
 		buffer.SetPartitionState("partition-1", "state-stream-1", "{\"count\":2}", 1);
 
-		await Assert.That(buffer.DirtyStates).HasCount(1);
+		await Assert.That(buffer.DirtyStates).Count().IsEqualTo(1);
 
 		var (streamName, stateJson, expectedVersion) = buffer.DirtyStates["partition-1"];
 		await Assert.That(streamName).IsEqualTo("state-stream-1");
@@ -83,7 +83,7 @@ public class OutputBufferTests {
 			CreateTestEmittedEvent("stream-3", "EventC")
 		]);
 
-		await Assert.That(buffer.EmittedEvents).HasCount(3);
+		await Assert.That(buffer.EmittedEvents).Count().IsEqualTo(3);
 	}
 
 	[Test]
@@ -94,7 +94,7 @@ public class OutputBufferTests {
 		buffer.SetPartitionState("partition-2", "state-stream-2", "{\"b\":2}", 0);
 		buffer.SetPartitionState("partition-3", "state-stream-3", "{\"c\":3}", 0);
 
-		await Assert.That(buffer.DirtyStates).HasCount(3);
+		await Assert.That(buffer.DirtyStates).Count().IsEqualTo(3);
 		await Assert.That(buffer.DirtyStates.ContainsKey("partition-1")).IsTrue();
 		await Assert.That(buffer.DirtyStates.ContainsKey("partition-2")).IsTrue();
 		await Assert.That(buffer.DirtyStates.ContainsKey("partition-3")).IsTrue();

@@ -465,9 +465,6 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 
-# Visual Studio Launch Settings
-**/launchSettings.json
-
 # es-gencert-cli
 certs/
 /es-gencert-cli

@@ -31,6 +31,7 @@ partial class Enumerator {
 		private readonly bool _requiresLeader;
 		private readonly DuckDBConnectionPool _pool;
 		private readonly CancellationTokenSource _cts;
+		private readonly CancellationToken _cancellationToken;
 		private readonly Channel<ReadResponse> _channel;
 		private readonly Channel<(ulong SequenceNumber, ResolvedEvent? ResolvedEvent, TFPos? Checkpoint)> _liveEvents;
 
@@ -56,6 +57,7 @@ partial class Enumerator {
 			_user = user;
 			_requiresLeader = requiresLeader;
 			_pool = pool;
+			_cancellationToken = cancellationToken;
 			_cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 			_channel = Channel.CreateBounded<ReadResponse>(DefaultCatchUpChannelOptions);
 			_liveEvents = Channel.CreateBounded<(ulong, ResolvedEvent?, TFPos?)>(DefaultLiveChannelOptions);
@@ -118,21 +120,25 @@ partial class Enumerator {
 		}
 
 		public async ValueTask<bool> MoveNextAsync() {
-			if (!await _channel.Reader.WaitToReadAsync(_cts.Token)) {
-				return false;
+			try {
+				if (!await _channel.Reader.WaitToReadAsync(_cts.Token)) {
+					return false;
+				}
+
+				var readResponse = await _channel.Reader.ReadAsync(_cts.Token);
+
+				if (readResponse is ReadResponse.EventReceived eventReceived) {
+					var eventPos = eventReceived.Event.OriginalPosition!.Value;
+					var position = Position.FromInt64(eventPos.CommitPosition, eventPos.PreparePosition);
+					Log.Verbose("Subscription {SubscriptionId} to {IndexName} seen event {Position}.", _subscriptionId, _indexName, position);
+				}
+
+				Current = readResponse;
+
+				return true;
+			} catch (OperationCanceledException ex) when (ex.CancellationToken == _cts.Token && _cancellationToken.IsCancellationRequested) {
+				throw new OperationCanceledException(ex.Message, ex, _cancellationToken);
 			}
-
-			var readResponse = await _channel.Reader.ReadAsync(_cts.Token);
-
-			if (readResponse is ReadResponse.EventReceived eventReceived) {
-				var eventPos = eventReceived.Event.OriginalPosition!.Value;
-				var position = Position.FromInt64(eventPos.CommitPosition, eventPos.PreparePosition);
-				Log.Verbose("Subscription {SubscriptionId} to {IndexName} seen event {Position}.", _subscriptionId, _indexName, position);
-			}
-
-			Current = readResponse;
-
-			return true;
 		}
 
 		private async ValueTask<(TFPos, ulong)> GoLive(TFPos checkpoint, ulong sequenceNumber, CancellationToken ct) {

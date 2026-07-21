@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
       - id: discover
         run: |
-          modules=$(cat src/KurrentDB.ContainerTests.slnf | jq -c '[.solution.projects[] | select(test("(?i)\\.tests\\.csproj$")) | gsub("\\\\"; "/")]')
+          modules=$(cat KurrentDB.ContainerTests.slnf | jq -c '[.solution.projects[] | select(test("(?i)\\.tests\\.csproj$")) | gsub("\\\\"; "/")| select(startswith("src/")) | ltrimstr("src/")]')
           echo "modules=$modules" >> $GITHUB_OUTPUT
   build-container:
     runs-on: ubuntu-latest

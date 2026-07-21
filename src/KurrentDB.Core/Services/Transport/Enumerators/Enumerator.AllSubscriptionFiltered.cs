@@ -33,6 +33,7 @@ partial class Enumerator {
 		private readonly uint _maxSearchWindow;
 		private readonly uint _checkpointInterval;
 		private readonly CancellationTokenSource _cts;
+		private readonly CancellationToken _cancellationToken;
 		private readonly Channel<ReadResponse> _channel;
 		private readonly Channel<(ulong SequenceNumber, ResolvedEvent? ResolvedEvent, TFPos? Checkpoint)> _liveEvents;
 
@@ -65,6 +66,7 @@ partial class Enumerator {
 			_requiresLeader = requiresLeader;
 			_maxSearchWindow = maxSearchWindow ?? DefaultReadBatchSize;
 			_checkpointInterval = checkpointIntervalMultiplier * _maxSearchWindow;
+			_cancellationToken = cancellationToken;
 			_cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 			_channel = Channel.CreateBounded<ReadResponse>(DefaultCatchUpChannelOptions);
 			_liveEvents = Channel.CreateBounded<(ulong, ResolvedEvent?, TFPos?)>(DefaultLiveChannelOptions);
@@ -91,47 +93,51 @@ partial class Enumerator {
 		}
 
 		public async ValueTask<bool> MoveNextAsync() {
+			try {
 ReadLoop:
 
-			if (!await _channel.Reader.WaitToReadAsync(_cts.Token)) {
-				return false;
-			}
-
-			var readResponse = await _channel.Reader.ReadAsync(_cts.Token);
-
-			if (readResponse is ReadResponse.EventReceived eventReceived) {
-				var eventPos = eventReceived.Event.OriginalPosition!.Value;
-				var position = Position.FromInt64(eventPos.CommitPosition, eventPos.PreparePosition);
-
-				if (_currentPosition.HasValue && position <= _currentPosition.Value) {
-					// this should no longer happen
-					Log.Warning("Subscription {subscriptionId} to $all:{eventFilter} skipping event {position} as it is less than {currentPosition}.",
-						_subscriptionId, _eventFilter, position, _currentPosition);
-					goto ReadLoop;
+				if (!await _channel.Reader.WaitToReadAsync(_cts.Token)) {
+					return false;
 				}
 
-				Log.Verbose("Subscription {subscriptionId} to $all:{eventFilter} seen event {position}.", _subscriptionId, _eventFilter, position);
+				var readResponse = await _channel.Reader.ReadAsync(_cts.Token);
 
-				_currentPosition = position;
-			} else if (readResponse is ReadResponse.CheckpointReceived checkpointReceived) {
-				var checkpointPos = new Position(checkpointReceived.CommitPosition, checkpointReceived.PreparePosition);
+				if (readResponse is ReadResponse.EventReceived eventReceived) {
+					var eventPos = eventReceived.Event.OriginalPosition!.Value;
+					var position = Position.FromInt64(eventPos.CommitPosition, eventPos.PreparePosition);
 
-				if (_currentCheckpoint.HasValue && checkpointPos <= _currentCheckpoint.Value) {
-					// in some cases, it's possible to receive the same checkpoint twice for example:
-					// i) when the subscription goes live, and it turns out that the next thing on the live channel is a checkpoint
-					// ii) when catching-up, reaching the checkpoint interval and the next page read reaches the end of the stream
+					if (_currentPosition.HasValue && position <= _currentPosition.Value) {
+						// this should no longer happen
+						Log.Warning("Subscription {subscriptionId} to $all:{eventFilter} skipping event {position} as it is less than {currentPosition}.",
+							_subscriptionId, _eventFilter, position, _currentPosition);
+						goto ReadLoop;
+					}
 
-					goto ReadLoop;
+					Log.Verbose("Subscription {subscriptionId} to $all:{eventFilter} seen event {position}.", _subscriptionId, _eventFilter, position);
+
+					_currentPosition = position;
+				} else if (readResponse is ReadResponse.CheckpointReceived checkpointReceived) {
+					var checkpointPos = new Position(checkpointReceived.CommitPosition, checkpointReceived.PreparePosition);
+
+					if (_currentCheckpoint.HasValue && checkpointPos <= _currentCheckpoint.Value) {
+						// in some cases, it's possible to receive the same checkpoint twice for example:
+						// i) when the subscription goes live, and it turns out that the next thing on the live channel is a checkpoint
+						// ii) when catching-up, reaching the checkpoint interval and the next page read reaches the end of the stream
+
+						goto ReadLoop;
+					}
+
+					Log.Verbose("Subscription {subscriptionId} to $all:{eventFilter} received checkpoint {position}.", _subscriptionId, _eventFilter, checkpointPos);
+
+					_currentCheckpoint = checkpointPos;
 				}
 
-				Log.Verbose("Subscription {subscriptionId} to $all:{eventFilter} received checkpoint {position}.", _subscriptionId, _eventFilter, checkpointPos);
+				_current = readResponse;
 
-				_currentCheckpoint = checkpointPos;
+				return true;
+			} catch (OperationCanceledException ex) when (ex.CancellationToken == _cts.Token && _cancellationToken.IsCancellationRequested) {
+				throw new OperationCanceledException(ex.Message, ex, _cancellationToken);
 			}
-
-			_current = readResponse;
-
-			return true;
 		}
 
 		private void Subscribe(Position? checkpoint, CancellationToken ct) {
