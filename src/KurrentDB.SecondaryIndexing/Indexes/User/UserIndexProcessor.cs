@@ -33,6 +33,7 @@ internal sealed class UserIndexProcessor : Disposable, ISecondaryIndexProcessor 
 	private readonly IReadOnlyList<IField> _fields;
 	private readonly Function?[] _fieldSelectors;
 	private readonly string?[] _fieldTexts;
+	private readonly JsValue?[] _fieldValues;
 	private readonly string _queryStreamName;
 	private readonly IPublisher _publisher;
 	private readonly DuckDBAdvancedConnection _connection;
@@ -85,6 +86,7 @@ internal sealed class UserIndexProcessor : Disposable, ISecondaryIndexProcessor 
 		for (var i = 0; i < fields.Count; i++)
 			_fieldSelectors[i] = JsRecordEvaluator.Compile(_engine, fields[i].Selector);
 		_fieldTexts = new string?[fields.Count];
+		_fieldValues = new JsValue?[fields.Count];
 
 		_connection = db.Open();
 		_sql.CreateUserIndex(_connection);
@@ -176,7 +178,7 @@ internal sealed class UserIndexProcessor : Disposable, ISecondaryIndexProcessor 
 			if (text is null) {
 				field.AppendNull(ref row);
 			} else {
-				field.AppendValue(text, ref row);
+				field.AppendValue(_fieldValues[i]!, ref row);
 				fieldValues.Add(new(field.Name, text));
 			}
 		}
@@ -193,8 +195,11 @@ internal sealed class UserIndexProcessor : Disposable, ISecondaryIndexProcessor 
 
 			if (IsAbsent(value)) {
 				_fieldTexts[i] = null;
+				_fieldValues[i] = null;
 			} else {
+				// FormatValue also validates the type here (guarded phase): a bad value throws and drops the event
 				_fieldTexts[i] = _fields[i].FormatValue(value!);
+				_fieldValues[i] = value;
 				anyPresent = true;
 			}
 		}

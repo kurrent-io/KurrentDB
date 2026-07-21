@@ -42,9 +42,9 @@ public interface IField {
 	/// type; callers run this in the guarded evaluate phase so a bad value drops the event rather than failing a write.
 	string FormatValue(JsValue value);
 
-	/// Appends a canonical value (as produced by <see cref="FormatValue"/> or <see cref="NormalizeValue"/>) to the row.
-	/// Never throws: the text is already known to be valid for this field's type.
-	void AppendValue(string canonicalText, ref BufferedAppender.Row row);
+	/// Appends the selector's (non-null) value to the row in the column's native type. Must be called only after
+	/// <see cref="FormatValue"/> has validated the same value in the guarded evaluate phase; it does not re-validate.
+	void AppendValue(JsValue value, ref BufferedAppender.Row row);
 
 	/// Parses <paramref name="text"/> into the column's type and binds it to the statement. Throws if invalid.
 	void BindEquality(PreparedStatement statement, ref int index, string text);
@@ -79,7 +79,7 @@ internal abstract class FieldBase(string name, string selector, bool optimizeLoo
 	public void AppendNull(ref BufferedAppender.Row row) => row.Add(DBNull.Value);
 
 	public abstract string FormatValue(JsValue value);
-	public abstract void AppendValue(string canonicalText, ref BufferedAppender.Row row);
+	public abstract void AppendValue(JsValue value, ref BufferedAppender.Row row);
 	public abstract void BindEquality(PreparedStatement statement, ref int index, string text);
 	public abstract string NormalizeValue(ReadOnlySpan<char> text);
 }
@@ -89,7 +89,7 @@ internal sealed class StringField(string name, string selector, bool optimizeLoo
 	protected override string DuckDbType => "VARCHAR";
 
 	public override string FormatValue(JsValue value) => value.AsString();
-	public override void AppendValue(string canonicalText, ref BufferedAppender.Row row) => row.Add(canonicalText);
+	public override void AppendValue(JsValue value, ref BufferedAppender.Row row) => row.Add(value.AsString());
 	public override void BindEquality(PreparedStatement statement, ref int index, string text) => statement.Bind(index++, text);
 	public override string NormalizeValue(ReadOnlySpan<char> text) => text.ToString();
 }
@@ -98,7 +98,7 @@ internal abstract class NumericField<TNumber>(string name, string selector, bool
 	: FieldBase(name, selector, optimizeLookups)
 	where TNumber : struct, INumber<TNumber> {
 	public override string FormatValue(JsValue value) => Format(TNumber.CreateChecked(value.AsNumber()));
-	public override void AppendValue(string canonicalText, ref BufferedAppender.Row row) => AppendNumber(Parse(canonicalText), ref row);
+	public override void AppendValue(JsValue value, ref BufferedAppender.Row row) => AppendNumber(TNumber.CreateChecked(value.AsNumber()), ref row);
 	public override void BindEquality(PreparedStatement statement, ref int index, string text) => Bind(statement, ref index, Parse(text));
 	public override string NormalizeValue(ReadOnlySpan<char> text) => Format(Parse(text));
 
