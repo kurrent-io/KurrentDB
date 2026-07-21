@@ -1,0 +1,4 @@
+<Project>
+  <!-- File-based apps need isolation from the repo's Directory.Build.props
+       which adds PackageReferences that rely on Central Package Management. -->
+</Project>

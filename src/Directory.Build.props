@@ -20,7 +20,12 @@
     <!-- Adjust for XUNIT1051 separately. Lots of lines but very simple -->
     <NoWarn>SYSLIB0057;xUnit1051</NoWarn>
 
-    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) @"$(MSBuildThisFileDirectory)../ci/ci.rsp"</TestingPlatformCommandLineArguments>
+    <!-- DisableCiTestRsp is set (via environment variable) by scripts/testing/test-runner.cs for
+         all its invocations: the runner supplies its own TRX reporting and timeouts, coverage and
+         hangdump are CI-only concerns, and ci.rsp's &#45;&#45;report-trx breaks TUnit's
+         &#45;&#45;list-tests discovery. CI invokes dotnet test directly (variable unset) and is
+         unaffected. -->
+    <TestingPlatformCommandLineArguments Condition="'$(DisableCiTestRsp)' != 'true'">$(TestingPlatformCommandLineArguments) @"$(MSBuildThisFileDirectory)../ci/ci.rsp"</TestingPlatformCommandLineArguments>
     <!-- we put these two here and not only for explicitly labelled test projects to make sure that -->
     <!-- we don't accidentally mix MTP with VSTest, which is not supported -->
     <!-- tell xunit projects to use MTP -->

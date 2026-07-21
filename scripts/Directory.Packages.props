@@ -1,0 +1,7 @@
+<Project>
+  <PropertyGroup>
+    <!-- File-based apps (dotnet run *.cs) define package versions inline via
+         #:package annotations, which is incompatible with Central Package Management. -->
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+</Project>
