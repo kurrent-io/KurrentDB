@@ -87,7 +87,7 @@ public static class McpResourceToolsExtensions {
 			if (node is not JsonObject obj || obj.ContainsKey("description")) return node;
 
 			string? doc;
-			if (ctx.PropertyInfo is { } property && ctx.DeclaringType is { } declaring) {
+			if (ctx is { PropertyInfo: { } property, DeclaringType: { } declaring }) {
 				doc = McpInstructions.Property(declaring, property.Name);
 
 				// Enums only ever appear in schemas as property nodes, so their own type entry (which

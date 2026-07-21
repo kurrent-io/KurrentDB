@@ -45,7 +45,7 @@ public sealed class KontextStore : IDisposable {
         ArgumentOutOfRangeException.ThrowIfLessThan(dimensions, 2);
 
         var fullPath = Path.GetFullPath(storagePath);
-        _datasetPath = Path.Combine(fullPath, Table + ".lance");
+        _datasetPath = Path.Combine(fullPath, $"{Table}.lance");
         _embedder    = embedder;
         _dimensions  = dimensions;
 
@@ -65,11 +65,7 @@ public sealed class KontextStore : IDisposable {
             conn => {
                 Exec(
                     conn,
-                    $"CREATE TABLE IF NOT EXISTS {Qualified} ("                                                               +
-                    "id VARCHAR, type SMALLINT, content VARCHAR, importance SMALLINT, sentiment SMALLINT, urgency SMALLINT, " +
-                    "evidence VARCHAR, tags VARCHAR[], supersedes VARCHAR[], valid_from TIMESTAMPTZ, valid_to TIMESTAMPTZ, "  +
-                    "retained_at TIMESTAMPTZ, last_accessed_at TIMESTAMPTZ, retracted BOOLEAN, retracted_at TIMESTAMPTZ, "    +
-                    $"superseded_at TIMESTAMPTZ, superseded_by VARCHAR, vec FLOAT[{_dimensions}])");
+                    $"CREATE TABLE IF NOT EXISTS {Qualified} (id VARCHAR, type SMALLINT, content VARCHAR, importance SMALLINT, sentiment SMALLINT, urgency SMALLINT, evidence VARCHAR, tags VARCHAR[], supersedes VARCHAR[], valid_from TIMESTAMPTZ, valid_to TIMESTAMPTZ, retained_at TIMESTAMPTZ, last_accessed_at TIMESTAMPTZ, retracted BOOLEAN, retracted_at TIMESTAMPTZ, superseded_at TIMESTAMPTZ, superseded_by VARCHAR, vec FLOAT[{_dimensions}])");
 
                 var existing = ShowIndexNames(conn);
 
@@ -93,7 +89,7 @@ public sealed class KontextStore : IDisposable {
         ArgumentNullException.ThrowIfNull(memory);
         ArgumentException.ThrowIfNullOrEmpty(memory.Content);
 
-        var id     = string.IsNullOrEmpty(memory.Id) ? "mem-" + Guid.NewGuid().ToString("N") : memory.Id;
+        var id     = string.IsNullOrEmpty(memory.Id) ? $"mem-{Guid.NewGuid():N}" : memory.Id;
         var now    = DateTimeOffset.UtcNow;
         var vector = Normalize((await _embedder.GenerateAsync([memory.Content], cancellationToken: ct).ConfigureAwait(false))[0].Vector);
 
@@ -105,8 +101,7 @@ public sealed class KontextStore : IDisposable {
 
                     using (var search = conn.CreateCommand()) {
                         search.CommandText =
-                            $"SELECT id, _distance FROM lance_vector_search('{Qualified}', 'vec', CAST(? AS FLOAT[{_dimensions}]), " +
-                            $"k := {relatedTop + 1}, prefilter := true, refine_factor := 4) WHERE retracted = ? AND id <> ? ORDER BY _distance LIMIT {relatedTop}";
+                            $"SELECT id, _distance FROM lance_vector_search('{Qualified}', 'vec', CAST(? AS FLOAT[{_dimensions}]), k := {relatedTop + 1}, prefilter := true, refine_factor := 4) WHERE retracted = ? AND id <> ? ORDER BY _distance LIMIT {relatedTop}";
 
                         search.Parameters.Add(new DuckDBParameter(vector));
                         search.Parameters.Add(new DuckDBParameter(false));
@@ -123,18 +118,7 @@ public sealed class KontextStore : IDisposable {
 
                     using (var merge = conn.CreateCommand()) {
                         merge.CommandText =
-                            $"MERGE INTO {Qualified} AS t USING (SELECT ? AS id, ? AS type, ? AS content, ? AS importance, ? AS sentiment, "                         +
-                            "? AS urgency, ? AS evidence, CAST(? AS VARCHAR[]) AS tags, CAST(? AS VARCHAR[]) AS supersedes, "                                        +
-                            "? AS valid_from, ? AS valid_to, ? AS retained_at, ? AS last_accessed_at, ? AS retracted, ? AS retracted_at, "                           +
-                            $"? AS superseded_at, ? AS superseded_by, CAST(? AS FLOAT[{_dimensions}]) AS vec) AS s ON t.id = s.id "                             +
-                            "WHEN MATCHED THEN UPDATE SET type = s.type, content = s.content, importance = s.importance, "                                           +
-                            "sentiment = s.sentiment, urgency = s.urgency, evidence = s.evidence, tags = s.tags, supersedes = s.supersedes, "                        +
-                            "valid_from = s.valid_from, valid_to = s.valid_to, retained_at = s.retained_at, last_accessed_at = s.last_accessed_at, "                 +
-                            "retracted = s.retracted, retracted_at = s.retracted_at, superseded_at = s.superseded_at, superseded_by = s.superseded_by, vec = s.vec " +
-                            "WHEN NOT MATCHED THEN INSERT (id, type, content, importance, sentiment, urgency, evidence, tags, supersedes, "                          +
-                            "valid_from, valid_to, retained_at, last_accessed_at, retracted, retracted_at, superseded_at, superseded_by, vec) "                      +
-                            "VALUES (s.id, s.type, s.content, s.importance, s.sentiment, s.urgency, s.evidence, s.tags, s.supersedes, "                              +
-                            "s.valid_from, s.valid_to, s.retained_at, s.last_accessed_at, s.retracted, s.retracted_at, s.superseded_at, s.superseded_by, s.vec)";
+                            $"MERGE INTO {Qualified} AS t USING (SELECT ? AS id, ? AS type, ? AS content, ? AS importance, ? AS sentiment, ? AS urgency, ? AS evidence, CAST(? AS VARCHAR[]) AS tags, CAST(? AS VARCHAR[]) AS supersedes, ? AS valid_from, ? AS valid_to, ? AS retained_at, ? AS last_accessed_at, ? AS retracted, ? AS retracted_at, ? AS superseded_at, ? AS superseded_by, CAST(? AS FLOAT[{_dimensions}]) AS vec) AS s ON t.id = s.id WHEN MATCHED THEN UPDATE SET type = s.type, content = s.content, importance = s.importance, sentiment = s.sentiment, urgency = s.urgency, evidence = s.evidence, tags = s.tags, supersedes = s.supersedes, valid_from = s.valid_from, valid_to = s.valid_to, retained_at = s.retained_at, last_accessed_at = s.last_accessed_at, retracted = s.retracted, retracted_at = s.retracted_at, superseded_at = s.superseded_at, superseded_by = s.superseded_by, vec = s.vec WHEN NOT MATCHED THEN INSERT (id, type, content, importance, sentiment, urgency, evidence, tags, supersedes, valid_from, valid_to, retained_at, last_accessed_at, retracted, retracted_at, superseded_at, superseded_by, vec) VALUES (s.id, s.type, s.content, s.importance, s.sentiment, s.urgency, s.evidence, s.tags, s.supersedes, s.valid_from, s.valid_to, s.retained_at, s.last_accessed_at, s.retracted, s.retracted_at, s.superseded_at, s.superseded_by, s.vec)";
 
                         merge.Parameters.Add(new DuckDBParameter(id));
                         merge.Parameters.Add(new DuckDBParameter((short)memory.Type));
@@ -192,14 +176,12 @@ public sealed class KontextStore : IDisposable {
                     // Tag containment is not pushed down by the extension: with tag filters the candidate pool
                     // must cover the table (validated oversample rule). Equality (retracted) prefilters fine.
                     var k     = options.Tags.Count > 0 ? Math.Max(Count(conn), top) : top;
-                    var where = " WHERE retracted = ?" + (options.Tags.Count > 0 ? " AND array_has_any(tags, CAST(? AS VARCHAR[]))" : "");
+                    var where = $" WHERE retracted = ?{(options.Tags.Count > 0 ? " AND array_has_any(tags, CAST(? AS VARCHAR[]))" : "")}";
 
                     using var cmd = conn.CreateCommand();
 
                     cmd.CommandText =
-                        $"SELECT {Columns}, _hybrid_score FROM lance_hybrid_search('{Qualified}', 'vec', CAST(? AS FLOAT[{_dimensions}]), " +
-                        $"'content', ?, k := {k}, prefilter := true, alpha := 0.5, refine_factor := 4)" +
-                        where + $" ORDER BY _hybrid_score DESC LIMIT {top}";
+                        $"SELECT {Columns}, _hybrid_score FROM lance_hybrid_search('{Qualified}', 'vec', CAST(? AS FLOAT[{_dimensions}]), 'content', ?, k := {k}, prefilter := true, alpha := 0.5, refine_factor := 4){where} ORDER BY _hybrid_score DESC LIMIT {top}";
 
                     cmd.Parameters.Add(new DuckDBParameter(vector));
                     cmd.Parameters.Add(new DuckDBParameter(query));
@@ -355,8 +337,8 @@ public sealed class KontextStore : IDisposable {
                 var nsv = Enumerable.Range(1, Math.Min(16, _dimensions)).Where(d => _dimensions % d == 0).Max();
 
                 Exec(
-                    conn, $"CREATE INDEX vec_idx ON '{_datasetPath}' (vec) USING IVF_HNSW_PQ " +
-                          $"WITH (metric_type = 'l2', num_partitions = 1, num_sub_vectors = {nsv}, num_bits = 8, hnsw_m = 16, hnsw_ef_construction = 100)");
+                    conn,
+                    $"CREATE INDEX vec_idx ON '{_datasetPath}' (vec) USING IVF_HNSW_PQ WITH (metric_type = 'l2', num_partitions = 1, num_sub_vectors = {nsv}, num_bits = 8, hnsw_m = 16, hnsw_ef_construction = 100)");
 
                 _vectorIndexCreated = true;
                 return 0;
@@ -537,8 +519,7 @@ public sealed class KontextStore : IDisposable {
         // SET TimeZone='UTC' makes TIMESTAMPTZ read/write symmetric so UTC instants round-trip exactly. ATTACH IF NOT
         // EXISTS is idempotent per shared engine instance (a bare ATTACH fails on the second connection). Never DETACH.
         readonly string _initSql =
-            "INSTALL lance; LOAD lance; SET TimeZone='UTC'; "
-          + $"ATTACH IF NOT EXISTS '{storagePath.Replace("'", "''", StringComparison.Ordinal)}' AS {storageAlias} (TYPE LANCE);";
+            $"INSTALL lance; LOAD lance; SET TimeZone='UTC'; ATTACH IF NOT EXISTS '{storagePath.Replace("'", "''", StringComparison.Ordinal)}' AS {storageAlias} (TYPE LANCE);";
 
         protected override void Initialize(DuckDBAdvancedConnection connection) {
             try {

@@ -54,6 +54,25 @@ claims are standard behavior of the underlying tech (labeled where inferred).
 - **Single-process ownership**: the database file is opened READ_WRITE with an exclusive OS lock; a
   second process fails fast ("Could not set lock on file"). The Lance dataset directory itself stays
   multi-reader via read-only connections or other Lance tooling.
+- **Engine introspection [validated 2026-07-20, v1.5.3]** — get the info first, then create what
+  needs creating: `SELECT version(), current_database(), current_schema()`; `duckdb_databases()` →
+  `database_name, path (NULL for internal rows), type, readonly, internal` (+ encrypted/cipher/options);
+  `duckdb_extensions()` → `extension_name, loaded, installed, extension_version, install_mode`;
+  `duckdb_settings()` → `name, value, scope` — values are the engine's VARCHAR renderings
+  (`memory_limit` → `"512.0 MiB"`), names mixed-case (`TimeZone` vs `access_mode`). Wrapped as
+  `DuckDBEngineInfo.From(connection | connectionString)` in DuckLance. Also validated:
+  Kurrent.Quack's `DuckDBAdvancedConnection` extends `DuckDB.NET.Data.DuckDBConnection`, so
+  `DuckDBConnection`-typed APIs accept pooled Quack connections directly.
+  **An ATTACHed TYPE LANCE database reports `type='duckdb'` in `duckdb_databases()`
+  [validated 2026-07-20 — the type column CANNOT prove a lance attach].** The deterministic
+  stem-collision detector is name identity instead: on the silent no-op the alias resolves to the
+  engine's OWN catalog, so `alias == current_database()` ⇒ collision; a healthy attach is a
+  separate catalog entry (`KontextConnectionPool.VerifyLanceNamespace` is the reference).
+- **Recursive CTEs work over lance scans [validated 2026-07-20 by the lineage tests]**:
+  `WITH RECURSIVE family AS (... UNION ...)` joining a lance table against the CTE, plus an
+  `IN (SELECT …)` over the result, behaves exactly like plain DuckDB — including the set-based
+  `UNION` recursion semantics (already-produced rows are not re-expanded; recursion terminates
+  when no new row appears). Reference: `KontextDataStoreV2.GetLineageAsync`.
 - **Our convention (DuckLance & KontextStore)**: caller supplies the full database file path; its
   directory is the Lance namespace; one `<collection>.lance` dataset per collection; table name IS the
   collection name; attach alias `ldb` (DuckLance) / `kx` (KontextStore).
@@ -90,17 +109,39 @@ claims are standard behavior of the underlying tech (labeled where inferred).
   `IVF_RQ`, `IVF_HNSW_FLAT`, `IVF_HNSW_PQ`, `IVF_HNSW_SQ`; scalar: `BTREE`, `BITMAP`, `ZONEMAP`,
   `BLOOMFILTER`, `INVERTED` (BM25 full-text), `NGRAM`, `LABEL_LIST` (tag containment). Single-column
   only.
-- **The 256-row training floor** **[validated]**: creating any vector index on a dataset under ~256
-  rows fails with "Creating empty vector indices with train=False is not yet implemented" — the FFI
-  *signature* has a `train` parameter, but the untrained path is unimplemented in this extension
-  version. Consequences:
+- **The 256-row training floor** **[validated — exactly 256, engine-declared]**: creating a vector
+  index below the floor fails with one of TWO error shapes [both observed live 2026-07-20]:
+  empty table → "Creating empty vector indices with train=False is not yet implemented";
+  non-empty but under 256 → "Unprocessable: Not enough rows to train PQ. Requires 256 rows but
+  only N available". The FFI *signature* has a `train` parameter, but the untrained path is
+  unimplemented in this extension version. Preferred detection: try the CREATE and match BOTH
+  messages (`KontextSchema.IsBelowTrainingFloor` is the reference) — a client-side
+  `count(*) >= 256` copies an engine-internal rule that can drift. Consequences:
   - Index creation must be **lazy**. Our pattern is stateless polling — no client-side row tracking:
     `EnsureVectorIndexes` asks the database `SHOW INDEXES` + `SELECT count(*)` live and creates the
     index when count ≥ 256. It is invoked automatically by (a) the always-on reindex scheduler every
     tick (default 5 min), (b) re-opening an existing collection, (c) manual optimize. Self-healing
     across crashes because nothing is remembered.
   - Below the floor, searches are brute-force scans: exact and trivially fast at that scale.
+  - **Below the floor, "no index" is the OPTIMUM — no index type can improve results there.**
+    Brute force IS exact nearest-neighbor; every index (PQ or not) only trades accuracy for
+    latency, and at ≤256 rows there is no accuracy above exact and no latency worth buying.
+    Don't chase indexes for small tables.
+  - **The floor is PQ-specific** (the error names PQ codebook training — 256 samples). FLAT-family
+    indexes (`IVF_FLAT`, `IVF_HNSW_FLAT`) have no codebook and may be creatable below 256
+    [inferred from the error's wording, not probed] — pointless per the previous bullet, so
+    deliberately not pursued.
+  - **Above the floor, PQ already matches FLAT on results**: `refine_factor := 4` re-ranks the
+    top-k with exact distances [validated — identical distances pre/post index], so
+    `IVF_HNSW_PQ` gives FLAT-parity results at a fraction of the memory. FLAT variants would
+    only matter if refine ever became the bottleneck.
 - **Scalar/FTS indexes have no such floor** — they work at 0 rows and are created eagerly.
+- **Scalar index creation validated [2026-07-20, KontextSchema tests]**: `CREATE INDEX … USING
+  BTREE` (memory_id, superseded_by) and `USING LABEL_LIST` (tags) both succeed on an EMPTY lance
+  table — no training floor, unlike vector indexes. LABEL_LIST caveat: containment predicates
+  never push down (§6), so a tags LABEL_LIST index is DORMANT today — created for
+  forward-compatibility only; the BTREE indexes can only matter for pushed-down equality
+  [index *use* by the scan is inferred from Lance semantics, not measured here].
 - **Index staleness is a latency problem, never a correctness problem**: queries automatically split
   into an indexed subplan + a brute-force scan of unindexed fragments and merge results — new writes
   are **never missing** **[validated + Lance docs]**. The reindex scheduler exists to bound the
@@ -114,6 +155,11 @@ claims are standard behavior of the underlying tech (labeled where inferred).
   - `SHOW INDEXES` returns `index_name, index_type, fields, rows_indexed, details` — **no timestamp**,
     so a retrain cadence needs its own stored clock (our scheduler keeps one in memory). Index types
     come back squashed-PascalCase (`IvfHnswPq`); we classify vector indexes by normalized `IVF` prefix.
+  - Kontext-side owners: `KontextSchema` issues every maintenance statement (`RetrainVectorIndexAsync`,
+    `CompactAsync`, `VacuumAsync`, plus the `ExistsAsync` / `GetMaintenanceStateAsync` probes);
+    `KontextMaintenanceScheduler` owns the tick cadence and the pure per-tick `Decide`
+    (ensure-vs-retrain-vs-nothing), calling `EnsureVectorIndexAsync` for both catch-up creation and
+    backlog folds. Ticks are serialized (non-overlap gate), so vacuum never runs concurrently.
 - **PQ constraint**: `num_sub_vectors` must evenly divide the vector dimension (clear engine error).
 
 ## 6. Search and scoring
@@ -121,6 +167,28 @@ claims are standard behavior of the underlying tech (labeled where inferred).
 Three table functions **[validated]**: `lance_vector_search` (returns `_distance`, smaller = closer),
 `lance_fts` (`_score`, larger = better), `lance_hybrid_search` (`_hybrid_score`, larger = better, plus
 `_distance` and `_score` as diagnostics).
+
+- **Full named-parameter surfaces [validated 2026-07-20 via `duckdb_functions()`]**:
+  `lance_hybrid_search` → `k, alpha, prefilter, refine_factor, oversample_factor, nprobs, use_index`
+  (note the spelling `nprobs`; `use_index := false` forces an exact brute-force scan even when an
+  index exists — the exactness escape hatch). `lance_vector_search` → the same minus alpha/oversample
+  plus `explain_verbose`. `lance_fts` → only `prefilter, k`. Query-vector overloads exist for both
+  `FLOAT[]` and `DOUBLE[]`. Confirmed absent: `filter`, `fast_search`, reranker knobs.
+- **All named arguments accept bound `$name` parameters [validated 2026-07-20 via live probe]**:
+  `k := $k`, `prefilter := $prefilter`, `refine_factor := $refine_factor`, `alpha := $alpha`,
+  `oversample_factor := $oversample_factor` all bind through DuckDB.NET named `DuckDBParameter`s,
+  as do the query vector (`CAST($query_embedding AS FLOAT[N])`), the query text, and `LIMIT $limit`.
+  The same `$name` referenced twice in one statement binds once. An earlier claim that Lance named
+  arguments "cannot be bound as parameters" was wrong — do not interpolate knob values into SQL
+  text. What genuinely cannot be a parameter: the `FLOAT[N]` type dimension and SQL keywords
+  (ASC/DESC) — those remain interpolated/clause-picked.
+- **Return columns [validated 2026-07-20]**: each function returns ALL table columns (including the
+  vector column — project explicitly to avoid paying for it) plus its scores: vector → `_distance`;
+  fts → `_score`; hybrid → `_distance`, `_score`, AND `_hybrid_score`. All single-precision FLOAT.
+  **A row surfaced by only one leg has NULL in the other leg's diagnostic column** — only the blend
+  is always present (surfaced by failing tests, then pinned). The blend behaves as per-leg
+  min-max-normalized scores combined by alpha [inferred from one probe — leg ties flatten to
+  identical `_hybrid_score` values].
 
 - **`_distance` semantics — undocumented upstream, measured with known vectors [validated]**:
   - `l2` (default) returns **squared** Euclidean distance, not raw L2.
@@ -135,7 +203,10 @@ Three table functions **[validated]**: `lance_vector_search` (returns `_distance
   wrong row). With it, top-k candidates are re-ranked with exact distances — returned scores are true
   distances.
 - **Prefilter semantics** **[validated]**: `WHERE` around the table function is the filter mechanism
-  (the `filter :=` named parameter is not in the released build). `prefilter := true` = genuine
+  (the `filter :=` named parameter is not in the released build; at HEAD it is ENFORCED
+  REST-namespace-only — `lance_search.cpp` throws "filter parameter is only supported for
+  namespace-backed tables" for local datasets [source-confirmed 2026-07-20], so it is not a future
+  local escape hatch either). `prefilter := true` = genuine
   prefilter (k matching rows even if far outside the global top-k); `prefilter := false` = post-filter
   (fewer than k). Always set it explicitly. Parameter-bound predicates (`WHERE category = ?`) push
   down fine.
@@ -144,6 +215,25 @@ Three table functions **[validated]**: `lance_vector_search` (returns `_distance
   index. Correct fallback: **oversample** — set `k` to cover the whole candidate set (we use the table
   row count), let DuckDB evaluate the containment predicate, then `LIMIT n`. Equality predicates DO
   push down and need no oversampling.
+- **The full pushdown whitelist [source-confirmed 2026-07-20 at HEAD of `lance-format/lance-duckdb`,
+  clone: `~/dev/contrib/lance-duckdb`]**: column refs (incl. `struct_extract` nested), constants,
+  non-try constant casts, all comparisons, AND/OR conjunctions, NOT, IS [NOT] NULL, IN/NOT IN
+  (literal lists), BETWEEN, and exactly five scalar functions — `lower`, `upper`, `starts_with`,
+  `ends_with`, `contains` (STRING contains, VARCHAR needle) — plus LIKE/ILIKE and
+  `regexp_matches`/`regexp_full_match`. Array containment is absent from the wire IR itself (both
+  the C++ encoder `lance_filter_ir.cpp` AND the Rust decoder `rust/expr_ir.rs` lack any opcode) —
+  adding it upstream means changing both sides in sync (per the repo's AGENTS.md). Conjunction-AND
+  of equalities is explicitly handled (`BOUND_CONJUNCTION`/`CONJUNCTION_AND`) — multi-column scope
+  filters translate. HEAD ⊇ released build: absences at HEAD are certainly absent in our build;
+  presences should still be live-probed before relying on them.
+- **Pushdown OBSERVED via EXPLAIN [validated 2026-07-20, CLI engine v1.5.4 / lance 3500606 —
+  translator identical to our 533e0ee for these paths (no filter_ir commits between the builds)]**:
+  the plan itself proves pushdown — look for `Lance Pushed Filter Parts: N` and the predicate
+  inside `LanceRead: … full_filter=…` (pushed) vs a separate `FILTER` operator above the scan with
+  `Pushed Filter Parts: 0` (not pushed). Observed: `tenant_id = 'a' AND user_id = 'b'` → 2 parts
+  pushed, whole conjunction in full_filter; `array_has_all(tags, […])` → 0 parts, FILTER above
+  scan; `contains(tags_text, '|tag|')` → 1 part pushed. This is the definitive probe technique for
+  any future pushdown question.
 - **No arbitrary `ORDER BY` inside the functions** — they rank by relevance only. "Filtered, ordered
   by another column, top N" requires a large k pool + client-side sort, with an inherent recall
   tradeoff.

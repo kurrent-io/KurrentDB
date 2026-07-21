@@ -10,16 +10,14 @@ using Microsoft.Extensions.VectorData;
 namespace Kurrent.Kontext.Data;
 
 /// <summary>
-/// The data access layer for everything Kontext persists — today one "memories" vector collection
-/// reached through the portable <see cref="VectorStore"/> abstraction; entities, directives, and the
-/// other upcoming stores land here too. This is the ONLY class that knows how memories are
-/// physically stored and found: consumers speak contract types and memory-shaped verbs, never
-/// records, filters, or connector types. When the portable surface can't express an operation
-/// (partial-update stamps, hybrid-search tuning, maintenance), this is the one place allowed to
-/// reach past it straight into the backing engine (e.g. DuckDB) without anything above noticing.
+/// Access the memories read model.
+/// It does not use any Vector store and it calls directly the DuckDB engine to retrieve the memories.
+/// - search
+/// - get by ids
+/// - list by tags and types and maybe importance and last accessed at with limit and sort
 /// </summary>
 public sealed class KontextDataStore : IDisposable, IAsyncDisposable {
-    const string MemoriesCollection = "memories";
+    const string MemoriesCollection = "memories"; // table
 
     public KontextDataStore(VectorStore vectorStore, TouchBufferOptions? touchBuffering = null) {
         _memories = vectorStore.GetCollection<string, MemoryRecord>(MemoriesCollection);
@@ -69,6 +67,7 @@ public sealed class KontextDataStore : IDisposable, IAsyncDisposable {
             yield return MemoryRecordMapper.ToStoredMemory(record);
     }
 
+    // this needs to disapear because kurrentdb is the source of truth for memories, and it needs to be able to update them without going through the store.
     /// <summary>
     /// Saves the batch in ONE storage commit — new memories and lifecycle-stamped ones alike — so the
     /// backing connector also generates whatever embeddings it needs once, not per memory.
@@ -128,8 +127,11 @@ public sealed class KontextDataStore : IDisposable, IAsyncDisposable {
     // (DuckLance lowercases every property name).
     static Task<IReadOnlyList<MemoryRecord>> ListBySqlAsync(
         DuckDBCollection<string, MemoryRecord> memories,
-        IReadOnlyCollection<Contracts.Tag> tags, IReadOnlyCollection<Contracts.MemoryType> types,
-        Contracts.RecollectSort sort, Contracts.SortDirection direction, int limit, CancellationToken ct
+        IReadOnlyCollection<Contracts.Tag> tags, 
+        IReadOnlyCollection<Contracts.MemoryType> types,
+        Contracts.RecollectSort sort, 
+        Contracts.SortDirection direction,
+        int limit, CancellationToken ct
     ) {
         var criteria   = new StringBuilder("WHERE isretracted = false");
         var parameters = new List<object?>();

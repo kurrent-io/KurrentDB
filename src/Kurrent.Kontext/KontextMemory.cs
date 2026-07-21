@@ -8,6 +8,8 @@ using Kurrent.Kontext.Data;
 
 namespace Kurrent.Kontext;
 
+public delegate Task AppendEvent(object evt, CancellationToken ct = default);
+
 /// <summary>
 /// The transport-neutral memory service: owns the domain workflows — retain with supersede
 /// semantics, the retract cascade, recall and its reconsolidation touches — and composes
@@ -24,7 +26,7 @@ namespace Kurrent.Kontext;
 /// - Reflect is not implemented — it synthesizes derived memories with a language model, which is
 ///   outside the data-store surface.
 /// </summary>
-public sealed class KontextMemory(KontextDataStore store) : IKontextMemory {
+public sealed class KontextMemory(KontextDataStore store, AppendEvent appendEvent) : IKontextMemory {
 	const int DefaultRecallLimit    = 10;
 	const int DefaultRecollectLimit = 100;
 
@@ -62,6 +64,7 @@ public sealed class KontextMemory(KontextDataStore store) : IKontextMemory {
 			// siblings pending in this batch can't surface as look-alikes — the caller just wrote
 			// them in the same request and needs no reminder.
 			if (request.Reconcile) {
+                // this is just a quick implementation cause it simply checks for similarity in the content of the memory, but it can be improved to check for other fields as well
 				await foreach (var hit in store.SearchAsync(memory.Content, ReconcileRelatedLimit, [], ct).ConfigureAwait(false))
 					result.Related.Add(new Contracts.RetainResponse.Types.RelatedMemory {
 						MemoryId   = hit.Memory.MemoryId,

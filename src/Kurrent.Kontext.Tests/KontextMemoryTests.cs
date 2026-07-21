@@ -13,7 +13,10 @@ namespace Kurrent.Kontext.Tests;
 /// suite parallelizes freely.
 /// </summary>
 public class KontextMemoryTests {
-	static KontextMemory NewMemory() => new(new KontextDataStore(new TestVectorStore(new TrigramHashEmbeddingGenerator())));
+	// The append side is not under test here; KontextMemory does not consume it yet.
+	static Task NoAppend(object evt, CancellationToken ct = default) => Task.CompletedTask;
+
+	static KontextMemory NewMemory() => new(new KontextDataStore(new TestVectorStore(new TrigramHashEmbeddingGenerator())), NoAppend);
 
 	static KontextDataStore NewBufferedStore(TestVectorStore store, int batchSize, TimeSpan batchWait) =>
 		new(store, new() { Enabled = true, BatchSize = batchSize, BatchWait = batchWait });
@@ -332,7 +335,7 @@ public class KontextMemoryTests {
 	public async ValueTask retain_writes_the_whole_request_as_one_batch_upsert() {
 		// Arrange
 		var store  = new TestVectorStore(new TrigramHashEmbeddingGenerator());
-		var memory = new KontextMemory(new KontextDataStore(store));
+		var memory = new KontextMemory(new KontextDataStore(store), NoAppend);
 
 		// Act
 		await memory.RetainAsync(new() {
@@ -401,7 +404,7 @@ public class KontextMemoryTests {
 		// Arrange
 		var store     = new TestVectorStore(new TrigramHashEmbeddingGenerator());
 		var dataStore = NewBufferedStore(store, batchSize: 100, batchWait: TimeSpan.FromMinutes(10));
-		var memory    = new KontextMemory(dataStore);
+		var memory    = new KontextMemory(dataStore, NoAppend);
 		await memory.RetainAsync(new() { Memories = { Observation("A memory recalled repeatedly.") } });
 
 		// Recollect never touches, so it reads the clocks without advancing them.
@@ -433,7 +436,7 @@ public class KontextMemoryTests {
 	public async ValueTask buffered_touches_flush_when_the_batch_size_is_reached() {
 		// Arrange
 		var store  = new TestVectorStore(new TrigramHashEmbeddingGenerator());
-		var memory = new KontextMemory(NewBufferedStore(store, batchSize: 2, batchWait: TimeSpan.FromMinutes(10)));
+		var memory = new KontextMemory(NewBufferedStore(store, batchSize: 2, batchWait: TimeSpan.FromMinutes(10)), NoAppend);
 		await memory.RetainAsync(new() {
 			Memories = {
 				Observation("The projector checkpoint format switched to protobuf JSON in v25.1."),
@@ -461,7 +464,7 @@ public class KontextMemoryTests {
 	public async ValueTask buffered_touches_flush_after_the_batch_wait() {
 		// Arrange
 		var store  = new TestVectorStore(new TrigramHashEmbeddingGenerator());
-		var memory = new KontextMemory(NewBufferedStore(store, batchSize: 100, batchWait: TimeSpan.FromMilliseconds(100)));
+		var memory = new KontextMemory(NewBufferedStore(store, batchSize: 100, batchWait: TimeSpan.FromMilliseconds(100)), NoAppend);
 		await memory.RetainAsync(new() { Memories = { Observation("A memory touched once and left to linger.") } });
 
 		var memories      = MemoriesOf(store);

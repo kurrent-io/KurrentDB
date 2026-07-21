@@ -28,10 +28,16 @@
     <PackageReference Include="Microsoft.SemanticKernel" />
     <PackageReference Include="ModelContextProtocol"/>
     <PackageReference Include="ModelContextProtocol.AspNetCore"/>
+    <PackageReference Include="Polly" />
   </ItemGroup>
     
   <ItemGroup>
     <None Remove="Kurrent.Kontext.csproj.DotSettings" />
+  </ItemGroup>
+    
+  <ItemGroup>
+    <Folder Include="Modules\Entities\" />
+    <Folder Include="Modules\Memory\" />
   </ItemGroup>
 
 </Project>
