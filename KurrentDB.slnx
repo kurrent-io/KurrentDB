@@ -47,14 +47,14 @@
     <Project Path="src\Connectors\KurrentDB.Connectors.Tests\KurrentDB.Connectors.Tests.csproj" />
   </Folder>
   <Folder Name="/Plugins/Kontext/">
-    <Project Path="src/Kurrent.Kontext.DuckLance.Tests/DuckLance.Tests.csproj" />
-    <Project Path="src/Kurrent.Kontext.DuckLance/DuckLance.csproj" />
-    <Project Path="src\Kurrent.Kontext.Contracts\Kurrent.Kontext.Contracts.csproj" />
-    <Project Path="src\Kurrent.Kontext.Embeddings.Playground\Kurrent.Kontext.Embeddings.Playground.csproj" />
-    <Project Path="src\Kurrent.Kontext.Embeddings.Tests\Kurrent.Kontext.Embeddings.Tests.csproj" />
-    <Project Path="src\Kurrent.Kontext.Embeddings\Kurrent.Kontext.Embeddings.csproj" />
-    <Project Path="src\Kurrent.Kontext.Tests\Kurrent.Kontext.Tests.csproj" />
-    <Project Path="src\Kurrent.Kontext\Kurrent.Kontext.csproj" />
+    <Project Path="src\Kontext\Kurrent.Kontext.DuckLance.Tests/DuckLance.Tests.csproj" />
+    <Project Path="src\Kontext\Kurrent.Kontext.DuckLance/DuckLance.csproj" />
+    <Project Path="src\Kontext\Kurrent.Kontext.Contracts\Kurrent.Kontext.Contracts.csproj" />
+    <Project Path="src\Kontext\Kurrent.Kontext.Embeddings.Playground\Kurrent.Kontext.Embeddings.Playground.csproj" />
+    <Project Path="src\Kontext\Kurrent.Kontext.Embeddings.Tests\Kurrent.Kontext.Embeddings.Tests.csproj" />
+    <Project Path="src\Kontext\Kurrent.Kontext.Embeddings\Kurrent.Kontext.Embeddings.csproj" />
+    <Project Path="src\Kontext\Kurrent.Kontext.Tests\Kurrent.Kontext.Tests.csproj" />
+    <Project Path="src\Kontext\Kurrent.Kontext\Kurrent.Kontext.csproj" />
   </Folder>
   <Folder Name="/Plugins/Kontext/Prototype/">
     <Project Path="src/KurrentDB.Kontext.Models/KurrentDB.Kontext.Models.csproj" />

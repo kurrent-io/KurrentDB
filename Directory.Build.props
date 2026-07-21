@@ -1,8 +1,17 @@
 <Project>
 <PropertyGroup>
-    <!--
-    <RestoreSources>https://www.myget.org/F/eventstore-deps/api/v3/index.json</RestoreSources>
-    -->
-    <RestorePackagesPath>$(MSBuildThisFileDirectory)dependencies</RestorePackagesPath>
+  <TargetFramework>net10.0</TargetFramework>
+  <LangVersion>preview</LangVersion>
+  <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+  <EnablePreviewFeatures>true</EnablePreviewFeatures>
+  <Nullable>enable</Nullable>
+  <ImplicitUsings>enable</ImplicitUsings>
+  <IsPackable>false</IsPackable>
+  
+  <!-- Exclude all .DotSettings files from being included -->
+  <DefaultItemExcludes>$(DefaultItemExcludes);**/*.DotSettings</DefaultItemExcludes>
+
+  <!--  <RestoreSources>https://www.myget.org/F/eventstore-deps/api/v3/index.json</RestoreSources>  -->
+  <RestorePackagesPath>$(MSBuildThisFileDirectory)dependencies</RestorePackagesPath>
 </PropertyGroup>
 </Project>
