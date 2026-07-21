@@ -78,7 +78,7 @@ internal sealed partial class UserIndexSql {
 			.CopyTo(records);
 	}
 
-	// ANDs one equality per supplied field. Column order is irrelevant: it is a filtered scan over the view.
+	// ANDs one equality per supplied field
 	private static string BuildPredicate(IReadOnlyList<FieldConstraint> constraints) {
 		if (constraints.Count == 0)
 			return string.Empty;
