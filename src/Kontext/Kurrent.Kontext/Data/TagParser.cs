@@ -2,13 +2,12 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Text;
-using Kurrent.Kontext.Mcp.Model;
 
-namespace Kurrent.Kontext.Edges.Mcp.Model;
+namespace Kurrent.Kontext.Data;
 
 /// <summary>
 /// Parses the canonical encoded tag form ("scope:value", or bare "value") and owns the sanitization
-/// rule that makes tags canonical. <see cref="Tag"/> itself is a plain record and enforces nothing —
+/// rule that makes tags canonical. Tag records themselves are plain data and enforce nothing —
 /// callers that need canonical parts go through here.
 /// </summary>
 public static class TagParser {

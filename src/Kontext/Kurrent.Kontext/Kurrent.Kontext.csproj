@@ -36,8 +36,9 @@
   </ItemGroup>
     
   <ItemGroup>
+    <Folder Include="Data\.scratch\" />
     <Folder Include="Modules\Entities\" />
-    <Folder Include="Modules\Memory\" />
+    <Folder Include="Modules\Memory\Data\" />
   </ItemGroup>
 
 </Project>

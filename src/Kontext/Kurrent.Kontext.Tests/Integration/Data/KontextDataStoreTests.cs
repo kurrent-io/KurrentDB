@@ -12,14 +12,14 @@ using Kurrent.Quack.ConnectionPool;
 namespace Kurrent.Kontext.Tests.Data;
 
 /// <summary>
-/// Behavioural tests for <see cref="KontextDataStoreV2"/> against a REAL DuckDB + Lance engine.
+/// Behavioural tests for <see cref="KontextDataStore"/> against a REAL DuckDB + Lance engine.
 /// The store is read-only, so each test seeds the memories table directly with SQL — exactly how
 /// the projector will write it — through the same borrowed pool the store reads from. No vector
 /// store and no embedding model anywhere: embeddings are seeded as literal 4-dim vectors, and
 /// searches pass the query embedding in.
 /// </summary>
 [Category("Integration")]
-public class KontextDataStoreV2Tests {
+public class KontextDataStoreTests {
 	static readonly DateTimeOffset Base = new(2026, 7, 1, 10, 0, 0, TimeSpan.Zero);
 
 	static Contracts.Evidence SeedEvidence() {
@@ -533,7 +533,7 @@ public class KontextDataStoreV2Tests {
 	static Contracts.Tag Tag(string scope, string value) => new() { Scope = scope, Value = value };
 
 	/// <summary>Creates the schema through <see cref="KontextSchema"/> and seeds the five fixed rows, then hands back a store over the same pool.</summary>
-	static async ValueTask<KontextDataStoreV2> Seed(KontextConnectionPool pool) {
+	static async ValueTask<KontextDataStore> Seed(KontextConnectionPool pool) {
 		// The schema component owns CREATE TABLE and every eager index (including the FTS
 		// INVERTED index the keyword tests need) — seeding only inserts rows.
 		await NewSchema(pool).CreateAsync();

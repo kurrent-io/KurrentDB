@@ -1,23 +1,27 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Kurrent.Kontext.Data;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Kurrent.Kontext.Data;
+namespace Kurrent.Kontext.Modules.Sessions;
 
 /// <summary>
 /// The agent session import's background loop: on a fixed cadence it runs the importer's one
-/// idempotent batch, copying the new tail of Claude Code session data into <c>sessions.messages</c>.
+/// idempotent DML batch, copying the new tail of Claude Code session data into <c>transcripts</c>
+/// (and refreshing the <c>transcript_parse_errors</c> snapshot).
 ///
 /// The split mirrors the rest of the data layer:
 /// - <see cref="AgentSessionImporter"/> owns every statement — this class issues no SQL
 /// - this class owns the clock, the tick cadence, and the non-overlap gate
 ///
-/// There is no per-tick decision to make — every tick imports; the batch is self-sufficient, so
-/// unlike <see cref="KontextMaintenanceScheduler"/> there is no state probe or Decide step. A tick
-/// never throws: every failure is logged and the next tick simply tries again — which is also the
-/// offline story, since the first INSTALL of the community extension needs network.
+/// A tick quietly skips while the transcript tables have not been created yet (a tick that fires
+/// before the host ran <see cref="AgentSessionImporter.CreateAsync"/>), exactly like
+/// <see cref="KontextMaintenanceScheduler"/> skips before its schema exists. Otherwise every tick
+/// just imports — there is no per-tick Decide step. A tick never throws: every failure is logged and
+/// the next tick simply tries again — which is also the offline story, since the first INSTALL of
+/// the community extension needs network.
 /// </summary>
 public sealed class AgentSessionImportScheduler : IDisposable {
     readonly AgentSessionImporter      _importer;
@@ -81,14 +85,20 @@ public sealed class AgentSessionImportScheduler : IDisposable {
         }
     }
 
-    // The single tick body. Never throws — every failure is caught and logged; the next tick
-    // retries whatever this one left undone (an offline first tick whose INSTALL could not reach
-    // the community feed is exactly this case).
+    // The single tick body. Never throws — every failure is caught and logged; quietly skips while
+    // the transcript tables have not been created yet (a tick that fires before the host ran
+    // AgentSessionImporter.CreateAsync). The next tick retries whatever this one left undone (an
+    // offline tick whose INSTALL could not reach the community feed is exactly this case).
     async Task RunTickBodyAsync(CancellationToken ct) {
         if (Volatile.Read(ref _disposed) != 0)
             return;
 
         try {
+            if (!await _importer.ExistsAsync(ct).ConfigureAwait(false)) {
+                _logger.LogDebug("Agent session import tick skipped: the transcript tables do not exist yet.");
+                return;
+            }
+
             await _importer.ImportAsync(ct).ConfigureAwait(false);
             _logger.LogDebug("Agent session import tick imported the new session tail.");
         } catch (Exception ex) {

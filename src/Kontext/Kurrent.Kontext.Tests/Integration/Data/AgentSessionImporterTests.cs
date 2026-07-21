@@ -3,6 +3,7 @@
 
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
+using Kurrent.Kontext.Modules.Sessions;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Kurrent.Kontext.Tests.Data;
@@ -10,10 +11,10 @@ namespace Kurrent.Kontext.Tests.Data;
 /// <summary>
 /// Behavioural tests for <see cref="AgentSessionImporter"/> and <see cref="AgentSessionImportScheduler"/>
 /// against a REAL DuckDB engine and the REAL agent_data community extension: each test writes a
-/// validated Claude Code session under <c>projects/-tmp-proj/&lt;session&gt;.jsonl</c>, imports it,
-/// and reads <c>sessions.messages</c> (and the <c>sessions.parse_errors</c> snapshot) back through
-/// the same pool the importer rents from. The scheduler halves drive ticks deterministically with a
-/// FakeTimeProvider.
+/// validated Claude Code session under <c>projects/-tmp-proj/&lt;session&gt;.jsonl</c>, bootstraps the
+/// tables with CreateAsync, imports, and reads <c>transcripts</c> (and the
+/// <c>transcript_parse_errors</c> snapshot) back through the same pool the importer rents from. The
+/// scheduler halves drive ticks deterministically with a FakeTimeProvider.
 /// </summary>
 [Category("Integration")]
 public class AgentSessionImporterTests {
@@ -28,6 +29,7 @@ public class AgentSessionImporterTests {
 		var sourceRoot = SeedSession(dir.Path, sample, [Fixture.UserLine, Fixture.AssistantTextLine, Fixture.AssistantToolUseLine]);
 
 		var importer = NewImporter(pool, sourceRoot);
+		await importer.CreateAsync();
 
 		// The tool_use row is the one carrying every asserted field — a real model, a tool name, and a
 		// timestamp that must land as an actual TIMESTAMPTZ instant, not the raw ISO-8601 string.
@@ -56,6 +58,7 @@ public class AgentSessionImporterTests {
 		var sourceRoot = SeedSession(dir.Path, sample, [Fixture.UserLine, Fixture.AssistantTextLine, Fixture.AssistantToolUseLine]);
 
 		var importer = NewImporter(pool, sourceRoot);
+		await importer.CreateAsync();
 
 		// Act — import the same unchanged session twice.
 		await importer.ImportAsync();
@@ -75,6 +78,7 @@ public class AgentSessionImporterTests {
 		var sourceRoot = SeedSession(dir.Path, sample, [Fixture.UserLine, Fixture.AssistantTextLine, Fixture.AssistantToolUseLine]);
 
 		var importer = NewImporter(pool, sourceRoot);
+		await importer.CreateAsync();
 
 		await importer.ImportAsync();
 		await Assert.That(await importer.CountAsync()).IsEqualTo(3L);
@@ -91,8 +95,8 @@ public class AgentSessionImporterTests {
 	[Test]
 	public async ValueTask keeps_unparseable_lines_in_parse_errors_table() {
 		// Arrange — the three conversation lines plus raw garbage and a known-but-unmodeled metadata
-		// type; both extras surface as _parse_error rows that are KEPT in sessions.parse_errors, not
-		// dropped, and linked back to the imported messages by session_id.
+		// type; both extras surface as _parse_error rows that are KEPT in transcript_parse_errors, not
+		// dropped, and linked back to the imported transcripts by session_id.
 		using var dir  = new TempDir();
 		using var pool = NewPool(dir.Path);
 
@@ -107,6 +111,7 @@ public class AgentSessionImporterTests {
 			]);
 
 		var importer = NewImporter(pool, sourceRoot);
+		await importer.CreateAsync();
 
 		// Act
 		await importer.ImportAsync();
@@ -134,6 +139,7 @@ public class AgentSessionImporterTests {
 			]);
 
 		var importer = NewImporter(pool, sourceRoot);
+		await importer.CreateAsync();
 
 		await importer.ImportAsync();
 		await Assert.That(await importer.CountAsync()).IsEqualTo(3L);
@@ -154,7 +160,7 @@ public class AgentSessionImporterTests {
 
 	[Test]
 	public async ValueTask count_is_zero_before_first_import() {
-		// Arrange — a fresh pool: neither sessions.messages nor sessions.parse_errors has been created.
+		// Arrange — a fresh pool: neither transcripts nor transcript_parse_errors has been created.
 		using var dir  = new TempDir();
 		using var pool = NewPool(dir.Path);
 
@@ -162,6 +168,29 @@ public class AgentSessionImporterTests {
 
 		// Act + Assert — both probes tolerate the missing table and return 0 rather than throwing.
 		await Assert.That(await importer.CountAsync()).IsEqualTo(0L);
+		await Assert.That(await importer.CountParseErrorsAsync()).IsEqualTo(0L);
+	}
+
+	[Test]
+	public async ValueTask create_is_idempotent() {
+		// Arrange — bootstrap runs on every host start, so calling it twice must be a harmless no-op
+		// (both tables use IF NOT EXISTS).
+		using var dir  = new TempDir();
+		using var pool = NewPool(dir.Path);
+
+		var sample     = NewSample();
+		var sourceRoot = SeedSession(dir.Path, sample, [Fixture.UserLine, Fixture.AssistantTextLine, Fixture.AssistantToolUseLine]);
+
+		var importer = NewImporter(pool, sourceRoot);
+
+		// Act — create, create again, then import.
+		await importer.CreateAsync();
+		await importer.CreateAsync();
+		await importer.ImportAsync();
+
+		// Assert — the double bootstrap left the tables intact and the import still lands three rows.
+		await Assert.That(await importer.ExistsAsync()).IsTrue();
+		await Assert.That(await importer.CountAsync()).IsEqualTo(3L);
 		await Assert.That(await importer.CountParseErrorsAsync()).IsEqualTo(0L);
 	}
 
@@ -183,6 +212,7 @@ public class AgentSessionImporterTests {
 		};
 
 		var importer = new AgentSessionImporter(pool, options);
+		await importer.CreateAsync();
 
 		using var scheduler = new AgentSessionImportScheduler(importer, options, clock);
 
@@ -194,9 +224,41 @@ public class AgentSessionImporterTests {
 	}
 
 	[Test]
+	public async ValueTask tick_skips_quietly_before_bootstrap() {
+		// Arrange — CreateAsync is deliberately never called: the transcript tables do not exist, so
+		// the tick must quiet-skip (the DML-only import would otherwise fail every tick).
+		using var dir  = new TempDir();
+		using var pool = NewPool(dir.Path);
+
+		var sample     = NewSample();
+		var sourceRoot = SeedSession(dir.Path, sample, [Fixture.UserLine, Fixture.AssistantTextLine, Fixture.AssistantToolUseLine]);
+
+		var clock = new FakeTimeProvider();
+
+		var options = new AgentSessionImportOptions {
+			SourcePath   = sourceRoot,
+			TickInterval = TimeSpan.FromMinutes(5),
+		};
+
+		var importer = new AgentSessionImporter(pool, options);
+
+		using var scheduler = new AgentSessionImportScheduler(importer, options, clock);
+
+		// Act — a background tick and a direct tick both fire before bootstrap; neither may throw.
+		clock.Advance(TimeSpan.FromMinutes(6));
+		await scheduler.TickNowAsync();
+
+		// Assert — the tick created nothing and imported nothing: the tables still do not exist.
+		await Assert.That(await importer.ExistsAsync()).IsFalse();
+		await Assert.That(await importer.CountAsync()).IsEqualTo(0L);
+		await Assert.That(await importer.CountParseErrorsAsync()).IsEqualTo(0L);
+	}
+
+	[Test]
 	public async ValueTask tick_failure_does_not_throw() {
-		// Arrange — the source path points at a directory that never exists, so the import batch's
-		// scan fails; the scheduler must swallow it rather than surface it onto the timer thread.
+		// Arrange — bootstrap the tables so the tick actually reaches the import, then point the source
+		// path at a directory that never exists so the scan fails; the scheduler must swallow it rather
+		// than surface it onto the timer thread.
 		using var dir  = new TempDir();
 		using var pool = NewPool(dir.Path);
 
@@ -208,6 +270,7 @@ public class AgentSessionImporterTests {
 		};
 
 		var importer = new AgentSessionImporter(pool, options);
+		await importer.CreateAsync();
 
 		using var scheduler = new AgentSessionImportScheduler(importer, options, clock);
 
@@ -217,8 +280,10 @@ public class AgentSessionImporterTests {
 		// …and the scheduler stays usable: a direct tick is still a safe no-throw.
 		await scheduler.TickNowAsync();
 
-		// Assert — nothing was imported, and no exception escaped either step.
+		// Assert — the tables exist but the failed scan imported nothing, and no exception escaped.
+		await Assert.That(await importer.ExistsAsync()).IsTrue();
 		await Assert.That(await importer.CountAsync()).IsEqualTo(0L);
+		await Assert.That(await importer.CountParseErrorsAsync()).IsEqualTo(0L);
 	}
 
 	#region ->> Test Infrastructure <<-
@@ -277,7 +342,7 @@ public class AgentSessionImporterTests {
 				command.CommandText =
 					"""
 					SELECT source, message_role, model, tool_name, "timestamp"
-					FROM sessions.messages
+					FROM transcripts
 					WHERE uuid = $uuid
 					""";
 				command.Parameters.Add(new("uuid", uuid));
@@ -286,7 +351,7 @@ public class AgentSessionImporterTests {
 				reader.Read();
 
 				// TIMESTAMPTZ arrives as a DateTimeOffset, or on some driver paths a bare DateTime whose
-				// clock reading is UTC — the same wire shapes KontextDataStoreV2 reads.
+				// clock reading is UTC — the same wire shapes KontextDataStore reads.
 				var timestamp = reader.GetValue(4) switch {
 					DateTimeOffset instant => instant,
 					DateTime clockReading  => new DateTimeOffset(DateTime.SpecifyKind(clockReading, DateTimeKind.Unspecified), TimeSpan.Zero),
@@ -305,15 +370,15 @@ public class AgentSessionImporterTests {
 		pool.ExecuteAsync(
 			connection => {
 				using var command = connection.CreateCommand();
-				command.CommandText = "SELECT count(*) FROM sessions.messages WHERE uuid = $uuid";
+				command.CommandText = "SELECT count(*) FROM transcripts WHERE uuid = $uuid";
 				command.Parameters.Add(new("uuid", uuid));
 
 				return (long)command.ExecuteScalar()! > 0;
 			});
 
 	/// <summary>
-	/// Counts parse-error rows whose <c>session_id</c> matches an imported message — the logical link
-	/// the two tables share (a SEMI JOIN, so a shared session never fans the count out per message).
+	/// Counts parse-error rows whose <c>session_id</c> matches an imported transcript — the logical
+	/// link the two tables share (a SEMI JOIN, so a shared session never fans the count out per row).
 	/// </summary>
 	static Task<long> CountParseErrorsLinkedToMessagesAsync(KontextConnectionPool pool) =>
 		pool.ExecuteAsync(
@@ -322,8 +387,8 @@ public class AgentSessionImporterTests {
 				command.CommandText =
 					"""
 					SELECT count(*)
-					FROM sessions.parse_errors AS pe
-					SEMI JOIN sessions.messages AS m ON pe.session_id = m.session_id
+					FROM transcript_parse_errors AS pe
+					SEMI JOIN transcripts AS m ON pe.session_id = m.session_id
 					""";
 
 				return (long)command.ExecuteScalar()!;

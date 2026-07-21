@@ -4,12 +4,12 @@
 using FluentValidation;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Edges.Grpc;
+using Kurrent.Kontext.Infrastructure.Data;
 using Kurrent.Kontext.Infrastructure.FluentValidation;
 using Kurrent.Kontext.Infrastructure.Validation;
 using Kurrent.Kontext.Mcp;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.VectorData;
 
 namespace Kurrent.Kontext;
 
@@ -18,10 +18,9 @@ public static class KontextServiceCollectionExtensions {
         /// <summary>
         /// Registers the transport-neutral memory service: the explicit request validators, the validation
         /// decorator, and <see cref="IKontextMemory"/> itself. Both edges build on this and it is idempotent,
-        /// so registering both edges is safe. The host must supply the <c>VectorStore</c> the core persists to.
-        /// <paramref name="configure"/> tunes <see cref="KontextMemoryOptions"/> (e.g. the opt-in touch
-        /// buffer); when omitted, defaults apply — DI injects the registered options into the service's
-        /// optional constructor parameter only when they were configured here.
+        /// so registering both edges is safe. The host must supply the <c>KontextConnectionPool</c> the
+        /// read model queries through. <paramref name="configure"/> tunes <see cref="KontextMemoryOptions"/>;
+        /// when omitted, defaults apply.
         /// </summary>
         public IServiceCollection AddKontext(Action<KontextMemoryOptions>? configure = null) {
             if (configure is not null) {
@@ -37,13 +36,11 @@ public static class KontextServiceCollectionExtensions {
         }
 
         IServiceCollection AddCore() {
-            // The data store owns ALL persistence (and the opt-in touch buffer); the host supplies
-            // the VectorStore it wraps. Registered as its own singleton so future components
-            // (retrieval pipelines, projectors) can share it — DI disposes it on shutdown, which
-            // flushes any buffered access stamps.
+            // The store is the projector-owned READ model over the lance table; the host
+            // supplies the KontextConnectionPool it queries through. Registered as its own
+            // singleton so future components (retrieval pipelines, maintenance) can share it.
             services.TryAddSingleton(sp => new KontextDataStore(
-                sp.GetRequiredService<VectorStore>(),
-                sp.GetService<KontextMemoryOptions>()?.TouchBuffer));
+                sp.GetRequiredService<KontextConnectionPool>()));
 
             services.TryAddSingleton<KontextMemory>();
 

@@ -11,7 +11,7 @@ namespace Kurrent.Kontext.Data;
 /// indexes, and the lazily-trained vector index.
 ///
 /// A separate component on purpose:
-/// - <see cref="KontextDataStoreV2"/> is read-only by design — it assumes the schema exists
+/// - <see cref="KontextDataStore"/> is read-only by design — it assumes the schema exists
 /// - the projector owns data writes and should not carry DDL
 /// - the host gets ONE place to bootstrap storage before either of them touches the table
 ///

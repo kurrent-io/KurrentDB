@@ -32,7 +32,7 @@ namespace Kurrent.Kontext.Data;
 /// - every value travels as a named $parameter, never inlined into the text (validated live:
 ///   even Lance's named arguments bind); only a clause or the FLOAT[N] dimension is interpolated
 /// </summary>
-public sealed class KontextDataStoreV2(KontextConnectionPool connections) {
+public sealed class KontextDataStore(KontextConnectionPool connections) {
     /// <summary>
     /// Vector search: ranks memories by embedding similarity to the query vector alone.
     ///
@@ -104,7 +104,7 @@ public sealed class KontextDataStoreV2(KontextConnectionPool connections) {
              LIMIT $limit
              """;
 
-        var tagValues = tags.Select(MemoryRecordMapper.EncodeTag).ToList();
+        var tagValues = tags.Select(EncodeTag).ToList();
 
         var hits = await connections.ExecuteAsync(
                 connection => {
@@ -209,7 +209,7 @@ public sealed class KontextDataStoreV2(KontextConnectionPool connections) {
             LIMIT $limit
             """;
 
-        var tagValues = tags.Select(MemoryRecordMapper.EncodeTag).ToList();
+        var tagValues = tags.Select(EncodeTag).ToList();
 
         var hits = await connections.ExecuteAsync(
                 connection => {
@@ -328,7 +328,7 @@ public sealed class KontextDataStoreV2(KontextConnectionPool connections) {
              LIMIT $limit
              """;
 
-        var tagValues = tags.Select(MemoryRecordMapper.EncodeTag).ToList();
+        var tagValues = tags.Select(EncodeTag).ToList();
 
         var hits = await connections.ExecuteAsync(
                 connection => {
@@ -583,7 +583,7 @@ public sealed class KontextDataStoreV2(KontextConnectionPool connections) {
             """;
 
         var typeValues = types.Distinct().Select(type => (int)type).ToList();
-        var tagValues  = tags.Select(MemoryRecordMapper.EncodeTag).ToList();
+        var tagValues  = tags.Select(EncodeTag).ToList();
 
         var sortKey = sort switch {
             Contracts.RecollectSort.LastAccessedAt => "last_accessed_at",
@@ -624,6 +624,19 @@ public sealed class KontextDataStoreV2(KontextConnectionPool connections) {
         return memories;
     }
 
+    // The tag wire encoding shared with the projector: a tag is stored as "scope:value" (bare
+    // "value" when the scope is empty), sanitized by TagParser on the way in.
+    public static string EncodeTag(Contracts.Tag tag) {
+        var scope = TagParser.Sanitize(tag.Scope);
+        var value = TagParser.Sanitize(tag.Value);
+        return scope.Length == 0 ? value : $"{scope}:{value}";
+    }
+
+    public static Contracts.Tag DecodeTag(string encoded) {
+        var (value, scope) = TagParser.Parse(encoded);
+        return new() { Scope = scope, Value = value };
+    }
+
     // Reads one row POSITIONALLY, in the SELECT column order, off the validated wire shapes (KB):
     // - VARCHAR[] arrives as List<string>
     // - a populated BLOB arrives as a Stream, an empty one as byte[]
@@ -641,7 +654,7 @@ public sealed class KontextDataStoreV2(KontextConnectionPool connections) {
             SupersededBy   = reader.GetString(15),
         };
 
-        stored.Tags.AddRange(((IEnumerable<string>)reader.GetValue(6)).Select(MemoryRecordMapper.DecodeTag));
+        stored.Tags.AddRange(((IEnumerable<string>)reader.GetValue(6)).Select(DecodeTag));
         stored.Supersedes.AddRange((IEnumerable<string>)reader.GetValue(8));
 
         var evidence = ReadBlob(reader, 7);

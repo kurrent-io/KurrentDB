@@ -7,15 +7,11 @@
 		<IsTestProject>true</IsTestProject>
 		<EnablePreviewFeatures>true</EnablePreviewFeatures>
 		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-		<!-- SKEXP0001/SKEXP0070: the SK ONNX Bert embedding generator used by the KontextStore tests is
-		     experimental; TreatWarningsAsErrors is forced on by src/Directory.Build.targets. -->
-		<NoWarn>$(NoWarn);NU1904;SKEXP0001;SKEXP0070</NoWarn>
+		<NoWarn>$(NoWarn);NU1904</NoWarn>
 	</PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="TUnit" />
-    <!-- Real ONNX Bert embedding generator for the KontextStore tests (no fakes). -->
-    <PackageReference Include="Microsoft.SemanticKernel.Connectors.Onnx" />
   </ItemGroup>
   
 	<ItemGroup>
