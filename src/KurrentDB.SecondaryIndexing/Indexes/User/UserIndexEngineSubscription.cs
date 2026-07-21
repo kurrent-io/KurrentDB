@@ -321,7 +321,7 @@ public partial class UserIndexEngineSubscription(
 		indexKey = indexStream;
 		constraints = [];
 
-		// we only reach here for a stream this reader owns (its CanReadIndex already parsed it), so the name always parses
+		// we only reach here for a stream this reader owns, so the name always parses
 		UserIndexHelpers.ParseQueryStreamName(indexStream, out var indexName, out var suffix);
 
 		// the index was deleted between being resolved as the reader and acquiring the read lock
