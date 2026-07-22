@@ -20,17 +20,17 @@ namespace KurrentDB.Core.Hosting;
 public delegate ValueTask<NodeSystemInfo> GetNodeSystemInfo(CancellationToken cancellationToken = default);
 
 public static class NodeSystemInfoProviderExtensions {
-    public static async ValueTask<NodeSystemInfo> GetNodeSystemInfo(this IPublisher publisher, TimeProvider time, CancellationToken cancellationToken = default) {
-        var lastEvent = await publisher.ReadStreamLastEvent(SystemStreams.GossipStream, cancellationToken);
-        var gossip    = Deserialize<GossipUpdatedInMemory>(lastEvent!.Value.Event.Data.Span, GossipStreamSerializerOptions)!;
+	public static async ValueTask<NodeSystemInfo> GetNodeSystemInfo(this IPublisher publisher, TimeProvider time, CancellationToken cancellationToken = default) {
+		var lastEvent = await publisher.ReadStreamLastEvent(SystemStreams.GossipStream, cancellationToken);
+		var gossip    = Deserialize<GossipUpdatedInMemory>(lastEvent!.Value.Event.Data.Span, GossipStreamSerializerOptions)!;
 
-        return new NodeSystemInfo(gossip.Members.Single(x => x.InstanceId == gossip.NodeId), time.GetUtcNow());
-    }
+		return new NodeSystemInfo(gossip.Members.Single(x => x.InstanceId == gossip.NodeId), time.GetUtcNow());
+	}
 
-    static readonly JsonSerializerOptions GossipStreamSerializerOptions = new() {
-        Converters = { new JsonStringEnumConverter() }
-    };
+	static readonly JsonSerializerOptions GossipStreamSerializerOptions = new() {
+		Converters = { new JsonStringEnumConverter() }
+	};
 
-    [UsedImplicitly]
-    record GossipUpdatedInMemory(Guid NodeId, ClientClusterInfo.ClientMemberInfo[] Members);
+	[UsedImplicitly]
+	record GossipUpdatedInMemory(Guid NodeId, ClientClusterInfo.ClientMemberInfo[] Members);
 }
