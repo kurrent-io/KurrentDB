@@ -4,8 +4,8 @@
 using Kurrent.Surge;
 using Kurrent.Surge.Producers;
 using KurrentDB.Connectors.Control.Contracts;
-using KurrentDB.Connectors.Infrastructure.System.Node;
-using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
+using KurrentDB.Core.Hosting;
+using KurrentDB.Surge.Hosting;
 using KurrentDB.Connectors.Planes.Control;
 using KurrentDB.Core;
 using KurrentDB.Core.Data;

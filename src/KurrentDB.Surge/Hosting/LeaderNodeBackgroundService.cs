@@ -2,14 +2,14 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using DotNext.Threading;
-using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace KurrentDB.Connectors.Infrastructure.System.Node;
+namespace KurrentDB.Surge.Hosting;
 
 public abstract class LeaderNodeBackgroundService : NodeBackgroundService {
-	private readonly CancellationTokenMultiplexer _multiplexer;
+    private readonly CancellationTokenMultiplexer _multiplexer;
 
     protected LeaderNodeBackgroundService(
         IPublisher publisher,
@@ -18,11 +18,6 @@ public abstract class LeaderNodeBackgroundService : NodeBackgroundService {
         ILoggerFactory loggerFactory,
         string? serviceName = null
     ) : base(publisher, loggerFactory.CreateLogger<NodeBackgroundService>(), serviceName) {
-        // GetNodeLifetimeService = component => new NodeLifetimeService(
-        //     component, publisher, subscriber,
-        //     loggerFactory.CreateLogger<NodeLifetimeService>()
-        // );
-
         NodeLifetimeService = new NodeLifetimeService(
             ServiceName, publisher, subscriber,
             loggerFactory.CreateLogger<NodeLifetimeService>()
@@ -35,9 +30,8 @@ public abstract class LeaderNodeBackgroundService : NodeBackgroundService {
         _multiplexer = new() { MaximumRetained = 10 };
     }
 
-    // GetNodeLifetimeService GetNodeLifetimeService { get; }
-    INodeLifetimeService   NodeLifetimeService    { get; }
-    GetNodeSystemInfo      GetNodeSystemInfo      { get; }
+    INodeLifetimeService NodeLifetimeService { get; }
+    GetNodeSystemInfo    GetNodeSystemInfo   { get; }
 
     protected ILogger Logger { get; }
 
@@ -45,8 +39,6 @@ public abstract class LeaderNodeBackgroundService : NodeBackgroundService {
         stoppingToken.Register(() => Logger.LogLeaderNodeBackgroundServiceShuttingDown(ServiceName));
 
         if (stoppingToken.IsCancellationRequested) return;
-
-        // INodeLifetimeService nodeLifetime = GetNodeLifetimeService(ServiceName);
 
         while (!stoppingToken.IsCancellationRequested) {
             var lifetimeToken = await NodeLifetimeService.WaitForLeadershipAsync(stoppingToken);
@@ -82,7 +74,7 @@ public abstract class LeaderNodeBackgroundService : NodeBackgroundService {
         Logger.LogLeaderNodeBackgroundServiceStopped(ServiceName);
     }
 
-    protected abstract Task Execute(NodeSystemInfo.NodeSystemInfo nodeInfo, CancellationToken stoppingToken);
+    protected abstract Task Execute(NodeSystemInfo nodeInfo, CancellationToken stoppingToken);
 }
 
 static partial class LeaderNodeBackgroundServiceLogMessages {

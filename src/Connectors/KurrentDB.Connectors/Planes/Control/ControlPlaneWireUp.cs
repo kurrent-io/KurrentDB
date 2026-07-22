@@ -8,7 +8,8 @@ using Kurrent.Surge;
 using Kurrent.Surge.Leases;
 
 using KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
-using KurrentDB.Connectors.Infrastructure.System.Node;
+using KurrentDB.Core.Hosting;
+using KurrentDB.Surge.Hosting;
 using KurrentDB.Connectors.Planes.Management;
 using KurrentDB.Core.Bus;
 using Microsoft.Extensions.DependencyInjection;

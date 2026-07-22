@@ -1,14 +1,19 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using KurrentDB.Connectors.Infrastructure.System.Node;
+#nullable enable
+
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace KurrentDB.Connectors.Planes.Management;
+namespace KurrentDB.Core.Hosting;
 
-internal class SystemStartupManager(IServiceProvider serviceProvider) : BackgroundService, IStartupWorkCompletionMonitor {
+public class SystemStartupManager(IServiceProvider serviceProvider) : BackgroundService, IStartupWorkCompletionMonitor {
 	private readonly TaskCompletionSource _completed = new();
 
 	protected override async Task ExecuteAsync(CancellationToken stoppingToken) {

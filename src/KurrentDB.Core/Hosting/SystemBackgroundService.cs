@@ -1,10 +1,13 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
+#nullable enable
+
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 
-namespace KurrentDB.Connectors.Infrastructure.System;
+namespace KurrentDB.Core.Hosting;
 
 public abstract class SystemBackgroundService(SystemReadinessProbe probe) : BackgroundService {
     SystemReadinessProbe ReadinessProbe { get; } = probe;

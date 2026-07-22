@@ -7,7 +7,7 @@ using Kurrent.Surge.DuckDB.Projectors;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
 using KurrentDB.SchemaRegistry.Data;
-using KurrentDB.SchemaRegistry.Infrastructure.System.Node;
+using KurrentDB.Core.Hosting;
 
 namespace KurrentDB.SchemaRegistry.Planes.Projection;
 

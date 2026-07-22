@@ -17,6 +17,7 @@ using KurrentDB.Connectors.Planes.Control.Model;
 using KurrentDB.Surge.Producers;
 using KurrentDB.Surge.Readers;
 using KurrentDB.Connectors.Planes.Management;
+using KurrentDB.Core.Hosting;
 using ConnectorSettings = System.Collections.Generic.IDictionary<string, string?>;
 
 namespace KurrentDB.Connectors.Planes.Control;

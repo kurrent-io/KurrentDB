@@ -13,7 +13,7 @@ using KurrentDB.SchemaRegistry.Infrastructure;
 using KurrentDB.SchemaRegistry.Infrastructure.Grpc;
 using KurrentDB.SchemaRegistry.Data;
 using KurrentDB.SchemaRegistry.Domain;
-using KurrentDB.SchemaRegistry.Infrastructure.System.Node.NodeSystemInfo;
+using KurrentDB.Core.Hosting;
 using KurrentDB.SchemaRegistry.Planes.Projection;
 using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;
 using KurrentDB.Surge.Eventuous;
