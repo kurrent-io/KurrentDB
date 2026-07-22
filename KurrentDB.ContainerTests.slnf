@@ -38,7 +38,6 @@
       "src\\KurrentDB.Logging\\KurrentDB.Logging.csproj",
       "src\\KurrentDB.MicroBenchmarks\\KurrentDB.MicroBenchmarks.csproj",
       "src\\KurrentDB.NETCore.Compatibility\\KurrentDB.NETCore.Compatibility.csproj",
-      "src\\KurrentDB.Native\\KurrentDB.Native.csproj",
       "src\\KurrentDB.OtlpExporterPlugin.Tests\\KurrentDB.OtlpExporterPlugin.Tests.csproj",
       "src\\KurrentDB.OtlpExporterPlugin\\KurrentDB.OtlpExporterPlugin.csproj",
       "src\\KurrentDB.POC.ConnectedSubsystemsPlugin\\KurrentDB.POC.ConnectedSubsystemsPlugin.csproj",

@@ -13,11 +13,9 @@ using KurrentDB.Common.Utils;
 using KurrentDB.Core.DataStructures;
 using KurrentDB.Core.DataStructures.ProbabilisticFilter;
 using KurrentDB.Core.Exceptions;
-using KurrentDB.Core.TransactionLog.Unbuffered;
 using ILogger = Serilog.ILogger;
 using MD5 = KurrentDB.Core.Hashing.MD5;
 using Range = KurrentDB.Core.Data.Range;
-using RuntimeInformation = System.Runtime.RuntimeInformation;
 
 namespace KurrentDB.Core.Index;
 
@@ -300,15 +298,8 @@ public partial class PTable : ISearchTable, IDisposable {
 			Log.Debug("Disabling Verification of PTable");
 		}
 
-		Stream stream = null;
-		WorkItem workItem = null;
-		if (RuntimeInformation.IsUnix) {
-			workItem = GetWorkItem();
-			stream = workItem.Stream;
-		} else {
-			stream = UnbufferedFileStream.Create(_filename, FileMode.Open, FileAccess.Read, FileShare.Read,
-				4096, 4096, false, 4096);
-		}
+		var workItem = GetWorkItem();
+		var stream = workItem.Stream;
 
 		UnmanagedMemoryAppendOnlyList<Midpoint> midpoints = null;
 
@@ -437,12 +428,7 @@ public partial class PTable : ISearchTable, IDisposable {
 			Dispose();
 			throw;
 		} finally {
-			if (RuntimeInformation.IsUnix) {
-				if (workItem != null)
-					ReturnWorkItem(workItem);
-			} else {
-				stream?.Dispose();
-			}
+			ReturnWorkItem(workItem);
 		}
 	}
 

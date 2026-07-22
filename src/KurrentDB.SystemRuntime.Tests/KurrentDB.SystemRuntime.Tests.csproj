@@ -4,6 +4,9 @@
 		<IsKurrentXUnit>true</IsKurrentXUnit>
 	</PropertyGroup>
 	<ItemGroup>
+		<PackageReference Include="Mono.Posix.NETStandard" />
+	</ItemGroup>
+	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.SystemRuntime\KurrentDB.SystemRuntime.csproj" />
 		<ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
 	</ItemGroup>

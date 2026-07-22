@@ -6,30 +6,20 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime;
 using System.Text;
-using KurrentDB.Core.TransactionLog.Unbuffered;
+using Mono.Unix;
+using Mono.Unix.Native;
 using Xunit;
 
 namespace KurrentDB.SystemRuntime.Tests;
 
 public sealed class ProcessStatsTests : IDisposable {
 	private readonly DirectoryInfo _directory;
+	private readonly string _filePath;
 
 	public ProcessStatsTests() {
-		string directoryPath = Path.Combine(Path.GetTempPath(), string.Format("ESX-{0}-{1}", Guid.NewGuid(), nameof(ProcessStatsTests)));
+		string directoryPath = Path.Combine(Path.GetTempPath(), $"ESX-{Guid.NewGuid()}-{nameof(ProcessStatsTests)}");
 		_directory = Directory.CreateDirectory(directoryPath);
-		var filePath = Path.Combine(directoryPath, "file.txt");
-		WriteAllText(filePath, "the data");
-		ReadAllText(filePath);
-	}
-
-	private static void ReadAllText(string path) {
-		// use UnbufferedFileStream to attempt to skip the OS's file cache
-		using var stream =
-			UnbufferedFileStream.Create(path, FileMode.Open, FileAccess.Read, FileShare.Read,
-				internalWriteBufferSize: 1024, internalReadBufferSize: 1024, writeThrough: false, minBlockSize: 1024);
-		var buffer = new byte[8];
-		stream.ReadExactly(buffer);
-		Assert.Equal("the data", Encoding.UTF8.GetString(buffer));
+		_filePath = Path.Combine(directoryPath, "file.txt");
 	}
 
 	private static void WriteAllText(string path, string data) {
@@ -44,15 +34,37 @@ public sealed class ProcessStatsTests : IDisposable {
 
 	[Fact]
 	public void TestProcessStats() {
-		var diskIo = ProcessStats.GetDiskIo();
+		WriteAllText(_filePath, "the data");
 
-		Assert.True(diskIo.ReadBytes > 0);
-		Assert.True(diskIo.WrittenBytes > 0);
+		var data = ReadAllText(_filePath);
+		Assert.Equal("the data", data);
 
-		if (RuntimeInformation.OsPlatform != RuntimeOSPlatform.OSX) {
+		var stats = ProcessStats.GetDiskIo();
+
+		Assert.True(stats.ReadBytes >= 8UL);
+		Assert.True(stats.WrittenBytes >= 8UL);
+
+		if (!RuntimeInformation.IsOSX) {
 			// ops not supported on OSX
-			Assert.True(diskIo.ReadOps > 0);
-			Assert.True(diskIo.WriteOps > 0);
+			Assert.True(stats.ReadOps  > 0);
+			Assert.True(stats.WriteOps > 0);
 		}
+	}
+
+	private static string ReadAllText(string filePath) {
+		using var handle = File.OpenHandle(filePath);
+
+		if (RuntimeInformation.IsUnix) {
+			// reset cache for this file, so the OS really reads it from disk
+			int r;
+			do {
+				r = Syscall.posix_fadvise(handle.DangerousGetHandle().ToInt32(), 0, 0, PosixFadviseAdvice.POSIX_FADV_DONTNEED);
+			} while (UnixMarshal.ShouldRetrySyscall(r));
+			UnixMarshal.ThrowExceptionForLastErrorIf(r);
+		}
+
+		Span<byte> buffer = stackalloc byte[128];
+		var read = RandomAccess.Read(handle, buffer, 0);
+		return Encoding.UTF8.GetString(buffer[..read]);
 	}
 }

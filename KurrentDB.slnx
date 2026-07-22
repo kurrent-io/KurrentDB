@@ -103,7 +103,6 @@
   <Project Path="src/KurrentDB.LogCommon/KurrentDB.LogCommon.csproj" />
   <Project Path="src/KurrentDB.Logging/KurrentDB.Logging.csproj" />
   <Project Path="src/KurrentDB.MicroBenchmarks/KurrentDB.MicroBenchmarks.csproj" />
-  <Project Path="src/KurrentDB.Native/KurrentDB.Native.csproj" />
   <Project Path="src/KurrentDB.NETCore.Compatibility/KurrentDB.NETCore.Compatibility.csproj" />
   <Project Path="src/KurrentDB.PluginHosting/KurrentDB.PluginHosting.csproj" />
   <Project Path="src/KurrentDB.Plugins.Kontext.Tests/KurrentDB.Plugins.Kontext.Tests.csproj" />
