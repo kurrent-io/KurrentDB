@@ -241,6 +241,8 @@ partial class Enumerator {
 							return;
 						case ReadIndexResult.InvalidPosition:
 							throw new ReadResponseException.InvalidPosition();
+						case ReadIndexResult.InvalidArgument:
+							throw new ReadResponseException.InvalidIndexQuery(completed.Error);
 						default:
 							throw ReadResponseException.UnknownError.Create(completed.Result, completed.Error);
 					}
