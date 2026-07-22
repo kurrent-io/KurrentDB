@@ -21,6 +21,7 @@ using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
 using KurrentDB.SecondaryIndexing.Indexes.User;
 using KurrentDB.SecondaryIndexing.Indexes.User.Management;
+using KurrentDB.SecondaryIndexing.LogsQuery;
 using KurrentDB.SecondaryIndexing.Query;
 using KurrentDB.SecondaryIndexing.Stats;
 using KurrentDB.SecondaryIndexing.Storage;
@@ -58,6 +59,12 @@ public class SecondaryIndexingPlugin(SecondaryIndexReaders secondaryIndexReaders
 		services.AddSingleton<IQueryEngine>(static sp => sp.GetRequiredService<QueryEngine>());
 		services.AddSingleton<UserIndexEngine>();
 		services.AddDuckDBSetup<IndexingDbSchema>();
+		services.AddDuckDBSetup<RenderMessageSetup>();
+		services.AddSingleton(static sp => {
+			var nodeOptions = sp.GetRequiredService<ClusterVNodeOptions>();
+			var logsDir = Path.GetFullPath(Path.Combine(nodeOptions.Logging.Log, nodeOptions.GetComponentName()));
+			return new LogViews(logsDir);
+		});
 		services.AddSingleton<FlightSqlLicense>();
 		services.AddFlightSqlServer();
 

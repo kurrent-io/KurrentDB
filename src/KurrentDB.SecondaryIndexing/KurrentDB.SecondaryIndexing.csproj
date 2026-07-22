@@ -5,6 +5,7 @@
 		<Nullable>enable</Nullable>
 		<EnableDynamicLoading>true</EnableDynamicLoading>
 		<IncludeHttpRuleProtos>true</IncludeHttpRuleProtos>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<NoWarn>$(NoWarn);DuckDBNET001</NoWarn>
 	</PropertyGroup>
 
@@ -23,6 +24,7 @@
 		<PackageReference Include="Eventuous.Application" />
 		<PackageReference Include="Eventuous.Extensions.DependencyInjection" />
 		<PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" />
+		<PackageReference Include="Serilog" />
 		<PackageReference Include="System.Linq.Async">
 			<ExcludeAssets>compile</ExcludeAssets>
 		</PackageReference>

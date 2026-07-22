@@ -8,6 +8,7 @@ using Kurrent.Quack;
 using Kurrent.Quack.Parser;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Indexes.User;
+using KurrentDB.SecondaryIndexing.LogsQuery;
 
 namespace KurrentDB.SecondaryIndexing.Query;
 
@@ -129,6 +130,12 @@ partial class QueryEngine {
 			case "records":
 				builder.HasDefaultIndex = true;
 				return DefaultSql.DefaultIndexViewName;
+			case "logs":
+				builder.HasLogs = true;
+				return LogViews.LogsViewName;
+			case "stats":
+				builder.HasStats = true;
+				return LogViews.StatsViewName;
 			default:
 				throw new UnsupportedSystemTableException(tableName);
 		}

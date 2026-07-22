@@ -27,6 +27,8 @@ partial class QueryEngine {
 		private readonly List<string> _userIndices = new();
 
 		public bool HasDefaultIndex;
+		public bool HasLogs;
+		public bool HasStats;
 
 		public readonly void AddUserIndexViewName(string viewName) => _userIndices.Add(viewName);
 
@@ -34,7 +36,7 @@ partial class QueryEngine {
 			var writer = new BufferWriterSlim<byte>(1024, ArrayPoolAllocator);
 			try {
 				// Header
-				writer.Add(GetFlags(HasDefaultIndex));
+				writer.Add(GetFlags(HasDefaultIndex, HasLogs, HasStats));
 
 				// rewritten query
 				writer.WriteLittleEndian(queryUtf8.Length);
@@ -58,11 +60,19 @@ partial class QueryEngine {
 				writer.Dispose();
 			}
 
-			static byte GetFlags(bool hasDefaultIndex) {
+			static byte GetFlags(bool hasDefaultIndex, bool hasLogs, bool hasStats) {
 				var result = PreparedQuery.EmptyFlags;
 
 				if (hasDefaultIndex) {
 					result |= PreparedQuery.HasDefaultIndexFlag;
+				}
+
+				if (hasLogs) {
+					result |= PreparedQuery.HasLogsFlag;
+				}
+
+				if (hasStats) {
+					result |= PreparedQuery.HasStatsFlag;
 				}
 
 				return result;
@@ -80,8 +90,12 @@ partial class QueryEngine {
 	private readonly ref struct PreparedQuery {
 		public const byte EmptyFlags = 0;
 		public const byte HasDefaultIndexFlag = 1;
+		public const byte HasLogsFlag = 1 << 1;
+		public const byte HasStatsFlag = 1 << 2;
 
 		public readonly bool HasDefaultIndex;
+		public readonly bool HasLogs;
+		public readonly bool HasStats;
 		public readonly ReadOnlySpan<byte> Query;
 		private readonly int _viewNameCount;
 		private readonly ReadOnlySpan<byte> _viewNames;
@@ -92,6 +106,8 @@ partial class QueryEngine {
 			var reader = new SpanReader<byte>(preparedQuery);
 			var flags = reader.Read();
 			HasDefaultIndex = (flags & HasDefaultIndexFlag) is not 0;
+			HasLogs = (flags & HasLogsFlag) is not 0;
+			HasStats = (flags & HasStatsFlag) is not 0;
 
 			// Query
 			var length = reader.ReadLittleEndian<int>();
