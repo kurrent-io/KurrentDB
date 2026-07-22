@@ -3,7 +3,7 @@
 
 using KurrentDB.Connect;
 using EventStore.Plugins;
-using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
+using KurrentDB.Core.Hosting;
 using KurrentDB.Connectors.Planes.Control;
 using KurrentDB.Connectors.Planes.Management;
 using KurrentDB.Connectors.Planes.Webhook;

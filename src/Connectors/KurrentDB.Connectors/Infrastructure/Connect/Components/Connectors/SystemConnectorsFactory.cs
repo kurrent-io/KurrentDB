@@ -21,7 +21,7 @@ using Kurrent.Surge.Schema;
 using Kurrent.Surge.Transformers;
 
 using KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
-using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
+using KurrentDB.Core.Hosting;
 using KurrentDB.Core;
 using KurrentDB.Surge.Processors;
 using KurrentDB.Surge.Producers;

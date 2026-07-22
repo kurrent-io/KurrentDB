@@ -1,7 +1,11 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using Kurrent.Surge;
+#nullable enable
+
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
@@ -9,7 +13,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using static System.Threading.Interlocked;
 
-namespace KurrentDB.Connectors.Infrastructure.System.Node;
+namespace KurrentDB.Core.Hosting;
 
 public delegate INodeLifetimeService GetNodeLifetimeService(string componentName);
 

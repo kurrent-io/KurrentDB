@@ -1,14 +1,18 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+#nullable enable
+
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace KurrentDB.Connectors.Infrastructure.System.Node;
+namespace KurrentDB.Core.Hosting;
 
-abstract class SystemStartupTaskService {
+public abstract class SystemStartupTaskService {
     protected SystemStartupTaskService(IServiceProvider serviceProvider, string? taskName = null) {
         ServiceProvider = serviceProvider;
         ReadinessProbe  = serviceProvider.GetRequiredService<SystemReadinessProbe>();
@@ -31,29 +35,28 @@ abstract class SystemStartupTaskService {
             // ignore
         }
         catch (Exception ex) {
-            // Logger.LogError(ex, "{TaskName} failed", TaskName);
             throw new Exception($"System startup task failed: {TaskName}", ex);
         }
     }
 
-    protected abstract Task OnStartup(NodeSystemInfo.NodeSystemInfo nodeInfo, IServiceProvider serviceProvider, CancellationToken stoppingToken);
+    protected abstract Task OnStartup(NodeSystemInfo nodeInfo, IServiceProvider serviceProvider, CancellationToken stoppingToken);
 }
 
 public interface ISystemStartupTask {
-    Task OnStartup(NodeSystemInfo.NodeSystemInfo nodeInfo, IServiceProvider serviceProvider, CancellationToken cancellationToken);
+    Task OnStartup(NodeSystemInfo nodeInfo, IServiceProvider serviceProvider, CancellationToken cancellationToken);
 }
 
-internal class SystemStartupTaskWorker(string taskName, IServiceProvider serviceProvider, ISystemStartupTask startupTask)
-	: SystemStartupTaskService(serviceProvider, taskName) {
-	protected override Task OnStartup(NodeSystemInfo.NodeSystemInfo nodeSystemInfo, IServiceProvider serviceProvider, CancellationToken cancellationToken) =>
-		startupTask.OnStartup(nodeSystemInfo, serviceProvider, cancellationToken);
+public class SystemStartupTaskWorker(string taskName, IServiceProvider serviceProvider, ISystemStartupTask startupTask)
+    : SystemStartupTaskService(serviceProvider, taskName) {
+    protected override Task OnStartup(NodeSystemInfo nodeSystemInfo, IServiceProvider serviceProvider, CancellationToken cancellationToken) =>
+        startupTask.OnStartup(nodeSystemInfo, serviceProvider, cancellationToken);
 }
 
 [PublicAPI]
 public static class SystemStartupTasksServiceCollectionExtensions {
     public static IServiceCollection AddSystemStartupTask(
         this IServiceCollection services, string taskName,
-        Func<NodeSystemInfo.NodeSystemInfo, IServiceProvider, CancellationToken, Task> onStartup
+        Func<NodeSystemInfo, IServiceProvider, CancellationToken, Task> onStartup
     ) {
         if (string.IsNullOrWhiteSpace(taskName))
             throw new ArgumentException("Value cannot be null or whitespace.", nameof(taskName));
@@ -78,8 +81,8 @@ public static class SystemStartupTasksServiceCollectionExtensions {
     public static IServiceCollection AddSystemStartupTask<T>(this IServiceCollection services) where T : class, ISystemStartupTask =>
         AddSystemStartupTask<T>(services, typeof(T).Name);
 
-    class SystemStartupTaskProxy(Func<NodeSystemInfo.NodeSystemInfo, IServiceProvider, CancellationToken, Task> onStartup) : ISystemStartupTask {
-        public Task OnStartup(NodeSystemInfo.NodeSystemInfo nodeInfo, IServiceProvider serviceProvider, CancellationToken cancellationToken) =>
+    class SystemStartupTaskProxy(Func<NodeSystemInfo, IServiceProvider, CancellationToken, Task> onStartup) : ISystemStartupTask {
+        public Task OnStartup(NodeSystemInfo nodeInfo, IServiceProvider serviceProvider, CancellationToken cancellationToken) =>
             onStartup(nodeInfo, serviceProvider, cancellationToken);
     }
 }

@@ -6,7 +6,8 @@
 
 using System.Net;
 using Kurrent.Surge;
-using KurrentDB.Connectors.Infrastructure.System.Node;
+using KurrentDB.Core.Hosting;
+using KurrentDB.Surge.Hosting;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Surge.Testing.Xunit;

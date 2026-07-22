@@ -7,8 +7,8 @@ using KurrentDB.Connectors.Management.Contracts.Events;
 using Kurrent.Surge;
 using Kurrent.Surge.Connectors;
 
-using KurrentDB.Connectors.Infrastructure.System.Node;
-using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
+using KurrentDB.Core.Hosting;
+using KurrentDB.Surge.Hosting;
 using KurrentDB.Connectors.Management.Contracts.Commands;
 using KurrentDB.Connectors.Planes.Management;
 using KurrentDB.Core;

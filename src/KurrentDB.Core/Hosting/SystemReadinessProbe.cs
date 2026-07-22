@@ -1,11 +1,14 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using KurrentDB.SchemaRegistry.Infrastructure.System.Node.NodeSystemInfo;
+#nullable enable
+
+using System.Threading;
+using System.Threading.Tasks;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
 
-namespace KurrentDB.SchemaRegistry.Infrastructure.System;
+namespace KurrentDB.Core.Hosting;
 
 public interface ISystemReadinessProbe {
     ValueTask<NodeSystemInfo> WaitUntilReady(CancellationToken cancellationToken);
@@ -16,12 +19,11 @@ public class SystemReadinessProbe : IHandle<SystemMessage.BecomeLeader>, IHandle
     public SystemReadinessProbe(ISubscriber subscriber, GetNodeSystemInfo getNodeSystemInfo) {
         CompletionSource = new();
 
-        Subscriber = subscriber.With(x => {
-            x.Subscribe<SystemMessage.BecomeLeader>(this);
-            x.Subscribe<SystemMessage.BecomeFollower>(this);
-            x.Subscribe<SystemMessage.BecomeReadOnlyReplica>(this);
-        });
+        subscriber.Subscribe<SystemMessage.BecomeLeader>(this);
+        subscriber.Subscribe<SystemMessage.BecomeFollower>(this);
+        subscriber.Subscribe<SystemMessage.BecomeReadOnlyReplica>(this);
 
+        Subscriber        = subscriber;
         GetNodeSystemInfo = getNodeSystemInfo;
     }
 

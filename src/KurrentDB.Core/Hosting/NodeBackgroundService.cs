@@ -1,11 +1,17 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+#nullable enable
+
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
-namespace KurrentDB.SchemaRegistry.Infrastructure.System.Node;
+namespace KurrentDB.Core.Hosting;
 
 public abstract class NodeBackgroundService : IHostedService, IDisposable {
     Task?                    _executeTask;

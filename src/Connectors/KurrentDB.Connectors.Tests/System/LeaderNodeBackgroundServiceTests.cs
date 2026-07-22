@@ -6,8 +6,8 @@
 
 using System.Net;
 using Kurrent.Surge;
-using KurrentDB.Connectors.Infrastructure.System.Node;
-using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
+using KurrentDB.Core.Hosting;
+using KurrentDB.Surge.Hosting;
 using KurrentDB.Core.Cluster;
 using KurrentDB.Core.Messages;
 using Microsoft.Extensions.Logging;
@@ -15,7 +15,7 @@ using Shouldly;
 using MemberInfo = KurrentDB.Core.Cluster.MemberInfo;
 
 
-using NodeSystemInfo = KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo.NodeSystemInfo;
+using NodeSystemInfo = KurrentDB.Core.Hosting.NodeSystemInfo;
 
 
 namespace KurrentDB.Connectors.Tests.System;

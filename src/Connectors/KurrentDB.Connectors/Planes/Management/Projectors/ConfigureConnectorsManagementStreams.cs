@@ -2,8 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Kurrent.Surge;
-using KurrentDB.Connectors.Infrastructure.System.Node;
-using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
+using KurrentDB.Core.Hosting;
+using KurrentDB.Surge.Hosting;
 using KurrentDB.Connectors.Planes.Management.Queries;
 using KurrentDB.Core;
 using Microsoft.Extensions.DependencyInjection;

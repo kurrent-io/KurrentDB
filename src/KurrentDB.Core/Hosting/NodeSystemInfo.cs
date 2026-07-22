@@ -1,11 +1,14 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+#nullable enable
+
+using System;
 using System.Net;
 using KurrentDB.Core.Cluster;
 using KurrentDB.Core.Data;
 
-namespace KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
+namespace KurrentDB.Core.Hosting;
 
 [PublicAPI]
 public readonly record struct NodeSystemInfo {

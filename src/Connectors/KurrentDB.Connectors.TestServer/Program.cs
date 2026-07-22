@@ -3,7 +3,7 @@
 
 using Kurrent.Surge.Schema;
 using KurrentDB.Connect;
-using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
+using KurrentDB.Core.Hosting;
 using KurrentDB.Connectors.Planes.Management;
 
 Host.CreateDefaultBuilder(args)
