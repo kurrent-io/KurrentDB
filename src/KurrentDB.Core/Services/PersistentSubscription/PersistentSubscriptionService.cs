@@ -46,6 +46,7 @@ public class PersistentSubscriptionService<TStreamId> :
 	IHandle<ClientMessage.UnsubscribeFromStream>,
 	IHandle<ClientMessage.PersistentSubscriptionAckEvents>,
 	IHandle<ClientMessage.PersistentSubscriptionNackEvents>,
+	IHandle<ClientMessage.PersistentSubscriptionStopFromConsumer>,
 	IHandle<ClientMessage.CreatePersistentSubscriptionToStream>,
 	IHandle<ClientMessage.UpdatePersistentSubscriptionToStream>,
 	IHandle<ClientMessage.DeletePersistentSubscriptionToStream>,
@@ -1089,6 +1090,14 @@ public class PersistentSubscriptionService<TStreamId> :
 		if (_subscriptionsById.TryGetValue(message.SubscriptionId, out subscription)) {
 			subscription.NotAcknowledgeMessagesProcessed(message.CorrelationId, message.ProcessedEventIds,
 				(NakAction)message.Action, message.Message);
+		}
+	}
+
+	public void Handle(ClientMessage.PersistentSubscriptionStopFromConsumer message) {
+		if (!_started)
+			return;
+		if (_subscriptionsById.TryGetValue(message.SubscriptionId, out var subscription)) {
+			subscription.StopClient(message.CorrelationId);
 		}
 	}
 

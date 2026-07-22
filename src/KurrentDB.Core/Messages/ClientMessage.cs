@@ -1567,6 +1567,17 @@ public static partial class ClientMessage {
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
+	public partial class PersistentSubscriptionStopFromConsumer : ReadRequestMessage {
+		public readonly string SubscriptionId;
+
+		public PersistentSubscriptionStopFromConsumer(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
+			string subscriptionId, ClaimsPrincipal user, DateTime? expires = null)
+			: base(internalCorrId, correlationId, envelope, user, expires) {
+			SubscriptionId = Ensure.NotNullOrEmpty(subscriptionId);
+		}
+	}
+
+	[DerivedMessage(CoreMessage.Client)]
 	public partial class PersistentSubscriptionConfirmation : Message {
 		public readonly Guid CorrelationId;
 		public readonly long LastIndexedPosition;
