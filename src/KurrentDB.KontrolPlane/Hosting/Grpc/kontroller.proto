@@ -6,18 +6,18 @@ option csharp_namespace = "KurrentDB.KontrolPlane.Hosting.Grpc";
 
 service Kontroller
 {
-  rpc KeepAlive(KeepAliveRequest) returns (KeepAliveResponse);
-  rpc Announce(AnnouncementRequest) returns (stream AnnouncementResponse);
+  rpc RenewLeaderAppointment(RenewLeaderAppointmentRequest) returns (RenewLeaderAppointmentResponse);
+  rpc AnnounceDatabaseNode(AnnouncementRequest) returns (stream AnnouncementResponse);
 }
 
-message KeepAliveRequest
+message RenewLeaderAppointmentRequest
 {
   string databaseId = 1;
   bytes address = 2;
   uint64 epoch = 3;
 }
 
-message KeepAliveResponse
+message RenewLeaderAppointmentResponse
 {
   bool success = 1;
   bytes kontrollerLeader = 2;

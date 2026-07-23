@@ -12,8 +12,8 @@ namespace KurrentDB.KontrolPlane.Hosting.Grpc;
 /// </summary>
 /// <param name="kontroller">The Kontroller instance.</param>
 public sealed class KontrollerServer(IKontroller kontroller) : Kontroller.KontrollerBase {
-	public override async Task<KeepAliveResponse> KeepAlive(KeepAliveRequest request, ServerCallContext context) {
-		var response = new KeepAliveResponse();
+	public override async Task<RenewLeaderAppointmentResponse> RenewLeaderAppointment(RenewLeaderAppointmentRequest request, ServerCallContext context) {
+		var response = new RenewLeaderAppointmentResponse();
 		try {
 			response.Success = await kontroller.RenewLeaderAppointmentAsync(request.DatabaseId, request.Address.ToEndPoint(), request.Epoch,
 				context.CancellationToken);
@@ -26,7 +26,7 @@ public sealed class KontrollerServer(IKontroller kontroller) : Kontroller.Kontro
 		return response;
 	}
 
-	public override async Task Announce(AnnouncementRequest request, IServerStreamWriter<AnnouncementResponse> responseStream, ServerCallContext context) {
+	public override async Task AnnounceDatabaseNode(AnnouncementRequest request, IServerStreamWriter<AnnouncementResponse> responseStream, ServerCallContext context) {
 		// announcement
 		try {
 			await kontroller.AddOrUpdateDatabaseNodeAsync(request.NodeInfo.ToEntity(), context.CancellationToken);
