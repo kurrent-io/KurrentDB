@@ -62,6 +62,7 @@ public class SubscriptionsService<TStreamId> :
 
 	private readonly Dictionary<string, List<Subscription>> _subscriptionTopics = new();
 	private readonly Dictionary<string, List<Subscription>> _indexSubscriptions = new();
+	private readonly Dictionary<string, string> _indexFieldValues = new(StringComparer.Ordinal);
 	private readonly Dictionary<Guid, Subscription> _subscriptionsById = new();
 	private readonly Dictionary<string, List<PollSubscription>> _pollTopics = new();
 
@@ -378,10 +379,25 @@ public class SubscriptionsService<TStreamId> :
 		var logPosition = _lastSeenSecondaryIndexLogPosition = message.Event.Event.LogPosition;
 
 		if (_indexSubscriptions.TryGetValue(message.IndexName, out var subscriptions)) {
+			var lookupReady = false;
+
 			for (int i = 0, n = subscriptions.Count; i < n; i++) {
 				var sub = subscriptions[i];
-				if (logPosition > sub.LastIndexedPosition && ConstraintsSatisfied(sub.IndexConstraints!, message.FieldValues))
-					sub.Envelope.ReplyWith(new ClientMessage.StreamEventAppeared(sub.CorrelationId, message.Event));
+				if (logPosition <= sub.LastIndexedPosition)
+					continue;
+
+				var constraints = sub.IndexConstraints!;
+				if (constraints.Count > 0) {
+					if (!lookupReady) {
+						PopulateCommittedFieldValues(message.FieldValues);
+						lookupReady = true;
+					}
+
+					if (!ConstraintsSatisfied(constraints, _indexFieldValues))
+						continue;
+				}
+
+				sub.Envelope.ReplyWith(new ClientMessage.StreamEventAppeared(sub.CorrelationId, message.Event));
 			}
 		}
 
@@ -389,18 +405,19 @@ public class SubscriptionsService<TStreamId> :
 		return ValueTask.CompletedTask;
 	}
 
-	private static bool ConstraintsSatisfied(IReadOnlyList<KeyValuePair<string, string>> constraints, IReadOnlyList<KeyValuePair<string, string>> fieldValues) {
+	private void PopulateCommittedFieldValues(IReadOnlyList<KeyValuePair<string, string>> fieldValues) {
+		_indexFieldValues.Clear();
+		for (int i = 0, n = fieldValues.Count; i < n; i++)
+			_indexFieldValues[fieldValues[i].Key] = fieldValues[i].Value;
+	}
+
+	private static bool ConstraintsSatisfied(IReadOnlyList<KeyValuePair<string, string>> constraints, Dictionary<string, string> fieldValues) {
+		if (constraints.Count > fieldValues.Count)
+			return false;
+
 		for (int i = 0, n = constraints.Count; i < n; i++) {
 			var constraint = constraints[i];
-			var matched = false;
-			for (int j = 0, m = fieldValues.Count; j < m; j++) {
-				if (fieldValues[j].Key == constraint.Key && fieldValues[j].Value == constraint.Value) {
-					matched = true;
-					break;
-				}
-			}
-
-			if (!matched)
+			if (!fieldValues.TryGetValue(constraint.Key, out var value) || value != constraint.Value)
 				return false;
 		}
 
