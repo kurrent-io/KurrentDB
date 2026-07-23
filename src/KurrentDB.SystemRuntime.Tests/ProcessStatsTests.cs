@@ -4,11 +4,13 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Runtime;
+using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Text;
 using Mono.Unix;
 using Mono.Unix.Native;
 using Xunit;
+using RuntimeInformation = System.Runtime.RuntimeInformation;
 
 namespace KurrentDB.SystemRuntime.Tests;
 
@@ -39,32 +41,56 @@ public sealed class ProcessStatsTests : IDisposable {
 		var data = ReadAllText(_filePath);
 		Assert.Equal("the data", data);
 
-		var stats = ProcessStats.GetDiskIo();
+		var diskIo = ProcessStats.GetDiskIo();
 
-		Assert.True(stats.ReadBytes >= 8UL);
-		Assert.True(stats.WrittenBytes >= 8UL);
+		Assert.True(diskIo.ReadBytes >= 8UL);
+		Assert.True(diskIo.WrittenBytes >= 8UL);
 
 		if (!RuntimeInformation.IsOSX) {
 			// ops not supported on OSX
-			Assert.True(stats.ReadOps  > 0);
-			Assert.True(stats.WriteOps > 0);
+			Assert.True(diskIo.ReadOps  > 0);
+			Assert.True(diskIo.WriteOps > 0);
 		}
 	}
 
 	private static string ReadAllText(string filePath) {
-		using var handle = File.OpenHandle(filePath);
-
 		if (RuntimeInformation.IsUnix) {
-			// reset cache for this file, so the OS really reads it from disk
-			int r;
-			do {
-				r = Syscall.posix_fadvise(handle.DangerousGetHandle().ToInt32(), 0, 0, PosixFadviseAdvice.POSIX_FADV_DONTNEED);
-			} while (UnixMarshal.ShouldRetrySyscall(r));
-			UnixMarshal.ThrowExceptionForLastErrorIf(r);
+			return ReadAllTextDirect(filePath);
 		}
 
+		// Windows: read through the managed file handle.
+		using var handle = File.OpenHandle(filePath);
 		Span<byte> buffer = stackalloc byte[128];
 		var read = RandomAccess.Read(handle, buffer, 0);
 		return Encoding.UTF8.GetString(buffer[..read]);
+	}
+
+	// Unix: open the file with O_DIRECT so the read bypasses the page cache and
+	// really hits the disk, which is what ProcessStats.GetDiskIo() needs to observe.
+	private static unsafe string ReadAllTextDirect(string filePath) {
+		var fd = Checked(() => Syscall.open(filePath, OpenFlags.O_RDONLY | OpenFlags.O_DIRECT));
+
+		Stat stat = default;
+		Checked(() => Syscall.fstat(fd, out stat));
+
+		var blockSize = (nuint)stat.st_blksize;
+		var buffer = NativeMemory.AlignedAlloc(Math.Max(blockSize, 128), blockSize);
+
+		try {
+			var read = Checked(() => Syscall.pread(fd, buffer, blockSize, 0));
+			return Encoding.UTF8.GetString(new ReadOnlySpan<byte>(buffer, (int)read));
+		} finally {
+			NativeMemory.AlignedFree(buffer);
+			Checked(() => Syscall.close(fd));
+		}
+
+		static T Checked<T>(Func<T> syscall)  where T: ISignedNumber<T> {
+			T ret;
+			do {
+				ret = syscall();
+			} while (UnixMarshal.ShouldRetrySyscall(int.CreateTruncating(ret)));
+			UnixMarshal.ThrowExceptionForLastErrorIf(int.CreateTruncating(ret));
+			return ret;
+		}
 	}
 }

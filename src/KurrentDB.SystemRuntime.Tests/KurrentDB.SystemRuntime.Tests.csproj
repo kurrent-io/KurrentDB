@@ -2,6 +2,7 @@
 	<PropertyGroup>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<IsKurrentXUnit>true</IsKurrentXUnit>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Mono.Posix.NETStandard" />
