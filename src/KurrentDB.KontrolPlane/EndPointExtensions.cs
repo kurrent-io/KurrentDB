@@ -5,19 +5,10 @@ using System.Net;
 using DotNext.Buffers;
 using DotNext.Net;
 using Google.Protobuf;
-using Kurrent.Quack;
 
-namespace KurrentDB.KontrolPlane.Raft.StateMachine;
+namespace KurrentDB.KontrolPlane;
 
 internal static class EndPointExtensions {
-	public static EndPoint ToEndPoint(this Blob bytes) {
-		var reader = new SequenceReader(bytes.Reference.AsMemory());
-		return reader.ReadEndPoint();
-	}
-
-	public static EndPoint? ToEndPointOrNull(this Blob bytes)
-		=> bytes.Reference.Length is 0 ? null : ToEndPoint(bytes);
-
 	public static ByteString ToByteString(this EndPoint ep) {
 		var writer = new BufferWriterSlim<byte>(stackalloc byte[256]);
 		try {
@@ -26,5 +17,10 @@ internal static class EndPointExtensions {
 		} finally {
 			writer.Dispose();
 		}
+	}
+
+	public static EndPoint ToEndPoint(this ByteString bytes) {
+		var reader = new SequenceReader(bytes.Memory);
+		return reader.ReadEndPoint();
 	}
 }

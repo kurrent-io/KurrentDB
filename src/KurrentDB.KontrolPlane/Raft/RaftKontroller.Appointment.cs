@@ -22,7 +22,7 @@ partial class RaftKontroller {
 		var tasks = new List<Task>(17);
 		var databases = new HashSet<string>(17);
 		var deletedDatabases = new HashSet<string>();
-		var timer = new PeriodicTimer(_appointmentExpiration);
+		var timer = new PeriodicTimer(AppointmentDuration);
 		try {
 			do {
 				var snapshot = await _state.CaptureCurrentStateAsync(token);
@@ -104,7 +104,7 @@ partial class RaftKontroller {
 	private bool IsAppointmentRequired(string databaseId, IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes)
 		=> nodes is not []
 		   && (!_appointmentState.TryGetValue(databaseId, out var appointment)
-		       || appointment.IsExpired(_appointmentExpiration));
+		       || appointment.IsExpired(AppointmentDuration));
 
 	private async Task AppointLeaderAsync(string databaseId, ulong epoch, IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes, CancellationToken token) {
 		var responses = new Dictionary<EndPoint, ReplicaState>(nodes.Count);

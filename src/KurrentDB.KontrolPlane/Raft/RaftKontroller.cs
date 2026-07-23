@@ -15,7 +15,6 @@ public partial class RaftKontroller : IAsyncDisposable {
 	private readonly WriteAheadLog _wal;
 	private readonly ClusterStateMachine _state;
 	private readonly RaftCluster _raft;
-	private readonly TimeSpan _appointmentExpiration;
 	private Task _leadershipTask;
 
 	public RaftKontroller(in Options options) {
@@ -40,7 +39,7 @@ public partial class RaftKontroller : IAsyncDisposable {
 		};
 
 		_leadershipTask = Task.CompletedTask;
-		_appointmentExpiration = options.AppointmentDuration;
+		AppointmentDuration = options.AppointmentDuration;
 		_appointmentState = new();
 		_lifecycleTokenSource = new();
 		_lifecycleToken = _lifecycleTokenSource.Token;

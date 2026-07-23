@@ -3,4 +3,4 @@
 
 namespace KurrentDB.KontrolPlane;
 
-public sealed class LeadershipRequiredException(Exception e) : InvalidOperationException("Current Kontroller is not leader", e);
+public sealed class LeadershipRequiredException(Exception? e = null) : InvalidOperationException("Current Kontroller is not leader", e);

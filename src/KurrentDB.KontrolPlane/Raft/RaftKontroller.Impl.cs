@@ -14,6 +14,8 @@ using StateMachine.Queries;
 using static StateMachine.LogEntries.ReplicationHelpers;
 
 partial class RaftKontroller : IKontroller {
+	public TimeSpan AppointmentDuration { get; }
+
 	public async ValueTask<IReadOnlySet<string>> GetDatabasesAsync(CancellationToken token = default) {
 		var result = new HashSet<string>();
 		var snapshot = await _state.CaptureCurrentStateAsync(token);
@@ -83,11 +85,20 @@ partial class RaftKontroller : IKontroller {
 
 	public ValueTask<bool> RenewLeaderAppointmentAsync(string databaseId, EndPoint leaderAddress, ulong epoch, CancellationToken token = default) {
 		ValueTask<bool> task;
+		var leadershipToken = LeadershipToken;
+
 		if (token.IsCancellationRequested) {
 			task = ValueTask.FromCanceled<bool>(token);
 		} else {
 			try {
-				task = new(RenewLeaderAppointment(databaseId, leaderAddress, epoch));
+				if (RenewLeaderAppointment(databaseId, leaderAddress, epoch)) {
+					task = ValueTask.FromResult(true);
+				}
+				else if (leadershipToken.IsCancellationRequested) {
+					task = ValueTask.FromException<bool>(new LeadershipRequiredException());
+				} else {
+					task = ValueTask.FromResult(false);
+				}
 			} catch (Exception e) {
 				task = ValueTask.FromException<bool>(e);
 			}

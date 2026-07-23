@@ -13,12 +13,16 @@
 		<PackageReference Include="DotNext.Net.Cluster" />
 		<PackageReference Include="Google.Protobuf" />
 		<PackageReference Include="Kurrent.Quack" />
+		<PackageReference Include="Grpc.Core.Api" />
 		<PackageReference Include="Grpc.Tools" PrivateAssets="All" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Protobuf Include="Raft\StateMachine\LogEntries\wal.proto">
+	  <Protobuf Include="Raft\StateMachine\LogEntries\wal.proto" Access="Internal" GrpcServices="None">
 	    <Generator>MSBuild:Compile</Generator>
 	  </Protobuf>
+		<Protobuf Include="Hosting\Grpc\kontroller.proto" Access="Public" GrpcServices="Server">
+			<Generator>MSBuild:Compile</Generator>
+		</Protobuf>
 	</ItemGroup>
 </Project>

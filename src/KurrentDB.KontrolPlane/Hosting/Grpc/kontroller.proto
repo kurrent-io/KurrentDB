@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package kurrent.kontrol_plane.server;
+
+option csharp_namespace = "KurrentDB.KontrolPlane.Hosting.Grpc";
+
+service Kontroller
+{
+  rpc KeepAlive(KeepAliveRequest) returns (KeepAliveResponse);
+  rpc Announce(AnnouncementRequest) returns (stream AnnouncementResponse);
+}
+
+message KeepAliveRequest
+{
+  string databaseId = 1;
+  bytes address = 2;
+  uint64 epoch = 3;
+}
+
+message KeepAliveResponse
+{
+  bool success = 1;
+  bytes kontrollerLeader = 2;
+}
+
+message AnnouncementRequest
+{
+  DatabaseNode nodeInfo = 1;
+}
+
+enum DatabaseNodeRole
+{
+  DB_NODE_REGULAR = 0;
+  DB_NODE_READONLY_REPLICA = 1;
+}
+
+message DatabaseNode
+{
+  string databaseId = 1;
+  bytes nodeAddress = 2;
+  DatabaseNodeRole role = 3;
+  bytes clientApiAddress = 4;
+  bytes replicationAddress = 5;
+  string version = 6;
+  bytes instanceId = 7;
+}
+
+message DatabaseCluster
+{
+  bytes databaseLeader = 1;
+  uint64 epoch = 2;
+  repeated DatabaseNode nodes = 3;
+}
+
+message AnnouncementResponse
+{
+  bytes kontrollerLeader = 1;
+  int64 appointmentDuration = 2;
+  optional DatabaseCluster cluster = 3;
+}

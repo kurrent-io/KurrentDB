@@ -21,6 +21,11 @@ public interface IKontroller {
 	ValueTask<bool> RemoveDatabaseNodeAsync(string databaseId, EndPoint address, CancellationToken token = default);
 
 	/// <summary>
+	/// Gets database leader appointment duration.
+	/// </summary>
+	TimeSpan AppointmentDuration { get; }
+
+	/// <summary>
 	/// Listens for database changes.
 	/// </summary>
 	/// <param name="databaseId">The identifier of the database.</param>
