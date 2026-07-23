@@ -11,6 +11,8 @@ namespace KurrentDB.Api.Modules.Indexes.Validators;
 class CreateIndexValidator : RequestValidator<CreateIndexRequest> {
 	public static readonly CreateIndexValidator Instance = new();
 
+	private const int MaxFields = 64;
+
 	private CreateIndexValidator() {
 		RuleFor(x => x.Name)
 			.SetValidator(IndexNameValidator.Instance);
@@ -20,6 +22,10 @@ class CreateIndexValidator : RequestValidator<CreateIndexRequest> {
 
 		RuleForEach(x => x.Fields)
 			.SetValidator(FieldValidator.Instance);
+
+		RuleFor(x => x.Fields)
+			.Must(fields => fields.Count <= MaxFields)
+			.WithMessage($"An index can have at most {MaxFields} fields");
 
 		RuleFor(x => x.Fields)
 			.Must(fields => fields.Select(f => f.Name).Distinct().Count() == fields.Count)
