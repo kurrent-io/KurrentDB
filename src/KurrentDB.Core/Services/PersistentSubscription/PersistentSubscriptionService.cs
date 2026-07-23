@@ -38,6 +38,7 @@ public class PersistentSubscriptionService<TStreamId> :
 	IHandle<SubscriptionMessage.PersistentSubscriptionPushToClients>,
 	IHandle<ClientMessage.ReplayParkedMessages>,
 	IHandle<ClientMessage.ReplayParkedMessage>,
+	IHandle<ClientMessage.TruncateParkedMessages>,
 	IHandle<SystemMessage.StateChangeMessage>,
 	IAsyncHandle<ClientMessage.ConnectToPersistentSubscriptionToStream>,
 	IAsyncHandle<ClientMessage.ConnectToPersistentSubscriptionToAll>,
@@ -1145,6 +1146,11 @@ public class PersistentSubscriptionService<TStreamId> :
 	}
 
 	public void Handle(ClientMessage.ReplayParkedMessages message) {
+		if (!_started) {
+			ReplyWithNotReady(message.Envelope, message.CorrelationId);
+			return;
+		}
+
 		PersistentSubscription subscription;
 		var key = BuildSubscriptionGroupKey(message.EventStreamId, message.GroupName);
 		Log.Debug("Replaying parked messages for persistent subscription {subscriptionKey} {to}. Requested by {user}",
@@ -1166,12 +1172,27 @@ public class PersistentSubscriptionService<TStreamId> :
 			return;
 		}
 
-		subscription.RetryParkedMessages(message.StopAt);
+		switch (subscription.RetryParkedMessages(message.StopAt)) {
+			case ParkedMessageOperationResult.NotReady:
+				ReplyWithNotReady(message.Envelope, message.CorrelationId);
+				return;
+			case ParkedMessageOperationResult.AlreadyInProgress:
+				message.Envelope.ReplyWith(new ClientMessage.ReplayMessagesReceived(message.CorrelationId,
+					ClientMessage.ReplayMessagesReceived.ReplayMessagesReceivedResult.Fail,
+					"A replay or truncate is already in progress."));
+				return;
+		}
+
 		message.Envelope.ReplyWith(new ClientMessage.ReplayMessagesReceived(message.CorrelationId,
 			ClientMessage.ReplayMessagesReceived.ReplayMessagesReceivedResult.Success, ""));
 	}
 
 	public void Handle(ClientMessage.ReplayParkedMessage message) {
+		if (!_started) {
+			ReplyWithNotReady(message.Envelope, message.CorrelationId);
+			return;
+		}
+
 		var key = BuildSubscriptionGroupKey(message.EventStreamId, message.GroupName);
 		PersistentSubscription subscription;
 
@@ -1185,6 +1206,47 @@ public class PersistentSubscriptionService<TStreamId> :
 		subscription.RetrySingleParkedMessage(message.Event);
 		message.Envelope.ReplyWith(new ClientMessage.ReplayMessagesReceived(message.CorrelationId,
 			ClientMessage.ReplayMessagesReceived.ReplayMessagesReceivedResult.Success, ""));
+	}
+
+	public void Handle(ClientMessage.TruncateParkedMessages message) {
+		if (!_started) {
+			ReplyWithNotReady(message.Envelope, message.CorrelationId);
+			return;
+		}
+
+		var key = BuildSubscriptionGroupKey(message.EventStreamId, message.GroupName);
+		Log.Debug("Truncating parked messages for persistent subscription {subscriptionKey} {to}. Requested by {user}",
+			key,
+			message.StopAt.HasValue ? $" (To: '{message.StopAt.ToString()}')" : " (All)",
+			message.User?.Identity?.Name);
+
+		if (message.StopAt.HasValue && message.StopAt.Value < 0) {
+			message.Envelope.ReplyWith(new ClientMessage.TruncateParkedMessagesCompleted(message.CorrelationId,
+				ClientMessage.TruncateParkedMessagesCompleted.TruncateParkedMessagesCompletedResult.Fail,
+				"Cannot truncate parked messages at a negative version."));
+			return;
+		}
+
+		if (!_subscriptionsById.TryGetValue(key, out var subscription)) {
+			message.Envelope.ReplyWith(new ClientMessage.TruncateParkedMessagesCompleted(message.CorrelationId,
+				ClientMessage.TruncateParkedMessagesCompleted.TruncateParkedMessagesCompletedResult.DoesNotExist,
+				"Unable to locate '" + key + "'"));
+			return;
+		}
+
+		switch (subscription.TruncateParkedMessages(message.StopAt)) {
+			case ParkedMessageOperationResult.NotReady:
+				ReplyWithNotReady(message.Envelope, message.CorrelationId);
+				return;
+			case ParkedMessageOperationResult.AlreadyInProgress:
+				message.Envelope.ReplyWith(new ClientMessage.TruncateParkedMessagesCompleted(message.CorrelationId,
+					ClientMessage.TruncateParkedMessagesCompleted.TruncateParkedMessagesCompletedResult.Fail,
+					"A replay or truncate is already in progress."));
+				return;
+		}
+
+		message.Envelope.ReplyWith(new ClientMessage.TruncateParkedMessagesCompleted(message.CorrelationId,
+			ClientMessage.TruncateParkedMessagesCompleted.TruncateParkedMessagesCompletedResult.Success, ""));
 	}
 
 	private void LoadConfiguration(Action continueWith) {

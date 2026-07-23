@@ -3,9 +3,10 @@
 
 using Bogus;
 using KurrentDB.Testing.Bogus;
+using KurrentDB.Testing.Sample.HomeAutomation;
 using Serilog;
 
-namespace KurrentDB.Testing.Sample.HomeAutomation;
+namespace KurrentDB.Testing.Tests.Sample.HomeAutomation;
 
 /// <summary>
 /// Test class to verify HomeAutomation DataSet functionality

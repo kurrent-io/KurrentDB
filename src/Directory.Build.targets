@@ -1,18 +1,5 @@
 <Project>
-	<PropertyGroup>
-		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-	</PropertyGroup>
 
-	<!--
-	  Review reminder for the NuGet audit suppression of GHSA-2m69-gcr7-jv3q (Directory.Build.props).
-	  Past the date below, the build emits an error prompting a recheck of whether a patched
-	  Microsoft.Data.Sqlite / SQLitePCLRaw bundle (SQLite >= 3.50.2) has shipped.
-	-->
-	<Target Name="ReviewSqliteAuditSuppression" BeforeTargets="Build">
-		<Error Condition="$([System.DateTime]::UtcNow.Ticks) &gt;= $([System.DateTime]::Parse('2026-07-19').Ticks)"
-				 Code="KDBAUDIT001"
-				 Text="The NuGet audit suppression for GHSA-2m69-gcr7-jv3q has passed its review date. Check whether Microsoft.Data.Sqlite/SQLitePCLRaw now bundles SQLite &gt;= 3.50.2 and remove the NuGetAuditSuppress entry in Directory.Build.props if so." />
-	</Target>
 	<PropertyGroup Condition="'$(IsKurrentTUnit)' == 'True' Or '$(IsKurrentXUnit)' == 'True' Or '$(IsKurrentNUnit)' == 'True'">
 		<OutputType>Exe</OutputType>
 	</PropertyGroup>

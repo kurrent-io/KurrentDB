@@ -122,13 +122,19 @@ KurrentDB is written in a mixture of C# and JavaScript. It can run on Windows, L
 Once you've installed the prerequisites for your system, you can launch a `Release` build of KurrentDB as follows:
 
 ```
-dotnet build -c Release src
+dotnet build -c Release
 ```
 
 To start a single node, you can then run:
 
 ```
-dotnet ./src/KurrentDB/bin/Release/net10.0/KurrentDB.dll --dev --db ./tmp/data --index ./tmp/index --log ./tmp/log
+dotnet run --project ./src/KurrentDB/KurrentDB.csproj -c Release -e ASPNETCORE_ENVIRONMENT=Development -- --dev --db ./tmp/data --index ./tmp/index --log ./tmp/log
+```
+
+Alternatively, you can run the `KurrentDB - Dev DB` profile pre-configured in `launchSettings.json`:
+
+```
+dotnet run --project ./src/KurrentDB/KurrentDB.csproj -c Release -lp "KurrentDB - Dev DB"
 ```
 
 ### Running the tests
@@ -136,7 +142,7 @@ dotnet ./src/KurrentDB/bin/Release/net10.0/KurrentDB.dll --dev --db ./tmp/data -
 You can launch the tests as follows:
 
 ```
-dotnet test --solution src/KurrentDB.sln
+dotnet test --solution KurrentDB.slnx
 ```
 
 ### Build KurrentDB Docker image

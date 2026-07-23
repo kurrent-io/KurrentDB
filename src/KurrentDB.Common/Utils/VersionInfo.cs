@@ -12,6 +12,7 @@ public static class VersionInfo {
 	public const string DefaultVersion = "default_version";
 	public const string OldVersion = "old_version";
 	public const string UnknownVersion = "unknown_version";
+	private const string VersionPropertiesFileName = "version.properties";
 
 	public static string BuildId { get; private set; } = "";
 	public static string Edition { get; private set; } = "";
@@ -36,7 +37,18 @@ public static class VersionInfo {
 
 		var versionFilePath = Path.Join(
 			Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory),
-			"version.properties");
+			VersionPropertiesFileName
+		);
+
+		if (!File.Exists(versionFilePath)) {
+			// In tests, AppDomain.CurrentDomain.BaseDirectory is `bin/` instead of `bin/<tfm>/`,
+			// so use a path relative to the current assembly as a fallback.
+			versionFilePath = Path.Join(
+				Path.GetDirectoryName(typeof(VersionInfo).Assembly.Location),
+				VersionPropertiesFileName
+			);
+		}
+
 		var properties = LoadProperties(versionFilePath);
 
 		if (properties.TryGetValue("version_suffix", out var versionSuffix))

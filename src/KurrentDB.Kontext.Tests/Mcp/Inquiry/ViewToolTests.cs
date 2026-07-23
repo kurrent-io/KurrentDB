@@ -15,7 +15,7 @@ public class ViewToolTests {
 		var result = await ViewTool.View(inquiries, new FakeWorkspaceContext(), sid);
 
 		await Assert.That(result.WorkingSetSize).IsEqualTo(0);
-		await Assert.That(result.Events).HasCount().EqualTo(0);
+		await Assert.That(result.Events).Count().IsEqualTo(0);
 	}
 
 	[Test]

@@ -181,6 +181,7 @@ public static class MetricsBootstrapper {
 			coreMeter.CreateObservableUpDownCounter($"{serviceName}-persistent-sub-last-known-event-commit-position", tracker.ObserveLastKnownEventCommitPosition);
 			coreMeter.CreateObservableUpDownCounter($"{serviceName}-persistent-sub-park-message-requests", tracker.ObserveParkMessageRequests);
 			coreMeter.CreateObservableUpDownCounter($"{serviceName}-persistent-sub-parked-message-replays", tracker.ObserveParkedMessageReplays);
+			coreMeter.CreateObservableUpDownCounter($"{serviceName}-persistent-sub-parked-message-truncations", tracker.ObserveParkedMessageTruncations);
 			coreMeter.CreateObservableUpDownCounter($"{serviceName}-persistent-sub-checkpointed-event-number", tracker.ObserveLastCheckpointedEvent);
 			coreMeter.CreateObservableUpDownCounter($"{serviceName}-persistent-sub-checkpointed-event-commit-position", tracker.ObserveLastCheckpointedEventCommitPosition);
 

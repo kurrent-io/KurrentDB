@@ -40,6 +40,7 @@ using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
 using MudBlazor.Services;
+using Scrutor;
 using Serilog;
 using Serilog.Events;
 using RuntimeInformation = System.Runtime.RuntimeInformation;
@@ -51,6 +52,11 @@ var exitCodeSource = new TaskCompletionSource<int>();
 
 Log.Logger = KurrentLoggerConfiguration.ConsoleLog;
 try {
+	if (!Environment.Is64BitProcess) {
+		Log.Fatal("KurrentDB requires a 64-bit process to run.");
+		return 1;
+	}
+
 	var options = ClusterVNodeOptions.FromConfiguration(configuration);
 
 	Log.Logger = KurrentLoggerConfiguration
@@ -330,13 +336,19 @@ try {
 			});
 			builder.Services.AddScoped<PersistentSubscriptionsService>();
 			builder.Services.AddScoped<ServerInfoService>();
-			// UI-layer authorizing wrapper over the SecondaryIndexing StatsService (which does no auth of its
-			// own). Resolved lazily by StatsPage and only when the plugin is enabled, so registering it here
-			// unconditionally is safe even though the inner StatsService is only registered by the plugin.
-			builder.Services.AddScoped<KurrentDB.Components.Stats.UiStatsService>();
+			builder.Services.AddScoped(sp => {
+				// Register via a factory (like ProjectionsService above) rather than by type:
+				// ValidateOnBuild constructs every type-registered descriptor up front and
+				// would fail resolving StatsService when secondary indexing is disabled.
+				return new KurrentDB.Components.Stats.UiStatsService(
+					sp.GetRequiredService<KurrentDB.SecondaryIndexing.Stats.StatsService>(),
+					sp.GetRequiredService<EventStore.Plugins.Authorization.IAuthorizationProvider>());
+			});
 			builder.Services.AddSingleton(TimeProvider.System);
 			Log.Information("Environment Name: {0}", builder.Environment.EnvironmentName);
 			Log.Information("ContentRoot Path: {0}", builder.Environment.ContentRootPath);
+
+			builder.Services.Decorate<IHostedService, HostedServiceLifecycleDecorator>();
 
 			var app = builder.Build();
 

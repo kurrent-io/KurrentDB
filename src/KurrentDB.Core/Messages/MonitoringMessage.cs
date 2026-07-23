@@ -135,6 +135,7 @@ public static partial class MonitoringMessage {
 		public long ParkedDueToClientNak { get; set; }
 		public long ParkedDueToMaxRetries { get; set; }
 		public long ParkedMessageReplays { get; set; }
+		public long ParkedMessageTruncations { get; set; }
 		public long OldestParkedMessage { get; set; }
 	}
 

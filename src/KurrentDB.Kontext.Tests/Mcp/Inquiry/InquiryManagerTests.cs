@@ -52,6 +52,6 @@ public class InquiryManagerTests {
 		await SearchTool.Search(search, new FakeWorkspaceContext(), new FakeAuthorizationProvider(), new StaticHttpContextAccessor(), inquiries, sid1, queries: ["order"]);
 		var result = await SearchTool.Search(search, new FakeWorkspaceContext(), new FakeAuthorizationProvider(), new StaticHttpContextAccessor(), inquiries, sid2, queries: ["order"]);
 
-		await Assert.That(result.NewEvents).HasCount().EqualTo(1);
+		await Assert.That(result.NewEvents).Count().IsEqualTo(1);
 	}
 }

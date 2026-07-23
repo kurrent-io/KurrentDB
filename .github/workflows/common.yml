@@ -34,7 +34,6 @@ jobs:
     -  
       name: Scan for Vulnerabilities
       run: |
-        cd src
         dotnet restore
         dotnet list package --vulnerable --include-transitive 2>&1 | tee vulnerabilities.txt
         # Advisories consciously accepted while awaiting an upstream fix.

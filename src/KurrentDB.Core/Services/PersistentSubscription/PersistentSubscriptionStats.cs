@@ -120,6 +120,7 @@ public class PersistentSubscriptionStats {
 			ParkedDueToClientNak = _settings.MessageParker.ParkedDueToClientNak,
 			ParkedDueToMaxRetries = _settings.MessageParker.ParkedDueToMaxRetries,
 			ParkedMessageReplays = _settings.MessageParker.ParkedMessageReplays,
+			ParkedMessageTruncations = _settings.MessageParker.ParkedMessageTruncations,
 			OldestParkedMessage = oldestParkedMessage
 		};
 	}

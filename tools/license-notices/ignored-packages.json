@@ -4,5 +4,6 @@
   "Microsoft.*",
   "NETStandard.Library",
   "runtime.*",
-  "System.*"
+  "System.*",
+  "vswhere"
 ]
