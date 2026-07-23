@@ -38,7 +38,6 @@ public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
 
 	private static void CorruptPTableFile(string ptableFile, byte version, string corruptionType) {
 		int indexEntrySize = IndexEntry.GetSize(version);
-		int indexEntryKeySize = IndexEntryKey.GetSize(version);
 
 		int numMidpoints = PTable.GetRequiredMidpointCountCached(numIndexEntries, version);
 
@@ -106,16 +105,7 @@ public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
 				indexEntriesToCorrupt.Add(numIndexEntries / 2);
 
 				foreach (int entry in indexEntriesToCorrupt) {
-					stream.Seek(PTableHeader.Size + entry * indexEntrySize, SeekOrigin.Begin);
-					//modify one of the index entry hashes/version
-					stream.Write(data, 0, indexEntryKeySize);
-
-					if (version >= PTableVersions.IndexV4) {
-						//modify one of the midpoint entry hashes/version
-						stream.Seek(PTableHeader.Size + numIndexEntries * indexEntrySize + entry * indexEntrySize,
-							SeekOrigin.Begin);
-						stream.Write(data, 0, indexEntryKeySize);
-					}
+					CorruptIndexEntryKey(stream, entry, version, new PTable.IndexEntryKey(0, 0));
 				}
 			} else if (corruptionType == "maxOutMiddleEntries") {
 				//maxes out middle index entries - useful for binary search tests
@@ -123,30 +113,42 @@ public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
 				indexEntriesToCorrupt.Add(numIndexEntries / 2 - 1);
 				indexEntriesToCorrupt.Add(numIndexEntries / 2);
 
-				for (int i = 0; i < indexEntryKeySize; i++)
-					data[i] = 0xFF;
-
 				foreach (int entry in indexEntriesToCorrupt) {
-					stream.Seek(PTableHeader.Size + entry * indexEntrySize, SeekOrigin.Begin);
-					//modify one of the index entry hashes/version
-					stream.Write(data, 0, indexEntryKeySize);
-
-					if (version >= PTableVersions.IndexV4) {
-						//modify one of the midpoint entry hashes/version
-						stream.Seek(PTableHeader.Size + numIndexEntries * indexEntrySize + entry * indexEntrySize,
-							SeekOrigin.Begin);
-						stream.Write(data, 0, indexEntryKeySize);
-					}
+					CorruptIndexEntryKey(stream, entry, version, new PTable.IndexEntryKey(ulong.MaxValue, -1));
 				}
 			} else if (corruptionType == "midpointItemIndexesNotAscendingOrder") {
 				if (version >= PTableVersions.IndexV4) {
 					//modify one of the midpoint item indexes
-					stream.Seek(
-						PTableHeader.Size + numIndexEntries * indexEntrySize + 3 * indexEntrySize - sizeof(long),
-						SeekOrigin.Begin);
-					stream.Write(data, 0, sizeof(long));
+					var midpointPosition = PTableHeader.Size + numIndexEntries * indexEntrySize + 2 * indexEntrySize;
+					stream.Seek(midpointPosition, SeekOrigin.Begin);
+					var midpointEntry = PTable.Midpoint.ReadFrom(stream);
+					var corruptedMidpoint = new PTable.Midpoint(midpointEntry.Key, 0);
+					stream.Seek(midpointPosition, SeekOrigin.Begin);
+					corruptedMidpoint.AppendTo(stream);
 				}
 			}
+		}
+	}
+
+	private static void CorruptIndexEntryKey(FileStream stream, int entry, byte version, PTable.IndexEntryKey key) {
+		int indexEntrySize = IndexEntry.GetSize(version);
+
+		//modify one of the index entry hashes/version
+		var position = PTableHeader.Size + entry * indexEntrySize;
+		stream.Seek(position, SeekOrigin.Begin);
+		var indexEntry = IndexEntry.ReadFrom(stream, version);
+		var corruptedEntry = new IndexEntry(key.Stream, key.Version, indexEntry.Position);
+		stream.Seek(position, SeekOrigin.Begin);
+		corruptedEntry.AppendTo(stream, version);
+
+		if (version >= PTableVersions.IndexV4) {
+			//modify one of the midpoint entry hashes/version
+			var midpointPosition = PTableHeader.Size + numIndexEntries * indexEntrySize + entry * indexEntrySize;
+			stream.Seek(midpointPosition, SeekOrigin.Begin);
+			var midpointEntry = PTable.Midpoint.ReadFrom(stream);
+			var corruptedMidpoint = new PTable.Midpoint(key, midpointEntry.ItemIndex);
+			stream.Seek(midpointPosition, SeekOrigin.Begin);
+			corruptedMidpoint.AppendTo(stream);
 		}
 	}
 

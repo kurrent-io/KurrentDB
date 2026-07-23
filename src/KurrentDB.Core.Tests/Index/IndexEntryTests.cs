@@ -54,7 +54,7 @@ public class IndexEntryTests {
 	}
 
 	[TestCaseSource(nameof(LayoutCases))]
-	public void ReadFrom_reads_the_versioned_binary_layout(byte ptableVersion, IndexEntry expected, byte[] bytes) {
+	public void ReadFrom_reads_the_versioned_binary_layout_from_stream(byte ptableVersion, IndexEntry expected, byte[] bytes) {
 		using var stream = new MemoryStream(bytes);
 
 		var entry = IndexEntry.ReadFrom(stream, ptableVersion);

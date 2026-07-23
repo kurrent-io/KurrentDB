@@ -84,9 +84,6 @@ public class table_index_with_corrupt_index_entries_should : SpecificationWithDi
 
 	private void CorruptPTableFile(string ptableFile, byte version, string corruptionType) {
 		int indexEntrySize = IndexEntry.GetSize(version);
-		int indexEntryKeySize = IndexEntryKey.GetSize(version);
-
-		byte[] data = new byte[255];
 
 		using (FileStream stream = File.Open(ptableFile, FileMode.Open)) {
 			if (corruptionType == "zeroOutMiddleEntry") {
@@ -95,15 +92,22 @@ public class table_index_with_corrupt_index_entries_should : SpecificationWithDi
 				indexEntriesToCorrupt.Add(NumIndexEntries / 2 - 1);
 
 				foreach (int entry in indexEntriesToCorrupt) {
-					stream.Seek(PTableHeader.Size + entry * indexEntrySize, SeekOrigin.Begin);
+					var position = PTableHeader.Size + entry * indexEntrySize;
+					stream.Seek(position, SeekOrigin.Begin);
+					var indexEntry = IndexEntry.ReadFrom(stream, version);
 					//modify one of the index entry hashes/version
-					stream.Write(data, 0, indexEntryKeySize);
+					var corruptedEntry = new IndexEntry(0, 0, indexEntry.Position);
+					stream.Seek(position, SeekOrigin.Begin);
+					corruptedEntry.AppendTo(stream, version);
 
 					if (version >= PTableVersions.IndexV4) {
 						//modify one of the midpoint entry hashes/version
-						stream.Seek(PTableHeader.Size + NumIndexEntries * indexEntrySize + entry * indexEntrySize,
-							SeekOrigin.Begin);
-						stream.Write(data, 0, indexEntryKeySize);
+						var midpointPosition = PTableHeader.Size + NumIndexEntries * indexEntrySize + entry * indexEntrySize;
+						stream.Seek(midpointPosition, SeekOrigin.Begin);
+						var midpointEntry = PTable.Midpoint.ReadFrom(stream);
+						var corruptedMidpoint = new PTable.Midpoint(default, midpointEntry.ItemIndex);
+						stream.Seek(midpointPosition, SeekOrigin.Begin);
+						corruptedMidpoint.AppendTo(stream);
 					}
 				}
 			}

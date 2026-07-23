@@ -83,7 +83,6 @@ public partial class PTable {
 				header.WriteTo(cs);
 
 				// WRITE INDEX ENTRIES
-				var buffer = new byte[indexEntrySize];
 				var records = table.IterateAllInOrder();
 				var requiredMidpointCount = GetRequiredMidpointCountCached(table.Count, table.Version, cacheDepth);
 				using var midpoints = new UnmanagedMemoryAppendOnlyList<Midpoint>((int)requiredMidpointCount + MidpointsOverflowSafetyNet);
@@ -131,7 +130,7 @@ public partial class PTable {
 							throw new Exception("Last midpoint was not the last index entry");
 					}
 
-					WriteMidpointsTo(bs, fs, table.Version, indexEntrySize, buffer, dumpedEntryCount,
+					WriteMidpointsTo(bs, fs, table.Version, dumpedEntryCount,
 						numIndexEntries, requiredMidpointCount, midpoints);
 				}
 
@@ -204,8 +203,6 @@ public partial class PTable {
 					var header = new PTableHeader(version);
 					header.WriteTo(cs);
 
-					var buffer = new byte[indexEntrySize];
-
 					var requiredMidpointCount = GetRequiredMidpointCountCached(numIndexEntries, version, cacheDepth);
 					using var midpoints = new UnmanagedMemoryAppendOnlyList<Midpoint>((int)requiredMidpointCount + MidpointsOverflowSafetyNet);
 
@@ -257,7 +254,7 @@ public partial class PTable {
 								throw new Exception("Last midpoint was not the last index entry");
 						}
 
-						WriteMidpointsTo(bs, f, version, indexEntrySize, buffer, dumpedEntryCount, numIndexEntries,
+						WriteMidpointsTo(bs, f, version, dumpedEntryCount, numIndexEntries,
 							requiredMidpointCount, midpoints);
 					}
 
@@ -313,7 +310,6 @@ public partial class PTable {
 					header.WriteTo(cs);
 
 					// WRITE INDEX ENTRIES
-					var buffer = new byte[indexEntrySize];
 					var requiredMidpointCount =
 						GetRequiredMidpointCountCached(numIndexEntries, version, cacheDepth);
 					using var midpoints = new UnmanagedMemoryAppendOnlyList<Midpoint>((int)requiredMidpointCount + MidpointsOverflowSafetyNet);
@@ -377,7 +373,7 @@ public partial class PTable {
 								throw new Exception("Last midpoint was not the last index entry");
 						}
 
-						WriteMidpointsTo(bs, f, version, indexEntrySize, buffer, dumpedEntryCount, numIndexEntries,
+						WriteMidpointsTo(bs, f, version, dumpedEntryCount, numIndexEntries,
 							requiredMidpointCount, midpoints);
 					}
 
@@ -447,7 +443,6 @@ public partial class PTable {
 					header.WriteTo(cs);
 
 					// WRITE SCAVENGED INDEX ENTRIES
-					var buffer = new byte[indexEntrySize];
 					using (var enumerator = Get64bitEnumerator(table)) {
 
 						ulong? previousHash = null;
@@ -506,7 +501,7 @@ public partial class PTable {
 								(int)requiredMidpointCount + MidpointsOverflowSafetyNet);
 						ComputeMidpoints(bs, f, version, indexEntrySize, keptCount,
 							requiredMidpointCount, midpoints, ct);
-						WriteMidpointsTo(bs, f, version, indexEntrySize, buffer, keptCount, keptCount,
+						WriteMidpointsTo(bs, f, version, keptCount, keptCount,
 							requiredMidpointCount, midpoints);
 					}
 
@@ -564,15 +559,12 @@ public partial class PTable {
 	private static void ComputeMidpoints(BufferedStream bs, FileStream fs, byte version,
 		int indexEntrySize, long numIndexEntries, int requiredMidpointCount, UnmanagedMemoryAppendOnlyList<Midpoint> midpoints,
 		CancellationToken ct = default(CancellationToken)) {
-		int indexKeySize;
-		if (version == PTableVersions.IndexV4)
-			indexKeySize = IndexEntryKey.IndexKeyV3And4Size;
-		else
+
+		if (version != PTableVersions.IndexV4)
 			throw new InvalidOperationException("Unknown PTable version: " + version);
 
 		midpoints.Clear();
 		bs.Flush();
-		byte[] buffer = new byte[indexKeySize];
 
 		var previousFileStreamPosition = fs.Position;
 
@@ -587,20 +579,23 @@ public partial class PTable {
 				midpoints.Add(new Midpoint(previousKey, previousIndex));
 			} else {
 				fs.Seek(PTableHeader.Size + index * indexEntrySize, SeekOrigin.Begin);
-				fs.ReadExactly(buffer, 0, indexKeySize);
-				IndexEntryKey key = new IndexEntryKey(BitConverter.ToUInt64(buffer, 8),
-					BitConverter.ToInt64(buffer, 0));
-				midpoints.Add(new Midpoint(key, index));
+				var entry = IndexEntry.ReadFrom(fs, version);
+				midpoints.Add(new Midpoint(entry.Key, index));
 				previousIndex = index;
-				previousKey = key;
+				previousKey = entry.Key;
 			}
 		}
 
 		fs.Seek(previousFileStreamPosition, SeekOrigin.Begin);
 	}
 
-	private static void WriteMidpointsTo(BufferedStream bs, FileStream fs, byte version, int indexEntrySize,
-		byte[] buffer, long dumpedEntryCount, long numIndexEntries, long requiredMidpointCount,
+	private static void WriteMidpointsTo(
+		BufferedStream bs,
+		FileStream fs,
+		byte version,
+		long dumpedEntryCount,
+		long numIndexEntries,
+		long requiredMidpointCount,
 		UnmanagedMemoryAppendOnlyList<Midpoint> midpoints) {
 		//WRITE MIDPOINT ENTRIES
 
@@ -616,7 +611,7 @@ public partial class PTable {
 			long fileSizeUpToMidpointEntries = GetFileSizeUpToMidpointEntries(fs.Position, midpoints.Count, version);
 			fs.SetLength(fileSizeUpToMidpointEntries);
 			for (var i = 0; i < midpoints.Count; i++) {
-				AppendMidpointRecordTo(bs, buffer, version, midpoints[i], indexEntrySize);
+				midpoints[i].AppendTo(bs);
 			}
 
 			midpointsWritten = midpoints.Count;
@@ -631,32 +626,6 @@ public partial class PTable {
 		var footerBytes = new PTableFooter(version, (uint)midpointsWritten);
 		footerBytes.WriteTo(bs);
 		bs.Flush();
-	}
-
-	private static void AppendMidpointRecordTo(Stream stream, byte[] buffer, byte version, Midpoint midpointEntry,
-		int midpointEntrySize) {
-		if (version >= PTableVersions.IndexV4) {
-			ulong eventStream = midpointEntry.Key.Stream;
-			long eventVersion = midpointEntry.Key.Version;
-			long itemIndex = midpointEntry.ItemIndex;
-
-			for (int i = 0; i < 8; i++) {
-				buffer[i] = (byte)(eventVersion & 0xFF);
-				eventVersion >>= 8;
-			}
-
-			for (int i = 0; i < 8; i++) {
-				buffer[i + 8] = (byte)(eventStream & 0xFF);
-				eventStream >>= 8;
-			}
-
-			for (int i = 0; i < 8; i++) {
-				buffer[i + 16] = (byte)(itemIndex & 0xFF);
-				itemIndex >>= 8;
-			}
-
-			stream.Write(buffer, 0, midpointEntrySize);
-		}
 	}
 
 	static IEnumerator<IndexEntry> Get64bitEnumerator(ISearchTable table) {
