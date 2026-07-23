@@ -17,6 +17,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Protobuf Include="StateMachine\LogEntries\wal.proto" GrpcServices="None" Access="Internal"/>
+	  <Protobuf Include="Raft\StateMachine\LogEntries\wal.proto">
+	    <Generator>MSBuild:Compile</Generator>
+	  </Protobuf>
 	</ItemGroup>
 </Project>
