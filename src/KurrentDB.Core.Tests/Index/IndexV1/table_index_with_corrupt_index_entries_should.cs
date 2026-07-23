@@ -82,33 +82,9 @@ public class table_index_with_corrupt_index_entries_should : SpecificationWithDi
 		_tableIndex.Close();
 	}
 
-	private ulong GetOriginalHash(ulong stream, byte version) {
-		if (version == PTableVersions.IndexV1)
-			return stream << 32;
-		else
-			return stream;
-	}
-
 	private void CorruptPTableFile(string ptableFile, byte version, string corruptionType) {
-		int indexEntrySize = 0;
-		if (version == PTableVersions.IndexV1)
-			indexEntrySize = PTable.IndexEntryV1Size;
-		else if (version == PTableVersions.IndexV2)
-			indexEntrySize = PTable.IndexEntryV2Size;
-		else if (version == PTableVersions.IndexV3)
-			indexEntrySize = PTable.IndexEntryV3Size;
-		else if (version == PTableVersions.IndexV4)
-			indexEntrySize = PTable.IndexEntryV4Size;
-
-		int indexEntryKeySize = 0;
-		if (version == PTableVersions.IndexV1)
-			indexEntryKeySize = PTable.IndexKeyV1Size;
-		else if (version == PTableVersions.IndexV2)
-			indexEntryKeySize = PTable.IndexKeyV2Size;
-		else if (version == PTableVersions.IndexV3)
-			indexEntryKeySize = PTable.IndexKeyV3Size;
-		else if (version == PTableVersions.IndexV4)
-			indexEntryKeySize = PTable.IndexKeyV4Size;
+		int indexEntrySize = IndexEntry.GetSize(version);
+		int indexEntryKeySize = IndexEntryKey.GetSize(version);
 
 		byte[] data = new byte[255];
 

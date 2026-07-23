@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
@@ -64,7 +63,7 @@ public partial class PTable {
 		Ensure.NotNullOrEmpty(filename, "filename");
 		Ensure.Nonnegative(cacheDepth, "cacheDepth");
 
-		int indexEntrySize = GetIndexEntrySize(table.Version);
+		int indexEntrySize = IndexEntry.GetSize(table.Version);
 		long dumpedEntryCount = 0;
 
 		var sw = Stopwatch.StartNew();
@@ -94,11 +93,11 @@ public partial class PTable {
 
 				ulong? previousHash = null;
 				foreach (var rec in records) {
-					AppendRecordTo(bs, buffer, table.Version, rec, indexEntrySize);
+					rec.AppendTo(bs, table.Version);
 					dumpedEntryCount += 1;
 					if (table.Version >= PTableVersions.IndexV4 &&
 						indexEntry == midpointCalculator.NextMidpointIndex) {
-						midpoints.Add(new Midpoint(new IndexEntryKey(rec.Stream, rec.Version), indexEntry));
+						midpoints.Add(new Midpoint(rec.Key, indexEntry));
 						midpointCalculator.Advance();
 					}
 
@@ -167,7 +166,7 @@ public partial class PTable {
 		Ensure.NotNullOrEmpty(outputFile, "outputFile");
 		Ensure.Nonnegative(cacheDepth, "cacheDepth");
 
-		var indexEntrySize = GetIndexEntrySize(version);
+		var indexEntrySize = IndexEntry.GetSize(version);
 
 		long numIndexEntries = 0;
 		for (var i = 0; i < tables.Count; i++)
@@ -218,10 +217,10 @@ public partial class PTable {
 					while (enumerators.Count > 0) {
 						var idx = GetMaxOf(enumerators);
 						var current = enumerators[idx].Current;
-						AppendRecordTo(bs, buffer, version, current, indexEntrySize);
+						current.AppendTo(bs, version);
 						if (version >= PTableVersions.IndexV4 &&
 							indexEntry == midpointCalculator.NextMidpointIndex) {
-							midpoints.Add(new Midpoint(new IndexEntryKey(current.Stream, current.Version), indexEntry));
+							midpoints.Add(new Midpoint(current.Key, indexEntry));
 							midpointCalculator.Advance();
 						}
 
@@ -287,22 +286,6 @@ public partial class PTable {
 		}
 	}
 
-	public static int GetIndexEntrySize(byte version) {
-		if (version == PTableVersions.IndexV1) {
-			return IndexEntryV1Size;
-		}
-
-		if (version == PTableVersions.IndexV2) {
-			return IndexEntryV2Size;
-		}
-
-		if (version == PTableVersions.IndexV3) {
-			return IndexEntryV3Size;
-		}
-
-		return IndexEntryV4Size;
-	}
-
 	private static PTable MergeTo2(IList<PTable> tables, long numIndexEntries, int indexEntrySize,
 		string outputFile,
 		byte version, int initialReaders, int maxReaders,
@@ -358,11 +341,10 @@ public partial class PTable {
 							available2 = enum2.MoveNext();
 						}
 
-						AppendRecordTo(bs, buffer, version, current, indexEntrySize);
+						current.AppendTo(bs, version);
 						if (version >= PTableVersions.IndexV4 &&
 							indexEntry == midpointCalculator.NextMidpointIndex) {
-							midpoints.Add(new Midpoint(new IndexEntryKey(current.Stream, current.Version),
-								indexEntry));
+							midpoints.Add(new Midpoint(current.Key, indexEntry));
 							midpointCalculator.Advance();
 						}
 
@@ -440,7 +422,7 @@ public partial class PTable {
 		Ensure.NotNullOrEmpty(outputFile, "outputFile");
 		Ensure.Nonnegative(cacheDepth, "cacheDepth");
 
-		var indexEntrySize = GetIndexEntrySize(version);
+		var indexEntrySize = IndexEntry.GetSize(version);
 		var numIndexEntries = table.Count;
 
 		var fileSizeUpToIndexEntries = GetFileSizeUpToIndexEntries(numIndexEntries, version);
@@ -472,7 +454,7 @@ public partial class PTable {
 						while (enumerator.MoveNext()) {
 							if (await shouldKeep(enumerator.Current, ct)) {
 								var current = enumerator.Current;
-								AppendRecordTo(bs, buffer, version, enumerator.Current, indexEntrySize);
+								enumerator.Current.AppendTo(bs, version);
 								// WRITE BLOOM FILTER ENTRY
 								if (bloomFilter != null && current.Stream != previousHash) {
 									var streamHash = current.Stream;
@@ -579,27 +561,12 @@ public partial class PTable {
 		return idx;
 	}
 
-	private static unsafe void AppendRecordTo(Stream stream, byte[] buffer, byte version, IndexEntry entry,
-		int indexEntrySize) {
-		var bytes = entry.Bytes;
-		if (version == PTableVersions.IndexV1) {
-			var entryV1 = new IndexEntryV1((uint)entry.Stream, (int)entry.Version, entry.Position);
-			bytes = entryV1.Bytes;
-		} else if (version == PTableVersions.IndexV2) {
-			var entryV2 = new IndexEntryV2(entry.Stream, (int)entry.Version, entry.Position);
-			bytes = entryV2.Bytes;
-		}
-
-		Marshal.Copy((IntPtr)bytes, buffer, 0, indexEntrySize);
-		stream.Write(buffer, 0, indexEntrySize);
-	}
-
 	private static void ComputeMidpoints(BufferedStream bs, FileStream fs, byte version,
 		int indexEntrySize, long numIndexEntries, int requiredMidpointCount, UnmanagedMemoryAppendOnlyList<Midpoint> midpoints,
 		CancellationToken ct = default(CancellationToken)) {
 		int indexKeySize;
 		if (version == PTableVersions.IndexV4)
-			indexKeySize = IndexKeyV4Size;
+			indexKeySize = IndexEntryKey.IndexKeyV3And4Size;
 		else
 			throw new InvalidOperationException("Unknown PTable version: " + version);
 
@@ -700,12 +667,12 @@ public partial class PTable {
 	}
 
 	public static long GetFileSizeUpToIndexEntries(long numIndexEntries, byte version) {
-		int indexEntrySize = GetIndexEntrySize(version);
+		int indexEntrySize = IndexEntry.GetSize(version);
 		return (long)PTableHeader.Size + numIndexEntries * indexEntrySize;
 	}
 
 	public static long GetFileSizeUpToMidpointEntries(long currentPosition, long numMidpointEntries, byte version) {
-		int indexEntrySize = GetIndexEntrySize(version);
+		int indexEntrySize = IndexEntry.GetSize(version);
 		return currentPosition + numMidpointEntries * indexEntrySize;
 	}
 
@@ -728,7 +695,7 @@ public partial class PTable {
 		if (numIndexEntries == 1)
 			return 2;
 
-		int indexEntrySize = GetIndexEntrySize(version);
+		int indexEntrySize = IndexEntry.GetSize(version);
 		var depth = GetDepth(numIndexEntries * indexEntrySize, minDepth);
 		return (int)Math.Max(2L, Math.Min((long)1 << depth, numIndexEntries));
 	}

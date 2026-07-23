@@ -37,25 +37,8 @@ public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
 	}
 
 	private static void CorruptPTableFile(string ptableFile, byte version, string corruptionType) {
-		int indexEntrySize = 0;
-		if (version == PTableVersions.IndexV1)
-			indexEntrySize = PTable.IndexEntryV1Size;
-		else if (version == PTableVersions.IndexV2)
-			indexEntrySize = PTable.IndexEntryV2Size;
-		else if (version == PTableVersions.IndexV3)
-			indexEntrySize = PTable.IndexEntryV3Size;
-		else if (version == PTableVersions.IndexV4)
-			indexEntrySize = PTable.IndexEntryV4Size;
-
-		int indexEntryKeySize = 0;
-		if (version == PTableVersions.IndexV1)
-			indexEntryKeySize = PTable.IndexKeyV1Size;
-		else if (version == PTableVersions.IndexV2)
-			indexEntryKeySize = PTable.IndexKeyV2Size;
-		else if (version == PTableVersions.IndexV3)
-			indexEntryKeySize = PTable.IndexKeyV3Size;
-		else if (version == PTableVersions.IndexV4)
-			indexEntryKeySize = PTable.IndexKeyV4Size;
+		int indexEntrySize = IndexEntry.GetSize(version);
+		int indexEntryKeySize = IndexEntryKey.GetSize(version);
 
 		int numMidpoints = PTable.GetRequiredMidpointCountCached(numIndexEntries, version);
 

@@ -13,7 +13,7 @@ using MD5 = KurrentDB.Core.Hashing.MD5;
 
 namespace KurrentDB.Core.Tests.Index.IndexV1;
 
-[TestFixture(PTable.IndexEntryV1Size), Explicit, Ignore("Long running, unsafe")]
+[TestFixture(IndexEntry.IndexEntryV1Size), Explicit, Ignore("Long running, unsafe")]
 public class opening_a_ptable_with_more_than_32bits_of_records : SpecificationWithFilePerTestFixture {
 	public const int MD5Size = 16;
 	public const byte Version = 1;
@@ -23,7 +23,7 @@ public class opening_a_ptable_with_more_than_32bits_of_records : SpecificationWi
 	private long _size;
 	private long _ptableCount;
 
-	protected int _indexEntrySize = PTable.IndexEntryV1Size;
+	protected int _indexEntrySize = IndexEntry.IndexEntryV1Size;
 
 	public opening_a_ptable_with_more_than_32bits_of_records(int indexEntrySize) {
 		Assert.Inconclusive("Explicit test, Test setup never returns");

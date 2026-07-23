@@ -34,15 +34,6 @@ public class PTableVersions {
 }
 
 public partial class PTable : ISearchTable, IDisposable {
-	public const int IndexEntryV1Size = sizeof(int) + sizeof(int) + sizeof(long);
-	public const int IndexEntryV2Size = sizeof(int) + sizeof(long) + sizeof(long);
-	public const int IndexEntryV3Size = sizeof(long) + sizeof(long) + sizeof(long);
-	public const int IndexEntryV4Size = IndexEntryV3Size;
-
-	public const int IndexKeyV1Size = sizeof(int) + sizeof(int);
-	public const int IndexKeyV2Size = sizeof(int) + sizeof(long);
-	public const int IndexKeyV3Size = sizeof(long) + sizeof(long);
-	public const int IndexKeyV4Size = IndexKeyV3Size;
 	public const int MD5Size = 16;
 	public const int DefaultBufferSize = 8192;
 	public const int DefaultSequentialBufferSize = 65536;
@@ -153,9 +144,10 @@ public partial class PTable : ISearchTable, IDisposable {
 			readerWorkItem.Stream.Seek(0, SeekOrigin.Begin);
 			var header = PTableHeader.FromStream(readerWorkItem.Stream);
 
-			if (header.Version == PTableVersions.IndexV1) {
+			var version = header.Version;
+			if (version == PTableVersions.IndexV1) {
 				throw new CorruptIndexException(new UnsupportedFileVersionException(
-					_filename, header.Version, Version,
+					_filename, version, Version,
 					"Detected a V1 index file, which is no longer supported. " +
 					"The index will be backed up and rebuilt in a supported format. " +
 					"This may take a long time for large databases. " +
@@ -163,43 +155,22 @@ public partial class PTable : ISearchTable, IDisposable {
 					"indexes to a supported format by performing an index merge."));
 			}
 
-			if ((header.Version != PTableVersions.IndexV2) &&
-				(header.Version != PTableVersions.IndexV3) &&
-				(header.Version != PTableVersions.IndexV4))
-				throw new CorruptIndexException(new UnsupportedFileVersionException(_filename, header.Version, Version));
-			_version = header.Version;
+			if (version is < PTableVersions.IndexV2 or > PTableVersions.IndexV4)
+				throw new CorruptIndexException(new UnsupportedFileVersionException(_filename, version, Version));
+			_version = version;
+			_indexEntrySize = IndexEntry.GetSize(version);
+			_indexKeySize = IndexEntryKey.GetSize(version);
 
-			if (_version == PTableVersions.IndexV1) {
-				_indexEntrySize = IndexEntryV1Size;
-				_indexKeySize = IndexKeyV1Size;
-			}
-
-			if (_version == PTableVersions.IndexV2) {
-				_indexEntrySize = IndexEntryV2Size;
-				_indexKeySize = IndexKeyV2Size;
-			}
-
-			if (_version == PTableVersions.IndexV3) {
-				_indexEntrySize = IndexEntryV3Size;
-				_indexKeySize = IndexKeyV3Size;
-			}
-
-			if (_version >= PTableVersions.IndexV4) {
+			if (_version == PTableVersions.IndexV4) {
 				//read the PTable footer
 				var previousPosition = readerWorkItem.Stream.Position;
 				readerWorkItem.Stream.Seek(readerWorkItem.Stream.Length - MD5Size - PTableFooter.GetSize(_version),
 					SeekOrigin.Begin);
 				var footer = PTableFooter.FromStream(readerWorkItem.Stream);
-				if (footer.Version != header.Version)
+				if (footer.Version != version)
 					throw new CorruptIndexException(
-						String.Format("PTable header/footer version mismatch: {0}/{1}", header.Version,
+						String.Format("PTable header/footer version mismatch: {0}/{1}", version,
 							footer.Version), new InvalidFileException("Invalid PTable file."));
-
-				if (_version == PTableVersions.IndexV4) {
-					_indexEntrySize = IndexEntryV4Size;
-					_indexKeySize = IndexKeyV4Size;
-				} else
-					throw new InvalidOperationException("Unknown PTable version: " + _version);
 
 				_midpointsCached = footer.NumMidpointsCached;
 				_midpointsCacheSize = _midpointsCached * _indexEntrySize;
@@ -239,9 +210,9 @@ public partial class PTable : ISearchTable, IDisposable {
 				_maxEntry = new IndexEntryKey(ulong.MinValue, long.MinValue);
 			} else {
 				var minEntry = ReadEntry(_indexEntrySize, Count - 1, readerWorkItem, _version);
-				_minEntry = new IndexEntryKey(minEntry.Stream, minEntry.Version);
+				_minEntry = minEntry.Key;
 				var maxEntry = ReadEntry(_indexEntrySize, 0, readerWorkItem, _version);
-				_maxEntry = new IndexEntryKey(maxEntry.Stream, maxEntry.Version);
+				_maxEntry = maxEntry.Key;
 			}
 		} catch (Exception) {
 			Dispose();
@@ -505,7 +476,7 @@ public partial class PTable : ISearchTable, IDisposable {
 		try {
 			workItem.Stream.Position = PTableHeader.Size;
 			for (long i = 0, n = Count; i < n; i++) {
-				yield return ReadNextNoSeek(workItem, _version);
+				yield return IndexEntry.ReadFrom(workItem.Stream, _version);
 			}
 		} finally {
 			ReturnWorkItem(workItem);
@@ -534,7 +505,7 @@ public partial class PTable : ISearchTable, IDisposable {
 			return false;
 		}
 
-		entry = ReadEntry(_indexEntrySize, value.LatestOffset, _version);
+		entry = ReadEntry(value.LatestOffset, _version);
 		return true;
 	}
 
@@ -604,7 +575,7 @@ public partial class PTable : ISearchTable, IDisposable {
 
 		for (var idx = recordRange.Lower; idx <= recordRange.Upper; idx++) {
 			var candidateEntry = ReadEntry(_indexEntrySize, idx, workItem, _version);
-			var candidateEntryKey = new IndexEntryKey(candidateEntry.Stream, candidateEntry.Version);
+			var candidateEntryKey = candidateEntry.Key;
 
 			if (candidateEntryKey.GreaterThan(lowBoundsCheck)) {
 				throw new MaybeCorruptIndexException(
@@ -651,7 +622,7 @@ public partial class PTable : ISearchTable, IDisposable {
 			var mid = low + (high - low) / 2;
 			IndexEntry midpoint = ReadEntry(_indexEntrySize, mid, workItem, _version);
 
-			var midpointKey = new IndexEntryKey(midpoint.Stream, midpoint.Version);
+			var midpointKey = midpoint.Key;
 			if (midpointKey.GreaterThan(lowBoundsCheck)) {
 				throw new MaybeCorruptIndexException(
 					$"Midpoint key (stream: {midpointKey.Stream}, version: {midpointKey.Version}) > "
@@ -740,7 +711,7 @@ public partial class PTable : ISearchTable, IDisposable {
 		try {
 			var high = ChopForLatest(workItem, endKey);
 			var candEntry = ReadEntry(_indexEntrySize, high, workItem, _version);
-			var candKey = new IndexEntryKey(candEntry.Stream, candEntry.Version);
+			var candKey = candEntry.Key;
 
 			if (candKey.GreaterThan(endKey))
 				throw new MaybeCorruptIndexException(string.Format(
@@ -771,7 +742,7 @@ public partial class PTable : ISearchTable, IDisposable {
 			return false;
 		}
 
-		entry = ReadEntry(_indexEntrySize, value.OldestOffset, _version);
+		entry = ReadEntry(value.OldestOffset, _version);
 		return true;
 	}
 
@@ -821,7 +792,7 @@ public partial class PTable : ISearchTable, IDisposable {
 		try {
 			var high = ChopForOldest(workItem, startKey);
 			var candEntry = ReadEntry(_indexEntrySize, high, workItem, _version);
-			var candidateKey = new IndexEntryKey(candEntry.Stream, candEntry.Version);
+			var candidateKey = candEntry.Key;
 			if (candidateKey.SmallerThan(startKey))
 				throw new MaybeCorruptIndexException(string.Format(
 					"candEntry ({0}@{1}) < startKey {2}, stream {3}, startNum {4}, endNum {5}, PTable: {6}.",
@@ -914,30 +885,19 @@ public partial class PTable : ISearchTable, IDisposable {
 		workItem.Stream.Seek(indexEntrySize * indexNum + PTableHeader.Size, SeekOrigin.Begin);
 	}
 
-	private static IndexEntry ReadEntry(int indexEntrySize, long indexNum, WorkItem workItem, int ptableVersion) {
+	private static IndexEntry ReadEntry(int indexEntrySize, long indexNum, WorkItem workItem, byte ptableVersion) {
 		long seekTo = indexEntrySize * indexNum + PTableHeader.Size;
 		workItem.Stream.Seek(seekTo, SeekOrigin.Begin);
-		return ReadNextNoSeek(workItem, ptableVersion);
+		return IndexEntry.ReadFrom(workItem.Stream, ptableVersion);
 	}
 
-	private IndexEntry ReadEntry(int indexEntrySize, long indexNum, int ptableVersion) {
+	private IndexEntry ReadEntry(long indexNum, byte ptableVersion) {
 		var workItem = GetWorkItem();
 		try {
 			return ReadEntry(_indexEntrySize, indexNum, workItem, ptableVersion);
 		} finally {
 			ReturnWorkItem(workItem);
 		}
-	}
-
-	private static IndexEntry ReadNextNoSeek(WorkItem workItem, int ptableVersion) {
-		long version = (ptableVersion >= PTableVersions.IndexV3)
-			? workItem.Reader.ReadInt64()
-			: workItem.Reader.ReadInt32();
-		ulong stream = ptableVersion == PTableVersions.IndexV1
-			? workItem.Reader.ReadUInt32()
-			: workItem.Reader.ReadUInt64();
-		long position = workItem.Reader.ReadInt64();
-		return new IndexEntry(stream, version, position);
 	}
 
 	private WorkItem GetWorkItem() {
@@ -1058,9 +1018,9 @@ public partial class PTable : ISearchTable, IDisposable {
 		var result = new List<IndexEntry>();
 
 		for (long i = high, n = Count; i < n; ++i) {
-			var entry = ReadNextNoSeek(workItem, _version);
+			var entry = IndexEntry.ReadFrom(workItem.Stream, _version);
 
-			var candidateKey = new IndexEntryKey(entry.Stream, entry.Version);
+			var candidateKey = entry.Key;
 
 			if (candidateKey.GreaterThan(endKey))
 				throw new MaybeCorruptIndexException($"candidateKey ({candidateKey}) > endKey ({endKey})");
@@ -1084,7 +1044,7 @@ public partial class PTable : ISearchTable, IDisposable {
 		while (low < high) {
 			var mid = low + (high - low) / 2;
 			var midpoint = ReadEntry(_indexEntrySize, mid, workItem, _version);
-			var midpointKey = new IndexEntryKey(midpoint.Stream, midpoint.Version);
+			var midpointKey = midpoint.Key;
 
 			if (midpointKey.GreaterThan(lowBoundsCheck)) {
 				throw new MaybeCorruptIndexException(String.Format(
@@ -1115,7 +1075,7 @@ public partial class PTable : ISearchTable, IDisposable {
 		while (low < high) {
 			var mid = low + (high - low + 1) / 2;
 			var midpoint = ReadEntry(_indexEntrySize, mid, workItem, _version);
-			var midpointKey = new IndexEntryKey(midpoint.Stream, midpoint.Version);
+			var midpointKey = midpoint.Key;
 
 			if (midpointKey.GreaterThan(lowBoundsCheck)) {
 				throw new MaybeCorruptIndexException(String.Format(
@@ -1239,7 +1199,7 @@ public partial class PTable : ISearchTable, IDisposable {
 			obj is StreamHash streamHash && Equals(streamHash);
 	}
 
-	public struct CacheEntry {
+	public readonly struct CacheEntry {
 		public readonly long OldestNumber;
 		public readonly long LatestNumber;
 		public readonly long OldestOffset;
@@ -1253,7 +1213,7 @@ public partial class PTable : ISearchTable, IDisposable {
 		}
 	}
 
-	public struct Midpoint {
+	public readonly struct Midpoint {
 		public readonly IndexEntryKey Key;
 		public readonly long ItemIndex;
 
@@ -1305,34 +1265,20 @@ public partial class PTable : ISearchTable, IDisposable {
 		}
 
 		public override string ToString() {
-			return string.Format("Stream: {0}, Version: {1}", Stream, Version);
+			return $"Stream: {Stream}, Version: {Version}";
 		}
 	}
 
 	private class WorkItem : IDisposable {
 		public readonly FileStream Stream;
-		public readonly BinaryReader Reader;
 
 		public WorkItem(string filename, int bufferSize) {
 			Stream = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize,
 				FileOptions.RandomAccess);
-			Reader = new BinaryReader(Stream);
-		}
-
-		~WorkItem() {
-			Dispose(false);
 		}
 
 		public void Dispose() {
-			Dispose(true);
-			GC.SuppressFinalize(this);
-		}
-
-		private void Dispose(bool disposing) {
-			if (disposing) {
-				Stream.Dispose();
-				Reader.Dispose();
-			}
+			Stream.Dispose();
 		}
 	}
 }
