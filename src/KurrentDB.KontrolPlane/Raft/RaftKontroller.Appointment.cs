@@ -109,7 +109,8 @@ partial class RaftKontroller {
 	private async Task AppointLeaderAsync(string databaseId, ulong epoch, IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes, CancellationToken token) {
 		var responses = new Dictionary<EndPoint, ReplicaState>(nodes.Count);
 
-		await foreach (var task in Task.WhenEach(GetReplicaState(DataPlane, nodes, token))) {
+		int quorum;
+		await foreach (var task in GetReplicaStateAsync(nodes, out quorum, token)) {
 			try {
 				var pair = await task;
 				responses.Add(pair.Key, pair.Value);
@@ -121,7 +122,6 @@ partial class RaftKontroller {
 		}
 
 		// Appoint leader only if we have a quorum
-		var quorum = nodes.Count / 2 + 1;
 		if (responses.Count < quorum)
 			return;
 
@@ -141,21 +141,24 @@ partial class RaftKontroller {
 		// if the current node is not a leader anymore
 		if (await _raft.AppointLeaderAsync(databaseId, epoch, candidate, CancellationToken.None))
 			_appointmentState[databaseId] = new LeaderAppointment(candidate, epoch + 1UL); // appointment increments the Epoch
-
-		static IEnumerable<Task<KeyValuePair<EndPoint, ReplicaState>>> GetReplicaState(
-			IDataPlane replicas,
-			IEnumerable<(EndPoint Address, DatabaseNodeRole Role)> nodes,
-			CancellationToken token)
-			=> nodes
-				.Where(static node => node.Role is DatabaseNodeRole.Regular) // r/o replicas cannot contribute to the quorum
-				.Select(node => GetReplicaStateAsync(replicas, node.Address, token));
-
-		static async Task<KeyValuePair<EndPoint, ReplicaState>> GetReplicaStateAsync(
-			IDataPlane replicas,
-			EndPoint address,
-			CancellationToken token)
-			=> new(address, await replicas.GetReplicaStateAsync(address, token));
 	}
+
+	private IAsyncEnumerable<Task<KeyValuePair<EndPoint, ReplicaState>>> GetReplicaStateAsync(
+		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes,
+		out int quorum,
+		CancellationToken token) {
+		var regularNodes = new List<Task<KeyValuePair<EndPoint, ReplicaState>>>(nodes.Count);
+		regularNodes.AddRange(nodes
+			.Where(static node => node.Role is DatabaseNodeRole.Regular) // r/o replicas cannot contribute to the quorum
+			.Select(static node => node.Address)
+			.Select(address => GetReplicaStateAsync(address, token)));
+
+		quorum = regularNodes.Count / 2 + 1;
+		return Task.WhenEach(regularNodes);
+	}
+
+	private async Task<KeyValuePair<EndPoint, ReplicaState>> GetReplicaStateAsync(EndPoint address, CancellationToken token)
+		=> new(address, await DataPlane.GetReplicaStateAsync(address, token));
 
 	private bool RenewLeaderAppointment(string databaseId, EndPoint leaderAddress, ulong epoch) {
 		if (!_appointmentState.TryGetValue(databaseId, out var expectedAppointment) || expectedAppointment.Epoch != epoch)
