@@ -14,7 +14,7 @@
     "degit": "2.8.4",
     "del": "5.1.0",
     "dotenv": "10.0.0",
-    "eslint": "^8.57.0",
+    "eslint": "^9.26.0",
     "eslint-config-vuepress": "^4.10.1",
     "eslint-config-vuepress-typescript": "^4.10.1",
     "fs-extra": "^11.2.0",
