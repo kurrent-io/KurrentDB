@@ -6,6 +6,7 @@ using DotNext.Net.Cluster.Consensus.Raft.StateMachine;
 
 namespace KurrentDB.KontrolPlane.Raft;
 
+using DataPlane;
 using StateMachine;
 
 /// <summary>
@@ -45,7 +46,7 @@ public partial class RaftKontroller : IAsyncDisposable {
 		_lifecycleToken = _lifecycleTokenSource.Token;
 	}
 
-	public required IDataPlane DataPlane {
+	public required Func<IDataPlane> DataPlaneClientFactory {
 		get;
 		init => field = value ?? throw new ArgumentNullException(nameof(value));
 	}

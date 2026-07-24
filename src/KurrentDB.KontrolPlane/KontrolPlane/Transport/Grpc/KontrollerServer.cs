@@ -5,7 +5,7 @@ using DotNext.Threading;
 using Google.Protobuf;
 using Grpc.Core;
 
-namespace KurrentDB.KontrolPlane.Hosting.Grpc;
+namespace KurrentDB.KontrolPlane.Transport.Grpc;
 
 /// <summary>
 /// Represents server-side of the Kontroller.

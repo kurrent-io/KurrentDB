@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package kurrent.data_plane;
+
+import "google/protobuf/empty.proto";
+
+option csharp_namespace = "KurrentDB.DataPlane.Transport.Grpc";
+
+service DataPlaneNode
+{
+  rpc GetReplicaState(google.protobuf.Empty) returns (GetReplicaStateResponse);
+}
+
+message GetReplicaStateResponse
+{
+  uint64 epoch = 1;
+  int64 writerCheckpoint = 2;
+  int64 chaserCheckpoint = 3;
+  int32 priority = 4;
+}

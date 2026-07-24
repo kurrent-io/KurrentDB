@@ -6,6 +6,8 @@ using KurrentDB.Core.XUnit.Tests;
 
 namespace KurrentDB.KontrolPlane.Raft;
 
+using DataPlane;
+
 [Collection("RaftKontroller")]
 public sealed class WalPersistenceTests : DirectoryFixture<WalPersistenceTests> {
 	private const int SnapshotDepth = 10;
@@ -22,7 +24,7 @@ public sealed class WalPersistenceTests : DirectoryFixture<WalPersistenceTests> 
 			             SingleNodeDeployment = true,
 			             SnapshotDepth = SnapshotDepth,
 		             }) {
-			             DataPlane = new TestDataPlane(),
+			             DataPlaneClientFactory = static () => new TestDataPlane(),
 		             }) {
 
 			await kontroller.StartAsync(TestToken);
@@ -46,7 +48,7 @@ public sealed class WalPersistenceTests : DirectoryFixture<WalPersistenceTests> 
 			             SingleNodeDeployment = true,
 			             SnapshotDepth = SnapshotDepth,
 		             }) {
-			             DataPlane = new TestDataPlane(),
+			             DataPlaneClientFactory = static () => new TestDataPlane(),
 		             }) {
 
 			await kontroller.StartAsync(TestToken);
@@ -62,5 +64,7 @@ public sealed class WalPersistenceTests : DirectoryFixture<WalPersistenceTests> 
 	private sealed class TestDataPlane : IDataPlane {
 		ValueTask<ReplicaState> IDataPlane.GetReplicaStateAsync(EndPoint address, CancellationToken token)
 			=> ValueTask.FromException<ReplicaState>(new NotSupportedException());
+
+		ValueTask IAsyncDisposable.DisposeAsync() => ValueTask.CompletedTask;
 	}
 }

@@ -3,20 +3,17 @@
 
 using System.Collections.Immutable;
 using System.Net;
+using DotNext;
 using KurrentDB.Core.XUnit.Tests;
 
 namespace KurrentDB.KontrolPlane.Raft;
+
+using DataPlane;
 
 [Collection("RaftKontroller")]
 public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentTests> {
 	[Fact]
 	public async Task AppointLeader() {
-		// initialize members
-		var replicaSet = new TestDataPlane();
-		replicaSet.UpdateMember(TestDataPlane.Host1, new(Epoch: 1L, WriterCheckpoint: 100, ChaserCheckpoint: 0L, Priority: 0));
-		replicaSet.UpdateMember(TestDataPlane.Host2, new(Epoch: 0L, WriterCheckpoint: 200, ChaserCheckpoint: 0L, Priority: 0));
-		replicaSet.UpdateMember(TestDataPlane.Host3, new(Epoch: 1L, WriterCheckpoint: 150, ChaserCheckpoint: 0L, Priority: 0)); // leader
-
 		// initialize Kontroller
 		await using var kontroller = new RaftKontroller(new RaftKontroller.Options {
 			ListenAddress = new(IPAddress.Loopback, 3269),
@@ -27,7 +24,7 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 			},
 			SingleNodeDeployment = true,
 		}) {
-			DataPlane = replicaSet,
+			DataPlaneClientFactory = CreateDataPlane,
 		};
 
 		await kontroller.StartAsync(TestToken);
@@ -38,6 +35,14 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 		Assert.Equal(1UL, leader.Epoch);
 
 		await kontroller.StopAsync(TestToken);
+
+		static TestDataPlane CreateDataPlane() {
+			var replicaSet = new TestDataPlane();
+			replicaSet.UpdateMember(TestDataPlane.Host1, new(Epoch: 1L, WriterCheckpoint: 100, ChaserCheckpoint: 0L, Priority: 0));
+			replicaSet.UpdateMember(TestDataPlane.Host2, new(Epoch: 0L, WriterCheckpoint: 200, ChaserCheckpoint: 0L, Priority: 0));
+			replicaSet.UpdateMember(TestDataPlane.Host3, new(Epoch: 1L, WriterCheckpoint: 150, ChaserCheckpoint: 0L, Priority: 0)); // leader
+			return replicaSet;
+		}
 	}
 
 	[Fact]
@@ -60,7 +65,7 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 			},
 			SingleNodeDeployment = true,
 		}) {
-			DataPlane = replicaSet,
+			DataPlaneClientFactory = Func<IDataPlane>.Constant(replicaSet),
 		};
 
 		await kontroller.StartAsync(TestToken);
@@ -180,5 +185,7 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 			=> Volatile.Read(in _members).TryGetValue(address, out var state)
 				? new(state)
 				: ValueTask.FromException<ReplicaState>(new IOException());
+
+		ValueTask IAsyncDisposable.DisposeAsync() => ValueTask.CompletedTask;
 	}
 }

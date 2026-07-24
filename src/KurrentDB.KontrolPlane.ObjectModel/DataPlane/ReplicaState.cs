@@ -3,7 +3,7 @@
 
 using System.Runtime.InteropServices;
 
-namespace KurrentDB.KontrolPlane;
+namespace KurrentDB.DataPlane;
 
 /// <summary>
 /// Represents replication state of the node.
@@ -11,4 +11,4 @@ namespace KurrentDB.KontrolPlane;
 /// <param name="Epoch">The epoch of the database node.</param>
 /// <param name="WriterCheckpoint">The latest known offset of the uncommitted log record.</param>
 [StructLayout(LayoutKind.Auto)]
-public readonly record struct ReplicaState(ulong Epoch, long WriterCheckpoint, long ChaserCheckpoint, int Priority) : IEntity;
+public readonly record struct ReplicaState(ulong Epoch, long WriterCheckpoint, long ChaserCheckpoint, int Priority) : IModelEntity;

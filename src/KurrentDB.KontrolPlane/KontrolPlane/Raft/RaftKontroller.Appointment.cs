@@ -9,6 +9,7 @@ using DotNext.Net.Cluster.Consensus.Raft;
 
 namespace KurrentDB.KontrolPlane.Raft;
 
+using DataPlane;
 using StateMachine;
 using StateMachine.LogEntries;
 using StateMachine.Queries;
@@ -22,15 +23,22 @@ partial class RaftKontroller {
 		var tasks = new List<Task>(17);
 		var databases = new HashSet<string>(17);
 		var deletedDatabases = new HashSet<string>();
+		var activeMembers = new HashSet<EndPoint>();
+		var dataPlane = DataPlaneClientFactory.Invoke();
 		var timer = new PeriodicTimer(AppointmentDuration);
 		try {
 			do {
 				var snapshot = await _state.CaptureCurrentStateAsync(token);
 				try {
-					StartAppointments(snapshot, tasks, databases, token);
-					RemoveDeletedDatabases(databases, deletedDatabases);
+					StartAppointments(snapshot, dataPlane, tasks, databases, activeMembers, token);
 
 					var task = Task.WhenAll(tasks);
+
+					// parallel actions
+					RemoveDeletedDatabases(databases, deletedDatabases);
+					await dataPlane.ReclaimConnectionsAsync(activeMembers, token);
+
+					// wait for all communications to be finished
 					await task.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing
 					                          | ConfigureAwaitOptions.ContinueOnCapturedContext);
 
@@ -44,11 +52,13 @@ partial class RaftKontroller {
 					tasks.Clear();
 					deletedDatabases.Clear();
 					databases.Clear();
+					activeMembers.Clear();
 				}
 			} while (await timer.WaitForNextTickAsync(token));
 		}  finally {
 			timer.Dispose();
 			_appointmentState.Clear();
+			await dataPlane.DisposeAsync();
 		}
 
 		static void LeadershipLost(IEnumerable<Exception> exceptions, CancellationToken token) {
@@ -79,8 +89,10 @@ partial class RaftKontroller {
 
 	private void StartAppointments(
 		ClusterState clusterState,
+		IDataPlane dataPlane,
 		List<Task> tasks,
 		HashSet<string> databases,
+		HashSet<EndPoint> activeMembers,
 		CancellationToken token) {
 		// Process appointment for every database in parallel
 		using (clusterState.RentConnection(out var connection)) {
@@ -90,13 +102,20 @@ partial class RaftKontroller {
 			foreach (var database in currentDBs) {
 				databases.Add(database.Id);
 
-				IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes = connection
+				var nodes = connection
 					.GetDatabaseNodes(database.Id)
 					.Select(static node => (node.Address, node.Role))
 					.ToList();
 
+				ImportMembers(CollectionsMarshal.AsSpan(nodes), activeMembers);
 				if (IsAppointmentRequired(database.Id, nodes))
-					tasks.Add(AppointLeaderAsync(database.Id, database.Epoch, nodes, token));
+					tasks.Add(AppointLeaderAsync(database.Id, database.Epoch, dataPlane, nodes, token));
+			}
+		}
+
+		static void ImportMembers(ReadOnlySpan<(EndPoint Address, DatabaseNodeRole Role)> input, HashSet<EndPoint> output) {
+			foreach (ref readonly var node in input) {
+				output.Add(node.Address);
 			}
 		}
 	}
@@ -106,11 +125,16 @@ partial class RaftKontroller {
 		   && (!_appointmentState.TryGetValue(databaseId, out var appointment)
 		       || appointment.IsExpired(AppointmentDuration));
 
-	private async Task AppointLeaderAsync(string databaseId, ulong epoch, IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes, CancellationToken token) {
+	private async Task AppointLeaderAsync(
+		string databaseId,
+		ulong epoch,
+		IDataPlane dataPlane,
+		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes,
+		CancellationToken token) {
 		var responses = new Dictionary<EndPoint, ReplicaState>(nodes.Count);
 
 		int quorum;
-		await foreach (var task in GetReplicaStateAsync(nodes, out quorum, token)) {
+		await foreach (var task in GetReplicaStateAsync(dataPlane, nodes, out quorum, token)) {
 			try {
 				var pair = await task;
 				responses.Add(pair.Key, pair.Value);
@@ -144,6 +168,7 @@ partial class RaftKontroller {
 	}
 
 	private IAsyncEnumerable<Task<KeyValuePair<EndPoint, ReplicaState>>> GetReplicaStateAsync(
+		IDataPlane dataPlane,
 		IReadOnlyList<(EndPoint Address, DatabaseNodeRole Role)> nodes,
 		out int quorum,
 		CancellationToken token) {
@@ -151,14 +176,14 @@ partial class RaftKontroller {
 		regularNodes.AddRange(nodes
 			.Where(static node => node.Role is DatabaseNodeRole.Regular) // r/o replicas cannot contribute to the quorum
 			.Select(static node => node.Address)
-			.Select(address => GetReplicaStateAsync(address, token)));
+			.Select(address => GetMemberReplicaStateAsync(dataPlane, address, token)));
 
 		quorum = regularNodes.Count / 2 + 1;
 		return Task.WhenEach(regularNodes);
-	}
 
-	private async Task<KeyValuePair<EndPoint, ReplicaState>> GetReplicaStateAsync(EndPoint address, CancellationToken token)
-		=> new(address, await DataPlane.GetReplicaStateAsync(address, token));
+		static async Task<KeyValuePair<EndPoint, ReplicaState>> GetMemberReplicaStateAsync(IDataPlane dataPlane, EndPoint address, CancellationToken token)
+			=> new(address, await dataPlane.GetReplicaStateAsync(address, token));
+	}
 
 	private bool RenewLeaderAppointment(string databaseId, EndPoint leaderAddress, ulong epoch) {
 		if (!_appointmentState.TryGetValue(databaseId, out var expectedAppointment) || expectedAppointment.Epoch != epoch)

@@ -9,8 +9,8 @@ namespace KurrentDB.KontrolPlane;
 /// <summary>
 /// Describes database node.
 /// </summary>
-public sealed record DatabaseNode : IEntity {
-	internal readonly EndPoint? ClientApiAddressInternal;
+public sealed record DatabaseNode : IModelEntity {
+	private readonly EndPoint? _clientApiAddress;
 
 	public required string DatabaseId { get; init; }
 
@@ -20,7 +20,16 @@ public sealed record DatabaseNode : IEntity {
 	/// <remarks>
 	/// The endpoint contains an address + port, which is used to access V2 and internal gRPC API.
 	/// </remarks>
-	public required EndPoint Address { get; init; }
+	public required EndPoint Address {
+		get;
+		init {
+			if (value.Equals(_clientApiAddress)) {
+				_clientApiAddress = null;
+			}
+
+			field = value;
+		}
+	}
 
 	public DatabaseNodeRole Role { get; init; }
 
@@ -29,8 +38,8 @@ public sealed record DatabaseNode : IEntity {
 	/// </summary>
 	[AllowNull]
 	public EndPoint ClientApiAddress {
-		get => ClientApiAddressInternal ?? Address;
-		init => ClientApiAddressInternal = value;
+		get => _clientApiAddress ?? Address;
+		init { _clientApiAddress = Address.Equals(value) ? null : value; }
 	}
 
 	/// <summary>

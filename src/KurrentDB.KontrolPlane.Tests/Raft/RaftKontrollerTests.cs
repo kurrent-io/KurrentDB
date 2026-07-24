@@ -3,6 +3,8 @@ using KurrentDB.Core.XUnit.Tests;
 
 namespace KurrentDB.KontrolPlane.Raft;
 
+using DataPlane;
+
 [Collection("RaftKontroller")]
 public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 	private static readonly IPEndPoint Address = new(IPAddress.Loopback, 3269);
@@ -18,7 +20,7 @@ public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 			},
 			SingleNodeDeployment = true,
 		}) {
-			DataPlane = new TestDataPlane(),
+			DataPlaneClientFactory = static () => new TestDataPlane(),
 		};
 	}
 
@@ -225,5 +227,7 @@ public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 	private sealed class TestDataPlane : IDataPlane {
 		ValueTask<ReplicaState> IDataPlane.GetReplicaStateAsync(EndPoint address, CancellationToken token)
 			=> ValueTask.FromException<ReplicaState>(new NotSupportedException());
+
+		ValueTask IAsyncDisposable.DisposeAsync() => ValueTask.CompletedTask;
 	}
 }

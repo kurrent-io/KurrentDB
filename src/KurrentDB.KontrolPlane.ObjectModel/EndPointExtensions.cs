@@ -6,9 +6,9 @@ using DotNext.Buffers;
 using DotNext.Net;
 using Google.Protobuf;
 
-namespace KurrentDB.KontrolPlane;
+namespace KurrentDB;
 
-internal static class EndPointExtensions {
+public static class EndPointExtensions {
 	public static ByteString ToByteString(this EndPoint ep) {
 		var writer = new BufferWriterSlim<byte>(stackalloc byte[256]);
 		try {

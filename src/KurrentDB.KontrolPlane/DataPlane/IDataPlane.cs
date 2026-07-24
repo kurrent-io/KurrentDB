@@ -3,12 +3,12 @@
 
 using System.Net;
 
-namespace KurrentDB.KontrolPlane;
+namespace KurrentDB.DataPlane;
 
 /// <summary>
 /// Manages communication with the member in the Data Plane.
 /// </summary>
-public interface IDataPlane {
+public interface IDataPlane : IAsyncDisposable {
 	/// <summary>
 	/// Gets the replication state for the specified member.
 	/// </summary>
@@ -16,4 +16,13 @@ public interface IDataPlane {
 	/// <param name="token">The token that can be used to cancel the operation.</param>
 	/// <returns>The replication state of the member.</returns>
 	ValueTask<ReplicaState> GetReplicaStateAsync(EndPoint address, CancellationToken token);
+
+	/// <summary>
+	/// Instructs the client to keep the specified connections alive.
+	/// </summary>
+	/// <param name="activeConnections">A set of connections to be retained alive.</param>
+	/// <param name="token">The token that can be used to cancel the operation.</param>
+	/// <returns></returns>
+	ValueTask ReclaimConnectionsAsync(IReadOnlySet<EndPoint> activeConnections, CancellationToken token)
+		=> ValueTask.CompletedTask;
 }

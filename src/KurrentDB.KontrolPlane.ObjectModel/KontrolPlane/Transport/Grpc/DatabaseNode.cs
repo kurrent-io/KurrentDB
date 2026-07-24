@@ -3,7 +3,7 @@
 
 using Google.Protobuf;
 
-namespace KurrentDB.KontrolPlane.Hosting.Grpc;
+namespace KurrentDB.KontrolPlane.Transport.Grpc;
 
 partial class DatabaseNode {
 	public DatabaseNode(KontrolPlane.DatabaseNode node) {
