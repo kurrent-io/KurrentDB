@@ -482,6 +482,18 @@ public partial record ClusterVNodeOptions {
 
 		[Description("The number of stream hashes to remember when checking for collisions.")]
 		public int ScavengeHashUsersCacheCapacity { get; init; } = Opts.ScavengeHashUsersCacheCapacityDefault;
+
+		[Description("The amount of space that can be allocated by embedded DuckDB for temporary files.")]
+		public long SqlEngineTempDirectorySizeLimit {
+			get => field < 0L ? 0L : field;
+			init;
+		}
+
+		[Description("The location of temp directory for embedded DuckDB.")]
+		public string SqlEngineTempDirectory {
+			get => field ?? string.Empty;
+			init;
+		}
 	}
 
 	[Description("gRPC Options")]
@@ -607,7 +619,7 @@ public partial record ClusterVNodeOptions {
 		[Description("The maximum size, in bytes, of a projection's state and result. A projection will fault if its state size exceeds this value. May not exceed 16mb.")]
 		public int MaxProjectionStateSize { get; set; } = Opts.MaxProjectionStateSizeDefault;
 
-		[Description("Maximum number of partition-state entries cached in memory per V2 projection cache " + 
+		[Description("Maximum number of partition-state entries cached in memory per V2 projection cache " +
 		             "(one per partition slot plus a shared engine-wide cache).")]
 		public int MaxPartitionStateCacheSize { get; init; } = Opts.MaxPartitionStateCacheSizeDefault;
 	}

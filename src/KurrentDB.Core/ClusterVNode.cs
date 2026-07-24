@@ -491,7 +491,10 @@ public class ClusterVNode<TStreamId> :
 				unbuffered: false,
 				writethrough: options.Database.WriteThrough,
 				reduceFileCachePressure: options.Database.ReduceFileCachePressure,
-				maxTruncation: options.Database.MaxTruncation);
+				maxTruncation: options.Database.MaxTruncation) {
+				SqlEngineTempDirectory = options.Database.SqlEngineTempDirectory,
+				SqlEngineTempDirectorySizeLimit = options.Database.SqlEngineTempDirectorySizeLimit,
+			};
 		}
 
 		var databaseTag = Db.Config.DatabaseTag.Read();
