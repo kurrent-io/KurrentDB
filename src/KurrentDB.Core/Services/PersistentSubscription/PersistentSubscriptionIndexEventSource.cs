@@ -8,28 +8,30 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 
 namespace KurrentDB.Core.Services.PersistentSubscription;
 
-public sealed class PersistentSubscriptionAllStreamEventSource : IPersistentSubscriptionEventSource {
-	public EventSourceKind Kind => EventSourceKind.All;
+public sealed class PersistentSubscriptionIndexEventSource : IPersistentSubscriptionEventSource {
+	public EventSourceKind Kind => EventSourceKind.Index;
 	public string EventStreamId => throw new InvalidOperationException();
-	public string IndexName => throw new InvalidOperationException();
-	public override string ToString() => SystemStreams.AllStream;
-	public IEventFilter EventFilter { get; }
+	public string IndexName { get; }
+	public IEventFilter EventFilter => null;
 
-	public PersistentSubscriptionAllStreamEventSource(IEventFilter eventFilter) {
-		EventFilter = eventFilter;
+	public PersistentSubscriptionIndexEventSource(string indexName) {
+		IndexName = indexName ?? throw new ArgumentNullException(nameof(indexName));
 	}
 
-	public PersistentSubscriptionAllStreamEventSource() {
-		EventFilter = null;
-	}
+	public override string ToString() => IndexName;
 
-	public IPersistentSubscriptionStreamPosition StreamStartPosition => new PersistentSubscriptionAllStreamPosition(0L, 0L);
+	public IPersistentSubscriptionStreamPosition StreamStartPosition =>
+		new PersistentSubscriptionAllStreamPosition(0L, 0L);
+
 	public IPersistentSubscriptionStreamPosition GetStreamPositionFor(ResolvedEvent @event) {
 		if (@event.OriginalPosition.HasValue) {
-			return new PersistentSubscriptionAllStreamPosition(@event.OriginalPosition.Value.CommitPosition, @event.OriginalPosition.Value.PreparePosition);
+			return new PersistentSubscriptionAllStreamPosition(
+				@event.OriginalPosition.Value.CommitPosition,
+				@event.OriginalPosition.Value.PreparePosition);
 		}
 		throw new InvalidOperationException();
 	}
+
 	public IPersistentSubscriptionStreamPosition GetStreamPositionFor(string checkpoint) {
 		const string C = "C:";
 		const string P = "P:";
