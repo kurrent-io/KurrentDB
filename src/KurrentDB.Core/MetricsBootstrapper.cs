@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Linq;
 using KurrentDB.Core.Bus;
@@ -67,6 +68,8 @@ public static class MetricsBootstrapper {
 	public static void Bootstrap(
 		Conf conf,
 		TFChunkDbConfig dbConfig,
+		string indexPath,
+		string logPath,
 		Trackers trackers) {
 
 		OptionsFormatter.LogConfig("Metrics", conf);
@@ -283,7 +286,7 @@ public static class MetricsBootstrapper {
 			{ Conf.SystemTracker.TotalMem, "total" },
 		});
 
-		systemMetrics.CreateDiskMetric($"{serviceName}-sys-disk", dbConfig.Path, new() {
+		systemMetrics.CreateDiskMetric($"{serviceName}-sys-disk", [dbConfig.Path, indexPath, logPath], DriveStats.GetDriveInfo, new() {
 			{ Conf.SystemTracker.DriveTotalBytes, "total" },
 			{ Conf.SystemTracker.DriveUsedBytes, "used" },
 		});

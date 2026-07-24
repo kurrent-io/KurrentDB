@@ -339,8 +339,9 @@ public class ClusterVNode<TStreamId> :
 			out var readerThreadsCount);
 
 		var trackers = new Trackers();
+		var indexPath = options.Database.Index ?? Path.Combine(dbConfig.Path, ESConsts.DefaultIndexDirectoryName);
 		var metricsConfiguration = MetricsConfiguration.Get(configuration);
-		MetricsBootstrapper.Bootstrap(metricsConfiguration, dbConfig, trackers);
+		MetricsBootstrapper.Bootstrap(metricsConfiguration, dbConfig, indexPath, options.Logging.Log, trackers);
 
 		var namingStrategy = new VersionedPatternFileNamingStrategy(dbConfig.Path, "chunk-");
 		IChunkFileSystem fileSystem = new ChunkLocalFileSystem(namingStrategy);
@@ -636,7 +637,6 @@ public class ClusterVNode<TStreamId> :
 		threadPoolQueueLengthMonitor.Start();
 
 		// Log Format
-		var indexPath = options.Database.Index ?? Path.Combine(Db.Config.Path, ESConsts.DefaultIndexDirectoryName);
 
 		var pTableMaxReaderCount = GetPTableMaxReaderCount(readerThreadsCount);
 		var tfReader = new TFChunkReader(Db, Db.Config.WriterCheckpoint.AsReadOnly());
