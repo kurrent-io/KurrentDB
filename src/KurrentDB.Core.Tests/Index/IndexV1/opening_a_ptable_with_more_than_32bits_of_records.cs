@@ -58,8 +58,8 @@ public class opening_a_ptable_with_more_than_32bits_of_records : SpecificationWi
 			using (var cs = new CryptoStream(fs, md5, CryptoStreamMode.Write))
 			using (var bs = new BufferedStream(cs, DefaultSequentialBufferSize)) {
 				// WRITE HEADER
-				var headerBytes = new PTableHeader(Version).AsByteArray();
-				cs.Write(headerBytes, 0, headerBytes.Length);
+				var header = new PTableHeader(Version);
+				header.WriteTo(cs);
 
 				// WRITE INDEX ENTRIES
 				var buffer = new byte[indexEntrySize];

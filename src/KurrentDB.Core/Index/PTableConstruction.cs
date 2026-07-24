@@ -80,8 +80,8 @@ public partial class PTable {
 			using (var cs = new CryptoStream(fs, md5, CryptoStreamMode.Write))
 			using (var bs = new BufferedStream(cs, DefaultSequentialBufferSize)) {
 				// WRITE HEADER
-				var headerBytes = new PTableHeader(table.Version).AsByteArray();
-				cs.Write(headerBytes, 0, headerBytes.Length);
+				var header = new PTableHeader(table.Version);
+				header.WriteTo(cs);
 
 				// WRITE INDEX ENTRIES
 				var buffer = new byte[indexEntrySize];
@@ -202,8 +202,8 @@ public partial class PTable {
 				using (var cs = new CryptoStream(f, md5, CryptoStreamMode.Write))
 				using (var bs = new BufferedStream(cs, DefaultSequentialBufferSize)) {
 					// WRITE HEADER
-					var headerBytes = new PTableHeader(version).AsByteArray();
-					cs.Write(headerBytes, 0, headerBytes.Length);
+					var header = new PTableHeader(version);
+					header.WriteTo(cs);
 
 					var buffer = new byte[indexEntrySize];
 
@@ -326,8 +326,8 @@ public partial class PTable {
 				using (var cs = new CryptoStream(f, md5, CryptoStreamMode.Write))
 				using (var bs = new BufferedStream(cs, DefaultSequentialBufferSize)) {
 					// WRITE HEADER
-					var headerBytes = new PTableHeader(version).AsByteArray();
-					cs.Write(headerBytes, 0, headerBytes.Length);
+					var header = new PTableHeader(version);
+					header.WriteTo(cs);
 
 					// WRITE INDEX ENTRIES
 					var buffer = new byte[indexEntrySize];
@@ -461,8 +461,8 @@ public partial class PTable {
 				using (var cs = new CryptoStream(f, md5, CryptoStreamMode.Write))
 				using (var bs = new BufferedStream(cs, DefaultSequentialBufferSize)) {
 					// WRITE HEADER
-					var headerBytes = new PTableHeader(version).AsByteArray();
-					cs.Write(headerBytes, 0, headerBytes.Length);
+					var header = new PTableHeader(version);
+					header.WriteTo(cs);
 
 					// WRITE SCAVENGED INDEX ENTRIES
 					var buffer = new byte[indexEntrySize];
@@ -661,8 +661,8 @@ public partial class PTable {
 
 		bs.Flush();
 		fs.SetLength(fs.Position + PTableFooter.GetSize(version));
-		var footerBytes = new PTableFooter(version, (uint)midpointsWritten).AsByteArray();
-		bs.Write(footerBytes, 0, footerBytes.Length);
+		var footerBytes = new PTableFooter(version, (uint)midpointsWritten);
+		footerBytes.WriteTo(bs);
 		bs.Flush();
 	}
 
