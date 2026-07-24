@@ -29,7 +29,7 @@ public sealed class KontrollerServer(IKontroller kontroller) : Kontroller.Kontro
 	public override async Task AnnounceDatabaseNode(AnnouncementRequest request, IServerStreamWriter<AnnouncementResponse> responseStream, ServerCallContext context) {
 		// announcement
 		try {
-			await kontroller.AddOrUpdateDatabaseNodeAsync(request.NodeInfo.ToEntity(), context.CancellationToken);
+			await kontroller.TryAddDatabaseNodeAsync(request.NodeInfo.ToEntity(), context.CancellationToken);
 		} catch (LeadershipRequiredException) {
 			// the current node is not a leader
 			await responseStream.WriteAsync(new() {

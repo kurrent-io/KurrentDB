@@ -27,6 +27,45 @@ partial class ClusterState {
 
 		return result;
 	}
+
+	public bool Update(AddOrIgnoreDatabaseNode command, in CommandInfo info)
+		=> Update<AddOrIgnoreDatabaseNodeStmt, bool>(new(command), info);
+}
+
+[StructLayout(LayoutKind.Auto)]
+file readonly struct AddOrIgnoreDatabaseNodeStmt(AddOrIgnoreDatabaseNode command)
+	: IPreparedStatement<(string DatabaseId, ReadOnlyMemory<byte> Address, int Role, string Version, ReadOnlyMemory<byte> ClientApiAddr,
+			ReadOnlyMemory<byte> ReplicationAddr, Guid InstanceId)>,
+		ISupplier<DuckDBAdvancedConnection, bool> {
+	public static ReadOnlySpan<byte> CommandText => """
+	                                                INSERT OR IGNORE INTO node (database_id, address, role, version, client_api_addr, replication_addr, instance_id)
+	                                                VALUES ($1, $2, $3, $4, $5, $6, $7)
+	                                                """u8;
+
+	public static StatementBindingResult Bind(
+		in (string DatabaseId, ReadOnlyMemory<byte> Address, int Role, string Version, ReadOnlyMemory<byte> ClientApiAddr,
+			ReadOnlyMemory<byte> ReplicationAddr, Guid InstanceId) args,
+		PreparedStatement source) => new(source) {
+		args.DatabaseId,
+		args.Address.Span,
+		args.Role,
+		args.Version,
+		args.ClientApiAddr.Span,
+		args.ReplicationAddr.Span,
+		Unsafe.BitCast<Guid, UInt128>(args.InstanceId),
+	};
+
+	public bool Invoke(DuckDBAdvancedConnection connection)
+		=> connection
+			.ExecuteNonQuery<(string, ReadOnlyMemory<byte>, int, string, ReadOnlyMemory<byte>, ReadOnlyMemory<byte>, Guid),
+				AddOrIgnoreDatabaseNodeStmt>(
+				new(command.DatabaseId,
+					command.Address.Memory,
+					command.Role,
+					command.Version,
+					command.ClientApiAddress.Memory,
+					command.ReplicationProtocolAddress.Memory,
+					new Guid(command.InstanceId.Span))) > 0L;
 }
 
 [StructLayout(LayoutKind.Auto)]
@@ -58,7 +97,10 @@ file readonly struct AddOrUpdateDatabaseNodeStmt(AddOrUpdateDatabaseNode command
 		=> connection
 			.ExecuteNonQuery<(string, ReadOnlyMemory<byte>, int, string, ReadOnlyMemory<byte>, ReadOnlyMemory<byte>, Guid),
 				AddOrUpdateDatabaseNodeStmt>(
-				new(command.DatabaseId, command.Address.Memory, command.Role, command.Version,
+				new(command.DatabaseId,
+					command.Address.Memory,
+					command.Role,
+					command.Version,
 					command.ClientApiAddress.Memory,
 					command.ReplicationProtocolAddress.Memory,
 					new Guid(command.InstanceId.Span)));

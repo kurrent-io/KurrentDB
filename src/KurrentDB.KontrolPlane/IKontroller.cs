@@ -18,6 +18,8 @@ public interface IKontroller {
 
 	ValueTask AddOrUpdateDatabaseNodeAsync(DatabaseNode node, CancellationToken token = default);
 
+	ValueTask<bool> TryAddDatabaseNodeAsync(DatabaseNode node, CancellationToken token = default);
+
 	ValueTask<bool> RemoveDatabaseNodeAsync(string databaseId, EndPoint address, CancellationToken token = default);
 
 	/// <summary>

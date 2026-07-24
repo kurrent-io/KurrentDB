@@ -47,6 +47,31 @@ internal static class ReplicationHelpers {
 						})
 					{ Term = raft.Term }, token);
 
+		public async ValueTask<bool> TryAddDatabaseNodeAsync(string databaseId,
+			EndPoint address,
+			DatabaseNodeRole role,
+			EndPoint? clientApiAddress,
+			EndPoint replicationAddress,
+			string version,
+			Guid instanceId,
+			CancellationToken token) {
+			var box = new StrongBox<bool>();
+
+			await raft.ReplicateAsync(
+				new ProtobufLogEntry<AddOrIgnoreDatabaseNode>(new()
+					{
+						Address = address.ToByteString(),
+						DatabaseId = databaseId,
+						Role = (int)role,
+						ReplicationProtocolAddress = replicationAddress.ToByteString(),
+						ClientApiAddress = clientApiAddress?.ToByteString() ?? ByteString.Empty,
+						Version = version,
+						InstanceId = ByteString.CopyFrom(instanceId.ToByteArray()),
+					})
+					{ Term = raft.Term, Context = box}, token);
+			return box.Value;
+		}
+
 		public async ValueTask<bool> RemoveDatabaseNodeAsync(string databaseId,
 			EndPoint address,
 			CancellationToken token) {

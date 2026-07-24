@@ -121,6 +121,34 @@ public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 	}
 
 	[Fact]
+	public async Task TryAddRemoveNode() {
+		var expectedNode = new DatabaseNode {
+			Address = new IPEndPoint(IPAddress.Parse("192.168.0.1"), 3262),
+			ReplicationProtocolAddress = new IPEndPoint(IPAddress.Parse("192.168.0.1"), 3263),
+			DatabaseId = Database.MainDatabaseId,
+			Role = DatabaseNodeRole.ReadOnlyReplica,
+			InstanceId = Guid.NewGuid(),
+			Version = "1.0",
+		};
+
+		Assert.True(await Kontroller.TryAddDatabaseNodeAsync(expectedNode, TestToken));
+		Assert.False(await Kontroller.TryAddDatabaseNodeAsync(expectedNode, TestToken));
+
+		var database = await Kontroller.GetDatabaseAsync(Database.MainDatabaseId, TestToken);
+		Assert.NotNull(database);
+		Assert.Null(database.LeaderAddress);
+
+		var actualNode = Assert.Single(database.Nodes);
+		Assert.Equal(expectedNode, actualNode);
+
+		await Kontroller.RemoveDatabaseNodeAsync(Database.MainDatabaseId, expectedNode.Address, TestToken);
+
+		database = await Kontroller.GetDatabaseAsync(Database.MainDatabaseId, TestToken);
+		Assert.NotNull(database);
+		Assert.Empty(database.Nodes);
+	}
+
+	[Fact]
 	public async Task TrackDatabaseDescription() {
 		await using var enumerator = Kontroller
 			.ListenDatabaseAsync(Database.MainDatabaseId, TestToken)

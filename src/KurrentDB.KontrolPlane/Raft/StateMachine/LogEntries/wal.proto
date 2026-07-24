@@ -28,6 +28,17 @@ message AddOrUpdateDatabaseNode
   bytes instanceId = 7;
 }
 
+message AddOrIgnoreDatabaseNode
+{
+  string databaseId = 1;
+  bytes address = 2;
+  int32 role = 3;
+  string version = 4;
+  bytes replicationProtocolAddress = 5;
+  bytes clientApiAddress = 6;
+  bytes instanceId = 7;
+}
+
 message RemoveDatabaseNode
 {
   string databaseId = 1;

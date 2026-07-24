@@ -44,6 +44,12 @@ partial class ClusterStateMachine {
 					in commandInfo,
 					entry.Context as StrongBox<bool>);
 				break;
+			case LogEntries.AddOrIgnoreDatabaseNode.TypeId:
+				Apply(currentState,
+					await DeserializeAsync<LogEntries.AddOrIgnoreDatabaseNode>(entry, token),
+					in commandInfo,
+					entry.Context as StrongBox<bool>);
+				break;
 			default:
 				Debug.Fail($"Unexpected entry type {entry.CommandId}");
 				break;
@@ -96,6 +102,19 @@ partial class ClusterStateMachine {
 		var result = currentState.Update(command, in commandInfo);
 
 		_databases.TryGetValue(command.DatabaseId).ValueOrDefault?.TryAdvance();
+		resultContainer?.Value = result;
+	}
+
+	private void Apply(ClusterState currentState,
+		LogEntries.AddOrIgnoreDatabaseNode command,
+		in CommandInfo commandInfo,
+		StrongBox<bool>? resultContainer) {
+		var result = currentState.Update(command, in commandInfo);
+
+		if (result) {
+			_databases.TryGetValue(command.DatabaseId).ValueOrDefault?.TryAdvance();
+		}
+
 		resultContainer?.Value = result;
 	}
 

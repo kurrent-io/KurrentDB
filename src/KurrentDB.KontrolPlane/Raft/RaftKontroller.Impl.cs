@@ -75,6 +75,21 @@ partial class RaftKontroller : IKontroller {
 		}
 	}
 
+	public async ValueTask<bool> TryAddDatabaseNodeAsync(DatabaseNode node, CancellationToken token = default) {
+		try {
+			return await _raft.TryAddDatabaseNodeAsync(node.DatabaseId,
+				node.Address,
+				node.Role,
+				node.ClientApiAddressInternal,
+				node.ReplicationProtocolAddress,
+				node.Version,
+				node.InstanceId,
+				token);
+		} catch (NotLeaderException e) {
+			throw new LeadershipRequiredException(e);
+		}
+	}
+
 	public async ValueTask<bool> RemoveDatabaseNodeAsync(string databaseId, EndPoint address, CancellationToken token = default) {
 		try {
 			return await _raft.RemoveDatabaseNodeAsync(databaseId, address, token);
