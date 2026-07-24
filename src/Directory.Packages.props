@@ -17,8 +17,9 @@
     <PackageVersion Include="Dapper" Version="2.1.66" />
     <PackageVersion Include="DotNext" Version="6.3.0" />
     <PackageVersion Include="DotNext.IO" Version="6.3.0" />
-    <PackageVersion Include="DotNext.Threading" Version="6.3.0" />
+    <PackageVersion Include="DotNext.Threading" Version="6.4.0" />
     <PackageVersion Include="DotNext.Unsafe" Version="6.3.0" />
+    <PackageVersion Include="DotNext.Net.Cluster" Version="6.4.0" />
     <PackageVersion Include="Ductus.FluentDocker" Version="2.85.0" />
     <PackageVersion Include="Ductus.FluentDocker.XUnit" Version="2.85.0" />
     <PackageVersion Include="DuckDB.NET.Data.Full" Version="1.5.0" />
@@ -48,7 +49,7 @@
     <PackageVersion Include="Grpc.AspNetCore.Server.Reflection" Version="2.71.0" />
     <PackageVersion Include="Grpc.AspNetCore.Web" Version="2.71.0" />
     <PackageVersion Include="Grpc.Net.Common" Version="2.76.0" />
-    <PackageVersion Include="Grpc.Core" Version="2.46.6" />
+		<PackageVersion Include="Grpc.Core.Api" Version="2.80.0" />
     <PackageVersion Include="Grpc.Net.Client" Version="2.71.0" />
     <PackageVersion Include="Grpc.StatusProto" Version="2.71.0" />
     <PackageVersion Include="Grpc.Tools" Version="2.72.0" />
@@ -70,8 +71,8 @@
     <PackageVersion Include="Kurrent.Surge.Core" Version="1.1.1-alpha.1.71" />
     <PackageVersion Include="Kurrent.Surge.DataProtection" Version="1.1.1-alpha.1.71" />
     <PackageVersion Include="Kurrent.Surge.DuckDB" Version="1.1.1-alpha.1.71" />
-    <PackageVersion Include="Kurrent.Quack" Version="0.0.0-alpha.181" />
-    <PackageVersion Include="Kurrent.Quack.Arrow" Version="0.0.0-alpha.181" />
+    <PackageVersion Include="Kurrent.Quack" Version="0.0.0-alpha.193" />
+    <PackageVersion Include="Kurrent.Quack.Arrow" Version="0.0.0-alpha.193" />
     <PackageVersion Include="KurrentDB.Client" Version="1.0.0" />
     <PackageVersion Include="librdkafka.redist" Version="2.5.0" />
     <PackageVersion Include="LruCacheNet" Version="1.2.0" />

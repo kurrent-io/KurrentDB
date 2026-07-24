@@ -1,0 +1,45 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<InvariantGlobalization>true</InvariantGlobalization>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+		<GitVersion>false</GitVersion>
+		<RootNamespace>KurrentDB</RootNamespace>
+	</PropertyGroup>
+	
+	<ItemGroup>
+		<ProjectReference Include="..\KurrentDB.KontrolPlane.ObjectModel\KurrentDB.KontrolPlane.ObjectModel.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Kurrent.Quack" />
+		<PackageReference Include="Grpc.Tools" PrivateAssets="All" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Protobuf Include="KontrolPlane\Raft\StateMachine\LogEntries\wal.proto">
+			<Access>Internal</Access>
+			<GrpcServices>None</GrpcServices>
+		</Protobuf>
+		<Protobuf Include="..\KurrentDB.KontrolPlane.ObjectModel\KontrolPlane\Transport\Grpc\kontroller.proto">
+			<GrpcServices>Server</GrpcServices>
+			<Access>Public</Access>
+			<OutputDir>GeneratedCodeByProtoCompiler</OutputDir>
+			<CompileOutputs>false</CompileOutputs>
+		</Protobuf>
+		<Protobuf Include="..\KurrentDB.KontrolPlane.ObjectModel\DataPlane\Transport\Grpc\db_node.proto">
+			<GrpcServices>Client</GrpcServices>
+			<Access>Internal</Access>
+			<OutputDir>GeneratedCodeByProtoCompiler</OutputDir>
+			<CompileOutputs>false</CompileOutputs>
+		</Protobuf>
+		<Compile Remove="GeneratedCodeByProtoCompiler/**" />
+		<Compile Include="GeneratedCodeByProtoCompiler/*Grpc.cs" />
+	</ItemGroup>
+
+	<Target Name="CleanGenerated" BeforeTargets="Clean">
+		<RemoveDir Directories="GeneratedCodeByProtoCompiler" />
+	</Target>
+</Project>

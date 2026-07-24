@@ -13,6 +13,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
+using DotNext;
 using EventStore.Core.Cluster;
 using EventStore.Plugins.Authentication;
 using EventStore.Plugins.Authorization;
@@ -403,7 +404,7 @@ public class ClusterVNode<TStreamId> :
 						bufferSize: 1, FileOptions.DeleteOnClose);
 				} catch (UnauthorizedAccessException) {
 					// Only use the fallback default directory if we are using a default directory
-					if (dbPath == Locations.DefaultDataDirectory || dbPath == Locations.LegacyDataDirectory) {
+					if (dbPath.IsOneOf(Locations.DefaultDataDirectory, Locations.LegacyDataDirectory)) {
 						Log.Information(
 							"Access to path {dbPath} denied. The KurrentDB database will be created in {fallbackDefaultDataDirectory}",
 							dbPath, Locations.FallbackDefaultDataDirectory);
@@ -414,6 +415,10 @@ public class ClusterVNode<TStreamId> :
 						throw;
 					}
 				}
+
+				var kontrollerPath = Path.Combine(dbPath, ESConsts.KontrollerDirectoryName);
+
+
 
 				var indexPath = options.Database.Index ?? Path.Combine(dbPath, ESConsts.DefaultIndexDirectoryName);
 				Log.Information("Index Path set to {indexPath}", indexPath);
@@ -939,6 +944,22 @@ public class ClusterVNode<TStreamId> :
 				options.Interface.AdvertiseHostToClientAs, options.Interface.AdvertiseNodePortToClientAs,
 				nodeTcpOptions?.NodeTcpPortAdvertiseAs ?? 0);
 		}
+
+		// static (IPEndPoint ListenAddr, EndPoint PublicAddr) GetKontrollerHostingOptions(
+		// 	ClusterVNodeOptions.InterfaceOptions options) {
+		// 	var kontrollerListenAddr = new IPEndPoint(options.NodeIp, options.KontrollerPort);
+		// 	var kontrollerPublicPort = options.AdvertiseKontrollerPortAs > 0
+		// 		? options.AdvertiseKontrollerPortAs
+		// 		: kontrollerListenAddr.Port;
+		//
+		// 	EndPoint kontrollerPublicAddr = options.KontrollerHostAdvertiseAs is { Length: > 0 } kontrollerHost
+		// 		? IPAddress.TryParse(kontrollerHost, out var publicIp)
+		// 			? new IPEndPoint(publicIp, kontrollerPublicPort)
+		// 			: new DnsEndPoint(kontrollerHost, kontrollerPublicPort)
+		// 		: kontrollerListenAddr;
+		//
+		// 	return (kontrollerListenAddr, kontrollerPublicAddr);
+		// }
 
 		_httpService = new KestrelHttpService(ServiceAccessibility.Public, _mainQueue, new TrieUriRouter(), options.Application.LogHttpRequests,
 			string.IsNullOrEmpty(GossipAdvertiseInfo.AdvertiseHostToClientAs) ? GossipAdvertiseInfo.AdvertiseExternalHostAs : GossipAdvertiseInfo.AdvertiseHostToClientAs,
