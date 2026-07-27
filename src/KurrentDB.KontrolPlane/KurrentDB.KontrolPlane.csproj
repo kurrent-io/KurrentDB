@@ -8,12 +8,13 @@
 		<GitVersion>false</GitVersion>
 		<RootNamespace>KurrentDB</RootNamespace>
 	</PropertyGroup>
-	
+
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.KontrolPlane.ObjectModel\KurrentDB.KontrolPlane.ObjectModel.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="DotNext.Net.Cluster" />
 		<PackageReference Include="Kurrent.Quack" />
 		<PackageReference Include="Grpc.Tools" PrivateAssets="All" />
 	</ItemGroup>

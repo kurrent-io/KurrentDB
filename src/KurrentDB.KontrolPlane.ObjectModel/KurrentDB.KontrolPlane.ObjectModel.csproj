@@ -10,7 +10,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="DotNext.Net.Cluster" />
+		<PackageReference Include="DotNext.IO" />
 		<PackageReference Include="Google.Protobuf" />
 		<PackageReference Include="Grpc.Core.Api" />
 		<PackageReference Include="Grpc.Tools" PrivateAssets="All" />

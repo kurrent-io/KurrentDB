@@ -4,6 +4,13 @@
 namespace KurrentDB.DataPlane.Transport.Grpc;
 
 partial class GetReplicaStateResponse {
+	public GetReplicaStateResponse(in ReplicaState state) {
+		Epoch = state.Epoch;
+		ChaserCheckpoint = state.ChaserCheckpoint;
+		WriterCheckpoint = state.WriterCheckpoint;
+		Priority = state.Priority;
+	}
+
 	public ReplicaState ToEntity() => new() {
 		Epoch = Epoch,
 		ChaserCheckpoint = ChaserCheckpoint,
