@@ -1,7 +1,7 @@
 ---
 description: Generate patch release notes from a GitHub release and add them to the current series doc
 argument-hint: <version> (e.g. 26.1.1)
-allowed-tools: Bash(curl:*), Bash(git:*), Read, Edit
+allowed-tools: Bash(curl https://api.github.com/:*), Bash(git branch:*), Bash(git show:*), Bash(git fetch:*), Read, Edit
 ---
 
 You are adding release notes for a **patch release** to KurrentDB's documentation.
@@ -21,10 +21,11 @@ You are adding release notes for a **patch release** to KurrentDB's documentatio
    - Series: `26.1` (major.minor)
    - Patch number: the last component (`1` here). Patch `.0` is the initial series release; this command handles patches `.1` and up.
 
-2. **Fetch the release content** from the public GitHub REST API with `curl` (do not scrape HTML):
+2. **Fetch the release content** from the public GitHub REST API with `curl` (do not scrape HTML). Keep the
+   URL first on the command line — the command is only permitted for the `https://api.github.com/` host:
    ```
-   curl -sSL -H "Accept: application/vnd.github+json" \
-     https://api.github.com/repos/kurrent-io/KurrentDB/releases/tags/v<version>
+   curl https://api.github.com/repos/kurrent-io/KurrentDB/releases/tags/v<version> \
+     -sSL -H "Accept: application/vnd.github+json"
    ```
    The JSON response contains `name` (title), `published_at` (date), and `body` (the full markdown notes:
    What's Changed, security fixes, bug fixes, features/enhancements, PR links, and `DB-####` references).
@@ -45,10 +46,10 @@ You are adding release notes for a **patch release** to KurrentDB's documentatio
    per PR; that is rarely enough to tell the reader what they need to know. For each change you intend to
    include, dig until you understand *what actually changed and why it matters to a user* (what was broken,
    under what conditions, what the new behaviour or option is, any impact on upgrade). Sources, in order:
-   - **The PR description** — fetch it:
+   - **The PR description** — fetch it (URL first, same host restriction as above):
      ```
-     curl -sSL -H "Accept: application/vnd.github+json" \
-       https://api.github.com/repos/kurrent-io/KurrentDB/pulls/<number>
+     curl https://api.github.com/repos/kurrent-io/KurrentDB/pulls/<number> \
+       -sSL -H "Accept: application/vnd.github+json"
      ```
      Read the `body`. Patch releases are often **cherry-picks** — if the body says "cherry-pick of #NNNN"
      or "backport of #NNNN", follow that link and read the **original PR** for the real detail.
