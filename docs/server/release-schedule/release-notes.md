@@ -28,7 +28,7 @@ Secondary-index statistics are now shown again in the admin UI.
 
 ### Persistent Subscriptions: Fixed Parked Messages View in UI (PR [#5660](https://github.com/kurrent-io/KurrentDB/pull/5660))
 
-When a two parked messages could not be resolved (for example, because the Persistent Subscription's source stream had been truncated by `$maxCount`), the admin UI would show no parked messages, making the parked message stream appear empty.
+When two parked messages could not be resolved (for example, because the Persistent Subscription's source stream had been truncated by `$maxCount`), the admin UI would show no parked messages, making the parked message stream appear empty.
 
 ### Persistent Subscriptions: Backported TruncateParked API (PR [#5665](https://github.com/kurrent-io/KurrentDB/pull/5665))
 
