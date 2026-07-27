@@ -18,9 +18,7 @@ public sealed class WalPersistenceTests : DirectoryFixture<WalPersistenceTests> 
 			             ListenAddress = new(IPAddress.Loopback, 3269),
 			             AppointmentDuration = TimeSpan.FromDays(1), // elect leader just once
 			             ConnectionPoolCapacity = 10,
-			             WalOptions = new() {
-				             Location = Directory,
-			             },
+			             PersistentStateRoot = Directory,
 			             SingleNodeDeployment = true,
 			             SnapshotDepth = SnapshotDepth,
 		             }) {
@@ -42,9 +40,7 @@ public sealed class WalPersistenceTests : DirectoryFixture<WalPersistenceTests> 
 			             ListenAddress = new(IPAddress.Loopback, 3269),
 			             AppointmentDuration = TimeSpan.FromDays(1), // elect leader just once
 			             ConnectionPoolCapacity = 10,
-			             WalOptions = new() {
-				             Location = Directory,
-			             },
+			             PersistentStateRoot = Directory,
 			             SingleNodeDeployment = true,
 			             SnapshotDepth = SnapshotDepth,
 		             }) {

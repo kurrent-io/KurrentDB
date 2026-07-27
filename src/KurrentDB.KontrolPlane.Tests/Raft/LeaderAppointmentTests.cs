@@ -19,9 +19,7 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 			ListenAddress = new(IPAddress.Loopback, 3269),
 			AppointmentDuration = TimeSpan.FromSeconds(1),
 			ConnectionPoolCapacity = 10,
-			WalOptions = new() {
-				Location = Directory,
-			},
+			PersistentStateRoot = Directory,
 			SingleNodeDeployment = true,
 		}) {
 			DataPlaneClientFactory = CreateDataPlane,
@@ -60,9 +58,7 @@ public sealed class LeaderAppointmentTests : DirectoryFixture<LeaderAppointmentT
 			ListenAddress = new(IPAddress.Loopback, 3269),
 			AppointmentDuration = appointmentTimeout,
 			ConnectionPoolCapacity = 10,
-			WalOptions = new() {
-				Location = Directory,
-			},
+			PersistentStateRoot = Directory,
 			SingleNodeDeployment = true,
 		}) {
 			DataPlaneClientFactory = Func<IDataPlane>.Constant(replicaSet),

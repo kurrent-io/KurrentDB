@@ -15,9 +15,7 @@ public class RaftKontrollerTests : DirectoryFixture<RaftKontrollerTests> {
 			ListenAddress = Address,
 			AppointmentDuration = TimeSpan.FromDays(1), // elect leader just once
 			ConnectionPoolCapacity = 10,
-			WalOptions = new() {
-				Location = Directory,
-			},
+			PersistentStateRoot = Directory,
 			SingleNodeDeployment = true,
 		}) {
 			DataPlaneClientFactory = static () => new TestDataPlane(),

@@ -11,9 +11,20 @@ partial class RaftKontroller {
 	/// Represents Kontroller options.
 	/// </summary>
 	public readonly struct Options {
-		public required WriteAheadLog.Options WalOptions {
+		private static readonly int WalChunkSize = Environment.SystemPageSize * 10;
+		private const WriteAheadLog.MemoryManagementStrategy WalMemoryManagementStrategy = WriteAheadLog.MemoryManagementStrategy.SharedMemory;
+		private const WriteAheadLog.IntegrityHashAlgorithm WalHashAlgorithm = WriteAheadLog.IntegrityHashAlgorithm.None;
+
+		internal WriteAheadLog.Options WalOptions => new() {
+			Location = PersistentStateRoot,
+			HashAlgorithm = WalHashAlgorithm,
+			ChunkSize = WalChunkSize,
+			MemoryManagement = WalMemoryManagementStrategy
+		};
+
+		public required string PersistentStateRoot {
 			get;
-			init;
+			init => field = value.Length > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value));
 		}
 
 		public required IPEndPoint ListenAddress {
