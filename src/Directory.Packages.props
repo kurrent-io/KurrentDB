@@ -4,8 +4,6 @@
     <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
   <ItemGroup>
-    <!-- Override vulnerable transitive from `bunit` -->
-    <PackageVersion Include="AngleSharp" Version="1.5.2" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.2" />
     <PackageVersion Include="BlazorMonaco" Version="3.4.0" />
     <PackageVersion Include="Bogus" Version="35.6.4" />
