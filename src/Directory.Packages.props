@@ -75,7 +75,7 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.7.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.2" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.7.0" />
-    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Diagnostics.NETCore.Client" Version="0.2.621003" />
     <PackageVersion Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="3.1.24" />
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
@@ -149,14 +149,16 @@
     <PackageVersion Include="SharpCompress" Version="0.48.0" />
     <PackageVersion Include="SharpDotYaml.Extensions.Configuration" Version="0.3.1" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
+    <!-- Override vulnerable transitive from `Microsoft.Data.Sqlite` -->
+    <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.12" />
     <PackageVersion Include="System.CommandLine.DragonFruit" Version="0.3.0-alpha.21216.1" />
     <PackageVersion Include="System.ComponentModel.Composition" Version="10.0.0" />
     <PackageVersion Include="System.Diagnostics.PerformanceCounter" Version="10.0.0" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
     <PackageVersion Include="System.Linq.Async" Version="6.0.3" />
     <PackageVersion Include="System.Reactive" Version="6.1.0" />
-    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.6" />
-    <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.6" />
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.10" />
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.10" />
     <PackageVersion Include="System.ServiceModel.Http" Version="8.1.2" />
     <PackageVersion Include="TestableIO.System.IO.Abstractions" Version="21.3.1" />
     <PackageVersion Include="TestableIO.System.IO.Abstractions.TestingHelpers" Version="21.3.1" />
