@@ -9,8 +9,20 @@ partial class DatabaseCluster {
 	public DatabaseCluster(KontrolPlane.DatabaseCluster cluster) {
 		DatabaseLeader = cluster.LeaderAddress?.ToByteString() ?? ByteString.Empty;
 		Epoch = cluster.Epoch;
+		Id = cluster.Id;
+		Description = cluster.Description;
+		LeaderAppointmentDuration = cluster.LeaderAppointmentDuration.Ticks;
 		foreach (var databaseNode in cluster.Nodes) {
 			Nodes.Add(new DatabaseNode(databaseNode));
 		}
 	}
+
+	public KontrolPlane.DatabaseCluster ToEntity() => new() {
+		Id = Id,
+		Description = Description,
+		LeaderAppointmentDuration = new(LeaderAppointmentDuration),
+		LeaderAddress = DatabaseLeader.ToEndPoint(),
+		Epoch = Epoch,
+		Nodes = [.. Nodes.Select(static n => n.ToEntity())]
+	};
 }

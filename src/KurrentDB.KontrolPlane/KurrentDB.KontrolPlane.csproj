@@ -24,23 +24,5 @@
 			<Access>Internal</Access>
 			<GrpcServices>None</GrpcServices>
 		</Protobuf>
-		<Protobuf Include="..\KurrentDB.KontrolPlane.ObjectModel\KontrolPlane\Transport\Grpc\kontroller.proto">
-			<GrpcServices>Server</GrpcServices>
-			<Access>Public</Access>
-			<OutputDir>GeneratedCodeByProtoCompiler</OutputDir>
-			<CompileOutputs>false</CompileOutputs>
-		</Protobuf>
-		<Protobuf Include="..\KurrentDB.KontrolPlane.ObjectModel\DataPlane\Transport\Grpc\db_node.proto">
-			<GrpcServices>Client</GrpcServices>
-			<Access>Internal</Access>
-			<OutputDir>GeneratedCodeByProtoCompiler</OutputDir>
-			<CompileOutputs>false</CompileOutputs>
-		</Protobuf>
-		<Compile Remove="GeneratedCodeByProtoCompiler/**" />
-		<Compile Include="GeneratedCodeByProtoCompiler/*Grpc.cs" />
 	</ItemGroup>
-
-	<Target Name="CleanGenerated" BeforeTargets="Clean">
-		<RemoveDir Directories="GeneratedCodeByProtoCompiler" />
-	</Target>
 </Project>

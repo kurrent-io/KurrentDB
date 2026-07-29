@@ -15,4 +15,6 @@ public sealed record DatabaseCluster : Database {
 	} = [];
 
 	public EndPoint? LeaderAddress { get; init; }
+
+	public TimeSpan LeaderAppointmentDuration { get; init; }
 }

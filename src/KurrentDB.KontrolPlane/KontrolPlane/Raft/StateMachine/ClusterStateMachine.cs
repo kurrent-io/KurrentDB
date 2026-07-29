@@ -31,6 +31,12 @@ internal sealed partial class ClusterStateMachine : Disposable, IStateMachine, I
 		_poolCapacity = connectionPoolCapacity;
 	}
 
+	public void NotifyAllTrackers() {
+		foreach (var tracker in _databases.Values) {
+			tracker.TryAdvance();
+		}
+	}
+
 	/// <summary>
 	/// Recovers the internal state from the last known persisted snapshot.
 	/// </summary>

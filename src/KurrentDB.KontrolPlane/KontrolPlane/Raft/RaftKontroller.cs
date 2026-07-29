@@ -39,6 +39,11 @@ public partial class RaftKontroller : IAsyncDisposable {
 			AuditTrail = _wal
 		};
 
+		// When Raft node is added or removed, we want to notify database nodes about new set of Kontrol Plane nodes
+		Action<RaftCluster<RaftClusterMember>, RaftClusterMemberEventArgs<RaftClusterMember>> notifier = _state.NotifyAllTrackers;
+		_raft.MemberAdded += notifier;
+		_raft.MemberRemoved += notifier;
+
 		_leadershipTask = Task.CompletedTask;
 		AppointmentDuration = options.AppointmentDuration;
 		_appointmentState = new();
@@ -80,4 +85,11 @@ public partial class RaftKontroller : IAsyncDisposable {
 			}
 		}
 	}
+}
+
+file static class ClusterStateMachineExtensions {
+	public static void NotifyAllTrackers(this ClusterStateMachine state,
+		RaftCluster<RaftClusterMember> cluster,
+		RaftClusterMemberEventArgs<RaftClusterMember> args)
+		=> state.NotifyAllTrackers();
 }

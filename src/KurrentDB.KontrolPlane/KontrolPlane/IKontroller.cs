@@ -22,10 +22,17 @@ public interface IKontroller {
 
 	ValueTask<bool> RemoveDatabaseNodeAsync(string databaseId, EndPoint address, CancellationToken token = default);
 
+	ValueTask ResignDatabaseLeaderAsync(string databaseId, CancellationToken token = default);
+
 	/// <summary>
 	/// Gets database leader appointment duration.
 	/// </summary>
 	TimeSpan AppointmentDuration { get; }
+
+	/// <summary>
+	/// Gets known Kontroller nodes.
+	/// </summary>
+	IEnumerable<EndPoint> Nodes { get; }
 
 	/// <summary>
 	/// Listens for database changes.

@@ -47,14 +47,17 @@ message DatabaseNode
 
 message DatabaseCluster
 {
-  bytes databaseLeader = 1;
-  uint64 epoch = 2;
-  repeated DatabaseNode nodes = 3;
+  string id = 1;
+  bytes databaseLeader = 2;
+  uint64 epoch = 3;
+  string description = 4;
+  int64 leaderAppointmentDuration = 5;
+  repeated DatabaseNode nodes = 6;
 }
 
 message AnnouncementResponse
 {
   bytes kontrollerLeader = 1;
-  int64 appointmentDuration = 2;
-  optional DatabaseCluster cluster = 3;
+  optional DatabaseCluster cluster = 2;
+  repeated bytes kontrollerNodes = 3;
 }

@@ -3,7 +3,7 @@
 
 namespace KurrentDB.KontrolPlane.Raft.StateMachine.LogEntries;
 
-partial class AddOrIgnoreDatabaseNode : ILogEntry<AddOrIgnoreDatabaseNode> {
+partial class AddOrIgnoreDatabaseNode : ILogEntry<AddOrIgnoreDatabaseNode>, IDatabaseModificationCommand {
 	public const int TypeId = 5;
 
 	static int ILogEntry.TypeId => TypeId;

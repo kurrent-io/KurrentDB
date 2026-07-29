@@ -6,7 +6,7 @@ using System.Net;
 namespace KurrentDB.DataPlane;
 
 /// <summary>
-/// Manages communication with the member in the Data Plane.
+/// Represents an abstraction to communicate with Data Plane nodes from Kontrol Plane.
 /// </summary>
 public interface IDataPlane : IAsyncDisposable {
 	/// <summary>

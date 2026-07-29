@@ -18,14 +18,12 @@
 
 	<ItemGroup>
 	  <Protobuf Include="DataPlane\Transport\Grpc\db_node.proto">
-	    <GrpcServices>None</GrpcServices>
+	    <GrpcServices>Both</GrpcServices>
 	    <Access>Public</Access>
-	    <Generator>MSBuild:Compile</Generator>
 	  </Protobuf>
-	  <Protobuf Include="KontrolPlane\Transport\Grpc\kontroller.proto">
-	    <GrpcServices>None</GrpcServices>
+	  <Protobuf Include="KontrolPlane\Transport\Grpc\kontroller_node.proto">
+	    <GrpcServices>Both</GrpcServices>
 	    <Access>Public</Access>
-	    <Generator>MSBuild:Compile</Generator>
 	  </Protobuf>
 	</ItemGroup>
 

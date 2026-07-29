@@ -11,6 +11,12 @@ namespace KurrentDB.DataPlane.Transport.Grpc;
 /// Represents gRPC client for the Data Plane.
 /// </summary>
 public abstract partial class GrpcDataPlaneClient : IDataPlane {
+	/// <summary>
+	/// Creates gRPC communication channel.
+	/// </summary>
+	/// <param name="address">The address of the gRPC service.</param>
+	/// <param name="invoker">The call invoker.</param>
+	/// <returns>The network channel that encapsulates the socket.</returns>
 	protected abstract IDisposable CreateChannel(EndPoint address, out CallInvoker invoker);
 
 	public ValueTask<ReplicaState> GetReplicaStateAsync(EndPoint address, CancellationToken token)

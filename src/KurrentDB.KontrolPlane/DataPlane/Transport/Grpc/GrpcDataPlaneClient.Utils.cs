@@ -13,15 +13,14 @@ partial class GrpcDataPlaneClient : Disposable {
 	private DataPlaneNode.DataPlaneNodeClient GetClient(EndPoint address) {
 		if (!_clients.TryGetValue(address, out var entry)) {
 			var channel = CreateChannel(address, out var invoker);
-			var existingEntry = _clients
+			entry = _clients
 				.GetOrAdd(address, new ClientCacheEntry {
 					Client = new(invoker),
 					Channel = channel,
 				});
 
-			if (!ReferenceEquals(channel, existingEntry.Channel)) {
+			if (!ReferenceEquals(channel, entry.Channel)) {
 				channel.Dispose();
-				entry = existingEntry;
 			}
 		}
 

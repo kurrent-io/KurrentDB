@@ -16,6 +16,8 @@ using static StateMachine.LogEntries.ReplicationHelpers;
 partial class RaftKontroller : IKontroller {
 	public TimeSpan AppointmentDuration { get; }
 
+	public IEnumerable<EndPoint> Nodes => _raft.Members.Select(static member => member.EndPoint);
+
 	public async ValueTask<IReadOnlySet<string>> GetDatabasesAsync(CancellationToken token = default) {
 		var result = new HashSet<string>();
 		var snapshot = await _state.CaptureCurrentStateAsync(token);
@@ -122,6 +124,15 @@ partial class RaftKontroller : IKontroller {
 		return task;
 	}
 
+	public async ValueTask ResignDatabaseLeaderAsync(string databaseId, CancellationToken token = default) {
+		try {
+			await _raft.ResignLeaderAsync(databaseId, token);
+			_appointmentState.TryRemove(databaseId, out _);
+		} catch (NotLeaderException e) {
+			throw new LeadershipRequiredException(e);
+		}
+	}
+
 	public async IAsyncEnumerable<DatabaseCluster> ListenDatabaseAsync(string databaseId, [EnumeratorCancellation] CancellationToken token = default) {
 		await foreach (var snapshot in _state.TrackChangesAsync(databaseId, token)) {
 			try {
@@ -136,7 +147,7 @@ partial class RaftKontroller : IKontroller {
 		}
 	}
 
-	private static DatabaseCluster? GetDatabaseCluster(ClusterState clusterState,
+	private DatabaseCluster? GetDatabaseCluster(ClusterState clusterState,
 		string databaseId) {
 		using (clusterState.RentConnection(out var connection)) {
 			return connection.GetDatabase(databaseId).FirstOrDefault().TryGet(out var database)
@@ -145,7 +156,8 @@ partial class RaftKontroller : IKontroller {
 					LeaderAddress = leaderAddress,
 					Id = databaseId,
 					Epoch = database.Epoch,
-					Description = database.Description
+					Description = database.Description,
+					LeaderAppointmentDuration = AppointmentDuration,
 				}
 				: null;
 		}

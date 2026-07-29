@@ -50,6 +50,11 @@ partial class ClusterStateMachine {
 					in commandInfo,
 					entry.Context as StrongBox<bool>);
 				break;
+			case LogEntries.ResignLeader.TypeId:
+				Apply(currentState,
+					await DeserializeAsync<LogEntries.ResignLeader>(entry, token),
+					in commandInfo);
+				break;
 			default:
 				Debug.Fail($"Unexpected entry type {entry.CommandId}");
 				break;
@@ -83,8 +88,7 @@ partial class ClusterStateMachine {
 
 	private void Apply(ClusterState currentState, LogEntries.AddOrUpdateDatabaseNode command, in CommandInfo commandInfo) {
 		currentState.Update(command, in commandInfo);
-
-		_databases.TryGetValue(command.DatabaseId).ValueOrDefault?.TryAdvance();
+		NotifyDatabaseChanged(command);
 	}
 
 	private void Apply(ClusterState currentState,
@@ -93,7 +97,7 @@ partial class ClusterStateMachine {
 		StrongBox<bool>? resultContainer) {
 		var result = currentState.Update(command, in commandInfo);
 
-		_databases.TryGetValue(command.DatabaseId).ValueOrDefault?.TryAdvance();
+		NotifyDatabaseChanged(command);
 
 		resultContainer?.Value = result;
 	}
@@ -101,7 +105,7 @@ partial class ClusterStateMachine {
 	private void Apply(ClusterState currentState, LogEntries.AppointLeader command, in CommandInfo commandInfo, StrongBox<bool>? resultContainer) {
 		var result = currentState.Update(command, in commandInfo);
 
-		_databases.TryGetValue(command.DatabaseId).ValueOrDefault?.TryAdvance();
+		NotifyDatabaseChanged(command);
 		resultContainer?.Value = result;
 	}
 
@@ -112,11 +116,21 @@ partial class ClusterStateMachine {
 		var result = currentState.Update(command, in commandInfo);
 
 		if (result) {
-			_databases.TryGetValue(command.DatabaseId).ValueOrDefault?.TryAdvance();
+			NotifyDatabaseChanged(command);
 		}
 
 		resultContainer?.Value = result;
 	}
+
+	private void Apply(ClusterState currentState,
+		LogEntries.ResignLeader command,
+		in CommandInfo commandInfo) {
+		currentState.Update(command, in commandInfo);
+		NotifyDatabaseChanged(command);
+	}
+
+	private void NotifyDatabaseChanged(LogEntries.IDatabaseModificationCommand command)
+		=> _databases.TryGetValue(command.DatabaseId).ValueOrDefault?.TryAdvance();
 
 	private static ValueTask<T> DeserializeAsync<T>(in LogEntry entry, CancellationToken token)
 		where T : class, LogEntries.IProtobufSerializable<T> {

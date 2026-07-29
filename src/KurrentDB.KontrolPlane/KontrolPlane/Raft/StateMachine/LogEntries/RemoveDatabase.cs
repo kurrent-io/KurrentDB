@@ -3,7 +3,7 @@
 
 namespace KurrentDB.KontrolPlane.Raft.StateMachine.LogEntries;
 
-partial class RemoveDatabase : ILogEntry<RemoveDatabase> {
+partial class RemoveDatabase : ILogEntry<RemoveDatabase>, IDatabaseModificationCommand {
 	public const int TypeId = 3;
 
 	static int ILogEntry.TypeId => TypeId;

@@ -33,7 +33,6 @@ public sealed class KontrollerServer(IKontroller kontroller) : Kontroller.Kontro
 		} catch (LeadershipRequiredException) {
 			// the current node is not a leader
 			await responseStream.WriteAsync(new() {
-				AppointmentDuration = kontroller.AppointmentDuration.Ticks,
 				KontrollerLeader = (await kontroller.WaitForLeaderAsync(context.CancellationToken)).ToByteString(),
 				Cluster = null,
 			});
@@ -50,18 +49,19 @@ public sealed class KontrollerServer(IKontroller kontroller) : Kontroller.Kontro
 		try {
 			while (await enumerator.MoveNextAsync()) {
 				await responseStream.WriteAsync(new() {
-					AppointmentDuration = kontroller.AppointmentDuration.Ticks,
 					Cluster = new(enumerator.Current),
 					KontrollerLeader = ByteString.Empty,
 				});
 			}
 		} catch (OperationCanceledException e) when (e.CausedBy(tokenSource, leadershipToken)) {
 			// the current node is not a leader
-			await responseStream.WriteAsync(new() {
-				AppointmentDuration = kontroller.AppointmentDuration.Ticks,
+			var response = new AnnouncementResponse {
 				KontrollerLeader = (await kontroller.WaitForLeaderAsync(context.CancellationToken)).ToByteString(),
 				Cluster = null,
-			});
+			};
+
+			response.KontrollerNodes.Add(kontroller.Nodes.Select(EndPointExtensions.ToByteString));
+			await responseStream.WriteAsync(response);
 		} catch (OperationCanceledException e) when (e.CancellationToken == tokenSource.Token) {
 			// restore canceled token
 			throw new OperationCanceledException(e.Message, e, tokenSource.CancellationOrigin);

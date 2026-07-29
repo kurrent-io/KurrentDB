@@ -35,16 +35,15 @@ internal static class ReplicationHelpers {
 			Guid instanceId,
 			CancellationToken token)
 			=> raft.ReplicateAsync(
-				new ProtobufLogEntry<AddOrUpdateDatabaseNode>(new()
-						{
-							Address = address.ToByteString(),
-							DatabaseId = databaseId,
-							Role = (int)role,
-							ReplicationProtocolAddress = replicationAddress.ToByteString(),
-							ClientApiAddress = clientApiAddress?.ToByteString() ?? ByteString.Empty,
-							Version = version,
-							InstanceId = ByteString.CopyFrom(instanceId.ToByteArray()),
-						})
+				new ProtobufLogEntry<AddOrUpdateDatabaseNode>(new() {
+						Address = address.ToByteString(),
+						DatabaseId = databaseId,
+						Role = (int)role,
+						ReplicationProtocolAddress = replicationAddress.ToByteString(),
+						ClientApiAddress = clientApiAddress?.ToByteString() ?? ByteString.Empty,
+						Version = version,
+						InstanceId = ByteString.CopyFrom(instanceId.ToByteArray()),
+					})
 					{ Term = raft.Term }, token);
 
 		public async ValueTask<bool> TryAddDatabaseNodeAsync(string databaseId,
@@ -58,8 +57,7 @@ internal static class ReplicationHelpers {
 			var box = new StrongBox<bool>();
 
 			await raft.ReplicateAsync(
-				new ProtobufLogEntry<AddOrIgnoreDatabaseNode>(new()
-					{
+				new ProtobufLogEntry<AddOrIgnoreDatabaseNode>(new() {
 						Address = address.ToByteString(),
 						DatabaseId = databaseId,
 						Role = (int)role,
@@ -68,7 +66,7 @@ internal static class ReplicationHelpers {
 						Version = version,
 						InstanceId = ByteString.CopyFrom(instanceId.ToByteArray()),
 					})
-					{ Term = raft.Term, Context = box}, token);
+					{ Term = raft.Term, Context = box }, token);
 			return box.Value;
 		}
 
@@ -94,5 +92,13 @@ internal static class ReplicationHelpers {
 					{ Term = raft.Term, Context = box }, token);
 			return box.Value;
 		}
+
+		public ValueTask ResignLeaderAsync(string databaseId,
+			CancellationToken token)
+			=> raft.ReplicateAsync(
+				new ProtobufLogEntry<ResignLeader>(new() {
+						DatabaseId = databaseId,
+					})
+					{ Term = raft.Term }, token);
 	}
 }

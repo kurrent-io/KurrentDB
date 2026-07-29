@@ -3,7 +3,7 @@
 
 namespace KurrentDB.KontrolPlane.Raft.StateMachine.LogEntries;
 
-partial class AppointLeader : ILogEntry<AppointLeader> {
+partial class AppointLeader : ILogEntry<AppointLeader>, IDatabaseModificationCommand {
 	public const int TypeId = 4;
 
 	static int ILogEntry.TypeId => TypeId;
