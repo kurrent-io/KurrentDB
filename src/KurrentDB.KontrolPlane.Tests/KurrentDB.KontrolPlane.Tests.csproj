@@ -5,11 +5,12 @@
 		<IsKurrentXUnit>true</IsKurrentXUnit>
 		<ImplicitUsings>true</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<RootNamespace>KurrentDB.KontrolPlane</RootNamespace>
+		<RootNamespace>KurrentDB</RootNamespace>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.Core.Testing.XUnit\KurrentDB.Core.Testing.XUnit.csproj" />
+		<ProjectReference Include="..\KurrentDB.DataPlane\KurrentDB.DataPlane.csproj" />
 		<ProjectReference Include="..\KurrentDB.KontrolPlane\KurrentDB.KontrolPlane.csproj" />
 	</ItemGroup>
 
