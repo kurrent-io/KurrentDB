@@ -67,8 +67,8 @@ public class GrpcKontrolPlaneTests {
 		Assert.Equal(1, nodeB.Service.AnnounceDatabaseNodeCallCount);
 	}
 
-	private static TestKontrolPlaneClient CreateClient(EndPoint seed, params IEnumerable<KontrollerNode> nodes) =>
-		new(nodes.ToDictionary(static n => n.Address, static n => n.Handler)) {
+	private static GrpcKontrolPlaneClient CreateClient(EndPoint seed, params IEnumerable<KontrollerNode> nodes) =>
+		new TestKontrolPlaneClient(nodes.ToDictionary(static n => n.Address, static n => n.Handler)) {
 			Seed = new HashSet<EndPoint> { seed },
 		};
 
