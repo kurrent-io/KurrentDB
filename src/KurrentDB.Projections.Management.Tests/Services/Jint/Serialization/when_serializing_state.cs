@@ -9,6 +9,7 @@ using System.Text.Json;
 using Jint;
 using Jint.Native;
 using Jint.Native.Json;
+using Jint.Runtime;
 using KurrentDB.Projections.Core.Metrics;
 using KurrentDB.Projections.Core.Services.Interpreted;
 using NUnit.Framework;
@@ -118,6 +119,10 @@ public class when_serializing_state {
 
 	[Test]
 	public void big_int() {
+		// JSON.stringify has no representation for a BigInt and throws on one, but the serializer this
+		// path used to run wrote the digits as a JSON string. The projection engine restores that through
+		// BigInt.prototype.toJSON so an already-running projection with a BigInt in its state keeps
+		// checkpointing across the upgrade.
 		var serialized = _sut.Serialize(new JsBigInt(BigInteger.Parse("20000000000000000000")));
 		Assert.AreEqual(@"""20000000000000000000""", serialized);
 	}
