@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Net;
+using DotNext;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 
@@ -10,7 +11,7 @@ namespace KurrentDB.DataPlane.Transport.Grpc;
 /// <summary>
 /// Represents gRPC client for the Data Plane.
 /// </summary>
-public abstract partial class GrpcDataPlaneClient : IDataPlane {
+public abstract partial class GrpcDataPlaneClient : Disposable, IDataPlane {
 	/// <summary>
 	/// Creates gRPC communication channel.
 	/// </summary>

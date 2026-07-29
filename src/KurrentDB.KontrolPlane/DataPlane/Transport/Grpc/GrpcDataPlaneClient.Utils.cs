@@ -3,11 +3,10 @@
 
 using System.Collections.Concurrent;
 using System.Net;
-using DotNext;
 
 namespace KurrentDB.DataPlane.Transport.Grpc;
 
-partial class GrpcDataPlaneClient : Disposable {
+partial class GrpcDataPlaneClient {
 	private readonly ConcurrentDictionary<EndPoint, ClientCacheEntry> _clients = new();
 
 	private DataPlaneNode.DataPlaneNodeClient GetClient(EndPoint address) {

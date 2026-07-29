@@ -3,6 +3,7 @@
 
 using System.Net;
 using System.Runtime.CompilerServices;
+using DotNext;
 using Grpc.Core;
 
 namespace KurrentDB.KontrolPlane.Transport.Grpc;
@@ -10,7 +11,7 @@ namespace KurrentDB.KontrolPlane.Transport.Grpc;
 /// <summary>
 /// Provides access to the Kontrol Plane via gRPC protocol.
 /// </summary>
-public abstract partial class GrpcKontrolPlaneClient : IKontrolPlane {
+public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane {
 	/// <summary>
 	/// Sets a statically known list of Kontroller nodes.
 	/// </summary>
@@ -78,7 +79,7 @@ public abstract partial class GrpcKontrolPlaneClient : IKontrolPlane {
 					return response.Success;
 
 				// Otherwise, change the address and try again
-				MarkAsUnavailable(currentAddress, response.KontrollerLeader.ToEndPoint());
+				currentAddress = MarkAsUnavailable(currentAddress, response.KontrollerLeader.ToEndPoint());
 			} catch (RpcException e) when (e.StatusCode is StatusCode.Unavailable or StatusCode.DeadlineExceeded) {
 				currentAddress = MarkAsUnavailable(currentAddress, newAddress: null);
 			}

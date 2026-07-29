@@ -71,6 +71,20 @@ partial class GrpcKontrolPlaneClient {
 		return entry;
 	}
 
+	private void DestroyChannels() {
+		foreach (var entry in _clients.Values) {
+			entry.Release();
+		}
+	}
+
+	protected override void Dispose(bool disposing) {
+		if (disposing) {
+			DestroyChannels();
+		}
+
+		base.Dispose(disposing);
+	}
+
 	private sealed class ClientCacheEntry(Kontroller.KontrollerClient client, IDisposable channel) : Disposable {
 		private uint _referenceCounter = 1U;
 
