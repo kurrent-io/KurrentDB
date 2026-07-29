@@ -47,7 +47,16 @@ internal abstract partial class UserIndexSql(string indexName, string fieldName)
 			.CopyTo(records);
 	}
 
-	public static bool IsUserIndexTable(ReadOnlySpan<char> tableName) => tableName.StartsWith(TableNamePrefix);
+	// Applies the same validation GetTableNameFor applies when the table is created, so a prefixed name
+	// that we could not have produced - anything outside [a-z0-9_-] - is not recognised. The migrations
+	// interpolate the names this returns into DDL, so keeping the character set to what creation allows
+	// means there is nothing there to escape.
+	//
+	// Because it reuses IdentifierRegex rather than a second pattern, this cannot reject a table we did
+	// create. That does assume IdentifierRegex has always been the rule; it arrived with the feature
+	// that creates these tables, so there should be no older name that fails it.
+	public static bool IsUserIndexTable(ReadOnlySpan<char> tableName) =>
+		tableName.StartsWith(TableNamePrefix) && IdentifierRegex.IsMatch(tableName);
 
 	private static string GetTableNameFor(string indexName) {
 		var tableName = string.Concat(TableNamePrefix, indexName);
@@ -84,6 +93,8 @@ internal abstract partial class UserIndexSql(string indexName, string fieldName)
 		connection.ExecuteNonQuery(ref query);
 	}
 
+	// do not change this without consideration for effect on migrations
+	// where this protects against sql injection
 	[GeneratedRegex("^[a-z][a-z0-9_-]*$", RegexOptions.Compiled)]
 	private static partial Regex ValidationRegex();
 }
