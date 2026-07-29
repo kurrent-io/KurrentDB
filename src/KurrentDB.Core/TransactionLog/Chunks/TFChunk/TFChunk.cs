@@ -13,6 +13,7 @@ using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Buffers;
+using DotNext.Buffers.Binary;
 using DotNext.Collections.Concurrent;
 using DotNext.Diagnostics;
 using DotNext.IO;
