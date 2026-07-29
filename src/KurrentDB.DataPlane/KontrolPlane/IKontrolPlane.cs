@@ -25,5 +25,7 @@ public interface IKontrolPlane {
 	/// <param name="nodeEpoch">The epoch of the caller database node.</param>
 	/// <param name="token">The token that can be used to cancel the operation.</param>
 	/// <returns><see langword="true"/> if leader appointment is updated successfully; otherwise, <see langword="false"/>.</returns>
-	ValueTask<bool> RenewLeaderAppointmentAsync(string databaseId, EndPoint nodeAddress, ulong nodeEpoch, CancellationToken token = default);
+	Task<bool> RenewLeaderAppointmentAsync(string databaseId, EndPoint nodeAddress, ulong nodeEpoch, CancellationToken token = default);
+
+	Task ResignLeaderAsync(string databaseId, CancellationToken token = default);
 }

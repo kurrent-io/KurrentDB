@@ -70,4 +70,17 @@ public sealed class KontrollerServer(IKontroller kontroller) : Kontroller.Kontro
 			tokenSource.Dispose();
 		}
 	}
+
+	public override async Task<ResignResponse> ResignLeader(ResignRequest request, ServerCallContext context) {
+		var response = new ResignResponse();
+		try {
+			await kontroller.ResignDatabaseLeaderAsync(request.DatabaseId, context.CancellationToken);
+			response.KontrollerLeader = ByteString.Empty;
+		} catch (LeadershipRequiredException) {
+			// the current node is not a leader
+			response.KontrollerLeader = (await kontroller.WaitForLeaderAsync(context.CancellationToken)).ToByteString();
+		}
+
+		return response;
+	}
 }

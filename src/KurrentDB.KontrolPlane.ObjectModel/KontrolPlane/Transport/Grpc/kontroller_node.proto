@@ -2,12 +2,15 @@ syntax = "proto3";
 
 package kurrent.kontrol_plane;
 
+import "google/protobuf/empty.proto";
+
 option csharp_namespace = "KurrentDB.KontrolPlane.Transport.Grpc";
 
 service Kontroller
 {
   rpc RenewLeaderAppointment(RenewLeaderAppointmentRequest) returns (RenewLeaderAppointmentResponse);
   rpc AnnounceDatabaseNode(AnnouncementRequest) returns (stream AnnouncementResponse);
+  rpc ResignLeader(ResignRequest) returns (ResignResponse);
 }
 
 message RenewLeaderAppointmentRequest
@@ -60,4 +63,14 @@ message AnnouncementResponse
   bytes kontrollerLeader = 1;
   optional DatabaseCluster cluster = 2;
   repeated bytes kontrollerNodes = 3;
+}
+
+message ResignRequest
+{
+  string databaseId = 1;
+}
+
+message ResignResponse
+{
+  bytes kontrollerLeader = 2;
 }

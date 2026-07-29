@@ -33,36 +33,40 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 		for (var currentAddress = CurrentAddress;; token.ThrowIfCancellationRequested()) {
 			var entry = GetOrCreateClient(currentAddress);
 
-			using var call = entry.Client.AnnounceDatabaseNode(new() { NodeInfo = new(node) });
-
-			// Outer loop for reconnections
-			// Inner loop for enumerating database cluster changes
-			for (;; token.ThrowIfCancellationRequested()) {
-				try {
-					if (!await call.ResponseStream.MoveNext())
+			var call = entry.Client.AnnounceDatabaseNode(new() { NodeInfo = new(node) });
+			try {
+				// Outer loop for reconnections
+				// Inner loop for enumerating database cluster changes
+				for (;; token.ThrowIfCancellationRequested()) {
+					try {
+						if (!await call.ResponseStream.MoveNext())
+							break;
+					} catch (RpcException e) when (e.StatusCode is StatusCode.DeadlineExceeded or StatusCode.Unavailable) {
+						currentAddress = MarkAsUnavailable(currentAddress, newAddress: null);
 						break;
-				} catch (RpcException e) when (e.StatusCode is StatusCode.DeadlineExceeded or StatusCode.Unavailable) {
-					currentAddress = MarkAsUnavailable(currentAddress, newAddress: null);
-					break;
+					}
+
+					// we have a result, update list of KPlane nodes
+					var response = call.ResponseStream.Current;
+					_kontrollerNodes = [.. response.KontrollerNodes.Select(EndPointExtensions.ToEndPoint)];
+
+					// KPlane informed us about a new KPlane leader, switch to it
+					if (!response.KontrollerLeader.IsEmpty) {
+						currentAddress = MarkAsUnavailable(currentAddress, response.KontrollerLeader.ToEndPoint());
+						break;
+					}
+
+					yield return response.Cluster.ToEntity();
 				}
-
-				// we have a result, update list of KPlane nodes
-				var response = call.ResponseStream.Current;
-				_kontrollerNodes = [.. response.KontrollerNodes.Select(EndPointExtensions.ToEndPoint)];
-
-				// KPlane informed us about a new KPlane leader, switch to it
-				if (!response.KontrollerLeader.IsEmpty) {
-					currentAddress = MarkAsUnavailable(currentAddress, response.KontrollerLeader.ToEndPoint());
-					break;
-				}
-
-				yield return response.Cluster.ToEntity();
+			} finally {
+				call.Dispose();
+				entry.Release();
 			}
 		}
 	}
 
 	/// <inheritdoc cref="IKontrolPlane.RenewLeaderAppointmentAsync"/>
-	public async ValueTask<bool> RenewLeaderAppointmentAsync(string databaseId, EndPoint nodeAddress, ulong nodeEpoch, CancellationToken token = default) {
+	public async Task<bool> RenewLeaderAppointmentAsync(string databaseId, EndPoint nodeAddress, ulong nodeEpoch, CancellationToken token = default) {
 		// Loop is needed to reach the KPlane leader
 		for (var currentAddress = CurrentAddress;; token.ThrowIfCancellationRequested()) {
 			var entry = GetOrCreateClient(currentAddress);
@@ -82,6 +86,32 @@ public abstract partial class GrpcKontrolPlaneClient : Disposable, IKontrolPlane
 				currentAddress = MarkAsUnavailable(currentAddress, response.KontrollerLeader.ToEndPoint());
 			} catch (RpcException e) when (e.StatusCode is StatusCode.Unavailable or StatusCode.DeadlineExceeded) {
 				currentAddress = MarkAsUnavailable(currentAddress, newAddress: null);
+			} finally {
+				entry.Release();
+			}
+		}
+	}
+
+	public async Task ResignLeaderAsync(string databaseId, CancellationToken token = default) {
+		// Loop is needed to reach the KPlane leader
+		for (var currentAddress = CurrentAddress;; token.ThrowIfCancellationRequested()) {
+			var entry = GetOrCreateClient(currentAddress);
+
+			try {
+				var response = await entry.Client.ResignLeaderAsync(new() {
+					DatabaseId = databaseId,
+				}, cancellationToken: token);
+
+				// We've got a response from the leader
+				if (response.KontrollerLeader.IsEmpty)
+					return;
+
+				// Otherwise, change the address and try again
+				currentAddress = MarkAsUnavailable(currentAddress, response.KontrollerLeader.ToEndPoint());
+			} catch (RpcException e) when (e.StatusCode is StatusCode.Unavailable or StatusCode.DeadlineExceeded) {
+				currentAddress = MarkAsUnavailable(currentAddress, newAddress: null);
+			} finally {
+				entry.Release();
 			}
 		}
 	}
