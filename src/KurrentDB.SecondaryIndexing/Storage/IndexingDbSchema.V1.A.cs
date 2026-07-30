@@ -9,7 +9,11 @@ using KurrentDB.SecondaryIndexing.Indexes.User;
 namespace KurrentDB.SecondaryIndexing.Storage;
 
 partial class IndexingDbSchema {
-	private static void UpgradeToV1(DuckDBAdvancedConnection connection) {
+	// The V1 migration exactly as it originally shipped.
+	// It is superseded in V1B and deliberately NOT registered in MigrationActions
+	// This is kept in its original form so that we can test the migration path
+	// that some databases will have taken through it.
+	internal static void UpgradeToV1A(DuckDBAdvancedConnection connection) {
 		// Add record_id column and rename columns
 		connection.ExecuteAdHocNonQuery("""
 		                                CREATE TABLE idx_metadata(key varchar primary key not null, value varchar);
