@@ -23,7 +23,7 @@ namespace KurrentDB.Core.DuckDB;
 public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 	private readonly string _path;
 	private readonly string _swapTempDirectory;
-	private readonly long _tempSizeLimit;
+	private readonly long _maxTempDirectorySizeBytes;
 	private readonly IReadOnlyList<IDuckDBSetup> _repeated;
 	private readonly ILogger<DuckDBConnectionPoolLifetime> _log;
 	[CanBeNull] private string _tempPath;
@@ -40,7 +40,7 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 			? tempPath
 			: Path.Combine(Path.GetTempPath(), "kurrent_ddb.tmp");
 
-		_tempSizeLimit = config.SqlEngineTempDirectorySizeLimit;
+		_maxTempDirectorySizeBytes = config.SqlEngineTempDirectorySizeLimit;
 		_log = log ?? NullLogger<DuckDBConnectionPoolLifetime>.Instance;
 
 		var once = new List<IDuckDBSetup>();
@@ -80,8 +80,8 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 			["temp_directory"] = _swapTempDirectory,
 		};
 
-		if (_tempSizeLimit > 0L)
-			settings["max_temp_directory_size"] = $"{_tempSizeLimit}MB";
+		if (_maxTempDirectorySizeBytes > 0L)
+			settings["max_temp_directory_size"] = $"{_maxTempDirectorySizeBytes}B";
 
 		var pool = new ConnectionPoolWithFunctions($"Data Source={_path};{GetParamsString()}", _repeated);
 
