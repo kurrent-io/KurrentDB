@@ -54,17 +54,36 @@ public sealed partial class MigrationTests : DirectoryPerTest<MigrationTests> {
 		                              created bigint not null
 		                            );
 
-		                            create table if not exists idx_user__MyIndex (
+		                            create table if not exists idx_user__myindex (
 		                                log_position bigint not null,
 		                                commit_position bigint null,
 		                                event_number bigint not null,
 		                                created bigint not null,
-		                                my_field integer not null
+		                                field_myfield integer not null
 		                            );
 		                            """u8;
 
 		using var transaction = connection.BeginTransaction();
 		connection.ExecuteAdHocNonQuery(schema, multipleStatements: true);
+		transaction.CommitOnDispose();
+	}
+
+	// Populates some V0 data so that migrations affecting data can be exercised.
+	private static void SeedV0Rows(DuckDBAdvancedConnection connection, int count) {
+		using var transaction = connection.BeginTransaction();
+		connection.ExecuteAdHocNonQuery(
+			$"""
+			insert into idx_all
+			select range, range, range, 1700000000 + range, null,
+				'account-' || range, hash(range), 'SomethingHappened',
+				'account', false, null, 'application/json'
+			from range({count});
+
+			insert into idx_user__myindex
+			select range, range, range, 1700000000 + range, cast(range as integer)
+			from range({count});
+			""",
+			multipleStatements: true);
 		transaction.CommitOnDispose();
 	}
 
