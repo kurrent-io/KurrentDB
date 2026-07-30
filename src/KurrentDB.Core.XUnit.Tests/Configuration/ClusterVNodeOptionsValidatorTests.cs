@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System;
 using KurrentDB.Common.Exceptions;
 using Xunit;
 
@@ -91,6 +92,71 @@ public class ClusterVNodeOptionsValidatorTests {
 			When();
 		} else {
 			Assert.Throws<InvalidConfigurationException>(When);
+		}
+	}
+
+	[Theory]
+	[InlineData(-1, false)]
+	[InlineData(0, true)]
+	[InlineData(1024, true)]
+	public void sql_engine_temp_directory_size_limit_cannot_be_negative(long sizeLimit, bool expectedValid) {
+		var options = new ClusterVNodeOptions {
+			Database = new() {
+				SqlEngineTempDirectorySizeLimit = sizeLimit,
+			},
+		};
+
+		void When() => ClusterVNodeOptionsValidator.Validate(options);
+
+		if (expectedValid) {
+			When();
+		} else {
+			Assert.Throws<ArgumentOutOfRangeException>(When);
+		}
+	}
+
+	[Fact]
+	public void sql_engine_temp_directory_cannot_start_with_a_tilde() {
+		var options = new ClusterVNodeOptions {
+			Database = new() {
+				SqlEngineTempDirectory = "~/spill",
+			},
+		};
+
+		Assert.Throws<ApplicationInitializationException>(() => {
+			ClusterVNodeOptionsValidator.Validate(options);
+		});
+	}
+
+	[Theory]
+	// distinct directories
+	[InlineData("/a/db", "/a/index", "/a/spill", true)]
+	// the sql engine temp directory can be shared with neither the db nor the index
+	[InlineData("/a/db", "/a/index", "/a/db", false)]
+	[InlineData("/a/db", "/a/index", "/a/index", false)]
+	// paths are normalized before they are compared
+	[InlineData("/a/db", "/a/index", "/a/db/", false)]
+	[InlineData("/a/db", "/a/index", "/a/./db", false)]
+	// the db and the index still cannot be shared with each other
+	[InlineData("/a/db", "/a/db", "/a/spill", false)]
+	// unset directories do not collide with each other
+	[InlineData("/a/db", null, "", true)]
+	public void directories_cannot_point_to_the_same_directory(
+		string db, string index, string sqlEngineTempDirectory, bool expectedValid) {
+		var options = new ClusterVNodeOptions {
+			Database = new() {
+				Db = db,
+				Index = index,
+				SqlEngineTempDirectory = sqlEngineTempDirectory,
+			},
+		};
+
+		void When() => ClusterVNodeOptionsValidator.Validate(options);
+
+		if (expectedValid) {
+			When();
+		} else {
+			Assert.Throws<ApplicationInitializationException>(When);
 		}
 	}
 }
