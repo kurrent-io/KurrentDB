@@ -36,9 +36,9 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 		[CanBeNull] ILogger<DuckDBConnectionPoolLifetime> log) {
 
 		_path = config.InMemDb ? GetTempPath() : $"{config.Path}/kurrent.ddb";
-		_swapTempDirectory = config.SqlEngineTempDirectory is { Length: > 0 } tempPath && Path.IsPathFullyQualified(tempPath)
+		_swapTempDirectory = Path.GetFullPath(config.SqlEngineTempDirectory is { Length: > 0 } tempPath
 			? tempPath
-			: Path.Combine(Path.GetTempPath(), "kurrent_ddb.tmp");
+			: $"{_path}.tmp"); // the same directory DuckDB would pick by default. explicit so we can clean it up
 
 		_maxTempDirectorySizeBytes = config.SqlEngineTempDirectorySizeLimit;
 		_log = log ?? NullLogger<DuckDBConnectionPoolLifetime>.Instance;
