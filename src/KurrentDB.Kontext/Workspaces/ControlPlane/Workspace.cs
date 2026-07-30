@@ -8,7 +8,7 @@ using KurrentDB.Scripting;
 namespace KurrentDB.Kontext.Workspaces.ControlPlane;
 
 public sealed class Workspace : Aggregate<WorkspaceState> {
-	static readonly Engine ValidateEngine = JintEngineFactory.CreateEngine();
+	static readonly JsValidationEngine ValidateEngine = new(JintEngineFactory.CreateEngine());
 
 	public void Create(CreateWorkspaceRequest cmd) {
 		ValidateName(cmd.Name);
@@ -110,8 +110,7 @@ public sealed class Workspace : Aggregate<WorkspaceState> {
 			if (string.IsNullOrWhiteSpace(rule.Filter))
 				continue;
 			try {
-				lock (ValidateEngine)
-					JsRecordEvaluator.Compile(ValidateEngine, rule.Filter);
+				ValidateEngine.Validate(engine => JsRecordEvaluator.Compile(engine, rule.Filter));
 			} catch (Exception ex) {
 				throw new WorkspaceInvalidException(
 					$"Filter for prefix '{rule.StreamPrefix}' failed to compile: {ex.Message}");

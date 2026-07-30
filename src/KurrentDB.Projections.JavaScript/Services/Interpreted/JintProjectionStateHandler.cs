@@ -2,16 +2,11 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Buffers;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
-using System.Text.Encodings.Web;
-using System.Text.Json;
 using Jint;
 using Jint.Native;
 using Jint.Native.Function;
@@ -41,6 +36,7 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 	private readonly List<EmittedEventEnvelope> _emitted;
 	private readonly InterpreterRuntime _interpreterRuntime;
 	private readonly JsonParser _parser;
+	private readonly JsonSerializer _serializer;
 	private readonly JsSerializationMeasurer _jsSerializer;
 
 	private CheckpointTag? _currentPosition;
@@ -60,10 +56,12 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		_definitionBuilder.AllEvents();
 		TimeConstraint timeConstraint = new(compilationTimeout, executionTimeout);
 		_engine = new Engine(opts => opts.Constraint(timeConstraint).DisableStringCompilation());
+		_serializer = new JsonSerializer(_engine);
+		RestoreBigIntSerialization();
 		_state = JsValue.Undefined;
 		_sharedState = JsValue.Undefined;
 		_interpreterRuntime = new InterpreterRuntime(_engine, _definitionBuilder, jsFunctionCaller);
-		_engine.Global.FastAddProperty("log", new ClrFunction(_engine, "log", Log), false, false, false);
+		_engine.Global.FastSetProperty("log", new PropertyDescriptor(new ClrFunction(_engine, "log", Log), PropertyFlag.AllForbidden));
 
 		timeConstraint.Compiling();
 		_engine.Execute(source);
@@ -71,12 +69,43 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		_parser = _interpreterRuntime.SwitchToExecutionMode();
 
 
-		_engine.Global.FastAddProperty("emit", new ClrFunction(_engine, "emit", Emit, 4), true, false, true);
-		_engine.Global.FastAddProperty("linkTo", new ClrFunction(_engine, "linkTo", LinkTo, 3), true, false, true);
-		_engine.Global.FastAddProperty("linkStreamTo", new ClrFunction(_engine, "linkStreamTo", LinkStreamTo, 3), true, false, true);
-		_engine.Global.FastAddProperty("copyTo", new ClrFunction(_engine, "copyTo", CopyTo, 3), true, false, true);
+		AddGlobalFunction("emit", Emit, 4);
+		AddGlobalFunction("linkTo", LinkTo, 3);
+		AddGlobalFunction("linkStreamTo", LinkStreamTo, 3);
+		AddGlobalFunction("copyTo", CopyTo, 3);
 		_emitted = new List<EmittedEventEnvelope>();
 	}
+
+	/// <summary>
+	/// Makes a BigInt in projection state serialize as a JSON string of its digits, which is what the
+	/// hand-written serializer this engine used to run wrote for one.
+	/// </summary>
+	/// <remarks>
+	/// A BigInt has no JSON representation, so JSON.stringify -- which state serialization now goes
+	/// through -- throws on one. For a projection already running with a BigInt in its state that would
+	/// mean faulting at serialization and halting checkpointing on upgrade, so the old rendering is
+	/// restored through the hook the specification leaves open for exactly this: JSON.stringify consults
+	/// toJSON before it decides a value has no representation, and quotes the digits this returns.
+	/// <para>
+	/// Deliberately not a replacer function passed to <c>Serialize</c>. A replacer is invoked for every
+	/// node of every state document, on the per-event hot path; this costs nothing until a BigInt is
+	/// actually present. It is installed only here, on the projection engines: the scripting engines
+	/// never ran the string-writing serializer and have no behaviour to preserve.
+	/// </para>
+	/// </remarks>
+	private void RestoreBigIntSerialization() {
+		var bigIntPrototype = _engine.Evaluate("BigInt.prototype").AsObject();
+		bigIntPrototype.FastSetProperty(
+			"toJSON",
+			new PropertyDescriptor(
+				new ClrFunction(_engine, "toJSON", static (thisValue, _) => thisValue.ToString()),
+				PropertyFlag.NonEnumerable));
+	}
+
+	// NonEnumerable is { writable: true, enumerable: false, configurable: true } -- the attribute shape a
+	// host-installed global function has always had here, now named rather than spelled as three bools.
+	private void AddGlobalFunction(string name, Func<JsValue, JsValue[], JsValue> func, int length) =>
+		_engine.Global.FastSetProperty(name, new PropertyDescriptor(new ClrFunction(_engine, name, func, length), PropertyFlag.NonEnumerable));
 
 	public void Dispose() {
 		_engine.Dispose();
@@ -400,6 +429,15 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 			_executing = true;
 
 		}
+		// Check() only reads a wall clock; it neither counts its own invocations nor budgets a quantity that
+		// can grow unboundedly between two checks, so it is sound for the engine to check it every N
+		// statements instead of before every single one. Jint's own TimeConstraint says the same about
+		// itself. Without this, a user-derived Constraint lands in the engine's "exact" partition, which
+		// costs a virtual Check() per statement and disarms the interpreter's tight-loop lanes for every
+		// projection that folds over an array. Only detection latency changes, and it stays bounded (the
+		// engine also re-checks whenever control returns from host code).
+		public override bool IsAmortizable => true;
+
 		public override void Reset() {
 			_start = _sw.Elapsed;
 		}
@@ -439,14 +477,14 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		private readonly JsonParser _parser;
 
 		private static readonly Dictionary<string, Action<InterpreterRuntime>> _possibleProperties = new Dictionary<string, Action<InterpreterRuntime>>() {
-			["when"] = i => i.FastAddProperty("when", i._whenInstance, true, false, true),
-			["partitionBy"] = i => i.FastAddProperty("partitionBy", i._partitionByInstance, true, false, true),
-			["outputState"] = i => i.FastAddProperty("outputState", i._outputStateInstance, true, false, true),
-			["foreachStream"] = i => i.FastAddProperty("foreachStream", i._foreachStreamInstance, true, false, true),
-			["transformBy"] = i => i.FastAddProperty("transformBy", i._transformByInstance, true, false, true),
-			["filterBy"] = i => i.FastAddProperty("filterBy", i._filterByInstance, true, false, true),
-			["outputTo"] = i => i.FastAddProperty("outputTo", i._outputToInstance, true, false, true),
-			["$defines_state_transform"] = i => i.FastAddProperty("$defines_state_transform", i._definesStateTransformInstance, true, false, true),
+			["when"] = i => i.AddDslProperty("when", i._whenInstance),
+			["partitionBy"] = i => i.AddDslProperty("partitionBy", i._partitionByInstance),
+			["outputState"] = i => i.AddDslProperty("outputState", i._outputStateInstance),
+			["foreachStream"] = i => i.AddDslProperty("foreachStream", i._foreachStreamInstance),
+			["transformBy"] = i => i.AddDslProperty("transformBy", i._transformByInstance),
+			["filterBy"] = i => i.AddDslProperty("filterBy", i._filterByInstance),
+			["outputTo"] = i => i.AddDslProperty("outputTo", i._outputToInstance),
+			["$defines_state_transform"] = i => i.AddDslProperty("$defines_state_transform", i._definesStateTransformInstance),
 		};
 
 		private static readonly Dictionary<string, string[]> _availableProperties = new Dictionary<string, string[]>() {
@@ -506,9 +544,12 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 
 		}
 
+		private void AddDslProperty(string name, JsValue value) =>
+			FastSetProperty(name, new PropertyDescriptor(value, PropertyFlag.NonEnumerable));
+
 		private void AddDefinitionFunction(string name, Func<JsValue, JsValue[], JsValue> func, int length) {
 			_definitionFunctions.Add(name);
-			_engine.Global.FastAddProperty(name, new ClrFunction(_engine, name, func, length), true, false, true);
+			_engine.Global.FastSetProperty(name, new PropertyDescriptor(new ClrFunction(_engine, name, func, length), PropertyFlag.NonEnumerable));
 		}
 
 		private JsValue FromStream(JsValue _, JsValue[] parameters) {
@@ -714,9 +755,9 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		public JsValue Handle(JsValue state, EventEnvelope eventEnvelope) {
 			JsValue newState;
 			if (_handlers.TryGetValue(eventEnvelope.EventType, out var handler)) {
-				newState = _jsFunctionCaller.Call(eventEnvelope.EventType, handler, state, FromObject(Engine, eventEnvelope));
+				newState = _jsFunctionCaller.Call(eventEnvelope.EventType, handler, state, eventEnvelope.Value);
 			} else if (_any != null) {
-				newState = _jsFunctionCaller.Call("$any", _any, state, FromObject(Engine, eventEnvelope));
+				newState = _jsFunctionCaller.Call("$any", _any, state, eventEnvelope.Value);
 			} else {
 				newState = eventEnvelope.IsJson ? eventEnvelope.Body : eventEnvelope.BodyRaw;
 			}
@@ -788,13 +829,13 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 
 		public JsValue GetPartition(EventEnvelope envelope) {
 			if (_partitionFunction != null)
-				return _jsFunctionCaller.Call("partitionBy", _partitionFunction, envelope);
+				return _jsFunctionCaller.Call("partitionBy", _partitionFunction, envelope.Value);
 			return Null;
 		}
 
 		public void HandleCreated(JsValue state, EventEnvelope envelope) {
 			for (int i = 0; i < _createdHandlers.Count; i++) {
-				_jsFunctionCaller.Call("$created", _createdHandlers[i], state, envelope);
+				_jsFunctionCaller.Call("$created", _createdHandlers[i], state, envelope.Value);
 			}
 		}
 
@@ -820,417 +861,153 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		}
 	}
 
-	EventEnvelope CreateEnvelope(string partition, ResolvedEvent @event, string category) {
-		var envelope = new EventEnvelope(_engine, _parser, this);
-		envelope.Partition = partition;
-		envelope.Created = @event.Timestamp;
-		envelope.BodyRaw = @event.Data;
-		envelope.MetadataRaw = @event.Metadata;
-		envelope.StreamId = @event.EventStreamId;
-		envelope.EventId = @event.EventId.ToString("D");
-		envelope.EventType = @event.EventType;
-		envelope.LinkMetadataRaw = @event.PositionMetadata;
-		envelope.IsJson = @event.IsJson;
-		envelope.Category = category;
-		envelope.SequenceNumber = @event.EventSequenceNumber;
-		return envelope;
-	}
-	sealed class EventEnvelope : ObjectInstance {
+	EventEnvelope CreateEnvelope(string partition, ResolvedEvent @event, string category) =>
+		new(_engine, _parser, partition, @event, category);
+	/// <summary>
+	/// The per-event object handed to a projection handler, plus the host-side state behind it.
+	/// <para>
+	/// The JavaScript value is a plain <see cref="JsObject"/> built from a shared
+	/// <see cref="JsObjectLayout"/> rather than a custom <c>ObjectInstance</c> subclass. That matters
+	/// because a host subclass carries none of the engine's storage flags, so it reaches no member-read
+	/// inline cache at all: every <c>e.streamId</c> was a virtual call into a property dictionary. Every
+	/// envelope built from this layout in one engine shares one hidden class, so the handler's reads stay
+	/// monomorphic across events even though the object itself is new each time.
+	/// </para>
+	/// <para>
+	/// The members that must parse a JSON document are declared as lazy slots, so they exist as ordinary
+	/// properties -- they answer <c>in</c>, <c>hasOwnProperty</c> and <c>Object.keys</c> -- but the
+	/// document is only parsed by a read that actually observes the value. Before 4.15.1 a lazy member and
+	/// a shaped object were mutually exclusive, which is why this used to be a subclass.
+	/// </para>
+	/// </summary>
+	internal sealed class EventEnvelope {
+		// Slot order is the own-key order of every envelope. It reproduces the order the previous
+		// implementation ended up with: the eleven eager members in the order they were assigned, then the
+		// parsed members in the order they were materialized.
+		//
+		// There are two variants because the previous implementation's key set was not fixed. Reconstructing
+		// its conditions exactly: metadataRaw and linkMetadataRaw were assigned unconditionally, and a null
+		// string converts to JS null rather than undefined, so EnsureMetadata and EnsureLinkMetadata always
+		// succeeded -- metadata and linkMetadata were always present, with the value null when their document
+		// was absent. EnsureBody additionally required IsJson, so body and data -- which always appeared
+		// together, sharing one descriptor -- were present exactly when the event was JSON. IsJson is
+		// therefore the only condition, and two layouts cover it.
+		//
+		// Each variant is still one shared hidden class across every envelope built from it, so the inline
+		// cache win survives. A projection handling both JSON and non-JSON events sees two shapes at its read
+		// sites and goes polymorphic there, which is the honest cost of the key sets genuinely differing --
+		// and still far cheaper than the host-subclass path, which reached no cache at all.
+		//
+		// The factories are static and read everything item-specific out of the per-object state, because a
+		// layout is process-shared by design and a captured engine would leak one engine's state into
+		// another's objects. "body" and "data" are two names for one document, so both factories go through
+		// the same memo and a projection reading each of them parses once.
+		private static readonly JsObjectLayout JsonLayout = BuildLayout(withBody: true);
+		private static readonly JsObjectLayout NonJsonLayout = BuildLayout(withBody: false);
+
+		private static JsObjectLayout BuildLayout(bool withBody) {
+			var builder = JsObjectLayout.CreateBuilder()
+				.Add("partition")
+				.Add("created")
+				.Add("bodyRaw")
+				.Add("metadataRaw")
+				.Add("streamId")
+				.Add("eventId")
+				.Add("eventType")
+				.Add("linkMetadataRaw")
+				.Add("isJson")
+				.Add("category")
+				.Add("sequenceNumber");
+
+			if (withBody) {
+				builder
+					.AddLazy("body", static (_, state) => ((EventEnvelope)state!).Body)
+					.AddLazy("data", static (_, state) => ((EventEnvelope)state!).Body);
+			}
+
+			return builder
+				.AddLazy("metadata", static (_, state) => ((EventEnvelope)state!).Metadata)
+				.AddLazy("linkMetadata", static (_, state) => ((EventEnvelope)state!).LinkMetadata)
+				.Build();
+		}
+
 		private readonly JsonParser _parser;
-		private readonly JintProjectionStateHandler _parent;
+		private readonly string? _bodyRaw;
+		private readonly string? _metadataRaw;
+		private readonly string? _linkMetadataRaw;
 
-		public string StreamId {
-			set => SetOwnProperty("streamId", new PropertyDescriptor(value, false, true, false));
-		}
-		public long SequenceNumber {
-			set => SetOwnProperty("sequenceNumber", new PropertyDescriptor(value, false, true, false));
-		}
+		private JsValue? _body;
+		private JsValue? _metadata;
+		private JsValue? _linkMetadata;
 
-		public string EventType {
-			get => _parent.AsString(Get("eventType"), false) ?? "";
-			set => SetOwnProperty("eventType", new PropertyDescriptor(value, false, true, false));
-		}
+		/// <summary>The value passed to the projection handler.</summary>
+		public JsObject Value { get; }
 
-		public JsValue Body {
-			get {
-				if (TryGetValue("body", out var value) && value is ObjectInstance oi)
-					return oi;
-				if (EnsureBody(out JsValue objectInstance))
-					return objectInstance;
+		/// <summary>
+		/// The event type, read straight off the CLR record. It used to be read back out of the JavaScript
+		/// property table purely to key a CLR dictionary of handlers.
+		/// </summary>
+		public string EventType { get; }
 
-				return Undefined;
-			}
-		}
+		public bool IsJson { get; }
 
-		private bool EnsureBody(out JsValue value) {
-			if (IsJson && TryGetValue("bodyRaw", out var raw) && raw is not JsUndefined) {
-				var body = raw.IsNull() ? raw : _parser.Parse(raw.AsString());
-				var pd = new PropertyDescriptor(body, false, true, false);
-				SetOwnProperty("body", pd);
-				SetOwnProperty("data", pd);
-				value = body;
-				return true;
-			}
+		public string? BodyRaw => _bodyRaw;
 
-			value = Undefined;
-			return false;
-		}
-
-		public bool IsJson {
-			get => Get("isJson").AsBoolean();
-			set => SetOwnProperty("isJson", new PropertyDescriptor(value, false, true, false));
-		}
-
-		public string? BodyRaw {
-			get => _parent.AsString(Get("bodyRaw"), false);
-			set => SetOwnProperty("bodyRaw", new PropertyDescriptor(value, false, true, false));
-		}
-
-		private JsValue Metadata {
-			get {
-				if (TryGetValue("metadata", out var value) && value is ObjectInstance oi)
-					return oi;
-				if (EnsureMetadata(out value))
-					return value;
-
-				return Undefined;
-			}
-		}
-
-		private bool EnsureMetadata(out JsValue value) {
-			if (TryGetValue("metadataRaw", out var raw) && raw is not JsUndefined) {
-				var metadata = raw.IsNull() ? raw : _parser.Parse(raw.AsString());
-				SetOwnProperty("metadata", new PropertyDescriptor(metadata, false, true, false));
-				{
-					value = metadata;
-					return true;
-				}
-			}
-
-			value = Undefined;
-			return false;
-		}
-
-		public string MetadataRaw {
-			set => FastSetProperty("metadataRaw", new PropertyDescriptor(value, false, true, false));
-		}
-
-		private JsValue LinkMetadata {
-			get {
-				if (TryGetValue("linkMetadata", out var value) && value is ObjectInstance oi)
-					return oi;
-				if (EnsureLinkMetadata(out value))
-					return value;
-
-				return Undefined;
-			}
-		}
-
-		private bool EnsureLinkMetadata(out JsValue value) {
-			if (TryGetValue("linkMetadataRaw", out var raw) && raw is not JsUndefined) {
-				var metadata = raw.IsNull() ? raw : _parser.Parse(raw.AsString());
-				SetOwnProperty("linkMetadata", new PropertyDescriptor(metadata, false, true, false));
-				{
-					value = metadata;
-					return true;
-				}
-			}
-
-			value = Undefined;
-			return false;
-		}
-
-		public string LinkMetadataRaw {
-			set => SetOwnProperty("linkMetadataRaw", new PropertyDescriptor(value, false, true, false));
-		}
-
-		public string Partition {
-			set => SetOwnProperty("partition", new PropertyDescriptor(value, false, true, false));
-		}
-
-		public string Category {
-			set => SetOwnProperty("category", new PropertyDescriptor(value, false, true, false));
-		}
-
-		public DateTime Created {
-			// avoid new JsDate(_engine, value) because if the user stores it in their state it will be a date
-			// until the state is serialized and back, after which it will be a string, which would be a gotcha
-			set => SetOwnProperty("created", new PropertyDescriptor(value.ToString("o"), false, true, false));
-		}
-
-		public string EventId {
-			set => SetOwnProperty("eventId", new PropertyDescriptor(value, false, true, false));
-		}
-
-		public EventEnvelope(Engine engine, JsonParser parser, JintProjectionStateHandler parent) : base(engine) {
+		public EventEnvelope(Engine engine, JsonParser parser, string partition, ResolvedEvent @event, string category) {
 			_parser = parser;
-			_parent = parent;
+			_bodyRaw = @event.Data;
+			_metadataRaw = @event.Metadata;
+			_linkMetadataRaw = @event.PositionMetadata;
+			IsJson = @event.IsJson;
+
+			// ResolvedEvent.EventType is null whenever the resolved event carries no event record, and its
+			// declaring project has nullable reference types disabled, so the `string` annotation says
+			// nothing. The removed CLR getter read the value back out of the property table through
+			// AsString(...) ?? "", so "" is the dispatch key an untyped event has always produced; keeping
+			// the coalesce preserves that rather than deciding something new. The JS-visible property is
+			// fed the raw value below, so it stays null there exactly as it was.
+			EventType = @event.EventType ?? "";
+
+			// avoid new JsDate(engine, value) because if the user stores it in their state it will be a date
+			// until the state is serialized and back, after which it will be a string, which would be a gotcha
+			var created = @event.Timestamp.ToString("o");
+			var eventId = @event.EventId.ToString("D");
+
+			// The value lists are spelled out per variant rather than assembled from a shared array: the
+			// trailing nulls are the lazy slots, which Create requires to be null, and building a common
+			// prefix first would put an extra array allocation on the per-event path.
+			Value = IsJson
+				? JsObject.Create(engine, JsonLayout, [
+					partition, created, _bodyRaw, _metadataRaw, @event.EventStreamId, eventId,
+					@event.EventType, _linkMetadataRaw, IsJson, category, @event.EventSequenceNumber,
+					null, null, null, null,
+				], this)
+				: JsObject.Create(engine, NonJsonLayout, [
+					partition, created, _bodyRaw, _metadataRaw, @event.EventStreamId, eventId,
+					@event.EventType, _linkMetadataRaw, IsJson, category, @event.EventSequenceNumber,
+					null, null,
+				], this);
 		}
 
-		public override JsValue Get(JsValue property, JsValue receiver) {
-			if (property == "body" || property == "data") {
-				return Body;
-			}
+		// Only reached through the JSON layout, whose slots exist exactly when the event is JSON. A null raw
+		// document parses to null -- present with the value null, which is what the previous implementation
+		// produced too, and distinct from the property being absent.
+		public JsValue Body => _body ??= Parse(_bodyRaw);
 
-			if (property == "metadata") {
-				return Metadata;
-			}
+		private JsValue Metadata => _metadata ??= Parse(_metadataRaw);
 
-			if (property == "linkMetadata") {
-				return LinkMetadata;
-			}
-			return base.Get(property, receiver);
-		}
+		private JsValue LinkMetadata => _linkMetadata ??= Parse(_linkMetadataRaw);
 
-		public override List<JsValue> GetOwnPropertyKeys(Types types = Types.String | Types.Symbol) {
-			var list = base.GetOwnPropertyKeys(types);
-			return list;
-		}
+		private JsValue Parse(string? raw) => raw is null ? JsValue.Null : _parser.Parse(raw);
 
-		public override IEnumerable<KeyValuePair<JsValue, PropertyDescriptor>> GetOwnProperties() {
-			if (!HasOwnProperty("body")) {
-				EnsureBody(out _);
-			}
-
-			if (!HasOwnProperty("metadata")) {
-				EnsureMetadata(out _);
-			}
-
-			if (!HasOwnProperty("linkMetadata")) {
-				EnsureLinkMetadata(out _);
-			}
-
-			var list = base.GetOwnProperties();
-
-			return list;
-		}
 	}
 
-	public string Serialize(JsValue value) {
-		var serialized = _jsSerializer.Serialize(value);
-		return Encoding.UTF8.GetString(serialized);
-	}
+	// Jint's JsonSerializer is JSON.stringify's own implementation, reachable directly. The
+	// hand-written serializer it replaces produced UTF-8, which this method then transcoded back to a
+	// string because every consumer of the result -- PartitionState, the emitted event body -- wants
+	// one. Going through the string-returning overload removes that encode and decode per event, drops
+	// the 1 MB ArrayBufferWriter each handler held, and picks up the shape-mode fast arm that walks a
+	// JsonParser-produced object by its hidden class instead of allocating a JsString per key.
+	public string Serialize(JsValue value) => _jsSerializer.Serialize(_serializer, value);
 
-	public class Serializer {
-		private readonly WriteState[] _iterators;
-		private readonly ArrayBufferWriter<byte> _bufferWriter;
-		private readonly Utf8JsonWriter _writer;
-		private readonly Dictionary<string, JsonEncodedText> _knownPropertyNames;
-		private int _depth;
-
-		public Serializer() {
-			_iterators = new WriteState[64];
-			_bufferWriter = new ArrayBufferWriter<byte>(1024 * 1024);
-			_writer = new Utf8JsonWriter(
-				_bufferWriter,
-				new JsonWriterOptions {
-					Indented = false,
-					SkipValidation = true,
-					Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-				});
-			_knownPropertyNames = new Dictionary<string, JsonEncodedText>();
-		}
-
-		public ReadOnlyMemory<byte> Serialize(JsValue value) {
-			_depth = 0;
-			_bufferWriter.Clear();
-			_writer.Reset();
-
-			if (value is JsArray array) {
-				_iterators[_depth] = new WriteState(array);
-			} else if (value is ObjectInstance oi) {
-				_iterators[_depth] = new WriteState(oi);
-			} else {
-				_iterators[_depth] = new WriteState(value);
-			}
-			ref var current = ref _iterators[0];
-
-			while (current.Write(_writer, ref _depth, _iterators, _knownPropertyNames)) {
-				current = ref _iterators[_depth];
-			}
-			_writer.Flush();
-			return _bufferWriter.WrittenMemory;
-
-		}
-
-		struct WriteState {
-			private enum Type {
-				Complete,
-				Array,
-				Object,
-				Primitive,
-			}
-
-			private static readonly IEnumerator<KeyValuePair<JsValue, PropertyDescriptor>> _emptyIterator =
-				new NoopIterator();
-
-			class NoopIterator : IEnumerator<KeyValuePair<JsValue, PropertyDescriptor>> {
-				public KeyValuePair<JsValue, PropertyDescriptor> Current => default;
-
-				object? IEnumerator.Current => default;
-
-				public void Dispose() {
-				}
-
-				public bool MoveNext() {
-					return false;
-				}
-
-				public void Reset() {
-				}
-			}
-
-			public WriteState(JsArray instance) {
-				_position = -1;
-				_length = (int)instance.Length;
-				_instance = instance;
-				_type = Type.Array;
-				_started = false;
-				_iterator = _emptyIterator;
-			}
-
-			public WriteState(ObjectInstance instance) {
-				_position = -1;
-				_length = -1;
-				_instance = JsValue.Null;
-				_type = Type.Object;
-				_started = false;
-				_iterator = instance.GetOwnProperties().GetEnumerator();
-			}
-
-			public WriteState(JsValue instance) {
-				if (instance.Type == Types.Object)
-					throw new ArgumentException("Primitive overload called for object instance");
-				_position = -1;
-				_length = -1;
-				_instance = instance;
-				_type = Type.Primitive;
-				_started = false;
-				_iterator = _emptyIterator;
-			}
-
-			private readonly JsValue _instance;
-			private readonly IEnumerator<KeyValuePair<JsValue, PropertyDescriptor>> _iterator;
-			private readonly Type _type;
-			private readonly int _length;
-			private int _position;
-			private bool _started;
-
-			[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-			public bool Write(
-				Utf8JsonWriter writer,
-				ref int depth,
-				WriteState[] writeStates,
-				Dictionary<string, JsonEncodedText> knownPropertyNames) {
-
-				switch (_type) {
-					case Type.Array:
-						if (_position == -1) {
-							writer.WriteStartArray();
-							_position++;
-						}
-						var instance = (JsArray)_instance;
-						for (; _position < _length; _position++) {
-							var value = instance[(uint)_position];
-							if (value.Type == Types.Object) {
-								if (value is JsArray ai) {
-									writeStates[++depth] = new WriteState(ai);
-								} else {
-									writeStates[++depth] = new WriteState(value.AsObject());
-								}
-								_position++;
-								return true;
-							}
-							SerializePrimitive(value, writer);
-						}
-						writer.WriteEndArray();
-						break;
-					case Type.Object:
-						if (!_started) {
-							writer.WriteStartObject();
-							_started = true;
-						}
-						while (_iterator.MoveNext()) {
-							var (name, propertyDescriptor) = _iterator.Current;
-							var value = propertyDescriptor.Value;
-							if (value.Type == Types.Undefined)
-								continue;
-
-							WriteMaybeCachedPropertyName(name.AsString(), knownPropertyNames, writer);
-							if (value.Type == Types.Object) {
-								if (value is JsArray ai) {
-									writeStates[++depth] = new WriteState(ai);
-								} else {
-									writeStates[++depth] = new WriteState(value.AsObject());
-								}
-								_position++;
-								return true;
-							} else {
-								SerializePrimitive(value, writer);
-							}
-
-						}
-
-						writer.WriteEndObject();
-						break;
-					case Type.Primitive:
-						SerializePrimitive(_instance, writer);
-						break;
-				}
-				writeStates[depth] = default;
-				depth--;
-				return depth >= 0;
-			}
-		}
-
-		[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-		private static void WriteMaybeCachedPropertyName(string name, Dictionary<string, JsonEncodedText> knownPropertyNames, Utf8JsonWriter writer) {
-			if (!knownPropertyNames.TryGetValue(name, out var propertyName)) {
-				propertyName = JsonEncodedText.Encode(name);
-				if (knownPropertyNames.Count < 1000) {
-					knownPropertyNames.Add(name, propertyName);
-				}
-			}
-			writer.WritePropertyName(propertyName);
-		}
-
-		[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-		static void SerializePrimitive(JsValue value, Utf8JsonWriter writer) {
-
-			switch (value.Type) {
-				case Types.Null:
-				case Types.Undefined:
-				case Types.Empty:
-					writer.WriteNullValue();
-					break;
-				case Types.Boolean:
-					if (ReferenceEquals(value, JsBoolean.False))
-						writer.WriteBooleanValue(false);
-					else
-						writer.WriteBooleanValue(true);
-					break;
-				case Types.Number:
-					var n = value.AsNumber();
-					if (double.IsFinite(n))
-						writer.WriteNumberValue(n);
-					else
-						writer.WriteNullValue();
-					break;
-				case Types.BigInt:
-					writer.WriteStringValue(value.ToString());
-					break;
-				case Types.String:
-					writer.WriteStringValue(value.AsString());
-					break;
-				default:
-					throw new Exception($"Cannot serialize {value.Type} as primitive");
-			}
-		}
-	}
-}
-
-internal static class ObjectInstanceExtensions {
-	public static void FastAddProperty(this ObjectInstance target, string name, JsValue value, bool writable, bool enumerable, bool configurable) {
-		target.FastSetProperty(name, new PropertyDescriptor(value, writable, enumerable, configurable));
-	}
 }

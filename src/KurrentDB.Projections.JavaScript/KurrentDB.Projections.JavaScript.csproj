@@ -8,4 +8,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.Projections.Shared\KurrentDB.Projections.Shared.csproj" />
 	</ItemGroup>
+	<ItemGroup>
+		<InternalsVisibleTo Include="KurrentDB.Projections.Management.Tests" />
+	</ItemGroup>
 </Project>

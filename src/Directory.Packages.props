@@ -57,7 +57,7 @@
     <PackageVersion Include="IdentityModel" Version="7.0.0" />
     <PackageVersion Include="IgnoresAccessChecksToGenerator" Version="0.8.0" />
     <PackageVersion Include="JetBrains.Annotations" Version="2026.2.0" />
-    <PackageVersion Include="Jint" Version="4.0.3" />
+    <PackageVersion Include="Jint" Version="4.15.3" />
     <PackageVersion Include="Kurrent.Connectors.Elasticsearch" Version="1.1.1-alpha.1.71" />
     <PackageVersion Include="Kurrent.Connectors.Http" Version="1.1.1-alpha.1.71" />
     <PackageVersion Include="Kurrent.Connectors.Kafka" Version="1.1.1-alpha.1.71" />
