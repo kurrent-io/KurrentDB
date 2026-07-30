@@ -484,10 +484,7 @@ public partial record ClusterVNodeOptions {
 
 		[Description($"The amount of disk space in bytes that can be allocated by embedded DuckDB for temporary files. " +
 					 $"Defaults to 90% of the available disk space on the {nameof(SqlEngineTempDirectory)} volume.")]
-		public long SqlEngineTempDirectorySizeLimit {
-			get => field < 0L ? 0L : field;
-			init;
-		}
+		public long SqlEngineTempDirectorySizeLimit { get; init; }
 
 		[Description("Directory for embedded DuckDB to write temp files. " +
 					 "Must not be used for other files, *.tmp files will automatically be removed. " +

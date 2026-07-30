@@ -78,10 +78,7 @@ public class TFChunkDbConfig {
 		MaxTruncation = maxTruncation;
 	}
 
-	public long SqlEngineTempDirectorySizeLimit {
-		get => field < 0L ? 0L : field;
-		init;
-	}
+	public long SqlEngineTempDirectorySizeLimit { get; init; }
 
 	public string SqlEngineTempDirectory {
 		get => field ?? string.Empty;
