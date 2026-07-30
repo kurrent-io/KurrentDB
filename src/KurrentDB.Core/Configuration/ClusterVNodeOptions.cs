@@ -489,10 +489,7 @@ public partial record ClusterVNodeOptions {
 		[Description("Directory for embedded DuckDB to write temp files. " +
 					 "Must not be used for other files, *.tmp files will automatically be removed. " +
 					 "Defaults to <DB Directory>/kurrent.ddb.tmp/")]
-		public string SqlEngineTempDirectory {
-			get => field ?? string.Empty;
-			init;
-		}
+		public string SqlEngineTempDirectory { get; init; } = "";
 	}
 
 	[Description("gRPC Options")]
