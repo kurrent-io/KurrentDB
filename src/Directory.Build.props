@@ -12,13 +12,13 @@
 		<PackageReleaseNotes>https://docs.kurrent.io/server/latest/release-schedule/release-notes</PackageReleaseNotes>
 		<TargetFramework>net10.0</TargetFramework>
 		<LangVersion>14.0</LangVersion>
-		<Platforms>AnyCPU;x64;ARM64</Platforms>
 		<IsPackable>false</IsPackable>
 		<VersionPrefix>26.2.0</VersionPrefix>
 		<VersionSuffix>prerelease</VersionSuffix>
 		<!-- Adjust for SYSLIB0057 separately to .NET 10 upgrade -->
 		<!-- Adjust for XUNIT1051 separately. Lots of lines but very simple -->
 		<NoWarn>SYSLIB0057;xUnit1051</NoWarn>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
 		<TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) @"$(MSBuildThisFileDirectory)../ci/ci.rsp"</TestingPlatformCommandLineArguments>
 		<!-- we put these two here and not only for explicitly labelled test projects to make sure that -->
@@ -32,21 +32,11 @@
 	<!-- TUnit -->
 	<ItemGroup Condition="'$(IsKurrentTUnit)' == 'True'">
 		<PackageReference Include="TUnit" />
-		<!-- MTP 2 -->
-		<PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.1.0" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="2.0.1" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="2.0.1" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.0.1" />
 	</ItemGroup>
 
 	<!-- XUnit -->
 	<ItemGroup Condition="'$(IsKurrentXUnit)' == 'True'">
-		<PackageReference Include="xunit.v3" />
-		<!-- MTP 1 -->
-		<PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.0.4" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="1.9.0" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="1.9.0" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.9.0" />
+		<PackageReference Include="xunit.v3.mtp-v2" />
 	</ItemGroup>
 
 	<!-- NUnit -->
@@ -54,17 +44,19 @@
 		<TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --settings $(MSBuildThisFileDirectory)../ci/ci.runsettings</TestingPlatformCommandLineArguments>
 	</PropertyGroup>
 	<ItemGroup Condition="'$(IsKurrentNUnit)' == 'True'">
+		<!--
+			Microsoft.NET.Test.Sdk is not required with MTP, but Rider can't locate tests without it.
+			See https://youtrack.jetbrains.com/projects/RIDER/issues/RIDER-131530
+		-->
+		<PackageReference Include="Microsoft.NET.Test.Sdk" />
 		<PackageReference Include="NUnit" />
 		<PackageReference Include="NUnit3TestAdapter" />
-		<!-- MTP 1 -->
-		<PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.0.4" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.CrashDump" Version="1.9.0" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="1.9.0" />
-		<PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="1.9.0" />
 	</ItemGroup>
 
 	<!-- All test projects -->
 	<ItemGroup Condition="'$(IsKurrentTUnit)' == 'True' Or '$(IsKurrentXUnit)' == 'True' Or '$(IsKurrentNUnit)' == 'True'">
+		<PackageReference Include="Microsoft.Testing.Platform" />
+		<PackageReference Include="Microsoft.Testing.Platform.MSBuild" />
 		<PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
 		<PackageReference Include="Microsoft.Testing.Extensions.CrashDump" />
 		<PackageReference Include="Microsoft.Testing.Extensions.HangDump" />
@@ -82,15 +74,5 @@
 	<ItemGroup Label="Default Packages">
 		<PackageReference Include="JetBrains.Annotations" PrivateAssets="All" />
 		<Using Include="JetBrains.Annotations" />
-	</ItemGroup>
-
-	<ItemGroup Label="NuGet Audit Suppressions">
-		<!--
-		  CVE-2025-6965 (GHSA-2m69-gcr7-jv3q): SQLitePCLRaw.lib.e_sqlite3 2.1.11 bundles SQLite < 3.50.2,
-		  pulled in transitively via Microsoft.Data.Sqlite (referenced by KurrentDB.Core for the scavenge backend).
-		  No patched SQLitePCLRaw release exists yet. Remove this suppression once Microsoft.Data.Sqlite ships
-		  a bundle with SQLite >= 3.50.2.
-		-->
-		<NuGetAuditSuppress Include="https://github.com/advisories/GHSA-2m69-gcr7-jv3q" />
 	</ItemGroup>
 </Project>

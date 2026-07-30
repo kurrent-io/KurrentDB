@@ -109,6 +109,7 @@ public static class Operations {
 		public static readonly OperationDefinition Delete = new(Resource, "delete");
 		public static readonly OperationDefinition ReplayParked = new(Resource, "replay");
 		public static readonly OperationDefinition Restart = new(Resource, "restart");
+		public static readonly OperationDefinition TruncateParked = new(Resource, "truncate");
 
 		public static readonly OperationDefinition ProcessMessages = new(Resource, "process");
 

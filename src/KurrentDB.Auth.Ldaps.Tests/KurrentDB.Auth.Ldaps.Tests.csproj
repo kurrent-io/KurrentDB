@@ -8,9 +8,6 @@
       <IsKurrentXUnit>true</IsKurrentXUnit>
     </PropertyGroup>
 
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
-      <DebugSymbols>true</DebugSymbols>
-    </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="Ductus.FluentDocker.XUnit" />

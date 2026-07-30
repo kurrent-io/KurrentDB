@@ -218,6 +218,9 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 			.When<ClientMessage.ConnectToPersistentSubscriptionToAll>().Do(HandleAsNonLeader)
 			.When<ClientMessage.UpdatePersistentSubscriptionToAll>().Do(HandleAsNonLeader)
 			.When<ClientMessage.DeletePersistentSubscriptionToAll>().Do(HandleAsNonLeader)
+			.When<ClientMessage.ReplayParkedMessages>().Do(HandleAsNonLeader)
+			.When<ClientMessage.ReplayParkedMessage>().Do(HandleAsNonLeader)
+			.When<ClientMessage.TruncateParkedMessages>().Do(HandleAsNonLeader)
 			.InStates(VNodeState.ReadOnlyLeaderless, VNodeState.PreReadOnlyReplica, VNodeState.ReadOnlyReplica)
 			.When<ClientMessage.WriteEvents>().Do(HandleAsReadOnlyReplica)
 			.When<ClientMessage.TransactionStart>().Do(HandleAsReadOnlyReplica)
@@ -820,6 +823,27 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private void HandleAsNonLeader(ClientMessage.DeletePersistentSubscriptionToAll message) {
+		if (_leader is null)
+			DenyRequestBecauseNotReady(message.Envelope, message.CorrelationId);
+		else
+			DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
+	}
+
+	private void HandleAsNonLeader(ClientMessage.ReplayParkedMessages message) {
+		if (_leader is null)
+			DenyRequestBecauseNotReady(message.Envelope, message.CorrelationId);
+		else
+			DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
+	}
+
+	private void HandleAsNonLeader(ClientMessage.ReplayParkedMessage message) {
+		if (_leader is null)
+			DenyRequestBecauseNotReady(message.Envelope, message.CorrelationId);
+		else
+			DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
+	}
+
+	private void HandleAsNonLeader(ClientMessage.TruncateParkedMessages message) {
 		if (_leader is null)
 			DenyRequestBecauseNotReady(message.Envelope, message.CorrelationId);
 		else

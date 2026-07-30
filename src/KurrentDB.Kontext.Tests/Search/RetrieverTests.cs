@@ -185,7 +185,7 @@ public class RetrieverTests : IDisposable {
 
 		var docs = _retriever.ListDocs(Idx("test"), limit: 2);
 
-		await Assert.That(docs).HasCount().EqualTo(2);
+		await Assert.That(docs).Count().IsEqualTo(2);
 	}
 
 	[Test]

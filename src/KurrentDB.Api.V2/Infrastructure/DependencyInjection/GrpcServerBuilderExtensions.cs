@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Grpc.AspNetCore.Server;
-using KurrentDB.Api.Infrastructure.Grpc.Compression;
 using KurrentDB.Api.Infrastructure.Grpc.Validation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -20,7 +19,6 @@ public static class GrpcServerBuilderExtensions {
         configureValidation?.Invoke(new RequestValidationBuilder(builder.Services));
 
         builder.AddServiceOptions<TService>(options => {
-            options.WithCompression();
             options.Interceptors.Add<RequestValidationInterceptor>();
             configureGrpc?.Invoke(options);
         });

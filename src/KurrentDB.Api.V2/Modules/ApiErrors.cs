@@ -226,7 +226,7 @@ public static partial class ApiErrors {
 	/// The exception includes retry information to guide client behavior.
 	/// </summary>
 	/// <param name="retryAfter">
-	/// An optional suggested retry delay. If not provided, defaults to 3 seconds.
+	/// An optional suggested retry delay. If not provided, defaults to <see cref="DefaultRetryDelay"/>.
 	/// This indicates how long clients should wait before retrying the request.
 	/// </param>
 	/// <returns>
@@ -243,6 +243,25 @@ public static partial class ApiErrors {
 		var details = new RetryInfo { RetryDelay = Duration.FromTimeSpan(retryAfter.Value) };
 
 		return RpcExceptions.FromError(ServerError.ServerNotReady, message, details);
+	}
+
+	/// <summary>
+	/// Creates an RPC exception indicating that the server is shutting down and can no longer handle the call.
+	/// Uses the ServerShuttingDown reason (status code <see cref="StatusCode.Unavailable"/>).
+	/// </summary>
+	/// <param name="retryAfter">
+	/// An optional suggested retry delay. If not provided, defaults to <see cref="DefaultRetryDelay"/>.
+	/// This indicates how long clients should wait before retrying the request.
+	/// </param>
+	public static RpcException ServerShuttingDown(TimeSpan? retryAfter = null) {
+		retryAfter ??= DefaultRetryDelay;
+
+		var message = $"The server is shutting down. "
+		            + $"Please retry after {retryAfter.Value.Humanize()}.";
+
+		var details = new RetryInfo { RetryDelay = Duration.FromTimeSpan(retryAfter.Value) };
+
+		return RpcExceptions.FromError(ServerError.ServerShuttingDown, message, details);
 	}
 
 	/// <summary>

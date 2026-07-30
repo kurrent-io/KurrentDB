@@ -144,8 +144,8 @@ public sealed class UserIndexEngine :
 		CancellationToken token) =>
 		_subscription.ReadBackwards(msg, token);
 
-	public bool TryGetUserIndexTableDetails(string indexName, out string tableName, out string? fieldName) =>
-		_subscription.TryGetUserIndexTableDetails(indexName, out tableName, out fieldName);
+	public IndexSubscriptionResult TryParseIndexSubscription(string indexStream, out string indexKey, out IReadOnlyList<KeyValuePair<string, string>> constraints) =>
+		_subscription.TryParseIndexSubscription(indexStream, out indexKey, out constraints);
 }
 
 static partial class UserIndexEngineLogMessages {

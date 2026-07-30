@@ -63,6 +63,8 @@ public class PersistentSubscriptionController : CommunicationController {
 			Codec.NoCodecs, DefaultCodecs, new Operation(Operations.Subscriptions.Statistics));
 		RegisterUrlBased(service, "/subscriptions/{stream}/{subscription}/replayParked?stopAt={stopAt}", HttpMethod.Post,
 			WithParameters(Operations.Subscriptions.ReplayParked), ReplayParkedMessages);
+		RegisterUrlBased(service, "/subscriptions/{stream}/{subscription}/truncateParked?stopAt={stopAt}", HttpMethod.Post,
+			WithParameters(Operations.Subscriptions.TruncateParked), TruncateParkedMessages);
 		RegisterUrlBased(service, "/subscriptions/{stream}/{subscription}/ack/{messageid}", HttpMethod.Post,
 			WithParameters(Operations.Subscriptions.ProcessMessages), AckMessage);
 		RegisterUrlBased(service, "/subscriptions/{stream}/{subscription}/nack/{messageid}?action={action}",
@@ -461,6 +463,59 @@ public class PersistentSubscriptionController : CommunicationController {
 		}
 
 		var cmd = new ClientMessage.ReplayParkedMessages(Guid.NewGuid(), Guid.NewGuid(), envelope, stream,
+			groupname, stopAt, http.User);
+		Publish(cmd);
+	}
+
+	private void TruncateParkedMessages(HttpEntityManager http, UriTemplateMatch match) {
+		if (_httpForwarder.ForwardRequest(http))
+			return;
+		var envelope = new SendToHttpEnvelope(
+			_networkSendQueue, http,
+			(args, message) => http.ResponseCodec.To(message),
+			(args, message) => {
+				int code;
+				if (message is ClientMessage.NotHandled notHandled)
+					return Configure.HandleNotHandled(args.RequestedUrl, notHandled);
+				var m = message as ClientMessage.TruncateParkedMessagesCompleted;
+				if (m == null)
+					throw new Exception("unexpected message " + message);
+				switch (m.Result) {
+					case ClientMessage.TruncateParkedMessagesCompleted.TruncateParkedMessagesCompletedResult.Success:
+						code = HttpStatusCode.OK;
+						break;
+					case ClientMessage.TruncateParkedMessagesCompleted.TruncateParkedMessagesCompletedResult.DoesNotExist:
+						code = HttpStatusCode.NotFound;
+						break;
+					case ClientMessage.TruncateParkedMessagesCompleted.TruncateParkedMessagesCompletedResult.AccessDenied:
+						code = HttpStatusCode.Unauthorized;
+						break;
+					default:
+						code = HttpStatusCode.InternalServerError;
+						break;
+				}
+
+				return new ResponseConfiguration(code, http.ResponseCodec.ContentType,
+					http.ResponseCodec.Encoding);
+			});
+		var groupname = match.BoundVariables["subscription"];
+		var stream = match.BoundVariables["stream"];
+		var stopAtStr = match.BoundVariables["stopAt"];
+
+		long? stopAt;
+		if (stopAtStr != null) {
+			if (!long.TryParse(stopAtStr, out var stopAtLong) || stopAtLong < 0) {
+				http.ReplyStatus(HttpStatusCode.BadRequest, "stopAt should be a properly formed positive integer",
+					exception => { });
+				return;
+			}
+
+			stopAt = stopAtLong;
+		} else {
+			stopAt = null;
+		}
+
+		var cmd = new ClientMessage.TruncateParkedMessages(Guid.NewGuid(), Guid.NewGuid(), envelope, stream,
 			groupname, stopAt, http.User);
 		Publish(cmd);
 	}

@@ -401,6 +401,8 @@ public class LegacyPolicyVerification {
 			yield return CreateOperation(Operations.Node.Information.ReadLogs);
 			yield return (new Operation(Operations.Subscriptions.ReplayParked).WithParameter(Operations.Subscriptions.Parameters.StreamId(_streamWithCustomPermissions)), _streamWithCustomPermissions, null);
 			yield return (new Operation(Operations.Subscriptions.ReplayParked).WithParameter(Operations.Subscriptions.Parameters.StreamId(_streamWithDefaultPermissions)), _streamWithDefaultPermissions, null);
+			yield return (new Operation(Operations.Subscriptions.TruncateParked).WithParameter(Operations.Subscriptions.Parameters.StreamId(_streamWithCustomPermissions)), _streamWithCustomPermissions, null);
+			yield return (new Operation(Operations.Subscriptions.TruncateParked).WithParameter(Operations.Subscriptions.Parameters.StreamId(_streamWithDefaultPermissions)), _streamWithDefaultPermissions, null);
 
 			yield return CreateOperation(Operations.Projections.UpdateConfiguration);
 

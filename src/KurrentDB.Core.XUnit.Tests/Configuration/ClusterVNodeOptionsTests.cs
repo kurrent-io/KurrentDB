@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using FluentAssertions;
@@ -335,6 +336,22 @@ public class ClusterVNodeOptionsTests {
 		var options = ClusterVNodeOptions.FromConfiguration(config);
 
 		options.Logging.LogLevel.Should().Be(LogLevel.Fatal);
+	}
+
+	[Theory]
+	[InlineData(true)]
+	[InlineData(false)]
+	public void can_set_grpc_compression_level(bool useEventStorePrefix) {
+		var builder = new ConfigurationBuilder();
+		if (useEventStorePrefix)
+			builder.AddLegacyEventStoreEnvironmentVariables(($"{EventStoreEnvVarPrefix}_COMPRESSION_LEVEL", nameof(CompressionLevel.NoCompression)));
+		else
+			builder.AddKurrentEnvironmentVariables(($"{KurrentEnvVarPrefix}_COMPRESSION_LEVEL", nameof(CompressionLevel.NoCompression)));
+		var config = builder.Build();
+
+		var options = ClusterVNodeOptions.FromConfiguration(config);
+
+		options.Grpc.CompressionLevel.Should().Be(CompressionLevel.NoCompression);
 	}
 
 	[Fact]

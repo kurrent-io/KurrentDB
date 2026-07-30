@@ -18,7 +18,7 @@ public class ReadToolTests {
 		var result = await ReadTool.Read(reader, new FakeWorkspaceContext(), TestWorkspace.Registry(),new FakeAuthorizationProvider(), new StaticHttpContextAccessor(), inquiries, sid,
 			eventRef: new EventRef { Stream = "order-1", EventNumber = 0 });
 
-		await Assert.That(result.NewEvents).HasCount().EqualTo(1);
+		await Assert.That(result.NewEvents).Count().IsEqualTo(1);
 		await Assert.That(result.NewEvents[0].EventType).IsEqualTo("OrderPlaced");
 	}
 
@@ -34,7 +34,7 @@ public class ReadToolTests {
 		var result = await ReadTool.Read(reader, new FakeWorkspaceContext(), TestWorkspace.Registry(),new FakeAuthorizationProvider(), new StaticHttpContextAccessor(), inquiries, sid,
 			eventRef: new EventRef { Stream = "order-1", EventNumber = 0, Count = 3 });
 
-		await Assert.That(result.NewEvents).HasCount().EqualTo(3);
+		await Assert.That(result.NewEvents).Count().IsEqualTo(3);
 	}
 
 	[Test]
@@ -50,7 +50,7 @@ public class ReadToolTests {
 		var result = await ReadTool.Read(reader, new FakeWorkspaceContext(), TestWorkspace.Registry(),new FakeAuthorizationProvider(), new StaticHttpContextAccessor(), inquiries, sid,
 			eventRef: new EventRef { Stream = "order-1", EventNumber = 0 });
 
-		await Assert.That(result.NewEvents).HasCount().EqualTo(0);
+		await Assert.That(result.NewEvents).Count().IsEqualTo(0);
 		await Assert.That(result.WorkingSetSize).IsEqualTo(1);
 	}
 
@@ -69,7 +69,7 @@ public class ReadToolTests {
 		var result = await ReadTool.Read(reader, new FakeWorkspaceContext(), TestWorkspace.Registry(),new FakeAuthorizationProvider(), new StaticHttpContextAccessor(), inquiries, sid,
 			eventRef: new EventRef { Stream = "order-1", EventNumber = 0 });
 
-		await Assert.That(result.NewEvents).HasCount().EqualTo(0);
+		await Assert.That(result.NewEvents).Count().IsEqualTo(0);
 		await Assert.That(result.WorkingSetSize).IsEqualTo(0);
 	}
 
@@ -84,7 +84,7 @@ public class ReadToolTests {
 			eventRef: new EventRef { Stream = "order-1", EventNumber = 0, Count = 6 });
 
 		await Assert.That(result.EndOfStream).IsTrue();
-		await Assert.That(result.NewEvents).HasCount().EqualTo(1);
+		await Assert.That(result.NewEvents).Count().IsEqualTo(1);
 	}
 
 	[Test]
@@ -100,7 +100,7 @@ public class ReadToolTests {
 			eventRef: new EventRef { Stream = "order-1", EventNumber = 0, Count = 2 });
 
 		await Assert.That(result.EndOfStream).IsFalse();
-		await Assert.That(result.NewEvents).HasCount().EqualTo(2);
+		await Assert.That(result.NewEvents).Count().IsEqualTo(2);
 	}
 
 	[Test]
@@ -113,7 +113,7 @@ public class ReadToolTests {
 			eventRef: new EventRef { Stream = "nothing-here", EventNumber = 0 });
 
 		await Assert.That(result.EndOfStream).IsTrue();
-		await Assert.That(result.NewEvents).HasCount().EqualTo(0);
+		await Assert.That(result.NewEvents).Count().IsEqualTo(0);
 	}
 
 	[Test]
@@ -163,7 +163,7 @@ public class ReadToolTests {
 			new StaticHttpContextAccessor(), inquiries, sid,
 			eventRef: new EventRef { Stream = "ticket-1", EventNumber = 0, Count = 2 });
 
-		await Assert.That(result.NewEvents).HasCount().EqualTo(1);
+		await Assert.That(result.NewEvents).Count().IsEqualTo(1);
 		await Assert.That(result.NewEvents[0].Id).IsEqualTo(100L);
 	}
 }

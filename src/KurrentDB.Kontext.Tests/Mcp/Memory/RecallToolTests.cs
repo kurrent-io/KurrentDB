@@ -37,7 +37,7 @@ public class RecallToolTests {
 		var fact = result.Facts[0];
 		await Assert.That(fact.Topic).IsEqualTo("alice-hobbies");
 		await Assert.That(fact.Fact).IsEqualTo("Alice has a dog named Max.");
-		await Assert.That(fact.SourceEvents).HasCount().EqualTo(2);
+		await Assert.That(fact.SourceEvents).Count().IsEqualTo(2);
 		await Assert.That(fact.SourceEvents[0].Stream).IsEqualTo("alice-pets");
 		await Assert.That(fact.SourceEvents[0].EventNumber).IsEqualTo(3L);
 		await Assert.That(fact.Superseded).IsFalse();
@@ -50,7 +50,7 @@ public class RecallToolTests {
 			new FakeSearchService(), new FakeSystemClient(), Workspace(), TestWorkspace.Registry(), "nonexistent");
 
 		await Assert.That(result.Count).IsEqualTo(0);
-		await Assert.That(result.Facts).HasCount().EqualTo(0);
+		await Assert.That(result.Facts).Count().IsEqualTo(0);
 	}
 
 	[Test]

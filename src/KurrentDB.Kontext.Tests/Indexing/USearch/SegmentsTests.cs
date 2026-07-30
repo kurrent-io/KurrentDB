@@ -47,7 +47,7 @@ public class SegmentsTests : IDisposable {
 		var group = segments.FindMergeGroup();
 		await Assert.That(group).IsNotNull();
 		await Assert.That(group!.Value.TargetLevel).IsEqualTo(1);
-		await Assert.That(group.Value.Group).HasCount().EqualTo(5);
+		await Assert.That(group.Value.Group).Count().IsEqualTo(5);
 	}
 
 	[Test]

@@ -1,0 +1,20 @@
+﻿{
+	"$schema": "http://json.schemastore.org/launchsettings.json",
+	"profiles": {
+		"KurrentDB": {
+			"commandName": "Project",
+			"dotnetRunMessages": true
+		},
+		"KurrentDB - Dev DB": {
+			"commandName": "Project",
+			"dotnetRunMessages": true,
+			"commandLineArgs": "--dev --db ./dev-db/data --index ./dev-db/index --log ./dev-db/log",
+			"applicationUrl": "https://127.0.0.1:2113",
+			"launchUrl": "ui/cluster",
+			"launchBrowser": true,
+			"environmentVariables": {
+				"ASPNETCORE_ENVIRONMENT": "Development"
+			}
+		}
+	}
+}

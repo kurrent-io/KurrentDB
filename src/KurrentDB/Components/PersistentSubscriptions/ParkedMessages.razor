@@ -9,34 +9,43 @@
 <PageTitle>KurrentDB: Parked Messages — @GroupName on @StreamId</PageTitle>
 
 <MudStack Spacing="4">
-	<MudStack Row="true" AlignItems="AlignItems.Center">
+	<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Style="width: 100%;">
 		<MudButton Variant="Variant.Text" StartIcon="@KurrentIcons.Back"
-		           Href="@($"/ui/persistent-subscriptions/{Uri.EscapeDataString(StreamId)}/{Uri.EscapeDataString(GroupName)}")">Back</MudButton>
+				   Href="@($"/ui/persistent-subscriptions/{Uri.EscapeDataString(StreamId)}/{Uri.EscapeDataString(GroupName)}")">Back</MudButton>
 		<MudText Typo="Typo.h5">Parked Messages: @GroupName on @StreamId</MudText>
+		<MudSpacer/>
+		@if (IsLeader) {
+			<MudButton Variant="Variant.Outlined" Size="Size.Small"
+					   StartIcon="@Icons.Material.Filled.Replay"
+					   OnClick="ReplayParked">Replay Parked</MudButton>
+			<MudButton Variant="Variant.Outlined" Size="Size.Small"
+					   StartIcon="@Icons.Material.Filled.DeleteSweep"
+					   OnClick="TruncateParked">Truncate Parked</MudButton>
+		}
 	</MudStack>
 
 	<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Style="width: 100%;">
 		<MudButton Variant="Variant.Outlined" Size="Size.Small"
-		           Disabled="@(!_cursor.HasOlderPage)"
-		           StartIcon="@Icons.Material.Filled.FirstPage"
-		           OnClick="OldestPage">Oldest</MudButton>
+				   Disabled="@(!_cursor.HasOlderPage)"
+				   StartIcon="@Icons.Material.Filled.FirstPage"
+				   OnClick="OldestPage">Oldest</MudButton>
 		<MudButton Variant="Variant.Outlined" Size="Size.Small"
-		           Disabled="@(!_cursor.HasOlderPage)"
-		           StartIcon="@Icons.Material.Filled.ChevronLeft"
-		           OnClick="NextPage">Older</MudButton>
+				   Disabled="@(!_cursor.HasOlderPage)"
+				   StartIcon="@Icons.Material.Filled.ChevronLeft"
+				   OnClick="NextPage">Older</MudButton>
 		<MudButton Variant="Variant.Outlined" Size="Size.Small"
-		           Disabled="@(!_cursor.HasNewerPage)"
-		           EndIcon="@Icons.Material.Filled.ChevronRight"
-		           OnClick="PreviousPage">Newer</MudButton>
+				   Disabled="@(!_cursor.HasNewerPage)"
+				   EndIcon="@Icons.Material.Filled.ChevronRight"
+				   OnClick="PreviousPage">Newer</MudButton>
 		<MudButton Variant="Variant.Outlined" Size="Size.Small"
-		           Disabled="@(!_cursor.HasNewerPage)"
-		           EndIcon="@Icons.Material.Filled.LastPage"
-		           OnClick="NewestPage">Newest</MudButton>
+				   Disabled="@(!_cursor.HasNewerPage)"
+				   EndIcon="@Icons.Material.Filled.LastPage"
+				   OnClick="NewestPage">Newest</MudButton>
 		<MudSpacer/>
 		<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
 			<MudText Typo="Typo.body2">Show</MudText>
 			<MudSelect T="int" Value="_cursor.PageSize" ValueChanged="OnPageSizeChanged" Dense="true"
-			           Variant="Variant.Outlined" Margin="Margin.Dense" Style="width: 90px;">
+					   Variant="Variant.Outlined" Margin="Margin.Dense" Style="width: 90px;">
 				<MudSelectItem T="int" Value="10">10</MudSelectItem>
 				<MudSelectItem T="int" Value="20">20</MudSelectItem>
 				<MudSelectItem T="int" Value="100">100</MudSelectItem>
@@ -72,6 +81,26 @@
 						@(context.Item.Event?.TimeStamp.ToString("g") ?? "")
 					</CellTemplate>
 				</TemplateColumn>
+				@if (IsLeader) {
+					<TemplateColumn>
+						<CellTemplate>
+							<MudStack Row="true" Spacing="0">
+								<MudTooltip Text="Replay all parked messages up to here inclusive">
+									<MudIconButton
+										Icon="@Icons.Material.Filled.Replay"
+										Size="Size.Small"
+										OnClick="() => ReplayInclusive(context.Item)"/>
+								</MudTooltip>
+								<MudTooltip Text="Truncate all parked messages up to here inclusive">
+									<MudIconButton
+										Icon="@Icons.Material.Filled.DeleteSweep"
+										Size="Size.Small"
+										OnClick="() => TruncateInclusive(context.Item)"/>
+								</MudTooltip>
+							</MudStack>
+						</CellTemplate>
+					</TemplateColumn>
+				}
 			</Columns>
 			<NoRecordsContent>
 				<MudText>No parked messages.</MudText>

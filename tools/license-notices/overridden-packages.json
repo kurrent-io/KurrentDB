@@ -40,6 +40,16 @@
     "License": "Apache-2.0"
   },
   {
+    "Id": "Lucene.Net",
+    "Version": "4.8.0-beta00017",
+    "License": "Apache-2.0"
+  },
+  {
+    "Id": "Lucene.Net.Analysis.Common",
+    "Version": "4.8.0-beta00017",
+    "License": "Apache-2.0"
+  },
+  {
     "Id": "NCrontab",
     "Version": "3.3.3",
     "License": "Apache-2.0"

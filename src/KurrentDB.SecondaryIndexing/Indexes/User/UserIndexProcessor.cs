@@ -7,6 +7,7 @@ using DotNext;
 using DotNext.Runtime.InteropServices;
 using DotNext.Threading;
 using Jint;
+using Jint.Native;
 using Jint.Native.Function;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
@@ -23,26 +24,21 @@ using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.User;
 
-internal abstract class UserIndexProcessor : Disposable, ISecondaryIndexProcessor {
-	public abstract void Commit();
-	public abstract bool TryIndex(ResolvedEvent evt);
-	public abstract TFPos GetLastPosition();
-	public abstract SecondaryIndexProgressTracker Tracker { get; }
-	public abstract UserIndexSql Sql { get; }
-	public abstract BufferedView.Snapshot CaptureSnapshot(DuckDBAdvancedConnection connection);
-}
+internal sealed class UserIndexProcessor : Disposable, ISecondaryIndexProcessor {
+	private static readonly IReadOnlyList<KeyValuePair<string, string>> NoFieldValues = [];
 
-internal class UserIndexProcessor<TField> : UserIndexProcessor
-	where TField : IField<TField> {
 	private readonly Engine _engine = JintEngineFactory.CreateEngine(executionTimeout: TimeSpan.FromSeconds(30));
 	private readonly JsRecordEvaluator _evaluator;
 	private readonly Function? _filter;
-	private readonly Function? _fieldSelector;
+	private readonly IReadOnlyList<IField> _fields;
+	private readonly Function?[] _fieldSelectors;
+	private readonly string?[] _fieldTexts;
+	private readonly JsValue?[] _fieldValues;
 	private readonly string _queryStreamName;
 	private readonly IPublisher _publisher;
 	private readonly DuckDBAdvancedConnection _connection;
-	private readonly UserIndexSql<TField> _sql;
-	private readonly object _skip;
+	private readonly UserIndexSql _sql;
+	private readonly JsValue _skip;
 	private readonly ILogger<UserIndexProcessor> _log;
 
 	private ulong _sequenceId;
@@ -52,15 +48,16 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 
 	public string IndexName { get; }
 
-	public override TFPos GetLastPosition() => _lastPosition.Value;
-	public override SecondaryIndexProgressTracker Tracker { get; }
+	public TFPos GetLastPosition() => _lastPosition.Value;
+	public SecondaryIndexProgressTracker Tracker { get; }
+	public UserIndexSql Sql => _sql;
 
 	public UserIndexProcessor(
 		string indexName,
 		string jsEventFilter,
-		string jsFieldSelector,
+		IReadOnlyList<IField> fields,
 		DuckDBConnectionPool db,
-		UserIndexSql<TField> sql,
+		UserIndexSql sql,
 		IPublisher publisher,
 		[FromKeyedServices(SecondaryIndexingConstants.InjectionKey)]
 		Meter meter,
@@ -70,6 +67,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 		TimeProvider? clock = null) {
 		IndexName = indexName;
 		_sql = sql;
+		_fields = fields;
 		_log = loggerFactory.CreateLogger<UserIndexProcessor>();
 
 		_queryStreamName = UserIndexHelpers.GetQueryStreamName(IndexName);
@@ -84,7 +82,11 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 		_evaluator = new JsRecordEvaluator(_engine, serializerOptions);
 
 		_filter = JsRecordEvaluator.Compile(_engine, jsEventFilter);
-		_fieldSelector = JsRecordEvaluator.Compile(_engine, jsFieldSelector);
+		_fieldSelectors = new Function?[fields.Count];
+		for (var i = 0; i < fields.Count; i++)
+			_fieldSelectors[i] = JsRecordEvaluator.Compile(_engine, fields[i].Selector);
+		_fieldTexts = new string?[fields.Count];
+		_fieldValues = new JsValue?[fields.Count];
 
 		_connection = db.Open();
 		_sql.CreateUserIndex(_connection);
@@ -102,19 +104,16 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 		Tracker = tracker;
 	}
 
-	public override UserIndexSql<TField> Sql => _sql;
-
-	public override BufferedView.Snapshot CaptureSnapshot(DuckDBAdvancedConnection connection)
+	public BufferedView.Snapshot CaptureSnapshot(DuckDBAdvancedConnection connection)
 		=> _appender.TakeSnapshot(connection, ExpandRecordFunction.UnnestExpression);
 
-	public override bool TryIndex(ResolvedEvent resolvedEvent) {
+	public bool TryIndex(ResolvedEvent resolvedEvent) {
 		if (IsDisposingOrDisposed)
 			return false;
 
-		var canHandle = CanHandleEvent(resolvedEvent, out var field);
 		var eventPosition = resolvedEvent.OriginalPosition!.Value;
 
-		if (!canHandle) {
+		if (!CanHandleEvent(resolvedEvent)) {
 			_lastPosition.Write(in eventPosition);
 			Tracker.RecordIndexed(resolvedEvent);
 			return false;
@@ -125,10 +124,9 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 		var eventNumber = resolvedEvent.Event.EventNumber;
 		var streamId = resolvedEvent.Event.EventStreamId;
 		var created = new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds();
-		var fieldStr = field?.ToString();
 		var recordId = MemoryMarshal.AsReadOnlyBytes(in resolvedEvent.Event.EventId);
 
-		_log.LogUserIndexIsAppendingEvent(IndexName, eventNumber, streamId, resolvedEvent.OriginalPosition, fieldStr);
+		IReadOnlyList<KeyValuePair<string, string>> fieldValues;
 
 		var row = _appender.CreateRow();
 		try {
@@ -141,49 +139,75 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 
 			row.Add(eventNumber);
 			row.Add(created);
-			field?.AppendTo(ref row);
+			fieldValues = AppendFields(ref row);
 			row.Add(recordId);
 		} finally {
 			row.Dispose();
 		}
 
+		_log.LogUserIndexIsAppendingEvent(IndexName, eventNumber, streamId, resolvedEvent.OriginalPosition, fieldValues.Count);
+
 		_lastPosition.Write(in eventPosition);
 
-		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(_queryStreamName, resolvedEvent));
-		if (field is not null)
-			_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(UserIndexHelpers.GetQueryStreamName(IndexName, fieldStr),
-				resolvedEvent));
+		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(_queryStreamName, fieldValues, resolvedEvent));
 
 		Tracker.RecordIndexed(resolvedEvent);
 
 		return true;
 	}
 
-	bool CanHandleEvent(ResolvedEvent resolvedEvent, out TField? field) {
-		field = default;
-
+	private bool CanHandleEvent(ResolvedEvent resolvedEvent) {
 		try {
 			_evaluator.MapRecord(resolvedEvent, ++_sequenceId);
-
-			if (!_evaluator.Match(_filter))
-				return false;
-
-			var fieldValue = _evaluator.Select(_fieldSelector);
-			if (fieldValue is null)
-				return true;
-
-			if (_skip.Equals(fieldValue))
-				return false;
-
-			field = TField.ParseFrom(fieldValue);
-
-			return true;
+			return _evaluator.Match(_filter) && TryExtractFieldValues();
 		} catch (Exception ex) {
 			_log.LogUserIndexFailedToProcessEvent(ex, IndexName, resolvedEvent.OriginalEventNumber, resolvedEvent.OriginalStreamId,
 				resolvedEvent.OriginalPosition);
 			return false;
 		}
 	}
+
+	private IReadOnlyList<KeyValuePair<string, string>> AppendFields(ref BufferedAppender.Row row) {
+		if (_fields.Count == 0)
+			return NoFieldValues;
+
+		var fieldValues = new List<KeyValuePair<string, string>>(_fields.Count);
+		for (var i = 0; i < _fields.Count; i++) {
+			var field = _fields[i];
+			var text = _fieldTexts[i];
+			if (text is null) {
+				field.AppendNull(ref row);
+			} else {
+				field.AppendValue(_fieldValues[i]!, ref row);
+				fieldValues.Add(new(field.Name, text));
+			}
+		}
+
+		return fieldValues;
+	}
+
+	private bool TryExtractFieldValues() {
+		var anyPresent = false;
+		for (var i = 0; i < _fields.Count; i++) {
+			var value = _evaluator.Select(_fieldSelectors[i]);
+			if (_skip.Equals(value))
+				return false;
+
+			if (IsAbsent(value)) {
+				_fieldTexts[i] = null;
+				_fieldValues[i] = null;
+			} else {
+				// FormatValue also validates the type here (guarded phase): a bad value throws and drops the event
+				_fieldTexts[i] = _fields[i].FormatValue(value!);
+				_fieldValues[i] = value;
+				anyPresent = true;
+			}
+		}
+
+		return _fields.Count == 0 || anyPresent;
+	}
+
+	private static bool IsAbsent(JsValue? value) => value is null || value.IsNull() || value.IsUndefined();
 
 	private (TFPos, DateTimeOffset) GetLastKnownRecord() {
 		(TFPos pos, DateTimeOffset timestamp) result = (TFPos.Invalid, DateTimeOffset.MinValue);
@@ -227,7 +251,7 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 	/// <summary>
 	/// Commits all in-flight records to the index.
 	/// </summary>
-	public override void Commit() {
+	public void Commit() {
 		if (IsDisposed || !Interlocked.FalseToTrue(ref _committing))
 			return;
 
@@ -241,11 +265,6 @@ internal class UserIndexProcessor<TField> : UserIndexProcessor
 		} finally {
 			Volatile.Write(ref _committing, false);
 		}
-	}
-
-	public void GetUserIndexTableDetails(out string tableName, out string? fieldName) {
-		tableName = _sql.TableName;
-		fieldName = _sql.FieldColumnName;
 	}
 
 	protected override void Dispose(bool disposing) {
@@ -266,8 +285,8 @@ static partial class UserIndexProcessorLogMessages {
 	[LoggerMessage(LogLevel.Information, "User index: {index} loaded its last known log position: {position} ({timestamp})")]
 	internal static partial void LogUserIndexLoadedLastKnownLogPosition(this ILogger logger, string index, TFPos position, DateTimeOffset timestamp);
 
-	[LoggerMessage(LogLevel.Trace, "User index: {index} is appending event: {eventNumber}@{stream} ({position}). Field = {field}.")]
-	internal static partial void LogUserIndexIsAppendingEvent(this ILogger logger, string index, long eventNumber, string stream, TFPos? position, string? field);
+	[LoggerMessage(LogLevel.Trace, "User index: {index} is appending event: {eventNumber}@{stream} ({position}) with {fieldCount} field value(s).")]
+	internal static partial void LogUserIndexIsAppendingEvent(this ILogger logger, string index, long eventNumber, string stream, TFPos? position, int fieldCount);
 
 	[LoggerMessage(LogLevel.Error, "User index: {index} failed to process event: {eventNumber}@{streamId} ({position})")]
 	internal static partial void LogUserIndexFailedToProcessEvent(this ILogger logger, Exception exception, string index, long eventNumber, string streamId, TFPos? position);
