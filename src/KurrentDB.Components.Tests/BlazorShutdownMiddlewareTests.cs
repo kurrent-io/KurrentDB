@@ -12,17 +12,18 @@ namespace KurrentDB.Components.Tests;
 // Kestrel draining until HostOptions.ShutdownTimeout expires. See BlazorShutdownMiddleware for the mechanism
 // and https://github.com/dotnet/aspnetcore/issues/58947 for the upstream issue it works around.
 public class BlazorShutdownMiddlewareTests {
-	class FakeLifetime : IHostApplicationLifetime {
+	class FakeLifetime : IHostApplicationLifetime, IDisposable {
 		readonly CancellationTokenSource _stopping = new();
 
 		public CancellationToken ApplicationStarted => CancellationToken.None;
 		public CancellationToken ApplicationStopping => _stopping.Token;
 		public CancellationToken ApplicationStopped => CancellationToken.None;
 		public void StopApplication() => _stopping.Cancel();
+		public void Dispose() => _stopping.Dispose();
 	}
 
 	// DefaultHttpContext's own lifetime feature ignores Abort(), so stand in for the one Kestrel provides.
-	class RecordingRequestLifetime : IHttpRequestLifetimeFeature {
+	class RecordingRequestLifetime : IHttpRequestLifetimeFeature, IDisposable {
 		readonly CancellationTokenSource _aborted = new();
 
 		public bool Aborted { get; private set; }
@@ -32,6 +33,8 @@ public class BlazorShutdownMiddlewareTests {
 			Aborted = true;
 			_aborted.Cancel();
 		}
+
+		public void Dispose() => _aborted.Dispose();
 	}
 
 	static DefaultHttpContext Request(string path) {
@@ -42,7 +45,7 @@ public class BlazorShutdownMiddlewareTests {
 
 	[Fact]
 	public async Task passes_other_requests_through() {
-		var lifetime = new FakeLifetime();
+		using var lifetime = new FakeLifetime();
 		lifetime.StopApplication();
 		var called = false;
 		var sut = new BlazorShutdownMiddleware(_ => {
@@ -63,7 +66,7 @@ public class BlazorShutdownMiddlewareTests {
 	[InlineData("/_blazor/negotiate")]
 	[InlineData("/_blazor")]
 	public async Task rejects_circuit_requests_while_stopping(string path) {
-		var lifetime = new FakeLifetime();
+		using var lifetime = new FakeLifetime();
 		lifetime.StopApplication();
 		var called = false;
 		var sut = new BlazorShutdownMiddleware(_ => {
@@ -80,8 +83,8 @@ public class BlazorShutdownMiddlewareTests {
 
 	[Fact]
 	public async Task aborts_a_circuit_that_started_before_the_shutdown() {
-		var lifetime = new FakeLifetime();
-		var requestLifetime = new RecordingRequestLifetime();
+		using var lifetime = new FakeLifetime();
+		using var requestLifetime = new RecordingRequestLifetime();
 		var context = Request("/_blazor");
 		context.Features.Set<IHttpRequestLifetimeFeature>(requestLifetime);
 		var inFlight = new TaskCompletionSource();
