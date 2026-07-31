@@ -352,6 +352,11 @@ try {
 
 			var app = builder.Build();
 
+			// ahead of Startup.Configure, which sets up routing and the endpoints: a Blazor circuit request
+			// would otherwise be handled by its endpoint before reaching this middleware
+			if (!options.Interface.DisableAdminUi)
+				app.UseMiddleware<BlazorShutdownMiddleware>();
+
 			hostedService.Node.Startup.Configure(app);
 			if (!options.Interface.DisableAdminUi) {
 				app.MapStaticAssets();
