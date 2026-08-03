@@ -33,6 +33,10 @@ public sealed partial class ProjectionDetail : ComponentBase, IDisposable {
 		? $"{new Uri(Navigation.BaseUri).Scheme}://{e.Ip}:{e.Port}/ui/projections/{Uri.EscapeDataString(Name)}"
 		: null;
 
+	// System projections are built into the server, so there is nothing to author locally and no Gaffer link.
+	// Same `$` prefix test Navigator splits user from system on.
+	bool IsSystemProjection => Name?.StartsWith('$') == true;
+
 	ProjectionStatistics _stats;
 	string _query = "";
 	string _state = "";
