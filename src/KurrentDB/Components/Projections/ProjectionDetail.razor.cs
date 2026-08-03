@@ -35,7 +35,7 @@ public sealed partial class ProjectionDetail : ComponentBase, IDisposable {
 
 	// System projections are built into the server, so there is nothing to author locally and no Gaffer link.
 	// Same `$` prefix test Navigator splits user from system on.
-	bool IsSystemProjection => Name?.StartsWith('$') == true;
+	bool IsSystemProjection => Name.StartsWith('$');
 
 	ProjectionStatistics _stats;
 	string _query = "";
