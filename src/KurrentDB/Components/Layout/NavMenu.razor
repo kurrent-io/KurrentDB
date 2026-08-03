@@ -1,8 +1,12 @@
 @* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
 @* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
 
+@using KurrentDB.Components.Cluster
 @using KurrentDB.Components.Shared
 @using KurrentDB.UI.Theme
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+@inject GossipMonitor Gossip
 
 <MudNavMenu>
 	<MudText Typo="Typo.overline" Class="pl-4" Style="opacity: 0.6;">Monitoring</MudText>
@@ -37,8 +41,17 @@
 
 	<MudDivider Class="my-2"/>
 	<MudText Typo="Typo.overline" Class="pl-4" Style="opacity: 0.6;">Tools</MudText>
-	<MudNavLink Href="/ui/navigator" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Stream">Navigator</MudNavLink>
+	<MudNavLink OnClick="OpenNavigator" Icon="@Icons.Material.Filled.Stream">Navigator</MudNavLink>
 	<MudNavLink Href="@GafferLink.For("sidebar", campaign: "tools")" Target="_blank"
 	            Icon="@KurrentIcons.Gaffer">Gaffer</MudNavLink>
 
 </MudNavMenu>
+
+@code {
+
+	Task OpenNavigator() =>
+		JS.InvokeVoidAsync("kurrentNavigator.open",
+			NavigatorLink.DeepLink(Navigation.BaseUri, Gossip.Members.Count),
+			NavigatorLink.Fallback).AsTask();
+
+}
