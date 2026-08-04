@@ -10,9 +10,10 @@ namespace DuckLance.Tests;
 /// platforms the extension actually ships binaries for.
 /// </summary>
 [LanceRequired]
+[Category("Lance")]
 public class LanceSmokeTests {
     [Test]
-    public async Task Lance_Extension_Installs_Loads_And_Reports_Version() {
+    public async ValueTask lance_extension_installs_loads_and_reports_version() {
         await using DuckDBConnection connection = new("DataSource=:memory:");
         await connection.OpenAsync();
 

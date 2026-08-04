@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Microsoft.Extensions.AI;
+using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
 
 namespace KurrentDB.Kontext.Tests.Indexing;
 
@@ -118,7 +119,7 @@ public class VectorIndexMetadataTests {
 		await Assert.That(source.Value.Dimensions).IsEqualTo(7);
 	}
 
-	sealed class ProbeGenerator(string? modelId, int dimensions) : IEmbeddingGenerator<string, Embedding<float>> {
+	sealed class ProbeGenerator(string? modelId, int dimensions) : EmbeddingGenerator {
 		public int CallCount;
 		public Exception? Failure;
 

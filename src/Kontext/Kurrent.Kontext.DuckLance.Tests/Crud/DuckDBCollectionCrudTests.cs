@@ -11,9 +11,10 @@ namespace DuckLance.Tests.Crud;
 /// <see cref="LanceRequiredAttribute"/>.
 /// </summary>
 [LanceRequired]
+[Category("Crud")]
 public class DuckDBCollectionCrudTests {
     [Test]
-    public async Task Upsert_New_Record_Then_Get_With_Vectors_Returns_It() {
+    public async ValueTask upsert_new_record_then_get_with_vectors_returns_it() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -47,7 +48,7 @@ public class DuckDBCollectionCrudTests {
     }
 
     [Test]
-    public async Task Upsert_Existing_Key_Updates_The_Record() {
+    public async ValueTask upsert_existing_key_updates_the_record() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -89,7 +90,7 @@ public class DuckDBCollectionCrudTests {
     }
 
     [Test]
-    public async Task Get_Missing_Key_Is_Null_And_Default_Options_Leaves_Vector_Default() {
+    public async ValueTask get_missing_key_is_null_and_default_options_leaves_vector_default() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -125,7 +126,7 @@ public class DuckDBCollectionCrudTests {
     }
 
     [Test]
-    public async Task Batch_Upsert_Then_Get_By_Keys_Returns_Only_Present_Records() {
+    public async ValueTask batch_upsert_then_get_by_keys_returns_only_present_records() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -178,7 +179,7 @@ public class DuckDBCollectionCrudTests {
     }
 
     [Test]
-    public async Task Delete_Existing_And_Missing_Keys_Behaves_As_Specified() {
+    public async ValueTask delete_existing_and_missing_keys_behaves_as_specified() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -222,7 +223,7 @@ public class DuckDBCollectionCrudTests {
     }
 
     [Test]
-    public async Task Dynamic_Collection_Round_Trips_A_Dictionary_Record() {
+    public async ValueTask dynamic_collection_round_trips_dictionary_record() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -270,7 +271,7 @@ public class DuckDBCollectionCrudTests {
     }
 
     [Test]
-    public async Task Scalar_Record_Round_Trips_Int_Double_Bool_DateTime() {
+    public async ValueTask scalar_record_round_trips_int_double_bool_datetime() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 

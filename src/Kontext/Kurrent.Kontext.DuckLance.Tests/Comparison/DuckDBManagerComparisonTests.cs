@@ -52,6 +52,7 @@ namespace DuckLance.Tests.Comparison;
 /// </remarks>
 [LanceRequired]
 [NotInParallel]
+[Category("Comparison")]
 public class DuckDBManagerComparisonTests {
     const string ServerUri       = "quack:localhost";
     const string Token           = "s3kret-compare-token";
@@ -78,7 +79,7 @@ public class DuckDBManagerComparisonTests {
     // ---------------------------------------------------------------------------------------------
 
     [Test]
-    public async Task EmbeddedVsQuack_ComparisonChecksAgreeWithEachOtherAndTheOracle() {
+    public async ValueTask embedded_vs_quack_comparison_checks_agree_with_each_other_and_the_oracle() {
         var worlds = await CreateWorldsAsync();
 
         try {
@@ -121,7 +122,7 @@ public class DuckDBManagerComparisonTests {
     // ---------------------------------------------------------------------------------------------
 
     [Test]
-    public async Task EmbeddedVsQuack_TimingComparison_ReportsMediansForKeyOperations() {
+    public async ValueTask embedded_vs_quack_timing_comparison_reports_medians_for_key_operations() {
         var worlds = await CreateWorldsAsync();
 
         try {

@@ -11,6 +11,7 @@ using KurrentDB.Kontext.Workspaces;
 using KurrentDB.Kontext.Workspaces.ControlPlane;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
 
 namespace KurrentDB.Kontext;
 
@@ -33,7 +34,7 @@ public static class KontextInitializer {
 			var storage = services.GetRequiredService<KontextStorageConfig>();
 			services.GetRequiredService<VectorIndexMetadataSource>().Value =
 				await VectorIndexMetadata.LoadOrProbeAsync(
-					services.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>(),
+					services.GetRequiredService<EmbeddingGenerator>(),
 					services.GetRequiredService<KontextEmbeddingsConfig>().Provider.ToString(),
 					cachePath: Path.Combine(storage.DataPath, "embeddings.meta.cache"), ct);
 

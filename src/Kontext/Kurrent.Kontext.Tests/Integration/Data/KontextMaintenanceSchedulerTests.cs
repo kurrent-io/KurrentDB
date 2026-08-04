@@ -21,10 +21,10 @@ public class KontextMaintenanceSchedulerTests {
 
 	[Test]
 	public async ValueTask decide_does_nothing_on_an_empty_table() {
-		// Arrange — an empty table can neither train an index nor usefully optimize one.
+		// Arrange
 		var options = Options(ratio: 0.15, floor: 1000);
 
-		// Act + Assert — with or without an index, and even with a retrain overdue.
+		// Act + Assert
 		await Assert.That(Decide(0, null, options, retrainDue: false)).IsEqualTo(KontextMaintenanceAction.None);
 		await Assert.That(Decide(0, 0, options, retrainDue: true)).IsEqualTo(KontextMaintenanceAction.None);
 	}
@@ -34,8 +34,7 @@ public class KontextMaintenanceSchedulerTests {
 		// Arrange
 		var options = Options(ratio: 0.15, floor: 1000);
 
-		// Act + Assert — a missing index is always an ensure attempt (the schema owns the training
-		// floor), even when the retrain clock says a rebuild is overdue: there is nothing to rebuild.
+		// Act + Assert
 		await Assert.That(Decide(300, null, options, retrainDue: false)).IsEqualTo(KontextMaintenanceAction.EnsureVectorIndex);
 		await Assert.That(Decide(300, null, options, retrainDue: true)).IsEqualTo(KontextMaintenanceAction.EnsureVectorIndex);
 	}
@@ -45,7 +44,7 @@ public class KontextMaintenanceSchedulerTests {
 		// Arrange
 		var options = Options(ratio: 0.15, floor: 1000);
 
-		// Act + Assert — unindexed 1000 meets the floor but ratio 0.01 is below 0.15: no fold.
+		// Act + Assert
 		await Assert.That(Decide(100_000, 99_000, options, retrainDue: false)).IsEqualTo(KontextMaintenanceAction.None);
 
 		// ratio 0.5 is well above 0.15 but unindexed 50 sits below the 1000-row floor: no fold.
@@ -57,10 +56,10 @@ public class KontextMaintenanceSchedulerTests {
 
 	[Test]
 	public async ValueTask decide_ratio_is_strict_and_floor_is_inclusive() {
-		// Act + Assert — ratio exactly at the threshold (500/1000 = 0.5) does NOT trigger…
+		// Act + Assert
 		await Assert.That(Decide(1000, 500, Options(ratio: 0.5, floor: 1), retrainDue: false)).IsEqualTo(KontextMaintenanceAction.None);
 
-		// …but one row past it (501/1000 = 0.501) does.
+		// one row past the ratio threshold (501/1000 = 0.501) does trigger.
 		await Assert.That(Decide(1000, 499, Options(ratio: 0.5, floor: 1), retrainDue: false)).IsEqualTo(KontextMaintenanceAction.EnsureVectorIndex);
 
 		// unindexed exactly at the floor (100) DOES trigger…
@@ -75,7 +74,7 @@ public class KontextMaintenanceSchedulerTests {
 		// Arrange
 		var options = Options(ratio: 0.15, floor: 1000);
 
-		// Act + Assert — the same snapshot that would fold above, but a retrain is due: rebuild wins.
+		// Act + Assert
 		await Assert.That(Decide(10_000, 5_000, options, retrainDue: true)).IsEqualTo(KontextMaintenanceAction.RetrainVectorIndex);
 
 		// A retrain fires even when the index is perfectly fresh — it is time-based, not backlog-based.
@@ -88,7 +87,7 @@ public class KontextMaintenanceSchedulerTests {
 
 	[Test]
 	public async ValueTask tick_skips_quietly_before_the_schema_is_created() {
-		// Arrange — CreateAsync is deliberately never called: no table, no dataset.
+		// Arrange
 		using var dir  = new TempDir();
 		using var pool = NewPool(dir.Path);
 
@@ -96,17 +95,16 @@ public class KontextMaintenanceSchedulerTests {
 
 		using var scheduler = NewScheduler(schema);
 
-		// Act — must not throw.
+		// Act
 		await scheduler.TickNowAsync();
 
-		// Assert — the tick created nothing: the table still does not exist.
+		// Assert
 		await Assert.That(await schema.ExistsAsync()).IsFalse();
 	}
 
 	[Test]
 	public async ValueTask tick_creates_the_vector_index_at_the_training_floor_then_folds_later_backlogs() {
-		// Arrange — 300 rows crosses the ~256-row training floor; eager thresholds make any
-		// backlog fold-worthy.
+		// Arrange
 		using var dir  = new TempDir();
 		using var pool = NewPool(dir.Path);
 
@@ -116,13 +114,13 @@ public class KontextMaintenanceSchedulerTests {
 
 		using var scheduler = NewScheduler(schema);
 
-		// Act — the first tick catch-up-creates the missing index (and compacts + vacuums).
+		// Act
 		await scheduler.TickNowAsync();
 
-		// Assert — the fresh index covers every row.
+		// Assert
 		await Assert.That(await schema.GetMaintenanceStateAsync()).IsEqualTo((300L, (long?)300L));
 
-		// Act — 50 more rows land past the index; the next tick folds them in.
+		// Act
 		SeedFillers(pool, 50, "s");
 		await scheduler.TickNowAsync();
 
@@ -132,7 +130,7 @@ public class KontextMaintenanceSchedulerTests {
 
 	[Test]
 	public async ValueTask tick_leaves_the_index_uncreated_below_the_training_floor() {
-		// Arrange — 5 rows: far below the engine's ~256-row training floor.
+		// Arrange
 		using var dir  = new TempDir();
 		using var pool = NewPool(dir.Path);
 
@@ -142,19 +140,16 @@ public class KontextMaintenanceSchedulerTests {
 
 		using var scheduler = NewScheduler(schema);
 
-		// Act — must not throw: the ensure attempt reports the floor honestly, hygiene still runs.
+		// Act
 		await scheduler.TickNowAsync();
 
-		// Assert — rows counted, index honestly absent.
+		// Assert
 		await Assert.That(await schema.GetMaintenanceStateAsync()).IsEqualTo((5L, (long?)null));
 	}
 
 	[Test]
 	public async ValueTask tick_retrains_on_cadence() {
-		// Arrange — default thresholds so a 50-row backlog is NOT fold-worthy: only the retrain
-		// clock can explain the index catching up. The tick interval far exceeds the advanced
-		// time so the fake clock's Advance never fires timer ticks underneath the deterministic
-		// TickNowAsync calls (FakeTimeProvider caps timer due times at ~49 days — uint32 ms).
+		// Arrange
 		using var dir  = new TempDir();
 		using var pool = NewPool(dir.Path);
 
@@ -175,23 +170,24 @@ public class KontextMaintenanceSchedulerTests {
 		await scheduler.TickNowAsync();
 		await Assert.That(await schema.GetMaintenanceStateAsync()).IsEqualTo((300L, (long?)300L));
 
-		// Act — a 50-row backlog appears (below the 1000-row floor: no fold), and 25 hours pass.
+		// Act
 		SeedFillers(pool, 50, "s");
 		clock.Advance(TimeSpan.FromHours(25));
 		await scheduler.TickNowAsync();
 
-		// Assert — the time-based full rebuild retrained over ALL current rows.
-		await Assert.That(await schema.GetMaintenanceStateAsync()).IsEqualTo((350L, (long?)350L));
+		// Assert
+		var expectedState = (350L, (long?)350L);
+
+		await Assert.That(await schema.GetMaintenanceStateAsync()).IsEqualTo(expectedState);
 
 		// A tick right after the rebuild has nothing to do: the retrain clock was re-armed.
 		await scheduler.TickNowAsync();
-		await Assert.That(await schema.GetMaintenanceStateAsync()).IsEqualTo((350L, (long?)350L));
+		await Assert.That(await schema.GetMaintenanceStateAsync()).IsEqualTo(expectedState);
 	}
 
 	[Test]
 	public async ValueTask maintenance_statements_execute_directly_against_the_live_engine() {
-		// Arrange — the tick body swallows failures by design, so a broken maintenance statement
-		// would never fail a tick test; each one is exercised HERE, where it throws loudly.
+		// Arrange
 		using var dir  = new TempDir();
 		using var pool = NewPool(dir.Path);
 
@@ -200,12 +196,12 @@ public class KontextMaintenanceSchedulerTests {
 		SeedFillers(pool, 300, "r");
 		await Assert.That(await schema.EnsureVectorIndexAsync()).IsTrue();
 
-		// Act — the full maintenance pass, statement by statement.
+		// Act
 		await schema.RetrainVectorIndexAsync();
 		await schema.CompactAsync();
 		await schema.VacuumAsync(TimeSpan.FromDays(14), retainVersions: 3);
 
-		// Assert — the dataset survived with the index intact and fully current.
+		// Assert
 		await Assert.That(await schema.GetMaintenanceStateAsync()).IsEqualTo((300L, (long?)300L));
 	}
 
@@ -217,19 +213,18 @@ public class KontextMaintenanceSchedulerTests {
 
 		var scheduler = NewScheduler(NewSchema(pool));
 
-		// Act — dispose, then tick: chosen over throwing ObjectDisposedException.
+		// Act
 		scheduler.Dispose();
 		await scheduler.TickNowAsync();
 		scheduler.Dispose(); // double-dispose is equally safe
 
-		// Assert — nothing was touched: the table was never created.
+		// Assert
 		await Assert.That(await NewSchema(pool).ExistsAsync()).IsFalse();
 	}
 
 	[Test]
 	public async ValueTask real_timer_eventually_creates_the_index_and_folds_a_backlog() {
-		// Arrange — a fast (200ms) real timer with eager thresholds: background ticks must both
-		// create the index and, later, fold a backlog without any TickNowAsync call.
+		// Arrange
 		using var dir  = new TempDir();
 		using var pool = NewPool(dir.Path);
 
@@ -245,7 +240,7 @@ public class KontextMaintenanceSchedulerTests {
 
 		using var scheduler = new KontextMaintenanceScheduler(schema, options);
 
-		// Act + Assert — phase 1: a background tick creates the vector index at 300 rows.
+		// Act + Assert
 		await Assert.That(await PollAsync(schema, expected: (300L, 300L), TimeSpan.FromSeconds(10))).IsTrue();
 
 		// Phase 2: a later background tick folds a fresh 50-row backlog in.
@@ -369,23 +364,6 @@ public class KontextMaintenanceSchedulerTests {
 	// Dimension 4 matches the literal 4-dim vectors the fillers seed.
 	static KontextSchema NewSchema(KontextConnectionPool pool) => new(pool, new() { Dimension = 4 });
 
-	/// <summary>A unique temp directory owned by one test; deleted on dispose.</summary>
-	sealed class TempDir : IDisposable {
-		public string Path { get; } = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "kontext-maintenance-scheduler-tests", Guid.NewGuid().ToString("N"));
-
-		public TempDir() => Directory.CreateDirectory(Path);
-
-		public void Dispose() {
-			try {
-				if (Directory.Exists(Path))
-					Directory.Delete(Path, recursive: true);
-			} catch (IOException) {
-				// Best-effort cleanup; a lingering native handle must not fail the test.
-			} catch (UnauthorizedAccessException) {
-				// Best-effort cleanup.
-			}
-		}
-	}
 
 	#endregion // Test Infrastructure
 }

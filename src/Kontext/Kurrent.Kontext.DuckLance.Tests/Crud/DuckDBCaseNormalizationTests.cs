@@ -13,9 +13,10 @@ namespace DuckLance.Tests.Crud;
 /// so every column name on the wire is entirely a product of automatic normalization.
 /// </summary>
 [LanceRequired]
+[Category("Crud")]
 public class DuckDBCaseNormalizationTests {
     [Test]
-    public async Task DefaultNamedPoco_UpsertGetDelete_RoundTrips_AndPhysicalColumnsAreLowercase() {
+    public async ValueTask default_named_poco_upsert_get_delete_round_trips_and_physical_columns_are_lowercase() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 

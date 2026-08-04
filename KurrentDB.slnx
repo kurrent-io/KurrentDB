@@ -53,6 +53,10 @@
     <Project Path="src\Kontext\Kurrent.Kontext.Embeddings.Playground\Kurrent.Kontext.Embeddings.Playground.csproj" />
     <Project Path="src\Kontext\Kurrent.Kontext.Embeddings.Tests\Kurrent.Kontext.Embeddings.Tests.csproj" />
     <Project Path="src\Kontext\Kurrent.Kontext.Embeddings\Kurrent.Kontext.Embeddings.csproj" />
+    <Project Path="src\Kontext\Kurrent.Kontext.Benchmarks\Kurrent.Kontext.Benchmarks.csproj" />
+    <Project Path="src\Kontext\Kurrent.Kontext.Retrieval.Tests\Kurrent.Kontext.Retrieval.Tests.csproj" />
+    <Project Path="src\Kontext\Kurrent.Kontext.Retrieval\Kurrent.Kontext.Retrieval.csproj" />
+    <Project Path="src\Kontext\Kurrent.Kontext.Testing\Kurrent.Kontext.Testing.csproj" />
     <Project Path="src\Kontext\Kurrent.Kontext.Tests\Kurrent.Kontext.Tests.csproj" />
     <Project Path="src\Kontext\Kurrent.Kontext\Kurrent.Kontext.csproj" />
   </Folder>

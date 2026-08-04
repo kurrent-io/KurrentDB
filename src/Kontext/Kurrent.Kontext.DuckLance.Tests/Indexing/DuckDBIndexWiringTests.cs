@@ -14,9 +14,10 @@ namespace DuckLance.Tests.Indexing;
 /// directory, so the class is gated by <see cref="LanceRequiredAttribute"/>.
 /// </summary>
 [LanceRequired]
+[Category("Indexing")]
 public class DuckDBIndexWiringTests {
     [Test]
-    public async Task EnsureCollectionExistsAsync_NewCollection_CreatesScalarIndexesButNoVectorIndex() {
+    public async ValueTask ensure_collection_exists_async_new_collection_creates_scalar_indexes_but_no_vector_index() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -42,7 +43,7 @@ public class DuckDBIndexWiringTests {
     }
 
     [Test]
-    public async Task Search_ThreeSeededRecords_NoVectorIndex_ReturnsOracleDistances() {
+    public async ValueTask search_three_seeded_records_no_vector_index_returns_oracle_distances() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -96,7 +97,7 @@ public class DuckDBIndexWiringTests {
     }
 
     [Test]
-    public async Task EnsureVectorIndexesAsync_FewerThan256Rows_ReturnsZero_AndCreatesNoIndex() {
+    public async ValueTask ensure_vector_indexes_async_fewer_than_256_rows_returns_zero_and_creates_no_index() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -127,7 +128,7 @@ public class DuckDBIndexWiringTests {
     }
 
     [Test]
-    public async Task EnsureVectorIndexesAsync_AtLeast256Rows_CreatesIvfPqIndex_AndIsIdempotent() {
+    public async ValueTask ensure_vector_indexes_async_at_least_256_rows_creates_ivf_pq_index_and_is_idempotent() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -155,7 +156,7 @@ public class DuckDBIndexWiringTests {
     }
 
     [Test]
-    public async Task EnsureCollectionExistsAsync_ReEnsureOnPopulatedCollection_PicksUpVectorIndex_WithNoDriftThrow() {
+    public async ValueTask ensure_collection_exists_async_re_ensure_on_populated_collection_picks_up_vector_index_with_no_drift_throw() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -185,7 +186,7 @@ public class DuckDBIndexWiringTests {
     }
 
     [Test]
-    public async Task EnsureVectorIndexesAsync_FlatIndexKind_NeverCreatesAnIndex_EvenWithEnoughRows() {
+    public async ValueTask ensure_vector_indexes_async_flat_index_kind_never_creates_an_index_even_with_enough_rows() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 

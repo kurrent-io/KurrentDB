@@ -12,9 +12,10 @@ namespace DuckLance.Tests.Mapping;
 /// supersede the record mapper. No DuckDB connection; reads are driven by
 /// <see cref="FakeDbDataReader"/> feeding the validated wire shapes, POSITIONALLY per the codec law.
 /// </summary>
+[Category("Mapping")]
 public class DuckDBModelCodecTests {
     [Test]
-    public async Task Encode_Places_Values_In_Model_Order_And_Passes_Collections_Through() {
+    public async ValueTask encode_places_values_in_model_order_and_passes_collections_through() {
         var codec = new DuckDBModelCodec<CodecRecord>(BuildModel<CodecRecord>());
 
         var record = new CodecRecord {
@@ -43,7 +44,7 @@ public class DuckDBModelCodecTests {
     }
 
     [Test]
-    public async Task Encode_Null_Vector_Binds_Null() {
+    public async ValueTask encode_null_vector_binds_null() {
         var codec  = new DuckDBModelCodec<CodecRecord>(BuildModel<CodecRecord>());
         var values = codec.Encode(new() { Id = "m1" }, new VectorSlots(["vec"], [null]));
 
@@ -51,7 +52,7 @@ public class DuckDBModelCodecTests {
     }
 
     [Test]
-    public async Task Decode_Full_Projection_Reads_Positionally() {
+    public async ValueTask decode_full_projection_reads_positionally() {
         var codec = new DuckDBModelCodec<CodecRecord>(BuildModel<CodecRecord>());
 
         // Column order IS model-property order — the codec never looks at column names.
@@ -76,7 +77,7 @@ public class DuckDBModelCodecTests {
     }
 
     [Test]
-    public async Task Decode_Lean_Projection_Shifts_Positions_Past_The_Absent_Vector() {
+    public async ValueTask decode_lean_projection_shifts_positions_past_the_absent_vector() {
         // The vector property sits in the MIDDLE of this model, so the lean projection shifts every
         // later column's position — the strongest test of the precomputed lean layout.
         var codec = new DuckDBModelCodec<VectorInMiddleRecord>(BuildModel<VectorInMiddleRecord>());
@@ -95,7 +96,7 @@ public class DuckDBModelCodecTests {
     }
 
     [Test]
-    public async Task Decode_DBNull_Sets_Null_Or_Leaves_Default() {
+    public async ValueTask decode_db_null_sets_null_or_leaves_default() {
         var codec = new DuckDBModelCodec<NullableCodecRecord>(BuildModel<NullableCodecRecord>());
 
         using var reader = FakeDbDataReader.SingleRow(
@@ -112,7 +113,7 @@ public class DuckDBModelCodecTests {
     }
 
     [Test]
-    public async Task Decode_Coerces_DateTime_To_DateTimeOffset_As_Utc() {
+    public async ValueTask decode_coerces_datetime_to_datetime_offset_as_utc() {
         var codec = new DuckDBModelCodec<TimestampCodecRecord>(BuildModel<TimestampCodecRecord>());
 
         var clockReading = new DateTime(
@@ -129,7 +130,7 @@ public class DuckDBModelCodecTests {
     }
 
     [Test]
-    public async Task Decode_Reads_Blob_From_Stream() {
+    public async ValueTask decode_reads_blob_from_stream() {
         // DuckDB.NET returns a populated BLOB as a Stream (UnmanagedMemoryStream); the codec must
         // materialize it — Convert.ChangeType would throw on the non-IConvertible stream.
         var codec = new DuckDBModelCodec<BlobCodecRecord>(BuildModel<BlobCodecRecord>());
@@ -146,7 +147,7 @@ public class DuckDBModelCodecTests {
     }
 
     [Test]
-    public async Task Dynamic_Records_Encode_And_Decode_By_ModelName() {
+    public async ValueTask dynamic_records_encode_and_decode_by_model_name() {
         var definition = new VectorStoreCollectionDefinition {
             Properties = [
                 new VectorStoreKeyProperty("Id", typeof(string)),
@@ -183,7 +184,7 @@ public class DuckDBModelCodecTests {
     // three native vector CLR shapes. Extraction covers ReadOnlyMemory<float>, Embedding<float>,
     // and float[] (which passes through by reference); Encode places each slot at its column.
     [Test]
-    public async Task Encode_Projects_All_Scalar_Types_And_Extracted_Vectors_In_Model_Order() {
+    public async ValueTask encode_projects_all_scalar_types_and_extracted_vectors_in_model_order() {
         var model = BuildModel<AllTypesRecord>();
         var codec = new DuckDBModelCodec<AllTypesRecord>(model);
 
@@ -250,7 +251,7 @@ public class DuckDBModelCodecTests {
     // Ported from the retired mapper tests: validated wire shapes -> declared CLR shapes, for every
     // scalar type and all three vector CLR shapes.
     [Test]
-    public async Task Decode_Reads_All_Wire_Shapes_Into_Declared_Types() {
+    public async ValueTask decode_reads_all_wire_shapes_into_declared_types() {
         var codec = new DuckDBModelCodec<AllTypesRecord>(BuildModel<AllTypesRecord>());
 
         var blob = new byte[] { 9, 8, 7 };
@@ -310,7 +311,7 @@ public class DuckDBModelCodecTests {
     // Ported from the retired mapper tests: an array-typed data property (string[]) passes through
     // Encode by reference and materializes back as string[] from the wire List<string>.
     [Test]
-    public async Task ArrayDataProperty_Encodes_By_Reference_And_Decodes_To_Array() {
+    public async ValueTask array_data_property_encodes_by_reference_and_decodes_to_array() {
         var model = BuildModel<ArrayTagsRecord>();
         var codec = new DuckDBModelCodec<ArrayTagsRecord>(model);
 
@@ -334,7 +335,7 @@ public class DuckDBModelCodecTests {
     // Ported from the retired mapper tests: dynamic dictionaries are keyed by ModelName while the
     // wire uses StorageName — including an explicit "name_col" override.
     [Test]
-    public async Task Dynamic_Records_Respect_StorageName_Overrides_Both_Directions() {
+    public async ValueTask dynamic_records_respect_storage_name_overrides_both_directions() {
         var definition = new VectorStoreCollectionDefinition {
             Properties = [
                 new VectorStoreKeyProperty("Id", typeof(string)),
@@ -385,7 +386,7 @@ public class DuckDBModelCodecTests {
     }
 
     [Test]
-    public async Task MultiVector_Encode_Places_Each_Named_Slot_At_Its_Own_Column() {
+    public async ValueTask multi_vector_encode_places_each_named_slot_at_its_own_column() {
         var codec = new DuckDBModelCodec<MultiVectorRecord>(BuildModel<MultiVectorRecord>());
 
         float[] vecA = [1f, 2f, 3f, 4f];
@@ -402,7 +403,7 @@ public class DuckDBModelCodecTests {
     }
 
     [Test]
-    public async Task MultiVector_Decode_Full_Projection_Reads_Both_Vectors() {
+    public async ValueTask multi_vector_decode_full_projection_reads_both_vectors() {
         var codec = new DuckDBModelCodec<MultiVectorRecord>(BuildModel<MultiVectorRecord>());
 
         using var reader = FakeDbDataReader.SingleRow(
@@ -422,7 +423,7 @@ public class DuckDBModelCodecTests {
     }
 
     [Test]
-    public async Task MultiVector_Lean_Projection_Shifts_Positions_Past_Every_Absent_Vector() {
+    public async ValueTask multi_vector_lean_projection_shifts_positions_past_every_absent_vector() {
         // TWO vector columns interleaved with data columns: the lean layout must skip both holes.
         var codec = new DuckDBModelCodec<MultiVectorRecord>(BuildModel<MultiVectorRecord>());
 
@@ -438,7 +439,7 @@ public class DuckDBModelCodecTests {
     }
 
     [Test]
-    public async Task VectorizeAsync_NativeVector_Extracts_Without_A_Generator() {
+    public async ValueTask vectorize_async_native_vector_extracts_without_generator() {
         // No generator supplied: a native-vector model vectorizes by extraction, not generation.
         var codec  = new DuckDBModelCodec<CodecRecord>(BuildModel<CodecRecord>());
         var record = new CodecRecord { Id = "m1", Vec = new([1f, 2f, 3f, 4f]) };
@@ -450,7 +451,7 @@ public class DuckDBModelCodecTests {
     }
 
     [Test]
-    public async Task VectorizeAsync_Routes_Native_Extraction_And_Dispatcher_Generation_Per_Slot() {
+    public async ValueTask vectorize_async_routes_native_extraction_and_dispatcher_generation_per_slot() {
         var generator = new RecordingEmbeddingGenerator();
         var codec     = new DuckDBModelCodec<MixedVectorRecord>(BuildModel<MixedVectorRecord>(generator));
 
@@ -471,7 +472,7 @@ public class DuckDBModelCodecTests {
     }
 
     [Test]
-    public async Task VectorizeBatchAsync_Generates_Once_Per_Text_Property_For_The_Whole_Batch() {
+    public async ValueTask vectorize_batch_async_generates_once_per_text_property_for_the_whole_batch() {
         var generator = new RecordingEmbeddingGenerator();
         var codec     = new DuckDBModelCodec<MixedVectorRecord>(BuildModel<MixedVectorRecord>(generator));
 

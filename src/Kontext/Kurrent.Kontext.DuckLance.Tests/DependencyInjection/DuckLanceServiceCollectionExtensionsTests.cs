@@ -14,11 +14,12 @@ namespace DuckLance.Tests.DependencyInjection;
 /// itself connects; connections are opened lazily on first actual query). None of these tests are therefore gated
 /// by <see cref="LanceRequiredAttribute"/>.
 /// </summary>
+[Category("DependencyInjection")]
 public class DuckLanceServiceCollectionExtensionsTests {
     // --- Resolves both DuckDBVectorStore and VectorStore, as the same instance ---
 
     [Test]
-    public async Task AddDuckLanceVectorStore_ResolvesStoreAndVectorStore_AsSameInstance() {
+    public async ValueTask add_ducklance_vector_store_resolves_store_and_vector_store_as_same_instance() {
         var services = new ServiceCollection();
         services.AddDuckLanceVectorStore(NewOptions());
 
@@ -34,7 +35,7 @@ public class DuckLanceServiceCollectionExtensionsTests {
     // --- Keyed resolves by key; unkeyed resolution is absent ---
 
     [Test]
-    public async Task AddKeyedDuckLanceVectorStore_ResolvesByKey_AndUnkeyedIsAbsent() {
+    public async ValueTask add_keyed_ducklance_vector_store_resolves_by_key_and_unkeyed_is_absent() {
         var services = new ServiceCollection();
         services.AddKeyedDuckLanceVectorStore("mykey", NewOptions());
 
@@ -53,7 +54,7 @@ public class DuckLanceServiceCollectionExtensionsTests {
     // --- ServiceLifetime is respected ---
 
     [Test]
-    public async Task AddDuckLanceVectorStore_SingletonLifetime_ReturnsSameInstanceAcrossResolutions() {
+    public async ValueTask add_ducklance_vector_store_singleton_lifetime_returns_same_instance_across_resolutions() {
         var services = new ServiceCollection();
         services.AddDuckLanceVectorStore(NewOptions());
 
@@ -66,7 +67,7 @@ public class DuckLanceServiceCollectionExtensionsTests {
     }
 
     [Test]
-    public async Task AddDuckLanceVectorStore_TransientLifetime_ReturnsDifferentInstancesAcrossResolutions() {
+    public async ValueTask add_ducklance_vector_store_transient_lifetime_returns_different_instances_across_resolutions() {
         var services = new ServiceCollection();
         services.AddDuckLanceVectorStore(NewOptions(), ServiceLifetime.Transient);
 
@@ -81,7 +82,7 @@ public class DuckLanceServiceCollectionExtensionsTests {
     // --- Options-provider overload is invoked lazily, against the built IServiceProvider ---
 
     [Test]
-    public async Task AddDuckLanceVectorStore_OptionsProviderOverload_InvokedLazilyWithServiceProvider() {
+    public async ValueTask add_ducklance_vector_store_options_provider_overload_invoked_lazily_with_service_provider() {
         var services = new ServiceCollection();
         services.AddSingleton("vs_from_provider");
 
@@ -120,7 +121,7 @@ public class DuckLanceServiceCollectionExtensionsTests {
     // non-substitution case (an options-level generator already present must win over the DI one).
 
     [Test]
-    public async Task AddDuckLanceVectorStore_NoGeneratorOnOptions_FallsBackToDIRegisteredGenerator() {
+    public async ValueTask add_ducklance_vector_store_no_generator_on_options_falls_back_to_di_registered_generator() {
         using var generator = new NeverInvokedGenerator<string>();
 
         var services = new ServiceCollection();
@@ -138,7 +139,7 @@ public class DuckLanceServiceCollectionExtensionsTests {
     }
 
     [Test]
-    public async Task AddDuckLanceVectorStore_NoGeneratorAnywhere_GetCollectionForGeneratedModel_Throws() {
+    public async ValueTask add_ducklance_vector_store_no_generator_anywhere_get_collection_for_generated_model_throws() {
         var services = new ServiceCollection();
         services.AddDuckLanceVectorStore(NewOptions());
 
@@ -151,7 +152,7 @@ public class DuckLanceServiceCollectionExtensionsTests {
     }
 
     [Test]
-    public async Task AddDuckLanceVectorStore_GeneratorAlreadyOnOptions_IsNotReplacedByDIRegisteredGenerator() {
+    public async ValueTask add_ducklance_vector_store_generator_already_on_options_is_not_replaced_by_di_registered_generator() {
         using var optionsGenerator = new NeverInvokedGenerator<string>(); // Compatible with GeneratedVectorRecord.Text.
         using var diGenerator      = new NeverInvokedGenerator<int>();    // Incompatible with a string-sourced vector property.
 

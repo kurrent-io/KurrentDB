@@ -68,6 +68,7 @@ namespace DuckLance.Tests.Storage;
 /// </remarks>
 [LanceRequired]
 [NotInParallel]
+[Category("Storage")]
 public class DuckDBConnectionManagerPerfTests {
     const string Alias         = "perf";
     const string Table         = "perf.main.vs_perf";
@@ -79,7 +80,7 @@ public class DuckDBConnectionManagerPerfTests {
     const string ProbeId       = "k100";
 
     [Test]
-    public async Task Decomposition_PointSelectByKey_ReportsManagerOverheadTerms() {
+    public async ValueTask decomposition_point_select_by_key_reports_manager_overhead_terms() {
         var dir     = CreateTempStorageDir();
         var manager = new DuckDBConnectionManager(new() { DatabasePath = Path.Combine(dir, "duck.db") }, Alias);
 

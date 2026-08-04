@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Kontext benchmark suite: scores retrieval ranking quality against the LoCoMo ground truth. Run "dotnet run -c Release" from this directory. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>false</IsTestProject>
+    <!-- https://github.com/dotnet/sdk/issues/51873 — MTP ignores IsTestProject=false -->
+    <IsTestingPlatformApplication>false</IsTestingPlatformApplication>
+    <EnablePreviewFeatures>true</EnablePreviewFeatures>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <RootNamespace>Benchmarks</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kurrent.Kontext\Kurrent.Kontext.csproj" />
+    <ProjectReference Include="..\Kurrent.Kontext.Embeddings\Kurrent.Kontext.Embeddings.csproj" />
+    <ProjectReference Include="..\Kurrent.Kontext.Testing\Kurrent.Kontext.Testing.csproj" />
+  </ItemGroup>
+
+</Project>

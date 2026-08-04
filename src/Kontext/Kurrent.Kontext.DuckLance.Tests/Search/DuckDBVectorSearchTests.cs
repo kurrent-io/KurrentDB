@@ -21,6 +21,7 @@ namespace DuckLance.Tests.Search;
 /// side-stepping the <c>lance</c> extension's uppercase-column pushdown bug.
 /// </remarks>
 [LanceRequired]
+[Category("Search")]
 public class DuckDBVectorSearchTests {
     static readonly (string Id, float[] Vec)[] s_knownVectors = [("k1", [1f, 0f, 0f, 0f]), ("k2", [0f, 1f, 0f, 0f]), ("k3", [-1f, 0f, 0f, 0f])];
 
@@ -29,7 +30,7 @@ public class DuckDBVectorSearchTests {
 
     // Oracle 1: squared L2 with no index -> raw _distance is squared L2 (0 / 2 / 4).
     [Test]
-    public async Task Search_SquaredL2_NoIndex_ReturnsOracleDistances() {
+    public async ValueTask search_squared_2_no_index_returns_oracle_distances() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -56,7 +57,7 @@ public class DuckDBVectorSearchTests {
 
     // Oracle 2: cosine distance with a cosine IVF_FLAT index -> _distance = 1 - cosine similarity (0 / 1 / 2).
     [Test]
-    public async Task Search_CosineDistance_WithCosineIndex_ReturnsOracleDistances() {
+    public async ValueTask search_cosine_distance_with_cosine_index_returns_oracle_distances() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -84,7 +85,7 @@ public class DuckDBVectorSearchTests {
     // Oracle 3: cosine similarity with the same cosine index -> score = cosine similarity (1 / 0 / -1),
     // ordered by ascending _distance (k1, k2, k3).
     [Test]
-    public async Task Search_CosineSimilarity_WithCosineIndex_ReturnsOracleScores() {
+    public async ValueTask search_cosine_similarity_with_cosine_index_returns_oracle_scores() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -111,7 +112,7 @@ public class DuckDBVectorSearchTests {
 
     // Paging: 25 distinct vectors, two disjoint pages, correctly ordered across the page boundary.
     [Test]
-    public async Task Search_Paging_ReturnsDisjointOrderedPages() {
+    public async ValueTask search_paging_returns_disjoint_ordered_pages() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -152,7 +153,7 @@ public class DuckDBVectorSearchTests {
 
     // Empty collection: table exists, zero rows -> empty result, no exception.
     [Test]
-    public async Task Search_EmptyCollection_ReturnsNoResults() {
+    public async ValueTask search_empty_collection_returns_no_results() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -172,7 +173,7 @@ public class DuckDBVectorSearchTests {
 
     // IncludeVectors: true returns the stored vector; the default (false) leaves it at its default value.
     [Test]
-    public async Task Search_IncludeVectors_ControlsVectorHydration() {
+    public async ValueTask search_include_vectors_controls_vector_hydration() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -199,7 +200,7 @@ public class DuckDBVectorSearchTests {
 
     // Multi-vector model: an unqualified search is ambiguous and throws; selecting a vector property works.
     [Test]
-    public async Task Search_MultiVector_RequiresVectorPropertySelection() {
+    public async ValueTask search_multi_vector_requires_vector_property_selection() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -242,7 +243,7 @@ public class DuckDBVectorSearchTests {
     // client-side after score conversion; see DuckDBHardeningTests for its coverage — so it is no longer asserted
     // to throw here.)
     [Test]
-    public async Task Search_UnsupportedOptions_Throw() {
+    public async ValueTask search_unsupported_options_throw() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -263,7 +264,7 @@ public class DuckDBVectorSearchTests {
 
     // TInput as float[] and Embedding<float> behave like ReadOnlyMemory<float>.
     [Test]
-    public async Task Search_AcceptsFloatArrayAndEmbeddingInputs() {
+    public async ValueTask search_accepts_float_array_and_embedding_inputs() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 

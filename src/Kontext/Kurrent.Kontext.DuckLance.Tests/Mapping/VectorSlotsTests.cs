@@ -7,9 +7,10 @@ namespace DuckLance.Tests.Mapping;
 /// Encode. Construction is internal on purpose — implementers only consume slots — so these tests
 /// build instances through the internal ctor (InternalsVisibleTo).
 /// </summary>
+[Category("Mapping")]
 public class VectorSlotsTests {
     [Test]
-    public async Task Default_Value_Is_Empty_With_Null_Single() {
+    public async ValueTask default_value_is_empty_with_null_single() {
         var slots = default(VectorSlots);
 
         await Assert.That(slots.Count).IsEqualTo(0);
@@ -17,7 +18,7 @@ public class VectorSlotsTests {
     }
 
     [Test]
-    public async Task Single_Slot_Serves_Single_And_Named_Access() {
+    public async ValueTask single_slot_serves_single_and_named_access() {
         float[] vector = [1f, 2f];
 
         var slots = new VectorSlots(["vec"], [vector]);
@@ -28,7 +29,7 @@ public class VectorSlotsTests {
     }
 
     [Test]
-    public async Task Multi_Slot_Serves_Each_Column_By_Name_And_Refuses_Single() {
+    public async ValueTask multi_slot_serves_each_column_by_name_and_refuses_single() {
         float[] title = [1f];
         float[] body  = [2f];
 
@@ -44,7 +45,7 @@ public class VectorSlotsTests {
     }
 
     [Test]
-    public async Task Unknown_Column_Throws_Instead_Of_Returning_Null() {
+    public async ValueTask unknown_column_throws_instead_of_returning_null() {
         var slots = new VectorSlots(["vec"], [[1f]]);
 
         // A typo'd column name must fail loudly — returning null here would silently write a NULL vector.
@@ -52,7 +53,7 @@ public class VectorSlotsTests {
     }
 
     [Test]
-    public async Task A_Slot_Can_Hold_A_Null_Vector() {
+    public async ValueTask slot_can_hold_null_vector() {
         var slots = new VectorSlots(["vec"], [null]);
 
         await Assert.That(slots.Single).IsNull();

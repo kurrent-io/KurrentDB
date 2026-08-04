@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Microsoft.Extensions.AI;
+using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
 
 namespace Kurrent.Kontext.Embeddings.Tests;
 
@@ -12,7 +13,7 @@ namespace Kurrent.Kontext.Embeddings.Tests;
 /// </summary>
 [Category("Integration")]
 public class SentencePieceOnnxEmbeddingGeneratorTests {
-	static IEmbeddingGenerator<string, Embedding<float>> _generator = null!;
+	static EmbeddingGenerator _generator = null!;
 
 	[Before(Class)]
 	public static Task Setup(ClassHookContext context) {

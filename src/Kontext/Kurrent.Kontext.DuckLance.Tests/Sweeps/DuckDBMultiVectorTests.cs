@@ -17,6 +17,7 @@ namespace DuckLance.Tests.Sweeps;
 /// oracle-matching results for THAT property alone.
 /// </summary>
 [LanceRequired]
+[Category("Sweeps")]
 public class DuckDBMultiVectorTests {
     // The same k1 (identical)/k2 (orthogonal)/k3 (opposite) oracle pattern used by DuckDBVectorSearchTests,
     // duplicated independently for the dim-4 and dim-8 vector properties (padded with trailing zeros for dim 8).
@@ -27,7 +28,7 @@ public class DuckDBMultiVectorTests {
     ];
 
     [Test]
-    public async Task EnsureVectorIndexesAsync_CreatesBothIndexes_AndEachPropertySearchesIndependently() {
+    public async ValueTask ensure_vector_indexes_async_creates_both_indexes_and_each_property_searches_independently() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 

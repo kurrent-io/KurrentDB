@@ -3,6 +3,7 @@
 
 using System.Runtime.CompilerServices;
 using Kurrent.Kontext.Data;
+using Kurrent.Kontext.Retrieval;
 
 namespace Kurrent.Kontext;
 
@@ -16,16 +17,15 @@ public delegate Task AppendEvent(object evt, CancellationToken ct = default);
 /// in the read model via the projector, a path this service does not own yet.
 ///
 /// Known simplifications of this port:
-/// - Recall is keyword (BM25) search only: this service has no embedding generator — query
-///   embeddings are produced upstream in the retrieval pipeline — so the vector and hybrid legs of
-///   the store are not reachable from here yet, and <c>min_score</c> cuts on the corpus-relative
-///   BM25 score (a gate, not a calibrated threshold).
+/// - Recall runs whatever <see cref="IKontextRetriever"/> pipeline the host wired — by default
+///   vector+keyword RRF, modulated by the cognitive model, MMR-polished — so <c>min_score</c> cuts
+///   on the pipeline's final score scale, not on raw BM25.
 /// - No reconsolidation: recall and reclaim do not refresh <c>last_accessed_at</c> — that is a
 ///   write, and writes belong to the log.
 /// - Reflect is not implemented — it synthesizes derived memories with a language model, which is
 ///   outside the data-store surface.
 /// </summary>
-public sealed class KontextMemory(KontextDataStore store, AppendEvent appendEvent) : IKontextMemory {
+public sealed class KontextMemory(KontextDataStore store, IKontextRetriever retriever, AppendEvent appendEvent) : IKontextMemory {
 	const int DefaultRecallLimit    = 10;
 	const int DefaultRecollectLimit = 100;
 
@@ -42,24 +42,22 @@ public sealed class KontextMemory(KontextDataStore store, AppendEvent appendEven
 			QueryId = request.QueryId.Length > 0 ? request.QueryId : Guid.CreateVersion7().ToString(),
 		};
 
-		var top = request.Limit > 0 ? request.Limit : DefaultRecallLimit;
+		var query = new RetrievalQuery {
+			Text     = request.Query,
+			Tags     = request.Tags,
+			Limit    = request.Limit > 0 ? request.Limit : DefaultRecallLimit,
+			MinScore = request.MinScore,
+		};
 
-		// Keyword-only for now (see the class remarks).
-		// K rides with the page size so the candidate pool never truncates the requested page.
-		var options = new FullTextSearchOptions { Limit = top, K = top };
+		var ranked = await retriever.RetrieveAsync(query, ct).ConfigureAwait(false);
 
-		await foreach (var hit in store.SearchAsync(request.Query, request.Tags, options, ct).ConfigureAwait(false)) {
-			// Only the keyword leg runs, so KeywordScore is always present (see MemoryHit remarks).
-			var score = hit.KeywordScore ?? 0;
-			if (score < request.MinScore)
-				continue;
-
-			var memory = new Contracts.RecallResponse.Types.RecalledMemory { Score = score };
+		foreach (var scored in ranked) {
+			var memory = new Contracts.RecallResponse.Types.RecalledMemory { Score = scored.Score };
 
 			if (request.IncludeFull)
-				memory.Full = hit.Memory;
+				memory.Full = scored.Memory;
 			else
-				memory.Lean = ToLean(hit.Memory);
+				memory.Lean = ToLean(scored.Memory);
 
 			response.Memories.Add(memory);
 		}

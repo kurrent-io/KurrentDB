@@ -12,6 +12,7 @@ namespace DuckLance.Tests.Hardening;
 /// <see cref="DuckDBScoreConverter"/> direction tests need no connection and run everywhere; the end-to-end tests
 /// drive a real DuckDB + <c>lance</c> connection and are gated per-method by <see cref="LanceRequiredAttribute"/>.
 /// </summary>
+[Category("Hardening")]
 public class DuckDBHardeningTests {
     // Timings are reported (never asserted); they are written both to the console and to a scratch file so a run
     // can surface them regardless of how the test host buffers console output.
@@ -27,7 +28,7 @@ public class DuckDBHardeningTests {
     [Arguments(0.0, true)]
     [Arguments(1.0, true)]
     [Arguments(2.0, false)]
-    public async Task PassesThreshold_CosineDistance_Threshold1_5_Keeps0And1(double score, bool expected) =>
+    public async ValueTask passes_threshold_cosine_distance_threshold_1_5_keeps_0_and_1(double score, bool expected) =>
         await Assert.That(DuckDBScoreConverter.PassesThreshold(DistanceFunction.CosineDistance, score, 1.5)).IsEqualTo(expected);
 
     // Cosine distance, threshold 0.5 keeps only {0}.
@@ -35,21 +36,21 @@ public class DuckDBHardeningTests {
     [Arguments(0.0, true)]
     [Arguments(1.0, false)]
     [Arguments(2.0, false)]
-    public async Task PassesThreshold_CosineDistance_Threshold0_5_KeepsOnly0(double score, bool expected) =>
+    public async ValueTask passes_threshold_cosine_distance_threshold_0_5_keeps_only_0(double score, bool expected) =>
         await Assert.That(DuckDBScoreConverter.PassesThreshold(DistanceFunction.CosineDistance, score, 0.5)).IsEqualTo(expected);
 
     // The null default is treated as cosine distance (distance semantics: keep <= threshold).
     [Test]
     [Arguments(0.0, true)]
     [Arguments(2.0, false)]
-    public async Task PassesThreshold_NullDefault_UsesDistanceDirection(double score, bool expected) =>
+    public async ValueTask passes_threshold_null_default_uses_distance_direction(double score, bool expected) =>
         await Assert.That(DuckDBScoreConverter.PassesThreshold(null, score, 1.5)).IsEqualTo(expected);
 
     // Squared Euclidean distance is also lower = closer: keep <= threshold.
     [Test]
     [Arguments(2.0, true)]
     [Arguments(4.0, false)]
-    public async Task PassesThreshold_EuclideanSquaredDistance_UsesDistanceDirection(double score, bool expected) =>
+    public async ValueTask passes_threshold_euclidean_squared_distance_uses_distance_direction(double score, bool expected) =>
         await Assert.That(DuckDBScoreConverter.PassesThreshold(DistanceFunction.EuclideanSquaredDistance, score, 3.0)).IsEqualTo(expected);
 
     // Cosine similarity (higher = closer): keep score >= threshold. Scores 1/0/-1, threshold 0.5 keeps {1}.
@@ -57,14 +58,14 @@ public class DuckDBHardeningTests {
     [Arguments(1.0, true)]
     [Arguments(0.0, false)]
     [Arguments(-1.0, false)]
-    public async Task PassesThreshold_CosineSimilarity_Threshold0_5_KeepsOnly1(double score, bool expected) =>
+    public async ValueTask passes_threshold_cosine_similarity_threshold_0_5_keeps_only_1(double score, bool expected) =>
         await Assert.That(DuckDBScoreConverter.PassesThreshold(DistanceFunction.CosineSimilarity, score, 0.5)).IsEqualTo(expected);
 
     // Dot-product similarity is also higher = closer: keep >= threshold.
     [Test]
     [Arguments(0.75, true)]
     [Arguments(0.25, false)]
-    public async Task PassesThreshold_DotProductSimilarity_UsesSimilarityDirection(double score, bool expected) =>
+    public async ValueTask passes_threshold_dot_product_similarity_uses_similarity_direction(double score, bool expected) =>
         await Assert.That(DuckDBScoreConverter.PassesThreshold(DistanceFunction.DotProductSimilarity, score, 0.5)).IsEqualTo(expected);
 
     // Hybrid scores are always higher = better: keep >= threshold.
@@ -72,7 +73,7 @@ public class DuckDBHardeningTests {
     [Arguments(0.9, true)]
     [Arguments(0.5, true)]
     [Arguments(0.4, false)]
-    public async Task PassesHybridThreshold_KeepsScoresAtOrAboveThreshold(double score, bool expected) =>
+    public async ValueTask passes_hybrid_threshold_keeps_scores_at_or_above_threshold(double score, bool expected) =>
         await Assert.That(DuckDBScoreConverter.PassesHybridThreshold(score, 0.5)).IsEqualTo(expected);
 
     // ============================================================================================================
@@ -83,7 +84,7 @@ public class DuckDBHardeningTests {
     // every record. The elapsed time is reported, not asserted.
     [Test]
     [LanceRequired]
-    public async Task BatchUpsert_700Records_ChunksAndRoundTrips() {
+    public async ValueTask batch_upsert_700_records_chunks_and_round_trips() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -139,7 +140,7 @@ public class DuckDBHardeningTests {
     // both source rows): the connector de-duplicates client-side, keeping the LAST occurrence.
     [Test]
     [LanceRequired]
-    public async Task BatchUpsert_InBatchDuplicateKey_LastOccurrenceWins() {
+    public async ValueTask batch_upsert_in_batch_duplicate_key_last_occurrence_wins() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -199,7 +200,7 @@ public class DuckDBHardeningTests {
     // that index is timed and reported (the pre-index baseline measured ~61s for a serial 550-row upsert).
     [Test]
     [LanceRequired]
-    public async Task EnsureCollectionExists_CreatesKeyBtreeIndex_AndBatchUpsertIsFast() {
+    public async ValueTask ensure_collection_exists_creates_key_btree_index_and_batch_upsert_is_fast() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -247,7 +248,7 @@ public class DuckDBHardeningTests {
     // The already-exists (re-ensure) path also backfills the key index when it is missing.
     [Test]
     [LanceRequired]
-    public async Task EnsureCollectionExists_ReEnsure_KeyIndexRemainsPresent() {
+    public async ValueTask ensure_collection_exists_re_ensure_key_index_remains_present() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -277,7 +278,7 @@ public class DuckDBHardeningTests {
     // DELETE bug (probed live for this stage).
     [Test]
     [LanceRequired]
-    public async Task EnsureCollectionExists_ReservedWordDataColumn_Throws() {
+    public async ValueTask ensure_collection_exists_reserved_word_data_column_throws() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -307,7 +308,7 @@ public class DuckDBHardeningTests {
     // A reserved-word KEY column is rejected the same way.
     [Test]
     [LanceRequired]
-    public async Task EnsureCollectionExists_ReservedWordKeyColumn_Throws() {
+    public async ValueTask ensure_collection_exists_reserved_word_key_column_throws() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -343,7 +344,7 @@ public class DuckDBHardeningTests {
     // the returned count is fewer than Top.
     [Test]
     [LanceRequired]
-    public async Task Search_ScoreThreshold_DistanceMetric_DropsRowsAboveThreshold() {
+    public async ValueTask search_score_threshold_distance_metric_drops_rows_above_threshold() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -379,7 +380,7 @@ public class DuckDBHardeningTests {
     // vector scores ~1 and the others score <= 0, so a 0.5 threshold keeps only the aligned row.
     [Test]
     [LanceRequired]
-    public async Task Search_ScoreThreshold_SimilarityMetric_KeepsScoresAtOrAboveThreshold() {
+    public async ValueTask search_score_threshold_similarity_metric_keeps_scores_at_or_above_threshold() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -409,7 +410,7 @@ public class DuckDBHardeningTests {
     // every result, while an impossibly low one keeps exactly the unfiltered set.
     [Test]
     [LanceRequired]
-    public async Task HybridSearch_ScoreThreshold_DropsLowBlendResults() {
+    public async ValueTask hybrid_search_score_threshold_drops_low_blend_results() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 

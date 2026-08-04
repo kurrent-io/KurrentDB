@@ -1,4 +1,5 @@
 using Microsoft.Extensions.AI;
+using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
 
 namespace Kurrent.SemanticKernel.Connectors.DuckLance;
 
@@ -9,7 +10,7 @@ namespace Kurrent.SemanticKernel.Connectors.DuckLance;
 /// Records with several vector columns extend <see cref="RecordCodec{TRecord}"/> directly and
 /// address slots by name.
 /// </summary>
-public abstract class SingleVectorRecordCodec<TRecord>(IEmbeddingGenerator<string, Embedding<float>>? embeddingGenerator = null)
+public abstract class SingleVectorRecordCodec<TRecord>(EmbeddingGenerator? embeddingGenerator = null)
     : RecordCodec<TRecord>(embeddingGenerator) where TRecord : notnull {
     /// <summary>
     /// The text this record's vector is computed from — the MEANING to position in vector space

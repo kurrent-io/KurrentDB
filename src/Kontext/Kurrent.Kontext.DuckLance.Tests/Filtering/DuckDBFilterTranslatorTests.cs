@@ -19,6 +19,7 @@ namespace DuckLance.Tests.Filtering;
 /// <c>r.Vec == array</c> is expressible (ReadOnlyMemory has no <c>==</c>); the translator treats every vector
 /// property identically regardless of CLR shape.
 /// </remarks>
+[Category("Filtering")]
 public class DuckDBFilterTranslatorTests {
     static CollectionModel Model() =>
         new DuckDBModelBuilder().Build(
@@ -30,7 +31,7 @@ public class DuckDBFilterTranslatorTests {
     // ---- Supported: equality ----
 
     [Test]
-    public async Task Equality_Literal_EmitsColumnEqualsPlaceholder() {
+    public async ValueTask equality_literal_emits_column_equals_placeholder() {
         var result = Translate(r => r.Category == "cat_a");
 
         await Assert.That(result.WhereClause).IsEqualTo("category = ?");
@@ -40,7 +41,7 @@ public class DuckDBFilterTranslatorTests {
     }
 
     [Test]
-    public async Task Equality_ReversedOperandOrder_EmitsSameClause() {
+    public async ValueTask equality_reversed_operand_order_emits_same_clause() {
         var result = Translate(r => "cat_a" == r.Category);
 
         await Assert.That(result.WhereClause).IsEqualTo("category = ?");
@@ -49,7 +50,7 @@ public class DuckDBFilterTranslatorTests {
     }
 
     [Test]
-    public async Task Equality_CapturedVariable_EmitsPlaceholderWithCapturedValue() {
+    public async ValueTask equality_captured_variable_emits_placeholder_with_captured_value() {
         var captured = "cat_a";
         var result   = Translate(r => r.Category == captured);
 
@@ -59,7 +60,7 @@ public class DuckDBFilterTranslatorTests {
     }
 
     [Test]
-    public async Task Equality_OnKeyProperty_IsAllowed() {
+    public async ValueTask equality_on_key_property_is_allowed() {
         var result = Translate(r => r.Id == "k1");
 
         await Assert.That(result.WhereClause).IsEqualTo("id = ?");
@@ -70,7 +71,7 @@ public class DuckDBFilterTranslatorTests {
     // ---- Supported: containment ----
 
     [Test]
-    public async Task Containment_OnIndexedTagList_EmitsArrayHasAnyAndRequiresOversample() {
+    public async ValueTask containment_on_indexed_tag_list_emits_array_has_any_and_requires_oversample() {
         var result = Translate(r => r.Tags.Contains("post"));
 
         await Assert.That(result.WhereClause).IsEqualTo("array_has_any(tags, [?])");
@@ -82,7 +83,7 @@ public class DuckDBFilterTranslatorTests {
     // ---- Supported: AndAlso composition ----
 
     [Test]
-    public async Task AndAlso_TwoEqualities_EmitsParenthesizedAnd_NoOversample() {
+    public async ValueTask and_also_two_equalities_emits_parenthesized_and_no_oversample() {
         var result = Translate(r => r.Category == "c" && r.Id == "k");
 
         await Assert.That(result.WhereClause).IsEqualTo("(category = ? AND id = ?)");
@@ -93,7 +94,7 @@ public class DuckDBFilterTranslatorTests {
     }
 
     [Test]
-    public async Task AndAlso_EqualityAndContainment_RequiresOversample() {
+    public async ValueTask and_also_equality_and_containment_requires_oversample() {
         var result = Translate(r => r.Category == "c" && r.Tags.Contains("post"));
 
         await Assert.That(result.WhereClause).IsEqualTo("(category = ? AND array_has_any(tags, [?]))");
@@ -104,7 +105,7 @@ public class DuckDBFilterTranslatorTests {
     }
 
     [Test]
-    public async Task AndAlso_NestedComposition_TranslatesRecursively() {
+    public async ValueTask and_also_nested_composition_translates_recursively() {
         var result = Translate(r => r.Category == "c" && r.Id == "k" && r.Tags.Contains("t"));
 
         await Assert.That(result.WhereClause).IsEqualTo("((category = ? AND id = ?) AND array_has_any(tags, [?]))");
@@ -118,105 +119,105 @@ public class DuckDBFilterTranslatorTests {
     // ---- Unsupported: each must throw NotSupportedException naming the construct ----
 
     [Test]
-    public async Task Filter_OnNonIndexedProperty_Throws() =>
+    public async ValueTask filter_on_non_indexed_property_throws() =>
         await Assert
             .That(() => Translate(r => r.Content == "x"))
             .Throws<NotSupportedException>()
             .WithMessageContaining("IsIndexed");
 
     [Test]
-    public async Task Filter_BooleanPropertyShortcut_Throws() =>
+    public async ValueTask filter_boolean_property_shortcut_throws() =>
         await Assert
             .That(() => Translate(r => r.Flag))
             .Throws<NotSupportedException>()
             .WithMessageContaining("Flag");
 
     [Test]
-    public async Task Filter_LogicalOr_Throws() =>
+    public async ValueTask filter_logical_or_throws() =>
         await Assert
             .That(() => Translate(r => r.Category == "a" || r.Category == "b"))
             .Throws<NotSupportedException>()
             .WithMessageContaining("||");
 
     [Test]
-    public async Task Filter_Inequality_Throws() =>
+    public async ValueTask filter_inequality_throws() =>
         await Assert
             .That(() => Translate(r => r.Category != "a"))
             .Throws<NotSupportedException>()
             .WithMessageContaining("!=");
 
     [Test]
-    public async Task Filter_GreaterThan_Throws() =>
+    public async ValueTask filter_greater_than_throws() =>
         await Assert
             .That(() => Translate(r => r.Content.Length > 3))
             .Throws<NotSupportedException>()
             .WithMessageContaining("greater-than");
 
     [Test]
-    public async Task Filter_LessThan_Throws() =>
+    public async ValueTask filter_less_than_throws() =>
         await Assert
             .That(() => Translate(r => r.Content.Length < 3))
             .Throws<NotSupportedException>()
             .WithMessageContaining("less-than");
 
     [Test]
-    public async Task Filter_LogicalNot_Throws() =>
+    public async ValueTask filter_logical_not_throws() =>
         await Assert
             .That(() => Translate(r => !(r.Category == "a")))
             .Throws<NotSupportedException>()
             .WithMessageContaining("NOT");
 
     [Test]
-    public async Task Filter_ConstantPredicate_Throws() =>
+    public async ValueTask filter_constant_predicate_throws() =>
         await Assert
             .That(() => Translate(r => true))
             .Throws<NotSupportedException>()
             .WithMessageContaining("constant");
 
     [Test]
-    public async Task Filter_NestedMemberAccess_Throws() =>
+    public async ValueTask filter_nested_member_access_throws() =>
         await Assert
             .That(() => Translate(r => r.Category.Length == 3))
             .Throws<NotSupportedException>()
             .WithMessageContaining("Length");
 
     [Test]
-    public async Task Filter_PropertyToProperty_Throws() =>
+    public async ValueTask filter_property_to_property_throws() =>
         await Assert
             .That(() => Translate(r => r.Category == r.Content))
             .Throws<NotSupportedException>()
             .WithMessageContaining("property-to-property");
 
     [Test]
-    public async Task Filter_StringContains_Throws() =>
+    public async ValueTask filter_string_contains_throws() =>
         await Assert
             .That(() => Translate(r => r.Content.Contains("x")))
             .Throws<NotSupportedException>()
             .WithMessageContaining("Contains");
 
     [Test]
-    public async Task Filter_InlineArrayContains_Throws() =>
+    public async ValueTask filter_inline_array_contains_throws() =>
         await Assert
             .That(() => Translate(r => new[] { "a" }.Contains(r.Category)))
             .Throws<NotSupportedException>()
             .WithMessageContaining("IN-style");
 
     [Test]
-    public async Task Filter_ContainsNull_Throws() =>
+    public async ValueTask filter_contains_null_throws() =>
         await Assert
             .That(() => Translate(r => r.Tags.Contains(null!)))
             .Throws<NotSupportedException>()
             .WithMessageContaining("non-null string");
 
     [Test]
-    public async Task Filter_EqualityWithNull_Throws() =>
+    public async ValueTask filter_equality_with_null_throws() =>
         await Assert
             .That(() => Translate(r => r.Category == null))
             .Throws<NotSupportedException>()
             .WithMessageContaining("null");
 
     [Test]
-    public async Task Filter_OnVectorProperty_Throws() {
+    public async ValueTask filter_on_vector_property_throws() {
         float[] probe = [1f, 0f, 0f, 0f];
 
         await Assert
@@ -226,14 +227,14 @@ public class DuckDBFilterTranslatorTests {
     }
 
     [Test]
-    public async Task Filter_EnumerableAny_Throws() =>
+    public async ValueTask filter_enumerable_any_throws() =>
         await Assert
             .That(() => Translate(r => r.Tags.Any(t => t == "x")))
             .Throws<NotSupportedException>()
             .WithMessageContaining("Any");
 
     [Test]
-    public async Task Filter_DateTimeComparisonOnNonIndexedProperty_Throws() =>
+    public async ValueTask filter_datetime_comparison_on_non_indexed_property_throws() =>
         await Assert
             .That(() => Translate(r => r.Created == new DateTime(2020, 1, 1)))
             .Throws<NotSupportedException>()

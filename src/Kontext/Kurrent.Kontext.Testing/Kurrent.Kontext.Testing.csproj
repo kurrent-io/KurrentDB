@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<!-- Shared test infrastructure for the Kontext suites and benchmarks. Not a test project itself:
+	     it references TUnit.Core for the fixture interfaces only, so non-test consumers (the retrieval
+	     benchmark) can reference it without dragging a test host in. -->
+	<PropertyGroup>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsPackable>false</IsPackable>
+		<IsTestProject>false</IsTestProject>
+		<EnablePreviewFeatures>true</EnablePreviewFeatures>
+		<!-- TreatWarningsAsErrors is forced on by src/Directory.Build.targets; the TUnit dependency chain trips the NU1904 audit. -->
+		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+		<NoWarn>$(NoWarn);NU1904</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="TUnit.Core" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- The corpus fixture is read at runtime and keeps its source-tree relative path; it flows to referencing projects' output. -->
+		<None Include="Corpus\Data\*.json" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Kurrent.Kontext\Kurrent.Kontext.csproj" />
+		<ProjectReference Include="..\Kurrent.Kontext.Embeddings\Kurrent.Kontext.Embeddings.csproj" />
+	</ItemGroup>
+
+</Project>

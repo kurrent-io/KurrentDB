@@ -20,8 +20,7 @@ namespace Kurrent.Kontext.Tests.Data;
 public class AgentSessionImporterTests {
 	[Test]
 	public async ValueTask imports_session_messages() {
-		// Arrange — one validated three-line session: a user turn, an assistant text turn, and an
-		// assistant tool_use turn.
+		// Arrange
 		using var dir  = new TempDir();
 		using var pool = NewPool(dir.Path);
 
@@ -43,7 +42,7 @@ public class AgentSessionImporterTests {
 		// Act
 		await importer.ImportAsync();
 
-		// Assert — all three conversation rows landed, and the tool_use row round-trips whole.
+		// Assert
 		await Assert.That(await importer.CountAsync()).IsEqualTo(3L);
 		await Assert.That(await ReadToolUseRowAsync(pool, sample.Uuid3)).IsEqualTo(expectedRow);
 	}
@@ -60,11 +59,11 @@ public class AgentSessionImporterTests {
 		var importer = NewImporter(pool, sourceRoot);
 		await importer.CreateAsync();
 
-		// Act — import the same unchanged session twice.
+		// Act
 		await importer.ImportAsync();
 		await importer.ImportAsync();
 
-		// Assert — the anti-join dropped everything already stored: still exactly three rows.
+		// Assert
 		await Assert.That(await importer.CountAsync()).IsEqualTo(3L);
 	}
 
@@ -83,20 +82,18 @@ public class AgentSessionImporterTests {
 		await importer.ImportAsync();
 		await Assert.That(await importer.CountAsync()).IsEqualTo(3L);
 
-		// Act — a fourth valid turn is appended to the same session file, then re-imported.
+		// Act
 		File.AppendAllLines(SessionFilePath(sourceRoot, sample), [Personalize(Fixture.ExtraAssistantLine, sample)]);
 		await importer.ImportAsync();
 
-		// Assert — only the new tail landed: four rows total, and the appended uuid is present.
+		// Assert
 		await Assert.That(await importer.CountAsync()).IsEqualTo(4L);
 		await Assert.That(await ContainsUuidAsync(pool, sample.Uuid4)).IsTrue();
 	}
 
 	[Test]
 	public async ValueTask keeps_unparseable_lines_in_parse_errors_table() {
-		// Arrange — the three conversation lines plus raw garbage and a known-but-unmodeled metadata
-		// type; both extras surface as _parse_error rows that are KEPT in transcript_parse_errors, not
-		// dropped, and linked back to the imported transcripts by session_id.
+		// Arrange
 		using var dir  = new TempDir();
 		using var pool = NewPool(dir.Path);
 
@@ -116,8 +113,7 @@ public class AgentSessionImporterTests {
 		// Act
 		await importer.ImportAsync();
 
-		// Assert — the three real conversation messages landed; the two unparseable lines were kept in
-		// the parse-error snapshot, both carrying the session_id that ties them to those messages.
+		// Assert
 		await Assert.That(await importer.CountAsync()).IsEqualTo(3L);
 		await Assert.That(await importer.CountParseErrorsAsync()).IsEqualTo(2L);
 		await Assert.That(await CountParseErrorsLinkedToMessagesAsync(pool)).IsEqualTo(2L);
@@ -125,7 +121,7 @@ public class AgentSessionImporterTests {
 
 	[Test]
 	public async ValueTask parse_errors_is_a_snapshot_not_a_log() {
-		// Arrange — a session with one unparseable line alongside the three valid turns.
+		// Arrange
 		using var dir  = new TempDir();
 		using var pool = NewPool(dir.Path);
 
@@ -145,36 +141,33 @@ public class AgentSessionImporterTests {
 		await Assert.That(await importer.CountAsync()).IsEqualTo(3L);
 		await Assert.That(await importer.CountParseErrorsAsync()).IsEqualTo(1L);
 
-		// Act — rewrite the file WITHOUT the bad line (the graduation/self-heal case in miniature),
-		// then re-import.
+		// Act
 		File.WriteAllLines(
 			SessionFilePath(sourceRoot, sample),
 			new[] { Fixture.UserLine, Fixture.AssistantTextLine, Fixture.AssistantToolUseLine }.Select(line => Personalize(line, sample)));
 		await importer.ImportAsync();
 
-		// Assert — the snapshot rebuilt from the current scan drops the vanished error; messages are
-		// untouched (already-stored uuids are anti-joined out).
+		// Assert
 		await Assert.That(await importer.CountAsync()).IsEqualTo(3L);
 		await Assert.That(await importer.CountParseErrorsAsync()).IsEqualTo(0L);
 	}
 
 	[Test]
 	public async ValueTask count_is_zero_before_first_import() {
-		// Arrange — a fresh pool: neither transcripts nor transcript_parse_errors has been created.
+		// Arrange
 		using var dir  = new TempDir();
 		using var pool = NewPool(dir.Path);
 
 		var importer = NewImporter(pool, Path.Combine(dir.Path, "claude-home"));
 
-		// Act + Assert — both probes tolerate the missing table and return 0 rather than throwing.
+		// Act + Assert
 		await Assert.That(await importer.CountAsync()).IsEqualTo(0L);
 		await Assert.That(await importer.CountParseErrorsAsync()).IsEqualTo(0L);
 	}
 
 	[Test]
 	public async ValueTask create_is_idempotent() {
-		// Arrange — bootstrap runs on every host start, so calling it twice must be a harmless no-op
-		// (both tables use IF NOT EXISTS).
+		// Arrange
 		using var dir  = new TempDir();
 		using var pool = NewPool(dir.Path);
 
@@ -183,12 +176,12 @@ public class AgentSessionImporterTests {
 
 		var importer = NewImporter(pool, sourceRoot);
 
-		// Act — create, create again, then import.
+		// Act
 		await importer.CreateAsync();
 		await importer.CreateAsync();
 		await importer.ImportAsync();
 
-		// Assert — the double bootstrap left the tables intact and the import still lands three rows.
+		// Assert
 		await Assert.That(await importer.ExistsAsync()).IsTrue();
 		await Assert.That(await importer.CountAsync()).IsEqualTo(3L);
 		await Assert.That(await importer.CountParseErrorsAsync()).IsEqualTo(0L);
@@ -196,8 +189,7 @@ public class AgentSessionImporterTests {
 
 	[Test]
 	public async ValueTask tick_runs_import() {
-		// Arrange — one shared options instance, exactly as host DI would wire it: the importer bakes
-		// in its source path, the scheduler drives the cadence off the same object.
+		// Arrange
 		using var dir  = new TempDir();
 		using var pool = NewPool(dir.Path);
 
@@ -216,17 +208,16 @@ public class AgentSessionImporterTests {
 
 		using var scheduler = new AgentSessionImportScheduler(importer, options, clock);
 
-		// Act — advance past one tick interval so the background timer fires the import once.
+		// Act
 		clock.Advance(TimeSpan.FromMinutes(6));
 
-		// Assert — the tick imported the three conversation rows.
+		// Assert
 		await Assert.That(await importer.CountAsync()).IsEqualTo(3L);
 	}
 
 	[Test]
 	public async ValueTask tick_skips_quietly_before_bootstrap() {
-		// Arrange — CreateAsync is deliberately never called: the transcript tables do not exist, so
-		// the tick must quiet-skip (the DML-only import would otherwise fail every tick).
+		// Arrange
 		using var dir  = new TempDir();
 		using var pool = NewPool(dir.Path);
 
@@ -244,11 +235,11 @@ public class AgentSessionImporterTests {
 
 		using var scheduler = new AgentSessionImportScheduler(importer, options, clock);
 
-		// Act — a background tick and a direct tick both fire before bootstrap; neither may throw.
+		// Act
 		clock.Advance(TimeSpan.FromMinutes(6));
 		await scheduler.TickNowAsync();
 
-		// Assert — the tick created nothing and imported nothing: the tables still do not exist.
+		// Assert
 		await Assert.That(await importer.ExistsAsync()).IsFalse();
 		await Assert.That(await importer.CountAsync()).IsEqualTo(0L);
 		await Assert.That(await importer.CountParseErrorsAsync()).IsEqualTo(0L);
@@ -256,9 +247,7 @@ public class AgentSessionImporterTests {
 
 	[Test]
 	public async ValueTask tick_failure_does_not_throw() {
-		// Arrange — bootstrap the tables so the tick actually reaches the import, then point the source
-		// path at a directory that never exists so the scan fails; the scheduler must swallow it rather
-		// than surface it onto the timer thread.
+		// Arrange
 		using var dir  = new TempDir();
 		using var pool = NewPool(dir.Path);
 
@@ -274,13 +263,13 @@ public class AgentSessionImporterTests {
 
 		using var scheduler = new AgentSessionImportScheduler(importer, options, clock);
 
-		// Act — a failing background tick must not throw…
+		// Act
 		clock.Advance(TimeSpan.FromMinutes(6));
 
-		// …and the scheduler stays usable: a direct tick is still a safe no-throw.
+		// the scheduler stays usable after the failing background tick: a direct tick is still a safe no-throw.
 		await scheduler.TickNowAsync();
 
-		// Assert — the tables exist but the failed scan imported nothing, and no exception escaped.
+		// Assert
 		await Assert.That(await importer.ExistsAsync()).IsTrue();
 		await Assert.That(await importer.CountAsync()).IsEqualTo(0L);
 		await Assert.That(await importer.CountParseErrorsAsync()).IsEqualTo(0L);
@@ -423,23 +412,6 @@ public class AgentSessionImporterTests {
 			"""{"type":"attachment","uuid":"aaaaaaaa-0000-0000-0000-000000000009","sessionId":"11111111-1111-1111-1111-111111111111","timestamp":"2026-07-21T10:00:03.000Z","path":"/tmp/proj/file.txt"}""";
 	}
 
-	/// <summary>A unique temp directory owned by one test; deleted on dispose.</summary>
-	sealed class TempDir : IDisposable {
-		public string Path { get; } = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "kontext-agent-session-importer-tests", Guid.NewGuid().ToString("N"));
-
-		public TempDir() => Directory.CreateDirectory(Path);
-
-		public void Dispose() {
-			try {
-				if (Directory.Exists(Path))
-					Directory.Delete(Path, recursive: true);
-			} catch (IOException) {
-				// Best-effort cleanup; a lingering native handle must not fail the test.
-			} catch (UnauthorizedAccessException) {
-				// Best-effort cleanup.
-			}
-		}
-	}
 
 	#endregion // Test Infrastructure
 }

@@ -19,13 +19,14 @@ namespace DuckLance.Tests.Storage;
 /// Each test pins a Quack/DotNext behavior the manager relies on, and (where relevant) confirms the
 /// manager's compensating guard.
 /// </summary>
+[Category("Storage")]
 public class DuckDBConnectionManagerQuackAuditTests {
     // ---------------------------------------------------------------------------------------------
     // #1 / #7  Capacity bounds IDLE connections only, and the real number is 33 (32 ring + 1 fast).
     // ---------------------------------------------------------------------------------------------
 
     [Test]
-    public async Task Pool_DefaultCapacity_Is33_RingPlusFastItem() {
+    public async ValueTask pool_default_capacity_is_33_ring_plus_fast_item() {
         // DotNext BoundedObjectPool.Capacity == RingBuffer.Length + 1; RingBuffer(32) => 32 => 33.
         // The manager comments speak of "capacity 32"; the pool actually retains up to 33 idle conns.
         // This bounds IDLE retention only — there is no outstanding-object accounting.
@@ -40,7 +41,7 @@ public class DuckDBConnectionManagerQuackAuditTests {
     // ---------------------------------------------------------------------------------------------
 
     [Test]
-    public async Task Pool_OutstandingRents_EachMintDistinctConnection() {
+    public async ValueTask pool_outstanding_rents_each_mint_distinct_connection() {
         const int N        = 5;
         var       db       = NewTempDbPath();
         var       pool     = new DuckDBConnectionPool($"Data Source={db}"); // default Initialize is a no-op
@@ -72,7 +73,7 @@ public class DuckDBConnectionManagerQuackAuditTests {
     // ---------------------------------------------------------------------------------------------
 
     [Test]
-    public async Task Pool_InMemoryDataSource_IsRejected_AtPin() {
+    public async ValueTask pool_in_memory_data_source_is_rejected_at_pin() {
         await Assert
             .That(() => new DuckDBConnectionPool("Data Source=:memory:"))
             .Throws<NotSupportedException>();
@@ -83,7 +84,7 @@ public class DuckDBConnectionManagerQuackAuditTests {
     }
 
     [Test]
-    public async Task Pool_FilePathDataSource_WithSpaces_IsAccepted_NotSeenAsInMemory() {
+    public async ValueTask pool_file_path_data_source_with_spaces_is_accepted_not_seen_as_in_memory() {
         var dir = Path.Combine(Path.GetTempPath(), "duck lance audit " + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
         var db = Path.Combine(dir, "audit space.ddb");
@@ -103,7 +104,7 @@ public class DuckDBConnectionManagerQuackAuditTests {
     // ---------------------------------------------------------------------------------------------
 
     [Test]
-    public async Task Scope_ReturnAfterPoolDispose_DisposesConnection_NoLeak() {
+    public async ValueTask scope_return_after_pool_dispose_disposes_connection_no_leak() {
         var db = NewTempDbPath();
 
         try {
@@ -133,7 +134,7 @@ public class DuckDBConnectionManagerQuackAuditTests {
     // ---------------------------------------------------------------------------------------------
 
     [Test]
-    public async Task Open_InitializeThrows_QuackLeaksOpenedConnection() {
+    public async ValueTask open_initialize_throws_quack_leaks_opened_connection() {
         var db   = NewTempDbPath();
         var pool = new CapturingThrowingPool($"Data Source={db}");
 
@@ -167,7 +168,7 @@ public class DuckDBConnectionManagerQuackAuditTests {
     // ---------------------------------------------------------------------------------------------
 
     [Test]
-    public async Task Pool_DoubleReturnSameConnection_AdmitsDuplicate_TwoRentsShareOneConnection() {
+    public async ValueTask pool_double_return_same_connection_admits_duplicate_two_rents_share_one_connection() {
         var                       db   = NewTempDbPath();
         var                       pool = new DuckDBConnectionPool($"Data Source={db}");
         DuckDBAdvancedConnection? conn = null;
@@ -200,7 +201,7 @@ public class DuckDBConnectionManagerQuackAuditTests {
     // ---------------------------------------------------------------------------------------------
 
     [Test]
-    public async Task Manager_ExecuteAfterDispose_ThrowsObjectDisposed_Guarded() {
+    public async ValueTask manager_execute_after_dispose_throws_object_disposed_guarded() {
         var dir     = CreateTempStorageDir();
         var manager = new DuckDBConnectionManager(new() { DatabasePath = Path.Combine(dir, "duck.db") }, "vs");
 
@@ -225,7 +226,7 @@ public class DuckDBConnectionManagerQuackAuditTests {
     // ---------------------------------------------------------------------------------------------
 
     [Test]
-    public async Task Manager_DoubleDispose_IsSafe() {
+    public async ValueTask manager_double_dispose_is_safe() {
         var dir     = CreateTempStorageDir();
         var manager = new DuckDBConnectionManager(new() { DatabasePath = Path.Combine(dir, "duck.db") }, "vs");
 

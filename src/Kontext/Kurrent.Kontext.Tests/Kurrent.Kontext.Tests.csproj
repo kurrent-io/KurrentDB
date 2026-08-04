@@ -18,10 +18,13 @@
 		<Using Include="TUnit" />
 		<Using Include="TUnit.Core" />
 		<Using Include="KurrentDB.Testing" />
+		<Using Include="Kurrent.Kontext.Testing" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\Kurrent.Kontext\Kurrent.Kontext.csproj" />
+		<ProjectReference Include="..\Kurrent.Kontext.Embeddings\Kurrent.Kontext.Embeddings.csproj" />
+		<ProjectReference Include="..\Kurrent.Kontext.Testing\Kurrent.Kontext.Testing.csproj" />
 		<ProjectReference Include="..\..\KurrentDB.Testing\KurrentDB.Testing.csproj" />
 	</ItemGroup>
   

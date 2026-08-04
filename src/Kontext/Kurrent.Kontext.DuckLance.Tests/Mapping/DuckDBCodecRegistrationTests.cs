@@ -13,9 +13,10 @@ namespace DuckLance.Tests.Mapping;
 /// assertions can tell exactly which path produced the value.
 /// </summary>
 [LanceRequired]
+[Category("Mapping")]
 public class DuckDBCodecRegistrationTests {
     [Test]
-    public async Task Registered_Codec_Drives_Both_Directions_Of_A_Real_Collection() {
+    public async ValueTask registered_codec_drives_both_directions_of_real_collection() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 

@@ -15,9 +15,10 @@ namespace DuckLance.Tests.Embeddings;
 /// dynamically skips when the backing ONNX model can't be obtained (e.g. offline).
 /// </summary>
 [LanceRequired]
+[Category("Embeddings")]
 public class DuckDBEmbeddingGenerationTests {
     [Test]
-    public async Task Upsert_RawText_Then_Search_RanksSemanticallyClosestFirst() {
+    public async ValueTask upsert_raw_text_then_search_ranks_semantically_closest_first() {
         var fixture = await EmbeddingModelFixture.GetAsync();
         Skip.Unless(fixture.IsAvailable, "embedding model unavailable (offline?)");
 
@@ -78,7 +79,7 @@ public class DuckDBEmbeddingGenerationTests {
     }
 
     [Test]
-    public async Task Upsert_With_PropertyLevel_Generator_From_Definition_Works() {
+    public async ValueTask upsert_with_property_level_generator_from_definition_works() {
         var fixture = await EmbeddingModelFixture.GetAsync();
         Skip.Unless(fixture.IsAvailable, "embedding model unavailable (offline?)");
 
@@ -124,7 +125,7 @@ public class DuckDBEmbeddingGenerationTests {
     }
 
     [Test]
-    public async Task Batch_Upsert_With_Generation_All_Records_Become_Searchable() {
+    public async ValueTask batch_upsert_with_generation_all_records_become_searchable() {
         var fixture = await EmbeddingModelFixture.GetAsync();
         Skip.Unless(fixture.IsAvailable, "embedding model unavailable (offline?)");
 
@@ -174,7 +175,7 @@ public class DuckDBEmbeddingGenerationTests {
     }
 
     [Test]
-    public async Task Mixed_Native_And_Generated_Vector_Properties_Are_Both_Searchable() {
+    public async ValueTask mixed_native_and_generated_vector_properties_are_both_searchable() {
         var fixture = await EmbeddingModelFixture.GetAsync();
         Skip.Unless(fixture.IsAvailable, "embedding model unavailable (offline?)");
 

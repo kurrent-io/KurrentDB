@@ -73,9 +73,10 @@ namespace DuckLance.Tests.Sweeps;
 /// </list>
 /// </remarks>
 [LanceRequired]
+[Category("Sweeps")]
 public class DuckDBTypeMatrixTests {
     [Test]
-    public async Task FullRoundTrip_PopulatedAndWithNullsRecords_EveryValueMatchesExactly() {
+    public async ValueTask full_round_trip_populated_and_with_nulls_records_every_value_matches_exactly() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -104,7 +105,7 @@ public class DuckDBTypeMatrixTests {
     }
 
     [Test]
-    public async Task VectorSearch_ReturnsDataPropertiesIdenticallyToGetAsync() {
+    public async ValueTask vector_search_returns_data_properties_identically_to_get_async() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -151,7 +152,7 @@ public class DuckDBTypeMatrixTests {
     /// (bypassing the codec entirely) confirms the same bytes were persisted.
     /// </summary>
     [Test]
-    public async Task BytesVal_PopulatedBlobColumn_RoundTripsExactlyViaGetAsyncAndSearchAsync() {
+    public async ValueTask bytes_val_populated_blob_column_round_trips_exactly_via_get_async_and_search_async() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 

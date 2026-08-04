@@ -12,13 +12,14 @@ namespace DuckLance.Tests.Storage;
 /// <see cref="LanceRequiredAttribute"/> because they install/load the DuckDB <c>lance</c> extension and attach a
 /// real Lance namespace on disk.
 /// </summary>
+[Category("Storage")]
 public class DuckDBConnectionManagerTests {
     const string Alias = "vs";
 
     // --- Constructor validation (no live connection required) ---
 
     [Test]
-    public async Task Constructor_EmptyDatabasePath_ThrowsArgumentException() {
+    public async ValueTask constructor_empty_database_path_throws_argument_exception() {
         var options = new DuckDBVectorStoreOptions { DatabasePath = "" };
 
         await Assert
@@ -34,7 +35,7 @@ public class DuckDBConnectionManagerTests {
     [Arguments("a.b")]  // period
     [Arguments("a'b")]  // single quote
     [Arguments("a;b")]  // semicolon
-    public async Task Constructor_InvalidAlias_ThrowsArgumentException(string alias) {
+    public async ValueTask constructor_invalid_alias_throws_argument_exception(string alias) {
         var options = new DuckDBVectorStoreOptions { DatabasePath = Path.Combine(Path.GetTempPath(), "duck.db") };
 
         await Assert
@@ -43,7 +44,7 @@ public class DuckDBConnectionManagerTests {
     }
 
     [Test]
-    public async Task Constructor_DatabaseFileStemEqualsAlias_ThrowsArgumentException() {
+    public async ValueTask constructor_database_file_stem_equals_alias_throws_argument_exception() {
         // DuckDB names the database's own catalog after the file name's stem (up to the first '.'), so a stem
         // equal to the ATTACH alias would make ATTACH IF NOT EXISTS silently no-op — the constructor rejects it.
         var options = new DuckDBVectorStoreOptions { DatabasePath = Path.Combine(Path.GetTempPath(), "ldb.ddb") };
@@ -54,7 +55,7 @@ public class DuckDBConnectionManagerTests {
     }
 
     [Test]
-    public async Task Constructor_ResolvesDatabasePathToFullPath() {
+    public async ValueTask constructor_resolves_database_path_to_full_path() {
         var dir = CreateTempStorageDir();
 
         try {
@@ -74,7 +75,7 @@ public class DuckDBConnectionManagerTests {
 
     [Test]
     [LanceRequired]
-    public async Task ExecuteAsync_CreatesAndQueriesLanceTable() {
+    public async ValueTask execute_async_creates_and_queries_lance_table() {
         var dir = CreateTempStorageDir();
 
         try {
@@ -107,7 +108,7 @@ public class DuckDBConnectionManagerTests {
 
     [Test]
     [LanceRequired]
-    public async Task ExecuteAsync_SequentialCalls_ReuseSamePhysicalConnection() {
+    public async ValueTask execute_async_sequential_calls_reuse_same_physical_connection() {
         var dir = CreateTempStorageDir();
 
         try {
@@ -131,7 +132,7 @@ public class DuckDBConnectionManagerTests {
 
     [Test]
     [LanceRequired]
-    public async Task ExecuteAsync_StaleDatasetCacheError_RecyclesConnectionAndRetriesOnce() {
+    public async ValueTask execute_async_stale_dataset_cache_error_recycles_connection_and_retries_once() {
         var dir = CreateTempStorageDir();
 
         try {
@@ -178,7 +179,7 @@ public class DuckDBConnectionManagerTests {
 
     [Test]
     [LanceRequired]
-    public async Task ExecuteAsync_NonMatchingException_PropagatesWithoutRetry() {
+    public async ValueTask execute_async_non_matching_exception_propagates_without_retry() {
         var dir = CreateTempStorageDir();
 
         try {
@@ -205,7 +206,7 @@ public class DuckDBConnectionManagerTests {
     // --- Cancellation ---
 
     [Test]
-    public async Task ExecuteAsync_PreCancelledToken_DoesNotRunOperation() {
+    public async ValueTask execute_async_pre_cancelled_token_does_not_run_operation() {
         var dir = CreateTempStorageDir();
 
         try {
@@ -230,7 +231,7 @@ public class DuckDBConnectionManagerTests {
 
     [Test]
     [LanceRequired]
-    public async Task Dispose_KeepsStableEngineFile() {
+    public async ValueTask dispose_keeps_stable_engine_file() {
         var dir     = CreateTempStorageDir();
         var manager = new DuckDBConnectionManager(new() { DatabasePath = Path.Combine(dir, "duck.db") }, Alias);
 
@@ -265,7 +266,7 @@ public class DuckDBConnectionManagerTests {
 
     [Test]
     [LanceRequired]
-    public async Task ExtensionPath_LoadsLanceFromFile() {
+    public async ValueTask extension_path_loads_lance_from_file() {
         var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
         var extensionPath = Path.Combine(
@@ -304,7 +305,7 @@ public class DuckDBConnectionManagerTests {
 
     [Test]
     [LanceRequired]
-    public async Task StableEngineFile_SurvivesDispose_AndIsReopenedBySecondManager() {
+    public async ValueTask stable_engine_file_survives_dispose_and_is_reopened_by_second_manager() {
         var dir = CreateTempStorageDir();
 
         try {
@@ -358,7 +359,7 @@ public class DuckDBConnectionManagerTests {
 
     [Test]
     [LanceRequired]
-    public async Task ConcurrentOperations_SecondConnectionInitialize_DoesNotCollideOnAttach() {
+    public async ValueTask concurrent_operations_second_connection_initialize_does_not_collide_on_attach() {
         var dir = CreateTempStorageDir();
 
         try {
@@ -406,7 +407,7 @@ public class DuckDBConnectionManagerTests {
 
     [Test]
     [LanceRequired]
-    public async Task TwoManagersOverSameDatabasePath_ShareInstance_BothOperateCorrectly() {
+    public async ValueTask two_managers_over_same_database_path_share_instance_both_operate_correctly() {
         var                      dir      = CreateTempStorageDir();
         DuckDBConnectionManager? managerA = null;
         DuckDBConnectionManager? managerB = null;
@@ -471,7 +472,7 @@ public class DuckDBConnectionManagerTests {
 
     [Test]
     [LanceRequired]
-    public async Task CrossProcessOpen_IsRejectedByDuckDBFileLock() {
+    public async ValueTask cross_process_open_is_rejected_by_duckdb_file_lock() {
         var duckdbCli = FindDuckDbCli();
 
         if (duckdbCli is null) {
@@ -523,7 +524,7 @@ public class DuckDBConnectionManagerTests {
 
     [Test]
     [LanceRequired]
-    public async Task MemoryLimitMib_IsAppliedToEngineMemoryLimitSetting() {
+    public async ValueTask memory_limit_mib_is_applied_to_engine_memory_limit_setting() {
         var dir = CreateTempStorageDir();
 
         try {

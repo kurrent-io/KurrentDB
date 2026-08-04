@@ -6,12 +6,13 @@ namespace DuckLance.Tests.Search;
 /// Pure unit tests for <see cref="DuckDBSearchSqlComposer"/>: the <c>lance_vector_search</c> statement composed
 /// from the query parameters. No DuckDB connection is used; every test asserts the exact SQL text.
 /// </summary>
+[Category("Search")]
 public class DuckDBSearchSqlComposerTests {
     // The canonical non-vector projection for the golden model (key id, data category/tags/content).
     static readonly string[] s_canonicalColumns = ["id", "category", "tags", "content"];
 
     [Test]
-    public async Task BuildVectorSearchSql_WithRefine_NoSkip_ProducesGoldenStatement() {
+    public async ValueTask build_vector_search_sql_with_refine_no_skip_produces_golden_statement() {
         var sql = DuckDBSearchSqlComposer.BuildVectorSearchSql(
             "ducklance.main.vs_docs", "vec", 4,
             10, true, s_canonicalColumns,
@@ -28,7 +29,7 @@ public class DuckDBSearchSqlComposerTests {
     }
 
     [Test]
-    public async Task BuildVectorSearchSql_WithoutRefine_NoSkip_OmitsRefineFactor() {
+    public async ValueTask build_vector_search_sql_without_refine_no_skip_omits_refine_factor() {
         var sql = DuckDBSearchSqlComposer.BuildVectorSearchSql(
             "ducklance.main.vs_docs", "vec", 4,
             10, false, s_canonicalColumns,
@@ -45,7 +46,7 @@ public class DuckDBSearchSqlComposerTests {
     }
 
     [Test]
-    public async Task BuildVectorSearchSql_WithSkip_EmitsOffsetClause() {
+    public async ValueTask build_vector_search_sql_with_skip_emits_offset_clause() {
         var sql = DuckDBSearchSqlComposer.BuildVectorSearchSql(
             "ducklance.main.vs_docs", "vec", 4,
             30, true, s_canonicalColumns,
@@ -62,7 +63,7 @@ public class DuckDBSearchSqlComposerTests {
     }
 
     [Test]
-    public async Task BuildVectorSearchSql_IncludeVectors_ProjectsVectorColumn() {
+    public async ValueTask build_vector_search_sql_include_vectors_projects_vector_column() {
         string[] columns = ["id", "category", "tags", "content", "vec"];
 
         var sql = DuckDBSearchSqlComposer.BuildVectorSearchSql(
@@ -81,7 +82,7 @@ public class DuckDBSearchSqlComposerTests {
     }
 
     [Test]
-    public async Task BuildVectorSearchSql_RespectsColumnOrder() {
+    public async ValueTask build_vector_search_sql_respects_column_order() {
         IReadOnlyList<string> columns = new List<string> {
             "gamma",
             "alpha",
@@ -104,7 +105,7 @@ public class DuckDBSearchSqlComposerTests {
     }
 
     [Test]
-    public async Task BuildHybridSearchSql_NoWhere_WithRefine_NoSkip_ProducesGoldenStatement() {
+    public async ValueTask build_hybrid_search_sql_no_where_with_refine_no_skip_produces_golden_statement() {
         var sql = DuckDBSearchSqlComposer.BuildHybridSearchSql(
             "ducklance.main.vs_docs", "vec", 4,
             "content", 10, true,
@@ -122,7 +123,7 @@ public class DuckDBSearchSqlComposerTests {
     }
 
     [Test]
-    public async Task BuildHybridSearchSql_NoWhere_WithoutRefine_OmitsRefineFactor() {
+    public async ValueTask build_hybrid_search_sql_no_where_without_refine_omits_refine_factor() {
         var sql = DuckDBSearchSqlComposer.BuildHybridSearchSql(
             "ducklance.main.vs_docs", "vec", 4,
             "content", 10, false,
@@ -140,7 +141,7 @@ public class DuckDBSearchSqlComposerTests {
     }
 
     [Test]
-    public async Task BuildHybridSearchSql_WithWhere_WithRefine_WithSkip_EmitsWhereAndOffset() {
+    public async ValueTask build_hybrid_search_sql_with_where_with_refine_with_skip_emits_where_and_offset() {
         var sql = DuckDBSearchSqlComposer.BuildHybridSearchSql(
             "ducklance.main.vs_docs", "vec", 4,
             "content", 30, true,
@@ -158,7 +159,7 @@ public class DuckDBSearchSqlComposerTests {
     }
 
     [Test]
-    public async Task BuildHybridSearchSql_WithWhere_WithoutRefine_NoSkip_EmitsWhereOnly() {
+    public async ValueTask build_hybrid_search_sql_with_where_without_refine_no_skip_emits_where_only() {
         var sql = DuckDBSearchSqlComposer.BuildHybridSearchSql(
             "ducklance.main.vs_docs", "vec", 4,
             "content", 5, false,

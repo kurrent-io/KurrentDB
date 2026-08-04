@@ -9,13 +9,14 @@ namespace DuckLance.Tests.Storage;
 /// run everywhere; the round-trip proofs (gated by <see cref="LanceRequiredAttribute"/>) use a real local DuckDB
 /// connection as the encoder's oracle — for every type, <c>SELECT {Encode(v)}</c> must reconstruct <c>v</c> exactly.
 /// </summary>
+[Category("Storage")]
 public class DuckDBSqlLiteralEncoderTests {
     // =============================================================================================================
     // NULL / bool
     // =============================================================================================================
 
     [Test]
-    public async Task Encode_Null_IsNull() {
+    public async ValueTask encode_null_is_null() {
         await Assert.That(DuckDBSqlLiteralEncoder.Encode(null)).IsEqualTo("NULL");
         await Assert.That(DuckDBSqlLiteralEncoder.Encode(DBNull.Value)).IsEqualTo("NULL");
     }
@@ -23,7 +24,7 @@ public class DuckDBSqlLiteralEncoderTests {
     [Test]
     [Arguments(true, "TRUE")]
     [Arguments(false, "FALSE")]
-    public async Task Encode_Bool_IsKeyword(bool value, string expected) => await Assert.That(DuckDBSqlLiteralEncoder.Encode(value)).IsEqualTo(expected);
+    public async ValueTask encode_bool_is_keyword(bool value, string expected) => await Assert.That(DuckDBSqlLiteralEncoder.Encode(value)).IsEqualTo(expected);
 
     // =============================================================================================================
     // Strings — the security-critical path.
@@ -35,10 +36,10 @@ public class DuckDBSqlLiteralEncoderTests {
     [Arguments("a''b", "'a''''b'")]                              // already-doubled input is doubled again
     [Arguments("", "''")]                                        // empty string
     [Arguments("plain", "'plain'")]                              // no escaping needed
-    public async Task Encode_String_DoublesQuotes(string value, string expected) => await Assert.That(DuckDBSqlLiteralEncoder.Encode(value)).IsEqualTo(expected);
+    public async ValueTask encode_string_doubles_quotes(string value, string expected) => await Assert.That(DuckDBSqlLiteralEncoder.Encode(value)).IsEqualTo(expected);
 
     [Test]
-    public async Task Encode_String_PreservesNewlinesAndUnicode() {
+    public async ValueTask encode_string_preserves_newlines_and_unicode() {
         // Newlines are legal inside a DuckDB literal and must pass through byte-for-byte.
         await Assert.That(DuckDBSqlLiteralEncoder.Encode("line1\nline2")).IsEqualTo("'line1\nline2'");
 
@@ -48,7 +49,7 @@ public class DuckDBSqlLiteralEncoderTests {
     }
 
     [Test]
-    public async Task Encode_VeryLongString_IsNotTruncated() {
+    public async ValueTask encode_very_long_string_is_not_truncated() {
         string big     = new('a', 200_000);
         var    encoded = DuckDBSqlLiteralEncoder.Encode(big);
 
@@ -62,14 +63,14 @@ public class DuckDBSqlLiteralEncoderTests {
     [Arguments("a\0b")] // NUL in the middle
     [Arguments("\0")]   // lone NUL
     [Arguments("trailing\0")]
-    public async Task Encode_StringWithNul_Throws(string value) => await Assert.That(() => DuckDBSqlLiteralEncoder.Encode(value)).Throws<ArgumentException>();
+    public async ValueTask encode_string_with_nul_throws(string value) => await Assert.That(() => DuckDBSqlLiteralEncoder.Encode(value)).Throws<ArgumentException>();
 
     // =============================================================================================================
     // Integers
     // =============================================================================================================
 
     [Test]
-    public async Task Encode_Integers_AreBareInvariantDigits() {
+    public async ValueTask encode_integers_are_bare_invariant_digits() {
         await Assert.That(DuckDBSqlLiteralEncoder.Encode(0)).IsEqualTo("0");
         await Assert.That(DuckDBSqlLiteralEncoder.Encode(-5)).IsEqualTo("-5");
         await Assert.That(DuckDBSqlLiteralEncoder.Encode(int.MinValue)).IsEqualTo("-2147483648");
@@ -86,7 +87,7 @@ public class DuckDBSqlLiteralEncoderTests {
     // =============================================================================================================
 
     [Test]
-    public async Task Encode_Float_HandlesNonFiniteAndNegativeZero() {
+    public async ValueTask encode_float_handles_non_finite_and_negative_zero() {
         await Assert.That(DuckDBSqlLiteralEncoder.Encode(float.NaN)).IsEqualTo("CAST('NaN' AS FLOAT)");
         await Assert.That(DuckDBSqlLiteralEncoder.Encode(float.PositiveInfinity)).IsEqualTo("CAST('Infinity' AS FLOAT)");
         await Assert.That(DuckDBSqlLiteralEncoder.Encode(float.NegativeInfinity)).IsEqualTo("CAST('-Infinity' AS FLOAT)");
@@ -96,7 +97,7 @@ public class DuckDBSqlLiteralEncoderTests {
     }
 
     [Test]
-    public async Task Encode_Double_HandlesNonFiniteAndNegativeZero() {
+    public async ValueTask encode_double_handles_non_finite_and_negative_zero() {
         await Assert.That(DuckDBSqlLiteralEncoder.Encode(double.NaN)).IsEqualTo("CAST('NaN' AS DOUBLE)");
         await Assert.That(DuckDBSqlLiteralEncoder.Encode(double.PositiveInfinity)).IsEqualTo("CAST('Infinity' AS DOUBLE)");
         await Assert.That(DuckDBSqlLiteralEncoder.Encode(double.NegativeInfinity)).IsEqualTo("CAST('-Infinity' AS DOUBLE)");
@@ -109,13 +110,13 @@ public class DuckDBSqlLiteralEncoderTests {
     // =============================================================================================================
 
     [Test]
-    public async Task Encode_Decimal_CastsToDecimal38_18() {
+    public async ValueTask encode_decimal_casts_to_decimal_38_18() {
         await Assert.That(DuckDBSqlLiteralEncoder.Encode(123.456m)).IsEqualTo("CAST('123.456' AS DECIMAL(38,18))");
         await Assert.That(DuckDBSqlLiteralEncoder.Encode(-0.000000000000000001m)).IsEqualTo("CAST('-0.000000000000000001' AS DECIMAL(38,18))");
     }
 
     [Test]
-    public async Task Encode_DateTime_IsMicrosecondTimestamp() {
+    public async ValueTask encode_datetime_is_microsecond_timestamp() {
         var dt = new DateTime(
             2024, 1, 2,
             3, 4, 5).AddTicks(1_230_000); // .123 seconds
@@ -124,7 +125,7 @@ public class DuckDBSqlLiteralEncoderTests {
     }
 
     [Test]
-    public async Task Encode_DateTimeOffset_NormalizesToUtc() {
+    public async ValueTask encode_datetime_offset_normalizes_to_utc() {
         var dto = new DateTimeOffset(
             2024, 1, 2,
             3, 4, 5,
@@ -138,7 +139,7 @@ public class DuckDBSqlLiteralEncoderTests {
     // =============================================================================================================
 
     [Test]
-    public async Task Encode_ByteArray_IsFullyHexEscapedBlob() {
+    public async ValueTask encode_byte_array_is_fully_hex_escaped_blob() {
         await Assert.That(DuckDBSqlLiteralEncoder.Encode(new byte[] { 0xAB, 0xCD })).IsEqualTo(@"CAST('\xAB\xCD' AS BLOB)");
 
         // The hazardous bytes: 0x00 (NUL), 0x27 (single quote), 0xFF (high byte) — all hex, none literal.
@@ -152,7 +153,7 @@ public class DuckDBSqlLiteralEncoderTests {
     // =============================================================================================================
 
     [Test]
-    public async Task Encode_FloatCollections_CastToFixedSizeArray() {
+    public async ValueTask encode_float_collections_cast_to_fixed_size_array() {
         await Assert.That(DuckDBSqlLiteralEncoder.Encode(new[] { 1f, 0f, 0f, 0f })).IsEqualTo("CAST([1, 0, 0, 0] AS FLOAT[4])");
         await Assert.That(DuckDBSqlLiteralEncoder.Encode(new ReadOnlyMemory<float>(new[] { 1.5f, -2.5f }))).IsEqualTo("CAST([1.5, -2.5] AS FLOAT[2])");
         await Assert.That(DuckDBSqlLiteralEncoder.Encode(new List<float> { 0.1f, 0.2f })).IsEqualTo("CAST([0.1, 0.2] AS FLOAT[2])");
@@ -162,14 +163,14 @@ public class DuckDBSqlLiteralEncoderTests {
     }
 
     [Test]
-    public async Task Encode_EmptyFloatCollection_IsVariableLengthList() {
+    public async ValueTask encode_empty_float_collection_is_variable_length_list() {
         // A fixed-size FLOAT[0] is illegal in DuckDB, so an empty float collection degrades to a variable-length list.
         await Assert.That(DuckDBSqlLiteralEncoder.Encode(new List<float>())).IsEqualTo("CAST([] AS FLOAT[])");
         await Assert.That(DuckDBSqlLiteralEncoder.Encode(Array.Empty<float>())).IsEqualTo("CAST([] AS FLOAT[])");
     }
 
     [Test]
-    public async Task Encode_StringLists_EncodeEachElement() {
+    public async ValueTask encode_string_lists_encode_each_element() {
         await Assert.That(DuckDBSqlLiteralEncoder.Encode(new List<string> { "a", "b" })).IsEqualTo("['a', 'b']");
         await Assert.That(DuckDBSqlLiteralEncoder.Encode(new[] { "O'Brien" })).IsEqualTo("['O''Brien']");
         await Assert.That(DuckDBSqlLiteralEncoder.Encode(new List<string>())).IsEqualTo("[]");
@@ -179,27 +180,27 @@ public class DuckDBSqlLiteralEncoderTests {
     }
 
     [Test]
-    public async Task Encode_NumericLists_AreBareBracketedElements() {
+    public async ValueTask encode_numeric_lists_are_bare_bracketed_elements() {
         await Assert.That(DuckDBSqlLiteralEncoder.Encode(new[] { 1, 2, 3 })).IsEqualTo("[1, 2, 3]");
         await Assert.That(DuckDBSqlLiteralEncoder.Encode(new List<long> { -5L, 9223372036854775807L })).IsEqualTo("[-5, 9223372036854775807]");
     }
 
     [Test]
-    public async Task Encode_UnsupportedType_Throws() => await Assert.That(() => DuckDBSqlLiteralEncoder.Encode(Guid.NewGuid())).Throws<NotSupportedException>();
+    public async ValueTask encode_unsupported_type_throws() => await Assert.That(() => DuckDBSqlLiteralEncoder.Encode(Guid.NewGuid())).Throws<NotSupportedException>();
 
     // =============================================================================================================
     // EncodeInto — placeholder substitution respecting quoted regions.
     // =============================================================================================================
 
     [Test]
-    public async Task EncodeInto_ReplacesPlaceholdersInOrder() {
+    public async ValueTask encode_into_replaces_placeholders_in_order() {
         await Assert.That(DuckDBSqlLiteralEncoder.EncodeInto("SELECT ?", [42])).IsEqualTo("SELECT 42");
         await Assert.That(DuckDBSqlLiteralEncoder.EncodeInto("SELECT ?, ?", ["a", 2])).IsEqualTo("SELECT 'a', 2");
         await Assert.That(DuckDBSqlLiteralEncoder.EncodeInto("SELECT ?", [null])).IsEqualTo("SELECT NULL");
     }
 
     [Test]
-    public async Task EncodeInto_DoesNotSubstituteInsideStringLiteral() {
+    public async ValueTask encode_into_does_not_substitute_inside_string_literal() {
         // The bare '?' inside the literal is data; only the trailing '?' is a placeholder.
         await Assert.That(DuckDBSqlLiteralEncoder.EncodeInto("SELECT '?', ?", [7])).IsEqualTo("SELECT '?', 7");
 
@@ -208,11 +209,11 @@ public class DuckDBSqlLiteralEncoderTests {
     }
 
     [Test]
-    public async Task EncodeInto_DoesNotSubstituteInsideQuotedIdentifier() =>
+    public async ValueTask encode_into_does_not_substitute_inside_quoted_identifier() =>
         await Assert.That(DuckDBSqlLiteralEncoder.EncodeInto("SELECT \"a?b\", ?", [7])).IsEqualTo("SELECT \"a?b\", 7");
 
     [Test]
-    public async Task EncodeInto_CountMismatch_Throws() {
+    public async ValueTask encode_into_count_mismatch_throws() {
         // Too few values.
         await Assert.That(() => DuckDBSqlLiteralEncoder.EncodeInto("SELECT ?, ?", [1])).Throws<ArgumentException>();
 
@@ -221,7 +222,7 @@ public class DuckDBSqlLiteralEncoderTests {
     }
 
     [Test]
-    public async Task EncodeInto_PropagatesEncodingErrors() =>
+    public async ValueTask encode_into_propagates_encoding_errors() =>
         // A NUL in a substituted value fails the whole splice rather than corrupting the statement.
         await Assert.That(() => DuckDBSqlLiteralEncoder.EncodeInto("SELECT ?", ["a\0b"])).Throws<ArgumentException>();
 
@@ -237,14 +238,14 @@ public class DuckDBSqlLiteralEncoderTests {
     [Arguments("line1\nline2\ttab")]
     [Arguments("🦆 mixed مرحبا")]
     [Arguments("")]
-    public async Task RoundTrip_String(string value) {
+    public async ValueTask round_trip_string(string value) {
         var got = await RoundTripAsync(DuckDBSqlLiteralEncoder.Encode(value));
         await Assert.That(got).IsEqualTo(value);
     }
 
     [Test]
     [LanceRequired]
-    public async Task RoundTrip_ScalarsAndTemporal() {
+    public async ValueTask round_trip_scalars_and_temporal() {
         await Assert.That((bool)(await RoundTripAsync(DuckDBSqlLiteralEncoder.Encode(true)))!).IsTrue();
         await Assert.That(await RoundTripAsync(DuckDBSqlLiteralEncoder.Encode(-12345))).IsEqualTo(-12345);
         await Assert.That(await RoundTripAsync(DuckDBSqlLiteralEncoder.Encode(long.MaxValue))).IsEqualTo(long.MaxValue);
@@ -271,7 +272,7 @@ public class DuckDBSqlLiteralEncoderTests {
 
     [Test]
     [LanceRequired]
-    public async Task RoundTrip_NonFiniteFloats() {
+    public async ValueTask round_trip_non_finite_floats() {
         await Assert.That(await RoundTripAsync(DuckDBSqlLiteralEncoder.Encode(float.PositiveInfinity))).IsEqualTo(float.PositiveInfinity);
         await Assert.That(await RoundTripAsync(DuckDBSqlLiteralEncoder.Encode(float.NegativeInfinity))).IsEqualTo(float.NegativeInfinity);
         await Assert.That(await RoundTripAsync(DuckDBSqlLiteralEncoder.Encode(double.NaN))).IsEqualTo(double.NaN);
@@ -279,7 +280,7 @@ public class DuckDBSqlLiteralEncoderTests {
 
     [Test]
     [LanceRequired]
-    public async Task RoundTrip_Blob() {
+    public async ValueTask round_trip_blob() {
         byte[] payload = [0x00, 0x27, 0xFF, 0x41, 0x00, 0xAB];
 
         // RoundTripAsync materializes the BLOB (returned as a native-backed Stream) into a byte[] before the
@@ -290,7 +291,7 @@ public class DuckDBSqlLiteralEncoderTests {
 
     [Test]
     [LanceRequired]
-    public async Task RoundTrip_FloatVector() {
+    public async ValueTask round_trip_float_vector() {
         var vector = new[] { 1f, 0f, -0.5f, 3.25f };
         var got    = await RoundTripAsync(DuckDBSqlLiteralEncoder.Encode(vector));
 
@@ -300,7 +301,7 @@ public class DuckDBSqlLiteralEncoderTests {
 
     [Test]
     [LanceRequired]
-    public async Task RoundTrip_StringList() {
+    public async ValueTask round_trip_string_list() {
         var tags = new List<string> {
             "alpha",
             "O'Brien",
@@ -314,7 +315,7 @@ public class DuckDBSqlLiteralEncoderTests {
 
     [Test]
     [LanceRequired]
-    public async Task RoundTrip_EmptyFloatList_IsEmpty() {
+    public async ValueTask round_trip_empty_float_list_is_empty() {
         var got = await RoundTripAsync(DuckDBSqlLiteralEncoder.Encode(new List<float>()));
         await Assert.That(((List<float>)got!).Count).IsEqualTo(0);
     }

@@ -12,9 +12,10 @@ namespace DuckLance.Tests.Crud;
 /// <see cref="LanceRequiredAttribute"/>.
 /// </summary>
 [LanceRequired]
+[Category("Crud")]
 public class DuckDBQueryTests {
     [Test]
-    public async Task Query_Combines_In_Set_Containment_Ordering_And_Limit_In_One_Statement() {
+    public async ValueTask query_combines_in_set_containment_ordering_and_limit_in_one_statement() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 
@@ -51,7 +52,7 @@ public class DuckDBQueryTests {
     }
 
     [Test]
-    public async Task Query_With_Vectors_Decodes_The_Vector_Columns_Too() {
+    public async ValueTask query_with_vectors_decodes_the_vector_columns_too() {
         var                dir   = CreateTempStorageDir();
         DuckDBVectorStore? store = null;
 

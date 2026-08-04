@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel.Connectors.Onnx;
+using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
 
 namespace DuckLance.Tests.Support;
 
@@ -44,14 +45,14 @@ public sealed class EmbeddingModelFixture {
     static readonly SemaphoreSlim          s_gate = new(1, 1);
     static          EmbeddingModelFixture? s_instance;
 
-    EmbeddingModelFixture(IEmbeddingGenerator<string, Embedding<float>>? generator) => Generator = generator;
+    EmbeddingModelFixture(EmbeddingGenerator? generator) => Generator = generator;
 
     /// <summary>Gets whether a real embedding generator could be obtained (model cached or freshly downloaded).</summary>
     [MemberNotNullWhen(true, nameof(Generator))]
     public bool IsAvailable => Generator is not null;
 
     /// <summary>Gets the real, SK-provided, ONNX-backed embedding generator, or <see langword="null"/> when <see cref="IsAvailable"/> is <see langword="false"/>.</summary>
-    public IEmbeddingGenerator<string, Embedding<float>>? Generator { get; }
+    public EmbeddingGenerator? Generator { get; }
 
     /// <summary>
     /// Gets the shared fixture instance, downloading and caching the model (and constructing the generator)
@@ -97,7 +98,7 @@ public sealed class EmbeddingModelFixture {
             using var provider = services.BuildServiceProvider();
 
             var generator =
-                provider.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
+                provider.GetRequiredService<EmbeddingGenerator>();
 
             return new(generator);
         } catch (Exception ex) when (ex is IOException or InvalidOperationException) {

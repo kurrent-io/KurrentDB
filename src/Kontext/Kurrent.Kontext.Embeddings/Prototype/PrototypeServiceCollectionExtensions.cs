@@ -5,6 +5,7 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
 
 namespace Kurrent.Kontext.Embeddings.Prototype;
 
@@ -21,7 +22,7 @@ public static class PrototypeServiceCollectionExtensions {
 			services.TryAddSingleton(sp => new EmbeddingService(
 				sp.GetRequiredService<ModelManager>(),
 				sp.GetRequiredService<ILogger<EmbeddingService>>()));
-			services.TryAddSingleton<IEmbeddingGenerator<string, Embedding<float>>>(
+			services.TryAddSingleton<EmbeddingGenerator>(
 				sp => sp.GetRequiredService<EmbeddingService>());
 			return services;
 		}

@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsPackable>false</IsPackable>
+		<IsTestProject>true</IsTestProject>
+		<EnablePreviewFeatures>true</EnablePreviewFeatures>
+		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+		<NoWarn>$(NoWarn);NU1904</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="TUnit" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Using Include="TUnit" />
+		<Using Include="TUnit.Core" />
+		<Using Include="TUnit.Assertions.Enums" />
+		<Using Include="KurrentDB.Testing" />
+		<Using Include="Kurrent.Kontext.Retrieval.Tests.Fakes" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Kurrent.Kontext.Retrieval\Kurrent.Kontext.Retrieval.csproj" />
+		<ProjectReference Include="..\..\KurrentDB.Testing\KurrentDB.Testing.csproj" />
+	</ItemGroup>
+
+</Project>

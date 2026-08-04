@@ -19,6 +19,7 @@ namespace DuckLance.Tests.Filtering;
 /// throw <see cref="NotSupportedException"/> at translation time; nothing may silently emit wrong SQL or a partial
 /// filter, and no user value may be inlined rather than parameterized.
 /// </remarks>
+[Category("Filtering")]
 public class DuckDBFilterTranslatorAdversarialTests {
     static CollectionModel Model() =>
         new DuckDBModelBuilder().Build(
@@ -36,7 +37,7 @@ public class DuckDBFilterTranslatorAdversarialTests {
     // =====================================================================================================
 
     [Test]
-    public async Task Value_LossyIntCastFromDouble_BindsEvaluatedInt() {
+    public async ValueTask value_lossy_int_cast_from_double_binds_evaluated_int() {
         var d      = 5.9;
         var result = Translate(r => r.Num == (int)d);
 
@@ -48,7 +49,7 @@ public class DuckDBFilterTranslatorAdversarialTests {
     }
 
     [Test]
-    public async Task Value_LossyIntCastFromDouble_BindsFive_CONTRACT() {
+    public async ValueTask value_lossy_int_cast_from_double_binds_five_contract() {
         var d      = 5.9;
         var result = Translate(r => r.Num == (int)d);
 
@@ -57,7 +58,7 @@ public class DuckDBFilterTranslatorAdversarialTests {
     }
 
     [Test]
-    public async Task Value_LossyIntCastFromOverflowingLong_BindsUncheckedWrappedInt() {
+    public async ValueTask value_lossy_int_cast_from_overflowing_long_binds_unchecked_wrapped_int() {
         var big    = 5_000_000_000L; // > int.MaxValue
         var result = Translate(r => r.Num == (int)big);
 
@@ -70,7 +71,7 @@ public class DuckDBFilterTranslatorAdversarialTests {
     }
 
     [Test]
-    public async Task Value_CheckedIntCastOverflow_ThrowsNotSupported() {
+    public async ValueTask value_checked_int_cast_overflow_throws_not_supported() {
         var big = 5_000_000_000L; // > int.MaxValue
 
         // A checked cast is an ExpressionType.ConvertChecked node; evaluating it overflows at translation time, and
@@ -89,7 +90,7 @@ public class DuckDBFilterTranslatorAdversarialTests {
     // =====================================================================================================
 
     [Test]
-    public async Task Equality_ShortProperty_TranslatesToShortTypedPlaceholder() {
+    public async ValueTask equality_short_property_translates_to_short_typed_placeholder() {
         short s      = 3;
         var   result = Translate(r => r.Small == s);
 
@@ -101,7 +102,7 @@ public class DuckDBFilterTranslatorAdversarialTests {
     }
 
     [Test]
-    public async Task Equality_ShortProperty_Translates_CONTRACT() {
+    public async ValueTask equality_short_property_translates_contract() {
         short s = 3;
         // Contract: an IsIndexed short is a filterable property; equality on it translates (it previously threw
         // InvalidCastException from the base binder). Operand order is irrelevant — `value == property` works too.
@@ -113,7 +114,7 @@ public class DuckDBFilterTranslatorAdversarialTests {
     }
 
     [Test]
-    public async Task Equality_ShortProperty_NonFittingValue_ThrowsNotSupported() {
+    public async ValueTask equality_short_property_non_fitting_value_throws_not_supported() {
         var tooBig = 100_000; // > short.MaxValue (32767)
 
         // `short == int` promotes the short column to int; narrowing the value 100000 back to short overflows, and a
@@ -124,7 +125,7 @@ public class DuckDBFilterTranslatorAdversarialTests {
     }
 
     [Test]
-    public async Task Equality_IntPropertyVsFittingLongValue_BindsIntValue() {
+    public async ValueTask equality_int_property_vs_fitting_long_value_binds_int_value() {
         long l      = 7;
         var  result = Translate(r => r.Num == l);
 
@@ -136,7 +137,7 @@ public class DuckDBFilterTranslatorAdversarialTests {
     }
 
     [Test]
-    public async Task Containment_IEnumerableUpcastSource_ThrowsNotSupported() =>
+    public async ValueTask containment_ie_numerable_upcast_source_throws_not_supported() =>
         // ((IEnumerable<string>)r.Tags).Contains("x") wraps the source in Convert(Tags, IEnumerable<string>). That
         // property-side cast is NOT a numeric promotion, so the relaxed binder rethrows the base's InvalidCastException
         // as the class-contract NotSupportedException (v1 deliberately does not add upcast support).
@@ -149,7 +150,7 @@ public class DuckDBFilterTranslatorAdversarialTests {
     // =====================================================================================================
 
     [Test]
-    public async Task Equality_NullableIntProperty_BindsIntValue() {
+    public async ValueTask equality_nullable_int_property_binds_int_value() {
         var result = Translate(r => r.NullableNum == 5);
 
         await Assert.That(result.WhereClause).IsEqualTo("nullablenum = ?");
@@ -158,7 +159,7 @@ public class DuckDBFilterTranslatorAdversarialTests {
     }
 
     [Test]
-    public async Task Containment_StringArrayProperty_EmitsArrayHasAny() {
+    public async ValueTask containment_string_array_property_emits_array_has_any() {
         // On net10, string[].Contains binds to MemoryExtensions.Contains(ReadOnlySpan<string>, string); the base
         // TryMatchContains unwraps the implicit span cast back to the raw array member, so this DOES translate.
         var result = Translate(r => r.TagsArray.Contains("x"));
@@ -169,7 +170,7 @@ public class DuckDBFilterTranslatorAdversarialTests {
     }
 
     [Test]
-    public async Task Containment_EnumerableStaticContains_EmitsArrayHasAny() {
+    public async ValueTask containment_enumerable_static_contains_emits_array_has_any() {
         var result = Translate(r => Enumerable.Contains(r.Tags, "x"));
 
         await Assert.That(result.WhereClause).IsEqualTo("array_has_any(tags, [?])");
@@ -178,21 +179,21 @@ public class DuckDBFilterTranslatorAdversarialTests {
     }
 
     [Test]
-    public async Task Containment_ListIntProperty_ThrowsNotSupported() =>
+    public async ValueTask containment_list_int_property_throws_not_supported() =>
         await Assert
             .That(() => Translate(r => r.IntTags.Contains(5)))
             .Throws<NotSupportedException>()
             .WithMessageContaining("non-null string");
 
     [Test]
-    public async Task Containment_ByteArrayScalar_ThrowsNotSupported() =>
+    public async ValueTask containment_byte_array_scalar_throws_not_supported() =>
         await Assert
             .That(() => Translate(r => r.Blob.Contains((byte)1)))
             .Throws<NotSupportedException>()
             .WithMessageContaining("scalar");
 
     [Test]
-    public async Task Equality_BoolPropertyEqualsTrue_EmitsColumnEqualsPlaceholder() {
+    public async ValueTask equality_bool_property_equals_true_emits_column_equals_placeholder() {
         var result = Translate(r => r.Flag == true);
 
         await Assert.That(result.WhereClause).IsEqualTo("flag = ?");
@@ -200,7 +201,7 @@ public class DuckDBFilterTranslatorAdversarialTests {
     }
 
     [Test]
-    public async Task Value_CapturedDictionaryIndexer_ThrowsNotSupported() {
+    public async ValueTask value_captured_dictionary_indexer_throws_not_supported() {
         var dict = new Dictionary<string, string> { ["k"] = "v" };
 
         await Assert
@@ -209,7 +210,7 @@ public class DuckDBFilterTranslatorAdversarialTests {
     }
 
     [Test]
-    public async Task Value_MethodCallResult_ThrowsNotSupported() {
+    public async ValueTask value_method_call_result_throws_not_supported() {
         var n = 5;
 
         await Assert
@@ -220,43 +221,43 @@ public class DuckDBFilterTranslatorAdversarialTests {
     // ---- Boundary leaks: every one must throw NotSupportedException, never simplify or partially filter ----
 
     [Test]
-    public async Task Boundary_AndTrue_ThrowsNotSupported() =>
+    public async ValueTask boundary_and_true_throws_not_supported() =>
         await Assert
             .That(() => Translate(r => r.Category == "a" && true))
             .Throws<NotSupportedException>();
 
     [Test]
-    public async Task Boundary_EqualityToTrue_ThrowsNotSupported() =>
+    public async ValueTask boundary_equality_to_true_throws_not_supported() =>
         await Assert
             .That(() => Translate(r => r.Category == "a" == true))
             .Throws<NotSupportedException>();
 
     [Test]
-    public async Task Boundary_DoubleNegation_ThrowsNotSupported_NotSimplifiedToEquality() =>
+    public async ValueTask boundary_double_negation_throws_not_supported_not_simplified_to_equality() =>
         await Assert
             .That(() => Translate(r => !(r.Category != "a")))
             .Throws<NotSupportedException>();
 
     [Test]
-    public async Task Boundary_StaticStringEquals_ThrowsNotSupported() =>
+    public async ValueTask boundary_static_string_equals_throws_not_supported() =>
         await Assert
             .That(() => Translate(r => string.Equals(r.Category, "a", StringComparison.Ordinal)))
             .Throws<NotSupportedException>();
 
     [Test]
-    public async Task Boundary_InstanceEquals_ThrowsNotSupported() =>
+    public async ValueTask boundary_instance_equals_throws_not_supported() =>
         await Assert
             .That(() => Translate(r => r.Category.Equals("a", StringComparison.Ordinal)))
             .Throws<NotSupportedException>();
 
     [Test]
-    public async Task Boundary_Ternary_ThrowsNotSupported() =>
+    public async ValueTask boundary_ternary_throws_not_supported() =>
         await Assert
             .That(() => Translate(r => r.Category == "a" ? true : false))
             .Throws<NotSupportedException>();
 
     [Test]
-    public async Task Boundary_NullCoalesce_ThrowsNotSupported() {
+    public async ValueTask boundary_null_coalesce_throws_not_supported() {
         string? maybeNull = null;
 
         await Assert
@@ -265,7 +266,7 @@ public class DuckDBFilterTranslatorAdversarialTests {
     }
 
     [Test]
-    public async Task Boundary_BitwiseAnd_ThrowsNotSupported() =>
+    public async ValueTask boundary_bitwise_and_throws_not_supported() =>
         await Assert
             .That(() => Translate(r => (r.Category == "a") & (r.Id == "b")))
             .Throws<NotSupportedException>();
@@ -275,7 +276,7 @@ public class DuckDBFilterTranslatorAdversarialTests {
     // =====================================================================================================
 
     [Test]
-    public async Task Wiring_MixedPredicateOrder_ParametersAreLeftToRight() {
+    public async ValueTask wiring_mixed_predicate_order_parameters_are_left_to_right() {
         var result = Translate(r => r.Category == "A" && r.Tags.Contains("B") && r.Id == "C");
 
         await Assert.That(result.WhereClause).IsEqualTo("((category = ? AND array_has_any(tags, [?])) AND id = ?)");
@@ -287,7 +288,7 @@ public class DuckDBFilterTranslatorAdversarialTests {
     }
 
     [Test]
-    public async Task Sql_HostileStorageNameViaDefinition_DiesAtModelBuild() {
+    public async ValueTask sql_hostile_storage_name_via_definition_dies_at_model_build() {
         VectorStoreCollectionDefinition definition = new() {
             Properties = [
                 new VectorStoreKeyProperty("Id", typeof(string)),
@@ -303,7 +304,7 @@ public class DuckDBFilterTranslatorAdversarialTests {
     }
 
     [Test]
-    public async Task Model_TypedBuildWithDefinition_StillBindsClrAttributedPropertyAbsentFromDefinition_BUG() {
+    public async ValueTask model_typed_build_with_definition_still_binds_clr_attributed_property_absent_from_definition_bug() {
         // The definition deliberately OMITS `Ghost`, which is attributed on the CLR type. One might expect the
         // definition to be the exclusive source of truth (item 7). It is NOT for the typed Build overload: the
         // builder unions the CLR-attributed properties, so `Ghost` is in the model and the filter translates.
@@ -326,7 +327,7 @@ public class DuckDBFilterTranslatorAdversarialTests {
     }
 
     [Test]
-    public async Task Model_DynamicBuild_FilterOnKeyAbsentFromDefinition_Throws() {
+    public async ValueTask model_dynamic_build_filter_on_key_absent_from_definition_throws() {
         // The truly definition-only (dynamic) path IS the source of truth: a get_Item key not in the definition
         // must fail binding. It throws InvalidOperationException from the base binder — note this is NOT the
         // NotSupportedException the class contract advertises for unsupported filter constructs.
@@ -346,7 +347,7 @@ public class DuckDBFilterTranslatorAdversarialTests {
     }
 
     [Test]
-    public async Task OrderBy_NestedMemberSelector_Throws() {
+    public async ValueTask order_by_nested_member_selector_throws() {
         var model = Model();
 
         // The GetAsync OrderBy path resolves each sort key through GetDataOrKeyProperty; a nested-member selector
@@ -357,7 +358,7 @@ public class DuckDBFilterTranslatorAdversarialTests {
     }
 
     [Test]
-    public async Task OrderBy_VectorPropertySelector_ThrowsNotSupported() {
+    public async ValueTask order_by_vector_property_selector_throws_not_supported() {
         var model = Model();
         // GetDataOrKeyProperty resolves a vector selector to its VectorPropertyModel rather than rejecting it, so the
         // OrderBy clause builder must reject it — otherwise it would emit `vec ASC`, ordering by a FLOAT[] column,

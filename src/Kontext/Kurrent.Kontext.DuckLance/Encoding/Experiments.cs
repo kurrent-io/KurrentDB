@@ -1,5 +1,6 @@
 using System.Data.Common;
 using Microsoft.Extensions.AI;
+using EmbeddingGenerator = Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>;
 
 namespace Kurrent.SemanticKernel.Connectors.DuckLance;
 
@@ -9,7 +10,7 @@ public readonly record struct MyMemoryEntry(string MemoryId, string Content, str
 /// The hand-written reference codec: three sync members, zero model machinery — what a consumer
 /// (or a future source generator) writes for a hot record type.
 /// </summary>
-public class MemoryCodec(IEmbeddingGenerator<string, Embedding<float>> embedder) : SingleVectorRecordCodec<MyMemoryEntry>(embedder) {
+public class MemoryCodec(EmbeddingGenerator embedder) : SingleVectorRecordCodec<MyMemoryEntry>(embedder) {
     // The meaning lives in the content — "Sergio lives in Norway" is what gets positioned in
     // vector space so "where does Sergio live?" lands nearby.
     protected override string GetVectorText(MyMemoryEntry record) => record.Content;
