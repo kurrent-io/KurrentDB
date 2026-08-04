@@ -30,7 +30,7 @@ public class ConnectorsActivator(CreateConnector createConnector) {
             if (connector.Revision == revision && connector.Instance.State is ConnectorState.Activating or ConnectorState.Running)
                 return ActivateResult.RevisionAlreadyRunning();
 
-            await Teardown();
+            await TryTeardown(connectorId, connector);
         }
 
         try {
@@ -45,31 +45,21 @@ public class ConnectorsActivator(CreateConnector createConnector) {
             return ActivateResult.Activated();
         }
         catch (ValidationException ex) {
-            await Teardown();
+            await TryTeardown(connectorId, connector);
             return ActivateResult.InvalidConfiguration(ex);
         }
         catch (Exception ex) {
-            await Teardown();
+            await TryTeardown(connectorId, connector);
             return ActivateResult.UnknownError(ex);
-        }
-
-        async ValueTask Teardown() {
-	        try {
-		        await connector.Instance.DisposeAsync();
-		        await connector.Instance.Stopped;
-	        } catch {
-		        // ignore
-	        }
         }
     }
 
     public async ValueTask<DeactivateResult> Deactivate(ConnectorId connectorId) {
-        if (!Connectors.TryRemove(connectorId, out var connector))
+        if (!Connectors.TryGetValue(connectorId, out var connector))
             return DeactivateResult.ConnectorNotFound();
 
         try {
-            await connector.Instance.DisposeAsync();
-            await connector.Instance.Stopped;
+            await Teardown(connectorId, connector);
             return DeactivateResult.Deactivated();
         }
         catch (Exception ex) {
@@ -78,15 +68,43 @@ public class ConnectorsActivator(CreateConnector createConnector) {
     }
 
     public async ValueTask<DeactivateResult> WaitForDeactivation(ConnectorId connectorId) {
-        if (!Connectors.TryRemove(connectorId, out var connector))
+        if (!Connectors.TryGetValue(connectorId, out var connector))
             return DeactivateResult.ConnectorNotFound();
 
         try {
             await connector.Instance.Stopped;
+        }
+        catch {
+            // a faulted stop is still a stop
+        }
+
+        try {
+            await Teardown(connectorId, connector);
             return DeactivateResult.Deactivated();
         }
         catch (Exception ex) {
             return DeactivateResult.UnknownError(ex);
+        }
+    }
+
+    async ValueTask Teardown(ConnectorId connectorId, (IConnector Instance, int Revision) connector) {
+        if (Connectors.TryRemove(KeyValuePair.Create(connectorId, connector)))
+            await connector.Instance.DisposeAsync();
+
+        try {
+            await connector.Instance.Stopped;
+        }
+        catch {
+            // a faulted stop is still a stop
+        }
+    }
+
+    async ValueTask TryTeardown(ConnectorId connectorId, (IConnector Instance, int Revision) connector) {
+        try {
+            await Teardown(connectorId, connector);
+        }
+        catch {
+            // ignore
         }
     }
 }
