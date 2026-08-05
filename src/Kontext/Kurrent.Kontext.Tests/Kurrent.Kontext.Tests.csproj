@@ -12,6 +12,12 @@
 
   <ItemGroup>
     <PackageReference Include="TUnit" />
+    <!-- Flows in transitively via Kurrent.Kontext's Surge references; compile assets are
+         excluded to avoid ambiguity with net10's built-in System.Linq.AsyncEnumerable —
+         the repo-wide remedy (see KurrentDB.Surge.csproj). -->
+    <PackageReference Include="System.Linq.Async">
+      <ExcludeAssets>compile</ExcludeAssets>
+    </PackageReference>
   </ItemGroup>
   
 	<ItemGroup>

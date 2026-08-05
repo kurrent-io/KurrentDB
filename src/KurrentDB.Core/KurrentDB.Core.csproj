@@ -137,4 +137,7 @@
 	    <DependentUpon>ClientMessage.cs</DependentUpon>
 	  </Compile>
 	</ItemGroup>
+	<ItemGroup>
+	  <None Remove="KurrentDB.Core.csproj.DotSettings" />
+	</ItemGroup>
 </Project>

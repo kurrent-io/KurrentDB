@@ -12,13 +12,11 @@ public sealed class StoredMemory {
 
 	public MemoryImportance Importance { get; set; }
 
-    public Evidence? Evidence { get; set; }
+	public string Reasoning { get; set; } = "";
+
+	public IReadOnlyList<Evidence> Evidence { get; set; } = [];
 
 	public IReadOnlyList<Tag> Tags { get; set; } = [];
-
-	public MemorySentiment Sentiment { get; set; } = MemorySentiment.Neutral;
-
-	public MemoryUrgency Urgency { get; set; } = MemoryUrgency.Medium;
 
 	public TemporalContext? Validity { get; set; }
 

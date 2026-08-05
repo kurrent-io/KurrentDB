@@ -14,36 +14,33 @@ using Microsoft.Extensions.Logging;
 namespace KurrentDB.Core.Hosting;
 
 public class SystemStartupManager(IServiceProvider serviceProvider) : BackgroundService, IStartupWorkCompletionMonitor {
-	private readonly TaskCompletionSource _completed = new();
+    readonly TaskCompletionSource _completed = new();
 
 	protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-		var workers = serviceProvider.GetServices<SystemStartupTaskWorker>().ToList();
-
+        var logger  = serviceProvider.GetRequiredService<ILogger<SystemStartupManager>>();
+        var workers = serviceProvider.GetServices<SystemStartupTaskWorker>().ToList();
+        
 		if (workers.Count == 0) {
 			_completed.TrySetResult();
 			return;
 		}
-
-		var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-		var linked  = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, timeout.Token);
-		var logger  = serviceProvider.GetRequiredService<ILogger<SystemStartupManager>>();
-
+        
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var linked  = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, timeout.Token);
+		
+        var linkedToken = linked.Token;
+        
 		try {
 			logger.LogInformation("System startup tasks started");
-			await Task.WhenAll(workers.Select(w => w.ExecuteAsync(linked.Token)));
+			await Task.WhenAll(workers.Select(w => w.ExecuteAsync(linkedToken)));
 			logger.LogInformation("System startup tasks completed");
 			_completed.TrySetResult();
 		} catch (OperationCanceledException ex) when (ex.CancellationToken == linked.Token) {
 			_completed.TrySetCanceled(linked.Token);
 		} catch (Exception ex) {
 			_completed.TrySetException(ex);
-		} finally {
-			timeout.Dispose();
-			linked.Dispose();
 		}
 	}
 
-	public Task WhenCompletedAsync() {
-		return _completed.Task;
-	}
+	public Task WhenCompletedAsync() => _completed.Task;
 }

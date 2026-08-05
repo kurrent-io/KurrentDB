@@ -6,6 +6,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.Threading.Tasks.TaskCreationOptions;
 
 namespace KurrentDB.Core.Hosting;
 
@@ -15,7 +16,7 @@ namespace KurrentDB.Core.Hosting;
 /// </summary>
 public sealed class TokenCompletionSource : IDisposable {
 	readonly CancellationTokenSource                 _cancellator = new();
-	readonly TaskCompletionSource<CancellationToken> _completion  = new(TaskCreationOptions.RunContinuationsAsynchronously);
+	readonly TaskCompletionSource<CancellationToken> _completion  = new(RunContinuationsAsynchronously);
 
 	// The waiter is handed this source's OWN token. That is the whole point:
 	// a later Cancel() cancels the very token the caller is already holding, so

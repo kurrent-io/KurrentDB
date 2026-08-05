@@ -8,60 +8,69 @@ package kurrent.kontext;
 option csharp_namespace = "Kurrent.Kontext.Contracts";
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
 
 // A memory — its intrinsic content, independent of storage lifecycle or how it's being viewed. It
 // is the write/command shape: provided on Retain and stamped onto MemoryRetained. The read paths
-// return the folded StoredMemory read model (or, for recall, a lean projection of it).
+// return the folded StoredMemory read model (or, for recall, the LeanMemory projection of it).
+//
+// There is deliberately NO memory_id here. The server mints every id, so a client can never collide
+// with an existing memory and never has to invent one. Retain returns the assigned ids positionally
+// (results[i] for memories[i]). A consequence worth knowing: you cannot cite a memory you are
+// sending in the same request, because its id does not exist yet — retain the sources first, then
+// retain the memory that cites them.
 message Memory {
-  // Unique identifier of the memory, optional, if absent server generates a new one. When supplied
-  // it must be a NEW UUID (enables idempotent retries and referencing the memory within the same
-  // batch) — an id that already exists is rejected, never silently merged; to replace an existing
-  // memory, retain the successor with `supersedes`.
-  string memory_id = 1;
-
   // The record's cognitive type — Kontext's trust axis (replaces an explicit confidence field)
-  MemoryType memory_type = 2;
+  MemoryType memory_type = 1;
 
   // The memory's textual content
-  string content = 3;
+  string content = 2;
 
   // The agent's salience rating — how much this memory matters. Higher importance keeps it
   // retrievable longer as recency fades; it does not change the decay rate (see MemoryImportance).
   // A coarse bucket by design — an enum set consistently beats a float never calibrated the same
   // way twice. Server maps each level to the ranker's salience (ScoringConfig.importance_weights).
   // Default: NORMAL.
-  MemoryImportance importance = 4;
+  MemoryImportance importance = 3;
 
-  // What this memory rests on: the sources it cites and the reasoning tying them to this memory
-  // (see Evidence). Absent for a raw observation.
-  Evidence evidence = 5;
+  // Why this record exists in this shape. TWO obligations, in order:
+  //
+  //   1. Why the claim is TRUE — the derivation from the cited sources to the conclusion. Present
+  //      when the memory was synthesized; absent when it is firsthand or directly asserted.
+  //   2. Why it is FILED THIS WAY — ONLY when the type or importance was a judgment call at a
+  //      contested boundary (HEARSAY vs OBSERVATION, PREFERENCE vs FACT, OPEN_QUESTION vs HEARSAY).
+  //      Skip it when the classification was obvious. Most memories need only (1), or neither.
+  //
+  // Kept OUT of `content` and out of the recall embedding on purpose: the embedding must index the
+  // memory's own claim, never the argument for it or the paperwork around it.
+  string reasoning = 4;
+
+  // What this memory rests on: the sources it cites (see Evidence). Provenance on a raw memory —
+  // "where I saw this" — and support on a derived one. Empty is normal and carries no penalty
+  // beyond the flat per-type certainty weight; most FACTs will never carry evidence.
+  repeated Evidence evidence = 5;
 
   // Scoped or bare labels
   repeated Tag tags = 6;
 
-  // The sentiment of the memory
-  MemorySentiment sentiment = 7;
-
-  // The urgency of the memory
-  MemoryUrgency urgency = 8;
-
   // world-time span the memory refers to (perceived from the text);
   // a point event sets start == end
-  TemporalContext validity = 9;
+  TemporalContext validity = 7;
 
   // memory_ids this memory supersedes (replaces). The superseded ones stay readable, marked
   // superseded_by this memory. Set at Retain — there is no separate supersede operation.
-  repeated string supersedes = 10;
+  repeated string supersedes = 8;
 }
 
 // The complete, folded READ MODEL of a single memory — every event for this memory_id applied —
 // for UIs and inspection, not retrieval. It is deliberately self-contained: it flattens the
 // memory's content and appends the lifecycle folded from the event stream, and does NOT embed the
 // `Memory` command message, so the read shape and the write/command shape evolve independently.
-// The content block mirrors `Memory`'s field numbers for readability only; the two are separate
-// messages and are free to diverge.
+// The content block follows `Memory`'s field ORDER for readability, offset by one because
+// `memory_id` leads here and does not exist on the write shape; the two are separate messages and
+// are free to diverge further.
 message StoredMemory {
-  // Unique identifier of the memory
+  // Unique identifier of the memory, assigned by the server at retain
   string memory_id = 1;
 
   // The record's cognitive type — Kontext's trust axis
@@ -73,62 +82,75 @@ message StoredMemory {
   // The salience level set at retain (higher keeps it retrievable longer as recency fades)
   MemoryImportance importance = 4;
 
-  // What this memory rests on: cited sources and the reasoning tying them to it
-  Evidence evidence = 5;
+  // Why the claim is true, and — when it was a judgment call — why it is filed this way
+  string reasoning = 5;
+
+  // What this memory rests on: the sources it cites
+  repeated Evidence evidence = 6;
 
   // Scoped or bare labels
-  repeated Tag tags = 6;
-
-  // The sentiment of the memory
-  MemorySentiment sentiment = 7;
-
-  // The urgency of the memory
-  MemoryUrgency urgency = 8;
+  repeated Tag tags = 7;
 
   // world-time span the memory refers to (perceived from the text)
-  TemporalContext validity = 9;
+  TemporalContext validity = 8;
 
   // memory_ids this memory supersedes (replaces)
-  repeated string supersedes = 10;
+  repeated string supersedes = 9;
 
   // When the memory was retained
-  google.protobuf.Timestamp retained_at = 11;
+  google.protobuf.Timestamp retained_at = 10;
 
-  // When the memory was last accessed (the recency clock, advanced by each Recall)
-  google.protobuf.Timestamp last_accessed_at = 12;
+  // When the memory was last accessed (the recency clock; see the ACCESS RULE on MemoryService)
+  google.protobuf.Timestamp last_accessed_at = 11;
 
   // When the memory was retracted
-  google.protobuf.Timestamp retracted_at = 13;
+  google.protobuf.Timestamp retracted_at = 12;
 
   // When the memory was superseded by a newer memory (a Retain that supersedes it)
-  google.protobuf.Timestamp superseded_at = 14;
+  google.protobuf.Timestamp superseded_at = 13;
 
   // The memory that superseded this one; set only when `superseded_at` is set
-  string superseded_by = 15;
+  string superseded_by = 14;
 }
 
-// What a memory rests on: the reasoning that produced it, together with the sources it cites.
-// DERIVED memories carry it — anything the agent synthesized by reflecting (a FACT, PROCEDURE,
-// SUMMARY, ...); a raw OBSERVATION rests on nothing and leaves it absent. Reasoning and citations
-// travel together because neither stands alone — the reasoning is the argument over exactly these
-// citations — so a memory carries both or neither.
+// The lean projection of a stored memory: enough to USE the memory and JUDGE it, without the
+// provenance trail (reasoning, evidence). Returned by `recall` for each hit and by `retain` for
+// each related memory. For the complete record, `reclaim` by id.
+message LeanMemory {
+  string                    memory_id   = 1;  // reclaim by this for the full record
+  MemoryType                memory_type = 2;  // the trust axis
+  string                    content     = 3;  // the memory text
+  repeated Tag              tags        = 4;  // labels carried on the memory
+  MemoryImportance          importance  = 5;  // its salience level
+  google.protobuf.Timestamp retained_at = 6;  // age, for context
+}
+
+// One source a memory cites, in citation order: another memory, a KurrentDB log record, a location
+// in a git repository, a page on the web, or an untyped escape hatch. Exactly one arm is set.
+//
+// A citation is PROVENANCE on a raw memory ("where I saw this") and SUPPORT on a derived one. The
+// two are told apart by WHAT is cited, not by whether evidence is present at all: a memory is
+// DERIVED when it cites at least one MEMORY. Citing only files, records, or pages means you looked
+// something up firsthand — that is provenance, and it leaves the memory raw.
+//
+// Evidence is frozen at retain — support for a belief grows through supersession, not mutation.
+// When a successor supersedes a memory to record stronger support for the same belief ("I know
+// better now — heard it again"), the successor carries the UNION of citations: its own new sources
+// plus everything the superseded memory cited. Certainty derivation therefore reads the chain TIP
+// alone; it never walks superseded history.
+//
+// A citation is admitted only when it points at something OUTSIDE the memory. A check you ran
+// yourself — a search, a build, a test run — is not a source; if it matters, say so in `content`
+// or `reasoning`. In particular a search result is not evidence: its positive half is better
+// expressed as a GitRef at the thing found, and its negative half ("nothing else does this") is an
+// argument, so it belongs in `reasoning` where a reader can discount it.
 message Evidence {
-  // The "because" that ties the cited sources to this memory: the derivation from the citations to
-  // the conclusion. Present on derived memories (whatever `reflect` synthesized). Kept OUT of the
-  // memory's `content` on purpose, so the recall embedding indexes the memory itself, not the
-  // citation trail — reasoning is a separate space.
-  string reasoning = 1;
-
-  // The sources this memory cites as support, in citation order: other memories and/or KurrentDB
-  // log records. Empty for a raw observation.
-  repeated Citation citations = 2;
-
-  // One cited source. Exactly one arm is set: a cited memory, or a cited KurrentDB log record.
-  message Citation {
-    oneof cited {
-      MemoryRef memory = 1;  // cites another memory
-      RecordRef record = 2;  // cites a KurrentDB log record
-    }
+  oneof source {
+    MemoryRef  memory  = 1;  // cites another memory — the ONLY arm that makes a memory derived
+    RecordRef  record  = 2;  // cites a KurrentDB log record
+    GitRef     git     = 3;  // cites a location in a git repository
+    WebRef     web     = 4;  // cites text on the web
+    GenericRef generic = 5;  // escape hatch: anything not worth a type yet
   }
 
   // A pointer to another memory that supports this one.
@@ -142,67 +164,202 @@ message Evidence {
     string id       = 1;  // the record's id
     sint64 position = 2;  // its position in the log (exact, replayable)
   }
+
+  // A location in a git repository. The ANCHOR is `commit`: without it the citation rots silently
+  // as the file moves, and a line number rots within days.
+  //
+  // Prefer `symbol` over a line range — a symbol survives a refactor, a line number does not. Reach
+  // for `line_start`/`line_end` only where there is no symbol to name: an XML element, a config
+  // entry, a data file.
+  message GitRef {
+    string repo       = 1;  // owner/name; empty = the repo the memory was retained from
+    string commit     = 2;  // THE ANCHOR — the revision this citation was true at
+    string branch     = 3;  // optional, advisory only: a branch moves, so it anchors nothing
+    string path       = 4;  // repo-relative
+    string symbol     = 5;  // preferred: type/member, survives line drift
+    int32  line_start = 6;  // fallback, only where no symbol exists
+    int32  line_end   = 7;
+
+    // Optional, at most one, 20..1000 characters. Expected when `repo` is NOT ours: a third-party
+    // repository can go private or vanish, and then the commit hash resolves to nothing. Our own
+    // history is immutable, so an excerpt there is redundant.
+    string excerpt = 8;
+  }
+
+  // A pointer to TEXT on the web — an article, a documentation page, a specification, a post.
+  // NOT a file, PDF, archive, or binary target: those are a different kind and do not belong here.
+  //
+  // The ANCHOR is `excerpts`, not the URI and not the timestamp. Pages are deleted, rewritten,
+  // paywalled, and moved; when that happens the excerpt is the only surviving evidence. A WebRef
+  // without an excerpt is a bookmark, not a citation — the server rejects it.
+  message WebRef {
+    string uri   = 1;
+    string title = 2;
+
+    // Required: 1..5 entries, each 20..1000 characters. The passages that made this worth citing —
+    // the sentences you would quote if asked "where does it say that?". Keep each one a passage,
+    // not a page: if you need six, you are summarizing the source, and that is a memory of its own.
+    // Not embedded — the recall embedding indexes the memory's claim, never the source's wording.
+    repeated string excerpts = 3;
+
+    // When the excerpts were taken. Metadata ABOUT the excerpt, not the anchor.
+    google.protobuf.Timestamp retrieved_at = 4;
+  }
+
+  // Escape hatch for a source that has no typed arm yet. Promote it to a typed ref the day
+  // something in the system starts FOLLOWING the pointer — resolving it, checking it for staleness,
+  // or deduplicating on it. Until then a human or a model is the only reader, and this is enough.
+  message GenericRef {
+    google.protobuf.Struct data = 1;
+  }
 }
 
 // What a memory IS — one flat concept that folds together "what kind of knowledge" and "how it
 // behaves". There is deliberately NO "reflection" type: reflection is a PROCESS (the `reflect`
-// tool), and its product is one of these types with `evidence` populated. So "how a memory arose"
-// is not a type — it is visible in `evidence` (empty = firsthand/asserted; populated = derived,
-// inheriting the certainty of the memories it cites). Which types reflection can produce:
-//   - NEVER (firsthand only, evidence always empty): OBSERVATION, HEARSAY — the raw inputs; a memory
-//     that cites sources is by definition derived, so it cannot be one of these.
-//   - EITHER asserted or reflected: FACT, PROCEDURE, PROFILE, PLAN — stated directly (no evidence),
-//     or synthesized from other memories (evidence present).
-//   - ONLY by reflection (always derived, evidence required): SUMMARY — a consolidation of other
-//     memories cannot exist without the memories it consolidates.
-// Trust and lifecycle are DERIVED from (type + evidence), not separate stored axes:
-//   episodic  — decays, recalled by relevance: OBSERVATION, HEARSAY
-//   durable   — persists, superseded by evidence: FACT, PROCEDURE, PROFILE
-//   time-bound — valid until acted on or it expires: PLAN
-//   derived   — refreshed from its sources: SUMMARY
-// Grounded in Park et al. 2023 ("Generative Agents"): OBSERVATION and PLAN are the paper's, and
+// tool), and its product is one of these types that cites the memories it rests on. So "how a
+// memory arose" is not a type — it is visible in `evidence`.
+//
+// ADMISSION TEST. Every type must carry something NO NEIGHBOUR CAN EXPRESS, on one of four axes:
+//   lifecycle    — what invalidates it (see below)
+//   trust        — how far to believe it (OBSERVATION vs HEARSAY share a lifecycle and split here)
+//   binding      — who it binds and how it loads (FACT vs PREFERENCE vs USER_PROFILE split here)
+//   assertiveness — whether it carries a proposition at all (OPEN_QUESTION splits here)
+// A candidate type that expresses nothing a neighbour cannot is not admitted. PROCEDURE and PLAN
+// were rejected by this test.
+//
+// LIFECYCLE TEST — the question that decides episodic vs durable:
+//   "Does TIME ALONE make this irrelevant, or does something have to HAPPEN?"
+//   Time alone      → episodic. Decays. OBSERVATION, HEARSAY, OPEN_QUESTION.
+//   Something must  → durable. Never decays; superseded when the world changes.
+//   happen            FACT, PREFERENCE, USER_PROFILE, SUMMARY.
+// Persistence is NOT a claim of eternal truth — a FACT is superseded the day the world changes.
+// It means only that decay would be the WRONG reason to lose it, because time alone did not make
+// it stale.
+//
+// Which types reflection can produce:
+//   - NEVER: HEARSAY (unverified by definition; a synthesis is not a thing you were told) and
+//     OPEN_QUESTION (a question is asked, not concluded).
+//   - EITHER asserted or reflected: OBSERVATION, FACT, USER_PROFILE, PREFERENCE.
+//   - ONLY by reflection (always cites memories): SUMMARY — a consolidation cannot exist without
+//     the memories it consolidates.
+//
+// Grounded in Park et al. 2023 ("Generative Agents"): OBSERVATION is the paper's atom, and
 // reflection is kept as the operation that produces the rest — extended here for durable knowledge.
+//
+// Deliberate absences (each considered and cut — see the ADMISSION TEST):
+//   - NO PROCEDURE: a how-to is a FACT about how something is done — identical on every axis.
+//   - NO PLAN: a stated intention is an unverified claim about the future — HEARSAY; it decays
+//     when stale, which is the honest fate of an unresolved intention.
+//   - NO EVENT: a witnessed happening is an OBSERVATION, a reported one is HEARSAY, a durable
+//     milestone is a FACT.
 //
 // Boundary cases (route these consistently):
 //   - Aggregate / period stats ("sales up 10% this week") → SUMMARY, not OBSERVATION (which is a
 //     single raw perceived event).
-//   - "Preference" is the tricky one, and it turns on SCOPE + who it binds. A personal preference,
-//     binding only its principal ("I prefer tabs"), is a PROFILE fact at principal scope. A shared
-//     standard that binds a team/project ("this project indents with tabs") is a PROCEDURE (a
-//     how-we-do-it) or a FACT at project/team scope — a preference everyone must follow is not a
-//     preference, it is a standard.
-//   - Owner / role identity → PROFILE (it is about a principal); FACT stays for world/business truths.
+//   - Preference turns on SCOPE + who it binds. A personal taste binding only its principal
+//     ("I prefer tabs") is a PREFERENCE. A shared standard that binds a team/project ("this
+//     project indents with tabs") is a FACT at that scope — a preference everyone must follow is
+//     not a preference, it is a standard.
+//   - Owner / role identity → USER_PROFILE (it is about a principal); FACT stays for
+//     world/business truths.
 enum MemoryType {
   // Default unspecified memory type.
   MEMORY_TYPE_UNSPECIFIED = 0;
 
-  // A perceived event — "what happened". Firsthand, so the highest trust. Episodic (decays).
+  // A perceived EVENT — "what happened". Firsthand, so the highest trust. Episodic: time alone
+  // makes it stale, so it decays.
+  //
+  // The word names the SHAPE OF THE CLAIM, not the act of observing. Reading a file is an act of
+  // observation, but what you learn from it is usually a standing state — that is a FACT. Ask the
+  // LIFECYCLE TEST before choosing: "the build failed at 15:04" is an event and decays correctly;
+  // "InMemoryBus dispatches parent handlers before derived-type handlers" is a standing property
+  // of the system that only a code change can invalidate, so it is a FACT.
+  //
+  // May carry evidence: a GitRef or WebRef on an observation is PROVENANCE ("where I saw this"),
+  // and leaves the memory raw. Citing a MEMORY would make it derived, and a derived record is no
+  // longer a firsthand perception.
   MEMORY_TYPE_OBSERVATION = 1;
 
-  // A claim heard in dialogue — a naturally LOW-TRUST observation, kept unverified so a fabricated
-  // "fact" injected via conversation can't launder itself into truth (the "memory-hacking" guard).
-  // Episodic.
+  // An UNVERIFIED CLAIM — someone asserts this is true and you have not checked. A naturally
+  // LOW-TRUST record, kept unverified so a fabricated "fact" injected into the agent cannot
+  // launder itself into truth (the "memory-hacking" guard). Episodic. Also the home of reported
+  // events and stated intentions — claims the agent was told about but did not witness.
+  //
+  // Defined by VERIFICATION STATUS, not by origin. A claim from a blog post, a stale code comment,
+  // or a colleague all land here; being spoken aloud is not what makes it hearsay, and not having
+  // checked it is.
+  //
+  // Versus OBSERVATION, when a conversation gives you both readings — ask:
+  //   "Is this memory useful because it WAS SAID, or because of WHAT WAS SAID?"
+  //   The saying    → OBSERVATION (a firsthand event: they said it, and they did).
+  //   The content   → HEARSAY (the claim itself, which you have not verified).
+  // Usually you want the content.
+  //
+  // Versus OPEN_QUESTION: hearsay is a LOW-CONFIDENCE ANSWER; an open question is the ABSENCE of
+  // one. Both can be live at once — "does registration happen at runtime?" (OPEN_QUESTION) and
+  // "the owner states it does not" (HEARSAY) are different records and neither is redundant.
+  //
+  // CARRIES NO EVIDENCE, and this falls out rather than being imposed: citing a memory would make
+  // it a derived inference, and citing a source would mean you verified it — at which point it has
+  // become an OBSERVATION or a FACT. Hearsay is the residue with neither. It MAY carry `reasoning`
+  // for the filing note ("filed HEARSAY although the owner said it, because I have not traced it").
+  //
+  // Promotion is an AGENT ACTION, never a system inference: when you verify a claim, retain a FACT
+  // with `supersedes: [hearsay_id]` and the source attached. The original stays readable, and the
+  // heard-then-verified history is itself worth keeping.
   MEMORY_TYPE_HEARSAY = 2;
 
-  // A durable truth about the world, a system, or a project (e.g. a coding standard). Persists;
-  // superseded by newer evidence, never decayed.
+  // A durable truth about the world, a system, or a project — a coding standard, a how-to, a
+  // milestone, a property of the code. A STANDING STATE, not an event: only a change in the world
+  // invalidates it, never the passage of time. Persists; superseded, never decayed.
+  //
+  // Scope is irrelevant to the type. "Humans need air", "InMemoryBus dispatches parents first",
+  // and "this project runs tests only via test-runner.cs" are the same KIND of record at different
+  // scopes — and scope is what Tags are for.
+  //
+  // EVIDENCE IS NOT WHAT MAKES A FACT. Most FACTs carry none: durable knowledge is usually asserted
+  // directly, and a system that demanded a citation for every one would be unbuildable. Missing
+  // evidence costs CERTAINTY, not validity — an unevidenced FACT takes the flat per-type weight
+  // instead of an inherited one. It is fully usable; it is simply not privileged.
   MEMORY_TYPE_FACT = 3;
 
-  // Durable how-to: a convention, workflow, or skill. Persists, superseded, not decayed.
-  MEMORY_TYPE_PROCEDURE = 4;
+  // Identity and role of a principal — who they are, deliberately small. Persists; loaded for
+  // that principal rather than earned by relevance, so only identity-grade facts belong here:
+  // if it should not ride along in EVERY interaction, it is a PREFERENCE or a FACT instead.
+  MEMORY_TYPE_USER_PROFILE = 5;
 
-  // Durable facts about a principal — identity, role, and PERSONAL preferences (those binding only
-  // that principal). Persists; loaded for that principal rather than earned by relevance. If a
-  // "preference" actually binds a team/project, it's a PROCEDURE/FACT at that scope, not a PROFILE.
-  MEMORY_TYPE_PROFILE = 5;
-
-  // A future course of action. Time-bound — valid until it's acted on or it expires.
-  MEMORY_TYPE_PLAN = 6;
-
-  // A consolidation of other memories — a recap, digest, or index. 
-  // Derived (cites its sources as evidence), so its certainty is inherited from them. Persists,
+  // A consolidation of other memories — a recap, digest, or index.
+  // Derived (cites the memories it rests on), so its certainty is inherited from them. Persists,
   // refreshed as those sources change.
   MEMORY_TYPE_SUMMARY = 7;
+
+  // A personal taste binding only its principal ("I prefer tabs"). Durable — persists and is
+  // superseded freely as taste drifts — but earned by relevance like any other memory, never
+  // always-loaded: the preference long tail must not ride along in every interaction. A
+  // preference that binds a team/project is a standard — a FACT at that scope.
+  MEMORY_TYPE_PREFERENCE = 8;
+
+  // A KNOWN GAP — something unresolved that still needs an answer. The ONLY NON-ASSERTIVE type:
+  // it carries no proposition, so it has no truth value, cannot be corroborated, cannot be
+  // contradicted, and certainty is meaningless for it. That is what earns it a place; every other
+  // type is a claim.
+  //
+  // Episodic — it decays, and that IS the "moot" mechanism: a question nobody recalls is a
+  // question nobody cares about, and it fades without ceremony. No anti-fact is ever needed.
+  // Decay does not erase it: a question that still matters keeps scoring on relevance and
+  // importance when you return to its area.
+  //
+  // Retrieved by ENUMERATION, not by relevance: `recollect { types: [OPEN_QUESTION] }` is a work
+  // queue, and recollect does not rank, so decay never hides one from that path.
+  //
+  // Terminates by being ANSWERED, not by being replaced with a better version of itself: retain
+  // the answering FACT with `supersedes: [question_id]`. That stretches "supersede" slightly and
+  // is deliberate — the behaviour is right and the chain is the audit trail of the answer. When it
+  // is moot rather than answered, let it decay, or `retract` it with a reason if you want it gone
+  // now.
+  //
+  // NEVER CITABLE AS EVIDENCE. A claim cannot rest on a question.
+  MEMORY_TYPE_OPEN_QUESTION = 9;
 }
 
 // The agent's salience rating for a memory, set at retain. It is an ADDITIVE term in the ranking,
@@ -219,22 +376,6 @@ enum MemoryImportance {
   MEMORY_IMPORTANCE_CRITICAL    = 4;  // (1.00) top salience — architectural calls, hard-won lessons
 }
 
-// Emotional tone of a memory's content, tagged by the enrichment pipeline (not agent-set).
-enum MemorySentiment {
-  SENTIMENT_UNSPECIFIED = 0;  // not yet classified
-  SENTIMENT_POSITIVE    = 1;  // approving / good-news tone (a fix worked, a success)
-  SENTIMENT_NEUTRAL     = 2;  // matter-of-fact, no clear valence
-  SENTIMENT_NEGATIVE    = 3;  // adverse tone (a failure, a complaint, a broken thing)
-}
-
-// How time-pressing the memory's content is, tagged by the enrichment pipeline (not agent-set).
-enum MemoryUrgency {
-  URGENCY_UNSPECIFIED = 0;  // not yet classified
-  URGENCY_LOW         = 1;  // no time pressure — background knowledge
-  URGENCY_MEDIUM      = 2;  // worth acting on before long
-  URGENCY_HIGH        = 3;  // needs attention now (blocker, incident, deadline)
-}
-
 // The world-time span the memory's content refers to, as the agent perceived it from the
 // statement/reflection text (may be fuzzy). This is CONTENT time, distinct from the two storage
 // clocks: `retained_at` (when Kontext stored it) and `last_accessed_at` (the recency clock
@@ -247,30 +388,55 @@ enum MemoryUrgency {
 message TemporalContext {
   // start of the state, or the moment of a point event
   google.protobuf.Timestamp perceived_start = 1;
-  
+
   // optional; blank = ongoing / open-ended
   google.protobuf.Timestamp perceived_end = 2;
 }
 
 // A tag is an agent-agnostic filter label with an optional scope (namespace). Scoped tags let you
-// filter on a typed dimension without parsing "scope::value" strings, and the same scope can repeat
-// (e.g. country::portugal + country::norway on one memory). `scope` is a free string, so new
+// filter on a typed dimension without parsing "scope:value" strings, and the same scope can repeat
+// (e.g. country:portugal + country:norway on one memory). `scope` is a free string, so new
 // dimensions need no contract change — which is why identity/context lives here, not in dedicated
-// fields: the set (user, session, project, workspace, …) keeps growing.
+// fields: the set (user, repo, session, project, …) keeps growing.
+//
+// TWO POPULATIONS, and only one of them is yours to choose:
+//
+//   STAMPED — user, repo, session, agent, model. Ambient facts about the connection, applied from
+//   configuration. NEVER agent judgment: a caller-supplied `user` tag is advisory and, under auth,
+//   is overridden by the principal the server resolves. Always present.
+//
+//   AUTHORED — everything else, and the rule is narrow: A TAG EARNS ITS PLACE ONLY IF YOU WOULD
+//   EVER FILTER ON IT. You filter on dimensions (which repo, which session, what status); you do
+//   not filter on topics, because `recall` is semantic and a topic is already in the content's
+//   embedding. Tagging a memory about hosting with "hosting" buys nothing. Do not feel obliged to
+//   author any tags at all.
+//
+// NORMALIZATION — lower kebab-case. Send values already normalized; the server normalizes anything
+// that arrives otherwise, on write AND on query, so a filter can never miss on casing alone:
+//   - lowercase; letters and digits are kept (Unicode included — "café" stays "café")
+//   - every run of other characters collapses to a single '-'
+//   - EXCEPT a run containing '/', or a run that is exactly '--', which becomes '--'
+//   - never leading or trailing '-'
+//   Matches: ^[\p{L}\p{N}]+(-{1,2}[\p{L}\p{N}]+)*$
 //
 // Well-known scopes (a convention, not a closed set — use these names so everyone agrees):
 //   user      — the principal a memory belongs to. This is the ISOLATION dimension: under auth the
-//               server stamps and ENFORCES it from the connection (a caller-supplied `user:` tag is
-//               advisory and not trusted); on a local single-user process it's the git/OS user.
+//               server stamps and ENFORCES it from the connection; on a local single-user process
+//               it's the git/OS user.
+//   repo      — the repository, as the owner/name slug with '/' encoded as '--'. A REPO IS NOT A
+//               PROJECT: one project can span several repos.
 //   session   — the conversation/session the memory came from (Kontext does not own sessions).
-//   project   — the project/repo the memory is about.
+//   project   — the project the memory is about, which may span repos. Agent-set, unlike `repo`.
+//   agent     — the agent that retained it.
+//   model     — the model behind that agent. Worth stamping for QUALITY AUDIT: if a model tier
+//               turns out to over-assert FACTs, you must be able to enumerate what it wrote.
 //   workspace — a workspace grouping above project.
 // Examples:
-// - { scope: "user",        value: "sergio"     }
-// - { scope: "session",     value: "<capacitor session id>" }
-// - { scope: "project",     value: "kurrentdb"  }
-// - { scope: "environment", value: "production" }
-// - {                       value: "research"   }   // bare tag: no scope
+// - { scope: "user",    value: "sergio"            }
+// - { scope: "repo",    value: "kurrent--kurrentdb" }
+// - { scope: "session", value: "<capacitor session id>" }
+// - { scope: "status",  value: "open-question"     }
+// - {                   value: "research"          }   // bare tag: no scope
 message Tag {
   string scope = 1;  // optional namespace; empty = bare tag
   string value = 2;  // the label
@@ -295,10 +461,10 @@ message ScoredMemory {
 
   // decayed recency (formula above); fresher = higher
   double recency_raw = 3;
- 
+
   // salience [0,1] mapped from the memory's MemoryImportance
   double importance_raw = 4;
- 
+
   // query-embedding cosine similarity
   double relevance_raw = 5;
 
@@ -307,13 +473,15 @@ message ScoredMemory {
   double importance_norm = 7;  // normalized importance
   double relevance_norm  = 8;  // normalized relevance
 
-  // Certainty multiplier applied to base_score — the trust gate. For a RAW memory (no evidence) it
-  // is the flat per-type weight from ScoringConfig.certainty_weights (a firsthand OBSERVATION high,
-  // a HEARSAY low). For a DERIVED memory (evidence present) it is the INHERITED certainty: the mean
-  // of the certainties of the memories it cites (its provenance) — so a synthesis built mostly on
-  // hearsay stays penalised (20 hearsay + 1 observation → ~0.14), preventing a single observation
-  // from laundering gossip into truth. Multiplicative, so a contradicted lie loses decisively (1.0
-  // vs 0.1) while strong gossip can still outrank a stale observation on the base score.
+  // Certainty multiplier applied to base_score — the trust gate. For a RAW memory (one citing no
+  // MEMORY) it is the flat per-type weight from ScoringConfig.certainty_weights (a firsthand
+  // OBSERVATION high, a HEARSAY low) — and note that a memory citing only files or pages is raw,
+  // because that is provenance, not derivation. For a DERIVED memory (citing at least one memory)
+  // it is the INHERITED certainty: the mean of the certainties of the memories it cites (its
+  // provenance) — so a synthesis built mostly on hearsay stays penalised (20 hearsay + 1
+  // observation → ~0.14), preventing a single observation from laundering gossip into truth.
+  // Multiplicative, so a contradicted lie loses decisively (1.0 vs 0.1) while strong gossip can
+  // still outrank a stale observation on the base score.
   double certainty   = 9;
   double base_score  = 10;  // alpha-weighted sum of the *_norm dimensions (before certainty)
   double final_score = 11;  // base_score × certainty — the value actually ranked on

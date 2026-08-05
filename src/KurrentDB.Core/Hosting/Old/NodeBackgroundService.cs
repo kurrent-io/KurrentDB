@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.Core.Hosting;
 
+// [Obsolete("Use the SystemReadyBackgroundService instead")]
 public abstract class NodeBackgroundService : IHostedService, IDisposable {
 	Task?                    _executeTask;
 	CancellationTokenSource? _stoppingCts;

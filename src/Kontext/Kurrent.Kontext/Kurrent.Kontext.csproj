@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\KurrentDB.Core\KurrentDB.Core.csproj" />
     <ProjectReference Include="..\Kurrent.Kontext.Contracts\Kurrent.Kontext.Contracts.csproj" />
     <ProjectReference Include="..\Kurrent.Kontext.DuckLance\DuckLance.csproj" />
   </ItemGroup>
@@ -20,6 +21,14 @@
     <PackageReference Include="Google.Protobuf" />
     <PackageReference Include="Google.Api.CommonProtos" />
     <PackageReference Include="Kurrent.Quack" />
+    <PackageReference Include="Kurrent.Surge.Core" />
+    <PackageReference Include="Kurrent.Surge.DuckDB" />
+    <!-- Surge pulls System.Linq.Async transitively; net10's built-in System.Linq.AsyncEnumerable
+         makes its operators ambiguous at compile time, so compile assets are excluded — the
+         repo-wide remedy (see KurrentDB.Surge.csproj). -->
+    <PackageReference Include="System.Linq.Async">
+      <ExcludeAssets>compile</ExcludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.Extensions.AI.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
     <PackageReference Include="Microsoft.Extensions.VectorData.Abstractions" />
@@ -38,7 +47,6 @@
   <ItemGroup>
     <Folder Include="Data\.scratch\" />
     <Folder Include="Modules\Entities\" />
-    <Folder Include="Modules\Memory\Data\" />
   </ItemGroup>
 
 </Project>

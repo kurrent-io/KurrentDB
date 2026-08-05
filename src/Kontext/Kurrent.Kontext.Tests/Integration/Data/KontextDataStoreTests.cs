@@ -22,11 +22,10 @@ namespace Kurrent.Kontext.Tests.Data;
 public class KontextDataStoreTests {
 	static readonly DateTimeOffset Base = new(2026, 7, 1, 10, 0, 0, TimeSpan.Zero);
 
-	static Contracts.Evidence SeedEvidence() {
-		var evidence = new Contracts.Evidence();
-		evidence.Citations.Add(new Contracts.Evidence.Types.Citation { Memory = new() { Id = "cited-1" } });
-		return evidence;
-	}
+	static Contracts.Evidence SeedEvidence() => new() { Memory = new() { Id = "cited-1" } };
+
+	// evidence is a VARCHAR[] column: one canonical-JSON citation per element.
+	static List<string> SeedEvidenceBlobs() => [JsonFormatter.Default.Format(SeedEvidence())];
 
 	[Test]
 	public async ValueTask get_by_id_round_trips_every_field() {
@@ -43,12 +42,10 @@ public class KontextDataStoreTests {
 		await Assert.That(stored!.MemoryType).IsEqualTo((Contracts.MemoryType)1);
 		await Assert.That(stored.Content).IsEqualTo("memory one");
 		await Assert.That(stored.Importance).IsEqualTo((Contracts.MemoryImportance)3);
-		await Assert.That(stored.Sentiment).IsEqualTo((Contracts.MemorySentiment)1);
-		await Assert.That(stored.Urgency).IsEqualTo((Contracts.MemoryUrgency)2);
 		await Assert.That(stored.Tags.Count).IsEqualTo(2);
 		await Assert.That(stored.Tags[0].Scope).IsEqualTo("work");
 		await Assert.That(stored.Tags[0].Value).IsEqualTo("alpha");
-		await Assert.That(stored.Evidence).IsEqualTo(SeedEvidence());
+		await Assert.That(stored.Evidence.ToList()).IsEquivalentTo([SeedEvidence()]);
 		await Assert.That(stored.Validity!.PerceivedStart.ToDateTimeOffset()).IsEqualTo(Base.AddHours(-24));
 		await Assert.That(stored.Validity.PerceivedEnd.ToDateTimeOffset()).IsEqualTo(Base.AddHours(24));
 		await Assert.That(stored.RetainedAt.ToDateTimeOffset()).IsEqualTo(Base.AddHours(1));
@@ -549,9 +546,8 @@ public class KontextDataStoreTests {
 			  memory_type,
 			  content,
 			  importance,
-			  sentiment,
-			  urgency,
 			  tags,
+			  reasoning,
 			  evidence,
 			  supersedes,
 			  validity_start,
@@ -565,11 +561,11 @@ public class KontextDataStoreTests {
 			  superseded_by,
 			  embedding)
 			VALUES
-			  (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
-			  (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
-			  (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
-			  (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
-			  (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			  (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+			  (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+			  (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+			  (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+			  (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			""";
 
 		using (pool.Rent(out var connection)) {
@@ -580,23 +576,23 @@ public class KontextDataStoreTests {
 				// contents carry distinct words for the keyword-search tests.
 
 				// m5: earliest retained, freshest access, highest importance; near m1's axis.
-				AddRow(insert, "m5", 2, "quick brown dog runs", 5, 0, 0, ["team:blue"], [], [],
+				AddRow(insert, "m5", 2, "quick brown dog runs", 5, ["team:blue"], "", [], [],
 					null, null, Base, Base.AddHours(40), false, null, false, null, "", [0.9f, 0.1f, 0f, 0f]);
 
 				// m1: the full-field row — evidence with a citation, validity window, two tags.
-				AddRow(insert, "m1", 1, "memory one", 3, 1, 2, ["work:alpha", "team:blue"], SeedEvidence().ToByteArray(), [],
+				AddRow(insert, "m1", 1, "memory one", 3, ["work:alpha", "team:blue"], "", SeedEvidenceBlobs(), [],
 					Base.AddHours(-24), Base.AddHours(24), Base.AddHours(1), Base.AddHours(30), false, null, false, null, "", [1f, 0f, 0f, 0f]);
 
 				// m4: superseded by m2 — visible in listings, marked in reads, hidden from search.
-				AddRow(insert, "m4", 3, "legacy quokka wisdom", 2, 0, 0, ["work:alpha", "team:blue"], [], [],
+				AddRow(insert, "m4", 3, "legacy quokka wisdom", 2, ["work:alpha", "team:blue"], "", [], [],
 					null, null, Base.AddHours(2), Base.AddHours(10), false, null, true, Base.AddHours(3), "m2", [0f, 0f, 0f, 1f]);
 
 				// m2: latest retained, lowest importance.
-				AddRow(insert, "m2", 2, "projector checkpoint format switched", 1, 0, 0, ["work:alpha"], [], [],
+				AddRow(insert, "m2", 2, "projector checkpoint format switched", 1, ["work:alpha"], "", [], [],
 					null, null, Base.AddHours(3), Base.AddHours(20), false, null, false, null, "", [0f, 1f, 0f, 0f]);
 
 				// m3: retracted — hidden from listings and search, still readable by id.
-				AddRow(insert, "m3", 1, "secret zebra fact", 4, 0, 0, [], [], [],
+				AddRow(insert, "m3", 1, "secret zebra fact", 4, [], "", [], [],
 					null, null, Base.AddHours(4), Base.AddHours(4), true, Base.AddHours(5), false, null, "", [0f, 0f, 1f, 0f]);
 
 				insert.ExecuteNonQuery();
@@ -617,9 +613,8 @@ public class KontextDataStoreTests {
 			  memory_type,
 			  content,
 			  importance,
-			  sentiment,
-			  urgency,
 			  tags,
+			  reasoning,
 			  evidence,
 			  supersedes,
 			  validity_start,
@@ -636,15 +631,14 @@ public class KontextDataStoreTests {
 			       1,
 			       'filler content ' || i,
 			       0,
-			       0,
-			       0,
 			       CAST([] AS VARCHAR[]),
-			       ''::BLOB,
+			       '',
+			       CAST([] AS VARCHAR[]),
 			       CAST([] AS VARCHAR[]),
 			       NULL,
 			       NULL,
-			       TIMESTAMPTZ '2026-06-01 00:00:00+00',
-			       TIMESTAMPTZ '2026-06-01 00:00:00+00',
+			       epoch_ms(TIMESTAMPTZ '2026-06-01 00:00:00+00'),
+			       epoch_ms(TIMESTAMPTZ '2026-06-01 00:00:00+00'),
 			       false,
 			       NULL,
 			       false,
@@ -684,9 +678,8 @@ public class KontextDataStoreTests {
 			  memory_type,
 			  content,
 			  importance,
-			  sentiment,
-			  urgency,
 			  tags,
+			  reasoning,
 			  evidence,
 			  supersedes,
 			  validity_start,
@@ -700,17 +693,17 @@ public class KontextDataStoreTests {
 			  superseded_by,
 			  embedding)
 			VALUES
-			  ('L1', 1, 'lineage first belief', 1, 0, 0, CAST([] AS VARCHAR[]), ''::BLOB, CAST([] AS VARCHAR[]),
-			   NULL, NULL, TIMESTAMPTZ '2026-07-01 15:00:00+00', TIMESTAMPTZ '2026-07-01 15:00:00+00',
-			   false, NULL, true, TIMESTAMPTZ '2026-07-01 17:00:00+00', 'L3', CAST([0.0, 0.0, 0.6, 0.8] AS FLOAT[4])),
-			  ('L2', 1, 'lineage second belief', 1, 0, 0, CAST([] AS VARCHAR[]), ''::BLOB, CAST([] AS VARCHAR[]),
-			   NULL, NULL, TIMESTAMPTZ '2026-07-01 16:00:00+00', TIMESTAMPTZ '2026-07-01 16:00:00+00',
-			   false, NULL, true, TIMESTAMPTZ '2026-07-01 17:00:00+00', 'L3', CAST([0.0, 0.0, 0.8, 0.6] AS FLOAT[4])),
-			  ('L3', 1, 'lineage consolidated belief', 2, 0, 0, CAST([] AS VARCHAR[]), ''::BLOB, CAST(['L1', 'L2'] AS VARCHAR[]),
-			   NULL, NULL, TIMESTAMPTZ '2026-07-01 17:00:00+00', TIMESTAMPTZ '2026-07-01 17:00:00+00',
-			   false, NULL, true, TIMESTAMPTZ '2026-07-01 18:00:00+00', 'L4', CAST([0.0, 0.0, 0.7, 0.7] AS FLOAT[4])),
-			  ('L4', 1, 'lineage current belief', 3, 0, 0, CAST([] AS VARCHAR[]), ''::BLOB, CAST(['L3'] AS VARCHAR[]),
-			   NULL, NULL, TIMESTAMPTZ '2026-07-01 18:00:00+00', TIMESTAMPTZ '2026-07-01 18:00:00+00',
+			  ('L1', 1, 'lineage first belief', 1, CAST([] AS VARCHAR[]), '', CAST([] AS VARCHAR[]), CAST([] AS VARCHAR[]),
+			   NULL, NULL, epoch_ms(TIMESTAMPTZ '2026-07-01 15:00:00+00'), epoch_ms(TIMESTAMPTZ '2026-07-01 15:00:00+00'),
+			   false, NULL, true, epoch_ms(TIMESTAMPTZ '2026-07-01 17:00:00+00'), 'L3', CAST([0.0, 0.0, 0.6, 0.8] AS FLOAT[4])),
+			  ('L2', 1, 'lineage second belief', 1, CAST([] AS VARCHAR[]), '', CAST([] AS VARCHAR[]), CAST([] AS VARCHAR[]),
+			   NULL, NULL, epoch_ms(TIMESTAMPTZ '2026-07-01 16:00:00+00'), epoch_ms(TIMESTAMPTZ '2026-07-01 16:00:00+00'),
+			   false, NULL, true, epoch_ms(TIMESTAMPTZ '2026-07-01 17:00:00+00'), 'L3', CAST([0.0, 0.0, 0.8, 0.6] AS FLOAT[4])),
+			  ('L3', 1, 'lineage consolidated belief', 2, CAST([] AS VARCHAR[]), '', CAST([] AS VARCHAR[]), CAST(['L1', 'L2'] AS VARCHAR[]),
+			   NULL, NULL, epoch_ms(TIMESTAMPTZ '2026-07-01 17:00:00+00'), epoch_ms(TIMESTAMPTZ '2026-07-01 17:00:00+00'),
+			   false, NULL, true, epoch_ms(TIMESTAMPTZ '2026-07-01 18:00:00+00'), 'L4', CAST([0.0, 0.0, 0.7, 0.7] AS FLOAT[4])),
+			  ('L4', 1, 'lineage current belief', 3, CAST([] AS VARCHAR[]), '', CAST([] AS VARCHAR[]), CAST(['L3'] AS VARCHAR[]),
+			   NULL, NULL, epoch_ms(TIMESTAMPTZ '2026-07-01 18:00:00+00'), epoch_ms(TIMESTAMPTZ '2026-07-01 18:00:00+00'),
 			   false, NULL, false, NULL, '', CAST([0.0, 0.0, 0.5, 0.9] AS FLOAT[4]))
 			""";
 
@@ -735,9 +728,8 @@ public class KontextDataStoreTests {
 			  memory_type,
 			  content,
 			  importance,
-			  sentiment,
-			  urgency,
 			  tags,
+			  reasoning,
 			  evidence,
 			  supersedes,
 			  validity_start,
@@ -751,11 +743,11 @@ public class KontextDataStoreTests {
 			  superseded_by,
 			  embedding)
 			VALUES
-			  ('m6', 1, 'tie row six', 3, 0, 0, CAST([] AS VARCHAR[]), ''::BLOB, CAST([] AS VARCHAR[]),
-			   NULL, NULL, TIMESTAMPTZ '2026-07-01 16:00:00+00', TIMESTAMPTZ '2026-07-03 12:00:00+00',
+			  ('m6', 1, 'tie row six', 3, CAST([] AS VARCHAR[]), '', CAST([] AS VARCHAR[]), CAST([] AS VARCHAR[]),
+			   NULL, NULL, epoch_ms(TIMESTAMPTZ '2026-07-01 16:00:00+00'), epoch_ms(TIMESTAMPTZ '2026-07-03 12:00:00+00'),
 			   false, NULL, false, NULL, '', CAST([0.5, 0.5, 0.0, 0.0] AS FLOAT[4])),
-			  ('m7', 1, 'tie row seven', 3, 0, 0, CAST([] AS VARCHAR[]), ''::BLOB, CAST([] AS VARCHAR[]),
-			   NULL, NULL, TIMESTAMPTZ '2026-07-01 16:00:00+00', TIMESTAMPTZ '2026-07-01 20:00:00+00',
+			  ('m7', 1, 'tie row seven', 3, CAST([] AS VARCHAR[]), '', CAST([] AS VARCHAR[]), CAST([] AS VARCHAR[]),
+			   NULL, NULL, epoch_ms(TIMESTAMPTZ '2026-07-01 16:00:00+00'), epoch_ms(TIMESTAMPTZ '2026-07-01 20:00:00+00'),
 			   false, NULL, false, NULL, '', CAST([0.4, 0.6, 0.0, 0.0] AS FLOAT[4]))
 			""";
 
@@ -771,18 +763,21 @@ public class KontextDataStoreTests {
 	// Binds one VALUES tuple, in InsertRowsSql's column order; null binds as NULL.
 	static void AddRow(
 		DuckDBCommand command,
-		string memoryId, int memoryType, string content, int importance, int sentiment, int urgency,
-		List<string> tags, byte[] evidence, List<string> supersedes,
+		string memoryId, int memoryType, string content, int importance,
+		List<string> tags, string reasoning, List<string> evidence, List<string> supersedes,
 		DateTimeOffset? validityStart, DateTimeOffset? validityEnd,
 		DateTimeOffset retainedAt, DateTimeOffset lastAccessedAt,
 		bool isRetracted, DateTimeOffset? retractedAt,
 		bool isSuperseded, DateTimeOffset? supersededAt, string supersededBy,
 		float[] embedding
 	) {
+		// Timestamps bind as Unix epoch milliseconds — the schema's BIGINT columns.
 		object?[] values = [
-			memoryId, memoryType, content, importance, sentiment, urgency, tags, evidence,
-			supersedes, validityStart, validityEnd, retainedAt, lastAccessedAt,
-			isRetracted, retractedAt, isSuperseded, supersededAt, supersededBy, embedding,
+			memoryId, memoryType, content, importance, tags, reasoning, evidence,
+			supersedes, validityStart?.ToUnixTimeMilliseconds(), validityEnd?.ToUnixTimeMilliseconds(),
+			retainedAt.ToUnixTimeMilliseconds(), lastAccessedAt.ToUnixTimeMilliseconds(),
+			isRetracted, retractedAt?.ToUnixTimeMilliseconds(), isSuperseded, supersededAt?.ToUnixTimeMilliseconds(),
+			supersededBy, embedding,
 		];
 
 		foreach (var value in values)

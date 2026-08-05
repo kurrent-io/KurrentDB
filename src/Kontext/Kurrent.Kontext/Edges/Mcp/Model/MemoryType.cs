@@ -3,6 +3,8 @@
 
 namespace Kurrent.Kontext.Mcp.Model;
 
+// Values mirror Contracts.MemoryType numerically — the mapper is a cast. 4 and 6 are the retired
+// Procedure and Plan; their numbers stay unassigned so old serialized values cannot alias.
 public enum MemoryType {
 	Unspecified = 0,
 
@@ -12,11 +14,11 @@ public enum MemoryType {
 
 	Fact = 3,
 
-	Procedure = 4,
-
-	Profile = 5,
-
-	Plan = 6,
+	UserProfile = 5,
 
 	Summary = 7,
+
+	Preference = 8,
+
+	OpenQuestion = 9,
 }

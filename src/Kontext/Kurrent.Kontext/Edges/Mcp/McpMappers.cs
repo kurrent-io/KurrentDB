@@ -2,15 +2,13 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Google.Protobuf.WellKnownTypes;
-using Citation = Kurrent.Kontext.Mcp.Model.Citation;
 using Evidence = Kurrent.Kontext.Mcp.Model.Evidence;
+using GitRef = Kurrent.Kontext.Mcp.Model.GitRef;
 using LeanMemory = Kurrent.Kontext.Mcp.Model.LeanMemory;
 using Memory = Kurrent.Kontext.Mcp.Model.Memory;
 using MemoryImportance = Kurrent.Kontext.Mcp.Model.MemoryImportance;
 using MemoryRef = Kurrent.Kontext.Mcp.Model.MemoryRef;
-using MemorySentiment = Kurrent.Kontext.Mcp.Model.MemorySentiment;
 using MemoryType = Kurrent.Kontext.Mcp.Model.MemoryType;
-using MemoryUrgency = Kurrent.Kontext.Mcp.Model.MemoryUrgency;
 using RecalledMemory = Kurrent.Kontext.Mcp.Model.RecalledMemory;
 using RecallResult = Kurrent.Kontext.Mcp.Model.RecallResult;
 using RecollectSort = Kurrent.Kontext.Mcp.Model.RecollectSort;
@@ -24,6 +22,7 @@ using SortDirection = Kurrent.Kontext.Mcp.Model.SortDirection;
 using StoredMemory = Kurrent.Kontext.Mcp.Model.StoredMemory;
 using Tag = Kurrent.Kontext.Mcp.Model.Tag;
 using TemporalContext = Kurrent.Kontext.Mcp.Model.TemporalContext;
+using WebRef = Kurrent.Kontext.Mcp.Model.WebRef;
 
 namespace Kurrent.Kontext.Mcp;
 
@@ -42,12 +41,6 @@ static class McpMappers {
 
 	public static Contracts.MemoryImportance ToContract(MemoryImportance v) => (Contracts.MemoryImportance)(int)v;
 	public static MemoryImportance ToModel(Contracts.MemoryImportance v) => (MemoryImportance)(int)v;
-
-	public static Contracts.MemorySentiment ToContract(MemorySentiment v) => (Contracts.MemorySentiment)(int)v;
-	public static MemorySentiment ToModel(Contracts.MemorySentiment v) => (MemorySentiment)(int)v;
-
-	public static Contracts.MemoryUrgency ToContract(MemoryUrgency v) => (Contracts.MemoryUrgency)(int)v;
-	public static MemoryUrgency ToModel(Contracts.MemoryUrgency v) => (MemoryUrgency)(int)v;
 
 	public static Contracts.RecollectSort ToContract(RecollectSort v) => (Contracts.RecollectSort)(int)v;
 	public static Contracts.SortDirection ToContract(SortDirection v) => (Contracts.SortDirection)(int)v;
@@ -70,32 +63,66 @@ static class McpMappers {
 	public static Contracts.Evidence.Types.RecordRef ToContract(RecordRef r) => new() { Id = r.Id, Position = r.Position };
 	public static RecordRef ToModel(Contracts.Evidence.Types.RecordRef r) => new() { Id = r.Id, Position = r.Position };
 
-	public static Contracts.Evidence.Types.Citation ToContract(Citation c) => c switch {
-		Citation.ToMemory m => new() { Memory = ToContract(m.Memory) },
-		Citation.ToRecord r => new() { Record = ToContract(r.Record) },
-		_ => throw new ArgumentOutOfRangeException(nameof(c)),
+	public static Contracts.Evidence.Types.GitRef ToContract(GitRef r) => new() {
+		Repo      = r.Repo ?? "",
+		Commit    = r.Commit,
+		Branch    = r.Branch ?? "",
+		Path      = r.Path ?? "",
+		Symbol    = r.Symbol ?? "",
+		LineStart = r.LineStart ?? 0,
+		LineEnd   = r.LineEnd ?? 0,
+		Excerpt   = r.Excerpt ?? "",
 	};
 
-	public static Citation ToModel(Contracts.Evidence.Types.Citation c) => c.CitedCase switch {
-		Contracts.Evidence.Types.Citation.CitedOneofCase.Memory => new Citation.ToMemory { Memory = ToModel(c.Memory) },
-		Contracts.Evidence.Types.Citation.CitedOneofCase.Record => new Citation.ToRecord { Record = ToModel(c.Record) },
-		_ => throw new ArgumentException("Citation has no cited source set."),
+	public static GitRef ToModel(Contracts.Evidence.Types.GitRef r) => new() {
+		Repo      = Unset(r.Repo),
+		Commit    = r.Commit,
+		Branch    = Unset(r.Branch),
+		Path      = Unset(r.Path),
+		Symbol    = Unset(r.Symbol),
+		LineStart = r.LineStart == 0 ? null : r.LineStart,
+		LineEnd   = r.LineEnd == 0 ? null : r.LineEnd,
+		Excerpt   = Unset(r.Excerpt),
 	};
 
-	// Null or empty evidence maps to an unset proto field, so a raw observation carries no evidence message on the wire.
-	public static Contracts.Evidence? ToContract(Evidence? e) =>
-		e is null || (e.Reasoning.Length == 0 && e.Citations.Count == 0)
-			? null
-			: new Contracts.Evidence {
-				Reasoning = e.Reasoning,
-				Citations = { e.Citations.Select(ToContract) },
-			};
+	public static Contracts.Evidence.Types.WebRef ToContract(WebRef r) {
+		var proto = new Contracts.Evidence.Types.WebRef { Uri = r.Uri, Title = r.Title ?? "" };
 
-	public static Evidence? ToModel(Contracts.Evidence? e) =>
-		e is null ? null : new Evidence {
-			Reasoning = e.Reasoning,
-			Citations = e.Citations.Select(ToModel).ToList(),
-		};
+		if (r.RetrievedAt is not null) proto.RetrievedAt = Timestamp.FromDateTimeOffset(r.RetrievedAt.Value);
+		proto.Excerpts.AddRange(r.Excerpts);
+
+		return proto;
+	}
+
+	public static WebRef ToModel(Contracts.Evidence.Types.WebRef r) => new() {
+		Uri         = r.Uri,
+		Title       = Unset(r.Title),
+		Excerpts    = r.Excerpts.ToList(),
+		RetrievedAt = r.RetrievedAt?.ToDateTimeOffset(),
+	};
+
+	public static Contracts.Evidence ToContract(Evidence e) => e switch {
+		Evidence.ToMemory m => new() { Memory = ToContract(m.Memory) },
+		Evidence.ToRecord r => new() { Record = ToContract(r.Record) },
+		Evidence.ToGit    g => new() { Git = ToContract(g.Git) },
+		Evidence.ToWeb    w => new() { Web = ToContract(w.Web) },
+		_ => throw new ArgumentOutOfRangeException(nameof(e)),
+	};
+
+	// The contract's `generic` arm has no MCP model (see Model/Evidence.cs), so a memory carrying one
+	// is surfaced as its typed neighbours only rather than failing the whole read.
+	public static Evidence? ToModel(Contracts.Evidence e) => e.SourceCase switch {
+		Contracts.Evidence.SourceOneofCase.Memory => new Evidence.ToMemory { Memory = ToModel(e.Memory) },
+		Contracts.Evidence.SourceOneofCase.Record => new Evidence.ToRecord { Record = ToModel(e.Record) },
+		Contracts.Evidence.SourceOneofCase.Git    => new Evidence.ToGit { Git = ToModel(e.Git) },
+		Contracts.Evidence.SourceOneofCase.Web    => new Evidence.ToWeb { Web = ToModel(e.Web) },
+		_ => null,
+	};
+
+	public static IReadOnlyList<Evidence> ToModel(IEnumerable<Contracts.Evidence> evidence) =>
+		evidence.Select(ToModel).OfType<Evidence>().ToList();
+
+	static string? Unset(string value) => string.IsNullOrEmpty(value) ? null : value;
 
 	public static Contracts.TemporalContext ToContract(TemporalContext t) {
 		var proto = new Contracts.TemporalContext { PerceivedStart = Timestamp.FromDateTimeOffset(t.From) };
@@ -115,16 +142,13 @@ static class McpMappers {
 
 	public static Contracts.Memory ToContract(Memory m) {
 		var proto = new Contracts.Memory {
-			// Empty id ⇒ server assigns; the MCP model carries a nullable string for the same "unset" intent.
-			MemoryId = m.Id ?? "",
 			MemoryType = ToContract(m.Type),
 			Content = m.Content,
 			Importance = ToContract(m.Importance),
-			Sentiment = ToContract(m.Sentiment),
-			Urgency = ToContract(m.Urgency),
+			Reasoning = m.Reasoning,
 		};
-		if (ToContract(m.Evidence) is { } evidence) proto.Evidence = evidence;
 		if (m.Validity is not null) proto.Validity = ToContract(m.Validity);
+		proto.Evidence.AddRange(m.Evidence.Select(ToContract));
 		proto.Tags.AddRange(m.Tags.Select(ToContract));
 		proto.Supersedes.AddRange(m.Supersedes);
 		return proto;
@@ -139,10 +163,9 @@ static class McpMappers {
 		MemoryType = ToModel(m.MemoryType),
 		Content = m.Content,
 		Importance = ToModel(m.Importance),
+		Reasoning = m.Reasoning,
 		Evidence = ToModel(m.Evidence),
 		Tags = m.Tags.Select(ToModel).ToList(),
-		Sentiment = ToModel(m.Sentiment),
-		Urgency = ToModel(m.Urgency),
 		Validity = ToModel(m.Validity),
 		Supersedes = m.Supersedes.ToList(),
 		RetainedAt = m.RetainedAt?.ToDateTimeOffset() ?? default,
@@ -152,7 +175,7 @@ static class McpMappers {
 		SupersededBy = string.IsNullOrEmpty(m.SupersededBy) ? null : m.SupersededBy,
 	};
 
-	public static LeanMemory ToModel(Contracts.RecallResponse.Types.RecalledMemory.Types.LeanMemory m) => new() {
+	public static LeanMemory ToModel(Contracts.LeanMemory m) => new() {
 		MemoryId = m.MemoryId,
 		MemoryType = ToModel(m.MemoryType),
 		Content = m.Content,
@@ -181,8 +204,8 @@ static class McpMappers {
 	};
 
 	public static RelatedMemory ToModel(Contracts.RetainResponse.Types.RelatedMemory r) => new() {
-		MemoryId = r.MemoryId,
 		Similarity = r.Similarity,
+		Memory = ToModel(r.Memory),
 	};
 
 	public static RetractResult ToModel(Contracts.RetractResponse r) => new() {

@@ -10,9 +10,9 @@ namespace Kurrent.Kontext.Embeddings;
 /// differently (e.g. Cohere's input_type). Generators that don't distinguish ignore this.
 /// </summary>
 public static class EmbeddingPurpose {
-	public const string Key = "purpose";
-	public const string Document = "document";
-	public const string Query = "query";
+    public const string Key      = "purpose";
+    public const string Document = "document";
+    public const string Query    = "query";
 
 	/// <summary>Options for embedding a search query.</summary>
 	public static readonly EmbeddingGenerationOptions QueryOptions = new() {

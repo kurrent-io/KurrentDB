@@ -16,12 +16,12 @@ On the **local ONNX** side, the project holds **four generators that tell a "pro
 the same all-MiniLM model, plus one multilingual generator on a different model lineage (the network-backed
 adapters are covered in [Remote / hosted providers](#remote--hosted-providers)):
 
-| Folder | Model | Tokenizer | Dims | Provider id | Status |
-|--------|-------|-----------|------|-------------|--------|
-| `Prototype/` | all-MiniLM-L6-v2 | hand-rolled WordPiece | 384 | `local` | **frozen default** — what existing indexes were built with |
-| `PrototypeV2/` | all-MiniLM-L6-v2 | hand-rolled WordPiece | 384 | `kontext-prototype-v2` | clean re-implementation of Prototype, **byte-identical** to it |
-| `WordPieceOnnx/` | all-MiniLM-L6-v2 | `BertTokenizer` (correct) | 384 | `kontext-wordpiece-onnx` | opt-in — **accent bug fixed** (different vectors) |
-| `SentencePieceOnnx/` | any XLM-R model (e5, paraphrase-multilingual, bge-m3) | SentencePiece + fairseq remap | model-dependent (384–1024) | `kontext-sentencepiece-onnx` | **multilingual** |
+| Folder               | Model                                                 | Tokenizer                     | Dims                       | Provider id                  | Status                                                         |
+|----------------------|-------------------------------------------------------|-------------------------------|----------------------------|------------------------------|----------------------------------------------------------------|
+| `Prototype/`         | all-MiniLM-L6-v2                                      | hand-rolled WordPiece         | 384                        | `local`                      | **frozen default** — what existing indexes were built with     |
+| `PrototypeV2/`       | all-MiniLM-L6-v2                                      | hand-rolled WordPiece         | 384                        | `kontext-prototype-v2`       | clean re-implementation of Prototype, **byte-identical** to it |
+| `WordPieceOnnx/`     | all-MiniLM-L6-v2                                      | `BertTokenizer` (correct)     | 384                        | `kontext-wordpiece-onnx`     | opt-in — **accent bug fixed** (different vectors)              |
+| `SentencePieceOnnx/` | any XLM-R model (e5, paraphrase-multilingual, bge-m3) | SentencePiece + fairseq remap | model-dependent (384–1024) | `kontext-sentencepiece-onnx` | **multilingual**                                               |
 
 > `Prototype/` and `PrototypeV2/` — the former **A** and **A′** in the prototype-evolution story — are the
 > **frozen prototype showcase**: same model, cleaner architecture, kept byte-faithful on purpose.
@@ -171,12 +171,12 @@ Every source ships the same pair:
   construction run **lazily inside the DI factory**, so a missing key / region surfaces when the generator is
   resolved, not at registration.
 
-| Folder | Provider | Client | Requires |
-|--------|----------|--------|----------|
-| `OpenAI/` | OpenAI (and OpenAI-compatible proxies) | `OpenAIClient.GetEmbeddingClient().AsIEmbeddingGenerator()` | `ApiKey` (`Endpoint` optional, for proxies) |
-| `Ollama/` | Ollama | `OllamaApiClient` (is itself an `IEmbeddingGenerator`) | — (defaults to `localhost:11434` / `nomic-embed-text`) |
-| `GoogleVertexAI/` | Google Vertex AI | `PredictionServiceClientBuilder.BuildIEmbeddingGenerator()` | `ProjectId` + `Region` |
-| `Aws/` | Amazon Bedrock | `AmazonBedrockRuntimeClient.AsIEmbeddingGenerator()` (Titan) or `CohereBedrockEmbeddingGenerator` (`cohere.*`) | `Region` |
+| Folder            | Provider                               | Client                                                                                                         | Requires                                               |
+|-------------------|----------------------------------------|----------------------------------------------------------------------------------------------------------------|--------------------------------------------------------|
+| `OpenAI/`         | OpenAI (and OpenAI-compatible proxies) | `OpenAIClient.GetEmbeddingClient().AsIEmbeddingGenerator()`                                                    | `ApiKey` (`Endpoint` optional, for proxies)            |
+| `Ollama/`         | Ollama                                 | `OllamaApiClient` (is itself an `IEmbeddingGenerator`)                                                         | — (defaults to `localhost:11434` / `nomic-embed-text`) |
+| `GoogleVertexAI/` | Google Vertex AI                       | `PredictionServiceClientBuilder.BuildIEmbeddingGenerator()`                                                    | `ProjectId` + `Region`                                 |
+| `Aws/`            | Amazon Bedrock                         | `AmazonBedrockRuntimeClient.AsIEmbeddingGenerator()` (Titan) or `CohereBedrockEmbeddingGenerator` (`cohere.*`) | `Region`                                               |
 
 ```csharp
 // From explicit settings…
@@ -270,16 +270,16 @@ Most of these live in the **frozen baseline (Prototype)** and are inherited by P
 baseline failures are **silent** — no exception, just quietly worse results. Full analysis:
 [`docs/reports/2026-07-11-kontext-embeddings-sk-migration`](../../.claude/context/docs/reports/2026-07-11-kontext-embeddings-sk-migration/report.md).
 
-| # | Issue | Affects | Severity | Fixed by |
-|---|-------|---------|----------|----------|
-| 1 | **Accents silently mangled** — `café` isn't normalized, shatters into `[UNK]`; `café`↔`cafe` cosine ≈ 0.46 | Prototype, PrototypeV2 | High | **WordPieceOnnx** |
-| 2 | **English-only model** — all-MiniLM has weak non-English semantics *even with a perfect tokenizer* (PT/ES/FR within-language separation near zero) | Prototype, PrototypeV2, WordPieceOnnx | High | **SentencePieceOnnx** |
-| 3 | **Non-Latin `[UNK]`-collapse → fake matches** — distinct CJK inputs collapse to the same `[UNK]` sequence, cosine 1.0 | Prototype, PrototypeV2 | Med-High | WordPieceOnnx, SentencePieceOnnx |
-| 4 | **Hand-rolled tokenizer diverges from standard BERT** (case-insensitive lookups, no normalization, `char.IsPunctuation`, 200-char word cap) | Prototype, PrototypeV2 | Med | WordPieceOnnx, SentencePieceOnnx |
-| 5 | **ICU landmine** — accent-folding needs `String.Normalize(FormD)`, a **silent no-op** under `InvariantGlobalization=true` or on ICU-less images (Alpine/musl); the fix silently reverts | WordPieceOnnx, SentencePieceOnnx | High | **fail-loud gate in WordPieceOnnx**; run with ICU (`InvariantGlobalization=false`) |
-| 6 | **AVX variant selection is x86-centric** — `ModelManager` ships avx512 + avx2 copies and on ARM silently loads the one literally named `avx2` | Prototype | Low-Med | open (baseline kept) |
-| 7 | **`Assembly.Load` reflection** in `ModelManager` — AOT-hostile in a repo targeting Native AOT | Prototype | Med | open (baseline kept; PrototypeV2 takes streams, WordPieceOnnx/SentencePieceOnnx resolve an `OnnxModel`, and the interim bridge reads embedded resources via `FromEmbeddedResources` — no `Assembly.Load`) |
-| 8 | **Model distribution is prototype-grade** — Prototype's models are downloaded at *build* time and embedded in a DLL (~53 MB), no checksum, no versioning | Prototype | Med | open design decision; PrototypeV2 takes streams and WordPieceOnnx/SentencePieceOnnx resolve an `OnnxModel`, deferring the choice to the host (the interim pMM12 embed re-uses the same build-time mechanism, by design, until the downloader lands) |
+| # | Issue                                                                                                                                                                                   | Affects                               | Severity | Fixed by                                                                                                                                                                                                                                            |
+|---|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1 | **Accents silently mangled** — `café` isn't normalized, shatters into `[UNK]`; `café`↔`cafe` cosine ≈ 0.46                                                                              | Prototype, PrototypeV2                | High     | **WordPieceOnnx**                                                                                                                                                                                                                                   |
+| 2 | **English-only model** — all-MiniLM has weak non-English semantics *even with a perfect tokenizer* (PT/ES/FR within-language separation near zero)                                      | Prototype, PrototypeV2, WordPieceOnnx | High     | **SentencePieceOnnx**                                                                                                                                                                                                                               |
+| 3 | **Non-Latin `[UNK]`-collapse → fake matches** — distinct CJK inputs collapse to the same `[UNK]` sequence, cosine 1.0                                                                   | Prototype, PrototypeV2                | Med-High | WordPieceOnnx, SentencePieceOnnx                                                                                                                                                                                                                    |
+| 4 | **Hand-rolled tokenizer diverges from standard BERT** (case-insensitive lookups, no normalization, `char.IsPunctuation`, 200-char word cap)                                             | Prototype, PrototypeV2                | Med      | WordPieceOnnx, SentencePieceOnnx                                                                                                                                                                                                                    |
+| 5 | **ICU landmine** — accent-folding needs `String.Normalize(FormD)`, a **silent no-op** under `InvariantGlobalization=true` or on ICU-less images (Alpine/musl); the fix silently reverts | WordPieceOnnx, SentencePieceOnnx      | High     | **fail-loud gate in WordPieceOnnx**; run with ICU (`InvariantGlobalization=false`)                                                                                                                                                                  |
+| 6 | **AVX variant selection is x86-centric** — `ModelManager` ships avx512 + avx2 copies and on ARM silently loads the one literally named `avx2`                                           | Prototype                             | Low-Med  | open (baseline kept)                                                                                                                                                                                                                                |
+| 7 | **`Assembly.Load` reflection** in `ModelManager` — AOT-hostile in a repo targeting Native AOT                                                                                           | Prototype                             | Med      | open (baseline kept; PrototypeV2 takes streams, WordPieceOnnx/SentencePieceOnnx resolve an `OnnxModel`, and the interim bridge reads embedded resources via `FromEmbeddedResources` — no `Assembly.Load`)                                           |
+| 8 | **Model distribution is prototype-grade** — Prototype's models are downloaded at *build* time and embedded in a DLL (~53 MB), no checksum, no versioning                                | Prototype                             | Med      | open design decision; PrototypeV2 takes streams and WordPieceOnnx/SentencePieceOnnx resolve an `OnnxModel`, deferring the choice to the host (the interim pMM12 embed re-uses the same build-time mechanism, by design, until the downloader lands) |
 
 **Structural notes (not behavioural bugs):**
 

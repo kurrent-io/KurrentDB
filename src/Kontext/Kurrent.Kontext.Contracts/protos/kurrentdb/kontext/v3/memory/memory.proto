@@ -7,39 +7,65 @@ package kurrent.kontext;
 
 option csharp_namespace = "Kurrent.Kontext.Contracts";
 
-import "google/protobuf/timestamp.proto";
-
 import "kurrentdb/kontext/v3/memory/resources.proto";
 
+// THE ACCESS RULE — which operations move a memory's recency clock.
+//
+//   The clock advances when the AGENT'S INTENT selected the memory, never when the SYSTEM offered
+//   it.
+//
+// `last_accessed_at` exists to measure "this memory was useful", not "this memory was transmitted".
+//   recall     — the agent asked a question and this answered it        → REFRESHES
+//   reclaim    — the agent named the id                                 → REFRESHES
+//   recollect  — an enumeration by filter, mostly discarded             → does not
+//   related    — surfaced by the server, unbidden, on retain            → does not
+// Refreshing on the last two would record accesses that never happened and inflate the salience of
+// memories nobody used.
 service MemoryService {
   // TOOL — retain
   //
   // Store something worth remembering. Reach for this the moment you learn something you'd want
   // back later: a decision and its reasoning, an error and its fix, a user preference, a durable
-  // fact about the system. Write each memory so it stands on its own — a reader months from now,
-  // with no other context, should understand it. Set `memory_type` honestly: it is the trust axis
-  // (a firsthand OBSERVATION is trusted more than HEARSAY overheard in conversation), so don't
-  // dress gossip up as fact. Set `importance` by how much it matters (higher keeps it retrievable
-  // longer). Cite what the memory rests on in `evidence`, and list any memories this one replaces in
-  // `supersedes`
-  // — the old ones stay readable, marked superseded (there is no separate supersede call).
+  // fact about the system, a question you could not answer. Write each memory so it stands on its
+  // own — a reader months from now, with no other context, should understand it. Set `memory_type`
+  // honestly: it is the trust axis (a firsthand OBSERVATION is trusted more than HEARSAY you have
+  // not verified), so don't dress an unchecked claim up as fact. Set `importance` by how much it
+  // matters (higher keeps it retrievable longer). Cite what the memory rests on in `evidence`, put
+  // the argument in `reasoning`, and list any memories this one replaces in `supersedes` — the old
+  // ones stay readable, marked superseded (there is no separate supersede call).
   //
-  // You can store one memory or several in a single call. Set `reconcile` to take a beat first — a
-  // quick reflection over what you already know, handing back anything the new memory looks to
-  // duplicate or contradict so you can resolve it now (supersede/retract). It never blocks: the
-  // memory is stored either way, and if you skip it the scheduled "dream" pass reconciles later.
+  // YOU DO NOT SUPPLY IDS. The server mints every memory_id and returns them positionally:
+  // results[i] is the memory you sent at memories[i], always, same length, same order. A
+  // consequence: you cannot cite a memory you are sending in this same request, because its id does
+  // not exist yet. Retain the sources first, then retain the memory that cites them. If the second
+  // call fails you are left with valid standalone memories, which is a harmless outcome.
   //
-  // Example: retain { memories: [{ memory_type: OBSERVATION, importance: MEMORY_IMPORTANCE_HIGH,
-  //          tags: [{ value: "kontext" }], content: "The projector checkpoint format switched to
-  //          protobuf JSON in v25.1." }] }
+  // EVERY RETAIN REPORTS ITS NEIGHBOURS. There is no flag: the server always runs a hybrid search
+  // for each memory you store and hands back the closest LIVE memories in `related` (nearest first,
+  // capped by configuration). Live means the tip of a supersession chain — superseded and retracted
+  // memories never appear. The server does not adjudicate: it will not merge, block, or deduplicate
+  // anything. It reports; YOU DECIDE. Reading `related` is part of making this call, not a
+  // courtesy — ignore it and you leave near-duplicates for the scheduled "dream" pass to clean up.
   //
-  // Returns: one result per stored memory (in order) with its server-assigned `memory_id`, plus any
-  // `related` look-alikes when `reconcile` was set.
+  // What to do when a neighbour matches what you just stored:
+  //   - You brought NEW SUPPORT (a second encounter, a different source) → `retain` a successor
+  //     with `supersedes: [neighbour_id]`, carrying the UNION of its citations and yours. This is
+  //     consolidation: re-encountering a belief is corroboration and should be recorded, not
+  //     discarded.
+  //   - You brought NOTHING NEW → `retract` the copy you just created, reason "duplicate of {id}".
+  // `related` gives you the lean projection, which is enough to judge; `reclaim` the one you intend
+  // to act on when you need its evidence to build the successor.
   //
-  // Safety: writing, additive — never overwrites or deletes. Not idempotent: each memory without a
-  // pre-set memory_id creates a new record. A supplied memory_id must be NEW — retaining an id that
-  // already exists is rejected (ALREADY_EXISTS), never silently merged; to replace an existing
-  // memory, retain the successor with `supersedes`.
+  // Example: retain { memories: [{ memory_type: MEMORY_TYPE_OBSERVATION,
+  //          importance: MEMORY_IMPORTANCE_HIGH, tags: [{ value: "kontext" }],
+  //          content: "The projector checkpoint format switched to protobuf JSON in v25.1." }] }
+  //
+  // Returns: one result per stored memory, in order, each with its server-assigned `memory_id` and
+  // its `related` neighbours.
+  //
+  // Safety: writing, additive — never overwrites or deletes, and always creates. Not idempotent:
+  // retaining the same content twice creates two memories, which is why you must act on `related`.
+  // Reporting neighbours does NOT touch their recency clocks (see THE ACCESS RULE).
   rpc Retain(RetainRequest) returns (RetainResponse);
 
   // TOOL — retract
@@ -54,11 +80,16 @@ service MemoryService {
   //     its place (retracting avoids inventing an "it is NOT true that…" anti-fact).
   //   - Forget it — a removal for privacy/PII, not a correction.
   //   - Cascade — you need memories derived from this one to go with it (below).
+  //   - A duplicate you just created — after `retain` reported a neighbour you had nothing to add
+  //     to.
   //
   // In one line: supersede = "I know better now" (has a replacement, preserves history, no cascade);
   // retract = "this shouldn't be here at all" (no replacement, HIDES it, and CASCADES to anything
   // derived from it — a SUMMARY that cited it is retracted too, its evidence having vanished). It is
   // the only "hide" primitive: retracted memories stop surfacing in `recall`.
+  //
+  // An OPEN_QUESTION that went moot needs no retraction — let it decay. Retract one only if you
+  // want it gone now.
   //
   // Example: retract { memory_id: "01J...", reason: "there was never a 3pm meeting" }
   //
@@ -81,41 +112,41 @@ service MemoryService {
   //
   // Phrase `query` in natural language, like a question to a colleague ("what did we decide about
   // the checkpoint format?") — not keywords. Add `tags` only when you already know the dimension to
-  // scope to (a session, a project, an environment); leave them empty to search everything.
+  // scope to (a session, a repo, an environment); leave them empty to search everything.
   //
   // Results come back ranked best-first: treat the order as the system's confidence, and each
   // memory's `memory_type` as how far to trust it (a firsthand OBSERVATION outranks HEARSAY you
-  // picked up in conversation). You only ever get what is currently true here — retracted and
-  // superseded memories never surface. Want the full record (evidence, reasoning)? Set
-  // `include_full`, or follow up with `reclaim` by id.
+  // have not verified). You only ever get what is currently true here — retracted and superseded
+  // memories never surface. Want the full record (evidence, reasoning)? Set `include_full`, or
+  // follow up with `reclaim` by id.
   //
   // Side effect worth knowing: recalling a memory keeps it salient (it refreshes that memory's
   // recency clock), so the things you actually use stay near the top over time. Recall freely.
   //
   // Siblings: `retain` (store a memory) · `reclaim` (fetch specific memories by id) · `recollect`
-  // (list/inspect by type or tag, including retracted) · `reflect` (synthesize higher-level
-  // memories from what's there).
+  // (list/inspect by type or tag) · `reflect` (synthesize higher-level memories from what's there).
   //
   // Example: recall { query: "what did we decide about the checkpoint format?", limit: 5 }
   //
   // Returns: `memories`, ranked best-first — each with its `score` (higher = stronger; a low top
-  // score means nothing matched well) and, by default, a lean body (id, type, content, tags,
+  // score means nothing matched well) and, by default, a LeanMemory body (id, type, content, tags,
   // importance, age). Set `include_full` for the complete folded record per hit. The score
   // breakdown is intentionally withheld.
   //
   // Safety: reading, but NOT side-effect-free — a recall refreshes the recency clock of every
-  // memory it returns (reconsolidation). Idempotent in what it returns; not in what it writes.
+  // memory it returns (reconsolidation; see THE ACCESS RULE). Idempotent in what it returns; not in
+  // what it writes.
   rpc Recall(RecallRequest) returns (RecallResponse);
 
   // TOOL — reclaim — fetch exact memories by `id` (input: the ids you already hold).
   // Not `recall` (that's by meaning) · not `recollect` (that's by type/tag).
   //
   // Pull specific, already-known memories back into context by id. Use it for progressive
-  // disclosure — when an earlier result (a reflection, a recall, a linked memory) handed you only
-  // ids and you now want the full records. Unlike `recall`, this is not a search and does not rank:
-  // you ask for exact ids and get exactly those, whatever their status.
-  //
-  // This tool will affect the temporal decay clock of the memories it returns (reconsolidation).
+  // disclosure — when an earlier result (a reflection, a recall, a `related` neighbour) handed you
+  // a lean record and you now want the full one: its `evidence` and `reasoning`. You need this
+  // before superseding a memory, because the successor must carry the union of its citations.
+  // Unlike `recall`, this is not a search and does not rank: you ask for exact ids and get exactly
+  // those, whatever their status.
   //
   // Example: reclaim { ids: ["01J...", "01K..."] }
   //
@@ -124,34 +155,38 @@ service MemoryService {
   // absent from the stream (never an error); diff the returned ids against what you asked for to
   // see which missed.
   //
-  // Safety: reading; records that these memories were reclaimed (events.proto MemoriesReclaimed).
+  // Safety: reading, but NOT side-effect-free — you named these ids, so this REFRESHES their
+  // recency clocks (see THE ACCESS RULE) and records events.proto MemoriesAccessed.
   rpc Reclaim(ReclaimRequest) returns (stream StoredMemory);
 
   // TOOL — recollect — list a slice by `type`/`tags` (input: filters, no question).
   // Not `recall` (that ranks by relevance to a query) · not `reclaim` (that's by id).
   //
   // Browse your memories by structure, not by relevance. Use it to enumerate or gather a set —
-  // "all my PLANs tagged project::engram", "everything I retracted this week" — where you want a
-  // filtered list, not a ranked answer to a question. For "what's relevant to what I'm doing now",
-  // use `recall` instead.
+  // "all my FACTs tagged project:engram", "every OPEN_QUESTION in this repo" — where you want a
+  // filtered list, not a ranked answer to a question. Enumerating OPEN_QUESTIONs at the start of a
+  // task is the canonical use: it is a work queue, and because recollect does not rank, temporal
+  // decay never hides one from it.
   //
-  // Example: recollect { types: [PLAN], tags: [{ scope: "project", value: "engram" }], limit: 50 }
+  // Example: recollect { types: [MEMORY_TYPE_OPEN_QUESTION], tags: [{ scope: "repo",
+  //          value: "kurrent--kurrentdb" }], limit: 50 }
   //
   // Returns: a stream of StoredMemory matching the filters — `types` is any-of (empty = any type),
   // all supplied `tags` must be present. Retracted memories are never returned (they were mistakes;
   // only `reclaim` by exact id still surfaces them). Ordered by `sort` (default: newest-retained
   // first); reverse with `direction`.
   //
-  // Safety: read-only.
+  // Safety: READ-ONLY, and deliberately so — an enumeration is not a use. It does NOT refresh the
+  // recency clock of what it lists (see THE ACCESS RULE); reclaim what you actually act on.
   rpc Recollect(RecollectRequest) returns (stream StoredMemory);
 
   // TOOL — reflect
   //
   // Step back and synthesize. This recalls broadly over the store and writes higher-level, DERIVED
-  // memories from what it finds — a FACT, PROCEDURE, PROFILE, SUMMARY, or PLAN that must cite the
-  // memories it rests on (its `evidence`) — and may retract or supersede the ones the new insight
-  // subsumes. Reflection is the operation that produces derived memories; there is no "reflection"
-  // memory type. Reach for it periodically, when a pile of observations wants to become a durable
+  // memories from what it finds — a FACT, USER_PROFILE, PREFERENCE, or SUMMARY that cites the
+  // memories it rests on — and may retract or supersede the ones the new insight subsumes.
+  // Reflection is the operation that produces derived memories; there is no "reflection" memory
+  // type. Reach for it periodically, when a pile of observations wants to become a durable
   // conclusion — not on every turn.
   //
   // Example: reflect { query: "what have I learned about the projector checkpoint design?" }
@@ -170,32 +205,35 @@ service MemoryService {
 
 message RetainRequest {
   // Required. One or more memories to store — see resources.proto Memory for the fields you set.
+  // Results come back in this order, one per entry.
   repeated Memory memories = 1;
-
-  // Optional. Take a beat before moving on: run a quick reflection over existing memories and hand
-  // back, per stored memory, anything the new one looks to duplicate or contradict
-  // (RetainResult.related), so you can resolve it now. Never blocks the write. Default false —
-  // retain stays fast and the scheduled "dream" pass reconciles later.
-  bool reconcile = 2;
 }
 
 message RetainResponse {
-  // One result per input memory, in the same order.
+  // One result per input memory, in the same order. Always the same length as the request.
   repeated RetainResult results = 1;
 
   message RetainResult {
-    // The stored memory's id. Retain always stores; `related` never blocks it.
+    // The id the server assigned to the memory you sent at this position. Always a NEW memory —
+    // retain always creates.
     string memory_id = 1;
 
-    // Advisory, only populated when `reconcile` was set: existing memories this one looks to
-    // duplicate or contradict, nearest first. A heads-up you may act on (supersede/retract) or
-    // leave for the scheduled reflection pass.
+    // Existing LIVE memories closest to the one just stored, nearest first, capped by server
+    // configuration. Live means the tip of a supersession chain. Advisory: the server does not act
+    // on these, you do — supersede when you brought new support, retract your copy when you did
+    // not. Populated on every retain; reading it is part of the call.
     repeated RelatedMemory related = 2;
   }
 
   message RelatedMemory {
-    string memory_id  = 1;  // the pre-existing memory that looks related
-    double similarity = 2;  // embedding cosine, ~0..1 (higher = more alike)
+    // Hybrid retrieval score, higher = more alike. A CONTINUOUS, inferential signal: it can never
+    // tell you two records are the same, because different sentences embed alike and quantization
+    // rounds. Compare `memory.content` yourself when that is the question.
+    double similarity = 1;
+
+    // The lean projection — enough to judge whether this duplicates, corroborates, or contradicts
+    // what you just stored, without a round trip. `reclaim` it when you need evidence/reasoning.
+    LeanMemory memory = 2;
   }
 }
 
@@ -209,9 +247,10 @@ message RetractRequest {
   // Required. The memory to take back.
   string memory_id = 1;
 
-  // Why you're taking this back (e.g. "user corrected me", "verified false in commit abc").
-  // Encouraged: it's the only record of why the memory is gone, it stops you relitigating it later,
-  // and it explains the cascade when derived memories are retracted with it.
+  // Why you're taking this back (e.g. "user corrected me", "verified false in commit abc",
+  // "duplicate of 01J..."). Encouraged: it's the only record of why the memory is gone, it stops
+  // you relitigating it later, and it explains the cascade when derived memories are retracted
+  // with it.
   string reason = 2;
 }
 
@@ -258,7 +297,7 @@ message RecallResponse {
   string query_id = 1;
 
   // ranked best-first
-  repeated RecalledMemory memories = 2; 
+  repeated RecalledMemory memories = 2;
 
   // One recall hit. `score` is always present; the body is the lean projection by default, or the
   // complete folded record when the request set `include_full`. The ranking breakdown stays on the
@@ -272,17 +311,6 @@ message RecallResponse {
       LeanMemory   lean = 2;  // default — enough to use and trust a hit
       StoredMemory full = 3;  // when include_full was set — the same complete record `reclaim` gives
     }
-
-    // The lean projection: enough to use the memory and judge it, without the provenance trail
-    // (evidence, reasoning). For those, set include_full or reclaim by id.
-    message LeanMemory {
-      string                    memory_id   = 1;  // reclaim by this for the full record
-      MemoryType                memory_type = 2;  // the trust axis
-      string                    content     = 3;  // the memory text
-      repeated Tag              tags        = 4;  // labels carried on the memory
-      MemoryImportance          importance  = 5;  // its salience level
-      google.protobuf.Timestamp retained_at = 6;  // age, for context
-    }
   }
 }
 
@@ -291,7 +319,7 @@ message RecallResponse {
 //===================================================================
 
 // Directly read specific, known memory fragments back into context.
-// It allows progressive disclosure for when certain operation return only the memory ids.
+// It allows progressive disclosure for when certain operations return only a lean record.
 message ReclaimRequest {
   // Required. The exact memory ids to fetch back.
   repeated string ids = 1;
@@ -313,7 +341,7 @@ enum RecollectSort {
   RECOLLECT_SORT_LAST_ACCESSED_AT = 2;
 
   // The agent's salience rating — surfaces the significant ones. Pairs well with `limit`:
-  // "the 20 most important PLANs" rather than 20 arbitrary ones.
+  // "the 20 most important FACTs" rather than 20 arbitrary ones.
   RECOLLECT_SORT_IMPORTANCE = 3;
 }
 

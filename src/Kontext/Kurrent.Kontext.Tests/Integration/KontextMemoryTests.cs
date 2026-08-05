@@ -101,7 +101,7 @@ public class KontextMemoryTests {
 		using var pool   = NewPool(dir.Path);
 		var       store  = await Seed(pool,
 			new Row("b1", Contracts.MemoryType.Fact, "flamingo stands gracefully on one leg", Contracts.MemoryImportance.High, Base.AddHours(1), [1f, 0f, 0f, 0f]) {
-				Evidence      = SeedEvidence().ToByteArray(),
+				Evidence      = SeedEvidenceBlobs(),
 				ValidityStart = Base.AddHours(-24),
 				ValidityEnd   = Base.AddHours(24),
 			});
@@ -123,7 +123,7 @@ public class KontextMemoryTests {
 		await Assert.That(hit.Score).IsGreaterThan(0);
 		await Assert.That(hit.Full.MemoryId).IsEqualTo("b1");
 		await Assert.That(hit.Full.Content).IsEqualTo(expectedContent);
-		await Assert.That(hit.Full.Evidence).IsEqualTo(SeedEvidence());
+		await Assert.That(hit.Full.Evidence.ToList()).IsEquivalentTo([SeedEvidence()]);
 		await Assert.That(hit.Full.Validity!.PerceivedStart.ToDateTimeOffset()).IsEqualTo(Base.AddHours(-24));
 	}
 
@@ -218,7 +218,7 @@ public class KontextMemoryTests {
 		var       store  = await Seed(pool,
 			new Row("f1", Contracts.MemoryType.Fact, "fact about caching", Contracts.MemoryImportance.High, Base.AddHours(1), [1f, 0f, 0f, 0f]) { LastAccessedAt = Base.AddHours(10) },
 			new Row("f2", Contracts.MemoryType.Fact, "fact about the checkpoint format", Contracts.MemoryImportance.Critical, Base.AddHours(2), [0f, 1f, 0f, 0f]) { LastAccessedAt = Base.AddHours(20) },
-			new Row("f3", Contracts.MemoryType.Plan, "plan to rewrite the projector", Contracts.MemoryImportance.Normal, Base.AddHours(3), [0f, 0f, 1f, 0f]) { LastAccessedAt = Base.AddHours(30) },
+			new Row("f3", Contracts.MemoryType.Hearsay, "plan to rewrite the projector", Contracts.MemoryImportance.Normal, Base.AddHours(3), [0f, 0f, 1f, 0f]) { LastAccessedAt = Base.AddHours(30) },
 			new Row("f4", Contracts.MemoryType.Fact, "fact about tags", Contracts.MemoryImportance.Low, Base.AddHours(4), [0f, 0f, 0f, 1f]) { LastAccessedAt = Base.AddHours(5) });
 		var       memory = new KontextMemory(store, NoOp);
 
@@ -243,11 +243,10 @@ public class KontextMemoryTests {
 	/// <summary>A no-op append: the write path is not built, so nothing this service does emits events yet.</summary>
 	static readonly AppendEvent NoOp = static (_, _) => Task.CompletedTask;
 
-	static Contracts.Evidence SeedEvidence() {
-		var evidence = new Contracts.Evidence();
-		evidence.Citations.Add(new Contracts.Evidence.Types.Citation { Memory = new() { Id = "cited-1" } });
-		return evidence;
-	}
+	static Contracts.Evidence SeedEvidence() => new() { Memory = new() { Id = "cited-1" } };
+
+	// evidence is a VARCHAR[] column: one canonical-JSON citation per element.
+	static List<string> SeedEvidenceBlobs() => [JsonFormatter.Default.Format(SeedEvidence())];
 
 	/// <summary>Creates the schema through <see cref="KontextSchema"/> and seeds the given rows, then hands back a store over the same pool.</summary>
 	static async ValueTask<KontextDataStore> Seed(KontextConnectionPool pool, params Row[] rows) {
@@ -265,9 +264,8 @@ public class KontextMemoryTests {
 			  memory_type,
 			  content,
 			  importance,
-			  sentiment,
-			  urgency,
 			  tags,
+			  reasoning,
 			  evidence,
 			  supersedes,
 			  validity_start,
@@ -283,7 +281,7 @@ public class KontextMemoryTests {
 			VALUES
 			""";
 
-		var tuple  = "(" + string.Join(", ", Enumerable.Repeat("?", 19)) + ")";
+		var tuple  = "(" + string.Join(", ", Enumerable.Repeat("?", 18)) + ")";
 		var values = string.Join(",\n", Enumerable.Repeat(tuple, rows.Length));
 
 		using (pool.Rent(out var connection)) {
@@ -299,27 +297,27 @@ public class KontextMemoryTests {
 		return new(pool);
 	}
 
-	// Binds one VALUES tuple, in the INSERT's column order; null binds as NULL. Sentiment, urgency
-	// and supersedes are neutral here — these tests never read them.
+	// Binds one VALUES tuple, in the INSERT's column order; null binds as NULL. Supersedes is
+	// neutral here — these tests never read it.
 	static void AddRow(DuckDBCommand command, Row row) {
+		// Timestamps bind as Unix epoch milliseconds — the schema's BIGINT columns.
 		object?[] values = [
 			row.Id,
 			(int)row.Type,
 			row.Content,
 			(int)row.Importance,
-			0,                                   // sentiment
-			0,                                   // urgency
 			row.Tags,
+			row.Reasoning,
 			row.Evidence,
 			new List<string>(),                  // supersedes
-			row.ValidityStart,
-			row.ValidityEnd,
-			row.RetainedAt,
-			row.LastAccessedAt ?? row.RetainedAt,
+			row.ValidityStart?.ToUnixTimeMilliseconds(),
+			row.ValidityEnd?.ToUnixTimeMilliseconds(),
+			row.RetainedAt.ToUnixTimeMilliseconds(),
+			(row.LastAccessedAt ?? row.RetainedAt).ToUnixTimeMilliseconds(),
 			row.IsRetracted,
-			row.RetractedAt,
+			row.RetractedAt?.ToUnixTimeMilliseconds(),
 			row.IsSuperseded,
-			row.SupersededAt,
+			row.SupersededAt?.ToUnixTimeMilliseconds(),
 			row.SupersededBy,
 			row.Embedding,
 		];
@@ -338,7 +336,8 @@ public class KontextMemoryTests {
 		float[] Embedding
 	) {
 		public List<string>    Tags           { get; init; } = [];
-		public byte[]          Evidence       { get; init; } = [];
+		public string          Reasoning      { get; init; } = "";
+		public List<string>    Evidence       { get; init; } = [];
 		public DateTimeOffset? LastAccessedAt { get; init; }
 		public bool            IsRetracted    { get; init; }
 		public DateTimeOffset? RetractedAt    { get; init; }

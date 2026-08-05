@@ -14,9 +14,9 @@ namespace KurrentDB.Connectors.Planes.Management.Projectors;
 
 [UsedImplicitly]
 public class ConfigureConnectorsManagementStreams : ISystemStartupTask {
-    public async Task OnStartup(NodeSystemInfo nodeInfo, IServiceProvider serviceProvider, CancellationToken cancellationToken) {
-        var client    = serviceProvider.GetRequiredService<ISystemClient>();
-        var logger    = serviceProvider.GetRequiredService<ILogger<SystemStartupTaskService>>();
+    public async Task OnStartup(NodeSystemInfo nodeInfo, IServiceProvider services, CancellationToken ct) {
+        var client    = services.GetRequiredService<ISystemClient>();
+        var logger    = services.GetRequiredService<ILogger<SystemStartupTaskService>>();
 
         await TryConfigureStream(ConnectorQueryConventions.Streams.ConnectorsStateProjectionStream, maxCount: 10);
         await TryConfigureStream(ConnectorQueryConventions.Streams.ConnectorsStateProjectionCheckpointsStream, maxCount: 10);
@@ -26,7 +26,7 @@ public class ConfigureConnectorsManagementStreams : ISystemStartupTask {
         Task TryConfigureStream(string stream, int maxCount) =>
             client
                 .Management
-                .GetStreamMetadata(stream, cancellationToken)
+                .GetStreamMetadata(stream, ct)
                 .Then(ctx => ctx.Metadata.MaxCount == maxCount
                     ? Task.FromResult(ctx)
                     : client.Management.SetStreamMetadata(
@@ -40,7 +40,7 @@ public class ConfigureConnectorsManagementStreams : ISystemStartupTask {
                             acl:            ctx.Metadata.Acl
                         ),
                         ctx.Revision,
-                        cancellationToken
+                        ct
                     )
                 )
                 .OnError(ex => logger.LogError(ex, "{TaskName} Failed to configure stream {Stream}", nameof(ConfigureConnectorsManagementStreams), stream))

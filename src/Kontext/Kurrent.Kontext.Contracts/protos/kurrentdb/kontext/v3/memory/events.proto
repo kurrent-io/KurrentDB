@@ -10,13 +10,28 @@ option csharp_namespace = "Kurrent.Kontext.Contracts";
 import "google/protobuf/timestamp.proto";
 import "kurrentdb/kontext/v3/memory/resources.proto";
 
-// Emitted by Retain: the memory body stamped with when it was stored.
-message MemoryRetained {
-  // the stored memory body, exactly as supplied to Retain
-  Memory memory = 1;
+// Emitted by Retain: every memory of ONE retain call, in request order.
+//
+// Batched on purpose. `retain` accepts many memories and returns their ids positionally, so the
+// batch is the unit of the operation and must be the unit of the event — one record per memory
+// would let a reader observe half a batch, and would cost one storage commit per memory instead of
+// one per call.
+message MemoriesRetained {
+  // In the same order they were supplied to Retain, which is the order their ids were returned.
+  repeated RetainedMemory memories = 1;
 
-  // when it was retained into our system — domain time, portable
+  // When the batch was retained into our system — domain time, portable. One instant for the whole
+  // call: they were stored by a single operation, so they share it.
   google.protobuf.Timestamp retained_at = 2;
+
+  message RetainedMemory {
+    // The id the server assigned. It lives here rather than on `Memory` because the write shape
+    // carries no id — clients never mint one — so this is the record's primary key.
+    string memory_id = 1;
+
+    // the stored memory body, exactly as supplied to Retain
+    Memory memory = 2;
+  }
 }
 
 // Emitted by Retract: the memory (and any derived memories cascaded with it) removed from the
@@ -93,24 +108,29 @@ message MemoriesRecalled {
   google.protobuf.Timestamp recalled_at = 8;
 }
 
-// Emitted when memories are accessed, so temporal decay can be recomputed from the access history.
+// Emitted when memories are accessed OUTSIDE of a recall, so temporal decay can be recomputed from
+// the access history. Raised by `reclaim` — the agent named those ids, so it selected them
+// deliberately and the clock must advance (see the ACCESS RULE on MemoryService).
+//
+// NOT raised by `recollect` (an enumeration the agent mostly discards) and NOT raised by the
+// `related` memories that `retain` reports back (the server offered those unbidden). Advancing the
+// clock for either would record an access that never happened and inflate the salience of memories
+// nobody used.
 message MemoriesAccessed {
   // the memories that were accessed
   repeated string memory_ids = 1;
-}
 
-// Emitted by Reclaim: the memories that were read back by id.
-message MemoriesReclaimed {
-  // the memories that were reclaimed
-  repeated string memory_ids = 1;
+  // The instant to set each memory's `last_accessed_at` to. Without it the event cannot drive the
+  // decay clock, which is why it is not optional.
+  google.protobuf.Timestamp accessed_at = 2;
 }
 
 // Emitted when an async Reflect pass completes: the memories it synthesized, superseded, and
 // retracted.
 message ReflectionCompleted {
   // correlates to the ReflectRequest
-  string query_id = 1; 
-  
+  string query_id = 1;
+
   // ids of memories synthesized
   repeated string synthesized_memory_ids = 2;
 

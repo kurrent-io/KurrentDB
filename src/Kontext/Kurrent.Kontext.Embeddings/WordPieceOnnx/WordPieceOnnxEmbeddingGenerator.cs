@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Kurrent.Kontext.Embeddings.Prototype;
 using Microsoft.Extensions.AI;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.Tokenizers;
@@ -46,7 +47,7 @@ public sealed class WordPieceOnnxEmbeddingGenerator : IEmbeddingGenerator<string
 	/// </summary>
 	public WordPieceOnnxEmbeddingGenerator(OnnxModel model, WordPieceOnnxOptions? options = null) {
 		var resolved = options ?? new WordPieceOnnxOptions();
-
+        
 		// Uncased BERT preprocessing is intrinsic to implementation B: always lower-case + strip accents
 		// (café -> cafe) — that IS the fix, not an opt-in — plus per-character CJK splitting.
 		using (var vocab = model.ReadAsset(resolved.VocabAsset))

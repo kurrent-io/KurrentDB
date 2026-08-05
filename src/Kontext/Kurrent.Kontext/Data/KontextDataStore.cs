@@ -5,6 +5,7 @@ using System.Data.Common;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using DuckDB.NET.Data;
+using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Kontext.Infrastructure.Data;
 
@@ -80,9 +81,8 @@ public sealed class KontextDataStore(KontextConnectionPool connections) {
                     memory_type,
                     content,
                     importance,
-                    sentiment,
-                    urgency,
                     tags,
+                    reasoning,
                     evidence,
                     supersedes,
                     validity_start,
@@ -133,7 +133,7 @@ public sealed class KontextDataStore(KontextConnectionPool connections) {
                         results.Add(new(
                             ReadStoredMemory(reader),
                             HybridScore: null,
-                            VectorDistance: Convert.ToDouble(reader.GetValue(16), CultureInfo.InvariantCulture),
+                            VectorDistance: Convert.ToDouble(reader.GetValue(15), CultureInfo.InvariantCulture),
                             KeywordScore: null));
                     }
 
@@ -186,9 +186,8 @@ public sealed class KontextDataStore(KontextConnectionPool connections) {
                    memory_type,
                    content,
                    importance,
-                   sentiment,
-                   urgency,
                    tags,
+                   reasoning,
                    evidence,
                    supersedes,
                    validity_start,
@@ -232,7 +231,7 @@ public sealed class KontextDataStore(KontextConnectionPool connections) {
                             ReadStoredMemory(reader),
                             HybridScore: null,
                             VectorDistance: null,
-                            KeywordScore: Convert.ToDouble(reader.GetValue(16), CultureInfo.InvariantCulture)));
+                            KeywordScore: Convert.ToDouble(reader.GetValue(15), CultureInfo.InvariantCulture)));
                     }
 
                     return results;
@@ -299,9 +298,8 @@ public sealed class KontextDataStore(KontextConnectionPool connections) {
                     memory_type,
                     content,
                     importance,
-                    sentiment,
-                    urgency,
                     tags,
+                    reasoning,
                     evidence,
                     supersedes,
                     validity_start,
@@ -359,9 +357,9 @@ public sealed class KontextDataStore(KontextConnectionPool connections) {
                         // the row leaves its diagnostic column NULL — only the blend is always set.
                         results.Add(new(
                             ReadStoredMemory(reader),
-                            HybridScore: Convert.ToDouble(reader.GetValue(18), CultureInfo.InvariantCulture),
-                            VectorDistance: reader.IsDBNull(16) ? null : Convert.ToDouble(reader.GetValue(16), CultureInfo.InvariantCulture),
-                            KeywordScore: reader.IsDBNull(17) ? null : Convert.ToDouble(reader.GetValue(17), CultureInfo.InvariantCulture)));
+                            HybridScore: Convert.ToDouble(reader.GetValue(17), CultureInfo.InvariantCulture),
+                            VectorDistance: reader.IsDBNull(15) ? null : Convert.ToDouble(reader.GetValue(15), CultureInfo.InvariantCulture),
+                            KeywordScore: reader.IsDBNull(16) ? null : Convert.ToDouble(reader.GetValue(16), CultureInfo.InvariantCulture)));
                     }
 
                     return results;
@@ -396,9 +394,8 @@ public sealed class KontextDataStore(KontextConnectionPool connections) {
                    memory_type,
                    content,
                    importance,
-                   sentiment,
-                   urgency,
                    tags,
+                   reasoning,
                    evidence,
                    supersedes,
                    validity_start,
@@ -475,9 +472,8 @@ public sealed class KontextDataStore(KontextConnectionPool connections) {
                    memory_type,
                    content,
                    importance,
-                   sentiment,
-                   urgency,
                    tags,
+                   reasoning,
                    evidence,
                    supersedes,
                    validity_start,
@@ -537,12 +533,12 @@ public sealed class KontextDataStore(KontextConnectionPool connections) {
         //   parameters. Every sort term is a NUMBER multiplied by $direction (1 = ascending,
         //   -1 = descending) — negating numbers and sorting ascending IS sorting descending.
         //   That is also why the first CASE coerces every key to DOUBLE: only numbers sign-flip.
-        // - term 1: the caller's key, picked by name in the CASE; epoch_ms turns the timestamps
-        //   into plain numbers so all three keys compare the same way.
+        // - term 1: the caller's key, picked by name in the CASE; the timestamp keys are already
+        //   plain numbers (BIGINT Unix milliseconds) so all three keys compare the same way.
         // - term 2: the tie-break, ONLY for importance — for the other keys the second CASE
         //   yields the constant 0, which orders nothing. Importance has a handful of levels, so
         //   ties are the norm and something must order the rows inside a tie group; the
-        //   microsecond timestamps never tie, so they need no such term. It multiplies by
+        //   millisecond timestamps rarely tie, and term 3 totalizes any tie. It multiplies by
         //   $direction too, so both intents read naturally: descending = most important, most
         //   recently used first; ascending = least important, longest untouched first — the
         //   eviction sweep. It is last_accessed_at, not retained_at, because staleness is about
@@ -556,9 +552,8 @@ public sealed class KontextDataStore(KontextConnectionPool connections) {
                    memory_type,
                    content,
                    importance,
-                   sentiment,
-                   urgency,
                    tags,
+                   reasoning,
                    evidence,
                    supersedes,
                    validity_start,
@@ -574,10 +569,10 @@ public sealed class KontextDataStore(KontextConnectionPool connections) {
               AND (len(CAST($tags AS VARCHAR[])) = 0 OR array_has_all(tags, CAST($tags AS VARCHAR[])))
             ORDER BY (CASE $sort_key
                         WHEN 'importance'       THEN importance::DOUBLE
-                        WHEN 'last_accessed_at' THEN epoch_ms(last_accessed_at)::DOUBLE
-                        ELSE epoch_ms(retained_at)::DOUBLE
+                        WHEN 'last_accessed_at' THEN last_accessed_at::DOUBLE
+                        ELSE retained_at::DOUBLE
                       END) * $direction,
-                     (CASE WHEN $sort_key = 'importance' THEN epoch_ms(last_accessed_at)::DOUBLE ELSE 0 END) * $direction,
+                     (CASE WHEN $sort_key = 'importance' THEN last_accessed_at::DOUBLE ELSE 0 END) * $direction,
                      memory_id
             LIMIT $limit
             """;
@@ -637,75 +632,72 @@ public sealed class KontextDataStore(KontextConnectionPool connections) {
         return new() { Scope = scope, Value = value };
     }
 
+    // The evidence wire encoding shared with the projector: one citation per VARCHAR[] element, as
+    // protobuf canonical JSON (see the column's note in KontextSchema).
+    public static string EncodeEvidence(Contracts.Evidence evidence) => JsonFormatter.Default.Format(evidence);
+
+    public static Contracts.Evidence DecodeEvidence(string encoded) => JsonParser.Default.Parse<Contracts.Evidence>(encoded);
+
+    // The memory citations, flattened into their own column for the lineage walk. Only a cited
+    // MEMORY makes a record derived; git, web, and record citations are provenance, so they stay
+    // out of this column.
+    public static List<string> EncodeCitedMemoryIds(Contracts.Memory memory) =>
+        memory.Evidence
+            .Where(evidence => evidence.Memory is not null)
+            .Select(evidence => evidence.Memory.Id)
+            .ToList();
+
+    // The timestamp wire encoding shared with the projector: BIGINT Unix epoch MILLISECONDS (UTC).
+    // A bare number carries no unit or timezone, so the conversion lives here once rather than being
+    // spelled out at every bind site.
+    public static long EncodeTimestamp(Timestamp timestamp) =>
+        timestamp.ToDateTimeOffset().ToUnixTimeMilliseconds();
+
+    // Binds as NULL when absent — the store's readers never reason about a missing timestamp any
+    // other way.
+    public static object EncodeOptionalTimestamp(Timestamp? timestamp) =>
+        timestamp is null ? DBNull.Value : EncodeTimestamp(timestamp);
+
+    public static Timestamp DecodeTimestamp(DbDataReader reader, int ordinal) =>
+        Timestamp.FromDateTimeOffset(DateTimeOffset.FromUnixTimeMilliseconds(reader.GetInt64(ordinal)));
+
     // Reads one row POSITIONALLY, in the SELECT column order, off the validated wire shapes (KB):
     // - VARCHAR[] arrives as List<string>
     // - a populated BLOB arrives as a Stream, an empty one as byte[]
-    // - TIMESTAMPTZ arrives as DateTimeOffset (a bare DateTime clock reading means UTC)
+    // - evidence is a VARCHAR[] of canonical-JSON citations (see the column's note in KontextSchema)
+    // - timestamps are BIGINT Unix epoch milliseconds (UTC) — the schema's one stated rule
     static Contracts.StoredMemory ReadStoredMemory(DbDataReader reader) {
         var stored = new Contracts.StoredMemory {
             MemoryId       = reader.GetString(0),
             MemoryType     = (Contracts.MemoryType)reader.GetInt32(1),
             Content        = reader.GetString(2),
             Importance     = (Contracts.MemoryImportance)reader.GetInt32(3),
-            Sentiment      = (Contracts.MemorySentiment)reader.GetInt32(4),
-            Urgency        = (Contracts.MemoryUrgency)reader.GetInt32(5),
-            RetainedAt     = Timestamp.FromDateTimeOffset(Utc(reader, 11)),
-            LastAccessedAt = Timestamp.FromDateTimeOffset(Utc(reader, 12)),
-            SupersededBy   = reader.GetString(15),
+            Reasoning      = reader.GetString(5),
+            RetainedAt     = DecodeTimestamp(reader, 10),
+            LastAccessedAt = DecodeTimestamp(reader, 11),
+            SupersededBy   = reader.GetString(14),
         };
 
-        stored.Tags.AddRange(((IEnumerable<string>)reader.GetValue(6)).Select(DecodeTag));
-        stored.Supersedes.AddRange((IEnumerable<string>)reader.GetValue(8));
+        stored.Tags.AddRange(((IEnumerable<string>)reader.GetValue(4)).Select(DecodeTag));
+        stored.Supersedes.AddRange((IEnumerable<string>)reader.GetValue(7));
 
-        var evidence = ReadBlob(reader, 7);
+        // An empty evidence list is the normal case — most memories cite nothing.
+        foreach (var citation in (IEnumerable<string>)reader.GetValue(6))
+            stored.Evidence.Add(DecodeEvidence(citation));
 
-        if (evidence.Length > 0)
-            stored.Evidence = Contracts.Evidence.Parser.ParseFrom(evidence);
+        if (!reader.IsDBNull(8)) {
+            stored.Validity = new() { PerceivedStart = DecodeTimestamp(reader, 8) };
 
-        if (!reader.IsDBNull(9)) {
-            stored.Validity = new() { PerceivedStart = Timestamp.FromDateTimeOffset(Utc(reader, 9)) };
-
-            if (!reader.IsDBNull(10))
-                stored.Validity.PerceivedEnd = Timestamp.FromDateTimeOffset(Utc(reader, 10));
+            if (!reader.IsDBNull(9))
+                stored.Validity.PerceivedEnd = DecodeTimestamp(reader, 9);
         }
+
+        if (!reader.IsDBNull(12))
+            stored.RetractedAt = DecodeTimestamp(reader, 12);
 
         if (!reader.IsDBNull(13))
-            stored.RetractedAt = Timestamp.FromDateTimeOffset(Utc(reader, 13));
-
-        if (!reader.IsDBNull(14))
-            stored.SupersededAt = Timestamp.FromDateTimeOffset(Utc(reader, 14));
+            stored.SupersededAt = DecodeTimestamp(reader, 13);
 
         return stored;
-
-        // Timestamp wire shapes:
-        // - normally a DateTimeOffset — use it as-is
-        // - some driver paths hand back a bare DateTime — its clock reading means UTC
-        static DateTimeOffset Utc(DbDataReader reader, int ordinal) =>
-            reader.GetValue(ordinal) switch {
-                DateTimeOffset instant => instant,
-                DateTime clockReading  => new(DateTime.SpecifyKind(clockReading, DateTimeKind.Unspecified), TimeSpan.Zero),
-                var other              => throw new NotSupportedException($"Unsupported timestamp value of type '{other.GetType()}'."),
-            };
-
-        // BLOB wire shapes differ by content:
-        // - populated => a Stream (UnmanagedMemoryStream) — read it out fully and dispose it
-        // - empty     => byte[]
-        static byte[] ReadBlob(DbDataReader reader, int ordinal) {
-            switch (reader.GetValue(ordinal)) {
-                case byte[] bytes: return bytes;
-
-                case Stream stream:
-                    try {
-                        using var memory = new MemoryStream();
-                        stream.CopyTo(memory);
-                        return memory.ToArray();
-                    } finally {
-                        stream.Dispose();
-                    }
-
-                case var other: throw new NotSupportedException($"Unsupported BLOB value of type '{other.GetType()}'.");
-            }
-        }
     }
-
 }

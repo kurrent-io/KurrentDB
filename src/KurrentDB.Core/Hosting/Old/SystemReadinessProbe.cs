@@ -3,6 +3,7 @@
 
 #nullable enable
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Core.Bus;
@@ -10,11 +11,7 @@ using KurrentDB.Core.Messages;
 
 namespace KurrentDB.Core.Hosting;
 
-public interface ISystemReadinessProbe {
-	ValueTask<NodeSystemInfo> WaitUntilReady(CancellationToken cancellationToken);
-}
-
-[UsedImplicitly]
+// [Obsolete("Use the AdvancedSystemReadinessProbe & SystemReadiness.CreateProbe instead")]
 public class SystemReadinessProbe : IHandle<SystemMessage.BecomeLeader>, IHandle<SystemMessage.BecomeFollower>, IHandle<SystemMessage.BecomeReadOnlyReplica> {
 	public SystemReadinessProbe(ISubscriber subscriber, GetNodeSystemInfo getNodeSystemInfo) {
 		CompletionSource = new();
@@ -40,6 +37,6 @@ public class SystemReadinessProbe : IHandle<SystemMessage.BecomeLeader>, IHandle
 		Subscriber.Unsubscribe<SystemMessage.BecomeLeader>(this);
 		Subscriber.Unsubscribe<SystemMessage.BecomeFollower>(this);
 		Subscriber.Unsubscribe<SystemMessage.BecomeReadOnlyReplica>(this);
-		return await GetNodeSystemInfo();
+		return await GetNodeSystemInfo(CancellationToken.None);
 	}
 }

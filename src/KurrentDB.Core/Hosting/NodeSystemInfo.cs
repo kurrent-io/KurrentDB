@@ -1,8 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-#nullable enable
-
 using System;
 using System.Net;
 using KurrentDB.Core.Cluster;
@@ -20,8 +18,8 @@ public readonly record struct NodeSystemInfo {
 		IsLeader    = MemberInfo is { State: VNodeState.Leader, IsAlive: true };
 		IsNotLeader = !IsLeader;
 
-		InternalTcpEndPoint = new DnsEndPoint(MemberInfo.InternalTcpIp, MemberInfo.InternalTcpPort);
-		HttpEndPoint        = new DnsEndPoint(MemberInfo.HttpEndPointIp, MemberInfo.HttpEndPointPort);
+		InternalTcpEndPoint = new(MemberInfo.InternalTcpIp, MemberInfo.InternalTcpPort);
+		HttpEndPoint        = new(MemberInfo.HttpEndPointIp, MemberInfo.HttpEndPointPort);
 	}
 
 	public ClientClusterInfo.ClientMemberInfo MemberInfo { get; }

@@ -18,11 +18,26 @@ public sealed class RetainRequestValidator : RequestValidator<Contracts.RetainRe
             .Must(m => !string.IsNullOrWhiteSpace(m.Content))
             .WithMessage("Memory content must not be empty.");
 
-        // memory_id is optional (empty = server-assigned) but, when set, must be a well-formed id so the
-        // mapper's MemoryId.Parse can't blow up on a bad string.
+        // A WebRef without an excerpt is a bookmark, not a citation: the page is the one cited source
+        // that can be deleted or rewritten out from under us, so the quoted passage IS the anchor.
+        // Requiring it also means a citation cannot be produced without having read the source, which
+        // is what stops an unverified claim dressing itself up with an unread link.
         RuleForEach(x => x.Memories)
-            .Must(m => MemoryRequestRules.EmptyOrGuid(m.MemoryId))
-            .WithMessage("memory_id must be empty or a valid UUID.");
+            .Must(m => m.Evidence.Where(e => e.Web is not null).All(e => MemoryRequestRules.ValidWebExcerpts(e.Web)))
+            .WithMessage($"A web citation requires 1..{MemoryRequestRules.MaxWebExcerpts} excerpts, each {MemoryRequestRules.MinExcerptLength}..{MemoryRequestRules.MaxExcerptLength} characters.");
+
+        RuleForEach(x => x.Memories)
+            .Must(m => m.Evidence.Where(e => e.Git is not null).All(e => MemoryRequestRules.ValidGitExcerpt(e.Git)))
+            .WithMessage($"A git citation's excerpt is optional but, when set, must be {MemoryRequestRules.MinExcerptLength}..{MemoryRequestRules.MaxExcerptLength} characters.");
+
+        // HEARSAY is the unverified claim — the residue with neither derivation nor verification. A
+        // memory citation would make it a derived inference; a source citation would mean you checked
+        // it, at which point it has become an OBSERVATION or a FACT. Enforced rather than merely
+        // documented, because this is the memory-hacking guard: a citation is exactly how a
+        // fabricated claim would dress itself up as trustworthy.
+        RuleForEach(x => x.Memories)
+            .Must(m => m.MemoryType != Contracts.MemoryType.Hearsay || m.Evidence.Count == 0)
+            .WithMessage("A HEARSAY memory carries no evidence — verify the claim and retain a FACT that supersedes it.");
     }
 }
 
@@ -91,7 +106,24 @@ public sealed class ReflectRequestValidator : RequestValidator<Contracts.Reflect
 /// <summary>Shared id predicates — the request ids are strings on the wire but must round-trip to the
 /// Guid-backed domain value objects (<c>MemoryId</c>/<c>QueryId</c>).</summary>
 static class MemoryRequestRules {
-    public static bool Guid(string value) => System.Guid.TryParse(value, out _);
+    // An excerpt below the floor ("yes") satisfies "at least one" while carrying no evidence; above the
+    // ceiling it stops being a passage and becomes a copy of the source.
+    public const int MinExcerptLength = 20;
+    public const int MaxExcerptLength = 1000;
+    public const int MaxWebExcerpts   = 5;
 
-    public static bool EmptyOrGuid(string value) => string.IsNullOrEmpty(value) || System.Guid.TryParse(value, out _);
+    public static bool Guid(string value) => global::System.Guid.TryParse(value, out _);
+
+    public static bool EmptyOrGuid(string value) => string.IsNullOrEmpty(value) || global::System.Guid.TryParse(value, out _);
+
+    public static bool ValidWebExcerpts(Contracts.Evidence.Types.WebRef web) =>
+        web.Excerpts.Count > 0
+     && web.Excerpts.Count <= MaxWebExcerpts
+     && web.Excerpts.All(WithinExcerptBounds);
+
+    public static bool ValidGitExcerpt(Contracts.Evidence.Types.GitRef git) =>
+        string.IsNullOrEmpty(git.Excerpt) || WithinExcerptBounds(git.Excerpt);
+
+    static bool WithinExcerptBounds(string excerpt) =>
+        excerpt.Length >= MinExcerptLength && excerpt.Length <= MaxExcerptLength;
 }

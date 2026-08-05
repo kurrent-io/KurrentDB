@@ -17,22 +17,22 @@ using Microsoft.Extensions.Logging;
 namespace KurrentDB.Connectors.Planes.Management.Migrations;
 
 public class FixConnectorsControlRegistryStreamName : ISystemStartupTask {
-public async Task OnStartup(NodeSystemInfo nodeInfo, IServiceProvider serviceProvider, CancellationToken cancellationToken) {
-        var client             = serviceProvider.GetRequiredService<ISystemClient>();
-        var logger             = serviceProvider.GetRequiredService<ILogger<SystemStartupTaskService>>();
-        var getReaderBuilder   = serviceProvider.GetRequiredService<Func<SystemReaderBuilder>>();
-        var getProducerBuilder = serviceProvider.GetRequiredService<Func<SystemProducerBuilder>>();
-        var options            = serviceProvider.GetRequiredService<ConnectorsControlRegistryOptions>();
+public async Task OnStartup(NodeSystemInfo nodeInfo, IServiceProvider services, CancellationToken ct) {
+        var client             = services.GetRequiredService<ISystemClient>();
+        var logger             = services.GetRequiredService<ILogger<SystemStartupTaskService>>();
+        var getReaderBuilder   = services.GetRequiredService<Func<SystemReaderBuilder>>();
+        var getProducerBuilder = services.GetRequiredService<Func<SystemProducerBuilder>>();
+        var options            = services.GetRequiredService<ConnectorsControlRegistryOptions>();
 
         var reader   = getReaderBuilder().ReaderId(nameof(FixConnectorsControlRegistryStreamName)).Create();
         var producer = getProducerBuilder().ProducerId(nameof(FixConnectorsControlRegistryStreamName)).Create();
 
-        var snapshotRecord = await reader.ReadLastStreamRecord(options.SnapshotStreamId, cancellationToken);
+        var snapshotRecord = await reader.ReadLastStreamRecord(options.SnapshotStreamId, ct);
         if (snapshotRecord.Value is ActivatedConnectorsSnapshot)
             return;
 
         var unwantedStreamName = $"${options.SnapshotStreamId}";
-        var unwantedSnapshotRecord = await reader.ReadLastStreamRecord(unwantedStreamName, cancellationToken);
+        var unwantedSnapshotRecord = await reader.ReadLastStreamRecord(unwantedStreamName, ct);
 
         if (unwantedSnapshotRecord.Value is not ActivatedConnectorsSnapshot previousSnapshot)
             return;
@@ -51,7 +51,7 @@ public async Task OnStartup(NodeSystemInfo nodeInfo, IServiceProvider servicePro
         logger.LogInformation("Successfully migrated pre-existing connector registry snapshot ");
 
         var unwantedRegularStreamName = options.SnapshotStreamId.Value[1..];
-        await client.Management.SoftDeleteStream(unwantedRegularStreamName, ExpectedVersion.NoStream, cancellationToken)
+        await client.Management.SoftDeleteStream(unwantedRegularStreamName, ExpectedVersion.NoStream, ct)
 	        .OnError(ex => logger.LogWarning("Did not delete incorrect connector registry stream: {Error}", ex));
 
         logger.LogInformation("Migration of incorrect connector registry stream completed.");

@@ -35,9 +35,8 @@ public sealed class McpMemoryService(IKontextMemory service) {
         UseStructuredContent = true,
         Destructive = false,
         OpenWorld = false)]
-    public async ValueTask<RetainResult> RetainAsync(IReadOnlyList<Memory> memories, bool reconcile = false, CancellationToken ct = default) {
+    public async ValueTask<RetainResult> RetainAsync(IReadOnlyList<Memory> memories, CancellationToken ct = default) {
         var request = new Contracts.RetainRequest {
-            Reconcile = reconcile,
             Memories = { memories.Select(ToContract) }
         };
 

@@ -22,7 +22,7 @@ public static class WordPieceOnnxServiceCollectionExtensions {
 		/// </summary>
 		public EmbeddingGeneratorBuilder<string, Embedding<float>> AddWordPieceOnnxEmbeddings(
 			Action<WordPieceOnnxOptions>? configure = null) =>
-			services.AddEmbeddingGenerator<string, Embedding<float>>(sp => {
+			services.AddEmbeddingGenerator(sp => {
 				var options = new WordPieceOnnxOptions();
 				configure?.Invoke(options);
 				return new WordPieceOnnxEmbeddingGenerator(sp.GetRequiredService<OnnxModelRegistry>(), options);

@@ -71,5 +71,10 @@
         ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "dotnet11@dotnet-agent-skills": true,
+    "kurrent@kurrent-skills": true,
+    "context7@claude-plugins-official": true
   }
 }

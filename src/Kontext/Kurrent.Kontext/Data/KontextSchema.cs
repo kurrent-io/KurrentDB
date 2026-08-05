@@ -50,8 +50,20 @@ public sealed class KontextSchema(KontextConnectionPool connections, KontextSche
     public async Task CreateAsync(CancellationToken ct = default) {
         // The dimension is part of the column TYPE (FLOAT[N]) — the one thing that can never
         // be a parameter — and it must match the retrieval pipeline's embedding model.
+        //
+        // Every timestamp column (*_at, validity_*) is a BIGINT holding Unix epoch MILLISECONDS
+        // (UTC) — a bare number carries no unit or timezone, so the rule lives here once. Plain
+        // numbers have no session-timezone semantics and ride the quack appender's Add(long).
+        //
+        // `evidence` is a repeated field, so it holds one citation per element, as protobuf
+        // canonical JSON. A native STRUCT[] is the efficient shape and is NOT usable: lance's
+        // decoder throws on a struct list whose elements differ in which fields are null, which a
+        // oneof does by construction (see EvidenceStructBindingProbeTests). VARCHAR[] is the same
+        // Arrow List<Utf8> that tags/supersedes/cited_memory_ids already round-trip through, and
+        // JSON keeps the content readable and queryable instead of an opaque blob. Nothing filters
+        // on this column — the searchable part is cited_memory_ids.
         if (options.Dimension <= 0)
-            throw new InvalidOperationException($"{nameof(KontextSchemaOptions)}.{nameof(options.Dimension)} must be the embedding model's dimension; it has no safe default.");
+            throw new InvalidOperationException($"{nameof(KontextSchemaOptions)}.{nameof(options.Dimension)} must be positive and match the embedding model's dimension.");
 
         var createTable =
             $"""
@@ -60,21 +72,21 @@ public sealed class KontextSchema(KontextConnectionPool connections, KontextSche
                memory_type INTEGER,
                content VARCHAR,
                importance INTEGER,
-               sentiment INTEGER,
-               urgency INTEGER,
                tags VARCHAR[],
-               evidence BLOB,
+               reasoning VARCHAR,
+               evidence VARCHAR[],
                cited_memory_ids VARCHAR[],
                supersedes VARCHAR[],
-               validity_start TIMESTAMPTZ,
-               validity_end TIMESTAMPTZ,
-               retained_at TIMESTAMPTZ,
-               last_accessed_at TIMESTAMPTZ,
+               validity_start BIGINT,
+               validity_end BIGINT,
+               retained_at BIGINT,
+               last_accessed_at BIGINT,
                is_retracted BOOLEAN,
-               retracted_at TIMESTAMPTZ,
+               retracted_at BIGINT,
                is_superseded BOOLEAN,
-               superseded_at TIMESTAMPTZ,
+               superseded_at BIGINT,
                superseded_by VARCHAR,
+               log_position UBIGINT,
                embedding FLOAT[{options.Dimension}])
              """;
 
@@ -108,7 +120,7 @@ public sealed class KontextSchema(KontextConnectionPool connections, KontextSche
     /// </remarks>
     public async Task<bool> EnsureVectorIndexAsync(CancellationToken ct = default) {
         if (options.Dimension <= 0)
-            throw new InvalidOperationException($"{nameof(KontextSchemaOptions)}.{nameof(options.Dimension)} must be the embedding model's dimension; it has no safe default.");
+            throw new InvalidOperationException($"{nameof(KontextSchemaOptions)}.{nameof(options.Dimension)} must be positive and match the embedding model's dimension.");
 
         var existing = await ListIndexesAsync(ct).ConfigureAwait(false);
 
@@ -305,9 +317,10 @@ public sealed class KontextSchema(KontextConnectionPool connections, KontextSche
 /// </summary>
 public sealed class KontextSchemaOptions {
     /// <summary>
-    /// The embedding dimension — the N in the FLOAT[N] column type. No default on purpose:
-    /// it must match the retrieval pipeline's embedding model exactly, and a silently wrong
-    /// dimension would poison every stored vector.
+    /// The embedding dimension — the N in the FLOAT[N] column type. Defaults to 384, the
+    /// dimension of the shipped ONNX models (all-MiniLM, multilingual-e5-small). It must match
+    /// the retrieval pipeline's embedding model exactly — a wrong dimension poisons every
+    /// stored vector.
     /// </summary>
-    public int Dimension { get; set; }
+    public int Dimension { get; set; } = 384;
 }

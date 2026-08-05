@@ -14,7 +14,10 @@ public sealed class RetainedMemory {
 }
 
 public sealed class RelatedMemory {
-	public string MemoryId { get; set; } = "";
-
 	public double Similarity { get; set; }
+
+	// The lean projection, not just an id: without the content there is no way to tell a duplicate
+	// from a contradiction without a reclaim round trip — which would also refresh the recency clock
+	// of memories the server offered rather than the agent chose.
+	public LeanMemory Memory { get; set; } = new();
 }

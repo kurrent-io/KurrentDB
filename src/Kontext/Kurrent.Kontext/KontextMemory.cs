@@ -66,8 +66,8 @@ public sealed class KontextMemory(KontextDataStore store, AppendEvent appendEven
 
 		return response;
 
-        static Contracts.RecallResponse.Types.RecalledMemory.Types.LeanMemory ToLean(Contracts.StoredMemory stored) {
-            var lean = new Contracts.RecallResponse.Types.RecalledMemory.Types.LeanMemory {
+        static Contracts.LeanMemory ToLean(Contracts.StoredMemory stored) {
+            var lean = new Contracts.LeanMemory {
                 MemoryId   = stored.MemoryId,
                 MemoryType = stored.MemoryType,
                 Content    = stored.Content,
@@ -81,7 +81,7 @@ public sealed class KontextMemory(KontextDataStore store, AppendEvent appendEven
 	}
 
 	public IAsyncEnumerable<Contracts.StoredMemory> ReclaimAsync(Contracts.ReclaimRequest request, CancellationToken ct = default) =>
-		store.GetAsync(request.Ids.ToArray(), ct);
+		store.GetAsync([.. request.Ids], ct);
 
 	public async IAsyncEnumerable<Contracts.StoredMemory> RecollectAsync(Contracts.RecollectRequest request, [EnumeratorCancellation] CancellationToken ct = default) {
 		var top = request.Limit > 0 ? request.Limit : DefaultRecollectLimit;

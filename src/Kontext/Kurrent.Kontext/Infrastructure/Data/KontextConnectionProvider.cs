@@ -39,8 +39,8 @@ public class KontextConnectionProvider : Disposable {
 	/// <returns>The connection handle. The caller must dispose it exactly once.</returns>
 	public DuckDBScopedConnection OpenConnection(ConnectionUse use = ConnectionUse.ReadOnly) =>
 		use switch{
-			ConnectionUse.Dedicated      => OpenDedicatedConnection(),
-			ConnectionUse.ReadOnly => OpenReadOnlyConnection(),
+			ConnectionUse.Dedicated => OpenDedicatedConnection(),
+			ConnectionUse.ReadOnly  => OpenReadOnlyConnection(),
 			_ => throw new ArgumentOutOfRangeException(nameof(use), use, "Unknown connection use."),
 		};
 
