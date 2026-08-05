@@ -56,26 +56,25 @@ public static class MemorySeeding {
 	}
 
 	// DuckDB.NET parameters, not Kurrent.Quack typed statements: Quack cannot bind the FLOAT[N]
-	// embedding or the VARCHAR[] tags. Null binds as NULL; sentiment, urgency and supersedes stay
-	// neutral — the tests never read them.
+	// embedding or the VARCHAR[] tags. Null binds as NULL; supersedes stays neutral — the tests
+	// never read it.
 	static readonly (string Name, Func<MemoryRow, object?> Value)[] Columns = [
 		("memory_id",        row => row.Id),
 		("memory_type",      row => (int)row.Type),
 		("content",          row => row.Content),
 		("importance",       row => (int)row.Importance),
-		("sentiment",        _   => 0),
-		("urgency",          _   => 0),
 		("tags",             row => row.Tags),
+		("reasoning",        _   => ""),
 		("evidence",         row => row.Evidence),
 		("supersedes",       _   => new List<string>()),
-		("validity_start",   row => row.ValidityStart),
-		("validity_end",     row => row.ValidityEnd),
-		("retained_at",      row => row.RetainedAt),
-		("last_accessed_at", row => row.LastAccessedAt ?? row.RetainedAt),
+		("validity_start",   row => row.ValidityStart?.ToUnixTimeMilliseconds()),
+		("validity_end",     row => row.ValidityEnd?.ToUnixTimeMilliseconds()),
+		("retained_at",      row => row.RetainedAt.ToUnixTimeMilliseconds()),
+		("last_accessed_at", row => (row.LastAccessedAt ?? row.RetainedAt).ToUnixTimeMilliseconds()),
 		("is_retracted",     row => row.IsRetracted),
-		("retracted_at",     row => row.RetractedAt),
+		("retracted_at",     row => row.RetractedAt?.ToUnixTimeMilliseconds()),
 		("is_superseded",    row => row.IsSuperseded),
-		("superseded_at",    row => row.SupersededAt),
+		("superseded_at",    row => row.SupersededAt?.ToUnixTimeMilliseconds()),
 		("superseded_by",    row => row.SupersededBy),
 		("embedding",        row => row.Embedding),
 	];
@@ -96,7 +95,7 @@ public sealed record MemoryRow(
 	public float[]         Embedding      { get; init; } = [1f, 0f, 0f, 0f];
 
 	public List<string>    Tags           { get; init; } = [];
-	public byte[]          Evidence       { get; init; } = [];
+	public List<string>    Evidence       { get; init; } = [];
 	public DateTimeOffset? ValidityStart  { get; init; }
 	public DateTimeOffset? ValidityEnd    { get; init; }
 	public DateTimeOffset? LastAccessedAt { get; init; }

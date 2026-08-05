@@ -89,20 +89,20 @@ public sealed class CognitiveModulator(CognitiveModulationOptions options) : IRe
     // in the pool contributes its type weight, a cited log record its own trust level, and an
     // unresolvable citation the configured fallback.
     double CertaintyOf(Contracts.StoredMemory memory, IReadOnlyDictionary<string, Contracts.StoredMemory> pool) {
-        var citations = memory.Evidence?.Citations;
+        var citations = memory.Evidence;
 
-        if (citations is not { Count: > 0 })
+        if (citations.Count == 0)
             return options.CertaintyOf(memory.MemoryType);
 
         var sum = 0.0;
 
         foreach (var citation in citations)
-            sum += citation.CitedCase switch {
-                Contracts.Evidence.Types.Citation.CitedOneofCase.Memory when pool.TryGetValue(citation.Memory.Id, out var cited)
+            sum += citation.SourceCase switch {
+                Contracts.Evidence.SourceOneofCase.Memory when pool.TryGetValue(citation.Memory.Id, out var cited)
                     => options.CertaintyOf(cited.MemoryType),
-                Contracts.Evidence.Types.Citation.CitedOneofCase.Memory => options.UnresolvedCitationCertainty,
-                Contracts.Evidence.Types.Citation.CitedOneofCase.Record => options.RecordCitationCertainty,
-                _                                                       => options.UnresolvedCitationCertainty,
+                Contracts.Evidence.SourceOneofCase.Memory => options.UnresolvedCitationCertainty,
+                Contracts.Evidence.SourceOneofCase.Record => options.RecordCitationCertainty,
+                _                                         => options.UnresolvedCitationCertainty,
             };
 
         return sum / citations.Count;
@@ -149,9 +149,7 @@ public sealed class CognitiveModulationOptions {
         [Contracts.MemoryType.Observation] = 1.00,
         [Contracts.MemoryType.Hearsay]     = 0.25,
         [Contracts.MemoryType.Fact]        = 0.90,
-        [Contracts.MemoryType.Procedure]   = 0.90,
-        [Contracts.MemoryType.Profile]     = 0.90,
-        [Contracts.MemoryType.Plan]        = 0.80,
+        [Contracts.MemoryType.UserProfile] = 0.90,
         [Contracts.MemoryType.Summary]     = 0.80,
     };
 

@@ -10,7 +10,7 @@ public class CognitiveModulatorTests {
 		// identical age, importance, and relevance leave every normalized dimension at the neutral
 		// 0.5, so base = 0.5 and final = 0.5 × certainty — the certainty rules decide alone
 		var synth = Fixtures.Scored("synth", 0.5, type: Contracts.MemoryType.Summary, cites: ["obs", "gossip", "missing"]);
-		synth.Memory.Evidence!.Citations.Add(new Contracts.Evidence.Types.Citation {
+		synth.Memory.Evidence.Add(new Contracts.Evidence {
 			Record = new Contracts.Evidence.Types.RecordRef { Id = "record-1" },
 		});
 

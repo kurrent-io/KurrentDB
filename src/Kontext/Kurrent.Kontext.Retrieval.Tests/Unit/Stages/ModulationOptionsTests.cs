@@ -129,8 +129,7 @@ public class ModulationOptionsTests {
 	[Test]
 	public async ValueTask record_citation_certainty_ignores_pool_composition() {
 		var citingRecord = Fixtures.Scored("synth", 0.5, type: Contracts.MemoryType.Summary);
-		citingRecord.Memory.Evidence = new Contracts.Evidence();
-		citingRecord.Memory.Evidence.Citations.Add(new Contracts.Evidence.Types.Citation {
+		citingRecord.Memory.Evidence.Add(new Contracts.Evidence {
 			Record = new Contracts.Evidence.Types.RecordRef { Id = "record-1" },
 		});
 

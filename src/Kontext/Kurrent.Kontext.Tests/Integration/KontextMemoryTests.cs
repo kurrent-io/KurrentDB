@@ -6,6 +6,7 @@ using Google.Protobuf;
 using TUnit.Assertions.Enums;
 using Kurrent.Kontext.Data;
 using Kurrent.Kontext.Infrastructure.Data;
+using Kurrent.Kontext.Retrieval;
 
 namespace Kurrent.Kontext.Tests;
 
@@ -31,7 +32,8 @@ public class KontextMemoryTests {
 		// Arrange
 		using var dir    = new TempDir();
 		using var pool   = NewPool(dir.Path);
-		var       memory = new KontextMemory(new KontextDataStore(pool), NoOp);
+		var       store  = new KontextDataStore(pool);
+		var       memory = new KontextMemory(store, KeywordRetriever(store), NoOp);
 
 		// Act + Assert — the write path lands in the read model via the log, not through this service.
 		await Assert.That(async () => await memory.RetainAsync(new())).Throws<NotImplementedException>();
@@ -42,7 +44,8 @@ public class KontextMemoryTests {
 		// Arrange
 		using var dir    = new TempDir();
 		using var pool   = NewPool(dir.Path);
-		var       memory = new KontextMemory(new KontextDataStore(pool), NoOp);
+		var       store  = new KontextDataStore(pool);
+		var       memory = new KontextMemory(store, KeywordRetriever(store), NoOp);
 
 		// Act + Assert
 		await Assert.That(async () => await memory.RetractAsync(new())).Throws<NotImplementedException>();
@@ -53,7 +56,8 @@ public class KontextMemoryTests {
 		// Arrange
 		using var dir    = new TempDir();
 		using var pool   = NewPool(dir.Path);
-		var       memory = new KontextMemory(new KontextDataStore(pool), NoOp);
+		var       store  = new KontextDataStore(pool);
+		var       memory = new KontextMemory(store, KeywordRetriever(store), NoOp);
 
 		// Act + Assert
 		await Assert.That(async () => await memory.ReflectAsync(new())).Throws<NotImplementedException>();
@@ -68,7 +72,7 @@ public class KontextMemoryTests {
 			new Row("a1", Contracts.MemoryType.Observation, "aardvark burrows deep underground", Contracts.MemoryImportance.High, Base.AddHours(1), [1f, 0f, 0f, 0f]),
 			new Row("a2", Contracts.MemoryType.Fact, "penguins waddle across antarctic ice", Contracts.MemoryImportance.Normal, Base.AddHours(2), [0f, 1f, 0f, 0f]),
 			new Row("a3", Contracts.MemoryType.Fact, "giraffes browse the tallest acacia leaves", Contracts.MemoryImportance.Low, Base.AddHours(3), [0f, 0f, 1f, 0f]));
-		var       memory = new KontextMemory(store, NoOp);
+		var       memory = new KontextMemory(store, KeywordRetriever(store), NoOp);
 
 		var request            = new Contracts.RecallRequest { Query = "aardvark" };
 		var expectedContent    = "aardvark burrows deep underground";
@@ -105,7 +109,7 @@ public class KontextMemoryTests {
 				ValidityStart = Base.AddHours(-24),
 				ValidityEnd   = Base.AddHours(24),
 			});
-		var       memory = new KontextMemory(store, NoOp);
+		var       memory = new KontextMemory(store, KeywordRetriever(store), NoOp);
 
 		var request         = new Contracts.RecallRequest { Query = "flamingo", IncludeFull = true };
 		var expectedContent = "flamingo stands gracefully on one leg";
@@ -143,7 +147,7 @@ public class KontextMemoryTests {
 				SupersededAt = Base.AddHours(4),
 				SupersededBy = "c1",
 			});
-		var       memory = new KontextMemory(store, NoOp);
+		var       memory = new KontextMemory(store, KeywordRetriever(store), NoOp);
 
 		var request        = new Contracts.RecallRequest { Query = "wombat" };
 		var expectedVisible = new List<string> { "c1" };
@@ -167,7 +171,7 @@ public class KontextMemoryTests {
 				Tags = ["project:rivers"],
 			},
 			new Row("d2", Contracts.MemoryType.Fact, "salmon spawn in shallow gravel", Contracts.MemoryImportance.Normal, Base.AddHours(2), [0f, 1f, 0f, 0f]));
-		var       memory = new KontextMemory(store, NoOp);
+		var       memory = new KontextMemory(store, KeywordRetriever(store), NoOp);
 
 		var request        = new Contracts.RecallRequest { Query = "salmon" };
 		request.Tags.Add(new Contracts.Tag { Scope = "project", Value = "rivers" });
@@ -193,7 +197,7 @@ public class KontextMemoryTests {
 				IsRetracted = true,
 				RetractedAt = Base.AddHours(5),
 			});
-		var       memory = new KontextMemory(store, NoOp);
+		var       memory = new KontextMemory(store, KeywordRetriever(store), NoOp);
 
 		var request = new Contracts.ReclaimRequest();
 		request.Ids.AddRange(["e1", "e2", "no-such-memory"]);
@@ -220,7 +224,7 @@ public class KontextMemoryTests {
 			new Row("f2", Contracts.MemoryType.Fact, "fact about the checkpoint format", Contracts.MemoryImportance.Critical, Base.AddHours(2), [0f, 1f, 0f, 0f]) { LastAccessedAt = Base.AddHours(20) },
 			new Row("f3", Contracts.MemoryType.Hearsay, "plan to rewrite the projector", Contracts.MemoryImportance.Normal, Base.AddHours(3), [0f, 0f, 1f, 0f]) { LastAccessedAt = Base.AddHours(30) },
 			new Row("f4", Contracts.MemoryType.Fact, "fact about tags", Contracts.MemoryImportance.Low, Base.AddHours(4), [0f, 0f, 0f, 1f]) { LastAccessedAt = Base.AddHours(5) });
-		var       memory = new KontextMemory(store, NoOp);
+		var       memory = new KontextMemory(store, KeywordRetriever(store), NoOp);
 
 		var request = new Contracts.RecollectRequest {
 			Sort      = Contracts.RecollectSort.Importance,
@@ -242,6 +246,10 @@ public class KontextMemoryTests {
 
 	/// <summary>A no-op append: the write path is not built, so nothing this service does emits events yet.</summary>
 	static readonly AppendEvent NoOp = static (_, _) => Task.CompletedTask;
+
+	/// <summary>A keyword-only pipeline over the store — recall here is raw BM25, so the seeded vectors never decide a result.</summary>
+	static IKontextRetriever KeywordRetriever(KontextDataStore store) =>
+		KontextRetriever.New().AddSearch(new KeywordSearch(store)).Build();
 
 	static Contracts.Evidence SeedEvidence() => new() { Memory = new() { Id = "cited-1" } };
 

@@ -24,14 +24,10 @@ static class Fixtures {
 			LastAccessedAt = Timestamp.FromDateTimeOffset(Now - age),
 		};
 
-		if (cites.Length > 0) {
-			memory.Evidence = new Contracts.Evidence();
-
-			foreach (var cited in cites)
-				memory.Evidence.Citations.Add(new Contracts.Evidence.Types.Citation {
-					Memory = new Contracts.Evidence.Types.MemoryRef { Id = cited },
-				});
-		}
+		foreach (var cited in cites)
+			memory.Evidence.Add(new Contracts.Evidence {
+				Memory = new Contracts.Evidence.Types.MemoryRef { Id = cited },
+			});
 
 		return memory;
 	}
