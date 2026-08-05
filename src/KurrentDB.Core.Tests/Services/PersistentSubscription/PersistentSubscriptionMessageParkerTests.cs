@@ -300,6 +300,33 @@ public class PersistentSubscriptionMessageParkerTests {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
+	public class given_the_park_message_write_times_out<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
+		private PersistentSubscriptionMessageParker _messageParker;
+		private string _streamId = Guid.NewGuid().ToString();
+		private OperationResult? _result;
+
+		protected override void Given() {
+			base.Given();
+			_messageParker = new PersistentSubscriptionMessageParker(_streamId, _ioDispatcher);
+			NoOtherStreams();
+			AllWritesQueueUp();
+		}
+
+		[Test]
+		public void should_complete_with_the_failure_and_not_update_the_stats() {
+			_messageParker.BeginParkMessage(CreateResolvedEvent(0, 0), "testing", ParkReason.ClientNak,
+				(_, result) => _result = result);
+
+			CompleteWriteWithResult(OperationResult.CommitTimeout);
+
+			Assert.AreEqual(OperationResult.CommitTimeout, _result,
+				"The completion callback must run so that the caller can retry and release the outstanding message");
+			Assert.Zero(_messageParker.ParkedMessageCount);
+			Assert.Null(_messageParker.GetOldestParkedMessage);
+		}
+	}
+
+	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	public class given_parked_messages_truncated_then_truncated_to_an_earlier_point<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 		private PersistentSubscriptionMessageParker _messageParker;
 		private string _streamId = Guid.NewGuid().ToString();
