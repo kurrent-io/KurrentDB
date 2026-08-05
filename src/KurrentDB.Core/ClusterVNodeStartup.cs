@@ -134,6 +134,7 @@ public class ClusterVNodeStartup<TStreamId>
 		// is driven by the HttpContext.User established above
 		app.UseAuthentication();
 		app.UseRouting();
+		app.UseMiddleware<GrpcStreamingShutdownMiddleware>();
 		app.UseAuthorization();
 		app.UseAntiforgery();
 

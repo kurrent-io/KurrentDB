@@ -40,6 +40,7 @@ using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
 using MudBlazor.Services;
+using Scrutor;
 using Serilog;
 using Serilog.Events;
 using RuntimeInformation = System.Runtime.RuntimeInformation;
@@ -51,6 +52,11 @@ var exitCodeSource = new TaskCompletionSource<int>();
 
 Log.Logger = KurrentLoggerConfiguration.ConsoleLog;
 try {
+	if (!Environment.Is64BitProcess) {
+		Log.Fatal("KurrentDB requires a 64-bit process to run.");
+		return 1;
+	}
+
 	var options = ClusterVNodeOptions.FromConfiguration(configuration);
 
 	Log.Logger = KurrentLoggerConfiguration
@@ -341,6 +347,8 @@ try {
 			builder.Services.AddSingleton(TimeProvider.System);
 			Log.Information("Environment Name: {0}", builder.Environment.EnvironmentName);
 			Log.Information("ContentRoot Path: {0}", builder.Environment.ContentRootPath);
+
+			builder.Services.Decorate<IHostedService, HostedServiceLifecycleDecorator>();
 
 			var app = builder.Build();
 

@@ -15,19 +15,12 @@ using Microsoft.Extensions.Logging;
 namespace KurrentDB.SecondaryIndexing.Subscriptions;
 
 // The subscription to $all used to populate a particular user index
-internal abstract class UserIndexSubscription {
-	public abstract ValueTask Start();
-	public abstract ValueTask Stop();
-	public abstract TFPos GetLastIndexedPosition();
-	public abstract void GetUserIndexTableDetails(out string tableName, out string? fieldName);
-}
-
-internal sealed class UserIndexSubscription<TField>(
+internal sealed class UserIndexSubscription(
 	IPublisher publisher,
-	UserIndexProcessor<TField> indexProcessor,
+	UserIndexProcessor indexProcessor,
 	SecondaryIndexingPluginOptions options,
 	ILogger log,
-	CancellationToken token) : UserIndexSubscription, IAsyncDisposable where TField : IField<TField> {
+	CancellationToken token) : IAsyncDisposable {
 	private readonly int _commitBatchSize = options.CommitBatchSize;
 	private CancellationTokenSource? _cts = CancellationTokenSource.CreateLinkedTokenSource(token);
 	private Enumerator.AllSubscription? _subscription;
@@ -145,21 +138,18 @@ internal sealed class UserIndexSubscription<TField>(
 		}
 	}
 
-	public override ValueTask Start() {
+	public ValueTask Start() {
 		Subscribe();
 		return ValueTask.CompletedTask;
 	}
 
-	public override async ValueTask Stop() {
+	public async ValueTask Stop() {
 		log.LogStoppingUserIndexSubscriptionForIndex(indexProcessor.IndexName);
 		await DisposeAsync();
 		indexProcessor.Dispose();
 	}
 
-	public override TFPos GetLastIndexedPosition() => indexProcessor.GetLastPosition();
-
-	public override void GetUserIndexTableDetails(out string tableName, out string? fieldName) =>
-		indexProcessor.GetUserIndexTableDetails(out tableName, out fieldName);
+	public TFPos GetLastIndexedPosition() => indexProcessor.GetLastPosition();
 }
 
 static partial class UserIndexSubscriptionLogMessages {

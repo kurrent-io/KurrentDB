@@ -37,6 +37,8 @@
 		<PackageReference Include="Microsoft.Diagnostics.NETCore.Client" />
 		<PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" />
 		<PackageReference Include="Microsoft.Data.Sqlite" />
+		<!-- Override vulnerable transitive from `Microsoft.Data.Sqlite` -->
+		<PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" />
 		<PackageReference Include="DotNext.IO" />
 		<PackageReference Include="DotNext.Threading" />
 		<PackageReference Include="DotNext.Unsafe" />
@@ -48,7 +50,6 @@
 		<ProjectReference Include="..\KurrentDB.Licensing\KurrentDB.Licensing.csproj" />
 		<ProjectReference Include="..\KurrentDB.LogCommon\KurrentDB.LogCommon.csproj" />
 		<ProjectReference Include="..\KurrentDB.Logging\KurrentDB.Logging.csproj" />
-		<ProjectReference Include="..\KurrentDB.Native\KurrentDB.Native.csproj" />
 		<ProjectReference Include="..\KurrentDB.Plugins\KurrentDB.Plugins.csproj" />
 		<ProjectReference Include="..\KurrentDB.Transport.Http\KurrentDB.Transport.Http.csproj" />
 		<ProjectReference Include="..\KurrentDB.Transport.Tcp\KurrentDB.Transport.Tcp.csproj" />

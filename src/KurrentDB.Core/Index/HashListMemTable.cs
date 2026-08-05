@@ -119,7 +119,7 @@ public class HashListMemTable : IMemTable {
 				if (endIdx is -1)
 					return false;
 
-				var key = list.Keys[endIdx];
+				var key = list.GetKeyAtIndex(endIdx);
 				if (key.EvNum == number) {
 					position = key.LogPos;
 					return true;
@@ -141,7 +141,7 @@ public class HashListMemTable : IMemTable {
 				throw new UnableToAcquireLockInReasonableTimeException();
 			try {
 				// requires the list to be non-empty before we are able to acquire a lock on it.
-				var latest = list.Keys[list.Count - 1];
+				var latest = list.GetKeyAtIndex(list.Count - 1);
 				entry = new IndexEntry(hash, latest.EvNum, latest.LogPos);
 				return true;
 			} finally {
@@ -175,7 +175,7 @@ public class HashListMemTable : IMemTable {
 			if (endIdx is -1)
 				return null;
 
-			var latestBeforePosition = list.Keys[endIdx];
+			var latestBeforePosition = list.GetKeyAtIndex(endIdx);
 			return new(hash, latestBeforePosition.EvNum, latestBeforePosition.LogPos);
 		} catch (SearchStoppedException) {
 			// fall back to linear search if there was a hash collision
@@ -187,7 +187,7 @@ public class HashListMemTable : IMemTable {
 			if (maxIdx is -1)
 				return null;
 
-			var latestBeforePosition = list.Keys[maxIdx];
+			var latestBeforePosition = list.GetKeyAtIndex(maxIdx);
 			return new(hash, latestBeforePosition.EvNum, latestBeforePosition.LogPos);
 		} finally {
 			list.Lock.Release();
@@ -202,7 +202,7 @@ public class HashListMemTable : IMemTable {
 			if (!list.Lock.TryEnterReadLock(DefaultLockTimeout))
 				throw new UnableToAcquireLockInReasonableTimeException();
 			try {
-				var oldest = list.Keys[0];
+				var oldest = list.GetKeyAtIndex(0);
 				entry = new IndexEntry(hash, oldest.EvNum, oldest.LogPos);
 				return true;
 			} finally {
@@ -230,7 +230,7 @@ public class HashListMemTable : IMemTable {
 				if (endIdx is -1)
 					return false;
 
-				var e = list.Keys[endIdx];
+				var e = list.GetKeyAtIndex(endIdx);
 				entry = new IndexEntry(hash, e.EvNum, e.LogPos);
 				return true;
 			} finally {
@@ -258,7 +258,7 @@ public class HashListMemTable : IMemTable {
 				if (endIdx is -1)
 					return false;
 
-				var e = list.Keys[endIdx];
+				var e = list.GetKeyAtIndex(endIdx);
 				entry = new IndexEntry(hash, e.EvNum, e.LogPos);
 				return true;
 			} finally {
@@ -273,21 +273,17 @@ public class HashListMemTable : IMemTable {
 		//Log.Trace("Sorting array in HashListMemTable.IterateAllInOrder...");
 
 		var keys = _hash.Keys.ToArray();
-		Array.Sort(keys, new ReverseComparer<ulong>());
+		Array.Sort(keys, ReverseComparer<ulong>.Instance);
 
 		foreach (var key in keys) {
 			var list = _hash[key];
 			for (int i = list.Count - 1; i >= 0; --i) {
-				var x = list.Keys[i];
+				var x = list.GetKeyAtIndex(i);
 				yield return new IndexEntry(key, x.EvNum, x.LogPos);
 			}
 		}
 
 		//Log.Trace("Sorting array in HashListMemTable.IterateAllInOrder... DONE!");
-	}
-
-	public void Clear() {
-		_hash.Clear();
 	}
 
 	public IReadOnlyList<IndexEntry> GetRange(ulong stream, long startNumber, long endNumber, int? limit = null) {
@@ -303,7 +299,7 @@ public class HashListMemTable : IMemTable {
 			try {
 				var endIdx = list.UpperBound(new Entry(endNumber, long.MaxValue));
 				for (int i = endIdx; i >= 0; i--) {
-					var key = list.Keys[i];
+					var key = list.GetKeyAtIndex(i);
 					if (key.EvNum < startNumber || ret.Count == limit)
 						break;
 					ret.Add(new IndexEntry(hash, version: key.EvNum, position: key.LogPos));
@@ -351,7 +347,9 @@ public class HashListMemTable : IMemTable {
 	}
 }
 
-public class ReverseComparer<T> : IComparer<T> where T : IComparable {
+public sealed class ReverseComparer<T> : IComparer<T> where T : IComparable<T> {
+	public static readonly ReverseComparer<T> Instance = new();
+
 	public int Compare(T x, T y) {
 		return -x.CompareTo(y);
 	}

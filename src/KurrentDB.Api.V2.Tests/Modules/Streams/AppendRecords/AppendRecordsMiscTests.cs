@@ -35,7 +35,7 @@ public class AppendRecordsMiscTests {
 
 		var response = await Fixture.StreamsClient.AppendRecordsAsync(request, cancellationToken: ct);
 
-		await Assert.That(response.Revisions).HasCount(2);
+		await Assert.That(response.Revisions).Count().IsEqualTo(2);
 
 		var revA = response.Revisions.First(r => r.Stream == streamA);
 		var revB = response.Revisions.First(r => r.Stream == streamB);

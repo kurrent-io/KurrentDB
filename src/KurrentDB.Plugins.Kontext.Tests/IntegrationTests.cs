@@ -155,7 +155,7 @@ public class IntegrationTests {
 		var result = await ReadTool.Read(_client, _workspaceContext, _workspaces, _authz, _httpAccessor, _inquiries, sid,
 			new EventRef { Stream = _testStream, EventNumber = 0, Count = 1 });
 
-		await Assert.That(result.NewEvents).HasCount().EqualTo(1);
+		await Assert.That(result.NewEvents).Count().IsEqualTo(1);
 		await Assert.That(result.NewEvents[0].EventType).IsEqualTo("OrderPlaced");
 	}
 
@@ -165,7 +165,7 @@ public class IntegrationTests {
 
 		var read = await ReadTool.Read(_client, _workspaceContext, _workspaces, _authz, _httpAccessor, _inquiries, sid,
 			new EventRef { Stream = _testStream, EventNumber = 0, Count = 3 });
-		await Assert.That(read.NewEvents).HasCount().EqualTo(3);
+		await Assert.That(read.NewEvents).Count().IsEqualTo(3);
 
 		var forget = ForgetTool.Forget(_workspaceContext, _inquiries, sid, [read.NewEvents[0].Id]);
 		await Assert.That(forget.Forgotten).IsEqualTo(1);
@@ -206,7 +206,7 @@ public class IntegrationTests {
 
 		var fact = recalled!.Facts.First(f => f.Topic == topic);
 		await Assert.That(fact.Fact).Contains("Alice orders Widgets");
-		await Assert.That(fact.SourceEvents).HasCount().EqualTo(2);
+		await Assert.That(fact.SourceEvents).Count().IsEqualTo(2);
 		await Assert.That(fact.SourceEvents[0].Stream).IsEqualTo(_testStream);
 		await Assert.That(fact.SourceEvents[0].EventNumber).IsEqualTo(0L);
 	}

@@ -22,6 +22,8 @@ namespace KurrentDB.Core.DuckDB;
 // Also produces additional pools on demand that the caller should dispose.
 public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 	private readonly string _path;
+	private readonly string _tempDirectory;
+	private readonly long _maxTempDirectorySizeBytes;
 	private readonly IReadOnlyList<IDuckDBSetup> _repeated;
 	private readonly ILogger<DuckDBConnectionPoolLifetime> _log;
 	[CanBeNull] private string _tempPath;
@@ -34,6 +36,11 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 		[CanBeNull] ILogger<DuckDBConnectionPoolLifetime> log) {
 
 		_path = config.InMemDb ? GetTempPath() : $"{config.Path}/kurrent.ddb";
+		_tempDirectory = Path.GetFullPath(config.SqlEngineTempDirectory is { Length: > 0 } tempPath
+			? tempPath
+			: $"{_path}.tmp"); // the same directory DuckDB would pick by default. explicit so we can clean it up
+
+		_maxTempDirectorySizeBytes = config.SqlEngineTempDirectorySizeLimit;
 		_log = log ?? NullLogger<DuckDBConnectionPoolLifetime>.Instance;
 
 		var once = new List<IDuckDBSetup>();
@@ -70,7 +77,12 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 		var settings = new Dictionary<string, string> {
 			["memory_limit"] = $"{duckDbRamMib}MB", // total, not per connection
 			["access_mode"] = isReadOnly ? "READ_ONLY" : "READ_WRITE",
+			["temp_directory"] = _tempDirectory,
 		};
+
+		if (_maxTempDirectorySizeBytes > 0L)
+			settings["max_temp_directory_size"] = $"{_maxTempDirectorySizeBytes}B";
+
 		var pool = new ConnectionPoolWithFunctions($"Data Source={_path};{GetParamsString()}", _repeated);
 
 		if (log)
@@ -88,7 +100,30 @@ public class DuckDBConnectionPoolLifetime : Disposable, IHostedService {
 		}
 	}
 
-	public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+	public Task StartAsync(CancellationToken cancellationToken) {
+		var task = Task.CompletedTask;
+		try {
+			var tempDir = new DirectoryInfo(_tempDirectory);
+			// cleanup tmp files on startup
+			if (tempDir.Exists) {
+				DeleteTempObjects(tempDir);
+			}
+		} catch (Exception e) {
+			task = Task.FromException(e);
+		}
+
+		return task;
+
+		static void DeleteTempObjects(DirectoryInfo tempDir) {
+			foreach (var tempObj in tempDir.EnumerateFileSystemInfos("*.tmp", SearchOption.TopDirectoryOnly)) {
+				if (tempObj is DirectoryInfo subDir) {
+					subDir.Delete(recursive: true);
+				} else {
+					tempObj.Delete();
+				}
+			}
+		}
+	}
 
 	public Task StopAsync(CancellationToken cancellationToken) {
 		_log.LogDebug("Checkpointing DuckDB connection");

@@ -9,8 +9,12 @@ namespace KurrentDB.MicroBenchmarks;
 
 internal class Program {
 	static void Main(string[] args) {
-		var config = Debugger.IsAttached ? new DebugBuildConfig() { } : DefaultConfig.Instance;
-		BenchmarkRunner.Run<ProjectionSerializationBenchmarks>(config, args);
-//		BenchmarkRunner.Run<QueueBenchmarks>(config, args);
+		var config = Debugger.IsAttached ? new DebugBuildConfig() : DefaultConfig.Instance;
+
+		// Run without arguments for an interactive picker, or filter from the command line, e.g.:
+		//   dotnet run -c Release -- --filter *PTableQueryBenchmarks*
+		BenchmarkSwitcher
+			.FromAssembly(typeof(Program).Assembly)
+			.Run(args, config);
 	}
 }

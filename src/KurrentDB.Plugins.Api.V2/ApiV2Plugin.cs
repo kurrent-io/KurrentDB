@@ -8,6 +8,7 @@ using Grpc.AspNetCore.Server;
 using Kurrent.Rpc;
 using KurrentDB.Api.Errors;
 using KurrentDB.Api.Infrastructure.DependencyInjection;
+using KurrentDB.Api.Infrastructure.Grpc;
 using KurrentDB.Api.Infrastructure.Grpc.Validation;
 using KurrentDB.Api.Modules.Indexes;
 using KurrentDB.Api.Streams.Validators;
@@ -22,8 +23,14 @@ namespace KurrentDB.Plugins.Api.V2;
 [UsedImplicitly]
 public class ApiV2Plugin() : SubsystemsPlugin("APIV2") {
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
+        // Global gRPC interceptor (applies to every service, v1 and v2): on shutdown it translates the
+        // cancellation of open streaming calls into a retryable UNAVAILABLE carrying the ServerShuttingDown
+        // reason, so clients reconnect / re-establish subscriptions. Pairs with GrpcStreamingShutdownMiddleware,
+        // which performs the cancellation.
+        services.AddSingleton<ServerShuttingDownInterceptor>();
+
         services
-            .AddGrpc()
+            .AddGrpc(options => options.Interceptors.Add<ServerShuttingDownInterceptor>())
             .AddJsonTranscoding(options => {
                 options.TypeRegistry = TypeRegistry.FromFiles(
                     KurrentDB.Protocol.V2.Indexes.Errors.ErrorsReflection.Descriptor,

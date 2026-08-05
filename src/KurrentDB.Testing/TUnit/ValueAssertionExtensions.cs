@@ -17,6 +17,6 @@ public static class ValueAssertionExtensions {
 		JsonDocument.Parse(json),
 		SerializerOptions);
 
-	public static StringEqualsAssertion<string> IsJson(this ValueAssertion<string> source, string expectedJson) =>
+	public static StringEqualsAssertion IsJson(this ValueAssertion<string> source, string expectedJson) =>
 		new(source.Context.Map(actualJson => Normalize(actualJson!)), Normalize(expectedJson!));
 }

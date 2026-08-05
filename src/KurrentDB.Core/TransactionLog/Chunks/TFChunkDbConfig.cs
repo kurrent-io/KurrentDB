@@ -77,4 +77,8 @@ public class TFChunkDbConfig {
 		ReduceFileCachePressure = reduceFileCachePressure;
 		MaxTruncation = maxTruncation;
 	}
+
+	public long SqlEngineTempDirectorySizeLimit { get; init; }
+
+	public string SqlEngineTempDirectory { get; init; } = "";
 }

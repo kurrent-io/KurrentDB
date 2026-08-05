@@ -28,7 +28,7 @@ public class SearchToolTests {
 
 		var result = await SearchTool.Search(search, new FakeWorkspaceContext(), new FakeAuthorizationProvider(), new StaticHttpContextAccessor(), inquiries, sid, queries: ["order"]);
 
-		await Assert.That(result.NewEvents).HasCount().EqualTo(1);
+		await Assert.That(result.NewEvents).Count().IsEqualTo(1);
 		await Assert.That(result.NewEvents[0].Stream).IsEqualTo("order-1");
 		await Assert.That(result.NewEvents[0].EventType).IsEqualTo("OrderPlaced");
 		await Assert.That(result.NewEvents[0].Score).IsEqualTo(0.95f);
@@ -48,7 +48,7 @@ public class SearchToolTests {
 		await SearchTool.Search(search, new FakeWorkspaceContext(), new FakeAuthorizationProvider(), new StaticHttpContextAccessor(), inquiries, sid, queries: ["order"]);
 		var result = await SearchTool.Search(search, new FakeWorkspaceContext(), new FakeAuthorizationProvider(), new StaticHttpContextAccessor(), inquiries, sid, queries: ["order"]);
 
-		await Assert.That(result.NewEvents).HasCount().EqualTo(0);
+		await Assert.That(result.NewEvents).Count().IsEqualTo(0);
 		await Assert.That(result.Searches[0].New).IsEqualTo(0);
 	}
 
@@ -65,7 +65,7 @@ public class SearchToolTests {
 
 		var result = await SearchTool.Search(search, new FakeWorkspaceContext(), new FakeAuthorizationProvider(), new StaticHttpContextAccessor(), inquiries, sid, queries: ["order", "payment"]);
 
-		await Assert.That(result.NewEvents).HasCount().EqualTo(2);
+		await Assert.That(result.NewEvents).Count().IsEqualTo(2);
 	}
 
 	[Test]
@@ -79,7 +79,7 @@ public class SearchToolTests {
 
 		var result = await SearchTool.Search(search, new FakeWorkspaceContext(), new FakeAuthorizationProvider(), new StaticHttpContextAccessor(), inquiries, sid, queries: ["order", "placed"]);
 
-		await Assert.That(result.NewEvents).HasCount().EqualTo(1);
+		await Assert.That(result.NewEvents).Count().IsEqualTo(1);
 	}
 
 	[Test]
@@ -91,7 +91,7 @@ public class SearchToolTests {
 
 		var result = await SearchTool.Search(search, new FakeWorkspaceContext(), new FakeAuthorizationProvider(), new StaticHttpContextAccessor(), inquiries, sid, queries: ["nonexistent"]);
 
-		await Assert.That(result.NewEvents).HasCount().EqualTo(0);
+		await Assert.That(result.NewEvents).Count().IsEqualTo(0);
 	}
 
 	[Test]
@@ -138,7 +138,7 @@ public class SearchToolTests {
 		var result = await SearchTool.Search(search, new FakeWorkspaceContext(), authz,
 			new StaticHttpContextAccessor(), inquiries, sid, queries: ["any"]);
 
-		await Assert.That(result.NewEvents).HasCount().EqualTo(2);
+		await Assert.That(result.NewEvents).Count().IsEqualTo(2);
 		var publicEvt = result.NewEvents.Single(e => e.Stream == "public-1");
 		var secretEvt = result.NewEvents.Single(e => e.Stream == "secret-1");
 

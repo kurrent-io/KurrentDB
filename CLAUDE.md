@@ -18,7 +18,8 @@ Detailed reference docs live in `.claude/docs/` — fetch them when working in a
 
 ### Build
 - `dotnet build -c Release KurrentDB.slnx`
-- On x64 Linux/Windows you can pin with `/p:Platform=x64 --framework=net10.0`. Do NOT pass these on Apple Silicon: `/p:Platform=x64` leaks into `KurrentDB.SourceGenerators` (netstandard2.0, AnyCPU) and Roslyn refuses the x64-path'd analyzer (CS8034); `--framework=net10.0` breaks restore for the same project (NETSDK1005).
+- On x64 Linux/Windows you can pin with `/p:Platform=x64 --framework=net10.0`. 
+  - Do NOT pass these on Apple Silicon: `/p:Platform=x64` leaks into `KurrentDB.SourceGenerators` (netstandard2.0, AnyCPU) and Roslyn refuses the x64-path'd analyzer (CS8034); `--framework=net10.0` breaks restore for the same project (NETSDK1005).
 - Requires a repo-root `nuget.config` with `packageSourceMapping` (central package management + multiple sources triggers NU1507 otherwise). `Kurrent.*` → GitHub feed, `*` → nuget.org.
 
 ### Test
