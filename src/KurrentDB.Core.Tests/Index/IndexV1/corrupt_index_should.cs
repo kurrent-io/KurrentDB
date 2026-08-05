@@ -37,7 +37,7 @@ public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
 	}
 
 	private static void CorruptPTableFile(string ptableFile, byte version, string corruptionType) {
-		int indexEntrySize = IndexEntry.GetSize(version);
+		int indexEntrySize = PTable.GetIndexEntrySize(version);
 
 		int numMidpoints = PTable.GetRequiredMidpointCountCached(numIndexEntries, version);
 
@@ -131,15 +131,15 @@ public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
 	}
 
 	private static void CorruptIndexEntryKey(FileStream stream, int entry, byte version, PTable.IndexEntryKey key) {
-		int indexEntrySize = IndexEntry.GetSize(version);
+		int indexEntrySize = PTable.GetIndexEntrySize(version);
 
 		//modify one of the index entry hashes/version
 		var position = PTableHeader.Size + entry * indexEntrySize;
 		stream.Seek(position, SeekOrigin.Begin);
-		var indexEntry = IndexEntry.ReadFrom(stream, version);
+		var indexEntry = PTable.ReadIndexEntryFrom(stream, version);
 		var corruptedEntry = new IndexEntry(key.Stream, key.Version, indexEntry.Position);
 		stream.Seek(position, SeekOrigin.Begin);
-		corruptedEntry.AppendTo(stream, version);
+		PTable.AppendIndexEntryTo(stream, in corruptedEntry, version);
 
 		if (version >= PTableVersions.IndexV4) {
 			//modify one of the midpoint entry hashes/version

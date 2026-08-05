@@ -31,6 +31,7 @@ public class PTableReadBenchmarks {
 	[GlobalSetup]
 	public void Setup() {
 		_data = PTableBenchmarkData.Generate(IndexSize);
+		_data.DeleteFile(Version);
 		_file = _data.CreateFile(Version, cacheDepth: CacheDepth);
 	}
 

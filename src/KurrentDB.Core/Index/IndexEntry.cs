@@ -10,23 +10,10 @@ using DotNext.Runtime.InteropServices;
 
 namespace KurrentDB.Core.Index;
 
-[StructLayout(LayoutKind.Explicit)]
 public readonly struct IndexEntry : IComparable<IndexEntry>, IEquatable<IndexEntry> {
-	public const int IndexEntryV1Size = sizeof(int) + sizeof(int) + sizeof(long);
-	public const int IndexEntryV2Size = sizeof(int) + sizeof(long) + sizeof(long);
-	public const int IndexEntryV3And4Size = sizeof(long) + sizeof(long) + sizeof(long);
-
-	[FieldOffset(0)] public readonly Int64 Version;
-	[FieldOffset(8)] public readonly UInt64 Stream;
-	[FieldOffset(16)] public readonly Int64 Position;
-
-#if DEBUG
-	static unsafe IndexEntry() {
-		Debug.Assert(sizeof(IndexEntryV1) == IndexEntryV1Size);
-		Debug.Assert(sizeof(IndexEntryV2) == IndexEntryV2Size);
-		Debug.Assert(sizeof(IndexEntry) == IndexEntryV3And4Size);
-	}
-#endif
+	public readonly Int64 Version;
+	public readonly UInt64 Stream;
+	public readonly Int64 Position;
 
 	public PTable.IndexEntryKey Key => new(Stream, Version);
 
@@ -36,63 +23,15 @@ public readonly struct IndexEntry : IComparable<IndexEntry>, IEquatable<IndexEnt
 		Position = position;
 	}
 
-	public static int GetSize(byte version) {
-		return version switch {
-			>= PTableVersions.IndexV3 => IndexEntryV3And4Size,
-			PTableVersions.IndexV2 => IndexEntryV2Size,
-			_ => IndexEntryV1Size
-		};
-	}
-
-	public void AppendTo(Stream stream, byte ptableVersion) {
-		if (ptableVersion <= PTableVersions.IndexV2) {
-			if (ptableVersion == PTableVersions.IndexV2) {
-				var entryV2 = new IndexEntryV2(this.Stream, (int)this.Version, this.Position);
-				var buffer = MemoryMarshal.AsReadOnlyBytes(ref entryV2);
-				Debug.Assert(buffer.Length == IndexEntryV2Size);
-				stream.Write(buffer);
-			} else {
-				var entryV1 = new IndexEntryV1((uint)this.Stream, (int)this.Version, this.Position);
-				var buffer = MemoryMarshal.AsReadOnlyBytes(ref entryV1);
-				Debug.Assert(buffer.Length == IndexEntryV1Size);
-				stream.Write(buffer);
-			}
-
-			return;
-		}
-
-		// v3+
-		{
-			var buffer = MemoryMarshal.AsReadOnlyBytes(in this);
-			Debug.Assert(buffer.Length == IndexEntryV3And4Size);
-			stream.Write(buffer);
-			return;
-		}
+	public void AppendTo<T>(Stream stream) where T : struct, ILayout<T> {
+		T.AppendTo(stream, in this);
 	}
 
 	[SkipLocalsInit]
-	public static IndexEntry ReadFrom(Stream stream, byte ptableVersion) {
-		Debug.Assert(IndexEntryV3And4Size >= IndexEntryV2Size);
-		Debug.Assert(IndexEntryV3And4Size >= IndexEntryV1Size);
-
-		Span<byte> buffer = stackalloc byte[IndexEntryV3And4Size];
-		var size = GetSize(ptableVersion);
-		stream.ReadExactly(buffer[..size]);
-
-		if (ptableVersion <= PTableVersions.IndexV2) {
-			if (ptableVersion == PTableVersions.IndexV2) {
-				ref readonly var entry = ref MemoryMarshal.AsRef<IndexEntryV2>(buffer);
-				return new IndexEntry(entry.Stream, entry.Version, entry.Position);
-			} else {
-				ref readonly var entry = ref MemoryMarshal.AsRef<IndexEntryV1>(buffer);
-				return new IndexEntry(entry.Stream, entry.Version, entry.Position);
-			}
-		}
-
-		// v3+
-		{
-			return MemoryMarshal.Read<IndexEntry>(buffer);
-		}
+	public static IndexEntry ReadFrom<T>(Stream stream) where T : struct, ILayout<T> {
+		Span<byte> buffer = stackalloc byte[T.Size];
+		stream.ReadExactly(buffer);
+		return T.ReadFrom(buffer);
 	}
 
 	public int CompareTo(IndexEntry other) {
@@ -112,20 +51,78 @@ public readonly struct IndexEntry : IComparable<IndexEntry>, IEquatable<IndexEnt
 	}
 
 	public override string ToString() {
-		return string.Format("Stream: {0}, Version: {1}, Position: {2}", Stream, Version, Position);
-	}
-
-	[StructLayout(LayoutKind.Explicit, Pack = 4)]
-	private readonly struct IndexEntryV2(ulong stream, int version, long position) {
-		[FieldOffset(0)] public readonly Int32 Version = version;
-		[FieldOffset(4)] public readonly UInt64 Stream = stream;
-		[FieldOffset(12)] public readonly Int64 Position = position;
+		return $"Stream: {Stream}, Version: {Version}, Position: {Position}";
 	}
 
 	[StructLayout(LayoutKind.Explicit)]
-	private readonly struct IndexEntryV1(uint stream, int version, long position) {
+	public readonly struct V3(ulong stream, long version, long position) : ILayout<V3> {
+		[FieldOffset(0)] public readonly Int64 Version = version;
+		[FieldOffset(8)] public readonly UInt64 Stream = stream;
+		[FieldOffset(16)] public readonly Int64 Position = position;
+
+		public static int Size => 24;
+
+		public static IndexEntry ReadFrom(ReadOnlySpan<byte> buffer) {
+			Debug.Assert(Unsafe.SizeOf<V3>() == Size);
+			ref readonly var entry = ref MemoryMarshal.AsRef<V3>(buffer);
+			return new IndexEntry(entry.Stream, entry.Version, entry.Position);
+		}
+
+		public static void AppendTo(Stream stream, in IndexEntry entry) {
+			var value = new V3(entry.Stream, entry.Version, entry.Position);
+			var buffer = MemoryMarshal.AsReadOnlyBytes(in value);
+			Debug.Assert(buffer.Length == Size);
+			stream.Write(buffer);
+		}
+	}
+
+	[StructLayout(LayoutKind.Explicit, Pack = 4)]
+	public readonly struct V2(ulong stream, int version, long position) : ILayout<V2> {
+		[FieldOffset(0)] public readonly Int32 Version = version;
+		[FieldOffset(4)] public readonly UInt64 Stream = stream;
+		[FieldOffset(12)] public readonly Int64 Position = position;
+
+		public static int Size => 20;
+
+		public static IndexEntry ReadFrom(ReadOnlySpan<byte> buffer) {
+			Debug.Assert(Unsafe.SizeOf<V2>() == Size);
+			ref readonly var entry = ref MemoryMarshal.AsRef<V2>(buffer);
+			return new IndexEntry(entry.Stream, entry.Version, entry.Position);
+		}
+
+		public static void AppendTo(Stream stream, in IndexEntry entry) {
+			var value = new V2(entry.Stream, (int)entry.Version, entry.Position);
+			var buffer = MemoryMarshal.AsReadOnlyBytes(in value);
+			Debug.Assert(buffer.Length == Size);
+			stream.Write(buffer);
+		}
+	}
+
+	[StructLayout(LayoutKind.Explicit)]
+	public readonly struct V1(uint stream, int version, long position) : ILayout<V1> {
 		[FieldOffset(0)] public readonly Int32 Version = version;
 		[FieldOffset(4)] public readonly UInt32 Stream = stream;
 		[FieldOffset(8)] public readonly Int64 Position = position;
+
+		public static int Size => 16;
+
+		public static IndexEntry ReadFrom(ReadOnlySpan<byte> buffer) {
+			Debug.Assert(Unsafe.SizeOf<V1>() == Size);
+			ref readonly var entry = ref MemoryMarshal.AsRef<V1>(buffer);
+			return new IndexEntry(entry.Stream, entry.Version, entry.Position);
+		}
+
+		public static void AppendTo(Stream stream, in IndexEntry entry) {
+			var value = new V1((uint)entry.Stream, (int)entry.Version, entry.Position);
+			var buffer = MemoryMarshal.AsReadOnlyBytes(in value);
+			Debug.Assert(buffer.Length == Size);
+			stream.Write(buffer);
+		}
+	}
+
+	public interface ILayout<TSelf> where TSelf : struct, ILayout<TSelf> {
+		static abstract int Size { get; }
+		static abstract IndexEntry ReadFrom(ReadOnlySpan<byte> buffer);
+		static abstract void AppendTo(Stream stream, in IndexEntry entry);
 	}
 }

@@ -61,7 +61,7 @@ public class when_creating_ptable_from_memtable : SpecificationWithFile {
 
 	[Test]
 	public void the_file_gets_created_and_can_be_read() {
-		int indexEntrySize = IndexEntry.GetSize(_ptableVersion);
+		int indexEntrySize = PTable.GetIndexEntrySize(_ptableVersion);
 
 		var table = new HashListMemTable(_ptableVersion, maxSize: 10);
 		table.Add(0x010100000000, 0x0001, 0x0001);

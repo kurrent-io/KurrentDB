@@ -83,7 +83,7 @@ public class table_index_with_corrupt_index_entries_should : SpecificationWithDi
 	}
 
 	private void CorruptPTableFile(string ptableFile, byte version, string corruptionType) {
-		int indexEntrySize = IndexEntry.GetSize(version);
+		int indexEntrySize = PTable.GetIndexEntrySize(version);
 
 		using (FileStream stream = File.Open(ptableFile, FileMode.Open)) {
 			if (corruptionType == "zeroOutMiddleEntry") {
@@ -94,11 +94,11 @@ public class table_index_with_corrupt_index_entries_should : SpecificationWithDi
 				foreach (int entry in indexEntriesToCorrupt) {
 					var position = PTableHeader.Size + entry * indexEntrySize;
 					stream.Seek(position, SeekOrigin.Begin);
-					var indexEntry = IndexEntry.ReadFrom(stream, version);
+					var indexEntry = PTable.ReadIndexEntryFrom(stream, version);
 					//modify one of the index entry hashes/version
 					var corruptedEntry = new IndexEntry(0, 0, indexEntry.Position);
 					stream.Seek(position, SeekOrigin.Begin);
-					corruptedEntry.AppendTo(stream, version);
+					PTable.AppendIndexEntryTo(stream, in corruptedEntry, version);
 
 					if (version >= PTableVersions.IndexV4) {
 						//modify one of the midpoint entry hashes/version
